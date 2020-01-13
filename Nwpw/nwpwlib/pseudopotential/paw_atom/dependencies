@@ -1,0 +1,20 @@
+$(LIBRARY_PATH)(paw_get_inverse.o):	./paw_my_memory.h 
+$(LIBRARY_PATH)(paw_ion.o):	./paw_pred_cor.h ./paw_hartree.h 
+$(LIBRARY_PATH)(paw_potential.o):	./paw_vosko.h ./paw_utilities.h ./paw_sdir.h ./paw_potential.h ./paw_orbitals.h ./paw_my_constants.h ./paw_loggrid.h ./paw_ion.h ./paw_hartree.h ./paw_dirac_exchange.h ./paw_core.h ./paw_comp_charge.h ./paw_bisect.h 
+$(LIBRARY_PATH)(paw_matrix_elements.o):	./paw_potential.h ./paw_my_memory.h ./paw_loggrid.h ./paw_basis.h 
+$(LIBRARY_PATH)(paw_loggrid.o):	./paw_utilities.h ./paw_sdir.h ./paw_pred_cor.h ./paw_my_memory.h ./paw_loggrid.h 
+$(LIBRARY_PATH)(paw_vosko.o):	./paw_vosko.h ./paw_my_constants.h ./paw_loggrid.h 
+$(LIBRARY_PATH)(paw_hartree.o):	./paw_pred_cor.h ./paw_hartree.h 
+$(LIBRARY_PATH)(paw_atom.o):	./paw_vosko.h ./paw_utilities.h ./paw_sdir.h ./paw_potential.h ./paw_orbitals.h ./paw_my_constants.h ./paw_matrix_elements.h ./paw_loggrid.h ./paw_kinetic_energy.h ./paw_ion.h ./paw_hartree.h ./paw_dirac_exchange.h ./paw_core.h ./paw_comp_charge.h ./paw_basis.h ./paw_atom.h 
+$(LIBRARY_PATH)(paw_comp_charge.o):	./paw_my_constants.h ./paw_loggrid.h ./paw_error_function.h ./paw_comp_charge.h ./paw_bisect.h 
+$(LIBRARY_PATH)(paw_atom_driver.o):	./paw_sdir.h ./paw_scattering.h ./paw_output.h ./paw_loggrid.h ./paw_basis.h ./paw_atom.h 
+$(LIBRARY_PATH)(paw_dirac_exchange.o):	./paw_my_constants.h ./paw_dirac_exchange.h 
+$(LIBRARY_PATH)(paw_output.o):	./paw_sdir.h ./paw_potential.h ./paw_my_constants.h ./paw_ion.h ./paw_core.h ./paw_comp_charge.h ./paw_basis.h ./paw_atom.h 
+$(LIBRARY_PATH)(paw_sdir.o):	./paw_sdir.h 
+$(LIBRARY_PATH)(paw_basis.o):	./paw_utilities.h ./paw_sdir.h ./paw_schrodin.h ./paw_scattering.h ./paw_potential.h ./paw_orbitals.h ./paw_my_memory.h ./paw_my_constants.h ./paw_matrix_elements.h ./paw_kinetic_energy.h ./paw_get_inverse.h ./paw_core.h ./paw_basis.h ./paw_atom.h 
+$(LIBRARY_PATH)(paw_utilities.o):	./paw_utilities.h ./paw_sdir.h ./paw_my_memory.h 
+$(LIBRARY_PATH)(paw_scattering.o):	./paw_utilities.h ./paw_schrodin.h ./paw_scattering.h ./paw_potential.h ./paw_orbitals.h ./paw_my_memory.h ./paw_my_constants.h ./paw_matrix_elements.h ./paw_loggrid.h ./paw_kinetic_energy.h ./paw_get_inverse.h ./paw_core.h ./paw_basis.h 
+$(LIBRARY_PATH)(paw_core.o):	./paw_sdir.h ./paw_orbitals.h ./paw_my_constants.h ./paw_loggrid.h ./paw_core.h ./paw_basis.h ./paw_atom.h 
+$(LIBRARY_PATH)(paw_schrodin.o):	./paw_schrodin.h ./paw_pred_cor.h ./paw_loggrid.h 
+$(LIBRARY_PATH)(paw_orbitals.o):	./paw_vosko.h ./paw_utilities.h ./paw_sdir.h ./paw_schrodin.h ./paw_potential.h ./paw_pauli.h ./paw_orbitals.h ./paw_my_constants.h ./paw_loggrid.h ./paw_kinetic_energy.h ./paw_ion.h ./paw_hartree.h ./paw_dirac_exchange.h 
+$(LIBRARY_PATH)(paw_pauli.o):	./paw_pred_cor.h ./paw_pauli.h ./paw_my_constants.h ./paw_loggrid.h 
