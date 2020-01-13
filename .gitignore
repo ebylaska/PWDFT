@@ -35,3 +35,6 @@
 *.vpp
 *.movecs
 nwpw.x
+
+# build directory
+build
