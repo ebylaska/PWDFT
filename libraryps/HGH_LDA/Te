@@ -1,0 +1,41 @@
+[lmax] -1
+[locp] -1
+[rlocal] 1.0
+[psp_type] 1
+<HGH>
+Te 6 0.575000 9.387085
+0.556456 2.046890 -0.029333 -0.881119
+0.615262 1.033478 -0.481172
+0.172997 0.050641
+0.805101 0.317411
+0.010809
+<end>
+
+
+Comment: Used for generating atomic orbitals
+<atom>
+Te
+52.0 128.0 9 2
+1  0      2.00
+2  0      2.00
+2  1      6.00
+3  0      2.00
+3  1      6.00
+3  2     10.00
+4  0      2.00
+4  1      6.00
+4  2     10.00
+5  0      2.00
+5  1      4.00
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut>
+   0    2.0880559
+   1    2.2789968
+<end>
+
+<semicore> 1.65   <end>
+<semicore_type> quadratic <end>
+
+

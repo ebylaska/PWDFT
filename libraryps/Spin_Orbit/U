@@ -1,0 +1,40 @@
+#
+# $Id$
+#
+Comment: U spin-orbit pseudopotential parameters
+Comment: Fitted by Patrick Nichols
+
+[lmax] 3
+[locp] 0
+[rlocal] 1.0
+[cutoff] 50.0
+
+ <atom>
+ U 
+  0.920000E+02  238.0000   13 4
+      1   0   2.0
+      2   0   2.0
+      2   1   6.0
+      3   0   2.0
+      3   1   6.0
+      3   2   10.0
+      4   0   2.0
+      4   1   6.0
+      4   2   10.0
+      4   3   14.0
+      5   0   2.0
+      5   1   6.0
+      5   2   10.0
+      6   0   2.0
+      6   1   6.0
+      5   3   2.0
+      6   2   1.0
+ <end>
+ <solver> dirac			        <end>
+ <pseudopotential> troullier-martins	<end>
+<rcut>
+      0 1.42088
+      1 1.60200
+      2 2.40000
+      3 1.25000
+<end>

@@ -1,0 +1,43 @@
+#
+# $Id$
+#
+Comment: Ag pseudopotential parameters
+Comment: Fitted 05-2-2013
+Comment: relativistic TM, quadratic semicore
+
+
+[lmax] 2
+[locp] 1
+[rlocal] 1.0
+<atom>
+Ag
+47.0 108.0 9 2
+1  0      2.00
+2  0      2.00
+2  1      6.00
+3  0      2.00
+3  1      6.00
+3  2     10.00
+4  0      2.00
+4  1      6.00
+4  2      10.0
+5  0      0.80
+5  1      0.20
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut> 
+   0    2.3000
+   1    2.7000
+   2    3.8100
+<end>
+
+
+<semicore> 2.98   <end>
+
+ <kb_expansion>
+   0  2
+ <end>
+
+
+<comment> Only 5s in valence (4d in core) Parameterized on 5/2/2013 <end>

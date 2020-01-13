@@ -1,0 +1,50 @@
+#
+# $Id$
+#
+
+Comment: Pu pseudopotential parameters
+Comment: relativistic TM
+
+[lmax] 3
+[locp] 0
+[rlocal] 1.0
+[cutoff] 50.0
+
+<comment> Parameterized (8/20/2012 by EJB) Troullier-Martins psp <end>
+
+ <atom>
+ Pu 
+  0.940000E+02  238.0000   13 4
+      1 0 2.0
+      2 0 2.0
+      2 1 6.0
+      3 0 2.0
+      3 1 6.0
+      3 2 10.0
+      4 0 2.0
+      4 1 6.0
+      4 2 10.0
+      4 3 14.0
+      5 0 2.0
+      5 1 6.0
+      5 2 10.0
+      6 0 2.0
+      6 1 6.0
+      5 3 4.0
+      6 2 1.0
+ <end>
+ <solver> pauli			        <end>
+ <pseudopotential> troullier-martins	<end>
+<rcut>
+      0 1.60000
+      1 1.80000
+      2 2.50000
+      3 1.30000
+<end>
+
+<screening_cut> 0.10 <end>
+
+
+
+
+
