@@ -1,0 +1,204 @@
+hello NWChemEX!!!
+hello NWChemEX!!!
+hello NWChemEX!!!
+hello NWChemEX!!!
+          *****************************************************
+          *                                                   *
+          *     Car-Parrinello microcluster calculation       *
+          *                                                   *
+          *     [     steepest descent minimization   ]       *
+          *     [          C++ implementation         ]       *
+          *                                                   *
+          *            version #7.00   09/20/18               *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska     *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Sep 23 17:06:14 2018 <<<
+rtdb error get_info tag =cpsd:input_wavefunction_filename
+
+
+
+          ==============  summary of input  ==================
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : hilbert
+ parallel mapping         : balanced
+
+ options:
+   electron spin = restricted
+
+ input movecs:eric.movecs
+
+ elements involved in the cluster:
+     0 :    C   core charge:  4.0  lmax=2
+           comment : Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp
+           pseudopotential type            :   0
+           highest angular component       :   2
+           local potential used            :   2
+           number of non-local projections :   4
+           cutoff =    0.800   0.850   0.850
+     1 :    O   core charge:  6.0  lmax=2
+           comment : Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp
+           pseudopotential type            :   0
+           highest angular component       :   2
+           local potential used            :   2
+           number of non-local projections :   4
+           cutoff =    0.700   0.700   0.700
+     2 :    H   core charge:  1.0  lmax=1
+           comment : Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp
+           pseudopotential type            :   0
+           highest angular component       :   1
+           local potential used            :   1
+           number of non-local projections :   1
+           cutoff =    0.800   0.800
+
+ atom composition:
+   C : 9   O : 4   H : 8
+
+ initial ion positions (au):
+   1 C	   -6.585    1.452   -0.278
+   2 C	   -3.860    2.053   -0.777
+   3 O	   -3.043    3.479   -2.320
+   4 O	   -2.327    0.662    0.850
+   5 C	    0.312    0.883    0.667
+   6 C	    1.437    3.213    1.079
+   7 C	    4.050    3.416    1.005
+   8 C	    5.526    1.294    0.523
+   9 C	    4.378   -1.024    0.126
+  10 C	    1.748   -1.287    0.197
+  11 C	    0.732   -3.914   -0.229
+  12 O	    2.053   -5.611   -0.960
+  13 O	   -1.731   -4.334    0.281
+  14 H	   -7.013    1.658    1.724
+  15 H	   -6.973   -0.503   -0.802
+  16 H	   -7.766    2.703   -1.394
+  17 H	    0.270    4.846    1.434
+  18 H	    4.926    5.234    1.322
+  19 H	    7.561    1.447    0.463
+  20 H	    5.478   -2.700   -0.250
+  21 H	   -2.523   -2.777    0.830
+
+ number of electrons: spin up=    34 (  34 per task) down=    34 (  34 per task)
+
+ supercell:
+      volume :   14738.12
+      lattice:    a1=<  -29.498    1.639   -2.012 >
+                  a2=<    1.386    1.707  -18.928 >
+                  a3=<    1.277   25.973    2.435 >
+      reciprocal: b1=<   -0.211    0.012   -0.014 >
+                  b2=<    0.024    0.030   -0.328 >
+                  b3=<    0.012    0.239    0.022 >
+      density cutoff= 100.000 fft=  140 x   90 x  120  (  351945 waves    87986 per task)
+      wavefnc cutoff=  50.000 fft=  140 x   90 x  120  (  124467 waves    31116 per task)
+
+ ewald parameters:
+      energy cutoff= 100.000 fft=  140 x   90 x  120  (  351945 waves    87987 per task)
+      summation: cut radius=    6.066 and   1   mandelung=   1.66477195
+
+ technical parameters:
+      time step=       5.80  ficticious mass= 400000.00
+      tolerance=  1.000e-09 (energy)   1.000e-09 (density)   1.000e-04 (ion)
+      max iterations =         10 (    1 inner    10 outer)
+
+
+
+          ================ iteration =========================
+
+          >>> iteration started at Sun Sep 23 17:06:15 2018 <<<
+
+   iter.             Energy       DeltaE     DeltaPsi     DeltaIon
+   ---------------------------------------------------------------
+       1  -1.1976405982e+02 -2.06490e+01  1.10126e-10  0.00000e+00
+       2  -1.1976405982e+02 -6.91483e-10  1.01444e-10  0.00000e+00
+          *** tolerance ok.    iteration terminated
+
+          >>> iteration ended at   Sun Sep 23 17:06:22 2018 <<<
+
+
+
+          =============  summary of results  =================
+
+ final ion positions (au):
+   1 C	   -6.585    1.452   -0.278
+   2 C	   -3.860    2.053   -0.777
+   3 O	   -3.043    3.479   -2.320
+   4 O	   -2.327    0.662    0.850
+   5 C	    0.312    0.883    0.667
+   6 C	    1.437    3.213    1.079
+   7 C	    4.050    3.416    1.005
+   8 C	    5.526    1.294    0.523
+   9 C	    4.378   -1.024    0.126
+  10 C	    1.748   -1.287    0.197
+  11 C	    0.732   -3.914   -0.229
+  12 O	    2.053   -5.611   -0.960
+  13 O	   -1.731   -4.334    0.281
+  14 H	   -7.013    1.658    1.724
+  15 H	   -6.973   -0.503   -0.802
+  16 H	   -7.766    2.703   -1.394
+  17 H	    0.270    4.846    1.434
+  18 H	    4.926    5.234    1.322
+  19 H	    7.561    1.447    0.463
+  20 H	    5.478   -2.700   -0.250
+  21 H	   -2.523   -2.777    0.830
+
+
+ total     energy    :   -1.1976405982e+02 (   -5.70305e+00 /ion)
+ total orbtial energy:   -3.3404140005e+01 (   -9.82475e-01 /electron)
+ hartree energy      :    2.5212480886e+02 (    7.41544e+00 /electron)
+ exc-corr energy     :   -3.1956539285e+01 (   -9.39898e-01 /electron)
+ ion-ion energy      :    1.5587538761e+02 (    7.42264e+00 /ion)
+
+ K.S. kinetic energy :    8.4872712433e+01 (    2.49626e+00 /electron)
+ K.S. V_l energy     :   -5.7563878165e+02 (   -1.69306e+01 /electron)
+ K.S. V_nl energy    :   -5.0416477873e+00 (   -1.48284e-01 /electron)
+ K.S. V_Hart energy  :    5.0424961771e+02 (    1.48309e+01 /electron)
+ K.S. V_xc energy    :   -4.1846040714e+01 (   -1.23077e+00 /electron)
+ Viral Coefficient   :   -1.3935792677e+00
+
+ orbital energies:
+    -2.2244654e-01 (  -6.053eV)
+    -2.3226960e-01 (  -6.320eV)
+    -2.3776875e-01 (  -6.470eV)
+    -2.5277516e-01 (  -6.878eV)
+    -2.6773469e-01 (  -7.285eV)
+    -2.8847307e-01 (  -7.850eV)
+    -3.1157468e-01 (  -8.478eV)
+    -3.2266159e-01 (  -8.780eV)
+    -3.3498097e-01 (  -9.115eV)
+    -3.4395730e-01 (  -9.360eV)
+    -3.5449796e-01 (  -9.646eV)
+    -3.6733606e-01 (  -9.996eV)
+    -3.7455080e-01 ( -10.192eV)
+    -3.7556249e-01 ( -10.220eV)
+    -3.8659563e-01 ( -10.520eV)
+    -3.9436753e-01 ( -10.731eV)
+    -4.1320024e-01 ( -11.244eV)
+    -4.2485126e-01 ( -11.561eV)
+    -4.4444002e-01 ( -12.094eV)
+    -4.4871508e-01 ( -12.210eV)
+    -4.5373623e-01 ( -12.347eV)
+    -4.7873445e-01 ( -13.027eV)
+    -5.2685150e-01 ( -14.336eV)
+    -5.4715695e-01 ( -14.889eV)
+    -5.7331401e-01 ( -15.601eV)
+    -5.9273226e-01 ( -16.129eV)
+    -6.6507207e-01 ( -18.098eV)
+    -6.8886494e-01 ( -18.745eV)
+    -7.0987208e-01 ( -19.317eV)
+    -7.8515113e-01 ( -21.365eV)
+    -9.1236786e-01 ( -24.827eV)
+    -9.5076625e-01 ( -25.872eV)
+    -9.9042023e-01 ( -26.951eV)
+    -1.0282706e+00 ( -27.981eV)
+
+-----------------
+cputime in seconds
+prologue    : 1.475323e+00
+main loop   : 6.566026e+00
+epilogue    : 2.511000e-02
+total       : 8.066459e+00
+cputime/step: 3.283013e+00
+
+          >>> job completed at     Sun Sep 23 17:06:22 2018 <<<
