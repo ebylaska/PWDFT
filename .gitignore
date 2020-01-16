@@ -37,4 +37,5 @@
 nwpw.x
 
 # build directory
+*.swp
 build
