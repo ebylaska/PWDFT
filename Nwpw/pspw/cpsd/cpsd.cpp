@@ -108,7 +108,7 @@ int cpsd(int argc, char *argv[])
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac);
 
    /* setup ewald */
-   Ewald myewald(&myparallel,&myion, &mypsp);
+   Ewald myewald(&myparallel,&myion, mypsp.zv);
    myewald.phafac();
 
 
