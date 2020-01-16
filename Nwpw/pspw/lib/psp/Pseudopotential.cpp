@@ -344,7 +344,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
         ntmp = nprj[ia];
 
-        dgemm_("N","T",&nshift,&nn,&ntmp,
+        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
                &rmone,
                prjtmp,&nshift,
                sw2,   &nn,
