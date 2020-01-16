@@ -38,6 +38,7 @@ configure_file(NwpwConfig.h.in NwpwConfig.h)
 
 # add the nwpwlib library
 add_subdirectory(nwpwlib)
+add_subdirectory(pspw)
 
 # add the executable
 add_executable(pwdft nwpw.cpp)
