@@ -36,17 +36,17 @@ include_directories(${MPI_INCLUDE_PATH})
 configure_file(NwpwConfig.h.in NwpwConfig.h)
 
 
-# add the nwpwlib library
+# create the nwpwlib and pspw libraries
 add_subdirectory(nwpwlib)
 add_subdirectory(pspw)
 
-# add the executable
+# create the pwdft executable
 add_executable(pwdft nwpw.cpp)
 target_include_directories(pwdft PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
 
-target_link_libraries(pwdft ${MPI_LIBRARIES})
+target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(pwdft PROPERTIES
