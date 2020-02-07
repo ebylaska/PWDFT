@@ -11,7 +11,7 @@ using namespace std;
 class	Ewald {
    int    encut,enx,eny,enz,enshl3d,enpack,enpack_all,enida;
    int    *i_indx,*j_indx,*k_indx;
-   double *vg,*rcell,*eG,*vcx,*zv,*ss;
+   double *vg,*rcell,*eG,*vcx,*zv,*ss,*exi,*tmp3,*ftmp;
    double *ewx1,*ewy1,*ewz1;
    double unita[9],unitg[9],ercut,cewald,alpha;
    double eecut;
@@ -32,6 +32,9 @@ public:
             delete [] vg;
             delete [] vcx;
             delete [] ss;
+            delete [] exi;
+            delete [] tmp3;
+            delete [] ftmp;
             delete [] rcell;
             delete [] eG;
             delete [] zv;
@@ -53,7 +56,7 @@ public:
     double rcut() {return ercut;}
     double mandelung() {return alpha;}
     double energy();
-    //void   force(double *);
+    void   force(double *);
 
 };
 
