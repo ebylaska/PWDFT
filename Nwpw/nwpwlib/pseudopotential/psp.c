@@ -96,9 +96,9 @@ void	init_Psp(char *filename)
 
 
     /* find the comment */
-    if (Solver_Type = Hamann)     comment = "Hamann pseudopotential";
-    if (Solver_Type = Troullier)  comment = "Troullier-Martins pseudopotential";
-    if (Solver_Type = Vanderbilt) comment = "Vanderbilt pseudopotential";
+    if (Solver_Type == Hamann)     strcpy(comment,"Hamann pseudopotential");
+    if (Solver_Type == Troullier)  strcpy(comment,"Troullier-Martins pseudopotential");
+    if (Solver_Type == Vanderbilt) strcpy(comment,"Vanderbilt pseudopotential");
     fp = fopen(filename,"r+");
     w = get_word(fp);
     while ((w!=NIL) && (strcmp("<comment>",w)!=0))
