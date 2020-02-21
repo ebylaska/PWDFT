@@ -257,7 +257,21 @@ PGrid::PGrid(Parallel *inparall) : d3db(inparall,control_mapping(),control_ngrid
  
    }
 
+   Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
+   Gpack[1] = &(Gpack[0][3*(nida[0]+nidb[0])]);
+   double *Gtmp = new double [nfft3d];
+   int one      = 1;
+   for (nb=0; nb<=1; ++nb)
+   {
+      for (i=0; i<3; ++i)
+      {
+         dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
+         this->t_pack(nb,Gtmp);
+         this->tt_pack_copy(nb,Gtmp,&(Gpack[nb][i*(nidb[nb]+nidb[nb])]));
 
+      }
+   }
+   delete [] Gtmp;
 }
 
 
@@ -525,4 +539,10 @@ void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
    int ng  = 2*(nida[nb]+nidb[nb]);
 
    for (i=0; i<ng; ++i) b[i] += alpha*a[i];
+}
+
+void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, double *c)
+{
+   for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
+      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1]; 
 }

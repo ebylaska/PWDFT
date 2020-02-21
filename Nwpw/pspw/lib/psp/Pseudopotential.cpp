@@ -368,10 +368,30 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::v_local(double *vout)
+void Pseudopotential::v_local(double *vout, const int move, double *dng, double *fion)
 {
    int ii,ia,nshift;
    double *exi;
+/*
+   int k;
+   double gg;
+   double *Gx  = mygrid->Gxyz(0);
+   double *Gy  = mygrid->Gxyz(1);
+   double *Gz  = mygrid->Gxyz(2);
+   tg          = new double [mygrid->npack(1)];
+   double *tmp = new double [mygrid->nfft3d];
+
+   mypneb = mygrid;
+
+   for (k=0; k<(mypneb->nfft3d); ++k)
+   {
+      gg     = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+      tmp[k] = -0.5*gg;
+   }
+   mypneb->t_pack(1,tmp);
+   mypneb->tt_pack_copy(1,tmp,tg);
+*/
+
 
    mypneb->c_zero(0,vout);
    nshift = 2*mypneb->npack(0);
@@ -381,6 +401,16 @@ void Pseudopotential::v_local(double *vout)
       ia = myion->katm[ii];
       mystrfac->strfac_pack(0,ii,exi);
       mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
+      /*
+      if (move) 
+      {
+         mypneb->tcc_MulSum2(0,vl[ia],exi,vtmp);
+         xtmp = dimag(dng)*dble(vtmp) - dble(dng)*dimag(vtmp)
+         fion(1,ii) += Gx * xtmp
+         fion(2,ii) += Gy * xtmp
+         fion(3,ii) += Gy * xtmp
+      }
+*/
 
    }
    delete [] exi;

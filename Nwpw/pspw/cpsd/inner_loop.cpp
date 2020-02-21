@@ -34,6 +34,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    double eorbit,eion,exc,ehartr,pxc;
    double eke,elocal,enlocal,dt,dte,Eold;
    double *vl,*vc,*xcp,*xce,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double *fion;
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
@@ -61,7 +62,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    vpsi=x;
 
    /* generate local psp*/
-   mypsp->v_local(vl);
+   mypsp->v_local(vl,0,dng,fion);
    
 
    //myewald->phafac();

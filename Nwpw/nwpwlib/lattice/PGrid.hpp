@@ -14,7 +14,7 @@ class PGrid : public d3db {
 
    Balance *mybalance;
    int balanced;
-   double *Garray;
+   double *Garray,*Gpack[2];
    int     *masker[2],*packarray[2];
    int     nwave[2],nwave_entire[2],nwave_all[2],nida[2],nidb[2],nidb2[2];
 
@@ -34,6 +34,7 @@ public:
         /* destructor */
         ~PGrid() { 
             delete [] Garray; 
+            delete [] Gpack[0]; 
             delete [] masker[0];
             delete [] packarray[0];
             if (balanced) delete mybalance;
@@ -46,10 +47,11 @@ public:
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
+        double *Gpackxyz(const int nb,const int i) { return &Gpack[nb][i*(nida[nb]+nidb[nb])]; }
 
-        int nzero(const int i) {return nida[i];}
-        int npack(const int i)     {return (nida[i] + nidb[i]);}
-        int npack_all(const int i) {return nwave_all[i];}
+        int nzero(const int nb) {return nida[nb];}
+        int npack(const int nb)     {return (nida[nb] + nidb[nb]);}
+        int npack_all(const int nb) {return nwave_all[nb];}
         int isbalanced() { return balanced;  }
 
         double *c_pack_allocate(const int nb) {
@@ -81,6 +83,7 @@ public:
         void c_SMul(const int, double, double *);
         void cc_SMul(const int, double, double *, double *);
         void cc_daxpy(const int, double, double *, double *);
+        void cct_iconjgMulb(const int, const double *, const double *, double *);
 
         void i_pack(const int, int *);
         void ii_pack_copy(const int, int *, int *);
