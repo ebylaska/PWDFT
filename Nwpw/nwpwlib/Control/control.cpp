@@ -23,12 +23,25 @@ static char input_movecs_filename[80];
 
 
 
+#include	"json.hpp"
 #include	"rtdb.hpp"
 #include	"control.hpp"
+
+using json = nlohmann::json;
 
 void   control_check_unita_for_default(RTDB& myrtdb)
 {
 
+}
+
+/***********************************
+ *                                 *
+ *         control_read_json       *
+ *                                 *
+ ***********************************/
+void control_read_json(string jsonstr)
+{
+   json j = json::parse(jsonstr);
 }
 
 /***********************************
