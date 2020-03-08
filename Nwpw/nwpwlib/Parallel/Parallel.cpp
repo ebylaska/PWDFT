@@ -17,17 +17,21 @@ using namespace std;
  *         Constructors         *
  *                              *
  ********************************/
-Parallel::Parallel(int argc, char *argv[]) 
+//Parallel::Parallel(int argc, char *argv[]) 
+Parallel::Parallel(MPI_Comm comm_world0)
 {
 
    int indx,d,dd,ii,np0,done;
 
    //MPI::Init(argc,argv);
-   MPI_Init(&argc,&argv);
+   //MPI_Init(&argc,&argv);
 
    dim = 1;
 
-   comm_i[0]   = MPI_COMM_WORLD;
+   //comm_i[0]   = MPI_COMM_WORLD;
+
+   comm_world  = comm_world0;
+   comm_i[0]   = comm_world;
    //npi[0]     = comm_i[0].Get_size();
    //taskidi[0] = comm_i[0].Get_rank();
    MPI_Comm_size(comm_i[0],&npi[0]);
@@ -78,16 +82,19 @@ void Parallel::init2d(const int ncolumns)
       for (int i=0; i<npi[1]; ++i) itmp[i] = procNd[i+taskidi[2]*npi[1]];
       //group_i[1] = MPI::COMM_WORLD.Get_group().Incl(npi[1],itmp);
       //comm_i[1]  = MPI::COMM_WORLD.Create(group_i[1]);
-      MPI_Comm_group(MPI_COMM_WORLD,&orig_group);
+      //MPI_Comm_group(MPI_COMM_WORLD,&orig_group);
+      MPI_Comm_group(comm_world,&orig_group);
       MPI_Group_incl(orig_group,npi[1],itmp,&group_i[1]);
-      MPI_Comm_create(MPI_COMM_WORLD,group_i[1],&comm_i[1]);
+      //MPI_Comm_create(MPI_COMM_WORLD,group_i[1],&comm_i[1]);
+      MPI_Comm_create(comm_world,group_i[1],&comm_i[1]);
 
 
       for (int j=0; j<npi[2]; ++j) itmp[j] = procNd[taskidi[1]+j*npi[1]];
       //group_i[2] = MPI::COMM_WORLD.Get_group().Incl(npi[2],itmp);
       //comm_i[2]  = MPI::COMM_WORLD.Create(group_i[2]);
       MPI_Group_incl(orig_group,npi[2],itmp,&group_i[2]);
-      MPI_Comm_create(MPI_COMM_WORLD,group_i[2],&comm_i[2]);
+      //MPI_Comm_create(MPI_COMM_WORLD,group_i[2],&comm_i[2]);
+      MPI_Comm_create(comm_world,group_i[2],&comm_i[2]);
 
       delete [] itmp;
    }
@@ -125,7 +132,7 @@ Parallel::~Parallel()
 
 
    //MPI::Finalize();
-   MPI_Finalize();
+   //MPI_Finalize();
 }
 /********************************
  *                              *

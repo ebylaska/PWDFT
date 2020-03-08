@@ -17,6 +17,7 @@ class Parallel {
     //MPI::Intracomm comm_i[3];
     //MPI::Group     group_i[3];
     //MPI::Request  **request;
+    MPI_Comm      comm_world;
     MPI_Comm      comm_i[3];
     MPI_Group     group_i[3];
     MPI_Request  **request;
@@ -26,7 +27,8 @@ public:
         int dim;
 
 	/* Constructors */
-	Parallel(int, char **);
+	//Parallel(int, char **);
+	Parallel(MPI_Comm);
 
         /* destructor */
 	~Parallel();

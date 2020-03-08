@@ -20,11 +20,14 @@ using namespace std;
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
+#include	"mpi.h"
 
 
-int cpsd(int argc, char *argv[])
+//int cpsd(int argc, char *argv[])
+int cpsd(MPI_Comm comm_world0)
 {
-   Parallel myparallel(argc,argv);
+   //Parallel myparallel(argc,argv);
+   Parallel myparallel(comm_world0);
    RTDB myrtdb(&myparallel, "eric.db", "old");
 
    int version,nfft[3],ne[2],ispin;
@@ -345,4 +348,6 @@ int cpsd(int argc, char *argv[])
       cout << "          >>> job completed at     " << util_date() << " <<<\n";
 
    }
+
+   return 0;
 }
