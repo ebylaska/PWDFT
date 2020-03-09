@@ -8,6 +8,7 @@ using json = nlohmann::json;
 
 using namespace std;
 
+
 string trim(const string& str)
 {
     size_t first = str.find_first_not_of(' ');
@@ -58,12 +59,29 @@ inline string lowerCase(const string& s) {
    return lower;
 }
 
+string ireplace(string s0,string a, string b)
+{
+   string s(s0);
+   auto pos = std::search(s.begin(), s.end(), a.begin(), a.end(), [](const char c1, const char c2){ return (std::tolower(c1)) == (std::tolower(c2));});
+   if(pos == s.end())
+        return "";
+   auto pos2 = pos;
+   std::cout << *pos << std::endl;
+   std::advance(pos2, a.size());
+   s.replace(pos, pos2, b);
+
+   std::cout << "s=" << s << std::endl;
+
+   return s;
+}
+
 int main()
 {
    json j;
 
    double x = 2.193939303;
    std::string s,line,nwinput;
+   json rtdb;
 
 
    nwinput = "";
@@ -91,9 +109,15 @@ int main()
          std::cout << "geometry: " << lines[cur] << std::endl;
       }
       else if (lowerCase(lines[cur]).find("title")  != std::string::npos)
+      {
          std::cout << "title: " << lines[cur] << std::endl;
+         std::cout << "ireplace:" << ireplace(lines[cur],"MY","my") << std::endl;
+      }
       else if (lowerCase(lines[cur]).find("start")  != std::string::npos)
+      {
          std::cout << "start: " << lines[cur] << std::endl;
+         rtdb["dbname"] = trim(split(split(lines[cur],"start")[1],"\n")[0]);
+      }
       else if (lowerCase(lines[cur]).find("charge") != std::string::npos)
          std::cout << "charge: " << lines[cur] << std::endl;
       else if (lowerCase(lines[cur]).find("nwpw")   != std::string::npos)
@@ -106,6 +130,7 @@ int main()
       ++cur;
    }
 
+   std::cout << "rtdb = " << rtdb.dump() << std::endl;
 
 /*
    json k = json::parse(s);
