@@ -12,6 +12,8 @@
 #include "mpi.h"
 
 #include "util_date.hpp"
+#include "json.hpp"
+#include "parsestring.hpp"
 
 using namespace std;
 
