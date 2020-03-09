@@ -1,6 +1,7 @@
 
 memory 900 mb
 start eric
+echo
 
 geometry noautosym noautoz
 C 0 0 0
