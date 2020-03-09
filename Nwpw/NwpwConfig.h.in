@@ -1,3 +1,4 @@
 // the configured options and settings for Tutorial
 #define Nwpw_VERSION_MAJOR @PWDFT_VERSION_MAJOR@
 #define Nwpw_VERSION_MINOR @PWDFT_VERSION_MINOR@
+#define Nwpw_COMPILE_TIMESTAMP  @PWDFT_BUILD_TIMESTAMP@

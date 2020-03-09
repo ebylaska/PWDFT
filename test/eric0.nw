@@ -1,0 +1,33 @@
+
+memory 900 mb
+start eric
+echo
+
+geometry noautosym noautoz
+C 0 0 0
+C 0 0 1
+C 0 0 2
+end
+
+nwpw
+   simulation_cell
+     SC 30.0
+     ngrid 48 48 48
+   end
+   mapping 2
+   #nobalance
+   #np_dimensions -1 5
+   steepest_descent
+     #input_wavefunction_filename eric.movecs
+     #output_wavefunction_filename eric2.movecs
+     loop 10 10
+   end
+   loop 2 2
+end
+task pspw energy
+#task pspw noit_energy
+
+nwpw
+   loop 10 10
+end
+task pspw steepest_descent

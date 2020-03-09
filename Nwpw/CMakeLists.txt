@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(PWDFT VERSION 1.0)
 
+string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
+
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -57,3 +59,4 @@ if(MPI_LINK_FLAGS)
   set_target_properties(pwdft PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
+
