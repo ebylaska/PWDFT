@@ -209,6 +209,12 @@ json parse_geometry(int *curptr, vector<string> lines)
    return geomjson;
 }
 
+json parse_nwpw(int *curptr, vector<string> lines)
+{
+   json nwpwjson;
+
+}
+
 
 int main()
 {
