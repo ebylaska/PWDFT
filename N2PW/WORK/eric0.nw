@@ -19,10 +19,14 @@ nwpw
    steepest_descent
      #input_wavefunction_filename eric.movecs
      #output_wavefunction_filename eric2.movecs
-     loop 1 10
+     loop 10 10
    end
-   #loop 2 2
+   loop 2 2
 end
 task pspw energy
-task pspw steepest_descent
+#task pspw steepest_descent
 #task pspw noit_energy
+
+nwpw
+   loop 10 10
+end

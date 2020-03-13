@@ -4,10 +4,13 @@ memory 900 mb
 start eric
 echo
 
+charge 0
+
 geometry noautosym noautoz
-C 0 0 0
-C 0 0 1
-C 0 0 2
+C 0 0 0 mass 14.0
+he 0 0 1
+h 0 0 2
+Au 2 1 0
 end
 
 nwpw
