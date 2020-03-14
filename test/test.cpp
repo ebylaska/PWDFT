@@ -114,27 +114,21 @@ json parse_geometry(int *curptr, vector<string> lines)
    int autosym = 0;
    double angs_to_au = 1.0/0.52917715;
    double conv = angs_to_au;
-   if (mystring_lowercase(lines[cur]).find(" au")   != std::string::npos) conv = 1.0;
-   if (mystring_lowercase(lines[cur]).find(" a.u.") != std::string::npos) conv = 1.0;
-   if (mystring_lowercase(lines[cur]).find(" bo")   != std::string::npos) conv = 1.0;
-   if (mystring_lowercase(lines[cur]).find(" an")   != std::string::npos) conv = angs_to_au;
-   if (mystring_lowercase(lines[cur]).find(" nm")   != std::string::npos) conv = 10.0*angs_to_au;
-   if (mystring_lowercase(lines[cur]).find(" na")   != std::string::npos) conv = 10.0*angs_to_au;
-   if (mystring_lowercase(lines[cur]).find(" pm")   != std::string::npos) conv = 0.01*angs_to_au;
-   if (mystring_lowercase(lines[cur]).find(" pi")   != std::string::npos) conv = 0.01*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," au"))   conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," a.u.")) conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," bo"))   conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," an"))   conv = angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," nm"))   conv = 10.0*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," na"))   conv = 10.0*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," pm"))   conv = 0.01*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," pi"))   conv = 0.01*angs_to_au;
 
-   if (mystring_lowercase(lines[cur]).find("nocenter")      != std::string::npos)  
-       center = 0;
-   else if (mystring_lowercase(lines[cur]).find("center")   != std::string::npos)  
-       center = 1;
-   if (mystring_lowercase(lines[cur]).find("noautoz")       != std::string::npos)
-      autoz  = 0;
-   else if (mystring_lowercase(lines[cur]).find("autoz")    != std::string::npos)
-      autoz  = 1;
-   if (mystring_lowercase(lines[cur]).find("noautosym")     != std::string::npos)
-      autosym  = 0;
-   else if (mystring_lowercase(lines[cur]).find("autosym")  != std::string::npos)
-      autosym  = 1;
+   if (mystring_contains(mystring_lowercase(lines[cur]),"nocenter"))    center = 0;
+   else if (mystring_contains(mystring_lowercase(lines[cur]),"center")) center = 1;
+   if (mystring_contains(mystring_lowercase(lines[cur]),"noautoz"))     autoz = 0;
+   else if (mystring_contains(mystring_lowercase(lines[cur]),"autoz"))  autoz = 1;
+   if (mystring_contains(mystring_lowercase(lines[cur]),"noautosym"))    autosym = 0;
+   else if (mystring_contains(mystring_lowercase(lines[cur]),"autosym")) autosym = 1;
 
    geomjson["conv"]    = conv;
    geomjson["center"]  = center;
@@ -213,7 +207,52 @@ json parse_nwpw(int *curptr, vector<string> lines)
 {
    json nwpwjson;
 
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+
+   while (endcount>0)
+   {
+      line = lines[cur];
+
+/*
+      if (mystring_contains(mystring_lowercase(line),"simulation_cell"))
+      if (mystring_contains(mystring_lowercase(line),"steepest_descent"))
+      if (mystring_contains(mystring_lowercase(line),"car-parrinello"))
+      if (mystring_contains(mystring_lowercase(line),"np_dimensions"))
+      if (mystring_contains(mystring_lowercase(line),"nobalance"))
+      if (mystring_contains(mystring_lowercase(line),"mapping"))
+      if (mystring_contains(mystring_lowercase(line),"loop"))
+      if (mystring_contains(mystring_lowercase(line),"xc"))
+*/
+
+      ++cur;
+      if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
+         --endcount;
+   }
+
+   return nwpwjson;
 }
+
+/*
+nwpw
+   simulation_cell
+     SC 30.0
+     ngrid 48 48 48
+   end
+   mapping 2
+   #nobalance
+   #np_dimensions -1 5
+   steepest_descent
+     #input_wavefunction_filename eric.movecs
+     #output_wavefunction_filename eric2.movecs
+     loop 10 10
+   end
+   loop 2 2
+end
+*/
+
 
 
 int main()
@@ -245,34 +284,34 @@ int main()
    int cur = 0;
    while (cur<n)
    {
-      if (mystring_lowercase(lines[cur]).find("geometry")    != std::string::npos)
+      if (mystring_contains(mystring_lowercase(lines[cur]),"geometry"))
       {
          std::cout << "geometry: " << lines[cur] << std::endl;
          rtdb["geometry"] = parse_geometry(&cur,lines);
          //cur = parse_geometry_endcur(cur,lines);
       }
-      else if (mystring_lowercase(lines[cur]).find("title")  != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"title"))
       {
          rtdb["title"] = mystring_trim(mystring_ireplace(mystring_split(mystring_ireplace(lines[cur],"TITLE","title"),"title")[1],"\"",""));
       }
-      else if (mystring_lowercase(lines[cur]).find("start")  != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"start"))
       {
          rtdb["dbname"] = mystring_trim(mystring_split(mystring_split(lines[cur],"start")[1],"\n")[0]);
       }
-      else if (mystring_lowercase(lines[cur]).find("charge") != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"charge"))
       {
          std::cout << "charge: " << lines[cur] << std::endl;
          rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur],"charge")[1],"\n")[0]));
       }
-      else if (mystring_lowercase(lines[cur]).find("nwpw")   != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"nwpw"))
       {
          std::cout << "nwpw: " << lines[cur] << std::endl;
       }
-      else if (mystring_lowercase(lines[cur]).find("driver") != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"driver"))
       {
          std::cout << "driver: " << lines[cur] << std::endl;
       }
-      else if (mystring_lowercase(lines[cur]).find("task")   != std::string::npos)
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"task"))
          std::cout << "task: " << lines[cur] << std::endl;
 
       ++cur;
