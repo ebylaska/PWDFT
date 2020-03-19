@@ -221,17 +221,27 @@ json parse_rtdbjson(json rtdb)
    bool foundtask = false;
    while ((cur<n) && (!foundtask))
    {
-      if (mystring_contains(mystring_lowercase(lines[cur]),"geometry"))
+      if (mystring_contains(mystring_lowercase(lines[cur]),"unset "))
       {
-         rtdb["geometry"] = parse_geometry(rtdb["geometry"], &cur,lines);
+         vector<string> ss = mystring_split0(lines[cur]);
+         if (ss.size()>1) auto count_erase = rtdb.erase(ss[1]);
       }
-      else if (mystring_contains(mystring_lowercase(lines[cur]),"title"))
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"set "))
       {
-         rtdb["title"] = mystring_trim(mystring_ireplace(mystring_split(mystring_ireplace(lines[cur],"TITLE","title"),"title")[1],"\"",""));
+         vector<string> ss = mystring_split0(lines[cur]);
+         if (ss.size()>2) rtdb[ss[1]] = ss[2];
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"start"))
       {
          rtdb["dbname"] = mystring_trim(mystring_split(mystring_split(lines[cur],"start")[1],"\n")[0]);
+      }
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"geometry"))
+      {
+         rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur,lines);
+      }
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"title"))
+      {
+         rtdb["title"] = mystring_trim(mystring_ireplace(mystring_split(mystring_ireplace(lines[cur],"TITLE","title"),"title")[1],"\"",""));
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"charge"))
       {
@@ -270,9 +280,9 @@ std::string parse_nwinput(std::string nwinput)
 {
    // intialize the rtdb structure
    json rtdb;
-   json nwpw,geometry;
+   json nwpw,geometries;
    rtdb["nwpw"]     = nwpw;
-   rtdb["geometry"] = geometry;
+   rtdb["geometries"] = geometries;
 
    // fetch the dbname
    string dbname  = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);

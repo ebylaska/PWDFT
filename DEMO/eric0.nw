@@ -15,6 +15,7 @@ C 0 0 1
 C 0 0 2
 end
 
+set geometry ericgeom
 
 nwpw
    simulation_cell
@@ -38,3 +39,5 @@ nwpw
    loop 10 10
 end
 task pspw steepest_descent
+
+unset geometry 

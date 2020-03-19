@@ -166,10 +166,16 @@ Ion::Ion(RTDB& myrtdb)
 Ion::Ion(string rtdbstring) 
 {
    auto rtdbjson =  json::parse(rtdbstring);
-   string geomname = "geometry";
 
-   nion = rtdbjson[geomname]["nion"];
-   auto symbols = rtdbjson[geomname]["symbols"];
+   string geomname = "geometry";
+   if (rtdbjson["geometry"].is_string())
+      geomname = rtdbjson["geometry"];
+   
+
+   json geomjson = rtdbjson["geometries"][geomname];
+
+   nion = geomjson["nion"];
+   auto symbols = geomjson["symbols"];
 
    vector<string> tmpsymbols;
    for (auto i=0; i<symbols.size(); ++i)
@@ -194,14 +200,14 @@ Ion::Ion(string rtdbstring)
    }
    for (auto i=0; i<nion; ++i)
    {
-      charge[i] = (double) rtdbjson[geomname]["charges"][i];
-      mass[i]   = (double) rtdbjson[geomname]["masses"][i];
-      rion1[3*i]   = (double) rtdbjson[geomname]["coords"][3*i];
-      rion1[3*i+1] = (double) rtdbjson[geomname]["coords"][3*i+1];
-      rion1[3*i+2] = (double) rtdbjson[geomname]["coords"][3*i+2];
-      rion2[3*i]   = (double) rtdbjson[geomname]["coords"][3*i];
-      rion2[3*i+1] = (double) rtdbjson[geomname]["coords"][3*i+1];
-      rion2[3*i+2] = (double) rtdbjson[geomname]["coords"][3*i+2];
+      charge[i] = (double) geomjson["charges"][i];
+      mass[i]   = (double) geomjson["masses"][i];
+      rion1[3*i]   = (double) geomjson["coords"][3*i];
+      rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
+      rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
+      rion2[3*i]   = (double) geomjson["coords"][3*i];
+      rion2[3*i+1] = (double) geomjson["coords"][3*i+1];
+      rion2[3*i+2] = (double) geomjson["coords"][3*i+2];
 
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
       if (match != end(tmpsymbols)) 
