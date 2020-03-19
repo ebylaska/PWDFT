@@ -23,9 +23,12 @@ using namespace std;
 #include	"rtdb.hpp"
 #include	"mpi.h"
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 
 //int cpsd(int argc, char *argv[])
-int cpsd(MPI_Comm comm_world0, string rtdbstring)
+int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -287,7 +290,7 @@ int cpsd(MPI_Comm comm_world0, string rtdbstring)
                                                myion.rion1[3*ii+2]);
       cout << "\n\n";
       printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
-      printf(" total orbtial energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
@@ -324,6 +327,12 @@ int cpsd(MPI_Comm comm_world0, string rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete [] eig;
+
+   // write results to the json
+   auto rtdbjson =  json::parse(rtdbstring);
+   rtdbjson["pspw"]["energy"]   = E[0];
+   rtdbjson["pspw"]["energies"] = E;
+   rtdbstring    = rtdbjson.dump();
 
 //                 |**************************|
 // *****************   report consumed time   **********************

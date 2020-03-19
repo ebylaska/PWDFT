@@ -2,16 +2,19 @@
    Author - Eric Bylaska
 */
 
-using namespace std;
-
-#include	<string.h>
-
 
 #include        <iostream>
 #include        <cstdio>
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
+#include	<string.h>
+using namespace std;
+
+#include "json.hpp"
+using json = nlohmann::json;
+
+
 
 #include	"Ion.hpp"
 
@@ -160,3 +163,52 @@ Ion::Ion(RTDB& myrtdb)
 
 }
 
+Ion::Ion(string rtdbstring) 
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+   string geomname = "geometry";
+
+   nion = rtdbjson[geomname]["nion"];
+   auto symbols = rtdbjson[geomname]["symbols"];
+
+   vector<string> tmpsymbols;
+   for (auto i=0; i<symbols.size(); ++i)
+   {
+      auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
+      if (match == end(tmpsymbols)) tmpsymbols.push_back(symbols[i]);
+   }
+   nkatm = tmpsymbols.size();
+
+   charge    = new double[nion];
+   mass      = new double[nion];
+   rion1     = new double[3*nion];
+   rion2     = new double[3*nion];
+   katm      = new int[nion];
+   natm      = new int[nkatm];
+   atomarray = new char[3*nkatm];
+
+   for (auto ia=0; ia<nkatm; ++ia)
+   {
+       natm[ia] = 0.0;
+       strcpy(&atomarray[3*ia],const_cast<char*>(tmpsymbols[ia].data()));
+   }
+   for (auto i=0; i<nion; ++i)
+   {
+      charge[i] = (double) rtdbjson[geomname]["charges"][i];
+      mass[i]   = (double) rtdbjson[geomname]["masses"][i];
+      rion1[3*i]   = (double) rtdbjson[geomname]["coords"][3*i];
+      rion1[3*i+1] = (double) rtdbjson[geomname]["coords"][3*i+1];
+      rion1[3*i+2] = (double) rtdbjson[geomname]["coords"][3*i+2];
+      rion2[3*i]   = (double) rtdbjson[geomname]["coords"][3*i];
+      rion2[3*i+1] = (double) rtdbjson[geomname]["coords"][3*i+1];
+      rion2[3*i+2] = (double) rtdbjson[geomname]["coords"][3*i+2];
+
+      auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
+      if (match != end(tmpsymbols)) 
+      {
+         auto ia = std::distance( begin(tmpsymbols),match);
+         katm[i] = ia;
+         natm[ia] += 1;
+      }
+   }
+}

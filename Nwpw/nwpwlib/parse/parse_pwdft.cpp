@@ -14,6 +14,7 @@ using namespace std;
 json periodic_table_mass = json::parse("{ \"H\"  : 1.008, \"He\" : 4.0026, \"Li\" : 7.016, \"Be\" : 9.01218, \"B\"  : 11.00931, \"C\"  : 12.0, \"N\"  : 14.00307, \"O\"  : 15.99491, \"F\"  : 18.9984, \"Ne\" : 19.99244, \"Na\" : 22.9898, \"Mg\" : 23.98504, \"Al\" : 26.98154, \"Si\" : 27.97693, \"P\"  : 30.97376, \"S\"  : 31.97207, \"Cl\" : 34.96885, \"Ar\" : 39.9624, \"K\"  : 38.96371, \"Ca\" : 39.96259, \"Sc\" : 44.95592, \"Ti\" : 45.948, \"V\"  : 50.9440, \"Cr\" : 51.9405, \"Mn\" : 54.9381, \"Fe\" : 55.9349, \"Co\" : 58.9332, \"Ni\" : 57.9353, \"Cu\" : 62.9298, \"Zn\" : 63.9291, \"Ga\" : 68.9257, \"Ge\" : 73.9219, \"As\" : 74.9216, \"Se\" : 78.9183, \"Br\" : 79.9165, \"Kr\" : 83.912, \"Rb\" : 84.9117, \"Sr\" : 87.9056, \"Y\"  : 88.9054, \"Zr\" : 89.9043, \"Nb\" : 92.9060, \"Mo\" : 97.9055, \"Tc\" : 97.9072, \"Ru\" : 101.9037, \"Rh\" : 102.9048, \"Pd\" : 105.9032, \"Ag\" : 106.90509, \"Cd\" : 113.9036, \"In\" : 114.9041, \"Sn\" : 117.9018, \"Sb\" : 120.9038, \"Te\" : 129.9067, \"I\"  : 126.9004, \"Xe\" : 131.9042, \"Cs\" : 132.9051, \"Ba\" : 137.9050, \"La\" : 138.9061, \"Ce\" : 139.9053, \"Pr\" : 140.9074, \"Nd\" : 143.9099, \"Pm\" : 144.9128, \"Sm\" : 151.9195, \"Eu\" : 152.920, \"Gd\" : 157.9241, \"Tb\" : 159.9250, \"Dy\" : 163.9288, \"Ho\" : 164.9303, \"Er\" : 165.930, \"Tm\" : 168.9344, \"Yb\" : 173.9390, \"Lu\" : 174.9409, \"Hf\" : 179.9468, \"Ta\" : 180.948, \"W\"  : 183.9510, \"Re\" : 186.9560, \"Os\" : 189.9586, \"Ir\" : 192.9633, \"Pt\" : 194.9648, \"Au\" : 196.9666, \"Hg\" : 201.9706, \"Tl\" : 204.9745, \"Pb\" : 207.9766, \"Bi\" : 208.9804, \"Po\" : 209.9829, \"At\" : 210.9875, \"Rn\" : 222.0175, \"Fr\" : 223.0198, \"Ra\" : 226.0254, \"Ac\" : 227.0278, \"Th\" : 232.0382, \"Pa\" : 231.0359, \"U\"  : 238.0508, \"Np\" : 237.0482, \"Pu\" : 244.0642, \"Am\" : 243.0614, \"Cm\" : 247.0704, \"Bk\" : 247.0703, \"Cf\" : 251.0796, \"Es\" : 252.0829, \"Fm\" : 257.0950, \"Md\" : 258.0986, \"No\" : 259.1009, \"Lr\" : 262.1100, \"Rf\" : 261.1087, \"Ha\" : 262.1138, \"Sg\" : 266.1219, \"Bh\" : 262.1229, \"Hs\" : 267.1318, \"Mt\" : 268.1388 }");
 
 
+json periodic_table_Z = json::parse("{ \"H\"  : 1, \"He\" : 2, \"Li\" : 3, \"Be\" : 4, \"B\"  : 5, \"C\"  : 6, \"N\"  : 7, \"O\"  : 8, \"F\"  : 9, \"Ne\" : 10, \"Na\" : 11, \"Mg\" : 12, \"Al\" : 13, \"Si\" : 14, \"P\"  : 15, \"S\"  : 16, \"Cl\" : 17, \"Ar\" : 18, \"K\"  : 19, \"Ca\" : 20, \"Sc\" : 21, \"Ti\" : 22, \"V\"  : 23, \"Cr\" : 24, \"Mn\" : 25, \"Fe\" : 26, \"Co\" : 27, \"Ni\" : 28, \"Cu\" : 29, \"Zn\" : 30, \"Ga\" : 31, \"Ge\" : 32, \"As\" : 33, \"Se\" : 34, \"Br\" : 35, \"Kr\" : 36, \"Rb\" : 37, \"Sr\" : 38, \"Y\"  : 39, \"Zr\" : 40, \"Nb\" : 41, \"Mo\" : 42, \"Tc\" : 43, \"Ru\" : 44, \"Rh\" : 45, \"Pd\" : 46, \"Ag\" : 47, \"Cd\" : 48, \"In\" : 49, \"Sn\" : 50, \"Sb\" : 51, \"Te\" : 52, \"I\"  : 53, \"Xe\" : 54, \"Cs\" : 55, \"Ba\" : 56, \"La\" : 57, \"Ce\" : 58, \"Pr\" : 59, \"Nd\" : 60, \"Pm\" : 61, \"Sm\" : 62, \"Eu\" : 63, \"Gd\" : 64, \"Tb\" : 65, \"Dy\" : 66, \"Ho\" : 67, \"Er\" : 68, \"Tm\" : 69, \"Yb\" : 70, \"Lu\" : 71, \"Hf\" : 72, \"Ta\" : 73, \"W\"  : 74, \"Re\" : 75, \"Os\" : 76, \"Ir\" : 77, \"Pt\" : 78, \"Au\" : 79, \"Hg\" : 80, \"Tl\" : 81, \"Pb\" : 82, \"Bi\" : 83, \"Po\" : 84, \"At\" : 85, \"Rn\" : 86, \"Fr\" : 87, \"Ra\" : 88, \"Ac\" : 89, \"Th\" : 90, \"Pa\" : 91, \"U\"  : 92, \"Np\" : 93, \"Pu\" : 94, \"Am\" : 95, \"Cm\" : 96, \"Bk\" : 97, \"Cf\" : 98, \"Es\" : 99, \"Fm\" : 100, \"Md\" : 101, \"No\" : 102, \"Lr\" : 103, \"Rf\" : 104, \"Ha\" : 105, \"Sg\" : 106, \"Bh\" : 107, \"Hs\" : 108, \"Mt\" : 109 }");
 
 /**************************************************
  *                                                *
@@ -76,7 +77,8 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    vector<string> symbols;
    vector<double> coords;
    vector<double> velocities;
-   vector<double> mass;
+   vector<double> masses;
+   vector<double> charges;
    ++cur;
    int nion = 0;
    double mm;
@@ -97,7 +99,12 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
       mm = periodic_table_mass[mystring_capitalize(ss[0])];
       if (mystring_contains(mystring_lowercase(line),"mass"))
          mm = std::stod(mystring_split0(mystring_split(line,"mass")[1])[0]);
-      mass.push_back(mm);
+      masses.push_back(mm);
+
+      mm = (double) periodic_table_Z[mystring_capitalize(ss[0])];
+      if (mystring_contains(mystring_lowercase(line),"charge"))
+         mm = std::stod(mystring_split0(mystring_split(line,"charge")[1])[0]);
+      charges.push_back(mm);
 
       ++nion;
       ++cur;
@@ -132,7 +139,8 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    geomjson["coords"]     = coords;
    geomjson["velocities"] = velocities;
    geomjson["nion"]       = nion;
-   geomjson["mass"]       = mass;
+   geomjson["masses"]     = masses;
+   geomjson["charges"]    = charges;
 
    *curptr = cur;
 

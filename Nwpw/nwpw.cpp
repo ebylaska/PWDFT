@@ -17,7 +17,7 @@
 using namespace std;
 
 //extern int cpsd(int argc, char *argv[]);
-extern int cpsd(MPI_Comm, string);
+extern int cpsd(MPI_Comm, string&);
 
 int main(int argc, char* argv[])
 {

@@ -2,6 +2,7 @@
 #define _IONS_H_
 
 
+#include        <string>
 using namespace std;
 
 #include	"rtdb.hpp"
@@ -19,6 +20,7 @@ public:
 
    /* Constructors */
    Ion(RTDB&);
+   Ion(string);
 
    /* destructor */
    ~Ion() {
