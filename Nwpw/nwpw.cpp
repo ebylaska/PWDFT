@@ -25,15 +25,15 @@ int main(int argc, char* argv[])
   int taskid,np;
   int MASTER=0;
   string line,nwinput,nwfilename;
-  string rtdbstr;
 
   // Initialize MPI
   ierr = MPI_Init(&argc,&argv);
   ierr += MPI_Comm_size(MPI_COMM_WORLD,&np);
   ierr += MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 
+  bool oprint = (taskid==MASTER);
 
-  if (taskid==MASTER)
+  if (oprint) 
   {
      std::cout << argv[0] << " (NWChemEx) - Version " << Nwpw_VERSION_MAJOR << "."
                << Nwpw_VERSION_MINOR << std::endl;
@@ -101,22 +101,20 @@ int main(int argc, char* argv[])
       if (taskid != MASTER)
          nwinput.resize(nwinput_size);
       MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,MPI_COMM_WORLD);
-
-      std::cout << "start taskid=" << taskid << std::endl << nwinput << std::endl;
-      std::cout << "end taskid=" << taskid << std::endl;
   }
 
-  rtdbstr = parse_nwinput(nwinput);
-  std::cout << "rtdbstr=" << rtdbstr << std::endl;
+  string rtdbstr  = parse_nwinput(nwinput);
   int task = parse_task(rtdbstr);
-  std::cout << "task0=" << task << std::endl;
+  if (oprint) std::cout << "rtdbstr=" << rtdbstr << std::endl;
+  if (oprint) std::cout << "task0=" << task << std::endl;
   while (task>0)
   {
      if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
     
      rtdbstr = parse_rtdbstring(rtdbstr);
      task    = parse_task(rtdbstr);
-     std::cout << "task =" << task << std::endl;
+     if (oprint) std::cout << "rtdbstr=" << rtdbstr << std::endl;
+     if (oprint) std::cout << "task =" << task << std::endl;
   }
 
   //int ijk = cpsd(argc,argv);
