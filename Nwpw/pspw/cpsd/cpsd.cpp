@@ -4,6 +4,7 @@
 #include	<stdio.h>
 #include	<cmath>
 #include	<cstdlib>
+#include	<string>
 using namespace std;
 
 #include	"Parallel.hpp"
@@ -24,7 +25,7 @@ using namespace std;
 
 
 //int cpsd(int argc, char *argv[])
-int cpsd(MPI_Comm comm_world0)
+int cpsd(MPI_Comm comm_world0, string rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);

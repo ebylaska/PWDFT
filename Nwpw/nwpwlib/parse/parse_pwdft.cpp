@@ -1,8 +1,10 @@
 #include <iostream>
 #include <sstream>
-#include "json.hpp"
 #include <string>
 #include <iomanip>
+
+#include "json.hpp"
+#include "parsestring.hpp"
 
 
 using json = nlohmann::json;
@@ -13,98 +15,13 @@ json periodic_table_mass = json::parse("{ \"H\"  : 1.008, \"He\" : 4.0026, \"Li\
 
 
 
-inline int mystring_contains(const string s, const string a)
-{
-   return (s.find(a) != std::string::npos) ;
-}
+/**************************************************
+ *                                                *
+ *                parse_geometry                  *
+ *                                                *
+ **************************************************/
 
-string mystring_trim(const string& str)
-{
-    size_t first = str.find_first_not_of(' ');
-    if (string::npos == first)
-    {
-        return str;
-    }
-    size_t last = str.find_last_not_of(' ');
-    return str.substr(first, (last - first + 1));
-}
-
-
-vector<string> mystring_split(string s, string delimiter) {
-    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-    string token;
-    vector<string> res;
-    while ((pos_end = s.find(delimiter, pos_start)) != string::npos) {
-        token = s.substr(pos_start, pos_end - pos_start);
-        pos_start = pos_end + delim_len;
-        res.push_back(token);
-    }
-    res.push_back(s.substr(pos_start));
-    return res;
-}
-
-vector<string> mystring_split0(string s) {
-   std::vector<std::string> result;
-   std::istringstream iss(s);
-   for(std::string s; iss >> s; )
-      result.push_back(s);
-
-   return result;
-}
-
-// Make a lowercase copy of s
-inline string mystring_lowercase(const string& s) {
-   string lower(s);
-   for(size_t i = 0; i < s.length(); ++i)
-   lower[i] = tolower(lower[i]);
-   return lower;
-}
-
-inline string mystring_capitalize(const string& s) {
-   string cap(s);
-   for(size_t i = 0; i < cap.length(); ++i)
-      cap[i] = tolower(cap[i]);
-   cap[0] = toupper(cap[0]);
-   return cap;
-}
-
-string mystring_ireplace(const string s0, const string a, const string b)
-{
-   string s(s0);
-   int posold = -1;
-   int posnew = mystring_lowercase(s).find(mystring_lowercase(a));
-   while ((posold!=posnew) && (posnew>-1))
-   {
-      auto pos = std::search(s.begin(), s.end(), a.begin(), a.end(), [](const char c1, const char c2){ return (std::tolower(c1)) == (std::tolower(c2));});
-      if(pos == s.end())
-           return "";
-      auto pos2 = pos;
-      //std::cout << *pos << std::endl;
-      std::advance(pos2, a.size());
-      s.replace(pos, pos2, b);
-
-      posold = posnew;
-      posnew = mystring_lowercase(s).find(mystring_lowercase(a));
-      //std::cout << s << "posold=" << posold << " posnew=" << posnew << std::endl;
-   }
-   return s;
-}
-
-
-class mystring : public std::string {
-   std::string mystring0;
-
-public:
-   mystring() { mystring0 = "";}
-   mystring(const std::string s) { mystring0 = s;}
-   mystring(const mystring& s) { mystring0 = s.mystring0;}
-   mystring operator = (const mystring s)    { return mystring(s); }
-   mystring operator = (const std::string s) { return mystring(s); }
-   mystring operator + (const std::string s ) { return mystring(mystring0 + s); }
-
-};
-
-json parse_geometry(json geom, int *curptr, vector<string> lines)
+static json parse_geometry(json geom, int *curptr, vector<string> lines)
 {
    json geomjson;
 
@@ -219,14 +136,20 @@ json parse_geometry(json geom, int *curptr, vector<string> lines)
 
    *curptr = cur;
 
-   std::cout << "HELLO geometry=" << geometry << std::endl;
-
    geom[geometry] = geomjson;
 
    return geom;
 }
 
-json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
+
+
+/**************************************************
+ *                                                *
+ *                parse_nwpw                      *
+ *                                                *
+ **************************************************/
+
+static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
 {
    //json nwpwjson;
 
@@ -269,67 +192,29 @@ json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
 
    *curptr = cur;
 
-  std::cout << "nwpwjson = " << nwpwjson.dump() << std::endl;
-
    return nwpwjson;
 }
 
-/*
-nwpw
-   simulation_cell
-     SC 30.0
-     ngrid 48 48 48
-   end
-   mapping 2
-   #nobalance
-   #np_dimensions -1 5
-   steepest_descent
-     #input_wavefunction_filename eric.movecs
-     #output_wavefunction_filename eric2.movecs
-     loop 10 10
-   end
-   loop 2 2
-end
-*/
 
 
 
-int main()
+/**************************************************
+ *                                                *
+ *                parse_rtdbjson                  *
+ *                                                *
+ **************************************************/
+
+json parse_rtdbjson(json rtdb)
 {
-   json j;
+   vector<string> lines = rtdb["nwinput_lines"];
+   int n   = rtdb["nwinput_nlines"];
+   int cur = rtdb["nwinput_cur"];
 
-   double x = 2.193939303;
-   std::string s,line,nwinput;
-   json rtdb;
-
-   json nwpw,geometry;
-   rtdb["nwpw"]     = nwpw;
-   rtdb["geometry"] = geometry;
-
-
-   nwinput = "";
-   while (getline(std::cin,line))
-      nwinput += line + "\n";
-
-   std::cout << "nwinput = \n" << nwinput<< std::endl << std::endl;
-
-   //std::vector<std::string> lines = split(nwinput, "start");
-
-   string dbname = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);
-   vector<string> lines = mystring_split(nwinput,"\n");
-
-   // Remove comments
-   for (auto i = lines.begin(); i != lines.end(); ++i) 
-      *i = mystring_split(*i,"#")[0];
-
-   std::cout << "dbname = " << dbname << std::endl;
-   int n = lines.size();
-   int cur = 0;
-   while (cur<n)
+   bool foundtask = false;
+   while ((cur<n) && (!foundtask))
    {
       if (mystring_contains(mystring_lowercase(lines[cur]),"geometry"))
       {
-         std::cout << "geometry: " << lines[cur] << std::endl;
          rtdb["geometry"] = parse_geometry(rtdb["geometry"], &cur,lines);
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"title"))
@@ -342,36 +227,108 @@ int main()
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"charge"))
       {
-         std::cout << "charge: " << lines[cur] << std::endl;
          rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur],"charge")[1],"\n")[0]));
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"nwpw"))
       {
          rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"],&cur,lines);
-         std::cout << "nwpw: " << lines[cur] << std::endl;
-         std::cout << "rtdb = " << rtdb.dump() << std::endl;
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"driver"))
       {
          std::cout << "driver: " << lines[cur] << std::endl;
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"task"))
-         std::cout << "task: " << lines[cur] << std::endl;
+      {
+         rtdb["current_task"] = lines[cur];
+         foundtask = true;
+      }
 
       ++cur;
    }
+   rtdb["nwinput_cur"] = cur;
+   rtdb["foundtask"]   = foundtask;
 
-   std::cout << "rtdb = " << rtdb.dump() << std::endl;
-
-/*
-   json k = json::parse(s);
-
-   j["pi"] = 3.14159;
-   j["eric"] = "programmer";
-   j["x"] = x;
-
-   std::cout << j.dump() << std::endl;
-   std::cout << k.dump() << std::endl;
-   std::cout << k["Eric"] << std::endl;
-*/
+   return rtdb;
 }
+
+
+/**************************************************
+ *                                                *
+ *               parse_nwinput                    *
+ *                                                *
+ **************************************************/
+
+std::string parse_nwinput(std::string nwinput)
+{
+   // intialize the rtdb structure
+   json rtdb;
+   json nwpw,geometry;
+   rtdb["nwpw"]     = nwpw;
+   rtdb["geometry"] = geometry;
+
+   // fetch the dbname
+   string dbname  = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);
+   rtdb["dbname"] = dbname;
+
+   // split nwinput into lines
+   vector<string> lines = mystring_split(nwinput,"\n");
+
+   // Remove comments
+   for (auto i = lines.begin(); i != lines.end(); ++i)
+      *i = mystring_split(*i,"#")[0];
+
+
+   rtdb["nwinput_lines"]  = lines;
+   rtdb["nwinput_nlines"] = lines.size();
+   rtdb["nwinput_cur"]    = 0;
+
+   rtdb = parse_rtdbjson(rtdb);
+  
+
+   return rtdb.dump();
+}
+
+
+/**************************************************
+ *                                                *
+ *               parse_rtdbstring                 *
+ *                                                *
+ **************************************************/
+
+std::string parse_rtdbstring(std::string rtdbstring)
+{
+   auto rtdb =  json::parse(rtdbstring);
+
+   rtdb = parse_rtdbjson(rtdb);
+   
+   return rtdb.dump();
+}
+
+
+/**************************************************
+ *                                                *
+ *                 parse_task                     *
+ *                                                *
+ **************************************************/
+
+int parse_task(std::string rtdbstring)
+{
+   auto rtdb =  json::parse(rtdbstring);
+   int task = 0;
+   if (rtdb["foundtask"])
+   {
+      // Look for pspw jobs
+      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"pspw"))
+      {
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"energy"))           task = 1;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"gradient"))         task = 2;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"optimize"))         task = 3;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"freq"))             task = 4;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"steepest_descent")) task = 5;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"car-parrinello"))   task = 6;
+      }
+   }
+
+   return task;
+}
+

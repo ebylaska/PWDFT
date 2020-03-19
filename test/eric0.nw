@@ -13,6 +13,13 @@ h 0 0 2
 Au 2 1 0
 end
 
+geometry eric noautosym noautoz
+C 0 0 0 mass 14.0
+he 0 0 1
+h 0 0 2
+Au 2 1 0
+end
+
 nwpw
    simulation_cell
      SC 30.0
@@ -26,12 +33,17 @@ nwpw
      #output_wavefunction_filename eric2.movecs
      loop 10 10
    end
-   loop 2 2
+   loop 2 20
+   xc pbe96
 end
 task pspw energy
 #task pspw noit_energy
+nwpw
+   xc pbe96
+   loop 3 3 
+end
 
 nwpw
-   loop 10 10
+   loop 10 2
 end
 task pspw steepest_descent

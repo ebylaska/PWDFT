@@ -12,13 +12,12 @@
 #include "mpi.h"
 
 #include "util_date.hpp"
-#include "json.hpp"
-#include "parsestring.hpp"
+#include "parse_pwdft.hpp"
 
 using namespace std;
 
 //extern int cpsd(int argc, char *argv[]);
-extern int cpsd(MPI_Comm comm_world0);
+extern int cpsd(MPI_Comm, string);
 
 int main(int argc, char* argv[])
 {
@@ -90,29 +89,38 @@ int main(int argc, char* argv[])
      std::cout << "       date             = " << util_date() << std::endl;
      std::cout << "       nproc            = " << np << std::endl;
      std::cout << "       input            = " << nwfilename << std::endl;
-
-/*
-
-    compiled        = Tue_Jan_21_22:33:23_2020
-    source          = /Users/bylaska/nwchem-releases/nwchem
-    nwchem branch   = 7.0.0
-    nwchem revision = N/A
-    ga revision     = 5.7.0
-    use scalapack   = F
-    input           = eric0.nw
-    prefix          = eric.
-    data base       = ./eric.db
-    status          = startup
-    nproc           =        1
-    time left       =     -1s
-*/
-
      std::cout << std::endl << std::endl;
 
   }
+ 
+  // Broadcast nwinput across MPI tasks 
+  if (np>1)
+  {
+      int nwinput_size = nwinput.size();
+      MPI_Bcast(&nwinput_size,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+      if (taskid != MASTER)
+         nwinput.resize(nwinput_size);
+      MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,MPI_COMM_WORLD);
+
+      std::cout << "start taskid=" << taskid << std::endl << nwinput << std::endl;
+      std::cout << "end taskid=" << taskid << std::endl;
+  }
+
+  rtdbstr = parse_nwinput(nwinput);
+  std::cout << "rtdbstr=" << rtdbstr << std::endl;
+  int task = parse_task(rtdbstr);
+  std::cout << "task0=" << task << std::endl;
+  while (task>0)
+  {
+     if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
+    
+     rtdbstr = parse_rtdbstring(rtdbstr);
+     task    = parse_task(rtdbstr);
+     std::cout << "task =" << task << std::endl;
+  }
 
   //int ijk = cpsd(argc,argv);
-  ierr += cpsd(MPI_COMM_WORLD);
+  //ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
 
 
   // Finalize MPI
