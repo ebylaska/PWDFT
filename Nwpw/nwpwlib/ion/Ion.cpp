@@ -217,4 +217,17 @@ Ion::Ion(string rtdbstring)
          natm[ia] += 1;
       }
    }
+/*  DEBUG CHECK
+   std::cout << "NION=" << nion << std::endl;
+   std::cout << "NKATM=" << nkatm << std::endl;
+   for (auto i=0; i<nion; ++i)
+   {
+      std::cout << "I=" << i << std::endl;
+      std::cout << "   KATM=" << katm[i] << std::endl;
+      std::cout << "   MASS=" << mass[i] << std::endl;
+      std::cout << "   CHARGE=" << charge[i] << std::endl;
+   }
+   std::cout << "NATM=" << natm[0] << std::endl;
+   std::cout << "ATOMARRAY=" << atomarray << std::endl;
+*/
 }

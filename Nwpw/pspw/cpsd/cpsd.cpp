@@ -98,7 +98,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
 
    /* read in ion structure */
-   Ion myion(myrtdb);
+   //Ion myion(myrtdb);
+   Ion myion(rtdbstring);
 
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
