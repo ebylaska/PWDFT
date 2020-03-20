@@ -149,6 +149,246 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    return geom;
 }
 
+/**************************************************
+ *                                                *
+ *                parse_simulation_cell           *
+ *                                                *
+ **************************************************/
+
+static json parse_simulation_cell(json celljson, int *curptr, vector<string> lines)
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+   vector<string> ss;
+
+   while (endcount>0)
+   {
+      line = mystring_lowercase(lines[cur]);
+      if (mystring_contains(line,"lattice_vectors"))
+      {
+         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
+         ++cur;
+         line = mystring_lowercase(lines[cur]);
+         ss = mystring_split0(line);
+         if (ss.size()>2) 
+         {
+             unita[0] = std::stod(ss[0]);
+             unita[1] = std::stod(ss[1]);
+             unita[2] = std::stod(ss[2]);
+         }
+         ++cur;
+         line = mystring_lowercase(lines[cur]);
+         ss = mystring_split0(line);
+         if (ss.size()>2) 
+         {
+             unita[3] = std::stod(ss[0]);
+             unita[4] = std::stod(ss[1]);
+             unita[5] = std::stod(ss[2]);
+         }
+         ++cur;
+         line = mystring_lowercase(lines[cur]);
+         ss = mystring_split0(line);
+         if (ss.size()>2) 
+         {
+             unita[6] = std::stod(ss[0]);
+             unita[7] = std::stod(ss[1]);
+             unita[8] = std::stod(ss[2]);
+         }
+         celljson["unita"] = unita;
+      }
+      else if (mystring_contains(line,"lattice"))
+      {
+         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
+         celljson["unita"] = unita;
+      }
+      else if (mystring_contains(line,"ngrid"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>3) 
+         {
+            vector<int> ngrid = {std::stoi(ss[1]),std::stoi(ss[2]),std::stoi(ss[3])};
+            celljson["ngrid"] = ngrid;
+         }
+      }
+      else if (mystring_contains(line,"sc"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) 
+         {
+            double a = std::stod(ss[1]);
+            vector<double> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
+            celljson["unita"] = unita;
+         }
+      }
+      else if (mystring_contains(line,"fcc"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) 
+         {
+            double a = 0.5*std::stod(ss[1]);
+            vector<double> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
+            celljson["unita"] = unita;
+         }
+      }
+      else if (mystring_contains(line,"bcc"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) 
+         {
+            double a = 0.5*std::stod(ss[1]);
+            vector<double> unita = {-a,a,a, a,-a,a, a,a,-a};
+            celljson["unita"] = unita;
+         }
+      }
+      else if (mystring_contains(line,"box_delta"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) 
+         {
+            double a = std::stod(ss[1]);
+            celljson["box_delta"] = a;
+         }
+      }
+      else if (mystring_contains(line,"box_orient"))
+      {
+         celljson["box_orient"] = true;
+      }
+      else if (mystring_contains(line,"box_different_lengths"))
+      {
+         celljson["box_different_lengths"] = true;
+      }
+
+
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+
+   *curptr = cur;
+
+   return celljson;
+}
+
+/**************************************************
+ *                                                *
+ *                parse_steepest_descent          *
+ *                                                *
+ **************************************************/
+
+static json parse_steepest_descent(json sdjson, int *curptr, vector<string> lines)
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+   vector<string> ss;
+
+   while (endcount>0)
+   {
+      line = mystring_lowercase(lines[cur]);
+
+      if (mystring_contains(line,"loop"))
+      {
+         vector<int> loop = {1, 1};
+         ss = mystring_split0(line);
+         if (ss.size()>1) loop[0] = std::stoi(ss[1]);
+         if (ss.size()>2) loop[1] = std::stoi(ss[2]);
+         sdjson["loop"] = loop;
+      }
+      else if (mystring_contains(line,"xc"))
+      {
+         sdjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
+      }
+/*
+      else if (mystring_contains(line,"input_wavefunction_filename"))
+      else if (mystring_contains(line,"output_wavefunction_filename"))
+      else if (mystring_contains(line,"fake_mass"))
+      else if (mystring_contains(line,"time_step"))
+      else if (mystring_contains(line,"tolerances"))
+      else if (mystring_contains(line,"cutoff"))
+      else if (mystring_contains(line,"geometry_optimize"))
+*/
+
+
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+
+   *curptr = cur;
+
+   return sdjson;
+}
+
+/**************************************************
+ *                                                *
+ *                parse_car_parrinello            *
+ *                                                *
+ **************************************************/
+
+static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> lines)
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+   vector<string> ss;
+
+   while (endcount>0)
+   {
+      line = mystring_lowercase(lines[cur]);
+      if (mystring_contains(line,"loop"))
+      {
+         vector<int> loop = {1, 1};
+         ss = mystring_split0(line);
+         if (ss.size()>1) loop[0] = std::stoi(ss[1]);
+         if (ss.size()>2) loop[1] = std::stoi(ss[2]);
+         cpmdjson["loop"] = loop;
+      }
+      else if (mystring_contains(line,"xc"))
+      {
+         cpmdjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
+      }
+
+/*
+      else if (mystring_contains(line,"input_wavefunction_filename"))
+      else if (mystring_contains(line,"input_v_wavefunction_filename"))
+      else if (mystring_contains(line,"output_wavefunction_filename"))
+      else if (mystring_contains(line,"output_v_wavefunction_filename"))
+      else if (mystring_contains(line,"scaling"))
+      else if (mystring_contains(line,"time_step"))
+      else if (mystring_contains(line,"xc"))
+      else if (mystring_contains(line,"tolerances"))
+      else if (mystring_contains(line,"cutoff"))
+      else if (mystring_contains(line,"geometry_optimize"))
+      else if (mystring_contains(line,"energy"))
+      else if (mystring_contains(line,"temperature"))
+      else if (mystring_contains(line,"initial_velocities"))
+      else if (mystring_contains(line,"xyz_filename"))
+      else if (mystring_contains(line,"emotion_filename"))
+      else if (mystring_contains(line,"ion_motion_filename"))
+      else if (mystring_contains(line,"eigmotion_filename"))
+      else if (mystring_contains(line,"omotion_filename"))
+      else if (mystring_contains(line,"hmotion_filename"))
+      else if (mystring_contains(line,"fei"))
+      else if (mystring_contains(line,"fei_quench"))
+      else if (mystring_contains(line,"sa_decay"))
+      else if (mystring_contains(line,"dipole_motion"))
+*/
+
+
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+
+   *curptr = cur;
+
+   return cpmdjson;
+}
+
 
 
 /**************************************************
@@ -165,30 +405,75 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
    int endcount = 1;
    ++cur;
    string line;
+   vector<string> ss;
 
    while (endcount>0)
    {
       line = mystring_lowercase(lines[cur]);
 
 /*
-      if (mystring_contains(line,"simulation_cell"))
       if (mystring_contains(line,"steepest_descent"))
       if (mystring_contains(line,"car-parrinello"))
-      if (mystring_contains(line,"np_dimensions"))
-      if (mystring_contains(line,"nobalance"))
-      if (mystring_contains(line,"mapping"))
 */
-      if (mystring_contains(line,"loop"))
+      if (mystring_contains(line,"simulation_cell"))
+      {
+         if  (nwpwjson["simulation_cell"].is_null())
+         {
+            json simulation_cell; 
+            nwpwjson["simulation_cell"] = simulation_cell;
+         }
+         *curptr = cur;
+         nwpwjson["simulation_cell"] = parse_simulation_cell(nwpwjson["simulation_cell"],curptr,lines);
+         cur = *curptr;
+      }
+      else if (mystring_contains(line,"steepest_descent"))
+      {
+         if  (nwpwjson["steepest_descent"].is_null())
+         {
+            json steepest_descent;
+            nwpwjson["steepest_descent"] = steepest_descent;
+         }
+         *curptr = cur;
+         nwpwjson["steepest_descent"] = parse_steepest_descent(nwpwjson["steepest_descent"],curptr,lines);
+         cur = *curptr;
+      }
+      else if (mystring_contains(line,"car-parrinello"))
+      {
+         if  (nwpwjson["car-parrinello"].is_null())
+         {
+            json car_parrinello;
+            nwpwjson["car-parrinello"] = car_parrinello;
+         }
+         *curptr = cur;
+         nwpwjson["car-parrinello"] = parse_car_parrinello(nwpwjson["car_parrinello"],curptr,lines);
+         cur = *curptr;
+      }
+      else if (mystring_contains(line,"nobalance"))
+      {
+         nwpwjson["nobalance"] = true;
+      }
+      else if (mystring_contains(line,"mapping"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) nwpwjson["mapping"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"np_dimensions"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>2) nwpwjson["np_dimensions"] = {std::stoi(ss[1]),std::stoi(ss[2])};
+         if (ss.size()>3) nwpwjson["np_dimensions"] = {std::stoi(ss[1]),std::stoi(ss[2]),std::stoi(ss[3])};
+      }
+      else if (mystring_contains(line,"loop"))
       {
          vector<int> loop;
          loop.push_back(1);
          loop.push_back(1);
-         vector<string> ss = mystring_split0(line);
+         ss = mystring_split0(line);
          if (ss.size()>1) loop[0] = std::stoi(ss[1]);
          if (ss.size()>2) loop[1] = std::stoi(ss[2]);
          nwpwjson["loop"] = loop;
       }
-      if (mystring_contains(line,"xc"))
+      else if (mystring_contains(line,"xc"))
       {
          nwpwjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
       }
@@ -197,6 +482,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       if (mystring_contains(lines[cur],"end"))
          --endcount;
    }
+   //std::cout << "NWPWJSON= " << nwpwjson.dump() << std::endl;
 
    *curptr = cur;
 

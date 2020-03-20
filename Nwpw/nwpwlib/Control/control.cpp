@@ -1,6 +1,7 @@
 #include        <iostream>
 #include        <cmath>
 #include        <cstdlib>
+#include        <string>
 #include	"Int64.h"
 using namespace std;
 
@@ -125,6 +126,29 @@ void control_read(RTDB &myrtdb)
    {
       ewald_grid[0] = ngrid[0]; ewald_grid[1] = ngrid[1]; ewald_grid[2] = ngrid[2];
    }
+
+}
+
+void control_read(const int np, const string rtdbstring)
+{
+   json rtdbjson = json::parse(rtdbstring);
+
+   Int64 idum[10];
+   int matype,nelem;
+   char date[99];
+
+
+   /* get parallel mappings */
+   mapping = 1;
+   //if (!myrtdb.get("nwpw:mapping",rtdb_int,1,&mapping)) mapping = 1;
+
+   /* set mapping1d */
+   mapping1d = 1;
+   //if (!myrtdb.get("nwpw:mapping1d",rtdb_int,1,&mapping1d)) mapping1d = 1;
+
+   /* qsize */
+   qsize = 4;
+   //if (!myrtdb.get("nwpw:pfft3_qsize",rtdb_int,1,&qsize)) qsize = 4;
 
 }
       
