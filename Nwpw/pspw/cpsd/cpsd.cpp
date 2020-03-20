@@ -140,13 +140,23 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       else
          cout << " parallel mapping         : not balanced" << "\n";
 
+      cout << "\n input movecs: " << control_input_movecs_filename() << "\n";
       cout << "\n options:\n";
-      cout << "   electron spin = ";
+      cout << "   ion motion           = ";
+      if (control_geometry_optimize())
+         cout << "yes\n";
+      else
+         cout << "no\n";
+      cout << "   boundary conditions  = ";
+      cout << "periodic\n";
+
+      cout << "   electron spin        = ";
       if (ispin==1)
          cout << "restricted\n";
       else
          cout << "unrestricted\n";
-      cout << "\n input movecs:" << control_input_movecs_filename() << "\n";
+      cout << "   exchange-correlation = ";
+         cout << "LDA (Vosko et al) parameterization\n";
   
       cout << "\n elements involved in the cluster:\n";
       for (ia=0; ia<myion.nkatm; ++ia)

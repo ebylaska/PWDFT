@@ -21,6 +21,7 @@ extern int control_ewald_ngrid(const int);
 extern int control_ewald_ncut();
 extern int control_loop(const int);
 extern int control_pfft3_qsize();
+extern bool control_geometry_optimize();
 
 extern double control_ewald_rcut();
 extern double control_unita(const int, const int);

@@ -18,6 +18,7 @@ static Int64 rotation,translation,balance,spin_orbit;
 static Int64 maxit_orb,maxit_orbs,scf_algorithm,ks_algorithm;
 static Int64 symm_number;
 static Int64 qsize;
+static bool  geometry_optimize;
 
 static char input_movecs_filename[80];
 static char output_movecs_filename[80];
@@ -180,6 +181,9 @@ void control_read(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["nobalance"].is_boolean()) 
       if (rtdbjson["nwpw"]["nobalance"]) balance = 0;
 
+   geometry_optimize = false;
+   if (rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"].is_boolean()) 
+      geometry_optimize = rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
 
    string input_movecs  = "eric.movecs";  
    string output_movecs = "eric.movecs";  
@@ -189,6 +193,11 @@ void control_read(const int np0, const string rtdbstring)
        input_movecs  = dbname + ".movecs";  
        output_movecs = dbname + ".movecs";  
    }
+   if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string()) 
+      input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) 
+      output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
+
    strcpy(input_movecs_filename,const_cast<char*>(input_movecs.data()));
    strcpy(output_movecs_filename,const_cast<char*>(output_movecs.data()));
 
@@ -197,7 +206,8 @@ void control_read(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["fake_mass"].is_number_float()) fake_mass = rtdbjson["nwpw"]["fake_mass"];
 
    time_step = 5.8;
-   if (rtdbjson["nwpw"]["time_step"].is_number_float()) time_step = rtdbjson["nwpw"]["time_step"];
+   if (rtdbjson["nwpw"]["time_step"].is_number_float())                     time_step = rtdbjson["nwpw"]["time_step"];
+   if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float()) time_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
 
    loop[0]=10 ; loop[1]=100; 
    if (rtdbjson["nwpw"]["loop"][0].is_number_integer()) loop[0] = rtdbjson["nwpw"]["loop"][0];
@@ -217,6 +227,9 @@ void control_read(const int np0, const string rtdbstring)
    wcut=9000.0;
    if (rtdbjson["nwpw"]["cutoff"][0].is_number_float()) wcut = rtdbjson["nwpw"]["cutoff"][0];
    if (rtdbjson["nwpw"]["cutoff"][1].is_number_float()) ecut = rtdbjson["nwpw"]["cutoff"][1];
+   if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float()) wcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];
+   if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float()) ecut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1];
+
    rcut=0.0;
    if (rtdbjson["nwpw"]["ewald_rcut"].is_number_float()) rcut = rtdbjson["nwpw"]["ewald_rcut"];
    ncut=1;
@@ -266,6 +279,7 @@ int control_ewald_ngrid(const int i) { return (int) ewald_grid[i]; }
 int control_ewald_ncut() { return (int) ncut; }
 int control_loop(const int i) { return (int) loop[i]; }
 int control_pfft3_qsize() { return (int) qsize; }
+bool control_geometry_optimize() { return geometry_optimize; }
 
 double control_ewald_rcut() { return (double) rcut; }
 double control_unita(const int i,const int j) { return unita[i+j*3]; }

@@ -3,7 +3,7 @@ memory 900 mb
 start eric
 echo
 
-geometry noautosym noautoz
+geometry noautosym noautoz center
 C 0 0 0
 C 0 0 1
 C 0 0 2
@@ -15,7 +15,7 @@ C 0 0 1
 C 0 0 2.2
 end
 
-set geometry ericgeom
+#set geometry ericgeom
 
 nwpw
    simulation_cell
@@ -26,11 +26,14 @@ nwpw
    #nobalance
    #np_dimensions -1 5
    steepest_descent
-     #input_wavefunction_filename eric.movecs
-     #output_wavefunction_filename eric2.movecs
+     input_wavefunction_filename  test.movecs
+     output_wavefunction_filename test2.movecs
      loop 10 10
+     geometry_optimize
+     time_step 51.8
    end
    loop 2 2
+   #cutoff 5.0
 end
 task pspw energy
 #task pspw noit_energy

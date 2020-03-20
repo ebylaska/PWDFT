@@ -35,6 +35,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    double eke,elocal,enlocal,dt,dte,Eold;
    double *vl,*vc,*xcp,*xce,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
+   bool move = control_geometry_optimize();
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];

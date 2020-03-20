@@ -301,14 +301,39 @@ static json parse_steepest_descent(json sdjson, int *curptr, vector<string> line
       {
          sdjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
       }
-/*
-      else if (mystring_contains(line,"input_wavefunction_filename"))
-      else if (mystring_contains(line,"output_wavefunction_filename"))
-      else if (mystring_contains(line,"fake_mass"))
-      else if (mystring_contains(line,"time_step"))
-      else if (mystring_contains(line,"tolerances"))
-      else if (mystring_contains(line,"cutoff"))
       else if (mystring_contains(line,"geometry_optimize"))
+      {
+         sdjson["geometry_optimize"] = true;
+      }
+      else if (mystring_contains(line,"input_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) sdjson["input_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"output_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) sdjson["output_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"time_step"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) sdjson["time_step"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"fake_mass"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) sdjson["fake_mass"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"cutoff"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) sdjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
+         if (ss.size()>2)  sdjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
+
+/*
+      else if (mystring_contains(line,"tolerances"))
 */
 
 
@@ -351,6 +376,12 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
       {
          cpmdjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
       }
+      else if (mystring_contains(line,"cutoff"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) cpmdjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
+         if (ss.size()>2)  cpmdjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
 
 /*
       else if (mystring_contains(line,"input_wavefunction_filename"))
@@ -361,7 +392,6 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
       else if (mystring_contains(line,"time_step"))
       else if (mystring_contains(line,"xc"))
       else if (mystring_contains(line,"tolerances"))
-      else if (mystring_contains(line,"cutoff"))
       else if (mystring_contains(line,"geometry_optimize"))
       else if (mystring_contains(line,"energy"))
       else if (mystring_contains(line,"temperature"))
@@ -476,6 +506,12 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       else if (mystring_contains(line,"xc"))
       {
          nwpwjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
+      }
+      else if (mystring_contains(line,"cutoff"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) nwpwjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
+         if (ss.size()>2)  nwpwjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
       }
 
       ++cur;
