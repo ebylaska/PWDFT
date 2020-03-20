@@ -4,11 +4,14 @@
    Author - Eric Bylaska
 */
 
+#include        <string>
+using namespace std;
 
 #include	"Parallel.hpp"
 #include	"rtdb.hpp"
 
 extern void control_read(RTDB&);
+extern void control_read(const int, const string);
 extern int control_mapping();
 extern int control_mapping1d();
 extern int control_balance();
@@ -28,5 +31,6 @@ extern double control_fake_mass();
 extern double control_tolerances(const int);
 
 extern char *control_input_movecs_filename();
+extern char *control_output_movecs_filename();
 
 #endif
