@@ -65,7 +65,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
-   control_read(myrtdb);
+   //control_read(myrtdb);
+   control_read(myparallel.np(),rtdbstring);
    lattice_init();
    myparallel.init2d(control_np_orbital());
 
