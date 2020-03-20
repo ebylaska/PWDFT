@@ -10,6 +10,8 @@ using namespace std;
 #include        <cstdlib>
 */
 
+#include        <iostream>
+
 #include	<string.h>
 #include        <cmath>
 
@@ -368,50 +370,44 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::v_local(double *vout, const int move, double *dng, double *fion)
+void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion)
 {
-   int ii,ia,nshift;
-   double *exi;
-/*
-   int k;
-   double gg;
-   double *Gx  = mygrid->Gxyz(0);
-   double *Gy  = mygrid->Gxyz(1);
-   double *Gz  = mygrid->Gxyz(2);
-   tg          = new double [mygrid->npack(1)];
-   double *tmp = new double [mygrid->nfft3d];
+   int ii,ia,nshift,npack0;
+   double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
 
-   mypneb = mygrid;
-
-   for (k=0; k<(mypneb->nfft3d); ++k)
+   npack0 = mypneb->npack(0);
+   if (move)
    {
-      gg     = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
-      tmp[k] = -0.5*gg;
+      Gx  = mypneb->Gpackxyz(0,0);
+      Gy  = mypneb->Gpackxyz(0,1);
+      Gz  = mypneb->Gpackxyz(0,2);
+      xtmp = new double[npack0];
    }
-   mypneb->t_pack(1,tmp);
-   mypneb->tt_pack_copy(1,tmp,tg);
-*/
-
-
+   
    mypneb->c_zero(0,vout);
-   nshift = 2*mypneb->npack(0);
+   nshift = 2*npack0;
    exi    = new double[nshift];
+   vtmp   = new double[nshift];
    for (ii=0; ii<(myion->nion); ++ii)
    {
       ia = myion->katm[ii];
       mystrfac->strfac_pack(0,ii,exi);
-      mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
-      /*
+      //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
+      mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
+      mypneb->cc_Sum2(0,vtmp,vout);
+   
       if (move) 
       {
-         mypneb->tcc_MulSum2(0,vl[ia],exi,vtmp);
-         xtmp = dimag(dng)*dble(vtmp) - dble(dng)*dimag(vtmp)
-         fion(1,ii) += Gx * xtmp
-         fion(2,ii) += Gy * xtmp
-         fion(3,ii) += Gy * xtmp
+         mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+         fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
+         fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
+         fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
+         std::cout << ii << " " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
       }
-*/
-
    }
    delete [] exi;
+   delete [] vtmp;
+   if (move) delete [] xtmp;
+
+   
 }

@@ -77,7 +77,8 @@ public:
     double ncore(const int ia) {return 0.0;}
 
     void v_nonlocal(double *, double *);
-    void v_local(double *, const int move, double *, double *);
+    void v_nonlocal_fion(double *, double *, const bool, double *);
+    void v_local(double *, const bool, double *, double *);
 
 };
 

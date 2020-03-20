@@ -3,7 +3,6 @@
 
 
 #include        <string>
-using namespace std;
 
 #include	"rtdb.hpp"
 
@@ -16,11 +15,11 @@ public:
    int *katm,*natm;
    double *charge;
    double *mass;
-   double *rion1,*rion2;
+   double *rion0,*rion1,*rion2;
 
    /* Constructors */
    Ion(RTDB&);
-   Ion(string);
+   Ion(std::string);
 
    /* destructor */
    ~Ion() {
@@ -29,10 +28,16 @@ public:
       delete [] atomarray;
       delete [] charge;
       delete [] mass;
+      delete [] rion0;
       delete [] rion1;
       delete [] rion2;
     }
 
+    void shift() 
+    { 
+       for (auto i=0; i<(3*nion); ++i) rion0[i] = rion1[i];
+       for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
+    }
     char *symbol(const int i) { return &atomarray[3*katm[i]]; }
     char *atom(const int ia)  { return &atomarray[3*ia]; }
 

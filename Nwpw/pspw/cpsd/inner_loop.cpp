@@ -62,6 +62,8 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    vc  = mygrid->c_pack_allocate(0);
    vpsi=x;
 
+   fion = new double[3*(myion->nion)];
+
    /* generate local psp*/
    mypsp->v_local(vl,0,dng,fion);
    
@@ -73,6 +75,13 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2,psi1);
       //mygrid->gh_fftb(psi1,psi_r);
+
+      if (move)
+      {
+         myion->shift();
+         mystrfac->phafac();
+         myewald->phafac();
+      }
 
       indx1 = 0;
       indx2 = 0;
@@ -95,9 +104,13 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
 
+      /* generate local potential */
+      if (move) mypsp->v_local(vl,move,dng,fion);
+
       /* apply k-space operators */
       myke->ke(psi1,Hpsi);
       mypsp->v_nonlocal(psi1,Hpsi);
+
 
       /* generate coulomb potential */
       mycoulomb->vcoulomb(dng,vc);
@@ -130,6 +143,20 @@ void inner_loop(Pneb *mygrid, Ion *myion,
      /* do a steepest descent step */
      mygrid->gg_SMul(dte,Hpsi,psi2);
      mygrid->gg_Sum2(psi1,psi2);
+
+     if (move) 
+     {
+        myewald->force(fion);
+        cout << endl << "Fion3=" << endl;
+        for (auto ii=0; ii<(myion->nion); ++ii)
+        {
+           cout << ii;
+           cout << " " << fion[3*ii];
+           cout << " " << fion[3*ii+1];
+           cout << " " << fion[3*ii+2] << endl << endl;
+        }
+        
+     }
 
      /* lagrange multiplier */
      mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
@@ -194,6 +221,8 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    delete [] sumi;
 
    *deltar = 0.0;
+
+   delete [] fion;
 
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);

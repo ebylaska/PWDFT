@@ -2,7 +2,6 @@
    Author - Eric Bylaska
 */
 
-using namespace std;
 
 #include	<string.h>
 
@@ -12,6 +11,7 @@ using namespace std;
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
+using namespace std;
 
 #include	"lattice.hpp"
 #include	"Strfac.hpp"

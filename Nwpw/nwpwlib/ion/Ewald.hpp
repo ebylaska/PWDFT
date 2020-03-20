@@ -1,7 +1,6 @@
 #ifndef	_EWALD_H_
 #define _EWALD_H_
 
-using namespace std;
 
 #include        "Parallel.hpp"
 #include        "lattice.hpp"

@@ -357,6 +357,20 @@ double PGrid::cc_pack_dot(const int nb, double *a, double *b)
    return d3db::parall->SumAll(1,tsum);
 }
 
+double PGrid::tt_pack_dot(const int nb, double *a, double *b)
+{
+   int one = 1;
+   int ng  = (nida[nb]+nidb[nb]);
+   int ng0 = nida[nb];
+   double tsum;
+
+   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
+   tsum -= ddot_(&ng0,a,&one,b,&one);
+
+   return d3db::parall->SumAll(1,tsum);
+}
+
+
 double PGrid::cc_pack_idot(const int nb, double *a, double *b)
 {
    int one = 1;
@@ -370,6 +384,21 @@ double PGrid::cc_pack_idot(const int nb, double *a, double *b)
 
    return tsum;
 }
+
+double PGrid::tt_pack_idot(const int nb, double *a, double *b)
+{
+   int one = 1;
+   //int ng  = 2*(nida[nb]+nidb[nb]);
+   int ng  = (nida[nb]+nidb[nb]);
+   int ng0 = nida[nb];
+   double tsum;
+
+   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
+   tsum -= ddot_(&ng0,a,&one,b,&one);
+
+   return tsum;
+}
+
 
 void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, double *sum)
 {

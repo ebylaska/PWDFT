@@ -143,6 +143,7 @@ Ion::Ion(RTDB& myrtdb)
 
    charge    = new double[nion];
    mass      = new double[nion];
+   rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
    katm      = new int[nion];
@@ -156,6 +157,8 @@ Ion::Ion(RTDB& myrtdb)
    { rion1[0] = 0.0; rion1[1] = 0.0; rion1[2] = 0.0; }
    if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion2)) 
    { rion2[0] = 0.0; rion2[1] = 0.0; rion2[2] = 0.0; }
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion0)) 
+   { rion0[0] = 0.0; rion0[1] = 0.0; rion0[2] = 0.0; }
 
    /*  read in masses and charges */
    if (!myrtdb.get("geometry:geometry:masses",rtdb_double,nion,mass)) mass[0] = 1.0;
@@ -187,6 +190,7 @@ Ion::Ion(string rtdbstring)
 
    charge    = new double[nion];
    mass      = new double[nion];
+   rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
    katm      = new int[nion];
@@ -202,6 +206,9 @@ Ion::Ion(string rtdbstring)
    {
       charge[i] = (double) geomjson["charges"][i];
       mass[i]   = (double) geomjson["masses"][i];
+      rion0[3*i]   = (double) geomjson["coords"][3*i];
+      rion0[3*i+1] = (double) geomjson["coords"][3*i+1];
+      rion0[3*i+2] = (double) geomjson["coords"][3*i+2];
       rion1[3*i]   = (double) geomjson["coords"][3*i];
       rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
