@@ -570,6 +570,12 @@ void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
    for (i=0; i<ng; ++i) b[i] += alpha*a[i];
 }
 
+void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double *c)
+{
+   for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
+      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i]; 
+}
+
 void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)

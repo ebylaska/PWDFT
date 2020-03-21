@@ -181,7 +181,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
       cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t %8.3lf %8.3lf %8.3lf\n",ii+1,myion.symbol(ii),
+         printf("%4d %s\t %10.5lf %10.5lf %10.5lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2]);
@@ -296,7 +296,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "          =============  summary of results  =================\n";
       cout << "\n final ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t %8.3lf %8.3lf %8.3lf\n",ii+1,myion.symbol(ii),
+         printf("%4d %s\t %10.5lf %10.5lf %10.5lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2]);

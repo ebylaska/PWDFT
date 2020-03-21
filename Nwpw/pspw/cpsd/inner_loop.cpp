@@ -109,7 +109,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
 
       /* apply k-space operators */
       myke->ke(psi1,Hpsi);
-      mypsp->v_nonlocal(psi1,Hpsi);
+      mypsp->v_nonlocal_fion(psi1,Hpsi,false,fion);
 
 
       /* generate coulomb potential */
@@ -147,6 +147,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
      if (move) 
      {
         myewald->force(fion);
+        myion->optimize_step(fion);
         cout << endl << "Fion3=" << endl;
         for (auto ii=0; ii<(myion->nion); ++ii)
         {

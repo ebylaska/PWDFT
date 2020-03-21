@@ -85,6 +85,7 @@ public:
         void c_SMul(const int, double, double *);
         void cc_SMul(const int, double, double *, double *);
         void cc_daxpy(const int, double, double *, double *);
+        void cct_iconjgMul(const int, const double *, const double *, double *);
         void cct_iconjgMulb(const int, const double *, const double *, double *);
 
         void i_pack(const int, int *);

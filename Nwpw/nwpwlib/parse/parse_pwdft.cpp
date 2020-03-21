@@ -30,7 +30,8 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    int center = 1;
    int autoz = 0;
    int autosym = 0;
-   double angs_to_au = 1.0/0.52917715;
+   //double angs_to_au = 1.0/0.52917715;
+   double angs_to_au = 1.88972598858;
    double conv = angs_to_au;
    vector<string> ss;
    string geometry = "geometry";

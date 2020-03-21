@@ -367,6 +367,124 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
 /*******************************************
  *                                         *
+ *     Pseudopotential::v_nonlocal_fion    *
+ *                                         *
+ *******************************************/
+void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
+{
+   int ii,ia,l,nshift0,sd_function,i,n;
+   double *exi;
+   double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
+   double *Gx,*Gy,*Gz,*xtmp,*sum;
+   Parallel *parall;
+   double scal = 1.0/lattice_omega();
+   int one=1;
+   int three=1;
+   int ntmp,nshift,nn,ispin;
+   double rone  = 1.0;
+   double rmone = -1.0;
+
+   nn     = mypneb->neq[0]+mypneb->neq[1];
+   ispin  = mypneb->ispin;
+   nshift0 = mypneb->npack(1);
+   nshift = 2*mypneb->npack(1);
+   exi    = new double[nshift];
+   prjtmp = new double[nprj_max*nshift];
+   sw1    = new double[nn*nprj_max];
+   sw2    = new double[nn*nprj_max];
+
+   if (move)
+   {
+      Gx  = mypneb->Gpackxyz(1,0);
+      Gy  = mypneb->Gpackxyz(1,1);
+      Gz  = mypneb->Gpackxyz(1,2);
+      xtmp = new double[nshift0];
+      sum  = new double[3*nn];
+   }
+
+   parall = mypneb->d3db::parall;
+
+   for (ii=0; ii<(myion->nion); ++ii)
+   {
+      ia = myion->katm[ii];
+      if (nprj[ia]>0)
+      {
+
+         /* structure factor */
+         mystrfac->strfac_pack(1,ii,exi);
+
+
+         /* generate sw1's and projectors */
+         for (l=0; l<nprj[ia]; ++ l)
+         {
+            sd_function = !(l_projector[ia][l] & 1);
+            prj = &prjtmp[l*nshift];
+            vnlprj = &vnl[ia][l*nshift0];
+            if (sd_function)
+               mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+            else
+               mypneb->tcc_iMul(1,vnlprj,exi,prj);
+            mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
+         }
+         parall->Vector_SumAll(1,nn*nprj[ia],sw1);
+
+         /* sw2 = Gijl*sw1 */
+         Multiply_Gijl_sw1(nn,nprj[ia],nmax[ia],lmax[ia],
+                           n_projector[ia],l_projector[ia],m_projector[ia],
+                           Gijl[ia],sw1,sw2);
+
+         /* do Kleinman-Bylander Multiplication */
+         ntmp = nn*nprj[ia];
+         dscal_(&ntmp,&scal,sw2,&one);
+
+        ntmp = nprj[ia];
+
+        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
+               &rmone,
+               prjtmp,&nshift,
+               sw2,   &nn,
+               &rone,
+               Hpsi,&nshift);
+
+         if (move)
+         {
+            for (l=0; l<nprj[ia]; ++ l)
+            {
+               prj = &prjtmp[l*nshift];
+               for (n=0; n<nn; ++n)
+               {
+                  mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                  sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
+                  sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
+                  sum[3*n+2] = mypneb->tt_pack_idot(1,Gy,xtmp);
+                }
+                parall->Vector_SumAll(1,3*nn,sum);
+
+                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,sum,    &three);
+                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,&sum[1],&three);
+                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,&sum[2],&three);
+            }
+         }
+
+      } /*if nprj>0*/
+   } /*ii*/
+
+   if (move)
+   {
+      delete [] xtmp;
+      delete [] sum;
+   }
+   delete [] sw2;
+   delete [] sw1;
+   delete [] prjtmp;
+   delete [] exi;
+}
+
+
+
+
+/*******************************************
+ *                                         *
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
