@@ -232,10 +232,10 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) 
    {
       seconds(&cpu2);
-      cout << "          ================ iteration =========================\n\n";
-      cout << "          >>> iteration started at " << util_date() << " <<<\n\n";
-      cout << "   iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      cout << "   ---------------------------------------------------------------\n";
+      cout << "         ================ iteration =========================\n";
+      cout << "     >>> iteration started at " << util_date() << " <<<\n";
+      cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
+      cout << "     ---------------------------------------------------------------\n";
 
 
    }
@@ -252,14 +252,14 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                  E,&deltae,&deltac,&deltar);
 
       if (myparallel.is_master())
-         printf("%8d%19.10le%13.5le%13.5le%13.5le\n",icount*control_loop(0),
-                                       E[0],deltae,deltar,deltac);
+         printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control_loop(0),
+                                       E[0],deltae,deltac,deltar);
 
       /* check for competion */
       if ((deltae>0.0)&&(icount>1))
       {
          done = 1;
-         cout << "          *** Energy going up. iteration terminated\n";
+         cout << "         *** Energy going up. iteration terminated\n";
       }
       else if ((fabs(deltae)<control_tolerances(0)) &&
                (deltac      <control_tolerances(1)) &&
@@ -267,19 +267,19 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       {
          done = 1;
          if (myparallel.is_master())
-            cout << "          *** tolerance ok.    iteration terminated\n";
+            cout << "         *** tolerance ok.    iteration terminated\n";
       }
       else if (icount>=control_loop(1))
       {
          done = 1;
          if (myparallel.is_master())
-            cout << "          *** arrived at the Maximum iteration.   terminated\n";
+            cout << "         *** arrived at the Maximum iteration.   terminated\n";
       }
    }
    if (myparallel.is_master()) 
    {
       seconds(&cpu3);
-      cout << "\n          >>> iteration ended at   " << util_date() << " <<<\n";
+      cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
    }
 
 

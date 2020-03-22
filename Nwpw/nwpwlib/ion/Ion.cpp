@@ -136,7 +136,8 @@ Ion::Ion(RTDB& myrtdb)
    int matype,nelem,ii,i,j,found;
    char *symtmp,*symb;
    char date[50];
-   double time_step = control_time_step();
+   double time_step   = control_time_step();
+   double amu_to_mass = 1822.89;
 
    /* get parallel mappings */
    if (!myrtdb.get("geometry:geometry:ncenter",rtdb_int,1,&nion)) nion = 1;
@@ -168,12 +169,16 @@ Ion::Ion(RTDB& myrtdb)
    if (!myrtdb.get("geometry:geometry:charges",rtdb_double,nion,charge)) charge[0] = 1.0;
 
    for (ii=0; ii<nion; ++ii)
-      dti[ii] = (time_step*time_step)/mass[ii];
+   {
+      mass[ii] *= amu_to_mass;
+      dti[ii]  = (time_step*time_step)/mass[ii];
+   }
 
 }
 
 Ion::Ion(string rtdbstring) 
 {
+   double amu_to_mass = 1822.89;
    double time_step = control_time_step();
 
    auto rtdbjson =  json::parse(rtdbstring);
@@ -214,7 +219,7 @@ Ion::Ion(string rtdbstring)
    for (auto i=0; i<nion; ++i)
    {
       charge[i] = (double) geomjson["charges"][i];
-      mass[i]   = (double) geomjson["masses"][i];
+      mass[i]   = ((double) geomjson["masses"][i])*amu_to_mass;
       dti[i]    = (time_step*time_step)/mass[i];
       rion0[3*i]   = (double) geomjson["coords"][3*i];
       rion0[3*i+1] = (double) geomjson["coords"][3*i+1];

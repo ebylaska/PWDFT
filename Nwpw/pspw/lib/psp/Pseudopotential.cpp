@@ -379,7 +379,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    Parallel *parall;
    double scal = 1.0/lattice_omega();
    int one=1;
-   int three=1;
+   int three=3;
    int ntmp,nshift,nn,ispin;
    double rone  = 1.0;
    double rmone = -1.0;
@@ -467,7 +467,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                   sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
                   sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
                   sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
-                  std::cout << n << " " << l << " " << sum[3*n] << " " << sum[3*n+1] << " " << sum[3*n+2] << std::endl;
+                  //std::cout << ii << " " << n << " " << l << " " << sum[3*n] << " " << sum[3*n+1] << " " << sum[3*n+2] << "    SW2= " << sw2[n+l*nn] << std::endl;
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
 
@@ -545,13 +545,13 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 
          mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
          double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
-         std::cout << ii << " " << xx << " " << yy << " " << zz << endl;
+         //std::cout << ii << " " << xx << " " << yy << " " << zz << endl;
 
          fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
          fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
          fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
-         std::cout << ii << " " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
-         std::cout << endl;
+         //std::cout << ii << " " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
+         //std::cout << endl;
       }
    }
    delete [] exi;

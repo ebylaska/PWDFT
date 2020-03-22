@@ -25,7 +25,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
                 double *psi1, double *psi2, double *Hpsi, double *psi_r,
                 double *dn, double *hml,double *lmbda,
-                double E[], double *deltae, double *deltar, double *deltac)
+                double E[], double *deltae, double *deltac, double *deltar)
 {
    int it,it_in,i,n2ft3d,neall,ispin,k,ms;
    int shift1,shift2,indx1,indx2;
@@ -107,32 +107,9 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       /* generate local potential */
       if (move) mypsp->v_local(vl,move,dng,fion);
 
-      cout << endl << "local Fion3=" << endl;
-      for (auto ii=0; ii<(myion->nion); ++ii)
-      {
-           cout << ii;
-           cout << " " << fion[3*ii];
-           cout << " " << fion[3*ii+1];
-           cout << " " << fion[3*ii+2] << endl;
-      }
-      cout << endl;
-        
-
-
       /* apply k-space operators */
       myke->ke(psi1,Hpsi);
       mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
-
-      cout << endl << "local+nonlocal Fion3=" << endl;
-      for (auto ii=0; ii<(myion->nion); ++ii)
-      {
-           cout << ii;
-           cout << " " << fion[3*ii];
-           cout << " " << fion[3*ii+1];
-           cout << " " << fion[3*ii+2] << endl;
-      }
-      cout << endl;
-
 
       /* generate coulomb potential */
       mycoulomb->vcoulomb(dng,vc);
@@ -170,16 +147,6 @@ void inner_loop(Pneb *mygrid, Ion *myion,
      {
         myewald->force(fion);
         myion->optimize_step(fion);
-        cout << endl << "local+nonlocal+ewald Fion3=" << endl;
-        for (auto ii=0; ii<(myion->nion); ++ii)
-        {
-           cout << ii;
-           cout << " " << fion[3*ii];
-           cout << " " << fion[3*ii+1];
-           cout << " " << fion[3*ii+2] << endl;
-        }
-        cout << endl;
-        
      }
 
      /* lagrange multiplier */
@@ -244,7 +211,20 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    *deltac = dc/dte;
    delete [] sumi;
 
+   /* deltar */ 
    *deltar = 0.0;
+   if (move)
+   {
+      double sum;
+      for (auto ii=0; ii<(myion->nion); ++ii)
+      {
+         sum = sqrt( fion[3*ii]  *fion[3*ii] 
+                   + fion[3*ii+1]*fion[3*ii+1] 
+                   + fion[3*ii+2]*fion[3*ii+2]);
+         if (sum>(*deltar)) *deltar = sum;
+      }
+   }
+
 
    delete [] fion;
 
