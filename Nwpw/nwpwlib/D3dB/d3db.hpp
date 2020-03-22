@@ -41,6 +41,7 @@ public:
         void     r_dealloc(double *);
         void     r_zero(double *);
         void     rr_copy(const double *,double *);
+        void     tt_copy(const double *,double *);
         void     rr_SMul(const double, const double *, double *);
         void	 r_SMul(const double, double *);
         double	 r_dsum(const double *);

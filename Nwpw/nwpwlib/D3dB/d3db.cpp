@@ -540,6 +540,36 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
 
 /********************************
  *                              *
+ *        d3db::tt_copy         *
+ *                              *
+ ********************************/
+void d3db::tt_copy(const double *ptr1, double *ptr2)
+{
+   int i;
+   int m = nfft3d%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] = ptr1[i];
+   if (nfft3d<7)
+      return;
+
+   for (i=m; i<nfft3d; i+=7)
+   {
+      ptr2[i]   = ptr1[i];
+      ptr2[i+1] = ptr1[i+1];
+      ptr2[i+2] = ptr1[i+2];
+      ptr2[i+3] = ptr1[i+3];
+      ptr2[i+4] = ptr1[i+4];
+      ptr2[i+5] = ptr1[i+5];
+      ptr2[i+6] = ptr1[i+6];
+   }
+   return;
+}
+
+
+
+/********************************
+ *                              *
  *         d3db::rr_SMul         *
  *                              *
  ********************************/

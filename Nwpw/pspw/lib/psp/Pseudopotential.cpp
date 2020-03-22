@@ -395,11 +395,21 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
    if (move)
    {
-      Gx  = mypneb->Gpackxyz(1,0);
-      Gy  = mypneb->Gpackxyz(1,1);
-      Gz  = mypneb->Gpackxyz(1,2);
       xtmp = new double[nshift0];
       sum  = new double[3*nn];
+      Gx = new double [mypneb->nfft3d];
+      Gy = new double [mypneb->nfft3d];
+      Gz = new double [mypneb->nfft3d];
+      mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+      mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+      mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+      mypneb->t_pack(1,Gx);
+      mypneb->t_pack(1,Gy);
+      mypneb->t_pack(1,Gz);
+
+      //Gx  = mypneb->Gpackxyz(1,0);
+      //Gy  = mypneb->Gpackxyz(1,1);
+      //Gz  = mypneb->Gpackxyz(1,2);
    }
 
    parall = mypneb->d3db::parall;
@@ -454,9 +464,10 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                for (n=0; n<nn; ++n)
                {
                   mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
-                  sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
                   sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
-                  sum[3*n+2] = mypneb->tt_pack_idot(1,Gy,xtmp);
+                  sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
+                  sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
+                  std::cout << n << " " << l << " " << sum[3*n] << " " << sum[3*n+1] << " " << sum[3*n+2] << std::endl;
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
 
@@ -473,6 +484,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    {
       delete [] xtmp;
       delete [] sum;
+      delete [] Gx;
+      delete [] Gy;
+      delete [] Gz;
    }
    delete [] sw2;
    delete [] sw1;
@@ -496,10 +510,20 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
    npack0 = mypneb->npack(0);
    if (move)
    {
-      Gx  = mypneb->Gpackxyz(0,0);
-      Gy  = mypneb->Gpackxyz(0,1);
-      Gz  = mypneb->Gpackxyz(0,2);
       xtmp = new double[npack0];
+      Gx = new double [mypneb->nfft3d];
+      Gy = new double [mypneb->nfft3d];
+      Gz = new double [mypneb->nfft3d];
+      mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+      mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+      mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+      mypneb->t_pack(0,Gx);
+      mypneb->t_pack(0,Gy);
+      mypneb->t_pack(0,Gz);
+
+      //Gx  = mypneb->Gpackxyz(0,0);
+      //Gy  = mypneb->Gpackxyz(0,1);
+      //Gz  = mypneb->Gpackxyz(0,2);
    }
    
    mypneb->c_zero(0,vout);
@@ -516,16 +540,29 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
    
       if (move) 
       {
+         double xx =  mypneb->cc_pack_dot(0,dng,dng);
+         double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+
          mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+         double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+         std::cout << ii << " " << xx << " " << yy << " " << zz << endl;
+
          fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
          fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
          fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
          std::cout << ii << " " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
+         std::cout << endl;
       }
    }
    delete [] exi;
    delete [] vtmp;
-   if (move) delete [] xtmp;
+   if (move)
+   {
+       delete [] xtmp;
+       delete [] Gx;
+       delete [] Gy;
+       delete [] Gz;
+   }
 
    
 }

@@ -47,7 +47,7 @@ public:
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
-        double *Gpackxyz(const int nb,const int i) { return &Gpack[nb][i*(nida[nb]+nidb[nb])]; }
+        double *Gpackxyz(const int nb,const int i) { return &(Gpack[nb][i*(nida[nb]+nidb[nb])]); }
 
         int nzero(const int nb) {return nida[nb];}
         int npack(const int nb)     {return (nida[nb] + nidb[nb]);}
