@@ -55,6 +55,7 @@ public:
         void  	 rr_daxpy(const double, const double *, double *);
         //void  	 r_read(const int, const int, double *);
 	void     c_read(const int, double *, const int);
+	void     c_write(const int, double *, const int);
 
 	void     cr_fft3d(double *);
 	void     rc_fft3d(double *);

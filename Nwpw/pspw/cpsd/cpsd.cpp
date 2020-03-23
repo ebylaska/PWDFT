@@ -32,7 +32,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
-   RTDB myrtdb(&myparallel, "eric.db", "old");
+   //RTDB myrtdb(&myparallel, "eric.db", "old");
 
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
@@ -128,8 +128,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    if (myparallel.is_master())
    {
-      cout << "\n\n\n";
+      cout << "\n\n";
       cout << "          ==============  summary of input  ==================\n";
+      cout << "\n input psi filename: " << control_input_movecs_filename() << "\n";
       cout << "\n";
       cout << " number of processors used: " << myparallel.np() << "\n";
       cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
@@ -140,7 +141,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       else
          cout << " parallel mapping         : not balanced" << "\n";
 
-      cout << "\n input movecs: " << control_input_movecs_filename() << "\n";
       cout << "\n options:\n";
       cout << "   ion motion           = ";
       if (control_geometry_optimize())
@@ -162,7 +162,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       for (ia=0; ia<myion.nkatm; ++ia)
       {
          printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
-                 ia,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
+                 ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
          printf("           comment : %s\n",mypsp.comment[ia]);
          printf("           pseudopotential type            : %3d\n",mypsp.psp_type[ia]);
          printf("           highest angular component       : %3d\n",mypsp.lmax[ia]);
@@ -181,11 +181,11 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
       cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t %10.5lf %10.5lf %10.5lf\n",ii+1,myion.symbol(ii),
+         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
                                                myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2]);
-
+                                               myion.rion1[3*ii+2],
+                                               myion.amu(ii));
       cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
@@ -292,14 +292,15 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
    if (myparallel.is_master()) 
    {
-      cout << "\n\n\n";
+      cout << "\n\n";
       cout << "          =============  summary of results  =================\n";
       cout << "\n final ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t %10.5lf %10.5lf %10.5lf\n",ii+1,myion.symbol(ii),
+         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
                                                myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2]);
+                                               myion.rion1[3*ii+2],
+                                               myion.amu(ii));
       cout << "\n\n";
       printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
       printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
@@ -328,7 +329,10 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
+      cout << "\n output psi filename: " << control_output_movecs_filename() << "\n";
    }
+
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1);
 
    /* deallocate memory */
    mygrid.g_deallocate(psi1);
@@ -345,6 +349,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    rtdbjson["pspw"]["energy"]   = E[0];
    rtdbjson["pspw"]["energies"] = E;
    rtdbstring    = rtdbjson.dump();
+   myion.writejsonstr(rtdbstring);
 
 //                 |**************************|
 // *****************   report consumed time   **********************
@@ -359,15 +364,15 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       double av = t2/((double ) control_loop(0)*icount);
       cout.setf(ios::scientific);
       cout << "\n";
-      cout << "-----------------"    << "\n";
-      cout << "cputime in seconds"   << "\n";
-      cout << "prologue    : " << t1 << "\n";
-      cout << "main loop   : " << t2 << "\n";
-      cout << "epilogue    : " << t3 << "\n";
-      cout << "total       : " << t4 << "\n";
-      cout << "cputime/step: " << av << "\n";
+      cout << " -----------------"    << "\n";
+      cout << " cputime in seconds"   << "\n";
+      cout << " prologue    : " << t1 << "\n";
+      cout << " main loop   : " << t2 << "\n";
+      cout << " epilogue    : " << t3 << "\n";
+      cout << " total       : " << t4 << "\n";
+      cout << " cputime/step: " << av << "\n";
       cout << "\n";
-      cout << "          >>> job completed at     " << util_date() << " <<<\n";
+      cout << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
 

@@ -42,6 +42,8 @@ public:
     }
     char *symbol(const int i) { return &atomarray[3*katm[i]]; }
     char *atom(const int ia)  { return &atomarray[3*ia]; }
+    double amu(const int i) { return mass[i]/1822.89; }
+    void writejsonstr(string&);
 
     void optimize_step(const double *fion) 
     {

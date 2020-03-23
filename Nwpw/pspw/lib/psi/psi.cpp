@@ -67,3 +67,28 @@ void psi_read(Pneb *mypneb,int *version, int nfft[],
 
    if (myparall->is_master()) closefile(4);
 }
+
+
+void psi_write(Pneb *mypneb,int *version, int nfft[],
+              double unita[], int *ispin, int ne[],
+              double *psi)
+{  
+   int occupation = 0;
+   
+   Parallel *myparall = mypneb->d3db::parall;
+   
+   if (myparall->is_master())
+   {  
+      openfile(6,control_output_movecs_filename(),"w");
+      iwrite(6,version,1);
+      iwrite(6,nfft,3);
+      dwrite(6,unita,9);
+      iwrite(6,ispin,1);
+      iwrite(6,ne,2);
+      iwrite(6,&occupation,1);
+   }
+   
+   mypneb->g_write(6,psi);
+   
+   if (myparall->is_master()) closefile(6);
+}

@@ -83,6 +83,31 @@ void Pneb::g_read(const int iunit, double *psi)
    delete [] tmp2;
 }
 
+void Pneb::g_write(const int iunit, double *psi)
+{
+   int ms,n,indx,i,pj,qj,taskid_j;
+   double *tmp2 = new double[n2ft3d];
+
+   taskid_j = d1db::parall->taskid_j();
+   for (ms=0; ms<ispin; ++ms)
+   for (n=0; n<ne[ms]; ++n)
+   {
+      qj = msntoindex(ms,n);
+      pj = msntop(ms,n);
+      if (pj==taskid_j)
+      {
+         indx = 2*npack(1)*qj;
+         cc_pack_copy(1,&(psi[indx]),tmp2);
+         c_unpack(1,tmp2);
+      }
+      c_write(iunit,tmp2,pj);
+   }
+
+   delete [] tmp2;
+}
+
+
+
 double Pneb::gg_traceall(double *psi1, double *psi2)
 {
    int n,indx;

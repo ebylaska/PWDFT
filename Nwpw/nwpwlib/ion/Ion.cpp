@@ -253,3 +253,27 @@ Ion::Ion(string rtdbstring)
    std::cout << "ATOMARRAY=" << atomarray << std::endl;
 */
 }
+
+
+/*******************************
+ *                             *
+ *      Ion::writejsonstr      *
+ *                             *
+ *******************************/
+
+void Ion::writejsonstr(string& rtdbstring) 
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+
+   string geomname = "geometry";
+   if (rtdbjson["geometry"].is_string())
+      geomname = rtdbjson["geometry"];
+
+   vector<double> coords;
+   for (auto i=0; i<(3*nion); ++i)
+      coords.push_back(rion1[i]);
+
+   rtdbjson["geometries"][geomname]["coords"] = coords;
+
+   rtdbstring = rtdbjson.dump();
+}

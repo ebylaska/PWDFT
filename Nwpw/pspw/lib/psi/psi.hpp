@@ -9,5 +9,6 @@
 
 extern void psi_get_header(Parallel *, int *, int *, double *, int *, int *);
 extern void psi_read(Pneb *, int *, int *, double *, int *, int *,double *);
+extern void psi_write(Pneb *, int *, int *, double *, int *, int *,double *);
 
 #endif

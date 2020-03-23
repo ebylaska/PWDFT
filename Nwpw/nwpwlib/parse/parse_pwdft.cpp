@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <iomanip>
@@ -601,15 +602,42 @@ json parse_rtdbjson(json rtdb)
 
 std::string parse_nwinput(std::string nwinput)
 {
-   // intialize the rtdb structure
-   json rtdb;
-   json nwpw,geometries;
-   rtdb["nwpw"]     = nwpw;
-   rtdb["geometries"] = geometries;
+   // fetch the permanent_dir and scratch_dir
+   string permanent_dir = ".";
+   string scratch_dir   =  ".";
+   if (mystring_contains(mystring_lowercase(nwinput),"permanent_dir"))
+      permanent_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[1],"\n")[0]));
+   if (mystring_contains(mystring_lowercase(nwinput),"scratch_dir"))
+      scratch_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[1],"\n")[0]));
 
    // fetch the dbname
-   string dbname  = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);
+   string dbname = "nwchemex";
+   if (mystring_contains(mystring_lowercase(nwinput),"start"))
+      dbname  = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);
+
+   json rtdb;
+   if (mystring_contains(mystring_lowercase(nwinput),"restart"))
+   {
+      // read a JSON file
+      string dbname0 = permanent_dir + "/" + dbname + ".json";
+      std::ifstream ifile(dbname0);
+      ifile >> rtdb;
+   }
+   else
+   {
+      // intialize the rtdb structure
+      json nwpw,geometries;
+      rtdb["nwpw"]     = nwpw;
+      rtdb["geometries"] = geometries;
+   }
+
+   // set the dbname
    rtdb["dbname"] = dbname;
+
+   // set the permanent_dir and scratch_dir
+   rtdb["permanent_dir"] = permanent_dir;
+   rtdb["scratch_dir"]   = scratch_dir;
+
 
    // split nwinput into lines
    vector<string> lines = mystring_split(nwinput,"\n");
@@ -671,5 +699,21 @@ int parse_task(std::string rtdbstring)
    }
 
    return task;
+}
+
+/**************************************************
+ *                                                *
+ *                 parse_write                    *
+ *                                                *
+ **************************************************/
+
+void parse_write(std::string rtdbstring)
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+   std::string pdir = rtdbjson["permanent_dir"];
+   std::string dbname0 = rtdbjson["dbname"];
+   std::cout << "filename = " <<  pdir + "/" + dbname0 + ".json" << std::endl;
+   std::ofstream ofile(pdir + "/" + dbname0 + ".json");
+   ofile << std::setw(4) << rtdbjson << std::endl;
 }
 

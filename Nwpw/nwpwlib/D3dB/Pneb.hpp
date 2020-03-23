@@ -40,6 +40,7 @@ public:
         }
 
         void g_read(const int, double *);
+        void g_write(const int, double *);
 
 
 

@@ -16,6 +16,28 @@ inline int mystring_contains(const string s, const string a)
    return (s.find(a) != std::string::npos) ;
 }
 
+const string WHITESPACE = " \n\r\t\f\v";
+const string WHITESPACE2 = "/ \n\r\t\f\v";
+
+inline string mystring_ltrim(const string& s)
+{
+	size_t start = s.find_first_not_of(WHITESPACE);
+	return (start == string::npos) ? "" : s.substr(start);
+}
+
+inline string mystring_rtrim(const string& s)
+{
+	size_t end = s.find_last_not_of(WHITESPACE);
+	return (end == string::npos) ? "" : s.substr(0, end + 1);
+}
+
+inline string mystring_rtrim_slash(const string& s)
+{
+	size_t end = s.find_last_not_of(WHITESPACE2);
+	return (end == string::npos) ? "" : s.substr(0, end + 1);
+}
+
+
 inline string mystring_trim(const string& str)
 {
     size_t first = str.find_first_not_of(' ');

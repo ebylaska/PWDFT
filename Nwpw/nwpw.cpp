@@ -121,6 +121,8 @@ int main(int argc, char* argv[])
   //ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
 
 
+  if (taskid==MASTER) parse_write(rtdbstr);
+
   // Finalize MPI
   ierr += MPI_Finalize();
 
