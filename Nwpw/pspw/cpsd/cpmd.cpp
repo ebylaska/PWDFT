@@ -18,7 +18,7 @@ using namespace std;
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
 #include	"Pseudopotential.hpp"
-#include	"inner_loop.hpp"
+#include	"inner_loop_md.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
 #include	"mpi.h"
@@ -27,7 +27,7 @@ using namespace std;
 using json = nlohmann::json;
 
 
-int cpsd(MPI_Comm comm_world0, string& rtdbstring)
+int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -54,10 +54,11 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "          *     Car-Parrinello calculation for molecules,     *\n";
       cout << "          *       microclusters, liquids, and materials       *\n";
       cout << "          *                                                   *\n";
-      cout << "          *     [     steepest descent minimization   ]       *\n";
+      cout << "          *     [     extended Lagrangian molecular   ]       *\n";
+      cout << "          *     [        dynamics simulation          ]       *\n";
       cout << "          *     [          C++ implementation         ]       *\n";
       cout << "          *                                                   *\n";
-      cout << "          *            version #7.00   09/20/18               *\n";
+      cout << "          *            version #7.00   03/20/20               *\n";
       cout << "          *                                                   *\n";
       cout << "          *    This code was developed by Eric J. Bylaska     *\n";
       cout << "          *                                                   *\n";
@@ -244,7 +245,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    while (!done)
    {
       ++icount;
-      inner_loop(&mygrid,&myion,
+      inner_loop_md(&mygrid,&myion,
                  &mykin,&mycoulomb,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,

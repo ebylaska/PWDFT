@@ -1,4 +1,29 @@
-// A simple program that computes the square root of a number
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                //
+//                              NWChemEx PWDFT NWPW  (MPI code)                                   //
+//                                                                                                //
+//    This is a developing PW DFT parallel code for NWChemEX. This code uses pseudopotentials     //
+// and plane-wave basis sets to perform Density Functional Theory calculations.  A significant    //
+// advantage of this code is its ability to simulate dynamics on a ground state potential surface //
+// directly at run-time using the Car-Parrinello algorithm. This method's efficiency and accuracy //
+// make it a desirable first principles method of simulation in the study of complex molecular,   //
+// liquid, and solid state systems. Applications for this first principles method include the     //
+// calculation of free energies, search for global minima, explicit simulation of solvated        //
+// molecules, and simulations of complex vibrational modes that cannot be described within the    //
+// harmonic approximation.                                                                        //
+//                                                                                                //
+// The code is a collection of two methods.                                                       //
+//                                                                                                //
+// PSPW - (PSeudopotential Plane-Wave) A gamma point code for calculating molecules, liquids,     //
+//        crystals, and surfaces.                                                                 //
+// Band - A band structure code for calculating crystals and surfaces with small band gaps (e.g.  //
+//        semi-conductors and metals).                                                            //
+//                                                                                                //
+// The PSPW and Band  methdods can be used to compute the energy and optimize the geometry. Both  //
+// the methods can also be used to find saddle points, and compute numerical second derivatives.  //
+//                                                                                                //
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
 //#include <cstdlib>
@@ -14,10 +39,10 @@
 #include "util_date.hpp"
 #include "parse_pwdft.hpp"
 
+#include "nwpw.hpp"
+
 using namespace std;
 
-//extern int cpsd(int argc, char *argv[]);
-extern int cpsd(MPI_Comm, string&);
 
 int main(int argc, char* argv[])
 {
@@ -110,6 +135,7 @@ int main(int argc, char* argv[])
   while (task>0)
   {
      if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
+     if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr);
     
      rtdbstr = parse_rtdbstring(rtdbstr);
      task    = parse_task(rtdbstr);
