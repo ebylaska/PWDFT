@@ -25,11 +25,13 @@ class	Pseudopotential {
    Strfac *mystrfac;
 
 public:
+   bool *semicore;
    int npsp;
-   int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type,*semicore;
+   int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
    int **n_projector,**l_projector,**m_projector,**b_projector;
    double **rc;
-   double *zv,*rcore;
+   double *zv,*rcore,*ncore_sum;
+   double *semicore_density;
    char **comment;
 
    /* Constructors */
@@ -68,13 +70,17 @@ public:
       delete [] m_projector;
       delete [] semicore;
       delete [] rcore;
+      delete [] ncore_sum;
    //   delete [] vl;
    //   delete [] vnl;
    //   delete [] rlocal;
       delete [] rc;
+      mypneb->r_dealloc(semicore_density);
     }
 
-    double ncore(const int ia) {return 0.0;}
+    bool has_semicore() { return semicore[npsp]; }
+    double ncore(const int ia) {return ncore_sum[ia];}
+    void semicore_density_update();
 
     void v_nonlocal(double *, double *);
     void v_nonlocal_fion(double *, double *, const bool, double *);

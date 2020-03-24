@@ -7,7 +7,6 @@
 #include        <iostream>
 #include        <cstdio>
 #include        <stdio.h>
-#include        <cmath>
 #include        <cstdlib>
 using namespace std;
 */
@@ -18,6 +17,7 @@ using namespace std;
 #include	"util.hpp"
 #include	"fft.h"
 #include	"blas.h"
+#include        <cmath>
 
 #include	"d3db.hpp"
 
@@ -593,12 +593,37 @@ void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
    return;
 }
 
+/********************************
+ *                              *
+ *        d3db::rrr_SMulAdd     *
+ *                              *
+ ********************************/
+void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = da*ptr1[i] + ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   = da*ptr1[i]   + ptr2[i];
+      ptr3[i+1] = da*ptr1[i+1] + ptr2[i];
+      ptr3[i+2] = da*ptr1[i+2] + ptr2[i];
+      ptr3[i+3] = da*ptr1[i+3] + ptr2[i];
+      ptr3[i+4] = da*ptr1[i+4] + ptr2[i];
+   }
+   return;
+}
+
 
 
 
 /********************************
  *                              *
- *         d3db::r_SMul        *
+ *          d3db::r_SMul        *
  *                              *
  ********************************/
 void d3db::r_SMul(const double da, double *ptr2)
@@ -620,6 +645,57 @@ void d3db::r_SMul(const double da, double *ptr2)
    }
    return;
 }
+
+/********************************
+ *                              *
+ *          d3db::r_abs         *
+ *                              *
+ ********************************/
+void d3db::r_abs(double *ptr2)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] = std::abs(ptr2[i]);
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr2[i]   = std::abs(ptr2[i]);
+      ptr2[i+1] = std::abs(ptr2[i+1]);
+      ptr2[i+2] = std::abs(ptr2[i+2]);
+      ptr2[i+3] = std::abs(ptr2[i+3]);
+      ptr2[i+4] = std::abs(ptr2[i+4]);
+   }
+   return;
+}
+
+/********************************
+ *                              *
+ *          d3db::r_sqr         *
+ *                              *
+ ********************************/
+void d3db::r_sqr(double *ptr2)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] *= ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr2[i]   *= ptr2[i];
+      ptr2[i+1] *= ptr2[i+1];
+      ptr2[i+2] *= ptr2[i+2];
+      ptr2[i+3] *= ptr2[i+3];
+      ptr2[i+4] *= ptr2[i+4];
+   }      
+   return;
+}
+
 
 /********************************
  *                              *
@@ -672,6 +748,30 @@ void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
    return;
 }
 
+/********************************
+ *                              *
+ *         d3db::rr_Sum         *
+ *                              *
+ ********************************/
+void d3db::rr_Sum(const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] += ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   += ptr2[i];
+      ptr3[i+1] += ptr2[i+1];
+      ptr3[i+2] += ptr2[i+2]; 
+      ptr3[i+3] += ptr2[i+3];
+      ptr3[i+4] += ptr2[i+4];
+   }
+   return;
+}
 
 
 

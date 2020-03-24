@@ -33,7 +33,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
    double eke,elocal,enlocal,dt,dte,Eold;
-   double *vl,*vc,*xcp,*xce,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
    bool move = control_geometry_optimize();
 
@@ -51,10 +51,11 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    it_in = control_loop(0);
 
    /* allocate temporary memory */
-   rho = mygrid->r_alloc();
-   tmp = mygrid->r_alloc();
-   xcp = mygrid->r_nalloc(ispin);
-   xce = mygrid->r_nalloc(ispin);
+   rho   = mygrid->r_alloc();
+   tmp   = mygrid->r_alloc();
+   xcp   = mygrid->r_nalloc(ispin);
+   xce   = mygrid->r_nalloc(ispin);
+   dnall = mygrid->r_nalloc(ispin);
    x   = mygrid->r_alloc();
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
@@ -104,6 +105,19 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
 
+      /* generate dnall - used for semicore corrections */
+      if (mypsp->has_semicore())
+      {
+         if ((move)||(it==0)) mypsp->semicore_density_update();
+         for (ms=0; ms<ispin; ++ms)
+            mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
+      }
+      else
+      {
+          for (ms=0; ms<ispin; ++ms)
+             mygrid->rr_copy(&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
+      }
+
       /* generate local potential */
       if (move) mypsp->v_local(vl,move,dng,fion);
 
@@ -115,7 +129,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       mycoulomb->vcoulomb(dng,vc);
 
       /* generate exchange-correlation potential */
-      v_exc(ispin,shift2,dn,xcp,xce,x);
+      v_exc(ispin,shift2,dnall,xcp,xce,x);
 
       /* apply r-space operators */
      mygrid->cc_SMul(0,scal2,vl,vall);
@@ -160,7 +174,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    if (ispin==1) eorbit = eorbit+eorbit;
 
    ehartr  = mycoulomb->ecoulomb(dng);
-   exc     = mygrid->rr_dot(dn,xce);
+   exc     = mygrid->rr_dot(dnall,xce);
    pxc     = mygrid->rr_dot(dn,xcp);
    if (ispin==1)
    {
@@ -169,7 +183,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    }
    else
    {
-      exc += mygrid->rr_dot(&dn[n2ft3d],xce);
+      exc += mygrid->rr_dot(&dnall[n2ft3d],xce);
       pxc += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
    }
    exc *= dv;
@@ -231,6 +245,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);
    mygrid->r_dealloc(xce);
+   mygrid->r_dealloc(dnall);
    mygrid->r_dealloc(x);
    mygrid->r_dealloc(vall);
    mygrid->r_dealloc(rho);

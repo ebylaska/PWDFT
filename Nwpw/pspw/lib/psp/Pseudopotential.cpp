@@ -79,7 +79,7 @@ static void psp_read(PGrid *mygrid,
                      int **m_projector,
                      int **b_projector,
                      double **Gijl,
-                     int *semicore,
+                     bool   *semicore,
                      double *rcore,
                      double **ncore,
                      double *vl,
@@ -159,9 +159,9 @@ static void psp_read(PGrid *mygrid,
    if (parall->is_master()) dread(5,rcore,1);
    parall->Brdcst_Values(0,0,1,rcore);
    if (*rcore > 0.0)
-      *semicore = 1;
+      *semicore = true;
    else
-      *semicore = 0;
+      *semicore = false;
 
 
    /* readin vl 3d block */
@@ -210,6 +210,35 @@ static void psp_read(PGrid *mygrid,
    if (parall->is_master()) closefile(5);
 }
   
+static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double *ncore)
+{
+   double sum = 0.0;
+   if (semicore)
+   {
+      double scal1 = 1.0/((double) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
+      double scal2 = 1.0/lattice_omega();
+      double dv    = lattice_omega()*scal1;
+      double *tmp  = mygrid->r_alloc();
+
+      /* put sqrt(core-density) at atom position */
+      mygrid->cc_pack_copy(0,ncore,tmp);
+      mygrid->c_SMul(0,scal2,tmp);
+        
+
+      /* Put put tmp into real space */
+      mygrid->c_unpack(0,tmp);
+      mygrid->cr_fft3d(tmp);
+
+      /*  square it  */
+      mygrid->r_sqr(tmp);
+
+      /*  integrate it */
+      sum = mygrid->r_dsum(tmp) * dv;
+
+      mygrid->r_dealloc(tmp);
+   }
+   return sum;
+}
 
 /* Constructors */
 
@@ -239,7 +268,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    locp     = new int[npsp];
    nmax     = new int[npsp];
    nprj     = new int[npsp];
-   semicore = new int[npsp];
+   semicore = new bool[npsp+1];
 
    n_projector = new int* [npsp];
    l_projector = new int* [npsp];
@@ -249,6 +278,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    zv          = new double[npsp];
    amass       = new double[npsp];
    rcore       = new double[npsp];
+   ncore_sum   = new double[npsp];
    rc          = new double* [npsp];
    vl          = new double* [npsp];
    for (ia=0; ia<npsp; ++ia) 
@@ -256,10 +286,12 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    Gijl        = new double* [npsp];
    vnl         = new double* [npsp];
    ncore_atom  = new double* [npsp];
+   semicore_density = mypneb->r_alloc();
    
    comment  = new  char* [npsp];
    for (ia=0; ia<npsp; ++ia) comment[ia] = new char[80];
 
+   semicore[npsp] = false;
    for (ia=0; ia<npsp; ++ia)
    {
       strcpy(fname,myion->atom(ia));
@@ -280,7 +312,11 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       vnl[ia]         = vnl_ptr;
       if (nprj[ia]>nprj_max) nprj_max = nprj[ia];
       if (semicore[ia])
-         ncore_atom[ia]  = ncore_ptr;
+      {
+         ncore_atom[ia] = ncore_ptr;
+         ncore_sum[ia]  = 0.0;
+         semicore[npsp] = true;
+      }
    }
 
 }
@@ -563,6 +599,41 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
        delete [] Gy;
        delete [] Gz;
    }
+}
 
-   
+
+/********************************************
+ *                                          *
+ * Pseudopotential::semicore_density_update *
+ *                                          *
+ ********************************************/
+
+void Pseudopotential::semicore_density_update()
+{
+   int ii,ia;
+   double scal2 = 1.0/lattice_omega();
+   double *exi = mypneb->c_pack_allocate(0);
+   double *tmp = mypneb->r_alloc();
+
+   mypneb->r_zero(semicore_density);
+   for (ii=0; ii<(myion->nion); ++ii)
+   {
+      ia = myion->katm[ii];
+      mystrfac->strfac_pack(0,ii,exi);
+      mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
+      mypneb->c_unpack(0,tmp);
+
+      /* Put put tmp into real space */
+      mypneb->c_unpack(0,tmp);
+      mypneb->cr_fft3d(tmp);
+
+      /*  square it  */
+      mypneb->r_sqr(tmp);
+      mypneb->rr_Sum(tmp,semicore_density);
+    
+   }
+   mypneb->r_SMul(scal2*scal2,semicore_density);
+
+   mypneb->r_dealloc(tmp);
+   mypneb->c_pack_deallocate(exi);
 }

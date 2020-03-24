@@ -44,11 +44,14 @@ public:
         void     tt_copy(const double *,double *);
         void     rr_SMul(const double, const double *, double *);
         void	 r_SMul(const double, double *);
+        void     rrr_SMulAdd(const double, const double *, const double *, double *);
         double	 r_dsum(const double *);
         double	 rr_dot(const double *, const double *);
         void  	 r_zero_ends(double *);
         void  	 r_abs(double *);
+        void     r_sqr(double *);
         void  	 rrr_Sum(const double *, const double *, double *);
+        void  	 rr_Sum(const double *, double *);
         void  	 rrr_Mul(const double *, const double *, double *);
         void  	 rrr_Minus(const double *, const double *, double *);
         void  	 rrr_Divide(const double *, const double *, double *);
