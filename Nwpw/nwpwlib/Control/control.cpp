@@ -20,6 +20,7 @@ static Int64 symm_number;
 static Int64 qsize;
 static bool  geometry_optimize;
 
+static char permanent_dir[80];
 static char input_movecs_filename[80];
 static char output_movecs_filename[80];
 
@@ -140,7 +141,6 @@ void control_read(const int np0, const string rtdbstring)
    char date[99];
    int np = np0;
 
-
    /* get parallel mappings */
    mapping = 1;
    if (rtdbjson["nwpw"]["mapping"].is_number_integer()) mapping = rtdbjson["nwpw"]["mapping"];
@@ -185,6 +185,16 @@ void control_read(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"].is_boolean()) 
       geometry_optimize = rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
 
+
+   string permanent_dir_str = ".";
+   string scratch_dir_str   = ".";
+   if (rtdbjson["permanent_dir"].is_string()) 
+      permanent_dir_str = rtdbjson["permanent_dir"];
+
+   if (rtdbjson["scratch_dir"].is_string()) 
+      scratch_dir_str = rtdbjson["scratch_dir"];
+
+
    string input_movecs  = "eric.movecs";  
    string output_movecs = "eric.movecs";  
    if (rtdbjson["dbname"].is_string()) 
@@ -197,9 +207,12 @@ void control_read(const int np0, const string rtdbstring)
       input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) 
       output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
+   input_movecs  = permanent_dir_str + "/" + input_movecs;
+   output_movecs = permanent_dir_str + "/" + output_movecs;
 
    strcpy(input_movecs_filename,const_cast<char*>(input_movecs.data()));
    strcpy(output_movecs_filename,const_cast<char*>(output_movecs.data()));
+   strcpy(permanent_dir,const_cast<char*>(permanent_dir_str.data()));
 
 
    fake_mass = 400000.0;
@@ -291,3 +304,4 @@ double control_tolerances(const int i) { return tolerances[i];}
 
 char   *control_input_movecs_filename() { return input_movecs_filename; }
 char   *control_output_movecs_filename() { return output_movecs_filename; }
+char   *control_permanent_dir() { return permanent_dir;}

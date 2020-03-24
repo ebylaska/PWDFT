@@ -15,6 +15,7 @@ using namespace std;
 #include	<string.h>
 #include        <cmath>
 
+#include	"control.hpp"
 #include	"lattice.hpp"
 #include	"compressed_io.hpp"
 #include	"blas.h"
@@ -294,7 +295,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    semicore[npsp] = false;
    for (ia=0; ia<npsp; ++ia)
    {
-      strcpy(fname,myion->atom(ia));
+      strcpy(fname,control_permanent_dir());
+      strcat(fname,"/");
+      strcat(fname,myion->atom(ia));
       strcat(fname,".vpp");
       psp_read(mypneb,
                fname,

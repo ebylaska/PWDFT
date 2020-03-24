@@ -333,11 +333,13 @@ static json parse_steepest_descent(json sdjson, int *curptr, vector<string> line
          if (ss.size()==2) sdjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
          if (ss.size()>2)  sdjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
       }
-
-/*
       else if (mystring_contains(line,"tolerances"))
-*/
-
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) sdjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[1]),1.0e-4};
+         if (ss.size()==3) sdjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),1.0e-4};
+         if (ss.size()>3)  sdjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),std::stod(ss[3])};
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))
@@ -378,36 +380,107 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
       {
          cpmdjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
       }
+      else if (mystring_contains(line,"input_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["input_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"output_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["output_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"input_v_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["input_v_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"output_v_wavefunction_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["output_v_wavefunction_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"time_step"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["time_step"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"fake_mass"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["fake_mass"] = std::stod(ss[1]);
+      }
       else if (mystring_contains(line,"cutoff"))
       {
          ss = mystring_split0(line);
          if (ss.size()==2) cpmdjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
          if (ss.size()>2)  cpmdjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
       }
+      else if (mystring_contains(line,"scaling"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) cpmdjson["scaling"] = {std::stod(ss[1]),std::stod(ss[1])};
+         if (ss.size()>2)  cpmdjson["scaling"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
+      else if (mystring_contains(line,"sa_decay"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) cpmdjson["sa_decay"] = {std::stod(ss[1]),std::stod(ss[1])};
+         if (ss.size()>2)  cpmdjson["sa_decay"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
+      else if (mystring_contains(line,"xyz_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["xyz_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"emotion_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["emotion_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"ion_motion_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["ion_motion_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"eigmotion_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["eigmotion_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"omotion_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["omotion_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"hmotion_filename"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["hmotion_filename"] = ss[1];
+      }
+      else if (mystring_contains(line,"fei"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["fei"] = ss[1];
+      }
+      else if (mystring_contains(line,"dipole_motion"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) cpmdjson["dipole_motion"] = ss[1];
+      }
+
+
+
 
 /*
-      else if (mystring_contains(line,"input_wavefunction_filename"))
-      else if (mystring_contains(line,"input_v_wavefunction_filename"))
-      else if (mystring_contains(line,"output_wavefunction_filename"))
-      else if (mystring_contains(line,"output_v_wavefunction_filename"))
-      else if (mystring_contains(line,"scaling"))
-      else if (mystring_contains(line,"time_step"))
       else if (mystring_contains(line,"xc"))
       else if (mystring_contains(line,"tolerances"))
       else if (mystring_contains(line,"geometry_optimize"))
       else if (mystring_contains(line,"energy"))
       else if (mystring_contains(line,"temperature"))
       else if (mystring_contains(line,"initial_velocities"))
-      else if (mystring_contains(line,"xyz_filename"))
-      else if (mystring_contains(line,"emotion_filename"))
-      else if (mystring_contains(line,"ion_motion_filename"))
-      else if (mystring_contains(line,"eigmotion_filename"))
-      else if (mystring_contains(line,"omotion_filename"))
-      else if (mystring_contains(line,"hmotion_filename"))
-      else if (mystring_contains(line,"fei"))
       else if (mystring_contains(line,"fei_quench"))
       else if (mystring_contains(line,"sa_decay"))
-      else if (mystring_contains(line,"dipole_motion"))
 */
 
 
@@ -477,7 +550,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
             nwpwjson["car-parrinello"] = car_parrinello;
          }
          *curptr = cur;
-         nwpwjson["car-parrinello"] = parse_car_parrinello(nwpwjson["car_parrinello"],curptr,lines);
+         nwpwjson["car-parrinello"] = parse_car_parrinello(nwpwjson["car-parrinello"],curptr,lines);
          cur = *curptr;
       }
       else if (mystring_contains(line,"nobalance"))
