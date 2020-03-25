@@ -295,10 +295,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    semicore[npsp] = false;
    for (ia=0; ia<npsp; ++ia)
    {
-      strcpy(fname,control_permanent_dir());
-      strcat(fname,"/");
-      strcat(fname,myion->atom(ia));
+      strcpy(fname,myion->atom(ia));
       strcat(fname,".vpp");
+      control_add_permanent_dir(fname);
       psp_read(mypneb,
                fname,
                comment[ia],&psp_type[ia],&version,nfft,unita,aname,

@@ -677,11 +677,17 @@ std::string parse_nwinput(std::string nwinput)
 {
    // fetch the permanent_dir and scratch_dir
    string permanent_dir = ".";
-   string scratch_dir   =  ".";
+   string scratch_dir   = ".";
    if (mystring_contains(mystring_lowercase(nwinput),"permanent_dir"))
-      permanent_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[1],"\n")[0]));
+   {
+      if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[0],"\n").back()),"#"))
+         permanent_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[1],"\n")[0]));
+   }
    if (mystring_contains(mystring_lowercase(nwinput),"scratch_dir"))
-      scratch_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[1],"\n")[0]));
+   {
+      if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[0],"\n").back()),"#"))
+         scratch_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[1],"\n")[0]));
+   }
 
    // fetch the dbname
    string dbname = "nwchemex";

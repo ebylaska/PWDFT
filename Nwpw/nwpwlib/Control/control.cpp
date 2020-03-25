@@ -186,8 +186,8 @@ void control_read(const int np0, const string rtdbstring)
       geometry_optimize = rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
 
 
-   string permanent_dir_str = ".";
-   string scratch_dir_str   = ".";
+   string permanent_dir_str = "";
+   string scratch_dir_str   = "";
    if (rtdbjson["permanent_dir"].is_string()) 
       permanent_dir_str = rtdbjson["permanent_dir"];
 
@@ -207,8 +207,12 @@ void control_read(const int np0, const string rtdbstring)
       input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) 
       output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
-   input_movecs  = permanent_dir_str + "/" + input_movecs;
-   output_movecs = permanent_dir_str + "/" + output_movecs;
+ 
+   if (permanent_dir_str.size()>0)
+   { 
+      if (input_movecs[0]!='/')  input_movecs  = permanent_dir_str + "/" + input_movecs;
+      if (output_movecs[0]!='/') output_movecs = permanent_dir_str + "/" + output_movecs;
+   }
 
    strcpy(input_movecs_filename,const_cast<char*>(input_movecs.data()));
    strcpy(output_movecs_filename,const_cast<char*>(output_movecs.data()));
@@ -305,3 +309,16 @@ double control_tolerances(const int i) { return tolerances[i];}
 char   *control_input_movecs_filename() { return input_movecs_filename; }
 char   *control_output_movecs_filename() { return output_movecs_filename; }
 char   *control_permanent_dir() { return permanent_dir;}
+
+void control_add_permanent_dir(char fname[])
+{
+   char stmp[80]; 
+
+   if (strlen(permanent_dir)>0)
+   {
+      strcpy(stmp,fname);
+      strcpy(fname,permanent_dir);
+      strcat(fname,"/");
+      strcat(fname,stmp);
+   }
+}
