@@ -13,5 +13,6 @@ extern void dwrite(const int, const double *, const int);
 extern void dread(const int, double *, const int);
 extern void openfile(const int, const char *, const char *);
 extern void closefile(const int);
+extern int  cfileexists(const char *);
 
 #endif

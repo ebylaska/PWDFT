@@ -38,6 +38,20 @@ using namespace std;
 #include "Int64.h"
 
 
+/*
+ * Check if a file exist using stat() function
+ * return 1 if the file exist otherwise return 0
+ */
+#include <sys/stat.h>
+int cfileexists(const char* filename){
+    struct stat buffer;
+    int exist = stat(filename,&buffer);
+    if(exist == 0)
+        return 1;
+    else // -1
+        return 0;
+}
+
 
 #define MAX_UNIT	10
 
@@ -123,3 +137,4 @@ void closefile(const int unit)
 {
    (void) fclose(fd[unit]);
 }
+
