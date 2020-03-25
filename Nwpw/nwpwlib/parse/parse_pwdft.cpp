@@ -791,7 +791,7 @@ void parse_write(std::string rtdbstring)
    auto rtdbjson =  json::parse(rtdbstring);
    std::string pdir = rtdbjson["permanent_dir"];
    std::string dbname0 = rtdbjson["dbname"];
-   std::cout << "filename = " <<  pdir + "/" + dbname0 + ".json" << std::endl;
+   std::cout << "writing rtdbjson = " <<  pdir + "/" + dbname0 + ".json" << std::endl;
    std::ofstream ofile(pdir + "/" + dbname0 + ".json");
    ofile << std::setw(4) << rtdbjson << std::endl;
 }

@@ -28,6 +28,8 @@ enable_language(Fortran)
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
+#Configure OpenMP
+find_package(OpenMP)
 
 #Configure MPI
 find_package(MPI REQUIRED)
@@ -48,7 +50,11 @@ target_include_directories(pwdft PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
 
-target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
+if(OpenMP_CXX_FOUND)
+   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} OpenMP::OpenMP_CXX)
+else(NOT OpenMP_CXX_FOUND)
+   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
+endif()
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(pwdft PROPERTIES
