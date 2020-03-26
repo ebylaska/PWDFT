@@ -39,7 +39,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double sum1,sum2,ev;
    double cpu1,cpu2,cpu3,cpu4;
    double E[50],deltae,deltac,deltar,viral,unita[9];
-   double *psi1,*psi2,*Hpsi,*psi_r;
+   double *psi0,*psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
 
@@ -75,7 +75,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne);
    Pneb mygrid(&myparallel,ispin,ne);
 
-   /* initialize psi1 and psi2 */
+   /* initialize psi0, psi1, and psi2 */
+   psi0  = mygrid.g_allocate(1);
    psi1  = mygrid.g_allocate(1);
    psi2  = mygrid.g_allocate(1);
    Hpsi  = mygrid.g_allocate(1);
@@ -85,6 +86,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
 
+   /* read wavefunction */
    psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2);
 
    /* ortho check */
@@ -96,6 +98,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       if (myparallel.is_master())
          printf("Warning: Gram-Schmidt Being performed on psi2\n");
    }
+
+   /* read wavefunction velocities */
+   mygrid.g_zero(psi0);
 
 
 
@@ -131,7 +136,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    {
       cout << "\n\n";
       cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename: " << control_input_movecs_filename() << "\n";
+      cout << "\n input psi filename:  " << control_input_movecs_filename() << "\n";
+      cout << " input vpsi filename: " << control_input_v_movecs_filename() << "\n";
       cout << "\n";
       cout << " number of processors used: " << myparallel.np() << "\n";
       cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
@@ -330,12 +336,16 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
-      cout << "\n output psi filename: " << control_output_movecs_filename() << "\n";
+      cout << "\n output psi filename:  " << control_output_movecs_filename() << "\n";
+      cout << " output vpsi filename: " << control_output_v_movecs_filename() << "\n";
    }
 
+   /* write wavefunction and velocity wavefunction */
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1);
+   v_psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0);
 
    /* deallocate memory */
+   mygrid.g_deallocate(psi0);
    mygrid.g_deallocate(psi1);
    mygrid.g_deallocate(psi2);
    mygrid.g_deallocate(Hpsi);

@@ -84,6 +84,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
          myewald->phafac();
       }
 
+      /* convert psi(G) to psi(r) - Expensive */
       indx1 = 0;
       indx2 = 0;
       for (i=0; i<neall; ++i) 
@@ -123,6 +124,8 @@ void inner_loop(Pneb *mygrid, Ion *myion,
 
       /* apply k-space operators */
       myke->ke(psi1,Hpsi);
+
+      /* apply non-local PSP  - Expensive */
       mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
@@ -131,7 +134,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
       /* generate exchange-correlation potential */
       v_exc(ispin,shift2,dnall,xcp,xce,x);
 
-      /* apply r-space operators */
+     /* apply r-space operators  - Expensive*/
      mygrid->cc_SMul(0,scal2,vl,vall);
      mygrid->cc_Sum2(0,vc,vall);
      mygrid->c_unpack(0,vall);
@@ -163,7 +166,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
         myion->optimize_step(fion);
      }
 
-     /* lagrange multiplier */
+     /* lagrange multiplier - Expensive */
      mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
    }
 

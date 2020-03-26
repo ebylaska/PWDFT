@@ -23,6 +23,9 @@ static bool  geometry_optimize;
 static char permanent_dir[80];
 static char input_movecs_filename[80];
 static char output_movecs_filename[80];
+static char input_v_movecs_filename[80];
+static char output_v_movecs_filename[80];
+
 
 
 
@@ -197,25 +200,50 @@ void control_read(const int np0, const string rtdbstring)
 
    string input_movecs  = "eric.movecs";  
    string output_movecs = "eric.movecs";  
+   string input_v_movecs  = "eric.vmovecs";  
+   string output_v_movecs = "eric.vmovecs";  
    if (rtdbjson["dbname"].is_string()) 
    {
        string dbname = rtdbjson["dbname"];
        input_movecs  = dbname + ".movecs";  
        output_movecs = dbname + ".movecs";  
+       input_v_movecs  = dbname + ".vmovecs";  
+       output_v_movecs = dbname + ".vmovecs";  
    }
+   // read from nwpw block
+   if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string()) 
+      input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string()) 
+      output_movecs = rtdbjson["nwpw"]["output_wavefunction_filename"];
+
+   // from steepest_descent block
    if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string()) 
       input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) 
       output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
+
+   // from car-parrinello block
+   if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"].is_string()) 
+      input_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"].is_string()) 
+      output_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"].is_string()) 
+      input_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"].is_string()) 
+      output_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
  
    if (permanent_dir_str.size()>0)
    { 
       if (input_movecs[0]!='/')  input_movecs  = permanent_dir_str + "/" + input_movecs;
       if (output_movecs[0]!='/') output_movecs = permanent_dir_str + "/" + output_movecs;
+      if (input_v_movecs[0]!='/')  input_v_movecs  = permanent_dir_str + "/" + input_v_movecs;
+      if (output_v_movecs[0]!='/') output_v_movecs = permanent_dir_str + "/" + output_v_movecs;
    }
 
    strcpy(input_movecs_filename,const_cast<char*>(input_movecs.data()));
    strcpy(output_movecs_filename,const_cast<char*>(output_movecs.data()));
+   strcpy(input_v_movecs_filename,const_cast<char*>(input_v_movecs.data()));
+   strcpy(output_v_movecs_filename,const_cast<char*>(output_v_movecs.data()));
    strcpy(permanent_dir,const_cast<char*>(permanent_dir_str.data()));
 
 
@@ -308,6 +336,8 @@ double control_tolerances(const int i) { return tolerances[i];}
 
 char   *control_input_movecs_filename() { return input_movecs_filename; }
 char   *control_output_movecs_filename() { return output_movecs_filename; }
+char   *control_input_v_movecs_filename() { return input_v_movecs_filename; }
+char   *control_output_v_movecs_filename() { return output_v_movecs_filename; }
 char   *control_permanent_dir() { return permanent_dir;}
 
 void control_add_permanent_dir(char fname[])

@@ -33,6 +33,9 @@ extern double control_tolerances(const int);
 
 extern char *control_input_movecs_filename();
 extern char *control_output_movecs_filename();
+extern char *control_input_v_movecs_filename();
+extern char *control_output_v_movecs_filename();
+extern char *control_permanent_dir();
 extern char *control_permanent_dir();
 extern void control_add_permanent_dir(char *);
 
