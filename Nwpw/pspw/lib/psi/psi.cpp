@@ -147,3 +147,17 @@ void v_psi_write(Pneb *mypneb,int *version, int nfft[],
    if (myparall->is_master()) closefile(6);
 }             
 
+bool v_psi_filefind(Pneb *mypneb)
+{
+   int ifound = 0;
+   Parallel *myparall = mypneb->d3db::parall;
+   
+   if (myparall->is_master())
+   {  
+      ifound = cfileexists(control_input_v_movecs_filename());
+   }
+
+   myparall->Brdcst_iValue(0,0,&ifound);
+
+   return (ifound>0);
+}

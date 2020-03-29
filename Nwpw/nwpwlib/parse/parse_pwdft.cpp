@@ -94,9 +94,21 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
       coords.push_back(std::stod(ss[1])*conv);
       coords.push_back(std::stod(ss[2])*conv);
       coords.push_back(std::stod(ss[3])*conv);
-      velocities.push_back(0.0);
-      velocities.push_back(0.0);
-      velocities.push_back(0.0);
+
+      double vx = 0.0;
+      double vy = 0.0;
+      double vz = 0.0;
+      if (ss.size()>6)
+      {
+         bool ffail = false;
+         try {vx = std::stod(ss[4])*conv;} catch(std::exception& ia) {vx = 0.0; ffail=true;}
+         try {vy = std::stod(ss[5])*conv;} catch(std::exception& ia) {vy = 0.0; ffail=true;}
+         try {vz = std::stod(ss[6])*conv;} catch(std::exception& ia) {vz = 0.0; ffail=true;}
+         if (ffail) { vx=0.0; vy=0.0; vz=0.0;}
+      }
+      velocities.push_back(vx);
+      velocities.push_back(vy);
+      velocities.push_back(vz);
 
       mm = periodic_table_mass[mystring_capitalize(ss[0])];
       if (mystring_contains(mystring_lowercase(line),"mass"))
@@ -468,6 +480,16 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
          ss = mystring_split0(line);
          if (ss.size()>1) cpmdjson["dipole_motion"] = ss[1];
       }
+      else if (mystring_contains(line,"intitial_velocities"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) 
+            cpmdjson["initial_velocities"] = {std::stod(ss[1]),12345};
+         else if (ss.size()>2) 
+            cpmdjson["initial_velocities"] = {std::stod(ss[1]),std::stoi(ss[2])};
+          else
+            cpmdjson["initial_velocities"] = {298.15,12345};
+      }
 
 
 
@@ -587,6 +609,16 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          ss = mystring_split0(line);
          if (ss.size()==2) nwpwjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
          if (ss.size()>2)  nwpwjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
+      else if (mystring_contains(line,"intitial_velocities"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) 
+            nwpwjson["initial_velocities"] = {std::stod(ss[1]),12345};
+         else if (ss.size()>2) 
+            nwpwjson["initial_velocities"] = {std::stod(ss[1]),std::stoi(ss[2])};
+          else
+            nwpwjson["initial_velocities"] = {298.15,12345};
       }
 
       ++cur;

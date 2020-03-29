@@ -10,7 +10,7 @@
 #include	"Strfac.hpp"
 #include        "Pseudopotential.hpp"
 
-extern void inner_loop_md(Pneb *, Ion *, 
+extern void inner_loop_md(bool, Pneb *, Ion *, 
                        Kinetic_Operator *, Coulomb_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
                        double *, double *, double *, double *,

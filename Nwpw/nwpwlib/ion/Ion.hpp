@@ -44,6 +44,44 @@ public:
     char *atom(const int ia)  { return &atomarray[3*ia]; }
     double amu(const int i) { return mass[i]/1822.89; }
     void writejsonstr(string&);
+    double rion(int i, int ii) { return rion1[3*ii+i];}
+    double vion(int i, int ii) { return rion0[3*ii+i];}
+    double gc(int i) 
+    { 
+       double ss = 0.0;
+       for (auto ii=0; ii<nion; ++ii) 
+          ss += rion1[3*ii+i];
+       return ss/((double) nion);
+    }
+    double vgc(int i) 
+    { 
+       double ss = 0.0;
+       for (auto ii=0; ii<nion; ++ii) 
+          ss += rion0[3*ii+i];
+       return ss/((double) nion);
+    }
+    double com(int i) 
+    {
+       double tmass = 0.0;
+       double ss    = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+       { 
+          tmass += mass[ii];
+          ss    += mass[ii]*rion1[3*ii+i];
+       }
+       return ss/tmass;
+    }
+    double vcom(int i) 
+    {
+       double tmass = 0.0;
+       double ss    = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+       { 
+          tmass += mass[ii];
+          ss    += mass[ii]*rion0[3*ii+i];
+       }
+       return ss/tmass;
+    }
 
     void optimize_step(const double *fion) 
     {

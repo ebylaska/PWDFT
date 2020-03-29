@@ -19,7 +19,7 @@ using namespace std;
 #include	"inner_loop_md.hpp"
 
 
-void inner_loop_md(Pneb *mygrid, Ion *myion, 
+void inner_loop_md(bool verlet, Pneb *mygrid, Ion *myion, 
                 Kinetic_Operator *myke, 
                 Coulomb_Operator *mycoulomb, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,

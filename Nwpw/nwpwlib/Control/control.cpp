@@ -11,7 +11,7 @@ static double bo_time_step;
 static Int64 bo_steps[2],bo_algorithm;
 static Int64 loop[2],ngrid[3],npsp,ncut,mapping,mapping1d;
 static Int64 np_dimensions[3],ewald_grid[3];
-static Int64 code,gga;
+static Int64 code,gga,task;
 static Int64 ispin,multiplicity;
 static Int64 move,frac_coord,SA,fei,fei_quench,gram_schmidt;
 static Int64 rotation,translation,balance,spin_orbit;
@@ -26,13 +26,11 @@ static char output_movecs_filename[80];
 static char input_v_movecs_filename[80];
 static char output_v_movecs_filename[80];
 
-
-
-
-
 #include	"json.hpp"
 #include	"rtdb.hpp"
 #include	"control.hpp"
+
+#include	"parsestring.hpp"
 
 using json = nlohmann::json;
 
@@ -143,6 +141,16 @@ void control_read(const int np0, const string rtdbstring)
    int matype,nelem;
    char date[99];
    int np = np0;
+   bool  is_cpmd;
+
+   task = 0;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"energy"))           task = 1;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"gradient"))         task = 2;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"optimize"))         task = 3;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"freq"))             task = 4;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) task = 5;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   task = 6;
+
 
    /* get parallel mappings */
    mapping = 1;
@@ -211,26 +219,19 @@ void control_read(const int np0, const string rtdbstring)
        output_v_movecs = dbname + ".vmovecs";  
    }
    // read from nwpw block
-   if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string()) 
-      input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
-   if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string()) 
-      output_movecs = rtdbjson["nwpw"]["output_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string())  input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["output_wavefunction_filename"];
 
-   // from steepest_descent block
-   if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string()) 
-      input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
-   if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) 
-      output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
 
    // from car-parrinello block
-   if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"].is_string()) 
-      input_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
-   if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"].is_string()) 
-      output_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
-   if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"].is_string()) 
-      input_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
-   if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"].is_string()) 
-      output_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"].is_string()) input_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"].is_string()) input_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"].is_string()) output_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
+
+   // from steepest_descent block
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string()) input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
  
    if (permanent_dir_str.size()>0)
    { 
@@ -249,31 +250,38 @@ void control_read(const int np0, const string rtdbstring)
 
    fake_mass = 400000.0;
    if (rtdbjson["nwpw"]["fake_mass"].is_number_float()) fake_mass = rtdbjson["nwpw"]["fake_mass"];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["fake_mass"].is_number_float()) fake_mass = rtdbjson["nwpw"]["steepest_descent"]["fake_mass"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["fake_mass"].is_number_float())   fake_mass = rtdbjson["nwpw"]["car-parrinello"]["fake_mass"];
+
 
    time_step = 5.8;
    if (rtdbjson["nwpw"]["time_step"].is_number_float())                     time_step = rtdbjson["nwpw"]["time_step"];
-   if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float()) time_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float()) time_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())   time_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
 
    loop[0]=10 ; loop[1]=100; 
    if (rtdbjson["nwpw"]["loop"][0].is_number_integer()) loop[0] = rtdbjson["nwpw"]["loop"][0];
    if (rtdbjson["nwpw"]["loop"][1].is_number_integer()) loop[1] = rtdbjson["nwpw"]["loop"][1];
-   if (rtdbjson["nwpw"]["steepest_descent"]["loop"][0].is_number_integer()) loop[0] = rtdbjson["nwpw"]["steepest_descent"]["loop"][0];
-   if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer()) loop[1] = rtdbjson["nwpw"]["steepest_descent"]["loop"][1];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][0].is_number_integer()) loop[0] = rtdbjson["nwpw"]["steepest_descent"]["loop"][0];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer()) loop[1] = rtdbjson["nwpw"]["steepest_descent"]["loop"][1];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][0].is_number_integer()) loop[0] = rtdbjson["nwpw"]["car-parrinello"]["loop"][0];
+   if (task==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][1].is_number_integer()) loop[1] = rtdbjson["nwpw"]["car-parrinello"]["loop"][1];
+
 
    tolerances[0] = 1.0e-9; tolerances[1] = 1.0e-9; tolerances[2] = 1.0e-4; 
    if (rtdbjson["nwpw"]["tolerances"][0].is_number_float()) tolerances[0] = rtdbjson["nwpw"]["tolerances"][0];
    if (rtdbjson["nwpw"]["tolerances"][1].is_number_float()) tolerances[1] = rtdbjson["nwpw"]["tolerances"][1];
    if (rtdbjson["nwpw"]["tolerances"][2].is_number_float()) tolerances[1] = rtdbjson["nwpw"]["tolerances"][2];
-   if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0].is_number_float()) tolerances[0] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0];
-   if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float()) tolerances[1] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1];
-   if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float()) tolerances[2] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0].is_number_float()) tolerances[0] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float()) tolerances[1] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float()) tolerances[2] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2];
 
    ecut=9000.0;
    wcut=9000.0;
    if (rtdbjson["nwpw"]["cutoff"][0].is_number_float()) wcut = rtdbjson["nwpw"]["cutoff"][0];
    if (rtdbjson["nwpw"]["cutoff"][1].is_number_float()) ecut = rtdbjson["nwpw"]["cutoff"][1];
-   if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float()) wcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];
-   if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float()) ecut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float()) wcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];
+   if (task==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float()) ecut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1];
 
    rcut=0.0;
    if (rtdbjson["nwpw"]["ewald_rcut"].is_number_float()) rcut = rtdbjson["nwpw"]["ewald_rcut"];
@@ -315,6 +323,7 @@ void control_read(const int np0, const string rtdbstring)
 }
       
 
+int control_task()             { return (int) task; }
 int control_balance()          { return (int) balance; }
 int control_mapping()          { return (int) mapping; }
 int control_mapping1d()        { return (int) mapping1d; }
@@ -334,6 +343,7 @@ double control_time_step() { return time_step; }
 double control_fake_mass() { return fake_mass; }
 double control_tolerances(const int i) { return tolerances[i];}
 
+
 char   *control_input_movecs_filename() { return input_movecs_filename; }
 char   *control_output_movecs_filename() { return output_movecs_filename; }
 char   *control_input_v_movecs_filename() { return input_v_movecs_filename; }
@@ -352,3 +362,6 @@ void control_add_permanent_dir(char fname[])
       strcat(fname,stmp);
    }
 }
+
+
+

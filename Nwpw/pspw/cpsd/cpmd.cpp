@@ -33,6 +33,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    Parallel myparallel(comm_world0);
    //RTDB myrtdb(&myparallel, "eric.db", "old");
 
+   bool verlet;
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
@@ -101,7 +102,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    /* read wavefunction velocities */
    mygrid.g_zero(psi0);
-
+   if (v_psi_filefind(&mygrid))
+      v_psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi0);
 
 
    /* read in ion structure */
@@ -186,13 +188,25 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
          cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      cout << "\n\n initial ion positions (au):" << "\n";
+      cout << "\n\n initial position of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
+                                               myion.rion(0,ii),
+                                               myion.rion(1,ii),
+                                               myion.rion(2,ii),
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
+
+      cout << "\n\n initial velocity of ions (au):" << "\n";
+      for (ii=0; ii<myion.nion; ++ii)
+         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
+                                               myion.vion(0,ii),
+                                               myion.vion(1,ii),
+                                               myion.vion(2,ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
+
       cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
@@ -239,19 +253,28 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) 
    {
       seconds(&cpu2);
-      cout << "         ================ iteration =========================\n";
+      cout << "         ================ Car-Parrinello iteration ================\n";
       cout << "     >>> iteration started at " << util_date() << " <<<\n";
-      cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      cout << "     ---------------------------------------------------------------\n";
+      cout << "     iter.          KE+Energy             Energy        KE_psi        KE_Ion   Temperature\n";
+      cout << "     -------------------------------------------------------------------------------------\n";
 
 
    }
+   verlet = false;
+   inner_loop_md(verlet, &mygrid,&myion,
+                 &mykin,&mycoulomb,
+                 &mypsp,&mystrfac,&myewald,
+                 psi1,psi2,Hpsi,psi_r,
+                 dn,hml,lmbda,
+                 E,&deltae,&deltac,&deltar);
+
+   verlet = true;
    done   = 0;
    icount = 0;
    while (!done)
    {
       ++icount;
-      inner_loop_md(&mygrid,&myion,
+      inner_loop_md(verlet, &mygrid,&myion,
                  &mykin,&mycoulomb,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
@@ -259,24 +282,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  E,&deltae,&deltac,&deltar);
 
       if (myparallel.is_master())
-         printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control_loop(0),
-                                       E[0],deltae,deltac,deltar);
+         printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control_loop(0),
+                                       E[0],E[1],E[2],E[3],0.0);
 
       /* check for competion */
-      if ((deltae>0.0)&&(icount>1))
-      {
-         done = 1;
-         cout << "         *** Energy going up. iteration terminated\n";
-      }
-      else if ((fabs(deltae)<control_tolerances(0)) &&
-               (deltac      <control_tolerances(1)) &&
-               (deltar      <control_tolerances(2)))
-      {
-         done = 1;
-         if (myparallel.is_master())
-            cout << "         *** tolerance ok.    iteration terminated\n";
-      }
-      else if (icount>=control_loop(1))
+      if (icount>=control_loop(1))
       {
          done = 1;
          if (myparallel.is_master())
@@ -301,13 +311,23 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    {
       cout << "\n\n";
       cout << "          =============  summary of results  =================\n";
-      cout << "\n final ion positions (au):" << "\n";
+      cout << "\n final position of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
+                                               myion.rion(0,ii),
+                                               myion.rion(1,ii),
+                                               myion.rion(2,ii),
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
+      cout << "\n final velocity of ions (au):" << "\n";
+      for (ii=0; ii<myion.nion; ++ii)
+         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
+                                               myion.vion(0,ii),
+                                               myion.vion(1,ii),
+                                               myion.vion(2,ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
       cout << "\n\n";
       printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
       printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));

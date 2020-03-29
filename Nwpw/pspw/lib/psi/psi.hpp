@@ -12,5 +12,6 @@ extern void psi_read(Pneb *, int *, int *, double *, int *, int *,double *);
 extern void psi_write(Pneb *, int *, int *, double *, int *, int *,double *);
 extern void v_psi_read(Pneb *, int *, int *, double *, int *, int *,double *);
 extern void v_psi_write(Pneb *, int *, int *, double *, int *, int *,double *);
+extern bool v_psi_filefind(Pneb *);
 
 #endif

@@ -20,6 +20,25 @@ using json = nlohmann::json;
 #include	"Ion.hpp"
 
 
+static void center_v_mass(int nion, double *mass, double *rion0, double *vx, double *vy, double *vz)
+{
+   double tmass = 0.0;
+   double sx    = 0.0;
+   double sy    = 0.0;
+   double sz    = 0.0;
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      tmass += mass[ii];
+      sx    += mass[ii]*rion0[3*ii];
+      sy    += mass[ii]*rion0[3*ii+1];
+      sz    += mass[ii]*rion0[3*ii+2];
+   }
+   *vx = sx/tmass;
+   *vy = sy/tmass;
+   *vz = sz/tmass;
+}
+
+
 /*******************************
  *                             *
  *        ion_find_nkatm       *
@@ -221,9 +240,11 @@ Ion::Ion(string rtdbstring)
       charge[i] = (double) geomjson["charges"][i];
       mass[i]   = ((double) geomjson["masses"][i])*amu_to_mass;
       dti[i]    = (time_step*time_step)/mass[i];
-      rion0[3*i]   = (double) geomjson["coords"][3*i];
-      rion0[3*i+1] = (double) geomjson["coords"][3*i+1];
-      rion0[3*i+2] = (double) geomjson["coords"][3*i+2];
+
+      rion0[3*i]  =(geomjson["velocities"][3*i].is_number_float())   ? (double) geomjson["velocities"][3*i]   : 0.0;
+      rion0[3*i+1]=(geomjson["velocities"][3*i+1].is_number_float()) ? (double) geomjson["velocities"][3*i+1] : 0.0;
+      rion0[3*i+2]=(geomjson["velocities"][3*i+2].is_number_float()) ? (double) geomjson["velocities"][3*i+2] : 0.0;
+
       rion1[3*i]   = (double) geomjson["coords"][3*i];
       rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
@@ -239,6 +260,66 @@ Ion::Ion(string rtdbstring)
          natm[ia] += 1;
       }
    }
+
+   // generate random initial velocities
+   double vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
+   double twopi = 16.0*atan(1.0);
+   int seed = -1;
+   double Tf =  -1.0;
+   double kb = 3.16679e-6;
+
+   if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0].is_number_float())
+      Tf =  rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0];
+   else if (rtdbjson["nwpw"]["initial_velocities"][0].is_number_float())
+      Tf =  rtdbjson["nwpw"]["initial_velocities"][0];
+
+   if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1].is_number_integer())
+      seed =  rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1];
+   else if (rtdbjson["nwpw"]["initial_velocities"][1].is_number_integer())
+      seed =  rtdbjson["nwpw"]["initial_velocities"][1];
+
+   if ((Tf>=0.0) && (seed>0))
+   {
+      std::srand(seed);
+      for (auto i=0; i<nion; ++i)
+      {
+         rr0 = ((double) std::rand())/((double) RAND_MAX);
+         rr1 = ((double) std::rand())/((double) RAND_MAX);
+         rr2 = ((double) std::rand())/((double) RAND_MAX);
+         rr3 = ((double) std::rand())/((double) RAND_MAX);
+         rr4 = ((double) std::rand())/((double) RAND_MAX);
+         rr5 = ((double) std::rand())/((double) RAND_MAX);
+         std::cout << "RANDS=" << rr0 << " " << rr1;
+         std::cout <<      " " << rr2 << " " << rr3;
+         std::cout <<      " " << rr4 << " " << rr5 << std::endl;
+         std::cout <<      " seed=" << seed;
+         std::cout <<      " Tf=" << Tf << std::endl;
+
+         vgx = -(2.00*kb*Tf/mass[i])*log(rr0);
+         vgy = cos(twopi*rr1);
+         rion0[3*i] = sqrt(vgx)*vgy;
+
+         vgx = -(2.00*kb*Tf/mass[i])*log(rr2);
+         vgy = cos(twopi*rr3);
+         rion0[3*i+1] = sqrt(vgx)*vgy;
+
+         vgx = -(2.00*kb*Tf/mass[i])*log(rr4);
+         vgy = cos(twopi*rr5);
+         rion0[3*i+2] = sqrt(vgx)*vgy;
+      }
+
+      // rescale velocities
+      center_v_mass(nion,mass,rion0,&vgx,&vgy,&vgz);
+      for (auto i=0; i<nion; ++i)
+      {
+         rion0[3*i]   -= vgx;
+         rion0[3*i+1] -= vgy;
+         rion0[3*i+2] -= vgz;
+      }
+   }
+ 
+      
+
 /*  DEBUG CHECK
    std::cout << "NION=" << nion << std::endl;
    std::cout << "NKATM=" << nkatm << std::endl;
