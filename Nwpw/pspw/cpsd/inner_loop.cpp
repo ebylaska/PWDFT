@@ -8,7 +8,6 @@ using namespace std;
 
 #include        "Parallel.hpp"
 #include        "control.hpp"
-#include	"lattice.hpp"
 #include        "PGrid.hpp"
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
@@ -36,6 +35,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
    bool move = control_geometry_optimize();
+   double omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
@@ -43,8 +43,10 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    shift2 = (mygrid->n2ft3d);
    n2ft3d = (mygrid->n2ft3d);
    scal1 = 1.0/((double) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
-   scal2 = 1.0/lattice_omega();
-   dv = lattice_omega()*scal1;
+   //scal2 = 1.0/lattice_omega();
+   //dv = lattice_omega()*scal1;
+   scal2 = 1.0/omega;
+   dv = omega*scal1;
 
    dt = control_time_step();
    dte = dt /sqrt(control_fake_mass());

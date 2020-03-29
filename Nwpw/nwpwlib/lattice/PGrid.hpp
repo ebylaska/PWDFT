@@ -7,7 +7,7 @@
 
 #include	"Parallel.hpp"
 #include	"d3db.hpp"
-#include	"lattice.hpp"
+#include	"Lattice.hpp"
 #include	"Balance.hpp"
 
 class PGrid : public d3db {
@@ -18,6 +18,7 @@ class PGrid : public d3db {
    int     *masker[2],*packarray[2];
    int     nwave[2],nwave_entire[2],nwave_all[2],nida[2],nidb[2],nidb2[2];
 
+
    /* pfft data */
    int *zero_row2[2], *zero_row3[2], *zero_slab23[2];
 
@@ -27,9 +28,10 @@ class PGrid : public d3db {
    double *atmp;
 
 public:
+        Lattice *lattice;
 
         /* constructor */
-	PGrid(Parallel *);
+	PGrid(Parallel *, Lattice *);
 
         /* destructor */
         ~PGrid() { 

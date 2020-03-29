@@ -89,7 +89,8 @@ double Coulomb_Operator::ecoulomb(double *dng)
       k1  += 2;
    }
    ave = mypneb->d3db::parall->SumAll(1,ave);
-   ave *= 0.5*lattice_omega();
+   //ave *= 0.5*lattice_omega();
+   ave *= 0.5*(mypneb->lattice->omega());
 
    return ave;
 }

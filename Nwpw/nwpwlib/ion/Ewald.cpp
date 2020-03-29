@@ -24,7 +24,7 @@ using namespace std;
  *                                   *
  *************************************/
 
-double  mandelung_get()
+static double  mandelung_get(Lattice *lattice)
 {
    int n1,n2,n3;
    double ax,ay,az,gx,gy,gz,gg;
@@ -33,7 +33,7 @@ double  mandelung_get()
    int N=40;
 
    pi = 4.0*atan(1.0);
-   rs = pow((3.0*lattice_omega()/(4.0*pi)),(1.0/3.0));
+   rs = pow((3.0*lattice->omega()/(4.0*pi)),(1.0/3.0));
    rc = rs;
    epsilon = 1.0/rc;
 
@@ -43,9 +43,9 @@ double  mandelung_get()
    for (n3=(-N+1); n3<=(N-1); ++n3)
       if ((n1!=0)||(n2!=0)||(n3!=0))
       {
-         ax = n1*lattice_unita(0,0) + n2*lattice_unita(0,1) + n3*lattice_unita(0,2);
-         ay = n1*lattice_unita(1,0) + n2*lattice_unita(1,1) + n3*lattice_unita(1,2);
-         az = n1*lattice_unita(2,0) + n2*lattice_unita(2,1) + n3*lattice_unita(2,2);
+         ax = n1*lattice->unita(0,0) + n2*lattice->unita(0,1) + n3*lattice->unita(0,2);
+         ay = n1*lattice->unita(1,0) + n2*lattice->unita(1,1) + n3*lattice->unita(1,2);
+         az = n1*lattice->unita(2,0) + n2*lattice->unita(2,1) + n3*lattice->unita(2,2);
          ea = sqrt(ax*ax + ay*ay + az*az);
          sum += erfc(epsilon*ea)/ea;
       }
@@ -58,15 +58,15 @@ double  mandelung_get()
    for (n3=(-N+1); n3<=(N-1); ++n3)
       if ((n1!=0)||(n2!=0)||(n3!=0))
       {
-         gx = n1*lattice_unitg(0,0) + n2*lattice_unitg(0,1) + n3*lattice_unitg(0,2);
-         gy = n1*lattice_unitg(1,0) + n2*lattice_unitg(1,1) + n3*lattice_unitg(1,2);
-         gz = n1*lattice_unitg(2,0) + n2*lattice_unitg(2,1) + n3*lattice_unitg(2,2);
+         gx = n1*lattice->unitg(0,0) + n2*lattice->unitg(0,1) + n3*lattice->unitg(0,2);
+         gy = n1*lattice->unitg(1,0) + n2*lattice->unitg(1,1) + n3*lattice->unitg(1,2);
+         gz = n1*lattice->unitg(2,0) + n2*lattice->unitg(2,1) + n3*lattice->unitg(2,2);
          gg = gx*gx + gy*gy + gz*gz;
          sum += (4.0*pi/gg)*exp(-gg*rc*rc/4.0);
       }
-   alpha2 = sum/lattice_omega();
+   alpha2 = sum/(lattice->omega());
 
-   sum = alpha1 + alpha2 - pi*rc*rc/lattice_omega() - 2.0*epsilon/sqrt(pi);
+   sum = alpha1 + alpha2 - pi*rc*rc/(lattice->omega()) - 2.0*epsilon/sqrt(pi);
    alpha = -sum*rs;
    return alpha;
 }
@@ -80,7 +80,7 @@ double  mandelung_get()
  *                               *
  *********************************/
 //Ewald::Ewald(Parallel *inparall, Ion *inion, Pseudopotential *inpsp)
-Ewald::Ewald(Parallel *inparall, Ion *inion, double *inzv)
+Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, double *inzv)
 {
    int i,j,k,l,k1,k2,k3;
    int enxh,enyh,enzh,enpack0;
@@ -92,14 +92,15 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, double *inzv)
 
    ewaldparall = inparall;
    ewaldion    = inion;
+   ewaldlattice= inlattice;
    tnp = ewaldparall->np();
    tid = ewaldparall->taskid();
 
    for (j=0; j<3; ++j)
    for (i=0; i<3; ++i)
    {
-      unitg[i+j*3] = lattice_unitg(i,j);
-      unita[i+j*3] = lattice_unita(i,j);
+      unitg[i+j*3] = ewaldlattice->unitg(i,j);
+      unita[i+j*3] = ewaldlattice->unita(i,j);
    }
       
    enx=control_ewald_ngrid(0);
@@ -379,7 +380,7 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, double *inzv)
    }
 
    /* set the mandelung constant */
-   alpha = mandelung_get();
+   alpha = mandelung_get(ewaldlattice);
 
    /* set the ion charges */
    for (i=0; i<(ewaldion->nkatm); ++i)
@@ -387,7 +388,7 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, double *inzv)
       //zv[i] = inpsp->zv[i];
 
    /* ewald summation */
-   rs = pow(3.0*lattice_omega()/pi4, 1.0/3.0);
+   rs = pow(3.0*ewaldlattice->omega()/pi4, 1.0/3.0);
    zz = 0.0;
    z  = 0.0;
    for (i=0; i<(ewaldion->nion); ++i)
@@ -401,8 +402,8 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, double *inzv)
    cewald *= 2.0;
    if (tnp>1) cewald = ewaldparall->SumAll(0,cewald);
 
-   cewald = -0.50*zz*(alpha/rs + cewald/lattice_omega())
-          -  0.50*(z*z-zz)*ercut*ercut*pi/lattice_omega();
+   cewald = -0.50*zz*(alpha/rs + cewald/ewaldlattice->omega())
+          -  0.50*(z*z-zz)*ercut*ercut*pi/ewaldlattice->omega();
 
    /* set rcell */
    l = 0;
@@ -554,7 +555,7 @@ double Ewald::energy()
       etmp1 += (x+y)*vg[k];
    }
    if (tnp>1) etmp1 = ewaldparall->SumAll(0,etmp1);
-   etmp1 = etmp1/lattice_omega() + cewald;
+   etmp1 = etmp1/ewaldlattice->omega() + cewald;
 
    dutask = 0;
    etmp2  = 0.0;
@@ -642,7 +643,7 @@ void Ewald::force(double *fion)
    double scal2,sw1,sw2,sw3;
    double cerfc=1.128379167;
 
-   scal2 = 1.0/lattice_omega();
+   scal2 = 1.0/ewaldlattice->omega();
    tnp = ewaldparall->np();
    tid = ewaldparall->taskid();
    nion = ewaldion->nion;

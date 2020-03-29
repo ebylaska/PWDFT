@@ -5,6 +5,7 @@
 */
 
 #include	"Parallel.hpp"
+#include	"Lattice.hpp"
 #include	"PGrid.hpp"
 #include	"d1db.hpp"
 
@@ -20,7 +21,7 @@ class Pneb : public PGrid, public d1db  {
 public:
 
         /* constructor */
-	Pneb(Parallel *, int, int *);
+	Pneb(Parallel *, Lattice *, int, int *);
 
         /* destructor */
         ~Pneb() 

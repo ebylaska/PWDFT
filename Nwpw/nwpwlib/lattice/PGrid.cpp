@@ -17,7 +17,7 @@ using namespace std;
 
 #include	"Parallel.hpp"
 #include	"control.hpp"
-#include	"lattice.hpp"
+#include	"Lattice.hpp"
 #include	"util.hpp"
 #include	"blas.h"
 
@@ -29,13 +29,15 @@ using namespace std;
  *                              *
  ********************************/
 
-PGrid::PGrid(Parallel *inparall) : d3db(inparall,control_mapping(),control_ngrid(0),control_ngrid(1),control_ngrid(2))
+PGrid::PGrid(Parallel *inparall, Lattice *inlattice) : d3db(inparall,control_mapping(),control_ngrid(0),control_ngrid(1),control_ngrid(2))
 {
    int i,j,k,nxh,nyh,nzh,p,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
    double *G1, *G2,*G3;
    double gx,gy,gz,gg,ggcut,eps;
    int *zero_arow3,*zero_arow2;
+
+   lattice = inlattice;
 
    eps = 1.0e-12;
    Garray = new double [3*nfft3d];
@@ -49,9 +51,9 @@ PGrid::PGrid(Parallel *inparall) : d3db(inparall,control_mapping(),control_ngrid
    for (k2 = (-nyh+1); k2<= nyh; ++k2)
    for (k1 = 0;        k1<= nxh; ++k1)
    {
-      gx = k1*lattice_unitg(0,0) + k2*lattice_unitg(0,1) + k3*lattice_unitg(0,2);
-      gy = k1*lattice_unitg(1,0) + k2*lattice_unitg(1,1) + k3*lattice_unitg(1,2);
-      gz = k1*lattice_unitg(2,0) + k2*lattice_unitg(2,1) + k3*lattice_unitg(2,2);
+      gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+      gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+      gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
       i=k1; if (i < 0) i = i + nx;
       j=k2; if (j < 0) j = j + ny;
       k=k3; if (k < 0) k = k + nz;
@@ -80,17 +82,17 @@ PGrid::PGrid(Parallel *inparall) : d3db(inparall,control_mapping(),control_ngrid
    {
       nwave[nb] = 0;
       if (nb==0) 
-         ggcut = lattice_eggcut();
+         ggcut = lattice->eggcut();
       else
-         ggcut = lattice_wggcut();
+         ggcut = lattice->wggcut();
 
       for (k3 = (-nzh+1); k3<  nzh; ++k3)
       for (k2 = (-nyh+1); k2<  nyh; ++k2)
       for (k1 = 0;        k1<  nxh; ++k1)
       {
-         gx = k1*lattice_unitg(0,0) + k2*lattice_unitg(0,1) + k3*lattice_unitg(0,2);
-         gy = k1*lattice_unitg(1,0) + k2*lattice_unitg(1,1) + k3*lattice_unitg(1,2);
-         gz = k1*lattice_unitg(2,0) + k2*lattice_unitg(2,1) + k3*lattice_unitg(2,2);
+         gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+         gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+         gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
          i=k1; if (i < 0) i = i + nx;
          j=k2; if (j < 0) j = j + ny;
          k=k3; if (k < 0) k = k + nz;
@@ -227,9 +229,9 @@ PGrid::PGrid(Parallel *inparall) : d3db(inparall,control_mapping(),control_ngrid
       for (nb=0; nb<=1; ++nb)
       {
          if (nb==0) 
-            ggcut = lattice_eggcut();
+            ggcut = lattice->eggcut();
          else
-            ggcut = lattice_wggcut();
+            ggcut = lattice->wggcut();
 
          /* find zero_row3 - (i,j,*) rows that are zero */
          for (i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i]  = 1;

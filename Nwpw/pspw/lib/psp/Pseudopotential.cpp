@@ -16,10 +16,8 @@ using namespace std;
 #include        <cmath>
 
 #include	"control.hpp"
-#include	"lattice.hpp"
 #include	"compressed_io.hpp"
 #include	"blas.h"
-
 #include	"Pseudopotential.hpp"
 
 
@@ -216,9 +214,12 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
    double sum = 0.0;
    if (semicore)
    {
+      double omega = mygrid->lattice->omega();
       double scal1 = 1.0/((double) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
-      double scal2 = 1.0/lattice_omega();
-      double dv    = lattice_omega()*scal1;
+      //double scal2 = 1.0/lattice_omega();
+      //double dv    = lattice_omega()*scal1;
+      double scal2 = 1.0/omega;
+      double dv    = omega*scal1;
       double *tmp  = mygrid->r_alloc();
 
       /* put sqrt(core-density) at atom position */
@@ -333,7 +334,9 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    Parallel *parall;
-   double scal = 1.0/lattice_omega();
+   double omega = mypneb->lattice->omega();
+   //double scal = 1.0/lattice_omega();
+   double scal = 1.0/omega;
    int one=1;
    int ntmp,nshift,nn;
    double rone  = 1.0;
@@ -415,7 +418,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    double *Gx,*Gy,*Gz,*xtmp,*sum;
    Parallel *parall;
-   double scal = 1.0/lattice_omega();
+   double omega = mypneb->lattice->omega();
+   //double scal = 1.0/lattice_omega();
+   double scal = 1.0/omega;
    int one=1;
    int three=3;
    int ntmp,nshift,nn,ispin;
@@ -613,7 +618,9 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 void Pseudopotential::semicore_density_update()
 {
    int ii,ia;
-   double scal2 = 1.0/lattice_omega();
+   double omega = mypneb->lattice->omega();
+   //double scal2 = 1.0/lattice_omega();
+   double scal2 = 1.0/omega;
    double *exi = mypneb->c_pack_allocate(0);
    double *tmp = mypneb->r_alloc();
 

@@ -14,6 +14,7 @@ using namespace std;
 
 
 #include	"control.hpp"
+#include	"Lattice.hpp"
 #include	"Parallel.hpp"
 #include	"PGrid.hpp"
 #include	"d1db.hpp"
@@ -28,7 +29,7 @@ using namespace std;
  *                              *
  ********************************/
 
-Pneb::Pneb(Parallel *inparall, int ispin, int *ne) : PGrid(inparall), d1db(inparall,control_mapping1d(),ispin,ne)
+Pneb::Pneb(Parallel *inparall, Lattice *inlattice, int ispin, int *ne) : PGrid(inparall, inlattice), d1db(inparall,control_mapping1d(),ispin,ne)
 {
     int ms;
     int np_i = d1db::parall->np_i();

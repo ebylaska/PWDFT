@@ -9,6 +9,7 @@ using namespace std;
 
 #include	"Parallel.hpp"
 #include	"control.hpp"
+#include	"Lattice.hpp"
 #include	"util_date.hpp"
 #include	"PGrid.hpp"
 #include	"Pneb.hpp"
@@ -67,12 +68,13 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    //control_read(myrtdb);
    control_read(myparallel.np(),rtdbstring);
-   lattice_init();
+   Lattice mylattice;
    myparallel.init2d(control_np_orbital());
+
 
    /* initialize lattice, parallel grid structure */
    psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne);
-   Pneb mygrid(&myparallel,ispin,ne);
+   Pneb mygrid(&myparallel,&mylattice,ispin,ne);
 
    /* initialize psi1 and psi2 */
    psi1  = mygrid.g_allocate(1);
@@ -117,7 +119,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac);
 
    /* setup ewald */
-   Ewald myewald(&myparallel,&myion, mypsp.zv);
+   Ewald myewald(&myparallel,&myion,&mylattice,mypsp.zv);
    myewald.phafac();
 
 
@@ -192,18 +194,18 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
       cout << "\n";
       cout << " supercell:\n";
-      printf("      volume : %10.2lf\n",lattice_omega());
-      printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",lattice_unita(0,0),lattice_unita(1,0),lattice_unita(2,0));
-      printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",lattice_unita(0,1),lattice_unita(1,1),lattice_unita(2,1));
-      printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",lattice_unita(0,2),lattice_unita(1,2),lattice_unita(2,2));
-      printf("      reciprocal: b1=< %8.3lf %8.3lf %8.3lf >\n",lattice_unitg(0,0),lattice_unitg(1,0),lattice_unitg(2,0));
-      printf("                  b2=< %8.3lf %8.3lf %8.3lf >\n",lattice_unitg(0,1),lattice_unitg(1,1),lattice_unitg(2,1));
-      printf("                  b3=< %8.3lf %8.3lf %8.3lf >\n",lattice_unitg(0,2),lattice_unitg(1,2),lattice_unitg(2,2));
+      printf("      volume : %10.2lf\n",mylattice.omega());
+      printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
+      printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
+      printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
+      printf("      reciprocal: b1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,0),mylattice.unitg(1,0),mylattice.unitg(2,0));
+      printf("                  b2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,1),mylattice.unitg(1,1),mylattice.unitg(2,1));
+      printf("                  b3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,2),mylattice.unitg(1,2),mylattice.unitg(2,2));
 
       printf("      density cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             lattice_ecut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(0),mygrid.npack(0));
+             mylattice.ecut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(0),mygrid.npack(0));
       printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             lattice_wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
+             mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
 
       cout << "\n";
       cout << " ewald parameters:\n";

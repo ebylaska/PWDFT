@@ -13,7 +13,6 @@
 #include        <cstdlib>
 using namespace std;
 
-#include	"lattice.hpp"
 #include	"Strfac.hpp"
 
 /* Constructors */
@@ -36,6 +35,7 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    myion  = inion;
    tnp = mygrid->np;
    tid = mygrid->taskid;
+   Lattice *lattice = mygrid->lattice;
 
    nx = mygrid->nx;
    ny = mygrid->ny;
@@ -45,8 +45,8 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    for (j=0; j<3; ++j)
    for (i=0; i<3; ++i)
    {
-      unitg[i+j*3] = lattice_unitg(i,j);
-      unita[i+j*3] = lattice_unita(i,j);
+      unitg[i+j*3] = lattice->unitg(i,j);
+      unita[i+j*3] = lattice->unita(i,j);
    }
       
    /* allocate memory */
