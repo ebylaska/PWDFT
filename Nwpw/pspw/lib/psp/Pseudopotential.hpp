@@ -4,6 +4,7 @@
 
 using namespace std;
 
+#include	"Control2.hpp"
 #include	"Ion.hpp"
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
@@ -35,7 +36,7 @@ public:
    char **comment;
 
    /* Constructors */
-   Pseudopotential(Ion *, Pneb *, Strfac *);
+   Pseudopotential(Ion *, Pneb *, Strfac *, Control2&);
 
    /* destructor */
    ~Pseudopotential() {

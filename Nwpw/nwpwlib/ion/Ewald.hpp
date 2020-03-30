@@ -5,6 +5,7 @@
 #include        "Parallel.hpp"
 #include        "Lattice.hpp"
 #include	"Ion.hpp"
+#include	"Control2.hpp"
 //#include	"Pseudopotential.hpp"
 
 class	Ewald {
@@ -22,7 +23,7 @@ public:
 
    /* Constructors */
    //Ewald(Parallel *, Ion *, Pseudopotential *);
-   Ewald(Parallel *, Ion *, Lattice *, double *);
+   Ewald(Parallel *, Ion *, Lattice *, Control2&, double *);
 
    /* destructor */
    ~Ewald() {

@@ -31,7 +31,7 @@ public:
         Lattice *lattice;
 
         /* constructor */
-	PGrid(Parallel *, Lattice *);
+	PGrid(Parallel *, Lattice *, Control2&);
 
         /* destructor */
         ~PGrid() { 

@@ -5,6 +5,7 @@
 #include        <string>
 
 #include	"rtdb.hpp"
+#include	"Control2.hpp"
 
 class	Ion {
 
@@ -19,8 +20,8 @@ public:
    double *rion0,*rion1,*rion2;
 
    /* Constructors */
-   Ion(RTDB&);
-   Ion(std::string);
+   Ion(RTDB&, Control2&);
+   Ion(std::string, Control2&);
 
    /* destructor */
    ~Ion() {

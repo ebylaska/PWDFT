@@ -5,6 +5,7 @@
 
 #include	<cmath>
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"Lattice.hpp"
 
 
@@ -33,30 +34,30 @@ static void get_cube(double *unita, double *unitg, double *omega)
  *                              *
  ********************************/
 
-Lattice::Lattice()
+Lattice::Lattice(Control2& control)
 {
    int nx,ny,nz,nxh,nyh,nzh;
    double gx,gy,gz,gg,gg1,gg2,gg3,ecut0,wcut0;
 
-   ecut0 = control_ecut();
-   wcut0 = control_wcut();
-   punita[0] = control_unita(0,0);
-   punita[1] = control_unita(1,0);
-   punita[2] = control_unita(2,0);
+   ecut0 = control.ecut();
+   wcut0 = control.wcut();
+   punita[0] = control.unita(0,0);
+   punita[1] = control.unita(1,0);
+   punita[2] = control.unita(2,0);
 
-   punita[3] = control_unita(0,1);
-   punita[4] = control_unita(1,1);
-   punita[5] = control_unita(2,1);
+   punita[3] = control.unita(0,1);
+   punita[4] = control.unita(1,1);
+   punita[5] = control.unita(2,1);
 
-   punita[6] = control_unita(0,2);
-   punita[7] = control_unita(1,2);
-   punita[8] = control_unita(2,2);
+   punita[6] = control.unita(0,2);
+   punita[7] = control.unita(1,2);
+   punita[8] = control.unita(2,2);
    get_cube(punita,punitg,&pomega);
 
 
-   nx = control_ngrid(0);
-   ny = control_ngrid(1);
-   nz = control_ngrid(2);
+   nx = control.ngrid(0);
+   ny = control.ngrid(1);
+   nz = control.ngrid(2);
    nxh = nx/2;
    nyh = ny/2;
    nzh = nz/2;

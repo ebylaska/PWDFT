@@ -15,6 +15,7 @@
 using namespace std;
 
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"Ewald.hpp"
 //#include	"Pseudopotential.hpp"
 
@@ -80,7 +81,7 @@ static double  mandelung_get(Lattice *lattice)
  *                               *
  *********************************/
 //Ewald::Ewald(Parallel *inparall, Ion *inion, Pseudopotential *inpsp)
-Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, double *inzv)
+Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& control, double *inzv)
 {
    int i,j,k,l,k1,k2,k3;
    int enxh,enyh,enzh,enpack0;
@@ -103,9 +104,9 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, double *inzv)
       unita[i+j*3] = ewaldlattice->unita(i,j);
    }
       
-   enx=control_ewald_ngrid(0);
-   eny=control_ewald_ngrid(1);
-   enz=control_ewald_ngrid(2);
+   enx=control.ewald_ngrid(0);
+   eny=control.ewald_ngrid(1);
+   enz=control.ewald_ngrid(2);
    enxh=enx/2;
    enyh=eny/2;
    enzh=enz/2;
@@ -130,8 +131,8 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, double *inzv)
    ggcut = gg1;
    if (gg2<ggcut) ggcut = gg2;
    if (gg3<ggcut) ggcut = gg3;
-   if ((2.0*control_ecut())<ggcut) 
-      ggcut=2.0*control_ecut();
+   if ((2.0*control.ecut())<ggcut) 
+      ggcut=2.0*control.ecut();
    eecut = 0.5*ggcut;
 
 
@@ -211,9 +212,9 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, double *inzv)
 
 
 
-   encut = control_ewald_ncut();
+   encut = control.ewald_ncut();
    enshl3d = (2*encut+1)*(2*encut+1)*(2*encut+1);
-   ercut = control_ewald_rcut();
+   ercut = control.ewald_rcut();
    pi  = 4.00*atan(1.0);
    pi4 = 4.00*pi;
    if (encut<=0) encut=1;

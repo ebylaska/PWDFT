@@ -9,6 +9,7 @@ using namespace std;
 
 #include	"Parallel.hpp"
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"util_date.hpp"
 #include	"Lattice.hpp"
 #include	"PGrid.hpp"
@@ -70,12 +71,14 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    //control_read(myrtdb);
    control_read(myparallel.np(),rtdbstring);
-   Lattice mylattice;
-   myparallel.init2d(control_np_orbital());
+   Control2 control(myparallel.np(),rtdbstring);
+   Lattice mylattice(control);
+   //myparallel.init2d(control_np_orbital());
+   myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
 
    /* initialize lattice, parallel grid structure */
    psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne);
-   Pneb mygrid(&myparallel,&mylattice,ispin,ne);
+   Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
 
    /* initialize psi0, psi1, and psi2 */
    psi0  = mygrid.g_allocate(1);
@@ -89,7 +92,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    eig   = new double[ne[0]+ne[1]];
 
    /* read wavefunction */
-   psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2);
+   psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
 
    /* ortho check */
    sum2  = mygrid.gg_traceall(psi2,psi2);
@@ -103,13 +106,13 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    /* read wavefunction velocities */
    mygrid.g_zero(psi0);
-   if (v_psi_filefind(&mygrid))
-      v_psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi0);
+   if (psi_filefind(&mygrid,control.input_v_movecs_filename()))
+      psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.input_v_movecs_filename());
 
 
    /* read in ion structure */
    //Ion myion(myrtdb);
-   Ion myion(rtdbstring);
+   Ion myion(rtdbstring,control);
 
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
@@ -123,10 +126,10 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    //XC_Operator      myxc(mygrid);
 
    
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
    /* setup ewald */
-   Ewald myewald(&myparallel,&myion,&mylattice,mypsp.zv);
+   Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
 
@@ -139,8 +142,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    {
       cout << "\n\n";
       cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename:  " << control_input_movecs_filename() << "\n";
-      cout << " input vpsi filename: " << control_input_v_movecs_filename() << "\n";
+      cout << "\n input psi filename:  " << control.input_movecs_filename() << "\n";
+      cout << " input vpsi filename: " << control.input_v_movecs_filename() << "\n";
       cout << "\n";
       cout << " number of processors used: " << myparallel.np() << "\n";
       cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
@@ -153,7 +156,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
       cout << "\n options:\n";
       cout << "   ion motion           = ";
-      if (control_geometry_optimize())
+      if (control.geometry_optimize())
          cout << "yes\n";
       else
          cout << "no\n";
@@ -237,11 +240,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "\n";
       cout << " technical parameters:\n";
       printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
-             control_time_step(),control_fake_mass());
+             control.time_step(),control.fake_mass());
       printf("      tolerance=%11.3le (energy) %11.3le (density) %11.3le (ion)\n",
-             control_tolerances(0),control_tolerances(1),control_tolerances(2));
+             control.tolerances(0),control.tolerances(1),control.tolerances(2));
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
-             control_loop(0)*control_loop(1),control_loop(0),control_loop(1));
+             control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
       cout << "\n\n\n";
 
 
@@ -262,7 +265,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    }
    verlet = false;
-   inner_loop_md(verlet, &mygrid,&myion,
+   inner_loop_md(verlet,control,&mygrid,&myion,
                  &mykin,&mycoulomb,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
@@ -275,7 +278,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    while (!done)
    {
       ++icount;
-      inner_loop_md(verlet, &mygrid,&myion,
+      inner_loop_md(verlet,control,&mygrid,&myion,
                  &mykin,&mycoulomb,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
@@ -283,11 +286,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  E,&deltae,&deltac,&deltar);
 
       if (myparallel.is_master())
-         printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control_loop(0),
+         printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
                                        E[0],E[1],E[2],E[3],0.0);
 
       /* check for competion */
-      if (icount>=control_loop(1))
+      if (icount>=control.loop(1))
       {
          done = 1;
          if (myparallel.is_master())
@@ -357,13 +360,13 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
-      cout << "\n output psi filename:  " << control_output_movecs_filename() << "\n";
-      cout << " output vpsi filename: " << control_output_v_movecs_filename() << "\n";
+      cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
+      cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
    }
 
    /* write wavefunction and velocity wavefunction */
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1);
-   v_psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0);
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.output_v_movecs_filename());
 
    /* deallocate memory */
    mygrid.g_deallocate(psi0);
@@ -393,7 +396,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
-      double av = t2/((double ) control_loop(0)*icount);
+      double av = t2/((double ) control.loop(0)*icount);
       cout.setf(ios::scientific);
       cout << "\n";
       cout << " -----------------"    << "\n";

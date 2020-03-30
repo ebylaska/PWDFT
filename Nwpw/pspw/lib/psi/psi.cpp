@@ -41,7 +41,7 @@ void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[],
 
 void psi_read(Pneb *mypneb,int *version, int nfft[], 
               double unita[], int *ispin, int ne[],
-              double *psi)
+              double *psi, char *filename)
 {
    int occupation;
 
@@ -49,7 +49,7 @@ void psi_read(Pneb *mypneb,int *version, int nfft[],
 
    if (myparall->is_master())
    {
-      openfile(4,control_input_movecs_filename(),"r");
+      openfile(4,filename,"r");
       iread(4,version,1);
       iread(4,nfft,3);
       dread(4,unita,9);
@@ -68,6 +68,49 @@ void psi_read(Pneb *mypneb,int *version, int nfft[],
    if (myparall->is_master()) closefile(4);
 }
 
+void psi_write(Pneb *mypneb,int *version, int nfft[],
+              double unita[], int *ispin, int ne[],
+              double *psi, char *filename)
+{  
+   int occupation = -1;
+   
+   Parallel *myparall = mypneb->d3db::parall;
+   
+   if (myparall->is_master())
+   {  
+      openfile(6,filename,"w");
+      iwrite(6,version,1);
+      iwrite(6,nfft,3);
+      dwrite(6,unita,9);
+      iwrite(6,ispin,1);
+      iwrite(6,ne,2);
+      iwrite(6,&occupation,1);
+   }
+   
+   mypneb->g_write(6,psi);
+   
+   if (myparall->is_master()) closefile(6);
+}
+
+bool psi_filefind(Pneb *mypneb, char *filename)
+{
+   int ifound = 0;
+   Parallel *myparall = mypneb->d3db::parall;
+   
+   if (myparall->is_master())
+   {  
+      ifound = cfileexists(filename);
+   }
+
+   myparall->Brdcst_iValue(0,0,&ifound);
+
+   return (ifound>0);
+}
+
+
+
+
+/*
 void v_psi_read(Pneb *mypneb,int *version, int nfft[],
               double unita[], int *ispin, int ne[],
               double *psi)
@@ -96,33 +139,10 @@ void v_psi_read(Pneb *mypneb,int *version, int nfft[],
 
    if (myparall->is_master()) closefile(4);
 }
+*/
 
 
-void psi_write(Pneb *mypneb,int *version, int nfft[],
-              double unita[], int *ispin, int ne[],
-              double *psi)
-{  
-   int occupation = -1;
-   
-   Parallel *myparall = mypneb->d3db::parall;
-   
-   if (myparall->is_master())
-   {  
-      openfile(6,control_output_movecs_filename(),"w");
-      iwrite(6,version,1);
-      iwrite(6,nfft,3);
-      dwrite(6,unita,9);
-      iwrite(6,ispin,1);
-      iwrite(6,ne,2);
-      iwrite(6,&occupation,1);
-   }
-   
-   mypneb->g_write(6,psi);
-   
-   if (myparall->is_master()) closefile(6);
-}
-
-
+/*
 void v_psi_write(Pneb *mypneb,int *version, int nfft[],
               double unita[], int *ispin, int ne[],
               double *psi)
@@ -147,17 +167,5 @@ void v_psi_write(Pneb *mypneb,int *version, int nfft[],
    if (myparall->is_master()) closefile(6);
 }             
 
-bool v_psi_filefind(Pneb *mypneb)
-{
-   int ifound = 0;
-   Parallel *myparall = mypneb->d3db::parall;
-   
-   if (myparall->is_master())
-   {  
-      ifound = cfileexists(control_input_v_movecs_filename());
-   }
+*/
 
-   myparall->Brdcst_iValue(0,0,&ifound);
-
-   return (ifound>0);
-}

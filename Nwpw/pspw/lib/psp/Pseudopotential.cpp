@@ -16,6 +16,7 @@ using namespace std;
 #include        <cmath>
 
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"compressed_io.hpp"
 #include	"blas.h"
 #include	"Pseudopotential.hpp"
@@ -249,7 +250,7 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
  *     Pseudopotential::Pseudopotential    *
  *                                         *
  *******************************************/
-Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin)
+Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& control)
 {
    int ia,version,nfft[3];
    int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
@@ -298,7 +299,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    {
       strcpy(fname,myion->atom(ia));
       strcat(fname,".vpp");
-      control_add_permanent_dir(fname);
+      control.add_permanent_dir(fname);
       psp_read(mypneb,
                fname,
                comment[ia],&psp_type[ia],&version,nfft,unita,aname,

@@ -17,6 +17,7 @@ using namespace std;
 
 #include	"Parallel.hpp"
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
 #include	"blas.h"
@@ -29,7 +30,7 @@ using namespace std;
  *                              *
  ********************************/
 
-PGrid::PGrid(Parallel *inparall, Lattice *inlattice) : d3db(inparall,control_mapping(),control_ngrid(0),control_ngrid(1),control_ngrid(2))
+PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(inparall,control.mapping(),control.ngrid(0),control.ngrid(1),control.ngrid(2))
 {
    int i,j,k,nxh,nyh,nzh,p,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
@@ -196,7 +197,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice) : d3db(inparall,control_map
    nwave_in[0] = nida[0] + nidb2[0];
    nwave_in[1] = nida[1] + nidb2[1];
 
-   if (control_balance()) 
+   if (control.balance()) 
    {
       balanced = 1;
       mybalance = new Balance(parall,2,nwave_in,nwave_out);

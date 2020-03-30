@@ -8,6 +8,7 @@ using namespace std;
 
 #include        "Parallel.hpp"
 #include        "control.hpp"
+#include        "Control2.hpp"
 #include        "PGrid.hpp"
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
@@ -18,7 +19,7 @@ using namespace std;
 #include	"inner_loop.hpp"
 
 
-void inner_loop(Pneb *mygrid, Ion *myion, 
+void inner_loop(Control2& control, Pneb *mygrid, Ion *myion, 
                 Kinetic_Operator *myke, 
                 Coulomb_Operator *mycoulomb, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
@@ -34,7 +35,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    double eke,elocal,enlocal,dt,dte,Eold;
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
-   bool move = control_geometry_optimize();
+   bool move = control.geometry_optimize();
    double omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
@@ -48,9 +49,9 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    scal2 = 1.0/omega;
    dv = omega*scal1;
 
-   dt = control_time_step();
-   dte = dt /sqrt(control_fake_mass());
-   it_in = control_loop(0);
+   dt = control.time_step();
+   dte = dt /sqrt(control.fake_mass());
+   it_in = control.loop(0);
 
    /* allocate temporary memory */
    rho   = mygrid->r_alloc();
@@ -215,7 +216,7 @@ void inner_loop(Pneb *mygrid, Ion *myion,
    E[9] = pxc;
 
    /* set convergence variables */
-   *deltae = (E[0]-Eold)/(dt*control_loop(0));
+   *deltae = (E[0]-Eold)/(dt*control.loop(0));
 
    /* deltac */
    sumi    = new double[neall];

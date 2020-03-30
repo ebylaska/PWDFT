@@ -5,6 +5,7 @@
 
 */
 
+#include	"Control2.hpp"
 
 class Lattice {
 
@@ -13,7 +14,7 @@ class Lattice {
 public:
 
    /* constructor */
-   Lattice();
+   Lattice(Control2&);
 
    double unita(const int i, const int j) { return punita[i+j*3]; }
    double unitg(const int i, const int j) { return punitg[i+j*3]; }

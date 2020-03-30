@@ -34,7 +34,7 @@ public:
 	~Parallel();
 
         /* 2d proc geom constructor */
-        void init2d(const int);
+        void init2d(const int, const int);
 
         int is_master() { return (taskidi[0]==MASTER); }
 

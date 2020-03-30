@@ -11,6 +11,7 @@ using namespace std;
 #include	"mpi.h"
 #include	"Parallel.hpp"
 #include	"control.hpp"
+#include	"Control2.hpp"
 
 /********************************
  *                              *
@@ -53,7 +54,7 @@ Parallel::Parallel(MPI_Comm comm_world0)
 
 }
 
-void Parallel::init2d(const int ncolumns)
+void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
 {
    int ii;
    MPI_Group orig_group;
@@ -99,7 +100,8 @@ void Parallel::init2d(const int ncolumns)
       delete [] itmp;
    }
 
-   ii = 3+control_pfft3_qsize();
+   //ii = 3+control.pfft3_qsize();
+   ii = 3+pfft3_qsize;
    reqcnt  = new int[ii];
    //request = new MPI::Request*[ii];
    request  = new MPI_Request*[ii];

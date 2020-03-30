@@ -17,6 +17,7 @@ using json = nlohmann::json;
 
 
 #include	"control.hpp"
+#include	"Control2.hpp"
 #include	"Ion.hpp"
 
 
@@ -149,13 +150,13 @@ static void ion_find_atomkatmnatm(RTDB& myrtdb, const int nion, const int nkatm,
  *          Ion::Ion             *
  *                               *
  *********************************/
-Ion::Ion(RTDB& myrtdb) 
+Ion::Ion(RTDB& myrtdb, Control2& control) 
 {
 
    int matype,nelem,ii,i,j,found;
    char *symtmp,*symb;
    char date[50];
-   double time_step   = control_time_step();
+   double time_step   = control.time_step();
    double amu_to_mass = 1822.89;
 
    /* get parallel mappings */
@@ -195,10 +196,10 @@ Ion::Ion(RTDB& myrtdb)
 
 }
 
-Ion::Ion(string rtdbstring) 
+Ion::Ion(string rtdbstring, Control2& control) 
 {
    double amu_to_mass = 1822.89;
-   double time_step = control_time_step();
+   double time_step = control.time_step();
 
    auto rtdbjson =  json::parse(rtdbstring);
 
