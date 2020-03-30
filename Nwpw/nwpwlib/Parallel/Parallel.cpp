@@ -10,7 +10,6 @@ using namespace std;
 
 #include	"mpi.h"
 #include	"Parallel.hpp"
-#include	"control.hpp"
 #include	"Control2.hpp"
 
 /********************************

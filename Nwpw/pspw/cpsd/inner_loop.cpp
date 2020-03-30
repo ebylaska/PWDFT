@@ -7,7 +7,7 @@
 using namespace std;
 
 #include        "Parallel.hpp"
-#include        "control.hpp"
+//#include        "control.hpp"
 #include        "Control2.hpp"
 #include        "PGrid.hpp"
 #include        "Ion.hpp"

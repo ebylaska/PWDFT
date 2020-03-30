@@ -15,7 +15,6 @@ using namespace std;
 #include	<string.h>
 #include        <cmath>
 
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"compressed_io.hpp"
 #include	"blas.h"

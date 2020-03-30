@@ -4,7 +4,6 @@
 */
 
 #include	<cmath>
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 

@@ -13,7 +13,6 @@ using namespace std;
 
 
 
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"Parallel.hpp"

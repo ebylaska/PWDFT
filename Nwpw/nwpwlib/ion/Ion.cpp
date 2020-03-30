@@ -16,7 +16,6 @@ using json = nlohmann::json;
 
 
 
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"Ion.hpp"
 

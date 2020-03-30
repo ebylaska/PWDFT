@@ -8,7 +8,7 @@
 using namespace std;
 
 #include	"Parallel.hpp"
-#include	"control.hpp"
+//#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"util_date.hpp"
 #include	"Lattice.hpp"
@@ -70,14 +70,14 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    //control_read(myrtdb);
-   control_read(myparallel.np(),rtdbstring);
+   //control_read(myparallel.np(),rtdbstring);
    Control2 control(myparallel.np(),rtdbstring);
    Lattice mylattice(control);
    //myparallel.init2d(control_np_orbital());
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
 
    /* initialize lattice, parallel grid structure */
-   psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne);
+   psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne,control.input_movecs_filename());
    Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
 
    /* initialize psi0, psi1, and psi2 */

@@ -14,7 +14,6 @@
 
 using namespace std;
 
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"Ewald.hpp"
 //#include	"Pseudopotential.hpp"

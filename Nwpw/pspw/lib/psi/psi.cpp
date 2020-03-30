@@ -12,17 +12,17 @@ using namespace std;
 
 
 #include	"compressed_io.hpp"
-#include	"control.hpp"
+//#include	"control.hpp"
 
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
 
-void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[])
+void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[], char *filename)
 {
    if (myparall->is_master())
    {
       //char *fname = control_input_movecs_filename();
-      openfile(4,control_input_movecs_filename(),"r");
+      openfile(4,filename,"r");
       iread(4,version,1);
       iread(4,nfft,3);
       dread(4,unita,9);

@@ -16,7 +16,6 @@ using namespace std;
 
 
 #include	"Parallel.hpp"
-#include	"control.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
