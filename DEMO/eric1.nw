@@ -1,0 +1,46 @@
+
+memory 900 mb
+start eric
+echo
+
+permanent_dir ./perm/
+scratch_dir   ./perm//
+
+geometry noautosym noautoz center
+C 0 0 0
+C 0 0 1
+C 0 0 2
+end
+
+geometry ericgeom noautosym noautoz
+C 0 0 0
+C 0 0 1
+C 0 0 2.2
+end
+
+#set geometry ericgeom
+
+nwpw
+   simulation_cell
+     SC 30.0
+     ngrid 48 48 48
+   end
+   mapping 2
+   #nobalance
+   #np_dimensions -1 5
+   steepest_descent
+     input_wavefunction_filename  test2b.movecs
+     output_wavefunction_filename test2c.movecs
+     loop 1 2
+     geometry_optimize
+   end
+end
+#task pspw energy
+#task pspw noit_energy
+
+nwpw
+   loop 1 2
+end
+task pspw steepest_descent
+
+unset geometry 
