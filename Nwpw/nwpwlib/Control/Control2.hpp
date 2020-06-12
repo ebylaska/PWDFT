@@ -14,6 +14,7 @@ class Control2 {
    double punita[9],ptolerances[3],pscaling[2];
    double ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
    double pbo_time_step;
+   double ptotal_charge;
 
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
@@ -48,6 +49,7 @@ public:
    double ecut()                  { return pecut; }
    double wcut()                  { return pwcut; }
    double ewald_rcut()            { return prcut; }
+   double total_charge()          { return ptotal_charge; }
 
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }
@@ -68,6 +70,8 @@ public:
    char   *permanent_dir() { return ppermanent_dir;}
 
    void add_permanent_dir(char *);
+
+   bool check_charge_multiplicity();
 
 };
 

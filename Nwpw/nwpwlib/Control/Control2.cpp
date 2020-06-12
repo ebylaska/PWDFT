@@ -9,6 +9,7 @@ using namespace std;
 #include	"json.hpp"
 #include	"rtdb.hpp"
 #include	"Control2.hpp"
+#include	"Parallel.hpp"
 
 #include	"parsestring.hpp"
 
@@ -37,6 +38,8 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) ptask = 5;
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   ptask = 6;
 
+   ptotal_charge = 0.0;
+   if (rtdbjson["charge"]["mapping"].is_number_float()) ptotal_charge = rtdbjson["charge"];
 
    /* get parallel mappings */
    pmapping = 1;
@@ -221,5 +224,37 @@ void Control2::add_permanent_dir(char fname[])
    }
 }
 
+/*****************************************
+ *                                       *
+ *  Control2::check_charge_multiplicity  *
+ *                                       *
+ *****************************************/
 
+bool Control2::check_charge_multiplicity(Parallel *myparall)
+{
+   int ifound;
+   int    version, ispin, nfft[3],ne[2];
+   double unita[9]
+
+   if (myparall->is_master()) 
+      ifound = cfileexists(input_movecs);
+   myparall->Brdcst_iValue(0,0,&ifound);
+
+   if (ifound) 
+   {
+      psi_get_header(myparall,&version, nfft,unita,&ispin,ne,input_movecs);
+           
+      int x_wf = ne[0]+ne[1]
+      int mult = ne[0]-ne[1] + 1
+      if (ispin==1)
+      {
+         x_wf *= 2;
+         mult  = 1;
+      }
+      double tcharge = ptotal_charge;
+
+   }
+
+   return (ifound>0);
+}
 
