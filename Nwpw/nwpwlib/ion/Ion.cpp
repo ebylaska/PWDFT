@@ -172,6 +172,7 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
+   zv_psp    = new double[nkatm];
 
    ion_find_atomkatmnatm(myrtdb,nion,nkatm,atomarray,katm,natm);
 
@@ -229,6 +230,7 @@ Ion::Ion(string rtdbstring, Control2& control)
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
+   zv_psp    = new double[nkatm];
 
    for (auto ia=0; ia<nkatm; ++ia)
    {

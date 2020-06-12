@@ -25,6 +25,8 @@ using namespace std;
 #include	"rtdb.hpp"
 #include	"mpi.h"
 
+#include	"psp_formatter.hpp"
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -71,12 +73,24 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    //control_read(myparallel.np(),rtdbstring);
    Control2 control(myparallel.np(),rtdbstring);
 
-   Lattice mylattice(control);
-   //myparallel.init2d(control_np_orbital());
+   /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
 
+   /* initialize lattice */
+   Lattice mylattice(control);
 
-   /* initialize lattice, parallel grid structure */
+   /* read in ion structure */
+   //Ion myion(myrtdb);
+   Ion myion(rtdbstring,control);
+
+   /* Check for vpp files */
+   psp_formatter_check(&myparallel,&myion,control);
+
+   /* Check for vpp and movecs files */
+   //bool newpsi = control.check_charge_multiplicity(&myparallel);
+
+
+   /* initialize parallel grid structure */
    psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne,control.input_movecs_filename());
    Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
 
@@ -104,9 +118,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
 
 
-   /* read in ion structure */
-   //Ion myion(myrtdb);
-   Ion myion(rtdbstring,control);
 
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);

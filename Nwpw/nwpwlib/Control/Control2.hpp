@@ -14,7 +14,7 @@ class Control2 {
    double punita[9],ptolerances[3],pscaling[2];
    double ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
    double pbo_time_step;
-   double ptotal_charge;
+   double ptotal_charge, ptotal_ion_charge;
 
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
@@ -42,6 +42,7 @@ public:
 
    // Access functions
    double unita(const int i,const int j) { return punita[i+j*3]; }
+   double unita1d(const int ii)   { return punita[ii]; }
    double tolerances(const int i) { return ptolerances[i]; }
    double scaling(const int i)    { return pscaling[i]; }
    double time_step()             { return ptime_step; }
@@ -71,7 +72,6 @@ public:
 
    void add_permanent_dir(char *);
 
-   bool check_charge_multiplicity();
 
 };
 

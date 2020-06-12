@@ -3,6 +3,7 @@
 
 
 #include        <string>
+#include        <cmath>
 
 #include	"rtdb.hpp"
 #include	"Control2.hpp"
@@ -12,9 +13,10 @@ class	Ion {
    char   *atomarray;
 
 public:
+   int ion_total_charge;
    int nion,nkatm;
    int *katm,*natm;
-   double *charge;
+   double *charge,*zv_psp;
    double *mass;
    double *dti;
    double *rion0,*rion1,*rion2;
@@ -29,12 +31,14 @@ public:
       delete [] natm;
       delete [] atomarray;
       delete [] charge;
+      delete [] zv_psp;
       delete [] mass;
       delete [] dti;
       delete [] rion0;
       delete [] rion1;
       delete [] rion2;
     }
+
 
     void shift() 
     { 
@@ -94,6 +98,8 @@ public:
           rion2[3*ii+2] = rion1[3*ii+2] + alpha*fion[3*ii+2];
        }
     }
+
+    void set_zv_psp(const int ia, const double zv) { zv_psp[ia] = zv; }
 
 };
 
