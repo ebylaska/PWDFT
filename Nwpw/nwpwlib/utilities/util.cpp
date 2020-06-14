@@ -98,3 +98,58 @@ void eigsrt(double *D, double *V, int n)
    }
 }
 
+
+
+/**************************************
+ *                                    *
+ *           getfilling               *
+ *                                    *
+ **************************************/
+void getfilling(int f, int nfft[], int *filling)
+{
+   int h = (f%2);
+   int f2 = (f-h)/2;
+   int k=0;
+   while ((k+1)*(k+2)*(k+3) <= (6*f2))
+      ++k;
+
+   f2 -= k*(k+1)*(k+2)/6;
+   int j=0;
+   while ((j+1)*(j+2) <= (2*f2))
+      ++j;
+
+   int i = f2 - j*(j+1)/2;
+
+   filling[0] = i;
+   if (i==0) 
+   {
+      filling[1] = j;
+      filling[2] = k;
+   }
+   else
+   {
+
+      if (((j+1)%2)==0)
+         filling[1] = (j+1)/2;
+      else 
+         filling[1] = -(j+1)/2;
+
+      if (((k+1)%2)==0)
+         filling[2] = (k+1)/2;
+      else 
+         filling[2] = -(k+1)/2;
+   }
+
+   if ((i==0) && (j==0) && (k==0))
+      filling[3] = 0;
+   else if (h==0)
+      filling[3] = 2;
+   else
+      filling[3] = -2;
+
+   /* modularize the filling */
+   int inc2c =( nfft[0]/2 + 1);
+   filling[0] = (filling[0]+inc2c)%inc2c;
+   filling[1] = (filling[1]+nfft[1])%nfft[1];
+   filling[2] = (filling[2]+nfft[2])%nfft[2];
+}
