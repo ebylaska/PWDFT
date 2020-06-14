@@ -13,4 +13,6 @@ extern void i_aindexcopy(const int, const int *, int *, int *);
 extern void eigsrt(double *, double *, int);
 extern double util_random(const int);
 
+extern void util_getfilling(int, int *, int *, double *);
+
 #endif

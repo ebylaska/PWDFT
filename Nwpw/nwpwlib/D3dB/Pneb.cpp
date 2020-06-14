@@ -61,6 +61,52 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     }
 }
 
+
+
+/*************************************
+ *                                   *
+ *      Pneb::g_generate_random      *
+ *                                   *
+ *************************************/
+void Pneb::g_generate_random(double *psi)
+{
+   int ms,n,indx,i,pj,qj,taskid_j;
+   int filling[4],nfft[3];
+   double zvalue[2];
+   double *tmp2 = new double[n2ft3d];
+
+   nfft[0] = nx;
+   nfft[1] = ny;
+   nfft[2] = nz;
+
+   taskid_j = d1db::parall->taskid_j();
+   for (ms=0; ms<ispin; ++ms)
+   for (n=0; n<ne[ms]; ++n)
+   {
+      util_getfilling(n,nfft,filling,zvalue);
+
+      qj = msntoindex(ms,n);
+      pj = msntop(ms,n);
+      if (pj==taskid_j)
+      {
+         r_zero(tmp2);
+         c_setpw(filling, zvalue, tmp2);
+         c_addrandom(tmp2);
+         indx = 2*npack(1)*qj;
+         c_pack(1,tmp2);
+         cc_pack_copy(1,tmp2,&(psi[indx]));
+      }
+   }
+
+   delete [] tmp2;
+}
+
+
+/*************************************
+ *                                   *
+ *           Pneb::g_read            *
+ *                                   *
+ *************************************/
 void Pneb::g_read(const int iunit, double *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;

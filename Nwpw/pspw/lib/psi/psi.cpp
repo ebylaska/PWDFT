@@ -1,7 +1,6 @@
 
 
 /*
-#include        <iostream>
 #include        <cstdio>
 #include        <stdio.h>
 #include        <cmath>
@@ -9,13 +8,13 @@
 using namespace std;
 */
 
-
-
+#include        <iostream>
 #include	"compressed_io.hpp"
 //#include	"control.hpp"
 
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
+#include	"psi.hpp"
 
 /*****************************************************
  *                                                   *
@@ -45,9 +44,20 @@ void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[],
 
 
 
-void psi_read(Pneb *mypneb,int *version, int nfft[], 
-              double unita[], int *ispin, int ne[],
-              double *psi, char *filename)
+/*****************************************************
+ *                                                   *
+ *                psi_read0                          *
+ *                                                   *
+ *****************************************************/
+/* 
+   Just reads psi and its header.  
+
+   Note - the file must exist
+  
+*/
+void psi_read0(Pneb *mypneb,int *version, int nfft[], 
+               double unita[], int *ispin, int ne[],
+               double *psi, char *filename)
 {
    int occupation;
 
@@ -74,6 +84,39 @@ void psi_read(Pneb *mypneb,int *version, int nfft[],
    if (myparall->is_master()) closefile(4);
 }
 
+/*****************************************************
+ *                                                   *
+ *                psi_read                           *
+ *                                                   *
+ *****************************************************/
+/* 
+   Reads psi and check the header
+*/
+void psi_read(Pneb *mypneb, char *filename, double *psi2)
+{
+   int version,ispin,nfft[3],ne[2];
+   double unita[9];
+
+   /* read psi from file if psi_exist */
+   if (psi_filefind(mypneb,filename))
+   {
+      std::cout << " input psi exists, reading from file: " << filename << std::endl;
+      psi_read0(mypneb,&version,nfft,unita,&ispin,ne,psi2,filename);
+   }
+
+   /* generate new psi */
+   else
+   {
+      std::cout << " generating random psi from scratch" << std::endl;
+      mypneb->g_generate_random(psi2);
+   }
+}
+
+/*****************************************************
+ *                                                   *
+ *                psi_write                          *
+ *                                                   *
+ *****************************************************/
 void psi_write(Pneb *mypneb,int *version, int nfft[],
               double unita[], int *ispin, int ne[],
               double *psi, char *filename)
@@ -98,6 +141,11 @@ void psi_write(Pneb *mypneb,int *version, int nfft[],
    if (myparall->is_master()) closefile(6);
 }
 
+/*****************************************************
+ *                                                   *
+ *                psi_filefind                       *
+ *                                                   *
+ *****************************************************/
 bool psi_filefind(Pneb *mypneb, char *filename)
 {
    int ifound = 0;

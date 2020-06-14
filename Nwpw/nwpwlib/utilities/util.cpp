@@ -1,5 +1,6 @@
 
 #include	<cstdlib>
+#include	<cmath>
 #include	"util.hpp"
 
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
@@ -103,10 +104,10 @@ void eigsrt(double *D, double *V, int n)
 
 /**************************************
  *                                    *
- *           getfilling               *
+ *         util_getfilling            *
  *                                    *
  **************************************/
-void getfilling(int f, int nfft[], int *filling)
+void util_getfilling(int f, int nfft[], int *filling, double zvalue[])
 {
    int h = (f%2);
    int f2 = (f-h)/2;
@@ -142,11 +143,23 @@ void getfilling(int f, int nfft[], int *filling)
    }
 
    if ((i==0) && (j==0) && (k==0))
+   {
       filling[3] = 0;
+      zvalue[0] = 1.0;
+      zvalue[1] = 0.0;
+   }
    else if (h==0)
+   {
       filling[3] = 2;
+      zvalue[0] = 1.0/sqrt(2.0);
+      zvalue[1] = 0.0;
+   }
    else
+   {
       filling[3] = -2;
+      zvalue[0] = 0.0;
+      zvalue[1] = 1.0/sqrt(2.0);
+   }
 
    /* modularize the filling */
    int inc2c =( nfft[0]/2 + 1);
@@ -154,6 +167,7 @@ void getfilling(int f, int nfft[], int *filling)
    filling[1] = (filling[1]+nfft[1])%nfft[1];
    filling[2] = (filling[2]+nfft[2])%nfft[2];
 }
+
 
 /**************************************
  *                                    *

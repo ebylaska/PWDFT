@@ -41,6 +41,7 @@ public:
                }
         }
 
+        void g_generate_random(double *);
         void g_read(const int, double *);
         void g_write(const int, double *);
 

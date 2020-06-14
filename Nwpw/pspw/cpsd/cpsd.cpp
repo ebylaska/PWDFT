@@ -99,6 +99,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    ispin = control.ispin();
    ne[0] = control.ne(0);
    ne[1] = control.ne(1);
+   version = 3;
 
 
    /* initialize parallel grid structure */
@@ -114,7 +115,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
 
-   psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
    /* ortho check */
    sum2  = mygrid.gg_traceall(psi2,psi2);

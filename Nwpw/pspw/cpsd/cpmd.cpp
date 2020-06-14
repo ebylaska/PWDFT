@@ -92,7 +92,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    eig   = new double[ne[0]+ne[1]];
 
    /* read wavefunction */
-   psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
 
    /* ortho check */
    sum2  = mygrid.gg_traceall(psi2,psi2);
@@ -107,7 +107,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    /* read wavefunction velocities */
    mygrid.g_zero(psi0);
    if (psi_filefind(&mygrid,control.input_v_movecs_filename()))
-      psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.input_v_movecs_filename());
+      psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.input_v_movecs_filename());
 
 
    /* read in ion structure */

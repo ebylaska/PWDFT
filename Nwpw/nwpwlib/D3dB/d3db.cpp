@@ -1916,32 +1916,36 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  *         d3db::c_setpw        *
  *                              *
  ********************************/
-void d3db::c_setpw(const int i, const int j, const int k, const double *cvalue, double *a)
+void d3db::c_setpw(const int filling[], const double *cvalue, double *a)
 {
-      int indx = ijktoindex(i,j,k);
-      int p    = ijktop(i,j,k);
+   int i = filling[0];
+   int j = filling[1];
+   int k = filling[2];
+
+   int indx = ijktoindex(i,j,k);
+   int p    = ijktop(i,j,k);
+   if (p==parall->taskid_i())
+   {
+      a[2*indx]   = cvalue[0];
+      a[2*indx+1] = cvalue[1];
+   }
+
+   /* set the conjugate on the i==0 plane */
+   if ((i==0) &&  (j!=0) && (k!=0))
+   {
+      int jc = j; if (jc>(ny/2)) jc -= ny;
+      jc = -jc;   if (jc<0)   jc += ny;
+
+      int kc = k; if (kc>(nz/2)) kc -= nz;
+      kc = -kc;   if (kc<0)   kc += nz;
+      indx = ijktoindex(i,jc,kc);
+      p    = ijktop(i,jc,kc);
       if (p==parall->taskid_i())
       {
          a[2*indx]   = cvalue[0];
-         a[2*indx+1] = cvalue[1];
+         a[2*indx+1] = -cvalue[1];
       }
-
-      /* set the conjugate on the i==0 plane */
-      if ((i==0) &&  (j!=0) && (k!=0))
-      {
-         int jc = j; if (jc>(ny/2)) jc -= ny;
-         jc = -jc;   if (jc<0)   jc += ny;
-
-         int kc = k; if (kc>(nz/2)) kc -= nz;
-         kc = -kc;   if (kc<0)   kc += nz;
-         indx = ijktoindex(i,jc,kc);
-         p    = ijktop(i,jc,kc);
-         if (p==parall->taskid_i())
-         {
-            a[2*indx]   = cvalue[0];
-            a[2*indx+1] = -cvalue[1];
-         }
-      }
+   }
 }
 
 /********************************
