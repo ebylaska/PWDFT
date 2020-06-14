@@ -30,6 +30,10 @@ Control2::Control2(const int np0, const string rtdbstring)
    int  np = np0;
    bool is_cpmd;
 
+   ptotal_ion_charge = 0;
+   pne[0] = 0;
+   pne[1] = 0;
+
    ptask = 0;
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"energy"))           ptask = 1;
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"gradient"))         ptask = 2;

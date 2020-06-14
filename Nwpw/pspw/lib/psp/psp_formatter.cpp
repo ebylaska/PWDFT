@@ -108,5 +108,7 @@ void psp_formatter_check(Parallel *myparall, Ion *myion, Control2& control)
       }
 
    }
+   /* set the total ion charge in control which in turn sets ispin and ne */
+   control.set_total_ion_charge(myion->total_zv());
 
 }

@@ -17,6 +17,12 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
 
+/*****************************************************
+ *                                                   *
+ *                psi_get_header                     *
+ *                                                   *
+ *****************************************************/
+
 void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[], char *filename)
 {
    if (myparall->is_master())

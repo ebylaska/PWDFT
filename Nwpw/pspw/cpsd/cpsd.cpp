@@ -87,7 +87,14 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    psp_formatter_check(&myparallel,&myion,control);
 
    /* Check for vpp and movecs files */
-   //bool newpsi = control.check_charge_multiplicity(&myparallel);
+   if (myparallel.is_master()) 
+   { 
+       cout << "total_ion_charge = " << myion.total_zv() << endl;
+       cout << "ispin = " << control.ispin() << endl;
+       cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
+   }
+
+   /* fetch psi information and check its charge and multiplicity */
 
 
    /* initialize parallel grid structure */

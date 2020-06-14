@@ -100,6 +100,13 @@ public:
     }
 
     void set_zv_psp(const int ia, const double zv) { zv_psp[ia] = zv; }
+    double total_zv()
+    {
+       double tcharge = 0.0;
+       for (auto ia=0; ia< nkatm; ++ia)
+          tcharge += zv_psp[ia]*natm[ia];
+       return tcharge;
+    }
 
 };
 
