@@ -66,6 +66,8 @@ public:
    int ne(const int i)          { return pne[i]; }
    int total_ion_charge()       { return ptotal_ion_charge; }
 
+   int *ne_ptr()                { return pne; }
+
    bool geometry_optimize()       { return pgeometry_optimize; }
 
    char   *input_movecs_filename() { return pinput_movecs_filename; }

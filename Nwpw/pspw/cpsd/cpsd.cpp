@@ -92,14 +92,17 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
        cout << "total_ion_charge = " << myion.total_zv() << endl;
        cout << "ispin = " << control.ispin() << endl;
        cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
+       cout << "ne = " << control.ne_ptr()[0] << " " << control.ne_ptr()[1] << endl;
    }
 
-   /* fetch psi information and check its charge and multiplicity */
+   /* fetch ispin and ne psi information from control */
+   ispin = control.ispin();
+   ne[0] = control.ne(0);
+   ne[1] = control.ne(1);
 
 
    /* initialize parallel grid structure */
-   psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne,control.input_movecs_filename());
-   Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
+   Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
    /* initialize psi1 and psi2 */
    psi1  = mygrid.g_allocate(1);
