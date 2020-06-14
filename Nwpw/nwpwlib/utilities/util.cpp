@@ -1,4 +1,5 @@
 
+#include	<cstdlib>
 #include	"util.hpp"
 
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
@@ -152,4 +153,22 @@ void getfilling(int f, int nfft[], int *filling)
    filling[0] = (filling[0]+inc2c)%inc2c;
    filling[1] = (filling[1]+nfft[1])%nfft[1];
    filling[2] = (filling[2]+nfft[2])%nfft[2];
+}
+
+/**************************************
+ *                                    *
+ *           util_random              *
+ *                                    *
+ **************************************/
+
+/* returns a random number between 0 and 1
+
+   Entry - seed - if zero set a seed with srand
+   Exit - returns a random number between 0 and 1
+   Uses - rand and srand stdlib functions
+*/
+double util_random(const int seed)
+{
+   if (seed>0) std::srand(((double) seed));
+   return ( (double) std::rand()/RAND_MAX);
 }

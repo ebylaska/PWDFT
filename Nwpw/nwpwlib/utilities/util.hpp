@@ -11,5 +11,6 @@ extern void t_bindexcopy(const int, const int *, double *, double *);
 extern void i_aindexcopy(const int, const int *, int *, int *);
 
 extern void eigsrt(double *, double *, int);
+extern double util_random(const int);
 
 #endif
