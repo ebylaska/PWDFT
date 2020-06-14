@@ -21,7 +21,7 @@ class Pneb : public PGrid, public d1db  {
 
 public:
 
-        /* constructor */
+        /* constructors */
 	Pneb(Parallel *, Lattice *, Control2&, int, int *);
 
         /* destructor */

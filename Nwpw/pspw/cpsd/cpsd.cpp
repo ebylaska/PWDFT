@@ -119,7 +119,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
 
-
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
    mystrfac.phafac();
@@ -146,7 +145,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    if (myparallel.is_master())
    {
-      cout << "\n\n";
+      cout << "\n";
       cout << "          ==============  summary of input  ==================\n";
       cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
       cout << "\n";
@@ -291,13 +290,13 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       {
          done = 1;
          if (myparallel.is_master())
-            cout << "         *** arrived at the Maximum iteration.   terminated\n";
+            cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
       }
    }
    if (myparallel.is_master()) 
    {
       seconds(&cpu3);
-      cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
+      cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
    }
 
 
