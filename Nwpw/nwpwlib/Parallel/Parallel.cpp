@@ -130,6 +130,7 @@ Parallel::~Parallel()
 
    delete [] reqcnt;
    delete [] request;
+   delete [] statuses;
 
 
    //MPI::Finalize();
