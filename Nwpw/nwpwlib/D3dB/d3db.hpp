@@ -72,6 +72,8 @@ public:
 	void     c_timereverse(double *, double *, double *);
         int	 timereverse_size();
 
+        void     c_setpw(const int, const int, const int, const double *, double *);
+
         /* t array operators */
         double * t_alloc();
         void     t_dealloc(double *);

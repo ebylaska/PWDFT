@@ -1600,6 +1600,11 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
 
 }
 
+/********************************
+ *                              *
+ *    d3db::c_transpose_jk      *
+ *                              *
+ ********************************/
 void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int it,proc_from,proc_to;
@@ -1636,6 +1641,11 @@ void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
    c_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
 
+/********************************
+ *                              *
+ *    d3db::t_transpose_jk      *
+ *                              *
+ ********************************/
 void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int it,proc_from,proc_to;
@@ -1675,7 +1685,11 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
 
 
 
-
+/********************************
+ *                              *
+ *    d3db::c_transpose_ijk     *
+ *                              *
+ ********************************/
 void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
@@ -1726,7 +1740,11 @@ void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 }
 
 
-
+/********************************
+ *                              *
+ *    d3db::t_transpose_ijk     *
+ *                              *
+ ********************************/
 void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
@@ -1777,7 +1795,11 @@ void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 }
 
 
-
+/********************************
+ *                              *
+ *    d3db::timereverse_size    *
+ *                              *
+ ********************************/
 int d3db::timereverse_size()
 {
    int it,indx1,indx2,i2,i3,j2,j3,k2,k3;
@@ -1842,6 +1864,11 @@ int d3db::timereverse_size()
 }
 
 
+/********************************
+ *                              *
+ *      d3db::c_timereverse     *
+ *                              *
+ ********************************/
 void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
 {
    int nnfft3d,indx,it,proc_from,proc_to;
@@ -1883,3 +1910,36 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
    c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
 }
 
+
+/********************************
+ *                              *
+ *         d3db::c_setpw        *
+ *                              *
+ ********************************/
+void d3db::c_setpw(const int i, const int j, const int k, const double *cvalue, double *a)
+{
+      int indx = ijktoindex(i,j,k);
+      int p    = ijktop(i,j,k);
+      if (p==parall->taskid_i())
+      {
+         a[2*indx]   = cvalue[0];
+         a[2*indx+1] = cvalue[1];
+      }
+
+      /* set the conjugate on the i==0 plane */
+      if ((i==0) &&  (j!=0) && (k!=0))
+      {
+         int jc = j; if (jc>(ny/2)) jc -= ny;
+         jc = -jc;   if (jc<0)   jc += ny;
+
+         int kc = k; if (kc>(nz/2)) kc -= nz;
+         kc = -kc;   if (kc<0)   kc += nz;
+         indx = ijktoindex(i,jc,kc);
+         p    = ijktop(i,jc,kc);
+         if (p==parall->taskid_i())
+         {
+            a[2*indx]   = cvalue[0];
+            a[2*indx+1] = -cvalue[1];
+         }
+      }
+}
