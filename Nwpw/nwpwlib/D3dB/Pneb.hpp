@@ -101,6 +101,7 @@ public:
 
         void gh_fftb(double *, double *);
         void ggm_lambda(double, double *, double *, double *);
+        void g_ortho(double *);
 
         void gg_SMul(double, double *, double *);
         void gg_Sum2(double *, double *);

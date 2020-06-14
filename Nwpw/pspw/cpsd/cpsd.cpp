@@ -125,7 +125,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    if (fabs(sum2-sum1)>1.0e-10)
    {
       if (myparallel.is_master())
-         printf("Warning: Gram-Schmidt Being performed on psi2\n");
+         printf(" Warning: Gram-Schmidt Being performed on psi2\n");
    }
 
 

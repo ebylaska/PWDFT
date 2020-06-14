@@ -9,6 +9,7 @@ using namespace std;
 */
 
 #include        <iostream>
+#include        <cmath>
 #include	"compressed_io.hpp"
 //#include	"control.hpp"
 
@@ -79,6 +80,7 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
    myparall->Brdcst_iValue(0,0,ispin);
    myparall->Brdcst_iValues(0,0,2,ne);
 
+   /* reads in c format and automatically packs the result to g format */
    mypneb->g_read(4,psi);
 
    if (myparall->is_master()) closefile(4);
@@ -90,12 +92,21 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
  *                                                   *
  *****************************************************/
 /* 
-   Reads psi and check the header
+   Reads psi and checks the header and check for orthonormalization.
+   Entry - mypneb: Pneb grid structure
+           filename: input filename
+   Exit - psi2: complex wavefunction
+
+   Uses - psi_filefind, psi_read0, 
+          mypneb->g_generate_random, 
+          mypneb->gg_traceall, 
+          mypneb->g_ortho
 */
 void psi_read(Pneb *mypneb, char *filename, double *psi2)
 {
    int version,ispin,nfft[3],ne[2];
    double unita[9];
+   Parallel *myparall = mypneb->d3db::parall;
 
    /* read psi from file if psi_exist */
    if (psi_filefind(mypneb,filename))
@@ -110,7 +121,19 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
       std::cout << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);
    }
+
+   /* ortho check */
+   double sum2  = mypneb->gg_traceall(psi2,psi2);
+   double sum1  = mypneb->ne[0] + mypneb->ne[1];
+   if ((mypneb->ispin)==1) sum1 *= 2;
+   if (fabs(sum2-sum1)>1.0e-10)
+   {
+      if (myparall->is_master())
+         std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+      mypneb->g_ortho(psi2);
+   }
 }
+
 
 /*****************************************************
  *                                                   *

@@ -661,4 +661,44 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
    /* correction due to contraint */
    fmf_Multiply(-1,psi1,lmbda,dte,psi2,1.0);
 }
+
+/********************************
+ *                              *
+ *        Pneb::g_ortho         *
+ *                              *
+ ********************************/
+/*
+   Performs a Gram-Schmidt orthogonalization on psi
+
+*/
+void Pneb::g_ortho(double *psi)
+{
+   int indxj,indxk,ishift;
+   double w;
+   if (parallelized)
+   {
+     printf("Pneb::g_ortho: 2d parallelization not finished\n");
+   }
+   else
+   {
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         ishift = ms*ne[1]*2*npack(1);
+         for (auto k=ne[ms]-1; k>=0;  --k)
+         {
+            indxk = 2*npack(1)*k + ishift;
+            w = cc_pack_dot(1,&psi[indxk],&psi[indxk]);
+            w = 1.0/sqrt(w);
+            c_SMul(1,w,&psi[indxk]);
+
+            for (auto j=k-1; j>=0; --j)
+            {
+               indxj = 2*npack(1)*j  + ishift;
+               w = -cc_pack_dot(1,&psi[indxk],&psi[indxj]);
+               cc_daxpy(1,w,&psi[indxk],&psi[indxj]);
+            }
+         }
+      }
+   }
+}
  
