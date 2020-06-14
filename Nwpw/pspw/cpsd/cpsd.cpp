@@ -118,17 +118,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
-   /* ortho check */
-   sum2  = mygrid.gg_traceall(psi2,psi2);
-   sum1  = ne[0]+ne[1];
-   if (ispin==1) sum1 *= 2;
-   if (fabs(sum2-sum1)>1.0e-10)
-   {
-      if (myparallel.is_master())
-         printf(" Warning: Gram-Schmidt Being performed on psi2\n");
-   }
-
-
 
 
    /* setup structure factor */
@@ -261,8 +250,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) 
    {
       seconds(&cpu2);
-      cout << "         ================ iteration =========================\n";
-      cout << "     >>> iteration started at " << util_date() << " <<<\n";
+      cout << "     ========================== iteration ==========================\n";
+      cout << "          >>> iteration started at " << util_date() << "  <<<\n";
       cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
       cout << "     ---------------------------------------------------------------\n";
 
