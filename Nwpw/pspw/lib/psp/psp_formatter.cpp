@@ -2,7 +2,9 @@
 #include        "compressed_io.hpp"
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
+#include        "util.hpp"
 #include        "Ion.hpp"
+#include	"psp_formatter.hpp"
 
 /*****************************************************
  *                                                   *
@@ -105,10 +107,53 @@ void psp_formatter_check(Parallel *myparall, Ion *myion, Control2& control)
       if (reformat)
       {
          printf("Need to reformat %s\n", fname);
+         zv = psp_formatter_auto(myparall,control,myion->atom(ia));
+         myion->set_zv_psp(ia,zv);
       }
 
    }
    /* set the total ion charge in control which in turn sets ispin and ne */
    control.set_total_ion_charge(myion->total_zv());
 
+}
+
+
+/*****************************************************
+ *                                                   *
+ *                psp_formatter_auto                 *
+ *                                                   *
+ *****************************************************/
+/*
+   This function formats a .psp file to a .vpp file.  If the
+.psp does not exist a call is made to psp_generator_auto which 
+will generate it.
+
+   Entry - myparall: Parallel object
+           control:  Control2 object
+           atom:     atom symbol
+   Exit - on exit the .vpp file has been created, and the value of 
+          the valence charge, zv, is returned
+
+   Uses - psp_generator_auto,util_filefind
+*/
+double psp_formatter_auto(Parallel *myparall, Control2& control, char *atom)
+{
+   double zv=0;
+   char psp_fname[256],vpp_fname[256];
+
+   /* define psp and vpp filenames */
+   strcpy(psp_fname,atom);
+   strcat(psp_fname,".vpp");
+   control.add_permanent_dir(psp_fname);
+
+   strcpy(vpp_fname,atom);
+   strcat(vpp_fname,".vpp");
+   control.add_permanent_dir(vpp_fname);
+
+   /* generate one-dimensional pseudopotential file */
+   if (!util_filefind(myparall,psp_fname))
+   {
+   }
+
+   return zv;
 }

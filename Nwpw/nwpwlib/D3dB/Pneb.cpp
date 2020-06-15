@@ -113,6 +113,7 @@ void Pneb::g_read(const int iunit, double *psi)
    double *tmp2 = new double[n2ft3d];
 
    taskid_j = d1db::parall->taskid_j();
+
    for (ms=0; ms<ispin; ++ms)
    for (n=0; n<ne[ms]; ++n)
    {

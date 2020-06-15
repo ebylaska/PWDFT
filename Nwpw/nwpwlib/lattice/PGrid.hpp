@@ -37,8 +37,11 @@ public:
         ~PGrid() { 
             delete [] Garray; 
             delete [] Gpack[0]; 
+            delete [] Gpack[1]; 
             delete [] masker[0];
+            delete [] masker[1];
             delete [] packarray[0];
+            delete [] packarray[1];
             if (balanced) delete mybalance;
             delete [] zero_row3[0];
             delete [] zero_row3[1];

@@ -63,6 +63,7 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
    int occupation;
 
    Parallel *myparall = mypneb->d3db::parall;
+   
 
    if (myparall->is_master())
    {
@@ -111,14 +112,16 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
    /* read psi from file if psi_exist */
    if (psi_filefind(mypneb,filename))
    {
-      std::cout << " input psi exists, reading from file: " << filename << std::endl;
+      if (myparall->is_master())
+         std::cout << " input psi exists, reading from file: " << filename << std::endl;
       psi_read0(mypneb,&version,nfft,unita,&ispin,ne,psi2,filename);
    }
 
    /* generate new psi */
    else
    {
-      std::cout << " generating random psi from scratch" << std::endl;
+      if (myparall->is_master())
+         std::cout << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);
    }
 

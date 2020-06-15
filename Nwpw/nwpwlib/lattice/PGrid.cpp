@@ -15,6 +15,7 @@ using namespace std;
 
 
 
+#include        <iostream>
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
@@ -42,8 +43,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
    eps = 1.0e-12;
    Garray = new double [3*nfft3d];
    G1 = Garray; 
-   G2 = &Garray[nfft3d]; 
-   G3 = &Garray[2*nfft3d];
+   G2 = (double *) &Garray[nfft3d]; 
+   G3 = (double *) &Garray[2*nfft3d];
    nxh = nx/2;
    nyh = ny/2;
    nzh = nz/2;
@@ -68,8 +69,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
       }
 
    }
-   masker[0] = new int [2*nfft3d];
-   masker[1] = &(masker[0][nfft3d]);
+   //masker[0] = new int [2*nfft3d];
+   //masker[1] = (int *) &(masker[0][nfft3d]);
+   masker[0] = new int [nfft3d];
+   masker[1] = new int [nfft3d];
    //for (int k=0; k<(2*nfft3d); ++k) 
    //   masker[0][k] = 1;
    for (int k=0; k<(nfft3d); ++k) 
@@ -115,8 +118,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
    }
 
 
-   packarray[0] = new int [2*nfft3d];
-   packarray[1] = &(packarray[0][nfft3d]);
+   //packarray[0] = new int [2*nfft3d];
+   //packarray[1] = (int *) &(packarray[0][nfft3d]);
+   packarray[0] = new int [nfft3d];
+   packarray[1] = new int [nfft3d];
 
    for (nb=0; nb<=1; ++nb)
    {
@@ -196,6 +201,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
    nwave_in[0] = nida[0] + nidb2[0];
    nwave_in[1] = nida[1] + nidb2[1];
 
+
    if (control.balance()) 
    {
       balanced = 1;
@@ -259,8 +265,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
  
    }
 
-   Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
-   Gpack[1] = &(Gpack[0][3*(nida[0]+nidb[0])]);
+   //Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
+   //Gpack[1] = (double *) &(Gpack[0][3*(nida[0]+nidb[0])]);
+   Gpack[0] = new double [3*(nida[0]+nidb[0])];
+   Gpack[1] = new double [3*(nida[1]+nidb[1])];
    double *Gtmp = new double [nfft3d];
    int one      = 1;
    for (nb=0; nb<=1; ++nb)
@@ -270,9 +278,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
          dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
          this->t_pack(nb,Gtmp);
          this->tt_pack_copy(nb,Gtmp,&(Gpack[nb][i*(nidb[nb]+nidb[nb])]));
-
       }
    }
+
    delete [] Gtmp;
 }
 
@@ -336,13 +344,14 @@ void PGrid::c_pack(const int nb, double *a)
    int zero     = 0;
    double rzero = 0.0;
    double *tmp = new double [n2ft3d];
-
+  
    dcopy_(&n2ft3d,a,&one,tmp,&one);
    dcopy_(&n2ft3d,&rzero,&zero,a,&one);
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
    if (balanced)
       mybalance->c_balance(nb,a);
+
 
    delete [] tmp;
 }

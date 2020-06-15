@@ -361,6 +361,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_deallocate(lmbda);
    delete [] eig;
 
+
+
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];

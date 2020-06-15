@@ -1,6 +1,8 @@
 
 #include	<cstdlib>
 #include	<cmath>
+#include        "compressed_io.hpp"
+#include        "Parallel.hpp"
 #include	"util.hpp"
 
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
@@ -186,3 +188,22 @@ double util_random(const int seed)
    if (seed>0) std::srand(((double) seed));
    return ( (double) std::rand()/RAND_MAX);
 }
+
+
+/**************************************
+ *                                    *
+ *           util_filefind            *
+ *                                    *
+ **************************************/
+bool util_filefind(Parallel *myparall, char *fname)
+{
+   int ifound;
+
+   if (myparall->is_master())
+      ifound = cfileexists(fname);
+
+   myparall->Brdcst_iValue(0,0,&ifound);
+
+   return (ifound>0);
+}
+

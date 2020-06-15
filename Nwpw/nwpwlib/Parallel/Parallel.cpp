@@ -3,7 +3,6 @@
 	this class is used for defining 3d parallel maps
 */
 
-#include        <iostream>
 #include        <cmath>
 #include        <cstdlib>
 using namespace std;
@@ -100,9 +99,9 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
    }
 
    //ii = 3+control.pfft3_qsize();
-   ii = 3+pfft3_qsize;
-   reqcnt  = new int[ii];
    //request = new MPI::Request*[ii];
+   ii = 3+pfft3_qsize;
+   reqcnt   = new int[ii];
    request  = new MPI_Request*[ii];
    statuses = new MPI_Status*[ii];
 
