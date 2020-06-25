@@ -106,7 +106,7 @@ void psp_formatter_check(Parallel *myparall, Ion *myion, Control2& control)
 
       if (reformat)
       {
-         printf("Need to reformat %s\n", fname);
+         printf(" -- Need to reformat %s\n", fname);
          zv = psp_formatter_auto(myparall,control,myion->atom(ia));
          myion->set_zv_psp(ia,zv);
       }
@@ -154,6 +154,33 @@ double psp_formatter_auto(Parallel *myparall, Control2& control, char *atom)
    if (!util_filefind(myparall,psp_fname))
    {
    }
+
+   /* get the psp type - call get_psp_type(psp_filename,psp_type) */
+/*
+   psp_type = get_psp_type(psp_fname);
+
+   if ((psp_type==0) || (psp_type==9))
+   {
+     value = pspformatter_kbppv3d(false,version,psp_filename,formatted_filename,ngrid,unita,locp,lmax,rlocal);
+   }
+   else if (psp_type==1)
+   {
+         value = pspformatter_hghppv1(.false.,version,psp_filename,formatted_filename,ngrid,unita,rlocal);
+   }
+   else if (psp_type==2)
+   {
+         value = pspformatter_kbppv3e(.false.,version,psp_filename,formatted_filename,ngrid,unita,locp,lmax,rlocal);
+   }
+   else if ((psp_type==4) || (psp_type==6))
+   {
+         value = pspformatter_pawppv1(.false.,version,psp_filename,formatted_filename,ngrid,unita,locp,lmax,rlocal);
+   }
+   else 
+   {
+         value = .false.
+   }
+*/
+      
 
    return zv;
 }

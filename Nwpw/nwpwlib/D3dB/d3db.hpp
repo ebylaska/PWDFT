@@ -80,6 +80,7 @@ public:
         double * t_alloc();
         void     t_dealloc(double *);
 	void     t_read(const int, double *, const int);
+	void     t_write(const int, double *, const int);
 };
 
 #endif

@@ -1597,8 +1597,121 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
       delete [] tmp2;
       delete [] tmp1;
    }
-
 }
+
+
+/********************************
+ *                              *
+ *         d3db::t_write        *
+ *                              *
+ ********************************/
+void d3db::t_write(const int iunit, double *a, const int jcol)
+{
+   int index,ii,jj,p_from,p_here;
+   int taskid   = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j     = parall->np_j();
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      double *tmp = new double[(nx+2)*ny];
+      int   bsize = (nx/2+1)*ny;
+
+      /**** master node gathers and write to file ****/
+      if (taskid==MASTER)
+         for (int k=0; k<nz; ++k)
+         {
+            ii    = ijktop(0,0,k);
+            p_from = parall->convert_taskid_ij(ii,jcol);
+            if (p_from==MASTER) 
+            {
+               index = ijktoindex(0,0,k);
+               for (int k=0; k<bsize; ++k) a[index+k] = tmp[k];
+               dwrite(iunit,tmp,bsize);
+            }
+            else
+            {
+                parall->dreceive(0,9,p_from,bsize,tmp);
+            }
+            dwrite(iunit,tmp,bsize);
+
+         }
+
+      /**** not master node ****/
+      else
+         for (int k=0; k<nz; ++k)
+         {
+            index = ijktoindex(0,0,k);
+            ii    = ijktop(0,0,k);
+            p_here = parall->convert_taskid_ij(ii,taskid_j);
+            if (p_here==taskid)
+            {
+               for (int k=0; k<bsize; ++k) tmp[k] = a[index+k];
+               parall->dsend(0,9,MASTER,bsize,tmp);
+            }
+         }
+
+      delete [] tmp;
+   }
+
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {  
+      double *tmp1 = new double[2*nfft3d];
+      double *tmp2 = new double[2*nfft3d];
+      t_transpose_ijk(5,a,tmp1,tmp2);
+      delete [] tmp2;
+      delete [] tmp1;
+
+      double *tmp = new double[nx/2+1];
+      int bsize = (nx/2+1);
+         
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid==MASTER)
+         for (int k=0; k<nz; ++k)
+         for (int j=0; j<ny; ++j)
+         {
+            ii     = ijktop2(0,j,k);
+            p_from = parall->convert_taskid_ij(ii,jcol);
+            if (p_from==MASTER) 
+            {
+               index  = ijktoindex2t(0,j,k);
+               for (int k=0; k<bsize; ++k) tmp[k] = a[index+k];
+            }
+            else
+            {
+               parall->dreceive(0,9,p_from,bsize,tmp);
+            }
+            dwrite(iunit,tmp,bsize);
+         }
+      
+      /**** not master node ****/
+      else
+         for (int k=0; k<nz; ++k)
+         for (int j=0; j<ny; ++j)
+         {  
+            ii     = ijktop2(0,j,k);
+            p_here = parall->convert_taskid_ij(ii,taskid_j);
+            if (p_here==taskid)
+            {  
+               index  = ijktoindex2t(0,j,k);
+               for (int k=0; k<bsize; ++k) tmp[k] = a[index+k];
+               parall->dsend(0,9,MASTER,bsize,tmp);
+            }
+         }
+      
+      delete [] tmp;
+      
+   }
+}
+
+
+
 
 /********************************
  *                              *
