@@ -85,7 +85,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    Ion myion(rtdbstring,control);
 
    /* Check for vpp files */
-   if (myparallel.is_master()) cout << std::endl << " psp_library: " << psp_library(control.psp_library_dir()).nwpw_libraryps << std::endl;
+   if (myparallel.is_master()) 
+      cout << std::endl << " psp_library: " << psp_library(control.psp_library_dir()).nwpw_libraryps << std::endl << std::endl;;
    psp_formatter_check(&myparallel,&myion,control);
 
    /* Check for vpp and movecs files */
