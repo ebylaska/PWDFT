@@ -1,0 +1,21 @@
+
+Comment: Li pseudopotential parameters
+Comment: updated May 16, 20179 
+Comment: relativistic Hamann, quadratic semicore
+Comment: local potential is p
+
+[lmax] 1
+[locp] 1
+[rlocal] 1.0
+<atom>
+Li
+3.0 7.0 1 2 
+1  0      2.0
+2  0      0.95
+2  1      0.05
+<end>
+<solver>          pauli         <end>
+<pseudopotential> hamann        <end>
+<semicore> 1.000   <end>
+<semicore_type> quadratic <end>
+

@@ -1,0 +1,30 @@
+Comment: Cr pseudopotential parameters
+Comment: Fitted 10-29-10
+Comment: by E.J. Bylaska,
+Comment: relativistic TM, 3s3p included in valence
+
+[lmax] 2
+[locp] 0
+[rlocal] 1.0
+[cutoff] 50.0
+
+<atom>
+Cr
+24.0 52.0 3 3
+1  0      2.00
+2  0      2.00
+2  1      6.00
+3  0      2.00
+3  1      6.00
+3  2      3.00
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut>
+   0   1.20
+   1   2.00
+   2   1.40
+<end>
+<screening_cut> 0.1 <end>
+
+<comment> Parameterized (10-29-10 by EJB) Troullier-Martin psp <end>

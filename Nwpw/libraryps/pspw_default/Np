@@ -1,0 +1,50 @@
+#
+# $Id$
+#
+
+Comment: Np pseudopotential parameters
+Comment: relativistic TM
+
+[lmax] 3
+[locp] 0
+[rlocal] 1.0
+[cutoff] 50.0
+
+<comment> Parameterized (8/20/2012 by EJB) Troullier-Martins psp <end>
+
+ <atom>
+ Np 
+  0.930000E+02  237.0000   13 4
+      1 0 2.0
+      2 0 2.0
+      2 1 6.0
+      3 0 2.0
+      3 1 6.0
+      3 2 10.0
+      4 0 2.0
+      4 1 6.0
+      4 2 10.0
+      4 3 14.0
+      5 0 2.0
+      5 1 6.0
+      5 2 10.0
+      6 0 2.0
+      6 1 6.0
+      5 3 3.0
+      6 2 1.0
+ <end>
+ <solver> pauli			        <end>
+ <pseudopotential> troullier-martins	<end>
+<rcut>
+      0 1.42088
+      1 1.60200
+      2 2.40000
+      3 1.35000
+<end>
+
+<screening_cut> 0.10 <end>
+
+
+
+
+
