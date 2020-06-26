@@ -39,6 +39,10 @@
 #include "util_date.hpp"
 #include "parse_pwdft.hpp"
 
+extern "C" {
+#include "psp_library.h"
+}
+
 #include "nwpw.hpp"
 
 using namespace std;
@@ -60,10 +64,13 @@ int main(int argc, char* argv[])
 
   /* set the pseudopotential library directory */
   const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default;
-  if (const char* libraryps0 = std::getenv("NWPW_LIBRARY"))
+  if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
      nwpw_libraryps = libraryps0;
-  else if (const char*  libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
+  else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
      nwpw_libraryps = libraryps0;
+
+  psp_library_setdir(nwpw_libraryps);
+
 
 
   if (oprint) 
