@@ -34,6 +34,7 @@ class Control2 {
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
+   char ppsp_library_dir[256];
 
 public:
 
@@ -75,6 +76,7 @@ public:
    char   *input_v_movecs_filename() { return pinput_v_movecs_filename; }
    char   *output_v_movecs_filename() { return poutput_v_movecs_filename; }
    char   *permanent_dir() { return ppermanent_dir;}
+   char   *psp_library_dir() { return ppsp_library_dir; }
 
    void add_permanent_dir(char *);
 

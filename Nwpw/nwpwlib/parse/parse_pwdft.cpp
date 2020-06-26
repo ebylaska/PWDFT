@@ -710,6 +710,7 @@ std::string parse_nwinput(std::string nwinput)
    // fetch the permanent_dir and scratch_dir
    string permanent_dir = ".";
    string scratch_dir   = ".";
+   string psp_library_dir = "";
    if (mystring_contains(mystring_lowercase(nwinput),"permanent_dir"))
    {
       if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[0],"\n").back()),"#"))
@@ -719,6 +720,11 @@ std::string parse_nwinput(std::string nwinput)
    {
       if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[0],"\n").back()),"#"))
          scratch_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"scratch_dir")[1],"\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput),"psp_library_dir"))
+   {
+      if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"psp_library_dir")[0],"\n").back()),"#"))
+         psp_library_dir  = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput,"psp_library_dir")[1],"\n")[0]));
    }
 
    // fetch the dbname
@@ -748,6 +754,7 @@ std::string parse_nwinput(std::string nwinput)
    // set the permanent_dir and scratch_dir
    rtdb["permanent_dir"] = permanent_dir;
    rtdb["scratch_dir"]   = scratch_dir;
+   rtdb["psp_library_dir"] = psp_library_dir;
 
 
    // split nwinput into lines

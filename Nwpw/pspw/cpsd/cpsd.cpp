@@ -26,6 +26,7 @@ using namespace std;
 #include	"mpi.h"
 
 #include	"psp_formatter.hpp"
+#include	"psp_library.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -84,6 +85,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    Ion myion(rtdbstring,control);
 
    /* Check for vpp files */
+   if (myparallel.is_master()) cout << std::endl << " psp_library: " << psp_library(control.psp_library_dir()).nwpw_libraryps << std::endl;
    psp_formatter_check(&myparallel,&myion,control);
 
    /* Check for vpp and movecs files */

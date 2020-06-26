@@ -38,10 +38,7 @@
 
 #include "util_date.hpp"
 #include "parse_pwdft.hpp"
-
-extern "C" {
-#include "psp_library.h"
-}
+#include "psp_library.hpp"
 
 #include "nwpw.hpp"
 
@@ -62,16 +59,12 @@ int main(int argc, char* argv[])
 
   bool oprint = (taskid==MASTER);
 
-  /* set the pseudopotential library directory */
+  /* Fetch  the pseudopotential library directory */
   const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default;
   if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
      nwpw_libraryps = libraryps0;
   else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
      nwpw_libraryps = libraryps0;
-
-  psp_library_setdir(nwpw_libraryps);
-
-
 
   if (oprint) 
   {
@@ -123,14 +116,15 @@ int main(int argc, char* argv[])
      std::cout << "       Energy Sciences.\n\n";
      std::cout << "       Job information\n";
      std::cout << "       ---------------\n";
-     std::cout << "       program          = pwdft (NWChemEx)\n";
-     std::cout << "       build configured = " << Nwpw_COMPILE_TIMESTAMP << std::endl;
-     std::cout << "       source           = " << Nwpw_TOP << std::endl;
-     std::cout << "       version          = " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
-     std::cout << "       psp libraries    = " << nwpw_libraryps << std::endl << std::endl;
-     std::cout << "       date             = " << util_date() << std::endl;
-     std::cout << "       nproc            = " << np << std::endl;
-     std::cout << "       input            = " << nwfilename << std::endl << std::endl;
+     std::cout << "       program               = pwdft (NWChemEx)\n";
+     std::cout << "       build configured      = " << Nwpw_COMPILE_TIMESTAMP << std::endl;
+     std::cout << "       source                = " << Nwpw_TOP << std::endl;
+     std::cout << "       version               = " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
+     //std::cout << "       psp libraries    = " << nwpw_libraryps << std::endl << std::endl;
+     std::cout << "       default psp libraries = " << psp_library("").nwpw_libraryps << std::endl << std::endl;
+     std::cout << "       date                  = " << util_date() << std::endl;
+     std::cout << "       nproc                 = " << np << std::endl;
+     std::cout << "       input                 = " << nwfilename << std::endl << std::endl;
      std::cout << std::endl << std::endl;
 
   }

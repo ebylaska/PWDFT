@@ -38,6 +38,7 @@ include_directories(${MPI_INCLUDE_PATH})
 
 # configure a header file to pass the version number only
 configure_file(NwpwConfig.h.in NwpwConfig.h)
+configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/psp_library/NwpwLibrarypsConfig.hpp")
 
 
 # create the nwpwlib and pspw libraries
