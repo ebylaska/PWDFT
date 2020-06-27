@@ -4,14 +4,20 @@
    author - Eric Bylaska
 
 */
+#include	<map>
+#include	<string>
+#include	"Control2.hpp"
 
 class psp_library {
 
    public:
-   const char *nwpw_libraryps;
+   std::string nwpw_libraryps_dir;
+   std::string default_library;
+   std::map<std::string, std::string> libraries;
 
    /* Constructors */
-   psp_library(const char *);
+   psp_library(const std::string);
+   psp_library(Control2&);
 
 };
 

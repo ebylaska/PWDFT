@@ -4,6 +4,7 @@
    Author - Eric Bylaska
 */
 
+#include	<map>
 #include        <string>
 using namespace std;
 
@@ -34,12 +35,16 @@ class Control2 {
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
-   char ppsp_library_dir[256];
+
 
 public:
 
    /* constructor */
    Control2(const int, const string);
+
+   /* public variables */
+   string psp_library_dir;
+   std::map<std::string, std::string> psp_libraries;
 
    // Access functions
    double unita(const int i,const int j) { return punita[i+j*3]; }
@@ -76,7 +81,7 @@ public:
    char   *input_v_movecs_filename() { return pinput_v_movecs_filename; }
    char   *output_v_movecs_filename() { return poutput_v_movecs_filename; }
    char   *permanent_dir() { return ppermanent_dir;}
-   char   *psp_library_dir() { return ppsp_library_dir; }
+
 
    void add_permanent_dir(char *);
 

@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
      std::cout << "       source                = " << Nwpw_TOP << std::endl;
      std::cout << "       version               = " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
      //std::cout << "       psp libraries    = " << nwpw_libraryps << std::endl << std::endl;
-     std::cout << "       default psp libraries = " << psp_library("").nwpw_libraryps << std::endl << std::endl;
+     std::cout << "       default psp libraries = " << psp_library("").nwpw_libraryps_dir << std::endl << std::endl;
      std::cout << "       date                  = " << util_date() << std::endl;
      std::cout << "       nproc                 = " << np << std::endl;
      std::cout << "       input                 = " << nwfilename << std::endl << std::endl;

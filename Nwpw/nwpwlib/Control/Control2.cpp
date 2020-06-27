@@ -90,9 +90,14 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"].is_boolean()) 
       pgeometry_optimize = rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
 
-   string psp_library_dir_str = "";
+   psp_library_dir = "";
    if (rtdbjson["psp_library_dir"].is_string()) 
-      psp_library_dir_str = rtdbjson["psp_library_dir"];
+      psp_library_dir = rtdbjson["psp_library_dir"];
+
+   if (!rtdbjson["nwpw"]["pseudopotentials"].is_null()) 
+      for (auto& el : rtdbjson["nwpw"]["pseudopotentials"].items()) {
+         psp_libraries[el.key()] = el.value();
+      }
 
    string permanent_dir_str = "";
    string scratch_dir_str   = "";
@@ -143,7 +148,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    strcpy(pinput_v_movecs_filename,const_cast<char*>(input_v_movecs.data()));
    strcpy(poutput_v_movecs_filename,const_cast<char*>(output_v_movecs.data()));
    strcpy(ppermanent_dir,const_cast<char*>(permanent_dir_str.data()));
-   strcpy(ppsp_library_dir,const_cast<char*>(psp_library_dir_str.data()));
+   //strcpy(ppsp_library_dir,const_cast<char*>(psp_library_dir_str.data()));
 
 
    pfake_mass = 400000.0;

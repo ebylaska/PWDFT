@@ -162,6 +162,36 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
 
    return geom;
 }
+/**************************************************
+ *                                                *
+ *              parse_pseudopotentials             *
+ *                                                *
+ **************************************************/
+static json parse_pseudopotentials(json pseudopotentials, int *curptr, vector<string> lines)
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+   vector<string> ss;
+
+   while (endcount>0)
+   {
+      line = lines[cur];
+      if (mystring_contains(lines[cur],"library"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>2)
+            if (mystring_contains(ss[1],"library"))
+                pseudopotentials[ss[0]] = ss[2];
+      }
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+   *curptr = cur;
+   return pseudopotentials;
+}
 
 /**************************************************
  *                                                *
@@ -551,6 +581,17 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          }
          *curptr = cur;
          nwpwjson["simulation_cell"] = parse_simulation_cell(nwpwjson["simulation_cell"],curptr,lines);
+         cur = *curptr;
+      }
+      else if (mystring_contains(line,"pseudopotentials"))
+      {
+         if  (nwpwjson["pseudopotentials"].is_null())
+         {
+            json pseudopotentials; 
+            nwpwjson["pseudopotentials"] = pseudopotentials;
+         }
+         *curptr = cur;
+         nwpwjson["pseudopotentials"] = parse_pseudopotentials(nwpwjson["pseudopotentials"],curptr,lines);
          cur = *curptr;
       }
       else if (mystring_contains(line,"steepest_descent"))

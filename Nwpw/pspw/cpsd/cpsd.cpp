@@ -86,7 +86,11 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    /* Check for vpp files */
    if (myparallel.is_master()) 
-      cout << std::endl << " psp_library: " << psp_library(control.psp_library_dir()).nwpw_libraryps << std::endl << std::endl;;
+   {
+      std::cout << std::endl << " psp_library: " << psp_library(control).nwpw_libraryps_dir << std::endl << std::endl;;
+      for (auto const& x : psp_library(control).libraries)
+         std::cout << " " << x.first << " library " << x.second << std::endl; 
+   }
    psp_formatter_check(&myparallel,&myion,control);
 
    /* Check for vpp and movecs files */
