@@ -30,7 +30,9 @@ using namespace std;
  *                              *
  ********************************/
 
-PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(inparall,control.mapping(),control.ngrid(0),control.ngrid(1),control.ngrid(2))
+//PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(inparall,control.mapping(),control.ngrid(0),control.ngrid(1),control.ngrid(2))
+
+PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0, int nx0, int ny0, int nz0) : d3db(inparall,mapping0,nx0,ny0,nz0)
 {
    int i,j,k,nxh,nyh,nzh,p,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
@@ -202,7 +204,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
    nwave_in[1] = nida[1] + nidb2[1];
 
 
-   if (control.balance()) 
+   //if (control.balance()) 
+   if (balance0) 
    {
       balanced = 1;
       mybalance = new Balance(parall,2,nwave_in,nwave_out);
@@ -283,6 +286,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : d3db(i
 
    delete [] Gtmp;
 }
+
+PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}
 
 
 /* 
