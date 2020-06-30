@@ -12,7 +12,7 @@ using namespace std;
 
 #include        <iostream>
 
-#include	<string.h>
+#include	<cstring>
 #include        <cmath>
 
 #include	"Control2.hpp"

@@ -5,10 +5,9 @@
 
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-#include	<string.h>
+#include	<cstring>
 using namespace std;
 
 #include "json.hpp"

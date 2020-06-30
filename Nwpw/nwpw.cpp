@@ -30,7 +30,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
-#include <stdio.h>
 #include <string>
 
 #include "NwpwConfig.h"

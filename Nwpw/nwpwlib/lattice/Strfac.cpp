@@ -3,14 +3,13 @@
 */
 
 
-#include	<string.h>
 
 
+#include        <cstdlib>
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
+#include	<cstring>
 #include        <cmath>
-#include        <cstdlib>
 using namespace std;
 
 #include	"Strfac.hpp"

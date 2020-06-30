@@ -3,12 +3,11 @@
 */
 
 
-#include	<string.h>
+#include	<cstring>
 
 
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
 

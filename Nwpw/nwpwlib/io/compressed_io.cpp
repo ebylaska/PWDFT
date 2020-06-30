@@ -25,16 +25,14 @@
 *************************************************************************
 */
 
+#include        <cstdlib>
+#include        <cstdio>
 #include        <iostream>
 #include        <cmath>
-#include        <cstdlib>
+#include        <cstring>
 using namespace std;
 
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "Int64.h"
 
 

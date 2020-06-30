@@ -1,5 +1,6 @@
 
 #include	<vector>
+#include	<cstring>
 #include        "compressed_io.hpp"
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
