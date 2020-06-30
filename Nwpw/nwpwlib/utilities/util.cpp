@@ -1,7 +1,10 @@
 
+extern "C" {
+#include        "compressed_io.h"
+}
+
 #include	<cstdlib>
 #include	<cmath>
-#include        "compressed_io.hpp"
 #include        "Parallel.hpp"
 #include	"util.hpp"
 

@@ -1,7 +1,6 @@
 #ifndef _PSIGETHEADER_H_
 #define _PSIGETHEADER_H_
 
-#include	"compressed_io.hpp"
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
 

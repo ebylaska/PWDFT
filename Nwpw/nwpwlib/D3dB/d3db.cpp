@@ -11,9 +11,11 @@
 using namespace std;
 */
 
+extern "C" {
+#include        "compressed_io.h"
+}
 
 #include	"Parallel.hpp"
-#include	"compressed_io.hpp"
 #include	"util.hpp"
 #include	"fft.h"
 #include	"blas.h"

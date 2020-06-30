@@ -1,7 +1,11 @@
 
 #include	<vector>
 #include	<cstring>
-#include        "compressed_io.hpp"
+
+extern "C" {
+#include        "compressed_io.h"
+}
+
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
 #include        "Lattice.hpp"

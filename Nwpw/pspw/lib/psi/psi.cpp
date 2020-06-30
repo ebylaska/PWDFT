@@ -10,8 +10,10 @@ using namespace std;
 
 #include        <iostream>
 #include        <cmath>
-#include	"compressed_io.hpp"
 //#include	"control.hpp"
+extern "C" {
+#include        "compressed_io.h"
+}
 
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"

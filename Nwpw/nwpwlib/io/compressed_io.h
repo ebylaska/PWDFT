@@ -1,6 +1,6 @@
 #ifndef _COMPRESSED_IO_H_
 #define _COMPRESSED_IO_H_
-/* compressed_io.hpp -
+/* compressed_io.h -
    Author - Eric Bylaska
 
 */
