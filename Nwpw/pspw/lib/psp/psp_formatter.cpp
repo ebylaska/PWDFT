@@ -1,9 +1,12 @@
 
+#include	<vector>
 #include        "compressed_io.hpp"
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
+#include        "Lattice.hpp"
 #include        "util.hpp"
 #include        "Ion.hpp"
+#include        "PGrid.hpp"
 #include	"psp_formatter.hpp"
 
 /*****************************************************
@@ -74,13 +77,14 @@ bool psp_formatter_read_header(Parallel *myparall, char *fname,
  *                                                   *
  *****************************************************/
 
-void psp_formatter_check(Parallel *myparall, Ion *myion, Control2& control)
+void psp_formatter_check(Parallel *myparall, Lattice *mylattice, Ion *myion, Control2& control)
 {
    char fname[256],comment[80],atom[2];
    int psp_type,version,nfft[3];
    double unita[9],amass,zv;
    bool reformat;
    double tol=1.0e-9;
+   std::vector<int> ialist;
 
 
    for (auto ia=0; ia<myion->nkatm; ++ia)
@@ -106,12 +110,30 @@ void psp_formatter_check(Parallel *myparall, Ion *myion, Control2& control)
 
       if (reformat)
       {
+         ialist.push_back(ia);
          printf(" -- Need to reformat %s\n", fname);
-         zv = psp_formatter_auto(myparall,control,myion->atom(ia));
+         //zv = psp_formatter_auto(myparall,control,myion->atom(ia));
+         //myion->set_zv_psp(ia,zv);
+      }
+   }
+
+   /* Reformat atoms */
+   if (ialist.size()>0) 
+   {
+      PGrid mypgrid(myparall,mylattice,control);
+      for (auto i=0; i<ialist.size(); ++i)
+      {
+         int ia = ialist[i];
+         strcpy(fname,myion->atom(ia));
+         strcat(fname,".vpp");
+         printf(" -- XXX Need to reformat %s\n", fname);
+
+         zv = psp_formatter_auto(myparall,&mypgrid,control,myion->atom(ia));
          myion->set_zv_psp(ia,zv);
       }
-
    }
+   
+
    /* set the total ion charge in control which in turn sets ispin and ne */
    control.set_total_ion_charge(myion->total_zv());
 
@@ -136,7 +158,7 @@ will generate it.
 
    Uses - psp_generator_auto,util_filefind
 */
-double psp_formatter_auto(Parallel *myparall, Control2& control, char *atom)
+double psp_formatter_auto(Parallel *myparall, PGrid *mypgrid, Control2& control, char *atom)
 {
    double zv=0;
    char psp_fname[256],vpp_fname[256];
