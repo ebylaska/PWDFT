@@ -275,7 +275,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       {
          dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
          this->t_pack(nb,Gtmp);
-         this->tt_pack_copy(nb,Gtmp,&(Gpack[nb][i*(nidb[nb]+nidb[nb])]));
+         this->tt_pack_copy(nb,Gtmp,&(Gpack[nb][i*(nida[nb]+nidb[nb])]));
       }
    }
 
