@@ -26,6 +26,7 @@ using namespace std;
 
 #include	"psp_formatter.hpp"
 #include	"psp_library.hpp"
+#include	"psp_file_check.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -40,7 +41,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
-   double sum1,sum2,ev;
+   double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4;
    double E[50],deltae,deltac,deltar,viral,unita[9];
    double *psi1,*psi2,*Hpsi,*psi_r;
@@ -83,18 +84,16 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    //Ion myion(myrtdb);
    Ion myion(rtdbstring,control);
 
-   /* Check for vpp files */
-   if (myparallel.is_master()) 
-   {
-      std::cout << std::endl << " psp_library: " << psp_library(control).nwpw_libraryps_dir << std::endl << std::endl;;
-      for (auto const& x : psp_library(control).libraries)
-         std::cout << " " << x.first << " library " << x.second << std::endl; 
-   }
-   psp_formatter_check(&myparallel,&mylattice,&myion,control);
+   /* Check for and generate psp files                       */
+   /* - this routine also sets the valence charges in myion, */
+   /*   and total_ion_charge and ne in control               */
+   psp_file_check(&myparallel,&myion,control);
 
-   /* Check for vpp and movecs files */
+
+   /* debug output - print charge, ispin, and ne */
    if (myparallel.is_master()) 
    { 
+       cout << endl;
        cout << "total_ion_charge = " << myion.total_zv() << endl;
        cout << "ispin = " << control.ispin() << endl;
        cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
@@ -136,6 +135,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    //Coulomb_Operator mycoul(mygrid);
    //XC_Operator      myxc(mygrid);
 
+   //Pseudopotential constructor can now be written to generate formatted .vpp files
+   //psp_formatter_check(&myparallel,&mylattice,&myion,control);
    
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 

@@ -2,9 +2,10 @@
 #include	<vector>
 #include	<cstring>
 
-extern "C" {
-#include        "compressed_io.h"
-}
+//extern "C" {
+//#include        "compressed_io.h"
+//}
+#include        "compressed_io.hpp"
 
 #include        "Parallel.hpp"
 #include        "Control2.hpp"

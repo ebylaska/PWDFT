@@ -1,7 +1,8 @@
 
-extern "C" {
-#include        "compressed_io.h"
-}
+//extern "C" {
+//#include        "compressed_io.h"
+//}
+#include        "compressed_io.hpp"
 
 #include	<cstdlib>
 #include	<cmath>

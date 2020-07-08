@@ -16,9 +16,12 @@ using namespace std;
 #include        <cmath>
 
 #include	"Control2.hpp"
-extern "C" {
-#include	"compressed_io.h"
-}
+
+//extern "C" {
+//#include	"compressed_io.h"
+//}
+
+#include	"compressed_io.hpp"
 #include	"blas.h"
 #include	"Pseudopotential.hpp"
 

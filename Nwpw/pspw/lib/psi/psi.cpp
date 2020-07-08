@@ -11,9 +11,10 @@ using namespace std;
 #include        <iostream>
 #include        <cmath>
 //#include	"control.hpp"
-extern "C" {
-#include        "compressed_io.h"
-}
+//extern "C" {
+//#include        "compressed_io.h"
+//}
+#include        "compressed_io.hpp"
 
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"

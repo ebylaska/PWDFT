@@ -66,10 +66,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       }
 
    }
-   //masker[0] = new int [2*nfft3d];
-   //masker[1] = (int *) &(masker[0][nfft3d]);
-   masker[0] = new int [nfft3d];
-   masker[1] = new int [nfft3d];
+   masker[0] = new int [2*nfft3d];
+   masker[1] = (int *) &(masker[0][nfft3d]);
+   //masker[0] = new int [nfft3d];
+   //masker[1] = new int [nfft3d];
    //for (int k=0; k<(2*nfft3d); ++k) 
    //   masker[0][k] = 1;
    for (int k=0; k<(nfft3d); ++k) 
@@ -115,10 +115,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
 
 
-   //packarray[0] = new int [2*nfft3d];
-   //packarray[1] = (int *) &(packarray[0][nfft3d]);
-   packarray[0] = new int [nfft3d];
-   packarray[1] = new int [nfft3d];
+   packarray[0] = new int [2*nfft3d];
+   packarray[1] = (int *) &(packarray[0][nfft3d]);
+   //packarray[0] = new int [nfft3d];
+   //packarray[1] = new int [nfft3d];
 
    for (nb=0; nb<=1; ++nb)
    {
@@ -263,10 +263,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    }
 
-   //Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
-   //Gpack[1] = (double *) &(Gpack[0][3*(nida[0]+nidb[0])]);
-   Gpack[0] = new double [3*(nida[0]+nidb[0])];
-   Gpack[1] = new double [3*(nida[1]+nidb[1])];
+   Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
+   Gpack[1] = (double *) &(Gpack[0][3*(nida[0]+nidb[0])]);
+   //Gpack[0] = new double [3*(nida[0]+nidb[0])];
+   //Gpack[1] = new double [3*(nida[1]+nidb[1])];
    double *Gtmp = new double [nfft3d];
    int one      = 1;
    for (nb=0; nb<=1; ++nb)

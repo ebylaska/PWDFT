@@ -25,12 +25,16 @@
 *************************************************************************
 */
 
-#include        <stdlib.h>
-#include        <stdio.h>
-#include        <math.h>
-#include        <string.h>
+//#include        <stdlib.h>
+//#include        <stdio.h>
+//#include        <math.h>
+//#include        <string.h>
 //using namespace std;
 
+#include        <cstdlib>
+#include        <cstdio>
+#include        <cmath>
+#include        <cstring>
 
 #include "Int64.h"
 
@@ -77,22 +81,24 @@ void cread(int unit, char *c, const int n)
 
 void iwrite(const int unit, const int *i, const int n)
 {
-   Int64 *itmp = (Int64 *) malloc(n*sizeof(Int64));
-   //itmp = new Int64[n];
+   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+   Int64 *itmp;
+   itmp = new Int64[n];
    for (int j=0; j<n; ++j)  itmp[j] = (Int64) i[j];
    (void) fwrite(itmp, sizeof(Int64), n, fd[unit]);
-   free(itmp);
-   //delete [] itmp;
+   //free(itmp);
+   delete [] itmp;
 }
 
 void iread(const int unit, int *i, const int n)
 {
-   Int64 *itmp = (Int64 *) malloc(n*sizeof(Int64));
-   //itmp = new Int64[n];
+   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+   Int64 *itmp;
+   itmp = new Int64[n];
    (void) fread(itmp, sizeof(Int64), n, fd[unit]);
    for (int j=0; j<n; ++j)  i[j] = (int) itmp[j];
-   free(itmp);
-   //delete [] itmp;
+   //free(itmp);
+   delete [] itmp;
 }
 
 void dwrite(const int unit, const double *d, const int n)
