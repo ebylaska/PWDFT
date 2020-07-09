@@ -27,10 +27,12 @@ class Control2 {
    int pmaxit_orb,pmaxit_orbs,pscf_algorithm,pks_algorithm;
    int psymm_number;
    int pqsize;
+   int pprint_level = 2;
 
    bool pgeometry_optimize;
 
-   char ppermanent_dir[80];
+   char ppermanent_dir[256];
+   char pscratch_dir[256];
    char pinput_movecs_filename[80];
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
@@ -81,9 +83,28 @@ public:
    char   *input_v_movecs_filename() { return pinput_v_movecs_filename; }
    char   *output_v_movecs_filename() { return poutput_v_movecs_filename; }
    char   *permanent_dir() { return ppermanent_dir;}
-
+   char   *scratch_dir() { return pscratch_dir;}
 
    void add_permanent_dir(char *);
+   void add_scratch_dir(char *);
+
+   int  print_level(string plevel) {
+      int doprt = 0;
+      if (plevel=="low") {
+         doprt = (pprint_level>0);
+
+      } else if (plevel=="medium") {
+         doprt = (pprint_level>1);
+
+      } else if (plevel=="high") {
+         doprt =  (pprint_level>2);
+
+      } else if (plevel=="debug") {
+         doprt =  (pprint_level>3);
+      }
+      return doprt;
+   }
+
 
    void set_total_ion_charge(int icharge)
    {

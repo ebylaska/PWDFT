@@ -1,11 +1,16 @@
 
 #include	<string>
+#include	<cstring>
 #include	<iostream>
 #include	<cstdio>
 #include	<cstdlib>
 #include	<cmath>
 
 #include	"parsestring.hpp"
+
+extern "C" {
+#include        "pseudopotential.h"
+}
 
 
 using namespace std;
@@ -163,31 +168,91 @@ void psp_library::psp_check(const char *atom, Control2& control, double *zv)
 void psp_library::psp_generator_auto(const char *atom, Control2& control)
 {
    char fname[256],tname[256];
+   char sdir_name[256], dir_name[256];
+   char psp_in[10],psp_out[10];
 
    int ptype = this->psp_type(atom);
    int lmax = this->psp_lmax(atom);
    int locp = this->psp_locp(atom);
-   int rlocal = this->psp_rlocal(atom);
+   double rlocal = this->psp_rlocal(atom);
    std::cout << " psptype = " << ptype << std::endl;
    std::cout << " lmax = " << lmax << std::endl;
    std::cout << " locp = " << locp << std::endl;
    std::cout << " rlocal = " << rlocal << std::endl;
 
    strcpy(fname,atom);
-   strcat(fname,".psp"); control.add_permanent_dir(fname);
-
+   strcat(fname,".psp");
+   strcpy(psp_out,fname); 
+   control.add_permanent_dir(fname);
    std::string mypsp_fname(fname);
    std::string mypsp_libname = this->psp_libname(atom);
 
    strcpy(tname,"junk");
-   strcat(tname,".inp"); control.add_permanent_dir(tname);
+   strcat(tname,".inp"); 
+   strcpy(psp_in,tname); 
+   control.add_permanent_dir(tname);
    std::string mypsp_junkname(tname);
 
    std::string pspinput = mystring_readfile(mypsp_libname);
 
    mystring_writefile(mypsp_junkname,pspinput);
 
-   std::cout << " -- generating .psp file =" << mypsp_fname << std::endl;
+   std::cout << " generating 1d pseudopotential file: " << mypsp_fname << std::endl;
+
+   strcpy(sdir_name,control.scratch_dir());
+   strcpy(dir_name,control.permanent_dir());
+   int n9 = strlen(sdir_name);
+   int n0 = strlen(dir_name);
+   int n1 = strlen(psp_in);
+   int n2 = strlen(psp_out);
+   int efg00 = 0;
+
+
+   if ((ptype==0)||(ptype==7))
+   {
+      int   debug = 0;
+      int   print = 0;
+      debug = control.print_level("debug");
+      print = control.print_level("high");
+      std::cout << " sdir_name = " << sdir_name << " " << strlen(sdir_name) << std::endl;
+      std::cout << " dir_name = " << dir_name << " " << strlen(dir_name) << std::endl;
+      std::cout << " psp_in = " << psp_in << " " << strlen(psp_in) << std::endl;
+      std::cout << " psp_out = " << psp_out << " " << strlen(psp_out) << std::endl;
+      pspsolve(&print,&debug,&lmax,&locp,&rlocal,&efg00,
+               sdir_name,&n9,
+               dir_name,&n0,
+               psp_in,&n1,
+               psp_out,&n2);
+
+   }
+   else if (ptype==1)
+   {
+      std::cout << " -- psp_type=1 not finished" << std::endl;
+   }
+   else if (ptype==2)
+   {
+      std::cout << " -- psp_type=2 not finished" << std::endl;
+   }
+   else if (ptype==3)
+   {
+      std::cout << " -- psp_type=3 not finished" << std::endl;
+   }
+   else if (ptype==4)
+   {
+      std::cout << " -- psp_type=4 not finished" << std::endl;
+   }
+   else if (ptype==5)
+   {
+      std::cout << " -- psp_type=5 not finished" << std::endl;
+   }
+   else if (ptype==6)
+   {
+      std::cout << " -- psp_type=6 not finished" << std::endl;
+   }
+   else
+   {
+      std::cout << " -- unknown psp_type, psp_type=" << ptype << std::endl;
+   }
 
 }
 

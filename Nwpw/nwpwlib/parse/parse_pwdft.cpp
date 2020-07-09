@@ -730,6 +730,10 @@ json parse_rtdbjson(json rtdb)
          rtdb["current_task"] = lines[cur];
          foundtask = true;
       }
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"print"))
+      {
+         rtdb["print"] = mystring_trim(mystring_split(mystring_split(lines[cur],"print")[1],"\n")[0]);
+      }
 
       ++cur;
    }

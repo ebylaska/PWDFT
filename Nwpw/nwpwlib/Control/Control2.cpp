@@ -99,6 +99,17 @@ Control2::Control2(const int np0, const string rtdbstring)
          psp_libraries[el.key()] = el.value();
       }
 
+   pprint_level = 2;
+   if (rtdbjson["print"].is_string()) 
+   {
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"debug"))  pprint_level = 4;
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"high"))   pprint_level = 3;
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"medium")) pprint_level = 2;
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"low"))    pprint_level = 1;
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"off"))    pprint_level = 0;
+      if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"none"))   pprint_level = 0;
+   }
+
    string permanent_dir_str = "";
    string scratch_dir_str   = "";
    if (rtdbjson["permanent_dir"].is_string()) 
@@ -148,6 +159,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    strcpy(pinput_v_movecs_filename,const_cast<char*>(input_v_movecs.data()));
    strcpy(poutput_v_movecs_filename,const_cast<char*>(output_v_movecs.data()));
    strcpy(ppermanent_dir,const_cast<char*>(permanent_dir_str.data()));
+   strcpy(pscratch_dir,const_cast<char*>(scratch_dir_str.data()));
    //strcpy(ppsp_library_dir,const_cast<char*>(psp_library_dir_str.data()));
 
 
@@ -227,7 +239,7 @@ Control2::Control2(const int np0, const string rtdbstring)
 
 void Control2::add_permanent_dir(char fname[])
 {
-   char stmp[80]; 
+   char stmp[256]; 
 
    if (strlen(ppermanent_dir)>0)
    {
@@ -237,6 +249,20 @@ void Control2::add_permanent_dir(char fname[])
       strcat(fname,stmp);
    }
 }
+
+void Control2::add_scratch_dir(char fname[])
+{
+   char stmp[256]; 
+
+   if (strlen(pscratch_dir)>0)
+   {
+      strcpy(stmp,fname);
+      strcpy(fname,pscratch_dir);
+      strcat(fname,"/");
+      strcat(fname,stmp);
+   }
+}
+
 
 
 
