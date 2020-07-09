@@ -5,11 +5,29 @@
 */
 
 
-#include <iostream>
-#include <sstream>
-#include <string>
+#include	<vector>
+#include 	<iostream>
+#include	<fstream>
+#include        <streambuf>
+#include	<sstream>
+#include	<string>
 
 using namespace std;
+
+inline string mystring_readfile(const string fname)
+{
+   /* load the file into string */
+   std::ifstream ifile(fname);
+   std::string aa((std::istreambuf_iterator<char>(ifile)),
+                   std::istreambuf_iterator<char>());
+   return aa;
+}
+
+inline void mystring_writefile(const string fname, const string& s)
+{
+    std::ofstream ofile(fname);
+    ofile << s;
+}
 
 inline int mystring_contains(const string s, const string a)
 {
