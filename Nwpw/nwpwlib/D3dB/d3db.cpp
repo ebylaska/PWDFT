@@ -21,6 +21,7 @@ using namespace std;
 #include	"fft.h"
 #include        <cmath>
 
+#define NWPW_INTEL_MKL (1)
 #if defined(NWPW_INTERNAL_LIBS)
 #include "blas.h"
 //#include "fft.h"

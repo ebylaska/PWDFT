@@ -13,6 +13,7 @@
 
 #include	"PGrid.hpp"
 
+#define NWPW_INTEL_MKL (1)
 #if defined(NWPW_INTERNAL_LIBS)
 #include "blas.h"
 #elif defined(NWPW_INTEL_MKL)
@@ -40,8 +41,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    eps = 1.0e-12;
    Garray = new double [3*nfft3d];
-   G1 = Garray; 
-   G2 = (double *) &Garray[nfft3d]; 
+   G1 = Garray;
+   G2 = (double *) &Garray[nfft3d];
    G3 = (double *) &Garray[2*nfft3d];
    nxh = nx/2;
    nyh = ny/2;
@@ -71,9 +72,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    masker[1] = (int *) &(masker[0][nfft3d]);
    //masker[0] = new int [nfft3d];
    //masker[1] = new int [nfft3d];
-   //for (int k=0; k<(2*nfft3d); ++k) 
+   //for (int k=0; k<(2*nfft3d); ++k)
    //   masker[0][k] = 1;
-   for (int k=0; k<(nfft3d); ++k) 
+   for (int k=0; k<(nfft3d); ++k)
    {
       masker[0][k] = 1;
       masker[1][k] = 1;
@@ -82,7 +83,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    for (nb=0; nb<=1; ++nb)
    {
       nwave[nb] = 0;
-      if (nb==0) 
+      if (nb==0)
          ggcut = lattice->eggcut();
       else
          ggcut = lattice->wggcut();
@@ -200,8 +201,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nwave_in[1] = nida[1] + nidb2[1];
 
 
-   //if (control.balance()) 
-   if (balance0) 
+   //if (control.balance())
+   if (balance0)
    {
       balanced = 1;
       mybalance = new Balance(parall,2,nwave_in,nwave_out);
@@ -233,7 +234,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       zero_arow3 = new int [(nxh+1)*ny];
       for (nb=0; nb<=1; ++nb)
       {
-         if (nb==0) 
+         if (nb==0)
             ggcut = lattice->eggcut();
          else
             ggcut = lattice->wggcut();
@@ -261,7 +262,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
       delete [] zero_arow3;
       delete [] zero_arow2;
- 
+
    }
 
    Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
@@ -291,7 +292,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}
 
 
-/* 
+/*
 void c_indexcopy(const int n, const int *indx, double *A, double *B)
 {
    int ii,jj;
@@ -614,7 +615,7 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a)
 {
 }
 
- 
+
 /********************************
  *                              *
  * PGrid:cr_pfft3b_queuefilled  *
@@ -640,7 +641,7 @@ void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   = b[ii]  *a[i];
       c[ii+1] = b[ii+1]*a[i];
@@ -659,7 +660,7 @@ void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   = -b[ii+1]*a[i];
       c[ii+1] =  b[ii]  *a[i];
@@ -678,7 +679,7 @@ void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   += b[ii]  *a[i];
       c[ii+1] += b[ii+1]*a[i];
@@ -760,7 +761,7 @@ void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
 void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
-      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i]; 
+      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
 }
 
 
@@ -772,5 +773,5 @@ void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double
 void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
-      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1]; 
+      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
