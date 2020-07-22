@@ -23,12 +23,13 @@ using namespace std;
 
 #define NWPW_INTEL_MKL (1)
 
-#include	"compressed_io.hpp"
 #if defined(NWPW_INTERNAL_LIBS)
 #include "blas.h"
 #elif defined(NWPW_INTEL_MKL)
 #include "mkl.h"
 #endif
+
+#include	"compressed_io.hpp"
 #include	"Pseudopotential.hpp"
 
 

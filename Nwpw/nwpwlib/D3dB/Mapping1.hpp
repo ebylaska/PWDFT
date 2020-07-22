@@ -5,7 +5,6 @@
 
 	this class is used defining 1d parallel maps
 */
-using namespace std;
 
 class Mapping1 {
 

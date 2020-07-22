@@ -14,6 +14,7 @@
 #include	"PGrid.hpp"
 
 #define NWPW_INTEL_MKL (1)
+
 #if defined(NWPW_INTERNAL_LIBS)
 #include "blas.h"
 #elif defined(NWPW_INTEL_MKL)
