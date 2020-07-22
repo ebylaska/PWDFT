@@ -4,20 +4,23 @@
 	this class is used for defining 3d parallel maps
 */
 
-/*
-using namespace std;
-*/
-
-
-
+#include <cstring> //memset
 #include        <iostream>
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
-#include	"blas.h"
 
 #include	"PGrid.hpp"
+
+#define NWPW_INTEL_MKL (1)
+
+#if defined(NWPW_INTERNAL_LIBS)
+#include "blas.h"
+#elif defined(NWPW_INTEL_MKL)
+#include "mkl.h"
+#endif
+
 
 /********************************
  *                              *
@@ -39,8 +42,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    eps = 1.0e-12;
    Garray = new double [3*nfft3d];
-   G1 = Garray; 
-   G2 = (double *) &Garray[nfft3d]; 
+   G1 = Garray;
+   G2 = (double *) &Garray[nfft3d];
    G3 = (double *) &Garray[2*nfft3d];
    nxh = nx/2;
    nyh = ny/2;
@@ -70,9 +73,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    masker[1] = (int *) &(masker[0][nfft3d]);
    //masker[0] = new int [nfft3d];
    //masker[1] = new int [nfft3d];
-   //for (int k=0; k<(2*nfft3d); ++k) 
+   //for (int k=0; k<(2*nfft3d); ++k)
    //   masker[0][k] = 1;
-   for (int k=0; k<(nfft3d); ++k) 
+   for (int k=0; k<(nfft3d); ++k)
    {
       masker[0][k] = 1;
       masker[1][k] = 1;
@@ -81,7 +84,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    for (nb=0; nb<=1; ++nb)
    {
       nwave[nb] = 0;
-      if (nb==0) 
+      if (nb==0)
          ggcut = lattice->eggcut();
       else
          ggcut = lattice->wggcut();
@@ -199,8 +202,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nwave_in[1] = nida[1] + nidb2[1];
 
 
-   //if (control.balance()) 
-   if (balance0) 
+   //if (control.balance())
+   if (balance0)
    {
       balanced = 1;
       mybalance = new Balance(parall,2,nwave_in,nwave_out);
@@ -232,7 +235,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       zero_arow3 = new int [(nxh+1)*ny];
       for (nb=0; nb<=1; ++nb)
       {
-         if (nb==0) 
+         if (nb==0)
             ggcut = lattice->eggcut();
          else
             ggcut = lattice->wggcut();
@@ -260,7 +263,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
       delete [] zero_arow3;
       delete [] zero_arow2;
- 
+
    }
 
    Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
@@ -273,7 +276,12 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    {
       for (i=0; i<3; ++i)
       {
+#if defined(NWPW_INTERNAL_LIBS)
          dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
+#elif (NWPW_INTEL_MKL)
+         cblas_dcopy(nfft3d, &(Garray[i*nfft3d]), one, Gtmp, one);
+#endif
+
          this->t_pack(nb,Gtmp);
          this->tt_pack_copy(nb,Gtmp,&(Gpack[nb][i*(nida[nb]+nidb[nb])]));
       }
@@ -285,7 +293,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}
 
 
-/* 
+/*
 void c_indexcopy(const int n, const int *indx, double *A, double *B)
 {
    int ii,jj;
@@ -312,17 +320,21 @@ void t_indexcopy(const int n, const int *indx, double *A, double *B)
  ********************************/
 void PGrid::c_unpack(const int nb, double *a)
 {
+   int one=1;
    int nn = 2*(nida[nb]+nidb2[nb]);
-   int one      = 1;
-   int zero     = 0;
-   double rzero = 0.0;
    double *tmp1,*tmp2;
    double *tmp = new double [2*nfft3d];
    if (balanced)
       mybalance->c_unbalance(nb,a);
 
+#if defined(NWPW_INTERNAL_LIBS)
    dcopy_(&nn,a,&one,tmp,&one);
-   dcopy_(&n2ft3d,&rzero,&zero,a,&one);
+#elif (NWPW_INTEL_MKL)
+   cblas_dcopy(nn, a, one, tmp, one);
+#endif
+   //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
+   memset(a, 0, n2ft3d * sizeof(double));
+
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
    tmp1 = new double[2*zplane_size];
@@ -340,13 +352,18 @@ void PGrid::c_unpack(const int nb, double *a)
  ********************************/
 void PGrid::c_pack(const int nb, double *a)
 {
-   int one      = 1;
-   int zero     = 0;
-   double rzero = 0.0;
+   int one=1;
    double *tmp = new double [n2ft3d];
-  
+
+#if defined(NWPW_INTERNAL_LIBS)
    dcopy_(&n2ft3d,a,&one,tmp,&one);
-   dcopy_(&n2ft3d,&rzero,&zero,a,&one);
+#elif (NWPW_INTEL_MKL)
+   cblas_dcopy(n2ft3d, a, one, tmp, one);
+#endif
+
+   //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
+   memset(a, 0, n2ft3d * sizeof(double));
+
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
    if (balanced)
@@ -366,7 +383,12 @@ void PGrid::cc_pack_copy(const int nb, double *a, double *b)
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
-   dcopy_(&ng,a,&one,b,&one);
+
+#ifdef NWPW_INTERNAL_LIBS
+   dcopy_(&ng, a, &one, b, &one);
+#elif (NWPW_INTEL_MKL)
+   cblas_dcopy(ng, a, one, b, one);
+#endif
 }
 
 /********************************
@@ -382,8 +404,13 @@ double PGrid::cc_pack_dot(const int nb, double *a, double *b)
    int ng0 = 2*nida[nb];
    double tsum;
 
-   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
-   tsum -= ddot_(&ng0,a,&one,b,&one);
+#ifdef NWPW_INTERNAL_LIBS
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+   tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
+   tsum -= cblas_ddot(ng0, a, one, b, one);
+#endif
 
    return d3db::parall->SumAll(1,tsum);
 }
@@ -400,8 +427,13 @@ double PGrid::tt_pack_dot(const int nb, double *a, double *b)
    int ng0 = nida[nb];
    double tsum;
 
-   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
-   tsum -= ddot_(&ng0,a,&one,b,&one);
+#ifdef NWPW_INTERNAL_LIBS
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+   tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
+   tsum -= cblas_ddot(ng0, a, one, b, one);
+#endif
 
    return d3db::parall->SumAll(1,tsum);
 }
@@ -420,8 +452,13 @@ double PGrid::cc_pack_idot(const int nb, double *a, double *b)
    int ng0 = 2*nida[nb];
    double tsum;
 
-   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
-   tsum -= ddot_(&ng0,a,&one,b,&one);
+#ifdef NWPW_INTERNAL_LIBS
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+   tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
+   tsum -= cblas_ddot(ng0, a, one, b, one);
+#endif
 
    return tsum;
 }
@@ -439,8 +476,13 @@ double PGrid::tt_pack_idot(const int nb, double *a, double *b)
    int ng0 = nida[nb];
    double tsum;
 
-   tsum = 2.0*ddot_(&ng,a,&one,b,&one);
-   tsum -= ddot_(&ng0,a,&one,b,&one);
+#ifdef NWPW_INTERNAL_LIBS
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+   tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
+   tsum -= cblas_ddot(ng0, a, one, b, one);
+#endif
 
    return tsum;
 }
@@ -453,16 +495,20 @@ double PGrid::tt_pack_idot(const int nb, double *a, double *b)
  ********************************/
 void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, double *sum)
 {
-   int i;
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
 
-   for (i=0; i<nn; ++i)
+   for (int i=0; i<nn; ++i)
    {
-      sum[i] = 2.0*ddot_(&ng,&a[i*ng],&one,b,&one);
-      sum[i] -= ddot_(&ng0,&a[i*ng],&one,b,&one);
+#ifdef NWPW_INTERNAL_LIBS
+      sum[i] = 2.0 * ddot_(&ng, &a[i*ng], &one, b, &one);
+      sum[i] -= ddot_(&ng0, &a[i*ng], &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+      sum[i] = 2.0 * cblas_ddot(ng, &a[i*ng], one, b, one);
+      sum[i] -= cblas_ddot(ng0, &a[i*ng], one, b, one);
+#endif
    }
 
 }
@@ -481,8 +527,14 @@ void PGrid::t_pack(const int nb, double *a)
    double rzero = 0.0;
    double *tmp  = new double [nfft3d];
 
-   dcopy_(&nfft3d,a,&one,tmp,&one);
-   dcopy_(&nfft3d,&rzero,&zero,a,&one);
+#ifdef NWPW_INTERNAL_LIBS
+   dcopy_(&nfft3d, a, &one, tmp, &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(nfft3d, a, one, tmp, one);
+#endif
+   //dcopy_(&nfft3d,&rzero,&zero,a,&one);
+   memset(a, 0, nfft3d * sizeof(double));
+
    t_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
    if (balanced)
@@ -500,7 +552,11 @@ void PGrid::tt_pack_copy(const int nb, double *a, double *b)
 {
    int one = 1;
    int ng  = nida[nb]+nidb[nb];
-   dcopy_(&ng,a,&one,b,&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   dcopy_(&ng, a, &one, b, &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(ng, a, one, b, one);
+#endif
 }
 
 
@@ -560,7 +616,7 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a)
 {
 }
 
- 
+
 /********************************
  *                              *
  * PGrid:cr_pfft3b_queuefilled  *
@@ -586,7 +642,7 @@ void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   = b[ii]  *a[i];
       c[ii+1] = b[ii+1]*a[i];
@@ -605,7 +661,7 @@ void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   = -b[ii+1]*a[i];
       c[ii+1] =  b[ii]  *a[i];
@@ -624,7 +680,7 @@ void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
    int ng  = nida[nb]+nidb[nb];
 
    ii = 0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   += b[ii]  *a[i];
       c[ii+1] += b[ii+1]*a[i];
@@ -706,7 +762,7 @@ void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
 void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
-      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i]; 
+      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
 }
 
 
@@ -718,5 +774,5 @@ void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double
 void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
-      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1]; 
+      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }

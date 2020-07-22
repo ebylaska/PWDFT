@@ -19,8 +19,16 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"util.hpp"
 #include	"fft.h"
-#include	"blas.h"
 #include        <cmath>
+
+#define NWPW_INTEL_MKL (1)
+#if defined(NWPW_INTERNAL_LIBS)
+#include "blas.h"
+//#include "fft.h"
+#elif defined(NWPW_INTEL_MKL)
+#include "mkl.h"
+//#include "mkl_dfti.h"
+#endif
 
 #include	"d3db.hpp"
 
@@ -1724,7 +1732,6 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
 void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int it,proc_from,proc_to;
-   int one=1;
    int msglen;
 
    parall->astart(1,np);
@@ -1733,9 +1740,12 @@ void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[0][1] - i2_start[0][0]);
-   dcopy_(&msglen,
-          &(tmp1[2*i1_start[0][0]]),&one,
-          &(tmp2[2*i2_start[0][0]]),&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   int one=1;
+   dcopy_(&msglen, &(tmp1[2*i1_start[0][0]]), &one, &(tmp2[2*i2_start[0][0]]), &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[2*i1_start[0][0]]), 1, &(tmp2[2*i2_start[0][0]]), 1);
+#endif
 
    /* receive packed array data */
    for (it=1; it<np; ++it)
@@ -1765,7 +1775,6 @@ void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int it,proc_from,proc_to;
-   int one=1;
    int msglen;
 
    parall->astart(1,np);
@@ -1774,9 +1783,12 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
 
    /* it = 0, transpose data on same thread */
    msglen = (i2_start[0][1] - i2_start[0][0]);
-   dcopy_(&msglen,
-          &(tmp1[i1_start[0][0]]),&one,
-          &(tmp2[i2_start[0][0]]),&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   int one=1;
+   dcopy_(&msglen, &(tmp1[i1_start[0][0]]), &one, &(tmp2[i2_start[0][0]]), &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[i1_start[0][0]]), 1, &(tmp2[i2_start[0][0]]), 1);
+#endif
 
    /* receive packed array data */
    for (it=1; it<np; ++it)
@@ -1809,7 +1821,6 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
 void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
-   int one=1;
    int msglen;
 
    parall->astart(1,np);
@@ -1822,9 +1833,12 @@ void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[op][1] - i2_start[op][0]);
-   dcopy_(&msglen,
-          &(tmp1[2*i1_start[op][0]]),&one,
-          &(tmp2[2*i2_start[op][0]]),&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   int one=1;
+   dcopy_(&msglen, &(tmp1[2*i1_start[op][0]]), &one, &(tmp2[2*i2_start[op][0]]), &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[2*i1_start[op][0]]), 1, &(tmp2[2*i2_start[op][0]]), 1);
+#endif
 
 
    /* receive packed array data */
@@ -1864,7 +1878,6 @@ void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
-   int one=1;
    int msglen;
 
    parall->astart(1,np);
@@ -1878,9 +1891,12 @@ void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 
    /* it = 0, transpose data on same thread */
    msglen = (i2_start[op][1] - i2_start[op][0]);
-   dcopy_(&msglen,
-          &(tmp1[i1_start[op][0]]),&one,
-          &(tmp2[i2_start[op][0]]),&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   int one=1;
+   dcopy_(&msglen, &(tmp1[i1_start[op][0]]), &one, &(tmp2[i2_start[op][0]]), &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[i1_start[op][0]]), 1, &(tmp2[i2_start[op][0]]), 1);
+#endif
 
 
    /* receive packed array data */
@@ -1988,7 +2004,6 @@ int d3db::timereverse_size()
 void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
 {
    int nnfft3d,indx,it,proc_from,proc_to;
-   int one=1;
    int msglen;
 
    parall->astart(1,np);
@@ -1999,9 +2014,12 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(t_i2_start[1] - t_i2_start[0]);
-   dcopy_(&msglen,
-          &(tmp1[2*t_i1_start[0]]),&one,
-          &(tmp2[2*t_i2_start[0]]),&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   int one=1;
+   dcopy_(&msglen, &(tmp1[2*t_i1_start[0]]), &one, &(tmp2[2*t_i2_start[0]]), &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[2*t_i1_start[0]]), 1, &(tmp2[2*t_i2_start[0]]), 1);
+#endif
 
    /* receive packed array data */
    for (it=1; it<np; ++it)
