@@ -1,4 +1,4 @@
-/* Pseudopotential.C - 
+/* Pseudopotential.C -
    Author - Eric Bylaska
 */
 /*
@@ -21,8 +21,14 @@ using namespace std;
 //#include	"compressed_io.h"
 //}
 
+#define NWPW_INTEL_MKL (1)
+
 #include	"compressed_io.hpp"
-#include	"blas.h"
+#if defined(NWPW_INTERNAL_LIBS)
+#include "blas.h"
+#elif defined(NWPW_INTEL_MKL)
+#include "mkl.h"
+#endif
 #include	"Pseudopotential.hpp"
 
 
@@ -45,17 +51,31 @@ static void Multiply_Gijl_sw1(int nn,
    int nnn = nn*nprj;
    int nna = nn;
 
-   dcopy_(&nnn,&rzero,&zero,sw2,&one);
+#if defined(NWPW_INTERNAL_LIBS)
+   dcopy_(&nnn, &rzero, &zero, sw2, &one);
+#elif defined(NWPW_INTEL_MKL)
+   cblas_dcopy(nnn, &rzero, 0, sw2, 1);
+#endif
+
    for (b=0; b<nprj; ++b)
       for (a=0; a<nprj; ++a)
          if ((l_prj[a]==l_prj[b]) && (m_prj[a]==m_prj[b]))
          {
             na = n_prj[a]-1;
             nb = n_prj[b]-1;
+
+#if defined(NWPW_INTERNAL_LIBS)
            daxpy_(&nna,
                    &G[nb + na*nmax + nmax2*l_prj[a]],
                    &sw1[a*nn],&one,
                    &sw2[b*nn],&one);
+#elif defined(NWPW_INTEL_MKL)
+           cblas_daxpy(nna,
+                       G[nb + na*nmax + nmax2*l_prj[a]],
+                       &sw1[a*nn], 1,
+                       &sw2[b*nn], 1);
+#endif
+
           }
 }
 
@@ -63,7 +83,7 @@ static void Multiply_Gijl_sw1(int nn,
 
 
 static void psp_read(PGrid *mygrid,
-                     char *fname, 
+                     char *fname,
                      char *comment,
                      int *psp_type,
                      int *version,
@@ -101,7 +121,7 @@ static void psp_read(PGrid *mygrid,
       i = 78;
       while (comment[i] == ' ')
         comment[i--] = '\0';
- 
+
       iread(5,psp_type,1);
       iread(5,version,1);
       iread(5,nfft,3);
@@ -134,7 +154,7 @@ static void psp_read(PGrid *mygrid,
    }
    parall->Brdcst_Values(0,0,*lmax+1,*rc);
    parall->Brdcst_iValue(0,0,nprj);
-   if (*nprj > 0) 
+   if (*nprj > 0)
    {
       *n_projector = new int[*nprj];
       *l_projector = new int[*nprj];
@@ -175,7 +195,7 @@ static void psp_read(PGrid *mygrid,
    mygrid->tt_pack_copy(0,tmp2,vl);
 
    /* reading vnl 3d block */
-   if (*nprj > 0) 
+   if (*nprj > 0)
    {
       *vnl = new double[(*nprj)*(mygrid->npack(1))];
       prj = *vnl;
@@ -213,7 +233,7 @@ static void psp_read(PGrid *mygrid,
 
    if (parall->is_master()) closefile(5);
 }
-  
+
 static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double *ncore)
 {
    double sum = 0.0;
@@ -230,7 +250,7 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
       /* put sqrt(core-density) at atom position */
       mygrid->cc_pack_copy(0,ncore,tmp);
       mygrid->c_SMul(0,scal2,tmp);
-        
+
 
       /* Put put tmp into real space */
       mygrid->c_unpack(0,tmp);
@@ -288,13 +308,13 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    ncore_sum   = new double[npsp];
    rc          = new double* [npsp];
    vl          = new double* [npsp];
-   for (ia=0; ia<npsp; ++ia) 
+   for (ia=0; ia<npsp; ++ia)
       vl[ia] = new double [mypneb->npack(0)];
    Gijl        = new double* [npsp];
    vnl         = new double* [npsp];
    ncore_atom  = new double* [npsp];
    semicore_density = mypneb->r_alloc();
-   
+
    comment  = new  char* [npsp];
    for (ia=0; ia<npsp; ++ia) comment[ia] = new char[80];
 
@@ -388,17 +408,31 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-         dscal_(&ntmp,&scal,sw2,&one);
+#if defined(NWPW_INTERNAL_LIBS)
+         dscal_(&ntmp, &scal, sw2, &one);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dscal(ntmp, scal, sw2, 1);
+#endif
 
         ntmp = nprj[ia];
 
+#if defined(NWPW_INTERNAL_LIBS)
         dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
                &rmone,
                prjtmp,&nshift,
                sw2,   &nn,
                &rone,
                Hpsi,&nshift);
-
+#elif defined(NWPW_INTEL_MKL)
+        cblas_dgemm(CblasRowMajor,
+                    CblasNoTrans, CblasTrans,
+                    nshift, nn, ntmp,
+                    -1.0,
+                    prjtmp, nshift,
+                    sw2, nn,
+                    1.0,
+                    Hpsi, nshift);
+#endif
 
       } /*if nprj>0*/
    } /*ii*/
@@ -493,16 +527,31 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-         dscal_(&ntmp,&scal,sw2,&one);
+#if defined(NWPW_INTERNAL_LIBS)
+         dscal_(&ntmp, &scal, sw2, &one);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dscal(ntmp, scal, sw2, 1);
+#endif
 
         ntmp = nprj[ia];
 
+#if defined(NWPW_INTERNAL_LIBS)
         dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
                &rmone,
                prjtmp,&nshift,
                sw2,   &nn,
                &rone,
                Hpsi,&nshift);
+#elif defined(NWPW_INTEL_MKL)
+        cblas_dgemm(CblasColMajor,
+                    CblasNoTrans, CblasTrans,
+                    nshift, nn, ntmp,
+                    -1.0,
+                    prjtmp, nshift,
+                    sw2, nn,
+                    1.0,
+                    Hpsi, nshift);
+#endif
 
          if (move)
          {
@@ -519,9 +568,16 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
 
-                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,sum,    &three);
-                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,&sum[1],&three);
-                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn,&sw2[l*nn],&one,&sum[2],&three);
+#if defined(NWPW_INTERNAL_LIBS)
+                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, sum,     &three);
+                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[1], &three);
+                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[2], &three);
+#elif defined(NWPW_INTEL_MKL)
+                fion[3*ii]   +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, sum,     3);
+                fion[3*ii+1] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[1], 3);
+                fion[3*ii+2] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[2], 3);
+#endif
+
             }
          }
 
@@ -573,7 +629,7 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
       //Gy  = mypneb->Gpackxyz(0,1);
       //Gz  = mypneb->Gpackxyz(0,2);
    }
-   
+
    mypneb->c_zero(0,vout);
    nshift = 2*npack0;
    exi    = new double[nshift];
@@ -585,8 +641,8 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
       //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
       mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
       mypneb->cc_Sum2(0,vtmp,vout);
-   
-      if (move) 
+
+      if (move)
       {
          double xx =  mypneb->cc_pack_dot(0,dng,dng);
          double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
@@ -644,7 +700,7 @@ void Pseudopotential::semicore_density_update()
       /*  square it  */
       mypneb->r_sqr(tmp);
       mypneb->rr_Sum(tmp,semicore_density);
-    
+
    }
    mypneb->r_SMul(scal2*scal2,semicore_density);
 
