@@ -16,6 +16,7 @@ using namespace std;
 #include        <cmath>
 
 #include	"Control2.hpp"
+#include        "Psp1d_Hamann.hpp"
 
 //extern "C" {
 //#include	"compressed_io.h"
@@ -26,6 +27,82 @@ using namespace std;
 #include	"Pseudopotential.hpp"
 
 
+/*******************************************
+ *                                         *
+ *              vpp_read_header            *
+ *                                         *
+ *******************************************/
+static bool vpp_read_header(char *fname,
+                            char *comment, int *psp_type, int *version, int nfft[], double unita[],
+                            char *atom, double *amass, double *zv)
+{
+   int i,ifound;
+
+   ifound = cfileexists(fname);
+
+
+   if (ifound>0)
+   {
+      openfile(5,fname,"r");
+      cread(5,comment,80);
+      comment[79] = '\0';
+      i = 78;
+      while (comment[i] == ' ')
+        comment[i--] = '\0';
+
+      iread(5,psp_type,1);
+      iread(5,version,1);
+      iread(5,nfft,3);
+      dread(5,unita,9);
+      cread(5,atom,2);
+      dread(5,amass,1);
+      dread(5,zv,1);
+      closefile(5);
+   }
+
+   return (ifound>0);
+}
+
+/*****************************************************
+ *                                                   *
+ *                vpp_formatter_check                *
+ *                                                   *
+ *****************************************************/
+
+static bool vpp_formatter_check(PGrid *mygrid, char *fname)
+{
+   char comment[80],atom[2];
+   int psp_type,version,nfft[3];
+   double unita[9],amass,zv;
+   bool reformat;
+   double tol=1.0e-9;
+
+   reformat = true;
+   if (vpp_read_header(fname,
+                            comment, &psp_type, &version, nfft, unita,
+                            atom, &amass, &zv))
+   {
+      reformat = false;
+      for (auto i=0; i<9; ++i)
+         reformat = reformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
+      reformat = reformat || (mygrid->nx!=nfft[0]);
+      reformat = reformat || (mygrid->ny!=nfft[1]);
+      reformat = reformat || (mygrid->nz!=nfft[2]);
+      //reformat = reformat || (control.pversion!=version);
+   }
+   return reformat;
+}
+
+
+
+
+
+
+/*******************************************
+ *                                         *
+ *           Multiply_Gijl_sw1             *
+ *                                         *
+ *******************************************/
 static void Multiply_Gijl_sw1(int nn,
                        const int nprj,
                        const int nmax,
@@ -61,8 +138,12 @@ static void Multiply_Gijl_sw1(int nn,
 
 
 
-
-static void psp_read(PGrid *mygrid,
+/*******************************************
+ *                                         *
+ *                vpp_read                 *
+ *                                         *
+ *******************************************/
+static void vpp_read(PGrid *mygrid,
                      char *fname, 
                      char *comment,
                      int *psp_type,
@@ -247,6 +328,127 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
    return sum;
 }
 
+static int convert_psp_type(char *test)
+{
+   int psp_type = 0;
+   if (test[0]=='0') psp_type = 0;
+   if (test[0]=='1') psp_type = 1;
+   if (test[0]=='2') psp_type = 2;
+   if (test[0]=='3') psp_type = 3;
+   if (test[0]=='4') psp_type = 4;
+   if (test[0]=='5') psp_type = 5;
+   if (test[0]=='6') psp_type = 6;
+   if (test[0]=='7') psp_type = 7;
+   if (test[0]=='8') psp_type = 8;
+   if (test[0]=='9') psp_type = 9;
+
+   return psp_type;
+}
+
+/*******************************************
+ *                                         *
+ *            vpp_get_psp_type             *
+ *                                         *
+ *******************************************/
+static int vpp_get_psp_type(Parallel *myparall, char *pspname)
+{
+   int psp_type;
+   char atom[2];
+
+   if (myparall->is_master())
+   {
+      FILE *fp = std::fopen(pspname,"r");
+      std::fscanf(fp,"%s",atom);
+      psp_type = convert_psp_type(atom);
+      //if (psp_type>0) std::fscanf(fp,"%s",atom);
+      fclose(fp);
+   }
+   myparall->Brdcst_iValue(0,0,&psp_type);
+
+   return psp_type;
+}
+
+
+
+/*******************************************
+ *                                         *
+ *                vpp_generate             *
+ *                                         *
+ *******************************************/
+static void vpp_generate(PGrid *mygrid,
+                     char *pspname,     
+                     char *fname,
+                     char *comment,
+                     int *psp_type,
+                     int *version,
+                     int *nfft,
+                     double *unita,
+                     char   *atom,
+                     double *amass,
+                     double *zv,
+                     int *lmmax,
+                     int *lmax,
+                     int *locp,
+                     int *nmax,
+                     double **rc,
+                     int *nprj,
+                     int **n_projector,
+                     int **l_projector,
+                     int **m_projector,
+                     int **b_projector,
+                     double **Gijl,
+                     bool   *semicore,
+                     double *rcore,
+                     double **ncore,
+                     double *vl,
+                     double **vnl)
+{  
+   int i,nn;
+   double   *tmp2,*prj; 
+   Parallel *myparall = mygrid->parall;
+
+   *psp_type = vpp_get_psp_type(myparall, pspname);
+
+   std::cout << "in vpp_generate, psp_type=" << *psp_type << std::endl;
+   std::cout << "in vpp_generate" << std::endl;
+   
+   if ((*psp_type==0) || (*psp_type==9))
+   {
+      int nray = mygrid->n_ray();
+      Psp1d_Hamann psp1d(myparall,pspname);
+      std::cout << "in vpp_generate Hamann psp1d.psp_type=" << psp1d.psp_type << std::endl;
+      std::cout << "in vpp_generate Hamann nray=" << nray << std::endl;
+      std::cout << "in vpp_generate Hamann Gmax=" << mygrid->Gmax_ray() << std::endl;
+      std::cout << "in vpp_generate Hamann Gmin=" << mygrid->Gmin_ray() << std::endl;
+      std::cout << "in vpp_generate Hamann dGmin=" << mygrid->dGmin_ray() << std::endl;
+      std::cout << "in vpp_generate Hamann lmax=" << psp1d.lmax << std::endl;
+      std::cout << "in vpp_generate Hamann locp=" << psp1d.locp << std::endl;
+      std::cout << "in vpp_generate Hamann nmax=" << psp1d.nmax << std::endl;
+      std::cout << "in vpp_generate Hamann nprj=" << psp1d.nprj << std::endl;
+      for (auto l=0; l<=psp1d.lmax; ++l)
+         std::cout << "in vpp_generate Hamann l=" << l << " norm=" << psp1d.vnlnrm[l] << std::endl;
+      double *G_ray = mygrid->generate_G_ray();
+      double *vl_ray  = new double [nray];
+      double *vnl_ray = new double [(psp1d.lmax+1)*nray];
+      double *rho_sc_k_ray = new double [2*nray];
+
+
+      delete [] rho_sc_k_ray;
+      delete [] vnl_ray;
+      delete [] vl_ray;
+      delete [] G_ray;
+
+   } 
+   else 
+   {
+      std::cout << "in vpp_generate Not finished " <<  std::endl;
+   }
+
+   
+}
+
+
+
 /* Constructors */
 
 /*******************************************
@@ -260,7 +462,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
    double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
    double unita[9];
-   char fname[80],aname[2];
+   char fname[256],pspname[256],aname[2];
 
    myion    = myionin;
    mypneb   = mypnebin;
@@ -304,12 +506,42 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       strcpy(fname,myion->atom(ia));
       strcat(fname,".vpp");
       control.add_permanent_dir(fname);
-      psp_read(mypneb,
-               fname,
-               comment[ia],&psp_type[ia],&version,nfft,unita,aname,
-               &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
-               &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
-               &ncore_ptr,vl[ia],&vnl_ptr);
+      if (vpp_formatter_check(mypneb,fname))
+      {
+         strcpy(pspname,myion->atom(ia));
+         strcat(pspname,".psp");
+         control.add_permanent_dir(pspname);
+         vpp_generate(mypneb,
+                  pspname,fname,
+                  comment[ia],&psp_type[ia],&version,nfft,unita,aname,
+                  &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
+                  &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
+                  &ncore_ptr,vl[ia],&vnl_ptr);
+
+      }
+      else
+      {
+         // ******** debug *********
+         strcpy(pspname,myion->atom(ia));
+         strcat(pspname,".psp");
+         control.add_permanent_dir(pspname);
+         vpp_generate(mypneb,
+                  pspname,fname,
+                  comment[ia],&psp_type[ia],&version,nfft,unita,aname,
+                  &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
+                  &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
+                  &ncore_ptr,vl[ia],&vnl_ptr);
+         // ******** debug *********
+         vpp_read(mypneb,
+                  fname,
+                  comment[ia],&psp_type[ia],&version,nfft,unita,aname,
+                  &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
+                  &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
+                  &ncore_ptr,vl[ia],&vnl_ptr);
+      }
+         std::cout << "Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
+         std::cout << "Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
+         std::cout << "Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
 
       rc[ia]          = rc_ptr;
       n_projector[ia] = n_ptr;

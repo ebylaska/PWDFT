@@ -2,10 +2,13 @@
    Author - Eric Bylaska
 */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
+#include	<cstdio>
+#include	<cstdlib>
+#include	<cmath>
+#include        "blas.h"
+
 using namespace std;
+
 
 #include	"Parallel.hpp"
 #include	"Psp1d_Hamann.hpp"
@@ -14,6 +17,81 @@ using namespace std;
 #define FMT1    "%lf"
 #define FMT2    " %lf %lf"
 #define FMT10   "%10.3lf %10.3lf %10.3lf"
+
+/*******************************************
+ *                                         *
+ *              util_matinvert             *
+ *                                         *
+ *******************************************/
+/* Calculates matrix inverse based on Gauss-Jordan elimination 
+  method with partial pivoting.
+*/
+static void util_matinvert(int n, int nmax, double *a)
+{
+   int irow;
+   double big,tmp,pivinv;
+   int *indx = new int[nmax];
+   for (auto i=0; i<n; ++i)
+   {
+      big = 0.0;
+      for (auto j=i; j<n; ++j)
+         if (fabs(a[j+i*nmax]) >= big)
+         {
+            big = fabs(a[j+j*nmax]);
+            irow = j;
+         }
+      if (big<=1.0e-9)
+      {
+         printf("Failed to invert matix\n");
+         exit(99);
+      }
+      indx[i] = irow;
+
+      if (irow!=i)
+      {
+         for (auto j=0; j<n; ++j)
+         {
+            tmp = a[irow+j*nmax];
+            a[irow+j*nmax] = a[i+j*nmax];
+            a[i+j*nmax]=tmp;
+         }
+      }
+
+      pivinv = 1.0/a[i+i*nmax];
+      a[i+i*nmax]= 1.0;
+
+      for (auto j=0; j<n; ++j)
+         a[i+j*nmax] *= pivinv;
+
+      for (auto l=0; l<n; ++l)
+         if (l!=i)
+         {
+            tmp = a[l+i*nmax];
+            a[l+i*nmax] = 0.0;
+            for (auto j=0; j<n; ++j)
+               a[l+j*nmax] -= a[i+j*nmax]*tmp;
+         }
+   }
+
+   delete [] indx;
+}
+
+/*******************************************
+ *                                         *
+ *              util_simpson               *
+ *                                         *
+ *******************************************/
+static double util_simpson(int n, double *y, double h)
+{
+   int ne = n/2;
+   int no = ne+1;
+   double s = -y[0]-y[n-1];
+   for (auto i=0; i<no; i+=2) s += 2.0*y[i];
+   for (auto i=1; i<ne; i+=2) s += 4.0*y[i];
+
+   return s*h/3.0;;
+}
+      
 
 
 static int convert_psp_type(char *test)
@@ -81,7 +159,7 @@ static void read_vpwpup(Parallel *myparall, FILE *fp, int nrho, int lmax0, int l
  *               read_vpwp                 *
  *                                         *
  *******************************************/
-static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lmax,
+static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lmax, int n_extra,
                       double *rho, double *vp, double *wp)
 {
    int i,l;
@@ -101,16 +179,17 @@ static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lma
       for (i=0; i<nrho; ++i)
       {
          std::fscanf(fp,FMT1,&rho[i]);
-         for (l=0; l<=lmax0; ++l)
+         for (l=0; l<=(lmax0+n_extra); ++l)
          {
             std::fscanf(fp,FMT1,&xx);
             if (l<=lmax) wp[i+l*nrho] = xx;
+            if (l>lmax0) wp[i+(l+lmax-lmax0)*nrho] = xx;
          }
       }
    }
    myparall->Brdcst_Values(0,0,nrho,rho);
    myparall->Brdcst_Values(0,0,nrho*(lmax+1),vp);
-   myparall->Brdcst_Values(0,0,nrho*(lmax+1),wp);
+   myparall->Brdcst_Values(0,0,nrho*(lmax+1+n_extra),wp);
 }
 
 
@@ -119,7 +198,7 @@ static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lma
  *               read_semicore             *
  *                                         *
  *******************************************/
-static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *rcore, int nrho, double *semicore)
+static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *rcore, int nrho, double *semicore_r)
 {
    int    i,isemicore0;
    double xx,yy,rcore0;
@@ -135,14 +214,14 @@ static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *
          for (i=0; i<(2*nrho); ++i)
          {
             std::fscanf(fp,FMT2,&xx,&yy);
-            semicore[i] = yy;
+            semicore_r[i] = yy;
          }
       }
    }
    myparall->Brdcst_iValue(0,0,&isemicore0);
    myparall->Brdcst_Values(0,0,1,&rcore0);
    if (isemicore0>0)
-      myparall->Brdcst_Values(0,0,2*nrho,semicore);
+      myparall->Brdcst_Values(0,0,2*nrho,semicore_r);
    *rcore = rcore0;
    *isemicore = isemicore0;
 }
@@ -217,13 +296,14 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
 {
    double xx;
    FILE *fp;
+   int nn;
 
    if (myparall->is_master())
    {
       fp = std::fopen(psp_name,"r");
       std::fscanf(fp,"%s",atom);
-      ihasae = convert_psp_type(atom);
-      if (ihasae>0) std::fscanf(fp,"%s",atom);
+      psp_type = convert_psp_type(atom);
+      if (psp_type>0) std::fscanf(fp,"%s",atom);
 
       std::fscanf(fp,FMT1,&zv);
       std::fscanf(fp,FMT1,&amass);
@@ -233,6 +313,19 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       std::fscanf(fp,FMT1,&rlocal);
       for (int l=0; l<=lmax0; ++l)
          std::fscanf(fp,FMT1,&rc[l]);
+
+      n_extra = 0;
+      for (int l=0; l<=lmax0; ++l) n_expansion[l] = 1;
+      if (psp_type==2) 
+      {
+         std::fscanf(fp,"%d",&n_extra);
+         for (int l=0; l<=lmax0; ++l)
+         {
+            std::fscanf(fp,"%d",&nn);
+            n_expansion[l] = nn;
+         }
+      }
+
       std::fscanf(fp,"%d",&nrho);
       std::fscanf(fp,FMT1,&drho);
       std::fscanf(fp," %79[^\n]",comment);
@@ -242,7 +335,8 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       if (locp<0)     locp = lmax;
    }
    myparall->Brdcst_cValues(0,0,2,atom);
-   myparall->Brdcst_iValue(0,0,&ihasae);
+   //myparall->Brdcst_iValue(0,0,&ihasae);
+   myparall->Brdcst_iValue(0,0,&psp_type);
    myparall->Brdcst_Values(0,0,1,&zv);
    myparall->Brdcst_Values(0,0,1,&amass);
    myparall->Brdcst_iValue(0,0,&lmax0);
@@ -253,23 +347,297 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
    myparall->Brdcst_Values(0,0,1,&drho);
    myparall->Brdcst_cValues(0,0,80,comment);
 
+   myparall->Brdcst_iValue(0,0,&n_extra);
+   myparall->Brdcst_iValues(0,0,(lmax0+1),n_expansion);
+   nprj = 0;
+   nmax = 1;
+   for (int l=0; l<=(lmax); ++l)
+      if (l!=locp)
+      {
+         nprj += n_expansion[l]*(2*l+1);
+         if (n_expansion[l]>nmax) nmax = n_expansion[l];
+      }
+
    rho = (double *) new double[nrho];
    vp  = (double *) new double[(lmax+1)*nrho];
-   wp  = (double *) new double[(lmax+1)*nrho];
-   semicore = (double *) new double[2*nrho];
-   if (ihasae>0) 
+   wp  = (double *) new double[(lmax+1+n_extra)*nrho];
+   vnlnrm   = (double *) new double[nmax*nmax*(lmax+1)];
+   rho_sc_r = (double *) new double[2*nrho];
+   if (psp_type==9) 
    {
       up  = (double *) new double[(lmax+1)*nrho];
       r3_matrix = (double *) new double[(lmax+1)*(lmax+1)];
-   }
-   if (ihasae>0)
-   {
-       read_vpwpup(myparall,fp,nrho,lmax0,lmax,rho,vp,wp,up);
-       generate_r3_matrix(nrho,lmax,drho,rho,wp,up,r3_matrix);
+      read_vpwpup(myparall,fp,nrho,lmax0,lmax,rho,vp,wp,up);
+      generate_r3_matrix(nrho,lmax,drho,rho,wp,up,r3_matrix);
    }
    else
-       read_vpwp(myparall,fp,nrho,lmax0,lmax,rho,vp,wp);
-   read_semicore(myparall,fp,&isemicore,&rcore,nrho,semicore);
+       read_vpwp(myparall,fp,nrho,lmax0,lmax,n_extra,rho,vp,wp);
+   read_semicore(myparall,fp,&isemicore,&rcore,nrho,rho_sc_r);
+   semicore = (isemicore==1);
 
+   /* Define non-local pseudopotential  */
+   for (auto l=0; l<=lmax; ++l) 
+      if (l!=locp)
+         for (auto i=0; i<nrho; ++i)
+            vp[i+l*nrho] = vp[i+l*nrho] - vp[i+locp*nrho];
+
+   /* set up indx(n,l) --> to wp */
+   int indx[5*4];
+   int nb = lmax+1;
+   for (auto l=0; l<=lmax; ++l)
+   {
+      indx[l*5] = l;
+      for (auto n1=1; n1<n_expansion[l]; ++n1)
+      {
+         indx[n1+l*5] = nb;
+         ++nb;
+      }
+   }
+
+   /* Normarization constants */
+   double a;
+   double *f = new double[nrho];
+   for (auto l=0; l<=lmax; ++l)
+   {
+      if (l!=locp)
+      {
+         for (auto n2=0; n2<n_expansion[l]; ++n2)
+         {
+            for (auto i=0; i<nrho; ++i)
+               f[i] = vp[i+l*nrho]*wp[i+indx[n2+l*5]*nrho]*wp[i+indx[n2+l*5]*nrho];
+
+            a = util_simpson(nrho,f,drho);
+            vnlnrm[n2+n2*nmax+l*nmax*nmax] = a;
+
+            for (auto n1=n2+1; n1<n_expansion[l]; ++n1)
+            {
+               for (auto i=0; i<nrho; ++i)
+                  f[i] = vp[i+l*nrho]*wp[i+indx[n1+l*5]*nrho]*wp[i+indx[n2+l*5]*nrho];
+               a = util_simpson(nrho,f,drho);
+               vnlnrm[n1+n2*nmax+l*nmax*nmax] = a;
+               vnlnrm[n2+n1*nmax+l*nmax*nmax] = a;
+  
+            }
+         }
+         if (n_expansion[l]==1)
+         {
+            vnlnrm[l*nmax*nmax] = 1/a;
+         }
+         else if (n_expansion[l]==2)
+         {
+            double d = vnlnrm[l*nmax*nmax]*vnlnrm[1+1*nmax+l*nmax*nmax]
+                     - vnlnrm[0+1*nmax+l*nmax*nmax]*vnlnrm[1+0*nmax+l*nmax*nmax];
+            double q = vnlnrm[l*nmax*nmax];
+            vnlnrm[l*nmax*nmax]          = vnlnrm[1+1*nmax+l*nmax*nmax]/d;
+            vnlnrm[1+1*nmax+l*nmax*nmax] = q/d;
+            vnlnrm[0+1*nmax+l*nmax*nmax] = -vnlnrm[0+1*nmax+l*nmax*nmax]/d;
+            vnlnrm[1+0*nmax+l*nmax*nmax] = -vnlnrm[1+0*nmax+l*nmax*nmax]/d;
+         }
+         else
+         {
+            util_matinvert(n_expansion[l],nmax,&(vnlnrm[l*nmax*nmax]));
+         }
+      }
+      else
+      {
+         for (int n2=0; n2<nmax; ++n2)
+         for (int n1=n2; n1<nmax; ++n1)
+         {
+            vnlnrm[n1 + n2*nmax + l*nmax*nmax] = 0.0;
+            vnlnrm[n2 + n1*nmax + l*nmax*nmax] = 0.0;
+         }
+      }
+   }
+   delete [] f;
+
+}
+
+
+
+/*******************************************
+ *                                         *
+ *     Psp1d_Hamann::vpp_generate_ray      *
+ *                                         *
+ *******************************************/
+void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray, double *vl_ray, double *vnl_ray, double *rho_sc_k_ray)
+{
+
+   /* set up indx(n,l) --> to wp */
+   int indx[5*4];
+   int nb = lmax+1;
+   for (auto l=0; l<=lmax; ++l)
+   {
+      indx[l*5] = l;
+      for (auto n1=1; n1<n_expansion[l]; ++n1)
+      {
+         indx[n1+l*5] = nb;
+         ++nb;
+      }
+   }
+
+   double pi    = 4.00*atan(1.0);
+   double twopi = 2.0*pi;
+   double forpi = 4.0*pi;
+
+   double P0 = sqrt(forpi);
+   double P1 = sqrt(3.0*forpi);
+   double P2 = sqrt(15.0*forpi);
+   double P3 = sqrt(105.0*forpi);
+
+   double zero = 0.0;
+   int    izero = 0;
+   int    ione  = 1;
+   int    nray2 = 2*nray;
+   int    lmaxnray = (lmax+1)*nray;
+
+   double q;
+   double *cs = new double[nrho];
+   double *sn = new double[nrho];
+   double *f  = new double[nrho];
+   double a,xx;
+
+   dcopy_(&nray,    &zero,&izero,vl_ray,&ione);
+   dcopy_(&lmaxnray,&zero,&izero,vnl_ray,&ione);
+   dcopy_(&nray2,   &zero,&izero,rho_sc_k_ray,&ione);
+
+   for (auto k1=(1+myparall->taskid()); k1<nray; k1+=myparall->np())
+   {
+      q=G_ray[k1];
+      for (auto i=0; i<nrho; ++i)
+      {
+         cs[i]=cos(q*rho[i]);
+         sn[i]=sin(q*rho[i]);
+      }
+
+      /* h projectors */
+      /* h projectors */
+      /* f projectors */
+      if ((locp!=3) && (lmax>2))
+      {
+         for (auto n=0; n<n_expansion[3]; ++n)
+         {
+            f[0] = 0.0;
+            for (auto i=1; i<nrho; ++i)
+            {
+                xx = q*rho[i];
+                a  = sn[i]/xx;
+                a  = 15.0*(a-cs[i])/(xx*xx) - 6*a + cs[i];
+                f[i]=a*wp[i+indx[n+3*5]*nrho]*vp[i+3*nrho];
+            }
+            vnl_ray[k1+indx[n+3*5]*nray]=P3*util_simpson(nrho,f,drho)/q;
+         } 
+      }
+
+      /* d projectors */
+      if ((locp!=2) && (lmax>1))
+      {
+         for (auto n=0; n<n_expansion[2]; ++n)
+         {
+            f[0] = 0.0;
+            for (auto i=1; i<nrho; ++i)
+            {
+                a=3.0*(sn[i]/(q*rho[i])-cs[i])/(q*rho[i])-sn[i];
+                f[i]=a*wp[i+indx[n+2*5]*nrho]*vp[i+2*nrho];
+            }
+            vnl_ray[k1+indx[n+2*5]*nray]=P2*util_simpson(nrho,f,drho)/q;
+         } 
+      }
+
+      /* p projectors */
+      if ((locp!=1) && (lmax>0))
+      {
+         for (auto n=0; n<n_expansion[1]; ++n)
+         {
+            f[0] = 0.0;
+            for (auto i=1; i<nrho; ++i)
+            {
+                a = (sn[i]/(q*rho[i])-cs[i]);
+                f[i]=a*wp[i+indx[n+1*5]*nrho]*vp[i+1*nrho];
+            }
+            vnl_ray[k1+indx[n+1*5]*nray]=P1*util_simpson(nrho,f,drho)/q;
+         } 
+      }
+
+      /* s projectors */
+      if (locp!=0)
+      {
+         for (auto n=0; n<n_expansion[0]; ++n)
+         {
+            for (auto i=0; i<nrho; ++i)
+                f[i]=sn[i]*wp[i+indx[n+0*5]*nrho]*vp[i+0*nrho];
+            vnl_ray[k1+indx[n+0*5]*nray]=P0*util_simpson(nrho,f,drho)/q;
+         } 
+      }
+
+      /* local */
+      if (version==3)
+      {
+         for (auto i=0; i<nrho; ++i)
+            f[i]=rho[i]*vp[i+locp*nrho]*sn[i];
+         vl_ray[k1]=util_simpson(nrho,f,drho)*forpi/q - zv*forpi*cs[nrho]/(q*q);;
+      }
+      else if (version==4)
+      {
+         for (auto i=0; i<nrho; ++i)
+            f[i]=(rho[i]*vp[i+locp*nrho]+zv*erf(rho[i]/rlocal))*sn[i];
+         vl_ray[k1]=util_simpson(nrho,f,drho)*forpi/q;
+      }
+
+      /* semicore density */
+      if (semicore)
+      {
+         for (auto i=0; i<nrho; ++i)
+            f[i]=rho[i]*sqrt(rho_sc_r[i])*sn[i];
+         rho_sc_k_ray[k1]=util_simpson(nrho,f,drho)*forpi/q;
+
+         for (auto i=0; i<nrho; ++i)
+            f[i]=(sn[i]/(q*rho[i])-cs[i])*rho_sc_r[i+nrho]*rho[i];
+         rho_sc_k_ray[k1+nray]=util_simpson(nrho,f,drho)*forpi/q;
+      }
+   }
+   myparall->Vector_SumAll(0,2*nray,rho_sc_k_ray);
+   myparall->Vector_SumAll(0,nray,vl_ray);
+   myparall->Vector_SumAll(0,(lmax+1+n_extra)*nray,vnl_ray);
+
+   /* G==0 local */
+   if (version==3)
+   {
+      for (auto i=0; i<nrho; ++i)
+        f[i]=vp[i+locp*nrho]*rho[i]*rho[i];
+      vl_ray[0]=forpi*util_simpson(nrho,f,drho)+twopi*zv*rho[nrho]*rho[nrho];
+   }
+   else if (version==4) 
+   {
+      for (auto i=0; i<nrho; ++i)
+        f[i]= (vp[i+locp*nrho]*rho[i]+zv*erf(rho[i]/rlocal))*rho[i];
+      vl_ray[0]=forpi*util_simpson(nrho,f,drho);
+   }
+
+   /* G==0 semicore */
+   if (semicore)
+   {
+      for (auto i=0; i<nrho; ++i)
+         f[i] = sqrt(rho_sc_r[i])*rho[i]*rho[i];
+      rho_sc_k_ray[0]      = forpi*util_simpson(nrho,f,drho);
+      rho_sc_k_ray[0+nray] = 0.0;
+   }
+
+   /* G==0 vnl */
+   for (auto l=0; l<=lmax; ++l)
+      for (auto n=0; n<n_expansion[l]; ++n)
+         vnl_ray[0+indx[n+l*5]*nray] = 0.0;   
+
+   /* only j0 is non-zero at zero */
+   if (locp!=0)
+      for (auto n=0; n<n_expansion[0]; ++n) 
+      {
+         for (auto i=0; i<nrho; ++i)
+            f[i]=rho[i]*wp[i+indx[n+0*5]*nrho]*vp[i];
+         vnl_ray[0+indx[n+0*5]*nray]=P0*util_simpson(nrho,f,drho);
+      }
+
+   delete [] f;
+   delete [] sn;
+   delete [] cs;
 }
 

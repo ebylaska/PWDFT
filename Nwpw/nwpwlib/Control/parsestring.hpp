@@ -11,6 +11,7 @@
 #include        <streambuf>
 #include	<sstream>
 #include	<string>
+#include 	<algorithm>
 
 using namespace std;
 

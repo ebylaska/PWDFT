@@ -5,6 +5,7 @@
 
 */
 
+#include	<cmath>
 #include	"Parallel.hpp"
 #include	"d3db.hpp"
 #include	"Lattice.hpp"
@@ -15,6 +16,7 @@ class PGrid : public d3db {
    Balance *mybalance;
    int balanced;
    double *Garray,*Gpack[2];
+   double Gmax,Gmin;
    int     *masker[2],*packarray[2];
    int     nwave[2],nwave_entire[2],nwave_all[2],nida[2],nidb[2],nidb2[2];
 
@@ -54,6 +56,23 @@ public:
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
         double *Gpackxyz(const int nb,const int i) { return &(Gpack[nb][i*(nida[nb]+nidb[nb])]); }
+        double Gmax_ray() { return Gmax;}
+        double Gmin_ray() { return Gmin;}
+        double dGmin_ray() { return 0.01*Gmin;}
+        int n_ray() {
+           int nray0 = (int) ceil(100*(Gmax/Gmin) + 1.0);
+           if (nray0<10) nray0 = 10;
+           return nray0;
+        }
+        double *generate_G_ray() {
+           int nray0 = (int) ceil(100*(Gmax/Gmin) + 1.0);
+           if (nray0<10) nray0 = 10;
+           double *g_ray = new double[nray0];
+           double dGmin = 0.01*Gmin;
+           for (auto i=0; i<nray0; ++i)
+              g_ray[i] = dGmin*i;
+           return g_ray;
+        }
 
         int nzero(const int nb) {return nida[nb];}
         int npack(const int nb)     {return (nida[nb] + nidb[nb]);}

@@ -10,6 +10,7 @@ using namespace std;
 
 
 
+#include        <cmath>
 #include        <iostream>
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
@@ -32,7 +33,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    int i,j,k,nxh,nyh,nzh,p,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
    double *G1, *G2,*G3;
-   double gx,gy,gz,gg,ggcut,eps;
+   double gx,gy,gz,gg,ggcut,eps,ggmax,ggmin;
    int *zero_arow3,*zero_arow2;
 
    lattice = inlattice;
@@ -45,6 +46,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nxh = nx/2;
    nyh = ny/2;
    nzh = nz/2;
+   ggmin = 9.9e9;
+   ggmax = 0.0;
    for (k3 = (-nzh+1); k3<= nzh; ++k3)
    for (k2 = (-nyh+1); k2<= nyh; ++k2)
    for (k1 = 0;        k1<= nxh; ++k1)
@@ -52,6 +55,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
       gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
       gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+      gg = gx*gx + gy*gy + gz*gz;
+      if (gg>ggmax) ggmax = gg;
+      if ((gg<ggmin)&&(gg>1.0e-6)) ggmin = gg;
       i=k1; if (i < 0) i = i + nx;
       j=k2; if (j < 0) j = j + ny;
       k=k3; if (k < 0) k = k + nz;
@@ -66,6 +72,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       }
 
    }
+   Gmax = sqrt(ggmax);
+   Gmin = sqrt(ggmin);
    masker[0] = new int [2*nfft3d];
    masker[1] = (int *) &(masker[0][nfft3d]);
    //masker[0] = new int [nfft3d];

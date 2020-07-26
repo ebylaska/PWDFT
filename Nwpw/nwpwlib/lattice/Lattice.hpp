@@ -16,6 +16,7 @@ public:
    /* constructor */
    Lattice(Control2&);
 
+   double unita1d(const int i) { return punita[i]; }
    double unita(const int i, const int j) { return punita[i+j*3]; }
    double unitg(const int i, const int j) { return punitg[i+j*3]; }
    double ecut() { return pecut; }
