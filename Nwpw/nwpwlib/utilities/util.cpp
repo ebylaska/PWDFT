@@ -211,3 +211,90 @@ bool util_filefind(Parallel *myparall, char *fname)
    return (ifound>0);
 }
 
+
+/**************************************
+ *                                    *
+ *           util_spline              *
+ *                                    *
+ **************************************/
+void   util_spline(double *x, double *y, int n, double yp1, double ypn, double *y2, double *utmp)
+{
+   double sig,p,qn,un;
+
+   if (yp1>0.99e30)
+   {
+      y2[0]   = 0.0;
+      utmp[0] = 0.0;
+   }
+   else
+   {
+      y2[0]   = -0.5;
+      utmp[0] = 3.0 / (x[1]-x[0]) * ( (y[1]-y[0]) / (x[1]-x[0]) - yp1);
+   }
+   for (auto i=1; i<(n-1); ++i)
+   {
+      sig = (x[i]-x[i-1]) / (x[i+1]-x[i-1]);
+      p = sig*y2[i-1] + 2.00;
+      y2[i] = (sig-1.00) / p;
+      utmp[i] = (
+                 6.00 *
+                 (
+                   (y[i+1]-y[i  ]) / (x[i+1]-x[i  ])
+                 - (y[i  ]-y[i-1]) / (x[i  ]-x[i-1])
+                 )
+                 / (x[i+1]-x[i-1]) - sig*utmp[i-1]
+               )
+               / p;
+   }
+   
+   if (ypn>0.99e30)
+   {
+      qn = 0.0;
+      un = 0.0;
+   }
+   else
+   {
+      qn = 0.5;
+      un = 3.00 / (x[n-1]-x[n-2])
+              * ( ypn - (y[n-1]-y[n-2]) / (x[n-1]-x[n-2]) );
+   
+   }
+
+   y2[n-1] = (un-qn*utmp[n-2]) / (qn*y2[n-2]+1.00);
+   for (auto k=n-2; k>=0; --k)
+      y2[k] = y2[k]*y2[k+1] + utmp[k];
+
+}
+
+
+
+/**************************************
+ *                                    *
+ *           util_splint              *
+ *                                    *
+ **************************************/
+double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
+{
+   int khi = nx;
+   int klo = nx-1;
+
+   while ((xa[klo]>x) || (xa[khi]<x))
+   {
+      if (xa[klo]>x)
+      {
+        klo = klo - 1;
+        khi = khi - 1;
+      }
+      if (xa[khi]<x)
+      {
+           klo = klo + 1;
+           khi = khi + 1;
+      }
+   }
+
+   double h = xa[khi]-xa[klo];
+   double a = (xa[khi]-x)/h;
+   double b = (x-xa[klo])/h;
+   
+   return  (a*ya[klo] + b*ya[khi] + ((a*a*a-a)*y2a[klo] + (b*b*b-b)*y2a[khi]) * h*h / 6.0);
+}
