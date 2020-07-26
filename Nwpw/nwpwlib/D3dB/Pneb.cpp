@@ -6,11 +6,10 @@
 
 #include        <iostream>
 #include        <cstdio>
+#include        <cstring> //memset()
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
-
-
+#include        <stdexcept> // runtime_error()
 
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
@@ -20,7 +19,14 @@ using namespace std;
 #include	"Pneb.hpp"
 #include	"util.hpp"
 
-#include	"blas.h"
+#define NWPW_INTEL_MKL (1)
+
+#if defined(NWPW_INTERNAL_LIBS)
+#include "blas.h"
+#elif defined(NWPW_INTEL_MKL)
+#include "mkl.h"
+#endif
+
 
 /********************************
  *                              *
@@ -176,20 +182,24 @@ void Pneb::gg_copy(double *psi1, double *psi2)
 {
    int one=1;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
+#if defined(NWPW_INTERNAL_LIBS)
    dcopy_(&nsize,psi1,&one,psi2,&one);
+#elif (NWPW_INTEL_MKL)
+   cblas_dcopy(nsize, psi1, one, psi2, one);
+#endif
 }
 void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
 {
    int i;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
-   for (i=0; i<nsize; ++i) 
+   for (i=0; i<nsize; ++i)
       psi2[i] = alpha*psi1[i];
 }
 void Pneb::gg_Sum2(double *psi1, double *psi2)
 {
    int i;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
-   for (i=0; i<nsize; ++i) 
+   for (i=0; i<nsize; ++i)
       psi2[i] += psi1[i];
 }
 
@@ -208,8 +218,9 @@ void Pneb::g_zero(double *psi2)
    int zero=0;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
    double rzero=0.0;
-  
-   dcopy_(&nsize,&rzero,&zero,psi2,&one);
+
+   //dcopy_(&nsize,&rzero,&zero,psi2,&one);
+   std::memset(psi2, 0, nsize*sizeof(double));
 }
 void Pneb::gh_fftb(double *psi, double *psi_r)
 {
@@ -250,7 +261,9 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
    int nsize = n2ft3d*ispin;
    double rzero = 0.0;
 
-   dcopy_(&nsize,&rzero,&zero,dn,&one);
+   //dcopy_(&nsize,&rzero,&zero,dn,&one);
+   std::memset(dn, 0, nsize * sizeof(double));
+
    indx0 = 0;
    indx1 = 0;
    for (ms=0; ms<ispin; ++ms)
@@ -296,18 +309,42 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
          mshift1 = mshift0;
          for (k=1; k<=n; ++k)
          {
+
+#if defined(NWPW_INTERNAL_LIBS)
              dgemm_("T","N",&k,&one,&ng,
                     &rtwo,
                     &psi1[shift0], &ng,
                     &psi2[shift1],&ng,
                     &rzero,
                     &hml[mshift1],&k);
+
              dgemm_("T","N",&k,&one,&ng0,
                     &rmone,
                     &psi1[shift0], &ng,
                     &psi2[shift1],&ng,
                     &rone,
                     &hml[mshift1],&k);
+
+#elif defined(NWPW_INTEL_MKL)
+             cblas_dgemm(CblasColMajor,
+                         CblasTrans, CblasNoTrans,
+                         k, one, ng,
+                         rtwo,
+                         &psi1[shift0], ng,
+                         &psi2[shift1], ng,
+                         rzero,
+                         &hml[mshift1], k);
+
+             cblas_dgemm(CblasColMajor,
+                         CblasTrans, CblasNoTrans,
+                         k, one, ng0,
+                         rmone,
+                         &psi1[shift0], ng,
+                         &psi2[shift1], ng,
+                         rone,
+                         &hml[mshift1], k);
+#endif
+
              shift1  += ng;
              mshift1 += n;
           }
@@ -345,7 +382,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    else
    {
       if (mb==-1)
-      {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; 
+      {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
           nn=ne[0]*ne[0]+ne[1]*ne[1];
           shift0  = 0;
           mshift0 = 0;
@@ -363,6 +400,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
          mshift1 = mshift0;
          for (k=1; k<=n; ++k)
          {
+#if defined(NWPW_INTERNAL_LIBS)
              dgemm_("T","N",&k,&one,&ng,
                     &rtwo,
                     &psi1[shift0],&ng,
@@ -375,6 +413,26 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
                     &psi2[shift1],&ng,
                     &rone,
                     &hml[mshift1],&k);
+#elif defined(NWPW_INTEL_MKL)
+             cblas_dgemm(CblasColMajor,
+                         CblasTrans, CblasNoTrans,
+                         k, one, ng,
+                         rtwo,
+                         &psi1[shift0], ng,
+                         &psi2[shift1], ng,
+                         rzero,
+                         &hml[mshift1], k);
+
+             cblas_dgemm(CblasColMajor,
+                         CblasTrans, CblasNoTrans,
+                         k, one, ng0,
+                         rmone,
+                         &psi1[shift0], ng,
+                         &psi2[shift1], ng,
+                         rone,
+                         &hml[mshift1], k);
+#endif
+
              shift1  += ng;
              mshift1 += n;
          }
@@ -404,24 +462,37 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
    else
    {
       if (mb==-1)
-      {  ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; 
+      {  ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
          shift1  = 0;
          mshift1 = 0;
        }
       else
-      {   ms1=mb; ms2=mb+1; ishift2=0; 
+      {   ms1=mb; ms2=mb+1; ishift2=0;
           shift1  = mb*ne[0]*ng;
           mshift1 = 0;
       }
       for (ms=ms1; ms<ms2; ++ms)
       {
          n       = ne[ms];
+
+#if defined(NWPW_INTERNAL_LIBS)
          dgemm_("N","N",&ng,&n,&n,
                 &alpha,
                 &psi1[shift1],&ng,
                 &hml[mshift1],&n,
                 &beta,
                 &psi2[shift1],&ng);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dgemm(CblasColMajor,
+                     CblasNoTrans, CblasNoTrans,
+                     ng, n, n,
+                     alpha,
+                     &psi1[shift1], ng,
+                     &hml[mshift1], n,
+                     beta,
+                     &psi2[shift1], ng);
+#endif
+
          shift1  += ne[0]*ng;
          mshift1 += ishift2;
       }
@@ -436,10 +507,14 @@ double Pneb::m_dmax(const int mb, double *hml)
   int nn;
   if (mb==-1)
      nn = ne[0]*ne[0] + ne[1]*ne[1];
-  else 
+  else
      nn = ne[mb]*ne[mb];
 
+#if defined(NWPW_INTERNAL_LIBS)
   return( fabs(hml[idamax_(&nn,hml,&one)-1]) );
+#elif defined(NWPW_INTEL_MKL)
+  return ( fabs(hml[cblas_idamax(nn, hml, one) - 1]) );
+#endif
 }
 
 
@@ -448,7 +523,12 @@ void Pneb::m_scal(double alpha, double *hml)
 {
   int one = 1;
   int nsize = ne[0]*ne[0] + ne[1]*ne[1];
+
+#if defined(NWPW_INTERNAL_LIBS)
   dscal_(&nsize,&alpha,hml,&one);
+#elif defined(NWPW_INTEL_MKL)
+  cblas_dscal(nsize, alpha, hml, one);
+#endif
 }
 
 double Pneb::m_trace(double *hml)
@@ -467,33 +547,51 @@ double Pneb::m_trace(double *hml)
 
 void Pneb::m_diagonalize(double *hml, double *eig)
 {
-   int ms,nn,shift1,shift2;
+   int shift1,shift2;
    int n,ierr;
-   double *xmp1;
+
    if (parallelized)
    {
      printf("not finished\n");
    }
    else
    {
-      nn  = 2*ne[0]*ne[0];
-      xmp1 = new double[nn];
+#if defined(NWPW_INTERNAL_LIBS)
+       int nn;
+       double *xmp1;
+       xmp1 = new double[nn];
+#endif
       shift1 = 0;
       shift2 = 0;
-      for (ms=0; ms<ispin; ++ms)
+      for (int ms=0; ms<ispin; ++ms)
       {
          n = ne[ms];
          //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
-         dsyev_("V","U",&n,
-                &hml[shift2],&n,
+
+#if defined(NWPW_INTERNAL_LIBS)
+         dsyev_("V", "U", &n,
+                &hml[shift2], &n,
                 &eig[shift1],
-                xmp1,&nn,&ierr);
+                xmp1, &nn, &ierr);
+#elif defined(NWPW_INTEL_MKL)
+         ierr = LAPACKE_dsyev(LAPACK_COL_MAJOR,
+                              'V', 'U', n,
+                              &hml[shift2], n,
+                              &eig[shift1]);
+         if (ierr != 0)
+         {
+             throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
+         }
+#endif
+
          eigsrt(&eig[shift1],&hml[shift2],n);
          shift1 += ne[0];
          shift2 += ne[0]*ne[0];
       }
-      delete [] xmp1;
 
+#if defined(NWPW_INTERNAL_LIBS)
+      delete [] xmp1;
+#endif
    }
 }
 
@@ -569,12 +667,24 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
       if (n>0)
       {
          shift2 = ms*ishift2;
+
+#if defined(NWPW_INTERNAL_LIBS)
          dgemm_("N","N",&n,&n,&n,
                 &alpha,
                 &a[shift2], &n,
                 &b[shift2], &n,
                 &beta,
                 &c[shift2], &n);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dgemm(CblasColMajor,
+                     CblasNoTrans, CblasNoTrans,
+                     n, n, n,
+                     alpha,
+                     &a[shift2], n,
+                     &b[shift2], n,
+                     beta,
+                     &c[shift2], n);
+#endif
       }
    }
 }
@@ -632,30 +742,62 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
 
       m_scale_s22(ms,dte,s22);
       m_scale_s21(ms,dte,s21);
-      dcopy_(&nn,s21,&one,s12,&one);
+
+#if defined(NWPW_INTERNAL_LIBS)
+      dcopy_(&nn, s21, &one,s12, &one);
+#elif defined(NWPW_INTEL_MKL)
+      cblas_dcopy(nn, s21, one, s12, one);
+#endif
+
       m_scale_s11(ms,dte,s11);
 
       ii   = 0;
       done = 0;
+#if defined(NWPW_INTERNAL_LIBS)
       dcopy_(&nn,s22,&one,sa0,&one);
+#elif defined(NWPW_INTEL_MKL)
+      cblas_dcopy(nn, s22, one, sa0, one);
+#endif
+
       while ((!done) && ((ii++)<ITERLMD))
       {
+#if defined(NWPW_INTERNAL_LIBS)
          dcopy_(&nn,s22,&one,sa1,&one);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dcopy(nn, s22, one, sa1, one);
+#endif
+
          mmm_Multiply(ms,s21,sa0,1.0,sa1,1.0);
          mmm_Multiply(ms,sa0,s12,1.0,sa1,1.0);
          mmm_Multiply(ms,s11,sa0,1.0,st1,0.0);
          mmm_Multiply(ms,sa0,st1,1.0,sa1,1.0);
-         dcopy_(&nn,sa1,&one,st1,&one);
-         daxpy_(&nn,&rmone,sa0,&one,st1,&one);
+#if defined(NWPW_INTERNAL_LIBS)
+         dcopy_(&nn, sa1, &one, st1, &one);
+         daxpy_(&nn, &rmone, sa0, &one, st1, &one);
+#elif defined(NWPW_INTEL_MKL)
+         cblas_dcopy(nn, sa1, one, st1, one);
+         cblas_daxpy(nn, rmone, sa0, one, st1, one);
+#endif
 
          adiff = m_dmax(ms,st1);
          if (adiff<CONVGLMD)
             done = 1;
          else
-            dcopy_(&nn,sa1,&one,sa0,&one);
+         {
+#if defined(NWPW_INTERNAL_LIBS)
+             dcopy_(&nn, sa1, &one, sa0, &one);
+#elif defined(NWPW_INTEL_MKL)
+             cblas_dcopy(nn, sa1, one, sa0, one);
+#endif
+         }
       }
       if (!done) printf("ierr=10 adiff=%lf\n",adiff);
-      dcopy_(&nn,sa1,&one,&lmbda[ms*ne[0]*ne[0]],&one);
+
+#if defined(NWPW_INTERNAL_LIBS)
+      dcopy_(&nn, sa1, &one, &lmbda[ms*ne[0]*ne[0]], &one);
+#elif defined(NWPW_INTEL_MKL)
+      cblas_dcopy(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+#endif
    }
 
    /* correction due to contraint */
@@ -669,7 +811,6 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
  ********************************/
 /*
    Performs a Gram-Schmidt orthogonalization on psi
-
 */
 void Pneb::g_ortho(double *psi)
 {
@@ -701,4 +842,3 @@ void Pneb::g_ortho(double *psi)
       }
    }
 }
- 
