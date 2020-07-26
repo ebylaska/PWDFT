@@ -22,12 +22,12 @@ using namespace std;
 //#include	"compressed_io.h"
 //}
 
-#define NWPW_INTEL_MKL (1)
+//#define NWPW_INTEL_MKL (1)
 
-#if defined(NWPW_INTERNAL_LIBS)
-#include "blas.h"
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
 #include "mkl.h"
+#else
+#include "blas.h"
 #endif
 
 #include	"compressed_io.hpp"
@@ -129,10 +129,10 @@ static void Multiply_Gijl_sw1(int nn,
    int nnn = nn*nprj;
    int nna = nn;
 
-#if defined(NWPW_INTERNAL_LIBS)
-   dcopy_(&nnn, &rzero, &zero, sw2, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    cblas_dcopy(nnn, &rzero, 0, sw2, 1);
+#else
+   dcopy_(&nnn, &rzero, &zero, sw2, &one);
 #endif
 
    for (b=0; b<nprj; ++b)
@@ -142,16 +142,16 @@ static void Multiply_Gijl_sw1(int nn,
             na = n_prj[a]-1;
             nb = n_prj[b]-1;
 
-#if defined(NWPW_INTERNAL_LIBS)
-           daxpy_(&nna,
-                   &G[nb + na*nmax + nmax2*l_prj[a]],
-                   &sw1[a*nn],&one,
-                   &sw2[b*nn],&one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
            cblas_daxpy(nna,
                        G[nb + na*nmax + nmax2*l_prj[a]],
                        &sw1[a*nn], 1,
                        &sw2[b*nn], 1);
+#else
+           daxpy_(&nna,
+                   &G[nb + na*nmax + nmax2*l_prj[a]],
+                   &sw1[a*nn],&one,
+                   &sw2[b*nn],&one);
 #endif
 
           }
@@ -159,7 +159,6 @@ static void Multiply_Gijl_sw1(int nn,
 
 
 
-<<<<<<< HEAD
 /*******************************************
  *                                         *
  *                vpp_read                 *
@@ -167,11 +166,6 @@ static void Multiply_Gijl_sw1(int nn,
  *******************************************/
 static void vpp_read(PGrid *mygrid,
                      char *fname, 
-=======
-
-static void psp_read(PGrid *mygrid,
-                     char *fname,
->>>>>>> 73d27dd17723e170282830d13e2cd67e3f4e4f1b
                      char *comment,
                      int *psp_type,
                      int *version,
@@ -647,22 +641,15 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-#if defined(NWPW_INTERNAL_LIBS)
-         dscal_(&ntmp, &scal, sw2, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
          cblas_dscal(ntmp, scal, sw2, 1);
+#else
+         dscal_(&ntmp, &scal, sw2, &one);
 #endif
 
         ntmp = nprj[ia];
 
-#if defined(NWPW_INTERNAL_LIBS)
-        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
-               &rmone,
-               prjtmp,&nshift,
-               sw2,   &nn,
-               &rone,
-               Hpsi,&nshift);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
         cblas_dgemm(CblasRowMajor,
                     CblasNoTrans, CblasTrans,
                     nshift, nn, ntmp,
@@ -671,6 +658,13 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
                     sw2, nn,
                     1.0,
                     Hpsi, nshift);
+#else
+        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
+               &rmone,
+               prjtmp,&nshift,
+               sw2,   &nn,
+               &rone,
+               Hpsi,&nshift);
 #endif
 
       } /*if nprj>0*/
@@ -766,22 +760,15 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-#if defined(NWPW_INTERNAL_LIBS)
-         dscal_(&ntmp, &scal, sw2, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
          cblas_dscal(ntmp, scal, sw2, 1);
+#else
+         dscal_(&ntmp, &scal, sw2, &one);
 #endif
 
         ntmp = nprj[ia];
 
-#if defined(NWPW_INTERNAL_LIBS)
-        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
-               &rmone,
-               prjtmp,&nshift,
-               sw2,   &nn,
-               &rone,
-               Hpsi,&nshift);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
         cblas_dgemm(CblasColMajor,
                     CblasNoTrans, CblasTrans,
                     nshift, nn, ntmp,
@@ -790,6 +777,13 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                     sw2, nn,
                     1.0,
                     Hpsi, nshift);
+#else
+        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
+               &rmone,
+               prjtmp,&nshift,
+               sw2,   &nn,
+               &rone,
+               Hpsi,&nshift);
 #endif
 
          if (move)
@@ -807,14 +801,14 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
 
-#if defined(NWPW_INTERNAL_LIBS)
-                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, sum,     &three);
-                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[1], &three);
-                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[2], &three);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
                 fion[3*ii]   +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, sum,     3);
                 fion[3*ii+1] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[1], 3);
                 fion[3*ii+2] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[2], 3);
+#else
+                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, sum,     &three);
+                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[1], &three);
+                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[2], &three);
 #endif
 
             }

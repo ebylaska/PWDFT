@@ -6,7 +6,7 @@ add_definitions(-DNWPW_SYCL=1)
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Enable Fortran
 enable_language(Fortran)
 
-SET(SYCL_CXX_COMPILE_FLAGS "-fsycl")
+#SET(SYCL_CXX_COMPILE_FLAGS "-fsycl")
 
 #if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 #    set(dialect "-ffree-form -std=f2008 -fimplicit-none")
@@ -30,24 +30,24 @@ SET(SYCL_CXX_COMPILE_FLAGS "-fsycl")
 #    set(bounds "-C")
 #endif()
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
+#SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
 #Configure OpenMP
-#find_package(OpenMP)
+find_package(OpenMP)
 
 #Configure MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
 
-if(MKL_FOUND)
-    include_directories(${MKL_INCLUDE_DIRS})
-else()
-    message(WARNING "MKL libs not found")
-endif()
+#if(MKL_FOUND)
+#    include_directories(${MKL_INCLUDE_DIRS})
+#else()
+#    message(WARNING "MKL libs not found")
+#endif()
 
 
 # configure a header file to pass the version number only

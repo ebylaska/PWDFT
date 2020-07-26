@@ -4,17 +4,10 @@
 	this class is used for defining 3d parallel maps
 */
 
-<<<<<<< HEAD
-/*
-using namespace std;
-*/
-
 
 
 #include        <cmath>
-=======
-#include <cstring> //memset
->>>>>>> 73d27dd17723e170282830d13e2cd67e3f4e4f1b
+#include 	<cstring> //memset
 #include        <iostream>
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
@@ -23,12 +16,12 @@ using namespace std;
 
 #include	"PGrid.hpp"
 
-#define NWPW_INTEL_MKL (1)
+//#define NWPW_INTEL_MKL (1)
 
-#if defined(NWPW_INTERNAL_LIBS)
-#include "blas.h"
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
 #include "mkl.h"
+#else
+#include "blas.h"
 #endif
 
 
@@ -293,10 +286,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    {
       for (i=0; i<3; ++i)
       {
-#if defined(NWPW_INTERNAL_LIBS)
-         dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
-#elif (NWPW_INTEL_MKL)
+#if (NWPW_INTEL_MKL)
          cblas_dcopy(nfft3d, &(Garray[i*nfft3d]), one, Gtmp, one);
+#else
+         dcopy_(&nfft3d,&(Garray[i*nfft3d]),&one,Gtmp,&one);
 #endif
 
          this->t_pack(nb,Gtmp);
@@ -344,10 +337,10 @@ void PGrid::c_unpack(const int nb, double *a)
    if (balanced)
       mybalance->c_unbalance(nb,a);
 
-#if defined(NWPW_INTERNAL_LIBS)
-   dcopy_(&nn,a,&one,tmp,&one);
-#elif (NWPW_INTEL_MKL)
+#if (NWPW_INTEL_MKL)
    cblas_dcopy(nn, a, one, tmp, one);
+#else
+   dcopy_(&nn,a,&one,tmp,&one);
 #endif
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
    memset(a, 0, n2ft3d * sizeof(double));
@@ -372,10 +365,10 @@ void PGrid::c_pack(const int nb, double *a)
    int one=1;
    double *tmp = new double [n2ft3d];
 
-#if defined(NWPW_INTERNAL_LIBS)
-   dcopy_(&n2ft3d,a,&one,tmp,&one);
-#elif (NWPW_INTEL_MKL)
+#if (NWPW_INTEL_MKL)
    cblas_dcopy(n2ft3d, a, one, tmp, one);
+#else
+   dcopy_(&n2ft3d,a,&one,tmp,&one);
 #endif
 
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
@@ -401,10 +394,10 @@ void PGrid::cc_pack_copy(const int nb, double *a, double *b)
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
 
-#ifdef NWPW_INTERNAL_LIBS
-   dcopy_(&ng, a, &one, b, &one);
-#elif (NWPW_INTEL_MKL)
+#if (NWPW_INTEL_MKL)
    cblas_dcopy(ng, a, one, b, one);
+#else
+   dcopy_(&ng, a, &one, b, &one);
 #endif
 }
 
@@ -421,12 +414,12 @@ double PGrid::cc_pack_dot(const int nb, double *a, double *b)
    int ng0 = 2*nida[nb];
    double tsum;
 
-#ifdef NWPW_INTERNAL_LIBS
-   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
-   tsum -= ddot_(&ng0, a, &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
    tsum -= cblas_ddot(ng0, a, one, b, one);
+#else
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
 #endif
 
    return d3db::parall->SumAll(1,tsum);
@@ -444,12 +437,12 @@ double PGrid::tt_pack_dot(const int nb, double *a, double *b)
    int ng0 = nida[nb];
    double tsum;
 
-#ifdef NWPW_INTERNAL_LIBS
-   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
-   tsum -= ddot_(&ng0, a, &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
    tsum -= cblas_ddot(ng0, a, one, b, one);
+#else
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
 #endif
 
    return d3db::parall->SumAll(1,tsum);
@@ -469,12 +462,12 @@ double PGrid::cc_pack_idot(const int nb, double *a, double *b)
    int ng0 = 2*nida[nb];
    double tsum;
 
-#ifdef NWPW_INTERNAL_LIBS
-   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
-   tsum -= ddot_(&ng0, a, &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
    tsum -= cblas_ddot(ng0, a, one, b, one);
+#else
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
 #endif
 
    return tsum;
@@ -493,12 +486,12 @@ double PGrid::tt_pack_idot(const int nb, double *a, double *b)
    int ng0 = nida[nb];
    double tsum;
 
-#ifdef NWPW_INTERNAL_LIBS
-   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
-   tsum -= ddot_(&ng0, a, &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    tsum = 2.0 * cblas_ddot(ng, a, one, b, one);
    tsum -= cblas_ddot(ng0, a, one, b, one);
+#else
+   tsum = 2.0*ddot_(&ng, a, &one, b, &one);
+   tsum -= ddot_(&ng0, a, &one, b, &one);
 #endif
 
    return tsum;
@@ -519,12 +512,12 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
 
    for (int i=0; i<nn; ++i)
    {
-#ifdef NWPW_INTERNAL_LIBS
-      sum[i] = 2.0 * ddot_(&ng, &a[i*ng], &one, b, &one);
-      sum[i] -= ddot_(&ng0, &a[i*ng], &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
       sum[i] = 2.0 * cblas_ddot(ng, &a[i*ng], one, b, one);
       sum[i] -= cblas_ddot(ng0, &a[i*ng], one, b, one);
+#else
+      sum[i] = 2.0 * ddot_(&ng, &a[i*ng], &one, b, &one);
+      sum[i] -= ddot_(&ng0, &a[i*ng], &one, b, &one);
 #endif
    }
 
@@ -544,10 +537,10 @@ void PGrid::t_pack(const int nb, double *a)
    double rzero = 0.0;
    double *tmp  = new double [nfft3d];
 
-#ifdef NWPW_INTERNAL_LIBS
-   dcopy_(&nfft3d, a, &one, tmp, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    cblas_dcopy(nfft3d, a, one, tmp, one);
+#else
+   dcopy_(&nfft3d, a, &one, tmp, &one);
 #endif
    //dcopy_(&nfft3d,&rzero,&zero,a,&one);
    memset(a, 0, nfft3d * sizeof(double));
@@ -569,10 +562,10 @@ void PGrid::tt_pack_copy(const int nb, double *a, double *b)
 {
    int one = 1;
    int ng  = nida[nb]+nidb[nb];
-#if defined(NWPW_INTERNAL_LIBS)
-   dcopy_(&ng, a, &one, b, &one);
-#elif defined(NWPW_INTEL_MKL)
+#if defined(NWPW_INTEL_MKL)
    cblas_dcopy(ng, a, one, b, one);
+#else
+   dcopy_(&ng, a, &one, b, &one);
 #endif
 }
 

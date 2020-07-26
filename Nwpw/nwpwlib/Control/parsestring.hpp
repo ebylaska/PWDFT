@@ -11,11 +11,7 @@
 #include        <streambuf>
 #include	<sstream>
 #include	<string>
-<<<<<<< HEAD
 #include 	<algorithm>
-=======
-#include        <algorithm>
->>>>>>> 73d27dd17723e170282830d13e2cd67e3f4e4f1b
 
 using namespace std;
 
