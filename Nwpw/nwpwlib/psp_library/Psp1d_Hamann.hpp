@@ -2,6 +2,7 @@
 #define _PSP1D_HAMANN_H_
 
 #include        "Parallel.hpp"
+#include        "PGrid.hpp"
 
 class	Psp1d_Hamann {
 
@@ -18,6 +19,7 @@ public:
    double *vp;
    double *wp;
    double *vnlnrm;
+   int    *n_prj, *l_prj, *m_prj, *b_prj;
 
    double *up;
    double *r3_matrix;
@@ -37,6 +39,13 @@ public:
       delete [] vp;
       delete [] wp;
       delete [] vnlnrm;
+      if (nprj>0)
+      {
+         delete [] n_prj;
+         delete [] l_prj;
+         delete [] m_prj;
+         delete [] b_prj;
+      }
       if (psp_type==9)
       {
          delete [] up;
@@ -48,6 +57,8 @@ public:
 
    /* G integration routines */
    void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
+
+   void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
 };
 
 #endif

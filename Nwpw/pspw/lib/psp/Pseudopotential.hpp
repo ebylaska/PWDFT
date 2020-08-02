@@ -50,6 +50,7 @@ public:
             delete [] n_projector[ia];
             delete [] l_projector[ia];
             delete [] m_projector[ia];
+            delete [] b_projector[ia];
             delete [] Gijl[ia];
             delete [] vnl[ia];
          }
@@ -69,6 +70,7 @@ public:
       delete [] n_projector;
       delete [] l_projector;
       delete [] m_projector;
+      delete [] b_projector;
       delete [] semicore;
       delete [] rcore;
       delete [] ncore_sum;

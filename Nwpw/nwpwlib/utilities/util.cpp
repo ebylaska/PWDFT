@@ -298,3 +298,29 @@ double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
    
    return  (a*ya[klo] + b*ya[khi] + ((a*a*a-a)*y2a[klo] + (b*b*b-b)*y2a[khi]) * h*h / 6.0);
 }
+
+
+
+/**************************************
+ *                                    *
+ *           util_filter              *
+ *                                    *
+ **************************************/
+void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
+{
+   int    ncut = 15;
+   double qmax = sqrt(ecut+ecut);
+   double g;
+
+   for (auto i=0; i<nray; ++i)
+   {
+      g = g_ray[i];
+      if (g > (qmax-0.2))
+      {
+         v_ray[i] *= ( 1.0 - pow((1.0-exp(-pow((g/qmax),ncut))),ncut) );
+      }
+   }
+}
+
+
+

@@ -569,6 +569,24 @@ void PGrid::tt_pack_copy(const int nb, double *a, double *b)
 #endif
 }
 
+/********************************
+ *                              *
+ *       PGrid:t_pack_nzero     *
+ *                              *
+ ********************************/
+void PGrid::t_pack_nzero(const int nb, const int n, double *a)
+{
+   int one   = 1;
+   int zero = 0;
+   int ng  = n*(nida[nb]+nidb[nb]);
+   double azero = 0.0;
+#if defined(NWPW_INTEL_MKL)
+   cblas_dcopy(ng, &azero, zero, a, one);
+#else
+   dcopy_(&ng, &azero, &zero, a, &one);
+#endif
+}
+
 
 
 /********************************

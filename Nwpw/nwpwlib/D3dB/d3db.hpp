@@ -40,6 +40,7 @@ public:
         double * r_nalloc(const int);
         void     r_dealloc(double *);
         void     r_zero(double *);
+        void     r_nzero(int, double *);
         void     rr_copy(const double *,double *);
         void     tt_copy(const double *,double *);
         void     rr_SMul(const double, const double *, double *);
@@ -81,6 +82,7 @@ public:
         void     t_dealloc(double *);
 	void     t_read(const int, double *, const int);
 	void     t_write(const int, double *, const int);
+        void     t_nzero(int, double *);
 };
 
 #endif

@@ -523,6 +523,63 @@ void d3db::r_zero(double *ptr)
 
 /********************************
  *                              *
+ *         d3db::r_nzero        *
+ *                              *
+ ********************************/
+void d3db::r_nzero(int n, double *ptr)
+{
+   int i;
+   int m = (n*n2ft3d)%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr[i] = 0.0;
+   if ((n*n2ft3d)<7)
+      return;
+
+   for (i=m; i<(n*n2ft3d); i+=7)
+   {
+      ptr[i]   = 0.0;
+      ptr[i+1] = 0.0;
+      ptr[i+2] = 0.0;
+      ptr[i+3] = 0.0;
+      ptr[i+4] = 0.0;
+      ptr[i+5] = 0.0;
+      ptr[i+6] = 0.0;
+   }
+   return;
+}
+
+/********************************
+ *                              *
+ *         d3db::t_nzero        *
+ *                              *
+ ********************************/
+void d3db::t_nzero(int n, double *ptr)
+{
+   int i;
+   int m = (n*nfft3d)%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr[i] = 0.0;
+   if ((n*nfft3d)<7)
+      return;
+
+   for (i=m; i<(n*nfft3d); i+=7)
+   {
+      ptr[i]   = 0.0;
+      ptr[i+1] = 0.0;
+      ptr[i+2] = 0.0;
+      ptr[i+3] = 0.0;
+      ptr[i+4] = 0.0;
+      ptr[i+5] = 0.0;
+      ptr[i+6] = 0.0;
+   }
+   return;
+}
+
+
+/********************************
+ *                              *
  *        d3db::rr_copy         *
  *                              *
  ********************************/

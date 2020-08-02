@@ -102,6 +102,8 @@ public:
 
         void t_pack(const int, double *);
         void tt_pack_copy(const int, double *, double *);
+        void t_pack_nzero(const int, const int, double *);
+
         void tcc_Mul( const int, double *, double *, double *);
         void tcc_iMul(const int, double *, double *, double *);
         void tcc_MulSum2( const int, double *, double *, double *);
@@ -115,6 +117,7 @@ public:
 
         void i_pack(const int, int *);
         void ii_pack_copy(const int, int *, int *);
+
 
 };
 

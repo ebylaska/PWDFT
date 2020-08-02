@@ -2,6 +2,7 @@
    Author - Eric Bylaska
 */
 
+#include	<iostream>
 #include	<cstdio>
 #include	<cstdlib>
 #include	<cmath>
@@ -11,6 +12,7 @@ using namespace std;
 
 
 #include	"Parallel.hpp"
+#include	"util.hpp"
 #include	"Psp1d_Hamann.hpp"
 
 
@@ -450,6 +452,133 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
    }
    delete [] f;
 
+   /* define n_prj, l_prj, m_prj, b_prj */
+   if (nprj>0)
+   {
+      n_prj = new int[nprj];
+      l_prj = new int[nprj];
+      m_prj = new int[nprj];
+      b_prj = new int[nprj];
+      std::cout << "define n_prj nprj=" << nprj << std::endl;
+
+      int lcount = nprj;
+      /* f projectors */
+      if ((locp!=3) && (lmax>2))
+         for (auto n=0; n<n_expansion[3]; ++n)
+         {
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = -3;
+            b_prj[lcount] = indx[n+3*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = -2;
+            b_prj[lcount] = indx[n+3*5];
+          
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = -1;
+            b_prj[lcount] = indx[n+3*5];
+          
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = 0;
+            b_prj[lcount] = indx[n+3*5];
+          
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = 1;
+            b_prj[lcount] = indx[n+3*5];
+          
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = 2;
+            b_prj[lcount] = indx[n+3*5];
+          
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 3;
+            m_prj[lcount] = 3;
+            b_prj[lcount] = indx[n+3*5];
+         }
+
+      /* d projectors */
+      if ((locp!=2) && (lmax>1))
+         for (auto n=0; n<n_expansion[2]; ++n)
+         {
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 2;
+            m_prj[lcount] = -2;
+            b_prj[lcount] = indx[n+2*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 2;
+            m_prj[lcount] = -1;
+            b_prj[lcount] = indx[n+2*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 2;
+            m_prj[lcount] = 0;
+            b_prj[lcount] = indx[n+2*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 2;
+            m_prj[lcount] = 1;
+            b_prj[lcount] = indx[n+2*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 2;
+            m_prj[lcount] = 2;
+            b_prj[lcount] = indx[n+2*5];
+         }
+
+      /* p projectors */
+      if ((locp!=1) && (lmax>0))
+         for (auto n=0; n<n_expansion[1]; ++n)
+         {
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 1;
+            m_prj[lcount] = -1;
+            b_prj[lcount] = indx[n+1*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 1;
+            m_prj[lcount] = 0;
+            b_prj[lcount] = indx[n+1*5];
+
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 1;
+            m_prj[lcount] = 1;
+            b_prj[lcount] = indx[n+1*5];
+         }
+
+      /* s projectors */
+      if (locp!=0)
+         for (auto n=0; n<n_expansion[0]; ++n)
+         {
+            --lcount;
+            n_prj[lcount] = n;
+            l_prj[lcount] = 0;
+            m_prj[lcount] = 0;
+            b_prj[lcount] = indx[n+0*5];
+         }
+   }
+
 }
 
 
@@ -640,4 +769,195 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    delete [] sn;
    delete [] cs;
 }
+
+
+
+/*******************************************
+ *                                         *
+ *   Psp1d_Hamann::vpp_generate_spline     *
+ *                                         *
+ *******************************************/
+void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, double *vl_ray, double *vnl_ray, double *rho_sc_k_ray,
+                                       double *vl, double *vnl, double *rho_sc_k)
+{
+
+   /* set up indx(n,l) --> to wp */
+   int indx[5*4];
+   int nb = lmax+1;
+   for (auto l=0; l<=lmax; ++l)
+   {
+      indx[l*5] = l;
+      for (auto n1=1; n1<n_expansion[l]; ++n1)
+      {
+         indx[n1+l*5] = nb;
+         ++nb;
+      }
+   }
+
+   double pi    = 4.00*atan(1.0);
+
+   /* allocate spline grids */
+   double *vl_splineray  = new double [nray];
+   double *vnl_splineray = new double [(lmax+1+n_extra)*nray];
+   double *rho_sc_k_splineray = new double [2*nray];
+   double *tmp_splineray  = new double [nray];
+
+   /* setup cubic bsplines */
+   double dG = G_ray[2] - G_ray[1];
+
+   /* five point formula */
+   double yp1 = ( -50.00*vl_ray[1]
+                 + 96.00*vl_ray[2]
+                 - 72.00*vl_ray[3]
+                 + 32.00*vl_ray[4]
+                 -  6.00*vl_ray[5])/(24.00*dG);
+   util_spline(&(G_ray[1]),&(vl_ray[1]),nray-1,yp1,0.00,&(vl_splineray[1]),tmp_splineray);
+
+   for (auto l=0; l<=lmax; ++l)
+      if (l!=locp)
+         for (auto n=0; n<n_expansion[l]; ++l)
+            util_spline(G_ray,&(vnl_ray[indx[n+5*l]*nray]),nray,0.00,0.00,&(vnl_splineray[indx[n+5*l]*nray]),tmp_splineray);
+
+   if (semicore)
+   {
+      util_spline(G_ray,rho_sc_k_ray,nray,0.00,0.00,rho_sc_k_splineray,tmp_splineray);
+      util_spline(G_ray,&(rho_sc_k_ray[nray]),nray,0.00,0.00,&(rho_sc_k_splineray[nray]),tmp_splineray);
+   }
+
+
+   double q, qx, qy, qz, xx;
+   double *gx, *gy, *gz;
+   int npack0 = mygrid->npack(0);
+   int npack1 = mygrid->npack(1);
+   int nx,lcount;
+   mygrid->t_pack_nzero(0,1,vl);
+   mygrid->t_pack_nzero(1,nprj,vnl);
+   if (semicore) mygrid->t_pack_nzero(0,4,rho_sc_k);
+
+   /* generate vl and rho_sc_k */
+   gx = mygrid->Gpackxyz(0,0);
+   gy = mygrid->Gpackxyz(0,1);
+   gz = mygrid->Gpackxyz(0,2);
+   for (auto k=0; k<npack0; ++k)
+   {
+      qx = gx[k]; qy = gy[k]; qz = gz[k];
+      q = sqrt(qx*qx + qy*qy + qz*qz);
+      nx = (int) floor(q/dG);
+
+      if (q>1.0e-9)
+      {
+         qx /= q; qy /= q; qz /= q;
+         vl[k] = util_splint(&(G_ray[1]),&(vl_ray[1]),&(vl_splineray[1]),nray-1,nx,q);
+         if (semicore)
+         {
+            rho_sc_k[k] = util_splint(G_ray,rho_sc_k_ray,rho_sc_k_splineray,nray,nx,q);
+            xx          = util_splint(G_ray,&(rho_sc_k_ray[nray]),&(rho_sc_k_splineray[nray]),nray,nx,q);
+            rho_sc_k[k+npack0]   = xx*qx;
+            rho_sc_k[k+2*npack0] = xx*qy;
+            rho_sc_k[k+3*npack0] = xx*qz;
+         }
+      }
+      else
+      {
+         vl[k] = vl_ray[0];
+         if (semicore)
+         {
+            rho_sc_k[k] = rho_sc_k_ray[0];
+            rho_sc_k[k+npack0]   = 0.0;
+            rho_sc_k[k+2*npack0] = 0.0;
+            rho_sc_k[k+3*npack0] = 0.0;
+         }
+      }
+   }
+
+   /* generate vnl */
+   gx = mygrid->Gpackxyz(1,0);
+   gy = mygrid->Gpackxyz(1,1);
+   gz = mygrid->Gpackxyz(1,2);
+   for (auto k=0; k<npack1; ++k)
+   {
+      qx = gx[k]; qy = gy[k]; qz = gz[k];
+      q = sqrt(qx*qx + qy*qy + qz*qz);
+      nx = (int) floor(q/dG);
+
+      if (q>1.0e-9)
+      {
+         qx /= q; qy /= q; qz /= q;
+         lcount = nprj;
+
+         /* f projectors */
+
+         if ((locp!=3) && (lmax>2))
+            for (auto n=0; n<n_expansion[3]; ++n)
+            {
+               xx = util_splint(G_ray,&(vnl_ray[indx[n+3*5]*nray]),&(vnl_splineray[indx[n+3*5]*nray]),nray,nx,q);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qy*(3.00*(1.00-qz*qz)-4.00*qy*qy)/sqrt(24.00);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qx*qy*qz;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qy*(5.00*qz*qz-1.00)/sqrt(40.00);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qz*(5.00*qz*qz-3.00)/sqrt(60.00);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qx*(5.00*qz*qz-1.00)/sqrt(40.00);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qz*(qx*qx - qy*qy)/2.00;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qx*(4.00*qx*qx-3.00*(1.00-qz*qz))/sqrt(24.00);
+
+            }
+
+         /* d projectors */
+         if ((locp!=2) && (lmax>1))
+            for (auto n=0; n<n_expansion[2]; ++n)
+            {
+               xx = util_splint(G_ray,&(vnl_ray[indx[n+2*5]*nray]),&(vnl_splineray[indx[n+2*5]*nray]),nray,nx,q);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qx*qy;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qy*qz;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * (3.00*qz*qz-1.00)/(2.00*sqrt(3.00));
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qz*qx;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * (qx*qx-qy*qy)/(2.00);
+
+            }
+
+         /* p projectors */
+         if ((locp!=1) && (lmax>0))
+            for (auto n=0; n<n_expansion[1]; ++n)
+            {
+               xx = util_splint(G_ray,&(vnl_ray[indx[n+1*5]*nray]),&(vnl_splineray[indx[n+1*5]*nray]),nray,nx,q);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qy;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qz;
+               --lcount;
+               vnl[k+lcount*npack1]=  xx * qx;
+            }
+
+         /* s projectors */
+         if (locp!=0)
+            for (auto n=0; n<n_expansion[0]; ++n)
+            {
+               xx = util_splint(G_ray,&(vnl_ray[indx[n+0*5]*nray]),&(vnl_splineray[indx[n+0*5]*nray]),nray,nx,q);
+               --lcount;
+               vnl[k+lcount*npack1]=  xx;
+            }
+      }
+   }
+
+
+   /*  deallocate spineray formatted grids */
+   delete [] tmp_splineray;
+   delete [] rho_sc_k_splineray;
+   delete [] vnl_splineray;
+   delete [] vl_splineray;
+
+}
+
+
 

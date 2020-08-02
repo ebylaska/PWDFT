@@ -22,4 +22,6 @@ extern bool util_filefind(Parallel *, char *);
 extern void   util_spline(double *, double *, int, double, double, double *, double *);
 extern double util_splint(double *, double *, double *, int, int, double);
 
+extern void util_filter(int, double *, double, double *);
+
 #endif
