@@ -511,6 +511,7 @@ static void vpp_generate(PGrid *mygrid,
       double *rho_sc_k_ray = new double [2*nray];
       psp1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vnl_ray,rho_sc_k_ray);
 
+
       /* filter the ray formatted grids */
       double ecut = mygrid->lattice->ecut();
       double wcut = mygrid->lattice->wcut();
@@ -634,6 +635,16 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
           
+         std::cout << "vpp_generate Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
+         std::cout << "vpp_generate Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
+         std::cout << "vpp_generate Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
+          std::cout << "vpp_generate vl[0] = " << vl[ia][0] << std::endl;
+          std::cout << "vpp_generate vl[1] = " << vl[ia][1] << std::endl;
+          std::cout << "vpp_generate vl[431] = " << vl[ia][431] << std::endl;
+          std::cout << "vpp_generate vl[9431] = " << vl[ia][9431] << std::endl;
+          std::cout << "vpp_generate vnl[431] = " << vnl_ptr[431] << std::endl;
+          std::cout << "vpp_generate vnl[31+2*npack1] = " << vnl_ptr[31+2*mypneb->npack(1)] << std::endl;
+          std::cout << std::endl;
           delete [] rc_ptr;
           delete [] n_ptr;
           delete [] l_ptr;
@@ -651,9 +662,15 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
       }
-         std::cout << "Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
-         std::cout << "Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
-         std::cout << "Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
+         std::cout << "vpp_read Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
+         std::cout << "vpp_read Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
+         std::cout << "vpp_read Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
+          std::cout << "vpp_read vl[0] = " << vl[ia][0] << std::endl;
+          std::cout << "vpp_read vl[1] = " << vl[ia][1] << std::endl;
+          std::cout << "vpp_read vl[431] = " << vl[ia][431] << std::endl;
+          std::cout << "vpp_read vl[9431] = " << vl[ia][9431] << std::endl;
+          std::cout << "vpp_read vnl[431] = " << vnl_ptr[431] << std::endl;
+          std::cout << "vpp_read vnl[31+2*npack1] = " << vnl_ptr[31+2*mypneb->npack(1)] << std::endl;
 
       rc[ia]          = rc_ptr;
       n_projector[ia] = n_ptr;

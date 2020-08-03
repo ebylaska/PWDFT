@@ -85,13 +85,11 @@ static void util_matinvert(int n, int nmax, double *a)
  *******************************************/
 static double util_simpson(int n, double *y, double h)
 {
-   int ne = n/2;
-   int no = ne+1;
    double s = -y[0]-y[n-1];
-   for (auto i=0; i<no; i+=2) s += 2.0*y[i];
-   for (auto i=1; i<ne; i+=2) s += 4.0*y[i];
+   for (auto i=0; i<n; i+=2) s += 2.0*y[i];
+   for (auto i=1; i<n; i+=2) s += 4.0*y[i];
 
-   return s*h/3.0;;
+   return s*h/3.0;
 }
       
 
@@ -228,21 +226,21 @@ static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *
    *isemicore = isemicore0;
 }
 
-static double dsum(int n, double *x, int incx)
-{
-   double stemp = 0.0;
-   for (int i=0; i<(n*incx); i+=incx) stemp += x[i];
-   return stemp;
-}
+//static double dsum(int n, double *x, int incx)
+//{
+//   double stemp = 0.0;
+//   for (int i=0; i<(n*incx); i+=incx) stemp += x[i];
+//   return stemp;
+//}
 
-static double simpson(int n, double *y, double h)
-{
-   int ne = n/2;
-   int no = ne+1;
-
-   double s = 3.0*dsum(no,y,2) + 4.0*dsum(ne,&y[1],2) - y[0] - y[n-1];
-   return (s*h/3.0);
-}
+//static double simpson(int n, double *y, double h)
+//{
+//   int ne = n/2;
+//   int no = ne+1;
+//
+//   double s = 3.0*dsum(no,y,2) + 4.0*dsum(ne,&y[1],2) - y[0] - y[n-1];
+//   return (s*h/3.0);
+//}
 
 
 /*******************************************
@@ -276,7 +274,7 @@ static void generate_r3_matrix(int nrho, int lmax, double drho,
             f[i] = ( up[i+li*nrho]*up[i+lj*nrho]
                    - wp[i+li*nrho]*wp[i+lj*nrho])
                   /(rho[i]*rho[i]*rho[i]);
-         coeff = fourpi*simpson(nrho,f,drho);
+         coeff = fourpi*util_simpson(nrho,f,drho);
          r3_matrix[li+lj*lmax] = coeff;
          if (li!=lj) r3_matrix[lj+li*lmax] = coeff;
       }
@@ -396,6 +394,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       }
    }
 
+   version = 3;
    /* Normarization constants */
    double a;
    double *f = new double[nrho];
@@ -617,7 +616,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    int    izero = 0;
    int    ione  = 1;
    int    nray2 = 2*nray;
-   int    lmaxnray = (lmax+1)*nray;
+   int    lmaxnray = (lmax+1+n_extra)*nray;
 
    double q;
    double *cs = new double[nrho];
@@ -625,6 +624,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    double *f  = new double[nrho];
    double a,xx;
 
+    std::cout << "gen vl_ray version=" << version<< " " <<  std::endl;
    dcopy_(&nray,    &zero,&izero,vl_ray,&ione);
    dcopy_(&lmaxnray,&zero,&izero,vnl_ray,&ione);
    dcopy_(&nray2,   &zero,&izero,rho_sc_k_ray,&ione);
@@ -703,7 +703,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
       {
          for (auto i=0; i<nrho; ++i)
             f[i]=rho[i]*vp[i+locp*nrho]*sn[i];
-         vl_ray[k1]=util_simpson(nrho,f,drho)*forpi/q - zv*forpi*cs[nrho]/(q*q);;
+         vl_ray[k1]=util_simpson(nrho,f,drho)*forpi/q - zv*forpi*cs[nrho-1]/(q*q);
       }
       else if (version==4)
       {
@@ -726,14 +726,16 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    }
    myparall->Vector_SumAll(0,2*nray,rho_sc_k_ray);
    myparall->Vector_SumAll(0,nray,vl_ray);
-   myparall->Vector_SumAll(0,(lmax+1+n_extra)*nray,vnl_ray);
+   myparall->Vector_SumAll(0,lmaxnray,vnl_ray);
 
    /* G==0 local */
    if (version==3)
    {
       for (auto i=0; i<nrho; ++i)
+      {
         f[i]=vp[i+locp*nrho]*rho[i]*rho[i];
-      vl_ray[0]=forpi*util_simpson(nrho,f,drho)+twopi*zv*rho[nrho]*rho[nrho];
+      }
+      vl_ray[0]=forpi*util_simpson(nrho,f,drho)+twopi*zv*rho[nrho-1]*rho[nrho-1];
    }
    else if (version==4) 
    {
@@ -859,6 +861,7 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
       }
       else
       {
+
          vl[k] = vl_ray[0];
          if (semicore)
          {
