@@ -16,6 +16,120 @@ using namespace std;
 using json = nlohmann::json;
 
 
+
+
+/***********************************
+ *                                 *
+ *         factor_count2           *
+ *                                 *
+ ***********************************/
+static int factor_count2(int n, int m)
+{  
+   int f = 0;
+   int nn = n;
+   while ((nn%m)==0)
+   {  
+      nn /= m;
+      ++f;
+   }
+   return f;
+}
+static int dum_ipow(int a, int n)
+{  
+   int npa = 1;
+   for (auto i=0; i<n; ++i) npa *= a;
+   return npa;
+}
+
+/***********************************
+ *                                 *
+ *         control_set_ngrid       *
+ *                                 *
+ ***********************************/
+/* return n so that it is a multiple of 2,3,5,7 
+*/
+static int control_set_ngrid(double x, bool mult2)
+{
+   int nx = (int) floor(x + 0.5);
+   if (mult2 && ((nx%2)!=0)) ++nx;
+
+   int nf2 = factor_count2(nx,2);
+   int nf3 = factor_count2(nx,3);
+   int nf5 = factor_count2(nx,5);
+   int nf7 = factor_count2(nx,7);
+   int ntest = dum_ipow(2,nf2) * dum_ipow(3,nf3) * dum_ipow(5,nf5) * dum_ipow(7,nf7);
+   while (nx != ntest)
+   {
+      ++nx;
+      if (mult2) ++nx;
+      nf2 = factor_count2(nx,2);
+      nf3 = factor_count2(nx,3);
+      nf5 = factor_count2(nx,5);
+      nf7 = factor_count2(nx,7);
+      ntest = dum_ipow(2,nf2) * dum_ipow(3,nf3) * dum_ipow(5,nf5) * dum_ipow(7,nf7);
+   }
+
+   return nx;
+}
+
+/***********************************
+ *                                 *
+ *      control_ngrid_default      *
+ *                                 *
+ ***********************************/
+/* defines the default ngrid given unita, ecut and mapping
+*/
+static void control_ngrid_default(double *unita, double ecut, int mapping, int *ngrid)
+{
+   double gx,gy,gz,xh,yh,zh,unitg[9];
+   double twopi = 8.0*atan(1.0);
+   unitg[0] = unita[4]*unita[8] - unita[5]*unita[7];
+   unitg[1] = unita[5]*unita[6] - unita[3]*unita[8];
+   unitg[2] = unita[3]*unita[7] - unita[4]*unita[6];
+   unitg[3] = unita[7]*unita[2] - unita[8]*unita[1];
+   unitg[4] = unita[8]*unita[0] - unita[6]*unita[2];
+   unitg[5] = unita[6]*unita[1] - unita[7]*unita[0];
+   unitg[6] = unita[1]*unita[5] - unita[2]*unita[4];
+   unitg[7] = unita[2]*unita[3] - unita[0]*unita[5];
+   unitg[8] = unita[0]*unita[4] - unita[1]*unita[3];
+   double volume = unita[0]*unitg[0] + unita[1]*unitg[1] + unita[2]*unitg[2];
+   for (int i=0; i<9; ++i)
+      unitg[i] *= twopi/volume;
+
+   gx = unitg[0];
+   gy = unitg[1];
+   gz = unitg[2];
+   xh = sqrt(2.00*ecut/(gx*gx + gy*gy + gz*gz))+0.5;
+
+   gx = unitg[3];
+   gy = unitg[4];
+   gz = unitg[5];
+   yh = sqrt(2.00*ecut/(gx*gx + gy*gy + gz*gz))+0.5;
+
+   gx = unitg[6];
+   gy = unitg[7];
+   gz = unitg[8];
+   zh = sqrt(2.00*ecut/(gx*gx + gy*gy + gz*gz))+0.5;
+
+   ngrid[0] = control_set_ngrid(2.0*xh,true);
+   ngrid[1] = control_set_ngrid(2.0*yh,true);
+   ngrid[2] = control_set_ngrid(2.0*zh,true);
+   if (mapping==1)
+   {
+      if (ngrid[1]>ngrid[2])
+         ngrid[2] = ngrid[1];
+      else
+         ngrid[1] = ngrid[2];
+   }
+}
+
+
+
+
+
+
+
+
 /***********************************
  *                                 *
  *         Constructors            *
@@ -224,10 +338,19 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][8].is_number_float()) punita[8] = rtdbjson["nwpw"]["simulation_cell"]["unita"][8];
 
 
-   pngrid[0] = 32; pngrid[1] = 32; pngrid[2] = 32;
+   pngrid[0] = -1; pngrid[1] = -1; pngrid[2] = -1;
    if (rtdbjson["nwpw"]["simulation_cell"]["ngrid"][0].is_number_integer()) pngrid[0] = rtdbjson["nwpw"]["simulation_cell"]["ngrid"][0];
    if (rtdbjson["nwpw"]["simulation_cell"]["ngrid"][1].is_number_integer()) pngrid[1] = rtdbjson["nwpw"]["simulation_cell"]["ngrid"][1];
    if (rtdbjson["nwpw"]["simulation_cell"]["ngrid"][2].is_number_integer()) pngrid[2] = rtdbjson["nwpw"]["simulation_cell"]["ngrid"][2];
+   if ((pngrid[0]<0) || (pngrid[1]<0) || (pngrid[2]<0))
+   {
+      if (pecut >5000.0)
+      {
+         pngrid[0] = 32; pngrid[1] = 32; pngrid[2] = 32;
+      }
+      else
+         control_ngrid_default(punita, pecut, pmapping, pngrid);
+   }
 
 
    pewald_grid[0] = pngrid[0]; pewald_grid[1] = pngrid[1]; pewald_grid[2] = pngrid[2];
@@ -262,7 +385,5 @@ void Control2::add_scratch_dir(char fname[])
       strcat(fname,stmp);
    }
 }
-
-
 
 
