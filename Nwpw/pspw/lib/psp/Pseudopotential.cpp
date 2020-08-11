@@ -142,6 +142,8 @@ static void Multiply_Gijl_sw1(int nn,
          {
             na = n_prj[a]-1;
             nb = n_prj[b]-1;
+            //na = n_prj[a];
+            //nb = n_prj[b];
 
 #if defined(NWPW_INTEL_MKL)
            cblas_daxpy(nna,
@@ -150,9 +152,9 @@ static void Multiply_Gijl_sw1(int nn,
                        &sw2[b*nn], 1);
 #else
            daxpy_(&nna,
-                   &G[nb + na*nmax + nmax2*l_prj[a]],
-                   &sw1[a*nn],&one,
-                   &sw2[b*nn],&one);
+                   &(G[nb + na*nmax + nmax2*l_prj[a]]),
+                   &(sw1[a*nn]),&one,
+                   &(sw2[b*nn]),&one);
 #endif
 
           }
@@ -654,6 +656,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
           delete [] vnl_ptr;
           if (semicore[ia]) delete [] ncore_ptr;
          // ******** debug *********
+         std::cout << "VPP READ = " << fname << std::endl;
 
          vpp_read(mypneb,
                   fname,
@@ -669,8 +672,13 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
           std::cout << "vpp_read vl[1] = " << vl[ia][1] << std::endl;
           std::cout << "vpp_read vl[431] = " << vl[ia][431] << std::endl;
           std::cout << "vpp_read vl[9431] = " << vl[ia][9431] << std::endl;
+          std::cout << "vpp_read vnl[0] = " << vnl_ptr[0] << std::endl;
+          std::cout << "vpp_read vnl[1] = " << vnl_ptr[1] << std::endl;
           std::cout << "vpp_read vnl[431] = " << vnl_ptr[431] << std::endl;
           std::cout << "vpp_read vnl[31+2*npack1] = " << vnl_ptr[31+2*mypneb->npack(1)] << std::endl;
+
+          std::cout << "VNLS = " << mypneb->tt_pack_dot(1,vnl_ptr,vnl_ptr) << std::endl;
+          std::cout << "VNLPX = " << mypneb->tt_pack_dot(1,&(vnl_ptr[mypneb->npack(1)]), &(vnl_ptr[mypneb->npack(1)]) ) << std::endl;
 
       rc[ia]          = rc_ptr;
       n_projector[ia] = n_ptr;
@@ -732,16 +740,17 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
          for (l=0; l<nprj[ia]; ++ l)
          {
             sd_function = !(l_projector[ia][l] & 1);
-            prj = &prjtmp[l*nshift];
-            vnlprj = &vnl[ia][l*nshift0];
+            prj = &(prjtmp[l*nshift]);
+            vnlprj = &(vnl[ia][l*nshift0]);
             if (sd_function)
                mypneb->tcc_Mul( 1,vnlprj,exi,prj);
             else
                mypneb->tcc_iMul(1,vnlprj,exi,prj);
-            mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
+            mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
          }
          parall->Vector_SumAll(1,nn*nprj[ia],sw1);
 
+        
          /* sw2 = Gijl*sw1 */
          Multiply_Gijl_sw1(nn,nprj[ia],nmax[ia],lmax[ia],
                            n_projector[ia],l_projector[ia],m_projector[ia],

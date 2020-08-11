@@ -513,11 +513,11 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
    for (int i=0; i<nn; ++i)
    {
 #if defined(NWPW_INTEL_MKL)
-      sum[i] = 2.0 * cblas_ddot(ng, &a[i*ng], one, b, one);
-      sum[i] -= cblas_ddot(ng0, &a[i*ng], one, b, one);
+      sum[i] = 2.0 * cblas_ddot(ng, &(a[i*ng]), one, b, one);
+      sum[i] -= cblas_ddot(ng0, &(a[i*ng]), one, b, one);
 #else
-      sum[i] = 2.0 * ddot_(&ng, &a[i*ng], &one, b, &one);
-      sum[i] -= ddot_(&ng0, &a[i*ng], &one, b, &one);
+      sum[i] = 2.0 * ddot_(&ng, &(a[i*ng]), &one, b, &one);
+      sum[i] -= ddot_(&ng0, &(a[i*ng]), &one, b, &one);
 #endif
    }
 

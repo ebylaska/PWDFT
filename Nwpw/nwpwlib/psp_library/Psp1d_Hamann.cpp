@@ -466,43 +466,43 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          for (auto n=0; n<n_expansion[3]; ++n)
          {
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = -3;
             b_prj[lcount] = indx[n+3*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = -2;
             b_prj[lcount] = indx[n+3*5];
           
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = -1;
             b_prj[lcount] = indx[n+3*5];
           
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = 0;
             b_prj[lcount] = indx[n+3*5];
           
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = 1;
             b_prj[lcount] = indx[n+3*5];
           
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = 2;
             b_prj[lcount] = indx[n+3*5];
           
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 3;
             m_prj[lcount] = 3;
             b_prj[lcount] = indx[n+3*5];
@@ -513,31 +513,31 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          for (auto n=0; n<n_expansion[2]; ++n)
          {
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 2;
             m_prj[lcount] = -2;
             b_prj[lcount] = indx[n+2*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 2;
             m_prj[lcount] = -1;
             b_prj[lcount] = indx[n+2*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 2;
             m_prj[lcount] = 0;
             b_prj[lcount] = indx[n+2*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 2;
             m_prj[lcount] = 1;
             b_prj[lcount] = indx[n+2*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 2;
             m_prj[lcount] = 2;
             b_prj[lcount] = indx[n+2*5];
@@ -548,19 +548,19 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          for (auto n=0; n<n_expansion[1]; ++n)
          {
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 1;
             m_prj[lcount] = -1;
             b_prj[lcount] = indx[n+1*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 1;
             m_prj[lcount] = 0;
             b_prj[lcount] = indx[n+1*5];
 
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 1;
             m_prj[lcount] = 1;
             b_prj[lcount] = indx[n+1*5];
@@ -571,7 +571,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          for (auto n=0; n<n_expansion[0]; ++n)
          {
             --lcount;
-            n_prj[lcount] = n;
+            n_prj[lcount] = n+1;
             l_prj[lcount] = 0;
             m_prj[lcount] = 0;
             b_prj[lcount] = indx[n+0*5];
@@ -763,7 +763,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
       for (auto n=0; n<n_expansion[0]; ++n) 
       {
          for (auto i=0; i<nrho; ++i)
-            f[i]=rho[i]*wp[i+indx[n+0*5]*nrho]*vp[i];
+            f[i]=rho[i]*wp[i+indx[n+0*5]*nrho]*vp[i+0*nrho];
          vnl_ray[0+indx[n+0*5]*nray]=P0*util_simpson(nrho,f,drho);
       }
 
@@ -804,6 +804,7 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
    double *rho_sc_k_splineray = new double [2*nray];
    double *tmp_splineray  = new double [nray];
 
+
    /* setup cubic bsplines */
    double dG = G_ray[2] - G_ray[1];
 
@@ -815,11 +816,12 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
                  -  6.00*vl_ray[5])/(24.00*dG);
    util_spline(&(G_ray[1]),&(vl_ray[1]),nray-1,yp1,0.00,&(vl_splineray[1]),tmp_splineray);
 
+
    for (auto l=0; l<=lmax; ++l)
       if (l!=locp)
-         for (auto n=0; n<n_expansion[l]; ++l)
+         for (auto n=0; n<n_expansion[l]; ++n)
             util_spline(G_ray,&(vnl_ray[indx[n+5*l]*nray]),nray,0.00,0.00,&(vnl_splineray[indx[n+5*l]*nray]),tmp_splineray);
-
+   
    if (semicore)
    {
       util_spline(G_ray,rho_sc_k_ray,nray,0.00,0.00,rho_sc_k_splineray,tmp_splineray);
@@ -877,6 +879,9 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
    gx = mygrid->Gpackxyz(1,0);
    gy = mygrid->Gpackxyz(1,1);
    gz = mygrid->Gpackxyz(1,2);
+
+
+
    for (auto k=0; k<npack1; ++k)
    {
       qx = gx[k]; qy = gy[k]; qz = gz[k];
@@ -950,6 +955,16 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
                --lcount;
                vnl[k+lcount*npack1]=  xx;
             }
+      }
+      else
+      {
+         for (auto l=0; l<nprj; ++l)
+            vnl[k+l*npack1] = 0.0;
+
+         /* only j0 is non-zero at zero */
+         if (locp!=0)
+            for (auto n=0; n<n_expansion[0]; ++n)
+               vnl[k+indx[n+0*5]*npack1] =  vnl_ray[0+indx[n+0*5]*nray];
       }
    }
 
