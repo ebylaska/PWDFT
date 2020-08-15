@@ -1864,7 +1864,7 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
          parall->dsend(1,1,proc_to,msglen,&tmp1[i1_start[0][it]]);
    }
    parall->aend(1);
-   c_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
+   t_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
 
 
@@ -2051,6 +2051,56 @@ int d3db::timereverse_size()
 
    return sz;
 }
+
+
+/********************************
+ *                              *
+ *      d3db::t_timereverse     *
+ *                              *
+ ********************************/
+void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
+{
+   int nnfft3d,indx,it,proc_from,proc_to;
+   int msglen;
+
+   parall->astart(1,np);
+
+   indx    = t_i1_start[0];
+   nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
+   t_aindexcopy(nnfft3d,&t_iq_to_i1[indx],a,&tmp1[indx]);
+
+   /* it = 0, transpose data on same thread */
+   msglen = (t_i2_start[1] - t_i2_start[0]);
+#if defined(NWPW_INTEL_MKL)
+   cblas_dcopy(msglen, &(tmp1[2*t_i1_start[0]]), 1, &(tmp2[2*t_i2_start[0]]), 1);
+#else
+   int one=1;
+   dcopy_(&msglen, &(tmp1[2*t_i1_start[0]]), &one, &(tmp2[2*t_i2_start[0]]), &one);
+#endif
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = (t_i2_start[it+1] - t_i2_start[it]);
+      if (msglen>0)
+         parall->adreceive(1,1,proc_from,msglen,&tmp2[2*t_i2_start[it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = (t_i1_start[it+1] - t_i1_start[it]);
+      if (msglen>0)
+         parall->dsend(1,1,proc_to,msglen,&tmp1[2*t_i1_start[it]]);
+   }
+   parall->aend(1);
+
+   indx    = t_i2_start[0];
+   nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
+   t_bindexcopy(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+}
+
 
 
 /********************************

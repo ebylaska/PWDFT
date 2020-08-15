@@ -524,6 +524,39 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
 }
 
 
+/********************************
+ *                              *
+ *       PGrid:t_unpack         *
+ *                              *
+ ********************************/
+void PGrid::t_unpack(const int nb, double *a)
+{
+   int one=1;
+   int nn = (nida[nb]+nidb2[nb]);
+   double *tmp1,*tmp2;
+   double *tmp = new double [nfft3d];
+   if (balanced)
+      mybalance->t_unbalance(nb,a);
+
+#if (NWPW_INTEL_MKL)
+   cblas_dcopy(nn, a, one, tmp, one);
+#else
+   dcopy_(&nn,a,&one,tmp,&one);
+#endif
+   //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
+   memset(a, 0, nfft3d * sizeof(double));
+
+   t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
+
+   tmp1 = new double[zplane_size];
+   tmp2 = new double[zplane_size];
+   t_timereverse(a,tmp1,tmp2);
+   delete [] tmp2;
+   delete [] tmp1;
+   delete [] tmp;
+}
+
+
 
 /********************************
  *                              *

@@ -319,6 +319,136 @@ static void vpp_read(PGrid *mygrid,
    if (parall->is_master()) closefile(5);
 }
 
+
+
+/*******************************************
+ *                                         *
+ *                vpp_write                *
+ *                                         *
+ *******************************************/
+static void vpp_write(PGrid *mygrid,
+                     char *fname, 
+                     char *comment,
+                     int psp_type,
+                     int version,
+                     int *nfft,
+                     double *unita,
+                     char   *atom,
+                     double amass,
+                     double zv,
+                     int lmmax,
+                     int lmax,
+                     int locp,
+                     int nmax,
+                     double *rc,
+                     int nprj,
+                     int *n_projector,
+                     int *l_projector,
+                     int *m_projector,
+                     int *b_projector,
+                     double *Gijl,
+                     bool   semicore,
+                     double rcore,
+                     double *ncore,
+                     double *vl,
+                     double *vnl)
+{
+   int i,nn;
+   double   *tmp2,*prj;
+   Parallel *parall = mygrid->parall;
+
+   if (parall->is_master())
+   {
+      openfile(6,fname,"w");
+      cwrite(6,comment,80);
+      comment[79] = '\0';
+
+      iwrite(6,&psp_type,1);
+      iwrite(6,&version,1);
+      iwrite(6,nfft,3);
+      dwrite(6,unita,9);
+      cwrite(6,atom,2);
+      dwrite(6,&amass,1);
+      dwrite(6,&zv,1);
+      iwrite(6,&lmax,1);
+      iwrite(6,&locp,1);
+      iwrite(6,&nmax,1);
+   }
+
+   if (parall->is_master())
+   {
+      dwrite(6,rc,lmax+1);
+      iwrite(6,&nprj,1);
+   }
+   if (nprj > 0)
+   {
+      if (parall->is_master())
+      {
+         iwrite(6,n_projector,nprj);
+         iwrite(6,l_projector,nprj);
+         iwrite(6,m_projector,nprj);
+         iwrite(6,b_projector,nprj);
+      }
+      nn = (nmax)*(nmax)*(lmax+1);
+      if (parall->is_master())
+      {
+         dwrite(6,Gijl,nn);
+      }
+   }
+   if (parall->is_master()) dwrite(6,&rcore,1);
+
+
+   /* readin vl 3d block */
+   mygrid->tt_pack_copy(0,vl,tmp2);
+   mygrid->t_unpack(0,tmp2);
+   mygrid->t_write(6,tmp2,-1);
+   
+
+   /* reading vnl 3d block */
+   if (nprj > 0)
+   {
+      prj = vnl;
+      for (i=0; i<(nprj); ++i)
+      {
+         mygrid->tt_pack_copy(1,&prj[i*mygrid->npack(1)],tmp2);
+         mygrid->t_unpack(1,tmp2);
+         mygrid->t_write(6,tmp2,-1);
+      }
+   }
+   if (semicore)
+   {
+      prj    = ncore;
+
+      mygrid->tt_pack_copy(0,prj,tmp2);
+      mygrid->t_unpack(0,tmp2);
+      mygrid->t_write(6,tmp2,-1);
+      
+
+      mygrid->tt_pack_copy(0,&prj[2*mygrid->npack(0)],tmp2);
+      mygrid->t_unpack(0,tmp2);
+      mygrid->t_write(6,tmp2,-1);
+
+      mygrid->tt_pack_copy(0,&prj[3*mygrid->npack(0)],tmp2);
+      mygrid->t_unpack(0,tmp2);
+      mygrid->t_write(6,tmp2,-1);
+
+      mygrid->tt_pack_copy(0,&prj[4*mygrid->npack(0)],tmp2);
+      mygrid->t_unpack(0,tmp2);
+      mygrid->t_write(6,tmp2,-1);
+   }
+
+   delete [] tmp2;
+
+   if (parall->is_master()) closefile(6);
+}
+
+
+
+/*******************************************
+ *                                         *
+ *            semicore_check               *
+ *                                         *
+ *******************************************/
 static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double *ncore)
 {
    double sum = 0.0;

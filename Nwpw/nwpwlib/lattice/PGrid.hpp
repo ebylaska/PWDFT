@@ -100,6 +100,7 @@ public:
         void cr_pfft3b_queueout(const int, double *);
         int  cr_pfft3b_queuefilled();
 
+        void t_unpack(const int, double *);
         void t_pack(const int, double *);
         void tt_pack_copy(const int, double *, double *);
         void t_pack_nzero(const int, const int, double *);

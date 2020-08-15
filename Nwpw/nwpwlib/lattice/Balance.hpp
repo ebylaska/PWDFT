@@ -33,6 +33,7 @@ public:
 
    void c_unbalance(const int, double *a);
    void c_balance(const int, double *a);
+   void t_unbalance(const int, double *a);
    void t_balance(const int, double *a);
    void i_balance(const int, int    *a);
 };

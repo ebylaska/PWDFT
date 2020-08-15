@@ -70,6 +70,7 @@ public:
 	void     c_transpose_ijk(const int, double *, double *, double *);
 	void     t_transpose_ijk(const int, double *, double *, double *);
 
+	void     t_timereverse(double *, double *, double *);
 	void     c_timereverse(double *, double *, double *);
         int	 timereverse_size();
 
