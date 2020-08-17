@@ -11,6 +11,10 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
 
+bool Parallel::m_using_device {false};
+int Parallel::m_num_threads {1};
+//std::thread::id Parallel::m_main_thread_id = std::this_thread::get_id();
+
 /********************************
  *                              *
  *         Constructors         *
@@ -135,6 +139,25 @@ Parallel::~Parallel()
    //MPI::Finalize();
    //MPI_Finalize();
 }
+
+//_____________________________________________________________________________
+//
+
+bool
+Parallel::usingDevice()
+{
+    return m_using_device;
+}
+
+//_____________________________________________________________________________
+//
+
+void
+Parallel::setUsingDevice(bool state)
+{
+    m_using_device = state;
+}
+
 /********************************
  *                              *
  *          MaxAll              *

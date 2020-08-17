@@ -7,22 +7,27 @@
 #include "device_types.hpp"
 #include "macros.hpp"
 
+#include "Parallel.hpp"
+
 namespace Nwpw {
 
 #ifdef NWPW_SYCL
-  struct gpuDeviceProp_t {
-    std::string device_name;
-    std::size_t totalGlobalMem;
-    std::size_t sharedMemPerBlock;
-    int multiProcessorCount;
-    int maxThreadsPerMultiProcessor;
-    int maxThreadsPerBlock;
-    int maxThreadsDim[3];
-    int maxGridSize[3]; // NOT yet supported in SYCL/DPC++
-    int warpSize;
-    cl::sycl::info::local_mem_type sharedMemType;
-    long maxMemAllocSize; // oneAPI only
-  };
+    struct gpuDeviceProp_t {
+        std::string device_name;
+        std::size_t totalGlobalMem;
+        std::size_t sharedMemPerBlock;
+        int multiProcessorCount;
+        int maxThreadsPerMultiProcessor;
+        int maxThreadsPerBlock;
+        int maxThreadsDim[3];
+        int maxGridSize[3]; // NOT yet supported in SYCL/DPC++
+        int warpSize;
+        cl::sycl::info::local_mem_type sharedMemType;
+        long maxMemAllocSize; // oneAPI only
+        int managedMemory;
+        int concurrentManagedAccess;
+        int maxParameterSize;
+    };
 #elif defined(NWPW_HIP)
   using gpuDeviceProp_t = hipDeviceProp_t;
 #elif defined(NWPW_CUDA)
@@ -39,7 +44,7 @@ namespace Nwpw {
       CPU
     };
 
-    Device();
+    Device(Parallel* myParallel);
     ~Device();
 
     template <typename T>
@@ -56,7 +61,7 @@ namespace Nwpw {
     static bool onNullStream(gpuStream_t stream) noexcept { return stream == gpu_default_stream; }
 #endif
 
-    /* ABB: 04/20/2020: STILL EXPERIMENTAL
+    /* ABB: 08/17/2020: STILL EXPERIMENTAL
        static int numGpuStreams() noexcept { return max_gpu_streams; }
        static void setStreamIndex(const int idx) noexcept;
        static void resetStreamIndex() noexcept { setStreamIndex(-1); }
@@ -73,18 +78,19 @@ namespace Nwpw {
 #endif
 
 #if defined(NWPW_CUDA) || defined(NWPW_HIP)
-    static std::size_t totalGlobalMem() noexcept { return device_prop.totalGlobalMem; }
-    static std::size_t sharedMemPerBlock() noexcept { return device_prop.sharedMemPerBlock; }
-    static int numMultiProcessors() noexcept { return device_prop.multiProcessorCount; }
+    static std::size_t totalGlobalMem() noexcept      { return device_prop.totalGlobalMem; }
+    static std::size_t sharedMemPerBlock() noexcept   { return device_prop.sharedMemPerBlock; }
+    static int numMultiProcessors() noexcept          { return device_prop.multiProcessorCount; }
     static int maxThreadsPerMultiProcessor() noexcept { return device_prop.maxThreadsPerMultiProcessor; }
-    static int maxThreadsPerBlock() noexcept { return device_prop.maxThreadsPerBlock; }
-    static int maxThreadsPerBlock(int dir) noexcept { return device_prop.maxThreadsDim[dir]; }
-    static int maxBlocksPerGrid(int dir) noexcept { return device_prop.maxGridSize[dir]; }
-    static std::string deviceName() noexcept { return std::string(device_prop.device_name); }
+    static int maxThreadsPerBlock() noexcept          { return device_prop.maxThreadsPerBlock; }
+    static int maxThreadsPerBlock(int dir) noexcept   { return device_prop.maxThreadsDim[dir]; }
+    static int maxBlocksPerGrid(int dir) noexcept     { return device_prop.maxGridSize[dir]; }
+    static std::string deviceName() noexcept          { return std::string(device_prop.device_name); }
 
-    static constexpr int warp_size = NWPW_HIP_OR_CUDA_OR_SYCL(64,32,32);
     static int maxBlocksPerLaunch () noexcept { return max_blocks_per_launch; }
 #endif
+
+    static constexpr int warp_size = NWPW_HIP_OR_CUDA_OR_SYCL(64,32,16);
 
 #ifdef NWPW_SYCL
     static long maxMemAllocSize() noexcept { return device_prop.maxMemAllocSize; }

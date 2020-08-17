@@ -5,7 +5,6 @@
 #include <exception>
 #include <stdexcept>
 
-#include "Parallel.hpp"
 #include "device.hpp"
 
 #define NWPW_SYCL_USE_DEFAULT_SELECTOR (0)
@@ -28,7 +27,7 @@ namespace Nwpw {
   //_____________________________________________________________________________
   //
 
-  Device::Device()
+  Device::Device(Parallel* myParallel)
   {
     // Count the number of GPU devices.
     int numDevices = 0;
@@ -61,7 +60,7 @@ namespace Nwpw {
     // or only one MPI rank, this is easy. Otherwise, we
     // need to do a little more work.
 
-    if (Parallel::getMPISize() == 1) {
+    if (myParallel->np() == 1) {
       device_id = 0;
     }
     else if (m_num_devices == 1) {
@@ -105,7 +104,7 @@ namespace Nwpw {
 
       // We have no preference on how ranks get ordered within this communicator.
       int key = 0;
-      MPI_Comm_split_type(Parallel::communicator(), split_type, key, MPI_INFO_NULL, &local_comm);
+      MPI_Comm_split_type(myParallel->communicator(), split_type, key, MPI_INFO_NULL, &local_comm);
 
       // Get rank within the local communicator, and number of ranks.
       int n_procs;
@@ -155,7 +154,7 @@ namespace Nwpw {
     int can_access = 0;
     for (int i = 0; i < numDevices; i++) {
       NWPW_HIP_SAFE_CALL( hipSetDevice(i) );
-      NWPW_HIP_SAFE_CALL( hipSetDeviceFlags(cudaDeviceMapHost) );
+      NWPW_HIP_SAFE_CALL( hipSetDeviceFlags(hipDeviceMapHost) );
 
       for (int j = 0; j < numDevices; j++) {
         if (i != j) {
@@ -242,10 +241,13 @@ namespace Nwpw {
       device_prop.maxGridSize[0] = -1; // xxxxx SYCL todo: unknown
       device_prop.maxGridSize[0] = -1; // unknown
       device_prop.maxGridSize[0] = -1; // unknown
+      device_prop.warpSize = Nwpw::Device::warp_size;
 
-      auto sgss = d.get_info<cl::sycl::info::device::sub_group_sizes>();
-      device_prop.warpSize = sgss.back();
-      device_prop.maxMemAllocSize = d.get_info<cl::sycl::info::device::max_mem_alloc_size>();
+      //auto sgss = d.get_info<cl::sycl::info::device::sub_group_sizes>();
+      device_prop.maxMemAllocSize         = d.get_info<cl::sycl::info::device::max_mem_alloc_size>();
+      device_prop.managedMemory           = d.get_info<cl::sycl::info::device::host_unified_memory>();
+      device_prop.concurrentManagedAccess = d.get_info<cl::sycl::info::device::usm_shared_allocations>();
+      device_prop.maxParameterSize        = d.get_info<cl::sycl::info::device::max_parameter_size>();
       {
         std::cout << "Device Properties:\n"
                   << "  name               : " << device_prop.device_name << "\n"

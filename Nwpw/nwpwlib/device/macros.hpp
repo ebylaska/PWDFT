@@ -40,6 +40,16 @@ inline void assert_fail(const char *condition, const char *function, const char 
   abort();
 }
 
+#if defined(NWPW_HIP)
+#define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) a
+#elif defined(NWPW_CUDA)
+#define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) b
+#elif defined(NWPW_SYCL)
+#define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) c
+#else
+#define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) ((void)0);
+#endif
+
 #define NWPW_ASSERT(x)                                                  \
   do {                                                                  \
     if(!copy_bool(x))                                                   \
