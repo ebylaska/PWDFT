@@ -609,14 +609,16 @@ void PGrid::tt_pack_copy(const int nb, double *a, double *b)
  ********************************/
 void PGrid::t_pack_nzero(const int nb, const int n, double *a)
 {
-   int one   = 1;
-   int zero = 0;
+   //int one   = 1;
+  // int zero = 0;
+  // double azero = 0.0;
    int ng  = n*(nida[nb]+nidb[nb]);
-   double azero = 0.0;
+   memset(a, 0, ng * sizeof(double));
+
 #if defined(NWPW_INTEL_MKL)
-   cblas_dcopy(ng, &azero, zero, a, one);
+//   cblas_dcopy(ng, &azero, zero, a, one);
 #else
-   dcopy_(&ng, &azero, &zero, a, &one);
+//   dcopy_(&ng, &azero, &zero, a, &one);
 #endif
 }
 
