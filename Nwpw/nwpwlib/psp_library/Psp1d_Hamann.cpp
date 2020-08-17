@@ -458,7 +458,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       l_prj = new int[nprj];
       m_prj = new int[nprj];
       b_prj = new int[nprj];
-      std::cout << "define n_prj nprj=" << nprj << std::endl;
+      //std::cout << "define n_prj nprj=" << nprj << std::endl;
 
       int lcount = nprj;
       /* f projectors */
@@ -624,7 +624,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    double *f  = new double[nrho];
    double a,xx;
 
-    std::cout << "gen vl_ray version=" << version<< " " <<  std::endl;
+   //std::cout << "gen vl_ray version=" << version<< " " <<  std::endl;
    dcopy_(&nray,    &zero,&izero,vl_ray,&ione);
    dcopy_(&lmaxnray,&zero,&izero,vnl_ray,&ione);
    dcopy_(&nray2,   &zero,&izero,rho_sc_k_ray,&ione);

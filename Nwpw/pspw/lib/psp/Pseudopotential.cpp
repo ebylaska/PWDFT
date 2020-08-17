@@ -200,6 +200,7 @@ static void vpp_read(PGrid *mygrid,
 
    if (parall->is_master())
    {
+      std::cout << "reading formatted psp filename: " << fname << std::endl;
       openfile(5,fname,"r");
       cread(5,comment,80);
       comment[79] = '\0';
@@ -563,23 +564,23 @@ static void vpp_generate(PGrid *mygrid,
 
    *psp_type = vpp_get_psp_type(myparall, pspname);
 
-   std::cout << "in vpp_generate, psp_type=" << *psp_type << std::endl;
-   std::cout << "in vpp_generate" << std::endl;
+   //std::cout << "in vpp_generate, psp_type=" << *psp_type << std::endl;
+   //std::cout << "in vpp_generate" << std::endl;
    
    if ((*psp_type==0) || (*psp_type==9))
    {
       int nray = mygrid->n_ray();
       Psp1d_Hamann psp1d(myparall,pspname);
-      std::cout << "in vpp_generate Hamann psp1d.psp_type=" << psp1d.psp_type << std::endl;
-      std::cout << "in vpp_generate Hamann nray=" << nray << std::endl;
-      std::cout << "in vpp_generate Hamann Gmax=" << mygrid->Gmax_ray() << std::endl;
-      std::cout << "in vpp_generate Hamann Gmin=" << mygrid->Gmin_ray() << std::endl;
-      std::cout << "in vpp_generate Hamann dGmin=" << mygrid->dGmin_ray() << std::endl;
-      std::cout << "in vpp_generate Hamann lmax=" << psp1d.lmax << std::endl;
-      std::cout << "in vpp_generate Hamann locp=" << psp1d.locp << std::endl;
-      std::cout << "in vpp_generate Hamann nmax=" << psp1d.nmax << std::endl;
-      std::cout << "in vpp_generate Hamann nprj=" << psp1d.nprj << std::endl;
-      std::cout << "in vpp_generate Hamann n_extra=" << psp1d.n_extra << std::endl;
+      //std::cout << "in vpp_generate Hamann psp1d.psp_type=" << psp1d.psp_type << std::endl;
+      //std::cout << "in vpp_generate Hamann nray=" << nray << std::endl;
+      //std::cout << "in vpp_generate Hamann Gmax=" << mygrid->Gmax_ray() << std::endl;
+      //std::cout << "in vpp_generate Hamann Gmin=" << mygrid->Gmin_ray() << std::endl;
+      //std::cout << "in vpp_generate Hamann dGmin=" << mygrid->dGmin_ray() << std::endl;
+      //std::cout << "in vpp_generate Hamann lmax=" << psp1d.lmax << std::endl;
+      //std::cout << "in vpp_generate Hamann locp=" << psp1d.locp << std::endl;
+      //std::cout << "in vpp_generate Hamann nmax=" << psp1d.nmax << std::endl;
+      //std::cout << "in vpp_generate Hamann nprj=" << psp1d.nprj << std::endl;
+      //std::cout << "in vpp_generate Hamann n_extra=" << psp1d.n_extra << std::endl;
 
       nfft[0] = mygrid->nx;
       nfft[1] = mygrid->ny;
@@ -614,7 +615,7 @@ static void vpp_generate(PGrid *mygrid,
       *Gijl = new double[nn];
       for (auto l=0; l<nn; ++l)
       {
-          std::cout << "in vpp_generate Hamann l=" << l << " norm=" << psp1d.vnlnrm[l] << std::endl;
+          //std::cout << "in vpp_generate Hamann l=" << l << " norm=" << psp1d.vnlnrm[l] << std::endl;
          (*Gijl)[l] = psp1d.vnlnrm[l];
       }
 
@@ -676,7 +677,7 @@ static void vpp_generate(PGrid *mygrid,
    } 
    else 
    {
-      std::cout << "in vpp_generate Not finished " <<  std::endl;
+      std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
    }
 
    
@@ -757,6 +758,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       else
       {
          // ******** debug *********
+         /*
          strcpy(pspname,myion->atom(ia));
          strcat(pspname,".psp");
          control.add_permanent_dir(pspname);
@@ -787,6 +789,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
           if (semicore[ia]) delete [] ncore_ptr;
          // ******** debug *********
          std::cout << "VPP READ = " << fname << std::endl;
+         */
 
          vpp_read(mypneb,
                   fname,
@@ -795,6 +798,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
       }
+       /*
          std::cout << "vpp_read Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
          std::cout << "vpp_read Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
          std::cout << "vpp_read Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
@@ -809,6 +813,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 
           std::cout << "VNLS = " << mypneb->tt_pack_dot(1,vnl_ptr,vnl_ptr) << std::endl;
           std::cout << "VNLPX = " << mypneb->tt_pack_dot(1,&(vnl_ptr[mypneb->npack(1)]), &(vnl_ptr[mypneb->npack(1)]) ) << std::endl;
+      */
 
       rc[ia]          = rc_ptr;
       n_projector[ia] = n_ptr;

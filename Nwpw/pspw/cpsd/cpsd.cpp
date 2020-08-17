@@ -91,6 +91,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
 
    /* debug output - print charge, ispin, and ne */
+/*
    if (myparallel.is_master()) 
    { 
        cout << endl;
@@ -99,11 +100,24 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
        cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
        cout << "ne = " << control.ne_ptr()[0] << " " << control.ne_ptr()[1] << endl;
    }
+*/
 
    /* fetch ispin and ne psi information from control */
    ispin = control.ispin();
    ne[0] = control.ne(0);
    ne[1] = control.ne(1);
+   nfft[0] = control.ngrid(0);
+   nfft[1] = control.ngrid(1);
+   nfft[2] = control.ngrid(2);
+   unita[0] = mylattice.unita1d(0);
+   unita[1] = mylattice.unita1d(1);
+   unita[2] = mylattice.unita1d(2);
+   unita[3] = mylattice.unita1d(3);
+   unita[4] = mylattice.unita1d(4);
+   unita[5] = mylattice.unita1d(5);
+   unita[6] = mylattice.unita1d(6);
+   unita[7] = mylattice.unita1d(7);
+   unita[8] = mylattice.unita1d(8);
    version = 3;
 
 

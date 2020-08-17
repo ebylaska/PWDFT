@@ -27,6 +27,7 @@ void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
       std::cout << std::endl << " psp_library: " << mypsp_library.nwpw_libraryps_dir << std::endl << std::endl;;
       for (auto const& x : mypsp_library.libraries)
          std::cout << " " << x.first << " library " << x.second << std::endl;
+      std::cout << std::endl;
    }
 
    /* Check for psp files - generate them if they do not exist */
