@@ -31,14 +31,14 @@
 #define NWPW_MAKESTRING2(a) #a
 #define NWPW_MAKESTRING(a) NWPW_MAKESTRING2(a)
 
-bool copy_bool(bool b) { return b; }
-inline void assert_fail(const char *condition, const char *function, const char *file, int line)
-{
-  std::cerr << "assertion failed: " << condition << " in function " << function
-            << " at " << file << ":"
-            << line << std::endl;
-  abort();
-}
+// bool copy_bool(bool b) { return b; }
+// inline void assert_fail(const char *condition, const char *function, const char *file, int line)
+// {
+//   std::cerr << "assertion failed: " << condition << " in function " << function
+//             << " at " << file << ":"
+//             << line << std::endl;
+//   abort();
+// }
 
 #if defined(NWPW_HIP)
 #define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) a
@@ -50,12 +50,12 @@ inline void assert_fail(const char *condition, const char *function, const char 
 #define NWPW_HIP_OR_CUDA_OR_SYCL(a,b,c) ((void)0);
 #endif
 
-#define NWPW_ASSERT(x)                                                  \
-  do {                                                                  \
-    if(!copy_bool(x))                                                   \
-      assert_fail(NWPW_MAKESTRING(x), __PRETTY_FUNCTION__, __FILE__, __LINE__); \
-  } while(false)
-#endif
+// #define NWPW_ASSERT(x)                                                  \
+//   do {                                                                  \
+//     if(!copy_bool(x))                                                   \
+//       assert_fail(NWPW_MAKESTRING(x), __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+//   } while(false)
+// #endif
 
 // Define a macro for catching SYCL exceptions
 #ifdef NWPW_SYCL
@@ -81,7 +81,7 @@ inline void assert_fail(const char *condition, const char *function, const char 
                          + ": " + cudaGetErrorString(nwpw_i_err));      \
       NWPW_THROW_X(std::runtime_error(errStr));                         \
     }}
-#endif
+#endif // NWPW_CUDA
 
 #ifdef NWPW_HIP
 #define NWPW_HIP_SAFE_CALL(call) {                                      \
@@ -92,5 +92,8 @@ inline void assert_fail(const char *condition, const char *function, const char 
                          + " " + hipGetErrorString(nwpw_i_err));        \
       NWPW_THROW_X(std::runtime_error(errStr));                         \
     }}
-#endif
+#endif // NWPW_HIP
 
+
+
+#endif

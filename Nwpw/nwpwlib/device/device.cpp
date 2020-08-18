@@ -13,6 +13,19 @@
 namespace Nwpw {
 
 #ifdef NWPW_SYCL
+    int Device::device_id = 0;
+    constexpr int Device::max_gpu_streams;
+    int Device::max_blocks_per_launch = 640;
+    std::unique_ptr<cl::sycl::context> Device::sycl_context;
+    std::unique_ptr<cl::sycl::device> Device::sycl_device;
+
+    std::array<gpuStream_t,Device::max_gpu_streams> Device::gpu_streams;
+    gpuStream_t                                     Device::gpu_default_stream;
+    gpuStream_t                                     Device::gpu_stream;
+    gpuDeviceProp_t                                 Device::device_prop;
+#endif
+
+#ifdef NWPW_SYCL
   auto nwpw_sycl_error_handler = [] (cl::sycl::exception_list exceptions) {
     for (std::exception_ptr const& e : exceptions) {
       try {
@@ -241,7 +254,7 @@ namespace Nwpw {
       device_prop.maxGridSize[0] = -1; // xxxxx SYCL todo: unknown
       device_prop.maxGridSize[0] = -1; // unknown
       device_prop.maxGridSize[0] = -1; // unknown
-      device_prop.warpSize = Nwpw::Device::warp_size;
+      device_prop.warpSize = warp_size;
 
       //auto sgss = d.get_info<cl::sycl::info::device::sub_group_sizes>();
       device_prop.maxMemAllocSize         = d.get_info<cl::sycl::info::device::max_mem_alloc_size>();
