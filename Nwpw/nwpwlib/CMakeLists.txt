@@ -16,16 +16,23 @@ file(GLOB_RECURSE src_parse     parse/*.hpp parse/*.cpp)
 file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
 # create the nwpwlib library
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control}
-${src_io} ${src_utilities} ${src_Parallel} ${src_fftpack} ${src_pspgen}
-${src_psplib} ${src_parse} ${src_device})
+if(MKL_FOUND)
+   add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+else()
+   message("-- including interal blas routines contained in project")
+   add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+endif()
 
 # adding target_include_directories to nwpwlib
 add_subdirectory(parse)
 add_subdirectory(psp_library)
 add_subdirectory(pseudopotential)
 add_subdirectory(pseudopotential/paw_atom)
-#add_subdirectory(blas)
+
+if(NOT MKL_FOUND)
+add_subdirectory(blas)
+endif()
+
 add_subdirectory(fftpack)
 add_subdirectory(Control)
 add_subdirectory(Parallel)

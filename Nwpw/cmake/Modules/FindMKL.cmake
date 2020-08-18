@@ -21,6 +21,14 @@
 # $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_gnu_thread.a -ldl -lpthread -lm
 
 # interface layer, either lp64 or ilp64 (only for 64 bit build)
+if(NOT MKL_ROOT)
+    set(MKL_ROOT $ENV{MKLROOT} CACHE PATH "Folder contains MKL")
+endif(NOT MKL_ROOT)
+message("-- Looking for MKL installation, MKL_ROOT = ${MKL_ROOT}")
+
+
+if (MKL_ROOT)
+
 if(NOT MKL_INTERFACE_LAYER)
     set(MKL_INTERFACE_LAYER "_lp64")
 endif(NOT MKL_INTERFACE_LAYER)
@@ -43,9 +51,6 @@ endif(MKL_ARCH STREQUAL "ia32")
 
 include(FindPackageHandleStandardArgs)
 
-if(NOT MKL_ROOT)
-    set(MKL_ROOT $ENV{MKLROOT} CACHE PATH "Folder contains MKL")
-endif(NOT MKL_ROOT)
 
 # Find include dir
 find_path(MKL_INCLUDE_DIR mkl.h PATHS ${MKL_ROOT}/include)
@@ -117,3 +122,5 @@ if(MKL_FOUND)
     add_definitions(-DNWPW_INTEL_MKL)
     message("***************************************************MKL LIBS:\n\n${MKL_LIBRARIES}")
 endif()
+
+endif (MKL_ROOT)
