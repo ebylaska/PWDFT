@@ -155,7 +155,7 @@ namespace Nwpw {
   {
     T* p = nullptr;
 
-#ifdef NWLW_SYCL
+#ifdef NWPW_SYCL
     switch(devType) {
         case HOST: {
             p = cl::sycl::malloc_host(N * sizeof(T), syclDevice(), syclContext());
