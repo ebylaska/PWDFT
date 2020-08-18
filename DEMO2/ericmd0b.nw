@@ -29,15 +29,14 @@ nwpw
    mapping 2
    #nobalance
    #np_dimensions -1 5
-   cutoff 5.0
+   cutoff 50.0
    loop 10 10
    steepest_descent
      #input_wavefunction_filename  eric.movecs
      #output_wavefunction_filename test2b.movecs
-     loop 10 200
+     loop 10 10
      #geometry_optimize
    end
-   vectors output test2.movecs
 end
 task pspw energy
 #task pspw noit_energy

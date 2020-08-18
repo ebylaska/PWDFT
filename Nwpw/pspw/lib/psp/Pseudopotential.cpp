@@ -902,13 +902,13 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
         ntmp = nprj[ia];
 
 #if defined(NWPW_INTEL_MKL)
-        cblas_dgemm(CblasRowMajor,
+        cblas_dgemm(CblasColMajor,
                     CblasNoTrans, CblasTrans,
                     nshift, nn, ntmp,
-                    -1.0,
+                    rmone,
                     prjtmp, nshift,
                     sw2, nn,
-                    1.0,
+                    rone,
                     Hpsi, nshift);
 #else
         dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,

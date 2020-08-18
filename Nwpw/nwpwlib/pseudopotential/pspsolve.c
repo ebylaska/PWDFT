@@ -16,7 +16,7 @@
 /** just include the source file here,it makes no sense to have a 
  **  separate object file. 
  **/
-#include "rpspsolve.c"
+#include "rpspsolve.inc"
 
 
 

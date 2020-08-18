@@ -5,9 +5,10 @@
 #include	<iostream>
 #include	<cstdio>
 #include	<cstdlib>
+#include	<cstring>
 #include	<cmath>
 #include    <cstring> //memset
-#include    "blas.h"
+//#include        "blas.h"
 
 using namespace std;
 
