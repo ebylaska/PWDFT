@@ -7,6 +7,7 @@ file(GLOB_RECURSE src_kinetic   lib/kinetic/*.hpp lib/kinetic/*.cpp)
 file(GLOB_RECURSE src_psp       lib/psp/*.hpp lib/psp/*.cpp)
 file(GLOB_RECURSE src_exchange-correlation  lib/exchange-correlation/*.hpp lib/exchange-correlation/*.cpp)
 
+
 # create to the pspw library
 add_library(pspw ${src_cpsd} ${src_psi} ${src_coulomb} ${src_kinetic} ${src_psp} ${src_exchange-correlation} )
 

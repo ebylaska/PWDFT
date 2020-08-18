@@ -7,7 +7,7 @@
 #include	<cstdlib>
 #include	<cstring>
 #include	<cmath>
-#include        "blas.h"
+//#include        "blas.h"
 
 using namespace std;
 
