@@ -88,8 +88,8 @@ find_library(MKL_FFT_LIBRARY mkl_cdft_core
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 find_library(MKL_SCALAPACK_LIBRARY mkl_scalapack${MKL_INTERFACE_LAYER}
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
-find_library(MKL_ONEMKL_LIBRARY mkl_sycl
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+#find_library(MKL_ONEMKL_LIBRARY mkl_sycl
+#    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 find_library(MKL_BLACS_LIBRARY mkl_blacs_intelmpi${MKL_INTERFACE_LAYER}
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 
@@ -114,5 +114,6 @@ if(MKL_FOUND)
     set(MKL_INCLUDE_DIRS ${MKL_INCLUDE_DIR})
     set(MKL_LIBRARIES ${MKL_LIBRARY})
     set(MKL_MINIMAL_LIBRARIES ${MKL_MINIMAL_LIBRARY})
+    add_definitions(-DNWPW_INTEL_MKL)
     message("***************************************************MKL LIBS:\n\n${MKL_LIBRARIES}")
 endif()

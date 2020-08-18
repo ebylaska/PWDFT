@@ -6,7 +6,7 @@ add_definitions(-DNWPW_SYCL=1)
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
-#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -42,18 +42,15 @@ find_package(OpenMP)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
-
-#if(MKL_FOUND)
-#    include_directories(${MKL_INCLUDE_DIRS})
-#else()
-#    message(WARNING "MKL libs not found")
-#endif()
-
+if(MKL_FOUND)
+   include_directories(${MKL_INCLUDE_DIRS})
+else()
+   message(WARNING "MKL libs not found")
+endif()
 
 # configure a header file to pass the version number only
 configure_file(NwpwConfig.h.in NwpwConfig.h)
 configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/psp_library/NwpwLibrarypsConfig.hpp")
-
 
 # create the nwpwlib and pspw libraries
 add_subdirectory(nwpwlib)
@@ -73,11 +70,11 @@ endif()
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(pwdft PROPERTIES
-    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+    COMPILE_FLAGS "${MPI_COMPILE_FLAGS} ${MKL_COMPILE_FLAGS}")
 endif()
 
 if(MPI_LINK_FLAGS)
   set_target_properties(pwdft PROPERTIES
-    LINK_FLAGS "${MPI_LINK_FLAGS}")
+    LINK_FLAGS "${MPI_LINK_FLAGS} ${MKL_LINK_FLAGS}")
 endif()
 
