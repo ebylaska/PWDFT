@@ -8,6 +8,8 @@ string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
+set(MKL_FOUND 0)
+
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -44,8 +46,9 @@ include_directories(${MPI_INCLUDE_PATH})
 
 if(MKL_FOUND)
    include_directories(${MKL_INCLUDE_DIRS})
+   message("-- Using MKL libs")
 else()
-   message(WARNING "MKL libs not found")
+   message("-- Using internal blas and lapack libs")
 endif()
 
 # configure a header file to pass the version number only
