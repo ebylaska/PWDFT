@@ -8,7 +8,6 @@ string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
-set(MKL_FOUND 0)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
