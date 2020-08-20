@@ -20,8 +20,11 @@ class d3db : public Mapping3 {
    int *t_i1_start,*t_i2_start;
 
    /* ptrans indexings */
-   int ***p_iq_to_i1,***p_iq_to_i2,***p_iz_to_i2;
-   int ***p_i1_start,***p_i2_start;
+   int **p_iq_to_i1[2],**p_iq_to_i2[2],**p_iz_to_i2[2], **p_iz_to_i2_count[2];
+   int **p_i1_start[2],**p_i2_start[2];
+
+   int **p_jq_to_i1[2],**p_jq_to_i2[2],**p_jz_to_i2[2];
+   int **p_j1_start[2],**p_j2_start[2];
 
    double *tmpx,*tmpy,*tmpz;
 
@@ -78,12 +81,17 @@ public:
         void     c_addrandom(double *);
 
 
+
         /* t array operators */
         double * t_alloc();
         void     t_dealloc(double *);
 	void     t_read(const int, double *, const int);
 	void     t_write(const int, double *, const int);
         void     t_nzero(int, double *);
+
+        /* ptranspose operators */
+ 	//void     c_ptranspose_jk_init(const int, int  *);
+	//void     c_ptranspose_ijk_init(const int, int *, int *);
 };
 
 #endif

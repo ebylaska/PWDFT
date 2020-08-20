@@ -35,11 +35,12 @@
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0, int nx0, int ny0, int nz0) : d3db(inparall,mapping0,nx0,ny0,nz0)
 {
-   int i,j,k,nxh,nyh,nzh,p,indx,k1,k2,k3,nb;
+   int i,j,k,nxh,nyh,nzh,p,q,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
    double *G1, *G2,*G3;
    double gx,gy,gz,gg,ggcut,eps,ggmax,ggmin;
    int *zero_arow3,*zero_arow2;
+   int yzslab,zrow;
 
    lattice = inlattice;
 
@@ -254,6 +255,70 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          for (i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i]  = 1;
          for (i=0; i<((nxh+1)*ny); ++i) zero_arow3[i] = 1;
 
+         for (auto k2=(-nyh+1); k2<nyh; ++k2)
+         for (auto k1=0;        k1<nxh; ++k1)
+         {
+            i = k1; j = k2;
+            if (i<0) i = i + nx;
+            if (j<0) j = j + ny;
+            zrow = 1;
+            for (auto k3=(-nzh+1); k3<nzh; ++k3)
+            {
+               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               gg = gx*gx + gy*gy + gz*gz;
+               gg= gg-ggcut;
+               if (gg<(-eps)) zrow = 0;
+            }
+            if (!zrow)
+            {
+               zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               q = ijktoq1(0,j,0);
+               p = ijktop1(0,j,0);
+               if (p==parall->taskid_i())
+               {
+                 zero_row3[nb][i+(nxh+1)*q] = 0;
+               }
+             }
+         }
+         // call D3dB_c_ptranspose_jk_init(nb,log_mb(zero_arow3(1)))
+
+
+         /* find zero_slab23 - (i,*,*) slabs that are zero */
+         for (auto i=0;  i<nxh; ++i)
+            zero_slab23[nb][i] = 1;
+
+         for (auto k1=0;  k1<nxh; ++k1)
+         {
+            i = k1;
+            if (i<0) i = i + nx;
+            yzslab = 1;
+            for (auto k3=(-nzh+1); k3<nzh; ++k3)
+            for (auto k2=(-nyh+1); k2<nyh; ++k2)
+            {
+               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               gg = gx*gx + gy*gy + gz*gz;
+               gg= gg-ggcut;
+               if (gg<(-eps)) yzslab = 0;
+            }
+            if (!yzslab)
+               zero_slab23[nb][i] = 0;
+         }
+
+         /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
+         for (k=0; k<nz;      ++k)
+         for (i=0; i<(nxh+1); ++i)
+         {
+            q = ijktoq(i,0,k);
+            p = ijktop(i,0,k);
+            if (p==parall->taskid_i())
+               zero_row2[nb][q] = zero_slab23[nb][i];
+         }
+
+
 
       }
 
@@ -270,6 +335,88 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
       zero_arow2 = new int [(nxh+1)*nz];
       zero_arow3 = new int [(nxh+1)*ny];
+
+      for (nb=0; nb<=1; ++nb)
+      {
+         if (nb==0)
+            ggcut = lattice->eggcut();
+         else
+            ggcut = lattice->wggcut();
+
+         /*  find zero_row3 - (i,j,*) rows that are zero */
+         for (auto q=0; q<nq3; ++q)
+            zero_row3[nb][q] =  1;
+        
+         for (auto q=0; q<(nxh+1)*ny; ++q)
+            zero_arow3[q] = 1;
+
+
+         for (auto k2=(-nyh+1); k2<nyh; ++k2)
+         for (auto k1=0;        k1<nxh; ++k1)
+         {
+            i = k1; j = k2;
+            if (i<0) i = i + nx;
+            if (j<0) j = j + ny;
+            zrow = 1;
+            for (auto k3=(-nzh+1); k3<nzh; ++k3)
+            {
+               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               gg = gx*gx + gy*gy + gz*gz;
+               gg= gg-ggcut;
+               if (gg<(-eps)) zrow = 0;
+            }
+            if (!zrow)
+            {
+               zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               q = ijktoq(i,j,0);
+               p = ijktop(i,j,0);
+               if (p==parall->taskid_i())
+               {
+                 zero_row3[nb][q] = 0;
+               }
+             }
+         }
+
+         /* find zero_slab23 - (i,*,*) slabs that are zero */
+         for (auto i=0;  i<nxh; ++i)
+            zero_slab23[nb][i] = 1;
+
+         for (auto k1=0;  k1<nxh; ++k1)
+         {
+            i = k1;
+            if (i<0) i = i + nx;
+            yzslab = 1; 
+            for (auto k3=(-nzh+1); k3<nzh; ++k3)
+            for (auto k2=(-nyh+1); k2<nyh; ++k2)
+            {
+               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               gg = gx*gx + gy*gy + gz*gz;
+               gg= gg-ggcut;
+               if (gg<(-eps)) yzslab = 0;
+            }
+            if (!yzslab)
+               zero_slab23[nb][i] = 0;
+         }
+
+         /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
+         for (k=0; k<nz;      ++k)
+         for (i=0; i<(nxh+1); ++i)
+         {
+            q = ijktoq1(i,0,k);
+            p = ijktop1(i,0,k);
+            if (p==parall->taskid_i())
+               zero_row2[nb][q] = zero_slab23[nb][i];
+         }
+
+
+         //call D3dB_c_ptranspose_ijk_init(nb,log_mb(zero_arow2(1)),log_mb(zero_arow3(1)))
+
+      }
+
 
       delete [] zero_arow3;
       delete [] zero_arow2;

@@ -29,6 +29,7 @@ class PGrid : public d3db {
    int    *aqindx,*aqstatus;
    double *atmp;
 
+
 public:
         Lattice *lattice;
 
@@ -96,9 +97,6 @@ public:
         double tt_pack_dot(const int, double *, double *);
         double tt_pack_idot(const int, double *, double *);
 
-        void cr_pfft3b_queuein(const int, double *);
-        void cr_pfft3b_queueout(const int, double *);
-        int  cr_pfft3b_queuefilled();
 
         void t_unpack(const int, double *);
         void t_pack(const int, double *);
@@ -118,6 +116,13 @@ public:
 
         void i_pack(const int, int *);
         void ii_pack_copy(const int, int *, int *);
+
+        void cr_pfft3b_queuein(const int, double *);
+        void cr_pfft3b_queueout(const int, double *);
+        int  cr_pfft3b_queuefilled();
+        //int  cr_pfft3b(const int, double *);
+        //int  rc_pfft3f(const int, double *);
+
 
 
 };

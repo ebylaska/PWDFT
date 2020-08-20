@@ -89,6 +89,22 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[0][np] = index1;
       i2_start[0][np] = index2;
 
+      /* allocate ptranspose indexes */
+      for (auto nb=0; nb<2; ++nb)
+      {
+         p_iq_to_i1[nb] = new int*[1]; p_iq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_iq_to_i2[nb] = new int*[1]; p_iq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_iz_to_i2[nb] = new int*[1]; p_iz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_i1_start[nb] = new int*[1]; p_i1_start[nb][0] = new int[nz+1];
+         p_i2_start[nb] = new int*[1]; p_i2_start[nb][0] = new int[nz+1];
+
+         p_jq_to_i1[nb] = new int*[1]; p_jq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_jq_to_i2[nb] = new int*[1]; p_jq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_jz_to_i2[nb] = new int*[1]; p_jz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
+         p_j1_start[nb] = new int*[1]; p_j1_start[nb][0] = new int[nz+1];
+         p_j2_start[nb] = new int*[1]; p_j2_start[nb][0] = new int[nz+1];
+      }
+
    }
    else
    {
@@ -115,6 +131,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i2_start = new int*[6];
       for (i=0; i<6; ++i) 
          i2_start[i] = new int[np+1];
+
 
       /**************************************************/
       /* map1to2 mapping - done - tranpose operation #0 */
@@ -326,6 +343,44 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[5][np] = index1;
       i2_start[5][np] = index2;
 
+
+      /* allocate ptranspose indexes */
+      for (auto nb=0; nb<2; ++nb)
+      {
+         p_iq_to_i1[nb] = new int*[6];
+         p_iq_to_i1[nb][0] = new int[(nx/2+1)*nq1];
+         p_iq_to_i1[nb][1] = new int[ny*nq2];
+         p_iq_to_i1[nb][2] = new int[nz*nq3];
+         p_iq_to_i1[nb][3] = new int[ny*nq2];
+         p_iq_to_i1[nb][4] = new int[(nx/2+1)*nq1];
+         p_iq_to_i1[nb][5] = new int[nz*nq3];
+
+         p_iq_to_i2[nb] = new int*[6];
+         p_iq_to_i2[nb][0] = new int[ny*nq2];
+         p_iq_to_i2[nb][1] = new int[nz*nq3];
+         p_iq_to_i2[nb][2] = new int[ny*nq2];
+         p_iq_to_i2[nb][3] = new int[(nx/2+1)*nq1];
+         p_iq_to_i2[nb][4] = new int[nz*nq3];
+         p_iq_to_i2[nb][5] = new int[(nx/2+1)*nq1];
+
+         p_iz_to_i2[nb] = new int*[6];
+         p_iz_to_i2[nb][0] = new int[ny*nq2];
+         p_iz_to_i2[nb][1] = new int[nz*nq3];
+         p_iz_to_i2[nb][2] = new int[ny*nq2];
+         p_iz_to_i2[nb][3] = new int[(nx/2+1)*nq1];
+         p_iz_to_i2[nb][4] = new int[nz*nq3];
+         p_iz_to_i2[nb][5] = new int[(nx/2+1)*nq1];
+
+         p_i1_start[nb] = new int*[6];
+         for (i=0; i<6; ++i)
+            p_i1_start[nb][i] = new int[np+1];
+
+         p_i2_start[nb] = new int*[6];
+         for (i=0; i<6; ++i)
+            p_i2_start[nb][i] = new int[np+1];
+      }
+
+
    }
 
    /* setup timereverse indexes */
@@ -419,7 +474,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
  ********************************/
 d3db::~d3db()
 {
-   int i;
+   int i,nb;
 
    if (maptype==1)
    {
@@ -433,6 +488,29 @@ d3db::~d3db()
       delete [] i1_start;
       delete [] i2_start[0];
       delete [] i2_start;
+      for (nb=0; nb<2; ++nb)
+      {
+         delete [] p_iq_to_i1[nb][0];
+         delete [] p_iq_to_i1[nb];
+         delete [] p_iq_to_i2[nb][0];
+         delete [] p_iq_to_i2[nb];
+         delete [] p_iz_to_i2[nb][0];
+         delete [] p_iz_to_i2[nb];
+         delete [] p_i1_start[nb][0];
+         delete [] p_i1_start[nb];
+         delete [] p_i2_start[nb][0];
+         delete [] p_i2_start[nb];
+         delete [] p_jq_to_i1[nb][0];
+         delete [] p_jq_to_i1[nb];
+         delete [] p_jq_to_i2[nb][0];
+         delete [] p_jq_to_i2[nb];
+         delete [] p_jz_to_i2[nb][0];
+         delete [] p_jz_to_i2[nb];
+         delete [] p_j1_start[nb][0];
+         delete [] p_j1_start[nb];
+         delete [] p_j2_start[nb][0];
+         delete [] p_j2_start[nb];
+      }
    }
    else
    {
@@ -447,6 +525,24 @@ d3db::~d3db()
       delete [] iq_to_i2;
       delete [] i1_start;
       delete [] i2_start;
+
+      for (nb=0; nb<2; ++nb)
+      {
+         for (i=0; i<6; ++i)
+         {
+            delete [] p_iq_to_i1[nb][i];
+            delete [] p_iq_to_i2[nb][i];
+            delete [] p_iz_to_i2[nb][i];
+            delete [] p_i1_start[nb][i];
+            delete [] p_i2_start[nb][i];
+         }
+         delete [] p_iq_to_i1[nb];
+         delete [] p_iq_to_i2[nb];
+         delete [] p_iz_to_i2[nb];
+         delete [] p_i1_start[nb];
+         delete [] p_i2_start[nb];
+      }
+
    }
 
    delete [] t_iq_to_i1;
@@ -458,6 +554,7 @@ d3db::~d3db()
    delete [] tmpy;
    delete [] tmpz;
 }
+
 
 
 
