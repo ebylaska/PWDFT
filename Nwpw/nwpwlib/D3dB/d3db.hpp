@@ -20,7 +20,7 @@ class d3db : public Mapping3 {
    int *t_i1_start,*t_i2_start;
 
    /* ptrans indexings */
-   int **p_iq_to_i1[2],**p_iq_to_i2[2],**p_iz_to_i2[2], **p_iz_to_i2_count[2];
+   int **p_iq_to_i1[2],**p_iq_to_i2[2],**p_iz_to_i2[2], p_iz_to_i2_count[2][6];
    int **p_i1_start[2],**p_i2_start[2];
 
    int **p_jq_to_i1[2],**p_jq_to_i2[2],**p_jz_to_i2[2];
@@ -91,7 +91,7 @@ public:
 
         /* ptranspose operators */
  	//void     c_ptranspose_jk_init(const int, int  *);
-	//void     c_ptranspose_ijk_init(const int, int *, int *);
+	void     c_ptranspose_ijk_init(const int, int *, int *);
 };
 
 #endif

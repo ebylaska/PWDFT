@@ -556,6 +556,307 @@ d3db::~d3db()
 }
 
 
+/******************************************
+ *                                        *
+ *      d3db::c_ptranspose_ijk_init       *
+ *                                        *
+ ******************************************/
+void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
+{
+   int index1,index2,index3,proc_to,proc_from,phere,pto;
+   bool iszero;
+
+
+   /**************************************************/
+   /* map1to2 mapping - done - tranpose operation #0 */
+   /*  (ny,nz,nx/2+1)  <-- (nx/2+1,ny,nz)            */
+   /*   use zero_arow2                               */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][0][it] = index1;
+      p_i2_start[nb][0][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {
+         iszero = (zero_arow2[i+k*(nx/2+1)]==1);
+
+         phere = ijktop2(i,j,k);
+         pto   = ijktop1(i,j,k);
+
+         /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            if (!iszero) 
+            {
+               p_iq_to_i1[nb][0][ijktoindex2t(i,j,k)] = index1;
+               ++index1;
+            }
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            if (!iszero) 
+            {
+               p_iq_to_i2[nb][0][index2] = ijktoindex1(i,j,k);
+               ++index2;
+            }
+            else
+            {
+               p_iz_to_i2[nb][0][index3] = ijktoindex1(i,j,k);
+               ++index3;
+            }
+         }
+      }
+   }
+   p_i1_start[nb][0][np] = index1;
+   p_i2_start[nb][0][np] = index2;
+   p_iz_to_i2_count[nb][0] = index3;
+
+
+   /**************************************************/
+   /* map2to3 mapping - done - tranpose operation #1 */
+   /*     (nz,nx/2+1,ny)  <-- (ny,nz,nx/2+1)         */
+   /*     use zero_arow3                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][1][it] = index1;
+      p_i2_start[nb][1][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {
+         iszero = (zero_arow3[i+j*(nx/2+1)]==1);
+
+         phere = ijktop1(i,j,k);
+         pto   = ijktop(i,j,k);
+          /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            if (!iszero)
+            {
+               p_iq_to_i1[nb][1][index1] = ijktoindex1(i,j,k);
+               ++index1;
+            }
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            if (!iszero)
+            {
+               p_iq_to_i2[nb][1][index2] = ijktoindex(i,j,k);
+               ++index2;
+            }
+            else
+            {
+               p_iz_to_i2[nb][1][index3] = ijktoindex(i,j,k);
+               ++index3;
+            }
+         }
+      }
+   }
+   p_i1_start[nb][1][np] = index1;
+   p_i2_start[nb][1][np] = index2;
+   p_iz_to_i2_count[nb][1] = index3;
+
+
+   /**************************************************/
+   /* map3to2 mapping - done - tranpose operation #2 */
+   /*     (ny,nz,nx/2+1)  <-- (nz,nx/2+1,ny)         */
+   /*     use zero_arow3                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0; 
+   index3 = 0; 
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][2][it] = index1;
+      p_i2_start[nb][2][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {  
+         iszero = (zero_arow3[i+j*(nx/2+1)]==1);
+
+         phere = ijktop(i,j,k);
+         pto   = ijktop1(i,j,k);
+            
+         /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            if (!iszero)
+            {
+               p_iq_to_i1[nb][2][index1] = ijktoindex(i,j,k);
+               ++index1;
+            }
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            if (!iszero)
+            {
+               p_iq_to_i2[nb][2][index2] = ijktoindex1(i,j,k);
+               ++index2;
+            }
+            else
+            {
+               p_iz_to_i2[nb][2][index3] = ijktoindex1(i,j,k);
+               ++index3;
+            }
+         }
+      }
+   }  
+   p_i1_start[nb][2][np] = index1;
+   p_i2_start[nb][2][np] = index2;
+   p_iz_to_i2_count[nb][2] = index3;
+
+   /**************************************************/
+   /* map2to1 mapping - done - tranpose operation #3 */
+   /*     (nx/2+1,ny,nz)  <-- (ny,nz,nx/2+1)         */
+   /*     use zero_arow2                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][3][it] = index1;
+      p_i2_start[nb][3][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {
+         iszero = (zero_arow2[i+k*(nx/2+1)]==1);
+
+         phere = ijktop1(i,j,k);
+         pto   = ijktop2(i,j,k);
+
+          /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            if (!iszero) 
+            {
+               p_iq_to_i1[nb][3][index1]  = ijktoindex1(i,j,k);
+               ++index1;
+            }
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            if (!iszero) 
+            {
+               p_iq_to_i2[nb][3][index2] = ijktoindex2t(i,j,k);
+               ++index2;
+            }
+            else
+            {
+               p_iz_to_i2[nb][3][index3] = ijktoindex2t(i,j,k);
+               ++index3;
+            }
+         }
+      }
+   }
+   p_i1_start[nb][3][np] = index1;
+   p_i2_start[nb][3][np] = index2;
+   p_iz_to_i2_count[nb][3] = index3;
+
+
+   /**************************************************/
+   /* map1to3 mapping - done - tranpose operation #4 */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][4][it] = index1;
+      p_i2_start[nb][4][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {
+         phere = ijktop2(i,j,k);
+         pto   = ijktop(i,j,k);
+
+         /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            p_iq_to_i1[nb][4][index1] = ijktoindex2t(i,j,k);
+            ++index1;
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            p_iq_to_i2[nb][4][index2] = ijktoindex(i,j,k);
+            ++index2;
+         }
+      }
+   }
+   p_i1_start[nb][4][np] = index1;
+   p_i2_start[nb][4][np] = index2;
+   p_iz_to_i2_count[nb][4] = index3;
+
+
+   /**************************************************/
+   /* map3to1 mapping - done - tranpose operation #5 */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index2 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][5][it] = index1;
+      p_i2_start[nb][5][it] = index2;
+      for (auto k=0; k<nz;       ++k)
+      for (auto j=0; j<ny;       ++j)
+      for (auto i=0; i<(nx/2+1); ++i)
+      {
+         phere = ijktop(i,j,k);
+         pto   = ijktop2(i,j,k);
+
+         /* packing scheme */
+         if ((phere==taskid) && (pto==proc_to))
+         {
+            p_iq_to_i1[nb][5][index1] = ijktoindex(i,j,k);
+            ++index1;
+         }
+         /* unpacking scheme */
+         if ((pto==taskid) && (phere==proc_from))
+         {
+            p_iq_to_i2[nb][5][index2] = ijktoindex2t(i,j,k);
+            ++index2;
+         }
+      }
+   }
+   p_i1_start[nb][5][np] = index1;
+   p_i2_start[nb][5][np] = index2;
+   p_iz_to_i2_count[nb][5] = index3;
+
+
+
+
+
+}
 
 
 /********************************
