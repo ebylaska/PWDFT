@@ -90,7 +90,7 @@ public:
         void     t_nzero(int, double *);
 
         /* ptranspose operators */
- 	//void     c_ptranspose_jk_init(const int, int  *);
+ 	void     c_ptranspose_jk_init(const int, int  *);
 	void     c_ptranspose_ijk_init(const int, int *, int *);
 };
 

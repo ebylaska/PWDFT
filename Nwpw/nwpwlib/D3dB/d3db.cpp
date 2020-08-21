@@ -558,6 +558,97 @@ d3db::~d3db()
 
 /******************************************
  *                                        *
+ *      d3db::c_ptranspose_jk_init        *
+ *                                        *
+ ******************************************/
+void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
+{
+   int index1,index2,index3;
+   int jndex1,jndex2,jndex3;
+   int proc_to,proc_from,phere,pto,pfrom;
+   bool iszero_ii,iszero_jj;
+
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   jndex1 = 0;
+   jndex2 = 0;
+   jndex3 = 0;
+   for (auto it=0; it<np; ++it)
+   {
+      proc_to   = (taskid+it)%np;
+      proc_from = (taskid-it+np)%np;
+      p_i1_start[nb][0][it] = index1;
+      p_i2_start[nb][0][it] = index2;
+
+      p_j1_start[nb][0][it] = jndex1;
+      p_j2_start[nb][0][it] = jndex2;
+
+      for (auto k=0; k<nz; ++k)
+      for (auto j=0; j<ny; ++j)
+      {
+         /* packing scheme */
+         phere = ijktop(0,0,k);
+         pto   = ijktop(0,0,j);
+         if ((phere==taskid) && (pto==proc_to))
+            for (auto i=0; i<(nx/2+1); ++i)
+            {
+               iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               if (!iszero_ii) 
+               {
+                  p_iq_to_i1[nb][0][index1] = ijktoindex(i,j,k);
+                  ++index1;
+               }
+               if (!iszero_jj) 
+               {
+                  p_jq_to_i1[nb][0][jndex1] = ijktoindex(i,j,k);
+                  ++jndex1;
+               }
+            }
+
+         /* unpacking scheme */
+         phere = ijktop(0,0,j);
+         pfrom = ijktop(0,0,k);
+         if ((phere==taskid) && (pfrom==proc_from))
+            for (auto i=0; i<(nx/2+1); ++i)
+            {
+               iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               if (!iszero_ii) 
+               {
+                  p_iq_to_i2[nb][0][index2] = ijktoindex(i,k,j);
+                  ++index2;
+               }
+               else
+               {
+                  p_iz_to_i2[nb][0][index3] = ijktoindex(i,k,j);
+                  ++index3;
+               }
+               if (!iszero_jj) 
+               {
+                  p_jq_to_i2[nb][0][jndex2] = ijktoindex(i,k,j);
+                  ++jndex2;
+               }
+               else
+               {
+                  p_jz_to_i2[nb][0][jndex3] = ijktoindex(i,k,j);
+                  ++jndex3;
+               }
+            }
+      }
+   }
+   p_i1_start[nb][0][np] = index1;
+   p_i2_start[nb][0][np] = index2;
+   p_j1_start[nb][0][np] = jndex1;
+   p_j2_start[nb][0][np] = jndex2;
+
+}
+
+
+
+/******************************************
+ *                                        *
  *      d3db::c_ptranspose_ijk_init       *
  *                                        *
  ******************************************/
