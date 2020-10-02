@@ -48,9 +48,13 @@ CPUgflopspersec=np.zeros(np.shape(CPUtimeinmicrosec))
 GPUgflopspersec=np.zeros(np.shape(GPUtimeinmicrosec))
 
 for idx, i in enumerate(npack):
+    print "jdx,j=",idx,i
     for jdx, j in enumerate(ne):
-        CPUgflopspersec[idx, jdx] = (2 * i**2 * j * 1e-6) / CPUtimeinmicrosec[idx, jdx]
-        GPUgflopspersec[idx, jdx] = (2 * i**2 * j * 1e-6) / GPUtimeinmicrosec[idx, jdx]
+        print "jdx,j=",jdx,j
+        CPUgflopspersec[idx, jdx] = (i * j*j * 1e-6) / (CPUtimeinmicrosec[idx, jdx]*1.0e-3)
+        GPUgflopspersec[idx, jdx] = (i * j*j * 1e-6) / (GPUtimeinmicrosec[idx, jdx]*1.0e-3)
+
+print "GPU=",GPUgflopspersec
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -117,13 +121,13 @@ def heatmap(data, row_labels, col_labels, ax=None,
 
 fig, ax = plt.subplots()
 im, cbar = heatmap(CPUgflopspersec, ne, npack, ax=ax,
-                   cmap="gist_rainbow", cbarlabel="TFLOP/s")
+                   cmap="gist_rainbow", cbarlabel="GFLOP/s")
 fig.tight_layout()
 plt.savefig('FFM_CPU.png', dpi=300)
 
 fig, ax = plt.subplots()
 im, cbar = heatmap(GPUgflopspersec, ne, npack, ax=ax,
-                   cmap="gist_rainbow", cbarlabel="TFLOP/s")
+                   cmap="gist_rainbow", cbarlabel="GFLOP/s")
 fig.tight_layout()
 plt.savefig('FFM_GPU.png', dpi=300)
 
