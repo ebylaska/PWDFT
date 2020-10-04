@@ -23,13 +23,9 @@ using namespace std;
 //#include	"compressed_io.h"
 //}
 
-//#define NWPW_INTEL_MKL (1)
 
-#if defined(NWPW_INTEL_MKL)
-#include "mkl.h"
-#else
 #include "blas.h"
-#endif
+
 
 #include	"compressed_io.hpp"
 #include	"Pseudopotential.hpp"
@@ -130,11 +126,7 @@ static void Multiply_Gijl_sw1(int nn,
    int nnn = nn*nprj;
    int nna = nn;
 
-#if defined(NWPW_INTEL_MKL)
-   cblas_dcopy(nnn, &rzero, 0, sw2, 1);
-#else
-   dcopy_(&nnn, &rzero, &zero, sw2, &one);
-#endif
+   DCOPY_PWDFT(nnn,&rzero,zero,sw2,one);
 
    for (b=0; b<nprj; ++b)
       for (a=0; a<nprj; ++a)
@@ -145,18 +137,10 @@ static void Multiply_Gijl_sw1(int nn,
             //na = n_prj[a];
             //nb = n_prj[b];
 
-#if defined(NWPW_INTEL_MKL)
-           cblas_daxpy(nna,
-                       G[nb + na*nmax + nmax2*l_prj[a]],
-                       &sw1[a*nn], 1,
-                       &sw2[b*nn], 1);
-#else
-           daxpy_(&nna,
-                   &(G[nb + na*nmax + nmax2*l_prj[a]]),
-                   &(sw1[a*nn]),&one,
-                   &(sw2[b*nn]),&one);
-#endif
-
+           DAXPY_PWDFT(nna,
+                   (G[nb + na*nmax + nmax2*l_prj[a]]),
+                   &(sw1[a*nn]),one,
+                   &(sw2[b*nn]),one);
           }
 }
 
@@ -893,31 +877,15 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-#if defined(NWPW_INTEL_MKL)
-         cblas_dscal(ntmp, scal, sw2, 1);
-#else
-         dscal_(&ntmp, &scal, sw2, &one);
-#endif
+         DSCAL_PWDFT(ntmp,scal,sw2,one);
 
         ntmp = nprj[ia];
-
-#if defined(NWPW_INTEL_MKL)
-        cblas_dgemm(CblasColMajor,
-                    CblasNoTrans, CblasTrans,
-                    nshift, nn, ntmp,
-                    rmone,
-                    prjtmp, nshift,
-                    sw2, nn,
-                    rone,
-                    Hpsi, nshift);
-#else
-        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
-               &rmone,
-               prjtmp,&nshift,
-               sw2,   &nn,
-               &rone,
-               Hpsi,&nshift);
-#endif
+        DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+               rmone,
+               prjtmp,nshift,
+               sw2,   nn,
+               rone,
+               Hpsi,nshift);
 
       } /*if nprj>0*/
    } /*ii*/
@@ -1012,31 +980,15 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
          /* do Kleinman-Bylander Multiplication */
          ntmp = nn*nprj[ia];
-#if defined(NWPW_INTEL_MKL)
-         cblas_dscal(ntmp, scal, sw2, 1);
-#else
-         dscal_(&ntmp, &scal, sw2, &one);
-#endif
+         DSCAL_PWDFT(ntmp,scal,sw2,one);
 
-        ntmp = nprj[ia];
-
-#if defined(NWPW_INTEL_MKL)
-        cblas_dgemm(CblasColMajor,
-                    CblasNoTrans, CblasTrans,
-                    nshift, nn, ntmp,
-                    -1.0,
-                    prjtmp, nshift,
-                    sw2, nn,
-                    1.0,
-                    Hpsi, nshift);
-#else
-        dgemm_((char*) "N",(char*) "T",&nshift,&nn,&ntmp,
-               &rmone,
-               prjtmp,&nshift,
-               sw2,   &nn,
-               &rone,
-               Hpsi,&nshift);
-#endif
+         ntmp = nprj[ia];
+         DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+               rmone,
+               prjtmp,nshift,
+               sw2,   nn,
+               rone,
+               Hpsi,nshift);
 
          if (move)
          {
@@ -1053,16 +1005,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
 
-#if defined(NWPW_INTEL_MKL)
-                fion[3*ii]   +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, sum,     3);
-                fion[3*ii+1] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[1], 3);
-                fion[3*ii+2] +=  (3-ispin)*2.0*cblas_ddot(nn, &sw2[l*nn], 1, &sum[2], 3);
-#else
-                fion[3*ii]   +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, sum,     &three);
-                fion[3*ii+1] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[1], &three);
-                fion[3*ii+2] +=  (3-ispin)*2.0*ddot_(&nn, &sw2[l*nn], &one, &sum[2], &three);
-#endif
-
+                fion[3*ii]   +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, sum,     three);
+                fion[3*ii+1] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, &sum[1], three);
+                fion[3*ii+2] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, &sum[2], three);
             }
          }
 
