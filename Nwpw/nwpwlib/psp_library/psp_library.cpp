@@ -176,10 +176,10 @@ void psp_library::psp_generator_auto(const char *atom, Control2& control)
    int lmax = this->psp_lmax(atom);
    int locp = this->psp_locp(atom);
    double rlocal = this->psp_rlocal(atom);
-   std::cout << " psptype = " << ptype << std::endl;
-   std::cout << " lmax = " << lmax << std::endl;
-   std::cout << " locp = " << locp << std::endl;
-   std::cout << " rlocal = " << rlocal << std::endl;
+   //std::cout << " psptype = " << ptype << std::endl;
+   //std::cout << " lmax = " << lmax << std::endl;
+   //std::cout << " locp = " << locp << std::endl;
+   //std::cout << " rlocal = " << rlocal << std::endl;
 
    strcpy(aatom,atom);
    strcpy(fname,atom);
@@ -217,10 +217,10 @@ void psp_library::psp_generator_auto(const char *atom, Control2& control)
 
    if ((ptype==0)||(ptype==7))
    {
-      std::cout << " sdir_name = " << sdir_name << " " << strlen(sdir_name) << std::endl;
-      std::cout << " dir_name = " << dir_name << " " << strlen(dir_name) << std::endl;
-      std::cout << " psp_in = " << psp_in << " " << strlen(psp_in) << std::endl;
-      std::cout << " psp_out = " << psp_out << " " << strlen(psp_out) << std::endl;
+      //std::cout << " sdir_name = " << sdir_name << " " << strlen(sdir_name) << std::endl;
+      //std::cout << " dir_name = " << dir_name << " " << strlen(dir_name) << std::endl;
+      //std::cout << " psp_in = " << psp_in << " " << strlen(psp_in) << std::endl;
+      //std::cout << " psp_out = " << psp_out << " " << strlen(psp_out) << std::endl;
       pspsolve(&print,&debug,&lmax,&locp,&rlocal,&efg00,
                sdir_name,&n9,
                dir_name,&n0,

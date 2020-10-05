@@ -809,7 +809,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       if (nprj[ia]>nprj_max) nprj_max = nprj[ia];
       if (semicore[ia])
       {
-         std::cout << "Rcore=" << rcore[ia] << std::endl;
          ncore_atom[ia] = ncore_ptr;
          ncore_sum[ia]  = semicore_check(mypneb,semicore[ia],rcore[ia],ncore_atom[ia]);
          semicore[npsp] = true;
