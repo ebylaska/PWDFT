@@ -1161,10 +1161,10 @@ void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, 
    for (i=m; i<n2ft3d; i+=5)
    {
       ptr3[i]   = da*ptr1[i]   + ptr2[i];
-      ptr3[i+1] = da*ptr1[i+1] + ptr2[i];
-      ptr3[i+2] = da*ptr1[i+2] + ptr2[i];
-      ptr3[i+3] = da*ptr1[i+3] + ptr2[i];
-      ptr3[i+4] = da*ptr1[i+4] + ptr2[i];
+      ptr3[i+1] = da*ptr1[i+1] + ptr2[i+1];
+      ptr3[i+2] = da*ptr1[i+2] + ptr2[i+2];
+      ptr3[i+3] = da*ptr1[i+3] + ptr2[i+3];
+      ptr3[i+4] = da*ptr1[i+4] + ptr2[i+4];
    }
    return;
 }
