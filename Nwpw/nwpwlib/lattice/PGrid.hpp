@@ -103,6 +103,8 @@ public:
         void tt_pack_copy(const int, double *, double *);
         void t_pack_nzero(const int, const int, double *);
 
+        void tc_pack_copy( const int, double *, double *);
+
         void tcc_Mul( const int, double *, double *, double *);
         void tcc_iMul(const int, double *, double *, double *);
         void tcc_MulSum2( const int, double *, double *, double *);

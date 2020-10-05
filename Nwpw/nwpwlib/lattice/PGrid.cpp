@@ -780,6 +780,25 @@ int  PGrid::cr_pfft3b_queuefilled()
 
 
 
+/********************************
+ *                              *
+ *     PGrid:tc_pack_copy       *
+ *                              *
+ ********************************/
+void PGrid::tc_pack_copy(const int nb, double *a, double *b)
+{
+   int i,ii;
+   int ng  = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      b[ii]   = a[i];
+      b[ii+1] = 0.0;
+      ii += 2;
+   }
+}
+
 
 /********************************
  *                              *

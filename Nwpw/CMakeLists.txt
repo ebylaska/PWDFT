@@ -16,6 +16,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Enable Fortran
 enable_language(Fortran)
 
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 #SET(SYCL_CXX_COMPILE_FLAGS "-fsycl")
 
 #if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
@@ -35,6 +39,7 @@ enable_language(Fortran)
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
+
 
 #Configure OpenMP
 find_package(OpenMP)

@@ -219,6 +219,9 @@ static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *
          }
       }
    }
+   std::cout << "isemicore0=" << isemicore0 << std::endl;
+   std::cout << "rcore0=" << rcore0 << std::endl;
+
    myparall->Brdcst_iValue(0,0,&isemicore0);
    myparall->Brdcst_Values(0,0,1,&rcore0);
    if (isemicore0>0)
@@ -756,6 +759,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
          f[i] = sqrt(rho_sc_r[i])*rho[i]*rho[i];
       rho_sc_k_ray[0]      = forpi*util_simpson(nrho,f,drho);
       rho_sc_k_ray[0+nray] = 0.0;
+      std::cout << "rho_k[0]=" << rho_sc_k_ray[0] << std::endl;
    }
 
    /* G==0 vnl */

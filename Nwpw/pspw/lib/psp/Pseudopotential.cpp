@@ -448,9 +448,8 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
       double *tmp  = mygrid->r_alloc();
 
       /* put sqrt(core-density) at atom position */
-      mygrid->cc_pack_copy(0,ncore,tmp);
+      mygrid->tc_pack_copy(0,ncore,tmp);
       mygrid->c_SMul(0,scal2,tmp);
-
 
       /* Put put tmp into real space */
       mygrid->c_unpack(0,tmp);
@@ -588,6 +587,7 @@ static void vpp_generate(PGrid *mygrid,
 
       *nprj     = psp1d.nprj;
       *semicore = psp1d.semicore;
+      *rcore    = psp1d.rcore;
 
       *rc = new double[*lmax+1];
       for (auto l=0; l<=(*lmax); ++l)
@@ -809,8 +809,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       if (nprj[ia]>nprj_max) nprj_max = nprj[ia];
       if (semicore[ia])
       {
+         std::cout << "Rcore=" << rcore[ia] << std::endl;
          ncore_atom[ia] = ncore_ptr;
-         ncore_sum[ia]  = 0.0;
+         ncore_sum[ia]  = semicore_check(mypneb,semicore[ia],rcore[ia],ncore_atom[ia]);
          semicore[npsp] = true;
       }
    }
