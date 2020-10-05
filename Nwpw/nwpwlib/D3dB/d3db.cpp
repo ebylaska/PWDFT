@@ -1250,7 +1250,7 @@ void d3db::r_sqr(double *ptr2)
 
 /********************************
  *                              *
- *         d3db::r_dsum        *
+ *         d3db::r_dsum         *
  *                              *
  ********************************/
 double d3db::r_dsum(const double *ptr)
@@ -1271,7 +1271,7 @@ double d3db::r_dsum(const double *ptr)
           +  ptr[i+3]
           +  ptr[i+4];
    }
-   return sum;
+   return parall->SumAll(1,sum);
 }
 
 /********************************
