@@ -1194,8 +1194,46 @@ void d3db::r_SMul(const double da, double *ptr2)
       ptr2[i+3] *= da;
       ptr2[i+4] *= da;
    }
-   return;
 }
+
+
+
+/********************************
+ *                              *
+ *       d3db::r_zero_ends      *
+ *                              *
+ ********************************/
+void d3db::r_zero_ends(double *A)
+{
+   int index;
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      for (auto q=0; q<nq; ++q)
+      for (auto k=0; k<nz; ++k)
+      {
+        index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+        A[index]   = 0.0;
+        A[index+1] = 0.0;
+      }
+   }
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      for (auto q=0; q<nq1; ++q)
+      {
+         index = nx + q*(nx+2);
+         A[index]   = 0.0;
+         A[index+1] = 0.0;
+       }
+   }
+}
+
 
 /********************************
  *                              *
@@ -1219,7 +1257,6 @@ void d3db::r_abs(double *ptr2)
       ptr2[i+3] = std::abs(ptr2[i+3]);
       ptr2[i+4] = std::abs(ptr2[i+4]);
    }
-   return;
 }
 
 /********************************
@@ -1244,7 +1281,6 @@ void d3db::r_sqr(double *ptr2)
       ptr2[i+3] *= ptr2[i+3];
       ptr2[i+4] *= ptr2[i+4];
    }      
-   return;
 }
 
 
@@ -1296,7 +1332,6 @@ void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
       ptr3[i+3] = ptr1[i+3] + ptr2[i+3];
       ptr3[i+4] = ptr1[i+4] + ptr2[i+4];
    }
-   return;
 }
 
 /********************************
@@ -1321,7 +1356,6 @@ void d3db::rr_Sum(const double *ptr2, double *ptr3)
       ptr3[i+3] += ptr2[i+3];
       ptr3[i+4] += ptr2[i+4];
    }
-   return;
 }
 
 

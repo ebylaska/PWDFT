@@ -458,7 +458,7 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
       /*  square it  */
       mygrid->r_sqr(tmp);
 
-      /*  integrate it */
+      /* integrate it */
       sum = mygrid->r_dsum(tmp) * dv;
 
       mygrid->r_dealloc(tmp);
@@ -1110,8 +1110,9 @@ void Pseudopotential::semicore_density_update()
 {
    int ii,ia;
    double omega = mypneb->lattice->omega();
-   //double scal2 = 1.0/lattice_omega();
    double scal2 = 1.0/omega;
+   //double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+   //double dv    = omega*scal1;
    double *exi = mypneb->c_pack_allocate(0);
    double *tmp = mypneb->r_alloc();
 
@@ -1119,18 +1120,19 @@ void Pseudopotential::semicore_density_update()
    for (ii=0; ii<(myion->nion); ++ii)
    {
       ia = myion->katm[ii];
-      mystrfac->strfac_pack(0,ii,exi);
-      mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
-      mypneb->c_unpack(0,tmp);
+      if (semicore[ia]) 
+      {
+         mystrfac->strfac_pack(0,ii,exi);
+         mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
 
-      /* Put put tmp into real space */
-      mypneb->c_unpack(0,tmp);
-      mypneb->cr_fft3d(tmp);
+         /* Put put tmp into real space */
+         mypneb->c_unpack(0,tmp);
+         mypneb->cr_fft3d(tmp);
 
-      /*  square it  */
-      mypneb->r_sqr(tmp);
-      mypneb->rr_Sum(tmp,semicore_density);
-
+         /*  square it  */
+         mypneb->r_sqr(tmp);
+         mypneb->rr_Sum(tmp,semicore_density);
+      }
    }
    mypneb->r_SMul(scal2*scal2,semicore_density);
 

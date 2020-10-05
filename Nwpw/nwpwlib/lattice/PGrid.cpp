@@ -802,7 +802,7 @@ void PGrid::tc_pack_copy(const int nb, double *a, double *b)
 
 /********************************
  *                              *
- *         PGrid:ttc_Mul        *
+ *         PGrid:tcc_Mul        *
  *                              *
  ********************************/
 void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
