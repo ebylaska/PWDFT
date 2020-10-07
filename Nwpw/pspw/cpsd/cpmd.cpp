@@ -1,4 +1,3 @@
-
 #include	<iostream>
 #include	<cstdio>
 #include	<cmath>
@@ -27,11 +26,19 @@ using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
 
+#if defined(NWPW_SYCL) || defined(NWPW_HIP) || defined(NWPW_CUDA)
+#include "device.hpp"
+#endif
 
 int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
+
+#if defined(NWPW_SYCL) || defined(NWPW_HIP) || defined(NWPW_CUDA)
+   Nwpw::Device myDevice = Nwpw::Device(&myparallel);
+#endif
+
    //RTDB myrtdb(&myparallel, "eric.db", "old");
 
    bool verlet;

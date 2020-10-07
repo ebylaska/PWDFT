@@ -7,6 +7,7 @@
 #include	<cstdlib>
 #include	<cstring>
 #include	<cmath>
+#include    <cstring> //memset
 //#include        "blas.h"
 
 using namespace std;
