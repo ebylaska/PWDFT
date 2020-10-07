@@ -1,0 +1,1100 @@
+matrix sizes:
+npack = 2000
+ne    = 100
+c(2000,100) = a(2000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 0.90523
+GPU GFLOPs   : 22.0938
+
+csv:2000,100,0.90523,22.0938
+
+matrix sizes:
+npack = 4000
+ne    = 100
+c(4000,100) = a(4000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 1.42688
+GPU GFLOPs   : 28.0332
+
+csv:4000,100,1.42688,28.0332
+
+matrix sizes:
+npack = 6000
+ne    = 100
+c(6000,100) = a(6000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 1.78798
+GPU GFLOPs   : 33.5575
+
+csv:6000,100,1.78798,33.5575
+
+matrix sizes:
+npack = 8000
+ne    = 100
+c(8000,100) = a(8000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 2.21387
+GPU GFLOPs   : 36.1358
+
+csv:8000,100,2.21387,36.1358
+
+matrix sizes:
+npack = 10000
+ne    = 100
+c(10000,100) = a(10000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 2.55662
+GPU GFLOPs   : 39.1141
+
+csv:10000,100,2.55662,39.1141
+
+matrix sizes:
+npack = 12000
+ne    = 100
+c(12000,100) = a(12000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 2.78122
+GPU GFLOPs   : 43.1466
+
+csv:12000,100,2.78122,43.1466
+
+matrix sizes:
+npack = 14000
+ne    = 100
+c(14000,100) = a(14000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 3.22414
+GPU GFLOPs   : 43.4224
+
+csv:14000,100,3.22414,43.4224
+
+matrix sizes:
+npack = 16000
+ne    = 100
+c(16000,100) = a(16000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 3.68794
+GPU GFLOPs   : 43.3847
+
+csv:16000,100,3.68794,43.3847
+
+matrix sizes:
+npack = 18000
+ne    = 100
+c(18000,100) = a(18000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 3.89997
+GPU GFLOPs   : 46.1542
+
+csv:18000,100,3.89997,46.1542
+
+matrix sizes:
+npack = 20000
+ne    = 100
+c(20000,100) = a(20000,100) * b(100,100)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 4.20844
+GPU GFLOPs   : 47.5235
+
+csv:20000,100,4.20844,47.5235
+
+matrix sizes:
+npack = 2000
+ne    = 200
+c(2000,200) = a(2000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 1.7401
+GPU GFLOPs   : 45.9743
+
+csv:2000,200,1.7401,45.9743
+
+matrix sizes:
+npack = 4000
+ne    = 200
+c(4000,200) = a(4000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 2.74115
+GPU GFLOPs   : 58.3696
+
+csv:4000,200,2.74115,58.3696
+
+matrix sizes:
+npack = 6000
+ne    = 200
+c(6000,200) = a(6000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 3.73319
+GPU GFLOPs   : 64.2881
+
+csv:6000,200,3.73319,64.2881
+
+matrix sizes:
+npack = 8000
+ne    = 200
+c(8000,200) = a(8000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 4.56253
+GPU GFLOPs   : 70.1365
+
+csv:8000,200,4.56253,70.1365
+
+matrix sizes:
+npack = 10000
+ne    = 200
+c(10000,200) = a(10000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 5.68709
+GPU GFLOPs   : 70.3347
+
+csv:10000,200,5.68709,70.3347
+
+matrix sizes:
+npack = 12000
+ne    = 200
+c(12000,200) = a(12000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 6.65441
+GPU GFLOPs   : 72.1326
+
+csv:12000,200,6.65441,72.1326
+
+matrix sizes:
+npack = 14000
+ne    = 200
+c(14000,200) = a(14000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 7.46215
+GPU GFLOPs   : 75.0454
+
+csv:14000,200,7.46215,75.0454
+
+matrix sizes:
+npack = 16000
+ne    = 200
+c(16000,200) = a(16000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 8.53758
+GPU GFLOPs   : 74.9627
+
+csv:16000,200,8.53758,74.9627
+
+matrix sizes:
+npack = 18000
+ne    = 200
+c(18000,200) = a(18000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 9.77281
+GPU GFLOPs   : 73.6738
+
+csv:18000,200,9.77281,73.6738
+
+matrix sizes:
+npack = 20000
+ne    = 200
+c(20000,200) = a(20000,200) * b(200,200)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 10.4985
+GPU GFLOPs   : 76.2017
+
+csv:20000,200,10.4985,76.2017
+
+matrix sizes:
+npack = 2000
+ne    = 300
+c(2000,300) = a(2000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 2.77779
+GPU GFLOPs   : 64.7997
+
+csv:2000,300,2.77779,64.7997
+
+matrix sizes:
+npack = 4000
+ne    = 300
+c(4000,300) = a(4000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 4.77561
+GPU GFLOPs   : 75.383
+
+csv:4000,300,4.77561,75.383
+
+matrix sizes:
+npack = 6000
+ne    = 300
+c(6000,300) = a(6000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 6.2475
+GPU GFLOPs   : 86.4346
+
+csv:6000,300,6.2475,86.4346
+
+matrix sizes:
+npack = 8000
+ne    = 300
+c(8000,300) = a(8000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 8.2717
+GPU GFLOPs   : 87.0438
+
+csv:8000,300,8.2717,87.0438
+
+matrix sizes:
+npack = 10000
+ne    = 300
+c(10000,300) = a(10000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 9.92916
+GPU GFLOPs   : 90.6421
+
+csv:10000,300,9.92916,90.6421
+
+matrix sizes:
+npack = 12000
+ne    = 300
+c(12000,300) = a(12000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 11.9756
+GPU GFLOPs   : 90.1831
+
+csv:12000,300,11.9756,90.1831
+
+matrix sizes:
+npack = 14000
+ne    = 300
+c(14000,300) = a(14000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 14.0196
+GPU GFLOPs   : 89.8744
+
+csv:14000,300,14.0196,89.8744
+
+matrix sizes:
+npack = 16000
+ne    = 300
+c(16000,300) = a(16000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 15.8015
+GPU GFLOPs   : 91.1307
+
+csv:16000,300,15.8015,91.1307
+
+matrix sizes:
+npack = 18000
+ne    = 300
+c(18000,300) = a(18000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 17.9073
+GPU GFLOPs   : 90.4658
+
+csv:18000,300,17.9073,90.4658
+
+matrix sizes:
+npack = 20000
+ne    = 300
+c(20000,300) = a(20000,300) * b(300,300)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 20.1202
+GPU GFLOPs   : 89.4624
+
+csv:20000,300,20.1202,89.4624
+
+matrix sizes:
+npack = 2000
+ne    = 400
+c(2000,400) = a(2000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 4.18311
+GPU GFLOPs   : 76.4981
+
+csv:2000,400,4.18311,76.4981
+
+matrix sizes:
+npack = 4000
+ne    = 400
+c(4000,400) = a(4000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 6.83205
+GPU GFLOPs   : 93.6762
+
+csv:4000,400,6.83205,93.6762
+
+matrix sizes:
+npack = 6000
+ne    = 400
+c(6000,400) = a(6000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 9.90945
+GPU GFLOPs   : 96.8772
+
+csv:6000,400,9.90945,96.8772
+
+matrix sizes:
+npack = 8000
+ne    = 400
+c(8000,400) = a(8000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 13.0524
+GPU GFLOPs   : 98.0663
+
+csv:8000,400,13.0524,98.0663
+
+matrix sizes:
+npack = 10000
+ne    = 400
+c(10000,400) = a(10000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 16.0077
+GPU GFLOPs   : 99.9519
+
+csv:10000,400,16.0077,99.9519
+
+matrix sizes:
+npack = 12000
+ne    = 400
+c(12000,400) = a(12000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 18.9588
+GPU GFLOPs   : 101.272
+
+csv:12000,400,18.9588,101.272
+
+matrix sizes:
+npack = 14000
+ne    = 400
+c(14000,400) = a(14000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 22.1497
+GPU GFLOPs   : 101.13
+
+csv:14000,400,22.1497,101.13
+
+matrix sizes:
+npack = 16000
+ne    = 400
+c(16000,400) = a(16000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 25.4411
+GPU GFLOPs   : 100.624
+
+csv:16000,400,25.4411,100.624
+
+matrix sizes:
+npack = 18000
+ne    = 400
+c(18000,400) = a(18000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 28.7432
+GPU GFLOPs   : 100.198
+
+csv:18000,400,28.7432,100.198
+
+matrix sizes:
+npack = 20000
+ne    = 400
+c(20000,400) = a(20000,400) * b(400,400)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 32.1739
+GPU GFLOPs   : 99.4594
+
+csv:20000,400,32.1739,99.4594
+
+matrix sizes:
+npack = 2000
+ne    = 500
+c(2000,500) = a(2000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 5.52627
+GPU GFLOPs   : 90.4769
+
+csv:2000,500,5.52627,90.4769
+
+matrix sizes:
+npack = 4000
+ne    = 500
+c(4000,500) = a(4000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 9.99745
+GPU GFLOPs   : 100.025
+
+csv:4000,500,9.99745,100.025
+
+matrix sizes:
+npack = 6000
+ne    = 500
+c(6000,500) = a(6000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 14.6597
+GPU GFLOPs   : 102.321
+
+csv:6000,500,14.6597,102.321
+
+matrix sizes:
+npack = 8000
+ne    = 500
+c(8000,500) = a(8000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 18.8055
+GPU GFLOPs   : 106.352
+
+csv:8000,500,18.8055,106.352
+
+matrix sizes:
+npack = 10000
+ne    = 500
+c(10000,500) = a(10000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 23.8258
+GPU GFLOPs   : 104.928
+
+csv:10000,500,23.8258,104.928
+
+matrix sizes:
+npack = 12000
+ne    = 500
+c(12000,500) = a(12000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 28.1265
+GPU GFLOPs   : 106.661
+
+csv:12000,500,28.1265,106.661
+
+matrix sizes:
+npack = 14000
+ne    = 500
+c(14000,500) = a(14000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 33.1643
+GPU GFLOPs   : 105.535
+
+csv:14000,500,33.1643,105.535
+
+matrix sizes:
+npack = 16000
+ne    = 500
+c(16000,500) = a(16000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 37.9222
+GPU GFLOPs   : 105.479
+
+csv:16000,500,37.9222,105.479
+
+matrix sizes:
+npack = 18000
+ne    = 500
+c(18000,500) = a(18000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 43.1152
+GPU GFLOPs   : 104.371
+
+csv:18000,500,43.1152,104.371
+
+matrix sizes:
+npack = 20000
+ne    = 500
+c(20000,500) = a(20000,500) * b(500,500)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 48.1185
+GPU GFLOPs   : 103.91
+
+csv:20000,500,48.1185,103.91
+
+matrix sizes:
+npack = 2000
+ne    = 600
+c(2000,600) = a(2000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 7.3757
+GPU GFLOPs   : 97.6178
+
+csv:2000,600,7.3757,97.6178
+
+matrix sizes:
+npack = 4000
+ne    = 600
+c(4000,600) = a(4000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 13.4215
+GPU GFLOPs   : 107.291
+
+csv:4000,600,13.4215,107.291
+
+matrix sizes:
+npack = 6000
+ne    = 600
+c(6000,600) = a(6000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 19.8156
+GPU GFLOPs   : 109.005
+
+csv:6000,600,19.8156,109.005
+
+matrix sizes:
+npack = 8000
+ne    = 600
+c(8000,600) = a(8000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 25.4385
+GPU GFLOPs   : 113.214
+
+csv:8000,600,25.4385,113.214
+
+matrix sizes:
+npack = 10000
+ne    = 600
+c(10000,600) = a(10000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 32.4731
+GPU GFLOPs   : 110.861
+
+csv:10000,600,32.4731,110.861
+
+matrix sizes:
+npack = 12000
+ne    = 600
+c(12000,600) = a(12000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 39.1477
+GPU GFLOPs   : 110.351
+
+csv:12000,600,39.1477,110.351
+
+matrix sizes:
+npack = 14000
+ne    = 600
+c(14000,600) = a(14000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 45.3743
+GPU GFLOPs   : 111.076
+
+csv:14000,600,45.3743,111.076
+
+matrix sizes:
+npack = 16000
+ne    = 600
+c(16000,600) = a(16000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 51.5942
+GPU GFLOPs   : 111.64
+
+csv:16000,600,51.5942,111.64
+
+matrix sizes:
+npack = 18000
+ne    = 600
+c(18000,600) = a(18000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 58.2207
+GPU GFLOPs   : 111.301
+
+csv:18000,600,58.2207,111.301
+
+matrix sizes:
+npack = 20000
+ne    = 600
+c(20000,600) = a(20000,600) * b(600,600)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 65.5581
+GPU GFLOPs   : 109.826
+
+csv:20000,600,65.5581,109.826
+
+matrix sizes:
+npack = 2000
+ne    = 700
+c(2000,700) = a(2000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 9.58139
+GPU GFLOPs   : 102.282
+
+csv:2000,700,9.58139,102.282
+
+matrix sizes:
+npack = 4000
+ne    = 700
+c(4000,700) = a(4000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 17.4737
+GPU GFLOPs   : 112.168
+
+csv:4000,700,17.4737,112.168
+
+matrix sizes:
+npack = 6000
+ne    = 700
+c(6000,700) = a(6000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 25.9442
+GPU GFLOPs   : 113.32
+
+csv:6000,700,25.9442,113.32
+
+matrix sizes:
+npack = 8000
+ne    = 700
+c(8000,700) = a(8000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 34.2351
+GPU GFLOPs   : 114.502
+
+csv:8000,700,34.2351,114.502
+
+matrix sizes:
+npack = 10000
+ne    = 700
+c(10000,700) = a(10000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 42.9847
+GPU GFLOPs   : 113.994
+
+csv:10000,700,42.9847,113.994
+
+matrix sizes:
+npack = 12000
+ne    = 700
+c(12000,700) = a(12000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 51.7449
+GPU GFLOPs   : 113.634
+
+csv:12000,700,51.7449,113.634
+
+matrix sizes:
+npack = 14000
+ne    = 700
+c(14000,700) = a(14000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 59.9994
+GPU GFLOPs   : 114.335
+
+csv:14000,700,59.9994,114.335
+
+matrix sizes:
+npack = 16000
+ne    = 700
+c(16000,700) = a(16000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 69.9445
+GPU GFLOPs   : 112.089
+
+csv:16000,700,69.9445,112.089
+
+matrix sizes:
+npack = 18000
+ne    = 700
+c(18000,700) = a(18000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 78.0649
+GPU GFLOPs   : 112.983
+
+csv:18000,700,78.0649,112.983
+
+matrix sizes:
+npack = 20000
+ne    = 700
+c(20000,700) = a(20000,700) * b(700,700)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 86.9167
+GPU GFLOPs   : 112.752
+
+csv:20000,700,86.9167,112.752
+
+matrix sizes:
+npack = 2000
+ne    = 800
+c(2000,800) = a(2000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 11.9434
+GPU GFLOPs   : 107.172
+
+csv:2000,800,11.9434,107.172
+
+matrix sizes:
+npack = 4000
+ne    = 800
+c(4000,800) = a(4000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 22.004
+GPU GFLOPs   : 116.342
+
+csv:4000,800,22.004,116.342
+
+matrix sizes:
+npack = 6000
+ne    = 800
+c(6000,800) = a(6000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 33.0359
+GPU GFLOPs   : 116.237
+
+csv:6000,800,33.0359,116.237
+
+matrix sizes:
+npack = 8000
+ne    = 800
+c(8000,800) = a(8000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 43.5778
+GPU GFLOPs   : 117.491
+
+csv:8000,800,43.5778,117.491
+
+matrix sizes:
+npack = 10000
+ne    = 800
+c(10000,800) = a(10000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 54.6611
+GPU GFLOPs   : 117.085
+
+csv:10000,800,54.6611,117.085
+
+matrix sizes:
+npack = 12000
+ne    = 800
+c(12000,800) = a(12000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 65.2177
+GPU GFLOPs   : 117.759
+
+csv:12000,800,65.2177,117.759
+
+matrix sizes:
+npack = 14000
+ne    = 800
+c(14000,800) = a(14000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 77.0808
+GPU GFLOPs   : 116.242
+
+csv:14000,800,77.0808,116.242
+
+matrix sizes:
+npack = 16000
+ne    = 800
+c(16000,800) = a(16000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 87.7114
+GPU GFLOPs   : 116.747
+
+csv:16000,800,87.7114,116.747
+
+matrix sizes:
+npack = 18000
+ne    = 800
+c(18000,800) = a(18000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 99.0404
+GPU GFLOPs   : 116.316
+
+csv:18000,800,99.0404,116.316
+
+matrix sizes:
+npack = 20000
+ne    = 800
+c(20000,800) = a(20000,800) * b(800,800)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 110.096
+GPU GFLOPs   : 116.262
+
+csv:20000,800,110.096,116.262
+
+matrix sizes:
+npack = 2000
+ne    = 900
+c(2000,900) = a(2000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 14.8792
+GPU GFLOPs   : 108.877
+
+csv:2000,900,14.8792,108.877
+
+matrix sizes:
+npack = 4000
+ne    = 900
+c(4000,900) = a(4000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 27.8595
+GPU GFLOPs   : 116.298
+
+csv:4000,900,27.8595,116.298
+
+matrix sizes:
+npack = 6000
+ne    = 900
+c(6000,900) = a(6000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 41.0929
+GPU GFLOPs   : 118.269
+
+csv:6000,900,41.0929,118.269
+
+matrix sizes:
+npack = 8000
+ne    = 900
+c(8000,900) = a(8000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 54.5851
+GPU GFLOPs   : 118.714
+
+csv:8000,900,54.5851,118.714
+
+matrix sizes:
+npack = 10000
+ne    = 900
+c(10000,900) = a(10000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 68.3577
+GPU GFLOPs   : 118.494
+
+csv:10000,900,68.3577,118.494
+
+matrix sizes:
+npack = 12000
+ne    = 900
+c(12000,900) = a(12000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 82.1403
+GPU GFLOPs   : 118.334
+
+csv:12000,900,82.1403,118.334
+
+matrix sizes:
+npack = 14000
+ne    = 900
+c(14000,900) = a(14000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 95.7238
+GPU GFLOPs   : 118.466
+
+csv:14000,900,95.7238,118.466
+
+matrix sizes:
+npack = 16000
+ne    = 900
+c(16000,900) = a(16000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 110.093
+GPU GFLOPs   : 117.719
+
+csv:16000,900,110.093,117.719
+
+matrix sizes:
+npack = 18000
+ne    = 900
+c(18000,900) = a(18000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 123.47
+GPU GFLOPs   : 118.086
+
+csv:18000,900,123.47,118.086
+
+matrix sizes:
+npack = 20000
+ne    = 900
+c(20000,900) = a(20000,900) * b(900,900)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 137.559
+GPU GFLOPs   : 117.767
+
+csv:20000,900,137.559,117.767
+
+matrix sizes:
+npack = 2000
+ne    = 1000
+c(2000,1000) = a(2000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 17.8569
+GPU GFLOPs   : 112.002
+
+csv:2000,1000,17.8569,112.002
+
+matrix sizes:
+npack = 4000
+ne    = 1000
+c(4000,1000) = a(4000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 33.7403
+GPU GFLOPs   : 118.553
+
+csv:4000,1000,33.7403,118.553
+
+matrix sizes:
+npack = 6000
+ne    = 1000
+c(6000,1000) = a(6000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 49.561
+GPU GFLOPs   : 121.063
+
+csv:6000,1000,49.561,121.063
+
+matrix sizes:
+npack = 8000
+ne    = 1000
+c(8000,1000) = a(8000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 65.6231
+GPU GFLOPs   : 121.908
+
+csv:8000,1000,65.6231,121.908
+
+matrix sizes:
+npack = 10000
+ne    = 1000
+c(10000,1000) = a(10000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 83.0552
+GPU GFLOPs   : 120.402
+
+csv:10000,1000,83.0552,120.402
+
+matrix sizes:
+npack = 12000
+ne    = 1000
+c(12000,1000) = a(12000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 98.4585
+GPU GFLOPs   : 121.879
+
+csv:12000,1000,98.4585,121.879
+
+matrix sizes:
+npack = 14000
+ne    = 1000
+c(14000,1000) = a(14000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 116.805
+GPU GFLOPs   : 119.858
+
+csv:14000,1000,116.805,119.858
+
+matrix sizes:
+npack = 16000
+ne    = 1000
+c(16000,1000) = a(16000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 132.328
+GPU GFLOPs   : 120.912
+
+csv:16000,1000,132.328,120.912
+
+matrix sizes:
+npack = 18000
+ne    = 1000
+c(18000,1000) = a(18000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 149.304
+GPU GFLOPs   : 120.56
+
+csv:18000,1000,149.304,120.56
+
+matrix sizes:
+npack = 20000
+ne    = 1000
+c(20000,1000) = a(20000,1000) * b(1000,1000)
+Device: Intel(R) Gen9 HD Graphics NEO
+
+GPU time (ms): 164.669
+GPU GFLOPs   : 121.456
+
+csv:20000,1000,164.669,121.456
+

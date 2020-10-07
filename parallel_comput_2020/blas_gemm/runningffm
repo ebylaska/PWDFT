@@ -1,0 +1,5 @@
+foreach ne (100 200 300 400 500  600 700 800 900 1000)
+foreach npack (2000 4000 6000 8000 10000 12000 14000 16000 18000 20000)
+./baseline_MKL_sycl2 $npack $ne
+end
+end
