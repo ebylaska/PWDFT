@@ -62,8 +62,10 @@ int main(int argc, char *argv[]) {
   // 1D arrays on host side
   double *host_a;
   double *host_b;
+  double *host_c;
   host_a = new double[npack*ne]{};
   host_b = new double[npack*ne]{};
+  host_c = new double[ne*ne]{};
 
   // prepare matrix data with ROW-major style
   // A(M, N)
@@ -107,41 +109,39 @@ int main(int argc, char *argv[]) {
   // copy host -> device
   //
 
-  device_queue.submit([&](cl::sycl::handler& cgh)
-  {
-    cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double));
-  });
-  device_queue.wait();
-  device_queue.submit([&](cl::sycl::handler& cgh)
-  {
-    cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double));
-  });
-  device_queue.wait();
+  //device_queue.submit([&](cl::sycl::handler& cgh)
+  //{
+  //  cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double));
+  //});
+  //device_queue.wait();
+  //device_queue.submit([&](cl::sycl::handler& cgh)
+  //{
+  //  cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double));
+  //});
+  //device_queue.wait();
 
   // device_queue.memcpy(dev_a, host_a, sizeof(double)*M*N);
   // device_queue.memcpy(dev_b, host_b, sizeof(double)*N*P);
 
   try {
 //Warm up the kernel
-      for (int i=0; i<5; i++)
-          oneapi::mkl::blas::gemm(device_queue, matT, matN, ne,ne,npack, alpha, dev_a, npack, dev_b, npack, beta, dev_c, ne);
+      //for (int i=0; i<5; i++)
+      oneapi::mkl::blas::gemm(device_queue, matT, matN, ne,ne,npack, alpha, dev_a, npack, dev_b, npack, beta, dev_c, ne);
       device_queue.wait();
       
 
+
       auto start = high_resolution_clock::now();
-      device_queue.submit([&](cl::sycl::handler& cgh)
-      {
-        cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double));
-      });
-      device_queue.submit([&](cl::sycl::handler& cgh)
-      {
-        cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double));
-      });
+      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
+      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double)); });
       device_queue.wait();
 
       oneapi::mkl::blas::gemm(device_queue, matT, matN, ne,ne,npack, alpha, dev_a, npack, dev_b, npack, beta, dev_c, ne);
+      device_queue.memcpy(host_c, dev_c, ne*ne*sizeof(double));
       device_queue.wait();
       auto stop = high_resolution_clock::now();
+
+
 
       duration<double> deltatime = stop-start;
       double dt = (double) deltatime.count();
