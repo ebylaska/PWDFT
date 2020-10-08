@@ -19,7 +19,7 @@
   </div>
   <script>
 
-Plotly.d3.csv('https://raw.githubusercontent.com/ebylaska/PWDFT/master/parallel_comput_2020/blas_gemm/ffm.csv', function(err, rows){
+Plotly.d3.csv('https://raw.githubusercontent.com/ebylaska/PWDFT/master/parallel_comput_2020/blas_gemm/fmf.csv', function(err, rows){
   function unpack(rows, key) {
   return rows.map(function(row) {return parseFloat(row[key]); });
 }
@@ -27,7 +27,7 @@ Plotly.d3.csv('https://raw.githubusercontent.com/ebylaska/PWDFT/master/parallel_
 var data = [
     {
         type: "heatmap",
-        z: unpack(rows, 'GPU GFLOPS'),
+        z: unpack(rows, 'GPU time (ms)'),
         y: unpack(rows, 'npack'),
         x: unpack(rows, 'ne'),
         colorscale: "Jet",
@@ -39,10 +39,10 @@ var layout = {
     height: 600,
     width: 600,
     title: {
-      text:'SYCL MKL DGEMM (Iris Gen9)- FFM Matrix Multiply GFLOPs',
+      text:'SYCL MKL DGEEM (Iris Gen9)- FMF Timings (milliseconds)',
       font: {
         family: 'Courier New, monospace',
-        size: 16
+        size: 14
       },
       xref: 'paper',
       x: 0.05,
