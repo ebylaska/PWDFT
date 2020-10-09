@@ -18,6 +18,7 @@
 #include	"d1db.hpp"
 #include	"Pneb.hpp"
 #include	"util.hpp"
+#include	"nwpw_timing.hpp"
 
 
 #include "blas.h"
@@ -332,6 +333,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 
 void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 {
+   nwpw_timing_start(15);
    int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
 
    int one = 1;
@@ -393,12 +395,15 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
       }
       d3db::parall->Vector_SumAll(1,nn,hml);
    }
+
+   nwpw_timing_end(15);
 }
 
 
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
+   nwpw_timing_start(16);
    int ms,ms1,ms2,n,shift1,mshift1,ishift2;
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
@@ -433,6 +438,7 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
          mshift1 += ishift2;
       }
    }
+   nwpw_timing_end(16);
 }
 
 
@@ -476,6 +482,7 @@ double Pneb::m_trace(double *hml)
 
 void Pneb::m_diagonalize(double *hml, double *eig)
 {
+   nwpw_timing_start(17);
    int shift1,shift2;
    int n,ierr;
 
@@ -506,6 +513,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
       delete [] xmp1;
    }
+   nwpw_timing_end(17);
 }
 
 
