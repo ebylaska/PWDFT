@@ -13,6 +13,7 @@
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
+#include	"nwpw_timing.hpp"
 
 #include	"PGrid.hpp"
 

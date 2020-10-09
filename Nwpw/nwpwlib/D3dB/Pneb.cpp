@@ -276,6 +276,7 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 {
+   nwpw_timing_function ftimer(15);
    int ms,j,k,n,shift0,shift1,mshift0,mshift1;
 
    int one = 1;
@@ -333,7 +334,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 
 void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 {
-   nwpw_timing_start(15);
+   nwpw_timing_function ftimer(15);
    int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
 
    int one = 1;
@@ -395,15 +396,13 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
       }
       d3db::parall->Vector_SumAll(1,nn,hml);
    }
-
-   nwpw_timing_end(15);
 }
 
 
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
-   nwpw_timing_start(16);
+   nwpw_timing_function ftimer(16);
    int ms,ms1,ms2,n,shift1,mshift1,ishift2;
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
@@ -438,7 +437,6 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
          mshift1 += ishift2;
       }
    }
-   nwpw_timing_end(16);
 }
 
 
@@ -577,6 +575,7 @@ void Pneb::m_scale_s21(const int mb, const double dte, double *s21)
 
 void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
 {
+   nwpw_timing_function ftimer(18);
    int ms,n,ms1,ms2,ishift2,shift2;
    if (mb==-1)
    {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
@@ -639,6 +638,7 @@ void Pneb::m_scale_s11(const int mb, const double dte, double *s11)
 
 void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
 {
+   nwpw_timing_function ftimer(3);
    int one=1;
    int ms,nn,ii,done;
    double adiff;

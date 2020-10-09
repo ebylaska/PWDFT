@@ -15,6 +15,7 @@ using namespace std;
 #include	<cstring>
 #include        <cmath>
 
+#include	"nwpw_timing.hpp"
 #include	"Control2.hpp"
 #include	"util.hpp"
 #include        "Psp1d_Hamann.hpp"
@@ -823,6 +824,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
  *******************************************/
 void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 {
+   nwpw_timing_function ftimer(6);
+
    int ii,ia,l,nshift0,sd_function,i;
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
@@ -905,6 +908,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *******************************************/
 void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
 {
+   nwpw_timing_function ftimer(6);
    int ii,ia,l,nshift0,sd_function,i,n;
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
@@ -1038,6 +1042,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
  *******************************************/
 void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion)
 {
+   nwpw_timing_function ftimer(5);
    int ii,ia,nshift,npack0;
    double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
 

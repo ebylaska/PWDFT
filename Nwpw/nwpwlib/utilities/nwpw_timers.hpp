@@ -126,6 +126,7 @@ public:
        print_timer("ffm_dgemm            ", times[15],counter,times[0]);
        print_timer("fmf_dgemm            ", times[16],counter,times[0]);
        print_timer("m_diagonalize        ", times[17],counter,times[0]);
+       print_timer("mmm_multiply         ", times[18],counter,times[0]);
    }
 
 };

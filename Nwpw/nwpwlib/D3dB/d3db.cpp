@@ -24,6 +24,7 @@ using namespace std;
 
 #include "blas.h"
 
+#include	"nwpw_timing.hpp"
 #include	"d3db.hpp"
 
 /********************************
@@ -1734,6 +1735,7 @@ static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, 
  ********************************/
 void d3db::cr_fft3d(double *a)
 {
+   nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
    double *tmp2,*tmp3;
    
@@ -1899,6 +1901,7 @@ void d3db::cr_fft3d(double *a)
  ********************************/
 void d3db::rc_fft3d(double *a)
 {
+   nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
    double *tmp2,*tmp3;
    
