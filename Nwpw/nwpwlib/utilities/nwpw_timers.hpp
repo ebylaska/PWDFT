@@ -127,6 +127,9 @@ public:
        print_timer("fmf_dgemm            ", times[16],counter,times[0]);
        print_timer("m_diagonalize        ", times[17],counter,times[0]);
        print_timer("mmm_multiply         ", times[18],counter,times[0]);
+       print_timer("queue fft            ", times[30],counter,times[0]);
+       print_timer("queue fft serial     ", times[31],counter,times[0]);
+       print_timer("queue fft parallel   ", times[32],counter,times[0]);
    }
 
 };
