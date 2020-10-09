@@ -103,7 +103,7 @@ public:
 
 
    void print_timer(std::string msg, double time, int counter, double ttime) {
-      if (time>1.0e-9) printf("%s %10.6le %10.6le %10.2lf %%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
+      if (time>1.0e-9) printf(" %s %10.6le %10.6le %10.2lf %%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
       //std::cout << msg << time << " " << time/((double) counter) << " " << std::setprecision(2) << 100*time/ttime  << "%" << std::endl;
    }
 
@@ -112,7 +112,7 @@ public:
        std::chrono::duration<double> deltatime = stop-start[0];
        times[0] = (double) deltatime.count();
 
-       std::cout << "Time spent doing      total        step             percent" << std::endl;
+       std::cout << " Time spent doing      total        step             percent" << std::endl;
        print_timer("total time           ", times[0],counter,times[0]);
        print_timer("total FFT time       ", times[1],counter,times[0]);
        print_timer("total dot products   ", times[2],counter,times[0]);
