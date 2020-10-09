@@ -103,7 +103,7 @@ public:
 
 
    void print_timer(std::string msg, double time, int counter, double ttime) {
-      if (time>1.0e-9) printf("%s %10.6le %10.6le %10.2lf\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
+      if (time>1.0e-9) printf("%s %10.6le %10.6le %10.2lf %%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
       //std::cout << msg << time << " " << time/((double) counter) << " " << std::setprecision(2) << 100*time/ttime  << "%" << std::endl;
    }
 
