@@ -7,6 +7,14 @@
 
 #include	"mpi.h"
 
+#ifdef HAS_SYCL
+#include	<cstdio>
+#include	<iostream>
+#include	<limits>
+#include	<CL/sycl.hpp>
+#include	"mkl_blas_sycl.hpp"
+#endif
+
 #define	MASTER	0
 
 class Parallel {
@@ -22,6 +30,22 @@ class Parallel {
     MPI_Group     group_i[3];
     MPI_Request  **request;
     MPI_Status   **statuses;
+
+#ifdef HAS_SYCL
+    auto asyncHandler = [&](cl::sycl::exception_list eL) {
+       for (auto& e : eL) {
+         try {
+           std::rethrow_exception(e);
+         } catch (cl::sycl::exception& e) {
+           std::cout << e.what() << std::endl;
+           std::cout << "fail" << std::endl;
+           std::terminate();
+         }
+       }
+    };
+    cl::sycl::gpu_selector device_selector;
+    cl::sycl::queue device_queue(device_selector,asyncHandler);
+#endif
 
 public:
         int dim;
