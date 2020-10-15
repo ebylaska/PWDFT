@@ -1,6 +1,7 @@
 #ifndef _GDEVICE_HPP_
 #define _GDEVICE_HPP_
 
+/* can place sycl mkl code here */
 #ifdef NWPW_SYCL
 #include        <cstdio>
 #include        <iostream>
@@ -50,7 +51,7 @@ public:
        cl::sycl::free(dev_c, device_queue);
      }
 
-     void ffm_gemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
+     void ffm_dgemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
         try {
            device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
            device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double)); });
@@ -64,7 +65,7 @@ public:
         }
      }
 
-     void fmf_gemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
+     void fmf_dgemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
         try {
            device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
            device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_c, host_c, ne*ne*sizeof(double)); });
@@ -80,6 +81,11 @@ public:
 };
 
 
+/* can place opencl code from mac here */
+#elif NWPW_OPENCL
+
+
+/* standard host code */
 #else
 
 #include        "blas.h"
@@ -94,7 +100,7 @@ public:
        ne    = ne0;
      }
 
-     void ffm_gemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
+     void ffm_dgemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
         DGEMM_PWDFT((char *) "T",(char *) "N",npack,ne,ne,
                     alpha,
                     host_a,npack,
@@ -103,7 +109,7 @@ public:
                     host_c,ne);
      }
 
-     void fmf_gemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
+     void fmf_dgemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,
                     alpha,
                     host_a,npack,
