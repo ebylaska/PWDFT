@@ -31,6 +31,8 @@ class Parallel {
     MPI_Request  **request;
     MPI_Status   **statuses;
 
+public:
+
 #ifdef NWPW_SYCL
     auto asyncHandler = [&](cl::sycl::exception_list eL) {
        for (auto& e : eL) {
@@ -49,7 +51,6 @@ class Parallel {
 				 cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
 #endif
 
-public:
         int dim;
 
 	/* Constructors */
