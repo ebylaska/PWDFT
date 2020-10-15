@@ -18,6 +18,7 @@
 #include	"d1db.hpp"
 #include	"Pneb.hpp"
 #include	"util.hpp"
+#include	"gdevice.hpp"
 #include	"nwpw_timing.hpp"
 
 
@@ -426,12 +427,13 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
       for (ms=ms1; ms<ms2; ++ms)
       {
          n       = ne[ms];
-         DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
-                alpha,
-                &psi1[shift1],ng,
-                &hml[mshift1],n,
-                beta,
-                &psi2[shift1],ng);
+         //DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
+         //       alpha,
+         //       &psi1[shift1],ng,
+         //       &hml[mshift1],n,
+         //       beta,
+         //       &psi2[shift1],ng);
+         gdevice_fmf_dgemm(ng,n,alpha,&psi1[shift1],&hml[mshift1],beta,&psi2[shift1]);
 
          shift1  += ne[0]*ng;
          mshift1 += ishift2;
