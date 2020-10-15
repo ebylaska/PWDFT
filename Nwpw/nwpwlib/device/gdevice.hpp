@@ -10,8 +10,10 @@
 
 
 class Gdevice {
+   int npack,ne;
 
-public:
+   oneapi::mkl::transpose matT = oneapi::mkl::transpose::trans;
+   oneapi::mkl::transpose matN = oneapi::mkl::transpose::nontrans;
 
     auto asyncHandler = [&](cl::sycl::exception_list eL) {
        for (auto& e : eL) {
@@ -31,12 +33,15 @@ public:
     /* device memory */
     double *dev_a,*dev_b,*dev_c;
 
+public:
 
-    Gdevice(const int npack, const int ne) {
+    Gdevice(const int npack0, const int ne0) {
+       npack = npack0;
+       ne    = ne0;
        /* Creating 1D buffers for mkl matrices */
        double* dev_a = cl::sycl::malloc_device<double>(npack*ne, device_queue);
-       double* dev_b = cl::sycl::malloc_device<double>(ne*ne,    device_queue);
-       double* dev_c = cl::sycl::malloc_device<double>(npack*ne, device_queue);
+       double* dev_b = cl::sycl::malloc_device<double>(npack*ne, device_queue);
+       double* dev_c = cl::sycl::malloc_device<double>(ne*ne,    device_queue);
     }
 
     ~Gdevice() {
@@ -44,7 +49,45 @@ public:
        cl::sycl::free(dev_b, device_queue);
        cl::sycl::free(dev_c, device_queue);
      }
+
+     void ffm_gemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
+        try {
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_b, host_b, npack*ne*sizeof(double)); });
+
+           oneapi::mkl::blas::gemm(device_queue, matT, matN, ne,ne,npack, alpha, dev_a, npack, dev_b, npack, beta, dev_c, ne);
+           device_queue.memcpy(host_c, dev_c, ne*ne*sizeof(double));
+           device_queue.wait();
+        }
+        catch(cl::sycl::exception const& e) {
+           std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+     }
+
+     void fmf_gemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
+        try {
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_c, host_c, ne*ne*sizeof(double)); });
+
+           oneapi::mkl::blas::gemm(device_queue, matN, matN, npack,ne,ne, alpha, dev_a, npack, dev_c, ne, beta, dev_b, npack);
+           device_queue.memcpy(host_b, dev_b, npack*ne*sizeof(double));
+           device_queue.wait();
+        }
+        catch(cl::sycl::exception const& e) {
+           std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+     }
 };
+
+/* define ffm_gemm and fmf_gemm macros */
+
+#else
+
+#include        "blas.h"
+
+
+/* define ffm_gemm and fmf_gemm macros */
+
 
 #endif
 #endif
