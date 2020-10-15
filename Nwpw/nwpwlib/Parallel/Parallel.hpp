@@ -7,14 +7,6 @@
 
 #include	"mpi.h"
 
-#ifdef NWPW_SYCL
-#include	<cstdio>
-#include	<iostream>
-#include	<limits>
-#include	<CL/sycl.hpp>
-#include	"mkl_blas_sycl.hpp"
-#endif
-
 #define	MASTER	0
 
 class Parallel {
@@ -32,25 +24,6 @@ class Parallel {
     MPI_Status   **statuses;
 
 public:
-
-#ifdef NWPW_SYCL
-    auto asyncHandler = [&](cl::sycl::exception_list eL) {
-       for (auto& e : eL) {
-         try {
-           std::rethrow_exception(e);
-         } catch (cl::sycl::exception& e) {
-           std::cout << e.what() << std::endl;
-           std::cout << "fail" << std::endl;
-           std::terminate();
-         }
-       }
-    };
-    cl::sycl::gpu_selector device_selector;
-    cl::sycl::queue device_queue(device_selector,
-				 asyncHandler,
-				 cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
-#endif
-
         int dim;
 
 	/* Constructors */
