@@ -79,15 +79,40 @@ public:
      }
 };
 
-/* define ffm_gemm and fmf_gemm macros */
 
 #else
 
 #include        "blas.h"
 
+class Gdevice {
+   int npack,ne;
 
-/* define ffm_gemm and fmf_gemm macros */
+public:
 
+     Gdevice(const int npack0, const int ne0) {
+       npack = npack0;
+       ne    = ne0;
+     }
+
+     void ffm_gemm(double alpha, const double *host_a, const double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "T",(char *) "N",npack,ne,ne,
+                    alpha,
+                    host_a,npack,
+                    host_b,npack,
+                    beta,
+                    host_c,ne);
+     }
+
+     void fmf_gemm(double alpha, const double *host_a, const double *host_c, double beta, double *host_b) {
+        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,
+                    alpha,
+                    host_a,npack,
+                    host_c,ne,
+                    beta,
+                    host_b,npack);
+     }
+
+};
 
 #endif
 #endif
