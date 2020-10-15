@@ -93,40 +93,40 @@ public:
 #endif
 
 
-#define progam1	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n \
-__kernel void NNmatmul(const int M, const int N, const int K,
-                     const __global double *A, \n \
-                     const __global double *B, \n \
-                     __global double *C) {\n\n \
+#define progam1	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n\
+__kernel void NNmatmul(const int M, const int N, const int K,\n\
+                     const __global double *A, \n\
+                     const __global double *B, \n\
+                     __global double *C) {\n\n\
     
-    // Get the index of the current element
-    int i = get_global_id(0);\n \
-    int j = get_global_id(1);\n\n \
+    // Get the index of the current element \n\
+    int i = get_global_id(0);\n\
+    int j = get_global_id(1);\n\n\
 
-    // Do the operation
-    double acc = 0.0; \n \
-    for (int l=0; l<K; l++) { \n \
-       acc += A[i + l*M]*B[l + j*K]; \n \
+    // Do the operation \n\
+    double acc = 0.0; \n\
+    for (int l=0; l<K; l++) { \n\
+       acc += A[i + l*M]*B[l + j*K]; \n\
     } \n \
-    C[i+j*M] = acc; \n \
+    C[i+j*M] = acc; \n\
 }"
 
-#define progam2	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n \
-__kernel void TNmatmul(const int M, const int N, const int K,
-                     const __global double *A, \n \
-                     const __global double *B, \n \
-                     __global double *C) {\n\n \
+#define progam2	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n\
+__kernel void TNmatmul(const int M, const int N, const int K,\n\
+                     const __global double *A, \n\
+                     const __global double *B, \n\
+                     __global double *C) {\n\n\
     
-    // Get the index of the current element
-    int i = get_global_id(0);\n \
-    int j = get_global_id(1);\n\n \
+    // Get the index of the current element\n\
+    int i = get_global_id(0);\n\
+    int j = get_global_id(1);\n\n\
 
-    // Do the operation
-    double acc = 0.0; \n \
-    for (int l=0; l<K; l++) { \n \
-       acc += A[l + i*M]*B[l + j*K]; \n \
-    } \n \
-    C[i+j*M] = acc; \n \
+    // Do the operation \n\
+    double acc = 0.0; \n\
+    for (int l=0; l<K; l++) { \n\
+       acc += A[l + i*M]*B[l + j*K]; \n\
+    } \n\
+    C[i+j*M] = acc; \n\
 }"
 
 
