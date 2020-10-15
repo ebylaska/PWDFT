@@ -64,7 +64,37 @@ public:
         return ii;
      }
 
-     void ffm_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
+     void TN3_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta,
+                    double *host_caa, double *host_cab, double *host_bb) {
+        int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
+        int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
+        int icaa = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
+        int icab = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
+        int icbb = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
+        try {
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double)); });
+           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double)); });
+
+           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ia],npack,beta,dev_mem[icaa],ne);
+           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[icab],ne);
+           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ib],npack,dev_mem[ib],npack,beta,dev_mem[icbb],ne);
+           device_queue.memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
+           device_queue.memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
+           device_queue.memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
+           device_queue.wait();
+        }
+        catch(cl::sycl::exception const& e) {
+           std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+
+        inuse[ia] = false;
+        inuse[ib] = false;
+        inuse[icaa] = false;
+        inuse[icab] = false;
+        inuse[icbb] = false;
+     }
+
+     void TN_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ic = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
@@ -85,7 +115,7 @@ public:
         inuse[ic] = false;
      }
 
-     void fmf_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
+     void NN_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int ic = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
@@ -161,11 +191,19 @@ __kernel void TNmatmul(const int M, const int N, const int K,\n\
 class Gdevices {
 
 public:
-     void ffm_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
-        DGEMM_PWDFT((char *) "T",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+
+     void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
+     {
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
      }
 
-     void fmf_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
+     void TN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+     }
+
+     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_c,ne,beta,host_b,npack);
      }
 
