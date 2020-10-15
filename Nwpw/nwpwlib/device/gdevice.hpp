@@ -1,8 +1,8 @@
 #ifndef _GDEVICE_HPP_
 #define _GDEVICE_HPP_
 
-/* can place sycl mkl code here */
 #ifdef NWPW_SYCL
+/* can place sycl mkl code here */
 #include        <cstdio>
 #include        <iostream>
 #include        <limits>
@@ -81,12 +81,57 @@ public:
 };
 
 
-/* can place opencl code from mac here */
 #elif NWPW_OPENCL
+/* can place opencl code from mac here */
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#define CL_SILENCE_DEPRECATION
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
 
-
-/* standard host code */
 #else
+#include <CL/cl.h>
+#endif
+
+
+#define progam1	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n \
+__kernel void NNmatmul(const int M, const int N, const int K,
+                     const __global double *A, \n \
+                     const __global double *B, \n \
+                     __global double *C) {\n\n \
+    
+    // Get the index of the current element
+    int i = get_global_id(0);\n \
+    int j = get_global_id(1);\n\n \
+
+    // Do the operation
+    double acc = 0.0; \n \
+    for (int l=0; l<K; l++) { \n \
+       acc += A[i + l*M]*B[l + j*K]; \n \
+    } \n \
+    C[i+j*M] = acc; \n \
+}"
+
+#define progam2	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n \
+__kernel void TNmatmul(const int M, const int N, const int K,
+                     const __global double *A, \n \
+                     const __global double *B, \n \
+                     __global double *C) {\n\n \
+    
+    // Get the index of the current element
+    int i = get_global_id(0);\n \
+    int j = get_global_id(1);\n\n \
+
+    // Do the operation
+    double acc = 0.0; \n \
+    for (int l=0; l<K; l++) { \n \
+       acc += A[l + i*M]*B[l + j*K]; \n \
+    } \n \
+    C[i+j*M] = acc; \n \
+}"
+
+
+#else
+/* standard host code */
 
 #include        "blas.h"
 
