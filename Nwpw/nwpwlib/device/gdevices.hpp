@@ -1,7 +1,8 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
-#ifdef NWPW_SYCL
+#ifdef _NWPW_SYCL_
+
 /* can place sycl mkl code here */
 #include        <cstdio>
 #include        <iostream>
@@ -107,7 +108,8 @@ public:
 };
 
 
-#elif NWPW_OPENCL
+#elif defined _NWPW_OPENCL_
+
 /* can place opencl code from mac here */
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #define CL_SILENCE_DEPRECATION
@@ -159,25 +161,16 @@ __kernel void TNmatmul(const int M, const int N, const int K,\n\
 class Gdevices {
 
 public:
-     void ffm_dgemm(const int npack, const int ne,const double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
-        DGEMM_PWDFT((char *) "T",(char *) "N",npack,ne,ne,
-                    alpha,
-                    host_a,npack,
-                    host_b,npack,
-                    beta,
-                    host_c,ne);
+     void ffm_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "T",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
      }
 
-     void fmf_dgemm(const int npack, const int ne, const double alpha, const double *host_a, const double *host_c, const double beta, double *host_b) {
-        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,
-                    alpha,
-                    host_a,npack,
-                    host_c,ne,
-                    beta,
-                    host_b,npack);
+     void fmf_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
+        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_c,ne,beta,host_b,npack);
      }
 
 };
 
 #endif
+
 #endif
