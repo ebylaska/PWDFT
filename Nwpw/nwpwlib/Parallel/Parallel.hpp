@@ -31,7 +31,7 @@ class Parallel {
     MPI_Request  **request;
     MPI_Status   **statuses;
 
-#ifdef HAS_SYCL
+#ifdef NWPW_SYCL
     auto asyncHandler = [&](cl::sycl::exception_list eL) {
        for (auto& e : eL) {
          try {
@@ -44,7 +44,9 @@ class Parallel {
        }
     };
     cl::sycl::gpu_selector device_selector;
-    cl::sycl::queue device_queue(device_selector,asyncHandler);
+    cl::sycl::queue device_queue(device_selector,
+				 asyncHandler,
+				 cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
 #endif
 
 public:
