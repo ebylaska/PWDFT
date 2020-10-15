@@ -7,7 +7,7 @@
 
 #include	"mpi.h"
 
-#ifdef HAS_SYCL
+#ifdef NWPW_SYCL
 #include	<cstdio>
 #include	<iostream>
 #include	<limits>
