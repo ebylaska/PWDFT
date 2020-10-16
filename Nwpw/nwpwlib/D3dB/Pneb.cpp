@@ -403,7 +403,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
 void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml11, double *hml12, double *hml22)
 {
    nwpw_timing_function ftimer(15);
-   int ms,ms1,ms2,ishift2,j,k,n,shift0,mshift0,nn;
+   int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
    int one = 1;
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
@@ -436,28 +436,48 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2, double *h
          n       = ne[ms];
          
          gdevice_TN3_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml11[mshift0],&hml12[mshift0],&hml22[mshift0]);
+
          if (ng0>0)
          {
-            DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
                     rmone,
                     &psi1[shift0],ng,
-                    &psi1[shift0],ng,
+                    &psi1[shift1],ng,
                     rone,
-                    &hml11[mshift0],n);
-            DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+                    &hml11[mshift1],k);
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
                     rmone,
                     &psi1[shift0],ng,
-                    &psi2[shift0],ng,
+                    &psi2[shift1],ng,
                     rone,
-                    &hml12[mshift0],n);
-            DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+                    &hml12[mshift1],k);
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
                     rmone,
                     &psi2[shift0],ng,
-                    &psi2[shift0],ng,
+                    &psi2[shift1],ng,
                     rone,
-                    &hml22[mshift0],n);
+                    &hml22[mshift1],k);
+               shift1  += ng;
+               mshift1 += n;
+            }
          }
 
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml11[mshift0 + j + k*n] = hml11[mshift0 + k + j*n];
+
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml12[mshift0 + j + k*n] = hml12[mshift0 + k + j*n];
+
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml22[mshift0 + j + k*n] = hml22[mshift0 + k + j*n];
+   
          shift0  += ng*ne[0];
          mshift0 += ne[0]*ne[0];
       }
