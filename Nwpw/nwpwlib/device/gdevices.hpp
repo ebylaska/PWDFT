@@ -290,6 +290,42 @@ public:
                                                                 gpu.avail[plat_indx][device_indx],
                                                                 gpu.has_cl_khr_fp64[plat_indx][device_indx]);
 
+
+        // Create an OpenCL context
+        context = clCreateContext(NULL,1, &(device_id_selected), NULL, NULL, &ret);
+
+        // Create a command queue
+        command_queue = clCreateCommandQueue(context, device_id_selected, 0, &ret);
+
+
+     }
+
+     ~Gdevices() {
+        cl_int ret = clReleaseCommandQueue(command_queue);
+               ret = clReleaseContext(context);
+
+        for (int i=0; i<gpu.num_platforms; ++i)
+        {
+           free(gpu.device_id[i]);
+           free(gpu.avail[i]);
+           free(gpu.has_cl_khr_fp64[i]);
+           free(gpu.num_cores[i]);
+           free(gpu.freq[i]);
+           free(gpu.wdouble[i]);
+           free(gpu.wfloat[i]);
+           free(gpu.mem[i]);
+        }
+        free(gpu.platform_id);
+        free(gpu.num_devices);
+        free(gpu.device_id);
+        free(gpu.avail);
+        free(gpu.has_cl_khr_fp64);
+        free(gpu.num_cores);
+        free(gpu.freq);
+        free(gpu.wdouble);
+        free(gpu.wfloat);
+        free(gpu.mem);
+
      }
 
      void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
@@ -310,8 +346,8 @@ public:
         //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
         //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
         //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
-        std::cout << "In the OpenCL branch!!!" << std::endl;
-        std::cout << "program1=" << program1 << std::endl;
+        //std::cout << "In the OpenCL branch!!!" << std::endl;
+        //std::cout << "program1=" << program1 << std::endl;
 
      }
 
