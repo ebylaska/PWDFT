@@ -1,7 +1,7 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
-#ifdef _NWPW_SYCL_
+#ifdef NWPW_SYCL
 
 /* can place sycl mkl code here */
 #include        <cstdio>
@@ -138,7 +138,7 @@ public:
 };
 
 
-#elif defined _NWPW_OPENCL_
+#elif defined NWPW_OPENCL
 
 /* can place opencl code from mac here */
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
@@ -181,6 +181,150 @@ __kernel void TNmatmul(const int M, const int N, const int K,\n\
     } \n\
     C[i+j*M] = acc; \n}\n"
 
+#include        <iostream>
+#include        "blas.h"
+
+typedef struct {
+   cl_uint num_platforms;
+   cl_platform_id * platform_id;
+   cl_uint * num_devices;
+   cl_device_id ** device_id;
+   cl_bool   ** avail;
+   cl_bool   ** has_cl_khr_fp64;
+   cl_uint   ** num_cores;
+   cl_uint   ** freq;
+   cl_uint   ** wdouble;
+   cl_uint   ** wfloat;
+   cl_ulong  ** mem;
+   //Device_Type ** device;
+} NWPW_GPU_Type;
+
+class Gdevices {
+
+   NWPW_GPU_Type gpu;
+
+   int plat_indx,device_indx;
+   cl_device_id     device_id_selected;
+   cl_context       context;
+   cl_command_queue command_queue;
+
+public:
+     Gdevices() {
+        size_t size;
+        char str[1000];
+
+        // Get platforms 
+        cl_int ret = clGetPlatformIDs(0, NULL, &(gpu.num_platforms));
+        gpu.platform_id = (cl_platform_id *) malloc(sizeof(cl_platform_id)*gpu.num_platforms);
+        ret = clGetPlatformIDs(gpu.num_platforms,gpu.platform_id,NULL);
+
+        gpu.num_devices = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_platforms);
+        gpu.device_id = (cl_device_id **) malloc(sizeof(cl_device_id *)*gpu.num_platforms);
+        gpu.avail     = (cl_bool **) malloc(sizeof(cl_bool *)*gpu.num_platforms);
+        gpu.has_cl_khr_fp64 = (cl_bool **) malloc(sizeof(cl_bool *)*gpu.num_platforms);
+        gpu.num_cores = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
+        gpu.freq      = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
+        gpu.wdouble   = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
+        gpu.wfloat    = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
+        gpu.mem       = (cl_ulong **) malloc(sizeof(cl_ulong *)*gpu.num_platforms);
+        for (cl_uint i=0; i<gpu.num_platforms; ++i)
+        {
+           ret = clGetDeviceIDs(gpu.platform_id[i], CL_DEVICE_TYPE_ALL, 0,NULL,&(gpu.num_devices[i]));
+
+           gpu.device_id[i] = (cl_device_id *) malloc(sizeof(cl_device_id)*gpu.num_devices[i]);
+           gpu.avail[i]     = (cl_bool *) malloc(sizeof(cl_bool)*gpu.num_devices[i]);
+           gpu.has_cl_khr_fp64[i] = (cl_bool *) malloc(sizeof(cl_bool)*gpu.num_devices[i]);
+           gpu.num_cores[i] = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
+           gpu.freq[i]      = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
+           gpu.wdouble[i]   = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
+           gpu.wfloat[i]    = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
+           gpu.mem[i]       = (cl_ulong *) malloc(sizeof(cl_ulong)*gpu.num_devices[i]);
+
+           ret = clGetDeviceIDs(gpu.platform_id[i],CL_DEVICE_TYPE_ALL,gpu.num_devices[i],gpu.device_id[i],NULL);
+
+           for (cl_uint j=0; j<gpu.num_devices[i]; ++j)
+           {
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&(gpu.avail[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&(gpu.num_cores[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&(gpu.freq[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu.wdouble[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&(gpu.mem[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_EXTENSIONS,1000*sizeof(char),str,&size);
+              gpu.has_cl_khr_fp64[i][j] = (strstr(str, "cl_khr_fp64") != NULL);
+           }
+        }
+        printf("Number of platforms = %d\n",gpu.num_platforms);
+        plat_indx   = 0;
+        device_indx = 0;
+        for (int i=0; i<gpu.num_platforms; ++i)
+        {
+           printf(" - %d patform_id= %ld num_devices= %d\n",i, gpu.platform_id[i],gpu.num_devices[i]);
+           for (int j=0; j<gpu.num_devices[i]; ++j)
+           {
+              printf("   -- %d device_id= %ld num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wdouble=%d avail=%d has_cl_khr_fp64=%d\n",j,gpu.device_id[i][j],
+                                                                gpu.num_cores[i][j],
+                                                                (long) gpu.mem[i][j],
+                                                                gpu.freq[i][j],
+                                                                gpu.wfloat[i][j],
+                                                                gpu.wdouble[i][j],
+                                                                gpu.avail[i][j],
+                                                                gpu.has_cl_khr_fp64[i][j]);
+              if (gpu.avail[i][j] && gpu.wdouble[i][j] && gpu.has_cl_khr_fp64[i][j])
+              {
+                 plat_indx = i;
+                 device_indx = j;
+              }
+           }
+        }
+
+        device_id_selected = gpu.device_id[plat_indx][device_indx];
+        ret = clGetDeviceInfo(device_id_selected,CL_DEVICE_VENDOR,1000*sizeof(char),str,&size);
+        printf("\n - Using platform_id=%ld device_id=%ld vendor=%s num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wdouble=%d avail=%d has_cl_khr_fp64=%d\n",
+               gpu.platform_id[plat_indx],gpu.device_id[plat_indx][device_indx],str,
+                                                                gpu.num_cores[plat_indx][device_indx],
+                                                                (long) gpu.mem[plat_indx][device_indx],
+                                                                gpu.freq[plat_indx][device_indx],
+                                                                gpu.wfloat[plat_indx][device_indx],
+                                                                gpu.wdouble[plat_indx][device_indx],
+                                                                gpu.avail[plat_indx][device_indx],
+                                                                gpu.has_cl_khr_fp64[plat_indx][device_indx]);
+
+     }
+
+     void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
+     {
+        int one = 1;
+        int shift1  = 0;
+        int mshift1 = 0;
+
+        for (auto k=1; k<=ne; ++k)
+        {
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_a,npack,&host_a[shift1],npack,beta,&host_caa[mshift1],k);
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_a,npack,&host_b[shift1],npack,beta,&host_cab[mshift1],k);
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_b,npack,&host_b[shift1],npack,beta,&host_cbb[mshift1],k);
+           shift1  += npack;
+           mshift1 += ne;
+        }
+
+        //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
+        //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
+        //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
+        std::cout << "In the OpenCL branch!!!" << std::endl;
+        std::cout << "program1=" << program1 << std::endl;
+
+     }
+
+     void TN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+     }
+
+     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
+        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_c,ne,beta,host_b,npack);
+     }
+
+};
+
 
 
 #else
@@ -222,6 +366,6 @@ public:
 
 };
 
-#endif
 
+#endif
 #endif
