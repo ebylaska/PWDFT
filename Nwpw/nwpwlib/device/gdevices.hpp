@@ -150,8 +150,9 @@ public:
 #include <CL/cl.h>
 #endif
 
+#define MAX_SOURCE_SIZE (0x100000)
 
-#define program1	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable \n\n\
+#define program1_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable \n\n\
 __kernel void NNmatmul(const int M, const int N, const int K,\n\
                      const __global double *A, \n\
                      const __global double *B, \n\
@@ -166,7 +167,7 @@ __kernel void NNmatmul(const int M, const int N, const int K,\n\
     }   \n\
     C[i+j*M] = acc; \n }\n"
 
-#define program2	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n\
+#define program2_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n\
 __kernel void TNmatmul(const int M, const int N, const int K,\n\
                      const __global double *A, \n\
                      const __global double *B, \n\
@@ -207,6 +208,14 @@ class Gdevices {
    cl_device_id     device_id_selected;
    cl_context       context;
    cl_command_queue command_queue;
+   cl_program       program1,program2;
+   cl_kernel        kernel1,kernel2;
+
+   /* device memory */
+   int    ndev_mem;
+   bool   inuse[25];
+   size_t nsize_mem[25];
+   double *dev_mem[25];
 
 public:
      Gdevices() {
@@ -294,14 +303,56 @@ public:
         // Create an OpenCL context
         context = clCreateContext(NULL,1, &(device_id_selected), NULL, NULL, &ret);
 
+
         // Create a command queue
         command_queue = clCreateCommandQueue(context, device_id_selected, 0, &ret);
+
+        // Create programs from the kernel source
+        // Build the program1        
+        char *source_str = (char*)malloc(MAX_SOURCE_SIZE);
+        strcpy(source_str,program1_src);
+        size_t source_size = strlen(source_str);
+        program1 = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+        ret = clBuildProgram(program1, 1, &device_id_selected, NULL, NULL, NULL);
+
+        size_t logSize;            
+        clGetProgramBuildInfo(program1, device_id_selected, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        char* messages = (char*)malloc((1+logSize)*sizeof(char));
+        clGetProgramBuildInfo(program1, device_id_selected, CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
+        messages[logSize] = '\0';
+        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        free(messages);
+
+        kernel1 = clCreateKernel(program1, "TN_matmul", &ret);
+
+
+        // Build the program2        
+        strcpy(source_str,program2_src);
+        source_size = strlen(source_str);
+        program1 = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+        ret = clBuildProgram(program2, 1, &device_id_selected, NULL, NULL, NULL);
+
+        logSize;            
+        clGetProgramBuildInfo(program2, device_id_selected, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        messages = (char*)malloc((1+logSize)*sizeof(char));
+        clGetProgramBuildInfo(program2, device_id_selected, CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
+        messages[logSize] = '\0';
+        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        free(messages);
+
+        kernel2 = clCreateKernel(program2, "NN_matmul", &ret);
 
 
      }
 
      ~Gdevices() {
-        cl_int ret = clReleaseCommandQueue(command_queue);
+        std::cout << "Deallocating Gdevices" << std::endl;
+
+        cl_int ret = clReleaseKernel(kernel1);
+               ret = clReleaseKernel(kernel2);
+               ret = clReleaseProgram(program1);
+               ret = clReleaseProgram(program2);
+               ret = clReleaseCommandQueue(command_queue);
                ret = clReleaseContext(context);
 
         for (int i=0; i<gpu.num_platforms; ++i)
