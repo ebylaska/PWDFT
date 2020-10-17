@@ -346,8 +346,8 @@ static void vpp_write(PGrid *mygrid,
    if (parall->is_master())
    {
       openfile(6,fname,"w");
-      cwrite(6,comment,80);
       comment[79] = '\0';
+      cwrite(6,comment,80);
 
       iwrite(6,&psp_type,1);
       iwrite(6,&version,1);
@@ -384,10 +384,13 @@ static void vpp_write(PGrid *mygrid,
    if (parall->is_master()) dwrite(6,&rcore,1);
 
 
+
    /* readin vl 3d block */
+   tmp2 = new double [mygrid->nfft3d];
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,-1);
+
    
 
    /* reading vnl 3d block */
@@ -568,7 +571,7 @@ static void vpp_generate(PGrid *mygrid,
 
       nfft[0] = mygrid->nx;
       nfft[1] = mygrid->ny;
-      nfft[1] = mygrid->nz;
+      nfft[2] = mygrid->nz;
       for (auto i=0; i<9; ++i)
          unita[i] = mygrid->lattice->unita1d(i);
 
@@ -738,6 +741,13 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
+
+         vpp_write(mypneb,
+                  fname,
+                  comment[ia],psp_type[ia],version,nfft,unita,aname,
+                  amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
+                  rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
+                  ncore_ptr,vl[ia],vnl_ptr);
 
       }
       else
