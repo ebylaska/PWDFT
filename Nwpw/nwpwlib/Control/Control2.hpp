@@ -11,7 +11,7 @@ using namespace std;
 
 class Control2 {
 
-   string myrtdbstring;
+   string myrtdbstring,xcstring;
    double punita[9],ptolerances[3],pscaling[2];
    double ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
    double pbo_time_step;
@@ -20,7 +20,7 @@ class Control2 {
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
    int pnp_dimensions[3],pewald_grid[3];
-   int pcode,pgga,ptask;
+   int pcode,ptask;
    int pispin,pmultiplicity,pne[2],ptotal_ion_charge;
    int pmove,pfrac_coord,pSA,pfei,pfei_quench,pgram_schmidt;
    int protation,ptranslation,pbalance,pspin_orbit;
@@ -73,6 +73,7 @@ public:
    int ispin()                  { return pispin; }
    int ne(const int i)          { return pne[i]; }
    int total_ion_charge()       { return ptotal_ion_charge; }
+   string xc_name()		{ return xcstring; }
 
    int *ne_ptr()                { return pne; }
 
