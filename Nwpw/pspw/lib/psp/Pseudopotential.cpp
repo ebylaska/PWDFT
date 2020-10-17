@@ -742,12 +742,15 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
 
+
+/* *** still a problem with vpp_write in semicore stuff ****
          vpp_write(mypneb,
                   fname,
                   comment[ia],psp_type[ia],version,nfft,unita,aname,
                   amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
                   rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
                   ncore_ptr,vl[ia],vnl_ptr);
+*/
 
       }
       else
