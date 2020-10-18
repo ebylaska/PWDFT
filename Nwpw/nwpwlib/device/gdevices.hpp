@@ -171,6 +171,10 @@ __kernel void NNmatmul(const int M, const int N, const int K, \n\
 
 //#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n    double acc[3] = {0.0, 0.0, 0.0};\n    for (int l=0; l<M; ++l) {\n       acc[0] += A[l + i*M]*A[l + j*M];\n       acc[1] += A[l + i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N]       = acc[0];\n    Caa[i+j*N+NN]    = acc[1];\n    Caa[i+j*N+NN+NN] = acc[2];\n}"
 
+
+#define NTmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void ntmatmul(const int M, const int N, const int K,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *C) {\n    \n    // A(npack,nprj),  B(ne,nprj), C(npack,ne)\n\n    // Get the index of the current element, M=npack, N=ne, K=nprj\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    //int la = 0; int lb = 0;\n    double acc = 0.0;\n    for (int l=0; l<K; ++l) {\n       acc += A[i+l*M]*B[j+l*N];\n    }\n    C[i+j*M] = acc;\n}"
+
+
 #define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n\
 __kernel void TNmatmul(const int M, const int N, const int K,\n\
                      const __global double *A, \n\
@@ -185,6 +189,8 @@ __kernel void TNmatmul(const int M, const int N, const int K,\n\
        acc += A[l + i*M]*B[l + j*K]; \n\
     } \n\
     C[i+j*M] = acc; \n}\n"
+
+
 
 #include        <iostream>
 #include        "blas.h"
@@ -212,8 +218,8 @@ class Gdevices {
    cl_device_id     device_id_selected;
    cl_context       context;
    cl_command_queue command_queue;
-   cl_program       NNmatmul_program,TN3matmul_program;
-   cl_kernel        NNmatmul_kernel, TN3matmul_kernel;
+   cl_program       NNmatmul_program,TN3matmul_program,NTmatmul_program;
+   cl_kernel        NNmatmul_kernel, TN3matmul_kernel, NTmatmul_kernel;
 
    /* device memory */
    int    ndev_mem = 0;
@@ -355,6 +361,27 @@ public:
 
         TN3matmul_kernel = clCreateKernel(TN3matmul_program, "TN3matmul", &ret); //std::cout << " retTN3kernel=" << ret << std::endl;
 
+
+
+        // Build the NTmatmul program
+        strcpy(source_str,NTmatmul_src);
+        source_size = strlen(source_str);
+
+        NTmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
+        ret = clBuildProgram(NTmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
+
+        logSize;     
+        clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        messages = (char*)malloc((1+logSize)*sizeof(char));
+        clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
+        messages[logSize] = '\0';
+        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        free(messages);
+
+        NTmatmul_kernel = clCreateKernel(NTmatmul_program, "NTmatmul", &ret); //std::cout << " retNTkernel=" << ret << std::endl;
+
+
+
         free(source_str);
 
         // Build the program2        
@@ -387,6 +414,9 @@ public:
         cl_int ret;
         for (auto i=0; i<ndev_mem; ++i)
            ret = clReleaseMemObject(dev_mem[i]);
+
+        ret = clReleaseKernel(NTmatmul_kernel);
+        ret = clReleaseProgram(NTmatmul_program);
 
         ret = clReleaseKernel(TN3matmul_kernel);
         ret = clReleaseProgram(TN3matmul_program);
@@ -613,6 +643,67 @@ public:
 
      }
 
+     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+#if 0
+
+        DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
+#else
+        int one = 1;
+        int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj),1);
+        int ib = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) nprj),1);
+        int ic = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne),2);
+        int icc = fetch_tmp_mem_indx( ((size_t) npack)*((size_t) ne) );
+
+        //std::cout << "ndev_mem=" << ndev_mem << " ia=" << ia << " ib=" << ib << " ic=" << ic << " alpha=" << alpha << " beta=" << beta;
+        //std::cout << " npack=" << npack << " ne=" << ne;
+        cl_int ret;
+        cl_uint nevents = 2;
+        cl_event events[5];
+        cl_event wevent;
+        int ifac1=1;
+        int ifac2=1;
+        for (int i=2; i<=16; ++i)
+        {
+           if ((npack%i)==0) ifac1 = i;
+           if ((ne%i)==0)    ifac2 = i;
+        }
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*nprj*sizeof(double),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,ne*nprj   *sizeof(double),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
+        //std::cout << "  ifac1=" << ifac1 << " ifac2=" << ifac2 << " events[0]=" << events[0] << " events[1]=" << events[1] << std::endl;
+
+        const int MNK[3] = {npack,ne,nprj};
+
+        ret = clSetKernelArg(NNmatmul_kernel,0,sizeof(int),(void*)&MNK[0]); //std::cout << " ret4=" << ret;
+        ret = clSetKernelArg(NNmatmul_kernel,1,sizeof(int),(void*)&MNK[1]); //std::cout << " ret5=" << ret;
+        ret = clSetKernelArg(NNmatmul_kernel,2,sizeof(int),(void*)&MNK[2]); //std::cout << " ret6=" << ret;
+        ret = clSetKernelArg(NNmatmul_kernel,3,sizeof(cl_mem),(void *)&(dev_mem[ia])); //std::cout << " ret7=" << ret;
+        ret = clSetKernelArg(NNmatmul_kernel,4,sizeof(cl_mem),(void *)&(dev_mem[ib])); //std::cout << " ret8=" << ret;
+        ret = clSetKernelArg(NNmatmul_kernel,5,sizeof(cl_mem),(void *)&(dev_mem[ic])); //std::cout << " ret9=" << ret << std::endl;;
+
+        // Execute the OpenCL kernel on the list
+        const size_t global_item_size[2] = {(size_t) npack, (size_t) ne};
+        const size_t local_item_size[2]  = {(size_t) ifac1, (size_t) ifac2};
+        ret = clEnqueueNDRangeKernel(command_queue,
+                                     NTmatmul_kernel, 2, NULL,
+                                     global_item_size,
+                                     local_item_size, nevents,events, NULL);
+        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,npack*ne*sizeof(double),tmp_mem[icc],0,NULL,&wevent);
+        ret = clWaitForEvents(1,&wevent);
+
+        int nn = npack*ne;
+        DSCAL_PWDFT(nn,beta,host_c,one);
+        DAXPY_PWDFT(nn,alpha,tmp_mem[icc],one,host_c,one);
+        //std::cout
+
+        inuse[ia] = false;
+        inuse[ib] = false;
+        inuse[ic] = false;
+        tmpinuse[icc] = false;
+#endif
+     }
+
+
+
 };
 
 
@@ -652,6 +743,11 @@ public:
 
      void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_c,ne,beta,host_b,npack);
+     }
+
+     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+
+        DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
 
 };

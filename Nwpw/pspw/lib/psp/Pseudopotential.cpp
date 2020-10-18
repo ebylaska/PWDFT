@@ -19,6 +19,7 @@ using namespace std;
 #include	"Control2.hpp"
 #include	"util.hpp"
 #include        "Psp1d_Hamann.hpp"
+#include        "gdevice.hpp"
 
 //extern "C" {
 //#include	"compressed_io.h"
@@ -896,12 +897,13 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
          DSCAL_PWDFT(ntmp,scal,sw2,one);
 
         ntmp = nprj[ia];
-        DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
-               rmone,
-               prjtmp,nshift,
-               sw2,   nn,
-               rone,
-               Hpsi,nshift);
+        //DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+        //       rmone,
+        //       prjtmp,nshift,
+        //       sw2,   nn,
+        //       rone,
+        //       Hpsi,nshift);
+        gdevice_NT_dgemm(nshift,nn,ntmp,rmone,prjtmp,sw2,rone,Hpsi);
 
       } /*if nprj>0*/
    } /*ii*/

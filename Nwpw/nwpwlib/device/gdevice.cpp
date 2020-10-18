@@ -16,3 +16,8 @@ void gdevice_NN_dgemm(int npack, int ne, double alpha, double *a, double *b, dou
 { 
    mygdevice.NN_dgemm(npack,ne,alpha,a,b,beta,c);
 }
+
+void gdevice_NT_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
+{ 
+   mygdevice.NT_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
+}
