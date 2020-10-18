@@ -633,15 +633,11 @@ public:
         inuse[ib] = false;
         inuse[ic] = false;
         tmpinuse[icc] = false;
-
-
-
 #endif
      }
 
 
      void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
-
 #if 0
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
 
@@ -701,6 +697,7 @@ public:
         inuse[ib] = false;
         inuse[ic] = false;
         tmpinuse[icc] = false;
+
 #endif
 
      }
@@ -803,8 +800,8 @@ public:
         DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
      }
 
-     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_c, double beta, double *host_b) {
-        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_c,ne,beta,host_b,npack);
+     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
 
      void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
