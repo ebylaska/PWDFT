@@ -7,9 +7,9 @@ void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, do
    mygdevice.TN3_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cbb);
 }
 
-void gdevice_TN_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *c)
+void gdevice_TN_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
 { 
-   mygdevice.TN_dgemm(npack,ne,alpha,a,b,beta,c);
+   mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
 }
 
 void gdevice_NN_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *c)
