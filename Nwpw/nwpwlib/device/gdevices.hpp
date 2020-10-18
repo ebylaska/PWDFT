@@ -172,10 +172,10 @@ __kernel void NNmatmul(const int M, const int N, const int K, \n\
 //#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n    double acc[3] = {0.0, 0.0, 0.0};\n    for (int l=0; l<M; ++l) {\n       acc[0] += A[l + i*M]*A[l + j*M];\n       acc[1] += A[l + i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N]       = acc[0];\n    Caa[i+j*N+NN]    = acc[1];\n    Caa[i+j*N+NN+NN] = acc[2];\n}"
 
 
-#define NTmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void ntmatmul(const int M, const int N, const int K,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *C) {\n    \n    // A(npack,nprj),  B(ne,nprj), C(npack,ne)\n\n    // Get the index of the current element, M=npack, N=ne, K=nprj\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    //int la = 0; int lb = 0;\n    double acc = 0.0;\n    for (int l=0; l<K; ++l) {\n       acc += A[i+l*M]*B[j+l*N];\n    }\n    C[i+j*M] = acc;\n}"
+#define NTmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void NTmatmul(const int M, const int N, const int K,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *C) {\n    \n    // A(npack,nprj),  B(ne,nprj), C(npack,ne)\n\n    // Get the index of the current element, M=npack, N=ne, K=nprj\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    //int la = 0; int lb = 0;\n    double acc = 0.0;\n    for (int l=0; l<K; ++l) {\n       acc += A[i+l*M]*B[j+l*N];\n    }\n    C[i+j*M] = acc;\n}"
 
 
-#define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n  \n__kernel void TNmatmul(const int M, const int N, const int K,\n                     const __global double *A,\n                     const __global double *B,\n                     __global double *C) {\n   \n    //A(npack,ne), B(npack,nprj), C(ne,nprj), M=ne, N=nprj, K=npack\n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    double acc = 0.0;\n    for (int l=0; l<K; ++l) \n       acc += A[l + i*K]*B[l + j*K];\n    }\n    C[i+j*M] = acc;\n}"
+#define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n  \n__kernel void TNmatmul(const int M, const int N, const int K,\n                     const __global double *A,\n                     const __global double *B,\n                     __global double *C) {\n\n    //A(npack,ne), B(npack,nprj), C(ne,nprj), M=ne, N=nprj, K=npack\n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    double acc = 0.0;\n    for (int l=0; l<K; ++l)\n       acc += A[l + i*K]*B[l + j*K];\n    C[i+j*M] = acc;\n}"
 
 
 
@@ -326,7 +326,7 @@ public:
         char* messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
         messages[logSize] = '\0';
-        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        if (logSize > 10) { printf(">>> NNmatmul Compiler message: %s\n", messages); }
         free(messages);
 
         NNmatmul_kernel = clCreateKernel(NNmatmul_program, "NNmatmul", &ret); //std::cout << " retkernel=" << ret << std::endl;
@@ -343,7 +343,7 @@ public:
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
         messages[logSize] = '\0';
-        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        if (logSize > 10) { printf(">>> TN3matmul Compiler message: %s\n", messages); }
         free(messages);
 
         TN3matmul_kernel = clCreateKernel(TN3matmul_program, "TN3matmul", &ret); //std::cout << " retTN3kernel=" << ret << std::endl;
@@ -361,7 +361,7 @@ public:
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
         messages[logSize] = '\0';
-        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        if (logSize > 10) { printf(">>> NTmatmul Compiler message: %s\n", messages); }
         free(messages);
 
         NTmatmul_kernel = clCreateKernel(NTmatmul_program, "NTmatmul", &ret); //std::cout << " retNTkernel=" << ret << std::endl;
@@ -379,7 +379,7 @@ public:
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
         messages[logSize] = '\0';
-        if (logSize > 10) { printf(">>> Compiler message: %s\n", messages); }
+        if (logSize > 10) { printf(">>> TNmatmul Compiler message: %s\n", messages); }
         free(messages);
 
         TNmatmul_kernel = clCreateKernel(TNmatmul_program, "TNmatmul", &ret); //std::cout << " retTNkernel=" << ret << std::endl;
