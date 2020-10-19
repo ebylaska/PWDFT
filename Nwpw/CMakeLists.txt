@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 # set the project name
 project(PWDFT VERSION 1.0)
-add_definitions(-DNWPW_SYCL=1)
+
+option( NWPW_SYCL "Enable SYCL Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
@@ -10,39 +11,25 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Enable Fortran
 enable_language(Fortran)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+#set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-#SET(SYCL_CXX_COMPILE_FLAGS "-fsycl")
-
-#if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-#    set(dialect "-ffree-form -std=f2008 -fimplicit-none")
-#    set(bounds "-fbounds-check")
-#endif()
-#if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-#    set(dialect "-stand f08 -free -implicitnone")
-#    set(bounds "-check bounds")
-#endif()
-#if(CMAKE_Fortran_COMPILER_ID MATCHES "PGI")
-#    set(dialect "-Mfreeform -Mdclchk -Mstandard -Mallocatable=03")
-#    set(bounds "-C")
-#endif()
-
-#SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
+if( NWPW_SYCL )
+  add_definitions(-DNWPW_SYCL=1)
+  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-device-code-split=per_kernel")
+  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
+endif()
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
-
-#Configure OpenMP
-find_package(OpenMP)
 
 #Configure MPI
 find_package(MPI REQUIRED)
@@ -69,12 +56,6 @@ target_include_directories(pwdft PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
 
-if(OpenMP_CXX_FOUND)
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} OpenMP::OpenMP_CXX)
-else(NOT OpenMP_CXX_FOUND)
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
-endif()
-
 if(MPI_COMPILE_FLAGS)
   set_target_properties(pwdft PROPERTIES
     COMPILE_FLAGS "${MPI_COMPILE_FLAGS} ${MKL_COMPILE_FLAGS}")
@@ -84,4 +65,3 @@ if(MPI_LINK_FLAGS)
   set_target_properties(pwdft PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS} ${MKL_LINK_FLAGS}")
 endif()
-

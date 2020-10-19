@@ -26,8 +26,7 @@ if(NOT MKL_ROOT)
 endif(NOT MKL_ROOT)
 message("-- Looking for MKL installation, MKL_ROOT = ${MKL_ROOT}")
 
-
-if (MKL_ROOT)
+if(MKL_ROOT)
 
 if(NOT MKL_INTERFACE_LAYER)
     set(MKL_INTERFACE_LAYER "_lp64")
@@ -36,9 +35,9 @@ endif(NOT MKL_INTERFACE_LAYER)
 if(NOT MKL_ARCH)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(MKL_ARCH "intel64")
-  else()
+  else(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(MKL_ARCH "ia32")
-  endif()
+  endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif(NOT MKL_ARCH)
 
 if(MKL_ARCH STREQUAL "ia32")
@@ -62,9 +61,9 @@ set(_MKL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
 
 if(MKL_STATIC)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-else()
+else(MKL_STATIC)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .so)
-endif()
+endif(MKL_STATIC)
 
 
 # MKL is composed by four layers: Interface, Threading, Computational and RTL
@@ -79,9 +78,9 @@ get_filename_component(MKL_LIBRARY_DIR ${MKL_INTERFACE_LIBRARY} PATH)
 ######################## Threading layer ########################
 if(MKL_MULTI_THREADED)
     set(MKL_THREADING_LIBNAME "mkl_intel_thread" "mkl_gnu_thread")
-else()
+else(MKL_MULTI_THREADED)
     set(MKL_THREADING_LIBNAME "mkl_sequential")
-endif()
+endif(MKL_MULTI_THREADED)
 
 find_library(MKL_THREADING_LIBRARY ${MKL_THREADING_LIBNAME}
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
@@ -93,8 +92,10 @@ find_library(MKL_FFT_LIBRARY mkl_cdft_core
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 find_library(MKL_SCALAPACK_LIBRARY mkl_scalapack${MKL_INTERFACE_LAYER}
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
-#find_library(MKL_ONEMKL_LIBRARY mkl_sycl
-#    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+if( NWPW_SYCL )
+  find_library(MKL_ONEMKL_LIBRARY mkl_sycl
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+endif(NWPW_SYCL)
 find_library(MKL_BLACS_LIBRARY mkl_blacs_intelmpi${MKL_INTERFACE_LAYER}
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 
@@ -102,23 +103,55 @@ find_library(MKL_BLACS_LIBRARY mkl_blacs_intelmpi${MKL_INTERFACE_LAYER}
 find_library(MKL_FFT_LIBRARY mkl_rt
     PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
 
-set(MKL_LIBRARY "-Wl,--start-group ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_FFT_LIBRARY} ${MKL_BLACS_LIBRARY} ${MKL_SCALAPACK_LIBRARY} ${MKL_RTL_LIBRARY} ${MKL_ONEMKL_LIBRARY} -Wl,--end-group -ldl -lpthread -lm")
-set(MKL_LINK_FLAGS "-Wl,--start-group ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} -Wl,--end-group -ldl -lpthread -lm" )
-set(MKL_MINIMAL_LIBRARY ${MKL_LINK_FLAGS})
+if( NWPW_SYCL )
 
-# set(MKL_LIBRARY "-Wl,--start-group ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_FFT_LIBRARY} ${MKL_BLACS_LIBRARY} ${MKL_SCALAPACK_LIBRARY} ${MKL_RTL_LIBRARY} ${MKL_ONEMKL_LIBRARY} -Wl,--end-group -ldl -lpthread -lm -fopenmp")
-# set(MKL_LINK_FLAGS "-Wl,--start-group ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} -Wl,--end-group -ldl -lpthread -lm -fopenmp" )
-# set(MKL_MINIMAL_LIBRARY ${MKL_LINK_FLAGS})
+  set(MKL_LIBRARY "-Wl,--start-group\
+      ${MKL_INTERFACE_LIBRARY}\
+      ${MKL_THREADING_LIBRARY}\
+      ${MKL_CORE_LIBRARY}\
+      ${MKL_FFT_LIBRARY}\
+      ${MKL_BLACS_LIBRARY}\
+      ${MKL_SCALAPACK_LIBRARY}\
+      ${MKL_RTL_LIBRARY}\
+      ${MKL_ONEMKL_LIBRARY}\
+      -Wl,--end-group -lsycl -lOpenCL -ldl -lpthread -lm")
+
+  set(MKL_LINK_FLAGS "-Wl,--start-group\
+      ${MKL_INTERFACE_LIBRARY}\
+      ${MKL_THREADING_LIBRARY}\
+      ${MKL_CORE_LIBRARY}\
+      ${MKL_ONEMKL_LIBRARY}\
+      -Wl,--end-group -lsycl -lOpenCL -ldl -lpthread -lm")
+
+else(NWPW_SYCL)
+
+  set(MKL_LIBRARY "-Wl,--start-group\
+      ${MKL_INTERFACE_LIBRARY}\
+      ${MKL_THREADING_LIBRARY}\
+      ${MKL_CORE_LIBRARY}\
+      ${MKL_FFT_LIBRARY}\
+      ${MKL_BLACS_LIBRARY}\
+      ${MKL_SCALAPACK_LIBRARY}\
+      ${MKL_RTL_LIBRARY}\
+      -Wl,--end-group -ldl -lpthread -lm")
+
+  set(MKL_LINK_FLAGS "-Wl,--start-group\
+      ${MKL_INTERFACE_LIBRARY}\
+      ${MKL_THREADING_LIBRARY}\
+      ${MKL_CORE_LIBRARY}\
+      -Wl,--end-group -ldl -lpthread -lm")
+
+endif(NWPW_SYCL)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES ${_MKL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
 
 find_package_handle_standard_args(MKL DEFAULT_MSG
-    MKL_INCLUDE_DIR MKL_LIBRARY MKL_MINIMAL_LIBRARY)
+    MKL_INCLUDE_DIR MKL_LIBRARY )
 
 if(MKL_FOUND)
     set(MKL_INCLUDE_DIRS ${MKL_INCLUDE_DIR})
     set(MKL_LIBRARIES ${MKL_LIBRARY})
-    set(MKL_MINIMAL_LIBRARIES ${MKL_MINIMAL_LIBRARY})
+
     add_definitions(-DNWPW_INTEL_MKL)
     message("***************************************************MKL LIBS:\n\n${MKL_LIBRARIES}")
 
@@ -137,8 +170,12 @@ if(MKL_FOUND)
     message("**** -- MKL_INCLUDE_DIRS      = ${MKL_INCLUDE_DIRS}")
     message("**** -- MKL_FFTLIBRARY        = ${MKL_FFT_LIBRARY}")
     message("**** -- MKL_LINK_FLAGS        = ${MKL_LINK_FLAGS}")
-    message("**** -- MKL_MINIMAL_LIBRARY   = ${MKL_MINIMAL_LIBRARY}")
-    message("**** END MKL CMAKE VARABLES  *****")
-endif()
 
-endif (MKL_ROOT)
+    if(NWPW_SYCL)
+      message("**** -- MKL_ONEMKL_FLAGS        = ${MKL_ONEMKL_LIBRARY}")
+    endif(NWPW_SYCL)
+
+    message("**** END MKL CMAKE VARABLES  *****")
+endif(MKL_FOUND)
+
+endif(MKL_ROOT)
