@@ -1,10 +1,11 @@
-#include	"gdevices.hpp"
+#include "gdevices.hpp"
 
 static Gdevices mygdevice;
 
+#ifdef NWPW_SYCL
 Gdevices::Gdevices() : ndev_mem(0) {
 
-  cl::sycl::async_handler asyncHandler = [&](cl::sycl::exception_list eL) {
+  auto asyncHandler = [&](cl::sycl::exception_list eL) {
     for (auto& e : eL) {
       try {
 	std::rethrow_exception(e);
@@ -20,6 +21,12 @@ Gdevices::Gdevices() : ndev_mem(0) {
 				      asyncHandler,
 				      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
 }
+
+cl::sycl::queue* get_syclQue()
+{
+  return mygdevice.device_queue;
+}
+#endif
 
 void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cbb)
 {

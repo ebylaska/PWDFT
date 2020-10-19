@@ -24,7 +24,8 @@ class Gdevices {
     double *dev_mem[25];
 
 public:
-     cl::sycl::queue* device_queue = nullptr;
+     std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
+     cl::sycl::queue* device_queue = nullptr; // default SYCL queue for now
 
      Gdevices();
 
@@ -63,9 +64,10 @@ public:
            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
            device_queue->memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double));
 
-           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ia],npack,beta,dev_mem[icaa],ne);
-           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[icab],ne);
-           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ib],npack,dev_mem[ib],npack,beta,dev_mem[icbb],ne);
+           oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ia], npack, beta, dev_mem[icaa], ne);
+           oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ib], npack, beta, dev_mem[icab], ne);
+           oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ib], npack, dev_mem[ib], npack, beta, dev_mem[icbb], ne);
+
            device_queue->memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
            device_queue->memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
            device_queue->memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
@@ -123,6 +125,7 @@ public:
         inuse[ib] = false;
         inuse[ic] = false;
      }
+
 };
 
 
