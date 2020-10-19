@@ -15,9 +15,11 @@ using namespace std;
 #include	<cstring>
 #include        <cmath>
 
+#include	"nwpw_timing.hpp"
 #include	"Control2.hpp"
 #include	"util.hpp"
 #include        "Psp1d_Hamann.hpp"
+#include        "gdevice.hpp"
 
 //extern "C" {
 //#include	"compressed_io.h"
@@ -345,8 +347,8 @@ static void vpp_write(PGrid *mygrid,
    if (parall->is_master())
    {
       openfile(6,fname,"w");
-      cwrite(6,comment,80);
       comment[79] = '\0';
+      cwrite(6,comment,80);
 
       iwrite(6,&psp_type,1);
       iwrite(6,&version,1);
@@ -383,10 +385,13 @@ static void vpp_write(PGrid *mygrid,
    if (parall->is_master()) dwrite(6,&rcore,1);
 
 
+
    /* readin vl 3d block */
+   tmp2 = new double [mygrid->nfft3d];
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,-1);
+
    
 
    /* reading vnl 3d block */
@@ -567,7 +572,7 @@ static void vpp_generate(PGrid *mygrid,
 
       nfft[0] = mygrid->nx;
       nfft[1] = mygrid->ny;
-      nfft[1] = mygrid->nz;
+      nfft[2] = mygrid->nz;
       for (auto i=0; i<9; ++i)
          unita[i] = mygrid->lattice->unita1d(i);
 
@@ -738,6 +743,16 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
 
+
+/* *** still a problem with vpp_write in semicore stuff ****
+         vpp_write(mypneb,
+                  fname,
+                  comment[ia],psp_type[ia],version,nfft,unita,aname,
+                  amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
+                  rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
+                  ncore_ptr,vl[ia],vnl_ptr);
+*/
+
       }
       else
       {
@@ -807,6 +822,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       Gijl[ia]        = G_ptr;
       vnl[ia]         = vnl_ptr;
       if (nprj[ia]>nprj_max) nprj_max = nprj[ia];
+
       if (semicore[ia])
       {
          ncore_atom[ia] = ncore_ptr;
@@ -814,6 +830,12 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
          semicore[npsp] = true;
       }
    }
+
+   /* define the maximum number of projectors  */
+   nprj_max *= 10;
+   //nprj_max = 0;
+   //for (auto ii=0; ii<(myion->nion); ++ii)
+   //   nprj_max += nprj[myion->katm[ii]];
 
 }
 /*******************************************
@@ -823,7 +845,11 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
  *******************************************/
 void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 {
+   nwpw_timing_function ftimer(6);
+
+   bool done;
    int ii,ia,l,nshift0,sd_function,i;
+   int jj,ll,jstart,jend,nprjall;
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    Parallel *parall;
@@ -845,18 +871,77 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
    parall = mypneb->d3db::parall;
 
+#if 1
+   ii = 0;
+   while (ii<(myion->nion))
+   {
+      ia      = myion->katm[ii];
+      nprjall = 0;
+      jstart  = ii;
+      done = false;
+      while (!done) 
+      {
+         //generate projectors
+         if (nprj[ia]>0) 
+         {
+            mystrfac->strfac_pack(1,ii,exi);
+            for (l=0; l<nprj[ia]; ++l)
+            {
+               sd_function = !(l_projector[ia][l] & 1);
+               prj = &(prjtmp[(l+nprjall)*nshift]);
+               vnlprj = &(vnl[ia][l*nshift0]);
+               if (sd_function)
+                  mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+               else
+                  mypneb->tcc_iMul(1,vnlprj,exi,prj);
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii<(myion->nion))
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall+nprj[ia]) > nprj_max);
+         } 
+         else
+         {
+            done = true;
+         }
+      }
+      jend = ii;
+      mypneb->cc_pack_inprjdot(1,nn,nprjall,psi,prjtmp,sw1);
+      parall->Vector_SumAll(1,nn*nprjall,sw1);
+
+      /* sw2 = Gijl*sw1 */
+      ll = 0;
+      for (jj=jstart; jj<jend; ++jj)
+      {
+         ia = myion->katm[jj];
+         if (nprj[ia]>0) 
+         {
+            Multiply_Gijl_sw1(nn,nprj[ia],nmax[ia],lmax[ia],
+                              n_projector[ia],l_projector[ia],m_projector[ia],
+                              Gijl[ia],&(sw1[ll*nn]),&(sw2[ll*nn]));
+            ll += nprj[ia];
+         }
+      }
+
+      ntmp = nn*nprjall;
+      DSCAL_PWDFT(ntmp,scal,sw2,one);
+      gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
+   }
+#else
+
    for (ii=0; ii<(myion->nion); ++ii)
    {
       ia = myion->katm[ii];
       if (nprj[ia]>0)
       {
-
          /* structure factor */
          mystrfac->strfac_pack(1,ii,exi);
 
-
          /* generate sw1's and projectors */
-         for (l=0; l<nprj[ia]; ++ l)
+         for (l=0; l<nprj[ia]; ++l)
          {
             sd_function = !(l_projector[ia][l] & 1);
             prj = &(prjtmp[l*nshift]);
@@ -865,8 +950,10 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
                mypneb->tcc_Mul( 1,vnlprj,exi,prj);
             else
                mypneb->tcc_iMul(1,vnlprj,exi,prj);
-            mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
+            //mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
          }
+         ntmp = nprj[ia];
+         mypneb->cc_pack_inprjdot(1,nn,ntmp,psi,prjtmp,sw1);
          parall->Vector_SumAll(1,nn*nprj[ia],sw1);
 
         
@@ -879,16 +966,18 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
          ntmp = nn*nprj[ia];
          DSCAL_PWDFT(ntmp,scal,sw2,one);
 
-        ntmp = nprj[ia];
-        DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
-               rmone,
-               prjtmp,nshift,
-               sw2,   nn,
-               rone,
-               Hpsi,nshift);
+         ntmp = nprj[ia];
+         //DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+         //       rmone,
+         //       prjtmp,nshift,
+         //       sw2,   nn,
+         //       rone,
+         //       Hpsi,nshift);
+         gdevice_NT_dgemm(nshift,nn,ntmp,rmone,prjtmp,sw2,rone,Hpsi);
 
       } /*if nprj>0*/
    } /*ii*/
+#endif
 
    delete [] sw2;
    delete [] sw1;
@@ -905,6 +994,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *******************************************/
 void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
 {
+   nwpw_timing_function ftimer(6);
    int ii,ia,l,nshift0,sd_function,i,n;
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
@@ -1038,6 +1128,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
  *******************************************/
 void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion)
 {
+   nwpw_timing_function ftimer(5);
    int ii,ia,nshift,npack0;
    double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
 

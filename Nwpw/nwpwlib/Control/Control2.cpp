@@ -321,6 +321,9 @@ Control2::Control2(const int np0, const string rtdbstring)
    pispin=1;
    if (rtdbjson["nwpw"]["ispin"].is_number_integer()) pispin = rtdbjson["nwpw"]["ispin"];
 
+   xcstring = "";
+   if (rtdbjson["nwpw"]["xc"].is_string()) xcstring = rtdbjson["nwpw"]["xc"];
+
 
    punita[0] = 20.0; punita[1] =  0.0; punita[2] =  0.0;
    punita[3] =  0.0; punita[4] = 20.0; punita[5] =  0.0;

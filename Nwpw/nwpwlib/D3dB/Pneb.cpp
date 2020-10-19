@@ -18,6 +18,8 @@
 #include	"d1db.hpp"
 #include	"Pneb.hpp"
 #include	"util.hpp"
+#include	"gdevice.hpp"
+#include	"nwpw_timing.hpp"
 
 
 #include "blas.h"
@@ -275,6 +277,7 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 {
+   nwpw_timing_function ftimer(15);
    int ms,j,k,n,shift0,shift1,mshift0,mshift1;
 
    int one = 1;
@@ -332,6 +335,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 
 void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 {
+   nwpw_timing_function ftimer(15);
    int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
 
    int one = 1;
@@ -396,9 +400,96 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
 }
 
 
+void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml11, double *hml12, double *hml22)
+{
+   nwpw_timing_function ftimer(15);
+   int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
+   int one = 1;
+   int ng  = 2*npack(1);
+   int ng0 = 2*nzero(1);
+
+   double rzero = 0.0;
+   double rtwo  = 2.0;
+   double rone =  1.0;
+   double rmone = -1.0;
+
+   if (parallelized)
+   {
+     printf("not finished\n");
+   }
+   else
+   {
+      if (mb==-1)
+      {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
+          nn=ne[0]*ne[0]+ne[1]*ne[1];
+          shift0  = 0;
+          mshift0 = 0;
+      }
+      else
+      {   ms1=mb; ms2=mb+1; ishift2=0;
+          nn = ne[mb]*ne[mb];
+          shift0  = mb*ne[0]*ng;
+          mshift0 = 0;
+      }
+      for (ms=ms1; ms<ms2; ++ms)
+      {
+         n       = ne[ms];
+         
+         gdevice_TN3_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml11[mshift0],&hml12[mshift0],&hml22[mshift0]);
+
+         if (ng0>0)
+         {
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+                    rmone,
+                    &psi1[shift0],ng,
+                    &psi1[shift1],ng,
+                    rone,
+                    &hml11[mshift1],k);
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+                    rmone,
+                    &psi1[shift0],ng,
+                    &psi2[shift1],ng,
+                    rone,
+                    &hml12[mshift1],k);
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+                    rmone,
+                    &psi2[shift0],ng,
+                    &psi2[shift1],ng,
+                    rone,
+                    &hml22[mshift1],k);
+               shift1  += ng;
+               mshift1 += n;
+            }
+         }
+
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml11[mshift0 + j + k*n] = hml11[mshift0 + k + j*n];
+
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml12[mshift0 + j + k*n] = hml12[mshift0 + k + j*n];
+
+         for (k=0; k<n; ++k)
+         for (j=k+1; j<n; ++j)
+            hml22[mshift0 + j + k*n] = hml22[mshift0 + k + j*n];
+   
+         shift0  += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1,nn,hml11);
+      d3db::parall->Vector_SumAll(1,nn,hml12);
+      d3db::parall->Vector_SumAll(1,nn,hml22);
+   }
+}
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
+   nwpw_timing_function ftimer(16);
    int ms,ms1,ms2,n,shift1,mshift1,ishift2;
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
@@ -422,12 +513,13 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
       for (ms=ms1; ms<ms2; ++ms)
       {
          n       = ne[ms];
-         DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
-                alpha,
-                &psi1[shift1],ng,
-                &hml[mshift1],n,
-                beta,
-                &psi2[shift1],ng);
+         //DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
+         //       alpha,
+         //       &psi1[shift1],ng,
+         //       &hml[mshift1],n,
+         //       beta,
+         //       &psi2[shift1],ng);
+         gdevice_NN_dgemm(ng,n,alpha,&psi1[shift1],&hml[mshift1],beta,&psi2[shift1]);
 
          shift1  += ne[0]*ng;
          mshift1 += ishift2;
@@ -476,6 +568,7 @@ double Pneb::m_trace(double *hml)
 
 void Pneb::m_diagonalize(double *hml, double *eig)
 {
+   nwpw_timing_start(17);
    int shift1,shift2;
    int n,ierr;
 
@@ -506,6 +599,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
       delete [] xmp1;
    }
+   nwpw_timing_end(17);
 }
 
 
@@ -569,6 +663,7 @@ void Pneb::m_scale_s21(const int mb, const double dte, double *s21)
 
 void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
 {
+   nwpw_timing_function ftimer(18);
    int ms,n,ms1,ms2,ishift2,shift2;
    if (mb==-1)
    {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
@@ -631,6 +726,7 @@ void Pneb::m_scale_s11(const int mb, const double dte, double *s11)
 
 void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
 {
+   nwpw_timing_function ftimer(3);
    int one=1;
    int ms,nn,ii,done;
    double adiff;
@@ -639,9 +735,11 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
    for (ms=0; ms<ispin; ++ms)
    {
       nn = m_size(ms);
-      ffm_sym_Multiply(ms,psi2,psi2,s22);
-      ffm_sym_Multiply(ms,psi2,psi1,s21);
-      ffm_sym_Multiply(ms,psi1,psi1,s11);
+      //ffm_sym_Multiply(ms,psi2,psi2,s22);
+      //ffm_sym_Multiply(ms,psi2,psi1,s21);
+      //ffm_sym_Multiply(ms,psi1,psi1,s11);
+
+      ffm3_sym_Multiply(ms,psi1,psi2,s11,s21,s22);
 
       m_scale_s22(ms,dte,s22);
       m_scale_s21(ms,dte,s21);

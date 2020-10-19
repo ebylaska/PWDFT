@@ -13,15 +13,16 @@ file(GLOB_RECURSE src_D3dB      D3dB/*.hpp D3dB/*.cpp)
 file(GLOB_RECURSE src_pspgen    pseudopotential/*.h  pseudopotential/*.c)
 file(GLOB_RECURSE src_psplib    psp_library/*.hpp  psp_library/*.cpp)
 file(GLOB_RECURSE src_parse     parse/*.hpp parse/*.cpp)
+file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
 
 # create the nwpwlib library
-# if(MKL_FOUND)
-# add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse})
-# else()
-#    message("-- including interal blas routines contained in project")
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse})
-#endif()
+if(MKL_FOUND)
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+else()
+   message("-- including interal blas routines contained in project")
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_lattice} ${src_Control} ${src_io} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+endif()
 
 # adding target_include_directories to nwpwlib
 add_subdirectory(parse)
@@ -41,4 +42,5 @@ add_subdirectory(io)
 add_subdirectory(lattice)
 add_subdirectory(ion)
 add_subdirectory(D3dB)
+add_subdirectory(device)
 

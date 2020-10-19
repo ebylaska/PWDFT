@@ -97,6 +97,8 @@ public:
         double tt_pack_dot(const int, double *, double *);
         double tt_pack_idot(const int, double *, double *);
 
+        void cc_pack_inprjdot(const int, int, int, double *, double *, double *);
+
 
         void t_unpack(const int, double *);
         void t_pack(const int, double *);

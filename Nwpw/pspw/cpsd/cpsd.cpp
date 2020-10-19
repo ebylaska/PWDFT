@@ -27,6 +27,7 @@ using namespace std;
 #include	"psp_formatter.hpp"
 #include	"psp_library.hpp"
 #include	"psp_file_check.hpp"
+#include	"nwpw_timing.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -411,6 +412,10 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << " epilogue    : " << t3 << "\n";
       cout << " total       : " << t4 << "\n";
       cout << " cputime/step: " << av << "\n";
+      cout << "\n";
+
+      nwpw_timing_print_final(control.loop(0)*icount);
+
       cout << "\n";
       cout << " >>> job completed at     " << util_date() << " <<<\n";
 

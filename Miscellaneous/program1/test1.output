@@ -1,0 +1,35 @@
+Number of gpu platforms = 1
+ - platform 0 id = 2147418112
+ - CL_PLATFORM_PROFILE : FULL_PROFILE
+ - CL_PLATFORM_VERSION : OpenCL 1.2 (Aug 31 2019 04:58:52)
+ - CL_PLATFORM_VENDOR : Apple
+ - CL_PLATFORM_EXTENSIONS : cl_APPLE_SetMemObjectDestructor cl_APPLE_ContextLoggingFunctions cl_APPLE_clut cl_APPLE_query_kernel_names cl_APPLE_gl_sharing cl_khr_gl_event
+
+ - number of devices = 3
+
+   -- device 0 id = -1, number of cores=8 @ 2900 MHz memory=17179869184 bytes wfloat=4 wdouble=2
+   -- device group size 1024
+   -- device available
+   -- device name Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
+   -- device version OpenCL 1.2 
+   -- device vendor Intel
+   -- device profile FULL_PROFILE
+   -- device extensions cl_APPLE_SetMemObjectDestructor cl_APPLE_ContextLoggingFunctions cl_APPLE_clut cl_APPLE_query_kernel_names cl_APPLE_gl_sharing cl_khr_gl_event cl_khr_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_int64_base_atomics cl_khr_int64_extended_atomics cl_khr_3d_image_writes cl_khr_image2d_from_buffer cl_APPLE_fp64_basic_ops cl_APPLE_fixed_alpha_channel_orders cl_APPLE_biased_fixed_point_image_formats cl_APPLE_command_queue_priority
+
+   -- device 1 id = 16925952, number of cores=24 @ 1100 MHz memory=1610612736 bytes wfloat=1 wdouble=0
+   -- device group size 256
+   -- device available
+   -- device name Intel(R) HD Graphics 630
+   -- device version OpenCL 1.2 
+   -- device vendor Intel Inc.
+   -- device profile FULL_PROFILE
+   -- device extensions cl_APPLE_SetMemObjectDestructor cl_APPLE_ContextLoggingFunctions cl_APPLE_clut cl_APPLE_query_kernel_names cl_APPLE_gl_sharing cl_khr_gl_event cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_image2d_from_buffer cl_khr_gl_depth_images cl_khr_depth_images cl_khr_3d_image_writes 
+
+   -- device 2 id = 16915456, number of cores=16 @ 300 MHz memory=4294967296 bytes wfloat=1 wdouble=1
+   -- device group size 256
+   -- device available
+   -- device name AMD Radeon Pro 560 Compute Engine
+   -- device version OpenCL 1.2 
+   -- device vendor AMD
+   -- device profile FULL_PROFILE
+   -- device extensions cl_APPLE_SetMemObjectDestructor cl_APPLE_ContextLoggingFunctions cl_APPLE_clut cl_APPLE_query_kernel_names cl_APPLE_gl_sharing cl_khr_gl_event cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store cl_khr_image2d_from_buffer cl_khr_depth_images cl_APPLE_command_queue_priority cl_APPLE_command_queue_select_compute_units cl_khr_fp64

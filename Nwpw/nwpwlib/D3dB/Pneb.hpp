@@ -87,6 +87,7 @@ public:
         void hr_aSumSqr(const double, double *, double *);
         void ggm_sym_Multiply(double *, double *, double *);
         void ffm_sym_Multiply(const int, double *, double *, double *);
+        void ffm3_sym_Multiply(const int, double *, double *, double *, double *, double *);
         void fmf_Multiply(const int, double *, double *, double, double *, double);
 
         void m_scal(const double, double *);

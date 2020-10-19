@@ -13,6 +13,8 @@
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
+#include	"nwpw_timing.hpp"
+#include	"gdevice.hpp"
 
 #include	"PGrid.hpp"
 
@@ -623,6 +625,40 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
 
    }
 
+}
+
+
+/********************************
+ *                              *
+ *    PGrid:cc_pack_inprjdot    *
+ *                              *
+ ********************************/
+void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *b, double *sum)
+{
+   int one = 1;
+   int ng  = 2*(nida[nb]+nidb[nb]);
+   int ng0 = 2*nida[nb];
+   double rtwo  = 2.0;
+   double rone  = 1.0;
+   double rmone = -1.0;
+   double rzero = 0.0;
+
+   //DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
+   //            rtwo,
+   //            a,ng,
+   //            b,ng,
+   //            rzero,
+   //            sum,nn);
+   gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
+   if (ng0>0)
+   {
+      DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng0,
+                 rmone,
+                 a,ng,
+                 b,ng,
+                 rone,
+                 sum,nn);
+   }
 }
 
 
