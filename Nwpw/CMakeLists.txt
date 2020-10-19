@@ -67,6 +67,8 @@ target_include_directories(pwdft PUBLIC
                            )
 if(OpenCL_FOUND)
    target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} ${OpenCL_LIBRARY})
+else()
+   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
 endif()
 
 if(MPI_COMPILE_FLAGS)
