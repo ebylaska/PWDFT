@@ -649,7 +649,6 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *
    //            b,ng,
    //            rzero,
    //            sum,nn);
-
    gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
    if (ng0>0)
    {
