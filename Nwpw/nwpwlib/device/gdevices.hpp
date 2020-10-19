@@ -2,6 +2,7 @@
 #define _GDEVICES_HPP_
 
 #ifdef NWPW_SYCL
+#pragma once
 
 /* can place sycl mkl code here */
 #include        <cstdio>
@@ -16,39 +17,25 @@ class Gdevices {
    oneapi::mkl::transpose matT = oneapi::mkl::transpose::trans;
    oneapi::mkl::transpose matN = oneapi::mkl::transpose::nontrans;
 
-    auto asyncHandler = [&](cl::sycl::exception_list eL) {
-       for (auto& e : eL) {
-         try {
-           std::rethrow_exception(e);
-         } catch (cl::sycl::exception& e) {
-           std::cout << e.what() << std::endl;
-           std::cout << "fail" << std::endl;
-           std::terminate();
-         }
-       }
-    };
-    cl::sycl::gpu_selector device_selector;
-    cl::sycl::queue device_queue(device_selector,
-                                 asyncHandler,
-                                 cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
     /* device memory */
     int    ndev_mem;
     bool   inuse[25];
-    size_t nsize_mem[25];
+    size_t ndsize_mem[25];
     double *dev_mem[25];
 
 public:
+     cl::sycl::queue* device_queue = nullptr;
 
-    Gdevice() { ndev_mem = 0; }
+     Gdevices();
 
-    ~Gdevice() {
+    ~Gdevices() {
        for (auto i=0; i<ndev_mem; ++i)
-          cl::sycl::free(dev_mem[i], device_queue);
+          cl::sycl::free(dev_mem[i], *device_queue);
      }
 
      int fetch_dev_mem_indx(const size_t ndsize) {
         int ii = 0;
-        while ((((ndsize!=ndsize_mem[ii]) || inuse[ii])) && (ii<ndev_mem)) 
+        while ((((ndsize!=ndsize_mem[ii]) || inuse[ii])) && (ii<ndev_mem))
           ++ii;
 
         if (ii<ndev_mem) {
@@ -57,31 +44,32 @@ public:
            ii            = ndev_mem;
            inuse[ii]     = true;
            ndsize_mem[ii] = ndsize;
-           dev_mem[ii]   = cl::sycl::malloc_device<double>(ndsize,device_queue);
+           dev_mem[ii]   = cl::sycl::malloc_device<double>(ndsize, *device_queue);
            ndev_mem += 1;
         }
 
         return ii;
      }
 
-     void TN3_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta,
-                    double *host_caa, double *host_cab, double *host_bb) {
+     void TN3_dgemm(const int npack, const int ne, double alpha, const
+		    double *host_a, const double *host_b, const double beta,
+                    double *host_caa, double *host_cab, double *host_cbb) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int icaa = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int icab = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int icbb = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         try {
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double)); });
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double)); });
+           device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
+           device_queue->memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double));
 
-           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ia],npack,beta,dev_mem[icaa],ne);
-           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[icab],ne);
-           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ib],npack,dev_mem[ib],npack,beta,dev_mem[icbb],ne);
-           device_queue.memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
-           device_queue.memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
-           device_queue.memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
-           device_queue.wait();
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ia],npack,beta,dev_mem[icaa],ne);
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[icab],ne);
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,ne,npack,alpha,dev_mem[ib],npack,dev_mem[ib],npack,beta,dev_mem[icbb],ne);
+           device_queue->memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
+           device_queue->memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
+           device_queue->memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
+           device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
@@ -99,12 +87,12 @@ public:
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
         int ic = fetch_dev_mem_indx(((size_t) ne) * ((size_t) nprj));
         try {
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double)); });
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ib], host_b, npack*nprj*sizeof(double)); });
+           device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
+           device_queue->memcpy(dev_mem[ib], host_b, npack*nprj*sizeof(double));
 
-           oneapi::mkl::blas::gemm(device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
-           device_queue.memcpy(host_c, dev_mem[ic], ne*nprj*sizeof(double));
-           device_queue.wait();
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
+           device_queue->memcpy(host_c, dev_mem[ic], ne*nprj*sizeof(double));
+           device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
@@ -120,12 +108,12 @@ public:
         int ib = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int ic = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         try {
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double)); });
-           device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_mem[ib], host_b, ne*ne*sizeof(double)); });
+           device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
+           device_queue->memcpy(dev_mem[ib], host_b, ne*ne*sizeof(double));
 
-           oneapi::mkl::blas::gemm(device_queue, matN, matN, npack,ne,ne, alpha, dev_mem[ia], npack, dev_mem[ib], ne, beta, dev_mem[ic], npack);
-           device_queue.memcpy(host_c, dev_mem[ic], npack*ne*sizeof(double));
-           device_queue.wait();
+           oneapi::mkl::blas::gemm(*device_queue, matN, matN, npack,ne,ne, alpha, dev_mem[ia], npack, dev_mem[ib], ne, beta, dev_mem[ic], npack);
+           device_queue->memcpy(host_c, dev_mem[ic], npack*ne*sizeof(double));
+           device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
@@ -226,7 +214,7 @@ public:
         size_t size;
         char str[1000];
 
-        // Get platforms 
+        // Get platforms
         cl_int ret = clGetPlatformIDs(0, NULL, &(gpu.num_platforms));
         gpu.platform_id = (cl_platform_id *) malloc(sizeof(cl_platform_id)*gpu.num_platforms);
         ret = clGetPlatformIDs(gpu.num_platforms,gpu.platform_id,NULL);
@@ -313,7 +301,7 @@ public:
 
         // Create programs from the kernel source
 
-        // Build the NNmatmul program        
+        // Build the NNmatmul program
         char *source_str = (char*)malloc(MAX_SOURCE_SIZE);
         strcpy(source_str,NNmatmul_src);
         size_t source_size = strlen(source_str);
@@ -321,7 +309,7 @@ public:
         NNmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(NNmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        size_t logSize;            
+        size_t logSize;
         clGetProgramBuildInfo(NNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         char* messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -331,14 +319,14 @@ public:
 
         NNmatmul_kernel = clCreateKernel(NNmatmul_program, "NNmatmul", &ret); //std::cout << " retkernel=" << ret << std::endl;
 
-        // Build the TN3matmul program        
+        // Build the TN3matmul program
         strcpy(source_str,TN3matmul_src);
         source_size = strlen(source_str);
 
         TN3matmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(TN3matmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;            
+        logSize;
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -356,7 +344,7 @@ public:
         NTmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(NTmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;     
+        logSize;
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -387,14 +375,14 @@ public:
         free(source_str);
 
 
-        // Build the program2        
+        // Build the program2
 /*
         strcpy(source_str,program2_src);
         source_size = strlen(source_str);
         program1 = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
         ret = clBuildProgram(program2, 1, &device_id_selected, NULL, NULL, NULL);
 
-        logSize;            
+        logSize;
         clGetProgramBuildInfo(program2, device_id_selected, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(program2, device_id_selected, CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -461,7 +449,7 @@ public:
      int fetch_dev_mem_indx(const size_t ndsize, const int rw) {
         cl_int ret;
         int ii = 0;
-        while (((ndsize!=ndsize_mem[ii]) || inuse[ii] || (rw!=rw_mem[ii])) && (ii<ndev_mem)) 
+        while (((ndsize!=ndsize_mem[ii]) || inuse[ii] || (rw!=rw_mem[ii])) && (ii<ndev_mem))
           ++ii;
 
         if (ii<ndev_mem) {
@@ -523,7 +511,7 @@ public:
         //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
         //std::cout << "In the OpenCL branch!!!" << std::endl;
         //std::cout << "program1=" << program1 << std::endl;
-#else 
+#else
         cl_int ret;
         cl_uint nevents = 2;
         cl_event events[5];
