@@ -9,6 +9,16 @@
 #include	"Parallel.hpp"
 #include	"Mapping3.hpp"
 
+#ifdef NWPW_SYCL
+#include "gdevice.hpp"
+#include "oneapi/mkl.hpp"
+
+typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+				     oneapi::mkl::dft::domain::REAL> desc_real_t;
+typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+				     oneapi::mkl::dft::domain::COMPLEX> desc_cmplx_t;
+#endif
+
 class d3db : public Mapping3 {
 
    /* transpose indexings */
@@ -27,6 +37,12 @@ class d3db : public Mapping3 {
    int **p_j1_start[2],**p_j2_start[2];
 
    double *tmpx,*tmpy,*tmpz;
+
+#ifdef NWPW_SYCL
+  double *tmpx_dev, *tmpy_dev, *tmpz_dev;
+  desc_real_t *desc_x;
+  desc_cmplx_t *desc_y, *desc_z;
+#endif
 
 public:
         Parallel  *parall;
