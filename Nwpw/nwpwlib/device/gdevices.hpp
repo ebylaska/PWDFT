@@ -335,7 +335,6 @@ public:
         TN3matmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(TN3matmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -353,7 +352,6 @@ public:
         NTmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(NTmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -371,7 +369,6 @@ public:
         TNmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(TNmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(TNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -389,7 +386,6 @@ public:
         Generate_projectors_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(Generate_projectors_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(Generate_projectors_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(Generate_projectors_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -398,7 +394,6 @@ public:
         free(messages);
 
         Generate_projectors_kernel = clCreateKernel(Generate_projectors_program, "Generate_projectors", &ret); //std::cout << " retGenerate_projectors_kernel=" << ret << std::endl;
-
 
         free(source_str);
 
