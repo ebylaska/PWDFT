@@ -169,6 +169,8 @@ __kernel void NNmatmul(const int M, const int N, const int K, \n\
 #define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n  \n__kernel void TNmatmul(const int M, const int N, const int K,\n                     const __global double *A,\n                     const __global double *B,\n                     __global double *C) {\n\n    //A(npack,ne), B(npack,nprj), C(ne,nprj), M=ne, N=nprj, K=npack\n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    double acc = 0.0;\n    for (int l=0; l<K; ++l)\n       acc += A[l + i*K]*B[l + j*K];\n    C[i+j*M] = acc;\n}"
 
 
+#define Generate_projectors_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void Generate_projectors(const int ii, const int ng0, const int nprj, const int nprjall, \n\t\t\t\t  const int nx, const int ny, const int nz,\n                                  const __global int    *indxi,\n                                  const __global int    *indxj,\n                                  const __global int    *indxk,\n                                  const __global double *phfacx,\n                                  const __global double *phfacy,\n                                  const __global double *phfacz,\n                                  const __global int    *sdfunction, \n                                  const __global double *vnl,\n                                  __global double *prj) {\n   int shftx = 2*ii*nx;\n   int shfty = 2*ii*ny;\n   int shftz = 2*ii*ny;\n   int ng    = 2*ng0;\n\n   int i = get_global_id(0); //ng\n   //int l = get_global_id(1); //nprj\n   \n   double ai = phfacx[shftx+2*indxi[i]]; double bi = phfacx[shftx+2*indxi[i]+1];\n   double aj = phfacy[shfty+2*indxj[i]]; double bj = phfacy[shfty+2*indxj[i]+1];\n   double ak = phfacz[shftz+2*indxk[i]]; double bk = phfacz[shftz+2*indxk[i]+1];\n   double c  = aj*ak - bj*bk;\n   double d  = aj*bk + ak*bj;\n   double rexi = (ai*c - bi*d);\n   double iexi = (ai*d + bi*c);\n\n   for (int l=0; l<nprj; ++l)\n   {\n      if (sdfunction[l])\n      {\n         prj[2*i   + (l+nprjall)*ng] = rexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] = iexi * vnl[i+l*ng0];\n      } else { \n         prj[2*i   + (l+nprjall)*ng] = -iexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] =  rexi * vnl[i+l*ng0];\n      }\n   }\n}"
+
 
 #include        <iostream>
 #include        "blas.h"
@@ -196,8 +198,8 @@ class Gdevices {
    cl_device_id     device_id_selected;
    cl_context       context;
    cl_command_queue command_queue;
-   cl_program       NNmatmul_program,TN3matmul_program,NTmatmul_program,TNmatmul_program;
-   cl_kernel        NNmatmul_kernel, TN3matmul_kernel, NTmatmul_kernel, TNmatmul_kernel;
+   cl_program       NNmatmul_program,TN3matmul_program,NTmatmul_program,TNmatmul_program,Generate_projectors_program;
+   cl_kernel        NNmatmul_kernel, TN3matmul_kernel, NTmatmul_kernel, TNmatmul_kernel, Generate_projectors_kernel;
 
    /* device memory */
    int    ndev_mem = 0;
@@ -211,6 +213,10 @@ class Gdevices {
    bool   tmpinuse[25];
    size_t tmpndsize_mem[25];
    double *tmp_mem[25];
+
+   /* phafac memory */
+   int nx_pf,ny_pf,nz_pf,npack_pf;
+   int indxi_dev,indxj_dev,indxk_dev,exi_dev,exj_dev,exk_dev;
 
 public:
      Gdevices() {
@@ -329,7 +335,6 @@ public:
         TN3matmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(TN3matmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TN3matmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -347,7 +352,6 @@ public:
         NTmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(NTmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(NTmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -365,7 +369,6 @@ public:
         TNmatmul_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
         ret = clBuildProgram(TNmatmul_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
 
-        logSize;
         clGetProgramBuildInfo(TNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
         messages = (char*)malloc((1+logSize)*sizeof(char));
         clGetProgramBuildInfo(TNmatmul_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
@@ -374,6 +377,23 @@ public:
         free(messages);
 
         TNmatmul_kernel = clCreateKernel(TNmatmul_program, "TNmatmul", &ret); //std::cout << " retTNkernel=" << ret << std::endl;
+
+
+        // Build the Generate_projectors program
+        strcpy(source_str,Generate_projectors_src);
+        source_size = strlen(source_str);
+
+        Generate_projectors_program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret); //std::cout << " retcreateprog=" << ret;
+        ret = clBuildProgram(Generate_projectors_program, 1, &(gpu.device_id[plat_indx][device_indx]), NULL, NULL, NULL);                    //std::cout << " retbuild=" << ret;
+
+        clGetProgramBuildInfo(Generate_projectors_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        messages = (char*)malloc((1+logSize)*sizeof(char));
+        clGetProgramBuildInfo(Generate_projectors_program, gpu.device_id[plat_indx][device_indx], CL_PROGRAM_BUILD_LOG, logSize, messages, NULL);
+        messages[logSize] = '\0';
+        if (logSize > 10) { printf(">>> Generate_projectors Compiler message: %s\n", messages); }
+        free(messages);
+
+        Generate_projectors_kernel = clCreateKernel(Generate_projectors_program, "Generate_projectors", &ret); //std::cout << " retGenerate_projectors_kernel=" << ret << std::endl;
 
         free(source_str);
 
@@ -408,6 +428,9 @@ public:
         cl_int ret;
         for (auto i=0; i<ndev_mem; ++i)
            ret = clReleaseMemObject(dev_mem[i]);
+
+        ret = clReleaseKernel(Generate_projectors_kernel);
+        ret = clReleaseProgram(Generate_projectors_program);
 
         ret = clReleaseKernel(TNmatmul_kernel);
         ret = clReleaseProgram(TNmatmul_program);
@@ -468,11 +491,19 @@ public:
               dev_mem[ii]   = clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndsize*sizeof(double), NULL, &ret);
            else if (rw==3)
               dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_WRITE, ndsize*sizeof(double), NULL, &ret);
+           else if (rw==4)
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_ONLY,  ndsize*sizeof(int), NULL, &ret);
+           else if (rw==5)
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndsize*sizeof(int), NULL, &ret);
+           else if (rw==6)
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_WRITE, ndsize*sizeof(int), NULL, &ret);
+
            ndev_mem += 1;
         }
 
         return ii;
      }
+
 
      int fetch_tmp_mem_indx(const size_t tmpndsize) {
         int ii = 0;
@@ -752,6 +783,40 @@ public:
 #endif
      }
 
+
+     void load_index_phafac(const int nion, const int npack, 
+                            const int indxi[], 
+                            const int indxj[], 
+                            const int indxk[],
+                            const int nx, const int ny, const int nz,
+                            const double exi[], const double exj[], const double exk[])
+     {
+        cl_int ret;
+        cl_uint nevents = 6;
+        cl_event events[6];
+
+        npack_pf = npack;
+        nx_pf = nx; ny_pf = ny; nz_pf = nz;
+
+        indxi_dev = fetch_dev_mem_indx(((size_t) npack),4);
+        indxj_dev = fetch_dev_mem_indx(((size_t) npack),4);
+        indxk_dev = fetch_dev_mem_indx(((size_t) npack),4);
+
+        exi_dev = fetch_dev_mem_indx(((size_t) (2*nx*nion)),1);
+        exj_dev = fetch_dev_mem_indx(((size_t) (2*ny*nion)),1);
+        exk_dev = fetch_dev_mem_indx(((size_t) (2*nz*nion)),1);
+
+
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxi_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[0]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxj_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[1]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxk_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[2]); 
+
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exi_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exi,0,NULL,&events[3]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exj_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exj,0,NULL,&events[4]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exk_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exk,0,NULL,&events[5]); 
+
+
+     }
 
 
 };
