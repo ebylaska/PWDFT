@@ -649,7 +649,16 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *
    //            b,ng,
    //            rzero,
    //            sum,nn);
+#ifdef NWPW_SYCL
+   DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
+              rtwo,
+              a,ng,
+              b,ng,
+              rzero,
+              sum,nn);
+#else
    gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
+#endif
    if (ng0>0)
    {
       DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng0,

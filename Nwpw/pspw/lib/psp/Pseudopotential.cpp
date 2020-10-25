@@ -928,7 +928,16 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
       ntmp = nn*nprjall;
       DSCAL_PWDFT(ntmp,scal,sw2,one);
+#ifdef NWPW_SYCL
+         DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
+               rmone,
+               prjtmp,nshift,
+               sw2,   nn,
+               rone,
+               Hpsi,nshift);
+#else
       gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
+#endif
    }
 #else
 
@@ -967,13 +976,16 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
          DSCAL_PWDFT(ntmp,scal,sw2,one);
 
          ntmp = nprj[ia];
-         //DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
-         //       rmone,
-         //       prjtmp,nshift,
-         //       sw2,   nn,
-         //       rone,
-         //       Hpsi,nshift);
+#ifdef NWPW_SYCL
+         DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+               rmone,
+               prjtmp,nshift,
+               sw2,   nn,
+               rone,
+               Hpsi,nshift);
+#else
          gdevice_NT_dgemm(nshift,nn,ntmp,rmone,prjtmp,sw2,rone,Hpsi);
+#endif
 
       } /*if nprj>0*/
    } /*ii*/
