@@ -23,7 +23,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if( NWPW_SYCL )
   add_definitions(-DNWPW_SYCL=1)
-  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-device-code-split=per_kernel")
+  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen-unknown-linux-sycldevice -Xsycl-target-backend \'-device skl\'")
   SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
 endif()
 
