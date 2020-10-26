@@ -22,9 +22,17 @@ Gdevices::Gdevices() : ndev_mem(0) {
 				      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
 }
 
-cl::sycl::queue* get_syclQue()
-{
+cl::sycl::queue* get_syclQue() {
   return mygdevice.device_queue;
+}
+int get_sycl_mem_index(const size_t memSize) {
+  return mygdevice.fetch_dev_mem_indx(memSize);
+}
+double* get_sycl_mem(const int memIndex) {
+  return mygdevice.dev_mem[memIndex];
+}
+void free_sycl_mem(const int memIndex) {
+  mygdevice.inuse[memIndex] = false;
 }
 #endif
 

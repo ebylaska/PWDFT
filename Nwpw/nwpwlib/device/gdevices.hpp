@@ -10,6 +10,7 @@
 #include        <limits>
 #include        <CL/sycl.hpp>
 #include        <oneapi/mkl.hpp>
+#include        <sstream>
 
 
 class Gdevices {
@@ -17,15 +18,17 @@ class Gdevices {
    oneapi::mkl::transpose matT = oneapi::mkl::transpose::trans;
    oneapi::mkl::transpose matN = oneapi::mkl::transpose::nontrans;
 
-    /* device memory */
-    int    ndev_mem;
-    bool   inuse[25];
-    size_t ndsize_mem[25];
-    double *dev_mem[25];
+   /* device memory */
+   int    ndev_mem;
 
 public:
      std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
      cl::sycl::queue* device_queue = nullptr; // default SYCL queue for now
+
+     /* device memory */
+     bool   inuse[25];
+     size_t ndsize_mem[25];
+     double *dev_mem[25];
 
      Gdevices();
 
