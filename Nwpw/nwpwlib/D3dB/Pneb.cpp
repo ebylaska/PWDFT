@@ -848,7 +848,7 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
       ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
 #endif
 
-      m_scale_s22_s21_s11(ms,dte,s22);
+      m_scale_s22_s21_s11(ms,dte,s22,s21,s11);
       DCOPY_PWDFT(nn, s21, one, s12, one);
 
       ii   = 0;
