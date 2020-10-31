@@ -21,9 +21,11 @@
 #include	"gdevice.hpp"
 #include	"nwpw_timing.hpp"
 
-
+#ifdef NWPW_SYCL
+#include "blas.hpp"
+#else
 #include "blas.h"
-
+#endif
 
 
 /********************************
@@ -41,6 +43,21 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     int np_j = d1db::parall->np_j();
     parallelized = (np_j>1);
 
+#ifdef NWPW_SYCL
+    s22_dev = get_sycl_mem(7*ne[0]*ne[0] * sizeof(double));
+    s21_dev = &s22_dev[1*ne[0]*ne[0]];
+    s12_dev = &s22_dev[2*ne[0]*ne[0]];
+    s11_dev = &s22_dev[3*ne[0]*ne[0]];
+    sa1 = &s22_dev[4*ne[0]*ne[0]];
+    sa0 = &s22_dev[5*ne[0]*ne[0]];
+    st1 = &s22_dev[6*ne[0]*ne[0]];
+
+    s22 = new double[4*ne[0]*ne[0]];
+    s21 = &s22[1*ne[0]*ne[0]];
+    s12 = &s22[2*ne[0]*ne[0]];
+    s11 = &s22[3*ne[0]*ne[0]];
+
+#else
     s22 = new double[7*ne[0]*ne[0]];
     s21 = &s22[1*ne[0]*ne[0]];
     s12 = &s22[2*ne[0]*ne[0]];
@@ -48,6 +65,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     sa1 = &s22[4*ne[0]*ne[0]];
     sa0 = &s22[5*ne[0]*ne[0]];
     st1 = &s22[6*ne[0]*ne[0]];
+#endif
 
     if (parallelized)
     {
@@ -403,7 +421,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
 
 #ifdef NWPW_SYCL
 void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1, const double *psi2,
-				  double *hml11, double *hml21, double *hml22)
+				  double *hml11_dev, double *hml21_dev, double *hml22_dev)
 {
   cl::sycl::queue* syclQ = get_syclQue();
 
@@ -441,91 +459,102 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1, const double
 	n = ne[ms];
 	size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
 	size_t hml_size = n*n;
-	int hml11_index = get_sycl_mem_index(hml_size);
-	int hml21_index = get_sycl_mem_index(hml_size);
-	int hml22_index = get_sycl_mem_index(hml_size);
-	int psi1_index = get_sycl_mem_index(psi_size);
-	int psi2_index = get_sycl_mem_index(psi_size);
-	double* hml11_dev = get_sycl_mem( hml11_index );
-	double* hml21_dev = get_sycl_mem( hml21_index );
-	double* hml22_dev = get_sycl_mem( hml22_index );
-	double* psi1_dev = get_sycl_mem( psi1_index );
-	double* psi2_dev = get_sycl_mem( psi2_index );
+
+	double* hml11_dev = get_sycl_mem(hml_size * sizeof(double));
+	double* hml21_dev = get_sycl_mem(hml_size * sizeof(double));
+	double* hml22_dev = get_sycl_mem(hml_size * sizeof(double));
+	double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
+	double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
+	// double* hml11_dev = cl::sycl::malloc_device<double>(hml_size, *syclQ);
+	// double* hml21_dev = cl::sycl::malloc_device<double>(hml_size, *syclQ);
+	// double* hml22_dev = cl::sycl::malloc_device<double>(hml_size, *syclQ);
+	// double* psi1_dev = cl::sycl::malloc_device<double>(psi_size, *syclQ);
+	// double* psi2_dev = cl::sycl::malloc_device<double>(psi_size, *syclQ);
 
 	syclQ->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
 	syclQ->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
 
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng,
-					      rtwo,
-					      psi1_dev, ng,
-					      psi1_dev, ng,
-					      rzero,
-					      hml11_dev, n);
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng,
-					      rtwo,
-					      psi1_dev, ng,
-					      psi2_dev, ng,
-					      rzero,
-					      hml21_dev, n);
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng,
-					      rtwo,
-					      psi2_dev, ng,
-					      psi2_dev, ng,
-					      rzero,
-					      hml22_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng,
+                                rtwo,
+                                psi1_dev, ng,
+                                psi1_dev, ng,
+                                rzero,
+                                hml11_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng,
+                                rtwo,
+                                psi1_dev, ng,
+                                psi2_dev, ng,
+                                rzero,
+                                hml21_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng,
+                                rtwo,
+                                psi2_dev, ng,
+                                psi2_dev, ng,
+                                rzero,
+                                hml22_dev, n);
 
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng0,
-					      rmone,
-					      psi1_dev, ng,
-					      psi1_dev, ng,
-					      rone,
-					      hml11_dev, n);
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng0,
-					      rmone,
-					      psi1_dev, ng,
-					      psi2_dev, ng,
-					      rone,
-					      hml21_dev, n);
-	oneapi::mkl::blas::column_major::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-					      n, n, ng0,
-					      rmone,
-					      psi2_dev, ng,
-					      psi2_dev, ng,
-					      rone,
-					      hml22_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng0,
+                                rmone,
+                                psi1_dev, ng,
+                                psi1_dev, ng,
+                                rone,
+                                hml11_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng0,
+                                rmone,
+                                psi1_dev, ng,
+                                psi2_dev, ng,
+                                rone,
+                                hml21_dev, n);
+        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                n, n, ng0,
+                                rmone,
+                                psi2_dev, ng,
+                                psi2_dev, ng,
+                                rone,
+                                hml22_dev, n);
 
-	syclQ->memcpy(hml11, hml11_dev, hml_size*sizeof(double));
-	syclQ->memcpy(hml21, hml21_dev, hml_size*sizeof(double));
-	syclQ->memcpy(hml22, hml22_dev, hml_size*sizeof(double));
+	syclQ->memcpy(this->s11, hml11_dev, hml_size*sizeof(double));
+	syclQ->memcpy(this->s21, hml21_dev, hml_size*sizeof(double));
+	syclQ->memcpy(this->s22, hml22_dev, hml_size*sizeof(double));
 	syclQ->wait_and_throw();
 
-	for (k=0; k<n; ++k) {
-	  for (j=k+1; j<n; ++j) {
-	    hml11[mshift0 + j + k*n] = hml11[mshift0 + k + j*n];
-	    hml21[mshift0 + j + k*n] = hml21[mshift0 + k + j*n];
-	    hml22[mshift0 + j + k*n] = hml22[mshift0 + k + j*n];
-	  }
-	}
+	// for (k=0; k<n; ++k) {
+	//   for (j=k+1; j<n; ++j) {
+	//     hml11[mshift0 + j + k*n] = hml11[mshift0 + k + j*n];
+	//     hml21[mshift0 + j + k*n] = hml21[mshift0 + k + j*n];
+	//     hml22[mshift0 + j + k*n] = hml22[mshift0 + k + j*n];
+	//   }
+	// }
 
 	shift0  += ng*ne[0];
 	mshift0 += ne[0]*ne[0];
 
-	free_sycl_mem(psi2_index);
-	free_sycl_mem(psi1_index);
-	free_sycl_mem(hml22_index);
-	free_sycl_mem(hml21_index);
-	free_sycl_mem(hml11_index);
+	free_sycl_mem(psi2_dev);
+	free_sycl_mem(psi1_dev);
+	// free_sycl_mem(hml22_dev);
+	// free_sycl_mem(hml21_dev);
+	// free_sycl_mem(hml11_dev);
+	// cl::sycl::free(psi2_dev, *syclQ);
+	// cl::sycl::free(psi1_dev, *syclQ);
+	// cl::sycl::free(hml22_dev, *syclQ);
+	// cl::sycl::free(hml21_dev, *syclQ);
+	// cl::sycl::free(hml11_dev, *syclQ);
+	// free_sycl_mem(psi2_index);
+	// free_sycl_mem(psi1_index);
+	// free_sycl_mem(hml22_index);
+	// free_sycl_mem(hml21_index);
+	// free_sycl_mem(hml11_index);
 
       } // for - ms
 
-      d3db::parall->Vector_SumAll(1,nn,hml11);
-      d3db::parall->Vector_SumAll(1,nn,hml21);
-      d3db::parall->Vector_SumAll(1,nn,hml22);
+      d3db::parall->Vector_SumAll(1, nn, this->s11);
+      d3db::parall->Vector_SumAll(1, nn, this->s21);
+      d3db::parall->Vector_SumAll(1, nn, this->s22);
    }
 }
 #else
@@ -611,7 +640,7 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2, double *h
       d3db::parall->Vector_SumAll(1,nn,hml22);
    }
 }
-#endif
+#endif // NWPW_SYCL
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
@@ -640,16 +669,23 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
       {
          n = ne[ms];
 #ifdef NWPW_SYCL
+	 // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
+	 // 	     alpha,
+	 // 	     &psi1[shift1],ng,
+	 // 	     &hml[mshift1],n,
+	 // 	     beta,
+	 // 	     &psi2[shift1],ng);
+
 	 cl::sycl::queue* syclQ = get_syclQue();
 	 size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1); // mygrid.g_allocate(1)
 	 size_t hml_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
 
-	 int hml_index = get_sycl_mem_index(hml_size);
-	 int psi1_index = get_sycl_mem_index(psi_size);
-	 int psi2_index = get_sycl_mem_index(psi_size);
-	 double* hml_dev = get_sycl_mem( hml_index );
-	 double* psi1_dev = get_sycl_mem( psi1_index );
-	 double* psi2_dev = get_sycl_mem( psi2_index );
+	 double* hml_dev = get_sycl_mem(hml_size * sizeof(double));
+	 double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
+	 double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
+	 // double* hml_dev  = cl::sycl::malloc_device<double>(hml_size, *syclQ);
+	 // double* psi1_dev = cl::sycl::malloc_device<double>(psi_size, *syclQ);
+	 // double* psi2_dev = cl::sycl::malloc_device<double>(psi_size, *syclQ);
 
 	 syclQ->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
 	 syclQ->memcpy(hml_dev, hml, hml_size*sizeof(double));
@@ -664,9 +700,19 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
 					       beta,
 					       psi2_dev, ng);
 
-	 free_sycl_mem(psi2_index);
-	 free_sycl_mem(psi1_index);
-	 free_sycl_mem(hml_index);
+	 syclQ->memcpy(psi2, psi2_dev,  psi_size*sizeof(double));
+	 syclQ->wait_and_throw();
+
+	 // cl::sycl::free(psi2_dev, *syclQ);
+	 // cl::sycl::free(psi1_dev, *syclQ);
+	 // cl::sycl::free(hml_dev, *syclQ);
+	 free_sycl_mem(psi2_dev);
+	 free_sycl_mem(psi1_dev);
+	 free_sycl_mem(hml_dev);
+
+         shift1  += ne[0]*ng;
+         mshift1 += ishift2;
+
 #else
 	 // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
 	 // 	     alpha,
@@ -682,21 +728,6 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
          mshift1 += ishift2;
       }
    }
-}
-
-
-
-double Pneb::m_dmax(const int mb, double *hml)
-{
-  int one = 1;
-  int nn;
-  if (mb==-1)
-     nn = ne[0]*ne[0] + ne[1]*ne[1];
-  else
-     nn = ne[mb]*ne[mb];
-
-  return( fabs(hml[IDAMAX_PWDFT(nn,hml,one)-1]) );
-
 }
 
 
@@ -746,10 +777,11 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
          //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
 
-         EIGEN_PWDFT(n,&hml[shift2],&eig[shift1],xmp1,nn,ierr);
+	 ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
+	   //EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
          if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
 
-         eigsrt(&eig[shift1],&hml[shift2],n);
+         eigsrt(&eig[shift1], &hml[shift2], n);
          shift1 += ne[0];
          shift2 += ne[0]*ne[0];
       }
@@ -813,11 +845,11 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
          shift2 = ms*ishift2;
 
          DGEMM_PWDFT((char *) "N",(char *) "N",n,n,n,
-                alpha,
-                &a[shift2], n,
-                &b[shift2], n,
-                beta,
-                &c[shift2], n);
+		     alpha,
+		     &a[shift2], n,
+		     &b[shift2], n,
+		     beta,
+		     &c[shift2], n);
 
       }
    }
@@ -827,12 +859,17 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 #define CONVGLMD        1e-15
 #define CONVGLMD2       1e-12
 
-void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
+void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 {
    nwpw_timing_function ftimer(3);
    int one=1;
    int ms,nn,ii,done;
+#ifdef NWPW_SYCL
+   std::int64_t* index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
+   double* adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
+#else
    double adiff;
+#endif
    double rmone = -1.0;
 
    for (ms=0; ms<ispin; ++ms)
@@ -844,11 +881,39 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
 
 #ifdef NWPW_SYCL
       ffm3_sym_Multiply_sycl(ms, psi1, psi2, s11, s21, s22);
+
+      get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+	  cgh.single_task([=] () {
+
+	      int indx0 = 0;
+	      for (int k=0; k<this->ne[0]; ++k) {
+		s22[indx0] = (1.0-s22[indx0])*(0.5/dte);
+		s21[indx0] = (1.0-s21[indx0])*(0.5);
+		s11[indx0] *= -0.5*dte;
+
+		int indx  = indx0 + 1;
+		int indxt = indx0 + ne[0];
+		for (int j=(k+1); j<ne[0]; ++j) {
+		  s22[indx]  *= (-0.5/dte);
+		  s22[indxt] *= (-0.5/dte);
+		  s21[indx]  *= -0.5;
+		  s21[indxt] *= -0.5;
+		  s11[indx]  *= -0.5*dte;
+		  s11[indxt] *= -0.5*dte;
+
+		  indx  += 1;
+		  indxt += ne[0];
+		}
+		indx0 += (ne[0]+1);
+	      }
+
+	    });
+	});
 #else
       ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
+      m_scale_s22_s21_s11(ms,dte,s22,s21,s11);
 #endif
 
-      m_scale_s22_s21_s11(ms,dte,s22,s21,s11);
       DCOPY_PWDFT(nn, s21, one, s12, one);
 
       ii   = 0;
@@ -859,26 +924,41 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
       {
          DCOPY_PWDFT(nn, s22, one, sa1, one);
 
-         mmm_Multiply(ms,s21,sa0,1.0,sa1,1.0);
-         mmm_Multiply(ms,sa0,s12,1.0,sa1,1.0);
-         mmm_Multiply(ms,s11,sa0,1.0,st1,0.0);
-         mmm_Multiply(ms,sa0,st1,1.0,sa1,1.0);
+         mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+         mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+         mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+         mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
 
          DCOPY_PWDFT(nn, sa1, one, st1, one);
          DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+#ifdef NWPW_SYCL	 
+         oneapi::mkl::blas::iamax(*get_syclQue(), nn, st1, one, index);
+	 get_syclQue()->wait_and_throw();
+	 *adiff = cl::sycl::fabs(st1[*index - 1]);
+#else
+         adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
+#endif
 
-         adiff = m_dmax(ms,st1);
-         if (adiff<CONVGLMD)
+#ifdef NWPW_SYCL
+         if (*adiff < CONVGLMD)
             done = 1;
+#else
+         if (adiff < CONVGLMD)
+            done = 1;
+#endif
          else
-         {
-             DCOPY_PWDFT(nn, sa1, one, sa0, one);
-         }
+	   DCOPY_PWDFT(nn, sa1, one, sa0, one);
       }
-      if (adiff<CONVGLMD2)
-      {
+
+#ifdef NWPW_SYCL
+      if (*adiff<CONVGLMD2) {
+         if (!done) printf("ierr=10 adiff=%lf\n",*adiff);
+      }
+#else
+      if (adiff<CONVGLMD2) {
          if (!done) printf("ierr=10 adiff=%lf\n",adiff);
       }
+#endif
 
       DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
    }

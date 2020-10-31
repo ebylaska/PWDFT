@@ -100,7 +100,6 @@ public:
         double m_trace(double *);
         void m_diagonalize(double *, double *);
         void mmm_Multiply(const int, double *, double *, double, double*, double);
-        double m_dmax(const int, double *);
         void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
 
 

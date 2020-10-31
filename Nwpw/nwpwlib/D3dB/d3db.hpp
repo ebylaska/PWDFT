@@ -39,7 +39,7 @@ class d3db : public Mapping3 {
    double *tmpx,*tmpy,*tmpz;
 
 #ifdef NWPW_SYCL
-  double *tmpx_dev, *tmpy_dev, *tmpz_dev;
+  double *a_dev;
   desc_real_t *desc_x;
   desc_cmplx_t *desc_y, *desc_z;
 #endif

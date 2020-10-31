@@ -11,7 +11,8 @@
 #include        <CL/sycl.hpp>
 #include        <oneapi/mkl.hpp>
 #include        <sstream>
-
+#include        <map>
+#include        <set>
 
 class Gdevices {
 
@@ -20,6 +21,8 @@ class Gdevices {
 
    /* device memory */
    int    ndev_mem;
+   std::map<size_t, std::set<double*> > free_list_gpu;
+   std::map<double *,size_t> live_ptrs_gpu;
 
 public:
      std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
@@ -33,9 +36,65 @@ public:
      Gdevices();
 
     ~Gdevices() {
-       for (auto i=0; i<ndev_mem; ++i)
-          cl::sycl::free(dev_mem[i], *device_queue);
+      for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
+	for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+	  cl::sycl::free(*it2, *device_queue);
+	}
+      }
+      free_list_gpu.clear();
      }
+
+  static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
+						 size_t bytes,
+						 std::map<double*, size_t>& liveset)
+  {
+    double* ptr=nullptr;
+    assert(free_map.find(bytes) != free_map.end());
+    /* assert(free_map.find(bytes)->second.size() > 0); */
+    std::set<double*> &st = free_map.find(bytes)->second;
+    ptr = *st.begin();
+    st.erase(ptr);
+    if(st.size()==0)
+      free_map.erase(bytes);
+    liveset[ptr] = bytes;
+    return ptr;
+  }
+
+  double* getGpuMem(size_t bytes) {
+    double *ptr=nullptr;
+    if(free_list_gpu.find(bytes)!=free_list_gpu.end()) {
+      std::set<double*> &lst = free_list_gpu.find(bytes)->second;
+      if(lst.size()!=0) {
+	ptr = resurrect_from_free_list(free_list_gpu, bytes, live_ptrs_gpu);
+	return ptr;
+      }
+    }
+    else {
+      for(std::map<size_t, std::set<double *> >::iterator it=free_list_gpu.begin();
+	  it != free_list_gpu.end();
+	  ++it) {
+	if(it->first >= bytes && it->second.size()>0) {
+	  ptr = resurrect_from_free_list(free_list_gpu, it->first, live_ptrs_gpu);
+	  return ptr;
+	}
+      }
+    }
+
+    ptr = (double *)cl::sycl::malloc_device(bytes, *device_queue);
+    assert(ptr!=nullptr); /*We hopefully have a pointer*/
+    live_ptrs_gpu[ptr] = bytes;
+    return ptr;
+  }
+
+  void freeGpuMem(double *p)
+  {
+    size_t bytes;
+    assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
+    bytes = live_ptrs_gpu[p];
+    live_ptrs_gpu.erase(p);
+    free_list_gpu[bytes].insert(p);
+  }
+
 
      int fetch_dev_mem_indx(const size_t ndsize) {
         int ii = 0;
@@ -56,7 +115,7 @@ public:
      }
 
      void TN3_dgemm(const int npack, const int ne, double alpha, const
-		    double *host_a, const double *host_b, const double beta,
+     		    double *host_a, const double *host_b, const double beta,
                     double *host_caa, double *host_cab, double *host_cbb) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
@@ -787,9 +846,9 @@ public:
      }
 
 
-     void load_index_phafac(const int nion, const int npack, 
-                            const int indxi[], 
-                            const int indxj[], 
+     void load_index_phafac(const int nion, const int npack,
+                            const int indxi[],
+                            const int indxj[],
                             const int indxk[],
                             const int nx, const int ny, const int nz,
                             const double exi[], const double exj[], const double exk[])
@@ -810,13 +869,13 @@ public:
         exk_dev = fetch_dev_mem_indx(((size_t) (2*nz*nion)),1);
 
 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxi_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[0]); 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxj_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[1]); 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxk_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[2]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxi_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[0]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxj_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[1]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxk_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[2]);
 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exi_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exi,0,NULL,&events[3]); 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exj_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exj,0,NULL,&events[4]); 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exk_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exk,0,NULL,&events[5]); 
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exi_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exi,0,NULL,&events[3]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exj_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exj,0,NULL,&events[4]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exk_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exk,0,NULL,&events[5]);
 
 
      }

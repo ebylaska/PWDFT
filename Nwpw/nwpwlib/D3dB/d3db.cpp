@@ -452,36 +452,34 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
    t_i2_start[np] = index2;
 
 #if defined(NWPW_SYCL)
+   // // // variable passed for rc_fft3d() and cr_fft3d()
+   // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
 
-   desc_x = new desc_real_t(nx);
-   desc_y = new desc_cmplx_t(ny);
-   desc_z = new desc_cmplx_t(nz);
+   // desc_x = new desc_real_t(nx);
+   // desc_y = new desc_cmplx_t(ny);
+   // desc_z = new desc_cmplx_t(nz);
 
-   desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx+2);
-   desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny*2);
-   desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz*2);
+   // desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx+2);
+   // desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny*2);
+   // desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz*2);
 
-   desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx+2);
-   desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny*2);
-   desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz*2);
+   // desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx+2);
+   // desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny*2);
+   // desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz*2);
 
-   desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
-   desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
-   desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq3);
+   // desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
+   // desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
+   // desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq3);
 
-   desc_x->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_NOT_INPLACE);
-   desc_y->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_NOT_INPLACE);
-   desc_z->set_value(oneapi::mkl::dft::config_param::PLACEMENT, DFTI_NOT_INPLACE);
+   // // desc_x->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
+   // // desc_y->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
+   // // desc_z->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
 
-   desc_x->commit(*get_syclQue());
-   desc_y->commit(*get_syclQue());
-   desc_z->commit(*get_syclQue());
+   // desc_x->commit(*get_syclQue());
+   // desc_y->commit(*get_syclQue());
+   // desc_z->commit(*get_syclQue());
 
-   tmpx_dev = cl::sycl::malloc_device<double>( 2*(2*nx+15), *get_syclQue() );
-   tmpy_dev = cl::sycl::malloc_device<double>( 2*(2*ny+15), *get_syclQue() );
-   tmpz_dev = cl::sycl::malloc_device<double>( 2*(2*nz+15), *get_syclQue() );
-
-#else
+   //#else
 
    /* setup ffts */
    tmpx = new double[2*(2*nx+15)];
@@ -580,6 +578,10 @@ d3db::~d3db()
    delete [] tmpx;
    delete [] tmpy;
    delete [] tmpz;
+
+#ifdef NWPW_SYCL
+   //cl::sycl::free(a_dev, *get_syclQue());
+#endif
 }
 
 
@@ -1882,7 +1884,23 @@ void d3db::cr_fft3d(double *a)
     *************************/
    else
    {
+#if defined(NWPW_SYCL)
+     // int adev_index = get_sycl_mem_index(n2ft3d);
+     // double* a_dev = get_sycl_mem( adev_index );
+     // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+     // compute_backward(*desc_z, a_dev);
+     // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+     // get_syclQue()->wait_and_throw();
+     // c_transpose_ijk(2, a, tmp2, tmp3);
 
+     // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
+     // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+     // compute_backward(*desc_y, a_dev);
+     // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+     // get_syclQue()->wait_and_throw();
+     // c_transpose_ijk(3, a, tmp2, tmp3);
+
+     //#else
       /************************************************
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
@@ -1919,7 +1937,8 @@ void d3db::cr_fft3d(double *a)
           indx += nxh2;
        }
        zeroend_fftb(nx,nq1,1,1,a);
-
+       //free_sycl_mem(adev_index);
+#endif
    }
 
    delete [] tmp3;
@@ -2055,45 +2074,42 @@ void d3db::rc_fft3d(double *a)
    {
 #if defined(NWPW_SYCL)
 
-       double* a_dev;
-
       /********************************************
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-       a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
-       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       compute_forward(*desc_x, a_dev, tmpx_dev);
-       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       get_syclQue()->memcpy(tmpx, tmpx_dev, nx*sizeof(double));
-       get_syclQue()->wait_and_throw();
-       cshift_fftf(nx,nq1,1,1,a);
-       c_transpose_ijk(0, a, tmp2, tmp3);
+       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
+       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       // compute_forward(*desc_x, a_dev);
+       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       // get_syclQue()->wait_and_throw();
+       // cshift_fftf(nx,nq1,1,1,a);
+       // c_transpose_ijk(0, a, tmp2, tmp3);
 
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-       a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
-       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       compute_forward(*desc_y, a_dev, tmpy_dev);
-       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       get_syclQue()->memcpy(tmpy, tmpy_dev, ny*sizeof(double));
-       get_syclQue()->wait_and_throw();
-       c_transpose_ijk(1, a, tmp2, tmp3);
+       // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
+       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       // compute_forward(*desc_y, a_dev);
+       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       // cl::sycl::free(a_dev, *get_syclQue());
+       // get_syclQue()->wait_and_throw();
+       // c_transpose_ijk(1, a, tmp2, tmp3);
 
        /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
-       a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
-       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       compute_forward(*desc_z, a_dev, tmpz_dev);
-       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       get_syclQue()->memcpy(tmpz, tmpz_dev, nz*sizeof(double));
-       get_syclQue()->wait_and_throw();
+       // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
+       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       // compute_forward(*desc_z, a_dev);
+       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       // get_syclQue()->wait_and_throw();
+       // cl::sycl::free(a_dev, *get_syclQue());
 
-#else
+// #else
 
       /********************************************
        ***     do fft along nx dimension        ***
@@ -2130,6 +2146,20 @@ void d3db::rc_fft3d(double *a)
           dcfftf_(&nz,&a[indx],tmpz);
           indx += 2*nz;
        }
+
+       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
+       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       // compute_forward(*desc_y, a_dev);
+       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       // get_syclQue()->wait_and_throw();
+       // c_transpose_ijk(1, a, tmp2, tmp3);
+
+       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
+       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       // compute_forward(*desc_z, a_dev);
+       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       // get_syclQue()->wait_and_throw();
+
 #endif
    }
 
