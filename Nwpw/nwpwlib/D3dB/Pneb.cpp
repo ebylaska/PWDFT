@@ -760,7 +760,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 }
 
 
-void Pneb::m_scale_s22(const int mb, const double dte, double *s22)
+void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, double *s21, double *s11)
 {
    int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
 
@@ -775,41 +775,20 @@ void Pneb::m_scale_s22(const int mb, const double dte, double *s22)
       for (k=0; k<ne[ms]; ++k)
       {
           s22[indx0] = (1.0-s22[indx0])*(0.5/dte);
+          s21[indx0] = (1.0-s21[indx0])*(0.5);
+          s11[indx0] *= -0.5*dte;
+
           indx  = indx0 + 1;
           indxt = indx0 + ne[ms];
           for (j=(k+1); j<ne[ms]; ++j)
           {
              s22[indx]  *= (-0.5/dte);
              s22[indxt] *= (-0.5/dte);
-             indx  += 1;
-             indxt += ne[ms];
-          }
-          indx0 += (ne[ms]+1);
-      }
-   }
-}
-
-void Pneb::m_scale_s21(const int mb, const double dte, double *s21)
-{
-   int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
-   if (mb==-1)
-   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
-   else
-   {   ms1=mb; ms2=mb+1; ishift2=0;}
-
-   for (ms=ms1; ms<ms2; ++ms)
-   {
-      indx0 = ms*ishift2;
-      for (k=0; k<ne[ms]; ++k)
-      {
-          //indx0  = k+k*ne[ms] + shift2;
-          s21[indx0] = (1.0-s21[indx0])*(0.5);
-          indx  = indx0 + 1;
-          indxt = indx0 + ne[ms];
-          for (j=k+1; j<ne[ms]; ++j)
-          {
              s21[indx]  *= -0.5;
              s21[indxt] *= -0.5;
+             s11[indx]  *= -0.5*dte;
+             s11[indxt] *= -0.5*dte;
+
              indx  += 1;
              indxt += ne[ms];
           }
@@ -844,39 +823,6 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
    }
 }
 
-
-void Pneb::m_scale_s11(const int mb, const double dte, double *s11)
-{
-   int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
-   if (mb==-1)
-   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
-   else
-   {   ms1=mb; ms2=mb+1; ishift2=0;}
-
-   for (ms=ms1; ms<ms2; ++ms)
-   {
-      indx0 = ms*ishift2;
-      for (k=0; k<ne[ms]; ++k)
-      {
-          //indx0  = k+k*ne[ms] + shift2;
-          s11[indx0] *= -0.5*dte;
-          indx  = indx0 + 1;
-          indxt = indx0 + ne[ms];
-          for (j=k+1; j<ne[ms]; ++j)
-          {
-             //indx  = j+k*ne[ms] + shift2;
-             //indxt = k+j*ne[ms] + shift2;
-             s11[indx]  *= -0.5*dte;
-             s11[indxt] *= -0.5*dte;
-             indx  += 1;
-             indxt += ne[ms];
-          }
-          indx0 += (ne[ms]+1);
-      }
-   }
-}
-
-
 #define ITERLMD         120
 #define CONVGLMD        1e-15
 #define CONVGLMD2       1e-12
@@ -902,11 +848,8 @@ void Pneb::ggm_lambda(double dte,double *psi1, double *psi2, double *lmbda)
       ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
 #endif
 
-      m_scale_s22(ms,dte,s22);
-      m_scale_s21(ms,dte,s21);
+      m_scale_s22_s21_s11(ms,dte,s22,s21,s11);
       DCOPY_PWDFT(nn, s21, one, s12, one);
-
-      m_scale_s11(ms,dte,s11);
 
       ii   = 0;
       done = 0;

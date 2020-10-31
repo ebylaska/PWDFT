@@ -101,9 +101,7 @@ public:
         void m_diagonalize(double *, double *);
         void mmm_Multiply(const int, double *, double *, double, double*, double);
         double m_dmax(const int, double *);
-        void m_scale_s22(const int, const double, double *);
-        void m_scale_s21(const int, const double, double *);
-        void m_scale_s11(const int, const double, double *);
+        void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
 
 
         void gh_fftb(double *, double *);
