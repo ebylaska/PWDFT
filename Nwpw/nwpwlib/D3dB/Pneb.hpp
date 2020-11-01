@@ -4,17 +4,29 @@
    Author - Eric Bylaska
 */
 
-#include	"Parallel.hpp"
-#include	"Lattice.hpp"
+#pragma once
+
+#include	"gdevice.hpp"
 #include	"Control2.hpp"
+#include	"Lattice.hpp"
+#include	"Parallel.hpp"
 #include	"PGrid.hpp"
 #include	"d1db.hpp"
+#include	"util.hpp"
+#include	"nwpw_timing.hpp"
 
 class Pneb : public PGrid, public d1db  {
 
    //int ispin,ne[2],neq[2];
    int parallelized;
-   double *s22,*s21,*s12,*s11,*sa1,*sa0,*st1;
+
+#ifdef NWPW_SYCL
+   double *s22_dev, *s21_dev, *s12_dev, *s11_dev, *sa1_dev, *sa0_dev, *st1_dev; // device-side
+   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1; // host_side
+#else
+   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1;
+#endif
+
    int *ma[2],*ma1[2],*ma2[2],*mc[2],*na[2],*nc[2];
    int mcq[2],ncq[2];
    int  ncqmax;
@@ -27,8 +39,12 @@ public:
         /* destructor */
         ~Pneb() 
         { 
+#ifdef NWPW_SYCL
+            cl::sycl::free(s22_dev, *get_syclQue());
             delete [] s22;
-
+#else
+            delete [] s22;
+#endif
             if (parallelized)
                for (int ms=0; ms<ispin; ++ms)
                {
@@ -89,9 +105,11 @@ public:
         void ffm_sym_Multiply(const int, double *, double *, double *);
 
 #ifdef NWPW_SYCL
-        void ffm3_sym_Multiply_sycl(const int, const double *, const double *, double *, double *, double *);
+  void ffm3_sym_Multiply_sycl(const int, const double *, const double *, double*, double*, double* );
+  void m_scale_s22_s21_s11_sycl(const int, const double, double *s22, double *s21, double *s11);
 #else
-        void ffm3_sym_Multiply(const int, double *, double *, double *, double *, double *);
+  void ffm3_sym_Multiply(const int, const double *, const double *, double*, double*, double*);
+  void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
 #endif
 
         void fmf_Multiply(const int, double *, double *, double, double *, double);
@@ -100,7 +118,6 @@ public:
         double m_trace(double *);
         void m_diagonalize(double *, double *);
         void mmm_Multiply(const int, double *, double *, double, double*, double);
-        void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
 
 
         void gh_fftb(double *, double *);
