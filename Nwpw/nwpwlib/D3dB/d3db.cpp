@@ -11,16 +11,10 @@
 using namespace std;
 */
 
-//extern "C" {
-//#include        "compressed_io.h"
-//}
 #include        "compressed_io.hpp"
-
-#include	"Parallel.hpp"
 #include	"util.hpp"
 #include	"fft.h"
 #include        <cmath>
-
 
 #include "blas.h"
 
@@ -453,33 +447,33 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
 #if defined(NWPW_SYCL)
    // // // variable passed for rc_fft3d() and cr_fft3d()
-   // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
+   a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
 
-   // desc_x = new desc_real_t(nx);
-   // desc_y = new desc_cmplx_t(ny);
-   // desc_z = new desc_cmplx_t(nz);
+   desc_x = new desc_real_t(nx);
+   desc_y = new desc_cmplx_t(ny);
+   desc_z = new desc_cmplx_t(nz);
 
-   // desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx+2);
-   // desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny*2);
-   // desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz*2);
+   desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx+2);
+   desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny*2);
+   desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz*2);
 
-   // desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx+2);
-   // desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny*2);
-   // desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz*2);
+   desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx+2);
+   desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny*2);
+   desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz*2);
 
-   // desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
-   // desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
-   // desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq3);
+   desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
+   desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
+   desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq3);
 
-   // // desc_x->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
-   // // desc_y->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
-   // // desc_z->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
+   // desc_x->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
+   // desc_y->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
+   // desc_z->set_value(oneapi::mkl::dft::config_param::WORKSPACE, DFTI_ALLOW);
 
-   // desc_x->commit(*get_syclQue());
-   // desc_y->commit(*get_syclQue());
-   // desc_z->commit(*get_syclQue());
+   desc_x->commit(*get_syclQue());
+   desc_y->commit(*get_syclQue());
+   desc_z->commit(*get_syclQue());
 
-   //#else
+#else
 
    /* setup ffts */
    tmpx = new double[2*(2*nx+15)];
@@ -580,7 +574,7 @@ d3db::~d3db()
    delete [] tmpz;
 
 #ifdef NWPW_SYCL
-   //cl::sycl::free(a_dev, *get_syclQue());
+   cl::sycl::free(a_dev, *get_syclQue());
 #endif
 }
 
@@ -1769,7 +1763,25 @@ static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, 
  ********************************/
 void d3db::cr_fft3d(double *a)
 {
+#ifdef NWPW_SYCL
+   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+
+   int* iq_to_i1_2_dev = cl::sycl::malloc_device<int>(nz*nq3, *get_syclQue());
+   int* iq_to_i1_3_dev = cl::sycl::malloc_device<int>(ny*nq2, *get_syclQue());
+   // int* iq_to_i1_2_dev = get_sycl_mem(nz*nq3 * sizeof(int));
+   // int* iq_to_i1_3_dev = get_sycl_mem(ny*nq2 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i1_2_dev, iq_to_i1[2], nz*nq3 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i1_3_dev, iq_to_i1[3], ny*nq2 * sizeof(int));
+   int* iq_to_i2_2_dev = cl::sycl::malloc_device<int>(ny*nq2, *get_syclQue());
+   int* iq_to_i2_3_dev = cl::sycl::malloc_device<int>((nx/2+1)*nq1, *get_syclQue());
+   // int* iq_to_i2_2_dev = get_sycl_mem(ny*nq2 * sizeof(int));
+   // int* iq_to_i2_3_dev = get_sycl_mem((nx/2+1)*nq1 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i2_2_dev, iq_to_i2[2], ny*nq2 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i2_3_dev, iq_to_i2[3], (nx/2+1)*nq1 * sizeof(int));
+#endif
+
    nwpw_timing_function ftime(1);
+
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
    double *tmp2,*tmp3;
 
@@ -1877,7 +1889,6 @@ void d3db::cr_fft3d(double *a)
        }
        zeroend_fftb(nx,ny,nq,1,a);
 
-
    }
    /*************************
     **** hilbert mapping ****
@@ -1885,22 +1896,44 @@ void d3db::cr_fft3d(double *a)
    else
    {
 #if defined(NWPW_SYCL)
-     // int adev_index = get_sycl_mem_index(n2ft3d);
-     // double* a_dev = get_sycl_mem( adev_index );
-     // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-     // compute_backward(*desc_z, a_dev);
-     // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-     // get_syclQue()->wait_and_throw();
-     // c_transpose_ijk(2, a, tmp2, tmp3);
+      double* tmp2_dev = get_sycl_mem(2*nfft3d * sizeof(double));
+      double* tmp3_dev = get_sycl_mem(2*nfft3d * sizeof(double));
 
-     // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
-     // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-     // compute_backward(*desc_y, a_dev);
-     // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-     // get_syclQue()->wait_and_throw();
-     // c_transpose_ijk(3, a, tmp2, tmp3);
+      compute_backward(*desc_z, a_dev);
+      c_transpose_ijk_sycl(2, iq_to_i1_2_dev, iq_to_i2_2_dev, a_dev, tmp2_dev, tmp3_dev);
 
-     //#else
+      compute_backward(*desc_y, a_dev);
+      c_transpose_ijk_sycl(3, iq_to_i1_2_dev, iq_to_i2_2_dev, a_dev, tmp2_dev, tmp3_dev);
+
+      get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+      	  cgh.parallel_for<class cshift1_fftb_sycl>(cl::sycl::range<1>(nq1), [=](cl::sycl::id<1> ii) {
+
+      	    });
+      	});
+      compute_backward(*desc_x, a_dev);
+      double* a_zero = a_dev;
+      int offset = nx;
+      get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+	  cgh.parallel_for<class zeroend_fftb_sycl>(cl::sycl::range<1>(nq1), [=](cl::sycl::id<1> ii) {
+	      a_zero[offset + ii * (offset+2) -1] = 0.0;
+	      a_zero[offset + ii * (offset+2)]    = 0.0;
+	    });
+	});
+
+      get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+      free_sycl_mem(tmp2_dev);
+      free_sycl_mem(tmp3_dev);
+      // free_sycl_mem(iq_to_i1_2_dev);
+      // free_sycl_mem(iq_to_i1_3_dev);
+      // free_sycl_mem(iq_to_i2_2_dev);
+      // free_sycl_mem(iq_to_i2_3_dev);
+      get_syclQue()->wait();
+      cl::sycl::free(iq_to_i1_2_dev, *get_syclQue());
+      cl::sycl::free(iq_to_i1_3_dev, *get_syclQue());
+      cl::sycl::free(iq_to_i2_2_dev, *get_syclQue());
+      cl::sycl::free(iq_to_i2_3_dev, *get_syclQue());
+
+#else
       /************************************************
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
@@ -1937,7 +1970,7 @@ void d3db::cr_fft3d(double *a)
           indx += nxh2;
        }
        zeroend_fftb(nx,nq1,1,1,a);
-       //free_sycl_mem(adev_index);
+
 #endif
    }
 
@@ -1952,7 +1985,25 @@ void d3db::cr_fft3d(double *a)
  ********************************/
 void d3db::rc_fft3d(double *a)
 {
+#ifdef NWPW_SYCL
+   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+
+   int* iq_to_i1_0_dev = cl::sycl::malloc_device<int>((nx/2+1)*nq1, *get_syclQue());
+   int* iq_to_i1_1_dev = cl::sycl::malloc_device<int>(ny*nq2,       *get_syclQue());
+   // int* iq_to_i1_0_dev = get_sycl_mem((nx/2+1)*nq1 * sizeof(int));
+   // int* iq_to_i1_1_dev = get_sycl_mem(ny*nq2 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i1_0_dev, iq_to_i1[0], (nx/2+1)*nq1 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i1_1_dev, iq_to_i1[1], ny*nq2 * sizeof(int));
+   int* iq_to_i2_0_dev = cl::sycl::malloc_device<int>(ny*nq2, *get_syclQue());
+   int* iq_to_i2_1_dev = cl::sycl::malloc_device<int>(nz*nq3, *get_syclQue());
+   // int* iq_to_i2_0_dev = get_sycl_mem(ny*nq2 * sizeof(int));
+   // int* iq_to_i2_1_dev = get_sycl_mem(nz*nq3 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i2_0_dev, iq_to_i2[0], ny*nq2 * sizeof(int));
+   get_syclQue()->memcpy(iq_to_i2_1_dev, iq_to_i2[1], nz*nq3 * sizeof(int));
+#endif
+
    nwpw_timing_function ftime(1);
+
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
    double *tmp2,*tmp3;
 
@@ -2073,43 +2124,52 @@ void d3db::rc_fft3d(double *a)
    else
    {
 #if defined(NWPW_SYCL)
+       double* tmp2_dev = get_sycl_mem(2*nfft3d*sizeof(double));
+       double* tmp3_dev = get_sycl_mem(2*nfft3d*sizeof(double));
 
       /********************************************
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
-       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       // compute_forward(*desc_x, a_dev);
-       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       // get_syclQue()->wait_and_throw();
-       // cshift_fftf(nx,nq1,1,1,a);
-       // c_transpose_ijk(0, a, tmp2, tmp3);
+       compute_forward(*desc_x, a_dev);
+       // get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+       // 	   cgh.parallel_for<class cshift_fftf_sycl>(cl::sycl::range<1>(nq1), [=](cl::sycl::id<1> ii) {
+
+       // 	     });
+       // 	 });
+       c_transpose_ijk_sycl(0, iq_to_i1_0_dev, iq_to_i2_0_dev, a_dev, tmp2_dev, tmp3_dev);
+
+       cshift_fftf(nx,nq1,1,1,a);
 
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-       // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
-       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       // compute_forward(*desc_y, a_dev);
-       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       // cl::sycl::free(a_dev, *get_syclQue());
-       // get_syclQue()->wait_and_throw();
-       // c_transpose_ijk(1, a, tmp2, tmp3);
+       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       compute_forward(*desc_y, a_dev);
+       c_transpose_ijk_sycl(1, iq_to_i1_1_dev, iq_to_i2_1_dev, a_dev, tmp2_dev, tmp3_dev);
 
        /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
-       // a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
-       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       // compute_forward(*desc_z, a_dev);
-       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       // get_syclQue()->wait_and_throw();
-       // cl::sycl::free(a_dev, *get_syclQue());
+       compute_forward(*desc_z, a_dev);
 
-// #else
+       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       free_sycl_mem(tmp3_dev);
+       free_sycl_mem(tmp2_dev);
+
+       get_syclQue()->wait();
+       // free_sycl_mem(iq_to_i1_0_dev);
+       // free_sycl_mem(iq_to_i1_1_dev);
+       // free_sycl_mem(iq_to_i2_0_dev);
+       // free_sycl_mem(iq_to_i2_1_dev);
+       cl::sycl::free(iq_to_i1_0_dev, *get_syclQue());
+       cl::sycl::free(iq_to_i1_1_dev, *get_syclQue());
+       cl::sycl::free(iq_to_i2_0_dev, *get_syclQue());
+       cl::sycl::free(iq_to_i2_1_dev, *get_syclQue());
+
+#else
 
       /********************************************
        ***     do fft along nx dimension        ***
@@ -2146,19 +2206,6 @@ void d3db::rc_fft3d(double *a)
           dcfftf_(&nz,&a[indx],tmpz);
           indx += 2*nz;
        }
-
-       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
-       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       // compute_forward(*desc_y, a_dev);
-       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       // get_syclQue()->wait_and_throw();
-       // c_transpose_ijk(1, a, tmp2, tmp3);
-
-       // get_syclQue()->memset(a_dev, 0, n2ft3d*sizeof(double));
-       // get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
-       // compute_forward(*desc_z, a_dev);
-       // get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
-       // get_syclQue()->wait_and_throw();
 
 #endif
    }
@@ -2492,6 +2539,50 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
  *    d3db::c_transpose_ijk     *
  *                              *
  ********************************/
+#ifdef NWPW_SYCL
+void d3db::c_transpose_ijk_sycl(const int op, const int* b_indx_dev, const int* a_indx_dev,
+				double *a_dev, double *tmp1_dev, double *tmp2_dev)
+{
+   int nnfft3d;
+
+   /* pack a array */
+   if ((op==0)||(op==4)) nnfft3d = (nx/2+1)*nq1;
+   if ((op==1)||(op==3)) nnfft3d = (ny)    *nq2;
+   if ((op==2)||(op==5)) nnfft3d = (nz)    *nq3;
+
+   get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+       cgh.parallel_for(cl::sycl::range<1>(nnfft3d), [=](cl::sycl::id<1> ii) {
+
+	       int jj = 2*b_indx_dev[ii];
+	       tmp1_dev[jj]   = a_dev[ii*2];
+	       tmp1_dev[jj+1] = a_dev[ii*2 + 1];
+
+	 });
+     });
+
+   /* it = 0, transpose data on same thread */
+   int msglen = 2*(i2_start[op][1] - i2_start[op][0]);
+   oneapi::mkl::blas::copy(*get_syclQue(), msglen,
+			   &(tmp1_dev[2*i1_start[op][0]]), 1,
+			   &(tmp2_dev[2*i2_start[op][0]]), 1);
+
+   /* unpack a array */
+   if ((op==3)||(op==5)) nnfft3d = (nx/2+1)*nq1;
+   if ((op==0)||(op==2)) nnfft3d = (ny)    *nq2;
+   if ((op==1)||(op==4)) nnfft3d = (nz)    *nq3;
+
+   get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+       cgh.parallel_for(cl::sycl::range<1>(nnfft3d), [=](cl::sycl::id<1> ii) {
+
+	       int jj = 2*a_indx_dev[ii];
+	       a_dev[ii]      = tmp2_dev[jj];
+	       a_dev[ii*2 +1] = tmp2_dev[jj+1];
+
+	 });
+     });
+
+}
+#endif // NWPW_SYCL
 void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
@@ -2537,7 +2628,6 @@ void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
    c_aindexcopy(nnfft3d,iq_to_i2[op],tmp2,a);
 
 }
-
 
 /********************************
  *                              *

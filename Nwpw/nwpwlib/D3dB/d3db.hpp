@@ -6,6 +6,8 @@
   this class is container of operations for distributed 3d blocks
 */
 
+#pragma once
+
 #include	"Parallel.hpp"
 #include	"Mapping3.hpp"
 
@@ -86,7 +88,11 @@ public:
 	void     c_transpose_jk(double *, double *, double *);
 	void     t_transpose_jk(double *, double *, double *);
 
+#ifdef NWPW_SYCL
+  void     c_transpose_ijk_sycl(const int, const int*, const int*, double *, double *, double *);
+#endif
 	void     c_transpose_ijk(const int, double *, double *, double *);
+
 	void     t_transpose_ijk(const int, double *, double *, double *);
 
 	void     t_timereverse(double *, double *, double *);

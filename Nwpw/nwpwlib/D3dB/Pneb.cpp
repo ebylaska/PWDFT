@@ -862,7 +862,7 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 // abb: Lagrange multiplier (expensive method)
 void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 {
-
+   nwpw_timing_function ftimer(3);
 #ifdef NWPW_SYCL
    std::int64_t* index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
    double* adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
@@ -884,7 +884,6 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
    double adiff;
 #endif
 
-   nwpw_timing_function ftimer(3);
    int one=1;
    double rmone = -1.0;
 
@@ -968,7 +967,8 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 #ifdef NWPW_SYCL
    fmf_Multiply(-1, psi1_dev, lmbda_dev, dte, psi2_dev, 1.0);
 
-   //get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
+   get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
+   get_syclQue()->wait();
    free_sycl_mem(lmbda_dev);
    free_sycl_mem(psi2_dev);
    free_sycl_mem(psi1_dev);
