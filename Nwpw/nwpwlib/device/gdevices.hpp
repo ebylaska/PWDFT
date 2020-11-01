@@ -91,6 +91,7 @@ public:
     size_t bytes;
     assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
     bytes = live_ptrs_gpu[p];
+    device_queue->memset(p, 0, bytes);
     live_ptrs_gpu.erase(p);
     free_list_gpu[bytes].insert(p);
   }
