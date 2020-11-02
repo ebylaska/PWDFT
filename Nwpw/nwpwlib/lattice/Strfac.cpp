@@ -14,6 +14,7 @@ using namespace std;
 
 #include	"Strfac.hpp"
 
+
 /* Constructors */
 
 
@@ -47,11 +48,24 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
       unitg[i+j*3] = lattice->unitg(i,j);
       unita[i+j*3] = lattice->unita(i,j);
    }
-      
+
    /* allocate memory */
    wx1 = new double [2*(myion->nion)*(mygrid->nx)];
    wy1 = new double [2*(myion->nion)*(mygrid->ny)];
    wz1 = new double [2*(myion->nion)*(mygrid->nz)];
+
+
+   std::cout << "INfo on npack from strfac:" << myion->nion << ", " << mygrid->npack(nb) << std::endl;
+
+// #ifdef NWPW_SYCL
+//    wx1 = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->nx), *get_syclQue());
+//    wy1 = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->ny), *get_syclQue());
+//    wz1 = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->nz), *get_syclQue());
+
+//    i1_indx_sycl = cl::sycl::malloc_device<int>(mygrid->npack(1), *get_syclQue());
+//    j1_indx_sycl = cl::sycl::malloc_device<int>(mygrid->npack(1), *get_syclQue());
+//    k1_indx_sycl = cl::sycl::malloc_device<int>(mygrid->npack(1), *get_syclQue());
+// #endif
    i_indx[0] = new int[mygrid->npack(0)];
    j_indx[0] = new int[mygrid->npack(0)];
    k_indx[0] = new int[mygrid->npack(0)];
@@ -89,6 +103,12 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    delete [] jj_indx;
    delete [] ii_indx;
 
+// #ifdef NWPW_SYCL
+//    get_syclQue()->memcpy(i1_indx_sycl, i_indx[1], mygrid->npack(1)*sizeof(int));
+//    get_syclQue()->memcpy(j1_indx_sycl, j_indx[1], mygrid->npack(1)*sizeof(int));
+//    get_syclQue()->memcpy(k1_indx_sycl, k_indx[1], mygrid->npack(1)*sizeof(int));
+//    get_syclQue()->wait();
+// #endif
 
 }
 
@@ -106,7 +126,7 @@ void Strfac::phafac()
    double cw1y,cw2y,cw3y;
 
    pi  = 4.00*atan(1.0);
-   
+
    nx = (mygrid->nx);
    ny = (mygrid->ny);
    nz = (mygrid->nz);
@@ -129,7 +149,7 @@ void Strfac::phafac()
       cw1x=cos(sw1); cw1y=-sin(sw1);
       cw2x=cos(sw2); cw2y=-sin(sw2);
       cw3x=cos(sw3); cw3y=-sin(sw3);
-      
+
       wx1[2*i*nx] = 1.0; wx1[2*i*nx+1] = 0.0;
       wy1[2*i*ny] = 1.0; wy1[2*i*ny+1] = 0.0;
       wz1[2*i*nz] = 1.0; wz1[2*i*nz+1] = 0.0;
@@ -166,21 +186,37 @@ void Strfac::phafac()
       wz1[2*(nzh+i*nz)] = 0.0; wz1[2*(nzh+i*nz)+1] = 0.0;
 
    }
+// #ifdef NWPW_SYCL
+//    get_syclQue()->memcpy(wx1_sycl, wx1,  2*(myion->nion)*(mygrid->nx)*sizeof(double));
+//    get_syclQue()->memcpy(wy1_sycl, wy1,  2*(myion->nion)*(mygrid->ny)*sizeof(double));
+//    get_syclQue()->memcpy(wz1_sycl, wz1,  2*(myion->nion)*(mygrid->nz)*sizeof(double));
+// #endif
 }
 
-void strfac_sub(const int npack,
-                const int indxi[],
-                const int indxj[],
-                const int indxk[],
-                const double exi[],
-                const double exj[],
-                const double exk[],
-                double strx[])
+/*********************************
+ *                               *
+ *       Strfac::strfac_pack     *
+ *                               *
+ *********************************/
+void Strfac::strfac_pack(const int nb, const int ii, double *strx)
 {
-   int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
-   for (i=0; i<npack; ++i)
+   int npack,nx,ny,nz;
+   npack = mygrid->npack(nb);
+   nx = mygrid->nx;
+   ny = mygrid->ny;
+   nz = mygrid->nz;
+
+   const int *indxi = i_indx[nb];
+   const int *indxj = j_indx[nb];
+   const int *indxk = k_indx[nb];
+
+   const double *exi = &wx1[2*ii * nx];
+   const double *exj = &wy1[2*ii * ny];
+   const double *exk = &wz1[2*ii * nz];
+
+   double ai, aj, ak, bi, bj, bk;
+   double c, d;
+   for (int i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
       aj = exj[2*indxj[i]]; bj = exj[2*indxj[i]+1];
@@ -190,28 +226,48 @@ void strfac_sub(const int npack,
       strx[2*i]   = (ai*c - bi*d);
       strx[2*i+1] = (ai*d + bi*c);
    }
+
 }
+// #ifdef NWPW_SYCL
+// void Strfac::strfac_pack_sycl(const int nb, const int ii, double *strx)
+// {
+//    assert(nb==1);    // following only works with nb=1
 
-/*********************************
- *                               *
- *       Strfac::strfac_pack     *
- *                               *
- *********************************/
-void Strfac::strfac_pack(const int nb, const int ii, double *ss)
-{
-   int npack,nx,ny,nz;
+//    int npack,nx,ny,nz;
+//    npack = mygrid->npack(nb);
+//    nx = mygrid->nx;
+//    ny = mygrid->ny;
+//    nz = mygrid->nz;
 
-   npack = mygrid->npack(nb);
-   nx = mygrid->nx; 
-   ny = mygrid->ny; 
-   nz = mygrid->nz;
-   strfac_sub(npack,
-              i_indx[nb],
-              j_indx[nb],
-              k_indx[nb],
-              &wx1[2*ii*nx],
-              &wy1[2*ii*ny],
-              &wz1[2*ii*nz],
-              ss);
-}
+//    const double *exi = &wx1_sycl[2*ii * nx];
+//    const double *exj = &wy1_sycl[2*ii * ny];
+//    const double *exk = &wz1_sycl[2*ii * nz];
 
+//    const int *i_idx_sycl = i1_indx_sycl;
+//    const int *j_idx_sycl = j1_indx_sycl;
+//    const int *k_idx_sycl = k1_indx_sycl;
+
+//    get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+//        cgh.parallel_for(cl::sycl::range<1>(npack), [=](cl::sycl::id<1> i) {
+
+// 	   int i_id = i_idx_sycl[i];
+// 	   int j_id = j_idx_sycl[i];
+// 	   int k_id = k_idx_sycl[i];
+
+// 	   double ai = exi[2*i_id];
+// 	   double bi = exi[2*i_id+1];
+// 	   double aj = exj[2*j_id];
+// 	   double bj = exj[2*j_id+1];
+// 	   double ak = exk[2*k_id];
+// 	   double bk = exk[2*k_id+1];
+
+// 	   double c  = aj*ak - bj*bk;
+// 	   double d  = aj*bk + ak*bj;
+
+// 	   strx[2*i]   = (ai*c - bi*d);
+// 	   strx[2*i+1] = (ai*d + bi*c);
+
+// 	 });
+//      });
+// }
+// #endif
