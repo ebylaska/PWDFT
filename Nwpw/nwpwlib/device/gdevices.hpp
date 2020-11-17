@@ -36,65 +36,64 @@ public:
      Gdevices();
 
     ~Gdevices() {
-      for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
-	for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
-	  cl::sycl::free(*it2, *device_queue);
+	for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
+	    for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+		cl::sycl::free(*it2, *device_queue);
+	    }
 	}
-      }
-      free_list_gpu.clear();
-     }
+	free_list_gpu.clear();
+	live_ptrs_gpu.clear();
+    }
 
-  static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
-						 size_t bytes,
-						 std::map<double*, size_t>& liveset)
-  {
-    double* ptr=nullptr;
-    assert(free_map.find(bytes) != free_map.end());
-    /* assert(free_map.find(bytes)->second.size() > 0); */
-    std::set<double*> &st = free_map.find(bytes)->second;
-    ptr = *st.begin();
-    st.erase(ptr);
-    if(st.size()==0)
-      free_map.erase(bytes);
-    liveset[ptr] = bytes;
-    return ptr;
-  }
-
-  double* getGpuMem(size_t bytes) {
-    double *ptr=nullptr;
-    if(free_list_gpu.find(bytes)!=free_list_gpu.end()) {
-      std::set<double*> &lst = free_list_gpu.find(bytes)->second;
-      if(lst.size()!=0) {
-	ptr = resurrect_from_free_list(free_list_gpu, bytes, live_ptrs_gpu);
+    static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
+						   size_t bytes,
+						   std::map<double*, size_t>& liveset) {
+	double* ptr=nullptr;
+	assert(free_map.find(bytes) != free_map.end());
+	/* assert(free_map.find(bytes)->second.size() > 0); */
+	std::set<double*> &st = free_map.find(bytes)->second;
+	ptr = *st.begin();
+	st.erase(ptr);
+	if(st.size()==0)
+	    free_map.erase(bytes);
+	liveset[ptr] = bytes;
 	return ptr;
-      }
     }
-    else {
-      for(std::map<size_t, std::set<double *> >::iterator it=free_list_gpu.begin();
-	  it != free_list_gpu.end();
-	  ++it) {
-	if(it->first >= bytes && it->second.size()>0) {
-	  ptr = resurrect_from_free_list(free_list_gpu, it->first, live_ptrs_gpu);
-	  return ptr;
+
+    double* getGpuMem(size_t bytes) {
+	double *ptr=nullptr;
+	if(free_list_gpu.find(bytes) != free_list_gpu.end()) {
+	    std::set<double*> &lst = free_list_gpu.find(bytes)->second;
+	    if(lst.size()!=0) {
+		ptr = resurrect_from_free_list(free_list_gpu, bytes, live_ptrs_gpu);
+		return ptr;
+	    }
 	}
-      }
+	else {
+	    for(std::map<size_t, std::set<double *> >::iterator it=free_list_gpu.begin();
+		it != free_list_gpu.end();
+		++it)
+	    {
+		if(it->first >= bytes && it->second.size()>0) {
+		    ptr = resurrect_from_free_list(free_list_gpu, it->first, live_ptrs_gpu);
+		    return ptr;
+		}
+	    }
+	}
+
+	ptr = (double *)cl::sycl::malloc_device(bytes, *device_queue);
+	assert(ptr!=nullptr); /*We hopefully have a pointer*/
+	live_ptrs_gpu[ptr] = bytes;
+	return ptr;
     }
 
-    ptr = (double *)cl::sycl::malloc_device(bytes, *device_queue);
-    assert(ptr!=nullptr); /*We hopefully have a pointer*/
-    live_ptrs_gpu[ptr] = bytes;
-    return ptr;
-  }
-
-  void freeGpuMem(double *p)
-  {
-    size_t bytes;
-    assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
-    bytes = live_ptrs_gpu[p];
-    device_queue->memset(p, 0, bytes);
-    live_ptrs_gpu.erase(p);
-    free_list_gpu[bytes].insert(p);
-  }
+    void freeGpuMem(double *p) {
+	assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
+	size_t bytes = live_ptrs_gpu[p];
+	device_queue->memset(p, 0, bytes);
+	live_ptrs_gpu.erase(p);
+	free_list_gpu[bytes].insert(p);
+    }
 
 
      int fetch_dev_mem_indx(const size_t ndsize) {
