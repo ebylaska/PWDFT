@@ -29,6 +29,9 @@ extern void gdevice_NT_dgemm(int, int, int, double, double *, double *, double, 
 extern cl::sycl::queue* get_syclQue();
 extern double* get_sycl_mem(const size_t memInBytes);
 extern void free_sycl_mem(double* ptr);
+extern double* get_host_mem(const size_t memInBytes);
+extern void free_host_mem(double* ptr);
+
 #endif // NWPW_SYCL
 
 #endif

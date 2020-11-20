@@ -33,6 +33,13 @@ void free_sycl_mem(double* ptr) {
 }
 #endif
 
+double* get_host_mem(const size_t mem_in_bytes) {
+  return mygdevice.getHostMem(mem_in_bytes);
+}
+void free_host_mem(double* ptr) {
+  mygdevice.freeHostMem(ptr);
+}
+
 void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cbb)
 {
   mygdevice.TN3_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cbb);
