@@ -11,7 +11,7 @@ __kernel void matmul(const int M, const int N, const int K,
 
     // Do the operation
     double acc = 0.0;
-    for (int l=0; l<K; l++) {
+    for (int l=0; l<K; ++l) {
        acc += A[i + l*M]*B[l + j*K];
     }
     C[i+j*M] = acc;
