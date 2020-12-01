@@ -1,0 +1,40 @@
+title "Cu2 dimer to test semicore corrections"
+
+memory heap 1900 mb stack 1900 mb global 10 mb
+start cu2dimer
+echo
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+
+
+geometry noautoz nocenter noautosym
+Cu   0.0 0.0  1.5
+Cu   0.0 0.0 -1.5
+end
+
+
+nwpw
+   pseudopotentials
+   Cu library pspw_default
+   end
+   simulation_cell
+     FCC 38.0
+     #ngrid 80 80 80
+   end
+   mapping 2
+   cutoff 20.0
+   loop 10 10
+   steepest_descent
+     #input_wavefunction_filename  eric.movecs
+     #output_wavefunction_filename test2b.movecs
+     loop 10 10
+     #geometry_optimize
+   end
+end
+
+task pspw steepest_descent
+
