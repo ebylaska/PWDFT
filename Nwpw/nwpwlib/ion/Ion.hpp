@@ -14,12 +14,13 @@ class	Ion {
 
 public:
    int ion_total_charge;
-   int nion,nkatm;
-   int *katm,*natm;
+   int nion,nkatm; // number of ions
+   int *katm; // element ID number
+   int *natm;
    double *charge,*zv_psp;
    double *mass;
    double *dti;
-   double *rion0,*rion1,*rion2;
+   double *rion0,*rion1,*rion2; // coordinates of ions
 
    /* Constructors */
    Ion(RTDB&, Control2&);
