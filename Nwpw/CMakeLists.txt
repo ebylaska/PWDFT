@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(PWDFT VERSION 1.0)
 option( NWPW_SYCL "Enable SYCL Bindings" OFF )
+option( NWPW_OPENCL "Enable OpenCL Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
@@ -10,7 +11,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 
 # specify the C++ standard
-set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -20,12 +20,11 @@ enable_language(Fortran)
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if( NWPW_SYCL )
   add_definitions(-DNWPW_SYCL=1)
-  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen-unknown-linux-sycldevice -Xsycl-target-backend \'-device skl\'")
-  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
+  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs \'-device skl\'")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
 endif()
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
@@ -33,13 +32,15 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
 
 #Configure OpenCl
+if( NWPW_OPENCL )
 find_package(OpenCL)
 if(OpenCL_FOUND)
    message("-- Using OpenCL libs")
    add_definitions(-DNWPW_OPENCL=1)
    include_directories(${OpenCL_INCLUDE_DIRS})
    link_directories(${OpenCL_LIBRARY})
-endif()
+endif(OPENCL_FOUND)
+endif(NWPW_OPENCL)
 
 #Configure MPI
 find_package(MPI REQUIRED)
