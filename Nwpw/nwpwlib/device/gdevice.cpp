@@ -17,9 +17,16 @@ Gdevices::Gdevices() : ndev_mem(0) {
     }
   };
 
+#ifdef NWPW_SYCL_ENABLE_PROFILE
   device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
-				      asyncHandler,
-				      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
+                                      asyncHandler,
+                                      cl::sycl::property_list{cl::sycl::property::queue::enable_profiling(),
+                                                              cl::sycl::property::queue::in_order{}});
+#else
+  device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
+                                      asyncHandler,
+                                      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
+#endif
 }
 
 cl::sycl::queue* get_syclQue() {
@@ -31,14 +38,13 @@ double* get_sycl_mem(const size_t mem_in_bytes) {
 void free_sycl_mem(double* ptr) {
   mygdevice.freeGpuMem(ptr);
 }
-#endif
-
 double* get_host_mem(const size_t mem_in_bytes) {
   return mygdevice.getHostMem(mem_in_bytes);
 }
 void free_host_mem(double* ptr) {
   mygdevice.freeHostMem(ptr);
 }
+#endif
 
 void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cbb)
 {
