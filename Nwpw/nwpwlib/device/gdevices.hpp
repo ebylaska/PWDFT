@@ -99,7 +99,7 @@ public:
     double* getHostMem(size_t bytes) {
         double *ptr=nullptr;
         if(free_list_host.find(bytes)!=free_list_host.end()) {
-            std::set<void*> &lst = free_list_host.find(bytes)->second;
+            std::set<double*> &lst = free_list_host.find(bytes)->second;
             if(lst.size()!=0) {
                 ptr = resurrect_from_free_list(free_list_host, bytes, live_ptrs_host);
                 return ptr;

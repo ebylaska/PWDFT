@@ -9,17 +9,18 @@
 #include        <cmath>
 #include 	<cstring> //memset
 #include        <iostream>
-#include	"Parallel.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
 #include	"nwpw_timing.hpp"
 #include	"gdevice.hpp"
 
+#ifdef NWPW_SYCL
+#include        <oneapi/mkl/blas.hpp>
+#endif
 #include	"PGrid.hpp"
 
 #include "blas.h"
-
 
 /********************************
  *                              *
@@ -342,7 +343,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          /*  find zero_row3 - (i,j,*) rows that are zero */
          for (auto q=0; q<nq3; ++q)
             zero_row3[nb][q] =  1;
-        
+
          for (auto q=0; q<(nxh+1)*ny; ++q)
             zero_arow3[q] = 1;
 
@@ -383,7 +384,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          {
             i = k1;
             if (i<0) i = i + nx;
-            yzslab = 1; 
+            yzslab = 1;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             for (auto k2=(-nyh+1); k2<nyh; ++k2)
             {
@@ -503,7 +504,6 @@ void PGrid::c_pack(const int nb, double *a)
 
    DCOPY_PWDFT(n2ft3d,a,one,tmp,one);
 
-   //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
    memset(a, 0, n2ft3d * sizeof(double));
 
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
@@ -511,8 +511,8 @@ void PGrid::c_pack(const int nb, double *a)
    if (balanced)
       mybalance->c_balance(nb,a);
 
-
    delete [] tmp;
+   return;
 }
 
 /********************************
@@ -635,30 +635,22 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
  ********************************/
 void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *b, double *sum)
 {
-   int one = 1;
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
+   int one = 1;
    double rtwo  = 2.0;
    double rone  = 1.0;
    double rmone = -1.0;
    double rzero = 0.0;
 
-   //DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
-   //            rtwo,
-   //            a,ng,
-   //            b,ng,
-   //            rzero,
-   //            sum,nn);
-#ifdef NWPW_SYCL
-   DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
-              rtwo,
-              a,ng,
-              b,ng,
-              rzero,
-              sum,nn);
-#else
+   // DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
+   // 	       rtwo,
+   // 	       a,ng,
+   // 	       b,ng,
+   // 	       rzero,
+   // 	       sum,nn);
    gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
-#endif
+
    if (ng0>0)
    {
       DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng0,
@@ -669,7 +661,6 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *
                  sum,nn);
    }
 }
-
 
 /********************************
  *                              *
@@ -990,3 +981,112 @@ void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, doubl
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
+
+
+#ifdef NWPW_SYCL
+// void PGrid::c_pack_sycl(const int nb, double *a_dev)
+// {
+//     double* tmp = get_sycl_mem(n2ft3d * sizeof(double));
+//     get_syclQue()->copy(tmp, a_dev, n2ft3d * sizeof(double));
+//     get_syclQue()->memset(a_dev, 0, n2ft3d * sizeof(double));
+
+//     c_aindexcopy(nida[nb]+nidb2[nb], packarray[nb], tmp, a_dev);
+
+//     // if (balanced)
+//     //       mybalance->c_balance(nb, a);
+
+//     free_sycl_mem(tmp);
+//     return;
+// }
+
+void PGrid::tcc_Mul_sycl(const int nb, const double *a, const double *b, double *c)
+{
+    int ng  = nida[nb]+nidb[nb]; // mygrid->npack(nb);
+    cl::sycl::range<1> threads(32);
+    cl::sycl::range<1> blocks((ng + threads[0] - 1)/threads[0]);
+
+    auto event = get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+            auto global_range = blocks * threads;
+            cgh.parallel_for(cl::sycl::nd_range<1>(global_range, threads),
+                             [=](cl::sycl::nd_item<1> item) {
+                                 size_t i = item.get_global_id(0);
+                                 if ( i < ng ) {
+                                     double a_val = a[i];
+                                     size_t i2 = i * 2;
+                                     c[i2]     = b[i2]     * a_val;
+                                     c[i2 + 1] = b[i2 + 1] * a_val;
+                                 }
+                             });
+        });
+
+#ifdef NWPW_SYCL_ENABLE_PROFILE
+    event.wait();
+    auto submit_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_submit>();
+    auto start_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_start>();
+    auto end_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_end>();
+    auto submission_time = (start_time - submit_time) / 1000000.0f;
+    auto execution_time = (end_time - start_time) / 1000000.0f;
+    std::cout << "tcc_Mul_sycl: " << execution_time << ", " << submission_time << std::endl;
+#endif
+}
+
+void PGrid::tcc_iMul_sycl(const int nb, const double *a, const double *b, double *c)
+{
+    int ng  = nida[nb]+nidb[nb];
+    cl::sycl::range<1> threads(32);
+    cl::sycl::range<1> blocks((ng + threads[0] - 1)/threads[0]);
+
+    auto event = get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+            auto global_range = blocks * threads;
+            cgh.parallel_for(cl::sycl::nd_range<1>(global_range, threads),
+                             [=](cl::sycl::nd_item<1> item) {
+                                 size_t i = item.get_global_id(0);
+                                 if ( i < ng ) {
+                                     double a_val = a[i];
+                                     size_t i2 = i * 2;
+                                     c[i2    ] = -b[i2 + 1] * a_val;
+                                     c[i2 + 1] =  b[i2    ] * a_val;
+                                 }
+                             });
+        });
+
+#ifdef NWPW_SYCL_ENABLE_PROFILE
+    event.wait();
+    auto submit_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_submit>();
+    auto start_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_start>();
+    auto end_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_end>();
+    auto submission_time = (start_time - submit_time) / 1000000.0f;
+    auto execution_time = (end_time - start_time) / 1000000.0f;
+    std::cout << "tcc_iMul_sycl: " << execution_time << ", " << submission_time << std::endl;
+#endif
+}
+
+void PGrid::cc_pack_inprjdot_sycl(const int nb, int nn, int nprj, double *a, double *b, double *sum)
+{
+   int ng  = 2*(nida[nb]+nidb[nb]);
+   int ng0 = 2*nida[nb];
+
+   oneapi::mkl::blas::gemm(*get_syclQue(),
+                           oneapi::mkl::transpose::trans,
+                           oneapi::mkl::transpose::nontrans,
+                           nn, nprj, ng,
+                           2.0,
+                           a, ng,
+                           b, ng,
+                           0.0,
+                           sum, nn);
+
+   if (ng0 > 0) {
+       oneapi::mkl::blas::gemm(*get_syclQue(),
+                               oneapi::mkl::transpose::trans,
+                               oneapi::mkl::transpose::nontrans,
+                               nn, nprj, ng0,
+                               -1.0,
+                               a, ng,
+                               b, ng,
+                               1.0,
+                               sum, nn);
+   }
+}
+
+#endif // NWPW_SYCL

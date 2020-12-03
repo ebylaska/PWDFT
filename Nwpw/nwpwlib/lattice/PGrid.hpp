@@ -5,6 +5,8 @@
 
 */
 
+#pragma once
+
 #include	<cmath>
 #include	"Parallel.hpp"
 #include	"d3db.hpp"
@@ -38,10 +40,10 @@ public:
 	PGrid(Parallel *, Lattice *, Control2&);
 
         /* destructor */
-        ~PGrid() { 
-            delete [] Garray; 
-            delete [] Gpack[0]; 
-            //delete [] Gpack[1]; 
+        ~PGrid() {
+            delete [] Garray;
+            delete [] Gpack[0];
+            //delete [] Gpack[1];
             delete [] masker[0];
             //delete [] masker[1];
             delete [] packarray[0];
@@ -99,7 +101,6 @@ public:
 
         void cc_pack_inprjdot(const int, int, int, double *, double *, double *);
 
-
         void t_unpack(const int, double *);
         void t_pack(const int, double *);
         void tt_pack_copy(const int, double *, double *);
@@ -127,7 +128,11 @@ public:
         //int  cr_pfft3b(const int, double *);
         //int  rc_pfft3f(const int, double *);
 
-
+#ifdef NWPW_SYCL
+        void cc_pack_inprjdot_sycl(const int, int, int, double *, double *, double *);
+        void tcc_Mul_sycl( const int, const double *, const double *, double *);
+        void tcc_iMul_sycl(const int, const double *, const double *, double *);
+#endif
 
 };
 
