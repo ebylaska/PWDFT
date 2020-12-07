@@ -1,12 +1,18 @@
 # PWDFT
-PW DFT development for NWChemEx
+PW-DFT development for NWChemEx
 
 # Build instructions on JLSE
-module load dpcpp
-module load mkl
-module load mpi
 
+## Required Modules
+```
+module load oneapi
+module load mpi/aurora
+module load cmake
+```
+
+## Build Instructions (for `SYCL` backend)
+```
 cd PWDFT
-mkdir build && cd build
-cmake -DCMAKE_CXX_COMPILER=dpcpp ../Nwpw
+cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 make -j4
+```
