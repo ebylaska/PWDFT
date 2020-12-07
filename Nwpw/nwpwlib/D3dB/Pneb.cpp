@@ -1181,7 +1181,7 @@ void Pneb::ggm_sym_Multiply_sycl(double *psi1, double *psi2, double *hml)
                 mshift1 += n;
             }
 
-            syclQ->submit([&](cl::sycl::handler &cgh) {
+            get_syclQue()->submit([&](cl::sycl::handler &cgh) {
                     cgh.parallel_for(cl::sycl::range<1>(n), [=](cl::sycl::id<1> tid) {
                             for (int j=tid+1; j<n; ++j) {
                                 hml[mshift0 + j + tid*n] = hml[mshift0 + tid + j*n];
