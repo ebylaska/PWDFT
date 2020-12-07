@@ -1,13 +1,19 @@
 #ifndef	_PSEUDOPOTENTIAL_H_
 #define _PSEUDOPOTENTIAL_H_
 
-
 using namespace std;
 
+#pragma once
+
+#include        "gdevice.hpp"
 #include	"Control2.hpp"
 #include	"Ion.hpp"
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
+
+#ifdef NWPW_SYCL
+#include        <oneapi/mkl/blas.hpp>
+#endif
 
 class	Pseudopotential {
 
@@ -29,6 +35,14 @@ public:
    bool *semicore;
    int npsp;
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
+#ifdef NWPW_SYCL
+    // int* myIon_katm = nullptr;
+   double** vnl_dev = nullptr;
+   int *sd_function_host=nullptr, *sd_function_dev=nullptr;
+   // double **Gijl_dev;
+   // int *nmax_dev, *lmax_dev;
+   // int **n_projector_dev, **l_projector_dev, **m_projector_dev;
+#endif
    int **n_projector,**l_projector,**m_projector,**b_projector;
    double **rc;
    double *zv,*rcore,*ncore_sum;
@@ -53,8 +67,11 @@ public:
             delete [] b_projector[ia];
             delete [] Gijl[ia];
             delete [] vnl[ia];
+#ifdef NWPW_SYCL
+	    cl::sycl::free(vnl_dev[ia], *get_syclQue());
+#endif
          }
-         if (semicore[ia]) 
+         if (semicore[ia])
             delete [] ncore_atom[ia];
       }
       delete [] vl;
@@ -74,10 +91,14 @@ public:
       delete [] semicore;
       delete [] rcore;
       delete [] ncore_sum;
-   //   delete [] vl;
-   //   delete [] vnl;
-   //   delete [] rlocal;
       delete [] rc;
+
+#ifdef NWPW_SYCL
+      cl::sycl::free(vnl_dev, *get_syclQue());
+      delete [] sd_function_host;
+      cl::sycl::free(sd_function_dev, *get_syclQue());
+      //cl::sycl::free(myIon_katm, *get_syclQue());
+#endif
       mypneb->r_dealloc(semicore_density);
     }
 
@@ -88,6 +109,12 @@ public:
     void v_nonlocal(double *, double *);
     void v_nonlocal_fion(double *, double *, const bool, double *);
     void v_local(double *, const bool, double *, double *);
+
+#ifdef NWPW_SYCL
+    void v_nonlocal_sycl(double *, double *);
+    void set_sd_function(int* sd_func);
+    void v_nonlocal_fion_sycl(double *, double *, const bool, double *);
+#endif
 
 };
 

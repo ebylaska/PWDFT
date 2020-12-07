@@ -37,8 +37,8 @@ public:
 	Pneb(Parallel *, Lattice *, Control2&, int, int *);
 
         /* destructor */
-        ~Pneb() 
-        { 
+        ~Pneb()
+        {
 #ifdef NWPW_SYCL
             cl::sycl::free(s22_dev, *get_syclQue());
             delete [] s22;
@@ -104,14 +104,8 @@ public:
         void ggm_sym_Multiply(double *, double *, double *);
         void ffm_sym_Multiply(const int, double *, double *, double *);
 
-#ifdef NWPW_SYCL
-  void ffm3_sym_Multiply_sycl(const int, const double *, const double *, double*, double*, double* );
-  void m_scale_s22_s21_s11_sycl(const int, const double, double *s22, double *s21, double *s11);
-#else
-  void ffm3_sym_Multiply(const int, const double *, const double *, double*, double*, double*);
-  void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
-#endif
-
+        void ffm3_sym_Multiply(const int, double *, double *, double*, double*, double*);
+        void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
         void fmf_Multiply(const int, double *, double *, double, double *, double);
 
         void m_scal(const double, double *);
@@ -127,6 +121,14 @@ public:
         void gg_SMul(double, double *, double *);
         void gg_Sum2(double *, double *);
         void ggg_Minus(double *, double *, double *);
+
+#ifdef NWPW_SYCL
+        void ggm_lambda_sycl(double, double *, double *, double *);
+        void ffm3_sym_Multiply_sycl(const int, const double *, const double *, double*, double*, double* );
+        void m_scale_s22_s21_s11_sycl(const int, const double, double *s22, double *s21, double *s11);
+        void fmf_Multiply_sycl(const int, double *, double *, double, double *, double);
+        void mmm_Multiply_sycl(const int, double *, double *, double, double*, double);
+#endif
 
 };
 

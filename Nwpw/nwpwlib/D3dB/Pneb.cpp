@@ -15,6 +15,9 @@
 
 #include "blas.h"
 
+#ifdef NWPW_SYCL
+#include <oneapi/mkl/blas.hpp>
+#endif
 
 /********************************
  *                              *
@@ -412,128 +415,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    }
 }
 
-#ifdef NWPW_SYCL
-void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const double *psi2_sycl,
-				  double* s11_sycl, double* s21_sycl, double* s22_sycl)
-{
-  cl::sycl::queue* syclQ = get_syclQue();
-
-  nwpw_timing_function ftimer(15);
-  int ms1,ms2,ishift2,j,shift0,shift1,mshift0,mshift1,nn;
-  int ng  = 2*npack(1);
-  int ng0 = 2*nzero(1);
-
-   double rzero = 0.0;
-   double rtwo  = 2.0;
-   double rone =  1.0;
-   double rmone = -1.0;
-
-   if (parallelized)
-   {
-     printf("not finished\n");
-   }
-   else
-   {
-      if (mb==-1)
-      {   ms1=0; ms2=ispin;
-          nn=ne[0]*ne[0]+ne[1]*ne[1];
-          shift0  = 0;
-          mshift0 = 0;
-      }
-      else
-      {   ms1=mb; ms2=mb+1;
-          nn = ne[mb]*ne[mb];
-          shift0  = mb*ne[0]*ng;
-          mshift0 = 0;
-      }
-
-      for (int ms=ms1; ms<ms2; ++ms)
-      {
-	int n = ne[ms];
-	size_t s_size = n*n;
-
-	// Needed for MPI cases
-	// get_syclQue()->memset(s11_sycl, 0, s_size*sizeof(double));
-	// get_syclQue()->memset(s21_sycl, 0, s_size*sizeof(double));
-	// get_syclQue()->memset(s22_sycl, 0, s_size*sizeof(double));
-
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng,
-                                rtwo,
-                                psi1_sycl, ng,
-                                psi1_sycl, ng,
-                                rzero,
-                                s11_sycl, n);
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng,
-                                rtwo,
-                                psi1_sycl, ng,
-                                psi2_sycl, ng,
-                                rzero,
-                                s21_sycl, n);
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng,
-                                rtwo,
-                                psi2_sycl, ng,
-                                psi2_sycl, ng,
-                                rzero,
-                                s22_sycl, n);
-
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng0,
-                                rmone,
-                                psi1_sycl, ng,
-                                psi1_sycl, ng,
-                                rone,
-                                s11_sycl, n);
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng0,
-                                rmone,
-                                psi1_sycl, ng,
-                                psi2_sycl, ng,
-                                rone,
-                                s21_sycl, n);
-        oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
-                                n, n, ng0,
-                                rmone,
-                                psi2_sycl, ng,
-                                psi2_sycl, ng,
-                                rone,
-                                s22_sycl, n);
-
-	// Needed for MPI cases
-	// syclQ->memcpy(s11, s11_dev, s_size*sizeof(double));
-	// syclQ->memcpy(s21, s21_dev, s_size*sizeof(double));
-	// syclQ->memcpy(s22, s22_dev, s_size*sizeof(double));
-	// syclQ->wait_and_throw();
-
-	// Logic to enforce symmetry for the matrices (s22, s21, s11)
-	// by copying the off-diagonal elements
-	auto mshift0_sycl = mshift0;
-	syclQ->submit([&](cl::sycl::handler &cgh) {
-	    cgh.parallel_for(cl::sycl::range<1>(n), [=](cl::sycl::id<1> tid) {
-
-		for (int j=tid + 1; j<n; ++j) {
-		  s11_sycl[mshift0_sycl + j + tid*n] = s11_sycl[mshift0_sycl + tid + j*n];
-		  s21_sycl[mshift0_sycl + j + tid*n] = s21_sycl[mshift0_sycl + tid + j*n];
-		  s22_sycl[mshift0_sycl + j + tid*n] = s22_sycl[mshift0_sycl + tid + j*n];
-		}
-
-	      });
-	  });
-
-	shift0  += ng*ne[0];
-	mshift0 += ne[0]*ne[0];
-      } // for - ms
-
-      // abb: disabled for SYCL(1-node cases)
-      // d3db::parall->Vector_SumAll(1, nn, s11);
-      // d3db::parall->Vector_SumAll(1, nn, s21);
-      // d3db::parall->Vector_SumAll(1, nn, s22);
-   }
-}
-#else
-void Pneb::ffm3_sym_Multiply(const int mb, const double *psi1, const double *psi2,
+void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
 			     double* s11, double* s21, double* s22)
 {
    nwpw_timing_function ftimer(15);
@@ -569,7 +451,7 @@ void Pneb::ffm3_sym_Multiply(const int mb, const double *psi1, const double *psi
       {
          n       = ne[ms];
 
-         gdevice_TN3_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&s11[mshift0],&s21[mshift0],&s22[mshift0]);
+         gdevice_TN3_dgemm(ng, n, rtwo, &psi1[shift0], &psi2[shift0], rzero, &s11[mshift0], &s21[mshift0], &s22[mshift0]);
 
          if (ng0>0)
          {
@@ -577,24 +459,24 @@ void Pneb::ffm3_sym_Multiply(const int mb, const double *psi1, const double *psi
             mshift1 = mshift0;
             for (k=1; k<=n; ++k)
             {
-               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
-                    rmone,
-                    &psi1[shift0],ng,
-                    &psi1[shift1],ng,
-                    rone,
-                    &s11[mshift1],k);
-               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
-                    rmone,
-                    &psi1[shift0],ng,
-                    &psi2[shift1],ng,
-                    rone,
-                    &s21[mshift1],k);
-               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
-                    rmone,
-                    &psi2[shift0],ng,
-                    &psi2[shift1],ng,
-                    rone,
-                    &s22[mshift1],k);
+		DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+			    rmone,
+			    &psi1[shift0],ng,
+			    &psi1[shift1],ng,
+			    rone,
+			    &s11[mshift1],k);
+		DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+			    rmone,
+			    &psi1[shift0],ng,
+			    &psi2[shift1],ng,
+			    rone,
+			    &s21[mshift1],k);
+		DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+			    rmone,
+			    &psi2[shift0],ng,
+			    &psi2[shift1],ng,
+			    rone,
+			    &s22[mshift1],k);
                shift1  += ng;
                mshift1 += n;
             }
@@ -616,14 +498,12 @@ void Pneb::ffm3_sym_Multiply(const int mb, const double *psi1, const double *psi
       d3db::parall->Vector_SumAll(1,nn,s22);
    }
 }
-#endif // NWPW_SYCL
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
    nwpw_timing_function ftimer(16);
    int ms,ms1,ms2,n,shift1,mshift1,ishift2;
    int ng  = 2*npack(1);
-   int ng0 = 2*nzero(1);
 
    if (parallelized)
    {
@@ -644,27 +524,14 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
       for (ms=ms1; ms<ms2; ++ms)
       {
          n = ne[ms];
-#ifdef NWPW_SYCL
-	 oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
-					       oneapi::mkl::transpose::nontrans,
-					       oneapi::mkl::transpose::nontrans,
-					       ng, n, n,
-					       alpha,
-					       psi1, ng,
-					       hml, n,
-					       beta,
-					       psi2, ng);
 
-#else
 	 // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
 	 // 	     alpha,
 	 // 	     &psi1[shift1],ng,
 	 // 	     &hml[mshift1],n,
 	 // 	     beta,
 	 // 	     &psi2[shift1],ng);
-
          gdevice_NN_dgemm(ng,n,alpha,&psi1[shift1],&hml[mshift1],beta,&psi2[shift1]);
-#endif
 
          shift1  += ne[0]*ng;
          mshift1 += ishift2;
@@ -698,86 +565,41 @@ double Pneb::m_trace(double *hml)
 
 void Pneb::m_diagonalize(double *hml, double *eig)
 {
-   nwpw_timing_start(17);
-   int shift1,shift2;
-   int n,ierr;
+    nwpw_timing_start(17);
+    int shift1,shift2;
+    int n,ierr;
 
-   if (parallelized)
-   {
-     printf("not finished\n");
-   }
-   else
-   {
-      int nn  = ne[0]*ne[0]+4;
-      double *xmp1 = new double[nn];
+    if (parallelized)
+    {
+        throw std::runtime_error(std::string("NWPW Error: m_diagonalize() parallel NOT implemented!"));
+    }
+    else
+    {
+        int nn  = ne[0]*ne[0]+4;
+        double *xmp1 = new double[nn];
 
-      shift1 = 0;
-      shift2 = 0;
-      for (int ms=0; ms<ispin; ++ms)
-      {
-         n = ne[ms];
+        shift1 = 0;
+        shift2 = 0;
+        for (int ms=0; ms<ispin; ++ms)
+        {
+            n = ne[ms];
 
-         //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+            //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
 
-	 ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
-	   //EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
-         if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
+            ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
+            //EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
+            if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
 
-         eigsrt(&eig[shift1], &hml[shift2], n);
-         shift1 += ne[0];
-         shift2 += ne[0]*ne[0];
-      }
+            eigsrt(&eig[shift1], &hml[shift2], n);
+            shift1 += ne[0];
+            shift2 += ne[0]*ne[0];
+        }
 
-      delete [] xmp1;
-   }
-   nwpw_timing_end(17);
+        delete [] xmp1;
+    }
+    nwpw_timing_end(17);
 }
 
-#ifdef NWPW_SYCL
-void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const double dte, double *s22, double *s21, double *s11)
-{
-   int k,ms1,ms2,ishift2;
-
-   if (mb==-1)
-   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
-   else
-   {   ms1=mb; ms2=mb+1; ishift2=0;}
-
-   for (int ms=ms1; ms<ms2; ++ms)
-   {
-     int indx0 = ms*ishift2;
-     int nelec = ne[ms];
-
-     get_syclQue()->submit([&](cl::sycl::handler &cgh) {
-	 cgh.parallel_for(cl::sycl::range<1>(nelec), [=](cl::sycl::id<1> k) {
-	     // Note: k is the index of diagonal indices for the sym_matrices (s11, s21, s22)
-
-	     size_t diag_indx = k * (nelec + 1);
-
-	     s22[diag_indx] = (1.0-s22[diag_indx])*(0.5/dte);
-	     s21[diag_indx] = (1.0-s21[diag_indx])*(0.5);
-	     s11[diag_indx] *= -0.5*dte;
-
-	     int indx  = diag_indx + 1;
-	     int indxt = diag_indx + nelec;
-	     for (int j=(k+1); j<nelec; ++j) {
-	       s22[indx]  *= (-0.5/dte);
-	       s21[indx]  *= -0.5;
-	       s11[indx]  *= -0.5*dte;
-
-	       s22[indxt] *= (-0.5/dte);
-	       s21[indxt] *= -0.5;
-	       s11[indxt] *= -0.5*dte;
-
-	       indx  += 1;
-	       indxt += nelec;
-	     }
-
-	   });
-       });
-   }
-}
-#else
 void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, double *s21, double *s11)
 {
    int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
@@ -814,7 +636,6 @@ void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
       }
    }
 }
-#endif //NWPW_SYCL
 
 void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
 {
@@ -831,26 +652,12 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
       {
          shift2 = ms*ishift2;
 
-#ifdef NWPW_SYCL
-	 // abb: notes for simple case "shift2=0" and should be fine with
-	 // SYCL implementation
-	 oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
-					       oneapi::mkl::transpose::nontrans,
-					       oneapi::mkl::transpose::nontrans,
-					       n, n, n,
-					       alpha,
-					       &a[shift2], n,
-					       &b[shift2], n,
-					       beta,
-					       &c[shift2], n);
-#else
          DGEMM_PWDFT((char *) "N",(char *) "N",n,n,n,
 		     alpha,
 		     &a[shift2], n,
 		     &b[shift2], n,
 		     beta,
 		     &c[shift2], n);
-#endif
       }
    }
 }
@@ -859,123 +666,59 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 #define CONVGLMD        1e-15
 #define CONVGLMD2       1e-12
 
-// abb: Lagrange multiplier (expensive method)
+// Lagrange multiplier (expensive method)
 void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 {
-   nwpw_timing_function ftimer(3);
 #ifdef NWPW_SYCL
-   std::int64_t* index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
-   double* adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
-   size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
-   size_t lmbda_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
-
-   // get the memory from the pool and reset the values to zero
-   // followed by copying the values from host arrays
-   double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
-   double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
-   double* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(double));
-   get_syclQue()->memset(psi1_dev, 0, psi_size*sizeof(double));
-   get_syclQue()->memset(psi2_dev, 0, psi_size*sizeof(double));
-   get_syclQue()->memset(lmbda_dev, 0, lmbda_size*sizeof(double));
-   get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
-   get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
-   get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(double));
-#else
-   double adiff;
+    ggm_lambda_sycl(dte, psi1, psi2, lmbda);
+    return;
 #endif
 
-   int one=1;
-   double rmone = -1.0;
+    nwpw_timing_function ftimer(3);
 
-   for (int ms=0; ms<ispin; ++ms) {
+    int one=1;
+    double rmone = -1.0;
+    double adiff = 0.0;
 
-     int nn = m_size(ms);
+    for (int ms=0; ms<ispin; ++ms) {
 
-#ifdef NWPW_SYCL
-     ffm3_sym_Multiply_sycl(ms, psi1_dev, psi2_dev, s11_dev, s21_dev, s22_dev);
-     m_scale_s22_s21_s11_sycl(ms, dte, s22_dev, s21_dev, s11_dev);
-#else
-     ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
-     m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
-#endif
+	int nn = m_size(ms);
 
-     int ii   = 0;
-     int done = 0;
+	ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
+	m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
 
-#ifdef NWPW_SYCL
-     oneapi::mkl::blas::copy(*get_syclQue(), nn, s21_dev, one, s12_dev, one);
-     oneapi::mkl::blas::copy(*get_syclQue(), nn, s22_dev, one, sa0_dev, one);
-     get_syclQue()->wait();
+	int ii   = 0;
+	int done = 0;
 
-     while ((!done) && ((ii++)<ITERLMD)) {
-       oneapi::mkl::blas::copy(*get_syclQue(), nn, s22_dev, one, sa1_dev, one);
+	DCOPY_PWDFT(nn, s21, one, s12, one);
+	DCOPY_PWDFT(nn, s22, one, sa0, one);
+	while ((!done) && ((ii++)<ITERLMD)) {
+	    DCOPY_PWDFT(nn, s22, one, sa1, one);
 
-       mmm_Multiply(ms, s21_dev, sa0_dev, 1.0, sa1_dev, 1.0);
-       mmm_Multiply(ms, sa0_dev, s12_dev, 1.0, sa1_dev, 1.0);
-       mmm_Multiply(ms, s11_dev, sa0_dev, 1.0, st1_dev, 0.0);
-       mmm_Multiply(ms, sa0_dev, st1_dev, 1.0, sa1_dev, 1.0);
+	    mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+	    mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+	    mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+	    mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
 
-       oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, st1_dev, one);
-       oneapi::mkl::blas::axpy(*get_syclQue(), nn, rmone, sa0_dev, one, st1_dev, one);
-       get_syclQue()->wait();
+	    DCOPY_PWDFT(nn, sa1, one, st1, one);
+	    DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+	    adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
 
-       oneapi::mkl::blas::iamax(*get_syclQue(), nn, st1_dev, one, index);
-       *adiff = cl::sycl::fabs(st1[*index - 1]);
-       if (*adiff < CONVGLMD)
-	 done = 1;
-       else
-	 oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, sa0_dev, one);
-     }
+	    if (adiff < CONVGLMD)
+		done = 1;
+	    else
+		DCOPY_PWDFT(nn, sa1, one, sa0, one);
+	}
 
-     if (*adiff < CONVGLMD2) {
-       if(!done)
-	 std::cout << "NWPW Warning: Max iter ggm_lambda(): adiff=" << *adiff << std::endl;
-     }
+	if (adiff<CONVGLMD2) {
+	    if (!done) printf("ierr=10 adiff=%lf\n",adiff);
+	}
 
-     oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, &lmbda_dev[ms*ne[0]*ne[0]], one);
-#else
-     DCOPY_PWDFT(nn, s21, one, s12, one);
-     DCOPY_PWDFT(nn, s22, one, sa0, one);
-     while ((!done) && ((ii++)<ITERLMD)) {
-       DCOPY_PWDFT(nn, s22, one, sa1, one);
+	DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+    } // for loop - ms
 
-       mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
-       mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
-       mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
-       mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
-
-       DCOPY_PWDFT(nn, sa1, one, st1, one);
-       DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
-       adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
-
-       if (adiff < CONVGLMD)
-	 done = 1;
-       else
-	 DCOPY_PWDFT(nn, sa1, one, sa0, one);
-     }
-
-     if (adiff<CONVGLMD2) {
-       if (!done) printf("ierr=10 adiff=%lf\n",adiff);
-     }
-
-     DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
-
-#endif // WHILE CONVERGENCE LOOP
-   } // for loop - ms
-
-   /* correction due to contraint */
-#ifdef NWPW_SYCL
-   fmf_Multiply(-1, psi1_dev, lmbda_dev, dte, psi2_dev, 1.0);
-
-   get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
-   get_syclQue()->wait();
-   free_sycl_mem(lmbda_dev);
-   free_sycl_mem(psi2_dev);
-   free_sycl_mem(psi1_dev);
-#else
-   fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
-#endif
-
+    /* correction due to contraint */
+    fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
 }
 
 /********************************
@@ -1016,3 +759,335 @@ void Pneb::g_ortho(double *psi)
       }
    }
 }
+
+
+#ifdef NWPW_SYCL
+void Pneb::ggm_lambda_sycl(double dte, double *psi1, double *psi2, double *lmbda)
+{
+    std::int64_t* index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
+    double* adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
+    size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
+    size_t lmbda_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
+
+    // get the memory from the pool and reset the values to zero
+    // followed by copying the values from host arrays
+    double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
+    double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
+    double* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(double));
+    get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
+    get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
+    get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(double));
+
+    nwpw_timing_function ftimer(3);
+
+    int one=1;
+    double rmone = -1.0;
+
+    for (int ms=0; ms<ispin; ++ms) {
+
+        int nn = m_size(ms);
+
+        ffm3_sym_Multiply_sycl(ms, psi1_dev, psi2_dev, s11_dev, s21_dev, s22_dev);
+        m_scale_s22_s21_s11_sycl(ms, dte, s22_dev, s21_dev, s11_dev);
+
+        int ii   = 0;
+        int done = 0;
+
+        oneapi::mkl::blas::copy(*get_syclQue(), nn, s21_dev, one, s12_dev, one);
+        oneapi::mkl::blas::copy(*get_syclQue(), nn, s22_dev, one, sa0_dev, one);
+        get_syclQue()->wait();
+
+        while ((!done) && ((ii++)<ITERLMD)) {
+            oneapi::mkl::blas::copy(*get_syclQue(), nn, s22_dev, one, sa1_dev, one);
+
+            mmm_Multiply_sycl(ms, s21_dev, sa0_dev, 1.0, sa1_dev, 1.0);
+            mmm_Multiply_sycl(ms, sa0_dev, s12_dev, 1.0, sa1_dev, 1.0);
+            mmm_Multiply_sycl(ms, s11_dev, sa0_dev, 1.0, st1_dev, 0.0);
+            mmm_Multiply_sycl(ms, sa0_dev, st1_dev, 1.0, sa1_dev, 1.0);
+
+            oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, st1_dev, one);
+            oneapi::mkl::blas::axpy(*get_syclQue(), nn, rmone, sa0_dev, one, st1_dev, one);
+            get_syclQue()->wait();
+
+            oneapi::mkl::blas::iamax(*get_syclQue(), nn, st1_dev, one, index);
+            *adiff = cl::sycl::fabs(st1[*index - 1]);
+            if (*adiff < CONVGLMD)
+                done = 1;
+            else
+                oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, sa0_dev, one);
+        }
+
+        if (*adiff < CONVGLMD2) {
+            if(!done)
+                std::cout << "NWPW Warning: Max iter ggm_lambda(): adiff=" << *adiff << std::endl;
+        }
+
+        oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, &lmbda_dev[ms*ne[0]*ne[0]], one);
+    } // for loop - ms
+
+    /* correction due to contraint */
+    fmf_Multiply_sycl(-1, psi1_dev, lmbda_dev, dte, psi2_dev, 1.0);
+
+    get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
+    get_syclQue()->wait();
+    free_sycl_mem(lmbda_dev);
+    free_sycl_mem(psi2_dev);
+    free_sycl_mem(psi1_dev);
+
+    cl::sycl::free(index, *get_syclQue());
+    cl::sycl::free(adiff, *get_syclQue());
+}
+
+
+void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const double *psi2_sycl,
+                                  double* s11_sycl, double* s21_sycl, double* s22_sycl)
+{
+    cl::sycl::queue* syclQ = get_syclQue();
+
+    nwpw_timing_function ftimer(15);
+    int ms1,ms2,ishift2,j,shift0,shift1,mshift0,mshift1,nn;
+    int ng  = 2*npack(1);
+    int ng0 = 2*nzero(1);
+
+    if (parallelized)
+    {
+        printf("not finished\n");
+    }
+    else
+    {
+        if (mb==-1)
+        {   ms1=0; ms2=ispin;
+            nn=ne[0]*ne[0]+ne[1]*ne[1];
+            shift0  = 0;
+            mshift0 = 0;
+        }
+        else
+        {   ms1=mb; ms2=mb+1;
+            nn = ne[mb]*ne[mb];
+            shift0  = mb*ne[0]*ng;
+            mshift0 = 0;
+        }
+
+        for (int ms=ms1; ms<ms2; ++ms)
+        {
+            int n = ne[ms];
+            size_t s_size = n*n;
+
+            // Needed for MPI cases
+            // get_syclQue()->memset(s11_sycl, 0, s_size*sizeof(double));
+            // get_syclQue()->memset(s21_sycl, 0, s_size*sizeof(double));
+            // get_syclQue()->memset(s22_sycl, 0, s_size*sizeof(double));
+
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng,
+                                    2.0,
+                                    psi1_sycl, ng,
+                                    psi1_sycl, ng,
+                                    0.0,
+                                    s11_sycl, n);
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng,
+                                    2.0,
+                                    psi1_sycl, ng,
+                                    psi2_sycl, ng,
+                                    0.0,
+                                    s21_sycl, n);
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng,
+                                    2.0,
+                                    psi2_sycl, ng,
+                                    psi2_sycl, ng,
+                                    0.0,
+                                    s22_sycl, n);
+
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng0,
+                                    -1.0,
+                                    psi1_sycl, ng,
+                                    psi1_sycl, ng,
+                                    1.0,
+                                    s11_sycl, n);
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng0,
+                                    -1.0,
+                                    psi1_sycl, ng,
+                                    psi2_sycl, ng,
+                                    1.0,
+                                    s21_sycl, n);
+            oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
+                                    n, n, ng0,
+                                    -1.0,
+                                    psi2_sycl, ng,
+                                    psi2_sycl, ng,
+                                    1.0,
+                                    s22_sycl, n);
+
+            // Needed for MPI cases
+            // syclQ->memcpy(s11, s11_dev, s_size*sizeof(double));
+            // syclQ->memcpy(s21, s21_dev, s_size*sizeof(double));
+            // syclQ->memcpy(s22, s22_dev, s_size*sizeof(double));
+            // syclQ->wait_and_throw();
+
+            // Logic to enforce symmetry for the matrices (s22, s21, s11)
+            // by copying the off-diagonal elements
+            auto mshift0_sycl = mshift0;
+            auto event = syclQ->submit([&](cl::sycl::handler &cgh) {
+                    cgh.parallel_for(cl::sycl::range<1>(n), [=](cl::sycl::id<1> tid) {
+
+                            for (int j=tid + 1; j<n; ++j) {
+                                s11_sycl[mshift0_sycl + j + tid*n] = s11_sycl[mshift0_sycl + tid + j*n];
+                                s21_sycl[mshift0_sycl + j + tid*n] = s21_sycl[mshift0_sycl + tid + j*n];
+                                s22_sycl[mshift0_sycl + j + tid*n] = s22_sycl[mshift0_sycl + tid + j*n];
+                            }
+
+                        });
+                });
+
+#ifdef NWPW_SYCL_ENABLE_PROFILE
+            event.wait();
+            auto submit_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_submit>();
+            auto start_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_start>();
+            auto end_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_end>();
+            auto submission_time = (start_time - submit_time) / 1000000.0f;
+            auto execution_time = (end_time - start_time) / 1000000.0f;
+            std::cout << "ffm3_sym_Multiply_sycl: " << n << ", " << execution_time << ", " << submission_time << std::endl;
+#endif
+
+            shift0  += ng*ne[0];
+            mshift0 += ne[0]*ne[0];
+        } // for - ms
+
+        // abb: disabled for SYCL(1-node cases)
+        // d3db::parall->Vector_SumAll(1, nn, s11);
+        // d3db::parall->Vector_SumAll(1, nn, s21);
+        // d3db::parall->Vector_SumAll(1, nn, s22);
+    }
+}
+
+void Pneb::fmf_Multiply_sycl(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
+{
+    nwpw_timing_function ftimer(16);
+
+    int ms1,ms2,n,shift1,mshift1,ishift2;
+    int ng  = 2*npack(1);
+
+    if (parallelized)
+    {
+        printf("not finished\n");
+    }
+    else
+    {
+        if (mb==-1)
+        {  ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
+            shift1  = 0;
+            mshift1 = 0;
+        }
+        else
+        {   ms1=mb; ms2=mb+1; ishift2=0;
+            shift1  = mb*ne[0]*ng;
+            mshift1 = 0;
+        }
+        for (int ms=ms1; ms<ms2; ++ms)
+        {
+            n = ne[ms];
+
+            oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
+                                                  oneapi::mkl::transpose::nontrans,
+                                                  oneapi::mkl::transpose::nontrans,
+                                                  ng, n, n,
+                                                  alpha,
+                                                  &psi1[shift1], ng,
+                                                  &hml[mshift1], n,
+                                                  beta,
+                                                  &psi2[shift1], ng);
+
+            shift1  += ne[0]*ng;
+            mshift1 += ishift2;
+        }
+    }
+}
+
+void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const double dte, double *s22, double *s21, double *s11)
+{
+    int k,ms1,ms2,ishift2;
+
+    if (mb==-1)
+    {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+    else
+    {   ms1=mb; ms2=mb+1; ishift2=0;}
+
+    for (int ms=ms1; ms<ms2; ++ms)
+    {
+        int indx0 = ms*ishift2;
+        int nelec = ne[ms];
+
+        auto event = get_syclQue()->submit([&](cl::sycl::handler &cgh) {
+                cgh.parallel_for(cl::sycl::range<1>(nelec), [=](cl::sycl::id<1> k) {
+                        // Note: k is the index of diagonal indices for the sym_matrices (s11, s21, s22)
+                        size_t diag_indx = k * (nelec + 1);
+
+                        s22[diag_indx] = (1.0-s22[diag_indx])*(0.5/dte);
+                        s21[diag_indx] = (1.0-s21[diag_indx])*(0.5);
+                        s11[diag_indx] *= -0.5*dte;
+
+                        int indx  = diag_indx + 1;
+                        int indxt = diag_indx + nelec;
+                        for (int j=(k+1); j<nelec; ++j) {
+                            s22[indx]  *= (-0.5/dte);
+                            s21[indx]  *= -0.5;
+                            s11[indx]  *= -0.5*dte;
+
+                            s22[indxt] *= (-0.5/dte);
+                            s21[indxt] *= -0.5;
+                            s11[indxt] *= -0.5*dte;
+
+                            indx  += 1;
+                            indxt += nelec;
+                        }
+
+                    });
+            });
+
+#ifdef NWPW_SYCL_ENABLE_PROFILE
+        event.wait();
+        auto submit_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_submit>();
+        auto start_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_start>();
+        auto end_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_end>();
+        auto submission_time = (start_time - submit_time) / 1000000.0f;
+        auto execution_time = (end_time - start_time) / 1000000.0f;
+        std::cout << "m_scale_s22_s21_s11_sycl: " << nelec << ", " << execution_time << ", " << submission_time << std::endl;
+#endif
+    }
+}
+
+void Pneb::mmm_Multiply_sycl(const int mb, double *a, double *b, double alpha, double *c, double beta)
+{
+    nwpw_timing_function ftimer(18);
+
+    int ms,n,ms1,ms2,ishift2,shift2;
+    if (mb==-1)
+    {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+    else
+    {   ms1=mb; ms2=mb+1; ishift2=0;}
+
+    for (ms=ms1; ms<ms2; ++ms)
+    {
+        n = ne[ms];
+        if (n>0)
+        {
+            shift2 = ms*ishift2;
+
+            oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
+                                                  oneapi::mkl::transpose::nontrans,
+                                                  oneapi::mkl::transpose::nontrans,
+                                                  n, n, n,
+                                                  alpha,
+                                                  &a[shift2], n,
+                                                  &b[shift2], n,
+                                                  beta,
+                                                  &c[shift2], n);
+        }
+    }
+}
+
+#endif // NWPW_SYCL
