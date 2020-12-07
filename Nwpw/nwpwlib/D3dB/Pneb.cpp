@@ -9,6 +9,7 @@
 #include        <cstring> //memset()
 #include        <cmath>
 #include        <cstdlib>
+#include        <sstream>
 #include        <stdexcept> // runtime_error()
 
 #include	"Pneb.hpp"
@@ -35,6 +36,10 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     parallelized = (np_j>1);
 
 #ifdef NWPW_SYCL
+    // shared_mem copies
+    index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
+    adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
+
     // device copies
     s22_dev = cl::sycl::malloc_device<double>(7*ne[0]*ne[0], *get_syclQue());
     s21_dev = &s22_dev[1*ne[0]*ne[0]];
@@ -293,6 +298,29 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 {
+// #ifdef NWPW_SYCL
+//     size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
+//     size_t hml_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
+
+//     double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
+//     double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
+//     double* hml_dev  = get_sycl_mem(hml_size * sizeof(double));
+//     get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
+//     get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
+//     get_syclQue()->memcpy(hml_dev, hml, hml_size*sizeof(double));
+
+//     ggm_sym_Multiply_sym(psi1_dev, psi2_dev, hml_dev);
+
+//     get_syclQue()->memcpy(hml, hml_dev, hml_size*sizeof(double));
+//     get_syclQue()->wait();
+
+//     free_sycl_mem(hml_dev);
+//     free_sycl_mem(psi2_dev);
+//     free_sycl_mem(psi1_dev);
+
+//     return;
+// #endif
+
    nwpw_timing_function ftimer(15);
    int ms,j,k,n,shift0,shift1,mshift0,mshift1;
 
@@ -307,7 +335,10 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 
    if (parallelized)
    {
-     printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: ggm_sym_Multiply() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
    }
    else
    {
@@ -346,9 +377,6 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
    }
 }
 
-
-
-
 void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 {
    nwpw_timing_function ftimer(15);
@@ -365,7 +393,10 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
 
    if (parallelized)
    {
-     printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
    }
    else
    {
@@ -431,7 +462,10 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
 
    if (parallelized)
    {
-     printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
    }
    else
    {
@@ -507,7 +541,10 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
 
    if (parallelized)
    {
-     printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: fmf_Multiply() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
    }
    else
    {
@@ -571,7 +608,10 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
     if (parallelized)
     {
-        throw std::runtime_error(std::string("NWPW Error: m_diagonalize() parallel NOT implemented!"));
+        std::ostringstream msg;
+        msg << "NWPW Error: m_diagonalize() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
     }
     else
     {
@@ -670,7 +710,26 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 {
 #ifdef NWPW_SYCL
-    ggm_lambda_sycl(dte, psi1, psi2, lmbda);
+    // get the memory from the pool and reset the values to zero
+    // followed by copying the values from host arrays
+    size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
+    size_t lmbda_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
+
+    double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
+    double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
+    double* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(double));
+    get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
+    get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
+    get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(double));
+
+    ggm_lambda_sycl(dte, psi1_dev, psi2_dev, lmbda_dev);
+
+    get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
+    get_syclQue()->memcpy(lmbda, lmbda_dev, lmbda_size*sizeof(double));
+    get_syclQue()->wait();
+    free_sycl_mem(lmbda_dev);
+    free_sycl_mem(psi2_dev);
+    free_sycl_mem(psi1_dev);
     return;
 #endif
 
@@ -735,7 +794,10 @@ void Pneb::g_ortho(double *psi)
    double w;
    if (parallelized)
    {
-     printf("Pneb::g_ortho: 2d parallelization not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: g_ortho() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
    }
    else
    {
@@ -762,26 +824,14 @@ void Pneb::g_ortho(double *psi)
 
 
 #ifdef NWPW_SYCL
-void Pneb::ggm_lambda_sycl(double dte, double *psi1, double *psi2, double *lmbda)
+void Pneb::ggm_lambda_sycl(double dte, double *psi1_dev, double *psi2_dev, double *lmbda_dev)
 {
-    std::int64_t* index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
-    double* adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
-    size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
-    size_t lmbda_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
-
-    // get the memory from the pool and reset the values to zero
-    // followed by copying the values from host arrays
-    double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
-    double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
-    double* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(double));
-    get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
-    get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
-    get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(double));
+    *index = 0;
+    *adiff = 0.0;
 
     nwpw_timing_function ftimer(3);
 
     int one=1;
-    double rmone = -1.0;
 
     for (int ms=0; ms<ispin; ++ms) {
 
@@ -806,10 +856,10 @@ void Pneb::ggm_lambda_sycl(double dte, double *psi1, double *psi2, double *lmbda
             mmm_Multiply_sycl(ms, sa0_dev, st1_dev, 1.0, sa1_dev, 1.0);
 
             oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, st1_dev, one);
-            oneapi::mkl::blas::axpy(*get_syclQue(), nn, rmone, sa0_dev, one, st1_dev, one);
-            get_syclQue()->wait();
+            oneapi::mkl::blas::axpy(*get_syclQue(), nn, -1.0, sa0_dev, one, st1_dev, one);
 
             oneapi::mkl::blas::iamax(*get_syclQue(), nn, st1_dev, one, index);
+            get_syclQue()->wait();
             *adiff = cl::sycl::fabs(st1[*index - 1]);
             if (*adiff < CONVGLMD)
                 done = 1;
@@ -819,7 +869,7 @@ void Pneb::ggm_lambda_sycl(double dte, double *psi1, double *psi2, double *lmbda
 
         if (*adiff < CONVGLMD2) {
             if(!done)
-                std::cout << "NWPW Warning: Max iter ggm_lambda(): adiff=" << *adiff << std::endl;
+                std::cout << "NWPW Warning: MaxIterations ggm_lambda(): adiff=" << *adiff << std::endl;
         }
 
         oneapi::mkl::blas::copy(*get_syclQue(), nn, sa1_dev, one, &lmbda_dev[ms*ne[0]*ne[0]], one);
@@ -827,15 +877,6 @@ void Pneb::ggm_lambda_sycl(double dte, double *psi1, double *psi2, double *lmbda
 
     /* correction due to contraint */
     fmf_Multiply_sycl(-1, psi1_dev, lmbda_dev, dte, psi2_dev, 1.0);
-
-    get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
-    get_syclQue()->wait();
-    free_sycl_mem(lmbda_dev);
-    free_sycl_mem(psi2_dev);
-    free_sycl_mem(psi1_dev);
-
-    cl::sycl::free(index, *get_syclQue());
-    cl::sycl::free(adiff, *get_syclQue());
 }
 
 
@@ -851,7 +892,10 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const d
 
     if (parallelized)
     {
-        printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: ffm3_sym_Multiply_sycl() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
     }
     else
     {
@@ -871,12 +915,6 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const d
         for (int ms=ms1; ms<ms2; ++ms)
         {
             int n = ne[ms];
-            size_t s_size = n*n;
-
-            // Needed for MPI cases
-            // get_syclQue()->memset(s11_sycl, 0, s_size*sizeof(double));
-            // get_syclQue()->memset(s21_sycl, 0, s_size*sizeof(double));
-            // get_syclQue()->memset(s22_sycl, 0, s_size*sizeof(double));
 
             oneapi::mkl::blas::gemm(*syclQ, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,
                                     n, n, ng,
@@ -922,16 +960,10 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const d
                                     1.0,
                                     s22_sycl, n);
 
-            // Needed for MPI cases
-            // syclQ->memcpy(s11, s11_dev, s_size*sizeof(double));
-            // syclQ->memcpy(s21, s21_dev, s_size*sizeof(double));
-            // syclQ->memcpy(s22, s22_dev, s_size*sizeof(double));
-            // syclQ->wait_and_throw();
-
-            // Logic to enforce symmetry for the matrices (s22, s21, s11)
+            // enforce symmetry for the matrices (s22, s21, s11)
             // by copying the off-diagonal elements
             auto mshift0_sycl = mshift0;
-            auto event = syclQ->submit([&](cl::sycl::handler &cgh) {
+            syclQ->submit([&](cl::sycl::handler &cgh) {
                     cgh.parallel_for(cl::sycl::range<1>(n), [=](cl::sycl::id<1> tid) {
 
                             for (int j=tid + 1; j<n; ++j) {
@@ -943,24 +975,22 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const d
                         });
                 });
 
-#ifdef NWPW_SYCL_ENABLE_PROFILE
-            event.wait();
-            auto submit_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_submit>();
-            auto start_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_start>();
-            auto end_time = event.get_profiling_info<cl::sycl::info::event_profiling::command_end>();
-            auto submission_time = (start_time - submit_time) / 1000000.0f;
-            auto execution_time = (end_time - start_time) / 1000000.0f;
-            std::cout << "ffm3_sym_Multiply_sycl: " << n << ", " << execution_time << ", " << submission_time << std::endl;
-#endif
-
             shift0  += ng*ne[0];
             mshift0 += ne[0]*ne[0];
+
         } // for - ms
 
-        // abb: disabled for SYCL(1-node cases)
-        // d3db::parall->Vector_SumAll(1, nn, s11);
-        // d3db::parall->Vector_SumAll(1, nn, s21);
-        // d3db::parall->Vector_SumAll(1, nn, s22);
+	size_t s_size = ne[0]*ne[0];
+	syclQ->memcpy(s11, s11_dev, s_size*sizeof(double));
+	syclQ->memcpy(s21, s21_dev, s_size*sizeof(double));
+	syclQ->memcpy(s22, s22_dev, s_size*sizeof(double));
+	syclQ->wait();
+	d3db::parall->Vector_SumAll(1, nn, s11);
+	d3db::parall->Vector_SumAll(1, nn, s21);
+	d3db::parall->Vector_SumAll(1, nn, s22);
+	syclQ->memcpy(s11_dev, s11, s_size*sizeof(double));
+	syclQ->memcpy(s21_dev, s21, s_size*sizeof(double));
+	syclQ->memcpy(s22_dev, s22, s_size*sizeof(double));
     }
 }
 
@@ -973,7 +1003,10 @@ void Pneb::fmf_Multiply_sycl(const int mb, double *psi1, double *hml, double alp
 
     if (parallelized)
     {
-        printf("not finished\n");
+        std::ostringstream msg;
+        msg << "NWPW Error: fmf_Multiply_sycl() parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
     }
     else
     {
@@ -1016,33 +1049,41 @@ void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const double dte, double *s22,
     else
     {   ms1=mb; ms2=mb+1; ishift2=0;}
 
+    cl::sycl::range<1> threads(32);
+
     for (int ms=ms1; ms<ms2; ++ms)
     {
         int indx0 = ms*ishift2;
         int nelec = ne[ms];
 
+	cl::sycl::range<1> blocks((nelec + threads[0] - 1)/threads[0]);
+
         auto event = get_syclQue()->submit([&](cl::sycl::handler &cgh) {
-                cgh.parallel_for(cl::sycl::range<1>(nelec), [=](cl::sycl::id<1> k) {
-                        // Note: k is the index of diagonal indices for the sym_matrices (s11, s21, s22)
-                        size_t diag_indx = k * (nelec + 1);
+                auto global_range = blocks * threads;
+                cgh.parallel_for<class m_scale_s22s21s11>(cl::sycl::nd_range<1>(global_range, threads), [=](cl::sycl::nd_item<1> item) {
+                        // Note: k is related to the index of diagonal elements for the sym_matrices (s11, s21, s22)
+                        size_t k = item.get_global_id(0);
+                        if(k < nelec) {
+                            size_t diag_indx = k * (nelec + 1);
 
-                        s22[diag_indx] = (1.0-s22[diag_indx])*(0.5/dte);
-                        s21[diag_indx] = (1.0-s21[diag_indx])*(0.5);
-                        s11[diag_indx] *= -0.5*dte;
+                            s22[diag_indx] = (1.0-s22[diag_indx])*(0.5/dte);
+                            s21[diag_indx] = (1.0-s21[diag_indx])*(0.5);
+                            s11[diag_indx] *= -0.5*dte;
 
-                        int indx  = diag_indx + 1;
-                        int indxt = diag_indx + nelec;
-                        for (int j=(k+1); j<nelec; ++j) {
-                            s22[indx]  *= (-0.5/dte);
-                            s21[indx]  *= -0.5;
-                            s11[indx]  *= -0.5*dte;
+                            int indx  = diag_indx + 1;
+                            int indxt = diag_indx + nelec;
+                            for (int j=(k+1); j<nelec; ++j) {
+                                s22[indx]  *= (-0.5/dte);
+                                s21[indx]  *= -0.5;
+                                s11[indx]  *= -0.5*dte;
 
-                            s22[indxt] *= (-0.5/dte);
-                            s21[indxt] *= -0.5;
-                            s11[indxt] *= -0.5*dte;
+                                s22[indxt] *= (-0.5/dte);
+                                s21[indxt] *= -0.5;
+                                s11[indxt] *= -0.5*dte;
 
-                            indx  += 1;
-                            indxt += nelec;
+                                indx  += 1;
+                                indxt += nelec;
+                            }
                         }
 
                     });
@@ -1087,6 +1128,77 @@ void Pneb::mmm_Multiply_sycl(const int mb, double *a, double *b, double alpha, d
                                                   beta,
                                                   &c[shift2], n);
         }
+    }
+}
+
+void Pneb::ggm_sym_Multiply_sycl(double *psi1, double *psi2, double *hml)
+{
+    nwpw_timing_function ftimer(15);
+
+    int ms,j,k,n,shift0,shift1,mshift0,mshift1;
+    int ng  = 2*npack(1);
+    int ng0 = 2*nzero(1);
+
+    if (parallelized)
+    {
+        std::ostringstream msg;
+        msg << "NWPW Error: ggm_sym_Multiply() parallelized is NOT supported\n"
+            << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
+    }
+    else
+    {
+        shift0  = 0;
+        mshift0 = 0;
+        for (ms=0; ms<ispin; ++ms)
+        {
+            n       = ne[ms];
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+                oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
+                                                      oneapi::mkl::transpose::trans,
+                                                      oneapi::mkl::transpose::nontrans,
+                                                      k, 1, ng,
+                                                      2.0,
+                                                      &psi1[shift0], ng,
+                                                      &psi2[shift1], ng,
+                                                      0.0,
+                                                      &hml[mshift1], k);
+
+                oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
+                                                      oneapi::mkl::transpose::trans,
+                                                      oneapi::mkl::transpose::nontrans,
+                                                      k, 1, ng0,
+                                                      -1.0,
+                                                      &psi1[shift0], ng,
+                                                      &psi2[shift1], ng,
+                                                      1.0,
+                                                      &hml[mshift1], k);
+
+                shift1  += ng;
+                mshift1 += n;
+            }
+
+            syclQ->submit([&](cl::sycl::handler &cgh) {
+                    cgh.parallel_for(cl::sycl::range<1>(n), [=](cl::sycl::id<1> tid) {
+                            for (int j=tid+1; j<n; ++j) {
+                                hml[mshift0 + j + tid*n] = hml[mshift0 + tid + j*n];
+                            }
+                        });
+                });
+
+            shift0  += ng*ne[0];
+            mshift0 += ne[0]*ne[0];
+        }
+
+        double* hml_host = get_host_mem((ne[0]*ne[0] + ne[1]*ne[1]) * sizeof(double));
+        get_syclQue()->memcpy(hml_host, hml, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(double));
+        get_syclQue()->wait();
+        d3db::parall->Vector_SumAll(1, ne[0]*ne[0] + ne[1]*ne[1], hml_host);
+        get_syclQue()->memcpy(hml, hml_host, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(double));
+        free_host_mem(hml_host);
     }
 }
 
