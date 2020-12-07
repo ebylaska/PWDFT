@@ -14,7 +14,8 @@ class Mapping1 {
 
 public:
         int ispin,ne[2];
-        int maptype1,neq[2];
+        int maptype1;
+        int neq[2]; // Number of wave functions
 
 	/* Constructors */
 	Mapping1();
