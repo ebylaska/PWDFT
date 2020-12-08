@@ -17,3 +17,8 @@ cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 make -j4
 ```
+
+## Running on JSLE
+```
+qsub -I -n 1 -t 60 -q iris
+```
