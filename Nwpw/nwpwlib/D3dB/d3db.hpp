@@ -11,39 +11,58 @@
 #include	"Parallel.hpp"
 #include	"Mapping3.hpp"
 
+#include <stdexcept>
+#include <sstream>
+
+
 #ifdef NWPW_SYCL
+
 #include "gdevice.hpp"
-#include "oneapi/mkl.hpp"
+#include <oneapi/mkl/dfti.hpp>
+#include <oneapi/mkl/blas.hpp>
 
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
 				     oneapi::mkl::dft::domain::REAL> desc_real_t;
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
 				     oneapi::mkl::dft::domain::COMPLEX> desc_cmplx_t;
+
 #endif
 
 class d3db : public Mapping3 {
 
-   /* transpose indexings */
-   int **iq_to_i1,**iq_to_i2;
-   int **i1_start,**i2_start;
+    /* transpose indexings */
+    int **iq_to_i1,**iq_to_i2;
+    int **i1_start,**i2_start;
 
-   /* timereverse indexings */
-   int *t_iq_to_i1,*t_iq_to_i2;
-   int *t_i1_start,*t_i2_start;
+    /* timereverse indexings */
+    int *t_iq_to_i1,*t_iq_to_i2;
+    int *t_i1_start,*t_i2_start;
 
-   /* ptrans indexings */
-   int **p_iq_to_i1[2],**p_iq_to_i2[2],**p_iz_to_i2[2], p_iz_to_i2_count[2][6];
-   int **p_i1_start[2],**p_i2_start[2];
+    /* ptrans indexings */
+    int **p_iq_to_i1[2],**p_iq_to_i2[2],**p_iz_to_i2[2], p_iz_to_i2_count[2][6];
+    int **p_i1_start[2],**p_i2_start[2];
 
-   int **p_jq_to_i1[2],**p_jq_to_i2[2],**p_jz_to_i2[2];
-   int **p_j1_start[2],**p_j2_start[2];
+    int **p_jq_to_i1[2],**p_jq_to_i2[2],**p_jz_to_i2[2];
+    int **p_j1_start[2],**p_j2_start[2];
 
-   double *tmpx,*tmpy,*tmpz;
+    double *tmpx,*tmpy,*tmpz;
 
 #ifdef NWPW_SYCL
-  double *a_dev;
-  desc_real_t *desc_x;
-  desc_cmplx_t *desc_y, *desc_z;
+    // NOTE: supports only mapType = 2
+    int *iq_to_i1_0_dev; // iq_to_i1[0]
+    int *iq_to_i1_1_dev; // iq_to_i1[1]
+    int *iq_to_i1_2_dev; // iq_to_i1[2]
+    int *iq_to_i1_3_dev; // iq_to_i1[3]
+
+    int *iq_to_i2_0_dev; // iq_to_i2[0]
+    int *iq_to_i2_1_dev; // iq_to_i2[1]
+    int *iq_to_i2_2_dev; // iq_to_i2[2]
+    int *iq_to_i2_3_dev; // iq_to_i2[3]
+
+    // variables for cr_fft3d_sycl() and rc_fft3d_sycl()
+    double *a_dev;
+    desc_real_t *desc_x;
+    desc_cmplx_t *desc_y, *desc_z;
 #endif
 
 public:
@@ -88,9 +107,6 @@ public:
 	void     c_transpose_jk(double *, double *, double *);
 	void     t_transpose_jk(double *, double *, double *);
 
-#ifdef NWPW_SYCL
-  void     c_transpose_ijk_sycl(const int, const int*, const int*, double *, double *, double *);
-#endif
 	void     c_transpose_ijk(const int, double *, double *, double *);
 
 	void     t_transpose_ijk(const int, double *, double *, double *);
@@ -114,6 +130,13 @@ public:
         /* ptranspose operators */
  	void     c_ptranspose_jk_init(const int, int  *);
 	void     c_ptranspose_ijk_init(const int, int *, int *);
+
+#ifdef NWPW_SYCL
+        void     cr_fft3d_sycl(double *);
+        void     rc_fft3d_sycl(double *);
+        void     c_transpose_ijk_sycl(const int, const int*, const int*, double *, double *, double *);
+#endif
+
 };
 
 #endif
