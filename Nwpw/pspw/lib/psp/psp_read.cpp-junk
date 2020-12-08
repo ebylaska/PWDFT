@@ -12,29 +12,29 @@ static void psp_read(PGrid *mygrid,
                      int *psp_type,
                      int *version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double *amass,
-                     double *zv,
+                     float *amass,
+                     float *zv,
                      int *lmmax,
                      int *lmax,
                      int *locp,
                      int *nmax,
-                     double **rc,
+                     float **rc,
                      int *nprj,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
                      int **b_projector,
-                     double **Gijl,
+                     float **Gijl,
                      bool   *semicore,
-                     double *rcore,
-                     double **ncore,
-                     double *vl,
-                     double **vnl)
+                     float *rcore,
+                     float **ncore,
+                     float *vl,
+                     float **vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -70,7 +70,7 @@ static void psp_read(PGrid *mygrid,
    parall->Brdcst_iValue(0,0,nmax);
    *lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
 
-   *rc = new double[*lmax+1];
+   *rc = new float[*lmax+1];
    if (parall->is_master())
    {
       dread(5,*rc,*lmax+1);
@@ -97,7 +97,7 @@ static void psp_read(PGrid *mygrid,
       parall->Brdcst_iValues(0,0,*nprj,*b_projector);
 
       nn = (*nmax)*(*nmax)*(*lmax+1);
-      *Gijl = new double[nn];
+      *Gijl = new float[nn];
       if (parall->is_master())
       {
          dread(5,*Gijl,nn);
@@ -113,7 +113,7 @@ static void psp_read(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   tmp2 = new float [mygrid->nfft3d];
    mygrid->t_read(5,tmp2,-1);
    mygrid->t_pack(0,tmp2);
    mygrid->tt_pack_copy(0,tmp2,vl);
@@ -121,7 +121,7 @@ static void psp_read(PGrid *mygrid,
    /* reading vnl 3d block */
    if (*nprj > 0) 
    {
-      *vnl = new double[(*nprj)*(mygrid->npack(1))];
+      *vnl = new float[(*nprj)*(mygrid->npack(1))];
       prj = *vnl;
       for (i=0; i<(*nprj); ++i)
       {
@@ -133,7 +133,7 @@ static void psp_read(PGrid *mygrid,
    if (*semicore)
    {
       nn     = 5*mygrid->npack(0);
-      *ncore = new double[nn];
+      *ncore = new float[nn];
       prj    = *ncore;
 
       mygrid->t_read(5,tmp2,-1);

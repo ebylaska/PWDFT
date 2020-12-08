@@ -1,5 +1,5 @@
       subroutine dcffti (n,wsave)
-      double precision wsave(1)
+      real wsave(1)
 c
       if (n .eq. 1) return
 c

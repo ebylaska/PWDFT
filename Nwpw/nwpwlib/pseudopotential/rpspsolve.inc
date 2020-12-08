@@ -21,7 +21,7 @@ void rpspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,
      int *debug_ptr;
      int *lmax_ptr;
      int *locp_ptr;
-     double *rlocal_ptr;
+     float *rlocal_ptr;
      char sdir_name[];
      int *n9;
      char dir_name[];
@@ -34,13 +34,13 @@ void rpspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,
 
   int i, j, k, l, p, Nlinear, Nvalence;
   int debug, print;
-  double *rl, *rhol, **psil, **pspl;
-  double over_fourpi, c, x, y;
+  float *rl, *rhol, **psil, **pspl;
+  float over_fourpi, c, x, y;
   int Ngrid;
-  double *vall, *rgrid;
+  float *vall, *rgrid;
   char name[255];
   int lmax_out, locp_out, nvh;
-  double rlocal_out, vx;
+  float rlocal_out, vx;
 
   FILE *fp;
 
@@ -97,15 +97,15 @@ void rpspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,
   /* allocate linear meshes */
   Nvalence = Nvalence_RelPsp ();
   Nlinear = nrl_Linear ();
-  psil = (double **) malloc (Nvalence * sizeof (double *));
-  pspl = (double **) malloc (Nvalence * sizeof (double *));
+  psil = (float **) malloc (Nvalence * sizeof (float *));
+  pspl = (float **) malloc (Nvalence * sizeof (float *));
   for (p = 0; p < Nvalence; ++p)
     {
-      psil[p] = (double *) malloc (Nlinear * sizeof (double));
-      pspl[p] = (double *) malloc (Nlinear * sizeof (double));
+      psil[p] = (float *) malloc (Nlinear * sizeof (float));
+      pspl[p] = (float *) malloc (Nlinear * sizeof (float));
     }
-  rl = (double *) malloc (Nlinear * sizeof (double));
-  rhol = (double *) malloc (Nlinear * sizeof (double));
+  rl = (float *) malloc (Nlinear * sizeof (float));
+  rhol = (float *) malloc (Nlinear * sizeof (float));
 
 
   /* Norm-conserving output */

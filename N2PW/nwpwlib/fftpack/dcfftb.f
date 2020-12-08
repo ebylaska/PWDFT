@@ -1,5 +1,5 @@
       subroutine dcfftb (n,c,wsave)
-      double precision c(1), wsave(1)
+      real c(1), wsave(1)
 c
       if (n .eq. 1) return
 c

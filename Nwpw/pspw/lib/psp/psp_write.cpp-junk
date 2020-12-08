@@ -12,29 +12,29 @@ static void psp_write(PGrid *mygrid,
                      int *psp_type,
                      int *version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double *amass,
-                     double *zv,
+                     float *amass,
+                     float *zv,
                      int *lmmax,
                      int *lmax,
                      int *locp,
                      int *nmax,
-                     double *rc,
+                     float *rc,
                      int *nprj,
                      int *n_projector,
                      int *l_projector,
                      int *m_projector,
                      int *b_projector,
-                     double *Gijl,
+                     float *Gijl,
                      bool   *semicore,
-                     double *rcore,
-                     double *ncore,
-                     double *vl,
-                     double *vnl)
+                     float *rcore,
+                     float *ncore,
+                     float *vl,
+                     float *vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -91,7 +91,7 @@ static void psp_write(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   tmp2 = new float [mygrid->nfft3d];
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,0);

@@ -28,8 +28,8 @@ c
 
       character*255 pspgenerator
       character*4  element
-      double precision charge
-      double precision mass_number
+      float charge
+      float mass_number
       character*25  pseudopotential_type
       character*25  solver_type
       character*25  correlation_type
@@ -567,7 +567,7 @@ c      call flush(6)
 
       integer iopt
       character*4 atom
-      double precision rlocal
+      float rlocal
       integer	    locp,lmax
 c
       integer MASTER,taskid,msglen
@@ -584,7 +584,7 @@ c
       integer  nwpw_libglmax,nwpw_libglocp,control_gga
       integer  nwpw_libgpsp_type
       integer  nwpw_libgefg_type
-      double precision nwpw_libgrlocal
+      float nwpw_libgrlocal
       external control_print
       external nwpw_libglmax,nwpw_libglocp,control_gga
       external nwpw_libgpsp_type
@@ -815,7 +815,7 @@ c        *** revPBE ***
 #include "stdio.fh"
 
       character*4 atom
-      double precision rlocal
+      float rlocal
       integer	    locp,lmax
 c
       integer MASTER,taskid,msglen
@@ -831,7 +831,7 @@ c
       logical  control_print
       integer  nwpw_libglmax,nwpw_libglocp,control_gga
       integer  nwpw_libgpsp_type
-      double precision nwpw_libgrlocal
+      float nwpw_libgrlocal
       external control_print
       external nwpw_libglmax,nwpw_libglocp,control_gga
       external nwpw_libgpsp_type

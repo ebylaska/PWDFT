@@ -1,5 +1,5 @@
       subroutine dpssb (nac,ido,ip,l1,idl1,cc,c1,c2,ch,ch2,wa)
-      double precision cc(ido,ip,l1), c1(ido,l1,ip), c2(idl1,ip),
+      real cc(ido,ip,l1), c1(ido,l1,ip), c2(idl1,ip),
      1  ch(ido,l1,ip), ch2(idl1,ip), wa(1), wai, war
 c
       idot = ido/2

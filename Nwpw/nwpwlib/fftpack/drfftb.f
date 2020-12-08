@@ -1,5 +1,5 @@
       subroutine drfftb (n,r,wsave)
-      double precision r(1), wsave(1)
+      real r(1), wsave(1)
 c
       if (n .eq. 1) return
 c

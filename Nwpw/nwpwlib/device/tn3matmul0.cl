@@ -1,9 +1,9 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 __kernel void TN3matmul(const int M, const int N,
-                     const __global double *A, 
-                     const __global double *B, 
-                     __global double *Caa) {
+                     const __global float *A, 
+                     const __global float *B, 
+                     __global float *Caa) {
     
     // Get the index of the current element
     int i = get_global_id(0);
@@ -11,9 +11,9 @@ __kernel void TN3matmul(const int M, const int N,
 
     // Do the operation
     int NN = N*N;
-     double aa_acc = 0.0;
-    double ab_acc = 0.0;
-    double bb_acc = 0.0;
+     float aa_acc = 0.0;
+    float ab_acc = 0.0;
+    float bb_acc = 0.0;
     for (int l=0; l<M; ++l) {
        aa_acc += A[l + i*M]*A[l + j*M];
        ab_acc += A[l + i*M]*B[l + j*M];

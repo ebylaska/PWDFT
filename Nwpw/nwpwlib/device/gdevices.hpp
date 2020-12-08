@@ -362,7 +362,7 @@ public:
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&(gpu.avail[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&(gpu.num_cores[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&(gpu.freq[i][j]),&size);
-              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&(gpu.mem[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_EXTENSIONS,1000*sizeof(char),str,&size);

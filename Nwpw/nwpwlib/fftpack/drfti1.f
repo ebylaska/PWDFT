@@ -1,5 +1,5 @@
       subroutine drfti1 (n,wa,ifac)
-      double precision wa(1), arg, argh, argld, fi, tpi
+      real wa(1), arg, argh, argld, fi, tpi
       integer ifac(*), ntryh(4)
       data ntryh(1), ntryh(2), ntryh(3), ntryh(4) /4, 2, 3, 5/
       data tpi   /  6.2831853071 7958647692 5286766559 00577d0/

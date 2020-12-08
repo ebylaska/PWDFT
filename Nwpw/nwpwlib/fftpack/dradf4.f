@@ -1,5 +1,5 @@
       subroutine dradf4 (ido,l1,cc,ch,wa1,wa2,wa3)
-      double precision cc(ido,l1,4), ch(ido,4,l1), wa1(1), wa2(1),
+      real cc(ido,l1,4), ch(ido,4,l1), wa1(1), wa2(1),
      1  wa3(1), ci2, ci3, ci4, cr2, cr3, cr4, hsqt2, ti1, ti2, ti3,
      2  ti4, tr1, tr2, tr3, tr4
       data hsqt2 /   .7071067811 8654752440 0844362104 85 d0 /

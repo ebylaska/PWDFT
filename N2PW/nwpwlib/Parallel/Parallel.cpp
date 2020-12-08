@@ -137,8 +137,8 @@ float Parallel::MaxAll(const int d, const float sum)
 {
    float sumout;
    if (npi[d]>1) 
-      //comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_MAX);
-      MPI_Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_MAX,comm_i[d]);
+      //comm_i[d].Allreduce(&sum,&sumout,1,MPI_REAL,MPI_MAX);
+      MPI_Allreduce(&sum,&sumout,1,MPI_REAL,MPI_MAX,comm_i[d]);
    else 
       sumout = sum;
    return sumout;
@@ -154,8 +154,8 @@ float Parallel::SumAll(const int d, const float sum)
    float sumout;
 
    if (npi[d]>1) 
-      //comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM);
-      MPI_Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM,comm_i[d]);
+      //comm_i[d].Allreduce(&sum,&sumout,1,MPI_REAL,MPI_SUM);
+      MPI_Allreduce(&sum,&sumout,1,MPI_REAL,MPI_SUM,comm_i[d]);
    else
       sumout = sum;
    return sumout;
@@ -190,8 +190,8 @@ void Parallel::Vector_SumAll(const int d, const int n, float *sum)
    if (npi[d]>1)
    {
       sumout = new float [n];
-      //comm_i[d].Allreduce(sum,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM);
-      MPI_Allreduce(sum,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM,comm_i[d]);
+      //comm_i[d].Allreduce(sum,sumout,n,MPI_REAL,MPI_SUM);
+      MPI_Allreduce(sum,sumout,n,MPI_REAL,MPI_SUM,comm_i[d]);
       for (int i=0; i<n; ++i) sum[i] = sumout[i];
       delete [] sumout;
    }
@@ -223,8 +223,8 @@ void Parallel::Vector_ISumAll(const int d, const int n, int *sum)
  ********************************/
 void Parallel::Brdcst_Values(const int d, const int root, const int n, float *sum)
 {
-   //if (npi[d]>1) comm_i[d].Bcast(sum,n,MPI_DOUBLE_PRECISION,root);
-   if (npi[d]>1) MPI_Bcast(sum,n,MPI_DOUBLE_PRECISION,root,comm_i[d]);
+   //if (npi[d]>1) comm_i[d].Bcast(sum,n,MPI_REAL,root);
+   if (npi[d]>1) MPI_Bcast(sum,n,MPI_REAL,root,comm_i[d]);
 }
 
 /********************************
@@ -267,8 +267,8 @@ void Parallel::Brdcst_cValues(const int d, const int root, const int n, void *su
  ********************************/
 void Parallel::dsend(const int d, const int tag, const int procto, const int n, float *sum)
 {
-   //if (npi[d]>1) comm_i[d].Send(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
-   if (npi[d]>1) MPI_Send(sum,n,MPI_DOUBLE_PRECISION,procto,tag,comm_i[d]);
+   //if (npi[d]>1) comm_i[d].Send(sum,n,MPI_REAL,procto,tag);
+   if (npi[d]>1) MPI_Send(sum,n,MPI_REAL,procto,tag,comm_i[d]);
 }
 
 
@@ -280,9 +280,9 @@ void Parallel::dsend(const int d, const int tag, const int procto, const int n, 
 void Parallel::dreceive(const int d, const int tag, const int procfrom, const int n, float *sum)
 {
    //MPI::Status status;
-   //if (npi[d]>1) comm_i[d].Recv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
+   //if (npi[d]>1) comm_i[d].Recv(sum,n,MPI_REAL,procfrom,tag);
    MPI_Status status;
-   if (npi[d]>1) MPI_Recv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag,comm_i[d],&status);
+   if (npi[d]>1) MPI_Recv(sum,n,MPI_REAL,procfrom,tag,comm_i[d],&status);
 }
 
 
@@ -356,8 +356,8 @@ void Parallel::aend(const int d)
 void Parallel::adreceive(const int d, const int tag, const int procfrom, const int n, float *sum)
 {
    //MPI::Status status;
-   //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
-   if (npi[d]>1) MPI_Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag,comm_i[d],&request[d][reqcnt[d]++]);
+   //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Irecv(sum,n,MPI_REAL,procfrom,tag);
+   if (npi[d]>1) MPI_Irecv(sum,n,MPI_REAL,procfrom,tag,comm_i[d],&request[d][reqcnt[d]++]);
 }
 
 /********************************
@@ -367,7 +367,7 @@ void Parallel::adreceive(const int d, const int tag, const int procfrom, const i
  ********************************/
 void Parallel::adsend(const int d, const int tag, const int procto, const int n, float *sum)
 {
-   //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
-   if (npi[d]>1) MPI_Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag,comm_i[d],&request[d][reqcnt[d]++]);
+   //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Isend(sum,n,MPI_REAL,procto,tag);
+   if (npi[d]>1) MPI_Isend(sum,n,MPI_REAL,procto,tag,comm_i[d],&request[d][reqcnt[d]++]);
 }
 

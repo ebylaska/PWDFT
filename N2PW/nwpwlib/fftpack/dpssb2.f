@@ -1,5 +1,5 @@
       subroutine dpssb2 (ido,l1,cc,ch,wa1)
-      double precision cc(ido,2,l1), ch(ido,l1,2), wa1(1), ti2, tr2
+      real cc(ido,2,l1), ch(ido,l1,2), wa1(1), ti2, tr2
 c
       if (ido .gt. 2) go to 102
       do 101 k=1,l1

@@ -15,5 +15,6 @@ module load cmake
 ```
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
+cmake -H. -Bbuild_cpu -DCMAKE_BUILD_TYPE=Debug ./Nwpw
 make -j4
 ```

@@ -87,7 +87,7 @@ c
 	return
 	end
 
-	double precision function nwpw_libgrlocal(atom)
+	real function nwpw_libgrlocal(atom)
 	implicit none
 #include "nwpw_inp.fh"
 	character*(*) atom
@@ -95,7 +95,7 @@ c
 	return
 	end
 
-	double precision function nwpw_libgcutoff(atom)
+	real function nwpw_libgcutoff(atom)
 	implicit none
 #include "nwpw_inp.fh"
 	character*(*) atom
@@ -115,7 +115,7 @@ c
 c
 	integer l_lgth,i,sqptr_l,sqptr_r,k_lgth
 	integer read_int
-	double precision read_float
+	real read_float
 	logical gotsq
 c
 c       square parenthesis [] are used for lmax locp rlocal

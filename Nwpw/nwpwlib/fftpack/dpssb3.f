@@ -1,5 +1,5 @@
       subroutine dpssb3 (ido,l1,cc,ch,wa1,wa2)
-      double precision cc(ido,3,l1), ch(ido,l1,3), wa1(1), wa2(1),
+      real cc(ido,3,l1), ch(ido,l1,3), wa1(1), wa2(1),
      1 ci2, ci3, cr2, cr3, di2, di3, dr2, dr3, taui, taur, ti2, tr2
       data taur / -0.5 d0 /
       data taui  /  0.8660254037 8443864676 3723170752 93618d0/

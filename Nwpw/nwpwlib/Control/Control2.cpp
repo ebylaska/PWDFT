@@ -367,6 +367,7 @@ void Control2::add_permanent_dir(char fname[])
 {
    char stmp[256]; 
 
+   cout << string(ppermanent_dir, ' ');
    if (strlen(ppermanent_dir)>0)
    {
       strcpy(stmp,fname);

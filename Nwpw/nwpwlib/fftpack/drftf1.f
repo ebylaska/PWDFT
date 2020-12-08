@@ -1,5 +1,5 @@
       subroutine drftf1 (n,c,ch,wa,ifac)
-      double precision c(1), ch(1), wa(1)
+      real c(1), ch(1), wa(1)
       integer ifac(*)
 c
       nf = ifac(2)

@@ -1,5 +1,5 @@
       subroutine dradb2 (ido,l1,cc,ch,wa1)
-      double precision cc(ido,2,l1), ch(ido,l1,2), wa1(1), ti2, tr2
+      real cc(ido,2,l1), ch(ido,l1,2), wa1(1), ti2, tr2
 c
       do 101 k=1,l1
          ch(1,k,1) = cc(1,1,k)+cc(ido,2,k)
