@@ -5,6 +5,7 @@ PW-DFT development for NWChemEx
 
 ## Required Modules
 ```
+export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
 module load oneapi
 module load mpi/aurora
 module load cmake
