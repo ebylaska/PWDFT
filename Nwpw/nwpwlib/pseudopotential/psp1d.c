@@ -33,35 +33,35 @@ static	int	*l;
 static  int	kb_extra;
 static	int	*kb_expansion;
 static	int	lmax;
-static 	double	*fill;
-static 	double	*rcut;
-static  double	*peak;
-static	double	Zion;
-static	double	Total_E,
+static 	float	*fill;
+static 	float	*rcut;
+static  float	*peak;
+static	float	Zion;
+static	float	Total_E,
 		E_Hartree, P_Hartree,
 		E_exchange,
 		P_exchange,
 		E_correlation,
 		P_correlation;
-static	double  *eigenvalue;
-static	double	**r_psi;
-static	double	**r_psi_prime;
-static	double	**r_psi_extra;
-static	double	**r_psi_prime_extra;
-static  double  *rho;
-static  double  *rho_semicore;
-static  double  *drho_semicore;
-static  double  r_semicore;
-static	double	**V_psp;
+static	float  *eigenvalue;
+static	float	**r_psi;
+static	float	**r_psi_prime;
+static	float	**r_psi_extra;
+static	float	**r_psi_prime_extra;
+static  float  *rho;
+static  float  *rho_semicore;
+static  float  *drho_semicore;
+static  float  r_semicore;
+static	float	**V_psp;
 static  char    comment[80];
 
 /* extra Vanderbilt parameters */
-static double rlocal,clocal;
+static float rlocal,clocal;
 static int    ns[10],indx_il[4][10],indx_ijl[4][4][10];
-static double *Vlocal;
-static double **r_hard_psi;
-static double *D0;
-static double *q;
+static float *Vlocal;
+static float **r_hard_psi;
+static float *D0;
+static float *q;
 
 /* solver parameters: this is the Kawai-Weare default */
 static	int	Solver_Type      = Hamann;
@@ -77,7 +77,7 @@ void	init_Psp(char *filename)
 {
    int	  p,p1,p2;
    int	  ltmp,semicore_type;
-   double rctmp;
+   float rctmp;
    char   *w,*tc;
    FILE	  *fp;
 
@@ -154,18 +154,18 @@ void	init_Psp(char *filename)
    n    	 = (int *)    malloc((npsp_states)*sizeof(int));
    l    	 = (int *)    malloc((npsp_states)*sizeof(int));
    kb_expansion  = (int *)    malloc((npsp_states)*sizeof(int));
-   fill 	 = (double *) malloc((npsp_states)*sizeof(double));
-   rcut 	 = (double *) malloc((npsp_states)*sizeof(double));
-   peak 	 = (double *) malloc((npsp_states)*sizeof(double));
-   eigenvalue = (double *) malloc((npsp_states)*sizeof(double));
+   fill 	 = (float *) malloc((npsp_states)*sizeof(float));
+   rcut 	 = (float *) malloc((npsp_states)*sizeof(float));
+   peak 	 = (float *) malloc((npsp_states)*sizeof(float));
+   eigenvalue = (float *) malloc((npsp_states)*sizeof(float));
 
    for (p=0; p<npsp_states; ++p)
       kb_expansion[p] = 1;
    
    /* allocate memory for r_psi, V_psp, and rho */ 
-   r_psi       = (double **) malloc((npsp_states)*sizeof(double*));
-   r_psi_prime = (double **) malloc((npsp_states)*sizeof(double*));
-   V_psp       = (double **) malloc((npsp_states)*sizeof(double*));
+   r_psi       = (float **) malloc((npsp_states)*sizeof(float*));
+   r_psi_prime = (float **) malloc((npsp_states)*sizeof(float*));
+   V_psp       = (float **) malloc((npsp_states)*sizeof(float*));
    for (p=0; p<npsp_states; ++p)
    {
       r_psi[p]       = alloc_LogGrid();
@@ -179,14 +179,14 @@ void	init_Psp(char *filename)
    /* allocate extra memory for Vanderbilt psp */
    if (Solver_Type==Vanderbilt)
    {
-      r_hard_psi = (double **) malloc((npsp_states)*sizeof(double*));
+      r_hard_psi = (float **) malloc((npsp_states)*sizeof(float*));
       for (p=0; p<npsp_states; ++p)
       {
          r_hard_psi[p]       = alloc_LogGrid();
       }
       Vlocal = alloc_LogGrid();
-      D0     = (double *) malloc((npsp_states*npsp_states)*sizeof(double)); 
-      q      = (double *) malloc((npsp_states*npsp_states)*sizeof(double));
+      D0     = (float *) malloc((npsp_states*npsp_states)*sizeof(float)); 
+      q      = (float *) malloc((npsp_states*npsp_states)*sizeof(float));
         
    } /* Solver_Type==Vanderbilt */
 
@@ -233,11 +233,11 @@ void	init_Psp(char *filename)
          w = get_word(fp);
          while ((w!=NIL) && (strcmp("<end>",w) != 0))
          {
-            sscanf(w,"%lf",&rctmp);
+            sscanf(w,"%f",&rctmp);
             w = get_word(fp);
             rlocal = rctmp;
 
-            sscanf(w,"%lf",&rctmp);
+            sscanf(w,"%f",&rctmp);
             w = get_word(fp);
             clocal = rctmp;
 
@@ -268,11 +268,11 @@ void	init_Psp(char *filename)
             l[ltmp] = p2;
             lmax = Max(lmax,p2);
 
-            sscanf(w,"%lf",&rctmp);
+            sscanf(w,"%f",&rctmp);
             w = get_word(fp);
             eigenvalue[ltmp] = rctmp;
 
-            sscanf(w,"%lf",&rctmp);
+            sscanf(w,"%f",&rctmp);
             w = get_word(fp);
             rcut[ltmp] = rctmp;
             fill[ltmp] = 0.0;
@@ -333,7 +333,7 @@ void	init_Psp(char *filename)
          {
             sscanf(w,"%d", &ltmp);
             w = get_word(fp);
-            sscanf(w,"%lf", &rctmp);
+            sscanf(w,"%f", &rctmp);
             w = get_word(fp);
             rcut[ltmp] = rctmp;
          }
@@ -376,7 +376,7 @@ void	init_Psp(char *filename)
          {
             sscanf(w,"%d", &ltmp);
             w = get_word(fp);
-            sscanf(w,"%lf", &rctmp);
+            sscanf(w,"%f", &rctmp);
             w = get_word(fp);
             eigenvalue[ltmp] = rctmp;
          }
@@ -398,7 +398,7 @@ void	init_Psp(char *filename)
       w = get_word(fp);
       while ((w!=NIL) && (strcmp("<end>",w) != 0))
       {
-         sscanf(w,"%lf", &rctmp);
+         sscanf(w,"%f", &rctmp);
          w = get_word(fp);
          r_semicore = rctmp;
       }
@@ -452,8 +452,8 @@ void	init_Psp(char *filename)
       kb_extra += (kb_expansion[l[p]] - 1);
    if (kb_extra>0)
    {
-      r_psi_extra       = (double **) malloc((kb_extra)*sizeof(double*));
-      r_psi_prime_extra = (double **) malloc((kb_extra)*sizeof(double*));
+      r_psi_extra       = (float **) malloc((kb_extra)*sizeof(float*));
+      r_psi_prime_extra = (float **) malloc((kb_extra)*sizeof(float*));
       for (p=0; p<kb_extra; ++p)
       {
          r_psi_extra[p]       = alloc_LogGrid();
@@ -527,7 +527,7 @@ void	solve_Psp()
 {
 
    int 		p,k,Ngrid;
-   double	*rgrid;
+   float	*rgrid;
 
    /* get loggrid variables */
    Ngrid = N_LogGrid();
@@ -621,7 +621,7 @@ FILE 	*fp;
    fprintf(fp,"hartree type     : %s\n",hartree_Name_DFT());
    fprintf(fp,"exchange type    : %s\n",exchange_Name_DFT());
    if (strcmp(exchange_Name_DFT(),"Dirac") == 0)
-     fprintf(fp,"           alpha : %lf\n",Dirac_alpha());
+     fprintf(fp,"           alpha : %f\n",Dirac_alpha());
    fprintf(fp,"correlation type : %s\n",correlation_Name_DFT());
 
    fprintf(fp,"----------------------------------------------------------------------------\n");
@@ -640,19 +640,19 @@ FILE 	*fp;
    if (r_semicore > 0.0)
    {
      fprintf(fp,"SemiCore Corrections Added\n");
-     fprintf(fp,"    rcore                      : %lf\n",r_semicore);
-     fprintf(fp,"    Semicore Charge            : %lf\n",
+     fprintf(fp,"    rcore                      : %f\n",r_semicore);
+     fprintf(fp,"    Semicore Charge            : %f\n",
                  Integrate_LogGrid(rho_semicore));
-     fprintf(fp,"    Semicore Charge gradient   : %lf\n",
+     fprintf(fp,"    Semicore Charge gradient   : %f\n",
                  Integrate_LogGrid(drho_semicore));
    }
 
    if (Solver_Type==Vanderbilt) 
       fprintf(fp,"Using AE valence density for descreening\n");
 
-   fprintf(fp,  "Pseudopotential ion charge       = %lf\n", Zion);
-   fprintf(fp,  "Pseudopotential electronic charge= %lf\n", -Integrate_LogGrid(rho));
-   fprintf(fp,  "Pseudopotential atom charge      = %lf\n", Zion-Integrate_LogGrid(rho));
+   fprintf(fp,  "Pseudopotential ion charge       = %f\n", Zion);
+   fprintf(fp,  "Pseudopotential electronic charge= %f\n", -Integrate_LogGrid(rho));
+   fprintf(fp,  "Pseudopotential atom charge      = %f\n", Zion-Integrate_LogGrid(rho));
 
    fprintf(fp,"\nTotal E       = %le\n",Total_E);
    fprintf(fp,"\n");
@@ -710,48 +710,48 @@ int NormConserving_Psp()
  *				*
  ********************************/
 
-double	E_Psp()
+float	E_Psp()
 {
    return Total_E;
 } /*E_Atom*/
 
 
-double	eigenvalue_Psp(int i)
+float	eigenvalue_Psp(int i)
 {
    return eigenvalue[i];
 }
 
-double	*rho_Psp()
+float	*rho_Psp()
 {
    return rho;
 }
 
-double	*rho_semicore_Psp()
+float	*rho_semicore_Psp()
 {
    return rho_semicore;
 }
 
-double	*drho_semicore_Psp()
+float	*drho_semicore_Psp()
 {
    return drho_semicore;
 }
 
-double	r_semicore_Psp()
+float	r_semicore_Psp()
 {
    return r_semicore;
 }
 
 
-double *Beta_Psp(int i,int l)
+float *Beta_Psp(int i,int l)
 {
    return V_psp[indx_il[i][l]];
 }
 
-double *r_psi_il_Psp(int i, int l)
+float *r_psi_il_Psp(int i, int l)
 {
    return r_psi[indx_il[i][l]];
 }
-double *r_hard_psi_il_Psp(int i, int l)
+float *r_hard_psi_il_Psp(int i, int l)
 {
    return r_hard_psi[indx_il[i][l]];
 }
@@ -761,35 +761,35 @@ int ns_Psp(int l)
    return ns[l];
 }
 
-double D0_Psp(int i, int j, int l)
+float D0_Psp(int i, int j, int l)
 {
    return D0[indx_ijl[i][j][l]];
 }
 
-double q_Psp(int i, int j, int l)
+float q_Psp(int i, int j, int l)
 {
    return q[indx_ijl[i][j][l]];
 }
 
-double *Vlocal_Psp()
+float *Vlocal_Psp()
 {
    return Vlocal;
 }
 
 
 
-double	*V_Psp(int i)
+float	*V_Psp(int i)
 {
    return V_psp[i];
 }
 
 
-double	*r_psi_Psp(int i)
+float	*r_psi_Psp(int i)
 {
    return r_psi[i];
 }
 
-double	*r_psi_extra_Psp(int i)
+float	*r_psi_extra_Psp(int i)
 {
    return r_psi_extra[i];
 }
@@ -809,7 +809,7 @@ int	lmax_Psp()
    return lmax;
 }
 
-double	fill_Psp(int i)
+float	fill_Psp(int i)
 {
    return fill[i];
 }
@@ -832,22 +832,22 @@ int   kb_expansion_Psp(int i)
 }
 
 
-double	peak_Psp(int i)
+float	peak_Psp(int i)
 {
    return peak[i];
 }
 
-double	rcut_Psp(int i)
+float	rcut_Psp(int i)
 {
    return rcut[i];
 }
 
-double	rcut_il_Psp(int i, int l)
+float	rcut_il_Psp(int i, int l)
 {
    return rcut[ indx_il[i][l] ];
 }
 
-double	Zion_Psp()
+float	Zion_Psp()
 {
    return Zion;
 }

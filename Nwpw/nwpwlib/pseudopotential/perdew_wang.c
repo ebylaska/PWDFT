@@ -35,27 +35,27 @@
 
 void  R_Perdew_Wang(rho,Vc_out,Ec_out,Pc_out)
 
-double	rho[],
+float	rho[],
 Vc_out[],
 *Ec_out,
 *Pc_out;
 {
     int	i;
-    double onethird;
-    double onesixth;
-    double sevensixth;
-    double pi,rs_scale;
-    double rs,rss,n;
-    double Q0,Q1,Q2,Q3;
-    double ec,ec_rs;
-    double uc;
+    float onethird;
+    float onesixth;
+    float sevensixth;
+    float pi,rs_scale;
+    float rs,rss,n;
+    float Q0,Q1,Q2,Q3;
+    float ec,ec_rs;
+    float uc;
 
     /* loggrid variables */
     int	   Ngrid;
 
     /* temporary local grids */
-    double *ec_functional;
-    double *tmp;
+    float *ec_functional;
+    float *tmp;
 
     /* define constants */
     pi       = 4.0*atan(1.0);

@@ -14,7 +14,7 @@
 extern void inner_loop_md(bool, Control2&, Pneb *, Ion *, 
                        Kinetic_Operator *, Coulomb_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
-                       double *, double *, double *, double *,
-                       double *, double *, double *,
-                       double *, double *, double *, double *);
+                       float *, float *, float *, float *,
+                       float *, float *, float *,
+                       float *, float *, float *, float *);
 #endif

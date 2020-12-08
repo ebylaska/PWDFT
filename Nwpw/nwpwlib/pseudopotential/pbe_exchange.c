@@ -31,33 +31,33 @@
 
 void  R_PBE96_Exchange(rho,Vx,Ex,Px)
 
-double	rho[],
+float	rho[],
 Vx[],
 *Ex,
 *Px;
 {
     int	i;
-    double mu,kappa;
-    double onethird,fourthird,twothird;
-    double pi;
-    double n;
-    double n_onethird;
-    double ex_p;
-    double ux_p;
-    double s,F,Fs,Fss,kf,P0;
-    double u,v;
-    double agr,lap,delgr;
+    float mu,kappa;
+    float onethird,fourthird,twothird;
+    float pi;
+    float n;
+    float n_onethird;
+    float ex_p;
+    float ux_p;
+    float s,F,Fs,Fss,kf,P0;
+    float u,v;
+    float agr,lap,delgr;
 
     /* loggrid variables */
     int	   Ngrid;
 
     /* tempory local grids */
-    double *ex_functional;
-    double *tmp;
-    double *drho;
-    double *ddrho;
-    double *dadrho;
-    double *rgrid;
+    float *ex_functional;
+    float *tmp;
+    float *drho;
+    float *ddrho;
+    float *dadrho;
+    float *rgrid;
 
     /* define constants */
     mu        = 0.2195149727645171;

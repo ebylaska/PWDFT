@@ -21,16 +21,16 @@ int main(void) {
  int size = 100;
 
  // Cumulative time
- double h = 0;
+ float h = 0;
 
  // Signal frequency
- double frequency_signal = 10;
+ float frequency_signal = 10;
 
  // Sampling frequency
- double frequency_sampling = size*frequency_signal;
+ float frequency_sampling = size*frequency_signal;
 
  // step = T_sampling
- double step = 1.0/frequency_sampling;
+ float step = 1.0/frequency_sampling;
 
  // File for saving outputs
  FILE *FFT_1D;

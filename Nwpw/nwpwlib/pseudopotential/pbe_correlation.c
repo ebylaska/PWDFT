@@ -38,41 +38,41 @@
 
 void  R_PBE96_Correlation(rho,Vc_out,Ec_out,Pc_out)
 
-double	rho[],
+float	rho[],
 Vc_out[],
 *Ec_out,
 *Pc_out;
 {
     int	i;
-    double BOG;
-    double onethird;
-    double onesixth;
-    double sevensixth;
-    double pi,rs_scale;
-    double rs,rss,n;
-    double lap,agr,delgr;
-    double t,t2,t4,t6;
-    double Q0,Q1,Q2,Q3,Q4,Q5,Q8,Q9;
-    double uu,vv;
-    double ks,kf;
-    double H,Hrs,Hrst,Ht,Htt,H_B,H_Bt,B_ec,B;
-    double FACT0;
-    double FACT1;
-    double FACT2;
-    double FACT3;
-    double ec,ec_rs;
-    double uc,duc;
+    float BOG;
+    float onethird;
+    float onesixth;
+    float sevensixth;
+    float pi,rs_scale;
+    float rs,rss,n;
+    float lap,agr,delgr;
+    float t,t2,t4,t6;
+    float Q0,Q1,Q2,Q3,Q4,Q5,Q8,Q9;
+    float uu,vv;
+    float ks,kf;
+    float H,Hrs,Hrst,Ht,Htt,H_B,H_Bt,B_ec,B;
+    float FACT0;
+    float FACT1;
+    float FACT2;
+    float FACT3;
+    float ec,ec_rs;
+    float uc,duc;
 
     /* loggrid variables */
     int	   Ngrid;
-    double *rgrid;
+    float *rgrid;
 
     /* temporary local grids */
-    double *ec_functional;
-    double *tmp;
-    double *drho;
-    double *ddrho;
-    double *dadrho;
+    float *ec_functional;
+    float *tmp;
+    float *drho;
+    float *ddrho;
+    float *dadrho;
 
     /* define constants */
     pi       = 4.0*atan(1.0);

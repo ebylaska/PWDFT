@@ -32,36 +32,36 @@ Gdevices::Gdevices() : ndev_mem(0) {
 cl::sycl::queue* get_syclQue() {
   return mygdevice.device_queue;
 }
-double* get_sycl_mem(const size_t mem_in_bytes) {
+float* get_sycl_mem(const size_t mem_in_bytes) {
   return mygdevice.getGpuMem(mem_in_bytes);
 }
-void free_sycl_mem(double* ptr) {
+void free_sycl_mem(float* ptr) {
   mygdevice.freeGpuMem(ptr);
 }
-double* get_host_mem(const size_t mem_in_bytes) {
+float* get_host_mem(const size_t mem_in_bytes) {
   return mygdevice.getHostMem(mem_in_bytes);
 }
-void free_host_mem(double* ptr) {
+void free_host_mem(float* ptr) {
   mygdevice.freeHostMem(ptr);
 }
 #endif
 
-void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cbb)
+void gdevice_TN3_dgemm(int npack, int ne, float alpha, float *a, float *b, float beta, float *caa, float *cab, float *cbb)
 {
   mygdevice.TN3_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cbb);
 }
 
-void gdevice_TN_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
+void gdevice_TN_dgemm(int npack, int ne, int nprj, float alpha, float *a, float *b, float beta, float *c)
 {
   mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
 }
 
-void gdevice_NN_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *c)
+void gdevice_NN_dgemm(int npack, int ne, float alpha, float *a, float *b, float beta, float *c)
 {
   mygdevice.NN_dgemm(npack,ne,alpha,a,b,beta,c);
 }
 
-void gdevice_NT_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
+void gdevice_NT_dgemm(int npack, int ne, int nprj, float alpha, float *a, float *b, float beta, float *c)
 {
   mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
 }

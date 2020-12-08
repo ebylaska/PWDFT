@@ -25,20 +25,20 @@ int main(void) {
  int N = sizex*sizey;
 
  // Cumulative time
- double hx = 0;
- double hy = 0;
+ float hx = 0;
+ float hy = 0;
 
  // Signal frequency
- double frequency_signalx = 10;
- double frequency_signaly = 20;
+ float frequency_signalx = 10;
+ float frequency_signaly = 20;
 
  // Sampling frequency
- double frequency_samplingx = sizex*frequency_signalx;
- double frequency_samplingy = sizey*frequency_signaly;
+ float frequency_samplingx = sizex*frequency_signalx;
+ float frequency_samplingy = sizey*frequency_signaly;
 
  // Step = T_sampling
- double stepx = 1.0/frequency_samplingx;
- double stepy = 1.0/frequency_samplingy;
+ float stepx = 1.0/frequency_samplingx;
+ float stepy = 1.0/frequency_samplingy;
 
  // File for saving outputs
  FILE *FFT_2D;

@@ -13,7 +13,7 @@
 extern void inner_loop(Pneb *, Ion *, 
                        Kinetic_Operator *, Coulomb_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
-                       double *, double *, double *, double *,
-                       double *, double *, double *,
-                       double *, double *, double *, double *);
+                       float *, float *, float *, float *,
+                       float *, float *, float *,
+                       float *, float *, float *, float *);
 #endif

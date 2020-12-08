@@ -27,14 +27,14 @@ static void Multiply_Gijl_sw1(int nn,
                        int *n_prj,
                        int *l_prj,
                        int *m_prj,
-                       double *G,
-                       double *sw1,
-                       double *sw2)
+                       float *G,
+                       float *sw1,
+                       float *sw2)
 {
    int a,b,na,nb;
    int one  = 1;
    int zero = 0;
-   double rzero = 0.0;
+   float rzero = 0.0;
    int nmax2 = nmax*nmax;
    int nnn = nn*nprj;
    int nna = nn;
@@ -62,29 +62,29 @@ static void psp_read(PGrid *mygrid,
                      int *psp_type,
                      int *version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double *amass,
-                     double *zv,
+                     float *amass,
+                     float *zv,
                      int *lmmax,
                      int *lmax,
                      int *locp,
                      int *nmax,
-                     double **rc,
+                     float **rc,
                      int *nprj,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
                      int **b_projector,
-                     double **Gijl,
+                     float **Gijl,
                      int *semicore,
-                     double *rcore,
-                     double **ncore,
-                     double *vl,
-                     double **vnl)
+                     float *rcore,
+                     float **ncore,
+                     float *vl,
+                     float **vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -120,7 +120,7 @@ static void psp_read(PGrid *mygrid,
    parall->Brdcst_iValue(0,0,nmax);
    *lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
 
-   *rc = new double[*lmax+1];
+   *rc = new float[*lmax+1];
    if (parall->is_master())
    {
       dread(5,*rc,*lmax+1);
@@ -147,7 +147,7 @@ static void psp_read(PGrid *mygrid,
       parall->Brdcst_iValues(0,0,*nprj,*b_projector);
 
       nn = (*nmax)*(*nmax)*(*lmax+1);
-      *Gijl = new double[nn];
+      *Gijl = new float[nn];
       if (parall->is_master())
       {
          dread(5,*Gijl,nn);
@@ -163,7 +163,7 @@ static void psp_read(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   tmp2 = new float [mygrid->nfft3d];
    mygrid->t_read(5,tmp2,-1);
    mygrid->t_pack(0,tmp2);
    mygrid->tt_pack_copy(0,tmp2,vl);
@@ -171,7 +171,7 @@ static void psp_read(PGrid *mygrid,
    /* reading vnl 3d block */
    if (*nprj > 0) 
    {
-      *vnl = new double[(*nprj)*(mygrid->npack(1))];
+      *vnl = new float[(*nprj)*(mygrid->npack(1))];
       prj = *vnl;
       for (i=0; i<(*nprj); ++i)
       {
@@ -183,7 +183,7 @@ static void psp_read(PGrid *mygrid,
    if (*semicore)
    {
       nn     = 5*mygrid->npack(0);
-      *ncore = new double[nn];
+      *ncore = new float[nn];
       prj    = *ncore;
 
       mygrid->t_read(5,tmp2,-1);
@@ -220,8 +220,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 {
    int ia,version,nfft[3];
    int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
-   double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
-   double unita[9];
+   float *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
+   float unita[9];
    char fname[80],aname[2];
 
    myion    = myionin;
@@ -244,16 +244,16 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    m_projector = new int* [npsp];
    b_projector = new int* [npsp];
 
-   zv          = new double[npsp];
-   amass       = new double[npsp];
-   rcore       = new double[npsp];
-   rc          = new double* [npsp];
-   vl          = new double* [npsp];
+   zv          = new float[npsp];
+   amass       = new float[npsp];
+   rcore       = new float[npsp];
+   rc          = new float* [npsp];
+   vl          = new float* [npsp];
    for (ia=0; ia<npsp; ++ia) 
-      vl[ia] = new double [mypneb->npack(0)];
-   Gijl        = new double* [npsp];
-   vnl         = new double* [npsp];
-   ncore_atom  = new double* [npsp];
+      vl[ia] = new float [mypneb->npack(0)];
+   Gijl        = new float* [npsp];
+   vnl         = new float* [npsp];
+   ncore_atom  = new float* [npsp];
    
    comment  = new  char* [npsp];
    for (ia=0; ia<npsp; ++ia) comment[ia] = new char[80];
@@ -287,25 +287,25 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
  *     Pseudopotential::v_nonlocal         *
  *                                         *
  *******************************************/
-void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
+void Pseudopotential::v_nonlocal(float *psi, float *Hpsi)
 {
    int ii,ia,l,nshift0,sd_function,i;
-   double *exi;
-   double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
+   float *exi;
+   float *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    Parallel *parall;
-   double scal = 1.0/lattice_omega();
+   float scal = 1.0/lattice_omega();
    int one=1;
    int ntmp,nshift,nn;
-   double rone  = 1.0;
-   double rmone = -1.0;
+   float rone  = 1.0;
+   float rmone = -1.0;
 
    nn     = mypneb->neq[0]+mypneb->neq[1];
    nshift0 = mypneb->npack(1);
    nshift = 2*mypneb->npack(1);
-   exi    = new double[nshift];
-   prjtmp = new double[nprj_max*nshift];
-   sw1    = new double[nn*nprj_max];
-   sw2    = new double[nn*nprj_max];
+   exi    = new float[nshift];
+   prjtmp = new float[nprj_max*nshift];
+   sw1    = new float[nn*nprj_max];
+   sw2    = new float[nn*nprj_max];
 
    parall = mypneb->d3db::parall;
 
@@ -368,14 +368,14 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::v_local(double *vout)
+void Pseudopotential::v_local(float *vout)
 {
    int ii,ia,nshift;
-   double *exi;
+   float *exi;
 
    mypneb->c_zero(0,vout);
    nshift = 2*mypneb->npack(0);
-   exi    = new double[nshift];
+   exi    = new float[nshift];
    for (ii=0; ii<(myion->nion); ++ii)
    {
       ia = myion->katm[ii];

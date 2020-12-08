@@ -9,7 +9,7 @@
 #include        "Parallel.hpp"
 #include	"util.hpp"
 
-void c_aindexcopy(const int n, const int *indx, double *A, double *B)
+void c_aindexcopy(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -22,7 +22,7 @@ void c_aindexcopy(const int n, const int *indx, double *A, double *B)
    }
 }
 
-void c_bindexcopy(const int n, const int *indx, double *A, double *B)
+void c_bindexcopy(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -34,7 +34,7 @@ void c_bindexcopy(const int n, const int *indx, double *A, double *B)
       ii += 2;
    }
 }
-void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
+void c_bindexcopy_conjg(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -48,13 +48,13 @@ void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
 }
 
 
-void t_aindexcopy(const int n, const int *indx, double *A, double *B)
+void t_aindexcopy(const int n, const int *indx, float *A, float *B)
 {
    for (int i=0; i<n; ++i)
       B[i] = A[indx[i]];
 }
 
-void t_bindexcopy(const int n, const int *indx, double *A, double *B)
+void t_bindexcopy(const int n, const int *indx, float *A, float *B)
 {
    for (int i=0; i<n; ++i)
       B[indx[i]] = A[i];
@@ -76,10 +76,10 @@ void i_aindexcopy(const int n, const int *indx, int *A, int *B)
  *                                    *
  **************************************/
 
-void eigsrt(double *D, double *V, int n)
+void eigsrt(float *D, float *V, int n)
 {
    int i,j,k;
-   double p;
+   float p;
 
    for (i=0; i<(n-1); ++i)
    {
@@ -113,7 +113,7 @@ void eigsrt(double *D, double *V, int n)
  *         util_getfilling            *
  *                                    *
  **************************************/
-void util_getfilling(int f, int nfft[], int *filling, double zvalue[])
+void util_getfilling(int f, int nfft[], int *filling, float zvalue[])
 {
    int h = (f%2);
    int f2 = (f-h)/2;
@@ -187,10 +187,10 @@ void util_getfilling(int f, int nfft[], int *filling, double zvalue[])
    Exit - returns a random number between 0 and 1
    Uses - rand and srand stdlib functions
 */
-double util_random(const int seed)
+float util_random(const int seed)
 {
-   if (seed>0) std::srand(((double) seed));
-   return ( (double) std::rand()/RAND_MAX);
+   if (seed>0) std::srand(((float) seed));
+   return ( (float) std::rand()/RAND_MAX);
 }
 
 
@@ -217,9 +217,9 @@ bool util_filefind(Parallel *myparall, char *fname)
  *           util_spline              *
  *                                    *
  **************************************/
-void   util_spline(double *x, double *y, int n, double yp1, double ypn, double *y2, double *utmp)
+void   util_spline(float *x, float *y, int n, float yp1, float ypn, float *y2, float *utmp)
 {
-   double sig,p,qn,un;
+   float sig,p,qn,un;
 
    if (yp1>0.99e30)
    {
@@ -273,7 +273,7 @@ void   util_spline(double *x, double *y, int n, double yp1, double ypn, double *
  *           util_splint              *
  *                                    *
  **************************************/
-double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
+float util_splint(float *xa, float *ya, float *y2a, int n, int nx, float x)
 {
    int khi = nx;
    int klo = nx-1;
@@ -292,9 +292,9 @@ double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
       }
    }
 
-   double h = xa[khi]-xa[klo];
-   double a = (xa[khi]-x)/h;
-   double b = (x-xa[klo])/h;
+   float h = xa[khi]-xa[klo];
+   float a = (xa[khi]-x)/h;
+   float b = (x-xa[klo])/h;
    
    return  (a*ya[klo] + b*ya[khi] + ((a*a*a-a)*y2a[klo] + (b*b*b-b)*y2a[khi]) * h*h / 6.0);
 }
@@ -306,11 +306,11 @@ double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
  *           util_filter              *
  *                                    *
  **************************************/
-void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
+void util_filter(int nray, float *g_ray, float ecut, float *v_ray)
 {
    int    ncut = 15;
-   double qmax = sqrt(ecut+ecut);
-   double g;
+   float qmax = sqrt(ecut+ecut);
+   float g;
 
    for (auto i=0; i<nray; ++i)
    {

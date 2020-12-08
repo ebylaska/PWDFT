@@ -32,7 +32,7 @@ void DisplayDevicesInfo(cl_platform_id id)
    char str[1000];
    cl_ulong mem;
    cl_bool  avail;
-   cl_uint num_devices,num_cores,freq,wdouble,wfloat;
+   cl_uint num_devices,num_cores,freq,wfloat,wfloat;
    cl_int ret = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0,NULL,&num_devices);
    printf("\n");
    printf(" - number of devices = %d\n", num_devices);
@@ -44,10 +44,10 @@ void DisplayDevicesInfo(cl_platform_id id)
       printf("\n");
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&num_cores,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&freq,&size);
-      ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&wdouble,&size);
+      ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&wfloat,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&wfloat,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&mem,&size);
-      printf("   -- device %d id = %d, number of cores=%d @ %d MHz memory=%ld bytes wfloat=%d wdouble=%d\n",i,(int) device_ids[i],num_cores,freq,(long) mem,wfloat,wdouble);
+      printf("   -- device %d id = %d, number of cores=%d @ %d MHz memory=%ld bytes wfloat=%d wfloat=%d\n",i,(int) device_ids[i],num_cores,freq,(long) mem,wfloat,wfloat);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(size_t),&group,&size);
       printf("   -- device group size %d\n",(int) group);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&avail,&size);

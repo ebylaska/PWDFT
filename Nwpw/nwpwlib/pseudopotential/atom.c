@@ -31,21 +31,21 @@ static int *n;
 static int *l;
 static int *s2;
 static int lmax;
-static double *fill;
+static float *fill;
 static int *turning_point;
-static double *peak;
-static double Zion;
-static double amass;
-static double Total_E,
+static float *peak;
+static float Zion;
+static float amass;
+static float Total_E,
   E_Hartree, P_Hartree, E_exchange, P_exchange, E_correlation, P_correlation;
-static double *eigenvalue;
-static double **r_psi;
-static double **r_psi_prime;
-static double *rho;
-static double *rho_core;
-static double *rho_valence;
-static double *Vion;
-static double *Vall;
+static float *eigenvalue;
+static float **r_psi;
+static float **r_psi_prime;
+static float *rho;
+static float *rho_core;
+static float *rho_valence;
+static float *Vion;
+static float *Vall;
 static char atom_name[10];
 static int solver_iterations;
 
@@ -62,7 +62,7 @@ static int Solver_Type = Pauli;
 void init_Atom (char *filename)
 {
   int i, Ngrid, nx, lx, ncvh;
-  double *rgrid, fillx;
+  float *rgrid, fillx;
   char *w;
   FILE *fp;
 
@@ -117,11 +117,11 @@ void init_Atom (char *filename)
       n = (int *) malloc ((Ncv + 1) * sizeof (int));
       l = (int *) malloc ((Ncv + 1) * sizeof (int));
       s2 = (int *) malloc ((Ncv + 1) * sizeof (int));
-      fill = (double *) malloc ((Ncv + 1) * sizeof (double));
+      fill = (float *) malloc ((Ncv + 1) * sizeof (float));
 
       /* allocate memory for outer peak and turning_point positions */
       turning_point = (int *) malloc ((Ncv + 1) * sizeof (int));
-      peak = (double *) malloc ((Ncv + 1) * sizeof (double));
+      peak = (float *) malloc ((Ncv + 1) * sizeof (float));
 
       /* set eigenvalue arrays */
       lmax = 0;
@@ -139,9 +139,9 @@ void init_Atom (char *filename)
 
 
       /* allocate the necessary memory */
-      eigenvalue = (double *) malloc ((Ncv + 1) * sizeof (double));
-      r_psi = (double **) malloc ((Ncv + 1) * sizeof (double *));
-      r_psi_prime = (double **) malloc ((Ncv + 1) * sizeof (double *));
+      eigenvalue = (float *) malloc ((Ncv + 1) * sizeof (float));
+      r_psi = (float **) malloc ((Ncv + 1) * sizeof (float *));
+      r_psi_prime = (float **) malloc ((Ncv + 1) * sizeof (float *));
       for (i = 0; i < (Ncv + 1); ++i)
 	{
 	  r_psi[i] = alloc_LogGrid();
@@ -159,11 +159,11 @@ void init_Atom (char *filename)
       n = (int *) malloc((Ncv + 2) * sizeof (int));
       l = (int *) malloc((Ncv + 2) * sizeof (int));
       s2 = (int *) malloc((Ncv + 2) * sizeof (int));
-      fill = (double *) malloc((Ncv + 2) * sizeof (double));
+      fill = (float *) malloc((Ncv + 2) * sizeof (float));
 
       /* allocate memory for outer peak and turning_point positions */
       turning_point = (int *) malloc((Ncv + 2) * sizeof (int));
-      peak = (double *) malloc((Ncv + 2) * sizeof (double));
+      peak = (float *) malloc((Ncv + 2) * sizeof (float));
 
       /* set eigenvalue arrays */
       lmax = 0;
@@ -202,9 +202,9 @@ void init_Atom (char *filename)
 
 
       /* allocate the necessary memory */
-      eigenvalue = (double *) malloc((Ncv + 2) * sizeof (double));
-      r_psi = (double **) malloc((Ncv + 2) * sizeof (double *));
-      r_psi_prime = (double **) malloc((Ncv + 2) * sizeof (double *));
+      eigenvalue = (float *) malloc((Ncv + 2) * sizeof (float));
+      r_psi = (float **) malloc((Ncv + 2) * sizeof (float *));
+      r_psi_prime = (float **) malloc((Ncv + 2) * sizeof (float *));
       for (i = 0; i < (Ncv + 2); ++i)
 	{
 	  r_psi[i] = alloc_LogGrid();
@@ -276,11 +276,11 @@ void end_Atom()
 
 void
 Thomas_Fermi (Z, Vtmp)
-     double Z;
-     double Vtmp[];
+     float Z;
+     float Vtmp[];
 {
   int i, Ngrid;
-  double *rgrid, x, t;
+  float *rgrid, x, t;
 
   Ngrid = N_LogGrid ();
   rgrid = r_LogGrid ();
@@ -312,12 +312,12 @@ solve_Atom ()
 {
   int i, k, Ngrid;
   int it, converged, sz;
-  double Etmp, echarge, Z;
-  double thl, sn, sd, dr, rl0, rl1, vn;
-  double *rgrid;
-  double *Vo, *Vo1, *Vi1;
-  double *Vx, *Vc;
-  double *Vh;
+  float Etmp, echarge, Z;
+  float thl, sn, sd, dr, rl0, rl1, vn;
+  float *rgrid;
+  float *Vo, *Vo1, *Vi1;
+  float *Vx, *Vc;
+  float *Vh;
 
   /* get loggrid variables */
   Ngrid = N_LogGrid ();
@@ -344,7 +344,7 @@ solve_Atom ()
     {
       echarge += fill[i];
       Z = Zion - echarge + 1.0;
-      eigenvalue[i] = -0.5 * (Z * Z) / ((double) (n[i] * n[i]));
+      eigenvalue[i] = -0.5 * (Z * Z) / ((float) (n[i] * n[i]));
       if (eigenvalue[i] > Vall[Ngrid - 1])
 	eigenvalue[i] = 2.0 * Vall[Ngrid - 1];
     }
@@ -540,9 +540,9 @@ solve_Atom ()
  *				*
  ********************************/
 
-void solve_Scattering_State_Atom (int nt, int lt, double et, double rmax)
+void solve_Scattering_State_Atom (int nt, int lt, float et, float rmax)
 {
-  double r0, al;
+  float r0, al;
   int st;
 
   r0 = r_LogGrid ()[0];
@@ -652,7 +652,7 @@ print_Atom (FILE * fp)
   fprintf (fp, "hartree type     : %s\n", hartree_Name_DFT ());
   fprintf (fp, "exchange type    : %s\n", exchange_Name_DFT ());
   if (strcmp (exchange_Name_DFT (), "Dirac") == 0)
-    fprintf (fp, "           alpha : %lf\n", Dirac_alpha ());
+    fprintf (fp, "           alpha : %f\n", Dirac_alpha ());
   fprintf (fp, "correlation type : %s\n", correlation_Name_DFT ());
   fprintf (fp, "Solver iterations: %d\n", solver_iterations);
 
@@ -733,44 +733,44 @@ set_Solver_Atom (solver)
  *				*
  ********************************/
 
-double E_Atom()
+float E_Atom()
 {
   return Total_E;
 }				/*E_Atom */
 
-double eigenvalue_Atom(int i)
+float eigenvalue_Atom(int i)
 {
   return eigenvalue[i];
 }
 
-double * rho_Atom()
+float * rho_Atom()
 {
   return rho;
 }
 
-double * rho_core_Atom()
+float * rho_core_Atom()
 {
   return rho_core;
 }
 
-double * rho_valence_Atom()
+float * rho_valence_Atom()
 {
   return rho_valence;
 }
 
 
-double * Vall_Atom()
+float * Vall_Atom()
 {
   return Vall;
 }
 
 
-double * r_psi_Atom(int i)
+float * r_psi_Atom(int i)
 {
   return r_psi[i];
 }
 
-double * r_psi_prime_Atom(int i)
+float * r_psi_prime_Atom(int i)
 {
   return r_psi_prime[i];
 }
@@ -795,7 +795,7 @@ int lmax_Atom()
   return lmax;
 }
 
-double fill_Atom(int i)
+float fill_Atom(int i)
 {
   return fill[i];
 }
@@ -810,7 +810,7 @@ int Nvalence_Atom()
   return Nvalence;
 }
 
-double peak_Atom(int i)
+float peak_Atom(int i)
 {
   return peak[i];
 }
@@ -821,13 +821,13 @@ turning_point_Atom(int i)
   return turning_point[i];
 }
 
-double
+float
 Zion_Atom ()
 {
   return Zion;
 }
 
-double
+float
 Amass_Atom ()
 {
   return amass;

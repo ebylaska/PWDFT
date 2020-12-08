@@ -76,26 +76,26 @@
 
 void  R_Vosko(rho,Vc,Ec,Pc)
 
-double	rho[],
+float	rho[],
 Vc[],
 *Ec,
 *Pc;
 {
     int	i;
-    double onesixth,onethird,fourthird,twothird;
-    double two_to_onethird;
-    double pi,rs_scale;
-    double rs,n;
-    double x,xxp,dxxp;
-    double ec_p;
-    double uc_p;
+    float onesixth,onethird,fourthird,twothird;
+    float two_to_onethird;
+    float pi,rs_scale;
+    float rs,n;
+    float x,xxp,dxxp;
+    float ec_p;
+    float uc_p;
 
     /* loggrid variables */
     int	   Ngrid;
 
     /* tempory local grids */
-    double *ec_functional;
-    double *tmp;
+    float *ec_functional;
+    float *tmp;
 
     /* define constants */
     onesixth  = 1.0/6.0;

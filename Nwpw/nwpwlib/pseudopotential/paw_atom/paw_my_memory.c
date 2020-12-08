@@ -9,12 +9,12 @@
 
 
 ******************************/
-double*  paw_alloc_1d_array(int n)
+float*  paw_alloc_1d_array(int n)
 {
-    double* array;
+    float* array;
     int     i;
 
-    array = (double*) malloc(n*sizeof(double));
+    array = (float*) malloc(n*sizeof(float));
 
     if (array==0)
     {
@@ -34,7 +34,7 @@ double*  paw_alloc_1d_array(int n)
 
 
 ******************************/
-void   paw_dealloc_1d_array(double* array)
+void   paw_dealloc_1d_array(float* array)
 {
     free(array);
 }
@@ -44,13 +44,13 @@ void   paw_dealloc_1d_array(double* array)
 
 
 ******************************/
-double** paw_alloc_2d_array(int n1,int n2)
+float** paw_alloc_2d_array(int n1,int n2)
 {
-    double** array;
+    float** array;
     int     i;
     int     j;
 
-    array = (double**) malloc(n1*sizeof(double*));
+    array = (float**) malloc(n1*sizeof(float*));
 
     if (array==0)
     {
@@ -60,7 +60,7 @@ double** paw_alloc_2d_array(int n1,int n2)
 
     for (i=0;i<n1;i++)
     {
-        array[i] = (double*) malloc(n2*sizeof(double));
+        array[i] = (float*) malloc(n2*sizeof(float));
 
         if (array==0)
         {
@@ -86,7 +86,7 @@ double** paw_alloc_2d_array(int n1,int n2)
 
 
 ******************************/
-void   paw_dealloc_2d_array(int n1,int n2,double** array)
+void   paw_dealloc_2d_array(int n1,int n2,float** array)
 {
     int     i;
 

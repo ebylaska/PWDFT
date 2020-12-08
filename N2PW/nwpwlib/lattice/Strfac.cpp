@@ -50,9 +50,9 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    }
       
    /* allocate memory */
-   wx1 = new double [2*(myion->nion)*(mygrid->nx)];
-   wy1 = new double [2*(myion->nion)*(mygrid->ny)];
-   wz1 = new double [2*(myion->nion)*(mygrid->nz)];
+   wx1 = new float [2*(myion->nion)*(mygrid->nx)];
+   wy1 = new float [2*(myion->nion)*(mygrid->ny)];
+   wz1 = new float [2*(myion->nion)*(mygrid->nz)];
    i_indx[0] = new int[mygrid->npack(0)];
    j_indx[0] = new int[mygrid->npack(0)];
    k_indx[0] = new int[mygrid->npack(0)];
@@ -102,9 +102,9 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
 void Strfac::phafac()
 {
    int i,k,nxh,nyh,nzh,nx,ny,nz;
-   double a,b,sw1,sw2,sw3,pi;
-   double cw1x,cw2x,cw3x;
-   double cw1y,cw2y,cw3y;
+   float a,b,sw1,sw2,sw3,pi;
+   float cw1x,cw2x,cw3x;
+   float cw1y,cw2y,cw3y;
 
    pi  = 4.00*atan(1.0);
    
@@ -173,14 +173,14 @@ void strfac_sub(const int npack,
                 const int indxi[],
                 const int indxj[],
                 const int indxk[],
-                const double exi[],
-                const double exj[],
-                const double exk[],
-                double strx[])
+                const float exi[],
+                const float exj[],
+                const float exk[],
+                float strx[])
 {
    int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
+   float ai,aj,ak,c,d;
+   float bi,bj,bk;
    for (i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
@@ -198,7 +198,7 @@ void strfac_sub(const int npack,
  *       Strfac::strfac_pack     *
  *                               *
  *********************************/
-void Strfac::strfac_pack(const int nb, const int ii, double *ss)
+void Strfac::strfac_pack(const int nb, const int ii, float *ss)
 {
    int npack,nx,ny,nz;
 

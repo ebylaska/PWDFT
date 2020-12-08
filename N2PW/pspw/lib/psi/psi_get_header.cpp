@@ -3,7 +3,7 @@
 #include	"compressed_io.hpp"
 #include	"control.hpp"
 
-void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[])
+void psi_get_header(Parallel *myparall,int *version, int nfft[], float unita[], int *ispin, int ne[])
 {
    if (myparall->is_master())
    {

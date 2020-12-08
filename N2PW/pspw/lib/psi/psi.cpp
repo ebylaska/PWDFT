@@ -17,7 +17,7 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
 
-void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[])
+void psi_get_header(Parallel *myparall,int *version, int nfft[], float unita[], int *ispin, int ne[])
 {
    if (myparall->is_master())
    {
@@ -40,8 +40,8 @@ void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[],
 
 
 void psi_read(Pneb *mypneb,int *version, int nfft[], 
-              double unita[], int *ispin, int ne[],
-              double *psi)
+              float unita[], int *ispin, int ne[],
+              float *psi)
 {
    int occupation;
 

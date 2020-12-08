@@ -11,10 +11,10 @@ using namespace std;
 class	Ewald {
    int    encut,enx,eny,enz,enshl3d,enpack,enpack_all,enida;
    int    *i_indx,*j_indx,*k_indx;
-   double *vg,*rcell,*eG,*vcx,*zv,*ss;
-   double *ewx1,*ewy1,*ewz1;
-   double unita[9],unitg[9],ercut,cewald,alpha;
-   double eecut;
+   float *vg,*rcell,*eG,*vcx,*zv,*ss;
+   float *ewx1,*ewy1,*ewz1;
+   float unita[9],unitg[9],ercut,cewald,alpha;
+   float eecut;
 
 public:
    Parallel  *ewaldparall;
@@ -48,11 +48,11 @@ public:
     int nx() {return enx;}
     int ny() {return eny;}
     int nz() {return enz;}
-    double ecut() {return eecut;}
-    double rcut() {return ercut;}
-    double mandelung() {return alpha;}
-    double energy();
-    //void   force(double *);
+    float ecut() {return eecut;}
+    float rcut() {return ercut;}
+    float mandelung() {return alpha;}
+    float energy();
+    //void   force(float *);
 
 };
 

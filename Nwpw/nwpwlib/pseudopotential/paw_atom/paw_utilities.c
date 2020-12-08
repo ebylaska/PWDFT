@@ -99,13 +99,13 @@ char *paw_spd_Name(int l)
     return s;
 }
 
-void paw_lu_decompose(int N, double **c, double **a, double **b)
+void paw_lu_decompose(int N, float **c, float **a, float **b)
 {
 
     int i;
     int j;
     int k;
-    double sum;
+    float sum;
 
     for (j=0;j<=N-1;j++)
     {
@@ -162,13 +162,13 @@ void paw_lu_decompose(int N, double **c, double **a, double **b)
 
 }
 
-void paw_triang_matrix_inverse(char* matrix_type, int N, double **a, double **a_inv)
+void paw_triang_matrix_inverse(char* matrix_type, int N, float **a, float **a_inv)
 {
 
     int i;
     int j;
     int k;
-    double sum;
+    float sum;
 
     if (strcmp(matrix_type,"u")==0)
     {
@@ -259,10 +259,10 @@ void paw_test_lu_decompose()
     int i,j,k;
     int n;
 
-    double** a;
-    double** b;
-    double** c;
-    double** c1;
+    float** a;
+    float** b;
+    float** c;
+    float** c1;
 
     n = 3;
 
@@ -377,9 +377,9 @@ void paw_test_triang_matrix_inverse()
     int i,j,k;
     int n;
 
-    double** a;
-    double** b;
-    double** c;
+    float** a;
+    float** b;
+    float** c;
 
     n = 3;
 
@@ -426,7 +426,7 @@ void paw_test_triang_matrix_inverse()
 }
 
 
-void paw_square_matrix_product(int n, double **a,double **b,double **c)
+void paw_square_matrix_product(int n, float **a,float **b,float **c)
 {
     int i,j,k;
 
@@ -448,7 +448,7 @@ void paw_square_matrix_product(int n, double **a,double **b,double **c)
 }
 
 
-void paw_print_matrix(int n, double **a, char* title)
+void paw_print_matrix(int n, float **a, char* title)
 {
     int i,j;
 

@@ -30,12 +30,12 @@ int cpsd(int argc, char *argv[])
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
-   double sum1,sum2,ev;
-   double cpu1,cpu2,cpu3,cpu4;
-   double E[50],deltae,deltac,deltar,viral,unita[9];
-   double *psi1,*psi2,*Hpsi,*psi_r;
-   double *dn;
-   double *hml,*lmbda,*eig;
+   float sum1,sum2,ev;
+   float cpu1,cpu2,cpu3,cpu4;
+   float E[50],deltae,deltac,deltar,viral,unita[9];
+   float *psi1,*psi2,*Hpsi,*psi_r;
+   float *dn;
+   float *hml,*lmbda,*eig;
 
    for (ii=0; ii<50; ++ii) E[ii] = 0.0;
 
@@ -74,7 +74,7 @@ int cpsd(int argc, char *argv[])
    dn    = mygrid.r_nalloc(ispin);
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
-   eig   = new double[ne[0]+ne[1]];
+   eig   = new float[ne[0]+ne[1]];
 
    psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2);
 
@@ -327,11 +327,11 @@ int cpsd(int argc, char *argv[])
    if (myparallel.is_master()) 
    {
       seconds(&cpu4);
-      double t1 = cpu2-cpu1;
-      double t2 = cpu3-cpu2;
-      double t3 = cpu4-cpu3;
-      double t4 = cpu4-cpu1;
-      double av = t2/((double ) control_loop(0)*icount);
+      float t1 = cpu2-cpu1;
+      float t2 = cpu3-cpu2;
+      float t3 = cpu4-cpu3;
+      float t4 = cpu4-cpu1;
+      float av = t2/((float ) control_loop(0)*icount);
       cout.setf(ios::scientific);
       cout << "\n";
       cout << "-----------------"    << "\n";

@@ -8,8 +8,8 @@ using namespace std;
 
 class	Strfac {
    int    *i_indx[2],*j_indx[2],*k_indx[2];
-   double *wx1,*wy1,*wz1;
-   double unita[9],unitg[9];
+   float *wx1,*wy1,*wz1;
+   float unita[9],unitg[9];
 
    PGrid  *mygrid;
    Ion	  *myion;
@@ -32,7 +32,7 @@ public:
          }
 
     void phafac();
-    void strfac_pack(const int, const int, double *);
+    void strfac_pack(const int, const int, float *);
 
 };
 

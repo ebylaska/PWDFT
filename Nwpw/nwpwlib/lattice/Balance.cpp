@@ -219,7 +219,7 @@ Balance::~Balance()
  *                              *
  ********************************/
 
-void Balance::c_unbalance(const int nb, double *a)
+void Balance::c_unbalance(const int nb, float *a)
 {
    int j,pto,pfrom,msglen,indx;
 
@@ -251,7 +251,7 @@ void Balance::c_unbalance(const int nb, double *a)
  *                              *
  ********************************/
 
-void Balance::c_balance(const int nb, double *a)
+void Balance::c_balance(const int nb, float *a)
 {
    int j,pto,pfrom,msglen,indx;
 
@@ -283,7 +283,7 @@ void Balance::c_balance(const int nb, double *a)
  *                              *
  ********************************/
 
-void Balance::t_unbalance(const int nb, double *a)
+void Balance::t_unbalance(const int nb, float *a)
 {
    int j,pto,pfrom,msglen,indx;
 
@@ -315,7 +315,7 @@ void Balance::t_unbalance(const int nb, double *a)
  *                              *
  ********************************/
 
-void Balance::t_balance(const int nb, double *a)
+void Balance::t_balance(const int nb, float *a)
 {
    int j,pto,pfrom,msglen,indx;
 

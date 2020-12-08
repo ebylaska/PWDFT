@@ -48,52 +48,52 @@ static int max_i_r_orbital;
 
 static int *i_r_orbital;
 
-static double* r_orbital;
+static float* r_orbital;
 
-static double *log_deriv;
-static double *e;
-static double *e_ps;
-static double *fill;
-static double *log_deriv;
+static float *log_deriv;
+static float *e;
+static float *e_ps;
+static float *fill;
+static float *log_deriv;
 
-static double **phi0;
-static double **phi0_prime;
-static double **phi_ps0;
-static double **phi_ps0_prime;
+static float **phi0;
+static float **phi0_prime;
+static float **phi_ps0;
+static float **phi_ps0_prime;
 
-static double **phi;
-static double **phi_ps;
-static double **phi_prime;
-static double **phi_ps_prime;
+static float **phi;
+static float **phi_ps;
+static float **phi_prime;
+static float **phi_ps_prime;
 
-static double **prj_ps0;
-static double **prj_ps;
-static double *rho_ps;
-static double *rho;
+static float **prj_ps0;
+static float **prj_ps;
+static float *rho_ps;
+static float *rho;
 
-static double **psi_ps;
-static double **psi_ps_prime;
+static float **psi_ps;
+static float **psi_ps_prime;
 
-static double ekin;
+static float ekin;
 static int *delta_ekin;
 
-static double *scaling_factor;
-static double **tr_matrix;
+static float *scaling_factor;
+static float **tr_matrix;
 
-static double Zvalence;
+static float Zvalence;
 
 /****************************************
  Function name	  : paw_init_paw_orbitals
  Description	    :
  Return type		  : void
  Argument         : int a_nbasis
- Argument         : double *a_rc_orb
+ Argument         : float *a_rc_orb
  Argument         : int *a_n
  Argument         : int *a_n_ps
  Argument         : int *a_l
  Argument         : int *a_s_z
- Argument         : double *a_e
- Argument         : double *a_fill
+ Argument         : float *a_e
+ Argument         : float *a_fill
 
  Author     		  : Marat Valiev
  Date & Time		  : 4/4/99 5:11:29 PM
@@ -104,7 +104,7 @@ void paw_init_paw_basis(
     int a_nbasis,
     int *a_n,
     int *a_l,
-    double *r_match
+    float *r_match
 )
 {
 
@@ -113,9 +113,9 @@ void paw_init_paw_basis(
     int i_match;
     int Ngrid;
     int index;
-    double *rgrid;
-    double *psi;
-    double *psi_prime;
+    float *rgrid;
+    float *psi;
+    float *psi_prime;
 
 
     Ngrid = paw_N_LogGrid();
@@ -147,29 +147,29 @@ void paw_init_paw_basis(
     orb_l       = (int *)    malloc( nbasis*      sizeof(int));
     l_counter   = (int *)    malloc((max_orb_l+1)*sizeof(int));
     i_r_orbital = (int *)    malloc( nbasis*      sizeof(int));
-    r_orbital   = (double *) malloc( nbasis*      sizeof(double));
-    fill        = (double *) malloc( nbasis*      sizeof(double));
-    e           = (double *) malloc( nbasis*      sizeof(double));
-    e_ps        = (double *) malloc( nbasis*      sizeof(double));
-    log_deriv   = (double *) malloc( nbasis*      sizeof(double));
+    r_orbital   = (float *) malloc( nbasis*      sizeof(float));
+    fill        = (float *) malloc( nbasis*      sizeof(float));
+    e           = (float *) malloc( nbasis*      sizeof(float));
+    e_ps        = (float *) malloc( nbasis*      sizeof(float));
+    log_deriv   = (float *) malloc( nbasis*      sizeof(float));
 
     rho         = paw_alloc_LogGrid();
     rho_ps      = paw_alloc_LogGrid();
 
 
-    phi          = (double **) malloc(nbasis * sizeof(double *));
-    phi0         = (double **) malloc(nbasis * sizeof(double *));
-    phi_prime    = (double **) malloc(nbasis * sizeof(double *));
-    phi_ps0      = (double **) malloc(nbasis * sizeof(double *));
-    phi_ps0_prime= (double **) malloc(nbasis * sizeof(double *));
-    phi0_prime   = (double **) malloc(nbasis * sizeof(double *));
-    phi_ps       = (double **) malloc(nbasis * sizeof(double *));
-    phi_ps_prime = (double **) malloc(nbasis * sizeof(double *));
-    prj_ps       = (double **) malloc(nbasis * sizeof(double *));
-    prj_ps0      = (double **) malloc(nbasis * sizeof(double *));
+    phi          = (float **) malloc(nbasis * sizeof(float *));
+    phi0         = (float **) malloc(nbasis * sizeof(float *));
+    phi_prime    = (float **) malloc(nbasis * sizeof(float *));
+    phi_ps0      = (float **) malloc(nbasis * sizeof(float *));
+    phi_ps0_prime= (float **) malloc(nbasis * sizeof(float *));
+    phi0_prime   = (float **) malloc(nbasis * sizeof(float *));
+    phi_ps       = (float **) malloc(nbasis * sizeof(float *));
+    phi_ps_prime = (float **) malloc(nbasis * sizeof(float *));
+    prj_ps       = (float **) malloc(nbasis * sizeof(float *));
+    prj_ps0      = (float **) malloc(nbasis * sizeof(float *));
 
-    psi_ps       = (double **) malloc(nbasis * sizeof(double *));
-    psi_ps_prime = (double **) malloc(nbasis * sizeof(double *));
+    psi_ps       = (float **) malloc(nbasis * sizeof(float *));
+    psi_ps_prime = (float **) malloc(nbasis * sizeof(float *));
 
     for (i = 0; i < nbasis; ++i)
     {
@@ -385,12 +385,12 @@ void paw_generate_pseudo_orbitals()
     int     iteration;
     int     match;
     int     status;
-    double log_amesh;
-    double f1,f2;
-    double  *V;
-    double  *rgrid;
-    double  *f;
-    double norm;
+    float log_amesh;
+    float f1,f2;
+    float  *V;
+    float  *rgrid;
+    float  *f;
+    float norm;
 
     char    output[300];
     FILE   *fp;
@@ -588,8 +588,8 @@ void    paw_generate_projectors()
 {
     int i;
     int j;
-    double norm;
-    double norm_error;
+    float norm;
+    float norm_error;
 
     if (strcmp(projector_method,"vanderbilt")==0)
     {
@@ -640,16 +640,16 @@ void    paw_generate_projectors_vanderbilt()
     int j;
     int k;
     int Ngrid;
-    double norm;
-    double max_prj;
-    double max_phi;
-    double max_phi_ps;
-    double tmp_prj;
-    double *V_ref;
-    double *V;
-    double *rgrid;
-    double **b;
-    double **prj_ps0;
+    float norm;
+    float max_prj;
+    float max_phi;
+    float max_phi_ps;
+    float tmp_prj;
+    float *V_ref;
+    float *V;
+    float *rgrid;
+    float **b;
+    float **prj_ps0;
     char  output[300];
     FILE  *fp;
 
@@ -838,20 +838,20 @@ void    paw_generate_projectors_blochl()
     int j;
     int k;
     int Ngrid;
-    double norm;
-    double max_prj;
-    double max_phi;
-    double max_phi_ps;
-    double tmp_prj;
-    double *V_ref;
-    double *V;
-    double *rgrid;
-    double **b;
-    double **L;
-    double **U;
-    double **L_inv;
-    double **U_inv;
-    double **test_matrix;
+    float norm;
+    float max_prj;
+    float max_phi;
+    float max_phi_ps;
+    float tmp_prj;
+    float *V_ref;
+    float *V;
+    float *rgrid;
+    float **b;
+    float **L;
+    float **U;
+    float **L_inv;
+    float **U_inv;
+    float **test_matrix;
     char  output[300];
     FILE  *fp;
 
@@ -1071,8 +1071,8 @@ void paw_solve_pseudo_orbitals()
     int k;
     int i_end_point;
     int Ngrid;
-    double scale;
-    double *rgrid;
+    float scale;
+    float *rgrid;
 
 
     Ngrid = paw_N_LogGrid();
@@ -1120,11 +1120,11 @@ void paw_solve_pseudo_orbitals()
  Function name	  : paw_find_density
  Description	    :
  Return type		  : void
- Argument         : double **rho_ps
+ Argument         : float **rho_ps
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 1:13:57 PM
 ****************************************/
-double* paw_get_pointer_paw_ps_density()
+float* paw_get_pointer_paw_ps_density()
 {
 
     return rho_ps;
@@ -1136,11 +1136,11 @@ double* paw_get_pointer_paw_ps_density()
  Function name	  : paw_find_density
  Description	    :
  Return type		  : void
- Argument         : double **rho_ps
+ Argument         : float **rho_ps
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 1:13:57 PM
 ****************************************/
-double* paw_get_pointer_paw_density()
+float* paw_get_pointer_paw_density()
 {
 
     return rho;
@@ -1148,7 +1148,7 @@ double* paw_get_pointer_paw_density()
 
 }
 
-double paw_get_paw_kinetic_energy()
+float paw_get_paw_kinetic_energy()
 {
 
     return ekin;
@@ -1167,7 +1167,7 @@ void paw_print_basis_to_file(char* atom_name)
     int j;
     int k;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
     char data_filename[300];
     char script_filename[300];
     char nl_name[20];
@@ -1241,7 +1241,7 @@ void paw_print_basis_test_to_file(char* atom_name)
     int j;
     int k;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
     char data_filename[300];
     char script_filename[300];
     char nl_name[20];
@@ -1309,7 +1309,7 @@ void paw_print_basis_test_to_file(char* atom_name)
     }
 }
 
-double paw_get_Zvalence() { return Zvalence; }
+float paw_get_Zvalence() { return Zvalence; }
 
 
 int paw_get_nbasis()
@@ -1337,48 +1337,48 @@ int* paw_get_pointer_paw_n_ps_array()
     return prin_n_ps;
 }
 
-double* paw_get_pointer_paw_e_array()
+float* paw_get_pointer_paw_e_array()
 {
 
     return e_ps;
 }
 
-double** paw_get_pointer_paw_psi_array()
+float** paw_get_pointer_paw_psi_array()
 {
 
     return phi;
 
 }
 
-double** paw_get_pointer_paw_psi_prime_array()
+float** paw_get_pointer_paw_psi_prime_array()
 {
 
     return phi_prime;
 
 }
 
-double** paw_get_pointer_paw_psi_ps_array()
+float** paw_get_pointer_paw_psi_ps_array()
 {
 
     return phi_ps;
 
 }
 
-double** paw_get_pointer_paw_psi_ps_prime_array()
+float** paw_get_pointer_paw_psi_ps_prime_array()
 {
 
     return phi_ps_prime;
 
 }
 
-double** paw_get_pointer_paw_prj_ps_array()
+float** paw_get_pointer_paw_prj_ps_array()
 {
 
     return prj_ps;
 
 }
 
-double** paw_get_pointer_paw_prj_ps0_array()
+float** paw_get_pointer_paw_prj_ps0_array()
 {
 
     return prj_ps0;
@@ -1392,7 +1392,7 @@ int paw_get_max_i_r_orbital()
     return max_i_r_orbital;
 
 }
-double paw_get_r_orbital(int i)
+float paw_get_r_orbital(int i)
 {
     return r_orbital[i];
 }
@@ -1403,7 +1403,7 @@ int paw_projectors_are_done()
     return projectors_done;
 }
 
-double** paw_get_pointer_paw_psi_ps_unscr_array()
+float** paw_get_pointer_paw_psi_ps_unscr_array()
 {
 
     return phi_ps0;
@@ -1444,31 +1444,31 @@ void paw_print_basis_information(FILE *fp)
  Author     		  : Marat Valiev
  Date & Time		  : 5/15/00
 ****************************************/
-void paw_scattering_test(double e1,double e2,int number_points ,int l, double r )
+void paw_scattering_test(float e1,float e2,int number_points ,int l, float r )
 {
 
     int i;
     int k;
     int i_end_point;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
     FILE   *fp;
-    double *V_ks;
+    float *V_ks;
 
 
-    double *psi1;
-    double *psi1_prime;
+    float *psi1;
+    float *psi1_prime;
 
-    double *psi;
-    double *psi_prime;
+    float *psi;
+    float *psi_prime;
 
-    double *log_grid_ae;
-    double *log_grid_paw;
+    float *log_grid_ae;
+    float *log_grid_paw;
 
-    double de;
-    double* e3;
-    double e_test;
-    double log_amesh;
+    float de;
+    float* e3;
+    float e_test;
+    float log_amesh;
 
     /*char output[30];*/
     char data_filename[300];

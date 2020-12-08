@@ -36,10 +36,10 @@ Corrector_In
    Exit  - returns the value of y[?] + F(....)
 */
 
-double  paw_Predictor_In(int i,double  y[], double f[])
+float  paw_Predictor_In(int i,float  y[], float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i]  - one_over_24*(  55.0*f[i]
                                  - 59.0*f[i+1]
@@ -70,10 +70,10 @@ double  paw_Predictor_In(int i,double  y[], double f[])
 
 */
 
-double  paw_Predictor_Out(int i,double y[],double f[])
+float  paw_Predictor_Out(int i,float y[],float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  y[i] + one_over_24*(  55.0*f[i]
                                  - 59.0*f[i-1]
@@ -85,10 +85,10 @@ double  paw_Predictor_Out(int i,double y[],double f[])
 } /* paw_Predictor_Out */
 
 
-double  paw_Predictor_Out_F(int i,double f[])
+float  paw_Predictor_Out_F(int i,float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(  55.0*f[i]
                           - 59.0*f[i-1]
@@ -117,10 +117,10 @@ double  paw_Predictor_Out_F(int i,double f[])
 
 */
 
-double  paw_Corrector_In(int i,double y[],double f[])
+float  paw_Corrector_In(int i,float y[],float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i] - one_over_24*(   9.0*f[i-1]
                                  + 19.0*f[i]
@@ -149,10 +149,10 @@ double  paw_Corrector_In(int i,double y[],double f[])
 
 */
 
-double  paw_Corrector_In_F(int i,double f[])
+float  paw_Corrector_In_F(int i,float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp = -one_over_24*(   9.0*f[i-1]
                            + 19.0*f[i]
@@ -183,10 +183,10 @@ double  paw_Corrector_In_F(int i,double f[])
 
 */
 
-double  paw_Corrector_Out(int i,double y[],double f[])
+float  paw_Corrector_Out(int i,float y[],float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i] + one_over_24*(   9.0*f[i+1]
                                  + 19.0*f[i]
@@ -213,10 +213,10 @@ double  paw_Corrector_Out(int i,double y[],double f[])
 
 */
 
-double  paw_Derivative5_1(int i, double f[])
+float  paw_Derivative5_1(int i, float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*( -50.0*f[i]
                          + 96.0*f[i+1]
@@ -243,9 +243,9 @@ double  paw_Derivative5_1(int i, double f[])
 
 */
 
-double  paw_Derivative5_2(int i,double f[])
+float  paw_Derivative5_2(int i,float f[])
 {
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(  -6.0*f[i-1]
                           - 20.0*f[i]
@@ -277,10 +277,10 @@ double  paw_Derivative5_2(int i,double f[])
 
 */
 
-double  paw_Derivative5_3( int i,double f[])
+float  paw_Derivative5_3( int i,float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(   2.0*f[i-2]
                            - 16.0*f[i-1]
@@ -308,10 +308,10 @@ double  paw_Derivative5_3( int i,double f[])
 
 */
 
-double  paw_Derivative5_4(int i,double f[])
+float  paw_Derivative5_4(int i,float f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(  -2.0*f[i-3]
                           + 12.0*f[i-2]
@@ -339,10 +339,10 @@ double  paw_Derivative5_4(int i,double f[])
 
 */
 
-double  paw_Derivative5_5(int i,double  f[])
+float  paw_Derivative5_5(int i,float  f[])
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(   6.0*f[i-4]
                            - 32.0*f[i-3]

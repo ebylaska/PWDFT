@@ -16,7 +16,7 @@ void carter_parse(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int	*debug_ptr;
 int	*lmax_ptr;
 int	*locp_ptr;
-double 	*rlocal_ptr;
+float 	*rlocal_ptr;
 char	sdir_name[];
 int	*n9;
 char	dir_name[];
@@ -31,27 +31,27 @@ int	*n3;
 
     int      debug;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
 
-    double   zatom,zion;      /* local psp parameters          */
-    double over_fourpi;
+    float   zatom,zion;      /* local psp parameters          */
+    float over_fourpi;
 
     int      *nl;
     int      i,k,l,p,p1;
     int      Ngrid,nrl=0;
-    double   *rgrid,*psi,*psp;
-    double       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
+    float   *rgrid,*psi,*psp;
+    float       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
     **psil,
     **pspl;
-    double   drl=0.0,rmax;
+    float   drl=0.0,rmax;
 
     int      lmax,locp,lmaxp;
-    double   r0,xx;
+    float   r0,xx;
     int      n[10];
     int      pspdat,pspcode,pspxc;
-    double   r2well,rcore[10],e99,e999;
-    double   rchrg,fchrg,qchrg,pi;
+    float   r2well,rcore[10],e99,e999;
+    float   rchrg,fchrg,qchrg,pi;
 
 
     char   *w,*tc;
@@ -120,26 +120,26 @@ int	*n3;
     argc = to_eoln(fp);
     argc= get_line(fp,comment,255);
 
-    fscanf(fp,"%lf %lf %d",&zatom,&zion,&pspdat);
+    fscanf(fp,"%f %f %d",&zatom,&zion,&pspdat);
     argc=to_eoln(fp);
-    fscanf(fp,"%d %d %d %d %d %lf",&pspcode,&pspxc,&lmax,&locp,&Ngrid,&r2well);
+    fscanf(fp,"%d %d %d %d %d %f",&pspcode,&pspxc,&lmax,&locp,&Ngrid,&r2well);
     lmaxp = lmax+1;
     argc=to_eoln(fp);
 
 
-    fscanf(fp,"%lf %lf %lf",&rchrg,&fchrg,&qchrg);
+    fscanf(fp,"%f %f %f",&rchrg,&fchrg,&qchrg);
     argc=to_eoln(fp);
     argc=to_eoln(fp);
     argc=to_eoln(fp);
     argc=to_eoln(fp);
     rcore[0] = 0.0;
 
-    psi     = (double *) malloc(Ngrid*sizeof(double));
-    psp     = (double *) malloc(Ngrid*sizeof(double));
-    rgrid   = (double *) malloc(Ngrid*sizeof(double));
+    psi     = (float *) malloc(Ngrid*sizeof(float));
+    psp     = (float *) malloc(Ngrid*sizeof(float));
+    rgrid   = (float *) malloc(Ngrid*sizeof(float));
 
     /* read in rgrid and pseudopotentials */
-    for (i=0; i<Ngrid; ++i)  fscanf(fp,"%d %lf %lf",&k,&(rgrid[i]),&(psp[i]));
+    for (i=0; i<Ngrid; ++i)  fscanf(fp,"%d %f %f",&k,&(rgrid[i]),&(psp[i]));
 
     /* define psi=0 */
     for (i=0; i<Ngrid; ++i)  psi[i] = 0.0;
@@ -179,11 +179,11 @@ int	*n3;
     fp = fopen(outfile,"w+");
     fprintf(fp,"%s\n",atom_out);
     if (locp_out!=-1) locp=locp_out;
-    fprintf(fp,"%lf %lf %d   %d %d %lf\n",zion,0.0,lmax,lmax_out,locp,rlocal_out);
+    fprintf(fp,"%f %f %d   %d %d %f\n",zion,0.0,lmax,lmax_out,locp,rlocal_out);
     for (p=0; p<=lmax; ++p)
-        fprintf(fp,"%lf ", rcore[p]);
+        fprintf(fp,"%f ", rcore[p]);
     fprintf(fp,"\n");
-    fprintf(fp,"%d %lf\n",Ngrid,rgrid[1]);
+    fprintf(fp,"%d %f\n",Ngrid,rgrid[1]);
     fprintf(fp,"%s",comment);
 
     /* appending pseudopotentials */
@@ -208,17 +208,17 @@ int	*n3;
     {
         printf("CARTER pseudopotential Parameters\n\n");
         printf("atom : %s\n",atom_out);
-        printf("Zatom= %lf\n",zatom);
-        printf("Zion = %lf\n",zion);
+        printf("Zatom= %f\n",zatom);
+        printf("Zion = %f\n",zion);
         printf(" lmax= %d\n",lmax);
         printf(" locp= %d\n",locp);
-        printf(" rlocal= %lf\n\n",rlocal_out);
-        printf(" rcrhg=%lf  fchrg=%lf  qchrg=%lf\n",rchrg,fchrg,qchrg);
+        printf(" rlocal= %f\n\n",rlocal_out);
+        printf(" rcrhg=%f  fchrg=%f  qchrg=%f\n",rchrg,fchrg,qchrg);
         printf("rcore: ");
         for (p=0; p<=lmax; ++p)
-            printf("%lf ", rcore[p]);
+            printf("%f ", rcore[p]);
         printf("\n");
-        printf(" nrl=%d drl=%lf\n",nrl,drl);
+        printf(" nrl=%d drl=%f\n",nrl,drl);
         printf("comment:%s\n",comment);
 
         fflush(stdout);

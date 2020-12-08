@@ -11,6 +11,6 @@ int main() {
   }
   printf("Result: %llu\n", val);
   clock_t end = clock();
-  double runtime = (double)(end - begin) / CLOCKS_PER_SEC;
-  printf("Runtime: %lfms\n", runtime);
+  float runtime = (float)(end - begin) / CLOCKS_PER_SEC;
+  printf("Runtime: %fms\n", runtime);
 }

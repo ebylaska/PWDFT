@@ -50,15 +50,15 @@ void	Suggested_Param_Vanderbilt(num_states_psp,n_psp,l_psp,
 int	*num_states_psp;
 int	n_psp[];
 int	l_psp[];
-double	e_psp[];
-double	fill_psp[];
-double	rcut_psp[];
-double  *rlocal,*clocal;
+float	e_psp[];
+float	fill_psp[];
+float	rcut_psp[];
+float  *rlocal,*clocal;
 {
     int p,npsps;
     int i,l,lmax;
     int Nc,Nv,n;
-    double rcmax,emax;
+    float rcmax,emax;
 
     Nc	= Ncore_Atom();
     Nv   = Nvalence_Atom();
@@ -182,48 +182,48 @@ void	solve_Vanderbilt(num_psp,n_psp,l_psp,e_psp,fill_psp,rcut_psp,
 int	num_psp;
 int	n_psp[];
 int	l_psp[];
-double	e_psp[];
-double	fill_psp[];
-double	rcut_psp[];
-double  rlocal,clocal;
+float	e_psp[];
+float	fill_psp[];
+float	rcut_psp[];
+float  rlocal,clocal;
 int    ns[10],indx_il[4][10],indx_ijl[4][4][10];
-double  **r_hard_psi_psp;
-double	**r_psi_psp;
-double	**r_psi_prime_psp;
-double	*rho_psp;
-double	*rho_semicore;
-double	**V_psp;
-double  *Vlocal;
-double  *D0,*q;
-double	*eall_psp;
-double	*eh_psp;
-double	*ph_psp;
-double	*ex_psp;
-double	*px_psp;
-double	*ec_psp;
-double	*pc_psp;
+float  **r_hard_psi_psp;
+float	**r_psi_psp;
+float	**r_psi_prime_psp;
+float	*rho_psp;
+float	*rho_semicore;
+float	**V_psp;
+float  *Vlocal;
+float  *D0,*q;
+float	*eall_psp;
+float	*eh_psp;
+float	*ph_psp;
+float	*ex_psp;
+float	*px_psp;
+float	*ec_psp;
+float	*pc_psp;
 {
     int 		i,l,j,k,it,
     match,match_R,
     Ngrid;
-    double	al,amesh,Zion;
-    double	f;
-    double	el,eeig,scale;
-    double       sum1,sum2;
-    double	ph,px,pc,eh,ex,ec;
+    float	al,amesh,Zion;
+    float	f;
+    float	el,eeig,scale;
+    float       sum1,sum2;
+    float	ph,px,pc,eh,ex,ec;
 
-    double	*ul,*ul_prime;
-    double	*wl,*wl_prime;
-    double	*r,
+    float	*ul,*ul_prime;
+    float	*wl,*wl_prime;
+    float	*r,
     *Vh,*Vx,*Vc,*rho_valence,
     *Vall,
     *Vl;
-    double	*chi;
+    float	*chi;
 
 
     int    lmax,Nc,Nv;
-    double B[250],Binv[250],bb[250],aa[250];
-    double D_shift;
+    float B[250],Binv[250],bb[250],aa[250];
+    float D_shift;
 
     /* Allocate Grids */
     Vall       = Vall_Atom();
@@ -316,7 +316,7 @@ double	*pc_psp;
 
 
             if (it==MAXIT)
-                printf("%s\t%lf  %lf  %lf  %lf  %lf  %lf\n",spd_Name(l_psp[l]),
+                printf("%s\t%f  %f  %f  %f  %f  %f\n",spd_Name(l_psp[l]),
                        rcut_psp[l],r[match],
                        e_psp[l],el,
                        fabs(ul[match]/wl[match]),

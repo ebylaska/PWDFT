@@ -20,13 +20,13 @@ extern int control_ewald_ncut();
 extern int control_loop(const int);
 extern int control_pfft3_qsize();
 
-extern double control_ewald_rcut();
-extern double control_unita(const int, const int);
-extern double control_ecut();
-extern double control_wcut();
-extern double control_time_step();
-extern double control_fake_mass();
-extern double control_tolerances(const int);
+extern float control_ewald_rcut();
+extern float control_unita(const int, const int);
+extern float control_ecut();
+extern float control_wcut();
+extern float control_time_step();
+extern float control_fake_mass();
+extern float control_tolerances(const int);
 
 extern char *control_input_movecs_filename();
 

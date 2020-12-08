@@ -5,7 +5,7 @@
 */
 
 
-extern double  paw_my_erf(double x);
+extern float  paw_my_erf(float x);
 
 #endif
 

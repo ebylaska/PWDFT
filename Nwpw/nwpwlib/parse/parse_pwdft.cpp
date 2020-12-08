@@ -31,9 +31,9 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    int center = 1;
    int autoz = 0;
    int autosym = 0;
-   //double angs_to_au = 1.0/0.52917715;
-   double angs_to_au = 1.88972598858;
-   double conv = angs_to_au;
+   //float angs_to_au = 1.0/0.52917715;
+   float angs_to_au = 1.88972598858;
+   float conv = angs_to_au;
    vector<string> ss;
    string geometry = "geometry";
 
@@ -77,13 +77,13 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
 
    int endcount = 1;
    vector<string> symbols;
-   vector<double> coords;
-   vector<double> velocities;
-   vector<double> masses;
-   vector<double> charges;
+   vector<float> coords;
+   vector<float> velocities;
+   vector<float> masses;
+   vector<float> charges;
    ++cur;
    int nion = 0;
-   double mm;
+   float mm;
    string line;
    while (endcount>0)
    {
@@ -95,9 +95,9 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
       coords.push_back(std::stod(ss[2])*conv);
       coords.push_back(std::stod(ss[3])*conv);
 
-      double vx = 0.0;
-      double vy = 0.0;
-      double vz = 0.0;
+      float vx = 0.0;
+      float vy = 0.0;
+      float vz = 0.0;
       if (ss.size()>6)
       {
          bool ffail = false;
@@ -115,7 +115,7 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
          mm = std::stod(mystring_split0(mystring_split(line,"mass")[1])[0]);
       masses.push_back(mm);
 
-      mm = (double) periodic_table_Z[mystring_capitalize(ss[0])];
+      mm = (float) periodic_table_Z[mystring_capitalize(ss[0])];
       if (mystring_contains(mystring_lowercase(line),"charge"))
          mm = std::stod(mystring_split0(mystring_split(line,"charge")[1])[0]);
       charges.push_back(mm);
@@ -129,18 +129,18 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    if (center)
    {
       int ii;
-      double xcm=0.0;
-      double ycm=0.0;
-      double zcm=0.0;
+      float xcm=0.0;
+      float ycm=0.0;
+      float zcm=0.0;
       for (ii=0; ii<nion; ++ii)
       {
          xcm += coords[3*ii];
          ycm += coords[3*ii+1];
          zcm += coords[3*ii+2];
       }
-      xcm /= ((double) nion);
-      ycm /= ((double) nion);
-      zcm /= ((double) nion);
+      xcm /= ((float) nion);
+      ycm /= ((float) nion);
+      zcm /= ((float) nion);
       for (int ii=0; ii<nion; ++ii)
       {
          coords[3*ii]   -= xcm;
@@ -212,7 +212,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
       line = mystring_lowercase(lines[cur]);
       if (mystring_contains(line,"lattice_vectors"))
       {
-         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
+         vector<float> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
          ++cur;
          line = mystring_lowercase(lines[cur]);
          ss = mystring_split0(line);
@@ -244,7 +244,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
       }
       else if (mystring_contains(line,"lattice"))
       {
-         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
+         vector<float> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
          celljson["unita"] = unita;
       }
       else if (mystring_contains(line,"ngrid"))
@@ -261,8 +261,8 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = std::stod(ss[1]);
-            vector<double> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
+            float a = std::stod(ss[1]);
+            vector<float> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
             celljson["unita"] = unita;
          }
       }
@@ -271,8 +271,8 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = 0.5*std::stod(ss[1]);
-            vector<double> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
+            float a = 0.5*std::stod(ss[1]);
+            vector<float> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
             celljson["unita"] = unita;
          }
       }
@@ -281,8 +281,8 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = 0.5*std::stod(ss[1]);
-            vector<double> unita = {-a,a,a, a,-a,a, a,a,-a};
+            float a = 0.5*std::stod(ss[1]);
+            vector<float> unita = {-a,a,a, a,-a,a, a,a,-a};
             celljson["unita"] = unita;
          }
       }
@@ -291,7 +291,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = std::stod(ss[1]);
+            float a = std::stod(ss[1]);
             celljson["box_delta"] = a;
          }
       }

@@ -81,7 +81,7 @@ class nwpw_timers {
 
 
    std::chrono::high_resolution_clock::time_point start[nwpw_tim_max+1];
-   double times[nwpw_tim_max+1];
+   float times[nwpw_tim_max+1];
 
 public: 
 
@@ -97,20 +97,20 @@ public:
    }
    void end_timer(const int i) {
        auto stop = std::chrono::high_resolution_clock::now();
-       std::chrono::duration<double> deltatime = stop-start[i];
-       times[i] += (double) deltatime.count();
+       std::chrono::duration<float> deltatime = stop-start[i];
+       times[i] += (float) deltatime.count();
    }
 
 
-   void print_timer(std::string msg, double time, int counter, double ttime) {
-      if (time>1.0e-9) printf(" %s %10.6le %10.6le %10.2lf%%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
-      //std::cout << msg << time << " " << time/((double) counter) << " " << std::setprecision(2) << 100*time/ttime  << "%" << std::endl;
+   void print_timer(std::string msg, float time, int counter, float ttime) {
+      if (time>1.0e-9) printf(" %s %10.6le %10.6le %10.2lf%%\n",msg.c_str(),time,time/((float) counter),100*time/ttime);
+      //std::cout << msg << time << " " << time/((float) counter) << " " << std::setprecision(2) << 100*time/ttime  << "%" << std::endl;
    }
 
    void print_final(int counter) {
        auto stop = std::chrono::high_resolution_clock::now();
-       std::chrono::duration<double> deltatime = stop-start[0];
-       times[0] = (double) deltatime.count();
+       std::chrono::duration<float> deltatime = stop-start[0];
+       times[0] = (float) deltatime.count();
 
        std::cout << " Time spent doing      total        step             percent" << std::endl;
        print_timer("total time           ", times[0],counter,times[0]);

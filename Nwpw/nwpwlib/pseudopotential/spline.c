@@ -13,7 +13,7 @@
 #include	"loggrid.h"
 
 static	int	nrl=1501;
-static	double	drl=0.02;
+static	float	drl=0.02;
 static  int     zeroflag=0;
 
 static  int     *nl;
@@ -29,7 +29,7 @@ void	init_Linear(char *filename)
         w = get_word(fp);
     if (w!=((char *) EOF))
     {
-        fscanf(fp,"%d %lf",&nrl,&drl);
+        fscanf(fp,"%d %f",&nrl,&drl);
     }
     fclose(fp);
     nl   = (int *) malloc(nrl*sizeof(int));
@@ -58,7 +58,7 @@ int	nrl_Linear()
     return nrl;
 }
 
-double	drl_Linear()
+float	drl_Linear()
 {
     return drl;
 }
@@ -71,16 +71,16 @@ double	drl_Linear()
  ********************************/
 
 void Spline(x,y,n,yp1,ypn,y2)
-double 	x[],
+float 	x[],
 y[];
 int	n;
-double	yp1;
-double	ypn;
-double	y2[];
+float	yp1;
+float	ypn;
+float	y2[];
 {
     int	i,k;
-    double sig,qn,un,p;
-    double *u;
+    float sig,qn,un,p;
+    float *u;
 
     u = alloc_Grid();
     if (yp1 > 0.99e30)
@@ -132,17 +132,17 @@ double	y2[];
  ********************************/
 
 
-double	Splint(xa,ya,y2a,n,nx,x)
-double	xa[];
-double	ya[];
-double	y2a[];
+float	Splint(xa,ya,y2a,n,nx,x)
+float	xa[];
+float	ya[];
+float	y2a[];
 int	n;
 int	nx;
-double	x;
+float	x;
 {
     int khi,klo;
-    double h,a,b;
-    double y;
+    float h,a,b;
+    float y;
 
     khi = nx+1;
     klo = nx;
@@ -187,17 +187,17 @@ double	x;
  ********************************/
 
 void	Log_to_Linear(ulog,rl,ulin)
-double	ulog[];
-double	rl[];
-double	ulin[];
+float	ulog[];
+float	rl[];
+float	ulin[];
 {
     int i,Ngrid;
     /*
       int	nl[5000];
     */
-    double r0,al;
-    double *r;
-    double *tmp;
+    float r0,al;
+    float *r;
+    float *tmp;
 
     r = r_LogGrid();
     r0 = r[0];
@@ -206,7 +206,7 @@ double	ulin[];
     rl[0] = r[0];
     for (i=1; i<nrl; ++i)
     {
-        rl[i] = drl*((double) i);
+        rl[i] = drl*((float) i);
         nl[i] = rint(log(rl[i]/r0)/al -0.5);
     }
 
@@ -230,17 +230,17 @@ double	ulin[];
  ********************************/
 
 void    Log_to_Linear_zero(ulog,rl,ulin)
-double  ulog[];
-double  rl[];
-double  ulin[];
+float  ulog[];
+float  rl[];
+float  ulin[];
 {
     int i,Ngrid;
     /*
       int        nl[5000];
     */
-    double r0,al;
-    double *r;
-    double *tmp;
+    float r0,al;
+    float *r;
+    float *tmp;
 
     r = r_LogGrid();
     r0 = r[0];
@@ -249,7 +249,7 @@ double  ulin[];
     rl[0] = r[0];
     for (i=1; i<nrl; ++i)
     {
-        rl[i] = drl*((double) i);
+        rl[i] = drl*((float) i);
         nl[i] = rint(log(rl[i]/r0)/al -0.5);
     }
 
@@ -276,10 +276,10 @@ double  ulin[];
 
 
 
-double	nm2(int n, double *y, double h)
+float	nm2(int n, float *y, float h)
 {
     int k;
-    double sum,sum1,sum2;
+    float sum,sum1,sum2;
 
     sum1 = 0.0;
     sum2 = 0.0;
@@ -294,10 +294,10 @@ double	nm2(int n, double *y, double h)
     return sum;
 } /* norm2 */
 
-void	normalize_Linear(double	*wl)
+void	normalize_Linear(float	*wl)
 {
     int	  k;
-    double norm;
+    float norm;
 
     norm = nm2(nrl,wl,drl);
     norm = 1.0/sqrt(norm);
@@ -306,10 +306,10 @@ void	normalize_Linear(double	*wl)
 }
 
 
-void	normalize_Linear2(double *wl, double *ul)
+void	normalize_Linear2(float *wl, float *ul)
 {
     int	  k;
-    double norm;
+    float norm;
 
     norm = nm2(nrl,wl,drl);
     norm = 1.0/sqrt(norm);

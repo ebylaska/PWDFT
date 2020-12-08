@@ -56,7 +56,7 @@ static int convert_psp_type(char *test)
 
 #define FMT1    "%lf"
 
-static bool psp_read_header(char *fname, double *zv)
+static bool psp_read_header(char *fname, float *zv)
 {
    int i,ifound,ihasae;
    char atom[2];
@@ -140,7 +140,7 @@ psp_library::psp_library(Control2& control)
  *                                         *
  *******************************************/
 
-void psp_library::psp_check(const char *atom, Control2& control, double *zv)
+void psp_library::psp_check(const char *atom, Control2& control, float *zv)
 {
 
    char fname[256];
@@ -175,7 +175,7 @@ void psp_library::psp_generator_auto(const char *atom, Control2& control)
    int ptype = this->psp_type(atom);
    int lmax = this->psp_lmax(atom);
    int locp = this->psp_locp(atom);
-   double rlocal = this->psp_rlocal(atom);
+   float rlocal = this->psp_rlocal(atom);
    //std::cout << " psptype = " << ptype << std::endl;
    //std::cout << " lmax = " << lmax << std::endl;
    //std::cout << " locp = " << locp << std::endl;
@@ -379,13 +379,13 @@ int psp_library::psp_locp(const char *atom)
  *        psp_library::psp_rlocal          *
  *                                         *
  *******************************************/
-double psp_library::psp_rlocal(const char *atom)
+float psp_library::psp_rlocal(const char *atom)
 {
    /* filename of psp file for atom */
    /* load the file into string */
    std::string aa = mystring_readfile(this->psp_libname(atom));
 
-   double rlocal = 1.0;
+   float rlocal = 1.0;
    if (mystring_contains(aa,"[rlocal]"))
       rlocal = std::stod(mystring_trim(mystring_split(mystring_split(aa,"[rlocal]")[1],"\n")[0]));
 

@@ -8,6 +8,6 @@
 #include        "Ion.hpp"
 
 extern void   psp_formatter_check(Parallel *, Lattice *, Ion *, Control2&);
-extern double psp_formatter_auto(Parallel *, PGrid *, Control2&, char *a);
+extern float psp_formatter_auto(Parallel *, PGrid *, Control2&, char *a);
 
 #endif

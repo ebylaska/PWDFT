@@ -46,13 +46,13 @@ values for the Troullier prescription.
 void
 Suggested_Param_RelTroullier (int *num_states_psp,
 			      int *n_psp, int *l_psp, int *s_psp,
-			      double *e_psp, double *fill_psp,
-			      double *rcut_psp)
+			      float *e_psp, float *fill_psp,
+			      float *rcut_psp)
 {
   int p, npsps;
   int i, l, lmax;
   int Nc, Nv, n, s2, js;
-  double rcmax, emax;
+  float rcmax, emax;
 
   Nc = Ncore_Atom ();
   Nv = Nvalence_Atom ();
@@ -157,28 +157,28 @@ solve_RelTroullier (int num_psp,
 		    int *n_psp,
 		    int *l_psp,
 		    int *s_psp,
-		    double *e_psp,
-		    double *fill_psp,
-		    double *rcut_psp,
-		    double **r_psi_psp,
-		    double **r_psi_prime_psp,
-		    double *rho_psp,
-		    double *rho_semicore,
-		    double **V_psp, double *eall_psp,
-		    double *eh_psp, double *ph_psp,
-		    double *ex_psp, double *px_psp,
-		    double *ec_psp, double *pc_psp)
+		    float *e_psp,
+		    float *fill_psp,
+		    float *rcut_psp,
+		    float **r_psi_psp,
+		    float **r_psi_prime_psp,
+		    float *rho_psp,
+		    float *rho_semicore,
+		    float **V_psp, float *eall_psp,
+		    float *eh_psp, float *ph_psp,
+		    float *ex_psp, float *px_psp,
+		    float *ec_psp, float *pc_psp)
 {
   int istate, i, l, k, p, s2, match, mch, Ngrid;
-  double al, amesh, rmax, Zion;
-  double gamma, gpr, nu0;
-  double ldpsi_match;
-  double el, eeig=0.0;
-  double ph, px, pc, eh, ex, ec;
+  float al, amesh, rmax, Zion;
+  float gamma, gpr, nu0;
+  float ldpsi_match;
+  float el, eeig=0.0;
+  float ph, px, pc, eh, ex, ec;
 
-  double *ul, *ul_prime;
-  double *wl, *wl_prime;
-  double *r, *Vh, *Vx, *Vc, *rho_total, *Vall, *Vl;
+  float *ul, *ul_prime;
+  float *wl, *wl_prime;
+  float *r, *Vh, *Vx, *Vc, *rho_total, *Vall, *Vl;
 
 
   /* Allocate Grids */
@@ -308,8 +308,8 @@ solve_RelTroullier (int num_psp,
       gpr = fabs (ul_prime[match] / wl_prime[match]);
       if (debug_print ())
 	{
-	  /*printf("ul[match] wl[match]: %lf %lf\n",ul[match],wl[match]); */
-	  printf ("%d\t%lf  %lf  %lf  %lf  %lf  %lf\n", l_psp[p],
+	  /*printf("ul[match] wl[match]: %f %f\n",ul[match],wl[match]); */
+	  printf ("%d\t%f  %f  %f  %f  %f  %f\n", l_psp[p],
 		  rcut_psp[p], r[match], e_psp[p], el, gamma, gpr);
 	}
 

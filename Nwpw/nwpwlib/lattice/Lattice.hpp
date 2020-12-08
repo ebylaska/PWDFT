@@ -9,21 +9,21 @@
 
 class Lattice {
 
-   double punita[9],punitg[9],pecut,pwcut,pomega;
+   float punita[9],punitg[9],pecut,pwcut,pomega;
 
 public:
 
    /* constructor */
    Lattice(Control2&);
 
-   double unita1d(const int i) { return punita[i]; }
-   double unita(const int i, const int j) { return punita[i+j*3]; }
-   double unitg(const int i, const int j) { return punitg[i+j*3]; }
-   double ecut() { return pecut; }
-   double wcut() { return pwcut; }
-   double omega() { return pomega; }
-   double eggcut() { return 2*pecut; }
-   double wggcut() { return 2*pwcut; }
+   float unita1d(const int i) { return punita[i]; }
+   float unita(const int i, const int j) { return punita[i+j*3]; }
+   float unitg(const int i, const int j) { return punitg[i+j*3]; }
+   float ecut() { return pecut; }
+   float wcut() { return pwcut; }
+   float omega() { return pomega; }
+   float eggcut() { return 2*pecut; }
+   float wggcut() { return 2*pwcut; }
 };
 
 #endif

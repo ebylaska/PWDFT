@@ -5,7 +5,7 @@
 */
 
 
-extern double paw_get_kinetic_energy(int , int*, double*, double**, double**);
+extern float paw_get_kinetic_energy(int , int*, float*, float**, float**);
 
 #endif
 

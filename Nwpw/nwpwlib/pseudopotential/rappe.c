@@ -47,14 +47,14 @@ void	Suggested_Param_Rappe(num_states_psp,n_psp,l_psp,
 int	*num_states_psp;
 int	n_psp[];
 int	l_psp[];
-double	e_psp[];
-double	fill_psp[];
-double	rcut_psp[];
+float	e_psp[];
+float	fill_psp[];
+float	rcut_psp[];
 {
     int p,npsps;
     int i,l,lmax;
     int Nc,Nv,n;
-    double rcmax,emax;
+    float rcmax,emax;
 
     Nc	= Ncore_Atom();
     Nv   = Nvalence_Atom();
@@ -160,35 +160,35 @@ void	solve_Rappe(num_psp,n_psp,l_psp,e_psp,fill_psp,rcut_psp,
 int	num_psp;
 int	n_psp[];
 int	l_psp[];
-double	e_psp[];
-double	fill_psp[];
-double	rcut_psp[];
-double	**r_psi_psp;
-double	**r_psi_prime_psp;
-double	*rho_psp;
-double	*rho_semicore;
-double	**V_psp;
-double	*eall_psp;
-double	*eh_psp;
-double	*ph_psp;
-double	*ex_psp;
-double	*px_psp;
-double	*ec_psp;
-double	*pc_psp;
+float	e_psp[];
+float	fill_psp[];
+float	rcut_psp[];
+float	**r_psi_psp;
+float	**r_psi_prime_psp;
+float	*rho_psp;
+float	*rho_semicore;
+float	**V_psp;
+float	*eall_psp;
+float	*eh_psp;
+float	*ph_psp;
+float	*ex_psp;
+float	*px_psp;
+float	*ec_psp;
+float	*pc_psp;
 {
     int 		istate,
     i,l,k,
     match,mch,
     Ngrid;
-    double	al,amesh,rmax,Zion;
-    double	gamma,gpr,nu0;
-    double	ldpsi_match;
-    double	el,eeig;
-    double	ph,px,pc,eh,ex,ec;
+    float	al,amesh,rmax,Zion;
+    float	gamma,gpr,nu0;
+    float	ldpsi_match;
+    float	el,eeig;
+    float	ph,px,pc,eh,ex,ec;
 
-    double	*ul,*ul_prime;
-    double	*wl,*wl_prime;
-    double	*r,
+    float	*ul,*ul_prime;
+    float	*wl,*wl_prime;
+    float	*r,
     *Vh,*Vx,*Vc,*rho_total,
     *Vall,
     *Vl;
@@ -303,7 +303,7 @@ double	*pc_psp;
         gamma=fabs(ul[match]/wl[match]);
         gpr  =fabs(ul_prime[match]/wl_prime[match]);
         if (debug_print()){
-            printf("%d\t%lf  %lf  %lf  %lf  %lf  %lf\n",l_psp[l],
+            printf("%d\t%f  %f  %f  %f  %f  %f\n",l_psp[l],
                    rcut_psp[l],r[match],
                    e_psp[l],el,
                    gamma,gpr);

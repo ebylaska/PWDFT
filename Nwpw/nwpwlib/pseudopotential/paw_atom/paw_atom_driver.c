@@ -23,7 +23,7 @@ void paw_atom_driver(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int *debug_ptr;
 int *lmax_ptr;
 int *locp_ptr;
-double  *rlocal_ptr;
+float  *rlocal_ptr;
 char    sdir_name[];
 int *n9;
 char    dir_name[];
@@ -38,27 +38,27 @@ int *n3;
 
     int      debug;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
 
-    double   zatom,zion;      /* local psp parameters          */
-    double over_fourpi;
+    float   zatom,zion;      /* local psp parameters          */
+    float over_fourpi;
 
     int      *nl;
     int      i,k,l,p,p1;
     int      Ngrid,nrl;
-    double   *rgrid,*psi,*psp;
-    double       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
+    float   *rgrid,*psi,*psp;
+    float       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
     **psil,
     **pspl;
-    double   drl,rmax;
+    float   drl,rmax;
 
     int      lmax,locp,lmaxp;
-    double   r0,xx;
+    float   r0,xx;
     int      n[10];
     int      pspdat,pspcode,pspxc;
-    double   r2well,rcore[10],e99,e999;
-    double   rchrg,fchrg,qchrg,pi;
+    float   r2well,rcore[10],e99,e999;
+    float   rchrg,fchrg,qchrg,pi;
 
 
     char   *w,*tc;

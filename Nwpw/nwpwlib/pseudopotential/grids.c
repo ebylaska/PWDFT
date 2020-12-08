@@ -23,7 +23,7 @@
 /* use a linked list to keep tract of grids */
 typedef	struct tt_struct {
     struct tt_struct	*next;
-    double			*grid;
+    float			*grid;
 } *Grids_List_Type;
 
 static	int		Ngrid_points;
@@ -77,9 +77,9 @@ void	end_Grids()
  *				*
  ********************************/
 
-double	*alloc_Grid()
+float	*alloc_Grid()
 {
-    double 	   *grid_return;
+    float 	   *grid_return;
     Grids_List_Type node;
 
 
@@ -93,7 +93,7 @@ double	*alloc_Grid()
     else
     {
         node       = (Grids_List_Type) malloc(sizeof(struct tt_struct));
-        node->grid = (double *) malloc(Ngrid_points*sizeof(double));
+        node->grid = (float *) malloc(Ngrid_points*sizeof(float));
 
     }
 
@@ -115,7 +115,7 @@ double	*alloc_Grid()
  *				*
  ********************************/
 
-void	dealloc_Grid(double * grid)
+void	dealloc_Grid(float * grid)
 {
     int	    done;
     Grids_List_Type  cur,prev;

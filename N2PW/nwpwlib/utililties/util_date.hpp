@@ -6,6 +6,6 @@
 */
 
 extern char *util_date();
-extern void seconds(double *);
+extern void seconds(float *);
 
 #endif

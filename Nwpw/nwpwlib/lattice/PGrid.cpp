@@ -34,18 +34,18 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 {
    int i,j,k,nxh,nyh,nzh,p,q,indx,k1,k2,k3,nb;
    int nwave_in[2],nwave_out[2];
-   double *G1, *G2,*G3;
-   double gx,gy,gz,gg,ggcut,eps,ggmax,ggmin;
+   float *G1, *G2,*G3;
+   float gx,gy,gz,gg,ggcut,eps,ggmax,ggmin;
    int *zero_arow3,*zero_arow2;
    int yzslab,zrow;
 
    lattice = inlattice;
 
    eps = 1.0e-12;
-   Garray = new double [3*nfft3d];
+   Garray = new float [3*nfft3d];
    G1 = Garray;
-   G2 = (double *) &Garray[nfft3d];
-   G3 = (double *) &Garray[2*nfft3d];
+   G2 = (float *) &Garray[nfft3d];
+   G3 = (float *) &Garray[2*nfft3d];
    nxh = nx/2;
    nyh = ny/2;
    nzh = nz/2;
@@ -420,11 +420,11 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    }
 
-   Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
-   Gpack[1] = (double *) &(Gpack[0][3*(nida[0]+nidb[0])]);
-   //Gpack[0] = new double [3*(nida[0]+nidb[0])];
-   //Gpack[1] = new double [3*(nida[1]+nidb[1])];
-   double *Gtmp = new double [nfft3d];
+   Gpack[0] = new float [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
+   Gpack[1] = (float *) &(Gpack[0][3*(nida[0]+nidb[0])]);
+   //Gpack[0] = new float [3*(nida[0]+nidb[0])];
+   //Gpack[1] = new float [3*(nida[1]+nidb[1])];
+   float *Gtmp = new float [nfft3d];
    int one      = 1;
    for (nb=0; nb<=1; ++nb)
    {
@@ -444,7 +444,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(
 
 
 /*
-void c_indexcopy(const int n, const int *indx, double *A, double *B)
+void c_indexcopy(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -456,7 +456,7 @@ void c_indexcopy(const int n, const int *indx, double *A, double *B)
       ii +=2;
    }
 }
-void t_indexcopy(const int n, const int *indx, double *A, double *B)
+void t_indexcopy(const int n, const int *indx, float *A, float *B)
 {
    for (int i=0; i<n; ++i)
       B[i] = A[indx[i]];
@@ -468,24 +468,24 @@ void t_indexcopy(const int n, const int *indx, double *A, double *B)
  *       PGrid:c_unpack         *
  *                              *
  ********************************/
-void PGrid::c_unpack(const int nb, double *a)
+void PGrid::c_unpack(const int nb, float *a)
 {
    int one=1;
    int nn = 2*(nida[nb]+nidb2[nb]);
-   double *tmp1,*tmp2;
-   double *tmp = new double [2*nfft3d];
+   float *tmp1,*tmp2;
+   float *tmp = new float [2*nfft3d];
    if (balanced)
       mybalance->c_unbalance(nb,a);
 
    DCOPY_PWDFT(nn,a,one,tmp,one);
 
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
-   memset(a, 0, n2ft3d * sizeof(double));
+   memset(a, 0, n2ft3d * sizeof(float));
 
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new double[2*zplane_size];
-   tmp2 = new double[2*zplane_size];
+   tmp1 = new float[2*zplane_size];
+   tmp2 = new float[2*zplane_size];
    c_timereverse(a,tmp1,tmp2);
    delete [] tmp2;
    delete [] tmp1;
@@ -497,14 +497,14 @@ void PGrid::c_unpack(const int nb, double *a)
  *       PGrid:c_pack           *
  *                              *
  ********************************/
-void PGrid::c_pack(const int nb, double *a)
+void PGrid::c_pack(const int nb, float *a)
 {
    int one=1;
-   double *tmp = new double [n2ft3d];
+   float *tmp = new float [n2ft3d];
 
    DCOPY_PWDFT(n2ft3d,a,one,tmp,one);
 
-   memset(a, 0, n2ft3d * sizeof(double));
+   memset(a, 0, n2ft3d * sizeof(float));
 
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -520,7 +520,7 @@ void PGrid::c_pack(const int nb, double *a)
  *       PGrid:cc_pack_copy     *
  *                              *
  ********************************/
-void PGrid::cc_pack_copy(const int nb, double *a, double *b)
+void PGrid::cc_pack_copy(const int nb, float *a, float *b)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
@@ -534,13 +534,13 @@ void PGrid::cc_pack_copy(const int nb, double *a, double *b)
  *       PGrid:cc_pack_dot      *
  *                              *
  ********************************/
-double PGrid::cc_pack_dot(const int nb, double *a, double *b)
+float PGrid::cc_pack_dot(const int nb, float *a, float *b)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
-   double tsum;
+   float tsum;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
@@ -553,12 +553,12 @@ double PGrid::cc_pack_dot(const int nb, double *a, double *b)
  *       PGrid:tt_pack_dot      *
  *                              *
  ********************************/
-double PGrid::tt_pack_dot(const int nb, double *a, double *b)
+float PGrid::tt_pack_dot(const int nb, float *a, float *b)
 {
    int one = 1;
    int ng  = (nida[nb]+nidb[nb]);
    int ng0 = nida[nb];
-   double tsum;
+   float tsum;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
@@ -572,13 +572,13 @@ double PGrid::tt_pack_dot(const int nb, double *a, double *b)
  *       PGrid:cc_pack_idot     *
  *                              *
  ********************************/
-double PGrid::cc_pack_idot(const int nb, double *a, double *b)
+float PGrid::cc_pack_idot(const int nb, float *a, float *b)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
-   double tsum;
+   float tsum;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
@@ -591,13 +591,13 @@ double PGrid::cc_pack_idot(const int nb, double *a, double *b)
  *       PGrid:tt_pack_idot     *
  *                              *
  ********************************/
-double PGrid::tt_pack_idot(const int nb, double *a, double *b)
+float PGrid::tt_pack_idot(const int nb, float *a, float *b)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = (nida[nb]+nidb[nb]);
    int ng0 = nida[nb];
-   double tsum;
+   float tsum;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
@@ -611,7 +611,7 @@ double PGrid::tt_pack_idot(const int nb, double *a, double *b)
  *       PGrid:cc_pack_indot    *
  *                              *
  ********************************/
-void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, double *sum)
+void PGrid::cc_pack_indot(const int nb, const int nn, float *a, float *b, float *sum)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);
@@ -633,15 +633,15 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
  *    PGrid:cc_pack_inprjdot    *
  *                              *
  ********************************/
-void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *b, double *sum)
+void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, float *a, float *b, float *sum)
 {
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
    int one = 1;
-   double rtwo  = 2.0;
-   double rone  = 1.0;
-   double rmone = -1.0;
-   double rzero = 0.0;
+   float rtwo  = 2.0;
+   float rone  = 1.0;
+   float rmone = -1.0;
+   float rzero = 0.0;
 
    // DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
    // 	       rtwo,
@@ -667,24 +667,24 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *
  *       PGrid:t_unpack         *
  *                              *
  ********************************/
-void PGrid::t_unpack(const int nb, double *a)
+void PGrid::t_unpack(const int nb, float *a)
 {
    int one=1;
    int nn = (nida[nb]+nidb2[nb]);
-   double *tmp1,*tmp2;
-   double *tmp = new double [nfft3d];
+   float *tmp1,*tmp2;
+   float *tmp = new float [nfft3d];
    if (balanced)
       mybalance->t_unbalance(nb,a);
 
    DCOPY_PWDFT(nn,a,one,tmp,one);
 
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
-   memset(a, 0, nfft3d * sizeof(double));
+   memset(a, 0, nfft3d * sizeof(float));
 
    t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new double[zplane_size];
-   tmp2 = new double[zplane_size];
+   tmp1 = new float[zplane_size];
+   tmp2 = new float[zplane_size];
    t_timereverse(a,tmp1,tmp2);
    delete [] tmp2;
    delete [] tmp1;
@@ -698,17 +698,17 @@ void PGrid::t_unpack(const int nb, double *a)
  *       PGrid:t_pack           *
  *                              *
  ********************************/
-void PGrid::t_pack(const int nb, double *a)
+void PGrid::t_pack(const int nb, float *a)
 {
    int one      = 1;
    int zero     = 0;
-   double rzero = 0.0;
-   double *tmp  = new double [nfft3d];
+   float rzero = 0.0;
+   float *tmp  = new float [nfft3d];
 
    DCOPY_PWDFT(nfft3d,a,one,tmp,one);
 
    //dcopy_(&nfft3d,&rzero,&zero,a,&one);
-   memset(a, 0, nfft3d * sizeof(double));
+   memset(a, 0, nfft3d * sizeof(float));
 
    t_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -723,7 +723,7 @@ void PGrid::t_pack(const int nb, double *a)
  *       PGrid:tt_pack_copy     *
  *                              *
  ********************************/
-void PGrid::tt_pack_copy(const int nb, double *a, double *b)
+void PGrid::tt_pack_copy(const int nb, float *a, float *b)
 {
    int one = 1;
    int ng  = nida[nb]+nidb[nb];
@@ -736,13 +736,13 @@ void PGrid::tt_pack_copy(const int nb, double *a, double *b)
  *       PGrid:t_pack_nzero     *
  *                              *
  ********************************/
-void PGrid::t_pack_nzero(const int nb, const int n, double *a)
+void PGrid::t_pack_nzero(const int nb, const int n, float *a)
 {
    //int one   = 1;
   // int zero = 0;
-  // double azero = 0.0;
+  // float azero = 0.0;
    int ng  = n*(nida[nb]+nidb[nb]);
-   memset(a, 0, ng * sizeof(double));
+   memset(a, 0, ng * sizeof(float));
 }
 
 
@@ -788,7 +788,7 @@ void PGrid::ii_pack_copy(const int nb, int *a, int *b)
  *    PGrid:cr_pfft3b_queuein   *
  *                              *
  ********************************/
-void PGrid::cr_pfft3b_queuein(const int nb, double *a)
+void PGrid::cr_pfft3b_queuein(const int nb, float *a)
 {
    int np = parall->np_i();
 }
@@ -798,7 +798,7 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a)
  *    PGrid:cr_pfft3b_queueout  *
  *                              *
  ********************************/
-void PGrid::cr_pfft3b_queueout(const int nb, double *a)
+void PGrid::cr_pfft3b_queueout(const int nb, float *a)
 {
 }
 
@@ -821,7 +821,7 @@ int  PGrid::cr_pfft3b_queuefilled()
  *     PGrid:tc_pack_copy       *
  *                              *
  ********************************/
-void PGrid::tc_pack_copy(const int nb, double *a, double *b)
+void PGrid::tc_pack_copy(const int nb, float *a, float *b)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -841,7 +841,7 @@ void PGrid::tc_pack_copy(const int nb, double *a, double *b)
  *         PGrid:tcc_Mul        *
  *                              *
  ********************************/
-void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_Mul(const int nb, float *a, float *b, float *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -860,7 +860,7 @@ void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
  *         PGrid:ttc_iMul       *
  *                              *
  ********************************/
-void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_iMul(const int nb, float *a, float *b, float *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -879,7 +879,7 @@ void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
  *       PGrid:ttc_MulSum2      *
  *                              *
  ********************************/
-void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_MulSum2(const int nb, float *a, float *b, float *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -899,7 +899,7 @@ void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
  *         PGrid:cc_Sum2        *
  *                              *
  ********************************/
-void PGrid::cc_Sum2(const int nb, double *a, double *b)
+void PGrid::cc_Sum2(const int nb, float *a, float *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -912,7 +912,7 @@ void PGrid::cc_Sum2(const int nb, double *a, double *b)
  *         PGrid:c_zero         *
  *                              *
  ********************************/
-void PGrid::c_zero(const int nb, double *b)
+void PGrid::c_zero(const int nb, float *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -925,7 +925,7 @@ void PGrid::c_zero(const int nb, double *b)
  *         PGrid:c_SMul         *
  *                              *
  ********************************/
-void PGrid::c_SMul(const int nb, double alpha, double *b)
+void PGrid::c_SMul(const int nb, float alpha, float *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -938,7 +938,7 @@ void PGrid::c_SMul(const int nb, double alpha, double *b)
  *         PGrid:cc_SMul        *
  *                              *
  ********************************/
-void PGrid::cc_SMul(const int nb, double alpha, double *a, double *b)
+void PGrid::cc_SMul(const int nb, float alpha, float *a, float *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -951,7 +951,7 @@ void PGrid::cc_SMul(const int nb, double alpha, double *a, double *b)
  *         PGrid:cc_daxpy       *
  *                              *
  ********************************/
-void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
+void PGrid::cc_daxpy(const int nb, float alpha, float *a, float *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -964,7 +964,7 @@ void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
  *       PGrid:cct_iconjgMul    *
  *                              *
  ********************************/
-void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double *c)
+void PGrid::cct_iconjgMul(const int nb, const float *a, const float *b, float *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
@@ -976,7 +976,7 @@ void PGrid::cct_iconjgMul(const int nb, const double *a, const double *b, double
  *       PGrid:cct_iconjgMulb   *
  *                              *
  ********************************/
-void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, double *c)
+void PGrid::cct_iconjgMulb(const int nb, const float *a, const float *b, float *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
@@ -984,11 +984,11 @@ void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, doubl
 
 
 #ifdef NWPW_SYCL
-// void PGrid::c_pack_sycl(const int nb, double *a_dev)
+// void PGrid::c_pack_sycl(const int nb, float *a_dev)
 // {
-//     double* tmp = get_sycl_mem(n2ft3d * sizeof(double));
-//     get_syclQue()->copy(tmp, a_dev, n2ft3d * sizeof(double));
-//     get_syclQue()->memset(a_dev, 0, n2ft3d * sizeof(double));
+//     float* tmp = get_sycl_mem(n2ft3d * sizeof(float));
+//     get_syclQue()->copy(tmp, a_dev, n2ft3d * sizeof(float));
+//     get_syclQue()->memset(a_dev, 0, n2ft3d * sizeof(float));
 
 //     c_aindexcopy(nida[nb]+nidb2[nb], packarray[nb], tmp, a_dev);
 
@@ -999,7 +999,7 @@ void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, doubl
 //     return;
 // }
 
-void PGrid::tcc_Mul_sycl(const int nb, const double *a, const double *b, double *c)
+void PGrid::tcc_Mul_sycl(const int nb, const float *a, const float *b, float *c)
 {
     int ng  = nida[nb]+nidb[nb]; // mygrid->npack(nb);
     cl::sycl::range<1> threads(32);
@@ -1011,7 +1011,7 @@ void PGrid::tcc_Mul_sycl(const int nb, const double *a, const double *b, double 
                              [=](cl::sycl::nd_item<1> item) {
                                  size_t i = item.get_global_id(0);
                                  if ( i < ng ) {
-                                     double a_val = a[i];
+                                     float a_val = a[i];
                                      size_t i2 = i * 2;
                                      c[i2]     = b[i2]     * a_val;
                                      c[i2 + 1] = b[i2 + 1] * a_val;
@@ -1030,7 +1030,7 @@ void PGrid::tcc_Mul_sycl(const int nb, const double *a, const double *b, double 
 #endif
 }
 
-void PGrid::tcc_iMul_sycl(const int nb, const double *a, const double *b, double *c)
+void PGrid::tcc_iMul_sycl(const int nb, const float *a, const float *b, float *c)
 {
     int ng  = nida[nb]+nidb[nb];
     cl::sycl::range<1> threads(32);
@@ -1042,7 +1042,7 @@ void PGrid::tcc_iMul_sycl(const int nb, const double *a, const double *b, double
                              [=](cl::sycl::nd_item<1> item) {
                                  size_t i = item.get_global_id(0);
                                  if ( i < ng ) {
-                                     double a_val = a[i];
+                                     float a_val = a[i];
                                      size_t i2 = i * 2;
                                      c[i2    ] = -b[i2 + 1] * a_val;
                                      c[i2 + 1] =  b[i2    ] * a_val;
@@ -1061,7 +1061,7 @@ void PGrid::tcc_iMul_sycl(const int nb, const double *a, const double *b, double
 #endif
 }
 
-void PGrid::cc_pack_inprjdot_sycl(const int nb, int nn, int nprj, double *a, double *b, double *sum)
+void PGrid::cc_pack_inprjdot_sycl(const int nb, int nn, int nprj, float *a, float *b, float *sum)
 {
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];

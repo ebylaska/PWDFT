@@ -17,10 +17,10 @@ public:
    int nion,nkatm; // number of ions
    int *katm; // element ID number
    int *natm;
-   double *charge,*zv_psp;
-   double *mass;
-   double *dti;
-   double *rion0,*rion1,*rion2; // coordinates of ions
+   float *charge,*zv_psp;
+   float *mass;
+   float *dti;
+   float *rion0,*rion1,*rion2; // coordinates of ions
 
    /* Constructors */
    Ion(RTDB&, Control2&);
@@ -48,28 +48,28 @@ public:
     }
     char *symbol(const int i) { return &atomarray[3*katm[i]]; }
     char *atom(const int ia)  { return &atomarray[3*ia]; }
-    double amu(const int i) { return mass[i]/1822.89; }
+    float amu(const int i) { return mass[i]/1822.89; }
     void writejsonstr(string&);
-    double rion(int i, int ii) { return rion1[3*ii+i];}
-    double vion(int i, int ii) { return rion0[3*ii+i];}
-    double gc(int i) 
+    float rion(int i, int ii) { return rion1[3*ii+i];}
+    float vion(int i, int ii) { return rion0[3*ii+i];}
+    float gc(int i) 
     { 
-       double ss = 0.0;
+       float ss = 0.0;
        for (auto ii=0; ii<nion; ++ii) 
           ss += rion1[3*ii+i];
-       return ss/((double) nion);
+       return ss/((float) nion);
     }
-    double vgc(int i) 
+    float vgc(int i) 
     { 
-       double ss = 0.0;
+       float ss = 0.0;
        for (auto ii=0; ii<nion; ++ii) 
           ss += rion0[3*ii+i];
-       return ss/((double) nion);
+       return ss/((float) nion);
     }
-    double com(int i) 
+    float com(int i) 
     {
-       double tmass = 0.0;
-       double ss    = 0.0;
+       float tmass = 0.0;
+       float ss    = 0.0;
        for (auto ii=0; ii<nion; ++ii)
        { 
           tmass += mass[ii];
@@ -77,10 +77,10 @@ public:
        }
        return ss/tmass;
     }
-    double vcom(int i) 
+    float vcom(int i) 
     {
-       double tmass = 0.0;
-       double ss    = 0.0;
+       float tmass = 0.0;
+       float ss    = 0.0;
        for (auto ii=0; ii<nion; ++ii)
        { 
           tmass += mass[ii];
@@ -89,21 +89,21 @@ public:
        return ss/tmass;
     }
 
-    void optimize_step(const double *fion) 
+    void optimize_step(const float *fion) 
     {
        for (auto ii=0; ii<nion; ++ii)
        {
-          double alpha = sqrt(dti[ii]);
+          float alpha = sqrt(dti[ii]);
           rion2[3*ii]   = rion1[3*ii]   + alpha*fion[3*ii];
           rion2[3*ii+1] = rion1[3*ii+1] + alpha*fion[3*ii+1];
           rion2[3*ii+2] = rion1[3*ii+2] + alpha*fion[3*ii+2];
        }
     }
 
-    void set_zv_psp(const int ia, const double zv) { zv_psp[ia] = zv; }
-    double total_zv()
+    void set_zv_psp(const int ia, const float zv) { zv_psp[ia] = zv; }
+    float total_zv()
     {
-       double tcharge = 0.0;
+       float tcharge = 0.0;
        for (auto ia=0; ia< nkatm; ++ia)
           tcharge += zv_psp[ia]*natm[ia];
        return tcharge;

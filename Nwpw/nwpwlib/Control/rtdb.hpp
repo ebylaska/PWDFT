@@ -18,9 +18,7 @@
 #define rtdb_int    1010    /* int */
 #define rtdb_log    1011    /* log */
 #define rtdb_float  1012    /* float */
-#define rtdb_double 1013    /* double */
 #define rtdb_complex 1014    /* complex*/
-#define rtdb_double_complex 1015    /* double complex*/
 #endif
 
 

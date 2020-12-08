@@ -26,7 +26,7 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
      int *debug_ptr;
      int *lmax_ptr;
      int *locp_ptr;
-     double *rlocal_ptr;
+     float *rlocal_ptr;
      int *efg_ptr;
      char sdir_name[];
      int *n9;
@@ -41,13 +41,13 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
 
   int i, j, k, l, p, Nlinear, Nvalence,Ncore,istate,mch,kb_extra;
   int debug, print;
-  double *rl, *rhol, **psil_ae,**psil, **psil_extra, **pspl;
-  double over_fourpi, c, x, y,nu0;
+  float *rl, *rhol, **psil_ae,**psil, **psil_extra, **pspl;
+  float over_fourpi, c, x, y,nu0;
   int Ngrid;
-  double *vall, *rgrid;
+  float *vall, *rgrid;
   char name[255];
   int lmax_out, locp_out,efg_type;
-  double rlocal_out,rmax;
+  float rlocal_out,rmax;
 
   FILE *fp;
 
@@ -109,17 +109,17 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
   Nvalence = Nvalence_Psp();
   Ncore    = Ncore_Atom();
   Nlinear = nrl_Linear();
-  psil    = (double **) malloc(Nvalence * sizeof (double *));
-  psil_ae = (double **) malloc(Nvalence * sizeof (double *));
-  pspl    = (double **) malloc(Nvalence * sizeof (double *));
+  psil    = (float **) malloc(Nvalence * sizeof (float *));
+  psil_ae = (float **) malloc(Nvalence * sizeof (float *));
+  pspl    = (float **) malloc(Nvalence * sizeof (float *));
   for (p = 0; p < Nvalence; ++p)
     {
-      psil[p]    = (double *) malloc(Nlinear * sizeof (double));
-      psil_ae[p] = (double *) malloc(Nlinear * sizeof (double));
-      pspl[p]    = (double *) malloc(Nlinear * sizeof (double));
+      psil[p]    = (float *) malloc(Nlinear * sizeof (float));
+      psil_ae[p] = (float *) malloc(Nlinear * sizeof (float));
+      pspl[p]    = (float *) malloc(Nlinear * sizeof (float));
     }
-  rl = (double *)   malloc(Nlinear * sizeof (double));
-  rhol = (double *) malloc(Nlinear * sizeof (double));
+  rl = (float *)   malloc(Nlinear * sizeof (float));
+  rhol = (float *) malloc(Nlinear * sizeof (float));
 
   /* Norm-conserving output */
   if (NormConserving_Psp())
@@ -155,10 +155,10 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
       kb_extra = kb_extra_Psp();
       if (kb_extra>0)
       {
-         psil_extra = (double **) malloc(kb_extra*sizeof(double*));
+         psil_extra = (float **) malloc(kb_extra*sizeof(float*));
          for (p=0; p<kb_extra; ++p)
          {
-            psil_extra[p] = (double *) malloc(Nlinear*sizeof(double));
+            psil_extra[p] = (float *) malloc(Nlinear*sizeof(float));
             Log_to_Linear(r_psi_extra_Psp(p),rl,psil_extra[p]);
          }
       }
@@ -244,10 +244,10 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
       else if (kb_extra)  fprintf(fp, "2\n");
       fprintf(fp, "%s\n", name_Atom());
 
-      fprintf(fp, "%lf %lf %d   %d %d %lf\n", Zion_Psp(), Amass_Atom(),
+      fprintf(fp, "%f %f %d   %d %d %f\n", Zion_Psp(), Amass_Atom(),
 	       lmax_Psp(), lmax_out, locp_out, rlocal_out);
       for (p = 0; p <= lmax_Psp(); ++p)
-	fprintf(fp, "%lf ", rcut_Psp(p));
+	fprintf(fp, "%f ", rcut_Psp(p));
       fprintf(fp, "\n");
       if (kb_extra)
       {
@@ -256,7 +256,7 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
             fprintf(fp, "%d ", kb_expansion_Psp(p));
          fprintf(fp, "\n");
       }
-      fprintf(fp, "%d %lf\n", nrl_Linear(), drl_Linear());
+      fprintf(fp, "%d %f\n", nrl_Linear(), drl_Linear());
       fprintf(fp, "%s\n", comment_Psp());
        
 
@@ -302,7 +302,7 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
 	      printf ("  + Appending semicore density\n");
 	    }
 	  Log_to_Linear(rho_semicore_Psp(), rl, rhol);
-	  fprintf (fp, "%lf\n", r_semicore_Psp());
+	  fprintf (fp, "%f\n", r_semicore_Psp());
 	  for (k = 0; k < Nlinear; ++k)
 	    fprintf (fp, "%12.8lf %12.8lf\n", rl[k],
 		     fabs(rhol[k] * over_fourpi));
@@ -327,7 +327,7 @@ void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr,efg_ptr,
       printf("Creating Vanderbilt pseudopotential input: %s\n", outfile);
       fp = fopen(outfile, "w+");
       fprintf(fp, "0 %s\n", name_Atom());
-      fprintf(fp, "%lf %lf %d\n", Zion_Psp(), Amass_Atom(), lmax_Psp());
+      fprintf(fp, "%f %f %d\n", Zion_Psp(), Amass_Atom(), lmax_Psp());
 
       /* output grid parameters */
       fprintf (fp, "%d %20.15le \n", Nlinear, drl_Linear());

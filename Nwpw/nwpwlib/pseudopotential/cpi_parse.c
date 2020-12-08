@@ -9,7 +9,7 @@
 //#include "typesf2c.h"
 #include "get_word.h"
 
-extern double cpi_Splint();
+extern float cpi_Splint();
 extern void   cpi_Spline();
 
 
@@ -18,7 +18,7 @@ void cpi_parse(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int	*debug_ptr;
 int	*lmax_ptr;
 int	*locp_ptr;
-double 	*rlocal_ptr;
+float 	*rlocal_ptr;
 char	sdir_name[];
 int	*n9;
 char	dir_name[];
@@ -33,25 +33,25 @@ int	*n3;
 
     int      debug;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
     int      lmax;
 
 
-    double   Zion;      /* local psp parameters          */
-    double over_fourpi;
+    float   Zion;      /* local psp parameters          */
+    float over_fourpi;
 
     int      *nl;
     int      i,j,k,p,p1;
     int      Ngrid,nrl;
-    double   *rgrid,*psi,*psp;
-    double       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
+    float   *rgrid,*psi,*psp;
+    float       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
     **psil,
     **pspl;
-    double   r,ul,vl,amesh,al,drl,r_semicore,rmax;
+    float   r,ul,vl,amesh,al,drl,r_semicore,rmax;
 
     int      lmaxp;
-    double   dum1,dum2,dum3,dum4,r0;
+    float   dum1,dum2,dum3,dum4,r0;
     int idum;
 
 
@@ -129,7 +129,7 @@ int	*n3;
     /* define linear grid */
     nrl  = 2001;
     rmax = 40.0;
-    drl  = rmax/((double) (nrl-1));
+    drl  = rmax/((float) (nrl-1));
 
     fp = fopen(infile,"r+");
     w = get_word(fp);
@@ -137,8 +137,8 @@ int	*n3;
         w = get_word(fp);
     if (w!=((char *) EOF))
     {
-        fscanf(fp,"%d %lf",&nrl,&drl);
-        rmax = ((double) (nrl-1))*drl;
+        fscanf(fp,"%d %f",&nrl,&drl);
+        rmax = ((float) (nrl-1))*drl;
     }
     fclose(fp);
 
@@ -162,34 +162,34 @@ int	*n3;
     argc = to_eoln(fp);
 
 
-    fscanf(fp,"%lf %d",&Zion,&lmaxp);
+    fscanf(fp,"%f %d",&Zion,&lmaxp);
     lmax = lmaxp-1;
 
-    fscanf(fp,"%lf %lf %lf %lf",&dum1,&dum2,&dum3,&dum4);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
-    fscanf(fp,"%lf %lf %lf ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f %f",&dum1,&dum2,&dum3,&dum4);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
+    fscanf(fp,"%f %f %f ",&dum1,&dum2,&dum3);
 
-    fscanf(fp,"%d %lf",&Ngrid,&amesh);
+    fscanf(fp,"%d %f",&Ngrid,&amesh);
     al = log(amesh);
 
-    psi     = (double *) malloc(Ngrid*sizeof(double));
-    psp     = (double *) malloc(Ngrid*sizeof(double));
-    rgrid   = (double *) malloc(Ngrid*sizeof(double));
-    tmp     = (double *) malloc(Ngrid*sizeof(double));
-    tmp2    = (double *) malloc(Ngrid*sizeof(double));
-    sc_rho  = (double *) malloc(Ngrid*sizeof(double));
-    sc_drho = (double *) malloc(Ngrid*sizeof(double));
+    psi     = (float *) malloc(Ngrid*sizeof(float));
+    psp     = (float *) malloc(Ngrid*sizeof(float));
+    rgrid   = (float *) malloc(Ngrid*sizeof(float));
+    tmp     = (float *) malloc(Ngrid*sizeof(float));
+    tmp2    = (float *) malloc(Ngrid*sizeof(float));
+    sc_rho  = (float *) malloc(Ngrid*sizeof(float));
+    sc_drho = (float *) malloc(Ngrid*sizeof(float));
 
     for (i=0; i<Ngrid; ++i)
     {
-        fscanf(fp,"%d %lf %lf %lf",&j, &r,&ul,&vl);
+        fscanf(fp,"%d %f %f %f",&j, &r,&ul,&vl);
         rgrid[i]  = r;
         psi[i] = ul;
         psp[i] = vl;
@@ -200,30 +200,30 @@ int	*n3;
     if (rmax > rgrid[Ngrid-5])
     {
         rmax = rgrid[Ngrid-5];
-        drl = rmax/((double) (nrl-1));
+        drl = rmax/((float) (nrl-1));
     }
 
 
 
     /* generate linear meshes */
-    rl       = (double *) malloc(nrl*sizeof(double));
+    rl       = (float *) malloc(nrl*sizeof(float));
     nl       = (int *)    malloc(nrl*sizeof(int));
-    psil     = (double **) malloc(lmaxp*sizeof(double*));
-    pspl     = (double **) malloc(lmaxp*sizeof(double*));
-    sc_rhol  = (double *) malloc(nrl*sizeof(double));
-    sc_drhol = (double *) malloc(nrl*sizeof(double));
+    psil     = (float **) malloc(lmaxp*sizeof(float*));
+    pspl     = (float **) malloc(lmaxp*sizeof(float*));
+    sc_rhol  = (float *) malloc(nrl*sizeof(float));
+    sc_drhol = (float *) malloc(nrl*sizeof(float));
 
     r0    = rgrid[0];
     rl[0] = rgrid[0];
     for (i=1; i<nrl; ++i)
     {
-        rl[i] = drl*((double) i);
+        rl[i] = drl*((float) i);
         nl[i] = rint(log(rl[i]/r0)/al -0.5);
     }
 
 
-    psil[0] = (double *) malloc(nrl*sizeof(double));
-    pspl[0] = (double *) malloc(nrl*sizeof(double));
+    psil[0] = (float *) malloc(nrl*sizeof(float));
+    pspl[0] = (float *) malloc(nrl*sizeof(float));
 
     cpi_Spline(rgrid,psp,Ngrid-4,0.0,0.0,tmp,tmp2);
     pspl[0][0] = psp[0];
@@ -241,18 +241,18 @@ int	*n3;
 
     for (p=1; p<lmaxp; ++p)
     {
-        fscanf(fp,"%d %lf",&idum,&dum1);
+        fscanf(fp,"%d %f",&idum,&dum1);
 
         for (i=0; i<Ngrid; ++i)
         {
-            fscanf(fp,"%d %lf %lf %lf",&j, &r,&ul,&vl);
+            fscanf(fp,"%d %f %f %f",&j, &r,&ul,&vl);
             rgrid[i]  = r;
             psi[i] = ul;
             psp[i] = vl;
         }
 
-        psil[p] = (double *) malloc(nrl*sizeof(double));
-        pspl[p] = (double *) malloc(nrl*sizeof(double));
+        psil[p] = (float *) malloc(nrl*sizeof(float));
+        pspl[p] = (float *) malloc(nrl*sizeof(float));
 
         cpi_Spline(rgrid,psp,Ngrid-4,0.0,0.0,tmp,tmp2);
         pspl[p][0] = psp[0];
@@ -273,14 +273,14 @@ int	*n3;
 
     /* read semi-core */
     r_semicore = 0.0;
-    value = fscanf(fp,"%lf   %lf %lf %lf", &r,&ul,&vl,&dum1);
+    value = fscanf(fp,"%f   %f %f %f", &r,&ul,&vl,&dum1);
     if (value!=EOF)
     {
         r_semicore =  99.99; /* not known?? */
         rgrid[0]  = r; sc_rho[0] = ul; sc_drho[0] = vl;
         for (i=1; i<Ngrid; ++i)
         {
-            fscanf(fp,"%lf   %lf %lf %lf", &r,&ul,&vl,&dum1);
+            fscanf(fp,"%f   %f %f %f", &r,&ul,&vl,&dum1);
             rgrid[i]   = r;
             sc_rho[i]  = ul;
             sc_drho[i] = vl;
@@ -319,11 +319,11 @@ int	*n3;
     /* write outfile */
     fp = fopen(outfile,"w+");
     fprintf(fp,"%s\n",atom_out);
-    fprintf(fp,"%lf %lf %d   %d %d %lf\n",Zion,0.0,lmax,lmax_out,locp_out,rlocal_out);
+    fprintf(fp,"%f %f %d   %d %d %f\n",Zion,0.0,lmax,lmax_out,locp_out,rlocal_out);
     for (p=0; p<=lmax; ++p)
-        fprintf(fp,"%lf ", -1.0);
+        fprintf(fp,"%f ", -1.0);
     fprintf(fp,"\n");
-    fprintf(fp,"%d %lf\n",nrl,drl);
+    fprintf(fp,"%d %f\n",nrl,drl);
     fprintf(fp,"%s\n",comment);
 
     /* appending pseudopotentials */
@@ -352,7 +352,7 @@ int	*n3;
     /* append semicore corrections */
     if (r_semicore != 0.0)
     {
-        fprintf(fp,"%lf\n",r_semicore);
+        fprintf(fp,"%f\n",r_semicore);
         for (k=0; k<nrl; ++k)
             fprintf(fp,"%12.8lf %12.8lf\n", rl[k],
                     fabs(sc_rhol[k]*over_fourpi));
@@ -372,11 +372,11 @@ int	*n3;
     {
         printf("CPI pseudopotential Parameters\n\n");
         printf("atom : %s\n",atom);
-        printf("Zion : %lf\n",Zion);
+        printf("Zion : %f\n",Zion);
         printf(" lmax: %d\n",lmax);
         printf(" locp: %d\n",locp_out);
-        printf(" rlocal: %lf\n\n",rlocal_out);
-        printf(" r_semicore: %lf\n",r_semicore);
+        printf(" rlocal: %f\n\n",rlocal_out);
+        printf(" r_semicore: %f\n",r_semicore);
 
     }
 
@@ -400,16 +400,16 @@ int	*n3;
  ********************************/
 
 void cpi_Spline(x,y,n,yp1,ypn,y2,u)
-double 	x[],
+float 	x[],
 y[];
 int	n;
-double	yp1;
-double	ypn;
-double	y2[];
-double	u[];
+float	yp1;
+float	ypn;
+float	y2[];
+float	u[];
 {
     int	i,k;
-    double sig,qn,un,p;
+    float sig,qn,un,p;
 
     if (yp1 > 0.99e30)
     {
@@ -459,17 +459,17 @@ double	u[];
  ********************************/
 
 
-double	cpi_Splint(xa,ya,y2a,n,nx,x)
-double	xa[];
-double	ya[];
-double	y2a[];
+float	cpi_Splint(xa,ya,y2a,n,nx,x)
+float	xa[];
+float	ya[];
+float	y2a[];
 int	n;
 int	nx;
-double	x;
+float	x;
 {
     int khi,klo;
-    double h,a,b;
-    double y;
+    float h,a,b;
+    float y;
 
     khi = nx+1;
     klo = nx;

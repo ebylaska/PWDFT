@@ -12,12 +12,12 @@ class	Pseudopotential {
 
    int nprj_max;
 
-   double **Gijl;
-   double **ncore_atom;
-   double **vl;
-   double **vnl;
-   double *rlocal;
-   double *amass;
+   float **Gijl;
+   float **ncore_atom;
+   float **vl;
+   float **vnl;
+   float *rlocal;
+   float *amass;
 
    //char **atomsym;
    Pneb   *mypneb;
@@ -28,8 +28,8 @@ public:
    int npsp;
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type,*semicore;
    int **n_projector,**l_projector,**m_projector,**b_projector;
-   double **rc;
-   double *zv,*rcore;
+   float **rc;
+   float *zv,*rcore;
    char **comment;
 
    /* Constructors */
@@ -74,10 +74,10 @@ public:
       delete [] rc;
     }
 
-    double ncore(const int ia) {return 0.0;}
+    float ncore(const int ia) {return 0.0;}
 
-    void v_nonlocal(double *, double *);
-    void v_local(double *);
+    void v_nonlocal(float *, float *);
+    void v_local(float *);
 
 };
 

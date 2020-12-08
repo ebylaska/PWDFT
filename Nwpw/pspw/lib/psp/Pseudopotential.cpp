@@ -23,8 +23,8 @@
  *                                         *
  *******************************************/
 static bool vpp_read_header(char *fname,
-                            char *comment, int *psp_type, int *version, int nfft[], double unita[],
-                            char *atom, double *amass, double *zv)
+                            char *comment, int *psp_type, int *version, int nfft[], float unita[],
+                            char *atom, float *amass, float *zv)
 {
    int i,ifound;
 
@@ -63,9 +63,9 @@ static bool vpp_formatter_check(PGrid *mygrid, char *fname)
 {
    char comment[80],atom[2];
    int psp_type,version,nfft[3];
-   double unita[9],amass,zv;
+   float unita[9],amass,zv;
    bool reformat;
-   double tol=1.0e-9;
+   float tol=1.0e-9;
 
    reformat = true;
    if (vpp_read_header(fname,
@@ -100,14 +100,14 @@ static void Multiply_Gijl_sw1(int nn,
                        int *n_prj,
                        int *l_prj,
                        int *m_prj,
-                       double *G,
-                       double *sw1,
-                       double *sw2)
+                       float *G,
+                       float *sw1,
+                       float *sw2)
 {
    int a,b,na,nb;
    int one  = 1;
    int zero = 0;
-   double rzero = 0.0;
+   float rzero = 0.0;
    int nmax2 = nmax*nmax;
    int nnn = nn*nprj;
    int nna = nn;
@@ -141,32 +141,32 @@ static void vpp_read(PGrid *mygrid,
                      int *psp_type,
                      int *version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double *amass,
-                     double *zv,
+                     float *amass,
+                     float *zv,
                      int *lmmax,
                      int *lmax,
                      int *locp,
                      int *nmax,
-                     double **rc,
+                     float **rc,
                      int *nprj,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
 #ifdef NWPW_SYCL
- 		     double **vnl_dev,
+ 		     float **vnl_dev,
 #endif
                      int **b_projector,
-                     double **Gijl,
+                     float **Gijl,
                      bool   *semicore,
-                     double *rcore,
-                     double **ncore,
-                     double *vl,
-                     double **vnl)
+                     float *rcore,
+                     float **ncore,
+                     float *vl,
+                     float **vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -203,7 +203,7 @@ static void vpp_read(PGrid *mygrid,
    parall->Brdcst_iValue(0,0,nmax);
    *lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
 
-   *rc = new double[*lmax+1];
+   *rc = new float[*lmax+1];
    if (parall->is_master())
    {
       dread(5,*rc,*lmax+1);
@@ -230,7 +230,7 @@ static void vpp_read(PGrid *mygrid,
       parall->Brdcst_iValues(0,0,*nprj,*b_projector);
 
       nn = (*nmax)*(*nmax)*(*lmax+1);
-      *Gijl = new double[nn];
+      *Gijl = new float[nn];
       if (parall->is_master())
       {
          dread(5,*Gijl,nn);
@@ -246,7 +246,7 @@ static void vpp_read(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   tmp2 = new float [mygrid->nfft3d];
    mygrid->t_read(5,tmp2,-1);
    mygrid->t_pack(0,tmp2);
    mygrid->tt_pack_copy(0,tmp2,vl);
@@ -254,9 +254,9 @@ static void vpp_read(PGrid *mygrid,
    /* reading vnl 3d block */
    if (*nprj > 0)
    {
-      *vnl = new double[(*nprj)*(mygrid->npack(1))];
+      *vnl = new float[(*nprj)*(mygrid->npack(1))];
 #ifdef NWPW_SYCL
-      *vnl_dev = cl::sycl::malloc_device<double>((*nprj)*(mygrid->npack(1)), *get_syclQue());
+      *vnl_dev = cl::sycl::malloc_device<float>((*nprj)*(mygrid->npack(1)), *get_syclQue());
 #endif
       prj = *vnl;
       for (i=0; i<(*nprj); ++i)
@@ -269,7 +269,7 @@ static void vpp_read(PGrid *mygrid,
    if (*semicore)
    {
       nn     = 5*mygrid->npack(0);
-      *ncore = new double[nn];
+      *ncore = new float[nn];
       prj    = *ncore;
 
       mygrid->t_read(5,tmp2,-1);
@@ -290,7 +290,7 @@ static void vpp_read(PGrid *mygrid,
    }
 
 #ifdef NWPW_SYCL
-      get_syclQue()->memcpy(*vnl_dev, *vnl, (*nprj)*(mygrid->npack(1))*sizeof(double));
+      get_syclQue()->memcpy(*vnl_dev, *vnl, (*nprj)*(mygrid->npack(1))*sizeof(float));
       //get_syclQue()->wait();
 #endif
 
@@ -312,29 +312,29 @@ static void vpp_write(PGrid *mygrid,
                      int psp_type,
                      int version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double amass,
-                     double zv,
+                     float amass,
+                     float zv,
                      int lmmax,
                      int lmax,
                      int locp,
                      int nmax,
-                     double *rc,
+                     float *rc,
                      int nprj,
                      int *n_projector,
                      int *l_projector,
                      int *m_projector,
                      int *b_projector,
-                     double *Gijl,
+                     float *Gijl,
                      bool   semicore,
-                     double rcore,
-                     double *ncore,
-                     double *vl,
-                     double *vnl)
+                     float rcore,
+                     float *ncore,
+                     float *vl,
+                     float *vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -380,7 +380,7 @@ static void vpp_write(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   tmp2 = new float [mygrid->nfft3d];
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,-1);
@@ -432,18 +432,18 @@ static void vpp_write(PGrid *mygrid,
  *            semicore_check               *
  *                                         *
  *******************************************/
-static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double *ncore)
+static float semicore_check(PGrid *mygrid, bool semicore, float rcore, float *ncore)
 {
-   double sum = 0.0;
+   float sum = 0.0;
    if (semicore)
    {
-      double omega = mygrid->lattice->omega();
-      double scal1 = 1.0/((double) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
-      //double scal2 = 1.0/lattice_omega();
-      //double dv    = lattice_omega()*scal1;
-      double scal2 = 1.0/omega;
-      double dv    = omega*scal1;
-      double *tmp  = mygrid->r_alloc();
+      float omega = mygrid->lattice->omega();
+      float scal1 = 1.0/((float) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
+      //float scal2 = 1.0/lattice_omega();
+      //float dv    = lattice_omega()*scal1;
+      float scal2 = 1.0/omega;
+      float dv    = omega*scal1;
+      float *tmp  = mygrid->r_alloc();
 
       /* put sqrt(core-density) at atom position */
       mygrid->tc_pack_copy(0,ncore,tmp);
@@ -518,32 +518,32 @@ static void vpp_generate(PGrid *mygrid,
                      int *psp_type,
                      int *version,
                      int *nfft,
-                     double *unita,
+                     float *unita,
                      char   *atom,
-                     double *amass,
-                     double *zv,
+                     float *amass,
+                     float *zv,
                      int *lmmax,
                      int *lmax,
                      int *locp,
                      int *nmax,
-                     double **rc,
+                     float **rc,
                      int *nprj,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
 #ifdef NWPW_SYCL
-           		 double **vnl_dev,
+           		 float **vnl_dev,
 #endif
                      int **b_projector,
-                     double **Gijl,
+                     float **Gijl,
                      bool   *semicore,
-                     double *rcore,
-                     double **ncore,
-                     double *vl,
-                     double **vnl)
+                     float *rcore,
+                     float **ncore,
+                     float *vl,
+                     float **vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   float   *tmp2,*prj;
    Parallel *myparall = mygrid->parall;
 
    *psp_type = vpp_get_psp_type(myparall, pspname);
@@ -590,14 +590,14 @@ static void vpp_generate(PGrid *mygrid,
       *semicore = psp1d.semicore;
       *rcore    = psp1d.rcore;
 
-      *rc = new double[*lmax+1];
+      *rc = new float[*lmax+1];
       for (auto l=0; l<=(*lmax); ++l)
          (*rc)[l] = psp1d.rc[l];
 
 
       /* allocate Gijl and copy from psp1d */
       int nn = (psp1d.nmax)*(psp1d.nmax)*(psp1d.lmax+1);
-      *Gijl = new double[nn];
+      *Gijl = new float[nn];
       for (auto l=0; l<nn; ++l)
       {
           //std::cout << "in vpp_generate Hamann l=" << l << " norm=" << psp1d.vnlnrm[l] << std::endl;
@@ -623,16 +623,16 @@ static void vpp_generate(PGrid *mygrid,
 
 
       /*  allocate and generate ray formatted grids */
-      double *G_ray = mygrid->generate_G_ray();
-      double *vl_ray  = new double [nray];
-      double *vnl_ray = new double [(psp1d.lmax+1+psp1d.n_extra)*nray];
-      double *rho_sc_k_ray = new double [2*nray];
+      float *G_ray = mygrid->generate_G_ray();
+      float *vl_ray  = new float [nray];
+      float *vnl_ray = new float [(psp1d.lmax+1+psp1d.n_extra)*nray];
+      float *rho_sc_k_ray = new float [2*nray];
       psp1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vnl_ray,rho_sc_k_ray);
 
 
       /* filter the ray formatted grids */
-      double ecut = mygrid->lattice->ecut();
-      double wcut = mygrid->lattice->wcut();
+      float ecut = mygrid->lattice->ecut();
+      float wcut = mygrid->lattice->wcut();
       util_filter(nray,G_ray,ecut,vl_ray);
       for (auto l=0; l<(psp1d.lmax+1+psp1d.n_extra); ++l)
          util_filter(nray,G_ray,wcut,&(vnl_ray[l*nray]));
@@ -643,12 +643,12 @@ static void vpp_generate(PGrid *mygrid,
       }
 
       /* allocate vnl and ncore  generate formated grids */
-      *vnl = new double[(psp1d.nprj)*(mygrid->npack(1))];
+      *vnl = new float[(psp1d.nprj)*(mygrid->npack(1))];
 #ifdef NWPW_SYCL
-      *vnl_dev = cl::sycl::malloc_device<double>((psp1d.nprj)*(mygrid->npack(1)), *get_syclQue());
+      *vnl_dev = cl::sycl::malloc_device<float>((psp1d.nprj)*(mygrid->npack(1)), *get_syclQue());
 #endif
       if (*semicore)
-         *ncore = new double[5*mygrid->npack(0)];
+         *ncore = new float[5*mygrid->npack(0)];
 
       /*  generate formatted grids using splines */
       psp1d.vpp_generate_spline(mygrid,nray,G_ray,vl_ray,vnl_ray,rho_sc_k_ray,
@@ -656,7 +656,7 @@ static void vpp_generate(PGrid *mygrid,
 
 
 #ifdef NWPW_SYCL
-	 get_syclQue()->memcpy(*vnl_dev, *vnl, (psp1d.nprj)*(mygrid->npack(1))*sizeof(double));
+	 get_syclQue()->memcpy(*vnl_dev, *vnl, (psp1d.nprj)*(mygrid->npack(1))*sizeof(float));
 #endif
 
       /*  deallocate ray formatted grids */
@@ -691,10 +691,10 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    int ia,version,nfft[3];
    int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
 #ifdef NWPW_SYCL
-   double *vnl_ptr_dev;
+   float *vnl_ptr_dev;
 #endif
-   double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
-   double unita[9];
+   float *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
+   float unita[9];
    char fname[256],pspname[256],aname[2];
 
    myion    = myionin;
@@ -713,24 +713,24 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    semicore = new bool[npsp+1];
 
 #ifdef NWPW_SYCL
-   vnl_dev = cl::sycl::malloc_device<double*>(npsp, *get_syclQue());
+   vnl_dev = cl::sycl::malloc_device<float*>(npsp, *get_syclQue());
 #endif
    n_projector = new int* [npsp];
    l_projector = new int* [npsp];
    m_projector = new int* [npsp];
    b_projector = new int* [npsp];
 
-   zv          = new double[npsp];
-   amass       = new double[npsp];
-   rcore       = new double[npsp];
-   ncore_sum   = new double[npsp];
-   rc          = new double* [npsp];
-   vl          = new double* [npsp];
+   zv          = new float[npsp];
+   amass       = new float[npsp];
+   rcore       = new float[npsp];
+   ncore_sum   = new float[npsp];
+   rc          = new float* [npsp];
+   vl          = new float* [npsp];
    for (ia=0; ia<npsp; ++ia)
-      vl[ia] = new double [mypneb->npack(0)];
-   Gijl        = new double* [npsp];
-   vnl         = new double* [npsp];
-   ncore_atom  = new double* [npsp];
+      vl[ia] = new float [mypneb->npack(0)];
+   Gijl        = new float* [npsp];
+   vnl         = new float* [npsp];
+   ncore_atom  = new float* [npsp];
    semicore_density = mypneb->r_alloc();
 
    comment  = new  char* [npsp];
@@ -878,20 +878,20 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
  *     Pseudopotential::v_nonlocal         *
  *                                         *
  *******************************************/
-void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
+void Pseudopotential::v_nonlocal(float *psi, float *Hpsi)
 {
 #ifdef NWPW_SYCL
 // copy the inputs to device
-    double* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    float* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
+    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
 
-    double* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    float* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
+    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
     get_syclQue()->wait();
 
     this->v_nonlocal_sycl(psi_dev, Hpsi_dev);
 
-    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
 
     get_syclQue()->wait();
     free_sycl_mem(psi_dev);
@@ -904,24 +904,24 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
    bool done;
    int ii,ia,l,nshift0,sd_function,i;
    int jj,ll,jstart,jend,nprjall;
-   double *exi;
-   double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
+   float *exi;
+   float *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    Parallel *parall;
-   double omega = mypneb->lattice->omega();
-   //double scal = 1.0/lattice_omega();
-   double scal = 1.0/omega;
+   float omega = mypneb->lattice->omega();
+   //float scal = 1.0/lattice_omega();
+   float scal = 1.0/omega;
    int one=1;
    int ntmp,nshift,nn;
-   double rone  = 1.0;
-   double rmone = -1.0;
+   float rone  = 1.0;
+   float rmone = -1.0;
 
    nn     = mypneb->neq[0]+mypneb->neq[1];
    nshift0 = mypneb->npack(1);
    nshift = 2*mypneb->npack(1);
-   exi    = new double[nshift];
-   prjtmp = new double[nprj_max*nshift];
-   sw1    = new double[nn*nprj_max];
-   sw2    = new double[nn*nprj_max];
+   exi    = new float[nshift];
+   prjtmp = new float[nprj_max*nshift];
+   sw1    = new float[nn*nprj_max];
+   sw2    = new float[nn*nprj_max];
 
    parall = mypneb->d3db::parall;
 
@@ -1054,19 +1054,19 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *     Pseudopotential::v_nonlocal_fion    *
  *                                         *
  *******************************************/
-void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
+void Pseudopotential::v_nonlocal_fion(float *psi, float *Hpsi, const bool move, float *fion)
 {
 #ifdef NWPW_SYCL
-    double* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    float* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
+    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
 
-    double* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    float* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
+    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
     get_syclQue()->wait();
 
     v_nonlocal_fion_sycl(psi_dev, Hpsi_dev, move, fion);
 
-    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
+    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(float));
 
     get_syclQue()->wait();
     free_sycl_mem(psi_dev);
@@ -1077,35 +1077,35 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
    nwpw_timing_function ftimer(6);
    int ii,ia,l,nshift0,sd_function,i,n;
-   double *exi;
-   double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
-   double *Gx,*Gy,*Gz,*xtmp,*sum;
+   float *exi;
+   float *prjtmp,*sw1,*sw2,*prj,*vnlprj;
+   float *Gx,*Gy,*Gz,*xtmp,*sum;
    Parallel *parall;
-   double omega = mypneb->lattice->omega();
-   //double scal = 1.0/lattice_omega();
-   double scal = 1.0/omega;
+   float omega = mypneb->lattice->omega();
+   //float scal = 1.0/lattice_omega();
+   float scal = 1.0/omega;
    int one=1;
    int three=3;
    int ntmp,nshift,nn,ispin;
-   double rone  = 1.0;
-   double rmone = -1.0;
+   float rone  = 1.0;
+   float rmone = -1.0;
 
    nn     = mypneb->neq[0]+mypneb->neq[1];
    ispin  = mypneb->ispin;
    nshift0 = mypneb->npack(1);
    nshift = 2*mypneb->npack(1);
-   exi    = new double[nshift];
-   prjtmp = new double[nprj_max*nshift];
-   sw1    = new double[nn*nprj_max];
-   sw2    = new double[nn*nprj_max];
+   exi    = new float[nshift];
+   prjtmp = new float[nprj_max*nshift];
+   sw1    = new float[nn*nprj_max];
+   sw2    = new float[nn*nprj_max];
 
    if (move)
    {
-      xtmp = new double[nshift0];
-      sum  = new double[3*nn];
-      Gx = new double [mypneb->nfft3d];
-      Gy = new double [mypneb->nfft3d];
-      Gz = new double [mypneb->nfft3d];
+      xtmp = new float[nshift0];
+      sum  = new float[3*nn];
+      Gx = new float [mypneb->nfft3d];
+      Gy = new float [mypneb->nfft3d];
+      Gz = new float [mypneb->nfft3d];
       mypneb->tt_copy(mypneb->Gxyz(0),Gx);
       mypneb->tt_copy(mypneb->Gxyz(1),Gy);
       mypneb->tt_copy(mypneb->Gxyz(2),Gz);
@@ -1205,19 +1205,19 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion)
+void Pseudopotential::v_local(float *vout, const bool move, float *dng, float *fion)
 {
    nwpw_timing_function ftimer(5);
    int ii,ia,nshift,npack0;
-   double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
+   float *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
 
    npack0 = mypneb->npack(0);
    if (move)
    {
-      xtmp = new double[npack0];
-      Gx = new double [mypneb->nfft3d];
-      Gy = new double [mypneb->nfft3d];
-      Gz = new double [mypneb->nfft3d];
+      xtmp = new float[npack0];
+      Gx = new float [mypneb->nfft3d];
+      Gy = new float [mypneb->nfft3d];
+      Gz = new float [mypneb->nfft3d];
       mypneb->tt_copy(mypneb->Gxyz(0),Gx);
       mypneb->tt_copy(mypneb->Gxyz(1),Gy);
       mypneb->tt_copy(mypneb->Gxyz(2),Gz);
@@ -1232,8 +1232,8 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 
    mypneb->c_zero(0,vout);
    nshift = 2*npack0;
-   exi    = new double[nshift];
-   vtmp   = new double[nshift];
+   exi    = new float[nshift];
+   vtmp   = new float[nshift];
    for (ii=0; ii<(myion->nion); ++ii)
    {
       ia = myion->katm[ii];
@@ -1244,11 +1244,11 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 
       if (move)
       {
-         double xx =  mypneb->cc_pack_dot(0,dng,dng);
-         double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+         float xx =  mypneb->cc_pack_dot(0,dng,dng);
+         float yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
 
          mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
-         double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+         float zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
 
          fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
          fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
@@ -1276,12 +1276,12 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 void Pseudopotential::semicore_density_update()
 {
    int ii,ia;
-   double omega = mypneb->lattice->omega();
-   double scal2 = 1.0/omega;
-   //double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
-   //double dv    = omega*scal1;
-   double *exi = mypneb->c_pack_allocate(0);
-   double *tmp = mypneb->r_alloc();
+   float omega = mypneb->lattice->omega();
+   float scal2 = 1.0/omega;
+   //float scal1 = 1.0/((float) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+   //float dv    = omega*scal1;
+   float *exi = mypneb->c_pack_allocate(0);
+   float *tmp = mypneb->r_alloc();
 
    mypneb->r_zero(semicore_density);
    for (ii=0; ii<(myion->nion); ++ii)
@@ -1316,17 +1316,17 @@ void Multiply_Gijl_sw1_sycl(cl::sycl::queue& syclQ,
 			    const int *n_prj,
 			    const int *l_prj,
 			    const int *m_prj,
-			    double *G,
-			    double *sw1_dev,
-			    double *sw2_dev)
+			    float *G,
+			    float *sw1_dev,
+			    float *sw2_dev)
 {
     int nmax2 = nmax*nmax;
     int nnn = nn*nprj;
     int nna = nn;
-    double alpha = 0;
+    float alpha = 0;
     int na, nb;
 
-    syclQ.memset(sw2_dev, 0, nnn*sizeof(double));
+    syclQ.memset(sw2_dev, 0, nnn*sizeof(float));
 
     for (int b=0; b<nprj; ++b) {
 	for (int a=0; a<nprj; ++a) {
@@ -1363,7 +1363,7 @@ void Pseudopotential::set_sd_function(int* sd_func)
 }
 
 
-void Pseudopotential::v_nonlocal_fion_sycl(double *psi, double *Hpsi, const bool move, double *fion)
+void Pseudopotential::v_nonlocal_fion_sycl(float *psi, float *Hpsi, const bool move, float *fion)
 {
     if(move) {
         std::ostringstream msg;
@@ -1375,31 +1375,31 @@ void Pseudopotential::v_nonlocal_fion_sycl(double *psi, double *Hpsi, const bool
     nwpw_timing_function ftimer(6);
 
     int ia,l,nshift0,sd_function,i,n;
-    double *prj,*vnlprj;
+    float *prj,*vnlprj;
     Parallel *parall;
-    double omega = mypneb->lattice->omega();
-    double scal = 1.0/omega;
+    float omega = mypneb->lattice->omega();
+    float scal = 1.0/omega;
     int ntmp,nshift,nn,ispin;
 
     nn     = mypneb->neq[0]+mypneb->neq[1];
     ispin  = mypneb->ispin;
     nshift0 = mypneb->npack(1);
     nshift = 2*mypneb->npack(1);
-    double* exi      = get_sycl_mem(nshift * sizeof(double));
-    double* prjtmp   = get_sycl_mem(nprj_max*nshift * sizeof(double));
-    double* sw1      = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw2      = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw1_host = get_host_mem(nn*nprj_max * sizeof(double));
+    float* exi      = get_sycl_mem(nshift * sizeof(float));
+    float* prjtmp   = get_sycl_mem(nprj_max*nshift * sizeof(float));
+    float* sw1      = get_sycl_mem(nn*nprj_max * sizeof(float));
+    float* sw2      = get_sycl_mem(nn*nprj_max * sizeof(float));
+    float* sw1_host = get_host_mem(nn*nprj_max * sizeof(float));
 
     // if (move)
     // {
-    //  double *Gx,*Gy,*Gz,*xtmp,*sum;
+    //  float *Gx,*Gy,*Gz,*xtmp,*sum;
 
-    // 	xtmp = get_sycl_mem(nshift0 * sizeof(double));
-    // 	sum  = get_sycl_mem(3*nn * sizeof(double));
-    // 	Gx = get_sycl_mem(mypneb->nfft3d * sizeof(double));
-    // 	Gy = get_sycl_mem(mypneb->nfft3d * sizeof(double));
-    // 	Gz = get_sycl_mem(mypneb->nfft3d * sizeof(double));
+    // 	xtmp = get_sycl_mem(nshift0 * sizeof(float));
+    // 	sum  = get_sycl_mem(3*nn * sizeof(float));
+    // 	Gx = get_sycl_mem(mypneb->nfft3d * sizeof(float));
+    // 	Gy = get_sycl_mem(mypneb->nfft3d * sizeof(float));
+    // 	Gz = get_sycl_mem(mypneb->nfft3d * sizeof(float));
     // 	mypneb->tt_copy(mypneb->Gxyz(0),Gx);
     // 	mypneb->tt_copy(mypneb->Gxyz(1),Gy);
     // 	mypneb->tt_copy(mypneb->Gxyz(2),Gz);
@@ -1437,9 +1437,9 @@ void Pseudopotential::v_nonlocal_fion_sycl(double *psi, double *Hpsi, const bool
 	    // 	mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
 	    // }
 
-	    get_syclQue()->memcpy(sw1_host, sw1, nn*nprj_max*sizeof(double));
+	    get_syclQue()->memcpy(sw1_host, sw1, nn*nprj_max*sizeof(float));
 	    parall->Vector_SumAll(1, nn*nprj[ia], sw1_host);
-	    get_syclQue()->memcpy(sw1, sw1_host, nn*nprj_max*sizeof(double));
+	    get_syclQue()->memcpy(sw1, sw1_host, nn*nprj_max*sizeof(float));
 
 	    /* sw2 = Gijl*sw1 */
 	    Multiply_Gijl_sw1_sycl(*get_syclQue(), nn, nprj[ia], nmax[ia], lmax[ia],
@@ -1500,7 +1500,7 @@ void Pseudopotential::v_nonlocal_fion_sycl(double *psi, double *Hpsi, const bool
 
 }
 
-void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
+void Pseudopotential::v_nonlocal_sycl(float *psi_sycl, float *Hpsi_sycl)
 {
     nwpw_timing_function ftimer(6);
 
@@ -1508,19 +1508,19 @@ void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
     int ll = 0, jstart = 0, jend = 0, nprjall = 0;
     bool done = false;
 
-    double omega = mypneb->lattice->omega();
-    double scal = 1.0/omega;
+    float omega = mypneb->lattice->omega();
+    float scal = 1.0/omega;
     int nn     = mypneb->neq[0]+mypneb->neq[1];
     int nshift0 = mypneb->npack(1);
     int nshift = 2*mypneb->npack(1);
 
     Parallel* parall = mypneb->d3db::parall;
 
-    double* exi_sycl    = get_sycl_mem(nshift * sizeof(double));
-    double* prjtmp_sycl = get_sycl_mem(nprj_max*nshift * sizeof(double));
-    double* sw1_sycl    = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw1_host    = get_host_mem(nn*nprj_max * sizeof(double));
-    double* sw2_sycl    = get_sycl_mem(nn*nprj_max * sizeof(double));
+    float* exi_sycl    = get_sycl_mem(nshift * sizeof(float));
+    float* prjtmp_sycl = get_sycl_mem(nprj_max*nshift * sizeof(float));
+    float* sw1_sycl    = get_sycl_mem(nn*nprj_max * sizeof(float));
+    float* sw1_host    = get_host_mem(nn*nprj_max * sizeof(float));
+    float* sw2_sycl    = get_sycl_mem(nn*nprj_max * sizeof(float));
 
     while (ii < myion->nion) {
 
@@ -1537,8 +1537,8 @@ void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
 		// mystrfac->strfac_pack_sycl(1, ii, exi_sycl);
 		// for (int l=0; l<nprj[ia]; ++l) {
 		//     sd_function = !(l_projector[ia][l] & 1);
-		//     double* prj = &(prjtmp_sycl[l*nshift]);
-		//     double* vnlprj = &(vnl_dev[ia][l*nshift0]);
+		//     float* prj = &(prjtmp_sycl[l*nshift]);
+		//     float* vnlprj = &(vnl_dev[ia][l*nshift0]);
 		//     if (sd_function)
 		// 	mypneb->tcc_Mul_sycl(1, vnlprj, exi_sycl, prj);
 		//     else
@@ -1564,9 +1564,9 @@ void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
 	mypneb->cc_pack_inprjdot_sycl(1, nn, nprjall, psi_sycl, prjtmp_sycl, sw1_sycl);
 
 	// abb: performance detrimental section because of to-and-fro data transfers for "sw1"
-	get_syclQue()->memcpy(sw1_host, sw1_sycl, nn*nprj_max*sizeof(double));
+	get_syclQue()->memcpy(sw1_host, sw1_sycl, nn*nprj_max*sizeof(float));
 	parall->Vector_SumAll(1,nn*nprjall,sw1_host);
-	get_syclQue()->memcpy(sw1_sycl, sw1_host, nn*nprj_max*sizeof(double));
+	get_syclQue()->memcpy(sw1_sycl, sw1_host, nn*nprj_max*sizeof(float));
 	//get_syclQue()->wait();
 
 	/* sw2 = Gijl*sw1 */
@@ -1614,7 +1614,7 @@ void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
     free_sycl_mem(exi_sycl);
 
     // std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    // std::chrono::duration<float> time_span = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1);
     // std::cout << "v_nonlocal() =  " << time_span.count() << " seconds. \n";
 }
 

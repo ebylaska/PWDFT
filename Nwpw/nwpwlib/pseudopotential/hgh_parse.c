@@ -13,7 +13,7 @@ void hgh_parse(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int	*debug_ptr;
 int	*lmax_ptr;
 int	*locp_ptr;
-double 	*rlocal_ptr;
+float 	*rlocal_ptr;
 char	sdir_name[];
 int	*n9;
 char	dir_name[];
@@ -26,7 +26,7 @@ int	*n2;
 
     int      debug,done;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
     int      lmax;
     int      nmax_l[4];
@@ -34,12 +34,12 @@ int	*n2;
     char     atom[10];
 
     int      Zion;                  /* local psp parameters          */
-    double   rloc,C1,C2,C3,C4;
+    float   rloc,C1,C2,C3,C4;
 
-    double   r[4];                  /* projector radii               */
+    float   r[4];                  /* projector radii               */
 
-    double   H[3][4];               /* diagonal overlap coefficients */
-    double   K[3][4];               /* diagonal overlap coefficients */
+    float   H[3][4];               /* diagonal overlap coefficients */
+    float   K[3][4];               /* diagonal overlap coefficients */
 
     int    i,p,p1;
     char   *w,*tc;
@@ -218,15 +218,15 @@ int	*n2;
     fprintf(fp,"%d\n",Zion);
     if (lmax<0) fprintf(fp,"%d",0);
     else fprintf(fp,"%d\n",lmax);
-    fprintf(fp,"%lf  %lf %lf %lf %lf\n",rloc,C1,C2,C3,C4);
+    fprintf(fp,"%f  %f %f %f %f\n",rloc,C1,C2,C3,C4);
 
     if (lmax>=0)
     {
-        fprintf(fp,"%lf  %lf %lf %lf\n",r[0],H[0][0],H[1][0],H[2][0]);
+        fprintf(fp,"%f  %f %f %f\n",r[0],H[0][0],H[1][0],H[2][0]);
         for (i=1; i<=lmax; ++i)
         {
-            fprintf(fp,"%lf %lf %lf %lf\n",r[i],H[0][i],H[1][i],H[2][i]);
-            fprintf(fp,"%lf %lf %lf\n",         K[0][i],K[1][i],K[2][i]);
+            fprintf(fp,"%f %f %f %f\n",r[i],H[0][i],H[1][i],H[2][i]);
+            fprintf(fp,"%f %f %f\n",         K[0][i],K[1][i],K[2][i]);
         }
     }
     fprintf(fp,"%s\n",comment);
@@ -239,15 +239,15 @@ int	*n2;
         printf("atom : %s\n",atom);
         printf("Zion : %d\n",Zion);
         printf(" lmax: %d\n\n",lmax);
-        printf(" vloc: %lf    %lf %lf %lf %lf\n\n",rloc,C1,C2,C3,C4);
+        printf(" vloc: %f    %f %f %f %f\n\n",rloc,C1,C2,C3,C4);
 
         if (lmax>=0)
         {
-            printf("l=%d   r=%lf \t H= %lf %lf %lf\n\n",0,r[0],H[0][0],H[1][0],H[2][0]);
+            printf("l=%d   r=%f \t H= %f %f %f\n\n",0,r[0],H[0][0],H[1][0],H[2][0]);
             for (i=1; i<=lmax; ++i)
             {
-                printf("l=%d   r=%lf \t H= %lf %lf %lf\n",i,r[i],H[0][i],H[1][i],H[2][i]);
-                printf("           \t\t K= %lf %lf %lf\n\n",     K[0][i],K[1][i],K[2][i]);
+                printf("l=%d   r=%f \t H= %f %f %f\n",i,r[i],H[0][i],H[1][i],H[2][i]);
+                printf("           \t\t K= %f %f %f\n\n",     K[0][i],K[1][i],K[2][i]);
             }
         }
     }

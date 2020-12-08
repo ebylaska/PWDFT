@@ -23,25 +23,25 @@ void paw_generate_basis_file(char *outfile)
     FILE    *fp;
     int     i;
     int     k;
-    double tmp;
-    double *Vpseudo;
-    double *rho_core;
-    double *rho_core_ps;
+    float tmp;
+    float *Vpseudo;
+    float *rho_core;
+    float *rho_core_ps;
 
     int nbasis;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
     int* prin_n;
     int* prin_n_ps;
     int *l;
-    double* e;
-    double** psi;
-    double** psi_ps0;
-    double** psi_prime;
-    double** psi_ps;
-    double** psi_ps_prime;
-    double** prj_ps;
-    double** prj_ps0;
+    float* e;
+    float** psi;
+    float** psi_ps0;
+    float** psi_prime;
+    float** psi_ps;
+    float** psi_ps_prime;
+    float** prj_ps;
+    float** prj_ps0;
 
     Ngrid = paw_N_LogGrid();
     rgrid = paw_r_LogGrid();
@@ -76,7 +76,7 @@ void paw_generate_basis_file(char *outfile)
 
     fprintf(fp,"4\n"); /*dummy tag*/    /* new*/
     fprintf(fp,"%s\n",atom_name);    /* new*/
-    fprintf(fp,"%lf\n",paw_get_Zvalence());    /* new*/
+    fprintf(fp,"%f\n",paw_get_Zvalence());    /* new*/
     fprintf(fp,"%15.11e\n",rgrid[0]);
 
     fprintf(fp,"%15.11e\n",rgrid[Ngrid-1]);

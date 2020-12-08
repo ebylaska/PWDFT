@@ -25,13 +25,13 @@ using namespace std;
 Coulomb_Operator::Coulomb_Operator(Pneb *mygrid)
 {
    int k,pzero,zero,taskid;
-   double gg;
-   double *Gx  = mygrid->Gxyz(0);
-   double *Gy  = mygrid->Gxyz(1);
-   double *Gz  = mygrid->Gxyz(2);
-   vg          = new double [mygrid->npack(0)];
-   double *tmp = new double [mygrid->nfft3d];
-   double fourpi = 16.0*atan(1.0);
+   float gg;
+   float *Gx  = mygrid->Gxyz(0);
+   float *Gy  = mygrid->Gxyz(1);
+   float *Gz  = mygrid->Gxyz(2);
+   vg          = new float [mygrid->npack(0)];
+   float *tmp = new float [mygrid->nfft3d];
+   float fourpi = 16.0*atan(1.0);
 
    mypneb = mygrid;
 
@@ -55,7 +55,7 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid)
 
 
 
-void Coulomb_Operator::vcoulomb(double *dng, double *vcout)
+void Coulomb_Operator::vcoulomb(float *dng, float *vcout)
 {
    int k,k1,ksize;
 
@@ -69,10 +69,10 @@ void Coulomb_Operator::vcoulomb(double *dng, double *vcout)
    }
 }
 
-double Coulomb_Operator::ecoulomb(double *dng)
+float Coulomb_Operator::ecoulomb(float *dng)
 {
    int k,k1,k2,n,nsize,ksize1,ksize2;
-   double ave;
+   float ave;
 
    ksize1 = (mypneb->nzero(0));
    ksize2 = (mypneb->npack(0));

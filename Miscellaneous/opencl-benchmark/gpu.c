@@ -57,7 +57,7 @@ int main() {
   ret = clEnqueueReadBuffer(command_queue, memobj, CL_TRUE, 0, sizeof(cl_mem), val, 0, NULL, NULL);
 
   clock_t end = clock();
-  double runtime = (double)(end - begin) / CLOCKS_PER_SEC;
+  float runtime = (float)(end - begin) / CLOCKS_PER_SEC;
 
   ret = clFlush(command_queue);
   ret = clFinish(command_queue);
@@ -68,7 +68,7 @@ int main() {
   ret = clReleaseContext(context);
 
   printf("Result: %llu\n", val[0]);
-  printf("Runtime: %lfms\n", runtime);
+  printf("Runtime: %fms\n", runtime);
   
   free(source_str);
 

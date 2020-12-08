@@ -16,26 +16,26 @@
 
 static	int	l;
 static	int	match;
-static	double  occupation;
-static	double	poly[10];
-static	double	c[10];
-static	double	rc[13];
+static	float  occupation;
+static	float	poly[10];
+static	float	c[10];
+static	float	rc[13];
 
-static	double	ae_core_charge;
-static	double	ldpsi;
-static	double	el;
-static	double	*Vall;
-static	double	*ul;
-static	double	*ul_prime;
-static	double	*Vl;
-static	double	*wl;
-static	double	*wl_prime;
+static	float	ae_core_charge;
+static	float	ldpsi;
+static	float	el;
+static	float	*Vall;
+static	float	*ul;
+static	float	*ul_prime;
+static	float	*Vl;
+static	float	*wl;
+static	float	*wl_prime;
 
-void	p_xpansion(double p[])
+void	p_xpansion(float p[])
 {
     int    i;
-    double r1,r2,r4,r6,r8,r10,r12;
-    double *r;
+    float r1,r2,r4,r6,r8,r10,r12;
+    float *r;
 
     r = r_LogGrid();
 
@@ -61,11 +61,11 @@ void	p_xpansion(double p[])
 
 
 
-void	dp_xpansion(double dp[])
+void	dp_xpansion(float dp[])
 {
     int    i;
-    double r1,r2,r3,r5,r7,r9,r11;
-    double *r;
+    float r1,r2,r3,r5,r7,r9,r11;
+    float *r;
 
     r = r_LogGrid();
 
@@ -90,11 +90,11 @@ void	dp_xpansion(double dp[])
 
 
 
-void	ddp_xpansion(double ddp[])
+void	ddp_xpansion(float ddp[])
 {
     int    i;
-    double r1,r2,r4,r6,r8,r10;
-    double *r;
+    float r1,r2,r4,r6,r8,r10;
+    float *r;
 
     r = r_LogGrid();
 
@@ -117,11 +117,11 @@ void	ddp_xpansion(double ddp[])
 } /* ddp_xpansion */
 
 
-void	dddp_xpansion(double dddp[])
+void	dddp_xpansion(float dddp[])
 {
     int    i;
-    double r1,r2,r3,r5,r7,r9;
-    double *r;
+    float r1,r2,r3,r5,r7,r9;
+    float *r;
 
     r = r_LogGrid();
 
@@ -142,11 +142,11 @@ void	dddp_xpansion(double dddp[])
     }
 } /* dddp_xpansion */
 
-void	ddddp_xpansion(double ddddp[])
+void	ddddp_xpansion(float ddddp[])
 {
     int    i;
-    double r1,r2,r4,r6,r8;
-    double *r;
+    float r1,r2,r4,r6,r8;
+    float *r;
 
     r = r_LogGrid();
 
@@ -176,7 +176,7 @@ void	ddddp_xpansion(double ddddp[])
 void	psp_xpansion()
 {
     int    i,Ngrid;
-    double *r,*dp,*ddp;
+    float *r,*dp,*ddp;
 
 
     Ngrid = N_LogGrid();
@@ -212,7 +212,7 @@ void	psp_xpansion()
 void	psi_xpansion()
 {
     int    i,Ngrid;
-    double *r,*p;
+    float *r,*p;
 
     Ngrid = N_LogGrid();
     r     = r_LogGrid();
@@ -240,8 +240,8 @@ void	psi_xpansion()
 void	dpsi_xpansion()
 {
     int    i,Ngrid;
-    double al;
-    double *r,*p,*dp;
+    float al;
+    float *r,*p,*dp;
 
     Ngrid = N_LogGrid();
     r     = r_LogGrid();
@@ -277,12 +277,12 @@ void	get_c0_c10()
 {
     int    i,j,k,iteration;
     int    indx_rc,factor;
-    double delta;
-    double ddelta;
-    double tolerance, fdnew,fdold;
-    double  psp_core_charge;
+    float delta;
+    float ddelta;
+    float tolerance, fdnew,fdold;
+    float  psp_core_charge;
 
-    double  b[5],a[25];
+    float  b[5],a[25];
 
 
 
@@ -368,17 +368,17 @@ void	get_c0_c10()
    exit - returns the constraint value, and c vector
 */
 
-double	get_c0_c12(double gamma)
+float	get_c0_c12(float gamma)
 {
     int    i,j,k,iteration;
     int    indx_rc,factor;
-    double delta;
-    double ddelta;
-    double tolerance, fdnew,fdold;
-    double  psp_core_charge;
-    double constraint;
+    float delta;
+    float ddelta;
+    float tolerance, fdnew,fdold;
+    float  psp_core_charge;
+    float constraint;
 
-    double  b[5],a[25];
+    float  b[5],a[25];
 
 
     c[0]  = delta = 0.0;    /* c0 coefficient */
@@ -461,22 +461,22 @@ double	get_c0_c12(double gamma)
 
 void init_xpansion(int    l_in,
                    int    match_in,
-                   double occupation_in,
-                   double el_in,
-                   double *Vall_in,
-                   double *ul_in,
-                   double *ul_prime_in,
-                   double *Vl_in,
-                   double *wl_in,
-                   double *wl_prime_in)
+                   float occupation_in,
+                   float el_in,
+                   float *Vall_in,
+                   float *ul_in,
+                   float *ul_prime_in,
+                   float *Vl_in,
+                   float *wl_in,
+                   float *wl_prime_in)
 {
     int    i,iteration;
-    double gamma,gamma_mid,dgamma;
-    double constraint1,constraint2,constraint_mid;
-    double gamma1,gamma2;
-    double Vall_match, dVall_match,ddVall_match;
-    double al;
-    double *r;
+    float gamma,gamma_mid,dgamma;
+    float constraint1,constraint2,constraint_mid;
+    float gamma1,gamma2;
+    float Vall_match, dVall_match,ddVall_match;
+    float al;
+    float *r;
 
     r  = r_LogGrid();
     al = log_amesh_LogGrid();

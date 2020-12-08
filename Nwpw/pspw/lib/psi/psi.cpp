@@ -29,7 +29,7 @@ using namespace std;
  *                                                   *
  *****************************************************/
 
-static void wvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], double *psi2)
+static void wvfnc_expander_convert(int ngrid[], float *psi1, int dngrid[], float *psi2)
 {
    int indx,dindx,j2,k2;
    int nfft3d  = ( ngrid[0]/2+1)* ngrid[1]* ngrid[2];
@@ -58,7 +58,7 @@ static void wvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], doub
    //std::cout << "dn2ft3d = " << dn2ft3d << std::endl;
    //std::cout << "n1,n2,n3 = " << n1 << " " << n2 << " " << n3 << std::endl;
 
-   memset(psi2,0,dn2ft3d*sizeof(double));
+   memset(psi2,0,dn2ft3d*sizeof(float));
    for (auto k=0; k<n3; ++k)
    for (auto j=0; j<n2; ++j)
    for (auto i=0; i<(n1/2+1); ++i)
@@ -113,7 +113,7 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
    Parallel *myparall = mypneb->d3db::parall;
 
    int version,ispin,occupation,nfft[3],dnfft[3],ne[2];
-   double unita[9],dunita[9];
+   float unita[9],dunita[9];
    char tmpfilename[256];
    strcpy(tmpfilename,filename);
    strcat(tmpfilename,".wvfnc_expander");
@@ -152,8 +152,8 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
 
       int n2ft3d  = (nfft[0]+2)*nfft[1]*nfft[2];
       int dn2ft3d = (dnfft[0]+2)*dnfft[1]*dnfft[2];
-      double *psi1 = new double[n2ft3d];
-      double *psi2 = new double[dn2ft3d];
+      float *psi1 = new float[n2ft3d];
+      float *psi2 = new float[dn2ft3d];
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0;  n<ne[ms];  ++n)
       {
@@ -165,7 +165,7 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
       std::cout << std::endl;
       if (occupation>0)
       {
-         double *occ1 = new double[ne[0]+ne[1]];
+         float *occ1 = new float[ne[0]+ne[1]];
          dread(4,occ1,(ne[0]+ne[1]));
          dwrite(6,occ1,(ne[0]+ne[1]));
          delete [] occ1;
@@ -191,7 +191,7 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
  *                                                   *
  *****************************************************/
 
-void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[], int *ispin, int ne[], char *filename)
+void psi_get_header(Parallel *myparall,int *version, int nfft[], float unita[], int *ispin, int ne[], char *filename)
 {
    if (myparall->is_master())
    {
@@ -220,7 +220,7 @@ static void psi_check_convert(Pneb *mypneb, char *filename)
 {
    Parallel *myparall = mypneb->d3db::parall;
    int version0,ispin0,nfft0[3],ne0[2];
-   double unita0[9];
+   float unita0[9];
 
    psi_get_header(myparall,&version0,nfft0,unita0,&ispin0,ne0,filename);
 
@@ -251,8 +251,8 @@ static void psi_check_convert(Pneb *mypneb, char *filename)
   
 */
 void psi_read0(Pneb *mypneb,int *version, int nfft[], 
-               double unita[], int *ispin, int ne[],
-               double *psi, char *filename)
+               float unita[], int *ispin, int ne[],
+               float *psi, char *filename)
 {
    int occupation;
 
@@ -297,10 +297,10 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
           mypneb->gg_traceall, 
           mypneb->g_ortho
 */
-void psi_read(Pneb *mypneb, char *filename, double *psi2)
+void psi_read(Pneb *mypneb, char *filename, float *psi2)
 {
    int version,ispin,nfft[3],ne[2];
-   double unita[9];
+   float unita[9];
    Parallel *myparall = mypneb->d3db::parall;
 
    /* read psi from file if psi_exist */
@@ -322,8 +322,8 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
    }
 
    /* ortho check */
-   double sum2  = mypneb->gg_traceall(psi2,psi2);
-   double sum1  = mypneb->ne[0] + mypneb->ne[1];
+   float sum2  = mypneb->gg_traceall(psi2,psi2);
+   float sum1  = mypneb->ne[0] + mypneb->ne[1];
    if ((mypneb->ispin)==1) sum1 *= 2;
    if (fabs(sum2-sum1)>1.0e-10)
    {
@@ -340,8 +340,8 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
  *                                                   *
  *****************************************************/
 void psi_write(Pneb *mypneb,int *version, int nfft[],
-              double unita[], int *ispin, int ne[],
-              double *psi, char *filename)
+              float unita[], int *ispin, int ne[],
+              float *psi, char *filename)
 {  
    int occupation = -1;
    
@@ -388,8 +388,8 @@ bool psi_filefind(Pneb *mypneb, char *filename)
 
 /*
 void v_psi_read(Pneb *mypneb,int *version, int nfft[],
-              double unita[], int *ispin, int ne[],
-              double *psi)
+              float unita[], int *ispin, int ne[],
+              float *psi)
 {
    int occupation;
 
@@ -420,8 +420,8 @@ void v_psi_read(Pneb *mypneb,int *version, int nfft[],
 
 /*
 void v_psi_write(Pneb *mypneb,int *version, int nfft[],
-              double unita[], int *ispin, int ne[],
-              double *psi)
+              float unita[], int *ispin, int ne[],
+              float *psi)
 {     
    int occupation = -1;
       

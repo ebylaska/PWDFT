@@ -29,13 +29,13 @@ class psp_library {
    psp_library(Control2&);
 
    /* other */
-   void psp_check(const char *, Control2&, double *);
+   void psp_check(const char *, Control2&, float *);
 
    string psp_libname(const char *);
    int    psp_type(const char *);
    int    psp_lmax(const char *);
    int    psp_locp(const char *);
-   double psp_rlocal(const char *);
+   float psp_rlocal(const char *);
 
    void psp_generator_auto(const char *, Control2&);
 

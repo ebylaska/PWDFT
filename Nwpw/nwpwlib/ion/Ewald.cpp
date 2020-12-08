@@ -23,12 +23,12 @@ using namespace std;
  *                                   *
  *************************************/
 
-static double  mandelung_get(Lattice *lattice)
+static float  mandelung_get(Lattice *lattice)
 {
    int n1,n2,n3;
-   double ax,ay,az,gx,gy,gz,gg;
-   double alpha,alpha1,alpha2,sum,ea;
-   double rc,rs,epsilon,pi;
+   float ax,ay,az,gx,gy,gz,gg;
+   float alpha,alpha1,alpha2,sum,ea;
+   float rc,rs,epsilon,pi;
    int N=40;
 
    pi = 4.0*atan(1.0);
@@ -79,15 +79,15 @@ static double  mandelung_get(Lattice *lattice)
  *                               *
  *********************************/
 //Ewald::Ewald(Parallel *inparall, Ion *inion, Pseudopotential *inpsp)
-Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& control, double *inzv)
+Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& control, float *inzv)
 {
    int i,j,k,l,k1,k2,k3;
    int enxh,enyh,enzh,enpack0;
    int tnp,tid,dutask;
-   double g1,g2,g3,gg1,gg2,gg3,gg,ggcut;
-   double pi,pi4,rs,w,term;
-   double q,z,zz;
-   double eps=1.0e-12;
+   float g1,g2,g3,gg1,gg2,gg3,gg,ggcut;
+   float pi,pi4,rs,w,term;
+   float q,z,zz;
+   float eps=1.0e-12;
 
    ewaldparall = inparall;
    ewaldion    = inion;
@@ -236,18 +236,18 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& contr
 
 
    /* allocate memory */
-   eG  = new double [3*enpack];
-   vg  = new double [enpack];
-   ss  = new double [2*enpack];
-   exi  = new double [2*enpack];
-   tmp3 = new double [enpack];
-   ftmp = new double [3*(ewaldion->nion)];
-   vcx  = new double [enpack];
-   rcell = new double [3*enshl3d];
-   ewx1 = new double [2*(ewaldion->nion)*enx];
-   ewy1 = new double [2*(ewaldion->nion)*eny];
-   ewz1 = new double [2*(ewaldion->nion)*enz];
-   zv   = new double [ewaldion->nkatm];
+   eG  = new float [3*enpack];
+   vg  = new float [enpack];
+   ss  = new float [2*enpack];
+   exi  = new float [2*enpack];
+   tmp3 = new float [enpack];
+   ftmp = new float [3*(ewaldion->nion)];
+   vcx  = new float [enpack];
+   rcell = new float [3*enshl3d];
+   ewx1 = new float [2*(ewaldion->nion)*enx];
+   ewy1 = new float [2*(ewaldion->nion)*eny];
+   ewz1 = new float [2*(ewaldion->nion)*enz];
+   zv   = new float [ewaldion->nkatm];
    i_indx = new int[enpack];
    j_indx = new int[enpack];
    k_indx = new int[enpack];
@@ -431,9 +431,9 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& contr
 void Ewald::phafac()
 {
    int i,k,enxh,enyh,enzh;
-   double a,b,sw1,sw2,sw3,pi;
-   double cw1x,cw2x,cw3x;
-   double cw1y,cw2y,cw3y;
+   float a,b,sw1,sw2,sw3,pi;
+   float cw1x,cw2x,cw3x;
+   float cw1y,cw2y,cw3y;
 
    pi  = 4.00*atan(1.0);
    enxh = enx/2;
@@ -499,15 +499,15 @@ void ewald_strfac_add_sub(const int npack,
                     const int indxi[],
                     const int indxj[],
                     const int indxk[],
-                    const double exi[],
-                    const double exj[],
-                    const double exk[],
-                    const double alpha,
-                    double strx[])
+                    const float exi[],
+                    const float exj[],
+                    const float exk[],
+                    const float alpha,
+                    float strx[])
 {
    int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
+   float ai,aj,ak,c,d;
+   float bi,bj,bk;
    for (i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
@@ -525,11 +525,11 @@ void ewald_strfac_add_sub(const int npack,
  *          Ewald::energy        *
  *                               *
  *********************************/
-double Ewald::energy()
+float Ewald::energy()
 {
    int i,j,k,l,nion,tnp,tid,dutask;
-   double x,y,z,dx,dy,dz,zz,r,w;
-   double etmp1,etmp2,eall;
+   float x,y,z,dx,dy,dz,zz,r,w;
+   float etmp1,etmp2,eall;
 
    tnp = ewaldparall->np();
    tid = ewaldparall->taskid();
@@ -589,14 +589,14 @@ void ewald_strfac_sub(const int npack,
                 const int indxi[],
                 const int indxj[],
                 const int indxk[],
-                const double exi[],
-                const double exj[],
-                const double exk[],
-                double strx[])
+                const float exi[],
+                const float exj[],
+                const float exk[],
+                float strx[])
 {
    int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
+   float ai,aj,ak,c,d;
+   float bi,bj,bk;
    for (i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
@@ -610,19 +610,19 @@ void ewald_strfac_sub(const int npack,
 }
 
 void ewald_f_tmp3_sub(const int n, 
-                      const double e[],
-                      const double s[],
-                      const double v[],
-                      double t[])
+                      const float e[],
+                      const float s[],
+                      const float v[],
+                      float t[])
 {
    for (int i=0; i<n; ++i) 
    {
       t[i] = v[i]*(e[2*i]*s[2*i+1] - e[2*i+1]*s[2*i]);
    }
 }
-double ewald_f_ddot_sub(const int n, const double a[], const double b[])
+float ewald_f_ddot_sub(const int n, const float a[], const float b[])
 {
-   double sum = 0.0;
+   float sum = 0.0;
    for (int i=0; i<n; ++i) sum += a[i]*b[i];
 
    return sum;
@@ -635,12 +635,12 @@ double ewald_f_ddot_sub(const int n, const double a[], const double b[])
  *          Ewald::force         *
  *                               *
  *********************************/
-void Ewald::force(double *fion)
+void Ewald::force(float *fion)
 {
    int i,j,k,l,nion,tnp,tid,dutask;
-   double x,y,z,dx,dy,dz,zz,r,w,zi,f;
-   double scal2,sw1,sw2,sw3;
-   double cerfc=1.128379167;
+   float x,y,z,dx,dy,dz,zz,r,w,zi,f;
+   float scal2,sw1,sw2,sw3;
+   float cerfc=1.128379167;
 
    scal2 = 1.0/ewaldlattice->omega();
    tnp = ewaldparall->np();

@@ -21,27 +21,27 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
                 Kinetic_Operator *myke, 
                 Coulomb_Operator *mycoulomb, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
-                double *psi1, double *psi2, double *Hpsi, double *psi_r,
-                double *dn, double *hml,double *lmbda,
-                double E[], double *deltae, double *deltac, double *deltar)
+                float *psi1, float *psi2, float *Hpsi, float *psi_r,
+                float *dn, float *hml,float *lmbda,
+                float E[], float *deltae, float *deltac, float *deltar)
 {
    int it,it_in,i,n2ft3d,neall,ispin,k,ms;
    int shift1,shift2,indx1,indx2;
    int one=1;
-   double scal1,scal2,dv,dc;
-   double eorbit,eion,exc,ehartr,pxc;
-   double eke,elocal,enlocal,dt,dte,Eold;
-   double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
-   double *fion;
+   float scal1,scal2,dv,dc;
+   float eorbit,eion,exc,ehartr,pxc;
+   float eke,elocal,enlocal,dt,dte,Eold;
+   float *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   float *fion;
    bool move = control.geometry_optimize();
-   double omega = mygrid->lattice->omega();
+   float omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
    shift1 = 2*(mygrid->npack(1));
    shift2 = (mygrid->n2ft3d);
    n2ft3d = (mygrid->n2ft3d);
-   scal1 = 1.0/((double) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
+   scal1 = 1.0/((float) ((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
    //scal2 = 1.0/lattice_omega();
    //dv = lattice_omega()*scal1;
    scal2 = 1.0/omega;
@@ -64,7 +64,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    vc  = mygrid->c_pack_allocate(0);
    vpsi=x;
 
-   fion = new double[3*(myion->nion)];
+   fion = new float[3*(myion->nion)];
 
    /* generate local psp*/
    mypsp->v_local(vl,0,dng,fion);
@@ -214,7 +214,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    *deltae = (E[0]-Eold)/(dt*control.loop(0));
 
    /* deltac */
-   sumi    = new double[neall];
+   sumi    = new float[neall];
    mygrid->ggg_Minus(psi2,psi1,Hpsi);
    for (i=0; i<neall; ++i) 
       sumi[i] = mygrid->cc_pack_idot(1,&Hpsi[i*shift1],&Hpsi[i*shift1]);
@@ -230,7 +230,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    *deltar = 0.0;
    if (move)
    {
-      double sum;
+      float sum;
       for (auto ii=0; ii<(myion->nion); ++ii)
       {
          sum = sqrt( fion[3*ii]  *fion[3*ii] 

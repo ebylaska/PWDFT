@@ -1,7 +1,7 @@
 
 #include	"util.hpp"
 
-void c_aindexcopy(const int n, const int *indx, double *A, double *B)
+void c_aindexcopy(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -14,7 +14,7 @@ void c_aindexcopy(const int n, const int *indx, double *A, double *B)
    }
 }
 
-void c_bindexcopy(const int n, const int *indx, double *A, double *B)
+void c_bindexcopy(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -26,7 +26,7 @@ void c_bindexcopy(const int n, const int *indx, double *A, double *B)
       ii += 2;
    }
 }
-void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
+void c_bindexcopy_conjg(const int n, const int *indx, float *A, float *B)
 {
    int ii,jj;
    ii = 0;
@@ -40,13 +40,13 @@ void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
 }
 
 
-void t_aindexcopy(const int n, const int *indx, double *A, double *B)
+void t_aindexcopy(const int n, const int *indx, float *A, float *B)
 {
    for (int i=0; i<n; ++i)
       B[i] = A[indx[i]];
 }
 
-void t_bindexcopy(const int n, const int *indx, double *A, double *B)
+void t_bindexcopy(const int n, const int *indx, float *A, float *B)
 {
    for (int i=0; i<n; ++i)
       B[indx[i]] = A[i];
@@ -68,10 +68,10 @@ void i_aindexcopy(const int n, const int *indx, int *A, int *B)
  *                                    *
  **************************************/
 
-void eigsrt(double *D, double *V, int n)
+void eigsrt(float *D, float *V, int n)
 {
    int i,j,k;
-   double p;
+   float p;
 
    for (i=0; i<(n-1); ++i)
    {

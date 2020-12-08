@@ -7,7 +7,7 @@
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"
 
-extern void psi_get_header(Parallel *, int *, int *, double *, int *, int *);
-extern void psi_read(Pneb *, int *, int *, double *, int *, int *,double *);
+extern void psi_get_header(Parallel *, int *, int *, float *, int *, int *);
+extern void psi_read(Pneb *, int *, int *, float *, int *, int *,float *);
 
 #endif

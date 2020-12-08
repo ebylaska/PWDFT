@@ -12,6 +12,6 @@
 
 */
 
-extern double R_Hartree();
+extern float R_Hartree();
 
 #endif

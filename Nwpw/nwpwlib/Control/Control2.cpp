@@ -48,7 +48,7 @@ static int dum_ipow(int a, int n)
  ***********************************/
 /* return n so that it is a multiple of 2,3,5,7 
 */
-static int control_set_ngrid(double x, bool mult2)
+static int control_set_ngrid(float x, bool mult2)
 {
    int nx = (int) floor(x + 0.5);
    if (mult2 && ((nx%2)!=0)) ++nx;
@@ -79,10 +79,10 @@ static int control_set_ngrid(double x, bool mult2)
  ***********************************/
 /* defines the default ngrid given unita, ecut and mapping
 */
-static void control_ngrid_default(double *unita, double ecut, int mapping, int *ngrid)
+static void control_ngrid_default(float *unita, float ecut, int mapping, int *ngrid)
 {
-   double gx,gy,gz,xh,yh,zh,unitg[9];
-   double twopi = 8.0*atan(1.0);
+   float gx,gy,gz,xh,yh,zh,unitg[9];
+   float twopi = 8.0*atan(1.0);
    unitg[0] = unita[4]*unita[8] - unita[5]*unita[7];
    unitg[1] = unita[5]*unita[6] - unita[3]*unita[8];
    unitg[2] = unita[3]*unita[7] - unita[4]*unita[6];
@@ -92,7 +92,7 @@ static void control_ngrid_default(double *unita, double ecut, int mapping, int *
    unitg[6] = unita[1]*unita[5] - unita[2]*unita[4];
    unitg[7] = unita[2]*unita[3] - unita[0]*unita[5];
    unitg[8] = unita[0]*unita[4] - unita[1]*unita[3];
-   double volume = unita[0]*unitg[0] + unita[1]*unitg[1] + unita[2]*unitg[2];
+   float volume = unita[0]*unitg[0] + unita[1]*unitg[1] + unita[2]*unitg[2];
    for (int i=0; i<9; ++i)
       unitg[i] *= twopi/volume;
 

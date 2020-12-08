@@ -30,16 +30,16 @@
 
 */
 
-double  R_Hartree(n,charge,Vh)
-double 	n[],
+float  R_Hartree(n,charge,Vh)
+float 	n[],
 charge,
 Vh[];
 {
     int i,Ngrid;
-    double log_amesh;
-    double *rgrid,*tmp;
-    double r,r2,r3,tt;
-    double E;
+    float log_amesh;
+    float *rgrid,*tmp;
+    float r,r2,r3,tt;
+    float E;
 
     /* access the size of grid, and log(amesh) */
     Ngrid     = N_LogGrid();

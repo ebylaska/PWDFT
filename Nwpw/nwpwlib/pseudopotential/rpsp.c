@@ -33,29 +33,29 @@ static int *n;
 static int *l;
 static int *spin;
 static int lmax;
-static double *fill;
-static double *rcut;
-static double *peak;
-static double Zion;
-static double Total_E,
+static float *fill;
+static float *rcut;
+static float *peak;
+static float Zion;
+static float Total_E,
   E_Hartree, P_Hartree, E_exchange, P_exchange, E_correlation, P_correlation;
-static double *eigenvalue;
-static double **r_psi;
-static double **r_psi_prime;
-static double *rho;
-static double *rho_semicore;
-static double *drho_semicore;
-static double r_semicore;
-static double **V_psp;
+static float *eigenvalue;
+static float **r_psi;
+static float **r_psi_prime;
+static float *rho;
+static float *rho_semicore;
+static float *drho_semicore;
+static float r_semicore;
+static float **V_psp;
 static char comment[80];
 
 /* extra Vanderbilt parameters */
-static double rlocal, clocal;
+static float rlocal, clocal;
 static int ns[10], indx_il[4][10], indx_ijl[4][4][10];
-static double *Vlocal;
-static double **r_hard_psi;
-static double *D0;
-static double *q;
+static float *Vlocal;
+static float **r_hard_psi;
+static float *D0;
+static float *q;
 
 /* solver parameters: this is the Kawai-Weare default */
 static int Solver_Type = Hamann;
@@ -72,7 +72,7 @@ init_RelPsp (char *filename)
 {
   int p, p1, p2;
   int ltmp, semicore_type;
-  double rctmp;
+  float rctmp;
   char *w, *tc;
   FILE *fp;
 
@@ -107,16 +107,16 @@ init_RelPsp (char *filename)
   n = (int *) malloc ((npsp_states) * sizeof (int));
   l = (int *) malloc ((npsp_states) * sizeof (int));
   spin = (int *) malloc ((npsp_states) * sizeof (int));
-  fill = (double *) malloc ((npsp_states) * sizeof (double));
-  rcut = (double *) malloc ((npsp_states) * sizeof (double));
-  peak = (double *) malloc ((npsp_states) * sizeof (double));
-  eigenvalue = (double *) malloc ((npsp_states) * sizeof (double));
+  fill = (float *) malloc ((npsp_states) * sizeof (float));
+  rcut = (float *) malloc ((npsp_states) * sizeof (float));
+  peak = (float *) malloc ((npsp_states) * sizeof (float));
+  eigenvalue = (float *) malloc ((npsp_states) * sizeof (float));
 
 
   /* allocate memory for r_psi, V_psp, and rho */
-  r_psi = (double **) malloc ((npsp_states) * sizeof (double *));
-  r_psi_prime = (double **) malloc ((npsp_states) * sizeof (double *));
-  V_psp = (double **) malloc ((npsp_states) * sizeof (double *));
+  r_psi = (float **) malloc ((npsp_states) * sizeof (float *));
+  r_psi_prime = (float **) malloc ((npsp_states) * sizeof (float *));
+  V_psp = (float **) malloc ((npsp_states) * sizeof (float *));
   for (p = 0; p < npsp_states; ++p)
     {
       r_psi[p] = alloc_LogGrid ();
@@ -165,7 +165,7 @@ init_RelPsp (char *filename)
 	{
 	  sscanf (w, "%d", &ltmp);
 	  w = get_word (fp);
-	  sscanf (w, "%lf", &rctmp);
+	  sscanf (w, "%f", &rctmp);
 	  w = get_word (fp);
 	  rcut[2 * ltmp] = rctmp;
 	  rcut[2 * ltmp + 1] = rctmp;
@@ -186,7 +186,7 @@ init_RelPsp (char *filename)
 	{
 	  sscanf (w, "%d", &ltmp);
 	  w = get_word (fp);
-	  sscanf (w, "%lf", &rctmp);
+	  sscanf (w, "%f", &rctmp);
 	  w = get_word (fp);
 	  eigenvalue[2 * ltmp] = rctmp;
 	  eigenvalue[2 * ltmp + 1] = rctmp;
@@ -206,7 +206,7 @@ init_RelPsp (char *filename)
       w = get_word (fp);
       while ((w != NIL) && (strcmp ("<end>", w) != 0))
 	{
-	  sscanf (w, "%lf", &rctmp);
+	  sscanf (w, "%f", &rctmp);
 	  w = get_word (fp);
 	  r_semicore = rctmp;
 	}
@@ -272,7 +272,7 @@ solve_RelPsp ()
 {
 
   int p, k, Ngrid;
-  double *rgrid;
+  float *rgrid;
 
   /* get loggrid variables */
   Ngrid = N_LogGrid ();
@@ -334,7 +334,7 @@ void
 print_RelPsp (FILE * fp)
 {
   int i;
-  double dx;
+  float dx;
   fprintf (fp, "\n\n");
   fprintf (fp, "PSP solver information\n\n");
   fprintf (fp, "Atom name: %s\n", name_Atom ());
@@ -347,7 +347,7 @@ print_RelPsp (FILE * fp)
   fprintf (fp, "hartree type     : %s\n", hartree_Name_DFT ());
   fprintf (fp, "exchange type    : %s\n", exchange_Name_DFT ());
   if (strcmp (exchange_Name_DFT (), "Dirac") == 0)
-    fprintf (fp, "           alpha : %lf\n", Dirac_alpha ());
+    fprintf (fp, "           alpha : %f\n", Dirac_alpha ());
   fprintf (fp, "correlation type : %s\n", correlation_Name_DFT ());
 
   fprintf (fp,
@@ -365,18 +365,18 @@ print_RelPsp (FILE * fp)
   if (r_semicore > 0.0)
     {
       fprintf (fp, "SemiCore Corrections Added\n");
-      fprintf (fp, "    rcore                      : %lf\n", r_semicore);
-      fprintf (fp, "    Semicore Charge            : %lf\n",
+      fprintf (fp, "    rcore                      : %f\n", r_semicore);
+      fprintf (fp, "    Semicore Charge            : %f\n",
 	       Integrate_LogGrid (rho_semicore));
-      fprintf (fp, "    Semicore Charge gradient   : %lf\n",
+      fprintf (fp, "    Semicore Charge gradient   : %f\n",
 	       Integrate_LogGrid (drho_semicore));
     }
 
-  fprintf (fp, "Pseudopotential ion charge       = %lf\n", Zion);
+  fprintf (fp, "Pseudopotential ion charge       = %f\n", Zion);
   dx= - Integrate_LogGrid(rho);
-  fprintf (fp, "Pseudopotential electronic charge= %lf\n",
+  fprintf (fp, "Pseudopotential electronic charge= %f\n",
 	   dx);
-  fprintf (fp, "Pseudopotential atom charge      = %lf\n",
+  fprintf (fp, "Pseudopotential atom charge      = %f\n",
 	   (Zion+dx));
 
   fprintf (fp, "\nTotal E       = %le\n", Total_E);
@@ -443,57 +443,57 @@ NormConserving_RelPsp ()
  *				*
  ********************************/
 
-double
+float
 E_RelPsp ()
 {
   return Total_E;
 }				/*E_Atom */
 
 
-double
+float
 eigenvalue_RelPsp (int i)
 {
   return eigenvalue[i];
 }
 
-double *
+float *
 rho_RelPsp ()
 {
   return rho;
 }
 
-double *
+float *
 rho_semicore_RelPsp ()
 {
   return rho_semicore;
 }
 
-double *
+float *
 drho_semicore_RelPsp ()
 {
   return drho_semicore;
 }
 
-double
+float
 r_semicore_RelPsp ()
 {
   return r_semicore;
 }
 
 
-double *
+float *
 Beta_RelPsp (int i, int l)
 {
   return V_psp[indx_il[i][l]];
 }
 
-double *
+float *
 r_psi_il_RelPsp (int i, int l)
 {
   return r_psi[indx_il[i][l]];
 }
 
-double *
+float *
 r_hard_psi_il_RelPsp (int i, int l)
 {
   return r_hard_psi[indx_il[i][l]];
@@ -505,19 +505,19 @@ ns_RelPsp (int l)
   return ns[l];
 }
 
-double
+float
 D0_RelPsp (int i, int j, int l)
 {
   return D0[indx_ijl[i][j][l]];
 }
 
-double
+float
 q_RelPsp (int i, int j, int l)
 {
   return q[indx_ijl[i][j][l]];
 }
 
-double *
+float *
 Vlocal_RelPsp ()
 {
   return Vlocal;
@@ -525,14 +525,14 @@ Vlocal_RelPsp ()
 
 
 
-double *
+float *
 V_RelPsp (int i)
 {
   return V_psp[i];
 }
 
 
-double *
+float *
 r_psi_RelPsp (int i)
 {
   return r_psi[i];
@@ -556,7 +556,7 @@ lmax_RelPsp ()
   return lmax;
 }
 
-double
+float
 fill_RelPsp (int i)
 {
   return fill[i];
@@ -569,27 +569,27 @@ Nvalence_RelPsp ()
   return Nvalence;
 }
 
-double
+float
 peak_RelPsp (int i)
 {
   return peak[i];
 }
 
-double
+float
 rcut_RelPsp (int l)
 {
   return rcut[2*l];
 }
 
 
-double
+float
 rcut_il_RelPsp (int i, int l)
 {
   return rcut[indx_il[i][l]];
 }
 
 
-double
+float
 Zion_RelPsp ()
 {
   return Zion;

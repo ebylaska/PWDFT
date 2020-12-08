@@ -6,9 +6,9 @@
 
 
 extern void paw_init_hartree();
-extern void paw_generate_hartree_pot(double *n);
-extern double paw_get_hartree_energy(double *n);
-extern double* paw_get_hartree_pot();
+extern void paw_generate_hartree_pot(float *n);
+extern float paw_get_hartree_energy(float *n);
+extern float* paw_get_hartree_pot();
 #endif
 
 

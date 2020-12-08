@@ -83,7 +83,7 @@ int     get_int(FILE *stream, int *ii)
 
 
 
-int get_float(FILE *stream, double *ff)
+int get_float(FILE *stream, float *ff)
 {
     int c,value,n,i;
 
@@ -103,7 +103,7 @@ int get_float(FILE *stream, double *ff)
         --n;
     }
 
-    value = sscanf(word,"%lf",ff);
+    value = sscanf(word,"%f",ff);
     if (!value) for (i=0; i<n; ++i) ungetc(word[n-i],stream);
 
 

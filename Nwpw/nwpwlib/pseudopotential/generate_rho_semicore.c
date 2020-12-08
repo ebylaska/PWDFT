@@ -23,23 +23,23 @@
 void  generate_rho_semicore(semicore_type,rho_core,r_semicore,rho_semicore)
 
 int semicore_type;
-double	rho_core[],
+float	rho_core[],
 r_semicore,
 rho_semicore[];
 {
 
     int    k,index;
     int	   Ngrid;
-    double *rgrid;
-    double *drho_core,*ddrho_core;
+    float *rgrid;
+    float *drho_core,*ddrho_core;
 
-    double c1,c2;
-    double x1,x2,cs,ct,A,B,f,fp;
-    double r,rho,drho,ddrho,dddrho;
-    double c0,c3,c4,c5,c6;
+    float c1,c2;
+    float x1,x2,cs,ct,A,B,f,fp;
+    float r,rho,drho,ddrho,dddrho;
+    float c0,c3,c4,c5,c6;
 
 
-    double bs[4],as[4*4];
+    float bs[4],as[4*4];
 
 
     /* access the loggrid variables */

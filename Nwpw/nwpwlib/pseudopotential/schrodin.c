@@ -30,10 +30,10 @@
 
 void R_Schrodinger(n,l,v,mch,Eig,u,uprime)
 int    n,l;
-double v[];
+float v[];
 int    *mch;
-double *Eig;
-double u[],
+float *Eig;
+float u[],
 uprime[];
 
 {
@@ -43,7 +43,7 @@ uprime[];
     match,
     Ninf, Ngrid;
 
-    double  E, de,
+    float  E, de,
     Emax,
     Emin,
     log_amesh,
@@ -59,8 +59,8 @@ uprime[];
 
     /* define eigenvalues */
     E     = *Eig;
-    gamma = ((double) (l+1));
-    L2    = ((double) (l*(l+1)));
+    gamma = ((float) (l+1));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = N_LogGrid();
@@ -68,9 +68,9 @@ uprime[];
     log_amesh2 = log_amesh*log_amesh;
 
     /* get pointer rgrid, and extra memory */
-    r     = (double *) r_LogGrid();
-    f_upp = (double *) alloc_LogGrid();
-    upp   = (double *) alloc_LogGrid();
+    r     = (float *) r_LogGrid();
+    f_upp = (float *) alloc_LogGrid();
+    upp   = (float *) alloc_LogGrid();
 
     /* set up bounds for eigenvalue */
     Emax = v[Ngrid-1]  + 0.5*L2/(r[Ngrid-1]*r[Ngrid-1]);
@@ -270,17 +270,17 @@ uprime[];
 
 void R_Schrodinger_Fixed_E(n,l,v,match,E,u,uprime)
 int    n,l;
-double v[];
+float v[];
 int    match;
-double E;
-double u[],
+float E;
+float u[],
 uprime[];
 
 {
     int     i,j,
     Ngrid;
 
-    double  log_amesh,
+    float  log_amesh,
     log_amesh2,
     gamma,
     L2,
@@ -291,8 +291,8 @@ uprime[];
     *upp;
 
     /* define eigenvalues */
-    gamma = ((double) (l+1));
-    L2    = ((double) (l*(l+1)));
+    gamma = ((float) (l+1));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = N_LogGrid();
@@ -300,9 +300,9 @@ uprime[];
     log_amesh2 = log_amesh*log_amesh;
 
     /* get pointer rgrid, and extra memory */
-    r     = (double *) r_LogGrid();
-    f_upp = (double *) alloc_LogGrid();
-    upp   = (double *) alloc_LogGrid();
+    r     = (float *) r_LogGrid();
+    f_upp = (float *) alloc_LogGrid();
+    upp   = (float *) alloc_LogGrid();
 
     /* define f_upp */
     for (i=0; i<Ngrid; ++i)
@@ -370,11 +370,11 @@ uprime[];
 
 void R_Schrodinger_Fixed_Logderiv(n,l,v,match,u_logderiv,Eig,u,uprime)
 int    n,l;
-double v[];
+float v[];
 int	match;
-double u_logderiv;
-double *Eig;
-double u[],
+float u_logderiv;
+float *Eig;
+float u[],
 uprime[];
 
 {
@@ -383,7 +383,7 @@ uprime[];
     node,
     Ngrid;
 
-    double  E, de,
+    float  E, de,
     Emax,
     Emin,
     log_amesh,
@@ -399,8 +399,8 @@ uprime[];
 
     /* define eigenvalues */
     E     = *Eig;
-    gamma = ((double) (l+1));
-    L2    = ((double) (l*(l+1)));
+    gamma = ((float) (l+1));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = N_LogGrid();
@@ -408,9 +408,9 @@ uprime[];
     log_amesh2 = log_amesh*log_amesh;
 
     /* get pointer rgrid, and extra memory */
-    r     = (double *) r_LogGrid();
-    f_upp = (double *) alloc_LogGrid();
-    upp   = (double *) alloc_LogGrid();
+    r     = (float *) r_LogGrid();
+    f_upp = (float *) alloc_LogGrid();
+    upp   = (float *) alloc_LogGrid();
 
     /* set up bounds for eigenvalue */
     Emax = E + 10.0;

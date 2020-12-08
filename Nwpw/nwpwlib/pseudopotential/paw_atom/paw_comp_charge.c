@@ -13,23 +13,23 @@
 #include "paw_comp_charge.h"
 #include "paw_error_function.h"
 
-static double comp_charge_tolerance = 1.0e-10;
-static double r_comp;
-static double sigma_comp;
-static double* comp_charge_density;
-static double* V_comp;
+static float comp_charge_tolerance = 1.0e-10;
+static float r_comp;
+static float sigma_comp;
+static float* comp_charge_density;
+static float* V_comp;
 
 
 /****************************************
  Function name	  : paw_init_comp_charge
  Description	    :
  Return type		  : void
- Argument         :  double a_Z
- Argument         : double a_r_sphere
+ Argument         :  float a_Z
+ Argument         : float a_r_sphere
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 3:26:49 PM
 ****************************************/
-void paw_init_comp_charge( double comp_radius)
+void paw_init_comp_charge( float comp_radius)
 {
 
     r_comp = comp_radius;
@@ -46,16 +46,16 @@ void paw_init_comp_charge( double comp_radius)
 /****************************************
  Function name	  : paw_boundary_function
  Description	    :
- Return type		  : double
- Argument         : double sigma
+ Return type		  : float
+ Argument         : float sigma
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 3:28:36 PM
 ****************************************/
-double paw_boundary_function(double sigma)
+float paw_boundary_function(float sigma)
 {
 
-    double tmp;
-    double Z;
+    float tmp;
+    float Z;
 
     Z = 1.0;
 
@@ -71,15 +71,15 @@ double paw_boundary_function(double sigma)
 /****************************************
  Function name	  : paw_find_sigma_comp
  Description	    :
- Return type		  : double
+ Return type		  : float
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 3:28:28 PM
 ****************************************/
-double paw_find_sigma_comp()
+float paw_find_sigma_comp()
 {
-    double tmp;
-    double rc1;
-    double rc2;
+    float tmp;
+    float rc1;
+    float rc2;
 
     rc1 = r_comp/10;
     rc2 = 4*r_comp;
@@ -96,18 +96,18 @@ double paw_find_sigma_comp()
  Function name	  : paw_find_comp_charge_potential
  Description	    :
  Return type		  : void
- Argument         : double charge
- Argument         : double ps_charge
- Argument         : double *V_comp
+ Argument         : float charge
+ Argument         : float ps_charge
+ Argument         : float *V_comp
  Author     		  : Marat Valiev
  Date & Time		  : 4/9/99 3:28:30 PM
 ****************************************/
-double* paw_find_comp_charge_potential(double Zion, double charge, double ps_charge)
+float* paw_find_comp_charge_potential(float Zion, float charge, float ps_charge)
 {
     int k;
     int Ngrid;
-    double comp_charge;
-    double *rgrid;
+    float comp_charge;
+    float *rgrid;
 
     Ngrid = paw_N_LogGrid();
     rgrid = paw_r_LogGrid();
@@ -125,14 +125,14 @@ double* paw_find_comp_charge_potential(double Zion, double charge, double ps_cha
 
 }
 
-double paw_get_sigma_comp()
+float paw_get_sigma_comp()
 {
 
     return sigma_comp;
 
 }
 
-double paw_get_comp_charge_radius()
+float paw_get_comp_charge_radius()
 {
 
     return r_comp;

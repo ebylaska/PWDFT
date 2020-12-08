@@ -115,18 +115,6 @@ void ma_print(FILE *file, const int ma_type, const int nelem, void *p)
     if (nprint > 0) (void) fprintf(file, "\n");
     break;
 
-  case rtdb_double:	/* double */
-
-    for (nprint=i=0; i<nelem; i++) {
-      nprint += fprintf(file, "%.14e ", ((double *) p)[i]);
-      if (nprint >= 72) {
-	(void) fprintf(file, "\n");
-	nprint = 0;
-      }
-    }
-    if (nprint > 0) (void) fprintf(file, "\n");
-    break;
-
   default:
 
     (void) fprintf(file, " !! %d = unknown data type\n", ma_type);
@@ -140,7 +128,6 @@ static int ma_nametype(const char *maname)
    if (strcmp(maname,"int")==0)    ma_type = rtdb_int;
    if (strcmp(maname,"long")==0)   ma_type = rtdb_long;
    if (strcmp(maname,"float")==0)  ma_type = rtdb_float;
-   if (strcmp(maname,"double")==0) ma_type = rtdb_double;
    return ma_type; 
 }
 static int ma_typesize(const int intype)
@@ -156,12 +143,8 @@ static int ma_typesize(const int intype)
     return sizeof(rtdb_long); break;
   case rtdb_float:	/* float */
     return sizeof(float); break;
-  case rtdb_double:	/* double */
-    return sizeof(double); break;
   case rtdb_complex:	/* complex */
     return 2*sizeof(float); break;
-  case rtdb_double_complex:	/* double complex */
-    return 2*sizeof(double); break;
   default:
     return sizeof(char); break;
   }
@@ -182,8 +165,6 @@ const char *ma_typename(const int ma_type)
     return "long"; break;
   case rtdb_float:	/* float */
     return "float"; break;
-  case rtdb_double:	/* double */
-    return "double"; break;
   default:
     return "invalid"; break;
   }

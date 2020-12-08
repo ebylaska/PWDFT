@@ -8,16 +8,16 @@
 
 #include	"lattice.hpp"
 
-static  double punita[9],punitg[9],pecut,pwcut,pomega;
+static  float punita[9],punitg[9],pecut,pwcut,pomega;
 
 /********************************
  *                              *
  *         Constructors         *
  *                              *
  ********************************/
-void get_cube(double *unita, double *unitg, double *omega)
+void get_cube(float *unita, float *unitg, float *omega)
 {
-   double twopi = 8.0*atan(1.0);
+   float twopi = 8.0*atan(1.0);
    unitg[0] = unita[4]*unita[8] - unita[5]*unita[7];
    unitg[1] = unita[5]*unita[6] - unita[3]*unita[8];
    unitg[2] = unita[3]*unita[7] - unita[4]*unita[6];
@@ -27,7 +27,7 @@ void get_cube(double *unita, double *unitg, double *omega)
    unitg[6] = unita[1]*unita[5] - unita[2]*unita[4];
    unitg[7] = unita[2]*unita[3] - unita[0]*unita[5];
    unitg[8] = unita[0]*unita[4] - unita[1]*unita[3];
-   double volume = unita[0]*unitg[0] + unita[1]*unitg[1] + unita[2]*unitg[2];
+   float volume = unita[0]*unitg[0] + unita[1]*unitg[1] + unita[2]*unitg[2];
    for (int i=0; i<9; ++i) 
       unitg[i] *= twopi/volume;
    *omega = fabs(volume);
@@ -36,7 +36,7 @@ void get_cube(double *unita, double *unitg, double *omega)
 void lattice_init()
 {
    int nx,ny,nz,nxh,nyh,nzh;
-   double gx,gy,gz,gg,gg1,gg2,gg3,ecut0,wcut0;
+   float gx,gy,gz,gg,gg1,gg2,gg3,ecut0,wcut0;
 
    ecut0 = control_ecut();
    wcut0 = control_wcut();
@@ -61,19 +61,19 @@ void lattice_init()
    nyh = ny/2;
    nzh = nz/2;
 
-   gx = punitg[0]*((double) nxh);
-   gy = punitg[1]*((double) nxh);
-   gz = punitg[2]*((double) nxh);
+   gx = punitg[0]*((float) nxh);
+   gy = punitg[1]*((float) nxh);
+   gz = punitg[2]*((float) nxh);
    gg1 = gx*gx + gy*gy + gz*gz;
 
-   gx = punitg[3]*((double) nyh);
-   gy = punitg[4]*((double) nyh);
-   gz = punitg[5]*((double) nyh);
+   gx = punitg[3]*((float) nyh);
+   gy = punitg[4]*((float) nyh);
+   gz = punitg[5]*((float) nyh);
    gg2 = gx*gx + gy*gy + gz*gz;
 
-   gx = punitg[6]*((double) nzh);
-   gy = punitg[7]*((double) nzh);
-   gz = punitg[8]*((double) nzh);
+   gx = punitg[6]*((float) nzh);
+   gy = punitg[7]*((float) nzh);
+   gz = punitg[8]*((float) nzh);
    gg3 = gx*gx + gy*gy + gz*gz;
 
    gg = gg1;
@@ -87,13 +87,13 @@ void lattice_init()
 
 }
 
-double lattice_unita(const int i, const int j) { return punita[i+j*3]; }
-double lattice_unitg(const int i, const int j) { return punitg[i+j*3]; }
-double lattice_ecut() { return pecut; }
-double lattice_wcut() { return pwcut; }
-double lattice_omega() { return pomega; }
-double lattice_eggcut() { return 2*pecut; }
-double lattice_wggcut() { return 2*pwcut; }
+float lattice_unita(const int i, const int j) { return punita[i+j*3]; }
+float lattice_unitg(const int i, const int j) { return punitg[i+j*3]; }
+float lattice_ecut() { return pecut; }
+float lattice_wcut() { return pwcut; }
+float lattice_omega() { return pomega; }
+float lattice_eggcut() { return 2*pecut; }
+float lattice_wggcut() { return 2*pwcut; }
 
 
 

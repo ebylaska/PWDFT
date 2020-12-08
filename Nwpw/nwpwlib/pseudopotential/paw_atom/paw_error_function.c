@@ -41,19 +41,19 @@
 /****************************************
  Function name	  : paw_my_erf
  Description	    : to calculate error function for
-                    double precision scalar argument.
- Return type		  : double
- Argument         : double x
+                    float precision scalar argument.
+ Return type		  : float
+ Argument         : float x
  Author     		  : Marat Valiev
  Algorithm        : original source unknown,
                     replicated from
                     Ryoichi Kawai's Cray Code
  Date & Time		  : 1/8/99 1:04:47 PM
 ****************************************/
-double  paw_my_erf(double x)
+float  paw_my_erf(float x)
 
 {
-    double f;
+    float f;
 
     f = (1.0+x*(B1+x*(B2+x*(B3+x*(B4+x*(B5+x*B6))))));
 

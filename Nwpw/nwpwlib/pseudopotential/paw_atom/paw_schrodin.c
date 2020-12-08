@@ -35,10 +35,10 @@
 
 int paw_R_Schrodinger(int n,
                       int l,
-                      double* v,
-                      double *Eig,
-                      double* u,
-                      double* uprime)
+                      float* v,
+                      float *Eig,
+                      float* u,
+                      float* uprime)
 {
     int     i,j,
     iteration,
@@ -46,7 +46,7 @@ int paw_R_Schrodinger(int n,
     match,
     Ninf, Ngrid;
 
-    double  E, de,
+    float  E, de,
     Emax,
     Emin,
     log_amesh,
@@ -62,8 +62,8 @@ int paw_R_Schrodinger(int n,
 
     /* define eigenvalues */
     E     = *Eig;
-    gamma = ((double) (l+1));
-    L2    = ((double) (l*(l+1)));
+    gamma = ((float) (l+1));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = paw_N_LogGrid();
@@ -285,17 +285,17 @@ int paw_R_Schrodinger(int n,
 
 int paw_R_Schrodinger_Fixed_E(
     int l,
-    double *v,
+    float *v,
     int match,
-    double E,
-    double *u,
-    double *uprime
+    float E,
+    float *u,
+    float *uprime
 )
 {
     int     i,j,
     Ngrid;
 
-    double  log_amesh,
+    float  log_amesh,
     log_amesh2,
     gamma,
     L2,
@@ -304,17 +304,17 @@ int paw_R_Schrodinger_Fixed_E(
     *f_upp,
     *upp;
 
-    double max_u;
+    float max_u;
 
 
     /*set maximum allowed value for u*/
     max_u = 100000000;
 
     /* define power of the orbital near 0 */
-    gamma = ((double) (l+1));
+    gamma = ((float) (l+1));
 
     /* define square of the angular momentum */
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = paw_N_LogGrid();
@@ -389,12 +389,12 @@ int paw_R_Schrodinger_Fixed_E(
 
  Argument         : int n
  Argument         : int l
- Argument         : double *v
+ Argument         : float *v
  Argument         : int match
- Argument         : double u_logderiv
- Argument         : double *Eig
- Argument         : double *u
- Argument         : double *uprime
+ Argument         : float u_logderiv
+ Argument         : float *Eig
+ Argument         : float *u
+ Argument         : float *uprime
 
  Author     		  : Eric Bylaska & Marat Valiev
  Date & Time		  : 1/8/99 2:04:28 PM
@@ -402,12 +402,12 @@ int paw_R_Schrodinger_Fixed_E(
 int paw_R_Schrodinger_Fixed_Logderiv(
     int n,
     int l,
-    double *v,
+    float *v,
     int match,
-    double u_logderiv,
-    double *Eig,
-    double *u,
-    double *uprime
+    float u_logderiv,
+    float *Eig,
+    float *u,
+    float *uprime
 )
 
 {
@@ -417,31 +417,31 @@ int paw_R_Schrodinger_Fixed_Logderiv(
     int     node;
     int     Ngrid;
 
-    double  sum;
-    double  E;
-    double  de;
-    double  Emax;
-    double  Emin;
-    double  log_amesh;
-    double  log_amesh2;
-    double  gamma;
-    double  L2;
-    double  r2;
-    double  uout;
-    double  upout;
-    double  upin;
-    double  *r;
-    double  *f_upp;
-    double  *upp;
+    float  sum;
+    float  E;
+    float  de;
+    float  Emax;
+    float  Emin;
+    float  log_amesh;
+    float  log_amesh2;
+    float  gamma;
+    float  L2;
+    float  r2;
+    float  uout;
+    float  upout;
+    float  upin;
+    float  *r;
+    float  *f_upp;
+    float  *upp;
 
     /* define eigenvalues */
     E     = *Eig;
 
     /* define power of the orbital near 0 */
-    gamma = ((double) (l+1));
+    gamma = ((float) (l+1));
 
     /* define square of the angular momentum */
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = paw_N_LogGrid();
@@ -449,9 +449,9 @@ int paw_R_Schrodinger_Fixed_Logderiv(
     log_amesh2 = log_amesh*log_amesh;
 
     /* get pointer rgrid, and extra memory */
-    r     = (double *) paw_r_LogGrid();
-    f_upp = (double *) paw_alloc_LogGrid();
-    upp   = (double *) paw_alloc_LogGrid();
+    r     = (float *) paw_r_LogGrid();
+    f_upp = (float *) paw_alloc_LogGrid();
+    upp   = (float *) paw_alloc_LogGrid();
 
     /* set up bounds for eigenvalue */
     Emax = E + 10.0;
@@ -587,12 +587,12 @@ int paw_R_Schrodinger_Fixed_Logderiv(
 int paw_R_Schrodinger_Fixed_Logderiv1(
     int n,
     int l,
-    double *v,
+    float *v,
     int match,
-    double u_logderiv,
-    double *Eig,
-    double *u,
-    double *uprime
+    float u_logderiv,
+    float *Eig,
+    float *u,
+    float *uprime
 )
 
 {
@@ -601,31 +601,31 @@ int paw_R_Schrodinger_Fixed_Logderiv1(
     int     iteration;
     int     Ngrid;
 
-    double  sum;
-    double  E;
-    double  de;
-    double  Emax;
-    double  Emin;
-    double  log_amesh;
-    double  log_amesh2;
-    double  gamma;
-    double  L2;
-    double  r2;
-    double  uout;
-    double  upout;
-    double  upin;
-    double  *r;
-    double  *f_upp;
-    double  *upp;
+    float  sum;
+    float  E;
+    float  de;
+    float  Emax;
+    float  Emin;
+    float  log_amesh;
+    float  log_amesh2;
+    float  gamma;
+    float  L2;
+    float  r2;
+    float  uout;
+    float  upout;
+    float  upin;
+    float  *r;
+    float  *f_upp;
+    float  *upp;
 
     /* define eigenvalues */
     E     = *Eig;
 
     /* define power of the orbital near 0 */
-    gamma = ((double) (l+1));
+    gamma = ((float) (l+1));
 
     /* define square of the angular momentum */
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = paw_N_LogGrid();
@@ -633,9 +633,9 @@ int paw_R_Schrodinger_Fixed_Logderiv1(
     log_amesh2 = log_amesh*log_amesh;
 
     /* get pointer rgrid, and extra memory */
-    r     = (double *) paw_r_LogGrid();
-    f_upp = (double *) paw_alloc_LogGrid();
-    upp   = (double *) paw_alloc_LogGrid();
+    r     = (float *) paw_r_LogGrid();
+    f_upp = (float *) paw_alloc_LogGrid();
+    upp   = (float *) paw_alloc_LogGrid();
 
     /* set up bounds for eigenvalue */
     Emax = E + 10.0;
@@ -749,18 +749,18 @@ int paw_R_Schrodinger_Fixed_Logderiv1(
 
 void paw_R_Schrodinger_Fixed_E1(
     int l,
-    double *v,
-    double *f,
+    float *v,
+    float *f,
     int match,
-    double E,
-    double *u,
-    double *uprime
+    float E,
+    float *u,
+    float *uprime
 )
 {
     int     i,j,
     Ngrid;
 
-    double  log_amesh,
+    float  log_amesh,
     log_amesh2,
     gamma,
     L2,
@@ -769,16 +769,16 @@ void paw_R_Schrodinger_Fixed_E1(
     *f_upp,
     *upp;
 
-    double max_u;
+    float max_u;
 
     /*set maximum allowed value for u*/
     max_u = 10000000;
 
     /* define power of the orbital near 0 */
-    gamma = ((double) (l+1));
+    gamma = ((float) (l+1));
 
     /* define square of the angular momentum */
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     /* define log grid parameters */
     Ngrid      = paw_N_LogGrid();
@@ -792,9 +792,9 @@ void paw_R_Schrodinger_Fixed_E1(
         exit(1);
     }
     /* get pointer rgrid, and extra memory */
-    r     = (double *) paw_r_LogGrid();
-    f_upp = (double *) paw_alloc_LogGrid();
-    upp   = (double *) paw_alloc_LogGrid();
+    r     = (float *) paw_r_LogGrid();
+    f_upp = (float *) paw_alloc_LogGrid();
+    upp   = (float *) paw_alloc_LogGrid();
 
     for (i=0; i<=match; i++)
     {

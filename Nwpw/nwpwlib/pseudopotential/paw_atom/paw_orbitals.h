@@ -14,9 +14,9 @@
 
 extern void   paw_init_orbitals_from_file(FILE *fp);
 
-extern void   paw_solve_orbital(int i,double *V);
+extern void   paw_solve_orbital(int i,float *V);
 
-extern int    paw_bound_state_test(int l, double *v);
+extern int    paw_bound_state_test(int l, float *v);
 
 extern void   paw_print_orbital_information(FILE *fp);
 
@@ -31,19 +31,19 @@ extern void   paw_print_orbitals_to_file(char* output);
 extern int paw_get_Nscat();
 
 
-extern double* paw_get_psi_prime(int);
-extern double** paw_get_pointer_psi_prime_array();
+extern float* paw_get_psi_prime(int);
+extern float** paw_get_pointer_psi_prime_array();
 
-extern double* paw_get_psi(int);
-extern double** paw_get_pointer_psi_array();
+extern float* paw_get_psi(int);
+extern float** paw_get_pointer_psi_array();
 
-extern double paw_get_fill(int);
-extern double* paw_get_pointer_fill_array();
+extern float paw_get_fill(int);
+extern float* paw_get_pointer_fill_array();
 
 extern int paw_get_l(int);
 extern int* paw_get_pointer_l_array();
 
-extern double paw_get_e(int);
+extern float paw_get_e(int);
 
 extern int paw_get_Ntotal();
 
@@ -53,9 +53,9 @@ extern char* paw_orbital_type_name(int i);
 
 extern int paw_get_orb_type(int i);
 
-extern void paw_generate_density(double* rho);
+extern void paw_generate_density(float* rho);
 
-extern double* paw_get_pointer_density();
+extern float* paw_get_pointer_density();
 
 #endif
 

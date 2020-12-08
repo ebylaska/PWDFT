@@ -29,10 +29,10 @@ using namespace std;
 /* Calculates matrix inverse based on Gauss-Jordan elimination 
   method with partial pivoting.
 */
-static void util_matinvert(int n, int nmax, double *a)
+static void util_matinvert(int n, int nmax, float *a)
 {
    int irow;
-   double big,tmp,pivinv;
+   float big,tmp,pivinv;
    int *indx = new int[nmax];
    for (auto i=0; i<n; ++i)
    {
@@ -84,9 +84,9 @@ static void util_matinvert(int n, int nmax, double *a)
  *              util_simpson               *
  *                                         *
  *******************************************/
-static double util_simpson(int n, double *y, double h)
+static float util_simpson(int n, float *y, float h)
 {
-   double s = -y[0]-y[n-1];
+   float s = -y[0]-y[n-1];
    for (auto i=0; i<n; i+=2) s += 2.0*y[i];
    for (auto i=1; i<n; i+=2) s += 4.0*y[i];
 
@@ -118,10 +118,10 @@ static int convert_psp_type(char *test)
  *                                         *
  *******************************************/
 static void read_vpwpup(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lmax,
-                        double *rho, double *vp, double *wp, double *up)
+                        float *rho, float *vp, float *wp, float *up)
 {
    int i,l;
-   double xx;
+   float xx;
 
    if (myparall->is_master())
    {
@@ -161,10 +161,10 @@ static void read_vpwpup(Parallel *myparall, FILE *fp, int nrho, int lmax0, int l
  *                                         *
  *******************************************/
 static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lmax, int n_extra,
-                      double *rho, double *vp, double *wp)
+                      float *rho, float *vp, float *wp)
 {
    int i,l;
-   double xx;
+   float xx;
 
    if (myparall->is_master())
    {
@@ -199,10 +199,10 @@ static void read_vpwp(Parallel *myparall, FILE *fp, int nrho, int lmax0, int lma
  *               read_semicore             *
  *                                         *
  *******************************************/
-static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *rcore, int nrho, double *semicore_r)
+static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, float *rcore, int nrho, float *semicore_r)
 {
    int    i,isemicore0;
-   double xx,yy,rcore0;
+   float xx,yy,rcore0;
 
    isemicore0 = 0;
    rcore0 = 0.0;
@@ -228,19 +228,19 @@ static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *
    *isemicore = isemicore0;
 }
 
-//static double dsum(int n, double *x, int incx)
+//static float dsum(int n, float *x, int incx)
 //{
-//   double stemp = 0.0;
+//   float stemp = 0.0;
 //   for (int i=0; i<(n*incx); i+=incx) stemp += x[i];
 //   return stemp;
 //}
 
-//static double simpson(int n, double *y, double h)
+//static float simpson(int n, float *y, float h)
 //{
 //   int ne = n/2;
 //   int no = ne+1;
 //
-//   double s = 3.0*dsum(no,y,2) + 4.0*dsum(ne,&y[1],2) - y[0] - y[n-1];
+//   float s = 3.0*dsum(no,y,2) + 4.0*dsum(ne,&y[1],2) - y[0] - y[n-1];
 //   return (s*h/3.0);
 //}
 
@@ -255,15 +255,15 @@ static void read_semicore(Parallel *myparall, FILE *fp, int *isemicore, double *
 
    r3_matrix(li,lj) = <uli|1/r3|ulj> - <wli|1/r3|wlj>
 */
-static void generate_r3_matrix(int nrho, int lmax, double drho, 
-                               double *rho, double *wp, double *up, 
-                               double *r3_matrix)
+static void generate_r3_matrix(int nrho, int lmax, float drho, 
+                               float *rho, float *wp, float *up, 
+                               float *r3_matrix)
 {
    int i,li,lj;
    int lmax2 = (lmax+1)*(lmax+1);
-   double coeff;
-   double fourpi = 16.0*atan(1.0);
-   double *f = (double *) new double[nrho];
+   float coeff;
+   float fourpi = 16.0*atan(1.0);
+   float *f = (float *) new float[nrho];
 
 
    for (i=0; i<lmax2; ++i) r3_matrix[i] = 0.0;
@@ -296,7 +296,7 @@ static void generate_r3_matrix(int nrho, int lmax, double drho,
  *******************************************/
 Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
 {
-   double xx;
+   float xx;
    FILE *fp;
    int nn;
 
@@ -360,15 +360,15 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          if (n_expansion[l]>nmax) nmax = n_expansion[l];
       }
 
-   rho = (double *) new double[nrho];
-   vp  = (double *) new double[(lmax+1)*nrho];
-   wp  = (double *) new double[(lmax+1+n_extra)*nrho];
-   vnlnrm   = (double *) new double[nmax*nmax*(lmax+1)];
-   rho_sc_r = (double *) new double[2*nrho];
+   rho = (float *) new float[nrho];
+   vp  = (float *) new float[(lmax+1)*nrho];
+   wp  = (float *) new float[(lmax+1+n_extra)*nrho];
+   vnlnrm   = (float *) new float[nmax*nmax*(lmax+1)];
+   rho_sc_r = (float *) new float[2*nrho];
    if (psp_type==9) 
    {
-      up  = (double *) new double[(lmax+1)*nrho];
-      r3_matrix = (double *) new double[(lmax+1)*(lmax+1)];
+      up  = (float *) new float[(lmax+1)*nrho];
+      r3_matrix = (float *) new float[(lmax+1)*(lmax+1)];
       read_vpwpup(myparall,fp,nrho,lmax0,lmax,rho,vp,wp,up);
       generate_r3_matrix(nrho,lmax,drho,rho,wp,up,r3_matrix);
    }
@@ -398,8 +398,8 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
 
    version = 3;
    /* Normarization constants */
-   double a;
-   double *f = new double[nrho];
+   float a;
+   float *f = new float[nrho];
    for (auto l=0; l<=lmax; ++l)
    {
       if (l!=locp)
@@ -428,9 +428,9 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
          }
          else if (n_expansion[l]==2)
          {
-            double d = vnlnrm[l*nmax*nmax]*vnlnrm[1+1*nmax+l*nmax*nmax]
+            float d = vnlnrm[l*nmax*nmax]*vnlnrm[1+1*nmax+l*nmax*nmax]
                      - vnlnrm[0+1*nmax+l*nmax*nmax]*vnlnrm[1+0*nmax+l*nmax*nmax];
-            double q = vnlnrm[l*nmax*nmax];
+            float q = vnlnrm[l*nmax*nmax];
             vnlnrm[l*nmax*nmax]          = vnlnrm[1+1*nmax+l*nmax*nmax]/d;
             vnlnrm[1+1*nmax+l*nmax*nmax] = q/d;
             vnlnrm[0+1*nmax+l*nmax*nmax] = -vnlnrm[0+1*nmax+l*nmax*nmax]/d;
@@ -589,7 +589,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
  *     Psp1d_Hamann::vpp_generate_ray      *
  *                                         *
  *******************************************/
-void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray, double *vl_ray, double *vnl_ray, double *rho_sc_k_ray)
+void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, float *G_ray, float *vl_ray, float *vnl_ray, float *rho_sc_k_ray)
 {
 
    /* set up indx(n,l) --> to wp */
@@ -605,35 +605,35 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
       }
    }
 
-   double pi    = 4.00*atan(1.0);
-   double twopi = 2.0*pi;
-   double forpi = 4.0*pi;
+   float pi    = 4.00*atan(1.0);
+   float twopi = 2.0*pi;
+   float forpi = 4.0*pi;
 
-   double P0 = sqrt(forpi);
-   double P1 = sqrt(3.0*forpi);
-   double P2 = sqrt(15.0*forpi);
-   double P3 = sqrt(105.0*forpi);
+   float P0 = sqrt(forpi);
+   float P1 = sqrt(3.0*forpi);
+   float P2 = sqrt(15.0*forpi);
+   float P3 = sqrt(105.0*forpi);
 
-   double zero = 0.0;
+   float zero = 0.0;
    int    izero = 0;
    int    ione  = 1;
    int    nray2 = 2*nray;
    int    lmaxnray = (lmax+1+n_extra)*nray;
 
-   double q;
-   double *cs = new double[nrho];
-   double *sn = new double[nrho];
-   double *f  = new double[nrho];
-   double a,xx;
+   float q;
+   float *cs = new float[nrho];
+   float *sn = new float[nrho];
+   float *f  = new float[nrho];
+   float a,xx;
 
    //std::cout << "gen vl_ray version=" << version<< " " <<  std::endl;
    //dcopy_(&nray,    &zero,&izero,vl_ray,&ione);
    //dcopy_(&lmaxnray,&zero,&izero,vnl_ray,&ione);
    //dcopy_(&nray2,   &zero,&izero,rho_sc_k_ray,&ione);
   
-   memset(vl_ray,0,nray*sizeof(double));
-   memset(vnl_ray,0,lmaxnray*sizeof(double));
-   memset(rho_sc_k_ray,0,nray2*sizeof(double));
+   memset(vl_ray,0,nray*sizeof(float));
+   memset(vnl_ray,0,lmaxnray*sizeof(float));
+   memset(rho_sc_k_ray,0,nray2*sizeof(float));
 
    for (auto k1=(1+myparall->taskid()); k1<nray; k1+=myparall->np())
    {
@@ -785,8 +785,8 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
  *   Psp1d_Hamann::vpp_generate_spline     *
  *                                         *
  *******************************************/
-void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, double *vl_ray, double *vnl_ray, double *rho_sc_k_ray,
-                                       double *vl, double *vnl, double *rho_sc_k)
+void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, float *G_ray, float *vl_ray, float *vnl_ray, float *rho_sc_k_ray,
+                                       float *vl, float *vnl, float *rho_sc_k)
 {
 
    /* set up indx(n,l) --> to wp */
@@ -802,20 +802,20 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
       }
    }
 
-   double pi    = 4.00*atan(1.0);
+   float pi    = 4.00*atan(1.0);
 
    /* allocate spline grids */
-   double *vl_splineray  = new double [nray];
-   double *vnl_splineray = new double [(lmax+1+n_extra)*nray];
-   double *rho_sc_k_splineray = new double [2*nray];
-   double *tmp_splineray  = new double [nray];
+   float *vl_splineray  = new float [nray];
+   float *vnl_splineray = new float [(lmax+1+n_extra)*nray];
+   float *rho_sc_k_splineray = new float [2*nray];
+   float *tmp_splineray  = new float [nray];
 
 
    /* setup cubic bsplines */
-   double dG = G_ray[2] - G_ray[1];
+   float dG = G_ray[2] - G_ray[1];
 
    /* five point formula */
-   double yp1 = ( -50.00*vl_ray[1]
+   float yp1 = ( -50.00*vl_ray[1]
                  + 96.00*vl_ray[2]
                  - 72.00*vl_ray[3]
                  + 32.00*vl_ray[4]
@@ -835,8 +835,8 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
    }
 
 
-   double q, qx, qy, qz, xx;
-   double *gx, *gy, *gz;
+   float q, qx, qy, qz, xx;
+   float *gx, *gy, *gz;
    int npack0 = mygrid->npack(0);
    int npack1 = mygrid->npack(1);
    int nx,lcount;

@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     // Start the timed loop
     printf(">>> Starting %d myGEMM runs...\n", NUM_RUNS);
     gettimeofday(&Tvalue, &dummy);
-    double starttime = (double)Tvalue.tv_sec + 1.0e-6*((double)Tvalue.tv_usec);
+    float starttime = (float)Tvalue.tv_sec + 1.0e-6*((float)Tvalue.tv_usec);
     for (int r=0; r<NUM_RUNS; r++) {
 
         // Run the myGEMM kernel
@@ -140,9 +140,9 @@ int main(int argc, char* argv[]) {
 
     // End the timed loop
     gettimeofday(&Tvalue, &dummy);
-    double endtime = (double)Tvalue.tv_sec + 1.0e-6*((double)Tvalue.tv_usec);
-    double runtime = (endtime - starttime) / (double)NUM_RUNS;
-    double gflop = ((long)K * (long)M * (long)N * 2) / (1000*1000*1000);
+    float endtime = (float)Tvalue.tv_sec + 1.0e-6*((float)Tvalue.tv_usec);
+    float runtime = (endtime - starttime) / (float)NUM_RUNS;
+    float gflop = ((long)K * (long)M * (long)N * 2) / (1000*1000*1000);
     printf(">>> Done: took %.3lf seconds per run, %.1lf GFLOPS\n", runtime, gflop/runtime);
 
     // Copy the output matrix C back to the CPU memory

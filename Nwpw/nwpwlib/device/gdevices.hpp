@@ -21,8 +21,8 @@ class Gdevices {
 
     /* device, host pool memory */
     int    ndev_mem;
-    std::map<size_t, std::set<double*> > free_list_gpu, free_list_host;
-    std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
+    std::map<size_t, std::set<float*> > free_list_gpu, free_list_host;
+    std::map<float *, size_t> live_ptrs_gpu, live_ptrs_host;
 
 public:
     std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
@@ -31,14 +31,14 @@ public:
     /* device memory */
     bool   inuse[25];
     size_t ndsize_mem[25];
-    double *dev_mem[25];
+    float *dev_mem[25];
 
     Gdevices();
 
     ~Gdevices() {
         // free GPU memory
-        for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
-            for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+        for(std::map<size_t,std::set<float*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
+            for(std::set<float*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
                 cl::sycl::free(*it2, *device_queue);
             }
         }
@@ -46,8 +46,8 @@ public:
         live_ptrs_gpu.clear();
 
         // free host memory
-        for(std::map<size_t,std::set<double*>>::iterator it=free_list_host.begin(); it!=free_list_host.end(); ++it) {
-            for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+        for(std::map<size_t,std::set<float*>>::iterator it=free_list_host.begin(); it!=free_list_host.end(); ++it) {
+            for(std::set<float*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
                 free(*it2);
             }
         }
@@ -55,13 +55,13 @@ public:
         live_ptrs_host.clear();
     }
 
-    static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
+    static inline float *resurrect_from_free_list(std::map<size_t, std::set<float*> > &free_map,
                                                    size_t bytes,
-                                                   std::map<double*, size_t>& liveset) {
-        double* ptr=nullptr;
+                                                   std::map<float*, size_t>& liveset) {
+        float* ptr=nullptr;
         assert(free_map.find(bytes) != free_map.end());
         /* assert(free_map.find(bytes)->second.size() > 0); */
-        std::set<double*> &st = free_map.find(bytes)->second;
+        std::set<float*> &st = free_map.find(bytes)->second;
         ptr = *st.begin();
         st.erase(ptr);
         if(st.size()==0)
@@ -70,17 +70,17 @@ public:
         return ptr;
     }
 
-    double* getGpuMem(size_t bytes) {
-        double *ptr=nullptr;
+    float* getGpuMem(size_t bytes) {
+        float *ptr=nullptr;
         if(free_list_gpu.find(bytes) != free_list_gpu.end()) {
-            std::set<double*> &lst = free_list_gpu.find(bytes)->second;
+            std::set<float*> &lst = free_list_gpu.find(bytes)->second;
             if(lst.size()!=0) {
                 ptr = resurrect_from_free_list(free_list_gpu, bytes, live_ptrs_gpu);
                 return ptr;
             }
         }
         else {
-            for(std::map<size_t, std::set<double *> >::iterator it=free_list_gpu.begin();
+            for(std::map<size_t, std::set<float *> >::iterator it=free_list_gpu.begin();
                 it != free_list_gpu.end();
                 ++it)
             {
@@ -91,15 +91,15 @@ public:
             }
         }
 
-        ptr = (double *)cl::sycl::malloc_device(bytes, *device_queue);
+        ptr = (float *)cl::sycl::malloc_device(bytes, *device_queue);
         assert(ptr!=nullptr); /*We hopefully have a pointer*/
         live_ptrs_gpu[ptr] = bytes;
         return ptr;
     }
-    double* getHostMem(size_t bytes) {
-        double *ptr=nullptr;
+    float* getHostMem(size_t bytes) {
+        float *ptr=nullptr;
         if(free_list_host.find(bytes)!=free_list_host.end()) {
-            std::set<double*> &lst = free_list_host.find(bytes)->second;
+            std::set<float*> &lst = free_list_host.find(bytes)->second;
             if(lst.size()!=0) {
                 ptr = resurrect_from_free_list(free_list_host, bytes, live_ptrs_host);
                 return ptr;
@@ -107,7 +107,7 @@ public:
         }
         else
         {
-            for(std::map<size_t, std::set<double *> >::iterator it=free_list_host.begin();
+            for(std::map<size_t, std::set<float *> >::iterator it=free_list_host.begin();
                 it != free_list_host.end();
                 ++it)
             {
@@ -118,20 +118,20 @@ public:
             }
         }
 
-        ptr = (double *)malloc(bytes);
+        ptr = (float *)malloc(bytes);
         assert(ptr!=nullptr); /*We hopefully have a pointer*/
         live_ptrs_host[ptr] = bytes;
         return ptr;
     }
 
-    void freeGpuMem(double *p) {
+    void freeGpuMem(float *p) {
         assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
         size_t bytes = live_ptrs_gpu[p];
         device_queue->memset(p, 0, bytes);
         live_ptrs_gpu.erase(p);
         free_list_gpu[bytes].insert(p);
     }
-    void freeHostMem(double *p) {
+    void freeHostMem(float *p) {
         assert(live_ptrs_host.find(p) != live_ptrs_host.end());
         size_t bytes = live_ptrs_host[p];
         memset(p, 0, bytes);
@@ -150,32 +150,32 @@ public:
             ii            = ndev_mem;
             inuse[ii]     = true;
             ndsize_mem[ii] = ndsize;
-            dev_mem[ii]   = cl::sycl::malloc_device<double>(ndsize, *device_queue);
+            dev_mem[ii]   = cl::sycl::malloc_device<float>(ndsize, *device_queue);
             ndev_mem += 1;
         }
 
         return ii;
     }
 
-    void TN3_dgemm(const int npack, const int ne, double alpha, const
-                   double *host_a, const double *host_b, const double beta,
-                   double *host_caa, double *host_cab, double *host_cbb) {
+    void TN3_dgemm(const int npack, const int ne, float alpha, const
+                   float *host_a, const float *host_b, const float beta,
+                   float *host_caa, float *host_cab, float *host_cbb) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int icaa = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int icab = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int icbb = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double));
+            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(float));
+            device_queue->memcpy(dev_mem[ib], host_b, npack*ne*sizeof(float));
 
             oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ia], npack, beta, dev_mem[icaa], ne);
             oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ib], npack, beta, dev_mem[icab], ne);
             oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ib], npack, dev_mem[ib], npack, beta, dev_mem[icbb], ne);
 
-            device_queue->memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
-            device_queue->memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
-            device_queue->memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
+            device_queue->memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(float));
+            device_queue->memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(float));
+            device_queue->memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(float));
             device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
@@ -189,16 +189,16 @@ public:
         inuse[icbb] = false;
     }
 
-    void TN_dgemm(const int npack, const int ne, const int nprj, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
+    void TN_dgemm(const int npack, const int ne, const int nprj, float alpha, const float *host_a, const float *host_b, const float beta, float *host_c) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
         int ic = fetch_dev_mem_indx(((size_t) ne) * ((size_t) nprj));
         try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, npack*nprj*sizeof(double));
+            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(float));
+            device_queue->memcpy(dev_mem[ib], host_b, npack*nprj*sizeof(float));
 
             oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
-            device_queue->memcpy(host_c, dev_mem[ic], ne*nprj*sizeof(double));
+            device_queue->memcpy(host_c, dev_mem[ic], ne*nprj*sizeof(float));
             device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
@@ -210,16 +210,16 @@ public:
         inuse[ic] = false;
     }
 
-    void NN_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
+    void NN_dgemm(const int npack, const int ne, float alpha, const float *host_a, const float *host_b, const float beta, float *host_c) {
         int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         int ib = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
         int ic = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, ne*ne*sizeof(double));
+            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(float));
+            device_queue->memcpy(dev_mem[ib], host_b, ne*ne*sizeof(float));
 
             oneapi::mkl::blas::gemm(*device_queue, matN, matN, npack,ne,ne, alpha, dev_mem[ia], npack, dev_mem[ib], ne, beta, dev_mem[ic], npack);
-            device_queue->memcpy(host_c, dev_mem[ic], npack*ne*sizeof(double));
+            device_queue->memcpy(host_c, dev_mem[ic], npack*ne*sizeof(float));
             device_queue->wait();
         }
         catch(cl::sycl::exception const& e) {
@@ -250,31 +250,31 @@ public:
 
 #define NNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable \n\n\
 __kernel void NNmatmul(const int M, const int N, const int K, \n\
-                     const __global double *A, \n\
-                     const __global double *B, \n\
-                     __global double *C) { \n\n\
+                     const __global float *A, \n\
+                     const __global float *B, \n\
+                     __global float *C) { \n\n\
     // Get the index of the current element  \n\
     int i = get_global_id(0); \n\
     int j = get_global_id(1); \n\n\
     // Do the operation  \n\
-    double acc = 0.0;  \n\
+    float acc = 0.0;  \n\
     for (int l=0; l<K; l++) {  \n\
        acc += A[i + l*M]*B[l + j*K];  \n\
     }   \n\
     C[i+j*M] = acc; \n }\n \0\0"
 
-#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n     double aa_acc = 0.0;\n    double ab_acc = 0.0;\n    double bb_acc = 0.0;\n    for (int l=0; l<M; ++l) {\n       aa_acc += A[l + i*M]*A[l + j*M];\n       ab_acc += A[l + i*M]*B[l + j*M];\n       bb_acc += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N] = aa_acc;\n    Caa[i+j*N+NN] = ab_acc;\n    Caa[i+j*N+NN+NN] = bb_acc;\n}\n"
+#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global float *A, \n                     const __global float *B, \n                     __global float *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n     float aa_acc = 0.0;\n    float ab_acc = 0.0;\n    float bb_acc = 0.0;\n    for (int l=0; l<M; ++l) {\n       aa_acc += A[l + i*M]*A[l + j*M];\n       ab_acc += A[l + i*M]*B[l + j*M];\n       bb_acc += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N] = aa_acc;\n    Caa[i+j*N+NN] = ab_acc;\n    Caa[i+j*N+NN+NN] = bb_acc;\n}\n"
 
-//#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n    double acc[3] = {0.0, 0.0, 0.0};\n    for (int l=0; l<M; ++l) {\n       acc[0] += A[l + i*M]*A[l + j*M];\n       acc[1] += A[l + i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N]       = acc[0];\n    Caa[i+j*N+NN]    = acc[1];\n    Caa[i+j*N+NN+NN] = acc[2];\n}"
-
-
-#define NTmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void NTmatmul(const int M, const int N, const int K,\n                     const __global double *A, \n                     const __global double *B, \n                     __global double *C) {\n    \n    // A(npack,nprj),  B(ne,nprj), C(npack,ne)\n\n    // Get the index of the current element, M=npack, N=ne, K=nprj\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    //int la = 0; int lb = 0;\n    double acc = 0.0;\n    for (int l=0; l<K; ++l) {\n       acc += A[i+l*M]*B[j+l*N];\n    }\n    C[i+j*M] = acc;\n}"
+//#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void TN3matmul(const int M, const int N,\n                     const __global float *A, \n                     const __global float *B, \n                     __global float *Caa) {\n    \n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    int NN = N*N;\n    float acc[3] = {0.0, 0.0, 0.0};\n    for (int l=0; l<M; ++l) {\n       acc[0] += A[l + i*M]*A[l + j*M];\n       acc[1] += A[l + i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n    Caa[i+j*N]       = acc[0];\n    Caa[i+j*N+NN]    = acc[1];\n    Caa[i+j*N+NN+NN] = acc[2];\n}"
 
 
-#define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n  \n__kernel void TNmatmul(const int M, const int N, const int K,\n                     const __global double *A,\n                     const __global double *B,\n                     __global double *C) {\n\n    //A(npack,ne), B(npack,nprj), C(ne,nprj), M=ne, N=nprj, K=npack\n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    double acc = 0.0;\n    for (int l=0; l<K; ++l)\n       acc += A[l + i*K]*B[l + j*K];\n    C[i+j*M] = acc;\n}"
+#define NTmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void NTmatmul(const int M, const int N, const int K,\n                     const __global float *A, \n                     const __global float *B, \n                     __global float *C) {\n    \n    // A(npack,nprj),  B(ne,nprj), C(npack,ne)\n\n    // Get the index of the current element, M=npack, N=ne, K=nprj\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    //int la = 0; int lb = 0;\n    float acc = 0.0;\n    for (int l=0; l<K; ++l) {\n       acc += A[i+l*M]*B[j+l*N];\n    }\n    C[i+j*M] = acc;\n}"
 
 
-#define Generate_projectors_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void Generate_projectors(const int ii, const int ng0, const int nprj, const int nprjall, \n\t\t\t\t  const int nx, const int ny, const int nz,\n                                  const __global int    *indxi,\n                                  const __global int    *indxj,\n                                  const __global int    *indxk,\n                                  const __global double *phfacx,\n                                  const __global double *phfacy,\n                                  const __global double *phfacz,\n                                  const __global int    *sdfunction, \n                                  const __global double *vnl,\n                                  __global double *prj) {\n   int shftx = 2*ii*nx;\n   int shfty = 2*ii*ny;\n   int shftz = 2*ii*ny;\n   int ng    = 2*ng0;\n\n   int i = get_global_id(0); //ng\n   //int l = get_global_id(1); //nprj\n   \n   double ai = phfacx[shftx+2*indxi[i]]; double bi = phfacx[shftx+2*indxi[i]+1];\n   double aj = phfacy[shfty+2*indxj[i]]; double bj = phfacy[shfty+2*indxj[i]+1];\n   double ak = phfacz[shftz+2*indxk[i]]; double bk = phfacz[shftz+2*indxk[i]+1];\n   double c  = aj*ak - bj*bk;\n   double d  = aj*bk + ak*bj;\n   double rexi = (ai*c - bi*d);\n   double iexi = (ai*d + bi*c);\n\n   for (int l=0; l<nprj; ++l)\n   {\n      if (sdfunction[l])\n      {\n         prj[2*i   + (l+nprjall)*ng] = rexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] = iexi * vnl[i+l*ng0];\n      } else { \n         prj[2*i   + (l+nprjall)*ng] = -iexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] =  rexi * vnl[i+l*ng0];\n      }\n   }\n}"
+#define TNmatmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n  \n__kernel void TNmatmul(const int M, const int N, const int K,\n                     const __global float *A,\n                     const __global float *B,\n                     __global float *C) {\n\n    //A(npack,ne), B(npack,nprj), C(ne,nprj), M=ne, N=nprj, K=npack\n    // Get the index of the current element\n    int i = get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n    float acc = 0.0;\n    for (int l=0; l<K; ++l)\n       acc += A[l + i*K]*B[l + j*K];\n    C[i+j*M] = acc;\n}"
+
+
+#define Generate_projectors_src	"#pragma OPENCL EXTENSION cl_khr_fp64 : enable\n\n__kernel void Generate_projectors(const int ii, const int ng0, const int nprj, const int nprjall, \n\t\t\t\t  const int nx, const int ny, const int nz,\n                                  const __global int    *indxi,\n                                  const __global int    *indxj,\n                                  const __global int    *indxk,\n                                  const __global float *phfacx,\n                                  const __global float *phfacy,\n                                  const __global float *phfacz,\n                                  const __global int    *sdfunction, \n                                  const __global float *vnl,\n                                  __global float *prj) {\n   int shftx = 2*ii*nx;\n   int shfty = 2*ii*ny;\n   int shftz = 2*ii*ny;\n   int ng    = 2*ng0;\n\n   int i = get_global_id(0); //ng\n   //int l = get_global_id(1); //nprj\n   \n   float ai = phfacx[shftx+2*indxi[i]]; float bi = phfacx[shftx+2*indxi[i]+1];\n   float aj = phfacy[shfty+2*indxj[i]]; float bj = phfacy[shfty+2*indxj[i]+1];\n   float ak = phfacz[shftz+2*indxk[i]]; float bk = phfacz[shftz+2*indxk[i]+1];\n   float c  = aj*ak - bj*bk;\n   float d  = aj*bk + ak*bj;\n   float rexi = (ai*c - bi*d);\n   float iexi = (ai*d + bi*c);\n\n   for (int l=0; l<nprj; ++l)\n   {\n      if (sdfunction[l])\n      {\n         prj[2*i   + (l+nprjall)*ng] = rexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] = iexi * vnl[i+l*ng0];\n      } else { \n         prj[2*i   + (l+nprjall)*ng] = -iexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] =  rexi * vnl[i+l*ng0];\n      }\n   }\n}"
 
 
 #include        <iostream>
@@ -289,7 +289,7 @@ typedef struct {
    cl_bool   ** has_cl_khr_fp64;
    cl_uint   ** num_cores;
    cl_uint   ** freq;
-   cl_uint   ** wdouble;
+   cl_uint   ** wfloat;
    cl_uint   ** wfloat;
    cl_ulong  ** mem;
    //Device_Type ** device;
@@ -317,7 +317,7 @@ class Gdevices {
    int    ntmp_mem=0;
    bool   tmpinuse[25];
    size_t tmpndsize_mem[25];
-   double *tmp_mem[25];
+   float *tmp_mem[25];
 
    /* phafac memory */
    int nx_pf,ny_pf,nz_pf,npack_pf;
@@ -339,7 +339,7 @@ public:
         gpu.has_cl_khr_fp64 = (cl_bool **) malloc(sizeof(cl_bool *)*gpu.num_platforms);
         gpu.num_cores = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
         gpu.freq      = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
-        gpu.wdouble   = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
+        gpu.wfloat   = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
         gpu.wfloat    = (cl_uint **) malloc(sizeof(cl_uint *)*gpu.num_platforms);
         gpu.mem       = (cl_ulong **) malloc(sizeof(cl_ulong *)*gpu.num_platforms);
         for (cl_uint i=0; i<gpu.num_platforms; ++i)
@@ -351,7 +351,7 @@ public:
            gpu.has_cl_khr_fp64[i] = (cl_bool *) malloc(sizeof(cl_bool)*gpu.num_devices[i]);
            gpu.num_cores[i] = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
            gpu.freq[i]      = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
-           gpu.wdouble[i]   = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
+           gpu.wfloat[i]   = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
            gpu.wfloat[i]    = (cl_uint *) malloc(sizeof(cl_uint)*gpu.num_devices[i]);
            gpu.mem[i]       = (cl_ulong *) malloc(sizeof(cl_ulong)*gpu.num_devices[i]);
 
@@ -362,7 +362,7 @@ public:
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&(gpu.avail[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&(gpu.num_cores[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&(gpu.freq[i][j]),&size);
-              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu.wdouble[i][j]),&size);
+              ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&(gpu.wfloat[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&(gpu.mem[i][j]),&size);
               ret = clGetDeviceInfo(gpu.device_id[i][j],CL_DEVICE_EXTENSIONS,1000*sizeof(char),str,&size);
@@ -377,15 +377,15 @@ public:
            printf(" - %d patform_id= %ld num_devices= %d\n",i, gpu.platform_id[i],gpu.num_devices[i]);
            for (int j=0; j<gpu.num_devices[i]; ++j)
            {
-              printf("   -- %d device_id= %ld num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wdouble=%d avail=%d has_cl_khr_fp64=%d\n",j,gpu.device_id[i][j],
+              printf("   -- %d device_id= %ld num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wfloat=%d avail=%d has_cl_khr_fp64=%d\n",j,gpu.device_id[i][j],
                                                                 gpu.num_cores[i][j],
                                                                 (long) gpu.mem[i][j],
                                                                 gpu.freq[i][j],
                                                                 gpu.wfloat[i][j],
-                                                                gpu.wdouble[i][j],
+                                                                gpu.wfloat[i][j],
                                                                 gpu.avail[i][j],
                                                                 gpu.has_cl_khr_fp64[i][j]);
-              if (gpu.avail[i][j] && gpu.wdouble[i][j] && gpu.has_cl_khr_fp64[i][j])
+              if (gpu.avail[i][j] && gpu.wfloat[i][j] && gpu.has_cl_khr_fp64[i][j])
               {
                  plat_indx = i;
                  device_indx = j;
@@ -395,13 +395,13 @@ public:
 
         device_id_selected = gpu.device_id[plat_indx][device_indx];
         ret = clGetDeviceInfo(device_id_selected,CL_DEVICE_VENDOR,1000*sizeof(char),str,&size);
-        printf("\n - Using platform_id=%ld device_id=%ld vendor=%s num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wdouble=%d avail=%d has_cl_khr_fp64=%d\n",
+        printf("\n - Using platform_id=%ld device_id=%ld vendor=%s num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wfloat=%d avail=%d has_cl_khr_fp64=%d\n",
                gpu.platform_id[plat_indx],gpu.device_id[plat_indx][device_indx],str,
                                                                 gpu.num_cores[plat_indx][device_indx],
                                                                 (long) gpu.mem[plat_indx][device_indx],
                                                                 gpu.freq[plat_indx][device_indx],
                                                                 gpu.wfloat[plat_indx][device_indx],
-                                                                gpu.wdouble[plat_indx][device_indx],
+                                                                gpu.wfloat[plat_indx][device_indx],
                                                                 gpu.avail[plat_indx][device_indx],
                                                                 gpu.has_cl_khr_fp64[plat_indx][device_indx]);
 
@@ -560,7 +560,7 @@ public:
            free(gpu.has_cl_khr_fp64[i]);
            free(gpu.num_cores[i]);
            free(gpu.freq[i]);
-           free(gpu.wdouble[i]);
+           free(gpu.wfloat[i]);
            free(gpu.wfloat[i]);
            free(gpu.mem[i]);
         }
@@ -571,7 +571,7 @@ public:
         free(gpu.has_cl_khr_fp64);
         free(gpu.num_cores);
         free(gpu.freq);
-        free(gpu.wdouble);
+        free(gpu.wfloat);
         free(gpu.wfloat);
         free(gpu.mem);
 
@@ -591,11 +591,11 @@ public:
            rw_mem[ii]    = rw;
            ndsize_mem[ii] = ndsize;
            if (rw==1)
-              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_ONLY,  ndsize*sizeof(double), NULL, &ret);
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_ONLY,  ndsize*sizeof(float), NULL, &ret);
            else if (rw==2)
-              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndsize*sizeof(double), NULL, &ret);
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndsize*sizeof(float), NULL, &ret);
            else if (rw==3)
-              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_WRITE, ndsize*sizeof(double), NULL, &ret);
+              dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_WRITE, ndsize*sizeof(float), NULL, &ret);
            else if (rw==4)
               dev_mem[ii]   = clCreateBuffer(context, CL_MEM_READ_ONLY,  ndsize*sizeof(int), NULL, &ret);
            else if (rw==5)
@@ -621,7 +621,7 @@ public:
            ii                = ntmp_mem;
            tmpinuse[ii]      = true;
            tmpndsize_mem[ii] = tmpndsize;
-           tmp_mem[ii]       = (double *) malloc(tmpndsize*sizeof(double));
+           tmp_mem[ii]       = (float *) malloc(tmpndsize*sizeof(float));
            ntmp_mem += 1;
         }
 
@@ -629,7 +629,7 @@ public:
      }
 
 
-     void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
+     void TN3_dgemm(int npack, int ne, float alpha, float *host_a, float *host_b, float beta, float *host_caa, float *host_cab, float *host_cbb)
      {
 #if 0
         int one = 1;
@@ -662,15 +662,15 @@ public:
         int iccaa = fetch_tmp_mem_indx( ((size_t) ne)*((size_t) ne)*((size_t) 3) );
 
         int nn = ne*ne;
-        double *tmpc = tmp_mem[iccaa];
+        float *tmpc = tmp_mem[iccaa];
 
         int ifac1=1;
         for (int i=2; i<=16; ++i)
         {
            if ((ne%i)==0)    ifac1 = i;
         }
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne*sizeof(double),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,npack*ne*sizeof(double),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne*sizeof(float),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,npack*ne*sizeof(float),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
 
         const int MNK[2] = {npack,ne};
 
@@ -693,7 +693,7 @@ public:
         DSCAL_PWDFT(nn,beta,host_cab,one);
         DSCAL_PWDFT(nn,beta,host_cbb,one);
 
-        ret = clEnqueueReadBuffer(command_queue,dev_mem[icaa],CL_FALSE,0,3*ne*ne*sizeof(double),tmp_mem[iccaa],0,NULL,&wevent);
+        ret = clEnqueueReadBuffer(command_queue,dev_mem[icaa],CL_FALSE,0,3*ne*ne*sizeof(float),tmp_mem[iccaa],0,NULL,&wevent);
         ret = clWaitForEvents(1,&wevent);
 
         DAXPY_PWDFT(nn,alpha,tmpc,one,host_caa,one);
@@ -708,7 +708,7 @@ public:
      }
 
 
-     void TN_dgemm(int ne, int nprj, int npack, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void TN_dgemm(int ne, int nprj, int npack, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
 #if 0
         DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
 #else
@@ -729,8 +729,8 @@ public:
            if ((ne%i)==0)   ifac1 = i;
            if ((nprj%i)==0) ifac2 = i;
         }
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne  *sizeof(double),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,npack*nprj*sizeof(double),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne  *sizeof(float),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,npack*nprj*sizeof(float),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
 
         const int MNK[3] = {ne,nprj,npack};
 
@@ -748,7 +748,7 @@ public:
                                      NNmatmul_kernel, 2, NULL,
                                      global_item_size,
                                      local_item_size, nevents,events, NULL);
-        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,ne*nprj*sizeof(double),tmp_mem[icc],0,NULL,&wevent);
+        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,ne*nprj*sizeof(float),tmp_mem[icc],0,NULL,&wevent);
         ret = clWaitForEvents(1,&wevent);
 
         int nn = ne*nprj;
@@ -764,7 +764,7 @@ public:
      }
 
 
-     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void NN_dgemm(int npack, int ne, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
 #if 0
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
 
@@ -792,8 +792,8 @@ public:
            if ((npack%i)==0) ifac1 = i;
            if ((ne%i)==0)    ifac2 = i;
         }
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne*sizeof(double),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,ne*ne   *sizeof(double),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*ne*sizeof(float),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,ne*ne   *sizeof(float),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
         //std::cout << "  ifac1=" << ifac1 << " ifac2=" << ifac2 << " events[0]=" << events[0] << " events[1]=" << events[1] << std::endl;
 
         const int MNK[3] = {npack,ne,ne};
@@ -812,7 +812,7 @@ public:
                                      NNmatmul_kernel, 2, NULL,
                                      global_item_size,
                                      local_item_size, nevents,events, NULL);
-        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,npack*ne*sizeof(double),tmp_mem[icc],0,NULL,&wevent);
+        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,npack*ne*sizeof(float),tmp_mem[icc],0,NULL,&wevent);
         ret = clWaitForEvents(1,&wevent);
 
         int nn = npack*ne;
@@ -829,7 +829,7 @@ public:
 
      }
 
-     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void NT_dgemm(int npack, int ne, int nprj, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
 #if 0
 
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
@@ -853,8 +853,8 @@ public:
            if ((npack%i)==0) ifac1 = i;
            if ((ne%i)==0)    ifac2 = i;
         }
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*nprj*sizeof(double),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,ne*nprj   *sizeof(double),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ia],CL_FALSE,0,npack*nprj*sizeof(float),host_a,0,NULL,&events[0]); //std::cout << " ret1=" << ret;
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[ib],CL_FALSE,0,ne*nprj   *sizeof(float),host_b,0,NULL,&events[1]); //std::cout << " ret2=" << ret;
         //std::cout << "  ifac1=" << ifac1 << " ifac2=" << ifac2 << " events[0]=" << events[0] << " events[1]=" << events[1] << std::endl;
 
         const int MNK[3] = {npack,ne,nprj};
@@ -873,7 +873,7 @@ public:
                                      NTmatmul_kernel, 2, NULL,
                                      global_item_size,
                                      local_item_size, nevents,events, NULL);
-        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,npack*ne*sizeof(double),tmp_mem[icc],0,NULL,&wevent);
+        ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,npack*ne*sizeof(float),tmp_mem[icc],0,NULL,&wevent);
         ret = clWaitForEvents(1,&wevent);
 
         int nn = npack*ne;
@@ -894,7 +894,7 @@ public:
                             const int indxj[],
                             const int indxk[],
                             const int nx, const int ny, const int nz,
-                            const double exi[], const double exj[], const double exk[])
+                            const float exi[], const float exj[], const float exk[])
      {
         cl_int ret;
         cl_uint nevents = 6;
@@ -916,9 +916,9 @@ public:
         ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxj_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[1]);
         ret = clEnqueueWriteBuffer(command_queue,dev_mem[indxk_dev],CL_FALSE,0,npack*sizeof(int),indxi,0,NULL,&events[2]);
 
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exi_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exi,0,NULL,&events[3]);
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exj_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exj,0,NULL,&events[4]);
-        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exk_dev],CL_FALSE,0,2*nx*nion*sizeof(double),exk,0,NULL,&events[5]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exi_dev],CL_FALSE,0,2*nx*nion*sizeof(float),exi,0,NULL,&events[3]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exj_dev],CL_FALSE,0,2*nx*nion*sizeof(float),exj,0,NULL,&events[4]);
+        ret = clEnqueueWriteBuffer(command_queue,dev_mem[exk_dev],CL_FALSE,0,2*nx*nion*sizeof(float),exk,0,NULL,&events[5]);
 
 
      }
@@ -937,7 +937,7 @@ class Gdevices {
 
 public:
 
-     void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
+     void TN3_dgemm(int npack, int ne, float alpha, float *host_a, float *host_b, float beta, float *host_caa, float *host_cab, float *host_cbb)
      {
         int one = 1;
         int shift1  = 0;
@@ -957,15 +957,15 @@ public:
         //DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
      }
 
-     void TN_dgemm(int ne, int nprj, int npack, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void TN_dgemm(int ne, int nprj, int npack, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
         DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
      }
 
-     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void NN_dgemm(int npack, int ne, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
         DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
 
-     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+     void NT_dgemm(int npack, int ne, int nprj, float alpha, float *host_a, float *host_b, float beta, float *host_c) {
 
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }

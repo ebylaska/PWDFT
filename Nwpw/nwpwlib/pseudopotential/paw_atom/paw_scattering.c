@@ -24,15 +24,15 @@
 
 static int paw_scattering_initialized = False;
 
-static double *u;
-static double *u_prime;
-static double **w;
-static double **w_prime;
-static double **A;
-static double **B;
-static double **D;
-static double *g;
-static double *c;
+static float *u;
+static float *u_prime;
+static float **w;
+static float **w_prime;
+static float **A;
+static float **B;
+static float **D;
+static float *g;
+static float *c;
 
 void paw_init_paw_scattering_set()
 {
@@ -98,7 +98,7 @@ void paw_end_paw_scattering()
 /****************************************
 
 ****************************************/
-void paw_solve_paw_scattering(int l, double r, double e, double* psi,double* psi_prime)
+void paw_solve_paw_scattering(int l, float r, float e, float* psi,float* psi_prime)
 {
 
     int i1;
@@ -109,13 +109,13 @@ void paw_solve_paw_scattering(int l, double r, double e, double* psi,double* psi
     int nbasis;
     int Ngrid;
     int *orb_l;
-    double *V;
-    double **prj_ps;
+    float *V;
+    float **prj_ps;
 
-    double** dH_ae;
-    double** dH_ps;
-    double** dO_ae;
-    double** dO_ps;
+    float** dH_ae;
+    float** dH_ps;
+    float** dO_ae;
+    float** dO_ps;
 
     if (!(paw_scattering_initialized))
         paw_init_paw_scattering();

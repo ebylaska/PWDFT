@@ -18,11 +18,11 @@
 
 
 /*internal core data*/
-static double core_charge;
-static double ps_core_charge;
-static double core_kin_energy;
-static double *core_density;
-static double *ps_core_density;
+static float core_charge;
+static float ps_core_charge;
+static float core_kin_energy;
+static float *core_density;
+static float *ps_core_density;
 
 
 /****************************************
@@ -43,10 +43,10 @@ void  paw_set_core()
 
     int k;
     int Ngrid;
-    double *full_density;
-    double *paw_basis_density;
+    float *full_density;
+    float *paw_basis_density;
     FILE *fp;
-    double *rgrid;
+    float *rgrid;
     char output[200];
 
     Ngrid = paw_N_LogGrid();
@@ -84,35 +84,35 @@ void  paw_set_core()
 }
 
 
-double* paw_get_pointer_core_density()
+float* paw_get_pointer_core_density()
 {
 
     return core_density;
 
 }
 
-double* paw_get_pointer_ps_core_density()
+float* paw_get_pointer_ps_core_density()
 {
 
     return ps_core_density;
 
 }
 
-double paw_get_core_charge()
+float paw_get_core_charge()
 {
 
     return core_charge;
 
 }
 
-double paw_get_ps_core_charge()
+float paw_get_ps_core_charge()
 {
 
     return ps_core_charge;
 
 }
 
-double paw_get_core_kinetic_energy()
+float paw_get_core_kinetic_energy()
 {
 
     return core_kin_energy;

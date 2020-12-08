@@ -31,8 +31,8 @@
 */
 
 bool psp_formatter_read_header(Parallel *myparall, char *fname, 
-                              char *comment, int *psp_type, int *version, int nfft[], double unita[], 
-                              char *atom, double *amass, double *zv) 
+                              char *comment, int *psp_type, int *version, int nfft[], float unita[], 
+                              char *atom, float *amass, float *zv) 
 {
    int i,ifound;
 
@@ -87,9 +87,9 @@ void psp_formatter_check(Parallel *myparall, Lattice *mylattice, Ion *myion, Con
 {
    char fname[256],comment[80],atom[2];
    int psp_type,version,nfft[3];
-   double unita[9],amass,zv;
+   float unita[9],amass,zv;
    bool reformat;
-   double tol=1.0e-9;
+   float tol=1.0e-9;
    std::vector<int> ialist;
 
 
@@ -164,9 +164,9 @@ will generate it.
 
    Uses - psp_generator_auto,util_filefind
 */
-double psp_formatter_auto(Parallel *myparall, PGrid *mypgrid, Control2& control, char *atom)
+float psp_formatter_auto(Parallel *myparall, PGrid *mypgrid, Control2& control, char *atom)
 {
-   double zv=0;
+   float zv=0;
    char psp_fname[256],vpp_fname[256];
 
    /* define psp and vpp filenames */

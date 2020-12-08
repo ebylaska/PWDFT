@@ -5,6 +5,6 @@
 #define _GAUSSJ_H_
 
 
-extern	void gaussj(int, double*, int, double*);
+extern	void gaussj(int, float*, int, float*);
 
 #endif

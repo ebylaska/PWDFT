@@ -25,12 +25,12 @@ using namespace std;
 Kinetic_Operator::Kinetic_Operator(Pneb *mygrid)
 {
    int k;
-   double gg;
-   double *Gx  = mygrid->Gxyz(0);
-   double *Gy  = mygrid->Gxyz(1);
-   double *Gz  = mygrid->Gxyz(2);
-   tg          = new double [mygrid->npack(1)];
-   double *tmp = new double [mygrid->nfft3d];
+   float gg;
+   float *Gx  = mygrid->Gxyz(0);
+   float *Gy  = mygrid->Gxyz(1);
+   float *Gz  = mygrid->Gxyz(2);
+   tg          = new float [mygrid->npack(1)];
+   float *tmp = new float [mygrid->nfft3d];
 
    mypneb = mygrid;
 
@@ -47,7 +47,7 @@ Kinetic_Operator::Kinetic_Operator(Pneb *mygrid)
 
 
 
-void Kinetic_Operator::ke(double *psi, double *tpsi)
+void Kinetic_Operator::ke(float *psi, float *tpsi)
 {
    int k,k1,k2,n,nsize,ksize;
 
@@ -64,10 +64,10 @@ void Kinetic_Operator::ke(double *psi, double *tpsi)
    }
 }
 
-double Kinetic_Operator::ke_ave(double *psi)
+float Kinetic_Operator::ke_ave(float *psi)
 {
    int k,k1,k2,n,nsize,ksize1,ksize2;
-   double ave;
+   float ave;
 
    nsize  = (mypneb->neq[0]+mypneb->neq[1]);
    ksize1 = (mypneb->nzero(1));

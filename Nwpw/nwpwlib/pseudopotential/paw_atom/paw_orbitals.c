@@ -38,15 +38,15 @@ static   int occupied_orbitals_done = False;
 
 static   int      *n;
 static   int      *l;
-static   double   *fill;
+static   float   *fill;
 static   int      *orb_type;
 
 
-static  double    *eigenvalue;
-static  double    **psi;
-static  double    **psi_prime;
-static  double    *psi_tmp;
-static  double    *rho;
+static  float    *eigenvalue;
+static  float    **psi;
+static  float    **psi_prime;
+static  float    *psi_tmp;
+static  float    *rho;
 
 static int Solver_Type = Pauli;
 
@@ -87,22 +87,22 @@ void paw_init_orbitals_from_file(FILE *fp)
         n          = (int *) malloc(Ntotal*sizeof(int));
         l          = (int *) malloc(Ntotal*sizeof(int));
         orb_type   = (int *) malloc(Ntotal*sizeof(int));
-        fill       = (double *) malloc(Ntotal*sizeof(double));
-        eigenvalue = (double *) malloc(Ntotal*sizeof(double));
+        fill       = (float *) malloc(Ntotal*sizeof(float));
+        eigenvalue = (float *) malloc(Ntotal*sizeof(float));
 
 
         /*read orbital indexes arrays*/
         for (i=0; i<Nbound; ++i)
-            fscanf(fp,"%d %d %lf",&n[i],&l[i],&fill[i]);
+            fscanf(fp,"%d %d %f",&n[i],&l[i],&fill[i]);
 
         for (i=Nbound; i<Ntotal; ++i)
-            fscanf(fp,"%d %d %lf %lf",&n[i],&l[i],&fill[i],&eigenvalue[i]);
+            fscanf(fp,"%d %d %f %f",&n[i],&l[i],&fill[i],&eigenvalue[i]);
 
     }
 
     /*allocating additional memory*/
-    psi       = (double **) malloc(Ntotal*sizeof(double*));
-    psi_prime = (double **) malloc(Ntotal*sizeof(double*));
+    psi       = (float **) malloc(Ntotal*sizeof(float*));
+    psi_prime = (float **) malloc(Ntotal*sizeof(float*));
     for (i=0; i<Ntotal; i++)
     {
         psi[i]       = paw_alloc_LogGrid();
@@ -144,16 +144,16 @@ void paw_init_orbitals_from_file(FILE *fp)
  Function name	  : paw_guess_eigenvalues
  Description	    :
  Return type		  : void
- Argument         : double **V
+ Argument         : float **V
  Author     		  : Marat Valiev
  Date & Time		  : 3/30/99 11:46:56 PM
 ****************************************/
-void paw_guess_eigenvalues(double Zion, double *V)
+void paw_guess_eigenvalues(float Zion, float *V)
 {
     int i;
     int Ngrid;
-    double echarge;
-    double Z;
+    float echarge;
+    float Z;
 
     Ngrid = paw_N_LogGrid();
 
@@ -162,7 +162,7 @@ void paw_guess_eigenvalues(double Zion, double *V)
     {
         echarge += fill[i];
         Z = Zion - echarge + 1.0;
-        eigenvalue[i] = -0.5*(Z*Z)/((double) (n[i]*n[i]));
+        eigenvalue[i] = -0.5*(Z*Z)/((float) (n[i]*n[i]));
         if (eigenvalue[i] > V[Ngrid-1])
             eigenvalue[i] = 2.0*V[Ngrid-1];
     }
@@ -187,21 +187,21 @@ void   paw_solve_occupied_orbitals()
     int  converged;
     int   Ngrid;
     int   max_iter;
-    double sum;
-    double Etmp;
-    double thl;
-    double sn;
-    double sd;
-    double dr;
-    double rl0;
-    double rl1;
-    double vn;
-    double Zion;
-    double *Vo;
-    double *Vo1;
-    double *Vi1;
-    double *Vi;
-    double *rgrid;
+    float sum;
+    float Etmp;
+    float thl;
+    float sn;
+    float sd;
+    float dr;
+    float rl0;
+    float rl1;
+    float vn;
+    float Zion;
+    float *Vo;
+    float *Vo1;
+    float *Vi1;
+    float *Vi;
+    float *rgrid;
 
     max_iter = 100;
 
@@ -356,10 +356,10 @@ void paw_solve_unoccupied_orbitals()
     int state;
     int Ngrid;
     int status;
-    double sum;
-    double *V;
-    double *rgrid;
-    double Zion;
+    float sum;
+    float *V;
+    float *rgrid;
+    float Zion;
 
 
     Ngrid = paw_N_LogGrid();
@@ -448,11 +448,11 @@ void paw_solve_scattering_orbitals()
     int k;
     int i_match;
     int Ngrid;
-    double sum;
-    double *V;
-    double *rgrid;
-    double r_sphere;
-    double Zion;
+    float sum;
+    float *V;
+    float *rgrid;
+    float r_sphere;
+    float Zion;
 
     Ngrid = paw_N_LogGrid();
     rgrid = paw_r_LogGrid();
@@ -539,22 +539,22 @@ void paw_solve_scattering_orbitals()
  Return type		  : int
  Argument         : int n
  Argument         : int l
- Argument         : double *v
+ Argument         : float *v
  Author     		  : Marat Valiev
  Date & Time		  : 3/31/99 3:02:14 PM
 ****************************************/
-int paw_bound_state_test(int l, double *v)
+int paw_bound_state_test(int l, float *v)
 {
     int i;
     int Ngrid;
-    double L2,r2;
-    double Emin;
-    double *r;
+    float L2,r2;
+    float Emin;
+    float *r;
 
 
     Ngrid = paw_N_LogGrid();
-    r      = (double *) paw_r_LogGrid();
-    L2 = ((double) (l*(l+1)));
+    r      = (float *) paw_r_LogGrid();
+    L2 = ((float) (l*(l+1)));
     Emin = 0;
     for (i=0; i<Ngrid; ++i)
     {
@@ -625,7 +625,7 @@ void paw_print_orbitals_to_file(char* atom_name)
     int i;
     int k;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
     char data_filename[300];
     char script_filename[300];
     char nl_name[20];
@@ -761,49 +761,49 @@ int* paw_get_pointer_l_array()
 
 }
 
-double paw_get_e(int i)
+float paw_get_e(int i)
 {
 
     return eigenvalue[i];
 
 }
 
-double paw_get_fill(int i)
+float paw_get_fill(int i)
 {
 
     return fill[i];
 
 }
 
-double* paw_get_pointer_fill_array()
+float* paw_get_pointer_fill_array()
 {
 
     return fill;
 
 }
 
-double* paw_get_psi(int i)
+float* paw_get_psi(int i)
 {
 
     return psi[i];
 
 }
 
-double** paw_get_pointer_psi_array()
+float** paw_get_pointer_psi_array()
 {
 
     return psi;
 
 }
 
-double** paw_get_pointer_psi_prime_array()
+float** paw_get_pointer_psi_prime_array()
 {
 
     return psi_prime;
 
 }
 
-double* paw_get_psi_prime(int i)
+float* paw_get_psi_prime(int i)
 {
 
     return psi_prime[i];
@@ -872,16 +872,16 @@ char* paw_orbital_type_name(int i)
  Function name	  : paw_get_core_density
  Description	    :
  Return type		  : void
- Argument         : double** rho
+ Argument         : float** rho
  Author     		  : Marat Valiev
  Date & Time		  : 3/31/99 3:35:46 PM
 ****************************************/
-void paw_generate_density(double* rho)
+void paw_generate_density(float* rho)
 {
     int i;
     int k;
     int Ngrid;
-    double* rgrid;
+    float* rgrid;
 
     Ngrid = paw_N_LogGrid();
     rgrid = paw_r_LogGrid();
@@ -900,11 +900,11 @@ void paw_generate_density(double* rho)
  Function name	  : paw_get_density
  Description	    :
  Return type		  : void
- Argument         : double** rho
+ Argument         : float** rho
  Author     		  : Marat Valiev
  Date & Time		  : 3/31/99 3:35:46 PM
 ****************************************/
-double* paw_get_pointer_density()
+float* paw_get_pointer_density()
 {
 
     return rho;

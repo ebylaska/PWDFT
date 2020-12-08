@@ -26,24 +26,24 @@ int main(void) {
  int N = sizex*sizey*sizez;
 
  // Cumulative time
- double hx = 0.0f;
- double hy = 0.0f;
- double hz = 0.0f;
+ float hx = 0.0f;
+ float hy = 0.0f;
+ float hz = 0.0f;
 
  // Signal frequency
- double frequency_signalx = 1;
- double frequency_signaly = 2;
- double frequency_signalz = 4;
+ float frequency_signalx = 1;
+ float frequency_signaly = 2;
+ float frequency_signalz = 4;
 
  // Sampling frequency
- double frequency_samplingx = sizex*frequency_signalx;
- double frequency_samplingy = sizey*frequency_signaly;
- double frequency_samplingz = sizez*frequency_signalz;
+ float frequency_samplingx = sizex*frequency_signalx;
+ float frequency_samplingy = sizey*frequency_signaly;
+ float frequency_samplingz = sizez*frequency_signalz;
 
  // Step = T_sampling
- double stepx = 1.0/frequency_samplingx;
- double stepy = 1.0/frequency_samplingy;
- double stepz = 1.0/frequency_samplingz;
+ float stepx = 1.0/frequency_samplingx;
+ float stepy = 1.0/frequency_samplingy;
+ float stepz = 1.0/frequency_samplingz;
 
  // File for saving outputs
  FILE *FFT_3D;

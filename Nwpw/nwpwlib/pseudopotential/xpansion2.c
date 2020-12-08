@@ -13,24 +13,24 @@
 
 static	int	l;
 static	int	match;
-static	double	poly[10];
-static	double	c[10];
-static	double	rc[13];
+static	float	poly[10];
+static	float	c[10];
+static	float	rc[13];
 
-static	double	ldpsi;
-static	double	el;
-static	double	*Vall;
-static	double	*ul;
-static	double	*ul_prime;
-static	double	*Vl;
-static	double	*wl;
-static	double	*wl_prime;
+static	float	ldpsi;
+static	float	el;
+static	float	*Vall;
+static	float	*ul;
+static	float	*ul_prime;
+static	float	*Vl;
+static	float	*wl;
+static	float	*wl_prime;
 
-void	p_xpansion2(double p[])
+void	p_xpansion2(float p[])
 {
     int    i;
-    double r1,r2,r4,r6,r8,r10;
-    double *r;
+    float r1,r2,r4,r6,r8,r10;
+    float *r;
 
     r = r_LogGrid();
 
@@ -55,11 +55,11 @@ void	p_xpansion2(double p[])
 
 
 
-void	dp_xpansion2(double dp[])
+void	dp_xpansion2(float dp[])
 {
     int    i;
-    double r1,r2,r3,r5,r7,r9,r11;
-    double *r;
+    float r1,r2,r3,r5,r7,r9,r11;
+    float *r;
 
     r = r_LogGrid();
 
@@ -83,11 +83,11 @@ void	dp_xpansion2(double dp[])
 
 
 
-void	ddp_xpansion2(double ddp[])
+void	ddp_xpansion2(float ddp[])
 {
     int    i;
-    double r1,r2,r4,r6,r8,r10;
-    double *r;
+    float r1,r2,r4,r6,r8,r10;
+    float *r;
 
     r = r_LogGrid();
 
@@ -109,11 +109,11 @@ void	ddp_xpansion2(double ddp[])
 } /* ddp_xpansion2 */
 
 
-void	dddp_xpansion2(double dddp[])
+void	dddp_xpansion2(float dddp[])
 {
     int    i;
-    double r1,r2,r3,r5,r7,r9;
-    double *r;
+    float r1,r2,r3,r5,r7,r9;
+    float *r;
 
     r = r_LogGrid();
 
@@ -133,11 +133,11 @@ void	dddp_xpansion2(double dddp[])
     }
 } /* dddp_xpansion2 */
 
-void	ddddp_xpansion2(double ddddp[])
+void	ddddp_xpansion2(float ddddp[])
 {
     int    i;
-    double r1,r2,r4,r6,r8;
-    double *r;
+    float r1,r2,r4,r6,r8;
+    float *r;
 
     r = r_LogGrid();
 
@@ -166,7 +166,7 @@ void	ddddp_xpansion2(double ddddp[])
 void	chi_xpansion2()
 {
     int    i,Ngrid;
-    double *r,*dp,*ddp;
+    float *r,*dp,*ddp;
 
 
     Ngrid = N_LogGrid();
@@ -208,7 +208,7 @@ void	chi_xpansion2()
 void	psi_xpansion2()
 {
     int    i,Ngrid;
-    double *r,*p;
+    float *r,*p;
 
     Ngrid = N_LogGrid();
     r     = r_LogGrid();
@@ -236,8 +236,8 @@ void	psi_xpansion2()
 void	dpsi_xpansion2()
 {
     int    i,Ngrid;
-    double al;
-    double *r,*p,*dp;
+    float al;
+    float *r,*p,*dp;
 
     Ngrid = N_LogGrid();
     r     = r_LogGrid();
@@ -272,10 +272,10 @@ void	dpsi_xpansion2()
 int get_c0_c10_xpansion2()
 {
     int    i;
-    double delta,delta_old,tolerance;
+    float delta,delta_old,tolerance;
 
-    double  b[5],a[25],aa[25];
-    double sum;
+    float  b[5],a[25],aa[25];
+    float sum;
 
     /* define matrix a */
     a[0] = 1.0; a[5]= 1.0*rc[2]; a[10]=  1.0*rc[6]; a[15] =  1.0*rc[8]; a[20]=   1.0*rc[10];
@@ -355,18 +355,18 @@ int get_c0_c10_xpansion2()
 
 int init_xpansion2(int    l_in,
                    int    match_in,
-                   double el_in,
-                   double *Vall_in,
-                   double *ul_in,
-                   double *ul_prime_in,
-                   double *Vl_in,
-                   double *wl_in,
-                   double *wl_prime_in)
+                   float el_in,
+                   float *Vall_in,
+                   float *ul_in,
+                   float *ul_prime_in,
+                   float *Vl_in,
+                   float *wl_in,
+                   float *wl_prime_in)
 {
     int    i;
-    double Vall_match, dVall_match,ddVall_match;
-    double al;
-    double *r;
+    float Vall_match, dVall_match,ddVall_match;
+    float al;
+    float *r;
 
     r  = r_LogGrid();
     al = log_amesh_LogGrid();

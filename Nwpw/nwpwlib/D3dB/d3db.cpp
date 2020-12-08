@@ -447,7 +447,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
 #if defined(NWPW_SYCL)
    // // // variable passed for rc_fft3d() and cr_fft3d()
-   a_dev = cl::sycl::malloc_device<double>(n2ft3d, *get_syclQue());
+   a_dev = cl::sycl::malloc_device<float>(n2ft3d, *get_syclQue());
 
    desc_x = new desc_real_t(nx);
    desc_y = new desc_cmplx_t(ny);
@@ -476,9 +476,9 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 #else
 
    /* setup ffts */
-   tmpx = new double[2*(2*nx+15)];
-   tmpy = new double[2*(2*ny+15)];
-   tmpz = new double[2*(2*nz+15)];
+   tmpx = new float[2*(2*nx+15)];
+   tmpy = new float[2*(2*ny+15)];
+   tmpz = new float[2*(2*nz+15)];
    drffti_(&nx,tmpx);
    dcffti_(&ny,tmpy);
    dcffti_(&nz,tmpz);
@@ -978,9 +978,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
  *         d3db::r_alloc        *
  *                              *
  ********************************/
-double * d3db::r_alloc()
+float * d3db::r_alloc()
 {
-   double *ptr = new double[n2ft3d];
+   float *ptr = new float[n2ft3d];
    return ptr;
 }
 
@@ -989,9 +989,9 @@ double * d3db::r_alloc()
  *         d3db::r_nalloc       *
  *                              *
  ********************************/
-double * d3db::r_nalloc(const int nn)
+float * d3db::r_nalloc(const int nn)
 {
-   double *ptr = new double[n2ft3d*nn];
+   float *ptr = new float[n2ft3d*nn];
    return ptr;
 }
 
@@ -1000,7 +1000,7 @@ double * d3db::r_nalloc(const int nn)
  *         d3db::r_dealloc      *
  *                              *
  ********************************/
-void d3db::r_dealloc(double *ptr)
+void d3db::r_dealloc(float *ptr)
 {
    delete [] ptr;
 }
@@ -1010,7 +1010,7 @@ void d3db::r_dealloc(double *ptr)
  *         d3db::r_zero         *
  *                              *
  ********************************/
-void d3db::r_zero(double *ptr)
+void d3db::r_zero(float *ptr)
 {
    int i;
    int m = n2ft3d%7;
@@ -1038,7 +1038,7 @@ void d3db::r_zero(double *ptr)
  *         d3db::r_nzero        *
  *                              *
  ********************************/
-void d3db::r_nzero(int n, double *ptr)
+void d3db::r_nzero(int n, float *ptr)
 {
    int i;
    int m = (n*n2ft3d)%7;
@@ -1066,7 +1066,7 @@ void d3db::r_nzero(int n, double *ptr)
  *         d3db::t_nzero        *
  *                              *
  ********************************/
-void d3db::t_nzero(int n, double *ptr)
+void d3db::t_nzero(int n, float *ptr)
 {
    int i;
    int m = (n*nfft3d)%7;
@@ -1095,7 +1095,7 @@ void d3db::t_nzero(int n, double *ptr)
  *        d3db::rr_copy         *
  *                              *
  ********************************/
-void d3db::rr_copy(const double *ptr1, double *ptr2)
+void d3db::rr_copy(const float *ptr1, float *ptr2)
 {
    int i;
    int m = n2ft3d%7;
@@ -1123,7 +1123,7 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
  *        d3db::tt_copy         *
  *                              *
  ********************************/
-void d3db::tt_copy(const double *ptr1, double *ptr2)
+void d3db::tt_copy(const float *ptr1, float *ptr2)
 {
    int i;
    int m = nfft3d%7;
@@ -1153,7 +1153,7 @@ void d3db::tt_copy(const double *ptr1, double *ptr2)
  *         d3db::rr_SMul         *
  *                              *
  ********************************/
-void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
+void d3db::rr_SMul(const float da, const float *ptr1, float *ptr2)
 {
    int i;
    int m = n2ft3d%5;
@@ -1178,7 +1178,7 @@ void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
  *        d3db::rrr_SMulAdd     *
  *                              *
  ********************************/
-void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, double *ptr3)
+void d3db::rrr_SMulAdd(const float da, const float *ptr1, const float *ptr2, float *ptr3)
 {
    int i;
    int m = n2ft3d%5;
@@ -1206,7 +1206,7 @@ void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, 
  *          d3db::r_SMul        *
  *                              *
  ********************************/
-void d3db::r_SMul(const double da, double *ptr2)
+void d3db::r_SMul(const float da, float *ptr2)
 {
    int i;
    int m = n2ft3d%5;
@@ -1232,7 +1232,7 @@ void d3db::r_SMul(const double da, double *ptr2)
  *       d3db::r_zero_ends      *
  *                              *
  ********************************/
-void d3db::r_zero_ends(double *A)
+void d3db::r_zero_ends(float *A)
 {
    int index;
 
@@ -1269,7 +1269,7 @@ void d3db::r_zero_ends(double *A)
  *          d3db::r_abs         *
  *                              *
  ********************************/
-void d3db::r_abs(double *ptr2)
+void d3db::r_abs(float *ptr2)
 {
    int i;
    int m = n2ft3d%5;
@@ -1293,7 +1293,7 @@ void d3db::r_abs(double *ptr2)
  *          d3db::r_sqr         *
  *                              *
  ********************************/
-void d3db::r_sqr(double *ptr2)
+void d3db::r_sqr(float *ptr2)
 {
    int i;
    int m = n2ft3d%5;
@@ -1318,11 +1318,11 @@ void d3db::r_sqr(double *ptr2)
  *         d3db::r_dsum         *
  *                              *
  ********************************/
-double d3db::r_dsum(const double *ptr)
+float d3db::r_dsum(const float *ptr)
 {
    int i;
    int m = n2ft3d%5;
-   double sum=0.0;
+   float sum=0.0;
    if (m>0)
       for (i=0; i<m; ++i)
          sum += ptr[i];
@@ -1344,7 +1344,7 @@ double d3db::r_dsum(const double *ptr)
  *         d3db::rrr_Sum        *
  *                              *
  ********************************/
-void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
+void d3db::rrr_Sum(const float *ptr1, const float *ptr2, float *ptr3)
 {
    int i;
    int m = n2ft3d%5;
@@ -1368,7 +1368,7 @@ void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
  *         d3db::rr_Sum         *
  *                              *
  ********************************/
-void d3db::rr_Sum(const double *ptr2, double *ptr3)
+void d3db::rr_Sum(const float *ptr2, float *ptr3)
 {
    int i;
    int m = n2ft3d%5;
@@ -1394,7 +1394,7 @@ void d3db::rr_Sum(const double *ptr2, double *ptr3)
  *         d3db::rrr_Mul        *
  *                              *
  ********************************/
-void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
+void d3db::rrr_Mul(const float *ptr1, const float *ptr2, float *ptr3)
 {
    int i;
    int m = n2ft3d%5;
@@ -1421,11 +1421,11 @@ void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
  *         d3db::rr_dot        *
  *                              *
  ********************************/
-double d3db::rr_dot(const double *ptr1, const double *ptr2)
+float d3db::rr_dot(const float *ptr1, const float *ptr2)
 {
    int i;
    int m = n2ft3d%5;
-   double sum=0.0;
+   float sum=0.0;
    if (m>0)
       for (i=0; i<m; ++i)
          sum += ptr1[i]*ptr2[i];
@@ -1448,9 +1448,9 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
  *         d3db::t_alloc        *
  *                              *
  ********************************/
-double * d3db::t_alloc()
+float * d3db::t_alloc()
 {
-   double *ptr = new double[nfft3d];
+   float *ptr = new float[nfft3d];
    return ptr;
 }
 
@@ -1459,7 +1459,7 @@ double * d3db::t_alloc()
  *         d3db::t_dealloc      *
  *                              *
  ********************************/
-void d3db::t_dealloc(double *ptr)
+void d3db::t_dealloc(float *ptr)
 {
    delete [] ptr;
 }
@@ -1470,7 +1470,7 @@ void d3db::t_dealloc(double *ptr)
  *         d3db::c_read         *
  *                              *
  ********************************/
-void d3db::c_read(const int iunit, double *a, const int jcol)
+void d3db::c_read(const int iunit, float *a, const int jcol)
 {
    int jstart,jend,fillcolumn,index,ii,jj,p_to,p_here;
    int taskid   = parall->taskid();
@@ -1494,7 +1494,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      float *tmp = new float[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
       /**** master node reads from file and distributes ****/
@@ -1537,7 +1537,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp = new double[nx+2];
+      float *tmp = new float[nx+2];
       int bsize = (nx+2);
 
       /**** master node reads from file and distributes ****/
@@ -1578,8 +1578,8 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
 
       delete [] tmp;
 
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      float *tmp1 = new float[2*nfft3d];
+      float *tmp2 = new float[2*nfft3d];
       c_transpose_ijk(4,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
@@ -1593,7 +1593,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
  *         d3db::c_write        *
  *                              *
  ********************************/
-void d3db::c_write(const int iunit, double *a, const int jcol)
+void d3db::c_write(const int iunit, float *a, const int jcol)
 {
    int index,ii,jj,p_from,p_here;
    int taskid   = parall->taskid();
@@ -1605,7 +1605,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      float *tmp = new float[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
       /**** master node gathers and write to file ****/
@@ -1650,13 +1650,13 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      float *tmp1 = new float[2*nfft3d];
+      float *tmp2 = new float[2*nfft3d];
       c_transpose_ijk(5,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
 
-      double *tmp = new double[nx+2];
+      float *tmp = new float[nx+2];
       int bsize = (nx+2);
 
       /**** master node write to file and fetches from other nodes ****/
@@ -1700,7 +1700,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
 
 
 
-static void cshift1_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
+static void cshift1_fftb(const int n1,const int n2, const int n3, const int n4, float *a)
 {
    int i,j,indx;
    indx = 1;
@@ -1713,7 +1713,7 @@ static void cshift1_fftb(const int n1,const int n2, const int n3, const int n4, 
       indx += (n1+2);
    }
 }
-static void cshift_fftf(const int n1,const int n2, const int n3, const int n4, double *a)
+static void cshift_fftf(const int n1,const int n2, const int n3, const int n4, float *a)
 {
    int i,j,indx;
    indx = 1;
@@ -1728,7 +1728,7 @@ static void cshift_fftf(const int n1,const int n2, const int n3, const int n4, d
       indx += (n1+2);
    }
 }
-static void cshift_fftf_ab(const int n1,const int n2, const int n3, const int n4, double *a, double *b)
+static void cshift_fftf_ab(const int n1,const int n2, const int n3, const int n4, float *a, float *b)
 {
    int i,j,indx;
    indx = 0;
@@ -1743,7 +1743,7 @@ static void cshift_fftf_ab(const int n1,const int n2, const int n3, const int n4
       indx += (n1+2);
    }
 }
-static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
+static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, float *a)
 {
    int i,indx;
    indx = n1+1;
@@ -1761,10 +1761,10 @@ static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, 
  *         d3db::cr_fft3d       *
  *                              *
  ********************************/
-void d3db::cr_fft3d(double *a)
+void d3db::cr_fft3d(float *a)
 {
 #ifdef NWPW_SYCL
-   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(float));
 
    int* iq_to_i1_2_dev = cl::sycl::malloc_device<int>(nz*nq3, *get_syclQue());
    int* iq_to_i1_3_dev = cl::sycl::malloc_device<int>(ny*nq2, *get_syclQue());
@@ -1783,7 +1783,7 @@ void d3db::cr_fft3d(double *a)
    nwpw_timing_function ftime(1);
 
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2,*tmp3;
+   float *tmp2,*tmp3;
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -1792,8 +1792,8 @@ void d3db::cr_fft3d(double *a)
    nxhy2 = nxh2*ny;
    nxhz2 = nxh2*nz;
 
-   tmp2 = new double[2*nfft3d];
-   tmp3 = new double[2*nfft3d];
+   tmp2 = new float[2*nfft3d];
+   tmp3 = new float[2*nfft3d];
 
    /**********************
     **** slab mapping ****
@@ -1896,8 +1896,8 @@ void d3db::cr_fft3d(double *a)
    else
    {
 #if defined(NWPW_SYCL)
-      double* tmp2_dev = get_sycl_mem(2*nfft3d * sizeof(double));
-      double* tmp3_dev = get_sycl_mem(2*nfft3d * sizeof(double));
+      float* tmp2_dev = get_sycl_mem(2*nfft3d * sizeof(float));
+      float* tmp3_dev = get_sycl_mem(2*nfft3d * sizeof(float));
 
       compute_backward(*desc_z, a_dev);
       c_transpose_ijk_sycl(2, iq_to_i1_2_dev, iq_to_i2_2_dev, a_dev, tmp2_dev, tmp3_dev);
@@ -1911,7 +1911,7 @@ void d3db::cr_fft3d(double *a)
       	    });
       	});
       compute_backward(*desc_x, a_dev);
-      double* a_zero = a_dev;
+      float* a_zero = a_dev;
       int offset = nx;
       get_syclQue()->submit([&](cl::sycl::handler &cgh) {
 	  cgh.parallel_for<class zeroend_fftb_sycl>(cl::sycl::range<1>(nq1), [=](cl::sycl::id<1> ii) {
@@ -1920,7 +1920,7 @@ void d3db::cr_fft3d(double *a)
 	    });
 	});
 
-      get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+      get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(float));
       free_sycl_mem(tmp2_dev);
       free_sycl_mem(tmp3_dev);
       // free_sycl_mem(iq_to_i1_2_dev);
@@ -1983,10 +1983,10 @@ void d3db::cr_fft3d(double *a)
  *         d3db::rc_fft3d       *
  *                              *
  ********************************/
-void d3db::rc_fft3d(double *a)
+void d3db::rc_fft3d(float *a)
 {
 #ifdef NWPW_SYCL
-   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+   get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(float));
 
    int* iq_to_i1_0_dev = cl::sycl::malloc_device<int>((nx/2+1)*nq1, *get_syclQue());
    int* iq_to_i1_1_dev = cl::sycl::malloc_device<int>(ny*nq2,       *get_syclQue());
@@ -2005,7 +2005,7 @@ void d3db::rc_fft3d(double *a)
    nwpw_timing_function ftime(1);
 
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2,*tmp3;
+   float *tmp2,*tmp3;
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -2014,8 +2014,8 @@ void d3db::rc_fft3d(double *a)
    nxhy2 = nxh2*ny;
    nxhz2 = nxh2*nz;
 
-   tmp2 = new double[2*nfft3d];
-   tmp3 = new double[2*nfft3d];
+   tmp2 = new float[2*nfft3d];
+   tmp3 = new float[2*nfft3d];
 
    /**********************
     **** slab mapping ****
@@ -2124,8 +2124,8 @@ void d3db::rc_fft3d(double *a)
    else
    {
 #if defined(NWPW_SYCL)
-       double* tmp2_dev = get_sycl_mem(2*nfft3d*sizeof(double));
-       double* tmp3_dev = get_sycl_mem(2*nfft3d*sizeof(double));
+       float* tmp2_dev = get_sycl_mem(2*nfft3d*sizeof(float));
+       float* tmp3_dev = get_sycl_mem(2*nfft3d*sizeof(float));
 
       /********************************************
        ***     do fft along nx dimension        ***
@@ -2145,7 +2145,7 @@ void d3db::rc_fft3d(double *a)
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(double));
+       get_syclQue()->memcpy(a_dev, a, n2ft3d*sizeof(float));
        compute_forward(*desc_y, a_dev);
        c_transpose_ijk_sycl(1, iq_to_i1_1_dev, iq_to_i2_1_dev, a_dev, tmp2_dev, tmp3_dev);
 
@@ -2155,7 +2155,7 @@ void d3db::rc_fft3d(double *a)
        ********************************************/
        compute_forward(*desc_z, a_dev);
 
-       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(double));
+       get_syclQue()->memcpy(a, a_dev, n2ft3d*sizeof(float));
        free_sycl_mem(tmp3_dev);
        free_sycl_mem(tmp2_dev);
 
@@ -2223,7 +2223,7 @@ void d3db::rc_fft3d(double *a)
  *         d3db::t_read         *
  *                              *
  ********************************/
-void d3db::t_read(const int iunit, double *a, const int jcol)
+void d3db::t_read(const int iunit, float *a, const int jcol)
 {
    int jstart,jend,fillcolumn,index,ii,jj,p_to,p_here;
    int taskid   = parall->taskid();
@@ -2247,7 +2247,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx/2+1)*ny];
+      float *tmp = new float[(nx/2+1)*ny];
       int   bsize = (nx/2+1)*ny;
 
       /**** master node reads from file and distributes ****/
@@ -2291,7 +2291,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp = new double[nx/2+1];
+      float *tmp = new float[nx/2+1];
       int bsize = (nx/2+1);
 
       /**** master node reads from file and distributes ****/
@@ -2331,8 +2331,8 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
          }
       delete [] tmp;
 
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      float *tmp1 = new float[2*nfft3d];
+      float *tmp2 = new float[2*nfft3d];
       t_transpose_ijk(4,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
@@ -2345,7 +2345,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
  *         d3db::t_write        *
  *                              *
  ********************************/
-void d3db::t_write(const int iunit, double *a, const int jcol)
+void d3db::t_write(const int iunit, float *a, const int jcol)
 {
    int index,ii,jj,p_from,p_here;
    int taskid   = parall->taskid();
@@ -2357,7 +2357,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      float *tmp = new float[(nx+2)*ny];
       int   bsize = (nx/2+1)*ny;
 
       /**** master node gathers and write to file ****/
@@ -2402,13 +2402,13 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      float *tmp1 = new float[2*nfft3d];
+      float *tmp2 = new float[2*nfft3d];
       t_transpose_ijk(5,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
 
-      double *tmp = new double[nx/2+1];
+      float *tmp = new float[nx/2+1];
       int bsize = (nx/2+1);
 
       /**** master node write to file and fetches from other nodes ****/
@@ -2458,7 +2458,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
  *    d3db::c_transpose_jk      *
  *                              *
  ********************************/
-void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
+void d3db::c_transpose_jk(float *a, float *tmp1, float *tmp2)
 {
    int it,proc_from,proc_to;
    int msglen;
@@ -2497,7 +2497,7 @@ void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
  *    d3db::t_transpose_jk      *
  *                              *
  ********************************/
-void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
+void d3db::t_transpose_jk(float *a, float *tmp1, float *tmp2)
 {
    int it,proc_from,proc_to;
    int msglen;
@@ -2541,7 +2541,7 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
  ********************************/
 #ifdef NWPW_SYCL
 void d3db::c_transpose_ijk_sycl(const int op, const int* b_indx_dev, const int* a_indx_dev,
-				double *a_dev, double *tmp1_dev, double *tmp2_dev)
+				float *a_dev, float *tmp1_dev, float *tmp2_dev)
 {
    int nnfft3d;
 
@@ -2583,7 +2583,7 @@ void d3db::c_transpose_ijk_sycl(const int op, const int* b_indx_dev, const int* 
 
 }
 #endif // NWPW_SYCL
-void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
+void d3db::c_transpose_ijk(const int op,float *a,float *tmp1,float *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
    int msglen;
@@ -2634,7 +2634,7 @@ void d3db::c_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
  *    d3db::t_transpose_ijk     *
  *                              *
  ********************************/
-void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
+void d3db::t_transpose_ijk(const int op,float *a,float *tmp1,float *tmp2)
 {
    int nnfft3d,it,proc_from,proc_to;
    int msglen;
@@ -2755,7 +2755,7 @@ int d3db::timereverse_size()
  *      d3db::t_timereverse     *
  *                              *
  ********************************/
-void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
+void d3db::t_timereverse(float *a, float *tmp1, float *tmp2)
 {
    int nnfft3d,indx,it,proc_from,proc_to;
    int msglen;
@@ -2801,7 +2801,7 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
  *      d3db::c_timereverse     *
  *                              *
  ********************************/
-void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
+void d3db::c_timereverse(float *a, float *tmp1, float *tmp2)
 {
    int nnfft3d,indx,it,proc_from,proc_to;
    int msglen;
@@ -2846,7 +2846,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  *         d3db::c_setpw        *
  *                              *
  ********************************/
-void d3db::c_setpw(const int filling[], const double *cvalue, double *a)
+void d3db::c_setpw(const int filling[], const float *cvalue, float *a)
 {
    int i = filling[0];
    int j = filling[1];
@@ -2884,9 +2884,9 @@ void d3db::c_setpw(const int filling[], const double *cvalue, double *a)
  *                              *
  ********************************/
 
-void d3db::c_addrandom(double *a)
+void d3db::c_addrandom(float *a)
 {
-   double fac = 1.0/sqrt(1.0*nfft3d);
+   float fac = 1.0/sqrt(1.0*nfft3d);
    for (auto i=0; i<n2ft3d; ++i)
       a[i] += fac*(0.50-util_random(0));
 }

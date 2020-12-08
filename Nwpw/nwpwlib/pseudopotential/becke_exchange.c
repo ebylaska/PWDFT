@@ -18,49 +18,49 @@ exit:  - Vx[]: exchange potential
 
 void R_Becke_Exchange(rho,Vx,Ex,Px)
 
-double rho[],
+float rho[],
 Vx[],
 *Ex,
 *Px;
 {
     /*local variables*/
     int i;
-    double lda_c;
-    double beta;
-    double pi;
-    double X1, X2, X3, ex;
-    double fdn_lda;
-    double ux;
-    double c;
-    double norm;
-    double lap,damp,ddamp;
-    double z5,z4,z3,z2,z1;
+    float lda_c;
+    float beta;
+    float pi;
+    float X1, X2, X3, ex;
+    float fdn_lda;
+    float ux;
+    float c;
+    float norm;
+    float lap,damp,ddamp;
+    float z5,z4,z3,z2,z1;
 
-    double rho_fourthirds,rho_onethird, two_onethird;
+    float rho_fourthirds,rho_onethird, two_onethird;
 
 
     int Ngrid;
 
     /* temporary local grids */
-    double *rhoNRM;
-    double *drho;
-    double *ddrho;
-    double *ex_density;
-    double *tmp;
-    double *rgrid;
-    double *agr;
-    double *chi;
-    double *chidn;
-    double *chiddn;
-    double *H;
-    double *F;
-    double *Fdchi;
-    double *G;
-    double *G2;
-    double *Gdr;
-    double *G2dr;
-    double *fdn;
-    double *fddn;
+    float *rhoNRM;
+    float *drho;
+    float *ddrho;
+    float *ex_density;
+    float *tmp;
+    float *rgrid;
+    float *agr;
+    float *chi;
+    float *chidn;
+    float *chiddn;
+    float *H;
+    float *F;
+    float *Fdchi;
+    float *G;
+    float *G2;
+    float *Gdr;
+    float *G2dr;
+    float *fdn;
+    float *fddn;
 
 
 

@@ -14,10 +14,10 @@
    exponential as r-> infinity
 
 */
-double Norm(int M,double gamma,double *u)
+float Norm(int M,float gamma,float *u)
 {
     int	  i;
-    double r0,sum,amesh,log_amesh,
+    float r0,sum,amesh,log_amesh,
     *r;
 
     amesh     = amesh_LogGrid();

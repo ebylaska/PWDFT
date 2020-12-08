@@ -51,21 +51,21 @@ int main(int argc, char *argv[]) {
      sscanf(argv[2],"%d",&ne);
   }
 
-  double nmultadds = (double) ne;
-         nmultadds *= (double) ne;
-         nmultadds *= (double) npack;
+  float nmultadds = (float) ne;
+         nmultadds *= (float) ne;
+         nmultadds *= (float) npack;
 
   // set scalar fp values
-  double alpha = 1.0;
-  double beta  = 0.0;
+  float alpha = 1.0;
+  float beta  = 0.0;
 
   // 1D arrays on host side
-  double *host_a;
-  double *host_b;
-  double *host_c;
-  host_a = new double[npack*ne]{};
-  host_b = new double[ne*ne]{};
-  host_c = new double[npack*ne]{};
+  float *host_a;
+  float *host_b;
+  float *host_c;
+  host_a = new float[npack*ne]{};
+  host_b = new float[ne*ne]{};
+  host_c = new float[npack*ne]{};
 
   // prepare matrix data with ROW-major style
   // A(M, N)
@@ -101,10 +101,10 @@ int main(int argc, char *argv[]) {
   queue device_queue(device_selector, asyncHandler);
   std::cout << "Device: " << device_queue.get_device().get_info<info::device::name>() << std::endl << std::endl;
 
-  // Creating 1D buffers for matrices (double)
-  double* dev_a = cl::sycl::malloc_device<double>(npack*ne, device_queue);
-  double* dev_b = cl::sycl::malloc_device<double>(ne*ne,    device_queue);
-  double* dev_c = cl::sycl::malloc_device<double>(npack*ne, device_queue);
+  // Creating 1D buffers for matrices (float)
+  float* dev_a = cl::sycl::malloc_device<float>(npack*ne, device_queue);
+  float* dev_b = cl::sycl::malloc_device<float>(ne*ne,    device_queue);
+  float* dev_c = cl::sycl::malloc_device<float>(npack*ne, device_queue);
 
   // Transfer info from CPU to GPU
   // copy host -> device
@@ -112,17 +112,17 @@ int main(int argc, char *argv[]) {
 
   //device_queue.submit([&](cl::sycl::handler& cgh)
   //{
-  //  cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double));
+  //  cgh.memcpy(dev_a, host_a, npack*ne*sizeof(float));
   //});
   //device_queue.wait();
   //device_queue.submit([&](cl::sycl::handler& cgh)
   //{
-  //  cgh.memcpy(dev_b, host_b, ne*ne*sizeof(double));
+  //  cgh.memcpy(dev_b, host_b, ne*ne*sizeof(float));
   //});
   //device_queue.wait();
 
-  // device_queue.memcpy(dev_a, host_a, sizeof(double)*M*N);
-  // device_queue.memcpy(dev_b, host_b, sizeof(double)*N*P);
+  // device_queue.memcpy(dev_a, host_a, sizeof(float)*M*N);
+  // device_queue.memcpy(dev_b, host_b, sizeof(float)*N*P);
 
   try {
 //Warm up the kernel
@@ -132,17 +132,17 @@ int main(int argc, char *argv[]) {
       
 
       auto start = high_resolution_clock::now();
-      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(double)); });
-      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_b, host_b, ne*ne*sizeof(double)); });
+      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_a, host_a, npack*ne*sizeof(float)); });
+      device_queue.submit([&](cl::sycl::handler& cgh) { cgh.memcpy(dev_b, host_b, ne*ne*sizeof(float)); });
       device_queue.wait();
 
       oneapi::mkl::blas::gemm(device_queue, matN, matN, npack,ne,ne, alpha, dev_a, npack, dev_b, ne, beta, dev_c, npack);
-      device_queue.memcpy(host_c, dev_c, npack*ne*sizeof(double));
+      device_queue.memcpy(host_c, dev_c, npack*ne*sizeof(float));
       device_queue.wait();
       auto stop = high_resolution_clock::now();
 
-      duration<double> deltatime = stop-start;
-      double dt = (double) deltatime.count();
+      duration<float> deltatime = stop-start;
+      float dt = (float) deltatime.count();
 
       std::cout << "GPU time (ms): " << dt*1000.0 << std::endl;
       std::cout << "GPU GFLOPs   : " << (nmultadds/dt)*1.0e-9 << std::endl;

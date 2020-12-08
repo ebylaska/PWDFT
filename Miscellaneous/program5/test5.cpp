@@ -41,7 +41,7 @@ typedef struct {
    cl_bool   ** has_cl_khr_fp64;
    cl_uint   ** num_cores;
    cl_uint   ** freq;
-   cl_uint   ** wdouble;
+   cl_uint   ** wfloat;
    cl_uint   ** wfloat;
    cl_ulong  ** mem;
    //Device_Type ** device;
@@ -68,7 +68,7 @@ void nwpw_gpu_init(NWPW_GPU_Type *gpu)
    gpu->has_cl_khr_fp64 = (cl_bool **) malloc(sizeof(cl_bool *)*gpu->num_platforms);
    gpu->num_cores = (cl_uint **) malloc(sizeof(cl_uint *)*gpu->num_platforms);
    gpu->freq      = (cl_uint **) malloc(sizeof(cl_uint *)*gpu->num_platforms);
-   gpu->wdouble   = (cl_uint **) malloc(sizeof(cl_uint *)*gpu->num_platforms);
+   gpu->wfloat   = (cl_uint **) malloc(sizeof(cl_uint *)*gpu->num_platforms);
    gpu->wfloat    = (cl_uint **) malloc(sizeof(cl_uint *)*gpu->num_platforms);
    gpu->mem       = (cl_ulong **) malloc(sizeof(cl_ulong *)*gpu->num_platforms);
    for (cl_uint i=0; i<gpu->num_platforms; ++i)
@@ -80,7 +80,7 @@ void nwpw_gpu_init(NWPW_GPU_Type *gpu)
       gpu->has_cl_khr_fp64[i] = (cl_bool *) malloc(sizeof(cl_bool)*gpu->num_devices[i]);
       gpu->num_cores[i] = (cl_uint *) malloc(sizeof(cl_uint)*gpu->num_devices[i]);
       gpu->freq[i]      = (cl_uint *) malloc(sizeof(cl_uint)*gpu->num_devices[i]);
-      gpu->wdouble[i]   = (cl_uint *) malloc(sizeof(cl_uint)*gpu->num_devices[i]);
+      gpu->wfloat[i]   = (cl_uint *) malloc(sizeof(cl_uint)*gpu->num_devices[i]);
       gpu->wfloat[i]    = (cl_uint *) malloc(sizeof(cl_uint)*gpu->num_devices[i]);
       gpu->mem[i]       = (cl_ulong *) malloc(sizeof(cl_ulong)*gpu->num_devices[i]);
 
@@ -91,7 +91,7 @@ void nwpw_gpu_init(NWPW_GPU_Type *gpu)
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&(gpu->avail[i][j]),&size);
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&(gpu->num_cores[i][j]),&size);
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&(gpu->freq[i][j]),&size);
-         ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu->wdouble[i][j]),&size);
+         ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&(gpu->wfloat[i][j]),&size);
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&(gpu->wfloat[i][j]),&size);
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&(gpu->mem[i][j]),&size);
          ret = clGetDeviceInfo(gpu->device_id[i][j],CL_DEVICE_EXTENSIONS,1000*sizeof(char),str,&size);
@@ -115,7 +115,7 @@ void nwpw_gpu_end(NWPW_GPU_Type *gpu)
       free(gpu->has_cl_khr_fp64[i]);
       free(gpu->num_cores[i]);
       free(gpu->freq[i]);
-      free(gpu->wdouble[i]);
+      free(gpu->wfloat[i]);
       free(gpu->wfloat[i]);
       free(gpu->mem[i]);
    }
@@ -126,7 +126,7 @@ void nwpw_gpu_end(NWPW_GPU_Type *gpu)
    free(gpu->has_cl_khr_fp64);
    free(gpu->num_cores);
    free(gpu->freq);
-   free(gpu->wdouble);
+   free(gpu->wfloat);
    free(gpu->wfloat);
    free(gpu->mem);
 }
@@ -163,14 +163,14 @@ void nwpw_gpu_program_generate(NWPW_GPU_Program_Type *gpuprogram,
       {
          gpuprogram->buf_mem_obj[i] = clCreateBuffer(gpuprogram->context, 
                                                      CL_MEM_WRITE_ONLY, 
-                                                     gpuprogram->bufsize[i]*sizeof(double),
+                                                     gpuprogram->bufsize[i]*sizeof(float),
                                                      NULL, &ret);
       }
       else 
       {
          gpuprogram->buf_mem_obj[i] = clCreateBuffer(gpuprogram->context,
                                                      CL_MEM_READ_ONLY,
-                                                     gpuprogram->bufsize[i]*sizeof(double), 
+                                                     gpuprogram->bufsize[i]*sizeof(float), 
                                                      NULL, &ret);
       }
    }
@@ -202,13 +202,13 @@ void nwpw_gpu_program_generate(NWPW_GPU_Program_Type *gpuprogram,
  *                                     *
  ***************************************/
 void nwpw_gpu_program_host2gpu(NWPW_GPU_Program_Type *gpuprogram, 
-                               const double *A, const int buf_id,
+                               const float *A, const int buf_id,
                                cl_event *event) 
 {
    // Copy the lists A and B to their respective memory buffers
    cl_int ret = clEnqueueWriteBuffer(gpuprogram->command_queue, 
                                      gpuprogram->buf_mem_obj[buf_id], CL_FALSE, 0,
-                                     gpuprogram->bufsize[buf_id]*sizeof(double), A, 0, NULL, event);
+                                     gpuprogram->bufsize[buf_id]*sizeof(float), A, 0, NULL, event);
 }
 
 /***************************************
@@ -217,12 +217,12 @@ void nwpw_gpu_program_host2gpu(NWPW_GPU_Program_Type *gpuprogram,
  *                                     *
  ***************************************/
 void nwpw_gpu_program_gpu2host(NWPW_GPU_Program_Type *gpuprogram, 
-                               const int buf_id, double *C,
+                               const int buf_id, float *C,
                                cl_event *event) 
 {
    cl_uint ret = clEnqueueReadBuffer(gpuprogram->command_queue, 
                                      gpuprogram->buf_mem_obj[buf_id], CL_FALSE, 0,
-                                     gpuprogram->bufsize[buf_id]*sizeof(double), 
+                                     gpuprogram->bufsize[buf_id]*sizeof(float), 
                                      C, 0, NULL, event);
 }
 
@@ -316,7 +316,7 @@ void DisplayDevicesInfo(cl_platform_id id)
    char str[1000];
    cl_ulong mem;
    cl_bool  avail;
-   cl_uint num_devices,num_cores,freq,wdouble,wfloat;
+   cl_uint num_devices,num_cores,freq,wfloat,wfloat;
    cl_int ret = clGetDeviceIDs(id, CL_DEVICE_TYPE_ALL, 0,NULL,&num_devices);
    printf("\n");
    printf(" - number of devices = %d\n", num_devices);
@@ -328,10 +328,10 @@ void DisplayDevicesInfo(cl_platform_id id)
       printf("\n");
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(cl_uint),&num_cores,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(cl_uint),&freq,&size);
-      ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&wdouble,&size);
+      ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE,sizeof(cl_uint),&wfloat,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT,sizeof(cl_uint),&wfloat,&size);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&mem,&size);
-      printf("   -- device %d id = %ld, number of cores=%d @ %d MHz memory=%ld bytes wfloat=%d wdouble=%d\n",i,(size_t) device_ids[i],num_cores,freq,(long) mem,wfloat,wdouble);
+      printf("   -- device %d id = %ld, number of cores=%d @ %d MHz memory=%ld bytes wfloat=%d wfloat=%d\n",i,(size_t) device_ids[i],num_cores,freq,(long) mem,wfloat,wfloat);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(size_t),&group,&size);
       printf("   -- device group size %d\n",(int) group);
       ret = clGetDeviceInfo(device_ids[i],CL_DEVICE_AVAILABLE,sizeof(cl_bool),&avail,&size);
@@ -452,12 +452,12 @@ int main()
       printf(" - %d patform_id= %ld num_devices= %d\n",i,(size_t) gpu.platform_id[i],gpu.num_devices[i]);
       for (int j=0; j<gpu.num_devices[i]; ++j)
       {
-         printf("   -- %d device_id= %ld num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wdouble=%d avail=%d has_cl_khr_fp64=%d\n",j,(size_t) gpu.device_id[i][j],
+         printf("   -- %d device_id= %ld num_cores=%3d mem=%12ld  %4d MHz wfloat=%d wfloat=%d avail=%d has_cl_khr_fp64=%d\n",j,(size_t) gpu.device_id[i][j],
                                                                 gpu.num_cores[i][j],
                                                                 (long) gpu.mem[i][j],
                                                                 gpu.freq[i][j],
                                                                 gpu.wfloat[i][j],
-                                                                gpu.wdouble[i][j],
+                                                                gpu.wfloat[i][j],
                                                                 gpu.avail[i][j], 
                                                                 gpu.has_cl_khr_fp64[i][j]);
       }
@@ -505,12 +505,12 @@ int main()
 
 
    // Allocate buffers on host
-   double *A = (double*)malloc(sizeof(double)*Msize*Ksize);
-   double *B = (double*)malloc(sizeof(double)*Ksize*Nsize);
-   double *C = (double*)malloc(sizeof(double)*Msize*Nsize);
-   double *CC = (double*)malloc(sizeof(double)*Msize*Nsize);
-   for (int i=0; i<Msize*Ksize; ++i) A[i] = ((double) i);
-   for (int i=0; i<Ksize*Nsize; ++i) B[i] = sin(((double) i));
+   float *A = (float*)malloc(sizeof(float)*Msize*Ksize);
+   float *B = (float*)malloc(sizeof(float)*Ksize*Nsize);
+   float *C = (float*)malloc(sizeof(float)*Msize*Nsize);
+   float *CC = (float*)malloc(sizeof(float)*Msize*Nsize);
+   for (int i=0; i<Msize*Ksize; ++i) A[i] = ((float) i);
+   for (int i=0; i<Ksize*Nsize; ++i) B[i] = sin(((float) i));
    for (int i=0; i<Msize*Nsize; ++i) C[i] = 0.0;
 
    //time2 = clock();
@@ -546,24 +546,24 @@ int main()
       printf("%lf + %lf = %lf\n",A[i],B[i],C[i]);
 */
 
-   duration<double> deltatime21 = ctime2-ctime1;
-   duration<double> deltatime32 = ctime3-ctime2;
-   duration<double> deltatime43 = ctime4-ctime3;
-   duration<double> deltatime54 = ctime5-ctime4;
-   duration<double> deltatime65 = ctime6-ctime5;
-   double dt21 = (double) deltatime21.count();
-   double dt32 = (double) deltatime32.count();
-   double dt43 = (double) deltatime43.count();
-   double dt54 = (double) deltatime54.count();
-   double dt65 = (double) deltatime65.count();
+   duration<float> deltatime21 = ctime2-ctime1;
+   duration<float> deltatime32 = ctime3-ctime2;
+   duration<float> deltatime43 = ctime4-ctime3;
+   duration<float> deltatime54 = ctime5-ctime4;
+   duration<float> deltatime65 = ctime6-ctime5;
+   float dt21 = (float) deltatime21.count();
+   float dt32 = (float) deltatime32.count();
+   float dt43 = (float) deltatime43.count();
+   float dt54 = (float) deltatime54.count();
+   float dt65 = (float) deltatime65.count();
 
    printf("\n\nUsing gpu platform=%d device=%d\n",0,2);
    printf("\n");
-   //printf("GPU compile and setup time           = time2-time1 = %lf ms %lf\n",1000.0*(double)(time2-time1)/CLOCKS_PER_SEC,dt21*1000.0);
-   //printf("Host2gpu copy time                   = time3-time2 = %lf ms\n",1000.0*(double)(time3-time2)/CLOCKS_PER_SEC);
-   //printf("Gpu time (includes host2gpu barrier) = time4-time3 = %lf ms\n",1000.0*(double)(time4-time3)/CLOCKS_PER_SEC);
-   //printf("Gpu2host copy time                   = time5-time4 = %lf ms\n",1000.0*(double)(time5-time4)/CLOCKS_PER_SEC);
-   //printf("Gpu2host barrier time                = time6-time5 = %lf ms\n",1000.0*(double)(time6-time5)/CLOCKS_PER_SEC);
+   //printf("GPU compile and setup time           = time2-time1 = %lf ms %lf\n",1000.0*(float)(time2-time1)/CLOCKS_PER_SEC,dt21*1000.0);
+   //printf("Host2gpu copy time                   = time3-time2 = %lf ms\n",1000.0*(float)(time3-time2)/CLOCKS_PER_SEC);
+   //printf("Gpu time (includes host2gpu barrier) = time4-time3 = %lf ms\n",1000.0*(float)(time4-time3)/CLOCKS_PER_SEC);
+   //printf("Gpu2host copy time                   = time5-time4 = %lf ms\n",1000.0*(float)(time5-time4)/CLOCKS_PER_SEC);
+   //printf("Gpu2host barrier time                = time6-time5 = %lf ms\n",1000.0*(float)(time6-time5)/CLOCKS_PER_SEC);
 
    printf("GPU compile and setup time           = time2-time1 = %lf ms\n",dt21*1000.0);
    printf("Host2gpu copy time                   = time3-time2 = %lf ms\n",1000.0*dt32);
@@ -577,19 +577,19 @@ int main()
    for(int i=0; i<Msize; ++i)
    for(int j=0; j<Nsize; ++j)
    {
-      double acc = 0.0;
+      float acc = 0.0;
       for(int k=0; k<Ksize; ++k)
          acc += A[i+k*Msize]*B[k+j*Nsize];
       CC[i+j*Msize] = acc;
    }
    //time8 = clock();
    auto ctime8 = high_resolution_clock::now();
-   duration<double> deltatime87 = ctime8-ctime7;
-   duration<double> deltatime52 = ctime5-ctime2;
-   duration<double> deltatime62 = ctime6-ctime2;
-   double dt87 = (double) deltatime87.count();
-   double dt52 = (double) deltatime52.count();
-   double dt62 = (double) deltatime62.count();
+   duration<float> deltatime87 = ctime8-ctime7;
+   duration<float> deltatime52 = ctime5-ctime2;
+   duration<float> deltatime62 = ctime6-ctime2;
+   float dt87 = (float) deltatime87.count();
+   float dt52 = (float) deltatime52.count();
+   float dt62 = (float) deltatime62.count();
 
    printf("\nSerial time = %lf ms\n",1000.0*dt87);
    printf("\nspeedup (gpu only)                                = %lf\n",(dt87/dt43));

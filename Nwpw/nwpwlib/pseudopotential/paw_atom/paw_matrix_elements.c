@@ -14,14 +14,14 @@
 
 
 
-static double **dH_ae;
-static double **dO_ae;
-static double **dO_ps;
-static double **dH_ps;
-static double **dT_ae;
-static double **dT_ps;
-static double **dV_ae;
-static double **dV_ps;
+static float **dH_ae;
+static float **dO_ae;
+static float **dO_ps;
+static float **dH_ps;
+static float **dT_ae;
+static float **dT_ps;
+static float **dV_ae;
+static float **dV_ps;
 
 
 
@@ -37,19 +37,19 @@ void paw_generate_matrix_elements()
     int k;
     int Ngrid;
     int nbasis;
-    double log_amesh;
+    float log_amesh;
     int    *orb_l;
-    double **phi;
-    double **phi_prime;
-    double **phi_ps;
-    double **phi_ps_prime;
+    float **phi;
+    float **phi_prime;
+    float **phi_ps;
+    float **phi_ps_prime;
 
-    double *v;
-    double *v_tilda;
-    double *f1;
-    double *f2;
-    double *f3;
-    double *rgrid;
+    float *v;
+    float *v_tilda;
+    float *f1;
+    float *f2;
+    float *f3;
+    float *rgrid;
 
 
     Ngrid     = paw_N_LogGrid();
@@ -155,22 +155,22 @@ void paw_generate_matrix_elements()
 
 }
 
-double** paw_get_pointer_dH_ae()
+float** paw_get_pointer_dH_ae()
 {
     return dH_ae;
 }
 
-double** paw_get_pointer_dH_ps()
+float** paw_get_pointer_dH_ps()
 {
     return dH_ps;
 }
 
-double** paw_get_pointer_dO_ae()
+float** paw_get_pointer_dO_ae()
 {
     return dO_ae;
 }
 
-double** paw_get_pointer_dO_ps()
+float** paw_get_pointer_dO_ps()
 {
     return dO_ps;
 }

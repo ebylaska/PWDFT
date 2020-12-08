@@ -23,13 +23,13 @@
 #include "paw_utilities.h"
 #include "paw_sdir.h"
 
-double    *Vi;
+float    *Vi;
 
 extern char     *atom_name;
 
 /* global loggrid data */
 extern int     Ngrid;
-extern double  *rgrid;
+extern float  *rgrid;
 
 extern   int   Hartree_Type ;
 extern   int   Exchange_Type;
@@ -40,7 +40,7 @@ extern   int   Correlation_Type;
  Function name	  : paw_init_potential
  Description	    :
  Return type		  : void
- Argument         : double Z
+ Argument         : float Z
  Author     		  : Marat Valiev
  Date & Time		  : 3/30/99 5:05:57 PM
 ****************************************/
@@ -58,19 +58,19 @@ void paw_init_potential()
  Function name	  : paw_get_kohn_sham_potential
  Description	    :
  Return type		  : void
- Argument         : double *dn
- Argument         : double **rho
- Argument         : double **Vo
+ Argument         : float *dn
+ Argument         : float **rho
+ Argument         : float **Vo
  Author     		  : Marat Valiev
  Date & Time		  : 3/30/99 5:32:13 PM
 ****************************************/
-void paw_find_kohn_sham_potential(double *rho,double *V_ks)
+void paw_find_kohn_sham_potential(float *rho,float *V_ks)
 {
     int k;
-    double    *Vion;
-    double    *Vh;
-    double    *Vx;
-    double    *Vc;
+    float    *Vion;
+    float    *Vh;
+    float    *Vx;
+    float    *Vc;
 
     Vion = paw_get_ion_pot();
 
@@ -93,11 +93,11 @@ void paw_find_kohn_sham_potential(double *rho,double *V_ks)
  Function name	  : paw_set_Kohn_Sham_potential
  Description	    :
  Return type		  : void
- Argument         : double *rho
+ Argument         : float *rho
  Author     		  : Marat Valiev
  Date & Time		  : 4/10/99 6:59:53 PM
 ****************************************/
-void paw_set_kohn_sham_potential(double *rho)
+void paw_set_kohn_sham_potential(float *rho)
 {
     paw_find_kohn_sham_potential(rho,Vi);
 }
@@ -107,11 +107,11 @@ void paw_set_kohn_sham_potential(double *rho)
 /****************************************
  Function name	  : *paw_get_Kohn_Sham_potential
  Description	    :
- Return type		  : double
+ Return type		  : float
  Author     		  : Marat Valiev
  Date & Time		  : 4/10/99 7:00:50 PM
 ****************************************/
-double *paw_get_kohn_sham_potential()
+float *paw_get_kohn_sham_potential()
 {
 
     return Vi;
@@ -123,15 +123,15 @@ double *paw_get_kohn_sham_potential()
  Function name	  :   paw_Thomas_Fermi
  Description	    :
  Return type		  : void
- Argument         : double Z
- Argument         : double *V
+ Argument         : float Z
+ Argument         : float *V
  Author     		  : Marat Valiev
  Date & Time		  : 4/10/99 3:41:34 PM
 ****************************************/
-void    paw_Thomas_Fermi(double Z, double *V)
+void    paw_Thomas_Fermi(float Z, float *V)
 {
     int    i;
-    double  x,t;
+    float  x,t;
 
     for (i=0; i<Ngrid; ++i)
     {
@@ -182,32 +182,32 @@ void    paw_Thomas_Fermi(double Z, double *V)
 
 static int nbasis;
 static int* i_r_potential;
-static double* rc_pot;
-static double rc_ref;
-static double lambda=6;
-static double r_function_for_rc_pot;
+static float* rc_pot;
+static float rc_ref;
+static float lambda=6;
+static float r_function_for_rc_pot;
 
-static double *c;
-static double pot_tolerance = 1.0e-10;
-static double* r_potential;
-static double r_ref;
-static double **fcut;
-static double **V_paw;
-static double *V_ref;
-static double *V_pseudo;
+static float *c;
+static float pot_tolerance = 1.0e-10;
+static float* r_potential;
+static float r_ref;
+static float **fcut;
+static float **V_paw;
+static float *V_ref;
+static float *V_pseudo;
 
 /****************************************
  Function name    : paw_function_for_rc_pot
  Description        :
- Return type              : double
- Argument         : double r
+ Return type              : float
+ Argument         : float r
  Author                   : Marat Valiev
  Date & Time              : 4/9/99 12:50:27 PM
 ****************************************/
-double paw_function_for_rc_pot( double r)
+float paw_function_for_rc_pot( float r)
 {
 
-    double tmp;
+    float tmp;
 
     tmp = exp(-pow((r_function_for_rc_pot/r), lambda)) - pot_tolerance;
 
@@ -215,12 +215,12 @@ double paw_function_for_rc_pot( double r)
 
 }
 
-double paw_find_rc_pot(double rcut_in)
+float paw_find_rc_pot(float rcut_in)
 {
 
-    double tmp;
-    double rc1;
-    double rc2;
+    float tmp;
+    float rc1;
+    float rc2;
 
     r_function_for_rc_pot = rcut_in;
 
@@ -238,25 +238,25 @@ double paw_find_rc_pot(double rcut_in)
  Description        :
  Return type              : void
  Argument         : int a_nbasis
- Argument         : double a_r_sphere
+ Argument         : float a_r_sphere
  Author                   : Marat Valiev
  Date & Time              : 4/11/99 4:11:34 PM
 ****************************************/
 void paw_init_paw_potential(int a_nbasis,
-                            double c0,
-                            double a_r_ref,
-                            double* a_r_potential,
-                            double* V_ks)
+                            float c0,
+                            float a_r_ref,
+                            float* a_r_potential,
+                            float* V_ks)
 {
 
     int   i;
     int   k;
     int    Ngrid;
     int ic;
-    double rc;
-    double a,d,b;
-    double V_prime;
-    double *rgrid;
+    float rc;
+    float a,d,b;
+    float V_prime;
+    float *rgrid;
 
     Ngrid = paw_N_LogGrid();
     rgrid = paw_r_LogGrid();
@@ -267,13 +267,13 @@ void paw_init_paw_potential(int a_nbasis,
     rc_ref = paw_find_rc_pot(r_ref);
 
     i_r_potential = (int *) malloc(nbasis * sizeof(int));
-    r_potential   = (double *) malloc(nbasis * sizeof(double));
-    rc_pot        = (double *) malloc(nbasis * sizeof(double));
-    c             = (double *) malloc(nbasis * sizeof(double));
-    fcut          = (double **) malloc(nbasis * sizeof(double *));
+    r_potential   = (float *) malloc(nbasis * sizeof(float));
+    rc_pot        = (float *) malloc(nbasis * sizeof(float));
+    c             = (float *) malloc(nbasis * sizeof(float));
+    fcut          = (float **) malloc(nbasis * sizeof(float *));
     V_pseudo      = paw_alloc_LogGrid();
     V_ref         = paw_alloc_LogGrid();
-    V_paw         = (double **) malloc(nbasis * sizeof(double *));
+    V_paw         = (float **) malloc(nbasis * sizeof(float *));
 
     for (i = 0; i <= nbasis-1; ++i)
     {
@@ -340,12 +340,12 @@ void paw_init_paw_potential(int a_nbasis,
 /****************************************
  Function name    : paw_get_paw_potential
  Description        :
- Return type              : double*
+ Return type              : float*
  Argument         : int i
  Author                   : Marat Valiev
  Date & Time              : 1/11/99 11:11:16 AM
 ****************************************/
-double* paw_get_paw_potential(int i)
+float* paw_get_paw_potential(int i)
 {
 
     return V_paw[i];
@@ -353,7 +353,7 @@ double* paw_get_paw_potential(int i)
 }
 
 
-double* paw_get_pointer_pseudopotential()
+float* paw_get_pointer_pseudopotential()
 {
 
     return V_pseudo;
@@ -366,19 +366,19 @@ double* paw_get_pointer_pseudopotential()
  Return type              : void
  Argument         : int conv_status
  Argument         : int i
- Argument         : double *w
+ Argument         : float *w
  Author                   : Marat Valiev
  Date & Time              : 1/10/99 6:27:44 PM
 ****************************************/
-void paw_update_paw_potential(int *conv_status, int i, double eig, double eig_ps,double *w)
+void paw_update_paw_potential(int *conv_status, int i, float eig, float eig_ps,float *w)
 {
 
     int     k;
     int Ngrid;
-    double  sv;
-    double  dcl;
-    double  eps;
-    double  *tmp;
+    float  sv;
+    float  dcl;
+    float  eps;
+    float  *tmp;
 
     eps = 1.0e-7;
 
@@ -414,12 +414,12 @@ void paw_update_paw_potential(int *conv_status, int i, double eig, double eig_ps
 /****************************************
  Function name    : paw_get_ref_pot
  Description        :
- Return type              : double*
+ Return type              : float*
  Author                   : Marat Valiev
  Date & Time              : 1/25/99 11:29:24 AM
  Modifications    : 1/26/99
 ****************************************/
-double* paw_get_ref_pot()
+float* paw_get_ref_pot()
 {
     return V_ref;
 }
@@ -437,20 +437,20 @@ void paw_generate_pseudopot()
 
     int   k;
     int   Ngrid;
-    double charge;
-    double ps_charge;
-    double Z;
-    double *Vh;
-    double *Vx;
-    double *Vc;
-    double *rho;
-    double *rho_ps;
-    double *rho_core;
-    double *rho_core_ps;
-    double *full_density;
-    double *full_ps_density;
-    double* V_comp;
-    double *rgrid;
+    float charge;
+    float ps_charge;
+    float Z;
+    float *Vh;
+    float *Vx;
+    float *Vc;
+    float *rho;
+    float *rho_ps;
+    float *rho_core;
+    float *rho_core_ps;
+    float *full_density;
+    float *full_ps_density;
+    float* V_comp;
+    float *rgrid;
     FILE *fp;
     char data_filename[300];
 
@@ -533,7 +533,7 @@ void paw_generate_pseudopot()
 
 }
 
-double paw_get_potential_matching_radius()
+float paw_get_potential_matching_radius()
 {
     return r_ref;
 }
@@ -590,7 +590,7 @@ void paw_print_paw_potential_to_file(char* atom_name)
     int Ngrid;
     int *prin_n;
     int * orb_l;
-    double *rgrid;
+    float *rgrid;
     char data_filename[300];
     char script_filename[300];
     char nl_name[20];

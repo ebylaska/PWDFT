@@ -19,12 +19,12 @@ using json = nlohmann::json;
 #include	"Ion.hpp"
 
 
-static void center_v_mass(int nion, double *mass, double *rion0, double *vx, double *vy, double *vz)
+static void center_v_mass(int nion, float *mass, float *rion0, float *vx, float *vy, float *vz)
 {
-   double tmass = 0.0;
-   double sx    = 0.0;
-   double sy    = 0.0;
-   double sz    = 0.0;
+   float tmass = 0.0;
+   float sx    = 0.0;
+   float sy    = 0.0;
+   float sz    = 0.0;
    for (auto ii=0; ii<nion; ++ii)
    {
       tmass += mass[ii];
@@ -154,38 +154,38 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    int matype,nelem,ii,i,j,found;
    char *symtmp,*symb;
    char date[50];
-   double time_step   = control.time_step();
-   double amu_to_mass = 1822.89;
+   float time_step   = control.time_step();
+   float amu_to_mass = 1822.89;
 
    /* get parallel mappings */
    if (!myrtdb.get("geometry:geometry:ncenter",rtdb_int,1,&nion)) nion = 1;
 
    nkatm = ion_find_nkatm(myrtdb,nion);
 
-   charge    = new double[nion];
-   mass      = new double[nion];
-   dti       = new double[nion];
-   rion0     = new double[3*nion];
-   rion1     = new double[3*nion];
-   rion2     = new double[3*nion];
+   charge    = new float[nion];
+   mass      = new float[nion];
+   dti       = new float[nion];
+   rion0     = new float[3*nion];
+   rion1     = new float[3*nion];
+   rion2     = new float[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
-   zv_psp    = new double[nkatm];
+   zv_psp    = new float[nkatm];
 
    ion_find_atomkatmnatm(myrtdb,nion,nkatm,atomarray,katm,natm);
 
    /*  read in ion positions */
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion1)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_float,3*nion,rion1)) 
    { rion1[0] = 0.0; rion1[1] = 0.0; rion1[2] = 0.0; }
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion2)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_float,3*nion,rion2)) 
    { rion2[0] = 0.0; rion2[1] = 0.0; rion2[2] = 0.0; }
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion0)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_float,3*nion,rion0)) 
    { rion0[0] = 0.0; rion0[1] = 0.0; rion0[2] = 0.0; }
 
    /*  read in masses and charges */
-   if (!myrtdb.get("geometry:geometry:masses",rtdb_double,nion,mass)) mass[0] = 1.0;
-   if (!myrtdb.get("geometry:geometry:charges",rtdb_double,nion,charge)) charge[0] = 1.0;
+   if (!myrtdb.get("geometry:geometry:masses",rtdb_float,nion,mass)) mass[0] = 1.0;
+   if (!myrtdb.get("geometry:geometry:charges",rtdb_float,nion,charge)) charge[0] = 1.0;
 
    for (ii=0; ii<nion; ++ii)
    {
@@ -197,8 +197,8 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
 
 Ion::Ion(string rtdbstring, Control2& control) 
 {
-   double amu_to_mass = 1822.89;
-   double time_step = control.time_step();
+   float amu_to_mass = 1822.89;
+   float time_step = control.time_step();
 
    auto rtdbjson =  json::parse(rtdbstring);
 
@@ -220,16 +220,16 @@ Ion::Ion(string rtdbstring, Control2& control)
    }
    nkatm = tmpsymbols.size();
 
-   charge    = new double[nion];
-   mass      = new double[nion];
-   dti       = new double[nion];
-   rion0     = new double[3*nion];
-   rion1     = new double[3*nion];
-   rion2     = new double[3*nion];
+   charge    = new float[nion];
+   mass      = new float[nion];
+   dti       = new float[nion];
+   rion0     = new float[3*nion];
+   rion1     = new float[3*nion];
+   rion2     = new float[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
-   zv_psp    = new double[nkatm];
+   zv_psp    = new float[nkatm];
 
    for (auto ia=0; ia<nkatm; ++ia)
    {
@@ -238,20 +238,20 @@ Ion::Ion(string rtdbstring, Control2& control)
    }
    for (auto i=0; i<nion; ++i)
    {
-      charge[i] = (double) geomjson["charges"][i];
-      mass[i]   = ((double) geomjson["masses"][i])*amu_to_mass;
+      charge[i] = (float) geomjson["charges"][i];
+      mass[i]   = ((float) geomjson["masses"][i])*amu_to_mass;
       dti[i]    = (time_step*time_step)/mass[i];
 
-      rion0[3*i]  =(geomjson["velocities"][3*i].is_number_float())   ? (double) geomjson["velocities"][3*i]   : 0.0;
-      rion0[3*i+1]=(geomjson["velocities"][3*i+1].is_number_float()) ? (double) geomjson["velocities"][3*i+1] : 0.0;
-      rion0[3*i+2]=(geomjson["velocities"][3*i+2].is_number_float()) ? (double) geomjson["velocities"][3*i+2] : 0.0;
+      rion0[3*i]  =(geomjson["velocities"][3*i].is_number_float())   ? (float) geomjson["velocities"][3*i]   : 0.0;
+      rion0[3*i+1]=(geomjson["velocities"][3*i+1].is_number_float()) ? (float) geomjson["velocities"][3*i+1] : 0.0;
+      rion0[3*i+2]=(geomjson["velocities"][3*i+2].is_number_float()) ? (float) geomjson["velocities"][3*i+2] : 0.0;
 
-      rion1[3*i]   = (double) geomjson["coords"][3*i];
-      rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
-      rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
-      rion2[3*i]   = (double) geomjson["coords"][3*i];
-      rion2[3*i+1] = (double) geomjson["coords"][3*i+1];
-      rion2[3*i+2] = (double) geomjson["coords"][3*i+2];
+      rion1[3*i]   = (float) geomjson["coords"][3*i];
+      rion1[3*i+1] = (float) geomjson["coords"][3*i+1];
+      rion1[3*i+2] = (float) geomjson["coords"][3*i+2];
+      rion2[3*i]   = (float) geomjson["coords"][3*i];
+      rion2[3*i+1] = (float) geomjson["coords"][3*i+1];
+      rion2[3*i+2] = (float) geomjson["coords"][3*i+2];
 
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
       if (match != end(tmpsymbols)) 
@@ -263,11 +263,11 @@ Ion::Ion(string rtdbstring, Control2& control)
    }
 
    // generate random initial velocities
-   double vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
-   double twopi = 16.0*atan(1.0);
+   float vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
+   float twopi = 16.0*atan(1.0);
    int seed = -1;
-   double Tf =  -1.0;
-   double kb = 3.16679e-6;
+   float Tf =  -1.0;
+   float kb = 3.16679e-6;
 
    if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0].is_number_float())
       Tf =  rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0];
@@ -284,12 +284,12 @@ Ion::Ion(string rtdbstring, Control2& control)
       std::srand(seed);
       for (auto i=0; i<nion; ++i)
       {
-         rr0 = ((double) std::rand())/((double) RAND_MAX);
-         rr1 = ((double) std::rand())/((double) RAND_MAX);
-         rr2 = ((double) std::rand())/((double) RAND_MAX);
-         rr3 = ((double) std::rand())/((double) RAND_MAX);
-         rr4 = ((double) std::rand())/((double) RAND_MAX);
-         rr5 = ((double) std::rand())/((double) RAND_MAX);
+         rr0 = ((float) std::rand())/((float) RAND_MAX);
+         rr1 = ((float) std::rand())/((float) RAND_MAX);
+         rr2 = ((float) std::rand())/((float) RAND_MAX);
+         rr3 = ((float) std::rand())/((float) RAND_MAX);
+         rr4 = ((float) std::rand())/((float) RAND_MAX);
+         rr5 = ((float) std::rand())/((float) RAND_MAX);
          std::cout << "RANDS=" << rr0 << " " << rr1;
          std::cout <<      " " << rr2 << " " << rr3;
          std::cout <<      " " << rr4 << " " << rr5 << std::endl;
@@ -351,7 +351,7 @@ void Ion::writejsonstr(string& rtdbstring)
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
-   vector<double> coords;
+   vector<float> coords;
    for (auto i=0; i<(3*nion); ++i)
       coords.push_back(rion1[i]);
 

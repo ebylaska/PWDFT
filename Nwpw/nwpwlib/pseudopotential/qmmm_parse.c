@@ -16,7 +16,7 @@ void qmmm_parse(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int	*debug_ptr;
 int	*lmax_ptr;
 int	*locp_ptr;
-double 	*rlocal_ptr;
+float 	*rlocal_ptr;
 char	sdir_name[];
 int	*n9;
 char	dir_name[];
@@ -31,22 +31,22 @@ int	*n3;
 
     int      debug;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
     int      lmax;
 
 
-    double   Zion;      /* local psp parameters          */
+    float   Zion;      /* local psp parameters          */
 
     int      i,k,p,p1;
     int      nrl;
-    double       *rl,
+    float       *rl,
     **psil,
     **pspl;
-    double   drl,rmax;
+    float   drl,rmax;
 
     int      lmaxp,n_sigma;
-    double   rc,rc1,rc2,rr1,rr2,ttt,sss,s_sigma;
+    float   rc,rc1,rc2,rr1,rr2,ttt,sss,s_sigma;
 
 
     char   *w,*tc;
@@ -122,7 +122,7 @@ int	*n3;
     /* define linear grid */
     nrl  = 2001;
     rmax = 40.0;
-    drl  = rmax/((double)(nrl-1));
+    drl  = rmax/((float)(nrl-1));
 
     fp = fopen(infile,"r+");
     w = get_word(fp);
@@ -130,8 +130,8 @@ int	*n3;
         w = get_word(fp);
     if (w!=((char *) EOF))
     {
-        fscanf(fp,"%d %lf",&nrl,&drl);
-        rmax = ((double) (nrl-1))*drl;
+        fscanf(fp,"%d %f",&nrl,&drl);
+        rmax = ((float) (nrl-1))*drl;
     }
     fclose(fp);
 
@@ -165,14 +165,14 @@ int	*n3;
 
 
     /* generate linear meshes */
-    rl       = (double *) malloc(nrl*sizeof(double));
-    psil     = (double **) malloc(lmaxp*sizeof(double*));
-    pspl     = (double **) malloc(lmaxp*sizeof(double*));
+    rl       = (float *) malloc(nrl*sizeof(float));
+    psil     = (float **) malloc(lmaxp*sizeof(float*));
+    pspl     = (float **) malloc(lmaxp*sizeof(float*));
 
     rl[0] = 0.00004167;
     for (i=1; i<nrl; ++i)
     {
-        rl[i] = drl*((double) i);
+        rl[i] = drl*((float) i);
     }
 
     /* generate potential */
@@ -180,8 +180,8 @@ int	*n3;
     for (i=0; i<n_sigma; ++i) rc1 *= rc;
     rc2 = rc1*rc;
 
-    pspl[0] = (double *) malloc(nrl*sizeof(double));
-    psil[0] = (double *) malloc(nrl*sizeof(double));
+    pspl[0] = (float *) malloc(nrl*sizeof(float));
+    psil[0] = (float *) malloc(nrl*sizeof(float));
     if (Zion>0.0)
     {
         for (i=0; i<nrl; ++i)
@@ -204,7 +204,7 @@ int	*n3;
             sss = (rc2 - rr2);
             /* l'Hopital */
             if (fabs(sss)<1.0e-9)
-                pspl[0][i] = (-Zion/rc) * ((double) n_sigma)/((double) (n_sigma+1));
+                pspl[0][i] = (-Zion/rc) * ((float) n_sigma)/((float) (n_sigma+1));
             else
                 pspl[0][i] = -Zion*(ttt/sss);
             psil[0][i] = 0.0;
@@ -216,9 +216,9 @@ int	*n3;
     /* write outfile */
     fp = fopen(outfile,"w+");
     fprintf(fp,"%s\n",atom_out);
-    fprintf(fp,"%lf %lf %d   %d %d %lf\n",Zion,0.0,lmax,lmax_out,locp_out,rlocal_out);
-    fprintf(fp,"%lf\n", rc);
-    fprintf(fp,"%d %lf\n",nrl,drl);
+    fprintf(fp,"%f %f %d   %d %d %f\n",Zion,0.0,lmax,lmax_out,locp_out,rlocal_out);
+    fprintf(fp,"%f\n", rc);
+    fprintf(fp,"%d %f\n",nrl,drl);
     fprintf(fp,"%s\n",comment);
 
     /* appending pseudopotentials */
@@ -250,10 +250,10 @@ int	*n3;
     {
         printf("QMMM pseudopotential Parameters\n\n");
         printf("atom : %s\n",atom);
-        printf("Zion : %lf\n",Zion);
+        printf("Zion : %f\n",Zion);
         printf(" lmax: %d\n",lmax);
         printf(" locp: %d\n",locp_out);
-        printf(" rlocal: %lf\n\n",rlocal_out);
+        printf(" rlocal: %f\n\n",rlocal_out);
 
     }
 

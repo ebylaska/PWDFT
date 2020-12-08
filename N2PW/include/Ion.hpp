@@ -13,9 +13,9 @@ class	Ion {
 public:
    int nion,nkatm;
    int *katm,*natm;
-   double *charge;
-   double *mass;
-   double *rion1,*rion2;
+   float *charge;
+   float *mass;
+   float *rion1,*rion2;
 
    /* Constructors */
    Ion(RTDB&);

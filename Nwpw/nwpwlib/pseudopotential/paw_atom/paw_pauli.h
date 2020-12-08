@@ -8,21 +8,21 @@
 
 extern int   paw_R_Pauli(int n,
                                    int l,
-                                   double  Z,
-                                   double* v,
-                                   double *Eig,
-                                   double* u,
-                                   double* uprime);
+                                   float  Z,
+                                   float* v,
+                                   float *Eig,
+                                   float* u,
+                                   float* uprime);
 
 extern  int paw_R_Pauli_Fixed_E(
         int n,
         int l,
-        double Z,
-        double *v,
+        float Z,
+        float *v,
         int match,
-        double E,
-        double *u,
-        double *uprime
+        float E,
+        float *u,
+        float *uprime
     );
 
 

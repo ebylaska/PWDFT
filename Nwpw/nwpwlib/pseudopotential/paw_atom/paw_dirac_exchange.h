@@ -6,10 +6,10 @@
 
 
 extern void paw_init_dirac_exchange();
-extern double paw_get_exchange_energy(double **rho);
-extern void paw_generate_exchange_pot_LDA(double *rho);
-extern double paw_get_exchange_energy_LDA(double *rho);
-extern double* paw_get_exchange_potential();
+extern float paw_get_exchange_energy(float **rho);
+extern void paw_generate_exchange_pot_LDA(float *rho);
+extern float paw_get_exchange_energy_LDA(float *rho);
+extern float* paw_get_exchange_potential();
 
 #endif
 

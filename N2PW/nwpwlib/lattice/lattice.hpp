@@ -6,12 +6,12 @@
 */
 
 extern void   lattice_init();
-extern double lattice_unita(const int, const int);
-extern double lattice_unitg(const int, const int);
-extern double lattice_ecut();
-extern double lattice_wcut();
-extern double lattice_omega();
-extern double lattice_eggcut();
-extern double lattice_wggcut();
+extern float lattice_unita(const int, const int);
+extern float lattice_unitg(const int, const int);
+extern float lattice_ecut();
+extern float lattice_wcut();
+extern float lattice_omega();
+extern float lattice_eggcut();
+extern float lattice_wggcut();
 
 #endif

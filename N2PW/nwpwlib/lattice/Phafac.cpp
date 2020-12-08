@@ -30,10 +30,10 @@ Strfac:Strfac(Parallel *inparall, Ion *inion)
    int i,j,k,l,k1,k2,k3;
    int enxh,enyh,enzh,enpack0;
    int tnp,tid,dutask;
-   double g1,g2,g3,gg1,gg2,gg3,gg,ggcut;
-   double pi,pi4,rs,w,term;
-   double q,z,zz;
-   double eps=1.0e-12;
+   float g1,g2,g3,gg1,gg2,gg3,gg,ggcut;
+   float pi,pi4,rs,w,term;
+   float q,z,zz;
+   float eps=1.0e-12;
 
    ewaldparall = inparall;
    ewaldion    = inion;
@@ -181,15 +181,15 @@ Strfac:Strfac(Parallel *inparall, Ion *inion)
 
 
    /* allocate memory */
-   eG  = new double [3*enpack];
-   vg  = new double [enpack];
-   ss  = new double [2*enpack];
-   vcx  = new double [enpack];
-   rcell = new double [3*enshl3d];
-   ewx1 = new double [2*(ewaldion->nion)*enx];
-   ewy1 = new double [2*(ewaldion->nion)*eny];
-   ewz1 = new double [2*(ewaldion->nion)*enz];
-   zv   = new double [ewaldion->nkatm];
+   eG  = new float [3*enpack];
+   vg  = new float [enpack];
+   ss  = new float [2*enpack];
+   vcx  = new float [enpack];
+   rcell = new float [3*enshl3d];
+   ewx1 = new float [2*(ewaldion->nion)*enx];
+   ewy1 = new float [2*(ewaldion->nion)*eny];
+   ewz1 = new float [2*(ewaldion->nion)*enz];
+   zv   = new float [ewaldion->nkatm];
    i_indx = new int[enpack];
    j_indx = new int[enpack];
    k_indx = new int[enpack];
@@ -372,9 +372,9 @@ Strfac:Strfac(Parallel *inparall, Ion *inion)
 void Ewald::phafac()
 {
    int i,k,enxh,enyh,enzh;
-   double a,b,sw1,sw2,sw3,pi;
-   double cw1x,cw2x,cw3x;
-   double cw1y,cw2y,cw3y;
+   float a,b,sw1,sw2,sw3,pi;
+   float cw1x,cw2x,cw3x;
+   float cw1y,cw2y,cw3y;
 
    pi  = 4.00*atan(1.0);
    enxh = enx/2;
@@ -440,15 +440,15 @@ void strfac_add_sub(const int npack,
                     const int indxi[],
                     const int indxj[],
                     const int indxk[],
-                    const double exi[],
-                    const double exj[],
-                    const double exk[],
-                    const double alpha,
-                    double strx[])
+                    const float exi[],
+                    const float exj[],
+                    const float exk[],
+                    const float alpha,
+                    float strx[])
 {
    int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
+   float ai,aj,ak,c,d;
+   float bi,bj,bk;
    for (i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
@@ -466,11 +466,11 @@ void strfac_add_sub(const int npack,
  *          Ewald::energy        *
  *                               *
  *********************************/
-double Ewald::energy()
+float Ewald::energy()
 {
    int i,j,k,l,nion,tnp,tid,dutask;
-   double x,y,z,dx,dy,dz,zz,r,w;
-   double etmp1,etmp2,eall;
+   float x,y,z,dx,dy,dz,zz,r,w;
+   float etmp1,etmp2,eall;
 
    tnp = ewaldparall->np();
    tid = ewaldparall->taskid();

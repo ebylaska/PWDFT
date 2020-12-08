@@ -9,25 +9,25 @@ class	Psp1d_Hamann {
 public:
    int version,nrho,nmax,lmax0,lmax,locp,psp_type;
    int nprj,n_extra,n_expansion[10];
-   double drho,rlocal,amass,zv;
+   float drho,rlocal,amass,zv;
 
-   double rc[10];
+   float rc[10];
    char atom[2];
    char comment[80];
 
-   double *rho;
-   double *vp;
-   double *wp;
-   double *vnlnrm;
+   float *rho;
+   float *vp;
+   float *wp;
+   float *vnlnrm;
    int    *n_prj, *l_prj, *m_prj, *b_prj;
 
-   double *up;
-   double *r3_matrix;
+   float *up;
+   float *r3_matrix;
 
    bool   semicore;
    int    isemicore;
-   double rcore;
-   double *rho_sc_r;
+   float rcore;
+   float *rho_sc_r;
 
 
    /* Constructors */
@@ -56,9 +56,9 @@ public:
     }
 
    /* G integration routines */
-   void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
+   void vpp_generate_ray(Parallel *, int, float *, float *, float *, float *);
 
-   void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
+   void vpp_generate_spline(PGrid *, int, float *, float *, float *, float *, float *, float *, float *);
 };
 
 #endif

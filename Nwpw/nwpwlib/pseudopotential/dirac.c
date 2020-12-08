@@ -29,12 +29,12 @@
  **********************************/
 
 void
-R_Dirac (int n, int l, int s2, double Z, const double *v, int *mch,
-         double *Eig, double *u, double *uprime)
+R_Dirac (int n, int l, int s2, float Z, const float *v, int *mch,
+         float *Eig, float *u, float *uprime)
 {
     int i, j, iteration, node, match, Ninf, Ngrid;
 
-    double E, de, kappa,
+    float E, de, kappa,
     Emax,
     Emin,
     log_amesh,
@@ -47,7 +47,7 @@ R_Dirac (int n, int l, int s2, double Z, const double *v, int *mch,
 
     /* define eigenvalues */
     E = *Eig;
-    L2 = ((double) (l * (l + 1)));
+    L2 = ((float) (l * (l + 1)));
     fss = 1.0 / 137.03602;
     fss = fss * fss;
     kappa = -1;
@@ -310,16 +310,16 @@ R_Dirac (int n, int l, int s2, double Z, const double *v, int *mch,
  **********************************/
 
 void
-R_Dirac_Fixed_E (int n, int l, int s2, double Z, const double *v, int match,
-                 double E, double *u, double *uprime)
+R_Dirac_Fixed_E (int n, int l, int s2, float Z, const float *v, int match,
+                 float E, float *u, float *uprime)
 {
     int i, j, node, Ngrid;
 
-    double log_amesh,kappa,m1scale,
+    float log_amesh,kappa,m1scale,
     log_amesh2, fss, gamma, L2, L0, r2, sum, *r, *f_upp, *dv, *frp, *fr, *upp;
 
     /* define eigenvalues */
-    L2 = ((double) (l * (l + 1)));
+    L2 = ((float) (l * (l + 1)));
 
     fss = 1.0 / 137.03602;
     fss = fss * fss;
@@ -442,13 +442,13 @@ R_Dirac_Fixed_E (int n, int l, int s2, double Z, const double *v, int match,
 }
 
 void
-R_Dirac_FixedLogDeriv (int n, int l, int s2, double Z, const double *v, int match,
-         double u_logderiv,
-         double *Eig, double *u, double *uprime)
+R_Dirac_FixedLogDeriv (int n, int l, int s2, float Z, const float *v, int match,
+         float u_logderiv,
+         float *Eig, float *u, float *uprime)
 {
     int i, j, iteration, node, Ninf, Ngrid;
 
-    double E, de, kappa,
+    float E, de, kappa,
     Emax,
     Emin,
     log_amesh,
@@ -461,7 +461,7 @@ R_Dirac_FixedLogDeriv (int n, int l, int s2, double Z, const double *v, int matc
 
     /* define eigenvalues */
     E = *Eig;
-    L2 = ((double) (l * (l + 1)));
+    L2 = ((float) (l * (l + 1)));
     fss = 1.0 / 137.03602;
     fss = fss * fss;
     kappa = -1;

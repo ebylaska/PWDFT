@@ -19,12 +19,12 @@ class	Pseudopotential {
 
    int nprj_max;
 
-   double **Gijl;
-   double **ncore_atom;
-   double **vl;
-   double **vnl;
-   double *rlocal;
-   double *amass;
+   float **Gijl;
+   float **ncore_atom;
+   float **vl;
+   float **vnl;
+   float *rlocal;
+   float *amass;
 
    //char **atomsym;
    Pneb   *mypneb;
@@ -37,16 +37,16 @@ public:
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
 #ifdef NWPW_SYCL
     // int* myIon_katm = nullptr;
-   double** vnl_dev = nullptr;
+   float** vnl_dev = nullptr;
    int *sd_function_host=nullptr, *sd_function_dev=nullptr;
-   // double **Gijl_dev;
+   // float **Gijl_dev;
    // int *nmax_dev, *lmax_dev;
    // int **n_projector_dev, **l_projector_dev, **m_projector_dev;
 #endif
    int **n_projector,**l_projector,**m_projector,**b_projector;
-   double **rc;
-   double *zv,*rcore,*ncore_sum;
-   double *semicore_density;
+   float **rc;
+   float *zv,*rcore,*ncore_sum;
+   float *semicore_density;
    char **comment;
 
    /* Constructors */
@@ -103,17 +103,17 @@ public:
     }
 
     bool has_semicore() { return semicore[npsp]; }
-    double ncore(const int ia) {return ncore_sum[ia];}
+    float ncore(const int ia) {return ncore_sum[ia];}
     void semicore_density_update();
 
-    void v_nonlocal(double *, double *);
-    void v_nonlocal_fion(double *, double *, const bool, double *);
-    void v_local(double *, const bool, double *, double *);
+    void v_nonlocal(float *, float *);
+    void v_nonlocal_fion(float *, float *, const bool, float *);
+    void v_local(float *, const bool, float *, float *);
 
 #ifdef NWPW_SYCL
-    void v_nonlocal_sycl(double *, double *);
+    void v_nonlocal_sycl(float *, float *);
     void set_sd_function(int* sd_func);
-    void v_nonlocal_fion_sycl(double *, double *, const bool, double *);
+    void v_nonlocal_fion_sycl(float *, float *, const bool, float *);
 #endif
 
 };

@@ -5,6 +5,6 @@
 #include	"compressed_io.hpp"
 #include	"control.hpp"
 
-extern void psi_get_header(Parallel *, int *, int *, double *, int *, int *);
+extern void psi_get_header(Parallel *, int *, int *, float *, int *, int *);
 
 #endif

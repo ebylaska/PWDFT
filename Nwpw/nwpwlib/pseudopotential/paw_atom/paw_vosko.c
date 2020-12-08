@@ -58,11 +58,11 @@
 
 #define	small_number	1.0e-80
 
-static double onesixth,onethird;
-static double rs_scale;
+static float onesixth,onethird;
+static float rs_scale;
 
-static double *Vc;
-static double *ec_functional;
+static float *Vc;
+static float *ec_functional;
 
 /****************************************
  Function name	  : paw_init_vosko()
@@ -84,7 +84,7 @@ void paw_init_vosko()
 /****************************************
  Function name	  : get_corr_pot_LDA()
 ****************************************/
-double* paw_get_corr_pot_LDA()
+float* paw_get_corr_pot_LDA()
 {
     return Vc;
 }
@@ -94,20 +94,20 @@ double* paw_get_corr_pot_LDA()
                     polarized Vosko et. al. correlation potential.
                     This is a Ceperly and Alder parameterization
  Return type		  : void
- Argument         : double **rho
- Argument         : double **Vc
- Argument         : double *Ec
+ Argument         : float **rho
+ Argument         : float **Vc
+ Argument         : float *Ec
  Author     		  : Eric Bylaska & Marat Valiev
  Date & Time		  : 1/8/99 1:19:44 PM
 ****************************************/
 #define small_number    1.0e-80
-void paw_generate_corr_pot_LDA(double *rho)
+void paw_generate_corr_pot_LDA(float *rho)
 {
     int	i;
-    double rs,n;
-    double x,xxp,dxxp;
-    double ec_p;
-    double uc_p;
+    float rs,n;
+    float x,xxp,dxxp;
+    float ec_p;
+    float uc_p;
 
     /* loggrid variables */
     int	   Ngrid;
@@ -143,16 +143,16 @@ void paw_generate_corr_pot_LDA(double *rho)
 } /* R_Vosko */
 
 /****************************************
- Function name	  : paw_get_correlation_energy_LDA(double *rho)
+ Function name	  : paw_get_correlation_energy_LDA(float *rho)
 ****************************************/
-double paw_get_correlation_energy_LDA(double *rho)
+float paw_get_correlation_energy_LDA(float *rho)
 {
     int	i;
-    double rs,n;
-    double x,xxp;
-    double ec_p;
-    double Ec;
-    double *tmp;
+    float rs,n;
+    float x,xxp;
+    float ec_p;
+    float Ec;
+    float *tmp;
 
     /* loggrid variables */
     int	   Ngrid;

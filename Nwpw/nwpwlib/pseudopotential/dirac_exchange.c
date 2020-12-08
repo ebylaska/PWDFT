@@ -13,7 +13,7 @@
 #include        "loggrid.h"
 #include	"dirac_exchange.h"
 
-static	double	alpha=0.6666666666666666667;
+static	float	alpha=0.6666666666666666667;
 
 /********************************
  *			 	*
@@ -22,7 +22,7 @@ static	double	alpha=0.6666666666666666667;
  ********************************/
 
 void set_Dirac_alpha(aa)
-double aa;
+float aa;
 {
     alpha = aa;
 }
@@ -33,7 +33,7 @@ double aa;
  *				*
  ********************************/
 
-double Dirac_alpha()
+float Dirac_alpha()
 {
 
     return alpha;
@@ -58,25 +58,25 @@ double Dirac_alpha()
 
 void  R_Dirac_Exchange(rho,Vx,Ex,Px)
 
-double	rho[],
+float	rho[],
 Vx[],
 *Ex,
 *Px;
 {
     int	i;
-    double onethird;
-    double pi;
-    double n;
-    double n_onethird;
-    double ex_p;
-    double ux_p;
+    float onethird;
+    float pi;
+    float n;
+    float n_onethird;
+    float ex_p;
+    float ux_p;
 
     /* loggrid variables */
     int	   Ngrid;
 
     /* tempory local grids */
-    double *ex_functional;
-    double *tmp;
+    float *ex_functional;
+    float *tmp;
 
     /* define constants */
     onethird  = 1.0/3.0;

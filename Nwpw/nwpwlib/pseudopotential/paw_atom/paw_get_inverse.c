@@ -26,7 +26,7 @@
 
 
 
-void    paw_get_inverse(double **a, int matrix_size)
+void    paw_get_inverse(float **a, int matrix_size)
 
 
 
@@ -40,11 +40,11 @@ void    paw_get_inverse(double **a, int matrix_size)
 
     int     irow;
 
-    double  big;
+    float  big;
 
-    double  temp;
+    float  temp;
 
-    double  pivinv;
+    float  pivinv;
 
     int    *index;
 
@@ -193,9 +193,9 @@ void paw_test_matrix_inverse()
     int i,j,k;
     int n;
 
-    double** a;
-    double** b;
-    double** c;
+    float** a;
+    float** b;
+    float** c;
 
     n = 2;
 

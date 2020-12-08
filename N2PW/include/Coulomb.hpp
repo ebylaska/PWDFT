@@ -8,7 +8,7 @@ using namespace std;
 
 class	Coulomb_Operator {
 
-   double *vg;
+   float *vg;
    Pneb   *mypneb;
 
 public:
@@ -21,8 +21,8 @@ public:
          delete [] vg;
     }
 
-    void   vcoulomb(double *, double *);
-    double ecoulomb(double *);
+    void   vcoulomb(float *, float *);
+    float ecoulomb(float *);
 };
 
 #endif

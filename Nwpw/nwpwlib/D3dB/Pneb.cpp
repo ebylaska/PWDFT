@@ -38,10 +38,10 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
 #ifdef NWPW_SYCL
     // shared_mem copies
     index = cl::sycl::malloc_shared<std::int64_t>(1, *get_syclQue());
-    adiff = cl::sycl::malloc_shared<double>(1, *get_syclQue());
+    adiff = cl::sycl::malloc_shared<float>(1, *get_syclQue());
 
     // device copies
-    s22_dev = cl::sycl::malloc_device<double>(7*ne[0]*ne[0], *get_syclQue());
+    s22_dev = cl::sycl::malloc_device<float>(7*ne[0]*ne[0], *get_syclQue());
     s21_dev = &s22_dev[1*ne[0]*ne[0]];
     s12_dev = &s22_dev[2*ne[0]*ne[0]];
     s11_dev = &s22_dev[3*ne[0]*ne[0]];
@@ -50,7 +50,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     st1_dev = &s22_dev[6*ne[0]*ne[0]];
 
     // host copies (also required for MPI syncing)
-    s22 = new double[7*ne[0]*ne[0]];
+    s22 = new float[7*ne[0]*ne[0]];
     s21 = &s22[1*ne[0]*ne[0]];
     s12 = &s22[2*ne[0]*ne[0]];
     s11 = &s22[3*ne[0]*ne[0]];
@@ -59,7 +59,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     st1 = &s22[6*ne[0]*ne[0]];
 
 #else
-    s22 = new double[7*ne[0]*ne[0]];
+    s22 = new float[7*ne[0]*ne[0]];
     s21 = &s22[1*ne[0]*ne[0]];
     s12 = &s22[2*ne[0]*ne[0]];
     s11 = &s22[3*ne[0]*ne[0]];
@@ -92,12 +92,12 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
  *      Pneb::g_generate_random      *
  *                                   *
  *************************************/
-void Pneb::g_generate_random(double *psi)
+void Pneb::g_generate_random(float *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
    int filling[4],nfft[3];
-   double zvalue[2];
-   double *tmp2 = new double[n2ft3d];
+   float zvalue[2];
+   float *tmp2 = new float[n2ft3d];
 
    nfft[0] = nx;
    nfft[1] = ny;
@@ -131,10 +131,10 @@ void Pneb::g_generate_random(double *psi)
  *           Pneb::g_read            *
  *                                   *
  *************************************/
-void Pneb::g_read(const int iunit, double *psi)
+void Pneb::g_read(const int iunit, float *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
-   double *tmp2 = new double[n2ft3d];
+   float *tmp2 = new float[n2ft3d];
 
    taskid_j = d1db::parall->taskid_j();
 
@@ -155,10 +155,10 @@ void Pneb::g_read(const int iunit, double *psi)
    delete [] tmp2;
 }
 
-void Pneb::g_write(const int iunit, double *psi)
+void Pneb::g_write(const int iunit, float *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
-   double *tmp2 = new double[n2ft3d];
+   float *tmp2 = new float[n2ft3d];
 
    taskid_j = d1db::parall->taskid_j();
    for (ms=0; ms<ispin; ++ms)
@@ -180,10 +180,10 @@ void Pneb::g_write(const int iunit, double *psi)
 
 
 
-double Pneb::gg_traceall(double *psi1, double *psi2)
+float Pneb::gg_traceall(float *psi1, float *psi2)
 {
    int n,indx;
-   double sum=0.0;
+   float sum=0.0;
 
    indx = 0;
    for (n=0; n<(neq[0]+neq[1]); ++n)
@@ -197,20 +197,20 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    return sum;
 }
 
-void Pneb::gg_copy(double *psi1, double *psi2)
+void Pneb::gg_copy(float *psi1, float *psi2)
 {
    int one=1;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
    DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
-void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
+void Pneb::gg_SMul(float alpha,float *psi1, float *psi2)
 {
    int i;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
    for (i=0; i<nsize; ++i)
       psi2[i] = alpha*psi1[i];
 }
-void Pneb::gg_Sum2(double *psi1, double *psi2)
+void Pneb::gg_Sum2(float *psi1, float *psi2)
 {
    int i;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
@@ -218,7 +218,7 @@ void Pneb::gg_Sum2(double *psi1, double *psi2)
       psi2[i] += psi1[i];
 }
 
-void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
+void Pneb::ggg_Minus(float *psi1, float *psi2, float *psi3)
 {
    int i;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
@@ -227,17 +227,17 @@ void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
 }
 
 
-void Pneb::g_zero(double *psi2)
+void Pneb::g_zero(float *psi2)
 {
    int one=1;
    int zero=0;
    int nsize = 2*(neq[0]+neq[1])*npack(1);
-   double rzero=0.0;
+   float rzero=0.0;
 
    //dcopy_(&nsize,&rzero,&zero,psi2,&one);
-   std::memset(psi2, 0, nsize*sizeof(double));
+   std::memset(psi2, 0, nsize*sizeof(float));
 }
-void Pneb::gh_fftb(double *psi, double *psi_r)
+void Pneb::gh_fftb(float *psi, float *psi_r)
 {
    int n,done;
    int indx1,indx1n,shift1;
@@ -268,16 +268,16 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
 
 }
 
-void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
+void Pneb::hr_aSumSqr(const float alpha, float *psir, float *dn)
 {
    int n,ms,k,indx0,indx1;
    int one=1;
    int zero=0;
    int nsize = n2ft3d*ispin;
-   double rzero = 0.0;
+   float rzero = 0.0;
 
    //dcopy_(&nsize,&rzero,&zero,dn,&one);
-   std::memset(dn, 0, nsize * sizeof(double));
+   std::memset(dn, 0, nsize * sizeof(float));
 
    indx0 = 0;
    indx1 = 0;
@@ -296,22 +296,22 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 
 
-void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
+void Pneb::ggm_sym_Multiply(float *psi1, float *psi2, float *hml)
 {
 // #ifdef NWPW_SYCL
 //     size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
 //     size_t hml_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
 
-//     double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
-//     double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
-//     double* hml_dev  = get_sycl_mem(hml_size * sizeof(double));
-//     get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
-//     get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
-//     get_syclQue()->memcpy(hml_dev, hml, hml_size*sizeof(double));
+//     float* psi1_dev = get_sycl_mem(psi_size * sizeof(float));
+//     float* psi2_dev = get_sycl_mem(psi_size * sizeof(float));
+//     float* hml_dev  = get_sycl_mem(hml_size * sizeof(float));
+//     get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(float));
+//     get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(float));
+//     get_syclQue()->memcpy(hml_dev, hml, hml_size*sizeof(float));
 
 //     ggm_sym_Multiply_sym(psi1_dev, psi2_dev, hml_dev);
 
-//     get_syclQue()->memcpy(hml, hml_dev, hml_size*sizeof(double));
+//     get_syclQue()->memcpy(hml, hml_dev, hml_size*sizeof(float));
 //     get_syclQue()->wait();
 
 //     free_sycl_mem(hml_dev);
@@ -328,10 +328,10 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
 
-   double rzero = 0.0;
-   double rtwo  = 2.0;
-   double rone =  1.0;
-   double rmone = -1.0;
+   float rzero = 0.0;
+   float rtwo  = 2.0;
+   float rone =  1.0;
+   float rmone = -1.0;
 
    if (parallelized)
    {
@@ -377,7 +377,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
    }
 }
 
-void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
+void Pneb::ffm_sym_Multiply(const int mb, float *psi1, float *psi2, float *hml)
 {
    nwpw_timing_function ftimer(15);
    int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
@@ -386,10 +386,10 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
 
-   double rzero = 0.0;
-   double rtwo  = 2.0;
-   double rone =  1.0;
-   double rmone = -1.0;
+   float rzero = 0.0;
+   float rtwo  = 2.0;
+   float rone =  1.0;
+   float rmone = -1.0;
 
    if (parallelized)
    {
@@ -446,8 +446,8 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    }
 }
 
-void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
-			     double* s11, double* s21, double* s22)
+void Pneb::ffm3_sym_Multiply(const int mb, float *psi1, float *psi2,
+			     float* s11, float* s21, float* s22)
 {
    nwpw_timing_function ftimer(15);
    int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
@@ -455,10 +455,10 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    int ng  = 2*npack(1);
    int ng0 = 2*nzero(1);
 
-   double rzero = 0.0;
-   double rtwo  = 2.0;
-   double rone =  1.0;
-   double rmone = -1.0;
+   float rzero = 0.0;
+   float rtwo  = 2.0;
+   float rone =  1.0;
+   float rmone = -1.0;
 
    if (parallelized)
    {
@@ -533,7 +533,7 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    }
 }
 
-void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
+void Pneb::fmf_Multiply(const int mb, float *psi1, float *hml, float alpha, float *psi2, float beta)
 {
    nwpw_timing_function ftimer(16);
    int ms,ms1,ms2,n,shift1,mshift1,ishift2;
@@ -578,7 +578,7 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
 
 
 
-void Pneb::m_scal(double alpha, double *hml)
+void Pneb::m_scal(float alpha, float *hml)
 {
   int one = 1;
   int nsize = ne[0]*ne[0] + ne[1]*ne[1];
@@ -586,11 +586,11 @@ void Pneb::m_scal(double alpha, double *hml)
   DSCAL_PWDFT(nsize,alpha,hml,one);
 }
 
-double Pneb::m_trace(double *hml)
+float Pneb::m_trace(float *hml)
 {
    int ms,i;
    int mshift = 0;
-   double sum = 0.0;
+   float sum = 0.0;
    for (ms=0; ms<ispin; ++ms)
    {
       for (i=0; i<ne[ms]; ++i)
@@ -600,7 +600,7 @@ double Pneb::m_trace(double *hml)
    return sum;
 }
 
-void Pneb::m_diagonalize(double *hml, double *eig)
+void Pneb::m_diagonalize(float *hml, float *eig)
 {
     nwpw_timing_start(17);
     int shift1,shift2;
@@ -616,7 +616,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     else
     {
         int nn  = ne[0]*ne[0]+4;
-        double *xmp1 = new double[nn];
+        float *xmp1 = new float[nn];
 
         shift1 = 0;
         shift2 = 0;
@@ -626,7 +626,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
             //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
 
-            ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
+            ierr=LAPACKE_ssyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
             //EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
             if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
 
@@ -640,7 +640,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     nwpw_timing_end(17);
 }
 
-void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, double *s21, double *s11)
+void Pneb::m_scale_s22_s21_s11(const int mb, const float dte, float *s22, float *s21, float *s11)
 {
    int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
 
@@ -677,7 +677,7 @@ void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
    }
 }
 
-void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
+void Pneb::mmm_Multiply(const int mb, float *a, float *b, float alpha, float *c, float beta)
 {
    nwpw_timing_function ftimer(18);
    int ms,n,ms1,ms2,ishift2,shift2;
@@ -707,7 +707,7 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 #define CONVGLMD2       1e-12
 
 // Lagrange multiplier (expensive method)
-void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
+void Pneb::ggm_lambda(float dte, float *psi1, float *psi2, float *lmbda)
 {
 #ifdef NWPW_SYCL
     // get the memory from the pool and reset the values to zero
@@ -715,17 +715,17 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
     size_t psi_size = 2 * (neq[0]+neq[1]) * npack(1);
     size_t lmbda_size = ne[0]*ne[0] + ne[1]*ne[1]; // mygrid.m_allocate(-1, 1)
 
-    double* psi1_dev = get_sycl_mem(psi_size * sizeof(double));
-    double* psi2_dev = get_sycl_mem(psi_size * sizeof(double));
-    double* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(double));
-    get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(double));
-    get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(double));
-    get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(double));
+    float* psi1_dev = get_sycl_mem(psi_size * sizeof(float));
+    float* psi2_dev = get_sycl_mem(psi_size * sizeof(float));
+    float* lmbda_dev = get_sycl_mem(lmbda_size * sizeof(float));
+    get_syclQue()->memcpy(psi1_dev, psi1, psi_size*sizeof(float));
+    get_syclQue()->memcpy(psi2_dev, psi2, psi_size*sizeof(float));
+    get_syclQue()->memcpy(lmbda_dev, lmbda, lmbda_size*sizeof(float));
 
     ggm_lambda_sycl(dte, psi1_dev, psi2_dev, lmbda_dev);
 
-    get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(double));
-    get_syclQue()->memcpy(lmbda, lmbda_dev, lmbda_size*sizeof(double));
+    get_syclQue()->memcpy(psi2, psi2_dev, psi_size*sizeof(float));
+    get_syclQue()->memcpy(lmbda, lmbda_dev, lmbda_size*sizeof(float));
     get_syclQue()->wait();
     free_sycl_mem(lmbda_dev);
     free_sycl_mem(psi2_dev);
@@ -736,8 +736,8 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
     nwpw_timing_function ftimer(3);
 
     int one=1;
-    double rmone = -1.0;
-    double adiff = 0.0;
+    float rmone = -1.0;
+    float adiff = 0.0;
 
     for (int ms=0; ms<ispin; ++ms) {
 
@@ -788,10 +788,10 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 /*
    Performs a Gram-Schmidt orthogonalization on psi
 */
-void Pneb::g_ortho(double *psi)
+void Pneb::g_ortho(float *psi)
 {
    int indxj,indxk,ishift;
-   double w;
+   float w;
    if (parallelized)
    {
         std::ostringstream msg;
@@ -824,7 +824,7 @@ void Pneb::g_ortho(double *psi)
 
 
 #ifdef NWPW_SYCL
-void Pneb::ggm_lambda_sycl(double dte, double *psi1_dev, double *psi2_dev, double *lmbda_dev)
+void Pneb::ggm_lambda_sycl(float dte, float *psi1_dev, float *psi2_dev, float *lmbda_dev)
 {
     *index = 0;
     *adiff = 0.0;
@@ -880,8 +880,8 @@ void Pneb::ggm_lambda_sycl(double dte, double *psi1_dev, double *psi2_dev, doubl
 }
 
 
-void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const double *psi2_sycl,
-                                  double* s11_sycl, double* s21_sycl, double* s22_sycl)
+void Pneb::ffm3_sym_Multiply_sycl(const int mb, const float *psi1_sycl, const float *psi2_sycl,
+                                  float* s11_sycl, float* s21_sycl, float* s22_sycl)
 {
     cl::sycl::queue* syclQ = get_syclQue();
 
@@ -981,20 +981,20 @@ void Pneb::ffm3_sym_Multiply_sycl(const int mb, const double *psi1_sycl, const d
         } // for - ms
 
 	size_t s_size = ne[0]*ne[0];
-	syclQ->memcpy(s11, s11_dev, s_size*sizeof(double));
-	syclQ->memcpy(s21, s21_dev, s_size*sizeof(double));
-	syclQ->memcpy(s22, s22_dev, s_size*sizeof(double));
+	syclQ->memcpy(s11, s11_dev, s_size*sizeof(float));
+	syclQ->memcpy(s21, s21_dev, s_size*sizeof(float));
+	syclQ->memcpy(s22, s22_dev, s_size*sizeof(float));
 	syclQ->wait();
 	d3db::parall->Vector_SumAll(1, nn, s11);
 	d3db::parall->Vector_SumAll(1, nn, s21);
 	d3db::parall->Vector_SumAll(1, nn, s22);
-	syclQ->memcpy(s11_dev, s11, s_size*sizeof(double));
-	syclQ->memcpy(s21_dev, s21, s_size*sizeof(double));
-	syclQ->memcpy(s22_dev, s22, s_size*sizeof(double));
+	syclQ->memcpy(s11_dev, s11, s_size*sizeof(float));
+	syclQ->memcpy(s21_dev, s21, s_size*sizeof(float));
+	syclQ->memcpy(s22_dev, s22, s_size*sizeof(float));
     }
 }
 
-void Pneb::fmf_Multiply_sycl(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
+void Pneb::fmf_Multiply_sycl(const int mb, float *psi1, float *hml, float alpha, float *psi2, float beta)
 {
     nwpw_timing_function ftimer(16);
 
@@ -1040,7 +1040,7 @@ void Pneb::fmf_Multiply_sycl(const int mb, double *psi1, double *hml, double alp
     }
 }
 
-void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const double dte, double *s22, double *s21, double *s11)
+void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const float dte, float *s22, float *s21, float *s11)
 {
     int k,ms1,ms2,ishift2;
 
@@ -1101,7 +1101,7 @@ void Pneb::m_scale_s22_s21_s11_sycl(const int mb, const double dte, double *s22,
     }
 }
 
-void Pneb::mmm_Multiply_sycl(const int mb, double *a, double *b, double alpha, double *c, double beta)
+void Pneb::mmm_Multiply_sycl(const int mb, float *a, float *b, float alpha, float *c, float beta)
 {
     nwpw_timing_function ftimer(18);
 
@@ -1131,7 +1131,7 @@ void Pneb::mmm_Multiply_sycl(const int mb, double *a, double *b, double alpha, d
     }
 }
 
-void Pneb::ggm_sym_Multiply_sycl(double *psi1, double *psi2, double *hml)
+void Pneb::ggm_sym_Multiply_sycl(float *psi1, float *psi2, float *hml)
 {
     nwpw_timing_function ftimer(15);
 
@@ -1193,11 +1193,11 @@ void Pneb::ggm_sym_Multiply_sycl(double *psi1, double *psi2, double *hml)
             mshift0 += ne[0]*ne[0];
         }
 
-        double* hml_host = get_host_mem((ne[0]*ne[0] + ne[1]*ne[1]) * sizeof(double));
-        get_syclQue()->memcpy(hml_host, hml, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(double));
+        float* hml_host = get_host_mem((ne[0]*ne[0] + ne[1]*ne[1]) * sizeof(float));
+        get_syclQue()->memcpy(hml_host, hml, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(float));
         get_syclQue()->wait();
         d3db::parall->Vector_SumAll(1, ne[0]*ne[0] + ne[1]*ne[1], hml_host);
-        get_syclQue()->memcpy(hml, hml_host, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(double));
+        get_syclQue()->memcpy(hml, hml_host, (ne[0]*ne[0] + ne[1]*ne[1])*sizeof(float));
         free_host_mem(hml_host);
     }
 }

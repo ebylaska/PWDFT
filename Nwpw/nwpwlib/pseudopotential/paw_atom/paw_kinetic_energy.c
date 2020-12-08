@@ -8,16 +8,16 @@
 
 #include   "paw_loggrid.h"
 
-double paw_get_kinetic_energy(int num_states, int *l, double *fill, double **psi, double **psi_prime)
+float paw_get_kinetic_energy(int num_states, int *l, float *fill, float **psi, float **psi_prime)
 {
     int    i;
     int    k;
     int Ngrid;
-    double ekin;
-    double ekin_total;
-    double log_amesh;
-    double *f;
-    double *r;
+    float ekin;
+    float ekin_total;
+    float log_amesh;
+    float *f;
+    float *r;
 
     Ngrid     = paw_N_LogGrid();
     log_amesh = paw_log_amesh_LogGrid();

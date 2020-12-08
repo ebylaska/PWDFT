@@ -48,16 +48,16 @@ int main(int arc, char ** argv) {
   int ldC = n;
 
   // set scalar fp values
-  double alpha = 1.0;
-  double beta  = 0.0;
+  float alpha = 1.0;
+  float beta  = 0.0;
 
   // 1D arrays on host side
-  double *host_a;
-  double *host_b;
-  double *host_c;
-  host_a = new double[M*K]{};
-  host_b = new double[K*N]{};
-  host_c = new double[M*N]{};
+  float *host_a;
+  float *host_b;
+  float *host_c;
+  host_a = new float[M*K]{};
+  host_b = new float[K*N]{};
+  host_c = new float[M*N]{};
 
   // prepare matrix data with ROW-major style
   // A(M, K)
@@ -81,7 +81,7 @@ int main(int arc, char ** argv) {
       cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k,
                   alpha, host_b, ldB, host_a, ldA, beta, host_c, ldC);
   auto stop = high_resolution_clock::now();
-  double time = duration<double, std::micro>(stop - start).count();
+  float time = duration<float, std::micro>(stop - start).count();
   time /= N_ROUNDS;
 
   std::cout << "   avg CPU time (ms): " << time << std::endl;

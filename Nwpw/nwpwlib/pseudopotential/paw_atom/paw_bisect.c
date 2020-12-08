@@ -14,20 +14,20 @@
 /****************************************
  Function name	  : paw_bisection
  Description	    :
- Return type		  : double
- Argument         : *my_func)(double)
- Argument         : double x1
- Argument         : double x2
- Argument         : double eps
+ Return type		  : float
+ Argument         : *my_func)(float)
+ Argument         : float x1
+ Argument         : float x2
+ Argument         : float eps
  Author     		  : Marat Valiev
  Date & Time		  : 9/30/98
 ****************************************/
-double paw_bisection(double (*my_func)(double), double x1, double x2, double eps)
+float paw_bisection(float (*my_func)(float), float x1, float x2, float eps)
 {
 
     int j;
     int root_found;
-    double dx,f,fmid,xmid,root;
+    float dx,f,fmid,xmid,root;
 
     root_found = False;
 

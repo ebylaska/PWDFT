@@ -21,20 +21,20 @@ with the grid points defined by:
 
 extern void     init_LogGrid();
 extern void     end_LogGrid();
-extern double  *alloc_LogGrid();
+extern float  *alloc_LogGrid();
 extern void	dealloc_LogGrid();
-extern double  *r_LogGrid();
+extern float  *r_LogGrid();
 extern int      N_LogGrid();
-extern double   log_amesh_LogGrid();
-extern double   amesh_LogGrid();
-extern double	Integrate_LogGrid();
-extern double  Integrate_LogGrid_na_nb(int,int,double*);
-extern double	Integrate2_LogGrid();
+extern float   log_amesh_LogGrid();
+extern float   amesh_LogGrid();
+extern float	Integrate_LogGrid();
+extern float  Integrate_LogGrid_na_nb(int,int,float*);
+extern float	Integrate2_LogGrid();
 extern void	Zero_LogGrid();
 extern void	Copy_LogGrid();
-extern double	Norm_LogGrid();
+extern float	Norm_LogGrid();
 extern void	Derivative_LogGrid();
-extern void	Plot_LogGrid(char*,double*);
+extern void	Plot_LogGrid(char*,float*);
 extern int  	index_r_LogGrid();
 
 #ifdef WIN32

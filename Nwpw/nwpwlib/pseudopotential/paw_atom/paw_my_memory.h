@@ -5,10 +5,10 @@
 */
 
 
-extern double   *paw_alloc_1d_array(int);
-extern double   **paw_alloc_2d_array(int,int);
-extern void     paw_dealloc_1d_array(double*);
-extern void     paw_dealloc_2d_array(int,int,double**);
+extern float   *paw_alloc_1d_array(int);
+extern float   **paw_alloc_2d_array(int,int);
+extern void     paw_dealloc_1d_array(float*);
+extern void     paw_dealloc_2d_array(int,int,float**);
 
 
 #endif

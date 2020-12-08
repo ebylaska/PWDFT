@@ -20,13 +20,13 @@
 
 */
 
-void  gaussj(int n, double a[],
-             int m, double b[])
+void  gaussj(int n, float a[],
+             int m, float b[])
 {
     int i,j,k,l,ll;
     int icol,irow;
     int ipiv[NMAX], indxr[NMAX], indxc[NMAX];
-    double big,dum,pivinv;
+    float big,dum,pivinv;
 
     for (j=0; j<n; ++j) ipiv[j] = 0;
 

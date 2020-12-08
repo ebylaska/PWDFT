@@ -14,15 +14,15 @@
 static int	Hartree_Type     = Hartree_On;
 static int	Exchange_Type    = Exchange_Dirac;
 static int	Correlation_Type = Correlation_Vosko;
-static double   screening_cut = 0.0;
-static double   blyp_screening_cut = 0.0;
+static float   screening_cut = 0.0;
+static float   blyp_screening_cut = 0.0;
 
 
 void	init_DFT(char	*filename)
 {
     FILE	*fp;
     char	*w;
-    double alpha;
+    float alpha;
 
     /* set hartree type */
     fp = fopen(filename,"r+");
@@ -61,7 +61,7 @@ void	init_DFT(char	*filename)
         w = get_word(fp);
     if (w!=NIL)
     {
-        fscanf(fp,"%lf",&alpha);
+        fscanf(fp,"%f",&alpha);
         set_Dirac_alpha(alpha);
     }
     fclose(fp);
@@ -100,7 +100,7 @@ void	init_DFT(char	*filename)
       w = get_word(fp);
    if (w!=NIL)
    {
-      fscanf(fp,"%lf",&screening_cut);
+      fscanf(fp,"%f",&screening_cut);
    }
    fclose(fp);
 
@@ -112,7 +112,7 @@ void	init_DFT(char	*filename)
       w = get_word(fp);
    if (w!=NIL)
    {
-      fscanf(fp,"%lf",&blyp_screening_cut);
+      fscanf(fp,"%f",&blyp_screening_cut);
    }
    fclose(fp);
 
@@ -135,11 +135,11 @@ void set_Hartree_DFT(int hartree)
 }
 
 
-void R_Screening_Cut(double * Vx)
+void R_Screening_Cut(float * Vx)
 {
    int k,NN,n0,n1=0;
-   double r0,r1=0.0,v0,v1=0.0,m,b;
-   double *r;
+   float r0,r1=0.0,v0,v1=0.0,m,b;
+   float *r;
    if (screening_cut>0.0)
    {
       r = r_LogGrid();
@@ -170,7 +170,7 @@ void R_Screening_Cut(double * Vx)
 
 
 
-void R_Exchange_DFT(double * rho, double * Vx, double * Ex, double * Px)
+void R_Exchange_DFT(float * rho, float * Vx, float * Ex, float * Px)
 {
     int k,Ngrid;
 
@@ -192,7 +192,7 @@ void R_Exchange_DFT(double * rho, double * Vx, double * Ex, double * Px)
     }
 }
 
-void R_Correlation_DFT(double * rho, double * Vc, double * Ec, double * Pc)
+void R_Correlation_DFT(float * rho, float * Vc, float * Ec, float * Pc)
 {
     int k,Ngrid;
 
@@ -218,10 +218,10 @@ void R_Correlation_DFT(double * rho, double * Vc, double * Ec, double * Pc)
     }
 }
 
-double	R_Hartree_DFT(double * rho, double charge, double * Vh)
+float	R_Hartree_DFT(float * rho, float charge, float * Vh)
 {
     int k,Ngrid;
-    double ph;
+    float ph;
 
     if (Hartree_Type==Hartree_On)
         ph = R_Hartree(rho,charge,Vh);

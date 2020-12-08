@@ -36,10 +36,10 @@
 
 int paw_R_Pauli(n,l,Z,v,Eig,u,uprime)
 int    n,l;
-double Z;
-double v[];
-double *Eig;
-double u[],
+float Z;
+float v[];
+float *Eig;
+float u[],
 uprime[];
 
 {
@@ -49,7 +49,7 @@ uprime[];
     match,
     Ninf, Ngrid;
 
-    double  E, de,
+    float  E, de,
     Emax,
     Emin,
     log_amesh,
@@ -66,7 +66,7 @@ uprime[];
 
     /* define eigenvalues */
     E     = *Eig;
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     fss  = 1.0/137.03602;
     fss  = fss*fss;
@@ -74,7 +74,7 @@ uprime[];
         gamma = sqrt(1.0 - fss*Z*Z);
     else
     {
-        L0 = (double) l;
+        L0 = (float) l;
         gamma = (  sqrt(L0*L0           - fss*Z*Z)*L0
                    + sqrt((L0+1.0)*(L0+1) - fss*Z*Z)*(L0+1.0)
                 )/(2.0*L0+1.0);
@@ -330,11 +330,11 @@ uprime[];
 
 int paw_R_Pauli_Fixed_E(n,l,Z,v,match,E,u,uprime)
 int    n,l;
-double Z;
-double v[];
+float Z;
+float v[];
 int    match;
-double E;
-double u[],
+float E;
+float u[],
 uprime[];
 
 {
@@ -342,7 +342,7 @@ uprime[];
     node,
     Ngrid;
 
-    double  log_amesh,
+    float  log_amesh,
     log_amesh2,
     fss,gamma,
     L2,L0,
@@ -354,7 +354,7 @@ uprime[];
     *upp;
 
     /* define eigenvalues */
-    L2    = ((double) (l*(l+1)));
+    L2    = ((float) (l*(l+1)));
 
     fss  = 1.0/137.03602;
     fss  = fss*fss;
@@ -362,7 +362,7 @@ uprime[];
         gamma = sqrt(1.0 - fss*Z*Z);
     else
     {
-        L0 = (double) l;
+        L0 = (float) l;
         gamma = (  sqrt(L0*L0           - fss*Z*Z)*L0
                    + sqrt((L0+1.0)*(L0+1) - fss*Z*Z)*(L0+1.0)
                 )/(2.0*L0+1.0);

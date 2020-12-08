@@ -27,25 +27,25 @@ with the grid points defined by:
 
 
 /* Hamman definitions */
-/*static double amesh = 1.0247;   */
-/*static double r0Z   =  0.00625; */
-/*static double Lmax  = 45.0;     */
+/*static float amesh = 1.0247;   */
+/*static float r0Z   =  0.00625; */
+/*static float Lmax  = 45.0;     */
 
 /* My definitions */
-/*static double Lmax  = 45.0;    */
-/*static double amesh = 1.0050;  */
-/*static double r0Z   = 0.00025; */
+/*static float Lmax  = 45.0;    */
+/*static float amesh = 1.0050;  */
+/*static float r0Z   = 0.00025; */
 
-static double Lmax  = 45.0;
-static double amesh = 1.0050;
-static double r0Z   = 0.00025;
+static float Lmax  = 45.0;
+static float amesh = 1.0050;
+static float r0Z   = 0.00025;
 
 
 
 static int     N;
-static double  r0;
-static double  log_amesh;
-static double  *rgrid;
+static float  r0;
+static float  log_amesh;
+static float  *rgrid;
 
 
 
@@ -63,7 +63,7 @@ static double  *rgrid;
 */
 
 void  init_LogGrid(Z)
-double  Z;
+float  Z;
 {
     int  i;
 
@@ -113,9 +113,9 @@ void  end_LogGrid()
 /* returns the pointer to a loggrid array.
 
 */
-double  *alloc_LogGrid()
+float  *alloc_LogGrid()
 {
-    double *tt;
+    float *tt;
 
     tt = alloc_Grid();
     Zero_LogGrid(tt);
@@ -134,7 +134,7 @@ double  *alloc_LogGrid()
 
 */
 void  dealloc_LogGrid(grid)
-double	*grid;
+float	*grid;
 {
 
     dealloc_Grid(grid);
@@ -152,7 +152,7 @@ double	*grid;
 /* returns the pointer to the rgrid array.
 
 */
-double  *r_LogGrid()
+float  *r_LogGrid()
 {
     return rgrid;
 
@@ -168,7 +168,7 @@ double  *r_LogGrid()
 
 */
 int  index_r_LogGrid(r)
-double r;
+float r;
 {
     int index;
 
@@ -207,7 +207,7 @@ int  N_LogGrid()
 
 */
 
-double log_amesh_LogGrid()
+float log_amesh_LogGrid()
 {
     return log_amesh;
 
@@ -225,7 +225,7 @@ double log_amesh_LogGrid()
 
 */
 
-double amesh_LogGrid()
+float amesh_LogGrid()
 {
     return(amesh);
 
@@ -239,11 +239,11 @@ double amesh_LogGrid()
  *				*
  ********************************/
 
-double	Integrate_LogGrid(f)
-double  f[];
+float	Integrate_LogGrid(f)
+float  f[];
 {
     int    i;
-    double sum;
+    float sum;
 
     /*
        sum = (   9.0*f[0]*(rgrid[0]*rgrid[0]*rgrid[0])
@@ -271,10 +271,10 @@ double  f[];
  *				*
  ********************************/
 
-double	Integrate_LogGrid_na_nb(int na, int nb, double f[])
+float	Integrate_LogGrid_na_nb(int na, int nb, float f[])
 {
     int    i;
-    double sum;
+    float sum;
 
     sum = (   9.0*f[na  ]*(rgrid[na  ])
               + 28.0*f[na+1]*(rgrid[na+1])
@@ -302,7 +302,7 @@ double	Integrate_LogGrid_na_nb(int na, int nb, double f[])
  ********************************/
 
 void	Zero_LogGrid(grid)
-double *grid;
+float *grid;
 {
     int i;
 
@@ -319,7 +319,7 @@ double *grid;
 
 void Copy_LogGrid(gridnew,gridold)
 
-double *gridnew,
+float *gridnew,
 *gridold;
 {
     int i;
@@ -341,13 +341,13 @@ double *gridnew,
    and approaches zero as r**(2*gamma)
 
 */
-double Norm_LogGrid(M,gamma,u)
+float Norm_LogGrid(M,gamma,u)
 int    M;
-double gamma;
-double u[];
+float gamma;
+float u[];
 {
     int	  i;
-    double r0,sum;
+    float r0,sum;
 
 
     /* Find Integral(u**2) */
@@ -376,13 +376,13 @@ double u[];
    like an exponential as r-> infinity
 
 */
-double Integrate2_LogGrid(M,nu,f)
+float Integrate2_LogGrid(M,nu,f)
 int    M;
-double nu;
-double f[];
+float nu;
+float f[];
 {
     int	  i;
-    double r0,sum;
+    float r0,sum;
 
 
     /* Find Integral of f */
@@ -407,7 +407,7 @@ double f[];
 
 void	Derivative_LogGrid(f,df)
 
-double	f[],
+float	f[],
 df[];
 {
     int i;
@@ -422,7 +422,7 @@ df[];
 
 } /* Derivative_LogGrid */
 
-void	Plot_LogGrid(char *name, double *f)
+void	Plot_LogGrid(char *name, float *f)
 {
     int i;
     FILE *fp;

@@ -23,15 +23,15 @@
 
 static char     comment[80];
 static char     *atom_name;
-static double   Zion;
+static float   Zion;
 
 
-static double   Total_E;
-static double   E_kin;
-static double   E_ion;
-static double   E_Hartree;
-static double   E_exchange;
-static double   E_correlation;
+static float   Total_E;
+static float   E_kin;
+static float   E_ion;
+static float   E_Hartree;
+static float   E_exchange;
+static float   E_correlation;
 
 
 /****************************************
@@ -140,10 +140,10 @@ void   paw_solve_atom()
 {
     int nbasis;
     int *l;
-    double *fill;
-    double **psi;
-    double **psi_prime;
-    double *rho;
+    float *fill;
+    float **psi;
+    float **psi_prime;
+    float *rho;
 
 
     /*find bound orbitals*/
@@ -238,14 +238,14 @@ void   paw_print_atom()
 
 } /* print_Atom */
 
-double paw_get_atom_kinetic_energy()
+float paw_get_atom_kinetic_energy()
 {
 
     return E_kin;
 
 }
 
-double paw_get_atom_total_energy()
+float paw_get_atom_total_energy()
 {
 
     return Total_E;
@@ -307,14 +307,14 @@ void   paw_init_paw_atom(char *infile)
     char projector_method[30];
     int *n;
     int *l;
-    double c0;
-    double r_pot;
-    double r_comp;
-    double *r_orb;
+    float c0;
+    float r_pot;
+    float r_comp;
+    float *r_orb;
     char input[50];
     FILE *fp;
-    double *rgrid;
-    double *V_ks;
+    float *rgrid;
+    float *V_ks;
 
 
     rgrid = paw_r_LogGrid();
@@ -346,10 +346,10 @@ void   paw_init_paw_atom(char *infile)
         fscanf(fp, "%d", &nbasis);
         n     = (int *) malloc( nbasis*sizeof(int));
         l     = (int *) malloc( nbasis*sizeof(int));
-        r_orb = (double *) malloc( nbasis*sizeof(double));
+        r_orb = (float *) malloc( nbasis*sizeof(float));
 
         for (i=0; i<=nbasis-1; i++)
-            fscanf(fp,"%d %d %lf",&n[i],&l[i],&r_orb[i]);
+            fscanf(fp,"%d %d %f",&n[i],&l[i],&r_orb[i]);
 
     }
 
@@ -448,9 +448,9 @@ void paw_solve_paw_atom(char *infile)
     int n;
     int *l;
     int *number_points;
-    double *e1;
-    double *e2;
-    double *r;
+    float *e1;
+    float *e2;
+    float *r;
     FILE *fp;
 
     paw_generate_pseudo_orbitals();
@@ -485,14 +485,14 @@ void paw_solve_paw_atom(char *infile)
         fscanf(fp, "%d",&n);
         l =  (int *) malloc( n*sizeof(int));
         number_points =  (int *) malloc( n*sizeof(int));
-        e1 = (double *) malloc( n*sizeof(double));
-        e2 = (double *) malloc( n*sizeof(double));
-        r  = (double *) malloc( n*sizeof(double));
+        e1 = (float *) malloc( n*sizeof(float));
+        e2 = (float *) malloc( n*sizeof(float));
+        r  = (float *) malloc( n*sizeof(float));
 
         for (i=0;i<=n-1;i++)
         {
 
-            fscanf(fp,"%d %lf %lf %lf %d",&l[i],&e1[i],&e2[i],&r[i],&number_points[i]);
+            fscanf(fp,"%d %f %f %f %d",&l[i],&e1[i],&e2[i],&r[i],&number_points[i]);
 
         }
         for (i=0;i<=n-1;i++)

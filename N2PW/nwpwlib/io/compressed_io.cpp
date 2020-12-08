@@ -13,10 +13,10 @@
 *					n is the length of the filename	*
 *	call cwrite(unit,c, n)		c is n element character array	*
 *	call iwrite(unit,i, n)		i is n element integer array	*
-*	call dwrite(unit,d, n)		d is n element double array	*
+*	call dwrite(unit,d, n)		d is n element float array	*
 *	call cread(unit,c, n)		c is n element character array	*
 *	call iread(unit,i, n)		i is n element integer array	*
-*	call dread(unit,d, n)		d is n element double array	*
+*	call dread(unit,d, n)		d is n element float array	*
 *	call closefile(unit)		close the datafile		*
 *									*
 * Author:      Scott Kohn (skohn@chem.ucsd.edu)				*
@@ -82,14 +82,14 @@ void iread(const int unit, int *i, const int n)
    delete [] itmp;
 }
 
-void dwrite(const int unit, const double *d, const int n)
+void dwrite(const int unit, const float *d, const int n)
 {
-   (void) fwrite(d, sizeof(double), n, fd[unit]);
+   (void) fwrite(d, sizeof(float), n, fd[unit]);
 }
 
-void dread(const int unit, double *d, const int n)
+void dread(const int unit, float *d, const int n)
 {
-   (void) fread(d, sizeof(double), n, fd[unit]);
+   (void) fread(d, sizeof(float), n, fd[unit]);
 }
 
 /*

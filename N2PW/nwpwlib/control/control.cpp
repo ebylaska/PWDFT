@@ -5,9 +5,9 @@
 #include	"Int64.h"
 using namespace std;
 
-static double unita[9],tolerances[3],scaling[2];
-static double time_step,fake_mass,ks_alpha,ecut,wcut,rcut;
-static double bo_time_step;
+static float unita[9],tolerances[3],scaling[2];
+static float time_step,fake_mass,ks_alpha,ecut,wcut,rcut;
+static float bo_time_step;
 static Int64 bo_steps[2],bo_algorithm;
 static Int64 loop[2],ngrid[3],npsp,ncut,mapping,mapping1d;
 static Int64 np_dimensions[3],ewald_grid[3];
@@ -85,21 +85,21 @@ void control_read(RTDB &myrtdb)
       if (!myrtdb.get("cpsd:input_wavefunction_filename",matype,nelem,input_movecs_filename))
          strcpy(input_movecs_filename,"eric.movecs");
 
-   if (!myrtdb.get("cpsd:fake_mass",rtdb_double,1,&fake_mass)) fake_mass = 400000.0;
-   if (!myrtdb.get("cpsd:time_step",rtdb_double,1,&time_step)) time_step = 5.8;
+   if (!myrtdb.get("cpsd:fake_mass",rtdb_float,1,&fake_mass)) fake_mass = 400000.0;
+   if (!myrtdb.get("cpsd:time_step",rtdb_float,1,&time_step)) time_step = 5.8;
    if (!myrtdb.get("cpsd:loop",rtdb_int,2,loop)) 
       { loop[0]=10 ; loop[1]=100; }
-   if (!myrtdb.get("cpsd:tolerances",rtdb_double,3,tolerances))
+   if (!myrtdb.get("cpsd:tolerances",rtdb_float,3,tolerances))
       { tolerances[0] = 1.0e-9; tolerances[1] = 1.0e-9; tolerances[2] = 1.0e-4; }
 
-   if (!myrtdb.get("cpsd:ecut",rtdb_double,1,&ecut))      ecut=9000.0;
-   if (!myrtdb.get("cpsd:wcut",rtdb_double,1,&wcut))      wcut=ecut;
-   if (!myrtdb.get("cpsd:rcut",rtdb_double,1,&rcut))      rcut = 0.0;
+   if (!myrtdb.get("cpsd:ecut",rtdb_float,1,&ecut))      ecut=9000.0;
+   if (!myrtdb.get("cpsd:wcut",rtdb_float,1,&wcut))      wcut=ecut;
+   if (!myrtdb.get("cpsd:rcut",rtdb_float,1,&rcut))      rcut = 0.0;
    if (!myrtdb.get("cpsd:ncut",rtdb_int,1,&ncut))         ncut = 1;
    if (!myrtdb.get("cpsd:mult",rtdb_int,1,&multiplicity)) multiplicity = 1;
    if (!myrtdb.get("cpsd:ispin",rtdb_int,1,&ispin))       ispin=1;
 
-   if (!myrtdb.get("cell_default:unita",rtdb_double,9,unita))
+   if (!myrtdb.get("cell_default:unita",rtdb_float,9,unita))
    {
        unita[0] = 20.0; unita[1] =  0.0; unita[2] =  0.0;
        unita[3] =  0.0; unita[4] = 20.0; unita[5] =  0.0;
@@ -127,12 +127,12 @@ int control_ewald_ncut() { return (int) ncut; }
 int control_loop(const int i) { return (int) loop[i]; }
 int control_pfft3_qsize() { return (int) qsize; }
 
-double control_ewald_rcut() { return (double) rcut; }
-double control_unita(const int i,const int j) { return unita[i+j*3]; }
-double control_ecut() { return ecut; }
-double control_wcut() { return wcut; }
-double control_time_step() { return time_step; }
-double control_fake_mass() { return fake_mass; }
-double control_tolerances(const int i) { return tolerances[i];}
+float control_ewald_rcut() { return (float) rcut; }
+float control_unita(const int i,const int j) { return unita[i+j*3]; }
+float control_ecut() { return ecut; }
+float control_wcut() { return wcut; }
+float control_time_step() { return time_step; }
+float control_fake_mass() { return fake_mass; }
+float control_tolerances(const int i) { return tolerances[i];}
 
 char   *control_input_movecs_filename() { return input_movecs_filename; }

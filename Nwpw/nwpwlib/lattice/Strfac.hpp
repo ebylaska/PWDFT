@@ -13,12 +13,12 @@
 
 class	Strfac {
    int    *i_indx[2],*j_indx[2],*k_indx[2];
-   double *wx1,*wy1,*wz1;
+   float *wx1,*wy1,*wz1;
 #ifdef NWPW_SYCL
    int *i1_indx_sycl, *j1_indx_sycl, *k1_indx_sycl;
-   double *wx1_sycl, *wy1_sycl, *wz1_sycl;
+   float *wx1_sycl, *wy1_sycl, *wz1_sycl;
 #endif
-   double unita[9],unitg[9];
+   float unita[9],unitg[9];
 
    PGrid  *mygrid;
    Ion	  *myion;
@@ -50,24 +50,24 @@ public:
     }
 
     void phafac();
-    void strfac_pack(const int, const int, double *);
+    void strfac_pack(const int, const int, float *);
 
 #ifdef NWPW_SYCL
-    void strfac_pack_sycl(const int, const int, double *);
+    void strfac_pack_sycl(const int, const int, float *);
     void generate_projectors_sycl(const int nb,
 				  const int ii,
 				  const int nprj,
 				  const int* sd_func,
-				  const double* vnl,
-				  double *prj);
+				  const float* vnl,
+				  float *prj);
     // void generate_projectors_all(const int nb,
     // 			     const int nions,
     // 			     const int* katm,
     // 			     const int nprjMax,
     // 			     const int* nprj,
     // 			     const int* sd_func,
-    // 			     double** vnl,
-    // 			     double *prj);
+    // 			     float** vnl,
+    // 			     float *prj);
 #endif
 };
 

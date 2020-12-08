@@ -49,8 +49,8 @@ static int matypesize(const int intype)
     return sizeof(long); break;
   case rtdb_float:      /* float */
     return sizeof(float); break;
-  case rtdb_double:     /* double */
-    return sizeof(double); break;
+  case rtdb_float:     /* float */
+    return sizeof(float); break;
   default:
     return sizeof(char); break;
   }

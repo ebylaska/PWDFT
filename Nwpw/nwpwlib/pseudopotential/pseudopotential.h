@@ -1,25 +1,25 @@
 #ifndef _PSEUDOPOTENTIAL_H_
 #define _PSEUDOPOTENTIAL_H_
 
-extern void pspsolve(int *, int *, int *, int *, double *, int *,
+extern void pspsolve(int *, int *, int *, int *, float *, int *,
                      char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void hgh_parse(int *, int *, int *, double *,
+extern void hgh_parse(int *, int *, int *, float *,
                      char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void cpi_parse(int *, int *, int *, double *,
+extern void cpi_parse(int *, int *, int *, float *,
                       char *, int *, char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void teter_parse(int *, int *, int *, double *,
+extern void teter_parse(int *, int *, int *, float *,
                         char *, int *, char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void paw_atom_driver(int *, int *, int *, double *,
+extern void paw_atom_driver(int *, int *, int *, float *,
                             char *, int *, char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void qmmm_parse(int *, int *, int *, double *,
+extern void qmmm_parse(int *, int *, int *, float *,
                        char *, int *, char *, int *, char *, int *, char *, int *, char *, int *);
 
-extern void carter_parse(int *, int *, int *, double *,
+extern void carter_parse(int *, int *, int *, float *,
                          char *, int *, char *, int *, char *, int *, char *, int *, char *, int *);
 
 

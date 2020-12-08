@@ -156,7 +156,7 @@ void hilbert2d_map(const int sizex, const int sizey, int *map)
     int i,j,size;
     int ii,jj,iii,jjj;
     int level,count;
-    double dx,dy,x2,y2,dx2,dy2;
+    float dx,dy,x2,y2,dx2,dy2;
     int *map2,*mapii,*mapjj;
 
    size = sizex;
@@ -196,10 +196,10 @@ void hilbert2d_map(const int sizex, const int sizey, int *map)
    }
 
 
-   dx2 = 1.0/((double) count);
-   dy2 = 1.0/((double) count);
-   dx =  1.0/((double) sizex);
-   dy =  1.0/((double) sizey);
+   dx2 = 1.0/((float) count);
+   dy2 = 1.0/((float) count);
+   dx =  1.0/((float) sizex);
+   dy =  1.0/((float) sizey);
 
    for (j=0; j<sizex*sizey; ++j) map[j] = -9;
 

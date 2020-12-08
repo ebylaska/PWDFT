@@ -9,8 +9,9 @@
 //#include "typesf2c.h"
 #include "get_word.h"
 
-extern double tetercc();
-extern double cpi_Splint();
+extern float tetercc(float xx);
+
+extern float cpi_Splint();
 extern void   cpi_Spline();
 
 
@@ -19,7 +20,7 @@ void teter_parse(debug_ptr,lmax_ptr,locp_ptr,rlocal_ptr,
 int	*debug_ptr;
 int	*lmax_ptr;
 int	*locp_ptr;
-double 	*rlocal_ptr;
+float 	*rlocal_ptr;
 char	sdir_name[];
 int	*n9;
 char	dir_name[];
@@ -34,27 +35,27 @@ int	*n3;
 
     int      debug;
     int      lmax_out,locp_out;
-    double   rlocal_out;
+    float   rlocal_out;
 
 
-    double   zatom,zion;      /* local psp parameters          */
-    double over_fourpi;
+    float   zatom,zion;      /* local psp parameters          */
+    float over_fourpi;
 
     int      *nl;
     int      i,k,l,p,p1;
     int      Ngrid,nrl;
-    double   *rgrid,*psi,*psp;
-    double       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
+    float   *rgrid,*psi,*psp;
+    float       *rl, *tmp, *tmp2, *sc_rho, *sc_rhol, *sc_drho, *sc_drhol,
     **psil,
     **pspl;
-    double   drl,rmax;
+    float   drl,rmax;
 
     int      lmax,locp,lmaxp;
-    double   r0,xx;
+    float   r0,xx;
     int      n[10];
     int      pspdat,pspcode,pspxc;
-    double   r2well,rcore[10],e99,e999;
-    double   rchrg,fchrg,qchrg,pi;
+    float   r2well,rcore[10],e99,e999;
+    float   rchrg,fchrg,qchrg,pi;
 
 
     char   *w,*tc;
@@ -107,7 +108,7 @@ int	*n3;
     /* define linear grid */
     nrl  = 2001;
     rmax = 40.0;
-    drl  = rmax/((double) (nrl-1));
+    drl  = rmax/((float) (nrl-1));
 
     fp = fopen(infile,"r+");
     w = get_word(fp);
@@ -115,8 +116,8 @@ int	*n3;
         w = get_word(fp);
     if (w!=((char *) EOF))
     {
-        fscanf(fp,"%d %lf",&nrl,&drl);
-        rmax = ((double) (nrl-1))*drl;
+        fscanf(fp,"%d %f",&nrl,&drl);
+        rmax = ((float) (nrl-1))*drl;
     }
     fclose(fp);
 
@@ -143,38 +144,38 @@ int	*n3;
     argc = to_eoln(fp);
     argc= get_line(fp,comment,255);
 
-    fscanf(fp,"%lf %lf %d",&zatom,&zion,&pspdat);
+    fscanf(fp,"%f %f %d",&zatom,&zion,&pspdat);
     argc=to_eoln(fp);
-    fscanf(fp,"%d %d %d %d %d %lf",&pspcode,&pspxc,&lmax,&locp,&Ngrid,&r2well);
+    fscanf(fp,"%d %d %d %d %d %f",&pspcode,&pspxc,&lmax,&locp,&Ngrid,&r2well);
     lmaxp = lmax+1;
     argc=to_eoln(fp);
 
 
     for (p=0; p<=lmax; ++p)
     {
-        fscanf(fp,"%d %lf %lf %d %lf",&l,&e99,&e999,&(n[p]),&(rcore[p]));
+        fscanf(fp,"%d %f %f %d %f",&l,&e99,&e999,&(n[p]),&(rcore[p]));
         to_eoln(fp);
         to_eoln(fp);
     }
-    fscanf(fp,"%lf %lf %lf",&rchrg,&fchrg,&qchrg);
+    fscanf(fp,"%f %f %f",&rchrg,&fchrg,&qchrg);
 
 
 
 
-    psi     = (double *) malloc(Ngrid*sizeof(double));
-    psp     = (double *) malloc(Ngrid*sizeof(double));
-    rgrid   = (double *) malloc(Ngrid*sizeof(double));
-    tmp     = (double *) malloc(Ngrid*sizeof(double));
-    tmp2    = (double *) malloc(Ngrid*sizeof(double));
-    sc_rho  = (double *) malloc(Ngrid*sizeof(double));
-    sc_drho = (double *) malloc(Ngrid*sizeof(double));
+    psi     = (float *) malloc(Ngrid*sizeof(float));
+    psp     = (float *) malloc(Ngrid*sizeof(float));
+    rgrid   = (float *) malloc(Ngrid*sizeof(float));
+    tmp     = (float *) malloc(Ngrid*sizeof(float));
+    tmp2    = (float *) malloc(Ngrid*sizeof(float));
+    sc_rho  = (float *) malloc(Ngrid*sizeof(float));
+    sc_drho = (float *) malloc(Ngrid*sizeof(float));
 
 
     /* define Teter grid */
     for (i=0; i<Ngrid; ++i)
     {
-        xx = ((double) i);
-        xx=xx/((double) (Ngrid-1));
+        xx = ((float) i);
+        xx=xx/((float) (Ngrid-1));
         xx = (xx+0.01);
         xx = xx*xx*xx*xx*xx;
         rgrid[i]=100.0*xx-1.0e-8;
@@ -185,24 +186,24 @@ int	*n3;
     if (rmax > rgrid[Ngrid-5])
     {
         rmax = rgrid[Ngrid-5];
-        drl = rmax/((double) (nrl-1));
+        drl = rmax/((float) (nrl-1));
     }
 
 
 
     /* generate linear meshes */
-    rl       = (double *) malloc(nrl*sizeof(double));
+    rl       = (float *) malloc(nrl*sizeof(float));
     nl       = (int *)    malloc(nrl*sizeof(int));
-    psil     = (double **) malloc(lmaxp*sizeof(double*));
-    pspl     = (double **) malloc(lmaxp*sizeof(double*));
-    sc_rhol  = (double *) malloc(nrl*sizeof(double));
-    sc_drhol = (double *) malloc(nrl*sizeof(double));
+    psil     = (float **) malloc(lmaxp*sizeof(float*));
+    pspl     = (float **) malloc(lmaxp*sizeof(float*));
+    sc_rhol  = (float *) malloc(nrl*sizeof(float));
+    sc_drhol = (float *) malloc(nrl*sizeof(float));
 
     r0    = rgrid[280];
     rl[0] = rgrid[280];
     for (i=1; i<nrl; ++i)
     {
-        rl[i] = drl*((double) i);
+        rl[i] = drl*((float) i);
         xx = (rl[i] + 1.0e-8)/100.0;
         xx = pow(xx,0.2);
         xx = xx-0.01;
@@ -214,11 +215,11 @@ int	*n3;
     /* read in pseudopotentials */
     for (p=0; p<=lmax; ++p)
     {
-        pspl[p] = (double *) malloc(nrl*sizeof(double));
+        pspl[p] = (float *) malloc(nrl*sizeof(float));
 
         to_eoln(fp);
         to_eoln(fp);
-        for (i=0; i<Ngrid; ++i)  fscanf(fp,"%lf",&(psp[i]));
+        for (i=0; i<Ngrid; ++i)  fscanf(fp,"%f",&(psp[i]));
 
 
         cpi_Spline(rgrid,psp,Ngrid-4,0.0,0.0,tmp,tmp2);
@@ -232,11 +233,11 @@ int	*n3;
     /* read in wavefunctions */
     for (p=0; p<=lmax; ++p)
     {
-        psil[p] = (double *) malloc(nrl*sizeof(double));
+        psil[p] = (float *) malloc(nrl*sizeof(float));
 
         to_eoln(fp);
         to_eoln(fp);
-        for (i=0; i<Ngrid; ++i)  fscanf(fp,"%lf",&(psi[i]));
+        for (i=0; i<Ngrid; ++i)  fscanf(fp,"%f",&(psi[i]));
 
 
         cpi_Spline(rgrid,psi,Ngrid-4,0.0,0.0,tmp,tmp2);
@@ -318,11 +319,11 @@ int	*n3;
     fp = fopen(outfile,"w+");
     fprintf(fp,"%s\n",atom_out);
     if (locp_out!=-1) locp=locp_out;
-    fprintf(fp,"%lf %lf %d   %d %d %lf\n",zion,0.0,lmax,lmax_out,locp,rlocal_out);
+    fprintf(fp,"%f %f %d   %d %d %f\n",zion,0.0,lmax,lmax_out,locp,rlocal_out);
     for (p=0; p<=lmax; ++p)
-        fprintf(fp,"%lf ", rcore[p]);
+        fprintf(fp,"%f ", rcore[p]);
     fprintf(fp,"\n");
-    fprintf(fp,"%d %lf\n",nrl,drl);
+    fprintf(fp,"%d %f\n",nrl,drl);
     fprintf(fp,"%s",comment);
 
 
@@ -352,7 +353,7 @@ int	*n3;
     /* append semicore corrections */
     if (rchrg != 0.0)
     {
-        fprintf(fp,"%lf\n",rchrg);
+        fprintf(fp,"%f\n",rchrg);
         for (k=0; k<nrl; ++k)
             fprintf(fp,"%14.9lf %12.8lf\n", rl[k],
                     fabs(sc_rhol[k]*over_fourpi));
@@ -372,17 +373,17 @@ int	*n3;
     {
         printf("TETER pseudopotential Parameters\n\n");
         printf("atom : %s\n",atom_out);
-        printf("Zatom= %lf\n",zatom);
-        printf("Zion = %lf\n",zion);
+        printf("Zatom= %f\n",zatom);
+        printf("Zion = %f\n",zion);
         printf(" lmax= %d\n",lmax);
         printf(" locp= %d\n",locp);
-        printf(" rlocal= %lf\n\n",rlocal_out);
-        printf(" rcrhg=%lf  fchrg=%lf  qchrg=%lf\n",rchrg,fchrg,qchrg);
+        printf(" rlocal= %f\n\n",rlocal_out);
+        printf(" rcrhg=%f  fchrg=%f  qchrg=%f\n",rchrg,fchrg,qchrg);
         printf("rcore: ");
         for (p=0; p<=lmax; ++p)
-            printf("%lf ", rcore[p]);
+            printf("%f ", rcore[p]);
         printf("\n");
-        printf(" nrl=%d drl=%lf\n",nrl,drl);
+        printf(" nrl=%d drl=%f\n",nrl,drl);
         printf("comment:%s\n",comment);
 
         fflush(stdout);
@@ -399,15 +400,15 @@ int	*n3;
 } /* main */
 
 
-double tetercc(double xx)
+float tetercc(float xx)
 {
 
     /*The c s are coefficients for Taylor expansion of the analytic form near xx=0, 1/2, and 1. */
-    double   c21,c22,c23,c24;
-    double   c31,c32,c33,c34;
+    float   c21,c22,c23,c24;
+    float   c31,c32,c33,c34;
 
     /*local variables */
-    double pi,gg1cc,yy;
+    float pi,gg1cc,yy;
 
     pi = 4.0*atan(1.0);
     c21= 4.00/9.00;

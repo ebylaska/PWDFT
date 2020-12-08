@@ -2,7 +2,7 @@
    $Id$
 */
 
-#include        <stdio.h>
+//#include        <stdio.h>
 #include        <stdlib.h>
 #include        <string.h>
 #include        <math.h>
@@ -18,24 +18,24 @@
 /***********************/
 
 /* Hamman definitions */
-/*static double amesh = 1.0247*/
-/*static double r0Z   =  0.00625 */
-/*static double Lmax  = 45.0  */
-/*static double Lmax  = 45.0; */
+/*static float amesh = 1.0247*/
+/*static float r0Z   =  0.00625 */
+/*static float Lmax  = 45.0  */
+/*static float Lmax  = 45.0; */
 
 
 int     Ngrid;
-double  log_amesh;
-double  amesh;
-double  *rgrid;
-double  *rgrid2;
-double  *rgrid3;
-double  *scratch;
+float  log_amesh;
+float  amesh;
+float  *rgrid;
+float  *rgrid2;
+float  *rgrid3;
+float  *scratch;
 
 
-double Lmax;
-static double r0Z   = 0.00025;
-double  r0;
+float Lmax;
+static float r0Z   = 0.00025;
+float  r0;
 
 void  paw_end_LogGrid()
 {
@@ -50,12 +50,12 @@ void  paw_end_LogGrid()
 Function name	  : paw_init_LogGrid
 Description	    :
 Return type		  : void
-Argument        : double Z -> ion charge
+Argument        : float Z -> ion charge
 Argument        : FILE *fp
 Author     		  : Marat Valiev
 Date & Time		  : 1/7/99 4:26:57 PM
 ****************************************/
-void  paw_init_LogGrid_from_file( double Z, FILE *fp)
+void  paw_init_LogGrid_from_file( float Z, FILE *fp)
 {
     int  i;
     char input[30];
@@ -109,13 +109,13 @@ void  paw_init_LogGrid_from_file( double Z, FILE *fp)
 /****************************************
   Function name	  : paw_alloc_LogGrid
   Description	    : creates a loggrid array
-  Return type		  : double*
+  Return type		  : float*
   Author     		  : Eric Bylaska & Marat Valiev
   Date & Time		  : 1/7/99 4:31:15 PM
 ****************************************/
-double* paw_alloc_LogGrid()
+float* paw_alloc_LogGrid()
 {
-    double *tt;
+    float *tt;
 
     tt = paw_alloc_1d_array(Ngrid);
 
@@ -134,7 +134,7 @@ double* paw_alloc_LogGrid()
   Author     		  : Eric Bylaska & Marat Valiev
   Date & Time		  : 1/7/99 4:31:39 PM
 ****************************************/
-void  paw_dealloc_LogGrid(double *grid)
+void  paw_dealloc_LogGrid(float *grid)
 {
 
     paw_dealloc_1d_array(grid);
@@ -148,24 +148,24 @@ void  paw_dealloc_LogGrid(double *grid)
 /****************************************
 Function name	  : paw_r_LogGrid
 Description	    : returns the pointer to the rgrid array
-Return type		  : double*
+Return type		  : float*
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:35:15 PM
 ****************************************/
-double* paw_r_LogGrid()
+float* paw_r_LogGrid()
 {
     return rgrid;
 
 } /* r_LogGrid */
 
 
-double* paw_r2_LogGrid()
+float* paw_r2_LogGrid()
 {
     return rgrid2;
 
 }
 
-double* paw_r3_LogGrid()
+float* paw_r3_LogGrid()
 {
     return rgrid3;
 
@@ -190,11 +190,11 @@ int  paw_N_LogGrid()
 Function name	  : paw_r0_LogGrid
 Description	    : returns the first nonzero coordinate
 of a log grid
-Return type		  : double 
+Return type		  : float 
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:36:10 PM
 ****************************************/
-double paw_r0_LogGrid()
+float paw_r0_LogGrid()
 {
     return r0;
 }
@@ -204,11 +204,11 @@ double paw_r0_LogGrid()
 /****************************************
 Function name	  : paw_log_amesh_LogGrid
 Description	    : returns the value log(amesh)
-Return type		  : double
+Return type		  : float
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:37:11 PM
 ****************************************/
-double paw_log_amesh_LogGrid()
+float paw_log_amesh_LogGrid()
 {
     return log_amesh;
 
@@ -220,11 +220,11 @@ double paw_log_amesh_LogGrid()
 /****************************************
   Function name	  : paw_amesh_LogGrid
   Description	    : returns the value (amesh)
-  Return type		  : double
+  Return type		  : float
   Author     		  : Eric Bylaska & Marat Valiev
   Date & Time		  : 1/7/99 4:37:43 PM
 ****************************************/
-double paw_amesh_LogGrid()
+float paw_amesh_LogGrid()
 {
     return(amesh);
 
@@ -241,19 +241,19 @@ double paw_amesh_LogGrid()
   r**(rpow) from 0 to Nrange.
   Function f is assumed to behave
   as r**(fpow) near 0
-  Return type		  : double
-  Argument         : double fpow
-  Argument         : double *f
-  Argument         : double rpow
+  Return type		  : float
+  Argument         : float fpow
+  Argument         : float *f
+  Argument         : float rpow
   Argument         : int Nrange
   Author     		  : Marat Valiev
   Date & Time		  : 1/7/99 4:38:43 PM
 ****************************************/
-double  paw_Def_Integr(double fpow,double *f,double rpow,int Nrange)
+float  paw_Def_Integr(float fpow,float *f,float rpow,int Nrange)
 
 {
     int i;
-    double sum;
+    float sum;
 
     sum = (   9.0*f[0]*pow(rgrid[0],rpow+1)
               + 23.0*f[1]*pow(rgrid[1],rpow+1)
@@ -277,16 +277,16 @@ Function name	  : paw_Integrate_LogGrid
 Description	    :  returns a definite integral of
 of the given function f times
 r squared
-Return type		  : double
-Argument         : double f[]
+Return type		  : float
+Argument         : float f[]
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:40:59 PM
 ****************************************/
 
-double  paw_Integrate_LogGrid(double *f)
+float  paw_Integrate_LogGrid(float *f)
 {
     int    i;
-    double sum;
+    float sum;
 
     sum = (   9.0*f[0]*(rgrid[0]*rgrid[0]*rgrid[0])
               + 23.0*f[1]*(rgrid[1]*rgrid[1]*rgrid[1])
@@ -311,11 +311,11 @@ double  paw_Integrate_LogGrid(double *f)
 Function name	  :   paw_Zero_LogGrid
 Description	    :
 Return type		  : void
-Argument         : double* grid
+Argument         : float* grid
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:42:43 PM
 ****************************************/
-void    paw_Zero_LogGrid(double *grid)
+void    paw_Zero_LogGrid(float *grid)
 
 {
     int i;
@@ -330,12 +330,12 @@ void    paw_Zero_LogGrid(double *grid)
   Function name	  : paw_Copy_LogGrid
   Description	    :
   Return type		  : void
-  Argument         : double *gridnew
-  Argument         : double *gridold
+  Argument         : float *gridnew
+  Argument         : float *gridold
   Author     		  : Eric Bylaska & Marat Valiev
   Date & Time		  : 1/7/99 4:44:22 PM
 ****************************************/
-void paw_Copy_LogGrid(double *gridnew, double *gridold)
+void paw_Copy_LogGrid(float *gridnew, float *gridold)
 
 {
     int i;
@@ -351,17 +351,17 @@ Description	    : This routine calculates the Norm
 of a wavefunction assuming that
 the wavefunction decays like an
 exponential as r goes to  infinity
-Return type		  : double
+Return type		  : float
 Argument         : int M -> endpoint
-Argument         : double gamma -> power of u near the 0
-Argument         : double *u
+Argument         : float gamma -> power of u near the 0
+Argument         : float *u
 Author     		  : Eric Bylaska & Marat Valiev
 Date & Time		  : 1/7/99 4:46:08 PM
 ****************************************/
-double paw_Norm_LogGrid(int M, double gamma, double *u)
+float paw_Norm_LogGrid(int M, float gamma, float *u)
 {
     int   i;
-    double sum;
+    float sum;
 
 
     sum = (   9.0*u[0]*u[0]*rgrid[0]
@@ -389,12 +389,12 @@ double paw_Norm_LogGrid(int M, double gamma, double *u)
   of the function defined on the
   loggrid array
   Return type		  : void
-  Argument         : double *f  -> original function
-  Argument         : double *df -> derivative
+  Argument         : float *f  -> original function
+  Argument         : float *df -> derivative
   Author     		  : Eric Bylaska & Marat Valiev
   Date & Time		  : 1/7/99 4:47:29 PM
 ****************************************/
-void    paw_Derivative_LogGrid(double *f,double *df)
+void    paw_Derivative_LogGrid(float *f,float *df)
 {
     int i;
 
@@ -414,17 +414,17 @@ void    paw_Derivative_LogGrid(double *f,double *df)
 /****************************************
   Function name	  : paw_dot_product
   Description	    :
-  Return type		  : double
-  Argument         : double *f
-  Argument         : double *g
+  Return type		  : float
+  Argument         : float *f
+  Argument         : float *g
   Author     		  : Marat Valiev
   Date & Time		  : 2/7/99 4:53:24 PM
 ****************************************/
-double paw_dot_product(double *f, double *g)
+float paw_dot_product(float *f, float *g)
 {
 
     int k;
-    double norm;
+    float norm;
 
     norm =0.0;
 
@@ -438,11 +438,11 @@ double paw_dot_product(double *f, double *g)
 
 }
 
-double paw_dot_product1(int n, double *f, double *g)
+float paw_dot_product1(int n, float *f, float *g)
 {
 
     int k;
-    double norm;
+    float norm;
 
     norm =0.0;
 
@@ -478,7 +478,7 @@ void  paw_print_loggrid_information(FILE *fp)
 }
 
 
-int paw_get_grid_index(double r)
+int paw_get_grid_index(float r)
 {
     int i;
 
@@ -497,7 +497,7 @@ int paw_get_grid_index(double r)
     return i;
 }
 
-double* paw_scratch_LogGrid()
+float* paw_scratch_LogGrid()
 {
 
     return scratch;

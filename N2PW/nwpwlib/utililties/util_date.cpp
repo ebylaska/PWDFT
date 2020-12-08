@@ -17,8 +17,8 @@ char *util_date()
 
 #define Clock   clock()
 
-void    seconds(double *tt)
+void    seconds(float *tt)
 {
-   *tt = Clock/((double) CLOCKS_PER_SEC);
+   *tt = Clock/((float) CLOCKS_PER_SEC);
 }
 

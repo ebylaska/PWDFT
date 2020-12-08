@@ -15,37 +15,37 @@
 
 void  R_LYP_Correlation(rho,Vc,Ec,Pc)
 
-double  rho[],
+float  rho[],
 Vc[],
 *Ec,
 *Pc;
 {
     /* local variables */
     int i;
-    double pi;
-    double a,b,c,d,Cf;
-    double smallnumber;
-    double F1,F12,dF1,ddF1;
-    double G1,dG1,ddG1,ddG1A,ddG1B,ddG1C;
-    double T1,T2,T3,T4;
-    double tw;
-    double n;
-    double agr,agr2,lap;
-    double rho_onethird, rho_twothirds,rho_fourthirds,rho_fivethirds,rho_seventhirds,rho_eightthirds,rho3;
-    double rho_eleventhirds,rho4,rho_thirteenthirds,e_c_rho,rho_fivethirds2;
-    double ce,cp;
-    double norm;
+    float pi;
+    float a,b,c,d,Cf;
+    float smallnumber;
+    float F1,F12,dF1,ddF1;
+    float G1,dG1,ddG1,ddG1A,ddG1B,ddG1C;
+    float T1,T2,T3,T4;
+    float tw;
+    float n;
+    float agr,agr2,lap;
+    float rho_onethird, rho_twothirds,rho_fourthirds,rho_fivethirds,rho_seventhirds,rho_eightthirds,rho3;
+    float rho_eleventhirds,rho4,rho_thirteenthirds,e_c_rho,rho_fivethirds2;
+    float ce,cp;
+    float norm;
 
     /* loggrid variables */
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
 
     /* temporary local grids */
-    double *ce_density;
-    double *tmp;
-    double *drho;
-    double *ddrho;
-    double *dadrho;
+    float *ce_density;
+    float *tmp;
+    float *drho;
+    float *ddrho;
+    float *dadrho;
 
     /* constants */
     pi = 4.0*atan(1.0);

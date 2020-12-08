@@ -12,10 +12,10 @@ using namespace std;
 class Control2 {
 
    string myrtdbstring,xcstring;
-   double punita[9],ptolerances[3],pscaling[2];
-   double ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
-   double pbo_time_step;
-   double ptotal_charge;
+   float punita[9],ptolerances[3],pscaling[2];
+   float ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
+   float pbo_time_step;
+   float ptotal_charge;
 
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
@@ -49,16 +49,16 @@ public:
    std::map<std::string, std::string> psp_libraries;
 
    // Access functions
-   double unita(const int i,const int j) { return punita[i+j*3]; }
-   double unita1d(const int ii)   { return punita[ii]; }
-   double tolerances(const int i) { return ptolerances[i]; }
-   double scaling(const int i)    { return pscaling[i]; }
-   double time_step()             { return ptime_step; }
-   double fake_mass()             { return pfake_mass; }
-   double ecut()                  { return pecut; }
-   double wcut()                  { return pwcut; }
-   double ewald_rcut()            { return prcut; }
-   double total_charge()          { return ptotal_charge; }
+   float unita(const int i,const int j) { return punita[i+j*3]; }
+   float unita1d(const int ii)   { return punita[ii]; }
+   float tolerances(const int i) { return ptolerances[i]; }
+   float scaling(const int i)    { return pscaling[i]; }
+   float time_step()             { return ptime_step; }
+   float fake_mass()             { return pfake_mass; }
+   float ecut()                  { return pecut; }
+   float wcut()                  { return pwcut; }
+   float ewald_rcut()            { return prcut; }
+   float total_charge()          { return ptotal_charge; }
 
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }

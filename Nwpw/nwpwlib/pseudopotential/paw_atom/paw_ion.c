@@ -9,19 +9,19 @@
 #include  "paw_hartree.h"
 
 
-static double Zion;
-static double Eion;
-static double *Vion;
+static float Zion;
+static float Eion;
+static float *Vion;
 
 /****************************************
- Function name	  : paw_init_ion(double Z)
+ Function name	  : paw_init_ion(float Z)
  Description	    :
 ****************************************/
-void paw_init_ion(double Z)
+void paw_init_ion(float Z)
 {
     int i;
     int Ngrid;
-    double *rgrid;
+    float *rgrid;
 
 
     Ngrid = paw_N_LogGrid();
@@ -38,16 +38,16 @@ void paw_init_ion(double Z)
 /****************************************
  Function name	  : paw_get_ion_energy
  Description	    :
- Return type		  : double
- Argument         : double *dn
+ Return type		  : float
+ Argument         : float *dn
  Author     		  : Marat Valiev
  Date & Time		  : 3/31/99 2:12:25 PM
 ****************************************/
-double paw_get_ion_energy(double *dn)
+float paw_get_ion_energy(float *dn)
 {
     int    k;
     int Ngrid;
-    double *tmp;
+    float *tmp;
 
 
     Ngrid = paw_N_LogGrid();
@@ -62,12 +62,12 @@ double paw_get_ion_energy(double *dn)
     return Eion;
 }
 
-double* paw_get_ion_pot()
+float* paw_get_ion_pot()
 {
     return Vion;
 }
 
-double paw_get_ion_charge()
+float paw_get_ion_charge()
 {
 
     return Zion;

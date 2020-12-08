@@ -18,7 +18,7 @@ using namespace std;
 */
 void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
 {
-   double zv;
+   float zv;
    psp_library mypsp_library(control);
 
    /* write out psp library directories being used */

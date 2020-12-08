@@ -138,10 +138,10 @@ Ion::Ion(RTDB& myrtdb)
 
    nkatm = ion_find_nkatm(myrtdb,nion);
 
-   charge    = new double[nion];
-   mass      = new double[nion];
-   rion1     = new double[3*nion];
-   rion2     = new double[3*nion];
+   charge    = new float[nion];
+   mass      = new float[nion];
+   rion1     = new float[3*nion];
+   rion2     = new float[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
@@ -149,14 +149,14 @@ Ion::Ion(RTDB& myrtdb)
    ion_find_atomkatmnatm(myrtdb,nion,nkatm,atomarray,katm,natm);
 
    /*  read in ion positions */
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion1)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_float,3*nion,rion1)) 
    { rion1[0] = 0.0; rion1[1] = 0.0; rion1[2] = 0.0; }
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion2)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_float,3*nion,rion2)) 
    { rion2[0] = 0.0; rion2[1] = 0.0; rion2[2] = 0.0; }
 
    /*  read in masses and charges */
-   if (!myrtdb.get("geometry:geometry:masses",rtdb_double,nion,mass)) mass[0] = 1.0;
-   if (!myrtdb.get("geometry:geometry:charges",rtdb_double,nion,charge)) charge[0] = 1.0;
+   if (!myrtdb.get("geometry:geometry:masses",rtdb_float,nion,mass)) mass[0] = 1.0;
+   if (!myrtdb.get("geometry:geometry:charges",rtdb_float,nion,charge)) charge[0] = 1.0;
 
 }
 

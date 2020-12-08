@@ -1,10 +1,10 @@
 #ifndef _GDEVICE_HPP_
 #define _GDEVICE_HPP_
 
-extern void gdevice_TN3_dgemm(int, int, double, double *, double *, double, double *, double *, double *);
-extern void gdevice_TN_dgemm(int, int, int, double, double *, double *, double, double *);
-extern void gdevice_NN_dgemm(int, int, double, double *, double *, double, double *);
-extern void gdevice_NT_dgemm(int, int, int, double, double *, double *, double, double *);
+extern void gdevice_TN3_dgemm(int, int, float, float *, float *, float, float *, float *, float *);
+extern void gdevice_TN_dgemm(int, int, int, float, float *, float *, float, float *);
+extern void gdevice_NN_dgemm(int, int, float, float *, float *, float, float *);
+extern void gdevice_NT_dgemm(int, int, int, float, float *, float *, float, float *);
 
 #ifdef NWPW_SYCL
 #include <CL/sycl.hpp>
@@ -27,10 +27,10 @@ extern void gdevice_NT_dgemm(int, int, int, double, double *, double *, double, 
   }
 
 extern cl::sycl::queue* get_syclQue();
-extern double* get_sycl_mem(const size_t memInBytes);
-extern void free_sycl_mem(double* ptr);
-extern double* get_host_mem(const size_t memInBytes);
-extern void free_host_mem(double* ptr);
+extern float* get_sycl_mem(const size_t memInBytes);
+extern void free_sycl_mem(float* ptr);
+extern float* get_host_mem(const size_t memInBytes);
+extern void free_host_mem(float* ptr);
 
 #endif // NWPW_SYCL
 

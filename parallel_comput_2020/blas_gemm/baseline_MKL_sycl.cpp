@@ -53,14 +53,14 @@ int main() {
   int ldC = n;
 
   // set scalar fp values
-  double alpha = 1.0;
-  double beta  = 0.0;
+  float alpha = 1.0;
+  float beta  = 0.0;
 
   // 1D arrays on host side
-  double *host_a;
-  double *host_b;
-  host_a = new double[M*N]{};
-  host_b = new double[N*P]{};
+  float *host_a;
+  float *host_b;
+  host_a = new float[M*N]{};
+  host_b = new float[N*P]{};
 
   // prepare matrix data with ROW-major style
   // A(M, N)
@@ -93,26 +93,26 @@ int main() {
   queue device_queue(device_selector, asyncHandler);
   std::cout << "Device: " << device_queue.get_device().get_info<info::device::name>() << std::endl << std::endl;
 
-  // Creating 1D buffers for matrices (double)
-  double* dev_a = cl::sycl::malloc_device<double>(M*N, device_queue);
-  double* dev_b = cl::sycl::malloc_device<double>(N*P, device_queue);
-  double* dev_c = cl::sycl::malloc_device<double>(M*P, device_queue);
+  // Creating 1D buffers for matrices (float)
+  float* dev_a = cl::sycl::malloc_device<float>(M*N, device_queue);
+  float* dev_b = cl::sycl::malloc_device<float>(N*P, device_queue);
+  float* dev_c = cl::sycl::malloc_device<float>(M*P, device_queue);
 
   // Transfer info from CPU to GPU
   // copy host -> device
   device_queue.submit([&](cl::sycl::handler& cgh)
   {
-    cgh.memcpy(dev_a, host_a, M*N*sizeof(double));
+    cgh.memcpy(dev_a, host_a, M*N*sizeof(float));
   });
   device_queue.wait();
   device_queue.submit([&](cl::sycl::handler& cgh)
   {
-    cgh.memcpy(dev_b, host_b, N*P*sizeof(double));
+    cgh.memcpy(dev_b, host_b, N*P*sizeof(float));
   });
   device_queue.wait();
 
-  // device_queue.memcpy(dev_a, host_a, sizeof(double)*M*N);
-  // device_queue.memcpy(dev_b, host_b, sizeof(double)*N*P);
+  // device_queue.memcpy(dev_a, host_a, sizeof(float)*M*N);
+  // device_queue.memcpy(dev_b, host_b, sizeof(float)*N*P);
 
   try {
 //Warm up the kernel

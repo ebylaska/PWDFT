@@ -37,13 +37,13 @@ Corrector_In
    Exit  - returns the value of y[?] + F(....)
 */
 
-double  Predictor_In(i,y,f)
+float  Predictor_In(i,y,f)
 int     i;
-double  y[],
+float  y[],
 f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i]  - one_over_24*(  55.0*f[i]
                                  - 59.0*f[i+1]
@@ -81,13 +81,13 @@ f[];
 
 */
 
-double  Predictor_Out(i,y,f)
+float  Predictor_Out(i,y,f)
 int     i;
-double  y[],
+float  y[],
 f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  y[i] + one_over_24*(  55.0*f[i]
                                  - 59.0*f[i-1]
@@ -126,13 +126,13 @@ f[];
 
 */
 
-double  Corrector_In(i,y,f)
+float  Corrector_In(i,y,f)
 int     i;
-double  y[],
+float  y[],
 f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i] - one_over_24*(   9.0*f[i-1]
                                  + 19.0*f[i]
@@ -168,12 +168,12 @@ f[];
 
 */
 
-double  Corrector_In_F(i,f)
+float  Corrector_In_F(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp = -one_over_24*(   9.0*f[i-1]
                            + 19.0*f[i]
@@ -211,13 +211,13 @@ double  f[];
 
 */
 
-double  Corrector_Out(i,y,f)
+float  Corrector_Out(i,y,f)
 int     i;
-double  y[],
+float  y[],
 f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp = y[i] + one_over_24*(   9.0*f[i+1]
                                  + 19.0*f[i]
@@ -249,12 +249,12 @@ f[];
 
 */
 
-double  Derivative7_1(i,f)
+float  Derivative7_1(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*( -147.0*f[i]
                          + 360.0*f[i+1]
@@ -280,12 +280,12 @@ double  f[];
 
 */
 
-double  Derivative7_2(i,f)
+float  Derivative7_2(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*( -10.0*f[i-1]
                          -  77.0*f[i]
@@ -312,12 +312,12 @@ double  f[];
 
 */
 
-double  Derivative7_3(i,f)
+float  Derivative7_3(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*(  +2.0*f[i-2]
                           -  24.0*f[i-1]
@@ -343,12 +343,12 @@ double  f[];
 
 */
 
-double  Derivative7_4(i,f)
+float  Derivative7_4(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*(  -1.0*f[i-3]
                           +   9.0*f[i-2]
@@ -375,12 +375,12 @@ double  f[];
 
 */
 
-double  Derivative7_5(i,f)
+float  Derivative7_5(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*(  -2.0*f[i+2]
                           +  24.0*f[i+1]
@@ -406,12 +406,12 @@ double  f[];
 
 */
 
-double  Derivative7_6(i,f)
+float  Derivative7_6(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*( +10.0*f[i+1]
                          +  77.0*f[i]
@@ -439,12 +439,12 @@ double  f[];
 
 */
 
-double  Derivative7_7(i,f)
+float  Derivative7_7(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_60*( +147.0*f[i]
                          - 360.0*f[i-1]
@@ -470,12 +470,12 @@ double  f[];
 
 */
 
-double  Laplacian7_4(i,f)
+float  Laplacian7_4(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_180*(  +2.0*f[i-3]
                            -  27.0*f[i-2]
@@ -503,12 +503,12 @@ double  f[];
 
 */
 
-double  Derivative5_1(i,f)
+float  Derivative5_1(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*( -50.0*f[i]
                          + 96.0*f[i+1]
@@ -535,12 +535,12 @@ double  f[];
 
 */
 
-double  Derivative5_2(i,f)
+float  Derivative5_2(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(  -6.0*f[i-1]
                           - 20.0*f[i]
@@ -572,12 +572,12 @@ double  f[];
 
 */
 
-double  Derivative5_3(i,f)
+float  Derivative5_3(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(   2.0*f[i-2]
                            - 16.0*f[i-1]
@@ -605,12 +605,12 @@ double  f[];
 
 */
 
-double  Derivative5_4(i,f)
+float  Derivative5_4(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(  -2.0*f[i-3]
                           + 12.0*f[i-2]
@@ -638,12 +638,12 @@ double  f[];
 
 */
 
-double  Derivative5_5(i,f)
+float  Derivative5_5(i,f)
 int     i;
-double  f[];
+float  f[];
 {
 
-    double tmp;
+    float tmp;
 
     tmp =  one_over_24*(   6.0*f[i-4]
                            - 32.0*f[i-3]

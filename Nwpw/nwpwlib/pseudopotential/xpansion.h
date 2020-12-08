@@ -14,8 +14,8 @@ extern  void	ddddp_xpansion();
 extern	void	psp_xpansion();
 extern	void	psi_xpansion();
 extern	void	dpsi_xpansion();
-extern	void	init_xpansion(int,int,double,double,
-                              double*, double*, double*,
-                              double*, double*, double*);
+extern	void	init_xpansion(int,int,float,float,
+                              float*, float*, float*,
+                              float*, float*, float*);
 
 #endif

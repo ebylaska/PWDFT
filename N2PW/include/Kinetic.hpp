@@ -8,7 +8,7 @@ using namespace std;
 
 class	Kinetic_Operator {
 
-   double *tg;
+   float *tg;
    Pneb   *mypneb;
 
 public:
@@ -21,8 +21,8 @@ public:
          delete [] tg;
     }
 
-    void   ke(double *, double *);
-    double ke_ave(double *);
+    void   ke(float *, float *);
+    float ke_ave(float *);
 };
 
 #endif

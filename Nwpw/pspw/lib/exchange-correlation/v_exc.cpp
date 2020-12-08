@@ -68,16 +68,16 @@
 #define one6th (1.00/6.00)
 #define dncut  1.0e-20
 
-void v_exc(const int ispin, const int n2ft3d, double *dn, 
-           double *xcp, double *xce, double *x)
+void v_exc(const int ispin, const int n2ft3d, float *dn, 
+           float *xcp, float *xce, float *x)
 {
    nwpw_timing_start(4);
 
    /* local variables */
    int    k;
-   double pi,xx,xx1,rho,zup,zdw,f,df;
-   double *rhoup,*xcpup,*xceup;
-   double *rhodn,*xcpdn,*xcedn;
+   float pi,xx,xx1,rho,zup,zdw,f,df;
+   float *rhoup,*xcpup,*xceup;
+   float *rhodn,*xcpdn,*xcedn;
 
    pi      = 4.00*atan(1.00);
 

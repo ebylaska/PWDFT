@@ -50,31 +50,31 @@ public:
         int convert_taskid_ij(const int i, const int j) {return procNd[i+j*npi[1]]; }
 
        /* SumAll */
-      double SumAll(const int, const double);
-      void Vector_SumAll(const int, const int, double *);
+      float SumAll(const int, const float);
+      void Vector_SumAll(const int, const int, float *);
       int ISumAll(const int, const int);
       void Vector_ISumAll(const int, const int, int *);
 
        /* MaxAll */
-      double MaxAll(const int, const double);
+      float MaxAll(const int, const float);
 
        /* Brdcsts */
-      void Brdcst_Values(const int, const int, const int, double *);
+      void Brdcst_Values(const int, const int, const int, float *);
       void Brdcst_iValues(const int, const int, const int, int *);
       void Brdcst_iValue(const int, const int, int *);
       void Brdcst_cValues(const int, const int, const int, void *);
 
       /* send/receives */
-      void    dsend(const int, const int, const int, const int, double *);
-      void dreceive(const int, const int, const int, const int, double *);
+      void    dsend(const int, const int, const int, const int, float *);
+      void dreceive(const int, const int, const int, const int, float *);
       void    isend(const int, const int, const int, const int, int    *);
       void ireceive(const int, const int, const int, const int, int    *);
 
       /* asend/areceives */
       void astart(const int, const int);
       void aend(const int);
-      void    adsend(const int, const int, const int, const int, double *);
-      void adreceive(const int, const int, const int, const int, double *);
+      void    adsend(const int, const int, const int, const int, float *);
+      void adreceive(const int, const int, const int, const int, float *);
 
 };
 

@@ -9,10 +9,10 @@
 #include  "paw_hartree.h"
 
 
-static double *Vh;
+static float *Vh;
 
 /****************************************
- Function name	  : paw_init_hartree(double Z)
+ Function name	  : paw_init_hartree(float Z)
  Description	    :
 ****************************************/
 void paw_init_hartree()
@@ -25,23 +25,23 @@ void paw_init_hartree()
  Function name	  : paw_generate_hartree_pot
  Description	    :
  Return type		  : void
- Argument         : double *n
- Argument         : double *Vh
+ Argument         : float *n
+ Argument         : float *Vh
  Author     		  : Marat Valiev (modified from Erics code)
  Date & Time		  : 1/11/99 3:49:01 PM
 ****************************************/
-void paw_generate_hartree_pot(double *n)
+void paw_generate_hartree_pot(float *n)
 {
 
     int i;
     int Ngrid;
-    double* r;
-    double* r2;
-    double* r3;
-    double tt;
-    double charge;
-    double log_amesh;
-    double *tmp;
+    float* r;
+    float* r2;
+    float* r3;
+    float tt;
+    float charge;
+    float log_amesh;
+    float *tmp;
 
     /* get access to rgrid, and a tmp grid */
     Ngrid     = paw_N_LogGrid();
@@ -87,16 +87,16 @@ void paw_generate_hartree_pot(double *n)
 
 
 /****************************************
- Function name	  : paw_get_hartree_energy(double *n)
+ Function name	  : paw_get_hartree_energy(float *n)
  Description	    :
 ****************************************/
-double paw_get_hartree_energy(double *n)
+float paw_get_hartree_energy(float *n)
 {
 
     int i;
     int Ngrid;
-    double Eh;
-    double *tmp;
+    float Eh;
+    float *tmp;
 
     Ngrid     = paw_N_LogGrid();
     tmp       = paw_scratch_LogGrid();
@@ -116,7 +116,7 @@ double paw_get_hartree_energy(double *n)
  Function name	  : paw_get_hartree_pot
  Description	    :
 ****************************************/
-double* paw_get_hartree_pot()
+float* paw_get_hartree_pot()
 {
 
     return Vh;

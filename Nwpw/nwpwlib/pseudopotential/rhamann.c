@@ -44,13 +44,13 @@ values for the Hamann prescription.
 void
 Suggested_Param_RelHamann (int *num_states_psp,
 			   int n_psp[], int l_psp[], int s_psp[],
-			   double e_psp[], double fill_psp[],
-			   double rcut_psp[])
+			   float e_psp[], float fill_psp[],
+			   float rcut_psp[])
 {
   int p, npsps, itmp;
   int i, l, lmax, ss, js;
   int Nc, Nv, n;
-  double rcmax, emax;
+  float rcmax, emax;
 
   Nc = Ncore_Atom ();
   Nv = Nvalence_Atom();
@@ -166,32 +166,32 @@ solve_RelHamann (int num_psp,
 		 int *n_psp,
 		 int *l_psp,
 		 int *s_psp,
-		 double *e_psp,
-		 double *fill_psp,
-		 double *rcut_psp,
-		 double **r_psi_psp,
-		 double **r_psi_prime_psp,
-		 double *rho_psp,
-		 double *rho_semicore,
-		 double **V_psp,
-		 double *eall_psp,
-		 double *eh_psp,
-		 double *ph_psp,
-		 double *ex_psp,
-		 double *px_psp, double *ec_psp, double *pc_psp)
+		 float *e_psp,
+		 float *fill_psp,
+		 float *rcut_psp,
+		 float **r_psi_psp,
+		 float **r_psi_prime_psp,
+		 float *rho_psp,
+		 float *rho_semicore,
+		 float **V_psp,
+		 float *eall_psp,
+		 float *eh_psp,
+		 float *ph_psp,
+		 float *ex_psp,
+		 float *px_psp, float *ec_psp, float *pc_psp)
 {
   int iteration, converged, p, i, k, match, mch, nrc, Ngrid;
-  double al, amesh, rmax, texp, Zion;
-  double gamma, gpr, del, nu0, nu1, nu2, r0;
-  double sv, sf, sx;
-  double dcl;
-  double cl[14];
-  double rpsi_match, rpsi_prime_match;
-  double ldpsi_match;
-  double e1l, e2l, eeig;
-  double ph, px, pc, eh, ex, ec;
-  double *w1l, *w1l_prime, *w2l, *w2l_prime;
-  double *r, *Vh, *Vx, *Vc, *Vall, *Vcut, *Fcut, *f, *V1l, *V2l;
+  float al, amesh, rmax, texp, Zion;
+  float gamma, gpr, del, nu0, nu1, nu2, r0;
+  float sv, sf, sx;
+  float dcl;
+  float cl[14];
+  float rpsi_match, rpsi_prime_match;
+  float ldpsi_match;
+  float e1l, e2l, eeig;
+  float ph, px, pc, eh, ex, ec;
+  float *w1l, *w1l_prime, *w2l, *w2l_prime;
+  float *r, *Vh, *Vx, *Vc, *Vall, *Vcut, *Fcut, *f, *V1l, *V2l;
 
   /* Allocate Grids */
   Vall = Vall_Atom ();
@@ -286,9 +286,9 @@ solve_RelHamann (int num_psp,
 	    }
 
 	  /* perform integrals */
-	  nu0 = ((double) (2 * l_psp[p] + 3));
-	  nu1 = ((double) (l_psp[p] + 1));
-	  nu2 = ((double) (l_psp[p] + 2));
+	  nu0 = ((float) (2 * l_psp[p] + 3));
+	  nu1 = ((float) (l_psp[p] + 1));
+	  nu2 = ((float) (l_psp[p] + 2));
 	  r0 = r[0] / sqrt (amesh);
 	  sv = pow (r0, nu0) * (w1l[0] * Fcut[0] / pow (r[0], nu1)) / nu0;
 	  sf = pow (r0, nu0) * Fcut[0] / nu0;
@@ -336,7 +336,7 @@ solve_RelHamann (int num_psp,
 					sf * (gamma * gamma - 1.0))) / sf;
 
       /* construct final psp wavefunction w2l */
-      nu1 = ((double) (l_psp[p] + 1));
+      nu1 = ((float) (l_psp[p] + 1));
       for (k = 0; k < Ngrid; ++k)
 	w2l[k] = gamma * (w1l[k] + del * pow (r[k], nu1) * Fcut[k]);
 
@@ -349,7 +349,7 @@ solve_RelHamann (int num_psp,
 	      V2l[k] +=
 		(gamma * del * pow (r[k], nu1) * Fcut[k] / (2.0 * w2l[k]))
 		* ((ALAM * ALAM * pow (r[k] / rcut_psp[p], (2.0 * ALAM))
-		    - (2.0 * ALAM * ((double) l_psp[p]) + ALAM * (ALAM + 1.0))
+		    - (2.0 * ALAM * ((float) l_psp[p]) + ALAM * (ALAM + 1.0))
 		    * pow (r[k] / rcut_psp[p], ALAM)) / (r[k] * r[k])
 		   + 2.0 * e_psp[p] - 2.0 * V1l[k]);
 	    }
@@ -391,7 +391,7 @@ solve_RelHamann (int num_psp,
 	}
       if (debug_print ())
 	{
-	  printf ("%d\t%d/2\t%lf  %lf  %lf  %lf  %lf  %lf\n", l_psp[p],
+	  printf ("%d\t%d/2\t%f  %f  %f  %f  %f  %f\n", l_psp[p],
 		  s_psp[p], rcut_psp[p], r[match], e_psp[p], e2l, gamma, gpr);
 	}
 

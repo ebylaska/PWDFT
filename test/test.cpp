@@ -112,8 +112,8 @@ json parse_geometry(json geom, int *curptr, vector<string> lines)
    int center = 1;
    int autoz = 0;
    int autosym = 0;
-   double angs_to_au = 1.0/0.52917715;
-   double conv = angs_to_au;
+   float angs_to_au = 1.0/0.52917715;
+   float conv = angs_to_au;
    vector<string> ss;
    string geometry = "geometry";
 
@@ -157,12 +157,12 @@ json parse_geometry(json geom, int *curptr, vector<string> lines)
 
    int endcount = 1;
    vector<string> symbols;
-   vector<double> coords;
-   vector<double> velocities;
-   vector<double> mass;
+   vector<float> coords;
+   vector<float> velocities;
+   vector<float> mass;
    ++cur;
    int nion = 0;
-   double mm;
+   float mm;
    string line;
    while (endcount>0)
    {
@@ -191,18 +191,18 @@ json parse_geometry(json geom, int *curptr, vector<string> lines)
    if (center)
    {
       int ii;
-      double xcm=0.0;
-      double ycm=0.0;
-      double zcm=0.0;
+      float xcm=0.0;
+      float ycm=0.0;
+      float zcm=0.0;
       for (ii=0; ii<nion; ++ii)
       {
          xcm += coords[3*ii];
          ycm += coords[3*ii+1];
          zcm += coords[3*ii+2];
       }
-      xcm /= ((double) nion);
-      ycm /= ((double) nion);
-      zcm /= ((double) nion);
+      xcm /= ((float) nion);
+      ycm /= ((float) nion);
+      zcm /= ((float) nion);
       for (int ii=0; ii<nion; ++ii)
       {
          coords[3*ii]   -= xcm;
@@ -298,7 +298,7 @@ int main()
 {
    json j;
 
-   double x = 2.193939303;
+   float x = 2.193939303;
    std::string s,line,nwinput;
    json rtdb;
 

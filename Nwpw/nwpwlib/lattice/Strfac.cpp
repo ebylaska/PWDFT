@@ -46,14 +46,14 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    }
 
    /* allocate memory */
-   wx1 = new double [2*(myion->nion)*(mygrid->nx)];
-   wy1 = new double [2*(myion->nion)*(mygrid->ny)];
-   wz1 = new double [2*(myion->nion)*(mygrid->nz)];
+   wx1 = new float [2*(myion->nion)*(mygrid->nx)];
+   wy1 = new float [2*(myion->nion)*(mygrid->ny)];
+   wz1 = new float [2*(myion->nion)*(mygrid->nz)];
 
 #ifdef NWPW_SYCL
-   wx1_sycl = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->nx), *get_syclQue());
-   wy1_sycl = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->ny), *get_syclQue());
-   wz1_sycl = cl::sycl::malloc_device<double>(2*(myion->nion)*(mygrid->nz), *get_syclQue());
+   wx1_sycl = cl::sycl::malloc_device<float>(2*(myion->nion)*(mygrid->nx), *get_syclQue());
+   wy1_sycl = cl::sycl::malloc_device<float>(2*(myion->nion)*(mygrid->ny), *get_syclQue());
+   wz1_sycl = cl::sycl::malloc_device<float>(2*(myion->nion)*(mygrid->nz), *get_syclQue());
 
    i1_indx_sycl = cl::sycl::malloc_device<int>(mygrid->npack(1), *get_syclQue());
    j1_indx_sycl = cl::sycl::malloc_device<int>(mygrid->npack(1), *get_syclQue());
@@ -113,9 +113,9 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
 void Strfac::phafac()
 {
    int i,k,nxh,nyh,nzh,nx,ny,nz;
-   double a,b,sw1,sw2,sw3,pi;
-   double cw1x,cw2x,cw3x;
-   double cw1y,cw2y,cw3y;
+   float a,b,sw1,sw2,sw3,pi;
+   float cw1x,cw2x,cw3x;
+   float cw1y,cw2y,cw3y;
 
    pi  = 4.00*atan(1.0);
 
@@ -179,9 +179,9 @@ void Strfac::phafac()
 
    }
 #ifdef NWPW_SYCL
-   get_syclQue()->memcpy(wx1_sycl, wx1,  2*(myion->nion)*(mygrid->nx)*sizeof(double));
-   get_syclQue()->memcpy(wy1_sycl, wy1,  2*(myion->nion)*(mygrid->ny)*sizeof(double));
-   get_syclQue()->memcpy(wz1_sycl, wz1,  2*(myion->nion)*(mygrid->nz)*sizeof(double));
+   get_syclQue()->memcpy(wx1_sycl, wx1,  2*(myion->nion)*(mygrid->nx)*sizeof(float));
+   get_syclQue()->memcpy(wy1_sycl, wy1,  2*(myion->nion)*(mygrid->ny)*sizeof(float));
+   get_syclQue()->memcpy(wz1_sycl, wz1,  2*(myion->nion)*(mygrid->nz)*sizeof(float));
 
    //get_syclQue()->wait();
 #endif
@@ -192,7 +192,7 @@ void Strfac::phafac()
  *       Strfac::strfac_pack     *
  *                               *
  *********************************/
-void Strfac::strfac_pack(const int nb, const int ii, double *strx)
+void Strfac::strfac_pack(const int nb, const int ii, float *strx)
 {
    int npack,nx,ny,nz;
    npack = mygrid->npack(nb);
@@ -204,12 +204,12 @@ void Strfac::strfac_pack(const int nb, const int ii, double *strx)
    const int *indxj = j_indx[nb];
    const int *indxk = k_indx[nb];
 
-   const double *exi = &wx1[2*ii * nx];
-   const double *exj = &wy1[2*ii * ny];
-   const double *exk = &wz1[2*ii * nz];
+   const float *exi = &wx1[2*ii * nx];
+   const float *exj = &wy1[2*ii * ny];
+   const float *exk = &wz1[2*ii * nz];
 
-   double ai, aj, ak, bi, bj, bk;
-   double c, d;
+   float ai, aj, ak, bi, bj, bk;
+   float c, d;
    for (int i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
@@ -223,7 +223,7 @@ void Strfac::strfac_pack(const int nb, const int ii, double *strx)
 }
 
 #ifdef NWPW_SYCL
-void Strfac::strfac_pack_sycl(const int nb, const int ii, double *strx)
+void Strfac::strfac_pack_sycl(const int nb, const int ii, float *strx)
 {
     assert(nb==1);    // following only works with nb=1
 
@@ -233,9 +233,9 @@ void Strfac::strfac_pack_sycl(const int nb, const int ii, double *strx)
     ny = mygrid->ny;
     nz = mygrid->nz;
 
-    const double *exi = &wx1_sycl[2*ii * nx];
-    const double *exj = &wy1_sycl[2*ii * ny];
-    const double *exk = &wz1_sycl[2*ii * nz];
+    const float *exi = &wx1_sycl[2*ii * nx];
+    const float *exj = &wy1_sycl[2*ii * ny];
+    const float *exk = &wz1_sycl[2*ii * nz];
 
     const int *i_idx_sycl = i1_indx_sycl;
     const int *j_idx_sycl = j1_indx_sycl;
@@ -256,15 +256,15 @@ void Strfac::strfac_pack_sycl(const int nb, const int ii, double *strx)
 	    int j_id = j_idx_sycl[i];
 	    int k_id = k_idx_sycl[i];
 
-	    double ai = exi[2*i_id];
-	    double bi = exi[2*i_id+1];
-	    double aj = exj[2*j_id];
-	    double bj = exj[2*j_id+1];
-	    double ak = exk[2*k_id];
-	    double bk = exk[2*k_id+1];
+	    float ai = exi[2*i_id];
+	    float bi = exi[2*i_id+1];
+	    float aj = exj[2*j_id];
+	    float bj = exj[2*j_id+1];
+	    float ak = exk[2*k_id];
+	    float bk = exk[2*k_id+1];
 
-	    double c  = aj*ak - bj*bk;
-	    double d  = aj*bk + ak*bj;
+	    float c  = aj*ak - bj*bk;
+	    float d  = aj*bk + ak*bj;
 
 	    strx[2*i]   = (ai*c - bi*d);
 	    strx[2*i+1] = (ai*d + bi*c);
@@ -278,8 +278,8 @@ void Strfac::generate_projectors_sycl(const int nb,
 				      const int ii,
 				      const int nprj,
 				      const int* sd_func,
-				      const double* vnl,
-				      double *prj)
+				      const float* vnl,
+				      float *prj)
 {
     assert(nb==1); // following only works with nb=1
 
@@ -289,9 +289,9 @@ void Strfac::generate_projectors_sycl(const int nb,
     ny = mygrid->ny;
     nz = mygrid->nz;
 
-    const double *exi = &wx1_sycl[2*ii * nx];
-    const double *exj = &wy1_sycl[2*ii * ny];
-    const double *exk = &wz1_sycl[2*ii * nz];
+    const float *exi = &wx1_sycl[2*ii * nx];
+    const float *exj = &wy1_sycl[2*ii * ny];
+    const float *exk = &wz1_sycl[2*ii * nz];
 
     const int *i_idx_sycl = i1_indx_sycl;
     const int *j_idx_sycl = j1_indx_sycl;
@@ -316,22 +316,22 @@ void Strfac::generate_projectors_sycl(const int nb,
 	    int exj_id = 2 * j_id;
 	    int exk_id = 2 * k_id;
 
-	    double ai = exi[exi_id];
-	    double bi = exi[exi_id+1];
-	    double aj = exj[exj_id];
-	    double bj = exj[exj_id+1];
-	    double ak = exk[exk_id];
-	    double bk = exk[exk_id+1];
+	    float ai = exi[exi_id];
+	    float bi = exi[exi_id+1];
+	    float aj = exj[exj_id];
+	    float bj = exj[exj_id+1];
+	    float ak = exk[exk_id];
+	    float bk = exk[exk_id+1];
 
-	    double c  = aj*ak - bj*bk;
-	    double d  = aj*bk + ak*bj;
+	    float c  = aj*ak - bj*bk;
+	    float d  = aj*bk + ak*bj;
 
-	    double r_strfac = (ai*c - bi*d);
-	    double i_strfac = (ai*d + bi*c);
+	    float r_strfac = (ai*c - bi*d);
+	    float i_strfac = (ai*d + bi*c);
 
 	    size_t i2 = i*2;
 	    for( int l=0; l<nprj; l++) {
-		double vnl_val = vnl[i + l*npack];
+		float vnl_val = vnl[i + l*npack];
 		size_t lnpack2 = l*2*npack;
 		if( sd_func[l] ) {
 		    // mypneb->tcc_Mul_sycl()
@@ -353,11 +353,11 @@ void Strfac::generate_projectors_sycl(const int nb,
         });
 
     // mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
-    // void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, double *sum)
+    // void PGrid::cc_pack_indot(const int nb, const int nn, float *a, float *b, float *sum)
     // {
     // 	int ng  = 2*(nida[nb]+nidb[nb]);
     // 	int ng0 = 2*nida[nb];
-    // 	double* sw1_local = &(sw1[l * nn]);
+    // 	float* sw1_local = &(sw1[l * nn]);
     // 	for (int i=0; i<nn; ++i)
     // 	{
     // 	    sum[i] = 2.0 * DDOT_PWDFT(ng,&(a[i*ng]),1,b,1);
@@ -391,8 +391,8 @@ void Strfac::generate_projectors_all(const int nb,
 				     const int nprjMax,
 				     const int* nprj,
 				     const int* sd_func,
-				     double** vnl,
-				     double *prjAll)
+				     float** vnl,
+				     float *prjAll)
 {
     assert(nb==1); // following only works with nb=1
 
@@ -406,9 +406,9 @@ void Strfac::generate_projectors_all(const int nb,
     const int *j_idx_sycl = j1_indx_sycl;
     const int *k_idx_sycl = k1_indx_sycl;
 
-    const double* phafacx = wx1_sycl;
-    const double* phafacy = wy1_sycl;
-    const double* phafacz = wz1_sycl;
+    const float* phafacx = wx1_sycl;
+    const float* phafacy = wy1_sycl;
+    const float* phafacz = wz1_sycl;
 
     auto event = get_syclQue()->submit([&](cl::sycl::handler &cgh) {
             cgh.parallel_for_work_group<class gen_proj>(cl::sycl::range<1>(nions), cl::sycl::range<1>(npack),
@@ -417,14 +417,14 @@ void Strfac::generate_projectors_all(const int nb,
         size_t ii = group.get_id(0);
         size_t ii2 = 2*ii;
 
-        const double* exi = &phafacx[ii2 * nx];
-        const double* exj = &phafacy[ii2 * ny];
-        const double* exk = &phafacz[ii2 * nz];
+        const float* exi = &phafacx[ii2 * nx];
+        const float* exj = &phafacy[ii2 * ny];
+        const float* exk = &phafacz[ii2 * nz];
 	const size_t ia = katm[ii];
-	const double* vnl_ion = vnl[ia];
+	const float* vnl_ion = vnl[ia];
         const int n_proj = nprj[ia];
 	const int* sdFunc = &(sd_func[ii * nprjMax]);
-	double* prj = &(prjAll[ii * nprjMax*2*npack]);
+	float* prj = &(prjAll[ii * nprjMax*2*npack]);
 
         group.parallel_for_work_item([&](cl::sycl::h_item<1> item) {
                 size_t i = item.get_global_id();
@@ -438,22 +438,22 @@ void Strfac::generate_projectors_all(const int nb,
                 int exj_id = 2 * j_id;
                 int exk_id = 2 * k_id;
 
-                double ai = exi[exi_id];
-                double bi = exi[exi_id+1];
-                double aj = exj[exj_id];
-                double bj = exj[exj_id+1];
-                double ak = exk[exk_id];
-                double bk = exk[exk_id+1];
+                float ai = exi[exi_id];
+                float bi = exi[exi_id+1];
+                float aj = exj[exj_id];
+                float bj = exj[exj_id+1];
+                float ak = exk[exk_id];
+                float bk = exk[exk_id+1];
 
-                double c  = aj*ak - bj*bk;
-                double d  = aj*bk + ak*bj;
+                float c  = aj*ak - bj*bk;
+                float d  = aj*bk + ak*bj;
 
-                double r_strfac = ai*c - bi*d;
-                double i_strfac = ai*d + bi*c;
+                float r_strfac = ai*c - bi*d;
+                float i_strfac = ai*d + bi*c;
 
                 for( int l=0; l<n_proj; l++) {
 		    size_t lnpack2 = 2*l*npack;
-                    double vnl_val = vnl_ion[i + l*npack];
+                    float vnl_val = vnl_ion[i + l*npack];
                     if(sdFunc[l]) {
                         // mypneb->tcc_Mul_sycl()
                         prj[i2   + lnpack2] = vnl_val * r_strfac;

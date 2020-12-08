@@ -6,8 +6,8 @@
 #include	"Pneb.hpp"
 
 void psi_header(Pneb *mypneb,int *version, int nfft[], 
-                double unita[], int *ispin, int ne[],
-                double *psi)
+                float unita[], int *ispin, int ne[],
+                float *psi)
 {
    int occupation;
    Parallel *myparall = mypneb->d3db::parall;

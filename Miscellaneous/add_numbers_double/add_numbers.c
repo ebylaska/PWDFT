@@ -105,8 +105,8 @@ int main() {
    size_t local_size, global_size;
 
    /* Data and buffers */
-   double data[ARRAY_SIZE];
-   double sum[2], total, actual_sum;
+   float data[ARRAY_SIZE];
+   float sum[2], total, actual_sum;
    cl_mem input_buffer, sum_buffer;
    cl_int num_groups;
 
@@ -131,9 +131,9 @@ int main() {
    local_size = 4;
    num_groups = global_size/local_size;
    input_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY |
-         CL_MEM_COPY_HOST_PTR, ARRAY_SIZE * sizeof(double), data, &err);
+         CL_MEM_COPY_HOST_PTR, ARRAY_SIZE * sizeof(float), data, &err);
    sum_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE |
-         CL_MEM_COPY_HOST_PTR, num_groups * sizeof(double), sum, &err);
+         CL_MEM_COPY_HOST_PTR, num_groups * sizeof(float), sum, &err);
    if(err < 0) {
       perror("Couldn't create a buffer");
       exit(1);   
@@ -155,7 +155,7 @@ int main() {
 
    /* Create kernel arguments */
    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_buffer);
-   err |= clSetKernelArg(kernel, 1, local_size * sizeof(double), NULL);
+   err |= clSetKernelArg(kernel, 1, local_size * sizeof(float), NULL);
    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sum_buffer);
    if(err < 0) {
       perror("Couldn't create a kernel argument");
