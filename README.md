@@ -21,4 +21,5 @@ make -j4
 ## Running on JSLE
 ```
 qsub -I -n 1 -t 60 -q iris
+qsub -I -n 1 -t 60 -q R.coe_dungeon_iris
 ```
