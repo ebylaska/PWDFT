@@ -5,8 +5,9 @@ PW-DFT development for NWChemEx
 
 ## Required Modules
 ```
+export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
 module load oneapi
-module load mpi/aurora
+module load mpi/aurora_mpich
 module load cmake
 ```
 
@@ -15,4 +16,9 @@ module load cmake
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 make -j4
+```
+
+## Running on JSLE
+```
+qsub -I -n 1 -t 60 -q iris
 ```
