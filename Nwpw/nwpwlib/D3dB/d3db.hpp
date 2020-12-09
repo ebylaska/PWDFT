@@ -48,16 +48,16 @@ class d3db : public Mapping3 {
     double *tmpx,*tmpy,*tmpz;
 
 #ifdef NWPW_SYCL
-    // NOTE: supports only mapType = 2
-    int *iq_to_i1_0_dev; // iq_to_i1[0]
-    int *iq_to_i1_1_dev; // iq_to_i1[1]
-    int *iq_to_i1_2_dev; // iq_to_i1[2]
-    int *iq_to_i1_3_dev; // iq_to_i1[3]
+    // // NOTE: supports only mapType = 2
+    // int *iq_to_i1_0_dev; // iq_to_i1[0]
+    // int *iq_to_i1_1_dev; // iq_to_i1[1]
+    // int *iq_to_i1_2_dev; // iq_to_i1[2]
+    // int *iq_to_i1_3_dev; // iq_to_i1[3]
 
-    int *iq_to_i2_0_dev; // iq_to_i2[0]
-    int *iq_to_i2_1_dev; // iq_to_i2[1]
-    int *iq_to_i2_2_dev; // iq_to_i2[2]
-    int *iq_to_i2_3_dev; // iq_to_i2[3]
+    // int *iq_to_i2_0_dev; // iq_to_i2[0]
+    // int *iq_to_i2_1_dev; // iq_to_i2[1]
+    // int *iq_to_i2_2_dev; // iq_to_i2[2]
+    // int *iq_to_i2_3_dev; // iq_to_i2[3]
 
     // variables for cr_fft3d_sycl() and rc_fft3d_sycl()
     double *a_dev;
