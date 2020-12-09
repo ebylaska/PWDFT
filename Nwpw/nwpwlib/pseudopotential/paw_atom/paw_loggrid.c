@@ -77,9 +77,9 @@ void  paw_init_LogGrid_from_file( float Z, FILE *fp)
     }
     else
     {
-        fscanf(fp,"%le",&Lmax);
+        fscanf(fp,"%e",&Lmax);
         fscanf(fp,"%d", &Ngrid);
-        fscanf(fp,"%le",&r0);
+        fscanf(fp,"%e",&r0);
 
         log_amesh = log(Lmax/r0)/(Ngrid-1);
         amesh     = exp(log_amesh);

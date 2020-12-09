@@ -54,7 +54,7 @@ static int convert_psp_type(char *test)
    Returns true if fname exists otherwise false.
 */
 
-#define FMT1    "%lf"
+#define FMT1    "%f"
 
 static bool psp_read_header(char *fname, float *zv)
 {

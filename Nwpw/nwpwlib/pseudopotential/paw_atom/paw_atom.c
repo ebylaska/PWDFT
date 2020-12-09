@@ -67,7 +67,7 @@ void   paw_init_atom(char* atom, char *infile)
     atom_name = atom;
 
     /* read ion charge */
-    /*fscanf(fp,"%le", &Zion);*/
+    /*fscanf(fp,"%e", &Zion);*/
     strcpy(input,"<atom_charge>");
     if (paw_find_word(input,fp) != 0)
     {
@@ -78,7 +78,7 @@ void   paw_init_atom(char* atom, char *infile)
     }
     else
     {
-        fscanf(fp,"%le", &Zion);
+        fscanf(fp,"%e", &Zion);
     }
 
     /*initialize log grid*/
@@ -362,7 +362,7 @@ void   paw_init_paw_atom(char *infile)
     }
     else
     {
-        fscanf(fp, "%le", &r_pot);
+        fscanf(fp, "%e", &r_pot);
     }
 
     /* potential at zero */
@@ -374,7 +374,7 @@ void   paw_init_paw_atom(char *infile)
     }
     else
     {
-        fscanf(fp, "%le", &c0);
+        fscanf(fp, "%e", &c0);
     }
 
     /* compensation charge radius */
@@ -386,7 +386,7 @@ void   paw_init_paw_atom(char *infile)
     }
     else
     {
-        fscanf(fp, "%le", &r_comp);
+        fscanf(fp, "%e", &r_comp);
     }
 
     /* node constraint*/

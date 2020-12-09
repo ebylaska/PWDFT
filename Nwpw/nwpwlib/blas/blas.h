@@ -41,16 +41,16 @@ extern "C" void dsyev_(char *, char *, int *,
 extern "C" int  idamax_(int *, float *, int *);
 
 
-#define	DSCAL_PWDFT(n,alpha,a,ida)		dscal_(&(n),&(alpha),a,&(ida));
-#define DCOPY_PWDFT(n,a,ida,b,idb)              dcopy_(&(n),a,&(ida),b,&(idb))
-#define DAXPY_PWDFT(n,alpha,a,ida,b,idb)        daxpy_(&(n),&(alpha),a,&(ida),b,&(idb))
-#define DGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) dgemm_(s1,s2,&(n),&(m),&(k),&(alpha),a,&(ida),b,&(idb),&(beta),c,&(idc))
+#define	DSCAL_PWDFT(n,alpha,a,ida)		sscal_(&(n),&(alpha),a,&(ida));
+#define DCOPY_PWDFT(n,a,ida,b,idb)              scopy_(&(n),a,&(ida),b,&(idb))
+#define DAXPY_PWDFT(n,alpha,a,ida,b,idb)        saxpy_(&(n),&(alpha),a,&(ida),b,&(idb))
+#define DGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) sgemm_(s1,s2,&(n),&(m),&(k),&(alpha),a,&(ida),b,&(idb),&(beta),c,&(idc))
 
 #define IDAMAX_PWDFT(nn,hml,one)	idamax_(&(nn),hml,&(one))
 
-#define EIGEN_PWDFT(n,hml,eig,xtmp,nn,ierr) dsyev_((char *) "V",(char *) "U", &(n),hml,&(n),eig,xtmp,&(nn),&ierr)
+#define EIGEN_PWDFT(n,hml,eig,xtmp,nn,ierr) ssyev_((char *) "V",(char *) "U", &(n),hml,&(n),eig,xtmp,&(nn),&ierr)
 
-#define	DDOT_PWDFT(n,a,ida,b,idb)	ddot_(&(n),a,&ida,b,&(idb));
+#define	DDOT_PWDFT(n,a,ida,b,idb)	sdot_(&(n),a,&ida,b,&(idb));
 
 #endif
 

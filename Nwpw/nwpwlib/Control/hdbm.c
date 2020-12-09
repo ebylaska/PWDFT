@@ -293,7 +293,7 @@ static int datum_fread(FILE *file, size_t file_ptr, size_t size, datum *d)
     d->dsize = 0;
     
     if (!(d->dptr = hdbm_malloc((size_t) size))) {
-	fprintf(stderr, "datum_fread: failed to malloc %d\n", size);
+	fprintf(stderr, "datum_fread: failed to malloc %zu\n", size);
 	return 0;
     }
     if (hdbm_fseek(file, file_ptr, SEEK_SET)) {
@@ -302,7 +302,7 @@ static int datum_fread(FILE *file, size_t file_ptr, size_t size, datum *d)
 	return 0;
     }
     if (hdbm_fread((char *) d->dptr, (size_t) 1, (size_t) size, file) != size) {
-	fprintf(stderr, "datum_fread: failed to read data %d\n", size);
+	fprintf(stderr, "datum_fread: failed to read data %zu\n", size);
 	return 0;
     }
     
@@ -436,7 +436,7 @@ int hdbm_open(const char *name, int use_file, hdbm *db)
 	if (!(hash_tables[i].file = fopen(name, "r+b")))
 	    if (!(hash_tables[i].file = fopen(name, "w+b"))) {
 perror(name);
-		(void) fprintf(stderr, "hdbm_open: open of %s failed %x\n", name,hash_tables[i].file);
+		(void) fprintf(stderr, "hdbm_open: open of %s failed %p\n", name,hash_tables[i].file);
 		return 0;
 	    }
 	retval = hdbm_fseek(hash_tables[i].file, 0L, SEEK_END);

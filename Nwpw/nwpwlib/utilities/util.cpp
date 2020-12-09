@@ -190,7 +190,7 @@ void util_getfilling(int f, int nfft[], int *filling, float zvalue[])
 float util_random(const int seed)
 {
    if (seed>0) std::srand(((float) seed));
-   return ( (float) std::rand()/RAND_MAX);
+   return ( (float) std::rand()/(float)RAND_MAX);
 }
 
 

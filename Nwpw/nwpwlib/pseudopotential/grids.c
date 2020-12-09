@@ -139,12 +139,12 @@ void	dealloc_Grid(float * grid)
     if (!done)
     {
         printf("Error in dealloc_Grid: grid not found\n");
-        printf("              address: %lx\n", grid);
+        printf("              address: %p\n", grid);
         cur = using_grids_list;
         printf("Address List:");
         while (cur != NIL)
         {
-            printf("%lx ", cur->grid);
+            printf("%p ", cur->grid);
             cur = cur->next;
         }
         printf("\n");

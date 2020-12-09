@@ -1,6 +1,10 @@
 /*
  $Id$
 */
+#include <math.h>
+float   log_amesh_LogGrid();
+float   amesh_LogGrid();
+float*  r_LogGrid();
 
 /**********************************
  *				  *

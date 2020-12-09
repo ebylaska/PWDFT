@@ -128,7 +128,7 @@ int     get_string(FILE *stream, char *string)
         ++n;
     }
 
-    if ((c=='\n'))
+    if (c=='\n')
     {
         ungetc(c,stream);
         --n;
@@ -153,7 +153,7 @@ int remove_blanks(FILE *stream)
 
 
     value = 1;
-    if ((c=='\n'))
+    if (c=='\n')
     {
         value = 0;
         --n;

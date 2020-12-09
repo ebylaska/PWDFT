@@ -105,8 +105,8 @@ void init_Atom (char *filename)
   fscanf (fp, "%s", atom_name);
 
   /* read in atom info. from the stream */
-  fscanf (fp, "%le", &Zion);
-  fscanf (fp, "%le", &amass);
+  fscanf (fp, "%e", &Zion);
+  fscanf (fp, "%e", &amass);
   fscanf (fp, "%d %d", &Ncore, &Nvalence);
 
   if (Solver_Type != Dirac && Solver_Type!=ZORA)
@@ -127,7 +127,7 @@ void init_Atom (char *filename)
       lmax = 0;
       for (i = 0; i < Ncv; ++i)
 	{
-	  fscanf(fp, "%d %d %le", &n[i], &l[i], &fill[i]);
+	  fscanf(fp, "%d %d %e", &n[i], &l[i], &fill[i]);
 	  if (l[i] > lmax)
 	    lmax = l[i];
 	}
@@ -170,7 +170,7 @@ void init_Atom (char *filename)
       ncvh = Ncv / 2;
       for (i = 0; i < ncvh; ++i)
 	{
-	  fscanf (fp, "%d %d %le", &nx, &lx, &fillx);
+	  fscanf (fp, "%d %d %e", &nx, &lx, &fillx);
           lmax=(lmax>lx)?lmax:lx;
 	  n[2 * i] = nx;
 	  n[2 * i + 1] = nx;
@@ -275,9 +275,7 @@ void end_Atom()
  ********************************/
 
 void
-Thomas_Fermi (Z, Vtmp)
-     float Z;
-     float Vtmp[];
+Thomas_Fermi (float Z, float Vtmp[])
 {
   int i, Ngrid;
   float *rgrid, x, t;
@@ -641,8 +639,8 @@ print_Atom (FILE * fp)
 
   fprintf (fp, "All electron atom solver\n\n");
   fprintf (fp, "Atom name: %s\n", atom_name);
-  fprintf (fp, "Zcharge  : %le\n", Zion);
-  fprintf (fp, "Amass    : %le\n", amass);
+  fprintf (fp, "Zcharge  : %e\n", Zion);
+  fprintf (fp, "Amass    : %e\n", amass);
   fprintf (fp, "Ncore    : %d\n", Ncore);
   fprintf (fp, "Nvalence : %d\n", Nvalence);
   fprintf (fp, "         : restricted calculation\n");
@@ -658,9 +656,9 @@ print_Atom (FILE * fp)
 
 
   fprintf (fp, "\n------- Grid information -------\n");
-  fprintf (fp, "Zcharge  : %le\n", Zion);
-  fprintf (fp, "amesh    : %le\n", amesh_LogGrid ());
-  fprintf (fp, "R_max    : %le\n", r_LogGrid ()[N_LogGrid () - 1]);
+  fprintf (fp, "Zcharge  : %e\n", Zion);
+  fprintf (fp, "amesh    : %e\n", amesh_LogGrid ());
+  fprintf (fp, "R_max    : %e\n", r_LogGrid ()[N_LogGrid () - 1]);
   fprintf (fp, "Ngrid    : %d\n", N_LogGrid ());
   fprintf (fp,
 	   "------------------------------------------------------------\n");
@@ -669,7 +667,7 @@ print_Atom (FILE * fp)
       fprintf (fp, "n\tl\tspin\tpopulation\tEigenvalue\tOuter Peak\n");
       for (i = 0; i < Ncv; ++i)
 	{
-	  fprintf (fp, "%d\t%s\t%.1lf\t%.2lf\t\t%le\t%le\n", n[i],
+	  fprintf (fp, "%d\t%s\t%.1lf\t%.2lf\t\t%e\t%e\n", n[i],
 		   spd_Name (l[i]), 0.5 * s2[i], fill[i], eigenvalue[i],
 		   peak[i]);
 	}
@@ -680,36 +678,36 @@ print_Atom (FILE * fp)
       for (i = 0; i < Ncv; ++i)
 	{
 
-	  fprintf (fp, "%d\t%s\t%.2lf\t\t%le\t%le\n", n[i], spd_Name (l[i]),
+	  fprintf (fp, "%d\t%s\t%.2lf\t\t%e\t%e\n", n[i], spd_Name (l[i]),
 		   fill[i], eigenvalue[i], peak[i]);
 	}
     }
   fprintf (fp,
 	   "------------------------------------------------------------\n");
 
-  fprintf (fp, "electronic charge      = %le\n", -Integrate_LogGrid (rho));
-  fprintf (fp, "electronic core charge = %le\n",
+  fprintf (fp, "electronic charge      = %e\n", -Integrate_LogGrid (rho));
+  fprintf (fp, "electronic core charge = %e\n",
 	   -Integrate_LogGrid (rho_core));
-  fprintf (fp, "total atom charge      = %le\n",
+  fprintf (fp, "total atom charge      = %e\n",
 	   Zion - Integrate_LogGrid (rho));
 
 
 
 
-  fprintf (fp, "\nTotal E       = %le\n", Total_E);
+  fprintf (fp, "\nTotal E       = %e\n", Total_E);
   fprintf (fp, "\n");
 
 
-  fprintf (fp, "E_Hartree     = %le\n", E_Hartree);
-  fprintf (fp, "<Vh>          = %le\n", P_Hartree);
+  fprintf (fp, "E_Hartree     = %e\n", E_Hartree);
+  fprintf (fp, "<Vh>          = %e\n", P_Hartree);
   fprintf (fp, "\n");
 
-  fprintf (fp, "E_exchange    = %le\n", E_exchange);
-  fprintf (fp, "<Vx>          = %le\n", P_exchange);
+  fprintf (fp, "E_exchange    = %e\n", E_exchange);
+  fprintf (fp, "<Vx>          = %e\n", P_exchange);
   fprintf (fp, "\n");
 
-  fprintf (fp, "E_correlation = %le\n", E_correlation);
-  fprintf (fp, "<Vc>          = %le\n", P_correlation);
+  fprintf (fp, "E_correlation = %e\n", E_correlation);
+  fprintf (fp, "<Vc>          = %e\n", P_correlation);
 
 }				/* print_Atom */
 

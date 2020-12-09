@@ -34,14 +34,7 @@
  *                                *
  **********************************/
 
-int paw_R_Pauli(n,l,Z,v,Eig,u,uprime)
-int    n,l;
-float Z;
-float v[];
-float *Eig;
-float u[],
-uprime[];
-
+int paw_R_Pauli(int n, int l, float Z, float v[], float* Eig, float u[], float uprime[])
 {
     int     i,j,
     iteration,
@@ -328,15 +321,7 @@ uprime[];
  *                                *
  **********************************/
 
-int paw_R_Pauli_Fixed_E(n,l,Z,v,match,E,u,uprime)
-int    n,l;
-float Z;
-float v[];
-int    match;
-float E;
-float u[],
-uprime[];
-
+int paw_R_Pauli_Fixed_E(int n, int l, float Z, float v[], int match, float E, float u[],float uprime[])
 {
     int     i,j,
     node,

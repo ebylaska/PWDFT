@@ -17,8 +17,8 @@ using namespace std;
 #include	"Psp1d_Hamann.hpp"
 
 
-#define FMT1    "%lf"
-#define FMT2    " %lf %lf"
+#define FMT1    "%f"
+#define FMT2    " %f %f"
 #define FMT10   "%10.3lf %10.3lf %10.3lf"
 
 /*******************************************
