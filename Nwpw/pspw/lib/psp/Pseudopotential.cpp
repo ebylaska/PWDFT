@@ -154,9 +154,6 @@ static void vpp_read(PGrid *mygrid,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
-#ifdef NWPW_SYCL
- 		     double **vnl_dev,
-#endif
                      int **b_projector,
                      double **Gijl,
                      bool   *semicore,
@@ -255,9 +252,6 @@ static void vpp_read(PGrid *mygrid,
    if (*nprj > 0)
    {
       *vnl = new double[(*nprj)*(mygrid->npack(1))];
-#ifdef NWPW_SYCL
-      *vnl_dev = cl::sycl::malloc_device<double>((*nprj)*(mygrid->npack(1)), *get_syclQue());
-#endif
       prj = *vnl;
       for (i=0; i<(*nprj); ++i)
       {
@@ -288,11 +282,6 @@ static void vpp_read(PGrid *mygrid,
       mygrid->t_pack(0,tmp2);
       mygrid->tt_pack_copy(0,tmp2,&prj[4*mygrid->npack(0)]);
    }
-
-#ifdef NWPW_SYCL
-      get_syclQue()->memcpy(*vnl_dev, *vnl, (*nprj)*(mygrid->npack(1))*sizeof(double));
-      //get_syclQue()->wait();
-#endif
 
    delete [] tmp2;
 
@@ -531,9 +520,6 @@ static void vpp_generate(PGrid *mygrid,
                      int **n_projector,
                      int **l_projector,
                      int **m_projector,
-#ifdef NWPW_SYCL
-           		 double **vnl_dev,
-#endif
                      int **b_projector,
                      double **Gijl,
                      bool   *semicore,
@@ -644,9 +630,6 @@ static void vpp_generate(PGrid *mygrid,
 
       /* allocate vnl and ncore  generate formated grids */
       *vnl = new double[(psp1d.nprj)*(mygrid->npack(1))];
-#ifdef NWPW_SYCL
-      *vnl_dev = cl::sycl::malloc_device<double>((psp1d.nprj)*(mygrid->npack(1)), *get_syclQue());
-#endif
       if (*semicore)
          *ncore = new double[5*mygrid->npack(0)];
 
@@ -654,12 +637,7 @@ static void vpp_generate(PGrid *mygrid,
       psp1d.vpp_generate_spline(mygrid,nray,G_ray,vl_ray,vnl_ray,rho_sc_k_ray,
                                 vl,*vnl,*ncore);
 
-
-#ifdef NWPW_SYCL
-	 get_syclQue()->memcpy(*vnl_dev, *vnl, (psp1d.nprj)*(mygrid->npack(1))*sizeof(double));
-#endif
-
-      /*  deallocate ray formatted grids */
+      /* deallocate ray formatted grids */
       delete [] rho_sc_k_ray;
       delete [] vnl_ray;
       delete [] vl_ray;
@@ -671,10 +649,6 @@ static void vpp_generate(PGrid *mygrid,
    {
       std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
    }
-
-// #ifdef NWPW_SYCL
-//    get_syclQue()->wait();
-// #endif
 }
 
 
@@ -690,9 +664,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 {
    int ia,version,nfft[3];
    int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
-#ifdef NWPW_SYCL
-   double *vnl_ptr_dev;
-#endif
    double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
    double unita[9];
    char fname[256],pspname[256],aname[2];
@@ -712,9 +683,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    nprj     = new int[npsp];
    semicore = new bool[npsp+1];
 
-#ifdef NWPW_SYCL
-   vnl_dev = cl::sycl::malloc_device<double*>(npsp, *get_syclQue());
-#endif
    n_projector = new int* [npsp];
    l_projector = new int* [npsp];
    m_projector = new int* [npsp];
@@ -752,9 +720,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 		      comment[ia],&psp_type[ia],&version,nfft,unita,aname,
 		      &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
 		      &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
-#ifdef NWPW_SYCL
-		      &vnl_ptr_dev,
-#endif
 		      &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
 		      &ncore_ptr,vl[ia],&vnl_ptr);
 
@@ -810,9 +775,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                   comment[ia],&psp_type[ia],&version,nfft,unita,aname,
                   &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                   &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
-#ifdef NWPW_SYCL
-		  &vnl_ptr_dev,
-#endif
 		  &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
                   &ncore_ptr,vl[ia],&vnl_ptr);
       }
@@ -838,9 +800,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       l_projector[ia] = l_ptr;
       m_projector[ia] = m_ptr;
       b_projector[ia] = b_ptr;
-#ifdef NWPW_SYCL
-      vnl_dev[ia] = vnl_ptr_dev;
-#endif
       Gijl[ia]        = G_ptr;
       vnl[ia]         = vnl_ptr;
       if (nprj[ia]>nprj_max) nprj_max = nprj[ia];
@@ -859,19 +818,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    // for (auto ii=0; ii < myion->nion; ++ii)
    //     nprj_max += nprj[myion->katm[ii]];
 
-#ifdef NWPW_SYCL
-   // Assign the values for `sd_function` (both host & device variables)
-   size_t len_sd = myion->nion * nprj_max;
-   sd_function_host = new int[len_sd];
-   set_sd_function(sd_function_host);
-   sd_function_dev = cl::sycl::malloc_device<int>(len_sd, *get_syclQue());
-   get_syclQue()->memcpy(sd_function_dev, sd_function_host, len_sd*sizeof(int));
-
-   // Allocate and copy data for `myion->katm` device array
-   // myIon_katm = cl::sycl::malloc_device<int>(myion->nion, *get_syclQue());
-   // get_syclQue()->memcpy(myIon_katm, myion->katm, myion->nion*sizeof(int));
-#endif
-
 }
 /*******************************************
  *                                         *
@@ -880,25 +826,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
  *******************************************/
 void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 {
-#ifdef NWPW_SYCL
-// copy the inputs to device
-    double* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-
-    double* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->wait();
-
-    this->v_nonlocal_sycl(psi_dev, Hpsi_dev);
-
-    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-
-    get_syclQue()->wait();
-    free_sycl_mem(psi_dev);
-    free_sycl_mem(Hpsi_dev);
-    return;
-
-#endif
 
    nwpw_timing_function ftimer(6);
    bool done;
@@ -1056,25 +983,6 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  *******************************************/
 void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
 {
-#ifdef NWPW_SYCL
-    double* psi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(psi_dev, psi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-
-    double* Hpsi_dev = get_sycl_mem(2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->memcpy(Hpsi_dev, Hpsi, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-    get_syclQue()->wait();
-
-    v_nonlocal_fion_sycl(psi_dev, Hpsi_dev, move, fion);
-
-    get_syclQue()->memcpy(Hpsi, Hpsi_dev, 2*(mypneb->neq[0]+mypneb->neq[1])*mypneb->npack(1) * sizeof(double));
-
-    get_syclQue()->wait();
-    free_sycl_mem(psi_dev);
-    free_sycl_mem(Hpsi_dev);
-
-    return;
-#endif
-
    nwpw_timing_function ftimer(6);
    int ii,ia,l,nshift0,sd_function,i,n;
    double *exi;
@@ -1307,315 +1215,4 @@ void Pseudopotential::semicore_density_update()
    mypneb->c_pack_deallocate(exi);
 }
 
-#ifdef NWPW_SYCL
-void Multiply_Gijl_sw1_sycl(cl::sycl::queue& syclQ,
-			    int nn,
-			    const int nprj,
-			    const int nmax,
-			    const int lmax,
-			    const int *n_prj,
-			    const int *l_prj,
-			    const int *m_prj,
-			    double *G,
-			    double *sw1_dev,
-			    double *sw2_dev)
-{
-    int nmax2 = nmax*nmax;
-    int nnn = nn*nprj;
-    int nna = nn;
-    double alpha = 0;
-    int na, nb;
 
-    syclQ.memset(sw2_dev, 0, nnn*sizeof(double));
-
-    for (int b=0; b<nprj; ++b) {
-	for (int a=0; a<nprj; ++a) {
-	    if ((l_prj[a]==l_prj[b]) && (m_prj[a]==m_prj[b])) {
-		na = n_prj[a]-1;
-		nb = n_prj[b]-1;
-
-		alpha = G[nb + na*nmax + nmax2*l_prj[a]];
-		oneapi::mkl::blas::axpy(syclQ,
-					nna,
-					alpha,
-					&(sw1_dev[a*nn]), 1,
-					&(sw2_dev[b*nn]), 1);
-	    }
-	}
-    }
-}
-
-void Pseudopotential::set_sd_function(int* sd_func)
-{
-    int ia=0;
-    size_t sd_id=0;
-    for (int ii=0; ii < myion->nion; ++ii) {
-	ia = myion->katm[ii];
-	int* sd_func_local = &(sd_func[ii * nprj_max]);
-	sd_id = 0;
-	for (int l=0; l < nprj[ia]; ++l) {
-	    sd_func_local[sd_id] = !(l_projector[ia][l] & 1);
-	    sd_id++;
-	}
-    }
-
-    return;
-}
-
-
-void Pseudopotential::v_nonlocal_fion_sycl(double *psi, double *Hpsi, const bool move, double *fion)
-{
-    if(move) {
-        std::ostringstream msg;
-        msg << "NWPW Error: v_nonlocal_fion_sycl() is NOT supported with 'bool move=': << " << move << "\n"
-	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-        throw(std::runtime_error(msg.str()));
-    }
-
-    nwpw_timing_function ftimer(6);
-
-    int ia,l,nshift0,sd_function,i,n;
-    double *prj,*vnlprj;
-    Parallel *parall;
-    double omega = mypneb->lattice->omega();
-    double scal = 1.0/omega;
-    int ntmp,nshift,nn,ispin;
-
-    nn     = mypneb->neq[0]+mypneb->neq[1];
-    ispin  = mypneb->ispin;
-    nshift0 = mypneb->npack(1);
-    nshift = 2*mypneb->npack(1);
-    double* exi      = get_sycl_mem(nshift * sizeof(double));
-    double* prjtmp   = get_sycl_mem(nprj_max*nshift * sizeof(double));
-    double* sw1      = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw2      = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw1_host = get_host_mem(nn*nprj_max * sizeof(double));
-
-    // if (move)
-    // {
-    //  double *Gx,*Gy,*Gz,*xtmp,*sum;
-
-    // 	xtmp = get_sycl_mem(nshift0 * sizeof(double));
-    // 	sum  = get_sycl_mem(3*nn * sizeof(double));
-    // 	Gx = get_sycl_mem(mypneb->nfft3d * sizeof(double));
-    // 	Gy = get_sycl_mem(mypneb->nfft3d * sizeof(double));
-    // 	Gz = get_sycl_mem(mypneb->nfft3d * sizeof(double));
-    // 	mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-    // 	mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-    // 	mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-    // 	mypneb->t_pack(1,Gx);
-    // 	mypneb->t_pack(1,Gy);
-    // 	mypneb->t_pack(1,Gz);
-    // }
-
-    parall = mypneb->d3db::parall;
-
-    for (int ii=0; ii<(myion->nion); ++ii)
-    {
-	ia = myion->katm[ii];
-	if (nprj[ia]>0)
-	{
-	    //mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
-
-	    mystrfac->generate_projectors_sycl(1, ii, nprj[ia],
-					       &(sd_function_dev[ii*nprj_max]),
-					       vnl_dev[ia], prjtmp);
-
-	    // /* structure factor */
-	    // mystrfac->strfac_pack(1,ii,exi);
-
-	    // /* generate sw1's and projectors */
-	    // for (l=0; l<nprj[ia]; ++ l)
-	    // {
-	    // 	sd_function = !(l_projector[ia][l] & 1);
-	    // 	prj = &prjtmp[l*nshift];
-	    // 	vnlprj = &vnl[ia][l*nshift0];
-	    // 	if (sd_function)
-	    // 	    mypneb->tcc_Mul( 1,vnlprj,exi,prj);
-	    // 	else
-	    // 	    mypneb->tcc_iMul(1,vnlprj,exi,prj);
-	    // 	mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
-	    // }
-
-	    get_syclQue()->memcpy(sw1_host, sw1, nn*nprj_max*sizeof(double));
-	    parall->Vector_SumAll(1, nn*nprj[ia], sw1_host);
-	    get_syclQue()->memcpy(sw1, sw1_host, nn*nprj_max*sizeof(double));
-
-	    /* sw2 = Gijl*sw1 */
-	    Multiply_Gijl_sw1_sycl(*get_syclQue(), nn, nprj[ia], nmax[ia], lmax[ia],
-				   n_projector[ia], l_projector[ia], m_projector[ia],
-				   Gijl[ia], sw1, sw2);
-
-	    /* do Kleinman-Bylander Multiplication */
-	    ntmp = nn*nprj[ia];
-	    oneapi::mkl::blas::scal(*get_syclQue(), ntmp, scal, sw2, 1);
-
-	    ntmp = nprj[ia];
-	    oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
-						  oneapi::mkl::transpose::nontrans,
-						  oneapi::mkl::transpose::trans,
-						  nshift, nn, ntmp,
-						  -1.0,
-						  prjtmp, nshift,
-						  sw2, nn,
-						  1.0,
-						  Hpsi, nshift);
-
-	    // if (move)
-	    // {
-	    // 	for (l=0; l<nprj[ia]; ++ l)
-	    // 	{
-	    // 	    prj = &prjtmp[l*nshift];
-	    // 	    for (n=0; n<nn; ++n)
-	    // 	    {
-	    // 		mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
-	    // 		sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
-	    // 		sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
-	    // 		sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
-	    // 	    }
-	    // 	    parall->Vector_SumAll(1,3*nn,sum);
-
-	    // 	    fion[3*ii]   +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, sum,     three);
-	    // 	    fion[3*ii+1] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, &sum[1], three);
-	    // 	    fion[3*ii+2] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[l*nn], one, &sum[2], three);
-	    // 	}
-	    // }
-
-	} /*if nprj>0*/
-    } /*ii*/
-
-    // if (move)
-    // {
-    // 	free_sycl_mem(xtmp);
-    // 	free_sycl_mem(sum);
-    // 	free_sycl_mem(Gx);
-    // 	free_sycl_mem(Gy);
-    // 	free_sycl_mem(Gz);
-    // }
-    free_sycl_mem(sw2);
-    free_sycl_mem(sw1);
-    free_sycl_mem(prjtmp);
-    free_sycl_mem(exi);
-    free_host_mem(sw1_host);
-
-}
-
-void Pseudopotential::v_nonlocal_sycl(double *psi_sycl, double *Hpsi_sycl)
-{
-    nwpw_timing_function ftimer(6);
-
-    int ii = 0, ia = 0, sd_function = 0, ntmp = 0;
-    int ll = 0, jstart = 0, jend = 0, nprjall = 0;
-    bool done = false;
-
-    double omega = mypneb->lattice->omega();
-    double scal = 1.0/omega;
-    int nn     = mypneb->neq[0]+mypneb->neq[1];
-    int nshift0 = mypneb->npack(1);
-    int nshift = 2*mypneb->npack(1);
-
-    Parallel* parall = mypneb->d3db::parall;
-
-    double* exi_sycl    = get_sycl_mem(nshift * sizeof(double));
-    double* prjtmp_sycl = get_sycl_mem(nprj_max*nshift * sizeof(double));
-    double* sw1_sycl    = get_sycl_mem(nn*nprj_max * sizeof(double));
-    double* sw1_host    = get_host_mem(nn*nprj_max * sizeof(double));
-    double* sw2_sycl    = get_sycl_mem(nn*nprj_max * sizeof(double));
-
-    while (ii < myion->nion) {
-
-	ia = myion->katm[ii];
-	nprjall = 0;
-	jstart  = ii;
-
-	done = false;
-	while (!done) {
-	    //generate projectors
-	    if (nprj[ia] > 0) {
-		mystrfac->generate_projectors_sycl(1, ii, nprj[ia], &(sd_function_dev[ii*nprj_max]), vnl_dev[ia], prjtmp_sycl);
-
-		// mystrfac->strfac_pack_sycl(1, ii, exi_sycl);
-		// for (int l=0; l<nprj[ia]; ++l) {
-		//     sd_function = !(l_projector[ia][l] & 1);
-		//     double* prj = &(prjtmp_sycl[l*nshift]);
-		//     double* vnlprj = &(vnl_dev[ia][l*nshift0]);
-		//     if (sd_function)
-		// 	mypneb->tcc_Mul_sycl(1, vnlprj, exi_sycl, prj);
-		//     else
-		// 	mypneb->tcc_iMul_sycl(1, vnlprj, exi_sycl, prj);
-		// }
-
-		nprjall += nprj[ia];
-	    }
-
-	    ++ii;
-	    if (ii < myion->nion) {
-		done = ((nprjall+nprj[ia]) > nprj_max);
-	    }
-	    else {
-		done = true;
-	    }
-
-	    //get_syclQue()->wait();
-	} // (!done)
-
-	jend = ii;
-
-	mypneb->cc_pack_inprjdot_sycl(1, nn, nprjall, psi_sycl, prjtmp_sycl, sw1_sycl);
-
-	// abb: performance detrimental section because of to-and-fro data transfers for "sw1"
-	get_syclQue()->memcpy(sw1_host, sw1_sycl, nn*nprj_max*sizeof(double));
-	parall->Vector_SumAll(1,nn*nprjall,sw1_host);
-	get_syclQue()->memcpy(sw1_sycl, sw1_host, nn*nprj_max*sizeof(double));
-	//get_syclQue()->wait();
-
-	/* sw2 = Gijl*sw1 */
-	ll = 0;
-	for (int jj=jstart; jj<jend; ++jj) {
-	    ia = myion->katm[jj];
-	    if (nprj[ia]>0) {
-		Multiply_Gijl_sw1_sycl(*get_syclQue(), nn,
-				       nprj[ia], nmax[ia], lmax[ia],
-				       n_projector[ia], l_projector[ia], m_projector[ia],
-				       Gijl[ia], &(sw1_sycl[ll*nn]), &(sw2_sycl[ll*nn]));
-		ll += nprj[ia];
-	    }
-	}
-
-	ntmp = nn*nprjall;
-	oneapi::mkl::blas::scal(*get_syclQue(), ntmp, scal, sw2_sycl, 1);
-	oneapi::mkl::blas::column_major::gemm(*get_syclQue(),
-				oneapi::mkl::transpose::nontrans,
-				oneapi::mkl::transpose::trans,
-				nshift, nn, nprjall,
-				-1.0,
-				prjtmp_sycl, nshift,
-				sw2_sycl, nn,
-				1.0,
-				Hpsi_sycl, nshift);
-
-	// oneapi::mkl::blas::row_major::gemm(*get_syclQue(),
-	// 				   oneapi::mkl::transpose::trans,
-	// 				   oneapi::mkl::transpose::nontrans,
-	// 				   nn, nshift, nprjall,
-	// 				   -1.0,
-	// 				   sw2_sycl, nn,
-	// 				   prjtmp_sycl, nshift,
-	// 				   1.0,
-	// 				   Hpsi_sycl, nshift);
-
-	//get_syclQue()->wait();
-    }
-
-    free_sycl_mem(sw2_sycl);
-    free_sycl_mem(sw1_sycl);
-    free_host_mem(sw1_host);
-    free_sycl_mem(prjtmp_sycl);
-    free_sycl_mem(exi_sycl);
-
-    // std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    // std::cout << "v_nonlocal() =  " << time_span.count() << " seconds. \n";
-}
-
-#endif

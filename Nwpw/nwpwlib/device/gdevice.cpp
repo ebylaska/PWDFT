@@ -3,6 +3,14 @@
 static Gdevices mygdevice;
 
 #ifdef NWPW_SYCL
+#include        <cstdio>
+#include        <iostream>
+#include        <limits>
+#include        <CL/sycl.hpp>
+#include        <oneapi/mkl.hpp>
+
+
+
 Gdevices::Gdevices() : ndev_mem(0) {
 
   auto asyncHandler = [&](cl::sycl::exception_list eL) {
@@ -17,16 +25,9 @@ Gdevices::Gdevices() : ndev_mem(0) {
     }
   };
 
-#ifdef NWPW_SYCL_ENABLE_PROFILE
-  device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
-                                      asyncHandler,
-                                      cl::sycl::property_list{cl::sycl::property::queue::enable_profiling(),
-                                                              cl::sycl::property::queue::in_order{}});
-#else
   device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
                                       asyncHandler,
                                       cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
-#endif
 }
 
 cl::sycl::queue* get_syclQue() {

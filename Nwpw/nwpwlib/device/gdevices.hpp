@@ -5,6 +5,9 @@
 #pragma once
 
 /* can place sycl mkl code here */
+#include        "blas.h"
+
+/* can place sycl mkl code here */
 #include        <cstdio>
 #include        <iostream>
 #include        <limits>
@@ -35,25 +38,7 @@ public:
 
     Gdevices();
 
-    ~Gdevices() {
-        // free GPU memory
-        for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
-            for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
-                cl::sycl::free(*it2, *device_queue);
-            }
-        }
-        free_list_gpu.clear();
-        live_ptrs_gpu.clear();
 
-        // free host memory
-        for(std::map<size_t,std::set<double*>>::iterator it=free_list_host.begin(); it!=free_list_host.end(); ++it) {
-            for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
-                free(*it2);
-            }
-        }
-        free_list_host.clear();
-        live_ptrs_host.clear();
-    }
 
     static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
                                                    size_t bytes,
@@ -90,12 +75,8 @@ public:
                 }
             }
         }
-
-        ptr = (double *)cl::sycl::malloc_device(bytes, *device_queue);
-        assert(ptr!=nullptr); /*We hopefully have a pointer*/
-        live_ptrs_gpu[ptr] = bytes;
-        return ptr;
     }
+
     double* getHostMem(size_t bytes) {
         double *ptr=nullptr;
         if(free_list_host.find(bytes)!=free_list_host.end()) {
@@ -139,98 +120,39 @@ public:
         free_list_host[bytes].insert(p);
     }
 
-    int fetch_dev_mem_indx(const size_t ndsize) {
-        int ii = 0;
-        while ((((ndsize!=ndsize_mem[ii]) || inuse[ii])) && (ii<ndev_mem))
-            ++ii;
 
-        if (ii<ndev_mem) {
-            inuse[ii] = true;
-        } else {
-            ii            = ndev_mem;
-            inuse[ii]     = true;
-            ndsize_mem[ii] = ndsize;
-            dev_mem[ii]   = cl::sycl::malloc_device<double>(ndsize, *device_queue);
-            ndev_mem += 1;
+
+
+
+
+    void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
+     {
+        int one = 1;
+        int shift1  = 0;
+        int mshift1 = 0;
+
+        for (auto k=1; k<=ne; ++k)
+        {
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_a,npack,&host_a[shift1],npack,beta,&host_caa[mshift1],k);
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_a,npack,&host_b[shift1],npack,beta,&host_cab[mshift1],k);
+           DGEMM_PWDFT((char *) "T",(char *) "N",k,one,npack,alpha,host_b,npack,&host_b[shift1],npack,beta,&host_cbb[mshift1],k);
+           shift1  += npack;
+           mshift1 += ne;
         }
+     }
 
-        return ii;
-    }
+     void TN_dgemm(int ne, int nprj, int npack, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+     }
 
-    void TN3_dgemm(const int npack, const int ne, double alpha, const
-                   double *host_a, const double *host_b, const double beta,
-                   double *host_caa, double *host_cab, double *host_cbb) {
-        int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        int icaa = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
-        int icab = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
-        int icbb = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
-        try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, npack*ne*sizeof(double));
+     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
+     }
 
-            oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ia], npack, beta, dev_mem[icaa], ne);
-            oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ia], npack, dev_mem[ib], npack, beta, dev_mem[icab], ne);
-            oneapi::mkl::blas::gemm(*device_queue, matT, matN, ne, ne, npack, alpha, dev_mem[ib], npack, dev_mem[ib], npack, beta, dev_mem[icbb], ne);
+     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 
-            device_queue->memcpy(host_caa, dev_mem[icaa], ne*ne*sizeof(double));
-            device_queue->memcpy(host_cab, dev_mem[icab], ne*ne*sizeof(double));
-            device_queue->memcpy(host_cbb, dev_mem[icbb], ne*ne*sizeof(double));
-            device_queue->wait();
-        }
-        catch(cl::sycl::exception const& e) {
-            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
-        }
-
-        inuse[ia] = false;
-        inuse[ib] = false;
-        inuse[icaa] = false;
-        inuse[icab] = false;
-        inuse[icbb] = false;
-    }
-
-    void TN_dgemm(const int npack, const int ne, const int nprj, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
-        int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
-        int ic = fetch_dev_mem_indx(((size_t) ne) * ((size_t) nprj));
-        try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, npack*nprj*sizeof(double));
-
-            oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
-            device_queue->memcpy(host_c, dev_mem[ic], ne*nprj*sizeof(double));
-            device_queue->wait();
-        }
-        catch(cl::sycl::exception const& e) {
-            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
-        }
-
-        inuse[ia] = false;
-        inuse[ib] = false;
-        inuse[ic] = false;
-    }
-
-    void NN_dgemm(const int npack, const int ne, double alpha, const double *host_a, const double *host_b, const double beta, double *host_c) {
-        int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        int ib = fetch_dev_mem_indx(((size_t) ne) * ((size_t) ne));
-        int ic = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        try {
-            device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-            device_queue->memcpy(dev_mem[ib], host_b, ne*ne*sizeof(double));
-
-            oneapi::mkl::blas::gemm(*device_queue, matN, matN, npack,ne,ne, alpha, dev_mem[ia], npack, dev_mem[ib], ne, beta, dev_mem[ic], npack);
-            device_queue->memcpy(host_c, dev_mem[ic], npack*ne*sizeof(double));
-            device_queue->wait();
-        }
-        catch(cl::sycl::exception const& e) {
-            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
-        }
-
-        inuse[ia] = false;
-        inuse[ib] = false;
-        inuse[ic] = false;
-    }
-
+        DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
+     }
 };
 
 

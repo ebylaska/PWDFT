@@ -128,12 +128,6 @@ public:
         //int  cr_pfft3b(const int, double *);
         //int  rc_pfft3f(const int, double *);
 
-#ifdef NWPW_SYCL
-        void cc_pack_inprjdot_sycl(const int, int, int, double *, double *, double *);
-        void tcc_Mul_sycl( const int, const double *, const double *, double *);
-        void tcc_iMul_sycl(const int, const double *, const double *, double *);
-#endif
-
 };
 
 #endif

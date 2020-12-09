@@ -62,6 +62,12 @@
 *   53 - HFX DM columns
 *   54 - HFX DM Cholesky
 *   55 - re-gridding
+*
+*   70 - timer0
+*   71 - timer1
+*   72 - timer2
+*   73 - timer3
+*
 
 */
 
@@ -130,6 +136,11 @@ public:
        print_timer("queue fft            ", times[30],counter,times[0]);
        print_timer("queue fft serial     ", times[31],counter,times[0]);
        print_timer("queue fft parallel   ", times[32],counter,times[0]);
+
+       print_timer("projector generate   ", times[70],counter,times[0]);
+       print_timer("<P|psi> overlap/mpi  ", times[71],counter,times[0]);
+       print_timer("sw1/sw2 generation   ", times[72],counter,times[0]);
+       print_timer("psi^t*sw1            ", times[73],counter,times[0]);
    }
 
 };
