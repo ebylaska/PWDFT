@@ -9,13 +9,13 @@
 #include	"nwpw_timing.hpp"
 #include	"util.hpp"
 #include        "Psp1d_Hamann.hpp"
+#include        "gdevice.hpp"
+
 
 #include        "blas.h"
 
 #include	"compressed_io.hpp"
 #include	"Pseudopotential.hpp"
-#include <stdexcept>
-#include <sstream>
 
 /*******************************************
  *                                         *
@@ -853,6 +853,10 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
    parall = mypneb->d3db::parall;
 
 #if 1
+
+   //Copy psi to device
+   gdevice_psi_copy_host2gpu(nshift0,nn,psi);
+   
    ii = 0;
    while (ii<(myion->nion))
    {

@@ -10,26 +10,6 @@ static Gdevices mygdevice;
 #include        <oneapi/mkl.hpp>
 
 
-
-Gdevices::Gdevices() : ndev_mem(0) {
-
-  auto asyncHandler = [&](cl::sycl::exception_list eL) {
-    for (auto& e : eL) {
-      try {
-	std::rethrow_exception(e);
-      } catch (cl::sycl::exception& e) {
-	std::cout << e.what() << std::endl;
-	std::cout << "fail" << std::endl;
-	std::terminate();
-      }
-    }
-  };
-
-  device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
-                                      asyncHandler,
-                                      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
-}
-
 cl::sycl::queue* get_syclQue() {
   return mygdevice.device_queue;
 }
@@ -64,5 +44,35 @@ void gdevice_NN_dgemm(int npack, int ne, double alpha, double *a, double *b, dou
 
 void gdevice_NT_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
 {
-  mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
+  mygdevice.NT_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
 }
+
+
+void gdevice_psi_alloc(int npack, int ne)
+{ 
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.psi_alloc(npack,ne);
+#endif
+}
+
+void gdevice_psi_dealloc()
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.psi_dealloc();
+#endif
+}
+
+void gdevice_psi_copy_host2gpu(int npack , int ne, double *psi)
+{ 
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.psi_copy_host2gpu(npack, ne, psi);
+#endif
+}
+
+void gdevice_psi_copy_gpu2host(int npack, int ne, double *psi)
+{ 
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.psi_copy_gpu2host(npack,ne,psi);
+#endif
+}
+

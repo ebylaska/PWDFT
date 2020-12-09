@@ -17,6 +17,7 @@
 #include        <map>
 #include        <set>
 
+
 class Gdevices {
 
     oneapi::mkl::transpose matT = oneapi::mkl::transpose::trans;
@@ -27,7 +28,11 @@ class Gdevices {
     std::map<size_t, std::set<double*> > free_list_gpu, free_list_host;
     std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
 
+    double *psi_dev;
+
 public:
+    bool hasgpu = false;
+
     std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
     cl::sycl::queue* device_queue = nullptr; // default SYCL queue for now
 
@@ -36,7 +41,53 @@ public:
     size_t ndsize_mem[25];
     double *dev_mem[25];
 
-    Gdevices();
+    /* constructor */
+    Gdevices() {
+      std::cout << "calling gdevices constructor" << std::endl;
+      ndev_mem = 0;
+
+      auto asyncHandler = [&](cl::sycl::exception_list eL) {
+         for (auto& e : eL) {
+            try {
+              std::rethrow_exception(e);
+            } catch (cl::sycl::exception& e) {
+              std::cout << e.what() << std::endl;
+              std::cout << "fail" << std::endl;
+              std::terminate();
+            }
+         }
+      };
+      device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
+                                      asyncHandler,
+                                      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
+   }
+
+    /* deconstructor */
+    ~Gdevices() {
+       std::cout << "calling gdevices destructor" << std::endl;
+
+       // free GPU memory
+       for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
+          for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+              cl::sycl::free(*it2, *device_queue);
+          }
+       }
+       free_list_gpu.clear();
+       live_ptrs_gpu.clear();
+
+       // free host memory
+       for(std::map<size_t,std::set<double*>>::iterator it=free_list_host.begin(); it!=free_list_host.end(); ++it) {
+          for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
+             free(*it2);
+          }
+       }
+       free_list_host.clear();
+       live_ptrs_host.clear();
+
+
+
+       delete device_queue;
+    }
 
 
 
@@ -120,6 +171,25 @@ public:
         free_list_host[bytes].insert(p);
     }
 
+    int fetch_dev_mem_indx(const size_t ndsize) {
+        int ii = 0;
+        while ((((ndsize!=ndsize_mem[ii]) || inuse[ii])) && (ii<ndev_mem))
+            ++ii;
+
+        if (ii<ndev_mem) {
+            inuse[ii] = true;
+        } else {
+            ii            = ndev_mem;
+            inuse[ii]     = true;
+            ndsize_mem[ii] = ndsize;
+            dev_mem[ii]   = cl::sycl::malloc_device<double>(ndsize, *device_queue);
+            ndev_mem += 1;
+        }
+
+        return ii;
+    }
+
+
 
 
 
@@ -142,7 +212,32 @@ public:
      }
 
      void TN_dgemm(int ne, int nprj, int npack, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+        //gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
+#if 0
         DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+        
+#else
+        //int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
+        int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
+        int ic = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) nprj));
+
+        try {
+           //device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
+           device_queue->memcpy(dev_mem[ib],host_b,npack*nprj*sizeof(double));
+
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,psi_dev,npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
+           //oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
+
+           device_queue->memcpy(host_c,dev_mem[ic],ne*nprj*sizeof(double));
+           device_queue->wait();
+        }
+           catch(cl::sycl::exception const& e) {
+            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+        //inuse[ia] = false;
+        inuse[ib] = false;
+        inuse[ic] = false;
+#endif
      }
 
      void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
@@ -153,6 +248,26 @@ public:
 
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
+
+     /* psi_dev functions*/
+     void psi_alloc(int npack, int ne) {
+        psi_dev = getGpuMem(2*ne*npack*sizeof(double));
+     }
+
+     void psi_dealloc() {
+        freeGpuMem(psi_dev);
+     }
+
+     void psi_copy_host2gpu(int npack , int ne, double *psi) {
+        device_queue->memcpy(psi_dev, psi, 2*ne*npack*sizeof(double));
+     }
+
+     void psi_copy_gpu2host(int npack, int ne, double *psi) {
+        device_queue->memcpy(psi, psi_dev, 2*ne*npack*sizeof(double));
+     }
+
+
+
 };
 
 
@@ -219,6 +334,7 @@ typedef struct {
 
 class Gdevices {
 
+
    NWPW_GPU_Type gpu;
 
    int plat_indx,device_indx;
@@ -246,6 +362,8 @@ class Gdevices {
    int indxi_dev,indxj_dev,indxk_dev,exi_dev,exj_dev,exk_dev;
 
 public:
+     bool hasgpu = false;
+
      Gdevices() {
         size_t size;
         char str[1000];
@@ -858,6 +976,7 @@ public:
 class Gdevices {
 
 public:
+     bool hasgpu = false;
 
      void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
      {
@@ -891,6 +1010,7 @@ public:
 
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
+
 
 };
 
