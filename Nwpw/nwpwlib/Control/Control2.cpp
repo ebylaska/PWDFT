@@ -366,12 +366,15 @@ Control2::Control2(const int np0, const string rtdbstring)
 void Control2::add_permanent_dir(char fname[])
 {
    char stmp[256]; 
+   int test;
 
-   cout << string(ppermanent_dir, ' ');
-   if (strlen(ppermanent_dir)>0)
+//   cout << string(ppermanent_dir, ' ');
+   test=0;
+   test=strlen(Control2::ppermanent_dir);
+   if (test>0)
    {
       strcpy(stmp,fname);
-      strcpy(fname,ppermanent_dir);
+      strcpy(fname,Control2::ppermanent_dir);
       strcat(fname,"/");
       strcat(fname,stmp);
    }

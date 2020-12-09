@@ -5,8 +5,8 @@
       data tpi   /  6.2831853071 7958647692 5286766559 00577d0/
 c
       arg = tpi/dfloat(ip)
-      dcp = dcos(arg)
-      dsp = dsin(arg)
+      dcp = cos(arg)
+      dsp = sin(arg)
       ipph = (ip+1)/2
       ipp2 = ip+2
       idp2 = ido+2

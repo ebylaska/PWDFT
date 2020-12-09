@@ -49,8 +49,8 @@ c
                i = i+2
                fi = fi+1.d0
                arg = fi*argld
-               wa(i-1) = dcos(arg)
-               wa(i) = dsin(arg)
+               wa(i-1) = cos(arg)
+               wa(i) = sin(arg)
   108       continue
             is = is+ido
   109    continue

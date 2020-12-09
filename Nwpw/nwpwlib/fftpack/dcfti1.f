@@ -53,8 +53,8 @@ c
                i = i+2
                fi = fi+1.d0
                arg = fi*argld
-               wa(i-1) = dcos(arg)
-               wa(i) = dsin(arg)
+               wa(i-1) = cos(arg)
+               wa(i) = sin(arg)
   108       continue
             if (ip .le. 5) go to 109
             wa(i1-1) = wa(i-1)
