@@ -198,8 +198,10 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    eke     = myke->ke_ave(psi1);
    elocal  = mygrid->cc_pack_dot(0,dng,vl);
    mygrid->g_zero(Hpsi);
+   std::cout << "into v_nonlocal" << std::endl;
    mypsp->v_nonlocal(psi1,Hpsi);
    enlocal = -mygrid->gg_traceall(psi1,Hpsi);
+   std::cout << "out v_nonlocal, enlocal=" << enlocal << std::endl;
 
 
    Eold = E[0];

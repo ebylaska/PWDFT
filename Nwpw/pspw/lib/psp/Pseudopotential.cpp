@@ -1013,6 +1013,10 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    sw1    = new double[nn*nprj_max];
    sw2    = new double[nn*nprj_max];
 
+   //Copy psi to device
+   gdevice_psi_copy_host2gpu(nshift0,nn,psi);
+   gdevice_hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+
    if (move)
    {
       xtmp = new double[nshift0];

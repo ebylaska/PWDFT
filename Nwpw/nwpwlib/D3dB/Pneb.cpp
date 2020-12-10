@@ -163,10 +163,11 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
       sum += cc_pack_idot(1,&psi1[indx],&psi2[indx]);
       indx += 2*npack(1);
    }
-   if (ispin==1) sum *= 2;
+   if (ispin==1) sum *= 2.0;
 
-   sum = d3db::parall->SumAll(0,sum);
-   return sum;
+   std::cout << "gg_traceall sum=" << sum << std::endl;
+
+   return d3db::parall->SumAll(0,sum);
 }
 
 void Pneb::gg_copy(double *psi1, double *psi2)

@@ -575,7 +575,7 @@ double PGrid::cc_pack_idot(const int nb, double *a, double *b)
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = 2*(nida[nb]+nidb[nb]);
    int ng0 = 2*nida[nb];
-   double tsum;
+   double tsum=0.0;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
@@ -594,7 +594,7 @@ double PGrid::tt_pack_idot(const int nb, double *a, double *b)
    //int ng  = 2*(nida[nb]+nidb[nb]);
    int ng  = (nida[nb]+nidb[nb]);
    int ng0 = nida[nb];
-   double tsum;
+   double tsum=0.0;
 
    tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);

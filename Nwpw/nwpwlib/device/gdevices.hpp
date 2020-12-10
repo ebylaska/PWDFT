@@ -318,7 +318,9 @@ public:
         device_queue->memcpy(psi, dev_mem[ia_psi], 2*ne*npack*sizeof(double));
      }
      void hpsi_copy_gpu2host(int npack, int ne, double *hpsi) {
+        device_queue->wait();
         device_queue->memcpy(hpsi, dev_mem[ia_hpsi], 2*ne*npack*sizeof(double));
+        device_queue->wait();
      }
 
 
