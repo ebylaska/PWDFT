@@ -165,8 +165,6 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    }
    if (ispin==1) sum *= 2.0;
 
-   std::cout << "gg_traceall sum=" << sum << std::endl;
-
    return d3db::parall->SumAll(0,sum);
 }
 

@@ -990,7 +990,10 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move, double *fion)
 {
    nwpw_timing_function ftimer(6);
+   bool done;
    int ii,ia,l,nshift0,sd_function,i,n;
+   int jj,ll,jstart,jend,nprjall;
+
    double *exi;
    double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
    double *Gx,*Gy,*Gz,*xtmp,*sum;
@@ -1001,6 +1004,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    int one=1;
    int three=3;
    int ntmp,nshift,nn,ispin;
+
    double rone  = 1.0;
    double rmone = -1.0;
 
@@ -1020,7 +1024,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    if (move)
    {
       xtmp = new double[nshift0];
-      sum  = new double[3*nn];
+      sum  = new double[3*nn*nprj_max];
       Gx = new double [mypneb->nfft3d];
       Gy = new double [mypneb->nfft3d];
       Gz = new double [mypneb->nfft3d];
@@ -1037,6 +1041,101 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
    }
 
    parall = mypneb->d3db::parall;
+
+#if 1
+
+   ii = 0;
+   while (ii<(myion->nion))
+   {
+      ia      = myion->katm[ii];
+      nprjall = 0;
+      jstart  = ii;
+      done = false;
+      while (!done)
+      {
+         //generate projectors
+         if (nprj[ia]>0)
+         {
+            mystrfac->strfac_pack(1,ii,exi);
+            for (l=0; l<nprj[ia]; ++l)
+            {
+               sd_function = !(l_projector[ia][l] & 1);
+               prj = &(prjtmp[(l+nprjall)*nshift]);
+               vnlprj = &(vnl[ia][l*nshift0]);
+               if (sd_function)
+                  mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+               else
+                  mypneb->tcc_iMul(1,vnlprj,exi,prj);
+
+               if (move) 
+               {
+                  for (n=0; n<nn; ++n)
+                  {
+                     mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                     sum[3*n  +3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gx,xtmp);
+                     sum[3*n+1+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gy,xtmp);
+                     sum[3*n+2+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gz,xtmp);
+                   }
+               }
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii<(myion->nion))
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall+nprj[ia]) > nprj_max);
+         }
+         else
+         {
+            done = true;
+         }
+      }
+      jend = ii;
+      mypneb->cc_pack_inprjdot(1,nn,nprjall,psi,prjtmp,sw1);
+      parall->Vector_SumAll(1,nn*nprjall,sw1);
+      if (move) parall->Vector_SumAll(1,3*nn*nprjall,sum);
+
+      /* sw2 = Gijl*sw1 */
+      ll = 0;
+      for (jj=jstart; jj<jend; ++jj)
+      {
+         ia = myion->katm[jj];
+         if (nprj[ia]>0)
+         {
+            Multiply_Gijl_sw1(nn,nprj[ia],nmax[ia],lmax[ia],
+                              n_projector[ia],l_projector[ia],m_projector[ia],
+                              Gijl[ia],&(sw1[ll*nn]),&(sw2[ll*nn]));
+            ll += nprj[ia];
+         }
+      }
+
+      ntmp = nn*nprjall;
+      DSCAL_PWDFT(ntmp,scal,sw2,one);
+
+      // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
+      // 		  rmone,
+      // 		  prjtmp,nshift,
+      // 		  sw2,   nn,
+      // 		  rone,
+      // 		  Hpsi,nshift);
+      gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
+
+      if (move)
+         for (ll=0; ll<nprjall; ++ll)
+            for (n=0; n<nn; ++n)
+            {
+               fion[3*ii]   +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[  3*nn*ll], three);
+               fion[3*ii+1] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[1+3*nn*ll], three);
+               fion[3*ii+2] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[2+3*nn*ll], three);
+            }
+
+   }
+   gdevice_hpsi_copy_gpu2host(nshift0,nn,Hpsi);
+
+
+
+#else
 
    for (ii=0; ii<(myion->nion); ++ii)
    {
@@ -1100,6 +1199,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
       } /*if nprj>0*/
    } /*ii*/
+#endif
 
    if (move)
    {
