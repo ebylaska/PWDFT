@@ -76,3 +76,18 @@ void gdevice_psi_copy_gpu2host(int npack, int ne, double *psi)
 #endif
 }
 
+void gdevice_hpsi_copy_host2gpu(int npack , int ne, double *psi)
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.hpsi_copy_host2gpu(npack, ne, psi);
+#endif
+}
+
+void gdevice_hpsi_copy_gpu2host(int npack, int ne, double *psi)
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.hpsi_copy_gpu2host(npack,ne,psi);
+#endif
+}
+
+

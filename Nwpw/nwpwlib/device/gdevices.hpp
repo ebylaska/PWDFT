@@ -24,22 +24,29 @@ class Gdevices {
     oneapi::mkl::transpose matN = oneapi::mkl::transpose::nontrans;
 
     /* device, host pool memory */
-    int    ndev_mem;
     std::map<size_t, std::set<double*> > free_list_gpu, free_list_host;
     std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
 
-    double *psi_dev;
 
 public:
-    bool hasgpu = false;
+    bool hasgpu = true;
 
     std::vector<cl::sycl::queue*> syclQueues;  // TODO: queues per device
     cl::sycl::queue* device_queue = nullptr; // default SYCL queue for now
 
     /* device memory */
+    int    ndev_mem = 0;
     bool   inuse[25];
     size_t ndsize_mem[25];
     double *dev_mem[25];
+    int    ia_psi,ia_hpsi;
+    int    ib_prj;
+
+    /* tmp memory */
+    int    ntmp_mem=0;
+    bool   tmpinuse[25];
+    size_t tmpndsize_mem[25];
+    double *tmp_mem[25];
 
     /* constructor */
     Gdevices() {
@@ -60,11 +67,14 @@ public:
       device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
                                       asyncHandler,
                                       cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
-   }
+    }
 
     /* deconstructor */
     ~Gdevices() {
        std::cout << "calling gdevices destructor" << std::endl;
+
+       for (auto i=0; i<ntmp_mem; ++i)
+          free(tmp_mem[i]);
 
        // free GPU memory
        for(std::map<size_t,std::set<double*>>::iterator it=free_list_gpu.begin(); it!=free_list_gpu.end(); ++it) {
@@ -189,6 +199,24 @@ public:
         return ii;
     }
 
+    int fetch_tmp_mem_indx(const size_t tmpndsize) {
+       int ii = 0;
+       while (((tmpndsize!=tmpndsize_mem[ii]) || tmpinuse[ii] ) && (ii<ntmp_mem))
+         ++ii;
+
+       if (ii<ntmp_mem) {
+          tmpinuse[ii] = true;
+       } else {
+          ii                = ntmp_mem;
+          tmpinuse[ii]      = true;
+          tmpndsize_mem[ii] = tmpndsize;
+          tmp_mem[ii]       = (double *) malloc(tmpndsize*sizeof(double));
+          ntmp_mem += 1;
+       }
+       return ii;
+    }
+
+
 
 
 
@@ -218,15 +246,16 @@ public:
         
 #else
         //int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
-        int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
+        //int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
+        ib_prj = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
         int ic = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) nprj));
 
         try {
-           //device_queue->memcpy(dev_mem[ia], host_a, npack*ne*sizeof(double));
-           device_queue->memcpy(dev_mem[ib],host_b,npack*nprj*sizeof(double));
+           //device_queue->memcpy(dev_mem[ia],host_a, npack*ne*sizeof(double));
+           //device_queue->memcpy(dev_mem[ib],host_b,npack*nprj*sizeof(double));
+           device_queue->memcpy(dev_mem[ib_prj],host_b,npack*nprj*sizeof(double));
 
-           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,psi_dev,npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
-           //oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia],npack,dev_mem[ib],npack,beta,dev_mem[ic],ne);
+           oneapi::mkl::blas::gemm(*device_queue,matT,matN,ne,nprj,npack,alpha,dev_mem[ia_psi],npack,dev_mem[ib_prj],npack,beta,dev_mem[ic],ne);
 
            device_queue->memcpy(host_c,dev_mem[ic],ne*nprj*sizeof(double));
            device_queue->wait();
@@ -235,7 +264,7 @@ public:
             std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
         }
         //inuse[ia] = false;
-        inuse[ib] = false;
+        //inuse[ib_prj] = false;
         inuse[ic] = false;
 #endif
      }
@@ -246,24 +275,50 @@ public:
 
      void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 
+#if 0
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
+#else
+        int one = 1;
+        int ib = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) nprj));
+
+        try {
+           device_queue->memcpy(dev_mem[ib],host_b,ne*nprj*sizeof(double));
+
+           oneapi::mkl::blas::gemm(*device_queue,matN,matT,npack,ne,nprj,alpha,dev_mem[ib_prj],npack,dev_mem[ib],ne,beta,dev_mem[ia_hpsi],npack);
+
+        }
+           catch(cl::sycl::exception const& e) {
+            std::cout << "\t\tSYCL exception during GEMM\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+
+        inuse[ib] = false;
+        inuse[ib_prj] = false;
+#endif
      }
 
      /* psi_dev functions*/
      void psi_alloc(int npack, int ne) {
-        psi_dev = getGpuMem(2*ne*npack*sizeof(double));
+        ia_psi  = fetch_dev_mem_indx(2*((size_t) npack) * ((size_t) ne));
+        ia_hpsi = fetch_dev_mem_indx(2*((size_t) npack) * ((size_t) ne));
      }
 
      void psi_dealloc() {
-        freeGpuMem(psi_dev);
+        inuse[ia_psi]  = false;
+        inuse[ia_hpsi] = false;
      }
 
-     void psi_copy_host2gpu(int npack , int ne, double *psi) {
-        device_queue->memcpy(psi_dev, psi, 2*ne*npack*sizeof(double));
+     void psi_copy_host2gpu(int npack, int ne, double *psi) {
+       device_queue->memcpy(dev_mem[ia_psi],psi,2*npack*ne*sizeof(double));
+     }
+     void hpsi_copy_host2gpu(int npack, int ne, double *hpsi) {
+       device_queue->memcpy(dev_mem[ia_hpsi],hpsi,2*npack*ne*sizeof(double));
      }
 
      void psi_copy_gpu2host(int npack, int ne, double *psi) {
-        device_queue->memcpy(psi, psi_dev, 2*ne*npack*sizeof(double));
+        device_queue->memcpy(psi, dev_mem[ia_psi], 2*ne*npack*sizeof(double));
+     }
+     void hpsi_copy_gpu2host(int npack, int ne, double *hpsi) {
+        device_queue->memcpy(hpsi, dev_mem[ia_hpsi], 2*ne*npack*sizeof(double));
      }
 
 

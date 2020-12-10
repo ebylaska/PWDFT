@@ -28,6 +28,7 @@ using namespace std;
 #include	"psp_library.hpp"
 #include	"psp_file_check.hpp"
 #include	"nwpw_timing.hpp"
+#include        "gdevice.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -134,6 +135,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    psi_read(&mygrid,control.input_movecs_filename(),psi2);
@@ -382,6 +384,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete [] eig;
+   gdevice_psi_dealloc();
 
 
 

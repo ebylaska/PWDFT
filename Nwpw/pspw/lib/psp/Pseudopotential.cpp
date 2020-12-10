@@ -856,6 +856,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
    //Copy psi to device
    gdevice_psi_copy_host2gpu(nshift0,nn,psi);
+   gdevice_hpsi_copy_host2gpu(nshift0,nn,Hpsi);
    
    ii = 0;
    while (ii<(myion->nion))
@@ -922,6 +923,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
       // 		  Hpsi,nshift);
       gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
    }
+   gdevice_hpsi_copy_gpu2host(nshift0,nn,Hpsi);
 #else
 
    for (ii=0; ii<(myion->nion); ++ii)
