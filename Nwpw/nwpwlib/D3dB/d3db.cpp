@@ -12,6 +12,8 @@
 #include "blas.h"
 
 #include	"nwpw_timing.hpp"
+#include	"gdevice.hpp"
+
 #include	"d3db.hpp"
 
 #include <math.h>
@@ -448,6 +450,10 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
    drffti_(&nx,tmpx);
    dcffti_(&ny,tmpy);
    dcffti_(&nz,tmpz);
+
+#ifdef NWPW_SYCL
+   gdevice_batch_fft_init(nx,ny,nz);
+#endif
 
 //#endif
 }
@@ -1847,30 +1853,41 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
+#if (defined NWPW_SYCL) && false
+       gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
+#else
        indx = 0;
        for (q=0; q<nq3; ++q)
        {
           dcfftb_(&nz,&a[indx],tmpz);
           indx += 2*nz;
        }
+#endif
        c_transpose_ijk(2,a,tmp2,tmp3);
 
       /************************************************
        ***     do fft along ky dimension            ***
        ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
        ************************************************/
+#if (defined NWPW_SYCL) && false
+       gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
+#else
        indx = 0;
        for (q=0; q<nq2; ++q)
        {
           dcfftb_(&ny,&a[indx],tmpy);
           indx += (2*ny);
        }
+#endif
        c_transpose_ijk(3,a,tmp2,tmp3);
 
       /************************************************
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
+#if (defined NWPW_SYCL) && false
+       gdevice_batch_cfftz(false,nx,nq1,n2ft3d,a);
+#else
        cshift1_fftb(nx,nq1,1,1,a);
        indx = 0;
        for (q=0; q<nq1; ++q)
@@ -1878,6 +1895,7 @@ void d3db::cr_fft3d(double *a)
           drfftb_(&nx,&a[indx],tmpx);
           indx += nxh2;
        }
+#endif
        zeroend_fftb(nx,nq1,1,1,a);
 
    }

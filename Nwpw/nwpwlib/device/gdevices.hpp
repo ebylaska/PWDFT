@@ -17,6 +17,14 @@
 #include        <map>
 #include        <set>
 
+//#include <oneapi/mkl/dfti.hpp>
+//#include <oneapi/mkl/blas.hpp>
+
+typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+                                     oneapi::mkl::dft::domain::REAL> desc_real_t;
+typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+                                     oneapi::mkl::dft::domain::COMPLEX> desc_cmplx_t;
+
 
 class Gdevices {
 
@@ -27,6 +35,10 @@ class Gdevices {
     std::map<size_t, std::set<double*> > free_list_gpu, free_list_host;
     std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
 
+    desc_real_t *desc_x;
+    desc_cmplx_t *desc_y, *desc_z;
+
+    int nx_fft,ny_fft,nz_fft;
 
 public:
     bool hasgpu = true;
@@ -73,6 +85,12 @@ public:
     ~Gdevices() {
        std::cout << "calling gdevices destructor" << std::endl;
 
+       // free fft descriptors
+       delete desc_x;
+       delete desc_y;
+       delete desc_z;
+
+       // free CPU memory
        for (auto i=0; i<ntmp_mem; ++i)
           free(tmp_mem[i]);
 
@@ -369,8 +387,91 @@ public:
      }
 
 
+     /* fft functions*/
+     void batch_fft_init(int nx, int ny, int nz) {
+        nx_fft = nx;
+        ny_fft = ny;
+        nz_fft = nz;
+        desc_x = new desc_real_t(nx_fft);
+        desc_y = new desc_cmplx_t(ny_fft);
+        desc_z = new desc_cmplx_t(nz_fft);
+        desc_x->commit(*device_queue);
+        desc_y->commit(*device_queue);
+        desc_z->commit(*device_queue);
+     }
 
+
+     void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
+        int indx  = 0;
+        int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
+
+        try {
+           device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
+           for (int q=0; q<nq; ++q)
+           {
+               if (forward)
+                  compute_forward(*desc_x, &(dev_mem[ia_dev])[indx]);
+               else
+                  compute_backward(*desc_y,&(dev_mem[ia_dev])[indx]);
+               indx += (2*nx);
+           }
+           device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
+           device_queue->wait();
+        }
+           catch(cl::sycl::exception const& e) {
+            std::cout << "\t\tSYCL exception during FFTys\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+        inuse[ia_dev] = false;
+     }
+
+     void batch_cffty(bool forward, int ny,int nq,int n2ft3d, double *a) {
+        int indx  = 0;
+        int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
+
+        try {
+           device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
+           for (int q=0; q<nq; ++q)
+           {
+               if (forward)
+                  compute_forward(*desc_y, &(dev_mem[ia_dev])[indx]);
+               else
+                  compute_backward(*desc_y,&(dev_mem[ia_dev])[indx]);
+               indx += (2*ny);
+           }
+           device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
+           device_queue->wait();
+        }
+           catch(cl::sycl::exception const& e) {
+            std::cout << "\t\tSYCL exception during FFTys\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+        inuse[ia_dev] = false;
+     }
+
+     void batch_cfftz(bool forward, int nz,int nq,int n2ft3d, double *a) {
+        int indx  = 0;
+        int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
+
+        try {
+           device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
+           for (int q=0; q<nq; ++q)
+           {
+               if (forward)
+                  compute_forward(*desc_z, &(dev_mem[ia_dev])[indx]);
+               else
+                  compute_backward(*desc_z,&(dev_mem[ia_dev])[indx]);
+               indx += (2*nz);
+           }
+           device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
+           device_queue->wait();
+        }
+           catch(cl::sycl::exception const& e) {
+            std::cout << "\t\tSYCL exception during FFTys\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+        }
+        inuse[ia_dev] = false;
+     }
 };
+
+
 
 
 #elif defined NWPW_OPENCL

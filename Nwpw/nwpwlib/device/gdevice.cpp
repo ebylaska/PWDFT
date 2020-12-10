@@ -90,4 +90,33 @@ void gdevice_hpsi_copy_gpu2host(int npack, int ne, double *psi)
 #endif
 }
 
+/* fft functions*/
+void gdevice_batch_fft_init(int nx,int ny,int nz) 
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.batch_fft_init(nx,ny,nz);
+#endif
+}
+
+void gdevice_batch_cfftx(bool forward,int nx,int nq,int n2ft3d,double *a)
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.batch_cfftx(forward,nx,nq,n2ft3d,a);
+#endif
+}
+
+void gdevice_batch_cffty(bool forward,int ny,int nq,int n2ft3d,double *a)
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.batch_cffty(forward,ny,nq,n2ft3d,a);
+#endif
+}
+
+void gdevice_batch_cfftz(bool forward,int nz,int nq,int n2ft3d,double *a)
+{
+#ifdef NWPW_SYCL
+  if (mygdevice.hasgpu) mygdevice.batch_cfftz(forward,nz,nq,n2ft3d,a);
+#endif
+}
+
 
