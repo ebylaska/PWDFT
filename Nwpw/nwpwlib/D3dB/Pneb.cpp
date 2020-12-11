@@ -565,7 +565,8 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     else
     {
         int nn  = ne[0]*ne[0]+4;
-        double *xmp1 = new double[nn];
+        //double *xmp1 = new double[nn];
+        double xmp1[nn];
 
         shift1 = 0;
         shift2 = 0;
@@ -575,16 +576,16 @@ void Pneb::m_diagonalize(double *hml, double *eig)
 
             //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
 
-            ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
-            //EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
-            if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: LAPACKE_dsyev failed!"));
+            //ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
+            EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
+            if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
 
             eigsrt(&eig[shift1], &hml[shift2], n);
             shift1 += ne[0];
             shift2 += ne[0]*ne[0];
         }
 
-        delete [] xmp1;
+        //delete [] xmp1;
     }
     nwpw_timing_end(17);
 }
