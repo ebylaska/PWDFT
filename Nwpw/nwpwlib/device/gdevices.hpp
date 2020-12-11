@@ -412,7 +412,7 @@ public:
                if (forward)
                   compute_forward(*desc_x, &(dev_mem[ia_dev])[indx]);
                else
-                  compute_backward(*desc_y,&(dev_mem[ia_dev])[indx]);
+                  compute_backward(*desc_x,&(dev_mem[ia_dev])[indx]);
                indx += (nx+2);
            }
            device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
