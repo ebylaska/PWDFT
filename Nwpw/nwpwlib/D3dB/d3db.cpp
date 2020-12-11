@@ -1886,7 +1886,7 @@ void d3db::cr_fft3d(double *a)
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
 #if (defined NWPW_SYCL) && false
-       gdevice_batch_cfftz(false,nx,nq1,n2ft3d,a);
+       gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
 #else
        cshift1_fftb(nx,nq1,1,1,a);
        indx = 0;
