@@ -451,7 +451,7 @@ public:
         int indx  = 0;
         int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
 
-        try {
+         try {
            device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
            for (int q=0; q<nq; ++q)
            {
@@ -465,10 +465,11 @@ public:
            device_queue->wait();
         }
            catch(cl::sycl::exception const& e) {
-            std::cout << "\t\tSYCL exception during FFTys\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+            std::cout << "\t\tSYCL exception during FFTzs\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
         }
         inuse[ia_dev] = false;
      }
+
 };
 
 

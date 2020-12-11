@@ -10,6 +10,7 @@ static Gdevices mygdevice;
 #include        <oneapi/mkl.hpp>
 
 
+
 cl::sycl::queue* get_syclQue() {
   return mygdevice.device_queue;
 }

@@ -24,7 +24,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 if( NWPW_SYCL )
   add_definitions(-DNWPW_SYCL=1)
-  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs \'-device skl\'")
+  #SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs \'-device skl\' ")
+  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device skl\'")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
   
   if( NWPW_SYCL_ENABLE_PROFILE )
