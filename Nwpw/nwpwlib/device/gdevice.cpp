@@ -92,10 +92,10 @@ void gdevice_hpsi_copy_gpu2host(int npack, int ne, double *psi)
 }
 
 /* fft functions*/
-void gdevice_batch_fft_init(int nx,int ny,int nz) 
+void gdevice_batch_fft_init(int nx,int ny,int nz, int nq1, int nq2, int nq3) 
 {
 #ifdef NWPW_SYCL
-  if (mygdevice.hasgpu) mygdevice.batch_fft_init(nx,ny,nz);
+  if (mygdevice.hasgpu) mygdevice.batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 }
 

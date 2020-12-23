@@ -452,7 +452,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
    dcffti_(&nz,tmpz);
 
 #ifdef NWPW_SYCL
-   gdevice_batch_fft_init(nx,ny,nz);
+   gdevice_batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 
 //#endif

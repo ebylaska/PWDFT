@@ -38,6 +38,8 @@ class Gdevices {
     desc_real_t *desc_x;
     desc_cmplx_t *desc_y, *desc_z;
 
+    cl::sycl::event fftevent;
+
     int nx_fft,ny_fft,nz_fft;
 
 public:
@@ -388,18 +390,29 @@ public:
 
 
      /* fft functions*/
-     void batch_fft_init(int nx, int ny, int nz) {
+     void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
         nx_fft = nx;
         ny_fft = ny;
         nz_fft = nz;
         desc_x = new desc_real_t(nx_fft);
+        //desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
+        //desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx);
+        //desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx);
+
         desc_y = new desc_cmplx_t(ny_fft);
+        desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
+        desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny);
+        desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny);
+
         desc_z = new desc_cmplx_t(nz_fft);
+        desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq3);
+        desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz);
+        desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz);
+
         desc_x->commit(*device_queue);
         desc_y->commit(*device_queue);
         desc_z->commit(*device_queue);
      }
-
 
      void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
         int indx  = 0;
@@ -419,7 +432,7 @@ public:
            device_queue->wait();
         }
            catch(cl::sycl::exception const& e) {
-            std::cout << "\t\tSYCL exception during FFTys\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
+            std::cout << "\t\tSYCL exception during FFTxs\n" << e.what() << std::endl << "OpenCL status: " << e.get_cl_code() << std::endl;
         }
         inuse[ia_dev] = false;
      }
@@ -430,14 +443,22 @@ public:
 
         try {
            device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
-           for (int q=0; q<nq; ++q)
-           {
-               if (forward)
-                  compute_forward(*desc_y, &(dev_mem[ia_dev])[indx]);
-               else
-                  compute_backward(*desc_y,&(dev_mem[ia_dev])[indx]);
-               indx += (2*ny);
-           }
+
+           if (forward)
+              fftevent = compute_forward(*desc_y, dev_mem[ia_dev]);
+           else
+              fftevent = compute_backward(*desc_y, dev_mem[ia_dev]);
+           fftevent.wait();
+
+
+//           for (int q=0; q<nq; ++q)
+//           {
+//               if (forward)
+//                  compute_forward(*desc_y, &(dev_mem[ia_dev])[indx]);
+//               else
+//                  compute_backward(*desc_y,&(dev_mem[ia_dev])[indx]);
+//               indx += (2*ny);
+//           }
            device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
            device_queue->wait();
         }
@@ -453,14 +474,22 @@ public:
 
          try {
            device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
-           for (int q=0; q<nq; ++q)
-           {
-               if (forward)
-                  compute_forward(*desc_z, &(dev_mem[ia_dev])[indx]);
-               else
-                  compute_backward(*desc_z,&(dev_mem[ia_dev])[indx]);
-               indx += (2*nz);
-           }
+
+           if (forward)
+              fftevent = compute_forward(*desc_z, dev_mem[ia_dev]);
+           else
+              fftevent = compute_backward(*desc_z, dev_mem[ia_dev]);
+           fftevent.wait();
+
+//           for (int q=0; q<nq; ++q)
+//           {
+//               if (forward)
+//                  compute_forward(*desc_z, &(dev_mem[ia_dev])[indx]);
+//               else
+//                  compute_backward(*desc_z,&(dev_mem[ia_dev])[indx]);
+//               indx += (2*nz);
+//          }
+//
            device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
            device_queue->wait();
         }
