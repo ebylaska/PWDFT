@@ -1853,7 +1853,7 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
-#if (defined NWPW_SYCL) && false
+#if (defined NWPW_SYCL) && true
        gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
        indx = 0;
@@ -1869,7 +1869,7 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along ky dimension            ***
        ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
        ************************************************/
-#if (defined NWPW_SYCL) && false
+#if (defined NWPW_SYCL) && true
        gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
        indx = 0;
@@ -1885,7 +1885,7 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
-#if (defined NWPW_SYCL) && false
+#if (defined NWPW_SYCL) && true
        gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
 #else
        cshift1_fftb(nx,nq1,1,1,a);

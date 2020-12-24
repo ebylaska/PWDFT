@@ -395,9 +395,9 @@ public:
         ny_fft = ny;
         nz_fft = nz;
         desc_x = new desc_real_t(nx_fft);
-        //desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
-        //desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx);
-        //desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx);
+        desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq1);
+        desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx+2);
+        desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx+2);
 
         desc_y = new desc_cmplx_t(ny_fft);
         desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
@@ -420,14 +420,21 @@ public:
 
         try {
            device_queue->memcpy(dev_mem[ia_dev],a,n2ft3d*sizeof(double));
-           for (int q=0; q<nq; ++q)
-           {
-               if (forward)
-                  compute_forward(*desc_x, &(dev_mem[ia_dev])[indx]);
-               else
-                  compute_backward(*desc_x,&(dev_mem[ia_dev])[indx]);
-               indx += (nx+2);
-           }
+
+           if (forward)
+              fftevent = compute_forward(*desc_x, dev_mem[ia_dev]);
+           else
+              fftevent = compute_backward(*desc_x, dev_mem[ia_dev]);
+           fftevent.wait();
+
+//           for (int q=0; q<nq; ++q)
+//           {
+//               if (forward)
+//                  compute_forward(*desc_x, &(dev_mem[ia_dev])[indx]);
+//               else
+//                  compute_backward(*desc_x,&(dev_mem[ia_dev])[indx]);
+//               indx += (nx+2);
+//           }
            device_queue->memcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double));
            device_queue->wait();
         }
