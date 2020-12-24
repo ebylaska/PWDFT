@@ -1463,7 +1463,8 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      //double *tmp = new double[(nx+2)*ny];
+      double tmp[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
       /**** master node reads from file and distributes ****/
@@ -1498,7 +1499,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
    }
 
    /*************************
@@ -1506,7 +1507,8 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp = new double[nx+2];
+      //double *tmp = new double[nx+2];
+      double tmp[nx+2];
       int bsize = (nx+2);
 
       /**** master node reads from file and distributes ****/
@@ -1545,13 +1547,11 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
 
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      double tmp1[2*nfft3d];
+      double tmp2[2*nfft3d];
       c_transpose_ijk(4,a,tmp1,tmp2);
-      delete [] tmp2;
-      delete [] tmp1;
+      
    }
 
 }
@@ -1574,7 +1574,8 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      //double *tmp = new double[(nx+2)*ny];
+      double tmp[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
       /**** master node gathers and write to file ****/
@@ -1611,7 +1612,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
    }
 
    /*************************
@@ -1619,13 +1620,18 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
-      c_transpose_ijk(5,a,tmp1,tmp2);
-      delete [] tmp2;
-      delete [] tmp1;
+      //double *tmp1 = new double[2*nfft3d];
+      //double *tmp2 = new double[2*nfft3d];
+      {
+         double tmp1[2*nfft3d];
+         double tmp2[2*nfft3d];
+         c_transpose_ijk(5,a,tmp1,tmp2);
+      }
+      //delete [] tmp2;
+      //delete [] tmp1;
 
-      double *tmp = new double[nx+2];
+      //double *tmp = new double[nx+2];
+      double tmp[nx+2];
       int bsize = (nx+2);
 
       /**** master node write to file and fetches from other nodes ****/
@@ -1662,7 +1668,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
 
    }
 }
@@ -1735,7 +1741,8 @@ void d3db::cr_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2,*tmp3;
+   double tmp2[2*nfft3d];
+   double tmp3[2*nfft3d];
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -1743,9 +1750,6 @@ void d3db::cr_fft3d(double *a)
    nxh2  = nx+2;
    nxhy2 = nxh2*ny;
    nxhz2 = nxh2*nz;
-
-   tmp2 = new double[2*nfft3d];
-   tmp3 = new double[2*nfft3d];
 
    /**********************
     **** slab mapping ****
@@ -1900,8 +1904,6 @@ void d3db::cr_fft3d(double *a)
 
    }
 
-   delete [] tmp3;
-   delete [] tmp2;
 }
 
 /********************************
@@ -1914,7 +1916,8 @@ void d3db::rc_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2,*tmp3;
+   double tmp2[2*nfft3d];
+   double tmp3[2*nfft3d];
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -1923,8 +1926,6 @@ void d3db::rc_fft3d(double *a)
    nxhy2 = nxh2*ny;
    nxhz2 = nxh2*nz;
 
-   tmp2 = new double[2*nfft3d];
-   tmp3 = new double[2*nfft3d];
 
    /**********************
     **** slab mapping ****
@@ -2069,8 +2070,6 @@ void d3db::rc_fft3d(double *a)
        }
    }
 
-   delete [] tmp3;
-   delete [] tmp2;
 }
 
 
@@ -2103,7 +2102,8 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx/2+1)*ny];
+      //double *tmp = new double[(nx/2+1)*ny];
+      double tmp[(nx/2+1)*ny];
       int   bsize = (nx/2+1)*ny;
 
       /**** master node reads from file and distributes ****/
@@ -2139,7 +2139,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
    }
 
    /*************************
@@ -2147,7 +2147,8 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp = new double[nx/2+1];
+      //double *tmp = new double[nx/2+1];
+      double tmp[nx/2+1];
       int bsize = (nx/2+1);
 
       /**** master node reads from file and distributes ****/
@@ -2185,13 +2186,12 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
                for (int k=0; k<bsize; ++k) a[index+k] = tmp[k];
             }
          }
-      delete [] tmp;
+      //delete [] tmp;
 
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      double tmp1[2*nfft3d];
+      double tmp2[2*nfft3d];
       t_transpose_ijk(4,a,tmp1,tmp2);
-      delete [] tmp2;
-      delete [] tmp1;
+      
    }
 }
 
@@ -2213,7 +2213,8 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      //double *tmp = new double[(nx+2)*ny];
+      double tmp[(nx+2)*ny];
       int   bsize = (nx/2+1)*ny;
 
       /**** master node gathers and write to file ****/
@@ -2250,7 +2251,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
    }
 
    /*************************
@@ -2258,13 +2259,12 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
-      t_transpose_ijk(5,a,tmp1,tmp2);
-      delete [] tmp2;
-      delete [] tmp1;
+      { double tmp1[2*nfft3d];
+        double tmp2[2*nfft3d];
+        t_transpose_ijk(5,a,tmp1,tmp2); }
 
-      double *tmp = new double[nx/2+1];
+      //double *tmp = new double[nx/2+1];
+      double tmp[nx/2+1];
       int bsize = (nx/2+1);
 
       /**** master node write to file and fetches from other nodes ****/
@@ -2301,7 +2301,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
             }
          }
 
-      delete [] tmp;
+      //delete [] tmp;
 
    }
 }

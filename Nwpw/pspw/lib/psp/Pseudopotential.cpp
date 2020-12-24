@@ -323,7 +323,7 @@ static void vpp_write(PGrid *mygrid,
                      double *vnl)
 {
    int i,nn;
-   double   *tmp2,*prj;
+   double   *prj;
    Parallel *parall = mygrid->parall;
 
    if (parall->is_master())
@@ -369,7 +369,9 @@ static void vpp_write(PGrid *mygrid,
 
 
    /* readin vl 3d block */
-   tmp2 = new double [mygrid->nfft3d];
+   //tmp2 = new double [mygrid->nfft3d];
+   double tmp2[mygrid->nfft3d];
+
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,-1);
@@ -409,7 +411,7 @@ static void vpp_write(PGrid *mygrid,
       mygrid->t_write(6,tmp2,-1);
    }
 
-   delete [] tmp2;
+   //delete [] tmp2;
 
    if (parall->is_master()) closefile(6);
 }
