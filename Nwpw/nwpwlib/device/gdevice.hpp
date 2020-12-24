@@ -15,7 +15,7 @@ extern void gdevice_hpsi_copy_host2gpu(int, int, double *);
 extern void gdevice_psi_copy_gpu2host(int, int, double *);
 extern void gdevice_hpsi_copy_gpu2host(int, int, double *);
 
-extern void gdevice_batch_fft_init(int, int, int);
+extern void gdevice_batch_fft_init(int, int, int, int, int, int);
 extern void gdevice_batch_cfftx(bool,int,int,int,double *);
 extern void gdevice_batch_cffty(bool,int,int,int,double *);
 extern void gdevice_batch_cfftz(bool,int,int,int,double *);
