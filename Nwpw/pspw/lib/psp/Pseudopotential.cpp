@@ -168,7 +168,7 @@ static void vpp_read(PGrid *mygrid,
 
    if (parall->is_master())
    {
-      std::cout << "reading formatted psp filename: " << fname << std::endl;
+      std::cout << " reading formatted psp filename: " << fname << std::endl;
       openfile(5,fname,"r");
       cread(5,comment,80);
       comment[79] = '\0';
@@ -342,16 +342,11 @@ static void vpp_write(PGrid *mygrid,
       iwrite(6,&lmax,1);
       iwrite(6,&locp,1);
       iwrite(6,&nmax,1);
-   }
-
-   if (parall->is_master())
-   {
+   
       dwrite(6,rc,lmax+1);
       iwrite(6,&nprj,1);
-   }
-   if (nprj > 0)
-   {
-      if (parall->is_master())
+   
+      if (nprj > 0)
       {
          iwrite(6,n_projector,nprj);
          iwrite(6,l_projector,nprj);
@@ -359,13 +354,9 @@ static void vpp_write(PGrid *mygrid,
          iwrite(6,b_projector,nprj);
       }
       nn = (nmax)*(nmax)*(lmax+1);
-      if (parall->is_master())
-      {
-         dwrite(6,Gijl,nn);
-      }
+      dwrite(6,Gijl,nn);
+      dwrite(6,&rcore,1);
    }
-   if (parall->is_master()) dwrite(6,&rcore,1);
-
 
 
    /* readin vl 3d block */
@@ -374,8 +365,7 @@ static void vpp_write(PGrid *mygrid,
 
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
-   mygrid->t_write(6,tmp2,-1);
-
+   mygrid->t_write(6,tmp2,0);
 
 
    /* reading vnl 3d block */
@@ -386,29 +376,30 @@ static void vpp_write(PGrid *mygrid,
       {
          mygrid->tt_pack_copy(1,&prj[i*mygrid->npack(1)],tmp2);
          mygrid->t_unpack(1,tmp2);
-         mygrid->t_write(6,tmp2,-1);
+         mygrid->t_write(6,tmp2,0);
       }
    }
+
    if (semicore)
    {
       prj    = ncore;
 
       mygrid->tt_pack_copy(0,prj,tmp2);
       mygrid->t_unpack(0,tmp2);
-      mygrid->t_write(6,tmp2,-1);
+      mygrid->t_write(6,tmp2,0);
 
 
       mygrid->tt_pack_copy(0,&prj[2*mygrid->npack(0)],tmp2);
       mygrid->t_unpack(0,tmp2);
-      mygrid->t_write(6,tmp2,-1);
+      mygrid->t_write(6,tmp2,0);
 
       mygrid->tt_pack_copy(0,&prj[3*mygrid->npack(0)],tmp2);
       mygrid->t_unpack(0,tmp2);
-      mygrid->t_write(6,tmp2,-1);
+      mygrid->t_write(6,tmp2,0);
 
       mygrid->tt_pack_copy(0,&prj[4*mygrid->npack(0)],tmp2);
       mygrid->t_unpack(0,tmp2);
-      mygrid->t_write(6,tmp2,-1);
+      mygrid->t_write(6,tmp2,0);
    }
 
    //delete [] tmp2;
@@ -726,14 +717,13 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 		      &ncore_ptr,vl[ia],&vnl_ptr);
 
 
-/* *** still a problem with vpp_write in semicore stuff ****
+// *** still a problem with vpp_write in semicore stuff ****
          vpp_write(mypneb,
                   fname,
                   comment[ia],psp_type[ia],version,nfft,unita,aname,
                   amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
                   rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
                   ncore_ptr,vl[ia],vnl_ptr);
-*/
 
       }
       else
