@@ -69,7 +69,9 @@ void Pneb::g_generate_random(double *psi)
    int ms,n,indx,i,pj,qj,taskid_j;
    int filling[4],nfft[3];
    double zvalue[2];
-   double *tmp2 = new double[n2ft3d];
+   //double *tmp2 = new double[n2ft3d];
+
+   double tmp2[n2ft3d];
 
    nfft[0] = nx;
    nfft[1] = ny;
@@ -83,6 +85,7 @@ void Pneb::g_generate_random(double *psi)
 
       qj = msntoindex(ms,n);
       pj = msntop(ms,n);
+
       if (pj==taskid_j)
       {
          r_zero(tmp2);
@@ -94,7 +97,7 @@ void Pneb::g_generate_random(double *psi)
       }
    }
 
-   delete [] tmp2;
+   //delete [] tmp2;
 }
 
 
@@ -254,7 +257,7 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
    indx1 = 0;
    for (ms=0; ms<ispin; ++ms)
    {
-      for (n=0; n<(neq[0]+neq[1]); ++n)
+      for (n=0; n<(neq[ms]); ++n)
       {
          for (k=0; k<n2ft3d; ++k)
             dn[indx0+k] += alpha*psir[indx1+k]*psir[indx1+k];
@@ -577,10 +580,10 @@ void Pneb::m_diagonalize(double *hml, double *eig)
             //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
 
             //ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
-            EIGEN_PWDFT(n, &hml[shift2], &eig[shift1], xmp1, nn, ierr);
+            EIGEN_PWDFT(n, &(hml[shift2]), &(eig[shift1]), xmp1, nn, ierr);
             if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
 
-            eigsrt(&eig[shift1], &hml[shift2], n);
+            eigsrt(&(eig[shift1]), &(hml[shift2]), n);
             shift1 += ne[0];
             shift2 += ne[0]*ne[0];
         }
@@ -729,13 +732,15 @@ void Pneb::g_ortho(double *psi)
    {
       for (auto ms=0; ms<ispin; ++ms)
       {
-         ishift = ms*ne[1]*2*npack(1);
+         ishift = ms*ne[0]*2*npack(1);
          for (auto k=ne[ms]-1; k>=0;  --k)
          {
             indxk = 2*npack(1)*k + ishift;
             w = cc_pack_dot(1,&psi[indxk],&psi[indxk]);
+
             w = 1.0/sqrt(w);
             c_SMul(1,w,&psi[indxk]);
+
 
             for (auto j=k-1; j>=0; --j)
             {

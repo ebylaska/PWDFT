@@ -61,6 +61,7 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
          {
           qmap[ms][k] = q;
           pmap[ms][k] = p;
+
           if (p==taskid) neq[ms] = q;
           p++; 
           if (p>=np) { p = 0; ++q; }

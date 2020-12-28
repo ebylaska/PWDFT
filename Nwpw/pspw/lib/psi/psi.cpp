@@ -324,6 +324,7 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
    /* ortho check */
    double sum2  = mypneb->gg_traceall(psi2,psi2);
    double sum1  = mypneb->ne[0] + mypneb->ne[1];
+
    if ((mypneb->ispin)==1) sum1 *= 2;
    if (fabs(sum2-sum1)>1.0e-10)
    {
@@ -331,6 +332,8 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
          std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
       mypneb->g_ortho(psi2);
    }
+   sum2  = mypneb->gg_traceall(psi2,psi2);
+
 }
 
 

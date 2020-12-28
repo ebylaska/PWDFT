@@ -32,7 +32,7 @@ public:
            }
         }
 
-        int msntoindex(const int ms, const int n) { return qmap[ms][n]; }
+        int msntoindex(const int ms, const int n) { return (qmap[ms][n] + ms*neq[0]); }
         int msntop(const int ms, const int n)     { return pmap[ms][n]; }
 };
 
