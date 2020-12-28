@@ -5,6 +5,92 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
+
+/***********************************
+ *                                 *
+ *         DMatrix_dgemm1          *
+ *                                 *
+ ***********************************/
+void DMatrix_dgemm1(int m, int n, int k, int nblock,
+                    double alpha,
+                    double *A, int lda, int *ma, int *na,
+                    double *B, int ldb, int *mb, int *nb,
+                    double beta,
+                    double *C, int ldc, int *mc, int *nc,
+                    int  taskid_i,int taskid_j,
+                    int  np_i, int np_j,
+                    MPI_Comm comm_i, MPI_Comm comm_j,
+                    double  *work1, double *work2)
+{
+
+   for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
+      C[ij] = beta*C[ij];
+
+   int iwrk,shift,ierr;
+   int ii=0;
+   int jj=0;
+   int kk=0;
+   int icur=0;
+   int jcur=0;
+   double rone=1.0;
+
+   /* loop over all row pannels of C */
+   while (kk<k)
+   {
+      iwrk = MIN(nblock, mb[icur]-ii);
+      iwrk = MIN(iwrk,   na[jcur]-jj);
+     
+      /* pack current iwrk columns of A into work1 */
+      if (taskid_j==jcur)
+         DLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
+                      &A[jj*lda],lda,
+                      work1, ma[taskid_i]);
+
+      /* pack current iwrk rows of B into work2 */
+      if (taskid_i==icur)
+         DLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
+                      &B[ii],ldb,
+                      work2, iwrk);
+
+
+      /* broadcast work1  within my row */
+      ierr = MPI_Bcast(work1,iwrk*ma[taskid_i],MPI_DOUBLE_PRECISION,jcur,comm_j);
+
+      /* broadcast work2  within my column */
+      ierr = MPI_Bcast(work2,iwrk*nb[taskid_j],MPI_DOUBLE_PRECISION,icur,comm_i);
+
+
+
+
+      if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+         DGEMM_PWDFT((char *) "N",(char *) "N",mc[taskid_i],nc[taskid_j],iwrk,
+                   alpha,
+                   work1,ma[taskid_i],
+                   work2,iwrk,
+                   rone,
+                   C,ldc);
+
+      ii += iwrk;
+      jj += iwrk;
+      kk += iwrk;
+
+      if (jj>=na[jcur]) 
+      {
+        ++jcur;
+        jj=0;
+      }
+      if (ii>=mc[icur]) 
+      {
+        ++icur;
+        ii=0;
+      }
+
+   }
+}
+
+
+
+
 /***********************************
  *                                 *
  *         DMatrix_dgemm2          *
@@ -91,6 +177,91 @@ void DMatrix_dgemm2(int m, int n, int k, int nblock,
         jj=0;
       }
       if (ii>=mc[icur]) 
+      {
+        ++icur;
+        ii=0;
+      }
+
+   }
+}
+
+
+/***********************************
+ *                                 *
+ *         DMatrix_dgemm3          *
+ *                                 *
+ ***********************************/
+void DMatrix_dgemm3(int m, int n, int k, int nblock,
+                    double alpha,
+                    double *A, int lda, int *ma, int *na,
+                    double *B, int ldb, int *mb, int *nb,
+                    double beta,
+                    double *C, int ldc, int *mc, int *nc,
+                    int  taskid_i,int taskid_j,
+                    int  np_i, int np_j,
+                    MPI_Comm comm_i, MPI_Comm comm_j,
+                    double  *work1, double *work2)
+{
+
+   for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
+      C[ij] = beta*C[ij];
+
+   int iwrk,shift,ierr;
+   int ii=0;
+   int jj=0;
+   int kk=0;
+   int icur=0;
+   int jcur=0;
+   int one = 1;
+   double rone=1.0;
+   double rzero=0.0;
+
+   /* loop over all row pannels of C */
+   while (kk<n)
+   {
+      iwrk = MIN(nblock, mb[icur]-ii);
+      iwrk = MIN(iwrk,   nc[jcur]-jj);
+     
+      /* pack current iwrk rows of B into work2 */
+      if (taskid_i==icur)
+         DLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
+                      &B[ii],ldb,
+                      work2, iwrk);
+
+      /* broadcast work2  within my column */
+      ierr = MPI_Bcast(work2,iwrk*nb[taskid_j],MPI_DOUBLE_PRECISION,icur,comm_i);
+
+      if ((iwrk>0) && (na[taskid_i]>0) &&  (mc[taskid_j]>0))
+         DGEMM_PWDFT((char *) "N",(char *) "T",mc[taskid_i],iwrk,na[taskid_j],
+                   alpha,
+                   A,lda,
+                   work2,iwrk,
+                   rzero,
+                   work1,mc[taskid_i]);
+
+      /* reduce work1 within my row */
+      ierr = MPI_Reduce(work1,work2,mc[taskid_i]*iwrk*,MPI_DOUBLE_PRECISION,jcur,comm_j);
+
+      if (taskid_j==jcur)
+      {
+         shift = 0;
+         for (j=jj; j<(jj+iwrk); ++j)
+         {
+            DAXPY_PWDFT(mc[taskid_i],rone,&work2[shift],one,&C[j*ldc],one);
+            shift += mc[taskid_i];
+         }
+      }
+
+      ii += iwrk;
+      jj += iwrk;
+      kk += iwrk;
+
+      if (jj>=nc[jcur]) 
+      {
+        ++jcur;
+        jj=0;
+      }
+      if (ii>=mb[icur]) 
       {
         ++icur;
         ii=0;
