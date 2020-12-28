@@ -40,8 +40,10 @@ extern "C" void dsyev_(char *, char *, int *,
                        double *, int *, int*);
 extern "C" int  idamax_(int *, double *, int *);
 
+extern "C" void dlacpy_(char *,int *, int *, double *, int *, double *, int *);
 
-#define	DSCAL_PWDFT(n,alpha,a,ida)		dscal_(&(n),&(alpha),a,&(ida));
+
+#define	DSCAL_PWDFT(n,alpha,a,ida)		dscal_(&(n),&(alpha),a,&(ida))
 #define DCOPY_PWDFT(n,a,ida,b,idb)              dcopy_(&(n),a,&(ida),b,&(idb))
 #define DAXPY_PWDFT(n,alpha,a,ida,b,idb)        daxpy_(&(n),&(alpha),a,&(ida),b,&(idb))
 #define DGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) dgemm_(s1,s2,&(n),&(m),&(k),&(alpha),a,&(ida),b,&(idb),&(beta),c,&(idc))
@@ -50,7 +52,8 @@ extern "C" int  idamax_(int *, double *, int *);
 
 #define EIGEN_PWDFT(n,hml,eig,xtmp,nn,ierr) dsyev_((char *) "V",(char *) "U", &(n),hml,&(n),eig,xtmp,&(nn),&ierr)
 
-#define	DDOT_PWDFT(n,a,ida,b,idb)	ddot_(&(n),a,&ida,b,&(idb));
+#define	DDOT_PWDFT(n,a,ida,b,idb)	ddot_(&(n),a,&ida,b,&(idb))
+#define	DLACPY_PWDFT(s1,m,n,a,ida,b,idb)	dlacpy_(s1,&(m),&(n),a,&(ida),b,&(idb))
 
 #endif
 
