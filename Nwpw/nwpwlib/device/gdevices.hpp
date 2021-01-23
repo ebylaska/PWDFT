@@ -1,6 +1,7 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
+
 #ifdef NWPW_SYCL
 #pragma once
 
@@ -602,7 +603,7 @@ class Gdevices {
    int indxi_dev,indxj_dev,indxk_dev,exi_dev,exj_dev,exk_dev;
 
 public:
-     bool hasgpu = false;
+     bool hasgpu = true;
 
      Gdevices() {
         size_t size;
@@ -1014,18 +1015,18 @@ public:
 
         const int MNK[3] = {ne,nprj,npack};
 
-        ret = clSetKernelArg(NNmatmul_kernel,0,sizeof(int),(void*)&MNK[0]); //std::cout << " ret4=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,1,sizeof(int),(void*)&MNK[1]); //std::cout << " ret5=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,2,sizeof(int),(void*)&MNK[2]); //std::cout << " ret6=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,3,sizeof(cl_mem),(void *)&(dev_mem[ia])); //std::cout << " ret7=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,4,sizeof(cl_mem),(void *)&(dev_mem[ib])); //std::cout << " ret8=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,5,sizeof(cl_mem),(void *)&(dev_mem[ic])); //std::cout << " ret9=" << ret << std::endl;;
+        ret = clSetKernelArg(TNmatmul_kernel,0,sizeof(int),(void*)&MNK[0]); //std::cout << " ret4=" << ret;
+        ret = clSetKernelArg(TNmatmul_kernel,1,sizeof(int),(void*)&MNK[1]); //std::cout << " ret5=" << ret;
+        ret = clSetKernelArg(TNmatmul_kernel,2,sizeof(int),(void*)&MNK[2]); //std::cout << " ret6=" << ret;
+        ret = clSetKernelArg(TNmatmul_kernel,3,sizeof(cl_mem),(void *)&(dev_mem[ia])); //std::cout << " ret7=" << ret;
+        ret = clSetKernelArg(TNmatmul_kernel,4,sizeof(cl_mem),(void *)&(dev_mem[ib])); //std::cout << " ret8=" << ret;
+        ret = clSetKernelArg(TNmatmul_kernel,5,sizeof(cl_mem),(void *)&(dev_mem[ic])); //std::cout << " ret9=" << ret << std::endl;;
 
         // Execute the OpenCL kernel on the list
         const size_t global_item_size[2] = {(size_t) ne,    (size_t) nprj};
         const size_t local_item_size[2]  = {(size_t) ifac1, (size_t) ifac2};
         ret = clEnqueueNDRangeKernel(command_queue,
-                                     NNmatmul_kernel, 2, NULL,
+                                     TNmatmul_kernel, 2, NULL,
                                      global_item_size,
                                      local_item_size, nevents,events, NULL);
         ret = clEnqueueReadBuffer(command_queue,dev_mem[ic],CL_FALSE,0,ne*nprj*sizeof(double),tmp_mem[icc],0,NULL,&wevent);
@@ -1109,6 +1110,7 @@ public:
 
      }
 
+
      void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 #if 0
 
@@ -1139,12 +1141,12 @@ public:
 
         const int MNK[3] = {npack,ne,nprj};
 
-        ret = clSetKernelArg(NNmatmul_kernel,0,sizeof(int),(void*)&MNK[0]); //std::cout << " ret4=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,1,sizeof(int),(void*)&MNK[1]); //std::cout << " ret5=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,2,sizeof(int),(void*)&MNK[2]); //std::cout << " ret6=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,3,sizeof(cl_mem),(void *)&(dev_mem[ia])); //std::cout << " ret7=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,4,sizeof(cl_mem),(void *)&(dev_mem[ib])); //std::cout << " ret8=" << ret;
-        ret = clSetKernelArg(NNmatmul_kernel,5,sizeof(cl_mem),(void *)&(dev_mem[ic])); //std::cout << " ret9=" << ret << std::endl;;
+        ret = clSetKernelArg(NTmatmul_kernel,0,sizeof(int),(void*)&MNK[0]); //std::cout << " ret4=" << ret;
+        ret = clSetKernelArg(NTmatmul_kernel,1,sizeof(int),(void*)&MNK[1]); //std::cout << " ret5=" << ret;
+        ret = clSetKernelArg(NTmatmul_kernel,2,sizeof(int),(void*)&MNK[2]); //std::cout << " ret6=" << ret;
+        ret = clSetKernelArg(NTmatmul_kernel,3,sizeof(cl_mem),(void *)&(dev_mem[ia])); //std::cout << " ret7=" << ret;
+        ret = clSetKernelArg(NTmatmul_kernel,4,sizeof(cl_mem),(void *)&(dev_mem[ib])); //std::cout << " ret8=" << ret;
+        ret = clSetKernelArg(NTmatmul_kernel,5,sizeof(cl_mem),(void *)&(dev_mem[ic])); //std::cout << " ret9=" << ret << std::endl;;
 
         // Execute the OpenCL kernel on the list
         const size_t global_item_size[2] = {(size_t) npack, (size_t) ne};
