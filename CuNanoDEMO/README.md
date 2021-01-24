@@ -1,5 +1,12 @@
 # CuNanoDemo Timings
 
+## System: Cu20 + CH3OH
+ - nfft = 80x80x80
+ - input = cunano-10c.nw
+ - cutoff = 60 Ry
+ - FCC=38
+ - nfft = 80x80x80
+
 |machine          | software   | ncpus | ngpus | cputime/step | non-local | lagrange | fft  |
 |-----------------|------------|-------|-------|--------------|-----------|----------|------|
 |jlse iris-gen9   |     SYCL   | 1     | 1     | 0.72         | 0.06      | 0.05     | 0.40 |
