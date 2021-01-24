@@ -14,9 +14,9 @@
 |jlse iris-gen9   | MPI-SYCL   | 2     | 1     | 2.51         | 0.30      | 0.24     | 1.84 |
 |jlse iris-gen9   | MPI-SYCL   | 4     | 1     | 2.73         | 0.30      | 0.24     | 2.01 |
 |                 |            |       |       |              |           |          |      |
-|jlse iris-gen9   | MPI-ONLY   | 1     | 1     | 3.90         | 1.17      | 0.65     | 1.72 |
-|jlse iris-gen9   | MPI-ONLY   | 2     | 1     | 2.39         | 0.70      | 0.41     | 1.01 |
-|jlse iris-gen9   | MPI-ONLY   | 4     | 1     | 1.53         | 0.54      | 0.34     | 0.48 |
+|jlse iris-gen9   | MPI-ONLY   | 1     | 0     | 3.90         | 1.17      | 0.65     | 1.72 |
+|jlse iris-gen9   | MPI-ONLY   | 2     | 0     | 2.39         | 0.70      | 0.41     | 1.01 |
+|jlse iris-gen9   | MPI-ONLY   | 4     | 0     | 1.53         | 0.54      | 0.34     | 0.48 |
 |                 |            |       |       |              |           |          |      |
 |home macbook-pro | MPI-OPENCL | 2     | 1     | 5.03         | 0.83      | 0.46     | 3.05 |
 |home macbook-pro | MPI-OPENCL | 3     | 1     | 4.09         | 0.72      | 0.53     | 2.33 |
@@ -24,11 +24,11 @@
 |home macbook-pro | MPI-OPENCL | 5     | 1     | 2.69         | 0.56      | 0.39     | 1.47 |
 |home macbook-pro | MPI-OPENCL | 6     | 1     | 2.74         | 0.60      | 0.50     | 1.38 |
 |                 |            |       |       |              |           |          |      |
-|home macbook-pro | MPI-ONLY   | 2     | 1     | 19.70        | 10.65     | 4.52     | 3.15 |
-|home macbook-pro | MPI-ONLY   | 3     | 1     | 14.35        | 7.67      | 3.35     | 2.30 |
-|home macbook-pro | MPI-ONLY   | 4     | 1     | 10.88        | 5.77      | 2.53     | 1.73 |
-|home macbook-pro | MPI-ONLY   | 5     | 1     | 9.17         | 4.83      | 2.13     | 1.51 |
-|home macbook-pro | MPI-ONLY   | 6     | 1     | 7.67         | 4.02      | 1.77     | 1.25 |
+|home macbook-pro | MPI-ONLY   | 2     | 0     | 19.70        | 10.65     | 4.52     | 3.15 |
+|home macbook-pro | MPI-ONLY   | 3     | 0     | 14.35        | 7.67      | 3.35     | 2.30 |
+|home macbook-pro | MPI-ONLY   | 4     | 0     | 10.88        | 5.77      | 2.53     | 1.73 |
+|home macbook-pro | MPI-ONLY   | 5     | 0     | 9.17         | 4.83      | 2.13     | 1.51 |
+|home macbook-pro | MPI-ONLY   | 6     | 0     | 7.67         | 4.02      | 1.77     | 1.25 |
 
 
 ## System: Cu20 + CH3OH
@@ -47,13 +47,13 @@
 |home macbook-pro | MPI-OPENCL | 7     | 1     | 5.09         | 1.17      | 0.72     | 2.79 |
 |home macbook-pro | MPI-OPENCL | 8     | 1     | 4.75         | 1.22      | 0.78     | 2.64 |
 |                 |            |       |       |              |           |          |      |
-|home macbook-pro | MPI-ONLY   | 2     | 1     |         |      |      |  |
-|home macbook-pro | MPI-ONLY   | 3     | 1     |         |       |      |  |
-|home macbook-pro | MPI-ONLY   | 4     | 1     |         |       |      |  |
-|home macbook-pro | MPI-ONLY   | 5     | 1     |          |       |      |  |
-|home macbook-pro | MPI-ONLY   | 6     | 1     |          |       |      |  |
-|home macbook-pro | MPI-ONLY   | 7     | 1     |          |       |      |  |
-|home macbook-pro | MPI-ONLY   | 8     | 1     | 15.18         | 7.73      | 3.33     | 2.85 |
+|home macbook-pro | MPI-ONLY   | 2     | 0     |         |      |      |  |
+|home macbook-pro | MPI-ONLY   | 3     | 0     |         |       |      |  |
+|home macbook-pro | MPI-ONLY   | 4     | 0     |         |       |      |  |
+|home macbook-pro | MPI-ONLY   | 5     | 0     | 20.41         | 10.68     | 4.58     | 3.61 |
+|home macbook-pro | MPI-ONLY   | 6     | 0     | 16.94         | 8.74      | 3.72     | 3.08 |
+|home macbook-pro | MPI-ONLY   | 7     | 0     | 15.59         | 8.00      | 3.44     | 2.87 |
+|home macbook-pro | MPI-ONLY   | 8     | 0     | 15.18         | 7.73      | 3.33     | 2.85 |
 
  
  
