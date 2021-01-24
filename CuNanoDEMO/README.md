@@ -1,7 +1,6 @@
 # CuNanoDemo Timings
 
 ## System: Cu20 + CH3OH
- - nfft = 80x80x80
  - input = cunano-10c.nw
  - cutoff = 60 Ry
  - FCC=38
@@ -30,3 +29,31 @@
 |home macbook-pro | MPI-ONLY   | 4     | 1     | 10.88        | 5.77      | 2.53     | 1.73 |
 |home macbook-pro | MPI-ONLY   | 5     | 1     | 9.17         | 4.83      | 2.13     | 1.51 |
 |home macbook-pro | MPI-ONLY   | 6     | 1     | 7.67         | 4.02      | 1.77     | 1.25 |
+
+
+## System: Cu20 + CH3OH
+ - input = cunano-10d.nw
+ - cutoff = 100 Ry
+ - FCC=38
+ - nfft = 100x100x100
+ 
+ |machine         | software   | ncpus | ngpus | cputime/step | non-local | lagrange | fft  |
+|-----------------|------------|-------|-------|--------------|-----------|----------|------|
+|home macbook-pro | MPI-OPENCL | 2     | 1     | 11.79        | 1.62      | 0.95     | 7.45 |
+|home macbook-pro | MPI-OPENCL | 3     | 1     | 8.61         | 1.39      | 0.91     | 5.24 |
+|home macbook-pro | MPI-OPENCL | 4     | 1     | 7.26         | 1.31      | 0.81     | 4.31 |
+|home macbook-pro | MPI-OPENCL | 5     | 1     | 6.29         | 1.19      | 0.73     | 3.60 |
+|home macbook-pro | MPI-OPENCL | 6     | 1     | 5.27         | 1.30      | 0.70     | 3.07 |
+|home macbook-pro | MPI-OPENCL | 7     | 1     | 5.09         | 1.17      | 0.72     | 2.79 |
+|home macbook-pro | MPI-OPENCL | 8     | 1     | 4.75         | 1.22      | 0.78     | 2.64 |
+|                 |            |       |       |              |           |          |      |
+|home macbook-pro | MPI-ONLY   | 2     | 1     |         |      |      |  |
+|home macbook-pro | MPI-ONLY   | 3     | 1     |         |       |      |  |
+|home macbook-pro | MPI-ONLY   | 4     | 1     |         |       |      |  |
+|home macbook-pro | MPI-ONLY   | 5     | 1     |          |       |      |  |
+|home macbook-pro | MPI-ONLY   | 6     | 1     |          |       |      |  |
+|home macbook-pro | MPI-ONLY   | 7     | 1     |          |       |      |  |
+|home macbook-pro | MPI-ONLY   | 8     | 1     | 15.18         | 7.73      | 3.33     | 2.85 |
+
+ 
+ 
