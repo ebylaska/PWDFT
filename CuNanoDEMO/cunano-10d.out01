@@ -1,0 +1,153 @@
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+ retcontex=0 context=0x7faa2a71e370 retcommand=0
+../build/pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+
+memory 1900 mb
+start eric
+echo
+
+permanent_dir ./perm
+scratch_dir   ./perm
+#psp_library_dir /home/ericpsps
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+
+
+geometry noautoz nocenter noautosym
+Cu   -1.32092   -1.29661   -2.32473
+Cu    0.19961   -1.86282   -4.14087
+Cu   -0.31099    2.73962    0.45543
+Cu   -0.83334    0.76736   -1.03273
+Cu    1.23160    2.09181   -1.42823
+Cu    0.78438    0.10041   -2.81555
+Cu    1.57742   -0.19592   -0.44540
+Cu    1.00022   -2.20677   -1.84354
+Cu    1.70543    4.02957   -0.04581
+Cu    2.01925    1.81074    0.98033
+Cu   -4.27957    0.06569    1.36564
+Cu   -2.85153   -0.65864   -0.48073
+Cu   -2.30017    1.40668    0.87985
+Cu   -2.09703   -0.92187    1.89833
+Cu   -0.05068    0.48468    1.52509
+Cu   -0.60568   -1.67227    0.04555
+Cu    0.13673   -1.82241    2.44305
+Cu    1.74149   -2.47524    0.50341
+Cu    2.22440   -0.44229    1.97599
+Cu    2.36252   -2.71904    2.86318
+C     4.66632   -0.31269    0.00667
+O     3.36811    0.02089   -0.74763
+H     4.02050   -1.13205    0.33461
+H     4.79414   -0.34608   -1.07888
+H     5.64271   -0.40683    0.48877
+H     2.80704    5.20478   -0.15285
+end
+
+
+nwpw
+   pseudopotentials
+   H library pspw_default
+   C library pspw_default
+   Cu library pspw_default
+   end
+   simulation_cell
+     FCC 38.0
+     #ngrid 80 80 80
+   end
+   mapping 2
+   #nobalance
+   #np_dimensions -1 5
+   cutoff 50.0
+   loop 10 10
+   steepest_descent
+     #input_wavefunction_filename  eric.movecs
+     input_wavefunction_filename  test2d.movecs
+     output_wavefunction_filename test2d.movecs
+     loop 1 10
+     #geometry_optimize
+   end
+   #vectors output test2.movecs
+end
+task pspw energy
+#task pspw noit_energy
+
+task pspw steepest_descent
+#task pspw steepest_descent
+
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Sat Jan 23 19:25:41 2021
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Sat Jan 23 21:52:24 2021
+       nproc                 = 1
+       input                 = cunano-10d.nw
+
+
+
+rtdbstr={"current_task":"task pspw energy","dbname":"eric","foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,6.0,8.0,1.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-2.496176852835094,-2.450237614052714,-4.393102697431583,0.3772082045804538,-3.5202193660465952,-7.825109654331263,-0.5876858851884942,5.177131112833539,0.8606379069789893,-1.5747842553232572,1.4501001345967488,-1.9515767201862233,2.327386527535128,3.95294772017153,-2.6989633486696136,1.4822632709223802,0.1897473865133178,-5.320618007146419,2.9808915689058635,-0.3702351156825936,-0.841683955313532,1.8901417282974877,-4.170190619818687,-3.4837854489867732,3.2227953927039894,7.6147831518023095,-0.08656834753684979,3.815829202440165,3.4218024365613493,1.8525550783846314,-8.08721464894731,0.1241361001898202,2.580685399044391,-5.388610348215527,-1.2446491251183311,-0.9084479744900633,-4.346691027152058,2.6582397536157143,1.662675411052113,-3.9628120898319175,-1.7420816970922446,3.5873235359010716,-0.0957713131012344,0.9159123921449543,2.882002207923472,-1.1445692367631344,-3.1601320789226763,0.08607701877981899,0.25838223441854336,-3.443855538848078,4.616695076400369,3.290938911852184,-4.677525355972759,0.9513069599110578,4.203506488997352,-0.8358069074890482,3.734079656174194,4.464515442540021,-5.138240551988563,5.410625655982484,8.818066175030625,-0.5908984193690803,0.0126044723438286,6.364804999396184,0.0394763759014362,-1.4128158408420655,7.5976433370858905,-2.139264305371989,0.6323212130387538,9.05961095089092,-0.6539963701277663,-2.0387875745591906,10.663175733020251,-0.7687972239340014,0.9236413714382465,5.304536438983604,9.835608030841414,-0.288844617354453],"masses":[62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,12.0,15.99491,1.008,1.008,1.008,1.008],"nion":26,"symbols":["Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","C","O","H","H","H","H"],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":68,"nwinput_lines":["","memory 1900 mb","start eric","echo","","permanent_dir ./perm","scratch_dir   ./perm","","","set nwpw:kbpp_ray    .true.","set nwpw:kbpp_filter .true.","","","geometry noautoz nocenter noautosym","Cu   -1.32092   -1.29661   -2.32473","Cu    0.19961   -1.86282   -4.14087","Cu   -0.31099    2.73962    0.45543","Cu   -0.83334    0.76736   -1.03273","Cu    1.23160    2.09181   -1.42823","Cu    0.78438    0.10041   -2.81555","Cu    1.57742   -0.19592   -0.44540","Cu    1.00022   -2.20677   -1.84354","Cu    1.70543    4.02957   -0.04581","Cu    2.01925    1.81074    0.98033","Cu   -4.27957    0.06569    1.36564","Cu   -2.85153   -0.65864   -0.48073","Cu   -2.30017    1.40668    0.87985","Cu   -2.09703   -0.92187    1.89833","Cu   -0.05068    0.48468    1.52509","Cu   -0.60568   -1.67227    0.04555","Cu    0.13673   -1.82241    2.44305","Cu    1.74149   -2.47524    0.50341","Cu    2.22440   -0.44229    1.97599","Cu    2.36252   -2.71904    2.86318","C     4.66632   -0.31269    0.00667","O     3.36811    0.02089   -0.74763","H     4.02050   -1.13205    0.33461","H     4.79414   -0.34608   -1.07888","H     5.64271   -0.40683    0.48877","H     2.80704    5.20478   -0.15285","end","","","nwpw","   pseudopotentials","   H library pspw_default","   C library pspw_default","   Cu library pspw_default","   end","   simulation_cell","     FCC 38.0","     ","   end","   mapping 2","   ","   ","   cutoff 50.0","   loop 10 10","   steepest_descent","     ","     input_wavefunction_filename  test2d.movecs","     output_wavefunction_filename test2d.movecs","     loop 1 10","     ","   end","   ","end","task pspw energy","","","task pspw steepest_descent","","",""],"nwinput_nlines":74,"nwpw":{"cutoff":[50.0,100.0],"loop":[10,10],"mapping":2,"pseudopotentials":{"C":"pspw_default","Cu":"pspw_default","H":"pspw_default"},"simulation_cell":{"unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"steepest_descent":{"input_wavefunction_filename":"test2d.movecs","loop":[1,10],"output_wavefunction_filename":"test2d.movecs"}},"nwpw:kbpp_filter":".true.","nwpw:kbpp_ray":".true.","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm"}
+task0=1
+rtdbstr={"current_task":"task pspw steepest_descent","dbname":"eric","foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,6.0,8.0,1.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-2.496176852835094,-2.450237614052714,-4.393102697431583,0.3772082045804538,-3.5202193660465952,-7.825109654331263,-0.5876858851884942,5.177131112833539,0.8606379069789893,-1.5747842553232572,1.4501001345967488,-1.9515767201862233,2.327386527535128,3.95294772017153,-2.6989633486696136,1.4822632709223802,0.1897473865133178,-5.320618007146419,2.9808915689058635,-0.3702351156825936,-0.841683955313532,1.8901417282974877,-4.170190619818687,-3.4837854489867732,3.2227953927039894,7.6147831518023095,-0.08656834753684979,3.815829202440165,3.4218024365613493,1.8525550783846314,-8.08721464894731,0.1241361001898202,2.580685399044391,-5.388610348215527,-1.2446491251183311,-0.9084479744900633,-4.346691027152058,2.6582397536157143,1.662675411052113,-3.9628120898319175,-1.7420816970922446,3.5873235359010716,-0.0957713131012344,0.9159123921449543,2.882002207923472,-1.1445692367631344,-3.1601320789226763,0.08607701877981899,0.25838223441854336,-3.443855538848078,4.616695076400369,3.290938911852184,-4.677525355972759,0.9513069599110578,4.203506488997352,-0.8358069074890482,3.734079656174194,4.464515442540021,-5.138240551988563,5.410625655982484,8.818066175030625,-0.5908984193690803,0.0126044723438286,6.364804999396184,0.0394763759014362,-1.4128158408420655,7.5976433370858905,-2.139264305371989,0.6323212130387538,9.05961095089092,-0.6539963701277663,-2.0387875745591906,10.663175733020251,-0.7687972239340014,0.9236413714382465,5.304536438983604,9.835608030841414,-0.288844617354453],"masses":[62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,12.0,15.99491,1.008,1.008,1.008,1.008],"nion":26,"symbols":["Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","C","O","H","H","H","H"],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":71,"nwinput_lines":["","memory 1900 mb","start eric","echo","","permanent_dir ./perm","scratch_dir   ./perm","","","set nwpw:kbpp_ray    .true.","set nwpw:kbpp_filter .true.","","","geometry noautoz nocenter noautosym","Cu   -1.32092   -1.29661   -2.32473","Cu    0.19961   -1.86282   -4.14087","Cu   -0.31099    2.73962    0.45543","Cu   -0.83334    0.76736   -1.03273","Cu    1.23160    2.09181   -1.42823","Cu    0.78438    0.10041   -2.81555","Cu    1.57742   -0.19592   -0.44540","Cu    1.00022   -2.20677   -1.84354","Cu    1.70543    4.02957   -0.04581","Cu    2.01925    1.81074    0.98033","Cu   -4.27957    0.06569    1.36564","Cu   -2.85153   -0.65864   -0.48073","Cu   -2.30017    1.40668    0.87985","Cu   -2.09703   -0.92187    1.89833","Cu   -0.05068    0.48468    1.52509","Cu   -0.60568   -1.67227    0.04555","Cu    0.13673   -1.82241    2.44305","Cu    1.74149   -2.47524    0.50341","Cu    2.22440   -0.44229    1.97599","Cu    2.36252   -2.71904    2.86318","C     4.66632   -0.31269    0.00667","O     3.36811    0.02089   -0.74763","H     4.02050   -1.13205    0.33461","H     4.79414   -0.34608   -1.07888","H     5.64271   -0.40683    0.48877","H     2.80704    5.20478   -0.15285","end","","","nwpw","   pseudopotentials","   H library pspw_default","   C library pspw_default","   Cu library pspw_default","   end","   simulation_cell","     FCC 38.0","     ","   end","   mapping 2","   ","   ","   cutoff 50.0","   loop 10 10","   steepest_descent","     ","     input_wavefunction_filename  test2d.movecs","     output_wavefunction_filename test2d.movecs","     loop 1 10","     ","   end","   ","end","task pspw energy","","","task pspw steepest_descent","","",""],"nwinput_nlines":74,"nwpw":{"cutoff":[50.0,100.0],"loop":[10,10],"mapping":2,"pseudopotentials":{"C":"pspw_default","Cu":"pspw_default","H":"pspw_default"},"simulation_cell":{"unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"steepest_descent":{"input_wavefunction_filename":"test2d.movecs","loop":[1,10],"output_wavefunction_filename":"test2d.movecs"}},"nwpw:kbpp_filter":".true.","nwpw:kbpp_ray":".true.","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm"}
+task =5
+          *****************************************************
+          *                                                   *
+          *     Car-Parrinello calculation for molecules,     *
+          *       microclusters, liquids, and materials       *
+          *                                                   *
+          *     [     steepest descent minimization   ]       *
+          *     [          C++ implementation         ]       *
+          *                                                   *
+          *            version #7.00   09/20/18               *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska     *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jan 23 21:52:24 2021 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+ C library pspw_default
+ Cu library pspw_default
+ H library pspw_default
+
+ input psi exists, reading from file: ./perm/test2d.movecs
