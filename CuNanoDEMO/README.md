@@ -47,13 +47,13 @@
 |home macbook-pro | MPI-OPENCL | 7     | 1     | 5.09         | 1.17      | 0.72     | 2.79 |
 |home macbook-pro | MPI-OPENCL | 8     | 1     | 4.75         | 1.22      | 0.78     | 2.64 |
 |                 |            |       |       |              |           |          |      |
-|home macbook-pro | MPI-ONLY   | 2     | 0     |         |      |      |  |
-|home macbook-pro | MPI-ONLY   | 3     | 0     |         |       |      |  |
-|home macbook-pro | MPI-ONLY   | 4     | 0     |         |       |      |  |
-|home macbook-pro | MPI-ONLY   | 5     | 0     | 20.41         | 10.68     | 4.58     | 3.61 |
-|home macbook-pro | MPI-ONLY   | 6     | 0     | 16.94         | 8.74      | 3.72     | 3.08 |
-|home macbook-pro | MPI-ONLY   | 7     | 0     | 15.59         | 8.00      | 3.44     | 2.87 |
-|home macbook-pro | MPI-ONLY   | 8     | 0     | 15.18         | 7.73      | 3.33     | 2.85 |
+|home macbook-pro | MPI-ONLY   | 2     | 0     | 46.66        | 25.17     | 10.61    | 7.71 |
+|home macbook-pro | MPI-ONLY   | 3     | 0     | 31.47        | 16.84     | 7.10     | 5.29 |
+|home macbook-pro | MPI-ONLY   | 4     | 0     | 24.08        | 12.73     | 5.47     | 4.19 |
+|home macbook-pro | MPI-ONLY   | 5     | 0     | 20.41        | 10.68     | 4.58     | 3.61 |
+|home macbook-pro | MPI-ONLY   | 6     | 0     | 16.94        | 8.74      | 3.72     | 3.08 |
+|home macbook-pro | MPI-ONLY   | 7     | 0     | 15.59        | 8.00      | 3.44     | 2.87 |
+|home macbook-pro | MPI-ONLY   | 8     | 0     | 15.18        | 7.73      | 3.33     | 2.85 |
 
  
  
