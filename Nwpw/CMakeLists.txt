@@ -69,7 +69,7 @@ include_directories(${MPI_INCLUDE_PATH})
 
 
 if(MKL_FOUND)
-   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake
+   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
    include_directories(${MKL_INCLUDE_DIRS})
    message("-- Using MKL libs")
 else()
