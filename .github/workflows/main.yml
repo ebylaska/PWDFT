@@ -25,40 +25,25 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
        
-      # sets up cmake
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.7
-        with:
-           cmake-version: '3.16.x'
-
-        
-      # Checks-out and compiles openmpi
-      #- name: download-openmpi
-      #  run: wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
-      #- name: extract-openmpi
-      #   run: tar -xvf ./openmpi-4.0.2.tar.gz
-      #- name: configure-openmpi
-      #  run: ./openmpi-4.0.2/configure --prefix="/home/${USER}/.openmpi"
-      #- name: install-openmpi
-      #  run: |
-      #         make -j
-      #         sudo make install
-
-
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: echo Hello, world!
          
+      # install openmpi
+      - name: install ubuntu mpi
+        run: sudo apt-get install openmpi-bin openmpi-common openmpi-doc libopenmpi2 libopenmpi-dev
+        
       # Runs a configure
       - name: configure
         run: mkdir build && cd build && cmake ../Nwpw
 
       # Compiles
       - name: builder
-        run: cmake --build build
+        run: cmake --build build && ls
 
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
+          cd DEMO2 && cat ericmd00.nw && ../build/pwdft ericmd00.nw
