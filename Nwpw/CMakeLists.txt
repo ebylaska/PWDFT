@@ -9,7 +9,7 @@ option( NWPW_SYCL_ENABLE_PROFILE "Enable SYCL Queue Profiling Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 
 # specify the C++ standard
@@ -63,16 +63,6 @@ endif(NWPW_OPENCL)
 #endif(OPENMP_FOUND)
 #endif(NWPW_OPENMP)
 
-#Configure MPI
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-
-# Enable Fortran
-enable_language(Fortran)
-
-set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
-
 #Configure OpenMP
 if(NWPW_OPENMP)
 find_package(OpenMP)
@@ -84,6 +74,17 @@ if(OPENMP_FOUND)
 endif(OPENMP_FOUND)
 endif(NWPW_OPENMP)
 
+#Configure MPI
+find_package(MPI REQUIRED)
+include_directories(${MPI_INCLUDE_PATH})
+
+
+# Enable Fortran
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+enable_language(Fortran)
+
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
 if(MKL_FOUND)
    include_directories(${MKL_INCLUDE_DIRS})
