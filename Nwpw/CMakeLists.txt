@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Enable Fortran
-# enable_language(Fortran)
+enable_language(Fortran)
 
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -36,8 +36,8 @@ if(NWPW_SYCL)
   endif(NWPW_SYCL_ENABLE_PROFILE)
 endif(NWPW_SYCL)
 
-#set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
-#set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
 
 
 #Configure OpenCl
@@ -68,14 +68,8 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
 
-# Enable Fortran
-#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
-enable_language(Fortran)
-
-set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
-
 if(MKL_FOUND)
+   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake
    include_directories(${MKL_INCLUDE_DIRS})
    message("-- Using MKL libs")
 else()
