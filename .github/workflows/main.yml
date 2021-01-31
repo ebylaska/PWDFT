@@ -24,6 +24,19 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        
+      # Checks-out and compiles openmpi
+      - name: download-openmpi
+        run: wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
+      - name: extract-openmpi
+        run: tar -xvf ./openmpi-4.0.2.tar.gz
+      - name: configure-openmpi
+        run: ./openmpi-4.0.2/configure --prefix="/home/${USER}/.openmpi"
+      - name: install-openmpi
+        run: |
+               make -j
+               sudo make install
+
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
