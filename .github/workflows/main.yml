@@ -31,7 +31,7 @@ jobs:
          
       # Runs a configure
       - name: configure
-        run: mkdir build && cd build && cmake ../Nwpw
+        run: mkdir build && cd build && cmake -DBUILD_OPENFAST_CPP_API:BOOL=ON  ../Nwpw
 
       # Compiles
       - name: builder
