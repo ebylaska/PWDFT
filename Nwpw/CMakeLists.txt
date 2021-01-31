@@ -9,7 +9,7 @@ option( NWPW_SYCL_ENABLE_PROFILE "Enable SYCL Queue Profiling Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
-# include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 
 # specify the C++ standard
@@ -69,7 +69,6 @@ include_directories(${MPI_INCLUDE_PATH})
 
 
 if(MKL_FOUND)
-   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
    include_directories(${MKL_INCLUDE_DIRS})
    message("-- Using MKL libs")
 else()
