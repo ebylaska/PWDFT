@@ -24,6 +24,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - with: 
+         cmake-version: '3.16.x'
         
       # Checks-out and compiles openmpi
       #- name: download-openmpi
