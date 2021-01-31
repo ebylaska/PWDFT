@@ -64,7 +64,8 @@ endif(OPENMP_FOUND)
 endif(NWPW_OPENMP)
 
 #Configure MPI
-find_package(MPI REQUIRED)
+#find_package(MPI REQUIRED)
+find_package(MPI)
 include_directories(${MPI_INCLUDE_PATH})
 
 
