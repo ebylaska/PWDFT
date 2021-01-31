@@ -48,4 +48,4 @@ jobs:
           echo Running DEMO2/ericmd00.nw 
           cd DEMO2 && cat ericmd00.nw && ../build/pwdft ericmd00.nw
           echo Running CuNanoDEMO/cunano00.nw 
-          cd ../CuNanoDEMO && cat cunano00.nw && ../build/pwdft cunano00.nw
+          cd ../CuNanoDEMO && cat cunano00.nw && mpirun -np 2 ../build/pwdft cunano00.nw
