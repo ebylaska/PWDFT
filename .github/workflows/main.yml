@@ -29,6 +29,10 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
          
+      # install openmpi
+      - name: install ubuntu mpi
+        run: sudo apt-get install openmpi-bin openmpi-common openmpi-doc libopenmpi2 libopenmpi-dev
+        
       # Runs a configure
       - name: configure
         run: mkdir build && cd build && cmake -DBUILD_OPENFAST_CPP_API:BOOL=ON  ../Nwpw
