@@ -39,11 +39,11 @@ jobs:
 
       # Compiles
       - name: builder
-        run: cmake --build build
+        run: cmake --build build && ls
 
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-          cd CuNanoDEMO && cat cunano.nw && ls ..
+          cd CuNanoDEMO && cat cunano.nw && ls .. && ls ../build
