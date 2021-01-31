@@ -9,7 +9,7 @@ option( NWPW_SYCL_ENABLE_PROFILE "Enable SYCL Queue Profiling Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
-#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+# include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 
 # specify the C++ standard
@@ -53,17 +53,6 @@ endif(NWPW_OPENCL)
 
 
 #Configure OpenMP
-#if(NWPW_OPENMP)
-#find_package(OpenMP)
-#if(OPENMP_FOUND)
-#   message("-- Using OpenMP")
-#    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-#endif(OPENMP_FOUND)
-#endif(NWPW_OPENMP)
-
-#Configure OpenMP
 if(NWPW_OPENMP)
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -80,7 +69,7 @@ include_directories(${MPI_INCLUDE_PATH})
 
 
 # Enable Fortran
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 enable_language(Fortran)
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
