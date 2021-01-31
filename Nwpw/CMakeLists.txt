@@ -11,7 +11,6 @@ string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
-
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -64,8 +63,8 @@ endif(OPENMP_FOUND)
 endif(NWPW_OPENMP)
 
 #Configure MPI
-#find_package(MPI REQUIRED)
-find_package(MPI)
+find_package(MPI REQUIRED)
+#find_package(MPI)
 include_directories(${MPI_INCLUDE_PATH})
 
 
