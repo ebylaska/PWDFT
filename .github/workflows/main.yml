@@ -46,4 +46,4 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-          cd CuNanoDEMO && cat cunano.nw && ls .. && ls ../build && ../build/pwdft cunano.nw
+          cd DEMO2 && cat ericmd00.nw && ../build/pwdft ericmd00.nw
