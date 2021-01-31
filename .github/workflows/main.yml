@@ -35,7 +35,7 @@ jobs:
         
       # Runs a configure
       - name: configure
-        run: mkdir build && cd build && cmake -DBUILD_OPENFAST_CPP_API:BOOL=ON  ../Nwpw
+        run: mkdir build && cd build && cmake ../Nwpw
 
       # Compiles
       - name: builder
@@ -46,3 +46,4 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
+          cd CuNanoDEMO && cat cunano.nw 
