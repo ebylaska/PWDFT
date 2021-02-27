@@ -3,6 +3,7 @@ memory 1900 mb
 start eric
 echo
 
+
 permanent_dir ./perm
 scratch_dir   ./perm
 #psp_library_dir /home/ericpsps
