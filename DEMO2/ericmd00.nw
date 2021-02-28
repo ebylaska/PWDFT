@@ -39,7 +39,7 @@ nwpw
    end
    vectors output test2.movecs
 end
-task pspw energy
+#task pspw energy
 #task pspw noit_energy
 
 task pspw steepest_descent
