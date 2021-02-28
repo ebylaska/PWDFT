@@ -24,4 +24,8 @@ extern double util_splint(double *, double *, double *, int, int, double);
 
 extern void util_filter(int, double *, double, double *);
 
+extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
+
+
+
 #endif
