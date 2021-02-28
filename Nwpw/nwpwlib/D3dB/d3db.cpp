@@ -1587,8 +1587,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             if (p_from==MASTER)
             {
                index = 2*ijktoindex(0,0,k);
-               for (int k=0; k<bsize; ++k) a[index+k] = tmp[k];
-               dwrite(iunit,tmp,bsize);
+               for (int k=0; k<bsize; ++k) tmp[k] = a[index+k];
             }
             else
             {
@@ -2226,8 +2225,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
             if (p_from==MASTER)
             {
                index = ijktoindex(0,0,k);
-               for (int k=0; k<bsize; ++k) a[index+k] = tmp[k];
-               dwrite(iunit,tmp,bsize);
+               for (int k=0; k<bsize; ++k) tmp[k] = a[index+k];
             }
             else
             {
