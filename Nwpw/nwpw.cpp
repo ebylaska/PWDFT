@@ -144,6 +144,7 @@ int main(int argc, char* argv[])
   if (oprint) std::cout << "task0=" << task << std::endl;
   while (task>0)
   {
+     if (task==1) ierr += pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
      if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
      if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr);
     

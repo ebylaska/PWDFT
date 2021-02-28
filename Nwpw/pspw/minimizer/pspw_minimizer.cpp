@@ -149,6 +149,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
+   //PsiElectron psielc(control,mygrid,myion,mypsp,mystrfac,mykin,mycoulomb,myxc,myewald);
+
 
 
 //                 |**************************|
@@ -255,65 +257,16 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    }
 
-//                 |**************************|
-// *****************   start iterations       **********************
-//                 |**************************|
-   if (myparallel.is_master()) 
-   {
-      seconds(&cpu2);
-      cout << "     ========================== iteration ==========================\n";
-      cout << "          >>> iteration started at " << util_date() << "  <<<\n";
-      cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      cout << "     ---------------------------------------------------------------\n";
+//*                |***************************|
+//******************     call CG minimizer     **********************
+//*                |***************************|
 
-
-   }
-   done   = 0;
-   icount = 0;
-   while (!done)
-   {
-      ++icount;
-      inner_loop(control,&mygrid,&myion,
-                 &mykin,&mycoulomb,
-                 &mypsp,&mystrfac,&myewald,
-                 psi1,psi2,Hpsi,psi_r,
-                 dn,hml,lmbda,
-                 E,&deltae,&deltac,&deltar);
-
-      if (myparallel.is_master())
-         printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
-                                       E[0],deltae,deltac,deltar);
-
-      /* check for competion */
-      if ((deltae>0.0)&&(icount>1))
-      {
-         done = 1;
-         cout << "         *** Energy going up. iteration terminated\n";
-      }
-      else if ((fabs(deltae)<control.tolerances(0)) &&
-               (deltac      <control.tolerances(1)) &&
-               (deltar      <control.tolerances(2)))
-      {
-         done = 1;
-         if (myparallel.is_master())
-            cout << "         *** tolerance ok.    iteration terminated\n";
-      }
-      else if (icount>=control.loop(1))
-      {
-         done = 1;
-         if (myparallel.is_master())
-            cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
-      }
-   }
-   if (myparallel.is_master()) 
-   {
-      seconds(&cpu3);
-      cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
-   }
-
-
-   /* diagonalize the hamiltonian */
-   mygrid.m_diagonalize(hml,eig);
+   /*  calculate energy */
+//   if (flag.eq.-1) then
+//        EV= cgsd_noit_energy()
+//      else
+//        EV= cgsd_energy(psi)
+//      end if
 
 
 //                  |***************************|
