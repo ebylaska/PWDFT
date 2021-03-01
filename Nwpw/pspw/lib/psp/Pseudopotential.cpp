@@ -64,23 +64,26 @@ static bool vpp_formatter_check(PGrid *mygrid, char *fname)
    char comment[80],atom[2];
    int psp_type,version,nfft[3];
    double unita[9],amass,zv;
-   bool reformat;
    double tol=1.0e-9;
+   int ireformat;
 
-   reformat = true;
-   if (vpp_read_header(fname,
-                            comment, &psp_type, &version, nfft, unita,
-                            atom, &amass, &zv))
+   ireformat = 0;
+   if (mygrid->parall->is_master())
    {
-      reformat = false;
-      for (auto i=0; i<9; ++i)
-         reformat = reformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
-      reformat = reformat || (mygrid->nx!=nfft[0]);
-      reformat = reformat || (mygrid->ny!=nfft[1]);
-      reformat = reformat || (mygrid->nz!=nfft[2]);
-      //reformat = reformat || (control.pversion!=version);
+      if (vpp_read_header(fname, comment, &psp_type, &version, nfft, unita,
+                       atom, &amass, &zv))
+      {
+         for (auto i=0; i<9; ++i)
+            ireformat = ireformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
+         ireformat = ireformat || (mygrid->nx!=nfft[0]);
+         ireformat = ireformat || (mygrid->ny!=nfft[1]);
+         ireformat = ireformat || (mygrid->nz!=nfft[2]);
+         //reformat = reformat || (control.pversion!=version);
+      }
    }
-   return reformat;
+   mygrid->parall->Brdcst_iValue(0,0,&ireformat);
+
+   return (ireformat==1);
 }
 
 
@@ -728,40 +731,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       }
       else
       {
-         // ******** debug *********
-         /*
-         strcpy(pspname,myion->atom(ia));
-         strcat(pspname,".psp");
-         control.add_permanent_dir(pspname);
-         vpp_generate(mypneb,
-                  pspname,fname,
-                  comment[ia],&psp_type[ia],&version,nfft,unita,aname,
-                  &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
-                  &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,&b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
-                  &ncore_ptr,vl[ia],&vnl_ptr);
-
-         std::cout << "vpp_generate Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
-         std::cout << "vpp_generate Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
-         std::cout << "vpp_generate Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
-          std::cout << "vpp_generate vl[0] = " << vl[ia][0] << std::endl;
-          std::cout << "vpp_generate vl[1] = " << vl[ia][1] << std::endl;
-          std::cout << "vpp_generate vl[431] = " << vl[ia][431] << std::endl;
-          std::cout << "vpp_generate vl[9431] = " << vl[ia][9431] << std::endl;
-          std::cout << "vpp_generate vnl[431] = " << vnl_ptr[431] << std::endl;
-          std::cout << "vpp_generate vnl[31+2*npack1] = " << vnl_ptr[31+2*mypneb->npack(1)] << std::endl;
-          std::cout << std::endl;
-          delete [] rc_ptr;
-          delete [] n_ptr;
-          delete [] l_ptr;
-          delete [] m_ptr;
-          delete [] b_ptr;
-          delete [] G_ptr;
-          delete [] vnl_ptr;
-          if (semicore[ia]) delete [] ncore_ptr;
-         // ******** debug *********
-         std::cout << "VPP READ = " << fname << std::endl;
-         */
-
          vpp_read(mypneb,
                   fname,
                   comment[ia],&psp_type[ia],&version,nfft,unita,aname,
