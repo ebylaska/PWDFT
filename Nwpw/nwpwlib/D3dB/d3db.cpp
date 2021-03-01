@@ -2581,10 +2581,11 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
    int one=1;
    DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
 
+
    /* receive packed array data */
    for (it=1; it<np; ++it)
    {
-      /* synchronous receive of tmp */
+      /* asynchronous receive of tmp */
       proc_from = (taskid-it+np)%np;
       msglen = (t_i2_start[it+1] - t_i2_start[it]);
       if (msglen>0)
@@ -2602,6 +2603,7 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
    indx    = t_i2_start[0];
    nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
    t_bindexcopy(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+
 }
 
 

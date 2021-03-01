@@ -30,7 +30,6 @@ static bool vpp_read_header(char *fname,
 
    ifound = cfileexists(fname);
 
-
    if (ifound>0)
    {
       openfile(5,fname,"r");
@@ -67,18 +66,20 @@ static bool vpp_formatter_check(PGrid *mygrid, char *fname)
    double tol=1.0e-9;
    int ireformat;
 
-   ireformat = 0;
+   ireformat = 1;
    if (mygrid->parall->is_master())
    {
       if (vpp_read_header(fname, comment, &psp_type, &version, nfft, unita,
                        atom, &amass, &zv))
       {
+         bool reformat = false;
          for (auto i=0; i<9; ++i)
-            ireformat = ireformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
-         ireformat = ireformat || (mygrid->nx!=nfft[0]);
-         ireformat = ireformat || (mygrid->ny!=nfft[1]);
-         ireformat = ireformat || (mygrid->nz!=nfft[2]);
+            reformat = reformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
+         reformat = reformat || (mygrid->nx!=nfft[0]);
+         reformat = reformat || (mygrid->ny!=nfft[1]);
+         reformat = reformat || (mygrid->nz!=nfft[2]);
          //reformat = reformat || (control.pversion!=version);
+         if (!reformat) ireformat = 0;
       }
    }
    mygrid->parall->Brdcst_iValue(0,0,&ireformat);
@@ -329,6 +330,7 @@ static void vpp_write(PGrid *mygrid,
    double   *prj;
    Parallel *parall = mygrid->parall;
 
+
    if (parall->is_master())
    {
       openfile(6,fname,"w");
@@ -360,7 +362,7 @@ static void vpp_write(PGrid *mygrid,
       dwrite(6,Gijl,nn);
       dwrite(6,&rcore,1);
    }
-
+   double x = mygrid->parall->SumAll(0,1.0);
 
    /* readin vl 3d block */
    //tmp2 = new double [mygrid->nfft3d];
@@ -369,7 +371,6 @@ static void vpp_write(PGrid *mygrid,
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,0);
-
 
    /* reading vnl 3d block */
    if (nprj > 0)
@@ -408,6 +409,8 @@ static void vpp_write(PGrid *mygrid,
    //delete [] tmp2;
 
    if (parall->is_master()) closefile(6);
+
+   double xy = mygrid->parall->SumAll(0,1.0);
 }
 
 
@@ -721,12 +724,14 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 
 
 // *** still a problem with vpp_write in semicore stuff ****
+/*
          vpp_write(mypneb,
                   fname,
                   comment[ia],psp_type[ia],version,nfft,unita,aname,
                   amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
                   rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
                   ncore_ptr,vl[ia],vnl_ptr);
+*/
 
       }
       else
