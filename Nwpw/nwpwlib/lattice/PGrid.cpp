@@ -680,8 +680,8 @@ void PGrid::t_unpack(const int nb, double *a)
 
    t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new double[zplane_size+1];
-   tmp2 = new double[zplane_size+1];
+   tmp1 = new double[2*zplane_size+1];
+   tmp2 = new double[2*zplane_size+1];
    t_timereverse(a,tmp1,tmp2);
    delete [] tmp2;
    delete [] tmp1;

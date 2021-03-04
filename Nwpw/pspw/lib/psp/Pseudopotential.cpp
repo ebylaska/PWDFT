@@ -172,7 +172,7 @@ static void vpp_read(PGrid *mygrid,
 
    if (parall->is_master())
    {
-      std::cout << " reading formatted psp filename: " << fname << std::endl;
+      std::cout << std::endl << " reading formatted psp filename: " << fname << std::endl;
       openfile(5,fname,"r");
       cread(5,comment,80);
       comment[79] = '\0';
@@ -330,9 +330,12 @@ static void vpp_write(PGrid *mygrid,
    double   *prj;
    Parallel *parall = mygrid->parall;
 
+   //double tmp2[mygrid->nfft3d];
+   double *tmp2 = new double [mygrid->nfft3d];
 
    if (parall->is_master())
    {
+      std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
       openfile(6,fname,"w");
       comment[79] = '\0';
       cwrite(6,comment,80);
@@ -362,12 +365,9 @@ static void vpp_write(PGrid *mygrid,
       dwrite(6,Gijl,nn);
       dwrite(6,&rcore,1);
    }
-   double x = mygrid->parall->SumAll(0,1.0);
+   double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
 
    /* readin vl 3d block */
-   //tmp2 = new double [mygrid->nfft3d];
-   double tmp2[mygrid->nfft3d];
-
    mygrid->tt_pack_copy(0,vl,tmp2);
    mygrid->t_unpack(0,tmp2);
    mygrid->t_write(6,tmp2,0);
@@ -392,7 +392,6 @@ static void vpp_write(PGrid *mygrid,
       mygrid->t_unpack(0,tmp2);
       mygrid->t_write(6,tmp2,0);
 
-
       mygrid->tt_pack_copy(0,&prj[2*mygrid->npack(0)],tmp2);
       mygrid->t_unpack(0,tmp2);
       mygrid->t_write(6,tmp2,0);
@@ -406,11 +405,10 @@ static void vpp_write(PGrid *mygrid,
       mygrid->t_write(6,tmp2,0);
    }
 
-   //delete [] tmp2;
+   delete [] tmp2;
 
    if (parall->is_master()) closefile(6);
 
-   double xy = mygrid->parall->SumAll(0,1.0);
 }
 
 
@@ -538,6 +536,7 @@ static void vpp_generate(PGrid *mygrid,
 
    if ((*psp_type==0) || (*psp_type==9))
    {
+
       int nray = mygrid->n_ray();
       Psp1d_Hamann psp1d(myparall,pspname);
       //std::cout << "in vpp_generate Hamann psp1d.psp_type=" << psp1d.psp_type << std::endl;
@@ -666,6 +665,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
    double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
    double unita[9];
    char fname[256],pspname[256],aname[2];
+   char fname2[256];
 
    myion    = myionin;
    mypneb   = mypnebin;
@@ -709,6 +709,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
       strcpy(fname,myion->atom(ia));
       strcat(fname,".vpp");
       control.add_permanent_dir(fname);
+
       if (vpp_formatter_check(mypneb,fname))
       {
          strcpy(pspname,myion->atom(ia));
@@ -722,16 +723,13 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 		      &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
 		      &ncore_ptr,vl[ia],&vnl_ptr);
 
-
-// *** still a problem with vpp_write in semicore stuff ****
-/*
+         // writing .vpp file to fname
          vpp_write(mypneb,
                   fname,
                   comment[ia],psp_type[ia],version,nfft,unita,aname,
                   amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
                   rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
                   ncore_ptr,vl[ia],vnl_ptr);
-*/
 
       }
       else
