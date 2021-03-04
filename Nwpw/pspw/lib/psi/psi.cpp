@@ -157,7 +157,7 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0;  n<ne[ms];  ++n)
       {
-         std::cout <<  "converting .... psi:" << n+1 << " spin:" << ms+1 << std::endl;
+         std::cout <<  " converting .... psi:" << n+1 << " spin:" << ms+1 << std::endl;
          dread(4,psi1,n2ft3d);
          wvfnc_expander_convert(nfft,psi1,dnfft,psi2);
          dwrite(6,psi2,dn2ft3d);
@@ -229,8 +229,8 @@ static void psi_check_convert(Pneb *mypneb, char *filename)
        (nfft0[2]!=mypneb->nz))
    {
       if (myparall->is_master())
-         std::cout << "psi grids are being converted: " << std::endl 
-                   << "-----------------------------: " << std::endl;
+         std::cout << " psi grids are being converted: " << std::endl 
+                   << " -----------------------------: " << std::endl;
 
        wvfnc_expander(mypneb,filename);
    }
