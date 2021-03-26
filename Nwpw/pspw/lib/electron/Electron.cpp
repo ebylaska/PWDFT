@@ -142,7 +142,6 @@ void Electron_Operators::gen_vl_potential()
 
    /* generate local psp*/
    mypsp->v_local(vl,0,dng,fion);
-
 }
 
 /********************************************
@@ -231,10 +230,10 @@ void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall
 
 /********************************************
  *                                          *
- *       Electron_Operators::psi_vl_ave     *
+ *       Electron_Operators::vl_ave         *
  *                                          *
  ********************************************/
-double Electron_Operators::psi_vl_ave(double *dng)
+double Electron_Operators::vl_ave(double *dng)
 {
    return mygrid->cc_pack_dot(0,dng,vl);
 }
@@ -242,10 +241,10 @@ double Electron_Operators::psi_vl_ave(double *dng)
 
 /********************************************
  *                                          *
- *      Electron_Operators::psi_vnl_ave     *
+ *       Electron_Operators::vnl_ave        *
  *                                          *
  ********************************************/
-double Electron_Operators::psi_vnl_ave(double *psi)
+double Electron_Operators::vnl_ave(double *psi)
 {
    return mypsp->e_nonlocal(psi);
 }

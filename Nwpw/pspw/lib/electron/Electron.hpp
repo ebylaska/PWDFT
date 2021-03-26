@@ -56,8 +56,8 @@ public:
     void gen_scf_potentials(double *, double *, double *);
     void gen_vl_potential();
 
-    double psi_vl_ave(double *);
-    double psi_vnl_ave(double *);
+    double vl_ave(double *);
+    double vnl_ave(double *);
 
     double energy(double *, double *, double *, double *);
     double eorbit(double *);
