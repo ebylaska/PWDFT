@@ -18,6 +18,7 @@ using namespace std;
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
+#include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
@@ -115,18 +116,17 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
    /* initialize psi1 and psi2 */
-   psi1  = mygrid.g_allocate(1);
-   psi2  = mygrid.g_allocate(1);
-   Hpsi  = mygrid.g_allocate(1);
-   psi_r = mygrid.h_allocate();
-   dn    = mygrid.r_nalloc(ispin);
-   hml   = mygrid.m_allocate(-1,1);
-   lmbda = mygrid.m_allocate(-1,1);
-   eig   = new double[ne[0]+ne[1]];
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
+   //psi1  = mygrid.g_allocate(1);
+   //psi2  = mygrid.g_allocate(1);
+   //Hpsi  = mygrid.g_allocate(1);
+   //psi_r = mygrid.h_allocate();
+   //dn    = mygrid.r_nalloc(ispin);
+   //hml   = mygrid.m_allocate(-1,1);
+   //lmbda = mygrid.m_allocate(-1,1);
+   //eig   = new double[ne[0]+ne[1]];
+   //gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
-   //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
-   psi_read(&mygrid,control.input_movecs_filename(),psi2);
+   //psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
 
    /* setup structure factor */
@@ -137,11 +137,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Kinetic_Operator mykin(&mygrid);
    Coulomb_Operator mycoulomb(&mygrid);
 
-   //Coulomb_Operator mycoul(mygrid);
-   //XC_Operator      myxc(mygrid);
+   /* initialize xc */
+   XC_Operator      myxc(&mygrid,control);
 
-   //Pseudopotential constructor can now be written to generate formatted .vpp files
-   //psp_formatter_check(&myparallel,&mylattice,&myion,control);
    
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
@@ -186,8 +184,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          cout << "restricted\n";
       else
          cout << "unrestricted\n";
-      cout << "   exchange-correlation = ";
-         cout << "LDA (Vosko et al) parameterization\n";
+      cout << myxc;
+      //cout << "   exchange-correlation = ";
+      //cout << "LDA (Vosko et al) parameterization\n";
   
       cout << "\n elements involved in the cluster:\n";
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -314,18 +313,18 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
    }
 
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+   //psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
 
    /* deallocate memory */
-   mygrid.g_deallocate(psi1);
-   mygrid.g_deallocate(psi2);
-   mygrid.g_deallocate(Hpsi);
-   mygrid.h_deallocate(psi_r);
-   mygrid.r_dealloc(dn);
-   mygrid.m_deallocate(hml);
-   mygrid.m_deallocate(lmbda);
-   delete [] eig;
-   gdevice_psi_dealloc();
+   //mygrid.g_deallocate(psi1);
+   //mygrid.g_deallocate(psi2);
+   //mygrid.g_deallocate(Hpsi);
+   //mygrid.h_deallocate(psi_r);
+   //mygrid.r_dealloc(dn);
+   //mygrid.m_deallocate(hml);
+   //mygrid.m_deallocate(lmbda);
+   //delete [] eig;
+   //gdevice_psi_dealloc();
 
 
 

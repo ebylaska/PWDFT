@@ -54,7 +54,34 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2& control)
    mypneb = mygrid;
    xc_name = control.xc_name();
 
-   std::cout << "xc_name =" << xc_name << std::endl;
+   transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
+
+   gga = 0;
+
+   if (xc_name.compare("vosko") == 0) gga=0;
+   if (xc_name.compare("lda")   == 0) gga=0;
+
+   if (xc_name.compare("pbe")        == 0) gga=10;
+   if (xc_name.compare("pbe96")      == 0) gga=10;
+   if (xc_name.compare("blyp")       == 0) gga=11;
+   if (xc_name.compare("revpbe")     == 0) gga=12;
+   if (xc_name.compare("pbesol")     == 0) gga=13;
+   if (xc_name.compare("hser")       == 0) gga=14;
+   if (xc_name.compare("b3lypr")     == 0) gga=15;
+   if (xc_name.compare("beef")       == 0) gga=16;
+   if (xc_name.compare("xbeef-cpbe") == 0) gga=17;
+
+   if (xc_name.compare("pbe0")    == 0) gga=110;
+   if (xc_name.compare("blyp0")   == 0) gga=111;
+   if (xc_name.compare("revpbe0") == 0) gga=112;
+   if (xc_name.compare("bnl")     == 0) gga=113;
+   if (xc_name.compare("hse")     == 0) gga=114;
+   if (xc_name.compare("b3lyp")   == 0) gga=115;
+
+   if (xc_name.compare("hartree-fock") == 0) gga=200;
+   if (xc_name.compare("hf")           == 0) gga=200;
+    
+   //std::cout << "xc_name =" << xc_name << std::endl;
 }
 
 
