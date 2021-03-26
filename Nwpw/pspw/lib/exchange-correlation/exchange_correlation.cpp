@@ -54,7 +54,7 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2& control)
    mypneb = mygrid;
    xc_name = control.xc_name();
 
-   transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
+   std::transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
 
    gga = 0;
 
