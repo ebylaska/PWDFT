@@ -39,7 +39,8 @@
 */
 
 
-#include        "exchange_correlation.hpp"
+#include	<algorithm>
+#include	"exchange_correlation.hpp"
 
 /* Constructors */
 
