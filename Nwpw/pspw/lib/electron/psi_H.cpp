@@ -29,7 +29,7 @@
 void psi_H(Pneb *mygrid, 
            Kinetic_Operator *myke,
            Pseudopotential  *mypsp,
-           double *psi1, double *psi1_r;
+           double *psi, double *psi_r,
            double *vl, double *vc, double *xcp,
            double *Hpsi,
            bool move, double *fion)
@@ -47,15 +47,15 @@ void psi_H(Pneb *mygrid,
    double scal2 = 1.0/omega;
 
    /* allocate temporary memory */
-   vall= mygrid->r_alloc();
-   vpsi= mygrid->r_alloc();
-   tmp = mygrid->r_alloc();
+   double *vall= mygrid->r_alloc();
+   double *vpsi= mygrid->r_alloc();
+   double *tmp = mygrid->r_alloc();
 
    /* apply k-space operators */
-   myke->ke(psi1,Hpsi);
+   myke->ke(psi,Hpsi);
 
    /* apply non-local PSP  - Expensive */
-   mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
+   mypsp->v_nonlocal_fion(psi,Hpsi,move,fion);
 
    /* apply r-space operators  - Expensive*/
    mygrid->cc_SMul(0,scal2,vl,vall);

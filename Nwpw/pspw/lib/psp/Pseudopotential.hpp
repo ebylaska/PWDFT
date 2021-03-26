@@ -90,6 +90,7 @@ public:
     void v_nonlocal_fion(double *, double *, const bool, double *);
     void v_local(double *, const bool, double *, double *);
 
+    double e_nonlocal(double *);
 
 };
 

@@ -11,7 +11,7 @@ file(GLOB_RECURSE src_exchange-correlation  lib/exchange-correlation/*.hpp lib/e
 
 
 # create to the pspw library
-add_library(pspw ${src_minimizer} ${src_cpsd} ${src_psi} ${src_coulomb} ${src_kinetic} ${src_psp} ${src_exchange-correlation} )
+add_library(pspw ${src_minimizer} ${src_cpsd} ${src_psi} ${src_electron} ${src_coulomb} ${src_kinetic} ${src_psp} ${src_exchange-correlation} )
 
 # interface nwpwlib library to pspw library
 target_link_libraries(pspw nwpwlib)
