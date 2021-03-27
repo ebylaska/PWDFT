@@ -1,7 +1,7 @@
 # PWDFT
 PW-DFT development for NWChemEx
 
-#CMAKE - Generate a Project Buildsystem
+# CMAKE - Generate a Project Buildsystem
 
 cmake -S Nwpw/ -B build
 
