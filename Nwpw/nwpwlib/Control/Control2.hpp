@@ -29,6 +29,8 @@ class Control2 {
    int pqsize;
    int pprint_level = 2;
 
+   int pminimizer = 1;
+
    bool pgeometry_optimize;
 
    char ppermanent_dir[256];
@@ -60,6 +62,7 @@ public:
    double ewald_rcut()            { return prcut; }
    double total_charge()          { return ptotal_charge; }
 
+   int minimizer()             { return pminimizer; }
    int task()                  { return ptask; }
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }

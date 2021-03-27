@@ -269,9 +269,15 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    /*  calculate energy */
    double EV = 0.0;
 
-   if (flag < 0) {
+   if (flag < 0) 
+   {
       EV = cgsd_noit_energy(mymolecule);
+   } 
+   else 
+   {
+      EV = cgsd_energy(control,mymolecule);
    }
+
 
 
 

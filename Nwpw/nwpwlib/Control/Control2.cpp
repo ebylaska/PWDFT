@@ -362,6 +362,10 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][1].is_number_integer()) pewald_grid[1] = rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][1];
    if (rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][2].is_number_integer()) pewald_grid[2] = rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][2];
 
+
+   pminimizer = 1;
+   if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
+
 }
 
 void Control2::add_permanent_dir(char fname[])

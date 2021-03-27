@@ -661,6 +661,27 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
           else
             nwpwjson["initial_velocities"] = {298.15,12345};
       }
+      else if (mystring_contains(line,"cg"))
+      {
+         if (mystring_contains(line,"stiefel"))
+             nwpwjson["minimizer"] = 4;
+         else
+            nwpwjson["minimizer"] = 1;
+      }
+      else if (mystring_contains(line,"lmbfgs"))
+      {
+         if (mystring_contains(line,"stiefel"))
+            nwpwjson["minimizer"] = 7;
+         else
+            nwpwjson["minimizer"] = 2;
+      }
+      else if (mystring_contains(line,"scf"))
+      {
+         if (mystring_contains(line,"potential"))
+            nwpwjson["minimizer"] = 5;
+         else
+            nwpwjson["minimizer"] = 8;
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))
