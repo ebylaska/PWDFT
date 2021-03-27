@@ -6,7 +6,6 @@ echo
 
 #psp_library_dir /home/ericpsps
 
-
 geometry noautosym noautoz center
 C 0 0 0    
 C 0 0 1.3  
