@@ -19,8 +19,9 @@ nwpw
    simulation_cell
      SC 20.0
    end
-   cutoff 5.0
-   loop 10 10
+   cutoff 20.0
+   xc lda
 end
+task pspw steepest_descent
 task pspw energy
 
