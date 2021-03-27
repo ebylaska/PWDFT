@@ -21,6 +21,7 @@ using namespace std;
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
+#include	"Molecule.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
@@ -48,9 +49,10 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4;
    double E[50],deltae,deltac,deltar,viral,unita[9];
-   double *psi1,*psi2,*Hpsi,*psi_r;
-   double *dn;
-   double *hml,*lmbda,*eig;
+
+   //double *psi1,*psi2,*Hpsi,*psi_r;
+   //double *dn;
+   //double *hml,*lmbda,*eig;
 
    for (ii=0; ii<50; ++ii) E[ii] = 0.0;
 
@@ -116,18 +118,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    /* initialize parallel grid structure */
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
-   /* initialize psi1 and psi2 */
-   psi1  = mygrid.g_allocate(1);
-   psi2  = mygrid.g_allocate(1);
-   Hpsi  = mygrid.g_allocate(1);
-   psi_r = mygrid.h_allocate();
-   dn    = mygrid.r_nalloc(ispin);
-   hml   = mygrid.m_allocate(-1,1);
-   lmbda = mygrid.m_allocate(-1,1);
-   eig   = new double[ne[0]+ne[1]];
+   /* initialize gdevice memory */
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
-
-   psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
 
    /* setup structure factor */
@@ -141,49 +133,18 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    /* initialize xc */
    XC_Operator      myxc(&mygrid,control);
 
-   
    /* initialize psp */
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
    /* initialize electron operators */
    Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &mypsp);
 
-/*---------------------- testing Electron Operators ---------------------- */
-   myelectron.gen_vl_potential();
-   myelectron.gen_psi_r(psi2);
-   myelectron.gen_density(dn);
-
-   double *dnall = mygrid.r_nalloc(ispin);
-   double *dng   = mygrid.c_pack_allocate(0);
-  
-   double omega =mygrid.lattice->omega();
-   double scal1 = 1.0/((double) ((mygrid.nx)*(mygrid.ny)*(mygrid.nz)));
-   double scal2 = 1.0/omega;
-   double dv = omega*scal1;
-   sum1 = mygrid.r_dsum(dn)*dv;
-
-   std::cout << "integrate dn dv = " << sum1 << " dv=" << dv << std::endl;
-
-   myelectron.run(psi2,dn,dng,dnall);
-   sum1 = myelectron.energy(psi2,dn,dng,dnall);
-   std::cout << "electron energy = " << sum1 <<  std::endl;
-   std::cout << "electron eorbit = " << myelectron.eorbit(psi2) <<  std::endl;
-   std::cout << "electron ehartr = " << myelectron.ehartree(dng) <<  std::endl;
-   std::cout << "electron exc    = " << myelectron.exc(dnall) <<  std::endl;
-   std::cout << "electron pxc    = " << myelectron.pxc(dn) <<  std::endl;
-   std::cout << "electron vl_ave  = " << myelectron.vl_ave(dng) <<  std::endl;
-   std::cout << "electron vnl ave = " << myelectron.vnl_ave(psi2) <<  std::endl;
-
-   mygrid.r_dealloc(dnall);
-   mygrid.c_pack_deallocate(dng);
-/*---------------------- testing Electron Operators ---------------------- */
-
-
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
-   //PsiElectron psielc(control,mygrid,myion,mypsp,mystrfac,mykin,mycoulomb,myxc,myewald);
+   Molecule mymolecule(control.input_movecs_filename(),
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
 
 
@@ -303,6 +264,19 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 //        EV= cgsd_energy(psi)
 //      end if
 
+      //EV= cgsd_energy(mymolecule);
+
+   E[0] = mymolecule.energy();
+   E[1] = mymolecule.eorbit();
+   E[2] = mymolecule.ehartree();
+   E[3] = mymolecule.exc();
+   E[4] = mymolecule.eion();
+
+   E[6] = mymolecule.vl_ave();
+   E[7] = mymolecule.vnl_ave();
+   E[9] = mymolecule.pxc();
+
+   mymolecule.diagonalize();
 
 //                  |***************************|
 // ****************** report summary of results **********************
@@ -338,28 +312,22 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       ev = 27.2116;
       for (i=0; i<nn; ++i)
       {
-         printf("%18.7le",eig[i]); printf(" ("); printf("%8.3f",eig[i]*ev); printf("eV)\n");
+         printf("%18.7le",mymolecule.eig[i]); printf(" ("); printf("%8.3f",mymolecule.eig[i]*ev); printf("eV)\n");
       }
       for (i=0; i<ne[1]; ++i)
       {
-         printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
-         printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
+         printf("%18.7le",mymolecule.eig[i+nn]); printf(" ("); printf("%8.3lf",mymolecule.eig[i+nn]*ev); printf("eV) ");
+         printf("%18.7le",mymolecule.eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",mymolecule.eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
       cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
    }
 
-   //psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+
+   /* write psi */
+   mymolecule.writepsi(control.output_movecs_filename());
 
    /* deallocate memory */
-   mygrid.g_deallocate(psi1);
-   mygrid.g_deallocate(psi2);
-   mygrid.g_deallocate(Hpsi);
-   mygrid.h_deallocate(psi_r);
-   mygrid.r_dealloc(dn);
-   mygrid.m_deallocate(hml);
-   mygrid.m_deallocate(lmbda);
-   delete [] eig;
    gdevice_psi_dealloc();
 
 

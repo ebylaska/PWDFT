@@ -24,6 +24,8 @@ public:
    double omega() { return pomega; }
    double eggcut() { return 2*pecut; }
    double wggcut() { return 2*pwcut; }
+
+   double *unita_ptr() { return punita; } 
 };
 
 #endif

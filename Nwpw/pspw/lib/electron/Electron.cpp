@@ -138,10 +138,10 @@ void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dna
  ********************************************/
 void Electron_Operators::gen_vl_potential()
 {
-   double dng[1], fion[1];
+   double dng0[1], fion0[1];
 
    /* generate local psp*/
-   mypsp->v_local(vl,0,dng,fion);
+   mypsp->v_local(vl,0,dng0,fion0);
 }
 
 /********************************************
@@ -152,11 +152,13 @@ void Electron_Operators::gen_vl_potential()
 void Electron_Operators::gen_Hpsi_k(double *psi)
 {
    bool move=false;
-   double fion[1];
+   double fion0[1];
+
+   mygrid->g_zero(Hpsi);
 
    psi_H(mygrid,myke,mypsp,
-         psi,psi_r,vl,vc,xcp,
-         Hpsi,move,fion);
+         psi, psi_r, vl, vc, xcp,
+         Hpsi, move,fion0);
 
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -221,7 +223,9 @@ void Electron_Operators::genrho(double *psi, double *dn)
  ********************************************/
 void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall)
 {
+   
    this->gen_psi_r(psi);
+   //this->gen_density(dn);
    this->gen_densities(dn,dng,dnall);
    this->gen_scf_potentials(dn,dng,dnall);
    this->gen_Hpsi_k(psi);
@@ -257,7 +261,7 @@ double Electron_Operators::vnl_ave(double *psi)
 double Electron_Operators::eorbit(double *psi)
 {
    mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
-   mygrid->m_scal(-1.0,hmltmp);
+   //mygrid->m_scal(-1.0,hmltmp);
    double eorbit0 = mygrid->m_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0+eorbit0;
 
@@ -329,7 +333,7 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
 
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
-   mygrid->m_scal(-1.0,hmltmp);
+   //mygrid->m_scal(-1.0,hmltmp);
    eorbit0  = mygrid->m_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0+eorbit0;
 
