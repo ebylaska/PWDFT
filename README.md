@@ -1,6 +1,22 @@
 # PWDFT
 PW-DFT development for NWChemEx
 
+#CMAKE - Generate a Project Buildsystem
+
+cmake -S Nwpw/ -B build
+
+cmake [<options>] <path-to-source>
+$ mkdir build ; cd build
+$ cmake ../src
+
+cmake [<options>] -S <path-to-source> -B <path-to-build>
+$ cmake -S src -B build
+
+cmake [<options>] <path-to-existing-build>
+$ cd build
+$ cmake .
+
+
 # Build instructions on JLSE
 
 ## Required Modules
