@@ -64,6 +64,7 @@ public:
     double ehartree(double *);
     double exc(double *);
     double pxc(double *);
+    double eke(double *);
 
     //void semicoreforce(double *);
     

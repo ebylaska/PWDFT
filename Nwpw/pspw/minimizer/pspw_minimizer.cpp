@@ -267,16 +267,19 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       //EV= cgsd_energy(mymolecule);
 
    E[0] = mymolecule.energy();
+   mymolecule.diagonalize();
+
    E[1] = mymolecule.eorbit();
    E[2] = mymolecule.ehartree();
    E[3] = mymolecule.exc();
    E[4] = mymolecule.eion();
 
+   E[5] = mymolecule.eke();
    E[6] = mymolecule.vl_ave();
    E[7] = mymolecule.vnl_ave();
+   E[8] = 2*E[2];
    E[9] = mymolecule.pxc();
 
-   mymolecule.diagonalize();
 
 //                  |***************************|
 // ****************** report summary of results **********************

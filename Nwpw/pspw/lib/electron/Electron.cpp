@@ -321,6 +321,16 @@ double Electron_Operators::pxc(double *dn)
    return pxcsum;
 }
 
+/********************************************
+ *                                          *
+ *         Electron_Operators::eke          *
+ *                                          *
+ ********************************************/
+double Electron_Operators::eke(double *psi)
+{
+   return myke->ke_ave(psi);
+}
+
 
 /********************************************
  *                                          *
