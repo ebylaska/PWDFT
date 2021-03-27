@@ -244,7 +244,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
       if (flag > 0) 
       {
-         cout << "\n";
+         cout << std::endl;
          cout << " technical parameters:\n";
          printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
                 control.time_step(),control.fake_mass());
@@ -252,16 +252,14 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                 control.tolerances(0),control.tolerances(1),control.tolerances(2));
          printf("      max iterations = %10d (%5d inner %5d outer)\n",
                 control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-         cout << "\n\n\n";
       }
       else
       {
-         cout << "\n\n";
-         cout << " optimization of psi and densities turned off\n";
+         cout << std::endl;
+         cout << " technical parameters:\n";
+         cout << "      optimization of psi and densities turned off" << std::endl;
       }
-
-
-
+      cout << std::endl << std::endl << std::endl;
    }
 
 //*                |***************************|
