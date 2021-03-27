@@ -155,6 +155,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"freq"))             ptask = 4;
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) ptask = 5;
    if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   ptask = 6;
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"noit_"))            ptask *= -1;
 
    ptotal_ion_charge = -1.0;
    ptotal_charge = 0.0;

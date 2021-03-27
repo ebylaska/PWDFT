@@ -33,6 +33,8 @@ using namespace std;
 #include	"nwpw_timing.hpp"
 #include        "gdevice.hpp"
 
+#include	"cgsd_energy.hpp"
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -79,6 +81,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    //control_read(myrtdb);
    //control_read(myparallel.np(),rtdbstring);
    Control2 control(myparallel.np(),rtdbstring);
+   int flag =  control.task();
 
    /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
@@ -239,15 +242,23 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       printf("      summation: cut radius=  %7.3lf and %3d   mandelung= %12.8lf\n",
              myewald.rcut(),myewald.ncut(),myewald.mandelung());
 
-      cout << "\n";
-      cout << " technical parameters:\n";
-      printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
-             control.time_step(),control.fake_mass());
-      printf("      tolerance=%11.3le (energy) %11.3le (density) %11.3le (ion)\n",
-             control.tolerances(0),control.tolerances(1),control.tolerances(2));
-      printf("      max iterations = %10d (%5d inner %5d outer)\n",
-             control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      cout << "\n\n\n";
+      if (flag > 0) 
+      {
+         cout << "\n";
+         cout << " technical parameters:\n";
+         printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
+                control.time_step(),control.fake_mass());
+         printf("      tolerance=%11.3le (energy) %11.3le (density) %11.3le (ion)\n",
+                control.tolerances(0),control.tolerances(1),control.tolerances(2));
+         printf("      max iterations = %10d (%5d inner %5d outer)\n",
+                control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
+         cout << "\n\n\n";
+      }
+      else
+      {
+         cout << "\n\n";
+         cout << " optimization of psi and densities turned off\n";
+      }
 
 
 
@@ -258,77 +269,16 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 //*                |***************************|
 
    /*  calculate energy */
-//   if (flag.eq.-1) then
-//        EV= cgsd_noit_energy()
-//      else
-//        EV= cgsd_energy(psi)
-//      end if
+   double EV = 0.0;
 
-      //EV= cgsd_energy(mymolecule);
-
-   E[0] = mymolecule.energy();
-   mymolecule.diagonalize();
-
-   E[1] = mymolecule.eorbit();
-   E[2] = mymolecule.ehartree();
-   E[3] = mymolecule.exc();
-   E[4] = mymolecule.eion();
-
-   E[5] = mymolecule.eke();
-   E[6] = mymolecule.vl_ave();
-   E[7] = mymolecule.vnl_ave();
-   E[8] = 2*E[2];
-   E[9] = mymolecule.pxc();
-
-
-//                  |***************************|
-// ****************** report summary of results **********************
-//                  |***************************|
-   if (myparallel.is_master()) 
-   {
-      cout << "\n\n";
-      cout << "          =============  summary of results  =================\n";
-      cout << "\n final ion positions (au):" << "\n";
-      for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      cout << "\n\n";
-      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
-      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
-      printf("\n");
-      printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
-      viral = (E[9]+E[8]+E[7]+E[6])/E[5];
-      printf(" Viral Coefficient   : %19.10le\n",viral);
-
-      printf("\n orbital energies:\n"); 
-      nn = ne[0] - ne[1];
-      ev = 27.2116;
-      for (i=0; i<nn; ++i)
-      {
-         printf("%18.7le",mymolecule.eig[i]); printf(" ("); printf("%8.3f",mymolecule.eig[i]*ev); printf("eV)\n");
-      }
-      for (i=0; i<ne[1]; ++i)
-      {
-         printf("%18.7le",mymolecule.eig[i+nn]); printf(" ("); printf("%8.3lf",mymolecule.eig[i+nn]*ev); printf("eV) ");
-         printf("%18.7le",mymolecule.eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",mymolecule.eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
-      }
-
-      cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
+   if (flag < 0) {
+      EV = cgsd_noit_energy(mymolecule);
    }
 
 
+
    /* write psi */
-   mymolecule.writepsi(control.output_movecs_filename());
+   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
 
    /* deallocate memory */
    gdevice_psi_dealloc();

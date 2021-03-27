@@ -60,6 +60,7 @@ public:
    double ewald_rcut()            { return prcut; }
    double total_charge()          { return ptotal_charge; }
 
+   int task()                  { return ptask; }
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }
    int mapping()               { return pmapping; }

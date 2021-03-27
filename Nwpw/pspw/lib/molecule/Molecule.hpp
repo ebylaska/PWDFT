@@ -10,15 +10,10 @@ using namespace std;
 #include	"Ewald.hpp"
 #include        "Strfac.hpp"
 #include	"Pseudopotential.hpp"
+#include	"Electron.hpp"
 #include	"psi.hpp"
 
 class	Molecule {
-
-   Pneb   *mygrid;
-   Ion    *myion;
-   Strfac *mystrfac;
-   Ewald  *myewald;
-   Electron_Operators *myelectron;
 
    double omega,scal2,scal1,dv;
 
@@ -28,6 +23,12 @@ class	Molecule {
    
 
 public:
+   Pneb   *mygrid;
+   Ion    *myion;
+   Strfac *mystrfac;
+   Ewald  *myewald;
+   Electron_Operators *myelectron;
+
    double *psi1, *rho1, *rho1_all, *dng1;
    double *psi2, *rho2, *rho2_all, *dng2;
    double *hml, *eig;
@@ -59,11 +60,25 @@ public:
     }
 
 
-   /* molecule energies */
+   /* molecule energy */
    double energy() {
       myelectron->run(psi1,rho1,dng1,rho1_all);
       return (myelectron->energy(psi1,rho1,dng1,rho1_all) +  myewald->energy());
    }
+
+
+   /* molecule energy and eigenvalues */
+   double energy_eigenvalues() {
+      myelectron->run(psi1,rho1,dng1,rho1_all);
+      double total_energy = (myelectron->energy(psi1,rho1,dng1,rho1_all) +  myewald->energy());
+
+      myelectron->gen_hml(psi1,hml);
+      mygrid->m_diagonalize(hml,eig);
+
+      return total_energy;
+   }
+
+   /* various molecule energies */
    double eorbit()   { return myelectron->eorbit(psi1); }
    double ehartree() { return myelectron->ehartree(dng1); }
    double exc()      { return myelectron->exc(rho1_all); }
@@ -72,6 +87,9 @@ public:
    double vl_ave()   { return myelectron->vl_ave(dng1); }
    double vnl_ave()  { return myelectron->vnl_ave(psi1); }
    double eion()     { return myewald->energy(); }
+
+   /* molecule - generate current hamiltonian */
+   void gen_hml() { myelectron->gen_hml(psi1,hml); }
 
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml,eig); }

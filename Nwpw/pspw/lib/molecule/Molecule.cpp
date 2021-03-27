@@ -55,14 +55,9 @@ Molecule::Molecule(char *infilename,
    myelectron->gen_vl_potential();
 
 /*---------------------- testing Electron Operators ---------------------- */
+/*
    double sum1;
    std::cout << "Molecule: Testing Electron Operators " << std::endl;
-   //myelectron->gen_psi_r(psi1);
-   //myelectron->gen_density(rho1);
-
-
-   //double sum1 = mygrid->r_dsum(rho1)*dv;
-   //std::cout << "integrate dn dv = " << sum1 << " dv=" << dv << std::endl;
 
    myelectron->run(psi1,rho1,dng1,rho1_all);
    sum1 = myelectron->energy(psi1,rho1,dng1,rho1_all);
@@ -76,13 +71,7 @@ Molecule::Molecule(char *infilename,
    std::cout << "electron vl_ave  = " << myelectron->vl_ave(dng1) <<  std::endl;
    std::cout << "electron vnl ave = " << myelectron->vnl_ave(psi1) <<  std::endl;
 
-   //std::cout << "Z electron ehartr = " << myelectron->ehartree(dng1) <<  std::endl;
-
-   //myelectron->run(psi1,rho1,dng1,rho1_all);
-   //sum1 = myelectron->energy(psi1,rho1,dng1,rho1_all);
-   //std::cout << "Z electron energy = " << sum1 <<  std::endl;
-
-
+*/
 /*---------------------- testing Electron Operators ---------------------- */
 
 
