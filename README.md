@@ -5,7 +5,7 @@ PW-DFT development for NWChemEx
 
 cmake -S Nwpw/ -B build
 
-cmake [<options>] <path-to-source>
+cmake <options> <path-to-source>
 $ mkdir build ; cd build
 $ cmake ../src
 
