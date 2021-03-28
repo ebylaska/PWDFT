@@ -126,7 +126,7 @@ public:
       ios init(NULL);
       init.copyfmt(os);
       string eoln = "\n";
-      os << "          ==============  summary of results  ==============" << eoln;
+      os << "     ==============  energy results (Molecule object)  ==============" << eoln;
       os << eoln << eoln;
 
       os << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << mymolecule.en[0] 

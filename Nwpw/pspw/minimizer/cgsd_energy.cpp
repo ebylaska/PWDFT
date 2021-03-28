@@ -24,8 +24,8 @@ double cgsd_noit_energy(Molecule& mymolecule)
    /* report summary of results */
    if (parall->is_master())
    {
-      std::cout << "     ========= optimization of psi and densities turned off ========\n" << std::endl;
-      std::cout << std::endl << std::endl;
+      std::cout << "     ==================  optimization turned off  ===================\n" << std::endl;
+      std::cout << std::endl;
       std::cout << mymolecule;
    }
 
