@@ -339,7 +339,7 @@ double Electron_Operators::eke(double *psi)
  ********************************************/
 double Electron_Operators::energy(double *psi, double *dn, double *dng, double *dnall)
 {
-   double total_energy, eorbit0, ehartr0, exc0, pxc0;;
+   double total_energy, eorbit0, ehartr0, exc0, pxc0;
 
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
@@ -367,6 +367,63 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
   
    return total_energy;
 }
+
+
+/********************************************
+ *                                          *
+ *   Electron_Operators::gen_energies_en    *
+ *                                          *
+ ********************************************/
+void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, double *dnall,
+                                           double *E, double *en)
+{
+   double total_energy, eorbit0, ehartr0, exc0, pxc0;
+
+   /* total energy calculation */
+   mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
+   //mygrid->m_scal(-1.0,hmltmp);
+   eorbit0  = mygrid->m_trace(hmltmp);
+   if (ispin==1) eorbit0 = eorbit0+eorbit0;
+
+   ehartr0 = mycoulomb->ecoulomb(dng);
+   exc0    = mygrid->rr_dot(dnall,xce);
+   pxc0    = mygrid->rr_dot(dn,xcp);
+   if (ispin==1)
+   {
+      exc0 = exc0+exc0;
+      pxc0 = pxc0+pxc0;
+   }
+   else
+   {
+      exc0 += mygrid->rr_dot(&dnall[n2ft3d],xce);
+      pxc0 += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
+   }
+   exc0 *= dv;
+   pxc0 *= dv;
+
+   total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
+
+   /* set the E[] energies */
+   E[0] = total_energy;
+   E[1] = eorbit0;
+   E[2] = ehartr0;
+   E[3] = exc0;
+   E[4] = 0.0;
+
+   E[5] =  myke->ke_ave(psi);
+   E[6] = mygrid->cc_pack_dot(0,dng,vl);
+   E[7] = mypsp->e_nonlocal(psi);
+   E[8] = 2*ehartr0;
+   E[9] = pxc0;
+
+
+   en[0] = dv*mygrid->r_dsum(dn);
+   en[1] = en[0];
+   if (ispin > 1)
+      en[1] =  dv*mygrid->r_dsum(&dn[n2ft3d]);
+
+}
+
 
 
 

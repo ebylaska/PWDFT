@@ -66,6 +66,8 @@ public:
     double pxc(double *);
     double eke(double *);
 
+    void gen_energies_en(double *, double *, double *, double *, double *, double *);
+
     //void semicoreforce(double *);
     
 };
