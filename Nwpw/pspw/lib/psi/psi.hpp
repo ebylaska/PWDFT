@@ -7,7 +7,7 @@
 extern void psi_get_header(Parallel *, int *, int *, double *, int *, int *, char *);
 
 extern void psi_read0(Pneb *, int *, int *, double *, int *, int *,double *, char *);
-extern void psi_read(Pneb *, char *, double *);
+extern bool psi_read(Pneb *, char *, double *);
 
 extern void psi_write(Pneb *, int *, int *, double *, int *, int *,double *, char *);
 extern bool psi_filefind(Pneb *, char *);

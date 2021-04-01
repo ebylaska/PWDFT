@@ -1,4 +1,5 @@
 
+#include	"blas.h"
 #include	"Pneb.hpp"
 #include	"Ion.hpp"
 #include	"Kinetic.hpp"
@@ -46,6 +47,7 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, C
 
    n2ft3d = (mygrid->n2ft3d);
    shift1 = 2*(mygrid->npack(1));
+   npack1 = shift1;
    shift2 = (mygrid->n2ft3d);
    
 }
@@ -142,6 +144,17 @@ void Electron_Operators::gen_vl_potential()
 
    /* generate local psp*/
    mypsp->v_local(vl,0,dng0,fion0);
+}
+
+/***********************************************
+ *                                             *
+ * Electron_Operators::semicore_density_update *
+ *                                             *
+ ***********************************************/
+void Electron_Operators::semicore_density_update()
+{
+   if (mypsp->has_semicore())
+      mypsp->semicore_density_update();
 }
 
 /********************************************
@@ -422,6 +435,19 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, d
    if (ispin > 1)
       en[1] =  dv*mygrid->r_dsum(&dn[n2ft3d]);
 
+}
+
+
+/********************************************
+ *                                          *
+ *     Electron_Operators::add_dteHpsi      *
+ *                                          *
+ ********************************************/
+void Electron_Operators::add_dteHpsi(double dte, double *psi1, double *psi2)
+{
+   /* do a steepest descent step */
+   mygrid->gg_SMul(dte,Hpsi,psi2);
+   mygrid->gg_Sum2(psi1,psi2);
 }
 
 

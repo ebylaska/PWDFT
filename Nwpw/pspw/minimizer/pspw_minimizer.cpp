@@ -252,6 +252,24 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                 control.tolerances(0),control.tolerances(1),control.tolerances(2));
          printf("      max iterations = %10d (%5d inner %5d outer)\n",
                 control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
+         if (control.minimizer()==1) cout << "      minimizer = Grassmann conjugate gradient\n";
+         if (control.minimizer()==2) cout << "      minimizer = Grassmann lmbfgs\n";
+         if (control.minimizer()==4) cout << "      minimizer = Stiefel conjugate gradient\n";
+         if (control.minimizer()==5) cout << "      minimizer = scf (potential)\n";
+         if (control.minimizer()==7) cout << "      minimizer = Stiefel lmbfgs\n";
+         if (control.minimizer()==8) cout << "      minimizer = scf (density)\n";
+         if ((control.minimizer()==5) || (control.minimizer()==8))
+         {
+            cout << std::endl;
+            cout << " Kohn-Sham scf parameters:\n";
+            cout << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            cout << "     SCF algorithm        = simple mixing\n";
+            cout << "     SCF mixing parameter =    x.xxxx\n";
+            cout << "     Kohn-Sham iterations = xxxx\n";
+            if (control.minimizer()==5) cout << "     SCF mixing type      = potential\n";
+            if (control.minimizer()==8) cout << "     SCF mixing type      = density\n";
+            cout << "     Kerker damping       =    x.xxxx\n";
+         }
       }
       else
       {

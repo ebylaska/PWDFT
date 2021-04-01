@@ -138,7 +138,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
-   psi_read(&mygrid,control.input_movecs_filename(),psi2);
+   bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),psi2);
 
 
    /* setup structure factor */
@@ -370,7 +370,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
-      cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
+      //cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
    }
 
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());

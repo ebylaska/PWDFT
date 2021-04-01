@@ -39,6 +39,7 @@ Molecule::Molecule(char *infilename,
    dng1 = mygrid->c_pack_allocate(0);
    dng2 = mygrid->c_pack_allocate(0);
 
+   lmbda = mygrid->m_allocate(-1,1);
    hml   = mygrid->m_allocate(-1,1);
    eig   = new double[mygrid->ne[0]+mygrid->ne[1]];
 
@@ -51,7 +52,7 @@ Molecule::Molecule(char *infilename,
    shift1 = 2*(mygrid->npack(1));
    shift2 = (mygrid->n2ft3d);
 
-   psi_read(mygrid,infilename,psi1);
+   newpsi = psi_read(mygrid,infilename,psi1);
 
    myelectron->gen_vl_potential();
 

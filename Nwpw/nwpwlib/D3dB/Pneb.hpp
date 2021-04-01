@@ -92,6 +92,7 @@ public:
         void hr_aSumSqr(const double, double *, double *);
         void ggm_sym_Multiply(double *, double *, double *);
         void ffm_sym_Multiply(const int, double *, double *, double *);
+        void ggm_SVD(double *, double *, double *, double *);
 
         void ffm3_sym_Multiply(const int, double *, double *, double*, double*, double*);
         void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
@@ -101,6 +102,7 @@ public:
         double m_trace(double *);
         void m_diagonalize(double *, double *);
         void mmm_Multiply(const int, double *, double *, double, double*, double);
+        void mm_transpose(const int, double *, double *);
 
 
         void gh_fftb(double *, double *);

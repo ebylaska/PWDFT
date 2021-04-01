@@ -548,6 +548,48 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
 
 
 
+void Pneb::ggm_SVD(double *A, double *U, double *S, double *V)
+{
+   int n,indx;
+   double *tmp2 = new double [neq[0] + neq[1]];
+
+   /* generate V and Sigma^2 */
+   ggm_sym_Multiply(A,A,V);
+   m_diagonalize(V,S);
+
+   /* generate U*Sigma */
+   fmf_Multiply(-1,A,V,1.0,U,0.0);
+
+   /* normalize U*sigma */
+   indx = 0;
+   for (n=0; n<(neq[0]+neq[1]); ++n)
+   {
+      tmp2[n] = cc_pack_idot(1,&U[indx],&U[indx]);
+      indx += 2*npack(1);
+   }
+   d3db::parall->Vector_SumAll(0,neq[0]+neq[1],tmp2);
+
+   for (n=0; n<(neq[0]+neq[1]); ++n)
+      tmp2[n] = 1.0/sqrt(tmp2[n]);
+
+   indx = 0;
+   for (n=0; n<(neq[0]+neq[1]); ++n)
+   {
+      c_SMul(1,tmp2[n],&U[indx]);
+      indx += 2*npack(1);
+   }
+
+   /* calculated sqrt(S^2) */
+   for (n=0; n<(neq[0]+neq[1]); ++n)
+   {
+     if (S[n]<0.0) S[n] = fabs(S[n]);
+     S[n] = sqrt(S[n]);
+   }
+
+   delete [] tmp2;
+}
+
+
 void Pneb::m_scal(double alpha, double *hml)
 {
   int one = 1;
@@ -673,7 +715,28 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
    }
 }
 
-#define ITERLMD         120
+void Pneb::mm_transpose(const int mb, double *a, double *b)
+{
+   int i,j,indx,indxt;
+   int ms,n,ms1,ms2,ishift2,shift2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0;}
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      shift2 = ms*ishift2;
+      for (j=0; ne[ms]; ++j)
+      for (i=0; ne[ms]; ++j)
+      {
+          indx  = i+j*ne[ms] + shift2;
+          indxt = j+i*ne[ms] + shift2;
+          b[indx] = a[indxt];
+      }
+   }
+}
+
+#define ITERLMD         220
 #define CONVGLMD        1e-15
 #define CONVGLMD2       1e-12
 
@@ -693,6 +756,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
 	m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
 
+        int jj;
 	int ii   = 0;
 	int done = 0;
 
@@ -708,6 +772,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 
 	    DCOPY_PWDFT(nn, sa1, one, st1, one);
 	    DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+	    jj = IDAMAX_PWDFT(nn, st1, one);
 	    adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
 
 	    if (adiff < CONVGLMD)
@@ -715,9 +780,10 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    else
 		DCOPY_PWDFT(nn, sa1, one, sa0, one);
 	}
+	//printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d done=%d\n",nn,jj,adiff,ii,done);
 
-	if (adiff<CONVGLMD2) {
-	    if (!done) printf("ierr=10 adiff=%lf\n",adiff);
+	if (adiff>CONVGLMD2) {
+	    if (!done) printf("ierr=10 adiff=%le\n",adiff);
 	}
 
 	DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);

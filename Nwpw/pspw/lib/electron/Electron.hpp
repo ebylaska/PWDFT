@@ -22,7 +22,7 @@ class	Electron_Operators {
 
    double omega,scal2,scal1,dv;
 
-   int ispin,neall,n2ft3d,shift1,shift2;
+   int ispin,neall,n2ft3d,shift1,shift2,npack1;
    int counter=0;
 
 public:
@@ -55,6 +55,7 @@ public:
     void gen_densities(double *, double *, double *);
     void gen_scf_potentials(double *, double *, double *);
     void gen_vl_potential();
+    void semicore_density_update();
 
     double vl_ave(double *);
     double vnl_ave(double *);
@@ -67,6 +68,8 @@ public:
     double eke(double *);
 
     void gen_energies_en(double *, double *, double *, double *, double *, double *);
+
+    void add_dteHpsi(double, double *, double *);
 
     //void semicoreforce(double *);
     

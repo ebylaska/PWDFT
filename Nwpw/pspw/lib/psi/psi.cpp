@@ -216,11 +216,12 @@ void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[],
  *                psi_check_convert                  *
  *                                                   *
  *****************************************************/
-static void psi_check_convert(Pneb *mypneb, char *filename)
+static bool psi_check_convert(Pneb *mypneb, char *filename)
 {
    Parallel *myparall = mypneb->d3db::parall;
    int version0,ispin0,nfft0[3],ne0[2];
    double unita0[9];
+   bool converted = false;;
 
    psi_get_header(myparall,&version0,nfft0,unita0,&ispin0,ne0,filename);
 
@@ -233,7 +234,10 @@ static void psi_check_convert(Pneb *mypneb, char *filename)
                    << " -----------------------------: " << std::endl;
 
        wvfnc_expander(mypneb,filename);
+       converted = true;
    }
+
+   return converted;
 }
 
 
@@ -297,16 +301,17 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
           mypneb->gg_traceall, 
           mypneb->g_ortho
 */
-void psi_read(Pneb *mypneb, char *filename, double *psi2)
+bool psi_read(Pneb *mypneb, char *filename, double *psi2)
 {
    int version,ispin,nfft[3],ne[2];
    double unita[9];
    Parallel *myparall = mypneb->d3db::parall;
+   bool newpsi = true;
 
    /* read psi from file if psi_exist */
    if (psi_filefind(mypneb,filename))
    {
-      psi_check_convert(mypneb,filename);
+      newpsi = psi_check_convert(mypneb,filename);
 
       if (myparall->is_master())
          std::cout << " input psi exists, reading from file: " << filename << std::endl;
@@ -334,6 +339,7 @@ void psi_read(Pneb *mypneb, char *filename, double *psi2)
    }
    sum2  = mypneb->gg_traceall(psi2,psi2);
 
+   return newpsi;
 }
 
 
@@ -352,6 +358,7 @@ void psi_write(Pneb *mypneb,int *version, int nfft[],
    
    if (myparall->is_master())
    {  
+      std::cout << " output psi to filename: " << filename << std::endl;
       openfile(6,filename,"w");
       iwrite(6,version,1);
       iwrite(6,nfft,3);

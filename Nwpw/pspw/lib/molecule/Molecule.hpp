@@ -40,7 +40,9 @@ public:
 
    double *psi1, *rho1, *rho1_all, *dng1;
    double *psi2, *rho2, *rho2_all, *dng2;
-   double *hml, *eig;
+   double *lmbda, *hml, *eig;
+
+   bool newpsi;
 
    /* Constructors */
    Molecule(char *,  Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *);
@@ -57,6 +59,7 @@ public:
          delete [] rho2_all;
          delete [] dng2;
 
+         delete [] lmbda;
          delete [] hml;
          delete [] eig;
     }
@@ -119,6 +122,41 @@ public:
 
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml,eig); }
+
+   /* molecule - call phafacs and gen_vl_potential and semicore */
+   void phafacs_vl_potential_semicore() { 
+     mystrfac->phafac();
+     myewald->phafac();
+     myelectron->gen_vl_potential();
+     myelectron->semicore_density_update();
+   }
+
+   /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
+   void sd_update(double dte) {
+
+      /* apply psi2 = psi1 + dte*Hpsi1 */
+      myelectron->run(psi1,rho1,dng1,rho1_all);
+      myelectron->add_dteHpsi((-dte),psi1,psi2);
+
+      /* lagrange multiplier - Expensive */
+      mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
+
+      /* pointer swap of psi2 and psi1 */
+      double *t2 = psi2;
+      psi2 = psi1;
+      psi1 = t2;
+   }
+
+   double psi_1get_Tgradient(double *G1)
+   {
+      double total_energy;
+      myelectron->run(psi1,rho1,dng1,rho1_all);
+      total_energy = myelectron->energy(psi1,rho1,dng1,rho1_all) + myewald->energy();
+      myelectron->gen_hml(psi1,hml);
+      myelectron->get_Tgradient(psi1,hml,G1);
+
+      return total_energy;
+   }
   
 
    friend ostream& operator<<(ostream& os, const Molecule& mymolecule) {

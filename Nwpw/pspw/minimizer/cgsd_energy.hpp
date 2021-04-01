@@ -6,4 +6,5 @@
 extern double cgsd_noit_energy(Molecule&);
 extern double cgsd_energy(Control2&, Molecule&);
 
+
 #endif
