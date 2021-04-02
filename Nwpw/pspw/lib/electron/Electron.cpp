@@ -237,7 +237,7 @@ void Electron_Operators::genrho(double *psi, double *dn)
  ********************************************/
 void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall)
 {
-   
+   ++counter; 
    this->gen_psi_r(psi);
    //this->gen_density(dn);
    this->gen_densities(dn,dng,dnall);

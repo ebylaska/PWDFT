@@ -23,9 +23,9 @@ class	Electron_Operators {
    double omega,scal2,scal1,dv;
 
    int ispin,neall,n2ft3d,shift1,shift2,npack1;
-   int counter=0;
 
 public:
+   int counter=0;
 
    /* Constructors */
    Electron_Operators(Pneb *, Kinetic_Operator *, Coulomb_Operator *, Pseudopotential *);

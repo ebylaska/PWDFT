@@ -6,6 +6,7 @@
 #include	<string>
 using namespace std;
 
+#include        "util_linesearch.hpp"
 #include	"Parallel.hpp"
 //#include	"control.hpp"
 #include	"Control2.hpp"
@@ -278,7 +279,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          cout << "      optimization of psi and densities turned off" << std::endl;
       }
       cout << std::endl << std::endl << std::endl;
+      seconds(&cpu2);
    }
+
 
 //*                |***************************|
 //******************     call CG minimizer     **********************
@@ -295,6 +298,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    {
       EV = cgsd_energy(control,mymolecule);
    }
+   if (myparallel.is_master()) seconds(&cpu3);
 
 
 
@@ -324,7 +328,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
-      double av = t2/((double ) control.loop(0)*icount);
+      double av = t2/((double ) myelectron.counter);
       cout.setf(ios::scientific);
       cout << "\n";
       cout << " -----------------"    << "\n";
@@ -333,10 +337,10 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << " main loop   : " << t2 << "\n";
       cout << " epilogue    : " << t3 << "\n";
       cout << " total       : " << t4 << "\n";
-      cout << " cputime/step: " << av << "\n";
+      cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       cout << "\n";
 
-      nwpw_timing_print_final(control.loop(0)*icount);
+      nwpw_timing_print_final(myelectron.counter);
 
       cout << "\n";
       cout << " >>> job completed at     " << util_date() << " <<<\n";
