@@ -238,9 +238,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
       cout << "\n";
       cout << " technical parameters:\n";
-      printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
+      printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
              control.time_step(),control.fake_mass());
-      printf("      tolerance=%11.3le (energy) %11.3le (density) %11.3le (ion)\n",
+      printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
              control.tolerances(0),control.tolerances(1),control.tolerances(2));
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
