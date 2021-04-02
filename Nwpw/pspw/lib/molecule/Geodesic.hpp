@@ -9,6 +9,7 @@
 class	Geodesic {
 
    int minimizer;
+   Molecule            *mymolecule;
    Pneb                *mygrid;
    Electron_Operators  *myelectron;
 
@@ -17,10 +18,11 @@ class	Geodesic {
 public:
 
    /* Constructors */
-   Geodesic(int minimizer0, Molecule& mymolecule) {
+   Geodesic(int minimizer0, Molecule *mymolecule0) {
+      mymolecule = mymolecule0;
       minimizer  = minimizer0;
-      myelectron = mymolecule.myelectron;
-      mygrid     = mymolecule.mygrid;
+      myelectron = mymolecule->myelectron;
+      mygrid     = mymolecule->mygrid;
       U  = mygrid->g_allocate(1);
       Vt = mygrid->m_allocate(-1,1);
       S = new double[mygrid->ne[0]+mygrid->ne[1]];
@@ -56,7 +58,56 @@ public:
 
     }
  
+    void get(double t, double *Yold, double *Ynew) {
+       double *tmp1 = mygrid->m_allocate(-1,1);
+       double *tmp2 = mygrid->m_allocate(-1,1);
+       double *tmp3 = mygrid->m_allocate(-1,1);
+       double *tmpC = new double[mygrid->ne[0]+mygrid->ne[1]];
+       double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
+       mygrid->mm_SCtimesVtrans(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
 
+       mygrid->mmm_Multiply(-1,Vt,tmp1,1.0,tmp2,0.0);
+       mygrid->fmf_Multiply(-1,Yold,tmp2,1.0,Ynew,0.0);
+       mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);
+
+       delete [] tmpS;
+       delete [] tmpC;
+       delete [] tmp3;
+       delete [] tmp2;
+       delete [] tmp1;
+    }
+    void transport(double t, double *Yold, double *Ynew) {
+       double *tmp1 = mygrid->m_allocate(-1,1);
+       double *tmp2 = mygrid->m_allocate(-1,1);
+       double *tmp3 = mygrid->m_allocate(-1,1);
+       double *tmpC = new double[mygrid->ne[0]+mygrid->ne[1]];
+       double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
+       mygrid->mm_SCtimesVtrans2(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
+
+       mygrid->mmm_Multiply(-1,Vt,tmp1,1.0,tmp2,0.0);
+       mygrid->fmf_Multiply(-1,Yold,tmp2,-1.0,Ynew,0.0);
+       mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);
+
+       delete [] tmpS;
+       delete [] tmpC;
+       delete [] tmp3;
+       delete [] tmp2;
+       delete [] tmp1;
+    }
+
+    double energy(double t) {
+       this->get(t,mymolecule->psi1,mymolecule->psi2);
+       return mymolecule->psi2_energy();
+    }
+
+    double denergy(double t) {
+       this->transport(t,mymolecule->psi1,mymolecule->psi2);
+       return(2*mymolecule->psi2_eorbit());
+    }
+
+    void psi_final(double t) {
+       this->get(t,mymolecule->psi1,mymolecule->psi2);
+    }
 };
 
 #endif

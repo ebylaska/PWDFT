@@ -195,6 +195,7 @@ void Electron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi)
 {
    mygrid->fmf_Multiply(-1,psi,hml,1.0,THpsi,0.0);
    mygrid->gg_Minus2(Hpsi,THpsi);
+   //mygrid->g_Scale(-1.0,THpsi);
 }
 
 /********************************************

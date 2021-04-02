@@ -21,7 +21,7 @@ public:
 
    /* destructor */
    ~XC_Operator() {
-       std::cout << "finishec XC_Operator" << std::endl;
+       //std::cout << "finishec XC_Operator" << std::endl;
     }
 
    friend ostream& operator<<(ostream& os, const XC_Operator& xc) {

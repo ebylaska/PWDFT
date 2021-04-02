@@ -79,6 +79,12 @@ public:
       return E[0];
    }
 
+   double psi2_energy() {
+      myelectron->run(psi2,rho2,dng2,rho2_all);
+      E[0] = (myelectron->energy(psi2,rho2,dng2,rho2_all) +  myewald->energy());
+      return E[0];
+   }
+
 
    /* molecule energy and eigenvalues */
    double energy_eigenvalues() {
@@ -109,6 +115,7 @@ public:
 
    /* various molecule energies */
    double eorbit()   { return myelectron->eorbit(psi1); }
+   double psi2_eorbit()  { return myelectron->eorbit(psi2); }
    double ehartree() { return myelectron->ehartree(dng1); }
    double exc()      { return myelectron->exc(rho1_all); }
    double pxc()      { return myelectron->pxc(rho1); }
@@ -156,6 +163,13 @@ public:
       myelectron->get_Tgradient(psi1,hml,G1);
 
       return total_energy;
+   }
+
+   void swap_psi1_psi2() {
+      /* pointer swap of psi2 and psi1 */
+      double *t2 = psi2;
+      psi2 = psi1;
+      psi1 = t2;
    }
   
 

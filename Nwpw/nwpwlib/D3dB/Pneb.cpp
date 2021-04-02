@@ -690,6 +690,113 @@ void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
    }
 }
 
+void Pneb::mm_SCtimesVtrans(const int mb, const double t, double *S, double *Vt, 
+                            double *A, double *B, double *SA, double *SB)
+{
+   nwpw_timing_function ftimer(18);
+   int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
+   int j,k,indx1,indx2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; ishift1=ne[0]; nj = ne[0]+ne[1];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0; ishift1 = 0; nj = ne[mb];}
+   for (j=0; j<nj; ++j)
+   {
+       SA[j] = cos(S[j]*t);
+       SB[j] = sin(S[j]*t);
+   }
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      shift1 = ms*ishift1;
+      shift2 = ms*ishift2;
+      for (k=0; k<ne[ms]; ++k)
+      {
+         indx1 = shift1;
+         indx2 = shift2 + k*ne[ms];
+         for (j=0; j<ne[ms]; ++j)
+         {
+            A[indx2] = SA[indx1]*Vt[indx2];
+            B[indx2] = SB[indx1]*Vt[indx2];
+            ++indx1;
+            ++indx2;
+         }
+      }
+
+   }
+}
+
+void Pneb::mm_SCtimesVtrans2(const int mb, const double t, double *S, double *Vt,
+                             double *A, double *B, double *SA, double *SB)
+{
+   nwpw_timing_function ftimer(18);
+   int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
+   int j,k,indx1,indx2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; ishift1=ne[0]; nj = ne[0]+ne[1];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0; ishift1 = 0; nj = ne[mb];}
+   for (j=0; j<nj; ++j)
+   {
+       SA[j] = S[j]*sin(S[j]*t);
+       SB[j] = S[j]*cos(S[j]*t);
+   }
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      shift1 = ms*ishift1;
+      shift2 = ms*ishift2;
+      for (k=0; k<ne[ms]; ++k)
+      {
+         indx1 = shift1;
+         indx2 = shift2 + k*ne[ms];
+         for (j=0; j<ne[ms]; ++j)
+         {
+            A[indx2] = SA[indx1]*Vt[indx2];
+            B[indx2] = SB[indx1]*Vt[indx2];
+            ++indx1;
+            ++indx2;
+         }
+      }
+
+   }
+}
+
+void Pneb::mm_SCtimesVtrans3(const int mb, const double t, double *S, double *Vt,
+                             double *A, double *B, double *SA, double *SB)
+{
+   nwpw_timing_function ftimer(18);
+   int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
+   int j,k,indx1,indx2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; ishift1=ne[0]; nj = ne[0]+ne[1];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0; ishift1 = 0; nj = ne[mb];}
+   for (j=0; j<nj; ++j)
+   {
+       SA[j] = sin(S[j]*t);
+       SB[j] = 1.0-cos(S[j]*t);
+   }
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      shift1 = ms*ishift1;
+      shift2 = ms*ishift2;
+      for (k=0; k<ne[ms]; ++k)
+      {
+         indx1 = shift1;
+         indx2 = shift2 + k*ne[ms];
+         for (j=0; j<ne[ms]; ++j)
+         {
+            A[indx2] = SA[indx1]*Vt[indx2];
+            B[indx2] = SB[indx1]*Vt[indx2];
+            ++indx1;
+            ++indx2;
+         }
+      }
+
+   }
+}
+
+
+
 void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
 {
    nwpw_timing_function ftimer(18);
@@ -726,11 +833,11 @@ void Pneb::mm_transpose(const int mb, double *a, double *b)
    for (ms=ms1; ms<ms2; ++ms)
    {
       shift2 = ms*ishift2;
-      for (j=0; ne[ms]; ++j)
-      for (i=0; ne[ms]; ++j)
+      for (j=0; j<ne[ms]; ++j)
+      for (i=0; i<ne[ms]; ++i)
       {
-          indx  = i+j*ne[ms] + shift2;
-          indxt = j+i*ne[ms] + shift2;
+          indx  = i + j*ne[ms] + shift2;
+          indxt = j + i*ne[ms] + shift2;
           b[indx] = a[indxt];
       }
    }

@@ -51,7 +51,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
    bool   stalled=false;
    int    ne[2],ispin,nion;
-   double E[50],total_energy,deltae,deltac;
+   double E[50],total_energy,deltae,deltae_old,deltac;
 
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);
@@ -83,7 +83,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    //if (minimizer > 1) pspw_Grsm_list_start()
    if ((minimizer==5) || (minimizer==8)) it_out = 1;
 
-   Geodesic mygeodesic(minimizer,mymolecule);
+   Geodesic mygeodesic(minimizer,&mymolecule);
 
 
    /* generate phase factors and local psp and semicore density */
@@ -96,7 +96,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       if (parall->is_master()) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
    }
 
-   std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
+   //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
+   deltae = -1.0e-03;
    int bfgscount = 0;
    int icount = 0;
    bool converged = false;
@@ -110,6 +111,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
          bfgscount = 0;
       }
 
+      deltae_old = deltae;
       if (minimizer==1)
       {
         ++bfgscount; total_energy = cgsd_cgminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in);
@@ -129,7 +131,12 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
       if (parall->is_master())
          printf("%10d%25.12le%16.6le%16.6le\n",icount*it_in,total_energy,deltae, deltac);
-      stalled=true;
+
+      if ((fabs(deltae)>fabs(deltae_old)) || (fabs(deltae)>1.0e-2) || (deltae>0.0))
+         stalled = true;
+      else
+         stalled = false;
+
 
    }
    if (parall->is_master())

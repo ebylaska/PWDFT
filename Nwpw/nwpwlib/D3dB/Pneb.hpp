@@ -98,6 +98,13 @@ public:
         void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
         void fmf_Multiply(const int, double *, double *, double, double *, double);
 
+        void  mm_SCtimesVtrans(const int, const double, double *, double *, 
+                               double *, double *, double *, double *);
+        void  mm_SCtimesVtrans2(const int, const double, double *, double *, 
+                                double *, double *, double *, double *);
+        void  mm_SCtimesVtrans3(const int, const double, double *, double *, 
+                                double *, double *, double *, double *);
+
         void m_scal(const double, double *);
         double m_trace(double *);
         void m_diagonalize(double *, double *);
