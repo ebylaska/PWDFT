@@ -124,6 +124,10 @@ public:
        delete [] tmp1;
     }
 
+    void psi_1transport(double t, double *H0) {
+        this->transport(t, mymolecule->psi1,H0);
+    }
+
     double energy(double t) {
        this->get(t,mymolecule->psi1,mymolecule->psi2);
        return(mymolecule->psi2_energy());

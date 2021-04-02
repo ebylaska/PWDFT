@@ -44,8 +44,6 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    sum1 = mygrid->gg_traceall(G1,G1);
    Enew = total_energy;
 
-   //std::cout << "SUM1=" << sum1 << " ENERGY = " << total_energy << std::endl;
-
    mygrid->gg_copy(G1,H0);
 
 
@@ -60,7 +58,6 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    {
       /* initialize the geoedesic line data structure */
       dEold = mygeodesic.start(H0,&max_sigma, &min_sigma);
-      //std::cout << "MAX_SIGMA=" << max_sigma << " MIN_SIGMA="<< min_sigma << std::endl;
 
       /* line search */
       if (tmin > deltat_min)
@@ -80,20 +77,17 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       *deltac = mymolecule.rho_error();
       mygeodesic.psi_final(tmin);
 
-      //std::cout << "out geodesic.energy Eold=" << Eold << " dEold=" << dEold << std::endl;
-      //std::cout << "out geodesic.energy Enew=" << Enew << " DELTAE = " << *deltae << " tmin=" << tmin << std::endl;
 
       /* exit loop early */
       done = ((it >= it_in) || ((fabs(*deltae)<tole) && (*deltac<tolc)));
 
-
-      //std::cout << "it=" << it << " done=" << done << std::endl;
       if (!done)
       {
          /* transport the previous search directions */
-         mymolecule.swap_psi1_psi2();
+         mygeodesic.psi_1transport(tmin,H0);
 
          /* make psi1 <--- psi2(tmin) */
+         mymolecule.swap_psi1_psi2();
 
          /* get the new gradient - also updates densities */
          total_energy  = mymolecule.psi_1get_Tgradient(G1);
