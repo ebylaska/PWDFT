@@ -6,6 +6,7 @@
 #include	"Electron.hpp"
 #include	"Molecule.hpp"
 
+
 class	Geodesic {
 
    int minimizer;
@@ -66,7 +67,7 @@ public:
        double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
        mygrid->mm_SCtimesVtrans(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
 
-       mygrid->mmm_Multiply(-1,Vt,tmp1,1.0,tmp2,0.0);
+       mygrid->mmm_Multiply2(-1,Vt,tmp1,1.0,tmp2,0.0);
        mygrid->fmf_Multiply(-1,Yold,tmp2,1.0,Ynew,0.0);
        mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);
 
@@ -84,7 +85,7 @@ public:
        double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
        mygrid->mm_SCtimesVtrans2(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
 
-       mygrid->mmm_Multiply(-1,Vt,tmp1,1.0,tmp2,0.0);
+       mygrid->mmm_Multiply2(-1,Vt,tmp1,1.0,tmp2,0.0);
        mygrid->fmf_Multiply(-1,Yold,tmp2,-1.0,Ynew,0.0);
        mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);
 
@@ -97,12 +98,12 @@ public:
 
     double energy(double t) {
        this->get(t,mymolecule->psi1,mymolecule->psi2);
-       return mymolecule->psi2_energy();
+       return(mymolecule->psi2_energy());
     }
 
     double denergy(double t) {
        this->transport(t,mymolecule->psi1,mymolecule->psi2);
-       return(2*mymolecule->psi2_eorbit());
+       return(2.0*mymolecule->psi2_eorbit());
     }
 
     void psi_final(double t) {

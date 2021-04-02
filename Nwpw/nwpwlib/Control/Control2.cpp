@@ -249,6 +249,8 @@ Control2::Control2(const int np0, const string rtdbstring)
    // read from nwpw block
    if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string())  input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["output_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["input_v_wavefunction_filename"].is_string()) input_v_movecs = rtdbjson["nwpw"]["input_v_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["output_v_wavefunction_filename"].is_string()) output_v_movecs = rtdbjson["nwpw"]["output_v_wavefunction_filename"];
 
 
    // from car-parrinello block

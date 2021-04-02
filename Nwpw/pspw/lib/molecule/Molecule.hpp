@@ -171,6 +171,21 @@ public:
       psi2 = psi1;
       psi1 = t2;
    }
+
+   /* calculates the difference squared  error between rho1 and rho2 */
+   double rho_error() {
+      double x;
+      double sumxx = 0.0;
+      for (int i=0; i<n2ft3d; ++i)
+      {
+         x  = (rho2[i]-rho1[i]);
+         x += (rho2[i+(ispin-1)*n2ft3d]-rho1[i+(ispin-1)*n2ft3d]);
+         sumxx += x*x;
+      }
+      mygrid->d3db::parall->SumAll(1,sumxx);
+      return sumxx*dv;
+   }
+
   
 
    friend ostream& operator<<(ostream& os, const Molecule& mymolecule) {

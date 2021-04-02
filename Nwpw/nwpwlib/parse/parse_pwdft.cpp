@@ -682,6 +682,20 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          else
             nwpwjson["minimizer"] = 8;
       }
+      else if (mystring_contains(line,"vectors"))
+      {
+         if (mystring_contains(line," input"))
+            nwpwjson["input_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line," input")[1]))[0];
+         
+         if (mystring_contains(line," output"))
+            nwpwjson["output_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line," output")[1]))[0];
+
+         if (mystring_contains(line,"vinput"))
+            nwpwjson["input_v_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line,"vinput")[1]))[0];
+
+         if (mystring_contains(line,"voutput"))
+            nwpwjson["output_v_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line,"voutput")[1]))[0];
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))

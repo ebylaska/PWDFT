@@ -109,6 +109,7 @@ public:
         double m_trace(double *);
         void m_diagonalize(double *, double *);
         void mmm_Multiply(const int, double *, double *, double, double*, double);
+        void mmm_Multiply2(const int, double *, double *, double, double*, double);
         void mm_transpose(const int, double *, double *);
 
 

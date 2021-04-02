@@ -27,5 +27,4 @@ extern void util_filter(int, double *, double, double *);
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
 
 
-
 #endif

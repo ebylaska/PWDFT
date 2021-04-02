@@ -75,6 +75,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
                        0.50,&tmin0,&deltae0,2);
       tmin = tmin0;
       *deltae = deltae0;
+      *deltac = mymolecule.rho_error();
       mygeodesic.psi_final(tmin);
 
       //std::cout << "out geodesic.energy Eold=" << Eold << " dEold=" << dEold << std::endl;
@@ -120,7 +121,6 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
 
    total_energy  = mymolecule.gen_all_energies();
 
-   *deltac = 2.33434211e-6;
 
    mygrid->g_deallocate(H0);
    mygrid->g_deallocate(G1);

@@ -567,7 +567,7 @@ void Pneb::ggm_SVD(double *A, double *U, double *S, double *V)
       tmp2[n] = cc_pack_idot(1,&U[indx],&U[indx]);
       indx += 2*npack(1);
    }
-   d3db::parall->Vector_SumAll(0,neq[0]+neq[1],tmp2);
+   d3db::parall->Vector_SumAll(1,neq[0]+neq[1],tmp2);
 
    for (n=0; n<(neq[0]+neq[1]); ++n)
       tmp2[n] = 1.0/sqrt(tmp2[n]);
@@ -818,6 +818,32 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 		     &b[shift2], n,
 		     beta,
 		     &c[shift2], n);
+      }
+   }
+}
+
+
+void Pneb::mmm_Multiply2(const int mb, double *a, double *b, double alpha, double *c, double beta)
+{
+   nwpw_timing_function ftimer(18);
+   int ms,n,ms1,ms2,ishift2,shift2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0;}
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      n = ne[ms];
+      if (n>0)
+      {
+         shift2 = ms*ishift2;
+
+         DGEMM_PWDFT((char *) "T",(char *) "N",n,n,n,
+                     alpha,
+                     &a[shift2], n,
+                     &b[shift2], n,
+                     beta,
+                     &c[shift2], n);
       }
    }
 }

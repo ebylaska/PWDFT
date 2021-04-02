@@ -4,6 +4,7 @@
 //}
 #include        "compressed_io.hpp"
 
+#include	<iostream>
 #include	<cstdlib>
 #include	<cmath>
 #include        "Parallel.hpp"
