@@ -114,7 +114,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       deltae_old = deltae;
       if (minimizer==1)
       {
-        ++bfgscount; total_energy = cgsd_cgminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in);
+        ++bfgscount; total_energy = cgsd_cgminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
       }
       else if (minimizer==2)
       {
@@ -136,6 +136,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
          stalled = true;
       else
          stalled = false;
+
+      converged = (fabs(deltae)<tole) && (deltac<tolc);
 
 
    }

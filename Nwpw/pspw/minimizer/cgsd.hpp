@@ -4,6 +4,6 @@
 #include        "Molecule.hpp"
 #include        "Geodesic.hpp"
 
-extern double cgsd_cgminimize(Molecule&, Geodesic&, double *, double *, double *, int, int);
+extern double cgsd_cgminimize(Molecule&, Geodesic&, double *, double *, double *, int, int, double, double);
 
 #endif

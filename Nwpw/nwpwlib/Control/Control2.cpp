@@ -300,10 +300,12 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][1].is_number_integer()) ploop[1] = rtdbjson["nwpw"]["car-parrinello"]["loop"][1];
 
 
-   ptolerances[0] = 1.0e-9; ptolerances[1] = 1.0e-9; ptolerances[2] = 1.0e-4; 
+   ptolerances[0] = 1.0e-7; ptolerances[1] = 1.0e-7; ptolerances[2] = 1.0e-4; 
    if (rtdbjson["nwpw"]["tolerances"][0].is_number_float()) ptolerances[0] = rtdbjson["nwpw"]["tolerances"][0];
    if (rtdbjson["nwpw"]["tolerances"][1].is_number_float()) ptolerances[1] = rtdbjson["nwpw"]["tolerances"][1];
    if (rtdbjson["nwpw"]["tolerances"][2].is_number_float()) ptolerances[2] = rtdbjson["nwpw"]["tolerances"][2];
+
+   if (ptask==5) { ptolerances[0] = 1.0e-9; ptolerances[1] = 1.0e-9; ptolerances[2] = 1.0e-4; }
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0].is_number_float()) ptolerances[0] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float()) ptolerances[1] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float()) ptolerances[2] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2];

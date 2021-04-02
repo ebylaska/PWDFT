@@ -38,16 +38,19 @@ public:
     }
 
 
-   double start(double *A, double *max_sigma) {
+   double start(double *A, double *max_sigma, double *min_sigma) {
       double *V = mygrid->m_allocate(-1,1);
       mygrid->ggm_SVD(A,U,S,V);
 
       int neall = mygrid->ne[0] + mygrid->ne[1];
+      double mmsig=9.99e9;
       double msig =0.0;
-      for (int i=0; i<neall; ++i)
-         if (fabs(S[i])>msig)
-            msig = fabs(S[i]);
+      for (int i=0; i<neall; ++i) {
+         if (fabs(S[i])>msig)   msig = fabs(S[i]);
+         if (fabs(S[i])<mmsig) mmsig = fabs(S[i]);
+      }
       *max_sigma = msig;
+      *min_sigma = mmsig;
 
       /* calculate Vt */
       mygrid->mm_transpose(-1,V,Vt);
@@ -76,7 +79,20 @@ public:
        delete [] tmp3;
        delete [] tmp2;
        delete [] tmp1;
+
+       /* ortho check  - need to figure out what causes this to happen */
+       double sum2  = mygrid->gg_traceall(Ynew,Ynew);
+       double sum1  = mygrid->ne[0] + mygrid->ne[1];
+       if ((mygrid->ispin)==1) sum1 *= 2;
+       if (fabs(sum2-sum1)>1.0e-10)
+       {
+          //if (myparall->is_master()) std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+          //std::cout << " Warning - Gram-Schmidt being performed on psi2, error=" <<  fabs(sum2-sum1) << std::endl;
+          mygrid->g_ortho(Ynew);
+       }
     }
+
+
     void transport(double t, double *Yold, double *Ynew) {
        double *tmp1 = mygrid->m_allocate(-1,1);
        double *tmp2 = mygrid->m_allocate(-1,1);

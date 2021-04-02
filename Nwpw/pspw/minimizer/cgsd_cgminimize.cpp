@@ -20,14 +20,15 @@ static double dummy_energy(double t) { return mygeodesic_ptr->energy(t); }
 static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 
 
-double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, int current_iteration, int it_in)
+double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
+                       int current_iteration, int it_in, double tole, double tolc)
 {
    bool   done = false;
    double tmin = 0.0;
    double deltat_min=1.0e-3;
    double deltat;
    double sum0,sum1,scale,total_energy;
-   double dE,max_sigma;
+   double dE,max_sigma,min_sigma;
    double Eold,dEold,Enew;
    double tmin0,deltae0;
 
@@ -58,7 +59,8 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    while ((!done) && ((it++) < it_in))
    {
       /* initialize the geoedesic line data structure */
-      dEold = mygeodesic.start(H0,&max_sigma);
+      dEold = mygeodesic.start(H0,&max_sigma, &min_sigma);
+      //std::cout << "MAX_SIGMA=" << max_sigma << " MIN_SIGMA="<< min_sigma << std::endl;
 
       /* line search */
       if (tmin > deltat_min)
@@ -82,7 +84,8 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       //std::cout << "out geodesic.energy Enew=" << Enew << " DELTAE = " << *deltae << " tmin=" << tmin << std::endl;
 
       /* exit loop early */
-      done = (it >= it_in);
+      done = ((it >= it_in) || ((fabs(*deltae)<tole) && (*deltac<tolc)));
+
 
       //std::cout << "it=" << it << " done=" << done << std::endl;
       if (!done)
