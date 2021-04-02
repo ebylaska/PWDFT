@@ -1274,6 +1274,7 @@ double Pseudopotential::e_nonlocal(double *psi)
 
       esum += DDOT_PWDFT(ntmp,sw1,one,sw2,one);
    }
+   if (mypneb->ispin==1) esum = esum + esum;
    
    return esum;
 }

@@ -371,6 +371,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
+      cout << std::endl;
 
       //cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
    }
