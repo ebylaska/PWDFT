@@ -59,6 +59,9 @@ public:
     double energy();
     void   force(double *);
 
+    double rs()      { return pow(3.0*ewaldlattice->omega()/(16*atan(1.0) ),1.0/3.0); }
+    double rsalpha() { return (alpha*pow((16.0*atan(1.0)/3.0),1.0/3.0)); }
+
 };
 
 #endif

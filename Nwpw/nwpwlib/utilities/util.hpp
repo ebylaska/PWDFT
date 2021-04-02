@@ -27,4 +27,11 @@ extern void util_filter(int, double *, double, double *);
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
 
 
+//#define _MATPRINT_
+#ifdef _MATPRINT_
+#include <iostream>
+extern void util_matprint(std::string, int, double *);
+#endif
+
+
 #endif

@@ -6,6 +6,8 @@
 #include	"Electron.hpp"
 #include	"Molecule.hpp"
 
+//#include	"util.hpp"
+
 
 class	Geodesic {
 
@@ -55,6 +57,14 @@ public:
       /* calculate Vt */
       mygrid->mm_transpose(-1,V,Vt);
 
+      //double *tmp1 = mygrid->m_allocate(-1,1);
+      //mygrid->mmm_Multiply(-1,Vt,V,1.0,tmp1,0.0);
+      //util_matprint("Vt*V",4,tmp1);
+
+      //mygrid->ggm_sym_Multiply(U,U,tmp1);
+      //util_matprint("Ut*U",4,tmp1);
+      //delete [] tmp1;
+
       delete [] V;
 
       /* calculate  and return 2*<A|H|psi> */
@@ -70,6 +80,7 @@ public:
        double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
        mygrid->mm_SCtimesVtrans(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
 
+       /* Ynew = Yold*V*cos(Sigma*t)*Vt + U*sin(Sigma*t)*Vt */
        mygrid->mmm_Multiply2(-1,Vt,tmp1,1.0,tmp2,0.0);
        mygrid->fmf_Multiply(-1,Yold,tmp2,1.0,Ynew,0.0);
        mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);
@@ -87,7 +98,7 @@ public:
        if (fabs(sum2-sum1)>1.0e-10)
        {
           //if (myparall->is_master()) std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
-          //std::cout << " Warning - Gram-Schmidt being performed on psi2, error=" <<  fabs(sum2-sum1) << std::endl;
+          //std::cout << " Warning - Gram-Schmidt being performed on psi2, t=" << t << " error=" <<  fabs(sum2-sum1) << std::endl;
           mygrid->g_ortho(Ynew);
        }
     }
@@ -101,6 +112,7 @@ public:
        double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
        mygrid->mm_SCtimesVtrans2(-1,t,S,Vt,tmp1,tmp3,tmpC,tmpS);
 
+       /* tHnew = (-Yold*V*sin(Sigma*t) + U*cos(Sigma*t))*Sigma*Vt */
        mygrid->mmm_Multiply2(-1,Vt,tmp1,1.0,tmp2,0.0);
        mygrid->fmf_Multiply(-1,Yold,tmp2,-1.0,Ynew,0.0);
        mygrid->fmf_Multiply(-1,U,tmp3,1.0,Ynew,1.0);

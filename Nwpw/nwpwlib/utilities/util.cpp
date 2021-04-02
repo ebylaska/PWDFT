@@ -325,4 +325,15 @@ void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
 
 
 
+#ifdef _MATPRINT_
+void util_matprint(std::string matlabel, int n, double *A) {
+   std::cout << "util_matprint: " << matlabel << std::endl;
+   for (int i=0; i<n; ++i)
+   {
+      for (int j=0; j<n; ++j) std::cout << A[i+j*n] << " ";
+      std::cout << std::endl;
+   }
+   std::cout << std::endl;
+}
+#endif
 

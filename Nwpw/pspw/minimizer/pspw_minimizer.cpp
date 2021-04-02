@@ -240,8 +240,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << " ewald parameters:\n";
       printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
-      printf("      summation: cut radius=  %7.3lf and %3d   mandelung= %12.8lf\n",
-             myewald.rcut(),myewald.ncut(),myewald.mandelung());
+      printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
+      printf("                       Mandelung Wigner-Seitz= %12.8lf (alpha=%12.8lf rs=%11.8lf)\n",myewald.mandelung(),myewald.rsalpha(),myewald.rs());
 
       if (flag > 0) 
       {
