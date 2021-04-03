@@ -4,6 +4,7 @@
 
 #include        <iostream>
 #include 	<iomanip> 
+#include	<vector>
 using namespace std;
 
 #include	"Control2.hpp"
@@ -24,7 +25,6 @@ using namespace std;
 class	Molecule {
 
    double omega,scal2,scal1,dv;
-   double E[20],en[2];
 
    int ispin,ne[2],neall,n2ft3d,shift1,shift2;
    int nfft[3];
@@ -41,6 +41,8 @@ public:
    double *psi1, *rho1, *rho1_all, *dng1;
    double *psi2, *rho2, *rho2_all, *dng2;
    double *lmbda, *hml, *eig;
+
+   double E[20],en[2];
 
    bool newpsi;
 
@@ -185,6 +187,8 @@ public:
       mygrid->d3db::parall->SumAll(1,sumxx);
       return sumxx*dv;
    }
+
+   std::vector<double> eig_vector() { return std::vector<double>(eig,&eig[neall]); }
 
   
 

@@ -28,7 +28,7 @@ Molecule::Molecule(char *infilename,
    ne[0] = mygrid->ne[0]; 
    ne[1] = mygrid->ne[1];
    nfft[0] = mygrid->nx; nfft[1] = mygrid->ny; nfft[2] = mygrid->nz;
-   E[0] = 0.0;
+   for (int i=0; i<20; ++i) E[i] = 0.0;
 
    psi1  = mygrid->g_allocate(1);
    psi2  = mygrid->g_allocate(1);

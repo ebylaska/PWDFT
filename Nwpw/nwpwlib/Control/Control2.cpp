@@ -310,8 +310,10 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float()) ptolerances[1] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float()) ptolerances[2] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2];
 
-   pecut=9000.0;
-   pwcut=9000.0;
+   //pecut=9000.0;
+   //pwcut=9000.0;
+   //pecut= 60.0; pwcut=30.0;
+   pecut=100.0; pwcut=50.0;
    if (rtdbjson["nwpw"]["cutoff"][0].is_number_float()) pwcut = rtdbjson["nwpw"]["cutoff"][0];
    if (rtdbjson["nwpw"]["cutoff"][1].is_number_float()) pecut = rtdbjson["nwpw"]["cutoff"][1];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float()) pwcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];

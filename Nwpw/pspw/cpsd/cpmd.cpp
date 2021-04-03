@@ -28,6 +28,11 @@ using namespace std;
 using json = nlohmann::json;
 
 
+/******************************************
+ *                                        *
+ *                 cpmd                   *
+ *                                        *
+ ******************************************/
 int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);

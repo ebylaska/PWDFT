@@ -140,11 +140,28 @@ int main(int argc, char* argv[])
 
   string rtdbstr  = parse_nwinput(nwinput);
   int task = parse_task(rtdbstr);
+
   if (oprint) std::cout << "rtdbstr=" << rtdbstr << std::endl;
   if (oprint) std::cout << "task0=" << task << std::endl;
   while (task>0)
   {
-     if (task==1) ierr += pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
+     if (task==1)
+     {
+        std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
+        int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+        MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+        if (!wfound) 
+        {
+             auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
+             for (const auto & elem: lowlevel_rtdbstrs) {
+                if (oprint) std::cout << "lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+                std::string dum_rtdbstr  = elem;
+                ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+             }
+        }
+
+        ierr += pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
+     }
      if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
      if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr);
     

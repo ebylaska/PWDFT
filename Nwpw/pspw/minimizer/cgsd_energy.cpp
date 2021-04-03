@@ -89,7 +89,6 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    /* generate phase factors and local psp and semicore density */
    mymolecule.phafacs_vl_potential_semicore();
 
-
    if (mymolecule.newpsi) 
    {
       for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);

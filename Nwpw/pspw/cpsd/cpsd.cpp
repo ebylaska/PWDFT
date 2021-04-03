@@ -34,6 +34,11 @@ using namespace std;
 using json = nlohmann::json;
 
 
+/******************************************
+ *                                        *
+ *                cgsd                    *
+ *                                        *
+ ******************************************/
 int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);

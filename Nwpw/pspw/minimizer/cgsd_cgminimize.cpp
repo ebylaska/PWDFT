@@ -15,11 +15,17 @@
 #include        "Geodesic.hpp"
 
 
+/* create dummy function call to Geodesic class functions */
 static Geodesic *mygeodesic_ptr;
-static double dummy_energy(double t) { return mygeodesic_ptr->energy(t); }
+static double dummy_energy(double t)  { return mygeodesic_ptr->energy(t); }
 static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 
 
+/******************************************
+ *                                        *
+ *            cgsd_cgminimize             *
+ *                                        *
+ ******************************************/
 double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
                        int current_iteration, int it_in, double tole, double tolc)
 {
@@ -35,6 +41,8 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    Pneb *mygrid = mymolecule.mygrid;
    mygeodesic_ptr = &mygeodesic;
 
+   /* intialize the linesearch */
+   util_linesearch_init();
 
    /* get the initial gradient and direction */
    double *G1 = mygrid->g_allocate(1);

@@ -40,6 +40,12 @@ using namespace std;
 using json = nlohmann::json;
 
 
+
+/******************************************
+ *                                        *
+ *            pspw_minimizer              *
+ *                                        *
+ ******************************************/
 int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
@@ -313,8 +319,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
-   rtdbjson["pspw"]["energy"]   = E[0];
-   rtdbjson["pspw"]["energies"] = E;
+   rtdbjson["pspw"]["energy"]   = EV;
+   rtdbjson["pspw"]["energies"] = mymolecule.E;
+   rtdbjson["pspw"]["eigenvalues"] = mymolecule.eig_vector();
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 
@@ -349,3 +356,5 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    return 0;
 }
+
+

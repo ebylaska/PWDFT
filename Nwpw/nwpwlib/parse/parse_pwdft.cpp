@@ -901,6 +901,68 @@ int parse_task(std::string rtdbstring)
 
 /**************************************************
  *                                                *
+ *       parse_input_wavefunction_filename        *
+ *                                                *
+ **************************************************/
+std::string parse_input_wavefunction_filename(std::string rtdbstring)
+{
+   auto rtdb =  json::parse(rtdbstring);
+
+   std::string filename  = "eric.movecs";
+   if (rtdb["dbname"].is_string())
+   {
+       string dbname = rtdb["dbname"];
+       filename = dbname + ".movecs";
+   }
+   // read from nwpw block
+   if (rtdb["nwpw"]["input_wavefunction_filename"].is_string()) filename = rtdb["nwpw"]["input_wavefunction_filename"];
+
+   return filename;
+}
+
+/**************************************************
+ *                                                *
+ *           parse_gen_lowlevel_rtdbstrs          *
+ *                                                *
+ **************************************************/
+std::vector<std::string> parse_gen_lowlevel_rtdbstrs(std::string rtdbstring)
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+
+   double ecut0=100.0;
+   double wcut0=50.0;
+   if (rtdbjson["nwpw"]["cutoff"][0].is_number_float()) wcut0 = rtdbjson["nwpw"]["cutoff"][0];
+   if (rtdbjson["nwpw"]["cutoff"][1].is_number_float()) ecut0 = rtdbjson["nwpw"]["cutoff"][1];
+
+   int steps;
+   double dx;
+   if (wcut0<5.0) {
+      steps = 0; dx = 1.0;
+   } else if (wcut0<=20.0) {
+      steps = 2; dx = 1.0/2.0;
+   } else if (wcut0<=30.0) {
+      steps = 3; dx = 1.0/3.0;
+   } else {
+      steps = 4; dx = 1.0/4.0;
+   }
+
+   std::vector<std::string> gen_rtdbs;
+
+   for (int i=1; i<steps; ++i)
+   {
+      rtdbjson["nwpw"]["cutoff"][0] = i*dx*wcut0;
+      rtdbjson["nwpw"]["cutoff"][1] = i*dx*ecut0;
+      rtdbjson["current_task"]      = "energy";
+
+      gen_rtdbs.push_back(rtdbjson.dump());
+   }
+
+   return gen_rtdbs;
+}
+
+
+/**************************************************
+ *                                                *
  *                 parse_write                    *
  *                                                *
  **************************************************/
