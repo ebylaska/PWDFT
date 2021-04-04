@@ -141,8 +141,8 @@ int main(int argc, char* argv[])
   string rtdbstr  = parse_nwinput(nwinput);
   int task = parse_task(rtdbstr);
 
-  if (oprint) std::cout << "rtdbstr=" << rtdbstr << std::endl;
-  if (oprint) std::cout << "task0=" << task << std::endl;
+  if (oprint) std::cout << "First rtdbstr=" << rtdbstr << std::endl;
+  if (oprint) std::cout << "First task=" << task << std::endl << std::endl;
   while (task>0)
   {
      if (task==1)
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
         {
              auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
              for (const auto & elem: lowlevel_rtdbstrs) {
-                if (oprint) std::cout << "lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+                if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
                 std::string dum_rtdbstr  = elem;
                 ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
              }
@@ -167,8 +167,8 @@ int main(int argc, char* argv[])
     
      rtdbstr = parse_rtdbstring(rtdbstr);
      task    = parse_task(rtdbstr);
-     if (oprint) std::cout << "rtdbstr=" << rtdbstr << std::endl;
-     if (oprint) std::cout << "task =" << task << std::endl;
+     if (oprint) std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
+     if (oprint) std::cout << "Next task =" << task << std::endl << std::endl;
   }
 
   //int ijk = cpsd(argc,argv);
