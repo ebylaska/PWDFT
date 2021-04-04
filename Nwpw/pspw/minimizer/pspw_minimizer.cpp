@@ -257,6 +257,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                 control.time_step(),control.fake_mass());
          printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
                 control.tolerances(0),control.tolerances(1),control.tolerances(2));
+         //printf("      tolerance=%12.3le (energy) %12.3le (density)\n",
+         //       control.tolerances(0),control.tolerances(1));
          printf("      max iterations = %10d (%5d inner %5d outer)\n",
                 control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
          if (control.minimizer()==1) cout << "      minimizer = Grassmann conjugate gradient\n";

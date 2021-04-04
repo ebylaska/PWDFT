@@ -651,6 +651,13 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          if (ss.size()==2) nwpwjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
          if (ss.size()>2)  nwpwjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
       }
+      else if (mystring_contains(line,"tolerances"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[1]),1.0e-4};
+         if (ss.size()==3) nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),1.0e-4};
+         if (ss.size()>3)  nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),std::stod(ss[3])};
+      }
       else if (mystring_contains(line,"intitial_velocities"))
       {
          ss = mystring_split0(line);
