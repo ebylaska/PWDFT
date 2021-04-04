@@ -84,6 +84,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
          myion->shift();
          mystrfac->phafac();
          myewald->phafac();
+         //for (int ii=0; ii<(3*myion->nion); ++ii) fion[ii] = 0.0;
       }
 
       /* convert psi(G) to psi(r) - Expensive */

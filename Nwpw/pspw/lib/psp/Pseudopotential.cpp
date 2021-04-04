@@ -1086,13 +1086,21 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
       gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
 
       if (move)
-         for (ll=0; ll<nprjall; ++ll)
-            for (n=0; n<nn; ++n)
+      {
+         //for (ll=0; ll<nprjall; ++ll)
+         ll = 0;
+         for (jj=jstart; jj<jend; ++jj)
+         {
+            ia = myion->katm[jj];
+            for (l=0; l<nprj[ia]; ++l)
             {
-               fion[3*ii]   +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[  3*nn*ll], three);
-               fion[3*ii+1] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[1+3*nn*ll], three);
-               fion[3*ii+2] +=  (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[2+3*nn*ll], three);
+               fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[  3*nn*ll], three);
+               fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[1+3*nn*ll], three);
+               fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[2+3*nn*ll], three);
+               ++ll;
             }
+         }
+      }
 
    }
    gdevice_hpsi_copy_gpu2host(nshift0,nn,Hpsi);
@@ -1148,9 +1156,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                for (n=0; n<nn; ++n)
                {
                   mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                  sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
                   sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
                   sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
-                  sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
                   //std::cout << ii << " " << n << " " << l << " " << sum[3*n] << " " << sum[3*n+1] << " " << sum[3*n+2] << "    SW2= " << sw2[n+l*nn] << std::endl;
                 }
                 parall->Vector_SumAll(1,3*nn,sum);
