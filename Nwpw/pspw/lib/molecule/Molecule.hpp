@@ -190,6 +190,12 @@ public:
 
    std::vector<double> eig_vector() { return std::vector<double>(eig,&eig[neall]); }
 
+
+   void psi_1local_force(double *grad_ion)    { myelectron->vl_force(dng1,grad_ion); }
+   void psi_1nonlocal_force(double *grad_ion) { myelectron->vnl_force(psi1,grad_ion); }
+   void semicore_force(double *grad_ion)      { myelectron->semicore_force(grad_ion); }
+   void ewald_fion(double *grad_ion)         { myewald->force(grad_ion); }
+
   
 
    friend ostream& operator<<(ostream& os, const Molecule& mymolecule) {

@@ -5,6 +5,7 @@
 
 extern double cgsd_noit_energy(Molecule&);
 extern double cgsd_energy(Control2&, Molecule&);
+extern void   cgsd_energy_gradient(Molecule&, double *);
 
 
 #endif

@@ -458,7 +458,8 @@ void Electron_Operators::add_dteHpsi(double dte, double *psi1, double *psi2)
  ********************************************/
 void Electron_Operators::semicore_force(double *fion) 
 {
-   mypsp->semicore_xc_fion(xcp,fion);
+   if (mypsp->has_semicore())
+      mypsp->semicore_xc_fion(xcp,fion);
 }
 
 /********************************************
