@@ -85,10 +85,14 @@ public:
     bool has_semicore() { return semicore[npsp]; }
     double ncore(const int ia) {return ncore_sum[ia];}
     void semicore_density_update();
+    void semicore_xc_fion(double *, double *);
 
     void v_nonlocal(double *, double *);
     void v_nonlocal_fion(double *, double *, const bool, double *);
+    void f_nonlocal_fion(double *, double *);
+
     void v_local(double *, const bool, double *, double *);
+    void f_local(double *, double *);
 
     double e_nonlocal(double *);
 

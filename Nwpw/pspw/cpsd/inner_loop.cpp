@@ -165,7 +165,13 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
      if (move) 
      {
+        /* get the ewald force */
         myewald->force(fion);
+
+        /* get the semicore force - needs to be checked */
+        if (mypsp->has_semicore()) 
+           mypsp->semicore_xc_fion(xcp,fion);
+
         myion->optimize_step(fion);
      }
 

@@ -1383,6 +1383,32 @@ void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
    return;
 }
 
+/********************************
+ *                              *
+ *         d3db::rr_Mul        *
+ *                              *
+ ********************************/
+void d3db::rr_Mul(const double *ptr1, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] *= ptr1[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   *= ptr1[i];
+      ptr3[i+1] *= ptr1[i+1];
+      ptr3[i+2] *= ptr1[i+2];
+      ptr3[i+3] *= ptr1[i+3];
+      ptr3[i+4] *= ptr1[i+4];
+   }
+   return;
+}
+
+
 
 
 /********************************

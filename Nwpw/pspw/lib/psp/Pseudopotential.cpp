@@ -1190,6 +1190,158 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
 
 /*******************************************
  *                                         *
+ *     Pseudopotential::f_nonlocal_fion    *
+ *                                         *
+ *******************************************/
+void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
+{
+   nwpw_timing_function ftimer(6);
+   bool done;
+   int ii,ia,l,nshift0,sd_function,i,n;
+   int jj,ll,jstart,jend,nprjall;
+
+   double *exi;
+   double *prjtmp,*sw1,*sw2,*prj,*vnlprj;
+   double *Gx,*Gy,*Gz,*xtmp,*sum;
+   Parallel *parall;
+   double omega = mypneb->lattice->omega();
+   //double scal = 1.0/lattice_omega();
+   double scal = 1.0/omega;
+   int one=1;
+   int three=3;
+   int ntmp,nshift,nn,ispin;
+
+   double rone  = 1.0;
+   double rmone = -1.0;
+
+   nn     = mypneb->neq[0]+mypneb->neq[1];
+   ispin  = mypneb->ispin;
+   nshift0 = mypneb->npack(1);
+   nshift = 2*mypneb->npack(1);
+   exi    = new double[nshift];
+   prjtmp = new double[nprj_max*nshift];
+   sw1    = new double[nn*nprj_max];
+   sw2    = new double[nn*nprj_max];
+
+   //Copy psi to device
+   gdevice_psi_copy_host2gpu(nshift0,nn,psi);
+   //gdevice_hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+
+   xtmp = new double[nshift0];
+   sum  = new double[3*nn*nprj_max];
+   Gx = new double [mypneb->nfft3d];
+   Gy = new double [mypneb->nfft3d];
+   Gz = new double [mypneb->nfft3d];
+   mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+   mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+   mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+   mypneb->t_pack(1,Gx);
+   mypneb->t_pack(1,Gy);
+   mypneb->t_pack(1,Gz);
+
+   parall = mypneb->d3db::parall;
+
+   ii = 0;
+   while (ii<(myion->nion))
+   {
+      ia      = myion->katm[ii];
+      nprjall = 0;
+      jstart  = ii;
+      done = false;
+      while (!done)
+      {
+         //generate projectors
+         if (nprj[ia]>0)
+         {
+            mystrfac->strfac_pack(1,ii,exi);
+            for (l=0; l<nprj[ia]; ++l)
+            {
+               sd_function = !(l_projector[ia][l] & 1);
+               prj = &(prjtmp[(l+nprjall)*nshift]);
+               vnlprj = &(vnl[ia][l*nshift0]);
+               if (sd_function)
+                  mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+               else
+                  mypneb->tcc_iMul(1,vnlprj,exi,prj);
+               
+               for (n=0; n<nn; ++n)
+               {
+                  mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                  sum[3*n  +3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gx,xtmp);
+                  sum[3*n+1+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gy,xtmp);
+                  sum[3*n+2+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gz,xtmp);
+               }
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii<(myion->nion))
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall+nprj[ia]) > nprj_max);
+         }
+         else
+         {
+            done = true;
+         }
+      }
+      jend = ii;
+      mypneb->cc_pack_inprjdot(1,nn,nprjall,psi,prjtmp,sw1);
+      parall->Vector_SumAll(1,nn*nprjall,sw1);
+      parall->Vector_SumAll(1,3*nn*nprjall,sum);
+
+      /* sw2 = Gijl*sw1 */
+      ll = 0;
+      for (jj=jstart; jj<jend; ++jj)
+      {
+         ia = myion->katm[jj];
+         if (nprj[ia]>0)
+         {
+            Multiply_Gijl_sw1(nn,nprj[ia],nmax[ia],lmax[ia],
+                              n_projector[ia],l_projector[ia],m_projector[ia],
+                              Gijl[ia],&(sw1[ll*nn]),&(sw2[ll*nn]));
+            ll += nprj[ia];
+         }
+      }
+
+      ntmp = nn*nprjall;
+      DSCAL_PWDFT(ntmp,scal,sw2,one);
+
+      //gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
+
+      //for (ll=0; ll<nprjall; ++ll)
+      ll = 0;
+      for (jj=jstart; jj<jend; ++jj)
+      {
+         ia = myion->katm[jj];
+         for (l=0; l<nprj[ia]; ++l)
+         {
+            fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[  3*nn*ll], three);
+            fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[1+3*nn*ll], three);
+            fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, &sw2[ll*nn], one, &sum[2+3*nn*ll], three);
+            ++ll;
+         }
+      }
+   }
+   //gdevice_hpsi_copy_gpu2host(nshift0,nn,Hpsi);
+
+   delete [] xtmp;
+   delete [] sum;
+   delete [] Gx;
+   delete [] Gy;
+   delete [] Gz;
+  
+   delete [] sw2;
+   delete [] sw1;
+   delete [] prjtmp;
+   delete [] exi;
+}
+
+
+
+
+/*******************************************
+ *                                         *
  *     Pseudopotential::e_nonlocal         *
  *                                         *
  *******************************************/
@@ -1357,12 +1509,71 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
 }
 
 
+/*******************************************
+ *                                         *
+ *     Pseudopotential::f_local            *
+ *                                         *
+ *******************************************/
+void Pseudopotential::f_local(double *dng, double *fion)
+{
+   nwpw_timing_function ftimer(5);
+   int ii,ia,nshift,npack0;
+   double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
+
+   npack0 = mypneb->npack(0);
+   
+   xtmp = new double[npack0];
+   Gx = new double [mypneb->nfft3d];
+   Gy = new double [mypneb->nfft3d];
+   Gz = new double [mypneb->nfft3d];
+   mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+   mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+   mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+   mypneb->t_pack(0,Gx);
+   mypneb->t_pack(0,Gy);
+   mypneb->t_pack(0,Gz);
+
+   nshift = 2*npack0;
+   exi    = new double[nshift];
+   vtmp   = new double[nshift];
+   for (ii=0; ii<(myion->nion); ++ii)
+   {
+      ia = myion->katm[ii];
+      mystrfac->strfac_pack(0,ii,exi);
+      //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
+      mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
+
+      
+         double xx =  mypneb->cc_pack_dot(0,dng,dng);
+         double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+
+         mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+         double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+
+         fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
+         fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
+         fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
+     
+   }
+   delete [] exi;
+   delete [] vtmp;
+   
+   delete [] xtmp;
+   delete [] Gx;
+   delete [] Gy;
+   delete [] Gz;
+ 
+}
+
+
+
+
+
 /********************************************
  *                                          *
  * Pseudopotential::semicore_density_update *
  *                                          *
  ********************************************/
-
 void Pseudopotential::semicore_density_update()
 {
    int ii,ia;
@@ -1397,4 +1608,84 @@ void Pseudopotential::semicore_density_update()
    mypneb->c_pack_deallocate(exi);
 }
 
+
+/********************************************
+ *                                          *
+ *    Pseudopotential::semicore_xc_fion     *
+ *                                          *
+ ********************************************/
+
+/* this routine need to be check!! */
+
+void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
+{
+   int ia;
+   int ispin  = mypneb->ispin;
+   int n2ft3d = mypneb->n2ft3d;
+   double omega = mypneb->lattice->omega();
+   double scal2 = 1.0/omega;
+   double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+
+   double *exi = mypneb->c_pack_allocate(0);
+   double *tmp = mypneb->r_alloc();
+   double *tmpx = mypneb->r_alloc();
+   double *tmpy = mypneb->r_alloc();
+   double *tmpz = mypneb->r_alloc();
+   double *vxcG = mypneb->r_alloc();
+
+   double *Gx = new double [mypneb->nfft3d];
+   double *Gy = new double [mypneb->nfft3d];
+   double *Gz = new double [mypneb->nfft3d];
+   mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+   mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+   mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+   mypneb->t_pack(1,Gx);
+   mypneb->t_pack(1,Gy);
+   mypneb->t_pack(1,Gz);
+
+   mypneb->rrr_Sum(vxc,&vxc[(ispin-1)*n2ft3d],vxcG);
+
+   for (int ii=0; ii<(myion->nion); ++ii)
+   {
+      ia = myion->katm[ii];
+      if (semicore[ia])
+      {
+         /* put sqrt(core-density) at atom position */
+         mystrfac->strfac_pack(0,ii,exi);
+         mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
+         mypneb->tcc_iMul(0,Gx,tmp,tmpx);
+         mypneb->tcc_iMul(0,Gy,tmp,tmpy);
+         mypneb->tcc_iMul(0,Gz,tmp,tmpz);
+
+         /* Put put tmp,tmpx,tmpy,tmpz into real space */
+         mypneb->c_unpack(0,tmp);
+         mypneb->c_unpack(0,tmpx);
+         mypneb->c_unpack(0,tmpy);
+         mypneb->c_unpack(0,tmpz);
+         mypneb->cr_fft3d(tmp);
+         mypneb->cr_fft3d(tmpx);
+         mypneb->cr_fft3d(tmpy);
+         mypneb->cr_fft3d(tmpz);
+
+         mypneb->rr_Mul(tmp,tmpx);
+         mypneb->rr_Mul(tmp,tmpy);
+         mypneb->rr_Mul(tmp,tmpz);
+
+         fion[3*ii]   += scal1*scal2*mypneb->rr_dot(tmpx,vxcG);
+         fion[3*ii+1] += scal1*scal2*mypneb->rr_dot(tmpy,vxcG);
+         fion[3*ii+2] += scal1*scal2*mypneb->rr_dot(tmpz,vxcG);
+      }
+   }
+
+   mypneb->r_dealloc(tmp);
+   mypneb->r_dealloc(tmpx);
+   mypneb->r_dealloc(tmpy);
+   mypneb->r_dealloc(tmpz);
+   mypneb->r_dealloc(vxcG);
+   mypneb->c_pack_deallocate(exi);
+   delete [] Gx;
+   delete [] Gy;
+   delete [] Gz;
+
+}
 

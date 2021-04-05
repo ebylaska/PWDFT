@@ -62,6 +62,7 @@ public:
         void  	 rrr_Sum(const double *, const double *, double *);
         void  	 rr_Sum(const double *, double *);
         void  	 rrr_Mul(const double *, const double *, double *);
+        void  	 rr_Mul(const double *, double *);
         void  	 rrr_Minus(const double *, const double *, double *);
         void  	 rrr_Divide(const double *, const double *, double *);
         void  	 rr_daxpy(const double, const double *, double *);
