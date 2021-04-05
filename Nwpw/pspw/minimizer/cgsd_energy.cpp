@@ -167,7 +167,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
  *           cgsd_energy_gradient         *
  *                                        *
  ******************************************/
-double cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
+void cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
 {
    Parallel *parall = mymolecule.mygrid->d3db::parall;
 
@@ -176,5 +176,4 @@ double cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
    mymolecule.ewald_fion(grad_ion);
    mymolecule.semicore_force(grad_ion);
 }
-
 
