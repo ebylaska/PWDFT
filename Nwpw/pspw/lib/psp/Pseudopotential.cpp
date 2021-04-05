@@ -1542,17 +1542,16 @@ void Pseudopotential::f_local(double *dng, double *fion)
       mystrfac->strfac_pack(0,ii,exi);
       //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
       mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
-
       
-         double xx =  mypneb->cc_pack_dot(0,dng,dng);
-         double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+      double xx =  mypneb->cc_pack_dot(0,dng,dng);
+      double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
 
-         mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
-         double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+      mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+      double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
 
-         fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
-         fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
-         fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
+      fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
+      fion[3*ii+1] = mypneb->tt_pack_dot(0,Gy,xtmp);
+      fion[3*ii+2] = mypneb->tt_pack_dot(0,Gz,xtmp);
      
    }
    delete [] exi;

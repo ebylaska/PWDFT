@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
   if (oprint) std::cout << "First task=" << task << std::endl << std::endl;
   while (task>0)
   {
-     if (task==1)
+     if ((task==1) || (task==2))
      {
         std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
         int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }

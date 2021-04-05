@@ -4,6 +4,7 @@
 #include	<cmath>
 #include	<cstdlib>
 #include	<string>
+#include	<vector>
 using namespace std;
 
 #include        "util_linesearch.hpp"
@@ -308,7 +309,33 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    }
    if (myparallel.is_master()) seconds(&cpu3);
 
+   // write energy results to the json
+   auto rtdbjson =  json::parse(rtdbstring);
+   rtdbjson["pspw"]["energy"]   = EV;
+   rtdbjson["pspw"]["energies"] = mymolecule.E;
+   rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
+   /* calculation fion */
+   if (flag==2)
+   {
+      double *fion = new double[3*myion.nion]; 
+      cgsd_energy_gradient(mymolecule,fion);
+      if (myparallel.is_master())
+      {
+         std::cout << std::endl << " Ion Forces (au):" << std::endl;
+         for (ii=0; ii<myion.nion; ++ii)
+            printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
+                                                                fion[3*ii],
+                                                                fion[3*ii+1],
+                                                                fion[3*ii+2]);
+         std::cout << std::endl << std::endl;
+      }
+      rtdbjson["pspw"]["fion"] = std::vector<double>(fion,&fion[3*myion.nion]);
+      for (ii=0; ii<(3*myion.nion); ++ii) fion[ii] *= -1.0;
+      rtdbjson["pspw"]["gradient"] = std::vector<double>(fion,&fion[3*myion.nion]);
+
+      delete [] fion;
+   }
 
 
    /* write psi */
@@ -318,12 +345,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    gdevice_psi_dealloc();
 
 
-
-   // write results to the json
-   auto rtdbjson =  json::parse(rtdbstring);
-   rtdbjson["pspw"]["energy"]   = EV;
-   rtdbjson["pspw"]["energies"] = mymolecule.E;
-   rtdbjson["pspw"]["eigenvalues"] = mymolecule.eig_vector();
+   /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 

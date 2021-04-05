@@ -169,8 +169,6 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
  ******************************************/
 void cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
 {
-   Parallel *parall = mymolecule.mygrid->d3db::parall;
-
    mymolecule.psi_1local_force(grad_ion);
    mymolecule.psi_1nonlocal_force(grad_ion);
    mymolecule.ewald_fion(grad_ion);
