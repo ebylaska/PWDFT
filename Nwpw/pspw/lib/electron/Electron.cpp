@@ -451,6 +451,35 @@ void Electron_Operators::add_dteHpsi(double dte, double *psi1, double *psi2)
    mygrid->gg_Sum2(psi1,psi2);
 }
 
+/********************************************
+ *                                          *
+ *    Electron_Operators::semicore_force    *
+ *                                          *
+ ********************************************/
+void Electron_Operators::semicore_force(double *fion) 
+{
+   mypsp->semicore_xc_fion(xcp,fion);
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::vl_force        *
+ *                                          *
+ ********************************************/
+void Electron_Operators::vl_force(double *dng, double *fion) 
+{
+   mypsp->f_local(dng,fion);
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::vnl_force       *
+ *                                          *
+ ********************************************/
+void Electron_Operators::vnl_force(double *psi, double *fion) 
+{
+   mypsp->f_nonlocal_fion(psi,fion);
+}
 
 
 
