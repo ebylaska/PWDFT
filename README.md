@@ -40,10 +40,10 @@ qsub -I -n 1 -t 60 -q arcticus
 ```
 
 ## making shared library
-[2:17 PM] Bagusetty, Abhishek
-add_library(PWDFT SHARED nwpw.cpp)
+ [2:17 PM] Bagusetty, Abhishek
+ add_library(PWDFT SHARED nwpw.cpp)
 
-[2:18 PM] Bagusetty, Abhishek
-CMakeLists.txt (right after this lineadd_executable(pwdft nwpw.cpp))
+ [2:18 PM] Bagusetty, Abhishek
+ CMakeLists.txt (right after this lineadd_executable(pwdft nwpw.cpp))
 
 
