@@ -95,9 +95,9 @@ static void LSDT(double a, double a1, double b1, double b2, double b3, double b4
          - fdn(*,3): d(n*xce)/d|grad nup|, d(n*xce)/d|grad ndn|
                      d(n*xce)/d|grad n|
 */
-void gen_PBE96_BW_unrestricted(int n2ft3d,
+void gen_PBE96_BW_unrestricted(const int n2ft3d,
                                double *dn_in, double *agr_in,
-                               double  x_parameter,double c_parameter,
+                               const double x_parameter, const double c_parameter,
                                double *xce, double *fn, double *fdn)
 {
       
@@ -332,8 +332,6 @@ void gen_PBE96_BW_unrestricted(int n2ft3d,
    }
 }
       
-      
-
 
 
 
@@ -357,9 +355,9 @@ void gen_PBE96_BW_unrestricted(int n2ft3d,
              fdn(n2ft3d) : d(n*xce/d|grad n| 
 */
 
-void gen_PBE96_BW_restricted(int n2ft3d,
+void gen_PBE96_BW_restricted(const int n2ft3d,
                              double *rho_in, double *agr_in,
-                             double x_parameter,double c_parameter,
+                             const double x_parameter, const double c_parameter,
                              double *xce, double *fn, double *fdn)
 {
 
@@ -453,5 +451,125 @@ void gen_PBE96_BW_restricted(int n2ft3d,
       fdn[i] = x_parameter*fdnx + c_parameter*fdnc;
    }
 }
+
+
+
+
+/************************************
+ *                                  *
+ *      gen_PBE96_x_unrestricted    *
+ *                                  *
+ ************************************/
+/*
+     This function returns the PBE96 exchange
+   energy density, xe, and its derivatives with respect
+   to nup or ndn and |grad nup| or |grad ndn|.
+ 
+    Entry - dn_in  : spin densites nup or ndn
+            agr_in : |grad nup| or |grad ndn|
+ 
+    Exit - xe  : PBE96 energy density
+         - fn  : d(n*xe)/dnup or d(n*xe)/dndn
+         - fdn : d(n*xe)/d|grad nup| or d(n*xe)/d|grad ndn|
+*/
+
+void gen_PBE96_x_unrestricted(const double dn_in, const double agr_in,
+                              double *xe, double *fn, double *fdn)
+{
+   /* local variables */
+   double n,agr;
+   double kf,ks,s,P0,n_onethird;
+   double F;
+   double Fs;            // dF/ds
+   double ex,ex_lda;
+   double fnx,fdnx;      // d(n*ex)/dnup, d(n*ex)/dndn
+
+   double pi = 4.00*atan(1.00);
+   double fdnx_const = -3.00/(8.00*pi);
+
+   n     = dn_in;
+   agr   = agr_in;
+ 
+   /* calculate polarized Exchange energies and potentials */
+   n     = 2.00*n;
+   agr   = 2.00*agr;
+
+   n_onethird = pow((3.00*n/pi),onethird);
+   ex_lda     = -0.750*n_onethird;
+
+   kf = pow((3.00*pi*pi*n),onethird);
+   s  = agr/(2.00*kf*n);
+   P0 = 1.00 + (MU/KAPPA)*s*s;
+
+   F   = (1.00 + KAPPA - KAPPA/P0);
+   Fs  = 2.00*MU/(P0*P0)*s;
+
+   ex = ex_lda*F;
+   fnx = fourthird*(ex - ex_lda*Fs*s);
+   fdnx = fdnx_const*Fs;
+
+   *xe  = ex;
+   *fn  = fnx;  
+   *fdn = fdnx; 
+}
+
+/****************************************
+ *					*
+ *	    gen_PBE96_x_restricted	*
+ *					*
+ ****************************************/
+/*
+   This routine calculates the PBE96 exchange 
+   potential(xp) and energy density(xe).
+
+
+   Entry - rho_in : density (nup+ndn)
+           agr_in : |grad rho_in|
+
+     Exit  - xe  : PBE96 exchange energy density
+             fn  : d(n*xe)/dn
+             fdn : d(n*xe/d|grad n|
+*/
+
+void gen_PBE96_x_restricted(const double rho_in,const double agr_in,
+                            double *xe, double *fn, double *fdn)
+{
+   /* local variables */
+   double n,agr;
+   double kf,ks,s,P0,n_onethird;
+   double F,Fs;
+   double ex_lda;
+   double ex;
+   double fnx,fdnx;
+
+   double pi         = 4.00*atan(1.00);
+   double fdnx_const = -3.00/(8.00*pi);
+      
+   n     = rho_in;
+   agr   = agr_in;
+      
+   /* calculate unpolarized Exchange energies and potentials */
+   n_onethird = pow((3.00*n/pi),onethird);
+   ex_lda     = -0.750*n_onethird;
+
+   kf = pow((3.00*pi*pi*n),onethird);
+   s  = agr/(2.00*kf*n);
+   P0 = 1.00 + (MU/KAPPA)*s*s;
+
+   F   = (1.00 + KAPPA - KAPPA/P0);
+   Fs  = 2.00*MU/(P0*P0)*s;
+
+   ex   = ex_lda*F;
+   fnx  = fourthird*(ex - ex_lda*Fs*s);
+   fdnx = fdnx_const*Fs;
+
+   *xe  = ex;
+   *fn  = fnx;
+   *fdn = fdnx;
+}
+
+
+
+
 
 
