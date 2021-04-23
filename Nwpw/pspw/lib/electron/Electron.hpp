@@ -7,6 +7,7 @@ using namespace std;
 #include	"Pneb.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
+#include	"exchange_correlation.hpp"
 #include        "Strfac.hpp"
 #include	"Pseudopotential.hpp"
 
@@ -16,6 +17,7 @@ class	Electron_Operators {
 
    Kinetic_Operator *myke;
    Coulomb_Operator *mycoulomb;
+   XC_Operator      *myxc;
    Pseudopotential  *mypsp;
 
    double *Hpsi, *psi_r, *vl, *vall, *vc, *xcp, *xce, *x, *hmltmp;
@@ -28,7 +30,7 @@ public:
    int counter=0;
 
    /* Constructors */
-   Electron_Operators(Pneb *, Kinetic_Operator *, Coulomb_Operator *, Pseudopotential *);
+   Electron_Operators(Pneb *, Kinetic_Operator *, Coulomb_Operator *, XC_Operator *, Pseudopotential *);
 
    /* destructor */
    ~Electron_Operators() {

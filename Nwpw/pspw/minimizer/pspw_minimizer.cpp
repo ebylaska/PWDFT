@@ -148,7 +148,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
    /* initialize electron operators */
-   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &mypsp);
+   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);

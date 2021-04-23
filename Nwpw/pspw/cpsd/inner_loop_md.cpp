@@ -12,14 +12,16 @@ using namespace std;
 #include        "Ewald.hpp"
 #include        "Kinetic.hpp"
 #include        "Coulomb.hpp"
+#include        "exchange_correlation.hpp"
 #include        "Pseudopotential.hpp"
-#include	"v_exc.hpp"
+//#include	"v_exc.hpp"
 #include	"inner_loop_md.hpp"
 
 
 void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion, 
                 Kinetic_Operator *myke, 
                 Coulomb_Operator *mycoulomb, 
+                XC_Operator      *myxc, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
                 double *psi1, double *psi2, double *Hpsi, double *psi_r,
                 double *dn, double *hml,double *lmbda,
@@ -130,7 +132,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
       mycoulomb->vcoulomb(dng,vc);
 
       /* generate exchange-correlation potential */
-      v_exc(ispin,shift2,dnall,xcp,xce,x);
+      myxc->v_exc_all(ispin,dnall,xcp,xce);
 
       /* apply r-space operators */
      mygrid->cc_SMul(0,scal2,vl,vall);

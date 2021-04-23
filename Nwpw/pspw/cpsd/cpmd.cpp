@@ -18,6 +18,7 @@ using namespace std;
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
+#include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"inner_loop_md.hpp"
 #include	"psi.hpp"
@@ -125,10 +126,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
    Coulomb_Operator mycoulomb(&mygrid);
-
-   //Coulomb_Operator mycoul(mygrid);
-   //XC_Operator      myxc(mygrid);
-
+   XC_Operator      myxc(&mygrid,control);
    
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
@@ -270,7 +268,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    }
    verlet = false;
    inner_loop_md(verlet,control,&mygrid,&myion,
-                 &mykin,&mycoulomb,
+                 &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
@@ -283,7 +281,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    {
       ++icount;
       inner_loop_md(verlet,control,&mygrid,&myion,
-                 &mykin,&mycoulomb,
+                 &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,

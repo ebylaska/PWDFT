@@ -18,6 +18,7 @@ using namespace std;
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
+#include        "exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
@@ -153,13 +154,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
    Coulomb_Operator mycoulomb(&mygrid);
+   XC_Operator      myxc(&mygrid,control);
 
-   //Coulomb_Operator mycoul(mygrid);
-   //XC_Operator      myxc(mygrid);
-
-   //Pseudopotential constructor can now be written to generate formatted .vpp files
-   //psp_formatter_check(&myparallel,&mylattice,&myion,control);
-   
+   /* initialize psps */
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
    /* setup ewald */
@@ -201,8 +198,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          cout << "restricted\n";
       else
          cout << "unrestricted\n";
-      cout << "   exchange-correlation = ";
-         cout << "LDA (Vosko et al) parameterization\n";
+      cout << myxc;
+      //cout << "   exchange-correlation = ";
+      //cout << "LDA (Vosko et al) parameterization\n";
   
       cout << "\n elements involved in the cluster:\n";
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -293,7 +291,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    {
       ++icount;
       inner_loop(control,&mygrid,&myion,
-                 &mykin,&mycoulomb,
+                 &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,

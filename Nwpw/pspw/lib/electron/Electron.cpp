@@ -4,9 +4,10 @@
 #include	"Ion.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
+#include        "exchange_correlation.hpp"
 #include        "Strfac.hpp"
 #include	"Pseudopotential.hpp"
-#include        "v_exc.hpp"
+//#include        "v_exc.hpp"
 
 #include	"psi_H.hpp"
 
@@ -17,12 +18,13 @@
  *  Electron_Operators::Electron_Operators  *
  *                                          *
  ********************************************/
-Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, Coulomb_Operator *mycoulomb0,  Pseudopotential *mypsp0)
+Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, Coulomb_Operator *mycoulomb0, XC_Operator *myxc0,  Pseudopotential *mypsp0)
 {
    mygrid  = mygrid0;
    myke      = myke0;
    mycoulomb = mycoulomb0;
    mypsp     = mypsp0;
+   myxc      = myxc0;
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
@@ -129,7 +131,8 @@ void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dna
    mycoulomb->vcoulomb(dng,vc);
 
    /* generate exchange-correlation potential */
-   v_exc(ispin,shift2,dnall,xcp,xce,x);
+   myxc->v_exc_all(ispin,dnall,xcp,xce);
+   //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
 }
 
