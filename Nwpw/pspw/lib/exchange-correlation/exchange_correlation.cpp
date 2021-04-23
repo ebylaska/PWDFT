@@ -40,6 +40,7 @@
 
 
 #include	<algorithm>
+#include	"v_exc.hpp"
 #include	"exchange_correlation.hpp"
 
 /* Constructors */
@@ -81,8 +82,33 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2& control)
 
    if (xc_name.compare("hartree-fock") == 0) gga=200;
    if (xc_name.compare("hf")           == 0) gga=200;
+
+   use_lda  = false;
+   use_gga  = false;
+   use_mgga = false;
+   if (gga==0) {
+      use_lda = true;
+      xtmp = new double [mypneb->ispin*mypneb->n2ft3d];
+   }
+   if ((gga>=10) && (gga<100)) use_gga  = true;
+   if ((gga>=300))             use_mgga = true;
+
     
    //std::cout << "xc_name =" << xc_name << std::endl;
+}
+
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::v_exc_all           *
+ *                                         *
+ *******************************************/
+void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
+   if (use_lda) {
+      v_exc(ispin,mypneb->n2ft3d,dn,xcp,xce,xtmp);
+   } else if (use_gga) {
+   } else if (use_mgga) {
+   }
 }
 
 

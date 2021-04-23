@@ -10,6 +10,8 @@ class   XC_Operator {
 
    Pneb   *mypneb;
 
+   double *xtmp;
+
    string xc_name;
    int  gga;
    bool use_lda,use_gga,use_mgga;
@@ -22,7 +24,11 @@ public:
    /* destructor */
    ~XC_Operator() {
        //std::cout << "finishec XC_Operator" << std::endl;
+       if (use_lda) delete [] xtmp;
     }
+
+   void v_exc_all(int, double *, double *, double *);
+
 
    friend ostream& operator<<(ostream& os, const XC_Operator& xc) {
       os << "   exchange-correlation = ";
