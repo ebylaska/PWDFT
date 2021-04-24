@@ -119,15 +119,27 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
 
    }
 
-   /* hilbert mapping */
+   /* hilbert or hcurve  mapping */
    else
    {
       qmap[0] =  new int[ny*nz];       pmap[0] =  new int[ny*nz];
       qmap[1] =  new int[nz*(nx/2+1)]; pmap[1] =  new int[nz*(nx/2+1)];
       qmap[2] =  new int[(nx/2+1)*ny]; pmap[2] =  new int[(nx/2+1)*ny];
-      hilbert2d_map(ny,nz,pmap[0]);
-      hilbert2d_map(nz,(nx/2+1),pmap[1]);
-      hilbert2d_map((nx/2+1),ny,pmap[2]);
+
+      if (maptype==2)
+      {
+         hilbert2d_map(ny,nz,pmap[0]);
+         hilbert2d_map(nz,(nx/2+1),pmap[1]);
+         hilbert2d_map((nx/2+1),ny,pmap[2]);
+      }
+
+      if (maptype==3)
+      {
+         hcurve2d_map(ny,nz,pmap[0]);
+         hcurve2d_map(nz,(nx/2+1),pmap[1]);
+         hcurve2d_map((nx/2+1),ny,pmap[2]);
+      }
+
       nq1 = generate_map_indexes(taskid,np,ny,nz,      pmap[0],qmap[0]);
       nq2 = generate_map_indexes(taskid,np,nz,(nx/2+1),pmap[1],qmap[1]);
       nq3 = generate_map_indexes(taskid,np,(nx/2+1),ny,pmap[2],qmap[2]);
@@ -153,7 +165,7 @@ Mapping3::~Mapping3()
    }
    if (kmap) delete [] kmap;
 
-   if (maptype==2)
+   if ((maptype==2) || (maptype==3))
    {
         int *h_iq_to_i1[6],*h_iq_to_i2[6];
         int *h_i1_start[6],*h_i2_start[6];

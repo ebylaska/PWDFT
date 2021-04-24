@@ -171,8 +171,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << "\n";
       cout << " number of processors used: " << myparallel.np() << "\n";
       cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) cout << " parallel mapping         : slab"    << "\n";
-      if (mygrid.maptype==2) cout << " parallel mapping         : hilbert" << "\n";
+      if (mygrid.maptype==1) cout << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) cout << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) cout << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
          cout << " parallel mapping         : balanced" << "\n";
       else

@@ -625,6 +625,18 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          ss = mystring_split0(line);
          if (ss.size()>1) nwpwjson["mapping"] = std::stoi(ss[1]);
       }
+      else if (mystring_contains(line,"1d-slab"))
+      {
+         nwpwjson["mapping"] = 1;
+      }
+      else if (mystring_contains(line,"2d-hilbert"))
+      {
+         nwpwjson["mapping"] = 2;
+      } 
+      else if (mystring_contains(line,"2d-hcurve"))
+      {
+         nwpwjson["mapping"] = 3;
+      } 
       else if (mystring_contains(line,"np_dimensions"))
       {
          ss = mystring_split0(line);
