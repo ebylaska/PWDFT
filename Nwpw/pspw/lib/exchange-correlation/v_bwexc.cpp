@@ -3,6 +3,7 @@
 #include        "pbe96.hpp"
 #include        "blyp.hpp"
 #include        "revpbe.hpp"
+#include        "pbesol.hpp"
 
 #define dncut	1.0e-30
 
@@ -66,6 +67,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
             break;
          case 12 :
             gen_revPBE_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 13 :
+            gen_PBEsol_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
 
          default:
@@ -202,6 +206,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
             break;
          case 12 :
             gen_revPBE_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 13 :
+            gen_PBEsol_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
 
          default :
