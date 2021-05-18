@@ -873,7 +873,7 @@ void PGrid::tcc_iMul(const int nb, const double *a, const double *b, double *c)
 
 /********************************
  *                              *
- *         PGrid:tc_iMul       *
+ *         PGrid:tc_iMul        *
  *                              *
  ********************************/
 void PGrid::tc_iMul(const int nb, const double *a, double *c)
@@ -884,8 +884,8 @@ void PGrid::tc_iMul(const int nb, const double *a, double *c)
    ii = 0;
    for (i=0; i<ng; ++i)
    {
-      c[ii]   *= (-a[i]);
-      c[ii+1] *=  (a[i]);
+      c[ii]   = -c[ii+1]*a[i];
+      c[ii+1] =  c[ii]  *a[i];
       ii += 2;
    }
 }
