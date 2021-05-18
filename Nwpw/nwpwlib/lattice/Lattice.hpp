@@ -26,6 +26,7 @@ public:
    double wggcut() { return 2*pwcut; }
 
    double *unita_ptr() { return punita; } 
+   void abc_abg(double *, double *, double *, double *, double *, double *);
 };
 
 #endif
