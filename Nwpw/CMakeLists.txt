@@ -85,7 +85,7 @@ add_subdirectory(pspw)
 
 # create the pwdft executable
 add_executable(pwdft nwpw.cpp)
-#add_library(PWDFT SHARED nwpw.cpp)
+#add_library(pwdft SHARED nwpw.cpp)
 target_include_directories(pwdft PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
