@@ -72,8 +72,11 @@ void v_bwexc(const int gga, Pneb *mypneb,
          case 13 :
             gen_PBEsol_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
-         case 17 :
+         case 16 :
             gen_BEEF_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.6001664769,xce,fn,fdn);
+            break;
+         case 17 :
+            gen_BEEF_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.0,xce,fn,fdn);
             break;
 
          default:
@@ -214,8 +217,11 @@ void v_bwexc(const int gga, Pneb *mypneb,
          case 13 :
             gen_PBEsol_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
-         case 17 :
+         case 16 :
             gen_BEEF_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.6001664769,xce,fn,fdn);
+            break;
+         case 17 :
+            gen_BEEF_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.0,xce,fn,fdn);
             break;
 
 
