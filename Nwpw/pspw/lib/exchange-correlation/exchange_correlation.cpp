@@ -102,7 +102,7 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2& control)
 
            agr = new double [mypneb->n2ft3d];
            fn  = new double [mypneb->n2ft3d];
-           fdn = new double [2*mypneb->n2ft3d];
+           fdn = new double [mypneb->n2ft3d];
         } else {
            rho = new double [2*mypneb->n2ft3d];
 
