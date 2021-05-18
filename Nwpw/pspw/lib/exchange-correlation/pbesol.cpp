@@ -12,7 +12,7 @@
 #define alpha_zeta2	(1.0e0-ETA2)
 
 /* PBEsol GGA exchange constants */
-#define MU	0.2195149727645171e0
+//#define MU	0.2195149727645171e0
 #define MU	(10.00/81.00)
 #define KAPPA	0.8040000000000000e0
 
