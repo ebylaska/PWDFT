@@ -880,12 +880,15 @@ void PGrid::tc_iMul(const int nb, const double *a, double *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
+   double x,y;
 
    ii = 0;
    for (i=0; i<ng; ++i)
    {
-      c[ii]   = -c[ii+1]*a[i];
-      c[ii+1] =  c[ii]  *a[i];
+      x = c[ii]; y = c[ii+1];
+
+      c[ii]   = -y*a[i];
+      c[ii+1] =  x*a[i];
       ii += 2;
    }
 }
