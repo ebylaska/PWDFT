@@ -92,5 +92,159 @@ void v_bwexc(const int gga, Pneb *mypneb,
    ************************************/
    else 
    {
+      mypneb->r_nzero(3,agr);
+
+      double *rhoup = rho;
+      double *rhodn = rho + mypneb->n2ft3d;
+      double *grupx  = grx;
+      double *grupy  = gry;
+      double *grupz  = grz;
+      double *grdnx  = grx + mypneb->n2ft3d;;
+      double *grdny  = gry + mypneb->n2ft3d;;
+      double *grdnz  = grz + mypneb->n2ft3d;;
+      double *grallx = grx + 2*mypneb->n2ft3d;;
+      double *grally = gry + 2*mypneb->n2ft3d;;
+      double *grallz = grz + 2*mypneb->n2ft3d;;
+      double *agrup  = agr;
+      double *agrdn  = agr + mypneb->n2ft3d;
+      double *agrall = agr + 2*mypneb->n2ft3d;
+
+      //double *dnup = dn;
+      //double *dndn = dn + mypneb->n2ft3d;
+
+      double *xcpup = xcp;
+      double *xcpdn = xcp + mypneb->n2ft3d;
+
+      double *fnup = fn;
+      double *fndn = fn + mypneb->n2ft3d;;
+
+      double *fdnup  = fdn;
+      double *fdndn  = fdn + mypneb->n2ft3d;;
+      double *fdnall = fdn + 2*mypneb->n2ft3d;;
+
+      /* calculate rhoup  */
+      mypneb->rr_copy(dn,rhoup);
+      mypneb->rr_SMul(scal1,rhoup,rhog);
+      mypneb->rc_fft3d(rhog);
+      mypneb->c_pack(0,rhog);
+
+      /* calculate   grup= grad nup */
+      mypneb->tcc_iMul(0,Gx,rhog,grupx);
+      mypneb->tcc_iMul(0,Gy,rhog,grupy);
+      mypneb->tcc_iMul(0,Gz,rhog,grupz);
+      mypneb->c_unpack(0,grupx);
+      mypneb->c_unpack(0,grupy);
+      mypneb->c_unpack(0,grupz);
+      mypneb->cr_fft3d(grupx);
+      mypneb->cr_fft3d(grupy);
+      mypneb->cr_fft3d(grupz);
+
+      /* calculate agrup = |grad nup| */
+      mypneb->rr_sqr(grupx,agrup);
+      mypneb->rr_addsqr(grupy,agrup);
+      mypneb->rr_addsqr(grupz,agrup);
+      mypneb->r_sqrt(agrup);
+
+
+      /* calculate rhodn  */
+      mypneb->rr_copy(dn+mypneb->n2ft3d,rhodn);
+      mypneb->rr_SMul(scal1,rhodn,rhog);
+      mypneb->rc_fft3d(rhog);
+      mypneb->c_pack(0,rhog);
+
+      /* calculate   grdn= grad ndn */
+      mypneb->tcc_iMul(0,Gx,rhog,grdnx);
+      mypneb->tcc_iMul(0,Gy,rhog,grdny);
+      mypneb->tcc_iMul(0,Gz,rhog,grdnz);
+      mypneb->c_unpack(0,grdnx);
+      mypneb->c_unpack(0,grdny);
+      mypneb->c_unpack(0,grdnz);
+      mypneb->cr_fft3d(grdnx);
+      mypneb->cr_fft3d(grdny);
+      mypneb->cr_fft3d(grdnz);
+
+      /* calculate agrdn = |grad ndn| */
+      mypneb->rr_sqr(grdnx,agrdn);
+      mypneb->rr_addsqr(grdny,agrdn);
+      mypneb->rr_addsqr(grdnz,agrdn);
+      mypneb->r_sqrt(agrdn);
+
+      /* calculate agrall = |grad nup +grad ndn| */
+      mypneb->rrr_Sum(grupx,grdnx,grallx);
+      mypneb->rrr_Sum(grupy,grdny,grally);
+      mypneb->rrr_Sum(grupz,grdnz,grallz);
+      mypneb->rr_sqr(grallx,agrall);
+      mypneb->rr_addsqr(grally,agrall);
+      mypneb->rr_addsqr(grallz,agrall);
+      mypneb->r_sqrt(agrall);
+
+      gen_PBE96_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+
+     /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
+      **** calculate df/d|grad ndn|* (grad ndn)/|grad ndn|  ****
+      **** calculate df/d|grad n|  * (grad n)/|grad n|  ****/
+      mypneb->rr_Divide(agrup,grupx);
+      mypneb->rr_Divide(agrup,grupy);
+      mypneb->rr_Divide(agrup,grupz);
+      mypneb->rr_Divide(agrdn,grdnx);
+      mypneb->rr_Divide(agrdn,grdny);
+      mypneb->rr_Divide(agrdn,grdnz);
+      mypneb->rr_Divide(agrall,grallx);
+      mypneb->rr_Divide(agrall,grally);
+      mypneb->rr_Divide(agrall,grallz);
+
+      mypneb->rr_Mul(fdnup,grupx);
+      mypneb->rr_Mul(fdnup,grupy);
+      mypneb->rr_Mul(fdnup,grupz);
+      mypneb->rr_Mul(fdndn,grdnx);
+      mypneb->rr_Mul(fdndn,grdny);
+      mypneb->rr_Mul(fdndn,grdnz);
+      mypneb->rr_Mul(fdnall,grallx);
+      mypneb->rr_Mul(fdnall,grally);
+      mypneb->rr_Mul(fdnall,grallz);
+
+     /**** calculate (df/d|grad nup|* (grad nup)/|grad nup|)  ****
+      ****         + (df/d|grad n|  * (grad n)/|grad n|)      ****
+      **** calculate (df/d|grad ndn|* (grad ndn)/|grad ndn|)  ****
+      ****         + (df/d|grad n|  * (grad n)/|grad n|)      ****/
+      mypneb->rr_Sum(grallx,grupx);
+      mypneb->rr_Sum(grally,grupy);
+      mypneb->rr_Sum(grallz,grupz);
+      mypneb->rr_Sum(grallx,grdnx);
+      mypneb->rr_Sum(grally,grdny);
+      mypneb->rr_Sum(grallz,grdnz);
+
+      mypneb->r_SMul(scal1,grupx);
+      mypneb->r_SMul(scal1,grupy);
+      mypneb->r_SMul(scal1,grupz);
+      mypneb->r_SMul(scal1,grdnx);
+      mypneb->r_SMul(scal1,grdny);
+      mypneb->r_SMul(scal1,grdnz);
+
+      /* put sums by G-space */
+      mypneb->rc_fft3d(grupx);
+      mypneb->rc_fft3d(grupy);
+      mypneb->rc_fft3d(grupz);
+      mypneb->rc_fft3d(grdnx);
+      mypneb->rc_fft3d(grdny);
+      mypneb->rc_fft3d(grdnz);
+
+      /* multiply sums by G vector */
+      mypneb->tc_iMul(0,Gx,grupx);
+      mypneb->tc_iMul(0,Gy,grupy);
+      mypneb->tc_iMul(0,Gz,grupz);
+      mypneb->tc_iMul(0,Gx,grdnx);
+      mypneb->tc_iMul(0,Gy,grdny);
+      mypneb->tc_iMul(0,Gz,grdnz);
+
+      /* addup dot products */
+      mypneb->cccc_Sum(0,grupx,grupy,grupz,fdnup);
+      mypneb->cccc_Sum(0,grdnx,grdny,grdnz,fdndn);
+
+      /* put back in r-space and subtract from df/dnup,df/dndn */
+      mypneb->cr_fft3d(fdnup);
+      mypneb->cr_fft3d(fdndn);
+      mypneb->rrr_Minus(fnup,fdnup,xcpup);
+      mypneb->rrr_Minus(fndn,fdndn,xcpdn);
    }
 }
