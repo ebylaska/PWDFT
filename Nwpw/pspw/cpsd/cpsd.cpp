@@ -306,7 +306,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       if ((deltae>0.0)&&(icount>1))
       {
          done = 1;
-         cout << "         *** Energy going up. iteration terminated\n";
+         if (myparallel.is_master())
+            cout << "         *** Energy going up. iteration terminated\n";
       }
       else if ((fabs(deltae)<control.tolerances(0)) &&
                (deltac      <control.tolerances(1)) &&

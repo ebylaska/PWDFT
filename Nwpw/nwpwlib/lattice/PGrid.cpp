@@ -838,7 +838,7 @@ void PGrid::tc_pack_copy(const int nb, double *a, double *b)
  *         PGrid:tcc_Mul        *
  *                              *
  ********************************/
-void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_Mul(const int nb, const double *a, const double *b, double *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -857,7 +857,7 @@ void PGrid::tcc_Mul(const int nb, double *a, double *b, double *c)
  *         PGrid:ttc_iMul       *
  *                              *
  ********************************/
-void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_iMul(const int nb, const double *a, const double *b, double *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -873,10 +873,31 @@ void PGrid::tcc_iMul(const int nb, double *a, double *b, double *c)
 
 /********************************
  *                              *
+ *         PGrid:tc_iMul       *
+ *                              *
+ ********************************/
+void PGrid::tc_iMul(const int nb, const double *a, double *c)
+{
+   int i,ii;
+   int ng  = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   *= (-a[i]);
+      c[ii+1] *=  (a[i]);
+      ii += 2;
+   }
+}
+
+
+
+/********************************
+ *                              *
  *       PGrid:ttc_MulSum2      *
  *                              *
  ********************************/
-void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
+void PGrid::tcc_MulSum2(const int nb, const double *a, const double *b, double *c)
 {
    int i,ii;
    int ng  = nida[nb]+nidb[nb];
@@ -896,13 +917,30 @@ void PGrid::tcc_MulSum2(const int nb, double *a, double *b, double *c)
  *         PGrid:cc_Sum2        *
  *                              *
  ********************************/
-void PGrid::cc_Sum2(const int nb, double *a, double *b)
+void PGrid::cc_Sum2(const int nb, const double *a, double *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
 
    for (i=0; i<ng; ++i) b[i] += a[i];
 }
+
+/********************************
+ *                              *
+ *         PGrid:cccc_Sum       *
+ *                              *
+ ********************************/
+void PGrid::cccc_Sum(const int nb, const double *a, const double *b, const double *c, double *d)
+{
+   int i;
+   int ng  = 2*(nida[nb]+nidb[nb]);
+
+   for (i=0; i<ng; ++i) d[i] = (a[i]+b[i]+c[i]);
+}
+
+
+
+
 
 /********************************
  *                              *
@@ -922,7 +960,7 @@ void PGrid::c_zero(const int nb, double *b)
  *         PGrid:c_SMul         *
  *                              *
  ********************************/
-void PGrid::c_SMul(const int nb, double alpha, double *b)
+void PGrid::c_SMul(const int nb, const double alpha, double *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -935,7 +973,7 @@ void PGrid::c_SMul(const int nb, double alpha, double *b)
  *         PGrid:cc_SMul        *
  *                              *
  ********************************/
-void PGrid::cc_SMul(const int nb, double alpha, double *a, double *b)
+void PGrid::cc_SMul(const int nb, const double alpha, const double *a, double *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);
@@ -948,7 +986,7 @@ void PGrid::cc_SMul(const int nb, double alpha, double *a, double *b)
  *         PGrid:cc_daxpy       *
  *                              *
  ********************************/
-void PGrid::cc_daxpy(const int nb, double alpha, double *a, double *b)
+void PGrid::cc_daxpy(const int nb, const double alpha, const double *a, double *b)
 {
    int i;
    int ng  = 2*(nida[nb]+nidb[nb]);

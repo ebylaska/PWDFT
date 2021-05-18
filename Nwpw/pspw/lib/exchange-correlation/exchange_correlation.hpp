@@ -11,6 +11,7 @@ class   XC_Operator {
    Pneb   *mypneb;
 
    double *xtmp;
+   double *rho,*grx,*gry,*grz,*agr,*fn,*fdn;
 
    string xc_name;
    int  gga;
@@ -25,6 +26,15 @@ public:
    ~XC_Operator() {
        //std::cout << "finishec XC_Operator" << std::endl;
        if (use_lda) delete [] xtmp;
+       if (use_gga) {
+          delete [] rho;
+          delete [] grx;
+          delete [] gry;
+          delete [] grz;
+          delete [] agr;
+          delete [] fn;
+          delete [] fdn;
+       }
     }
 
    void v_exc_all(int, double *, double *, double *);

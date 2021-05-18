@@ -58,13 +58,22 @@ public:
         double	 rr_dot(const double *, const double *);
         void  	 r_zero_ends(double *);
         void  	 r_abs(double *);
+
         void     r_sqr(double *);
+        void     rr_sqr(const double *, double *);
+        void     rr_addsqr(const double *, double *);
+        void     r_sqrt(double *);
+
         void  	 rrr_Sum(const double *, const double *, double *);
         void  	 rr_Sum(const double *, double *);
         void  	 rrr_Mul(const double *, const double *, double *);
         void  	 rr_Mul(const double *, double *);
         void  	 rrr_Minus(const double *, const double *, double *);
+        void  	 rr_Minus(const double *, double *);
+
+        void  	 rr_Divide(const double *, double *);
         void  	 rrr_Divide(const double *, const double *, double *);
+
         void  	 rr_daxpy(const double, const double *, double *);
         //void  	 r_read(const int, const int, double *);
 	void     c_read(const int, double *, const int);
