@@ -3,7 +3,8 @@
 
 #include        "Pneb.hpp"
 
-extern void v_bwexc(const int, Pneb *, double *, double *, double *, 
+extern void v_bwexc(const int, Pneb *, const double *, const double, const double,
+                    double *, double *, 
                     double *, double *, double *, double *,
                     double *, double *, double *);
 

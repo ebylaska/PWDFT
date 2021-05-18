@@ -41,6 +41,7 @@
 
 #include	<algorithm>
 #include	"v_exc.hpp"
+#include	"v_bwexc.hpp"
 #include	"exchange_correlation.hpp"
 
 /* Constructors */
@@ -130,8 +131,9 @@ void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
    if (use_lda) {
       v_exc(ispin,mypneb->n2ft3d,dn,xcp,xce,xtmp);
    } else if (use_gga) {
-      v_bwexc(gga,mypneb,rho,xcp,xce,
-               rho,grx,gry,grz,agr,fn,fdn)
+      v_bwexc(gga,mypneb,dn,1.0,1.0,
+              xcp,xce,
+              rho,grx,gry,grz,agr,fn,fdn);
    } else if (use_mgga) {
    }
 }

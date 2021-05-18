@@ -1281,6 +1281,78 @@ void d3db::r_sqr(double *ptr2)
    }
 }
 
+/********************************
+ *                              *
+ *          d3db::rr_sqr        *
+ *                              *
+ ********************************/
+void d3db::rr_sqr(const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = ptr2[i]*ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   = ptr2[i]  *ptr2[i];
+      ptr3[i+1] = ptr2[i+1]*ptr2[i+1];
+      ptr3[i+2] = ptr2[i+2]*ptr2[i+2];
+      ptr3[i+3] = ptr2[i+3]*ptr2[i+3];
+      ptr3[i+4] = ptr2[i+4]*ptr2[i+4];
+   }
+}
+
+/********************************
+ *                              *
+ *        d3db::rr_addsqr       *
+ *                              *
+ ********************************/
+void d3db::rr_addsqr(const double *ptr2, double *ptr3)
+{  
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] += ptr2[i]*ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {  
+      ptr3[i]   += ptr2[i]  *ptr2[i];
+      ptr3[i+1] += ptr2[i+1]*ptr2[i+1];
+      ptr3[i+2] += ptr2[i+2]*ptr2[i+2];
+      ptr3[i+3] += ptr2[i+3]*ptr2[i+3];
+      ptr3[i+4] += ptr2[i+4]*ptr2[i+4];
+   }
+}
+
+/********************************
+ *                              *
+ *          d3db::r_sqrt        *
+ *                              *
+ ********************************/
+void d3db::r_sqrt(double *ptr2)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] = sqrt(ptr2[i]);
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr2[i]   = sqrt(ptr2[i]);
+      ptr2[i+1] = sqrt(ptr2[i+1]);
+      ptr2[i+2] = sqrt(ptr2[i+2]);
+      ptr2[i+3] = sqrt(ptr2[i+3]);
+      ptr2[i+4] = sqrt(ptr2[i+4]);
+   }
+}
+
 
 /********************************
  *                              *
@@ -1356,6 +1428,54 @@ void d3db::rr_Sum(const double *ptr2, double *ptr3)
    }
 }
 
+/********************************
+ *                              *
+ *         d3db::rrr_Minus      *
+ *                              *
+ ********************************/
+void d3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
+{  
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = ptr1[i] - ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {  
+      ptr3[i]   = ptr1[i]   - ptr2[i];
+      ptr3[i+1] = ptr1[i+1] - ptr2[i+1];
+      ptr3[i+2] = ptr1[i+2] - ptr2[i+2];
+      ptr3[i+3] = ptr1[i+3] - ptr2[i+3];
+      ptr3[i+4] = ptr1[i+4] - ptr2[i+4];
+   }
+}
+
+
+/********************************
+ *                              *
+ *         d3db::rr_Minus       *
+ *                              *
+ ********************************/
+void d3db::rr_Minus(const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] -= ptr2[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   -= ptr2[i];
+      ptr3[i+1] -= ptr2[i+1];
+      ptr3[i+2] -= ptr2[i+2];
+      ptr3[i+3] -= ptr2[i+3];
+      ptr3[i+4] -= ptr2[i+4];
+   }
+}
 
 
 /********************************
@@ -1385,7 +1505,7 @@ void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
 
 /********************************
  *                              *
- *         d3db::rr_Mul        *
+ *         d3db::rr_Mul         *
  *                              *
  ********************************/
 void d3db::rr_Mul(const double *ptr1, double *ptr3)
@@ -1407,6 +1527,61 @@ void d3db::rr_Mul(const double *ptr1, double *ptr3)
    }
    return;
 }
+
+
+
+/********************************
+ *                              *
+ *         d3db::rrr_Divide     *
+ *                              *
+ ********************************/
+#define ETA_DIV	1.0e-9
+void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr3[i]   = (std::abs(ptr2[i])>ETA_DIV)   ? (ptr1[i]   / ptr2[i])   : (0.0);
+      ptr3[i+1] = (std::abs(ptr2[i+1])>ETA_DIV) ? (ptr1[i+1] / ptr2[i+1]) : (0.0);
+      ptr3[i+2] = (std::abs(ptr2[i+2])>ETA_DIV) ? (ptr1[i+2] / ptr2[i+2]) : (0.0);
+      ptr3[i+3] = (std::abs(ptr2[i+3])>ETA_DIV) ? (ptr1[i+3] / ptr2[i+3]) : (0.0);
+      ptr3[i+4] = (std::abs(ptr2[i+4])>ETA_DIV) ? (ptr1[i+4] / ptr2[i+4]) : (0.0);
+   }
+   return;
+}
+
+/********************************
+ *                              *
+ *         d3db::rr_Divide      *
+ *                              *
+ ********************************/
+void d3db::rr_Divide(const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {  
+      ptr3[i]   = (std::abs(ptr2[i])>ETA_DIV)   ? (ptr3[i]   / ptr2[i])   : (0.0);
+      ptr3[i+1] = (std::abs(ptr2[i+1])>ETA_DIV) ? (ptr3[i+1] / ptr2[i+1]) : (0.0);
+      ptr3[i+2] = (std::abs(ptr2[i+2])>ETA_DIV) ? (ptr3[i+2] / ptr2[i+2]) : (0.0);
+      ptr3[i+3] = (std::abs(ptr2[i+3])>ETA_DIV) ? (ptr3[i+3] / ptr2[i+3]) : (0.0);
+      ptr3[i+4] = (std::abs(ptr2[i+4])>ETA_DIV) ? (ptr3[i+4] / ptr2[i+4]) : (0.0);
+   }
+   return;
+}
+
+
 
 
 

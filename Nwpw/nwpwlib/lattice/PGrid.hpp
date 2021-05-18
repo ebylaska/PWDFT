@@ -108,14 +108,18 @@ public:
 
         void tc_pack_copy( const int, double *, double *);
 
-        void tcc_Mul( const int, double *, double *, double *);
-        void tcc_iMul(const int, double *, double *, double *);
-        void tcc_MulSum2( const int, double *, double *, double *);
-        void cc_Sum2(const int, double *, double *);
+        void tcc_Mul( const int, const double *, const double *, double *);
+        void tcc_iMul(const int, const double *, const double *, double *);
+        void tc_iMul(const int, const double *, double *);
+
+        void tcc_MulSum2(const int, const double *, const double *, double *);
+        void cc_Sum2(const int, const double *, double *);
+        void cccc_Sum(const int, const double *, const double *, const double *, double *);
+
         void c_zero(const int, double *);
-        void c_SMul(const int, double, double *);
-        void cc_SMul(const int, double, double *, double *);
-        void cc_daxpy(const int, double, double *, double *);
+        void c_SMul(const int, const double, double *);
+        void cc_SMul(const int, const double, const double *, double *);
+        void cc_daxpy(const int, const double, const double *, double *);
         void cct_iconjgMul(const int, const double *, const double *, double *);
         void cct_iconjgMulb(const int, const double *, const double *, double *);
 
