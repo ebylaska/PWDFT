@@ -6,6 +6,7 @@
 #include        "pbesol.hpp"
 #include        "beef_gga.hpp"
 #include        "hsepbe.hpp"
+#include        "b3lyp.hpp"
 
 #define dncut	1.0e-30
 
@@ -75,6 +76,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
             break;
          case 14 :
             gen_HSE_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 15 :
+            gen_B3LYP_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
          case 16 :
             gen_BEEF_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.6001664769,xce,fn,fdn);
@@ -223,6 +227,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
             break;
          case 14 :
             gen_HSE_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 15 :
+            gen_B3LYP_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
             break;
          case 16 :
             gen_BEEF_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,0.6001664769,xce,fn,fdn);
