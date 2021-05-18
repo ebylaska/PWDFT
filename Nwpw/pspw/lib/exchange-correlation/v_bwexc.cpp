@@ -56,7 +56,16 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->rr_addsqr(grz,agr);
       mypneb->r_sqrt(agr);
 
-      gen_PBE96_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+      switch (gga) {
+         case 10 :
+            gen_PBE96_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 11 :
+            gen_BLYP_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         default:
+            gen_PBE96_BW_restricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+      }
 
       /* calculate df/d|grad n| *(grad n)/|grad n| */
       mypneb->rr_Divide(agr,grx);
@@ -83,6 +92,7 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->tc_iMul(0,Gz,grz);
 
       mypneb->cccc_Sum(0,grx,gry,grz,fdn);
+      mypneb->c_unpack(0,fdn);
       mypneb->cr_fft3d(fdn);
       mypneb->rrr_Minus(fn,fdn,xcp);
    } 
@@ -178,7 +188,17 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->rr_addsqr(grallz,agrall);
       mypneb->r_sqrt(agrall);
 
-      gen_PBE96_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+      switch (gga) {
+         case 10 :
+            gen_PBE96_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+         case 11 :
+            gen_BLYP_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+            break;
+
+         default :
+            gen_PBE96_BW_unrestricted(mypneb->n2ft3d,rho,agr,x_parameter,c_parameter,xce,fn,fdn);
+      }
 
      /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
       **** calculate df/d|grad ndn|* (grad ndn)/|grad ndn|  ****
@@ -229,6 +249,13 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->rc_fft3d(grdny);
       mypneb->rc_fft3d(grdnz);
 
+      mypneb->c_pack(0,grupx);
+      mypneb->c_pack(0,grupy);
+      mypneb->c_pack(0,grupz);
+      mypneb->c_pack(0,grdnx);
+      mypneb->c_pack(0,grdny);
+      mypneb->c_pack(0,grdnz);
+
       /* multiply sums by G vector */
       mypneb->tc_iMul(0,Gx,grupx);
       mypneb->tc_iMul(0,Gy,grupy);
@@ -242,6 +269,8 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->cccc_Sum(0,grdnx,grdny,grdnz,fdndn);
 
       /* put back in r-space and subtract from df/dnup,df/dndn */
+      mypneb->c_unpack(0,fdnup);
+      mypneb->c_unpack(0,fdndn);
       mypneb->cr_fft3d(fdnup);
       mypneb->cr_fft3d(fdndn);
       mypneb->rrr_Minus(fnup,fdnup,xcpup);
