@@ -4,14 +4,16 @@ PW-DFT development for NWChemEx
 # CMAKE - Generate a Project Buildsystem
 ```
 cmake -S Nwpw/ -B build
+cd build
+make
 
 Alternatively you can build :
 mkdir build
 cd build
 cmake ../Nwpw
+make
 
-
-
+```
 
 cmake [<options>] -S <path-to-source> -B <path-to-build>
 $ cmake -S src -B build 
@@ -19,7 +21,6 @@ $ cmake -S src -B build
 cmake [<options>] <path-to-existing-build>
 $ cd build
 $ cmake .
-```
 
 # Build instructions on JLSE
 
