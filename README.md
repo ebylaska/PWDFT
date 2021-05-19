@@ -15,6 +15,7 @@ make
 
 ```
 
+Standard cmake build commands
 ```
 cmake [<options>] <path-to-source>
 $ mkdir build ; cd build
