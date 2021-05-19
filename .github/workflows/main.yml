@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        mpi: [openmpi,mpich]
+        mpi: [openmpi]
         os: [ubuntu-18.04, macos-latest]
         include:
         - os: ubuntu-18.04
