@@ -34,10 +34,10 @@ jobs:
           install-mpi: sudo apt install -y openmpi-bin libopenmpi-dev
         - os: macos-latest
           mpi: mpich
-          install-mpi: brew install --cask gfortran &&  brew install mpich
+          install-mpi: brew install gcc9 &&  brew install mpich
         - os: macos-latest
           mpi: openmpi
-          install-mpi: brew install --cask gfortran &&  brew install openmpi
+          install-mpi: brew install gcc9 &&  brew install openmpi
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
