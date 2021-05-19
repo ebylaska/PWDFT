@@ -180,7 +180,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          cout << " parallel mapping         : not balanced" << "\n";
 
       cout << "\n options:\n";
-      cout << "   ion motion           = ";
+      cout << "   geometry optimize    = ";
       if (control.geometry_optimize())
          cout << "yes\n";
       else

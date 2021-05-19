@@ -83,12 +83,19 @@ configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nw
 add_subdirectory(nwpwlib)
 add_subdirectory(pspw)
 
-# create the pwdft executable
-add_executable(pwdft nwpw.cpp)
-#add_library(pwdft SHARED nwpw.cpp)
-target_include_directories(pwdft PUBLIC
-                           "${PROJECT_BINARY_DIR}"
-                           )
+
+if(MAKE_LIBRARY)
+   # create the pwdftlib shared library
+   message("-- Creating pwdft shared library!")
+   add_library(pwdft SHARED nwpw.cpp)
+   target_include_directories(pwdft PUBLIC "${PROJECT_BINARY_DIR}")
+else()
+   # create the pwdft executable
+   message("-- Creating pwdft executable!")
+   add_executable(pwdft nwpw.cpp)
+   target_include_directories(pwdft PUBLIC "${PROJECT_BINARY_DIR}")
+endif()
+
 if(OpenCL_FOUND)
    target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} ${OpenCL_LIBRARY})
 else()
