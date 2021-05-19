@@ -51,7 +51,7 @@ make -j4
 qsub -I -n 1 -t 60 -q arcticus
 ```
 
-## making shared library
+## Making shared library
 ```
 To generate a library clean the build directory and then regenerate cmake with
 
