@@ -4,14 +4,25 @@ PW-DFT development for NWChemEx
 # CMAKE - Generate a Project Buildsystem
 ```
 cmake -S Nwpw/ -B build
+cd build
+make
 
+Alternatively you can build :
+mkdir build
+cd build
+cmake ../Nwpw
+make
+
+```
+
+Standard cmake build commands
+```
 cmake [<options>] <path-to-source>
 $ mkdir build ; cd build
 $ cmake ../src
-
+ 
 cmake [<options>] -S <path-to-source> -B <path-to-build>
-$ cmake -S src -B build
-
+$ cmake -S src -B build 
 
 cmake [<options>] <path-to-existing-build>
 $ cd build
@@ -40,11 +51,17 @@ make -j4
 qsub -I -n 1 -t 60 -q arcticus
 ```
 
-## making shared library
+## Making shared library
+```
+To generate a library clean the build directory and then regenerate cmake with
+
+cmake ../Nwpw -DMAKE_LIBRARY=true
+```
+
  [2:17 PM] Bagusetty, Abhishek
- add_library(PWDFT SHARED nwpw.cpp)
+ add_library(pwdft SHARED nwpw.cpp)
 
  [2:18 PM] Bagusetty, Abhishek
- CMakeLists.txt (right after this lineadd_executable(pwdft nwpw.cpp))
+ CMakeLists.txt (right after this line add_executable(pwdft nwpw.cpp))
 
 
