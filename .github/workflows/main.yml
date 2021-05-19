@@ -19,7 +19,25 @@ jobs:
   build:
     # The type of runner that the job will run on
     #runs-on: ubuntu-latest
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        mpi: [mpich,openmpi]
+        os: [ubuntu-18.04, macos-10.15]
+        include:
+        - os: ubuntu-18.04
+          mpi: mpich
+          install-mpi: sudo apt install -y mpich libmpich-dev
+        - os: ubuntu-18.04
+          mpi: openmpi
+          install-mpi: sudo apt install -y openmpi-bin libopenmpi-dev
+        - os: macos-10.15
+          mpi: mpich
+          install-mpi: brew install mpich
+        - os: macos-10.15
+          mpi: openmpi
+          install-mpi: brew install openmpi
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -30,9 +48,9 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
          
-      # install openmpi
-      - name: install ubuntu mpi
-        run: sudo apt-get install openmpi-bin openmpi-common openmpi-doc libopenmpi2 libopenmpi-dev
+      # Install openmpi
+      - name: Install MPI
+        run: ${{ matrix.install-mpi }}
         
       # Runs a configure
       - name: configure
