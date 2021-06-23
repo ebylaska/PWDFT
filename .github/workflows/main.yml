@@ -34,7 +34,7 @@ jobs:
           install-mpi: sudo apt install -y openmpi-bin libopenmpi-dev
         - os: macos-latest
           mpi: openmpi
-          install-mpi: brew install gfortran &&  brew install openmpi
+          install-mpi: brew update && brew upgrade && brew install gfortran &&  brew install openmpi
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
