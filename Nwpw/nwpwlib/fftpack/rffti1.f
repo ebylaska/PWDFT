@@ -1,6 +1,8 @@
       subroutine rffti1 (n,wa,ifac)
-      dimension       wa(*)      ,ifac(*)    ,ntryh(4)
-      data ntryh(1),ntryh(2),ntryh(3),ntryh(4)/4,2,3,5/
+      real*4 wa(1), arg, argh, argld, fi, tpi
+      integer ifac(*), ntryh(4)
+      data ntryh(1), ntryh(2), ntryh(3), ntryh(4) /4, 2, 3, 5/
+      
       nl = n
       nf = 0
       j = 0
