@@ -51,7 +51,7 @@ jobs:
         
       # Runs a configure
       - name: configure
-        run: mkdir build && cd build && cmake ../Nwpw
+        run: FC=gfortran && mkdir build && cd build && cmake ../Nwpw
 
       # Compiling the code
       - name: builder
