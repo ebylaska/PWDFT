@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-11]
+        os: [ubuntu-18.04, macos-latest]
         mpi: [openmpi]
         include:
         - os: ubuntu-18.04
@@ -32,7 +32,7 @@ jobs:
         - os: ubuntu-18.04
           mpi: openmpi
           install-mpi: sudo apt install -y openmpi-bin libopenmpi-dev
-        - os: macos-11
+        - os: macos-latest
           mpi: openmpi
           install-mpi: brew install gfortran &&  brew install openmpi
 
