@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15]
+        os: [ubuntu-18.04, macos-11]
         mpi: [openmpi]
         include:
         - os: ubuntu-18.04
@@ -32,9 +32,9 @@ jobs:
         - os: ubuntu-18.04
           mpi: openmpi
           install-mpi: sudo apt install -y openmpi-bin libopenmpi-dev
-        - os: macos-10.15
+        - os: macos-11
           mpi: openmpi
-          install-mpi: brew install gfortran &&  brew install openmpi && export FC=gfortran
+          install-mpi: brew install gfortran &&  brew install openmpi
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -51,7 +51,7 @@ jobs:
         
       # Runs a configure
       - name: configure
-        run: FC=gfortran && mkdir build && cd build && cmake ../Nwpw
+        run: mkdir build && cd build && cmake ../Nwpw
 
       # Compiling the code
       - name: builder
