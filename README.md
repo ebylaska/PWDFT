@@ -63,6 +63,9 @@ module load cudatoolkit
 
 ## Build Instructions
 
+cmake -DNWPW_CUDA=ON ../Nwpw/
+
+
 ## Running on Cori
 
 
