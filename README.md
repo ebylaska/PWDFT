@@ -65,3 +65,5 @@ cmake ../Nwpw -DMAKE_LIBRARY=true
  CMakeLists.txt (right after this line add_executable(pwdft nwpw.cpp))
 
 
+# Build instructions on NERSC Cori
+
