@@ -58,6 +58,7 @@ qsub -I -n 1 -t 60 -q arcticus
 ```
 module load PrgEnv-intel
 module load cmake
+module load cudatoolkit
 ```
 
 ## Build Instructions
