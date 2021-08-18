@@ -1,20 +1,12 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
-
 #ifdef NWPW_SYCL
-
 #include "gdevices_sycl.h"
-
 #elif defined NWPW_CUDA
-
 #include        "gdevices_cuda.h"
-
-
 #elif defined NWPW_OPENCL
-
 #include        "gdevices_opencl.h"
-
 
 #else
 /* standard host code */
@@ -61,7 +53,6 @@ public:
 
 
 };
-
 
 #endif
 #endif
