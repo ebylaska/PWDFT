@@ -55,8 +55,10 @@ qsub -I -n 1 -t 60 -q arcticus
 # Build instructions on NERSC Cori
 
 ## Required Modules
+```
 module load PrgEnv-intel
 module load cmake
+```
 
 ## Build Instructions
 
