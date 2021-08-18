@@ -51,22 +51,22 @@ make -j4
 qsub -I -n 1 -t 60 -q arcticus
 ```
 
-## Making shared library
+
+# Build instructions on NERSC Cori
+## Required Modules
+## Build Instructions
+## Running on Cori
+
+
+
+# Making shared library
 ```
 To generate a library clean the build directory and then regenerate cmake with
 
 cmake ../Nwpw -DMAKE_LIBRARY=true
 ```
-
  [2:17 PM] Bagusetty, Abhishek
  add_library(pwdft SHARED nwpw.cpp)
 
  [2:18 PM] Bagusetty, Abhishek
  CMakeLists.txt (right after this line add_executable(pwdft nwpw.cpp))
-
-
-
-# Build instructions on NERSC Cori
-## Required Modules
-## Build Instructions
-## Making shared library
