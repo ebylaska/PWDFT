@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(PWDFT VERSION 1.0)
 option( NWPW_SYCL "Enable SYCL Bindings" OFF )
+option( NWPW_CUDA "Enable CUDA Bindings" OFF )
 option( NWPW_OPENCL "Enable OpenCL Bindings" OFF )
 option( NWPW_OPENMP "Enable OpenMP Bindings" OFF )
 option( NWPW_SYCL_ENABLE_PROFILE "Enable SYCL Queue Profiling Bindings" OFF )
@@ -27,13 +28,19 @@ if(NWPW_SYCL)
    message("-- Using NWPW_SYCL")
   add_definitions(-DNWPW_SYCL=1)
   #SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs \'-device skl\' ")
-  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device skl\'")
+  #SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device skl\'")
+  SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=2020 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device xehp'")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
   
   if( NWPW_SYCL_ENABLE_PROFILE )
     add_definitions(-DNWPW_SYCL_ENABLE_PROFILE=1)
   endif(NWPW_SYCL_ENABLE_PROFILE)
 endif(NWPW_SYCL)
+
+if(NWPW_CUDA)
+   enable_language(CUDA)
+endif(NWPW_CUDA)
+
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
