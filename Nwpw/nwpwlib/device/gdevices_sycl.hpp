@@ -7,6 +7,8 @@
 #include        "blas.h"
 
 /* can place sycl mkl code here */
+#include        <vector>
+#include        <cassert>
 #include        <cstdio>
 #include        <iostream>
 #include        <limits>

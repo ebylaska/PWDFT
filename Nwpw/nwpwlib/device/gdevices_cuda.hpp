@@ -9,6 +9,8 @@
 #include        <cublas_v2.h>
 #include        <cufft.h>
 
+#include        <vector>
+#include        <cassert>
 #include        <cstdio>
 #include        <iostream>
 #include        <limits>
@@ -21,6 +23,7 @@ class Gdevices {
     cufftHandle forward_plan_x, forward_plan_y, forward_plan_z = 0;
     cufftHandle backward_plan_x, backward_plan_y, backward_plan_z = 0;
 
+    cublasHandle_t master_handle = 0;
     cublasOperation_t matT = CUBLAS_OP_T;
     cublasOperation_t matN = CUBLAS_OP_N;
 
@@ -52,11 +55,15 @@ public:
     Gdevices() {
       std::cout << "calling gdevices constructor" << std::endl;
       ndev_mem = 0;
+
+      cublasCreate(&master_handle);
     }
 
     /* deconstructor */
     ~Gdevices() {
        std::cout << "calling gdevices destructor" << std::endl;
+
+       cublasDestroy(master_handle);
 
        // free fft descriptors
        cufftDestroy(forward_plan_x);
@@ -467,5 +474,3 @@ public:
      }
 
 };
-
-
