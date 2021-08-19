@@ -1,45 +1,32 @@
 // NWPW_CUDA Routines
 
-
 #pragma once
 
-/* can place sycl mkl code here */
 #include        "blas.h"
 
-#include	<cuda.h>
-#include	<cuda_runtime_api.h>
-#include	<cublas_v2.h>
-#include	<cufft.h>
+#include        <cuda.h>
+#include        <cuda_runtime_api.h>
+#include        <cublas_v2.h>
+#include        <cufft.h>
 
-/* can place sycl mkl code here */
 #include        <cstdio>
 #include        <iostream>
 #include        <limits>
-#include        <CL/sycl.hpp>
-#include        <oneapi/mkl.hpp>
 #include        <sstream>
 #include        <map>
 #include        <set>
 
-
 class Gdevices {
+
     cufftHandle forward_plan_x, forward_plan_y, forward_plan_z = 0;
     cufftHandle backward_plan_x, backward_plan_y, backward_plan_z = 0;
 
     cublasOperation_t matT = CUBLAS_OP_T;
     cublasOperation_t matN = CUBLAS_OP_N;
 
-
     /* device, host pool memory */
     std::map<size_t, std::set<double*> > free_list_gpu, free_list_host;
     std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
-
-    desc_real_t *desc_x;
-    desc_cmplx_t *desc_y, *desc_z;
-
-    cl::sycl::event fftevent;
-
-    int nx_fft,ny_fft,nz_fft;
 
 public:
     bool hasgpu = true;
@@ -65,21 +52,6 @@ public:
     Gdevices() {
       std::cout << "calling gdevices constructor" << std::endl;
       ndev_mem = 0;
-
-      auto asyncHandler = [&](cl::sycl::exception_list eL) {
-         for (auto& e : eL) {
-            try {
-              std::rethrow_exception(e);
-            } catch (cl::sycl::exception& e) {
-              std::cout << e.what() << std::endl;
-              std::cout << "fail" << std::endl;
-              std::terminate();
-            }
-         }
-      };
-      device_queue =  new cl::sycl::queue(cl::sycl::gpu_selector{},
-                                      asyncHandler,
-                                      cl::sycl::property_list{cl::sycl::property::queue::in_order{}});
     }
 
     /* deconstructor */
@@ -94,7 +66,6 @@ public:
        cufftDestroy(backward_plan_y);
        cufftDestroy(backward_plan_z);
 
-
        // free CPU memory
        for (auto i=0; i<ntmp_mem; ++i)
           free(tmp_mem[i]);
@@ -108,7 +79,6 @@ public:
        free_list_gpu.clear();
        live_ptrs_gpu.clear();
 
-
        // free host memory
        for(std::map<size_t,std::set<double*>>::iterator it=free_list_host.begin(); it!=free_list_host.end(); ++it) {
           for(std::set<double*>::iterator it2=it->second.begin(); it2!=it->second.end(); ++it2) {
@@ -117,13 +87,7 @@ public:
        }
        free_list_host.clear();
        live_ptrs_host.clear();
-
-
-
-       delete device_queue;
     }
-
-
 
     static inline double *resurrect_from_free_list(std::map<size_t, std::set<double*> > &free_map,
                                                    size_t bytes,
@@ -193,14 +157,14 @@ public:
     void freeGpuMem(double *p) {
         assert(live_ptrs_gpu.find(p) != live_ptrs_gpu.end());
         size_t bytes = live_ptrs_gpu[p];
-        device_queue->memset(p, 0, bytes);
+        cudaMemset(p, 0, bytes);
         live_ptrs_gpu.erase(p);
         free_list_gpu[bytes].insert(p);
     }
     void freeHostMem(double *p) {
         assert(live_ptrs_host.find(p) != live_ptrs_host.end());
         size_t bytes = live_ptrs_host[p];
-        memset(p, 0, bytes);
+        cudaMemset(p, 0, bytes);
         live_ptrs_host.erase(p);
         free_list_host[bytes].insert(p);
     }
@@ -216,7 +180,7 @@ public:
             ii            = ndev_mem;
             inuse[ii]     = true;
             ndsize_mem[ii] = ndsize;
-            cudaMalloc((void**)&(dev_mem[ii]), ndsize);
+	    cudaMalloc((void**)&(dev_mem[ii]), ndsize);
             ndev_mem += 1;
         }
 
@@ -316,7 +280,6 @@ public:
 	cudaMemcpy(host_c,dev_mem[ia_hpsi],npack*ne*sizeof(double),cudaMemcpyDeviceToHost);
 
         inuse[ib] = false;
-
 #endif
 
      }
@@ -326,7 +289,7 @@ public:
         //gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
 #if 0
         DGEMM_PWDFT((char *) "T",(char *) "N",ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
-        
+
 #else
         //int ia = fetch_dev_mem_indx(((size_t) npack) * ((size_t) ne));
         //int ib = fetch_dev_mem_indx(((size_t) npack) * ((size_t) nprj));
@@ -349,7 +312,6 @@ public:
 	   //inuse[ia] = false;
         //inuse[ib_prj] = false;
         inuse[ic] = false;
-
 #endif
      }
 
@@ -402,7 +364,7 @@ public:
      }
 
 
-     /* fft functions*/
+     /* fft functions (uses cuFFT) */
      void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
         cufftPlan1d(&forward_plan_x, nx, CUFFT_D2Z, nq1);
         cufftPlan1d(&forward_plan_y, ny, CUFFT_Z2Z, nq2);
@@ -410,12 +372,10 @@ public:
 
         cufftPlan1d(&backward_plan_x, nx, CUFFT_Z2D, nq1);
         cufftPlan1d(&backward_plan_y, ny, CUFFT_Z2Z, nq2);
-        cufftPlan1d(&backward_plan_z, nz, CUFFT_Z2Z, nq3)
-
+        cufftPlan1d(&backward_plan_z, nz, CUFFT_Z2Z, nq3);
      }
 
      void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
-
         int indx  = 0;
         int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
 
@@ -443,7 +403,6 @@ public:
 
         inuse[ia_dev] = false;
      }
-
 
      void batch_cffty(bool forward, int ny,int nq,int n2ft3d, double *a) {
         int indx  = 0;
@@ -505,11 +464,8 @@ public:
 	cudaMemcpy(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost);
 
         inuse[ia_dev] = false;
-
      }
 
 };
-
-
 
 
