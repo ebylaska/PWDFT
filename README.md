@@ -68,8 +68,11 @@ cmake -DNWPW_CUDA=ON ../Nwpw/
 ```
 
 ## Running on Cori
-
-
+```
+module load cgpu
+salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A <account>
+salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
+```
 
 # Making shared library
 ```
