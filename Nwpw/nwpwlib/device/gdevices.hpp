@@ -2,11 +2,11 @@
 #define _GDEVICES_HPP_
 
 #ifdef NWPW_SYCL
-#include        "gdevices_sycl.h"
+#include        "gdevices_sycl.hpp"
 #elif defined NWPW_CUDA
-#include        "gdevices_cuda.h"
+#include        "gdevices_cuda.hpp"
 #elif defined NWPW_OPENCL
-#include        "gdevices_opencl.h"
+#include        "gdevices_opencl.hpp"
 
 #else
 /* standard host code */
