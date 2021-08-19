@@ -56,6 +56,7 @@ qsub -I -n 1 -t 60 -q arcticus
 
 ## Required Modules
 ```
+module unload impi
 module load PrgEnv-intel
 module load cmake
 module load cudatoolkit
