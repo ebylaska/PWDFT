@@ -18,9 +18,16 @@ nwpw
    simulation_cell
      SC 20.0
    end
+   mapping 3
    cutoff 20.0
    xc lda
+   steepest_descent
+      time_step 5.8
+      geometry_optimize
+      loop 10 100
+   end
 end
+#task pspw energy
 task pspw steepest_descent
-task pspw energy
+task pspw noit_energy
 
