@@ -282,7 +282,7 @@ public:
 		    npack,ne,ne,&alpha,
 		    dev_mem[ia_psi],npack,
 		    dev_mem[ib],ne,
-		    beta,dev_mem[ia_hpsi],npack);
+		    &beta,dev_mem[ia_hpsi],npack);
 
 	cudaMemcpy(host_c,dev_mem[ia_hpsi],npack*ne*sizeof(double),cudaMemcpyDeviceToHost);
 
@@ -367,7 +367,6 @@ public:
      }
      void hpsi_copy_gpu2host(int npack, int ne, double *hpsi) {
         cudaMemcpy(hpsi, dev_mem[ia_hpsi], 2*ne*npack*sizeof(double),cudaMemcpyDeviceToHost);
-        device_queue->wait();
      }
 
 
