@@ -56,6 +56,7 @@ qsub -I -n 1 -t 60 -q arcticus
 
 ## Required Modules
 ```
+module unload impi
 module load PrgEnv-intel
 module load cmake
 module load cudatoolkit
@@ -67,8 +68,11 @@ cmake -DNWPW_CUDA=ON ../Nwpw/
 ```
 
 ## Running on Cori
-
-
+```
+module load cgpu
+salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A <account>
+salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
+```
 
 # Making shared library
 ```
