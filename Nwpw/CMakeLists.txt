@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 
 # set the project name
 project(PWDFT VERSION 1.0)
@@ -9,8 +9,6 @@ option( NWPW_OPENMP "Enable OpenMP Bindings" OFF )
 option( NWPW_SYCL_ENABLE_PROFILE "Enable SYCL Queue Profiling Bindings" OFF )
 
 string(TIMESTAMP PWDFT_BUILD_TIMESTAMP "\"%a %b %d %H:%M:%S %Y\"")
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -25,20 +23,34 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #Configure Sycll
 if(NWPW_SYCL)
-   message("-- Using NWPW_SYCL")
+  message("-- Using NWPW_SYCL")
   add_definitions(-DNWPW_SYCL=1)
-  #SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs \'-device skl\' ")
-  #SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=121 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device skl\'")
   SET(SYCL_CXX_COMPILE_FLAGS "-sycl-std=2020 -fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xsycl-target-backend \'-device xehp'")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SYCL_CXX_COMPILE_FLAGS}")
-  
+
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+
   if( NWPW_SYCL_ENABLE_PROFILE )
     add_definitions(-DNWPW_SYCL_ENABLE_PROFILE=1)
   endif(NWPW_SYCL_ENABLE_PROFILE)
 endif(NWPW_SYCL)
 
 if(NWPW_CUDA)
+   message("-- Using NWPW_CUDA")
+
    enable_language(CUDA)
+   find_package( CUDAToolkit REQUIRED )
+   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_80")
+
+   #add_library(CUDA::cublas INTERFACE IMPORTED)
+   set_target_properties(CUDA::cublas PROPERTIES INTERFACE_LINK_LIBRARIES "${CUDA_FLAG}lib=cublas")
+   #add_library(CUDA::cufft INTERFACE IMPORTED)
+   set_target_properties(CUDA::cufft PROPERTIES INTERFACE_LINK_LIBRARIES "${CUDA_FLAG}lib=cufft")
+   message("-- Using cublas, cufft: " ${CUDAToolkit_INCLUDE_DIRS})
+   include_directories(${CUDAToolkit_INCLUDE_DIRS})
+
+   add_definitions(-DNWPW_CUDA=1)
+   set(MKL_FOUND True)
 endif(NWPW_CUDA)
 
 
@@ -71,13 +83,14 @@ endif(NWPW_OPENMP)
 
 #Configure MPI
 find_package(MPI REQUIRED)
-#find_package(MPI)
 include_directories(${MPI_INCLUDE_PATH})
 
 
 if(MKL_FOUND)
-   include_directories(${MKL_INCLUDE_DIRS})
-   message("-- Using MKL libs")
+   if(NWPW_SYCL)
+      message("-- Using oneMKL libs")
+      include_directories(${MKL_INCLUDE_DIRS})
+   endif(NWPW_SYCL)
 else()
    message("-- Using internal blas and lapack libs")
 endif()
