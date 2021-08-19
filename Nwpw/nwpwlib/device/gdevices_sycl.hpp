@@ -16,9 +16,6 @@
 #include        <map>
 #include        <set>
 
-//#include <oneapi/mkl/dfti.hpp>
-//#include <oneapi/mkl/blas.hpp>
-
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
                                      oneapi::mkl::dft::domain::REAL> desc_real_t;
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
