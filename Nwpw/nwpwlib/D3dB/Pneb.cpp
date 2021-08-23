@@ -32,7 +32,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
     int np_j = d1db::parall->np_j();
     parallelized = (np_j>1);
 
-    s22 = new double[7*ne[0]*ne[0]];
+    s22 = new (std::nothrow) double[7*ne[0]*ne[0]]();
     s21 = &s22[1*ne[0]*ne[0]];
     s12 = &s22[2*ne[0]*ne[0]];
     s11 = &s22[3*ne[0]*ne[0]];
@@ -69,7 +69,7 @@ void Pneb::g_generate_random(double *psi)
    int ms,n,indx,i,pj,qj,taskid_j;
    int filling[4],nfft[3];
    double zvalue[2];
-   //double *tmp2 = new double[n2ft3d];
+   //double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
    double tmp2[n2ft3d];
 
@@ -109,7 +109,7 @@ void Pneb::g_generate_random(double *psi)
 void Pneb::g_read(const int iunit, double *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
-   double *tmp2 = new double[n2ft3d];
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
    taskid_j = d1db::parall->taskid_j();
 
@@ -133,7 +133,7 @@ void Pneb::g_read(const int iunit, double *psi)
 void Pneb::g_write(const int iunit, double *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
-   double *tmp2 = new double[n2ft3d];
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
    taskid_j = d1db::parall->taskid_j();
    for (ms=0; ms<ispin; ++ms)
@@ -551,7 +551,7 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
 void Pneb::ggm_SVD(double *A, double *U, double *S, double *V)
 {
    int n,indx;
-   double *tmp2 = new double [neq[0] + neq[1]];
+   double *tmp2 = new (std::nothrow) double [neq[0] + neq[1]]();
 
    /* generate V and Sigma^2 */
    ggm_sym_Multiply(A,A,V);
@@ -628,7 +628,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     else
     {
         int nn  = ne[0]*ne[0]+4;
-        //double *xmp1 = new double[nn];
+        //double *xmp1 = new (std::nothrow) double[nn]();
         double xmp1[nn];
 
         shift1 = 0;

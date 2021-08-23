@@ -67,7 +67,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    vc  = mygrid->c_pack_allocate(0);
    vpsi=x;
 
-   fion = new double[3*(myion->nion)];
+   fion = new double[3*(myion->nion)]();
 
    /* generate local psp*/
    mypsp->v_local(vl,0,dng,fion);
@@ -229,7 +229,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    *deltae = (E[0]-Eold)/(dt*control.loop(0));
 
    /* deltac */
-   sumi    = new double[neall];
+   sumi    = new double[neall]();
    mygrid->ggg_Minus(psi2,psi1,Hpsi);
    for (i=0; i<neall; ++i) 
       sumi[i] = mygrid->cc_pack_idot(1,&Hpsi[i*shift1],&Hpsi[i*shift1]);
