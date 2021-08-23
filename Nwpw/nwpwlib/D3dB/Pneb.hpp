@@ -54,7 +54,7 @@ public:
 
         double *g_allocate(const int nb) {
            double *ptr;
-           ptr = new double [2*(neq[0]+neq[1])*npack(nb)];
+           ptr = new (std::nothrow) double [2*(neq[0]+neq[1])*npack(nb)]();
            return ptr;
         }
         void g_deallocate(double *ptr) { delete [] ptr;}
@@ -62,7 +62,7 @@ public:
 
         double *h_allocate() {
            double *ptr;
-           ptr = new double [(neq[0]+neq[1])*n2ft3d];
+           ptr = new (std::nothrow) double [(neq[0]+neq[1])*n2ft3d]();
            return ptr;
         }
         void h_deallocate(double *ptr) { delete [] ptr;}
@@ -81,7 +81,7 @@ public:
            else
               nsize = ne[mb]*ne[mb];
 
-           ptr = new double [nblock*nsize];
+           ptr = new (std::nothrow) double [nblock*nsize]();
            return ptr;
         }
         void m_deallocate(double *ptr) { delete [] ptr;}

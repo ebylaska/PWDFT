@@ -38,6 +38,7 @@ class Gdevices {
 
     sycl::event fftevent;
 
+    // abb todo: these 3 vars can be removed. (not used in init())
     int nx_fft,ny_fft,nz_fft;
 
 public:

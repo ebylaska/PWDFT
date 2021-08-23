@@ -35,10 +35,10 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
    if (maptype==1)
    {
-      iq_to_i1 = new int*[1]; iq_to_i1[0] = new int[(nx/2+1)*ny*nq];
-      iq_to_i2 = new int*[1]; iq_to_i2[0] = new int[(nx/2+1)*ny*nq];
-      i1_start = new int*[1]; i1_start[0] = new int[nz+1];
-      i2_start = new int*[1]; i2_start[0] = new int[nz+1];
+      iq_to_i1 = new int*[1]; iq_to_i1[0] = new int[(nx/2+1)*ny*nq]();
+      iq_to_i2 = new int*[1]; iq_to_i2[0] = new int[(nx/2+1)*ny*nq]();
+      i1_start = new int*[1]; i1_start[0] = new int[nz+1]();
+      i2_start = new int*[1]; i2_start[0] = new int[nz+1]();
       index1 = 0;
       index2 = 0;
       for (it=0; it<np; ++it)
@@ -78,45 +78,45 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /* allocate ptranspose indexes */
       for (auto nb=0; nb<2; ++nb)
       {
-         p_iq_to_i1[nb] = new int*[1]; p_iq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_iq_to_i2[nb] = new int*[1]; p_iq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_iz_to_i2[nb] = new int*[1]; p_iz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_i1_start[nb] = new int*[1]; p_i1_start[nb][0] = new int[nz+1];
-         p_i2_start[nb] = new int*[1]; p_i2_start[nb][0] = new int[nz+1];
+	 p_iq_to_i1[nb] = new int*[1]; p_iq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_iq_to_i2[nb] = new int*[1]; p_iq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_iz_to_i2[nb] = new int*[1]; p_iz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_i1_start[nb] = new int*[1]; p_i1_start[nb][0] = new int[nz+1]();
+         p_i2_start[nb] = new int*[1]; p_i2_start[nb][0] = new int[nz+1]();
 
-         p_jq_to_i1[nb] = new int*[1]; p_jq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_jq_to_i2[nb] = new int*[1]; p_jq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_jz_to_i2[nb] = new int*[1]; p_jz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq];
-         p_j1_start[nb] = new int*[1]; p_j1_start[nb][0] = new int[nz+1];
-         p_j2_start[nb] = new int*[1]; p_j2_start[nb][0] = new int[nz+1];
+         p_jq_to_i1[nb] = new int*[1]; p_jq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_jq_to_i2[nb] = new int*[1]; p_jq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_jz_to_i2[nb] = new int*[1]; p_jz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
+         p_j1_start[nb] = new int*[1]; p_j1_start[nb][0] = new int[nz+1]();
+         p_j2_start[nb] = new int*[1]; p_j2_start[nb][0] = new int[nz+1]();
       }
 
    }
    else
    {
       iq_to_i1 = new int*[6];
-      iq_to_i1[0] = new int[(nx/2+1)*nq1];
-      iq_to_i1[1] = new int[ny*nq2];
-      iq_to_i1[2] = new int[nz*nq3];
-      iq_to_i1[3] = new int[ny*nq2];
-      iq_to_i1[4] = new int[(nx/2+1)*nq1];
-      iq_to_i1[5] = new int[nz*nq3];
+      iq_to_i1[0] = new int[(nx/2+1)*nq1]();
+      iq_to_i1[1] = new int[ny*nq2]();
+      iq_to_i1[2] = new int[nz*nq3]();
+      iq_to_i1[3] = new int[ny*nq2]();
+      iq_to_i1[4] = new int[(nx/2+1)*nq1]();
+      iq_to_i1[5] = new int[nz*nq3]();
 
       iq_to_i2 = new int*[6];
-      iq_to_i2[0] = new int[ny*nq2];
-      iq_to_i2[1] = new int[nz*nq3];
-      iq_to_i2[2] = new int[ny*nq2];
-      iq_to_i2[3] = new int[(nx/2+1)*nq1];
-      iq_to_i2[4] = new int[nz*nq3];
-      iq_to_i2[5] = new int[(nx/2+1)*nq1];
+      iq_to_i2[0] = new int[ny*nq2]();
+      iq_to_i2[1] = new int[nz*nq3]();
+      iq_to_i2[2] = new int[ny*nq2]();
+      iq_to_i2[3] = new int[(nx/2+1)*nq1]();
+      iq_to_i2[4] = new int[nz*nq3]();
+      iq_to_i2[5] = new int[(nx/2+1)*nq1]();
 
       i1_start = new int*[6];
       for (i=0; i<6; ++i)
-         i1_start[i] = new int[np+1];
+	 i1_start[i] = new int[np+1]();
 
       i2_start = new int*[6];
       for (i=0; i<6; ++i)
-         i2_start[i] = new int[np+1];
+         i2_start[i] = new int[np+1]();
 
 
       /**************************************************/
@@ -334,28 +334,28 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       for (auto nb=0; nb<2; ++nb)
       {
          p_iq_to_i1[nb] = new int*[6];
-         p_iq_to_i1[nb][0] = new int[(nx/2+1)*nq1];
-         p_iq_to_i1[nb][1] = new int[ny*nq2];
-         p_iq_to_i1[nb][2] = new int[nz*nq3];
-         p_iq_to_i1[nb][3] = new int[ny*nq2];
-         p_iq_to_i1[nb][4] = new int[(nx/2+1)*nq1];
-         p_iq_to_i1[nb][5] = new int[nz*nq3];
+         p_iq_to_i1[nb][0] = new int[(nx/2+1)*nq1]();
+         p_iq_to_i1[nb][1] = new int[ny*nq2]();
+         p_iq_to_i1[nb][2] = new int[nz*nq3]();
+         p_iq_to_i1[nb][3] = new int[ny*nq2]();
+         p_iq_to_i1[nb][4] = new int[(nx/2+1)*nq1]();
+         p_iq_to_i1[nb][5] = new int[nz*nq3]();
 
          p_iq_to_i2[nb] = new int*[6];
-         p_iq_to_i2[nb][0] = new int[ny*nq2];
-         p_iq_to_i2[nb][1] = new int[nz*nq3];
-         p_iq_to_i2[nb][2] = new int[ny*nq2];
-         p_iq_to_i2[nb][3] = new int[(nx/2+1)*nq1];
-         p_iq_to_i2[nb][4] = new int[nz*nq3];
-         p_iq_to_i2[nb][5] = new int[(nx/2+1)*nq1];
+         p_iq_to_i2[nb][0] = new int[ny*nq2]();
+         p_iq_to_i2[nb][1] = new int[nz*nq3]();
+         p_iq_to_i2[nb][2] = new int[ny*nq2]();
+         p_iq_to_i2[nb][3] = new int[(nx/2+1)*nq1]();
+         p_iq_to_i2[nb][4] = new int[nz*nq3]();
+         p_iq_to_i2[nb][5] = new int[(nx/2+1)*nq1]();
 
          p_iz_to_i2[nb] = new int*[6];
-         p_iz_to_i2[nb][0] = new int[ny*nq2];
-         p_iz_to_i2[nb][1] = new int[nz*nq3];
-         p_iz_to_i2[nb][2] = new int[ny*nq2];
-         p_iz_to_i2[nb][3] = new int[(nx/2+1)*nq1];
-         p_iz_to_i2[nb][4] = new int[nz*nq3];
-         p_iz_to_i2[nb][5] = new int[(nx/2+1)*nq1];
+         p_iz_to_i2[nb][0] = new int[ny*nq2]();
+         p_iz_to_i2[nb][1] = new int[nz*nq3]();
+         p_iz_to_i2[nb][2] = new int[ny*nq2]();
+         p_iz_to_i2[nb][3] = new int[(nx/2+1)*nq1]();
+         p_iz_to_i2[nb][4] = new int[nz*nq3]();
+         p_iz_to_i2[nb][5] = new int[(nx/2+1)*nq1]();
 
          p_i1_start[nb] = new int*[6];
          for (i=0; i<6; ++i)
@@ -371,10 +371,10 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
    /* setup timereverse indexes */
    zplane_size = timereverse_size();
-   t_iq_to_i1 = new int[zplane_size];
-   t_iq_to_i2 = new int[zplane_size];
-   t_i1_start = new int[np+1];
-   t_i2_start = new int[np+1];
+   t_iq_to_i1 = new int[zplane_size]();
+   t_iq_to_i2 = new int[zplane_size]();
+   t_i1_start = new int[np+1]();
+   t_i2_start = new int[np+1]();
    nyh = ny/2;
    nzh = nz/2;
    index1 = 0;
@@ -444,9 +444,9 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
 
    /* setup ffts */
-   tmpx = new double[2*(2*nx+15)];
-   tmpy = new double[2*(2*ny+15)];
-   tmpz = new double[2*(2*nz+15)];
+   tmpx = new (std::nothrow) double[2*(2*nx+15)]();
+   tmpy = new (std::nothrow) double[2*(2*ny+15)]();
+   tmpz = new (std::nothrow) double[2*(2*nz+15)]();
    drffti_(&nx,tmpx);
    dcffti_(&ny,tmpy);
    dcffti_(&nz,tmpz);
@@ -949,7 +949,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
  ********************************/
 double * d3db::r_alloc()
 {
-   double *ptr = new double[n2ft3d];
+   double *ptr = new (std::nothrow) double[n2ft3d]();
    return ptr;
 }
 
@@ -960,7 +960,7 @@ double * d3db::r_alloc()
  ********************************/
 double * d3db::r_nalloc(const int nn)
 {
-   double *ptr = new double[n2ft3d*nn];
+   double *ptr = new (std::nothrow) double[n2ft3d*nn]();
    return ptr;
 }
 
@@ -1620,7 +1620,7 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
  ********************************/
 double * d3db::t_alloc()
 {
-   double *ptr = new double[nfft3d];
+   double *ptr = new (std::nothrow) double[nfft3d]();
    return ptr;
 }
 
@@ -1664,7 +1664,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      double *tmp = new (std::nothrow) double[(nx+2)*ny]();
       //double tmp[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
@@ -1708,7 +1708,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      //double *tmp = new double[nx+2];
+      //double *tmp = new (std::nothrow) double[nx+2]();
       double tmp[nx+2];
       int bsize = (nx+2);
 
@@ -1751,8 +1751,8 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
 
       //double tmp1[2*nfft3d];
       //double tmp2[2*nfft3d];
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      double *tmp1 = new (std::nothrow) double[2*nfft3d]();
+      double *tmp2 = new (std::nothrow) double[2*nfft3d]();
       c_transpose_ijk(4,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
@@ -1779,7 +1779,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+      double *tmp = new (std::nothrow) double[(nx+2)*ny]();
       //double tmp[(nx+2)*ny];
       int   bsize = (nx+2)*ny;
 
@@ -1824,11 +1824,11 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      //double *tmp1 = new double[2*nfft3d];
-      //double *tmp2 = new double[2*nfft3d];
+      //double *tmp1 = new (std::nothrow) double[2*nfft3d];
+      //double *tmp2 = new (std::nothrow) double[2*nfft3d];
       {
-         double *tmp1 = new double[2*nfft3d];
-         double *tmp2 = new double[2*nfft3d];
+	 double *tmp1 = new (std::nothrow) double[2*nfft3d]();
+         double *tmp2 = new (std::nothrow) double[2*nfft3d]();
          c_transpose_ijk(5,a,tmp1,tmp2);
           delete [] tmp2;
           delete [] tmp1;
@@ -1836,7 +1836,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
       //delete [] tmp2;
       //delete [] tmp1;
 
-      //double *tmp = new double[nx+2];
+      //double *tmp = new (std::nothrow) double[nx+2];
       double tmp[nx+2];
       int bsize = (nx+2);
 
@@ -1947,8 +1947,8 @@ void d3db::cr_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2 = new double [2*nfft3d];
-   double *tmp3 = new double [2*nfft3d];
+   double *tmp2 = new (std::nothrow) double [2*nfft3d]();
+   double *tmp3 = new (std::nothrow) double [2*nfft3d]();
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -2124,8 +2124,8 @@ void d3db::rc_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
-   double *tmp2 = new double[2*nfft3d];
-   double *tmp3 = new double[2*nfft3d];
+   double *tmp2 = new (std::nothrow) double[2*nfft3d]();
+   double *tmp3 = new (std::nothrow) double[2*nfft3d]();
 
    nxh  = nx/2+1;
    nxhy = nxh*ny;
@@ -2312,7 +2312,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx/2+1)*ny];
+       double *tmp = new (std::nothrow) double[(nx/2+1)*ny]();
       //double tmp[(nx/2+1)*ny];
       int   bsize = (nx/2+1)*ny;
 
@@ -2357,7 +2357,7 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      //double *tmp = new double[nx/2+1];
+      //double *tmp = new (std::nothrow) double[nx/2+1]();
       double tmp[nx/2+1];
       int bsize = (nx/2+1);
 
@@ -2400,8 +2400,8 @@ void d3db::t_read(const int iunit, double *a, const int jcol)
 
       //double tmp1[2*nfft3d];
       //double tmp2[2*nfft3d];
-      double *tmp1 = new double[2*nfft3d];
-      double *tmp2 = new double[2*nfft3d];
+      double *tmp1 = new (std::nothrow) double[2*nfft3d]();
+      double *tmp2 = new (std::nothrow) double[2*nfft3d]();
       t_transpose_ijk(4,a,tmp1,tmp2);
       delete [] tmp2;
       delete [] tmp1;
@@ -2427,7 +2427,7 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1)
    {
-      double *tmp = new double[(nx+2)*ny];
+       double *tmp = new (std::nothrow) double[(nx+2)*ny]();
       //double tmp[(nx+2)*ny];
       int   bsize = (nx/2+1)*ny;
 
@@ -2474,13 +2474,13 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
    {
       { //double tmp1[2*nfft3d];
         //double tmp2[2*nfft3d];
-        double *tmp1 = new double[2*nfft3d];
-        double *tmp2 = new double[2*nfft3d];
+	double *tmp1 = new (std::nothrow) double[2*nfft3d]();
+        double *tmp2 = new (std::nothrow) double[2*nfft3d]();
         t_transpose_ijk(5,a,tmp1,tmp2);
         delete [] tmp2;
         delete [] tmp1; }
 
-      //double *tmp = new double[nx/2+1];
+      //double *tmp = new (std::nothrow) double[nx/2+1];
       double tmp[nx/2+1];
       int bsize = (nx/2+1);
 
