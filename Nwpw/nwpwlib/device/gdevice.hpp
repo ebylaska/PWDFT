@@ -79,9 +79,35 @@ public:
         file_(file), line_(line), err_code_(err) { }
 };
 
-#define GAUXC_CUDA_ERROR( ERR )                                 \
+class cufft_exception : public std::exception {
+
+    std::string file_;
+    int         line_;
+    cufftResult err_code_;
+
+    const char* what() const noexcept override {
+        std::stringstream ss;
+        ss << "CUFFT Exception, " << "  Error Code " << int(err_code_) << ": \""
+           << "  File       " << file_ << std::endl
+           << "  Line       " << line_ << std::endl;
+
+        auto msg = ss.str();
+        return strdup( msg.c_str() );
+    }
+
+public:
+
+    cufft_exception( std::string file, int line, cufftResult err ) :
+        file_(file), line_(line), err_code_(err) { }
+};
+
+#define NWPW_CUDA_ERROR( ERR )                                 \
     if( ERR != cudaSuccess )                                    \
         throw cuda_exception( __FILE__, __LINE__, ERR );
+
+#define NWPW_CUFFT_ERROR( ERR )                                 \
+    if( ERR != CUFFT_SUCCESS )                                   \
+        throw cufft_exception( __FILE__, __LINE__, ERR );
 
 #endif // NWPW_CUDA
 
