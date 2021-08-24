@@ -70,7 +70,7 @@ public:
         double *generate_G_ray() {
            int nray0 = (int) ceil(100*(Gmax/Gmin) + 1.0);
            if (nray0<10) nray0 = 10;
-           double *g_ray = new double[nray0];
+           double *g_ray = new (std::nothrow) double[nray0]();
            double dGmin = 0.01*Gmin;
            for (auto i=0; i<nray0; ++i)
               g_ray[i] = dGmin*i;
@@ -84,7 +84,7 @@ public:
 
         double *c_pack_allocate(const int nb) {
            double *ptr;
-           ptr = new double [2*npack(nb)];
+           ptr = new (std::nothrow) double [2*npack(nb)]();
            return ptr;
         }
         void c_pack_deallocate(double *ptr) { delete [] ptr;}

@@ -36,7 +36,7 @@ void gdevice_NT_dgemm(int npack, int ne, int nprj, double alpha, double *a, doub
 
 void gdevice_psi_alloc(int npack, int ne)
 { 
-#ifdef NWPW_SYCL
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
   if (mygdevice.hasgpu) mygdevice.psi_alloc(npack,ne);
 #endif
 }

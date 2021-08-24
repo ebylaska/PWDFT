@@ -218,25 +218,6 @@ public:
         return ii;
     }
 
-    int fetch_tmp_mem_indx(const size_t tmpndsize) {
-        int ii = 0;
-        while (((tmpndsize!=tmpndsize_mem[ii]) || tmpinuse[ii] ) && (ii<ntmp_mem))
-            ++ii;
-
-        if (ii<ntmp_mem) {
-            tmpinuse[ii] = true;
-        } else {
-            ii                = ntmp_mem;
-            tmpinuse[ii]      = true;
-            tmpndsize_mem[ii] = tmpndsize;
-            tmp_mem[ii]       = (double *) malloc(tmpndsize*sizeof(double));
-            ntmp_mem += 1;
-        }
-        return ii;
-    }
-
-
-
     void TN3_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cbb)
         {
 #if 0

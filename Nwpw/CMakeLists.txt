@@ -40,12 +40,8 @@ if(NWPW_CUDA)
 
    enable_language(CUDA)
    find_package( CUDAToolkit REQUIRED )
-   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_80")
+   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_60,sm_70,sm_80")
 
-   #add_library(CUDA::cublas INTERFACE IMPORTED)
-   #set_target_properties(CUDA::cublas PROPERTIES INTERFACE_LINK_LIBRARIES "${CUDA_FLAG}lib=cublas")
-   #add_library(CUDA::cufft INTERFACE IMPORTED)
-   #set_target_properties(CUDA::cufft PROPERTIES INTERFACE_LINK_LIBRARIES "${CUDA_FLAG}lib=cufft")
    message("-- Using cublas, cufft: " ${CUDAToolkit_INCLUDE_DIRS})
    include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
