@@ -35,6 +35,8 @@ using namespace std;
 #include	"nwpw_timing.hpp"
 #include        "gdevice.hpp"
 
+#include        "nwpw_lmbfgs.hpp"
+
 #include	"cgsd_energy.hpp"
 
 #include "json.hpp"
@@ -44,10 +46,10 @@ using json = nlohmann::json;
 
 /******************************************
  *                                        *
- *            pspw_minimizer              *
+ *            pspw_geovib                 *
  *                                        *
  ******************************************/
-int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
+int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -72,7 +74,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       ios_base::sync_with_stdio();
       cout << "          *****************************************************\n";
       cout << "          *                                                   *\n";
-      cout << "          *               PWDFT PSPW Calculation              *\n";
+      cout << "          *             PWDFT PSPW GeoVib Calculation         *\n";
       cout << "          *                                                   *\n";
       cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
       cout << "          *  [              C++ implementation             ]  *\n";
@@ -158,6 +160,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
 
+   //GeoVib mygeovib(&molecule,control);
 
 //                 |**************************|
 // *****************   summary of input data  **********************
@@ -180,11 +183,6 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          cout << " parallel mapping         : not balanced" << "\n";
 
       cout << "\n options:\n";
-      //cout << "   geometry optimize    = ";
-      //if (control.geometry_optimize() || flag==3)
-      //   cout << "yes\n";
-      //else
-      //   cout << "no\n";
       cout << "   boundary conditions  = ";
       cout << "periodic\n";
 
@@ -194,8 +192,6 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       else
          cout << "unrestricted\n";
       cout << myxc;
-      //cout << "   exchange-correlation = ";
-      //cout << "LDA (Vosko et al) parameterization\n";
   
       cout << "\n elements involved in the cluster:\n";
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -299,51 +295,36 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
 
 //*                |***************************|
-//******************     call CG minimizer     **********************
+//******************     call GeoVibminimizer  **********************
 //*                |***************************|
 
-   /*  calculate energy */
+   /*  calculate energy and gradient */
    double EV = 0.0;
+   double *fion = new double[3*myion.nion];
 
-   if (flag < 0) 
+   for (auto it=0; it<45; ++it)
    {
-      EV = cgsd_noit_energy(mymolecule);
-   } 
-   else 
-   {
+      /*  calculate energy and gradient */
       EV = cgsd_energy(control,mymolecule);
+      cgsd_energy_gradient(mymolecule,fion);
+
+      /* update coords in mymolecule */
+      mymolecule.myion->fixed_step(0.1,fion);
+      mymolecule.myion->shift();
    }
+
    if (myparallel.is_master()) seconds(&cpu3);
 
    // write energy results to the json
-   auto rtdbjson =  json::parse(rtdbstring);
+   auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = EV;
    rtdbjson["pspw"]["energies"] = mymolecule.E;
    rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
-   /* calculate fion */
-   if (flag==2)
-   {
-      double *fion = new double[3*myion.nion]; 
-      cgsd_energy_gradient(mymolecule,fion);
-      if (myparallel.is_master())
-      {
-         std::cout << std::endl << " Ion Forces (au):" << std::endl;
-         for (ii=0; ii<myion.nion; ++ii)
-            printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
-                                                                fion[3*ii],
-                                                                fion[3*ii+1],
-                                                                fion[3*ii+2]);
-         std::cout << std::endl << std::endl;
-      }
-      rtdbjson["pspw"]["fion"] = std::vector<double>(fion,&fion[3*myion.nion]);
-      for (ii=0; ii<(3*myion.nion); ++ii) fion[ii] *= -1.0;
-      rtdbjson["pspw"]["gradient"] = std::vector<double>(fion,&fion[3*myion.nion]);
-
-      delete [] fion;
-   }
 
 
+
+//*******************************************************************
 
 
    /* write psi */

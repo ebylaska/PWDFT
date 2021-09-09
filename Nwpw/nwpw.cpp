@@ -145,6 +145,8 @@ int main(int argc, char* argv[])
   if (oprint) std::cout << "First task=" << task << std::endl << std::endl;
   while (task>0)
   {
+
+     /* Energy or Gradient task */
      if ((task==1) || (task==2))
      {
         std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
@@ -162,8 +164,24 @@ int main(int argc, char* argv[])
 
         ierr += pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
      }
-     if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
-     if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr);
+
+     /* Optimize task */
+     if (task==3) 
+     {
+        if (oprint) std::cout << std::endl << "Running geometry optimization calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
+        ierr += pspw_geovib(MPI_COMM_WORLD,rtdbstr);
+     }
+
+     /* Frequency task */
+     if (task==4) 
+     {
+        if (oprint) std::cout << std::endl << "Running frequency calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
+     }
+
+     if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
+     if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
+
+
     
      rtdbstr = parse_rtdbstring(rtdbstr);
      task    = parse_task(rtdbstr);

@@ -71,7 +71,7 @@ public:
    void writepsi(char *output_filename) {
       psi_write(mygrid, &version, nfft, mygrid->lattice->unita_ptr(),
                 &ispin, ne, psi1, output_filename);
-    }
+   }
 
 
    /* molecule energy */
