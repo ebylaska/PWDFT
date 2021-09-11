@@ -117,6 +117,35 @@ public:
        return tcharge;
     }
 
+    double xrms()
+    {
+       double dx,dy,dz;
+       double xx;
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          dx = rion1[3*ii]   - rion0[3*ii];
+          dy = rion1[3*ii+1] - rion0[3*ii+1];
+          dz = rion1[3*ii+2] - rion0[3*ii+2];
+          xx += dx*dx + dy*dy + dz*dz;
+       }
+       return sqrt(xx)/((double) nion);
+    }
+
+    double xmax()
+    {
+       double dx,dy,dz,x,xx;
+       double yy = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          dx = rion1[3*ii]   - rion0[3*ii];
+          dy = rion1[3*ii+1] - rion0[3*ii+1];
+          dz = rion1[3*ii+2] - rion0[3*ii+2];
+          xx = dx*dx + dy*dy + dz*dz;
+          x = sqrt(xx); if (x>yy) yy = x;
+       }
+       return yy;
+    }
+
 
 
 };

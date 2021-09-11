@@ -59,7 +59,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
    double sum1,sum2,ev,zv;
-   double cpu1,cpu2,cpu3,cpu4;
+   double cpu1,cpu2,cpu3,cpu4,cpustep;
    double E[50],deltae,deltac,deltar,viral,unita[9];
 
    //double *psi1,*psi2,*Hpsi,*psi_r;
@@ -299,18 +299,54 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 //*                |***************************|
 
    /*  calculate energy and gradient */
-   double EV = 0.0;
+   double g,gg,Gmax,Grms,Xrms,Xmax;
+   double Eold =  0.0;
+   double EV   = 0.0;
    double *fion = new double[3*myion.nion];
+
 
    for (auto it=0; it<45; ++it)
    {
       /*  calculate energy and gradient */
+      Eold = EV;
       EV = cgsd_energy(control,mymolecule);
       cgsd_energy_gradient(mymolecule,fion);
 
       /* update coords in mymolecule */
       mymolecule.myion->fixed_step(0.1,fion);
       mymolecule.myion->shift();
+
+      if (myparallel.is_master())
+      {
+         Xmax = mymolecule.myion->xmax();
+         Xrms = mymolecule.myion->xrms();
+         Gmax = 0.0;
+         Grms = 0.0;
+         for (ii=0; ii<(myion.nion); ++ii)
+         {
+            gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+            Grms += gg; 
+            g = sqrt(gg); if (g>Gmax) Gmax = g;
+         }
+         Grms = sqrt(Grms)/((double) myion.nion);
+
+         if (it==0) 
+         {
+            printf("\n\n");
+            printf("@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
+            printf("@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+         } 
+         else 
+         {
+            printf("\n\n");
+            printf("  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
+            printf("  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+         }
+         seconds(&cpustep);
+         printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+         printf("\n\n");
+      }
+
    }
 
    if (myparallel.is_master()) seconds(&cpu3);
