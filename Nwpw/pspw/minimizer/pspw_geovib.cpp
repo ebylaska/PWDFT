@@ -307,21 +307,39 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    for (auto it=0; it<95; ++it)
    {
-      if (myparallel.is_master()){ cout << "     --------\n" << "     Step " << it << "\n     --------\n\n\n"; }
-
-      /*  calculate energy and gradient */
-      Eold = EV;
-      EV = cgsd_energy(control,mymolecule);
-      cgsd_energy_gradient(mymolecule,fion);
+      if (myparallel.is_master()){
+         cout << "\n\n";
+         cout << " -----------------------------------------------------------------------------------\n";
+         cout << " ----------------------------- Optimization Step " << std::setw(5) << it << " -----------------------------\n";
+         cout << " -----------------------------------------------------------------------------------\n\n";
+      }
 
       /* print out the current geometry */
       if (myparallel.is_master()) {
-         cout << "\n\n";
-         cout << " ----------------------------------------------------------------------------------\n";
-         cout << " -------------------------- Current Geometry - Step " << std::setw(5) << it << " -------------------------\n";
-         cout << " ----------------------------------------------------------------------------------\n";
+         cout << " ---------------------------------\n";
+         cout << "  Geometry for Step " <<  it << "\n";
+         cout << " ---------------------------------\n";
          cout <<  mymolecule.myion->print_bond_angle_torsions();
       }
+
+      /*  calculate energy and gradient */
+      if (myparallel.is_master()){
+         cout << "\n\n\n";
+         cout << " ---------------------------------\n";
+         cout << "  Calculate Energy for Step " <<  it << "\n";
+         cout << " ---------------------------------\n\n";
+      }
+      Eold = EV;
+      EV = cgsd_energy(control,mymolecule);
+
+      if (myparallel.is_master()){
+         cout << "\n";
+         cout << " ---------------------------------\n";
+         cout << "  Calculate Gradient for Step " <<  it << "\n";
+         cout << " ---------------------------------\n\n";
+      }
+      cgsd_energy_gradient(mymolecule,fion);
+
 
       /* update coords in mymolecule */
       mymolecule.myion->fixed_step(0.1,fion);
