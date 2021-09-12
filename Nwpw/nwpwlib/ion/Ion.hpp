@@ -7,6 +7,7 @@
 
 #include	"rtdb.hpp"
 #include	"Control2.hpp"
+#include	"ion_rcovalent.hpp"
 
 class	Ion {
 
@@ -145,6 +146,9 @@ public:
        }
        return yy;
     }
+
+    std::string print_bond_angle_torsions() { return ion_print_bond_angle_torsions(nion,katm,atomarray,rion1); }
+
 
 
 

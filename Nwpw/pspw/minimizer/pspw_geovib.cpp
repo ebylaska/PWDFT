@@ -305,17 +305,29 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    double *fion = new double[3*myion.nion];
 
 
-   for (auto it=0; it<45; ++it)
+   for (auto it=0; it<95; ++it)
    {
+      if (myparallel.is_master()){ cout << "     --------\n" << "     Step " << it << "\n     --------\n\n\n"; }
+
       /*  calculate energy and gradient */
       Eold = EV;
       EV = cgsd_energy(control,mymolecule);
       cgsd_energy_gradient(mymolecule,fion);
 
+      /* print out the current geometry */
+      if (myparallel.is_master()) {
+         cout << "\n\n";
+         cout << " ----------------------------------------------------------------------------------\n";
+         cout << " -------------------------- Current Geometry - Step " << std::setw(5) << it << " -------------------------\n";
+         cout << " ----------------------------------------------------------------------------------\n";
+         cout <<  mymolecule.myion->print_bond_angle_torsions();
+      }
+
       /* update coords in mymolecule */
       mymolecule.myion->fixed_step(0.1,fion);
       mymolecule.myion->shift();
 
+      /* print out the current energy */
       if (myparallel.is_master())
       {
          Xmax = mymolecule.myion->xmax();
