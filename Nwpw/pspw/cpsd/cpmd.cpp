@@ -28,6 +28,7 @@ using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
 
+namespace pwdft {
 
 /******************************************
  *                                        *
@@ -420,4 +421,6 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    return 0;
+}
+   
 }
