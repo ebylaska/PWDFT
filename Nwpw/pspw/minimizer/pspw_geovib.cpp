@@ -56,7 +56,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    //RTDB myrtdb(&myparallel, "eric.db", "old");
 
    int version,nfft[3],ne[2],ispin;
-   int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
+   int i,ii,ia,nn,ngrid[3],matype,nelem,icount;
    char date[26];
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4,cpustep;
@@ -293,6 +293,11 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       seconds(&cpu2);
    }
 
+   double tol_Gmax = 0.00045;
+   double tol_Grms = 0.00030;
+   double tol_Xrms = 0.00120;
+   double tol_Xmax = 0.00180;
+
 
 //*                |***************************|
 //******************     call GeoVibminimizer  **********************
@@ -303,10 +308,14 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    double Eold =  0.0;
    double EV   = 0.0;
    double *fion = new double[3*myion.nion];
+   int maxit = 200;
 
+   bool done = false;
+   int it = 0;
 
-   for (auto it=0; it<95; ++it)
+   while ((!done) && (it<maxit))
    {
+   
       if (myparallel.is_master()){
          cout << "\n\n";
          cout << " -----------------------------------------------------------------------------------\n";
@@ -322,7 +331,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          cout <<  mymolecule.myion->print_bond_angle_torsions();
       }
 
-      /*  calculate energy and gradient */
+      /*  calculate energy */
       if (myparallel.is_master()){
          cout << "\n\n\n";
          cout << " ---------------------------------\n";
@@ -332,6 +341,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       Eold = EV;
       EV = cgsd_energy(control,mymolecule);
 
+      /*  calculate the gradient */
       if (myparallel.is_master()){
          cout << "\n";
          cout << " ---------------------------------\n";
@@ -339,26 +349,54 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          cout << " ---------------------------------\n\n";
       }
       cgsd_energy_gradient(mymolecule,fion);
+      if (myparallel.is_master()){
+         cout << " ion forces (au):" << "\n";
+         for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
+            printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
+                            ii+1,mymolecule.myion->symbol(ii),
+                            fion[3*ii],
+                            fion[3*ii+1],
+                            fion[3*ii+2]);
+            printf("      C.O.M. ( %12.6lf %12.6lf %12.6lf )\n",
+                            mymolecule.myion->com_fion(fion,0),
+                            mymolecule.myion->com_fion(fion,1),
+                            mymolecule.myion->com_fion(fion,2));
+            cout << "   |F|/nion  = " << std::setprecision(6) << std::setw(15) << mymolecule.myion->rms_fion(fion) << std::endl 
+                 << "   max|Fatom|= " << std::setprecision(6) << std::setw(15) << mymolecule.myion->max_fion(fion) 
+                 << "  (" << std::setprecision(3) << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
+                 << std::endl << std::endl;
+             
+
+      }
 
 
       /* update coords in mymolecule */
       mymolecule.myion->fixed_step(0.1,fion);
       mymolecule.myion->shift();
 
+      Xmax = mymolecule.myion->xmax();
+      Xrms = mymolecule.myion->xrms();
+      Gmax = 0.0;
+      Grms = 0.0;
+      for (ii=0; ii<(myion.nion); ++ii)
+      {
+         gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+         Grms += gg; 
+         g = sqrt(gg); if (g>Gmax) Gmax = g;
+      }
+      Grms = sqrt(Grms)/((double) myion.nion);
+      if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax)) done = true;
+
+
       /* print out the current energy */
       if (myparallel.is_master())
       {
-         Xmax = mymolecule.myion->xmax();
-         Xrms = mymolecule.myion->xrms();
-         Gmax = 0.0;
-         Grms = 0.0;
-         for (ii=0; ii<(myion.nion); ++ii)
+         if (done)
          {
-            gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
-            Grms += gg; 
-            g = sqrt(gg); if (g>Gmax) Gmax = g;
+            cout << "      ----------------------\n"
+                 << "      Optimization converged\n"
+                 << "      ----------------------\n";
          }
-         Grms = sqrt(Grms)/((double) myion.nion);
 
          if (it==0) 
          {
@@ -374,11 +412,33 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          }
          seconds(&cpustep);
          printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
-         printf("\n\n");
+       
+         if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
+         {
+            cout << "@                                           ok       ok       ok       ok\n";
+         }
+         else if ((Gmax<=tol_Gmax)||(Grms<=tol_Grms)||(Xrms<=tol_Xrms)||(Xmax<=tol_Xmax))
+         {
+            std:string oktag = "";
+            std::cout << "                                     ";
+            oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; std::cout << "       " << oktag;
+            oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; std::cout << "       " << oktag;
+            oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; std::cout << "       " << oktag;
+            oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; std::cout << "       " << oktag << "\n";
+         }
       }
 
+     ++it;
    }
 
+   if (myparallel.is_master()) {
+      cout << "\n\n";
+      cout << " ---------------------------------\n";
+      cout << "  Final Geometry \n";
+      cout << " ---------------------------------\n";
+      cout <<  mymolecule.myion->print_bond_angle_torsions();
+      cout << "\n\n";
+   }
    if (myparallel.is_master()) seconds(&cpu3);
 
    // write energy results to the json

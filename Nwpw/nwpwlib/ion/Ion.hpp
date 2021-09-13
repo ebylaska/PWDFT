@@ -150,6 +150,56 @@ public:
     std::string print_bond_angle_torsions() { return ion_print_bond_angle_torsions(nion,katm,atomarray,rion1); }
 
 
+    double com_fion(const double *fion, const int i) {
+       double tmass = 0.0;
+       double ss    = 0.0;
+       for (auto ii=0; ii<nion; ++ii) { 
+          tmass += mass[ii];
+          ss    += mass[ii]*fion[3*ii+i];
+       }
+       return ss/tmass;
+    }
+
+    void remove_com_fion(double *fion) {
+       double tmass = 0.0;
+       double gx = 0.0;
+       double gy = 0.0;
+       double gz = 0.0;
+       for (auto ii=0; ii<nion; ++ii) { 
+          tmass += mass[ii];
+          gx    += mass[ii]*fion[3*ii];
+          gy    += mass[ii]*fion[3*ii+1];
+          gz    += mass[ii]*fion[3*ii+2];
+       }
+       gx /= tmass;
+       gy /= tmass;
+       gz /= tmass;
+       for (auto ii=0; ii<nion; ++ii) { 
+          fion[3*ii]   -= gx;
+          fion[3*ii+1] -= gy;
+          fion[3*ii+2] -= gz;
+       }
+    }
+
+    double max_fion(const double *fion) {
+       double x,xx;
+       double y = 0.0;
+       for (auto ii=0; ii<nion; ++ii) { 
+          xx = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+          x = sqrt(xx); if (x>y) y = x;
+       }
+       return y;
+   }
+
+
+    double rms_fion(const double *fion) {
+       double ss    = 0.0;
+       for (auto ii=0; ii<nion; ++ii) { 
+          ss += fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+       }
+       return sqrt(ss)/((double) nion);
+   }
+
 
 
 };
