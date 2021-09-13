@@ -162,14 +162,14 @@ int main(int argc, char* argv[])
              }
         }
 
-        ierr += pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
+        ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
      }
 
      /* Optimize task */
      if (task==3) 
      {
         if (oprint) std::cout << std::endl << "Running geometry optimization calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
-        ierr += pspw_geovib(MPI_COMM_WORLD,rtdbstr);
+        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,rtdbstr);
      }
 
      /* Frequency task */
@@ -178,8 +178,8 @@ int main(int argc, char* argv[])
         if (oprint) std::cout << std::endl << "Running frequency calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
      }
 
-     if (task==5) ierr += cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
-     if (task==6) ierr += cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
+     if (task==5) ierr += pwdft::cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
+     if (task==6) ierr += pwdft::cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
 
 
     
