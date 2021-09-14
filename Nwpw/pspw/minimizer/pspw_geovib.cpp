@@ -457,9 +457,6 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    /* write psi */
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
 
-   /* deallocate memory */
-   gdevice_psi_dealloc();
-
 
    /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
@@ -487,12 +484,15 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       cout << "\n";
 
-      //nwpw_timing_print_final(myelectron.counter);
+      nwpw_timing_print_final(myelectron.counter);
 
       cout << "\n";
       cout << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
+
+   /* deallocate memory */
+   gdevice_psi_dealloc();
 
    return 0;
 }
