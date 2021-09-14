@@ -70,14 +70,18 @@ cmake ../Nwpw/
 ```
 
 ## Running on Cori-Haswell
+```
 salloc --nodes 1 --qos interactive --time 01:00:00 --constraint haswell
 srun -n <num_mpi_processes> -c <cpus_per_task> a.out
 srun -n <num_mpi_processes> -c <cpus_per_task> pwdft
+```
 
 ### runnin on haswell??
+```
 salloc --nodes 1 --qos interactive --time 01:00:00 --constraint haswell
 cd PWDFT/QA/C2_steepest_descent
 srun -n 24 ../../build/pwdft c2-sd.nw
+```
 
 
 # Build instructions on NERSC Cori-CUDA
