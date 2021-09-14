@@ -1,0 +1,29 @@
+Title "Hellow Dolly"
+echo
+
+memory 1900 mb
+start c2-pbe-pspw
+
+#permanent_dir ./perm
+#scratch_dir   ./perm
+
+
+geometry noautosym noautoz center
+C 0 0 0    
+C 0 0 1.3  
+end
+
+nwpw
+   pseudopotentials
+   C library pspw_default
+   end
+   simulation_cell
+     SC 20.0
+   end
+   mapping 3
+   cutoff 30.0
+   xc pbe
+end
+task pspw energy
+task pspw optimize
+
