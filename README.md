@@ -51,9 +51,9 @@ make -j4
 qsub -I -n 1 -t 60 -q arcticus
 ```
 
-# Build Instructions on NERSC Cori
+# Build Instructions on NERSC Cori-Haswell
 
-## required modules
+## required modules on Cori-Haswell
 ```
 module purge
 module load cmake/3.18.2
@@ -62,9 +62,20 @@ module load craype-haswell
 module load openmpi
 ```
 
+## Build Instructions on Cori-Haswell (starting from PWDFT directory)
+```
+mkdir build
+cd build
+cmake ../Nwpw/
+```
+
+## Running on Cori-Haswell
+
+
+
 # Build instructions on NERSC Cori-CUDA
 
-## Required Modules
+## Required Modules on Cori-CUDA
 ```
 module unload impi
 module load PrgEnv-intel
@@ -72,12 +83,14 @@ module load cmake
 module load cudatoolkit
 ```
 
-## Build Instructions
+## Build Instructions on Cori-CUDA (starting from PWDFT directory)
 ```
+mkdir build_cuda
+cd build-cuda
 cmake -DNWPW_CUDA=ON ../Nwpw/
 ```
 
-## Running on Cori
+## Running on Cori-CUDA
 ```
 module load cgpu
 salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A <account>
