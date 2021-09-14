@@ -381,7 +381,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       cout << "\n";
 
-      nwpw_timing_print_final(myelectron.counter);
+      //nwpw_timing_print_final(myelectron.counter);
 
       cout << "\n";
       cout << " >>> job completed at     " << util_date() << " <<<\n";
