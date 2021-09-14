@@ -382,7 +382,6 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
-   double junk = myparallel.SumAll(0,1.0);
 
    /* deallocate memory */
    gdevice_psi_dealloc();
