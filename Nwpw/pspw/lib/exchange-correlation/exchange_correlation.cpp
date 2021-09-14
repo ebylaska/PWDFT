@@ -44,6 +44,9 @@
 #include	"v_bwexc.hpp"
 #include	"exchange_correlation.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /* Constructors */
 
 /*******************************************
@@ -139,3 +142,4 @@ void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
 }
 
 
+}

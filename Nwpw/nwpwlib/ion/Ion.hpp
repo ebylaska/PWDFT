@@ -9,6 +9,9 @@
 #include	"Control2.hpp"
 #include	"ion_rcovalent.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class	Ion {
 
    char   *atomarray;
@@ -203,5 +206,6 @@ public:
 
 
 };
+}
 
 #endif

@@ -6,6 +6,9 @@
 	this class is used defining 1d parallel maps
 */
 
+namespace pwdft {
+using namespace pwdft;
+
 class Mapping1 {
 
         int np,taskid;
@@ -35,5 +38,7 @@ public:
         int msntoindex(const int ms, const int n) { return (qmap[ms][n] + ms*neq[0]); }
         int msntop(const int ms, const int n)     { return pmap[ms][n]; }
 };
+
+}
 
 #endif

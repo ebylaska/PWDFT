@@ -3,6 +3,9 @@
 
 #include        "nwpw_timers.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 extern void nwpw_timing_start(const int);
 extern void nwpw_timing_end(const int);
 extern void nwpw_timing_print_final(int);
@@ -24,6 +27,5 @@ public:
 };
 
 
-
-
+}
 #endif

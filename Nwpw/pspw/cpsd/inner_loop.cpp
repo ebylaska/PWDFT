@@ -1,4 +1,5 @@
 
+
 #include        <iostream>
 #include        <cstdio>
 #include        <cmath>
@@ -17,6 +18,9 @@ using namespace std;
 #include        "Pseudopotential.hpp"
 //#include	"v_exc.hpp"
 #include	"inner_loop.hpp"
+
+namespace pwdft {
+using namespace pwdft;
 
 
 void inner_loop(Control2& control, Pneb *mygrid, Ion *myion, 
@@ -268,4 +272,5 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
    mygrid->c_pack_deallocate(vc);
+}
 }

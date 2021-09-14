@@ -5,6 +5,9 @@
 #include        "Kinetic.hpp"
 #include        "Pseudopotential.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 extern void psi_H(Pneb *,
                   Kinetic_Operator *,
                   Pseudopotential *,
@@ -12,4 +15,5 @@ extern void psi_H(Pneb *,
                   double *, double *, double *,
                   double *, 
                   bool, double *);
+}
 #endif

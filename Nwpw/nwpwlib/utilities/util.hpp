@@ -3,6 +3,9 @@
 
 #include        "Parallel.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 extern void c_aindexcopy(const int, const int *, double *, double *);
 extern void c_bindexcopy(const int, const int *, double *, double *);
 extern void c_bindexcopy_conjg(const int, const int *, double *, double *);
@@ -33,5 +36,6 @@ extern double util_linesearch(double, double (*)(double), double (*)(double), do
 extern void util_matprint(std::string, int, double *);
 #endif
 
+}
 
 #endif

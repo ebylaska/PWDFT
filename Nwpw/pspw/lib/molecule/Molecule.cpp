@@ -9,6 +9,8 @@
 
 #include	"Molecule.hpp"
 
+namespace pwdft {
+
 /********************************************
  *                                          *
  *           Molecule::Molecule             *
@@ -76,6 +78,8 @@ Molecule::Molecule(char *infilename,
 */
 /*---------------------- testing Electron Operators ---------------------- */
 
+
+}
 
 }
 

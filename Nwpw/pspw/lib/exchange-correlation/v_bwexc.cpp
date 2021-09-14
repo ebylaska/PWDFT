@@ -8,6 +8,9 @@
 #include        "hsepbe.hpp"
 #include        "b3lyp.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 #define dncut	1.0e-30
 
 /********************************
@@ -319,4 +322,6 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->rrr_Minus(fnup,fdnup,xcpup);
       mypneb->rrr_Minus(fndn,fdndn,xcpdn);
    }
+}
+
 }

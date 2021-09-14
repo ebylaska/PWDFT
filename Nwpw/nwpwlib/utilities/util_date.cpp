@@ -4,6 +4,10 @@
 #include <ctime>
 #include <cstring>
 
+
+namespace pwdft {
+using namespace pwdft;
+
 char *util_date()
 {
   time_t t = time((time_t *) 0);
@@ -22,3 +26,4 @@ void    seconds(double *tt)
    *tt = Clock/((double) CLOCKS_PER_SEC);
 }
 
+}

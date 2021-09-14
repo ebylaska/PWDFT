@@ -4,6 +4,9 @@
 
 #include        <cmath>
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /* Density cutoff parameters */
 #define DNS_CUT		(1.0e-20)
@@ -608,3 +611,4 @@ void gen_BEEF_BW_restricted(const int n2ft3d,
 
 }
 
+}

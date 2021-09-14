@@ -33,10 +33,12 @@ using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
 
+namespace pwdft {
+using namespace pwdft;
 
 /******************************************
  *                                        *
- *                cgsd                    *
+ *                cpsd                    *
  *                                        *
  ******************************************/
 int cpsd(MPI_Comm comm_world0, string& rtdbstring)
@@ -436,4 +438,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    return 0;
+}
+
 }

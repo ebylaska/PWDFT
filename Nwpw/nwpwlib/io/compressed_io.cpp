@@ -44,6 +44,11 @@
  * return 1 if the file exist otherwise return 0
  */
 #include <sys/stat.h>
+
+namespace pwdft {
+using namespace pwdft;
+
+
 int cfileexists(const char* filename){
     struct stat buffer;
     int exist = stat(filename,&buffer);
@@ -141,5 +146,7 @@ void openfile(const int unit, const char *filename, const char *mode)
 void closefile(const int unit)
 {
    (void) fclose(fd[unit]);
+}
+
 }
 

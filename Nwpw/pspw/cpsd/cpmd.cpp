@@ -6,6 +6,7 @@
 #include	<string>
 using namespace std;
 
+
 #include	"Parallel.hpp"
 //#include	"control.hpp"
 #include	"Control2.hpp"
@@ -29,6 +30,8 @@ using namespace std;
 using json = nlohmann::json;
 
 namespace pwdft {
+using namespace pwdft;
+
 
 /******************************************
  *                                        *

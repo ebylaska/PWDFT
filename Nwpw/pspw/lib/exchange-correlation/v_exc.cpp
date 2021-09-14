@@ -4,6 +4,8 @@
 #include	"nwpw_timing.hpp"
 #include	"v_exc.hpp"
 
+namespace pwdft {
+using namespace pwdft;
 
 /**********************************************
  *                                            *
@@ -166,5 +168,7 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
    }
 
    nwpw_timing_end(4);
+}
+
 }
 

@@ -15,6 +15,9 @@
 #include	"util.hpp"
 #include	"nwpw_timing.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class Pneb : public PGrid, public d1db  {
 
    //int ispin,ne[2],neq[2];
@@ -124,4 +127,6 @@ public:
         void ggg_Minus(double *, double *, double *);
 
 };
+}
+
 #endif

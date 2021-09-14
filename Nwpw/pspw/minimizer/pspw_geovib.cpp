@@ -43,6 +43,7 @@ using namespace std;
 using json = nlohmann::json;
 
 
+namespace pwdft {
 
 /******************************************
  *                                        *
@@ -494,6 +495,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    return 0;
+}
+
 }
 
 

@@ -4,6 +4,9 @@
 
 #include	<cmath>
 
+namespace pwdft {
+using namespace pwdft;
+
 /* Constants for HJS hole */
 #define AA	7.57211e-1
 #define BB	-1.06364e-1
@@ -759,6 +762,7 @@ void gen_HSE_BW_restricted(const int n2ft3d,
 }
 
       
+}
 
 
 

@@ -2,6 +2,8 @@
 #include	<cmath>
 #include	"util_linesearch.hpp"
 
+namespace pwdft {
+using namespace pwdft;
 
 
 /* util_linesearch common block */
@@ -225,7 +227,4 @@ double util_linesearch(const double t0, const double f0, const double df0, doubl
    return fmin;
 }
 
-
-
-
-
+}

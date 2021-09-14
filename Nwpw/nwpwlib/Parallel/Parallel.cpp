@@ -11,6 +11,9 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /********************************
  *                              *
  *         Constructors         *
@@ -376,4 +379,6 @@ void Parallel::adsend(const int d, const int tag, const int procto, const int n,
 {
    //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
    if (npi[d]>1) MPI_Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag,comm_i[d],&request[d][reqcnt[d]++]);
+}
+
 }

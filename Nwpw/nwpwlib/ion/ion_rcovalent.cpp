@@ -16,6 +16,8 @@
 
 #include	<cmath>
 
+namespace pwdft {
+using namespace pwdft;
 
 
 static std::map<std::string, std::vector<double> > rcovalent = { 
@@ -398,4 +400,5 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
    return msg;
 }
 
+}
 

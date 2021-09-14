@@ -17,6 +17,8 @@
 #include        "compressed_io.hpp"
 #include        "Pseudopotential.hpp"
 
+namespace pwdft {
+
 /*******************************************
  *                                         *
  *              vpp_read_header            *
@@ -1686,4 +1688,5 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
     delete [] Gy;
     delete [] Gz;
 
+}
 }

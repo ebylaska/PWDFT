@@ -12,14 +12,13 @@ extern "C" {
 #include        "pseudopotential.h"
 }
 
-
 using namespace std;
-
 
 #include	"NwpwLibrarypsConfig.hpp"
 #include	"psp_library.hpp"
 
-using namespace std;
+namespace pwdft {
+using namespace pwdft;
 
 
 static int convert_psp_type(char *test)
@@ -392,6 +391,7 @@ double psp_library::psp_rlocal(const char *atom)
    return rlocal;
 }
 
+}
 
 
 

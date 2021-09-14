@@ -15,6 +15,8 @@ using namespace std;
 
 using json = nlohmann::json;
 
+namespace pwdft {
+using namespace pwdft;
 
 
 
@@ -400,4 +402,5 @@ void Control2::add_scratch_dir(char fname[])
    }
 }
 
+}
 

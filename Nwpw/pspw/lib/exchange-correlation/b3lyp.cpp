@@ -5,6 +5,9 @@
 #include        <cmath>
 #include        "pbe96.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /* other constants */
 #define thrd    (1.00/3.00)
 #define twthrd  (2.00/3.00)
@@ -638,4 +641,6 @@ void gen_B3LYP_BW_restricted(const int n2ft3d,double *rho_in,double *agr_in,
       xce[i] = xce[i] + x_parameter*0.100*xe_dirac  + c_parameter*0.190*ce_vosko;
       fn[i]  = fn[i]  + x_parameter*0.100*fnx_dirac + c_parameter*0.190*fnc_vosko;
    }
+}
+
 }

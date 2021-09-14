@@ -17,6 +17,8 @@ using namespace std;
 #include	"Coulomb.hpp"
 
 
+namespace pwdft {
+
 /*******************************************
  *                                         *
  *     Coulomb_Operator::Coulomb_Operator  *
@@ -93,4 +95,6 @@ double Coulomb_Operator::ecoulomb(double *dng)
    ave *= 0.5*(mypneb->lattice->omega());
 
    return ave;
+}
+
 }

@@ -16,6 +16,8 @@ using namespace std;
 #include	"PGrid.hpp"
 #include	"Kinetic.hpp"
 
+namespace pwdft {
+
 
 /*******************************************
  *                                         *
@@ -95,4 +97,6 @@ double Kinetic_Operator::ke_ave(double *psi)
    ave = -ave;
 
    return ave;
+}
+
 }

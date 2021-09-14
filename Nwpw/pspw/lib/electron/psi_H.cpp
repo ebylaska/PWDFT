@@ -4,6 +4,9 @@
 #include        "Kinetic.hpp"
 #include        "Pseudopotential.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /*************************************
  *                                   *
  *             psi_H                 *
@@ -81,4 +84,6 @@ void psi_H(Pneb *mygrid,
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
    mygrid->r_dealloc(vall);
+}
+
 }

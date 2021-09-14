@@ -10,6 +10,9 @@
 
 #include	"Strfac.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /* Constructors */
 
@@ -197,5 +200,7 @@ void Strfac::strfac_pack(const int nb, const int ii, double *strx)
       strx[2*i]   = (ai*c - bi*d);
       strx[2*i+1] = (ai*d + bi*c);
    }
+}
+
 }
 

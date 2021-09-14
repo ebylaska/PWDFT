@@ -4,6 +4,9 @@
 
 #include	<cmath>
 
+namespace pwdft {
+using namespace pwdft;
+
 /* Density cutoff parameters */
 #define DNS_CUT	1.0e-20
 #define ETA	1.0e-20
@@ -451,6 +454,8 @@ void gen_PBEsol_BW_restricted(const int n2ft3d,
       fn[i]  = x_parameter*fnx  + c_parameter*fnc;
       fdn[i] = x_parameter*fdnx + c_parameter*fdnc;
    }
+}
+
 }
 
 

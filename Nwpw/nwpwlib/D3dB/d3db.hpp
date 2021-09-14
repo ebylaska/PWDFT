@@ -14,6 +14,9 @@
 #include <stdexcept>
 #include <sstream>
 
+namespace pwdft {
+using namespace pwdft;
+
 class d3db : public Mapping3 {
 
     /* transpose indexings */
@@ -110,5 +113,6 @@ public:
 	void     c_ptranspose_ijk_init(const int, int *, int *);
 
 };
+}
 
 #endif

@@ -16,6 +16,9 @@
 #include	<string>
 #include	"Control2.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class psp_library {
 
    public:
@@ -47,6 +50,8 @@ class psp_library {
 
 
 };
+
+}
 
 
 #endif

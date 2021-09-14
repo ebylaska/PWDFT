@@ -1,6 +1,9 @@
 #ifndef _GDEVICE_HPP_
 #define _GDEVICE_HPP_
 
+namespace pwdft {
+using namespace pwdft;
+
 extern void gdevice_TN3_dgemm(int, int, double, double *, double *, double, double *, double *, double *);
 extern void gdevice_TN_dgemm(int, int, int, double, double *, double *, double, double *);
 extern void gdevice_NN_dgemm(int, int, double, double *, double *, double, double *);
@@ -195,5 +198,7 @@ public:
         throw cublas_exception( __FILE__, __LINE__, ERR );
 
 #endif // NWPW_CUDA
+
+}
 
 #endif

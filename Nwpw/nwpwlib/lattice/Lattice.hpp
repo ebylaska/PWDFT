@@ -7,6 +7,9 @@
 
 #include	"Control2.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class Lattice {
 
    double punita[9],punitg[9],pecut,pwcut,pomega;
@@ -28,5 +31,6 @@ public:
    double *unita_ptr() { return punita; } 
    void abc_abg(double *, double *, double *, double *, double *, double *);
 };
+}
 
 #endif

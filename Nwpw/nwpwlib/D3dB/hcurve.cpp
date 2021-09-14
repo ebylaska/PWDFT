@@ -15,6 +15,8 @@
  *      (http://www2-fs.informatik.uni-tuebingen.de/~reinhard/fct97.pdf)
  */
 
+namespace pwdft {
+using namespace pwdft;
 
 typedef struct rect_struct {
 	struct rect_struct *lo,*ro,*lu,*ru,*sp;
@@ -209,5 +211,7 @@ void hcurve2d_map(const int sizex, const int sizey,int map[])
 	delete [] fel;
 	delete [] bfeld;
 	delete [] bfel;
+}
+
 }
 

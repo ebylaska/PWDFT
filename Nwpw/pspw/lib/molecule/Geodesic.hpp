@@ -8,6 +8,8 @@
 
 //#include	"util.hpp"
 
+namespace pwdft {
+
 
 class	Geodesic {
 
@@ -142,5 +144,7 @@ public:
        this->get(t,mymolecule->psi1,mymolecule->psi2);
     }
 };
+
+}
 
 #endif

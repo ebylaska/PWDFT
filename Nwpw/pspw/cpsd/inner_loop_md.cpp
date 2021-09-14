@@ -1,4 +1,5 @@
 
+
 #include        <iostream>
 #include        <cstdio>
 #include        <cmath>
@@ -17,6 +18,9 @@ using namespace std;
 //#include	"v_exc.hpp"
 #include	"inner_loop_md.hpp"
 
+
+namespace pwdft {
+using namespace pwdft;
 
 void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion, 
                 Kinetic_Operator *myke, 
@@ -255,4 +259,5 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
    mygrid->c_pack_deallocate(vc);
+}
 }

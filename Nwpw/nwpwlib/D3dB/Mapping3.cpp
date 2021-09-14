@@ -14,6 +14,9 @@ using namespace std;
 #include	"hilbert.hpp"
 #include	"Mapping3.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /***********************************
  *                                 *
  *        generate_map_indexes     *
@@ -171,6 +174,8 @@ Mapping3::~Mapping3()
         int *h_i1_start[6],*h_i2_start[6];
    }
 
+
+}
 
 }
 

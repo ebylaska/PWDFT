@@ -15,6 +15,9 @@
 
 using namespace std;
 
+namespace pwdft {
+using namespace pwdft;
+
 inline string mystring_readfile(const string fname)
 {
    /* load the file into string */
@@ -130,7 +133,7 @@ inline string mystring_ireplace(const string s0, const string a, const string b)
    return s;
 }
 
-
+}
 
 
 #endif

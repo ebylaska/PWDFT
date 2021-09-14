@@ -9,6 +9,9 @@
 #include	"Parallel.hpp"
 #include	"Mapping1.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class d1db : public Mapping1 {
 
 
@@ -22,5 +25,7 @@ public:
         ~d1db() {}
 
 };
+
+}
 
 #endif

@@ -19,6 +19,9 @@
 
 #include "blas.h"
 
+namespace pwdft {
+using namespace pwdft;
+
 /********************************
  *                              *
  *         Constructors         *
@@ -1020,4 +1023,5 @@ void PGrid::cct_iconjgMulb(const int nb, const double *a, const double *b, doubl
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
+}
 

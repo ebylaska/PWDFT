@@ -13,6 +13,9 @@
 #include	"Lattice.hpp"
 #include	"Balance.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class PGrid : public d3db {
 
    Balance *mybalance;
@@ -133,5 +136,7 @@ public:
         //int  rc_pfft3f(const int, double *);
 
 };
+
+}
 
 #endif

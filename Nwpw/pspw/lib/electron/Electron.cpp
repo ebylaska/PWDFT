@@ -13,6 +13,9 @@
 
 #include	"Electron.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /********************************************
  *                                          *
  *  Electron_Operators::Electron_Operators  *
@@ -486,4 +489,4 @@ void Electron_Operators::vnl_force(double *psi, double *fion)
 }
 
 
-
+}

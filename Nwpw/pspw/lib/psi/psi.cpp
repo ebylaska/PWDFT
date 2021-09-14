@@ -22,6 +22,8 @@ using namespace std;
 #include	"psi.hpp"
 
 
+namespace pwdft {
+using namespace pwdft;
 
 /*****************************************************
  *                                                   *
@@ -454,4 +456,6 @@ void v_psi_write(Pneb *mypneb,int *version, int nfft[],
 }             
 
 */
+
+}
 

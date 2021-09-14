@@ -16,6 +16,9 @@
 
 #include "blas.h"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /********************************
  *                              *
@@ -968,6 +971,8 @@ void Pneb::g_ortho(double *psi)
          }
       }
    }
+}
+
 }
 
 

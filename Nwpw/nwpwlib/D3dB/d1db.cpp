@@ -18,6 +18,9 @@ using namespace std;
 #include	"d1db.hpp"
 
 
+namespace pwdft {
+using namespace pwdft;
+
 /********************************
  *                              *
  *         Constructors         *
@@ -30,3 +33,4 @@ d1db::d1db(Parallel *inparall,const int inmaptype, const int inispin, int *inne)
    parall = inparall;
 }
 
+}

@@ -5,6 +5,9 @@
 #include	<cmath>
 #include	"pbe96.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /****************************************************
  *                                                  *
  *             Becke_smalln_correction              *
@@ -544,5 +547,7 @@ void gen_BLYP_BW_restricted(const int n2ft3d,
       fn[i]  = x_parameter*fdnx  + c_parameter*fdnc;
       fdn[i] = x_parameter*fdagrx + c_parameter*fdagrc;
    }
+
+}
 
 }

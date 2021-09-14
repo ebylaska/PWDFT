@@ -41,6 +41,8 @@ using namespace std;
 using json = nlohmann::json;
 
 
+namespace pwdft {
+
 
 /******************************************
  *                                        *
@@ -387,6 +389,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    return 0;
+}
+
 }
 
 

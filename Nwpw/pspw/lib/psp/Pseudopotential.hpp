@@ -11,6 +11,8 @@ using namespace std;
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
 
+namespace pwdft {
+
 class	Pseudopotential {
 
    int nprj_max;
@@ -97,5 +99,7 @@ public:
     double e_nonlocal(double *);
 
 };
+ 
+}
 
 #endif

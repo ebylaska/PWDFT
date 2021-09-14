@@ -7,6 +7,8 @@ $Id: hilbert.c,v 1.6 2005-10-07 19:34:21 bylaska Exp $
 #include <cmath>
 #include "olist.hpp"
 
+namespace pwdft {
+using namespace pwdft;
 
 
 #define bottom_left     0
@@ -224,5 +226,6 @@ void hilbert2d_map(const int sizex, const int sizey, int *map)
    delete [] mapjj;
    delete [] map2;
 
+}
 }
 

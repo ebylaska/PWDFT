@@ -8,6 +8,9 @@
 #include	"Parallel.hpp"
 
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /* datatypes */
 #ifndef _RTDB_DATATYPE_H_
@@ -44,4 +47,5 @@ public:
         int get_info(const char *, int *, int *, char *);
 
 };
+}
 #endif

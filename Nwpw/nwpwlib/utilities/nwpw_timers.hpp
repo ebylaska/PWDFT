@@ -79,6 +79,9 @@
 #include <iostream>
 #include <chrono>
 
+namespace pwdft {
+using namespace pwdft;
+
 #define MASTER  0
 #define	nwpw_tim_max	80
 
@@ -144,5 +147,6 @@ public:
    }
 
 };
+}
 
 #endif

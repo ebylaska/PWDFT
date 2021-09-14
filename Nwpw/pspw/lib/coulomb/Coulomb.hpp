@@ -6,6 +6,8 @@ using namespace std;
 
 #include	"Pneb.hpp"
 
+namespace pwdft {
+
 class	Coulomb_Operator {
 
    double *vg;
@@ -24,5 +26,7 @@ public:
     void   vcoulomb(double *, double *);
     double ecoulomb(double *);
 };
+
+}
 
 #endif

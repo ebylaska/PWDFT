@@ -17,6 +17,9 @@ using namespace std;
 #include	"Ewald.hpp"
 //#include	"Pseudopotential.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /*************************************
  *                                   *
  *          mandelung_get            *
@@ -709,4 +712,6 @@ void Ewald::force(double *fion)
    }
    if (tnp>1) ewaldparall->Vector_SumAll(0,3*nion,ftmp);
    for (i=0; i<3*nion; ++i) fion[i] += ftmp[i];
+}
+
 }

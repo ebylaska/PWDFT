@@ -12,6 +12,9 @@ using namespace std;
 
 #include	"Mapping1.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /********************************
  *                              *
@@ -98,3 +101,4 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
 
 }
 
+}

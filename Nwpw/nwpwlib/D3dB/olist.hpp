@@ -9,6 +9,9 @@
 #include        <cstdlib>
 using namespace std;
 
+namespace pwdft {
+using namespace pwdft;
+
 class OList {
 
    int max_index;
@@ -62,5 +65,7 @@ public:
 //extern	int	index_olist();
 //extern	void	destroy_olist();
 //extern	void	print_olist();
+
+}
 
 #endif

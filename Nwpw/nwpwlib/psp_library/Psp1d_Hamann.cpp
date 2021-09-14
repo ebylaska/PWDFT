@@ -16,6 +16,9 @@ using namespace std;
 #include	"util.hpp"
 #include	"Psp1d_Hamann.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 #define FMT1    "%lf"
 #define FMT2    " %lf %lf"
@@ -983,5 +986,6 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, d
 
 }
 
+}
 
 

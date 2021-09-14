@@ -13,11 +13,11 @@ using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
 
-
-
 #include	"Control2.hpp"
 #include	"Ion.hpp"
 
+namespace pwdft {
+using namespace pwdft;
 
 static void center_v_mass(int nion, double *mass, double *rion0, double *vx, double *vy, double *vz)
 {
@@ -358,4 +358,6 @@ void Ion::writejsonstr(string& rtdbstring)
    rtdbjson["geometries"][geomname]["coords"] = coords;
 
    rtdbstring = rtdbjson.dump();
+}
+
 }

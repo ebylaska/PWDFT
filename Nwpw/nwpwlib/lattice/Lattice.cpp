@@ -7,6 +7,9 @@
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 static void get_cube(double *unita, double *unitg, double *omega)
 {
@@ -128,4 +131,6 @@ void Lattice::abc_abg(double *a1, double *b1, double *c1, double *alpha1, double
    /* return values */
    *a1 = a; *b1 = b; *c1 = c;
    *alpha1 = alpha; *beta1  = beta; *gamma1 = gamma;
+}
+
 }

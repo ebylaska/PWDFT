@@ -6,6 +6,9 @@
 #include        "Control2.hpp"
 #include        "Pneb.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class   XC_Operator {
 
    Pneb   *mypneb;
@@ -65,5 +68,7 @@ public:
    }
 
 };
+
+}
 
 #endif

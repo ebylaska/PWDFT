@@ -4,6 +4,9 @@
 #include        "Parallel.hpp"
 #include        "PGrid.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class	Psp1d_Hamann {
 
 public:
@@ -60,5 +63,7 @@ public:
 
    void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
 };
+
+}
 
 #endif

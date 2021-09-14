@@ -6,6 +6,9 @@
 	this class is used defining 3d parallel maps
 */
 
+namespace pwdft {
+using namespace pwdft;
+
 class Mapping3 {
 
         int *qmap[3],*pmap[3],*kmap;
@@ -92,5 +95,7 @@ public:
         }
 
 };
+
+}
 
 #endif

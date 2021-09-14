@@ -14,6 +14,9 @@ extern "C" {
 }
 #include	"rtdb.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 /********************************
  *                              *
  *         Constructors         *
@@ -118,4 +121,5 @@ int RTDB::get_info(const char *tag, int *matype, int *nelem, char *date)
       parall->Brdcst_iValue(0,0,&status);
    }
    return status;
+}
 }

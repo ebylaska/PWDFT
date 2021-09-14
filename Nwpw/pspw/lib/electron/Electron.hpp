@@ -11,6 +11,9 @@ using namespace std;
 #include        "Strfac.hpp"
 #include	"Pseudopotential.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class	Electron_Operators {
 
    Pneb   *mygrid;
@@ -78,5 +81,7 @@ public:
     void semicore_force(double *);
     
 };
+
+}
 
 #endif

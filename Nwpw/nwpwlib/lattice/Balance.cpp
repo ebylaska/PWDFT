@@ -6,6 +6,9 @@
 
 #include	"Balance.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 void nwave2_sort(const int n,  const int *f, int *indx)
 {
    int i,j,idum;
@@ -373,3 +376,4 @@ void Balance::i_balance(const int nb, int *a)
       }
 }
 
+}

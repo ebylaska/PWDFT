@@ -8,6 +8,9 @@
 #include	"Control2.hpp"
 //#include	"Pseudopotential.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 class	Ewald {
    int    encut,enx,eny,enz,enshl3d,enpack,enpack_all,enida;
    int    *i_indx,*j_indx,*k_indx;
@@ -63,5 +66,6 @@ public:
     double rsalpha() { return (alpha*pow((16.0*atan(1.0)/3.0),1.0/3.0)); }
 
 };
+}
 
 #endif

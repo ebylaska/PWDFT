@@ -7,6 +7,9 @@ using namespace std;
 
 #include        "psp_library.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 /*******************************************
  *                                         *
@@ -44,4 +47,6 @@ void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
 
     /* set the total ion charge in control which in turn sets ispin and ne */
     control.set_total_ion_charge(myion->total_zv());
+}
+
 }

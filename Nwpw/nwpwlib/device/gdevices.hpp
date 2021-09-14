@@ -1,6 +1,9 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
+namespace pwdft {
+using namespace pwdft;
+
 #ifdef NWPW_SYCL
 #include        "gdevices_sycl.hpp"
 #elif defined NWPW_CUDA
@@ -55,4 +58,6 @@ public:
 };
 
 #endif
+
+}
 #endif

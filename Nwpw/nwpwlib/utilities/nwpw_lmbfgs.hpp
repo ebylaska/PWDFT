@@ -10,6 +10,9 @@
 #include	<cmath>
 #include	"blas.h"
 
+namespace pwdft {
+using namespace pwdft;
+
 class nwpw_lmbfgs {
 
    int one  = 1;
@@ -83,5 +86,7 @@ public:
    }
 
 };
+
+}
 
 #endif

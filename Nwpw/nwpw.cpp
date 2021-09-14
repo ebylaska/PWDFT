@@ -42,6 +42,7 @@
 #include "nwpw.hpp"
 
 using namespace std;
+using namespace pwdft;
 
 
 int main(int argc, char* argv[])

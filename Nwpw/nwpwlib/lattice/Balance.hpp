@@ -6,6 +6,8 @@
 */
 
 #include	"Parallel.hpp"
+namespace pwdft {
+using namespace pwdft;
 
 #define	MAXSIZE_MAX	2
 
@@ -37,5 +39,7 @@ public:
    void t_balance(const int, double *a);
    void i_balance(const int, int    *a);
 };
+
+}
 
 #endif

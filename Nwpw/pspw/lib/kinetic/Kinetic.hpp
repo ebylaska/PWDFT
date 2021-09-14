@@ -6,6 +6,8 @@ using namespace std;
 
 #include	"Pneb.hpp"
 
+namespace pwdft {
+
 class	Kinetic_Operator {
 
    double *tg;
@@ -24,5 +26,7 @@ public:
     void   ke(double *, double *);
     double ke_ave(double *);
 };
+
+}
 
 #endif

@@ -8,6 +8,9 @@
 #include        <string>
 using namespace std;
 
+namespace pwdft {
+using namespace pwdft;
+
 
 class Control2 {
 
@@ -158,5 +161,6 @@ public:
 
 };
 
+}
 
 #endif

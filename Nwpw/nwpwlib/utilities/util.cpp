@@ -10,6 +10,9 @@
 #include        "Parallel.hpp"
 #include	"util.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
 {
    int ii,jj;
@@ -336,4 +339,6 @@ void util_matprint(std::string matlabel, int n, double *A) {
    std::cout << std::endl;
 }
 #endif
+
+}
 

@@ -1,5 +1,8 @@
 #include "gdevices.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 static Gdevices mygdevice;
 
 #ifdef NWPW_SYCL
@@ -103,6 +106,8 @@ void gdevice_batch_cfftz(bool forward,int nz,int nq,int n2ft3d,double *a)
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
   if (mygdevice.hasgpu) mygdevice.batch_cfftz(forward,nz,nq,n2ft3d,a);
 #endif
+}
+
 }
 
 

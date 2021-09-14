@@ -15,6 +15,8 @@
 #include        "Geodesic.hpp"
 
 
+namespace pwdft {
+
 /* create dummy function call to Geodesic class functions */
 static Geodesic *mygeodesic_ptr;
 static double dummy_energy(double t)  { return mygeodesic_ptr->energy(t); }
@@ -131,4 +133,6 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    mygrid->g_deallocate(G1);
    
    return total_energy;
+}
+
 }

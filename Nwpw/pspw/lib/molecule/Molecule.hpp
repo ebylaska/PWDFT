@@ -16,6 +16,8 @@ using namespace std;
 #include	"Electron.hpp"
 #include	"psi.hpp"
 
+namespace pwdft {
+
 #define	ionstream(A,B,C)	(A) << scientific << setw(19) << setprecision(10) << (B) << setw(0) <<  " (" << setw(15) << setprecision(5)  << (C) << setw(0) << " /ion)" << "\n"
 #define	elcstream(A,B,C)	(A) << scientific << setw(19) << setprecision(10) << (B) << setw(0) <<  " (" << setw(15) << setprecision(5)  << (C) << setw(0) << " /electron)" << "\n"
 
@@ -245,5 +247,7 @@ public:
    
 
 };
+
+}
 
 #endif

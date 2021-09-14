@@ -6,6 +6,9 @@
 #include        "PGrid.hpp"
 #include	"Ion.hpp"
 
+namespace pwdft {
+using namespace pwdft;
+
 
 class	Strfac {
    int    *i_indx[2],*j_indx[2],*k_indx[2];
@@ -35,5 +38,6 @@ public:
     void phafac();
     void strfac_pack(const int, const int, double *);
 };
+}
 
 #endif
