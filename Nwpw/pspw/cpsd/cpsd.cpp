@@ -430,7 +430,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << " cputime/step: " << av << "\n";
       cout << "\n";
 
-      //nwpw_timing_print_final(control.loop(0)*icount);
+      nwpw_timing_print_final(control.loop(0)*icount);
 
       cout << "\n";
       cout << " >>> job completed at     " << util_date() << " <<<\n";
