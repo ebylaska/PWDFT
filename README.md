@@ -62,11 +62,17 @@ module load craype-haswell
 module load openmpi
 ```
 
+module purge;
+module load cmake/3.20.2;
+module load PrgEnv-intel;
+module load craype-haswell;
+module load openmpi
+
 ## Build Instructions on Cori-Haswell (starting from PWDFT directory)
 ```
 mkdir build
 cd build
-cmake ../Nwpw/
+cmake -DCMAKE_CXX_COMPILER=CC ../Nwpw/
 ```
 
 ## Running on Cori-Haswell
