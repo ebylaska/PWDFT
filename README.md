@@ -51,8 +51,17 @@ make -j4
 qsub -I -n 1 -t 60 -q arcticus
 ```
 
+#Build Instructions on NERSC Cori
 
-# Build instructions on NERSC Cori
+##required modules
+module purge
+module load cmake/3.18.2
+module load PrgEnv-intel
+module load craype-haswell
+module load openmpi
+
+
+# Build instructions on NERSC Cori-CUDA
 
 ## Required Modules
 ```
