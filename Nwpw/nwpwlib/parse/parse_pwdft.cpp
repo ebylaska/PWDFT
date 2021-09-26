@@ -727,6 +727,8 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          if (mystring_contains(line," off"))  nwpwjson["apc"]["on"]    = false;
          if (mystring_contains(line,"gc"))    nwpwjson["apc"]["Gc"]    = mystring_double_list(line,"gc")[0];
          if (mystring_contains(line,"gamma")) nwpwjson["apc"]["gamma"] = mystring_double_list(line,"gamma");
+         if (mystring_contains(line,"u"))     nwpwjson["apc"]["u"]     = mystring_double_list(line,"u");
+         if (mystring_contains(line,"q"))     nwpwjson["apc"]["q"]     = mystring_double_list(line,"q");
       }
 
       ++cur;
