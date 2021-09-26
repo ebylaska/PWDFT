@@ -93,6 +93,19 @@ inline vector<string> mystring_split0(string s) {
    return result;
 }
 
+
+// fetch a vector of doubles 
+inline std::vector<double> mystring_double_list(std::string s, std::string delimiter) {
+   std::vector<double> result;
+   std::istringstream  iss(s.substr(s.find(delimiter) + delimiter.length()));
+
+   double x; while (iss>>x) result.push_back(x);
+
+   return result;
+}
+
+
+
 // Make a lowercase copy of s
 inline string mystring_lowercase(const string& s) {
    string lower(s);

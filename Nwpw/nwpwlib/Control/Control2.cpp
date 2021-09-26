@@ -374,6 +374,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    pminimizer = 1;
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
 
+
 }
 
 void Control2::add_permanent_dir(char fname[])

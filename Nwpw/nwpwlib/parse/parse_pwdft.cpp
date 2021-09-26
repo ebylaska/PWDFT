@@ -718,6 +718,12 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          if (mystring_contains(line,"voutput"))
             nwpwjson["output_v_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line,"voutput")[1]))[0];
       }
+      else if (mystring_contains(line,"apc")) {
+         nwpwjson["apc"] = true;
+         if (mystring_contains(line," off"))  nwpwjson["apc"]      = false;
+         if (mystring_contains(line,"gc"))    nwpwjson["apc_Gc"]    = mystring_double_list(line,"gc")[0];
+         if (mystring_contains(line,"gamma")) nwpwjson["apc_gamma"] = mystring_double_list(line,"gamma");
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))
