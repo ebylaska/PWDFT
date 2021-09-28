@@ -374,6 +374,29 @@ Control2::Control2(const int np0, const string rtdbstring)
    pminimizer = 1;
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
 
+   papc_on  = false;
+   papc_nga = 0;
+   papc_Gc  = 2.5;
+   if (!rtdbjson["nwpw"]["apc"].is_null()) {
+      if (rtdbjson["nwpw"]["apc"]["on"].is_boolean())      papc_on = rtdbjson["nwpw"]["apc"]["on"];
+      if (rtdbjson["nwpw"]["apc"]["Gc"].is_number_float()) papc_Gc = rtdbjson["nwpw"]["apc"]["Gc"];
+      if (!rtdbjson["nwpw"]["apc"]["gamma"].is_null()) {
+         papc_nga = rtdbjson["nwpw"]["apc"]["gamma"].size();
+         for (size_t i=0; i<papc_nga; ++i) 
+            papc_gamma.push_back(rtdbjson["nwpw"]["apc"]["gamma"][i]);
+      }
+      if (!rtdbjson["nwpw"]["apc"]["u"].is_null()) {
+         size_t nu = rtdbjson["nwpw"]["apc"]["u"].size();
+         for (size_t i=0; i<nu; ++i) 
+            papc_u.push_back(rtdbjson["nwpw"]["apc"]["u"][i]);
+      }
+      if (!rtdbjson["nwpw"]["apc"]["q"].is_null()) {
+         size_t nq = rtdbjson["nwpw"]["apc"]["q"].size();
+         for (size_t i=0; i<nq; ++i) 
+            papc_u.push_back(rtdbjson["nwpw"]["apc"]["q"][i]);
+      }
+   }
+   
 
 }
 

@@ -6,6 +6,8 @@
 
 #include	<map>
 #include        <string>
+#include        <vector>
+
 using namespace std;
 
 namespace pwdft {
@@ -42,6 +44,11 @@ class Control2 {
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
+
+   bool   papc_on;
+   int    papc_nga;
+   double papc_Gc;
+   std::vector<double> papc_gamma,papc_u,papc_q;
 
 
 public:
@@ -158,6 +165,14 @@ public:
       }
    }
 
+
+   // APC
+   bool APC_on()    { return papc_on; }
+   int APC_nga()    { return papc_nga; }
+   double APC_Gc()  { return papc_Gc; }
+   double APC_gamma(const int i)  { return papc_gamma[i]; }
+   double APC_u(const int i)      { return papc_u[i]; }
+   double APC_q(const int i)      { return papc_q[i]; }
 
 };
 
