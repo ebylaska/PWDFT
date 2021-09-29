@@ -34,14 +34,29 @@ public:
    int nga,ngs;
    double Gc;
 
-   double *gamma,*Am,*u, *q;
+   double *gamma,*A,*Am,*b,*q,*u,*w,*gaus;
    double Eapc,Papc;
 
    /* constructor */
    nwpw_apc(Ion *, Pneb *, Strfac *, Control2&);
 
    /* destructor */
-   ~nwpw_apc() {}
+   ~nwpw_apc() {
+      if (apc_on) {
+         delete [] gamma;
+         delete [] A;
+         delete [] Am;
+         delete [] b;
+         delete [] q;
+         delete [] u;
+         delete [] w;
+         delete [] gaus;
+      }
+   }
+
+   void gen_APC(double *, bool);
+   void dngen_APC(double *, bool);
+
 
 };
 

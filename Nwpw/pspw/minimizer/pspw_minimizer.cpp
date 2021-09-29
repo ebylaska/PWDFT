@@ -24,6 +24,7 @@ using namespace std;
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
 #include	"Molecule.hpp"
+#include	"nwpw_apc.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
@@ -160,6 +161,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
 
+   /* initialize apc */
+   nwpw_apc mypac(&myion,&mygrid,&mystrfac,control);
 
 //                 |**************************|
 // *****************   summary of input data  **********************
