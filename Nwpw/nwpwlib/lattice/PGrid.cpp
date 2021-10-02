@@ -855,6 +855,29 @@ void PGrid::tcc_Mul(const int nb, const double *a, const double *b, double *c)
    }
 }
 
+
+
+/********************************
+ *                              *
+ *         PGrid:tc_Mul         *
+ *                              *
+ ********************************/
+void PGrid::tc_Mul(const int nb, const double *a, double *c)
+{
+   int i,ii;
+   int ng  = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = c[ii]  *a[i];
+      c[ii+1] = c[ii+1]*a[i];
+      ii += 2;
+   }
+}
+
+
+
 /********************************
  *                              *
  *         PGrid:ttc_iMul       *

@@ -162,7 +162,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
 
    /* initialize apc */
-   nwpw_apc mypac(&myion,&mygrid,&mystrfac,control);
+   nwpw_apc myapc(&myion,&mygrid,&mystrfac, control);
 
 //                 |**************************|
 // *****************   summary of input data  **********************
@@ -346,6 +346,12 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       rtdbjson["pspw"]["gradient"] = std::vector<double>(fion,&fion[3*myion.nion]);
 
       delete [] fion;
+   }
+
+   myapc.gen_APC(mymolecule.dng1,false);
+   if (myparallel.is_master())
+   {
+      std::cout <<  myapc.print_APC(mypsp.zv);
    }
 
 

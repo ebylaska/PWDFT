@@ -18,6 +18,16 @@
 
 #define	DDOT_PWDFT(n,a,ida,b,idb)	cblas_ddot(n,a,ida,b,idb);
 
+
+
+extern "C" void dgelss_(int *, int *, int *, 
+                       double *, int *,
+                       double *, int *,
+                       double *, double *, int *,
+                       double *, int *, int *);
+
+#define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr)	dgelss_(&(m),&(n),&(nrhs),a,&(ida),b,&(idb),s1,&(rcond),&(rank),work,&(iwork),&(ierr))
+
 #else
 
 
@@ -42,6 +52,15 @@ extern "C" int  idamax_(int *, double *, int *);
 
 extern "C" void dlacpy_(char *,int *, int *, double *, int *, double *, int *);
 
+extern "C" void dgelss_(int *, int *, int *, 
+                       double *, int *,
+                       double *, int *,
+                       double *, double *, int *,
+                       double *, int *, int *);
+
+
+
+
 
 #define	DSCAL_PWDFT(n,alpha,a,ida)		dscal_(&(n),&(alpha),a,&(ida))
 #define DCOPY_PWDFT(n,a,ida,b,idb)              dcopy_(&(n),a,&(ida),b,&(idb))
@@ -54,6 +73,9 @@ extern "C" void dlacpy_(char *,int *, int *, double *, int *, double *, int *);
 
 #define	DDOT_PWDFT(n,a,ida,b,idb)	ddot_(&(n),a,&ida,b,&(idb))
 #define	DLACPY_PWDFT(s1,m,n,a,ida,b,idb)	dlacpy_(s1,&(m),&(n),a,&(ida),b,&(idb))
+
+#define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr)	dgelss_(&(m),&(n),&(nrhs),a,&(ida),b,&(idb),s1,&(rcond),&(rank),work,&(iwork),&(ierr))
+
 
 #endif
 
