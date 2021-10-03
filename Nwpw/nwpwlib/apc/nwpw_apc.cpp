@@ -134,6 +134,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       double exj[2*npack0];
       double gaus_i[2*npack0];
       double gaus_j[2*npack0];
+      double xtmp[npack0];
 
       /* calculate N = dng(G=0)*omega */
       double N = ((double) (mypneb->ne[0] + mypneb->ne[ispin-1]));
@@ -156,6 +157,15 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
             /* bi = omega*Sum(G) w(G)*Re(dcongj(dng(G))*gaus_i(G)) */
             b[i] = omega*mypneb->cc_pack_dot(0,dng,gaus_i);
+
+            if (move) 
+            {
+               mypneb->cct_iconjgMulb(0,dng,gaus_i,xtmp);
+               b[i+ngs]   = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
+               b[i+2*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
+               b[i+3*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
+            }
+                   
          }
       }
 
@@ -186,11 +196,25 @@ void nwpw_apc::gen_APC(double *dng, bool move)
                   i = iii + ii*nga;
                   j = jjj + jj*nga;
 
-                 indx  = i + j*ngs;
-                 indxt = j + i*ngs;
+                  indx  = i + j*ngs;
+                  indxt = j + i*ngs;
 
-                 A[indx]  = e1;
-                 A[indxt] = e1;
+                  A[indx]  = e1;
+                  A[indxt] = e1;
+
+                  if (move)
+                  {
+                     mypneb->cct_iconjgMulb(0,gaus_i,gaus_j,xtmp);
+                     A[indx+ngs*ngs]   = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
+                     A[indx+2*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
+                     A[indx+3*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
+                     if (indx!=indxt)
+                     {
+                        A[indxt+ngs*ngs]   = -A[indx+ngs*ngs];
+                        A[indxt+2*ngs*ngs] = -A[indx+2*ngs*ngs];
+                        A[indxt+3*ngs*ngs] = -A[indx+3*ngs*ngs]; 
+                     }
+                  }
                }
             }
          }
