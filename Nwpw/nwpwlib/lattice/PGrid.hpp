@@ -119,6 +119,11 @@ public:
         void tcc_MulSum2(const int, const double *, const double *, double *);
         void cc_Sum2(const int, const double *, double *);
         void cccc_Sum(const int, const double *, const double *, const double *, double *);
+        void tcc_aMulAdd(const int, const double, const double *, const double *, double *);
+
+
+
+        void c_addzero(const int, const double, double *);
 
         void c_zero(const int, double *);
         void c_SMul(const int, const double, double *);

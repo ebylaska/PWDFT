@@ -265,8 +265,8 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       }
 
       /* synchronization */
-      mypneb->PGrid::parall->Vector_SumAll(1,ngs,q);
-      mypneb->PGrid::parall->Vector_SumAll(1,ngs*ngs,Am);
+      mypneb->PGrid::parall->Vector_SumAll(0,ngs,q);
+      mypneb->PGrid::parall->Vector_SumAll(0,ngs*ngs,Am);
 
 
 
@@ -281,6 +281,214 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 void nwpw_apc::dngen_APC(double *dn, bool move)
 {
 }
+
+
+
+/*******************************************
+ *                                         *
+ *          private sumAm_APC              *
+ *                                         *
+ *******************************************/
+static double sumAm_APC(const int ngs, const double *Am)
+{
+   double sum1=0.0;
+   for (auto i=0; i<ngs*ngs; ++i)
+      sum1 += Am[i];
+   return sum1;
+}
+
+/*******************************************
+ *                                         *
+ *          private Amtimesu_APC           *
+ *                                         *
+ *******************************************/
+static double Amtimesu_APC(const int ngs, const double *Am, const double *u)
+{
+   double sum0 = 0.0;
+   for (auto i=0; i<ngs; ++i)
+      for (auto j=0; j<ngs; ++j)
+         sum0 += Am[i+j*ngs]*u[j];
+   return sum0;
+}
+
+/*******************************************
+ *                                         *
+ *          private Vfac_APC               *
+ *                                         *
+ *******************************************/
+static double Vfac_APC(const int ngs, const double *Am, const double *u, const int i)
+{
+   double sum0 = 0.0;
+   for (auto j=0; j<ngs; ++j)
+      sum0 += Am[i+j*ngs]*u[j];
+   return sum0;
+}
+
+
+/*******************************************
+ *                                         *
+ *            nwpw_apc::VQ_APC             *
+ *                                         *
+ *******************************************/
+/*
+    This routine calculates dE/drho(G) where E is a function of model q. In order
+  to use this routine Am = inverse A must be calculated
+  for the current geometry.
+  
+    Entry - nion: number of qm atoms
+          - u: dE/dq(ii) - derivative of E wrt to model charges q(ii)
+    Exit - VQ(G) = dE/dq(ii)*dq(ii)/drho(G)
+  
+    Note - pspw_gen_APC needs to be called to generate Am=inv(A) before
+           this routine is called.
+*/
+
+void nwpw_apc::VQ_APC(double *u, double *VQ)
+{
+   int npack0 = mypneb->npack(0);
+
+   double omega  = mypneb->lattice->omega();
+   double sumAm  = sumAm_APC(ngs,Am);
+   double sumAmU = Amtimesu_APC(ngs,Am,u);
+   for (auto i=0; i<ngs; ++i)
+      u[i] -= (sumAmU/sumAm);
+
+   double exi[2*npack0];
+   double gaus_i[2*npack0];
+
+   for (auto ii=0; ii<myion->nion; ++ii)
+   {
+      mystrfac->strfac_pack(0,ii,exi);
+
+      for (auto iii=0; iii<nga; ++iii)
+      {
+         double afac = omega*Vfac_APC(ngs,Am,u,iii+ii*nga);
+
+         /* gaus_i(G)) */ 
+         mypneb->tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
+
+         /* VQ(G) += afac*w(G)*gaus_i(G)) */
+         mypneb->tcc_aMulAdd(0,afac,w,gaus_i,VQ);
+      }
+   }
+   mypneb->c_addzero(0,sumAmU/sumAm,VQ);
+}
+
+
+/*******************************************
+ *                                         *
+ *          private generate_dQdR          *
+ *                                         *
+ *******************************************/
+static double generate_dQdR(const int lb, const int nga, const int nion,
+                            const double *db, const double *q,  const double *u, 
+                            const double *dA, const double *Am, const double sumAm,
+                            double *dbtmp, double *dAtmp)
+{
+   int ngs = nga*nion;
+
+   /* calculate dbtmp */
+   for (auto ja=0; ja<nga; ++ja)
+   {
+      double tmp = 0.0;
+      for (auto kb=0; kb<nion; ++kb)
+      for (auto ka=0; ka<nga; ++ka)
+         tmp +=  dA[ja+lb*nga+(ka+kb*nga)*ngs]*q[ka+kb*nga];
+      dbtmp[ja] = tmp;
+   }
+
+   /* calculate dAtmp */
+   for (auto jb=0; jb<nion; ++jb)
+   for (auto ja=0; ja<nga; ++ja)
+   {
+      double tmp = 0.0;
+      for (auto ka=0; ka<nga; ++ka)
+         tmp +=  dA[ja+jb*nga+(ka+lb*nga)*ngs]*q[ka+lb*nga];
+      dAtmp[ja+jb*nga] = tmp;
+   }
+
+
+   double ff      = 0.0;
+   double sumdQdR = 0.0;
+   for (auto ib=0; ib<nion; ++ib)
+   for (auto ia=0; ia<nga; ++ia)
+   {
+      double tmp=0.0;
+      for (auto ja=0; ja<nga; ++ja)
+         tmp +=  Am[ia+ib*nga+(ja+lb*nga)*ngs]*(db[ja+lb*nga]+dbtmp[ja]);
+
+      double tmp2=0.0;
+      for (auto jb=0; jb<nion; ++jb)
+      for (auto ja=0; ja<nga; ++ib)
+         tmp2 +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*dAtmp[ja+jb*nga];
+      ff = ff + u[ia+ib*nga]*(tmp-tmp2);
+      sumdQdR = sumdQdR + (tmp-tmp2);
+   }
+   double fac = sumdQdR/sumAm;
+
+   for (auto ib=0; ib<nion; ++ib)
+   for (auto ia=0; ia<nga; ++ia) 
+   {
+      double tmp=0.0;
+      for (auto jb=0; jb<nion; ++jb)
+      for (auto ja=0; ja<nga; ++ja)
+         tmp +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*fac;
+      ff -= tmp*u[ia+ib*nga];
+   }
+
+   return ff;
+}
+
+
+
+/*******************************************
+ *                                         *
+ *            nwpw_apc::dQdR_APC           *
+ *                                         *
+ *******************************************/
+/*
+    This routine calculates dq/Rion where E is a function of model q. In order
+  to use this routine Am = inverse A must be calculated
+  for the current geometry.
+ 
+    Entry - nion: number of qm atoms
+          - u: dE/dq(ii) - derivative of E wrt to model charges q(ii)
+    Exit - fion = dE/dq(ii)*dq(ii)/dR
+ 
+    Note - pspw_gen_APC needs to be called to Am=inv(A) before
+           this routine is called.
+*/
+void nwpw_apc::dQdR_APC(double *u, double *fion)
+{
+   int taskid = mypneb->PGrid::parall->taskid();
+   int np     = mypneb->PGrid::parall->np();
+   int nion   = myion->nion;
+   int nion3  = 3*nion;
+   int ione = 1;
+   double rone=1.0;
+
+   double dbtmp[nga];
+   double dAtmp[ngs];
+
+   double ftmp[3*nion];
+   memset(ftmp,0,nion3*sizeof(double));
+
+   double sumAm = sumAm_APC(ngs,Am);
+
+   for (auto ii=taskid; ii<nion; ii+=np)
+   {
+      ftmp[3*ii]   = generate_dQdR(ii,nga,nion,&b[ngs],q,u,&A[ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii+1] = generate_dQdR(ii,nga,nion,&b[2*ngs],q,u,&A[2*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii+2] = generate_dQdR(ii,nga,nion,&b[3*ngs],q,u,&A[3*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+   }
+   mypneb->PGrid::parall->Vector_SumAll(0,nion3,ftmp);
+   DAXPY_PWDFT(nion3,rone,ftmp,ione,fion,ione);
+}
+
+
+
+
+
 
 
 /*******************************************

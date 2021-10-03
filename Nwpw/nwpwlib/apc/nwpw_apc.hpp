@@ -56,6 +56,9 @@ public:
 
    void gen_APC(double *, bool);
    void dngen_APC(double *, bool);
+   void VQ_APC(double *, double *);
+   void dQdR_APC(double *, double *);
+
    double Qtot_APC(const int);
    std::string print_APC(const double *);
 

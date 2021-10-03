@@ -877,6 +877,26 @@ void PGrid::tc_Mul(const int nb, const double *a, double *c)
 }
 
 
+/********************************
+ *                              *
+ *      PGrid:tcc_aMulAdd       *
+ *                              *
+ ********************************/
+void PGrid::tcc_aMulAdd(const int nb, const double alpha, const double *a, const double *b, double *c)
+{
+   int i,ii;
+   int ng  = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   += alpha*b[ii]  *a[i];
+      c[ii+1] += alpha*b[ii+1]*a[i];
+      ii += 2;
+   }
+}
+
+
 
 /********************************
  *                              *
@@ -967,8 +987,16 @@ void PGrid::cccc_Sum(const int nb, const double *a, const double *b, const doubl
    for (i=0; i<ng; ++i) d[i] = (a[i]+b[i]+c[i]);
 }
 
-
-
+/********************************
+ *                              *
+ *         PGrid:c_addzero      *
+ *                              *
+ ********************************/
+void PGrid::c_addzero(const int nb, const double vzero, double *a)
+{
+   int pzero = ijktop(0,0,0);
+   if (pzero==parall->taskid_i()) a[0] += vzero;
+}
 
 
 /********************************
