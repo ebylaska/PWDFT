@@ -1,9 +1,9 @@
 
 # files in the nwpwlib library
-file(GLOB_RECURSE src_blas      blas/*.f)
-file(GLOB_RECURSE src_lapack    lapack/*.f)
+file(GLOB src_blas      blas/*.f)
+file(GLOB src_lapack    lapack/*.f)
 file(GLOB_RECURSE src_fftpack   fftpack/*.f)
-file(GLOB_RECURSE src_nwpwxc    nwpwxc/*.F)
+#file(GLOB_RECURSE src_nwpwxc    nwpwxc/*.F)
 file(GLOB_RECURSE src_Control   Control/*.hpp Control/*.cpp Control/*.h Control/*.c)
 file(GLOB_RECURSE src_Parallel  Parallel/*.hpp Parallel/*.cpp)
 file(GLOB_RECURSE src_io        io/*.hpp io/*.cpp)
