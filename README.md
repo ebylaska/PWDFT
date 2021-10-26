@@ -124,6 +124,13 @@ Compile the library
 make
 ```
 
+The library, libpwdft.dylib, should be generated.
+```
+prompt% ls
+CMakeCache.txt       Makefile             cmake_install.cmake  nwpwlib/
+CMakeFiles/          NwpwConfig.h         libpwdft.dylib*      pspw/
+```
+
 
 Example header to make function calls
 ```
