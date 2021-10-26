@@ -115,12 +115,18 @@ salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
 ```
 
 # Making shared library
-```
 To generate a library clean the build directory and then regenerate cmake with
-
+```
 cmake ../Nwpw -DMAKE_LIBRARY=true
+```
+Compile the library
+```
+make
+```
 
 
+Example header to make function calls
+```
 #include <string>
 #include "mpi.h"
 
@@ -135,6 +141,12 @@ extern int pspw_minimizer(MPI_Comm, std::string&);
 extern int pspw_geovib(MPI_Comm, std::string&);
 }
 ```
+
+Example function call
+```
+ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,nwinput);
+```
+
  [2:17 PM] Bagusetty, Abhishek
  add_library(pwdft SHARED nwpw.cpp)
 
