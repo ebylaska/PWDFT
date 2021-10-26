@@ -309,7 +309,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    double Eold =  0.0;
    double EV   = 0.0;
    double *fion = new double[3*myion.nion];
-   int maxit = 200;
+   int maxit = 50;
 
    bool done = false;
    int it = 0;

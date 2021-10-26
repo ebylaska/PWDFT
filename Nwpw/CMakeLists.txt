@@ -103,7 +103,8 @@ add_subdirectory(pspw)
 if(MAKE_LIBRARY)
    # create the pwdftlib shared library
    message("-- Creating pwdft shared library!")
-   add_library(pwdft SHARED nwpw.cpp)
+   add_library(pwdft SHARED nwpw.cpp nwpwlib pspw)
+   #add_library(pwdft STATIC nwpw.cpp)
    target_include_directories(pwdft PUBLIC "${PROJECT_BINARY_DIR}")
 else()
    # create the pwdft executable
