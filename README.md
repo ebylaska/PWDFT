@@ -115,11 +115,45 @@ salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
 ```
 
 # Making shared library
-```
 To generate a library clean the build directory and then regenerate cmake with
-
+```
 cmake ../Nwpw -DMAKE_LIBRARY=true
 ```
+Compile and generate the shared library in the build directory.
+```
+make
+```
+
+The shared library, libpwdft.dylib, should be generated and present in the build directory.
+```
+prompt% ls
+CMakeCache.txt       Makefile             cmake_install.cmake  nwpwlib/
+CMakeFiles/          NwpwConfig.h         libpwdft.dylib*      pspw/
+```
+
+
+Example header to make function calls
+```
+#include <string>
+#include "mpi.h"
+
+namespace pwdft {
+using namespace pwdft;
+
+extern char *util_date();
+extern void seconds(double *);
+extern int cpsd(MPI_Comm, std::string&);
+extern int cpmd(MPI_Comm, std::string&);
+extern int pspw_minimizer(MPI_Comm, std::string&);
+extern int pspw_geovib(MPI_Comm, std::string&);
+}
+```
+
+Example function call
+```
+ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,nwinput);
+```
+
  [2:17 PM] Bagusetty, Abhishek
  add_library(pwdft SHARED nwpw.cpp)
 
