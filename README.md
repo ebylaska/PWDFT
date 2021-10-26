@@ -119,12 +119,12 @@ To generate a library clean the build directory and then regenerate cmake with
 ```
 cmake ../Nwpw -DMAKE_LIBRARY=true
 ```
-Compile the library
+Compile and generate the shared library in the build directory.
 ```
 make
 ```
 
-The library, libpwdft.dylib, should be generated.
+The shared library, libpwdft.dylib, should be generated and present in the build directory.
 ```
 prompt% ls
 CMakeCache.txt       Makefile             cmake_install.cmake  nwpwlib/
