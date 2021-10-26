@@ -348,10 +348,15 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       delete [] fion;
    }
 
-   myapc.gen_APC(mymolecule.dng1,false);
-   if (myparallel.is_master())
+
+   /* APC analysis */
+   if (control.APC_on()) 
    {
-      std::cout <<  myapc.print_APC(mypsp.zv);
+      myapc.gen_APC(mymolecule.dng1,false);
+      if (myparallel.is_master() && myapc.apc_on)
+      {
+         std::cout <<  myapc.print_APC(mypsp.zv);
+      }
    }
 
 
