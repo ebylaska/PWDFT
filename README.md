@@ -119,6 +119,21 @@ salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
 To generate a library clean the build directory and then regenerate cmake with
 
 cmake ../Nwpw -DMAKE_LIBRARY=true
+
+
+#include <string>
+#include "mpi.h"
+
+namespace pwdft {
+using namespace pwdft;
+
+extern char *util_date();
+extern void seconds(double *);
+extern int cpsd(MPI_Comm, std::string&);
+extern int cpmd(MPI_Comm, std::string&);
+extern int pspw_minimizer(MPI_Comm, std::string&);
+extern int pspw_geovib(MPI_Comm, std::string&);
+}
 ```
  [2:17 PM] Bagusetty, Abhishek
  add_library(pwdft SHARED nwpw.cpp)
