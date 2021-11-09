@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <cmath>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -19,6 +20,41 @@ json periodic_table_mass = json::parse("{ \"H\"  : 1.008, \"He\" : 4.0026, \"Li\
 
 
 json periodic_table_Z = json::parse("{ \"H\"  : 1, \"He\" : 2, \"Li\" : 3, \"Be\" : 4, \"B\"  : 5, \"C\"  : 6, \"N\"  : 7, \"O\"  : 8, \"F\"  : 9, \"Ne\" : 10, \"Na\" : 11, \"Mg\" : 12, \"Al\" : 13, \"Si\" : 14, \"P\"  : 15, \"S\"  : 16, \"Cl\" : 17, \"Ar\" : 18, \"K\"  : 19, \"Ca\" : 20, \"Sc\" : 21, \"Ti\" : 22, \"V\"  : 23, \"Cr\" : 24, \"Mn\" : 25, \"Fe\" : 26, \"Co\" : 27, \"Ni\" : 28, \"Cu\" : 29, \"Zn\" : 30, \"Ga\" : 31, \"Ge\" : 32, \"As\" : 33, \"Se\" : 34, \"Br\" : 35, \"Kr\" : 36, \"Rb\" : 37, \"Sr\" : 38, \"Y\"  : 39, \"Zr\" : 40, \"Nb\" : 41, \"Mo\" : 42, \"Tc\" : 43, \"Ru\" : 44, \"Rh\" : 45, \"Pd\" : 46, \"Ag\" : 47, \"Cd\" : 48, \"In\" : 49, \"Sn\" : 50, \"Sb\" : 51, \"Te\" : 52, \"I\"  : 53, \"Xe\" : 54, \"Cs\" : 55, \"Ba\" : 56, \"La\" : 57, \"Ce\" : 58, \"Pr\" : 59, \"Nd\" : 60, \"Pm\" : 61, \"Sm\" : 62, \"Eu\" : 63, \"Gd\" : 64, \"Tb\" : 65, \"Dy\" : 66, \"Ho\" : 67, \"Er\" : 68, \"Tm\" : 69, \"Yb\" : 70, \"Lu\" : 71, \"Hf\" : 72, \"Ta\" : 73, \"W\"  : 74, \"Re\" : 75, \"Os\" : 76, \"Ir\" : 77, \"Pt\" : 78, \"Au\" : 79, \"Hg\" : 80, \"Tl\" : 81, \"Pb\" : 82, \"Bi\" : 83, \"Po\" : 84, \"At\" : 85, \"Rn\" : 86, \"Fr\" : 87, \"Ra\" : 88, \"Ac\" : 89, \"Th\" : 90, \"Pa\" : 91, \"U\"  : 92, \"Np\" : 93, \"Pu\" : 94, \"Am\" : 95, \"Cm\" : 96, \"Bk\" : 97, \"Cf\" : 98, \"Es\" : 99, \"Fm\" : 100, \"Md\" : 101, \"No\" : 102, \"Lr\" : 103, \"Rf\" : 104, \"Ha\" : 105, \"Sg\" : 106, \"Bh\" : 107, \"Hs\" : 108, \"Mt\" : 109 }");
+
+
+/**************************************************
+ *                                                *
+ *                parse_lat_to_unita              *
+ *                                                *
+ **************************************************/
+
+static vector<double> parse_lat_to_unita(vector<double> lat)
+{
+   double conv =  0.017453292519943; //conv=pi/80.0
+   vector<double> cang = {lat[3]*conv,lat[4]*conv,lat[5]*conv};
+   vector<double> gmat = {lat[0]*lat[0],
+                          lat[1]*lat[0]*cos(cang[2]),
+                          lat[2]*lat[0]*cos(cang[1]),
+                          lat[0]*lat[1]*cos(cang[2]),
+                          lat[1]*lat[1],
+                          lat[2]*lat[1]*cos(cang[0]),
+                          lat[0]*lat[2]*cos(cang[1]),
+                          lat[1]*lat[2]*cos(cang[0]),
+                          lat[2]*lat[2] };
+   double deter3 = gmat[0]*(gmat[4]*gmat[8]-gmat[7]*gmat[5])
+                 - gmat[3]*(gmat[1]*gmat[8]-gmat[7]*gmat[2])
+                 + gmat[6]*(gmat[1]*gmat[5]-gmat[4]*gmat[2]);
+   double vol = sqrt(deter3);
+
+   double c1=cos(cang[0]);
+   double c2=cos(cang[1]);
+   double s2=sin(cang[1]);
+   double c3=cos(cang[2]);
+
+   return {lat[0]*s2,            0.0,                      lat[0]*c2,
+           lat[1]*(c3-c1*c2)/s2, (vol/(lat[0]*lat[2]*s2)), lat[1]*c1,
+           0.0,                  0.0,                      lat[2]};
+}
 
 /**************************************************
  *                                                *
@@ -78,6 +114,10 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    geomjson["autoz"]   = autoz;
    geomjson["autosym"] = autosym;
 
+   bool fractional = false;
+   vector<double> unita = {1.0,0.0,0.0, 0.0,1.0,0.0, 0.0,0.0,1.0};
+
+
    int endcount = 1;
    vector<string> symbols;
    vector<double> coords;
@@ -85,48 +125,183 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    vector<double> masses;
    vector<double> charges;
    ++cur;
+
    int nion = 0;
    double mm;
    string line;
+
+
    while (endcount>0)
    {
       line = lines[cur];
-      
-      ss = mystring_split0(lines[cur]);
-      symbols.push_back(mystring_capitalize(ss[0]));
-      coords.push_back(std::stod(ss[1])*conv);
-      coords.push_back(std::stod(ss[2])*conv);
-      coords.push_back(std::stod(ss[3])*conv);
 
-      double vx = 0.0;
-      double vy = 0.0;
-      double vz = 0.0;
-      if (ss.size()>6)
+      if (mystring_contains(line,"system crystal"))
       {
-         bool ffail = false;
-         try {vx = std::stod(ss[4])*conv;} catch(std::exception& ia) {vx = 0.0; ffail=true;}
-         try {vy = std::stod(ss[5])*conv;} catch(std::exception& ia) {vy = 0.0; ffail=true;}
-         try {vz = std::stod(ss[6])*conv;} catch(std::exception& ia) {vz = 0.0; ffail=true;}
-         if (ffail) { vx=0.0; vy=0.0; vz=0.0;}
+         if (mystring_contains(line,"cartesian")) 
+         { 
+            fractional = false;
+         } else {
+            fractional = true;
+         }
+         ++endcount;
+      } 
+      else if (endcount>1)
+      {
+         if (mystring_contains(line,"lat_a") ||
+             mystring_contains(line,"lat_b") ||
+             mystring_contains(line,"lat_c") ||
+             mystring_contains(line,"alpha") ||
+             mystring_contains(line,"beta")  ||
+             mystring_contains(line,"gamma"))
+         {
+            vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
+
+            int endsystem = 1;
+            while (endsystem>0)
+            {
+               line = mystring_lowercase(lines[cur]);
+               ss = mystring_split0(line);
+               if (mystring_contains(line,"lat_a")) lat[0] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"lat_b")) lat[1] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"lat_c")) lat[2] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"alpha")) lat[3] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"beta"))  lat[4] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"gamma")) lat[5] = std::stod(ss[1])*conv;
+
+               ++cur;
+               if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
+                  --endsystem;
+            }
+            unita = parse_lat_to_unita(lat);
+         }
+         else if (mystring_contains(line,"lattice_vectors"))
+         {
+            ++cur;
+            line = mystring_lowercase(lines[cur]);
+            ss = mystring_split0(line);
+            if (ss.size()>2)
+            {
+                unita[0] = std::stod(ss[0])*conv;
+                unita[1] = std::stod(ss[1])*conv;
+                unita[2] = std::stod(ss[2])*conv;
+            }
+            ++cur;
+            line = mystring_lowercase(lines[cur]);
+            ss = mystring_split0(line);
+            if (ss.size()>2)
+            {
+                unita[3] = std::stod(ss[0])*conv;
+                unita[4] = std::stod(ss[1])*conv;
+                unita[5] = std::stod(ss[2])*conv;
+            }
+            ++cur;
+            line = mystring_lowercase(lines[cur]);
+            ss = mystring_split0(line);
+            if (ss.size()>2)
+            {
+                unita[6] = std::stod(ss[0])*conv;
+                unita[7] = std::stod(ss[1])*conv;
+                unita[8] = std::stod(ss[2])*conv;
+            }
+         }
+         else if (mystring_contains(line,"sc"))
+         {
+            ss = mystring_split0(line);
+            if (ss.size()>1)
+            {
+               double a = std::stod(ss[1])*conv;
+               unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
+            }
+         }
+         else if (mystring_contains(line,"fcc"))
+         {
+            ss = mystring_split0(line);
+            if (ss.size()>1)
+            {
+               double a = 0.5*std::stod(ss[1])*conv;
+               unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
+            }
+         }
+         else if (mystring_contains(line,"bcc"))
+         {
+            ss = mystring_split0(line);
+            if (ss.size()>1)
+            {
+               double a = 0.5*std::stod(ss[1])*conv;
+               unita = {-a,a,a, a,-a,a, a,a,-a};
+            }
+         }
+
       }
-      velocities.push_back(vx);
-      velocities.push_back(vy);
-      velocities.push_back(vz);
 
-      mm = periodic_table_mass[mystring_capitalize(ss[0])];
-      if (mystring_contains(mystring_lowercase(line),"mass"))
-         mm = std::stod(mystring_split0(mystring_split(line,"mass")[1])[0]);
-      masses.push_back(mm);
+      // read the geometry
+      else if (mystring_trim(line).size()>1)
+      {
+      
+         ss = mystring_split0(lines[cur]);
+         symbols.push_back(mystring_capitalize(ss[0]));
+         double xx = std::stod(ss[1]);
+         double yy = std::stod(ss[2]);
+         double zz = std::stod(ss[3]);
 
-      mm = (double) periodic_table_Z[mystring_capitalize(ss[0])];
-      if (mystring_contains(mystring_lowercase(line),"charge"))
-         mm = std::stod(mystring_split0(mystring_split(line,"charge")[1])[0]);
-      charges.push_back(mm);
+         double vx = 0.0;
+         double vy = 0.0;
+         double vz = 0.0;
+         if (ss.size()>6)
+         {
+            bool ffail = false;
+            try {vx = std::stod(ss[4]);} catch(std::exception& ia) {vx = 0.0; ffail=true;}
+            try {vy = std::stod(ss[5]);} catch(std::exception& ia) {vy = 0.0; ffail=true;}
+            try {vz = std::stod(ss[6]);} catch(std::exception& ia) {vz = 0.0; ffail=true;}
+            if (ffail) { vx=0.0; vy=0.0; vz=0.0;}
+         }
 
-      ++nion;
+         if (fractional) 
+         {
+           double xxx = unita[0]*xx + unita[3]*yy + unita[6]*zz;
+           double yyy = unita[1]*xx + unita[4]*yy + unita[7]*zz;
+           double zzz = unita[2]*xx + unita[5]*yy + unita[8]*zz;
+           xx = xxx; yy = yyy; zz = zzz;
+
+           xxx = unita[0]*vx + unita[3]*vy + unita[6]*vz;
+           yyy = unita[1]*vx + unita[4]*vy + unita[7]*vz;
+           zzz = unita[2]*vx + unita[5]*vy + unita[8]*vz;
+           vx = xxx; vy = yyy; vz = zzz;
+         }
+         else
+         {
+            xx *= conv; yy *= conv; zz *= conv;
+            vx *= conv; vy *= conv; vz *= conv;
+         }
+
+         coords.push_back(xx);
+         coords.push_back(yy);
+         coords.push_back(zz);
+
+         velocities.push_back(vx);
+         velocities.push_back(vy);
+         velocities.push_back(vz);
+
+
+         mm = periodic_table_mass[mystring_capitalize(ss[0])];
+         if (mystring_contains(mystring_lowercase(line),"mass"))
+            mm = std::stod(mystring_split0(mystring_split(line,"mass")[1])[0]);
+         masses.push_back(mm);
+
+         mm = (double) periodic_table_Z[mystring_capitalize(ss[0])];
+         if (mystring_contains(mystring_lowercase(line),"charge"))
+            mm = std::stod(mystring_split0(mystring_split(line,"charge")[1])[0]);
+         charges.push_back(mm);
+
+         ++nion;
+      }
+
       ++cur;
       if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
+      {
          --endcount;
+         ++cur;
+      }
    }
 
    if (center)
@@ -158,6 +333,7 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    geomjson["nion"]       = nion;
    geomjson["masses"]     = masses;
    geomjson["charges"]    = charges;
+   geomjson["unita"]      = unita;
 
    *curptr = cur;
 
@@ -735,7 +911,6 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       if (mystring_contains(lines[cur],"end"))
          --endcount;
    }
-   //std::cout << "NWPWJSON= " << nwpwjson.dump() << std::endl;
 
    *curptr = cur;
 

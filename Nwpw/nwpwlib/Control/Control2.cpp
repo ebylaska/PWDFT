@@ -337,6 +337,23 @@ Control2::Control2(const int np0, const string rtdbstring)
    punita[0] = 20.0; punita[1] =  0.0; punita[2] =  0.0;
    punita[3] =  0.0; punita[4] = 20.0; punita[5] =  0.0;
    punita[6] =  0.0; punita[7] =  0.0; punita[8] = 20.0;
+
+   string geomname = "geometry";
+   if (rtdbjson["geometry"].is_string())
+      geomname = rtdbjson["geometry"];
+
+   if (rtdbjson["geometries"][geomname]["unita"][0].is_number_float()) punita[0] = rtdbjson["geometries"][geomname]["unita"][0];
+   if (rtdbjson["geometries"][geomname]["unita"][1].is_number_float()) punita[1] = rtdbjson["geometries"][geomname]["unita"][1];
+   if (rtdbjson["geometries"][geomname]["unita"][2].is_number_float()) punita[2] = rtdbjson["geometries"][geomname]["unita"][2];
+
+   if (rtdbjson["geometries"][geomname]["unita"][3].is_number_float()) punita[3] = rtdbjson["geometries"][geomname]["unita"][3];
+   if (rtdbjson["geometries"][geomname]["unita"][4].is_number_float()) punita[4] = rtdbjson["geometries"][geomname]["unita"][4];
+   if (rtdbjson["geometries"][geomname]["unita"][5].is_number_float()) punita[5] = rtdbjson["geometries"][geomname]["unita"][5];
+
+   if (rtdbjson["geometries"][geomname]["unita"][6].is_number_float()) punita[6] = rtdbjson["geometries"][geomname]["unita"][6];
+   if (rtdbjson["geometries"][geomname]["unita"][7].is_number_float()) punita[7] = rtdbjson["geometries"][geomname]["unita"][7];
+   if (rtdbjson["geometries"][geomname]["unita"][8].is_number_float()) punita[8] = rtdbjson["geometries"][geomname]["unita"][8];
+
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][0].is_number_float()) punita[0] = rtdbjson["nwpw"]["simulation_cell"]["unita"][0];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][1].is_number_float()) punita[1] = rtdbjson["nwpw"]["simulation_cell"]["unita"][1];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][2].is_number_float()) punita[2] = rtdbjson["nwpw"]["simulation_cell"]["unita"][2];
