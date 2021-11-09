@@ -57,19 +57,19 @@ end
 
 
 nwpw
-  cutoff 2.0
   mult 1
   xc pbe96
-  
   2d-hcurve
-  loop 1 2
   steepest_descent
      time_step 5.8
      loop 1 2
   end
+  loop 2 2
+  cutoff 5.0
 end
 set nwpw:cif_filename Cu36
 
+task pspw energy
 task pspw steepest_descent
 
 
