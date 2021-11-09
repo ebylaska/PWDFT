@@ -154,6 +154,7 @@ int main(int argc, char* argv[])
         std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
         int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
         MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+        std::cout << "wfound=" << wfound << "  filename=" << input_wavefunction_filename << std::endl;
         if (!wfound) 
         {
              auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
