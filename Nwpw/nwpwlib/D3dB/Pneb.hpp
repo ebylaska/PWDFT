@@ -6,6 +6,7 @@
 
 #pragma once
 
+
 #include	"gdevice.hpp"
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
@@ -57,7 +58,7 @@ public:
 
         double *g_allocate(const int nb) {
            double *ptr;
-           ptr = new (std::nothrow) double [2*(neq[0]+neq[1])*npack(nb)]();
+           ptr = new (std::nothrow) double [2*(neq[0]+neq[1])*PGrid::npack(nb)]();
            return ptr;
         }
         void g_deallocate(double *ptr) { delete [] ptr;}
