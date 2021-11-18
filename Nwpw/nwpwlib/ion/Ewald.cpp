@@ -366,6 +366,7 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& contr
       }
    }
 
+
    /* find vg and vcx */
    for (i=0; i<enpack; ++i) vg[i]  = 0.0;
    for (i=0; i<enpack; ++i) vcx[i] = 0.0;
