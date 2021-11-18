@@ -30,35 +30,35 @@ using namespace pwdft;
 d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, const int nz)
    : Mapping3(inmaptype,inparall->np_i(),inparall->taskid_i(),nx,ny,nz)
 {
-   int i,j,k,index1,index2,it,proc_to,proc_from;
-   int j1,j2,k1,k2,nyh,nzh;
+   int index1,index2,proc_to,proc_from;
+   int nyh,nzh;
    int phere,pto,pfrom;
 
    parall = inparall;
 
    if (maptype==1)
    {
-      iq_to_i1 = new int*[1]; iq_to_i1[0] = new int[(nx/2+1)*ny*nq]();
-      iq_to_i2 = new int*[1]; iq_to_i2[0] = new int[(nx/2+1)*ny*nq]();
-      i1_start = new int*[1]; i1_start[0] = new int[nz+1]();
-      i2_start = new int*[1]; i2_start[0] = new int[nz+1]();
+      iq_to_i1 = new (std::nothrow) int*[1]; iq_to_i1[0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+      iq_to_i2 = new (std::nothrow) int*[1]; iq_to_i2[0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+      i1_start = new (std::nothrow) int*[1]; i1_start[0] = new (std::nothrow) int[nz+1]();
+      i2_start = new (std::nothrow) int*[1]; i2_start[0] = new (std::nothrow) int[nz+1]();
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[0][it] = index1;
          i2_start[0][it] = index2;
 
-         for (k=0; k<nz; ++k)
-         for (j=0; j<ny; ++j)
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
          {
             /* packing scheme */
             phere = ijktop(0,0,k);
             pto   = ijktop(0,0,j);
             if ((phere==taskid) && (pto==proc_to))
-               for (i=0; i<(nx/2+1); ++i)
+               for (auto i=0; i<(nx/2+1); ++i)
                {
                   iq_to_i1[0][ijktoindex(i,j,k)] = index1;
                   ++index1;
@@ -68,7 +68,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
             phere = ijktop(0,0,j);
             pfrom = ijktop(0,0,k);
             if ((phere==taskid) && (pfrom==proc_from))
-               for (i=0; i<(nx/2+1); ++i)
+               for (auto i=0; i<(nx/2+1); ++i)
                {
                   iq_to_i2[0][ijktoindex(i,k,j)] = index2;
                   ++index2;
@@ -81,45 +81,47 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /* allocate ptranspose indexes */
       for (auto nb=0; nb<2; ++nb)
       {
-	 p_iq_to_i1[nb] = new int*[1]; p_iq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_iq_to_i2[nb] = new int*[1]; p_iq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_iz_to_i2[nb] = new int*[1]; p_iz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_i1_start[nb] = new int*[1]; p_i1_start[nb][0] = new int[nz+1]();
-         p_i2_start[nb] = new int*[1]; p_i2_start[nb][0] = new int[nz+1]();
+	 p_iq_to_i1[nb] = new (std::nothrow) int*[1](); p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_iq_to_i2[nb] = new (std::nothrow) int*[1](); p_iq_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_iz_to_i2[nb] = new (std::nothrow) int*[1](); p_iz_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_i1_start[nb] = new (std::nothrow) int*[1](); p_i1_start[nb][0] = new (std::nothrow) int[nz+1]();
+         p_i2_start[nb] = new (std::nothrow) int*[1](); p_i2_start[nb][0] = new (std::nothrow) int[nz+1]();
 
-         p_jq_to_i1[nb] = new int*[1]; p_jq_to_i1[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_jq_to_i2[nb] = new int*[1]; p_jq_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_jz_to_i2[nb] = new int*[1]; p_jz_to_i2[nb][0] = new int[(nx/2+1)*ny*nq]();
-         p_j1_start[nb] = new int*[1]; p_j1_start[nb][0] = new int[nz+1]();
-         p_j2_start[nb] = new int*[1]; p_j2_start[nb][0] = new int[nz+1]();
+         p_jq_to_i1[nb] = new (std::nothrow) int*[1](); p_jq_to_i1[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_jq_to_i2[nb] = new (std::nothrow) int*[1](); p_jq_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_jz_to_i2[nb] = new (std::nothrow) int*[1](); p_jz_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_j1_start[nb] = new (std::nothrow) int*[1](); p_j1_start[nb][0] = new (std::nothrow) int[nz+1]();
+         p_j2_start[nb] = new (std::nothrow) int*[1](); p_j2_start[nb][0] = new (std::nothrow) int[nz+1]();
       }
 
    }
    else
    {
-      iq_to_i1 = new int*[6];
-      iq_to_i1[0] = new int[(nx/2+1)*nq1]();
-      iq_to_i1[1] = new int[ny*nq2]();
-      iq_to_i1[2] = new int[nz*nq3]();
-      iq_to_i1[3] = new int[ny*nq2]();
-      iq_to_i1[4] = new int[(nx/2+1)*nq1]();
-      iq_to_i1[5] = new int[nz*nq3]();
+      iq_to_i1 = new (std::nothrow) int*[6]();
+      iq_to_i1[0] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_i1[1] = new (std::nothrow) int[ny*nq2]();
+      iq_to_i1[2] = new (std::nothrow) int[nz*nq3]();
 
-      iq_to_i2 = new int*[6];
-      iq_to_i2[0] = new int[ny*nq2]();
-      iq_to_i2[1] = new int[nz*nq3]();
-      iq_to_i2[2] = new int[ny*nq2]();
-      iq_to_i2[3] = new int[(nx/2+1)*nq1]();
-      iq_to_i2[4] = new int[nz*nq3]();
-      iq_to_i2[5] = new int[(nx/2+1)*nq1]();
+      iq_to_i1[3] = new (std::nothrow) int[ny*nq2]();
+      iq_to_i1[4] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_i1[5] = new (std::nothrow) int[nz*nq3]();
 
-      i1_start = new int*[6];
-      for (i=0; i<6; ++i)
-	 i1_start[i] = new int[np+1]();
+      iq_to_i2 = new (std::nothrow) int*[6]();
+      iq_to_i2[0] = new (std::nothrow) int[ny*nq2]();
+      iq_to_i2[1] = new (std::nothrow) int[nz*nq3]();
+      iq_to_i2[2] = new (std::nothrow) int[ny*nq2]();
 
-      i2_start = new int*[6];
-      for (i=0; i<6; ++i)
-         i2_start[i] = new int[np+1]();
+      iq_to_i2[3] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_i2[4] = new (std::nothrow) int[nz*nq3]();
+      iq_to_i2[5] = new (std::nothrow) int[(nx/2+1)*nq1]();
+
+      i1_start = new (std::nothrow) int*[6]();
+      for (auto i=0; i<6; ++i)
+	 i1_start[i] = new (std::nothrow) int[np+1]();
+
+      i2_start = new (std::nothrow) int*[6]();
+      for (auto i=0; i<6; ++i)
+         i2_start[i] = new (std::nothrow) int[np+1]();
 
 
       /**************************************************/
@@ -127,15 +129,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[0][it] = index1;
          i2_start[0][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop2(i,j,k);
             pto   = ijktop1(i,j,k);
@@ -157,20 +159,21 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[0][np] = index1;
       i2_start[0][np] = index2;
 
+
       /**************************************************/
       /* map2to3 mapping - done - tranpose operation #1 */
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[1][it] = index1;
          i2_start[1][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop1(i,j,k);
             pto   = ijktop(i,j,k);
@@ -197,15 +200,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[2][it] = index1;
          i2_start[2][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop(i,j,k);
             pto   = ijktop1(i,j,k);
@@ -232,15 +235,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[3][it] = index1;
          i2_start[3][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop1(i,j,k);
             pto   = ijktop2(i,j,k);
@@ -267,15 +270,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[4][it] = index1;
          i2_start[4][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop2(i,j,k);
             pto   = ijktop(i,j,k);
@@ -302,15 +305,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /**************************************************/
       index1 = 0;
       index2 = 0;
-      for (it=0; it<np; ++it)
+      for (auto it=0; it<np; ++it)
       {
          proc_to   = (taskid+it)%np;
          proc_from = (taskid-it+np)%np;
          i1_start[5][it] = index1;
          i2_start[5][it] = index2;
-         for (k=0; k<nz;       ++k)
-         for (j=0; j<ny;       ++j)
-         for (i=0; i<(nx/2+1); ++i)
+         for (auto k=0; k<nz;       ++k)
+         for (auto j=0; j<ny;       ++j)
+         for (auto i=0; i<(nx/2+1); ++i)
          {
             phere = ijktop(i,j,k);
             pto   = ijktop2(i,j,k);
@@ -336,53 +339,53 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /* allocate ptranspose indexes */
       for (auto nb=0; nb<2; ++nb)
       {
-         p_iq_to_i1[nb] = new int*[6];
-         p_iq_to_i1[nb][0] = new int[(nx/2+1)*nq1]();
-         p_iq_to_i1[nb][1] = new int[ny*nq2]();
-         p_iq_to_i1[nb][2] = new int[nz*nq3]();
-         p_iq_to_i1[nb][3] = new int[ny*nq2]();
-         p_iq_to_i1[nb][4] = new int[(nx/2+1)*nq1]();
-         p_iq_to_i1[nb][5] = new int[nz*nq3]();
+         p_iq_to_i1[nb] = new (std::nothrow) int*[6];
+         p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx/2+1)*nq1]();
+         p_iq_to_i1[nb][1] = new (std::nothrow) int[ny*nq2]();
+         p_iq_to_i1[nb][2] = new (std::nothrow) int[nz*nq3]();
+         p_iq_to_i1[nb][3] = new (std::nothrow) int[ny*nq2]();
+         p_iq_to_i1[nb][4] = new (std::nothrow) int[(nx/2+1)*nq1]();
+         p_iq_to_i1[nb][5] = new (std::nothrow) int[nz*nq3]();
 
-         p_iq_to_i2[nb] = new int*[6];
-         p_iq_to_i2[nb][0] = new int[ny*nq2]();
-         p_iq_to_i2[nb][1] = new int[nz*nq3]();
-         p_iq_to_i2[nb][2] = new int[ny*nq2]();
-         p_iq_to_i2[nb][3] = new int[(nx/2+1)*nq1]();
-         p_iq_to_i2[nb][4] = new int[nz*nq3]();
-         p_iq_to_i2[nb][5] = new int[(nx/2+1)*nq1]();
+         p_iq_to_i2[nb] = new (std::nothrow) int*[6];
+         p_iq_to_i2[nb][0] = new (std::nothrow) int[ny*nq2]();
+         p_iq_to_i2[nb][1] = new (std::nothrow) int[nz*nq3]();
+         p_iq_to_i2[nb][2] = new (std::nothrow) int[ny*nq2]();
+         p_iq_to_i2[nb][3] = new (std::nothrow) int[(nx/2+1)*nq1]();
+         p_iq_to_i2[nb][4] = new (std::nothrow) int[nz*nq3]();
+         p_iq_to_i2[nb][5] = new (std::nothrow) int[(nx/2+1)*nq1]();
 
-         p_iz_to_i2[nb] = new int*[6];
-         p_iz_to_i2[nb][0] = new int[ny*nq2]();
-         p_iz_to_i2[nb][1] = new int[nz*nq3]();
-         p_iz_to_i2[nb][2] = new int[ny*nq2]();
-         p_iz_to_i2[nb][3] = new int[(nx/2+1)*nq1]();
-         p_iz_to_i2[nb][4] = new int[nz*nq3]();
-         p_iz_to_i2[nb][5] = new int[(nx/2+1)*nq1]();
+         p_iz_to_i2[nb] = new (std::nothrow) int*[6];
+         p_iz_to_i2[nb][0] = new (std::nothrow) int[ny*nq2]();
+         p_iz_to_i2[nb][1] = new (std::nothrow) int[nz*nq3]();
+         p_iz_to_i2[nb][2] = new (std::nothrow) int[ny*nq2]();
+         p_iz_to_i2[nb][3] = new (std::nothrow) int[(nx/2+1)*nq1]();
+         p_iz_to_i2[nb][4] = new (std::nothrow) int[nz*nq3]();
+         p_iz_to_i2[nb][5] = new (std::nothrow) int[(nx/2+1)*nq1]();
 
-         p_i1_start[nb] = new int*[6];
-         for (i=0; i<6; ++i)
-            p_i1_start[nb][i] = new int[np+1];
+         p_i1_start[nb] = new (std::nothrow) int*[6];
+         for (auto i=0; i<6; ++i)
+            p_i1_start[nb][i] = new (std::nothrow) int[np+1]();
 
-         p_i2_start[nb] = new int*[6];
-         for (i=0; i<6; ++i)
-            p_i2_start[nb][i] = new int[np+1];
+         p_i2_start[nb] = new (std::nothrow) int*[6];
+         for (auto i=0; i<6; ++i)
+            p_i2_start[nb][i] = new (std::nothrow) int[np+1]();
       }
 
 
    }
 
    /* setup timereverse indexes */
-   zplane_size = timereverse_size();
-   t_iq_to_i1 = new int[zplane_size]();
-   t_iq_to_i2 = new int[zplane_size]();
-   t_i1_start = new int[np+1]();
-   t_i2_start = new int[np+1]();
+   zplane_size = timereverse_size() + 1;
+   t_iq_to_i1 = new (std::nothrow) int[zplane_size]();
+   t_iq_to_i2 = new (std::nothrow) int[zplane_size]();
+   t_i1_start = new (std::nothrow) int[np+1]();
+   t_i2_start = new (std::nothrow) int[np+1]();
    nyh = ny/2;
    nzh = nz/2;
    index1 = 0;
    index2 = 0;
-   for (it=0; it<np; ++it)
+   for (auto it=0; it<np; ++it)
    {
       proc_to   = (taskid+it)%np;
       proc_from = (taskid-it+np)%np;
@@ -390,10 +393,10 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       t_i2_start[it] = index2;
 
       /* k=(0,0,k3) */
-      for (k=1; k<nzh; ++k)
+      for (auto k=1; k<nzh; ++k)
       {
-         k1 = k;
-         k2 = -k;
+         auto k1 = k;
+         auto k2 = -k;
          if (k1<0) k1 += nz;
          if (k2<0) k2 += nz;
          phere = ijktop(0,0,k1);
@@ -414,15 +417,15 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       }
 
        /* k=(0,k2,k3) */
-      for (k=(-nzh+1); k<nzh; ++k)
-      for (j=1; j<nyh; ++j)
+      for (auto k=(-nzh+1); k<nzh; ++k)
+      for (auto j=1; j<nyh; ++j)
       {
-         j1 = j;
-         k1 = k;
+         auto j1 = j;
+         auto k1 = k;
          if (j1<0) j1 += ny;
          if (k1<0) k1 += nz;
-         j2 = -j;
-         k2 = -k;
+         auto j2 = -j;
+         auto k2 = -k;
          if (j2<0) j2 += ny;
          if (k2<0) k2 += nz;
          phere = ijktop(0,j1,k1);
@@ -444,6 +447,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
    }
    t_i1_start[np] = index1;
    t_i2_start[np] = index2;
+
 
 
    /* setup ffts */
@@ -588,8 +592,10 @@ void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
          if ((phere==taskid) && (pto==proc_to))
             for (auto i=0; i<(nx/2+1); ++i)
             {
-               iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
-               iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               //iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+               //iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               iszero_ii = (zero_arow3[i + (nx/2+1)*k]==1);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*j]==1);
                if (!iszero_ii)
                {
                   p_iq_to_i1[nb][0][index1] = ijktoindex(i,j,k);
@@ -608,8 +614,10 @@ void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
          if ((phere==taskid) && (pfrom==proc_from))
             for (auto i=0; i<(nx/2+1); ++i)
             {
-               iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
-               iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               //iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+               //iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+               iszero_ii = (zero_arow3[i + (nx/2+1)*k]==1);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*j]==1);
                if (!iszero_ii)
                {
                   p_iq_to_i2[nb][0][index2] = ijktoindex(i,k,j);
@@ -1216,7 +1224,8 @@ void d3db::r_zero_ends(double *A)
       for (auto q=0; q<nq; ++q)
       for (auto k=0; k<nz; ++k)
       {
-        index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+        //index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+        index = nx + k*(nx+2) + q*(nx+2)*ny;
         A[index]   = 0.0;
         A[index+1] = 0.0;
       }

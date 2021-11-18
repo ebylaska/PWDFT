@@ -31,6 +31,7 @@ d1db::d1db(Parallel *inparall,const int inmaptype, const int inispin, int *inne)
    : Mapping1(inmaptype,inparall->np_j(),inparall->taskid_j(),inispin,inne)
 {
    parall = inparall;
+
 }
 
 }
