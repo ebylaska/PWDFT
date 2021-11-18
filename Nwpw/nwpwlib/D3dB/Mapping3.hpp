@@ -35,6 +35,7 @@ public:
            else
               return (k + qmap[2][i+j*(nx/2+1)]*nz);
         }
+
         int ijktoindex1(const int i, const int j, const int k) {
            if (maptype==1)
               return (i + k*(nx/2+1) + qmap[0][j]*(nx/2+1)*nz);
@@ -54,6 +55,8 @@ public:
               return (i + qmap[0][j+k*ny]*(nx/2+1));
         }
 
+
+
         int ijktop(const int i, const int j, const int k) {
            if (maptype==1)
               return (pmap[0][k]);
@@ -72,6 +75,7 @@ public:
            else
               return (pmap[0][j+k*ny]);
         }
+
 
         int ijktoq(const int i, const int j, const int k) {
            if (maptype==1)

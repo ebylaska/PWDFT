@@ -22,7 +22,7 @@ public:
 
 	/* Constructors */
 	Mapping1();
-	Mapping1(const int, const int, const int, const int, int *);
+	Mapping1(const int, const int, const int, const int, const int *);
 
         /* destructor */
 	~Mapping1() {

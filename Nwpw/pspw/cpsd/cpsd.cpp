@@ -52,7 +52,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    char date[26];
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4;
-   double E[50],deltae,deltac,deltar,viral,unita[9];
+   double E[50],deltae,deltac,deltar,viral,unita[9],en[2];
    double *psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
@@ -85,6 +85,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
+   MPI_Barrier(comm_world0);
 
    /* initialize lattice */
    Lattice mylattice(control);
@@ -92,11 +93,13 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    /* read in ion structure */
    //Ion myion(myrtdb);
    Ion myion(rtdbstring,control);
+   MPI_Barrier(comm_world0);
 
    /* Check for and generate psp files                       */
    /* - this routine also sets the valence charges in myion, */
    /*   and total_ion_charge and ne in control               */
    psp_file_check(&myparallel,&myion,control);
+   MPI_Barrier(comm_world0);
 
 
    /* debug output - print charge, ispin, and ne */
@@ -146,6 +149,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),psi2);
+   MPI_Barrier(comm_world0);
 
 
    /* setup structure factor */
@@ -340,6 +344,18 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_diagonalize(hml,eig);
 
 
+   /* calculate real-space number of electrons, en */
+   {
+      double omega = mylattice.omega();
+      double scal1 = 1.0/((double) ((mygrid.nx)*(mygrid.ny)*(mygrid.nz)));
+      double dv = omega*scal1;
+
+      en[0] = dv*mygrid.r_dsum(dn);
+      en[1] = en[0];
+      if (ispin > 1)
+         en[1] =  dv*mygrid.r_dsum(&dn[mygrid.n2ft3d]);
+   }
+
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
@@ -354,6 +370,11 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2],
                                                myion.amu(ii));
+
+      cout << "\n\n";
+      cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]
+                                           << "  down= " << setw(11) << setprecision(5) << en[ispin]
+                                           << " (real space)";
       cout << "\n\n";
       printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
       printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
@@ -387,6 +408,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+   MPI_Barrier(comm_world0);
 
    /* deallocate memory */
    mygrid.g_deallocate(psi1);
@@ -419,24 +441,26 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) control.loop(0)*icount);
-      cout.setf(ios::scientific);
-      cout << "\n";
-      cout << " -----------------"    << "\n";
-      cout << " cputime in seconds"   << "\n";
-      cout << " prologue    : " << t1 << "\n";
-      cout << " main loop   : " << t2 << "\n";
-      cout << " epilogue    : " << t3 << "\n";
-      cout << " total       : " << t4 << "\n";
-      cout << " cputime/step: " << av << "\n";
-      cout << "\n";
+      //cout.setf(ios::scientific);
+      std::cout << std::scientific;
+      std::cout << std::endl;
+      std::cout << " -----------------"    << std::endl;
+      std::cout << " cputime in seconds"   << std::endl;
+      std::cout << " prologue    : " << t1 << std::endl;
+      std::cout << " main loop   : " << t2 << std::endl;
+      std::cout << " epilogue    : " << t3 << std::endl;
+      std::cout << " total       : " << t4 << std::endl;
+      std::cout << " cputime/step: " << av << std::endl;
+      std::cout << std::endl;
 
       nwpw_timing_print_final(control.loop(0)*icount);
 
-      cout << "\n";
-      cout << " >>> job completed at     " << util_date() << " <<<\n";
+      std::cout << std::endl;
+      std::cout << " >>> job completed at     " << util_date() << " <<<" << std::endl;;
 
    }
 
+   MPI_Barrier(comm_world0);
    return 0;
 }
 

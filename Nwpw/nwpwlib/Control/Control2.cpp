@@ -143,6 +143,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    myrtdbstring  = rtdbstring;
    json rtdbjson = json::parse(rtdbstring);
 
+
    int  np = np0;
    bool is_cpmd;
 
@@ -150,14 +151,19 @@ Control2::Control2(const int np0, const string rtdbstring)
    pne[0] = 0;
    pne[1] = 0;
 
+
    ptask = 0;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"energy"))           ptask = 1;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"gradient"))         ptask = 2;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"optimize"))         ptask = 3;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"freq"))             ptask = 4;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) ptask = 5;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   ptask = 6;
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"noit_"))            ptask *= -1;
+   if (!rtdbjson["current_task"].is_null())
+   {
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"energy"))           ptask = 1;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"gradient"))         ptask = 2;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"optimize"))         ptask = 3;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"freq"))             ptask = 4;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) ptask = 5;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   ptask = 6;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"noit_"))            ptask *= -1;
+   }
+
 
    ptotal_ion_charge = -1.0;
    ptotal_charge = 0.0;
@@ -226,6 +232,7 @@ Control2::Control2(const int np0, const string rtdbstring)
       if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"off"))    pprint_level = 0;
       if (mystring_contains(mystring_lowercase(rtdbjson["print"]),"none"))   pprint_level = 0;
    }
+
 
    string permanent_dir_str = "";
    string scratch_dir_str   = "";

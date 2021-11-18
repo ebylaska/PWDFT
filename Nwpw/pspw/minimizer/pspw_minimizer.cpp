@@ -108,6 +108,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    /* - this routine also sets the valence charges in myion, */
    /*   and total_ion_charge and ne in control               */
    psp_file_check(&myparallel,&myion,control);
+   MPI_Barrier(comm_world0);
 
 
    /* fetch ispin and ne psi information from control */
@@ -168,6 +169,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 // *****************   summary of input data  **********************
 //                 |**************************|
 
+   MPI_Barrier(comm_world0);
    if (myparallel.is_master())
    {
       cout << "\n";
@@ -301,6 +303,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       cout << std::endl << std::endl << std::endl;
       seconds(&cpu2);
    }
+   MPI_Barrier(comm_world0);
 
 
 //*                |***************************|
@@ -362,6 +365,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    /* write psi */
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
+   MPI_Barrier(comm_world0);
 
    /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
@@ -379,7 +383,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) myelectron.counter);
-      cout.setf(ios::scientific);
+      //cout.setf(ios::scientific);
+      std::cout << std::scientific;
       cout << "\n";
       cout << " -----------------"    << "\n";
       cout << " cputime in seconds"   << "\n";
@@ -399,6 +404,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    /* deallocate memory */
    gdevice_psi_dealloc();
+
+   MPI_Barrier(comm_world0);
 
    return 0;
 }

@@ -31,9 +31,11 @@ public:
        if (use_lda) delete [] xtmp;
        if (use_gga) {
           delete [] rho;
+
           delete [] grx;
           delete [] gry;
           delete [] grz;
+
           delete [] agr;
           delete [] fn;
           delete [] fdn;

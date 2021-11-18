@@ -34,8 +34,6 @@ Parallel::Parallel(MPI_Comm comm_world0)
 
    comm_world  = comm_world0;
    comm_i[0]   = comm_world;
-   //npi[0]     = comm_i[0].Get_size();
-   //taskidi[0] = comm_i[0].Get_rank();
    MPI_Comm_size(comm_i[0],&npi[0]);
    MPI_Comm_rank(comm_i[0],&taskidi[0]);
 
@@ -46,7 +44,7 @@ Parallel::Parallel(MPI_Comm comm_world0)
    taskidi[1] = taskidi[0];
    taskidi[2] = 0;
 
-   procNd      = new int [npi[0]];
+   procNd      = new int[npi[0]]();
 
    npi[1] = npi[0];
    npi[2] = 1;
@@ -60,6 +58,7 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
    int ii;
    MPI_Group orig_group;
 
+   MPI_Barrier(comm_world);
    if (ncolumns>1)
    {
       dim = 2;
@@ -79,23 +78,16 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
          icount = (icount+1)%npi[0];
       }
 
-      int *itmp = new int[npi[0]];
+      int *itmp = new int[npi[0]]();
 
       for (int i=0; i<npi[1]; ++i) itmp[i] = procNd[i+taskidi[2]*npi[1]];
-      //group_i[1] = MPI::COMM_WORLD.Get_group().Incl(npi[1],itmp);
-      //comm_i[1]  = MPI::COMM_WORLD.Create(group_i[1]);
-      //MPI_Comm_group(MPI_COMM_WORLD,&orig_group);
       MPI_Comm_group(comm_world,&orig_group);
       MPI_Group_incl(orig_group,npi[1],itmp,&group_i[1]);
-      //MPI_Comm_create(MPI_COMM_WORLD,group_i[1],&comm_i[1]);
       MPI_Comm_create(comm_world,group_i[1],&comm_i[1]);
 
 
       for (int j=0; j<npi[2]; ++j) itmp[j] = procNd[taskidi[1]+j*npi[1]];
-      //group_i[2] = MPI::COMM_WORLD.Get_group().Incl(npi[2],itmp);
-      //comm_i[2]  = MPI::COMM_WORLD.Create(group_i[2]);
       MPI_Group_incl(orig_group,npi[2],itmp,&group_i[2]);
-      //MPI_Comm_create(MPI_COMM_WORLD,group_i[2],&comm_i[2]);
       MPI_Comm_create(comm_world,group_i[2],&comm_i[2]);
 
       delete [] itmp;
@@ -104,9 +96,11 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
    //ii = 3+control.pfft3_qsize();
    //request = new MPI::Request*[ii];
    ii = 3+pfft3_qsize;
-   reqcnt   = new int[ii];
-   request  = new MPI_Request*[ii];
-   statuses = new MPI_Status*[ii];
+   reqcnt   = new int[ii]();
+   request  = new MPI_Request*[ii]();
+   statuses = new MPI_Status*[ii]();
+
+   MPI_Barrier(comm_world);
 
 }
 
@@ -117,6 +111,7 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
  ********************************/
 Parallel::~Parallel()
 {
+   MPI_Barrier(comm_world);
    if (dim>1)
    {
       for (int d=1; d<=dim; ++d)
@@ -135,8 +130,7 @@ Parallel::~Parallel()
    delete [] statuses;
 
 
-   //MPI::Finalize();
-   //MPI_Finalize();
+   MPI_Barrier(comm_world);
 }
 /********************************
  *                              *

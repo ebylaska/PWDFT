@@ -11,6 +11,7 @@
 using namespace std;
 */
 
+#include        <iostream>
 #include	"hilbert.hpp"
 #include	"Mapping3.hpp"
 
@@ -34,8 +35,8 @@ int  generate_map_indexes(int taskid,int np,
    int nq2        = nq1;
 
 
-   indx_proc = new int[ny*nz];
-   indx_q    = new int[ny*nz];
+   indx_proc = new (std::nothrow) int[ny*nz]();
+   indx_q    = new (std::nothrow) int[ny*nz]();
 
    if (rmdr1>0) ++nq2;
    nq=0; p=0; q=0;
@@ -79,19 +80,19 @@ Mapping3::Mapping3()
 {
    maptype=0; n2ft3d=0; nfft3d=0;
    nx=0; ny=0; nz=0;
-   qmap[0] = 0; qmap[1] = 0; qmap[2] = 0;
-   pmap[0] = 0; pmap[1] = 0; pmap[2] = 0;
-   kmap = 0;
+   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL;
+   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL;
+   kmap = NULL;
 }
 
 Mapping3::Mapping3(const int mapin, const int npin, const int taskidin, 
                    const int nxin,  const int nyin, const int nzin)
 {
-   int k,p,q;
+   int p,q;
 
-   qmap[0] = 0; qmap[1] = 0; qmap[2] = 0;
-   pmap[0] = 0; pmap[1] = 0; pmap[2] = 0;
-   kmap = 0;
+   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL;
+   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL;
+   kmap = NULL;
 
    np      = npin;
    taskid  = taskidin;
@@ -103,13 +104,13 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
    /* slab mapping */
    if (maptype==1)
    {
-      qmap[0] =  new int[nz];
-      pmap[0] =  new int[nz];
-      kmap    =  new int[nz];
+      qmap[0] =  new (std::nothrow) int[nz]();
+      pmap[0] =  new (std::nothrow) int[nz]();
+      kmap    =  new (std::nothrow) int[nz]();
 
        /* cyclic mapping */
        p = 0; q = 0;
-       for (k=0; k<nz; ++k)
+       for (auto k=0; k<nz; ++k)
        {
           qmap[0][k] = q;
           pmap[0][k] = p;
@@ -125,9 +126,9 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
    /* hilbert or hcurve  mapping */
    else
    {
-      qmap[0] =  new int[ny*nz];       pmap[0] =  new int[ny*nz];
-      qmap[1] =  new int[nz*(nx/2+1)]; pmap[1] =  new int[nz*(nx/2+1)];
-      qmap[2] =  new int[(nx/2+1)*ny]; pmap[2] =  new int[(nx/2+1)*ny];
+      qmap[0] =  new (std::nothrow) int[ny*nz]();       pmap[0] =  new (std::nothrow) int[ny*nz]();
+      qmap[1] =  new (std::nothrow) int[nz*(nx/2+1)](); pmap[1] =  new (std::nothrow) int[nz*(nx/2+1)]();
+      qmap[2] =  new (std::nothrow) int[(nx/2+1)*ny](); pmap[2] =  new (std::nothrow) int[(nx/2+1)*ny]();
 
       if (maptype==2)
       {
@@ -170,8 +171,8 @@ Mapping3::~Mapping3()
 
    if ((maptype==2) || (maptype==3))
    {
-        int *h_iq_to_i1[6],*h_iq_to_i2[6];
-        int *h_i1_start[6],*h_i2_start[6];
+        //int *h_iq_to_i1[6],*h_iq_to_i2[6];
+        //int *h_i1_start[6],*h_i2_start[6];
    }
 
 

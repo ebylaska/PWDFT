@@ -10,6 +10,7 @@
 using namespace std;
 */
 
+#include        <iostream>
 #include	"Mapping1.hpp"
 
 namespace pwdft {
@@ -27,16 +28,17 @@ Mapping1::Mapping1()
    maptype1=0; 
    ne[0]=0; neq[0]=0;
    ne[1]=0; neq[1]=0;
-   qmap[0] = 0; qmap[1] = 0;
-   pmap[0] = 0; pmap[1] = 0;
-   kmap[0] = 0; kmap[1] = 0;
-   nqarray[0] = 0; nqarray[1] = 0;
+   qmap[0] = (int *) 0; qmap[1] = (int *) 0;
+   pmap[0] = (int *) 0; pmap[1] = (int *) 0;
+   kmap[0] = (int *) 0; kmap[1] = (int *) 0;
+   nqarray[0] = (int *) 0; nqarray[1] = (int *) 0;
 }
 
 Mapping1::Mapping1(const int mapin, const int npin, const int taskidin, 
-                   const int ispinin, int *nein)
+                   const int ispinin, const int *nein)
 {
-   int ms,k,p,q;
+   //int k,p,q;
+
 
    np      = npin;
    taskid = taskidin;
@@ -46,28 +48,29 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
    ne[0]=0; neq[0]=0;
    ne[1]=0; neq[1]=0;
 
-   for (ms=0; ms<ispin; ++ms)
+   for (auto ms=0; ms<ispin; ++ms)
    {
       ne[ms]      = nein[ms];
-      qmap[ms]    = new int[ne[ms]];
-      pmap[ms]    = new int[ne[ms]];
-      kmap[ms]    = new int[ne[ms]];
-      nqarray[ms] = new int[np];
+      qmap[ms]    = new (std::nothrow) int[ne[ms]];
+      pmap[ms]    = new (std::nothrow) int[ne[ms]];
+      kmap[ms]    = new (std::nothrow) int[ne[ms]];
+      nqarray[ms] = new (std::nothrow) int[np];
 
       /* cyclic mapping */
       if (maptype1==0)
       {
 
          /* cyclic mapping */
-         p = 0; q = 0;
-         for (k=0; k<ne[ms]; ++k)
+         int p = 0; 
+         int q = 0;
+         for (auto k=0; k<ne[ms]; ++k)
          {
-          qmap[ms][k] = q;
-          pmap[ms][k] = p;
+             qmap[ms][k] = q;
+             pmap[ms][k] = p;
 
-          if (p==taskid) neq[ms] = q;
-          p++; 
-          if (p>=np) { p = 0; ++q; }
+             if (p==taskid) neq[ms] = q;
+             p++; 
+             if (p>=np) { p = 0; ++q; }
          }
 
       }
@@ -75,6 +78,8 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
       /* block mapping */
       else
       {
+         int k,q;
+         int p;
          for (p=0; p<np; ++p) nqarray[ms][p] = 0;
          p = 0;
          for (k=0; k<ne[ms]; ++k)
@@ -94,9 +99,10 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
          neq[ms] = nqarray[ms][taskid];
       }
 
-      for (k=0; k<ne[ms]; ++k)
+      for (auto k=0; k<ne[ms]; ++k)
         if (pmap[ms][k]==taskid)
            kmap[ms][qmap[ms][k]] = k;
+
    }
 
 }

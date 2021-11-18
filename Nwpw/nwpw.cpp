@@ -140,8 +140,10 @@ int main(int argc, char* argv[])
       MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,MPI_COMM_WORLD);
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
   string rtdbstr  = parse_nwinput(nwinput);
   int task = parse_task(rtdbstr);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if (oprint) std::cout << "First rtdbstr=" << rtdbstr << std::endl;
   if (oprint) std::cout << "First task=" << task << std::endl << std::endl;
@@ -154,24 +156,29 @@ int main(int argc, char* argv[])
         std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
         int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
         MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
-        std::cout << "wfound=" << wfound << "  filename=" << input_wavefunction_filename << std::endl;
+        //std::cout << "wfound=" << wfound << "  filename=" << input_wavefunction_filename << std::endl;
         if (!wfound) 
         {
              auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
              for (const auto & elem: lowlevel_rtdbstrs) {
                 if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
                 std::string dum_rtdbstr  = elem;
+                MPI_Barrier(MPI_COMM_WORLD);
                 ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+                MPI_Barrier(MPI_COMM_WORLD);
              }
         }
 
+        MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
+        MPI_Barrier(MPI_COMM_WORLD);
      }
 
      /* Optimize task */
      if (task==3) 
      {
         if (oprint) std::cout << std::endl << "Running geometry optimization calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,rtdbstr);
      }
 
@@ -181,25 +188,41 @@ int main(int argc, char* argv[])
         if (oprint) std::cout << std::endl << "Running frequency calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
      }
 
-     if (task==5) ierr += pwdft::cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
-     if (task==6) ierr += pwdft::cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
+     if (task==5) 
+     { 
+        ierr += pwdft::cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
+     }
+     if (task==6) 
+     {
+        ierr += pwdft::cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
+     }
+     MPI_Barrier(MPI_COMM_WORLD);
 
 
     
+     MPI_Barrier(MPI_COMM_WORLD);
      rtdbstr = parse_rtdbstring(rtdbstr);
+     MPI_Barrier(MPI_COMM_WORLD);
      task    = parse_task(rtdbstr);
      if (oprint) std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
      if (oprint) std::cout << "Next task =" << task << std::endl << std::endl;
+     MPI_Barrier(MPI_COMM_WORLD);
   }
 
   //int ijk = cpsd(argc,argv);
-  //ierr += cpsd(MPI_COMM_WORLD,rtdbstr);
 
+  // DEBUG
+  //MPI_Barrier(MPI_COMM_WORLD);
+  //ierr += cpsd_debug(MPI_COMM_WORLD,rtdbstr);
+  //MPI_Barrier(MPI_COMM_WORLD);
 
   if (taskid==MASTER) parse_write(rtdbstr);
+  MPI_Barrier(MPI_COMM_WORLD);
+
 
   // Finalize MPI
-  ierr += MPI_Finalize();
+  ierr = MPI_Finalize();
+
 
 
   return ierr;

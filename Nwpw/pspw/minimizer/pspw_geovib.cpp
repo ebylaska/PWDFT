@@ -160,6 +160,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    Molecule mymolecule(control.input_movecs_filename(),
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
+   MPI_Barrier(comm_world0);
 
    //GeoVib mygeovib(&molecule,control);
 
@@ -449,6 +450,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
 
+   MPI_Barrier(comm_world0);
 
 
 //*******************************************************************
@@ -473,7 +475,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) myelectron.counter);
-      cout.setf(ios::scientific);
+      //cout.setf(ios::scientific);
+      std::cout << std::scientific;
       cout << "\n";
       cout << " -----------------"    << "\n";
       cout << " cputime in seconds"   << "\n";
@@ -493,6 +496,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    /* deallocate memory */
    gdevice_psi_dealloc();
+
+   MPI_Barrier(comm_world0);
 
    return 0;
 }

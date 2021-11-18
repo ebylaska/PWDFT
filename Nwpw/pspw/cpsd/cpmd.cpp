@@ -409,7 +409,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) control.loop(0)*icount);
-      cout.setf(ios::scientific);
+      //cout.setf(ios::scientific);
+      std::cout << std::scientific;
       cout << "\n";
       cout << " -----------------"    << "\n";
       cout << " cputime in seconds"   << "\n";
@@ -423,6 +424,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    }
 
+   MPI_Barrier(comm_world0);
    return 0;
 }
    
