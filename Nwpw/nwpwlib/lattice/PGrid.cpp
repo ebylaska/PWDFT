@@ -32,17 +32,17 @@ using namespace pwdft;
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0, int nx0, int ny0, int nz0) : d3db(inparall,mapping0,nx0,ny0,nz0)
 {
-   int i,j,k,nxh,nyh,nzh,p,q,indx,k1,k2,k3,nb;
+   int nxh,nyh,nzh,p,q,indx,nb;
    int nwave_in[2],nwave_out[2];
    double *G1, *G2,*G3;
-   double gx,gy,gz,gg,ggcut,eps,ggmax,ggmin;
+   double ggcut,eps,ggmax,ggmin;
    int *zero_arow3,*zero_arow2;
    int yzslab,zrow;
 
    lattice = inlattice;
 
    eps = 1.0e-12;
-   Garray = new double [3*nfft3d];
+   Garray = new (std::nothrow) double [3*nfft3d]();
    G1 = Garray;
    G2 = (double *) &Garray[nfft3d];
    G3 = (double *) &Garray[2*nfft3d];
@@ -51,22 +51,22 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nzh = nz/2;
    ggmin = 9.9e9;
    ggmax = 0.0;
-   for (k3 = (-nzh+1); k3<= nzh; ++k3)
-   for (k2 = (-nyh+1); k2<= nyh; ++k2)
-   for (k1 = 0;        k1<= nxh; ++k1)
+   for (auto k3 = (-nzh+1); k3<= nzh; ++k3)
+   for (auto k2 = (-nyh+1); k2<= nyh; ++k2)
+   for (auto k1 = 0;        k1<= nxh; ++k1)
    {
-      gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-      gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-      gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-      gg = gx*gx + gy*gy + gz*gz;
+      auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+      auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+      auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+      auto gg = gx*gx + gy*gy + gz*gz;
       if (gg>ggmax) ggmax = gg;
       if ((gg<ggmin)&&(gg>1.0e-6)) ggmin = gg;
-      i=k1; if (i < 0) i = i + nx;
-      j=k2; if (j < 0) j = j + ny;
-      k=k3; if (k < 0) k = k + nz;
+      auto i=k1; if (i < 0) i = i + nx;
+      auto j=k2; if (j < 0) j = j + ny;
+      auto k=k3; if (k < 0) k = k + nz;
 
-      indx = ijktoindex(i,j,k);
-      p    = ijktop(i,j,k);
+      auto indx = ijktoindex(i,j,k);
+      auto p    = ijktop(i,j,k);
       if (p==parall->taskid_i())
       {
          G1[indx] = gx;
@@ -77,19 +77,16 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
-   masker[0] = new int [2*nfft3d];
+   masker[0] = new (std::nothrow) int [2*nfft3d]();
    masker[1] = (int *) &(masker[0][nfft3d]);
-   //masker[0] = new int [nfft3d];
-   //masker[1] = new int [nfft3d];
-   //for (int k=0; k<(2*nfft3d); ++k)
-   //   masker[0][k] = 1;
+   parall->Barrier();
    for (int k=0; k<(nfft3d); ++k)
    {
       masker[0][k] = 1;
       masker[1][k] = 1;
    }
 
-   for (nb=0; nb<=1; ++nb)
+   for (auto nb=0; nb<=1; ++nb)
    {
       nwave[nb] = 0;
       if (nb==0)
@@ -97,22 +94,22 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       else
          ggcut = lattice->wggcut();
 
-      for (k3 = (-nzh+1); k3<  nzh; ++k3)
-      for (k2 = (-nyh+1); k2<  nyh; ++k2)
-      for (k1 = 0;        k1<  nxh; ++k1)
+      for (auto k3 = (-nzh+1); k3<  nzh; ++k3)
+      for (auto k2 = (-nyh+1); k2<  nyh; ++k2)
+      for (auto k1 = 0;        k1<  nxh; ++k1)
       {
-         gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-         gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-         gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-         i=k1; if (i < 0) i = i + nx;
-         j=k2; if (j < 0) j = j + ny;
-         k=k3; if (k < 0) k = k + nz;
+         auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+         auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+         auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+         auto i=k1; if (i < 0) i = i + nx;
+         auto j=k2; if (j < 0) j = j + ny;
+         auto k=k3; if (k < 0) k = k + nz;
 
-         indx = ijktoindex(i,j,k);
-         p    = ijktop(i,j,k);
+         auto indx = ijktoindex(i,j,k);
+         auto p    = ijktop(i,j,k);
          if (p==parall->taskid_i())
          {
-            gg = gx*gx + gy*gy + gz*gz;
+            auto gg = gx*gx + gy*gy + gz*gz;
             gg = gg-ggcut;
             if (gg < (-eps))
             {
@@ -126,22 +123,20 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
 
 
-   packarray[0] = new int [2*nfft3d];
+   packarray[0] = new (std::nothrow) int [2*nfft3d]();
    packarray[1] = (int *) &(packarray[0][nfft3d]);
-   //packarray[0] = new int [nfft3d];
-   //packarray[1] = new int [nfft3d];
 
-   for (nb=0; nb<=1; ++nb)
+   for (auto nb=0; nb<=1; ++nb)
    {
       nida[nb]  = 0;
       nidb2[nb] = 0;
 
       /* k=(0,0,0)  */
-      k1=0;
-      k2=0;
-      k3=0;
-      indx = ijktoindex(k1,k2,k3);
-      p    = ijktop(k1,k2,k3);
+      auto k1=0;
+      auto k2=0;
+      auto k3=0;
+      auto indx = ijktoindex(k1,k2,k3);
+      auto p    = ijktop(k1,k2,k3);
       if (p==parall->taskid_i())
          if (!masker[nb][indx])
          {
@@ -149,8 +144,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             ++nida[nb];
          }
 
-      /* k=(0,0,k3) - neglect (0,0,-k3) points */
-      for (k=1; k<=(nzh-1); ++k)
+      // k=(0,0,k3) - neglect (0,0,-k3) points
+      for (auto k=1; k<=(nzh-1); ++k)
       {
          k1=0;
          k2=0;
@@ -165,9 +160,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             }
       }
 
-      /* k=(0,k2,k3) - neglect (0,-k2, -k3) points */
-      for (k=(-nzh+1); k<=(nzh-1); ++k)
-      for (j=1;        j<=(nyh-1); ++j)
+      // k=(0,k2,k3) - neglect (0,-k2, -k3) points 
+      for (auto k=(-nzh+1); k<=(nzh-1); ++k)
+      for (auto j=1;        j<=(nyh-1); ++j)
       {
          k1=0;
          k2=j;
@@ -184,10 +179,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       }
 
 
-      /* k=(k1,k2,k3) */
-      for (k=(-nzh+1); k<=(nzh-1); ++k)
-      for (j=(-nyh+1); j<=(nyh-1); ++j)
-      for (i=1;        i<=(nxh-1); ++i)
+      // k=(k1,k2,k3)
+      for (auto k=(-nzh+1); k<=(nzh-1); ++k)
+      for (auto j=(-nyh+1); j<=(nyh-1); ++j)
+      for (auto i=1;        i<=(nxh-1); ++i)
       {
          k1=i;
          k2=j;
@@ -210,7 +205,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nwave_in[1] = nida[1] + nidb2[1];
 
 
-   //if (control.balance())
+   // if (control.balance())
    if (balance0)
    {
       balanced = 1;
@@ -233,15 +228,15 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    if (maptype==1)
    {
 
-      zero_row3[0]   = new int[(nxh+1)*nq];
-      zero_row3[1]   = new int[(nxh+1)*nq];
-      zero_row2[0]   = new int[(nxh+1)*nq];
-      zero_row2[1]   = new int[(nxh+1)*nq];
-      zero_slab23[0] = new int[nxh+1];
-      zero_slab23[1] = new int[nxh+1];
+      zero_row3[0]   = new (std::nothrow) int[(nxh+1)*nq];
+      zero_row3[1]   = new (std::nothrow) int[(nxh+1)*nq];
+      zero_row2[0]   = new (std::nothrow) int[(nxh+1)*nq];
+      zero_row2[1]   = new (std::nothrow) int[(nxh+1)*nq];
+      zero_slab23[0] = new (std::nothrow) int[nxh+1];
+      zero_slab23[1] = new (std::nothrow) int[nxh+1];
 
       zero_arow3 = new int [(nxh+1)*ny];
-      for (nb=0; nb<=1; ++nb)
+      for (auto nb=0; nb<=1; ++nb)
       {
          if (nb==0)
             ggcut = lattice->eggcut();
@@ -249,28 +244,28 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             ggcut = lattice->wggcut();
 
          /* find zero_row3 - (i,j,*) rows that are zero */
-         for (i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i]  = 1;
-         for (i=0; i<((nxh+1)*ny); ++i) zero_arow3[i] = 1;
+         for (auto i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i]  = 1;
+         for (auto i=0; i<((nxh+1)*ny); ++i) zero_arow3[i] = 1;
 
          for (auto k2=(-nyh+1); k2<nyh; ++k2)
          for (auto k1=0;        k1<nxh; ++k1)
          {
-            i = k1; j = k2;
+            auto i = k1; auto j = k2;
             if (i<0) i = i + nx;
             if (j<0) j = j + ny;
             zrow = 1;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             {
-               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-               gg = gx*gx + gy*gy + gz*gz;
-               gg= gg-ggcut;
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               auto gg = gx*gx + gy*gy + gz*gz;
+                    gg = gg-ggcut;
                if (gg<(-eps)) zrow = 0;
             }
             if (!zrow)
             {
-               zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               zero_arow3[i+(nxh+1)*j] = 0;
                q = ijktoq1(0,j,0);
                p = ijktop1(0,j,0);
                if (p==parall->taskid_i())
@@ -288,17 +283,17 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
          for (auto k1=0;  k1<nxh; ++k1)
          {
-            i = k1;
+            auto i = k1;
             if (i<0) i = i + nx;
             yzslab = 1;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             for (auto k2=(-nyh+1); k2<nyh; ++k2)
             {
-               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-               gg = gx*gx + gy*gy + gz*gz;
-               gg= gg-ggcut;
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               auto gg = gx*gx + gy*gy + gz*gz;
+                    gg = gg-ggcut;
                if (gg<(-eps)) yzslab = 0;
             }
             if (!yzslab)
@@ -306,8 +301,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          }
 
          /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
-         for (k=0; k<nz;      ++k)
-         for (i=0; i<(nxh+1); ++i)
+         for (auto k=0; k<nz;      ++k)
+         for (auto i=0; i<(nxh+1); ++i)
          {
             q = ijktoq(i,0,k);
             p = ijktop(i,0,k);
@@ -323,24 +318,24 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
    else
    {
-      zero_row3[0] = new int[nq3];
-      zero_row3[1] = new int[nq3];
-      zero_row2[0] = new int[nq2];
-      zero_row2[1] = new int[nq2];
-      zero_slab23[0] = new int[nxh+1];
-      zero_slab23[1] = new int[nxh+1];
+      zero_row3[0] = new (std::nothrow) int[nq3]();
+      zero_row3[1] = new (std::nothrow) int[nq3]();
+      zero_row2[0] = new (std::nothrow) int[nq2]();
+      zero_row2[1] = new (std::nothrow) int[nq2]();
+      zero_slab23[0] = new (std::nothrow) int[nxh+1]();
+      zero_slab23[1] = new (std::nothrow) int[nxh+1]();
 
-      zero_arow2 = new int [(nxh+1)*nz];
-      zero_arow3 = new int [(nxh+1)*ny];
+      zero_arow2 = new (std::nothrow) int [(nxh+1)*nz]();
+      zero_arow3 = new (std::nothrow) int [(nxh+1)*ny]();
 
-      for (nb=0; nb<=1; ++nb)
+      for (auto nb=0; nb<=1; ++nb)
       {
          if (nb==0)
             ggcut = lattice->eggcut();
          else
             ggcut = lattice->wggcut();
 
-         /*  find zero_row3 - (i,j,*) rows that are zero */
+         // find zero_row3 - (i,j,*) rows that are zero 
          for (auto q=0; q<nq3; ++q)
             zero_row3[nb][q] =  1;
 
@@ -351,22 +346,23 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          for (auto k2=(-nyh+1); k2<nyh; ++k2)
          for (auto k1=0;        k1<nxh; ++k1)
          {
-            i = k1; j = k2;
+            auto i = k1; auto j = k2;
             if (i<0) i = i + nx;
             if (j<0) j = j + ny;
             zrow = 1;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             {
-               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-               gg = gx*gx + gy*gy + gz*gz;
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               auto gg = gx*gx + gy*gy + gz*gz;
                gg= gg-ggcut;
                if (gg<(-eps)) zrow = 0;
             }
             if (!zrow)
             {
-               zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               //zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               zero_arow3[i+(nxh+1)*j] = 0;
                q = ijktoq(i,j,0);
                p = ijktop(i,j,0);
                if (p==parall->taskid_i())
@@ -382,16 +378,16 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
          for (auto k1=0;  k1<nxh; ++k1)
          {
-            i = k1;
+            auto i = k1;
             if (i<0) i = i + nx;
             yzslab = 1;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             for (auto k2=(-nyh+1); k2<nyh; ++k2)
             {
-               gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-               gg = gx*gx + gy*gy + gz*gz;
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               auto gg = gx*gx + gy*gy + gz*gz;
                gg= gg-ggcut;
                if (gg<(-eps)) yzslab = 0;
             }
@@ -399,9 +395,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                zero_slab23[nb][i] = 0;
          }
 
-         /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
-         for (k=0; k<nz;      ++k)
-         for (i=0; i<(nxh+1); ++i)
+         // find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*)
+         for (auto k=0; k<nz;      ++k)
+         for (auto i=0; i<(nxh+1); ++i)
          {
             q = ijktoq1(i,0,k);
             p = ijktop1(i,0,k);
@@ -420,15 +416,14 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    }
 
-   Gpack[0] = new double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])];
+   Gpack[0] = new (std::nothrow) double [3*(nida[0]+nidb[0]) + 3*(nida[1]+nidb[1])]();
    Gpack[1] = (double *) &(Gpack[0][3*(nida[0]+nidb[0])]);
-   //Gpack[0] = new double [3*(nida[0]+nidb[0])];
-   //Gpack[1] = new double [3*(nida[1]+nidb[1])];
-   double *Gtmp = new double [nfft3d];
+
+   double *Gtmp = new (std::nothrow) double [nfft3d]();
    int one      = 1;
-   for (nb=0; nb<=1; ++nb)
+   for (auto nb=0; nb<=1; ++nb)
    {
-      for (i=0; i<3; ++i)
+      for (auto i=0; i<3; ++i)
       {
          DCOPY_PWDFT(nfft3d,&(Garray[i*nfft3d]),one,Gtmp,one);
 
@@ -438,6 +433,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
 
    delete [] Gtmp;
+
 }
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}
@@ -473,7 +469,7 @@ void PGrid::c_unpack(const int nb, double *a)
    int one=1;
    int nn = 2*(nida[nb]+nidb2[nb]);
    double *tmp1,*tmp2;
-   double *tmp = new double [2*nfft3d];
+   double *tmp = new (std::nothrow) double [2*nfft3d];
    if (balanced)
       mybalance->c_unbalance(nb,a);
 
@@ -484,8 +480,8 @@ void PGrid::c_unpack(const int nb, double *a)
 
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new double[2*zplane_size+1];
-   tmp2 = new double[2*zplane_size+1];
+   tmp1 = new (std::nothrow) double[2*zplane_size+1];
+   tmp2 = new (std::nothrow) double[2*zplane_size+1];
    c_timereverse(a,tmp1,tmp2);
    delete [] tmp2;
    delete [] tmp1;
@@ -500,7 +496,7 @@ void PGrid::c_unpack(const int nb, double *a)
 void PGrid::c_pack(const int nb, double *a)
 {
    int one=1;
-   double *tmp = new double [n2ft3d];
+   double *tmp = new (std::nothrow) double [n2ft3d];
 
    DCOPY_PWDFT(n2ft3d,a,one,tmp,one);
 
@@ -672,7 +668,7 @@ void PGrid::t_unpack(const int nb, double *a)
    int one=1;
    int nn = (nida[nb]+nidb2[nb]);
    double *tmp1,*tmp2;
-   double *tmp = new double [nfft3d];
+   double *tmp = new (std::nothrow) double [nfft3d];
    if (balanced)
       mybalance->t_unbalance(nb,a);
 
@@ -683,8 +679,8 @@ void PGrid::t_unpack(const int nb, double *a)
 
    t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new double[2*zplane_size+1];
-   tmp2 = new double[2*zplane_size+1];
+   tmp1 = new (std::nothrow) double[2*zplane_size+1];
+   tmp2 = new (std::nothrow) double[2*zplane_size+1];
    t_timereverse(a,tmp1,tmp2);
    delete [] tmp2;
    delete [] tmp1;
@@ -703,7 +699,7 @@ void PGrid::t_pack(const int nb, double *a)
    int one      = 1;
    int zero     = 0;
    double rzero = 0.0;
-   double *tmp  = new double [nfft3d];
+   double *tmp  = new (std::nothrow) double [nfft3d];
 
    DCOPY_PWDFT(nfft3d,a,one,tmp,one);
 
@@ -755,7 +751,7 @@ void PGrid::t_pack_nzero(const int nb, const int n, double *a)
 void PGrid::i_pack(const int nb, int *a)
 {
    int i;
-   int *tmp  = new int [nfft3d];
+   int *tmp  = new (std::nothrow) int [nfft3d];
 
    for (i=0; i<nfft3d; ++i) tmp[i] = a[i];
    for (i=0; i<nfft3d; ++i) a[i]    = 0;
