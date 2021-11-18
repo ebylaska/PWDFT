@@ -38,7 +38,8 @@ void v_bwexc(const int gga, Pneb *mypneb,
    **********************************/
    if (mypneb->ispin==1)
    {
-      mypneb->r_nzero(2,agr);
+      //mypneb->r_nzero(2,agr);
+      mypneb->r_zero(agr);
 
       /* calculate rho tmp1=rho(g) */
       mypneb->rr_copy(dn,rho);
