@@ -36,7 +36,17 @@ class Control2 {
 
    int pminimizer = 1;
 
+
+   int    pdriver_maxiter     = 30;
+   int    pdriver_lmbfgs_size = 9;
+   double pdriver_gmax  = 0.00045;
+   double pdriver_grms  = 0.00030;
+   double pdriver_xrms  = 0.00120;
+   double pdriver_xmax  = 0.00180;
+   double pdriver_trust = 0.3;
+
    bool pgeometry_optimize;
+
 
    char ppermanent_dir[256];
    char pscratch_dir[256];
@@ -92,6 +102,14 @@ public:
    int *ne_ptr()                { return pne; }
 
    bool geometry_optimize()       { return pgeometry_optimize; }
+
+   int driver_maxiter()    { return pdriver_maxiter; }
+   int driver_lmbfgs_size(){ return pdriver_lmbfgs_size; }
+   double driver_gmax()    { return pdriver_gmax; }
+   double driver_grms()    { return pdriver_grms; }
+   double driver_xmax()    { return pdriver_xmax; }
+   double driver_xrms()    { return pdriver_xrms; }
+   double driver_trust()   { return pdriver_trust; }
 
    char   *input_movecs_filename() { return pinput_movecs_filename; }
    char   *output_movecs_filename() { return poutput_movecs_filename; }
@@ -171,8 +189,18 @@ public:
    int APC_nga()    { return papc_nga; }
    double APC_Gc()  { return papc_Gc; }
    double APC_gamma(const int i)  { return papc_gamma[i]; }
-   double APC_u(const int i)      { return papc_u[i]; }
-   double APC_q(const int i)      { return papc_q[i]; }
+   double APC_q(const int i){ 
+      if (i>=papc_q.size())
+         return 0.0;
+      else
+         return papc_q[i];
+   }
+   double APC_u(const int i)      { 
+      if (i>=papc_u.size())
+         return 0.0;
+      else
+         return papc_u[i];
+   }
 
 };
 

@@ -34,7 +34,7 @@ public:
 
       indx   = new int [max_m];
       rho    = new double [max_m];
-      sylist = new double [2*max_m*nsize];
+      sylist = new double [2*(max_m)*nsize];
 
       for (auto k=0; k<max_m; ++k) indx[k] = k;
 
@@ -51,30 +51,41 @@ public:
 
    void lmbfgs(double *x, double *g, double *q) {
       DCOPY_PWDFT(nsize,g,one,q,one);
-      DCOPY_PWDFT(nsize,x,one,&sylist[(2*(indx[m]+1))  *nsize],one);
-      DCOPY_PWDFT(nsize,g,one,&sylist[(2*(indx[m]+1)+1)*nsize],one);
+      DCOPY_PWDFT(nsize,x,one,&sylist[(2*(indx[m+1]))  *nsize],one);
+      DCOPY_PWDFT(nsize,g,one,&sylist[(2*(indx[m+1])+1)*nsize],one);
 
       DAXPY_PWDFT(nsize,mrone,x,one,&sylist[(2*indx[m])  *nsize],one);
       DAXPY_PWDFT(nsize,mrone,g,one,&sylist[(2*indx[m]+1)*nsize],one);
 
-      double sum = DDOT_PWDFT(nsize,&sylist[(2*indx[m]+1)*nsize],one,&sylist[(2*indx[m])*nsize],one);
+      double sum  = DDOT_PWDFT(nsize,&sylist[(2*indx[m]+1)*nsize],one,&sylist[(2*indx[m])*nsize],one);
       if (fabs(sum)>1.0e-11) {
          rho[indx[m]] = 1.0/sum;
-         
+
          double alpha[m+1];
-         for (auto k=m; k>=0; --k) {
+         for (auto k=m-1; k>=0; --k) {
             alpha[k]     = rho[indx[k]]*DDOT_PWDFT(nsize,&sylist[(2*indx[k])*nsize],one,q,one);
             double tscal = -alpha[k];
             DAXPY_PWDFT(nsize,tscal,&sylist[(2*indx[k]+1)*nsize],one,q,one);
          }
 
-         for (auto k=0; k<=m; ++k) {
+         /* add preconditioner here */
+         if (m>200) {
+             double sumsy = DDOT_PWDFT(nsize,&sylist[(2*indx[m-1])*nsize],  one,&sylist[(2*indx[m-1]+1)*nsize],one);
+             double sumyy = DDOT_PWDFT(nsize,&sylist[(2*indx[m-1]+1)*nsize],one,&sylist[(2*indx[m-1]+1)*nsize],one);
+             if (sumyy>1.0e-10) {
+                double gmma = sumsy/sumyy;
+                if (gmma>2.0) gmma = 2.0;
+                DSCAL_PWDFT(nsize,gmma,q,one);
+             }
+         }
+
+         for (auto k=0; k<m; ++k) {
             double beta  = rho[indx[k]]*DDOT_PWDFT(nsize,&sylist[(2*indx[k]+1)*nsize],one,q,one);
             double tscal = -(beta-alpha[k]);
             DAXPY_PWDFT(nsize,tscal,&sylist[(2*indx[k])*nsize],one,q,one);
          }
 
-         if (m<(max_m-1)) {
+         if (m<(max_m-2)) {
             ++m;
          } else {
             int itmp = indx[0];
@@ -83,6 +94,7 @@ public:
             indx[max_m-1] = itmp;
          }
       }
+
    }
 
 };

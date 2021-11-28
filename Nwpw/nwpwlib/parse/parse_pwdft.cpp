@@ -919,6 +919,168 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
 
 
 
+/**************************************************
+ *                                                *
+ *                parse_driver                    *
+ *                                                *
+ **************************************************/
+
+static json parse_driver(json driverjson, int *curptr, vector<string> lines)
+{
+   //json driverjson;
+
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   string line;
+   vector<string> ss;
+
+
+   while (endcount>0)
+   {
+      line = mystring_lowercase(lines[cur]);
+
+      if (mystring_contains(line,"maxiter"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) driverjson["maxiter"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"loose"))
+      {
+         driverjson["gmax"] = 0.00450;
+         driverjson["grms"] = 0.00300;
+         driverjson["xmax"] = 0.01800;
+         driverjson["xrms"] = 0.01200;
+      }
+      else if (mystring_contains(line,"default"))
+      {
+         driverjson["gmax"] = 0.00045;
+         driverjson["grms"] = 0.00030;
+         driverjson["xmax"] = 0.00180;
+         driverjson["xrms"] = 0.01200;
+      }
+      else if (mystring_contains(line,"tight"))
+      {
+         driverjson["gmax"] = 0.000015;
+         driverjson["grms"] = 0.00001;
+         driverjson["xmax"] = 0.00006;
+         driverjson["xrms"] = 0.00004;
+      }
+      else if (mystring_contains(line,"gmax"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["gmax"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"grms"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["grms"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"xmax"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["xmax"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"xrms"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["xrms"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"eprec"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["eprec"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"trust"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["trust"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"sadstp"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["tsadstp"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"clear"))
+      {
+         driverjson["clear"] = true;
+      }
+      else if (mystring_contains(line,"redoautoz"))
+      {
+         driverjson["redoautoz"] = true;
+      }
+      else if (mystring_contains(line,"inhess"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) driverjson["inhess"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"moddir"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) driverjson["moddir"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"vardir"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) driverjson["vardir"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"nofirstneg"))
+      {
+         driverjson["nofirstneg"] = true;
+      }
+      else if (mystring_contains(line,"firstneg"))
+      {
+         driverjson["firstneg"] = true;
+      }
+      else if (mystring_contains(line,"bscale"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["bscale"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"ascale"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["ascale"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"tscale"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["tscale"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"hscale"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) driverjson["hscale"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"noxyz"))
+      {
+         driverjson["noxyz"] = true;
+      }
+      else if (mystring_contains(line,"xyz"))
+      {
+         ss = mystring_split0(line);
+         driverjson["xyz"] = ss[1];
+      }
+      else if (mystring_contains(line,"lmbfgs_size"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) driverjson["lmbfgs_size"] = std::stoi(ss[1]);
+      }
+
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+
+   *curptr = cur;
+
+
+   return driverjson;
+}
+
+
+
+
 
 /**************************************************
  *                                                *
@@ -967,7 +1129,7 @@ json parse_rtdbjson(json rtdb)
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"driver"))
       {
-         std::cout << "driver: " << lines[cur] << std::endl;
+         rtdb["driver"] = parse_driver(rtdb["driver"],&cur,lines);
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"task"))
       {
@@ -1032,9 +1194,10 @@ std::string parse_nwinput(std::string nwinput)
    else
    {
       // intialize the rtdb structure
-      json nwpw,geometries;
-      rtdb["nwpw"]     = nwpw;
+      json nwpw,geometries,driver;
+      rtdb["nwpw"]       = nwpw;
       rtdb["geometries"] = geometries;
+      rtdb["driver"]     = driver;
    }
 
    // set the dbname

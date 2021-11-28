@@ -162,6 +162,16 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    MPI_Barrier(comm_world0);
 
+
+   // driver parameters
+   int maxit       = control.driver_maxiter();
+   double tol_Gmax = control.driver_gmax();
+   double tol_Grms = control.driver_grms();
+   double tol_Xrms = control.driver_xrms();
+   double tol_Xmax = control.driver_xmax();
+   double trust    = control.driver_trust();
+   int lmbfgs_size = control.driver_lmbfgs_size();
+
    //GeoVib mygeovib(&molecule,control);
 
 //                 |**************************|
@@ -223,13 +233,15 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2],
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
       cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
 
       cout << "\n";
       cout << " supercell:\n";
-      printf("      volume : %10.2lf\n",mylattice.omega());
+      printf("      volume = %10.2lf\n",mylattice.omega());
       printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
       printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
       printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
@@ -292,13 +304,24 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          cout << "      optimization of psi and densities turned off" << std::endl;
       }
       cout << std::endl << std::endl << std::endl;
+
+      cout << " -----------------------------------------------------------------------------------\n";
+      cout << " ----------------------------- Geometry Optimization -------------------------------\n";
+      cout << " -----------------------------------------------------------------------------------\n\n";
+      printf(" Optimization parameters:  %4d (maxiter) %12.3le (gmax) %12.3le (grms) %12.3le (xrms) %12.3le (xmax)\n",
+                maxit,tol_Gmax,tol_Grms,tol_Xrms,tol_Xmax);
+
+      printf("    maximum number of steps       (maxiter) = %4d\n",maxit); 
+      printf("    maximum gradient threshold       (Gmax) = %12.6le\n",tol_Gmax);
+      printf("    rms gradient threshold           (Grms) = %12.6le\n",tol_Grms);
+      printf("    rms cartesian step threshold     (Xrms) = %12.6le\n",tol_Xrms);
+      printf("    maximum cartesian step threshold (Xmax) = %12.6le\n",tol_Xmax);
+      printf("\n");
+      printf("    fixed trust radius              (Trust) = %12.6le\n",trust);
+      printf("    number lmbfgs histories   (lmbfgs_size) = %4d\n",lmbfgs_size); 
+
       seconds(&cpu2);
    }
-
-   double tol_Gmax = 0.00045;
-   double tol_Grms = 0.00030;
-   double tol_Xrms = 0.00120;
-   double tol_Xmax = 0.00180;
 
 
 //*                |***************************|
@@ -309,13 +332,124 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    double g,gg,Gmax,Grms,Xrms,Xmax;
    double Eold =  0.0;
    double EV   = 0.0;
-   double *fion = new double[3*myion.nion];
-   int maxit = 50;
+
+   int nfsize   = 3*myion.nion;
+   int one      = 1;
+   double mrone = -1.0;
+
+   // allocate temporary memory from stack
+   double fion[3*myion.nion];
+   double sion[3*myion.nion];
 
    bool done = false;
    int it = 0;
 
-   while ((!done) && (it<maxit))
+   /*  calculate energy */
+   if (myparallel.is_master()){
+      cout << "\n\n";
+      cout << " -----------------------------------------------------------------------------------\n";
+      cout << " -----------------------------    Initial Geometry     -----------------------------\n";
+      cout << " -----------------------------------------------------------------------------------\n\n";
+      cout << " ---------------------------------\n";
+      cout << "         Initial Geometry         \n";
+      cout << " ---------------------------------\n";
+      cout <<  mymolecule.myion->print_bond_angle_torsions();
+      cout << "\n\n\n";
+      cout << " ---------------------------------\n";
+      cout << "     Calculate Initial Energy     \n";
+      cout << " ---------------------------------\n\n";
+   }
+   EV = cgsd_energy(control,mymolecule);
+   /*  calculate the gradient */
+   if (myparallel.is_master()){
+      cout << "\n";
+      cout << " ---------------------------------\n";
+      cout << "    Calculate Initial Gradient    \n";
+      cout << " ---------------------------------\n\n";
+   }
+   cgsd_energy_gradient(mymolecule,fion);
+   if (myparallel.is_master()) {
+      cout << " ion forces (au):" << "\n";
+      for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
+         printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
+                         ii+1,mymolecule.myion->symbol(ii),
+                         fion[3*ii],
+                         fion[3*ii+1],
+                         fion[3*ii+2]);
+         printf("      C.O.M. ( %12.6lf %12.6lf %12.6lf )\n",
+                         mymolecule.myion->com_fion(fion,0),
+                         mymolecule.myion->com_fion(fion,1),
+                         mymolecule.myion->com_fion(fion,2));
+         cout << "   |F|/nion  = " << std::setprecision(6) << fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
+              << "   max|Fatom|= " << std::setprecision(6) << fixed << std::setw(12) << mymolecule.myion->max_fion(fion)
+              << "  (" << std::setprecision(3) << fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
+              << std::endl << std::endl;
+   }
+   DSCAL_PWDFT(nfsize,mrone,fion,one);
+
+   /* initialize lmbfgs */
+   nwpw_lmbfgs geom_lmbfgs(3*myion.nion,lmbfgs_size,myion.rion1,fion);
+
+
+   /* update coords in mymolecule */
+   mymolecule.myion->fixed_step(-trust,fion);
+   mymolecule.myion->shift();
+
+   Xmax = mymolecule.myion->xmax();
+   Xrms = mymolecule.myion->xrms();
+   Gmax = 0.0;
+   Grms = 0.0;
+   for (ii=0; ii<(myion.nion); ++ii)
+   {
+      gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+      Grms += gg;
+      g = sqrt(gg); if (g>Gmax) Gmax = g;
+   }
+   Grms = sqrt(Grms)/((double) myion.nion);
+   if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax)) done = true;
+
+   if (myparallel.is_master()){
+       if (done)
+       {
+          cout << "      ----------------------\n"
+               << "      Optimization converged\n"
+               << "      ----------------------\n";
+       }
+       if (it==0)
+       {
+          printf("\n\n");
+          printf("@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
+          printf("@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+       }
+       else
+       {
+          printf("\n\n");
+          printf("  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
+          printf("  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+       }
+       seconds(&cpustep);
+       printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+
+       if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
+       {
+          cout << "                                            ok       ok       ok       ok\n";
+       }
+       else if ((Gmax<=tol_Gmax)||(Grms<=tol_Grms)||(Xrms<=tol_Xrms)||(Xmax<=tol_Xmax))
+       {
+          std:string oktag = "";
+          std::cout << "                                     ";
+          oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; std::cout << "       " << oktag;
+          oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; std::cout << "       " << oktag;
+          oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; std::cout << "       " << oktag;
+          oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; std::cout << "       " << oktag << "\n";
+       }
+    }
+
+
+
+   ++it;
+
+   while ((!done) && (it<=maxit))
    {
    
       if (myparallel.is_master()){
@@ -363,18 +497,23 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
                             mymolecule.myion->com_fion(fion,0),
                             mymolecule.myion->com_fion(fion,1),
                             mymolecule.myion->com_fion(fion,2));
-            cout << "   |F|/nion  = " << std::setprecision(6) << std::setw(15) << mymolecule.myion->rms_fion(fion) << std::endl 
-                 << "   max|Fatom|= " << std::setprecision(6) << std::setw(15) << mymolecule.myion->max_fion(fion) 
-                 << "  (" << std::setprecision(3) << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
+            cout << "   |F|/nion  = " << std::setprecision(6) << fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl 
+                 << "   max|Fatom|= " << std::setprecision(6) << fixed << std::setw(12) << mymolecule.myion->max_fion(fion) 
+                 << "  (" << std::setprecision(3) << fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
                  << std::endl << std::endl;
              
 
       }
+      DSCAL_PWDFT(nfsize,mrone,fion,one);
+
+      /* lmbfgs gradient */
+      geom_lmbfgs.lmbfgs(myion.rion1,fion,sion);
 
 
       /* update coords in mymolecule */
-      mymolecule.myion->fixed_step(0.1,fion);
+      mymolecule.myion->fixed_step(-trust,sion);
       mymolecule.myion->shift();
+
 
       Xmax = mymolecule.myion->xmax();
       Xrms = mymolecule.myion->xrms();
@@ -417,11 +556,11 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
        
          if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
          {
-            cout << "@                                           ok       ok       ok       ok\n";
+            cout << "                                            ok       ok       ok       ok\n";
          }
          else if ((Gmax<=tol_Gmax)||(Grms<=tol_Grms)||(Xrms<=tol_Xrms)||(Xmax<=tol_Xmax))
          {
-            std:string oktag = "";
+            std::string oktag = "";
             std::cout << "                                     ";
             oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; std::cout << "       " << oktag;
             oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; std::cout << "       " << oktag;
@@ -496,6 +635,9 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    /* deallocate memory */
    gdevice_psi_dealloc();
+   //delete [] fion;
+   //delete [] sion;
+
 
    MPI_Barrier(comm_world0);
 

@@ -35,6 +35,7 @@ public:
    double Gc;
 
    double *gamma,*A,*Am,*b,*q,*u,*w,*gaus;
+   double *qion, *uion;
    double Eapc,Papc;
 
    /* constructor */
@@ -51,6 +52,8 @@ public:
          delete [] u;
          delete [] w;
          delete [] gaus;
+         delete [] qion;
+         delete [] uion;
       }
    }
 

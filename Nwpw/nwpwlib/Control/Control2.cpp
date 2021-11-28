@@ -417,10 +417,17 @@ Control2::Control2(const int np0, const string rtdbstring)
       if (!rtdbjson["nwpw"]["apc"]["q"].is_null()) {
          size_t nq = rtdbjson["nwpw"]["apc"]["q"].size();
          for (size_t i=0; i<nq; ++i) 
-            papc_u.push_back(rtdbjson["nwpw"]["apc"]["q"][i]);
+            papc_q.push_back(rtdbjson["nwpw"]["apc"]["q"][i]);
       }
    }
-   
+
+   if (!rtdbjson["driver"]["maxiter"].is_null())     { pdriver_maxiter     = rtdbjson["driver"]["maxiter"]; }
+   if (!rtdbjson["driver"]["lmbfgs_size"].is_null()) { pdriver_lmbfgs_size = rtdbjson["driver"]["lmbfgs_size"]; }
+   if (!rtdbjson["driver"]["gmax"].is_null())    { pdriver_gmax  = rtdbjson["driver"]["gmax"]; }
+   if (!rtdbjson["driver"]["grms"].is_null())    { pdriver_grms  = rtdbjson["driver"]["grms"]; }
+   if (!rtdbjson["driver"]["xmax"].is_null())    { pdriver_xmax  = rtdbjson["driver"]["xmax"]; }
+   if (!rtdbjson["driver"]["xrms"].is_null())    { pdriver_xrms  = rtdbjson["driver"]["xrms"]; }
+   if (!rtdbjson["driver"]["trust"].is_null())   { pdriver_trust = rtdbjson["driver"]["trust"]; }
 
 }
 

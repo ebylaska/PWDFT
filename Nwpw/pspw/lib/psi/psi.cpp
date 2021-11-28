@@ -321,8 +321,7 @@ bool psi_read(Pneb *mypneb, char *filename, double *psi2)
    }
 
    /* generate new psi */
-   else
-   {
+   else {
       if (myparall->is_master())
          std::cout << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);

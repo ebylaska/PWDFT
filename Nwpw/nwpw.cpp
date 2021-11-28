@@ -147,31 +147,32 @@ int main(int argc, char* argv[])
 
   if (oprint) std::cout << "First rtdbstr=" << rtdbstr << std::endl;
   if (oprint) std::cout << "First task=" << task << std::endl << std::endl;
+
+
+  // Initialize wavefunction
+  {
+     std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
+     int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+     MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+     if (!wfound) 
+     {
+        auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
+        for (const auto & elem: lowlevel_rtdbstrs) {
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+           std::string dum_rtdbstr  = elem;
+           ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+        }
+     }
+  }
+
+  // Tasks
   while (task>0)
   {
-
      /* Energy or Gradient task */
      if ((task==1) || (task==2))
      {
-        std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
-        int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
-        MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
-        //std::cout << "wfound=" << wfound << "  filename=" << input_wavefunction_filename << std::endl;
-        if (!wfound) 
-        {
-             auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
-             for (const auto & elem: lowlevel_rtdbstrs) {
-                if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
-                std::string dum_rtdbstr  = elem;
-                MPI_Barrier(MPI_COMM_WORLD);
-                ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
-                MPI_Barrier(MPI_COMM_WORLD);
-             }
-        }
-
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
-        MPI_Barrier(MPI_COMM_WORLD);
      }
 
      /* Optimize task */
@@ -188,10 +189,13 @@ int main(int argc, char* argv[])
         if (oprint) std::cout << std::endl << "Running frequency calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
      }
 
+     /* Steepest descent task */
      if (task==5) 
      { 
         ierr += pwdft::cpsd(MPI_COMM_WORLD,rtdbstr); /* Steepest_Descent task */
      }
+
+     /* Car-Parrinello task */
      if (task==6) 
      {
         ierr += pwdft::cpmd(MPI_COMM_WORLD,rtdbstr); /* Car-Parrinello task */
@@ -199,10 +203,11 @@ int main(int argc, char* argv[])
      MPI_Barrier(MPI_COMM_WORLD);
 
 
-    
-     MPI_Barrier(MPI_COMM_WORLD);
+     // parse json string 
      rtdbstr = parse_rtdbstring(rtdbstr);
      MPI_Barrier(MPI_COMM_WORLD);
+
+     // Find next task 
      task    = parse_task(rtdbstr);
      if (oprint) std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
      if (oprint) std::cout << "Next task =" << task << std::endl << std::endl;

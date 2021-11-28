@@ -133,12 +133,8 @@ static std::map<std::string, std::vector<double> > rcovalent = {
 {"Ds", {1.28,1.16,1.12,0.00}},
 {"Rg", {1.21,1.16,1.18,0.00}},
 {"Cn", {1.22,1.37,1.30,0.00}},
-{"Uut", {1.36,0.00,0.00,0.00}},
 {"Fl",  {1.43,0.00,0.00,0.00}},
-{"Uup", {1.62,0.00,0.00,0.00}},
 {"Lv",  {1.75,0.00,0.00,0.00}},
-{"Uus", {1.65,0.00,0.00,0.00}},
-{"Uuo", {1.57,0.00,0.00,0.00}}
 };
 
 
@@ -173,6 +169,7 @@ double ion_bond_order(std::vector<double> rc1, std::vector<double> rc2, double r
       b = 1+imin;
       if (imin==3) {b = 1.5;}
    }
+   if ((b==0) && (r12-(rc1[0]+rc2[0])) < 0.0) b = 1;
 
    return b;
 }
@@ -188,7 +185,7 @@ static inline void rtrim(std::string &s) {
 
 // *******************************************
 // *                                         *
-// *      ion_print_bond_angle_tortions      *
+// *      ion_print_bond_angle_torsions      *
 // *                                         *
 // *******************************************
 std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, double *rion) {
@@ -225,10 +222,8 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
          dz = zi-zj;
          r = std::sqrt(dx*dx + dy*dy + dz*dz);
 
-         std::string sym1 = "";
-         std::string sym2 = "";
-         sym1 += symbol[3*ia] + symbol[3*ia+1] + symbol[3*ia+2];
-         sym2 += symbol[3*ja] + symbol[3*ja+1] + symbol[3*ja+2];
+         std::string sym1 = &symbol[3*ia];
+         std::string sym2 = &symbol[3*ja];
          rtrim(sym1);
          rtrim(sym2);
          rci   = rcovalent[sym1];
@@ -272,12 +267,9 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
                dzkj = zk-zj;
                rkj = std::sqrt(dxkj*dxkj + dykj*dykj + dzkj*dzkj);
 
-               std::string sym1 = "";
-               std::string sym2 = "";
-               std::string sym3 = "";
-               sym1 += symbol[3*ia] + symbol[3*ia+1] + symbol[3*ia+2];
-               sym2 += symbol[3*ja] + symbol[3*ja+1] + symbol[3*ja+2];
-               sym3 += symbol[3*ka] + symbol[3*ka+1] + symbol[3*ka+2];
+               std::string sym1 = &symbol[3*ia];
+               std::string sym2 = &symbol[3*ja];
+               std::string sym3 = &symbol[3*ka];
                rtrim(sym1);
                rtrim(sym2);
                rtrim(sym3);
@@ -303,7 +295,6 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
                   ++count;
                }
             }
-
 
 
    /* determining torsions */
@@ -337,14 +328,10 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
                   dzkl = zl-zk;
                   rkl = std::sqrt(dxkl*dxkl + dykl*dykl + dzkl*dzkl);
 
-                  std::string sym1 = "";
-                  std::string sym2 = "";
-                  std::string sym3 = "";
-                  std::string sym4 = "";
-                  sym1 += symbol[3*ia] + symbol[3*ia+1] + symbol[3*ia+2];
-                  sym2 += symbol[3*ja] + symbol[3*ja+1] + symbol[3*ja+2];
-                  sym3 += symbol[3*ka] + symbol[3*ka+1] + symbol[3*ka+2];
-                  sym4 += symbol[3*la] + symbol[3*la+1] + symbol[3*la+2];
+                  std::string sym1 = &symbol[3*ia];
+                  std::string sym2 = &symbol[3*ja];
+                  std::string sym3 = &symbol[3*ka];
+                  std::string sym4 = &symbol[3*la];
                   rtrim(sym1);
                   rtrim(sym2);
                   rtrim(sym3);
@@ -386,10 +373,13 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol, dou
    for (auto ii=0; ii<nion; ++ii)
    {
       int ia = katm[ii];
-      msg += symbol[3*ia] + symbol[3*ia+1] + symbol[3*ia+2];
-      msg += "     ";
+      std::string sym1 = &symbol[3*ia];
+      msg += sym1;
+      msg += "    ";
+      if (sym1.length()==1) msg += " ";
 
       std::stringstream stream;
+      //stream <<  symbol[3*ia] << symbol[3*ia+1] << symbol[3*ia+2] << "     ";
       stream << std::fixed << std::setprecision(6) << std::setw(12) << autoang*rion[3*ii]   << " "
                                                    << std::setw(12) << autoang*rion[3*ii+1] << " "
                                                    << std::setw(12) << autoang*rion[3*ii+2] << "\n";

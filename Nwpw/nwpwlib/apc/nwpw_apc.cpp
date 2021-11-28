@@ -34,6 +34,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
    mystrfac = mystrfacin;
    apc_on = control.APC_on();
 
+
    if (apc_on)  
    {
       Gc  = control.APC_Gc();
@@ -54,17 +55,19 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       }
       ngs = nga*myion->nion;
 
-      /* allocate APC memory */
+      /* allocate APC memory from heap  */
       A  = new double [4*ngs*ngs];
       Am = new double [ngs*ngs];
       b  = new double [4*ngs];
       q  = new double [ngs];
       u  = new double [ngs];
 
+      qion = new double [myion->nion];
+      uion = new double [myion->nion];
+
       int npack0 = mypneb->npack(0);
       w    = new double[npack0];
       gaus = new double[nga*npack0];
-
 
 
       /* define weight function */
@@ -97,6 +100,12 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          }
       }
 
+      for (auto ii=0; ii<myion->nion; ++ii)
+      {
+         qion[ii] = control.APC_q(ii);
+         uion[ii] = control.APC_u(ii);
+      }
+
       /* write out APC header */   
       if (mypneb->PGrid::parall->is_master())
       {
@@ -107,6 +116,11 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          std::cout << " Gc      :  " << Gc << std::endl;
          for (auto i=0; i<nga; ++i)
             std::cout << " APC gamma: " << i << " " << gamma[i] << std::endl;
+         for (auto ii=0; ii<myion->nion; ++ii)
+            if (abs(uion[ii])> 1.0e-9) 
+               std::cout << " APC u: " << std::setw(8)  << ii+1 << "    " 
+                         << std::setw(12) << std::fixed << std::setprecision(3) << uion[ii] << std::endl;
+       
       }
    }
 }
@@ -130,11 +144,14 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       double *Gz = mypneb->Gpackxyz(0,2);
       double omega = mypneb->lattice->omega();
 
-      double exi[2*npack0];
-      double exj[2*npack0];
-      double gaus_i[2*npack0];
-      double gaus_j[2*npack0];
-      double xtmp[npack0];
+
+      /* allocate temporary memory from heap */
+      double *exi = new double[2*npack0];
+      double *exj = new double[2*npack0];
+      double *gaus_i = new double[2*npack0];
+      double *gaus_j = new double[2*npack0];
+      double *xtmp   = new double[npack0];
+
 
       /* calculate N = dng(G=0)*omega */
       double N = ((double) (mypneb->ne[0] + mypneb->ne[ispin-1]));
@@ -269,6 +286,12 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       mypneb->PGrid::parall->Vector_SumAll(0,ngs*ngs,Am);
 
 
+      /* deallocate temporary memory from heap */
+      delete [] xtmp;
+      delete [] gaus_j;
+      delete [] gaus_i;
+      delete [] exj;
+      delete [] exi;
 
    } /*apc_on*/
 }
@@ -353,8 +376,9 @@ void nwpw_apc::VQ_APC(double *u, double *VQ)
    for (auto i=0; i<ngs; ++i)
       u[i] -= (sumAmU/sumAm);
 
-   double exi[2*npack0];
-   double gaus_i[2*npack0];
+   /* allocate temporary memory from heap */
+   double *exi    = new double[2*npack0];
+   double *gaus_i = new double[2*npack0];
 
    for (auto ii=0; ii<myion->nion; ++ii)
    {
@@ -372,6 +396,10 @@ void nwpw_apc::VQ_APC(double *u, double *VQ)
       }
    }
    mypneb->c_addzero(0,sumAmU/sumAm,VQ);
+
+   /* deallocate temporary memory from heap */
+   delete [] gaus_i;
+   delete [] exi;
 }
 
 
@@ -467,6 +495,7 @@ void nwpw_apc::dQdR_APC(double *u, double *fion)
    int ione = 1;
    double rone=1.0;
 
+   /* allocate memory from stack */
    double dbtmp[nga];
    double dAtmp[ngs];
 
@@ -544,9 +573,9 @@ std::string nwpw_apc::print_APC(const double *zv)
       for (auto i=0; i<nga; ++i) sum += q[i+ii*nga];
       sume -= sum;
       sumi += zv[ia];
-      stream << std::setw(8)  << ii+1
-             << std::setw(6)  << myion->symbol(ii)
-             << std::setw(12) << std::fixed << std::setprecision(3) << -sum
+      stream << std::setw(8)  << ii+1 << "    "
+             << std::left  << std::setw(2)  << myion->symbol(ii)
+             << std::right << std::setw(12) << std::fixed << std::setprecision(3) << -sum
              << std::setw(12) << std::fixed << std::setprecision(3) << zv[ia]
              << std::setw(12) << std::fixed << std::setprecision(3) << zv[ia]-sum
              << std::endl;

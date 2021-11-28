@@ -236,6 +236,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2],
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
       cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
@@ -370,6 +372,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2],
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
       cout << "\n\n";
       cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]

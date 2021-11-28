@@ -94,24 +94,24 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Control2 control(myparallel.np(),rtdbstring);
    int flag =  control.task();
 
-   /* initialize processor grid structure */
+   // initialize processor grid structure 
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
 
-   /* initialize lattice */
+   // initialize lattice
    Lattice mylattice(control);
 
-   /* read in ion structure */
+   // read in ion structure
    //Ion myion(myrtdb);
    Ion myion(rtdbstring,control);
 
-   /* Check for and generate psp files                       */
-   /* - this routine also sets the valence charges in myion, */
-   /*   and total_ion_charge and ne in control               */
+   // Check for and generate psp files                      
+   // - this routine also sets the valence charges in myion,
+   //   and total_ion_charge and ne in control             
    psp_file_check(&myparallel,&myion,control);
    MPI_Barrier(comm_world0);
 
 
-   /* fetch ispin and ne psi information from control */
+   // fetch ispin and ne psi information from control 
    ispin = control.ispin();
    ne[0] = control.ne(0);
    ne[1] = control.ne(1);
@@ -130,31 +130,31 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    version = 3;
 
 
-   /* initialize parallel grid structure */
+   // initialize parallel grid structure 
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
-   /* initialize gdevice memory */
+   // initialize gdevice memory
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
 
-   /* setup structure factor */
+   // setup structure factor
    Strfac mystrfac(&myion, &mygrid);
    mystrfac.phafac();
 
-   /* initialize operators */
+   // initialize operators
    Kinetic_Operator mykin(&mygrid);
    Coulomb_Operator mycoulomb(&mygrid);
 
-   /* initialize xc */
+   // initialize xc
    XC_Operator      myxc(&mygrid,control);
 
-   /* initialize psp */
+   // initialize psp
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
-   /* initialize electron operators */
+   // initialize electron operators
    Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
 
-   /* setup ewald */
+   // setup ewald 
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
@@ -162,7 +162,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
 
-   /* initialize apc */
+   // initialize apc
    nwpw_apc myapc(&myion,&mygrid,&mystrfac, control);
 
 //                 |**************************|
@@ -232,13 +232,15 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.rion1[3*ii+1],
                                                myion.rion1[3*ii+2],
                                                myion.amu(ii));
+      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
+      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
       cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
 
       cout << "\n";
       cout << " supercell:\n";
-      printf("      volume : %10.2lf\n",mylattice.omega());
+      printf("      volume = %10.2lf\n",mylattice.omega());
       printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
       printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
       printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
@@ -310,7 +312,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 //******************     call CG minimizer     **********************
 //*                |***************************|
 
-   /*  calculate energy */
+   // calculate energy
    double EV = 0.0;
 
    if (flag < 0) 
@@ -329,10 +331,11 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    rtdbjson["pspw"]["energies"] = mymolecule.E;
    rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
-   /* calculate fion */
+   // calculate fion
    if (flag==2)
    {
-      double *fion = new double[3*myion.nion]; 
+      //double *fion = new double[3*myion.nion]; 
+      double fion[3*myion.nion]; 
       cgsd_energy_gradient(mymolecule,fion);
       if (myparallel.is_master())
       {
@@ -348,11 +351,11 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       for (ii=0; ii<(3*myion.nion); ++ii) fion[ii] *= -1.0;
       rtdbjson["pspw"]["gradient"] = std::vector<double>(fion,&fion[3*myion.nion]);
 
-      delete [] fion;
+      //delete [] fion;
    }
 
 
-   /* APC analysis */
+   // APC analysis 
    if (control.APC_on()) 
    {
       myapc.gen_APC(mymolecule.dng1,false);
@@ -363,11 +366,11 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    }
 
 
-   /* write psi */
+   // write psi 
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
    MPI_Barrier(comm_world0);
 
-   /* write rtdbjson */
+   // write rtdbjson
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 
@@ -402,7 +405,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    }
 
-   /* deallocate memory */
+   // deallocate memory
    gdevice_psi_dealloc();
 
    MPI_Barrier(comm_world0);
