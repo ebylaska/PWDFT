@@ -293,6 +293,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       delete [] exj;
       delete [] exi;
 
+
    } /*apc_on*/
 }
 

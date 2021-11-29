@@ -40,6 +40,7 @@ public:
    Ewald  *myewald;
    Electron_Operators *myelectron;
 
+
    double *psi1, *rho1, *rho1_all, *dng1;
    double *psi2, *rho2, *rho2_all, *dng2;
    double *lmbda, *hml, *eig;

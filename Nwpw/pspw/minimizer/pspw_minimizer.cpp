@@ -24,7 +24,6 @@ using namespace std;
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
 #include	"Molecule.hpp"
-#include	"nwpw_apc.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
@@ -158,12 +157,12 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
+
+   // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
 
-   // initialize apc
-   nwpw_apc myapc(&myion,&mygrid,&mystrfac, control);
 
 //                 |**************************|
 // *****************   summary of input data  **********************
@@ -358,10 +357,17 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    // APC analysis 
    if (control.APC_on()) 
    {
-      myapc.gen_APC(mymolecule.dng1,false);
-      if (myparallel.is_master() && myapc.apc_on)
+      mypsp.myapc->gen_APC(mymolecule.dng1,false);
+
+      // set qion
+      double qion[myion.nion]; 
+      for (auto ii=0; ii<myion.nion; ++ii)
+         qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
+      rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+
+      if (myparallel.is_master() && mypsp.myapc->apc_on)
       {
-         std::cout <<  myapc.print_APC(mypsp.zv);
+         std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
       }
    }
 

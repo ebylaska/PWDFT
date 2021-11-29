@@ -10,6 +10,7 @@ using namespace std;
 #include	"Ion.hpp"
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
+#include	"nwpw_apc.hpp"
 
 namespace pwdft {
 
@@ -30,6 +31,8 @@ class	Pseudopotential {
    Strfac *mystrfac;
 
 public:
+   nwpw_apc *myapc;
+
    bool *semicore;
    int npsp;
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
@@ -80,6 +83,8 @@ public:
       delete [] rcore;
       delete [] ncore_sum;
       delete [] rc;
+
+      delete myapc;
 
       mypneb->r_dealloc(semicore_density);
     }

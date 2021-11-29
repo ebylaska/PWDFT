@@ -29,6 +29,7 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, C
    mypsp     = mypsp0;
    myxc      = myxc0;
 
+
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
 
