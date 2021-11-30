@@ -445,7 +445,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
    double ff      = 0.0;
    double sumdQdR = 0.0;
    for (auto ib=0; ib<nion; ++ib)
-   for (auto ia=0; ia<nga; ++ia)
+   for (auto ia=0; ia<nga;  ++ia)
    {
       double tmp=0.0;
       for (auto ja=0; ja<nga; ++ja)
@@ -453,7 +453,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
 
       double tmp2=0.0;
       for (auto jb=0; jb<nion; ++jb)
-      for (auto ja=0; ja<nga; ++ib)
+      for (auto ja=0; ja<nga;  ++ja)
          tmp2 +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*dAtmp[ja+jb*nga];
       ff = ff + uq[ia+ib*nga]*(tmp-tmp2);
       sumdQdR = sumdQdR + (tmp-tmp2);
@@ -555,6 +555,11 @@ void nwpw_apc::V_APC(double *dng, double *zv, double *vapc,
 
       // Calculate Papc 
       Papc = mypneb->cc_pack_dot(0,dng,vtmp);
+
+
+      // F =  -sum(i,j) 0.5*q(i)*(dM/dR)*q(j) - sum u(i)*dq(i)/dR 
+      // fion = -sum u(i)*dq(i)/dR 
+      if (move) dQdR_APC(u,fion);
    }
 }
 
