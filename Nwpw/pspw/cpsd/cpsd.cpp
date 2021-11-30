@@ -52,12 +52,12 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    char date[26];
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4;
-   double E[50],deltae,deltac,deltar,viral,unita[9],en[2];
+   double E[60],deltae,deltac,deltar,viral,unita[9],en[2];
    double *psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
 
-   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+   for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
    if (myparallel.is_master())
    {
@@ -375,6 +375,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
+      cout << mypsp.myapc->shortprint_APC();
+
       cout << "\n\n";
       cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]
                                            << "  down= " << setw(11) << setprecision(5) << en[ispin]
@@ -385,12 +387,18 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
+      if (mypsp.myapc->v_apc_on) 
+         printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
+
       printf("\n");
       printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
+      if (mypsp.myapc->v_apc_on) 
+         printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
+
       viral = (E[9]+E[8]+E[7]+E[6])/E[5];
       printf(" Viral Coefficient   : %19.10le\n",viral);
 

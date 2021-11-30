@@ -68,6 +68,10 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       int npack0 = mypneb->npack(0);
       w    = new double[npack0];
       gaus = new double[nga*npack0];
+      vtmp = new double[2*npack0];
+
+      Eapc = 0.0;
+      Papc = 0.0;
 
 
       /* define weight function */
@@ -104,6 +108,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       {
          qion[ii] = control.APC_q(ii);
          uion[ii] = control.APC_u(ii);
+         if (abs(uion[ii])> 1.0e-9) v_apc_on = true;
       }
 
       /* write out APC header */   
@@ -326,12 +331,12 @@ static double sumAm_APC(const int ngs, const double *Am)
  *          private Amtimesu_APC           *
  *                                         *
  *******************************************/
-static double Amtimesu_APC(const int ngs, const double *Am, const double *u)
+static double Amtimesu_APC(const int ngs, const double *Am, const double *uq)
 {
    double sum0 = 0.0;
    for (auto i=0; i<ngs; ++i)
       for (auto j=0; j<ngs; ++j)
-         sum0 += Am[i+j*ngs]*u[j];
+         sum0 += Am[i+j*ngs]*uq[j];
    return sum0;
 }
 
@@ -340,11 +345,11 @@ static double Amtimesu_APC(const int ngs, const double *Am, const double *u)
  *          private Vfac_APC               *
  *                                         *
  *******************************************/
-static double Vfac_APC(const int ngs, const double *Am, const double *u, const int i)
+static double Vfac_APC(const int ngs, const double *Am, const double *uq, const int i)
 {
    double sum0 = 0.0;
    for (auto j=0; j<ngs; ++j)
-      sum0 += Am[i+j*ngs]*u[j];
+      sum0 += Am[i+j*ngs]*uq[j];
    return sum0;
 }
 
@@ -360,22 +365,22 @@ static double Vfac_APC(const int ngs, const double *Am, const double *u, const i
   for the current geometry.
   
     Entry - nion: number of qm atoms
-          - u: dE/dq(ii) - derivative of E wrt to model charges q(ii)
+          - uq: dE/dq(ii) - derivative of E wrt to model charges q(ii)
     Exit - VQ(G) = dE/dq(ii)*dq(ii)/drho(G)
   
     Note - pspw_gen_APC needs to be called to generate Am=inv(A) before
            this routine is called.
 */
 
-void nwpw_apc::VQ_APC(double *u, double *VQ)
+void nwpw_apc::VQ_APC(double *uq, double *VQ)
 {
    int npack0 = mypneb->npack(0);
 
    double omega  = mypneb->lattice->omega();
    double sumAm  = sumAm_APC(ngs,Am);
-   double sumAmU = Amtimesu_APC(ngs,Am,u);
+   double sumAmU = Amtimesu_APC(ngs,Am,uq);
    for (auto i=0; i<ngs; ++i)
-      u[i] -= (sumAmU/sumAm);
+      uq[i] -= (sumAmU/sumAm);
 
    /* allocate temporary memory from heap */
    double *exi    = new double[2*npack0];
@@ -387,7 +392,7 @@ void nwpw_apc::VQ_APC(double *u, double *VQ)
 
       for (auto iii=0; iii<nga; ++iii)
       {
-         double afac = omega*Vfac_APC(ngs,Am,u,iii+ii*nga);
+         double afac = omega*Vfac_APC(ngs,Am,uq,iii+ii*nga);
 
          /* gaus_i(G)) */ 
          mypneb->tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
@@ -410,7 +415,7 @@ void nwpw_apc::VQ_APC(double *u, double *VQ)
  *                                         *
  *******************************************/
 static double generate_dQdR(const int lb, const int nga, const int nion,
-                            const double *db, const double *q,  const double *u, 
+                            const double *db, const double *q,  const double *uq, 
                             const double *dA, const double *Am, const double sumAm,
                             double *dbtmp, double *dAtmp)
 {
@@ -450,7 +455,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
       for (auto jb=0; jb<nion; ++jb)
       for (auto ja=0; ja<nga; ++ib)
          tmp2 +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*dAtmp[ja+jb*nga];
-      ff = ff + u[ia+ib*nga]*(tmp-tmp2);
+      ff = ff + uq[ia+ib*nga]*(tmp-tmp2);
       sumdQdR = sumdQdR + (tmp-tmp2);
    }
    double fac = sumdQdR/sumAm;
@@ -462,7 +467,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
       for (auto jb=0; jb<nion; ++jb)
       for (auto ja=0; ja<nga; ++ja)
          tmp +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*fac;
-      ff -= tmp*u[ia+ib*nga];
+      ff -= tmp*uq[ia+ib*nga];
    }
 
    return ff;
@@ -481,13 +486,13 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
   for the current geometry.
  
     Entry - nion: number of qm atoms
-          - u: dE/dq(ii) - derivative of E wrt to model charges q(ii)
+          - uq: dE/dq(ii) - derivative of E wrt to model charges q(ii)
     Exit - fion = dE/dq(ii)*dq(ii)/dR
  
     Note - pspw_gen_APC needs to be called to Am=inv(A) before
            this routine is called.
 */
-void nwpw_apc::dQdR_APC(double *u, double *fion)
+void nwpw_apc::dQdR_APC(double *uq, double *fion)
 {
    int taskid = mypneb->PGrid::parall->taskid();
    int np     = mypneb->PGrid::parall->np();
@@ -507,14 +512,51 @@ void nwpw_apc::dQdR_APC(double *u, double *fion)
 
    for (auto ii=taskid; ii<nion; ii+=np)
    {
-      ftmp[3*ii]   = generate_dQdR(ii,nga,nion,&b[ngs],q,u,&A[ngs*ngs],Am,sumAm,dbtmp,dAtmp);
-      ftmp[3*ii+1] = generate_dQdR(ii,nga,nion,&b[2*ngs],q,u,&A[2*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
-      ftmp[3*ii+2] = generate_dQdR(ii,nga,nion,&b[3*ngs],q,u,&A[3*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii]   = generate_dQdR(ii,nga,nion,&b[ngs],q,uq,&A[ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii+1] = generate_dQdR(ii,nga,nion,&b[2*ngs],q,uq,&A[2*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii+2] = generate_dQdR(ii,nga,nion,&b[3*ngs],q,uq,&A[3*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
    }
    mypneb->PGrid::parall->Vector_SumAll(0,nion3,ftmp);
    DAXPY_PWDFT(nion3,rone,ftmp,ione,fion,ione);
 }
 
+
+/*******************************************
+ *                                         *
+ *            nwpw_apc::V_APC              *
+ *                                         *
+ *******************************************/
+
+void nwpw_apc::V_APC(double *dng, double *zv, double *vapc, 
+                     bool move,   double *fion)
+{
+   if ((apc_on) && (v_apc_on)) 
+   {
+      // generate APC charges qion 
+      gen_APC(dng,move);
+      for (auto ii=0; ii<myion->nion; ++ii)
+         qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+      // set u from APC uion
+      for (auto ii=0; ii<myion->nion; ++ii)
+         for (auto k=0; k<nga; ++k)
+            u[ii*nga+k] = -uion[ii];
+
+      // Calculate Eapc - cdft,qmmm,cosmo,born??
+      Eapc = 0.0;
+      for (auto ii=0; ii<myion->nion; ++ii)
+         Eapc += qion[ii]*uion[ii];
+
+      // Calculate Vapc
+      int npack0 = mypneb->npack(0);
+      memset(vtmp,0,2*npack0*sizeof(double));
+      VQ_APC(u,vtmp);
+      mypneb->cc_daxpy(0,1.0,vtmp,vapc);
+
+      // Calculate Papc 
+      Papc = mypneb->cc_pack_dot(0,dng,vtmp);
+   }
+}
 
 
 
@@ -532,6 +574,35 @@ double nwpw_apc::Qtot_APC(const int ii)
    if (nga>0) for (auto n=0; n<nga; ++n) qq += q[n+ii*nga];
    return qq;
 }
+
+/*******************************************
+ *                                         *
+ *         nwpw_apc::shortprint_APC        *
+ *                                         *
+ *******************************************/
+std::string nwpw_apc::shortprint_APC()
+{
+   std::stringstream stream;
+
+   stream << std::endl; 
+   stream << "APC Potential:" << std::endl;
+   for (auto ii=0; ii<myion->nion; ++ii) {
+      stream << std::setw(14) << std::fixed << std::setprecision(9) << uion[ii];
+      if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
+
+   }
+   stream << std::endl << std::endl;
+   stream << "APC Point Charges:" << std::endl;
+   for (auto ii=0; ii<myion->nion; ++ii) {
+      stream << std::setw(14) << std::fixed << std::setprecision(9) << qion[ii];
+      if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
+   }
+   stream << std::endl
+          << std::endl;
+
+   return stream.str();
+}
+
 
 /*******************************************
  *                                         *

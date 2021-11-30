@@ -30,11 +30,11 @@ class nwpw_apc {
    Strfac *mystrfac;
 
 public:
-   bool apc_on;
+   bool apc_on,v_apc_on;
    int nga,ngs;
    double Gc;
 
-   double *gamma,*A,*Am,*b,*q,*u,*w,*gaus;
+   double *gamma,*A,*Am,*b,*q,*u,*w,*gaus,*vtmp;
    double *qion, *uion;
    double Eapc,Papc;
 
@@ -52,6 +52,7 @@ public:
          delete [] u;
          delete [] w;
          delete [] gaus;
+         delete [] vtmp;
          delete [] qion;
          delete [] uion;
       }
@@ -62,7 +63,10 @@ public:
    void VQ_APC(double *, double *);
    void dQdR_APC(double *, double *);
 
+   void V_APC(double *, double *, double *, bool, double *);
+
    double Qtot_APC(const int);
+   std::string shortprint_APC();
    std::string print_APC(const double *);
 
 

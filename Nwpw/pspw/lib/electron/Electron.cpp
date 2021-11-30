@@ -131,12 +131,20 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
  ********************************************/
 void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dnall)
 {
-   /* generate coulomb potential */
+   // generate coulomb potential */
    mycoulomb->vcoulomb(dng,vc);
 
-   /* generate exchange-correlation potential */
+   // generate exchange-correlation potential */
    myxc->v_exc_all(ispin,dnall,xcp,xce);
    //v_exc(ispin,shift2,dnall,xcp,xce,x);
+
+   // generate apc potential */
+   if (mypsp->myapc->v_apc_on) 
+   {
+      double fion0[1];
+      gen_vl_potential();
+      mypsp->myapc->V_APC(dng,mypsp->zv,vl,false,fion0);
+   }
 
 }
 
@@ -149,7 +157,7 @@ void Electron_Operators::gen_vl_potential()
 {
    double dng0[1], fion0[1];
 
-   /* generate local psp*/
+   /* generate local psp */
    mypsp->v_local(vl,0,dng0,fion0);
 }
 
@@ -385,6 +393,13 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
    pxc0 *= dv;
 
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
+
+   if (mypsp->myapc->v_apc_on)
+   {
+      double eapc = mypsp->myapc->Eapc;
+      double papc = mypsp->myapc->Papc;
+      total_energy += (eapc - papc);
+   }
   
    return total_energy;
 }
