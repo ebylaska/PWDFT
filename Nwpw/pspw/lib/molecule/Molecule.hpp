@@ -45,7 +45,7 @@ public:
    double *psi2, *rho2, *rho2_all, *dng2;
    double *lmbda, *hml, *eig;
 
-   double E[20],en[2];
+   double E[60],en[2];
 
    bool newpsi;
 
@@ -197,7 +197,9 @@ public:
    void psi_1local_force(double *grad_ion)    { myelectron->vl_force(dng1,grad_ion); }
    void psi_1nonlocal_force(double *grad_ion) { myelectron->vnl_force(psi1,grad_ion); }
    void semicore_force(double *grad_ion)      { myelectron->semicore_force(grad_ion); }
-   void ewald_fion(double *grad_ion)         { myewald->force(grad_ion); }
+   void ewald_fion(double *grad_ion)          { myewald->force(grad_ion); }
+
+   void psi_1apc_force(double *grad_ion)      { myelectron->apc_force(dng1,grad_ion); }
 
   
 
@@ -219,12 +221,18 @@ public:
       os << elcstream(" hartree energy      : ",mymolecule.E[2],mymolecule.E[2]/mymolecule.neall);
       os << elcstream(" exc-corr energy     : ",mymolecule.E[3],mymolecule.E[3]/mymolecule.neall);
       os << ionstream(" ion-ion energy      : ",mymolecule.E[4],mymolecule.E[4]/mymolecule.myion->nion);
+      if (mymolecule.myelectron->is_v_apc_on())
+         os << ionstream(" APC energy          : ",mymolecule.E[51],mymolecule.E[51]/mymolecule.myion->nion);
+
       os << eoln;
       os << elcstream(" kinetic (planewave) : ",mymolecule.E[5],mymolecule.E[5]/mymolecule.neall);
       os << elcstream(" V_local (planewave) : ",mymolecule.E[6],mymolecule.E[6]/mymolecule.neall);
       os << elcstream(" V_nl    (planewave) : ",mymolecule.E[7],mymolecule.E[7]/mymolecule.neall);
       os << elcstream(" V_Coul  (planewave) : ",mymolecule.E[8],mymolecule.E[8]/mymolecule.neall);
       os << elcstream(" V_xc    (planewave) : ",mymolecule.E[9],mymolecule.E[9]/mymolecule.neall);
+      if (mymolecule.myelectron->is_v_apc_on())
+         os << ionstream(" K.S. V_APC energy   : ",mymolecule.E[52],mymolecule.E[52]/mymolecule.myion->nion);
+
       os << " Viral Coefficient   : "
          << setw(19) << setprecision(10) << (mymolecule.E[9] + mymolecule.E[8] + mymolecule.E[7] + mymolecule.E[6])/mymolecule.E[5];
       os << eoln;
@@ -240,6 +248,7 @@ public:
                           mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]], 
                           mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev);
       os << eoln;
+
 
       os.copyfmt(init);
 

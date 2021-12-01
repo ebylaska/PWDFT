@@ -32,7 +32,8 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
    myion    = myionin;
    mypneb   = mypnebin;
    mystrfac = mystrfacin;
-   apc_on = control.APC_on();
+   apc_on   = control.APC_on();
+   v_apc_on = false;
 
 
    if (apc_on)  
@@ -117,14 +118,19 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          std::cout << std::endl;
          std::cout << " initializing nwpw_APC object" << std::endl;
          std::cout << " ----------------------------" << std::endl;
-         std::cout << " nga, ngs:  " << nga << " " << ngs << std::endl;
-         std::cout << " Gc      :  " << Gc << std::endl;
+         std::cout << " nga = " << std::setw(3) << nga
+                   << " ngs = " << std::setw(5) << ngs << std::endl
+                   << " Gc  = " << std::fixed   << std::setprecision(5) << std::setw(9) << Gc << std::endl;
          for (auto i=0; i<nga; ++i)
             std::cout << " APC gamma: " << i << " " << gamma[i] << std::endl;
          for (auto ii=0; ii<myion->nion; ++ii)
             if (abs(uion[ii])> 1.0e-9) 
                std::cout << " APC u: " << std::setw(8)  << ii+1 << "    " 
-                         << std::setw(12) << std::fixed << std::setprecision(3) << uion[ii] << std::endl;
+                         << std::setw(12) << std::fixed << std::setprecision(5) << uion[ii] << std::endl;
+         if (v_apc_on) 
+            std::cout << " - self-consistent" << std::endl;
+         else 
+            std::cout << " - not self-consistent" << std::endl;
        
       }
    }
@@ -309,6 +315,28 @@ void nwpw_apc::gen_APC(double *dng, bool move)
  *******************************************/
 void nwpw_apc::dngen_APC(double *dn, bool move)
 {
+   // define parameters
+   int ispin    = mypneb->ispin;
+   int n2ft3d   = mypneb->n2ft3d;
+   double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+
+   // allocate temporary memory from heap
+   double *tmp  = mypneb->r_alloc();
+   double *dng  = mypneb->c_pack_allocate(0);
+
+   // convert dn to dng
+   mypneb->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
+   mypneb->r_SMul(scal1,tmp);
+   mypneb->rc_fft3d(tmp);
+   mypneb->c_pack(0,tmp);
+   mypneb->cc_pack_copy(0,tmp,dng);
+
+   // generate APC
+   gen_APC(dng,move);
+
+   // deallocate temporary memory from heap
+   mypneb->c_pack_deallocate(dng);
+   mypneb->r_dealloc(tmp);
 }
 
 
@@ -563,6 +591,36 @@ void nwpw_apc::V_APC(double *dng, double *zv, double *vapc,
    }
 }
 
+/*******************************************
+ *                                         *
+ *            nwpw_apc::f_APC              *
+ *                                         *
+ *******************************************/
+
+void nwpw_apc::f_APC(double *dng, double *zv, double *fion)
+{
+   if ((apc_on) && (v_apc_on)) 
+   {
+      // generate APC charges qion 
+      gen_APC(dng,true);
+      for (auto ii=0; ii<myion->nion; ++ii)
+         qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+      // set u from APC uion
+      for (auto ii=0; ii<myion->nion; ++ii)
+         for (auto k=0; k<nga; ++k)
+            u[ii*nga+k] = -uion[ii];
+
+      double sumAm  = sumAm_APC(ngs,Am);
+      double sumAmU = Amtimesu_APC(ngs,Am,u);
+      for (auto i=0; i<ngs; ++i)
+         u[i] -= (sumAmU/sumAm);
+
+      // fion = -sum u(i)*dq(i)/dR 
+      dQdR_APC(u,fion);
+   }
+}
+
 
 
 
@@ -635,8 +693,29 @@ std::string nwpw_apc::print_APC(const double *zv)
           << " Gc  = " << std::fixed   << std::setprecision(5) << std::setw(9) << Gc << std::endl;
    for (auto i=0; i<nga; ++i)
       stream  << " APC gamma: " << i << " " << gamma[i] << std::endl;
+   if (v_apc_on) 
+      stream << " - self-consistent" << std::endl;
+   else 
+      stream << " - not self-consistent" << std::endl;
 
-   stream << std::endl;
+   if (v_apc_on)
+   {
+      stream << std::endl;
+      stream << " APC Potential:" << std::endl;
+      for (auto ii=0; ii<myion->nion; ++ii) {
+         stream << std::setw(14) << std::fixed << std::setprecision(9) << uion[ii];
+         if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
+      }
+      stream << std::endl << std::endl;
+      stream << " APC Point Charges:" << std::endl;
+      for (auto ii=0; ii<myion->nion; ++ii) {
+         stream << std::setw(14) << std::fixed << std::setprecision(9) << qion[ii];
+         if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
+      }
+      stream << std::endl;
+   }
+
+   stream << std::endl << std::endl;
    stream << " charge analysis on each atom" << std::endl 
           << " ----------------------------" << std::endl << std::endl
           << "      no  atom        Qelc        Qion      Qtotal" << std::endl

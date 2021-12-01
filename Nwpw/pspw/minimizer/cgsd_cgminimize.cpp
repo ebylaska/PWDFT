@@ -91,14 +91,14 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       /* exit loop early */
       done = ((it >= it_in) || ((fabs(*deltae)<tole) && (*deltac<tolc)));
 
+      /* transport the previous search directions */
+      mygeodesic.psi_1transport(tmin,H0);
+
+      /* make psi1 <--- psi2(tmin) */
+      mymolecule.swap_psi1_psi2();
+
       if (!done)
       {
-         /* transport the previous search directions */
-         mygeodesic.psi_1transport(tmin,H0);
-
-         /* make psi1 <--- psi2(tmin) */
-         mymolecule.swap_psi1_psi2();
-
          /* get the new gradient - also updates densities */
          total_energy  = mymolecule.psi_1get_Tgradient(G1);
          sum0 = sum1;
@@ -125,7 +125,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       }
 
    }
-
+   // Making an extra call to electron.run and energy
    total_energy  = mymolecule.gen_all_energies();
 
 

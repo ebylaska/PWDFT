@@ -358,6 +358,12 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          en[1] =  dv*mygrid.r_dsum(&dn[mygrid.n2ft3d]);
    }
 
+   // calculate APC if v_apc_on==false
+   if (mypsp.myapc->apc_on)
+      if (!(mypsp.myapc->v_apc_on)) 
+         mypsp.myapc->dngen_APC(dn,false);
+
+
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
@@ -375,7 +381,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
-      cout << mypsp.myapc->shortprint_APC();
+      //if (mypsp.myapc->v_apc_on)
+      //   cout << mypsp.myapc->shortprint_APC();
 
       cout << "\n\n";
       cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]
@@ -416,7 +423,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       }
       cout << std::endl;
 
-      //cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
+      // write APC analysis
+      if (mypsp.myapc->apc_on)
+         std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
    }
 
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
@@ -433,14 +442,21 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    delete [] eig;
    gdevice_psi_dealloc();
 
-
-
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
    rtdbjson["pspw"]["energies"] = E;
+   if (control.APC_on())
+   {
+      double qion[myion.nion];
+      for (auto ii=0; ii<myion.nion; ++ii)
+         qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
+      rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+   }
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
+
+
 
 //                 |**************************|
 // *****************   report consumed time   **********************

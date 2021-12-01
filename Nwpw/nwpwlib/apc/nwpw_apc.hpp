@@ -64,6 +64,7 @@ public:
    void dQdR_APC(double *, double *);
 
    void V_APC(double *, double *, double *, bool, double *);
+   void f_APC(double *, double *, double *);
 
    double Qtot_APC(const int);
    std::string shortprint_APC();

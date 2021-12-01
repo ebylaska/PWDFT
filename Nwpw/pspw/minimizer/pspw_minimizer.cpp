@@ -353,11 +353,11 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       //delete [] fion;
    }
 
-
    // APC analysis 
-   if (control.APC_on()) 
+   if (mypsp.myapc->apc_on)
    {
-      mypsp.myapc->gen_APC(mymolecule.dng1,false);
+      if (!(mypsp.myapc->v_apc_on)) 
+         mypsp.myapc->gen_APC(mymolecule.dng1,false);
 
       // set qion
       double qion[myion.nion]; 
@@ -365,12 +365,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
-      if (myparallel.is_master() && mypsp.myapc->apc_on)
-      {
+      if (myparallel.is_master())
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
-      }
    }
-
 
    // write psi 
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());

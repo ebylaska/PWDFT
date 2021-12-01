@@ -452,6 +452,12 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, d
    E[8] = 2*ehartr0;
    E[9] = pxc0;
 
+   if (mypsp->myapc->v_apc_on)
+   {
+      E[51] = mypsp->myapc->Eapc;
+      E[52] = mypsp->myapc->Papc;
+      E[0]  = E[0] + E[51] - E[52];
+   }
 
    en[0] = dv*mygrid->r_dsum(dn);
    en[1] = en[0];
@@ -492,6 +498,22 @@ void Electron_Operators::semicore_force(double *fion)
 void Electron_Operators::vl_force(double *dng, double *fion) 
 {
    mypsp->f_local(dng,fion);
+
+
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::apc_force       *
+ *                                          *
+ ********************************************/
+void Electron_Operators::apc_force(double *dng, double *fion) 
+{
+   // generate apc force */
+   if (mypsp->myapc->v_apc_on)
+   {
+      mypsp->myapc->f_APC(dng,mypsp->zv,fion);
+   }
 }
 
 /********************************************
@@ -502,6 +524,7 @@ void Electron_Operators::vl_force(double *dng, double *fion)
 void Electron_Operators::vnl_force(double *psi, double *fion) 
 {
    mypsp->f_nonlocal_fion(psi,fion);
+
 }
 
 

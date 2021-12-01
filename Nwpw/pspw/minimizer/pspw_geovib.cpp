@@ -589,6 +589,21 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    rtdbjson["pspw"]["energies"] = mymolecule.E;
    rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
+   // APC analysis
+   if (mypsp.myapc->apc_on)
+   {
+      if (!(mypsp.myapc->v_apc_on))
+         mypsp.myapc->gen_APC(mymolecule.dng1,false);
+
+      // set qion
+      double qion[myion.nion];
+      for (auto ii=0; ii<myion.nion; ++ii)
+         qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
+      rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+
+      if (myparallel.is_master())
+         std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+   }
 
    MPI_Barrier(comm_world0);
 

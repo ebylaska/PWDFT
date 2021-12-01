@@ -53,7 +53,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
    bool   stalled=false;
    int    ne[2],ispin,nion;
-   double E[50],total_energy,deltae,deltae_old,deltac;
+   double E[60],total_energy,deltae,deltae_old,deltac;
 
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);
@@ -64,6 +64,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    double dte = dt /sqrt(control.fake_mass());
 
    int minimizer = control.minimizer();
+
+   for (auto ii=0; ii<60; ++ii) E[ii] = 0.0;
 
    if (parall->is_master())
    {
@@ -175,6 +177,7 @@ void cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
    mymolecule.psi_1nonlocal_force(grad_ion);
    mymolecule.ewald_fion(grad_ion);
    mymolecule.semicore_force(grad_ion);
+   mymolecule.psi_1apc_force(grad_ion);
 
 }
 
