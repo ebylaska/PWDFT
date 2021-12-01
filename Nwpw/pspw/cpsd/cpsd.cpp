@@ -446,7 +446,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
    rtdbjson["pspw"]["energies"] = E;
-   if (control.APC_on())
+   if (mypsp.myapc->apc_on)
    {
       double qion[myion.nion];
       for (auto ii=0; ii<myion.nion; ++ii)

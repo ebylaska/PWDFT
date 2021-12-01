@@ -50,12 +50,12 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    char date[26];
    double sum1,sum2,ev;
    double cpu1,cpu2,cpu3,cpu4;
-   double E[50],deltae,deltac,deltar,viral,unita[9];
+   double E[60],deltae,deltac,deltar,viral,unita[9];
    double *psi0,*psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
 
-   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+   for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
    if (myparallel.is_master())
    {
@@ -163,10 +163,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
       cout << "\n options:\n";
       cout << "   ion motion           = ";
-      if (control.geometry_optimize())
-         cout << "yes\n";
-      else
-         cout << "no\n";
+      cout << "yes\n";
       cout << "   boundary conditions  = ";
       cout << "periodic\n";
 
@@ -253,8 +250,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       cout << " technical parameters:\n";
       printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
              control.time_step(),control.fake_mass());
-      printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
-             control.tolerances(0),control.tolerances(1),control.tolerances(2));
+      //printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
+      //       control.tolerances(0),control.tolerances(1),control.tolerances(2));
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
       cout << "\n\n\n";
@@ -350,12 +347,16 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
+      if (mypsp.myapc->v_apc_on)
+         printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
       printf("\n");
       printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
+      if (mypsp.myapc->v_apc_on)
+         printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
       viral = (E[9]+E[8]+E[7]+E[6])/E[5];
       printf(" Viral Coefficient   : %19.10le\n",viral);
 
@@ -372,8 +373,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
-      cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
-      cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
+      //cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
+      //cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
    }
 
    /* write wavefunction and velocity wavefunction */
@@ -395,6 +396,13 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
    rtdbjson["pspw"]["energies"] = E;
+   if (mypsp.myapc->v_apc_on)
+   {
+      double qion[myion.nion];
+      for (auto ii=0; ii<myion.nion; ++ii)
+         qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
+      rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+   }
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 

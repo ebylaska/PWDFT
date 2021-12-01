@@ -39,7 +39,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    double eke,elocal,enlocal,dt,dte,Eold;
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
-   bool move = control.geometry_optimize();
+   bool move = true;
    double omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
@@ -127,6 +127,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
 
       /* generate local potential */
       if (move) mypsp->v_local(vl,move,dng,fion);
+      if (mypsp->myapc->v_apc_on) mypsp->myapc->V_APC(dng,mypsp->zv,vl,move,fion);
 
       /* apply k-space operators */
       myke->ke(psi1,Hpsi);
@@ -160,7 +161,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
          }
      }
 
-     /* do a steepest descent step */
+     /* car-parrinellot step */
      mygrid->gg_SMul(dte,Hpsi,psi2);
      mygrid->gg_Sum2(psi1,psi2);
 
@@ -215,6 +216,13 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    E[7] = enlocal;
    E[8] = 2*ehartr;
    E[9] = pxc;
+
+   if (mypsp->myapc->v_apc_on)
+   {
+      E[51] = mypsp->myapc->Eapc;
+      E[52] = mypsp->myapc->Papc;
+      E[0]  = E[0] + E[51] - E[52];
+   }
 
    /* set convergence variables */
    *deltae = (E[0]-Eold)/(dt*control.loop(0));
