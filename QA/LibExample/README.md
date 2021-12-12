@@ -1,11 +1,15 @@
+## Generate pwdft shared library ##
 
-cd $PWDFTHOME
+First go to the PWDFT home directory, e.g.,
 
-mkdir build_library
-cd build_library
+cd /Users/bylaska/Codes/PWDFT
 
-cmake ../Nwpw -DMAKE_LIBRARY=true
-make
+then excecute the following steps:
+
+1) mkdir build_library
+2) cd build_library
+3) cmake ../Nwpw -DMAKE_LIBRARY=true
+4) make
 
 
 ## compiling ##
