@@ -13,6 +13,16 @@ then excecute the following steps:
 
 
 ## compiling ##
-setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
-mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
+Go back to the QA directory, e.g.,
+
+cd /Users/bylaska/Codes/PWDFT/QA/LibExample
+
+
+### On a mac ###
+
+Set location of the DYLD_LIBRARY_PATY
+1) setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
+
+Compile test.cpp using mpic++
+2) mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
