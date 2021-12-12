@@ -1,7 +1,9 @@
 ## Generate pwdft shared library ##
 First go to the PWDFT home directory, e.g.,
 
- cd /Users/bylaska/Codes/PWDFT
+```
+cd /Users/bylaska/Codes/PWDFT
+```
 
 then excecute the following steps:
 
@@ -15,7 +17,9 @@ then excecute the following steps:
 
 Go back to the QA directory, e.g.,
 
- cd /Users/bylaska/Codes/PWDFT/QA/LibExample
+```
+cd /Users/bylaska/Codes/PWDFT/QA/LibExample
+```
 
 
 Set location of the DYLD_LIBRARY_PATH
@@ -35,8 +39,12 @@ TBD
 
 To run the program just type 
 
- a.out
+```
+a.out
+```
 
 or run using mpirun, e,g,
 
+```
  mpirun -np 4 a.out
+```
