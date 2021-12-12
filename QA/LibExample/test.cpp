@@ -24,7 +24,6 @@ extern int pspw_minimizer(MPI_Comm, std::string&);
 int main(int argc, char* argv[])
 {
 
-   std::cout << "Hello world" << std::endl;
 
    int ierr,np,taskid;
 
@@ -33,8 +32,11 @@ int main(int argc, char* argv[])
    ierr += MPI_Comm_size(MPI_COMM_WORLD,&np);
    ierr += MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 
-   std::cout << "np=" << np << " taskid=" << taskid << std::endl;
-   std::cout <<  "dummy=" << pwdft::util_date() << std::endl;
+   if (taskid==0) {
+      std::cout << "Hello world" << std::endl;
+      std::cout << "np=" << np << " taskid=" << taskid << std::endl;
+      std::cout <<  "dummy=" << pwdft::util_date() << std::endl;
+   }
 
    string line,nwinput;
    ifstream nwfile("w2-pspw.json");
@@ -46,10 +48,16 @@ int main(int argc, char* argv[])
    nwfile.close();
 
 
-  std::cout << "rtdbstr=" << nwinput << std::endl;
+   if (taskid==0) {
+      std::cout << "rtdbstr=" << nwinput << std::endl;
+   }
 
-  ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,nwinput);
+   ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,nwinput);
+
+   if (taskid==0) {
+      std::cout << "output rtdbstr=" << nwinput << std::endl;
+   }
 
 
-  ierr += MPI_Finalize();
+   ierr += MPI_Finalize();
 }
