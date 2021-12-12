@@ -154,6 +154,12 @@ Example function call
 ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,nwinput);
 ```
 
+```
+mpic++ test.cpp ../build-shared/libpwdft.dylib
+setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
+a.out
+```
+
  [2:17 PM] Bagusetty, Abhishek
  add_library(pwdft SHARED nwpw.cpp)
 
