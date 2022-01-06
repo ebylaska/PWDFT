@@ -41,8 +41,97 @@
 
 #include "nwpw.hpp"
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 using namespace std;
 using namespace pwdft;
+
+static std::string fortran_rtdbstring;
+
+extern "C" void pspw_fortran_minimizer_(int *comm_world, double *rion, double *uion, double *E, double *fion, double *qion)
+{
+   std::string line,nwinput;
+
+   std::cout << "HELLO from pspw_minimizer_fortran_   comm= " << *comm_world <<  std::endl;
+   std::cout << " " << MPI_COMM_WORLD << std::endl;
+
+   auto fortran_rtdbjson =  json::parse(fortran_rtdbstring);
+
+   int nion = fortran_rtdbjson["geometries"]["geometry"]["nion"];
+
+   fortran_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
+   fortran_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
+   fortran_rtdbstring    = fortran_rtdbjson.dump();
+
+   
+   std::cout << "input fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
+   int  ierr = pwdft::pspw_minimizer(MPI_COMM_WORLD, fortran_rtdbstring);
+   std::cout << "output fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
+
+
+   fortran_rtdbjson =  json::parse(fortran_rtdbstring);
+   *E = fortran_rtdbjson["pspw"]["energy"];
+
+   std::vector<double> v = fortran_rtdbjson["pspw"]["fion"];
+   std::copy(v.begin(),v.end(), fion);
+
+   std::vector<double> vv = fortran_rtdbjson["nwpw"]["apc"]["q"];
+   std::copy(vv.begin(),vv.end(), qion);
+}
+
+
+extern "C" void pspw_fortran_input_(char *filename, int *flen)
+{
+   int taskid,np,ierr,nwinput_size;;
+   int MASTER=0;
+   ierr = MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+   ierr = MPI_Comm_size(MPI_COMM_WORLD,&np);
+
+   std::cout << "filename=" << filename << " len=" << *flen << std::endl;
+
+   std::string nwinput;
+
+   MPI_Barrier(MPI_COMM_WORLD);
+   if (taskid==MASTER)
+   {
+      std::string line;
+      std::string nwfilename(filename);
+      //std::string nwfilename("w2.nw");
+
+      std::cout << "nwfilename =" << nwfilename << std::endl;
+      nwinput = "";
+      std::ifstream nwfile(nwfilename);
+      if (nwfile.good())
+      {
+         while (getline(nwfile,line))
+            nwinput += line + "\n";
+      }
+      nwfile.close();
+      std::cout << "nwinput =" << nwinput << std::endl;;
+
+      nwinput_size = nwinput.size();
+   }
+   std::cout << "taskid=" << taskid << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+   std::cout << "new taskid=" << taskid << " np=" << np << std::endl;
+
+   // Broadcast nwinput across MPI tasks 
+   if (np>1)
+   {
+      MPI_Bcast(&nwinput_size,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+      if (taskid != MASTER)
+         nwinput.resize(nwinput_size);
+      MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,MPI_COMM_WORLD);
+   }
+
+   MPI_Barrier(MPI_COMM_WORLD);
+   fortran_rtdbstring = pwdft::parse_nwinput(nwinput);
+
+}
+
+
+
 
 
 
