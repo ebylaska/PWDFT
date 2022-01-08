@@ -132,6 +132,83 @@ extern "C" void pspw_fortran_input_(char *filename, int *flen)
 
 
 
+static std::string lammps_rtdbstring;
+
+extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E)
+{ 
+   std::string line,nwinput;
+
+   auto lammps_rtdbjson =  json::parse(lammps_rtdbstring);
+
+   int nion = lammps_rtdbjson["geometries"]["geometry"]["nion"];
+
+   lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
+   lammps_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
+   lammps_rtdbstring    = lammps_rtdbjson.dump();
+
+
+   std::cout << "input lammps_rtdbstring= "  << lammps_rtdbstring << std::endl;;
+   int  ierr = pwdft::pspw_minimizer(comm_world, lammps_rtdbstring);
+   std::cout << "output lammp_rtdbstring= " << lammps_rtdbstring << std::endl;;
+
+
+   lammps_rtdbjson =  json::parse(lammps_rtdbstring);
+   *E = lammps_rtdbjson["pspw"]["energy"];
+
+   std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
+   std::copy(v.begin(),v.end(), fion);
+
+   std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
+   std::copy(vv.begin(),vv.end(), qion);
+
+   return ierr;
+}
+
+
+extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
+{
+   int taskid,np,ierr,nwinput_size;;
+   int MASTER=0;
+   ierr = MPI_Comm_rank(comm_world,&taskid);
+   ierr = MPI_Comm_size(comm_world,&np);
+
+   std::string nwinput;
+
+   MPI_Barrier(comm_world);
+   if (taskid==MASTER)
+   {  
+      std::string line;
+      
+      std::cout << "nwfilename =" << nwfilename << std::endl;
+      nwinput = ""; 
+      std::ifstream nwfile(nwfilename);
+      if (nwfile.good())
+      {  
+         while (getline(nwfile,line))
+            nwinput += line + "\n";
+      }
+      nwfile.close();
+      std::cout << "nwinput =" << nwinput << std::endl;;
+      
+      nwinput_size = nwinput.size();
+   }
+   std::cout << "taskid=" << taskid << std::endl;
+   MPI_Barrier(comm_world);
+   std::cout << "new taskid=" << taskid << " np=" << np << std::endl;
+
+   // Broadcast nwinput across MPI tasks 
+   if (np>1)
+   {
+      MPI_Bcast(&nwinput_size,1,MPI_INT,MASTER,comm_world);
+      if (taskid != MASTER)
+         nwinput.resize(nwinput_size);
+      MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,comm_world);
+   }
+
+   MPI_Barrier(comm_world);
+   lammps_rtdbstring = pwdft::parse_nwinput(nwinput);
+}
+
 
 
 
