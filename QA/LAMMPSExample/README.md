@@ -15,13 +15,12 @@ then excecute the following steps:
 Go back to the QA directory, e.g.,
 
 ```
-cd /Users/bylaska/Codes/PWDFT/QA/LibExample
+cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
 ```
-
 
 Set location of the DYLD_LIBRARY_PATH
 
- 1) setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
+ 1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:Users/bylaska/Codes/PWDFT/build-shared
 
 Compile test.cpp using mpic++
 
