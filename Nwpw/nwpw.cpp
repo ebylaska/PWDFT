@@ -148,7 +148,11 @@ extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion
    int  ierr = pwdft::pspw_minimizer(comm_world, lammps_rtdbstring);
 
    lammps_rtdbjson =  json::parse(lammps_rtdbstring);
-   *E = lammps_rtdbjson["pspw"]["energy"];
+
+   double ee   = lammps_rtdbjson["pspw"]["energy"];
+   double eapc = lammps_rtdbjson["pspw"]["energies"][51];
+
+   *E = (ee-eapc);
 
    std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
    std::copy(v.begin(),v.end(), fion);
