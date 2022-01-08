@@ -138,19 +138,14 @@ extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion
 { 
    std::string line,nwinput;
 
-   auto lammps_rtdbjson =  json::parse(lammps_rtdbstring);
-
-   int nion = lammps_rtdbjson["geometries"]["geometry"]["nion"];
+   auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
+   int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
 
    lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
    lammps_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
    lammps_rtdbstring    = lammps_rtdbjson.dump();
 
-
-   std::cout << "input lammps_rtdbstring= "  << lammps_rtdbstring << std::endl;;
    int  ierr = pwdft::pspw_minimizer(comm_world, lammps_rtdbstring);
-   std::cout << "output lammp_rtdbstring= " << lammps_rtdbstring << std::endl;;
-
 
    lammps_rtdbjson =  json::parse(lammps_rtdbstring);
    *E = lammps_rtdbjson["pspw"]["energy"];
@@ -167,7 +162,7 @@ extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion
 
 extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
 {
-   int taskid,np,ierr,nwinput_size;;
+   int taskid,np,ierr,nwinput_size;
    int MASTER=0;
    ierr = MPI_Comm_rank(comm_world,&taskid);
    ierr = MPI_Comm_size(comm_world,&np);
@@ -179,7 +174,6 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    {  
       std::string line;
       
-      std::cout << "nwfilename =" << nwfilename << std::endl;
       nwinput = ""; 
       std::ifstream nwfile(nwfilename);
       if (nwfile.good())
@@ -188,13 +182,10 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
             nwinput += line + "\n";
       }
       nwfile.close();
-      std::cout << "nwinput =" << nwinput << std::endl;;
       
       nwinput_size = nwinput.size();
    }
-   std::cout << "taskid=" << taskid << std::endl;
    MPI_Barrier(comm_world);
-   std::cout << "new taskid=" << taskid << " np=" << np << std::endl;
 
    // Broadcast nwinput across MPI tasks 
    if (np>1)
