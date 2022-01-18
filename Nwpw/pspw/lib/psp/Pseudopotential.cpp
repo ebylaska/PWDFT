@@ -9,6 +9,7 @@
 #include        "nwpw_timing.hpp"
 #include        "util.hpp"
 #include        "Psp1d_Hamann.hpp"
+#include        "Psp1d_pawppv1.hpp"
 #include        "gdevice.hpp"
 
 
@@ -525,6 +526,7 @@ static void vpp_generate(PGrid *mygrid,
                          double *rcore,
                          double **ncore,
                          double *vl,
+                         double *vlpaw,
                          double **vnl)
 {
     int i,nn;
@@ -610,8 +612,8 @@ static void vpp_generate(PGrid *mygrid,
 
         /*  allocate and generate ray formatted grids */
         double *G_ray = mygrid->generate_G_ray();
-        double *vl_ray  = new (std::nothrow) double [nray]();
-        double *vnl_ray = new (std::nothrow) double [(psp1d.lmax+1+psp1d.n_extra)*nray]();
+        double *vl_ray    = new (std::nothrow) double [nray]();
+        double *vnl_ray   = new (std::nothrow) double [(psp1d.lmax+1+psp1d.n_extra)*nray]();
         double *rho_sc_k_ray = new (std::nothrow) double [2*nray]();
         psp1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vnl_ray,rho_sc_k_ray);
 
@@ -644,6 +646,46 @@ static void vpp_generate(PGrid *mygrid,
         delete [] G_ray;
 
 
+    }
+    else if (*psp_type==1)
+        std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
+    else if (*psp_type==2)
+        std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
+    else if (*psp_type==4)
+    {
+        std::cout << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
+
+        int nray = mygrid->n_ray();
+        Psp1d_pawppv1 paw1d(myparall,pspname);
+
+        /*  allocate and generate ray formatted grids */
+        double *G_ray = mygrid->generate_G_ray();
+        double *vl_ray    = new (std::nothrow) double [nray]();
+        double *vlpaw_ray = new (std::nothrow) double [nray]();
+        double *vnl_ray   = new (std::nothrow) double [(paw1d.nbasis)*nray]();
+
+        paw1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray);
+
+        /* filter the ray formatted grids */
+        double ecut = mygrid->lattice->ecut();
+        double wcut = mygrid->lattice->wcut();
+        util_filter(nray,G_ray,ecut,vl_ray);
+        util_filter(nray,G_ray,ecut,vlpaw_ray);
+        for (auto l=0; l<(paw1d.nbasis); ++l)
+            util_filter(nray,G_ray,wcut,&(vnl_ray[l*nray]));
+
+        /* allocate vnl and ncore  generate formated grids */
+        *vnl = new (std::nothrow) double[(paw1d.nprj)*(mygrid->npack(1))]();
+
+        /*  generate formatted grids using splines */
+        paw1d.vpp_generate_spline(mygrid,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray,vl,vlpaw,*vnl);
+
+
+        /* deallocate ray formatted grids */
+        delete [] vnl_ray;
+        delete [] vlpaw_ray;
+        delete [] vl_ray;
+        delete [] G_ray;
     }
     else
     {
@@ -696,9 +738,14 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     rcore       = new (std::nothrow) double[npsp]();
     ncore_sum   = new (std::nothrow) double[npsp]();
     rc          = new (std::nothrow) double* [npsp]();
+
     vl          = new (std::nothrow) double* [npsp]();
     for (ia=0; ia<npsp; ++ia)
         vl[ia] = new (std::nothrow) double [mypneb->npack(0)]();
+    vlpaw       = new (std::nothrow) double* [npsp]();
+    for (ia=0; ia<npsp; ++ia)
+        vlpaw[ia] = new (std::nothrow) double [mypneb->npack(0)]();
+
     Gijl        = new (std::nothrow) double* [npsp]();
     vnl         = new (std::nothrow) double* [npsp]();
     ncore_atom  = new (std::nothrow) double* [npsp]();
@@ -725,7 +772,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                          &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                          &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
                          &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
-                         &ncore_ptr,vl[ia],&vnl_ptr);
+                         &ncore_ptr,vl[ia],vlpaw[ia],&vnl_ptr);
 
             // writing .vpp file to fname
             vpp_write(mypneb,

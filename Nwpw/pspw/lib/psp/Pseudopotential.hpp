@@ -21,6 +21,7 @@ class	Pseudopotential {
    double **Gijl;
    double **ncore_atom;
    double **vl;
+   double **vlpaw;
    double **vnl;
    double *rlocal;
    double *amass;
@@ -43,6 +44,16 @@ public:
    double *semicore_density;
    char **comment;
 
+   // paw variables
+   bool pawexist=false;
+   double **hartree_matrix,**comp_charge_matrix,**comp_pot_matrix;
+   double **rgrid,**eig,**phi_ae,**dphi_ae, **phi_ps,**dphi_ps;
+   double **core_ae,**core_ps,**core_ae_prime,**core_ps_prime;
+
+   double *log_amesh,*r1,*rmax,*sigma,*zion,*core_kin,*core_ion;
+   int    *n1dgrid,*n1dbasis,*nae,*nps,*lps,*icut;
+
+
    /* Constructors */
    Pseudopotential(Ion *, Pneb *, Strfac *, Control2&);
 
@@ -51,6 +62,7 @@ public:
       for (int ia=0; ia<npsp; ++ia)
       {
          delete [] vl[ia];
+         delete [] vlpaw[ia];
          delete [] comment[ia];
          delete [] rc[ia];
          if (nprj[ia]>0)
@@ -64,6 +76,24 @@ public:
          }
          if (semicore[ia])
             delete [] ncore_atom[ia];
+
+         if (psp_type[ia]==4)
+         {
+            //delete [] hartree_matrix[ia];
+            //delete [] comp_charge_matrix[ia];
+            //delete [] comp_pot_matrix[ia];
+            //delete [] eig[ia];
+            //delete [] phi_ae[ia];
+            //delete [] dphi_ae[ia];
+            //delete [] phi_ps[ia];
+            //delete [] dphi_ps[ia];
+            //delete [] core_ae[ia];
+            //delete [] core_ps[ia];
+            //delete [] core_ae_prime[ia];
+            //delete [] core_ps_prime[ia];
+            //delete [] rgrid[ia];
+         }
+
       }
       delete [] vl;
       delete [] vnl;
@@ -83,6 +113,41 @@ public:
       delete [] rcore;
       delete [] ncore_sum;
       delete [] rc;
+
+      //delete [] hartree_matrix;
+      //delete [] comp_charge_matrix;
+      //delete [] comp_pot_matrix;
+      //delete [] vlpaw;
+      //delete [] log_amesh; 
+      //delete [] r1;
+      //delete [] rmax;
+      //delete [] sigma;
+      //delete [] zion;
+      //delete [] core_kin;
+      //delete [] core_ion;
+      //delete [] n1dgrid;
+      //delete [] n1dbasis;
+      //delete [] nae;
+      //delete [] nps;
+      //delete [] lps;
+      //delete [] icut;
+      //delete [] eig;
+      //delete [] phi_ae;
+      //delete [] dphi_ae;
+      //delete [] phi_ps;
+      //delete [] dphi_ps;
+      //delete [] core_ae;
+      //delete [] core_ps;
+      //delete [] core_ae_prime;
+      //delete [] core_ps_prime;
+      //delete [] rgrid;
+
+      if (pawexist) 
+      {
+         //call nwpw_compcharge_end()
+         //call nwpw_xc_end()
+      }
+
 
       delete myapc;
 
