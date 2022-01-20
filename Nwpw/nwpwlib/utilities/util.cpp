@@ -198,6 +198,137 @@ double util_random(const int seed)
 }
 
 
+
+/**************************************
+ *                                    *
+ *        util_double_factorial       *
+ *                                    *
+ **************************************/
+double util_double_factorial(const int n)
+{
+   int n11[18] = {1,1,1,2,3,8,15,48,105,384,945,3840,10395,46080,135135,645120,2027025,10321920};
+
+   if ((n>=-1) && (n<=16))
+   {
+      return ((double) n11[n+1]);
+   }
+   else
+   {
+      std::cout << "too big parameter in nwpw_double_factorial" << std::endl;
+      return  -999999.0;
+   }
+}
+
+/*************************************************
+ *                                               *
+ *         util_compcharge_gen_rgaussian         *
+ *                                               *
+ *************************************************/
+void util_compcharge_gen_rgaussian(const int l, const double sigma, const int nr, const double r[], double gl[])
+{
+   double pi = 4.00*atan(1.00);
+   double c  = pow(2.00,(l+2))/(sqrt(pi)*(util_double_factorial(2*l+1))*pow(sigma,(2*l+3)));
+
+   // *** this fixes possible underflow error ***
+   for (auto i=0; i<nr; ++i) gl[i] = 0.00;
+
+   for (auto i=0; i<nr; ++i)
+      if (abs(r[i]) < (8.00*sigma))
+         gl[i] = c*pow(r[i],l)*exp(-(r[i]/sigma)*(r[i]/sigma));
+}
+
+
+/*******************************************
+ *                                         *
+ *         util_log_integrate_def          *
+ *                                         *
+ *******************************************/
+double util_log_integrate_def(const int power_f, const double f[],
+                              const int power_r, const double r[],
+                              const double log_amesh, const int  nrange)
+{
+   double integrand[nrange];
+   //double *integrand = new double[nrange];
+
+   for (auto k=0; k<nrange; ++k)
+       integrand[k] = f[k]*pow(r[k],power_r+1);
+
+   // *** integrate from the origin to the first point ***
+   double sum_f = integrand[0]/((double) (power_r+power_f+1));
+
+   // *** the rest via trapesoidal rule ***
+   double tmp_sum = 0.0;
+   for (auto k=0; k<nrange; ++k)
+      tmp_sum += integrand[k];
+
+   // *** the rest via trapesoidal rule ***
+   sum_f +=  log_amesh*tmp_sum - 0.50*log_amesh*(integrand[0]+integrand[nrange-1]);
+
+   //delete [] integrand;
+
+   return sum_f;
+}
+
+/************************************************
+ *                                              *
+ *            log_integrate_indef               *
+ *                                              *
+ ************************************************/
+void util_log_integrate_indef(const int power_f, const double f[],
+                              const int power_r, const double r[],
+                              const double  log_amesh,
+                              const int nrange, double sum_f[])
+{
+   double integrand[nrange];
+   //double *integrand = new double[nrange];
+
+   for (auto k=0; k<nrange; ++k)
+      integrand[k] = f[k]*pow(r[k],(power_r+1));
+
+   if (nrange<=5)
+   {
+      for (auto k=0; k<nrange; ++k)
+         sum_f[k] = integrand[k]/((double) (power_r+power_f+1));
+   }
+   else
+   {
+      for (auto k=0; k<5; ++k)
+         sum_f[k] = integrand[k]/((double) (power_r+power_f+1));
+
+      for (auto k=5; k<nrange; ++k)
+          sum_f[k] = sum_f[k-1] + log_amesh*0.50*(integrand[k-1] + integrand[k]);
+   }
+   //delete [] integrand;
+}
+
+
+/*******************************************
+ *                                         *
+ *         util_log_multipole_energy       *
+ *                                         *
+ *******************************************/
+double util_log_multipole_energy(const int l, const int nrange, const double g_r[],
+                                 const int power_q1, const double q1[],
+                                 const int power_q2, const double q2[],
+                                 const double log_amesh)
+{
+   double fourpi  = 16.0*atan(1.0);
+   double power_f = power_q1 + power_q2;
+   double q1_l[nrange],q2_l[nrange], ftmp[nrange];
+
+   util_log_integrate_indef(power_q1,q1,l,g_r,log_amesh,nrange,q1_l);
+   util_log_integrate_indef(power_q1,q2,l,g_r,log_amesh,nrange,q2_l);
+
+   for (auto k=0; k<nrange; ++k)
+      ftmp[k] = (q1[k]*q2_l[k]+q1_l[k]*q2[k])/pow(g_r[k],(l+1));
+
+   return (util_log_integrate_def(power_f,ftmp,0,g_r,log_amesh,nrange) * fourpi/((double) (2*l+1)));
+}
+
+      
+
+
+
 /**************************************
  *                                    *
  *           util_filefind            *

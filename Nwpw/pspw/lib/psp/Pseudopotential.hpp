@@ -114,10 +114,12 @@ public:
       delete [] ncore_sum;
       delete [] rc;
 
-      //delete [] hartree_matrix;
-      //delete [] comp_charge_matrix;
-      //delete [] comp_pot_matrix;
-      //delete [] vlpaw;
+      // *** paw data ***
+      delete [] hartree_matrix;
+      delete [] comp_charge_matrix;
+      delete [] comp_pot_matrix;
+      delete [] vlpaw;
+
       //delete [] log_amesh; 
       //delete [] r1;
       //delete [] rmax;

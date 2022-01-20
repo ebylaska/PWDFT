@@ -18,6 +18,27 @@ extern void i_aindexcopy(const int, const int *, int *, int *);
 extern void eigsrt(double *, double *, int);
 extern double util_random(const int);
 
+extern double util_double_factorial(const int);
+
+extern void util_compcharge_gen_rgaussian(const int, const double, const int, const double *, double *);
+
+extern double util_log_integrate_def(const int, const double *,
+                                     const int, const double *,
+                                     const double, const int);
+extern double util_log_multipole_energy(const int, const int, const double *,
+                                        const int, const double *,
+                                        const int, const double *,
+                                        const double);
+extern void util_log_integrate_indef(const int, const double *,
+                                     const int, const double *,
+                                     const double,
+                                     const int, double *);
+extern double util_log_multipole_energy(const int, const int, const double *,
+                                       const int, const double *,
+                                       const int, const double *,
+                                       const double);
+
+
 extern void util_getfilling(int, int *, int *, double *);
 
 extern bool util_filefind(Parallel *, char *);
@@ -28,6 +49,7 @@ extern double util_splint(double *, double *, double *, int, int, double);
 extern void util_filter(int, double *, double, double *);
 
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
+
 
 
 //#define _MATPRINT_

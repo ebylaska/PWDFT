@@ -39,16 +39,16 @@ public:
   
 
    /* comp_charge_matrix(nbasis,nbasis,0:2*lmax) */
-   double *comp_charge_matrix;
+   //double *comp_charge_matrix;
 
    /* comp_pot_matrix(nbasis,nbasis,0:2*lmax) */
-   double *comp_pot_matrix;
+   //double *comp_pot_matrix;
 
    /* hartree_matrix(nbasis,nbasis,nbasis,nbasis,0:2*lmax) */
-   double *hartree_matrix;
+   //double *hartree_matrix;
 
    /* 1-electron psp operators - Normalization constants */
-   double *Gijl;
+   //double *Gijl;
 
    int    *n_prj, *l_prj, *m_prj, *b_prj;
 
@@ -77,10 +77,10 @@ public:
       delete [] prj_ps;
       delete [] prj_ps0;
 
-      delete [] comp_charge_matrix;
-      delete [] comp_pot_matrix;
-      delete [] hartree_matrix;
-      delete [] Gijl;
+      //delete [] comp_charge_matrix;
+      //delete [] comp_pot_matrix;
+      //delete [] hartree_matrix;
+      //delete [] Gijl;
       if (nprj>0)
       {
          delete [] n_prj;
@@ -91,6 +91,7 @@ public:
     }
 
    /* G integration routines */
+   void vpp_generate_paw_matrices(Parallel *, double *, double *, double *, double *);
    void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
    void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
 

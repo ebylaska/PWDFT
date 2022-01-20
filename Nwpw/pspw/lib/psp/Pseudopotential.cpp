@@ -527,7 +527,10 @@ static void vpp_generate(PGrid *mygrid,
                          double **ncore,
                          double *vl,
                          double *vlpaw,
-                         double **vnl)
+                         double **vnl,
+                         double **hartree_matrix,
+                         double **comp_charge_matrix,
+                         double **comp_pot_matrix)
 {
     int i,nn;
     double   *tmp2,*prj;
@@ -658,6 +661,16 @@ static void vpp_generate(PGrid *mygrid,
         int nray = mygrid->n_ray();
         Psp1d_pawppv1 paw1d(myparall,pspname);
 
+        std::cout << "created paw1d" << std::endl;
+
+        /*  allocate paw matrices */
+        *Gijl               = new (std::nothrow) double[(paw1d.nmax)*(paw1d.nmax)*(2*paw1d.lmax+1)]();
+        *hartree_matrix     = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+        *comp_charge_matrix = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+        *comp_pot_matrix    = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+
+
+
         /*  allocate and generate ray formatted grids */
         double *G_ray = mygrid->generate_G_ray();
         double *vl_ray    = new (std::nothrow) double [nray]();
@@ -665,6 +678,8 @@ static void vpp_generate(PGrid *mygrid,
         double *vnl_ray   = new (std::nothrow) double [(paw1d.nbasis)*nray]();
 
         paw1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray);
+
+        std::cout << "vpp_generate_ray finished" << std::endl;
 
         /* filter the ray formatted grids */
         double ecut = mygrid->lattice->ecut();
@@ -674,11 +689,14 @@ static void vpp_generate(PGrid *mygrid,
         for (auto l=0; l<(paw1d.nbasis); ++l)
             util_filter(nray,G_ray,wcut,&(vnl_ray[l*nray]));
 
-        /* allocate vnl and ncore  generate formated grids */
+        /* allocate vnl and other paw data then generate formated grids */
         *vnl = new (std::nothrow) double[(paw1d.nprj)*(mygrid->npack(1))]();
+
 
         /*  generate formatted grids using splines */
         paw1d.vpp_generate_spline(mygrid,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray,vl,vlpaw,*vnl);
+
+        std::cout << "vpp_generate_spline finished" << std::endl;
 
 
         /* deallocate ray formatted grids */
@@ -707,6 +725,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     int ia,version,nfft[3];
     int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
     double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
+    double *hartree_matrix_ptr,*comp_charge_matrix_ptr,*comp_pot_matrix_ptr;
+
     double unita[9];
     char fname[256],pspname[256],aname[2];
     char fname2[256];
@@ -742,9 +762,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     vl          = new (std::nothrow) double* [npsp]();
     for (ia=0; ia<npsp; ++ia)
         vl[ia] = new (std::nothrow) double [mypneb->npack(0)]();
-    vlpaw       = new (std::nothrow) double* [npsp]();
-    for (ia=0; ia<npsp; ++ia)
-        vlpaw[ia] = new (std::nothrow) double [mypneb->npack(0)]();
 
     Gijl        = new (std::nothrow) double* [npsp]();
     vnl         = new (std::nothrow) double* [npsp]();
@@ -755,6 +772,18 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     for (ia=0; ia<npsp; ++ia) comment[ia] = new char[80]();
 
     semicore[npsp] = false;
+
+
+    // *** paw data  ***
+    pawexist = false;
+    vlpaw       = new (std::nothrow) double* [npsp]();
+    for (ia=0; ia<npsp; ++ia)
+        vlpaw[ia] = new (std::nothrow) double [mypneb->npack(0)]();
+
+    hartree_matrix     = new (std::nothrow) double* [npsp]();
+    comp_charge_matrix = new (std::nothrow) double* [npsp]();
+    comp_pot_matrix    = new (std::nothrow) double* [npsp]();
+
     for (ia=0; ia<npsp; ++ia)
     {
         strcpy(fname,myion->atom(ia));
@@ -772,7 +801,10 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                          &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                          &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
                          &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
-                         &ncore_ptr,vl[ia],vlpaw[ia],&vnl_ptr);
+                         &ncore_ptr,vl[ia],vlpaw[ia],&vnl_ptr,
+                         &hartree_matrix_ptr,
+                         &comp_charge_matrix_ptr,
+                         &comp_pot_matrix_ptr);
 
             // writing .vpp file to fname
             vpp_write(mypneb,

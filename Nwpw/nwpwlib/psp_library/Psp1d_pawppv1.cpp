@@ -25,36 +25,6 @@ using namespace pwdft;
 #define FMT10   "%10.3lf %10.3lf %10.3lf"
 
 
-/*******************************************
- *                                         *
- *         util_log_integrate_def          *
- *                                         *
- *******************************************/
-static double util_log_integrate_def(const int power_f, const double f[],
-                                     const int power_r, const double r[],
-                                     const double log_amesh, const int  nrange)
-{
-   double *integrand = new double[nrange];
-
-   for (auto k=0; k<nrange; ++k)
-       integrand[k] = f[k]*pow(r[k],power_r+1);
-
-   // *** integrate from the origin to the first point ***
-   double sum_f = integrand[0]/((double) (power_r+power_f+1));
-
-   // *** the rest via trapesoidal rule ***
-   double tmp_sum = 0.0;
-   for (auto k=0; k<nrange; ++k)
-      tmp_sum += integrand[k];
-
-   // *** the rest via trapesoidal rule ***
-   sum_f +=  log_amesh*tmp_sum - 0.50*log_amesh*(integrand[0]+integrand[nrange-1]);
-
-   delete [] integrand;
-
-   return sum_f;
-}
-      
 
 /*************************************************
  *                                               *
@@ -291,10 +261,10 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
 
 
    // allocate Gijl,Sijl,Tijl,vcore,Vpseuo 
-   Gijl               = new double[nmax*nmax*(lmax+1)];
-   hartree_matrix     = new double[nbasis*nbasis*nbasis*nbasis*(2*lmax+1)];
-   comp_charge_matrix = new double[nbasis*nbasis*(2*lmax+1)];
-   comp_pot_matrix    = new double[nbasis*nbasis*(2*lmax+1)];
+   //Gijl               = new double[nmax*nmax*(lmax+1)];
+   //hartree_matrix     = new double[nbasis*nbasis*nbasis*nbasis*(2*lmax+1)];
+   //comp_charge_matrix = new double[nbasis*nbasis*(2*lmax+1)];
+   //comp_pot_matrix    = new double[nbasis*nbasis*(2*lmax+1)];
 
 
    // define n_prj,l_prj, and m_prj
@@ -429,6 +399,135 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
 
 }
 
+
+/****************************************************
+ *                                                  *
+ *     Psp1d_pawppv1::vpp_generate_paw_matrices     *
+ *                                                  *
+ ****************************************************/
+void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, double *comp_charge_matrix, double *comp_pot_matrix, double *hartree_matrix)
+{
+
+   double twopi = 8.0*atan(1.0);
+   int nb1 = nbasis;
+   int nb2 = nbasis*nbasis;
+   int nb3 = nbasis*nbasis*nbasis;
+   int nb4 = nbasis*nbasis*nbasis*nbasis;
+
+   double *f1 = new double[n1dgrid];
+   double *f2 = new double[n1dgrid];
+   double *f3 = new double[n1dgrid];
+   double *f4 = new double[n1dgrid];
+
+   // **** comp_charge_matrix(nbasis,nbasis,0:2*lmax) ****
+   for (auto i=0; i<nbasis; ++i)
+      for (auto j=0; j<=i; ++j)
+      {
+         for (auto k=0; k<icut; ++k)
+            f1[k]=phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid]-phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid];
+
+         for (auto l=0; l<(2*lmax+1); ++l)
+         {
+            double d = util_log_integrate_def(2*l+2,f1,l,rgrid,log_amesh,icut);
+            comp_charge_matrix[i+j*nb1+l*nb2] = d;
+            comp_charge_matrix[j+i*nb1*l*nb2] = d;
+         }
+      }
+
+   // **** comp_pot_matrix(nbasis,nbasis,0:2*lmax) ****
+   for (auto l=0; l<(2*lmax+1); ++l)
+   {
+      int k1 = l+2;
+      int k2 = 2*l+2;
+
+      util_compcharge_gen_rgaussian(l,sigma,n1dgrid,rgrid,f1);
+      for (auto k=0; k<icut; ++k)
+         f1[k] *= rgrid[k]*rgrid[k];
+ 
+      for (auto i=0; i<nbasis; ++i)
+      {
+         for (auto j=0; j<=i; ++j)
+         {
+            for (auto k=0; k<icut; ++k)
+               f2[k] = phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid];
+
+            double d = util_log_multipole_energy(l,icut,rgrid,k1,f1,k2,f2,log_amesh);
+            comp_pot_matrix[i+j*nb1+l*nb2] = d;
+            comp_pot_matrix[j+i*nb1+l*nb2] = d;
+         }
+      }
+   }
+
+   // **** hartree_matrix(nbasis,nbasis,nbasis,nbasis,0:2*lmax)        ****
+   // **** Note - This is the effective hartree matrix which includes  ****
+   // **** comp_charge_matrix and comp_pot_matrix terms in it.         ****
+
+   memset(hartree_matrix,0,nbasis*nbasis*nbasis*nbasis*(2*lmax+1)*sizeof(double));
+
+   for (auto i=0; i<nbasis; ++i)
+      for (auto j=0; j<=i; ++j)
+      {
+         int sum_l = lps[i]+lps[j];
+         int dif_l = abs(lps[i]-lps[j]);
+         int k1    = sum_l + 2;
+
+         for (auto k=0; k<icut; ++k)
+         {
+            f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid];
+            f3[k] = phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid];
+         }
+
+         for (auto i2=0; i2<nbasis; ++i2)
+             for (auto j2=0; j2<=i2; ++j2)
+             {
+                int sum_l2 = lps[i2]+lps[j2];
+                int dif_l2 = abs(lps[i2]-lps[j2]);
+                int k2    = sum_l2 + 2;
+
+                for (auto k=0; k<icut; ++k)
+                {
+                   f2[k] = phi_ae[k+i2*n1dgrid]*phi_ae[k+j2*n1dgrid];
+                   f4[k] = phi_ps[k+i2*n1dgrid]*phi_ps[k+j2*n1dgrid];
+                }
+
+                for (auto l=0; l<(2*lmax+1); ++l)
+                {
+                   double d   = ((double) (2*l+1)) * util_double_factorial(2*l+1)*pow(sigma,(2*l+1));
+                   double vgl = 4.00*sqrt(twopi)/d;
+
+                   if ((l<=sum_l) && (l>=dif_l) && (l<=sum_l2) && (l>=dif_l2)) 
+                   {
+                       d = util_log_multipole_energy(l,icut,rgrid,k1,f1,k2,f2,log_amesh)
+                         - util_log_multipole_energy(l,icut,rgrid,k1,f3,k2,f4,log_amesh);
+
+                       hartree_matrix[i + j*nb1 + i2*nb2 + j2*nb3 + l*nb4] = d
+                               - 2.00*    comp_pot_matrix[i  + j *nb1 + l*nb2]
+                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2]
+                               - vgl  *comp_charge_matrix[i  + j *nb1 + l*nb2]
+                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2];
+                       hartree_matrix[j + i*nb1 + i2*nb2 + j2*nb3 + l*nb4] = d
+                               - 2.00*    comp_pot_matrix[j  + i *nb1 + l*nb2]
+                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2]
+                               - vgl  *comp_charge_matrix[j  + i *nb1 + l*nb2]
+                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2];
+                       hartree_matrix[i + j*nb1 + j2*nb2 + i2*nb3 + l*nb4] = d
+                               - 2.00*    comp_pot_matrix[i  + j *nb1 + l*nb2]
+                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2]
+                               - vgl  *comp_charge_matrix[i  + j *nb1 + l*nb2]
+                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2];
+
+                       hartree_matrix[j + i*nb1 + j2*nb2 + i2*nb3 + l*nb4] = d
+                               - 2.00*    comp_pot_matrix[j  + i *nb1 + l*nb2]
+                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2]
+                               - vgl  *comp_charge_matrix[j  + i *nb1 + l*nb2]
+                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2];
+                   }
+                }
+
+             }
+      }
+
+}
 
 
 /*******************************************
