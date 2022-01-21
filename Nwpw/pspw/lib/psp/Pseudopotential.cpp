@@ -664,7 +664,7 @@ static void vpp_generate(PGrid *mygrid,
         std::cout << "created paw1d" << std::endl;
 
         /*  allocate paw matrices */
-        *Gijl               = new (std::nothrow) double[(paw1d.nmax)*(paw1d.nmax)*(2*paw1d.lmax+1)]();
+        *Gijl               = new (std::nothrow) double[(paw1d.nmax)*(paw1d.nmax)*(paw1d.lmax+1)*5]();
         *comp_charge_matrix = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
         *comp_pot_matrix    = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
         *hartree_matrix     = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();

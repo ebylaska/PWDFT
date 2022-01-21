@@ -269,6 +269,45 @@ double util_log_integrate_def(const int power_f, const double f[],
    return sum_f;
 }
 
+
+/************************************************
+ *                                              *
+ *            log_integrate_def0                *
+ *                                              *
+ ************************************************/
+/*     
+     Computes the following integral
+      
+      
+          /               /
+          | f(r)/r dr =   | f(i) * log(a) di
+          /               /
+ 
+     where r(i) = r0*a**i   and f(r-->0) = r**power_f
+*/
+
+double util_log_integrate_def0(const int power_f,
+                               const double f[],
+                               const double r[],
+                               const double log_amesh,
+                               const int nrange)
+{
+   // *** integrate from the origin to the first point ***
+   double sum_f = f[0]/((double) power_f);
+
+   // *** the rest via trapesoidal rule ***
+   double tmp_sum = 0.0;
+   for (auto i=0; i<nrange; ++i)
+      tmp_sum += f[i];
+
+   // *** the rest via trapesoidal rule ***
+   sum_f += log_amesh*tmp_sum - 0.50*log_amesh*(f[0] + f[nrange-1]);
+
+   return sum_f;
+}
+
+
+
 /************************************************
  *                                              *
  *            log_integrate_indef               *

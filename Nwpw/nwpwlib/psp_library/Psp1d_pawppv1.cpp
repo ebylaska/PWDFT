@@ -7,7 +7,7 @@
 #include	<cstdlib>
 #include	<cstring>
 #include	<cmath>
-//#include        "blas.h"
+#include        "blas.h"
 
 using namespace std;
 
@@ -405,15 +405,21 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
  *     Psp1d_pawppv1::vpp_generate_paw_matrices     *
  *                                                  *
  ****************************************************/
-void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, double *comp_charge_matrix, double *comp_pot_matrix, double *hartree_matrix)
+#define matindx2(i,j,l,nbasis)		(i + j*nbasis + l*nbasis*nbasis)
+#define matindx4(i1,j1,i2,j2,l,nbasis)	(i1 + j1*nbasis + i2*nbasis*nbasis + j2*nbasis*nbasis*nbasis + l*nbasis*nbasis*nbasis*nbasis)
+#define matovlp(na,nb,l,ii,nmax,lmax)	((na-1) + (nb-1)*nmax + l*nmax*nmax + (ii-1)*nmax*nmax*(lmax+1))
+
+void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, 
+                                              double *comp_charge_matrix, 
+                                              double *comp_pot_matrix, 
+                                              double *hartree_matrix)
 {
 
-   double twopi = 8.0*atan(1.0);
-   int nb1 = nbasis;
-   int nb2 = nbasis*nbasis;
-   int nb3 = nbasis*nbasis*nbasis;
-   int nb4 = nbasis*nbasis*nbasis*nbasis;
-
+   double pi    = 4.00*atan(1.0);
+   double twopi = 2.0*pi;
+   double forpi = 4.0*pi;
+   double d,vgl,q;
+   
    double *f1 = new double[n1dgrid];
    double *f2 = new double[n1dgrid];
    double *f3 = new double[n1dgrid];
@@ -429,8 +435,8 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, 
          for (auto l=0; l<(2*lmax+1); ++l)
          {
             double d = util_log_integrate_def(2*l+2,f1,l,rgrid,log_amesh,icut);
-            comp_charge_matrix[i+j*nb1+l*nb2] = d;
-            comp_charge_matrix[j+i*nb1*l*nb2] = d;
+            comp_charge_matrix[matindx2(i,j,l,nbasis)] = d;
+            comp_charge_matrix[matindx2(j,i,l,nbasis)] = d;
          }
       }
 
@@ -451,9 +457,9 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, 
             for (auto k=0; k<icut; ++k)
                f2[k] = phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid];
 
-            double d = util_log_multipole_energy(l,icut,rgrid,k1,f1,k2,f2,log_amesh);
-            comp_pot_matrix[i+j*nb1+l*nb2] = d;
-            comp_pot_matrix[j+i*nb1+l*nb2] = d;
+            d = util_log_multipole_energy(l,icut,rgrid,k1,f1,k2,f2,log_amesh);
+            comp_pot_matrix[matindx2(i,j,l,nbasis)] = d;
+            comp_pot_matrix[matindx2(j,i,l,nbasis)] = d;
          }
       }
    }
@@ -492,41 +498,274 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl, 
 
                 for (auto l=0; l<(2*lmax+1); ++l)
                 {
-                   double d   = ((double) (2*l+1)) * util_double_factorial(2*l+1)*pow(sigma,(2*l+1));
-                   double vgl = 4.00*sqrt(twopi)/d;
+                   d   = ((double) (2*l+1)) * util_double_factorial(2*l+1)*pow(sigma,(2*l+1));
+                   vgl = 4.00*sqrt(twopi)/d;
 
                    if ((l<=sum_l) && (l>=dif_l) && (l<=sum_l2) && (l>=dif_l2)) 
                    {
                        d = util_log_multipole_energy(l,icut,rgrid,k1,f1,k2,f2,log_amesh)
                          - util_log_multipole_energy(l,icut,rgrid,k1,f3,k2,f4,log_amesh);
 
-                       hartree_matrix[i + j*nb1 + i2*nb2 + j2*nb3 + l*nb4] = d
-                               - 2.00*    comp_pot_matrix[i  + j *nb1 + l*nb2]
-                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2]
-                               - vgl  *comp_charge_matrix[i  + j *nb1 + l*nb2]
-                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2];
-                       hartree_matrix[j + i*nb1 + i2*nb2 + j2*nb3 + l*nb4] = d
-                               - 2.00*    comp_pot_matrix[j  + i *nb1 + l*nb2]
-                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2]
-                               - vgl  *comp_charge_matrix[j  + i *nb1 + l*nb2]
-                                      *comp_charge_matrix[i2 + j2*nb1 + l*nb2];
-                       hartree_matrix[i + j*nb1 + j2*nb2 + i2*nb3 + l*nb4] = d
-                               - 2.00*    comp_pot_matrix[i  + j *nb1 + l*nb2]
-                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2]
-                               - vgl  *comp_charge_matrix[i  + j *nb1 + l*nb2]
-                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2];
+                       hartree_matrix[matindx4(i,j,i2,j2,l,nbasis)] = d
+                               - 2.00*    comp_pot_matrix[matindx2(i, j, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(i2,j2,l,nbasis)]
+                               - vgl  *comp_charge_matrix[matindx2(i, j, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(i2,j2,l,nbasis)];
+                       hartree_matrix[matindx4(j,i,i2,j2,l,nbasis)] = d
+                               - 2.00*    comp_pot_matrix[matindx2(j, i, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(i2,j2,l,nbasis)]
+                               - vgl  *comp_charge_matrix[matindx2(j, i, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(i2,j2,l,nbasis)];
+                       hartree_matrix[matindx4(i,j,j2,i2,l,nbasis)] = d
+                               - 2.00*    comp_pot_matrix[matindx2(i, j, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(j2,i2,l,nbasis)]
+                               - vgl  *comp_charge_matrix[matindx2(i, j, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(j2,i2,l,nbasis)];
 
-                       hartree_matrix[j + i*nb1 + j2*nb2 + i2*nb3 + l*nb4] = d
-                               - 2.00*    comp_pot_matrix[j  + i *nb1 + l*nb2]
-                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2]
-                               - vgl  *comp_charge_matrix[j  + i *nb1 + l*nb2]
-                                      *comp_charge_matrix[j2 + i2*nb1 + l*nb2];
+                       hartree_matrix[matindx4(j,i,j2,i2,l,nbasis)] = d
+                               - 2.00*    comp_pot_matrix[matindx2(j, i, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(j2,i2,l,nbasis)]
+                               - vgl  *comp_charge_matrix[matindx2(j, i, l,nbasis)]
+                                      *comp_charge_matrix[matindx2(j2,i2,l,nbasis)];
                    }
                 }
 
              }
       }
 
+   // ******************************************************************************
+   // ***********  1-electron psp operators - Normalization constants  *************
+   // ******************************************************************************
+   memset(Gijl,0,5*nmax*nmax*(lmax+1)*sizeof(double));
+
+   // **** 2 - overlap  ****
+   for (auto i=0; i<nbasis; ++i)
+   {
+      int la = lps[i];
+      int na = nps[i] - la;
+      int power_f = 2*la + 2;
+
+      for (auto k=0; k<icut; ++k)
+         f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+i*n1dgrid]
+               - phi_ps[k+i*n1dgrid]*phi_ps[k+i*n1dgrid];
+
+      d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+      Gijl[matovlp(na,na,la,2,nmax,lmax)] += d;
+
+      for (auto j=0; j<i; ++j)
+      {
+         int lb = lps[j];
+         int nb = nps[j] - lb;
+         if (la==lb)
+         {
+            for (auto k=0; k<icut; ++k)
+               f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid]
+                     - phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid];
+
+            d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+            Gijl[matovlp(na,nb,la,2,nmax,lmax)] += d;
+            Gijl[matovlp(nb,na,la,2,nmax,lmax)] += d;
+         }
+      }
+   }
+
+   // **** 3 - kinetic  ****
+   for (auto i=0; i<nbasis; ++i)
+   {
+      int la = lps[i];
+      int na = nps[i] - la;
+      int power_f = 2*la;
+      
+      for (auto k=0; k<icut; ++k)
+         f1[k] = 0.50*(dphi_ae[k+i*n1dgrid]*dphi_ae[k+i*n1dgrid]
+                      -dphi_ps[k+i*n1dgrid]*dphi_ps[k+i*n1dgrid])
+               + 0.50*la*(la+1)*(phi_ae[k+i*n1dgrid]*phi_ae[k+i*n1dgrid]
+                                -phi_ps[k+i*n1dgrid]*phi_ps[k+i*n1dgrid])/pow(rgrid[k],2);
+
+      d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+      Gijl[matovlp(na,na,la,3,nmax,lmax)] += d;
+
+      for (auto j=0; j<i; ++j)
+      {
+         int lb = lps[j];
+         int nb = nps[j] - lb;
+         if (la==lb)
+         {
+            for (auto k=0; k<icut; ++k)
+               f1[k] = 0.50*(dphi_ae[k+i*n1dgrid]*dphi_ae[k+j*n1dgrid]
+                            -dphi_ps[k+i*n1dgrid]*dphi_ps[k+j*n1dgrid])
+                     + 0.50*la*(la+1)*(phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid] -
+                                       phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid])/pow(rgrid[k],2);
+
+           d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+           Gijl[matovlp(na,nb,la,3,nmax,lmax)] += d;
+           Gijl[matovlp(nb,na,la,3,nmax,lmax)] += d;
+         }
+      }
+   }
+
+   // **** 4 - Vlocal =  nloc*Vloc - ncmp*Vloc + nv*Vsrloc ****
+   // ****    where Vloc = v_ps - zv*erf(r/rlocal)/r       ****
+   // ****    and   Vsrloc = -zv/r - Vloc                  ****
+
+   // **** W2^(ion-electron) + W3^I(ion-electron)  -- add pseudo  - 4 ****
+   q = zv/(forpi);
+   d = 2.00*zv/(sqrt(twopi)*sigma);
+   for (auto i=0; i<nbasis; ++i)
+   {
+      int la = lps[i];
+      int na = nps[i] - la;
+      Gijl[matovlp(na,na,la,4,nmax,lmax)] += q*comp_pot_matrix[matindx2(i,i,0,nbasis)]
+                                           + d*Gijl[matovlp(na,na,la,2,nmax,lmax)];
+      for (auto j=0; j<i; ++j)
+      {
+         int lb = lps[j];
+         int nb = nps[j] - lb;
+         if (la==lb)
+         {
+            Gijl[matovlp(na,nb,la,4,nmax,lmax)] += q*comp_pot_matrix[matindx2(i,j,0,nbasis)]
+                                                 + d*Gijl[matovlp(na,nb,la,2,nmax,lmax)];
+
+            Gijl[matovlp(nb,na,la,4,nmax,lmax)] += q*comp_pot_matrix[matindx2(j,i,0,nbasis)]
+                                                 + d*Gijl[matovlp(nb,na,la,2,nmax,lmax)];
+         }
+      }
+   }
+      
+   // **** U3^I = -tilde(n)*Vloc -- add pseudo  - 4 - PAW local psp ****
+   for (auto i=0; i<nbasis; ++i)
+   {
+      int la = lps[i];
+      int na = nps[i] - la;
+      int power_f = 2*la + 2;
+
+      for (auto k=0; k<icut; ++k)
+         f1[k]= phi_ps[k+i*n1dgrid]*phi_ps[k+i*n1dgrid]*(-v_ps[k]);
+      
+      d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+      Gijl[matovlp(na,na,la,4,nmax,lmax)] += d;
+
+      for (auto j=0; j<i; ++j)
+      {
+         int lb = lps[j];
+         int nb = nps[j] - lb;
+         if (la==lb)
+         {
+            for (auto k=0; k<icut; ++k)
+               f1[k] = phi_ps[k+i*n1dgrid]*phi_ps[k+j*n1dgrid]*(-v_ps[k]);
+              
+            d = util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+            Gijl[matovlp(na,nb,la,4,nmax,lmax)] += d;
+            Gijl[matovlp(nb,na,la,4,nmax,lmax)] += d;
+
+         }
+      }
+   }
+
+   // **** add U1^I = -nv*(Zv/r) to pseudo - 4 ****
+   for (auto i=0; i<nbasis; ++i)
+   {
+      int la = lps[i];
+      int na = nps[i] - la;
+      int power_f = 2*la + 2;
+
+      for (auto k=0; k<icut; ++k)
+         f1[k] = (phi_ae[k+i*n1dgrid]*phi_ae[k+i*n1dgrid])*(-zv);
+        
+      d = util_log_integrate_def0(power_f,f1,rgrid,log_amesh,icut);
+      Gijl[matovlp(na,na,la,4,nmax,lmax)] += d;
+
+      for (auto j=0; j<i; ++j)
+      {
+         int lb = lps[j];
+         int nb = nps[j] - lb;
+         if (la==lb) 
+         {
+            for (auto k=0; k<icut; ++k)
+               f1[k] = (phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid])*(-zv);
+   
+            d = util_log_integrate_def0(power_f,f1,rgrid,log_amesh,icut);
+            Gijl[matovlp(na,nb,la,4,nmax,lmax)] += d;
+            Gijl[matovlp(nb,na,la,4,nmax,lmax)] += d;
+         }
+      }
+   }
+
+   // **************************************
+   // **** valence core matrix elements ****
+   // **************************************
+   double zcore = zion - zv;
+   if (zcore>0.0)
+   {
+      // **** vcore - 5 ****
+      for (auto k=0; k<icut; ++k)
+         f3[k] = core_ae[k]*pow(rgrid[k],2);
+         
+      for (auto i=0; i<nbasis; ++i)
+      {
+         int la = lps[i];
+         int na = nps[i] - la;
+         int power_f = 2*la + 2;
+
+         for (auto k=0; k<icut; ++k)
+            f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+i*n1dgrid];
+           
+         d = util_log_multipole_energy(0,icut,rgrid,power_f,f1,2,f3,log_amesh);
+         Gijl[matovlp(na,na,la,5,nmax,lmax)] += d;
+
+         for (auto j=0; j<i; ++i)
+         {
+            int lb = lps[j];
+            int nb = nps[j] - lb;
+            if (la==lb)
+            {
+               for (auto k=0; k<icut; ++k)
+                  f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid];
+                
+               d = util_log_multipole_energy(0,icut,rgrid,power_f,f1,2,f3,log_amesh);
+               Gijl[matovlp(na,nb,la,5,nmax,lmax)] += d;
+               Gijl[matovlp(nb,na,la,5,nmax,lmax)] += d;
+            }
+         }
+      }
+         
+      // **** add -Vzc to vcore - 5 ****
+      for (auto i=0; i<nbasis; ++i)
+      {
+         int la = lps[i];
+         int na = nps[i] - la;
+         int power_f = 2*la + 2;
+
+         for (auto k=0; k<icut; ++k)
+            f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+i*n1dgrid]/rgrid[k];
+           
+         d = zcore*util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+         Gijl[matovlp(na,na,la,5,nmax,lmax)] -= d;
+
+         for (auto j=0; j<i; ++j)
+         {
+            int lb = lps[j];
+            int nb = nps[j] - lb;
+            if (la==lb)
+            {
+               for (auto k=0; k<icut; ++k)
+                  f1[k] = phi_ae[k+i*n1dgrid]*phi_ae[k+j*n1dgrid]/rgrid[k];
+
+               d = zcore*util_log_integrate_def(power_f,f1,0,rgrid,log_amesh,icut);
+               Gijl[matovlp(na,nb,la,5,nmax,lmax)] -= d;
+               Gijl[matovlp(nb,na,la,5,nmax,lmax)] -= d;
+            }
+         }
+      }
+   }
+
+   int nnn  = nmax*nmax*(lmax+1);
+   int one  = 1;
+   double rone = 1.0;
+
+   DCOPY_PWDFT(nnn,     &Gijl[2*nnn],one,Gijl,one); // ** kinetic **
+   DAXPY_PWDFT(nnn,rone,&Gijl[3*nnn],one,Gijl,one); // ** Vsrloc - short range pseudo  **
+   DAXPY_PWDFT(nnn,rone,&Gijl[4*nnn],one,Gijl,one); // ** vcore - valence-core   **
 }
 
 

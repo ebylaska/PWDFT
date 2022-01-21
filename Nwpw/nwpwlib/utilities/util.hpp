@@ -25,19 +25,19 @@ extern void util_compcharge_gen_rgaussian(const int, const double, const int, co
 extern double util_log_integrate_def(const int, const double *,
                                      const int, const double *,
                                      const double, const int);
-extern double util_log_multipole_energy(const int, const int, const double *,
-                                        const int, const double *,
-                                        const int, const double *,
-                                        const double);
+extern double util_log_integrate_def0(const int,
+                                      const double *,
+                                      const double *,
+                                      const double,
+                                      const int);
 extern void util_log_integrate_indef(const int, const double *,
                                      const int, const double *,
                                      const double,
                                      const int, double *);
 extern double util_log_multipole_energy(const int, const int, const double *,
-                                       const int, const double *,
-                                       const int, const double *,
-                                       const double);
-
+                                        const int, const double *,
+                                        const int, const double *,
+                                        const double);
 
 extern void util_getfilling(int, int *, int *, double *);
 
