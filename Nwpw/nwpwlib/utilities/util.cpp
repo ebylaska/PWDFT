@@ -364,7 +364,111 @@ double util_log_multipole_energy(const int l, const int nrange, const double g_r
    return (util_log_integrate_def(power_f,ftmp,0,g_r,log_amesh,nrange) * fourpi/((double) (2*l+1)));
 }
 
-      
+
+/************************************************
+ *                                              *
+ *           util_log_r2integrate_eric          *
+ *                                              *
+ ************************************************/
+double util_log_r2integrate_eric(const int ngrid, const double log_amesh, const double rgrid[], const double f[])
+{
+   double mysum = (   9.00*f[0]*pow(rgrid[0],3)
+                   + 28.00*f[1]*pow(rgrid[1],3)
+                   + 23.00*f[2]*pow(rgrid[2],3)
+                  )/24.00;
+
+   for (auto i=3; i<ngrid; ++i)
+      mysum += f[i]*pow(rgrid[i],3);
+
+   return (log_amesh*mysum + f[0]*pow(rgrid[0],3)/3.00);
+}
+
+/************************************************
+ *                                              *
+ *            log_corrector_iF                  *
+ *                                              *
+ ************************************************/
+/*
+     Computes y(i) <-- y(i+1) + F(f(i),f(i+1),f(i+2),f(i+3))
+    where F is a 5 point corrector                           */
+
+double util_log_corrector_iF(const int i, const double f[])
+{
+   double oneo24 = 1.0/24.0;
+
+   return ( -oneo24 * (   9.00*f[i]
+                       + 19.00*f[i+1]
+                       -  5.00*f[i+2]
+                       +  1.00*f[i+3]));
+}
+
+
+/************************************************
+ *                                              *
+ *            util_log_coulomb0_energy          *
+ *                                              *
+ ************************************************/
+double util_log_coulomb0_energy(const double rho[],     const double charge,
+                                const double rgrid[],   const int ngrid,
+                                const double log_amesh, const double zion)
+{
+   double fourpi = 16.00*atan(1.0);
+   double tmp[ngrid];
+
+   for (auto i=0; i<ngrid; ++i)
+      tmp[i] = fourpi*rho[i]/rgrid[i];
+
+   double E  = util_log_r2integrate_eric(ngrid,log_amesh,rgrid,tmp);
+
+   E  = -E*zion;
+
+   return E;
+}
+
+
+/************************************************
+ *                                              *
+ *            util_log_coulomb_energy           *
+ *                                              *
+ ************************************************/
+double util_log_coulomb_energy(const double rho[],   const double charge,
+                               const double rgrid[], const int ngrid, 
+                               const double log_amesh)
+{
+   double fourpi = 16.0*atan(1.0);
+   double tmp[ngrid],vh[ngrid];
+
+   for (auto i=0; i<ngrid; ++i)      
+      tmp[i] = fourpi*rho[i]*log_amesh*pow(rgrid[i],3);
+
+   vh[ngrid-1] = charge;
+   vh[ngrid-2] = charge;
+   vh[ngrid-3] = charge;
+
+   for (auto i=(ngrid-4); i>=0; --i)
+      vh[i] = vh[i+1] + util_log_corrector_iF(i,tmp);
+
+   for (auto i=0; i<ngrid; ++i)
+      tmp[i] = fourpi*rho[i]*log_amesh*pow(rgrid[i],2);
+    
+   double tt = 0.0;
+
+   for (auto i=(ngrid-4); i>=0; --i)
+   {
+      tt += util_log_corrector_iF(i,tmp);
+      vh[i] -= rgrid[i]*tt;
+   }
+
+   for (auto i=0; i<ngrid; ++i)
+      vh[i] /= rgrid[i];
+
+   for (auto i=0; i<ngrid; ++i)
+      tmp[i] = fourpi*rho[i]*vh[i];
+
+   double E = util_log_r2integrate_eric(ngrid,log_amesh,rgrid,tmp);
+
+   return (E*0.50);
+}
 
 
 

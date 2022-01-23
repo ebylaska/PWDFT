@@ -38,6 +38,15 @@ extern double util_log_multipole_energy(const int, const int, const double *,
                                         const int, const double *,
                                         const int, const double *,
                                         const double);
+ 
+extern double util_log_r2integrate_eric(const int, const double, const double *, const double *);
+extern double util_log_corrector_iF(const int, const double *);
+extern double util_log_coulomb0_energy(const double *, const double,
+                                       const double *, const int,
+                                       const double, const double);
+extern double util_log_coulomb_energy(const double *, const double,
+                                      const double *, const int,
+                                      const double);
 
 extern void util_getfilling(int, int *, int *, double *);
 

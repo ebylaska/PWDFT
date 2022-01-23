@@ -236,6 +236,10 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    myparall->Brdcst_Values(0,0,1,&zion);
 
 
+   // **** calculate radial derivatives of core densities ****
+   pawppv1_derivative_ngrid(n1dgrid,log_amesh,rgrid,core_ae,core_ae_prime);
+   pawppv1_derivative_ngrid(n1dgrid,log_amesh,rgrid,core_ps,core_ps_prime);
+
    // define nprj and lmax 
    locp = -1;
    lmax = -1;
@@ -393,9 +397,17 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
       }
    }
 
-
-
-
+   // **** compute the core_ion_energy = ecorez + ecorecore ****
+   if (abs(zion-zv)> 1.0e-9)
+   {
+      double ecorez    = util_log_coulomb0_energy(core_ae,zion-zv,rgrid,n1dgrid,log_amesh,zion);
+      double ecorecore = util_log_coulomb_energy(core_ae, zion-zv,rgrid,n1dgrid,log_amesh);
+      core_ion_energy = ecorez + ecorecore;
+   } 
+   else
+   {
+      core_ion_energy = 0.0;
+   }
 
 }
 

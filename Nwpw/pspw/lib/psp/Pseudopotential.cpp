@@ -163,15 +163,44 @@ static void vpp_read(PGrid *mygrid,
                      int **m_projector,
                      int **b_projector,
                      double **Gijl,
+                     double *rlocal,
                      bool   *semicore,
                      double *rcore,
                      double **ncore,
                      double *vl,
-                     double **vnl)
+                     double **vnl,
+                     double *log_amesh,
+                     double *r1,
+                     double *rmax,
+                     double *sigma,
+                     double *zion,
+                     int *n1dgrid,
+                     int *n1dbasis,
+                     int **nae,
+                     int **nps,
+                     int **lps,
+                     int *icut,
+                     double **eig,
+                     double **phi_ae,
+                     double **dphi_ae,
+                     double **phi_ps,
+                     double **dphi_ps,
+                     double **core_ae,
+                     double **core_ps,
+                     double **core_ae_prime,
+                     double **core_ps_prime,
+                     double **rgrid,
+                     double *core_kin_energy,
+                     double *core_ion_energy,
+                     double **hartree_matrix,
+                     double **comp_charge_matrix,
+                     double **comp_pot_matrix)
 {
     int i,nn;
     double   *tmp2,*prj;
     Parallel *parall = mygrid->parall;
+
+    *rlocal = 0.0;
 
     if (parall->is_master())
     {
@@ -207,6 +236,12 @@ static void vpp_read(PGrid *mygrid,
     parall->Brdcst_iValue(0,0,nmax);
     *lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
 
+    if (*psp_type==4)
+       *n1dbasis = *locp;
+    else
+       *n1dbasis = *lmax+1;
+
+
     *rc = new (std::nothrow) double[*lmax+1]();
     if (parall->is_master())
     {
@@ -234,6 +269,8 @@ static void vpp_read(PGrid *mygrid,
         parall->Brdcst_iValues(0,0,*nprj,*b_projector);
 
         nn = (*nmax)*(*nmax)*(*lmax+1);
+        if (*psp_type==4) 
+           nn *= 5;
         *Gijl = new (std::nothrow) double[nn]();
         if (parall->is_master())
         {
@@ -241,12 +278,134 @@ static void vpp_read(PGrid *mygrid,
         }
         parall->Brdcst_Values(0,0,nn,*Gijl);
     }
-    if (parall->is_master()) dread(5,rcore,1);
+
+    if (parall->is_master())
+    {
+       if (*version==4) dread(5,rlocal,1);
+       dread(5,rcore,1);
+    }
+    parall->Brdcst_Values(0,0,1,rlocal);
     parall->Brdcst_Values(0,0,1,rcore);
     if (*rcore > 0.0)
         *semicore = true;
     else
         *semicore = false;
+
+
+    /* read in miscellaneous paw energies and 1d wavefunctions */
+    if (*psp_type==4) 
+    {
+        nn = (*n1dbasis)*(*n1dbasis)*(*n1dbasis)*(*n1dbasis)*(2*(*lmax)+1);
+        *hartree_matrix = new (std::nothrow) double[nn]();
+        if (parall->is_master())
+           dread(5,*hartree_matrix,nn);
+        parall->Brdcst_Values(0,0,nn,*hartree_matrix);
+
+        nn = (*n1dbasis)*(*n1dbasis)*(2*(*lmax)+1);
+        *comp_charge_matrix = new (std::nothrow) double[nn]();
+        if (parall->is_master()) 
+           dread(5,*comp_charge_matrix,nn);
+        parall->Brdcst_Values(0,0,nn,*comp_charge_matrix);
+
+        *comp_pot_matrix    = new (std::nothrow) double[nn]();
+        if (parall->is_master()) 
+           dread(5,*comp_pot_matrix,nn);
+        parall->Brdcst_Values(0,0,nn,*comp_pot_matrix);
+
+        if (parall->is_master()) 
+        {
+           dread(5,core_kin_energy,1);
+           dread(5,core_ion_energy,1);
+        }
+        parall->Brdcst_Values(0,0,1,core_kin_energy);
+        parall->Brdcst_Values(0,0,1,core_ion_energy);
+
+        if (parall->is_master()) 
+        {
+           iread(5,n1dgrid,1);
+           iread(5,icut,1);
+           dread(5,log_amesh,1);
+           dread(5,r1,1);
+           dread(5,rmax,1);
+           dread(5,sigma,1);
+           dread(5,zion,1);
+        }
+        parall->Brdcst_iValue(0,0,n1dgrid);
+        parall->Brdcst_iValue(0,0,icut);
+        parall->Brdcst_Values(0,0,1,log_amesh);
+        parall->Brdcst_Values(0,0,1,r1);
+        parall->Brdcst_Values(0,0,1,rmax);
+        parall->Brdcst_Values(0,0,1,sigma);
+        parall->Brdcst_Values(0,0,1,zion);
+
+        if ((*n1dbasis)>0)
+        {
+           nn = (*n1dbasis);
+           *nae = new (std::nothrow) int[nn]();
+           *nps = new (std::nothrow) int[nn]();
+           *lps = new (std::nothrow) int[nn]();
+ 
+           *eig = new (std::nothrow) double[nn]();
+
+           nn =  (*n1dbasis)*(*n1dgrid);
+           *phi_ae  = new (std::nothrow) double[nn]();
+           *dphi_ae = new (std::nothrow) double[nn]();
+           *phi_ps  = new (std::nothrow) double[nn]();
+           *dphi_ps = new (std::nothrow) double[nn]();
+        }
+        nn =  (*n1dgrid);
+        *core_ae       = new (std::nothrow) double[nn]();
+        *core_ps       = new (std::nothrow) double[nn]();
+        *core_ae_prime = new (std::nothrow) double[nn]();
+        *core_ps_prime = new (std::nothrow) double[nn]();
+        *rgrid         = new (std::nothrow) double[nn]();
+
+        nn = (*n1dbasis);
+        if (parall->is_master()) dread(5,*eig,nn);
+        parall->Brdcst_Values(0,0,nn,*eig);
+
+        if (parall->is_master()) iread(5,*nae,nn);
+        parall->Brdcst_iValues(0,0,nn,*nae);
+
+        if (parall->is_master()) iread(5,*nps,nn);
+        parall->Brdcst_iValues(0,0,nn,*nps);
+
+        if (parall->is_master()) iread(5,*lps,nn);
+        parall->Brdcst_iValues(0,0,nn,*lps);
+
+
+        nn =  (*n1dgrid);
+        if (parall->is_master()) dread(5,*rgrid,nn);
+        parall->Brdcst_Values(0,0,nn,*rgrid);
+
+
+        nn =  (*n1dbasis)*(*n1dgrid);
+        if (parall->is_master()) dread(5,*phi_ae,nn);
+        parall->Brdcst_Values(0,0,nn,*phi_ae);
+
+        if (parall->is_master()) dread(5,*dphi_ae,nn);
+        parall->Brdcst_Values(0,0,nn,*dphi_ae);
+
+        if (parall->is_master()) dread(5,*phi_ps,nn);
+        parall->Brdcst_Values(0,0,nn,*phi_ps);
+
+        if (parall->is_master()) dread(5,*dphi_ps,nn);
+        parall->Brdcst_Values(0,0,nn,*dphi_ps);
+
+
+        nn =  (*n1dbasis)*(*n1dgrid);
+        if (parall->is_master()) dread(5,*core_ae,nn);
+        parall->Brdcst_Values(0,0,nn,*core_ae);
+
+        if (parall->is_master()) dread(5,*core_ps,nn);
+        parall->Brdcst_Values(0,0,nn,*core_ps);
+
+        if (parall->is_master()) dread(5,*core_ae_prime,nn);
+        parall->Brdcst_Values(0,0,nn,*core_ae_prime);
+
+        if (parall->is_master()) dread(5,*core_ps_prime,nn);
+        parall->Brdcst_Values(0,0,nn,*core_ps_prime);
+    }
 
 
     /* readin vl 3d block */
@@ -323,11 +482,38 @@ static void vpp_write(PGrid *mygrid,
                       int *m_projector,
                       int *b_projector,
                       double *Gijl,
+                      double rlocal,
                       bool   semicore,
                       double rcore,
                       double *ncore,
                       double *vl,
-                      double *vnl)
+                      double *vnl,
+                      double log_amesh,
+                      double r1,
+                      double rmax,
+                      double sigma,
+                      double zion,
+                      int n1dgrid,
+                      int n1dbasis,
+                      int *nae,
+                      int *nps,
+                      int *lps,
+                      int icut,
+                      double *eig,
+                      double *phi_ae,
+                      double *dphi_ae,
+                      double *phi_ps,
+                      double *dphi_ps,
+                      double *core_ae,
+                      double *core_ps,
+                      double *core_ae_prime,
+                      double *core_ps_prime,
+                      double *rgrid,
+                      double core_kin_energy,
+                      double core_ion_energy,
+                      double *hartree_matrix,
+                      double *comp_charge_matrix,
+                      double *comp_pot_matrix)
 {
     int i,nn;
     double   *prj;
@@ -338,37 +524,81 @@ static void vpp_write(PGrid *mygrid,
 
     if (parall->is_master())
     {
-        std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
-        openfile(6,fname,"w");
-        comment[79] = '\0';
-        cwrite(6,comment,80);
+       std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
+       openfile(6,fname,"w");
+       comment[79] = '\0';
+       cwrite(6,comment,80);
 
-        iwrite(6,&psp_type,1);
-        iwrite(6,&version,1);
-        iwrite(6,nfft,3);
-        dwrite(6,unita,9);
-        cwrite(6,atom,2);
-        dwrite(6,&amass,1);
-        dwrite(6,&zv,1);
-        iwrite(6,&lmax,1);
-        iwrite(6,&locp,1);
-        iwrite(6,&nmax,1);
+       iwrite(6,&psp_type,1);
+       iwrite(6,&version,1);
+       iwrite(6,nfft,3);
+       dwrite(6,unita,9);
+       cwrite(6,atom,2);
+       dwrite(6,&amass,1);
+       dwrite(6,&zv,1);
+       iwrite(6,&lmax,1);
+       if (psp_type==4)
+          iwrite(6,&n1dbasis,1);
+       else
+          iwrite(6,&locp,1);
+       iwrite(6,&nmax,1);
 
-        dwrite(6,rc,lmax+1);
-        iwrite(6,&nprj,1);
+       dwrite(6,rc,lmax+1);
+       iwrite(6,&nprj,1);
 
-        if (nprj > 0)
-        {
-            iwrite(6,n_projector,nprj);
-            iwrite(6,l_projector,nprj);
-            iwrite(6,m_projector,nprj);
-            iwrite(6,b_projector,nprj);
-        }
-        nn = (nmax)*(nmax)*(lmax+1);
-        dwrite(6,Gijl,nn);
-        dwrite(6,&rcore,1);
+       if (nprj > 0)
+       {
+          iwrite(6,n_projector,nprj);
+          iwrite(6,l_projector,nprj);
+          iwrite(6,m_projector,nprj);
+          iwrite(6,b_projector,nprj);
+       }
+       nn = (nmax)*(nmax)*(lmax+1);
+       if (psp_type==4) nn *=5;
+       dwrite(6,Gijl,nn);
+       if (version==4) dwrite(6,&rlocal,1);
+       dwrite(6,&rcore,1);
+       double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
+
+
+       // ***** Miscellaneous paw energies and 1d wavefunctions ****
+       if (psp_type==4)
+       {
+          nn = n1dbasis*n1dbasis*n1dbasis*n1dbasis*(2*lmax+1);
+          dwrite(6,hartree_matrix,nn);
+
+          nn = n1dbasis*n1dbasis*(2*lmax+1);
+          dwrite(6,comp_charge_matrix,nn);
+          dwrite(6,comp_pot_matrix,nn);
+
+          dwrite(6,&core_kin_energy,1);
+          dwrite(6,&core_ion_energy,1);
+
+          /* write 1d-wavefunctions */
+          iwrite(6,&n1dgrid,1);
+          iwrite(6,&icut,1);
+          dwrite(6,&log_amesh,1);
+          dwrite(6,&r1,1);
+          dwrite(6,&rmax,1);
+          dwrite(6,&sigma,1);
+          dwrite(6,&zion,1);
+          dwrite(6,eig,n1dbasis);
+          iwrite(6,nae,n1dbasis);
+          iwrite(6,nps,n1dbasis);
+          iwrite(6,lps,n1dbasis);
+
+          dwrite(6,rgrid,n1dgrid);
+          dwrite(6,phi_ae,n1dgrid*n1dbasis);
+          dwrite(6,dphi_ae,n1dgrid*n1dbasis);
+          dwrite(6,phi_ps,n1dgrid*n1dbasis);
+          dwrite(6,dphi_ps,n1dgrid*n1dbasis);
+          dwrite(6,core_ae,n1dgrid);
+          dwrite(6,core_ps,n1dgrid);
+          dwrite(6,core_ae_prime,n1dgrid);
+          dwrite(6,core_ps_prime,n1dgrid);
+       }
     }
-    double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
+
 
     /* readin vl 3d block */
     mygrid->tt_pack_copy(0,vl,tmp2);
@@ -522,12 +752,36 @@ static void vpp_generate(PGrid *mygrid,
                          int **m_projector,
                          int **b_projector,
                          double **Gijl,
+                         double *rlocal,
                          bool   *semicore,
                          double *rcore,
                          double **ncore,
                          double *vl,
                          double *vlpaw,
                          double **vnl,
+                         double *log_amesh,
+                         double *r1,
+                         double *rmax,
+                         double *sigma,
+                         double *zion,
+                         int *n1dgrid,
+                         int *n1dbasis,
+                         int **nae,
+                         int **nps,
+                         int **lps,
+                         int *icut,
+                         double **eig,
+                         double **phi_ae,
+                         double **dphi_ae,
+                         double **phi_ps,
+                         double **dphi_ps,
+                         double **core_ae,
+                         double **core_ps,
+                         double **core_ae_prime,
+                         double **core_ps_prime,
+                         double **rgrid,
+                         double *core_kin_energy, 
+                         double *core_ion_energy,
                          double **hartree_matrix,
                          double **comp_charge_matrix,
                          double **comp_pot_matrix)
@@ -580,6 +834,7 @@ static void vpp_generate(PGrid *mygrid,
         *nprj     = psp1d.nprj;
         *semicore = psp1d.semicore;
         *rcore    = psp1d.rcore;
+        *rlocal   = psp1d.rlocal;
 
         *rc = new (std::nothrow) double[*lmax+1]();
         for (auto l=0; l<=(*lmax); ++l)
@@ -598,10 +853,10 @@ static void vpp_generate(PGrid *mygrid,
         /* allocate n_projector, l_projector, m_projector, and b_projector and copy from psp1d */
         if (psp1d.nprj>0)
         {
-            *n_projector = new int[psp1d.nprj]();
-            *l_projector = new int[psp1d.nprj]();
-            *m_projector = new int[psp1d.nprj]();
-            *b_projector = new int[psp1d.nprj]();
+            *n_projector = new (std::nothrow) int[psp1d.nprj]();
+            *l_projector = new (std::nothrow) int[psp1d.nprj]();
+            *m_projector = new (std::nothrow) int[psp1d.nprj]();
+            *b_projector = new (std::nothrow) int[psp1d.nprj]();
 
             for (auto l=0; l<psp1d.nprj; ++l)
             {
@@ -662,6 +917,106 @@ static void vpp_generate(PGrid *mygrid,
         Psp1d_pawppv1 paw1d(myparall,pspname);
 
         std::cout << "created paw1d" << std::endl;
+        nfft[0] = mygrid->nx;
+        nfft[1] = mygrid->ny;
+        nfft[2] = mygrid->nz;
+        for (auto i=0; i<9; ++i)
+            unita[i] = mygrid->lattice->unita1d(i);
+
+        atom[0] = paw1d.atom[0];
+        atom[1] = paw1d.atom[1];
+        *amass  = paw1d.amass;
+        *zv     = paw1d.zv;
+        for (auto i=0; i<80; ++i)
+            comment[i] = paw1d.comment[i];
+
+        *psp_type = paw1d.psp_type;
+        *version  = paw1d.version;
+        *lmax     = paw1d.lmax;
+        *locp     = paw1d.locp;
+        *nmax     = paw1d.nmax;
+        //*lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
+
+        *nprj     = paw1d.nprj;
+        *semicore = false;
+        *rcore    = 0.0;
+        *rlocal   = paw1d.rlocal;
+        *rc = new (std::nothrow) double[*lmax+1]();
+        for (auto l=0; l<=(*lmax); ++l)
+            (*rc)[l] = paw1d.rc[l];
+
+        /* allocate n_projector, l_projector, m_projector, and b_projector and copy from psp1d */
+        if (paw1d.nprj>0)
+        {   
+            *n_projector = new int[paw1d.nprj]();
+            *l_projector = new int[paw1d.nprj]();
+            *m_projector = new int[paw1d.nprj]();
+            *b_projector = new int[paw1d.nprj]();
+            
+            for (auto l=0; l<paw1d.nprj; ++l)
+            {   
+                (*n_projector)[l] = paw1d.n_prj[l];
+                (*l_projector)[l] = paw1d.l_prj[l];
+                (*m_projector)[l] = paw1d.m_prj[l];
+                (*b_projector)[l] = paw1d.b_prj[l];
+            }
+        }
+
+        *log_amesh = paw1d.log_amesh; 
+        *r1        = paw1d.r1;
+        *rmax      = paw1d.rmax;
+        *sigma     = paw1d.sigma;
+        *zion      = paw1d.zion;
+        *n1dgrid   = paw1d.n1dgrid;
+        *n1dbasis  = paw1d.nbasis;
+        *icut      = paw1d.icut;
+
+        *core_kin_energy = paw1d.core_kin_energy;
+        *core_ion_energy = paw1d.core_ion_energy;
+
+        if (paw1d.nbasis>0)
+        {   
+           *nae = new (std::nothrow) int[paw1d.nbasis]();
+           *nps = new (std::nothrow) int[paw1d.nbasis]();
+           *lps = new (std::nothrow) int[paw1d.nbasis]();
+
+           *eig = new double[paw1d.nbasis]();
+
+           *phi_ae  = new (std::nothrow) double[paw1d.nbasis*paw1d.n1dgrid]();
+           *dphi_ae = new (std::nothrow) double[paw1d.nbasis*paw1d.n1dgrid]();
+           *phi_ps  = new (std::nothrow) double[paw1d.nbasis*paw1d.n1dgrid]();
+           *dphi_ps = new (std::nothrow) double[paw1d.nbasis*paw1d.n1dgrid]();
+        }
+        *core_ae = new (std::nothrow) double[paw1d.n1dgrid]();
+        *core_ps = new (std::nothrow) double[paw1d.n1dgrid]();
+        *core_ae_prime = new (std::nothrow) double[paw1d.n1dgrid]();
+        *core_ps_prime = new (std::nothrow) double[paw1d.n1dgrid]();
+        *rgrid         = new (std::nothrow) double[paw1d.n1dgrid]();
+
+        for (auto l=0; l<paw1d.nbasis; ++l)
+        {
+           (*nae)[l] = paw1d.nae[l];
+           (*nps)[l] = paw1d.nps[l];
+           (*lps)[l] = paw1d.lps[l];
+
+           (*eig)[l] = paw1d.eig[l];
+        }
+        for (auto il=0; il<(paw1d.nbasis*paw1d.n1dgrid); ++il)
+        {
+           (*phi_ae)[il]  = paw1d.phi_ae[il];
+           (*dphi_ae)[il] = paw1d.dphi_ae[il];
+           (*phi_ps)[il]  = paw1d.phi_ps[il];
+           (*dphi_ps)[il] = paw1d.dphi_ps[il];
+        }
+        for (auto i=0; i<(paw1d.n1dgrid); ++i)
+        {
+           (*core_ae)[i]       = paw1d.core_ae[i];
+           (*core_ps)[i]       = paw1d.core_ps[i];
+           (*core_ae_prime)[i] = paw1d.core_ae_prime[i];
+           (*core_ps_prime)[i] = paw1d.core_ps_prime[i];
+           (*rgrid)[i]         = paw1d.rgrid[i];
+        }
+
 
         /*  allocate paw matrices */
         *Gijl               = new (std::nothrow) double[(paw1d.nmax)*(paw1d.nmax)*(paw1d.lmax+1)*5]();
@@ -670,7 +1025,6 @@ static void vpp_generate(PGrid *mygrid,
         *hartree_matrix     = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
 
         paw1d.vpp_generate_paw_matrices(myparall,*Gijl,*comp_charge_matrix,*comp_pot_matrix,*hartree_matrix);
-
 
 
         /*  allocate and generate ray formatted grids */
@@ -727,6 +1081,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     int ia,version,nfft[3];
     int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
     double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
+    int *nae_ptr,*nps_ptr,*lps_ptr;
+    double *eig_ptr,*phi_ae_ptr,*dphi_ae_ptr,*phi_ps_ptr,*dphi_ps_ptr;
+    double *core_ae_ptr,*core_ps_ptr,*core_ae_prime_ptr,*core_ps_prime_ptr,*rgrid_ptr;
     double *hartree_matrix_ptr,*comp_charge_matrix_ptr,*comp_pot_matrix_ptr;
 
     double unita[9];
@@ -757,6 +1114,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 
     zv          = new (std::nothrow) double[npsp]();
     amass       = new (std::nothrow) double[npsp]();
+    rlocal      = new (std::nothrow) double[npsp]();
     rcore       = new (std::nothrow) double[npsp]();
     ncore_sum   = new (std::nothrow) double[npsp]();
     rc          = new (std::nothrow) double* [npsp]();
@@ -786,6 +1144,32 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     comp_charge_matrix = new (std::nothrow) double* [npsp]();
     comp_pot_matrix    = new (std::nothrow) double* [npsp]();
 
+    rgrid   = new (std::nothrow) double* [npsp]();
+    eig     = new (std::nothrow) double* [npsp]();
+    phi_ae  = new (std::nothrow) double* [npsp]();
+    dphi_ae = new (std::nothrow) double* [npsp]();
+    phi_ps  = new (std::nothrow) double* [npsp]();
+    dphi_ps = new (std::nothrow) double* [npsp]();
+    core_ae = new (std::nothrow) double* [npsp]();
+    core_ps = new (std::nothrow) double* [npsp]();
+    core_ae_prime = new (std::nothrow) double* [npsp]();
+    core_ps_prime = new (std::nothrow) double* [npsp]();
+
+    log_amesh = new (std::nothrow) double [npsp]();
+    r1        = new (std::nothrow) double [npsp]();
+    rmax      = new (std::nothrow) double [npsp]();
+    sigma     = new (std::nothrow) double [npsp]();
+    zion      = new (std::nothrow) double [npsp]();
+    core_kin  = new (std::nothrow) double [npsp]();
+    core_ion  = new (std::nothrow) double [npsp]();
+
+    n1dgrid   = new (std::nothrow) int [npsp]();
+    n1dbasis  = new (std::nothrow) int [npsp]();
+    icut      = new (std::nothrow) int [npsp]();
+    nae       = new (std::nothrow) int* [npsp]();
+    nps       = new (std::nothrow) int* [npsp]();
+    lps       = new (std::nothrow) int* [npsp]();
+
     for (ia=0; ia<npsp; ++ia)
     {
         strcpy(fname,myion->atom(ia));
@@ -802,20 +1186,35 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                          comment[ia],&psp_type[ia],&version,nfft,unita,aname,
                          &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                          &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
-                         &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
+                         &b_ptr,&G_ptr,&rlocal[ia],&semicore[ia],&rcore[ia],
                          &ncore_ptr,vl[ia],vlpaw[ia],&vnl_ptr,
-                         &hartree_matrix_ptr,
-                         &comp_charge_matrix_ptr,
-                         &comp_pot_matrix_ptr);
+                         &log_amesh[ia],&r1[ia],&rmax[ia],&sigma[ia],&zion[ia],
+                         &n1dgrid[ia],&n1dbasis[ia],
+                         &nae_ptr,&nps_ptr,&lps_ptr,
+                         &icut[ia],
+                         &eig_ptr,&phi_ae_ptr,&dphi_ae_ptr,&phi_ps_ptr,&dphi_ps_ptr, 
+                         &core_ae_ptr,&core_ps_ptr,&core_ae_prime_ptr,&core_ps_prime_ptr,
+                         &rgrid_ptr,
+                         &core_kin[ia],&core_ion[ia],
+                         &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr);
+
 
             // writing .vpp file to fname
             vpp_write(mypneb,
                       fname,
                       comment[ia],psp_type[ia],version,nfft,unita,aname,
                       amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
-                      rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,semicore[ia],rcore[ia],
-                      ncore_ptr,vl[ia],vnl_ptr);
-
+                      rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,rlocal[ia],semicore[ia],rcore[ia],
+                      ncore_ptr,vl[ia],vnl_ptr,
+                         log_amesh[ia],r1[ia],rmax[ia],sigma[ia],zion[ia],
+                         n1dgrid[ia],n1dbasis[ia],
+                         nae_ptr,nps_ptr,lps_ptr,
+                         icut[ia],
+                         eig_ptr,phi_ae_ptr,dphi_ae_ptr,phi_ps_ptr,dphi_ps_ptr,
+                         core_ae_ptr,core_ps_ptr,core_ae_prime_ptr,core_ps_prime_ptr,
+                         rgrid_ptr,
+                         core_kin[ia],core_ion[ia],
+                         hartree_matrix_ptr,comp_charge_matrix_ptr,comp_pot_matrix_ptr);
         }
         else
         {
@@ -824,8 +1223,18 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                      comment[ia],&psp_type[ia],&version,nfft,unita,aname,
                      &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                      &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
-                     &b_ptr,&G_ptr,&semicore[ia],&rcore[ia],
-                     &ncore_ptr,vl[ia],&vnl_ptr);
+                     &b_ptr,&G_ptr,&rlocal[ia],&semicore[ia],&rcore[ia],
+                     &ncore_ptr,vl[ia],&vnl_ptr,
+                     &log_amesh[ia],&r1[ia],&rmax[ia],&sigma[ia],&zion[ia],
+                     &n1dgrid[ia],&n1dbasis[ia],
+                     &nae_ptr,&nps_ptr,&lps_ptr,
+                     &icut[ia],
+                     &eig_ptr,&phi_ae_ptr,&dphi_ae_ptr,&phi_ps_ptr,&dphi_ps_ptr,
+                     &core_ae_ptr,&core_ps_ptr,&core_ae_prime_ptr,&core_ps_prime_ptr,
+                     &rgrid_ptr,
+                     &core_kin[ia],&core_ion[ia],
+                     &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr);
+
         }
         /*
           std::cout << "vpp_read Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
@@ -858,6 +1267,25 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
             ncore_atom[ia] = ncore_ptr;
             ncore_sum[ia]  = semicore_check(mypneb,semicore[ia],rcore[ia],ncore_atom[ia]);
             semicore[npsp] = true;
+        }
+
+        if (psp_type[ia]==4) {
+           nae[ia] = nae_ptr;
+           nps[ia] = nps_ptr;
+           lps[ia] = lps_ptr;
+           eig[ia] = eig_ptr;
+           phi_ae[ia]         = phi_ae_ptr;
+           dphi_ae[ia]       = dphi_ae_ptr;
+           phi_ps[ia]        =  phi_ps_ptr;
+           dphi_ps[ia]       = dphi_ps_ptr,
+           core_ae[ia]       = core_ae_ptr;
+           core_ps[ia]       = core_ps_ptr;
+           core_ae_prime[ia] = core_ae_prime_ptr;
+           core_ps_prime[ia] = core_ps_prime_ptr;
+           rgrid[ia]         = rgrid_ptr;
+           hartree_matrix[ia]    = hartree_matrix_ptr;
+           comp_charge_matrix[ia] = comp_charge_matrix_ptr;
+           comp_pot_matrix[ia]   = comp_pot_matrix_ptr;
         }
     }
 
