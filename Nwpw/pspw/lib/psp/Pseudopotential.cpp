@@ -20,6 +20,7 @@
 
 namespace pwdft {
 
+
 /*******************************************
  *                                         *
  *              vpp_read_header            *
@@ -792,9 +793,6 @@ static void vpp_generate(PGrid *mygrid,
 
     *psp_type = vpp_get_psp_type(myparall, pspname);
 
-    //std::cout << "in vpp_generate, psp_type=" << *psp_type << std::endl;
-    //std::cout << "in vpp_generate" << std::endl;
-
     if ((*psp_type==0) || (*psp_type==9))
     {
 
@@ -846,7 +844,6 @@ static void vpp_generate(PGrid *mygrid,
         *Gijl = new (std::nothrow) double[nn]();
         for (auto l=0; l<nn; ++l)
         {
-            //std::cout << "in vpp_generate Hamann l=" << l << " norm=" << psp1d.vnlnrm[l] << std::endl;
             (*Gijl)[l] = psp1d.vnlnrm[l];
         }
 
@@ -916,7 +913,6 @@ static void vpp_generate(PGrid *mygrid,
         int nray = mygrid->n_ray();
         Psp1d_pawppv1 paw1d(myparall,pspname);
 
-        std::cout << "created paw1d" << std::endl;
         nfft[0] = mygrid->nx;
         nfft[1] = mygrid->ny;
         nfft[2] = mygrid->nz;
@@ -1035,7 +1031,6 @@ static void vpp_generate(PGrid *mygrid,
 
         paw1d.vpp_generate_ray(myparall,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray);
 
-        std::cout << "vpp_generate_ray finished" << std::endl;
 
         /* filter the ray formatted grids */
         double ecut = mygrid->lattice->ecut();
@@ -1052,8 +1047,6 @@ static void vpp_generate(PGrid *mygrid,
         /*  generate formatted grids using splines */
         paw1d.vpp_generate_spline(mygrid,nray,G_ray,vl_ray,vlpaw_ray,vnl_ray,vl,vlpaw,*vnl);
 
-        std::cout << "vpp_generate_spline finished" << std::endl;
-
 
         /* deallocate ray formatted grids */
         delete [] vnl_ray;
@@ -1065,6 +1058,7 @@ static void vpp_generate(PGrid *mygrid,
     {
         std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
     }
+
 }
 
 
@@ -1095,6 +1089,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     mystrfac = mystrfacin;
 
     myapc = new nwpw_apc(myion,mypneb,mystrfac,control);
+
+    psp_version = control.version;
 
     npsp = myion->nkatm;
     nprj_max = 0;
@@ -1206,15 +1202,15 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                       amass[ia],zv[ia],lmmax[ia],lmax[ia],locp[ia],nmax[ia],
                       rc_ptr,nprj[ia],n_ptr,l_ptr,m_ptr,b_ptr,G_ptr,rlocal[ia],semicore[ia],rcore[ia],
                       ncore_ptr,vl[ia],vnl_ptr,
-                         log_amesh[ia],r1[ia],rmax[ia],sigma[ia],zion[ia],
-                         n1dgrid[ia],n1dbasis[ia],
-                         nae_ptr,nps_ptr,lps_ptr,
-                         icut[ia],
-                         eig_ptr,phi_ae_ptr,dphi_ae_ptr,phi_ps_ptr,dphi_ps_ptr,
-                         core_ae_ptr,core_ps_ptr,core_ae_prime_ptr,core_ps_prime_ptr,
-                         rgrid_ptr,
-                         core_kin[ia],core_ion[ia],
-                         hartree_matrix_ptr,comp_charge_matrix_ptr,comp_pot_matrix_ptr);
+                      log_amesh[ia],r1[ia],rmax[ia],sigma[ia],zion[ia],
+                      n1dgrid[ia],n1dbasis[ia],
+                      nae_ptr,nps_ptr,lps_ptr,
+                      icut[ia],
+                      eig_ptr,phi_ae_ptr,dphi_ae_ptr,phi_ps_ptr,dphi_ps_ptr,
+                      core_ae_ptr,core_ps_ptr,core_ae_prime_ptr,core_ps_prime_ptr,
+                      rgrid_ptr,
+                      core_kin[ia],core_ion[ia],
+                      hartree_matrix_ptr,comp_charge_matrix_ptr,comp_pot_matrix_ptr);
         }
         else
         {
@@ -1236,22 +1232,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                      &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr);
 
         }
-        /*
-          std::cout << "vpp_read Gptr l= 0, norm=" << G_ptr[0] << std::endl;;
-          std::cout << "vpp_read Gptr l= 1, norm=" << G_ptr[1] << std::endl;;
-          std::cout << "vpp_read Gptr l= 2, norm=" << G_ptr[2] << std::endl;;
-          std::cout << "vpp_read vl[0] = " << vl[ia][0] << std::endl;
-          std::cout << "vpp_read vl[1] = " << vl[ia][1] << std::endl;
-          std::cout << "vpp_read vl[431] = " << vl[ia][431] << std::endl;
-          std::cout << "vpp_read vl[9431] = " << vl[ia][9431] << std::endl;
-          std::cout << "vpp_read vnl[0] = " << vnl_ptr[0] << std::endl;
-          std::cout << "vpp_read vnl[1] = " << vnl_ptr[1] << std::endl;
-          std::cout << "vpp_read vnl[431] = " << vnl_ptr[431] << std::endl;
-          std::cout << "vpp_read vnl[31+2*npack1] = " << vnl_ptr[31+2*mypneb->npack(1)] << std::endl;
-
-          std::cout << "VNLS = " << mypneb->tt_pack_dot(1,vnl_ptr,vnl_ptr) << std::endl;
-          std::cout << "VNLPX = " << mypneb->tt_pack_dot(1,&(vnl_ptr[mypneb->npack(1)]), &(vnl_ptr[mypneb->npack(1)]) ) << std::endl;
-        */
 
         rc[ia]          = rc_ptr;
         n_projector[ia] = n_ptr;
@@ -1274,7 +1254,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
            nps[ia] = nps_ptr;
            lps[ia] = lps_ptr;
            eig[ia] = eig_ptr;
-           phi_ae[ia]         = phi_ae_ptr;
+           phi_ae[ia]        = phi_ae_ptr;
            dphi_ae[ia]       = dphi_ae_ptr;
            phi_ps[ia]        =  phi_ps_ptr;
            dphi_ps[ia]       = dphi_ps_ptr,
@@ -1283,9 +1263,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
            core_ae_prime[ia] = core_ae_prime_ptr;
            core_ps_prime[ia] = core_ps_prime_ptr;
            rgrid[ia]         = rgrid_ptr;
-           hartree_matrix[ia]    = hartree_matrix_ptr;
+           hartree_matrix[ia]     = hartree_matrix_ptr;
            comp_charge_matrix[ia] = comp_charge_matrix_ptr;
-           comp_pot_matrix[ia]   = comp_pot_matrix_ptr;
+           comp_pot_matrix[ia]    = comp_pot_matrix_ptr;
         }
     }
 
@@ -1672,7 +1652,6 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                         sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
                         sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
                         sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
-                        //std::cout << ii << " " << n << " " << l << " " << sum[3*n] << " " << sum[3*n+1] << " " << sum[3*n+2] << "    SW2= " << sw2[n+l*nn] << std::endl;
                     }
                     parall->Vector_SumAll(1,3*nn,sum);
 
@@ -2200,4 +2179,74 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
     delete [] Gz;
 
 }
+
+/*******************************************
+ *                                         *
+ *      Pseudopotential::print_pspall      *
+ *                                         *
+ *******************************************/
+std::string Pseudopotential::print_pspall()
+{
+   std::stringstream stream;
+
+   ios init(NULL);
+   init.copyfmt(stream);
+
+   stream << std::endl 
+           << " elements involved in the cluster:" 
+           << std::endl;
+   for (int ia=0; ia<(myion->nkatm); ++ia)
+   {
+      if (psp_type[ia]==4)
+      {
+         stream << std::setw(7) << (ia+1) << ": "  << std::left << std::setw(4) << myion->atom(ia)  
+                << "valence charge :" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
+                << "  core charge :"  << std::fixed << std::setprecision(1) << std::setw(6) << zion[ia]-zv[ia] << std::endl;
+         stream.copyfmt(init);
+         stream << "             comment : " << comment[ia] << std::endl 
+                << "             pseudopotential type           :" << std::setw(10) << psp_type[ia] << std::endl 
+                << "             loggrid parameter r0           :" << std::scientific << std::setw(10) << std::setprecision(3) << r1[ia] << std::endl
+                << "             loggrid parameter rmax         :" << std::scientific << std::setw(10) << std::setprecision(3) << rmax[ia] << std::endl 
+                << "             loggrid parameter npoints      :" << std::setw(10) << n1dgrid[ia] << std::endl 
+                << "             augmentation sphere radius     :" << std::fixed << std::setw(10) << std::setprecision(3) << sphere_radius(ia) 
+                << " ( " << icut[ia] << " npoints " << icut[ia] << " per task)" << std::endl
+                << "             compensation sigma             :" << std::fixed << std::setw(10) << std::setprecision(3) << sigma[ia] << std::endl 
+                << "             total number of projectors     :" << std::setw(10) << nprj[ia] << std::endl;
+         if (psp_version==4)
+            stream << "             aperiodic cutoff radius         : " << std::fixed << std::setprecision(3) << std::setw(6) << rlocal[ia] << std::endl;
+         stream << "             n_ps (n) l          eig    #projector" << std::endl;
+         for (auto i=0; i<n1dbasis[ia]; ++i)
+            stream << std::setw(17) << nps[ia][i] << " (" << std::setw(1) << nae[ia][i] << ") " << std::setw(1) << spdf_name(lps[ia][i])
+                   << std::fixed << std::setw(13) << std::setprecision(6) << eig[ia][i]
+                   << std::setw(14) << 2*lps[ia][i] + 1 << std::endl;
+
+      }
+      else
+      {
+         stream << std::setw(7) << (ia+1) << ": "  << std::left << std::setw(4) << myion->atom(ia) 
+                << "valence charge :" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
+                << "  lmax=" << std::setw(1) << lmax[ia] << std::endl;
+         stream.copyfmt(init);
+         stream << "             comment : " << comment[ia] << std::endl 
+                << "             pseudopotential type            :" << std::setw(3) << psp_type[ia] << std::endl
+                << "             highest angular component       :" << std::setw(3) << lmax[ia]     << std::endl
+                << "             local potential used            :" << std::setw(3) << locp[ia]     << std::endl
+                << "             number of non-local projections :" << std::setw(3) << nprj[ia]     << std::endl;
+         if (psp_version==4)
+            stream << "             aperiodic cutoff radius         : " << std::fixed << std::setprecision(3) << std::setw(6) << rlocal[ia] << std::endl;
+         if (semicore[ia])
+            stream << "             semicore corrections inlcuded   : " << std::fixed << std::setprecision(3) << std::setw(6) << rcore[ia] << " (radius) " 
+                   << ncore(ia) << " (charge)"<< std::endl;
+         stream << "             cutoff = ";
+         for (auto l=0; l<=lmax[ia]; ++l)
+            stream << std::fixed << std::setprecision(3) << std::setw(8) << rc[ia][l];
+         stream << std::endl;
+      }
+   }
+
+   return stream.str();
+
+}
+
+
 }

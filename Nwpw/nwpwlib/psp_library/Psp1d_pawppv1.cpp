@@ -110,6 +110,7 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    FILE *fp;
    int nn;
 
+   memset(comment,0,80*sizeof(char));
 
    if (myparall->is_master())
    {
@@ -124,10 +125,15 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
       std::fscanf(fp,"%d",&nbasis);
       for (int l=0; l<nbasis; ++l)
          std::fscanf(fp,FMT1,&rc[l]);
-      std::fscanf(fp,"%d",&icut);
-      std::fscanf(fp,"%s",comment);
+      std::fscanf(fp,"%d\n",&icut);
+      //std::fscanf(fp,"%s",comment);
+      //std::fgets(comment,80,fp);
+      nn = 0;
+      char c;
+      while (((c=fgetc(fp)) != '\n') && (nn<80)) { comment[nn] = c; ++nn; } 
       std::fscanf(fp,FMT1,&core_kin_energy);
    }
+
 
    myparall->Brdcst_iValue(0,0,&psp_type);
    myparall->Brdcst_Values(0,0,1,&zv);
@@ -141,31 +147,35 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    myparall->Brdcst_cValues(0,0,80,comment);
    myparall->Brdcst_cValues(0,0,2,atom);
 
+   myparall->Brdcst_Values(0,0,1,&core_kin_energy);
+
+
    /* define rgrid */
-   log_amesh = log(rmax/r1)/((double) n1dgrid-1);
+   log_amesh = log(rmax/r1)/((double) (n1dgrid-1));
    amesh     = exp(log_amesh);
-   rgrid = (double *) new double[n1dgrid];
+   rgrid = new (std::nothrow) double [n1dgrid]();
    rgrid[0] = r1;
    for (auto i=1; i<n1dgrid; ++i)
       rgrid[i] = rgrid[i-1]*amesh;
 
    /* allocate rest of grid data */
-   nae = (int *) new int[nbasis];
-   nps = (int *) new int[nbasis];
-   lps = (int *) new int[nbasis];
-   eig           = (double *) new double[nbasis];
-   phi_ae        = (double *) new double[nbasis*n1dgrid];
-   dphi_ae       = (double *) new double[nbasis*n1dgrid];
-   phi_ps        = (double *) new double[nbasis*n1dgrid];
-   dphi_ps       = (double *) new double[nbasis*n1dgrid];
-   core_ae       = (double *) new double[n1dgrid];
-   core_ps       = (double *) new double[n1dgrid];
-   core_ae_prime = (double *) new double[n1dgrid];
-   core_ps_prime = (double *) new double[n1dgrid];
-   v_ps          = (double *) new double[n1dgrid];
-   prj_ps        = (double *) new double[nbasis*n1dgrid];
-   prj_ps0       = (double *) new double[nbasis*n1dgrid];
+   nae = new (std::nothrow) int [nbasis]();
+   nps = new (std::nothrow) int [nbasis]();
+   lps = new (std::nothrow) int [nbasis]();
+   eig           = new (std::nothrow) double [nbasis]();
+   phi_ae        = new (std::nothrow) double [nbasis*n1dgrid]();
+   dphi_ae       = new (std::nothrow) double [nbasis*n1dgrid]();
+   phi_ps        = new (std::nothrow) double [nbasis*n1dgrid]();
+   dphi_ps       = new (std::nothrow) double [nbasis*n1dgrid]();
+   core_ae       = new (std::nothrow) double [n1dgrid]();
+   core_ps       = new (std::nothrow) double [n1dgrid]();
+   core_ae_prime = new (std::nothrow) double [n1dgrid]();
+   core_ps_prime = new (std::nothrow) double [n1dgrid]();
+   v_ps          = new (std::nothrow) double [n1dgrid]();
+   prj_ps        = new (std::nothrow) double [nbasis*n1dgrid]();
+   prj_ps0       = new (std::nothrow) double [nbasis*n1dgrid]();
    
+
 
    if (myparall->is_master())
    {
@@ -247,7 +257,7 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    for (auto ii=0; ii<nbasis; ++ii)
    {
       auto l = lps[ii];
-      nprj += 2*l+1;
+      nprj += (2*l+1);
       if (l>lmax) lmax = l;
    }
 
@@ -263,19 +273,11 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
             nmax = nmaxl[l];
    }
 
-
-   // allocate Gijl,Sijl,Tijl,vcore,Vpseuo 
-   //Gijl               = new double[nmax*nmax*(lmax+1)];
-   //hartree_matrix     = new double[nbasis*nbasis*nbasis*nbasis*(2*lmax+1)];
-   //comp_charge_matrix = new double[nbasis*nbasis*(2*lmax+1)];
-   //comp_pot_matrix    = new double[nbasis*nbasis*(2*lmax+1)];
-
-
    // define n_prj,l_prj, and m_prj
-   n_prj = new int[nprj];
-   l_prj = new int[nprj];
-   m_prj = new int[nprj];
-   b_prj = new int[nprj];
+   n_prj = new (std::nothrow) int [nprj]();
+   l_prj = new (std::nothrow) int [nprj]();
+   m_prj = new (std::nothrow) int [nprj]();
+   b_prj = new (std::nothrow) int [nprj]();
 
    int lcount = 0;
    for (auto i=0; i<nbasis; ++i)
@@ -432,12 +434,13 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
    double forpi = 4.0*pi;
    double d,vgl,q;
    
-   double *f1 = new double[n1dgrid];
-   double *f2 = new double[n1dgrid];
-   double *f3 = new double[n1dgrid];
-   double *f4 = new double[n1dgrid];
+   double *f1 = new (std::nothrow) double[n1dgrid]();
+   double *f2 = new (std::nothrow) double[n1dgrid]();
+   double *f3 = new (std::nothrow) double[n1dgrid]();
+   double *f4 = new (std::nothrow) double[n1dgrid]();
 
    // **** comp_charge_matrix(nbasis,nbasis,0:2*lmax) ****
+   memset(comp_charge_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
    for (auto i=0; i<nbasis; ++i)
       for (auto j=0; j<=i; ++j)
       {
@@ -453,6 +456,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
       }
 
    // **** comp_pot_matrix(nbasis,nbasis,0:2*lmax) ****
+   memset(comp_pot_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
    for (auto l=0; l<(2*lmax+1); ++l)
    {
       int k1 = l+2;
@@ -725,7 +729,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
          d = util_log_multipole_energy(0,icut,rgrid,power_f,f1,2,f3,log_amesh);
          Gijl[matovlp(na,na,la,5,nmax,lmax)] += d;
 
-         for (auto j=0; j<i; ++i)
+         for (auto j=0; j<i; ++j)
          {
             int lb = lps[j];
             int nb = nps[j] - lb;
@@ -805,9 +809,9 @@ void Psp1d_pawppv1::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray
    
 
    double q;
-   double *cs = new double[n1dgrid];
-   double *sn = new double[n1dgrid];
-   double *f  = new double[n1dgrid];
+   double *cs = new (std::nothrow) double[n1dgrid]();
+   double *sn = new (std::nothrow) double[n1dgrid]();
+   double *f  = new (std::nothrow) double[n1dgrid]();
    double a,xx;
 
    memset(vl_ray,0,nray*sizeof(double));
@@ -944,10 +948,10 @@ void Psp1d_pawppv1::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray, 
    double pi    = 4.00*atan(1.0);
 
    /* allocate spline grids */
-   double *vl_splineray    = new double [nray];
-   double *vlpaw_splineray = new double [nray];
-   double *vnl_splineray   = new double [nbasis*nray];
-   double *tmp_splineray   = new double [nray];
+   double *vl_splineray    = new (std::nothrow) double [nray]();
+   double *vlpaw_splineray = new (std::nothrow) double [nray]();
+   double *vnl_splineray   = new (std::nothrow) double [nbasis*nray]();
+   double *tmp_splineray   = new (std::nothrow) double [nray]();
 
 
    /* setup cubic bsplines */

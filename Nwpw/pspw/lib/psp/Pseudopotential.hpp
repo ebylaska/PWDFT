@@ -33,6 +33,8 @@ class	Pseudopotential {
 public:
    nwpw_apc *myapc;
 
+   int psp_version = 3;
+
    bool *semicore;
    int npsp;
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
@@ -58,6 +60,7 @@ public:
 
    /* destructor */
    ~Pseudopotential() {
+      std::cout << "Destruct A" << std::endl;
       for (int ia=0; ia<npsp; ++ia)
       {
          delete [] vl[ia];
@@ -78,9 +81,9 @@ public:
 
          if (psp_type[ia]==4)
          {
-            delete [] nae;
-            delete [] nps;
-            delete [] lps;
+            delete [] nae[ia];
+            delete [] nps[ia];
+            delete [] lps[ia];
             delete [] eig[ia];
             delete [] phi_ae[ia];
             delete [] dphi_ae[ia];
@@ -154,9 +157,7 @@ public:
          //call nwpw_xc_end()
       }
 
-
       delete myapc;
-
       mypneb->r_dealloc(semicore_density);
     }
 
@@ -173,6 +174,25 @@ public:
     void f_local(double *, double *);
 
     double e_nonlocal(double *);
+
+    double sphere_radius(const int ia) { return rgrid[ia][icut[ia]-1]; }
+
+    std::string print_pspall();
+
+    char spdf_name(const int l) {
+       char name = '?';
+       if (l==0) name = 's';
+       if (l==1) name = 'p';
+       if (l==2) name = 'd';
+       if (l==3) name = 'f';
+       if (l==4) name = 'g';
+       if (l==5) name = 'h';
+       if (l==6) name = 'i';
+       if (l==7) name = 'j';
+       if (l==8) name = 'k';
+       if (l==9) name = 'l';
+       return name;
+    }
 
 };
  

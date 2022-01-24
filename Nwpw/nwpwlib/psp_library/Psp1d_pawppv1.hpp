@@ -46,7 +46,6 @@ public:
 
    /* destructor */
    ~Psp1d_pawppv1() {
-      delete [] rgrid;
       delete [] nae;
       delete [] nps;
       delete [] lps;
