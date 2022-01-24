@@ -63,6 +63,8 @@ class Control2 {
 
 public:
 
+   int version = 3;
+
    /* constructor */
    Control2(const int, const string);
 

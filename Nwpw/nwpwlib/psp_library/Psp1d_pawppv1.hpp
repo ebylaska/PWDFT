@@ -14,7 +14,7 @@ public:
    int version,psp_type,n1dgrid,nmax,lmax,nbasis,nprj,icut,locp;
    double rlocal,amass,zv,zion,r1,rmax,sigma,log_amesh,amesh;
 
-   double rc[10],core_kin_energy;
+   double rc[10],core_kin_energy,core_ion_energy;
    char atom[2];
    char comment[80];
 
@@ -38,18 +38,6 @@ public:
    double *prj_ps0;
   
 
-   /* comp_charge_matrix(nbasis,nbasis,0:2*lmax) */
-   double *comp_charge_matrix;
-
-   /* comp_pot_matrix(nbasis,nbasis,0:2*lmax) */
-   double *comp_pot_matrix;
-
-   /* hartree_matrix(nbasis,nbasis,nbasis,nbasis,0:2*lmax) */
-   double *hartree_matrix;
-
-   /* 1-electron psp operators - Normalization constants */
-   double *Gijl;
-
    int    *n_prj, *l_prj, *m_prj, *b_prj;
 
 
@@ -58,7 +46,6 @@ public:
 
    /* destructor */
    ~Psp1d_pawppv1() {
-      delete [] rgrid;
       delete [] nae;
       delete [] nps;
       delete [] lps;
@@ -77,10 +64,6 @@ public:
       delete [] prj_ps;
       delete [] prj_ps0;
 
-      delete [] comp_charge_matrix;
-      delete [] comp_pot_matrix;
-      delete [] hartree_matrix;
-      delete [] Gijl;
       if (nprj>0)
       {
          delete [] n_prj;
@@ -91,6 +74,7 @@ public:
     }
 
    /* G integration routines */
+   void vpp_generate_paw_matrices(Parallel *, double *, double *, double *, double *);
    void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
    void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
 

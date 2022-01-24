@@ -23,7 +23,6 @@ class	Pseudopotential {
    double **vl;
    double **vlpaw;
    double **vnl;
-   double *rlocal;
    double *amass;
 
    //char **atomsym;
@@ -34,13 +33,15 @@ class	Pseudopotential {
 public:
    nwpw_apc *myapc;
 
+   int psp_version = 3;
+
    bool *semicore;
    int npsp;
    int *nprj,*lmax,*lmmax,*locp,*nmax,*psp_type;
 
    int **n_projector,**l_projector,**m_projector,**b_projector;
    double **rc;
-   double *zv,*rcore,*ncore_sum;
+   double *zv,*rlocal,*rcore,*ncore_sum;
    double *semicore_density;
    char **comment;
 
@@ -51,7 +52,7 @@ public:
    double **core_ae,**core_ps,**core_ae_prime,**core_ps_prime;
 
    double *log_amesh,*r1,*rmax,*sigma,*zion,*core_kin,*core_ion;
-   int    *n1dgrid,*n1dbasis,*nae,*nps,*lps,*icut;
+   int    *n1dgrid,*n1dbasis,**nae,**nps,**lps,*icut;
 
 
    /* Constructors */
@@ -59,6 +60,7 @@ public:
 
    /* destructor */
    ~Pseudopotential() {
+      std::cout << "Destruct A" << std::endl;
       for (int ia=0; ia<npsp; ++ia)
       {
          delete [] vl[ia];
@@ -79,19 +81,23 @@ public:
 
          if (psp_type[ia]==4)
          {
-            //delete [] hartree_matrix[ia];
-            //delete [] comp_charge_matrix[ia];
-            //delete [] comp_pot_matrix[ia];
-            //delete [] eig[ia];
-            //delete [] phi_ae[ia];
-            //delete [] dphi_ae[ia];
-            //delete [] phi_ps[ia];
-            //delete [] dphi_ps[ia];
-            //delete [] core_ae[ia];
-            //delete [] core_ps[ia];
-            //delete [] core_ae_prime[ia];
-            //delete [] core_ps_prime[ia];
-            //delete [] rgrid[ia];
+            delete [] nae[ia];
+            delete [] nps[ia];
+            delete [] lps[ia];
+            delete [] eig[ia];
+            delete [] phi_ae[ia];
+            delete [] dphi_ae[ia];
+            delete [] phi_ps[ia];
+            delete [] dphi_ps[ia];
+            delete [] core_ae[ia];
+            delete [] core_ps[ia];
+            delete [] core_ae_prime[ia];
+            delete [] core_ps_prime[ia];
+            delete [] rgrid[ia];
+
+            delete [] hartree_matrix[ia];
+            delete [] comp_charge_matrix[ia];
+            delete [] comp_pot_matrix[ia];
          }
 
       }
@@ -109,38 +115,41 @@ public:
       delete [] l_projector;
       delete [] m_projector;
       delete [] b_projector;
+      delete [] rlocal;
       delete [] semicore;
       delete [] rcore;
       delete [] ncore_sum;
       delete [] rc;
 
-      //delete [] hartree_matrix;
-      //delete [] comp_charge_matrix;
-      //delete [] comp_pot_matrix;
-      //delete [] vlpaw;
-      //delete [] log_amesh; 
-      //delete [] r1;
-      //delete [] rmax;
-      //delete [] sigma;
-      //delete [] zion;
-      //delete [] core_kin;
-      //delete [] core_ion;
-      //delete [] n1dgrid;
-      //delete [] n1dbasis;
-      //delete [] nae;
-      //delete [] nps;
-      //delete [] lps;
-      //delete [] icut;
-      //delete [] eig;
-      //delete [] phi_ae;
-      //delete [] dphi_ae;
-      //delete [] phi_ps;
-      //delete [] dphi_ps;
-      //delete [] core_ae;
-      //delete [] core_ps;
-      //delete [] core_ae_prime;
-      //delete [] core_ps_prime;
-      //delete [] rgrid;
+      // *** paw data ***
+      delete [] hartree_matrix;
+      delete [] comp_charge_matrix;
+      delete [] comp_pot_matrix;
+      delete [] vlpaw;
+
+      delete [] log_amesh; 
+      delete [] r1;
+      delete [] rmax;
+      delete [] sigma;
+      delete [] zion;
+      delete [] core_kin;
+      delete [] core_ion;
+      delete [] n1dgrid;
+      delete [] n1dbasis;
+      delete [] nae;
+      delete [] nps;
+      delete [] lps;
+      delete [] icut;
+      delete [] eig;
+      delete [] phi_ae;
+      delete [] dphi_ae;
+      delete [] phi_ps;
+      delete [] dphi_ps;
+      delete [] core_ae;
+      delete [] core_ps;
+      delete [] core_ae_prime;
+      delete [] core_ps_prime;
+      delete [] rgrid;
 
       if (pawexist) 
       {
@@ -148,9 +157,7 @@ public:
          //call nwpw_xc_end()
       }
 
-
       delete myapc;
-
       mypneb->r_dealloc(semicore_density);
     }
 
@@ -167,6 +174,25 @@ public:
     void f_local(double *, double *);
 
     double e_nonlocal(double *);
+
+    double sphere_radius(const int ia) { return rgrid[ia][icut[ia]-1]; }
+
+    std::string print_pspall();
+
+    char spdf_name(const int l) {
+       char name = '?';
+       if (l==0) name = 's';
+       if (l==1) name = 'p';
+       if (l==2) name = 'd';
+       if (l==3) name = 'f';
+       if (l==4) name = 'g';
+       if (l==5) name = 'h';
+       if (l==6) name = 'i';
+       if (l==7) name = 'j';
+       if (l==8) name = 'k';
+       if (l==9) name = 'l';
+       return name;
+    }
 
 };
  

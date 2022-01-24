@@ -197,7 +197,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
       cout << "\n options:\n";
       cout << "   boundary conditions  = ";
-      cout << "periodic\n";
+      if (control.version==3) cout << "periodic\n";
+      if (control.version==4) cout << "aperiodic\n";
 
       cout << "   electron spin        = ";
       if (ispin==1)
@@ -206,23 +207,24 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          cout << "unrestricted\n";
       cout << myxc;
   
-      cout << "\n elements involved in the cluster:\n";
-      for (ia=0; ia<myion.nkatm; ++ia)
-      {
-         printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
-                 ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
-         printf("           comment : %s\n",mypsp.comment[ia]);
-         printf("           pseudopotential type            : %3d\n",mypsp.psp_type[ia]);
-         printf("           highest angular component       : %3d\n",mypsp.lmax[ia]);
-         printf("           local potential used            : %3d\n",mypsp.locp[ia]);
-         printf("           number of non-local projections : %3d\n",mypsp.nprj[ia]);
-         if (mypsp.semicore[ia])
-            printf("           semicore corrections included   : %6.3lf (radius) %6.3lf (charge)\n",mypsp.rcore[ia],mypsp.ncore(ia));
-         printf("           cutoff = ");
-         for (ii=0; ii<=mypsp.lmax[ia]; ++ii)
-            printf("%8.3lf",mypsp.rc[ia][ii]);
-         printf("\n");
-      }
+      //cout << "\n elements involved in the cluster:\n";
+      //for (ia=0; ia<myion.nkatm; ++ia)
+      //{
+      //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
+      //           ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
+      //   printf("           comment : %s\n",mypsp.comment[ia]);
+      //   printf("           pseudopotential type            : %3d\n",mypsp.psp_type[ia]);
+      //   printf("           highest angular component       : %3d\n",mypsp.lmax[ia]);
+      //   printf("           local potential used            : %3d\n",mypsp.locp[ia]);
+      //   printf("           number of non-local projections : %3d\n",mypsp.nprj[ia]);
+      //   if (mypsp.semicore[ia])
+      //      printf("           semicore corrections included   : %6.3lf (radius) %6.3lf (charge)\n",mypsp.rcore[ia],mypsp.ncore(ia));
+      //   printf("           cutoff = ");
+      //   for (ii=0; ii<=mypsp.lmax[ia]; ++ii)
+      //      printf("%8.3lf",mypsp.rc[ia][ii]);
+      //   printf("\n");
+      //}
+      cout << mypsp.print_pspall();
 
       cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
