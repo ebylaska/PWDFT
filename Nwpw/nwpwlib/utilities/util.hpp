@@ -57,9 +57,14 @@ extern double util_splint(double *, double *, double *, int, int, double);
 
 extern void util_filter(int, double *, double, double *);
 
+extern double util_ln_gamma(const double);
+extern double util_gamma(const double);
+extern double util_gser(const double, const double);
+extern double util_gcf(const double, const double);
+extern double util_gammp(const double, const double);
+
+
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
-
-
 
 //#define _MATPRINT_
 #ifdef _MATPRINT_
