@@ -23,6 +23,8 @@ public:
 
    /* Gaunt routines */
    double gaunt(const int, const int, const int, const int, const int, const int);
+   double gaunt2(const int, const int, const int, const int, const int, const int);
+   double gaunt3(const int, const int, const int, const int, const int, const int);
 };
 
 }
