@@ -630,7 +630,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    double a,xx;
 
    memset(vl_ray,0,nray*sizeof(double));
-   memset(vnl_ray,0,lmaxnray*nray*sizeof(double));
+   memset(vnl_ray,0,lmaxnray*sizeof(double));
    memset(rho_sc_k_ray,0,nray2*sizeof(double));
 
    for (auto k1=(1+myparall->taskid()); k1<nray; k1+=myparall->np())
