@@ -104,6 +104,7 @@ static double gaunt_sub_cmplx(const int l1, const int m1, const int l2, const in
 */
 static double gaunt_sub_real(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3)
 {
+   double coeff;
    double pi = 4.0*atan(1.0);
    double twopi   = 2.00*pi;
    double fourpi  = 4.00*pi;
@@ -239,11 +240,10 @@ double Paw_gaunt::gaunt(const int l1, const int m1, const int l2, const int m2, 
       int j = l2*l2 + (l2+m2);
       int k = l3*l3 + (l3+m3);
       int indx = i + j*gaunt_sizel2 + k*gaunt_sizel2*nwpw_gaunt_sizel2;
-      gg = dbl_mb(nwpw_gaunt_coeff(ic,1)+indx)
+      gg = gaunt_coeff[indx];
    }
    return gg;
 }
-
 
 
 /*******************************************
@@ -282,137 +282,96 @@ double Paw_gaunt::gaunt(const int l1, const int m1, const int l2, const int m2, 
 */
 double Paw_gaunt::gaunt2(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3)
 {
+   double coeff;
+   double pi = 4.0*datan(1.0);
+   double twopi   = 2.0*pi;
+   double fourpi  = 4.0*pi;
+   double piover2 = pi/2.0;
 
-      logical iscmplx
-      integer l1,l2,l3
-      integer m1,m2,m3
-      integer i
-      integer order
-      real*8  x1,x2
-     
-*     *** local variables ****
-      double precision pi
-      double precision piover2,twopi,fourpi
-c      parameter(pi = 3.14159265358979323846264338327950288419d0)
-c      parameter(piover2= pi*0.5d0)
-c      parameter(twopi  = pi*2.0d0)
-c      parameter(fourpi = pi*4.0d0)
+   // **** Error Checking ****
+   if ((l1<0) || (l2<0) || (l3<0))
+      std::cout << "Invalid parameter in gaunt2, negative l" << std::endl;
 
-c     work arrays for integration
-      double precision x(100),w(100),coeff
+   if ((l1<abs(m1)) || (l2<abs(m2)) || (l3<abs(m3)))
+      std::cout  << "Invalid parameter in gaunt2, m > l" << std::endl;
 
-      logical tp,tm
-      integer mm(3),newn,n,itmp
-      real*8   rtheta_lm,rtheta2_lm,ytheta_lm,ytheta2_lm
-      external rtheta_lm,rtheta2_lm,ytheta_lm,ytheta2_lm
-
-      pi = 4.0d0*datan(1.0d0)
-      twopi   = 2.0d0*pi
-      fourpi  = 4.0d0*pi
-      piover2 = pi/2.0d0
-
-      !**** Error Checking ****
-      if (l1.lt.0 .or. l2.lt.0 .or. l3.lt.0) 
-     > write(*,*)'Invalid parameter in nwpw_gaunt2, negative l'
-
-      If (l1.lt.(abs(m1)+1).or.l2.lt.(abs(m2)+1).or.l3.lt.abs(m3)) then
-        nwpw_gaunt2 = 0.0d0
-        return
-      end if
-
-      !**** Do integration over angle phi ****
-      if (iscmplx) then
-         if ((-m1) + m2 - m3 .ne. 0) then
-            nwpw_gaunt2 = 0.0d0
-            return 
-         else
-           coeff = twopi
-         endif
+   // **** Do integration over angle phi ****
+   if (gaunt_iscmplx)
+   {  
+      if (((-m1) + m2 - m3) !=  0)
+         return 0.0;
       else
-         mm(1) = m1
-         mm(2) = m2
-         mm(3) = m3
-         n = 3
-         do while (n>1) 
-            newn = 0
-            do i=1,n-1
-               if (mm(i).lt.mm(i+1)) then
-                  itmp    = mm(i) 
-                  mm(i)   = mm(i+1)
-                  mm(i+1) = itmp
-                  newn    = i
-               end if
-            end do
-            n = newn
-         end do
-         tp = (abs(mm(1)).eq.(abs(mm(2))+abs(mm(3))) )
-         tm = (abs(mm(1)).eq.abs((abs(mm(2))-abs(mm(3)))) )
+         coeff = twopi;
+   }
+   else
+   {
+      int mm[3] = {m1,m2,m3};
+      int n=3;
+      while (n>1)
+      {
+         int newn = 0
+         for (auto i=1; i<n; ++i)
+         {
+            if (mm[i-1] < mm[i])
+            {
+               int itmp = mm[i-1];
+               mm[i-1]  = mm[i];
+               mm[i]    = itmp;
+               newn     = i;
+            }
+         }
+         n = newn;
+      }
+      int tp = (abs(mm[0])==(abs(mm[1])+abs(mm[2])) );
+      int tm = (abs(mm[0])==abs((abs(mm[1])-abs(mm[2]))) );
 
-         if ((mm(1).gt.0).and.(mm(2).gt.0).and.(mm(3).gt.0).and.tp) then
-            coeff = piover2
-         else if ((mm(1).gt.0).and.(mm(2).gt.0)
-     >                        .and.(mm(3).eq.0).and.tp) then
-            coeff = pi
-         else if ((mm(1).gt.0).and.(mm(2).lt.0) 
-     >                        .and.(mm(3).lt.0).and.tp) then
-            coeff = -piover2
-         else if ((mm(1).gt.0).and.(mm(2).lt.0)
-     >                        .and.(mm(3).lt.0).and.tm) then
-            coeff = piover2
-         else if ((mm(1).eq.0).and.(mm(2).eq.0)
-     >                        .and.(mm(3).eq.0)) then
-            coeff = twopi
-         else if ((mm(1).eq.0).and.(mm(2).lt.0)
-     >                        .and.(mm(3).lt.0).and.(tm.or.tp)) then
-            coeff = pi
-         else
-            nwpw_gaunt2 = 0.0d0
-            return 
-         end if
-      endif
-
-      !**** Check the triangle rule ****
-      if (l3.gt.l1+l2 .or. l3.lt.abs(l1-l2)) then
-         nwpw_gaunt2 = 0.0d0
-         return 
-      endif
-
-      !**** Check if the integrand is odd function==>integral is zero ****
-      if (mod(l1 + l2 + l3,2) .eq. 1) then
-         nwpw_gaunt2 = 0.0d0
-         return 
-      endif
-
-      !**** hANDLE THE EXEPTIONAL CASE ****
-      if (l1.eq.0 .and. l2.eq.0 .and. l3.eq.0) then
-         nwpw_gaunt2 = 0.0d0
-         return 
-      endif
-      x1 = -1.0
-      x2 =  1.0
-      order = l1 + l2 + l3
-
-      !**** Generate weights and coordinates for Gauss-Legendre integration ****
-      CALL nwpw_gauss_weights(x1,x2,x,w,order)
-      nwpw_gaunt2 = 0.0d0
-      if (iscmplx) then
-         do i = 1, order
-            nwpw_gaunt2 = nwpw_gaunt2
-     >                 + w(i)*ytheta2_lm(l1,m1,x(i)) 
-     >                       *ytheta2_lm(l2,m2,x(i))
-     >                       *ytheta_lm(l3,m3,x(i))
-         end do
+      if ((mm[0]>0)       && (mm[1]>0)  && (mm[2]>0) && tp)
+         coeff = piover2;
+      else if ((mm[0]>0)  && (mm[1]>0)  && (mm[2]==0) && tp)
+         coeff = pi;
+      else if ((mm[0]>0)  && (mm[1]<0)  && (mm[2]<0) && tp)
+         coeff = -piover2;
+      else if ((mm[0]>0)  && (mm[1]<0)  && (mm[2]<0) && tm)
+         coeff = piover2;
+      else if ((mm[0]==0) && (mm[1]==0) && (mm[2]==0))
+         coeff = twopi;
+      else if ((mm[0]==0) && (mm[1]<0)  && (mm[2]<0) && (tm || tp))
+         coeff = pi;
       else
-         do i = 1, order
-            nwpw_gaunt2 = nwpw_gaunt2
-     >                 + w(i)*rtheta2_lm(l1,m1,x(i)) 
-     >                       *rtheta2_lm(l2,m2+1,x(i))
-     >                       *rtheta_lm(l3,m3,x(i))
-         end do
-      end if
+          return 0.0;
+   }
 
-      nwpw_gaunt2 = nwpw_gaunt2*coeff
+   // **** Check the triangle rule ****
+   if ((l3>(l1+l2)) || (l3<abs(l1-l2)))
+      return 0.0;
 
+   // **** Check if the integrand is odd function==>integral is zero ****
+    if (((l1 + l2 + l3)%2) ==1) 
+       return 0.0; 
+
+   // **** hANDLE THE EXEPTIONAL CASE ****
+   if ((l1==0) && (l2==0) && (l3==0))
+      return 0.0;
+      
+   double x1 = -1.0;
+   double x2 =  1.0;
+   int order = l1 + l2 + l3;
+   double x[order], w[order];
+
+   // **** Generate weights and coordinates for Gauss-Legendre integration ****
+   util_gauss_weights(x1,x2,x,w,order);
+   double gg = 0.0;
+   if (gaunt_iscmplx)
+      for (auto i=0; i<order; ++i)
+         gg += w[i]*util_ytheta2_lm(l1,m1,x[i]) 
+                   *util_ytheta2_lm(l2,m2,x[i])
+                   *util_ytheta_lm(l3,m3,x[i]);
+   else
+      for (auto i=0; i<order; ++i)
+         gg += w[i]*util_rtheta2_lm(l1,m1,x[i]) 
+                   *util_rtheta2_lm(l2,m2+1,x[i])
+                   *util_rtheta_lm(l3,m3,x[i]);
+   return (gg*coeff);
 }
 
 
@@ -454,136 +413,90 @@ c     work arrays for integration
 
 double Paw_gaunt::gaunt3(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3)
 {
-      implicit none
-      logical iscmplx
-      integer l1,l2,l3
-      integer m1,m2,m3
-      integer i
-      integer order
-      real*8  x1,x2
-     
-*     *** local variables ****
-      double precision pi
-      double precision piover2,twopi,fourpi
-c      parameter(pi = 3.14159265358979323846264338327950288419d0)
-c      parameter(piover2= pi*0.5d0)
-c      parameter(twopi  = pi*2.0d0)
-c      parameter(fourpi = pi*4.0d0)
+   double coeff;
+   double pi = 4.0*datan(1.0);
+   double twopi   = 2.0*pi;
+   double fourpi  = 4.0*pi;
+   double piover2 = pi/2.0;
 
-c     work arrays for integration
-      double precision x(100),w(100),coeff
+   // **** Error Checking ****
+   if ((l1<0) || (l2<0) || (l3<0))
+      std::cout << "Invalid parameter in gaunt3, negative l" << std::endl;
 
-      logical tp,tm
-      integer mm(3),newn,n,itmp
-      real*8   rtheta_lm,rtheta_lm_div,ytheta_lm,theta_lm_div
-      external rtheta_lm,rtheta_lm_div,ytheta_lm,theta_lm_div
+   if ((l1<abs(m1)) || (l2<abs(m2)) || (l3<abs(m3)))
+      std::cout  << "Invalid parameter in gaunt3, m > l" << std::endl;
 
-      pi = 4.0d0*datan(1.0d0)
-      twopi   = 2.0d0*pi
-      fourpi  = 4.0d0*pi
-      piover2 = pi/2.0d0
 
-      !**** Error Checking ****
-      if (l1.lt.0 .or. l2.lt.0 .or. l3.lt.0) 
-     > write(*,*)'Invalid parameter in nwpw_gaunt3, negative l'
-      If (l1.lt.abs(m1) .or. l3.lt.abs(m3) .or. l2.lt.abs(m2))
-     1 write(*,*) 'Invalid parameter in nwpw_gaunt3, m > l'
-
-      !**** Do integration over angle phi ****
-      if (iscmplx) then
-         if ((-m1) + m2 - m3 .ne. 0) then
-            nwpw_gaunt3 = 0.0d0
-            return 
-         else
-           coeff = twopi
-         endif
+   // **** Do integration over angle phi ****
+   if (gaunt_iscmplx)
+   {
+      if (((-m1) + m2 - m3) !=  0)
+         return 0.0;
       else
-         m1 = -m1
-         m2 = -m2
-         mm(1) = m1
-         mm(2) = m2
-         mm(3) = m3
-         n = 3
-         do while (n>1) 
-            newn = 0
-            do i=1,n-1
-               if (mm(i).lt.mm(i+1)) then
-                  itmp    = mm(i) 
-                  mm(i)   = mm(i+1)
-                  mm(i+1) = itmp
-                  newn    = i
-               end if
-            end do
-            n = newn
-         end do
-         tp = (abs(mm(1)).eq.(abs(mm(2))+abs(mm(3))) )
-         tm = (abs(mm(1)).eq.abs((abs(mm(2))-abs(mm(3)))) )
+         coeff = twopi;
+   }
+   else
+   {
+      int mm[3] = {-m1,-m2,m3};
+      int n=3;
+      while (n>1)
+      {
+         int newn = 0
+         for (auto i=1; i<n; ++i)
+         {
+            if (mm[i-1] < mm[i])
+            {
+               int itmp = mm[i-1];
+               mm[i-1]  = mm[i];
+               mm[i]    = itmp;
+               newn     = i;
+            }
+         }
+         n = newn;
+      }
+      int tp = (abs(mm[0])==(abs(mm[1])+abs(mm[2])) );
+      int tm = (abs(mm[0])==abs((abs(mm[1])-abs(mm[2]))) );
 
-         if ((mm(1).gt.0).and.(mm(2).gt.0).and.(mm(3).gt.0).and.tp) then
-            coeff = piover2
-         else if ((mm(1).gt.0).and.(mm(2).gt.0)
-     >                        .and.(mm(3).eq.0).and.tp) then
-            coeff = pi
-         else if ((mm(1).gt.0).and.(mm(2).lt.0) 
-     >                        .and.(mm(3).lt.0).and.tp) then
-            coeff = -piover2
-         else if ((mm(1).gt.0).and.(mm(2).lt.0)
-     >                        .and.(mm(3).lt.0).and.tm) then
-            coeff = piover2
-         else if ((mm(1).eq.0).and.(mm(2).eq.0)
-     >                        .and.(mm(3).eq.0)) then
-            coeff = twopi
-         else if ((mm(1).eq.0).and.(mm(2).lt.0)
-     >                        .and.(mm(3).lt.0).and.(tm.or.tp)) then
-            coeff = pi
-         else
-            nwpw_gaunt3 = 0.0d0
-            return 
-         end if
-      endif
-
-c      !**** Check the triangle rule ****
-c      if (l3.gt.l1+l2 .or. l3.lt.abs(l1-l2)) then
-c         nwpw_gaunt3 = 0.0d0
-c         return 
-c      endif
-
-c      !**** Check if the integrand is odd function==>integral is zero ****
-c      if (mod(l1 + l2 + l3,2) .eq. 1) then
-c         nwpw_gaunt3 = 0.0d0
-c         return 
-c      endif
-
-      !**** hANDLE THE EXEPTIONAL CASE ****
-      if (l1.eq.0 .and. l2.eq.0 .and. l3.eq.0) then
-         nwpw_gaunt3 = 0.0d0
-         return 
-      endif
-      x1 = -1.0
-      x2 =  1.0
-      order = l1 + l2 + l3
-
-      !**** Generate weights and coordinates for Gauss-Legendre integration ****
-      CALL nwpw_gauss_weights(x1,x2,x,w,order)
-      nwpw_gaunt3 = 0.0d0
-      if (iscmplx) then
-         do i = 1, order
-            nwpw_gaunt3 = nwpw_gaunt3
-     >                 - w(i)*theta_lm_div(l1,m1,x(i)) * (m1)
-     >                       *theta_lm_div(l2,m2,x(i)) * (m2)
-     >                       *ytheta_lm(l3,m3,x(i))
-         end do
+      if ((mm[0]>0)       && (mm[1]>0)  && (mm[2]>0) && tp)
+         coeff = piover2;
+      else if ((mm[0]>0)  && (mm[1]>0)  && (mm[2]==0) && tp)
+         coeff = pi;
+      else if ((mm[0]>0)  && (mm[1]<0)  && (mm[2]<0) && tp)
+         coeff = -piover2;
+      else if ((mm[0]>0)  && (mm[1]<0)  && (mm[2]<0) && tm)
+         coeff = piover2;
+      else if ((mm[0]==0) && (mm[1]==0) && (mm[2]==0))
+         coeff = twopi;
+      else if ((mm[0]==0) && (mm[1]<0)  && (mm[2]<0) && (tm || tp))
+         coeff = pi;
       else
-         do i = 1, order
-            nwpw_gaunt3 = nwpw_gaunt3
-     >                 + w(i)*rtheta_lm_div(l1,-m1,x(i)) * (m1)
-     >                       *rtheta_lm_div(l2,-m2,x(i)) * (m2)
-     >                       *rtheta_lm(l3,m3,x(i))
-         end do
-      end if
+          return 0.0;
+   }
 
-      nwpw_gaunt3 = nwpw_gaunt3*coeff
+   // **** hANDLE THE EXEPTIONAL CASE ****
+   if ((l1==0) && (l2==0) && (l3==0))
+      return 0.0;
 
+   double x1 = -1.0;
+   double x2 =  1.0;
+   int order = l1 + l2 + l3;
+   double x[order], w[order];
+
+   // **** Generate weights and coordinates for Gauss-Legendre integration ****
+   util_gauss_weights(x1,x2,x,w,order);
+
+   double gg = 0.0;
+   if (gaunt_iscmplx) 
+      for (auto i=0; i<order; ++i)
+         gg -= w[i]*util_theta_lm_div(l1,m1,x[i]) * (m1)
+                   *util_theta_lm_div(l2,m2,x[i]) * (m2)
+                   *util_ytheta_lm(l3,m3,x[i]);
+    else
+      for (auto i=0; i<order; ++i)
+         gg += w[i]*util_rtheta_lm_div(l1,-m1,x[i]) * (m1)
+                   *util_rtheta_lm_div(l2,-m2,x[i]) * (m2)
+                   *util_rtheta_lm(l3,m3,x[i]);
+   return (gg*coeff);
 }
 
 
