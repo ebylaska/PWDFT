@@ -751,6 +751,60 @@ double util_gammp(const double a, const double x)
    return gammp;
 }
 
+
+
+/*****************************************************
+ *                                                   *
+ *               util_gauss_weights                  *
+ *                                                   *
+ *****************************************************/
+void util_gauss_weights(const double x1, const double x2, 
+                        double x[], double w[], const int n)
+{
+   double pp,z1,z;
+   double eps = 3.0e-14;
+   double pi  = 4.0*atan(1.0);
+   double xm  = 0.5*(x2 + x1);
+   double xl  = 0.5*(x2 - x1);
+   int  m = (n+1)/2;
+
+   for (auto i=0; i<m; ++i)
+   {
+      //z    = cos(pi*(0-0.250)/(n+0.50));
+      z  = cos(pi*(i-1.250)/(n+0.50));
+
+      int  niter  = 0;
+      bool repeat = true;
+
+      while (repeat && (niter<1000000))
+      {
+         ++niter;
+       
+         double p1 = 1.00;
+         double p2 = 0.00;
+
+         for (auto j=1; j<=n; ++j)
+         {
+            double p3 = p2;
+            p2 = p1;
+            p1 = ((2.0*j-1.0)*z*p2 - (j-1.00)*p3)/((double) j);
+         }
+
+         pp = n*(z*p1-p2)/(z*z-1.0);
+         z1 = z;
+         z  = z1 - p1/pp;
+
+         if (abs(z-z1)<=eps) repeat = false;
+      }
+      if (niter>=1000000) std::cout << "cannot converge in gauss_weights" << std::endl;
+
+      x[i]     = xm - xl*z;
+      x[n-i-1] = xm + xl*z;
+      w[i]     = 2.0*xl/((1.0-z*z)*pp*pp);
+      w[n-i-1] = w[i];
+   }
+}
+
 #ifdef _MATPRINT_
 void util_matprint(std::string matlabel, int n, double *A) {
    std::cout << "util_matprint: " << matlabel << std::endl;
