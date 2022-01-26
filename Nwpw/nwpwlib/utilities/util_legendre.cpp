@@ -140,6 +140,120 @@ double util_rlegendre_lm(const int l, const int m, const double x)
 }
 
 
+/***********************************
+ *                                 *
+ *       util_rlegendre_lm_div     *
+ *                                 *
+ ***********************************/
+/*
+  Compute the associated legendre polynomial divided by sin(theta) w/o
+  a Condon-Shortley phase.
+*/
+double util_rlegendre_lm_div(const int l, const int m, const double x)
+{
+   double f;
+
+   // *** check the arguments ***
+   if ((m<0) || (m>l) || (abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in rlegendre_lm_div" << std::endl;
+
+   // *** P(1,1,x)/dsqrt(1-x**2) ***
+   double p_mm = 1.0;
+
+   // *** P(m,m,x)/dsqrt(1-x**2)            ***
+   // ***   = (2*m-1)*dsqrt(1-x**2)         ***
+   // ***     *(P(m-1,m-1,x)/dsqrt(1-x**2)) ***
+   double fact = 3.0;
+   double tmp  = sqrt((1.0-x)*(1.0+x));
+
+   for (auto i=2; i<=m; ++i)
+   {
+      p_mm *= fact*tmp;
+      fact += 2.0;
+   }
+
+   // *** find P(l,m) ***
+   if (m==l)
+      f = p_mm;
+   else
+   {
+      // *** find P(m+1,m) ***
+      double p_mp1m = x*(2*m+1)*p_mm;
+
+      if (l==(m+1)) 
+         f = p_mp1m;
+      else
+      {
+         for (auto i=(m+2); i<=l; ++i)
+         {
+            tmp = (x*(2*i-1)*p_mp1m - (i+m-1)*p_mm)/((double) (i-m));
+            p_mm = p_mp1m;
+            p_mp1m = tmp;
+         }
+         f = tmp;
+      }
+   }
+
+   return f;
+}
+
+
+
+/***********************************
+ *                                 *
+ *       util_legendre_lm_div      *
+ *                                 *
+ ***********************************/
+/*
+   Purpose : calculates associated Legendre
+             polynomial divided by sin(theta)
+             for a scalar argument
+*/
+double util_legendre_lm_div(const int l, const int m, const double x)
+{
+   double f;
+
+   // *** check the arguments ***
+   if ((m<0) || (m>l) || (abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in legendre_lm_div" << std::endl;
+
+   // *** P(1,1,x)/sqrt(1-x**2) ***
+   double p_mm = -1.0;
+
+   double fact = 3.0;
+   double tmp = sqrt((1.0-x)*(1.0+x));
+
+   for (auto i=2; i<=(m); ++i)
+   {
+      p_mm *= -fact*tmp;
+      fact +=  2.0;
+   }
+
+   // *** find P(l,m) ***
+   if (m==l)
+      f = p_mm;
+   else
+   {
+      // *** find P(m+1,m) ***
+      double  p_mp1m = x*(2*m+1)*p_mm;
+
+       if (l==(m+1)) 
+            f = p_mp1m;
+       else
+       {
+          for (auto i=(m+2); i<=l; ++i)
+          {
+             tmp = (x*(2*i-1)*p_mp1m - (i+m-1)*p_mm)/(i-m);
+             p_mm = p_mp1m;
+             p_mp1m = tmp;
+          }
+          f = tmp;
+       }
+   }
+   return f;
+}
+
+
+
+
 /*********************************************
  *                                           *
  *              util_theta_lm                *
@@ -327,6 +441,76 @@ double util_ytheta2_lm(const int l, const int m, const double cos_theta)
    if ((m<0) && (((mod_m+1)%2)==1)) f=-f;
 
    return (-f);
+}
+
+/*********************************************
+ *                                           *
+ *            util_rtheta_lm_div             *
+ *                                           *
+ *********************************************/
+/*
+*      Purpose : calculates rtheta_lm_div for a scalar cos_theta
+*                such that
+*                                                             {cos(|m|*phi)   m>0
+*      T_lm(cos_theta,phi)/sin_theta=rtheta_lm_div(cos_theta)*{1              m==0
+*                                                             {sin(|m|*phi)   m<0
+*/
+double util_rtheta_lm_div(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double twopi = 8.0*atan(1.0);
+
+   if (mod_m>l) std::cout << "parameter out of order in function rtheta_lm_div" << std::endl;
+
+   // *** find coefficient ***
+   if (mod_m==0)
+      coeff= 0.5;
+   else
+   {
+      coeff= 1.0;
+      for (auto i=1; i<(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+         
+   }
+   coeff *= (2*l+1)/twopi;
+   coeff = sqrt(coeff);
+
+   double f = coeff*util_rlegendre_lm_div(l,mod_m,cos_theta);
+   return f;
+}
+
+/*********************************************
+ *                                           *
+ *            util_ytheta_lm_div             *
+ *                                           *
+ *********************************************/
+/*
+   Purpose : calculates ytheta_lm/sin(theta)
+*/
+double util_ytheta_lm_div(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double fourpi = 16.0*atan(1.0);
+
+   if (m>l) std::cout << "parameter out of order in function theta_lm_div" << std::endl;
+
+   // *** find coefficient ***
+   if (mod_m==0) 
+      coeff = 1.0;
+   else 
+   {
+      coeff = 1.0;
+      for (auto i=1; i<=(2*mod_m); ++i) 
+         coeff /=  ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/fourpi;
+   coeff = sqrt(coeff);
+
+   double f = coeff*util_legendre_lm_div(l,mod_m,cos_theta);
+   if ((m<0) && ((mod_m%2)==1)) f = -f;
+   return f;
 }
 
 
