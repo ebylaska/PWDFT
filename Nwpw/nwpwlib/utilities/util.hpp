@@ -76,6 +76,9 @@ extern double util_rtheta_lm(const int, const int, const double);
 extern double util_ytheta2_lm(const int, const int, const double);
 extern double util_rtheta2_lm(const int, const int, const double);
 
+extern double util_theta_lm_div(const int, const int, const double);
+extern double util_ytheta_lm_div(const int, const int, const double);
+extern double util_rtheta_lm_div(const int, const int, const double);
 
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
 

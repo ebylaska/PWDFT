@@ -443,6 +443,44 @@ double util_ytheta2_lm(const int l, const int m, const double cos_theta)
    return (-f);
 }
 
+
+
+/*********************************************
+ *                                           *
+ *            util_theta_lm_div              *
+ *                                           *
+ *********************************************/
+/*
+    Purpose : calculates theta_lm/sin(theta)
+*/
+
+double util_theta_lm_div(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double fourpi = 16.0*atan(1.0);
+      
+   if ( m>l) std::cout << "parameter out of order in function theta_lm_div" << std::endl;
+           
+   // *** find coefficient ***
+   if (mod_m==0)
+      coeff = 1.0;
+   else
+   {
+      coeff = 1.0;
+      for (auto i=1; i<=(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/fourpi;
+   coeff = sqrt(coeff);
+
+   double f = coeff*util_legendre_lm_div(l,mod_m,cos_theta);
+   if ((m<0) && ((mod_m%2)==1)) f = -f;
+   return f;
+}
+
+
+
 /*********************************************
  *                                           *
  *            util_rtheta_lm_div             *

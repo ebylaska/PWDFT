@@ -73,8 +73,8 @@ static double gaunt_sub_cmplx(const int l1, const int m1, const int l2, const in
 
    int order = l1+l2+l3;
    double x[order],w[order];
-   double x1 = -1.0
-   double x2 =  1.0
+   double x1 = -1.0;
+   double x2 =  1.0;
 
    // **** Generate weights and coordinates for Gauss-Legendre integration ****
    util_gauss_weights(x1,x2,x,w,order);
@@ -121,7 +121,7 @@ static double gaunt_sub_real(const int l1, const int m1, const int l2, const int
    int n=3;
    while (n>1)
    {
-      int newn = 0
+      int newn = 0;
       for (auto i=1; i<n; ++i)
       {
          if (mm[i-1] < mm[i])
@@ -163,8 +163,8 @@ static double gaunt_sub_real(const int l1, const int m1, const int l2, const int
 
    int order = l1+l2+l3;
    double x[order],w[order];
-   double x1 = -1.0
-   double x2 =  1.0
+   double x1 = -1.0;
+   double x2 =  1.0;
 
    // **** Generate weights and coordinates for Gauss-Legendre integration ****
    util_gauss_weights(x1,x2,x,w,order);
@@ -186,8 +186,8 @@ static double gaunt_sub_real(const int l1, const int m1, const int l2, const int
  *******************************************/
 Paw_gaunt::Paw_gaunt(const bool iscmplx, const int lmax0)
 {
-   gaunt_iscmplx = iscmplx
-   gaunt_lmax    = lmax0
+   gaunt_iscmplx = iscmplx;
+   gaunt_lmax    = lmax0;
    int   sizel   = (gaunt_lmax+1);
 
    gaunt_sizel2 = sizel*sizel;
@@ -239,7 +239,7 @@ double Paw_gaunt::gaunt(const int l1, const int m1, const int l2, const int m2, 
       int i = l1*l1 + (l1+m1);
       int j = l2*l2 + (l2+m2);
       int k = l3*l3 + (l3+m3);
-      int indx = i + j*gaunt_sizel2 + k*gaunt_sizel2*nwpw_gaunt_sizel2;
+      int indx = i + j*gaunt_sizel2 + k*gaunt_sizel2*gaunt_sizel2;
       gg = gaunt_coeff[indx];
    }
    return gg;
@@ -283,7 +283,7 @@ double Paw_gaunt::gaunt(const int l1, const int m1, const int l2, const int m2, 
 double Paw_gaunt::gaunt2(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3)
 {
    double coeff;
-   double pi = 4.0*datan(1.0);
+   double pi = 4.0*atan(1.0);
    double twopi   = 2.0*pi;
    double fourpi  = 4.0*pi;
    double piover2 = pi/2.0;
@@ -309,7 +309,7 @@ double Paw_gaunt::gaunt2(const int l1, const int m1, const int l2, const int m2,
       int n=3;
       while (n>1)
       {
-         int newn = 0
+         int newn = 0;
          for (auto i=1; i<n; ++i)
          {
             if (mm[i-1] < mm[i])
@@ -414,7 +414,7 @@ double Paw_gaunt::gaunt2(const int l1, const int m1, const int l2, const int m2,
 double Paw_gaunt::gaunt3(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3)
 {
    double coeff;
-   double pi = 4.0*datan(1.0);
+   double pi = 4.0*atan(1.0);
    double twopi   = 2.0*pi;
    double fourpi  = 4.0*pi;
    double piover2 = pi/2.0;
@@ -441,7 +441,7 @@ double Paw_gaunt::gaunt3(const int l1, const int m1, const int l2, const int m2,
       int n=3;
       while (n>1)
       {
-         int newn = 0
+         int newn = 0;
          for (auto i=1; i<n; ++i)
          {
             if (mm[i-1] < mm[i])

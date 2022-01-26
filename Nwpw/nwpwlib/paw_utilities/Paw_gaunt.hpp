@@ -8,7 +8,7 @@ using namespace pwdft;
 class Paw_gaunt {
 
 public:
-   bool gaunt_iscmpx;
+   bool gaunt_iscmplx;
    int  gaunt_lmax;
    int  gaunt_sizel2;
    double *gaunt_coeff;
