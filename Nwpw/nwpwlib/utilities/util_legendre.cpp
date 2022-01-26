@@ -171,7 +171,7 @@ double util_theta_lm(const int l, const int m, const double cos_theta)
       for (auto i=1; i<=(2*mod_m); ++i)
           coeff /= ((double) (l-mod_m+i));
    }
-   coeff = coeff*(2*l+1)/fourpi;
+   coeff *= (2*l+1)/fourpi;
    coeff = sqrt(coeff);
    double f = coeff*util_legendre_lm(l,mod_m,cos_theta);
    if ((m<0) && ((mod_m%2)==1))
@@ -179,6 +179,156 @@ double util_theta_lm(const int l, const int m, const double cos_theta)
 
    return f;
 }
+
+/*********************************************
+ *                                           *
+ *              util_rtheta_lm               *
+ *                                           *
+ *********************************************/
+/*
+* 
+*      Purpose : calculates rtheta_lm for a scalar cos_theta
+*                such that
+*                                                   {cos(|m|*phi)   m>0
+*          T_lm(cos_theta,phi)=rtheta_lm(cos_theta)*{1              m==0
+*                                                   {sin(|m|*phi)   m<0
+*/
+
+double util_rtheta_lm(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m    = abs(m);
+   double twopi = 8.00*atan(1.0);
+
+   if (mod_m>l) std::cout << "parameter out of order in function rtheta_lm" << std::endl;
+
+   // *** find coefficient ***
+   if (mod_m==0)
+      coeff= 0.5;
+   else
+   {
+      coeff= 1.0;
+      for (auto i=1; i<=(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/twopi;
+   coeff = sqrt(coeff);
+   double f = coeff*util_rlegendre_lm(l,mod_m,cos_theta);
+
+   return f;
+}
+
+
+/*********************************************
+ *                                           *
+ *              util_ytheta_lm               *
+ *                                           *
+ *********************************************/
+/*
+*      Purpose : calculates ytheta_lm for a scalar cos_theta
+*                such that
+* 
+*          Y_lm(cos_theta,phi)=ytheta_lm(cos_theta)*exp(i*m*phi)
+*/
+double util_ytheta_lm(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double fourpi = 16.0*atan(1.0);
+
+   if (mod_m>l) std::cout << "parameter out of order in function ytheta_lm" << std::endl;
+
+   // *** find coefficient ***
+   if (mod_m==0) 
+      coeff= 1.0;
+   else
+   {
+      coeff= 1.0;
+      for (auto i=1; i<=(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/fourpi;
+   coeff = sqrt(coeff);
+   double f = coeff*util_legendre_lm(l,mod_m,cos_theta);
+   if ((m<0) && ((mod_m%2)==1)) f=-f;
+   return f;
+}
+
+
+/*********************************************
+ *                                           *
+ *              util_rtheta2_lm              *
+ *                                           *
+ *********************************************/
+/*
+*      Purpose : calculates rtheta2_lm for a scalar cos_theta
+*                such that
+*                                                            {cos(|m|*phi)   m>0
+*          dT_lm(cos_theta,phi)/dtheta=rtheta2_lm(cos_theta)*{1              m==0
+*                                                            {sin(|m|*phi)   m<0
+*/
+double util_rtheta2_lm(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double twopi = 8.0*atan(1.0);
+
+   if ((mod_m+1)>l) return 0.0;
+
+   // *** find coefficient ***
+   if (mod_m==0)
+      coeff= 0.5;
+   else
+   {
+      coeff= 1.00;
+      for (auto i=1; i<=(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/twopi;
+   coeff = sqrt(coeff);
+
+   double f = -coeff*util_rlegendre_lm(l,mod_m+1,cos_theta);
+   return f;
+}
+
+
+/*********************************************
+ *                                           *
+ *              util_ytheta2_lm              *
+ *                                           *
+ *********************************************/
+/*
+*      Purpose : calculates ytheta_lm for a scalar cos_theta
+*                such that
+* 
+*          dY_lm(cos_theta,phi)/dtheta=ytheta_lm(cos_theta)*exp(i*m*phi)
+*/
+double util_ytheta2_lm(const int l, const int m, const double cos_theta)
+{
+   double coeff;
+   int mod_m = abs(m);
+   double fourpi = 16.0*atan(1.0);
+
+   if ((mod_m+1)>l) return 0.0;
+
+   // *** find coefficient ***
+   if (mod_m==0)
+      coeff= 1.0;
+   else
+   {
+      coeff= 1.00;
+      for (auto i=1; i<=(2*mod_m); ++i)
+         coeff /= ((double) (l-mod_m+i));
+   }
+   coeff *= (2*l+1)/fourpi;
+   coeff = sqrt(coeff);
+
+   double f = coeff*util_legendre_lm(l,mod_m+1,cos_theta);
+   if ((m<0) && (((mod_m+1)%2)==1)) f=-f;
+
+   return (-f);
+}
+
 
 
 }

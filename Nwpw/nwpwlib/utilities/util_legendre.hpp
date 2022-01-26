@@ -7,5 +7,9 @@ using namespace pwdft;
 extern double util_legendre_lm(const int, const int, const double);
 extern double util_rlegendre_lm(const int, const int, const double);
 extern double util_theta_lm(const int, const int, const double);
+extern double util_ytheta_lm(const int, const int, const double);
+extern double util_rtheta_lm(const int, const int, const double);
+extern double util_ytheta2_lm(const int, const int, const double);
+extern double util_rtheta2_lm(const int, const int, const double);
 }
 #endif
