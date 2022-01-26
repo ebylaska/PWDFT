@@ -66,6 +66,10 @@ extern double util_gammp(const double, const double);
 extern void util_gauss_weights(const double, const double,
                                double *, double *, const int);
 
+extern double util_legendre_lm(const int, const int, const double);
+extern double util_rlegendre_lm(const int, const int, const double);
+extern double util_theta_lm(const int, const int, const double);
+
 
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
 
