@@ -80,6 +80,10 @@ extern double util_theta_lm_div(const int, const int, const double);
 extern double util_ytheta_lm_div(const int, const int, const double);
 extern double util_rtheta_lm_div(const int, const int, const double);
 
+extern double util_SpecialKummer(const int, const int, const double);
+extern double util_GaussBessel(const int, const int, const double, const double);
+extern double util_dGaussBessel(const int, const int, const double, const double);
+
 extern double util_linesearch(double, double (*)(double), double (*)(double), double, double, double, int);
 
 //#define _MATPRINT_

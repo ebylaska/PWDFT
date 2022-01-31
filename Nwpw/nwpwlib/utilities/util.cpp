@@ -471,6 +471,112 @@ double util_log_coulomb_energy(const double rho[],   const double charge,
 }
 
 
+/******************************************************
+ *                                                    *
+ *             util_SpecialKummer                     *
+ *                                                    *
+ ******************************************************/
+/*
+*     Calculates a special case of the Kummer confluent hypergeometric 
+*     function, M(n+1/2,l+3/2,z) for z .LE. 0
+*
+*     This function was created by  Marat Valiev, and  modified by Eric Bylaska.
+*     See Abramowitz and Stegun for the formulas used in this function.
+*/
+double util_SpecialKummer(const int n, const int l, const double z)
+{
+   double eps=1.0e-16;
+   double result=0.0;
+
+   //*** cannot handle positive z ***
+   if (z>0.0) std::cout << "util_SpecialKummer:invalid parameter, z>0" << std::endl;
+ 
+   //*** solution for z==0 ***
+   if (z==0.0) return(0.0);
+ 
+   //***** M(a,a+1,z) = a * (-z)**(-a) * igamma(a,-z) = a * (-z)**(-a) * P(a,-z) *Gamma(a)  where z is real and a = (n+0.5)  ****
+   if (n==l) 
+   {
+      result = util_gammp(n+0.50,(-z))*(n+0.50)*pow((-z),((-n)- 0.50))*util_gamma(n+0.50);
+      return  result;
+   }
+
+   //***** M(a,a,z) = exp(z)  where a = (n+0.5)  ****
+   else if (n==(l+1))
+   {
+      result = exp(z);
+      return result;
+   }
+
+   //*** do inifinite series for small z
+   if (abs(z)<=1.0)
+   {
+      result = 1.0;
+      double s = 1.0;
+      double a = n + 0.5;
+      double b = l + 1.5;
+      int i=1;
+      while ((i<10000)  && (abs(s)<eps))
+      {
+         s *= (a+i-1)*z/((b+i-1)*i);
+         result += s;
+         ++i;
+      }
+      if (i>10000) std::cout << "util_SpecialKummer:cannot converge" << std::endl;
+      return result;
+   }
+ 
+   if (n<l) 
+   {
+      //*** starting point n=l or b=a+1***
+      double a = n + 0.5;
+      double b = n + 1.5;
+ 
+      //*** m1 = M(a,b-1) ***
+      //*** m2 = M(a,b,z) ***
+      double  m1 = exp(z);
+      result = util_gammp(a,(-z))*a/pow((-z),a)*util_gamma(a);
+ 
+      // using recursion formula
+      // z(a-b)M(a,b+1,z)=b(b-1)M(a,b-1,z)+b(1-b-z)M(a,b,z)
+      // obtain M(1/2,3/2+l  ,z) --> m2
+      //        M(1/2,3/2+l-1,z) --> m2
+      for (auto i=1; i<=(l-n); ++i)
+      {
+         double m3=(b*(b-1.0)*m1+b*(1.0-b-z)*result)/(z*(a-b));
+         b +=  1.0;
+         m1 = result;
+         result = m3;
+      }
+   }   
+   else if (n>(l+1))
+   {
+      //*** starting point n=l+1 or b=a ***
+      double a = l + 1.5;
+      double b = l + 1.5;
+ 
+      //*** m1 = M(a-1,b) ***
+      //*** m2 = M(a,a,z) ***
+      double m1 = util_gammp(a-1.0,(-z))*(a-1.0)/pow((-z),(a-1.0))*util_gamma(a-1.0);
+      result = exp(z);
+ 
+      // using recursion formula
+      // aM(a+1,b,z)=(b-a)M(a-1,b,z)+(2a-b+z)M(a,b,z)
+      // obtain M(n+1/2-1,3/2,z)   --> m1
+      //        M(n+1/2  ,3/2,z)   --> m2
+      for (auto i=1; i<(n-l-1); ++i)
+      {
+         double m3 = ((b-a)*m1+(2*a-b+z)*result)/a;
+         m1 = result;
+         result = m3;
+         a += 1.0;
+      }
+   }
+ 
+   return result;
+}
+
+
 
 /**************************************
  *                                    *
@@ -804,6 +910,61 @@ void util_gauss_weights(const double x1, const double x2,
       w[n-i-1] = w[i];
    }
 }
+
+
+/******************************************************
+ *                                                    *
+ *               nwpw_GaussBessel                     *
+ *                                                    *
+ ******************************************************/
+/*
+     Calculates the Gaussian Bessel function,
+
+                                 /infinity
+    GausBessel(n,l,alpha,R)  =   | k**n exp(-alpha**2 * k**2) j_l(R*k) dk
+                                 /0
+
+     This function uses the SpecialKummer function. Note it is assumed that
+     (n+l) is an even integer.
+*/
+double util_GaussBessel(const int n, const int l, const double alpha, const double R)
+{
+   if ((n+l%2)==1) std::cout << "util_GaussBessel: n+l is not even" << std::endl;
+
+   double pi = 4.0*atan(1.0);
+   double  c = (sqrt(pi)/(pow(2.0,(l+2))*pow(alpha,(n+l+1)))) * exp(util_ln_gamma((n+l+1)/2.0) - util_ln_gamma(l+1.5));
+
+   return  ( c * pow(R,l) * util_SpecialKummer((n+l)/2,l,pow(-(0.5*R/alpha),2)) );
+}
+
+/******************************************************
+ *                                                    *
+ *                nwpw_dGaussBessel                   *
+ *                                                    *
+ ******************************************************/
+/*
+     Calculates the derivative of the Gaussian Bessel function wrt R,
+
+                                       /infinity
+   dGausBessel(n,l,alpha,R)  = (d/dR)  | k**n exp(-alpha**2 * k**2) j_l(R*k) dk
+                                       /0
+
+     This function uses the SpecialKummer function. Note it is assumed that
+     (n+l) is an even integer.
+*/
+double util_dGaussBessel(const int n, const int l, const double alpha, const double R)
+{
+
+   if ((n+l%2)==1) std::cout << "util_dGaussBessel: n+l is not even" << std::endl;
+   double pi = 4.0*atan(1.0);
+   double c = (sqrt(pi)/(pow(2.0,(l+2))*pow(alpha,(n+l+1)))) * exp(util_ln_gamma((n+l+1)/2.0) - util_ln_gamma(l+1.5));
+
+   return (c * ( pow(l*R,(l-1))*util_SpecialKummer((n+l)/2,l,pow(-(0.5*R/alpha),2)) 
+               - (0.5*pow(R,(l+1))/pow(alpha,2))*((n+l)/2.0+0.5)/(l+1.5)*util_SpecialKummer((n+l)/2+1,l+1,pow(-(0.5*R/alpha),2))) );
+}
+
+
+
 
 #ifdef _MATPRINT_
 void util_matprint(std::string matlabel, int n, double *A) {
