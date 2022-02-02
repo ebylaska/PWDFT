@@ -1,5 +1,5 @@
-#ifndef _UTIL_LINESEARCH_H_
-#define _UTIL_LINESEARCH_H_
+#ifndef _UTIL_LINESEARCH_HPP_
+#define _UTIL_LINESEARCH_HPP_
 
 namespace pwdft {
 using namespace pwdft;
