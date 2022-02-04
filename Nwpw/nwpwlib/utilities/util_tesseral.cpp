@@ -6,6 +6,8 @@
 #include        <cmath>
 
 #include        "Parallel.hpp"
+#include        "util_gamma.hpp"
+#include        "util_legendre.hpp"
 #include        "util_tesseral.hpp"
 
 namespace pwdft {
