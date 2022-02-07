@@ -14,7 +14,7 @@ using namespace pwdft;
 class	Ewald {
    int    encut,enx,eny,enz,enshl3d,enpack,enpack_all,enida;
    int    *i_indx,*j_indx,*k_indx;
-   double *vg,*rcell,*eG,*vcx,*zv,*ss,*exi,*tmp3,*ftmp;
+   double *vg,*eG,*vcx,*zv,*ss,*exi,*tmp3,*ftmp;
    double *ewx1,*ewy1,*ewz1;
    double unita[9],unitg[9],ercut,cewald,alpha;
    double eecut;
@@ -23,6 +23,8 @@ public:
    Parallel  *ewaldparall;
    Ion	     *ewaldion;
    Lattice  *ewaldlattice;
+
+   double *rcell;
 
    /* Constructors */
    //Ewald(Parallel *, Ion *, Pseudopotential *);

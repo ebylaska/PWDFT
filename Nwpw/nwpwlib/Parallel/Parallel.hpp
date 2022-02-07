@@ -13,6 +13,9 @@ using namespace pwdft;
 #define	MASTER	0
 
 class Parallel {
+    int thrid = 0;
+    int nthr  = 1;
+    int max_nthr = 1;
 
     int npi[3],taskidi[3];
     int *reqcnt;
@@ -40,6 +43,10 @@ public:
         void init2d(const int, const int);
 
         int is_master() { return (taskidi[0]==MASTER); }
+
+        int threadid()   {return thrid;}
+        int nthreads()   {return nthr;}
+        int maxthreads() {return max_nthr;}
 
         int taskid()   {return taskidi[0];}
         int taskid_i() {return taskidi[1];}
