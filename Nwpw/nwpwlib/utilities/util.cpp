@@ -221,7 +221,7 @@ bool util_filefind(Parallel *myparall, char *fname)
  *           util_spline              *
  *                                    *
  **************************************/
-void   util_spline(double *x, double *y, int n, double yp1, double ypn, double *y2, double *utmp)
+void   util_spline(const double *x, const double *y, const int n, const double yp1, const double ypn, double *y2, double *utmp)
 {
    double sig,p,qn,un;
 
@@ -277,7 +277,7 @@ void   util_spline(double *x, double *y, int n, double yp1, double ypn, double *
  *           util_splint              *
  *                                    *
  **************************************/
-double util_splint(double *xa, double *ya, double *y2a, int n, int nx, double x)
+double util_splint(const double *xa, const double *ya, const double *y2a, const int n, const int nx, const double x)
 {
    int khi = nx;
    int klo = nx-1;

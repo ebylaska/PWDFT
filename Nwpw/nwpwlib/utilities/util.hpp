@@ -28,8 +28,8 @@ extern void util_getfilling(int, int *, int *, double *);
 
 extern bool util_filefind(Parallel *, char *);
 
-extern void   util_spline(double *, double *, int, double, double, double *, double *);
-extern double util_splint(double *, double *, double *, int, int, double);
+extern void   util_spline(const double *, const double *, const int, const double, const double, double *, double *);
+extern double util_splint(const double *, const double *, const double *, const int, const int, const double);
 
 extern void util_filter(int, double *, double, double *);
 

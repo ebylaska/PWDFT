@@ -22,6 +22,8 @@ class Control2 {
    double pbo_time_step;
    double ptotal_charge;
 
+   bool   puse_grid_cmp = false;;
+
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
    int pnp_dimensions[3],pewald_grid[3];
@@ -103,7 +105,8 @@ public:
 
    int *ne_ptr()                { return pne; }
 
-   bool geometry_optimize()       { return pgeometry_optimize; }
+   bool geometry_optimize()     { return pgeometry_optimize; }
+   bool use_grid_cmp()          { return puse_grid_cmp; }
 
    int driver_maxiter()    { return pdriver_maxiter; }
    int driver_lmbfgs_size(){ return pdriver_lmbfgs_size; }

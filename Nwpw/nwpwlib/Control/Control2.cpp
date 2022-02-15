@@ -205,6 +205,11 @@ Control2::Control2(const int np0, const string rtdbstring)
       pnp_dimensions[0] = np/pnp_dimensions[1];
     }
 
+   puse_grid_cmp = false;
+   if (rtdbjson["nwpw"]["use_grid_cmp"].is_boolean()) 
+      puse_grid_cmp = rtdbjson["nwpw"]["use_grid_cmp"];
+
+
    pbalance = 1;
    if (rtdbjson["nwpw"]["nobalance"].is_boolean()) 
       if (rtdbjson["nwpw"]["nobalance"]) pbalance = 0;
@@ -212,6 +217,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    pgeometry_optimize = false;
    if (rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"].is_boolean()) 
       pgeometry_optimize = rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
+
 
    psp_library_dir = "";
    if (rtdbjson["psp_library_dir"].is_string()) 

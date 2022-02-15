@@ -799,6 +799,10 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       {
          nwpwjson["nobalance"] = true;
       }
+      else if (mystring_contains(line,"use_grid_cmp"))
+      {
+         nwpwjson["use_grid_cmp"] = true;
+      }
       else if (mystring_contains(line,"mapping"))
       {
          ss = mystring_split0(line);
