@@ -1250,6 +1250,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
         }
 
         if (psp_type[ia]==4) {
+           pawexist = true;
            nae[ia] = nae_ptr;
            nps[ia] = nps_ptr;
            lps[ia] = lps_ptr;
@@ -1274,6 +1275,40 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     // nprj_max = 0;
     // for (auto ii=0; ii < myion->nion; ++ii)
     //     nprj_max += nprj[myion->katm[ii]];
+
+   if (pawexist) 
+   {
+      //call psp_paw_init()
+      mypaw_compcharge = new Paw_compcharge(myion,mypneb,control,
+                                            nprj,n1dbasis,psp_type,lmax,
+                                            sigma,nprj_max,
+                                            l_projector,m_projector,b_projector,
+                                            comp_charge_matrix,hartree_matrix);
+
+      //Paw_compcharge_init(ion_nion(),npsp,
+      //                          int_mb(nprj(1)),
+      //                          int_mb(n1dbasis(1)),
+      //                          int_mb(psp_type(1)),
+      //                          int_mb(lmax(1)),
+      //                          dbl_mb(sigma(1)),
+      //                          nmax_max*lmmax_max,
+      //                          int_mb(l_projector(1)),
+      //                          int_mb(m_projector(1)),
+      //                          int_mb(b_projector(1)),
+      //                          int_mb(comp_charge_matrix(1)),
+      //                          int_mb(hartree_matrix(1)))
+
+      //nwpw_xc_init(ion_nion(),npsp,
+      //                int_mb(nprj(1)),
+      //                int_mb(n1dbasis(1)),
+      //                int_mb(n1dgrid(1)),
+      //                int_mb(psp_type(1)),
+      //                int_mb(lmax(1)),
+      //                nmax_max*lmmax_max,
+      //                int_mb(l_projector(1)),
+      //                int_mb(m_projector(1)),
+      //                int_mb(b_projector(1)))
+   }
 
 }
 /*******************************************

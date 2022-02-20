@@ -10,6 +10,7 @@ using namespace std;
 #include	"Ion.hpp"
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
+#include	"Paw_compcharge.hpp"
 #include	"nwpw_apc.hpp"
 
 namespace pwdft {
@@ -31,7 +32,8 @@ class	Pseudopotential {
    Strfac *mystrfac;
 
 public:
-   nwpw_apc *myapc;
+   nwpw_apc       *myapc;
+   Paw_compcharge *mypaw_compcharge;
 
    int psp_version = 3;
 
@@ -153,7 +155,7 @@ public:
 
       if (pawexist) 
       {
-         //call nwpw_compcharge_end()
+         delete mypaw_compcharge;
          //call nwpw_xc_end()
       }
 

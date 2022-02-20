@@ -44,6 +44,8 @@ static void Paw_compcharge_gen_smoothpsp(const int nray, const double Gray[], co
       else
          vlsmooth[k]=vlray[0];
    }
+
+   std::cout << "out smoothpsp" << std::endl;
 }
 
 
@@ -61,12 +63,12 @@ static void Paw_compcharge_gen_vlray(const double sigma_smooth,
    //double ecut   = control_ecut()
    //double  rlocal = 1.0d0
 
-   memset(vlray,0,nray*sizeof(double));
+   memset(vlray,0,2*nray*sizeof(double));
    for (auto k=1; k<nray; ++k)
    {
       double q = Gray[k];
       double x = sigma_smooth*q;
-      vlray[k]=-(fourpi/(q*q))*exp(-0.25*x*x);
+      vlray[k] = -(fourpi/(q*q))*exp(-0.25*x*x);
    }
 
    vlray[0] = 0.50*twopi*sigma_smooth*sigma_smooth;
@@ -82,14 +84,17 @@ static void Paw_compcharge_gen_vlray(const double sigma_smooth,
                  + 32.0*vlray[4]
                  -  6.0*vlray[5])/(24.0*dG);
 
+   std::cout << "into util_spline vlray" << std::endl;
+
    util_spline(&Gray[1],&vlray[1],nray-1,yp1,0.0,&vlray[1+nray],tmpray);
+   std::cout << "out util_spline vlray" << std::endl;
 }
 
 
 
 /*************************************************
  *                                               *
- *          Paw_compcharge_gen_vk_smooth        *
+ *          Paw_compcharge_gen_vk_smooth         *
  *                                               *
  *************************************************/
 static void Paw_compcharge_gen_vk_smooth(const int nray, const double *Gray,
@@ -99,7 +104,7 @@ static void Paw_compcharge_gen_vk_smooth(const int nray, const double *Gray,
                                          double vk[])
 {
 
-   double vlray[nray],tmpray[nray];
+   double vlray[2*nray],tmpray[nray];
 
    double bmesh     = 1.0050;
    double log_bmesh = log(bmesh);
@@ -113,8 +118,12 @@ static void Paw_compcharge_gen_vk_smooth(const int nray, const double *Gray,
    rho[0] = 0.00025;
    for (auto i=1; i<nrho; ++i)
       rho[i] = bmesh*rho[i-1];
+
+   std::cout << "Into gen_vlray, nray=" << nray << std::endl;
       
    Paw_compcharge_gen_vlray(sigma_smooth,log_bmesh,nrho,rho,f,nray,Gray,vlray,tmpray);
+
+   std::cout << "Into gen_smoothpsp" << std::endl;
    Paw_compcharge_gen_smoothpsp(nray,Gray,vlray,npack0,Gx,Gy,Gz,vk);
 }
 
@@ -129,18 +138,17 @@ static void Paw_compcharge_gen_vk_smooth(const int nray, const double *Gray,
  *                                                     *
  *******************************************************/
 
-Paw_compcharge::Paw_compcharge(Parallel *myparall0, Ion *myion0, Ewald *myewald0, Pneb *mypneb0,  Control2& control,
+Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                                const int nprj[], const int nbasis[], const int psp_type[], const int lmax0[],
                                const double sigma[],
-                               const int nprj_max, const int* l_prj[], const int* m_prj[], const int* b_prj[],
-                               const double* comp_charge_matrix[], const double* hartree_matrix[])
+                               const int nprj_max, int* l_prj[], int* m_prj[], int* b_prj[],
+                               double* comp_charge_matrix[], double* hartree_matrix[])
 {
    int ia,iia,ii,iii;
 
-   myparall = myparall0;
    myion    = myion0;
-   myewald  = myewald0;
    mypneb   = mypneb0;
+
 
    int nion  = myion->nion;
    int nkatm = myion->nkatm;
@@ -256,6 +264,8 @@ Paw_compcharge::Paw_compcharge(Parallel *myparall0, Ion *myion0, Ewald *myewald0
       if (mult_l_max<(2*lmax0[ia])) mult_l_max = 2*lmax0[ia];
    }
 
+   //*** initialize gaunt
+   util_gaunt_init(false,2*mult_l_max);
 
    //*** allocate gk_smooth, gk,and glm ***
    int npack0  = mypneb->npack(0);
@@ -352,6 +362,8 @@ Paw_compcharge::Paw_compcharge(Parallel *myparall0, Ion *myion0, Ewald *myewald0
       gk_smooth[k] = fourpioveromega*exp(-gg*scal);
    }
 
+   std::cout << "out define gk_smooth" << std::endl;
+
 
 
    //**** define gk(k,iia)  = 4*pi * Exp[-k*k*sigma(iia**2 / 4] ****
@@ -404,6 +416,7 @@ Paw_compcharge::Paw_compcharge(Parallel *myparall0, Ion *myion0, Ewald *myewald0
 
       nindx_Tndiff[iia] = indx - shift_Tndiff[iia];
    }
+   std::cout << "out define taunt" << std::endl;
 
    lm_Tndiff   = new (std::nothrow) int [indx]();
    iprj_Tndiff = new (std::nothrow) int [indx]();

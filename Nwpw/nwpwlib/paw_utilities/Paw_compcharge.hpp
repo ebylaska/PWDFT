@@ -1,22 +1,21 @@
 #ifndef _PAW_COMPCHARGE_HPP_
 #define _PAW_COMPCHARGE_HPP_
 
-#include        "Parallel.hpp"
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include	"Pneb.hpp"
 #include        "Control2.hpp"
+#include	"util_gaunt.hpp"
 
 namespace pwdft {
 using namespace pwdft;
 
 class Paw_compcharge {
 
-   Parallel *myparall;
    Ion      *myion;
-   Ewald    *myewald;
    Pneb     *mypneb;
 
+   Ewald    *myewald;
 
    //**** common block for nwpw_compcharge data  ****
    bool  isgamma,use_grid_cmp;
@@ -68,13 +67,16 @@ class Paw_compcharge {
 public:
 
    /* Constructors */
-   Paw_compcharge(Parallel *, Ion *, Ewald *, Pneb *,  Control2&,
-                               const int *, const int *, const int *, const int *,
-                               const double *,
-                               const int, const int **, const int **, const int **,
-                               const double **, const double **);
+   Paw_compcharge(Ion *, Pneb *, Control2&,
+                  const int *, const int *, const int *, const int *,
+                  const double *,
+                  const int, int **, int **, int **,
+                  double **, double **);
+
    /* destructor */
    ~Paw_compcharge() {
+
+      util_gaunt_end();
 
       delete [] vk_smooth;
       delete [] gk_smooth;
@@ -92,7 +94,10 @@ public:
    }
 
    /* sets the gaussian integrals */
-   void set(const bool);
+   //void set(const bool);
+
+   /* sets the ewald */
+   //void set_ewald(Ewald *myewald) { myewald = myewald0; }
 
 };
 
