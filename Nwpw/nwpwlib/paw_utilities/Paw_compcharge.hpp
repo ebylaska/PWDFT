@@ -91,6 +91,32 @@ public:
       delete [] dEmult_Qlm;
       delete [] dElocal_Qlm;
       delete [] dE_Qlm;
+
+      delete [] ion_iontopaw;
+      delete [] ion_pawtoion;
+      delete [] katm_iontopaw;
+      delete [] katm_pawtoion;
+      delete [] katm_paw;
+      delete [] sigma_paw;
+
+      delete [] mult_l;
+      delete [] lm_size;
+
+      delete [] nindx_Tndiff;
+      delete [] shift_Tndiff;
+
+      delete [] lm_Tndiff;
+      delete [] iprj_Tndiff;
+      delete [] jprj_Tndiff;
+      delete [] coeff_Tndiff;
+
+      delete [] nindx_hartree;
+      delete [] shift_hartree;
+      delete [] iprj_hartree;
+      delete [] jprj_hartree;
+      delete [] iprj1_hartree;
+      delete [] jprj1_hartree;
+      delete [] coeff_hartree;
    }
 
    /* sets the gaussian integrals */

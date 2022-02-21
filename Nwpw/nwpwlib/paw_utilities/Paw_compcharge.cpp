@@ -367,7 +367,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
 
 
    //**** define gk(k,iia)  = 4*pi * Exp[-k*k*sigma(iia**2 / 4] ****
-   for (auto iia=0; iia<=nkatm_paw; ++iia)
+   for (auto iia=0; iia<nkatm_paw; ++iia)
    {
       for (auto k=0; k<npack0; ++k)
       {
@@ -378,6 +378,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
          gk[iia*npack0+k] = fourpioveromega*exp(-gg*scal);
       }
    }
+   std::cout << "out define gk" << std::endl;
 
    //*******************************************************
    //*****  define indexing for compcharge evalulations ****
@@ -385,12 +386,14 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
    nindx_Tndiff = new (std::nothrow) int [nkatm_paw]();
    shift_Tndiff = new (std::nothrow) int [nkatm_paw]();
 
+   std::cout << "nkatm_paw=" << nkatm_paw << std::endl;
+
    int indx = 0;
    for (auto iia=0; iia<nkatm_paw; ++iia)
    {
       ia = katm_pawtoion[iia];
       shift_Tndiff[iia] = indx;
-
+      std::cout << "iia=" << iia << " ia=" << ia << std::endl;
 
       for (auto l=0; l<=mult_l[iia]; ++l)
       {
@@ -409,6 +412,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                   int bi = b_prj[ia][i];
                   double taunt = util_gaunt(false,l,m,li,mi,lj,mj)*comp_charge_matrix[ia][matindx2(bi,bj,l,nbasis[ia])];
                   if (abs(taunt)>1.0e-15) ++indx;
+                  std::cout << "indx=" << indx << " taunt="<< taunt << std::endl;
                }
             }
          }
@@ -416,7 +420,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
 
       nindx_Tndiff[iia] = indx - shift_Tndiff[iia];
    }
-   std::cout << "out define taunt" << std::endl;
+   std::cout << "out define taunt, indx=" << indx << std::endl;
 
    lm_Tndiff   = new (std::nothrow) int [indx]();
    iprj_Tndiff = new (std::nothrow) int [indx]();
@@ -460,6 +464,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
          }
       }
    }
+   std::cout << "final set indx=" << indx << std::endl;
 
    //************************************************************
    //*****  define indexing for hartree matrix evalulations  ****
@@ -493,7 +498,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                   int li1 = l_prj[ia][i1];
                   int mi1 = m_prj[ia][i1];
                   int bi1 = b_prj[ia][i1];
-                  for (auto l=0; l<mult_l[iia]; ++l)
+                  for (auto l=0; l<=mult_l[iia]; ++l)
                   {
                      for (auto m=-l; m<=l; ++m)
                      {
@@ -511,6 +516,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
       }
       nindx_hartree[iia] = indx - shift_hartree[iia];
    }
+   std::cout << "hartree set indx=" << indx << std::endl;
 
    iprj_hartree = new (std::nothrow) int [indx]();
    jprj_hartree = new (std::nothrow) int [indx]();
@@ -568,6 +574,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
          }
       }
    }
+   std::cout << "hartree final set indx=" << indx << std::endl;
 
 
    //**** initialize the gaussian integrals ****
