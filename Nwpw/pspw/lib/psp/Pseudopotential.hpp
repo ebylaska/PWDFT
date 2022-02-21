@@ -62,7 +62,6 @@ public:
 
    /* destructor */
    ~Pseudopotential() {
-      std::cout << "Destruct A" << std::endl;
       for (int ia=0; ia<npsp; ++ia)
       {
          delete [] vl[ia];

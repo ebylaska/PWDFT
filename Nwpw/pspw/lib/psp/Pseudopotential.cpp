@@ -559,7 +559,7 @@ static void vpp_write(PGrid *mygrid,
        dwrite(6,Gijl,nn);
        if (version==4) dwrite(6,&rlocal,1);
        dwrite(6,&rcore,1);
-       double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
+       //double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
 
 
        // ***** Miscellaneous paw energies and 1d wavefunctions ****
@@ -599,7 +599,6 @@ static void vpp_write(PGrid *mygrid,
           dwrite(6,core_ps_prime,n1dgrid);
        }
     }
-
 
     /* readin vl 3d block */
     mygrid->tt_pack_copy(0,vl,tmp2);
