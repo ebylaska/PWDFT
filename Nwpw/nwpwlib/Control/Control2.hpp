@@ -28,7 +28,7 @@ class Control2 {
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
    int pnp_dimensions[3],pewald_grid[3];
    int pcode,ptask;
-   int pispin,pmultiplicity,pne[2],ptotal_ion_charge;
+   int pispin,pmultiplicity,pne[2],ptotal_ion_charge,plmax_multipole;
    int pmove,pfrac_coord,pSA,pfei,pfei_quench,pgram_schmidt;
    int protation,ptranslation,pbalance,pspin_orbit;
    int pmaxit_orb,pmaxit_orbs,pscf_algorithm,pks_algorithm;
@@ -101,6 +101,7 @@ public:
    int ispin()                  { return pispin; }
    int ne(const int i)          { return pne[i]; }
    int total_ion_charge()       { return ptotal_ion_charge; }
+   int lmax_multipole()         { return plmax_multipole; }
    string xc_name()		{ return xcstring; }
 
    int *ne_ptr()                { return pne; }
@@ -205,6 +206,40 @@ public:
          return 0.0;
       else
          return papc_u[i];
+   }
+
+   //GGA value
+   int get_gga() {
+      string myxc_name = this->xc_name();
+
+      std::transform(myxc_name.begin(), myxc_name.end(), myxc_name.begin(), ::tolower);
+
+      int gga = 0;
+
+      if (myxc_name.compare("vosko") == 0) gga=0;
+      if (myxc_name.compare("lda")   == 0) gga=0;
+
+      if (myxc_name.compare("pbe")        == 0) gga=10;
+      if (myxc_name.compare("pbe96")      == 0) gga=10;
+      if (myxc_name.compare("blyp")       == 0) gga=11;
+      if (myxc_name.compare("revpbe")     == 0) gga=12;
+      if (myxc_name.compare("pbesol")     == 0) gga=13;
+      if (myxc_name.compare("hser")       == 0) gga=14;
+      if (myxc_name.compare("b3lypr")     == 0) gga=15;
+      if (myxc_name.compare("beef")       == 0) gga=16;
+      if (myxc_name.compare("xbeef-cpbe") == 0) gga=17;
+
+      if (myxc_name.compare("pbe0")    == 0) gga=110;
+      if (myxc_name.compare("blyp0")   == 0) gga=111;
+      if (myxc_name.compare("revpbe0") == 0) gga=112;
+      if (myxc_name.compare("bnl")     == 0) gga=113;
+      if (myxc_name.compare("hse")     == 0) gga=114;
+      if (myxc_name.compare("b3lyp")   == 0) gga=115;
+
+      if (myxc_name.compare("hartree-fock") == 0) gga=200;
+      if (myxc_name.compare("hf")           == 0) gga=200;
+
+      return gga;
    }
 
 };

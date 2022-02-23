@@ -11,6 +11,7 @@ using namespace std;
 #include	"Pneb.hpp"
 #include	"Strfac.hpp"
 #include	"Paw_compcharge.hpp"
+#include	"Paw_xc.hpp"
 #include	"nwpw_apc.hpp"
 
 namespace pwdft {
@@ -34,6 +35,7 @@ class	Pseudopotential {
 public:
    nwpw_apc       *myapc;
    Paw_compcharge *mypaw_compcharge;
+   Paw_xc         *mypaw_xc;
 
    int psp_version = 3;
 
@@ -155,7 +157,7 @@ public:
       if (pawexist) 
       {
          delete mypaw_compcharge;
-         //call nwpw_xc_end()
+         delete mypaw_xc;
       }
 
       delete myapc;

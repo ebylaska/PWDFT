@@ -209,6 +209,8 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (rtdbjson["nwpw"]["use_grid_cmp"].is_boolean()) 
       puse_grid_cmp = rtdbjson["nwpw"]["use_grid_cmp"];
 
+   plmax_multipole = 0;
+   if (rtdbjson["nwpw"]["lmax_multipole"].is_number_integer()) plmax_multipole = rtdbjson["nwpw"]["lmax_multipole"];
 
    pbalance = 1;
    if (rtdbjson["nwpw"]["nobalance"].is_boolean()) 

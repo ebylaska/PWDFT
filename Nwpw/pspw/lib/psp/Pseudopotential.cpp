@@ -1283,6 +1283,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                                             sigma,nprj_max,
                                             l_projector,m_projector,b_projector,
                                             comp_charge_matrix,hartree_matrix);
+      mypaw_xc = new Paw_xc(myion,mypneb,control,nprj,n1dbasis,n1dgrid,psp_type,lmax,
+                            l_projector,m_projector,b_projector);
 
       //Paw_compcharge_init(ion_nion(),npsp,
       //                          int_mb(nprj(1)),

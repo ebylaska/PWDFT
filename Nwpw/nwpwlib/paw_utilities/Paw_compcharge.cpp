@@ -203,12 +203,12 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
       if (psp_type[ia]==4) ++nkatm_paw;
    }
 
-   ion_iontopaw  = new int[nion];
-   ion_pawtoion  = new int[nion_paw];
-   katm_iontopaw = new int[nkatm];
-   katm_pawtoion = new int[nkatm_paw];
-   katm_paw      = new int[nion_paw];
-   sigma_paw     = new double[nkatm_paw];
+   ion_iontopaw  = new (std::nothrow) int [nion]();
+   ion_pawtoion  = new (std::nothrow) int [nion_paw]();
+   katm_iontopaw = new (std::nothrow) int [nkatm]();
+   katm_pawtoion = new (std::nothrow) int [nkatm_paw]();
+   katm_paw      = new (std::nothrow) int [nion_paw]();
+   sigma_paw     = new (std::nothrow) double [nkatm_paw]();
 
 
    iia = 0;
@@ -251,8 +251,8 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
    }
 
    //**** allocate mult_l and lm_size ****
-   mult_l  = new int[nkatm_paw];
-   lm_size = new int[nkatm_paw];
+   mult_l  = new (std::nothrow) int [nkatm_paw]();
+   lm_size = new (std::nothrow) int [nkatm_paw]();
 
 
    mult_l_max = 0;
