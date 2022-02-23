@@ -4,6 +4,7 @@
    Author - Eric Bylaska
 */
 
+#include        <algorithm>
 #include	<map>
 #include        <string>
 #include        <vector>
