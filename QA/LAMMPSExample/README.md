@@ -7,7 +7,8 @@ then excecute the following steps:
  1) mkdir build_library
  2) cd build_library
  3) cmake ../Nwpw -DMAKE_LIBRARY=true
- 4) make
+ 4) On linux: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+ 5) make
 
 
 ## Compiling on macOS ##
