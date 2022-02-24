@@ -23,9 +23,9 @@ Set location of the DYLD_LIBRARY_PATH
 
  1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
-Compile test.f90 using mpif90
+Compile fortran_test.f using mpif90
 
- 2) mpif90 test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
+ 2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
 
 ## Compiling on LINUX ##
@@ -35,5 +35,5 @@ Add location of shared library location to LD_LIBRARY_PATH, e.g.,
 
 Compile test.cpp using mpic++
 
- 2) mpif90 test-lammps.f90 /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
+ 2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
