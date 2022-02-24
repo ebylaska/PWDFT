@@ -5,6 +5,8 @@ mkdir build_library
 cd build_library
 
 cmake ../Nwpw -DMAKE_LIBRARY=true
+(on linux use: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
+
 make
 
 
