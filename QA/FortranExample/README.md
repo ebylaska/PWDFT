@@ -37,3 +37,7 @@ Compile test.cpp using mpic++
 
  2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
+## How to Run
+mpirun -np 8 a.out
+
+
