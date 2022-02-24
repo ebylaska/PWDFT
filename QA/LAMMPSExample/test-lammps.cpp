@@ -31,14 +31,17 @@ int main(int argc, char* argv[])
 
    double E;
    double uion[2], qion[2], rion[3*2],fion[3*2];
-   std::string nwfilename = "w2.nw";
+   //std::string nwfilename = "w2.nw";
+   std::string nwfilename = "h2.nw";
  
    lammps_pspw_input(MPI_COMM_WORLD, nwfilename);
 
    uion[0] = -0.01;
    uion[1] = 0.04;
-   rion[0] = 0.0; rion[1] = 0.0; rion[2] = -2.17;
-   rion[3] = 0.0; rion[4] = 0.0; rion[5] =  2.17;
+   //rion[0] = 0.0; rion[1] = 0.0; rion[2] = -2.17;
+   //rion[3] = 0.0; rion[4] = 0.0; rion[5] =  2.17;
+   rion[0] = 0.0; rion[1] = 0.0; rion[2] = -0.7;
+   rion[3] = 0.0; rion[4] = 0.0; rion[5] =  0.7;
    ierr += lammps_pspw_minimizer(MPI_COMM_WORLD,rion,uion,fion,qion,&E);
 
    if (taskid==MASTER)
