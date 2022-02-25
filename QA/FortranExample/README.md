@@ -18,17 +18,14 @@ cd /Users/bylaska/Codes/PWDFT/QA/FortranExample
 
 ## Using macOS ##
 Set location of the DYLD_LIBRARY_PATH
-
 #### with csh ####
 ```
 setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 ```
-
 #### with bash ####
 ```
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 ```
-
 then compile fortran_test.f using mpif90
 ```
 mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
