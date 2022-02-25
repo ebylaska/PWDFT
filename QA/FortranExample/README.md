@@ -10,22 +10,20 @@ then excecute the following steps:
  4) On linux: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
  5) make
 
-
-## Compiling on macOS ##
-
 Go back to the QA directory, e.g.,
 
 ```
 cd /Users/bylaska/Codes/PWDFT/QA/FortranExample
 ```
 
+## Using macOS ##
 Set location of the DYLD_LIBRARY_PATH
 
- 1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+#### with csh ####
+1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
-Compile fortran_test.f using mpif90
-
- 2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
+#### Compile fortran_test.f using mpif90 ####
+2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
 
 ## Compiling on LINUX ##
