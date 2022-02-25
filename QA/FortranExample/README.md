@@ -33,27 +33,29 @@ then compile fortran_test.f using mpif90
 ```
 mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 ```
-
 ## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
-
 #### with csh ####
 ```
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 ```
-
 #### with bash ####
 ```
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 ```
-
-#### Compile test.cpp using mpic++ ####
+then compile test.cpp using mpic++
 ```
 mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 ```
 
-## How to Run ##
+## Running Example ##
+To run the program just type 
 ```
-mpirun -np 8 a.out
+a.out
 ```
+or run using mpirun, e,g,
+```
+ mpirun -np 4 a.out
+```
+
 
