@@ -28,7 +28,7 @@ export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-s
 #### Compile fortran_test.f using mpif90 ####
 mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
-## Compiling on LINUX ##
+## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
 #### with csh ####
