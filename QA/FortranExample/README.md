@@ -20,26 +20,25 @@ cd /Users/bylaska/Codes/PWDFT/QA/FortranExample
 Set location of the DYLD_LIBRARY_PATH
 
 #### with csh ####
-1) setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
 #### with bash ####
-1) export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
 #### Compile fortran_test.f using mpif90 ####
-2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
-
+mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
 ## Compiling on LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
 #### with csh ####
-1) setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
 #### with bash ####
-1) export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
 #### Compile test.cpp using mpic++ ####
-2) mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
+mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 
 ## How to Run ##
 mpirun -np 8 a.out
