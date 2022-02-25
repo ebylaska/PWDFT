@@ -10,25 +10,24 @@ then excecute the following steps:
  4) On linux: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
  5) make
 
-
-## Compiling on macOS ##
-
 Go back to the QA directory, e.g.,
 
 ```
 cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
 ```
 
+
+## Using macOS ##
 Set location of the DYLD_LIBRARY_PATH
 
  1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
-Compile test.cpp using mpic++
+### Compile test.cpp using mpic++ ###
 
  2) mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
 
-## Running with LINUX ##
+## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
 ### set LD_LIBRARY_PATH with csh ###
