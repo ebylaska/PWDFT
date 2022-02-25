@@ -10,7 +10,7 @@ then excecute the following steps:
  4) On linux: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
  5) make
 
-Go back to the QA directory, e.g.,
+Next, go back to the QA directory, e.g.,
 
 ```
 cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
@@ -21,27 +21,37 @@ cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
 Set location of the DYLD_LIBRARY_PATH
 
 #### with csh ####
+```
 setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+```
 
 #### with bash ####
+```
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+```
 
 #### Compile test.cpp using mpic++ ####
+```
 mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
-
+```
 
 ## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
 #### with csh ####
+```
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+```
 
 #### with bash ####
+```
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+```
 
 #### Compile test.cpp using mpic++ ####
+```
 mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
-
+```
 
 ## Running Example ##
 
