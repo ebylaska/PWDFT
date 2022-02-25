@@ -30,13 +30,13 @@ Set location of the DYLD_LIBRARY_PATH
 ## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
-### set LD_LIBRARY_PATH with csh ###
+#### set LD_LIBRARY_PATH with csh ####
 1) setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
-### set LD_LIBRARY_PATH with bash ###
+#### set LD_LIBRARY_PATH with bash ####
 1) export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
-### Compile test.cpp using mpic++ ###
+#### Compile test.cpp using mpic++ ####
 
  2) mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 
