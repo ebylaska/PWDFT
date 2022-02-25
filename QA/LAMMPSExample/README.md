@@ -31,7 +31,10 @@ Compile test.cpp using mpic++
 ## Compiling on LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
+### csh ###
 1) setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+
+### bash ###
 
 Compile test.cpp using mpic++
 
