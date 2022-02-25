@@ -17,14 +17,14 @@
       write(*,*) "taskid=",taskid
       rion(1,1) = 0.0d0
       rion(2,1) = 0.0d0
-      rion(3,1) = -2.17d0
+      rion(3,1) = -0.7d0
       rion(1,2) = 0.0d0
       rion(2,2) = 0.0d0
-      rion(3,2) = 2.17d0
+      rion(3,2) = 0.7d0
       uion(1) = 0.0d0
       uion(2) = 0.0d0
 
-      call pspw_fortran_input("w2.nw",len("w2.nw"))
+      call pspw_fortran_input("h2.nw",len("h2.nw"))
       call pspw_fortran_minimizer(MPI_COMM_WORLD,rion,uion,
      >                            Energy0,fion,qion)
 
