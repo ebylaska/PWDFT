@@ -10,7 +10,7 @@ then excecute the following steps:
  4) On linux: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
  5) make
 
-Go back to the QA directory, e.g.,
+Next, go back to the QA directory, e.g.,
 
 ```
 cd /Users/bylaska/Codes/PWDFT/QA/FortranExample
