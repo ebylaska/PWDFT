@@ -30,7 +30,7 @@ setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-s
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 ```
 
-#### Compile test.cpp using mpic++ ####
+then compile test.cpp using mpic++
 ```
 mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 ```
@@ -48,7 +48,7 @@ setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 ```
 
-#### Compile test.cpp using mpic++ ####
+then compile test.cpp using mpic++
 ```
 mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 ```
