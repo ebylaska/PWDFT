@@ -155,8 +155,16 @@ Example function call
 ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,nwinput);
 ```
 
+## Running on a MAC
 ```
 mpic++ test.cpp ../build-shared/libpwdft.dylib
+setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
+a.out
+```
+
+## Running on a LINUX
+```
+mpic++ test.cpp ../build-shared/libpwdft.so
 setenv DYLD_LIBRARY_PATH /Users/bylaska/Codes/PWDFT/build-shared
 a.out
 ```
