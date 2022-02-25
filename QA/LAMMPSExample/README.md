@@ -20,25 +20,27 @@ cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
 ## Using macOS ##
 Set location of the DYLD_LIBRARY_PATH
 
- 1) setenv DYLD_LIBRARY_PATH /${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+#### with csh ####
+1) setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
-### Compile test.cpp using mpic++ ###
+#### with bash ####
+1) export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
 
+#### Compile test.cpp using mpic++ ####
  2) mpic++ test.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
 
 
 ## Using LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
-#### set LD_LIBRARY_PATH with csh ####
+#### with csh ####
 1) setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
-#### set LD_LIBRARY_PATH with bash ####
+#### with bash ####
 1) export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
 #### Compile test.cpp using mpic++ ####
-
- 2) mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
+2) mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 
 
 ## Running Example ##
