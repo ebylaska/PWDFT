@@ -31,11 +31,11 @@ Compile test.cpp using mpic++
 ## Compiling on LINUX ##
 Add location of shared library location to LD_LIBRARY_PATH, e.g., 
 
-1) setenv LD_LIBRARY_PATH setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+1) setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 
 Compile test.cpp using mpic++
 
- 2) mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.dylib 
+ 2) mpic++ test-lammps.cpp /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
 
 
 ## Running Example ##
