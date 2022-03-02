@@ -1,0 +1,31 @@
+Title "Hellow Dolly"
+
+memory 1900 mb
+start h2-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz center
+H 0 0 0    
+H 0 0 0.8  
+end
+
+nwpw
+   apc on
+   simulation_cell
+     lattice
+        lat_a 22.0
+        lat_b 20.0
+        lat_c 20.0
+        alpha 90.0
+        beta  90.0
+        gamma 90.0
+      end
+   end
+   cutoff 10.0
+   xc pbe
+end
+#task pspw steepest_descent
+task pspw gradient
+
