@@ -164,13 +164,13 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
                if (mystring_contains(line,"lat_a")) lat[0] = std::stod(ss[1])*conv;
                if (mystring_contains(line,"lat_b")) lat[1] = std::stod(ss[1])*conv;
                if (mystring_contains(line,"lat_c")) lat[2] = std::stod(ss[1])*conv;
-               if (mystring_contains(line,"alpha")) lat[3] = std::stod(ss[1])*conv;
-               if (mystring_contains(line,"beta"))  lat[4] = std::stod(ss[1])*conv;
-               if (mystring_contains(line,"gamma")) lat[5] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"alpha")) lat[3] = std::stod(ss[1]);
+               if (mystring_contains(line,"beta"))  lat[4] = std::stod(ss[1]);
+               if (mystring_contains(line,"gamma")) lat[5] = std::stod(ss[1]);
 
                ++cur;
                if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
-                  --endsystem;
+               {   --endsystem; --endcount;}
             }
             unita = parse_lat_to_unita(lat);
          }
@@ -382,9 +382,21 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
 {
    int cur = *curptr;
    int endcount = 1;
-   ++cur;
    string line;
    vector<string> ss;
+   double angs_to_au = 1.88972598858;
+   double conv = 1.0;
+
+   if (mystring_contains(mystring_lowercase(lines[cur])," au"))   conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," a.u.")) conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," bo"))   conv = 1.0;
+   if (mystring_contains(mystring_lowercase(lines[cur])," an"))   conv = angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," nm"))   conv = 10.0*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," na"))   conv = 10.0*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," pm"))   conv = 0.01*angs_to_au;
+   if (mystring_contains(mystring_lowercase(lines[cur])," pi"))   conv = 0.01*angs_to_au;
+
+   ++cur;
 
    while (endcount>0)
    {
@@ -397,34 +409,61 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>2) 
          {
-             unita[0] = std::stod(ss[0]);
-             unita[1] = std::stod(ss[1]);
-             unita[2] = std::stod(ss[2]);
+             unita[0] = std::stod(ss[0])*conv;
+             unita[1] = std::stod(ss[1])*conv;
+             unita[2] = std::stod(ss[2])*conv;
          }
          ++cur;
          line = mystring_lowercase(lines[cur]);
          ss = mystring_split0(line);
          if (ss.size()>2) 
          {
-             unita[3] = std::stod(ss[0]);
-             unita[4] = std::stod(ss[1]);
-             unita[5] = std::stod(ss[2]);
+             unita[3] = std::stod(ss[0])*conv;
+             unita[4] = std::stod(ss[1])*conv;
+             unita[5] = std::stod(ss[2])*conv;
          }
          ++cur;
          line = mystring_lowercase(lines[cur]);
          ss = mystring_split0(line);
          if (ss.size()>2) 
          {
-             unita[6] = std::stod(ss[0]);
-             unita[7] = std::stod(ss[1]);
-             unita[8] = std::stod(ss[2]);
+             unita[6] = std::stod(ss[0])*conv;
+             unita[7] = std::stod(ss[1])*conv;
+             unita[8] = std::stod(ss[2])*conv;
          }
          celljson["unita"] = unita;
       }
       else if (mystring_contains(line,"lattice"))
       {
-         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
-         celljson["unita"] = unita;
+         ++cur;
+         line = mystring_lowercase(lines[cur]);
+         if (mystring_contains(line,"lat_a") ||
+             mystring_contains(line,"lat_b") ||
+             mystring_contains(line,"lat_c") ||
+             mystring_contains(line,"alpha") ||
+             mystring_contains(line,"beta")  ||
+             mystring_contains(line,"gamma"))
+         {
+            vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
+
+            int endsystem = 1;
+            while (endsystem>0)
+            {
+               line = mystring_lowercase(lines[cur]);
+               ss = mystring_split0(line);
+               if (mystring_contains(line,"lat_a")) lat[0] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"lat_b")) lat[1] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"lat_c")) lat[2] = std::stod(ss[1])*conv;
+               if (mystring_contains(line,"alpha")) lat[3] = std::stod(ss[1]);
+               if (mystring_contains(line,"beta"))  lat[4] = std::stod(ss[1]);
+               if (mystring_contains(line,"gamma")) lat[5] = std::stod(ss[1]);
+
+               ++cur;
+               if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
+                  --endsystem;
+            }
+            celljson["unita"] = parse_lat_to_unita(lat);
+         }
       }
       else if (mystring_contains(line,"ngrid"))
       {
@@ -440,7 +479,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = std::stod(ss[1]);
+            double a = std::stod(ss[1])*conv;
             vector<double> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
             celljson["unita"] = unita;
          }
@@ -450,7 +489,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = 0.5*std::stod(ss[1]);
+            double a = 0.5*std::stod(ss[1])*conv;
             vector<double> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
             celljson["unita"] = unita;
          }
@@ -460,7 +499,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>1) 
          {
-            double a = 0.5*std::stod(ss[1]);
+            double a = 0.5*std::stod(ss[1])*conv;
             vector<double> unita = {-a,a,a, a,-a,a, a,a,-a};
             celljson["unita"] = unita;
          }
@@ -471,7 +510,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          if (ss.size()>1) 
          {
             double a = std::stod(ss[1]);
-            celljson["box_delta"] = a;
+            celljson["box_delta"] = a*conv;
          }
       }
       else if (mystring_contains(line,"box_orient"))
