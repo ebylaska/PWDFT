@@ -35,7 +35,6 @@ $ cmake .
 ```
 export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
 module load oneapi
-module load mpi/aurora_mpich
 module load cmake
 ```
 
