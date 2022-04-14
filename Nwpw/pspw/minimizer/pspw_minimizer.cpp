@@ -223,7 +223,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       //}
       cout << mypsp.print_pspall();
 
-      cout << "\n total charge: " << control.total_charge() << "\n";
+      printf("\n total charge:%8.3lf\n", control.total_charge());
 
       cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
