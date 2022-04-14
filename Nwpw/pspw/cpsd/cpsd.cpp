@@ -208,6 +208,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       cout << myxc;
       //cout << "   exchange-correlation = ";
       //cout << "LDA (Vosko et al) parameterization\n";
+      cout << myxc;
   
       //cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
@@ -227,6 +228,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       //   printf("\n");
       //}
       cout << mypsp.print_pspall();
+
+      cout << "\n total charge: " << control.total_charge() << "\n";
 
       cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)

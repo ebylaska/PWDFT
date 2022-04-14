@@ -167,7 +167,8 @@ Control2::Control2(const int np0, const string rtdbstring)
 
    ptotal_ion_charge = -1.0;
    ptotal_charge = 0.0;
-   if (rtdbjson["charge"].is_number_float()) ptotal_charge = rtdbjson["charge"];
+   //if (rtdbjson["charge"].is_number_float()) ptotal_charge = rtdbjson["charge"];
+   if (rtdbjson["charge"].is_number_integer()) ptotal_charge = rtdbjson["charge"];
 
    /* get parallel mappings */
    pmapping = 1;

@@ -226,6 +226,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       //}
       cout << mypsp.print_pspall();
 
+      cout << "\n total charge: " << control.total_charge() << "\n";
+
       cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
          cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
