@@ -4,7 +4,7 @@ OPTIONS:=
 ifeq ($(OS),Darwin)
         OPTIONS += -framework OpenCL
 else
-        OPTIONS += -l OpenCL
+        OPTIONS += -l OpenCL -lm
 endif
 
 main: test2.c
