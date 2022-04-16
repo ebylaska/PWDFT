@@ -124,7 +124,7 @@ public:
     double xrms()
     {
        double dx,dy,dz;
-       double xx;
+       double xx=0.0;
        for (auto ii=0; ii<nion; ++ii)
        {
           dx = rion1[3*ii]   - rion0[3*ii];
