@@ -187,6 +187,7 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    if (!myrtdb.get("geometry:geometry:masses",rtdb_double,nion,mass)) mass[0] = 1.0;
    if (!myrtdb.get("geometry:geometry:charges",rtdb_double,nion,charge)) charge[0] = 1.0;
 
+   dt = time_step;
    for (ii=0; ii<nion; ++ii)
    {
       mass[ii] *= amu_to_mass;

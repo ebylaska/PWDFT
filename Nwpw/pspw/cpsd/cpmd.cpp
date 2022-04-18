@@ -281,7 +281,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    inner_loop_md(verlet,control,&mygrid,&myion,
                  &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
-                 psi1,psi2,Hpsi,psi_r,
+                 psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
                  E,&deltae,&deltac,&deltar);
 
@@ -294,7 +294,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       inner_loop_md(verlet,control,&mygrid,&myion,
                  &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
-                 psi1,psi2,Hpsi,psi_r,
+                 psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
                  E,&deltae,&deltac,&deltar);
 

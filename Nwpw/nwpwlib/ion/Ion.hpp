@@ -25,6 +25,7 @@ public:
    double *mass;
    double *dti;
    double *rion0,*rion1,*rion2; // coordinates of ions
+   double dt;
 
    /* Constructors */
    Ion(RTDB&, Control2&);
@@ -101,6 +102,31 @@ public:
           rion2[3*ii]   = rion1[3*ii]   + alpha*fion[3*ii];
           rion2[3*ii+1] = rion1[3*ii+1] + alpha*fion[3*ii+1];
           rion2[3*ii+2] = rion1[3*ii+2] + alpha*fion[3*ii+2];
+       }
+    }
+
+    void Verlet_step(const double *fion) 
+    {
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          double scale = dti[ii];
+          rion2[3*ii]   = 2*rion1[3*ii]   - rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = 2*rion1[3*ii+1] - rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = 2*rion1[3*ii+2] - rion0[3*ii+2] + scale*fion[3*ii+2];
+       }
+
+       double h = 1.0/(2.0*dt);
+       for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
+    }
+
+    void Newton_step(const double *fion) 
+    {
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          double scale = dti[ii];
+          rion2[3*ii]   = rion1[3*ii]   + dt*rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = rion1[3*ii+1] + dt*rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = rion1[3*ii+2] + dt*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
     }
 

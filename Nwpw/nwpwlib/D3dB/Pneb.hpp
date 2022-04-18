@@ -127,6 +127,8 @@ public:
         void gg_Minus2(double *, double *);
         void ggg_Minus(double *, double *, double *);
 
+        void gg_daxpy(double, double *, double *);
+
 };
 }
 

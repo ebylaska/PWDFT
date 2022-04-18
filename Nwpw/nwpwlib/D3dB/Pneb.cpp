@@ -186,44 +186,46 @@ void Pneb::gg_copy(double *psi1, double *psi2)
 }
 void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
 {
-   int i;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (i=0; i<nsize; ++i)
+   for (int i=0; i<nsize; ++i)
       psi2[i] = alpha*psi1[i];
+}
+
+void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2)
+{
+   int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
+   for (int i=0; i<nsize; ++i)
+      psi2[i] += alpha*psi1[i];
 }
 
 void Pneb::g_Scale(double alpha,double *psi1)
 {
-   int i;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (i=0; i<nsize; ++i)
+   for (int i=0; i<nsize; ++i)
       psi1[i] *= alpha;
 }
 
 void Pneb::gg_Sum2(double *psi1, double *psi2)
 {
-   int i;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (i=0; i<nsize; ++i)
+   for (int i=0; i<nsize; ++i)
       psi2[i] += psi1[i];
 }
 
 void Pneb::gg_Minus2(double *psi1, double *psi2)
 {
-   int i;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (i=0; i<nsize; ++i)
+   for (int i=0; i<nsize; ++i)
       psi2[i] -= psi1[i];
 }
 
-
 void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
 {
-   int i;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (i=0; i<nsize; ++i)
+   for (int i=0; i<nsize; ++i)
       psi3[i] = psi1[i] - psi2[i];
 }
+
 
 
 void Pneb::g_zero(double *psi2)

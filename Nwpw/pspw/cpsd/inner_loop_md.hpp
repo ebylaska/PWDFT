@@ -19,7 +19,7 @@ namespace pwdft {
 extern void inner_loop_md(bool, Control2&, Pneb *, Ion *, 
                        Kinetic_Operator *, Coulomb_Operator *, XC_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
-                       double *, double *, double *, double *,
+                       double *, double *, double *, double *, double *,
                        double *, double *, double *,
                        double *, double *, double *, double *);
 }

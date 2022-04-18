@@ -27,7 +27,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
                 Coulomb_Operator *mycoulomb, 
                 XC_Operator      *myxc, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
-                double *psi1, double *psi2, double *Hpsi, double *psi_r,
+                double *psi0, double *psi1, double *psi2, double *Hpsi, double *psi_r,
                 double *dn, double *hml,double *lmbda,
                 double E[], double *deltae, double *deltac, double *deltar)
 {
@@ -36,7 +36,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    int one=1;
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
-   double eke,elocal,enlocal,dt,dte,Eold;
+   double eke,elocal,enlocal,dt,dte,fmass,Eold;
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
    bool move = true;
@@ -54,7 +54,9 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    dv = omega*scal1;
 
    dt = control.time_step();
-   dte = dt /sqrt(control.fake_mass());
+   fmass = control.fake_mass();
+   dte = dt*dt/fmass;
+
    it_in = control.loop(0);
 
    /* allocate temporary memory */
@@ -161,14 +163,26 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
          }
      }
 
-     /* car-parrinellot step */
-     mygrid->gg_SMul(dte,Hpsi,psi2);
-     mygrid->gg_Sum2(psi1,psi2);
+     myewald->force(fion);
 
-     if (move) 
+     /* car-parrinello Verlet step */
+     if (verlet) 
      {
-        myewald->force(fion);
-        myion->optimize_step(fion);
+        mygrid->gg_SMul(dte,Hpsi,psi2);
+        mygrid->gg_daxpy(-1.0,psi0,psi2);
+        mygrid->gg_daxpy( 2.0,psi1,psi2);
+
+        myion->Verlet_step(fion);
+     }
+
+     /* car-parrinello Newton step */
+     else
+     {
+        mygrid->gg_SMul(dte,Hpsi,psi2);
+        mygrid->gg_daxpy(dt,psi0,psi2);
+        mygrid->gg_Sum2(psi1,psi2);
+
+        myion->Newton_step(fion);
      }
 
      /* lagrange multiplier */
