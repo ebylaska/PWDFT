@@ -21,6 +21,6 @@ extern void inner_loop_md(bool, Control2&, Pneb *, Ion *,
                        Pseudopotential *, Strfac *, Ewald *,
                        double *, double *, double *, double *, double *,
                        double *, double *, double *,
-                       double *, double *, double *, double *);
+                       double *);
 }
 #endif

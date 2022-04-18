@@ -154,13 +154,14 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    int matype,nelem,ii,i,j,found;
    char *symtmp,*symb;
    char date[50];
-   double time_step   = control.time_step();
    double amu_to_mass = 1822.89;
 
    /* get parallel mappings */
    if (!myrtdb.get("geometry:geometry:ncenter",rtdb_int,1,&nion)) nion = 1;
 
    nkatm = ion_find_nkatm(myrtdb,nion);
+
+   time_step = control.time_step();
 
    charge    = new double[nion];
    mass      = new double[nion];
@@ -187,7 +188,6 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    if (!myrtdb.get("geometry:geometry:masses",rtdb_double,nion,mass)) mass[0] = 1.0;
    if (!myrtdb.get("geometry:geometry:charges",rtdb_double,nion,charge)) charge[0] = 1.0;
 
-   dt = time_step;
    for (ii=0; ii<nion; ++ii)
    {
       mass[ii] *= amu_to_mass;
@@ -199,9 +199,9 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
 Ion::Ion(string rtdbstring, Control2& control) 
 {
    double amu_to_mass = 1822.89;
-   double time_step = control.time_step();
 
    auto rtdbjson =  json::parse(rtdbstring);
+
 
    string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
@@ -220,6 +220,8 @@ Ion::Ion(string rtdbstring, Control2& control)
       if (match == end(tmpsymbols)) tmpsymbols.push_back(symbols[i]);
    }
    nkatm = tmpsymbols.size();
+
+   time_step = control.time_step();
 
    charge    = new double[nion];
    mass      = new double[nion];

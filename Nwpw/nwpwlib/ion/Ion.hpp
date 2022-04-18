@@ -25,7 +25,7 @@ public:
    double *mass;
    double *dti;
    double *rion0,*rion1,*rion2; // coordinates of ions
-   double dt;
+   double time_step;
 
    /* Constructors */
    Ion(RTDB&, Control2&);
@@ -94,6 +94,36 @@ public:
        return ss/tmass;
     }
 
+    double ke()
+    {
+       double eki = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+          eki += 0.5*mass[ii] * ( rion0[3*ii]  *rion0[3*ii]
+	  		        + rion0[3*ii+1]*rion0[3*ii+1] 
+			        + rion0[3*ii+2]*rion0[3*ii+2] );
+       return eki;
+    }
+
+    double ke_com()
+    {
+       double tmass = 0.0;
+       double vgx   = 0.0;
+       double vgy   = 0.0;
+       double vgz   = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+       { 
+          tmass += mass[ii];
+          vgx   += mass[ii]*rion0[3*ii];
+          vgy   += mass[ii]*rion0[3*ii+1];
+          vgz   += mass[ii]*rion0[3*ii+2];
+       }
+       vgx /= tmass;
+       vgy /= tmass;
+       vgz /= tmass;
+
+       return 0.5*tmass*(vgx*vgx + vgy*vgy + vgz*vgz);
+    }
+
     void optimize_step(const double *fion) 
     {
        for (auto ii=0; ii<nion; ++ii)
@@ -115,7 +145,7 @@ public:
           rion2[3*ii+2] = 2*rion1[3*ii+2] - rion0[3*ii+2] + scale*fion[3*ii+2];
        }
 
-       double h = 1.0/(2.0*dt);
+       double h = 1.0/(2.0*time_step);
        for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
     }
 
@@ -124,9 +154,9 @@ public:
        for (auto ii=0; ii<nion; ++ii)
        {
           double scale = dti[ii];
-          rion2[3*ii]   = rion1[3*ii]   + dt*rion0[3*ii]   + scale*fion[3*ii];
-          rion2[3*ii+1] = rion1[3*ii+1] + dt*rion0[3*ii+1] + scale*fion[3*ii+1];
-          rion2[3*ii+2] = rion1[3*ii+2] + dt*rion0[3*ii+2] + scale*fion[3*ii+2];
+          rion2[3*ii]   = rion1[3*ii]   + time_step*rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = rion1[3*ii+1] + time_step*rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = rion1[3*ii+2] + time_step*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
     }
 

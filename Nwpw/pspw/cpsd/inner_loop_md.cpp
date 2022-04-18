@@ -29,7 +29,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
                 double *psi0, double *psi1, double *psi2, double *Hpsi, double *psi_r,
                 double *dn, double *hml,double *lmbda,
-                double E[], double *deltae, double *deltac, double *deltar)
+                double E[])
 {
    int it,it_in,i,n2ft3d,neall,ispin,k,ms;
    int shift1,shift2,indx1,indx2;
@@ -82,16 +82,17 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
 
    for (it=0; it<it_in; ++it)
    {
+      /* shift wavefuntion */
       mygrid->g_zero(Hpsi);
+      mygrid->gg_copy(psi1,psi0);
       mygrid->gg_copy(psi2,psi1);
       //mygrid->gh_fftb(psi1,psi_r);
 
-      if (move)
-      {
-         myion->shift();
-         mystrfac->phafac();
-         myewald->phafac();
-      }
+      /* skip shift ion if newton step */
+      if (verlet) myion->shift();
+
+      mystrfac->phafac();
+      myewald->phafac();
 
       indx1 = 0;
       indx2 = 0;
@@ -192,83 +193,71 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
    mygrid->m_scal(-1.0,hml);
-   eorbit  = mygrid->m_trace(hml);
-   if (ispin==1) eorbit = eorbit+eorbit;
 
-   ehartr  = mycoulomb->ecoulomb(dng);
-   exc     = mygrid->rr_dot(dnall,xce);
-   pxc     = mygrid->rr_dot(dn,xcp);
-   if (ispin==1)
+   /* if newton then skip energy calculations */
+   if (verlet)
    {
-      exc = exc+exc;
-      pxc = pxc+pxc;
-   }
-   else
-   {
-      exc += mygrid->rr_dot(&dnall[n2ft3d],xce);
-      pxc += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
-   }
-   exc *= dv;
-   pxc *= dv;
+      eorbit  = mygrid->m_trace(hml);
+      if (ispin==1) eorbit = eorbit+eorbit;
 
-   eion    = myewald->energy();
-   eke     = myke->ke_ave(psi1);
-   elocal  = mygrid->cc_pack_dot(0,dng,vl);
-   mygrid->g_zero(Hpsi);
-   mypsp->v_nonlocal(psi1,Hpsi);
-   enlocal = -mygrid->gg_traceall(psi1,Hpsi);
-
-
-   Eold = E[0];
-   E[0] = eorbit + eion + exc - ehartr - pxc;
-   E[1] = eorbit;
-   E[2] = ehartr;
-   E[3] = exc;
-   E[4] = eion;
-   E[5] = eke;
-   E[6] = elocal;
-   E[7] = enlocal;
-   E[8] = 2*ehartr;
-   E[9] = pxc;
-
-   if (mypsp->myapc->v_apc_on)
-   {
-      E[51] = mypsp->myapc->Eapc;
-      E[52] = mypsp->myapc->Papc;
-      E[0]  = E[0] + E[51] - E[52];
-   }
-
-   /* set convergence variables */
-   *deltae = (E[0]-Eold)/(dt*control.loop(0));
-
-   /* deltac */
-   sumi    = new double[neall]();
-   mygrid->ggg_Minus(psi2,psi1,Hpsi);
-   for (i=0; i<neall; ++i) 
-      sumi[i] = mygrid->cc_pack_idot(1,&Hpsi[i*shift1],&Hpsi[i*shift1]);
-   mygrid->d3db::parall->Vector_SumAll(1,neall,sumi);
-   dc = 0.0;
-   for (i=0; i<neall; ++i) 
-      if (sumi[i]>dc) dc=sumi[i];
-   dc = mygrid->d3db::parall->MaxAll(2,dc);
-   *deltac = dc/dte;
-   delete [] sumi;
-
-   /* deltar */ 
-   *deltar = 0.0;
-   if (move)
-   {
-      double sum;
-      for (auto ii=0; ii<(myion->nion); ++ii)
+      ehartr  = mycoulomb->ecoulomb(dng);
+      exc     = mygrid->rr_dot(dnall,xce);
+      pxc     = mygrid->rr_dot(dn,xcp);
+      if (ispin==1)
       {
-         sum = sqrt( fion[3*ii]  *fion[3*ii] 
-                   + fion[3*ii+1]*fion[3*ii+1] 
-                   + fion[3*ii+2]*fion[3*ii+2]);
-         if (sum>(*deltar)) *deltar = sum;
+         exc = exc+exc;
+         pxc = pxc+pxc;
       }
+      else
+      {
+         exc += mygrid->rr_dot(&dnall[n2ft3d],xce);
+         pxc += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
+      }
+      exc *= dv;
+      pxc *= dv;
+
+      eion    = myewald->energy();
+      elocal  = mygrid->cc_pack_dot(0,dng,vl);
+      mygrid->g_zero(Hpsi);
+      mypsp->v_nonlocal(psi1,Hpsi);
+      enlocal = -mygrid->gg_traceall(psi1,Hpsi);
+
+      /* velocity and kinetic enegy of psi */
+      double h = 1.0/(2.8*dt);
+      mygrid->gg_SMul1(-h,psi0);
+      mygrid->gg_daxpy(h,psi2,psi0);
+      eke = fmass*mygrid->gg_traceall(psi0,psi0);
+
+
+      Eold = E[0];
+      E[1] = eorbit + eion + exc - ehartr - pxc;
+      E[2] = eke;
+      E[3] = myion->ke();
+
+      E[4] = eorbit;
+      E[5] = ehartr;
+      E[6] = exc;
+      E[7] = eion;
+
+      E[8] = elocal;
+      E[9] = enlocal;
+      E[10] = 2*ehartr;
+      E[11] = pxc;
+
+      if (mypsp->myapc->v_apc_on)
+      {
+         E[51] = mypsp->myapc->Eapc;
+         E[52] = mypsp->myapc->Papc;
+         E[1]  = E[1] + E[51] - E[52];
+      }
+
+
+      /* add kinetic energies */
+      E[0] = E[1] + E[2] + E[3];
+
    }
 
-
+   /* deallocate local heap data */
    delete [] fion;
 
    mygrid->r_dealloc(tmp);

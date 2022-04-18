@@ -161,7 +161,6 @@ void Pneb::g_write(const int iunit, double *psi)
 }
 
 
-
 double Pneb::gg_traceall(double *psi1, double *psi2)
 {
    int n,indx;
@@ -178,6 +177,7 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    return d3db::parall->SumAll(0,sum);
 }
 
+
 void Pneb::gg_copy(double *psi1, double *psi2)
 {
    int one=1;
@@ -189,6 +189,12 @@ void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
    for (int i=0; i<nsize; ++i)
       psi2[i] = alpha*psi1[i];
+}
+void Pneb::gg_SMul1(double alpha,double *psi1)
+{
+   int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
+   for (int i=0; i<nsize; ++i)
+      psi1[i] *= alpha;
 }
 
 void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2)

@@ -50,7 +50,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    char date[26];
    double sum1,sum2,ev;
    double cpu1,cpu2,cpu3,cpu4;
-   double E[60],deltae,deltac,deltar,viral,unita[9];
+   double E[60],viral,unita[9];
    double *psi0,*psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
@@ -283,7 +283,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
-                 E,&deltae,&deltac,&deltar);
+                 E);
 
    verlet = true;
    done   = 0;
@@ -296,7 +296,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
-                 E,&deltae,&deltac,&deltar);
+                 E);
 
       if (myparallel.is_master())
          printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
