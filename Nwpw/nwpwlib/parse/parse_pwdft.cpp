@@ -728,6 +728,8 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
          ss = mystring_split0(line);
          if (ss.size()>1) cpmdjson["dipole_motion"] = ss[1];
       }
+
+      // initial_velocities temperatue seed
       else if (mystring_contains(line,"intitial_velocities"))
       {
          ss = mystring_split0(line);
@@ -738,8 +740,11 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
           else
             cpmdjson["initial_velocities"] = {298.15,12345};
       }
-
-
+      else if (mystring_contains(line,"com_shift"))
+      {
+         if (mystring_contains(line," off")) cpmdjson["com_shift"] = false;
+         if (mystring_contains(line," on"))  cpmdjson["com_shift"] = true;
+      }
 
 
 /*

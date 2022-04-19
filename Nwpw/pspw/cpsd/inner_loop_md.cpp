@@ -224,7 +224,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
 
       /* velocity and kinetic enegy of psi */
       double h = 1.0/(2.8*dt);
-      mygrid->gg_SMul1(-h,psi0);
+      mygrid->g_Scale(-h,psi0);
       mygrid->gg_daxpy(h,psi2,psi0);
       eke = fmass*mygrid->gg_traceall(psi0,psi0);
 

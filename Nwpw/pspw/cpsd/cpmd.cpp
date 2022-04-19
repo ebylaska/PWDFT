@@ -138,6 +138,10 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
+   /* scaling psi velocity */
+   double eke0 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
+   mygrid.g_Scale(control.scaling(0),psi0);
+   double eke1 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
 
 
 //                 |**************************|
@@ -173,8 +177,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          cout << "restricted\n";
       else
          cout << "unrestricted\n";
-      cout << "   exchange-correlation = ";
-         cout << "LDA (Vosko et al) parameterization\n";
+      cout << myxc;
   
       //cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
@@ -256,8 +259,15 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
              control.time_step(),control.fake_mass());
       //printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
       //       control.tolerances(0),control.tolerances(1),control.tolerances(2));
+
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
+      cout << "\n\n";
+      printf(" cooling/heating rates:  %12.5le (psi) %12.5le (ion)\n",control.scaling(0),control.scaling(1));
+      printf(" initial kinetic energy: %12.5le (psi) %12.5le (ion)\n",eke0,myion.eki0);
+      printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
+      printf(" after scaling:          %12.5le (psi) %12.5le (ion)\n",eke1,myion.eki1);
+      printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
       cout << "\n\n\n";
 
 
@@ -346,23 +356,36 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
       cout << "\n\n";
-      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
-      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
+      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[1],E[1]/myion.nion);
+      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[4],E[4]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
       if (mypsp.myapc->v_apc_on)
          printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
+      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[7],E[7]/myion.nion);
+      printf(" Kinetic energy (elc)    : %19.10le (%15.5le /elc)\n",E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" Kinetic energy (ion)    : %19.10le (%15.5le /ion)\n",E[3],E[3]/myion.nion);
       printf("\n");
-      printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
-      if (mypsp.myapc->v_apc_on)
-         printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
-      viral = (E[9]+E[8]+E[7]+E[6])/E[5];
-      printf(" Viral Coefficient   : %19.10le\n",viral);
+
+      //if (nose)
+      //{
+      //   printf(" thermostat energy (elc) : %19.10le (%15.5le /elc)\n",E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
+      //   printf(" thermostat energy (ion) : %19.10le (%15.5le /ion)\n",E[4],E[3]/nion.nion);
+      //}
+      printf(" final kinetic energy:   %12.5le (psi) %12.5le (ion)\n", E[2],E[3]);
+      printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
+
+
+
+      //printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
+      //printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
+      //printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
+      //printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
+      //printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
+      //if (mypsp.myapc->v_apc_on)
+      //   printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
+      //viral = (E[9]+E[8]+E[7]+E[6])/E[5];
+      //printf(" Viral Coefficient   : %19.10le\n",viral);
 
       printf("\n orbital energies:\n"); 
       nn = ne[0] - ne[1];
@@ -377,6 +400,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
 
+      std::cout << std::endl << std::endl;
       //cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
       //cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
    }

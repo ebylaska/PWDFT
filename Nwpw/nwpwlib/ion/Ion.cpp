@@ -265,11 +265,12 @@ Ion::Ion(string rtdbstring, Control2& control)
       }
    }
 
-   // generate random initial velocities
+
+   // generate random initial velocities  (temperature, seed) - only set with random velocities if seed > 0 
+   seed = -1;
+   Tf   = -1.0;
    double vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
    double twopi = 16.0*atan(1.0);
-   int seed = -1;
-   double Tf =  -1.0;
    double kb = 3.16679e-6;
 
    if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0].is_number_float())
@@ -293,11 +294,11 @@ Ion::Ion(string rtdbstring, Control2& control)
          rr3 = ((double) std::rand())/((double) RAND_MAX);
          rr4 = ((double) std::rand())/((double) RAND_MAX);
          rr5 = ((double) std::rand())/((double) RAND_MAX);
-         std::cout << "RANDS=" << rr0 << " " << rr1;
-         std::cout <<      " " << rr2 << " " << rr3;
-         std::cout <<      " " << rr4 << " " << rr5 << std::endl;
-         std::cout <<      " seed=" << seed;
-         std::cout <<      " Tf=" << Tf << std::endl;
+         //std::cout << "RANDS=" << rr0 << " " << rr1;
+         //std::cout <<      " " << rr2 << " " << rr3;
+         //std::cout <<      " " << rr4 << " " << rr5 << std::endl;
+         //std::cout <<      " seed=" << seed;
+         //std::cout <<      " Tf=" << Tf << std::endl;
 
          vgx = -(2.00*kb*Tf/mass[i])*log(rr0);
          vgy = cos(twopi*rr1);
@@ -320,8 +321,42 @@ Ion::Ion(string rtdbstring, Control2& control)
          rion0[3*i+1] -= vgy;
          rion0[3*i+2] -= vgz;
       }
+      eki0 = ke();
+      double Tscale;
+      if (nion>2)
+         Tscale = 2.0*eki0/(3.0*nion-6.0)/kb;
+      else
+         Tscale = 2.0*eki0/kb;
+      Tscale = sqrt(Tf/Tscale);
+      for (auto i=0; i<(3*nion); ++i) rion0[i] *= Tscale;
+
    }
  
+   // generate initial kinetic energies
+   ekg  = ke_com();
+   eki0 = ke();
+
+   // shift by velocity COM
+   bool do_com_shift = true;
+   if (rtdbjson["nwpw"]["car-parrinello"]["com_shift"].is_boolean())
+      do_com_shift = rtdbjson["nwpw"]["car-parrinello"]["com_shift"];
+
+   if (do_com_shift)
+   {
+      center_v_mass(nion,mass,rion0,&vgx,&vgy,&vgz);
+      for (auto i=0; i<nion; ++i)
+      {
+         rion0[3*i]   -= vgx;
+         rion0[3*i+1] -= vgy;
+         rion0[3*i+2] -= vgz;
+      }
+   }
+
+   // scale velocities then find kinetic energy
+   rr0 = control.scaling(1);
+   for (auto i=0; i<(3*nion); ++i) rion0[i] *= rr0;
+   eki1 = ke();
+
       
 
 /*  DEBUG CHECK
@@ -362,5 +397,6 @@ void Ion::writejsonstr(string& rtdbstring)
 
    rtdbstring = rtdbjson.dump();
 }
+
 
 }

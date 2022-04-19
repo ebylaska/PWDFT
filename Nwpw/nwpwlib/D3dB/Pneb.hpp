@@ -122,7 +122,7 @@ public:
         void g_ortho(double *);
 
         void gg_SMul(double, double *, double *);
-        void gg_SMul1(double, double *);
+        //void g_SMul1(double, double *);
         void g_Scale(double, double *);
         void gg_Sum2(double *, double *);
         void gg_Minus2(double *, double *);

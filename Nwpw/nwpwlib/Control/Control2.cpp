@@ -168,7 +168,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    ptotal_ion_charge = -1.0;
    ptotal_charge = 0.0;
    //if (rtdbjson["charge"].is_number_float()) ptotal_charge = rtdbjson["charge"];
-   if (rtdbjson["charge"].is_number_integer()) ptotal_charge = rtdbjson["charge"];
+   if (rtdbjson["charge"].is_number_integer()||rtdbjson["charge"].is_number_float()) ptotal_charge = rtdbjson["charge"];
 
    /* get parallel mappings */
    pmapping = 1;
@@ -316,6 +316,12 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer()) ploop[1] = rtdbjson["nwpw"]["steepest_descent"]["loop"][1];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][0].is_number_integer()) ploop[0] = rtdbjson["nwpw"]["car-parrinello"]["loop"][0];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][1].is_number_integer()) ploop[1] = rtdbjson["nwpw"]["car-parrinello"]["loop"][1];
+
+   pscaling[0] = 1.0; pscaling[1] = 1.0;
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_float())   pscaling[0] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][0];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_integer()) pscaling[0] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][0];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_float())   pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_integer()) pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
 
 
    ptolerances[0] = 1.0e-7; ptolerances[1] = 1.0e-7; ptolerances[2] = 1.0e-4; 

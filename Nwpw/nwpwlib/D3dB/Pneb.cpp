@@ -190,12 +190,12 @@ void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
    for (int i=0; i<nsize; ++i)
       psi2[i] = alpha*psi1[i];
 }
-void Pneb::gg_SMul1(double alpha,double *psi1)
-{
-   int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   for (int i=0; i<nsize; ++i)
-      psi1[i] *= alpha;
-}
+//void Pneb::g_SMul1(double alpha,double *psi1)
+//{
+//   int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
+//   for (int i=0; i<nsize; ++i)
+//      psi1[i] *= alpha;
+//}
 
 void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2)
 {

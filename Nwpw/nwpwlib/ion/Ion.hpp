@@ -27,6 +27,10 @@ public:
    double *rion0,*rion1,*rion2; // coordinates of ions
    double time_step;
 
+   /* init_ke variables */
+   int ke_count, seed, Tf;
+   double ekg,eki0,eki1,ke_total,kg_total,mass_total;
+
    /* Constructors */
    Ion(RTDB&, Control2&);
    Ion(std::string, Control2&);
@@ -45,6 +49,7 @@ public:
       delete [] rion2;
     }
 
+    /* functions */
 
     void shift() 
     { 
