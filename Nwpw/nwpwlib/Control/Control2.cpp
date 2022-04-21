@@ -436,6 +436,63 @@ Control2::Control2(const int np0, const string rtdbstring)
       }
    }
 
+   pnose_on = false; pnose_restart = false;
+   pnose_mchain = 0; pnose_mchain = 0;
+   pnose_te = 0.0; pnose_tr = 0.0; pnose_pe = 0.0; pnose_pr = 0.0; pnose_ne_chain = 0.0; pnose_eke0 = 0.0; 
+   if (!rtdbjson["nwpw"]["car-parrinello"]["Nose-Hoover"].is_null()) {
+
+      auto nosejson = rtdbjson["nwpw"]["car-parrinello"]["Nose-Hoover"];
+
+      if (nosejson["on"].is_boolean())      pnose_on      = nosejson["on"];
+      if (nosejson["restart"].is_boolean()) pnose_restart = nosejson["restart"];
+
+      if (nosejson["Mchain"].is_number_integer()) pnose_mchain = nosejson["Mchain"];
+      if (nosejson["Nchain"].is_number_integer()) pnose_nchain = nosejson["Nchain"];
+
+      if (nosejson["Te"].is_number_float()) pnose_te = nosejson["Te"];
+      if (nosejson["Tr"].is_number_float()) pnose_tr = nosejson["Tr"];
+      if (nosejson["Pe"].is_number_float()) pnose_pe = nosejson["Pe"];
+      if (nosejson["Pr"].is_number_float()) pnose_pr = nosejson["Pr"];
+
+      if (nosejson["Ne_chain"].is_number_float()) pnose_ne_chain = nosejson["Ne_chain"];
+      if (nosejson["eke0"].is_number_float())     pnose_eke0     = nosejson["eke0"];
+
+      if (!nosejson["Xem"].is_null()) {
+         size_t nu = nosejson["Xem"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xem.push_back(nosejson["Xem"][i]);
+      }
+      if (!nosejson["Xe0"].is_null()) {
+         size_t nu = nosejson["Xe0"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xe0.push_back(nosejson["Xe0"][i]);
+      }
+      if (!nosejson["Xe1"].is_null()) {
+         size_t nu = nosejson["Xe1"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xe1.push_back(nosejson["Xe1"][i]);
+      }
+      if (!nosejson["Qe"].is_null()) {
+         size_t nu = nosejson["Qe"].size();
+         for (size_t i=0; i<nu; ++i) pnose_qe.push_back(nosejson["Qe"][i]);
+      }
+
+      if (!nosejson["Xrm"].is_null()) {
+         size_t nu = nosejson["Xrm"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xrm.push_back(nosejson["Xrm"][i]);
+      }
+      if (!nosejson["Xr0"].is_null()) {
+         size_t nu = nosejson["Xr0"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xr0.push_back(nosejson["Xr0"][i]);
+      }
+      if (!nosejson["Xr1"].is_null()) {
+         size_t nu = nosejson["Xr1"].size();
+         for (size_t i=0; i<nu; ++i) pnose_xr1.push_back(nosejson["Xr1"][i]);
+      }
+      if (!nosejson["Qr"].is_null()) {
+         size_t nu = nosejson["Qr"].size();
+         for (size_t i=0; i<nu; ++i) pnose_qr.push_back(nosejson["Qr"][i]);
+      }
+   }
+
+
    if (!rtdbjson["driver"]["maxiter"].is_null())     { pdriver_maxiter     = rtdbjson["driver"]["maxiter"]; }
    if (!rtdbjson["driver"]["lmbfgs_size"].is_null()) { pdriver_lmbfgs_size = rtdbjson["driver"]["lmbfgs_size"]; }
    if (!rtdbjson["driver"]["gmax"].is_null())    { pdriver_gmax  = rtdbjson["driver"]["gmax"]; }

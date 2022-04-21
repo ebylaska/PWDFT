@@ -63,6 +63,11 @@ class Control2 {
    double papc_Gc;
    std::vector<double> papc_gamma,papc_u,papc_q;
 
+   bool   pnose_on,pnose_restart;
+   int    pnose_mchain,pnose_nchain;
+   double pnose_pe,pnose_pr,pnose_te,pnose_tr,pnose_ne_chain,pnose_eke0;
+   std::vector<double> pnose_xem,pnose_xe0,pnose_xe1,pnose_qe,
+                       pnose_xrm,pnose_xr0,pnose_xr1,pnose_qr;
 
 public:
 
@@ -208,6 +213,27 @@ public:
       else
          return papc_u[i];
    }
+
+   // Nose
+   bool Nose() { return pnose_on; }
+   bool Nose_restart() { return pnose_restart; }
+   int  Nose_Mchain()  { return pnose_mchain; }
+   int  Nose_Nchain()  { return pnose_nchain; }
+   double Nose_Te()    { return pnose_te; }
+   double Nose_Tr()    { return pnose_tr; }
+   double Nose_Pe()    { return pnose_pe; }
+   double Nose_Pr()    { return pnose_pr; }
+   double Nose_eke0()  { return pnose_eke0; }
+   double Nose_Ne_chain() { return pnose_ne_chain; }
+   double Nose_Xem(const int i) { return ((i>=pnose_xem.size()) ? 0.0 : pnose_xem[i]); }
+   double Nose_Xe0(const int i) { return ((i>=pnose_xe0.size()) ? 0.0 : pnose_xe0[i]); }
+   double Nose_Xe1(const int i) { return ((i>=pnose_xe1.size()) ? 0.0 : pnose_xe1[i]); }
+   double Nose_Qe(const int i)  { return ((i>=pnose_qe.size())  ? 0.0 : pnose_qe[i]);  }
+   double Nose_Xrm(const int i) { return ((i>=pnose_xrm.size()) ? 0.0 : pnose_xrm[i]); }
+   double Nose_Xr0(const int i) { return ((i>=pnose_xr0.size()) ? 0.0 : pnose_xr0[i]); }
+   double Nose_Xr1(const int i) { return ((i>=pnose_xr1.size()) ? 0.0 : pnose_xr1[i]); }
+   double Nose_Qr(const int i)  { return ((i>=pnose_qr.size())  ? 0.0 : pnose_qr[i]);  }
+
 
    //GGA value
    int get_gga() {

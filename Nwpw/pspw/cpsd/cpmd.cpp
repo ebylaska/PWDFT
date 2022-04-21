@@ -17,6 +17,7 @@ using namespace std;
 #include	"Ion.hpp"
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
+#include	"nwpw_Nose_Hoover.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
 #include	"exchange_correlation.hpp"
@@ -142,6 +143,31 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double eke0 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
    mygrid.g_Scale(control.scaling(0),psi0);
    double eke1 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
+
+   /* initialize thermostats */
+   nwpw_Nose_Hoover mynose(myion,(mygrid.ne[0]+mygrid.ne[1]),eke0,control);
+
+   /* Initialize simulated annealing */
+
+   /* initialize two-electron Gaussian integrals */
+   /* initialize paw ncmp*Vloc */
+
+   /* initialize metadynamics and tamd */
+
+   /* initialize dplot */
+
+   /* initialize SIC and HFX */
+
+   /* initialize DFT+U */
+
+   /* initialize META GGA */
+
+   /* initialize vdw */
+
+   /* initialize pressure */
+
+
+
 
 
 //                 |**************************|
