@@ -49,12 +49,14 @@ using namespace pwdft;
 
 static std::string fortran_rtdbstring;
 
-extern "C" void pspw_fortran_minimizer_(int *comm_world, double *rion, double *uion, double *E, double *fion, double *qion)
+extern "C" void pspw_fortran_minimizer_(MPI_Fint *fcomm_world, double *rion, double *uion, double *E, double *fion, double *qion)
 {
+   MPI_Comm comm_world = MPI_Comm_f2c(*fcomm_world);
+
    std::string line,nwinput;
 
-   std::cout << "HELLO from pspw_minimizer_fortran_   comm= " << *comm_world <<  std::endl;
-   std::cout << " " << MPI_COMM_WORLD << std::endl;
+   //std::cout << "HELLO from pspw_minimizer_fortran_   comm= " <<  comm_world <<  std::endl;
+   //std::cout << " MPI_COMM_WORLD= " << MPI_COMM_WORLD << std::endl;
 
    auto fortran_rtdbjson =  json::parse(fortran_rtdbstring);
 
@@ -65,31 +67,31 @@ extern "C" void pspw_fortran_minimizer_(int *comm_world, double *rion, double *u
    fortran_rtdbstring    = fortran_rtdbjson.dump();
 
    
-   std::cout << "input fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
+   //std::cout << "input fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
 
    // Initialize wavefunction if it doesn't exist
    {
      int taskid;
      int MASTER=0;
-     int ierr = MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+     int ierr = MPI_Comm_rank(comm_world,&taskid);
      bool oprint = (taskid==MASTER);
      std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
      int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
-     MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+     MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
      if (!wfound)
      {
         auto lowlevel_rtdbstrs = pwdft::parse_gen_lowlevel_rtdbstrs(fortran_rtdbstring);
         for (const auto & elem: lowlevel_rtdbstrs) {
            if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
            std::string dum_rtdbstr  = elem;
-           ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
         }
      }
    }
 
-   int  ierr = pwdft::pspw_minimizer(MPI_COMM_WORLD, fortran_rtdbstring);
+   int  ierr = pwdft::pspw_minimizer(comm_world, fortran_rtdbstring);
 
-   std::cout << "output fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
+   //std::cout << "output fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
 
 
    fortran_rtdbjson =  json::parse(fortran_rtdbstring);
@@ -103,22 +105,25 @@ extern "C" void pspw_fortran_minimizer_(int *comm_world, double *rion, double *u
 }
 
 
-extern "C" void pspw_fortran_input_(char *filename, int *flen)
+extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *flen)
 {
+   MPI_Comm comm_world = MPI_Comm_f2c(*fcomm_world);
    int taskid,np,ierr,nwinput_size;;
    int MASTER=0;
-   ierr = MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
-   ierr = MPI_Comm_size(MPI_COMM_WORLD,&np);
+   ierr = MPI_Comm_rank(comm_world,&taskid);
+   ierr = MPI_Comm_size(comm_world,&np);
 
-   std::cout << "filename=" << filename << " len=" << *flen << std::endl;
+   //std::cout << "taskid=" << taskid << " np=" << np << std::endl;
+   //std::cout << "filename=" << filename << " len=" << *flen << std::endl;
 
    std::string nwinput;
 
-   MPI_Barrier(MPI_COMM_WORLD);
+   MPI_Barrier(comm_world);
    if (taskid==MASTER)
    {
       std::string line;
-      std::string nwfilename(filename);
+      char tfilename[*flen]; for (auto i=0; i<*flen; ++i) tfilename[i] = filename[i];
+      std::string nwfilename(tfilename);
       //std::string nwfilename("w2.nw");
 
       std::cout << "nwfilename =" << nwfilename << std::endl;
@@ -134,20 +139,20 @@ extern "C" void pspw_fortran_input_(char *filename, int *flen)
 
       nwinput_size = nwinput.size();
    }
-   std::cout << "taskid=" << taskid << std::endl;
-   MPI_Barrier(MPI_COMM_WORLD);
-   std::cout << "new taskid=" << taskid << " np=" << np << std::endl;
+   //std::cout << "taskid=" << taskid << std::endl;
+   MPI_Barrier(comm_world);
+   //std::cout << "new taskid=" << taskid << " np=" << np << std::endl;
 
    // Broadcast nwinput across MPI tasks 
    if (np>1)
    {
-      MPI_Bcast(&nwinput_size,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+      MPI_Bcast(&nwinput_size,1,MPI_INT,MASTER,comm_world);
       if (taskid != MASTER)
          nwinput.resize(nwinput_size);
-      MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,MPI_COMM_WORLD);
+      MPI_Bcast(const_cast<char*>(nwinput.data()),nwinput_size,MPI_CHAR,MASTER,comm_world);
    }
 
-   MPI_Barrier(MPI_COMM_WORLD);
+   MPI_Barrier(comm_world);
    fortran_rtdbstring = pwdft::parse_nwinput(nwinput);
 
 }

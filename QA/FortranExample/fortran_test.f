@@ -13,8 +13,9 @@
       call MPI_COMM_RANK(MPI_COMM_WORLD,taskid,mpierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,np,mpierr)
 
+
 *     *** needs to be written over tasks ***
-      write(*,*) "taskid=",taskid
+      !write(*,*) "taskid=",taskid
       rion(1,1) = 0.0d0
       rion(2,1) = 0.0d0
       rion(3,1) = -0.7d0
@@ -24,7 +25,7 @@
       uion(1) = 0.0d0
       uion(2) = 0.0d0
 
-      call pspw_fortran_input("h2.nw",len("h2.nw"))
+      call pspw_fortran_input(MPI_COMM_WORLD,"h2.nw",len("h2.nw"))
       call pspw_fortran_minimizer(MPI_COMM_WORLD,rion,uion,
      >                            Energy0,fion,qion)
 
