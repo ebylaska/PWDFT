@@ -62,6 +62,12 @@ public:
     void writejsonstr(string&);
     double rion(int i, int ii) { return rion1[3*ii+i];}
     double vion(int i, int ii) { return rion0[3*ii+i];}
+    double total_mass() { 
+       double tmass = 0.0;
+       for (auto ii=0; ii<nion; ++ii)
+          tmass += mass[ii];
+       return tmass;
+    }
     double gc(int i) 
     { 
        double ss = 0.0;

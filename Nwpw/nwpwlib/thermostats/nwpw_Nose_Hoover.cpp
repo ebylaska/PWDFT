@@ -4,6 +4,7 @@
 
 
 #include	<iostream>
+#include        <iomanip>
 #include	<sstream>
 #include	<cstring>
 #include	<cmath>
@@ -25,7 +26,7 @@ namespace pwdft {
  *   nwpw_Nose_Hoover::nwpw_Nose_Hoover    *
  *                                         *
  *******************************************/
-nwpw_Nose_Hoover::nwpw_Nose_Hoover(Ion& myion, int nemax, double eke0, Control2& control)
+nwpw_Nose_Hoover::nwpw_Nose_Hoover(Ion& myion, int nemax0, double eke0, Control2& control)
 {
 
    nose_on = control.Nose();
@@ -34,7 +35,9 @@ nwpw_Nose_Hoover::nwpw_Nose_Hoover(Ion& myion, int nemax, double eke0, Control2&
    {
       double kb = 3.16679e-6;
 
-      nion = myion.nion;
+      nion  = myion.nion;
+      total_mass = myion.total_mass();
+      nemax = nemax0;
 
       Te = control.Nose_Te();
       Tr = control.Nose_Tr();
@@ -109,7 +112,7 @@ nwpw_Nose_Hoover::nwpw_Nose_Hoover(Ion& myion, int nemax, double eke0, Control2&
       Er0[0] = 0.5*g_dof*kb*Tr;
       for (auto n=1; n<Nchain; ++n) Er0[n] = 0.5*kb*Tr;
 
-      Ee0[0] = 4.0*kb*Te*fmass*(nion/mass_total)*eke0_init;;
+      Ee0[0] = 4.0*kb*Te*fmass*(nion/total_mass)*eke0_init;;
       double betae = Ee0[0]/Ne_chain;
       for (auto m=1; m<Mchain; ++m) Ee0[m] = betae;
 
@@ -174,26 +177,71 @@ void nwpw_Nose_Hoover::writejsonstr(std::string& rtdbstring)
 
 /*******************************************
  *                                         *
- *      nwpw_Nose_Hoover::shortprint       *
+ *      nwpw_Nose_Hoover::inputprint       *
  *                                         *
  *******************************************/
-std::string nwpw_Nose_Hoover::shortprint()
+std::string nwpw_Nose_Hoover::inputprint()
 {
-   std::string outstring = "";
+   std::string inputstring = "";
 
    if (nose_on)  
    {
       std::stringstream stream;
 
-      stream << std::endl; 
-      stream << "APC Potential:" << std::endl;
-      stream << std::endl
-          << std::endl;
+      stream << " Nose-Hoover Simulation - Thermostat Parameters:" << std::endl;
+      if (nosers) 
+         stream << "     thermostats resused"     << std::endl;
+      else
+         stream << "     thermostats initialized" << std::endl;
 
-      outstring = stream.str();
+      for (auto m=0; m<Mchain; ++m)
+         stream << "     link = " << setw(3) << (m+1) 
+                << " Te ="     << fixed      << setprecision(2) << setw(8)  << Te 
+                << " Qe ="     << scientific << setprecision(3) << setw(10) << Qe[m] 
+                << " 2*pi/we =" << scientific << setprecision(3) << setw(10) << Pe[m] 
+                << " Ee0 ="     << scientific << setprecision(3) << setw(10) << Ee0[m] 
+                << std::endl;
+      for (auto n=0; n<Nchain; ++n)
+         stream << "     link = " << setw(3) << (n+1) 
+                << " Tr ="     << fixed      << setprecision(2) << setw(8)  << Tr 
+                << " Qr ="     << scientific << setprecision(3) << setw(10) << Qr[n] 
+                << " 2*pi/wr =" << scientific << setprecision(3) << setw(10) << Pr[n] 
+                << " Er0 ="     << scientific << setprecision(3) << setw(10) << Er0[n] 
+                << std::endl;
+
+      inputstring = stream.str();
    }
-   return outstring;
+   return inputstring;
 }
+
+
+
+/*******************************************
+ *                                         *
+ *    nwpw_Nose_Hoover::thermostatprint    *
+ *                                         *
+ *******************************************/
+std::string nwpw_Nose_Hoover::thermostatprint()
+{
+   std::string thermostring = "";
+
+   if (nose_on)  
+   {
+      std::stringstream stream;
+
+      double ee = e_energy();
+      double er = r_energy();
+      stream << std::endl; 
+      stream << " thermostat energy (elc) : " <<  ee << " ( " << ee/nemax << "/elc)" << std::endl;
+      stream << " thermostat energy (ion) : " <<  er << " ( " << er/nion  << "/ion)" << std::endl;
+
+      thermostring = stream.str();
+   }
+   return thermostring;
+}
+
+
+
 
 
 }

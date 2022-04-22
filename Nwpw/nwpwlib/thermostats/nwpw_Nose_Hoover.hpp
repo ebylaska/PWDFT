@@ -29,16 +29,16 @@ public:
 
    int    Mchain=0;
    int    Nchain=0;
-   int    nion;
+   int    nion,nemax;
    double *Xem,*Xe0,*Xe1,*Xe2,*Ee0,*Qe,*Pe;
    double *Xrm,*Xr0,*Xr1,*Xr2,*Er0,*Qr,*Pr;
 
    double eke0_init,Ne_chain,Pe_init,Pr_init,g_dof;
 
-   double Te,Tr,time_step,fmass,mass_total;
+   double Te,Tr,time_step,fmass,total_mass;
 
    /* constructor */
-   nwpw_Nose_Hoover(Ion&,int, double,Control2&);
+   nwpw_Nose_Hoover(Ion&,int,double,Control2&);
 
    /* destructor */
    ~nwpw_Nose_Hoover() {
@@ -62,6 +62,7 @@ public:
    }
 
    /* access functions */
+   bool on()      { return nose_on; }
    bool restart() { return nosers; }
 
    void reset_T(double Te_new, double Tr_new) {
@@ -78,7 +79,7 @@ public:
       if (Nchain>1) for (auto n=1; n<Nchain; ++n) Er0[n] = 0.5*kb*Tr;
 
       /* Set Ee0(0) - read from rtdb otherwise use current KE */
-      Ee0[0] = 4.0*kb*Te*fmass*(nion/mass_total)*eke0_init;
+      Ee0[0] = 4.0*kb*Te*fmass*(nion/total_mass)*eke0_init;
 
       /* Set Ee0(1:Mchain-1) = 1/2*(1/betae), where 1/betae = 2*Ee/Ne */
       if (Mchain>1) 
@@ -229,7 +230,8 @@ public:
 
    void writejsonstr(string&);
 
-   std::string shortprint();
+   std::string inputprint();
+   std::string thermostatprint();
 
 
 };

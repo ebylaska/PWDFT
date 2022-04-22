@@ -146,6 +146,14 @@ inline string mystring_ireplace(const string s0, const string a, const string b)
    return s;
 }
 
+inline bool mystring_isfloat(const string s)
+{
+   std::istringstream iss(s);
+   float f;
+   iss >> noskipws >> f;
+   return iss.eof() && !iss.fail();
+}
+
 }
 
 

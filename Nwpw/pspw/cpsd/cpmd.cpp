@@ -30,6 +30,7 @@ using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
 
+
 namespace pwdft {
 using namespace pwdft;
 
@@ -145,7 +146,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double eke1 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
 
    /* initialize thermostats */
-   nwpw_Nose_Hoover mynose(myion,(mygrid.ne[0]+mygrid.ne[1]),eke0,control);
+   double w = mykin.ke_ave(psi2);
+   nwpw_Nose_Hoover mynose(myion,(mygrid.ne[0]+mygrid.ne[1]),w,control);
 
    /* Initialize simulated annealing */
 
@@ -296,7 +298,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
       cout << "\n\n\n";
 
-
+      if (mynose.on()) 
+         cout << mynose.inputprint();
+      else
+         cout << " Constant Energy Simulation" << std::endl;
+      cout << std::endl << std::endl;
 
    }
 

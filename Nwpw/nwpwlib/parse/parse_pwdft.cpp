@@ -746,10 +746,14 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
          if (mystring_contains(line," on"))  cpmdjson["com_shift"] = true;
       }
 
-      /* Nose-Hoover Pelc Telc, Pion Tion start/restart nchain mchain */
+      /* Nose-Hoover Pe Te, Pr Tr start/restart nchain mchain */
       else if (mystring_contains(line,"Nose-Hoover"))
       {
-         cpmdjson["Nose-Hoover"] = true;
+         if  (cpmdjson["Nose-Hoover"].is_null()) {
+            json apc;
+            cpmdjson["Nose-Hoover"] = apc;
+         }
+         cpmdjson["Nose-Hoover"]["on"] = true;
          double Tr = 298.16;
          double Te = 298.16;
          double Pr = 1200.0;
@@ -759,73 +763,32 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
          int nchain = 1;
 
          ss = mystring_split0(line);
-         if (ss.size()==2)
+         int count = 0;
+         for (auto i=1; i<ss.size(); ++i)
          {
-            Pe = std::stod(ss[1]);
-            Pr = Pe;
+            if (mystring_isfloat(ss[i])) 
+            {
+               if (count==0) Pe = std::stod(ss[i]);
+               if (count==1) Te = std::stod(ss[i]);
+               if (count==2) Pr = std::stod(ss[i]);
+               if (count==3) Tr = std::stod(ss[i]);
+               if (count==4) mchain = std::stoi(ss[i]);
+               if (count==5) nchain = std::stoi(ss[i]);
+               ++count;
+            } 
+            else if (mystring_contains(ss[i],"restart"))    nosers = true;
+            else if (mystring_contains(ss[i],"start"))      nosers = false;
+            else if (mystring_contains(ss[i],"clear"))      nosers = false;
+            else if (mystring_contains(ss[i],"initialize")) nosers = false;
          }
-         else if (ss.size()==3)
-         {
-            Pe = std::stod(ss[1]);
-            Te = std::stod(ss[2]);
-            Pr = Pe;
-            Tr = Te;
-         }
-         else if (ss.size()==4)
-         {
-            Pe = std::stod(ss[1]);
-            Te = std::stod(ss[2]);
-            Pr = std::stod(ss[3]);
-            Tr = Te;
-         }
-         else if (ss.size()==5)
-         {
-            Pe = std::stod(ss[1]);
-            Te = std::stod(ss[2]);
-            Pr = std::stod(ss[3]);
-            Tr = std::stod(ss[4]);
-         }
-         else if (ss.size()==6)
-         {
-            Pe = std::stod(ss[1]);
-            Te = std::stod(ss[2]);
-            Pr = std::stod(ss[3]);
-            Tr = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-         }
-         else if (ss.size()==7)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-            nchain = std::stoi(ss[6]);
-         }
-         else if (ss.size()==8)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-            nchain = std::stoi(ss[6]);
-            mchain = std::stoi(ss[7]);
-         }
-         cpmdjson["Nose-Hoover"]["Telc"] = Te;
-         cpmdjson["Nose-Hoover"]["Tion"] = Tr;
-         cpmdjson["Nose-Hoover"]["Pelc"] = Pe;
-         cpmdjson["Nose-Hoover"]["Pion"] = Pr;
-         cpmdjson["Nose-Hoover"]["Pion"] = Pr;
+         if (count==1) { Pr=Pe;}
+         if (count==2) { Pr=Pe; Tr=Te;}
+         if (count==3) { Tr=Te;}
+         
+         cpmdjson["Nose-Hoover"]["Te"] = Te;
+         cpmdjson["Nose-Hoover"]["Tr"] = Tr;
+         cpmdjson["Nose-Hoover"]["Pe"] = Pe;
+         cpmdjson["Nose-Hoover"]["Pr"] = Pr;
          cpmdjson["Nose-Hoover"]["nosers"] = nosers;
          cpmdjson["Nose-Hoover"]["Nchain"] = nchain;
          cpmdjson["Nose-Hoover"]["Mchain"] = mchain;
@@ -834,7 +797,11 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
       /* temperature Tion Pion Tion Pelc start/restart nchain mchain */
       else if (mystring_contains(line,"temperature"))
       {
-         cpmdjson["Nose-Hoover"] = true;
+         if  (cpmdjson["Nose-Hoover"].is_null()) {
+            json apc;
+            cpmdjson["Nose-Hoover"] = apc;
+         }
+         cpmdjson["Nose-Hoover"]["on"] = true;
          double Tr = 298.16;
          double Te = 298.16;
          double Pr = 1200.0;
@@ -844,73 +811,32 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
          int nchain = 1;
 
          ss = mystring_split0(line);
-         if (ss.size()==2)
+         int count = 0;
+         for (auto i=1; i<ss.size(); ++i)
          {
-            Tr = std::stod(ss[1]);
-            Te = Tr;
+            if (mystring_isfloat(ss[i])) 
+            {
+               if (count==0) Tr = std::stod(ss[i]);
+               if (count==1) Pr = std::stod(ss[i]);
+               if (count==2) Te = std::stod(ss[i]);
+               if (count==3) Pe = std::stod(ss[i]);
+               if (count==4) nchain = std::stoi(ss[i]);
+               if (count==5) mchain = std::stoi(ss[i]);
+               ++count;
+            } 
+            else if (mystring_contains(ss[i],"restart"))    nosers = true;
+            else if (mystring_contains(ss[i],"start"))      nosers = false;
+            else if (mystring_contains(ss[i],"clear"))      nosers = false;
+            else if (mystring_contains(ss[i],"initialize")) nosers = false;
          }
-         else if (ss.size()==3)
-         {
-            Tr = std::stod(ss[1]);
-            Te = Tr;
-            Pr = std::stod(ss[2]);
-            Pe = Pr;
-         }
-         else if (ss.size()==4)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = Pr;
-         }
-         else if (ss.size()==5)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-         }
-         else if (ss.size()==6)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-         }
-         else if (ss.size()==7)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-            nchain = std::stoi(ss[6]);
-         }
-         else if (ss.size()==8)
-         {
-            Tr = std::stod(ss[1]);
-            Pr = std::stod(ss[2]);
-            Te = std::stod(ss[3]);
-            Pe = std::stod(ss[4]);
-            if      (mystring_contains(ss[5],"restart"))    nosers = true;
-            else if (mystring_contains(ss[5],"start"))      nosers = false;
-            else if (mystring_contains(ss[5],"clear"))      nosers = false;
-            else if (mystring_contains(ss[5],"initialize")) nosers = false;
-            nchain = std::stoi(ss[6]);
-            mchain = std::stoi(ss[7]);
-         }
-         cpmdjson["Nose-Hoover"]["Telc"] = Te;
-         cpmdjson["Nose-Hoover"]["Tion"] = Tr;
-         cpmdjson["Nose-Hoover"]["Pelc"] = Pe;
-         cpmdjson["Nose-Hoover"]["Pion"] = Pr;
-         cpmdjson["Nose-Hoover"]["Pion"] = Pr;
+         if (count==1) { Te=Tr;}
+         if (count==2) { Te=Tr; Pe=Pr;}
+         if (count==3) { Pe=Pr;}
+
+         cpmdjson["Nose-Hoover"]["Te"] = Te;
+         cpmdjson["Nose-Hoover"]["Tr"] = Tr;
+         cpmdjson["Nose-Hoover"]["Pe"] = Pe;
+         cpmdjson["Nose-Hoover"]["Pr"] = Pr;
          cpmdjson["Nose-Hoover"]["nosers"] = nosers;
          cpmdjson["Nose-Hoover"]["Nchain"] = nchain;
          cpmdjson["Nose-Hoover"]["Mchain"] = mchain;
@@ -1507,7 +1433,15 @@ std::string parse_input_wavefunction_filename(std::string rtdbstring)
    // read from nwpw block
    if (rtdb["nwpw"]["input_wavefunction_filename"].is_string()) filename = rtdb["nwpw"]["input_wavefunction_filename"];
 
-   return filename;
+   // append permdir
+   std::string permdir = "";
+   if (rtdb["permanent_dir"].is_string())
+   {
+      permdir = rtdb["permanent_dir"];
+      permdir += "/";
+   }
+
+   return permdir + filename;
 }
 
 /**************************************************
@@ -1536,6 +1470,11 @@ std::vector<std::string> parse_gen_lowlevel_rtdbstrs(std::string rtdbstring)
       steps = 4; dx = 1.0/4.0;
    }
 
+   // run an extra step when task > 3
+   if (parse_task(rtdbstring)>3) ++steps;
+
+
+   // setup steps
    std::vector<std::string> gen_rtdbs;
 
    for (int i=1; i<steps; ++i)
