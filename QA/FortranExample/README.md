@@ -1,5 +1,6 @@
 ```
-cd /Users/bylaska/Codes/PWDFT
+cd /Users/bylaska/Codes/PWDFT   (mac laptop location)
+cd /home/bylaska/Codes/PWDFT    (ubuntu laptop location)
 ```
 
 then excecute the following steps:
@@ -13,7 +14,8 @@ then excecute the following steps:
 Next, go back to the QA directory, e.g.,
 
 ```
-cd /Users/bylaska/Codes/PWDFT/QA/FortranExample
+cd /Users/bylaska/Codes/PWDFT/QA/FortranExample   (mac laptop location)
+cd /home/bylaska/Codes/PWDFT/QA/FortranExample    (ubuntu laptop location)
 ```
 
 ## Using macOS ##
@@ -43,6 +45,10 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
 then compile test.cpp using mpic++
 ```
 mpif90 fortran_test.f /Users/bylaska/Codes/PWDFT/build_library/libpwdft.so
+
+or
+
+mpif90 fortran_test.f /home/bylaska/Codes/PWDFT/build_library/libpwdft.so
 ```
 
 ## Running Example ##

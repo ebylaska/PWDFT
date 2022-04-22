@@ -1,5 +1,6 @@
 ```
-cd /Users/bylaska/Codes/PWDFT
+cd /Users/bylaska/Codes/PWDFT    (mac laptop location)
+cd /home/bylaska/Codes/PWDFT     (ubuntu laptop location)
 ```
 
 then excecute the following steps:
@@ -13,7 +14,8 @@ then excecute the following steps:
 Next, go back to the QA directory, e.g.,
 
 ```
-cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample
+cd /Users/bylaska/Codes/PWDFT/QA/LAMMPSExample   (mac laptop location)
+cd /home/bylaska/Codes/PWDFT/QA/LAMMPSExample    (ubuntun laptop location)
 ```
 
 
@@ -22,12 +24,12 @@ Set location of the DYLD_LIBRARY_PATH
 
 #### with csh ####
 ```
-setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+setenv DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared   (mac laptop example)
 ```
 
 #### with bash ####
 ```
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/Users/bylaska/Codes/PWDFT/build-shared   (mac laptop example)
 ```
 
 then compile test.cpp using mpic++
@@ -40,12 +42,14 @@ Add location of shared library location to LD_LIBRARY_PATH, e.g.,
 
 #### with csh ####
 ```
-setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib                  (constance example)
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home/bylaska/Codes/PWDFT/build_library  (ubuntu laptop example)
 ```
 
 #### with bash ####
 ```
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/qfs/people/bylaska/lib                  (constance example)
+export LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home/bylaska/Codes/PWDFT/build_library  (ubuntu laptop example)
 ```
 
 then compile test.cpp using mpic++
