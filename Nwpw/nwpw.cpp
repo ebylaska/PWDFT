@@ -66,7 +66,29 @@ extern "C" void pspw_fortran_minimizer_(int *comm_world, double *rion, double *u
 
    
    std::cout << "input fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
+
+   // Initialize wavefunction if it doesn't exist
+   {
+     int taskid;
+     int MASTER=0;
+     int ierr = MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
+     bool oprint = (taskid==MASTER);
+     std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
+     int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+     MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
+     if (!wfound)
+     {
+        auto lowlevel_rtdbstrs = pwdft::parse_gen_lowlevel_rtdbstrs(fortran_rtdbstring);
+        for (const auto & elem: lowlevel_rtdbstrs) {
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+           std::string dum_rtdbstr  = elem;
+           ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+        }
+     }
+   }
+
    int  ierr = pwdft::pspw_minimizer(MPI_COMM_WORLD, fortran_rtdbstring);
+
    std::cout << "output fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
 
 
@@ -145,6 +167,28 @@ extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion
    lammps_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
    lammps_rtdbstring    = lammps_rtdbjson.dump();
 
+
+  // Initialize wavefunction if it doesn't exist
+  {
+     int taskid;
+     int MASTER=0;
+     int ierr = MPI_Comm_rank(comm_world,&taskid);
+     bool oprint = (taskid==MASTER);
+     std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(lammps_rtdbstring);
+     int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+     MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
+     if (!wfound)
+     {
+        auto lowlevel_rtdbstrs = pwdft::parse_gen_lowlevel_rtdbstrs(lammps_rtdbstring);
+        for (const auto & elem: lowlevel_rtdbstrs) {
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+           std::string dum_rtdbstr  = elem;
+           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
+        }
+     }
+   }
+
+   // run minimizer
    int  ierr = pwdft::pspw_minimizer(comm_world, lammps_rtdbstring);
 
    lammps_rtdbjson =  json::parse(lammps_rtdbstring);
