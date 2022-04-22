@@ -935,6 +935,16 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          nwpwjson["car-parrinello"] = parse_car_parrinello(nwpwjson["car-parrinello"],curptr,lines);
          cur = *curptr;
       }
+      else if (mystring_contains(line,"initialize_wavefunction"))
+      {
+         if (mystring_contains(line," off"))   nwpwjson["initialize_wavefunction"] = false;
+         if (mystring_contains(line," no"))    nwpwjson["initialize_wavefunction"] = false;
+         if (mystring_contains(line," false")) nwpwjson["initialize_wavefunction"] = false;
+
+         if (mystring_contains(line," on"))    nwpwjson["initialize_wavefunction"]  = true;
+         if (mystring_contains(line," yes"))   nwpwjson["initialize_wavefunction"]  = true;
+         if (mystring_contains(line," true"))  nwpwjson["initialize_wavefunction"]  = true;
+      }
       else if (mystring_contains(line,"nobalance"))
       {
          nwpwjson["nobalance"] = true;
@@ -1414,6 +1424,29 @@ int parse_task(std::string rtdbstring)
 
    return task;
 }
+
+
+/**************************************************
+ *                                                *
+ *            parse_initialize_wvfnc              *
+ *                                                *
+ **************************************************/
+
+int parse_initialize_wvfnc(std::string rtdbstring)
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+   bool init_wvfnc = true;
+
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean())
+      init_wvfnc = rtdbjson["nwpw"]["initialize_wavefunction"];
+
+   return init_wvfnc;
+}
+
+
+
+
+
 
 /**************************************************
  *                                                *
