@@ -1,5 +1,4 @@
 
-
 #include        <iostream>
 #include        <cstdio>
 #include        <cmath>
@@ -14,6 +13,7 @@ using namespace std;
 #include        "Kinetic.hpp"
 #include        "Coulomb.hpp"
 #include        "exchange_correlation.hpp"
+#include        "nwpw_Nose_Hoover.hpp"
 #include        "Pseudopotential.hpp"
 //#include	"v_exc.hpp"
 #include	"inner_loop_md.hpp"
@@ -22,7 +22,7 @@ using namespace std;
 namespace pwdft {
 using namespace pwdft;
 
-void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion, 
+void inner_loop_md(bool verlet, double *sa_alpha, Control2& control, Pneb *mygrid, Ion *myion, nwpw_Nose_Hoover *mynose,
                 Kinetic_Operator *myke, 
                 Coulomb_Operator *mycoulomb, 
                 XC_Operator      *myxc, 
@@ -36,10 +36,13 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    int one=1;
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
-   double eke,elocal,enlocal,dt,dte,fmass,Eold;
+   double eke,eki,elocal,enlocal,dt,dte,fmass,Eold;
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
    bool move = true;
+   bool nose = mynose->on();
+   double sse = 1.0;
+   double ssr = 1.0;
    double omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
@@ -52,6 +55,14 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    //dv = lattice_omega()*scal1;
    scal2 = 1.0/omega;
    dv = omega*scal1;
+
+   double sa1 = 1.0;
+   double sa2 = 1.0;
+   if (!nose) 
+   {
+      sa1 =    1.0/(2.0-sa_alpha[0]);
+      sa2 = sa_alpha[0]/(2.0-sa_alpha[0]);
+   }
 
    dt = control.time_step();
    fmass = control.fake_mass();
@@ -90,6 +101,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
 
       /* skip shift ion if newton step */
       if (verlet) myion->shift();
+      if (nose && verlet) mynose->shift();
 
       mystrfac->phafac();
       myewald->phafac();
@@ -169,34 +181,90 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
      /* car-parrinello Verlet step */
      if (verlet) 
      {
-        mygrid->gg_SMul(dte,Hpsi,psi2);
-        mygrid->gg_daxpy(-1.0,psi0,psi2);
-        mygrid->gg_daxpy( 2.0,psi1,psi2);
+        /* constant temperature */
+        if (nose)
+        {
+           sse = mynose->sse();
+           ssr = mynose->ssr();
+           mygrid->gg_SMul(0.5*dte,Hpsi,psi2);
+           mygrid->gg_daxpy(-1.0,psi0,psi2);
+           mygrid->gg_daxpy( 1.0,psi1,psi2);
 
-        myion->Verlet_step(fion);
+           mygrid->g_Scale(2.0*sse,psi2);
+           mygrid->gg_daxpy( 1.0,psi0,psi2);
+
+           //myion->Verlet_step(ssr,fion);
+           myion->Nose_step(ssr,fion);
+        }
+        /* constant energy */
+        else
+        {
+           mygrid->gg_SMul(dte*sa1,Hpsi,psi2);
+           mygrid->gg_daxpy(-1.0*sa2,psi0,psi2);
+           mygrid->gg_daxpy( 2.0*sa1,psi1,psi2);
+
+           myion->Verlet_step(fion,sa_alpha[1]);
+        }
      }
 
      /* car-parrinello Newton step */
      else
      {
+        double r = 1.0;
+        double s = 1.0;
+        /* constant temperature */
+        if (nose)
+        {
+           r = (1.0-0.5*dt*mynose->dXr());
+           s = (1.0-0.5*dt*mynose->dXe());
+        }
+       
         mygrid->gg_SMul(dte,Hpsi,psi2);
-        mygrid->gg_daxpy(dt,psi0,psi2);
+        mygrid->gg_daxpy(s*dt*sa_alpha[0],psi0,psi2);
         mygrid->gg_Sum2(psi1,psi2);
 
-        myion->Newton_step(fion);
+        myion->Newton_step(fion,sa_alpha[1]*r);
      }
 
      /* lagrange multiplier */
-     mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
-   }
+     double dte0 = dte;
+     if (nose && verlet) dte0 *= sse;
+     mygrid->ggm_lambda(dte0,psi1,psi2,lmbda);
 
+     /* update thermostats */
+     if (nose)
+     {
+        if (verlet)
+        {
+           double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[1]);
+           double kefac = 0.5*fmass/(dt*dt);
+           eke = kefac*(nesum - mygrid->gg_traceall(psi2,psi0));
+           eki = myion->ke();
+           mynose->Verlet_step(eke,eki);
+        }
+        else
+        {
+           eke = fmass*mygrid->gg_traceall(psi0,psi0);
+           eki = myion->ke();
+           mynose->Newton_step(eke,eki);
+        }
+     }
+
+
+   } /* it, innerloop */
+
+
+
+   /****************************/
    /* total energy calculation */
-   mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
-   mygrid->m_scal(-1.0,hml);
+   /****************************/
 
    /* if newton then skip energy calculations */
    if (verlet)
    {
+      mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
+      mygrid->m_scal(-1.0,hml);
+
       eorbit  = mygrid->m_trace(hml);
       if (ispin==1) eorbit = eorbit+eorbit;
 
@@ -252,8 +320,28 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
       }
 
 
+      /* Running Sums - Energy and Energy**2 sum */
+      E[24] +=  E[1];
+      E[25] +=  E[1]*E[1];
+      E[26] +=  E[1]+E[2]+E[3];
+      E[27] +=  std::pow((E[1]+E[2]+E[3]),2);
+
+
+      /* Nose thermostat energies */
+      if (nose)
+      {
+        E[8] = mynose->e_energy();
+        E[9] = mynose->r_energy();
+        E[0] = E[1]+E[2]+E[3]+E[8]+E[9];
+      }
+
       /* add kinetic energies */
-      E[0] = E[1] + E[2] + E[3];
+      else
+      {
+        E[0] = E[1]+E[2]+E[3];
+      }
+
+
 
    }
 

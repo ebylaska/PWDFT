@@ -105,7 +105,7 @@ public:
       }
    }
 
-   void Newton_Step(double eke, double eki) {
+   void Newton_step(double eke, double eki) {
       if (nose_on) {
          double eke_tmp = eke;
          for (auto m=0; m<(Mchain-1); ++m)
@@ -144,7 +144,7 @@ public:
       }
    }
 
-   void Verlet_Step(double eke, double eki) {
+   void Verlet_step(double eke, double eki) {
       if (nose_on) {
          double eke_tmp = eke;
          for (auto m=0; m<(Mchain-1); ++m)
@@ -197,6 +197,8 @@ public:
       }
 
    }
+   double dXe() { return Xem[0]; }
+   double dXr() { return Xrm[0]; }
 
    double sse() {
       double dXe = (3.0*Xe1[0] - 4.0*Xe0[0] + Xem[0])/(2.0*time_step);
@@ -207,6 +209,7 @@ public:
       double dXr = (3.0*Xr1[0] - 4.0*Xr0[0] + Xrm[0])/(2.0*time_step);
       return (1.0/(1.0+0.5*dXr*time_step));
    }
+
 
    double e_energy() { 
       double esum = 0.0;

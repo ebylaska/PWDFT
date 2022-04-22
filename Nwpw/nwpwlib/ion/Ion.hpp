@@ -135,6 +135,12 @@ public:
        return 0.5*tmass*(vgx*vgx + vgy*vgy + vgz*vgz);
     }
 
+    double Temperature()
+    {
+       double temp = 0.0;
+       return temp;
+    }
+
     void optimize_step(const double *fion) 
     {
        for (auto ii=0; ii<nion; ++ii)
@@ -146,28 +152,43 @@ public:
        }
     }
 
-    void Verlet_step(const double *fion) 
+    void Verlet_step(const double *fion,const double alpha) 
     {
+      double sa1 = 1.0/(2.0-alpha);
+      double sa2 = alpha/(2.0-alpha);
+
        for (auto ii=0; ii<nion; ++ii)
        {
-          double scale = dti[ii];
-          rion2[3*ii]   = 2*rion1[3*ii]   - rion0[3*ii]   + scale*fion[3*ii];
-          rion2[3*ii+1] = 2*rion1[3*ii+1] - rion0[3*ii+1] + scale*fion[3*ii+1];
-          rion2[3*ii+2] = 2*rion1[3*ii+2] - rion0[3*ii+2] + scale*fion[3*ii+2];
+          double scale = sa1*dti[ii];
+          rion2[3*ii]   = 2*sa1*rion1[3*ii]   - sa2*rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = 2*sa1*rion1[3*ii+1] - sa2*rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = 2*sa1*rion1[3*ii+2] - sa2*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
 
        double h = 1.0/(2.0*time_step);
        for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
     }
 
-    void Newton_step(const double *fion) 
+    void Newton_step(const double *fion, const double alpha) 
     {
        for (auto ii=0; ii<nion; ++ii)
        {
-          double scale = dti[ii];
-          rion2[3*ii]   = rion1[3*ii]   + time_step*rion0[3*ii]   + scale*fion[3*ii];
-          rion2[3*ii+1] = rion1[3*ii+1] + time_step*rion0[3*ii+1] + scale*fion[3*ii+1];
-          rion2[3*ii+2] = rion1[3*ii+2] + time_step*rion0[3*ii+2] + scale*fion[3*ii+2];
+          double scale = 0.5*dti[ii];
+          rion2[3*ii]   = rion1[3*ii]   + alpha*time_step*rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = rion1[3*ii+1] + alpha*time_step*rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = rion1[3*ii+2] + alpha*time_step*rion0[3*ii+2] + scale*fion[3*ii+2];
+       }
+    }
+
+    void Nose_step(const double ssr, const double *fion)
+    {
+       double smr = 2.0*ssr-1.0;
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          double scale = ssr*dti[ii];
+          rion2[3*ii]   = 2*ssr*rion1[3*ii]   - smr*rion0[3*ii]   + scale*fion[3*ii];
+          rion2[3*ii+1] = 2*ssr*rion1[3*ii+1] - smr*rion0[3*ii+1] + scale*fion[3*ii+1];
+          rion2[3*ii+2] = 2*ssr*rion1[3*ii+2] - smr*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
     }
 

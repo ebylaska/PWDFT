@@ -492,6 +492,12 @@ Control2::Control2(const int np0, const string rtdbstring)
       }
    }
 
+   psa_on = false;
+   psa_decay[0] = 1.0;
+   psa_decay[1] = 1.0;
+   if (rtdbjson["nwpw"]["car-parrinello"]["sa_decay"][0].is_number_float()) { psa_on = true; psa_decay[0] = rtdbjson["nwpw"]["car-parrinello"]["SA_decay"][0]; }
+   if (rtdbjson["nwpw"]["car-parrinello"]["sa_decay"][1].is_number_float()) { psa_on = true; psa_decay[1] = rtdbjson["nwpw"]["car-parrinello"]["SA_decay"][1]; }
+
 
    if (!rtdbjson["driver"]["maxiter"].is_null())     { pdriver_maxiter     = rtdbjson["driver"]["maxiter"]; }
    if (!rtdbjson["driver"]["lmbfgs_size"].is_null()) { pdriver_lmbfgs_size = rtdbjson["driver"]["lmbfgs_size"]; }

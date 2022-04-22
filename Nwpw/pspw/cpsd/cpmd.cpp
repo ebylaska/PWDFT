@@ -46,7 +46,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    Parallel myparallel(comm_world0);
    //RTDB myrtdb(&myparallel, "eric.db", "old");
 
-   bool verlet;
+   bool verlet,SA;
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
@@ -56,6 +56,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double *psi0,*psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
+   double sa_alpha[2],sa_decay[2],Te_init,Tr_init,Te_new,Tr_new;
 
    for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
@@ -148,6 +149,32 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    /* initialize thermostats */
    double w = mykin.ke_ave(psi2);
    nwpw_Nose_Hoover mynose(myion,(mygrid.ne[0]+mygrid.ne[1]),w,control);
+
+   /* initialize simulated annealing */
+   SA       = false;
+   Te_init  = 0.0;
+   Tr_init  = 0.0;
+   sa_alpha[0]     = 1.0;
+   sa_alpha[1]     = 1.0;
+   if (control.SA())
+   {
+      sa_decay[0] = control.SA_decay(0);
+      sa_decay[1] = control.SA_decay(1);
+      if (mynose.on()) 
+      {
+         SA      = true;
+         Te_init = mynose.Te;
+         Tr_init = mynose.Tr;
+      }
+      else
+      {
+         double dt   = control.time_step();
+         SA          = false;
+         sa_alpha[0] = exp(-(dt/sa_decay[0]));
+         sa_alpha[1] = exp(-(dt/sa_decay[1]));
+      }
+   }
+
 
    /* Initialize simulated annealing */
 
@@ -302,8 +329,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          cout << mynose.inputprint();
       else
          cout << " Constant Energy Simulation" << std::endl;
-      cout << std::endl << std::endl;
 
+      if (SA) printf("      SA decay rate = %10.3le  (elc) %10.3le (ion)\n",sa_decay[0],sa_decay[1]);
+
+      cout << std::endl << std::endl;
+ 
    }
 
 //                 |**************************|
@@ -320,7 +350,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    }
    verlet = false;
-   inner_loop_md(verlet,control,&mygrid,&myion,
+   inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
                  &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
@@ -333,7 +363,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    while (!done)
    {
       ++icount;
-      inner_loop_md(verlet,control,&mygrid,&myion,
+      inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
                  &mykin,&mycoulomb,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
@@ -341,8 +371,14 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  E);
 
       if (myparallel.is_master())
-         printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
-                                       E[0],E[1],E[2],E[3],0.0);
+      {
+         if (SA)
+            printf("%10d%19.10le%19.10le%14.5le%14.5le%9.1lf%9.1lf\n",icount*control.loop(0),
+                                       E[0],E[1],E[2],E[3],Te_new,Tr_new);
+         else
+            printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
+                                       E[0],E[1],E[2],E[3],myion.Temperature());
+      }
 
       /* check for competion */
       if (icount>=control.loop(1))

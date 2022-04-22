@@ -30,7 +30,7 @@ class Control2 {
    int pnp_dimensions[3],pewald_grid[3];
    int pcode,ptask;
    int pispin,pmultiplicity,pne[2],ptotal_ion_charge,plmax_multipole;
-   int pmove,pfrac_coord,pSA,pfei,pfei_quench,pgram_schmidt;
+   int pmove,pfrac_coord,pfei,pfei_quench,pgram_schmidt;
    int protation,ptranslation,pbalance,pspin_orbit;
    int pmaxit_orb,pmaxit_orbs,pscf_algorithm,pks_algorithm;
    int psymm_number;
@@ -68,6 +68,9 @@ class Control2 {
    double pnose_pe,pnose_pr,pnose_te,pnose_tr,pnose_ne_chain,pnose_eke0;
    std::vector<double> pnose_xem,pnose_xe0,pnose_xe1,pnose_qe,
                        pnose_xrm,pnose_xr0,pnose_xr1,pnose_qr;
+
+   bool   psa_on;
+   double psa_decay[2] = {1.0,1.0};
 
 public:
 
@@ -234,6 +237,9 @@ public:
    double Nose_Xr1(const int i) { return ((i>=pnose_xr1.size()) ? 0.0 : pnose_xr1[i]); }
    double Nose_Qr(const int i)  { return ((i>=pnose_qr.size())  ? 0.0 : pnose_qr[i]);  }
 
+   // SA - simulated annealing
+   bool SA() { return psa_on; }
+   double SA_decay(const int i) { return psa_decay[i]; }
 
    //GGA value
    int get_gga() {
