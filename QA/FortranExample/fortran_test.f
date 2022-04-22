@@ -13,8 +13,7 @@
       call MPI_COMM_RANK(MPI_COMM_WORLD,taskid,mpierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,np,mpierr)
 
-
-*     *** needs to be written over tasks ***
+*     *** fixed --- needs to be written over tasks ***
       !write(*,*) "taskid=",taskid
       rion(1,1) = 0.0d0
       rion(2,1) = 0.0d0
