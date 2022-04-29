@@ -13,7 +13,10 @@ extern void lammps_pspw_input(MPI_Comm, std::string&);
 
 int main(int argc, char* argv[])
 {
-
+   //std::string nwfilename = "w2.nw";
+   std::string nwfilename = "h2.nw";
+   if (argc>1) nwfilename = argv[1];
+   
 
    int ierr,np,taskid;
    int MASTER=0;
@@ -26,13 +29,14 @@ int main(int argc, char* argv[])
    if (taskid==0) {
       std::cout << "Hello world" << std::endl;
       std::cout << "np=" << np << " taskid=" << taskid << std::endl;
+      std::cout << "argc=" << argc << std::endl;
+      std::cout << "nwfilename=" << nwfilename << std::endl;
    }
+
 
 
    double E;
    double uion[2], qion[2], rion[3*2],fion[3*2];
-   //std::string nwfilename = "w2.nw";
-   std::string nwfilename = "h2.nw";
  
    lammps_pspw_input(MPI_COMM_WORLD, nwfilename);
 

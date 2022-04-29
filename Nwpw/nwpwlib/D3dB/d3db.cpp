@@ -2941,7 +2941,7 @@ void d3db::c_addrandom(double *a)
  ********************************/
 void d3db::r_setrandom(double *a)
 {
-   double fac = 1.0/sqrt(1.0*nfft3d);
+   double fac = 1.0/(1.0*nfft3d);
    for (auto i=0; i<n2ft3d; ++i)
       a[i] = fac*(0.50-util_random(0));
 }
