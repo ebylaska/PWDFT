@@ -12,7 +12,10 @@ H 0 0 0.8
 end
 
 nwpw
-   apc on
+
+   #The apc option is automatically set in lammps interface
+   #apc on
+
    simulation_cell
      SC 20.0
    end

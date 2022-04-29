@@ -171,7 +171,14 @@ extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion
    int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
 
    lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
-   lammps_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
+
+   if (lammps_rtdbjson["nwpw"]["apc"].is_null())
+   {
+      json apc;
+      lammps_rtdbjson["nwpw"]["apc"] = apc;
+   }
+   lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
+   lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
    lammps_rtdbstring    = lammps_rtdbjson.dump();
 
    // run minimizer
