@@ -318,7 +318,7 @@ double Electron_Operators::exc(double *dnall)
    double excsum     = mygrid->rr_dot(dnall,xce);
    if (ispin==1)
    {
-      excsum = excsum+excsum;
+      excsum *= 2.0;
    }
    else
    {
@@ -339,7 +339,7 @@ double Electron_Operators::pxc(double *dn)
    double pxcsum = mygrid->rr_dot(dn,xcp);
    if (ispin==1)
    {
-      pxcsum = pxcsum+pxcsum;
+      pxcsum *= 2.0;
    }
    else
    {

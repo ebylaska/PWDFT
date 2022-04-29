@@ -90,7 +90,6 @@ double Kinetic_Operator::ke_ave(double *psi)
          ave += 2.0*tg[k]*(psi[k1]*psi[k1] + psi[k2]*psi[k2]); 
          k1 += 2; k2 += 2;
       }
-
    }
    ave = mypneb->d3db::parall->SumAll(0,ave);
    if (mypneb->ispin==1) ave *= 2.0;

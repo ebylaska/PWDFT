@@ -25,6 +25,9 @@ double cgsd_noit_energy(Molecule& mymolecule)
 {
    Parallel *parall = mymolecule.mygrid->d3db::parall;
 
+   /* generate phase factors and local psp and semicore density */
+   mymolecule.phafacs_vl_potential_semicore();
+
    double total_energy  = mymolecule.gen_all_energies();
 
    /* report summary of results */

@@ -98,6 +98,7 @@ public:
 
         void     c_setpw(const int *, const double *, double *);
         void     c_addrandom(double *);
+        void     r_setrandom(double *);
 
 
 

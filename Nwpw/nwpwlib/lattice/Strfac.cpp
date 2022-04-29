@@ -128,7 +128,6 @@ void Strfac::phafac()
       cw1x=cos(sw1); cw1y=-sin(sw1);
       cw2x=cos(sw2); cw2y=-sin(sw2);
       cw3x=cos(sw3); cw3y=-sin(sw3);
-
       wx1[2*i*nx] = 1.0; wx1[2*i*nx+1] = 0.0;
       wy1[2*i*ny] = 1.0; wy1[2*i*ny+1] = 0.0;
       wz1[2*i*nz] = 1.0; wz1[2*i*nz+1] = 0.0;
@@ -141,6 +140,7 @@ void Strfac::phafac()
          wx1[2*(nx-k + i*nx)]   =  wx1[2*(k + i*nx)];
          wx1[2*(nx-k + i*nx)+1] = -wx1[2*(k + i*nx)+1];
       }
+
       for (k=1; k<=nyh; ++k)
       {
          a = wy1[2*(k-1 + i*ny)];
@@ -165,6 +165,7 @@ void Strfac::phafac()
       wz1[2*(nzh+i*nz)] = 0.0; wz1[2*(nzh+i*nz)+1] = 0.0;
 
    }
+
 }
 
 /*********************************

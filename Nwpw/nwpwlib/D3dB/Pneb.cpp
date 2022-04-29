@@ -96,16 +96,43 @@ void Pneb::g_generate_random(double *psi)
       if (pj==taskid_j)
       {
          r_zero(tmp2);
-         c_setpw(filling, zvalue, tmp2);
+         d3db::c_setpw(filling, zvalue, tmp2);
          d3db::c_addrandom(tmp2);
-         indx = 2*PGrid::npack(1)*qj;
+
          PGrid::c_pack(1,tmp2);
+         indx = 2*PGrid::npack(1)*qj;
          PGrid::cc_pack_copy(1,tmp2,&(psi[indx]));
       }
    }
 
    //delete [] tmp2;
 }
+
+void Pneb::g_generate2_random(double *psi)
+{
+   double tmp2[n2ft3d];
+
+   int taskid_j = d1db::parall->taskid_j();
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<ne[ms]; ++n)
+   {
+      int qj = msntoindex(ms,n);
+      int pj = msntop(ms,n);
+      if (pj==taskid_j)
+      {
+         d3db::r_setrandom(tmp2);
+         d3db::r_zero_ends(tmp2);
+         d3db::rc_fft3d(tmp2);
+
+         PGrid::c_pack(1,tmp2);
+         int indx = 2*PGrid::npack(1)*qj;
+         PGrid::cc_pack_copy(1,tmp2,&(psi[indx]));
+      }
+   }
+
+}
+
+
 
 
 /*************************************
@@ -590,7 +617,7 @@ void Pneb::ggm_SVD(double *A, double *U, double *S, double *V)
    indx = 0;
    for (n=0; n<(neq[0]+neq[1]); ++n)
    {
-      c_SMul(1,tmp2[n],&U[indx]);
+      PGrid::c_SMul(1,tmp2[n],&U[indx]);
       indx += 2*PGrid::npack(1);
    }
 
@@ -971,8 +998,7 @@ void Pneb::g_ortho(double *psi)
             w = PGrid::cc_pack_dot(1,&psi[indxk],&psi[indxk]);
 
             w = 1.0/sqrt(w);
-            c_SMul(1,w,&psi[indxk]);
-
+            PGrid::c_SMul(1,w,&psi[indxk]);
 
             for (auto j=k-1; j>=0; --j)
             {

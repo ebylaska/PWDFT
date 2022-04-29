@@ -100,7 +100,8 @@ public:
        if (fabs(sum2-sum1)>1.0e-10)
        {
           //if (myparall->is_master()) std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
-          //std::cout << " Warning - Gram-Schmidt being performed on psi2, t=" << t << " error=" <<  fabs(sum2-sum1) << std::endl;
+          //std::cout << " Warning - Gram-Schmidt being performed on psi2, t=" 
+          //          << t << " sum1=" << sum1 << " sum2=" << sum2 <<  " error=" <<  fabs(sum2-sum1) << std::endl;
           mygrid->g_ortho(Ynew);
        }
     }

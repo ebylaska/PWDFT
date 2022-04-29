@@ -324,7 +324,8 @@ bool psi_read(Pneb *mypneb, char *filename, double *psi2)
    else {
       if (myparall->is_master())
          std::cout << " generating random psi from scratch" << std::endl;
-      mypneb->g_generate_random(psi2);
+      //mypneb->g_generate_random(psi2);
+      mypneb->g_generate2_random(psi2);
    }
 
    /* ortho check */
@@ -338,7 +339,12 @@ bool psi_read(Pneb *mypneb, char *filename, double *psi2)
          std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
       mypneb->g_ortho(psi2);
    }
-   sum2  = mypneb->gg_traceall(psi2,psi2);
+   double sum3  = mypneb->gg_traceall(psi2,psi2);
+   if (myparall->is_master())
+         std::cout << "         - exact norm = " << sum1 
+                   << " norm="           << sum2
+                   << " corrected norm=" << sum3 
+                   << " (error=" << abs(sum2-sum1) << ")" << std::endl;
 
    return newpsi;
 }
