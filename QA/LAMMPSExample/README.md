@@ -63,12 +63,15 @@ To run the program just type
 
 ```
 a.out
+a.out w2.nw
 ```
 
 or run using mpirun, e,g,
 
 ```
  mpirun -np 4 a.out
+ mpirun -np 4 a.out w2.nw
 ```
+
 
 ## Example Output ##
