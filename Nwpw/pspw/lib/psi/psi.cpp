@@ -296,6 +296,7 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
    Reads psi and checks the header and check for orthonormalization.
    Entry - mypneb: Pneb grid structure
            filename: input filename
+           wvfnc_initialize: force initialize wavefuntion
    Exit - psi2: complex wavefunction
 
    Uses - psi_filefind, psi_read0, 
@@ -303,15 +304,15 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
           mypneb->gg_traceall, 
           mypneb->g_ortho
 */
-bool psi_read(Pneb *mypneb, char *filename, double *psi2)
+bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
 {
    int version,ispin,nfft[3],ne[2];
    double unita[9];
    Parallel *myparall = mypneb->d3db::parall;
    bool newpsi = true;
 
-   /* read psi from file if psi_exist */
-   if (psi_filefind(mypneb,filename))
+   /* read psi from file if psi_exist and not forcing wavefunction initialization */
+   if (psi_filefind(mypneb,filename) && (!wvfnc_initialize))
    {
       newpsi = psi_check_convert(mypneb,filename);
 
@@ -338,13 +339,14 @@ bool psi_read(Pneb *mypneb, char *filename, double *psi2)
       if (myparall->is_master())
          std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
       mypneb->g_ortho(psi2);
-   }
-   double sum3  = mypneb->gg_traceall(psi2,psi2);
-   if (myparall->is_master())
+
+      double sum3  = mypneb->gg_traceall(psi2,psi2);
+      if (myparall->is_master())
          std::cout << "         - exact norm = " << sum1 
                    << " norm="           << sum2
                    << " corrected norm=" << sum3 
                    << " (error=" << abs(sum2-sum1) << ")" << std::endl;
+   }
 
    return newpsi;
 }

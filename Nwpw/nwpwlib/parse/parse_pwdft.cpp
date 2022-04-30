@@ -937,13 +937,14 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       }
       else if (mystring_contains(line,"initialize_wavefunction"))
       {
-         if (mystring_contains(line," off"))   nwpwjson["initialize_wavefunction"] = false;
-         if (mystring_contains(line," no"))    nwpwjson["initialize_wavefunction"] = false;
-         if (mystring_contains(line," false")) nwpwjson["initialize_wavefunction"] = false;
+         if (mystring_contains(line," off"))        nwpwjson["initialize_wavefunction"] = false;
+         else if (mystring_contains(line," no"))    nwpwjson["initialize_wavefunction"] = false;
+         else if (mystring_contains(line," false")) nwpwjson["initialize_wavefunction"] = false;
 
-         if (mystring_contains(line," on"))    nwpwjson["initialize_wavefunction"]  = true;
-         if (mystring_contains(line," yes"))   nwpwjson["initialize_wavefunction"]  = true;
-         if (mystring_contains(line," true"))  nwpwjson["initialize_wavefunction"]  = true;
+         else if (mystring_contains(line," yes"))   nwpwjson["initialize_wavefunction"]  = true;
+         else if (mystring_contains(line," true"))  nwpwjson["initialize_wavefunction"]  = true;
+         else if (mystring_contains(line," on"))    nwpwjson["initialize_wavefunction"]  = true;
+         else  nwpwjson["initialize_wavefunction"]  = true;
       }
       else if (mystring_contains(line,"nobalance"))
       {
@@ -1432,10 +1433,11 @@ int parse_task(std::string rtdbstring)
  *                                                *
  **************************************************/
 
-int parse_initialize_wvfnc(std::string rtdbstring)
+int parse_initialize_wvfnc(std::string rtdbstring, bool start_bool)
 {
    auto rtdbjson =  json::parse(rtdbstring);
-   bool init_wvfnc = true;
+   //bool init_wvfnc = true;
+   bool init_wvfnc = start_bool;
 
    if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean())
       init_wvfnc = rtdbjson["nwpw"]["initialize_wavefunction"];
@@ -1443,6 +1445,19 @@ int parse_initialize_wvfnc(std::string rtdbstring)
    return init_wvfnc;
 }
 
+/**************************************************
+ *                                                *
+ *       parse_initialize_wvfnc_set               *
+ *                                                *
+ **************************************************/
+std::string parse_initialize_wvfnc_set(std::string rtdbstring, bool setvalue)
+{
+   auto rtdbjson =  json::parse(rtdbstring);
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) 
+      rtdbjson["nwpw"]["initialize_wavefunction"] = setvalue;
+
+   return rtdbjson.dump();
+}
 
 
 

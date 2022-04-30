@@ -50,7 +50,7 @@ public:
    bool newpsi;
 
    /* Constructors */
-   Molecule(char *,  Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *);
+   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *);
 
    /* destructor */
    ~Molecule() {

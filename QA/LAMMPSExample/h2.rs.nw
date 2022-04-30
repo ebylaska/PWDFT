@@ -13,8 +13,8 @@ end
 
 nwpw
 
-   #this option forces the wavefunctions to be initialized from scratch
-   initialize_wavefunction on
+   #this option forces the wavefunctions to be initialized only when wavefunction does not ext from scratch
+   initialize_wavefunction off
 
    #The apc option is automatically set in lammps interface
    #apc on

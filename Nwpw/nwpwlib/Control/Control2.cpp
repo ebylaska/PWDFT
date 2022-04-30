@@ -264,6 +264,7 @@ Control2::Control2(const int np0, const string rtdbstring)
        input_v_movecs  = dbname + ".vmovecs";  
        output_v_movecs = dbname + ".vmovecs";  
    }
+
    // read from nwpw block
    if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string())  input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["output_wavefunction_filename"];
@@ -296,6 +297,9 @@ Control2::Control2(const int np0, const string rtdbstring)
    strcpy(ppermanent_dir,const_cast<char*>(permanent_dir_str.data()));
    strcpy(pscratch_dir,const_cast<char*>(scratch_dir_str.data()));
    //strcpy(ppsp_library_dir,const_cast<char*>(psp_library_dir_str.data()));
+
+   // force wavefunction initializion
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) pinput_movecs_initialize = rtdbjson["nwpw"]["initialize_wavefunction"];
 
 
    pfake_mass = 400000.0;

@@ -71,6 +71,7 @@ or run using mpirun, e,g,
 ```
  mpirun -np 4 a.out
  mpirun -np 4 a.out w2.nw
+ mpirun -np 4 a.out ../../benzene/benzene.nw
 ```
 
 

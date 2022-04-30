@@ -12,7 +12,10 @@ W 0 0 2.3
 end
 
 nwpw
-   apc on
+
+   initialize_wavefunction true
+
+   #apc on
    simulation_cell
      SC 20.0
    end

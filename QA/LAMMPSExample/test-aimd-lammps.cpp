@@ -8,7 +8,7 @@
 
 using namespace std;
 
-extern int  lammps_pspw_qmmm_minimizer(MPI_Comm, double*, double*, double*, double*, double*);
+extern int  lammps_pspw_aimd_minimizer(MPI_Comm, double*, double*, double*);
 extern void lammps_pspw_input(MPI_Comm, std::string&);
 
 int main(int argc, char* argv[])
@@ -36,30 +36,25 @@ int main(int argc, char* argv[])
 
 
    double E;
-   double uion[2], qion[2], rion[3*2],fion[3*2];
+   double rion[3*2],fion[3*2];
  
    lammps_pspw_input(MPI_COMM_WORLD, nwfilename);
 
-   uion[0] = -0.01;
-   uion[1] = 0.04;
    //rion[0] = 0.0; rion[1] = 0.0; rion[2] = -2.17;
    //rion[3] = 0.0; rion[4] = 0.0; rion[5] =  2.17;
    rion[0] = 0.0; rion[1] = 0.0; rion[2] = -0.7;
    rion[3] = 0.0; rion[4] = 0.0; rion[5] =  0.7;
-   ierr += lammps_pspw_qmmm_minimizer(MPI_COMM_WORLD,rion,uion,fion,qion,&E);
+   ierr += lammps_pspw_aimd_minimizer(MPI_COMM_WORLD,rion,fion,&E);
 
    if (taskid==MASTER)
    {
       std::cout << std::endl << std::endl;
       std::cout << "rion: " << rion[0] << " " << rion[1] << " " << rion[2] << std::endl 
                 << "      " << rion[3] << " " << rion[4] << " " << rion[5] << std::endl;
-      std::cout << "uion: " << uion[0] << " " << uion[1] << std::endl;
-      std::cout << std::endl;
 
       std::cout << "energy=" << E << std::endl;
       std::cout << "fion:  " << fion[0] << " " << fion[1] << " " << fion[2] << std::endl 
                 << "       " << fion[3] << " " << fion[4] << " " << fion[5] << std::endl;
-      std::cout << "qion:  " << qion[0] << " " << qion[1] << std::endl;
    }
 
 

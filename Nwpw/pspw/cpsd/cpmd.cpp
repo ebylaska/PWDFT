@@ -488,6 +488,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_deallocate(lmbda);
    delete [] eig;
 
+
+
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
@@ -499,6 +501,10 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
    }
+
+   // set rtdbjson initialize_wavefunction option to false
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) rtdbjson["nwpw"]["initialize_wavefunction"] = false;
+
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 

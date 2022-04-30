@@ -158,7 +158,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    myewald.phafac();
 
    // initialize Molecule
-   Molecule mymolecule(control.input_movecs_filename(),
+   Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron);
 
    MPI_Barrier(comm_world0);
@@ -587,6 +587,10 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    }
    if (myparallel.is_master()) seconds(&cpu3);
 
+
+//*******************************************************************
+
+
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = EV;
@@ -609,19 +613,18 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
    }
 
+   // set rtdbjson initialize_wavefunction option to false
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) rtdbjson["nwpw"]["initialize_wavefunction"] = false;
+
    MPI_Barrier(comm_world0);
-
-
-//*******************************************************************
-
 
    /* write psi */
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
 
-
    /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
+
 
 //                 |**************************|
 // *****************   report consumed time   **********************

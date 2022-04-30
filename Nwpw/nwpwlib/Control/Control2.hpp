@@ -51,6 +51,7 @@ class Control2 {
    bool pgeometry_optimize;
 
 
+   bool pinput_movecs_initialize = false;
    char ppermanent_dir[256];
    char pscratch_dir[256];
    char pinput_movecs_filename[80];
@@ -126,6 +127,7 @@ public:
    double driver_xrms()    { return pdriver_xrms; }
    double driver_trust()   { return pdriver_trust; }
 
+   bool   input_movecs_initialize() { return pinput_movecs_initialize; }
    char   *input_movecs_filename() { return pinput_movecs_filename; }
    char   *output_movecs_filename() { return poutput_movecs_filename; }
    char   *input_v_movecs_filename() { return pinput_v_movecs_filename; }

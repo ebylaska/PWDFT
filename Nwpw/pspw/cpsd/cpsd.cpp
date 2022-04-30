@@ -148,7 +148,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
-   bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),psi2);
+   bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
+                                  control.input_movecs_initialize(),psi2);
    MPI_Barrier(comm_world0);
 
 
@@ -447,6 +448,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    delete [] eig;
    gdevice_psi_dealloc();
 
+
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
@@ -458,6 +460,10 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
    }
+
+   // set rtdbjson initialize_wavefunction option to false
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) rtdbjson["nwpw"]["initialize_wavefunction"] = false;
+
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 

@@ -136,8 +136,11 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
    fortran_rtdbstring = pwdft::parse_nwinput(nwinput);
 
    // Initialize wavefunction if it doesn't exist
-   if (parse_initialize_wvfnc(fortran_rtdbstring))
+   if (parse_initialize_wvfnc(fortran_rtdbstring,true))
    {
+     bool wvfnc_initialize = parse_initialize_wvfnc(fortran_rtdbstring,false);
+     if (wvfnc_initialize) fortran_rtdbstring = parse_initialize_wvfnc_set(fortran_rtdbstring,false);
+
      int taskid;
      int MASTER=0;
      int ierr = MPI_Comm_rank(comm_world,&taskid);
@@ -145,12 +148,17 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
      std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
      int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
      MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
-     if (!wfound)
+
+     if ((!wfound) || (wvfnc_initialize))
      {
         auto lowlevel_rtdbstrs = pwdft::parse_gen_lowlevel_rtdbstrs(fortran_rtdbstring);
         for (const auto & elem: lowlevel_rtdbstrs) {
-           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
            std::string dum_rtdbstr  = elem;
+           if (wvfnc_initialize) {
+              dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr,true);
+              wvfnc_initialize = false;
+           }
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
            ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
         }
      }
@@ -163,29 +171,51 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
 static std::string lammps_rtdbstring;
 
-extern int lammps_pspw_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E)
-{ 
-   std::string line,nwinput;
-
+extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E)
+{
    auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
    int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
-
    lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
 
-   if (lammps_rtdbjson["nwpw"]["apc"].is_null())
-   {
-      json apc;
-      lammps_rtdbjson["nwpw"]["apc"] = apc;
-   }
-   lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
-   lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
-   lammps_rtdbstring    = lammps_rtdbjson.dump();
+   lammps_rtdbstring = lammps_rtdbjson.dump();
 
    // run minimizer
-   int  ierr = pwdft::pspw_minimizer(comm_world, lammps_rtdbstring);
+   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
 
-   lammps_rtdbjson =  json::parse(lammps_rtdbstring);
+   lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
 
+
+   // fetch output - energy and forces
+   double ee       = lammps_rtdbjson["pspw"]["energy"];
+   *E = ee;
+
+   std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
+   std::copy(v.begin(),v.end(), fion);
+
+   return ierr;
+}
+
+
+extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E)
+{ 
+   auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
+
+   int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
+   lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
+
+   if (lammps_rtdbjson["nwpw"].is_null()) { json nwpw; lammps_rtdbjson["nwpw"] = nwpw; }
+   if (lammps_rtdbjson["nwpw"]["apc"].is_null()) { json apc; lammps_rtdbjson["nwpw"]["apc"] = apc; }
+   lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
+   lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
+
+   lammps_rtdbstring = lammps_rtdbjson.dump();
+
+   // run minimizer
+   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+
+   lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
+
+   // fetch output - energy, forces, and apc charges
    double ee   = lammps_rtdbjson["pspw"]["energy"];
    double eapc = lammps_rtdbjson["pspw"]["energies"][51];
 
@@ -240,9 +270,12 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    MPI_Barrier(comm_world);
    lammps_rtdbstring = pwdft::parse_nwinput(nwinput);
 
-   // Initialize wavefunction if it doesn't exist
-   if (parse_initialize_wvfnc(lammps_rtdbstring))
+   // Initialize wavefunction if it doesn't exist or if initialize_wavefunction set
+   if (parse_initialize_wvfnc(lammps_rtdbstring,true))
    {
+      bool wvfnc_initialize = parse_initialize_wvfnc(lammps_rtdbstring,false);
+      if (wvfnc_initialize) lammps_rtdbstring = parse_initialize_wvfnc_set(lammps_rtdbstring,false);
+
       int taskid;
       int MASTER=0;
       int ierr = MPI_Comm_rank(comm_world,&taskid);
@@ -250,15 +283,21 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(lammps_rtdbstring);
       int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
       MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
-      if (!wfound)
+     
+      if ((!wfound) || (wvfnc_initialize))
       {
         auto lowlevel_rtdbstrs = pwdft::parse_gen_lowlevel_rtdbstrs(lammps_rtdbstring);
         for (const auto & elem: lowlevel_rtdbstrs) {
-           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
            std::string dum_rtdbstr  = elem;
+           if (wvfnc_initialize) {
+              dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr,true);
+              wvfnc_initialize = false;
+           }
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
            ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
         }
       }
+
    }
 
 
@@ -371,17 +410,26 @@ int main(int argc, char* argv[])
 
 
   // Initialize wavefunction
-  if (parse_initialize_wvfnc(rtdbstr))
+  if (parse_initialize_wvfnc(rtdbstr,true))
   {
+     bool wvfnc_initialize = parse_initialize_wvfnc(rtdbstr,false);
+     if (wvfnc_initialize) rtdbstr = parse_initialize_wvfnc_set(rtdbstr,false);
+
      std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
      int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
      MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
-     if (!wfound) 
+
+     if ((!wfound) || (wvfnc_initialize))
      {
         auto lowlevel_rtdbstrs =  parse_gen_lowlevel_rtdbstrs(rtdbstr);
         for (const auto & elem: lowlevel_rtdbstrs) {
-           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << elem << std::endl << std::endl;
+           // add initiale to el
            std::string dum_rtdbstr  = elem;
+           if (wvfnc_initialize) {
+              dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr,true);
+              wvfnc_initialize = false;
+           }
+           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
            ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
         }
      }
