@@ -17,7 +17,7 @@ using namespace pwdft;
 
 class Control2 {
 
-   string myrtdbstring,xcstring;
+   std::string myrtdbstring,xcstring;
    double punita[9],ptolerances[3],pscaling[2];
    double ptime_step,pfake_mass,pks_alpha,pecut,pwcut,prcut;
    double pbo_time_step;
@@ -30,7 +30,7 @@ class Control2 {
    int pnp_dimensions[3],pewald_grid[3];
    int pcode,ptask;
    int pispin,pmultiplicity,pne[2],ptotal_ion_charge,plmax_multipole;
-   int pmove,pfrac_coord,pfei,pfei_quench,pgram_schmidt;
+   int pmove,pfrac_coord,pgram_schmidt;
    int protation,ptranslation,pbalance,pspin_orbit;
    int pmaxit_orb,pmaxit_orbs,pscf_algorithm,pks_algorithm;
    int psymm_number;
@@ -59,6 +59,7 @@ class Control2 {
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
 
+
    bool   papc_on;
    int    papc_nga;
    double papc_Gc;
@@ -73,16 +74,33 @@ class Control2 {
    bool   psa_on;
    double psa_decay[2] = {1.0,1.0};
 
+   bool   pfei_on;
+   bool   pcif_on;
+   bool   pdipole_on;
+   bool   pmulliken_on;
+
 public:
 
    int version = 3;
 
    /* constructor */
-   Control2(const int, const string);
+   Control2(const int, const std::string);
 
    /* public variables */
-   string psp_library_dir;
+   std::string psp_library_dir;
    std::map<std::string, std::string> psp_libraries;
+
+   std::string xyz_filename,
+               ion_motion_filename,
+               emotion_filename,
+               fei_filename,
+               cif_filename,
+               omotion_filename,
+               hmotion_filename,
+               eigmotion_filename,
+               dipole_motion_filename;
+   std::string permanent_dir_str,scratch_dir_str;
+
 
    // Access functions
    double unita(const int i,const int j) { return punita[i+j*3]; }
@@ -112,7 +130,7 @@ public:
    int ne(const int i)          { return pne[i]; }
    int total_ion_charge()       { return ptotal_ion_charge; }
    int lmax_multipole()         { return plmax_multipole; }
-   string xc_name()		{ return xcstring; }
+   std::string xc_name()	{ return xcstring; }
 
    int *ne_ptr()                { return pne; }
 
@@ -135,10 +153,13 @@ public:
    char   *permanent_dir() { return ppermanent_dir;}
    char   *scratch_dir() { return pscratch_dir;}
 
+
    void add_permanent_dir(char *);
    void add_scratch_dir(char *);
 
-   int  print_level(string plevel) {
+   bool out_of_time() { return false; } // needs to be implemented
+
+   int  print_level(std::string plevel) {
       int doprt = 0;
       if (plevel=="low") {
          doprt = (pprint_level>0);
@@ -243,9 +264,23 @@ public:
    bool SA() { return psa_on; }
    double SA_decay(const int i) { return psa_decay[i]; }
 
+   // Fei
+   bool Fei_on() { return pfei_on; }
+
+   // CIF
+   bool CIF_on() { return pcif_on; }
+
+   // Mulliken
+   bool Mulliken_on() { return pmulliken_on; }
+
+   // Dipole
+   bool dipole_on() { return pdipole_on; }
+
+
+
    //GGA value
    int get_gga() {
-      string myxc_name = this->xc_name();
+      std::string myxc_name = this->xc_name();
 
       std::transform(myxc_name.begin(), myxc_name.end(), myxc_name.begin(), ::tolower);
 

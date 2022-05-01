@@ -239,13 +239,15 @@ void inner_loop_md(bool verlet, double *sa_alpha, Control2& control, Pneb *mygri
            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[1]);
            double kefac = 0.5*fmass/(dt*dt);
            eke = kefac*(nesum - mygrid->gg_traceall(psi2,psi0));
-           eki = myion->ke();
+           //eki = myion->ke();
+           eki = myion->eki1;
            mynose->Verlet_step(eke,eki);
         }
         else
         {
            eke = fmass*mygrid->gg_traceall(psi0,psi0);
-           eki = myion->ke();
+           //eki = myion->ke();
+           eki = myion->eki1;
            mynose->Newton_step(eke,eki);
         }
      }
@@ -291,7 +293,7 @@ void inner_loop_md(bool verlet, double *sa_alpha, Control2& control, Pneb *mygri
       enlocal = -mygrid->gg_traceall(psi1,Hpsi);
 
       /* velocity and kinetic enegy of psi */
-      double h = 1.0/(2.8*dt);
+      double h = 1.0/(2.0*dt);
       mygrid->g_Scale(-h,psi0);
       mygrid->gg_daxpy(h,psi2,psi0);
       eke = fmass*mygrid->gg_traceall(psi0,psi0);
@@ -300,7 +302,8 @@ void inner_loop_md(bool verlet, double *sa_alpha, Control2& control, Pneb *mygri
       Eold = E[0];
       E[1] = eorbit + eion + exc - ehartr - pxc;
       E[2] = eke;
-      E[3] = myion->ke();
+      //E[3] = myion->ke();
+      E[3] = myion->eki1;
 
       E[4] = eorbit;
       E[5] = ehartr;

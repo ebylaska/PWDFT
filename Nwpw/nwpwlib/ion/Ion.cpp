@@ -271,7 +271,6 @@ Ion::Ion(string rtdbstring, Control2& control)
    Tf   = -1.0;
    double vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
    double twopi = 16.0*atan(1.0);
-   double kb = 3.16679e-6;
 
    if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0].is_number_float())
       Tf =  rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0];
@@ -357,6 +356,17 @@ Ion::Ion(string rtdbstring, Control2& control)
    for (auto i=0; i<(3*nion); ++i) rion0[i] *= rr0;
    eki1 = ke();
 
+   // set ke_count, ke_total,and kg_total and g_dof
+   ke_count = 0;
+   ke_total = 0.0;
+   kg_total = 0.0;
+   if (rtdbjson["nwpw"]["ke_count"].is_number_integer()) ke_count = rtdbjson["nwpw"]["ke_count"];
+   if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
+   if (rtdbjson["nwpw"]["kg_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["kg_total"];
+
+   g_dof = 3.0*nion - 6.0;
+   if (g_dof<1) g_dof = 1.0;
+
       
 
 /*  DEBUG CHECK
@@ -389,11 +399,24 @@ void Ion::writejsonstr(string& rtdbstring)
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
+   // write coordinates
    vector<double> coords;
    for (auto i=0; i<(3*nion); ++i)
       coords.push_back(rion1[i]);
-
    rtdbjson["geometries"][geomname]["coords"] = coords;
+
+   // write velocities and ke running averages
+   if (ke_count>0) 
+   {
+      vector<double> vcoords;
+      for (auto i=0; i<(3*nion); ++i)
+         vcoords.push_back(rion0[i]);
+      rtdbjson["geometries"][geomname]["velocities"] = vcoords;
+
+      rtdbjson["nwpw"]["ke_count"] = ke_count;
+      rtdbjson["nwpw"]["ke_total"] = ke_total;
+      rtdbjson["nwpw"]["kg_total"] = kg_total;
+   }
 
    rtdbstring = rtdbjson.dump();
 }

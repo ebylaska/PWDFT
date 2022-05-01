@@ -243,8 +243,8 @@ Control2::Control2(const int np0, const string rtdbstring)
    }
 
 
-   string permanent_dir_str = "";
-   string scratch_dir_str   = "";
+   permanent_dir_str = "";
+   scratch_dir_str   = "";
    if (rtdbjson["permanent_dir"].is_string()) 
       permanent_dir_str = rtdbjson["permanent_dir"];
 
@@ -252,13 +252,13 @@ Control2::Control2(const int np0, const string rtdbstring)
       scratch_dir_str = rtdbjson["scratch_dir"];
 
 
-   string input_movecs  = "eric.movecs";  
-   string output_movecs = "eric.movecs";  
-   string input_v_movecs  = "eric.vmovecs";  
-   string output_v_movecs = "eric.vmovecs";  
+   std::string input_movecs  = "eric.movecs";  
+   std::string output_movecs = "eric.movecs";  
+   std::string input_v_movecs  = "eric.vmovecs";  
+   std::string output_v_movecs = "eric.vmovecs";  
    if (rtdbjson["dbname"].is_string()) 
    {
-       string dbname = rtdbjson["dbname"];
+       std::string dbname = rtdbjson["dbname"];
        input_movecs  = dbname + ".movecs";  
        output_movecs = dbname + ".movecs";  
        input_v_movecs  = dbname + ".vmovecs";  
@@ -277,6 +277,31 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"].is_string()) output_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"].is_string()) input_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"].is_string()) output_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
+
+   if (rtdbjson["dbname"].is_string()) 
+   {
+       std::string dbname = rtdbjson["dbname"];
+       xyz_filename = dbname + ".xyz";  
+       ion_motion_filename = dbname + ".ion_motion";
+       emotion_filename = dbname + ".emotion";
+       fei_filename = dbname + ".fei";  
+       cif_filename = dbname + ".cif";  
+       omotion_filename = dbname + ".omotion";
+       hmotion_filename = dbname + ".hmotion";
+       fei_filename = dbname + ".fei";
+       eigmotion_filename = dbname + ".eigmotion";
+       dipole_motion_filename = dbname + ".dipole_motion";
+   }
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"].is_string()) xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())  ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["motion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string()) emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string()) omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string()) hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["fei_filename"].is_string()) fei_filename = rtdbjson["nwpw"]["car-parrinello"]["fei_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["cif_filename"].is_string()) cif_filename = rtdbjson["nwpw"]["car-parrinello"]["cif_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string()) eigmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"].is_string()) dipole_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
+
 
    // from steepest_descent block
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string()) input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
@@ -510,6 +535,12 @@ Control2::Control2(const int np0, const string rtdbstring)
    if (!rtdbjson["driver"]["xmax"].is_null())    { pdriver_xmax  = rtdbjson["driver"]["xmax"]; }
    if (!rtdbjson["driver"]["xrms"].is_null())    { pdriver_xrms  = rtdbjson["driver"]["xrms"]; }
    if (!rtdbjson["driver"]["trust"].is_null())   { pdriver_trust = rtdbjson["driver"]["trust"]; }
+
+
+   pfei_on      = false;
+   pcif_on      = false;
+   pmulliken_on = false;
+   pdipole_on   = false;
 
 }
 

@@ -30,6 +30,8 @@ public:
    /* init_ke variables */
    int ke_count, seed, Tf;
    double ekg,eki0,eki1,ke_total,kg_total,mass_total;
+   double kb  = 3.16679e-6;
+   double g_dof = 1.0;
 
    /* Constructors */
    Ion(RTDB&, Control2&);
@@ -135,11 +137,8 @@ public:
        return 0.5*tmass*(vgx*vgx + vgy*vgy + vgz*vgz);
     }
 
-    double Temperature()
-    {
-       double temp = 0.0;
-       return temp;
-    }
+    double Temperature()     { return (2.0*(ke_total/((double) ke_count))/g_dof/kb); }
+    double com_Temperature() { return (2.0*(kg_total/((double) ke_count))/kb); }
 
     void optimize_step(const double *fion) 
     {
@@ -157,6 +156,7 @@ public:
       double sa1 = 1.0/(2.0-alpha);
       double sa2 = alpha/(2.0-alpha);
 
+       // Generate R(t+delta) = r2
        for (auto ii=0; ii<nion; ++ii)
        {
           double scale = sa1*dti[ii];
@@ -165,12 +165,21 @@ public:
           rion2[3*ii+2] = 2*sa1*rion1[3*ii+2] - sa2*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
 
+       // update current velocities - place in r0
        double h = 1.0/(2.0*time_step);
        for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
+
+       // add current kinetic energies to running averages
+       eki1 = this->ke();
+       ekg  = this->ke_com();
+       ++ke_count;
+       ke_total += eki1;
+       kg_total += ekg;
     }
 
     void Newton_step(const double *fion, const double alpha) 
     {
+       // Generate R(t+delta) = r2
        for (auto ii=0; ii<nion; ++ii)
        {
           double scale = 0.5*dti[ii];
@@ -178,10 +187,18 @@ public:
           rion2[3*ii+1] = rion1[3*ii+1] + alpha*time_step*rion0[3*ii+1] + scale*fion[3*ii+1];
           rion2[3*ii+2] = rion1[3*ii+2] + alpha*time_step*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
+
+       // add current kinetic energies to running averages
+       eki1 = this->ke();
+       ekg  = this->ke_com();
+       ++ke_count;
+       ke_total += eki1;
+       kg_total += ekg;
     }
 
     void Nose_step(const double ssr, const double *fion)
     {
+       // Generate R(t+delta) = r2
        double smr = 2.0*ssr-1.0;
        for (auto ii=0; ii<nion; ++ii)
        {
@@ -190,6 +207,17 @@ public:
           rion2[3*ii+1] = 2*ssr*rion1[3*ii+1] - smr*rion0[3*ii+1] + scale*fion[3*ii+1];
           rion2[3*ii+2] = 2*ssr*rion1[3*ii+2] - smr*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
+
+       // update current velocities - place in r0
+       double h = 1.0/(2.0*time_step);
+       for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
+
+       // add current kinetic energies to running averages
+       eki1 = this->ke();
+       ekg  = this->ke_com();
+       ++ke_count;
+       ke_total += eki1;
+       kg_total += ekg;
     }
 
 

@@ -22,6 +22,7 @@ using namespace std;
 #include	"Coulomb.hpp"
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
+#include	"nwpw_aimd_running_data.hpp"
 #include	"inner_loop_md.hpp"
 #include	"psi.hpp"
 #include	"rtdb.hpp"
@@ -53,10 +54,12 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double sum1,sum2,ev;
    double cpu1,cpu2,cpu3,cpu4;
    double E[60],viral,unita[9];
+   double eave,evar,have,hvar,qave,qvar,eke;
    double *psi0,*psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
    double sa_alpha[2],sa_decay[2],Te_init,Tr_init,Te_new,Tr_new;
+   double kb = 3.16679e-6;
 
    for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
@@ -301,15 +304,15 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
 
-      cout << "\n";
-      cout << " ewald parameters:\n";
+      std::cout << "\n";
+      std::cout << " ewald parameters:\n";
       printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
       printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
       printf("                       Mandelung Wigner-Seitz= %12.8lf (alpha=%12.8lf rs=%11.8lf)\n",myewald.mandelung(),myewald.rsalpha(),myewald.rs());
 
-      cout << "\n";
-      cout << " technical parameters:\n";
+      std::cout << "\n";
+      std::cout << " technical parameters:\n";
       printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
              control.time_step(),control.fake_mass());
       //printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
@@ -317,38 +320,40 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      cout << "\n\n";
+      std::cout << "\n\n";
       printf(" cooling/heating rates:  %12.5le (psi) %12.5le (ion)\n",control.scaling(0),control.scaling(1));
       printf(" initial kinetic energy: %12.5le (psi) %12.5le (ion)\n",eke0,myion.eki0);
       printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
       printf(" after scaling:          %12.5le (psi) %12.5le (ion)\n",eke1,myion.eki1);
       printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
-      cout << "\n\n\n";
+      std::cout << "\n\n\n";
 
       if (mynose.on()) 
-         cout << mynose.inputprint();
+         std::cout << mynose.inputprint();
       else
-         cout << " Constant Energy Simulation" << std::endl;
+         std::cout << " Constant Energy Simulation" << std::endl;
 
       if (SA) printf("      SA decay rate = %10.3le  (elc) %10.3le (ion)\n",sa_decay[0],sa_decay[1]);
 
-      cout << std::endl << std::endl;
+      std::cout << std::endl << std::endl;
  
    }
 
+
 //                 |**************************|
-// *****************   start iterations       **********************
+// *****************     start iterations     **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+
+   if (myparallel.is_master())
    {
       seconds(&cpu2);
-      cout << "         ================ Car-Parrinello iteration ================\n";
-      cout << "     >>> iteration started at " << util_date() << " <<<\n";
-      cout << "     iter.          KE+Energy             Energy        KE_psi        KE_Ion   Temperature\n";
-      cout << "     -------------------------------------------------------------------------------------\n";
-
-
+      std::cout << "         ================ Car-Parrinello iteration ================\n";
+      std::cout << "     >>> iteration started at " << util_date() << " <<<\n";
+      std::cout << "     iter.          KE+Energy             Energy        KE_psi        KE_Ion   Temperature\n";
+      std::cout << "     -------------------------------------------------------------------------------------\n";
    }
+
+   // Newton step - first step using velocity
    verlet = false;
    inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
                  &mykin,&mycoulomb,&myxc,
@@ -357,46 +362,83 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  dn,hml,lmbda,
                  E);
 
-   verlet = true;
-   done   = 0;
-   icount = 0;
-   while (!done)
+   //Verlet Block: Position Verlet loop  - steps: r2 = 2*r1 - r0 + 0.5*a
+   if (control.loop(1) > 0)
    {
-      ++icount;
-      inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
-                 &mykin,&mycoulomb,&myxc,
-                 &mypsp,&mystrfac,&myewald,
-                 psi0,psi1,psi2,Hpsi,psi_r,
-                 dn,hml,lmbda,
-                 E);
+      // Initialize AIMD running data
+      nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
 
-      if (myparallel.is_master())
+      icount = 0;
+      verlet = true;
+      eke    = 0.0;
+      done   = 0;
+      while (!done)
       {
-         if (SA)
-            printf("%10d%19.10le%19.10le%14.5le%14.5le%9.1lf%9.1lf\n",icount*control.loop(0),
-                                       E[0],E[1],E[2],E[3],Te_new,Tr_new);
-         else
-            printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
-                                       E[0],E[1],E[2],E[3],myion.Temperature());
-      }
+         ++icount;
+         inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
+                    &mykin,&mycoulomb,&myxc,
+                    &mypsp,&mystrfac,&myewald,
+                    psi0,psi1,psi2,Hpsi,psi_r,
+                    dn,hml,lmbda,
+                    E);
+          eke += E[2];
 
-      /* check for competion */
-      if (icount>=control.loop(1))
-      {
-         done = 1;
+         // Update Metadynamics and TAMD 
+
+         // Write out loop energies
          if (myparallel.is_master())
-            cout << "         *** arrived at the Maximum iteration.   terminated\n";
-      }
-   }
+         {
+            if (SA)
+               printf("%10d%19.10le%19.10le%14.5le%14.5le%9.1lf%9.1lf\n",icount*control.loop(0),
+                                          E[0],E[1],E[2],E[3],Te_new,Tr_new);
+            else
+               printf("%10d%19.10le%19.10le%14.5le%14.5le%14.2lf\n",icount*control.loop(0),
+                                          E[0],E[1],E[2],E[3],myion.Temperature());
+         }
+
+         // Update AIMD Running data
+         mymotion_data.update_iteration(icount);
+         eave = mymotion_data.eave; evar = mymotion_data.evar;
+         have = mymotion_data.have; hvar = mymotion_data.hvar;
+         qave = mymotion_data.qave; qvar = mymotion_data.qvar;
+
+
+         // update thermostats using SA decay
+
+
+         // Check for running out of time
+         if (control.out_of_time())
+         {
+            done = 1;
+            if (myparallel.is_master()) std::cout << "         *** out of time. iteration terminated." << std::endl;
+         }
+         // Check for Completion
+         else if (icount>=control.loop(1))
+         {
+            done = 1;
+            if (myparallel.is_master()) std::cout << "         *** arrived at the Maximum iteration.   terminated." << std::endl;
+         }
+
+      } // end while loop
+
+   } // Verlet Block
+
    if (myparallel.is_master()) 
    {
       seconds(&cpu3);
       cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
    }
+// *******************  end of iteration loop  ***********************
 
+
+
+//          |****************************************|
+// ********** post data checking and diagonalize hml *****************
+//          |****************************************|
 
    /* diagonalize the hamiltonian */
    mygrid.m_diagonalize(hml,eig);
+
 
 
 //                  |***************************|
@@ -430,20 +472,29 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
       if (mypsp.myapc->v_apc_on)
          printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[7],E[7]/myion.nion);
-      printf(" Kinetic energy (elc)    : %19.10le (%15.5le /elc)\n",E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" Kinetic energy (ion)    : %19.10le (%15.5le /ion)\n",E[3],E[3]/myion.nion);
-      printf("\n");
+      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n\n",      E[7],E[7]/myion.nion);
 
-      //if (nose)
-      //{
-      //   printf(" thermostat energy (elc) : %19.10le (%15.5le /elc)\n",E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
-      //   printf(" thermostat energy (ion) : %19.10le (%15.5le /ion)\n",E[4],E[3]/nion.nion);
-      //}
+      printf(" Kinetic energy (elc): %19.10le (%15.5le /electron)\n",E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" Kinetic energy (ion): %19.10le (%15.5le /ion)\n\n",E[3],E[3]/myion.nion);
+      if (mynose.on())
+      {
+         printf(" thermostat energy (elc) : %19.10le (%15.5le /electron)\n",E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
+         printf(" thermostat energy (ion) : %19.10le (%15.5le /ion)\n",E[4],E[3]/myion.nion);
+      }
       printf(" final kinetic energy:   %12.5le (psi) %12.5le (ion)\n", E[2],E[3]);
       printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
+      eke /= ((double) control.loop(1));
+      eke *= 2.0 / kb / ((double) (mygrid.ne[0]+mygrid.ne[ispin-1])) / ((double) mygrid.npack_all(1));
+      printf(" Temperature         : %10.1lf K (elc)\n",eke);
+      printf(" Temperature         : %10.1lf K (ion)\n",myion.Temperature());
+      printf("                     : %10.1lf K (c.o.m.)\n\n",myion.com_Temperature());
 
-
+      printf(" Vaverge   Eaverage  :   %19.10le %19.10le\n", have,eave);
+      printf(" Vvariance Evariance :   %19.10le %19.10le\n", hvar,evar);
+      double cv = myion.Temperature();
+      cv = (evar)/(kb*cv*cv);
+      cv /= ((double) myion.nion);
+      printf(" Cv - f*kb/(2*nion)  :   %19.10le\n", cv);
 
       //printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
       //printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
@@ -473,6 +524,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       //cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
    }
 
+
+//                  |***************************|
+// ******************         prologue          **********************
+//                  |***************************|
+
    /* write wavefunction and velocity wavefunction */
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.output_v_movecs_filename());
@@ -487,7 +543,6 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete [] eig;
-
 
 
    // write results to the json
