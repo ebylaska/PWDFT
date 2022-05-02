@@ -5,18 +5,30 @@
 #include        <iomanip>
 #include        <cstring>
 #include        <cmath>
-
 #include        <iostream>
 #include        <fstream>
-#include	<filesystem>
-namespace fs = std::filesystem;
-
+#include 	<sys/stat.h>
+#include 	<unistd.h>
+#include	<cstdio>
 #include        "nwpw_timing.hpp"
 #include        "gdevice.hpp"
-
 #include        "blas.h"
-
 #include        "nwpw_aimd_running_data.hpp"
+
+// Option for C++17
+//#include	<filesystem>
+//namespace fs = std::filesystem;
+
+// Option for C++ before C++17
+namespace fs {
+inline bool exists(const std::string& filename) { struct stat buffer;   return (stat (filename.c_str(), &buffer) == 0); }
+inline void remove(const std::string& filename) { int result =  std::remove(filename.c_str()); }
+inline void copy(const std::string& source_filename, const std::string& dest_filename) {
+   std::ifstream  src(source_filename, std::ios::binary);
+   std::ofstream  dst(dest_filename,   std::ios::binary);
+   dst << src.rdbuf();
+}
+}
 
 
 #define E124	std::right << std::setw(12) << std::setprecision(4)  << std::scientific
