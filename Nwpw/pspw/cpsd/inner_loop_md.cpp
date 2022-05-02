@@ -326,7 +326,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       E[24] +=  E[1];
       E[25] +=  E[1]*E[1];
       E[26] +=  E[1]+E[2]+E[3];
-      E[27] +=  std::pow((E[1]+E[2]+E[3]),2);
+      E[27] +=  (E[1]+E[2]+E[3])*(E[1]+E[2]+E[3]);
 
 
       /* Nose thermostat energies */

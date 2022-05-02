@@ -362,14 +362,15 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  dn,hml,lmbda,
                  1,E);
 
+
    //Verlet Block: Position Verlet loop  - steps: r2 = 2*r1 - r0 + 0.5*a
+   icount = 0;
    if (control.loop(1) > 0)
    {
       // Initialize AIMD running data
       nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
 
       int it_in = control.loop(0);
-      icount = 0;
       verlet = true;
       eke    = 0.0;
       done   = 0;
@@ -440,6 +441,12 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    /* diagonalize the hamiltonian */
    mygrid.m_diagonalize(hml,eig);
 
+   /* rotate current psi and psi0 */
+   mygrid.fmf_Multiply(0,psi1,hml,1.0, psi2,0.0);
+
+   mygrid.gg_copy(psi0,psi1);
+   mygrid.fmf_Multiply(0,psi1,hml,1.0, psi0,0.0);
+
 
 
 //                  |***************************|
@@ -447,6 +454,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
    if (myparallel.is_master()) 
    {
+      util_print_elapsed_time(icount*control.loop(0)*control.time_step());
       cout << "\n\n";
       cout << "          =============  summary of results  =================\n";
       cout << "\n final position of ions (au):" << "\n";
@@ -491,8 +499,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" Temperature         :   %10.1lf K (ion)\n",myion.Temperature());
       printf("                     :   %10.1lf K (c.o.m.)\n\n",myion.com_Temperature());
 
-      printf(" Vaverge   Eaverage  :   %19.10le %19.10le\n", have,eave);
-      printf(" Vvariance Evariance :   %19.10le %19.10le\n", hvar,evar);
+      printf(" Vaverge   Eaverage  :   %19.10le %19.10le\n", eave,have);
+      printf(" Vvariance Evariance :   %19.10le %19.10le\n", evar,hvar);
       double cv = myion.Temperature();
       cv = (evar)/(kb*cv*cv);
       cv /= ((double) myion.nion);
@@ -532,7 +540,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
 
    /* write wavefunction and velocity wavefunction */
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.output_movecs_filename());
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.output_v_movecs_filename());
 
    /* deallocate memory */

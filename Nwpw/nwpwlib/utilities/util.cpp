@@ -4,6 +4,7 @@
 //}
 #include        "compressed_io.hpp"
 
+#include        <iomanip>
 #include	<iostream>
 #include	<cstdlib>
 #include	<cmath>
@@ -324,6 +325,30 @@ void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
          v_ray[i] *= ( 1.0 - pow((1.0-exp(-pow((g/qmax),ncut))),ncut) );
       }
    }
+}
+
+/**************************************
+ *                                    *
+ *       util_print_elapsed_time      *
+ *                                    *
+ **************************************/
+void util_print_elapsed_time(const double autime)
+{
+   double sectime = autime * 2.41889e-17;
+    
+   std::cout << std::endl << std::endl;
+   if (sectime<1.0e-12)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-15) << " fs" << std::endl;
+   else if (sectime<1.0e-9)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-12) << " ps" << std::endl;
+   else if (sectime<1.0e-9)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-9) << " ns" << std::endl;
 }
 
 

@@ -281,13 +281,14 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
    if (emotion_open) 
    {
       double current_time = dt_inner*(icount+emotion_ishift);
-      double fac          = 1.0/((double) (icount+emotion_ishift));
+      double fac          = ((double) (icount+emotion_ishift));
       double pressure = 0.0;
 
       eave = E[24]/fac;
       evar = E[25]/fac; evar -= eave*eave;
       have = E[26]/fac;
       hvar = E[27]/fac; hvar -= have*have;
+
       qave = E[22]/fac;
       qvar = E[23]/fac; qvar -= qave*qave;
 

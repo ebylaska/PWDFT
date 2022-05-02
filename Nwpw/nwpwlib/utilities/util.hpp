@@ -33,6 +33,9 @@ extern double util_splint(const double *, const double *, const double *, const 
 
 extern void util_filter(int, double *, double, double *);
 
+extern void util_print_elapsed_time(const double);
+
+
 
 //#define _MATPRINT_
 #ifdef _MATPRINT_
