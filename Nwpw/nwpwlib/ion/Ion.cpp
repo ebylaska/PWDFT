@@ -362,7 +362,7 @@ Ion::Ion(string rtdbstring, Control2& control)
    kg_total = 0.0;
    if (rtdbjson["nwpw"]["ke_count"].is_number_integer()) ke_count = rtdbjson["nwpw"]["ke_count"];
    if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
-   if (rtdbjson["nwpw"]["kg_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["kg_total"];
+   if (rtdbjson["nwpw"]["kg_total"].is_number_float())   kg_total = rtdbjson["nwpw"]["kg_total"];
 
    g_dof = 3.0*nion - 6.0;
    if (g_dof<1) g_dof = 1.0;
