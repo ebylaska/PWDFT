@@ -321,13 +321,13 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      std::cout << "\n\n";
+      std::cout << "\n";
       printf(" cooling/heating rates:  %12.5le (psi) %12.5le (ion)\n",control.scaling(0),control.scaling(1));
       printf(" initial kinetic energy: %12.5le (psi) %12.5le (ion)\n",eke0,myion.eki0);
       printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
       printf(" after scaling:          %12.5le (psi) %12.5le (ion)\n",eke1,myion.eki1);
       printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
-      std::cout << "\n\n\n";
+      std::cout << "\n";
 
       if (mynose.on()) 
          std::cout << mynose.inputprint();
