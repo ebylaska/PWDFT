@@ -291,7 +291,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       mypsp->v_nonlocal(psi1,Hpsi);
       enlocal = -mygrid->gg_traceall(psi1,Hpsi);
 
-      /* velocity and kinetic enegy of psi */
+      /* set wavefunction velocity and kinetic enegy of psi */
       double h = 1.0/(2.0*dt);
       mygrid->g_Scale(-h,psi0);
       mygrid->gg_daxpy(h,psi2,psi0);
@@ -321,12 +321,11 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
          E[1]  = E[1] + E[51] - E[52];
       }
 
-
       /* Running Sums - Energy and Energy**2 sum */
-      E[24] +=  E[1];
-      E[25] +=  E[1]*E[1];
-      E[26] +=  E[1]+E[2]+E[3];
-      E[27] +=  (E[1]+E[2]+E[3])*(E[1]+E[2]+E[3]);
+      E[24] += E[1];
+      E[25] += E[1]*E[1];
+      E[26] += (E[1]+E[2]+E[3]);
+      E[27] += (E[1]+E[2]+E[3])*(E[1]+E[2]+E[3]);
 
 
       /* Nose thermostat energies */
@@ -342,8 +341,6 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       {
         E[0] = E[1]+E[2]+E[3];
       }
-
-
 
    }
 

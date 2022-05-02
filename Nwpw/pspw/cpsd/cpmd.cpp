@@ -120,9 +120,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    }
 
    /* read wavefunction velocities */
-   mygrid.g_zero(psi0);
+   mygrid.g_zero(psi1);
    if (psi_filefind(&mygrid,control.input_v_movecs_filename()))
-      psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.input_v_movecs_filename());
+      psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.input_v_movecs_filename());
 
 
    /* read in ion structure */
@@ -145,9 +145,10 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    myewald.phafac();
 
    /* scaling psi velocity */
+   mygrid.gg_copy(psi1,psi0);
+   mygrid.g_Scale(control.scaling(0),psi1);
    double eke0 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
-   mygrid.g_Scale(control.scaling(0),psi0);
-   double eke1 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
+   double eke1 = control.fake_mass()*mygrid.gg_traceall(psi1,psi1); 
 
    /* initialize thermostats */
    double w = mykin.ke_ave(psi2);
