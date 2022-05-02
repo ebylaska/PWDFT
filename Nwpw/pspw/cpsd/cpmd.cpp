@@ -360,7 +360,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
-                 E);
+                 1,E);
 
    //Verlet Block: Position Verlet loop  - steps: r2 = 2*r1 - r0 + 0.5*a
    if (control.loop(1) > 0)
@@ -368,6 +368,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       // Initialize AIMD running data
       nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
 
+      int it_in = control.loop(0);
       icount = 0;
       verlet = true;
       eke    = 0.0;
@@ -380,7 +381,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                     &mypsp,&mystrfac,&myewald,
                     psi0,psi1,psi2,Hpsi,psi_r,
                     dn,hml,lmbda,
-                    E);
+                    it_in,E);
           eke += E[2];
 
          // Update Metadynamics and TAMD 
@@ -466,28 +467,29 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
       cout << "\n\n";
-      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[1],E[1]/myion.nion);
-      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[4],E[4]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" total     energy        : %19.10le (%15.5le /ion)\n",      E[1],E[1]/myion.nion);
+      printf(" total orbital energy    : %19.10le (%15.5le /electron)\n", E[4],E[4]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" hartree energy          : %19.10le (%15.5le /electron)\n", E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" exc-corr energy         : %19.10le (%15.5le /electron)\n", E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
       if (mypsp.myapc->v_apc_on)
-         printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n\n",      E[7],E[7]/myion.nion);
+         printf(" APC energy              : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
+      printf(" ion-ion energy          : %19.10le (%15.5le /ion)\n\n",      E[7],E[7]/myion.nion);
 
-      printf(" Kinetic energy (elc): %19.10le (%15.5le /electron)\n",E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" Kinetic energy (ion): %19.10le (%15.5le /ion)\n\n",E[3],E[3]/myion.nion);
+      printf(" Kinetic energy    (elc) : %19.10le (%15.5le /electron)\n",E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
+      printf(" Kinetic energy    (ion) : %19.10le (%15.5le /ion)\n",E[3],E[3]/myion.nion);
       if (mynose.on())
       {
          printf(" thermostat energy (elc) : %19.10le (%15.5le /electron)\n",E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
          printf(" thermostat energy (ion) : %19.10le (%15.5le /ion)\n",E[4],E[3]/myion.nion);
       }
-      printf(" final kinetic energy:   %12.5le (psi) %12.5le (ion)\n", E[2],E[3]);
+
+      printf("\n final kinetic energy:   %12.5le (psi) %12.5le (ion)\n", E[2],E[3]);
       printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
       eke /= ((double) control.loop(1));
       eke *= 2.0 / kb / ((double) (mygrid.ne[0]+mygrid.ne[ispin-1])) / ((double) mygrid.npack_all(1));
-      printf(" Temperature         : %10.1lf K (elc)\n",eke);
-      printf(" Temperature         : %10.1lf K (ion)\n",myion.Temperature());
-      printf("                     : %10.1lf K (c.o.m.)\n\n",myion.com_Temperature());
+      printf(" Temperature         :   %10.1lf K (elc)\n",eke);
+      printf(" Temperature         :   %10.1lf K (ion)\n",myion.Temperature());
+      printf("                     :   %10.1lf K (c.o.m.)\n\n",myion.com_Temperature());
 
       printf(" Vaverge   Eaverage  :   %19.10le %19.10le\n", have,eave);
       printf(" Vvariance Evariance :   %19.10le %19.10le\n", hvar,evar);

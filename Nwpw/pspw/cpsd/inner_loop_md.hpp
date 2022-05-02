@@ -17,11 +17,11 @@
 using namespace pwdft;
 
 namespace pwdft {
-extern void inner_loop_md(bool, double *, Control2&, Pneb *, Ion *, nwpw_Nose_Hoover *,
+extern void inner_loop_md(const bool, double *, Control2&, Pneb *, Ion *, nwpw_Nose_Hoover *,
                        Kinetic_Operator *, Coulomb_Operator *, XC_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
                        double *, double *, double *, double *, double *,
                        double *, double *, double *,
-                       double *);
+                       const int, double *);
 }
 #endif
