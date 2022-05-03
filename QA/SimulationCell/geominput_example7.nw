@@ -6,7 +6,7 @@ echo
 
 #psp_library_dir /home/ericpsps
 
-geometry noautosym noautoz center  units bohrs
+geometry noautosym noautoz nocenter units bohrs
 system crystal cartesian
    lattice_vectors
     24.0  0.0  0.0
