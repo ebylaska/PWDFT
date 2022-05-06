@@ -106,8 +106,9 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
       std::string nwfilename(tfilename);
       //std::string nwfilename("w2.nw");
 
+      // preappend print option to nwinput, options=none,off,low,medium,high,debug
       std::cout << "nwfilename =" << nwfilename << std::endl;
-      nwinput = "";
+      nwinput = "\nprint off\n\n";
       std::ifstream nwfile(nwfilename);
       if (nwfile.good())
       {
@@ -115,11 +116,6 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
             nwinput += line + "\n";
       }
       nwfile.close();
-
-      // add print option to nwinput, options=none,off,low,medium,high,debug
-      nwinput += "print off\n";
-
-      std::cout << "nwinput =" << nwinput << std::endl;;
 
       nwinput_size = nwinput.size();
    }
@@ -249,7 +245,8 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    {  
       std::string line;
       
-      nwinput = ""; 
+      // prepend print option to nwinput, options=none,off,low,medium,high,debug
+      nwinput = "\nprint off\n\n"; 
       std::ifstream nwfile(nwfilename);
       if (nwfile.good())
       {  
@@ -258,9 +255,6 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       }
       nwfile.close();
 
-      // add print option to nwinput, options=none,off,low,medium,high,debug
-      nwinput += "print off\n";
-      
       nwinput_size = nwinput.size();
    }
    MPI_Barrier(comm_world);
@@ -277,6 +271,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    MPI_Barrier(comm_world);
    lammps_rtdbstring = pwdft::parse_nwinput(nwinput);
 
+   //std::cout << "rtdb=" << lammps_rtdbstring << std::endl;
 
    // Initialize wavefunction if it doesn't exist or if initialize_wavefunction set
    if (parse_initialize_wvfnc(lammps_rtdbstring,true))

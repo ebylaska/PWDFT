@@ -22,10 +22,12 @@ using namespace pwdft;
 void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
 {
    double zv;
-   psp_library mypsp_library(control);
+   bool oprint = ((myparall->is_master()) && (control.print_level("medium")));
 
+   psp_library mypsp_library(control);
+   
    /* write out psp library directories being used */
-   if (myparall->is_master())
+   if (oprint)
    {
       std::cout << std::endl << " psp_library: " << mypsp_library.nwpw_libraryps_dir << std::endl << std::endl;;
       for (auto const& x : mypsp_library.libraries)
