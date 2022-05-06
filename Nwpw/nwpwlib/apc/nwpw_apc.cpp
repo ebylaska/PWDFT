@@ -35,6 +35,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
    apc_on   = control.APC_on();
    v_apc_on = false;
 
+   bool oprint = ((mypneb->PGrid::parall->is_master()) && (control.print_level("medium")));
 
    if (apc_on)  
    {
@@ -113,7 +114,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       }
 
       /* write out APC header */   
-      if (mypneb->PGrid::parall->is_master())
+      if (oprint)
       {
          std::cout << std::endl;
          std::cout << " initializing nwpw_APC object" << std::endl;
