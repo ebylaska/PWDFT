@@ -115,6 +115,10 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
             nwinput += line + "\n";
       }
       nwfile.close();
+
+      // add print option to nwinput, options=none,off,low,medium,high,debug
+      nwinput += "print off\n";
+
       std::cout << "nwinput =" << nwinput << std::endl;;
 
       nwinput_size = nwinput.size();
@@ -144,7 +148,7 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
      int taskid;
      int MASTER=0;
      int ierr = MPI_Comm_rank(comm_world,&taskid);
-     bool oprint = (taskid==MASTER);
+     bool oprint = (taskid==MASTER) && false;
      std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
      int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
      MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
@@ -253,6 +257,9 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
             nwinput += line + "\n";
       }
       nwfile.close();
+
+      // add print option to nwinput, options=none,off,low,medium,high,debug
+      nwinput += "print off\n";
       
       nwinput_size = nwinput.size();
    }
@@ -270,6 +277,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    MPI_Barrier(comm_world);
    lammps_rtdbstring = pwdft::parse_nwinput(nwinput);
 
+
    // Initialize wavefunction if it doesn't exist or if initialize_wavefunction set
    if (parse_initialize_wvfnc(lammps_rtdbstring,true))
    {
@@ -279,7 +287,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       int taskid;
       int MASTER=0;
       int ierr = MPI_Comm_rank(comm_world,&taskid);
-      bool oprint = (taskid==MASTER);
+      bool oprint = (taskid==MASTER) && false;
       std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(lammps_rtdbstring);
       int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
       MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
