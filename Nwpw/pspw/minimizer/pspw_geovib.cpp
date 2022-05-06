@@ -63,15 +63,26 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    double cpu1,cpu2,cpu3,cpu4,cpustep;
    double E[50],deltae,deltac,deltar,viral,unita[9];
 
+   Control2 control(myparallel.np(),rtdbstring);
+   int flag =  control.task();
+
+   bool hprint = (myparallel.is_master() && control.print_level("high"));
+   bool oprint = (myparallel.is_master() && control.print_level("medium"));
+   bool lprint = (myparallel.is_master() && control.print_level("low"));
+
+   /* reset Parallel base_stdio_print = lprint */
+   myparallel.base_stdio_print = lprint;
+
+
    //double *psi1,*psi2,*Hpsi,*psi_r;
    //double *dn;
    //double *hml,*lmbda,*eig;
 
    for (ii=0; ii<50; ++ii) E[ii] = 0.0;
 
-   if (myparallel.is_master())
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint)
    {
-      seconds(&cpu1);
       ios_base::sync_with_stdio();
       cout << "          *****************************************************\n";
       cout << "          *                                                   *\n";
@@ -88,11 +99,6 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       cout << "          *****************************************************\n";
       cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
-
-   //control_read(myrtdb);
-   //control_read(myparallel.np(),rtdbstring);
-   Control2 control(myparallel.np(),rtdbstring);
-   int flag =  control.task();
 
    /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
@@ -179,7 +185,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 // *****************   summary of input data  **********************
 //                 |**************************|
 
-   if (myparallel.is_master())
+   if (oprint)
    {
       cout << "\n";
       cout << "          ==============  summary of input  ==================\n";
@@ -325,8 +331,8 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       printf("    fixed trust radius              (Trust) = %12.6le\n",trust);
       printf("    number lmbfgs histories   (lmbfgs_size) = %4d\n",lmbfgs_size); 
 
-      seconds(&cpu2);
    }
+   if (myparallel.is_master()) seconds(&cpu2);
 
 
 //*                |***************************|
@@ -350,7 +356,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    int it = 0;
 
    /*  calculate energy */
-   if (myparallel.is_master()){
+   if (oprint) {
       cout << "\n\n";
       cout << " -----------------------------------------------------------------------------------\n";
       cout << " -----------------------------    Initial Geometry     -----------------------------\n";
@@ -366,14 +372,14 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    }
    EV = cgsd_energy(control,mymolecule);
    /*  calculate the gradient */
-   if (myparallel.is_master()){
+   if (oprint){
       cout << "\n";
       cout << " ---------------------------------\n";
       cout << "    Calculate Initial Gradient    \n";
       cout << " ---------------------------------\n\n";
    }
    cgsd_energy_gradient(mymolecule,fion);
-   if (myparallel.is_master()) {
+   if (oprint) {
       cout << " ion forces (au):" << "\n";
       for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
          printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
@@ -413,7 +419,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    Grms = sqrt(Grms)/((double) myion.nion);
    if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax)) done = true;
 
-   if (myparallel.is_master()){
+   if (oprint) {
        if (done)
        {
           cout << "      ----------------------\n"
@@ -457,7 +463,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
    while ((!done) && (it<=maxit))
    {
    
-      if (myparallel.is_master()){
+      if (oprint) {
          cout << "\n\n";
          cout << " -----------------------------------------------------------------------------------\n";
          cout << " ----------------------------- Optimization Step " << std::setw(5) << it << " -----------------------------\n";
@@ -465,7 +471,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       }
 
       /* print out the current geometry */
-      if (myparallel.is_master()) {
+      if (oprint) {
          cout << " ---------------------------------\n";
          cout << "  Geometry for Step " <<  it << "\n";
          cout << " ---------------------------------\n";
@@ -473,7 +479,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       }
 
       /*  calculate energy */
-      if (myparallel.is_master()){
+      if (oprint) {
          cout << "\n\n\n";
          cout << " ---------------------------------\n";
          cout << "  Calculate Energy for Step " <<  it << "\n";
@@ -483,14 +489,16 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       EV = cgsd_energy(control,mymolecule);
 
       /*  calculate the gradient */
-      if (myparallel.is_master()){
+      if (oprint) {
          cout << "\n";
          cout << " ---------------------------------\n";
          cout << "  Calculate Gradient for Step " <<  it << "\n";
          cout << " ---------------------------------\n\n";
       }
+
       cgsd_energy_gradient(mymolecule,fion);
-      if (myparallel.is_master()){
+
+      if (oprint) {
          cout << " ion forces (au):" << "\n";
          for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
             printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
@@ -506,8 +514,6 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
                  << "   max|Fatom|= " << std::setprecision(6) << fixed << std::setw(12) << mymolecule.myion->max_fion(fion) 
                  << "  (" << std::setprecision(3) << fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
                  << std::endl << std::endl;
-             
-
       }
       DSCAL_PWDFT(nfsize,mrone,fion,one);
 
@@ -535,7 +541,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
 
       /* print out the current energy */
-      if (myparallel.is_master())
+      if (oprint)
       {
          if (done)
          {
@@ -577,7 +583,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
      ++it;
    }
 
-   if (myparallel.is_master()) {
+   if (oprint) {
       cout << "\n\n";
       cout << " ---------------------------------\n";
       cout << "  Final Geometry \n";
@@ -609,7 +615,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
-      if (myparallel.is_master())
+      if (oprint)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
    }
 
@@ -629,9 +635,9 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 // *****************   report consumed time   **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint) 
    {
-      seconds(&cpu4);
       double t1 = cpu2-cpu1;
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;

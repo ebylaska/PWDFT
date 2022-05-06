@@ -203,9 +203,11 @@ static void vpp_read(PGrid *mygrid,
 
     *rlocal = 0.0;
 
+    if (parall->base_stdio_print)
+        std::cout << std::endl << " reading formatted psp filename: " << fname << std::endl;
+
     if (parall->is_master())
     {
-        std::cout << std::endl << " reading formatted psp filename: " << fname << std::endl;
         openfile(5,fname,"r");
         cread(5,comment,80);
         comment[79] = '\0';
@@ -523,9 +525,11 @@ static void vpp_write(PGrid *mygrid,
     //double tmp2[mygrid->nfft3d];
     double *tmp2 = new (std::nothrow) double [mygrid->nfft3d]();
 
+    if (parall->base_stdio_print)
+       std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
+
     if (parall->is_master())
     {
-       std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
        openfile(6,fname,"w");
        comment[79] = '\0';
        cwrite(6,comment,80);
@@ -902,12 +906,12 @@ static void vpp_generate(PGrid *mygrid,
 
     }
     else if (*psp_type==1)
-        std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
     else if (*psp_type==2)
-        std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
     else if (*psp_type==4)
     {
-        std::cout << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
 
         int nray = mygrid->n_ray();
         Psp1d_pawppv1 paw1d(myparall,pspname);
@@ -1055,7 +1059,7 @@ static void vpp_generate(PGrid *mygrid,
     }
     else
     {
-        std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
     }
 
 }

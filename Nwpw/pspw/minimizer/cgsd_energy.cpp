@@ -30,8 +30,9 @@ double cgsd_noit_energy(Molecule& mymolecule)
 
    double total_energy  = mymolecule.gen_all_energies();
 
+
    /* report summary of results */
-   if (parall->is_master())
+   if (parall->base_stdio_print)
    {
       std::cout << "     ==================  optimization turned off  ===================\n" << std::endl;
       std::cout << std::endl;
@@ -68,9 +69,14 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
    int minimizer = control.minimizer();
 
+   bool hprint = (parall->is_master() && control.print_level("high"));
+   bool oprint = (parall->is_master() && control.print_level("medium"));
+   bool lprint = (parall->is_master() && control.print_level("low"));
+
+
    for (auto ii=0; ii<60; ++ii) E[ii] = 0.0;
 
-   if (parall->is_master())
+   if (oprint)
    {
       if (minimizer==1) std::cout << "     ============ Grassmann conjugate gradient iteration ============" << std::endl;
       if (minimizer==2) std::cout << "     ================== Grassmann lmbfgs iteration ==================" << std::endl;
@@ -99,7 +105,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    if (mymolecule.newpsi) 
    {
       for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-      if (parall->is_master()) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+      if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
    }
 
    //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
@@ -113,7 +119,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       if (stalled)
       {
          for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-         if (parall->is_master()) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+         if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
          bfgscount = 0;
       }
 
@@ -135,7 +141,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
         ++bfgscount; // call bfgsminimize2(E,deltae,deltac,bfgscount,it_in)
       }
 
-      if (parall->is_master())
+      if (oprint)
          printf("%10d%25.12le%16.6le%16.6le\n",icount*it_in,total_energy,deltae, deltac);
 
       if ((fabs(deltae)>fabs(deltae_old)) || (fabs(deltae)>1.0e-2) || (deltae>0.0))
@@ -147,7 +153,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
 
    }
-   if (parall->is_master())
+   if (oprint)
    {
       if (converged)  std::cout <<  "     *** tolerance ok. iteration terminated" << std::endl;
       if (!converged) std::cout <<  "     *** arrived at the Maximum iteration.  terminated" << std::endl;
@@ -158,7 +164,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
    /* report summary of results */
    //total_energy  = mymolecule.gen_all_energies();
-   if (parall->is_master())
+   if (oprint)
    {
       std::cout << std::endl;
       std::cout << mymolecule;

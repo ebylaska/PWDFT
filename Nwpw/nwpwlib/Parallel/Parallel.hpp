@@ -31,6 +31,7 @@ class Parallel {
 
 public:
         int dim;
+        bool base_stdio_print = true;
 
 	/* Constructors */
 	//Parallel(int, char **);

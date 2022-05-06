@@ -61,11 +61,20 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    double sa_alpha[2],sa_decay[2],Te_init,Tr_init,Te_new,Tr_new;
    double kb = 3.16679e-6;
 
+   Control2 control(myparallel.np(),rtdbstring);
+
+   bool hprint = (myparallel.is_master() && control.print_level("high"));
+   bool oprint = (myparallel.is_master() && control.print_level("medium"));
+   bool lprint = (myparallel.is_master() && control.print_level("low"));
+
+   /* reset Parallel base_stdio_print = lprint */
+   myparallel.base_stdio_print = lprint;
+
    for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
-   if (myparallel.is_master())
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint)
    {
-      seconds(&cpu1);
       ios_base::sync_with_stdio();
       cout << "          *****************************************************\n";
       cout << "          *                                                   *\n";
@@ -84,9 +93,6 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
-   //control_read(myrtdb);
-   //control_read(myparallel.np(),rtdbstring);
-   Control2 control(myparallel.np(),rtdbstring);
    Lattice mylattice(control);
    //myparallel.init2d(control_np_orbital());
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
@@ -115,7 +121,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    if (ispin==1) sum1 *= 2;
    if (fabs(sum2-sum1)>1.0e-10)
    {
-      if (myparallel.is_master())
+      if (oprint)
          printf("Warning: Gram-Schmidt Being performed on psi2\n");
    }
 
@@ -207,7 +213,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 // *****************   summary of input data  **********************
 //                 |**************************|
 
-   if (myparallel.is_master())
+   if (oprint)
    {
       cout << "\n\n";
       cout << "          ==============  summary of input  ==================\n";
@@ -345,9 +351,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 // *****************     start iterations     **********************
 //                 |**************************|
 
-   if (myparallel.is_master())
+   if (myparallel.is_master()) seconds(&cpu2);
+   if (oprint)
    {
-      seconds(&cpu2);
       std::cout << "         ================ Car-Parrinello iteration ================\n";
       std::cout << "     >>> iteration started at " << util_date() << " <<<\n";
       std::cout << "     iter.          KE+Energy             Energy        KE_psi        KE_Ion   Temperature\n";
@@ -389,7 +395,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          // Update Metadynamics and TAMD 
 
          // Write out loop energies
-         if (myparallel.is_master())
+         if (oprint)
          {
             if (SA)
                printf("%10d%19.10le%19.10le%14.5le%14.5le%9.1lf%9.1lf\n",icount*control.loop(0),
@@ -413,22 +419,22 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
          if (control.out_of_time())
          {
             done = 1;
-            if (myparallel.is_master()) std::cout << "         *** out of time. iteration terminated." << std::endl;
+            if (oprint) std::cout << "         *** out of time. iteration terminated." << std::endl;
          }
          // Check for Completion
          else if (icount>=control.loop(1))
          {
             done = 1;
-            if (myparallel.is_master()) std::cout << "         *** arrived at the Maximum iteration.   terminated." << std::endl;
+            if (oprint) std::cout << "         *** arrived at the Maximum iteration.   terminated." << std::endl;
          }
 
       } // end while loop
 
    } // Verlet Block
 
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu3);
+   if (oprint) 
    {
-      seconds(&cpu3);
       cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
    }
 // *******************  end of iteration loop  ***********************
@@ -453,7 +459,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
-   if (myparallel.is_master()) 
+   if (oprint) 
    {
       util_print_elapsed_time(icount*control.loop(0)*control.time_step());
       cout << "\n\n";
@@ -577,9 +583,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 // *****************   report consumed time   **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint) 
    {
-      seconds(&cpu4);
       double t1 = cpu2-cpu1;
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;

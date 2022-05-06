@@ -68,9 +68,19 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    for (ii=0; ii<50; ++ii) E[ii] = 0.0;
 
-   if (myparallel.is_master())
+   Control2 control(myparallel.np(),rtdbstring);
+   int flag =  control.task();
+
+   bool hprint = (myparallel.is_master() && control.print_level("high"));
+   bool oprint = (myparallel.is_master() && control.print_level("medium"));
+   bool lprint = (myparallel.is_master() && control.print_level("low"));
+
+   /* reset Parallel base_stdio_print = lprint */
+   myparallel.base_stdio_print = lprint;
+
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint)
    {
-      seconds(&cpu1);
       ios_base::sync_with_stdio();
       cout << "          *****************************************************\n";
       cout << "          *                                                   *\n";
@@ -90,8 +100,6 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    //control_read(myrtdb);
    //control_read(myparallel.np(),rtdbstring);
-   Control2 control(myparallel.np(),rtdbstring);
-   int flag =  control.task();
 
    // initialize processor grid structure 
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
@@ -169,7 +177,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 
    MPI_Barrier(comm_world0);
-   if (myparallel.is_master())
+   if (oprint)
    {
       cout << "\n";
       cout << "          ==============  summary of input  ==================\n";
@@ -306,9 +314,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          cout << "      optimization of psi and densities turned off" << std::endl;
       }
       cout << std::endl << std::endl << std::endl;
-      seconds(&cpu2);
    }
    MPI_Barrier(comm_world0);
+   if (myparallel.is_master()) seconds(&cpu2);
 
 
 //*                |***************************|
@@ -340,7 +348,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       //double *fion = new double[3*myion.nion]; 
       double fion[3*myion.nion]; 
       cgsd_energy_gradient(mymolecule,fion);
-      if (myparallel.is_master())
+      if (lprint)
       {
          std::cout << std::endl << " Ion Forces (au):" << std::endl;
          for (ii=0; ii<myion.nion; ++ii)
@@ -369,7 +377,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
-      if (myparallel.is_master())
+      if (lprint)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
    }
 
@@ -388,9 +396,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 // *****************   report consumed time   **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint) 
    {
-      seconds(&cpu4);
       double t1 = cpu2-cpu1;
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;

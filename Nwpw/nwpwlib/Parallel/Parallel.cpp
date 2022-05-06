@@ -11,6 +11,8 @@ using namespace std;
 #include	"Parallel.hpp"
 #include	"Control2.hpp"
 
+#define	MASTER 0
+
 namespace pwdft {
 using namespace pwdft;
 
@@ -51,6 +53,9 @@ Parallel::Parallel(MPI_Comm comm_world0)
    for (int i=0; i<npi[0]; ++i)
       procNd[i] = i;
 
+
+   /* set initial base_stdio_print to is_master */
+   base_stdio_print = (taskidi[0]==MASTER);
 }
 
 void Parallel::init2d(const int ncolumns, const int pfft3_qsize)

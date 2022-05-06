@@ -57,11 +57,21 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    double *dn;
    double *hml,*lmbda,*eig;
 
+   Control2 control(myparallel.np(),rtdbstring);
+
+   bool hprint = (myparallel.is_master() && control.print_level("high"));
+   bool oprint = (myparallel.is_master() && control.print_level("medium"));
+   bool lprint = (myparallel.is_master() && control.print_level("low"));
+
+   /* reset Parallel base_stdio_print = lprint */
+   myparallel.base_stdio_print = lprint;
+
+
    for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
-   if (myparallel.is_master())
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint)
    {
-      seconds(&cpu1);
       ios_base::sync_with_stdio();
       cout << "          *****************************************************\n";
       cout << "          *                                                   *\n";
@@ -81,7 +91,6 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    //control_read(myrtdb);
    //control_read(myparallel.np(),rtdbstring);
-   Control2 control(myparallel.np(),rtdbstring);
 
    /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
@@ -175,7 +184,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 // *****************   summary of input data  **********************
 //                 |**************************|
 
-   if (myparallel.is_master())
+   if (oprint)
    {
       cout << "\n";
       cout << "          ==============  summary of input  ==================\n";
@@ -293,15 +302,13 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 // *****************   start iterations       **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu2);
+   if (oprint) 
    {
-      seconds(&cpu2);
       cout << "     ========================== iteration ==========================\n";
       cout << "          >>> iteration started at " << util_date() << "  <<<\n";
       cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
       cout << "     ---------------------------------------------------------------\n";
-
-
    }
    done   = 0;
    icount = 0;
@@ -315,7 +322,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                  dn,hml,lmbda,
                  E,&deltae,&deltac,&deltar);
 
-      if (myparallel.is_master())
+      if (oprint)
          printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
                                        E[0],deltae,deltac,deltar);
 
@@ -323,7 +330,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       if ((deltae>0.0)&&(icount>1))
       {
          done = 1;
-         if (myparallel.is_master())
+         if (oprint)
             cout << "         *** Energy going up. iteration terminated\n";
       }
       else if ((fabs(deltae)<control.tolerances(0)) &&
@@ -331,19 +338,19 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                (deltar      <control.tolerances(2)))
       {
          done = 1;
-         if (myparallel.is_master())
+         if (oprint)
             cout << "         *** tolerance ok.    iteration terminated\n";
       }
       else if (icount>=control.loop(1))
       {
          done = 1;
-         if (myparallel.is_master())
+         if (oprint)
             cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
       }
    }
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu3);
+   if (oprint) 
    {
-      seconds(&cpu3);
       cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
    }
 
@@ -373,7 +380,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
-   if (myparallel.is_master()) 
+   if (oprint) 
    {
       cout << "\n\n";
       cout << "          =============  summary of results  =================\n";
@@ -472,9 +479,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 //                 |**************************|
 // *****************   report consumed time   **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint) 
    {
-      seconds(&cpu4);
       double t1 = cpu2-cpu1;
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;
