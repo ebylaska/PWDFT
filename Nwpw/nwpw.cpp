@@ -108,7 +108,8 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
       // preappend print option to nwinput, options=none,off,low,medium,high,debug
       std::cout << "nwfilename =" << nwfilename << std::endl;
-      nwinput = "\nprint off\n\n";
+      //nwinput = "\nprint off\n\n";
+      nwinput = "";
       std::ifstream nwfile(nwfilename);
       if (nwfile.good())
       {
@@ -246,7 +247,8 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       std::string line;
       
       // prepend print option to nwinput, options=none,off,low,medium,high,debug
-      nwinput = "\nprint off\n\n"; 
+      //nwinput = "\nprint off\n\n"; 
+      nwinput = ""; 
       std::ifstream nwfile(nwfilename);
       if (nwfile.good())
       {  
