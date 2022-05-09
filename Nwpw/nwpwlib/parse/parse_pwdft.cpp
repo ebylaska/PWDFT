@@ -1295,6 +1295,10 @@ json parse_rtdbjson(json rtdb)
       {
          rtdb["print"] = mystring_trim(mystring_split(mystring_split(lines[cur],"print")[1],"\n")[0]);
       }
+      else if (mystring_contains(mystring_lowercase(lines[cur]),"redirect_filename"))
+      {
+         rtdb["redirect_filename"] = mystring_trim(mystring_split(mystring_split(lines[cur],"redirect_filename")[1],"\n")[0]);
+      }
 
       ++cur;
    }

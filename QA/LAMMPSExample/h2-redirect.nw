@@ -1,0 +1,34 @@
+Title "Hellow Dolly"
+
+memory 1900 mb
+start h2-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz center
+H 0 0 0    
+H 0 0 0.8  
+end
+
+#### redirect output to a file  ####
+redirect_filename lammps_pspw.out
+
+
+nwpw
+
+   #this option forces the wavefunctions to be initialized from scratch
+   initialize_wavefunction on
+
+   #The apc option is automatically set in lammps interface
+   #apc on
+
+   simulation_cell
+     SC 20.0
+   end
+   cutoff 10.0
+   xc pbe
+end
+#task pspw steepest_descent
+task pspw gradient
+

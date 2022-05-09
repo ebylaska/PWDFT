@@ -31,6 +31,7 @@
 #include <fstream>
 #include <cstdio>
 #include <string>
+#include <unistd.h>
 
 #include "NwpwConfig.h"
 #include "mpi.h"
@@ -46,6 +47,20 @@ using json = nlohmann::json;
 
 using namespace std;
 using namespace pwdft;
+
+#define MASTER 0
+
+// MACROS for redirecting stdout - note REDIRECT_INIT has to be executed
+//   in the same scope of both REDIRECT_ON and REDIRECT_OFF.
+#define REDIRECT_INIT    int stdout_fd;fpos_t stdout_pos;
+
+#define REDIRECT_ON(OUTPUTFILE) { fgetpos(stdout,&stdout_pos); stdout_fd = dup(fileno(stdout)); freopen(OUTPUTFILE,"w",stdout); }
+
+#define REDIRECT_OFF()  { fflush(stdout); dup2(stdout_fd,fileno(stdout)); close(stdout_fd); clearerr(stdout); fsetpos(stdout,&stdout_pos); }
+
+
+
+
 
 static std::string fortran_rtdbstring;
 
@@ -89,7 +104,6 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 {
    MPI_Comm comm_world = MPI_Comm_f2c(*fcomm_world);
    int taskid,np,ierr,nwinput_size;;
-   int MASTER=0;
    ierr = MPI_Comm_rank(comm_world,&taskid);
    ierr = MPI_Comm_size(comm_world,&np);
 
@@ -143,7 +157,6 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
      if (wvfnc_initialize) fortran_rtdbstring = parse_initialize_wvfnc_set(fortran_rtdbstring,false);
 
      int taskid;
-     int MASTER=0;
      int ierr = MPI_Comm_rank(comm_world,&taskid);
      bool oprint = (taskid==MASTER) && false;
      std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
@@ -170,6 +183,9 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
 
 
+
+
+static bool io_redirect = false;
 static std::string lammps_rtdbstring;
 
 extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E)
@@ -181,7 +197,17 @@ extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
    // run minimizer
+   REDIRECT_INIT;
+   if (io_redirect) { 
+      std::string filename = lammps_rtdbjson["redirect_filename"];
+      REDIRECT_ON(filename.c_str()); 
+   } 
+
    int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+
+   if (io_redirect) 
+      REDIRECT_OFF();
+
 
    lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
 
@@ -212,7 +238,17 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
    // run minimizer
+   REDIRECT_INIT;
+   if (io_redirect) { 
+      std::string filename = lammps_rtdbjson["redirect_filename"];
+      REDIRECT_ON(filename.c_str()); 
+   } 
+
    int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+
+   if (io_redirect) 
+      REDIRECT_OFF();
+
 
    lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
 
@@ -235,7 +271,6 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
 {
    int taskid,np,ierr,nwinput_size;
-   int MASTER=0;
    ierr = MPI_Comm_rank(comm_world,&taskid);
    ierr = MPI_Comm_size(comm_world,&np);
 
@@ -273,6 +308,17 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    MPI_Barrier(comm_world);
    lammps_rtdbstring = pwdft::parse_nwinput(nwinput);
 
+
+   auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
+   if ((taskid==MASTER) && (!lammps_rtdbjson["redirect_filename"].is_null())) 
+      io_redirect = true;
+   
+   REDIRECT_INIT;
+   if (io_redirect) { 
+      std::string filename = lammps_rtdbjson["redirect_filename"];
+      REDIRECT_ON(filename.c_str()); 
+   }
+
    //std::cout << "rtdb=" << lammps_rtdbstring << std::endl;
 
    // Initialize wavefunction if it doesn't exist or if initialize_wavefunction set
@@ -282,7 +328,6 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       if (wvfnc_initialize) lammps_rtdbstring = parse_initialize_wvfnc_set(lammps_rtdbstring,false);
 
       int taskid;
-      int MASTER=0;
       int ierr = MPI_Comm_rank(comm_world,&taskid);
       bool oprint = (taskid==MASTER) && false;
       std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(lammps_rtdbstring);
@@ -305,6 +350,9 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
 
    }
 
+   if (io_redirect)
+      REDIRECT_OFF();
+
 
 }
 
@@ -315,7 +363,6 @@ int main(int argc, char* argv[])
 {
   int ierr=0;
   int taskid,np;
-  int MASTER=0;
   string line,nwinput,nwfilename;
 
   // Initialize MPI
