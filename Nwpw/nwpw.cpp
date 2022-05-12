@@ -267,7 +267,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
    // pre-remove qm/qm electrostatic interactions
    *E -= pwdft::ion_ion_e(nion,qion,rion);
-   pwdft::ion_ion_f(nion,qion,rion,fion);
+   pwdft::ion_ion_m_f(nion,qion,rion,fion);
 
    return ierr;
 }
