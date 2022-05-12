@@ -39,6 +39,7 @@
 #include "util_date.hpp"
 #include "parse_pwdft.hpp"
 #include "psp_library.hpp"
+#include "ion_ion.hpp"
 
 #include "nwpw.hpp"
 
@@ -263,6 +264,10 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
    std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
    std::copy(vv.begin(),vv.end(), qion);
+
+   // pre-remove qm/qm electrostatic interactions
+   *E -= pwdft::ion_ion_e(nion,qion,rion);
+   pwdft::ion_ion_f(nion,qion,rion,fion);
 
    return ierr;
 }
