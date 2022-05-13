@@ -185,6 +185,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
          {
             sse = mynose->sse();
             ssr = mynose->ssr();
+
             mygrid->gg_SMul(0.5*dte,Hpsi,psi2);
             mygrid->gg_daxpy(-1.0,psi0,psi2);
             mygrid->gg_daxpy( 1.0,psi1,psi2);
@@ -235,10 +236,9 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       {
          if (verlet)
          {
-            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[1]);
+            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[ispin-1]);
             double kefac = 0.5*fmass/(dt*dt);
             eke = kefac*(nesum - mygrid->gg_traceall(psi2,psi0));
-            //eki = myion->ke();
             eki = myion->eki1;
             mynose->Verlet_step(eke,eki);
          }

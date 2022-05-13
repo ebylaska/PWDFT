@@ -30,6 +30,7 @@ nwpw_Nose_Hoover::nwpw_Nose_Hoover(Ion& myion, int nemax0, double eke0, Control2
 {
 
    nose_on = control.Nose();
+   time_step = control.time_step();
 
    if (nose_on)  
    {
