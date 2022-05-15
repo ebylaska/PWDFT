@@ -82,7 +82,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    vc  = mygrid->c_pack_allocate(0);
    vpsi=x;
 
-   fion = new double[3*(myion->nion)]();
+   //new double[3*(myion->nion)]();
+   fion = myion->fion1;
 
    /* generate local psp*/
    //mypsp->v_local(vl,0,dng,fion);
@@ -343,9 +344,6 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       }
 
    }
-
-   /* deallocate local heap data */
-   delete [] fion;
 
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);

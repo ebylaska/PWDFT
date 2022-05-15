@@ -169,6 +169,7 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
@@ -229,6 +230,7 @@ Ion::Ion(string rtdbstring, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
@@ -252,9 +254,14 @@ Ion::Ion(string rtdbstring, Control2& control)
       rion1[3*i]   = (double) geomjson["coords"][3*i];
       rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
+
       rion2[3*i]   = (double) geomjson["coords"][3*i];
       rion2[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion2[3*i+2] = (double) geomjson["coords"][3*i+2];
+
+      fion1[3*i]   = 0.0;
+      fion1[3*i+1] = 0.0;
+      fion1[3*i+2] = 0.0;
 
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
       if (match != end(tmpsymbols)) 

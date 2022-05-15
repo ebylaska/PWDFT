@@ -25,6 +25,7 @@ public:
    double *mass;
    double *dti;
    double *rion0,*rion1,*rion2; // coordinates of ions
+   double *fion1;               // forces of ions
    double time_step;
 
    /* init_ke variables */
@@ -49,6 +50,7 @@ public:
       delete [] rion0;
       delete [] rion1;
       delete [] rion2;
+      delete [] fion1;
     }
 
     /* functions */
@@ -64,6 +66,7 @@ public:
     void writejsonstr(string&);
     double rion(int i, int ii) { return rion1[3*ii+i];}
     double vion(int i, int ii) { return rion0[3*ii+i];}
+    double fion(int i, int ii) { return fion1[3*ii+i];}
     double total_mass() { 
        double tmass = 0.0;
        for (auto ii=0; ii<nion; ++ii)
