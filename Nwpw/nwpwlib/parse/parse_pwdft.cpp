@@ -720,11 +720,13 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
       }
       else if (mystring_contains(line,"fei"))
       {
+         cpmdjson["fei_on"] = true;
          ss = mystring_split0(line);
-         if (ss.size()>1) cpmdjson["fei"] = ss[1];
+         if (ss.size()>1) cpmdjson["fei_filename"] = ss[1];
       }
       else if (mystring_contains(line,"dipole_motion"))
       {
+         cpmdjson["dipole_motion_on"] = true;
          ss = mystring_split0(line);
          if (ss.size()>1) cpmdjson["dipole_motion"] = ss[1];
       }
