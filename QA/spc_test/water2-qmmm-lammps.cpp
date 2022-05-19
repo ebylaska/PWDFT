@@ -149,6 +149,45 @@ static void shake_chain(const int n, const int indx[], const int nb,
    }
 }
 
+double LJ_energy(const double epsilon12, const double sigma12,
+                 const double r1[], const double r2[]) 
+{
+
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+   double u = (sigma12/r);
+   double u6  = u*u*u*u*u*u;
+   double u12 = u6*u6;
+
+   return (4.0*epsilon12*(u12-u6));
+}
+
+void LJ_force(const double epsilon12, const double sigma12,
+                const double r1[], double f1[],
+                const double r2[], double f2[]) 
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+   double u = (sigma12/r);
+   double u6  = u*u*u*u*u*u;
+   double u12 = u6*u6;
+
+   double dVLJ = -(4.00*epsilon12/r)*(12.0*u12-6.0*u6);
+
+   f1[0] -= (x/r)*dVLJ;
+   f1[1] -= (y/r)*dVLJ;
+   f1[2] -= (z/r)*dVLJ;
+   f2[0] += (x/r)*dVLJ;
+   f2[1] += (y/r)*dVLJ;
+   f2[2] += (z/r)*dVLJ;
+}
+
+
+
 double Q_Electrostatic_potential(const double r1[], const double q1, 
                                  const double r2[])
 {
@@ -197,6 +236,34 @@ void Q_Electrostatic_Force_self(const double r1[], const double q1, double f1[],
    f1[1] += fy;
    f1[2] += fz;
 }
+
+double QMMM_LJ_energy(const int nion_qm, const int nion,
+                      const double epsilon[], const double sigma[], const double rion[])
+{
+   double E = 0.0;
+   // QMQM LJ == 0
+   // QMMM LJ
+   for (auto qm=0; qm<nion_qm; ++qm)
+      for (auto mm=nion_qm; mm<nion; ++mm)
+      {
+         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
+         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
+         E += LJ_energy(epsilon12,sigma12,&rion[3*qm],&rion[3*mm]);
+      }
+   return E;
+}
+
+void QMMM_LJ_force(const int nion_qm, const int nion,
+                   const double epsilon[], const double sigma[], const double rion[], double fion[])
+{
+   for (auto qm=0; qm<nion_qm; ++qm)
+      for (auto mm=nion_qm; mm<nion; ++mm) {
+         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
+         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
+         LJ_force(epsilon12,sigma12,&rion[3*qm],&fion[3*qm],&rion[3*mm],&fion[3*mm]);
+      }
+}
+
 
 /****************************************************
  *                                                  *
@@ -248,19 +315,6 @@ void QMMM_electrostatic_force(const int nion_qm, const int nion,
    }
 }
 
-/****************************************************
- *                                                  *
- *          MM_electrostatic_force                  *
- *                                                  *
- ****************************************************/
-void MM_electrostatic_force(const int nwater, const double qion[], const double rion[], double fion[])
-{
-   for (auto w1=0; w1<nwater; ++w1)
-      for (auto w2=w1+1; w2<nwater; ++w2)
-      {
-      }
-}
-
 
 
 
@@ -290,7 +344,8 @@ int main(int argc, char* argv[])
    int nwater  = 1;
    int nion    = nion_qm + 3*nwater;
    double uion[nion],qion[nion],rion[3*nion],fion[3*nion];
-   double E;
+   double epsilon[nion],sigma[nion];
+   double E,Eqm,Ecoul,ELJ;
 
    lammps_pspw_input(MPI_COMM_WORLD, nwfilename);
 
@@ -301,6 +356,9 @@ int main(int argc, char* argv[])
    rion[6] =  0.158220*ANGTOBOHR; rion[7] =  0.181883*ANGTOBOHR; rion[8] =  1.945696*ANGTOBOHR;
    qion[0] = -0.8476; qion[1] = 0.4238; qion[2] = 0.4238;
    uion[0] =  0.0000; uion[1] = 0.0000; uion[2] = 0.0000;
+   sigma[0] = 3.165558*ANGTOBOHR; epsilon[0] = 0.155394/(23.06*27.2116);
+   sigma[1] = 0.700000*ANGTOBOHR; epsilon[1] = 0.044000/(23.06*27.2116);
+   sigma[2] = 0.700000*ANGTOBOHR; epsilon[2] = 0.044000/(23.06*27.2116);
 
    // second water molecule - MM water
    rion[9]  =  0.161560*ANGTOBOHR; rion[10] = -0.052912*ANGTOBOHR; rion[11] =  0.033173*ANGTOBOHR;
@@ -308,6 +366,9 @@ int main(int argc, char* argv[])
    rion[15] = -0.325571*ANGTOBOHR; rion[16] = -0.669574*ANGTOBOHR; rion[17] = -0.488560*ANGTOBOHR;
    qion[3]  = -0.8476; qion[4] = 0.4238; qion[5] = 0.4238;
    uion[3]  =  0.0000; uion[4] = 0.0000; uion[5] = 0.0000;
+   sigma[3] = 3.165558*ANGTOBOHR; epsilon[3] = 0.155394/(23.06*27.2116);
+   sigma[4] = 0.700000*ANGTOBOHR; epsilon[4] = 0.0;
+   sigma[5] = 0.700000*ANGTOBOHR; epsilon[5] = 0.0;
 
 
    //lj_ion_parameters O 3.165558 0.155394
@@ -317,17 +378,25 @@ int main(int argc, char* argv[])
    //shake units angstroms 1 2 3 cyclic 1.0 1.632993125 1.0
    double dsq[3] = {1.0*ANGTOBOHR, 1.632993125*ANGTOBOHR, 1.0*ANGTOBOHR};
 
+   // zero potentials and forces 
    memset(uion,0,nion*sizeof(double));
+   memset(fion,0,3*nion*sizeof(double));
 
-   // calculate electrostatic potential u(ii)
+   // calculate electrostatic potential on QM atoms, u(ii)
    QMMM_electrostatic_potential(nion_qm,nion,qion,rion,uion);
 
+   // QM energy and forces
+   ierr += lammps_pspw_qmmm_minimizer(MPI_COMM_WORLD,rion,uion,fion,qion,&Eqm);
 
-   // zero forces 
-   memset(fion,0,3*nion*sizeof(double));
-   
-   ierr += lammps_pspw_qmmm_minimizer(MPI_COMM_WORLD,rion,uion,fion,qion,&E);
+   // QMMM Electrostatic energy and forces
+   Ecoul = 0.0;
+   for (auto ii=0; ii<nion_qm; ++ii)
+      Ecoul += qion[ii]*uion[ii];
    QMMM_electrostatic_force(nion_qm,nion,qion,rion,fion);
+
+   // QMMM Electrostatic energy and forces
+   ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion);
+   QMMM_LJ_force(nion_qm,nion,epsilon,sigma,rion,fion);
 
    if (taskid==MASTER)
    {
@@ -335,7 +404,7 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " rion: "  << rion[3*ii]   << " " << rion[3*ii+1]   << " " << rion[3*ii+2]   << " uion=" << uion[ii]   << std::endl;
 
-      std::cout << "energy=" << E << std::endl;
+      std::cout << "energy=" << Eqm+Ecoul+ELJ << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
