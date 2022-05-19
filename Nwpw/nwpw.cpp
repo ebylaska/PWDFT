@@ -80,6 +80,8 @@ extern "C" void pspw_fortran_minimizer_(MPI_Fint *fcomm_world, double *rion, dou
 
    fortran_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
    fortran_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
+   fortran_rtdbjson["current_task"]  = "gradient";
+
    fortran_rtdbstring    = fortran_rtdbjson.dump();
 
    
@@ -235,6 +237,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    if (lammps_rtdbjson["nwpw"]["apc"].is_null()) { json apc; lammps_rtdbjson["nwpw"]["apc"] = apc; }
    lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
    lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
+   lammps_rtdbjson["current_task"]  = "gradient";
 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
@@ -264,6 +267,8 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
    std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
    std::copy(vv.begin(),vv.end(), qion);
+
+
 
    // pre-remove qm/qm electrostatic interactions
    *E -= pwdft::ion_ion_e(nion,qion,rion);
