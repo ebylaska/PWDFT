@@ -79,6 +79,85 @@ static double born_radius(const int ii, const int nion, const double rion[], con
    return (1.0/bornr1);
 }
 
+/*******************************************
+ *                                         *
+ *               born_energy0              *
+ *                                         *
+ *******************************************/
+
+// this routine need to parallelized!!!
+
+static double born_energy0(const int nion, const double rion[], const double bradii[],
+                           const double q[], const double dielec)
+{
+   double Gsolv = 0.0;
+   double screen = (1.0 - 1.0/dielec);
+
+   for (auto ii=0; ii<nion; ++ii)
+   for (auto jj=0; jj<nion; ++jj)
+   {
+      double dx = rion[3*ii]  -rion[3*jj];
+      double dy = rion[3*ii+1]-rion[3*jj+1];
+      double dz = rion[3*ii+2]-rion[3*jj+2];
+      double dist2 = dx*dx + dy*dy + dz*dz;
+      double C     = std::exp(-0.25*dist2/(bradii[ii]*bradii[jj]));
+      double f     = std::sqrt(dist2 + bradii[ii]*bradii[jj]*C);
+      Gsolv -=  0.5*screen*q[ii]*q[jj]/f;
+   }
+   return Gsolv;
+}
+
+/*******************************************
+ *                                         *
+ *               born_dgsolv               *
+ *                                         *
+ *******************************************/
+static double born_dgsolv(const double screen, const double qi, const double qj, 
+                        const double bi, const double bj, const double xx)
+{
+   double C = std::exp(-0.25*xx/(bi*bj));
+   double f = std::sqrt(xx + bi*bj*C);
+   double gsolv = -0.5*screen*qi*qj/f;
+
+   return (-0.5*gsolv*(1.0-0.25*C)/(f*f));
+}
+
+/*******************************************
+ *                                         *
+ *               born_fion0                *
+ *                                         *
+ *******************************************/
+
+// this routine need to parallelized!!!
+
+static void born_fion0(const int nion, const double rion[], const double bradii[],
+                       const double q[], const double dielec,
+                       double fion[])
+{
+   double screen = (1.0 - 1.0/dielec);
+
+   for (auto ii=0; ii<nion; ++ii)
+   for (auto jj=0; jj<nion; ++jj)
+   {
+      double dx = rion[3*ii]  -rion[3*jj];
+      double dy = rion[3*ii+1]-rion[3*jj+1];
+      double dz = rion[3*ii+2]-rion[3*jj+2];
+      double dist2 = dx*dx + dy*dy + dz*dz;
+
+      double dGsolv = born_dgsolv(screen,q[ii],q[jj],bradii[ii],bradii[jj],dist2);
+
+      fion[3*ii]   -= 2.0*dGsolv*dx;
+      fion[3*ii+1] -= 2.0*dGsolv*dy;
+      fion[3*ii+2] -= 2.0*dGsolv*dz;
+
+      fion[3*jj]   += 2.0*dGsolv*dx;
+      fion[3*jj+1] += 2.0*dGsolv*dy;
+      fion[3*jj+2] += 2.0*dGsolv*dz;
+   }
+}
+
+
+
 
 /* Constructors */
 
