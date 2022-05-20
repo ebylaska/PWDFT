@@ -18,6 +18,7 @@
 #include        "Ion.hpp"
 #include        "Pneb.hpp"
 #include        "Strfac.hpp"
+#include        "nwpw_born.hpp"
 
 
 namespace pwdft {
@@ -30,7 +31,9 @@ class nwpw_apc {
    Strfac *mystrfac;
 
 public:
-   bool apc_on,v_apc_on;
+   nwpw_born *myborn;
+
+   bool apc_on,v_apc_on,born_on;
    int nga,ngs;
    double Gc;
 
@@ -55,6 +58,7 @@ public:
          delete [] vtmp;
          delete [] qion;
          delete [] uion;
+         if (born_on) delete myborn;
       }
    }
 

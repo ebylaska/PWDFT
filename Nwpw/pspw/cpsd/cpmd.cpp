@@ -572,7 +572,6 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       for (auto ii=0; ii<myion.nion; ++ii)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
-      if (oprint) std::cout <<  mypsp.myborn->Qprint(qion);
    }
 
    // set rtdbjson initialize_wavefunction option to false

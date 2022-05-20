@@ -34,6 +34,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
    mystrfac = mystrfacin;
    apc_on   = control.APC_on();
    v_apc_on = false;
+   born_on  = false;
 
    bool oprint = ((mypneb->PGrid::parall->is_master()) && (control.print_level("medium")));
 
@@ -136,6 +137,9 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
             std::cout << " - not self-consistent" << std::endl;
        
       }
+
+      born_on = control.born_on();
+      if (born_on) myborn = new nwpw_born(myion,mypneb->PGrid::parall,control);
    }
 }
 
@@ -768,8 +772,23 @@ std::string nwpw_apc::print_APC(const double *zv)
           stream << std::setw(12) << std::fixed << std::setprecision(3) << -q[i+ii*nga];
       stream << std::endl;
    }
+
+   /* include born output */
+   if (born_on)
+   {
+     double qion[myion->nion];
+     for (auto ii=0; ii<myion->nion; ++ii) {
+        int ia     = myion->katm[ii];
+        double sum = 0.0;
+        for (auto i=0; i<nga; ++i) sum += q[i+ii*nga];
+        qion[ii] = zv[ia] - sum;
+     }
+     stream << myborn->Qprint(qion);
+   }
+
    stream << std::endl
           << std::endl;
+
 
    return stream.str();
 }

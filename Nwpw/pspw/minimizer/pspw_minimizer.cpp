@@ -380,8 +380,6 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       if (lprint)
       {
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
-         if (mypsp.myborn->born_on)
-            std::cout <<  mypsp.myborn->Qprint(qion);
       }
    }
 
