@@ -751,7 +751,7 @@ std::string nwpw_apc::print_APC(const double *zv)
 
 
    stream << std::endl  << std::endl
-          << " gaussian coefficients of model density" << std::endl
+          << " Gaussian coefficients of model density" << std::endl
           << " --------------------------------------" << std::endl
           << std::endl;
    stream << "      no  atom";
