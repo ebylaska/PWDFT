@@ -106,6 +106,8 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          }
       }
 
+      /* turn on self-consistency */
+      v_apc_on = control.born_relax();
       for (auto ii=0; ii<myion->nion; ++ii)
       {
          qion[ii] = control.APC_q(ii);

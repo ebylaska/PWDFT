@@ -616,7 +616,11 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
       if (oprint)
+      {
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+         if (mypsp.myborn->born_on)
+            std::cout <<  mypsp.myborn->Qprint(qion);
+      }
    }
 
    // set rtdbjson initialize_wavefunction option to false

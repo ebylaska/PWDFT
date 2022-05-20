@@ -1091,7 +1091,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     mypneb   = mypnebin;
     mystrfac = mystrfacin;
 
-    myapc = new nwpw_apc(myion,mypneb,mystrfac,control);
+    myapc  = new nwpw_apc(myion,mypneb,mystrfac,control);
+    myborn = new nwpw_born(myion,mypneb->PGrid::parall,control);
 
     psp_version = control.version;
 

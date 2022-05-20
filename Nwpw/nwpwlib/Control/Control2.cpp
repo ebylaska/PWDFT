@@ -454,6 +454,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    pminimizer = 1;
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
 
+   // APC data
    papc_on  = false;
    papc_nga = 0;
    papc_Gc  = 2.5;
@@ -477,6 +478,7 @@ Control2::Control2(const int np0, const string rtdbstring)
       }
    }
 
+   // Born data
    pborn_on  = false; pborn_relax  = false;
    if (!rtdbjson["nwpw"]["born"].is_null()) {
       auto bornjson = rtdbjson["nwpw"]["born"];
@@ -489,7 +491,9 @@ Control2::Control2(const int np0, const string rtdbstring)
          for (size_t i=0; i<nu; ++i) pborn_bradii.push_back(bornjson["bradii"][i]);
       }
    }
+   if (pborn_on) papc_on = true;
 
+   // Nose data
    pnose_on = false; pnose_restart = false;
    pnose_mchain = 0; pnose_mchain = 0;
    pnose_te = 0.0; pnose_tr = 0.0; pnose_pe = 0.0; pnose_pr = 0.0; pnose_ne_chain = 0.0; pnose_eke0 = 0.0; 

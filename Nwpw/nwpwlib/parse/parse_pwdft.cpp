@@ -86,6 +86,7 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
                      || mystring_contains(mystring_lowercase(ss[1]),"na")
                      || mystring_contains(mystring_lowercase(ss[1]),"pm")
                      || mystring_contains(mystring_lowercase(ss[1]),"pi")
+                     || mystring_contains(mystring_lowercase(ss[1]),"units")
                      || mystring_contains(mystring_lowercase(ss[1]),"center")
                      || mystring_contains(mystring_lowercase(ss[1]),"autoz")
                      || mystring_contains(mystring_lowercase(ss[1]),"autosym");

@@ -198,11 +198,14 @@ static void born_dVdq0(const int nion, const double rion[], const double bradii[
  *            nwpw_born::nwpw_born         *
  *                                         *
  *******************************************/
-nwpw_born::nwpw_born(Ion *myionin, Control2& control)
+nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control)
 {
    myion      = myionin;
+   myparall   = myparallin;
    born_on    = control.born_on();
    born_relax = control.born_relax();
+
+   bool oprint = ((myparall->is_master()) && (control.print_level("medium")));
 
    if (born_on)
    {
@@ -229,16 +232,21 @@ nwpw_born::nwpw_born(Ion *myionin, Control2& control)
                           2.223,2.223,2.223,2.223,2.223,2.223,
                           2.223,2.223,2.223,2.223,2.223,2.223};
 
-        for (auto ii=0; ii<myion->nion; ++ii)
-        {
-           int iq     = (int) std::round(myion->charge[ii]);
-           vradii[ii] = vdwr[iq-1]/0.529177;
-           if (vradii[ii] < 1.0e-3) 
-              vradii[ii] = 1.17*1.90/0.529177;
+      for (auto ii=0; ii<myion->nion; ++ii)
+      {
+         int iq     = (int) std::round(myion->charge[ii]);
+         vradii[ii] = vdwr[iq-1]/0.529177;
+         if (vradii[ii] < 1.0e-3) 
+            vradii[ii] = 1.17*1.90/0.529177;
+      }
+      //read in bradii if in rtdb 
+      for (auto ii=0; ii<myion->nion; ++ii)
+         bradii[ii] = born_radius(ii,myion->nion,myion->rion1,vradii);
 
-           //read in if rtdb 
-           bradii[ii] = born_radius(ii,myion->nion,myion->rion1, vradii);
-        }
+      /* write out Born header */
+      if (oprint) 
+         std::cout << this->header_print();
+      
    }
 }
 
@@ -284,6 +292,28 @@ void nwpw_born::dVdq(const double q[], double u[])
  *******************************************/
 std::string nwpw_born::header_print()
 {
+   std::stringstream stream;
+
+   stream << std::endl;
+   stream << " extended Born Solvation model:" << std::endl;
+   stream << "      G.D. Hawkins, C.R. Cramer, D.G. Truhlar (1995) Pairwise solute descreening of solue" << std::endl;
+   stream << "       charge from a dielectric medium, Chem. Phys. Lett., vol 246, pages 122-129." << std::endl;
+   stream << std::endl;
+   stream << "      dielectric constant=" << std::fixed << std::setw(11) << std::setprecision(6) << dielec << std::endl;
+   if (born_relax)
+      stream << "      self-consistent solvation" << std::endl;
+   else
+      stream << "      perturbative solvation" << std::endl;
+   stream << "      generalized Born radii:" << std::endl;
+   for (auto ii=0; ii<myion->nion; ++ii)
+      stream << "        - Born Radius: " << std::left << std::setw(4) << myion->symbol(ii)
+             << "- a(" << std::right << std::setw(4) << (ii+1)
+             << ") = " << std::fixed << std::setw(6) << std::setprecision(3) << bradii[ii]*0.529177
+             << " Angstroms (1.17*vdw radius="
+             << std::fixed << std::setw(6) << std::setprecision(3) << vradii[ii]*0.529177
+             << " Angstroms)" << std::endl;
+
+   return stream.str();
 }
 
 /*******************************************
@@ -293,15 +323,62 @@ std::string nwpw_born::header_print()
  *******************************************/
 std::string nwpw_born::Qprint(const double q[])
 {
+   double Gsolv = born_energy0(myion->nion,myion->rion1,bradii,q,dielec);
+
+   std::stringstream stream;
+
+   stream << std::endl;
+   stream << "Generalized Born Solvation" << std::endl;
+   stream << "--------------------------" << std::endl;
+   stream << "  - Radii defined by G.D. Hawkins, C.R. Cramer, D.G. Truhlar (1995) Pairwise" << std::endl;
+   stream << "    solute descreening of solute charge from a dielectric medium, Chem. Phys. Lett.," << std::endl;
+   stream << "    vol. 246, pages 122-129." << std::endl;
+   stream << std::endl;
+   stream << "  - Dielectric constant -eps- =" << std::fixed << std::setw(11) << std::setprecision(6) << dielec << std::endl;
+   stream << std::endl;
+   for (auto ii=0; ii<myion->nion; ++ii)
+      stream << "  - Born Radius: " << std::left << std::setw(4) << myion->symbol(ii)
+             << "- a(" << std::right << std::setw(4) << (ii+1)
+             << ") = " << std::fixed << std::setw(8) << std::setprecision(3) << bradii[ii]*0.529177
+             << " Angstroms (1.17*vdw radius="
+             << std::fixed << std::setw(8) << std::setprecision(3) << vradii[ii]*0.529177
+             << " Angstroms) - atom charge = "
+             << std::fixed << std::setw(8) << std::setprecision(3) << q[ii] << std::endl;
+   stream << std::endl;
+   stream << "  - Gsolvation(Born) = " << std::fixed << std::setw(14) << std::setprecision(6) << Gsolv 
+          << " (" << std::fixed << std::setw(8) << std::setprecision(3) << Gsolv*27.2116*23.06
+          << " kcal/mol)" << std::endl;
+   stream << std::endl << std::endl;
+
+   return stream.str();
 }
 
 /*******************************************
  *                                         *
- *           nwpw_born::final_print        *
+ *        nwpw_born::shortprint            *
  *                                         *
  *******************************************/
-std::string nwpw_born::final_print(const double egas, const double esolv)
+std::string nwpw_born::shortprint(const double egas, const double esol)
 {
+   std::stringstream stream;
+
+   stream << "     extended Born solvation results    " << std::endl;
+   stream << "     -------------------------------    " << std::endl;
+   if (egas>0.0)
+   {
+      stream << "     gas phase energy                 = " << std::scientific << std::setw(19) << std::setprecision(10) << egas << std::endl;
+      stream << "     sol phase energy                 = " << std::scientific << std::setw(19) << std::setprecision(10) << esol << std::endl;
+      stream << "     (electrostatic) solvation energy = " << std::scientific << std::setw(19) << std::setprecision(10) << egas-esol
+             << "(" << std::fixed << std::setw(8) << std::setprecision(3) << (egas-esol)*27.2116*23.06 << " kcal/mol)" << std::endl;
+   }
+   else
+   {
+      stream << "     skipped: no gas phase energy " << std::endl;
+      stream << "     sol phase energy                 = " << std::scientific << std::setw(19) << std::setprecision(10) << esol << std::endl;
+   }
+   stream << std::endl << std::endl;
+
+   return stream.str();
 }
 
 

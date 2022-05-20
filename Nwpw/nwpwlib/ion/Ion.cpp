@@ -203,15 +203,14 @@ Ion::Ion(string rtdbstring, Control2& control)
 
    auto rtdbjson =  json::parse(rtdbstring);
 
-
    string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
-
    json geomjson = rtdbjson["geometries"][geomname];
 
    nion = geomjson["nion"];
+
    auto symbols = geomjson["symbols"];
 
    vector<string> tmpsymbols;
