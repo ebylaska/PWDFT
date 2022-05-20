@@ -156,7 +156,39 @@ static void born_fion0(const int nion, const double rion[], const double bradii[
    }
 }
 
+/*******************************************
+ *                                         *
+ *               born_dVdq0                *
+ *                                         *
+ *******************************************/
 
+// this routine need to parallelized!!!
+
+static void born_dVdq0(const int nion, const double rion[], const double bradii[],
+                       const double q[], const double dielec,
+                       double u[])
+{
+   //double Gsolv = 0.0;
+   double screen = (1.0 - 1.0/dielec);
+
+   memset(u,0,nion*sizeof(double));
+
+   for (auto ii=0; ii<nion; ++ii)
+   for (auto jj=0; jj<nion; ++jj)
+   {
+      double dx = rion[3*ii]  -rion[3*jj];
+      double dy = rion[3*ii+1]-rion[3*jj+1];
+      double dz = rion[3*ii+2]-rion[3*jj+2];
+      double dist2 = dx*dx + dy*dy + dz*dz;
+     
+      double C = std::exp(-0.25*dist2/(bradii[ii]*bradii[jj]));
+      double f = std::sqrt(dist2 + bradii[ii]*bradii[jj]*C);
+
+      u[ii] += 0.5*screen*q[jj]/f;
+      u[jj] += 0.5*screen*q[ii]/f;
+      //Gsolv -=  0.5*screen*q[ii]*q[jj]/f;
+   }
+}
 
 
 /* Constructors */
@@ -217,6 +249,7 @@ nwpw_born::nwpw_born(Ion *myionin, Control2& control)
  *******************************************/
 double nwpw_born::energy(const double q[])
 {
+   return born_energy0(myion->nion,myion->rion1,bradii,q,dielec);
 }
 
 
@@ -225,8 +258,12 @@ double nwpw_born::energy(const double q[])
  *            nwpw_born::fion              *
  *                                         *
  *******************************************/
+
+// Needs to be parallelized!!
+
 void nwpw_born::fion(const double q[], double fion[])
 {
+   born_fion0(myion->nion,myion->rion1,bradii,q,dielec,fion);
 }
 
 
@@ -237,6 +274,7 @@ void nwpw_born::fion(const double q[], double fion[])
  *******************************************/
 void nwpw_born::dVdq(const double q[], double u[])
 {
+   born_dVdq0(myion->nion,myion->rion1,bradii,q,dielec,u);
 }
 
 /*******************************************
