@@ -18,7 +18,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 enable_language(Fortran)
 
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #Configure Sycll

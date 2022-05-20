@@ -1063,6 +1063,18 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          if (mystring_contains(line,"u"))     nwpwjson["apc"]["u"]     = mystring_double_list(line,"u");
          if (mystring_contains(line,"q"))     nwpwjson["apc"]["q"]     = mystring_double_list(line,"q");
       }
+      else if (mystring_contains(line,"born")) {
+         if  (nwpwjson["born"].is_null()) {
+            json born;
+            nwpwjson["born"] = born;
+         }
+         nwpwjson["born"]["on"] = true;
+         if (mystring_contains(line," off"))          nwpwjson["born"]["on"]     = false;
+         if      (mystring_contains(line," norelax")) nwpwjson["born"]["relax"]  = false;
+         else if (mystring_contains(line," relax"))   nwpwjson["born"]["relax"]  = true;
+         if (mystring_contains(line,"dielec"))
+            nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line," dielec")[1]))[0]);
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))

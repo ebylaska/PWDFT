@@ -575,11 +575,11 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
          n = ne[ms];
 
 	 // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
-	 // 	     alpha,
-	 // 	     &psi1[shift1],ng,
-	 // 	     &hml[mshift1],n,
-	 // 	     beta,
-	 // 	     &psi2[shift1],ng);
+         //	     alpha,
+	 //	     &psi1[shift1],ng,
+	 //	     &hml[mshift1],n,
+	 //	     beta,
+	 //	     &psi2[shift1],ng);
          gdevice_NN_dgemm(ng,n,alpha,&psi1[shift1],&hml[mshift1],beta,&psi2[shift1]);
 
          shift1  += ne[0]*ng;

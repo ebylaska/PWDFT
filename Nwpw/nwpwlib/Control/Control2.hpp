@@ -65,6 +65,10 @@ class Control2 {
    double papc_Gc;
    std::vector<double> papc_gamma,papc_u,papc_q;
 
+   bool   pborn_on,pborn_relax;
+   double pborn_dielec = 78.4;
+   std::vector<double> pborn_bradii;
+
    bool   pnose_on,pnose_restart;
    int    pnose_mchain,pnose_nchain;
    double pnose_pe,pnose_pr,pnose_te,pnose_tr,pnose_ne_chain,pnose_eke0;
@@ -239,6 +243,13 @@ public:
       else
          return papc_u[i];
    }
+
+   // Born
+   bool born_on()    { return pborn_on; }
+   bool born_relax() { return pborn_relax; }
+   double born_vradii(const int i) { return ((i>=pborn_bradii.size()) ? 0.0 : pborn_bradii[i]); }
+   double born_dielec() { return pborn_dielec; }
+
 
    // Nose
    bool Nose() { return pnose_on; }

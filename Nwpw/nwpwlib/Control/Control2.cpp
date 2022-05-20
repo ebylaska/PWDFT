@@ -477,6 +477,19 @@ Control2::Control2(const int np0, const string rtdbstring)
       }
    }
 
+   pborn_on  = false; pborn_relax  = false;
+   if (!rtdbjson["nwpw"]["born"].is_null()) {
+      auto bornjson = rtdbjson["nwpw"]["born"];
+      if (bornjson["on"].is_boolean())    pborn_on    = bornjson["on"];
+      if (bornjson["relax"].is_boolean()) pborn_relax = bornjson["relax"];
+      if (bornjson["dielec"].is_number_float()) pborn_dielec = bornjson["dielec"];
+
+      if (!bornjson["bradii"].is_null()) {
+         size_t nu = bornjson["bradii"].size();
+         for (size_t i=0; i<nu; ++i) pborn_bradii.push_back(bornjson["bradii"][i]);
+      }
+   }
+
    pnose_on = false; pnose_restart = false;
    pnose_mchain = 0; pnose_mchain = 0;
    pnose_te = 0.0; pnose_tr = 0.0; pnose_pe = 0.0; pnose_pr = 0.0; pnose_ne_chain = 0.0; pnose_eke0 = 0.0; 
