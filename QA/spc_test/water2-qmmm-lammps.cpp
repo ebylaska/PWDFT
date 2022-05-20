@@ -36,7 +36,7 @@ extern void lammps_pspw_input(MPI_Comm, std::string&);
            r1,r2: atom array
    Exit - r1,r2: atom arrays adjusted to satisfy bond distance constraints
 */
-static void shake_chain(const int n, const int indx[], const int nb,
+void shake_chain(const int n, const int indx[], const int nb,
                  const double tol, const int maxit,
                  const double dsq[], double mass[], const double unita[],
                  double r1[], double r2[]) 
@@ -95,8 +95,6 @@ static void shake_chain(const int n, const int indx[], const int nb,
             double pabsq  = pxab*pxab + pyab*pyab + pzab*pzab;
             double rabsq  = dsq[a];
             double diffsq = rabsq - pabsq;
-            std::cout << "a=" << a << " b=" << b << " diffsq=" << diffsq << " dsq=" << dsq[a] << " pabsq=" << pabsq << std::endl;
-
 
             if (fabs(diffsq) > (rabsq*tol2)) {
                double rxab = rxi[a] - rxi[b];
@@ -127,6 +125,7 @@ static void shake_chain(const int n, const int indx[], const int nb,
                pxi[a] += rma*dx;
                pyi[a] += rma*dy;
                pzi[a] += rma*dz;
+
                pxi[b] -= rmb*dx;
                pyi[b] -= rmb*dy;
                pzi[b] -= rmb*dz;
@@ -146,13 +145,13 @@ static void shake_chain(const int n, const int indx[], const int nb,
    }
 
    for (auto a=0; a<n; ++a) {
-      r2[3*indx[a]]   = pxi[a];
-      r2[3*indx[a]+1] = pyi[a];
-      r2[3*indx[a]+2] = pzi[a];
-
       r1[3*indx[a]]   = rxi[a];
       r1[3*indx[a]+1] = ryi[a];
       r1[3*indx[a]+2] = rzi[a];
+
+      r2[3*indx[a]]   = pxi[a];
+      r2[3*indx[a]+1] = pyi[a];
+      r2[3*indx[a]+2] = pzi[a];
    }
 }
 
@@ -318,6 +317,33 @@ void QMMM_electrostatic_force(const int nion_qm, const int nion,
    }
 }
 
+/****************************************************
+ *                                                  *
+ *        QMQM_electrostatic_energy                 *
+ *                                                  *
+ ****************************************************/
+double  QMQM_electrostatic_energy(const int nion,const double qion[], const double rion[])
+{
+   double E = 0.0;
+   for (auto ii=0; ii<nion; ++ii)
+      for (auto jj=ii+1; jj<nion; ++jj)
+         E += Q_Electrostatic_self(&rion[3*ii],qion[ii],&rion[3*jj],qion[jj]);
+   return E;
+}
+/****************************************************
+ *                                                  *
+ *        QMQM_electrostatic_force                  *
+ *                                                  *
+ ****************************************************/
+void  QMQM_electrostatic_force(const int nion,const double qion[], const double rion[], double fion[])
+{
+   for (auto ii=0; ii<nion; ++ii)
+      for (auto jj=ii+1; jj<nion; ++jj)
+         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
+                                    &rion[3*jj],qion[jj],&fion[3*jj]);
+}
+
+
 #define E124    std::right << std::setw(12) << std::setprecision(4)  << std::scientific
 #define E156    std::right << std::setw(15) << std::setprecision(6)  << std::scientific
 #define E1910   std::right << std::setw(19) << std::setprecision(10) << std::scientific
@@ -348,6 +374,20 @@ void printxyz(std::ofstream *xyz, const int nion, const std::string symbol[], co
       *xyz << xyzstream(symbol[ii],rion[3*ii]*AACONV,rion[3*ii+1]*AACONV,rion[3*ii+2]*AACONV) << std::endl;
 }
 
+void printemotion(std::ofstream *emotion, const double current_time,
+                  const double Etotal, const double E, 
+                  const double KE, const double Eqm, const double Ecoul, const double ELJ)
+{
+   *emotion << E1910 << current_time
+         << E1910 << Etotal
+         << E1910 << E
+         << E1910 << KE
+         << E1910 << Eqm 
+         << E1910 << Ecoul 
+         << E1910 << ELJ
+         << std::endl;
+}
+
 
 
 
@@ -355,6 +395,7 @@ void printxyz(std::ofstream *xyz, const int nion, const std::string symbol[], co
 int main(int argc, char* argv[])
 {
    std::ofstream *xyzfile;
+   std::ofstream *emotionfile;
 
    //std::string nwfilename = "w2.nw";
    std::string nwfilename = "water1.nw";
@@ -375,7 +416,10 @@ int main(int argc, char* argv[])
       std::cout << "nwfilename=" << nwfilename << std::endl;
 
       xyzfile = new (std::nothrow) std::ofstream;
-      xyzfile->open("water2qmm.xyz", std::ios::app);
+      xyzfile->open("testqmm.xyz", std::ios::app);
+
+      emotionfile = new (std::nothrow) std::ofstream;
+      emotionfile->open("testqmm.emotion", std::ios::app);
    }
 
 
@@ -393,8 +437,6 @@ int main(int argc, char* argv[])
 
 
    // first water molecule - QM water
-   memset(rion0,0,3*nion*sizeof(double));
-   memset(rion2,0,3*nion*sizeof(double));
    rion1[0] =  0.021259*ANGTOBOHR; rion1[1] =  0.506771*ANGTOBOHR; rion1[2] =  2.831278*ANGTOBOHR;
    rion1[3] = -0.721039*ANGTOBOHR; rion1[4] =  1.083100*ANGTOBOHR; rion1[5] =  2.758378*ANGTOBOHR;
    rion1[6] =  0.158220*ANGTOBOHR; rion1[7] =  0.181883*ANGTOBOHR; rion1[8] =  1.945696*ANGTOBOHR;
@@ -403,7 +445,7 @@ int main(int argc, char* argv[])
    sigma[0] = 3.165558*ANGTOBOHR; epsilon[0] = 0.155394/(23.06*27.2116);
    sigma[1] = 0.700000*ANGTOBOHR; epsilon[1] = 0.044000/(23.06*27.2116);
    sigma[2] = 0.700000*ANGTOBOHR; epsilon[2] = 0.044000/(23.06*27.2116);
-   mass[0] = 16.0*1822.89; mass[1]= 1.0*1822.89; mass[2]=1.0*1822.90;
+   mass[0] = 16.0*1822.89; mass[1]= 1.0*1822.89; mass[2]=1.0*1822.89;
 
    // second water molecule - MM water
    rion1[9]  =  0.161560*ANGTOBOHR; rion1[10] = -0.052912*ANGTOBOHR; rion1[11] =  0.033173*ANGTOBOHR;
@@ -414,7 +456,8 @@ int main(int argc, char* argv[])
    sigma[3] = 3.165558*ANGTOBOHR; epsilon[3] = 0.155394/(23.06*27.2116);
    sigma[4] = 0.700000*ANGTOBOHR; epsilon[4] = 0.0;
    sigma[5] = 0.700000*ANGTOBOHR; epsilon[5] = 0.0;
-   mass[3] = 16.0*1822.89; mass[4]= 1.0*1822.89; mass[5]=1.0*1822.90;
+   mass[3] = 16.0*1822.89; mass[4]= 1.0*1822.89; mass[5]=1.0*1822.89;
+
 
 
    //lj_ion_parameters O 3.165558 0.155394
@@ -425,9 +468,13 @@ int main(int argc, char* argv[])
    double unita[9] = {20.0,  0.0,  0.0,
                        0.0, 20.0,  0.0,
                        0.0,  0.0, 20.0};
-   double dsq[3] = {1.0*ANGTOBOHR, 1.632993125*ANGTOBOHR, 1.0*ANGTOBOHR};
+   double dsq[3] = {1.0*ANGTOBOHR, 1.632993125*ANGTOBOHR, 1.0*ANGTOBOHR}; for (auto i=0; i<3; ++i) dsq[i] = dsq[i]*dsq[i];
    int mm_water_indx[3] = {3, 4, 5};
    double dt = 5.0;
+
+   //memcpy(rion2,rion1,3*nion*sizeof(double));
+   //memset(rion0,0,3*nion*sizeof(double));
+   //shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
 
    // zero potentials and forces 
    memset(uion,0,nion*sizeof(double));
@@ -436,16 +483,19 @@ int main(int argc, char* argv[])
    // calculate electrostatic potential on QM atoms, u(ii)
    QMMM_electrostatic_potential(nion_qm,nion,qion,rion1,uion);
 
-   // QM energy and forces
+   // Eqm = QM energy and forces
    ierr += lammps_pspw_qmmm_minimizer(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm);
 
-   // QMMM Electrostatic energy and forces
-   Ecoul = 0.0;
+   // Ecoul = QMQM Electrostatic energy and forces
+   Ecoul = QMQM_electrostatic_energy(nion_qm,qion,rion1);
+   QMQM_electrostatic_force(nion_qm,qion,rion1,fion);
+
+   // Ecoul += QMMM Electrostatic energy and forces
    for (auto ii=0; ii<nion_qm; ++ii)
       Ecoul += qion[ii]*uion[ii];
    QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
 
-   // QMMM Electrostatic energy and forces
+   // ELJ = QMMM Lenard-Jones energy and forces
    ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
    QMMM_LJ_force(nion_qm,nion,epsilon,sigma,rion1,fion);
 
@@ -458,7 +508,7 @@ int main(int argc, char* argv[])
    }
 
    // shake MM water
-   shake_chain(3,mm_water_indx,3,1.0e-6,25,dsq,mass,unita,rion1,rion2); 
+   shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
 
    // kinetic energy
    KE = 0.0;
@@ -479,13 +529,14 @@ int main(int argc, char* argv[])
       std::cout << std::endl << std::endl;
 
       printxyz(xyzfile,nion,symbol,unita,rion1) ;
+      printemotion(emotionfile,0.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
    }
 
 
 
 
    // Verlet Iterations 
-   for(auto it=0; it<1; ++it)
+   for(auto it=0; it<300; ++it)
    {
       for (auto ii=0; ii<(3*nion); ++ii) rion0[ii] = rion1[ii];
       for (auto ii=0; ii<(3*nion); ++ii) rion1[ii] = rion2[ii];
@@ -500,8 +551,11 @@ int main(int argc, char* argv[])
       // QM energy and forces
       ierr += lammps_pspw_qmmm_minimizer(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm);
 
+      // Ecoul = QMQM Electrostatic energy and forces
+      Ecoul = QMQM_electrostatic_energy(nion_qm,qion,rion1);
+      QMQM_electrostatic_force(nion_qm,qion,rion1,fion);
+
       // QMMM Electrostatic energy and forces
-      Ecoul = 0.0;
       for (auto ii=0; ii<nion_qm; ++ii)
          Ecoul += qion[ii]*uion[ii];
       QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
@@ -520,7 +574,7 @@ int main(int argc, char* argv[])
       }
 
       // shake MM water
-      shake_chain(3,mm_water_indx,3,1.0e-6,25,dsq,mass,unita,rion1,rion2); 
+      shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
 
 
       // kinetic energy
@@ -529,7 +583,9 @@ int main(int argc, char* argv[])
       KE = 0.0;
       for (auto ii=0; ii<nion; ++ii)
       {
-         KE += 0.5*mass[ii]*(rion0[3*ii]*rion0[3*ii] + rion0[3*ii+1]*rion0[3*ii+1] + rion0[3*ii+2]*rion0[3*ii+2]);
+         KE += 0.5*mass[ii]*( rion0[3*ii]*rion0[3*ii] 
+                            + rion0[3*ii+1]*rion0[3*ii+1] 
+                            + rion0[3*ii+2]*rion0[3*ii+2]);
          std::cout << ii << " mass, ke=" << mass[ii] << " " << KE << std::endl;
       }
 
@@ -548,13 +604,16 @@ int main(int argc, char* argv[])
          std::cout << std::endl << std::endl;
 
          printxyz(xyzfile,nion,symbol,unita,rion1) ;
+         printemotion(emotionfile,it*5.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
       }
    }
 
    if (taskid==MASTER)
    {
       xyzfile->close();
+      emotionfile->close();
       delete xyzfile;
+      delete emotionfile;
    }
 
 
