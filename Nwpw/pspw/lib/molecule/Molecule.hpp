@@ -181,14 +181,20 @@ public:
    double rho_error() {
       double x;
       double sumxx = 0.0;
+      //mygrid->r_zero_ends(rho2);
+      //mygrid->r_zero_ends(rho1);
+      //if (ispin==2)
+      //{
+      //   mygrid->r_zero_ends(&rho1[n2ft3d]);
+      //   mygrid->r_zero_ends(&rho2[n2ft3d]);
+      //}
       for (int i=0; i<n2ft3d; ++i)
       {
          x  = (rho2[i]-rho1[i]);
          x += (rho2[i+(ispin-1)*n2ft3d]-rho1[i+(ispin-1)*n2ft3d]);
          sumxx += x*x;
       }
-      mygrid->d3db::parall->SumAll(1,sumxx);
-      return sumxx*dv;
+      return mygrid->d3db::parall->SumAll(1,sumxx)*dv;
    }
 
    std::vector<double> eig_vector() { return std::vector<double>(eig,&eig[neall]); }
