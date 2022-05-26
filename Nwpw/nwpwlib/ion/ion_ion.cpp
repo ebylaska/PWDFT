@@ -30,7 +30,7 @@ double ion_ion_e(const int nion, const double Q[], const double R[])
    for (auto jj=0; jj<nion; ++jj)
       for (auto ii=0; ii<(jj-1); ++ii)
       {
-         double x = R[3*jj]-R[3*ii];
+         double x = R[3*jj]  -R[3*ii];
          double y = R[3*jj+1]-R[3*ii+1];
          double z = R[3*jj+2]-R[3*ii+2];
          double r = std::sqrt(x*x + y*y + z*z);
