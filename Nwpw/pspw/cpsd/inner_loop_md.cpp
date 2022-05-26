@@ -67,6 +67,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    dt = control.time_step();
    fmass = control.fake_mass();
    dte = dt*dt/fmass;
+   if (!verlet) dte=0.5*dte;
+
 
 
    /* allocate temporary memory */
@@ -130,7 +132,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore())
       {
-         if ((move)||(it==0)) mypsp->semicore_density_update();
+         mypsp->semicore_density_update();
          for (ms=0; ms<ispin; ++ms)
             mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
       }
@@ -176,7 +178,13 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
          }
       }
 
+      /* get the ewald force */
       myewald->force(fion);
+
+      /* get the semicore force - needs to be checked */
+      if (mypsp->has_semicore())
+         mypsp->semicore_xc_fion(xcp,fion);
+
 
       /* car-parrinello Verlet step */
       if (verlet) 
@@ -231,6 +239,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       double dte0 = dte;
       if (nose && verlet) dte0 *= sse;
       mygrid->ggm_lambda(dte0,psi1,psi2,lmbda);
+
 
       /* update thermostats */
       if (nose)
@@ -302,8 +311,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       Eold = E[0];
       E[1] = eorbit + eion + exc - ehartr - pxc;
       E[2] = eke;
-      //E[3] = myion->ke();
-      E[3] = myion->eki1;
+      E[3] = myion->ke();
+      //E[3] = myion->eki1;
 
       E[4] = eorbit;
       E[5] = ehartr;

@@ -394,8 +394,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
-      //if (mypsp.myapc->v_apc_on)
-      //   cout << mypsp.myapc->shortprint_APC();
+      if (mypsp.myapc->v_apc_on)
+         cout << mypsp.myapc->shortprint_APC();
 
       cout << "\n\n";
       cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]
@@ -406,9 +406,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
       if (mypsp.myapc->v_apc_on) 
          printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
+      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
 
       printf("\n");
       printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));

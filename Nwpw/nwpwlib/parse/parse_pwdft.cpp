@@ -311,15 +311,20 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
       double xcm=0.0;
       double ycm=0.0;
       double zcm=0.0;
+      double tmass = 0.0;
       for (ii=0; ii<nion; ++ii)
       {
-         xcm += coords[3*ii];
-         ycm += coords[3*ii+1];
-         zcm += coords[3*ii+2];
+         xcm += coords[3*ii]  *masses[ii];
+         ycm += coords[3*ii+1]*masses[ii];
+         zcm += coords[3*ii+2]*masses[ii];
+         tmass += masses[ii];
       }
-      xcm /= ((double) nion);
-      ycm /= ((double) nion);
-      zcm /= ((double) nion);
+      //xcm /= ((double) nion);
+      //ycm /= ((double) nion);
+      //zcm /= ((double) nion);
+      xcm /= tmass;
+      ycm /= tmass;
+      zcm /= tmass;
       for (int ii=0; ii<nion; ++ii)
       {
          coords[3*ii]   -= xcm;
