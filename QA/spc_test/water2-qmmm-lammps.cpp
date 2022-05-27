@@ -525,8 +525,6 @@ int main(int argc, char* argv[])
    for (auto ii=0; ii<nion_qm; ++ii)
       EAPC += qion[ii]*uion[ii];
    QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-   std::cout << "EAPC1=" << EAPC << std::endl;
-   std::cout << "Ecoul1=" << Ecoul << std::endl;
    Ecoul += EAPC;
 
    // ELJ = QMMM Lenard-Jones energy and forces
@@ -575,7 +573,7 @@ int main(int argc, char* argv[])
 
 
    // Verlet Iterations 
-   int nsteps = 200;
+   int nsteps = 100;
    for(auto it=0; it<nsteps; ++it)
    {
       //for (auto ii=0; ii<(3*nion); ++ii) rion0[ii] = rion1[ii];
@@ -602,7 +600,6 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion_qm; ++ii)
          Ecoul += qion[ii]*uion[ii];
       QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-      std::cout << "EAPC1=" << Ecoul << std::endl;
 
       // QMMM Electrostatic energy and forces
       ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
@@ -622,15 +619,8 @@ int main(int argc, char* argv[])
 
 
       // kinetic energy
-      for (auto ii=0; ii<nion; ++ii) 
-      {
-         double vx = h*(rion2[3*ii]   - rion0[3*ii]);
-         double vy = h*(rion2[3*ii+1] - rion0[3*ii+1]);
-         double vz = h*(rion2[3*ii+2] - rion0[3*ii+2]);
-         rion0[3*ii]   = vx;
-         rion0[3*ii+1] = vy;
-         rion0[3*ii+2] = vz;
-      }
+      for (auto i=0; i<3*nion; ++i) rion0[i] = h*(rion2[i] - rion0[i]);
+      
       KE = 0.0;
       for (auto ii=0; ii<nion; ++ii)
       {
@@ -638,7 +628,6 @@ int main(int argc, char* argv[])
          double vy = rion0[3*ii+1];
          double vz = rion0[3*ii+1];
          KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
-         std::cout << ii << " mass, ke=" << mass[ii] << " " << KE << std::endl;
       }
 
       if (taskid==MASTER)
@@ -649,7 +638,8 @@ int main(int argc, char* argv[])
                                      << " vion: "  << rion0[3*ii]   << " " << rion0[3*ii+1]   << " " << rion0[3*ii+2]   
                       << " uion=" << uion[ii]   << std::endl;
 
-         std::cout << "@ KE+energy=" << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
+         std::cout << "@ KE+energy=" << it << " " << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ 
+                   << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
          for (auto ii=0; ii<nion; ++ii)
             std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
