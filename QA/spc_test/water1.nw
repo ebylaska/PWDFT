@@ -22,7 +22,7 @@ nwpw
   simulation_cell
     SC 25.0
   end
-  cutoff 12.0
+  cutoff 30.0
   mult 1
   xc pbe96
   apc on

@@ -39,6 +39,8 @@ public:
    Strfac *mystrfac;
    Ewald  *myewald;
    Electron_Operators *myelectron;
+   Pseudopotential  *mypsp;
+
 
 
    double *psi1, *rho1, *rho1_all, *dng1;
@@ -50,7 +52,7 @@ public:
    bool newpsi;
 
    /* Constructors */
-   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *);
+   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *, Pseudopotential *);
 
    /* destructor */
    ~Molecule() {
@@ -220,15 +222,17 @@ public:
       os << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << mymolecule.en[0] 
                                          << "  down= " << setw(11) << setprecision(5) << mymolecule.en[mymolecule.ispin] 
                                          << " (real space)";
-      os << eoln;
+      os << eoln << eoln;
+      if (mymolecule.mypsp->myapc->v_apc_on)
+         os << mymolecule.mypsp->myapc->shortprint_APC();
       os << eoln;
       os << ionstream(" total     energy    : ",mymolecule.E[0],mymolecule.E[0]/mymolecule.myion->nion);
       os << elcstream(" total orbital energy: ",mymolecule.E[1],mymolecule.E[1]/mymolecule.neall);
       os << elcstream(" hartree energy      : ",mymolecule.E[2],mymolecule.E[2]/mymolecule.neall);
       os << elcstream(" exc-corr energy     : ",mymolecule.E[3],mymolecule.E[3]/mymolecule.neall);
-      os << ionstream(" ion-ion energy      : ",mymolecule.E[4],mymolecule.E[4]/mymolecule.myion->nion);
       if (mymolecule.myelectron->is_v_apc_on())
          os << ionstream(" APC energy          : ",mymolecule.E[51],mymolecule.E[51]/mymolecule.myion->nion);
+      os << ionstream(" ion-ion energy      : ",mymolecule.E[4],mymolecule.E[4]/mymolecule.myion->nion);
 
       os << eoln;
       os << elcstream(" kinetic (planewave) : ",mymolecule.E[5],mymolecule.E[5]/mymolecule.neall);

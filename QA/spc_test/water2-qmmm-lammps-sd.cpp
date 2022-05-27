@@ -501,10 +501,6 @@ int main(int argc, char* argv[])
    double h  = 1.0/(2.0*dt);
    for (auto ii=0; ii<nion; ++ii) dti[ii] = (dt*dt)/mass[ii];
 
-   //memcpy(rion2,rion1,3*nion*sizeof(double));
-   //memset(rion0,0,3*nion*sizeof(double));
-   //shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
-
    // zero potentials and forces 
    memset(uion,0,nion*sizeof(double));
    memset(fion,0,3*nion*sizeof(double));
@@ -518,7 +514,6 @@ int main(int argc, char* argv[])
    // Ecoul = QMQM Electrostatic energy and forces
    Ecoul = QMQM_electrostatic_energy(nion_qm,qion,rion1);
    QMQM_electrostatic_force(nion_qm,qion,rion1,fion);
-   //Ecoul = 0.0;
 
    // Ecoul += QMMM Electrostatic energy and forces
    double EAPC = 0.0;
@@ -564,7 +559,7 @@ int main(int argc, char* argv[])
 
 
    // steepest descent Iterations 
-   int nsteps = 1000;
+   int nsteps = 5000;
    for(auto it=0; it<nsteps; ++it)
    {
       //for (auto ii=0; ii<(3*nion); ++ii) rion0[ii] = rion1[ii];

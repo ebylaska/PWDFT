@@ -165,7 +165,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
 
    MPI_Barrier(comm_world0);
 
