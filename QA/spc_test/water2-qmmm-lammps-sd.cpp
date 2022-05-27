@@ -251,9 +251,7 @@ double QMMM_LJ_energy(const int nion_qm, const int nion,
       {
          double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
          double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
-         double elj = LJ_energy(epsilon12,sigma12,&rion[3*qm],&rion[3*mm]);
-         E += elj;
-         std::cout << "qm,mm,elj=" << qm << " " << mm << " " << elj << std::endl;
+         E += LJ_energy(epsilon12,sigma12,&rion[3*qm],&rion[3*mm]);
       }
    return E;
 }
@@ -458,7 +456,7 @@ int main(int argc, char* argv[])
    double rion0[3*nion],rion1[3*nion],rion2[3*nion];
    double uion[nion],qion[nion],fion[3*nion];
    double epsilon[nion],sigma[nion],mass[nion],dti[nion];
-   double E,KE,Eqm,Ecoul,ELJ;
+   double E,Eqm,Ecoul,ELJ;
 
    std::string symbol[nion] = {"O","H","H","O","H","H"};
 
@@ -527,13 +525,7 @@ int main(int argc, char* argv[])
    for (auto ii=0; ii<nion_qm; ++ii)
       EAPC += qion[ii]*uion[ii];
    QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-   std::cout << "EAPC1=" << EAPC << std::endl;
-   std::cout << "Ecoul1=" << Ecoul << std::endl;
    Ecoul += EAPC;
-
-   Eqm   = 0.0;
-   Ecoul = 0.0;
-   memset(fion,0,3*nion*sizeof(double));
 
    // ELJ = QMMM Lenard-Jones energy and forces
    ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
@@ -542,23 +534,14 @@ int main(int argc, char* argv[])
    // take a Newton step
    for (auto ii=0; ii<nion; ++ii)
    {
-      rion2[3*ii]   = rion1[3*ii]   + dt*rion0[3*ii]   + 0.5*dti[ii]*fion[3*ii];
-      rion2[3*ii+1] = rion1[3*ii+1] + dt*rion0[3*ii+1] + 0.5*dti[ii]*fion[3*ii+1];
-      rion2[3*ii+2] = rion1[3*ii+2] + dt*rion0[3*ii+2] + 0.5*dti[ii]*fion[3*ii+2];
+      rion2[3*ii]   = rion1[3*ii]    + 0.5*dti[ii]*fion[3*ii];
+      rion2[3*ii+1] = rion1[3*ii+1]  + 0.5*dti[ii]*fion[3*ii+1];
+      rion2[3*ii+2] = rion1[3*ii+2]  + 0.5*dti[ii]*fion[3*ii+2];
    }
 
    // shake MM water
    shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
 
-   // kinetic energy
-   KE = 0.0;
-   for (auto ii=0; ii<nion; ++ii)
-   {
-      double vx = rion0[3*ii];
-      double vy = rion0[3*ii+1];
-      double vz = rion0[3*ii+2];
-      KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
-   }
 
    // Current step output
    if (taskid==MASTER)
@@ -567,21 +550,21 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " rion: "  << rion1[3*ii]   << " " << rion1[3*ii+1]   << " " << rion1[3*ii+2]   << " uion=" << uion[ii]   << std::endl;
 
-      std::cout << "KE+energy=" << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
+      std::cout << "energy=" << Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
       std::cout << std::endl << std::endl;
 
       printxyz(xyzfile,nion,symbol,unita,rion1) ;
-      printemotion(emotionfile,0.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
+      printemotion(emotionfile,0.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
    }
 
 
 
 
-   // Verlet Iterations 
-   int nsteps = 200;
+   // steepest descent Iterations 
+   int nsteps = 1000;
    for(auto it=0; it<nsteps; ++it)
    {
       //for (auto ii=0; ii<(3*nion); ++ii) rion0[ii] = rion1[ii];
@@ -608,57 +591,41 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion_qm; ++ii)
          Ecoul += qion[ii]*uion[ii];
       QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-      std::cout << "EAPC1=" << Ecoul << std::endl;
-
-      Eqm   = 0.0;
-      Ecoul = 0.0;
-      memset(fion,0,3*nion*sizeof(double));
 
       // QMMM Electrostatic energy and forces
       ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
       QMMM_LJ_force(nion_qm,nion,epsilon,sigma,rion1,fion);
 
+
       // take a position Verlet step
       for (auto ii=0; ii<nion; ++ii)
       {
-         rion2[3*ii]   = 2.0*rion1[3*ii]   - rion0[3*ii]   + dti[ii]*fion[3*ii];
-         rion2[3*ii+1] = 2.0*rion1[3*ii+1] - rion0[3*ii+1] + dti[ii]*fion[3*ii+1];
-         rion2[3*ii+2] = 2.0*rion1[3*ii+2] - rion0[3*ii+2] + dti[ii]*fion[3*ii+2];
+         rion2[3*ii]   = rion1[3*ii]    + dti[ii]*fion[3*ii];
+         rion2[3*ii+1] = rion1[3*ii+1]  + dti[ii]*fion[3*ii+1];
+         rion2[3*ii+2] = rion1[3*ii+2]  + dti[ii]*fion[3*ii+2];
       }
 
       // shake MM water
       shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
 
 
-      // kinetic energy
-      for (auto i=0; i<nion; ++i) rion0[i] = h*(rion2[i]-rion0[i]);
-      
-      KE = 0.0;
-      for (auto ii=0; ii<nion; ++ii)
-      {
-         double vx = rion0[3*ii];
-         double vy = rion0[3*ii+1];
-         double vz = rion0[3*ii+1];
-         KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
-         std::cout << ii << " mass, ke=" << mass[ii] << " " << KE << std::endl;
-      }
 
       if (taskid==MASTER)
       {
          std::cout << std::endl << std::endl;
          for (auto ii=0; ii<nion; ++ii)
             std::cout << "ii=" << ii << " rion: "  << rion1[3*ii]   << " " << rion1[3*ii+1]   << " " << rion1[3*ii+2]   
-                                     << " vion: "  << rion0[3*ii]   << " " << rion0[3*ii+1]   << " " << rion0[3*ii+2]   
                       << " uion=" << uion[ii]   << std::endl;
 
-         std::cout << "@ KE+energy=" << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
+         std::cout << "@ energy=" << it << " " << Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ 
+                   << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
          for (auto ii=0; ii<nion; ++ii)
             std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
          std::cout << std::endl << std::endl;
 
          printxyz(xyzfile,nion,symbol,unita,rion1) ;
-         printemotion(emotionfile,it*5.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
+         printemotion(emotionfile,it*5.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
       }
    }
 
