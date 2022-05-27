@@ -551,8 +551,8 @@ int main(int argc, char* argv[])
          std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
       std::cout << std::endl << std::endl;
 
-      printxyz(xyzfile,nion,symbol,unita,rion1) ;
-      printemotion(emotionfile,0.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
+      //printxyz(xyzfile,nion,symbol,unita,rion1) ;
+      //printemotion(emotionfile,0.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
    }
 
 

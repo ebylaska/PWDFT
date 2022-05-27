@@ -103,7 +103,6 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
          total_energy  = mymolecule.psi_1get_Tgradient(G1);
          sum0 = sum1;
          sum1 = mygrid->gg_traceall(G1,G1);
-         //std::cout << "SUM0=" << sum0 <<  " SUM1=" << sum1 << std::endl;
 
          /* the new direction using Fletcher-Reeves */
          if ( (fabs(*deltae)<=(1.0e-2)) &&  (tmin>deltat_min))

@@ -394,6 +394,7 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
 
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
 
+
    if (mypsp->myapc->v_apc_on)
    {
       double eapc = mypsp->myapc->Eapc;

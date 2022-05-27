@@ -464,9 +464,9 @@ int main(int argc, char* argv[])
 
 
    // first water molecule - QM water
-   rion1[0] =  0.021259*ANGTOBOHR; rion1[1] =  0.506771*ANGTOBOHR; rion1[2] =  2.831278*ANGTOBOHR;
-   rion1[3] = -0.721039*ANGTOBOHR; rion1[4] =  1.083100*ANGTOBOHR; rion1[5] =  2.758378*ANGTOBOHR;
-   rion1[6] =  0.158220*ANGTOBOHR; rion1[7] =  0.181883*ANGTOBOHR; rion1[8] =  1.945696*ANGTOBOHR;
+   rion1[0] =  0.021259*ANGTOBOHR; rion1[1] =  0.506771*ANGTOBOHR; rion1[2] =  2.731278*ANGTOBOHR;
+   rion1[3] = -0.721039*ANGTOBOHR; rion1[4] =  1.083100*ANGTOBOHR; rion1[5] =  2.658378*ANGTOBOHR;
+   rion1[6] =  0.158220*ANGTOBOHR; rion1[7] =  0.181883*ANGTOBOHR; rion1[8] =  1.645696*ANGTOBOHR;
    qion[0] = -0.8476; qion[1] = 0.4238; qion[2] = 0.4238;
    uion[0] =  0.0000; uion[1] = 0.0000; uion[2] = 0.0000;
    sigma[0] = 3.165558*ANGTOBOHR; epsilon[0] = 0.155394/(23.06*27.2116);
@@ -541,6 +541,9 @@ int main(int argc, char* argv[])
 
    // shake MM water
    shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
+   MPI_Bcast(rion1,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
+   MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
+   
 
    // kinetic energy
    KE = 0.0;
@@ -565,8 +568,8 @@ int main(int argc, char* argv[])
          std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
       std::cout << std::endl << std::endl;
 
-      printxyz(xyzfile,nion,symbol,unita,rion1) ;
-      printemotion(emotionfile,0.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
+      //printxyz(xyzfile,nion,symbol,unita,rion1) ;
+      //printemotion(emotionfile,0.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
    }
 
 
@@ -616,6 +619,8 @@ int main(int argc, char* argv[])
 
       // shake MM water
       shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
+      MPI_Bcast(rion1,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
+      MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
 
 
       // kinetic energy

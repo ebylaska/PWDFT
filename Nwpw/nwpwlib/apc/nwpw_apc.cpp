@@ -599,7 +599,7 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
 
    // Calculate Eapc - cdft,qmmm,cosmo,born??
    Eapc = 0.0;
-   for (auto ii=0; ii<myion->nion; ++ii)
+   for (auto ii=0; ii<(myion->nion); ++ii)
       Eapc += qion[ii]*uion[ii];
 
    // Calculate Vapc
