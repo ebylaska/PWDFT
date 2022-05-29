@@ -545,7 +545,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
  
     Entry - nion: number of qm atoms
           - uq: dE/dq(ii) - derivative of E wrt to model charges q(ii)
-    Exit - fion = dE/dq(ii)*dq(ii)/dR
+    Exit - fion = dE/dq(ii)*dq(ii)/dR = uq(ii) * dq(ii)/dR
  
     Note - pspw_gen_APC needs to be called to Am=inv(A) before
            this routine is called.
@@ -715,10 +715,10 @@ void nwpw_apc::f_APC_cdft(double *dng, double *zv, double *fion)
       for (auto k=0; k<nga; ++k)
          u[ii*nga+k] = -uion[ii];
 
-   double sumAm  = sumAm_APC(ngs,Am);
-   double sumAmU = Amtimesu_APC(ngs,Am,u);
-   for (auto i=0; i<ngs; ++i)
-      u[i] -= (sumAmU/sumAm);
+   //double sumAm  = sumAm_APC(ngs,Am);
+   //double sumAmU = Amtimesu_APC(ngs,Am,u);
+   //for (auto i=0; i<ngs; ++i)
+   //   u[i] -= (sumAmU/sumAm);
 
    // fion = -sum u(i)*dq(i)/dR 
    dQdR_APC(u,fion);
