@@ -168,7 +168,7 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
 
 
 
@@ -378,7 +378,9 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
       if (lprint)
+      {
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+      }
    }
 
    // write psi 

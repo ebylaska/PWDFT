@@ -165,7 +165,7 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
 
    MPI_Barrier(comm_world0);
 
@@ -616,7 +616,9 @@ int pspw_geovib(MPI_Comm comm_world0, string& rtdbstring)
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
       if (oprint)
+      {
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+      }
    }
 
    // set rtdbjson initialize_wavefunction option to false

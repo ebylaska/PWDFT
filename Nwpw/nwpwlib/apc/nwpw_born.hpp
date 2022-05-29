@@ -18,6 +18,7 @@
 
 #include        "Control2.hpp"
 #include        "Ion.hpp"
+#include        "Parallel.hpp"
 
 
 namespace pwdft {
@@ -25,7 +26,8 @@ using namespace pwdft;
 
 class nwpw_born {
 
-   Ion    *myion;
+   Ion      *myion;
+   Parallel *myparall;
 
 public:
    bool born_on,born_relax;
@@ -34,7 +36,7 @@ public:
    double dielec;
 
    /* constructor */
-   nwpw_born(Ion *, Control2&);
+   nwpw_born(Ion *, Parallel *, Control2&);
 
    /* destructor */
    ~nwpw_born() {
@@ -53,7 +55,7 @@ public:
 
    std::string header_print();
    std::string Qprint(const double *);
-   std::string final_print(const double, const double);
+   std::string shortprint(const double, const double);
 
    void writejsonstr(std::string&);
 

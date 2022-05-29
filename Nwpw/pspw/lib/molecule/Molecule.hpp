@@ -39,6 +39,8 @@ public:
    Strfac *mystrfac;
    Ewald  *myewald;
    Electron_Operators *myelectron;
+   Pseudopotential  *mypsp;
+
 
 
    double *psi1, *rho1, *rho1_all, *dng1;
@@ -50,7 +52,7 @@ public:
    bool newpsi;
 
    /* Constructors */
-   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *);
+   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *, Pseudopotential *);
 
    /* destructor */
    ~Molecule() {
@@ -181,14 +183,20 @@ public:
    double rho_error() {
       double x;
       double sumxx = 0.0;
+      //mygrid->r_zero_ends(rho2);
+      //mygrid->r_zero_ends(rho1);
+      //if (ispin==2)
+      //{
+      //   mygrid->r_zero_ends(&rho1[n2ft3d]);
+      //   mygrid->r_zero_ends(&rho2[n2ft3d]);
+      //}
       for (int i=0; i<n2ft3d; ++i)
       {
          x  = (rho2[i]-rho1[i]);
          x += (rho2[i+(ispin-1)*n2ft3d]-rho1[i+(ispin-1)*n2ft3d]);
          sumxx += x*x;
       }
-      mygrid->d3db::parall->SumAll(1,sumxx);
-      return sumxx*dv;
+      return mygrid->d3db::parall->SumAll(1,sumxx)*dv;
    }
 
    std::vector<double> eig_vector() { return std::vector<double>(eig,&eig[neall]); }
@@ -214,15 +222,17 @@ public:
       os << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << mymolecule.en[0] 
                                          << "  down= " << setw(11) << setprecision(5) << mymolecule.en[mymolecule.ispin] 
                                          << " (real space)";
-      os << eoln;
+      os << eoln << eoln;
+      if (mymolecule.mypsp->myapc->v_apc_on)
+         os << mymolecule.mypsp->myapc->shortprint_APC();
       os << eoln;
       os << ionstream(" total     energy    : ",mymolecule.E[0],mymolecule.E[0]/mymolecule.myion->nion);
       os << elcstream(" total orbital energy: ",mymolecule.E[1],mymolecule.E[1]/mymolecule.neall);
       os << elcstream(" hartree energy      : ",mymolecule.E[2],mymolecule.E[2]/mymolecule.neall);
       os << elcstream(" exc-corr energy     : ",mymolecule.E[3],mymolecule.E[3]/mymolecule.neall);
-      os << ionstream(" ion-ion energy      : ",mymolecule.E[4],mymolecule.E[4]/mymolecule.myion->nion);
       if (mymolecule.myelectron->is_v_apc_on())
          os << ionstream(" APC energy          : ",mymolecule.E[51],mymolecule.E[51]/mymolecule.myion->nion);
+      os << ionstream(" ion-ion energy      : ",mymolecule.E[4],mymolecule.E[4]/mymolecule.myion->nion);
 
       os << eoln;
       os << elcstream(" kinetic (planewave) : ",mymolecule.E[5],mymolecule.E[5]/mymolecule.neall);

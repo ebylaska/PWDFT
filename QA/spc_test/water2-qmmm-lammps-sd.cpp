@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
    double rion0[3*nion],rion1[3*nion],rion2[3*nion];
    double uion[nion],qion[nion],fion[3*nion];
    double epsilon[nion],sigma[nion],mass[nion],dti[nion];
-   double E,KE,Eqm,Ecoul,ELJ;
+   double E,Eqm,Ecoul,ELJ;
 
    std::string symbol[nion] = {"O","H","H","O","H","H"};
 
@@ -464,9 +464,9 @@ int main(int argc, char* argv[])
 
 
    // first water molecule - QM water
-   rion1[0] =  0.021259*ANGTOBOHR; rion1[1] =  0.506771*ANGTOBOHR; rion1[2] =  2.731278*ANGTOBOHR;
-   rion1[3] = -0.721039*ANGTOBOHR; rion1[4] =  1.083100*ANGTOBOHR; rion1[5] =  2.658378*ANGTOBOHR;
-   rion1[6] =  0.158220*ANGTOBOHR; rion1[7] =  0.181883*ANGTOBOHR; rion1[8] =  1.645696*ANGTOBOHR;
+   rion1[0] =  0.021259*ANGTOBOHR; rion1[1] =  0.506771*ANGTOBOHR; rion1[2] =  2.831278*ANGTOBOHR;
+   rion1[3] = -0.721039*ANGTOBOHR; rion1[4] =  1.083100*ANGTOBOHR; rion1[5] =  2.758378*ANGTOBOHR;
+   rion1[6] =  0.158220*ANGTOBOHR; rion1[7] =  0.181883*ANGTOBOHR; rion1[8] =  1.945696*ANGTOBOHR;
    qion[0] = -0.8476; qion[1] = 0.4238; qion[2] = 0.4238;
    uion[0] =  0.0000; uion[1] = 0.0000; uion[2] = 0.0000;
    sigma[0] = 3.165558*ANGTOBOHR; epsilon[0] = 0.155394/(23.06*27.2116);
@@ -501,10 +501,6 @@ int main(int argc, char* argv[])
    double h  = 1.0/(2.0*dt);
    for (auto ii=0; ii<nion; ++ii) dti[ii] = (dt*dt)/mass[ii];
 
-   //memcpy(rion2,rion1,3*nion*sizeof(double));
-   //memset(rion0,0,3*nion*sizeof(double));
-   //shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
-
    // zero potentials and forces 
    memset(uion,0,nion*sizeof(double));
    memset(fion,0,3*nion*sizeof(double));
@@ -518,7 +514,6 @@ int main(int argc, char* argv[])
    // Ecoul = QMQM Electrostatic energy and forces
    Ecoul = QMQM_electrostatic_energy(nion_qm,qion,rion1);
    QMQM_electrostatic_force(nion_qm,qion,rion1,fion);
-   //Ecoul = 0.0;
 
    // Ecoul += QMMM Electrostatic energy and forces
    double EAPC = 0.0;
@@ -534,26 +529,14 @@ int main(int argc, char* argv[])
    // take a Newton step
    for (auto ii=0; ii<nion; ++ii)
    {
-      rion2[3*ii]   = rion1[3*ii]   + dt*rion0[3*ii]   + 0.5*dti[ii]*fion[3*ii];
-      rion2[3*ii+1] = rion1[3*ii+1] + dt*rion0[3*ii+1] + 0.5*dti[ii]*fion[3*ii+1];
-      rion2[3*ii+2] = rion1[3*ii+2] + dt*rion0[3*ii+2] + 0.5*dti[ii]*fion[3*ii+2];
+      rion2[3*ii]   = rion1[3*ii]    + 0.5*dti[ii]*fion[3*ii];
+      rion2[3*ii+1] = rion1[3*ii+1]  + 0.5*dti[ii]*fion[3*ii+1];
+      rion2[3*ii+2] = rion1[3*ii+2]  + 0.5*dti[ii]*fion[3*ii+2];
    }
 
    // shake MM water
    shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
-   MPI_Bcast(rion1,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
-   MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
-   
 
-   // kinetic energy
-   KE = 0.0;
-   for (auto ii=0; ii<nion; ++ii)
-   {
-      double vx = rion0[3*ii];
-      double vy = rion0[3*ii+1];
-      double vz = rion0[3*ii+2];
-      KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
-   }
 
    // Current step output
    if (taskid==MASTER)
@@ -562,21 +545,21 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " rion: "  << rion1[3*ii]   << " " << rion1[3*ii+1]   << " " << rion1[3*ii+2]   << " uion=" << uion[ii]   << std::endl;
 
-      std::cout << "KE+energy=" << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
+      std::cout << "energy=" << Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
       for (auto ii=0; ii<nion; ++ii)
          std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
       std::cout << std::endl << std::endl;
 
       //printxyz(xyzfile,nion,symbol,unita,rion1) ;
-      //printemotion(emotionfile,0.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
+      //printemotion(emotionfile,0.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
    }
 
 
 
 
-   // Verlet Iterations 
-   int nsteps = 100;
+   // steepest descent Iterations 
+   int nsteps = 5000;
    for(auto it=0; it<nsteps; ++it)
    {
       //for (auto ii=0; ii<(3*nion); ++ii) rion0[ii] = rion1[ii];
@@ -612,46 +595,32 @@ int main(int argc, char* argv[])
       // take a position Verlet step
       for (auto ii=0; ii<nion; ++ii)
       {
-         rion2[3*ii]   = 2.0*rion1[3*ii]   - rion0[3*ii]   + dti[ii]*fion[3*ii];
-         rion2[3*ii+1] = 2.0*rion1[3*ii+1] - rion0[3*ii+1] + dti[ii]*fion[3*ii+1];
-         rion2[3*ii+2] = 2.0*rion1[3*ii+2] - rion0[3*ii+2] + dti[ii]*fion[3*ii+2];
+         rion2[3*ii]   = rion1[3*ii]    + dti[ii]*fion[3*ii];
+         rion2[3*ii+1] = rion1[3*ii+1]  + dti[ii]*fion[3*ii+1];
+         rion2[3*ii+2] = rion1[3*ii+2]  + dti[ii]*fion[3*ii+2];
       }
 
       // shake MM water
       shake_chain(3,mm_water_indx,3,1.0e-6,55,dsq,mass,unita,rion1,rion2); 
-      MPI_Bcast(rion1,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
-      MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
 
 
-      // kinetic energy
-      for (auto i=0; i<3*nion; ++i) rion0[i] = h*(rion2[i] - rion0[i]);
-      
-      KE = 0.0;
-      for (auto ii=0; ii<nion; ++ii)
-      {
-         double vx = rion0[3*ii];
-         double vy = rion0[3*ii+1];
-         double vz = rion0[3*ii+1];
-         KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
-      }
 
       if (taskid==MASTER)
       {
          std::cout << std::endl << std::endl;
          for (auto ii=0; ii<nion; ++ii)
             std::cout << "ii=" << ii << " rion: "  << rion1[3*ii]   << " " << rion1[3*ii+1]   << " " << rion1[3*ii+2]   
-                                     << " vion: "  << rion0[3*ii]   << " " << rion0[3*ii+1]   << " " << rion0[3*ii+2]   
                       << " uion=" << uion[ii]   << std::endl;
 
-         std::cout << "@ KE+energy=" << it << " " << KE+Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ 
-                   << " KE=" << KE << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
+         std::cout << "@ energy=" << it << " " << Eqm+Ecoul+ELJ << " energy=" << Eqm+Ecoul+ELJ 
+                   << " Eqm=" << Eqm << " Ecoul=" << Ecoul << " ELJ=" << ELJ << std::endl;
 
          for (auto ii=0; ii<nion; ++ii)
             std::cout << "ii=" << ii << " fion: "  << fion[3*ii]   << " " << fion[3*ii+2]   << " " << fion[3*ii+2]   << " qion=" << qion[ii]   << std::endl;
          std::cout << std::endl << std::endl;
 
          printxyz(xyzfile,nion,symbol,unita,rion1) ;
-         printemotion(emotionfile,it*5.0,KE+Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,KE,Eqm,Ecoul,ELJ);
+         printemotion(emotionfile,it*5.0,Eqm+Ecoul+ELJ,Eqm+Ecoul+ELJ,0.0,Eqm,Ecoul,ELJ);
       }
    }
 

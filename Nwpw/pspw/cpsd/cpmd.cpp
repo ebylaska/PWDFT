@@ -405,6 +405,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                                           E[0],E[1],E[2],E[3],myion.Temperature());
          }
 
+
          // Update AIMD Running data
          mymotion_data.update_iteration(icount);
          eave = mymotion_data.eave; evar = mymotion_data.evar;
@@ -462,9 +463,9 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    if (oprint) 
    {
       util_print_elapsed_time(icount*control.loop(0)*control.time_step());
-      cout << "\n\n";
-      cout << "          =============  summary of results  =================\n";
-      cout << "\n final position of ions (au):" << "\n";
+      std::cout << "\n\n";
+      std::cout << "          =============  summary of results  =================\n";
+      std::cout << "\n final position of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion(0,ii),
@@ -473,7 +474,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.amu(ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
-      cout << "\n final velocity of ions (au):" << "\n";
+      std::cout << "\n final velocity of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
                                                myion.vion(0,ii),
@@ -481,7 +482,11 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.vion(2,ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
-      cout << "\n\n";
+      std::cout << std::endl;
+
+      if (mypsp.myapc->v_apc_on) 
+         std::cout << mypsp.myapc->shortprint_APC();
+
       printf(" total     energy        : %19.10le (%15.5le /ion)\n",      E[1],E[1]/myion.nion);
       printf(" total orbital energy    : %19.10le (%15.5le /electron)\n", E[4],E[4]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" hartree energy          : %19.10le (%15.5le /electron)\n", E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));

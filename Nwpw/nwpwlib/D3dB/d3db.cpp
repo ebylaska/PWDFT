@@ -992,7 +992,8 @@ void d3db::r_dealloc(double *ptr)
  ********************************/
 void d3db::r_zero(double *ptr)
 {
-   int i;
+   memset(ptr,0,n2ft3d*sizeof(double));
+   /*int i;
    int m = n2ft3d%7;
    if (m>0)
       for (i=0; i<m; ++i)
@@ -1011,6 +1012,7 @@ void d3db::r_zero(double *ptr)
       ptr[i+6] = 0.0;
    }
    return;
+   */
 }
 
 /********************************
@@ -1020,7 +1022,8 @@ void d3db::r_zero(double *ptr)
  ********************************/
 void d3db::r_nzero(int n, double *ptr)
 {
-   int i;
+   memset(ptr,0,n*n2ft3d*sizeof(double));
+   /*int i;
    int m = (n*n2ft3d)%7;
    if (m>0)
       for (i=0; i<m; ++i)
@@ -1039,6 +1042,7 @@ void d3db::r_nzero(int n, double *ptr)
       ptr[i+6] = 0.0;
    }
    return;
+   */
 }
 
 /********************************
@@ -1048,6 +1052,8 @@ void d3db::r_nzero(int n, double *ptr)
  ********************************/
 void d3db::t_nzero(int n, double *ptr)
 {
+   memset(ptr,0,n*nfft3d*sizeof(double));
+   /*
    int i;
    int m = (n*nfft3d)%7;
    if (m>0)
@@ -1067,6 +1073,7 @@ void d3db::t_nzero(int n, double *ptr)
       ptr[i+6] = 0.0;
    }
    return;
+   */
 }
 
 
@@ -1077,6 +1084,8 @@ void d3db::t_nzero(int n, double *ptr)
  ********************************/
 void d3db::rr_copy(const double *ptr1, double *ptr2)
 {
+   memcpy(ptr2,ptr1,n2ft3d*sizeof(double));
+   /*
    int i;
    int m = n2ft3d%7;
    if (m>0)
@@ -1096,6 +1105,7 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
       ptr2[i+6] = ptr1[i+6];
    }
    return;
+   */
 }
 
 /********************************
@@ -1105,6 +1115,8 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
  ********************************/
 void d3db::tt_copy(const double *ptr1, double *ptr2)
 {
+   memcpy(ptr2,ptr1,nfft3d*sizeof(double));
+   /*
    int i;
    int m = nfft3d%7;
    if (m>0)
@@ -1124,6 +1136,7 @@ void d3db::tt_copy(const double *ptr1, double *ptr2)
       ptr2[i+6] = ptr1[i+6];
    }
    return;
+   */
 }
 
 
