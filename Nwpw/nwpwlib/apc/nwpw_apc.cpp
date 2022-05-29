@@ -597,10 +597,13 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
       for (auto k=0; k<nga; ++k)
          u[ii*nga+k] = -uion[ii];
 
+   if (move) dQdR_APC(u,fion);
+
    // Calculate Eapc - cdft,qmmm,cosmo,born??
    Eapc = 0.0;
    for (auto ii=0; ii<(myion->nion); ++ii)
       Eapc += qion[ii]*uion[ii];
+
 
    // Calculate Vapc
    int npack0 = mypneb->npack(0);
@@ -614,7 +617,6 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
 
    // F =  -sum(i,j) 0.5*q(i)*(dM/dR)*q(j) - sum u(i)*dq(i)/dR 
    // fion = -sum u(i)*dq(i)/dR 
-   if (move) dQdR_APC(u,fion);
 }
 
 /*******************************************

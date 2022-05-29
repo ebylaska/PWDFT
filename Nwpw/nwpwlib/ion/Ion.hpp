@@ -35,6 +35,12 @@ public:
    double kb  = 3.16679e-6;
    double g_dof = 1.0;
 
+   bool fix_translation = true;
+   bool dof_translation = true; 
+
+   bool fix_rotation = false;
+   bool dof_rotation = false;
+
    /* Constructors */
    Ion(RTDB&, Control2&);
    Ion(std::string, Control2&);
@@ -68,6 +74,17 @@ public:
     double rion(int i, int ii) { return rion1[3*ii+i];}
     double vion(int i, int ii) { return rion0[3*ii+i];}
     double fion(int i, int ii) { return fion1[3*ii+i];}
+
+    int ndof() {
+       int dof = 3*nion - 6;
+       if (dof_translation) dof += 3;
+       if (dof_rotation)    dof += 3;
+       if (dof<1) dof = 1;
+       return dof;
+    }
+    void remove_com_translation();
+    void remove_rotation();
+
     double total_mass() { 
        double tmass = 0.0;
        for (auto ii=0; ii<nion; ++ii)
@@ -169,6 +186,12 @@ public:
           rion2[3*ii+2] = 2*sa1*rion1[3*ii+2] - sa2*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
 
+       // remove translation
+       if (fix_translation) remove_com_translation();
+
+       // remove rotation
+       if (fix_rotation) remove_rotation();
+
        // update current velocities - place in r0
        double h = 1.0/(2.0*time_step);
        for (auto i=0; i<(3*nion); ++i) rion0[i] = h*(rion2[i]-rion0[i]);
@@ -192,6 +215,10 @@ public:
           rion2[3*ii+2] = rion1[3*ii+2] + alpha*time_step*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
 
+       // remove translation
+       if (fix_translation) remove_com_translation();
+
+
        // add current kinetic energies to running averages
        eki1 = this->ke();
        ekg  = this->ke_com();
@@ -211,6 +238,12 @@ public:
           rion2[3*ii+1] = 2*ssr*rion1[3*ii+1] - smr*rion0[3*ii+1] + scale*fion[3*ii+1];
           rion2[3*ii+2] = 2*ssr*rion1[3*ii+2] - smr*rion0[3*ii+2] + scale*fion[3*ii+2];
        }
+
+       // remove translation
+       if (fix_translation) remove_com_translation();
+
+       // remove rotation
+       if (fix_rotation) remove_rotation();
 
        // update current velocities - place in r0
        double h = 1.0/(2.0*time_step);
@@ -283,7 +316,7 @@ public:
        return ss/tmass;
     }
 
-    void remove_com_fion(double *fion) {
+   void remove_com_fion(double *fion) {
        double tmass = 0.0;
        double gx = 0.0;
        double gy = 0.0;
@@ -302,9 +335,9 @@ public:
           fion[3*ii+1] -= gy;
           fion[3*ii+2] -= gz;
        }
-    }
+   }
 
-    double max_fion(const double *fion) {
+   double max_fion(const double *fion) {
        double x,xx;
        double y = 0.0;
        for (auto ii=0; ii<nion; ++ii) { 
@@ -315,15 +348,13 @@ public:
    }
 
 
-    double rms_fion(const double *fion) {
+   double rms_fion(const double *fion) {
        double ss    = 0.0;
        for (auto ii=0; ii<nion; ++ii) { 
           ss += fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
        }
        return sqrt(ss)/((double) nion);
    }
-
-
 
 };
 }

@@ -1057,6 +1057,26 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
          if (mystring_contains(line,"voutput"))
             nwpwjson["output_v_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line,"voutput")[1]))[0];
       }
+      else if (mystring_contains(line,"translation")) {
+         if (mystring_contains(line," off"))        nwpwjson["fix_translation"] = true;
+         else if (mystring_contains(line," no"))    nwpwjson["fix_translation"] = true;
+         else if (mystring_contains(line," false")) nwpwjson["fix_translation"] = true;
+
+         else if (mystring_contains(line," yes"))   nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," true"))  nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," on"))    nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," allow_translation")) nwpwjson["fix_translation"] = false;
+         else nwpwjson["fix_translation"] = true;
+      }
+      else if (mystring_contains(line,"rotation")) {
+         if (mystring_contains(line," off"))        nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," no"))    nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," false")) nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," yes"))   nwpwjson["fix_rotation"]  = false;
+         else if (mystring_contains(line," true"))  nwpwjson["fix_rotation"]  = false;
+         else if (mystring_contains(line," on"))    nwpwjson["fix_rotation"]  = false;
+         else nwpwjson["fix_rotation"] = false;
+      }
       else if (mystring_contains(line,"apc")) {
          if  (nwpwjson["apc"].is_null()) {
             json apc;
