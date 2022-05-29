@@ -5,6 +5,7 @@
 
 #include        <iostream>
 #include        <cstring>
+#include        <sstream>
 #include        <cmath>
 
 #include        "nwpw_timing.hpp"

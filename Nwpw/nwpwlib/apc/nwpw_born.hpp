@@ -15,6 +15,7 @@
 
 #include        <iomanip>
 #include        <iostream>
+#include        <string>
 
 #include        "Control2.hpp"
 #include        "Ion.hpp"
