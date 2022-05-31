@@ -3,7 +3,7 @@
 #include	"nwpw_timers.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 static nwpw_timers mytimer;
 

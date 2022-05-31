@@ -3,7 +3,7 @@
 #include	"util_linesearch.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /* util_linesearch common block */
@@ -135,9 +135,9 @@ double util_linesearch(const double t0, const double f0, const double df0, doubl
    deltaf = f[indx[1]] - f[indx[0]];
 
    if (stoptype==1)
-      notfinished = (fabs(deltaf)>tolerance) &&  (iteration<=maxiter);
+      notfinished = (std::fabs(deltaf)>tolerance) &&  (iteration<=maxiter);
    else
-      notfinished = (fabs(df[indx[0]]/df_first)>tolerance) && (iteration<=maxiter);
+      notfinished = (std::fabs(df[indx[0]]/df_first)>tolerance) && (iteration<=maxiter);
 
    while (notfinished) 
    {
@@ -179,7 +179,7 @@ double util_linesearch(const double t0, const double f0, const double df0, doubl
               + (t[0] - t[1])*f[2];
 
          /* check added by E.Apra */
-         if (fabs(down) > (tolerance*tolerance))
+         if (std::fabs(down) > (tolerance*tolerance))
          {
             tmin = 0.50*up/down;
             fmin  =  FUNC1(tmin);
@@ -210,9 +210,9 @@ double util_linesearch(const double t0, const double f0, const double df0, doubl
          deltaf=0.0;
 
       if (stoptype==1)
-         notfinished = (fabs(deltaf)>tolerance) && (iteration<=maxiter);
+         notfinished = (std::fabs(deltaf)>tolerance) && (iteration<=maxiter);
       else
-         notfinished = (fabs(df[indx[0]]/df_first)>tolerance) && (iteration<=maxiter);
+         notfinished = (std::fabs(df[indx[0]]/df_first)>tolerance) && (iteration<=maxiter);
    }
 
 

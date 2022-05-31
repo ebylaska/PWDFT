@@ -4,7 +4,7 @@
 #include        <cstdio>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include        "Parallel.hpp"
 //#include        "control.hpp"
@@ -20,7 +20,7 @@ using namespace std;
 #include	"inner_loop.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 void inner_loop(Control2& control, Pneb *mygrid, Ion *myion, 

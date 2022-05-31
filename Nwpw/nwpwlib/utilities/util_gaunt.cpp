@@ -5,7 +5,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 static bool has_complex_gaunt = false;
 static bool has_real_gaunt = false;

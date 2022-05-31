@@ -105,7 +105,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    if (mymolecule.newpsi) 
    {
       for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-      if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+      //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
    }
 
    //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
@@ -118,8 +118,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       ++icount;
       if (stalled)
       {
-         for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-         if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+	 //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
+         //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
          bfgscount = 0;
       }
 
@@ -144,12 +144,12 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       if (oprint)
          printf("%10d%25.12le%16.6le%16.6le\n",icount*it_in,total_energy,deltae, deltac);
 
-      if ((fabs(deltae)>fabs(deltae_old)) || (fabs(deltae)>1.0e-2) || (deltae>0.0))
+      if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
          stalled = true;
       else
          stalled = false;
 
-      converged = (fabs(deltae)<tole) && (deltac<tolc);
+      converged = (std::fabs(deltae)<tole) && (deltac<tolc);
 
 
    }

@@ -4,7 +4,7 @@
 #include        <iostream>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern std::string ion_print_bond_angle_torsions(int, int *, char *, double *);
 

@@ -196,19 +196,19 @@ std::string nwpw_Nose_Hoover::inputprint()
          stream << "     thermostats initialized" << std::endl;
 
       for (auto m=0; m<Mchain; ++m)
-         stream << "     link = " << setw(3) << (m+1) 
-                << " Te ="     << fixed      << setprecision(2) << setw(8)  << Te 
-                << " Qe ="     << scientific << setprecision(3) << setw(10) << Qe[m] 
-                << " 2*pi/we =" << scientific << setprecision(3) << setw(10) << Pe[m] 
-                << " Ee0 ="     << scientific << setprecision(3) << setw(10) << Ee0[m] 
-                << std::endl;
+	stream << "     link = " << std::setw(3) << (m+1) 
+	       << " Te ="     << std::fixed      << std::setprecision(2) << std::setw(8)  << Te 
+	       << " Qe ="     << std::scientific << std::setprecision(3) << std::setw(10) << Qe[m] 
+	       << " 2*pi/we =" << std::scientific << std::setprecision(3) << std::setw(10) << Pe[m] 
+	       << " Ee0 ="     << std::scientific << std::setprecision(3) << std::setw(10) << Ee0[m] 
+	       << std::endl;
       for (auto n=0; n<Nchain; ++n)
-         stream << "     link = " << setw(3) << (n+1) 
-                << " Tr ="     << fixed      << setprecision(2) << setw(8)  << Tr 
-                << " Qr ="     << scientific << setprecision(3) << setw(10) << Qr[n] 
-                << " 2*pi/wr =" << scientific << setprecision(3) << setw(10) << Pr[n] 
-                << " Er0 ="     << scientific << setprecision(3) << setw(10) << Er0[n] 
-                << std::endl;
+	stream << "     link = " << std::setw(3) << (n+1) 
+	       << " Tr ="     << std::fixed      << std::setprecision(2) << std::setw(8)  << Tr 
+	       << " Qr ="     << std::scientific << std::setprecision(3) << std::setw(10) << Qr[n] 
+	       << " 2*pi/wr =" << std::scientific << std::setprecision(3) << std::setw(10) << Pr[n] 
+	       << " Er0 ="     << std::scientific << std::setprecision(3) << std::setw(10) << Er0[n] 
+	       << std::endl;
 
       inputstring = stream.str();
    }

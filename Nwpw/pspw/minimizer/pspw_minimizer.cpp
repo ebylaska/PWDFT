@@ -5,7 +5,7 @@
 #include	<cstdlib>
 #include	<string>
 #include	<vector>
-using namespace std;
+//
 
 #include        "util_linesearch.hpp"
 #include	"Parallel.hpp"
@@ -49,7 +49,7 @@ namespace pwdft {
  *            pspw_minimizer              *
  *                                        *
  ******************************************/
-int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
+int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -81,21 +81,21 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu1);
    if (oprint)
    {
-      ios_base::sync_with_stdio();
-      cout << "          *****************************************************\n";
-      cout << "          *                                                   *\n";
-      cout << "          *               PWDFT PSPW Calculation              *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
-      cout << "          *  [              C++ implementation             ]  *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *              version #7.00   02/27/21             *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      cout << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *****************************************************\n";
-      cout << "          >>> job started at       " << util_date() << " <<<\n";
+      std::ios_base::sync_with_stdio();
+      std::cout << "          *****************************************************\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *               PWDFT PSPW Calculation              *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
+      std::cout << "          *  [              C++ implementation             ]  *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *              version #7.00   02/27/21             *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *    This code was developed by Eric J. Bylaska,    *\n";
+      std::cout << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *****************************************************\n";
+      std::cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
    //control_read(myrtdb);
@@ -179,40 +179,40 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
    MPI_Barrier(comm_world0);
    if (oprint)
    {
-      cout << "\n";
-      cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
-      cout << "\n";
-      cout << " number of processors used: " << myparallel.np() << "\n";
-      cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) cout << " parallel mapping         : 1d-slab"    << "\n";
-      if (mygrid.maptype==2) cout << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype==3) cout << " parallel mapping         : 2d-hcurve" << "\n";
+      std::cout << "\n";
+      std::cout << "          ==============  summary of input  ==================\n";
+      std::cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      std::cout << "\n";
+      std::cout << " number of processors used: " << myparallel.np() << "\n";
+      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
-         cout << " parallel mapping         : balanced" << "\n";
+         std::cout << " parallel mapping         : balanced" << "\n";
       else
-         cout << " parallel mapping         : not balanced" << "\n";
+         std::cout << " parallel mapping         : not balanced" << "\n";
 
-      cout << "\n options:\n";
-      //cout << "   geometry optimize    = ";
+      std::cout << "\n options:\n";
+      //std::cout << "   geometry optimize    = ";
       //if (control.geometry_optimize() || flag==3)
-      //   cout << "yes\n";
+      //   std::cout << "yes\n";
       //else
-      //   cout << "no\n";
-      cout << "   boundary conditions  = ";
-      if (control.version==3) cout << "periodic\n";
-      if (control.version==4) cout << "aperiodic\n";
+      //   std::cout << "no\n";
+      std::cout << "   boundary conditions  = ";
+      if (control.version==3) std::cout << "periodic\n";
+      if (control.version==4) std::cout << "aperiodic\n";
 
-      cout << "   electron spin        = ";
+      std::cout << "   electron spin        = ";
       if (ispin==1)
-         cout << "restricted\n";
+         std::cout << "restricted\n";
       else
-         cout << "unrestricted\n";
-      cout << myxc;
-      //cout << "   exchange-correlation = ";
-      //cout << "LDA (Vosko et al) parameterization\n";
+         std::cout << "unrestricted\n";
+      std::cout << myxc;
+      //std::cout << "   exchange-correlation = ";
+      //std::cout << "LDA (Vosko et al) parameterization\n";
   
-      //cout << "\n elements involved in the cluster:\n";
+      //std::cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
       //{
       //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
@@ -229,14 +229,14 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       //      printf("%8.3lf",mypsp.rc[ia][ii]);
       //   printf("\n");
       //}
-      cout << mypsp.print_pspall();
+      std::cout << mypsp.print_pspall();
 
       printf("\n total charge:%8.3lf\n", control.total_charge());
 
-      cout << "\n atom composition:" << "\n";
+      std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
-         cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      cout << "\n\n initial ion positions (au):" << "\n";
+         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      std::cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
@@ -245,12 +245,12 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.amu(ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
-      cout << "\n";
+      std::cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
 
-      cout << "\n";
-      cout << " supercell:\n";
+      std::cout << "\n";
+      std::cout << " supercell:\n";
       printf("      volume = %10.2lf\n",mylattice.omega());
       printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
       printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
@@ -269,8 +269,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
 
-      cout << "\n";
-      cout << " ewald parameters:\n";
+      std::cout << "\n";
+      std::cout << " ewald parameters:\n";
       printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
       printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
@@ -278,8 +278,8 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
 
       if (flag > 0) 
       {
-         cout << std::endl;
-         cout << " technical parameters:\n";
+         std::cout << std::endl;
+         std::cout << " technical parameters:\n";
          printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
                 control.time_step(),control.fake_mass());
          printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
@@ -288,32 +288,32 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
          //       control.tolerances(0),control.tolerances(1));
          printf("      max iterations = %10d (%5d inner %5d outer)\n",
                 control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-         if (control.minimizer()==1) cout << "      minimizer = Grassmann conjugate gradient\n";
-         if (control.minimizer()==2) cout << "      minimizer = Grassmann lmbfgs\n";
-         if (control.minimizer()==4) cout << "      minimizer = Stiefel conjugate gradient\n";
-         if (control.minimizer()==5) cout << "      minimizer = scf (potential)\n";
-         if (control.minimizer()==7) cout << "      minimizer = Stiefel lmbfgs\n";
-         if (control.minimizer()==8) cout << "      minimizer = scf (density)\n";
+         if (control.minimizer()==1) std::cout << "      minimizer = Grassmann conjugate gradient\n";
+         if (control.minimizer()==2) std::cout << "      minimizer = Grassmann lmbfgs\n";
+         if (control.minimizer()==4) std::cout << "      minimizer = Stiefel conjugate gradient\n";
+         if (control.minimizer()==5) std::cout << "      minimizer = scf (potential)\n";
+         if (control.minimizer()==7) std::cout << "      minimizer = Stiefel lmbfgs\n";
+         if (control.minimizer()==8) std::cout << "      minimizer = scf (density)\n";
          if ((control.minimizer()==5) || (control.minimizer()==8))
          {
-            cout << std::endl;
-            cout << " Kohn-Sham scf parameters:\n";
-            cout << "     Kohn-Sham algorithm  = conjugate gradient\n";
-            cout << "     SCF algorithm        = simple mixing\n";
-            cout << "     SCF mixing parameter =    x.xxxx\n";
-            cout << "     Kohn-Sham iterations = xxxx\n";
-            if (control.minimizer()==5) cout << "     SCF mixing type      = potential\n";
-            if (control.minimizer()==8) cout << "     SCF mixing type      = density\n";
-            cout << "     Kerker damping       =    x.xxxx\n";
+            std::cout << std::endl;
+            std::cout << " Kohn-Sham scf parameters:\n";
+            std::cout << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            std::cout << "     SCF algorithm        = simple mixing\n";
+            std::cout << "     SCF mixing parameter =    x.xxxx\n";
+            std::cout << "     Kohn-Sham iterations = xxxx\n";
+            if (control.minimizer()==5) std::cout << "     SCF mixing type      = potential\n";
+            if (control.minimizer()==8) std::cout << "     SCF mixing type      = density\n";
+            std::cout << "     Kerker damping       =    x.xxxx\n";
          }
       }
       else
       {
-         cout << std::endl;
-         cout << " technical parameters:\n";
-         cout << "      optimization of psi and densities turned off" << std::endl;
+         std::cout << std::endl;
+         std::cout << " technical parameters:\n";
+         std::cout << "      optimization of psi and densities turned off" << std::endl;
       }
-      cout << std::endl << std::endl << std::endl;
+      std::cout << std::endl << std::endl << std::endl;
    }
    MPI_Barrier(comm_world0);
    if (myparallel.is_master()) seconds(&cpu2);
@@ -408,20 +408,20 @@ int pspw_minimizer(MPI_Comm comm_world0, string& rtdbstring)
       double av = t2/((double ) myelectron.counter);
       //cout.setf(ios::scientific);
       std::cout << std::scientific;
-      cout << "\n";
-      cout << " -----------------"    << "\n";
-      cout << " cputime in seconds"   << "\n";
-      cout << " prologue    : " << t1 << "\n";
-      cout << " main loop   : " << t2 << "\n";
-      cout << " epilogue    : " << t3 << "\n";
-      cout << " total       : " << t4 << "\n";
-      cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
-      cout << "\n";
+      std::cout << "\n";
+      std::cout << " -----------------"    << "\n";
+      std::cout << " cputime in seconds"   << "\n";
+      std::cout << " prologue    : " << t1 << "\n";
+      std::cout << " main loop   : " << t2 << "\n";
+      std::cout << " epilogue    : " << t3 << "\n";
+      std::cout << " total       : " << t4 << "\n";
+      std::cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
+      std::cout << "\n";
 
       nwpw_timing_print_final(myelectron.counter);
 
-      cout << "\n";
-      cout << " >>> job completed at     " << util_date() << " <<<\n";
+      std::cout << "\n";
+      std::cout << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
 

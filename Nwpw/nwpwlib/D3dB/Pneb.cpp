@@ -17,7 +17,7 @@
 #include "blas.h"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /********************************

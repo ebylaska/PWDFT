@@ -3,7 +3,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern double util_double_factorial(const int);
 extern void util_gauss_weights(const double, const double, double *, double *, const int);

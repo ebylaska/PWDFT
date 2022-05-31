@@ -9,14 +9,14 @@
 #include        <cmath>
 #include        "blas.h"
 
-using namespace std;
+
 
 
 #include        "util.hpp"
 #include        "Paw_gaunt.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*******************************************
  *                                         *
@@ -134,8 +134,8 @@ static double gaunt_sub_real(const int l1, const int m1, const int l2, const int
       }
       n = newn;
    }
-   int tp = (abs(mm[0])==(abs(mm[1])+abs(mm[2])) );
-   int tm = (abs(mm[0])==abs((abs(mm[1])-abs(mm[2]))) );
+   int tp = (std::abs(mm[0])==(std::abs(mm[1])+abs(mm[2])) );
+   int tm = (std::abs(mm[0])==abs((std::abs(mm[1])-abs(mm[2]))) );
 
    if ((mm[0]>0)       && (mm[1]>0)  && (mm[2]>0) && tp)
       coeff = piover2;
@@ -322,8 +322,8 @@ double Paw_gaunt::gaunt2(const int l1, const int m1, const int l2, const int m2,
          }
          n = newn;
       }
-      int tp = (abs(mm[0])==(abs(mm[1])+abs(mm[2])) );
-      int tm = (abs(mm[0])==abs((abs(mm[1])-abs(mm[2]))) );
+      int tp = (std::abs(mm[0])==(std::abs(mm[1])+abs(mm[2])) );
+      int tm = (std::abs(mm[0])==abs((std::abs(mm[1])-abs(mm[2]))) );
 
       if ((mm[0]>0)       && (mm[1]>0)  && (mm[2]>0) && tp)
          coeff = piover2;
@@ -454,8 +454,8 @@ double Paw_gaunt::gaunt3(const int l1, const int m1, const int l2, const int m2,
          }
          n = newn;
       }
-      int tp = (abs(mm[0])==(abs(mm[1])+abs(mm[2])) );
-      int tm = (abs(mm[0])==abs((abs(mm[1])-abs(mm[2]))) );
+      int tp = (std::abs(mm[0])==(std::abs(mm[1])+abs(mm[2])) );
+      int tm = (std::abs(mm[0])==abs((std::abs(mm[1])-abs(mm[2]))) );
 
       if ((mm[0]>0)       && (mm[1]>0)  && (mm[2]>0) && tp)
          coeff = piover2;

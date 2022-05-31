@@ -17,7 +17,7 @@
 #include	<cmath>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 static std::map<std::string, std::vector<double> > rcovalent = { 
@@ -146,10 +146,10 @@ static std::map<std::string, std::vector<double> > rcovalent = {
 double ion_bond_order(std::vector<double> rc1, std::vector<double> rc2, double r12)
 { 
    double dd     = 0.0001;
-   double cov[4] = {abs(r12-(rc1[0]+rc2[0]))/(rc1[0]+rc2[0]+dd),
-                    abs(r12-(rc1[1]+rc2[1]))/(rc1[1]+rc2[1]+dd),
-                    abs(r12-(rc1[2]+rc2[2]))/(rc1[2]+rc2[2]+dd),
-                    abs(r12-(rc1[3]+rc2[3]))/(rc1[3]+rc2[3]+dd)};
+   double cov[4] = {std::abs(r12-(rc1[0]+rc2[0]))/(rc1[0]+rc2[0]+dd),
+     std::abs(r12-(rc1[1]+rc2[1]))/(rc1[1]+rc2[1]+dd),
+     std::abs(r12-(rc1[2]+rc2[2]))/(rc1[2]+rc2[2]+dd),
+     std::abs(r12-(rc1[3]+rc2[3]))/(rc1[3]+rc2[3]+dd)};
    int imin = 0;
    double dmin = cov[0];
    if (cov[1]<dmin) {

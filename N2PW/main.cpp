@@ -4,7 +4,7 @@
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 
 extern int cpsd(int argc, char *argv[]);

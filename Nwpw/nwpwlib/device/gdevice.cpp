@@ -1,17 +1,12 @@
 #include "gdevices.hpp"
 
+//using namespace pwdft;
 namespace pwdft {
-using namespace pwdft;
 
 static Gdevices mygdevice;
 
 #ifdef NWPW_SYCL
-#include        <cstdio>
-#include        <iostream>
-#include        <limits>
-#include        <oneapi/mkl.hpp>
-
-cl::sycl::queue* get_syclQue() {
+sycl::queue* get_syclQue() {
   return mygdevice.device_queue;
 }
 #endif // NWPW_SYCL
@@ -109,5 +104,3 @@ void gdevice_batch_cfftz(bool forward,int nz,int nq,int n2ft3d,double *a)
 }
 
 }
-
-

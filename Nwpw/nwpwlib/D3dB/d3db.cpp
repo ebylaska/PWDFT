@@ -19,7 +19,7 @@
 #include <math.h>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /********************************
  *                              *

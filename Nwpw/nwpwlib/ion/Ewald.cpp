@@ -11,14 +11,14 @@
 #include        <cmath>
 #include        <cstdlib>
 
-using namespace std;
+
 
 #include	"Control2.hpp"
 #include	"Ewald.hpp"
 //#include	"Pseudopotential.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*************************************
  *                                   *

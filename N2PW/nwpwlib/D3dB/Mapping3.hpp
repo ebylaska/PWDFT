@@ -5,7 +5,7 @@
 
 	this class is used defining 3d parallel maps
 */
-using namespace std;
+
 
 
 class Mapping3 {

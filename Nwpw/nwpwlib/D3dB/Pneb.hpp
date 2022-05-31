@@ -1,5 +1,3 @@
-#ifndef _PNEB_H_
-#define _PNEB_H_
 /* Pneb.h
    Author - Eric Bylaska
 */
@@ -17,7 +15,7 @@
 #include	"nwpw_timing.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class Pneb : public PGrid, public d1db  {
 
@@ -133,5 +131,3 @@ public:
 
 };
 }
-
-#endif

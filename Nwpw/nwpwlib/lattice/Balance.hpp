@@ -7,7 +7,7 @@
 
 #include	"Parallel.hpp"
 namespace pwdft {
-using namespace pwdft;
+
 
 #define	MAXSIZE_MAX	2
 

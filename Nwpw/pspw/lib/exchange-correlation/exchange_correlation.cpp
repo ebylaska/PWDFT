@@ -45,7 +45,7 @@
 #include	"exchange_correlation.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /* Constructors */
 

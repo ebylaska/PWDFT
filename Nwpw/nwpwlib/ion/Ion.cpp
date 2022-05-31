@@ -1,4 +1,4 @@
-/* Ions.C - 
+/* Ions.C -
    Author - Eric Bylaska
 */
 
@@ -8,7 +8,7 @@
 #include        <cmath>
 #include        <cstdlib>
 #include	<cstring>
-using namespace std;
+
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -17,7 +17,7 @@ using json = nlohmann::json;
 #include	"Ion.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /*******************************
@@ -186,7 +186,7 @@ static void ion_find_atomkatmnatm(RTDB& myrtdb, const int nion, const int nkatm,
  *          Ion::Ion             *
  *                               *
  *********************************/
-Ion::Ion(RTDB& myrtdb, Control2& control) 
+Ion::Ion(RTDB& myrtdb, Control2& control)
 {
 
    int matype,nelem,ii,i,j,found;
@@ -216,11 +216,11 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    ion_find_atomkatmnatm(myrtdb,nion,nkatm,atomarray,katm,natm);
 
    /*  read in ion positions */
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion1)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion1))
    { rion1[0] = 0.0; rion1[1] = 0.0; rion1[2] = 0.0; }
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion2)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion2))
    { rion2[0] = 0.0; rion2[1] = 0.0; rion2[2] = 0.0; }
-   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion0)) 
+   if (!myrtdb.get("geometry:geometry:coords",rtdb_double,3*nion,rion0))
    { rion0[0] = 0.0; rion0[1] = 0.0; rion0[2] = 0.0; }
 
    /*  read in masses and charges */
@@ -235,13 +235,13 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
 
 }
 
-Ion::Ion(string rtdbstring, Control2& control) 
+Ion::Ion(std::string rtdbstring, Control2& control)
 {
    double amu_to_mass = 1822.89;
 
    auto rtdbjson =  json::parse(rtdbstring);
 
-   string geomname = "geometry";
+   std::string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
@@ -251,7 +251,7 @@ Ion::Ion(string rtdbstring, Control2& control)
 
    auto symbols = geomjson["symbols"];
 
-   vector<string> tmpsymbols;
+   std::vector<std::string> tmpsymbols;
    for (auto i=0; i<symbols.size(); ++i)
    {
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
@@ -301,7 +301,7 @@ Ion::Ion(string rtdbstring, Control2& control)
       fion1[3*i+2] = 0.0;
 
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
-      if (match != end(tmpsymbols)) 
+      if (match != end(tmpsymbols))
       {
          auto ia = std::distance( begin(tmpsymbols),match);
          katm[i] = ia;
@@ -310,7 +310,7 @@ Ion::Ion(string rtdbstring, Control2& control)
    }
 
 
-   // generate random initial velocities  (temperature, seed) - only set with random velocities if seed > 0 
+   // generate random initial velocities  (temperature, seed) - only set with random velocities if seed > 0
    seed = -1;
    Tf   = -1.0;
    double vgx,vgy,vgz,rr0,rr1,rr2,rr3,rr4,rr5;
@@ -374,7 +374,7 @@ Ion::Ion(string rtdbstring, Control2& control)
       for (auto i=0; i<(3*nion); ++i) rion0[i] *= Tscale;
 
    }
- 
+
    // generate initial kinetic energies
    ekg  = ke_com();
    eki0 = ke();
@@ -422,6 +422,7 @@ Ion::Ion(string rtdbstring, Control2& control)
    if (g_dof<1) g_dof = 1.0;
 
 
+
 /*  DEBUG CHECK
    std::cout << "NION=" << nion << std::endl;
    std::cout << "NKATM=" << nkatm << std::endl;
@@ -444,24 +445,24 @@ Ion::Ion(string rtdbstring, Control2& control)
  *                             *
  *******************************/
 
-void Ion::writejsonstr(string& rtdbstring) 
+void Ion::writejsonstr(std::string& rtdbstring)
 {
    auto rtdbjson =  json::parse(rtdbstring);
 
-   string geomname = "geometry";
+   std::string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
    // write coordinates
-   vector<double> coords;
+   std::vector<double> coords;
    for (auto i=0; i<(3*nion); ++i)
       coords.push_back(rion1[i]);
    rtdbjson["geometries"][geomname]["coords"] = coords;
 
    // write velocities and ke running averages
-   if (ke_count>0) 
+   if (ke_count>0)
    {
-      vector<double> vcoords;
+     std::vector<double> vcoords;
       for (auto i=0; i<(3*nion); ++i)
          vcoords.push_back(rion0[i]);
       rtdbjson["geometries"][geomname]["velocities"] = vcoords;

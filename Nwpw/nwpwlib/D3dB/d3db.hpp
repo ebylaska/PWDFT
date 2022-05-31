@@ -1,5 +1,3 @@
-#ifndef _D3dB_H_
-#define _D3dB_H_
 /* d3db.h
    Author - Eric Bylaska
 
@@ -15,7 +13,7 @@
 #include <sstream>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class d3db : public Mapping3 {
 
@@ -115,5 +113,3 @@ public:
 
 };
 }
-
-#endif

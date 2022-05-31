@@ -6,7 +6,7 @@
 */
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void cwrite(const int, char *, const int);
 extern void cread(const int, char *, const int);

@@ -6,7 +6,7 @@
 
 #include        <iostream>
 #include        <cstdlib>
-using namespace std;
+
 
 
 #include	"Int64.h"

@@ -8,7 +8,7 @@
 #include	"mpi.h"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 #define	MASTER	0
 

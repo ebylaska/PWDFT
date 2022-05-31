@@ -4,7 +4,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void util_gaunt_init(const bool, const int);
 extern void util_gaunt_end();

@@ -2,7 +2,7 @@
 #define _PBEsol_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_PBEsol_BW_unrestricted(const int, 
                                       double *, double *,

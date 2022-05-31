@@ -10,7 +10,7 @@
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 */
 
 #include	"Parallel.hpp"
@@ -19,7 +19,7 @@ using namespace std;
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /********************************
  *                              *

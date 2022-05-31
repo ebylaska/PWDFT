@@ -4,7 +4,7 @@
 #include	<cmath>
 #include	<cstdlib>
 #include	<string>
-using namespace std;
+
 
 #include	"Parallel.hpp"
 //#include	"control.hpp"
@@ -34,14 +34,14 @@ using namespace std;
 using json = nlohmann::json;
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /******************************************
  *                                        *
  *                cpsd                    *
  *                                        *
  ******************************************/
-int cpsd(MPI_Comm comm_world0, string& rtdbstring)
+int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -72,21 +72,21 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu1);
    if (oprint)
    {
-      ios_base::sync_with_stdio();
-      cout << "          *****************************************************\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     Car-Parrinello calculation for molecules,     *\n";
-      cout << "          *       microclusters, liquids, and materials       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     [     steepest descent minimization   ]       *\n";
-      cout << "          *     [          C++ implementation         ]       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *            version #7.00   09/20/18               *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *    This code was developed by Eric J. Bylaska     *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *****************************************************\n";
-      cout << "          >>> job started at       " << util_date() << " <<<\n";
+      std::ios_base::sync_with_stdio();
+      std::cout << "          *****************************************************\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     Car-Parrinello calculation for molecules,     *\n";
+      std::cout << "          *       microclusters, liquids, and materials       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     [     steepest descent minimization   ]       *\n";
+      std::cout << "          *     [          C++ implementation         ]       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *            version #7.00   09/20/18               *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *    This code was developed by Eric J. Bylaska     *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *****************************************************\n";
+      std::cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
    //control_read(myrtdb);
@@ -115,11 +115,11 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 /*
    if (myparallel.is_master()) 
    { 
-       cout << endl;
-       cout << "total_ion_charge = " << myion.total_zv() << endl;
-       cout << "ispin = " << control.ispin() << endl;
-       cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
-       cout << "ne = " << control.ne_ptr()[0] << " " << control.ne_ptr()[1] << endl;
+       std::cout << endl;
+       std::cout << "total_ion_charge = " << myion.total_zv() << endl;
+       std::cout << "ispin = " << control.ispin() << endl;
+       std::cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
+       std::cout << "ne = " << control.ne_ptr()[0] << " " << control.ne_ptr()[1] << endl;
    }
 */
 
@@ -186,41 +186,41 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
    if (oprint)
    {
-      cout << "\n";
-      cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
-      cout << "\n";
-      cout << " number of processors used: " << myparallel.np() << "\n";
-      cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) cout << " parallel mapping         : 1d-slab"    << "\n";
-      if (mygrid.maptype==2) cout << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype==3) cout << " parallel mapping         : 2d-hcurve" << "\n";
+      std::cout << "\n";
+      std::cout << "          ==============  summary of input  ==================\n";
+      std::cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      std::cout << "\n";
+      std::cout << " number of processors used: " << myparallel.np() << "\n";
+      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
-         cout << " parallel mapping         : balanced" << "\n";
+         std::cout << " parallel mapping         : balanced" << "\n";
       else
-         cout << " parallel mapping         : not balanced" << "\n";
+         std::cout << " parallel mapping         : not balanced" << "\n";
 
-      cout << "\n options:\n";
-      cout << "   ion motion           = ";
+      std::cout << "\n options:\n";
+      std::cout << "   ion motion           = ";
       if (control.geometry_optimize())
-         cout << "yes\n";
+         std::cout << "yes\n";
       else
-         cout << "no\n";
-      cout << "   boundary conditions  = ";
-      if (control.version==3) cout << "periodic\n";
-      if (control.version==4) cout << "aperiodic\n";
+         std::cout << "no\n";
+      std::cout << "   boundary conditions  = ";
+      if (control.version==3) std::cout << "periodic\n";
+      if (control.version==4) std::cout << "aperiodic\n";
 
-      cout << "   electron spin        = ";
+      std::cout << "   electron spin        = ";
       if (ispin==1)
-         cout << "restricted\n";
+         std::cout << "restricted\n";
       else
-         cout << "unrestricted\n";
-      cout << myxc;
-      //cout << "   exchange-correlation = ";
-      //cout << "LDA (Vosko et al) parameterization\n";
-      cout << myxc;
+         std::cout << "unrestricted\n";
+      std::cout << myxc;
+      //std::cout << "   exchange-correlation = ";
+      //std::cout << "LDA (Vosko et al) parameterization\n";
+      std::cout << myxc;
   
-      //cout << "\n elements involved in the cluster:\n";
+      //std::cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
       //{
       //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
@@ -237,14 +237,14 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       //      printf("%8.3lf",mypsp.rc[ia][ii]);
       //   printf("\n");
       //}
-      cout << mypsp.print_pspall();
+      std::cout << mypsp.print_pspall();
 
       printf("\n total charge:%8.3lf\n", control.total_charge());
 
-      cout << "\n atom composition:" << "\n";
+      std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
-         cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      cout << "\n\n initial ion positions (au):" << "\n";
+         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      std::cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
@@ -253,12 +253,12 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
                                                myion.amu(ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
-      cout << "\n";
+      std::cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
 
-      cout << "\n";
-      cout << " supercell:\n";
+      std::cout << "\n";
+      std::cout << " supercell:\n";
       printf("      volume : %10.2lf\n",mylattice.omega());
       printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
       printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
@@ -276,8 +276,8 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
 
-      cout << "\n";
-      cout << " ewald parameters:\n";
+      std::cout << "\n";
+      std::cout << " ewald parameters:\n";
       printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
              myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
       printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
@@ -285,15 +285,15 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 
 
 
-      cout << "\n";
-      cout << " technical parameters:\n";
+      std::cout << "\n";
+      std::cout << " technical parameters:\n";
       printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
              control.time_step(),control.fake_mass());
       printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
              control.tolerances(0),control.tolerances(1),control.tolerances(2));
       printf("      max iterations = %10d (%5d inner %5d outer)\n",
              control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      cout << "\n\n\n";
+      std::cout << "\n\n\n";
 
 
 
@@ -305,10 +305,10 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu2);
    if (oprint) 
    {
-      cout << "     ========================== iteration ==========================\n";
-      cout << "          >>> iteration started at " << util_date() << "  <<<\n";
-      cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      cout << "     ---------------------------------------------------------------\n";
+      std::cout << "     ========================== iteration ==========================\n";
+      std::cout << "          >>> iteration started at " << util_date() << "  <<<\n";
+      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
+      std::cout << "     ---------------------------------------------------------------\n";
    }
    done   = 0;
    icount = 0;
@@ -331,27 +331,27 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       {
          done = 1;
          if (oprint)
-            cout << "         *** Energy going up. iteration terminated\n";
+            std::cout << "         *** Energy going up. iteration terminated\n";
       }
-      else if ((fabs(deltae)<control.tolerances(0)) &&
+      else if ((std::fabs(deltae)<control.tolerances(0)) &&
                (deltac      <control.tolerances(1)) &&
                (deltar      <control.tolerances(2)))
       {
          done = 1;
          if (oprint)
-            cout << "         *** tolerance ok.    iteration terminated\n";
+            std::cout << "         *** tolerance ok.    iteration terminated\n";
       }
       else if (icount>=control.loop(1))
       {
          done = 1;
          if (oprint)
-            cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
+            std::cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
       }
    }
    if (myparallel.is_master()) seconds(&cpu3);
    if (oprint) 
    {
-      cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
+      std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
    }
 
 
@@ -382,9 +382,9 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 //                  |***************************|
    if (oprint) 
    {
-      cout << "\n\n";
-      cout << "          =============  summary of results  =================\n";
-      cout << "\n final ion positions (au):" << "\n";
+      std::cout << "\n\n";
+      std::cout << "          =============  summary of results  =================\n";
+      std::cout << "\n final ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion1[3*ii],
@@ -394,14 +394,14 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
-      if (mypsp.myapc->v_apc_on)
-         cout << mypsp.myapc->shortprint_APC();
+      //if (mypsp.myapc->v_apc_on)
+      //   std::cout << mypsp.myapc->shortprint_APC();
 
-      cout << "\n\n";
-      cout << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << en[0]
-                                           << "  down= " << setw(11) << setprecision(5) << en[ispin]
-                                           << " (real space)";
-      cout << "\n\n";
+      std::cout << "\n\n";
+      std::cout << std::fixed << " number of electrons: spin up= " << std::setw(11) << std::setprecision(5) << en[0]
+		<< "  down= " << std::setw(11) << std::setprecision(5) << en[ispin]
+		<< " (real space)";
+      std::cout << "\n\n";
       printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
       printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
@@ -434,7 +434,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
          printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
          printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
-      cout << std::endl;
+      std::cout << std::endl;
 
       // write APC analysis
       if (mypsp.myapc->apc_on)
@@ -487,7 +487,7 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) control.loop(0)*icount);
-      //cout.setf(ios::scientific);
+      //std::cout.setf(ios::scientific);
       std::cout << std::scientific;
       std::cout << std::endl;
       std::cout << " -----------------"    << std::endl;

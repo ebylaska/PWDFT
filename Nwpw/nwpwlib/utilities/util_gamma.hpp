@@ -2,7 +2,7 @@
 #define _UTIL_GAMMA_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern double util_ln_gamma(const double);
 extern double util_gamma(const double);

@@ -18,7 +18,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class nwpw_Nose_Hoover {
 
@@ -229,7 +229,7 @@ public:
       return esum;
    }
 
-   void writejsonstr(string&);
+   void writejsonstr(std::string&);
 
    std::string inputprint();
    std::string thermostatprint();

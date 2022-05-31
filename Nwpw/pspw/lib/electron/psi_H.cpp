@@ -5,7 +5,7 @@
 #include        "Pseudopotential.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*************************************
  *                                   *

@@ -5,7 +5,7 @@
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 */
 
 #include        <cstring> //memset
@@ -23,7 +23,7 @@ using namespace std;
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*****************************************************
  *                                                   *
@@ -336,7 +336,7 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
    double sum1  = mypneb->ne[0] + mypneb->ne[1];
 
    if ((mypneb->ispin)==1) sum1 *= 2;
-   if (fabs(sum2-sum1)>1.0e-10)
+   if (std::fabs(sum2-sum1)>1.0e-10)
    {
       if (myparall->base_stdio_print)
          std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
@@ -347,7 +347,7 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
          std::cout << "         - exact norm = " << sum1 
                    << " norm="           << sum2
                    << " corrected norm=" << sum3 
-                   << " (error=" << abs(sum2-sum1) << ")" << std::endl;
+                   << " (error=" << std::abs(sum2-sum1) << ")" << std::endl;
    }
 
    return newpsi;

@@ -1,25 +1,16 @@
 
-#include	<string>
-#include	<cstring>
-#include	<iostream>
-#include	<cstdio>
-#include	<cstdlib>
-#include	<cmath>
-
 #include	"parsestring.hpp"
 
 extern "C" {
 #include        "pseudopotential.h"
 }
 
-using namespace std;
+
 
 #include	"NwpwLibrarypsConfig.hpp"
 #include	"psp_library.hpp"
 
 namespace pwdft {
-using namespace pwdft;
-
 
 static int convert_psp_type(char *test)
 {
@@ -126,7 +117,7 @@ psp_library::psp_library(Control2& control)
           nwpw_libraryps_dir = libraryps0;
    }
    default_library    = "pspw_default";
-   nwpw_permanent_dir = string(control.permanent_dir());
+   nwpw_permanent_dir = std::string(control.permanent_dir());
 
    for (auto const& x : control.psp_libraries)
       libraries[x.first] = x.second;
@@ -307,7 +298,7 @@ void psp_library::psp_generator_auto(const char *atom, Control2& control)
  *        psp_library::psp_libname         *
  *                                         *
  *******************************************/
-string psp_library::psp_libname(const char *atom)
+std::string psp_library::psp_libname(const char *atom)
 {
 
    /* filename of psp file for atom */
@@ -395,6 +386,3 @@ double psp_library::psp_rlocal(const char *atom)
 }
 
 }
-
-
-

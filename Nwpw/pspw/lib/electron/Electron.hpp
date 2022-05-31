@@ -1,8 +1,4 @@
-#ifndef	_ELECTRON_HPP_
-#define _ELECTRON_HPP_
-
-
-using namespace std;
+#pragma once
 
 #include	"Pneb.hpp"
 #include	"Kinetic.hpp"
@@ -12,7 +8,7 @@ using namespace std;
 #include	"Pseudopotential.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class	Electron_Operators {
 
@@ -87,5 +83,3 @@ public:
 };
 
 }
-
-#endif

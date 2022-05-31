@@ -14,7 +14,7 @@
 #include        "nwpw_Nose_Hoover.hpp"
 #include	"Strfac.hpp"
 #include        "Pseudopotential.hpp"
-using namespace pwdft;
+
 
 namespace pwdft {
 extern void inner_loop_md(const bool, double *, Control2&, Pneb *, Ion *, nwpw_Nose_Hoover *,

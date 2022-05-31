@@ -9,7 +9,7 @@
 #include	<cmath>
 #include        "blas.h"
 
-using namespace std;
+
 
 
 #include	"Parallel.hpp"
@@ -17,7 +17,7 @@ using namespace std;
 #include	"Psp1d_pawppv1.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 #define FMT1    "%lf"
@@ -400,7 +400,7 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    }
 
    // **** compute the core_ion_energy = ecorez + ecorecore ****
-   if (abs(zion-zv)> 1.0e-9)
+   if (std::abs(zion-zv)> 1.0e-9)
    {
       double ecorez    = util_log_coulomb0_energy(core_ae,zion-zv,rgrid,n1dgrid,log_amesh,zion);
       double ecorecore = util_log_coulomb_energy(core_ae, zion-zv,rgrid,n1dgrid,log_amesh);

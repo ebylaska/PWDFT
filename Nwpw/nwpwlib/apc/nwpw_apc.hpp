@@ -22,7 +22,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class nwpw_apc {
 

@@ -5,7 +5,7 @@
 #include        <cmath>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /* Density cutoff parameters */

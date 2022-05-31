@@ -1,9 +1,6 @@
-#ifndef	_PSEUDOPOTENTIAL_H_
-#define _PSEUDOPOTENTIAL_H_
-
-using namespace std;
-
 #pragma once
+
+//
 
 #include        "gdevice.hpp"
 #include	"Control2.hpp"
@@ -200,5 +197,3 @@ public:
 };
  
 }
-
-#endif

@@ -9,7 +9,7 @@
 #include <OpenCL/opencl.h>
 
 #else
-#include <CL/cl.h>
+#include <sycl/cl.h>
 #endif
 
 #define MAX_SOURCE_SIZE (0x100000)

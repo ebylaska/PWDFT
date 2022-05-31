@@ -6,7 +6,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 char *util_date()
 {

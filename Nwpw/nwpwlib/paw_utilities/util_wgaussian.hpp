@@ -8,7 +8,7 @@
 #include        <cmath>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern double util_WGaussian(const int, const int, const double, const int, const int, const double, const double *);
 extern void util_dWGaussian(const int, const int, const double, const int, const int, const double, const double *, double&, double *);

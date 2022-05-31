@@ -14,7 +14,7 @@
 #include	"Balance.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class PGrid : public d3db {
 

@@ -9,7 +9,7 @@
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /* datatypes */

@@ -14,7 +14,7 @@
 #include	"Electron.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /********************************************
  *                                          *

@@ -12,7 +12,7 @@
 #include	"Strfac.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /* Constructors */

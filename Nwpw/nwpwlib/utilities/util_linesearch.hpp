@@ -2,7 +2,7 @@
 #define _UTIL_LINESEARCH_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void util_linesearch_init();
 extern void util_linesearch_maxiter_set(const int);

@@ -3,9 +3,9 @@
 */
 
 /*
-using namespace std;
 
-#include	<string.h>
+
+#include	<string>
 #include        <iostream>
 #include        <cstdio>
 #include        <stdio.h>

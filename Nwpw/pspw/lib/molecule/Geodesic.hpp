@@ -50,8 +50,8 @@ public:
       double mmsig=9.99e9;
       double msig =0.0;
       for (int i=0; i<neall; ++i) {
-         if (fabs(S[i])>msig)   msig = fabs(S[i]);
-         if (fabs(S[i])<mmsig) mmsig = fabs(S[i]);
+         if (std::fabs(S[i])>msig)   msig = fabs(S[i]);
+         if (std::fabs(S[i])<mmsig) mmsig = fabs(S[i]);
       }
       *max_sigma = msig;
       *min_sigma = mmsig;
@@ -97,7 +97,7 @@ public:
        double sum2  = mygrid->gg_traceall(Ynew,Ynew);
        double sum1  = mygrid->ne[0] + mygrid->ne[1];
        if ((mygrid->ispin)==1) sum1 *= 2;
-       if (fabs(sum2-sum1)>1.0e-10)
+       if (std::fabs(sum2-sum1)>1.0e-10)
        {
           //if (myparall->is_master()) std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
           //std::cout << " Warning - Gram-Schmidt being performed on psi2, t=" 

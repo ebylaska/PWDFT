@@ -7,7 +7,7 @@
 #include	"Balance.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 void nwave2_sort(const int n,  const int *f, int *indx)
 {

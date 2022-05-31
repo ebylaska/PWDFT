@@ -7,7 +7,7 @@
 #include        "Pneb.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class   XC_Operator {
 
@@ -16,7 +16,7 @@ class   XC_Operator {
    double *xtmp;
    double *rho,*grx,*gry,*grz,*agr,*fn,*fdn;
 
-   string xc_name;
+   std::string xc_name;
    int  gga;
    bool use_lda,use_gga,use_mgga;
 
@@ -45,7 +45,7 @@ public:
    void v_exc_all(int, double *, double *, double *);
 
 
-   friend ostream& operator<<(ostream& os, const XC_Operator& xc) {
+   friend std::ostream& operator<<(std::ostream& os, const XC_Operator& xc) {
       os << "   exchange-correlation = ";
       if (xc.gga==0)  os << "LDA (Vosko et al) parameterization\n";
       if (xc.gga==10) os << "PBE96 (White and Bird) parameterization\n";
@@ -71,6 +71,6 @@ public:
 
 };
 
-}
+} // namespace pwdft
 
-#endif
+#endif // _EXCHANGE_CORRELATION_H_

@@ -4,7 +4,7 @@
 #include	<cmath>
 #include	<cstdlib>
 #include	<string>
-using namespace std;
+
 
 
 #include	"Parallel.hpp"
@@ -33,7 +33,7 @@ using json = nlohmann::json;
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /******************************************
@@ -41,7 +41,7 @@ using namespace pwdft;
  *                 cpmd                   *
  *                                        *
  ******************************************/
-int cpmd(MPI_Comm comm_world0, string& rtdbstring)
+int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -75,22 +75,22 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu1);
    if (oprint)
    {
-      ios_base::sync_with_stdio();
-      cout << "          *****************************************************\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     Car-Parrinello calculation for molecules,     *\n";
-      cout << "          *       microclusters, liquids, and materials       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     [     extended Lagrangian molecular   ]       *\n";
-      cout << "          *     [        dynamics simulation          ]       *\n";
-      cout << "          *     [          C++ implementation         ]       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *            version #7.00   03/20/20               *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *    This code was developed by Eric J. Bylaska     *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *****************************************************\n";
-      cout << "          >>> job started at       " << util_date() << " <<<\n";
+      std::ios_base::sync_with_stdio();
+      std::cout << "          *****************************************************\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     Car-Parrinello calculation for molecules,     *\n";
+      std::cout << "          *       microclusters, liquids, and materials       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     [     extended Lagrangian molecular   ]       *\n";
+      std::cout << "          *     [        dynamics simulation          ]       *\n";
+      std::cout << "          *     [          C++ implementation         ]       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *            version #7.00   03/20/20               *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *    This code was developed by Eric J. Bylaska     *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *****************************************************\n";
+      std::cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
    Lattice mylattice(control);
@@ -119,7 +119,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    sum2  = mygrid.gg_traceall(psi2,psi2);
    sum1  = ne[0]+ne[1];
    if (ispin==1) sum1 *= 2;
-   if (fabs(sum2-sum1)>1.0e-10)
+   if (std::fabs(sum2-sum1)>1.0e-10)
    {
       if (oprint)
          printf("Warning: Gram-Schmidt Being performed on psi2\n");
@@ -215,36 +215,36 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
 
    if (oprint)
    {
-      cout << "\n\n";
-      cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename:  " << control.input_movecs_filename() << "\n";
-      cout << " input vpsi filename: " << control.input_v_movecs_filename() << "\n";
-      cout << "\n";
-      cout << " number of processors used: " << myparallel.np() << "\n";
-      cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) cout << " parallel mapping         : 1d-slab"    << "\n";
-      if (mygrid.maptype==2) cout << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype==3) cout << " parallel mapping         : 2d-hcurve" << "\n";
+      std::cout << "\n\n";
+      std::cout << "          ==============  summary of input  ==================\n";
+      std::cout << "\n input psi filename:  " << control.input_movecs_filename() << "\n";
+      std::cout << " input vpsi filename: " << control.input_v_movecs_filename() << "\n";
+      std::cout << "\n";
+      std::cout << " number of processors used: " << myparallel.np() << "\n";
+      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
-         cout << " parallel mapping         : balanced" << "\n";
+         std::cout << " parallel mapping         : balanced" << "\n";
       else
-         cout << " parallel mapping         : not balanced" << "\n";
+         std::cout << " parallel mapping         : not balanced" << "\n";
 
-      cout << "\n options:\n";
-      cout << "   ion motion           = ";
-      cout << "yes\n";
-      cout << "   boundary conditions  = ";
-      if (control.version==3) cout << "periodic\n";
-      if (control.version==4) cout << "aperiodic\n";
+      std::cout << "\n options:\n";
+      std::cout << "   ion motion           = ";
+      std::cout << "yes\n";
+      std::cout << "   boundary conditions  = ";
+      if (control.version==3) std::cout << "periodic\n";
+      if (control.version==4) std::cout << "aperiodic\n";
 
-      cout << "   electron spin        = ";
+      std::cout << "   electron spin        = ";
       if (ispin==1)
-         cout << "restricted\n";
+         std::cout << "restricted\n";
       else
-         cout << "unrestricted\n";
-      cout << myxc;
+         std::cout << "unrestricted\n";
+      std::cout << myxc;
   
-      //cout << "\n elements involved in the cluster:\n";
+      //std::cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
       //{
       //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
@@ -261,14 +261,14 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       //      printf("%8.3lf",mypsp.rc[ia][ii]);
       //   printf("\n");
       //}
-      cout << mypsp.print_pspall();
+      std::cout << mypsp.print_pspall();
 
       printf("\n total charge:%8.3lf\n", control.total_charge());
 
-      cout << "\n atom composition:" << "\n";
+      std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
-         cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      cout << "\n\n initial position of ions (au):" << "\n";
+         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      std::cout << "\n\n initial position of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
                                                myion.rion(0,ii),
@@ -278,7 +278,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
 
-      cout << "\n\n initial velocity of ions (au):" << "\n";
+      std::cout << "\n\n initial velocity of ions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
          printf("%4d %s\t( %10.5lf %10.5lf %10.5lf )\n",ii+1,myion.symbol(ii),
                                                myion.vion(0,ii),
@@ -288,12 +288,12 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
       printf(" number of constraints = %6d ( DOF = %6d )\n", 0,myion.ndof());
 
-      cout << "\n";
+      std::cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
              mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
 
-      cout << "\n";
-      cout << " supercell:\n";
+      std::cout << "\n";
+      std::cout << " supercell:\n";
       printf("      volume : %10.2lf\n",mylattice.omega());
       printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
       printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
@@ -439,7 +439,7 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu3);
    if (oprint) 
    {
-      cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
+     std::cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
    }
 // *******************  end of iteration loop  ***********************
 
@@ -545,8 +545,8 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       }
 
       std::cout << std::endl << std::endl;
-      //cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
-      //cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
+      //std::cout << "\n output psi filename:  " << control.output_movecs_filename() << "\n";
+      //std::cout << " output vpsi filename: " << control.output_v_movecs_filename() << "\n";
    }
 
 
@@ -601,16 +601,16 @@ int cpmd(MPI_Comm comm_world0, string& rtdbstring)
       double av = t2/((double ) control.loop(0)*icount);
       //cout.setf(ios::scientific);
       std::cout << std::scientific;
-      cout << "\n";
-      cout << " -----------------"    << "\n";
-      cout << " cputime in seconds"   << "\n";
-      cout << " prologue    : " << t1 << "\n";
-      cout << " main loop   : " << t2 << "\n";
-      cout << " epilogue    : " << t3 << "\n";
-      cout << " total       : " << t4 << "\n";
-      cout << " cputime/step: " << av << "\n";
-      cout << "\n";
-      cout << " >>> job completed at     " << util_date() << " <<<\n";
+      std::cout << "\n";
+      std::cout << " -----------------"    << "\n";
+      std::cout << " cputime in seconds"   << "\n";
+      std::cout << " prologue    : " << t1 << "\n";
+      std::cout << " main loop   : " << t2 << "\n";
+      std::cout << " epilogue    : " << t3 << "\n";
+      std::cout << " total       : " << t4 << "\n";
+      std::cout << " cputime/step: " << av << "\n";
+      std::cout << "\n";
+      std::cout << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
 

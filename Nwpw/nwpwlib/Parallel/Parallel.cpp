@@ -5,7 +5,7 @@
 
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include	"mpi.h"
 #include	"Parallel.hpp"
@@ -14,7 +14,7 @@ using namespace std;
 #define	MASTER 0
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /********************************
  *                              *
