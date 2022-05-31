@@ -274,12 +274,12 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
    std::copy(vv.begin(),vv.end(), qion);
 
-   //std::cout << taskid << " EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
+   std::cout << " pwdft EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
 
 
    // pre-remove qm/qm electrostatic interactions
    double ecoul = pwdft::ion_ion_e(nion,qion,rion);
-   //std::cout << taskid << " QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+   //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
    *E -= ecoul;
    pwdft::ion_ion_m_f(nion,qion,rion,fion);
 
