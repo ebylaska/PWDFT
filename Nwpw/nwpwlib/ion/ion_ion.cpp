@@ -27,8 +27,8 @@ using namespace pwdft;
 double ion_ion_e(const int nion, const double Q[], const double R[])
 {
    double e1 = 0.0;
-   for (auto jj=0; jj<nion; ++jj)
-      for (auto ii=0; ii<(jj-1); ++ii)
+   for (auto jj=0; jj<(nion-1); ++jj)
+      for (auto ii=jj+1; ii<nion; ++ii)
       {
          double x = R[3*jj]  -R[3*ii];
          double y = R[3*jj+1]-R[3*ii+1];
@@ -62,8 +62,8 @@ void ion_ion_f(const int nion, const double Q[], const double R[], double F[])
 {
    if (nion>1)
    {
-      for (auto jj=0; jj<nion; ++jj)
-         for (auto ii=0; ii<(jj-1); ++ii)
+      for (auto jj=0; jj<(nion-1); ++jj)
+         for (auto ii=jj+1; ii<nion; ++ii)
          {
             double x = R[3*jj]-R[3*ii];
             double y = R[3*jj+1]-R[3*ii+1];
@@ -105,8 +105,8 @@ void ion_ion_m_f(const int nion, const double Q[], const double R[], double F[])
 {
    if (nion>1)
    {
-      for (auto jj=0; jj<nion; ++jj)
-         for (auto ii=0; ii<(jj-1); ++ii)
+      for (auto jj=0; jj<(nion-1); ++jj)
+         for (auto ii=jj+1; ii<nion; ++ii)
          {
             double x = R[3*ii]  -R[3*jj];
             double y = R[3*ii+1]-R[3*jj+1];

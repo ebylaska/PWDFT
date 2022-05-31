@@ -467,6 +467,16 @@ void nwpw_apc::VQ_APC(double *uq, double *VQ)
 }
 
 
+/*     dq(ia,ib)/dR(lb) = Sum(ja,jb) Am(ia,ib;ja,jb) * ( db(ja,jb)/dR(lb) - Sum(ka,kb) (dA(ja,jb;ka,kb)/dR(lb) * q(ka,kb)) )
+*                       = Sum(ja,jb) Am(ia,ib;ja,jb) * db(ja,lb)*delta(jb,lb)
+*                       + Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka,kb) dA(ja,lb;ka,kb)*q(ka,kb)*delta(jb,lb)
+*                       - Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka,kb) dA(ja,jb;ka,lb)*q(ka,kb)*delta(kb,lb)
+*
+*                       = Sum(ja) Am(ia,ib;ja,lb) * db(ja,lb)
+*                       + Sum(ja) Am(ia,ib;ja,lb) * Sum(ka,kb) dA(ja,lb;ka,kb)*q(ka,kb)
+*                       - Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka) dA(ja,jb;ka,lb)*q(ka,lb)
+*/
+
 /*******************************************
  *                                         *
  *          private generate_dQdR          *
@@ -531,6 +541,85 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
    return ff;
 }
 
+/*  B  dq(ia,ib)/dR(lb) = Sum(ja,jb) Am(ia,ib;ja,jb) * ( db(ja,jb)/dR(lb) - Sum(ka,kb) (dA(ja,jb;ka,kb)/dR(lb) * q(ka,kb)) )
+*                       = Sum(ja,jb) Am(ia,ib;ja,jb) * db(ja,lb)*delta(jb,lb)
+*                       + Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka,kb) dA(ja,lb;ka,kb)*q(ka,kb)*delta(jb,lb)
+*                       - Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka,kb) dA(ja,jb;ka,lb)*q(ka,kb)*delta(kb,lb)
+*
+*                       = Sum(ja) Am(ia,ib;ja,lb) * db(ja,lb)
+*                       + Sum(ja) Am(ia,ib;ja,lb) * Sum(ka,kb) dA(ja,lb;ka,kb)*q(ka,kb)
+*                       - Sum(ja,jb) Am(ia,ib;ja,jb) * Sum(ka) dA(ja,jb;ka,lb)*q(ka,lb)
+*/
+
+/*******************************************
+ *                                         *
+ *          private generate_dQdR0         *
+ *                                         *
+ *******************************************/
+static double generate_dQdR0(const int lb, const int nga, const int nion,
+                            const double *db, const double *q,  const double *uq,
+                            const double *dA, const double *Am, const double sumAm,
+                            double *dbtmp, double *dAtmp)
+{
+   int ngs = nga*nion;
+
+   /* calculate dbtmp */
+   for (auto ja=0; ja<nga; ++ja)
+   {
+      double tmp = 0.0;
+      for (auto kb=0; kb<nion; ++kb)
+      for (auto ka=0; ka<nga; ++ka)
+         tmp +=  dA[ja+lb*nga+(ka+kb*nga)*ngs]*q[ka+kb*nga];
+      dbtmp[ja] = tmp;
+   }
+   
+
+   /* calculate dAtmp */
+   for (auto jb=0; jb<nion; ++jb)
+   for (auto ja=0; ja<nga; ++ja)
+   {
+      double tmp = 0.0;
+      for (auto ka=0; ka<nga; ++ka)
+         tmp +=  dA[ja+jb*nga+(ka+lb*nga)*ngs]*q[ka+lb*nga];
+      dAtmp[ja+jb*nga] = tmp;
+   }
+
+
+   double ff      = 0.0;
+   double sumdQdR = 0.0;
+   for (auto ib=0; ib<nion; ++ib)
+   for (auto ia=0; ia<nga;  ++ia)
+   {
+      double tmp=0.0; 
+      for (auto ja=0; ja<nga; ++ja)
+         tmp +=  Am[ia+ib*nga+(ja+lb*nga)*ngs]*(db[ja+lb*nga]+dbtmp[ja]);
+         //tmp +=  Am[ia+ib*nga+(ja+lb*nga)*ngs]*(db[ja+lb*nga]);
+         //tmp +=  Am[ia+ib*nga+(ja+lb*nga)*ngs]*(dbtmp[ja]);
+
+      double tmp2=0.0;
+      for (auto jb=0; jb<nion; ++jb)
+      for (auto ja=0; ja<nga;  ++ja)
+         tmp2 +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*dAtmp[ja+jb*nga];
+      ff = ff + uq[ia+ib*nga]*(tmp-tmp2);
+      sumdQdR = sumdQdR + (tmp-tmp2);
+   }
+   double fac = sumdQdR/sumAm;
+
+   for (auto ib=0; ib<nion; ++ib)
+   for (auto ia=0; ia<nga; ++ia)
+   {
+      double tmp=0.0;
+      for (auto jb=0; jb<nion; ++jb)
+      for (auto ja=0; ja<nga; ++ja)
+         tmp +=  Am[ia+ib*nga+(ja+jb*nga)*ngs]*fac;
+      ff -= tmp*uq[ia+ib*nga];
+   }
+
+   return ff;
+}
+
+
+
 
 
 /*******************************************
@@ -593,7 +682,7 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
       qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
 
    // set u from APC uion
-   for (auto ii=0; ii<myion->nion; ++ii)
+   for (auto ii=0; ii<(myion->nion); ++ii)
       for (auto k=0; k<nga; ++k)
          u[ii*nga+k] = -uion[ii];
 
@@ -709,11 +798,29 @@ void nwpw_apc::f_APC_cdft(double *dng, double *zv, double *fion)
 {
    // generate APC charges qion 
    gen_APC(dng,true);
-   for (auto ii=0; ii<myion->nion; ++ii)
+   for (auto ii=0; ii<(myion->nion); ++ii)
       qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
 
+   //double uintern[myion->nion];
+   //memset(uintern,0,myion->nion*sizeof(double));
+   //for (auto ii=0; ii<(myion->nion); ++ii)
+   //for (auto jj=0; jj<(myion->nion); ++jj)
+   //{      
+   //   double dx = myion->rion1[3*ii]  -myion->rion1[3*jj];
+   //   double dy = myion->rion1[3*ii+1]-myion->rion1[3*jj+1];
+   //   double dz = myion->rion1[3*ii+2]-myion->rion1[3*jj+2];
+   //   double dist2 = dx*dx + dy*dy + dz*dz;
+   //   if (dist2>1.0e-4)
+   //   {
+   //      double f = std::sqrt(dist2);
+   //
+   //     uintern[ii] += 0.5*q[jj]/f;
+   //      uintern[jj] += 0.5*q[ii]/f;
+   //   }
+   //}
+
    // set u from APC uion
-   for (auto ii=0; ii<myion->nion; ++ii)
+   for (auto ii=0; ii<(myion->nion); ++ii)
       for (auto k=0; k<nga; ++k)
          u[ii*nga+k] = -uion[ii];
 
@@ -723,7 +830,25 @@ void nwpw_apc::f_APC_cdft(double *dng, double *zv, double *fion)
    //   u[i] -= (sumAmU/sumAm);
 
    // fion = -sum u(i)*dq(i)/dR 
+   std::cout << "fion before: " << fion[0] << " "
+                                << fion[1] << " "
+                                << fion[2] << " " << std::endl 
+             << "           : " << fion[3] << " "
+                                << fion[4] << " "
+                                << fion[5] << " " << std::endl 
+             << "           : " << fion[6] << " "
+                                << fion[7] << " "
+                                << fion[8] << " " << std::endl;
    dQdR_APC(u,fion);
+   std::cout << "fion +apc  : " << fion[0] << " "
+                                << fion[1] << " "
+                                << fion[2] << " " << std::endl 
+             << "           : " << fion[3] << " "
+                                << fion[4] << " "
+                                << fion[5] << " " << std::endl 
+             << "           : " << fion[6] << " "
+                                << fion[7] << " "
+                                << fion[8] << " " << std::endl;
 }
 
 /*******************************************
@@ -741,7 +866,7 @@ void nwpw_apc::f_APC_born(double *dng, double *zv, double *fion)
    myborn->dVdq(qion,uion);
 
    // set u from APC uion
-   for (auto ii=0; ii<myion->nion; ++ii)
+   for (auto ii=0; ii<(myion->nion); ++ii)
       for (auto k=0; k<nga; ++k)
          u[ii*nga+k] = uion[ii];
 
