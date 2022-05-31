@@ -67,6 +67,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    dt = control.time_step();
    fmass = control.fake_mass();
    dte = dt*dt/fmass;
+   if (!verlet) dte=0.5*dte;
+
 
 
    /* allocate temporary memory */
@@ -82,7 +84,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    vc  = mygrid->c_pack_allocate(0);
    vpsi=x;
 
-   fion = new double[3*(myion->nion)]();
+   //new double[3*(myion->nion)]();
+   fion = myion->fion1;
 
    /* generate local psp*/
    //mypsp->v_local(vl,0,dng,fion);
@@ -129,7 +132,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore())
       {
-         if ((move)||(it==0)) mypsp->semicore_density_update();
+         mypsp->semicore_density_update();
          for (ms=0; ms<ispin; ++ms)
             mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
       }
@@ -175,7 +178,13 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
          }
       }
 
+      /* get the ewald force */
       myewald->force(fion);
+
+      /* get the semicore force - needs to be checked */
+      if (mypsp->has_semicore())
+         mypsp->semicore_xc_fion(xcp,fion);
+
 
       /* car-parrinello Verlet step */
       if (verlet) 
@@ -185,6 +194,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
          {
             sse = mynose->sse();
             ssr = mynose->ssr();
+
             mygrid->gg_SMul(0.5*dte,Hpsi,psi2);
             mygrid->gg_daxpy(-1.0,psi0,psi2);
             mygrid->gg_daxpy( 1.0,psi1,psi2);
@@ -230,15 +240,15 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       if (nose && verlet) dte0 *= sse;
       mygrid->ggm_lambda(dte0,psi1,psi2,lmbda);
 
+
       /* update thermostats */
       if (nose)
       {
          if (verlet)
          {
-            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[1]);
+            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[ispin-1]);
             double kefac = 0.5*fmass/(dt*dt);
             eke = kefac*(nesum - mygrid->gg_traceall(psi2,psi0));
-            //eki = myion->ke();
             eki = myion->eki1;
             mynose->Verlet_step(eke,eki);
          }
@@ -301,8 +311,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       Eold = E[0];
       E[1] = eorbit + eion + exc - ehartr - pxc;
       E[2] = eke;
-      //E[3] = myion->ke();
-      E[3] = myion->eki1;
+      E[3] = myion->ke();
+      //E[3] = myion->eki1;
 
       E[4] = eorbit;
       E[5] = ehartr;
@@ -343,9 +353,6 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       }
 
    }
-
-   /* deallocate local heap data */
-   delete [] fion;
 
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);

@@ -7,6 +7,7 @@
 #include        <cstdio>
 #include	<cstring>
 #include        <cmath>
+#include        <iomanip>
 
 #include	"Strfac.hpp"
 
@@ -104,7 +105,7 @@ void Strfac::phafac()
    double cw1x,cw2x,cw3x;
    double cw1y,cw2y,cw3y;
 
-   pi  = 4.00*atan(1.0);
+   pi  = 4.00*std::atan(1.0);
 
    nx = (mygrid->nx);
    ny = (mygrid->ny);
@@ -125,9 +126,9 @@ void Strfac::phafac()
           + unitg[7]*myion->rion1[1+3*i]
           + unitg[8]*myion->rion1[2+3*i]+pi;
 
-      cw1x=cos(sw1); cw1y=-sin(sw1);
-      cw2x=cos(sw2); cw2y=-sin(sw2);
-      cw3x=cos(sw3); cw3y=-sin(sw3);
+      cw1x=std::cos(sw1); cw1y=-std::sin(sw1);
+      cw2x=std::cos(sw2); cw2y=-std::sin(sw2);
+      cw3x=std::cos(sw3); cw3y=-std::sin(sw3);
       wx1[2*i*nx] = 1.0; wx1[2*i*nx+1] = 0.0;
       wy1[2*i*ny] = 1.0; wy1[2*i*ny+1] = 0.0;
       wz1[2*i*nz] = 1.0; wz1[2*i*nz+1] = 0.0;

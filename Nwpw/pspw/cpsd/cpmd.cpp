@@ -286,6 +286,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
                                                myion.vion(2,ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
+      printf(" number of constraints = %6d ( DOF = %6d )\n", 0,myion.ndof());
 
       std::cout << "\n";
       printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
@@ -320,6 +321,8 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
 
       std::cout << "\n";
       std::cout << " technical parameters:\n";
+      if (myion.fix_translation) std::cout << "      translation constrained\n";
+      if (myion.fix_rotation)    std::cout << "      rotation constrained\n";
       printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
              control.time_step(),control.fake_mass());
       //printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
@@ -405,6 +408,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
                                           E[0],E[1],E[2],E[3],myion.Temperature());
          }
 
+
          // Update AIMD Running data
          mymotion_data.update_iteration(icount);
          eave = mymotion_data.eave; evar = mymotion_data.evar;
@@ -481,7 +485,11 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
                                                myion.vion(2,ii));
       printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vgc(0), myion.vgc(1), myion.vgc(2));
       printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.vcom(0),myion.vcom(1),myion.vcom(2));
-      std::cout << "\n\n";
+      std::cout << std::endl;
+
+      if (mypsp.myapc->v_apc_on) 
+         std::cout << mypsp.myapc->shortprint_APC();
+
       printf(" total     energy        : %19.10le (%15.5le /ion)\n",      E[1],E[1]/myion.nion);
       printf(" total orbital energy    : %19.10le (%15.5le /electron)\n", E[4],E[4]/(mygrid.ne[0]+mygrid.ne[1]));
       printf(" hartree energy          : %19.10le (%15.5le /electron)\n", E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));

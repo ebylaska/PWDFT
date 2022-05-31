@@ -86,6 +86,7 @@ static json parse_geometry(json geom, int *curptr, std::vector<std::string> line
                      || mystring_contains(mystring_lowercase(ss[1]),"na")
                      || mystring_contains(mystring_lowercase(ss[1]),"pm")
                      || mystring_contains(mystring_lowercase(ss[1]),"pi")
+                     || mystring_contains(mystring_lowercase(ss[1]),"units")
                      || mystring_contains(mystring_lowercase(ss[1]),"center")
                      || mystring_contains(mystring_lowercase(ss[1]),"autoz")
                      || mystring_contains(mystring_lowercase(ss[1]),"autosym");
@@ -310,15 +311,20 @@ static json parse_geometry(json geom, int *curptr, std::vector<std::string> line
       double xcm=0.0;
       double ycm=0.0;
       double zcm=0.0;
+      double tmass = 0.0;
       for (ii=0; ii<nion; ++ii)
       {
-         xcm += coords[3*ii];
-         ycm += coords[3*ii+1];
-         zcm += coords[3*ii+2];
+         xcm += coords[3*ii]  *masses[ii];
+         ycm += coords[3*ii+1]*masses[ii];
+         zcm += coords[3*ii+2]*masses[ii];
+         tmass += masses[ii];
       }
-      xcm /= ((double) nion);
-      ycm /= ((double) nion);
-      zcm /= ((double) nion);
+      //xcm /= ((double) nion);
+      //ycm /= ((double) nion);
+      //zcm /= ((double) nion);
+      xcm /= tmass;
+      ycm /= tmass;
+      zcm /= tmass;
       for (int ii=0; ii<nion; ++ii)
       {
          coords[3*ii]   -= xcm;
@@ -721,11 +727,13 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, std::vector<std::st
       }
       else if (mystring_contains(line,"fei"))
       {
+         cpmdjson["fei_on"] = true;
          ss = mystring_split0(line);
-         if (ss.size()>1) cpmdjson["fei"] = ss[1];
+         if (ss.size()>1) cpmdjson["fei_filename"] = ss[1];
       }
       else if (mystring_contains(line,"dipole_motion"))
       {
+         cpmdjson["dipole_motion_on"] = true;
          ss = mystring_split0(line);
          if (ss.size()>1) cpmdjson["dipole_motion"] = ss[1];
       }
@@ -1050,6 +1058,26 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (mystring_contains(line,"voutput"))
             nwpwjson["output_v_wavefunction_filename"] = mystring_split0(mystring_trim(mystring_split(line,"voutput")[1]))[0];
       }
+      else if (mystring_contains(line,"translation")) {
+         if (mystring_contains(line," off"))        nwpwjson["fix_translation"] = true;
+         else if (mystring_contains(line," no"))    nwpwjson["fix_translation"] = true;
+         else if (mystring_contains(line," false")) nwpwjson["fix_translation"] = true;
+
+         else if (mystring_contains(line," yes"))   nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," true"))  nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," on"))    nwpwjson["fix_translation"]  = false;
+         else if (mystring_contains(line," allow_translation")) nwpwjson["fix_translation"] = false;
+         else nwpwjson["fix_translation"] = true;
+      }
+      else if (mystring_contains(line,"rotation")) {
+         if (mystring_contains(line," off"))        nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," no"))    nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," false")) nwpwjson["fix_rotation"] = true;
+         else if (mystring_contains(line," yes"))   nwpwjson["fix_rotation"]  = false;
+         else if (mystring_contains(line," true"))  nwpwjson["fix_rotation"]  = false;
+         else if (mystring_contains(line," on"))    nwpwjson["fix_rotation"]  = false;
+         else nwpwjson["fix_rotation"] = false;
+      }
       else if (mystring_contains(line,"apc")) {
          if  (nwpwjson["apc"].is_null()) {
             json apc;
@@ -1061,6 +1089,18 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (mystring_contains(line,"gamma")) nwpwjson["apc"]["gamma"] = mystring_double_list(line,"gamma");
          if (mystring_contains(line,"u"))     nwpwjson["apc"]["u"]     = mystring_double_list(line,"u");
          if (mystring_contains(line,"q"))     nwpwjson["apc"]["q"]     = mystring_double_list(line,"q");
+      }
+      else if (mystring_contains(line,"born")) {
+         if  (nwpwjson["born"].is_null()) {
+            json born;
+            nwpwjson["born"] = born;
+         }
+         nwpwjson["born"]["on"] = true;
+         if (mystring_contains(line," off"))          nwpwjson["born"]["on"]     = false;
+         if      (mystring_contains(line," norelax")) nwpwjson["born"]["relax"]  = false;
+         else if (mystring_contains(line," relax"))   nwpwjson["born"]["relax"]  = true;
+         if (mystring_contains(line,"dielec"))
+            nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line," dielec")[1]))[0]);
       }
 
       ++cur;

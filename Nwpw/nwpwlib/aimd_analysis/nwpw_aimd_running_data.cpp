@@ -34,6 +34,8 @@ inline void copy(const std::string& source_filename, const std::string& dest_fil
 #define E124	std::right << std::setw(12) << std::setprecision(4)  << std::scientific
 #define E156	std::right << std::setw(15) << std::setprecision(6)  << std::scientific
 #define E1910	std::right << std::setw(19) << std::setprecision(10) << std::scientific
+#define F206	std::right << std::setw(20) << std::setprecision(6)  << std::fixed
+#define F105	std::right << std::setw(10) << std::setprecision(5)  << std::fixed
 
 #define hxyzstream(a1x,a1y,a1z,a2x,a2y,a2z,a3x,a3y,a3z)	E124 << (a1x) << E124 << (a1y) << E124 << (a1z) << E124 << (a2x) <<  E124 << (a2y) << E124 << (a2z) << E124 << (a3x) << E124 << (a3y) << E124 << (a3z) 
 
@@ -172,6 +174,7 @@ nwpw_aimd_running_data::nwpw_aimd_running_data(Control2& control, Parallel *inpa
       fei_open = true; 
       fei = new (std::nothrow) std::ofstream;
       fei->open(const_cast<char*> (fei_filename.data()), std::ios::app);
+
    }
 
    // cif file
@@ -349,6 +352,29 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
    // Running fei
    if (fei_open)
    {
+      double a1x = mypneb->lattice->unita(0,0);
+      double a1y = mypneb->lattice->unita(1,0);
+      double a1z = mypneb->lattice->unita(2,0);
+      double a2x = mypneb->lattice->unita(0,1);
+      double a2y = mypneb->lattice->unita(1,1);
+      double a2z = mypneb->lattice->unita(2,1);
+      double a3x = mypneb->lattice->unita(0,2);
+      double a3y = mypneb->lattice->unita(1,2);
+      double a3z = mypneb->lattice->unita(2,2);
+      *fei << myion->nion  << std::endl 
+           << F206 << E[1] << std::endl 
+           << F105 << a1x << F105 << a1y << F105 << a1z << std::endl 
+           << F105 << a2x << F105 << a2y << F105 << a2z << std::endl 
+           << F105 << a3x << F105 << a3y << F105 << a3z << std::endl;
+      for (auto ii=0; ii<myion->nion; ++ii)
+      {
+        *fei << std::setw(5) << (ii+1) 
+             << std::setw(3) << myion->symbol(ii)
+             << std::setw(5) << myion->symbol(ii)
+             << F105 << myion->rion(0,ii) << F105 << myion->rion(1,ii) << F105 << myion->rion(2,ii)
+             << F105 << myion->fion(0,ii) << F105 << myion->fion(1,ii) << F105 << myion->fion(2,ii)
+             << std::endl;
+      }
    }
 
    // Running cif

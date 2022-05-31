@@ -209,7 +209,8 @@ void Pneb::gg_copy(double *psi1, double *psi2)
 {
    int one=1;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   DCOPY_PWDFT(nsize, psi1, one, psi2, one);
+   memcpy(psi2,psi1,nsize*sizeof(double));
+   //DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
 void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
 {
@@ -575,11 +576,11 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, d
          n = ne[ms];
 
 	 // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
-	 // 	     alpha,
-	 // 	     &psi1[shift1],ng,
-	 // 	     &hml[mshift1],n,
-	 // 	     beta,
-	 // 	     &psi2[shift1],ng);
+         //	     alpha,
+	 //	     &psi1[shift1],ng,
+	 //	     &hml[mshift1],n,
+	 //	     beta,
+	 //	     &psi2[shift1],ng);
          gdevice_NN_dgemm(ng,n,alpha,&psi1[shift1],&hml[mshift1],beta,&psi2[shift1]);
 
          shift1  += ne[0]*ng;
@@ -935,8 +936,11 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	int ii   = 0;
 	int done = 0;
 
-	DCOPY_PWDFT(nn, s21, one, s12, one);
-	DCOPY_PWDFT(nn, s22, one, sa0, one);
+	//DCOPY_PWDFT(nn, s21, one, s12, one);
+	//DCOPY_PWDFT(nn, s22, one, sa0, one);
+        memcpy(s12,s21,nn*sizeof(double));
+
+        memcpy(sa0,s22,nn*sizeof(double));
 	while ((!done) && ((ii++)<ITERLMD)) {
 	    DCOPY_PWDFT(nn, s22, one, sa1, one);
 
@@ -945,7 +949,8 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
 	    mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
 
-	    DCOPY_PWDFT(nn, sa1, one, st1, one);
+	    //DCOPY_PWDFT(nn, sa1, one, st1, one);
+            memcpy(st1,sa1,nn*sizeof(double));
 	    DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
 	    jj = IDAMAX_PWDFT(nn, st1, one);
 	    adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
@@ -953,7 +958,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    if (adiff < CONVGLMD)
 		done = 1;
 	    else
-		DCOPY_PWDFT(nn, sa1, one, sa0, one);
+               memcpy(sa0,sa1,nn*sizeof(double)); //DCOPY_PWDFT(nn, sa1, one, sa0, one);
 	}
 	//printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d done=%d\n",nn,jj,adiff,ii,done);
 
@@ -961,7 +966,9 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    if (!done) printf("ierr=10 adiff=%le\n",adiff);
 	}
 
-	DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+	//DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+        memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+
     } // for loop - ms
 
     /* correction due to contraint */

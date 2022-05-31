@@ -32,6 +32,7 @@
 #include <cstdio>
 #include <string>
 #include <unistd.h>
+#include <iomanip>
 
 #include "NwpwConfig.h"
 #include "mpi.h"
@@ -39,6 +40,7 @@
 #include "util_date.hpp"
 #include "parse_pwdft.hpp"
 #include "psp_library.hpp"
+#include "ion_ion.hpp"
 
 #include "nwpw.hpp"
 
@@ -78,6 +80,8 @@ extern "C" void pspw_fortran_minimizer_(MPI_Fint *fcomm_world, double *rion, dou
 
    fortran_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
    fortran_rtdbjson["nwpw"]["apc"]["u"] = std::vector<double>(uion,&uion[nion]);
+   fortran_rtdbjson["current_task"]  = "gradient";
+
    fortran_rtdbstring    = fortran_rtdbjson.dump();
 
    
@@ -224,6 +228,11 @@ extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double 
 
 extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E)
 { 
+   int ierr;
+   //int taskid,np,ierr;
+   //ierr = MPI_Comm_rank(comm_world,&taskid);
+   //ierr = MPI_Comm_size(comm_world,&np);
+
    auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
 
    int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
@@ -233,6 +242,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    if (lammps_rtdbjson["nwpw"]["apc"].is_null()) { json apc; lammps_rtdbjson["nwpw"]["apc"] = apc; }
    lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
    lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
+   lammps_rtdbjson["current_task"]  = "gradient";
 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
@@ -243,7 +253,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
       REDIRECT_ON(filename.c_str()); 
    } 
 
-   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
 
    if (io_redirect) 
       REDIRECT_OFF();
@@ -262,6 +272,15 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
    std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
    std::copy(vv.begin(),vv.end(), qion);
+
+   //std::cout << taskid << " EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
+
+
+   // pre-remove qm/qm electrostatic interactions
+   double ecoul = pwdft::ion_ion_e(nion,qion,rion);
+   //std::cout << taskid << " QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+   *E -= ecoul;
+   pwdft::ion_ion_m_f(nion,qion,rion,fion);
 
    return ierr;
 }

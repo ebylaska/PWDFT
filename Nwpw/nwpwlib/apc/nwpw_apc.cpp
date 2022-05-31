@@ -34,6 +34,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
    mystrfac = mystrfacin;
    apc_on   = control.APC_on();
    v_apc_on = false;
+   born_on  = false;
 
    bool oprint = ((mypneb->PGrid::parall->is_master()) && (control.print_level("medium")));
 
@@ -55,7 +56,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          for (auto i=0; i<nga; ++i)
             gamma[i] = control.APC_gamma(i);
       }
-      ngs = nga*myion->nion;
+      ngs = nga*(myion->nion);
 
       /* allocate APC memory from heap  */
       A  = new double [4*ngs*ngs];
@@ -63,6 +64,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       b  = new double [4*ngs];
       q  = new double [ngs];
       u  = new double [ngs];
+      //utmp = new double [ngs];
 
       qion = new double [myion->nion];
       uion = new double [myion->nion];
@@ -84,11 +86,11 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       double *Gz = mypneb->Gpackxyz(0,2);
       for (auto i=0; i<npack0; ++i)
       {
-         gg = Gx[i]*Gx[i] + Gy[i]*Gy[i] + Gz[i]*Gz[i];
+         gg = (Gx[i]*Gx[i] + Gy[i]*Gy[i] + Gz[i]*Gz[i]);
          w[i] = 0.0;
          if ((gg>1.0e-6) && (gg<(Gc*Gc))) 
          {
-            xx = gg-Gc*Gc;
+            xx = (gg-Gc*Gc);
             w[i] = fourpi*xx*xx/(gg*Gc*Gc);
          }
       }
@@ -100,12 +102,14 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          xx = gamma[n]*gamma[n]/4.0;
          for (auto i=0; i<npack0; ++i)
          {
-            gg = Gx[i]*Gx[i] + Gy[i]*Gy[i] + Gz[i]*Gz[i];
+            gg = (Gx[i]*Gx[i] + Gy[i]*Gy[i] + Gz[i]*Gz[i]);
             gaus[n*npack0 + i] = coef*exp(-xx*gg);
 
          }
       }
 
+      /* turn on self-consistency */
+      v_apc_on = control.born_relax();
       for (auto ii=0; ii<myion->nion; ++ii)
       {
          qion[ii] = control.APC_q(ii);
@@ -134,6 +138,9 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
             std::cout << " - not self-consistent" << std::endl;
        
       }
+
+      born_on = control.born_on();
+      if (born_on) myborn = new nwpw_born(myion,mypneb->PGrid::parall,control);
    }
 }
 
@@ -165,6 +172,8 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       double *xtmp   = new double[npack0];
 
 
+      memset(exi,0,2*npack0*sizeof(double));
+
       /* calculate N = dng(G=0)*omega */
       double N = ((double) (mypneb->ne[0] + mypneb->ne[ispin-1]));
 
@@ -186,6 +195,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
             /* bi = omega*Sum(G) w(G)*Re(dcongj(dng(G))*gaus_i(G)) */
             b[i] = omega*mypneb->cc_pack_dot(0,dng,gaus_i);
+            //std::cout << i << " " << b[i] << std::endl;
 
             if (move) 
             {
@@ -193,6 +203,10 @@ void nwpw_apc::gen_APC(double *dng, bool move)
                b[i+ngs]   = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
                b[i+2*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
                b[i+3*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
+            //std::cout << "i,b,db= " << std::right << std::setw(4) << i << " " << std::fixed << std::setw(15) << std::setprecision(11) <<  b[i] 
+            //               << " " << b[i+ngs]
+            //               << " " << b[i+2*ngs]
+            //               << " " << b[i+3*ngs] << std::endl;
             }
                    
          }
@@ -234,15 +248,19 @@ void nwpw_apc::gen_APC(double *dng, bool move)
                   if (move)
                   {
                      mypneb->cct_iconjgMulb(0,gaus_i,gaus_j,xtmp);
-                     A[indx+ngs*ngs]   = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
+                     A[indx+  ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
                      A[indx+2*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
                      A[indx+3*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
                      if (indx!=indxt)
                      {
-                        A[indxt+ngs*ngs]   = -A[indx+ngs*ngs];
+                        A[indxt+  ngs*ngs] = -A[indx+  ngs*ngs];
                         A[indxt+2*ngs*ngs] = -A[indx+2*ngs*ngs];
                         A[indxt+3*ngs*ngs] = -A[indx+3*ngs*ngs]; 
                      }
+                  //std::cout << "i,j,dA=" << std::setw(4) << indx << " " << std::setw(4) << indxt
+                  //          << std::fixed << std::setw(15) << std::setprecision(11)
+                  //          << A[indx] << " " << A[indx+ngs*ngs] << " " 
+                  //          << A[indx+2*ngs*ngs] << " " << A[indx+3*ngs*ngs] << std::endl;
                   }
                }
             }
@@ -251,7 +269,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
       /* perform matrix operations in serial */
       memset(Am,0,ngs*ngs*sizeof(double));
-      memset(q,0,ngs*sizeof(double));
+      memset(q, 0,    ngs*sizeof(double));
 
       if (mypneb->PGrid::parall->is_master())
       {
@@ -262,10 +280,11 @@ void nwpw_apc::gen_APC(double *dng, bool move)
          double AAA[ngs*ngs];
          double rcond = 1.0e-9;
 
-        for (i=0; i<ngs*ngs; ++i) AAA[i]        = A[i];
-        for (i=0; i<ngs;     ++i) Am[i + i*ngs] = 1.0;
+         memcpy(AAA,A,ngs*ngs*sizeof(double));
+         //for (i=0; i<ngs*ngs; ++i) AAA[i]        = A[i];
+         for (i=0; i<ngs; ++i) Am[i + i*ngs] = 1.0;
 
-        DGELSS_PWDFT(ngs,ngs,ngs,AAA,ngs,Am,ngs,q,rcond,rank,work,lwork,ierr);
+         DGELSS_PWDFT(ngs,ngs,ngs,AAA,ngs,Am,ngs,q,rcond,rank,work,lwork,ierr);
 
 
         /* calculate q_i */
@@ -374,12 +393,19 @@ static double Amtimesu_APC(const int ngs, const double *Am, const double *uq)
  *          private Vfac_APC               *
  *                                         *
  *******************************************/
-static double Vfac_APC(const int ngs, const double *Am, const double *uq, const int i)
+static double Vfac_APC(const int ngs, double *Am, const double *uq, const int i)
 {
-   double sum0 = 0.0;
+   double vsum0 = 0.0;
+   double *AA = &Am[i];
    for (auto j=0; j<ngs; ++j)
-      sum0 += Am[i+j*ngs]*uq[j];
-   return sum0;
+   {
+      vsum0 += AA[0]*uq[j];
+      AA    += ngs;
+   }
+   //for (auto j=0; j<ngs; ++j)
+   //   sum0 = sum0 +  Am[i+j*ngs]*uq[j];
+
+   return vsum0;
 }
 
 
@@ -411,6 +437,7 @@ void nwpw_apc::VQ_APC(double *uq, double *VQ)
    for (auto i=0; i<ngs; ++i)
       uq[i] -= (sumAmU/sumAm);
 
+
    /* allocate temporary memory from heap */
    double *exi    = new double[2*npack0];
    double *gaus_i = new double[2*npack0];
@@ -421,16 +448,18 @@ void nwpw_apc::VQ_APC(double *uq, double *VQ)
 
       for (auto iii=0; iii<nga; ++iii)
       {
-         double afac = omega*Vfac_APC(ngs,Am,uq,iii+ii*nga);
+         int i = iii + ii*nga;
+         double afac = omega*Vfac_APC(ngs,Am,uq,i);
 
          /* gaus_i(G)) */ 
-         mypneb->tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
+         mypneb->PGrid::tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
 
          /* VQ(G) += afac*w(G)*gaus_i(G)) */
-         mypneb->tcc_aMulAdd(0,afac,w,gaus_i,VQ);
+         mypneb->PGrid::tcc_aMulAdd(0,afac,w,gaus_i,VQ);
       }
    }
-   mypneb->c_addzero(0,sumAmU/sumAm,VQ);
+   mypneb->PGrid::c_addzero(0,sumAmU/sumAm,VQ);
+
 
    /* deallocate temporary memory from heap */
    delete [] gaus_i;
@@ -516,7 +545,7 @@ static double generate_dQdR(const int lb, const int nga, const int nion,
  
     Entry - nion: number of qm atoms
           - uq: dE/dq(ii) - derivative of E wrt to model charges q(ii)
-    Exit - fion = dE/dq(ii)*dq(ii)/dR
+    Exit - fion = dE/dq(ii)*dq(ii)/dR = uq(ii) * dq(ii)/dR
  
     Note - pspw_gen_APC needs to be called to Am=inv(A) before
            this routine is called.
@@ -534,14 +563,14 @@ void nwpw_apc::dQdR_APC(double *uq, double *fion)
    double dbtmp[nga];
    double dAtmp[ngs];
 
-   double ftmp[3*nion];
+   double ftmp[nion3];
    memset(ftmp,0,nion3*sizeof(double));
 
    double sumAm = sumAm_APC(ngs,Am);
 
    for (auto ii=taskid; ii<nion; ii+=np)
    {
-      ftmp[3*ii]   = generate_dQdR(ii,nga,nion,&b[ngs],q,uq,&A[ngs*ngs],Am,sumAm,dbtmp,dAtmp);
+      ftmp[3*ii]   = generate_dQdR(ii,nga,nion,&b[ngs],  q,uq,&A[ngs*ngs],  Am,sumAm,dbtmp,dAtmp);
       ftmp[3*ii+1] = generate_dQdR(ii,nga,nion,&b[2*ngs],q,uq,&A[2*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
       ftmp[3*ii+2] = generate_dQdR(ii,nga,nion,&b[3*ngs],q,uq,&A[3*ngs*ngs],Am,sumAm,dbtmp,dAtmp);
    }
@@ -552,44 +581,172 @@ void nwpw_apc::dQdR_APC(double *uq, double *fion)
 
 /*******************************************
  *                                         *
+ *           nwpw_APC::V_APC_cdft          *
+ *                                         *
+ *******************************************/
+void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
+                       bool move,   double *fion)
+{
+   // generate APC charges qion 
+   gen_APC(dng,move);
+   for (auto ii=0; ii<myion->nion; ++ii)
+      qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+   // set u from APC uion
+   for (auto ii=0; ii<myion->nion; ++ii)
+      for (auto k=0; k<nga; ++k)
+         u[ii*nga+k] = -uion[ii];
+
+   if (move) dQdR_APC(u,fion);
+
+   // Calculate Eapc - cdft,qmmm,cosmo,born??
+   Eapc = 0.0;
+   for (auto ii=0; ii<(myion->nion); ++ii)
+      Eapc += qion[ii]*uion[ii];
+
+
+   // Calculate Vapc
+   int npack0 = mypneb->npack(0);
+   memset(vtmp,0,2*npack0*sizeof(double));
+   VQ_APC(u,vtmp);
+   mypneb->cc_daxpy(0,1.0,vtmp,vapc);
+
+   // Calculate Papc 
+   Papc = mypneb->cc_pack_dot(0,dng,vtmp);
+
+
+   // F =  -sum(i,j) 0.5*q(i)*(dM/dR)*q(j) - sum u(i)*dq(i)/dR 
+   // fion = -sum u(i)*dq(i)/dR 
+}
+
+/*******************************************
+ *                                         *
+ *           nwpw_apc::V_APC_born          *
+ *                                         *
+ *******************************************/
+void nwpw_apc::V_APC_born(double *dng, double *zv, double *vapc,
+                       bool move, double *fion)
+{
+   // generate APC charges qion 
+   gen_APC(dng,move);
+   for (auto ii=0; ii<myion->nion; ++ii)
+      qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+   myborn->dVdq(qion,uion);
+
+   //Eapc = 0.0;
+   //for (auto ii=0; ii<myion->nion; ++ii)
+   //   Eapc += qion[ii]*uion[ii];
+
+   // set u from APC uion
+   for (auto ii=0; ii<myion->nion; ++ii)
+      for (auto k=0; k<nga; ++k)
+         u[ii*nga+k] = uion[ii];
+
+   //double elocal = mypneb->cc_pack_dot(0,dng,vapc);
+
+   //if (move) memcpy(utmp,u,ngs*sizeof(double));
+   if (move)
+   {
+      myborn->fion(qion,fion);
+      dQdR_APC(u,fion);
+   }
+
+   // Calculate Vapc
+   int npack0 = mypneb->npack(0);
+   memset(vtmp,0,2*npack0*sizeof(double));
+   VQ_APC(u,vtmp);
+   mypneb->cc_daxpy(0,1.0,vtmp,vapc);
+
+
+   // Calculate Eborn
+   Eapc = myborn->energy(qion);
+
+   // Calculate Pborn
+   Papc = mypneb->cc_pack_dot(0,dng,vtmp);
+   //double Papc1 = mypneb->cc_pack_dot(0,dng,vapc);
+
+
+   //std::cout << "Elocal=" << std::fixed << std::setw(15) << std::setprecision(11) << elocal << std::endl;
+   //std::cout << std::endl;
+   //std::cout << "PAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << Papc << std::endl;
+   //std::cout << "PAPC1=" << std::fixed << std::setw(15) << std::setprecision(11) << Papc1 << std::endl;
+   //std::cout << "vapc=" << std::fixed << std::setw(15) << std::setprecision(11) << vapc[0] << " " << vapc[1] << std::endl;
+
+   //if (move)
+   //{
+   //   myborn->fion(qion,fion);
+   //   dQdR_APC(utmp,fion);
+  // }
+
+}
+
+/*******************************************
+ *                                         *
  *            nwpw_apc::V_APC              *
  *                                         *
  *******************************************/
-
 void nwpw_apc::V_APC(double *dng, double *zv, double *vapc, 
                      bool move,   double *fion)
 {
    if ((apc_on) && (v_apc_on)) 
    {
-      // generate APC charges qion 
-      gen_APC(dng,move);
-      for (auto ii=0; ii<myion->nion; ++ii)
-         qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
-
-      // set u from APC uion
-      for (auto ii=0; ii<myion->nion; ++ii)
-         for (auto k=0; k<nga; ++k)
-            u[ii*nga+k] = -uion[ii];
-
-      // Calculate Eapc - cdft,qmmm,cosmo,born??
-      Eapc = 0.0;
-      for (auto ii=0; ii<myion->nion; ++ii)
-         Eapc += qion[ii]*uion[ii];
-
-      // Calculate Vapc
-      int npack0 = mypneb->npack(0);
-      memset(vtmp,0,2*npack0*sizeof(double));
-      VQ_APC(u,vtmp);
-      mypneb->cc_daxpy(0,1.0,vtmp,vapc);
-
-      // Calculate Papc 
-      Papc = mypneb->cc_pack_dot(0,dng,vtmp);
-
-
-      // F =  -sum(i,j) 0.5*q(i)*(dM/dR)*q(j) - sum u(i)*dq(i)/dR 
-      // fion = -sum u(i)*dq(i)/dR 
-      if (move) dQdR_APC(u,fion);
+      if (born_on)
+         this->V_APC_born(dng,zv,vapc,move,fion);
+      else
+         this->V_APC_cdft(dng,zv,vapc,move,fion);
    }
+}
+
+
+
+/*******************************************
+ *                                         *
+ *            nwpw_apc::f_APC_cdft         *
+ *                                         *
+ *******************************************/
+void nwpw_apc::f_APC_cdft(double *dng, double *zv, double *fion)
+{
+   // generate APC charges qion 
+   gen_APC(dng,true);
+   for (auto ii=0; ii<myion->nion; ++ii)
+      qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+   // set u from APC uion
+   for (auto ii=0; ii<myion->nion; ++ii)
+      for (auto k=0; k<nga; ++k)
+         u[ii*nga+k] = -uion[ii];
+
+   //double sumAm  = sumAm_APC(ngs,Am);
+   //double sumAmU = Amtimesu_APC(ngs,Am,u);
+   //for (auto i=0; i<ngs; ++i)
+   //   u[i] -= (sumAmU/sumAm);
+
+   // fion = -sum u(i)*dq(i)/dR 
+   dQdR_APC(u,fion);
+}
+
+/*******************************************
+ *                                         *
+ *            nwpw_apc::f_APC_born         *
+ *                                         *
+ *******************************************/
+void nwpw_apc::f_APC_born(double *dng, double *zv, double *fion)
+{
+   // generate APC charges qion 
+   gen_APC(dng,true);
+   for (auto ii=0; ii<myion->nion; ++ii)
+      qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
+
+   myborn->dVdq(qion,uion);
+
+   // set u from APC uion
+   for (auto ii=0; ii<myion->nion; ++ii)
+      for (auto k=0; k<nga; ++k)
+         u[ii*nga+k] = uion[ii];
+
+   myborn->fion(qion,fion);
+   dQdR_APC(u,fion);
 }
 
 /*******************************************
@@ -602,23 +759,10 @@ void nwpw_apc::f_APC(double *dng, double *zv, double *fion)
 {
    if ((apc_on) && (v_apc_on)) 
    {
-      // generate APC charges qion 
-      gen_APC(dng,true);
-      for (auto ii=0; ii<myion->nion; ++ii)
-         qion[ii] = -Qtot_APC(ii) + zv[myion->katm[ii]];
-
-      // set u from APC uion
-      for (auto ii=0; ii<myion->nion; ++ii)
-         for (auto k=0; k<nga; ++k)
-            u[ii*nga+k] = -uion[ii];
-
-      double sumAm  = sumAm_APC(ngs,Am);
-      double sumAmU = Amtimesu_APC(ngs,Am,u);
-      for (auto i=0; i<ngs; ++i)
-         u[i] -= (sumAmU/sumAm);
-
-      // fion = -sum u(i)*dq(i)/dR 
-      dQdR_APC(u,fion);
+      if (born_on)
+         this->f_APC_born(dng,zv,fion);
+      else
+         this->f_APC_cdft(dng,zv,fion);
    }
 }
 
@@ -649,14 +793,14 @@ std::string nwpw_apc::shortprint_APC()
    std::stringstream stream;
 
    stream << std::endl; 
-   stream << "APC Potential:" << std::endl;
+   stream << " APC Potential:" << std::endl;
    for (auto ii=0; ii<myion->nion; ++ii) {
       stream << std::setw(14) << std::fixed << std::setprecision(9) << uion[ii];
       if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
 
    }
    stream << std::endl << std::endl;
-   stream << "APC Point Charges:" << std::endl;
+   stream << " APC Point Charges:" << std::endl;
    for (auto ii=0; ii<myion->nion; ++ii) {
       stream << std::setw(14) << std::fixed << std::setprecision(9) << qion[ii];
       if ((((ii+1)%10)==0) && (ii!=(myion->nion-1))) stream << std::endl;
@@ -745,7 +889,7 @@ std::string nwpw_apc::print_APC(const double *zv)
 
 
    stream << std::endl  << std::endl
-          << " gaussian coefficients of model density" << std::endl
+          << " Gaussian coefficients of model density" << std::endl
           << " --------------------------------------" << std::endl
           << std::endl;
    stream << "      no  atom";
@@ -766,8 +910,23 @@ std::string nwpw_apc::print_APC(const double *zv)
           stream << std::setw(12) << std::fixed << std::setprecision(3) << -q[i+ii*nga];
       stream << std::endl;
    }
+
+   /* include born output */
+   if (born_on)
+   {
+     double qion[myion->nion];
+     for (auto ii=0; ii<myion->nion; ++ii) {
+        int ia     = myion->katm[ii];
+        double sum = 0.0;
+        for (auto i=0; i<nga; ++i) sum += q[i+ii*nga];
+        qion[ii] = zv[ia] - sum;
+     }
+     stream << myborn->Qprint(qion);
+   }
+
    stream << std::endl
           << std::endl;
+
 
    return stream.str();
 }

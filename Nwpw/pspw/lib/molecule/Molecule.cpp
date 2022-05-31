@@ -5,6 +5,7 @@
 #include	"Ewald.hpp"
 #include        "Strfac.hpp"
 #include	"Electron.hpp"
+#include	"Pseudopotential.hpp"
 #include	"psi.hpp"
 
 #include	"Molecule.hpp"
@@ -17,13 +18,14 @@ namespace pwdft {
  *                                          *
  ********************************************/
 Molecule::Molecule(char *infilename, bool wvfnc_initialize,
-                   Pneb *mygrid0, Ion *myion0, Strfac *mystrfac0, Ewald *myewald0, Electron_Operators *myelectron0)
+                   Pneb *mygrid0, Ion *myion0, Strfac *mystrfac0, Ewald *myewald0, Electron_Operators *myelectron0, Pseudopotential *mypsp0)
 {
    mygrid     = mygrid0;
    myion      = myion0;
    mystrfac   = mystrfac0;
    myewald    = myewald0;
    myelectron = myelectron0;
+   mypsp      = mypsp0;
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];

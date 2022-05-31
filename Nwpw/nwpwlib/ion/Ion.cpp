@@ -19,6 +19,44 @@ using json = nlohmann::json;
 namespace pwdft {
 
 
+
+/*******************************
+ *                             *
+ *        solve_3by3           *
+ *                             *
+ *******************************/
+static void solve_3by3(const double Im[], const double L[], double omega[])
+{
+   double a = Im[0];
+   double b = Im[4];
+   double c = Im[8];
+   double d = Im[3];
+   double e = Im[6];
+   double f = Im[7];
+   double o = L[0];
+   double p = L[1];
+   double q = L[2];
+
+   double af_de = a*f-d*e;
+   double aq_eo = a*q-e*o;
+   double ab_dd = a*b-d*d;
+   double ac_ee = a*c-e*e;
+
+   double z = (af_de*(a*p-d*o)-ab_dd*aq_eo) / (af_de*af_de-ab_dd*ac_ee);
+   double y = (aq_eo - z*ac_ee)/af_de;
+   double x = (o - d*y - e*z)/a;
+
+   omega[0] = x;
+   omega[1] = y;
+   omega[2] = z;
+}
+
+
+/*******************************
+ *                             *
+ *        center_v_mass        *
+ *                             *
+ *******************************/
 static void center_v_mass(int nion, double *mass, double *rion0, double *vx, double *vy, double *vz)
 {
    double tmass = 0.0;
@@ -169,6 +207,7 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
@@ -202,15 +241,14 @@ Ion::Ion(std::string rtdbstring, Control2& control)
 
    auto rtdbjson =  json::parse(rtdbstring);
 
-
    std::string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 
-
    json geomjson = rtdbjson["geometries"][geomname];
 
    nion = geomjson["nion"];
+
    auto symbols = geomjson["symbols"];
 
    std::vector<std::string> tmpsymbols;
@@ -229,6 +267,7 @@ Ion::Ion(std::string rtdbstring, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
    atomarray = new char[3*nkatm];
@@ -252,9 +291,14 @@ Ion::Ion(std::string rtdbstring, Control2& control)
       rion1[3*i]   = (double) geomjson["coords"][3*i];
       rion1[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion1[3*i+2] = (double) geomjson["coords"][3*i+2];
+
       rion2[3*i]   = (double) geomjson["coords"][3*i];
       rion2[3*i+1] = (double) geomjson["coords"][3*i+1];
       rion2[3*i+2] = (double) geomjson["coords"][3*i+2];
+
+      fion1[3*i]   = 0.0;
+      fion1[3*i+1] = 0.0;
+      fion1[3*i+2] = 0.0;
 
       auto match = std::find( begin(tmpsymbols), end(tmpsymbols), symbols[i] );
       if (match != end(tmpsymbols))
@@ -364,7 +408,17 @@ Ion::Ion(std::string rtdbstring, Control2& control)
    if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
    if (rtdbjson["nwpw"]["kg_total"].is_number_float())   kg_total = rtdbjson["nwpw"]["kg_total"];
 
+   if (rtdbjson["nwpw"]["fix_translation"].is_boolean()) fix_translation = rtdbjson["nwpw"]["fix_translation"];
+   if (rtdbjson["nwpw"]["fix_rotation"].is_boolean())    fix_rotation = rtdbjson["nwpw"]["fix_rotation"];
+
+   dof_translation = !fix_translation;
+   dof_rotation    = !fix_rotation;
+   if (rtdbjson["nwpw"]["dof_translation"].is_boolean()) dof_translation = rtdbjson["nwpw"]["dof_translation"];
+   if (rtdbjson["nwpw"]["dof_rotation"].is_boolean())    dof_rotation = rtdbjson["nwpw"]["dof_rotation"];
+
    g_dof = 3.0*nion - 6.0;
+   if (dof_translation) g_dof += 3;
+   if (dof_rotation)    g_dof += 3;
    if (g_dof<1) g_dof = 1.0;
 
 
@@ -420,6 +474,109 @@ void Ion::writejsonstr(std::string& rtdbstring)
 
    rtdbstring = rtdbjson.dump();
 }
+
+
+/*******************************
+ *                             *
+ * Ion::remove_com_translation *
+ *                             *
+ *******************************/
+void Ion::remove_com_translation()
+{
+   double am0 = 0.0;
+   double hx = 0.0; double gx = 0.0;
+   double hy = 0.0; double gy = 0.0;
+   double hz = 0.0; double gz = 0.0;
+   for (auto ii=0; ii<nion; ++ii) {
+      am0 += mass[ii];
+      gx  += mass[ii]*rion1[3*ii];
+      gy  += mass[ii]*rion1[3*ii+1];
+      gz  += mass[ii]*rion1[3*ii+2];
+      hx  += mass[ii]*rion2[3*ii];
+      hy  += mass[ii]*rion2[3*ii+1];
+      hz  += mass[ii]*rion2[3*ii+2];
+   }
+   hx /= am0; hy /= am0; hz /= am0;
+   gx /= am0; gy /= am0; gz /= am0;
+
+   for (auto ii=0; ii<nion; ++ii) {
+      rion2[3*ii]   += gx - hx;
+      rion2[3*ii+1] += gy - hy;
+      rion2[3*ii+2] += gz - hz;
+   }
+}
+
+/*******************************
+ *                             *
+ *    Ion::remove_rotation     *
+ *                             *
+ *******************************/
+void Ion::remove_rotation()
+{
+   double h = 1.0/(2.0*time_step);
+
+   // center of mass 
+   double tmass = 0.0;
+   double cm[3] = {0.0, 0.0, 0.0};
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      tmass += mass[ii];
+      cm[0] += mass[ii]*rion1[3*ii];
+      cm[1] += mass[ii]*rion1[3*ii+1];
+      cm[2] += mass[ii]*rion1[3*ii+2];
+   }
+   cm[0] /= tmass; cm[1] /= tmass; cm[2] /= tmass;
+
+   // total angular momentum and inertia 
+   double L[3]  = {0.0, 0.0, 0.0};
+   double Im[9] = {0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0};
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      double temp[3] = {rion1[3*ii]   - cm[0],
+                        rion1[3*ii+1] - cm[1],
+                        rion1[3*ii+2] - cm[2]};
+      double v[3] =  { h*(rion2[3*ii]   - rion0[3*ii]),
+                       h*(rion2[3*ii+1] - rion0[3*ii+1]),
+                       h*(rion2[3*ii+2] - rion0[3*ii+2]) };
+      L[0] += mass[ii]*(temp[1]*v[2] - temp[2]*v[1]);
+      L[1] += mass[ii]*(temp[2]*v[0] - temp[0]*v[2]);
+      L[2] += mass[ii]*(temp[0]*v[1] - temp[1]*v[0]);
+      for (auto j=0; j<3; ++j)
+      for (auto i=0; i<3; ++i)
+         Im[i+3*j] -= mass[ii]*temp[i]*temp[j];
+   }
+
+   tmass = Im[0] + Im[4] + Im[8];
+   Im[0] -= tmass;
+   Im[4] -= tmass;
+   Im[8] -= tmass;
+   double L2 = L[0]*L[0] + L[1]*L[1] + L[2]*L[2];
+
+   if (L2>1.0e-12)
+   {
+      double omega[9];
+      solve_3by3(Im,L,omega);
+      double hinv = 1.0/h;
+
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         double temp[3] = {rion1[3*ii]   - cm[0],
+                           rion1[3*ii+1] - cm[1],
+                           rion1[3*ii+2] - cm[2]};
+         double v[3] = { (omega[1]*temp[2] - omega[2]*temp[1]),
+                         (omega[2]*temp[0] - omega[0]*temp[2]),
+                         (omega[0]*temp[1] - omega[1]*temp[0]) };
+         rion2[3*ii]   -= v[0]*hinv;
+         rion2[3*ii+1] -= v[1]*hinv;
+         rion2[3*ii+2] -= v[2]*hinv;
+      }
+   }
+}
+
+
+
 
 
 }

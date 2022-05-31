@@ -1092,7 +1092,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     mypneb   = mypnebin;
     mystrfac = mystrfacin;
 
-    myapc = new nwpw_apc(myion,mypneb,mystrfac,control);
+    myapc  = new nwpw_apc(myion,mypneb,mystrfac,control);
 
     psp_version = control.version;
 
@@ -1523,19 +1523,19 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
     {
         xtmp = new (std::nothrow) double[nshift0]();
         sum  = new (std::nothrow) double[3*nn*nprj_max]();
-        Gx = new (std::nothrow) double [mypneb->nfft3d]();
-        Gy = new (std::nothrow) double [mypneb->nfft3d]();
-        Gz = new (std::nothrow) double [mypneb->nfft3d]();
-        mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-        mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-        mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-        mypneb->t_pack(1,Gx);
-        mypneb->t_pack(1,Gy);
-        mypneb->t_pack(1,Gz);
+        //Gx = new (std::nothrow) double [mypneb->nfft3d]();
+        //Gy = new (std::nothrow) double [mypneb->nfft3d]();
+        //Gz = new (std::nothrow) double [mypneb->nfft3d]();
+        //mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+        //mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+        //mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+        //mypneb->t_pack(1,Gx);
+        //mypneb->t_pack(1,Gy);
+        //mypneb->t_pack(1,Gz);
 
-        //Gx  = mypneb->Gpackxyz(1,0);
-        //Gy  = mypneb->Gpackxyz(1,1);
-        //Gz  = mypneb->Gpackxyz(1,2);
+        Gx  = mypneb->Gpackxyz(1,0);
+        Gy  = mypneb->Gpackxyz(1,1);
+        Gz  = mypneb->Gpackxyz(1,2);
     }
 
     parall = mypneb->d3db::parall;
@@ -1710,9 +1710,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
     {
         delete [] xtmp;
         delete [] sum;
-        delete [] Gx;
-        delete [] Gy;
-        delete [] Gz;
+        //delete [] Gx;
+        //delete [] Gy;
+        //delete [] Gz;
     }
     delete [] sw2;
     delete [] sw1;
@@ -1990,19 +1990,19 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
     if (move)
     {
         xtmp = new (std::nothrow) double[npack0]();
-        Gx = new (std::nothrow) double [mypneb->nfft3d]();
-        Gy = new (std::nothrow) double [mypneb->nfft3d]();
-        Gz = new (std::nothrow) double [mypneb->nfft3d]();
-        mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-        mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-        mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-        mypneb->t_pack(0,Gx);
-        mypneb->t_pack(0,Gy);
-        mypneb->t_pack(0,Gz);
+        //Gx = new (std::nothrow) double [mypneb->nfft3d]();
+        //Gy = new (std::nothrow) double [mypneb->nfft3d]();
+        //Gz = new (std::nothrow) double [mypneb->nfft3d]();
+        //mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+        //mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+        //mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+        //mypneb->t_pack(0,Gx);
+        //mypneb->t_pack(0,Gy);
+        //mypneb->t_pack(0,Gz);
 
-        //Gx  = mypneb->Gpackxyz(0,0);
-        //Gy  = mypneb->Gpackxyz(0,1);
-        //Gz  = mypneb->Gpackxyz(0,2);
+        Gx  = mypneb->Gpackxyz(0,0);
+        Gy  = mypneb->Gpackxyz(0,1);
+        Gz  = mypneb->Gpackxyz(0,2);
     }
 
     mypneb->c_zero(0,vout);
@@ -2035,9 +2035,9 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
     if (move)
     {
         delete [] xtmp;
-        delete [] Gx;
-        delete [] Gy;
-        delete [] Gz;
+        //delete [] Gx;
+        //delete [] Gy;
+        //delete [] Gz;
     }
 }
 
@@ -2165,15 +2165,20 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
     double *tmpz = mypneb->r_alloc();
     double *vxcG = mypneb->r_alloc();
 
-    double *Gx = new (std::nothrow) double [mypneb->nfft3d]();
-    double *Gy = new (std::nothrow) double [mypneb->nfft3d]();
-    double *Gz = new (std::nothrow) double [mypneb->nfft3d]();
-    mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-    mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-    mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-    mypneb->t_pack(1,Gx);
-    mypneb->t_pack(1,Gy);
-    mypneb->t_pack(1,Gz);
+    //double *Gx = new (std::nothrow) double [mypneb->nfft3d]();
+    //double *Gy = new (std::nothrow) double [mypneb->nfft3d]();
+    //double *Gz = new (std::nothrow) double [mypneb->nfft3d]();
+    //mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+    //mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+    //mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+    //mypneb->t_pack(1,Gx);
+    //mypneb->t_pack(1,Gy);
+    //mypneb->t_pack(1,Gz);
+    double *Gx  = mypneb->Gpackxyz(0,0);
+    double *Gy  = mypneb->Gpackxyz(0,1);
+    double *Gz  = mypneb->Gpackxyz(0,2);
+
+
 
     mypneb->rrr_Sum(vxc,&vxc[(ispin-1)*n2ft3d],vxcG);
 
@@ -2215,9 +2220,9 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
     mypneb->r_dealloc(tmpz);
     mypneb->r_dealloc(vxcG);
     mypneb->c_pack_deallocate(exi);
-    delete [] Gx;
-    delete [] Gy;
-    delete [] Gz;
+    //delete [] Gx;
+    //delete [] Gy;
+    //delete [] Gz;
 
 }
 

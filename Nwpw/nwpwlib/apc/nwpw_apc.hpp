@@ -18,6 +18,7 @@
 #include        "Ion.hpp"
 #include        "Pneb.hpp"
 #include        "Strfac.hpp"
+#include        "nwpw_born.hpp"
 
 
 namespace pwdft {
@@ -30,11 +31,13 @@ class nwpw_apc {
    Strfac *mystrfac;
 
 public:
-   bool apc_on,v_apc_on;
+   nwpw_born *myborn;
+
+   bool apc_on,v_apc_on,born_on;
    int nga,ngs;
    double Gc;
 
-   double *gamma,*A,*Am,*b,*q,*u,*w,*gaus,*vtmp;
+   double *gamma,*A,*Am,*b,*q,*u,*utmp,*w,*gaus,*vtmp;
    double *qion, *uion;
    double Eapc,Papc;
 
@@ -50,11 +53,13 @@ public:
          delete [] b;
          delete [] q;
          delete [] u;
+         //delete [] utmp;
          delete [] w;
          delete [] gaus;
          delete [] vtmp;
          delete [] qion;
          delete [] uion;
+         if (born_on) delete myborn;
       }
    }
 
@@ -64,7 +69,12 @@ public:
    void dQdR_APC(double *, double *);
 
    void V_APC(double *, double *, double *, bool, double *);
+   void V_APC_cdft(double *, double *, double *, bool, double *);
+   void V_APC_born(double *, double *, double *, bool, double *);
+
    void f_APC(double *, double *, double *);
+   void f_APC_cdft(double *, double *, double *);
+   void f_APC_born(double *, double *, double *);
 
    double Qtot_APC(const int);
    std::string shortprint_APC();

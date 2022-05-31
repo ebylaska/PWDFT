@@ -151,6 +151,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pne[0] = 0;
    pne[1] = 0;
 
+   pfei_on      = false;
+   pcif_on      = false;
+   pmulliken_on = false;
+   pdipole_on   = false;
+
 
    ptask = 0;
    if (!rtdbjson["current_task"].is_null())
@@ -295,12 +300,19 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"].is_string()) xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())  ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["motion_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string()) emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string()) omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string()) hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
+
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string()  ) omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string())   hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string()) eigmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["fei_filename"].is_string()) fei_filename = rtdbjson["nwpw"]["car-parrinello"]["fei_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["cif_filename"].is_string()) cif_filename = rtdbjson["nwpw"]["car-parrinello"]["cif_filename"];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string()) eigmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"].is_string()) dipole_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
+
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["fei_on"].is_boolean())    pfei_on = rtdbjson["nwpw"]["car-parrinello"]["fei_on"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["cif_on"].is_boolean())    pcif_on = rtdbjson["nwpw"]["car-parrinello"]["cif_on"];
+   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["dipole_on"].is_boolean()) pdipole_on = rtdbjson["nwpw"]["car-parrinello"]["dipole_on"];
+   //if (ptask==6) if (rtdbjson["nwpw"]["mulliken"].is_boolean())                    pmulliken_on = rtdbjson["nwpw"]["mulliken_on"];
+
 
 
    // from steepest_descent block
@@ -442,6 +454,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pminimizer = 1;
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
 
+   // APC data
    papc_on  = false;
    papc_nga = 0;
    papc_Gc  = 2.5;
@@ -465,6 +478,22 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       }
    }
 
+   // Born data
+   pborn_on  = false; pborn_relax  = false;
+   if (!rtdbjson["nwpw"]["born"].is_null()) {
+      auto bornjson = rtdbjson["nwpw"]["born"];
+      if (bornjson["on"].is_boolean())    pborn_on    = bornjson["on"];
+      if (bornjson["relax"].is_boolean()) pborn_relax = bornjson["relax"];
+      if (bornjson["dielec"].is_number_float()) pborn_dielec = bornjson["dielec"];
+
+      if (!bornjson["bradii"].is_null()) {
+         size_t nu = bornjson["bradii"].size();
+         for (size_t i=0; i<nu; ++i) pborn_bradii.push_back(bornjson["bradii"][i]);
+      }
+   }
+   if (pborn_on) papc_on = true;
+
+   // Nose data
    pnose_on = false; pnose_restart = false;
    pnose_mchain = 0; pnose_mchain = 0;
    pnose_te = 0.0; pnose_tr = 0.0; pnose_pe = 0.0; pnose_pr = 0.0; pnose_ne_chain = 0.0; pnose_eke0 = 0.0; 
@@ -537,10 +566,6 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (!rtdbjson["driver"]["trust"].is_null())   { pdriver_trust = rtdbjson["driver"]["trust"]; }
 
 
-   pfei_on      = false;
-   pcif_on      = false;
-   pmulliken_on = false;
-   pdipole_on   = false;
 
 }
 

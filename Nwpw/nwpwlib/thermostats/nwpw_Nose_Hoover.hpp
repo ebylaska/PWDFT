@@ -123,7 +123,6 @@ public:
          /* Last link of chain */
          double FXe    = 2.0*(eke_tmp-Ee0[Mchain-1]);
          Xe2[Mchain-1] = Xe1[Mchain-1] + time_step*Xem[Mchain-1] + (0.5*time_step*time_step/Qe[Mchain-1])*FXe;
-
  
          double ekr_tmp = eki;
          for (auto n=0; n<(Nchain-1); ++n)
@@ -165,7 +164,6 @@ public:
          /* Last link of chain */
          double FXe    = 2.0*(eke_tmp-Ee0[Mchain-1]);
          Xe2[Mchain-1] = 2.0*Xe1[Mchain-1] - Xe0[Mchain-1] + (time_step*time_step/Qe[Mchain-1])*FXe;
-
 
          double ekr_tmp = eki;
          for (auto n=0; n<(Nchain-1); ++n)
