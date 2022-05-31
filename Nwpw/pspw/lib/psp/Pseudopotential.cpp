@@ -1761,15 +1761,18 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
 
     xtmp = new (std::nothrow) double[nshift0]();
     sum  = new (std::nothrow) double[3*nn*nprj_max]();
-    Gx = new (std::nothrow) double [mypneb->nfft3d]();
-    Gy = new (std::nothrow) double [mypneb->nfft3d]();
-    Gz = new (std::nothrow) double [mypneb->nfft3d]();
-    mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-    mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-    mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-    mypneb->t_pack(1,Gx);
-    mypneb->t_pack(1,Gy);
-    mypneb->t_pack(1,Gz);
+    //Gx = new (std::nothrow) double [mypneb->nfft3d]();
+    //Gy = new (std::nothrow) double [mypneb->nfft3d]();
+    //Gz = new (std::nothrow) double [mypneb->nfft3d]();
+    //mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+    //mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+    //mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+    //mypneb->t_pack(1,Gx);
+    //mypneb->t_pack(1,Gy);
+    //mypneb->t_pack(1,Gz);
+    Gx  = mypneb->Gpackxyz(1,0);
+    Gy  = mypneb->Gpackxyz(1,1);
+    Gz  = mypneb->Gpackxyz(1,2);
 
     parall = mypneb->d3db::parall;
 
@@ -1859,9 +1862,9 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
 
     delete [] xtmp;
     delete [] sum;
-    delete [] Gx;
-    delete [] Gy;
-    delete [] Gz;
+    //delete [] Gx;
+    //delete [] Gy;
+    //delete [] Gz;
 
     delete [] sw2;
     delete [] sw1;
@@ -2055,15 +2058,19 @@ void Pseudopotential::f_local(double *dng, double *fion)
     npack0 = mypneb->npack(0);
 
     xtmp = new (std::nothrow) double[npack0]();
-    Gx = new (std::nothrow) double [mypneb->nfft3d]();
-    Gy = new (std::nothrow) double [mypneb->nfft3d]();
-    Gz = new (std::nothrow) double [mypneb->nfft3d]();
-    mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-    mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-    mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-    mypneb->t_pack(0,Gx);
-    mypneb->t_pack(0,Gy);
-    mypneb->t_pack(0,Gz);
+    //Gx = new (std::nothrow) double [mypneb->nfft3d]();
+    //Gy = new (std::nothrow) double [mypneb->nfft3d]();
+    //Gz = new (std::nothrow) double [mypneb->nfft3d]();
+    //mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+    //mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+    //mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+    //mypneb->t_pack(0,Gx);
+    //mypneb->t_pack(0,Gy);
+    //mypneb->t_pack(0,Gz);
+
+    Gx  = mypneb->Gpackxyz(0,0);
+    Gy  = mypneb->Gpackxyz(0,1);
+    Gz  = mypneb->Gpackxyz(0,2);
 
     nshift = 2*npack0;
     exi    = new (std::nothrow) double[nshift]();
@@ -2090,9 +2097,9 @@ void Pseudopotential::f_local(double *dng, double *fion)
     delete [] vtmp;
 
     delete [] xtmp;
-    delete [] Gx;
-    delete [] Gy;
-    delete [] Gz;
+    //delete [] Gx;
+    //delete [] Gy;
+    //delete [] Gz;
 
 }
 
