@@ -5,7 +5,7 @@
 #include	"v_exc.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /**********************************************
  *                                            *

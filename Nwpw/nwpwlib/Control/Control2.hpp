@@ -9,10 +9,10 @@
 #include        <string>
 #include        <vector>
 
-using namespace std;
+
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 class Control2 {

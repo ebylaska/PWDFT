@@ -9,7 +9,7 @@
 //#include	"Pseudopotential.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class	Ewald {
    int    encut,enx,eny,enz,enshl3d,enpack,enpack_all,enida;

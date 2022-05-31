@@ -2,7 +2,7 @@
 #define _B3LYP_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_B3LYP_BW_unrestricted(const int, 
                                       double *, double *,

@@ -6,3 +6,8 @@ if(NWPW_CUDA)
   target_link_libraries( nwpwlib PUBLIC CUDA::cufft )
 endif()
 
+if(NWPW_HIP)
+  target_link_libraries( nwpwlib PUBLIC roc::rocblas )
+  target_link_libraries( nwpwlib PUBLIC roc::rocfft )
+endif()
+

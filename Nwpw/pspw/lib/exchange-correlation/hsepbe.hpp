@@ -2,7 +2,7 @@
 #define _HSEPBE_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_HSE_BW_unrestricted(const int, 
                                       double *, double *,

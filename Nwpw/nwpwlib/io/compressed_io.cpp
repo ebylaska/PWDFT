@@ -28,8 +28,8 @@
 //#include        <stdlib.h>
 //#include        <stdio.h>
 //#include        <math.h>
-//#include        <string.h>
-//using namespace std;
+//#include        <string>
+//
 
 #include        <cstdlib>
 #include        <cstdio>
@@ -46,7 +46,7 @@
 #include <sys/stat.h>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 int cfileexists(const char* filename){

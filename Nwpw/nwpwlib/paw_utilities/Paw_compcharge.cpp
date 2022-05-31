@@ -9,7 +9,7 @@
 #include	<complex>
 #include        <cmath>
 
-using namespace std;
+
 
 
 #include	"blas.h"
@@ -19,7 +19,7 @@ using namespace std;
 #include        "Paw_compcharge.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /***********************************
@@ -411,7 +411,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                   int mi = m_prj[ia][i];
                   int bi = b_prj[ia][i];
                   double taunt = util_gaunt(false,l,m,li,mi,lj,mj)*comp_charge_matrix[ia][matindx2(bi,bj,l,nbasis[ia])];
-                  if (abs(taunt)>1.0e-15) ++indx;
+                  if (std::abs(taunt)>1.0e-15) ++indx;
                   std::cout << "indx=" << indx << " taunt="<< taunt << std::endl;
                }
             }
@@ -450,7 +450,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                   int bi = b_prj[ia][i];
                   double taunt = util_gaunt(false,l,m,li,mi,lj,mj)*comp_charge_matrix[ia][matindx2(bi,bj,l,nbasis[ia])];
 
-                  if (abs(taunt)>1.0e-15) 
+                  if (std::abs(taunt)>1.0e-15) 
                   {
                      lm_Tndiff[indx]   = lm;
                      iprj_Tndiff[indx] = i;
@@ -505,7 +505,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                         double taunt = util_gaunt(false,l,m,li,mi,lj,mj)
                                       *util_gaunt(false,l,m,li1,mi1,lj1,mj1)
                                       *hartree_matrix[ia][matindx4(bi,bj,bi1,bj1,l,nbasis[ia])];
-                        if (abs(taunt)>1.0e-15) ++indx; 
+                        if (std::abs(taunt)>1.0e-15) ++indx; 
                      }
                   }
 
@@ -556,7 +556,7 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
                         double taunt = util_gaunt(false,l,m,li,mi,lj,mj)
                                       *util_gaunt(false,l,m,li1,mi1,lj1,mj1)
                                       *hartree_matrix[ia][matindx4(bi,bj,bi1,bj1,l,nbasis[ia])];
-                        if (abs(taunt)>1.0e-15)
+                        if (std::abs(taunt)>1.0e-15)
                         {
                            iprj_hartree[indx]  = i;
                            jprj_hartree[indx]  = j;

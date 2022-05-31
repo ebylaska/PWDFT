@@ -9,7 +9,7 @@
 #include        "b3lyp.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 #define dncut	1.0e-30
 

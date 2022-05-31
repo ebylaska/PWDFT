@@ -1,12 +1,11 @@
 #include <random>
 #include <iostream>
 #include <limits>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "mkl_blas_sycl.hpp"
 
 #include <chrono>
 using namespace std::chrono;
-using namespace cl::sycl;
 
 #define M 8192
 #define N 8192

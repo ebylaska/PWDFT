@@ -10,7 +10,7 @@
 #include	"util_linesearch.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void c_aindexcopy(const int, const int *, double *, double *);
 extern void c_bindexcopy(const int, const int *, double *, double *);

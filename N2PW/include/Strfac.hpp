@@ -1,7 +1,7 @@
 #ifndef	_STRFAC_H_
 #define _STRFAC_H_
 
-using namespace std;
+
 
 #include        "PGrid.hpp"
 #include	"Ion.hpp"

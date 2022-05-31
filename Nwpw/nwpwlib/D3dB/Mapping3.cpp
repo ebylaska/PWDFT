@@ -8,7 +8,7 @@
 #include        <iostream>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 */
 
 #include        <iostream>
@@ -16,7 +16,7 @@ using namespace std;
 #include	"Mapping3.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /***********************************
  *                                 *

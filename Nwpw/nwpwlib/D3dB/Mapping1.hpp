@@ -7,7 +7,7 @@
 */
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class Mapping1 {
 

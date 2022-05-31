@@ -7,7 +7,7 @@
 #include        "Control2.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 class Paw_gintegrals {

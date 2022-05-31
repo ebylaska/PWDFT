@@ -2,7 +2,7 @@
 #define _PAW_GAUNT_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 class Paw_gaunt {

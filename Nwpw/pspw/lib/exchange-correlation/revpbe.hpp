@@ -2,7 +2,7 @@
 #define _revPBE_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_revPBE_BW_unrestricted(const int, 
                                        double *, double *,

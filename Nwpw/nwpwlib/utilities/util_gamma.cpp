@@ -7,7 +7,7 @@
 #include	"util_gamma.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 
@@ -77,7 +77,7 @@ double util_gser(const double a, const double x)
       ap  += 1.0;
       del *= x/ap;
       sum += del;
-      if (abs(del)<(abs(sum)*EPS)) done = true;
+      if (std::abs(del)<(std::abs(sum)*EPS)) done = true;
       ++n;
    }
    if (n>ITMAX) std::cout << "a too large, ITMAX too small in gser" << std::endl;
@@ -117,13 +117,13 @@ double util_gcf(const double a, const double x)
       b += 2.00;
       d = an*d + b;
 
-      if (abs(d) < FPMIN) d = FPMIN;
+      if (std::abs(d) < FPMIN) d = FPMIN;
       c= b + an/c;
-      if (abs(c) < FPMIN) c = FPMIN;
+      if (std::abs(c) < FPMIN) c = FPMIN;
       d = 1.0/d;
       double  del = d*c;
       h *= del;
-      if (abs(del-1.00)<EPS) done = true;
+      if (std::abs(del-1.00)<EPS) done = true;
       ++i;
    }
    if (i>ITMAX) std::cout << "a too large, ITMAX too small in util_gcf" << std::endl;

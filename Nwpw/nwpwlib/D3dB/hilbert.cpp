@@ -8,7 +8,7 @@ $Id: hilbert.c,v 1.6 2005-10-07 19:34:21 bylaska Exp $
 #include "olist.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 #define bottom_left     0

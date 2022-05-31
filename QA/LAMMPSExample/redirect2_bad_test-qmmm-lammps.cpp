@@ -6,7 +6,7 @@
 
 #include "mpi.h"
 
-using namespace std;
+
 
 extern int  lammps_pspw_qmmm_minimizer(MPI_Comm, double*, double*, double*, double*, double*);
 extern void lammps_pspw_input(MPI_Comm, std::string&);

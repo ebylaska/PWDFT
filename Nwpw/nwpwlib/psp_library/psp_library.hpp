@@ -1,23 +1,25 @@
-#ifndef _PSP_LIBRARY_HPP_
-#define _PSP_LIBRARY_HPP_
 /* psp_library.h -
    author - Eric Bylaska
 
 */
 
+#pragma once
+
 //extern "C" {
 //#include        "compressed_io.h"
 //}
 #include        "compressed_io.hpp"
-
-
-
 #include	<map>
 #include	<string>
 #include	"Control2.hpp"
 
+#include	<cstring>
+#include	<iostream>
+#include	<cstdio>
+#include	<cstdlib>
+#include	<cmath>
+
 namespace pwdft {
-using namespace pwdft;
 
 class psp_library {
 
@@ -34,7 +36,7 @@ class psp_library {
    /* other */
    void psp_check(const char *, Control2&, double *);
 
-   string psp_libname(const char *);
+   std::string psp_libname(const char *);
    int    psp_type(const char *);
    int    psp_lmax(const char *);
    int    psp_locp(const char *);
@@ -52,6 +54,3 @@ class psp_library {
 };
 
 }
-
-
-#endif

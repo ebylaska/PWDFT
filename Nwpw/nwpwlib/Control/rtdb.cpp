@@ -5,7 +5,7 @@
 
 #include        <iostream>
 #include        <cstdlib>
-using namespace std;
+
 
 
 #include	"Int64.h"
@@ -15,7 +15,7 @@ extern "C" {
 #include	"rtdb.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /********************************
  *                              *
@@ -30,7 +30,7 @@ RTDB::RTDB(Parallel *inparall, const char *filename, const char *mode)
    {
       if (!rtdb_seq_open(filename,mode, &handle))
       {
-         cout << "error opening " << filename << " mode=" << mode << "\n";
+	 std::cout << "error opening " << filename << " mode=" << mode << "\n";
          return;
       }
    }
@@ -97,7 +97,7 @@ int RTDB::put(const char *tag, const int matype, const int nelem, void *array)
    {
       status = rtdb_seq_put(handle,tag,matype,nelem,array);
       if (!status)
-         cout << "rtdb error putting tag =" << tag << "\n";
+	std::cout << "rtdb error putting tag =" << tag << "\n";
    }
    if (parallel_mode)
       parall->Brdcst_iValue(0,0,&status);
@@ -112,7 +112,7 @@ int RTDB::get_info(const char *tag, int *matype, int *nelem, char *date)
    {
       status = rtdb_seq_get_info(handle,tag,matype,nelem,date);
       if (!status)
-         cout << "rtdb error get_info tag =" << tag << "\n";
+	std::cout << "rtdb error get_info tag =" << tag << "\n";
    }
    if (parallel_mode)
    {

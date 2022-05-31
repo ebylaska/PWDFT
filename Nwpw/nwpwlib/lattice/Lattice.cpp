@@ -8,7 +8,7 @@
 #include	"Lattice.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 static void get_cube(double *unita, double *unitg, double *omega)

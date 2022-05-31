@@ -14,7 +14,7 @@
 #include	"Strfac.hpp"
 #include        "Pseudopotential.hpp"
 
-using namespace pwdft;
+
 
 namespace pwdft {
 

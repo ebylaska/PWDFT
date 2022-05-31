@@ -10,7 +10,7 @@
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 */
 
 

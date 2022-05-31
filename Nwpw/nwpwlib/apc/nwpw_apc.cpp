@@ -110,7 +110,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       {
          qion[ii] = control.APC_q(ii);
          uion[ii] = control.APC_u(ii);
-         if (abs(uion[ii])> 1.0e-9) v_apc_on = true;
+         if (std::abs(uion[ii])> 1.0e-9) v_apc_on = true;
       }
 
       /* write out APC header */   
@@ -125,7 +125,7 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
          for (auto i=0; i<nga; ++i)
             std::cout << " APC gamma: " << i << " " << gamma[i] << std::endl;
          for (auto ii=0; ii<myion->nion; ++ii)
-            if (abs(uion[ii])> 1.0e-9) 
+            if (std::abs(uion[ii])> 1.0e-9) 
                std::cout << " APC u: " << std::setw(8)  << ii+1 << "    " 
                          << std::setw(12) << std::fixed << std::setprecision(5) << uion[ii] << std::endl;
          if (v_apc_on) 
@@ -749,12 +749,12 @@ std::string nwpw_apc::print_APC(const double *zv)
           << " --------------------------------------" << std::endl
           << std::endl;
    stream << "      no  atom";
-   stream << setw(7) << "g=" << std::fixed << std::setprecision(3) << 0.0;
+   stream << std::setw(7) << "g=" << std::fixed << std::setprecision(3) << 0.0;
    for (auto i=0; i<nga; ++i) 
-      stream << setw(7) << "g=" << std::fixed << std::setprecision(3) << gamma[i];
+     stream << std::setw(7) << "g=" << std::fixed << std::setprecision(3) << gamma[i];
    stream << std::endl;
    stream << "   -----  ----";
-   for (auto i=0; i<(nga+1); ++i) stream << setw(12) << "-------";
+   for (auto i=0; i<(nga+1); ++i) stream << std::setw(12) << "-------";
    stream << std::endl;
    for (auto ii=0; ii<myion->nion; ++ii)
    {

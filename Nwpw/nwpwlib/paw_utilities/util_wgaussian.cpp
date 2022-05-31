@@ -11,7 +11,7 @@
 #include        "util_wgaussian.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /******************************************************
@@ -48,7 +48,7 @@ double util_WGaussian(const int la, const int ma, const double sa,
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.0e-9))
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.0e-9))
    {
       phi = 0.0;
    }
@@ -67,7 +67,7 @@ double util_WGaussian(const int la, const int ma, const double sa,
    }
    
 
-   if ((((abs(la-lb)+la+lb)/2)%2)==1)
+   if ((((std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -139,7 +139,7 @@ void util_dWGaussian(const int la, const int ma, const double sa,
       c = 32.0*pi/(x*y);
    }
 
-   if ((((abs(la-lb)+la+lb)/2)%2)==1)
+   if ((((std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -271,7 +271,7 @@ double util_WGaussian3(const int la, const int ma, const double sa, const int lb
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.0e-9))
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.0e-9))
    {
       phi = 0.0;
    }
@@ -289,7 +289,7 @@ double util_WGaussian3(const int la, const int ma, const double sa, const int lb
       c = 32.0*pi/(x*y);
    }
 
-   if ((((abs(la-lb)+la+lb)/2)%2)==1)
+   if ((((std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -361,7 +361,7 @@ double util_WGaussian2(const int la, const int ma, const double sa, const int lb
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.0e-9))
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.0e-9))
    {
       phi = 0.0;
    }
@@ -379,7 +379,7 @@ double util_WGaussian2(const int la, const int ma, const double sa, const int lb
       c = 32.0*pi/(x*y);
    }
 
-   if ((((abs(la-lb)+la+lb)/2)%2)==1)
+   if ((((std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -462,7 +462,7 @@ void  util_dWGaussian3(const int la, const int ma, const double sa,
       c = 32.0*pi/(x*y);
    }
 
-   if ((((abs(la-lb)+la+lb)/2)%2)==1)
+   if ((((std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -555,7 +555,7 @@ std::complex<double> util_CWGaussian(const int la, const int ma, const double sa
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.0e-9))
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.0e-9))
    {
       phi = 0.0;
    }
@@ -573,7 +573,7 @@ std::complex<double> util_CWGaussian(const int la, const int ma, const double sa
       c = 32.0*pi/(x*y);
    }
 
-   if (((mb+(abs(la-lb)+la+lb)/2)%2)==1) 
+   if (((mb+(std::abs(la-lb)+la+lb)/2)%2)==1) 
    {
       fac = -1.0;
    }
@@ -585,7 +585,7 @@ std::complex<double> util_CWGaussian(const int la, const int ma, const double sa
    std::complex<double> tmp = std::complex<double>(0.0,0.0);
    for (auto l=abs(la-lb); l<=(la+lb); l+=2)
    {
-      if (abs(m)<=l)
+      if (std::abs(m)<=l)
       {
          std::complex<double> mtmp = util_gaunt(true,l,m,la,ma,lb,-mb)*util_YSpherical_lm(l,m,cos_theta,phi);
          tmp +=  fac*mtmp*util_GaussBessel(la+lb,l,alpha,R);
@@ -645,7 +645,7 @@ void util_dCWGaussian(const int la, const int ma, const double sa,
       c = 32.0*pi/(x*y);
    }
 
-   if (((mb+(abs(la-lb)+la+lb)/2)%2)==1) 
+   if (((mb+(std::abs(la-lb)+la+lb)/2)%2)==1) 
    {
       fac = -1.0;
    }
@@ -661,7 +661,7 @@ void util_dCWGaussian(const int la, const int ma, const double sa,
    std::complex<double> Tx,Ty,Tz;
    for (auto l=abs(la-lb); l<=(la+lb); l+=2)
    {
-      if (abs(m)<=l)
+      if (std::abs(m)<=l)
       {
          double gg1 = util_gaunt(true,l,m,la,ma,lb,-mb);
          util_dYspherical_lm(l,m,cos_theta,phi,Tx,Ty,Tz);
@@ -726,7 +726,7 @@ std::complex<double> util_CWGaussian3(const int la, const int ma, const double s
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.0e-9)) 
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.0e-9)) 
    {
       phi = 0.0;
    } 
@@ -744,7 +744,7 @@ std::complex<double> util_CWGaussian3(const int la, const int ma, const double s
       c = 32.0*pi/(x*y);
    }
       
-   if (((mb+(abs(la-lb)+la+lb)/2)%2)==1)
+   if (((mb+(std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -756,7 +756,7 @@ std::complex<double> util_CWGaussian3(const int la, const int ma, const double s
    std::complex<double> tmp = std::complex<double>(0.0,0.0);
    for (auto l=abs(la-lb); l<=(la+lb); l+=2)
    {
-      if (abs(m)<=l)
+      if (std::abs(m)<=l)
       {
          std::complex<double> mtmp = util_gaunt(true,l,m,la,ma,lb,-mb)*util_YSpherical_lm(l,m,cos_theta,phi);
 
@@ -811,7 +811,7 @@ std::complex<double> util_CWGaussian2(const int la, const int ma, const double s
 
    double phi,c,fac;
 
-   if ((abs(Rab[1])<1.0e-9) && (abs(Rab[0])<1.03-9))
+   if ((std::abs(Rab[1])<1.0e-9) && (std::abs(Rab[0])<1.03-9))
    {
       phi = 0.0;
    }
@@ -829,7 +829,7 @@ std::complex<double> util_CWGaussian2(const int la, const int ma, const double s
       c = 32.0*pi/(x*y);
    }
 
-   if (((mb+(abs(la-lb)+la+lb)/2)%2)==1)
+   if (((mb+(std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -841,7 +841,7 @@ std::complex<double> util_CWGaussian2(const int la, const int ma, const double s
    std::complex<double> tmp = std::complex<double>(0.0,0.0);
    for (auto l=abs(la-lb); l<=(la+lb); l+=2)
    {
-      if (abs(m)<=l)
+      if (std::abs(m)<=l)
       {
          std::complex<double> mtmp = util_gaunt(true,l,m,la,ma,lb,-mb) * util_YSpherical_lm(l,m,cos_theta,phi);
 
@@ -909,7 +909,7 @@ void util_dCWGaussian3(const int la, const int ma, const double sa,
       c = 32.0*pi/(x*y);
    }
 
-   if (((mb+(abs(la-lb)+la+lb)/2)%2)==1)
+   if (((mb+(std::abs(la-lb)+la+lb)/2)%2)==1)
    {
       fac = -1.0;
    }
@@ -927,7 +927,7 @@ void util_dCWGaussian3(const int la, const int ma, const double sa,
 
    for (auto l=abs(la-lb); l<=(la+lb); l+=2)
    {
-      if (abs(m)<=l)
+      if (std::abs(m)<=l)
       {
          double gg1 = util_gaunt(true,l,m,la,ma,lb,-mb);
          util_dYspherical_lm(l,m,cos_theta,phi,Tx,Ty,Tz);

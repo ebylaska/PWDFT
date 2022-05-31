@@ -9,14 +9,14 @@
 #include	<complex>
 #include        <cmath>
 
-using namespace std;
+
 
 
 #include        "util_wgaussian.hpp"
 #include        "Paw_gintegrals.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*************************************************
  *                                               *
@@ -136,7 +136,7 @@ static void Paw_gintegral_stripper(const int ng_in,
    ng_out = 0;
    for (auto i=0; i<ng_in; ++i)
    {
-      if (abs(e_in[i])>tole) 
+      if (std::abs(e_in[i])>tole) 
       {
          iii1_out[ng_out] = iii1_in[i];
          iii2_out[ng_out] = iii2_in[i];

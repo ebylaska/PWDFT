@@ -45,7 +45,6 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-using namespace std;
 using namespace pwdft;
 
 #define MASTER 0
@@ -160,7 +159,7 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
      int ierr = MPI_Comm_rank(comm_world,&taskid);
      bool oprint = (taskid==MASTER) && false;
      std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(fortran_rtdbstring);
-     int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+     int wfound=0; if (taskid==MASTER) { std::ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
      MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
 
      if ((!wfound) || (wvfnc_initialize))
@@ -331,7 +330,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
       int ierr = MPI_Comm_rank(comm_world,&taskid);
       bool oprint = (taskid==MASTER) && false;
       std::string input_wavefunction_filename = pwdft::parse_input_wavefunction_filename(lammps_rtdbstring);
-      int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+      int wfound=0; if (taskid==MASTER) { std::ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
       MPI_Bcast(&wfound,1,MPI_INT,MASTER,comm_world);
      
       if ((!wfound) || (wvfnc_initialize))
@@ -363,7 +362,7 @@ int main(int argc, char* argv[])
 {
   int ierr=0;
   int taskid,np;
-  string line,nwinput,nwfilename;
+  std::string line,nwinput,nwfilename;
 
   // Initialize MPI
   ierr = MPI_Init(&argc,&argv);
@@ -387,7 +386,7 @@ int main(int argc, char* argv[])
      {
         nwfilename = argv[1];
         nwinput = "";
-        ifstream nwfile(argv[1]);
+        std::ifstream nwfile(argv[1]);
         if (nwfile.good())
         {
            while (getline(nwfile,line))
@@ -453,7 +452,7 @@ int main(int argc, char* argv[])
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  string rtdbstr  = parse_nwinput(nwinput);
+  std::string rtdbstr  = parse_nwinput(nwinput);
   int task = parse_task(rtdbstr);
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -468,7 +467,7 @@ int main(int argc, char* argv[])
      if (wvfnc_initialize) rtdbstr = parse_initialize_wvfnc_set(rtdbstr,false);
 
      std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
-     int wfound=0; if (taskid==MASTER) { ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
+     int wfound=0; if (taskid==MASTER) { std::ifstream wfile(input_wavefunction_filename); if (wfile.good()) wfound=1; wfile.close(); }
      MPI_Bcast(&wfound,1,MPI_INT,MASTER,MPI_COMM_WORLD);
 
      if ((!wfound) || (wvfnc_initialize))

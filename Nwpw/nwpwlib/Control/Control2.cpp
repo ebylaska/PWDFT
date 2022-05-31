@@ -3,7 +3,7 @@
 #include        <cstdlib>
 #include        <string>
 
-using namespace std;
+
 
 
 #include	"json.hpp"
@@ -16,7 +16,7 @@ using namespace std;
 using json = nlohmann::json;
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 
@@ -138,7 +138,7 @@ static void control_ngrid_default(double *unita, double ecut, int mapping, int *
  *                                 *
  ***********************************/
 
-Control2::Control2(const int np0, const string rtdbstring)
+Control2::Control2(const int np0, const std::string rtdbstring)
 {
    myrtdbstring  = rtdbstring;
    json rtdbjson = json::parse(rtdbstring);
@@ -389,7 +389,7 @@ Control2::Control2(const int np0, const string rtdbstring)
    punita[3] =  0.0; punita[4] = 20.0; punita[5] =  0.0;
    punita[6] =  0.0; punita[7] =  0.0; punita[8] = 20.0;
 
-   string geomname = "geometry";
+   std::string geomname = "geometry";
    if (rtdbjson["geometry"].is_string())
       geomname = rtdbjson["geometry"];
 

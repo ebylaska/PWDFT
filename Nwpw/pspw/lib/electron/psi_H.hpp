@@ -6,7 +6,7 @@
 #include        "Pseudopotential.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void psi_H(Pneb *,
                   Kinetic_Operator *,

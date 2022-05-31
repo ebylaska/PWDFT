@@ -3,7 +3,7 @@
 */
 
 /*
-using namespace std;
+
 
 #include	<string.h>
 #include        <iostream>

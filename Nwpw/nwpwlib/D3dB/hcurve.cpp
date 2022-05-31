@@ -16,7 +16,7 @@
  */
 
 namespace pwdft {
-using namespace pwdft;
+
 
 typedef struct rect_struct {
 	struct rect_struct *lo,*ro,*lu,*ru,*sp;

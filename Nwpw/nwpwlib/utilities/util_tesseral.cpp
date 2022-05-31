@@ -11,7 +11,7 @@
 #include        "util_tesseral.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /**************************************

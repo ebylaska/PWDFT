@@ -11,7 +11,7 @@
 #include	"blas.h"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class nwpw_lmbfgs {
 
@@ -58,7 +58,7 @@ public:
       DAXPY_PWDFT(nsize,mrone,g,one,&sylist[(2*indx[m]+1)*nsize],one);
 
       double sum  = DDOT_PWDFT(nsize,&sylist[(2*indx[m]+1)*nsize],one,&sylist[(2*indx[m])*nsize],one);
-      if (fabs(sum)>1.0e-11) {
+      if (std::fabs(sum)>1.0e-11) {
          rho[indx[m]] = 1.0/sum;
 
          double alpha[m+1];

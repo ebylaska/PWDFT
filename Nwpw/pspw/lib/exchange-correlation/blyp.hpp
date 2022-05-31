@@ -2,7 +2,7 @@
 #define _BLYP_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_BLYP_BW_unrestricted(const int, 
                                      double *, double *,

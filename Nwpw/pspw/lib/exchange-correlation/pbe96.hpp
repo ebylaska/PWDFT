@@ -2,7 +2,7 @@
 #define _PBE96_HPP_
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void gen_PBE96_BW_unrestricted(const int, 
                                       double *, double *,

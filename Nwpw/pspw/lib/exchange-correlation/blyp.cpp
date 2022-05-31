@@ -6,7 +6,7 @@
 #include	"pbe96.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /****************************************************
  *                                                  *

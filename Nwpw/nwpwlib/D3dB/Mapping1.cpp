@@ -7,14 +7,14 @@
 #include        <iostream>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 */
 
 #include        <iostream>
 #include	"Mapping1.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /********************************

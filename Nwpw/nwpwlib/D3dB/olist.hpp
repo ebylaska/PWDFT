@@ -7,10 +7,10 @@
 
 #include        <iostream>
 #include        <cstdlib>
-using namespace std;
+
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class OList {
 
@@ -51,10 +51,10 @@ public:
 
       void print() {
          int i;
-         cout << max_index << ": ";
+	 std::cout << max_index << ": ";
          for (i=0; i<(max_index); ++i)
-            cout << list[i] << " ";
-         cout << "\n";
+	   std::cout << list[i] << " ";
+	 std::cout << "\n";
       }
       
      

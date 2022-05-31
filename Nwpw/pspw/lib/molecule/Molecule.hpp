@@ -5,7 +5,7 @@
 #include        <iostream>
 #include 	<iomanip> 
 #include	<vector>
-using namespace std;
+
 
 #include	"Control2.hpp"
 #include	"Pneb.hpp"
@@ -18,11 +18,11 @@ using namespace std;
 
 namespace pwdft {
 
-#define	ionstream(A,B,C)	(A) << scientific << setw(19) << setprecision(10) << (B) << setw(0) <<  " (" << setw(15) << setprecision(5)  << (C) << setw(0) << " /ion)" << "\n"
-#define	elcstream(A,B,C)	(A) << scientific << setw(19) << setprecision(10) << (B) << setw(0) <<  " (" << setw(15) << setprecision(5)  << (C) << setw(0) << " /electron)" << "\n"
+#define	ionstream(A,B,C)	(A) << std::scientific << std::setw(19) << std::setprecision(10) << (B) << std::setw(0) <<  " (" << std::setw(15) << std::setprecision(5)  << (C) << std::setw(0) << " /ion)" << "\n"
+#define	elcstream(A,B,C)	(A) << std::scientific << std::setw(19) << std::setprecision(10) << (B) << std::setw(0) <<  " (" << std::setw(15) << std::setprecision(5)  << (C) << std::setw(0) << " /electron)" << "\n"
 
-#define	eig1stream(A,B)		scientific << setw(18) << setprecision(7) << (A) << setw(0) <<  " (" << fixed << setw(8) << setprecision(3)  << (B) << setw(0) << "eV)\n"
-#define	eig2stream(A,B,C,D)	scientific << setw(18) << setprecision(7) << (A) << setw(0) <<  " (" << fixed << setw(8) << setprecision(3)  << (B) << setw(0) << "eV) " << scientific << setw(18) << setprecision(7) << (C) << setw(0) <<  " (" << fixed << setw(8) << setprecision(3)  << (D) << setw(0) << " eV)\n" 
+#define	eig1stream(A,B)		std::scientific << std::setw(18) << std::setprecision(7) << (A) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (B) << std::setw(0) << "eV)\n"
+#define	eig2stream(A,B,C,D)	std::scientific << std::setw(18) << std::setprecision(7) << (A) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (B) << std::setw(0) << "eV) " << std::scientific << std::setw(18) << std::setprecision(7) << (C) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (D) << std::setw(0) << " eV)\n" 
 
 class	Molecule {
 
@@ -203,16 +203,16 @@ public:
 
   
 
-   friend ostream& operator<<(ostream& os, const Molecule& mymolecule) {
+   friend std::ostream& operator<<(std::ostream& os, const Molecule& mymolecule) {
       /* using old style c++ formatting */
-      ios init(NULL);
+      std::ios init(NULL);
       init.copyfmt(os);
-      string eoln = "\n";
+      std::string eoln = "\n";
       os << "     ==============  energy results (Molecule object)  ==============" << eoln;
       os << eoln << eoln;
 
-      os << fixed << " number of electrons: spin up= " << setw(11) << setprecision(5) << mymolecule.en[0] 
-                                         << "  down= " << setw(11) << setprecision(5) << mymolecule.en[mymolecule.ispin] 
+      os << std::fixed << " number of electrons: spin up= " << std::setw(11) << std::setprecision(5) << mymolecule.en[0] 
+                                         << "  down= " << std::setw(11) << std::setprecision(5) << mymolecule.en[mymolecule.ispin] 
                                          << " (real space)";
       os << eoln;
       os << eoln;
@@ -234,7 +234,7 @@ public:
          os << ionstream(" K.S. V_APC energy   : ",mymolecule.E[52],mymolecule.E[52]/mymolecule.myion->nion);
 
       os << " Viral Coefficient   : "
-         << setw(19) << setprecision(10) << (mymolecule.E[9] + mymolecule.E[8] + mymolecule.E[7] + mymolecule.E[6])/mymolecule.E[5];
+         << std::setw(19) << std::setprecision(10) << (mymolecule.E[9] + mymolecule.E[8] + mymolecule.E[7] + mymolecule.E[6])/mymolecule.E[5];
       os << eoln;
       os << eoln;
       os << " orbital energy:" << eoln;

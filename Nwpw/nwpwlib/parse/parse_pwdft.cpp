@@ -11,10 +11,10 @@
 
 using json = nlohmann::json;
 
-using namespace std;
+
 
 namespace pwdft {
-using namespace pwdft;
+
 
 json periodic_table_mass = json::parse("{ \"H\"  : 1.008, \"He\" : 4.0026, \"Li\" : 7.016, \"Be\" : 9.01218, \"B\"  : 11.00931, \"C\"  : 12.0, \"N\"  : 14.00307, \"O\"  : 15.99491, \"F\"  : 18.9984, \"Ne\" : 19.99244, \"Na\" : 22.9898, \"Mg\" : 23.98504, \"Al\" : 26.98154, \"Si\" : 27.97693, \"P\"  : 30.97376, \"S\"  : 31.97207, \"Cl\" : 34.96885, \"Ar\" : 39.9624, \"K\"  : 38.96371, \"Ca\" : 39.96259, \"Sc\" : 44.95592, \"Ti\" : 45.948, \"V\"  : 50.9440, \"Cr\" : 51.9405, \"Mn\" : 54.9381, \"Fe\" : 55.9349, \"Co\" : 58.9332, \"Ni\" : 57.9353, \"Cu\" : 62.9298, \"Zn\" : 63.9291, \"Ga\" : 68.9257, \"Ge\" : 73.9219, \"As\" : 74.9216, \"Se\" : 78.9183, \"Br\" : 79.9165, \"Kr\" : 83.912, \"Rb\" : 84.9117, \"Sr\" : 87.9056, \"Y\"  : 88.9054, \"Zr\" : 89.9043, \"Nb\" : 92.9060, \"Mo\" : 97.9055, \"Tc\" : 97.9072, \"Ru\" : 101.9037, \"Rh\" : 102.9048, \"Pd\" : 105.9032, \"Ag\" : 106.90509, \"Cd\" : 113.9036, \"In\" : 114.9041, \"Sn\" : 117.9018, \"Sb\" : 120.9038, \"Te\" : 129.9067, \"I\"  : 126.9004, \"Xe\" : 131.9042, \"Cs\" : 132.9051, \"Ba\" : 137.9050, \"La\" : 138.9061, \"Ce\" : 139.9053, \"Pr\" : 140.9074, \"Nd\" : 143.9099, \"Pm\" : 144.9128, \"Sm\" : 151.9195, \"Eu\" : 152.920, \"Gd\" : 157.9241, \"Tb\" : 159.9250, \"Dy\" : 163.9288, \"Ho\" : 164.9303, \"Er\" : 165.930, \"Tm\" : 168.9344, \"Yb\" : 173.9390, \"Lu\" : 174.9409, \"Hf\" : 179.9468, \"Ta\" : 180.948, \"W\"  : 183.9510, \"Re\" : 186.9560, \"Os\" : 189.9586, \"Ir\" : 192.9633, \"Pt\" : 194.9648, \"Au\" : 196.9666, \"Hg\" : 201.9706, \"Tl\" : 204.9745, \"Pb\" : 207.9766, \"Bi\" : 208.9804, \"Po\" : 209.9829, \"At\" : 210.9875, \"Rn\" : 222.0175, \"Fr\" : 223.0198, \"Ra\" : 226.0254, \"Ac\" : 227.0278, \"Th\" : 232.0382, \"Pa\" : 231.0359, \"U\"  : 238.0508, \"Np\" : 237.0482, \"Pu\" : 244.0642, \"Am\" : 243.0614, \"Cm\" : 247.0704, \"Bk\" : 247.0703, \"Cf\" : 251.0796, \"Es\" : 252.0829, \"Fm\" : 257.0950, \"Md\" : 258.0986, \"No\" : 259.1009, \"Lr\" : 262.1100, \"Rf\" : 261.1087, \"Ha\" : 262.1138, \"Sg\" : 266.1219, \"Bh\" : 262.1229, \"Hs\" : 267.1318, \"Mt\" : 268.1388 }");
 
@@ -28,11 +28,11 @@ json periodic_table_Z = json::parse("{ \"H\"  : 1, \"He\" : 2, \"Li\" : 3, \"Be\
  *                                                *
  **************************************************/
 
-static vector<double> parse_lat_to_unita(vector<double> lat)
+static std::vector<double> parse_lat_to_unita(std::vector<double> lat)
 {
    double conv =  0.017453292519943; //conv=pi/80.0
-   vector<double> cang = {lat[3]*conv,lat[4]*conv,lat[5]*conv};
-   vector<double> gmat = {lat[0]*lat[0],
+   std::vector<double> cang = {lat[3]*conv,lat[4]*conv,lat[5]*conv};
+   std::vector<double> gmat = {lat[0]*lat[0],
                           lat[1]*lat[0]*cos(cang[2]),
                           lat[2]*lat[0]*cos(cang[1]),
                           lat[0]*lat[1]*cos(cang[2]),
@@ -62,7 +62,7 @@ static vector<double> parse_lat_to_unita(vector<double> lat)
  *                                                *
  **************************************************/
 
-static json parse_geometry(json geom, int *curptr, vector<string> lines)
+static json parse_geometry(json geom, int *curptr, std::vector<std::string> lines)
 {
    json geomjson;
 
@@ -73,8 +73,8 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    //double angs_to_au = 1.0/0.52917715;
    double angs_to_au = 1.88972598858;
    double conv = angs_to_au;
-   vector<string> ss;
-   string geometry = "geometry";
+   std::vector<std::string> ss;
+   std::string geometry = "geometry";
 
    ss = mystring_split0(lines[cur]);
    if (ss.size()>1) 
@@ -115,20 +115,20 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
    geomjson["autosym"] = autosym;
 
    bool fractional = false;
-   vector<double> unita = {1.0,0.0,0.0, 0.0,1.0,0.0, 0.0,0.0,1.0};
+   std::vector<double> unita = {1.0,0.0,0.0, 0.0,1.0,0.0, 0.0,0.0,1.0};
 
 
    int endcount = 1;
-   vector<string> symbols;
-   vector<double> coords;
-   vector<double> velocities;
-   vector<double> masses;
-   vector<double> charges;
+   std::vector<std::string> symbols;
+   std::vector<double> coords;
+   std::vector<double> velocities;
+   std::vector<double> masses;
+   std::vector<double> charges;
    ++cur;
 
    int nion = 0;
    double mm;
-   string line;
+   std::string line;
 
 
    while (endcount>0)
@@ -154,7 +154,7 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
              mystring_contains(line,"beta")  ||
              mystring_contains(line,"gamma"))
          {
-            vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
+	    std::vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
 
             int endsystem = 1;
             while (endsystem>0)
@@ -346,13 +346,14 @@ static json parse_geometry(json geom, int *curptr, vector<string> lines)
  *              parse_pseudopotentials             *
  *                                                *
  **************************************************/
-static json parse_pseudopotentials(json pseudopotentials, int *curptr, vector<string> lines)
+static json parse_pseudopotentials(json pseudopotentials, int *curptr,
+				   std::vector<std::string> lines)
 {
    int cur = *curptr;
    int endcount = 1;
    ++cur;
-   string line;
-   vector<string> ss;
+   std::string line;
+   std::vector<std::string> ss;
 
    while (endcount>0)
    {
@@ -378,12 +379,12 @@ static json parse_pseudopotentials(json pseudopotentials, int *curptr, vector<st
  *                                                *
  **************************************************/
 
-static json parse_simulation_cell(json celljson, int *curptr, vector<string> lines)
+static json parse_simulation_cell(json celljson, int *curptr, std::vector<std::string> lines)
 {
    int cur = *curptr;
    int endcount = 1;
-   string line;
-   vector<string> ss;
+   std::string line;
+   std::vector<std::string> ss;
    double angs_to_au = 1.88972598858;
    double conv = 1.0;
 
@@ -403,7 +404,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
       line = mystring_lowercase(lines[cur]);
       if (mystring_contains(line,"lattice_vectors"))
       {
-         vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
+	 std::vector<double> unita = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0};
          ++cur;
          line = mystring_lowercase(lines[cur]);
          ss = mystring_split0(line);
@@ -444,7 +445,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
              mystring_contains(line,"beta")  ||
              mystring_contains(line,"gamma"))
          {
-            vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
+	    std::vector<double> lat = {0.0,0.0,0.0, 90.0,90.0,90.0};
 
             int endsystem = 1;
             while (endsystem>0)
@@ -470,7 +471,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          ss = mystring_split0(line);
          if (ss.size()>3) 
          {
-            vector<int> ngrid = {std::stoi(ss[1]),std::stoi(ss[2]),std::stoi(ss[3])};
+	    std::vector<int> ngrid = {std::stoi(ss[1]),std::stoi(ss[2]),std::stoi(ss[3])};
             celljson["ngrid"] = ngrid;
          }
       }
@@ -480,7 +481,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          if (ss.size()>1) 
          {
             double a = std::stod(ss[1])*conv;
-            vector<double> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
+	    std::vector<double> unita = {a,0.0,0.0, 0.0,a,0.0, 0.0,0.0,a};
             celljson["unita"] = unita;
          }
       }
@@ -490,7 +491,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          if (ss.size()>1) 
          {
             double a = 0.5*std::stod(ss[1])*conv;
-            vector<double> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
+	    std::vector<double> unita = {a,a,0.0, a,0.0,a, 0.0,a,a};
             celljson["unita"] = unita;
          }
       }
@@ -500,7 +501,7 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
          if (ss.size()>1) 
          {
             double a = 0.5*std::stod(ss[1])*conv;
-            vector<double> unita = {-a,a,a, a,-a,a, a,a,-a};
+	    std::vector<double> unita = {-a,a,a, a,-a,a, a,a,-a};
             celljson["unita"] = unita;
          }
       }
@@ -539,13 +540,13 @@ static json parse_simulation_cell(json celljson, int *curptr, vector<string> lin
  *                                                *
  **************************************************/
 
-static json parse_steepest_descent(json sdjson, int *curptr, vector<string> lines)
+static json parse_steepest_descent(json sdjson, int *curptr, std::vector<std::string> lines)
 {
    int cur = *curptr;
    int endcount = 1;
    ++cur;
-   string line;
-   vector<string> ss;
+   std::string line;
+   std::vector<std::string> ss;
 
    while (endcount>0)
    {
@@ -553,7 +554,7 @@ static json parse_steepest_descent(json sdjson, int *curptr, vector<string> line
 
       if (mystring_contains(line,"loop"))
       {
-         vector<int> loop = {1, 1};
+	 std::vector<int> loop = {1, 1};
          ss = mystring_split0(line);
          if (ss.size()>1) loop[0] = std::stoi(ss[1]);
          if (ss.size()>2) loop[1] = std::stoi(ss[2]);
@@ -617,20 +618,20 @@ static json parse_steepest_descent(json sdjson, int *curptr, vector<string> line
  *                                                *
  **************************************************/
 
-static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> lines)
+static json parse_car_parrinello(json cpmdjson, int *curptr, std::vector<std::string> lines)
 {
    int cur = *curptr;
    int endcount = 1;
    ++cur;
-   string line;
-   vector<string> ss;
+   std::string line;
+   std::vector<std::string> ss;
 
    while (endcount>0)
    {
       line = mystring_lowercase(lines[cur]);
       if (mystring_contains(line,"loop"))
       {
-         vector<int> loop = {1, 1};
+	 std::vector<int> loop = {1, 1};
          ss = mystring_split0(line);
          if (ss.size()>1) loop[0] = std::stoi(ss[1]);
          if (ss.size()>2) loop[1] = std::stoi(ss[2]);
@@ -873,15 +874,15 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, vector<string> line
  *                                                *
  **************************************************/
 
-static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
+static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> lines)
 {
    //json nwpwjson;
 
    int cur = *curptr;
    int endcount = 1;
    ++cur;
-   string line;
-   vector<string> ss;
+   std::string line;
+   std::vector<std::string> ss;
 
    while (endcount>0)
    {
@@ -979,7 +980,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
       }
       else if (mystring_contains(line,"loop"))
       {
-         vector<int> loop;
+	 std::vector<int> loop;
          loop.push_back(1);
          loop.push_back(1);
          ss = mystring_split0(line);
@@ -1080,16 +1081,15 @@ static json parse_nwpw(json nwpwjson, int *curptr, vector<string> lines)
  *                                                *
  **************************************************/
 
-static json parse_driver(json driverjson, int *curptr, vector<string> lines)
+static json parse_driver(json driverjson, int *curptr, std::vector<std::string> lines)
 {
    //json driverjson;
 
    int cur = *curptr;
    int endcount = 1;
    ++cur;
-   string line;
-   vector<string> ss;
-
+   std::string line;
+   std::vector<std::string> ss;
 
    while (endcount>0)
    {
@@ -1245,7 +1245,7 @@ static json parse_driver(json driverjson, int *curptr, vector<string> lines)
 
 json parse_rtdbjson(json rtdb)
 {
-   vector<string> lines = rtdb["nwinput_lines"];
+   std::vector<std::string> lines = rtdb["nwinput_lines"];
    int n   = rtdb["nwinput_nlines"];
    int cur = rtdb["nwinput_cur"];
 
@@ -1254,12 +1254,12 @@ json parse_rtdbjson(json rtdb)
    {
       if (mystring_contains(mystring_lowercase(lines[cur]),"unset "))
       {
-         vector<string> ss = mystring_split0(lines[cur]);
+         std::vector<std::string> ss = mystring_split0(lines[cur]);
          if (ss.size()>1) auto count_erase = rtdb.erase(ss[1]);
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"set "))
       {
-         vector<string> ss = mystring_split0(lines[cur]);
+         std::vector<std::string> ss = mystring_split0(lines[cur]);
          if (ss.size()>2) rtdb[ss[1]] = ss[2];
       }
       else if (mystring_contains(mystring_lowercase(lines[cur]),"start"))
@@ -1318,9 +1318,9 @@ json parse_rtdbjson(json rtdb)
 std::string parse_nwinput(std::string nwinput)
 {
    // fetch the permanent_dir and scratch_dir
-   string permanent_dir = ".";
-   string scratch_dir   = ".";
-   string psp_library_dir = "";
+   std::string permanent_dir = ".";
+   std::string scratch_dir   = ".";
+   std::string psp_library_dir = "";
    if (mystring_contains(mystring_lowercase(nwinput),"permanent_dir"))
    {
       if (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"permanent_dir")[0],"\n").back()),"#"))
@@ -1338,7 +1338,7 @@ std::string parse_nwinput(std::string nwinput)
    }
 
    // fetch the dbname
-   string dbname = "nwchemex";
+   std::string dbname = "nwchemex";
    if (mystring_contains(mystring_lowercase(nwinput),"start"))
       dbname  = mystring_trim(mystring_split(mystring_split(nwinput,"start")[1],"\n")[0]);
 
@@ -1346,7 +1346,7 @@ std::string parse_nwinput(std::string nwinput)
    if (mystring_contains(mystring_lowercase(nwinput),"restart"))
    {
       // read a JSON file
-      string dbname0 = permanent_dir + "/" + dbname + ".json";
+      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
       std::ifstream ifile(dbname0);
       ifile >> rtdb;
    }
@@ -1369,7 +1369,7 @@ std::string parse_nwinput(std::string nwinput)
 
 
    // split nwinput into lines
-   vector<string> lines = mystring_split(nwinput,"\n");
+   std::vector<std::string> lines = mystring_split(nwinput,"\n");
 
    // Remove comments
    for (auto i = lines.begin(); i != lines.end(); ++i)
@@ -1479,7 +1479,7 @@ std::string parse_input_wavefunction_filename(std::string rtdbstring)
    std::string filename  = "eric.movecs";
    if (rtdb["dbname"].is_string())
    {
-       string dbname = rtdb["dbname"];
+       std::string dbname = rtdb["dbname"];
        filename = dbname + ".movecs";
    }
    // read from nwpw block

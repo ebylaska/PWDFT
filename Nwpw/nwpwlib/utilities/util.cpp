@@ -12,7 +12,7 @@
 #include	"util.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
 {

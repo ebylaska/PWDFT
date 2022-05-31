@@ -1,5 +1,5 @@
 #include        <iostream>
-using namespace std;
+
 
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
@@ -8,7 +8,7 @@ using namespace std;
 #include        "psp_library.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /*******************************************

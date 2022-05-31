@@ -5,7 +5,7 @@
 #include        "PGrid.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class	Psp1d_Hamann {
 

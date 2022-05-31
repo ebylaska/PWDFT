@@ -9,7 +9,7 @@
 #include	<cmath>
 //#include        "blas.h"
 
-using namespace std;
+
 
 
 #include	"Parallel.hpp"
@@ -17,7 +17,7 @@ using namespace std;
 #include	"Psp1d_Hamann.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 #define FMT1    "%lf"
@@ -41,7 +41,7 @@ static void util_matinvert(int n, int nmax, double *a)
    {
       big = 0.0;
       for (auto j=i; j<n; ++j)
-         if (fabs(a[j+i*nmax]) >= big)
+         if (std::fabs(a[j+i*nmax]) >= big)
          {
             big = fabs(a[j+j*nmax]);
             irow = j;

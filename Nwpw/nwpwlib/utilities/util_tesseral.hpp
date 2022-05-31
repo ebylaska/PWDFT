@@ -4,7 +4,7 @@
 #include        <complex>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern std::complex<double> util_rSphericalHarmonic3(const int, const int, const double, const double, const double);
 

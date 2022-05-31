@@ -8,7 +8,7 @@
 #include	"util_gaunt.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class Paw_xc {
 

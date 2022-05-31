@@ -18,7 +18,7 @@
 #include        "Pneb.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class nwpw_aimd_running_data {
 

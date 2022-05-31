@@ -6,7 +6,7 @@
 #include        "util_legendre.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /*********************************************
  *                                           *
@@ -21,7 +21,7 @@ double util_legendre_lm(const int l, const int m, const double x)
    double lgndr;
    int mod_m = abs(m);      
 
-   if (abs(x)>1.0) 
+   if (std::abs(x)>1.0) 
    {
       std::cout << "parameter out of range in legendre_lm" << std::endl;
       return 0.0;
@@ -98,7 +98,7 @@ double util_dlegendre_lm(const int l, const int m, const double x)
    double f1,f2;
 
    // *** check the arguments ***
-   if ((m>l) || (abs(x)>1.0)) std::cout << "Parameter ot of range in dlegendre_lm" << std::endl;
+   if ((m>l) || (std::abs(x)>1.0)) std::cout << "Parameter ot of range in dlegendre_lm" << std::endl;
   
    if (m==l)
    {
@@ -136,7 +136,7 @@ double util_rlegendre_lm(const int l, const int m, const double x)
    double rlgndr;
    int mod_m = abs(m);
 
-   if (abs(x)>1.0)
+   if (std::abs(x)>1.0)
    {  
       std::cout << "parameter out of range in legendre_lm" << std::endl;
       return 0.0;
@@ -197,7 +197,7 @@ double util_rlegendre_lm_div(const int l, const int m, const double x)
    double f;
 
    // *** check the arguments ***
-   if ((m<0) || (m>l) || (abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in rlegendre_lm_div" << std::endl;
+   if ((m<0) || (m>l) || (std::abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in rlegendre_lm_div" << std::endl;
 
    // *** P(1,1,x)/dsqrt(1-x**2) ***
    double p_mm = 1.0;
@@ -256,7 +256,7 @@ double util_legendre_lm_div(const int l, const int m, const double x)
    double f;
 
    // *** check the arguments ***
-   if ((m<0) || (m>l) || (abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in legendre_lm_div" << std::endl;
+   if ((m<0) || (m>l) || (std::abs(x)>1.0) || (m==0)) std::cout << "parameter ot of range in legendre_lm_div" << std::endl;
 
    // *** P(1,1,x)/sqrt(1-x**2) ***
    double p_mm = -1.0;

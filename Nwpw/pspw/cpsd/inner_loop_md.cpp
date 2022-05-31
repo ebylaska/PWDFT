@@ -3,7 +3,7 @@
 #include        <cstdio>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
@@ -20,7 +20,7 @@ using namespace std;
 
 
 namespace pwdft {
-using namespace pwdft;
+
 
 void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb *mygrid, Ion *myion, nwpw_Nose_Hoover *mynose,
                 Kinetic_Operator *myke, 

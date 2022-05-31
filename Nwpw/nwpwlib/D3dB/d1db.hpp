@@ -10,7 +10,7 @@
 #include	"Mapping1.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 class d1db : public Mapping1 {
 

@@ -6,7 +6,7 @@
 #include        "pbe96.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /* other constants */
 #define thrd    (1.00/3.00)

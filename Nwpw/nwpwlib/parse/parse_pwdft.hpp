@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern std::string parse_nwinput(std::string);
 extern std::string parse_rtdbstring(std::string);

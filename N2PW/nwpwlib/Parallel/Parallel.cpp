@@ -7,7 +7,7 @@
 #include        <iostream>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include	"mpi.h"
 #include	"Parallel.hpp"

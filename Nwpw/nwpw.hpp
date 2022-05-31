@@ -5,7 +5,7 @@
 #include "mpi.h"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern int cpsd(MPI_Comm, std::string&);
 extern int cpmd(MPI_Comm, std::string&);

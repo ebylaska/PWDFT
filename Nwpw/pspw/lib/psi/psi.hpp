@@ -5,7 +5,7 @@
 #include	"Pneb.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern void psi_get_header(Parallel *, int *, int *, double *, int *, int *, char *);
 

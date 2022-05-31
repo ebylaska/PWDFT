@@ -2,7 +2,7 @@
 #define _PSEUDOPOTENTIAL_H_
 
 
-using namespace std;
+
 
 #include	"Ion.hpp"
 #include	"Pneb.hpp"

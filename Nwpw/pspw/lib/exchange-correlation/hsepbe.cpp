@@ -5,7 +5,7 @@
 #include	<cmath>
 
 namespace pwdft {
-using namespace pwdft;
+
 
 /* Constants for HJS hole */
 #define AA	7.57211e-1

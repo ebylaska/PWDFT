@@ -89,7 +89,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
 
 
       /* exit loop early */
-      done = ((it >= it_in) || ((fabs(*deltae)<tole) && (*deltac<tolc)));
+      done = ((it >= it_in) || ((std::fabs(*deltae)<tole) && (*deltac<tolc)));
 
       /* transport the previous search directions */
       mygeodesic.psi_1transport(tmin,H0);
@@ -106,7 +106,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
          //std::cout << "SUM0=" << sum0 <<  " SUM1=" << sum1 << std::endl;
 
          /* the new direction using Fletcher-Reeves */
-         if ( (fabs(*deltae)<=(1.0e-2)) &&  (tmin>deltat_min))
+         if ( (std::fabs(*deltae)<=(1.0e-2)) &&  (tmin>deltat_min))
          {
              if (sum0>1.0e-9)
                 scale = sum1/sum0;

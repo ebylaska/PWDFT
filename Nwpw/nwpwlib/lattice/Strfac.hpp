@@ -7,7 +7,7 @@
 #include	"Ion.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 class	Strfac {

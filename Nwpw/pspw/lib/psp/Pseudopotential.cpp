@@ -78,7 +78,7 @@ static bool vpp_formatter_check(PGrid *mygrid, char *fname)
         {
             bool reformat = false;
             for (auto i=0; i<9; ++i)
-                reformat = reformat || (fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
+                reformat = reformat || (std::fabs(mygrid->lattice->unita1d(i)-unita[i])>tol);
             reformat = reformat || (mygrid->nx!=nfft[0]);
             reformat = reformat || (mygrid->ny!=nfft[1]);
             reformat = reformat || (mygrid->nz!=nfft[2]);
@@ -903,12 +903,13 @@ static void vpp_generate(PGrid *mygrid,
         delete [] vl_ray;
         delete [] G_ray;
 
-
     }
-    else if (*psp_type==1)
-        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
-    else if (*psp_type==2)
-        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
+    else if (*psp_type==1) {
+      if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
+    }
+    else if (*psp_type==2) {
+      if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
+    }
     else if (*psp_type==4)
     {
         if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
@@ -2229,7 +2230,7 @@ std::string Pseudopotential::print_pspall()
 {
    std::stringstream stream;
 
-   ios init(NULL);
+   std::ios init(NULL);
    init.copyfmt(stream);
 
    stream << std::endl 

@@ -9,7 +9,8 @@
 #define DCOPY_PWDFT(n,a,ida,b,idb)              cblas_dcopy(n,a,ida,b,idb)
 #define DAXPY_PWDFT(n,alpha,a,ida,b,idb)        cblas_daxpy(n,alpha,a,ida,b,idb)
 
-#define TRANSCONV(a)    ( a=="N" ?  CblasNoTrans : CblasTrans )
+//#define TRANSCONV(a)    ( (std::strcmp(a, "N")) ?  CblasNoTrans : CblasTrans )
+#define TRANSCONV(a)    ( (a == "N") ?  CblasNoTrans : CblasTrans )
 #define DGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) cblas_dgemm(CblasColMajor,TRANSCONV(s1),TRANSCONV(s2),n,m,k,alpha,a,ida,b,idb,beta,c,idc)
 
 #define IDAMAX_PWDFT(nn,hml,one)	cblas_idamax(nn,hml,one)
@@ -18,15 +19,7 @@
 
 #define	DDOT_PWDFT(n,a,ida,b,idb)	cblas_ddot(n,a,ida,b,idb);
 
-
-
-extern "C" void dgelss_(int *, int *, int *, 
-                       double *, int *,
-                       double *, int *,
-                       double *, double *, int *,
-                       double *, int *, int *);
-
-#define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr)	dgelss_(&(m),&(n),&(nrhs),a,&(ida),b,&(idb),s1,&(rcond),&(rank),work,&(iwork),&(ierr))
+#define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr) ierr =	LAPACKE_dgels(LAPACK_COL_MAJOR, 'N', m, n, nrhs ,a, ida, b, idb);
 
 #else
 

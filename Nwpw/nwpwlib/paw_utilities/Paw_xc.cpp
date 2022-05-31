@@ -9,7 +9,7 @@
 #include	<complex>
 #include        <cmath>
 
-using namespace std;
+
 
 
 #include	"blas.h"
@@ -18,7 +18,7 @@ using namespace std;
 #include        "Paw_xc.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
      
 /*****************************************************
@@ -151,11 +151,11 @@ Paw_xc::Paw_xc(Ion *myion0, Pneb *mypneb0,  Control2& control,
          double angle_phi = paw_xc_angle_phi[i_p];
          if (m<0)
          {
-            tmp_phi = sin(abs(m)*angle_phi);
+            tmp_phi = sin(std::abs(m)*angle_phi);
          }
          else if (m>0)
          {
-            tmp_phi = cos(abs(m)*angle_phi);
+            tmp_phi = cos(std::abs(m)*angle_phi);
          }
          else
          {
@@ -181,11 +181,11 @@ Paw_xc::Paw_xc(Ion *myion0, Pneb *mypneb0,  Control2& control,
             double angle_phi = paw_xc_angle_phi[i_p];
             if (m<0)
             { 
-               tmp_phi = sin(abs(m)*angle_phi);
+               tmp_phi = sin(std::abs(m)*angle_phi);
             }
             else if (m>0)
             {
-               tmp_phi = cos(abs(m)*angle_phi);
+               tmp_phi = cos(std::abs(m)*angle_phi);
             }
             else
             {
@@ -216,11 +216,11 @@ Paw_xc::Paw_xc(Ion *myion0, Pneb *mypneb0,  Control2& control,
 
                if (m<0) 
                {
-                  tmp_phi = abs(m)*cos(abs(m)*angle_phi);
+                  tmp_phi = abs(m)*cos(std::abs(m)*angle_phi);
                }
                else if (m>0) 
                {
-                  tmp_phi = -abs(m)*sin(abs(m)*angle_phi);
+                  tmp_phi = -abs(m)*sin(std::abs(m)*angle_phi);
                }
                else
                {
@@ -309,7 +309,7 @@ Paw_xc::Paw_xc(Ion *myion0, Pneb *mypneb0,  Control2& control,
                   if ((l<=(li+lj)) && (l>=abs(li-lj)))
                   {
                      double tmp_gaunt = util_gaunt(false,l,m,li,mi,lj,mj);
-                     if (abs(tmp_gaunt)>1.0e-11) ++nsize;
+                     if (std::abs(tmp_gaunt)>1.0e-11) ++nsize;
                   }
                }
             }
@@ -359,9 +359,9 @@ Paw_xc::Paw_xc(Ion *myion0, Pneb *mypneb0,  Control2& control,
                         tmp_gaunt2 = 0.0;
                         tmp_gaunt3 = 0.0;
                      }
-                     if ((abs(tmp_gaunt) >1.0e-11) ||
-                         (abs(tmp_gaunt2)>1.0e-11) ||
-                         (abs(tmp_gaunt3)>1.0e-11)) 
+                     if ((std::abs(tmp_gaunt) >1.0e-11) ||
+                         (std::abs(tmp_gaunt2)>1.0e-11) ||
+                         (std::abs(tmp_gaunt3)>1.0e-11)) 
                      {
                         coeff_rholm[nsize]  = tmp_gaunt;
                         coeff_rholm2[nsize] = tmp_gaunt2;

@@ -1,21 +1,23 @@
 #ifndef _GDEVICES_HPP_
 #define _GDEVICES_HPP_
 
-namespace pwdft {
-using namespace pwdft;
-
 #ifdef NWPW_SYCL
 #include        "gdevices_sycl.hpp"
 #elif defined NWPW_CUDA
 #include        "gdevices_cuda.hpp"
 #elif defined NWPW_OPENCL
 #include        "gdevices_opencl.hpp"
-
+#elif defined NWPW_HIP
+#include        "gdevices_hip.hpp"
 #else
-/* standard host code */
-
 #include        "blas.h"
+#endif
 
+namespace pwdft {
+
+  // just HOST side calls
+#if !defined(NWPW_CUDA) && !defined(NWPW_HIP) && !defined(NWPW_SYCL) && !defined(NWPW_OPENCL)
+  
 class Gdevices {
 
 public:
@@ -54,10 +56,9 @@ public:
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
 
-
 };
 
-#endif
+#endif // !NWPW_CUDA && !NWPW_HIP && !NWPW_SYCL && !NWPW_OPENCL
 
 }
-#endif
+#endif // _GDEVICES_HPP_

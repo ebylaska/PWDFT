@@ -6,12 +6,12 @@
 
 #include "mpi.h"
 
-using namespace std;
+
 
 //extern int dummy_pwdft();
 
 namespace pwdft {
-using namespace pwdft;
+
 
 extern char *util_date();
 extern void seconds(double *);

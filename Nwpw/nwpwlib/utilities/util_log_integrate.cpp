@@ -7,7 +7,7 @@
 #include	"util_log_integrate.hpp"
 
 namespace pwdft {
-using namespace pwdft;
+
 
 
 /*************************************
@@ -46,7 +46,7 @@ void util_compcharge_gen_rgaussian(const int l, const double sigma, const int nr
    for (auto i=0; i<nr; ++i) gl[i] = 0.00;
 
    for (auto i=0; i<nr; ++i)
-      if (abs(r[i]) < (8.00*sigma))
+      if (std::abs(r[i]) < (8.00*sigma))
          gl[i] = c*pow(r[i],l)*exp(-(r[i]/sigma)*(r[i]/sigma));
 }
 
@@ -322,14 +322,14 @@ double util_SpecialKummer(const int n, const int l, const double z)
    }
 
    //*** do inifinite series for small z
-   if (abs(z)<=1.0)
+   if (std::abs(z)<=1.0)
    {
       result = 1.0;
       double s = 1.0;
       double a = n + 0.5;
       double b = l + 1.5;
       int i=1;
-      while ((i<10000)  && (abs(s)<eps))
+      while ((i<10000)  && (std::abs(s)<eps))
       {
          s *= (a+i-1)*z/((b+i-1)*i);
          result += s;
@@ -432,7 +432,7 @@ void util_gauss_weights(const double x1, const double x2,
          z1 = z;
          z  = z1 - p1/pp;
 
-         if (abs(z-z1)<=eps) repeat = false;
+         if (std::abs(z-z1)<=eps) repeat = false;
       }
       if (niter>=1000000) std::cout << "cannot converge in gauss_weights" << std::endl;
 
