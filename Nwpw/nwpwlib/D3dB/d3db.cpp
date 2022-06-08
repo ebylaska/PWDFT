@@ -16,6 +16,7 @@
 
 #include	"d3db.hpp"
 
+#include <cstring>
 #include <math.h>
 
 namespace pwdft {
@@ -992,7 +993,7 @@ void d3db::r_dealloc(double *ptr)
  ********************************/
 void d3db::r_zero(double *ptr)
 {
-   memset(ptr,0,n2ft3d*sizeof(double));
+   std::memset(ptr,0,n2ft3d*sizeof(double));
    /*int i;
    int m = n2ft3d%7;
    if (m>0)
@@ -1022,7 +1023,7 @@ void d3db::r_zero(double *ptr)
  ********************************/
 void d3db::r_nzero(int n, double *ptr)
 {
-   memset(ptr,0,n*n2ft3d*sizeof(double));
+   std::memset(ptr,0,n*n2ft3d*sizeof(double));
    /*int i;
    int m = (n*n2ft3d)%7;
    if (m>0)
@@ -1052,7 +1053,7 @@ void d3db::r_nzero(int n, double *ptr)
  ********************************/
 void d3db::t_nzero(int n, double *ptr)
 {
-   memset(ptr,0,n*nfft3d*sizeof(double));
+   std::memset(ptr,0,n*nfft3d*sizeof(double));
    /*
    int i;
    int m = (n*nfft3d)%7;
