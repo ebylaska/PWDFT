@@ -1085,7 +1085,7 @@ void d3db::t_nzero(int n, double *ptr)
  ********************************/
 void d3db::rr_copy(const double *ptr1, double *ptr2)
 {
-   memcpy(ptr2,ptr1,n2ft3d*sizeof(double));
+   std::memcpy(ptr2,ptr1,n2ft3d*sizeof(double));
    /*
    int i;
    int m = n2ft3d%7;
@@ -1116,7 +1116,7 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
  ********************************/
 void d3db::tt_copy(const double *ptr1, double *ptr2)
 {
-   memcpy(ptr2,ptr1,nfft3d*sizeof(double));
+   std::memcpy(ptr2,ptr1,nfft3d*sizeof(double));
    /*
    int i;
    int m = nfft3d%7;

@@ -209,7 +209,7 @@ void Pneb::gg_copy(double *psi1, double *psi2)
 {
    int one=1;
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
-   memcpy(psi2,psi1,nsize*sizeof(double));
+   std::memcpy(psi2,psi1,nsize*sizeof(double));
    //DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
 void Pneb::gg_SMul(double alpha,double *psi1, double *psi2)
@@ -938,9 +938,9 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 
 	//DCOPY_PWDFT(nn, s21, one, s12, one);
 	//DCOPY_PWDFT(nn, s22, one, sa0, one);
-        memcpy(s12,s21,nn*sizeof(double));
+        std::memcpy(s12,s21,nn*sizeof(double));
 
-        memcpy(sa0,s22,nn*sizeof(double));
+        std::memcpy(sa0,s22,nn*sizeof(double));
 	while ((!done) && ((ii++)<ITERLMD)) {
 	    DCOPY_PWDFT(nn, s22, one, sa1, one);
 
@@ -950,7 +950,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
 
 	    //DCOPY_PWDFT(nn, sa1, one, st1, one);
-            memcpy(st1,sa1,nn*sizeof(double));
+            std::memcpy(st1,sa1,nn*sizeof(double));
 	    DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
 	    jj = IDAMAX_PWDFT(nn, st1, one);
 	    adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
@@ -958,7 +958,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	    if (adiff < CONVGLMD)
 		done = 1;
 	    else
-               memcpy(sa0,sa1,nn*sizeof(double)); //DCOPY_PWDFT(nn, sa1, one, sa0, one);
+               std::memcpy(sa0,sa1,nn*sizeof(double)); //DCOPY_PWDFT(nn, sa1, one, sa0, one);
 	}
 	//printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d done=%d\n",nn,jj,adiff,ii,done);
 
@@ -967,7 +967,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	}
 
 	//DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
-        memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+        std::memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
 
     } // for loop - ms
 

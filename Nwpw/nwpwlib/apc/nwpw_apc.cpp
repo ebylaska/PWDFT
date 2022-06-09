@@ -280,7 +280,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
          double AAA[ngs*ngs];
          double rcond = 1.0e-9;
 
-         memcpy(AAA,A,ngs*ngs*sizeof(double));
+         std::memcpy(AAA,A,ngs*ngs*sizeof(double));
          //for (i=0; i<ngs*ngs; ++i) AAA[i]        = A[i];
          for (i=0; i<ngs; ++i) Am[i + i*ngs] = 1.0;
 
@@ -734,7 +734,7 @@ void nwpw_apc::V_APC_born(double *dng, double *zv, double *vapc,
 
    //double elocal = mypneb->cc_pack_dot(0,dng,vapc);
 
-   //if (move) memcpy(utmp,u,ngs*sizeof(double));
+   //if (move) std::memcpy(utmp,u,ngs*sizeof(double));
    if (move)
    {
       myborn->fion(qion,fion);
