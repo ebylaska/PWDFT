@@ -63,7 +63,7 @@ static void Paw_compcharge_gen_vlray(const double sigma_smooth,
    //double ecut   = control_ecut()
    //double  rlocal = 1.0d0
 
-   memset(vlray,0,2*nray*sizeof(double));
+   std::memset(vlray,0,2*nray*sizeof(double));
    for (auto k=1; k<nray; ++k)
    {
       double q = Gray[k];
@@ -285,13 +285,13 @@ Paw_compcharge::Paw_compcharge(Ion *myion0, Pneb *mypneb0,  Control2& control,
    dElocal_Qlm = new (std::nothrow) double [2*lm_size_max*nion_paw]();
    dE_Qlm      = new (std::nothrow) double [2*lm_size_max*nion_paw]();
 
-   memset(Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(Qlmx,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(Qlmy,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(Qlmz,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(dEmult_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(dElocal_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
-   memset(dE_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(Qlmx,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(Qlmy,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(Qlmz,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(dEmult_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(dElocal_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
+   std::memset(dE_Qlm,0,2*lm_size_max*nion_paw*sizeof(double));
 
    double scal;
    double fourpioveromega = 16.0*atan(1.0)/mypneb->lattice->omega();

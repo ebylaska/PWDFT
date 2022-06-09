@@ -30,7 +30,7 @@ static void Paw_gintegrals_set_gcount(const int nshl3d,
                                       int& ngauss, int& ngauss_max,
                                       int tgauss[],int tgauss_shift[])
 {
-   memset(tgauss,0,nthr*sizeof(int));
+   std::memset(tgauss,0,nthr*sizeof(int));
 
    int nn;
    int pcount = 0;
@@ -632,8 +632,8 @@ void Paw_gintegrals::set(const bool move)
    int iii1_tauss[ngauss_max], iii2_tauss[ngauss_max];
    double e_tauss[ngauss_max], f_tauss[3*ngauss_max];
 
-   memset(e_tauss,0,ngauss_max*sizeof(double));
-   memset(f_tauss,0,3*ngauss_max*sizeof(double));
+   std::memset(e_tauss,0,ngauss_max*sizeof(double));
+   std::memset(f_tauss,0,3*ngauss_max*sizeof(double));
 
    int nshl3d=1;
    double *rcell;
@@ -713,7 +713,7 @@ void Paw_gintegrals::set(const bool move)
                {
                   if ((gcount%nthr)==tid)
                   {
-                     memset(e1,0,4*sizeof(double));
+                     std::memset(e1,0,4*sizeof(double));
                      for (auto l=1; l<nshl3d; ++l)
                      {
                         Rab[0] = rcell[l];
@@ -778,8 +778,8 @@ void Paw_gintegrals::set(const bool move)
                {
                   if ((gcount%nthr)==tid)
                   {
-                     memset(e1, 0,  4*sizeof(double));
-                     memset(de1,0,3*4*sizeof(double));
+                     std::memset(e1, 0,  4*sizeof(double));
+                     std::memset(de1,0,3*4*sizeof(double));
                      
                      for (auto l=0; l<nshl3d; ++l)
                      {

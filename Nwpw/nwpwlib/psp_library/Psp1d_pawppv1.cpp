@@ -110,7 +110,7 @@ Psp1d_pawppv1::Psp1d_pawppv1(Parallel *myparall, const char *psp_name)
    FILE *fp;
    int nn;
 
-   memset(comment,0,80*sizeof(char));
+   std::memset(comment,0,80*sizeof(char));
 
    if (myparall->is_master())
    {
@@ -440,7 +440,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
    double *f4 = new (std::nothrow) double[n1dgrid]();
 
    // **** comp_charge_matrix(nbasis,nbasis,0:2*lmax) ****
-   memset(comp_charge_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
+   std::memset(comp_charge_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
    for (auto i=0; i<nbasis; ++i)
       for (auto j=0; j<=i; ++j)
       {
@@ -456,7 +456,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
       }
 
    // **** comp_pot_matrix(nbasis,nbasis,0:2*lmax) ****
-   memset(comp_pot_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
+   std::memset(comp_pot_matrix,0,nbasis*nbasis*(2*lmax+1)*sizeof(double));
    for (auto l=0; l<(2*lmax+1); ++l)
    {
       int k1 = l+2;
@@ -484,7 +484,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
    // **** Note - This is the effective hartree matrix which includes  ****
    // **** comp_charge_matrix and comp_pot_matrix terms in it.         ****
 
-   memset(hartree_matrix,0,nbasis*nbasis*nbasis*nbasis*(2*lmax+1)*sizeof(double));
+   std::memset(hartree_matrix,0,nbasis*nbasis*nbasis*nbasis*(2*lmax+1)*sizeof(double));
 
    for (auto i=0; i<nbasis; ++i)
       for (auto j=0; j<=i; ++j)
@@ -552,7 +552,7 @@ void Psp1d_pawppv1::vpp_generate_paw_matrices(Parallel *myparall, double *Gijl,
    // ******************************************************************************
    // ***********  1-electron psp operators - Normalization constants  *************
    // ******************************************************************************
-   memset(Gijl,0,5*nmax*nmax*(lmax+1)*sizeof(double));
+   std::memset(Gijl,0,5*nmax*nmax*(lmax+1)*sizeof(double));
 
    // **** 2 - overlap  ****
    for (auto i=0; i<nbasis; ++i)
@@ -814,9 +814,9 @@ void Psp1d_pawppv1::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray
    double *f  = new (std::nothrow) double[n1dgrid]();
    double a,xx;
 
-   memset(vl_ray,0,nray*sizeof(double));
-   memset(vlpaw_ray,0,nray*sizeof(double));
-   memset(vnl_ray,0,nbasis*nray*sizeof(double));
+   std::memset(vl_ray,0,nray*sizeof(double));
+   std::memset(vlpaw_ray,0,nray*sizeof(double));
+   std::memset(vnl_ray,0,nbasis*nray*sizeof(double));
 
    for (auto k1=(1+myparall->taskid()); k1<nray; k1+=myparall->np())
    {

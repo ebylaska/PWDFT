@@ -172,7 +172,7 @@ static void born_dVdq0(const int nion, const double rion[], const double bradii[
    //double Gsolv = 0.0;
    double screen = (1.0 - 1.0/dielec);
 
-   memset(u,0,nion*sizeof(double));
+   std::memset(u,0,nion*sizeof(double));
 
    for (auto ii=0; ii<nion; ++ii)
    for (auto jj=0; jj<nion; ++jj)

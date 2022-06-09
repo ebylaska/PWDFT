@@ -172,7 +172,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       double *xtmp   = new double[npack0];
 
 
-      memset(exi,0,2*npack0*sizeof(double));
+      std::memset(exi,0,2*npack0*sizeof(double));
 
       /* calculate N = dng(G=0)*omega */
       double N = ((double) (mypneb->ne[0] + mypneb->ne[ispin-1]));
@@ -268,8 +268,8 @@ void nwpw_apc::gen_APC(double *dng, bool move)
       }
 
       /* perform matrix operations in serial */
-      memset(Am,0,ngs*ngs*sizeof(double));
-      memset(q, 0,    ngs*sizeof(double));
+      std::memset(Am,0,ngs*ngs*sizeof(double));
+      std::memset(q, 0,    ngs*sizeof(double));
 
       if (mypneb->PGrid::parall->is_master())
       {
@@ -299,7 +299,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
         }
         sum = (sum-N)/sum1;
 
-        memset(q,0,ngs*sizeof(double));
+        std::memset(q,0,ngs*sizeof(double));
         for (i=0; i<ngs; ++i)
         {
            sum1 = 0.0;
@@ -653,7 +653,7 @@ void nwpw_apc::dQdR_APC(double *uq, double *fion)
    double dAtmp[ngs];
 
    double ftmp[nion3];
-   memset(ftmp,0,nion3*sizeof(double));
+   std::memset(ftmp,0,nion3*sizeof(double));
 
    double sumAm = sumAm_APC(ngs,Am);
 
@@ -696,7 +696,7 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
 
    // Calculate Vapc
    int npack0 = mypneb->npack(0);
-   memset(vtmp,0,2*npack0*sizeof(double));
+   std::memset(vtmp,0,2*npack0*sizeof(double));
    VQ_APC(u,vtmp);
    mypneb->cc_daxpy(0,1.0,vtmp,vapc);
 
@@ -743,7 +743,7 @@ void nwpw_apc::V_APC_born(double *dng, double *zv, double *vapc,
 
    // Calculate Vapc
    int npack0 = mypneb->npack(0);
-   memset(vtmp,0,2*npack0*sizeof(double));
+   std::memset(vtmp,0,2*npack0*sizeof(double));
    VQ_APC(u,vtmp);
    mypneb->cc_daxpy(0,1.0,vtmp,vapc);
 

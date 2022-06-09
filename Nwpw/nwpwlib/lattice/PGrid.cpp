@@ -476,7 +476,7 @@ void PGrid::c_unpack(const int nb, double *a)
    DCOPY_PWDFT(nn,a,one,tmp,one);
 
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
-   memset(a, 0, n2ft3d * sizeof(double));
+   std::memset(a, 0, n2ft3d * sizeof(double));
 
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -500,7 +500,7 @@ void PGrid::c_pack(const int nb, double *a)
 
    DCOPY_PWDFT(n2ft3d,a,one,tmp,one);
 
-   memset(a, 0, n2ft3d * sizeof(double));
+   std::memset(a, 0, n2ft3d * sizeof(double));
 
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -675,7 +675,7 @@ void PGrid::t_unpack(const int nb, double *a)
    DCOPY_PWDFT(nn,a,one,tmp,one);
 
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
-   memset(a, 0, nfft3d * sizeof(double));
+   std::memset(a, 0, nfft3d * sizeof(double));
 
    t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -704,7 +704,7 @@ void PGrid::t_pack(const int nb, double *a)
    DCOPY_PWDFT(nfft3d,a,one,tmp,one);
 
    //dcopy_(&nfft3d,&rzero,&zero,a,&one);
-   memset(a, 0, nfft3d * sizeof(double));
+   std::memset(a, 0, nfft3d * sizeof(double));
 
    t_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -738,7 +738,7 @@ void PGrid::t_pack_nzero(const int nb, const int n, double *a)
   // int zero = 0;
   // double azero = 0.0;
    int ng  = n*(nida[nb]+nidb[nb]);
-   memset(a, 0, ng * sizeof(double));
+   std::memset(a, 0, ng * sizeof(double));
 }
 
 
