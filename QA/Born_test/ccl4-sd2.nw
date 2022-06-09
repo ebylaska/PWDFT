@@ -1,0 +1,43 @@
+Title "CCl4 Born test"
+echo
+
+memory 1900 mb
+start ccl4-born2
+
+permanent_dir ./perm2
+scratch_dir   ./perm2
+
+geometry units angstroms noautosym  noautoz nocenter
+Cl   -0.302804 1.234427 1.298566
+C   0.075206 0.050102 0.012408
+Cl   1.335825 -1.079122 0.593930
+Cl   0.670364 0.912773 -1.436680
+Cl   -1.401717 -0.869000 -0.404717
+end
+
+nwpw
+
+   simulation_cell
+     SC 26.0
+     #boundary_conditions aperiodic
+   end
+   xc pbe
+   cutoff 30.0
+   2d-hcurve
+
+   born relax on
+   
+   steepest_descent
+      geometry_optimize
+      loop 1 1
+      fake_mass 750.0
+      time_step 5.0
+   end
+   vectors output jjj.elc voutput jjj.velc
+   
+end
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+
+#task pspw energy
+task pspw steepest_descent
