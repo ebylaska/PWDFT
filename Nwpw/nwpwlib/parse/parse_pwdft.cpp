@@ -996,6 +996,27 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (ss.size()>2) loop[1] = std::stoi(ss[2]);
          nwpwjson["loop"] = loop;
       }
+      else if (mystring_contains(line,"bo_steps"))
+      {
+	 std::vector<int> loop;
+         loop.push_back(1);
+         loop.push_back(1);
+         ss = mystring_split0(line);
+         if (ss.size()>1) loop[0] = std::stoi(ss[1]);
+         if (ss.size()>2) loop[1] = std::stoi(ss[2]);
+         nwpwjson["bo_steps"] = loop;
+      }
+      else if (mystring_contains(line,"bo_time_step"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) nwpwjson["bo_time_step"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(line,"bo_algorithm"))
+      {
+         if (mystring_contains(line," leap-frog"))              nwpwjson["bo_algorithm"] = 2;
+         else if (mystring_contains(line," velocity-velocity")) nwpwjson["bo_algorithm"] = 1;
+         else nwpwjson["bo_algorithm"] = 0;
+      }
       else if (mystring_contains(line,"xc"))
       {
          nwpwjson["xc"] = mystring_trim(mystring_split(line,"xc")[1]);
@@ -1464,6 +1485,7 @@ int parse_task(std::string rtdbstring)
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"freq"))             task = 4;
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"steepest_descent")) task = 5;
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"car-parrinello"))   task = 6;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"born-oppenheimer")) task = 7;
       }
    }
 

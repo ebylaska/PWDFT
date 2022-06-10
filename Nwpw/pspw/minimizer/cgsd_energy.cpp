@@ -14,6 +14,10 @@
 
 #include	"cgsd.hpp"
 
+#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
+#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
+#define Ifmt(w)   std::right << std::setw(w) 
+
 namespace pwdft {
 
 /******************************************
@@ -21,7 +25,7 @@ namespace pwdft {
  *            cgsd_noit_energy            *
  *                                        *
  ******************************************/
-double cgsd_noit_energy(Molecule& mymolecule) 
+double cgsd_noit_energy(Molecule& mymolecule, bool doprint, std::ostream& coutput) 
 {
    Parallel *parall = mymolecule.mygrid->d3db::parall;
 
@@ -32,11 +36,11 @@ double cgsd_noit_energy(Molecule& mymolecule)
 
 
    /* report summary of results */
-   if (parall->base_stdio_print)
+   if (parall->base_stdio_print && doprint) 
    {
-      std::cout << "     ==================  optimization turned off  ===================\n" << std::endl;
-      std::cout << std::endl;
-      std::cout << mymolecule;
+      coutput << "     ==================  optimization turned off  ===================\n" << std::endl;
+      coutput << std::endl;
+      coutput << mymolecule;
    }
 
    return total_energy;
@@ -49,7 +53,7 @@ double cgsd_noit_energy(Molecule& mymolecule)
  *              cgsd_energy               *
  *                                        *
  ******************************************/
-double cgsd_energy(Control2& control, Molecule& mymolecule)
+double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::ostream& coutput)
 {
    Parallel *parall = mymolecule.mygrid->d3db::parall;
    Pneb *mygrid = mymolecule.mygrid;
@@ -69,25 +73,25 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
 
    int minimizer = control.minimizer();
 
-   bool hprint = (parall->is_master() && control.print_level("high"));
-   bool oprint = (parall->is_master() && control.print_level("medium"));
-   bool lprint = (parall->is_master() && control.print_level("low"));
+   bool hprint = (parall->is_master() && control.print_level("high") && doprint);
+   bool oprint = (parall->is_master() && control.print_level("medium") && doprint);
+   bool lprint = (parall->is_master() && control.print_level("low") && doprint);
 
 
    for (auto ii=0; ii<60; ++ii) E[ii] = 0.0;
 
    if (oprint)
    {
-      if (minimizer==1) std::cout << "     ============ Grassmann conjugate gradient iteration ============" << std::endl;
-      if (minimizer==2) std::cout << "     ================== Grassmann lmbfgs iteration ==================" << std::endl;
-      if (minimizer==4) std::cout << "     ============= Stiefel conjugate gradient iteration =============" << std::endl;
-      if (minimizer==5) std::cout << "     ============= Kohn-Sham scf iteration (potential) ==============" << std::endl;
-      if (minimizer==7) std::cout << "     =================== Stiefel lmbfgs iteration ===================" << std::endl;
-      if (minimizer==8) std::cout << "     ============== Kohn-Sham scf iteration (density) ===============" << std::endl;
+      if (minimizer==1) coutput << "     ============ Grassmann conjugate gradient iteration ============" << std::endl;
+      if (minimizer==2) coutput << "     ================== Grassmann lmbfgs iteration ==================" << std::endl;
+      if (minimizer==4) coutput << "     ============= Stiefel conjugate gradient iteration =============" << std::endl;
+      if (minimizer==5) coutput << "     ============= Kohn-Sham scf iteration (potential) ==============" << std::endl;
+      if (minimizer==7) coutput << "     =================== Stiefel lmbfgs iteration ===================" << std::endl;
+      if (minimizer==8) coutput << "     ============== Kohn-Sham scf iteration (density) ===============" << std::endl;
 
-      std::cout << "          >>> iteration started at " << util_date() << "  <<<\n";
-      std::cout << "     iter.                 Energy          DeltaE        DeltaRho\n";
-      std::cout << "     ----------------------------------------------------------------\n";
+      coutput << "          >>> iteration started at " << util_date() << "  <<<\n";
+      coutput << "     iter.                 Energy          DeltaE        DeltaRho\n";
+      coutput << "     ----------------------------------------------------------------\n";
       //printf("%10d%25.12le%16.6le%16.6le\n",1000,99.99, 1.33434340e-4, 2.33434211e-6);
 
 
@@ -142,7 +146,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
       }
 
       if (oprint)
-         printf("%10d%25.12le%16.6le%16.6le\n",icount*it_in,total_energy,deltae, deltac);
+         std::cout << Ifmt(10) << icount*it_in << Efmt(25,12) << total_energy << Efmt(16,6) << deltae << Efmt(16,6) << deltac << std::endl;
 
       if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
          stalled = true;
@@ -155,9 +159,9 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    }
    if (oprint)
    {
-      if (converged)  std::cout <<  "     *** tolerance ok. iteration terminated" << std::endl;
-      if (!converged) std::cout <<  "     *** arrived at the Maximum iteration.  terminated" << std::endl;
-      std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
+      if (converged)  coutput <<  "     *** tolerance ok. iteration terminated" << std::endl;
+      if (!converged) coutput <<  "     *** arrived at the Maximum iteration.  terminated" << std::endl;
+      coutput << "          >>> iteration ended at   " << util_date() << "  <<<\n";
    }
 
 
@@ -166,8 +170,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule)
    //total_energy  = mymolecule.gen_all_energies();
    if (oprint)
    {
-      std::cout << std::endl;
-      std::cout << mymolecule;
+      coutput << std::endl;
+      coutput << mymolecule;
    }
 
    return total_energy;

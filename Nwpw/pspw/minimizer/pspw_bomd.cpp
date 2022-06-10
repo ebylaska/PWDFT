@@ -18,6 +18,7 @@
 #include	"Ion.hpp"
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
+#include        "nwpw_Nose_Hoover.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb.hpp"
 #include	"exchange_correlation.hpp"
@@ -26,6 +27,7 @@
 #include	"Molecule.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
+#include        "nwpw_aimd_running_data.hpp"
 #include	"rtdb.hpp"
 #include	"mpi.h"
 
@@ -35,10 +37,13 @@
 #include	"nwpw_timing.hpp"
 #include        "gdevice.hpp"
 
+#include        "nwpw_lmbfgs.hpp"
+
 #include	"cgsd_energy.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
+
 
 
 #define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
@@ -48,30 +53,26 @@ using json = nlohmann::json;
 
 namespace pwdft {
 
-
 /******************************************
  *                                        *
- *            pspw_minimizer              *
+ *              pspw_bomd                 *
  *                                        *
  ******************************************/
-int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
+int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
    //RTDB myrtdb(&myparallel, "eric.db", "old");
 
+   bool verlet,SA;
    int version,nfft[3],ne[2],ispin;
-   int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
+   int i,ii,ia,nn,ngrid[3],matype,nelem,icount;
    char date[26];
    double sum1,sum2,ev,zv;
-   double cpu1,cpu2,cpu3,cpu4;
+   double cpu1,cpu2,cpu3,cpu4,cpustep;
    double E[50],deltae,deltac,deltar,viral,unita[9];
-
-   //double *psi1,*psi2,*Hpsi,*psi_r;
-   //double *dn;
-   //double *hml,*lmbda,*eig;
-
-   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+   double sa_alpha[2],sa_decay[2],Te_init,Tr_init,Te_new,Tr_new;
+   double kb = 3.16679e-6;
 
    Control2 control(myparallel.np(),rtdbstring);
    int flag =  control.task();
@@ -83,13 +84,20 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
 
+
+   //double *psi1,*psi2,*Hpsi,*psi_r;
+   //double *dn;
+   //double *hml,*lmbda,*eig;
+
+   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+
    if (myparallel.is_master()) seconds(&cpu1);
    if (oprint)
    {
       std::ios_base::sync_with_stdio();
       std::cout << "          *****************************************************\n";
       std::cout << "          *                                                   *\n";
-      std::cout << "          *               PWDFT PSPW Calculation              *\n";
+      std::cout << "          *              PWDFT PSPW BOmd Calculation          *\n";
       std::cout << "          *                                                   *\n";
       std::cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
       std::cout << "          *  [              C++ implementation             ]  *\n";
@@ -103,27 +111,23 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
-   //control_read(myrtdb);
-   //control_read(myparallel.np(),rtdbstring);
-
-   // initialize processor grid structure 
+   /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
 
-   // initialize lattice
+   /* initialize lattice */
    Lattice mylattice(control);
 
-   // read in ion structure
+   /* read in ion structure */
    //Ion myion(myrtdb);
    Ion myion(rtdbstring,control);
 
-   // Check for and generate psp files                      
-   // - this routine also sets the valence charges in myion,
-   //   and total_ion_charge and ne in control             
+   /* Check for and generate psp files                       */
+   /* - this routine also sets the valence charges in myion, */
+   /*   and total_ion_charge and ne in control               */
    psp_file_check(&myparallel,&myion,control);
-   MPI_Barrier(comm_world0);
 
 
-   // fetch ispin and ne psi information from control 
+   /* fetch ispin and ne psi information from control */
    ispin = control.ispin();
    ne[0] = control.ne(0);
    ne[1] = control.ne(1);
@@ -142,46 +146,80 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
    version = 3;
 
 
-   // initialize parallel grid structure 
+   /* initialize parallel grid structure */
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
-   // initialize gdevice memory
+   /* initialize gdevice memory */
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
 
 
-   // setup structure factor
+   /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
    mystrfac.phafac();
 
-   // initialize operators
+   /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
    Coulomb_Operator mycoulomb(&mygrid);
 
-   // initialize xc
+   /* initialize xc */
    XC_Operator      myxc(&mygrid,control);
 
-   // initialize psp
+   /* initialize psp */
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
 
-   // initialize electron operators
+   /* initialize electron operators */
    Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
 
-   // setup ewald 
+   // setup ewald
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
+
+   /* initialize thermostats */
+   double w = 0.01;
+   nwpw_Nose_Hoover mynose(myion,(mygrid.ne[0]+mygrid.ne[1]),w,control);
+
+   /* initialize simulated annealing */
+   SA       = false;
+   Tr_init  = 0.0;
+   sa_alpha[1]     = 1.0;
+   if (control.SA())
+   {
+      sa_decay[1] = control.SA_decay(1);
+      if (mynose.on())
+      {
+         SA      = true;
+         Tr_init = mynose.Tr;
+      }
+      else
+      {
+         double dt   = control.bo_time_step();
+         SA          = false;
+         sa_alpha[1] = exp(-(dt/sa_decay[1]));
+      }
+   }
 
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
 
+   MPI_Barrier(comm_world0);
+
+
+   // driver parameters
+   int maxit       = control.driver_maxiter();
+   double tol_Gmax = control.driver_gmax();
+   double tol_Grms = control.driver_grms();
+   double tol_Xrms = control.driver_xrms();
+   double tol_Xmax = control.driver_xmax();
+   double trust    = control.driver_trust();
+   int lmbfgs_size = control.driver_lmbfgs_size();
 
 
 //                 |**************************|
 // *****************   summary of input data  **********************
 //                 |**************************|
 
-   MPI_Barrier(comm_world0);
    if (oprint)
    {
       std::cout << "\n";
@@ -199,11 +237,6 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout << " parallel mapping         : not balanced" << "\n";
 
       std::cout << "\n options:\n";
-      //std::cout << "   geometry optimize    = ";
-      //if (control.geometry_optimize() || flag==3)
-      //   std::cout << "yes\n";
-      //else
-      //   std::cout << "no\n";
       std::cout << "   boundary conditions  = ";
       if (control.version==3) std::cout << "periodic\n";
       if (control.version==4) std::cout << "aperiodic\n";
@@ -214,8 +247,6 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
       else
          std::cout << "unrestricted\n";
       std::cout << myxc;
-      //std::cout << "   exchange-correlation = ";
-      //std::cout << "LDA (Vosko et al) parameterization\n";
   
       //std::cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
@@ -243,7 +274,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
       std::cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) 
                    << "\t( " << Ffmt(10,5) << myion.rion1[3*ii] << " " << Ffmt(10,5) << myion.rion1[3*ii+1] << " " << Ffmt(10,5) << myion.rion1[3*ii+2]
                    << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
       std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
@@ -281,7 +312,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "                       Mandelung Wigner-Seitz= " << Ffmt(12,8) << myewald.mandelung()
                 << " (alpha=" << Ffmt(12,8) << myewald.rsalpha() << " rs=" << Ffmt(11,8) << myewald.rs() << ")" << std::endl;
 
-      if (flag > 0)
+      if (flag > 0) 
       {
          std::cout << std::endl;
          std::cout << " technical parameters:\n";
@@ -317,81 +348,235 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout << "      optimization of psi and densities turned off" << std::endl;
       }
       std::cout << std::endl << std::endl << std::endl;
+
+      std::cout << " -----------------------------------------------------------------------------------\n";
+      std::cout << " -------------------------------- BOmd Simulation ----------------------------------\n";
+      std::cout << " -----------------------------------------------------------------------------------\n\n";
+      std::cout << "\n";
+      std::cout << " molecular dynamics parameters:\n";
+      if (myion.fix_translation) std::cout << "      translation constrained\n";
+      if (myion.fix_rotation)    std::cout << "      rotation constrained\n";
+
+      std::cout << "      time step= " << Ffmt(11,2) << control.bo_time_step()
+                << " iterations = "    << Ifmt(10) <<  control.bo_steps(0)*control.bo_steps(1)
+                << " ("  << Ifmt(5) << control.bo_steps(0) << " inner " << Ifmt(5) << control.bo_steps(1) << " outer)\n";
+      if (control.bo_algorithm()==0) std::cout << "      integration algorithm = Position Verlet\n";
+      if (control.bo_algorithm()==1) std::cout << "      integration algorithm = Velocity Verlet\n";
+      if (control.bo_algorithm()==2) std::cout << "      integration algorithm = Leap Frog\n";
+
+
+      std::cout << "\n";
+      std::cout << " cooling/heating rate: " << Efmt(12,5) << control.scaling(0) << " (ion) " << std::endl;
+      //printf(" initial kinetic energy: %12.5le (psi) %12.5le (ion)\n",eke0,myion.eki0);
+      //printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
+      //printf(" after scaling:          %12.5le (psi) %12.5le (ion)\n",eke1,myion.eki1);
+      //printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
+      std::cout << "\n";
+
+      if (mynose.on())
+         std::cout << mynose.inputprint();
+      else
+         std::cout << " Constant Energy Simulation" << std::endl;
+
+      if (SA) std::cout << "      SA decay rate = " << Ffmt(10,3) << sa_decay[1] << "(ion)\n";
+
    }
-   MPI_Barrier(comm_world0);
    if (myparallel.is_master()) seconds(&cpu2);
 
 
 //*                |***************************|
-//******************     call CG minimizer     **********************
+//******************     call GeoVibminimizer  **********************
 //*                |***************************|
 
-   // calculate energy
-   double EV = 0.0;
+   /*  calculate energy and gradient */
+   double g,gg,Gmax,Grms,Xrms,Xmax;
+   double Eold =  0.0;
+   double EV   = 0.0;
 
-   if (flag < 0) 
+   int nfsize   = 3*myion.nion;
+   int one      = 1;
+   double mrone = -1.0;
+
+   // allocate temporary memory from stack
+   double fion[3*myion.nion];
+
+   bool done = false;
+
+   /*  calculate energy */
+   if (oprint) {
+
+      std::cout << "\n\n";
+      std::cout << " -----------------------------------------------------------------------------------\n";
+      std::cout << " -----------------------------    Initial Geometry     -----------------------------\n";
+      std::cout << " -----------------------------------------------------------------------------------\n\n";
+      std::cout << " ---------------------------------\n";
+      std::cout << "         Initial Geometry         \n";
+      std::cout << " ---------------------------------\n";
+      std::cout <<  mymolecule.myion->print_bond_angle_torsions();
+      std::cout << "\n\n\n";
+      std::cout << "         ================ Born-Oppenheimer AIMD iteration ================\n";
+      std::cout << "     >>> iteration started at " << util_date() << " <<<\n";
+      std::cout << "     iter.          KE+Energy             Energy        KE_Ion   Temperature\n";
+      std::cout << "     -----------------------------------------------------------------------\n";
+   }
+
+   nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,
+                                       mymolecule.E,
+                                       mymolecule.hml,
+                                       mymolecule.psi1,
+                                       mymolecule.rho1);
+
+   if (control.bo_steps(1)>0)
    {
-      EV = cgsd_noit_energy(mymolecule,true,std::cout);
-   } 
-   else 
-   {
-      EV = cgsd_energy(control,mymolecule,true,std::cout);
+      bool nose = mynose.on();
+      bool verlet   = (control.bo_algorithm()==0);
+      bool vverlet  = (control.bo_algorithm()==1);
+      bool leapfrog = (control.bo_algorithm()==2);
+      double dt  = control.bo_time_step();
+      int it_out = control.bo_steps(1);
+      int it_in  = control.bo_steps(0);
+      double r   = 1.0;
+      double ssr = 1.0;
+      double eki1 = 0.0;
+      icount = 0;
+
+      EV = cgsd_energy(control,mymolecule,false,std::cout);
+      cgsd_energy_gradient(mymolecule,fion);
+
+      if (nose) r = (1.0-0.5*dt*mynose.dXr());
+      myion.Newton_step(fion,sa_alpha[1]*r);
+
+      done = false;
+      // outer loop iteration
+      while (!done)
+      {
+         ++icount;
+
+         // inner loop iteration
+         for (auto it=0; it<it_in; ++it)
+         {
+            myion.shift();
+            if (nose) mynose.shift();
+
+            //  calculate the energy and gradient 
+            EV = cgsd_energy(control,mymolecule,false,std::cout);
+            cgsd_energy_gradient(mymolecule,fion);
+            if (nose)
+            {
+               ssr = mynose.ssr();
+               myion.Nose_step(ssr,fion);
+            }
+            else
+               myion.Verlet_step(fion,sa_alpha[1]);
+
+         } // end inner loop
+
+         // Update AIMD Running data
+         mymotion_data.update_iteration(icount);
+         //eave = mymotion_data.eave; evar = mymotion_data.evar;
+         //have = mymotion_data.have; hvar = mymotion_data.hvar;
+         //qave = mymotion_data.qave; qvar = mymotion_data.qvar;
+
+         // Write out loop energies
+         if (oprint)
+         {
+            if (SA)
+            {
+               if (mynose.on())
+                  std::cout << Ifmt(10) << (icount*it_in)
+                            << Efmt(19,10) << EV+myion.eki1+mynose.r_energy()
+                            << Efmt(19,10) << EV
+                            << Efmt(14,5)  << myion.eki1
+                            << Ffmt(9,1)   << Tr_new << std::endl;
+               else
+                  std::cout << Ifmt(10) << (icount*it_in)
+                            << Efmt(19,10) << EV+myion.eki1
+                            << Efmt(19,10) << EV
+                            << Efmt(14,5)  << myion.eki1
+                            << Ffmt(9,1)   << Tr_new << std::endl;
+            }
+            else
+            {
+               if (mynose.on())
+                  std::cout << Ifmt(10)    << (icount*it_in)
+                            << Efmt(19,10) << EV+myion.eki1+mynose.r_energy()
+                            << Efmt(19,10) << EV
+                            << Efmt(14,5)  << myion.eki1
+                            << Ffmt(14,2)  << myion.Temperature() << std::endl;
+               else
+                  std::cout << Ifmt(10) << (icount*it_in)
+                            << Efmt(19,10) << EV+myion.eki1
+                            << Efmt(19,10) << EV
+                            << Efmt(14,5)  << myion.eki1
+                            << Ffmt(14,2)  << myion.Temperature() << std::endl;
+            }
+         }
+
+
+         // Check for running out of time
+         if (control.out_of_time())
+         {   
+            done = true;
+            if (oprint) std::cout << "         *** out of time. iteration terminated." << std::endl;
+         }
+         // Check for Completion
+         else if (icount>=it_out)
+         {
+            done = true;
+            if (oprint) std::cout << "         *** arrived at the Maximum iteration.   terminated." << std::endl;
+         }
+      } // end outer loop 
+
+   } // end bomd iterations
+
+
+   if (oprint) {
+      std::cout << "\n\n";
+      std::cout << " ---------------------------------\n";
+      std::cout << "  Final Geometry \n";
+      std::cout << " ---------------------------------\n";
+      std::cout <<  mymolecule.myion->print_bond_angle_torsions();
+      std::cout << "\n\n";
    }
    if (myparallel.is_master()) seconds(&cpu3);
 
+
+//*******************************************************************
+
+
    // write energy results to the json
-   auto rtdbjson =  json::parse(rtdbstring);
+   auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = EV;
    rtdbjson["pspw"]["energies"] = mymolecule.E;
    rtdbjson["pspw"]["eigenvalues"]  = mymolecule.eig_vector();
 
-   // calculate fion
-   if (flag==2)
-   {
-      //double *fion = new double[3*myion.nion]; 
-      double fion[3*myion.nion]; 
-      cgsd_energy_gradient(mymolecule,fion);
-      if (lprint)
-      {
-         std::cout << std::endl << " Ion Forces (au):" << std::endl;
-         for (ii=0; ii<myion.nion; ++ii)
-            std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
-                      << "\t( " << Ffmt(10,5) << fion[3*ii] << " " << Ffmt(10,5) << fion[3*ii+1] << " " << Ffmt(10,5) << fion[3*ii+2] << " )\n";
-         std::cout << std::endl << std::endl;
-      }
-      rtdbjson["pspw"]["fion"] = std::vector<double>(fion,&fion[3*myion.nion]);
-      for (ii=0; ii<(3*myion.nion); ++ii) fion[ii] *= -1.0;
-      rtdbjson["pspw"]["gradient"] = std::vector<double>(fion,&fion[3*myion.nion]);
-
-      //delete [] fion;
-   }
-
-   // APC analysis 
+   // APC analysis
    if (mypsp.myapc->apc_on)
    {
-      if (!(mypsp.myapc->v_apc_on)) 
+      if (!(mypsp.myapc->v_apc_on))
          mypsp.myapc->gen_APC(mymolecule.dng1,false);
 
       // set qion
-      double qion[myion.nion]; 
+      double qion[myion.nion];
       for (auto ii=0; ii<myion.nion; ++ii)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
 
-      if (lprint)
+      if (oprint)
       {
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
       }
    }
 
-   // write psi 
-   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
-   MPI_Barrier(comm_world0);
-
    // set rtdbjson initialize_wavefunction option to false
    if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) rtdbjson["nwpw"]["initialize_wavefunction"] = false;
 
-   // write rtdbjson
+   MPI_Barrier(comm_world0);
+
+   /* write psi */
+   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
+
+   /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
 
@@ -407,7 +592,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) myelectron.counter);
-      //cout.setf(ios::scientific);
+      //std::cout.setf(ios::scientific);
       std::cout << std::scientific;
       std::cout << "\n";
       std::cout << " -----------------"    << "\n";
@@ -426,8 +611,11 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
 
    }
 
-   // deallocate memory
+   /* deallocate memory */
    gdevice_psi_dealloc();
+   //delete [] fion;
+   //delete [] sion;
+
 
    MPI_Barrier(comm_world0);
 

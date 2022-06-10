@@ -542,6 +542,13 @@ int main(int argc, char* argv[])
      }
      MPI_Barrier(MPI_COMM_WORLD);
 
+     /* Born-Oppenheimer task */
+     if (task==7) 
+     {
+        if (oprint) std::cout << std::endl << "Running Born-Oppenheimer molecular dynamics - rtdbstr = " << rtdbstr << std::endl << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_bomd(MPI_COMM_WORLD,rtdbstr);
+     }
 
      // parse json string 
      rtdbstr = parse_rtdbstring(rtdbstr);

@@ -166,6 +166,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"freq"))             ptask = 4;
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"steepest_descent")) ptask = 5;
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"car-parrinello"))   ptask = 6;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"born-oppenheimer")) ptask = 7;
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),"noit_"))            ptask *= -1;
    }
 
@@ -344,8 +345,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["fake_mass"].is_number_float()) pfake_mass = rtdbjson["nwpw"]["steepest_descent"]["fake_mass"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["fake_mass"].is_number_float())   pfake_mass = rtdbjson["nwpw"]["car-parrinello"]["fake_mass"];
 
-
-   ptime_step = 5.8;
+   ptime_step    = 5.8;
    if (rtdbjson["nwpw"]["time_step"].is_number_float()) ptime_step = rtdbjson["nwpw"]["time_step"];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float()) ptime_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())   ptime_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
@@ -353,6 +353,17 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    ploop[0]=10 ; ploop[1]=100; 
    if (rtdbjson["nwpw"]["loop"][0].is_number_integer()) ploop[0] = rtdbjson["nwpw"]["loop"][0];
    if (rtdbjson["nwpw"]["loop"][1].is_number_integer()) ploop[1] = rtdbjson["nwpw"]["loop"][1];
+
+   pbo_time_step = 5.0;
+   if (rtdbjson["nwpw"]["bo_time_step"].is_number_float()) pbo_time_step = rtdbjson["nwpw"]["bo_time_step"];
+
+   pbo_steps[0]=10 ; pbo_steps[1]=100; 
+   if (rtdbjson["nwpw"]["bo_steps"][0].is_number_integer()) pbo_steps[0] = rtdbjson["nwpw"]["bo_steps"][0];
+   if (rtdbjson["nwpw"]["bo_steps"][1].is_number_integer()) pbo_steps[1] = rtdbjson["nwpw"]["bo_steps"][1];
+
+   pbo_algorithm = 0;
+   if (rtdbjson["nwpw"]["bo_algorithm"].is_number_integer()) pbo_algorithm = rtdbjson["nwpw"]["bo_algorithm"];
+
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][0].is_number_integer()) ploop[0] = rtdbjson["nwpw"]["steepest_descent"]["loop"][0];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer()) ploop[1] = rtdbjson["nwpw"]["steepest_descent"]["loop"][1];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][0].is_number_integer()) ploop[0] = rtdbjson["nwpw"]["car-parrinello"]["loop"][0];

@@ -112,6 +112,7 @@ public:
    double tolerances(const int i) { return ptolerances[i]; }
    double scaling(const int i)    { return pscaling[i]; }
    double time_step()             { return ptime_step; }
+   double bo_time_step()          { return pbo_time_step; }
    double fake_mass()             { return pfake_mass; }
    double ecut()                  { return pecut; }
    double wcut()                  { return pwcut; }
@@ -126,6 +127,8 @@ public:
    int balance()               { return pbalance; }
    int ngrid(const int i)      { return pngrid[i]; }
    int loop(const int i)       { return ploop[i]; }
+   int bo_steps(const int i)   { return pbo_steps[i]; }
+   int bo_algorithm()          { return pbo_algorithm; }
    int pfft3_qsize()           { return pqsize; }
    int ewald_ngrid(const int i) { return pewald_grid[i]; }
    int ewald_ncut()             { return pncut; }

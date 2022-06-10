@@ -33,6 +33,12 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+
+#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
+#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
+#define Ifmt(w)   std::right << std::setw(w) 
+
+
 namespace pwdft {
 
 
@@ -218,7 +224,6 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << myxc;
       //std::cout << "   exchange-correlation = ";
       //std::cout << "LDA (Vosko et al) parameterization\n";
-      std::cout << myxc;
   
       //std::cout << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
@@ -239,63 +244,60 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       //}
       std::cout << mypsp.print_pspall();
 
-      printf("\n total charge:%8.3lf\n", control.total_charge());
 
-      std::cout << "\n atom composition:" << "\n";
+      std::cout << "\n total charge:" << Ffmt(8,3) << control.total_charge() << std::endl;
+
+      std::cout << "\n atom composition:" << std::endl;
       for (ia=0; ia<myion.nkatm; ++ia)
          std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      std::cout << "\n\n initial ion positions (au):" << "\n";
+      std::cout << "\n\n initial ion positions (au):" << std::endl;
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
-      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
-      std::cout << "\n";
-      printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
-             mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
+                   << "\t( " << Ffmt(10,5) << myion.rion1[3*ii] << " " << Ffmt(10,5) << myion.rion1[3*ii+1] << " " << Ffmt(10,5) << myion.rion1[3*ii+2]
+                   << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+      std::cout << std::endl;
+      std::cout <<" number of electrons: spin up=" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+                << " per task) down=" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
-      std::cout << "\n";
-      std::cout << " supercell:\n";
-      printf("      volume : %10.2lf\n",mylattice.omega());
-      printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
-      printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
-      printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
-      printf("      reciprocal: b1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,0),mylattice.unitg(1,0),mylattice.unitg(2,0));
-      printf("                  b2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,1),mylattice.unitg(1,1),mylattice.unitg(2,1));
-      printf("                  b3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,2),mylattice.unitg(1,2),mylattice.unitg(2,2));
-      {  double aa1,bb1,cc1,alpha1,beta1,gamma1;
-         mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
-         printf("      lattice:    a=    %8.3lf b=   %8.3lf c=    %8.3lf\n",aa1,bb1,cc1);
-         printf("                  alpha=%8.3lf beta=%8.3lf gamma=%8.3lf\n",alpha1,beta1,gamma1);}
+      std::cout << std::endl;
+      std::cout << " supercell:" << std::endl;
+      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
+      std::cout << "      lattice:    a1=< " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      std::cout << "                  a2=< " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      std::cout << "                  a3=< " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      std::cout << "      reciprocal: b1=< " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      std::cout << "                  b2=< " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      std::cout << "                  b3=< " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
 
-      printf("      density cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.ecut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(0),mygrid.npack(0));
-      printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
-
+      {double aa1,bb1,cc1,alpha1,beta1,gamma1;
+       mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
+       std::cout << "      lattice:    a=    " << Ffmt(8,3) << aa1    << " b=   " << Ffmt(8,3) << bb1   << " c=    " << Ffmt(8,3) << cc1 << std::endl;
+       std::cout << "                  alpha=" << Ffmt(8,3) << alpha1 << " beta=" << Ffmt(8,3) << beta1 << " gamma=" << Ffmt(8,3) << gamma1<< std::endl;}
+      std::cout << "      density cutoff= " << Ffmt(7,3) << mylattice.ecut()
+                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
+      std::cout << "      wavefnc cutoff= " << Ffmt(7,3) << mylattice.wcut()
+                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
       std::cout << " ewald parameters:\n";
-      printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
-      printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
-      printf("                       Mandelung Wigner-Seitz= %12.8lf (alpha=%12.8lf rs=%11.8lf)\n",myewald.mandelung(),myewald.rsalpha(),myewald.rs());
+      std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
+                << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
+                << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
+      std::cout << "      Ewald summation: cut radius=  " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
+      std::cout << "                       Mandelung Wigner-Seitz= " << Ffmt(12,8) << myewald.mandelung()
+                << " (alpha=" << Ffmt(12,8) << myewald.rsalpha() << " rs=" << Ffmt(11,8) << myewald.rs() << ")" << std::endl;
 
-
-
-      std::cout << "\n";
+      std::cout << std::endl;
       std::cout << " technical parameters:\n";
-      printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
-             control.time_step(),control.fake_mass());
-      printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
-             control.tolerances(0),control.tolerances(1),control.tolerances(2));
-      printf("      max iterations = %10d (%5d inner %5d outer)\n",
-             control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      std::cout << "\n\n\n";
-
-
+      std::cout << "      time step= " << Ffmt(11,2) << control.time_step() << "  ficticious mass=" << Ffmt(11,2) << control.fake_mass() << std::endl;
+      std::cout << "      tolerance="  << Efmt(12,3) << control.tolerances(0) << " (energy) "
+                                       << Efmt(12,3) << control.tolerances(1) << " (density) "
+                                       << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
+      std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
+                << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)\n";
 
    }
 
@@ -323,8 +325,10 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
                  E,&deltae,&deltac,&deltar);
 
       if (oprint)
-         printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
-                                       E[0],deltae,deltac,deltar);
+         std::cout << Ifmt(10) << icount*control.loop(0) << Efmt(19,10) << E[0] 
+                   << Efmt(13,5) << deltae << Efmt(13,5) << deltac << Efmt(13,5) << deltar << std::endl; 
+         //printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
+         //                              E[0],deltae,deltac,deltar);
 
       /* check for competion */
       if ((deltae>0.0)&&(icount>1))
@@ -386,13 +390,17 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "          =============  summary of results  =================\n";
       std::cout << "\n final ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
-      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) 
+                   << "\t( " 
+                   << Ffmt(10,5) << myion.rion1[3*ii]   << " " 
+                   << Ffmt(10,5) << myion.rion1[3*ii+1] << " " 
+                   << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl; 
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " 
+                                 << Ffmt(10,5) << myion.gc(1) << " " 
+                                 << Ffmt(10,5) << myion.gc(2) << " )" <<  std::endl; 
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " 
+                                 << Ffmt(10,5) << myion.com(1) << " " 
+                                 << Ffmt(10,5) << myion.com(2) << " )" <<  std::endl; 
 
       //if (mypsp.myapc->v_apc_on)
       //   std::cout << mypsp.myapc->shortprint_APC();
@@ -401,38 +409,41 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << std::fixed << " number of electrons: spin up= " << std::setw(11) << std::setprecision(5) << en[0]
 		<< "  down= " << std::setw(11) << std::setprecision(5) << en[ispin]
 		<< " (real space)";
-      std::cout << "\n\n";
-      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
-      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
+      std::cout << std::endl << std::endl;
+      std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;  
+      std::cout << " total orbital energy: " << Efmt(19,10) << E[1] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " hartree energy      : " << Efmt(19,10) << E[2] << " (" << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl; 
+      std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
       if (mypsp.myapc->v_apc_on) 
-         printf(" APC energy          : %19.10le (%15.5le /ion)\n",      E[51],E[51]/myion.nion);
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
+         std::cout << " APC energy          : " << Efmt(19,10) << E[51] << " (" << Efmt(15,5)  << E[51]/myion.nion << " /ion)" << std::endl;
+      std::cout << " ion-ion energy      : " << Efmt(19,10) << E[4] << " (" << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
 
-      printf("\n");
-      printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
+      std::cout << std::endl;
+      std::cout << " K.S. kinetic energy : " << Efmt(19,10) << E[5] << " (" << Efmt(15,5) << E[5]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_l energy     : " << Efmt(19,10) << E[6] << " (" << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_nl_energy    : " << Efmt(19,10) << E[7] << " (" << Efmt(15,5) << E[7]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_Hart energy  : " << Efmt(19,10) << E[8] << " (" << Efmt(15,5) << E[8]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_xc energy    : " << Efmt(19,10) << E[9] << " (" << Efmt(15,5) << E[9]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
       if (mypsp.myapc->v_apc_on) 
-         printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
+         std::cout << " K.S. V_APC energy   : " << Efmt(19,10) << E[52] << " (" << Efmt(15,5) << E[52]/myion.nion << " /ion)" << std::endl;
 
       viral = (E[9]+E[8]+E[7]+E[6])/E[5];
-      printf(" Viral Coefficient   : %19.10le\n",viral);
+      std::cout << " Viral Coefficient   : " << Efmt(19,10) << viral << std::endl;
 
-      printf("\n orbital energies:\n"); 
+      std::cout << "\n orbital energies:\n"; 
       nn = ne[0] - ne[1];
       ev = 27.2116;
       for (i=0; i<nn; ++i)
       {
-         printf("%18.7le",eig[i]); printf(" ("); printf("%8.3f",eig[i]*ev); printf("eV)\n");
+         std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i]*ev << "eV)" << std::endl;
       }
       for (i=0; i<ne[1]; ++i)
       {
-         printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
-         printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
+         std::cout << Efmt(18,7) << eig[i+nn] << eig[i]    << " (" << Ffmt(8,3) << eig[i+nn]*ev << eig[i]*ev << "eV) " 
+                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" << Ffmt(8,3) << eig[i+(ispin-1)*ne[0]]*ev << "eV)"  << std::endl;
+         //printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
+         //printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
       std::cout << std::endl;
 

@@ -42,6 +42,9 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
+#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
+#define Ifmt(w)   std::right << std::setw(w) 
 
 namespace pwdft {
 
@@ -232,63 +235,61 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       //}
       std::cout << mypsp.print_pspall();
 
-      printf("\n total charge:%8.3lf\n", control.total_charge());
+      std::cout << "\n total charge:" << Ffmt(8,3) << control.total_charge() << std::endl;
 
       std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
          std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
       std::cout << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      printf("   G.C.\t( %10.5lf %10.5lf %10.5lf )\n", myion.gc(0), myion.gc(1), myion.gc(2));
-      printf(" C.O.M.\t( %10.5lf %10.5lf %10.5lf )\n", myion.com(0),myion.com(1),myion.com(2));
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
+                   << "\t( " << Ffmt(10,5) << myion.rion1[3*ii] << " " << Ffmt(10,5) << myion.rion1[3*ii+1] << " " << Ffmt(10,5) << myion.rion1[3*ii+2]
+                   << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
       std::cout << "\n";
-      printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
-             mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
+      std::cout <<" number of electrons: spin up=" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+                << " per task) down=" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
       std::cout << "\n";
       std::cout << " supercell:\n";
-      printf("      volume = %10.2lf\n",mylattice.omega());
-      printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
-      printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
-      printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
-      printf("      reciprocal: b1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,0),mylattice.unitg(1,0),mylattice.unitg(2,0));
-      printf("                  b2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,1),mylattice.unitg(1,1),mylattice.unitg(2,1));
-      printf("                  b3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,2),mylattice.unitg(1,2),mylattice.unitg(2,2));
+      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
+      std::cout << "      lattice:    a1=< " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      std::cout << "                  a2=< " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      std::cout << "                  a3=< " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      std::cout << "      reciprocal: b1=< " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      std::cout << "                  b2=< " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      std::cout << "                  b3=< " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
 
       {double aa1,bb1,cc1,alpha1,beta1,gamma1;
        mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
-       printf("      lattice:    a=    %8.3lf b=   %8.3lf c=    %8.3lf\n",aa1,bb1,cc1);
-       printf("                  alpha=%8.3lf beta=%8.3lf gamma=%8.3lf\n",alpha1,beta1,gamma1);}
-
-      printf("      density cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.ecut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(0),mygrid.npack(0));
-      printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
-
+       std::cout << "      lattice:    a=    " << Ffmt(8,3) << aa1    << " b=   " << Ffmt(8,3) << bb1   << " c=    " << Ffmt(8,3) << cc1 << std::endl;
+       std::cout << "                  alpha=" << Ffmt(8,3) << alpha1 << " beta=" << Ffmt(8,3) << beta1 << " gamma=" << Ffmt(8,3) << gamma1<< std::endl;}
+      std::cout << "      density cutoff= " << Ffmt(7,3) << mylattice.ecut()
+                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
+      std::cout << "      wavefnc cutoff= " << Ffmt(7,3) << mylattice.wcut()
+                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
       std::cout << " ewald parameters:\n";
-      printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
-      printf("      Ewald summation: cut radius=  %7.3lf and %3d\n", myewald.rcut(),myewald.ncut());
-      printf("                       Mandelung Wigner-Seitz= %12.8lf (alpha=%12.8lf rs=%11.8lf)\n",myewald.mandelung(),myewald.rsalpha(),myewald.rs());
+      std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
+                << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
+                << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
+      std::cout << "      Ewald summation: cut radius=  " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
+      std::cout << "                       Mandelung Wigner-Seitz= " << Ffmt(12,8) << myewald.mandelung()
+                << " (alpha=" << Ffmt(12,8) << myewald.rsalpha() << " rs=" << Ffmt(11,8) << myewald.rs() << ")" << std::endl;
 
-      if (flag > 0) 
+      if (flag > 0)
       {
          std::cout << std::endl;
          std::cout << " technical parameters:\n";
-         printf("      time step= %11.2lf  ficticious mass=%11.2lf\n",
-                control.time_step(),control.fake_mass());
-         printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le (ion)\n",
-                control.tolerances(0),control.tolerances(1),control.tolerances(2));
-         //printf("      tolerance=%12.3le (energy) %12.3le (density)\n",
-         //       control.tolerances(0),control.tolerances(1));
-         printf("      max iterations = %10d (%5d inner %5d outer)\n",
-                control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
+         std::cout << "      time step= " << Ffmt(11,2) << control.time_step() << "  ficticious mass=" << Ffmt(11,2) << control.fake_mass() << std::endl;
+         std::cout << "      tolerance="  << Efmt(12,3) << control.tolerances(0) << " (energy) "
+                                          << Efmt(12,3) << control.tolerances(1) << " (density) "
+                                          << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
+         std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
+                   << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)\n";
          if (control.minimizer()==1) std::cout << "      minimizer = Grassmann conjugate gradient\n";
          if (control.minimizer()==2) std::cout << "      minimizer = Grassmann lmbfgs\n";
          if (control.minimizer()==4) std::cout << "      minimizer = Stiefel conjugate gradient\n";
@@ -319,17 +320,20 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << " -----------------------------------------------------------------------------------\n";
       std::cout << " ----------------------------- Geometry Optimization -------------------------------\n";
       std::cout << " -----------------------------------------------------------------------------------\n\n";
-      printf(" Optimization parameters:  %4d (maxiter) %12.3le (gmax) %12.3le (grms) %12.3le (xrms) %12.3le (xmax)\n",
-                maxit,tol_Gmax,tol_Grms,tol_Xrms,tol_Xmax);
+      std::cout << " Optimization parameters:  " << Ifmt(5) << maxit << " (maxiter) " 
+                << Efmt(12,3) << tol_Gmax << " (gmax) " 
+                << Efmt(12,3) << tol_Grms << " (grms) " 
+                << Efmt(12,3) << tol_Xrms << " (xrms) " 
+                << Efmt(12,3) << tol_Xmax << " (xmax)\n";
 
-      printf("    maximum number of steps       (maxiter) = %4d\n",maxit); 
-      printf("    maximum gradient threshold       (Gmax) = %12.6le\n",tol_Gmax);
-      printf("    rms gradient threshold           (Grms) = %12.6le\n",tol_Grms);
-      printf("    rms cartesian step threshold     (Xrms) = %12.6le\n",tol_Xrms);
-      printf("    maximum cartesian step threshold (Xmax) = %12.6le\n",tol_Xmax);
-      printf("\n");
-      printf("    fixed trust radius              (Trust) = %12.6le\n",trust);
-      printf("    number lmbfgs histories   (lmbfgs_size) = %4d\n",lmbfgs_size); 
+      std::cout << "    maximum number of steps       (maxiter) = " << Ifmt(4) << maxit << std::endl;
+      std::cout << "    maximum gradient threshold       (Gmax) = " << Efmt(12,6) << tol_Gmax << std::endl;
+      std::cout << "    rms gradient threshold           (Grms) = " << Efmt(12,6) << tol_Grms << std::endl;
+      std::cout << "    rms cartesian step threshold     (Xrms) = " << Efmt(12,6) << tol_Xrms << std::endl;
+      std::cout << "    maximum cartesian step threshold (Xmax) = " << Efmt(12,6) << tol_Xmax << std::endl;
+      std::cout << std::endl;
+      std::cout << "    fixed trust radius              (Trust) = " << Efmt(12,6) << trust << std::endl;
+      std::cout << "    number lmbfgs histories   (lmbfgs_size) = " << Ifmt(4) << lmbfgs_size << std::endl;
 
    }
    if (myparallel.is_master()) seconds(&cpu2);
@@ -370,7 +374,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "     Calculate Initial Energy     \n";
       std::cout << " ---------------------------------\n\n";
    }
-   EV = cgsd_energy(control,mymolecule);
+   EV = cgsd_energy(control,mymolecule,true,std::cout);
    /*  calculate the gradient */
    if (oprint){
       std::cout << "\n";
@@ -382,19 +386,15 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
    if (oprint) {
       std::cout << " ion forces (au):" << "\n";
       for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-         printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
-                         ii+1,mymolecule.myion->symbol(ii),
-                         fion[3*ii],
-                         fion[3*ii+1],
-                         fion[3*ii+2]);
-         printf("      C.O.M. ( %12.6lf %12.6lf %12.6lf )\n",
-                         mymolecule.myion->com_fion(fion,0),
-                         mymolecule.myion->com_fion(fion,1),
-                         mymolecule.myion->com_fion(fion,2));
-         std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
-		   << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion)
-		   << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
-		   << std::endl << std::endl;
+         std::cout << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
+                   << "  ( " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2] << " )\n";
+       std::cout << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " "
+                                      << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " "
+                                      << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )\n";
+       std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
+                 << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion)
+                 << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
+                 << std::endl << std::endl;
    }
    DSCAL_PWDFT(nfsize,mrone,fion,one);
 
@@ -428,18 +428,22 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
        }
        if (it==0)
        {
-          printf("\n\n");
-          printf("@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
-          printf("@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+          std::cout << std::endl << std::endl; 
+          std::cout << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+          std::cout << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
        }
        else
        {
-          printf("\n\n");
-          printf("  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
-          printf("  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+          std::cout << std::endl << std::endl;
+          std::cout << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+          std::cout << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
        }
        seconds(&cpustep);
-       printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+       std::cout << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
+                   << " " << Ffmt(8,5) << Gmax <<  " " << Ffmt(8,5) << Grms
+                   << " " << Ffmt(8,5) << Xrms <<  " " << Ffmt(8,5) << Xmax
+                   << " " << Ffmt(10,1) << cpustep-cpu1 << " " << Ifmt(9) << myelectron.counter << std::endl;
+       //printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
 
        if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
        {
@@ -486,7 +490,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout << " ---------------------------------\n\n";
       }
       Eold = EV;
-      EV = cgsd_energy(control,mymolecule);
+      EV = cgsd_energy(control,mymolecule,true,std::cout);
 
       /*  calculate the gradient */
       if (oprint) {
@@ -501,19 +505,15 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       if (oprint) {
 	 std::cout << " ion forces (au):" << "\n";
          for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-            printf(" %5d %4s  ( %12.6lf %12.6lf %12.6lf )\n",
-                            ii+1,mymolecule.myion->symbol(ii),
-                            fion[3*ii],
-                            fion[3*ii+1],
-                            fion[3*ii+2]);
-            printf("      C.O.M. ( %12.6lf %12.6lf %12.6lf )\n",
-                            mymolecule.myion->com_fion(fion,0),
-                            mymolecule.myion->com_fion(fion,1),
-                            mymolecule.myion->com_fion(fion,2));
-            std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl 
-		      << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion) 
-		      << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
-		      << std::endl << std::endl;
+            std::cout << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
+                      << "  ( " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2] << " )\n";
+          std::cout << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " " 
+                                         << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " " 
+                                         << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )\n";
+          std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl 
+	            << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion) 
+		    << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
+		    << std::endl << std::endl;
       }
       DSCAL_PWDFT(nfsize,mrone,fion,one);
 
@@ -552,18 +552,22 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
 
          if (it==0) 
          {
-            printf("\n\n");
-            printf("@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
-            printf("@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+            std::cout << std::endl << std::endl;
+            std::cout << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            std::cout << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
          } 
          else 
          {
-            printf("\n\n");
-            printf("  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n");
-            printf("  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n");
+            std::cout << std::endl << std::endl;
+            std::cout << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            std::cout << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
          }
          seconds(&cpustep);
-         printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+         std::cout << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
+                   << " " << Ffmt(8,5) << Gmax <<  " " << Ffmt(8,5) << Grms
+                   << " " << Ffmt(8,5) << Xrms <<  " " << Ffmt(8,5) << Xmax
+                   << " " << Ffmt(10,1) << cpustep-cpu1 << " " << Ifmt(9) << myelectron.counter << std::endl;
+         //printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
        
          if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
          {

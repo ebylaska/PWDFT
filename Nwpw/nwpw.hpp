@@ -11,6 +11,7 @@ extern int cpsd(MPI_Comm, std::string&);
 extern int cpmd(MPI_Comm, std::string&);
 extern int pspw_minimizer(MPI_Comm, std::string&);
 extern int pspw_geovib(MPI_Comm, std::string&);
+extern int pspw_bomd(MPI_Comm, std::string&);
 
 extern int cpsd_debug(MPI_Comm, std::string&);
 }
