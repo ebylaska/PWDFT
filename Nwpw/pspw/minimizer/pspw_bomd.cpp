@@ -97,7 +97,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::ios_base::sync_with_stdio();
       std::cout << "          *****************************************************\n";
       std::cout << "          *                                                   *\n";
-      std::cout << "          *              PWDFT PSPW BOmd Calculation          *\n";
+      std::cout << "          *   PWDFT PSPW Born-Oppenheimer molecular dynamics  *\n";
       std::cout << "          *                                                   *\n";
       std::cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
       std::cout << "          *  [              C++ implementation             ]  *\n";
@@ -350,7 +350,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << std::endl << std::endl << std::endl;
 
       std::cout << " -----------------------------------------------------------------------------------\n";
-      std::cout << " -------------------------------- BOmd Simulation ----------------------------------\n";
+      std::cout << " ----------------------- Born-Oppenheimer molecular dynamics -----------------------\n";
       std::cout << " -----------------------------------------------------------------------------------\n\n";
       std::cout << "\n";
       std::cout << " molecular dynamics parameters:\n";
