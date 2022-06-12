@@ -1013,8 +1013,8 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
       }
       else if (mystring_contains(line,"bo_algorithm"))
       {
-         if (mystring_contains(line," leap-frog"))              nwpwjson["bo_algorithm"] = 2;
-         else if (mystring_contains(line," velocity-velocity")) nwpwjson["bo_algorithm"] = 1;
+         if (mystring_contains(line," leap-frog"))            nwpwjson["bo_algorithm"] = 2;
+         else if (mystring_contains(line," velocity-verlet")) nwpwjson["bo_algorithm"] = 1;
          else nwpwjson["bo_algorithm"] = 0;
       }
       else if (mystring_contains(line,"xc"))

@@ -26,6 +26,7 @@ public:
    double *mass;
    double *dti;
    double *rion0,*rion1,*rion2; // coordinates of ions
+   double *vionhalf;            // temp velocities
    double *fion1;               // forces of ions
    double time_step;
 
@@ -67,6 +68,16 @@ public:
        for (auto i=0; i<(3*nion); ++i) rion0[i] = rion1[i];
        for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
     }
+    void shift21() 
+    {
+       //for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
+       memcpy(rion1,rion2,3*nion*sizeof(double));
+    }
+    void vshift() 
+    { 
+       for (auto i=0; i<(3*nion); ++i) rion0[i] = vionhalf[i];
+    }
+
     char *symbol(const int i) { return &atomarray[3*katm[i]]; }
     char *atom(const int ia)  { return &atomarray[3*ia]; }
     double amu(const int i) { return mass[i]/1822.89; }
@@ -202,6 +213,20 @@ public:
        ++ke_count;
        ke_total += eki1;
        kg_total += ekg;
+    }
+
+    void vVerlet_step(const double fion[],const double fion1[]) 
+    {
+       double sa = 1.0/time_step;
+       for (auto ii=0; ii<nion; ++ii)
+       {
+          double scale = 0.5*sa*dti[ii];
+          vionhalf[3*ii]   = rion0[3*ii]   + scale*(fion1[3*ii]   + fion[3*ii]);
+          vionhalf[3*ii+1] = rion0[3*ii+1] + scale*(fion1[3*ii+1] + fion[3*ii+1]);
+          vionhalf[3*ii+2] = rion0[3*ii+2] + scale*(fion1[3*ii+2] + fion[3*ii+2]);
+       }
+
+       // ***** impose molecular constraints - need to implement rattle here***
     }
 
     void Newton_step(const double *fion, const double alpha) 

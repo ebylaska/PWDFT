@@ -207,6 +207,7 @@ Ion::Ion(RTDB& myrtdb, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   vionhalf  = new double[3*nion];
    fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
@@ -267,6 +268,7 @@ Ion::Ion(std::string rtdbstring, Control2& control)
    rion0     = new double[3*nion];
    rion1     = new double[3*nion];
    rion2     = new double[3*nion];
+   vionhalf  = new double[3*nion];
    fion1     = new double[3*nion];
    katm      = new int[nion];
    natm      = new int[nkatm];
@@ -400,6 +402,9 @@ Ion::Ion(std::string rtdbstring, Control2& control)
    rr0 = control.ion_scaling();
    for (auto i=0; i<(3*nion); ++i) rion0[i] *= rr0;
    eki1 = ke();
+
+   // set intitial vionhalf
+   memcpy(vionhalf,rion0,3*nion*sizeof(double));
 
    // set ke_count, ke_total,and kg_total and g_dof
    ke_count = 0;

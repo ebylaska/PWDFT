@@ -439,6 +439,8 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       double eki1 = 0.0;
       icount = 0;
 
+      double fion1[3*myion.nion];
+
       EV = cgsd_energy(control,mymolecule,false,std::cout);
       cgsd_energy_gradient(mymolecule,fion);
 
@@ -446,6 +448,9 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       myion.Newton_step(fion,sa_alpha[1]*r);
 
       eki = myion.eki1;
+      if (nose) mynose.Newton_step(0.01,eki);
+
+
       E[0] = EV+eki; 
       E[1] = EV; 
       E[2] = 0.0; 
@@ -461,8 +466,16 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
          // inner loop iteration
          for (auto it=0; it<it_in; ++it)
          {
-            myion.shift();
-            if (nose) mynose.shift();
+            if (vverlet)
+            {
+               memcpy(fion1,fion,3*myion.nion*sizeof(double));
+               myion.shift21();
+            }
+            else 
+            {
+               myion.shift();
+               if (nose) mynose.shift();
+            }
 
             //  calculate the energy and gradient 
             EV = cgsd_energy(control,mymolecule,false,std::cout);
@@ -472,11 +485,22 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
             {
                ssr = mynose.ssr();
                myion.Nose_step(ssr,fion);
+               eki = myion.eki1;
+               mynose.Verlet_step(0.01,eki);
+            }
+            else if (vverlet)
+            {
+               myion.vVerlet_step(fion,fion1);
+               myion.vshift();
+               myion.Newton_step(fion,sa_alpha[1]*r);
+               eki = myion.eki1;
             }
             else
+            {
                myion.Verlet_step(fion,sa_alpha[1]);
-
-            eki = myion.eki1;
+               eki = myion.eki1;
+            }
+  
             E[0] = EV+eki; 
             E[1] = EV; 
             E[2] = 0.0; 
