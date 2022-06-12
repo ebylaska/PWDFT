@@ -2253,10 +2253,10 @@ std::string Pseudopotential::print_pspall()
       if (psp_type[ia]==4)
       {
          stream << std::setw(7) << (ia+1) << ": "  << std::left << std::setw(4) << myion->atom(ia)  
-                << "valence charge :" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
-                << "  core charge :"  << std::fixed << std::setprecision(1) << std::setw(6) << zion[ia]-zv[ia] << std::endl;
+                << "valence charge =" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
+                << "  core charge ="  << std::fixed << std::setprecision(1) << std::setw(6) << zion[ia]-zv[ia] << std::endl;
          stream.copyfmt(init);
-         stream << "             comment : " << comment[ia] << std::endl 
+         stream << "             comment = " << comment[ia] << std::endl 
                 << "             pseudopotential type           :" << std::setw(10) << psp_type[ia] << std::endl 
                 << "             loggrid parameter r0           :" << std::scientific << std::setw(10) << std::setprecision(3) << r1[ia] << std::endl
                 << "             loggrid parameter rmax         :" << std::scientific << std::setw(10) << std::setprecision(3) << rmax[ia] << std::endl 
@@ -2277,18 +2277,18 @@ std::string Pseudopotential::print_pspall()
       else
       {
          stream << std::setw(7) << (ia+1) << ": "  << std::left << std::setw(4) << myion->atom(ia) 
-                << "valence charge :" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
-                << "  lmax=" << std::setw(1) << lmax[ia] << std::endl;
+                << "valence charge =" << std::right << std::fixed << std::setprecision(1) << std::setw(5) << zv[ia]
+                << "  lmax =" << std::setw(1) << lmax[ia] << std::endl;
          stream.copyfmt(init);
-         stream << "             comment : " << comment[ia] << std::endl 
-                << "             pseudopotential type            :" << std::setw(3) << psp_type[ia] << std::endl
-                << "             highest angular component       :" << std::setw(3) << lmax[ia]     << std::endl
-                << "             local potential used            :" << std::setw(3) << locp[ia]     << std::endl
-                << "             number of non-local projections :" << std::setw(3) << nprj[ia]     << std::endl;
+         stream << "             comment = " << comment[ia] << std::endl 
+                << "             pseudopotential type            =" << std::setw(3) << psp_type[ia] << std::endl
+                << "             highest angular component       =" << std::setw(3) << lmax[ia]     << std::endl
+                << "             local potential used            =" << std::setw(3) << locp[ia]     << std::endl
+                << "             number of non-local projections =" << std::setw(3) << nprj[ia]     << std::endl;
          if (psp_version==4)
-            stream << "             aperiodic cutoff radius         : " << std::fixed << std::setprecision(3) << std::setw(6) << rlocal[ia] << std::endl;
+            stream << "             aperiodic cutoff radius         = " << std::fixed << std::setprecision(3) << std::setw(6) << rlocal[ia] << std::endl;
          if (semicore[ia])
-            stream << "             semicore corrections inlcuded   : " << std::fixed << std::setprecision(3) << std::setw(6) << rcore[ia] << " (radius) " 
+            stream << "             semicore corrections inlcuded   = " << std::fixed << std::setprecision(3) << std::setw(6) << rcore[ia] << " (radius) " 
                    << ncore(ia) << " (charge)"<< std::endl;
          stream << "             cutoff = ";
          for (auto l=0; l<=lmax[ia]; ++l)

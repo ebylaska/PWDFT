@@ -24,6 +24,16 @@ namespace pwdft {
 #define	eig1stream(A,B)		std::scientific << std::setw(18) << std::setprecision(7) << (A) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (B) << std::setw(0) << "eV)\n"
 #define	eig2stream(A,B,C,D)	std::scientific << std::setw(18) << std::setprecision(7) << (A) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (B) << std::setw(0) << "eV) " << std::scientific << std::setw(18) << std::setprecision(7) << (C) << std::setw(0) <<  " (" << std::fixed << std::setw(8) << std::setprecision(3)  << (D) << std::setw(0) << " eV)\n" 
 
+/*
+E[0] =
+E[1] =
+E[2] =
+E[3] =
+E[4] =
+E[5] =
+E[6] =
+*/
+
 class	Molecule {
 
    double omega,scal2,scal1,dv;

@@ -27,7 +27,7 @@ class nwpw_aimd_running_data {
    Ion      *myion;
    double   *E,*hml,*psi,*dn;
 
-   bool ismaster,use_nose_output;
+   bool ismaster,use_nose_output,use_bo_output;
 
    int emotion_ishift=0;
    int ion_motion_ishift=0;

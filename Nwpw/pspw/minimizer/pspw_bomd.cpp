@@ -70,7 +70,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
    char date[26];
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4,cpustep;
-   double E[50],deltae,deltac,deltar,viral,unita[9];
+   double E[60],deltae,deltac,deltar,viral,unita[9];
    double sa_alpha[2],sa_decay[2],Te_init,Tr_init,Te_new,Tr_new;
    double kb = 3.16679e-6;
 
@@ -89,7 +89,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
    //double *dn;
    //double *hml,*lmbda,*eig;
 
-   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+   for (ii=0; ii<60; ++ii) E[ii] = 0.0;
 
    if (myparallel.is_master()) seconds(&cpu1);
    if (oprint)
@@ -267,7 +267,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       //}
       std::cout << mypsp.print_pspall();
 
-      std::cout << "\n total charge:" << Ffmt(8,3) << control.total_charge() << std::endl;
+      std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
 
       std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -304,7 +304,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
                 << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
-      std::cout << " ewald parameters:\n";
+      std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
                 << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
@@ -360,23 +360,23 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "      time step= " << Ffmt(11,2) << control.bo_time_step()
                 << " iterations = "    << Ifmt(10) <<  control.bo_steps(0)*control.bo_steps(1)
                 << " ("  << Ifmt(5) << control.bo_steps(0) << " inner " << Ifmt(5) << control.bo_steps(1) << " outer)\n";
-      if (control.bo_algorithm()==0) std::cout << "      integration algorithm = Position Verlet\n";
-      if (control.bo_algorithm()==1) std::cout << "      integration algorithm = Velocity Verlet\n";
-      if (control.bo_algorithm()==2) std::cout << "      integration algorithm = Leap Frog\n";
+      if (control.bo_algorithm()==0) std::cout << "      integration algorithm = position Verlet\n";
+      if (control.bo_algorithm()==1) std::cout << "      integration algorithm = velocity Verlet\n";
+      if (control.bo_algorithm()==2) std::cout << "      integration algorithm = leap frog\n";
 
 
-      std::cout << "\n";
-      std::cout << " cooling/heating rate: " << Efmt(12,5) << control.scaling(0) << " (ion) " << std::endl;
-      //printf(" initial kinetic energy: %12.5le (psi) %12.5le (ion)\n",eke0,myion.eki0);
-      //printf("                                            %12.5le (c.o.m.)\n",myion.ekg);
-      //printf(" after scaling:          %12.5le (psi) %12.5le (ion)\n",eke1,myion.eki1);
-      //printf(" increased energy:       %12.5le (psi) %12.5le (ion)\n",eke1-eke0,myion.eki1-myion.eki0);
-      std::cout << "\n";
+      std::cout << std::endl;
+      std::cout << " cooling/heating rate:   " << Efmt(12,5) << control.ion_scaling() << " (ion)"    << std::endl;
+      std::cout << " initial kinetic energy: " << Efmt(12,5) << myion.eki0            << " (ion)"    << std::endl;
+      std::cout << "                      "    << Efmt(15,5) << myion.ekg             << " (C.O.M.)" << std::endl;
+      std::cout << " after scaling:          " << Efmt(12,5) << myion.eki1            << " (ion)"    << std::endl;
+      std::cout << " increased energy:       " << Efmt(12,5) << myion.eki1-myion.eki0 << " (ion)"    << std::endl;
+      std::cout << std::endl;
 
       if (mynose.on())
          std::cout << mynose.inputprint();
       else
-         std::cout << " Constant Energy Simulation" << std::endl;
+         std::cout << " constant energy simulation" << std::endl;
 
       if (SA) std::cout << "      SA decay rate = " << Ffmt(10,3) << sa_decay[1] << "(ion)\n";
 
@@ -392,6 +392,8 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
    double g,gg,Gmax,Grms,Xrms,Xmax;
    double Eold =  0.0;
    double EV   = 0.0;
+   double eki  = 0.0;
+   double *Emol  = mymolecule.E;
 
    int nfsize   = 3*myion.nion;
    int one      = 1;
@@ -421,10 +423,7 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
    }
 
    nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,
-                                       mymolecule.E,
-                                       mymolecule.hml,
-                                       mymolecule.psi1,
-                                       mymolecule.rho1);
+                                        E,mymolecule.hml,mymolecule.psi1,mymolecule.rho1);
 
    if (control.bo_steps(1)>0)
    {
@@ -446,6 +445,13 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
       if (nose) r = (1.0-0.5*dt*mynose.dXr());
       myion.Newton_step(fion,sa_alpha[1]*r);
 
+      eki = myion.eki1;
+      E[0] = EV+eki; 
+      E[1] = EV; 
+      E[2] = 0.0; 
+      E[3] = eki; 
+      for (auto i=0; i<56; ++i) E[i+4] = Emol[i];
+
       done = false;
       // outer loop iteration
       while (!done)
@@ -460,7 +466,8 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
 
             //  calculate the energy and gradient 
             EV = cgsd_energy(control,mymolecule,false,std::cout);
-            cgsd_energy_gradient(mymolecule,fion);
+            cgsd_energy_gradient(mymolecule,fion); 
+
             if (nose)
             {
                ssr = mynose.ssr();
@@ -468,6 +475,13 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
             }
             else
                myion.Verlet_step(fion,sa_alpha[1]);
+
+            eki = myion.eki1;
+            E[0] = EV+eki; 
+            E[1] = EV; 
+            E[2] = 0.0; 
+            E[3] = eki; 
+            for (auto i=0; i<56; ++i) E[i+4] = Emol[i];
 
          } // end inner loop
 
@@ -484,30 +498,30 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
             {
                if (mynose.on())
                   std::cout << Ifmt(10) << (icount*it_in)
-                            << Efmt(19,10) << EV+myion.eki1+mynose.r_energy()
+                            << Efmt(19,10) << EV+eki+mynose.r_energy()
                             << Efmt(19,10) << EV
-                            << Efmt(14,5)  << myion.eki1
+                            << Efmt(14,5)  << eki
                             << Ffmt(9,1)   << Tr_new << std::endl;
                else
                   std::cout << Ifmt(10) << (icount*it_in)
-                            << Efmt(19,10) << EV+myion.eki1
+                            << Efmt(19,10) << EV+eki
                             << Efmt(19,10) << EV
-                            << Efmt(14,5)  << myion.eki1
+                            << Efmt(14,5)  << eki
                             << Ffmt(9,1)   << Tr_new << std::endl;
             }
             else
             {
                if (mynose.on())
                   std::cout << Ifmt(10)    << (icount*it_in)
-                            << Efmt(19,10) << EV+myion.eki1+mynose.r_energy()
+                            << Efmt(19,10) << EV+eki+mynose.r_energy()
                             << Efmt(19,10) << EV
-                            << Efmt(14,5)  << myion.eki1
+                            << Efmt(14,5)  << eki
                             << Ffmt(14,2)  << myion.Temperature() << std::endl;
                else
                   std::cout << Ifmt(10) << (icount*it_in)
-                            << Efmt(19,10) << EV+myion.eki1
+                            << Efmt(19,10) << EV+eki
                             << Efmt(19,10) << EV
-                            << Efmt(14,5)  << myion.eki1
+                            << Efmt(14,5)  << eki
                             << Ffmt(14,2)  << myion.Temperature() << std::endl;
             }
          }

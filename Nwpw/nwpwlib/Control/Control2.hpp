@@ -110,7 +110,11 @@ public:
    double unita(const int i,const int j) { return punita[i+j*3]; }
    double unita1d(const int ii)   { return punita[ii]; }
    double tolerances(const int i) { return ptolerances[i]; }
+
    double scaling(const int i)    { return pscaling[i]; }
+   double elc_scaling()           { return pscaling[0]; }
+   double ion_scaling()           { if (ptask==7) return pscaling[0]; else return pscaling[1]; }
+
    double time_step()             { return ptime_step; }
    double bo_time_step()          { return pbo_time_step; }
    double fake_mass()             { return pfake_mass; }

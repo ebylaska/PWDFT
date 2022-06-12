@@ -155,7 +155,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
 
    /* scaling psi velocity */
    mygrid.gg_copy(psi1,psi0);
-   mygrid.g_Scale(control.scaling(0),psi1);
+   mygrid.g_Scale(control.elc_scaling(),psi1);
    double eke0 = control.fake_mass()*mygrid.gg_traceall(psi0,psi0); 
    double eke1 = control.fake_mass()*mygrid.gg_traceall(psi1,psi1); 
 
@@ -266,7 +266,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       //}
       std::cout << mypsp.print_pspall();
 
-      std::cout << "\n total charge:" << Ffmt(8,3) << control.total_charge() << std::endl;
+      std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
 
       std::cout << "\n atom composition:" << std::endl;
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -314,7 +314,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
                 << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
-      std::cout << " ewald parameters:\n";
+      std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
                 << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
@@ -333,9 +333,9 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1) 
                 << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
       std::cout << std::endl;
-      std::cout << " cooling/heating rates:  " << Efmt(12,5) << control.scaling(0) << " (psi) " << Efmt(12,5) << control.scaling(1) << " (ion)" << std::endl;
+      std::cout << " cooling/heating rates:  " << Efmt(12,5) << control.elc_scaling() << " (psi) " << Efmt(12,5) << control.ion_scaling() << " (ion)" << std::endl;
       std::cout << " initial kinetic energy: " << Efmt(12,5) << eke0 << " (psi) " << Efmt(12,5) << myion.eki0 << " (ion)" << std::endl;
-      std::cout << "                                           " << Efmt(12,5) << myion.ekg << " (C.O.M.)" << std::endl;
+      std::cout << "                                            " << Efmt(12,5) << myion.ekg << " (C.O.M.)" << std::endl;
       std::cout << " after scaling:          " << Efmt(12,5) << eke1 << " (psi) " << Efmt(12,5) << myion.eki1 << " (ion)" << std::endl;
       std::cout << " increased energy:       " << Efmt(12,5) << eke1-eke0 << " (psi) " << Efmt(12,5) << myion.eki1-myion.eki0 << " (ion)" << std::endl;
       std::cout << std::endl;
@@ -343,7 +343,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       if (mynose.on()) 
          std::cout << mynose.inputprint();
       else
-         std::cout << " Constant Energy Simulation" << std::endl;
+         std::cout << " constant energy simulation" << std::endl;
 
       if (SA) std::cout << "      SA decay rate = " << Efmt(10,3) << sa_decay[0] << "  (elc) " << Efmt(10,3) << sa_decay[1]  << " (ion)" << std::endl;
 
@@ -510,9 +510,8 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << " Kinetic energy    (ion) : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3]/myion.nion << " /ion)" << std::endl;
       if (mynose.on())
       {
-         // BUG!! the wrong energies need to be fixed!
-         std::cout << " thermostat energy (elc) : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
-         std::cout << " thermostat energy (ion) : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3] << myion.nion << " /ion)" << std::endl;
+         std::cout << " thermostat energy (elc) : " << Efmt(19,10) << E[8] << " (" << Efmt(15,5) << E[8]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+         std::cout << " thermostat energy (ion) : " << Efmt(19,10) << E[9] << " (" << Efmt(15,5) << E[9] << myion.nion << " /ion)" << std::endl;
       }
 
       std::cout << "\n final kinetic energy:   " << Efmt(12,5) << E[2] <<" (psi) " << Efmt(12,5) << E[3] << " (ion)" << std::endl;

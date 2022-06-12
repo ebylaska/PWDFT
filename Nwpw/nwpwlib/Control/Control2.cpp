@@ -375,6 +375,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_float())   pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
    if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_integer()) pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
 
+   if (ptask==7) if (rtdbjson["nwpw"]["bo_scaling"][0].is_number_float())   pscaling[0] = rtdbjson["nwpw"]["bo_scaling"][0];
+   if (ptask==7) if (rtdbjson["nwpw"]["bo_scaling"][0].is_number_integer()) pscaling[0] = rtdbjson["nwpw"]["bo_scaling"][0];
+
 
    ptolerances[0] = 1.0e-7; ptolerances[1] = 1.0e-7; ptolerances[2] = 1.0e-4; 
    if (rtdbjson["nwpw"]["tolerances"][0].is_number_float()) ptolerances[0] = rtdbjson["nwpw"]["tolerances"][0];

@@ -396,7 +396,8 @@ Ion::Ion(std::string rtdbstring, Control2& control)
    }
 
    // scale velocities then find kinetic energy
-   rr0 = control.scaling(1);
+   //rr0 = control.scaling(1);
+   rr0 = control.ion_scaling();
    for (auto i=0; i<(3*nion); ++i) rion0[i] *= rr0;
    eki1 = ke();
 

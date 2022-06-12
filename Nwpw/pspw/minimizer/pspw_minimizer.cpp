@@ -236,7 +236,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
       //}
       std::cout << mypsp.print_pspall();
 
-      std::cout << "\n total charge:" << Ffmt(8,3) << control.total_charge() << std::endl;
+      std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
 
       std::cout << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
@@ -273,7 +273,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
                 << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
-      std::cout << " ewald parameters:\n";
+      std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
                 << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;

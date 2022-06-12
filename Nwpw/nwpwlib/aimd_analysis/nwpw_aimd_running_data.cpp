@@ -75,8 +75,16 @@ nwpw_aimd_running_data::nwpw_aimd_running_data(Control2& control, Parallel *inpa
    calculate_dipole   = control.dipole_on();
    use_nose_output    = control.Nose();
 
-   dt = control.time_step();
-   dt_inner = dt*control.loop(0);
+   if (control.task()==7) 
+   {
+      dt = control.bo_time_step();
+      dt_inner = dt*control.bo_steps(0);
+   }
+   else
+   {
+      dt = control.time_step();
+      dt_inner = dt*control.loop(0);
+   }
 
    // set running data filenames
    xyz_filename           = control.permanent_dir_str + "/" + control.xyz_filename;
