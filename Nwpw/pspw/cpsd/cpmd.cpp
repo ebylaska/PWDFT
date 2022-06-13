@@ -5,8 +5,7 @@
 #include	<cstdlib>
 #include	<string>
 
-
-
+#include        "iofmt.hpp"
 #include	"Parallel.hpp"
 //#include	"control.hpp"
 #include	"Control2.hpp"
@@ -30,10 +29,6 @@
 
 #include "json.hpp"
 using json = nlohmann::json;
-
-#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
-#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
-#define Ifmt(w)   std::right << std::setw(w) 
 
 namespace pwdft {
 

@@ -4,6 +4,7 @@
 #include        <cstdlib>
 #include        <string>
 
+#include        "iofmt.hpp"
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
 #include        "util_date.hpp"
@@ -14,9 +15,7 @@
 
 #include	"cgsd.hpp"
 
-#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
-#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
-#define Ifmt(w)   std::right << std::setw(w) 
+#include	"iofmt.hpp"
 
 namespace pwdft {
 
@@ -188,8 +187,9 @@ void cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
 {
    mymolecule.psi_1local_force(grad_ion);
    mymolecule.psi_1nonlocal_force(grad_ion);
-   mymolecule.ewald_fion(grad_ion);
    mymolecule.semicore_force(grad_ion);
+
+   mymolecule.ewald_fion(grad_ion);
    mymolecule.psi_1apc_force(grad_ion);
 
 }

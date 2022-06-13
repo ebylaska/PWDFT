@@ -5,10 +5,12 @@
 #include        <string>
 #include        <cmath>
 
-
+//#include        "iofmt.hpp"
 #include	"rtdb.hpp"
 #include	"Control2.hpp"
 #include	"ion_rcovalent.hpp"
+
+
 
 namespace pwdft {
 
@@ -143,9 +145,11 @@ public:
     {
        double eki = 0.0;
        for (auto ii=0; ii<nion; ++ii)
+       {
           eki += 0.5*mass[ii] * ( rion0[3*ii]  *rion0[3*ii]
 	  		        + rion0[3*ii+1]*rion0[3*ii+1] 
 			        + rion0[3*ii+2]*rion0[3*ii+2] );
+       }
        return eki;
     }
 

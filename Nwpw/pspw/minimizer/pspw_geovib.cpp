@@ -6,7 +6,7 @@
 #include	<string>
 #include	<vector>
 //
-
+#include        "iofmt.hpp"
 #include        "util_linesearch.hpp"
 #include	"Parallel.hpp"
 //#include	"control.hpp"
@@ -42,9 +42,6 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-#define Efmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::scientific
-#define Ffmt(w,p) std::right << std::setw(w) << std::setprecision(p)  << std::fixed
-#define Ifmt(w)   std::right << std::setw(w) 
 
 namespace pwdft {
 

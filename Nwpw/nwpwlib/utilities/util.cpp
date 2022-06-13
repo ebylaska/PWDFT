@@ -5,11 +5,13 @@
 #include        "compressed_io.hpp"
 
 #include        <iomanip>
-#include	<iostream>
+#include        <iostream>
 #include	<cstdlib>
 #include	<cmath>
+
 #include        "Parallel.hpp"
 #include	"util.hpp"
+
 
 namespace pwdft {
 
@@ -364,6 +366,7 @@ void util_matprint(std::string matlabel, int n, double *A) {
    std::cout << std::endl;
 }
 #endif
+
 
 }
 
