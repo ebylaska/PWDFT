@@ -96,6 +96,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
 
    }
 
+
    //if (minimizer > 1) pspw_Grsm_list_start()
    if ((minimizer==5) || (minimizer==8)) it_out = 1;
 
@@ -133,7 +134,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
       }
       else if (minimizer==2)
       {
-        ++bfgscount; // call bfgsminimize(E,deltae,deltac,bfgscount,it_in)
+        ++bfgscount; //total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
       }
       else if (minimizer==4)
       {

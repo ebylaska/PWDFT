@@ -25,15 +25,15 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 
 /******************************************
  *                                        *
- *            cgsd_cgminimize             *
+ *            cgsd_bfgsminimize           *
  *                                        *
  ******************************************/
-double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
-                       int current_iteration, int it_in, double tole, double tolc)
+double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
+                         int current_iteration, int it_in, double tole, double tolc)
 {
    bool   done = false;
    double tmin = 0.0;
-   double deltat_min=1.0e-3;
+   double deltat_min=1.0e-2;
    double deltat;
    double sum0,sum1,scale,total_energy;
    double dE,max_sigma,min_sigma;
@@ -45,19 +45,28 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
 
 
    /* get the initial gradient and direction */
-   double *G1 = mygrid->g_allocate(1);
-   double *H0 = mygrid->g_allocate(1);
+   double *G0 = mygrid->g_allocate(1);
+   double *S0 = mygrid->g_allocate(1);
 
-   total_energy  = mymolecule.psi_1get_Tgradient(G1);
-   sum1 = mygrid->gg_traceall(G1,G1);
+   total_energy  = mymolecule.psi_1get_Tgradient(G0);
+   sum1 = mygrid->gg_traceall(G0,G0);
    Enew = total_energy;
 
-   mygrid->gg_copy(G1,H0);
+   mygrid->gg_copy(G0,S0);
+
+   if (current_iteration==0) 
+   {
+      //pspw_lmbfgs_init(control_lmbfgs_size(),G0);
+   }
+   else
+   {
+      //pspw_lmbfgs(tmin,G0,S0);
+   }
 
 
    /******************************************
     ****                                  ****
-    **** Start of conjugate gradient loop ****
+    ****   Start of BFGS iteration loop   ****
     ****                                  ****
     ******************************************/
    int it = 0;
@@ -65,7 +74,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    while ((!done) && ((it++) < it_in))
    {
       /* initialize the geoedesic line data structure */
-      dEold = mygeodesic.start(H0,&max_sigma, &min_sigma);
+      dEold = mygeodesic.start(S0,&max_sigma, &min_sigma);
 
       /* line search */
       if (tmin > deltat_min)
@@ -90,7 +99,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       done = ((it >= it_in) || ((std::fabs(*deltae)<tole) && (*deltac<tolc)));
 
       /* transport the previous search directions */
-      mygeodesic.psi_1transport(tmin,H0);
+      mygeodesic.psi_1transport(tmin,S0);
 
       /* make psi1 <--- psi2(tmin) */
       mymolecule.swap_psi1_psi2();
@@ -98,9 +107,9 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       if (!done)
       {
          /* get the new gradient - also updates densities */
-         total_energy  = mymolecule.psi_1get_Tgradient(G1);
+         total_energy  = mymolecule.psi_1get_Tgradient(G0);
          sum0 = sum1;
-         sum1 = mygrid->gg_traceall(G1,G1);
+         sum1 = mygrid->gg_traceall(G0,G0);
 
          /* the new direction using Fletcher-Reeves */
          if ( (std::fabs(*deltae)<=(1.0e-2)) &&  (tmin>deltat_min))
@@ -110,15 +119,15 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
              else
                 scale = 0.0;
 
-             mygrid->g_Scale(scale,H0);
-             mygrid->gg_Sum2(G1,H0);
+             mygrid->g_Scale(scale,S0);
+             mygrid->gg_Sum2(G0,S0);
          } 
 
          /* the new direction using steepest-descent */
          else
-              mygrid->gg_copy(G1,H0);
+              mygrid->gg_copy(G0,S0);
 
-         //mygrid->gg_copy(G1,H0);
+         //mygrid->gg_copy(G0,S0);
       }
 
    }
@@ -126,8 +135,8 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    total_energy  = mymolecule.gen_all_energies();
 
 
-   mygrid->g_deallocate(H0);
-   mygrid->g_deallocate(G1);
+   mygrid->g_deallocate(S0);
+   mygrid->g_deallocate(G0);
    
    return total_energy;
 }
