@@ -21,7 +21,11 @@ enable_language(Fortran)
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_DEBUG "-O3")
+#set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
+#set(CMAKE_Fortran_FLAGS "-Ofast")
+
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_Fortran_FLAGS "-O3")
 
 #Configure Sycll
 if (NWPW_SYCL)
