@@ -458,7 +458,6 @@ int main(int argc, char* argv[])
          std::string str = ss[0]; 
          str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
          symbol[(nion_qm+nion_mm)]  = str;
-         std::cout << "SYMBOL=" << str << std::endl;
          epsilon[(nion_qm+nion_mm)] = symboltoepsilon(symbol[(nion_qm+nion_mm)])/23.06/27.2116;
          sigma[(nion_qm+nion_mm)]     = symboltosigma(symbol[(nion_qm+nion_mm)])*ANGTOBOHR;
          mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
