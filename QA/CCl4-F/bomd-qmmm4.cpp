@@ -10,6 +10,7 @@
 #include        <sys/stat.h>
 #include	<string>
 #include	<vector>
+#include 	<algorithm>
 
 #include "mpi.h"
 
@@ -352,7 +353,7 @@ int main(int argc, char* argv[])
    std::ofstream *emotionfile;
 
    //std::string nwfilename = "w2.nw";
-   std::string nwfilename = "ccl4.nw";
+   std::string nwfilename = "ccl4-f.nw";
    if (argc>1) nwfilename = argv[1];
 
    int ierr,np,taskid;
@@ -396,7 +397,7 @@ int main(int argc, char* argv[])
       geomblock  = mystring_rtrim(mystring_ltrim(mystring_split(mystring_split(nwinput,"nocenter")[1],"end")[0]));
    }
    std::vector<std::string> geomlines = mystring_split(geomblock,"\n");
-   int nion_qm = geomlines.size();
+   int nion = geomlines.size();
    //for (auto ii=0; ii<nion; ++ii)
    //   std::cout << ii << " geomline:" << geomlines[ii] << std::endl;
    
@@ -404,11 +405,9 @@ int main(int argc, char* argv[])
    if (taskid==MASTER) std::cout << "nwinput = " << nwinput << std::endl << std::endl;
    if (taskid==MASTER) std::cout << "geomblock = " << geomblock << std::endl;
 
-   lammps_pspw_input(MPI_COMM_WORLD, nwfilename,std::cout);
+   // Initialize lammps_pspw interface 
+   lammps_pspw_input(MPI_COMM_WORLD,nwfilename,std::cout);
 
-
-
-   int    nion = nion_qm+1;
 
    double unita[9] = {26.0,  0.0,  0.0,
                        0.0, 26.0,  0.0,
@@ -430,28 +429,47 @@ int main(int argc, char* argv[])
    memset(qion,0,   nion*sizeof(double));
 
 
-   for (auto ii=0; ii<nion_qm; ++ii)
+   // get the qm atoms
+   int nion_qm = 0;
+   for (auto ii=0; ii<nion; ++ii)
    {
-      std::vector<std::string> ss = mystring_split0(geomlines[ii]);
-      symbol[ii] = ss[0];
-      epsilon[ii] = symboltoepsilon(symbol[ii])/23.06/27.2116;
-      sigma[ii]   = symboltosigma(symbol[ii])*ANGTOBOHR;
-      mass[ii]    = symboltomass(symbol[ii])*1822.89;
-      rion1[3*ii]   = std::stod(ss[1])*ANGTOBOHR;
-      rion1[3*ii+1] = std::stod(ss[2])*ANGTOBOHR;
-      rion1[3*ii+2] = std::stod(ss[3])*ANGTOBOHR;
-      dti[ii] = dt*dt/mass[ii];
+      if (!mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
+      {
+         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
+         symbol[nion_qm]  = ss[0];
+         epsilon[nion_qm] = symboltoepsilon(symbol[nion_qm])/23.06/27.2116;
+         sigma[nion_qm]   = symboltosigma(symbol[nion_qm])*ANGTOBOHR;
+         mass[nion_qm]    = symboltomass(symbol[nion_qm])*1822.89;
+         rion1[3*nion_qm]   = std::stod(ss[1])*ANGTOBOHR;
+         rion1[3*nion_qm+1] = std::stod(ss[2])*ANGTOBOHR;
+         rion1[3*nion_qm+2] = std::stod(ss[3])*ANGTOBOHR;
+         dti[nion_qm] = dt*dt/mass[nion_qm];
+         ++nion_qm;
+      }
    }
 
-   symbol[nion-1]  = "F";
-   epsilon[nion-1] = symboltoepsilon(symbol[nion-1])/23.06/27.2116;
-   sigma[nion-1]   = symboltosigma(symbol[nion-1])*ANGTOBOHR;
-   mass[nion-1]    = symboltomass(symbol[nion-1])*1822.89;
-   rion1[3*(nion-1)]   = 3.001717*ANGTOBOHR;
-   rion1[3*(nion-1)+1] = 0.869000*ANGTOBOHR; 
-   rion1[3*(nion-1)+2] = 0.404717*ANGTOBOHR;
-   dti[nion-1]     = dt*dt/mass[nion-1];
-   qion[nion-1]    = -1.0;
+   // get the mm atoms
+   int nion_mm = 0;
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      if (mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
+      {
+         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
+         std::string str = ss[0]; 
+         str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
+         symbol[(nion_qm+nion_mm)]  = str;
+         epsilon[(nion_qm+nion_mm)] = symboltoepsilon(symbol[(nion_qm+nion_mm)])/23.06/27.2116;
+         sigma[(nion_qm+nion_mm)]     = symboltosigma(symbol[(nion_qm+nion_mm)])*ANGTOBOHR;
+         mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
+         rion1[3*(nion_qm+nion_mm)]   = std::stod(ss[1])*ANGTOBOHR;
+         rion1[3*(nion_qm+nion_mm)+1] = std::stod(ss[2])*ANGTOBOHR;
+         rion1[3*(nion_qm+nion_mm)+2] = std::stod(ss[3])*ANGTOBOHR;
+         dti[(nion_qm+nion_mm)]       = dt*dt/mass[(nion_qm+nion_mm)];
+         qion[(nion_qm+nion_mm)]      = std::stod(ss[5])*ANGTOBOHR;
+         ++nion_mm;
+      }
+   }
+
 
    // kinetic energy
    KE = 0.0;

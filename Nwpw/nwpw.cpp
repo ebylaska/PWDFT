@@ -216,7 +216,7 @@ extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double 
 
 
 extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
-                                      bool removecoulomb, std::ostream& coutput)
+                                      bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::ostream& coutput)
 { 
    int ierr;
    //int taskid,np,ierr;
@@ -248,7 +248,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    double ee   = lammps_rtdbjson["pspw"]["energy"];
    double eapc = lammps_rtdbjson["pspw"]["energies"][51];
 
-   if (removecoulomb)
+   if (removeqmmmcoulomb)
       *E = (ee-eapc);
    else
       *E = (ee);
@@ -263,7 +263,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
 
    // pre-remove qm/qm electrostatic interactions
-   if (removecoulomb)
+   if (removeqmqmcoulomb)
    {
       double ecoul = pwdft::ion_ion_e(nion,qion,rion);
       //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
