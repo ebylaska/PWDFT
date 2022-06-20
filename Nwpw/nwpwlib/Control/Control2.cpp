@@ -504,6 +504,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
          size_t nu = bornjson["bradii"].size();
          for (size_t i=0; i<nu; ++i) pborn_bradii.push_back(bornjson["bradii"][i]);
       }
+      if (!bornjson["vradii"].is_null()) {
+         size_t nu = bornjson["vradii"].size();
+         for (size_t i=0; i<nu; ++i) pborn_vradii.push_back(bornjson["vradii"][i]);
+      }
    }
    if (pborn_on) papc_on = true;
 

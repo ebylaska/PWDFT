@@ -245,44 +245,44 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
       std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
       std::cout << "\n";
-      std::cout <<" number of electrons: spin up=" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
-                << " per task) down=" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+      std::cout <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+                << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
       std::cout << "\n";
       std::cout << " supercell:\n";
       std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
-      std::cout << "      lattice:    a1=< " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
-      std::cout << "                  a2=< " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
-      std::cout << "                  a3=< " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
-      std::cout << "      reciprocal: b1=< " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
-      std::cout << "                  b2=< " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
-      std::cout << "                  b3=< " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
+      std::cout << "      lattice:    a1 = < " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      std::cout << "                  a2 = < " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      std::cout << "                  a3 = < " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      std::cout << "      reciprocal: b1 = < " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      std::cout << "                  b2 = < " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      std::cout << "                  b3 = < " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
 
       {double aa1,bb1,cc1,alpha1,beta1,gamma1;
        mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
-       std::cout << "      lattice:    a=    " << Ffmt(8,3) << aa1    << " b=   " << Ffmt(8,3) << bb1   << " c=    " << Ffmt(8,3) << cc1 << std::endl;
-       std::cout << "                  alpha=" << Ffmt(8,3) << alpha1 << " beta=" << Ffmt(8,3) << beta1 << " gamma=" << Ffmt(8,3) << gamma1<< std::endl;}
-      std::cout << "      density cutoff= " << Ffmt(7,3) << mylattice.ecut()
-                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+       std::cout << "      lattice:    a =    " << Ffmt(8,3) << aa1    << " b =   " << Ffmt(8,3) << bb1   << " c =    " << Ffmt(8,3) << cc1 << std::endl;
+       std::cout << "                  alpha =" << Ffmt(8,3) << alpha1 << " beta =" << Ffmt(8,3) << beta1 << " gamma =" << Ffmt(8,3) << gamma1<< std::endl;}
+      std::cout << "      density cutoff =" << Ffmt(7,3) << mylattice.ecut()
+                << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
-      std::cout << "      wavefnc cutoff= " << Ffmt(7,3) << mylattice.wcut()
-                << " fft= " << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+      std::cout << "      wavefnc cutoff =" << Ffmt(7,3) << mylattice.wcut()
+                << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
       std::cout << "\n";
       std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
-                << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
+                << " fft =" << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
-      std::cout << "      Ewald summation: cut radius=  " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
-      std::cout << "                       Mandelung Wigner-Seitz= " << Ffmt(12,8) << myewald.mandelung()
-                << " (alpha=" << Ffmt(12,8) << myewald.rsalpha() << " rs=" << Ffmt(11,8) << myewald.rs() << ")" << std::endl;
+      std::cout << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
+      std::cout << "                       Mandelung Wigner-Seitz =" << Ffmt(12,8) << myewald.mandelung()
+                << " (alpha =" << Ffmt(12,8) << myewald.rsalpha() << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
 
       if (flag > 0)
       {
          std::cout << std::endl;
          std::cout << " technical parameters:\n";
-         std::cout << "      time step= " << Ffmt(11,2) << control.time_step() << "  ficticious mass=" << Ffmt(11,2) << control.fake_mass() << std::endl;
-         std::cout << "      tolerance="  << Efmt(12,3) << control.tolerances(0) << " (energy) "
+         std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step() << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
+         std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0) << " (energy) "
                                           << Efmt(12,3) << control.tolerances(1) << " (density) "
                                           << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
          std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)

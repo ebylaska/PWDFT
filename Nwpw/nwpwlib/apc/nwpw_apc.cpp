@@ -830,25 +830,25 @@ void nwpw_apc::f_APC_cdft(double *dng, double *zv, double *fion)
    //   u[i] -= (sumAmU/sumAm);
 
    // fion = -sum u(i)*dq(i)/dR 
-   std::cout << "fion before: " << fion[0] << " "
-                                << fion[1] << " "
-                                << fion[2] << " " << std::endl 
-             << "           : " << fion[3] << " "
-                                << fion[4] << " "
-                                << fion[5] << " " << std::endl 
-             << "           : " << fion[6] << " "
-                                << fion[7] << " "
-                                << fion[8] << " " << std::endl;
+   //std::cout << "fion before: " << fion[0] << " "
+   //                             << fion[1] << " "
+   //                             << fion[2] << " " << std::endl 
+   //          << "           : " << fion[3] << " "
+   //                             << fion[4] << " "
+   //                             << fion[5] << " " << std::endl 
+   //          << "           : " << fion[6] << " "
+   //                             << fion[7] << " "
+   //                             << fion[8] << " " << std::endl;
    dQdR_APC(u,fion);
-   std::cout << "fion +apc  : " << fion[0] << " "
-                                << fion[1] << " "
-                                << fion[2] << " " << std::endl 
-             << "           : " << fion[3] << " "
-                                << fion[4] << " "
-                                << fion[5] << " " << std::endl 
-             << "           : " << fion[6] << " "
-                                << fion[7] << " "
-                                << fion[8] << " " << std::endl;
+   //std::cout << "fion +apc  : " << fion[0] << " "
+   //                             << fion[1] << " "
+   //                             << fion[2] << " " << std::endl 
+   //          << "           : " << fion[3] << " "
+   //                             << fion[4] << " "
+   //                             << fion[5] << " " << std::endl 
+   //          << "           : " << fion[6] << " "
+   //                             << fion[7] << " "
+   //                             << fion[8] << " " << std::endl;
 }
 
 /*******************************************

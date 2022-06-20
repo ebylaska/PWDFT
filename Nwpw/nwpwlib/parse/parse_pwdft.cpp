@@ -1122,6 +1122,8 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          else if (mystring_contains(line," relax"))   nwpwjson["born"]["relax"]  = true;
          if (mystring_contains(line,"dielec"))
             nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line," dielec")[1]))[0]);
+         if (mystring_contains(line,"bradii"))    
+            nwpwjson["born"]["bradii"] = mystring_double_list(line,"bradii");
       }
 
       ++cur;

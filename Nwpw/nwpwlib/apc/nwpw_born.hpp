@@ -61,6 +61,7 @@ public:
    void writejsonstr(std::string&);
 
 
+
   // friend std::ostream& operator<<(std::ostream& os, const nwpw_born& myborn) {
   //    /* using old style c++ formatting */
   //    std::ios init(NULL);

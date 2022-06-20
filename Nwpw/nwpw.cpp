@@ -190,6 +190,7 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
 static bool io_redirect = false;
 static std::string lammps_rtdbstring;
+static bool printqmmm = false;
 
 extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E)
 {
@@ -252,6 +253,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
       std::string filename = lammps_rtdbjson["redirect_filename"];
       REDIRECT_ON(filename.c_str()); 
    } 
+   //if (printqmmm) std::cout << "lammps_rtdbstring = " << lammps_rtdbstring << std::endl;
 
    ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
 
@@ -265,7 +267,8 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    double ee   = lammps_rtdbjson["pspw"]["energy"];
    double eapc = lammps_rtdbjson["pspw"]["energies"][51];
 
-   *E = (ee-eapc);
+   //*E = (ee-eapc);
+   *E = (ee);
 
    std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
    std::copy(v.begin(),v.end(), fion);
@@ -277,10 +280,10 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
 
 
    // pre-remove qm/qm electrostatic interactions
-   double ecoul = pwdft::ion_ion_e(nion,qion,rion);
+   //double ecoul = pwdft::ion_ion_e(nion,qion,rion);
    //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
-   *E -= ecoul;
-   pwdft::ion_ion_m_f(nion,qion,rion,fion);
+   //*E -= ecoul;
+   //pwdft::ion_ion_m_f(nion,qion,rion,fion);
 
    return ierr;
 }
@@ -292,11 +295,13 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
    ierr = MPI_Comm_rank(comm_world,&taskid);
    ierr = MPI_Comm_size(comm_world,&np);
 
+
    std::string nwinput;
 
    MPI_Barrier(comm_world);
    if (taskid==MASTER)
    {  
+      printqmmm = true;
       std::string line;
       
       // prepend print option to nwinput, options=none,off,low,medium,high,debug

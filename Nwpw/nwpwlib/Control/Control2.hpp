@@ -67,7 +67,7 @@ class Control2 {
 
    bool   pborn_on,pborn_relax;
    double pborn_dielec = 78.4;
-   std::vector<double> pborn_bradii;
+   std::vector<double> pborn_bradii,pborn_vradii;
 
    bool   pnose_on,pnose_restart;
    int    pnose_mchain,pnose_nchain;
@@ -254,7 +254,8 @@ public:
    // Born
    bool born_on()    { return pborn_on; }
    bool born_relax() { return pborn_relax; }
-   double born_vradii(const int i) { return ((i>=pborn_bradii.size()) ? 0.0 : pborn_bradii[i]); }
+   double born_bradii(const int i) { return ((i>=pborn_bradii.size()) ? 0.0 : pborn_bradii[i]); }
+   double born_vradii(const int i) { return ((i>=pborn_vradii.size()) ? 0.0 : pborn_vradii[i]); }
    double born_dielec() { return pborn_dielec; }
 
 

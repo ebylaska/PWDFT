@@ -235,14 +235,23 @@ nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control)
 
       for (auto ii=0; ii<myion->nion; ++ii)
       {
-         int iq     = (int) std::round(myion->charge[ii]);
-         vradii[ii] = vdwr[iq-1]/0.529177;
-         if (vradii[ii] < 1.0e-3) 
-            vradii[ii] = 1.17*1.90/0.529177;
+         double  vrdii = control.born_vradii(ii);
+         if (vrdii>1.0e-3)
+            vradii[ii] = vrdii;
+         else
+         {
+            int iq     = (int) std::round(myion->charge[ii]);
+            vradii[ii] = vdwr[iq-1]/0.529177;
+            if (vradii[ii] < 1.0e-3) 
+               vradii[ii] = 1.17*1.90/0.529177;
+         }
       }
       //read in bradii if in rtdb 
       for (auto ii=0; ii<myion->nion; ++ii)
-         bradii[ii] = born_radius(ii,myion->nion,myion->rion1,vradii);
+      {
+         double  brdii = control.born_bradii(ii);
+         bradii[ii] = ((brdii>1.0e-3) ? brdii : born_radius(ii,myion->nion,myion->rion1,vradii));
+      }
 
       /* write out Born header */
       if (oprint) 
@@ -393,16 +402,15 @@ void nwpw_born::writejsonstr(std::string& rtdbstring)
    {
       /* save restart information into json */
       auto rtdbjson = json::parse(rtdbstring);
-      auto bornjson = rtdbjson["nwpw"]["Born"];
 
-      bornjson["born_on"]    = born_on;
-      bornjson["born_relax"] = born_relax;
-      bornjson["bradii"]     = std::vector<double>(bradii, &bradii[myion->nion]);
+      rtdbjson["nwpw"]["born"]["on"]     = born_on;
+      rtdbjson["nwpw"]["born"]["relax"]  = born_relax;
+      rtdbjson["nwpw"]["born"]["bradii"] = std::vector<double>(bradii, &bradii[myion->nion]);
+      rtdbjson["nwpw"]["born"]["vradii"] = std::vector<double>(vradii, &vradii[myion->nion]);
 
       rtdbstring = rtdbjson.dump();
    }
 }
-
 
 
 }
