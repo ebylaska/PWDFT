@@ -20,3 +20,7 @@ fgrep @@ bomd_qmmm3.out00 | tee bomd_qmmm3.dat
  gnuplot
  plot "bomd_qmmm4.dat" using 3:4,"bomd_qmmm4.dat" using 3:5,"bomd_qmmm3.dat" using 3:4 w l,"bomd_qmmm3.dat" using 3:5 w l
 ```
+
+<p align="center">
+  <img src=".qmmm.svg" width="350" title="hover text">
+</p>
