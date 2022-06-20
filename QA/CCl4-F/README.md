@@ -22,5 +22,5 @@ fgrep @@ bomd_qmmm3.out00 | tee bomd_qmmm3.dat
 ```
 
 <p align="center">
-  <img src=".qmmm.svg" width="350" title="hover text">
+  <img src="./qmmm.svg" width="350" title="hover text">
 </p>
