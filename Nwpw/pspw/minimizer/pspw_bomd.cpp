@@ -385,6 +385,9 @@ int pspw_bomd(MPI_Comm comm_world0, std::string& rtdbstring)
 //******************     call GeoVibminimizer  **********************
 //*                |***************************|
 
+   /* intialize the linesearch */
+   util_linesearch_init(); 
+
    /*  calculate energy and gradient */
    double g,gg,Gmax,Grms,Xrms,Xmax;
    double Eold =  0.0;

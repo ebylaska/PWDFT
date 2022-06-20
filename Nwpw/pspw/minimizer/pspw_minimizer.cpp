@@ -175,7 +175,8 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
                        &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
 
-
+   /* intialize the linesearch */
+   util_linesearch_init();
 
 //                 |**************************|
 // *****************   summary of input data  **********************
@@ -325,6 +326,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring)
 //*                |***************************|
 //******************     call CG minimizer     **********************
 //*                |***************************|
+
 
    // calculate energy
    double EV = 0.0;
