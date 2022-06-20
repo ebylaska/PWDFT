@@ -62,6 +62,12 @@ public:
         }
         void g_deallocate(double *ptr) { delete [] ptr;}
 
+        double *g_nallocate(const int nb,const int nblock) {
+           double *ptr;
+           ptr = new (std::nothrow) double [nblock*2*(neq[0]+neq[1])*PGrid::npack(nb)]();
+           return ptr;
+        }
+
 
         double *h_allocate() {
            double *ptr;

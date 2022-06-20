@@ -50,7 +50,7 @@ namespace pwdft {
  *            pspw_geovib                 *
  *                                        *
  ******************************************/
-int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
+int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -84,20 +84,20 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
    if (oprint)
    {
       std::ios_base::sync_with_stdio();
-      std::cout << "          *****************************************************\n";
-      std::cout << "          *                                                   *\n";
-      std::cout << "          *             PWDFT PSPW GeoVib Calculation         *\n";
-      std::cout << "          *                                                   *\n";
-      std::cout << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
-      std::cout << "          *  [              C++ implementation             ]  *\n";
-      std::cout << "          *                                                   *\n";
-      std::cout << "          *              version #7.00   02/27/21             *\n";
-      std::cout << "          *                                                   *\n";
-      std::cout << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      std::cout << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
-      std::cout << "          *                                                   *\n";
-      std::cout << "          *****************************************************\n";
-      std::cout << "          >>> job started at       " << util_date() << " <<<\n";
+      coutput << "          *****************************************************\n";
+      coutput << "          *                                                   *\n";
+      coutput << "          *             PWDFT PSPW GeoVib Calculation         *\n";
+      coutput << "          *                                                   *\n";
+      coutput << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
+      coutput << "          *  [              C++ implementation             ]  *\n";
+      coutput << "          *                                                   *\n";
+      coutput << "          *              version #7.00   02/27/21             *\n";
+      coutput << "          *                                                   *\n";
+      coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
+      coutput << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
+      coutput << "          *                                                   *\n";
+      coutput << "          *****************************************************\n";
+      coutput << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
    /* initialize processor grid structure */
@@ -190,33 +190,33 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
 
    if (oprint)
    {
-      std::cout << "\n";
-      std::cout << "          ==============  summary of input  ==================\n";
-      std::cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
-      std::cout << "\n";
-      std::cout << " number of processors used: " << myparallel.np() << "\n";
-      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab"    << "\n";
-      if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
+      coutput << "\n";
+      coutput << "          ==============  summary of input  ==================\n";
+      coutput << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      coutput << "\n";
+      coutput << " number of processors used: " << myparallel.np() << "\n";
+      coutput << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) coutput << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) coutput << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) coutput << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
-         std::cout << " parallel mapping         : balanced" << "\n";
+         coutput << " parallel mapping         : balanced" << "\n";
       else
-         std::cout << " parallel mapping         : not balanced" << "\n";
+         coutput << " parallel mapping         : not balanced" << "\n";
 
-      std::cout << "\n options:\n";
-      std::cout << "   boundary conditions  = ";
-      if (control.version==3) std::cout << "periodic\n";
-      if (control.version==4) std::cout << "aperiodic\n";
+      coutput << "\n options:\n";
+      coutput << "   boundary conditions  = ";
+      if (control.version==3) coutput << "periodic\n";
+      if (control.version==4) coutput << "aperiodic\n";
 
-      std::cout << "   electron spin        = ";
+      coutput << "   electron spin        = ";
       if (ispin==1)
-         std::cout << "restricted\n";
+         coutput << "restricted\n";
       else
-         std::cout << "unrestricted\n";
-      std::cout << myxc;
+         coutput << "unrestricted\n";
+      coutput << myxc;
   
-      //std::cout << "\n elements involved in the cluster:\n";
+      //coutput << "\n elements involved in the cluster:\n";
       //for (ia=0; ia<myion.nkatm; ++ia)
       //{
       //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
@@ -233,107 +233,107 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       //      printf("%8.3lf",mypsp.rc[ia][ii]);
       //   printf("\n");
       //}
-      std::cout << mypsp.print_pspall();
+      coutput << mypsp.print_pspall();
 
-      std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
+      coutput << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
 
-      std::cout << "\n atom composition:" << "\n";
+      coutput << "\n atom composition:" << "\n";
       for (ia=0; ia<myion.nkatm; ++ia)
-         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      std::cout << "\n\n initial ion positions (au):" << "\n";
+         coutput << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      coutput << "\n\n initial ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
+         coutput << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
                    << "\t( " << Ffmt(10,5) << myion.rion1[3*ii] << " " << Ffmt(10,5) << myion.rion1[3*ii+1] << " " << Ffmt(10,5) << myion.rion1[3*ii+2]
                    << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
-      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
-      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
-      std::cout << "\n";
-      std::cout <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+      coutput << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      coutput << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+      coutput << "\n";
+      coutput <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
                 << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
-      std::cout << "\n";
-      std::cout << " supercell:\n";
-      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
-      std::cout << "      lattice:    a1 = < " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
-      std::cout << "                  a2 = < " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
-      std::cout << "                  a3 = < " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
-      std::cout << "      reciprocal: b1 = < " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
-      std::cout << "                  b2 = < " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
-      std::cout << "                  b3 = < " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
+      coutput << "\n";
+      coutput << " supercell:\n";
+      coutput << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
+      coutput << "      lattice:    a1 = < " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      coutput << "                  a2 = < " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      coutput << "                  a3 = < " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      coutput << "      reciprocal: b1 = < " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      coutput << "                  b2 = < " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      coutput << "                  b3 = < " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
 
       {double aa1,bb1,cc1,alpha1,beta1,gamma1;
        mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
-       std::cout << "      lattice:    a =    " << Ffmt(8,3) << aa1    << " b =   " << Ffmt(8,3) << bb1   << " c =    " << Ffmt(8,3) << cc1 << std::endl;
-       std::cout << "                  alpha =" << Ffmt(8,3) << alpha1 << " beta =" << Ffmt(8,3) << beta1 << " gamma =" << Ffmt(8,3) << gamma1<< std::endl;}
-      std::cout << "      density cutoff =" << Ffmt(7,3) << mylattice.ecut()
+       coutput << "      lattice:    a =    " << Ffmt(8,3) << aa1    << " b =   " << Ffmt(8,3) << bb1   << " c =    " << Ffmt(8,3) << cc1 << std::endl;
+       coutput << "                  alpha =" << Ffmt(8,3) << alpha1 << " beta =" << Ffmt(8,3) << beta1 << " gamma =" << Ffmt(8,3) << gamma1<< std::endl;}
+      coutput << "      density cutoff =" << Ffmt(7,3) << mylattice.ecut()
                 << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
-      std::cout << "      wavefnc cutoff =" << Ffmt(7,3) << mylattice.wcut()
+      coutput << "      wavefnc cutoff =" << Ffmt(7,3) << mylattice.wcut()
                 << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
-      std::cout << "\n";
-      std::cout << " Ewald parameters:\n";
-      std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
+      coutput << "\n";
+      coutput << " Ewald parameters:\n";
+      coutput << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
                 << " fft =" << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
-      std::cout << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
-      std::cout << "                       Mandelung Wigner-Seitz =" << Ffmt(12,8) << myewald.mandelung()
+      coutput << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
+      coutput << "                       Mandelung Wigner-Seitz =" << Ffmt(12,8) << myewald.mandelung()
                 << " (alpha =" << Ffmt(12,8) << myewald.rsalpha() << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
 
       if (flag > 0)
       {
-         std::cout << std::endl;
-         std::cout << " technical parameters:\n";
-         std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step() << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
-         std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0) << " (energy) "
+         coutput << std::endl;
+         coutput << " technical parameters:\n";
+         coutput << "      fixed step: time step =" << Ffmt(12,2) << control.time_step() << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
+         coutput << "      tolerance =" << Efmt(12,3) << control.tolerances(0) << " (energy) "
                                           << Efmt(12,3) << control.tolerances(1) << " (density) "
                                           << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
-         std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
+         coutput << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
                    << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)\n";
-         if (control.minimizer()==1) std::cout << "      minimizer = Grassmann conjugate gradient\n";
-         if (control.minimizer()==2) std::cout << "      minimizer = Grassmann lmbfgs\n";
-         if (control.minimizer()==4) std::cout << "      minimizer = Stiefel conjugate gradient\n";
-         if (control.minimizer()==5) std::cout << "      minimizer = scf (potential)\n";
-         if (control.minimizer()==7) std::cout << "      minimizer = Stiefel lmbfgs\n";
-         if (control.minimizer()==8) std::cout << "      minimizer = scf (density)\n";
+         if (control.minimizer()==1) coutput << "      minimizer = Grassmann conjugate gradient\n";
+         if (control.minimizer()==2) coutput << "      minimizer = Grassmann lmbfgs\n";
+         if (control.minimizer()==4) coutput << "      minimizer = Stiefel conjugate gradient\n";
+         if (control.minimizer()==5) coutput << "      minimizer = scf (potential)\n";
+         if (control.minimizer()==7) coutput << "      minimizer = Stiefel lmbfgs\n";
+         if (control.minimizer()==8) coutput << "      minimizer = scf (density)\n";
          if ((control.minimizer()==5) || (control.minimizer()==8))
          {
-            std::cout << std::endl;
-            std::cout << " Kohn-Sham scf parameters:\n";
-            std::cout << "     Kohn-Sham algorithm  = conjugate gradient\n";
-            std::cout << "     SCF algorithm        = simple mixing\n";
-            std::cout << "     SCF mixing parameter =    x.xxxx\n";
-            std::cout << "     Kohn-Sham iterations = xxxx\n";
-            if (control.minimizer()==5) std::cout << "     SCF mixing type      = potential\n";
-            if (control.minimizer()==8) std::cout << "     SCF mixing type      = density\n";
-            std::cout << "     Kerker damping       =    x.xxxx\n";
+            coutput << std::endl;
+            coutput << " Kohn-Sham scf parameters:\n";
+            coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            coutput << "     SCF algorithm        = simple mixing\n";
+            coutput << "     SCF mixing parameter =    x.xxxx\n";
+            coutput << "     Kohn-Sham iterations = xxxx\n";
+            if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+            coutput << "     Kerker damping       =    x.xxxx\n";
          }
       }
       else
       {
-         std::cout << std::endl;
-         std::cout << " technical parameters:\n";
-         std::cout << "      optimization of psi and densities turned off" << std::endl;
+         coutput << std::endl;
+         coutput << " technical parameters:\n";
+         coutput << "      optimization of psi and densities turned off" << std::endl;
       }
-      std::cout << std::endl << std::endl << std::endl;
+      coutput << std::endl << std::endl << std::endl;
 
-      std::cout << " -----------------------------------------------------------------------------------\n";
-      std::cout << " ----------------------------- Geometry Optimization -------------------------------\n";
-      std::cout << " -----------------------------------------------------------------------------------\n\n";
-      std::cout << " Optimization parameters:  " << Ifmt(5) << maxit << " (maxiter) " 
+      coutput << " -----------------------------------------------------------------------------------\n";
+      coutput << " ----------------------------- Geometry Optimization -------------------------------\n";
+      coutput << " -----------------------------------------------------------------------------------\n\n";
+      coutput << " Optimization parameters:  " << Ifmt(5) << maxit << " (maxiter) " 
                 << Efmt(12,3) << tol_Gmax << " (gmax) " 
                 << Efmt(12,3) << tol_Grms << " (grms) " 
                 << Efmt(12,3) << tol_Xrms << " (xrms) " 
                 << Efmt(12,3) << tol_Xmax << " (xmax)\n";
 
-      std::cout << "    maximum number of steps       (maxiter) = " << Ifmt(4) << maxit << std::endl;
-      std::cout << "    maximum gradient threshold       (Gmax) = " << Efmt(12,6) << tol_Gmax << std::endl;
-      std::cout << "    rms gradient threshold           (Grms) = " << Efmt(12,6) << tol_Grms << std::endl;
-      std::cout << "    rms cartesian step threshold     (Xrms) = " << Efmt(12,6) << tol_Xrms << std::endl;
-      std::cout << "    maximum cartesian step threshold (Xmax) = " << Efmt(12,6) << tol_Xmax << std::endl;
-      std::cout << std::endl;
-      std::cout << "    fixed trust radius              (Trust) = " << Efmt(12,6) << trust << std::endl;
-      std::cout << "    number lmbfgs histories   (lmbfgs_size) = " << Ifmt(4) << lmbfgs_size << std::endl;
+      coutput << "    maximum number of steps       (maxiter) = " << Ifmt(4) << maxit << std::endl;
+      coutput << "    maximum gradient threshold       (Gmax) = " << Efmt(12,6) << tol_Gmax << std::endl;
+      coutput << "    rms gradient threshold           (Grms) = " << Efmt(12,6) << tol_Grms << std::endl;
+      coutput << "    rms cartesian step threshold     (Xrms) = " << Efmt(12,6) << tol_Xrms << std::endl;
+      coutput << "    maximum cartesian step threshold (Xmax) = " << Efmt(12,6) << tol_Xmax << std::endl;
+      coutput << std::endl;
+      coutput << "    fixed trust radius              (Trust) = " << Efmt(12,6) << trust << std::endl;
+      coutput << "    number lmbfgs histories   (lmbfgs_size) = " << Ifmt(4) << lmbfgs_size << std::endl;
 
    }
    if (myparallel.is_master()) seconds(&cpu2);
@@ -361,37 +361,37 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
 
    /*  calculate energy */
    if (oprint) {
-      std::cout << "\n\n";
-      std::cout << " -----------------------------------------------------------------------------------\n";
-      std::cout << " -----------------------------    Initial Geometry     -----------------------------\n";
-      std::cout << " -----------------------------------------------------------------------------------\n\n";
-      std::cout << " ---------------------------------\n";
-      std::cout << "         Initial Geometry         \n";
-      std::cout << " ---------------------------------\n";
-      std::cout <<  mymolecule.myion->print_bond_angle_torsions();
-      std::cout << "\n\n\n";
-      std::cout << " ---------------------------------\n";
-      std::cout << "     Calculate Initial Energy     \n";
-      std::cout << " ---------------------------------\n\n";
+      coutput << "\n\n";
+      coutput << " -----------------------------------------------------------------------------------\n";
+      coutput << " -----------------------------    Initial Geometry     -----------------------------\n";
+      coutput << " -----------------------------------------------------------------------------------\n\n";
+      coutput << " ---------------------------------\n";
+      coutput << "         Initial Geometry         \n";
+      coutput << " ---------------------------------\n";
+      coutput <<  mymolecule.myion->print_bond_angle_torsions();
+      coutput << "\n\n\n";
+      coutput << " ---------------------------------\n";
+      coutput << "     Calculate Initial Energy     \n";
+      coutput << " ---------------------------------\n\n";
    }
-   EV = cgsd_energy(control,mymolecule,true,std::cout);
+   EV = cgsd_energy(control,mymolecule,true,coutput);
    /*  calculate the gradient */
    if (oprint){
-      std::cout << "\n";
-      std::cout << " ---------------------------------\n";
-      std::cout << "    Calculate Initial Gradient    \n";
-      std::cout << " ---------------------------------\n\n";
+      coutput << "\n";
+      coutput << " ---------------------------------\n";
+      coutput << "    Calculate Initial Gradient    \n";
+      coutput << " ---------------------------------\n\n";
    }
    cgsd_energy_gradient(mymolecule,fion);
    if (oprint) {
-      std::cout << " ion forces (au):" << "\n";
+      coutput << " ion forces (au):" << "\n";
       for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-         std::cout << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
+         coutput << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
                    << "  ( " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2] << " )\n";
-       std::cout << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " "
+       coutput << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " "
                                       << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " "
                                       << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )\n";
-       std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
+       coutput << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
                  << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion)
                  << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
                  << std::endl << std::endl;
@@ -422,24 +422,24 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
    if (oprint) {
        if (done)
        {
-	  std::cout << "      ----------------------\n"
+	  coutput << "      ----------------------\n"
 		    << "      Optimization converged\n"
 		    << "      ----------------------\n";
        }
        if (it==0)
        {
-          std::cout << std::endl << std::endl; 
-          std::cout << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
-          std::cout << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+          coutput << std::endl << std::endl; 
+          coutput << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+          coutput << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
        }
        else
        {
-          std::cout << std::endl << std::endl;
-          std::cout << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
-          std::cout << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+          coutput << std::endl << std::endl;
+          coutput << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+          coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
        }
        seconds(&cpustep);
-       std::cout << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
+       coutput << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
                    << " " << Ffmt(8,5) << Gmax <<  " " << Ffmt(8,5) << Grms
                    << " " << Ffmt(8,5) << Xrms <<  " " << Ffmt(8,5) << Xmax
                    << " " << Ffmt(10,1) << cpustep-cpu1 << " " << Ifmt(9) << myelectron.counter << std::endl;
@@ -447,16 +447,16 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
 
        if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
        {
-	 std::cout << "                                            ok       ok       ok       ok\n";
+	 coutput << "                                            ok       ok       ok       ok\n";
        }
        else if ((Gmax<=tol_Gmax)||(Grms<=tol_Grms)||(Xrms<=tol_Xrms)||(Xmax<=tol_Xmax))
        {
 	  std::string oktag("");
-          std::cout << "                                     ";
-          oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; std::cout << "       " << oktag;
-          oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; std::cout << "       " << oktag;
-          oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; std::cout << "       " << oktag;
-          oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; std::cout << "       " << oktag << "\n";
+          coutput << "                                     ";
+          oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; coutput << "       " << oktag;
+          oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; coutput << "       " << oktag;
+          oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; coutput << "       " << oktag;
+          oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; coutput << "       " << oktag << "\n";
        }
     }
 
@@ -468,49 +468,49 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
    {
    
       if (oprint) {
-         std::cout << "\n\n";
-         std::cout << " -----------------------------------------------------------------------------------\n";
-         std::cout << " ----------------------------- Optimization Step " << std::setw(5) << it << " -----------------------------\n";
-         std::cout << " -----------------------------------------------------------------------------------\n\n";
+         coutput << "\n\n";
+         coutput << " -----------------------------------------------------------------------------------\n";
+         coutput << " ----------------------------- Optimization Step " << std::setw(5) << it << " -----------------------------\n";
+         coutput << " -----------------------------------------------------------------------------------\n\n";
       }
 
       /* print out the current geometry */
       if (oprint) {
-         std::cout << " ---------------------------------\n";
-         std::cout << "  Geometry for Step " <<  it << "\n";
-         std::cout << " ---------------------------------\n";
-         std::cout <<  mymolecule.myion->print_bond_angle_torsions();
+         coutput << " ---------------------------------\n";
+         coutput << "  Geometry for Step " <<  it << "\n";
+         coutput << " ---------------------------------\n";
+         coutput <<  mymolecule.myion->print_bond_angle_torsions();
       }
 
       /*  calculate energy */
       if (oprint) {
-         std::cout << "\n\n\n";
-         std::cout << " ---------------------------------\n";
-         std::cout << "  Calculate Energy for Step " <<  it << "\n";
-         std::cout << " ---------------------------------\n\n";
+         coutput << "\n\n\n";
+         coutput << " ---------------------------------\n";
+         coutput << "  Calculate Energy for Step " <<  it << "\n";
+         coutput << " ---------------------------------\n\n";
       }
       Eold = EV;
-      EV = cgsd_energy(control,mymolecule,true,std::cout);
+      EV = cgsd_energy(control,mymolecule,true,coutput);
 
       /*  calculate the gradient */
       if (oprint) {
-         std::cout << "\n";
-         std::cout << " ---------------------------------\n";
-         std::cout << "  Calculate Gradient for Step " <<  it << "\n";
-         std::cout << " ---------------------------------\n\n";
+         coutput << "\n";
+         coutput << " ---------------------------------\n";
+         coutput << "  Calculate Gradient for Step " <<  it << "\n";
+         coutput << " ---------------------------------\n\n";
       }
 
       cgsd_energy_gradient(mymolecule,fion);
 
       if (oprint) {
-	 std::cout << " ion forces (au):" << "\n";
+	 coutput << " ion forces (au):" << "\n";
          for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-            std::cout << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
+            coutput << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii)
                       << "  ( " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2] << " )\n";
-          std::cout << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " " 
+          coutput << "      C.O.M. ( " << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " " 
                                          << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " " 
                                          << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )\n";
-          std::cout << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl 
+          coutput << "   |F|/nion  = " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl 
 	            << "   max|Fatom|= " << std::setprecision(6) << std::fixed << std::setw(12) << mymolecule.myion->max_fion(fion) 
 		    << "  (" << std::setprecision(3) << std::fixed << std::setw(8) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)  << " eV/Angstrom)"
 		    << std::endl << std::endl;
@@ -545,25 +545,25 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       {
          if (done)
          {
-	    std::cout << "      ----------------------\n"
+	    coutput << "      ----------------------\n"
 		      << "      Optimization converged\n"
 		      << "      ----------------------\n";
          }
 
          if (it==0) 
          {
-            std::cout << std::endl << std::endl;
-            std::cout << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
-            std::cout << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+            coutput << std::endl << std::endl;
+            coutput << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            coutput << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
          } 
          else 
          {
-            std::cout << std::endl << std::endl;
-            std::cout << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
-            std::cout << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+            coutput << std::endl << std::endl;
+            coutput << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
          }
          seconds(&cpustep);
-         std::cout << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
+         coutput << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " " << Efmt(11,3) << EV-Eold
                    << " " << Ffmt(8,5) << Gmax <<  " " << Ffmt(8,5) << Grms
                    << " " << Ffmt(8,5) << Xrms <<  " " << Ffmt(8,5) << Xmax
                    << " " << Ffmt(10,1) << cpustep-cpu1 << " " << Ifmt(9) << myelectron.counter << std::endl;
@@ -571,16 +571,16 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
        
          if ((Gmax<=tol_Gmax)&&(Grms<=tol_Grms)&&(Xrms<=tol_Xrms)&&(Xmax<=tol_Xmax))
          {
-	    std::cout << "                                            ok       ok       ok       ok\n";
+	    coutput << "                                            ok       ok       ok       ok\n";
          }
          else if ((Gmax<=tol_Gmax)||(Grms<=tol_Grms)||(Xrms<=tol_Xrms)||(Xmax<=tol_Xmax))
          {
             std::string oktag = "";
-            std::cout << "                                     ";
-            oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; std::cout << "       " << oktag;
-            oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; std::cout << "       " << oktag;
-            oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; std::cout << "       " << oktag;
-            oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; std::cout << "       " << oktag << "\n";
+            coutput << "                                     ";
+            oktag = "  "; if (Gmax<=tol_Gmax) oktag = "ok"; coutput << "       " << oktag;
+            oktag = "  "; if (Grms<=tol_Grms) oktag = "ok"; coutput << "       " << oktag;
+            oktag = "  "; if (Xrms<=tol_Xrms) oktag = "ok"; coutput << "       " << oktag;
+            oktag = "  "; if (Xmax<=tol_Xmax) oktag = "ok"; coutput << "       " << oktag << "\n";
          }
       }
 
@@ -588,12 +588,12 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
    }
 
    if (oprint) {
-      std::cout << "\n\n";
-      std::cout << " ---------------------------------\n";
-      std::cout << "  Final Geometry \n";
-      std::cout << " ---------------------------------\n";
-      std::cout <<  mymolecule.myion->print_bond_angle_torsions();
-      std::cout << "\n\n";
+      coutput << "\n\n";
+      coutput << " ---------------------------------\n";
+      coutput << "  Final Geometry \n";
+      coutput << " ---------------------------------\n";
+      coutput <<  mymolecule.myion->print_bond_angle_torsions();
+      coutput << "\n\n";
    }
    if (myparallel.is_master()) seconds(&cpu3);
 
@@ -621,7 +621,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
 
       if (oprint)
       {
-         std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+         coutput <<  mypsp.myapc->print_APC(mypsp.zv);
       }
    }
 
@@ -649,22 +649,22 @@ int pspw_geovib(MPI_Comm comm_world0, std::string& rtdbstring)
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) myelectron.counter);
-      //std::cout.setf(ios::scientific);
-      std::cout << std::scientific;
-      std::cout << "\n";
-      std::cout << " -----------------"    << "\n";
-      std::cout << " cputime in seconds"   << "\n";
-      std::cout << " prologue    : " << t1 << "\n";
-      std::cout << " main loop   : " << t2 << "\n";
-      std::cout << " epilogue    : " << t3 << "\n";
-      std::cout << " total       : " << t4 << "\n";
-      std::cout << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
-      std::cout << "\n";
+      //coutput.setf(ios::scientific);
+      coutput << std::scientific;
+      coutput << "\n";
+      coutput << " -----------------"    << "\n";
+      coutput << " cputime in seconds"   << "\n";
+      coutput << " prologue    : " << t1 << "\n";
+      coutput << " main loop   : " << t2 << "\n";
+      coutput << " epilogue    : " << t3 << "\n";
+      coutput << " total       : " << t4 << "\n";
+      coutput << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
+      coutput << "\n";
 
       nwpw_timing_print_final(myelectron.counter);
 
-      std::cout << "\n";
-      std::cout << " >>> job completed at     " << util_date() << " <<<\n";
+      coutput << "\n";
+      coutput << " >>> job completed at     " << util_date() << " <<<\n";
 
    }
 

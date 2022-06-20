@@ -87,7 +87,7 @@ extern "C" void pspw_fortran_minimizer_(MPI_Fint *fcomm_world, double *rion, dou
    
    //std::cout << "input fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
 
-   int  ierr = pwdft::pspw_minimizer(comm_world, fortran_rtdbstring);
+   int  ierr = pwdft::pspw_minimizer(comm_world, fortran_rtdbstring, std::cout);
 
    //std::cout << "output fortran_rtdbstring= " << fortran_rtdbstring << std::endl;;
 
@@ -176,7 +176,7 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
               wvfnc_initialize = false;
            }
            if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
-           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
+           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr,std::cout);
         }
      }
    }
@@ -207,7 +207,7 @@ extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double 
       REDIRECT_ON(filename.c_str()); 
    } 
 
-   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,std::cout);
 
    if (io_redirect) 
       REDIRECT_OFF();
@@ -255,7 +255,7 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    } 
    //if (printqmmm) std::cout << "lammps_rtdbstring = " << lammps_rtdbstring << std::endl;
 
-   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring);
+   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,std::cout);
 
    if (io_redirect) 
       REDIRECT_OFF();
@@ -367,7 +367,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
               wvfnc_initialize = false;
            }
            if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
-           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr);
+           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr,std::cout);
         }
       }
 
@@ -505,7 +505,7 @@ int main(int argc, char* argv[])
               wvfnc_initialize = false;
            }
            if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
-           ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr);
+           ierr += pspw_minimizer(MPI_COMM_WORLD,dum_rtdbstr,std::cout);
         }
      }
   }
@@ -517,7 +517,7 @@ int main(int argc, char* argv[])
      if ((task==1) || (task==2))
      {
         MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr);
+        ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr,std::cout);
      }
 
      /* Optimize task */
@@ -525,7 +525,7 @@ int main(int argc, char* argv[])
      {
         if (oprint) std::cout << std::endl << "Running geometry optimization calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,rtdbstr);
+        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD,rtdbstr,std::cout);
      }
 
      /* Frequency task */
@@ -552,7 +552,7 @@ int main(int argc, char* argv[])
      {
         if (oprint) std::cout << std::endl << "Running Born-Oppenheimer molecular dynamics - rtdbstr = " << rtdbstr << std::endl << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::pspw_bomd(MPI_COMM_WORLD,rtdbstr);
+        ierr += pwdft::pspw_bomd(MPI_COMM_WORLD,rtdbstr,std::cout);
      }
 
      // parse json string 
