@@ -7,7 +7,6 @@ start ccl4-f-qmmm
 permanent_dir ./perm_qmmm
 scratch_dir   ./perm_qmmm
 
-charge -1 
 
 geometry units angstroms noautosym  noautoz nocenter
 Cl   -0.302804 1.234427 1.298566
