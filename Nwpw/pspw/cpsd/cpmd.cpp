@@ -24,7 +24,7 @@
 #include	"nwpw_aimd_running_data.hpp"
 #include	"inner_loop_md.hpp"
 #include	"psi.hpp"
-#include	"rtdb.hpp"
+//#include	"rtdb.hpp"
 #include	"mpi.h"
 
 #include "json.hpp"

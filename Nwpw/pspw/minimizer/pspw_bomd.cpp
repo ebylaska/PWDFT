@@ -28,7 +28,7 @@
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 #include        "nwpw_aimd_running_data.hpp"
-#include	"rtdb.hpp"
+//#include	"rtdb.hpp"
 #include	"mpi.h"
 
 

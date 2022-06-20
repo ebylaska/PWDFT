@@ -22,7 +22,7 @@
 #include	"Pseudopotential.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
-#include	"rtdb.hpp"
+//#include	"rtdb.hpp"
 #include	"mpi.h"
 
 #include	"psp_library.hpp"

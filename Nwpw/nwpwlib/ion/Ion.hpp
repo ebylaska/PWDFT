@@ -2,11 +2,13 @@
 #define _IONS_H_
 
 
-#include        <string>
+#include        <cstring>
 #include        <cmath>
+#include        <cstdlib>
+
 
 //#include        "iofmt.hpp"
-#include	"rtdb.hpp"
+//#include	"rtdb.hpp"
 #include	"Control2.hpp"
 #include	"ion_rcovalent.hpp"
 
@@ -45,7 +47,7 @@ public:
    bool dof_rotation = false;
 
    /* Constructors */
-   Ion(RTDB&, Control2&);
+   //Ion(RTDB&, Control2&);
    Ion(std::string, Control2&);
 
    /* destructor */
@@ -73,7 +75,7 @@ public:
     void shift21() 
     {
        //for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
-       memcpy(rion1,rion2,3*nion*sizeof(double));
+       std::memcpy(rion1,rion2,3*nion*sizeof(double));
     }
     void vshift() 
     { 
