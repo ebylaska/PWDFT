@@ -188,33 +188,21 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
 
 
-static bool io_redirect = false;
 static std::string lammps_rtdbstring;
 static bool printqmmm = false;
 
-extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E)
+extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E, std::ostream& coutput)
 {
+   int ierr;
    auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
    int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
    lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
-   // run minimizer
-   REDIRECT_INIT;
-   if (io_redirect) { 
-      std::string filename = lammps_rtdbjson["redirect_filename"];
-      REDIRECT_ON(filename.c_str()); 
-   } 
-
-   int  ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,std::cout);
-
-   if (io_redirect) 
-      REDIRECT_OFF();
-
+   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,coutput);
 
    lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
-
 
    // fetch output - energy and forces
    double ee       = lammps_rtdbjson["pspw"]["energy"];
@@ -227,7 +215,8 @@ extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double 
 }
 
 
-extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E)
+extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                      bool removecoulomb, std::ostream& coutput)
 { 
    int ierr;
    //int taskid,np,ierr;
@@ -248,17 +237,9 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    lammps_rtdbstring = lammps_rtdbjson.dump();
 
    // run minimizer
-   REDIRECT_INIT;
-   if (io_redirect) { 
-      std::string filename = lammps_rtdbjson["redirect_filename"];
-      REDIRECT_ON(filename.c_str()); 
-   } 
    //if (printqmmm) std::cout << "lammps_rtdbstring = " << lammps_rtdbstring << std::endl;
 
-   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,std::cout);
-
-   if (io_redirect) 
-      REDIRECT_OFF();
+   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,coutput);
 
 
    lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
@@ -267,8 +248,10 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    double ee   = lammps_rtdbjson["pspw"]["energy"];
    double eapc = lammps_rtdbjson["pspw"]["energies"][51];
 
-   //*E = (ee-eapc);
-   *E = (ee);
+   if (removecoulomb)
+      *E = (ee-eapc);
+   else
+      *E = (ee);
 
    std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
    std::copy(v.begin(),v.end(), fion);
@@ -276,20 +259,23 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
    std::copy(vv.begin(),vv.end(), qion);
 
-   std::cout << " pwdft EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
+   //coutput << " pwdft EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
 
 
    // pre-remove qm/qm electrostatic interactions
-   //double ecoul = pwdft::ion_ion_e(nion,qion,rion);
-   //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
-   //*E -= ecoul;
-   //pwdft::ion_ion_m_f(nion,qion,rion,fion);
+   if (removecoulomb)
+   {
+      double ecoul = pwdft::ion_ion_e(nion,qion,rion);
+      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+      *E -= ecoul;
+      pwdft::ion_ion_m_f(nion,qion,rion,fion);
+   }
 
    return ierr;
 }
 
 
-extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
+extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename, std::ostream& coutput)
 {
    int taskid,np,ierr,nwinput_size;
    ierr = MPI_Comm_rank(comm_world,&taskid);
@@ -333,16 +319,7 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
 
 
    auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
-   if ((taskid==MASTER) && (!lammps_rtdbjson["redirect_filename"].is_null())) 
-      io_redirect = true;
-   
-   REDIRECT_INIT;
-   if (io_redirect) { 
-      std::string filename = lammps_rtdbjson["redirect_filename"];
-      REDIRECT_ON(filename.c_str()); 
-   }
 
-   //std::cout << "rtdb=" << lammps_rtdbstring << std::endl;
 
    // Initialize wavefunction if it doesn't exist or if initialize_wavefunction set
    if (parse_initialize_wvfnc(lammps_rtdbstring,true))
@@ -366,16 +343,12 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename)
               dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr,true);
               wvfnc_initialize = false;
            }
-           if (oprint) std::cout << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
-           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr,std::cout);
+           if (oprint) coutput << std::endl << "Running staged energy optimization - lowlevel_rtdbstr = " << dum_rtdbstr << std::endl << std::endl;
+           ierr += pwdft::pspw_minimizer(comm_world,dum_rtdbstr,coutput);
         }
       }
 
    }
-
-   if (io_redirect)
-      REDIRECT_OFF();
-
 
 }
 
