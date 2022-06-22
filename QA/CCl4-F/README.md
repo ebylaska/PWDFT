@@ -36,9 +36,9 @@ fgrep @@ bomd_qmmm3.out00 | tee bomd_qmmm3.dat
 
 
 ## CCl4-F QM/MM example - read in MM atoms - qm/mm and qm/qm coulomb interactions removed and added back in correctly
-#### using extern int  lammps_pspw_qmmm_minimizer_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,std::string&);
-####       extern void lammps_pspw_input_filename(MPI_Comm,std::string&,std::string&);
-#### io turned off
+using - extern int  lammps_pspw_qmmm_minimizer_filename(MPI_Comm, double*, double*, double*, double*, double*, bool, bool, std::string&);
+      - extern void lammps_pspw_input_filename(MPI_Comm, std::string&, std::string&);
+      - io turned off
 
 ```
  mpic++ bomd-qmmm8.cpp ../../build_library/libpwdft.so -o bomd_qmmm8.x
