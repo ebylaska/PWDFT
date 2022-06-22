@@ -40,7 +40,7 @@ void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control, std::ostr
    {
       if (myparall->is_master())
       {
-        mypsp_library.psp_check(myion->atom(ia),control,&zv);
+        mypsp_library.psp_check(myion->atom(ia),control,&zv, coutput);
       }
       myparall->Brdcst_Values(0,0,1,&zv);
       myion->set_zv_psp(ia,zv);
