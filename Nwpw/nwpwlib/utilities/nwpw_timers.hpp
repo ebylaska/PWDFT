@@ -79,6 +79,8 @@
 #include <iostream>
 #include <chrono>
 
+#include        "iofmt.hpp"
+
 namespace pwdft {
 
 
@@ -111,39 +113,44 @@ public:
    }
 
 
-   void print_timer(std::string msg, double time, int counter, double ttime) {
-      if (time>1.0e-9) printf(" %s %10.6le %10.6le %10.2lf%%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
+   void print_timer(std::string msg, double time, int counter, double ttime, std::ostream& coutput) {
+      if (time>1.0e-9) 
+         coutput << " " << msg 
+                 << " " << Efmt(10,6) << time 
+                 << " " << Efmt(10,6) << time/((double) counter)
+                 << " " << Ffmt(10,2) << 100*time/ttime << "%" << std::endl;
+      //printf(" %s %10.6le %10.6le %10.2lf%%\n",msg.c_str(),time,time/((double) counter),100*time/ttime);
       //std::cout << msg << time << " " << time/((double) counter) << " " << std::setprecision(2) << 100*time/ttime  << "%" << std::endl;
    }
 
-   void print_final(int counter) {
+   void print_final(int counter, std::ostream& coutput) {
        auto stop = std::chrono::high_resolution_clock::now();
        std::chrono::duration<double> deltatime = stop-start[0];
        times[0] = (double) deltatime.count();
 
-       std::cout << " Time spent doing      total        step             percent" << std::endl;
-       print_timer("total time           ", times[0],counter,times[0]);
-       print_timer("total FFT time       ", times[1],counter,times[0]);
-       print_timer("total dot products   ", times[2],counter,times[0]);
-       print_timer("lagrange multipliers ", times[3],counter,times[0]);
-       print_timer("exchange correlation ", times[4],counter,times[0]);
-       print_timer("local potentials     ", times[5],counter,times[0]);
-       print_timer("non-local potentials ", times[6],counter,times[0]);
-       print_timer("hartree potentials   ", times[7],counter,times[0]);
-       print_timer("structure factors    ", times[8],counter,times[0]);
-       print_timer("masking and packing  ", times[9],counter,times[0]);
-       print_timer("ffm_dgemm            ", times[15],counter,times[0]);
-       print_timer("fmf_dgemm            ", times[16],counter,times[0]);
-       print_timer("m_diagonalize        ", times[17],counter,times[0]);
-       print_timer("mmm_multiply         ", times[18],counter,times[0]);
-       print_timer("queue fft            ", times[30],counter,times[0]);
-       print_timer("queue fft serial     ", times[31],counter,times[0]);
-       print_timer("queue fft parallel   ", times[32],counter,times[0]);
+       coutput << " Time spent doing      total        step             percent" << std::endl;
+       print_timer("total time           ", times[0],counter,times[0],coutput);
+       print_timer("total FFT time       ", times[1],counter,times[0],coutput);
+       print_timer("total dot products   ", times[2],counter,times[0],coutput);
+       print_timer("lagrange multipliers ", times[3],counter,times[0],coutput);
+       print_timer("exchange correlation ", times[4],counter,times[0],coutput);
+       print_timer("local potentials     ", times[5],counter,times[0],coutput);
+       print_timer("non-local potentials ", times[6],counter,times[0],coutput);
+       print_timer("hartree potentials   ", times[7],counter,times[0],coutput);
+       print_timer("structure factors    ", times[8],counter,times[0],coutput);
+       print_timer("masking and packing  ", times[9],counter,times[0],coutput);
+       print_timer("ffm_dgemm            ", times[15],counter,times[0],coutput);
+       print_timer("fmf_dgemm            ", times[16],counter,times[0],coutput);
+       print_timer("m_diagonalize        ", times[17],counter,times[0],coutput);
+       print_timer("mmm_multiply         ", times[18],counter,times[0],coutput);
+       print_timer("queue fft            ", times[30],counter,times[0],coutput);
+       print_timer("queue fft serial     ", times[31],counter,times[0],coutput);
+       print_timer("queue fft parallel   ", times[32],counter,times[0],coutput);
 
-       print_timer("projector generate   ", times[70],counter,times[0]);
-       print_timer("<P|psi> overlap/mpi  ", times[71],counter,times[0]);
-       print_timer("sw1/sw2 generation   ", times[72],counter,times[0]);
-       print_timer("psi^t*sw1            ", times[73],counter,times[0]);
+       print_timer("projector generate   ", times[70],counter,times[0],coutput);
+       print_timer("<P|psi> overlap/mpi  ", times[71],counter,times[0],coutput);
+       print_timer("sw1/sw2 generation   ", times[72],counter,times[0],coutput);
+       print_timer("psi^t*sw1            ", times[73],counter,times[0],coutput);
    }
 
 };

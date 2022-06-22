@@ -108,7 +108,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    /* Check for and generate psp files                       */
    /* - this routine also sets the valence charges in myion, */
    /*   and total_ion_charge and ne in control               */
-   psp_file_check(&myparallel,&myion,control);
+   psp_file_check(&myparallel,&myion,control,std::cout);
    MPI_Barrier(comm_world0);
 
 
@@ -173,7 +173,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    XC_Operator      myxc(&mygrid,control);
 
    /* initialize psps */
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
@@ -504,7 +504,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << " cputime/step: " << av << std::endl;
       std::cout << std::endl;
 
-      nwpw_timing_print_final(control.loop(0)*icount);
+      nwpw_timing_print_final(control.loop(0)*icount,std::cout);
 
       std::cout << std::endl;
       std::cout << " >>> job completed at     " << util_date() << " <<<" << std::endl;;

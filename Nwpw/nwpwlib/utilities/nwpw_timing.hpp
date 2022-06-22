@@ -8,7 +8,7 @@ namespace pwdft {
 
 extern void nwpw_timing_start(const int);
 extern void nwpw_timing_end(const int);
-extern void nwpw_timing_print_final(int);
+extern void nwpw_timing_print_final(int, std::ostream& coutput);
 
 
 class nwpw_timing_function {

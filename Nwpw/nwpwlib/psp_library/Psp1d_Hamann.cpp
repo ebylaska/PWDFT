@@ -463,7 +463,6 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       l_prj = new int[nprj];
       m_prj = new int[nprj];
       b_prj = new int[nprj];
-      //std::cout << "define n_prj nprj=" << nprj << std::endl;
 
       int lcount = nprj;
       /* f projectors */

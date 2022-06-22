@@ -142,7 +142,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    Coulomb_Operator mycoulomb(&mygrid);
    XC_Operator      myxc(&mygrid,control);
    
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);

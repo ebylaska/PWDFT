@@ -195,7 +195,8 @@ static void vpp_read(PGrid *mygrid,
                      double *core_ion_energy,
                      double **hartree_matrix,
                      double **comp_charge_matrix,
-                     double **comp_pot_matrix)
+                     double **comp_pot_matrix,
+                     std::ostream& coutput)
 {
     int i,nn;
     double   *tmp2,*prj;
@@ -204,7 +205,7 @@ static void vpp_read(PGrid *mygrid,
     *rlocal = 0.0;
 
     if (parall->base_stdio_print)
-        std::cout << std::endl << " reading formatted psp filename: " << fname << std::endl;
+        coutput << std::endl << " reading formatted psp filename: " << fname << std::endl;
 
     if (parall->is_master())
     {
@@ -516,7 +517,8 @@ static void vpp_write(PGrid *mygrid,
                       double core_ion_energy,
                       double *hartree_matrix,
                       double *comp_charge_matrix,
-                      double *comp_pot_matrix)
+                      double *comp_pot_matrix,
+                      std::ostream& coutput)
 {
     int i,nn;
     double   *prj;
@@ -526,7 +528,7 @@ static void vpp_write(PGrid *mygrid,
     double *tmp2 = new (std::nothrow) double [mygrid->nfft3d]();
 
     if (parall->base_stdio_print)
-       std::cout << std::endl << " writing formatted psp filename: " << fname << std::endl;
+       coutput << std::endl << " writing formatted psp filename: " << fname << std::endl;
 
     if (parall->is_master())
     {
@@ -788,7 +790,8 @@ static void vpp_generate(PGrid *mygrid,
                          double *core_ion_energy,
                          double **hartree_matrix,
                          double **comp_charge_matrix,
-                         double **comp_pot_matrix)
+                         double **comp_pot_matrix,
+                         std::ostream& coutput)
 {
     int i,nn;
     double   *tmp2,*prj;
@@ -801,16 +804,6 @@ static void vpp_generate(PGrid *mygrid,
 
         int nray = mygrid->n_ray();
         Psp1d_Hamann psp1d(myparall,pspname);
-        //std::cout << "in vpp_generate Hamann psp1d.psp_type=" << psp1d.psp_type << std::endl;
-        //std::cout << "in vpp_generate Hamann nray=" << nray << std::endl;
-        //std::cout << "in vpp_generate Hamann Gmax=" << mygrid->Gmax_ray() << std::endl;
-        //std::cout << "in vpp_generate Hamann Gmin=" << mygrid->Gmin_ray() << std::endl;
-        //std::cout << "in vpp_generate Hamann dGmin=" << mygrid->dGmin_ray() << std::endl;
-        //std::cout << "in vpp_generate Hamann lmax=" << psp1d.lmax << std::endl;
-        //std::cout << "in vpp_generate Hamann locp=" << psp1d.locp << std::endl;
-        //std::cout << "in vpp_generate Hamann nmax=" << psp1d.nmax << std::endl;
-        //std::cout << "in vpp_generate Hamann nprj=" << psp1d.nprj << std::endl;
-        //std::cout << "in vpp_generate Hamann n_extra=" << psp1d.n_extra << std::endl;
 
         nfft[0] = mygrid->nx;
         nfft[1] = mygrid->ny;
@@ -905,14 +898,14 @@ static void vpp_generate(PGrid *mygrid,
 
     }
     else if (*psp_type==1) {
-      if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
+      if (myparall->base_stdio_print) coutput << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type <<  std::endl;
     }
     else if (*psp_type==2) {
-      if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
+      if (myparall->base_stdio_print) coutput << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type <<  std::endl;
     }
     else if (*psp_type==4)
     {
-        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) coutput << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type <<  std::endl;
 
         int nray = mygrid->n_ray();
         Psp1d_pawppv1 paw1d(myparall,pspname);
@@ -1060,7 +1053,7 @@ static void vpp_generate(PGrid *mygrid,
     }
     else
     {
-        if (myparall->base_stdio_print) std::cout << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
+        if (myparall->base_stdio_print) coutput << "in vpp_generate Not finished, psp_type = " << *psp_type <<  std::endl;
     }
 
 }
@@ -1074,7 +1067,7 @@ static void vpp_generate(PGrid *mygrid,
  *     Pseudopotential::Pseudopotential    *
  *                                         *
  *******************************************/
-Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& control)
+Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& control, std::ostream& coutput)
 {
     int ia,version,nfft[3];
     int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
@@ -1092,7 +1085,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     mypneb   = mypnebin;
     mystrfac = mystrfacin;
 
-    myapc  = new nwpw_apc(myion,mypneb,mystrfac,control);
+    myapc  = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
 
     psp_version = control.version;
 
@@ -1196,7 +1189,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                          &core_ae_ptr,&core_ps_ptr,&core_ae_prime_ptr,&core_ps_prime_ptr,
                          &rgrid_ptr,
                          &core_kin[ia],&core_ion[ia],
-                         &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr);
+                         &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr,coutput);
 
 
             // writing .vpp file to fname
@@ -1214,7 +1207,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                       core_ae_ptr,core_ps_ptr,core_ae_prime_ptr,core_ps_prime_ptr,
                       rgrid_ptr,
                       core_kin[ia],core_ion[ia],
-                      hartree_matrix_ptr,comp_charge_matrix_ptr,comp_pot_matrix_ptr);
+                      hartree_matrix_ptr,comp_charge_matrix_ptr,comp_pot_matrix_ptr,coutput);
         }
         else
         {
@@ -1233,7 +1226,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
                      &core_ae_ptr,&core_ps_ptr,&core_ae_prime_ptr,&core_ps_prime_ptr,
                      &rgrid_ptr,
                      &core_kin[ia],&core_ion[ia],
-                     &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr);
+                     &hartree_matrix_ptr,&comp_charge_matrix_ptr,&comp_pot_matrix_ptr,coutput);
 
         }
 
