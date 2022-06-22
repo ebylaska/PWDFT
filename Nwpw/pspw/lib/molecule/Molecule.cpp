@@ -18,7 +18,9 @@ namespace pwdft {
  *                                          *
  ********************************************/
 Molecule::Molecule(char *infilename, bool wvfnc_initialize,
-                   Pneb *mygrid0, Ion *myion0, Strfac *mystrfac0, Ewald *myewald0, Electron_Operators *myelectron0, Pseudopotential *mypsp0)
+                   Pneb *mygrid0, Ion *myion0, Strfac *mystrfac0, Ewald *myewald0, 
+                   Electron_Operators *myelectron0, Pseudopotential *mypsp0,
+                   std::ostream& coutput)
 {
    mygrid     = mygrid0;
    myion      = myion0;
@@ -56,7 +58,7 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize,
    shift1 = 2*(mygrid->npack(1));
    shift2 = (mygrid->n2ft3d);
 
-   newpsi = psi_read(mygrid,infilename,wvfnc_initialize,psi1);
+   newpsi = psi_read(mygrid,infilename,wvfnc_initialize,psi1,coutput);
 
    myelectron->gen_vl_potential();
 

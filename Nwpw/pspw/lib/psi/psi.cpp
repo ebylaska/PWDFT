@@ -56,9 +56,6 @@ static void wvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], doub
    bool kreverse = (kdiff<0);
    if (jreverse) jdiff = -jdiff;
    if (kreverse) kdiff = -kdiff;
-   //std::cout << "n2ft3d = " << n2ft3d << std::endl;
-   //std::cout << "dn2ft3d = " << dn2ft3d << std::endl;
-   //std::cout << "n1,n2,n3 = " << n1 << " " << n2 << " " << n3 << std::endl;
 
    std::memset(psi2,0,dn2ft3d*sizeof(double));
    for (auto k=0; k<n3; ++k)
@@ -110,7 +107,7 @@ static void wvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], doub
  *                wvfnc_expander                     *
  *                                                   *
  *****************************************************/
-static void wvfnc_expander(Pneb *mypneb, char *filename)
+static void wvfnc_expander(Pneb *mypneb, char *filename, std::ostream& coutput)
 {
    Parallel *myparall = mypneb->d3db::parall;
 
@@ -161,12 +158,12 @@ static void wvfnc_expander(Pneb *mypneb, char *filename)
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0;  n<ne[ms];  ++n)
       {
-         if (lprint) std::cout <<  " converting .... psi:" << n+1 << " spin:" << ms+1 << std::endl;
+         if (lprint) coutput <<  " converting .... psi:" << n+1 << " spin:" << ms+1 << std::endl;
          dread(4,psi1,n2ft3d);
          wvfnc_expander_convert(nfft,psi1,dnfft,psi2);
          dwrite(6,psi2,dn2ft3d);
       }
-      if (lprint) std::cout << std::endl;
+      if (lprint) coutput << std::endl;
       if (occupation>0)
       {
          double *occ1 = new double[ne[0]+ne[1]];
@@ -220,7 +217,7 @@ void psi_get_header(Parallel *myparall,int *version, int nfft[], double unita[],
  *                psi_check_convert                  *
  *                                                   *
  *****************************************************/
-static bool psi_check_convert(Pneb *mypneb, char *filename)
+static bool psi_check_convert(Pneb *mypneb, char *filename, std::ostream& coutput)
 {
    Parallel *myparall = mypneb->d3db::parall;
    int version0,ispin0,nfft0[3],ne0[2];
@@ -234,10 +231,10 @@ static bool psi_check_convert(Pneb *mypneb, char *filename)
        (nfft0[2]!=mypneb->nz))
    {
       if (myparall->base_stdio_print)
-         std::cout << " psi grids are being converted: " << std::endl 
+         coutput << " psi grids are being converted: " << std::endl 
                    << " -----------------------------: " << std::endl;
 
-       wvfnc_expander(mypneb,filename);
+       wvfnc_expander(mypneb,filename,coutput);
        converted = true;
    }
 
@@ -306,7 +303,7 @@ void psi_read0(Pneb *mypneb,int *version, int nfft[],
           mypneb->gg_traceall, 
           mypneb->g_ortho
 */
-bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
+bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2, std::ostream& coutput)
 {
    int version,ispin,nfft[3],ne[2];
    double unita[9];
@@ -316,17 +313,17 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
    if (psi_filefind(mypneb,filename) && (!wvfnc_initialize))
    {
-      newpsi = psi_check_convert(mypneb,filename);
+      newpsi = psi_check_convert(mypneb,filename,coutput);
 
       if (myparall->base_stdio_print) 
-         std::cout << " input psi exists, reading from file: " << filename << std::endl;
+         coutput << " input psi exists, reading from file: " << filename << std::endl;
       psi_read0(mypneb,&version,nfft,unita,&ispin,ne,psi2,filename);
    }
 
    /* generate new psi */
    else {
       if (myparall->base_stdio_print) 
-         std::cout << " generating random psi from scratch" << std::endl;
+         coutput << " generating random psi from scratch" << std::endl;
       //mypneb->g_generate_random(psi2);
       mypneb->g_generate2_random(psi2);
    }
@@ -339,15 +336,15 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
    if (std::fabs(sum2-sum1)>1.0e-10)
    {
       if (myparall->base_stdio_print)
-         std::cout << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+         coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
       mypneb->g_ortho(psi2);
 
       double sum3  = mypneb->gg_traceall(psi2,psi2);
       if (myparall->base_stdio_print)
-         std::cout << "         - exact norm = " << sum1 
-                   << " norm="           << sum2
-                   << " corrected norm=" << sum3 
-                   << " (error=" << std::abs(sum2-sum1) << ")" << std::endl;
+         coutput << "         - exact norm = " << sum1 
+                 << " norm="           << sum2
+                 << " corrected norm=" << sum3 
+                 << " (error=" << std::abs(sum2-sum1) << ")" << std::endl;
    }
 
    return newpsi;
@@ -361,14 +358,14 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2)
  *****************************************************/
 void psi_write(Pneb *mypneb,int *version, int nfft[],
               double unita[], int *ispin, int ne[],
-              double *psi, char *filename)
+              double *psi, char *filename, std::ostream& coutput)
 {  
    int occupation = -1;
    
    Parallel *myparall = mypneb->d3db::parall;
    
    if (myparall->base_stdio_print)
-      std::cout << " output psi to filename: " << filename << std::endl;
+      coutput << " output psi to filename: " << filename << std::endl;
 
    if (myparall->is_master())
    {  

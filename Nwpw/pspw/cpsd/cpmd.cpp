@@ -560,8 +560,8 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
 //                  |***************************|
 
    /* write wavefunction and velocity wavefunction */
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.output_movecs_filename());
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.output_v_movecs_filename());
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.output_movecs_filename(),std::cout);
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi0,control.output_v_movecs_filename(),std::cout);
 
    /* deallocate memory */
    mygrid.g_deallocate(psi0);

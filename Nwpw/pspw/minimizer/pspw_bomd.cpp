@@ -197,7 +197,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp,coutput);
 
    MPI_Barrier(comm_world0);
 
@@ -612,7 +612,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
    MPI_Barrier(comm_world0);
 
    /* write psi */
-   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
+   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename(),coutput);
 
    /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
