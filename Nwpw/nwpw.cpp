@@ -51,6 +51,14 @@ using namespace pwdft;
 
 #define MASTER 0
 
+
+// *************************************************************************
+//
+// Fortran Interface Routines
+//
+//
+// *************************************************************************
+
 // MACROS for redirecting stdout - note REDIRECT_INIT has to be executed
 //   in the same scope of both REDIRECT_ON and REDIRECT_OFF.
 #define REDIRECT_INIT    int stdout_fd;fpos_t stdout_pos;
@@ -186,10 +194,16 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename, int *
 
 
 
+// *************************************************************************
+//
+// LAMMPS Interface Routines - output sent to io stream
+//
+// *************************************************************************
 
-
+static std::string lammps_output_filename;
 static std::string lammps_rtdbstring;
 static bool printqmmm = false;
+
 
 extern int lammps_pspw_aimd_minimizer(MPI_Comm comm_world, double *rion, double *fion, double *E, std::ostream& coutput)
 {
@@ -349,9 +363,67 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename, std:
       }
 
    }
-
 }
 
+// *************************************************************************
+//
+// LAMMPS Interface filename Routines - output is appended to filename
+//
+// *************************************************************************
+class NullBuffer : public std::streambuf
+{
+public:
+  int overflow(int c) { return c; }
+};
+
+extern int lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, std::string filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_aimd_minimizer(comm_world,rion,fion,E,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_aimd_minimizer(comm_world,rion,fion,E,nwout);
+   }
+   return ierr;
+}
+extern int lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                               bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::string filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_qmmm_minimizer(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_qmmm_minimizer(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,nwout);
+   }
+   return ierr;
+}
+
+extern void lammps_pspw_input_filename(MPI_Comm comm_world, std::string& nwfilename, std::string filename)
+{
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      lammps_pspw_input(comm_world,nwfilename,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      lammps_pspw_input(comm_world,nwfilename,nwout);
+   }
+}
 
 
 
