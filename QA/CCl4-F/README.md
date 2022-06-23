@@ -52,6 +52,7 @@ interface definitions:
 
 - extern int  lammps_pspw_qmmm_minimizer_filename(MPI_Comm, double*, double*, double*, double*, double*, bool, bool, std::string&);
 - extern void lammps_pspw_input_filename(MPI_Comm, std::string&, std::string&);
+- io redirected to qmmm9.nwout
 
 ```
  mpic++ bomd-qmmm9.cpp ../../build_library/libpwdft.so -o bomd_qmmm9.x
