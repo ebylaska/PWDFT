@@ -447,8 +447,6 @@ extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfil
 {
    std::string nwfilename(cnwfilename);
    std::string filename(cfilename);
-   std::cout << "nwfilename:" << nwfilename << ":" << std::endl;
-   std::cout << "filename:" << filename << ":" << std::endl;
    lammps_pspw_input_filename(comm_world,nwfilename,filename);
 }
 
