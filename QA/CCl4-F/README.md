@@ -1,35 +1,35 @@
 
 ## CCl4-F QM/MM example
 ```
-mpic++ bomd-qmmm3.cpp ../../build_library/libpwdft.so -o bomd_qmmm3.x
+mpic++ -std=c++17 bomd-qmmm3.cpp ../../build_library/libpwdft.so -o bomd_qmmm3.x
 mpirun -np 4 ./bomd_qmmm3.x ccl4.nw  | tee bomd_qmmm3.out
 fgrep @@ bomd_qmmm3.out00 | tee bomd_qmmm3.dat
 ```
 
 ## CCl4-F QM/MM example - read in MM atoms
 ```
- mpic++ bomd-qmmm4.cpp ../../build_library/libpwdft.so -o bomd_qmmm4.x
+ mpic++ -std=c++17 bomd-qmmm4.cpp ../../build_library/libpwdft.so -o bomd_qmmm4.x
  mpirun -np 4 ./bomd_qmmm4.x ccl4-f.nw  | tee bomd_qmmm4.out
  fgrep @@ bomd_qmmm4.out00 | tee bomd_qmmm4.dat
 ```
 
 ## CCl4-F QM/MM example - read in MM atoms - qm/mm coulomb interactions removed and added back in
 ```
- mpic++ bomd-qmmm5.cpp ../../build_library/libpwdft.so -o bomd_qmmm5.x
+ mpic++ -std=c++17 bomd-qmmm5.cpp ../../build_library/libpwdft.so -o bomd_qmmm5.x
  mpirun -np 4 ./bomd_qmmm5.x ccl4-f.nw  | tee bomd_qmmm5.out
  fgrep @@ bomd_qmmm5.out00 | tee bomd_qmmm5.dat
 ```
 
 ## CCl4-F QM/MM example - read in MM atoms - qm/mm and qm/qm coulomb interactions removed and added back in incorrectly like LJ pairs
 ```
- mpic++ bomd-qmmm6.cpp ../../build_library/libpwdft.so -o bomd_qmmm6.x
+ mpic++ -std=c++17 bomd-qmmm6.cpp ../../build_library/libpwdft.so -o bomd_qmmm6.x
  mpirun -np 4 ./bomd_qmmm6.x ccl4-f.nw  | tee bomd_qmmm6.out
  fgrep @@ bomd_qmmm6.out00 | tee bomd_qmmm6.dat
 ```
 
 ## CCl4-F QM/MM example - read in MM atoms - qm/mm and qm/qm coulomb interactions removed and added back in correctly
 ```
- mpic++ bomd-qmmm7.cpp ../../build_library/libpwdft.so -o bomd_qmmm7.x
+ mpic++ -std=c++17 bomd-qmmm7.cpp ../../build_library/libpwdft.so -o bomd_qmmm7.x
  mpirun -np 4 ./bomd_qmmm7.x ccl4-f.nw  | tee bomd_qmmm7.out
  fgrep @@ bomd_qmmm7.out00 | tee bomd_qmmm7.dat
 ```
@@ -42,7 +42,7 @@ interface definitions:
 - extern void lammps_pspw_input_filename(MPI_Comm, std::string&, std::string&);
 
 ```
- mpic++ bomd-qmmm8.cpp ../../build_library/libpwdft.so -o bomd_qmmm8.x
+ mpic++ -std=c++17 bomd-qmmm8.cpp ../../build_library/libpwdft.so -o bomd_qmmm8.x
  mpirun -np 4 ./bomd_qmmm8.x ccl4-f.nw  | tee bomd_qmmm8.out
  fgrep @@ bomd_qmmm8.out00 | tee bomd_qmmm8.dat
 ```
@@ -55,7 +55,7 @@ interface definitions:
 - io redirected to qmmm9.nwout
 
 ```
- mpic++ bomd-qmmm9.cpp ../../build_library/libpwdft.so -o bomd_qmmm9.x
+ mpic++ -std=c++17 bomd-qmmm9.cpp ../../build_library/libpwdft.so -o bomd_qmmm9.x
  mpirun -np 4 ./bomd_qmmm9.x ccl4-f.nw  | tee bomd_qmmm9.out
 ```
 
