@@ -427,6 +427,36 @@ extern void lammps_pspw_input_filename(MPI_Comm comm_world, std::string& nwfilen
 
 
 
+// *************************************************************************
+//
+// LAMMPS c - Interface filename Routines - output is appended to filename
+//
+// *************************************************************************
+extern int c_lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, char *cfilename, int flen)
+{
+   char tfilename2[flen]; for (auto i=0; i<flen; ++i) tfilename2[i] = cfilename[i];
+   std::string filename(tfilename2);
+   return lammps_pspw_aimd_minimizer_filename(comm_world,rion,fion,E,filename);
+}
+extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, char *cfilename, int flen)
+{
+   char tfilename2[flen]; for (auto i=0; i<flen; ++i) tfilename2[i] = cfilename[i];
+   std::string filename(tfilename2);
+   return lammps_pspw_qmmm_minimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
+} 
+extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, char *cnwfilename, int nwlen, char *cfilename, int flen)
+{
+   char tfilename[nwlen]; for (auto i=0; i<nwlen; ++i) tfilename[i]  = cnwfilename[i];
+   char tfilename2[flen]; for (auto i=0; i<flen;  ++i) tfilename2[i] = cfilename[i];
+   std::string nwfilename(tfilename);
+   std::string filename(tfilename2);
+   lammps_pspw_input_filename(comm_world,nwfilename,filename);
+}
+
+
+
+
 int main(int argc, char* argv[])
 {
   int ierr=0;
