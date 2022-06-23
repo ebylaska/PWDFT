@@ -18,8 +18,8 @@
 
 using namespace std;
 
-extern int  c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,const char*,const int);
-extern void c_lammps_pspw_input_filename(MPI_Comm,const char*,const int,const char*,const int);
+extern int  c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,const char*);
+extern void c_lammps_pspw_input_filename(MPI_Comm,const char*,const char*);
 
 #define	MASTER 		0
 #define ANGTOBOHR	1.88972687777
@@ -377,6 +377,12 @@ int main(int argc, char* argv[])
       std::cout << "debugfilename=" << debugfilename << std::endl;
    }
 
+   // copy to c strings
+   char cnwfilename[nwfilename.size()+1],cdebugfilename[debugfilename.size()+1];
+   std::strcpy(cnwfilename,  nwfilename.c_str());
+   std::strcpy(cdebugfilename,debugfilename.c_str());
+
+
    // read input deck
    int nwinput_size;
    std::string nwinput;
@@ -413,7 +419,7 @@ int main(int argc, char* argv[])
    if (taskid==MASTER) std::cout << "geomblock = " << geomblock << std::endl;
 
    // Initialize lammps_pspw interface 
-   c_lammps_pspw_input_filename(MPI_COMM_WORLD,nwfilename.c_str(),nwfilename.size(),debugfilename.c_str(),debugfilename.size());
+   c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,cdebugfilename);
 
 
    double unita[9] = {26.0,  0.0,  0.0,
@@ -511,7 +517,7 @@ int main(int argc, char* argv[])
 
 
    // QM energy and forces
-   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,debugfilename.c_str(),debugfilename.size());
+   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,cdebugfilename);
 
    Eqq = QMMM_QMQM_electrostatic_energy(nion_qm,nion,qion,rion1);
    QMMM_QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
@@ -550,7 +556,7 @@ int main(int argc, char* argv[])
 
       QMMM_electrostatic_potential(nion_qm,nion,qion,rion1,uion);
 
-      ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,debugfilename.c_str(),debugfilename.size());
+      ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,cdebugfilename);
 
       Eqq = QMMM_QMQM_electrostatic_energy(nion_qm,nion,qion,rion1);
       QMMM_QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);

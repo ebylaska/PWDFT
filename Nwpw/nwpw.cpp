@@ -432,25 +432,23 @@ extern void lammps_pspw_input_filename(MPI_Comm comm_world, std::string& nwfilen
 // LAMMPS c - Interface filename Routines - output is appended to filename
 //
 // *************************************************************************
-extern int c_lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, const char *cfilename, const int flen)
+extern int c_lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, const char *cfilename)
 {
-   char tfilename2[flen]; for (auto i=0; i<flen; ++i) tfilename2[i] = cfilename[i];
-   std::string filename(tfilename2);
+   std::string filename(cfilename);
    return lammps_pspw_aimd_minimizer_filename(comm_world,rion,fion,E,filename);
 }
 extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
-                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename, const int flen)
+                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
 {
-   char tfilename2[flen]; for (auto i=0; i<flen; ++i) tfilename2[i] = cfilename[i];
-   std::string filename(tfilename2);
+   std::string filename(cfilename);
    return lammps_pspw_qmmm_minimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
-extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const int nwlen, const char *cfilename, const int flen)
+extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
 {
-   char tfilename[nwlen]; for (auto i=0; i<nwlen; ++i) tfilename[i]  = cnwfilename[i];
-   char tfilename2[flen]; for (auto i=0; i<flen;  ++i) tfilename2[i] = cfilename[i];
-   std::string nwfilename(tfilename);
-   std::string filename(tfilename2);
+   std::string nwfilename(cnwfilename);
+   std::string filename(cfilename);
+   std::cout << "nwfilename:" << nwfilename << ":" << std::endl;
+   std::cout << "filename:" << filename << ":" << std::endl;
    lammps_pspw_input_filename(comm_world,nwfilename,filename);
 }
 
