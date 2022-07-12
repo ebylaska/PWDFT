@@ -1,0 +1,37 @@
+Title "CCl4 AIMD BOMD test"
+echo
+
+memory 1900 mb
+start ccl4-gradient
+
+permanent_dir ./perm_bomd2
+scratch_dir   ./perm_bomd2
+
+geometry units angstroms noautosym  noautoz nocenter
+Cl   -0.302804 1.234427 1.298566
+C   0.075206 0.050102 0.012408
+Cl   1.335825 -1.079122 0.593930
+Cl   0.670364 0.912773 -1.436680
+Cl   -1.401717 -0.869000 -0.404717
+end
+
+nwpw
+
+   simulation_cell
+     SC 26.0
+   end
+   xc pbe
+   cutoff 30.0
+   2d-hcurve
+   tolerances 1.0e-9 1.0e-9
+
+   translation off #default
+   rotation    on  #default
+   bo_steps 1 200
+   bo_time_step 6.0
+   bo_algorithm velocity-verlet
+end
+
+task pspw energy
+task pspw born-oppenheimer
+#task pspw car-parrinello
