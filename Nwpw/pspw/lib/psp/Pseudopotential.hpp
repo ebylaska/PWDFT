@@ -57,7 +57,7 @@ public:
 
 
    /* Constructors */
-   Pseudopotential(Ion *, Pneb *, Strfac *, Control2&);
+   Pseudopotential(Ion *, Pneb *, Strfac *, Control2&, std::ostream&);
 
    /* destructor */
    ~Pseudopotential() {

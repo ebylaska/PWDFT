@@ -42,7 +42,7 @@ public:
    double Eapc,Papc;
 
    /* constructor */
-   nwpw_apc(Ion *, Pneb *, Strfac *, Control2&);
+   nwpw_apc(Ion *, Pneb *, Strfac *, Control2&, std::ostream&);
 
    /* destructor */
    ~nwpw_apc() {

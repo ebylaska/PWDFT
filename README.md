@@ -41,7 +41,11 @@ module load cmake
 ## Build Instructions (for `SYCL` backend)
 ```
 cd PWDFT
+```
+```
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
+```
+```
 make -j4
 ```
 
@@ -117,7 +121,10 @@ salloc -C gpu -t 60 -c 10 -G 1 -q interactive -A mp119
 To generate a library clean the build directory and then regenerate cmake with
 ```
 cmake ../Nwpw -DMAKE_LIBRARY=true
-on Linux use: cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+```
+on Linux use: 
+```
+cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 ```
 Compile and generate the shared library in the build directory.
 ```

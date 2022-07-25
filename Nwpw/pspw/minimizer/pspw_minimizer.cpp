@@ -50,7 +50,7 @@ namespace pwdft {
  *            pspw_minimizer              *
  *                                        *
  ******************************************/
-int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput)
+int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& coutput)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -115,7 +115,7 @@ int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& co
    // Check for and generate psp files                      
    // - this routine also sets the valence charges in myion,
    //   and total_ion_charge and ne in control             
-   psp_file_check(&myparallel,&myion,control);
+   psp_file_check(&myparallel,&myion,control,coutput);
    MPI_Barrier(comm_world0);
 
 
@@ -157,7 +157,7 @@ int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& co
    XC_Operator      myxc(&mygrid,control);
 
    // initialize psp
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
    // append Born information to rtdb for restarts
    if (mypsp.myapc->born_on) 
@@ -173,7 +173,7 @@ int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& co
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp,coutput);
 
    /* intialize the linesearch */
    util_linesearch_init();
@@ -387,7 +387,7 @@ int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& co
    }
 
    // write psi 
-   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
+   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename(),coutput);
    MPI_Barrier(comm_world0);
 
    // set rtdbjson initialize_wavefunction option to false
@@ -421,7 +421,7 @@ int pspw_minimizer(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& co
       coutput << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       coutput << "\n";
 
-      nwpw_timing_print_final(myelectron.counter);
+      nwpw_timing_print_final(myelectron.counter,coutput);
 
       coutput << "\n";
       coutput << " >>> job completed at     " << util_date() << " <<<\n";

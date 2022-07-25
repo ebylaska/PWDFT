@@ -37,7 +37,7 @@ public:
    double dielec;
 
    /* constructor */
-   nwpw_born(Ion *, Parallel *, Control2&);
+   nwpw_born(Ion *, Parallel *, Control2&, std::ostream&);
 
    /* destructor */
    ~nwpw_born() {

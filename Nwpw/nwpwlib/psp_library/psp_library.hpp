@@ -34,7 +34,7 @@ class psp_library {
    psp_library(Control2&);
 
    /* other */
-   void psp_check(const char *, Control2&, double *);
+   void psp_check(const char *, Control2&, double *, std::ostream&);
 
    std::string psp_libname(const char *);
    int    psp_type(const char *);
@@ -42,7 +42,7 @@ class psp_library {
    int    psp_locp(const char *);
    double psp_rlocal(const char *);
 
-   void psp_generator_auto(const char *, Control2&);
+   void psp_generator_auto(const char *, Control2&, std::ostream&);
 
    //void psp_generate(const char *);
 

@@ -62,7 +62,7 @@ public:
    bool newpsi;
 
    /* Constructors */
-   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *, Pseudopotential *);
+   Molecule(char *,  bool, Pneb *, Ion *, Strfac *, Ewald *, Electron_Operators *, Pseudopotential *, std::ostream&);
 
    /* destructor */
    ~Molecule() {
@@ -83,9 +83,9 @@ public:
 
 
    /* write psi molecule */
-   void writepsi(char *output_filename) {
+   void writepsi(char *output_filename, std::ostream& coutput) {
       psi_write(mygrid, &version, nfft, mygrid->lattice->unita_ptr(),
-                &ispin, ne, psi1, output_filename);
+                &ispin, ne, psi1, output_filename, coutput);
    }
 
 

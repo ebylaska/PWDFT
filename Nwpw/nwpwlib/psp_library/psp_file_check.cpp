@@ -19,7 +19,7 @@ namespace pwdft {
 /* 
    Determines whether .psp files are present in the permanent dir 
 */
-void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
+void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control, std::ostream& coutput)
 {
    double zv;
    bool oprint = ((myparall->is_master()) && (control.print_level("medium")));
@@ -29,10 +29,10 @@ void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
    /* write out psp library directories being used */
    if (oprint)
    {
-      std::cout << std::endl << " psp_library: " << mypsp_library.nwpw_libraryps_dir << std::endl << std::endl;;
+      coutput << std::endl << " psp_library: " << mypsp_library.nwpw_libraryps_dir << std::endl << std::endl;;
       for (auto const& x : mypsp_library.libraries)
-         std::cout << " " << x.first << " library " << x.second << std::endl;
-      std::cout << std::endl;
+         coutput << " " << x.first << " library " << x.second << std::endl;
+      coutput << std::endl;
    }
 
    /* Check for psp files - generate them if they do not exist */
@@ -40,8 +40,7 @@ void psp_file_check(Parallel *myparall, Ion *myion, Control2 &control)
    {
       if (myparall->is_master())
       {
-        mypsp_library.psp_check(myion->atom(ia),control,&zv);
-        //std::cout << " zv =" << zv << std::endl;
+        mypsp_library.psp_check(myion->atom(ia),control,&zv, coutput);
       }
       myparall->Brdcst_Values(0,0,1,&zv);
       myion->set_zv_psp(ia,zv);

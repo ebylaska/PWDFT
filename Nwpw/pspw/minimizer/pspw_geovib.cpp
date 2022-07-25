@@ -113,7 +113,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
    /* Check for and generate psp files                       */
    /* - this routine also sets the valence charges in myion, */
    /*   and total_ion_charge and ne in control               */
-   psp_file_check(&myparallel,&myion,control);
+   psp_file_check(&myparallel,&myion,control,coutput);
 
 
    /* fetch ispin and ne psi information from control */
@@ -154,7 +154,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
    XC_Operator      myxc(&mygrid,control);
 
    /* initialize psp */
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
    /* initialize electron operators */
    Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
@@ -165,7 +165,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
 
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),control.input_movecs_initialize(),
-                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp);
+                       &mygrid,&myion,&mystrfac,&myewald,&myelectron,&mypsp,coutput);
 
    /* intialize the linesearch */
    util_linesearch_init();
@@ -631,7 +631,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
    MPI_Barrier(comm_world0);
 
    /* write psi */
-   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename());
+   if (flag > 0) mymolecule.writepsi(control.output_movecs_filename(),coutput);
 
    /* write rtdbjson */
    rtdbstring    = rtdbjson.dump();
@@ -661,7 +661,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
       coutput << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       coutput << "\n";
 
-      nwpw_timing_print_final(myelectron.counter);
+      nwpw_timing_print_final(myelectron.counter,coutput);
 
       coutput << "\n";
       coutput << " >>> job completed at     " << util_date() << " <<<\n";

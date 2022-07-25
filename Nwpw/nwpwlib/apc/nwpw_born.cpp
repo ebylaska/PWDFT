@@ -199,7 +199,7 @@ static void born_dVdq0(const int nion, const double rion[], const double bradii[
  *            nwpw_born::nwpw_born         *
  *                                         *
  *******************************************/
-nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control)
+nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control, std::ostream& coutput)
 {
    myion      = myionin;
    myparall   = myparallin;
@@ -255,7 +255,7 @@ nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control)
 
       /* write out Born header */
       if (oprint) 
-         std::cout << this->header_print();
+         coutput << this->header_print();
       
    }
 }

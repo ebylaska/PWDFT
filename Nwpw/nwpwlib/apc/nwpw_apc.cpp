@@ -26,7 +26,7 @@ namespace pwdft {
  *            nwpw_apc::nwpw_apc           *
  *                                         *
  *******************************************/
-nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& control)
+nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& control, std::ostream& coutput)
 {
 
    myion    = myionin;
@@ -120,27 +120,27 @@ nwpw_apc::nwpw_apc(Ion *myionin, Pneb *mypnebin, Strfac *mystrfacin, Control2& c
       /* write out APC header */   
       if (oprint)
       {
-         std::cout << std::endl;
-         std::cout << " initializing nwpw_APC object" << std::endl;
-         std::cout << " ----------------------------" << std::endl;
-         std::cout << " nga = " << std::setw(3) << nga
-                   << " ngs = " << std::setw(5) << ngs << std::endl
-                   << " Gc  = " << std::fixed   << std::setprecision(5) << std::setw(9) << Gc << std::endl;
+         coutput << std::endl;
+         coutput << " initializing nwpw_APC object" << std::endl;
+         coutput << " ----------------------------" << std::endl;
+         coutput << " nga = " << std::setw(3) << nga
+                 << " ngs = " << std::setw(5) << ngs << std::endl
+                 << " Gc  = " << std::fixed   << std::setprecision(5) << std::setw(9) << Gc << std::endl;
          for (auto i=0; i<nga; ++i)
-            std::cout << " APC gamma: " << i << " " << gamma[i] << std::endl;
+            coutput << " APC gamma: " << i << " " << gamma[i] << std::endl;
          for (auto ii=0; ii<myion->nion; ++ii)
             if (std::abs(uion[ii])> 1.0e-9) 
-               std::cout << " APC u: " << std::setw(8)  << ii+1 << "    " 
-                         << std::setw(12) << std::fixed << std::setprecision(5) << uion[ii] << std::endl;
+               coutput << " APC u: " << std::setw(8)  << ii+1 << "    " 
+                       << std::setw(12) << std::fixed << std::setprecision(5) << uion[ii] << std::endl;
          if (v_apc_on) 
-            std::cout << " - self-consistent" << std::endl;
+            coutput << " - self-consistent" << std::endl;
          else 
-            std::cout << " - not self-consistent" << std::endl;
+            coutput << " - not self-consistent" << std::endl;
        
       }
 
       born_on = control.born_on();
-      if (born_on) myborn = new nwpw_born(myion,mypneb->PGrid::parall,control);
+      if (born_on) myborn = new nwpw_born(myion,mypneb->PGrid::parall,control,coutput);
    }
 }
 
