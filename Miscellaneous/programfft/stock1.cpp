@@ -61,6 +61,40 @@ void fft0_fac3(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
    }
 }
 
+void fft0_fac4(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
+// isgn: -1 forward fft, 1 inverse fft
+// n  : sequence length
+// s  : stride
+// eo : x is output if eo == 0, y is output if eo == 1
+// x  : input sequence(or output sequence if eo == 0)
+// y  : work area(or output sequence if eo == 1)
+{  
+   const int m = n/4;
+   const double theta0 = 2*M_PI/n;
+   const complex_t u14 = complex_t(cos(2*M_PI/4.0), isgn*sin(2*M_PI/4.0));
+   const complex_t u24 = complex_t(cos(4*M_PI/4.0), isgn*sin(4*M_PI/4.0));
+   const complex_t u34 = complex_t(cos(6*M_PI/4.0), isgn*sin(6*M_PI/4.0));
+   if (n == 1) { if (eo) for (int q = 0; q < s; q++) y[q] = x[q]; }
+   else { 
+      for (int p = 0; p < m; p++) {
+          const complex_t wp  = complex_t(cos(p*theta0),   isgn*sin(p*theta0));
+          const complex_t wp2 = complex_t(cos(2*p*theta0), isgn*sin(2*p*theta0));
+          const complex_t wp3 = complex_t(cos(3*p*theta0), isgn*sin(3*p*theta0));
+          for (int q = 0; q < s; q++) { 
+              const complex_t a = x[q + s*(p + 0)];
+              const complex_t b = x[q + s*(p + 1*m)];
+              const complex_t c = x[q + s*(p + 2*m)];
+              const complex_t d = x[q + s*(p + 3*m)];
+              y[q + s*(4*p + 0)] =  a + b + c + d;
+              y[q + s*(4*p + 1)] = (a + b*u14 + c*u24 + d*u34) * wp;
+              y[q + s*(4*p + 2)] = (a + b*u24 + c*u14 + d*u24) * wp2;
+              y[q + s*(4*p + 3)] = (a + b*u34 + c*u24 + d*u14) * wp3;
+          }
+      }
+      //fft0_fac4(n/4, 4*s, !eo, y, x);
+   }
+}
+
 void fft0_fac5(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
 // isgn: -1 forward fft, 1 inverse fft
 // n  : sequence length
