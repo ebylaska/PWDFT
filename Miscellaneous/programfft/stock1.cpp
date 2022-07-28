@@ -133,6 +133,50 @@ void fft0_fac5(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
    }
 }
 
+void fft0_fac6(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
+// isgn: -1 forward fft, 1 inverse fft
+// n  : sequence length
+// s  : stride
+// eo : x is output if eo == 0, y is output if eo == 1
+// x  : input sequence(or output sequence if eo == 0)
+// y  : work area(or output sequence if eo == 1)
+{
+   const int m = n/6;
+   const double theta0 = 2*M_PI/n;
+   const complex_t u16 = complex_t(cos( 2*M_PI/6.0), isgn*sin( 2*M_PI/6.0)); //  0.5000 + 0.8660i
+   const complex_t u26 = complex_t(cos( 4*M_PI/6.0), isgn*sin( 4*M_PI/6.0)); // -0.5000 + 0.8660i
+   const complex_t u36 = complex_t(cos( 6*M_PI/6.0), isgn*sin( 6*M_PI/6.0)); // -1.0
+   const complex_t u46 = complex_t(cos( 8*M_PI/6.0), isgn*sin( 8*M_PI/6.0)); // -0.5000 - 0.8660i
+   const complex_t u56 = complex_t(cos(10*M_PI/6.0), isgn*sin(10*M_PI/6.0)); //  0.5000 - 0.8660i
+   if (n == 1) { if (eo) for (int q = 0; q < s; q++) y[q] = x[q]; }
+   else {
+      for (int p = 0; p < m; p++) {
+          const complex_t wp  = complex_t(cos(p*theta0),   isgn*sin(p*theta0));
+          const complex_t wp2 = complex_t(cos(2*p*theta0), isgn*sin(2*p*theta0));
+          const complex_t wp3 = complex_t(cos(3*p*theta0), isgn*sin(3*p*theta0));
+          const complex_t wp4 = complex_t(cos(4*p*theta0), isgn*sin(4*p*theta0));
+          const complex_t wp5 = complex_t(cos(5*p*theta0), isgn*sin(5*p*theta0));
+          for (int q = 0; q < s; q++) {
+              const complex_t a = x[q + s*(p + 0)];
+              const complex_t b = x[q + s*(p + 1*m)];
+              const complex_t c = x[q + s*(p + 2*m)];
+              const complex_t d = x[q + s*(p + 3*m)];
+              const complex_t e = x[q + s*(p + 4*m)];
+              const complex_t f = x[q + s*(p + 5*m)];
+              y[q + s*(6*p + 0)] =  a + b + c + d + e + f;;
+              y[q + s*(6*p + 1)] = (a + b*u16 + c*u26 + d*u36 + e*u46 + f*u56) * wp;
+              y[q + s*(6*p + 2)] = (a + b*u26 + c*u46 + d     + e*u26 + f*u46) * wp2;
+              y[q + s*(6*p + 3)] = (a + b*u36 + c     + d*u36 + e     + f*u36) * wp3;
+              y[q + s*(6*p + 4)] = (a + b*u46 + c*u26 + d     + e*u46 + f*u26) * wp4;
+              y[q + s*(6*p + 5)] = (a + b*u56 + c*u46 + d*u36 + e*u26 + f*u16) * wp5;
+          }
+      }
+      //fft0_fac6(n/6, 6*s, !eo, y, x);
+   }
+}
+
+
+
 void fft0_fac7(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
 // isgn: -1 forward fft, 1 inverse fft
 // n  : sequence length
@@ -265,6 +309,15 @@ void fft(int isgn, int n, complex_t* x) // Fourier transform
              fft0_fac7(isgn,nn, s, eo, x, y);
           nn /= 7; s *= 7; eo = !eo;
        }
+       else if ((nn%6)==0)
+       {
+          std::cout << " - radix-6 " << std::endl;
+          if (eo)
+             fft0_fac6(isgn,nn, s, eo, y, x);
+          else
+             fft0_fac6(isgn,nn, s, eo, x, y);
+          nn /= 6; s *= 6; eo = !eo;
+       }
        else if ((nn%5)==0)
        {
           std::cout << " - radix-5 " << std::endl;
@@ -320,7 +373,7 @@ void fft(int isgn, int n, complex_t* x) // Fourier transform
 }
 */
 
-#define	N 40
+#define	N 36
 int main()
 {
    complex_t x[N];
@@ -337,7 +390,7 @@ int main()
 
    std::cout << std::endl << std::endl;
    // backward fft
-   fft(1,N,x);
+   //fft(1,N,x);
 
    for (int i=0; i<N; ++i)
       std::cout << x[i] << " ";
