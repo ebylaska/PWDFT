@@ -87,7 +87,7 @@ void fft0_fac4(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
               const complex_t d = x[q + s*(p + 3*m)];
               y[q + s*(4*p + 0)] =  a + b + c + d;
               y[q + s*(4*p + 1)] = (a + b*u14 - c     + d*u34) * wp;
-              y[q + s*(4*p + 2)] = (a - b     + c     - d*u24) * wp2;
+              y[q + s*(4*p + 2)] = (a - b     + c     - d    ) * wp2;
               y[q + s*(4*p + 3)] = (a + b*u34 - c     + d*u14) * wp3;
           }
       }
