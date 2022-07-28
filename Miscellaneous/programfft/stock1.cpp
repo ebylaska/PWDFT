@@ -71,9 +71,9 @@ void fft0_fac4(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
 {  
    const int m = n/4;
    const double theta0 = 2*M_PI/n;
-   const complex_t u14 = complex_t(cos(2*M_PI/4.0), isgn*sin(2*M_PI/4.0));
-   const complex_t u24 = complex_t(cos(4*M_PI/4.0), isgn*sin(4*M_PI/4.0));
-   const complex_t u34 = complex_t(cos(6*M_PI/4.0), isgn*sin(6*M_PI/4.0));
+   const complex_t u14 = complex_t(cos(2*M_PI/4.0), isgn*sin(2*M_PI/4.0)); //i
+   const complex_t u24 = complex_t(cos(4*M_PI/4.0), isgn*sin(4*M_PI/4.0)); //-1
+   const complex_t u34 = complex_t(cos(6*M_PI/4.0), isgn*sin(6*M_PI/4.0)); //-i
    if (n == 1) { if (eo) for (int q = 0; q < s; q++) y[q] = x[q]; }
    else { 
       for (int p = 0; p < m; p++) {
@@ -86,9 +86,9 @@ void fft0_fac4(int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
               const complex_t c = x[q + s*(p + 2*m)];
               const complex_t d = x[q + s*(p + 3*m)];
               y[q + s*(4*p + 0)] =  a + b + c + d;
-              y[q + s*(4*p + 1)] = (a + b*u14 + c*u24 + d*u34) * wp;
-              y[q + s*(4*p + 2)] = (a + b*u24 + c*u14 + d*u24) * wp2;
-              y[q + s*(4*p + 3)] = (a + b*u34 + c*u24 + d*u14) * wp3;
+              y[q + s*(4*p + 1)] = (a + b*u14 - c     + d*u34) * wp;
+              y[q + s*(4*p + 2)] = (a - b     + c     - d*u24) * wp2;
+              y[q + s*(4*p + 3)] = (a + b*u34 - c     + d*u14) * wp3;
           }
       }
       //fft0_fac4(n/4, 4*s, !eo, y, x);
@@ -258,7 +258,7 @@ int main()
    std::cout << std::endl;
 
    // forward fft
-   //fft(-1,N,x);
+   fft(-1,N,x);
 
    // backward fft
    fft(1,N,x);
