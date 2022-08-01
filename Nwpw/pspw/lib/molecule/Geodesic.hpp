@@ -15,12 +15,12 @@ class	Geodesic {
 
    int minimizer;
    Molecule            *mymolecule;
-   Pneb                *mygrid;
    Electron_Operators  *myelectron;
 
    double *U, *Vt, *S;
 
 public:
+   Pneb                *mygrid;
 
    /* Constructors */
    Geodesic(int minimizer0, Molecule *mymolecule0) {
@@ -129,6 +129,25 @@ public:
 
     void psi_1transport(double t, double *H0) {
         this->transport(t, mymolecule->psi1,H0);
+    }
+
+    void Gtransport(double t, double *Yold, double *tG) {
+       double *tmp1 = mygrid->m_allocate(-1,1);
+       double *tmp2 = mygrid->m_allocate(-1,1);
+       double *tmp3 = mygrid->m_allocate(-1,1);
+       double *tmpC = new double[mygrid->ne[0]+mygrid->ne[1]];
+       double *tmpS = new double[mygrid->ne[0]+mygrid->ne[1]];
+
+       mygrid->ffm_Multiply(-1,U,tG,tmp2);
+       mygrid->mm_SCtimesVtrans3(-1,t,S,tmp2,tmp1,tmp3,tmpC,tmpS);
+       mygrid->mmm_Multiply2(-1,Vt,tmp1,1.0,tmp2,0.0);
+
+       mygrid->fmf_Multiply(-1,Yold,tmp2,-1.0,tG,1.0);
+       mygrid->fmf_Multiply(-1,U,tmp3,-1.0,tG,1.0);
+    }
+
+    void psi_1Gtransport(double t, double *H0) {
+        this->Gtransport(t, mymolecule->psi1,H0);
     }
 
     double energy(double t) {

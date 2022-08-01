@@ -29,6 +29,35 @@ void fft0_fac2(int n, int s, bool eo, complex_t* x, complex_t* y)
         fft0_fac2(n/2, 2*s, !eo, y, x);
     }
 }
+void fft0_fac3(int n, int s, bool eo, complex_t* x, complex_t* y)
+// n  : sequence length
+// s  : stride
+// eo : x is output if eo == 0, y is output if eo == 1
+// x  : input sequence(or output sequence if eo == 0)
+// y  : work area(or output sequence if eo == 1)
+{
+    std::cout << "n=" << n << " s=" << s << " eo=" << eo << std::endl;
+    const int m = n/3;
+    const double theta0 = 2*M_PI/n;
+    if (n == 1) { if (eo) for (int q = 0; q < s; q++) y[q] = x[q]; }
+    else {
+        for (int p = 0; p < m; p++) {
+            const complex_t wp  = complex_t(cos(p*theta0), -sin(p*theta0));
+            const complex_t wp2 = complex_t(cos(2*p*theta0), -sin(2*p*theta0));
+            for (int q = 0; q < s; q++) {
+                const complex_t a = x[q + s*(p + 0)];
+                const complex_t b = x[q + s*(p + m)];
+                const complex_t c = x[q + s*(p + 2*m)];
+                y[q + s*(3*p + 0)] =  a + b;
+                y[q + s*(3*p + 1)] = (a - b) * wp;
+                y[q + s*(3*p + 2)] = (a - c) * wp2;
+            }
+        }
+        fft0_fac3(n/3, 3*s, !eo, y, x);
+    }
+}
+
+
 
 void fft(int n, complex_t* x) // Fourier transform
 // n : sequence length

@@ -459,6 +459,63 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    }
 }
 
+void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
+{
+   nwpw_timing_function ftimer(15);
+   int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
+
+   int one = 1;
+   int ng  = 2*PGrid::npack(1);
+   int ng0 = 2*PGrid::nzero(1);
+
+   double rzero = 0.0;
+   double rtwo  = 2.0;
+   double rone =  1.0;
+   double rmone = -1.0;
+
+   if (parallelized)
+   {
+        std::ostringstream msg;
+        msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
+            << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
+   }
+   else
+   {
+      if (mb==-1)
+      {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
+          nn=ne[0]*ne[0]+ne[1]*ne[1];
+          shift0  = 0;
+          mshift0 = 0;
+      }
+      else
+      {   ms1=mb; ms2=mb+1; ishift2=0;
+          nn = ne[mb]*ne[mb];
+          shift0  = mb*ne[0]*ng;
+          mshift0 = 0;
+      }
+      for (ms=ms1; ms<ms2; ++ms)
+      {  
+         n       = ne[ms];
+         DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng,
+                    rtwo,
+                    &psi1[shift0],ng,
+                    &psi2[shift0],ng,
+                    rzero,
+                    &hml[mshift0],k);
+         DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+                    rmone,
+                    &psi1[shift0],ng,
+                    &psi2[shift1],ng,
+                    rone,
+                    &hml[mshift0],k);
+         shift0  += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1,nn,hml);
+   }
+}
+
 void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
 			     double* s11, double* s21, double* s22)
 {

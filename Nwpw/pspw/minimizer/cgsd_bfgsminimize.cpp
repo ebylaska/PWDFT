@@ -13,6 +13,7 @@
 #include        "Pneb.hpp"
 #include        "Molecule.hpp"
 #include        "Geodesic.hpp"
+#include        "pspw_lmbfgs.hpp"
 
 
 namespace pwdft {
@@ -28,7 +29,8 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
  *            cgsd_bfgsminimize           *
  *                                        *
  ******************************************/
-double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
+double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, pspw_lmbfgs &psi_lmbfgs, 
+                         double *E, double *deltae, double *deltac, 
                          int current_iteration, int it_in, double tole, double tolc)
 {
    bool   done = false;
@@ -44,6 +46,7 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, 
    mygeodesic_ptr = &mygeodesic;
 
 
+
    /* get the initial gradient and direction */
    double *G0 = mygrid->g_allocate(1);
    double *S0 = mygrid->g_allocate(1);
@@ -52,15 +55,14 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, 
    sum1 = mygrid->gg_traceall(G0,G0);
    Enew = total_energy;
 
-   mygrid->gg_copy(G0,S0);
-
    if (current_iteration==0) 
    {
-      //pspw_lmbfgs_init(control_lmbfgs_size(),G0);
+      psi_lmbfgs.start(G0);
+      mygrid->gg_copy(G0,S0);
    }
    else
    {
-      //pspw_lmbfgs(tmin,G0,S0);
+      psi_lmbfgs.fetch(tmin,G0,S0);
    }
 
 

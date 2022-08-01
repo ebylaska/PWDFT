@@ -12,6 +12,7 @@
 #include        "Pneb.hpp"
 #include        "Molecule.hpp"
 #include	"Geodesic.hpp"
+#include	"pspw_lmbfgs.hpp"
 
 #include	"cgsd.hpp"
 
@@ -117,46 +118,61 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
    int bfgscount = 0;
    int icount = 0;
    bool converged = false;
-   while ((icount < it_out) && (!converged))
-   {
-      ++icount;
-      if (stalled)
+
+   if (minimizer==1) {
+      while ((icount < it_out) && (!converged))
       {
-	 //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-         //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
-         bfgscount = 0;
+         ++icount;
+         if (stalled)
+         {
+  	    //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
+            //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+         ++bfgscount; 
+         total_energy = cgsd_cgminimize(mymolecule,mygeodesic,
+                                        E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         if (oprint)
+            coutput << Ifmt(10) << icount*it_in 
+                    << Efmt(25,12) << total_energy 
+                    << Efmt(16,6) << deltae 
+                    << Efmt(16,6) << deltac << std::endl;
+         if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
+            stalled = true;
+         else
+            stalled = false;
+         converged = (std::fabs(deltae)<tole) && (deltac<tolc);
       }
-
-      deltae_old = deltae;
-      if (minimizer==1)
+      
+   } else if (minimizer==2) {
+      pspw_lmbfgs psi_lmbfgs(&mygeodesic,5);
+      while ((icount < it_out) && (!converged))
       {
-        ++bfgscount; total_energy = cgsd_cgminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         ++icount;
+         if (stalled)
+         {
+  	    //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
+            //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+         ++bfgscount; 
+         total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic,psi_lmbfgs,
+                                          E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         if (oprint)
+            coutput << Ifmt(10) << icount*it_in 
+                    << Efmt(25,12) << total_energy 
+                    << Efmt(16,6) << deltae 
+                    << Efmt(16,6) << deltac << std::endl;
+         if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
+            stalled = true;
+         else
+            stalled = false;
+         converged = (std::fabs(deltae)<tole) && (deltac<tolc);
       }
-      else if (minimizer==2)
-      {
-        ++bfgscount; //total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic,E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
-      }
-      else if (minimizer==4)
-      {
-        ++bfgscount; // call cgminimize2(E,deltae,deltac,bfgscount,it_in)
-      }
-      else if (minimizer==7)
-      {
-        ++bfgscount; // call bfgsminimize2(E,deltae,deltac,bfgscount,it_in)
-      }
-
-      if (oprint)
-         coutput << Ifmt(10) << icount*it_in << Efmt(25,12) << total_energy << Efmt(16,6) << deltae << Efmt(16,6) << deltac << std::endl;
-
-      if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
-         stalled = true;
-      else
-         stalled = false;
-
-      converged = (std::fabs(deltae)<tole) && (deltac<tolc);
-
-
    }
+
    if (oprint)
    {
       if (converged)  coutput <<  "     *** tolerance ok. iteration terminated" << std::endl;
