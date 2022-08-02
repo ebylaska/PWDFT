@@ -63,6 +63,10 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, pspw_lmbfgs
    else
    {
       psi_lmbfgs.fetch(tmin,G0,S0);
+
+      // reset to gradient if <S0|G0> <= 0.0
+      double kappa = mygrid->gg_traceall(G0,S0);
+      if (kappa<=0.0) mygrid->gg_copy(G0,S0);
    }
 
 
@@ -100,9 +104,6 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, pspw_lmbfgs
       /* exit loop early */
       done = ((it >= it_in) || ((std::fabs(*deltae)<tole) && (*deltac<tolc)));
 
-      /* transport the previous search directions */
-      mygeodesic.psi_1transport(tmin,S0);
-
       /* make psi1 <--- psi2(tmin) */
       mymolecule.swap_psi1_psi2();
 
@@ -110,32 +111,17 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic& mygeodesic, pspw_lmbfgs
       {
          /* get the new gradient - also updates densities */
          total_energy  = mymolecule.psi_1get_Tgradient(G0);
-         sum0 = sum1;
-         sum1 = mygrid->gg_traceall(G0,G0);
+         psi_lmbfgs.fetch(tmin,G0,S0);
 
-         /* the new direction using Fletcher-Reeves */
-         if ( (std::fabs(*deltae)<=(1.0e-2)) &&  (tmin>deltat_min))
-         {
-             if (sum0>1.0e-9)
-                scale = sum1/sum0;
-             else
-                scale = 0.0;
+         // reset to gradient if <S0|G0> <= 0.0
+         double kappa = mygrid->gg_traceall(G0,S0);
+         if (kappa<=0.0) mygrid->gg_copy(G0,S0);
 
-             mygrid->g_Scale(scale,S0);
-             mygrid->gg_Sum2(G0,S0);
-         } 
-
-         /* the new direction using steepest-descent */
-         else
-              mygrid->gg_copy(G0,S0);
-
-         //mygrid->gg_copy(G0,S0);
       }
 
    }
    // Making an extra call to electron.run and energy
    total_energy  = mymolecule.gen_all_energies();
-
 
    mygrid->g_deallocate(S0);
    mygrid->g_deallocate(G0);

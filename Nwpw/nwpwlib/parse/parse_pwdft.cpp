@@ -1050,6 +1050,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
              nwpwjson["minimizer"] = 4;
          else
             nwpwjson["minimizer"] = 1;
+
       }
       else if (mystring_contains(line,"lmbfgs"))
       {
@@ -1057,6 +1058,13 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
             nwpwjson["minimizer"] = 7;
          else
             nwpwjson["minimizer"] = 2;
+
+         int lmbfgs_size = 2;
+         ss = mystring_split0(line);
+         for (auto iis=0; iis<ss.size(); ++iis)
+            if (mystring_isfloat(ss[iis]))
+               lmbfgs_size = std::stoi(ss[iis]);
+         if (lmbfgs_size>2) nwpwjson["lmbfgs_size"] = lmbfgs_size;
       }
       else if (mystring_contains(line,"scf"))
       {

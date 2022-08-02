@@ -38,6 +38,7 @@ class Control2 {
    int pprint_level = 2;
 
    int pminimizer = 1;
+   int plmbfgs_size = 2;
 
 
    int    pdriver_maxiter     = 30;
@@ -124,6 +125,7 @@ public:
    double total_charge()          { return ptotal_charge; }
 
    int minimizer()             { return pminimizer; }
+   int lmbfgs_size()           { return plmbfgs_size; }
    int task()                  { return ptask; }
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }

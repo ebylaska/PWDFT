@@ -466,7 +466,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 
 
    pminimizer = 1;
-   if (rtdbjson["nwpw"]["minimizer"].is_number_integer()) pminimizer = rtdbjson["nwpw"]["minimizer"];
+   if (rtdbjson["nwpw"]["minimizer"].is_number_integer())   pminimizer   = rtdbjson["nwpw"]["minimizer"];
+   if (rtdbjson["nwpw"]["lmbfgs_size"].is_number_integer()) plmbfgs_size = rtdbjson["nwpw"]["lmbfgs_size"];
 
    // APC data
    papc_on  = false;

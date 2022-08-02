@@ -115,7 +115,7 @@ public:
     
          mygeodesic->mygrid->gg_daxpy(sum0,ss,s);
 
-         if (m<max_m)
+         if (m<(max_m-1))
             ++m;
          else
          {

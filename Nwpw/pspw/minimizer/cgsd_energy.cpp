@@ -71,7 +71,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
    double dt = control.time_step();
    double dte = dt /sqrt(control.fake_mass());
 
-   int minimizer = control.minimizer();
+   int minimizer   = control.minimizer();
+   int lmbfgs_size = control.lmbfgs_size();
 
    bool hprint = (parall->is_master() && control.print_level("high") && doprint);
    bool oprint = (parall->is_master() && control.print_level("medium") && doprint);
@@ -130,9 +131,9 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
             bfgscount = 0;
          }
          deltae_old = deltae;
-         ++bfgscount; 
          total_energy = cgsd_cgminimize(mymolecule,mygeodesic,
                                         E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         ++bfgscount; 
          if (oprint)
             coutput << Ifmt(10) << icount*it_in 
                     << Efmt(25,12) << total_energy 
@@ -146,7 +147,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
       }
       
    } else if (minimizer==2) {
-      pspw_lmbfgs psi_lmbfgs(&mygeodesic,5);
+      pspw_lmbfgs psi_lmbfgs(&mygeodesic,lmbfgs_size);
       while ((icount < it_out) && (!converged))
       {
          ++icount;
@@ -157,9 +158,9 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
             bfgscount = 0;
          }
          deltae_old = deltae;
-         ++bfgscount; 
          total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic,psi_lmbfgs,
                                           E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         ++bfgscount; 
          if (oprint)
             coutput << Ifmt(10) << icount*it_in 
                     << Efmt(25,12) << total_energy 
