@@ -2895,6 +2895,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
    indx    = t_i2_start[0];
    nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
    c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+
 }
 
 

@@ -434,6 +434,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    delete [] Gtmp;
 
+   zplane_tmp1 = new (std::nothrow) double[2*zplane_size+8];
+   zplane_tmp2 = new (std::nothrow) double[2*zplane_size+8];
+
 }
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}
@@ -480,11 +483,11 @@ void PGrid::c_unpack(const int nb, double *a)
 
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new (std::nothrow) double[2*zplane_size+1];
-   tmp2 = new (std::nothrow) double[2*zplane_size+1];
-   c_timereverse(a,tmp1,tmp2);
-   delete [] tmp2;
-   delete [] tmp1;
+   //tmp1 = new (std::nothrow) double[2*zplane_size+1];
+   //tmp2 = new (std::nothrow) double[2*zplane_size+1];
+   c_timereverse(a,zplane_tmp1,zplane_tmp2);
+   //delete [] tmp2;
+   //delete [] tmp1;
    delete [] tmp;
 }
 
@@ -679,11 +682,11 @@ void PGrid::t_unpack(const int nb, double *a)
 
    t_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
-   tmp1 = new (std::nothrow) double[2*zplane_size+1];
-   tmp2 = new (std::nothrow) double[2*zplane_size+1];
-   t_timereverse(a,tmp1,tmp2);
-   delete [] tmp2;
-   delete [] tmp1;
+   //tmp1 = new (std::nothrow) double[2*zplane_size+1];
+   //tmp2 = new (std::nothrow) double[2*zplane_size+1];
+   t_timereverse(a,zplane_tmp1,zplane_tmp2);
+   //delete [] tmp2;
+   //delete [] tmp1;
    delete [] tmp;
 }
 

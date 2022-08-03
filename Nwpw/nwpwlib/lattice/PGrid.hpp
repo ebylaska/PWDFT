@@ -34,6 +34,9 @@ class PGrid : public d3db {
    int    *aqindx,*aqstatus;
    double *atmp;
 
+   /* zplane data */
+   double *zplane_tmp1,*zplane_tmp2;
+
 
 public:
         Lattice *lattice;
@@ -58,6 +61,8 @@ public:
             delete [] zero_row2[1];
             delete [] zero_slab23[0];
             delete [] zero_slab23[1];
+            delete [] zplane_tmp1;
+            delete [] zplane_tmp2;
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
