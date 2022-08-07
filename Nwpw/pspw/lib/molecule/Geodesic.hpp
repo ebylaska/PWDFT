@@ -144,6 +144,12 @@ public:
 
        mygrid->fmf_Multiply(-1,Yold,tmp2,-1.0,tG,1.0);
        mygrid->fmf_Multiply(-1,U,tmp3,-1.0,tG,1.0);
+
+       delete [] tmpS;
+       delete [] tmpC;
+       delete [] tmp3;
+       delete [] tmp2;
+       delete [] tmp1;
     }
 
     void psi_1Gtransport(double t, double *H0) {
