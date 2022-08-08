@@ -15,6 +15,7 @@
 #include        "Geodesic.hpp"
 
 
+
 namespace pwdft {
 
 /* create dummy function call to Geodesic class functions */
@@ -53,6 +54,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    Enew = total_energy;
 
    mygrid->gg_copy(G1,H0);
+
 
 
    /******************************************

@@ -506,7 +506,7 @@ void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
          DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
                     rmone,
                     &psi1[shift0],ng,
-                    &psi2[shift1],ng,
+                    &psi2[shift0],ng,
                     rone,
                     &hml[mshift0],n);
          shift0  += ng*ne[0];

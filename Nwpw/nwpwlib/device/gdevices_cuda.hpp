@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 class cuda_exception : public std::exception {
 
@@ -179,6 +180,8 @@ public:
     Gdevices() {
         ndev_mem = 0;
 
+       std::cout << "Into cublasCreate" << std::endl;
+
         NWPW_CUBLAS_ERROR( cublasCreate(&master_handle) );
     }
 
@@ -250,6 +253,9 @@ public:
         }
 
     void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+
+     DGEMM_PWDFT((char *) "N",(char *) "N",npack,ne,ne,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
+/*
         int ib = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne));
 
         NWPW_CUDA_ERROR( cudaMemcpy(dev_mem[ib],host_b,ne*ne*sizeof(double),cudaMemcpyHostToDevice) );
@@ -264,6 +270,7 @@ public:
         NWPW_CUDA_ERROR( cudaMemcpy(host_c,dev_mem[ia_hpsi],npack*ne*sizeof(double),cudaMemcpyDeviceToHost) );
 
         inuse[ib] = false;
+   */
     }
 
 
@@ -338,6 +345,7 @@ public:
 
     /* fft functions (uses cuFFT) */
     void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
+    std::cout << "Into batch_fft_init" << std::endl;
         NWPW_CUFFT_ERROR( cufftPlan1d(&forward_plan_x, nx, CUFFT_D2Z, nq1) );
         NWPW_CUFFT_ERROR( cufftPlan1d(&backward_plan_x, nx, CUFFT_Z2D, nq1) );
 
