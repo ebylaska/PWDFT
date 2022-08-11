@@ -1,4 +1,3 @@
-
 #include        <iomanip>
 #include        <cstring>
 #include 	<cmath>
@@ -630,17 +629,15 @@ void QMMM_electrostatic_force(const int nion_qm, const int nion,
 void Q_cm(const int n, const int ks, const double amass[], const double rion[], 
          double rcm[])
 {
-   double m      = 0.0;
-   double rcm[0] = 0.0;
-   double rcm[1] = 0.0;
-   double rcm[2] = 0.0;
+   rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
+   double m = 0.0;
    int kk = ks
    for (auto k=0; k<n; ++k)
    {
       rcm[0] += amass[kk]*rion[3*kk];
       rcm[1] += amass[kk]*rion[3*kk+1];
       rcm[2] += amass[kk]*rion[3*kk+1];
-      m +=  amass[kk]
+      m += amass[kk];
       ++kk;
    }
    rcm[0] /= m;
@@ -658,6 +655,7 @@ void Q_cm(const int n, const int ks, const double amass[], const double rion[],
 double MMMM_electrostatic_energy(const int nfrag,       const int indx_frag_start[], 
                                  const int size_frag[], const int kfrag[],
                                  const double switch_Rin[], const double switch_Rout[],
+                                 const double amass[],
                                  const double qion[], const double rion[])
 {
    double E=0.0;
@@ -763,14 +761,9 @@ int main(int argc, char* argv[])
 
    //qmmmm fragments
    std::vector<std::string> fragments;
-   std::vector<int>         kfrag;
-   std::vector<int>         indx_frag_start;
-   std::vector<int>         size_frag;
    double qmmm_lmbda = 1.0;
-   int    nkfrag     = 0;
-   int    nfrag      = 0;
-   int    nbond  = 0;
-   int    nangle = 0;
+   int    nkfrag = 0;
+   int    nfrag  = 0;
 
    if  (mystring_contains(mystring_lowercase(nwinput),"fragment"))
    {
@@ -781,44 +774,17 @@ int main(int argc, char* argv[])
       {
          frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
          
-          mystring_split(frag,"index_start");
-          mystring_split(frag,"size");
-          mystring_split(frag,"bond_spring");
-          mystring_split(frag,"angle_spring");
+         if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
+            nbond += mystring_split(nwinput,"bond_spring").size() - 1;
+
+         if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
+            nangle += mystring_split(frag,"angle_spring").size() - 1;
+
+         if (mystring_contains(mystring_lowercase(frag),"index_start"))
+            nfrag += mystring_split0(mystring_split(frag,"index_start")[1]).size();
       }
    }
 
-   int    bond_indx[2*nbond],angle_indx[3*nangle];
-   double Krb[2*nbond];
-   double Kra[2*nangle];
-
-   std::cout << std::endl;
-   std::cout << std::endl;
-   std::cout << "nkfrag=" << nfrag << std::endl;
-   for (auto frag: fragments)
-      std::cout << "frag:" << frag << ":HELE" << std::endl;
-   std::cout << std::endl;
-   std::cout << std::endl;
-
-   int nbond = 0;
-   if (mystring_contains(mystring_lowercase(nwinput),"bond_spring"))
-   {
-      nbond = mystring_split(nwinput,"bond_spring").size() - 1;
-   }
-   int nangle = 0;
-   if (mystring_contains(mystring_lowercase(nwinput),"bond_spring"))
-   {
-      nangle = mystring_split(nwinput,"angle_spring").size() - 1;
-   }
-
-
-
-   
-
-   if (taskid==MASTER) std::cout << "nwinput = " << nwinput << std::endl << std::endl;
-   if (taskid==MASTER) std::cout << "geomblock = " << geomblock << std::endl;
-   if (taskid==MASTER) std::cout << "nbond =" << nbond << std::endl;
-   if (taskid==MASTER) std::cout << "nangle =" << nangle << std::endl;
 
    // Initialize lammps_pspw interface 
    c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
@@ -835,28 +801,45 @@ int main(int argc, char* argv[])
 
    double epsilon[nion],sigma[nion];
 
+   // switching parameters
+   double switch_Rin[nkfrag]  = { (2.0160/0.529177) };
+   double switch_Rout[nkfrag] = { (3.1287/0.529177) };
+
+   int indx_frag_start[nfrag];
+   int size_frag[nfrag];
+   int kfrag[nfrag];
+
+   // bond and angle spring parameters
    int    bond_indx[2*nbond],angle_indx[3*nangle];
    double Krb[2*nbond];
    double Kra[2*nangle];
 
-
-   if (mystring_contains(mystring_lowercase(nwinput),"bond_spring"))
+   for (auto & frag: fragments)
    {
-      std::string line;
-      std::vector<std::string> ss;
-      for (auto b=0; b<nbond; ++b)
+      frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
+      if (mystring_contains(mystring_lowercase(frag),"index_start"))
       {
-         line = mystring_split(nwinput,"bond_spring")[b+1];
-         ss   = mystring_split0(line);
-         int i = std::stoi(ss[0]);
-         int j = std::stoi(ss[1]);
-         double k = std::stod(ss[2]);
-         double r = std::stod(ss[3]);
-         bond_indx[2*b]   = i-1;
-         bond_indx[2*b+1] = j-1;
-         Krb[2*b]   = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
-         Krb[2*b+1] = r*ANGTOBOHR;
       }
+
+      if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
+      {
+         std::string line;
+         std::vector<std::string> ss;
+         for (auto b=0; b<nbond; ++b)
+         {
+            line = mystring_split(nwinput,"bond_spring")[b+1];
+            ss   = mystring_split0(line);
+            int i = std::stoi(ss[0]);
+            int j = std::stoi(ss[1]);
+            double k = std::stod(ss[2]);
+            double r = std::stod(ss[3]);
+            bond_indx[2*b]   = i-1;
+            bond_indx[2*b+1] = j-1;
+            Krb[2*b]   = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
+            Krb[2*b+1] = r*ANGTOBOHR;
+         }
+      }
+
    }
 
    double pi = 4.0*std::atan(1.0);
