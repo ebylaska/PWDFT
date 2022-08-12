@@ -818,6 +818,7 @@ int main(int argc, char* argv[])
    double switch_Rin[nkfrag]; //  = { (2.0160/0.529177) };
    double switch_Rout[nkfrag]; // = { (3.1287/0.529177) };
 
+   int size_frag[nkfrag];
    int nfrag_frag[nkfrag];
    int nbond_frag[nkfrag];
    int nangle_frag[nkfrag];
@@ -868,6 +869,7 @@ int main(int argc, char* argv[])
          bond_start_sum     += nbond_frag[ia];
          for (auto b=0; b<nbond_frag[ia]; ++b)
          {
+            int b1 = b + bond_start_frag[ia];
             line = mystring_split(frag,"bond_spring")[b+1];
             ss   = mystring_split0(line);
             int i = std::stoi(ss[0]);
@@ -875,10 +877,10 @@ int main(int argc, char* argv[])
             double k = std::stod(ss[2]);
             double r = std::stod(ss[3]);
 
-            bond_indx[2*b  +2*bond_start_frag[ia]] = i-1;
-            bond_indx[2*b+1+2*bond_start_frag[ia]] = j-1;
-            Krb[2*b  +2*bond_start_frag[ia]] = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
-            Krb[2*b+1+2*bond_start_frag[ia]] = r*ANGTOBOHR;
+            bond_indx[2*b1  ] = i-1;
+            bond_indx[2*b1+1] = j-1;
+            Krb[2*b1  ] = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
+            Krb[2*b1+1] = r*ANGTOBOHR;
          }  
       }
 
@@ -891,6 +893,7 @@ int main(int argc, char* argv[])
          angle_start_sum     += nangle_frag[ia];
          for (auto a=0; a<nangle_frag[ia]; ++a)
          {
+            int a1 = a + angle_start_frag[ia];
             line = mystring_split(frag,"angle_spring")[a+1];
             ss   = mystring_split0(line);
             int i = std::stoi(ss[0]);
@@ -900,11 +903,11 @@ int main(int argc, char* argv[])
             double theta = std::stod(ss[4]);
             std::cout << "i=" << i << " j=" << j << " k=" << k 
                       << " ks =" << ks << " theta=" << theta << std::endl;
-            angle_indx[3*a  +3*angle_start_frag[ia]] = i-1;
-            angle_indx[3*a+1+3*angle_start_frag[ia]] = j-1;
-            angle_indx[3*a+2+3*angle_start_frag[ia]] = k-1;
-            Kra[2*a  +2*angle_start_frag[ia]] = ks/27.2116/23.06;
-            Kra[2*a+1+2*angle_start_frag[ia]] = theta*pi/180.0;
+            angle_indx[3*a1  ] = i-1;
+            angle_indx[3*a1+1] = j-1;
+            angle_indx[3*a1+2] = k-1;
+            Kra[2*a1  ] = ks/27.2116/23.06;
+            Kra[2*a1+1] = theta*pi/180.0;
          }
       }
       ++ia;
