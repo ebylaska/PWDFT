@@ -776,17 +776,17 @@ int main(int argc, char* argv[])
       nkfrag = fragments.size();
       for (auto & frag: fragments)
       {
-         int nfrag0;
+         int nfrag0=0;
          frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
 
          if (mystring_contains(mystring_lowercase(frag),"index_start"))
             nfrag0 = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0])).size();
          
          if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
-            nbond += nfrag0*(mystring_split(frag,"bond_spring").size() - 1);
+            nbond += (mystring_split(frag,"bond_spring").size() - 1);
 
          if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
-            nangle += nfrag0*(mystring_split(frag,"angle_spring").size() - 1);
+            nangle += (mystring_split(frag,"angle_spring").size() - 1);
 
          nfrag += nfrag0;
       }
@@ -815,11 +815,16 @@ int main(int argc, char* argv[])
    double epsilon[nion],sigma[nion];
 
    // switching parameters
-   double switch_Rin[nkfrag]  = { (2.0160/0.529177) };
-   double switch_Rout[nkfrag] = { (3.1287/0.529177) };
+   double switch_Rin[nkfrag]; //  = { (2.0160/0.529177) };
+   double switch_Rout[nkfrag]; // = { (3.1287/0.529177) };
 
-   int indx_frag_start[nfrag];
-   int size_frag[nfrag];
+   int nfrag_frag[nkfrag];
+   int nbond_frag[nkfrag];
+   int nangle_frag[nkfrag];
+   int bond_start_frag[nkfrag];
+   int angle_start_frag[nkfrag];
+
+   int indxfrag_start[nfrag];
    int kfrag[nfrag];
 
    // bond and angle spring parameters
@@ -828,6 +833,8 @@ int main(int argc, char* argv[])
    double Kra[2*nangle];
    double pi = 4.0*std::atan(1.0);
 
+   int bond_start_sum  = 0;
+   int angle_start_sum = 0;
    int ntf = 0;
    int ia  = 0;
    for (auto & frag: fragments)
@@ -838,13 +845,15 @@ int main(int argc, char* argv[])
       int tsize = std::stoi(mystring_split0(mystring_split(frag,"size")[1])[0]);
       std::cout << "tsize=" << tsize << std::endl;
 
+      size_frag[ia] = tsize;
+
       if (mystring_contains(mystring_lowercase(frag),"index_start"))
       {
          std::vector<std::string> ss = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0]));
+         nfrag_frag[ia] = ss.size();
          for (auto i=0; i<ss.size(); ++i)
          {
-            indx_frag_start[ntf] = std::stoi(ss[i]);
-            size_frag[ntf] = tsize;
+            indxfrag_start[ntf] = std::stoi(ss[i]);
             kfrag[ntf] = ia;
             ++ntf;
          }
@@ -854,8 +863,11 @@ int main(int argc, char* argv[])
       {
          std::string line;
          std::vector<std::string> ss;
-         for (auto b=0; b<nbond; ++b)
-        
+         nbond_frag[ia]      = (mystring_split(frag,"bond_spring").size() - 1);
+         bond_start_frag[ia] = bond_start_sum;
+         bond_start_sum     += nbond_frag[ia];
+         for (auto b=0; b<nbond_frag[ia]; ++b)
+         {
             line = mystring_split(frag,"bond_spring")[b+1];
             ss   = mystring_split0(line);
             int i = std::stoi(ss[0]);
@@ -863,22 +875,21 @@ int main(int argc, char* argv[])
             double k = std::stod(ss[2]);
             double r = std::stod(ss[3]);
 
-
-            for (auto bb0
-            {
-               bond_indx[2*b]   = i-1;
-               bond_indx[2*b+1] = j-1;
-               Krb[2*b]   = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
-               Krb[2*b+1] = r*ANGTOBOHR;
-            }
-         }
+            bond_indx[2*b  +2*bond_start_frag[ia]] = i-1;
+            bond_indx[2*b+1+2*bond_start_frag[ia]] = j-1;
+            Krb[2*b  +2*bond_start_frag[ia]] = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
+            Krb[2*b+1+2*bond_start_frag[ia]] = r*ANGTOBOHR;
+         }  
       }
 
       if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
       {
          std::string line;
          std::vector<std::string> ss;
-         for (auto a=0; a<nangle; ++a)
+         nangle_frag[ia]      = (mystring_split(frag,"angle_spring").size() - 1);
+         angle_start_frag[ia] = angle_start_sum;
+         angle_start_sum     += nangle_frag[ia];
+         for (auto a=0; a<nangle_frag[ia]; ++a)
          {
             line = mystring_split(frag,"angle_spring")[a+1];
             ss   = mystring_split0(line);
@@ -889,11 +900,11 @@ int main(int argc, char* argv[])
             double theta = std::stod(ss[4]);
             std::cout << "i=" << i << " j=" << j << " k=" << k 
                       << " ks =" << ks << " theta=" << theta << std::endl;
-            angle_indx[3*a]   = i-1;
-            angle_indx[3*a+1] = j-1;
-            angle_indx[3*a+2] = k-1;
-            Kra[2*a]   = ks/27.2116/23.06;
-            Kra[2*a+1] = theta*pi/180.0;
+            angle_indx[3*a  +3*angle_start_frag[ia]] = i-1;
+            angle_indx[3*a+1+3*angle_start_frag[ia]] = j-1;
+            angle_indx[3*a+2+3*angle_start_frag[ia]] = k-1;
+            Kra[2*a  +2*angle_start_frag[ia]] = ks/27.2116/23.06;
+            Kra[2*a+1+2*angle_start_frag[ia]] = theta*pi/180.0;
          }
       }
       ++ia;
