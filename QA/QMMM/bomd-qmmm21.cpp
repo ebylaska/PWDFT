@@ -9,6 +9,7 @@
 #include        <sys/stat.h>
 #include	<string>
 #include	<vector>
+#include	<set>
 #include 	<algorithm>
 
 #include "mpi.h"
@@ -74,7 +75,7 @@ void printemotion(std::ofstream *emotion, const double current_time,
          << std::endl;
 }
 
-double symboltomass(std::string symbol)
+double symboltomass(std::string symbol0)
 {
    double mass = 1.008;
    if (mystring_contains(symbol,"H")) mass = 1.008;
@@ -750,18 +751,61 @@ int main(int argc, char* argv[])
       nwinput_size = nwinput.size();
    }
 
+   // set up geometry sizes and indexes: nion, nkatm, katm[nion] 
    std::string geomblock;
    if (mystring_contains(mystring_lowercase(nwinput),"geometry"))
    {
       geomblock  = mystring_rtrim(mystring_ltrim(mystring_split(mystring_split(nwinput,"nocenter")[1],"end")[0]));
    }
    std::vector<std::string> geomlines = mystring_split(geomblock,"\n");
-   int nion = geomlines.size();
-   //for (auto ii=0; ii<nion; ++ii)
-   //   std::cout << ii << " geomline:" << geomlines[ii] << std::endl;
+   int nion  = geomlines.size();
+   int nkatm = 0;
+   int katm[nion];
+   {  std::set<std::string> anameset;
+      for (auto & line: geomlines)
+      {
+        std::vector<std::string> ss = mystring_split0(line);
+        anameset.emplace(ss[0]);
+      }
+      nkatm = anameset.size();
+   }
+   std::string aname[nkatm];
+
+   {  int ia=0;
+      int ii=0;
+      int n = sizeof(aname)/sizeof(aname[0]);
+      std::set<std::string> anameset;
+      for (auto & line: geomlines)
+      {
+         std::vector<std::string> ss = mystring_split0(line);
+         if (anameset.count(ss[0])==0)
+         {
+            anameset.emplace(ss[0]);
+            aname[ia] = ss[0];
+            ++ia;
+         }
+         auto itr = find(aname, aname + n, ss[0]);
+         katm[ii] = std::distance(aname,itr);
+         ++ii;
+      }
+   }
+   if (taskid==MASTER) {
+      std::cout << "katm= ";
+      for (auto ii=0; ii<nion; ++ii)
+         std::cout << " " << katm[ii];
+      std::cout << std::endl;
+  
+
+      std::cout << std::endl;
+      std::cout << "aname size=" << nkatm << std::endl;
+      for (auto ia=0; ia<nkatm; ++ia)
+          std::cout << "aname =" << ia << " " << aname[ia] << std::endl;
+      std::cout << std::endl;
+   }
 
 
-   //qmmmm fragments
+
+   //set up qmmm fragments and sizes
    std::vector<std::string> fragments;
    double qmmm_lmbda = 1.0;
    int    nkfrag = 0;
@@ -791,16 +835,19 @@ int main(int argc, char* argv[])
          nfrag += nfrag0;
       }
    }
-   std::cout << "nkfrag=" << nkfrag << std::endl;
-   std::cout << "nfrag =" << nfrag  << std::endl;
-   std::cout << "nbond =" << nbond  << std::endl;
-   std::cout << "nangle =" << nangle  << std::endl;
+   if (taskid==MASTER) {
+      std::cout << "nkfrag=" << nkfrag << std::endl;
+      std::cout << "nfrag =" << nfrag  << std::endl;
+      std::cout << "nbond =" << nbond  << std::endl;
+      std::cout << "nangle =" << nangle  << std::endl;
+      std::cout << std::endl;
+   }
 
 
    // Initialize lammps_pspw interface 
    c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
 
-   std::cout << "out lammps inpute =" << nangle  << std::endl;
+   if (taskid==MASTER) std::cout << "out lammps inpute " << nangle  << std::endl;
 
 
    double unita[9] = {26.0,  0.0,  0.0,
