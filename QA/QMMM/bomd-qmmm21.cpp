@@ -459,7 +459,7 @@ double Q_Switching(const double Rin, const double Rout, const double r)
 
    double c1 = (Rout-Rin);
    double c3 = c1*c1*c1;
-   double c2 = 3.0*Rout-Rin
+   double c2 = 3.0*Rout-Rin;
    return(((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3);
 }
 
@@ -476,10 +476,10 @@ void Q_dSwitching(const double Rin, const double Rout, const double r,
    
    double c1 = (Rout-Rin);
    double c3 = c1*c1*c1;
-   double c2 = 3.0*Rout-Rin
+   double c2 = 3.0*Rout-Rin;
   
    *S  = ((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3;
-   *dS = 2.0*(r-Rin)*((c2-2.0*r)/c3) - 2.0*((r-Rin)*(r-Rin)) /c3
+   *dS = 2.0*(r-Rin)*((c2-2.0*r)/c3) - 2.0*((r-Rin)*(r-Rin)) /c3;
    return;
 }
 
@@ -631,7 +631,7 @@ void Q_cm(const int n, const int ks, const double amass[], const double rion[],
 {
    rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
    double m = 0.0;
-   int kk = ks
+   int kk = ks;
    for (auto k=0; k<n; ++k)
    {
       rcm[0] += amass[kk]*rion[3*kk];
@@ -659,6 +659,7 @@ double MMMM_electrostatic_energy(const int nfrag,       const int indx_frag_star
                                  const double qion[], const double rion[])
 {
    double E=0.0;
+   double rw1_cm[3],rw2_cm[3];
 
    // total mmmm interactions
    for (auto w1=0; w1<(nfrag-1); ++ w1)
@@ -682,11 +683,12 @@ double MMMM_electrostatic_energy(const int nfrag,       const int indx_frag_star
       }
    }
 
-   for (auto f1=0; f1<nfrag-1; ++f1)
+/*   for (auto f1=0; f1<nfrag-1; ++f1)
       for (auto f2=f1+1; f2<nfrag; ++f2)
          E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
                                    &rion[3*jj],qion[jj]);
 
+*/
    return E;
 }
 
@@ -764,6 +766,8 @@ int main(int argc, char* argv[])
    double qmmm_lmbda = 1.0;
    int    nkfrag = 0;
    int    nfrag  = 0;
+   int    nbond  = 0;
+   int    nangle = 0;
 
    if  (mystring_contains(mystring_lowercase(nwinput),"fragment"))
    {
@@ -772,22 +776,31 @@ int main(int argc, char* argv[])
       nkfrag = fragments.size();
       for (auto & frag: fragments)
       {
+         int nfrag0;
          frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
-         
-         if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
-            nbond += mystring_split(nwinput,"bond_spring").size() - 1;
-
-         if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
-            nangle += mystring_split(frag,"angle_spring").size() - 1;
 
          if (mystring_contains(mystring_lowercase(frag),"index_start"))
-            nfrag += mystring_split0(mystring_split(frag,"index_start")[1]).size();
+            nfrag0 = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0])).size();
+         
+         if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
+            nbond += nfrag0*(mystring_split(frag,"bond_spring").size() - 1);
+
+         if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
+            nangle += nfrag0*(mystring_split(frag,"angle_spring").size() - 1);
+
+         nfrag += nfrag0;
       }
    }
+   std::cout << "nkfrag=" << nkfrag << std::endl;
+   std::cout << "nfrag =" << nfrag  << std::endl;
+   std::cout << "nbond =" << nbond  << std::endl;
+   std::cout << "nangle =" << nangle  << std::endl;
 
 
    // Initialize lammps_pspw interface 
    c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
+
+   std::cout << "out lammps inpute =" << nangle  << std::endl;
 
 
    double unita[9] = {26.0,  0.0,  0.0,
@@ -813,12 +826,28 @@ int main(int argc, char* argv[])
    int    bond_indx[2*nbond],angle_indx[3*nangle];
    double Krb[2*nbond];
    double Kra[2*nangle];
+   double pi = 4.0*std::atan(1.0);
 
+   int ntf = 0;
+   int ia  = 0;
    for (auto & frag: fragments)
    {
+      std::cout << "start" << std::endl;
       frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
+
+      int tsize = std::stoi(mystring_split0(mystring_split(frag,"size")[1])[0]);
+      std::cout << "tsize=" << tsize << std::endl;
+
       if (mystring_contains(mystring_lowercase(frag),"index_start"))
       {
+         std::vector<std::string> ss = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0]));
+         for (auto i=0; i<ss.size(); ++i)
+         {
+            indx_frag_start[ntf] = std::stoi(ss[i]);
+            size_frag[ntf] = tsize;
+            kfrag[ntf] = ia;
+            ++ntf;
+         }
       }
 
       if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
@@ -826,44 +855,48 @@ int main(int argc, char* argv[])
          std::string line;
          std::vector<std::string> ss;
          for (auto b=0; b<nbond; ++b)
-         {
-            line = mystring_split(nwinput,"bond_spring")[b+1];
+        
+            line = mystring_split(frag,"bond_spring")[b+1];
             ss   = mystring_split0(line);
             int i = std::stoi(ss[0]);
             int j = std::stoi(ss[1]);
             double k = std::stod(ss[2]);
             double r = std::stod(ss[3]);
-            bond_indx[2*b]   = i-1;
-            bond_indx[2*b+1] = j-1;
-            Krb[2*b]   = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
-            Krb[2*b+1] = r*ANGTOBOHR;
+
+
+            for (auto bb0
+            {
+               bond_indx[2*b]   = i-1;
+               bond_indx[2*b+1] = j-1;
+               Krb[2*b]   = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
+               Krb[2*b+1] = r*ANGTOBOHR;
+            }
          }
       }
 
-   }
-
-   double pi = 4.0*std::atan(1.0);
-   if (mystring_contains(mystring_lowercase(nwinput),"angle_spring"))
-   {
-      std::string line;
-      std::vector<std::string> ss;
-      for (auto a=0; a<nangle; ++a)
+      if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
       {
-         line = mystring_split(nwinput,"angle_spring")[a+1];
-         ss   = mystring_split0(line);
-         int i = std::stoi(ss[0]);
-         int j = std::stoi(ss[1]);
-         int k = std::stoi(ss[2]);
-         double ks    = std::stod(ss[3]);
-         double theta = std::stod(ss[4]);
-         std::cout << "i=" << i << " j=" << j << " k=" << k 
-                   << " ks =" << ks << " theta=" << theta << std::endl;
-         angle_indx[3*a]   = i-1;
-         angle_indx[3*a+1] = j-1;
-         angle_indx[3*a+2] = k-1;
-         Kra[2*a]   = ks/27.2116/23.06;
-         Kra[2*a+1] = theta*pi/180.0;
+         std::string line;
+         std::vector<std::string> ss;
+         for (auto a=0; a<nangle; ++a)
+         {
+            line = mystring_split(frag,"angle_spring")[a+1];
+            ss   = mystring_split0(line);
+            int i = std::stoi(ss[0]);
+            int j = std::stoi(ss[1]);
+            int k = std::stoi(ss[2]);
+            double ks    = std::stod(ss[3]);
+            double theta = std::stod(ss[4]);
+            std::cout << "i=" << i << " j=" << j << " k=" << k 
+                      << " ks =" << ks << " theta=" << theta << std::endl;
+            angle_indx[3*a]   = i-1;
+            angle_indx[3*a+1] = j-1;
+            angle_indx[3*a+2] = k-1;
+            Kra[2*a]   = ks/27.2116/23.06;
+            Kra[2*a+1] = theta*pi/180.0;
+         }
       }
+      ++ia;
    }
 
 
@@ -965,11 +998,11 @@ int main(int argc, char* argv[])
 
    // Eqq = Electrostatic energy and forces
    Eqq = QMQM_electrostatic_energy(nion_qm,nion,qion,rion1) 
-       + QMMM_electrostatic_energy(nion_qm,nion,qion,rion1) 
-       + MMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
+       + QMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
+       //+ MMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
    QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
    QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-   MMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
+  // MMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
    Eqm += Eqq;
 
    // ELJ = Lennard-Jones energy and forces
@@ -1018,8 +1051,8 @@ int main(int argc, char* argv[])
       ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,NULL);
 
       // Eqq = Electrostatic energy and forces
-      Eqq = QMMM_QMQM_electrostatic_energy(nion_qm,nion,qion,rion1);
-      QMMM_QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
+      Eqq = QMQM_electrostatic_energy(nion_qm,nion,qion,rion1);
+      QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
       Eqm += Eqq;
 
       // ELJ = Lenard-Johnes energy and forces
