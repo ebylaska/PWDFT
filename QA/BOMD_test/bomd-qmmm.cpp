@@ -107,9 +107,6 @@ double symboltomass(std::string symbol)
 
 
 
-
-
-
 int main(int argc, char* argv[])
 {
    std::ofstream *xyzfile;
