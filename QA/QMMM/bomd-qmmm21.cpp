@@ -10,6 +10,7 @@
 #include	<string>
 #include	<vector>
 #include	<set>
+#include	<map>
 #include 	<algorithm>
 
 #include "mpi.h"
@@ -75,7 +76,7 @@ void printemotion(std::ofstream *emotion, const double current_time,
          << std::endl;
 }
 
-double symboltomass(std::string symbol0)
+double symboltomass(std::string symbol)
 {
    double mass = 1.008;
    if (mystring_contains(symbol,"H")) mass = 1.008;
@@ -100,6 +101,7 @@ double symboltomass(std::string symbol0)
    if (mystring_contains(symbol,"Cl")) mass = 34.96885;
    return mass;
 }
+
 
 double symboltoepsilon(std::string symbol)
 {
@@ -843,6 +845,34 @@ int main(int argc, char* argv[])
       std::cout << std::endl;
    }
 
+   //set up qmmm lj stuff
+   std::map<std::string,std::vector<double>> lj_qm_data,lj_mm_data;
+
+   if  (mystring_contains(mystring_lowercase(nwinput),"lj_qm_parameters"))
+   {
+      std::vector<std::string> ss;
+      std::vector<std::string> lj_fragments = mystring_split(nwinput,"lj_qm_parameters");
+      lj_fragments.erase(lj_fragments.begin());
+      for (auto & lj_frag: lj_fragments)
+      {
+         ss = mystring_split0(lj_frag);
+         lj_qm_data[ss[0]].push_back(std::stod(ss[1]));
+         lj_qm_data[ss[0]].push_back(std::stod(ss[2]));
+      }
+   }
+   if  (mystring_contains(mystring_lowercase(nwinput),"lj_mm_parameters"))
+   {
+      std::vector<std::string> ss;
+      std::vector<std::string> lj_fragments = mystring_split(nwinput,"lj_mm_parameters");
+      lj_fragments.erase(lj_fragments.begin());
+      for (auto & lj_frag: lj_fragments)
+      {
+         ss = mystring_split0(lj_frag);
+         lj_mm_data[ss[0]].push_back(std::stod(ss[1]));
+         lj_mm_data[ss[0]].push_back(std::stod(ss[2]));
+      }
+   }
+
 
    // Initialize lammps_pspw interface 
    c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
@@ -979,8 +1009,16 @@ int main(int argc, char* argv[])
       {
          std::vector<std::string> ss = mystring_split0(geomlines[ii]);
          symbol[nion_qm]  = ss[0];
-         epsilon[nion_qm] = symboltoepsilon(symbol[nion_qm])/23.06/27.2116;
-         sigma[nion_qm]   = symboltosigma(symbol[nion_qm])*ANGTOBOHR;
+         if (lj_qm_data.count(symbol[nion_qm]) > 0)
+         {
+            epsilon[nion_qm] = lj_qm_data[symbol[nion_qm]][0]/23.06/27.2116;
+            sigma[nion_qm]   = lj_qm_data[symbol[nion_qm]][1]*ANGTOBOHR;
+         }
+         else
+         {
+            epsilon[nion_qm] = symboltoepsilon(symbol[nion_qm])/23.06/27.2116;
+            sigma[nion_qm]   = symboltosigma(symbol[nion_qm])*ANGTOBOHR;
+         }
          mass[nion_qm]    = symboltomass(symbol[nion_qm])*1822.89;
          rion1[3*nion_qm]   = std::stod(ss[1])*ANGTOBOHR;
          rion1[3*nion_qm+1] = std::stod(ss[2])*ANGTOBOHR;
@@ -1000,8 +1038,16 @@ int main(int argc, char* argv[])
          std::string str = ss[0]; 
          str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
          symbol[(nion_qm+nion_mm)]  = str;
-         epsilon[(nion_qm+nion_mm)] = symboltoepsilon(symbol[(nion_qm+nion_mm)])/23.06/27.2116;
-         sigma[(nion_qm+nion_mm)]     = symboltosigma(symbol[(nion_qm+nion_mm)])*ANGTOBOHR;
+         if (lj_mm_data.count(str) > 0)
+         {
+            epsilon[(nion_qm+nion_mm)] = lj_mm_data[symbol[(nion_qm+nion_mm)]][0]/23.06/27.2116;
+            sigma[(nion_qm+nion_mm)]   = lj_mm_data[symbol[(nion_qm+nion_mm)]][1]*ANGTOBOHR;
+         }
+         else 
+         {
+            epsilon[(nion_qm+nion_mm)] = 0.0;
+            sigma[(nion_qm+nion_mm)]   = 1.0;
+         }
          mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
          rion1[3*(nion_qm+nion_mm)]   = std::stod(ss[1])*ANGTOBOHR;
          rion1[3*(nion_qm+nion_mm)+1] = std::stod(ss[2])*ANGTOBOHR;
