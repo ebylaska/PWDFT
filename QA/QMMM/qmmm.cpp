@@ -22,6 +22,223 @@
 #define MASTER          0
 #define ANGTOBOHR       1.88972687777
 
+
+/**************************************************
+ *                                                *
+ *                spring_bond_frag                *
+ *                                                *
+ **************************************************/
+static double spring_bond_frag(const int nbond, const int indx[], const double Kr0[], const double rion[])
+{
+   double E = 0.0;
+   for (auto b=0; b<nbond; ++b)
+   {
+      int ii = indx[0+2*b];
+      int jj = indx[1+2*b];
+
+      double x = rion[3*ii]   - rion[3*jj];
+      double y = rion[3*ii+1] - rion[3*jj+1];
+      double z = rion[3*ii+2] - rion[3*jj+2];
+      double r = std::sqrt(x*x + y*y + z*z);
+      double dr = r - Kr0[1+2*b];
+      E += Kr0[2*b]*dr*dr;
+
+   }
+   return E;
+}
+
+/**************************************************
+ *                                                *
+ *                spring_bond_force_frag          *
+ *                                                *
+ **************************************************/
+static void spring_bond_force_frag(const int nbond, const int indx[], const double Kr0[], const double rion[], double fion[])
+{
+   for (auto b=0; b<nbond; ++b)
+   {
+
+      int ii = indx[0+2*b];
+      int jj = indx[1+2*b];
+
+      double x = rion[3*ii]   - rion[3*jj];
+      double y = rion[3*ii+1] - rion[3*jj+1];
+      double z = rion[3*ii+2] - rion[3*jj+2];
+      double r = std::sqrt(x*x + y*y + z*z);
+      double dr = r - Kr0[1+2*b];
+      double dE = 2.0*Kr0[2*b]*dr/r;
+
+      fion[3*ii]   -= x*dE;
+      fion[3*ii+1] -= y*dE;
+      fion[3*ii+2] -= z*dE;
+
+      fion[3*jj]   += x*dE;
+      fion[3*jj+1] += y*dE;
+      fion[3*jj+2] += z*dE;
+   }
+}
+
+/**************************************************
+ *                                                *
+ *               spring_angle_frag                *
+ *                                                *
+ **************************************************/
+static double spring_angle_frag(const int nangle, const int indx[], const double Kr0[], const double rion[])
+{
+   double E = 0.0;
+   for (auto a=0; a<nangle; ++a)
+   {
+      int ii = indx[0+3*a];
+      int jj = indx[1+3*a];
+      int kk = indx[2+3*a];
+
+      double x1 = rion[3*ii]   - rion[3*jj];
+      double y1 = rion[3*ii+1] - rion[3*jj+1];
+      double z1 = rion[3*ii+2] - rion[3*jj+2];
+      double r1 = std::sqrt(x1*x1 + y1*y1 + z1*z1);
+
+      double x2 = rion[3*kk]   - rion[3*jj];
+      double y2 = rion[3*kk+1] - rion[3*jj+1];
+      double z2 = rion[3*kk+2] - rion[3*jj+2];
+      double r2 = std::sqrt(x2*x2 + y2*y2 + z2*z2);
+
+      double denom = r1*r2;
+      if (denom>1.0e-11)
+      {
+         double ctheta = (x1*x2+y1*y2+z1*z2)/(denom);
+         if (ctheta > 1.0)  ctheta = 1.0;
+         if (ctheta < -1.0) ctheta = -1.0;
+         double q = std::acos(ctheta)-Kr0[1+2*a];
+         E += Kr0[2*a]*q*q;
+      }
+   }
+   return E;
+}
+
+/**************************************************
+ *                                                *
+ *              spring_angle_force_frag           *
+ *                                                *
+ **************************************************/
+static void spring_angle_force_frag(const int nangle, const int indx[], const double Kr0[], const double rion[], double fion[])
+{
+   for (auto a=0; a<nangle; ++a)
+   {
+      int ii = indx[0+3*a];
+      int jj = indx[1+3*a];
+      int kk = indx[2+3*a];
+
+      double x1 = rion[3*ii]   - rion[3*jj];
+      double y1 = rion[3*ii+1] - rion[3*jj+1];
+      double z1 = rion[3*ii+2] - rion[3*jj+2];
+      double r1sq = x1*x1 + y1*y1 + z1*z1;
+      double r1 = std::sqrt(r1sq);
+
+      double x2 = rion[3*kk]   - rion[3*jj];
+      double y2 = rion[3*kk+1] - rion[3*jj+1];
+      double z2 = rion[3*kk+2] - rion[3*jj+2];
+      double r2sq = x2*x2 + y2*y2 + z2*z2;
+      double r2 = std::sqrt(r2sq);
+
+      double denom = r1*r2;
+      if (denom>1.0e-11)
+      {
+         double ctheta = (x1*x2+y1*y2+z1*z2)/(denom);
+         if (ctheta > 1.0)  ctheta = 1.0;
+         if (ctheta < -1.0) ctheta = -1.0;
+         double stheta = std::sqrt(1.0 - ctheta*ctheta);
+         if (stheta < 0.001) stheta = 0.001;
+         stheta = 1.0/stheta;
+
+         double q  = std::acos(ctheta)-Kr0[1+2*a];
+         double tk = Kr0[2*a]*q;
+
+         double  aa     = 2.0*tk*stheta;
+         double  a11    =  aa*ctheta/r1sq;
+         double  a12    = -aa/(denom);
+         double  a22    =  aa*ctheta/r2sq;
+
+         double  vx1 = a11*x1 + a12*x2;
+         double  vx2 = a22*x2 + a12*x1;
+
+         double  vy1 = a11*y1 + a12*y2;
+         double  vy2 = a22*y2 + a12*y1;
+
+         double  vz1 = a11*z1 + a12*z2;
+         double  vz2 = a22*z2 + a12*z1;
+
+         fion[3*ii]   -= vx1;
+         fion[3*ii+1] -= vy1;
+         fion[3*ii+2] -= vz1;
+
+         fion[3*jj]   += vx1 + vx2;
+         fion[3*jj+1] += vy1 + vy2;
+         fion[3*jj+2] += vz1 + vz2;
+
+         fion[3*kk]   -= vx2;
+         fion[3*kk+1] -= vy2;
+         fion[3*kk+2] -= vz2;
+      }
+   }
+}
+
+
+/**************************************************
+ *                                                *
+ *                   LJ_energy                    *
+ *                                                *
+ **************************************************/
+static double LJ_energy(const double epsilon12, const double sigma12,
+                        const double r1[], const double r2[])
+{
+
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+   double u = (sigma12/r);
+   double u6  = u*u*u*u*u*u;
+   double u12 = u6*u6;
+
+   return (4.0*epsilon12*(u12-u6));
+}
+
+/**************************************************
+ *                                                *
+ *                   LJ_force                     *
+ *                                                *
+ **************************************************/
+static void LJ_force(const double epsilon12, const double sigma12,
+                     const double r1[], double f1[],
+                     const double r2[], double f2[])
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+   double u = (sigma12/r);
+   double u6  = u*u*u*u*u*u;
+   double u12 = u6*u6;
+
+   double dVLJ = -(4.00*epsilon12/r)*(12.0*u12-6.0*u6);
+
+   f1[0] += (x/r)*dVLJ;
+   f1[1] += (y/r)*dVLJ;
+   f1[2] += (z/r)*dVLJ;
+
+   f2[0] -= (x/r)*dVLJ;
+   f2[1] -= (y/r)*dVLJ;
+   f2[2] -= (z/r)*dVLJ;
+}
+
+
+
+
+
+
+
+
+
+
 /*******************************************
  *                                         *
  *        QMMM_Operator::QMMM_Operator     *
@@ -179,6 +396,61 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
          }
       }
       ++ia;
+   }
+}
+
+
+/*******************************************
+ *                                         *
+ *      QMMM_Operator::spring_Energy       *
+ *                                         *
+ *******************************************/
+double QMMM_Operator::spring_Energy(const double rion[])
+{
+   double   E = 0.0;
+   for (auto w1=0; w1<nfrag; ++w1)
+   {
+      int ks1 = indxfrag_start[w1];
+      int ia  = kfrag[w1];
+      int nbs = nbond_frag[ia];
+      int nas = nangle_frag[ia];
+      if (nbs>0)
+      {
+         int bs1 = bond_start_frag[ia];
+         E += spring_bond_frag(nbs,&bond_indx[2*bs1],&Krb[2*bs1],&rion[3*ks1]);
+      }
+      if (nas>0)
+      {
+         int ba1 = angle_start_frag[ia];
+         E += spring_angle_frag(nas,&angle_indx[3*ba1],&Kra[2*ba1],&rion[3*ks1]);
+      }
+   }
+   return E;
+}
+
+/**************************************************
+ *                                                *
+ *           QMMM_Operator::spring_Force          *
+ *                                                *
+ **************************************************/
+void QMMM_Operator::spring_Force( const double rion[], double fion[])
+{
+   for (auto w1=0; w1<nfrag; ++w1)
+   {
+      int ks1 = indxfrag_start[w1];
+      int ia  = kfrag[w1];
+      int nbs = nbond_frag[ia];
+      int nas = nangle_frag[ia];
+      if (nbs>0)
+      {
+         int bs1 = bond_start_frag[ia];
+         spring_bond_force_frag(nbs,&bond_indx[2*bs1],&Krb[2*bs1],&rion[3*ks1],&fion[3*ks1]);
+      }
+      if (nas>0)
+      {
+         int ba1 = angle_start_frag[ia];
+         spring_angle_force_frag(nas,&angle_indx[3*ba1],&Kra[2*ba1],&rion[3*ks1],&fion[3*ks1]);
+      }
    }
 }
 

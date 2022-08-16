@@ -80,6 +80,10 @@ public:
          delete [] Kra;
     }
 
+    double spring_Energy(const double []);
+    void spring_Force(const double [], double []);
+
+
     //void   ke(double *, double *);
     //double ke_ave(double *);
 };
