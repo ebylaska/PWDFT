@@ -231,6 +231,135 @@ static void LJ_force(const double epsilon12, const double sigma12,
 }
 
 
+/**************************************************
+ *                                                *
+ *               Q_Switching                      *
+ *                                                *
+ **************************************************/
+static double Q_Switching(const double Rin, const double Rout, const double r)
+{
+   double s;
+
+   if (r<=Rin)  return 0.0;
+   if (r>=Rout) return 1.0;
+
+   double c1 = (Rout-Rin);
+   double c3 = c1*c1*c1;
+   double c2 = 3.0*Rout-Rin;
+   return(((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3);
+}
+
+/**************************************************
+ *                                                *
+ *               Q_dSwitching                     *
+ *                                                *
+ **************************************************/
+static void Q_dSwitching(const double Rin, const double Rout, const double r,
+                         double *S, double *dS)
+{
+   if (r<=Rin)  { *S = 0.0; *dS = 0.0; return; }
+   if (r>=Rout) { *S = 1.0; *dS = 0.0; return; }
+
+   double c1 = (Rout-Rin);
+   double c3 = c1*c1*c1;
+   double c2 = 3.0*Rout-Rin;
+
+   *S  = ((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3;
+   *dS = 2.0*(r-Rin)*((c2-2.0*r)/c3) - 2.0*((r-Rin)*(r-Rin)) /c3;
+   return;
+}
+
+/**************************************************
+ *                                                *
+ *            Q_Electrostatic_potential           *
+ *                                                *
+ **************************************************/
+static double Q_Electrostatic_potential(const double r1[], const double q1,
+                                 const double r2[])
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+
+   return (q1/r);
+}
+
+/**************************************************
+ *                                                *
+ *            Q_Electrostatic_self                *
+ *                                                *
+ **************************************************/
+static double Q_Electrostatic_self(const double r1[], const double q1,
+                            const double r2[], const double q2)
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double r = std::sqrt(x*x + y*y + z*z);
+
+   return (q1*q2/r);
+}
+
+/**************************************************
+ *                                                *
+ *          Q_Electrostatic_Force_self            *
+ *                                                *
+ **************************************************/
+
+static void Q_Electrostatic_Force_self(const double r1[], const double q1, double f1[],
+                                const double r2[], const double q2, double f2[])
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double rr = (x*x + y*y + z*z);
+   double r  = std::sqrt(rr);
+
+   double der = -q1*q2/rr;
+   double fx = -(x/r)*der;
+   double fy = -(y/r)*der;
+   double fz = -(z/r)*der;
+
+   f2[0] += fx;
+   f2[1] += fy;
+   f2[2] += fz;
+
+   f1[0] -= fx;
+   f1[1] -= fy;
+   f1[2] -= fz;
+}
+
+/****************************************************
+ *                                                  *
+ *                    Q_cm                          *
+ *                                                  *
+ ****************************************************/
+static void Q_cm(const int n, const int ks, const double amass[], const double rion[],
+         double rcm[])
+{
+   rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
+   double m = 0.0;
+   int kk = ks;
+   for (auto k=0; k<n; ++k)
+   {
+      rcm[0] += amass[kk]*rion[3*kk];
+      rcm[1] += amass[kk]*rion[3*kk+1];
+      rcm[2] += amass[kk]*rion[3*kk+1];
+      m += amass[kk];
+      ++kk;
+   }
+   rcm[0] /= m;
+   rcm[1] /= m;
+   rcm[2] /= m;
+}
+
+
+
+
+
+
+
 
 
 
