@@ -105,448 +105,10 @@ double symboltomass(std::string symbol)
 }
 
 
-double symboltoepsilon(std::string symbol)
-{
-   double epsilon = 0.044;
-   if (mystring_contains(symbol,"H")) epsilon = 0.044;
-   if (mystring_contains(symbol,"B")) epsilon = 0.180;
-   if (mystring_contains(symbol,"C")) epsilon = 0.105;
-   if (mystring_contains(symbol,"N")) epsilon = 0.069;
-   if (mystring_contains(symbol,"O")) epsilon = 0.060;
-   if (mystring_contains(symbol,"F")) epsilon = 0.050;
-   if (mystring_contains(symbol,"P")) epsilon = 0.305;
-   if (mystring_contains(symbol,"S")) epsilon = 0.274;
-   if (mystring_contains(symbol,"K")) epsilon = 0.035;
 
-   if (mystring_contains(symbol,"He")) epsilon = 0.056;
-   if (mystring_contains(symbol,"Li")) epsilon = 0.025;
-   if (mystring_contains(symbol,"Be")) epsilon = 0.085;
-   if (mystring_contains(symbol,"Ne")) epsilon = 0.042;
 
-   if (mystring_contains(symbol,"Na")) epsilon = 0.030;
-   if (mystring_contains(symbol,"Mg")) epsilon = 0.111;
-   if (mystring_contains(symbol,"Al")) epsilon = 0.505;
-   if (mystring_contains(symbol,"Si")) epsilon = 0.402;
-   if (mystring_contains(symbol,"Cl")) epsilon = 0.227;
-   return epsilon;
-}
 
-double symboltosigma(std::string symbol)
-{
-   double sigma = 2.886;
-   if (mystring_contains(symbol,"H")) sigma = 2.886;
-   if (mystring_contains(symbol,"B")) sigma = 4.083;
-   if (mystring_contains(symbol,"C")) sigma = 3.851;
-   if (mystring_contains(symbol,"N")) sigma = 3.66;
-   if (mystring_contains(symbol,"O")) sigma = 3.50;
-   if (mystring_contains(symbol,"F")) sigma = 3.364;
-   if (mystring_contains(symbol,"P")) sigma = 4.147;
-   if (mystring_contains(symbol,"S")) sigma = 4.035;
-   if (mystring_contains(symbol,"K")) sigma = 3.812;
 
-   if (mystring_contains(symbol,"He")) sigma = 2.362;
-   if (mystring_contains(symbol,"Li")) sigma = 2.451;
-   if (mystring_contains(symbol,"Be")) sigma = 2.745;
-   if (mystring_contains(symbol,"Ne")) sigma = 3.243;
-
-   if (mystring_contains(symbol,"Na")) sigma = 2.983;
-   if (mystring_contains(symbol,"Mg")) sigma = 3.021;
-   if (mystring_contains(symbol,"Al")) sigma = 4.499;
-   if (mystring_contains(symbol,"Si")) sigma = 4.295;
-   if (mystring_contains(symbol,"Cl")) sigma = 3.947;
-   return sigma;
-}
-
-/**************************************************
- *                                                *
- *                spring_bond_frag                *
- *                                                *
- **************************************************/
-double spring_bond_frag(const int nbond, const int indx[], const double Kr0[], const double rion[])
-{
-   double E = 0.0;
-   for (auto b=0; b<nbond; ++b)
-   {
-      int ii = indx[0+2*b];
-      int jj = indx[1+2*b];
-
-      double x = rion[3*ii]   - rion[3*jj];
-      double y = rion[3*ii+1] - rion[3*jj+1];
-      double z = rion[3*ii+2] - rion[3*jj+2];
-      double r = std::sqrt(x*x + y*y + z*z);
-      double dr = r - Kr0[1+2*b];
-      E += Kr0[2*b]*dr*dr;
-
-   }
-   return E;
-}
-
-
-/**************************************************
- *                                                *
- *                spring_bond_force_frag          *
- *                                                *
- **************************************************/
-void spring_bond_force_frag(const int nbond, const int indx[], const double Kr0[], const double rion[], double fion[])
-{
-   for (auto b=0; b<nbond; ++b)
-   {
-
-      int ii = indx[0+2*b];
-      int jj = indx[1+2*b];
-
-      double x = rion[3*ii]   - rion[3*jj];
-      double y = rion[3*ii+1] - rion[3*jj+1];
-      double z = rion[3*ii+2] - rion[3*jj+2];
-      double r = std::sqrt(x*x + y*y + z*z);
-      double dr = r - Kr0[1+2*b];
-      double dE = 2.0*Kr0[2*b]*dr/r;
-
-      fion[3*ii]   -= x*dE;
-      fion[3*ii+1] -= y*dE;
-      fion[3*ii+2] -= z*dE;
-
-      fion[3*jj]   += x*dE;
-      fion[3*jj+1] += y*dE;
-      fion[3*jj+2] += z*dE;
-   }
-}
-
-
-/**************************************************
- *                                                *
- *               spring_angle_frag                *
- *                                                *
- **************************************************/
-double spring_angle_frag(const int nangle, const int indx[], const double Kr0[], const double rion[])
-{
-   double E = 0.0;
-   for (auto a=0; a<nangle; ++a)
-   {
-      int ii = indx[0+3*a];
-      int jj = indx[1+3*a];
-      int kk = indx[2+3*a];
-
-      double x1 = rion[3*ii]   - rion[3*jj];
-      double y1 = rion[3*ii+1] - rion[3*jj+1];
-      double z1 = rion[3*ii+2] - rion[3*jj+2];
-      double r1 = std::sqrt(x1*x1 + y1*y1 + z1*z1);
-
-      double x2 = rion[3*kk]   - rion[3*jj];
-      double y2 = rion[3*kk+1] - rion[3*jj+1];
-      double z2 = rion[3*kk+2] - rion[3*jj+2];
-      double r2 = std::sqrt(x2*x2 + y2*y2 + z2*z2);
-
-      double denom = r1*r2;
-      if (denom>1.0e-11)
-      {
-         double ctheta = (x1*x2+y1*y2+z1*z2)/(denom);
-         if (ctheta > 1.0)  ctheta = 1.0;
-         if (ctheta < -1.0) ctheta = -1.0;
-         double q = std::acos(ctheta)-Kr0[1+2*a];
-         E += Kr0[2*a]*q*q;
-      }
-   }
-   return E;
-}
-
-
-/**************************************************
- *                                                *
- *              spring_angle_force_frag           *
- *                                                *
- **************************************************/
-void spring_angle_force_frag(const int nangle, const int indx[], const double Kr0[], const double rion[], double fion[])
-{
-   for (auto a=0; a<nangle; ++a)
-   {
-      int ii = indx[0+3*a];
-      int jj = indx[1+3*a];
-      int kk = indx[2+3*a];
-
-      double x1 = rion[3*ii]   - rion[3*jj];
-      double y1 = rion[3*ii+1] - rion[3*jj+1];
-      double z1 = rion[3*ii+2] - rion[3*jj+2];
-      double r1sq = x1*x1 + y1*y1 + z1*z1;
-      double r1 = std::sqrt(r1sq);
-
-      double x2 = rion[3*kk]   - rion[3*jj];
-      double y2 = rion[3*kk+1] - rion[3*jj+1];
-      double z2 = rion[3*kk+2] - rion[3*jj+2];
-      double r2sq = x2*x2 + y2*y2 + z2*z2;
-      double r2 = std::sqrt(r2sq);
-
-      double denom = r1*r2;
-      if (denom>1.0e-11)
-      {
-         double ctheta = (x1*x2+y1*y2+z1*z2)/(denom);
-         if (ctheta > 1.0)  ctheta = 1.0;
-         if (ctheta < -1.0) ctheta = -1.0;
-         double stheta = std::sqrt(1.0 - ctheta*ctheta);
-         if (stheta < 0.001) stheta = 0.001;
-         stheta = 1.0/stheta;
-
-         double q  = std::acos(ctheta)-Kr0[1+2*a];
-         double tk = Kr0[2*a]*q;
-
-         double  aa     = 2.0*tk*stheta;
-         double  a11    =  aa*ctheta/r1sq;
-         double  a12    = -aa/(denom);
-         double  a22    =  aa*ctheta/r2sq;
-
-         double  vx1 = a11*x1 + a12*x2;
-         double  vx2 = a22*x2 + a12*x1;
-
-         double  vy1 = a11*y1 + a12*y2;
-         double  vy2 = a22*y2 + a12*y1;
-
-         double  vz1 = a11*z1 + a12*z2;
-         double  vz2 = a22*z2 + a12*z1;
-
-         fion[3*ii]   -= vx1;
-         fion[3*ii+1] -= vy1;
-         fion[3*ii+2] -= vz1;
-
-         fion[3*jj]   += vx1 + vx2;
-         fion[3*jj+1] += vy1 + vy2;
-         fion[3*jj+2] += vz1 + vz2;
-
-         fion[3*kk]   -= vx2;
-         fion[3*kk+1] -= vy2;
-         fion[3*kk+2] -= vz2;
-      }
-   }
-}
-
-
-/**************************************************
- *                                                *
- *                spring_Energy                   *
- *                                                *
- **************************************************/
-double spring_Energy(const int nfrag, const int indxfrag_start[], const int kfrag[], 
-                     const int nbond_frag[],  const int bond_start_frag[],  const int  bond_indx[], const double Krb[],
-                     const int nangle_frag[], const int angle_start_frag[], const int angle_indx[], const double Kra[],
-                     const double rion[])
-{
-   double   E = 0.0;
-   for (auto w1=0; w1<nfrag; ++w1)
-   {
-      int ks1 = indxfrag_start[w1];
-      int ia  = kfrag[w1];
-      int nbs = nbond_frag[ia];
-      int nas = nangle_frag[ia];
-      if (nbs>0)
-      {
-         int bs1 = bond_start_frag[ia];
-         E += spring_bond_frag(nbs,&bond_indx[2*bs1],&Krb[2*bs1],&rion[3*ks1]);
-      }
-      if (nas>0)
-      {
-         int ba1 = angle_start_frag[ia];
-         E += spring_angle_frag(nas,&angle_indx[3*ba1],&Kra[2*ba1],&rion[3*ks1]);
-      }
-   }
-   return E;
-}
-
-/**************************************************
- *                                                *
- *                spring_Force                    *
- *                                                *
- **************************************************/
-void spring_Force(const int nfrag, const int indxfrag_start[], const int kfrag[], 
-                  const int nbond_frag[],  const int bond_start_frag[],  const int  bond_indx[], const double Krb[],
-                  const int nangle_frag[], const int angle_start_frag[], const int angle_indx[], const double Kra[],
-                  const double rion[], double fion[])
-{
-   for (auto w1=0; w1<nfrag; ++w1)
-   {
-      int ks1 = indxfrag_start[w1];
-      int ia  = kfrag[w1];
-      int nbs = nbond_frag[ia];
-      int nas = nangle_frag[ia];
-      if (nbs>0)
-      {
-         int bs1 = bond_start_frag[ia];
-         spring_bond_force_frag(nbs,&bond_indx[2*bs1],&Krb[2*bs1],&rion[3*ks1],&fion[3*ks1]);
-      }
-      if (nas>0)
-      {
-         int ba1 = angle_start_frag[ia];
-         spring_angle_force_frag(nas,&angle_indx[3*ba1],&Kra[2*ba1],&rion[3*ks1],&fion[3*ks1]);
-      }
-   }
-}
-
-
-
-
-
-
-
-double LJ_energy(const double epsilon12, const double sigma12,
-                 const double r1[], const double r2[])
-{
-
-   double x = r2[0] - r1[0];
-   double y = r2[1] - r1[1];
-   double z = r2[2] - r1[2];
-   double r = std::sqrt(x*x + y*y + z*z);
-   double u = (sigma12/r);
-   double u6  = u*u*u*u*u*u;
-   double u12 = u6*u6;
-
-   return (4.0*epsilon12*(u12-u6));
-}
-
-void LJ_force(const double epsilon12, const double sigma12,
-                const double r1[], double f1[],
-                const double r2[], double f2[])
-{
-   double x = r2[0] - r1[0];
-   double y = r2[1] - r1[1];
-   double z = r2[2] - r1[2];
-   double r = std::sqrt(x*x + y*y + z*z);
-   double u = (sigma12/r);
-   double u6  = u*u*u*u*u*u;
-   double u12 = u6*u6;
-
-   double dVLJ = -(4.00*epsilon12/r)*(12.0*u12-6.0*u6);
-
-   f1[0] += (x/r)*dVLJ;
-   f1[1] += (y/r)*dVLJ;
-   f1[2] += (z/r)*dVLJ;
-
-   f2[0] -= (x/r)*dVLJ;
-   f2[1] -= (y/r)*dVLJ;
-   f2[2] -= (z/r)*dVLJ;
-}
-
-double QMMM_LJ_energy(const int nion_qm, const int nion,
-                      const double epsilon[], const double sigma[], const double rion[])
-{
-   double E = 0.0;
-   // QMQM LJ == 0
-   // QMMM LJ
-   // qm and mm interactions
-   for (auto qm=0; qm<nion_qm; ++qm)
-      for (auto mm=nion_qm; mm<nion; ++mm)
-      {
-         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
-         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
-         double elj = LJ_energy(epsilon12,sigma12,&rion[3*qm],&rion[3*mm]);
-         E += elj;
-      }
-
-   // mm interactions
-   /*for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
-      for (auto mm2=mm1+1; mm2<nion; ++mm2)
-      {
-         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
-         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
-         double elj = LJ_energy(epsilon12,sigma12,&rion[3*mm1],&rion[3*mm2]);
-         E += elj;
-      }
-   */
-
-   return E;
-}
-
-void QMMM_LJ_force(const int nion_qm, const int nion,
-                   const double epsilon[], const double sigma[], const double rion[], double fion[])
-{
-   // qm and mm interactions
-   for (auto qm=0; qm<nion_qm; ++qm)
-      for (auto mm=nion_qm; mm<nion; ++mm) {
-         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
-         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
-         LJ_force(epsilon12,sigma12,&rion[3*qm],&fion[3*qm],&rion[3*mm],&fion[3*mm]);
-      }
-
-   // mm interactions
-   /*
-   for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
-      for (auto mm2=mm1+1; mm2<nion; ++mm2)
-      {
-         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
-         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
-         LJ_force(epsilon12,sigma12,&rion[3*mm1],&fion[3*mm1],&rion[3*mm2],&fion[3*mm2]);
-      }
-   */
-}
-
-double MMMM_LJ_energy(const int nion_qm, const int nion,
-                      const double epsilon[], const double sigma[], const double rion[])
-{
-   double E = 0.0;
-
-   // mm interactions
-   for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
-      for (auto mm2=mm1+1; mm2<nion; ++mm2)
-      {
-         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
-         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
-         double elj = LJ_energy(epsilon12,sigma12,&rion[3*mm1],&rion[3*mm2]);
-         E += elj;
-      }
-   return E;
-}
-
-void MMMM_LJ_force(const int nion_qm, const int nion,
-                   const double epsilon[], const double sigma[], const double rion[], double fion[])
-{
-   // mm interactions
-   for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
-      for (auto mm2=mm1+1; mm2<nion; ++mm2)
-      {
-         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
-         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
-         LJ_force(epsilon12,sigma12,&rion[3*mm1],&fion[3*mm1],&rion[3*mm2],&fion[3*mm2]);
-      }
-}
-
-
-
-
-
-/**************************************************
- *                                                *
- *               Q_Switching                      *
- *                                                *
- **************************************************/
-double Q_Switching(const double Rin, const double Rout, const double r)
-{
-   double s;
-
-   if (r<=Rin)  return 0.0;
-   if (r>=Rout) return 1.0;
-
-   double c1 = (Rout-Rin);
-   double c3 = c1*c1*c1;
-   double c2 = 3.0*Rout-Rin;
-   return(((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3);
-}
-
-/**************************************************
- *                                                *
- *               Q_dSwitching                     *
- *                                                *
- **************************************************/
-void Q_dSwitching(const double Rin, const double Rout, const double r,
-                  double *S, double *dS)
-{
-   if (r<=Rin)  { *S = 0.0; *dS = 0.0; return; }
-   if (r>=Rout) { *S = 1.0; *dS = 0.0; return; }
-   
-   double c1 = (Rout-Rin);
-   double c3 = c1*c1*c1;
-   double c2 = 3.0*Rout-Rin;
-  
-   *S  = ((r-Rin)*(r-Rin)) * (c2-2.0*r)/c3;
-   *dS = 2.0*(r-Rin)*((c2-2.0*r)/c3) - 2.0*((r-Rin)*(r-Rin)) /c3;
-   return;
-}
 
 
 
@@ -815,131 +377,34 @@ int main(int argc, char* argv[])
       nwinput_size = nwinput.size();
    }
 
-   // set up geometry sizes and indexes: nion, nkatm, katm[nion] 
-   std::string geomblock;
-   if (mystring_contains(mystring_lowercase(nwinput),"geometry"))
-   {
-      geomblock  = mystring_rtrim(mystring_ltrim(mystring_split(mystring_split(nwinput,"nocenter")[1],"end")[0]));
-   }
-   std::vector<std::string> geomlines = mystring_split(geomblock,"\n");
-   int nion  = geomlines.size();
-   int nkatm = 0;
-   int katm[nion];
-   {  std::set<std::string> anameset;
-      for (auto & line: geomlines)
-      {
-        std::vector<std::string> ss = mystring_split0(line);
-        anameset.emplace(ss[0]);
-      }
-      nkatm = anameset.size();
-   }
-   std::string aname[nkatm];
 
-   {  int ia=0;
-      int ii=0;
-      int n = sizeof(aname)/sizeof(aname[0]);
-      std::set<std::string> anameset;
-      for (auto & line: geomlines)
-      {
-         std::vector<std::string> ss = mystring_split0(line);
-         if (anameset.count(ss[0])==0)
-         {
-            anameset.emplace(ss[0]);
-            aname[ia] = ss[0];
-            ++ia;
-         }
-         auto itr = find(aname, aname + n, ss[0]);
-         katm[ii] = std::distance(aname,itr);
-         ++ii;
-      }
-   }
+   //set up qmmm
+   QMMM_Operator qmmm(nwinput);
+
+   int nion  = qmmm.nion;
+   int nion_qm  = qmmm.nion_qm;
+   int nion_mm  = qmmm.nion_mm;
+   int nkatm = qmmm.nkatm;
+
    if (taskid==MASTER) {
       std::cout << "katm= ";
       for (auto ii=0; ii<nion; ++ii)
-         std::cout << " " << katm[ii];
+         std::cout << " " << qmmm.katm[ii];
       std::cout << std::endl;
   
 
       std::cout << std::endl;
       std::cout << "aname size=" << nkatm << std::endl;
       for (auto ia=0; ia<nkatm; ++ia)
-          std::cout << "aname =" << ia << " " << aname[ia] << std::endl;
+          std::cout << "aname =" << ia << " " << qmmm.aname[ia] << std::endl;
       std::cout << std::endl;
    }
 
 
-
-   //set up qmmm fragments and sizes
-   std::vector<std::string> fragments;
-   double qmmm_lmbda = 1.0;
-   int    nkfrag = 0;
-   int    nfrag  = 0;
-   int    nbond  = 0;
-   int    nangle = 0;
-
-   if  (mystring_contains(mystring_lowercase(nwinput),"fragment"))
-   {
-      fragments = mystring_split(nwinput,"fragment");
-      fragments.erase(fragments.begin());
-      nkfrag = fragments.size();
-      for (auto & frag: fragments)
-      {
-         int nfrag0=0;
-         frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
-
-         if (mystring_contains(mystring_lowercase(frag),"index_start"))
-            nfrag0 = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0])).size();
-         
-         if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
-            nbond += (mystring_split(frag,"bond_spring").size() - 1);
-
-         if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
-            nangle += (mystring_split(frag,"angle_spring").size() - 1);
-
-         nfrag += nfrag0;
-      }
-   }
-   if (taskid==MASTER) {
-      std::cout << "nkfrag=" << nkfrag << std::endl;
-      std::cout << "nfrag =" << nfrag  << std::endl;
-      std::cout << "nbond =" << nbond  << std::endl;
-      std::cout << "nangle =" << nangle  << std::endl;
-      std::cout << std::endl;
-   }
-
-   //set up qmmm lj stuff
-   std::map<std::string,std::vector<double>> lj_qm_data,lj_mm_data;
-
-   if  (mystring_contains(mystring_lowercase(nwinput),"lj_qm_parameters"))
-   {
-      std::vector<std::string> ss;
-      std::vector<std::string> lj_fragments = mystring_split(nwinput,"lj_qm_parameters");
-      lj_fragments.erase(lj_fragments.begin());
-      for (auto & lj_frag: lj_fragments)
-      {
-         ss = mystring_split0(lj_frag);
-         lj_qm_data[ss[0]].push_back(std::stod(ss[1]));
-         lj_qm_data[ss[0]].push_back(std::stod(ss[2]));
-      }
-   }
-   if  (mystring_contains(mystring_lowercase(nwinput),"lj_mm_parameters"))
-   {
-      std::vector<std::string> ss;
-      std::vector<std::string> lj_fragments = mystring_split(nwinput,"lj_mm_parameters");
-      lj_fragments.erase(lj_fragments.begin());
-      for (auto & lj_frag: lj_fragments)
-      {
-         ss = mystring_split0(lj_frag);
-         lj_mm_data[ss[0]].push_back(std::stod(ss[1]));
-         lj_mm_data[ss[0]].push_back(std::stod(ss[2]));
-      }
-   }
 
 
    // Initialize lammps_pspw interface 
    c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
-
-   if (taskid==MASTER) std::cout << "out lammps inpute " << nangle  << std::endl;
 
 
    double unita[9] = {26.0,  0.0,  0.0,
@@ -951,186 +416,24 @@ int main(int argc, char* argv[])
    double mass[nion],dti[nion],KE,uion[nion],qion[nion];
    double Espring,ELJ,Eqm,Eqq;
 
-   double epsilon[nion],sigma[nion];
-
-   // switching parameters
-   double switch_Rin[nkfrag]; //  = { (2.0160/0.529177) };
-   double switch_Rout[nkfrag]; // = { (3.1287/0.529177) };
-
-   int size_frag[nkfrag];
-   int nfrag_frag[nkfrag];
-   int nbond_frag[nkfrag];
-   int nangle_frag[nkfrag];
-   int bond_start_frag[nkfrag];
-   int angle_start_frag[nkfrag];
-
-   int indxfrag_start[nfrag];
-   int kfrag[nfrag];
-
-   // bond and angle spring parameters
-   int    bond_indx[2*nbond],angle_indx[3*nangle];
-   double Krb[2*nbond];
-   double Kra[2*nangle];
-   double pi = 4.0*std::atan(1.0);
-
-   int bond_start_sum  = 0;
-   int angle_start_sum = 0;
-   int ntf = 0;
-   int ia  = 0;
-   for (auto & frag: fragments)
-   {
-      std::cout << "start" << std::endl;
-      frag = mystring_rtrim(mystring_ltrim(mystring_split(frag,"end")[0]));
-
-      int tsize = std::stoi(mystring_split0(mystring_split(frag,"size")[1])[0]);
-      std::cout << "tsize=" << tsize << std::endl;
-
-      size_frag[ia] = tsize;
-
-      if (mystring_contains(mystring_lowercase(frag),"index_start"))
-      {
-         std::vector<std::string> ss = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0]));
-         nfrag_frag[ia] = ss.size();
-         for (auto i=0; i<ss.size(); ++i)
-         {
-            indxfrag_start[ntf] = std::stoi(ss[i])-1;
-            kfrag[ntf] = ia;
-            ++ntf;
-         }
-      }
-
-      if (mystring_contains(mystring_lowercase(frag),"bond_spring"))
-      {
-         std::string line;
-         std::vector<std::string> ss;
-         nbond_frag[ia]      = (mystring_split(frag,"bond_spring").size() - 1);
-         bond_start_frag[ia] = bond_start_sum;
-         bond_start_sum     += nbond_frag[ia];
-         for (auto b=0; b<nbond_frag[ia]; ++b)
-         {
-            int b1 = b + bond_start_frag[ia];
-            line = mystring_split(frag,"bond_spring")[b+1];
-            ss   = mystring_split0(line);
-            int i = std::stoi(ss[0]);
-            int j = std::stoi(ss[1]);
-            double k = std::stod(ss[2]);
-            double r = std::stod(ss[3]);
-
-            bond_indx[2*b1  ] = i-1;
-            bond_indx[2*b1+1] = j-1;
-            Krb[2*b1  ] = k/27.2116/23.06/ANGTOBOHR/ANGTOBOHR;
-            Krb[2*b1+1] = r*ANGTOBOHR;
-         }  
-      }
-
-      if (mystring_contains(mystring_lowercase(frag),"angle_spring"))
-      {
-         std::string line;
-         std::vector<std::string> ss;
-         nangle_frag[ia]      = (mystring_split(frag,"angle_spring").size() - 1);
-         angle_start_frag[ia] = angle_start_sum;
-         angle_start_sum     += nangle_frag[ia];
-         for (auto a=0; a<nangle_frag[ia]; ++a)
-         {
-            int a1 = a + angle_start_frag[ia];
-            line = mystring_split(frag,"angle_spring")[a+1];
-            ss   = mystring_split0(line);
-            int i = std::stoi(ss[0]);
-            int j = std::stoi(ss[1]);
-            int k = std::stoi(ss[2]);
-            double ks    = std::stod(ss[3]);
-            double theta = std::stod(ss[4]);
-            std::cout << "i=" << i << " j=" << j << " k=" << k 
-                      << " ks =" << ks << " theta=" << theta << std::endl;
-            angle_indx[3*a1  ] = i-1;
-            angle_indx[3*a1+1] = j-1;
-            angle_indx[3*a1+2] = k-1;
-            Kra[2*a1  ] = ks/27.2116/23.06;
-            Kra[2*a1+1] = theta*pi/180.0;
-         }
-      }
-      ++ia;
-   }
-
-
 
    std::string symbol[nion];
-   memset(rion0,0,3*nion*sizeof(double));
-   memset(rion1,0,3*nion*sizeof(double));
-   memset(rion2,0,3*nion*sizeof(double));
-   memset(fion,0, 3*nion*sizeof(double));
-   memset(uion,0,   nion*sizeof(double));
-   memset(qion,0,   nion*sizeof(double));
+   std::memset(rion0,0,3*nion*sizeof(double));
+   std::memcpy(rion1,qmmm.rion,3*nion*sizeof(double));
+   std::memset(rion2,0,3*nion*sizeof(double));
+   std::memset(fion,0, 3*nion*sizeof(double));
+   std::memset(uion,0,   nion*sizeof(double));
+   std::memset(qion,0,   nion*sizeof(double));
 
-
-   // get the qm atoms
-   int nion_qm = 0;
-   for (auto ii=0; ii<nion; ++ii)
-   {
-      if (!mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
-      {
-         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
-         symbol[nion_qm]  = ss[0];
-         if (lj_qm_data.count(symbol[nion_qm]) > 0)
-         {
-            epsilon[nion_qm] = lj_qm_data[symbol[nion_qm]][0]/23.06/27.2116;
-            sigma[nion_qm]   = lj_qm_data[symbol[nion_qm]][1]*ANGTOBOHR;
-         }
-         else
-         {
-            epsilon[nion_qm] = symboltoepsilon(symbol[nion_qm])/23.06/27.2116;
-            sigma[nion_qm]   = symboltosigma(symbol[nion_qm])*ANGTOBOHR;
-         }
-         mass[nion_qm]    = symboltomass(symbol[nion_qm])*1822.89;
-         rion1[3*nion_qm]   = std::stod(ss[1])*ANGTOBOHR;
-         rion1[3*nion_qm+1] = std::stod(ss[2])*ANGTOBOHR;
-         rion1[3*nion_qm+2] = std::stod(ss[3])*ANGTOBOHR;
-         dti[nion_qm] = dt*dt/mass[nion_qm];
-         ++nion_qm;
-      }
-   }
-
-   // get the mm atoms
-   int nion_mm = 0;
-   for (auto ii=0; ii<nion; ++ii)
-   {
-      if (mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
-      {
-         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
-         std::string str = ss[0]; 
-         str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
-         symbol[(nion_qm+nion_mm)]  = str;
-         if (lj_mm_data.count(str) > 0)
-         {
-            epsilon[(nion_qm+nion_mm)] = lj_mm_data[symbol[(nion_qm+nion_mm)]][0]/23.06/27.2116;
-            sigma[(nion_qm+nion_mm)]   = lj_mm_data[symbol[(nion_qm+nion_mm)]][1]*ANGTOBOHR;
-         }
-         else 
-         {
-            epsilon[(nion_qm+nion_mm)] = 0.0;
-            sigma[(nion_qm+nion_mm)]   = 1.0;
-         }
-         mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
-         rion1[3*(nion_qm+nion_mm)]   = std::stod(ss[1])*ANGTOBOHR;
-         rion1[3*(nion_qm+nion_mm)+1] = std::stod(ss[2])*ANGTOBOHR;
-         rion1[3*(nion_qm+nion_mm)+2] = std::stod(ss[3])*ANGTOBOHR;
-         dti[(nion_qm+nion_mm)]       = dt*dt/mass[(nion_qm+nion_mm)];
-         qion[(nion_qm+nion_mm)]      = std::stod(ss[5]);
-         ++nion_mm;
-      }
-   }
 
    if (taskid==MASTER) std::cout << "nion =" << nion << std::endl;
    if (taskid==MASTER) std::cout << "nion_mm =" << nion_mm << std::endl;
    if (taskid==MASTER) std::cout << "nion_qm =" << nion_qm << std::endl << std::endl;
 
    // kinetic energy
-   Espring = spring_Energy(nfrag,indxfrag_start,kfrag, 
-                           nbond_frag,bond_start_frag,bond_indx,Krb,
-                           nangle_frag,angle_start_frag,angle_indx,Kra,rion1);
-
-
+   Espring = qmmm.spring_Energy(rion1);
    std::cout << "Espring=" << Espring << std::endl;
+
 
    // kinetic energy
    KE = 0.0;
@@ -1147,9 +450,9 @@ int main(int argc, char* argv[])
    {
       std::cout << std::endl << std::endl;
       for (auto ii=0; ii<nion; ++ii)
-            std::cout << "@ ii=" << ii << " " << symbol[ii] << "\trion: " << Ffmt(12,6) << rion1[3*ii] << " " << Ffmt(12,6) << rion1[3*ii+1] << " " << Ffmt(12,6) << rion1[3*ii+2]
-                      << " mass = "  << mass[ii] << " uion = " << uion[ii] << " qion = " << qion[ii] 
-                      << " epsilon =" << epsilon[ii] << " sigma=" << sigma[ii] << std::endl;
+            std::cout << "@ ii=" << ii << " " << qmmm.symbol[ii] << "\trion: " << Ffmt(12,6) << rion1[3*ii] << " " << Ffmt(12,6) << rion1[3*ii+1] << " " << Ffmt(12,6) << rion1[3*ii+2]
+                      << " mass = "  << qmmm.mass[ii] << " uion = " << uion[ii] << " qion = " << qion[ii] 
+                      << " epsilon =" << qmmm.epsilon[ii] << " sigma=" << qmmm.sigma[ii] << std::endl;
       std::cout << std::endl;
       std::cout << "@ Initial Kinetic Energy = " << Efmt(20,15) << KE << std::endl;
    }
@@ -1179,18 +482,14 @@ int main(int argc, char* argv[])
    Eqm += Eqq;
 
    // ELJ = Lennard-Jones energy and forces
-   ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
-   QMMM_LJ_force(nion_qm,nion,epsilon,sigma,rion1,fion);
+   ELJ = qmmm.QMMM_LJ_energy(rion1);
+   qmmm.QMMM_LJ_force(rion1,fion);
    Eqm += ELJ;
 
 
    // Espring = MM spring energy and forces
-   Espring = spring_Energy(nfrag,indxfrag_start,kfrag, 
-                           nbond_frag,bond_start_frag,bond_indx,Krb,
-                           nangle_frag,angle_start_frag,angle_indx,Kra,rion1);
-   spring_Force(nfrag,indxfrag_start,kfrag, 
-                nbond_frag,bond_start_frag,bond_indx,Krb,
-                nangle_frag,angle_start_frag,angle_indx,Kra,rion1,fion);
+   Espring = qmmm.spring_Energy(rion1);
+   qmmm.spring_Force(rion1,fion);
    Eqm += Espring;
 
 
@@ -1232,17 +531,13 @@ int main(int argc, char* argv[])
       Eqm += Eqq;
 
       // ELJ = Lenard-Johnes energy and forces
-      ELJ = QMMM_LJ_energy(nion_qm,nion,epsilon,sigma,rion1);
-      QMMM_LJ_force(nion_qm,nion,epsilon,sigma,rion1,fion);
+      ELJ = qmmm.QMMM_LJ_energy(rion1);
+      qmmm.QMMM_LJ_force(rion1,fion);
       Eqm += ELJ;
 
       // Espring = MM spring energy and forces
-      Espring = spring_Energy(nfrag,indxfrag_start,kfrag, 
-                              nbond_frag,bond_start_frag,bond_indx,Krb,
-                              nangle_frag,angle_start_frag,angle_indx,Kra,rion1);
-      spring_Force(nfrag,indxfrag_start,kfrag, 
-                   nbond_frag,bond_start_frag,bond_indx,Krb,
-                   nangle_frag,angle_start_frag,angle_indx,Kra,rion1,fion);
+      Espring = qmmm.spring_Energy(rion1);
+      qmmm.spring_Force(rion1,fion);
       Eqm += Espring;
 
 

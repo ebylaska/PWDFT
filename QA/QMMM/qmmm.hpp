@@ -48,6 +48,8 @@ class	QMMM_Operator {
    int *indxfrag_start;
    int *kfrag;
 
+   bool *self_interaction;
+
    // bond and angle spring parameters
    int    *bond_indx,*angle_indx;
    double *Krb;
@@ -55,12 +57,30 @@ class	QMMM_Operator {
 
 
 public:
+   int    nion,nion_qm,nion_mm,nkatm;
+   int    *katm;
+   double *epsilon;
+   double *sigma;
+   double *rion;
+   double *qion;
+   double *mass;
+   std::string *aname;
+   std::string *symbol;
 
    /* Constructors */
    QMMM_Operator(std::string nwinput);
 
    /* destructor */
    ~QMMM_Operator() {
+         delete [] katm;
+         delete [] epsilon;
+         delete [] sigma;
+         delete [] aname;
+         delete [] symbol;
+         delete [] rion;
+         delete [] qion;
+         delete [] mass;
+
          delete [] switch_Rin;
          delete [] switch_Rout;
 
@@ -74,6 +94,8 @@ public:
          delete [] indxfrag_start;
          delete [] kfrag;
 
+         delete [] self_interaction;
+
          delete [] bond_indx;
          delete [] angle_indx;
          delete [] Krb;
@@ -82,6 +104,22 @@ public:
 
     double spring_Energy(const double []);
     void spring_Force(const double [], double []);
+
+    double Coulomb_Energy(const double [], const double []);
+    void   Coulomb_Force(const double [], const double [], double []);
+
+    double Coulomb_Energy_qmmm(const double [], const double []);
+    void   Coulomb_Force_qmmm(const double [], const double [], double []);
+
+    double MMMM_electrostatic_energy(const double [], const double []);
+
+
+    double QMMM_LJ_energy(const double []);
+    void QMMM_LJ_force(const double [], double []);
+
+    double MMMM_LJ_energy(const double []);
+    void MMMM_LJ_force(const double [], double []);
+
 
 
     //void   ke(double *, double *);

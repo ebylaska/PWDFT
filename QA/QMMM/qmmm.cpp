@@ -25,6 +25,106 @@
 
 /**************************************************
  *                                                *
+ *                symboltomass                    *
+ *                                                *
+ **************************************************/
+static double symboltomass(std::string symbol)
+{
+   double mass = 1.008;
+   if (mystring_contains(symbol,"H")) mass = 1.008;
+   if (mystring_contains(symbol,"B")) mass = 11.00931;
+   if (mystring_contains(symbol,"C")) mass = 12.0;
+   if (mystring_contains(symbol,"N")) mass = 14.00307;
+   if (mystring_contains(symbol,"O")) mass = 15.99491;
+   if (mystring_contains(symbol,"F")) mass = 18.9984;
+   if (mystring_contains(symbol,"P")) mass = 30.97376;
+   if (mystring_contains(symbol,"S")) mass = 31.97207;
+   if (mystring_contains(symbol,"K")) mass = 38.96371;
+
+   if (mystring_contains(symbol,"He")) mass = 4.0026;
+   if (mystring_contains(symbol,"Li")) mass = 7.016;
+   if (mystring_contains(symbol,"Be")) mass = 9.01218;
+   if (mystring_contains(symbol,"Ne")) mass = 19.99244;
+
+   if (mystring_contains(symbol,"Na")) mass = 22.9898;
+   if (mystring_contains(symbol,"Mg")) mass = 23.98504;
+   if (mystring_contains(symbol,"Al")) mass = 26.98154;
+   if (mystring_contains(symbol,"Si")) mass = 27.97693;
+   if (mystring_contains(symbol,"Cl")) mass = 34.96885;
+   return mass;
+}
+
+
+/**************************************************
+ *                                                *
+ *             symboltoepsilon                    *
+ *                                                *
+ **************************************************/
+static double symboltoepsilon(std::string symbol)
+{
+   double epsilon = 0.044;
+   if (mystring_contains(symbol,"H")) epsilon = 0.044;
+   if (mystring_contains(symbol,"B")) epsilon = 0.180;
+   if (mystring_contains(symbol,"C")) epsilon = 0.105;
+   if (mystring_contains(symbol,"N")) epsilon = 0.069;
+   if (mystring_contains(symbol,"O")) epsilon = 0.060;
+   if (mystring_contains(symbol,"F")) epsilon = 0.050;
+   if (mystring_contains(symbol,"P")) epsilon = 0.305;
+   if (mystring_contains(symbol,"S")) epsilon = 0.274;
+   if (mystring_contains(symbol,"K")) epsilon = 0.035;
+
+   if (mystring_contains(symbol,"He")) epsilon = 0.056;
+   if (mystring_contains(symbol,"Li")) epsilon = 0.025;
+   if (mystring_contains(symbol,"Be")) epsilon = 0.085;
+   if (mystring_contains(symbol,"Ne")) epsilon = 0.042;
+
+   if (mystring_contains(symbol,"Na")) epsilon = 0.030;
+   if (mystring_contains(symbol,"Mg")) epsilon = 0.111;
+   if (mystring_contains(symbol,"Al")) epsilon = 0.505;
+   if (mystring_contains(symbol,"Si")) epsilon = 0.402;
+   if (mystring_contains(symbol,"Cl")) epsilon = 0.227;
+   return epsilon;
+}
+
+
+/**************************************************
+ *                                                *
+ *              symboltosigma                     *
+ *                                                *
+ **************************************************/
+static double symboltosigma(std::string symbol)
+{
+   double sigma = 2.886;
+   if (mystring_contains(symbol,"H")) sigma = 2.886;
+   if (mystring_contains(symbol,"B")) sigma = 4.083;
+   if (mystring_contains(symbol,"C")) sigma = 3.851;
+   if (mystring_contains(symbol,"N")) sigma = 3.66;
+   if (mystring_contains(symbol,"O")) sigma = 3.50;
+   if (mystring_contains(symbol,"F")) sigma = 3.364;
+   if (mystring_contains(symbol,"P")) sigma = 4.147;
+   if (mystring_contains(symbol,"S")) sigma = 4.035;
+   if (mystring_contains(symbol,"K")) sigma = 3.812;
+
+   if (mystring_contains(symbol,"He")) sigma = 2.362;
+   if (mystring_contains(symbol,"Li")) sigma = 2.451;
+   if (mystring_contains(symbol,"Be")) sigma = 2.745;
+   if (mystring_contains(symbol,"Ne")) sigma = 3.243;
+
+   if (mystring_contains(symbol,"Na")) sigma = 2.983;
+   if (mystring_contains(symbol,"Mg")) sigma = 3.021;
+   if (mystring_contains(symbol,"Al")) sigma = 4.499;
+   if (mystring_contains(symbol,"Si")) sigma = 4.295;
+   if (mystring_contains(symbol,"Cl")) sigma = 3.947;
+   return sigma;
+}
+
+
+
+
+
+
+/**************************************************
+ *                                                *
  *                spring_bond_frag                *
  *                                                *
  **************************************************/
@@ -354,11 +454,33 @@ static void Q_cm(const int n, const int ks, const double amass[], const double r
    rcm[2] /= m;
 }
 
+/****************************************************
+ *                                                  *
+ *                  Q_E_frag_frag                   *
+ *                                                  *
+ ****************************************************/
+static double Q_E_frag_frag(const int n1, const int ks1, const double rw1_cm[],
+                            const int n2, const int ks2, const double rw2_cm[],
+                            const double Rin, const double Rout,
+                            const double qion[], const double rion[])
+{
+   double E = 0.0;
+   double x = rw1_cm[0] - rw2_cm[0];
+   double y = rw1_cm[1] - rw2_cm[1];
+   double z = rw1_cm[2] - rw2_cm[2];
+   double rcm = std::sqrt(x*x + y*y + z*z);
 
+   if (rcm < Rout)
+   {
+      double Sm  = Q_Switching(Rin,Rout,rcm)-1.0;
+      for (auto a=0; a<n1; ++a)
+      for (auto b=0; b<n2; ++b)
+         E += Sm*Q_Electrostatic_self(&rion[3*(ks1+a)],qion[(ks1+a)],
+                                      &rion[3*(ks2+b)],qion[(ks2+b)]);
+   }
 
-
-
-
+   return E;
+}
 
 
 
@@ -375,6 +497,53 @@ static void Q_cm(const int n, const int ks, const double amass[], const double r
  *******************************************/
 QMMM_Operator::QMMM_Operator(std::string nwinput)
 {
+
+
+
+   // set up geometry sizes and indexes: nion, nkatm, katm[nion] 
+   std::string geomblock;
+   if (mystring_contains(mystring_lowercase(nwinput),"geometry"))
+   {
+      geomblock  = mystring_rtrim(mystring_ltrim(mystring_split(mystring_split(nwinput,"nocenter")[1],"end")[0]));
+   }
+   std::vector<std::string> geomlines = mystring_split(geomblock,"\n");
+   int nion  = geomlines.size();
+   int nkatm = 0;
+   katm   = new (std::nothrow) int [nion];
+   symbol = new (std::nothrow) std::string [nion];
+   rion   = new (std::nothrow) double [3*nion];
+   mass   = new (std::nothrow) double [nion];
+   {  std::set<std::string> anameset;
+      for (auto & line: geomlines)
+      {
+        std::vector<std::string> ss = mystring_split0(line);
+        anameset.emplace(ss[0]);
+      }
+      nkatm = anameset.size();
+   }
+   aname = new (std::nothrow) std::string [nkatm];
+
+   {  int ia=0;
+      int ii=0;
+      int n = sizeof(aname)/sizeof(aname[0]);
+      std::set<std::string> anameset;
+      for (auto & line: geomlines)
+      {
+         std::vector<std::string> ss = mystring_split0(line);
+         if (anameset.count(ss[0])==0)
+         {
+            anameset.emplace(ss[0]);
+            aname[ia] = ss[0];
+            ++ia;
+         }
+         auto itr = find(aname, aname + n, ss[0]);
+         katm[ii] = std::distance(aname,itr);
+         ++ii;
+      }
+   }
+
+
+
    //set up qmmm fragments and sizes
    std::vector<std::string> fragments;
    if  (mystring_contains(mystring_lowercase(nwinput),"fragment"))
@@ -426,6 +595,42 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
       }
    }
 
+   // get the qm atoms
+   nion_qm = 0;
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      if (!mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
+      {
+         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
+         symbol[nion_qm]  = ss[0];
+         mass[nion_qm]    = symboltomass(symbol[nion_qm])*1822.89;
+         rion[3*nion_qm]   = std::stod(ss[1])*ANGTOBOHR;
+         rion[3*nion_qm+1] = std::stod(ss[2])*ANGTOBOHR;
+         rion[3*nion_qm+2] = std::stod(ss[3])*ANGTOBOHR;
+         ++nion_qm;
+      }
+   }
+
+   // get the mm atoms
+   nion_mm = 0;
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      if (mystring_contains(mystring_lowercase(geomlines[ii]),"#"))
+      {
+         std::vector<std::string> ss = mystring_split0(geomlines[ii]);
+         std::string str = ss[0];
+         str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
+         symbol[(nion_qm+nion_mm)]  = str;
+         mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
+         rion[3*(nion_qm+nion_mm)]   = std::stod(ss[1])*ANGTOBOHR;
+         rion[3*(nion_qm+nion_mm)+1] = std::stod(ss[2])*ANGTOBOHR;
+         rion[3*(nion_qm+nion_mm)+2] = std::stod(ss[3])*ANGTOBOHR;
+         qion[(nion_qm+nion_mm)]      = std::stod(ss[5]);
+         ++nion_mm;
+      }
+   }
+
+
 
    // switching parameters
    switch_Rin  = new (std::nothrow) double [nkfrag]; //  = { (2.0160/0.529177) };
@@ -441,6 +646,8 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
 
    indxfrag_start = new (std::nothrow) int [nfrag];
    kfrag          = new (std::nothrow) int [nfrag];
+
+   self_interaction = new (std::nothrow) bool [nkfrag];
 
    // bond and angle spring parameters
    bond_indx  = new (std::nothrow) int [2*nbond],
@@ -582,5 +789,201 @@ void QMMM_Operator::spring_Force( const double rion[], double fion[])
       }
    }
 }
+
+/****************************************************
+ *                                                  *
+ *        QMMM_Operator::Coulomb_Energy             *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::Coulomb_Energy(const double qion[], const double rion[])
+{
+   double E=0.0;
+
+   // total q-q interactions
+   for (auto ii=0; ii<(nion-1); ++ii)
+      for (auto jj=ii+1; jj<nion; ++jj)
+         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
+                                   &rion[3*jj],qion[jj]);
+
+   return E;
+}
+
+/****************************************************
+ *                                                  *
+ *        QMMM_Operator::Coulomb_Force              *
+ *                                                  *
+ ****************************************************/
+void QMMM_Operator::Coulomb_Force(const double qion[], const double rion[], double fion[])
+{
+   // total q-q interactions
+   for (auto ii=0;       ii<(nion-1); ++ii)
+      for (auto jj=ii+1; jj<nion;     ++jj)
+         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
+                                    &rion[3*jj],qion[jj],&fion[3*jj]);
+}
+
+
+
+/****************************************************
+ *                                                  *
+ *     QMMM_Operator::Coulomb_Energy_qmmm           *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::Coulomb_Energy_qmmm(const double qion[], const double rion[])
+{
+   double E=0.0;
+
+   // total qm-mm interactions
+   for (auto ii=0;       ii<nion_qm; ++ii)
+   for (auto jj=nion_qm; jj<nion;    ++jj)
+      E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
+                                &rion[3*jj],qion[jj]);
+
+   return E;
+}
+
+
+/****************************************************
+ *                                                  *
+ *        QMMM_Operator::Coulomb_Force_qmmm         *
+ *                                                  *
+ ****************************************************/
+void QMMM_Operator::Coulomb_Force_qmmm(const double qion[], const double rion[], double fion[])
+{  
+   // total qm-mm interactions
+   for (auto ii=0;       ii<(nion_qm); ++ii)
+   for (auto jj=nion_qm; jj<nion;      ++jj)
+      Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
+                                 &rion[3*jj],qion[jj],&fion[3*jj]);
+
+}
+
+
+/****************************************************
+ *                                                  *
+ *        MMMM_electrostatic_energy                 *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const double rion[])
+{
+   double E=0.0;
+   double rw1_cm[3],rw2_cm[3];
+
+   // total mm-mm interactions
+   for (auto w1=0; w1<(nfrag-1); ++ w1)
+   {
+      int ks1 = indxfrag_start[w1];
+      int n1  = size_frag[w1];
+      double Rin1  = switch_Rin[kfrag[w1]];
+      double Rout1 = switch_Rin[kfrag[w1]];
+      Q_cm(n1,ks1,mass,rion,rw1_cm);
+
+      for (auto w2=w1+1; w2<nfrag; ++w2)
+      {
+         int ks2 = indxfrag_start[w2];
+         int n2  = size_frag[w2];
+         double Rin2  = switch_Rin[kfrag[w2]];
+         double Rout2 = switch_Rin[kfrag[w2]];
+         Q_cm(n2,ks2,mass,rion,rw2_cm);
+
+         double Rin  = 0.5*(Rin1 +Rin2);
+         double Rout = 0.5*(Rout1+Rout2);
+         E += Q_E_frag_frag(n1,ks1,rw1_cm,
+                            n2,ks2,rw2_cm,
+                            Rin,Rout,
+                            qion,rion);
+      }
+   }
+
+
+   // take out MM-MM Coulomb self energy ****
+   for (auto w1=0; w1<nfrag; ++w1)
+   {
+      if (!self_interaction[kfrag[w1]])
+      {
+         int ks1 = indxfrag_start[w1];
+         for (auto a=0;   a<(size_frag[w1]-1); ++a)
+         for (auto b=a+1; b<size_frag[w1];     ++b)
+         {
+            int kk1 = ks1+a;
+            int kk2 = ks1+b;
+            E -= Q_Electrostatic_self(&rion[3*kk1],qion[kk1],
+                                      &rion[3*kk2],qion[kk2]);
+         }
+      }
+   }
+
+   return E;
+}
+
+
+
+double QMMM_Operator::QMMM_LJ_energy(const double rion[])
+{
+   double E = 0.0;
+   // QMQM LJ == 0
+   // QMMM LJ
+   // qm and mm interactions
+   for (auto qm=0; qm<nion_qm; ++qm)
+      for (auto mm=nion_qm; mm<nion; ++mm)
+      {
+         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
+         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
+         double elj = LJ_energy(epsilon12,sigma12,&rion[3*qm],&rion[3*mm]);
+         E += elj;
+      }
+
+   return E;
+}
+
+void QMMM_Operator::QMMM_LJ_force(const double rion[], double fion[])
+{
+   // qm and mm interactions
+   for (auto qm=0; qm<nion_qm; ++qm)
+      for (auto mm=nion_qm; mm<nion; ++mm) {
+         double epsilon12 = std::sqrt(epsilon[qm]*epsilon[mm]);
+         double sigma12 = 0.5*(sigma[qm] + sigma[mm]);
+         LJ_force(epsilon12,sigma12,&rion[3*qm],&fion[3*qm],&rion[3*mm],&fion[3*mm]);
+      }
+}
+
+
+double QMMM_Operator::MMMM_LJ_energy(const double rion[])
+{
+   double E = 0.0;
+
+   // mm interactions
+   for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
+      for (auto mm2=mm1+1; mm2<nion; ++mm2)
+      {
+         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
+         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
+         double elj = LJ_energy(epsilon12,sigma12,&rion[3*mm1],&rion[3*mm2]);
+         E += elj;
+      }
+   return E;
+}
+
+
+void QMMM_Operator::MMMM_LJ_force(const double rion[], double fion[])
+{
+   // mm interactions
+   for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)
+      for (auto mm2=mm1+1; mm2<nion; ++mm2)
+      {
+         double epsilon12 = std::sqrt(epsilon[mm1]*epsilon[mm2]);
+         double sigma12 = 0.5*(sigma[mm1] + sigma[mm2]);
+         LJ_force(epsilon12,sigma12,&rion[3*mm1],&fion[3*mm1],&rion[3*mm2],&fion[3*mm2]);
+      }
+}
+
+
+
+
+
+
+
+
+
 
 
