@@ -507,8 +507,8 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
       geomblock  = mystring_rtrim(mystring_ltrim(mystring_split(mystring_split(nwinput,"nocenter")[1],"end")[0]));
    }
    std::vector<std::string> geomlines = mystring_split(geomblock,"\n");
-   int nion  = geomlines.size();
-   int nkatm = 0;
+   nion  = geomlines.size();
+   nkatm = 0;
    katm   = new (std::nothrow) int [nion];
    symbol = new (std::nothrow) std::string [nion];
    rion   = new (std::nothrow) double [3*nion];
