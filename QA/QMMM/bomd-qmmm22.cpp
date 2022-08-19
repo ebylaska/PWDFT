@@ -386,19 +386,24 @@ int main(int argc, char* argv[])
    int nion_mm  = qmmm.nion_mm;
    int nkatm = qmmm.nkatm;
 
-   if (taskid==MASTER) {
-      std::cout << "katm= ";
-      for (auto ii=0; ii<nion; ++ii)
-         std::cout << " " << qmmm.katm[ii];
-      std::cout << std::endl;
+   std::cout << "nion=" << nion << std::endl;
+   std::cout << "nion_qm=" << nion_qm << std::endl;
+   std::cout << "nion_mm=" << nion_mm << std::endl;
+   std::cout << "nkatm="   << nkatm << std::endl;
+
+   //if (taskid==MASTER) {
+   //   std::cout << "katm= ";
+   //   for (auto ii=0; ii<nion; ++ii)
+   //      std::cout << " " << qmmm.katm[ii];
+   //   std::cout << std::endl;
   
 
-      std::cout << std::endl;
-      std::cout << "aname size=" << nkatm << std::endl;
-      for (auto ia=0; ia<nkatm; ++ia)
-          std::cout << "aname =" << ia << " " << qmmm.aname[ia] << std::endl;
-      std::cout << std::endl;
-   }
+    //  std::cout << std::endl;
+    //  std::cout << "aname size=" << nkatm << std::endl;
+    //  for (auto ia=0; ia<nkatm; ++ia)
+    //      std::cout << "aname =" << ia << " " << qmmm.aname[ia] << std::endl;
+    //  std::cout << std::endl;
+   //}
 
 
 
