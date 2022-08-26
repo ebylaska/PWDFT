@@ -918,6 +918,99 @@ double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const doubl
 
 
 
+
+/****************************************************
+ *                                                  *
+ *        QMMM_electrostatic_potential              *
+ *                                                  *
+ ****************************************************/
+void QMMM_Operator::QMMM_electrostatic_potential(const double qion[], const double rion[], double uion[])
+{
+   for (auto qm=0; qm<nion_qm; ++qm)
+   {
+      uion[qm] = 0.0;
+      for (auto mm=nion_qm; mm<nion; ++mm)
+         uion[qm] += Q_Electrostatic_potential(&rion[3*mm],qion[mm], &rion[3*qm]);
+   }
+}
+
+
+/****************************************************
+ *                                                  *
+ *        QMMM_electrostatic_energy                 *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::QMMM_electrostatic_energy(const double qion[], const double rion[])
+{
+   double E=0.0;
+
+   // total qmmm interactions
+   for (auto ii=0; ii<(nion_qm); ++ii)
+      for (auto jj=nion_qm; jj<nion; ++jj)
+         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
+                                   &rion[3*jj],qion[jj]);
+
+   return E;
+}
+
+/****************************************************
+ *                                                  *
+ *        QMMM_electrostatic_force                  *
+ *                                                  *
+ ****************************************************/
+void QMMM_Operator::QMMM_electrostatic_force(const double qion[], const double rion[], double fion[])
+{
+   // total qmmm interactions
+   for (auto ii=0; ii<(nion_qm); ++ii)
+      for (auto jj=nion_qm; jj<nion; ++jj)
+         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
+                                    &rion[3*jj],qion[jj],&fion[3*jj]);
+
+}
+
+
+/****************************************************
+ *                                                  *
+ *        QMQM_electrostatic_energy                 *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::QMQM_electrostatic_energy(const double qion[], const double rion[])
+{
+   double E=0.0;
+
+   // total qmqm interactions
+   for (auto ii=0; ii<(nion_qm-1); ++ii)
+      for (auto jj=ii+1; jj<nion_qm; ++jj)
+         E += Q_Electrostatic_self(&rion[3*ii],qion[ii],
+                                   &rion[3*jj],qion[jj]);
+
+   return E;
+}
+
+
+/****************************************************
+ *                                                  *
+ *        QMQM_electrostatic_force                  *
+ *                                                  *
+ ****************************************************/
+void QMMM_Operator::QMQM_electrostatic_force(const double qion[], const double rion[], double fion[])
+{
+   // total qmqm interactions
+   for (auto ii=0; ii<(nion_qm-1); ++ii)
+      for (auto jj=ii+1; jj<nion_qm; ++jj)
+         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
+                                    &rion[3*jj],qion[jj],&fion[3*jj]);
+
+}
+
+
+
+
+/****************************************************
+ *                                                  *
+ *               QMMM_LJ_energy                     *
+ *                                                  *
+ ****************************************************/
 double QMMM_Operator::QMMM_LJ_energy(const double rion[])
 {
    double E = 0.0;
@@ -936,6 +1029,11 @@ double QMMM_Operator::QMMM_LJ_energy(const double rion[])
    return E;
 }
 
+/****************************************************
+ *                                                  *
+ *               QMMM_LJ_force                      *
+ *                                                  *
+ ****************************************************/
 void QMMM_Operator::QMMM_LJ_force(const double rion[], double fion[])
 {
    // qm and mm interactions
@@ -948,6 +1046,11 @@ void QMMM_Operator::QMMM_LJ_force(const double rion[], double fion[])
 }
 
 
+/****************************************************
+ *                                                  *
+ *               MMMM_LJ_energy                     *
+ *                                                  *
+ ****************************************************/
 double QMMM_Operator::MMMM_LJ_energy(const double rion[])
 {
    double E = 0.0;
@@ -965,6 +1068,11 @@ double QMMM_Operator::MMMM_LJ_energy(const double rion[])
 }
 
 
+/****************************************************
+ *                                                  *
+ *               MMMM_LJ_force                      *
+ *                                                  *
+ ****************************************************/
 void QMMM_Operator::MMMM_LJ_force(const double rion[], double fion[])
 {
    // mm interactions

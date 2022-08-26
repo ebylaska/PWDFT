@@ -108,221 +108,6 @@ double symboltomass(std::string symbol)
 
 
 
-
-
-
-
-
-double Q_Electrostatic_potential(const double r1[], const double q1,
-                                 const double r2[])
-{
-   double x = r2[0] - r1[0];
-   double y = r2[1] - r1[1];
-   double z = r2[2] - r1[2];
-   double r = std::sqrt(x*x + y*y + z*z);
-
-   return (q1/r);
-}
-
-double Q_Electrostatic_self(const double r1[], const double q1,
-                            const double r2[], const double q2)
-{
-   double x = r2[0] - r1[0];
-   double y = r2[1] - r1[1];
-   double z = r2[2] - r1[2];
-   double r = std::sqrt(x*x + y*y + z*z);
-
-   return (q1*q2/r);
-}
-
-void Q_Electrostatic_Force_self(const double r1[], const double q1, double f1[],
-                                const double r2[], const double q2, double f2[])
-{
-   double x = r2[0] - r1[0];
-   double y = r2[1] - r1[1];
-   double z = r2[2] - r1[2];
-   double rr = (x*x + y*y + z*z);
-   double r  = std::sqrt(rr);
-
-   double der = -q1*q2/rr;
-   double fx = -(x/r)*der;
-   double fy = -(y/r)*der;
-   double fz = -(z/r)*der;
-
-   f2[0] += fx;
-   f2[1] += fy;
-   f2[2] += fz;
-
-   f1[0] -= fx;
-   f1[1] -= fy;
-   f1[2] -= fz;
-}
-
-/****************************************************
- *                                                  *
- *        QMMM_electrostatic_potential              *
- *                                                  *
- ****************************************************/
-void QMMM_electrostatic_potential(const int nion_qm, const int nion,
-                                  const double qion[], const double rion[], double uion[])
-{
-   for (auto qm=0; qm<nion_qm; ++qm)
-   {
-      uion[qm] = 0.0;
-      for (auto mm=nion_qm; mm<nion; ++mm)
-         uion[qm] += Q_Electrostatic_potential(&rion[3*mm],qion[mm], &rion[3*qm]);
-   }
-}
-
-
-/****************************************************
- *                                                  *
- *        QMQM_electrostatic_energy                 *
- *                                                  *
- ****************************************************/
-double QMQM_electrostatic_energy(const int nion_qm, const int nion,
-                                 const double qion[], const double rion[])
-{
-   double E=0.0;
-
-   // total qmqm interactions
-   for (auto ii=0; ii<(nion_qm-1); ++ii)
-      for (auto jj=ii+1; jj<nion_qm; ++jj)
-         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
-                                   &rion[3*jj],qion[jj]);
-
-   return E;
-}
-
-
-/****************************************************
- *                                                  *
- *        QMQM_electrostatic_force                  *
- *                                                  *
- ****************************************************/
-void QMQM_electrostatic_force(const int nion_qm, const int nion,
-                              const double qion[], const double rion[], double fion[])
-{
-   // total qmqm interactions
-   for (auto ii=0; ii<(nion_qm-1); ++ii)
-      for (auto jj=ii+1; jj<nion_qm; ++jj)
-         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
-                                    &rion[3*jj],qion[jj],&fion[3*jj]);
-
-}
-
-
-/****************************************************
- *                                                  *
- *        QMMM_electrostatic_energy                 *
- *                                                  *
- ****************************************************/
-double QMMM_electrostatic_energy(const int nion_qm, const int nion,
-                                 const double qion[], const double rion[])
-{
-   double E=0.0;
-
-   // total qmmm interactions
-   for (auto ii=0; ii<(nion_qm); ++ii)
-      for (auto jj=nion_qm; jj<nion; ++jj)
-         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
-                                   &rion[3*jj],qion[jj]);
-
-   return E;
-}
-
-/****************************************************
- *                                                  *
- *        QMMM_electrostatic_force                  *
- *                                                  *
- ****************************************************/
-void QMMM_electrostatic_force(const int nion_qm, const int nion,
-                              const double qion[], const double rion[], double fion[])
-{
-   // total qmmm interactions
-   for (auto ii=0; ii<(nion_qm); ++ii)
-      for (auto jj=nion_qm; jj<nion; ++jj)
-         Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
-                                    &rion[3*jj],qion[jj],&fion[3*jj]);
-
-}
-
-
-/****************************************************
- *                                                  *
- *                    Q_cm                          *
- *                                                  *
- ****************************************************/
-void Q_cm(const int n, const int ks, const double amass[], const double rion[], 
-         double rcm[])
-{
-   rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
-   double m = 0.0;
-   int kk = ks;
-   for (auto k=0; k<n; ++k)
-   {
-      rcm[0] += amass[kk]*rion[3*kk];
-      rcm[1] += amass[kk]*rion[3*kk+1];
-      rcm[2] += amass[kk]*rion[3*kk+1];
-      m += amass[kk];
-      ++kk;
-   }
-   rcm[0] /= m;
-   rcm[1] /= m;
-   rcm[2] /= m;
-}
-
-
-
-/****************************************************
- *                                                  *
- *        MMMM_electrostatic_energy                 *
- *                                                  *
- ****************************************************/
-double MMMM_electrostatic_energy(const int nfrag,       const int indx_frag_start[], 
-                                 const int size_frag[], const int kfrag[],
-                                 const double switch_Rin[], const double switch_Rout[],
-                                 const double amass[],
-                                 const double qion[], const double rion[])
-{
-   double E=0.0;
-   double rw1_cm[3],rw2_cm[3];
-
-   // total mmmm interactions
-   for (auto w1=0; w1<(nfrag-1); ++ w1)
-   {
-      int ks1 = indx_frag_start[w1];
-      int n1  = size_frag[w1];
-      double Rin1  = switch_Rin[kfrag[w1]];
-      double Rout1 = switch_Rin[kfrag[w1]];
-      Q_cm(n1,ks1,amass,rion,rw1_cm);
-
-      for (auto w2=w1+1; w2<nfrag; ++w2)
-      {
-         int ks2 = indx_frag_start[w2];
-         int n2  = size_frag[w2];
-         double Rin2  = switch_Rin[kfrag[w2]];
-         double Rout2 = switch_Rin[kfrag[w2]];
-         Q_cm(n2,ks2,amass,rion,rw2_cm);
-
-         double Rin  = 0.5*(Rin1 +Rin2);
-         double Rout = 0.5*(Rout1+Rout2);
-      }
-   }
-
-/*   for (auto f1=0; f1<nfrag-1; ++f1)
-      for (auto f2=f1+1; f2<nfrag; ++f2)
-         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
-                                   &rion[3*jj],qion[jj]);
-
-*/
-   return E;
-}
-
-
-
-
-
 int main(int argc, char* argv[])
 {
    std::ofstream *xyzfile;
@@ -449,8 +234,7 @@ int main(int argc, char* argv[])
       KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
    }
 
-   QMMM_electrostatic_potential(nion_qm,nion,qion,rion1,uion);
-
+   qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
    if (taskid==MASTER)
    {
       std::cout << std::endl << std::endl;
@@ -478,11 +262,11 @@ int main(int argc, char* argv[])
 
 
    // Eqq = Electrostatic energy and forces
-   Eqq = QMQM_electrostatic_energy(nion_qm,nion,qion,rion1) 
-       + QMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
+   Eqq = qmmm.QMQM_electrostatic_energy(qion,rion1) 
+       + qmmm.QMMM_electrostatic_energy(qion,rion1);
        //+ MMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
-   QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
-   QMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
+   qmmm.QMQM_electrostatic_force(qion,rion1,fion);
+   qmmm.QMMM_electrostatic_force(qion,rion1,fion);
   // MMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
    Eqm += Eqq;
 
@@ -490,7 +274,6 @@ int main(int argc, char* argv[])
    ELJ = qmmm.QMMM_LJ_energy(rion1);
    qmmm.QMMM_LJ_force(rion1,fion);
    Eqm += ELJ;
-
 
    // Espring = MM spring energy and forces
    Espring = qmmm.spring_Energy(rion1);
@@ -526,13 +309,13 @@ int main(int argc, char* argv[])
       memcpy(rion1,rion2,3*nion*sizeof(double));
       memset(fion,0, 3*nion*sizeof(double));
 
-      QMMM_electrostatic_potential(nion_qm,nion,qion,rion1,uion);
+      qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
 
       ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,NULL);
 
       // Eqq = Electrostatic energy and forces
-      Eqq = QMQM_electrostatic_energy(nion_qm,nion,qion,rion1);
-      QMQM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
+      Eqq = qmmm.QMQM_electrostatic_energy(qion,rion1);
+      qmmm.QMQM_electrostatic_force(qion,rion1,fion);
       Eqm += Eqq;
 
       // ELJ = Lenard-Johnes energy and forces

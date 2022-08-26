@@ -113,6 +113,14 @@ public:
 
     double MMMM_electrostatic_energy(const double [], const double []);
 
+    double QMMM_electrostatic_energy(const double [], const double []);
+    void QMMM_electrostatic_potential(const double [], const double [], double []);
+    void QMMM_electrostatic_force(const double [], const double [], double []);
+
+    double QMQM_electrostatic_energy(const double [], const double []);
+    void QMQM_electrostatic_force(const double [], const double [], double []);
+
+
 
     double QMMM_LJ_energy(const double []);
     void QMMM_LJ_force(const double [], double []);
