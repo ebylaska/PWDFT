@@ -512,6 +512,7 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
    katm   = new (std::nothrow) int [nion];
    symbol = new (std::nothrow) std::string [nion];
    rion   = new (std::nothrow) double [3*nion];
+   qion   = new (std::nothrow) double [nion];
    mass   = new (std::nothrow) double [nion];
    epsilon   = new (std::nothrow) double [nion];
    sigma     = new (std::nothrow) double [nion];
@@ -542,7 +543,10 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
          katm[ii] = std::distance(aname,itr);
          ++ii;
       }
-   }
+   } 
+
+   std::memset(qion,0,   nion*sizeof(double));
+
 
 
 
@@ -598,6 +602,7 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
    }
 
    // get the qm atoms
+
    nion_qm = 0;
    for (auto ii=0; ii<nion; ++ii)
    {

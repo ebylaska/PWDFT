@@ -80,8 +80,6 @@ public:
          delete [] rion;
          delete [] qion;
          delete [] mass;
-         delete [] epsilon;
-         delete [] sigma;
 
          delete [] switch_Rin;
          delete [] switch_Rout;

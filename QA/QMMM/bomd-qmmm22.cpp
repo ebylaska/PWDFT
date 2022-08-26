@@ -176,21 +176,6 @@ int main(int argc, char* argv[])
    std::cout << "nion_mm=" << nion_mm << std::endl;
    std::cout << "nkatm="   << nkatm << std::endl;
 
-   //if (taskid==MASTER) {
-   //   std::cout << "katm= ";
-   //   for (auto ii=0; ii<nion; ++ii)
-   //      std::cout << " " << qmmm.katm[ii];
-   //   std::cout << std::endl;
-  
-
-    //  std::cout << std::endl;
-    //  std::cout << "aname size=" << nkatm << std::endl;
-    //  for (auto ia=0; ia<nkatm; ++ia)
-    //      std::cout << "aname =" << ia << " " << qmmm.aname[ia] << std::endl;
-    //  std::cout << std::endl;
-   //}
-
-
 
 
    // Initialize lammps_pspw interface 
@@ -203,7 +188,7 @@ int main(int argc, char* argv[])
    double dt = 5.0;
    double h  = 1.0/(2.0*dt);
    double rion0[3*nion],rion1[3*nion],rion2[3*nion],fion[3*nion]; 
-   double mass[nion],dti[nion],KE,uion[nion],qion[nion];
+   double dti[nion],KE,uion[nion],qion[nion];
    double Espring,ELJ,Eqm,Eqq;
 
 
@@ -213,7 +198,11 @@ int main(int argc, char* argv[])
    std::memset(rion2,0,3*nion*sizeof(double));
    std::memset(fion,0, 3*nion*sizeof(double));
    std::memset(uion,0,   nion*sizeof(double));
-   std::memset(qion,0,   nion*sizeof(double));
+   std::memcpy(qion,qmmm.qion,nion*sizeof(double));
+
+   for (auto ii=0; ii<nion; ++ii) 
+      dti[ii] = dt*dt/qmmm.mass[ii];
+
 
 
    if (taskid==MASTER) std::cout << "nion =" << nion << std::endl;
@@ -231,7 +220,7 @@ int main(int argc, char* argv[])
       double vx = rion0[3*ii];
       double vy = rion0[3*ii+1]; 
       double vz = rion0[3*ii+2];
-      KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
+      KE += 0.5*qmmm.mass[ii]*(vx*vx + vy*vy + vz*vz);
    }
 
 
@@ -291,7 +280,7 @@ int main(int argc, char* argv[])
       std::cout << "@ Initial Forces" << std::endl;
       for (auto ii=0; ii<nion; ++ii)
             std::cout << "@ ii=" << ii << " " << symbol[ii] << "\tfion: " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2]
-                      << " mass = "  << mass[ii] << " uion = " << uion[ii] << std::endl;
+                      << " mass = "  << qmmm.mass[ii] << " uion = " << uion[ii] << std::endl;
       std::cout << "@" << std::endl;
    }
 
@@ -304,7 +293,7 @@ int main(int argc, char* argv[])
    }
    MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
 
-   for (auto it=0; it<200; ++it)
+   for (auto it=0; it<20; ++it)
    {
 
       memcpy(rion0,rion1,3*nion*sizeof(double));
@@ -348,7 +337,7 @@ int main(int argc, char* argv[])
          double vx = rion0[3*ii];
          double vy = rion0[3*ii+1];
          double vz = rion0[3*ii+2];
-         KE += mass[ii]*(vx*vx + vy*vy + vz*vz);
+         KE += qmmm.mass[ii]*(vx*vx + vy*vy + vz*vz);
       }
       KE *= 0.5;
       if (taskid==MASTER) {
@@ -368,9 +357,6 @@ int main(int argc, char* argv[])
    }
 
 
-
-   //for (auto ii=0; ii<nion; ++ii) dti[ii] = (dt*dt)/mass[ii];
-
    if (taskid==MASTER)
    {
       xyzfile->close();
@@ -378,7 +364,6 @@ int main(int argc, char* argv[])
       delete xyzfile;
       delete emotionfile;
    }
-
 
 
 }
