@@ -234,6 +234,7 @@ int main(int argc, char* argv[])
       KE += 0.5*mass[ii]*(vx*vx + vy*vy + vz*vz);
    }
 
+
    qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
    if (taskid==MASTER)
    {
@@ -241,7 +242,8 @@ int main(int argc, char* argv[])
       for (auto ii=0; ii<nion; ++ii)
             std::cout << "@ ii=" << ii << " " << qmmm.symbol[ii] << "\trion: " << Ffmt(12,6) << rion1[3*ii] << " " << Ffmt(12,6) << rion1[3*ii+1] << " " << Ffmt(12,6) << rion1[3*ii+2]
                       << " mass = "  << qmmm.mass[ii] << " uion = " << uion[ii] << " qion = " << qion[ii] 
-                      << " epsilon =" << qmmm.epsilon[ii] << " sigma=" << qmmm.sigma[ii] << std::endl;
+                      << " epsilon =" << qmmm.epsilon[ii] << " sigma=" << qmmm.sigma[ii] 
+                      << std::endl;
       std::cout << std::endl;
       std::cout << "@ Initial Kinetic Energy = " << Efmt(20,15) << KE << std::endl;
    }

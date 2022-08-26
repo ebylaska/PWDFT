@@ -513,6 +513,8 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
    symbol = new (std::nothrow) std::string [nion];
    rion   = new (std::nothrow) double [3*nion];
    mass   = new (std::nothrow) double [nion];
+   epsilon   = new (std::nothrow) double [nion];
+   sigma     = new (std::nothrow) double [nion];
    {  std::set<std::string> anameset;
       for (auto & line: geomlines)
       {
@@ -603,6 +605,16 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
       {
          std::vector<std::string> ss = mystring_split0(geomlines[ii]);
          symbol[nion_qm]  = ss[0];
+         if (lj_qm_data.count(symbol[nion_qm]) > 0)
+         {
+            epsilon[nion_qm] = lj_qm_data[symbol[nion_qm]][0]/23.06/27.2116;
+            sigma[nion_qm]   = lj_qm_data[symbol[nion_qm]][1]*ANGTOBOHR;
+         }
+         else
+         {
+            epsilon[nion_qm] = symboltoepsilon(symbol[nion_qm])/23.06/27.2116;
+            sigma[nion_qm]   = symboltosigma(symbol[nion_qm])*ANGTOBOHR;
+         }
          mass[nion_qm]    = symboltomass(symbol[nion_qm])*1822.89;
          rion[3*nion_qm]   = std::stod(ss[1])*ANGTOBOHR;
          rion[3*nion_qm+1] = std::stod(ss[2])*ANGTOBOHR;
@@ -621,6 +633,16 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
          std::string str = ss[0];
          str.erase(std::remove(str.begin(),str.end(),'#'),str.end());
          symbol[(nion_qm+nion_mm)]  = str;
+         if (lj_mm_data.count(str) > 0)
+         {
+            epsilon[(nion_qm+nion_mm)] = lj_mm_data[symbol[(nion_qm+nion_mm)]][0]/23.06/27.2116;
+            sigma[(nion_qm+nion_mm)]   = lj_mm_data[symbol[(nion_qm+nion_mm)]][1]*ANGTOBOHR;
+         }
+         else
+         {
+            epsilon[(nion_qm+nion_mm)] = 0.0;
+            sigma[(nion_qm+nion_mm)]   = 1.0;
+         }
          mass[(nion_qm+nion_mm)]      = symboltomass(symbol[(nion_qm+nion_mm)])*1822.89;
          rion[3*(nion_qm+nion_mm)]   = std::stod(ss[1])*ANGTOBOHR;
          rion[3*(nion_qm+nion_mm)+1] = std::stod(ss[2])*ANGTOBOHR;
