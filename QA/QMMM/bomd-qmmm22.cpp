@@ -203,8 +203,6 @@ int main(int argc, char* argv[])
    for (auto ii=0; ii<nion; ++ii) 
       dti[ii] = dt*dt/qmmm.mass[ii];
 
-
-
    if (taskid==MASTER) std::cout << "nion =" << nion << std::endl;
    if (taskid==MASTER) std::cout << "nion_mm =" << nion_mm << std::endl;
    if (taskid==MASTER) std::cout << "nion_qm =" << nion_qm << std::endl << std::endl;
@@ -213,16 +211,8 @@ int main(int argc, char* argv[])
    Espring = qmmm.spring_Energy(rion1);
    std::cout << "Espring=" << Espring << std::endl;
 
-
    // kinetic energy
-   KE = 0.0;
-   for (auto ii=0; ii<nion; ++ii) {
-      double vx = rion0[3*ii];
-      double vy = rion0[3*ii+1]; 
-      double vz = rion0[3*ii+2];
-      KE += 0.5*qmmm.mass[ii]*(vx*vx + vy*vy + vz*vz);
-   }
-
+   KE = qmmm.KE_ion(rion0);
 
    qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
    if (taskid==MASTER)
@@ -253,12 +243,11 @@ int main(int argc, char* argv[])
 
 
    // Eqq = Electrostatic energy and forces
-   Eqq = qmmm.QMQM_electrostatic_energy(qion,rion1) 
-       + qmmm.QMMM_electrostatic_energy(qion,rion1);
-       //+ MMMM_electrostatic_energy(nion_qm,nion,qion,rion1);
-   qmmm.QMQM_electrostatic_force(qion,rion1,fion);
-   qmmm.QMMM_electrostatic_force(qion,rion1,fion);
-  // MMMM_electrostatic_force(nion_qm,nion,qion,rion1,fion);
+   Eqq = qmmm.Coulomb_Energy(qion,rion1);       // total Q energy
+       + qmmm.MMMM_electrostatic_energy(qion,rion1);  // subtracts the fragment coulomb
+
+   qmmm.Coulomb_Force(qion,rion1,fion);
+   qmmm.MMMM_electrostatic_force(qion,rion1,fion);
    Eqm += Eqq;
 
    // ELJ = Lennard-Jones energy and forces
@@ -305,8 +294,11 @@ int main(int argc, char* argv[])
       ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,NULL);
 
       // Eqq = Electrostatic energy and forces
-      Eqq = qmmm.QMQM_electrostatic_energy(qion,rion1);
-      qmmm.QMQM_electrostatic_force(qion,rion1,fion);
+      Eqq = qmmm.Coulomb_Energy(qion,rion1);       // total Q energy
+          + qmmm.MMMM_electrostatic_energy(qion,rion1);  // subtracts the fragment coulomb
+
+      qmmm.Coulomb_Force(qion,rion1,fion);
+      qmmm.MMMM_electrostatic_force(qion,rion1,fion);
       Eqm += Eqq;
 
       // ELJ = Lenard-Johnes energy and forces
@@ -331,15 +323,7 @@ int main(int argc, char* argv[])
 
       // kinetic energy
       for (auto i=0; i<3*nion; ++i) rion0[i] = h*(rion2[i] - rion0[i]);
-      KE = 0.0;
-      for (auto ii=0; ii<nion; ++ii)
-      {
-         double vx = rion0[3*ii];
-         double vy = rion0[3*ii+1];
-         double vz = rion0[3*ii+2];
-         KE += qmmm.mass[ii]*(vx*vx + vy*vy + vz*vz);
-      }
-      KE *= 0.5;
+      KE = qmmm.KE_ion(rion0);
       if (taskid==MASTER) {
          std::cout << "@ it = " << Ifmt(5) << it+1 << " Energy+Kinetic = " << Efmt(20,15) << Eqm+KE 
                    << " Energy = " << Efmt(20,15) << Eqm << " Kinetic Energy = " << Efmt(20,15) << KE 

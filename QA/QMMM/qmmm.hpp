@@ -102,19 +102,32 @@ public:
          delete [] Kra;
     }
 
+    // kinetic energy
+    double KE_ion(const double []);
+
+    // spring energy and forces
     double spring_Energy(const double []);
     void spring_Force(const double [], double []);
 
+    // LJ energy and forces
+    double MMMM_LJ_energy(const double []);
+    void MMMM_LJ_force(const double [], double []);
+
+    // Coulomb energy and forces
     double Coulomb_Energy(const double [], const double []);
     void   Coulomb_Force(const double [], const double [], double []);
 
-    double Coulomb_Energy_qmmm(const double [], const double []);
-    void   Coulomb_Force_qmmm(const double [], const double [], double []);
-
     double MMMM_electrostatic_energy(const double [], const double []);
+    void   MMMM_electrostatic_force(const double [], const double [], double []);
+
+
+    // QMMM electrostatic potential
+    void QMMM_electrostatic_potential(const double [], const double [], double []);
+
+
+    // auxilliary test functions
 
     double QMMM_electrostatic_energy(const double [], const double []);
-    void QMMM_electrostatic_potential(const double [], const double [], double []);
     void QMMM_electrostatic_force(const double [], const double [], double []);
 
     double QMQM_electrostatic_energy(const double [], const double []);
@@ -122,11 +135,11 @@ public:
 
 
 
+
     double QMMM_LJ_energy(const double []);
     void QMMM_LJ_force(const double [], double []);
 
-    double MMMM_LJ_energy(const double []);
-    void MMMM_LJ_force(const double [], double []);
+
 
 
 

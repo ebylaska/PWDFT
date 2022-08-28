@@ -408,7 +408,7 @@ static double Q_Electrostatic_self(const double r1[], const double q1,
  **************************************************/
 
 static void Q_Electrostatic_Force_self(const double r1[], const double q1, double f1[],
-                                const double r2[], const double q2, double f2[])
+                                       const double r2[], const double q2, double f2[])
 {
    double x = r2[0] - r1[0];
    double y = r2[1] - r1[1];
@@ -430,13 +430,80 @@ static void Q_Electrostatic_Force_self(const double r1[], const double q1, doubl
    f1[2] -= fz;
 }
 
+
+/**************************************************
+ *                                                *
+ *          Q_Electrostatic_SmForce               *
+ *                                                *
+ **************************************************/
+
+// Calculates the Electrostatic force between two centers
+
+static void Q_Electrostatic_SmForce(const double Sm, 
+                                    const double r1[], const double q1, double f1[],
+                                    const double r2[], const double q2, double f2[])
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double rr = (x*x + y*y + z*z);
+   double r  = std::sqrt(rr);
+
+   double der = -Sm*q1*q2/rr;
+   double fx = -(x/r)*der;
+   double fy = -(y/r)*der;
+   double fz = -(z/r)*der;
+
+   f2[0] += fx;
+   f2[1] += fy;
+   f2[2] += fz;
+
+   f1[0] -= fx;
+   f1[1] -= fy;
+   f1[2] -= fz;
+}
+
+
+
+
+
+/**************************************************
+ *                                                *
+ *         Q_Electrostatic_mForce_self            *
+ *                                                *
+ **************************************************/
+
+static void Q_Electrostatic_mForce_self(const double r1[], const double q1, double f1[],
+                                        const double r2[], const double q2, double f2[])
+{
+   double x = r2[0] - r1[0];
+   double y = r2[1] - r1[1];
+   double z = r2[2] - r1[2];
+   double rr = (x*x + y*y + z*z);
+   double r  = std::sqrt(rr);
+
+   double der = -q1*q2/rr;
+   double fx = -(x/r)*der;
+   double fy = -(y/r)*der;
+   double fz = -(z/r)*der;
+
+   f2[0] -= fx;
+   f2[1] -= fy;
+   f2[2] -= fz;
+
+   f1[0] += fx;
+   f1[1] += fy;
+   f1[2] += fz;
+}
+
+
 /****************************************************
  *                                                  *
  *                    Q_cm                          *
  *                                                  *
  ****************************************************/
 static void Q_cm(const int n, const int ks, const double amass[], const double rion[],
-         double rcm[])
+                 double rcm[])
 {
    rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
    double m = 0.0;
@@ -456,9 +523,44 @@ static void Q_cm(const int n, const int ks, const double amass[], const double r
 
 /****************************************************
  *                                                  *
+ *                    Q_cmm                         *
+ *                                                  *
+ ****************************************************/
+static double Q_cmm(const int n, const int ks, const double amass[], const double rion[],
+                    double rcm[])
+{
+   rcm[0] = 0.0; rcm[1] = 0.0; rcm[2] = 0.0;
+   double m = 0.0;
+   int kk = ks;
+   for (auto k=0; k<n; ++k)
+   {
+      rcm[0] += amass[kk]*rion[3*kk];
+      rcm[1] += amass[kk]*rion[3*kk+1];
+      rcm[2] += amass[kk]*rion[3*kk+1];
+      m += amass[kk];
+      ++kk;
+   }
+   rcm[0] /= m;
+   rcm[1] /= m;
+   rcm[2] /= m;
+
+   return m;
+}
+
+
+
+
+
+/****************************************************
+ *                                                  *
  *                  Q_E_frag_frag                   *
  *                                                  *
  ****************************************************/
+
+// This function takes out frag-frag Coulomb energies if rcm<Rin,
+// takes out part of frag-frag Coulomb energies if Rcin<rcm<Rcout,
+// or does not subtract frag-frag Coulomb energy if rcm>=Rcout
+
 static double Q_E_frag_frag(const int n1, const int ks1, const double rw1_cm[],
                             const int n2, const int ks2, const double rw2_cm[],
                             const double Rin, const double Rout,
@@ -483,6 +585,54 @@ static double Q_E_frag_frag(const int n1, const int ks1, const double rw1_cm[],
 }
 
 
+
+/****************************************************
+ *                                                  *
+ *                  Q_fion_frag_frag                *
+ *                                                  *
+ ****************************************************/
+static void Q_fion_frag_frag(const int n1, const int ks1, const double rw1_cm[], const double m1,
+                             const int n2, const int ks2, const double rw2_cm[], const double m2,
+                             const double Rin, const double Rout,
+                             const double qion[], const double mass[], const double rion[], double fion[])
+{
+   double x = rw1_cm[0] - rw2_cm[0];
+   double y = rw1_cm[1] - rw2_cm[1];
+   double z = rw1_cm[2] - rw2_cm[2];
+   double rcm = std::sqrt(x*x + y*y + z*z);
+
+   if (rcm < Rout)
+   {
+      double E=0.0;
+      double Sm,dSm;
+      Q_dSwitching(Rin,Rout,rcm,&Sm,&dSm);
+      Sm = Sm - 1.0;
+
+      // calculate E, and -Sm*grad(E)
+      for (auto a=0; a<n1; ++a)
+      for (auto b=0; b<n2; ++b)
+      {
+         E += Q_Electrostatic_self(&rion[3*(ks1+a)],qion[(ks1+a)],
+                                   &rion[3*(ks2+b)],qion[(ks2+b)]);
+         Q_Electrostatic_SmForce(Sm,&rion[3*(ks1+a)],qion[(ks1+a)],&fion[3*(ks1+a)],
+                                    &rion[3*(ks2+b)],qion[(ks2+b)],&fion[3*(ks2+b)]);
+      }
+
+      //calculate -E*grad(Sm) 
+      for (auto a=0; a<n1; ++a)
+      {
+         fion[3*(ks1+a)]   -= E*dSm*(x/rcm)*mass[(ks1+a)]/m1;
+         fion[3*(ks1+a)+1] -= E*dSm*(y/rcm)*mass[(ks1+a)]/m1;
+         fion[3*(ks1+a)+2] -= E*dSm*(z/rcm)*mass[(ks1+a)]/m1;
+      }
+      for (auto b=0; b<n2; ++b)
+      {
+         fion[3*(ks2+b)]   += E*dSm*(x/rcm)*mass[(ks2+b)]/m2;
+         fion[3*(ks2+b)+1] += E*dSm*(y/rcm)*mass[(ks2+b)]/m2;
+         fion[3*(ks2+b)+2] += E*dSm*(z/rcm)*mass[(ks2+b)]/m2;
+      }
+   }
+}
 
 
 
@@ -853,50 +1003,19 @@ void QMMM_Operator::Coulomb_Force(const double qion[], const double rion[], doub
 
 /****************************************************
  *                                                  *
- *     QMMM_Operator::Coulomb_Energy_qmmm           *
- *                                                  *
- ****************************************************/
-double QMMM_Operator::Coulomb_Energy_qmmm(const double qion[], const double rion[])
-{
-   double E=0.0;
-
-   // total qm-mm interactions
-   for (auto ii=0;       ii<nion_qm; ++ii)
-   for (auto jj=nion_qm; jj<nion;    ++jj)
-      E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
-                                &rion[3*jj],qion[jj]);
-
-   return E;
-}
-
-
-/****************************************************
- *                                                  *
- *        QMMM_Operator::Coulomb_Force_qmmm         *
- *                                                  *
- ****************************************************/
-void QMMM_Operator::Coulomb_Force_qmmm(const double qion[], const double rion[], double fion[])
-{  
-   // total qm-mm interactions
-   for (auto ii=0;       ii<(nion_qm); ++ii)
-   for (auto jj=nion_qm; jj<nion;      ++jj)
-      Q_Electrostatic_Force_self(&rion[3*ii],qion[ii],&fion[3*ii],
-                                 &rion[3*jj],qion[jj],&fion[3*jj]);
-
-}
-
-
-/****************************************************
- *                                                  *
  *        MMMM_electrostatic_energy                 *
  *                                                  *
  ****************************************************/
+
+// Function partially removes Coulomb frag-frag energies, and completely removes Coulomb frag self energies.
+// This function is intended to be called in conjunction with Coulomb_Energy.
+
 double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const double rion[])
 {
    double E=0.0;
    double rw1_cm[3],rw2_cm[3];
 
-   // total mm-mm interactions
+   // Partialy removes MM/MM Coulomb frag-frag energies 
    for (auto w1=0; w1<(nfrag-1); ++ w1)
    {
       int ks1 = indxfrag_start[w1];
@@ -942,6 +1061,66 @@ double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const doubl
 
    return E;
 }
+
+/****************************************************
+ *                                                  *
+ *         MMMM_Coulomb_electrostatic_force         *
+ *                                                  *
+ ****************************************************/
+
+void QMMM_Operator::MMMM_electrostatic_force(const double qion[], const double rion[], double fion[])
+{
+   double m1,m2;
+   double rw1_cm[3],rw2_cm[3];
+
+   // Partialy removes MM/MM Coulomb frag-frag energies 
+   for (auto w1=0; w1<(nfrag-1); ++ w1)
+   {
+      int ks1 = indxfrag_start[w1];
+      int n1  = size_frag[w1];
+      double Rin1  = switch_Rin[kfrag[w1]];
+      double Rout1 = switch_Rin[kfrag[w1]];
+      m1 = Q_cmm(n1,ks1,mass,rion,rw1_cm);
+
+      for (auto w2=w1+1; w2<nfrag; ++w2)
+      {
+         int ks2 = indxfrag_start[w2];
+         int n2  = size_frag[w2];
+         double Rin2  = switch_Rin[kfrag[w2]];
+         double Rout2 = switch_Rin[kfrag[w2]];
+         m2 = Q_cmm(n2,ks2,mass,rion,rw2_cm);
+
+         double Rin  = 0.5*(Rin1 +Rin2);
+         double Rout = 0.5*(Rout1+Rout2);
+         Q_fion_frag_frag(n1,ks1,rw1_cm,m1,
+                          n2,ks2,rw2_cm,m2,
+                          Rin,Rout,
+                          qion,mass,rion,fion);
+      }
+   }
+
+   // take out MM-MM Coulomb self energy ****
+   for (auto w1=0; w1<nfrag; ++w1)
+   {
+      if (!self_interaction[kfrag[w1]])
+      {
+         int ks1 = indxfrag_start[w1];
+         for (auto a=0;   a<(size_frag[w1]-1); ++a)
+         for (auto b=a+1; b<size_frag[w1];     ++b)
+         {
+            int kk1 = ks1+a;
+            int kk2 = ks1+b;
+            Q_Electrostatic_mForce_self(&rion[3*kk1],qion[kk1],&fion[3*kk1],
+                                        &rion[3*kk2],qion[kk2],&fion[3*kk2]);
+         }
+      }
+   }
+
+}
+
+
+
+
 
 
 
@@ -1112,6 +1291,24 @@ void QMMM_Operator::MMMM_LJ_force(const double rion[], double fion[])
       }
 }
 
+
+/****************************************************
+ *                                                  *
+ *                    KE_ion                        *
+ *                                                  *
+ ****************************************************/
+double QMMM_Operator::KE_ion(const double vion[])
+{
+      double KE = 0.0;
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         double vx = vion[3*ii];
+         double vy = vion[3*ii+1];
+         double vz = vion[3*ii+2];
+         KE += mass[ii]*(vx*vx + vy*vy + vz*vz);
+      }
+      return 0.5*KE;
+}
 
 
 
