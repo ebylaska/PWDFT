@@ -173,8 +173,8 @@ public:
     void v_local(double *, const bool, double *, double *);
     void f_local(double *, double *);
 
-    //void vlr_local(double *, const bool, double *, double *);
-    //void grad_v_lr_local(double *, const bool, double *, double *);
+    void v_lr_local(double *);
+    void grad_v_lr_local(const double *, double *);
 
     double e_nonlocal(double *);
 
