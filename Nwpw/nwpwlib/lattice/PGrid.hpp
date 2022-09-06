@@ -116,26 +116,26 @@ public:
 
         void tc_pack_copy( const int, double *, double *);
 
-        void tcc_Mul( const int, const double *, const double *, double *);
-        void tc_Mul(const int, const double *, double *);
-        void tcc_iMul(const int, const double *, const double *, double *);
-        void tc_iMul(const int, const double *, double *);
+        void tcc_pack_Mul( const int, const double *, const double *, double *);
+        void tc_pack_Mul(const int, const double *, double *);
+        void tcc_pack_iMul(const int, const double *, const double *, double *);
+        void tc_pack_iMul(const int, const double *, double *);
 
-        void tcc_MulSum2(const int, const double *, const double *, double *);
-        void cc_Sum2(const int, const double *, double *);
-        void cccc_Sum(const int, const double *, const double *, const double *, double *);
-        void tcc_aMulAdd(const int, const double, const double *, const double *, double *);
+        void tcc_pack_MulSum2(const int, const double *, const double *, double *);
+        void cc_pack_Sum2(const int, const double *, double *);
+        void cccc_pack_Sum(const int, const double *, const double *, const double *, double *);
+        void tcc_pack_aMulAdd(const int, const double, const double *, const double *, double *);
 
 
 
-        void c_addzero(const int, const double, double *);
+        void c_pack_addzero(const int, const double, double *);
 
-        void c_zero(const int, double *);
-        void c_SMul(const int, const double, double *);
-        void cc_SMul(const int, const double, const double *, double *);
-        void cc_daxpy(const int, const double, const double *, double *);
-        void cct_iconjgMul(const int, const double *, const double *, double *);
-        void cct_iconjgMulb(const int, const double *, const double *, double *);
+        void c_pack_zero(const int, double *);
+        void c_pack_SMul(const int, const double, double *);
+        void cc_pack_SMul(const int, const double, const double *, double *);
+        void cc_pack_daxpy(const int, const double, const double *, double *);
+        void cct_pack_iconjgMul(const int, const double *, const double *, double *);
+        void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
 
         void i_pack(const int, int *);
         void ii_pack_copy(const int, int *, int *);

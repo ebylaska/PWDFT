@@ -27,6 +27,7 @@ class Pneb : public PGrid, public d1db  {
    int mcq[2],ncq[2];
    int  ncqmax;
 
+
 public:
 
         /* constructors */
@@ -95,6 +96,7 @@ public:
         }
         void m_deallocate(double *ptr) { delete [] ptr;}
 
+
         double gg_traceall(double *, double *);
         void gg_copy(double *, double *);
         void g_zero(double *);
@@ -135,6 +137,7 @@ public:
         void ggg_Minus(double *, double *, double *);
 
         void gg_daxpy(double, double *, double *);
+
 
 };
 }

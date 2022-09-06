@@ -99,6 +99,10 @@ public:
         void     r_setrandom(double *);
 
 
+        /* expand and contract operators */
+        void     hr2r_expand(const double *, double *);
+        void     r2hr_contract(const double *, double *);
+
 
         /* t array operators */
         double * t_alloc();
@@ -106,6 +110,7 @@ public:
 	void     t_read(const int, double *, const int);
 	void     t_write(const int, double *, const int);
         void     t_nzero(int, double *);
+        void     tc_Mul(const double *, double *);
 
         /* ptranspose operators */
  	void     c_ptranspose_jk_init(const int, int  *);

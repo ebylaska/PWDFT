@@ -672,7 +672,7 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double 
 
         /* put sqrt(core-density) at atom position */
         mygrid->tc_pack_copy(0,ncore,tmp);
-        mygrid->c_SMul(0,scal2,tmp);
+        mygrid->c_pack_SMul(0,scal2,tmp);
 
         /* Put put tmp into real space */
         mygrid->c_unpack(0,tmp);
@@ -1368,9 +1368,9 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
                     prj = &(prjtmp[(l+nprjall)*nshift]);
                     vnlprj = &(vnl[ia][l*nshift0]);
                     if (sd_function)
-                        mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                     else
-                        mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
                 }
                 nprjall += nprj[ia];
             }
@@ -1432,9 +1432,9 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
                 prj = &(prjtmp[l*nshift]);
                 vnlprj = &(vnl[ia][l*nshift0]);
                 if (sd_function)
-                    mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                    mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                 else
-                    mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                    mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
                 //mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
             }
             ntmp = nprj[ia];
@@ -1554,15 +1554,15 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                     prj = &(prjtmp[(l+nprjall)*nshift]);
                     vnlprj = &(vnl[ia][l*nshift0]);
                     if (sd_function)
-                        mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                     else
-                        mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
 
                     if (move)
                     {
                         for (n=0; n<nn; ++n)
                         {
-                            mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                            mypneb->cct_pack_iconjgMul(1,prj,&psi[n*nshift],xtmp);
                             sum[3*n  +3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gx,xtmp);
                             sum[3*n+1+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gy,xtmp);
                             sum[3*n+2+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gz,xtmp);
@@ -1651,9 +1651,9 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                 prj = &prjtmp[l*nshift];
                 vnlprj = &vnl[ia][l*nshift0];
                 if (sd_function)
-                    mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                    mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                 else
-                    mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                    mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
                 mypneb->cc_pack_indot(1,nn,psi,prj,&sw1[l*nn]);
             }
             parall->Vector_SumAll(1,nn*nprj[ia],sw1);
@@ -1682,7 +1682,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi, const bool move
                     prj = &prjtmp[l*nshift];
                     for (n=0; n<nn; ++n)
                     {
-                        mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                        mypneb->cct_pack_iconjgMul(1,prj,&psi[n*nshift],xtmp);
                         sum[3*n]   = mypneb->tt_pack_idot(1,Gx,xtmp);
                         sum[3*n+1] = mypneb->tt_pack_idot(1,Gy,xtmp);
                         sum[3*n+2] = mypneb->tt_pack_idot(1,Gz,xtmp);
@@ -1789,13 +1789,13 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
                     prj = &(prjtmp[(l+nprjall)*nshift]);
                     vnlprj = &(vnl[ia][l*nshift0]);
                     if (sd_function)
-                        mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                     else
-                        mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
 
                     for (n=0; n<nn; ++n)
                     {
-                        mypneb->cct_iconjgMul(1,prj,&psi[n*nshift],xtmp);
+                        mypneb->cct_pack_iconjgMul(1,prj,&psi[n*nshift],xtmp);
                         sum[3*n  +3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gx,xtmp);
                         sum[3*n+1+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gy,xtmp);
                         sum[3*n+2+3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1,Gz,xtmp);
@@ -1923,9 +1923,9 @@ double Pseudopotential::e_nonlocal(double *psi)
                     prj = &(prjtmp[(l+nprjall)*nshift]);
                     vnlprj = &(vnl[ia][l*nshift0]);
                     if (sd_function)
-                        mypneb->tcc_Mul( 1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_Mul( 1,vnlprj,exi,prj);
                     else
-                        mypneb->tcc_iMul(1,vnlprj,exi,prj);
+                        mypneb->tcc_pack_iMul(1,vnlprj,exi,prj);
                 }
                 nprjall += nprj[ia];
             }
@@ -2001,7 +2001,7 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
         Gz  = mypneb->Gpackxyz(0,2);
     }
 
-    mypneb->c_zero(0,vout);
+    mypneb->c_pack_zero(0,vout);
     nshift = 2*npack0;
     exi    = new (std::nothrow) double[nshift]();
     vtmp   = new (std::nothrow) double[nshift]();
@@ -2009,16 +2009,16 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
     {
         ia = myion->katm[ii];
         mystrfac->strfac_pack(0,ii,exi);
-        //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
-        mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
-        mypneb->cc_Sum2(0,vtmp,vout);
+        //mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+        mypneb->tcc_pack_Mul(0,vl[ia],exi,vtmp);
+        mypneb->cc_pack_Sum2(0,vtmp,vout);
 
         if (move)
         {
             //double xx =  mypneb->cc_pack_dot(0,dng,dng);
             //double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
 
-            mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+            mypneb->cct_pack_iconjgMulb(0,dng,vtmp,xtmp);
             //double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
 
             fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
@@ -2073,13 +2073,13 @@ void Pseudopotential::f_local(double *dng, double *fion)
     {
         ia = myion->katm[ii];
         mystrfac->strfac_pack(0,ii,exi);
-        //mypneb->tcc_MulSum2(0,vl[ia],exi,vout);
-        mypneb->tcc_Mul(0,vl[ia],exi,vtmp);
+        //mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+        mypneb->tcc_pack_Mul(0,vl[ia],exi,vtmp);
 
         //double xx =  mypneb->cc_pack_dot(0,dng,dng);
         //double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
 
-        mypneb->cct_iconjgMulb(0,dng,vtmp,xtmp);
+        mypneb->cct_pack_iconjgMulb(0,dng,vtmp,xtmp);
         //double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
 
         fion[3*ii]   = mypneb->tt_pack_dot(0,Gx,xtmp);
@@ -2123,7 +2123,7 @@ void Pseudopotential::semicore_density_update()
         if (semicore[ia])
         {
             mystrfac->strfac_pack(0,ii,exi);
-            mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
+            mypneb->tcc_pack_Mul(0,ncore_atom[ia],exi,tmp);
 
             /* Put put tmp into real space */
             mypneb->c_unpack(0,tmp);
@@ -2189,10 +2189,10 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
         {
             /* put sqrt(core-density) at atom position */
             mystrfac->strfac_pack(0,ii,exi);
-            mypneb->tcc_Mul(0,ncore_atom[ia],exi,tmp);
-            mypneb->tcc_iMul(0,Gx,tmp,tmpx);
-            mypneb->tcc_iMul(0,Gy,tmp,tmpy);
-            mypneb->tcc_iMul(0,Gz,tmp,tmpz);
+            mypneb->tcc_pack_Mul(0,ncore_atom[ia],exi,tmp);
+            mypneb->tcc_pack_iMul(0,Gx,tmp,tmpx);
+            mypneb->tcc_pack_iMul(0,Gy,tmp,tmpy);
+            mypneb->tcc_pack_iMul(0,Gz,tmp,tmpz);
 
             /* Put put tmp,tmpx,tmpy,tmpz into real space */
             mypneb->c_unpack(0,tmp);

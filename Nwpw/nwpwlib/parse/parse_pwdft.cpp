@@ -963,6 +963,10 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
       {
          nwpwjson["use_grid_cmp"] = true;
       }
+      else if (mystring_contains(line,"fast_erf"))
+      {
+         nwpwjson["fast_erf"] = true;
+      }
       else if (mystring_contains(line,"mapping"))
       {
          ss = mystring_split0(line);

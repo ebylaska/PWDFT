@@ -12,6 +12,7 @@ namespace pwdft {
 
 class Lattice {
 
+   bool   pfast_erf;
    double punita[9],punitg[9],pecut,pwcut,pomega;
 
 public:
@@ -30,6 +31,10 @@ public:
 
    double *unita_ptr() { return punita; } 
    void abc_abg(double *, double *, double *, double *, double *, double *);
+
+   bool fast_erf() { return pfast_erf;}
+
+
 };
 }
 

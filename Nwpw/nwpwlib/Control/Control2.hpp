@@ -24,6 +24,7 @@ class Control2 {
    double ptotal_charge;
 
    bool   puse_grid_cmp = false;;
+   bool   pfast_erf = false;
 
    int pbo_steps[2],pbo_algorithm;
    int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
@@ -149,6 +150,7 @@ public:
 
    bool geometry_optimize()     { return pgeometry_optimize; }
    bool use_grid_cmp()          { return puse_grid_cmp; }
+   bool fast_erf()              { return pfast_erf; }
 
    int driver_maxiter()    { return pdriver_maxiter; }
    int driver_lmbfgs_size(){ return pdriver_lmbfgs_size; }

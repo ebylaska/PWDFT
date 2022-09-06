@@ -190,8 +190,8 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
             /* gaus_i(G)) */
             /* w(G)*gaus_i(G)) */
-            mypneb->tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
-            mypneb->tc_Mul(0,w,gaus_i);
+            mypneb->tcc_pack_Mul(0,&gaus[npack0*iii],exi,gaus_i);
+            mypneb->tc_pack_Mul(0,w,gaus_i);
 
             /* bi = omega*Sum(G) w(G)*Re(dcongj(dng(G))*gaus_i(G)) */
             b[i] = omega*mypneb->cc_pack_dot(0,dng,gaus_i);
@@ -199,7 +199,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
             if (move) 
             {
-               mypneb->cct_iconjgMulb(0,dng,gaus_i,xtmp);
+               mypneb->cct_pack_iconjgMulb(0,dng,gaus_i,xtmp);
                b[i+ngs]   = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
                b[i+2*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
                b[i+3*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
@@ -226,13 +226,13 @@ void nwpw_apc::gen_APC(double *dng, bool move)
             {
                /* gaus_i(G)) */
                /* w(G)*gaus_i(G)) */
-               mypneb->tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
-               mypneb->tc_Mul(0,w,gaus_i);
+               mypneb->tcc_pack_Mul(0,&gaus[npack0*iii],exi,gaus_i);
+               mypneb->tc_pack_Mul(0,w,gaus_i);
 
                for (auto jjj=0; jjj<nga; ++jjj)
                {
                   /* gaus_j(G)) */
-                  mypneb->tcc_Mul(0,&gaus[npack0*jjj],exj,gaus_j);
+                  mypneb->tcc_pack_Mul(0,&gaus[npack0*jjj],exj,gaus_j);
 
                   /* omega*Sum(G) w(G)*gaus_i(G)*gaus_j(G)) */
                   double e1 = omega*mypneb->cc_pack_dot(0,gaus_i,gaus_j);
@@ -247,7 +247,7 @@ void nwpw_apc::gen_APC(double *dng, bool move)
 
                   if (move)
                   {
-                     mypneb->cct_iconjgMulb(0,gaus_i,gaus_j,xtmp);
+                     mypneb->cct_pack_iconjgMulb(0,gaus_i,gaus_j,xtmp);
                      A[indx+  ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gx,xtmp);
                      A[indx+2*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gy,xtmp);
                      A[indx+3*ngs*ngs] = omega*mypneb->tt_pack_dot(0,Gz,xtmp);
@@ -452,13 +452,13 @@ void nwpw_apc::VQ_APC(double *uq, double *VQ)
          double afac = omega*Vfac_APC(ngs,Am,uq,i);
 
          /* gaus_i(G)) */ 
-         mypneb->PGrid::tcc_Mul(0,&gaus[npack0*iii],exi,gaus_i);
+         mypneb->PGrid::tcc_pack_Mul(0,&gaus[npack0*iii],exi,gaus_i);
 
          /* VQ(G) += afac*w(G)*gaus_i(G)) */
-         mypneb->PGrid::tcc_aMulAdd(0,afac,w,gaus_i,VQ);
+         mypneb->PGrid::tcc_pack_aMulAdd(0,afac,w,gaus_i,VQ);
       }
    }
-   mypneb->PGrid::c_addzero(0,sumAmU/sumAm,VQ);
+   mypneb->PGrid::c_pack_addzero(0,sumAmU/sumAm,VQ);
 
 
    /* deallocate temporary memory from heap */
@@ -698,7 +698,7 @@ void nwpw_apc::V_APC_cdft(double *dng, double *zv, double *vapc,
    int npack0 = mypneb->npack(0);
    std::memset(vtmp,0,2*npack0*sizeof(double));
    VQ_APC(u,vtmp);
-   mypneb->cc_daxpy(0,1.0,vtmp,vapc);
+   mypneb->cc_pack_daxpy(0,1.0,vtmp,vapc);
 
    // Calculate Papc 
    Papc = mypneb->cc_pack_dot(0,dng,vtmp);
@@ -745,7 +745,7 @@ void nwpw_apc::V_APC_born(double *dng, double *zv, double *vapc,
    int npack0 = mypneb->npack(0);
    std::memset(vtmp,0,2*npack0*sizeof(double));
    VQ_APC(u,vtmp);
-   mypneb->cc_daxpy(0,1.0,vtmp,vapc);
+   mypneb->cc_pack_daxpy(0,1.0,vtmp,vapc);
 
 
    // Calculate Eborn

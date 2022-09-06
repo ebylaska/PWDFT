@@ -675,7 +675,7 @@ void Pneb::ggm_SVD(double *A, double *U, double *S, double *V)
    indx = 0;
    for (n=0; n<(neq[0]+neq[1]); ++n)
    {
-      PGrid::c_SMul(1,tmp2[n],&U[indx]);
+      PGrid::c_pack_SMul(1,tmp2[n],&U[indx]);
       indx += 2*PGrid::npack(1);
    }
 
@@ -1062,13 +1062,13 @@ void Pneb::g_ortho(double *psi)
             w = PGrid::cc_pack_dot(1,&psi[indxk],&psi[indxk]);
 
             w = 1.0/sqrt(w);
-            PGrid::c_SMul(1,w,&psi[indxk]);
+            PGrid::c_pack_SMul(1,w,&psi[indxk]);
 
             for (auto j=k-1; j>=0; --j)
             {
                indxj = 2*PGrid::npack(1)*j  + ishift;
                w = -PGrid::cc_pack_dot(1,&psi[indxk],&psi[indxj]);
-               PGrid::cc_daxpy(1,w,&psi[indxk],&psi[indxj]);
+               PGrid::cc_pack_daxpy(1,w,&psi[indxk],&psi[indxj]);
             }
          }
       }

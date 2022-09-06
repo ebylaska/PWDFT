@@ -49,9 +49,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->c_pack(0,rhog);
 
       /* calculate gr = grad n */
-      mypneb->tcc_iMul(0,Gx,rhog,grx);
-      mypneb->tcc_iMul(0,Gy,rhog,gry);
-      mypneb->tcc_iMul(0,Gz,rhog,grz);
+      mypneb->tcc_pack_iMul(0,Gx,rhog,grx);
+      mypneb->tcc_pack_iMul(0,Gy,rhog,gry);
+      mypneb->tcc_pack_iMul(0,Gz,rhog,grz);
       mypneb->c_unpack(0,grx);
       mypneb->c_unpack(0,gry);
       mypneb->c_unpack(0,grz);
@@ -115,11 +115,11 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->c_pack(0,gry);
       mypneb->c_pack(0,grz);
 
-      mypneb->tc_iMul(0,Gx,grx);
-      mypneb->tc_iMul(0,Gy,gry);
-      mypneb->tc_iMul(0,Gz,grz);
+      mypneb->tc_pack_iMul(0,Gx,grx);
+      mypneb->tc_pack_iMul(0,Gy,gry);
+      mypneb->tc_pack_iMul(0,Gz,grz);
 
-      mypneb->cccc_Sum(0,grx,gry,grz,fdn);
+      mypneb->cccc_pack_Sum(0,grx,gry,grz,fdn);
       mypneb->c_unpack(0,fdn);
       mypneb->cr_fft3d(fdn);
       mypneb->rrr_Minus(fn,fdn,xcp);
@@ -167,9 +167,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->c_pack(0,rhog);
 
       /* calculate   grup= grad nup */
-      mypneb->tcc_iMul(0,Gx,rhog,grupx);
-      mypneb->tcc_iMul(0,Gy,rhog,grupy);
-      mypneb->tcc_iMul(0,Gz,rhog,grupz);
+      mypneb->tcc_pack_iMul(0,Gx,rhog,grupx);
+      mypneb->tcc_pack_iMul(0,Gy,rhog,grupy);
+      mypneb->tcc_pack_iMul(0,Gz,rhog,grupz);
       mypneb->c_unpack(0,grupx);
       mypneb->c_unpack(0,grupy);
       mypneb->c_unpack(0,grupz);
@@ -191,9 +191,9 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->c_pack(0,rhog);
 
       /* calculate   grdn= grad ndn */
-      mypneb->tcc_iMul(0,Gx,rhog,grdnx);
-      mypneb->tcc_iMul(0,Gy,rhog,grdny);
-      mypneb->tcc_iMul(0,Gz,rhog,grdnz);
+      mypneb->tcc_pack_iMul(0,Gx,rhog,grdnx);
+      mypneb->tcc_pack_iMul(0,Gy,rhog,grdny);
+      mypneb->tcc_pack_iMul(0,Gz,rhog,grdnz);
       mypneb->c_unpack(0,grdnx);
       mypneb->c_unpack(0,grdny);
       mypneb->c_unpack(0,grdnz);
@@ -304,16 +304,16 @@ void v_bwexc(const int gga, Pneb *mypneb,
       mypneb->c_pack(0,grdnz);
 
       /* multiply sums by G vector */
-      mypneb->tc_iMul(0,Gx,grupx);
-      mypneb->tc_iMul(0,Gy,grupy);
-      mypneb->tc_iMul(0,Gz,grupz);
-      mypneb->tc_iMul(0,Gx,grdnx);
-      mypneb->tc_iMul(0,Gy,grdny);
-      mypneb->tc_iMul(0,Gz,grdnz);
+      mypneb->tc_pack_iMul(0,Gx,grupx);
+      mypneb->tc_pack_iMul(0,Gy,grupy);
+      mypneb->tc_pack_iMul(0,Gz,grupz);
+      mypneb->tc_pack_iMul(0,Gx,grdnx);
+      mypneb->tc_pack_iMul(0,Gy,grdny);
+      mypneb->tc_pack_iMul(0,Gz,grdnz);
 
       /* addup dot products */
-      mypneb->cccc_Sum(0,grupx,grupy,grupz,fdnup);
-      mypneb->cccc_Sum(0,grdnx,grdny,grdnz,fdndn);
+      mypneb->cccc_pack_Sum(0,grupx,grupy,grupz,fdnup);
+      mypneb->cccc_pack_Sum(0,grdnx,grdny,grdnz,fdndn);
 
       /* put back in r-space and subtract from df/dnup,df/dndn */
       mypneb->c_unpack(0,fdnup);

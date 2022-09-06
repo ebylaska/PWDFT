@@ -150,8 +150,8 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
      /* apply r-space operators  - Expensive*/
-     mygrid->cc_SMul(0,scal2,vl,vall);
-     mygrid->cc_Sum2(0,vc,vall);
+     mygrid->cc_pack_SMul(0,scal2,vl,vall);
+     mygrid->cc_pack_Sum2(0,vc,vall);
      mygrid->c_unpack(0,vall);
      mygrid->cr_fft3d(vall);
      indx1 = 0;
@@ -164,7 +164,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
             mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
             mygrid->rc_fft3d(vpsi);
             mygrid->c_pack(1,vpsi);
-            mygrid->cc_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+            mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
 
             indx1 += shift1;
             indx2 += shift2;

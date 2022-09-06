@@ -711,7 +711,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
       else if (version==4)
       {
          for (auto i=0; i<nrho; ++i)
-            f[i]=(rho[i]*vp[i+locp*nrho]+zv*erf(rho[i]/rlocal))*sn[i];
+            f[i]=(rho[i]*vp[i+locp*nrho]+zv*std::erf(rho[i]/rlocal))*sn[i];
          vl_ray[k1]=util_simpson(nrho,f,drho)*forpi/q;
       }
 
@@ -743,7 +743,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    else if (version==4) 
    {
       for (auto i=0; i<nrho; ++i)
-        f[i]= (vp[i+locp*nrho]*rho[i]+zv*erf(rho[i]/rlocal))*rho[i];
+        f[i]= (vp[i+locp*nrho]*rho[i]+zv*std::erf(rho[i]/rlocal))*rho[i];
       vl_ray[0]=forpi*util_simpson(nrho,f,drho);
    }
 

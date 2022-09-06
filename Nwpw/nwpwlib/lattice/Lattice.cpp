@@ -88,6 +88,7 @@ Lattice::Lattice(Control2& control)
    pwcut = pecut;
    if (wcut0 < pwcut) pwcut = wcut0;
 
+   pfast_erf = control.fast_erf();
 }
 
 
