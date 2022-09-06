@@ -11,7 +11,7 @@
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include        "Kinetic.hpp"
-#include        "Coulomb.hpp"
+#include        "Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include        "nwpw_Nose_Hoover.hpp"
 #include        "Pseudopotential.hpp"
@@ -24,7 +24,7 @@ namespace pwdft {
 
 void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb *mygrid, Ion *myion, nwpw_Nose_Hoover *mynose,
                 Kinetic_Operator *myke, 
-                Coulomb_Operator *mycoulomb, 
+                Coulomb12_Operator *mycoulomb12, 
                 XC_Operator      *myxc, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
                 double *psi0, double *psi1, double *psi2, double *Hpsi, double *psi_r,
@@ -81,7 +81,10 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
-   vc  = mygrid->c_pack_allocate(0);
+   if (mycoulomb12->has_coulomb1)
+      vc  = mygrid->c_pack_allocate(0);
+   else if (mycoulomb12->has_coulomb2)
+      vc  = mygrid->r_alloc();
    vpsi=x;
 
    //new double[3*(myion->nion)]();
@@ -151,7 +154,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
-      mycoulomb->vcoulomb(dng,vc);
+      if (mycoulomb12->has_coulomb1) mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+      //if (mycoulomb12->has_coulomb2) mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
       myxc->v_exc_all(ispin,dnall,xcp,xce);
@@ -279,7 +283,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       eorbit  = mygrid->m_trace(hml);
       if (ispin==1) eorbit = eorbit+eorbit;
 
-      ehartr  = mycoulomb->ecoulomb(dng);
+      if (mycoulomb12->has_coulomb1) ehartr  = mycoulomb12->mycoulomb1->ecoulomb(dng);
       exc     = mygrid->rr_dot(dnall,xce);
       pxc     = mygrid->rr_dot(dn,xcp);
       if (ispin==1)
@@ -363,6 +367,9 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
-   mygrid->c_pack_deallocate(vc);
+   if (mycoulomb12->has_coulomb1)
+      mygrid->c_pack_deallocate(vc);
+   else if (mycoulomb12->has_coulomb2)
+      mygrid->r_dealloc(vc);
 }
 }

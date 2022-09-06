@@ -18,7 +18,7 @@
 #include	"Strfac.hpp"
 #include	"nwpw_Nose_Hoover.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"nwpw_aimd_running_data.hpp"
@@ -138,9 +138,9 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    mystrfac.phafac();
 
    /* initialize operators */
-   Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
-   XC_Operator      myxc(&mygrid,control);
+   Kinetic_Operator   mykin(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
+   XC_Operator        myxc(&mygrid,control);
    
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
 
@@ -364,7 +364,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    // Newton step - first step using velocity
    verlet = false;
    inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
-                 &mykin,&mycoulomb,&myxc,
+                 &mykin,&mycoulomb12,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi0,psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
@@ -386,7 +386,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       {
          ++icount;
          inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
-                    &mykin,&mycoulomb,&myxc,
+                    &mykin,&mycoulomb12,&myxc,
                     &mypsp,&mystrfac,&myewald,
                     psi0,psi1,psi2,Hpsi,psi_r,
                     dn,hml,lmbda,

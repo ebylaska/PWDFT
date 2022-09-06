@@ -9,7 +9,7 @@
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include        "nwpw_Nose_Hoover.hpp"
 #include	"Strfac.hpp"
@@ -18,7 +18,7 @@
 
 namespace pwdft {
 extern void inner_loop_md(const bool, double *, Control2&, Pneb *, Ion *, nwpw_Nose_Hoover *,
-                       Kinetic_Operator *, Coulomb_Operator *, XC_Operator *,
+                       Kinetic_Operator *, Coulomb12_Operator *, XC_Operator *,
                        Pseudopotential *, Strfac *, Ewald *,
                        double *, double *, double *, double *, double *,
                        double *, double *, double *,

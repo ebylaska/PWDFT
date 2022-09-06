@@ -15,5 +15,15 @@ extern void psi_H(Pneb *,
                   double *, double *, double *,
                   double *, 
                   bool, double *);
+
+extern void psi_Hv4(Pneb *,
+                  Kinetic_Operator *,
+                  Pseudopotential *,
+                  double *, double *, 
+                  double *, double *,
+                  double *, double *,
+                  double *, 
+                  bool, double *);
+
 }
 #endif

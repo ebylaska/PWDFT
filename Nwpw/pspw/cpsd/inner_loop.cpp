@@ -7,15 +7,15 @@
 
 
 #include        "Parallel.hpp"
-//#include        "control.hpp"
 #include        "Control2.hpp"
 #include        "PGrid.hpp"
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include        "Kinetic.hpp"
-#include        "Coulomb.hpp"
+#include        "Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include        "Pseudopotential.hpp"
+#include        "psi_H.hpp"
 //#include	"v_exc.hpp"
 #include	"inner_loop.hpp"
 
@@ -25,7 +25,7 @@ namespace pwdft {
 
 void inner_loop(Control2& control, Pneb *mygrid, Ion *myion, 
                 Kinetic_Operator *myke, 
-                Coulomb_Operator *mycoulomb, 
+                Coulomb12_Operator *mycoulomb12, 
                 XC_Operator *myxc, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
                 double *psi1, double *psi2, double *Hpsi, double *psi_r,
@@ -68,7 +68,11 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
-   vc  = mygrid->c_pack_allocate(0);
+   if (mycoulomb12->has_coulomb1)
+      vc  = mygrid->c_pack_allocate(0);
+   else if (mycoulomb12->has_coulomb2)
+      vc  = mygrid->r_alloc();
+
    vpsi=x;
 
    fion = new double[3*(myion->nion)]();
@@ -109,8 +113,10 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
       /* generate dng */
-      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
-      mygrid->r_SMul(scal1,tmp);
+      //mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
+      //mygrid->r_SMul(scal1,tmp);
+      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mygrid->rr_SMul(scal1,rho,tmp);
       mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
@@ -137,39 +143,44 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       }
 
       /* apply k-space operators */
-      myke->ke(psi1,Hpsi);
+      //myke->ke(psi1,Hpsi);
 
       /* apply non-local PSP  - Expensive */
-      mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
+      //mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
-      mycoulomb->vcoulomb(dng,vc);
+      if (mycoulomb12->has_coulomb1) mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+      if (mycoulomb12->has_coulomb2) mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
       myxc->v_exc_all(ispin,dnall,xcp,xce);
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
-     /* apply r-space operators  - Expensive*/
-     mygrid->cc_pack_SMul(0,scal2,vl,vall);
-     mygrid->cc_pack_Sum2(0,vc,vall);
-     mygrid->c_unpack(0,vall);
-     mygrid->cr_fft3d(vall);
-     indx1 = 0;
-     indx2 = 0;
-     for (ms=0; ms<ispin; ++ms) 
-     { 
-         mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
-         for (i=0; i<(mygrid->neq[ms]); ++i)
-         {
-            mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
-            mygrid->rc_fft3d(vpsi);
-            mygrid->c_pack(1,vpsi);
-            mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+      /* get Hpsi */
+      psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
 
-            indx1 += shift1;
-            indx2 += shift2;
-         }
-     }
+
+     /* apply r-space operators  - Expensive*/
+     //mygrid->cc_pack_SMul(0,scal2,vl,vall);
+     //mygrid->cc_pack_Sum2(0,vc,vall);
+     //mygrid->c_unpack(0,vall);
+     //mygrid->cr_fft3d(vall);
+     //indx1 = 0;
+     //indx2 = 0;
+     //for (ms=0; ms<ispin; ++ms) 
+     //{ 
+     //    mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
+     //    for (i=0; i<(mygrid->neq[ms]); ++i)
+     //    {
+     //       mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
+     //       mygrid->rc_fft3d(vpsi);
+     //       mygrid->c_pack(1,vpsi);
+     //       mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+     //
+     //       indx1 += shift1;
+     //       indx2 += shift2;
+     //    }
+     //}
 
      /* do a steepest descent step */
      mygrid->gg_SMul(dte,Hpsi,psi2);
@@ -197,7 +208,19 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    eorbit  = mygrid->m_trace(hml);
    if (ispin==1) eorbit = eorbit+eorbit;
 
-   ehartr  = mycoulomb->ecoulomb(dng);
+   /* hartree energy and ion-ion energy */
+   if (mycoulomb12->has_coulomb1) 
+   {
+      ehartr  = mycoulomb12->mycoulomb1->ecoulomb(dng);
+      eion    = myewald->energy();
+   }
+   if (mycoulomb12->has_coulomb2)
+   {
+       ehartr  = 0.5*mygrid->rr_dot(rho,vc)*dv;
+       eion = myion->ion_ion_energy();
+   }
+
+   /* xc energy */
    exc     = mygrid->rr_dot(dnall,xce);
    pxc     = mygrid->rr_dot(dn,xcp);
    if (ispin==1)
@@ -213,14 +236,17 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    exc *= dv;
    pxc *= dv;
 
-   eion    = myewald->energy();
+   /* average Kohn-Sham kineticl energy */
    eke     = myke->ke_ave(psi1);
+
+   /* average Kohn-Sham local psp energy */
    elocal  = mygrid->cc_pack_dot(0,dng,vl);
+   /* add in long range part here*/
+
+   /* average Kohn-Sham v_nonlocal energy */
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1,Hpsi);
    enlocal = -mygrid->gg_traceall(psi1,Hpsi);
-
-
 
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;
@@ -283,6 +309,9 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
-   mygrid->c_pack_deallocate(vc);
+   if (mycoulomb12->has_coulomb1)
+      mygrid->c_pack_deallocate(vc);
+   else if (mycoulomb12->has_coulomb2)
+      mygrid->r_dealloc(vc);
 }
 }

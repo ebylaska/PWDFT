@@ -17,7 +17,7 @@
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"inner_loop.hpp"
@@ -168,9 +168,9 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    mystrfac.phafac();
 
    /* initialize operators */
-   Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
-   XC_Operator      myxc(&mygrid,control);
+   Kinetic_Operator   mykin(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
+   XC_Operator        myxc(&mygrid,control);
 
    /* initialize psps */
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
@@ -291,7 +291,8 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
                                        << Efmt(12,3) << control.tolerances(1) << " (density) "
                                        << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
       std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
-                << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)\n";
+                << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)"
+                << std::endl;
 
    }
 
@@ -301,10 +302,11 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    if (myparallel.is_master()) seconds(&cpu2);
    if (oprint) 
    {
-      std::cout << "     ========================== iteration ==========================\n";
-      std::cout << "          >>> iteration started at " << util_date() << "  <<<\n";
-      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      std::cout << "     ---------------------------------------------------------------\n";
+      std::cout << std::endl << std::endl << std::endl;
+      std::cout << "     ========================== iteration ==========================" << std::endl;
+      std::cout << "          >>> iteration started at " << util_date() << "  <<<"        << std::endl;
+      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon" << std::endl;
+      std::cout << "     ---------------------------------------------------------------" << std::endl;
    }
    done   = 0;
    icount = 0;
@@ -312,7 +314,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    {
       ++icount;
       inner_loop(control,&mygrid,&myion,
-                 &mykin,&mycoulomb,&myxc,
+                 &mykin,&mycoulomb12,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
