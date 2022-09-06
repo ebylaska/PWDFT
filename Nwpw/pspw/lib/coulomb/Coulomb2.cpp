@@ -143,8 +143,8 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid)
          if (i1>dnx/2) i1 -= dnx;
 
          //call D3dB_ijktoindex2p(2,i,j,k,index1,p)
-         auto indx = myd3db2->ijktoindex(i,j,k);
-         auto p    = myd3db2->ijktop(i,j,k);
+         auto indx = myd3db2->ijktoindex2(i,j,k);
+         auto p    = myd3db2->ijktop2(i,j,k);
          if (p==taskid)
          {
             auto x = i1*dunita[0]/fdnx + j1*dunita[3]/fdny + k1*dunita[6]/fdnz;

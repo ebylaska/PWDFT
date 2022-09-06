@@ -437,6 +437,39 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    zplane_tmp1 = new (std::nothrow) double[2*zplane_size+8];
    zplane_tmp2 = new (std::nothrow) double[2*zplane_size+8];
 
+
+   /* initialize r_grid */
+   has_r_grid = (lattice->aperiodic());
+   if (has_r_grid)
+   {
+      r_grid = r_nalloc(3);
+      double a[9];
+      for (auto i=0; i<3; ++i) {
+         a[i]   = lattice->unita1d(0+i)/((double) nx);
+         a[3+i] = lattice->unita1d(3+i)/((double) ny);
+         a[6+i] = lattice->unita1d(6+i)/((double) nz);
+      }
+
+      /* grid points in coordination space */
+      for (auto k3=(-nzh); k3<nzh; ++k3)
+      for (auto k2=(-nyh); k2<nyh; ++k2)
+      for (auto k1=(-nxh); k1<nxh; ++k1)
+      {
+         int i = k1 + nxh;
+         int j = k2 + nyh;
+         int k = k3 + nzh;
+         int indx = ijktoindex2(i,j,k);
+         int p    = ijktop2(i,j,k);
+   
+         if (p==parall->taskid_i())
+         {
+            r_grid[3*indx]   = a[0]*k1 + a[3]*k2 + a[6]*k3;
+            r_grid[3*indx+1] = a[1]*k1 + a[4]*k2 + a[7]*k3;
+            r_grid[3*indx+2] = a[2]*k1 + a[5]*k2 + a[8]*k3;
+         }
+      }
+   }
+
 }
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2& control) : PGrid(inparall,inlattice,control.mapping(),control.balance(),control.ngrid(0),control.ngrid(1),control.ngrid(2)) {}

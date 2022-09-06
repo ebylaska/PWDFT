@@ -173,6 +173,9 @@ public:
     void v_local(double *, const bool, double *, double *);
     void f_local(double *, double *);
 
+    //void vlr_local(double *, const bool, double *, double *);
+    //void grad_v_lr_local(double *, const bool, double *, double *);
+
     double e_nonlocal(double *);
 
     double sphere_radius(const int ia) { return rgrid[ia][icut[ia]-1]; }

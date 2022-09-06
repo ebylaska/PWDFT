@@ -39,7 +39,13 @@ class PGrid : public d3db {
 
 
 public:
+        /* lattice pointer */
         Lattice *lattice;
+
+        /* r_grid data */
+        bool has_r_grid = false;
+        double *r_grid;
+
 
         /* constructor */
 	PGrid(Parallel *, Lattice *, int, int, int, int, int);
@@ -63,6 +69,7 @@ public:
             delete [] zero_slab23[1];
             delete [] zplane_tmp1;
             delete [] zplane_tmp2;
+            if (has_r_grid) delete [] r_grid;
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
