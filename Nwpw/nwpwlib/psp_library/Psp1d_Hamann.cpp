@@ -400,6 +400,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
    }
 
    version = 3;
+   //version = psp_version;
    /* Normarization constants */
    double a;
    double *f = new double[nrho];
