@@ -288,6 +288,68 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    return ierr;
 }
 
+extern int lammps_pspw_qmmm_nominimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                        bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::ostream& coutput)
+{
+   int ierr;
+   //int taskid,np,ierr;
+   //ierr = MPI_Comm_rank(comm_world,&taskid);
+   //ierr = MPI_Comm_size(comm_world,&np);
+
+   auto lammps_rtdbjson = json::parse(lammps_rtdbstring);
+
+   int nion             = lammps_rtdbjson["geometries"]["geometry"]["nion"];
+   lammps_rtdbjson["geometries"]["geometry"]["coords"] = std::vector<double>(rion,&rion[3*nion]);
+
+   if (lammps_rtdbjson["nwpw"].is_null()) { json nwpw; lammps_rtdbjson["nwpw"] = nwpw; }
+   if (lammps_rtdbjson["nwpw"]["apc"].is_null()) { json apc; lammps_rtdbjson["nwpw"]["apc"] = apc; }
+   lammps_rtdbjson["nwpw"]["apc"]["on"] = true;
+   lammps_rtdbjson["nwpw"]["apc"]["u"]  = std::vector<double>(uion,&uion[nion]);
+   lammps_rtdbjson["current_task"]  = "noit_gradient";
+
+   lammps_rtdbstring = lammps_rtdbjson.dump();
+
+   // run minimizer
+   //if (printqmmm) std::cout << "qmmm_nominimizer:lammps_rtdbstring = " << lammps_rtdbstring << std::endl;
+
+   ierr = pwdft::pspw_minimizer(comm_world,lammps_rtdbstring,coutput);
+
+
+   lammps_rtdbjson   =  json::parse(lammps_rtdbstring);
+
+   // fetch output - energy, forces, and apc charges
+   double ee   = lammps_rtdbjson["pspw"]["energy"];
+   double eapc = lammps_rtdbjson["pspw"]["energies"][51];
+
+   if (removeqmmmcoulomb)
+      *E = (ee-eapc);
+   else
+      *E = (ee);
+
+   std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
+   std::copy(v.begin(),v.end(), fion);
+
+   std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
+   std::copy(vv.begin(),vv.end(), qion);
+
+   //coutput << " pwdft EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
+
+
+   // pre-remove qm/qm electrostatic interactions
+   if (removeqmqmcoulomb)
+   {
+      double ecoul = pwdft::ion_ion_e(nion,qion,rion);
+      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+      *E -= ecoul;
+      pwdft::ion_ion_m_f(nion,qion,rion,fion);
+   }
+
+   return ierr;
+}
+
+
+
+
 
 extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename, std::ostream& coutput)
 {
@@ -410,6 +472,27 @@ extern int lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion
    return ierr;
 }
 
+extern int lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
+                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::string& filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_qmmm_nominimizer(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_qmmm_nominimizer(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,nwout);
+   }
+   return ierr;
+}
+
+
+
+
 extern void lammps_pspw_input_filename(MPI_Comm comm_world, std::string& nwfilename, std::string& filename)
 {
    if (filename.empty())
@@ -456,6 +539,13 @@ extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *ri
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_qmmm_minimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
+extern int c_lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                                   bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
+{
+   std::string filename = convertcstring(cfilename);
+   return lammps_pspw_qmmm_nominimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
+} 
+
 extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
 {
    std::string nwfilename = convertcstring(cnwfilename);
