@@ -34,7 +34,7 @@ public:
 
 
    /* Constructors */
-   Psp1d_Hamann(Parallel *, const char *);
+   Psp1d_Hamann(Parallel *, const char *, const int);
 
    /* destructor */
    ~Psp1d_Hamann() {

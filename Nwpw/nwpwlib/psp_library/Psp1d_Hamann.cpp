@@ -297,7 +297,7 @@ static void generate_r3_matrix(int nrho, int lmax, double drho,
  *     Psp1d_Hamann::Psp1d_Hamann          *
  *                                         *
  *******************************************/
-Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
+Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name, const int psp_version)
 {
    double xx;
    FILE *fp;
@@ -399,8 +399,8 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name)
       }
    }
 
-   version = 3;
-   //version = psp_version;
+   //version = 3;
+   version = psp_version;
    /* Normarization constants */
    double a;
    double *f = new double[nrho];

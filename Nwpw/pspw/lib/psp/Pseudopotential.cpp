@@ -62,7 +62,7 @@ static bool vpp_read_header(char *fname,
  *                                                   *
  *****************************************************/
 
-static bool vpp_formatter_check(PGrid *mygrid, char *fname)
+static bool vpp_formatter_check(PGrid *mygrid, char *fname, const int psp_version)
 {
     char comment[80],atom[2];
     int psp_type,version,nfft[3];
@@ -82,7 +82,7 @@ static bool vpp_formatter_check(PGrid *mygrid, char *fname)
             reformat = reformat || (mygrid->nx!=nfft[0]);
             reformat = reformat || (mygrid->ny!=nfft[1]);
             reformat = reformat || (mygrid->nz!=nfft[2]);
-            //reformat = reformat || (control.pversion!=version);
+            reformat = reformat || (psp_version!=version);
             if (!reformat) ireformat = 0;
         }
     }
@@ -741,6 +741,7 @@ static void vpp_generate(PGrid *mygrid,
                          char *fname,
                          char *comment,
                          int *psp_type,
+                         int psp_version_in,
                          int *version,
                          int *nfft,
                          double *unita,
@@ -803,7 +804,7 @@ static void vpp_generate(PGrid *mygrid,
     {
 
         int nray = mygrid->n_ray();
-        Psp1d_Hamann psp1d(myparall,pspname);
+        Psp1d_Hamann psp1d(myparall,pspname,psp_version_in);
 
         nfft[0] = mygrid->nx;
         nfft[1] = mygrid->ny;
@@ -1169,14 +1170,14 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
         strcat(fname,".vpp");
         control.add_permanent_dir(fname);
 
-        if (vpp_formatter_check(mypneb,fname))
+        if (vpp_formatter_check(mypneb,fname,psp_version))
         {
             strcpy(pspname,myion->atom(ia));
             strcat(pspname,".psp");
             control.add_permanent_dir(pspname);
             vpp_generate(mypneb,
                          pspname,fname,
-                         comment[ia],&psp_type[ia],&version,nfft,unita,aname,
+                         comment[ia],&psp_type[ia],psp_version,&version,nfft,unita,aname,
                          &amass[ia],&zv[ia],&lmmax[ia],&lmax[ia],&locp[ia],&nmax[ia],
                          &rc_ptr,&nprj[ia],&n_ptr,&l_ptr,&m_ptr,
                          &b_ptr,&G_ptr,&rlocal[ia],&semicore[ia],&rcore[ia],
