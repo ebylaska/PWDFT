@@ -1,5 +1,5 @@
-## Generate pwdft shared library ##
-First go to the PWDFT home directory, e.g.,
+## Formulas for Energies and forces ##
+
 
 https://jsfiddle.net/8ndx694g/
 
