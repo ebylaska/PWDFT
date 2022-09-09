@@ -6,7 +6,12 @@ The following examples run a QM/MM two water example.
 
 ### Example 1 - Baseline implementation - Not ideal for LAMMPs ###
 
-This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM energies and QM/MM energies, and the energies and forces between the QM/QM atoms. The user qmmm codes needs to include functions to calculate the electrostatic potentials on the QM atoms from the MM atoms, QM/MM forces, and the MM/MM energies and forces. 
+Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
+
+Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+
+This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM Coulomb energies and QM/MM Coulomb energies, and the energies and forces between the QM/QM atoms.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, QM/MM forces, and the MM/MM energies and forces. 
 
 This example calls:
 - `extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename);`
@@ -47,14 +52,18 @@ To use this formulation of QM/MM requires the MD code to calculate
 - The spring energy and forces between the MM atoms
     - functions: `Espring=qmmm.spring_Energy(rion1)` and `qmmm.spring_Force(rion1,fion)`
 
-Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
-
-Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
-                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
 
 
 
 ### Example 2 - implementation more suitable for LAMMPs ###
+
+Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example02.cpp
+
+Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+
+This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
+QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
 
 
 

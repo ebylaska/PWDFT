@@ -232,10 +232,10 @@ int main(int argc, char* argv[])
 
    if (taskid==MASTER) {
       xyzfile = new (std::nothrow) std::ofstream;
-      xyzfile->open("testqmm.xyz", std::ios::app);
+      xyzfile->open("dataqmmm01.xyz", std::ios::app);
 
       emotionfile = new (std::nothrow) std::ofstream;
-      emotionfile->open("testqmm.emotion", std::ios::app);
+      emotionfile->open("dataqmmm01.emotion", std::ios::app);
    }
 
 
@@ -340,7 +340,6 @@ int main(int argc, char* argv[])
          printxyz(xyzfile,nion,qmmm.symbol,unita,rion1);
          printemotion(emotionfile,dt*(it+1),Etotal+KE,Etotal,KE,Eqm,Eqq,ELJ,Espring);
       }
-
 
    }
 
