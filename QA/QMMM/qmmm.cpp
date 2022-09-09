@@ -1003,14 +1003,14 @@ void QMMM_Operator::Coulomb_Force(const double qion[], const double rion[], doub
 
 /****************************************************
  *                                                  *
- *        MMMM_electrostatic_energy                 *
+ *        MMMM_electrostatic_Energy                 *
  *                                                  *
  ****************************************************/
 
 // Function partially removes Coulomb frag-frag energies, and completely removes Coulomb frag self energies.
 // This function is intended to be called in conjunction with Coulomb_Energy.
 
-double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const double rion[])
+double QMMM_Operator::MMMM_electrostatic_Energy(const double qion[], const double rion[])
 {
    double E=0.0;
    double rw1_cm[3],rw2_cm[3];
@@ -1064,11 +1064,11 @@ double QMMM_Operator::MMMM_electrostatic_energy(const double qion[], const doubl
 
 /****************************************************
  *                                                  *
- *         MMMM_Coulomb_electrostatic_force         *
+ *         MMMM_Coulomb_electrostatic_Force         *
  *                                                  *
  ****************************************************/
 
-void QMMM_Operator::MMMM_electrostatic_force(const double qion[], const double rion[], double fion[])
+void QMMM_Operator::MMMM_electrostatic_Force(const double qion[], const double rion[], double fion[])
 {
    double m1,m2;
    double rw1_cm[3],rw2_cm[3];
@@ -1214,10 +1214,10 @@ void QMMM_Operator::QMQM_electrostatic_force(const double qion[], const double r
 
 /****************************************************
  *                                                  *
- *               QMMM_LJ_energy                     *
+ *               QMMM_LJ_Energy                     *
  *                                                  *
  ****************************************************/
-double QMMM_Operator::QMMM_LJ_energy(const double rion[])
+double QMMM_Operator::QMMM_LJ_Energy(const double rion[])
 {
    double E = 0.0;
    // QMQM LJ == 0
@@ -1237,10 +1237,10 @@ double QMMM_Operator::QMMM_LJ_energy(const double rion[])
 
 /****************************************************
  *                                                  *
- *               QMMM_LJ_force                      *
+ *               QMMM_LJ_Force                      *
  *                                                  *
  ****************************************************/
-void QMMM_Operator::QMMM_LJ_force(const double rion[], double fion[])
+void QMMM_Operator::QMMM_LJ_Force(const double rion[], double fion[])
 {
    // qm and mm interactions
    for (auto qm=0; qm<nion_qm; ++qm)
@@ -1254,10 +1254,10 @@ void QMMM_Operator::QMMM_LJ_force(const double rion[], double fion[])
 
 /****************************************************
  *                                                  *
- *               MMMM_LJ_energy                     *
+ *               MMMM_LJ_Energy                     *
  *                                                  *
  ****************************************************/
-double QMMM_Operator::MMMM_LJ_energy(const double rion[])
+double QMMM_Operator::MMMM_LJ_Energy(const double rion[])
 {
    double E = 0.0;
 
@@ -1276,10 +1276,10 @@ double QMMM_Operator::MMMM_LJ_energy(const double rion[])
 
 /****************************************************
  *                                                  *
- *               MMMM_LJ_force                      *
+ *               MMMM_LJ_Force                      *
  *                                                  *
  ****************************************************/
-void QMMM_Operator::MMMM_LJ_force(const double rion[], double fion[])
+void QMMM_Operator::MMMM_LJ_Force(const double rion[], double fion[])
 {
    // mm interactions
    for (auto mm1=nion_qm; mm1<(nion-1); ++mm1)

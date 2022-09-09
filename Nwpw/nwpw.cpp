@@ -280,13 +280,14 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    if (removeqmqmcoulomb)
    {
       double ecoul = pwdft::ion_ion_e(nion,qion,rion);
-      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << " qion=" << lammps_rtdbjson["nwpw"]["apc"]["q"]  << std::endl;
       *E -= ecoul;
       pwdft::ion_ion_m_f(nion,qion,rion,fion);
    }
 
    return ierr;
 }
+
 
 extern int lammps_pspw_qmmm_nominimizer(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
                                         bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::ostream& coutput)
@@ -329,8 +330,8 @@ extern int lammps_pspw_qmmm_nominimizer(MPI_Comm comm_world, double *rion, doubl
    std::vector<double> v = lammps_rtdbjson["pspw"]["fion"];
    std::copy(v.begin(),v.end(), fion);
 
-   std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
-   std::copy(vv.begin(),vv.end(), qion);
+   //std::vector<double> vv = lammps_rtdbjson["nwpw"]["apc"]["q"];
+   //std::copy(vv.begin(),vv.end(), qion);
 
    //coutput << " pwdft EAPC=" << std::fixed << std::setw(15) << std::setprecision(11) << eapc << std::endl;
 
@@ -339,7 +340,7 @@ extern int lammps_pspw_qmmm_nominimizer(MPI_Comm comm_world, double *rion, doubl
    if (removeqmqmcoulomb)
    {
       double ecoul = pwdft::ion_ion_e(nion,qion,rion);
-      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << std::endl;
+      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << " qion=" << lammps_rtdbjson["nwpw"]["apc"]["q"] <<  std::endl;
       *E -= ecoul;
       pwdft::ion_ion_m_f(nion,qion,rion,fion);
    }

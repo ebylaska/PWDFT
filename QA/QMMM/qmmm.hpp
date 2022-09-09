@@ -110,15 +110,17 @@ public:
     void spring_Force(const double [], double []);
 
     // LJ energy and forces
-    double MMMM_LJ_energy(const double []);
-    void MMMM_LJ_force(const double [], double []);
+    double MMMM_LJ_Energy(const double []);
+    double QMMM_LJ_Energy(const double []);
+    void MMMM_LJ_Force(const double [], double []);
+    void QMMM_LJ_Force(const double [], double []);
 
     // Coulomb energy and forces
     double Coulomb_Energy(const double [], const double []);
     void   Coulomb_Force(const double [], const double [], double []);
 
-    double MMMM_electrostatic_energy(const double [], const double []);
-    void   MMMM_electrostatic_force(const double [], const double [], double []);
+    double MMMM_electrostatic_Energy(const double [], const double []);
+    void   MMMM_electrostatic_Force(const double [], const double [], double []);
 
 
     // QMMM electrostatic potential
@@ -136,8 +138,6 @@ public:
 
 
 
-    double QMMM_LJ_energy(const double []);
-    void QMMM_LJ_force(const double [], double []);
 
 
 

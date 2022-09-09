@@ -108,9 +108,9 @@ void ion_ion_m_f(const int nion, const double Q[], const double R[], double F[])
       for (auto jj=0; jj<(nion-1); ++jj)
          for (auto ii=jj+1; ii<nion; ++ii)
          {
-            double x = R[3*ii]  -R[3*jj];
-            double y = R[3*ii+1]-R[3*jj+1];
-            double z = R[3*ii+2]-R[3*jj+2];
+            double x = R[3*jj]  -R[3*ii];
+            double y = R[3*jj+1]-R[3*ii+1];
+            double z = R[3*jj+2]-R[3*ii+2];
             double r = std::sqrt(x*x + y*y + z*z);
             if (r>1.0e-6)
             {
@@ -118,6 +118,7 @@ void ion_ion_m_f(const int nion, const double Q[], const double R[], double F[])
                F[3*ii]   += x*v;
                F[3*ii+1] += y*v;
                F[3*ii+2] += z*v;
+
                F[3*jj]   -= x*v;
                F[3*jj+1] -= y*v;
                F[3*jj+2] -= z*v;

@@ -528,6 +528,14 @@ static json parse_simulation_cell(json celljson, int *curptr, std::vector<std::s
       {
          celljson["box_different_lengths"] = true;
       }
+      else if (mystring_contains(line,"boundary_conditions"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) 
+            celljson["boundary_conditions"] = ss[1];
+         else
+            celljson["boundary_conditions"] = "periodic";
+      }
 
 
       ++cur;

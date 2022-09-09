@@ -468,6 +468,15 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][1].is_number_integer()) pewald_grid[1] = rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][1];
    if (rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][2].is_number_integer()) pewald_grid[2] = rtdbjson["nwpw"]["simulation_cell"]["ewald_ngrid"][2];
 
+   if (rtdbjson["nwpw"]["simulation_cell"]["boundary_conditions"].is_string()) {
+      std::string bc_str = mystring_lowercase(rtdbjson["nwpw"]["simulation_cell"]["boundary_conditions"]);
+      if (mystring_contains(bc_str,"aperiodic"))  version = 4;
+      if (mystring_contains(bc_str,"free-space")) version = 4;
+      if (mystring_contains(bc_str,"freespace"))  version = 4;
+      if (mystring_contains(bc_str,"free space")) version = 4;
+   }
+
+
 
    pminimizer = 1;
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer())   pminimizer   = rtdbjson["nwpw"]["minimizer"];

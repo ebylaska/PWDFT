@@ -240,29 +240,25 @@ int main(int argc, char* argv[])
 
 
    // QM energy and forces
-   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,NULL);
+   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,NULL);
    Etotal = Eqm;
 
-
-   // Eqq = Electrostatic energy and forces
-   Eqq = qmmm.Coulomb_Energy(qion,rion1);             // total Q energy = 0.5*qm/qm + qm/mm + 0.5*mm/mm
-       + qmmm.MMMM_electrostatic_energy(qion,rion1);  // subtracts the mm/mm fragment coulomb
-
-   qmmm.Coulomb_Force(qion,rion1,fion);
-   qmmm.MMMM_electrostatic_force(qion,rion1,fion);
-   Etotal += Eqq;
+   // Electrostatic energy between qm and mm atoms - Note this energy is already included from c_lammps_pspw_qmmm_minimizer_filename.
+   // However, the electrostatic forces between the qm and mm atoms is not included in this c_lammps_pspw_qmmm_minimizer_filename.
+   Eqq = 0.0;
+   // Eqq = QMMM_electrostatic_energy(qion,rion1); 
+   // Etotal += Eqq;
+   qmmm.QMMM_electrostatic_force(qion,rion1,fion);
 
    // ELJ = Lennard-Jones energy and forces
-   ELJ = 0.0;
-   //ELJ = qmmm.QMMM_LJ_energy(rion1);
-   //qmmm.QMMM_LJ_force(rion1,fion);
+   ELJ = qmmm.QMMM_LJ_Energy(rion1);
+   qmmm.QMMM_LJ_Force(rion1,fion);
    Etotal += ELJ;
 
    // Espring = MM spring energy and forces
    Espring = qmmm.spring_Energy(rion1);
    qmmm.spring_Force(rion1,fion);
    Etotal += Espring;
-
 
 
    if (taskid==MASTER) {
@@ -297,26 +293,24 @@ int main(int argc, char* argv[])
 
       qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
 
-      ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,true,true,NULL);
+      ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,NULL);
+      Etotal = Eqm;
 
-      // Eqq = Electrostatic energy and forces
-      Eqq = qmmm.Coulomb_Energy(qion,rion1);       // total Q energy
-          + qmmm.MMMM_electrostatic_energy(qion,rion1);  // subtracts the fragment coulomb
+      // Electrostatic energy between qm and mm atoms - Note this energy is already included from c_lammps_pspw_qmmm_minimizer_filename.
+      // However, the electrostatic forces between the qm and mm atoms is not included in this c_lammps_pspw_qmmm_minimizer_filename.
+      // Eqq = QMMM_electrostatic_energy(qion,rion1); 
+      qmmm.QMMM_electrostatic_force(qion,rion1,fion);
+      //Etotal += Eqq;
 
-      qmmm.Coulomb_Force(qion,rion1,fion);
-      qmmm.MMMM_electrostatic_force(qion,rion1,fion);
-      Eqm += Eqq;
-
-      // ELJ = Lenard-Johnes energy and forces
-      ELJ = 0.0;
-      //ELJ = qmmm.QMMM_LJ_energy(rion1);
-      //qmmm.QMMM_LJ_force(rion1,fion);
-      //Eqm += ELJ;
+      // ELJ = Lenard-Jones energy and forces
+      ELJ = qmmm.QMMM_LJ_Energy(rion1);
+      qmmm.QMMM_LJ_Force(rion1,fion);
+      Etotal += ELJ;
 
       // Espring = MM spring energy and forces
       Espring = qmmm.spring_Energy(rion1);
       qmmm.spring_Force(rion1,fion);
-      Eqm += Espring;
+      Etotal += Espring;
 
 
       // take a position Verlet step
@@ -335,20 +329,17 @@ int main(int argc, char* argv[])
          std::cout << "@ it = " << Ifmt(5) << it+1 << " Energy+Kinetic = " << Efmt(20,15) << Etotal+KE 
                    << " Energy = " << Efmt(20,15) << Etotal << " Kinetic Energy = " << Efmt(20,15) << KE << std::endl
                    <<  " QM Energy = " << Efmt(20,15) << Eqm << std::endl 
-                   <<  " QQ Energy = " << Efmt(20,15) << Eqq << std::endl 
                    <<  " LJ Energy = " << Efmt(20,15) << ELJ << std::endl 
                    <<  " Spring Energy = " << Efmt(20,15) << Espring << std::endl << std::endl;
          std::cout << "@@ "     << Ifmt(5) << it+1 << " " << Efmt(20,15) << dt*(it+1) << " " << Efmt(20,15) << Etotal+KE << " " 
                    << Efmt(20,15) << Etotal << " " << Efmt(20,15) << KE 
                    << " " << Efmt(20,15) << Eqm
-                   << " " << Efmt(20,15) << Eqq 
                    << " " << Efmt(20,15) << ELJ 
                    << " " << Efmt(20,15) << Espring << std::endl;
          std::cout << std::endl;
          printxyz(xyzfile,nion,qmmm.symbol,unita,rion1);
          printemotion(emotionfile,dt*(it+1),Etotal+KE,Etotal,KE,Eqm,Eqq,ELJ,Espring);
       }
-
 
 
    }
