@@ -19,4 +19,13 @@ and the forces and MM atoms are
 $$ \frac{\partial E_{QM-mm}}{\partial r} 
 $$
 
-https://jsfiddle.net/8ndx694g/
+
+The overall Coulomb energy can be written in the following form.
+
+$$ E_{Coulomb} = { {\frac{1}{2}} \sum_{{I,J=QM} \atop {I \ne J}} \frac{Q_I Q_J}{|R_I - R_J|} } + { {\frac{1}{2}} \sum_{{i,j=MM} \atop {i \ne j}}  \frac{q_i q_j}{|r_i - r_j|} } + {\sum_{I=QM} \sum_{j=MM} {Q_{I}  q_{j} \over |R_I - r_j| } } 
+$$
+
+$$ E_{Coulomb} = { {\frac{1}{2}} \sum_{{a,b=Atoms} \atop {a \ne b}} \frac{\eta_a \eta_b}{|x_a - x_b|} } 
+$$
+
+
