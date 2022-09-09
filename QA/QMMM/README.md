@@ -21,10 +21,10 @@ This example calls:
 
 To use this formulation of QM/MM requires the MD code to calculate
 - The electrostatic potential on the QM atoms from the MM atoms
-    - qmmm.QMMM_electrostatic_potential(qion,rion1,uion)  
+    - function: qmmm.QMMM_electrostatic_potential(qion,rion1,uion)  
 - Forces on the QM and MM atoms from the electrostatic (Coulomb) forces between the QM and MM atoms
+    - function: qmmm.QMMM_electrostatic_force(qion,rion1,fion)
     - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
-    - qmmm.QMMM_electrostatic_force(qion,rion1,fion)
   
 - The electrostatic (Coulomb) energy and forces between the MM atoms.
   
