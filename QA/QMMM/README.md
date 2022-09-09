@@ -15,7 +15,7 @@ This example calls:
     - where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
     
 - Functions used that are contained in qmmmm.cpp:
-    - qmmm.QMMM_electrostatic_potential(qion,rion1,uion)
+    - #0969DA qmmm.QMMM_electrostatic_potential(qion,rion1,uion)
     - ELJ=qmmm.QMMM_LJ_Energy(rion1);
     - qmmm.QMMM_LJ_Force(rion1,fion);
     - Espring=qmmm.spring_Energy(rion1);
