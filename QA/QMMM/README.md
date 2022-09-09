@@ -1,3 +1,20 @@
+# QM/MM Examples #
+
+## 2 water QM/MM Examples - 1 QM water and 1 MM water ##
+The following examples run a QM/MM two water example.
+
+### Example 1 - Baseline implementation ###
+
+This example runs a QM/MM two water example in which the the call to pspw_qmmm contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms
+
+Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
+
+Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+
+### Example 2 - ###
+
+
 ## Formulas for Energies and forces ##
 
 The Coulomb energy between the QM and MM atoms is written as
@@ -27,5 +44,8 @@ $$
 
 $$ E_{Coulomb} = { {\frac{1}{2}} \sum_{{a,b=Atoms} \atop {a \ne b}} \frac{\eta_a \eta_b}{|x_a - x_b|} } 
 $$
+
+
+
 
 
