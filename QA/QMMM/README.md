@@ -8,12 +8,10 @@ The following examples run a QM/MM two water example.
 
 This example runs a QM/MM two water example in which the the call to c_lammps_pspw_qmmm_minimizer_filename contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
 
-This example calls 
-
-extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
-                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
-
-where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
+This example calls:
+- extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
+  z.                                               bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
+    - where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
 
 To use this formulation of QM/MM requires the MD code to calculate
 - The electrostatic potential on the QM atoms from the MM atoms
