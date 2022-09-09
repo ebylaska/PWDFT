@@ -24,7 +24,7 @@ To use this formulation of QM/MM requires the MD code to calculate
     - $U_I = \sum_{j=MM} {q_{j} \over |R_I - r_j| }$  
     - function: qmmm.QMMM_electrostatic_potential(qion,rion1,uion)
 - Forces on the QM and MM atoms from the electrostatic (Coulomb) forces between the QM and MM atoms
-    - ${\vec F_I} = xyz$
+    - ${\vec F_I} = \sum_{j=MM} {q_{j} ({\vec r_j} - {\vec R_I}) \over |R_I - r_j| }$
     - $F_j = abc$
     - function: qmmm.QMMM_electrostatic_force(qion,rion1,fion)
     - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
