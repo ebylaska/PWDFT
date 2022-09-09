@@ -6,7 +6,7 @@ The following examples run a QM/MM two water example.
 
 ### Example 1 - Baseline implementation - Not ideal for LAMMPs ###
 
-This example runs a QM/MM two water example in which the the call to *c_lammps_pspw_qmmm_minimizer_filename* contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
+This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
 
 This example calls:
 - `extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename);`
@@ -39,7 +39,7 @@ To use this formulation of QM/MM requires the MD code to calculate
     - This interaction is not needed for the two water example. 
   
 - The LJ energy and forces between the QM and MM atoms
-    - functions: `ELJ=qmmm.QMMM_LJ_Energy(rion1)* and *qmmm.QMMM_LJ_Force(rion1,fion)`
+    - functions: `ELJ=qmmm.QMMM_LJ_Energy(rion1)` and `qmmm.QMMM_LJ_Force(rion1,fion)`
 
 - The LJ energy and forces between the MM atoms
     - This interaction is not needed for the two water example.
