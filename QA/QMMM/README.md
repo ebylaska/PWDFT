@@ -9,6 +9,7 @@ The following examples run a QM/MM two water example.
 This example runs a QM/MM two water example in which the the call to c_lammps_pspw_qmmm_minimizer_filename contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
 
 This example calls:
+- extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
 - extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
   z.                                               bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
     - where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
