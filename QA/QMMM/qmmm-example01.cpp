@@ -15,7 +15,7 @@
 
 #include "mpi.h"
 
-#include "parsestring.hpp"
+//#include "parsestring.hpp"
 
 #include "qmmm.hpp"
 
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
    ierr += MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 
    if (taskid==MASTER) {
-      debugfilename = "qmmm20.nwout";
+      debugfilename = "qmmm-example01.nwout";
       std::cout << "Hello world" << std::endl;
       std::cout << "np=" << np << " taskid=" << taskid << std::endl;
       std::cout << "argc=" << argc << std::endl;
