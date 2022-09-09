@@ -54,7 +54,8 @@ Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cp
 
 
 
-### Example 2 - ###
+### Example 2 - implementation more suitable for LAMMPs ###
+
 
 
 ## Formulas for Energies and forces ##
