@@ -11,6 +11,9 @@ Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.c
 Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
                    https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
 
+How to compile: mpic++ -O3 qmmm-example01.cpp qmmm.cpp ../../build_library/libpwdft.so 
+
+
 This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM Coulomb energies and QM/MM Coulomb energies, and the energies and forces between the QM/QM atoms.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, QM/MM forces, and the MM/MM energies and forces. 
 
 This example calls:

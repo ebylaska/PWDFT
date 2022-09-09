@@ -38,6 +38,8 @@ nwpw
    xc pbe
    cutoff 30.0
    2d-hcurve
+   tolerances 1.0e-9 1.0-9
+   apc on
    
 end
 
