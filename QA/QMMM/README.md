@@ -13,6 +13,11 @@ This example calls:
 - extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
   z.                                               bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
     - where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
+- qmmm.QMMM_electrostatic_potential(qion,rion1,uion)
+- ELJ = qmmm.QMMM_LJ_Energy(rion1);
+- qmmm.QMMM_LJ_Force(rion1,fion);
+- Espring = qmmm.spring_Energy(rion1);
+- qmmm.spring_Force(rion1,fion);
 
 To use this formulation of QM/MM requires the MD code to calculate
 - The electrostatic potential on the QM atoms from the MM atoms
