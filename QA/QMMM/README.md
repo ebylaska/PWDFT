@@ -3,13 +3,15 @@
 ## QM/MM Examples - 1 QM water and 1 MM water  ##
 The following examples run a QM/MM two water example.
 
+NWChem input deck used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/water2.nw
 
 ### Example 1 - Baseline implementation - Not ideal for LAMMPs ###
 
-Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
+Program filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
 
-Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
-                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+Program library files: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/parsestring.hpp
 
 How to compile: mpic++ -O3 qmmm-example01.cpp qmmm.cpp ../../build_library/libpwdft.so 
 
@@ -60,10 +62,11 @@ To use this formulation of QM/MM requires the MD code to calculate
 
 ### Example 2 - implementation more suitable for LAMMPs ###
 
-Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example02.cpp
+Program filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example02.cpp
 
-Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
-                   https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+Program library files: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/parsestring.hpp
 
 This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
 QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
