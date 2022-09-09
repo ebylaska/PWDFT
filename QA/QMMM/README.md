@@ -3,14 +3,30 @@
 ## 2 water QM/MM Examples - 1 QM water and 1 MM water ##
 The following examples run a QM/MM two water example.
 
-### Example 1 - Baseline implementation ###
 
-This example runs a QM/MM two water example in which the the call to pspw_qmmm contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms
+### Example 1 - Baseline implementation - Not ideal for LAMMPs ###
+
+This example runs a QM/MM two water example in which the the call to c_lammps_pspw_qmmm_minimizer_filename contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
+
+This example calls 
+
+extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
+                                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
+
+where removeqmmmcoulomb = false, and removeqmqmcoulomb = false.
+
+To use this formulation of QM/MM requires the MD code to calculate
+- The electrostatic potential on the QM atoms from the MM atoms
+- The electrostatic (Coulomb), LJ and spring energy and forces between the MM atoms
+- The electrostatic (Coulomb) forces between the QM and MM atoms
+  - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
 
 Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
 
 Library file used: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
                    https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+
+
 
 ### Example 2 - ###
 
