@@ -1,12 +1,12 @@
 # QM/MM Examples #
 
-## 2 water QM/MM Examples - 1 QM water and 1 MM water ##
+## QM/MM Examples - 1 QM water and 1 MM water  ##
 The following examples run a QM/MM two water example.
 
 
 ### Example 1 - Baseline implementation - Not ideal for LAMMPs ###
 
-This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM energies and QM/MM energies, and the forces on between the QM/QM atoms.  
+This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` contains all the QM/QM energies and QM/MM energies, and the energies and forces between the QM/QM atoms. The user qmmm codes needs to include functions to calculate the electrostatic potentials on the QM atoms from the MM atoms, QM/MM forces, and the MM/MM energies and forces. 
 
 This example calls:
 - `extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename);`
