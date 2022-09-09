@@ -1,24 +1,22 @@
 ## Formulas for Energies and forces ##
 
+The Coulomb energy between the QM and MM atoms is written as
+
+$$ E_{QMMM} = {\sum_{I=QM} \sum_{j=MM} {Q_{I}  q_{j} \over |R_I - r_j| } }  = {\sum_{I=QM} Q_I \left(\sum_{j=MM} {q_{j} \over |R_I - r_j| }\right) } ={\sum_{I=QM} Q_I U_I} , $$
+
+where $U_I$ is the electrostatic potential located at the QM atom $I$ from the MM atom charges, $q_j$.  Note, the functional dependence of the the two factors in the ${\sum_I Q_I U_I}$ sum are connected to just the QM atom positions, and the MM atom positions positions are embedded in the electrostatic potentials, $U_I$.
+
+, the Blochl charge, $Q_I$, at QM atom is a function of the QM position $R_I$, and the electrostatic potential, $U_I$, is a function of the QM positions, $R_I$, and MM atom positions, $r_j$.  
+
+The forces on the QM atoms are
+
+$$ \frac{\partial E_{QM-mm}}{\partial R} 
+= \frac{\partial}{\partial R} \left({\sum_I Q_I U_I}\right)
+= {\sum_I \left( \frac{\partial Q_I}{\partial R} U_I + Q_I \frac{\partial U_I}{\partial R} \right)} $$
+
+and the forces and MM atoms are
+
+$$ \frac{\partial E_{QM-mm}}{\partial r} 
+$$
 
 https://jsfiddle.net/8ndx694g/
-
-
-<img src="https://render.githubusercontent.com/render/math?math=\large E = E_{QM} %2B E_{MM} %2B E_{QM/MM}">
-
-<img src="https://render.githubusercontent.com/render/math?math=\large %5Cbegin%7Balign*%7D%0AE_%7BMM%7D%20%26%3D%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bi%20%5Cneq%20j%7D%20%5Cfrac%7Bq_i%20q_j%7D%7Br_%7Bij%7D%7D%20%5C%5C%0A%20%20%20%20%20%20%20%26%20%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bi%20%5Cneq%20j%7D%20%5C%7B%20%5Cfrac%7BA_%7Bij%7D%7D%7Br_%7Bij%7D%5E%7B12%7D%7D%20-%20%5Cfrac%7BB_%7Bij%7D%7D%7Br_%7Bij%7D%5E6%7D%20%5C%7D%0A%5Cend%7Balign*%7D">
-
-
-
-<img src="https://render.githubusercontent.com/render/math?math=\large %5Cbegin%7Balign*%7D%0AE_%7BQM%2FMM%7D%20%26%3D%20%5Csum_%7BI%3DQM%7D%20%5Csum_%7Bi%3DMM%7D%20%5C%7B%20%5Cfrac%7BQ_I%20q_i%7D%7Br_%7BIi%7D%7D%20%5C%7D%5C%5C%0A%26%2B%20%5Csum_%7BI%3DQM%7D%20%5Csum_%7Bi%3DMM%7D%20%5C%7B%20%5Cfrac%7BA_%7BIi%7D%7D%7Br_%7BIi%7D%5E%7B12%7D%7D%20-%20%5Cfrac%7BB_%7BIi%7D%7D%7Br_%7BIi%7D%5E6%7D%20%5C%7D%0A%5Cend%7Balign*%7D">
-
-<img src="https://render.githubusercontent.com/render/math?math=\large %5Cbegin%7Balign*%7D%0AE_%7BQM%2FMM%7D%20%26%3D%20%5Csum_%7BI%3DQM%7D%20%5Csum_%7Bi%3DMM%7D%20%5C%7B%20%5Cfrac%7BQ_I%20q_i%7D%7Br_%7BIi%7D%7D%20%5C%7D%5C%5C%0A%26%2B%20%5Csum_%7BI%3DQM%7D%20%5Csum_%7Bi%3DMM%7D%20%5C%7B%20%5Cfrac%7BA_%7BIi%7D%7D%7Br_%7BIi%7D%5E%7B12%7D%7D%20-%20%5Cfrac%7BB_%7BIi%7D%7D%7Br_%7BIi%7D%5E6%7D%20%5C%7D%5C%5C%0A%26%3D%20%5Csum_%7BI%3DQM%7D%20Q_I%20U_I%20%5C%5C%0A%26%2B%20e_%7BLJ%7D(I%2Ci)%0A%5Cend%7Balign*%7D">
-
-
-<img src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AE_%7BQM%2FMM%7D%20%26%3D%20%5Csum_%7BIi%7D%20%5Cfrac%7BQ_I%20q_i%7D%7Br_%7BIi%7D%7D%5C%5C%0A%26%2B%20%5Csum_%7BIi%7D%20%5C%7B%20%5Cfrac%7BA_%7BIi%7D%7D%7Br_%7BIi%7D%5E%7B12%7D%7D%20-%20%5Cfrac%7BB_%7BIi%7D%7D%7Br_%7BIi%7D%5E6%7D%20%5C%7D%0A%5Cend%7Balign*%7D">
-
-<img src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AE_%7BAPC%7D%20%26%3D%20%5Csum_I%20Q_I%20U_I%0A%5Cend%7Balign*%7D">
-
-<img src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AU_%7BI%7D%20%26%3D%20%5Csum_%7Bi%7D%20%5Cfrac%7Bq_i%7D%7Br_%7BIi%7D%7D%0A%5Cend%7Balign*%7D">
-
-<img src="https://render.githubusercontent.com/render/math?math=%5Cbegin%7Balign*%7D%0AE_%7BQQ%7D%20%26%3D%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7BI%20%5Cneq%20J%7D%20%5Cfrac%7BQ_I%20Q_J%7D%7Br_%7BIJ%7D%7D%5C%5C%0A%26%2B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7BI%20%5Cneq%20J%7D%20%5C%7B%20%5Cfrac%7BA_%7BIJ%7D%7D%7Br_%7BIJ%7D%5E%7B12%7D%7D%20-%20%5Cfrac%7BB_%7BIJ%7D%7D%7Br_%7BIJ%7D%5E6%7D%20%5C%7D%0A%5Cend%7Balign*%7D">
