@@ -20,6 +20,7 @@ This example calls:
 - qmmm.spring_Force(rion1,fion);
 
 To use this formulation of QM/MM requires the MD code to calculate
+- The forces on the QM atoms are included in the call to c_lammps_pspw_input_filename
 - The electrostatic potential on the QM atoms from the MM atoms
     - $U_I = \sum_{j=MM} {q_{j} \over |R_I - r_j| }$  
     - function: qmmm.QMMM_electrostatic_potential(qion,rion1,uion)
@@ -28,8 +29,11 @@ To use this formulation of QM/MM requires the MD code to calculate
     - ${\vec F_{j}} = - q_{j} \sum_{I=QM} Q_{I} {{\vec r_j} - {\vec R_I} \over |r_j - R_I|^3}$
     - function: qmmm.QMMM_electrostatic_force(qion,rion1,fion)
     - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
-  
+- Forces on MM atoms from the electrostatic (Coulomb) forces between the MM atoms
+    - This interaction not needed for the two water example.
+   
 - The electrostatic (Coulomb) energy and forces between the MM atoms.
+    - This interaction not needed for the two water example. 
   
 - The electrostatic (Coulomb), LJ and spring energy and forces between the MM atoms
 - The electrostatic (Coulomb) forces between the QM and MM atoms
