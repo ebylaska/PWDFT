@@ -36,12 +36,13 @@ To use this formulation of QM/MM requires the MD code to calculate
     - This interaction is not needed for the two water example. 
   
 - The LJ energy and forces between the QM and MM atoms
-    - xx
     - functions: ELJ = qmmm.QMMM_LJ_Energy(rion1) and qmmm.QMMM_LJ_Force(rion1,fion)
 
+- The LJ energy and forces between the MM atoms
+    - This interaction is not needed for the two water example.
 
-- The electrostatic (Coulomb) forces between the QM and MM atoms
-  - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
+- The spring energy and forces between the MM atoms
+    - functions:   Espring=qmmm.spring_Energy(rion1) and qmmm.spring_Force(rion1,fion)
 
 Filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example01.cpp
 
