@@ -280,7 +280,9 @@ extern int lammps_pspw_qmmm_minimizer(MPI_Comm comm_world, double *rion, double 
    if (removeqmqmcoulomb)
    {
       double ecoul = pwdft::ion_ion_e(nion,qion,rion);
-      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul << " qion=" << lammps_rtdbjson["nwpw"]["apc"]["q"]  << std::endl;
+      //std::cout << " pwdft QMQM Ecoul=" << std::fixed << std::setw(15) << std::setprecision(11) << ecoul 
+      //          << " qion=" << lammps_rtdbjson["nwpw"]["apc"]["q"]  
+      //          << std::endl;
       *E -= ecoul;
       pwdft::ion_ion_m_f(nion,qion,rion,fion);
    }

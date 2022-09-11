@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
    // Electrostatic energy between qm and mm atoms - Note this energy has been subtracted from the
    // c_lammps_pspw_qmmm_minimizer_filename qm energy and needs to be added back in.
    // Also the electrostatic forces between the qm and mm atoms also need to be added.
-   Eqq = qmmm.QMMM_electrostatic_energy(qion,rion1); 
+   Eqq = qmmm.QMMM_electrostatic_energy(qion,rion1)  
        + qmmm.QMQM_electrostatic_energy(qion,rion1); 
    qmmm.QMMM_electrostatic_force(qion,rion1,fion);
    qmmm.QMQM_electrostatic_force(qion,rion1,fion);
@@ -300,8 +300,8 @@ int main(int argc, char* argv[])
       // Electrostatic energy between qm and mm atoms - Note this energy has been subtracted from the
       // c_lammps_pspw_qmmm_minimizer_filename qm energy and needs to be added back in.
       // Also the electrostatic forces between the qm and mm atoms also need to be added.
-      Eqq = qmmm.QMMM_electrostatic_energy(qion,rion1); 
-            qmmm.QMQM_electrostatic_energy(qion,rion1); 
+      Eqq = qmmm.QMMM_electrostatic_energy(qion,rion1) 
+          + qmmm.QMQM_electrostatic_energy(qion,rion1); 
       qmmm.QMMM_electrostatic_force(qion,rion1,fion);
       qmmm.QMQM_electrostatic_force(qion,rion1,fion);
       Etotal += Eqq;
