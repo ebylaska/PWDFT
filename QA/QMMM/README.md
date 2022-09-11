@@ -34,7 +34,7 @@ This example calls:
 
 
 To use this formulation of QM/MM requires the MD code to calculate
-- The forces on the QM atoms are included in the call to c_lammps_pspw_input_filename
+- The forces on the QM atoms are included in the call to `c_lammps_pspw_input_filename`
 - The electrostatic potential on the QM atoms from the MM atoms
     - $U_I = \sum_{j=MM} {q_{j} \over |R_I - r_j| }$  
     - function: `qmmm.QMMM_electrostatic_potential(qion,rion1,uion)`
@@ -85,7 +85,6 @@ To use this formulation of QM/MM requires the MD code to calculate
     - ${\vec F_I} = - Q_{I} \sum_{J=QM} Q_{J} {{\vec R_I} - {\vec R_J} \over |R_I - R_J|^3 }$
     - function: `Eqq=qmmm.QMQM_electrostatic_energy(qion,rion1)`
     - function: `qmmm.QMQM_electrostatic_force(qion,rion1,fion)`
-
 - QMMM electrostatic energy and forces on the QM and MM atoms from the electrostatic (Coulomb) forces between the QM and MM atoms
     - ${\vec F_I} = - Q_{I} \sum_{j=MM} q_{j} {{\vec R_I} - {\vec r_j} \over |R_I - r_j|^3 }$
     - ${\vec F_{j}} = - q_{j} \sum_{I=QM} Q_{I} {{\vec r_j} - {\vec R_I} \over |r_j - R_I|^3}$
