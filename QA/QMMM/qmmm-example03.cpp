@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
    ierr += MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
 
    if (taskid==MASTER) {
-      debugfilename = "qmmm-example02.nwout";
+      debugfilename = "qmmm-example03.nwout";
       std::cout << "Hello world" << std::endl;
       std::cout << "np=" << np << " taskid=" << taskid << std::endl;
       std::cout << "argc=" << argc << std::endl;
@@ -232,10 +232,10 @@ int main(int argc, char* argv[])
 
    if (taskid==MASTER) {
       xyzfile = new (std::nothrow) std::ofstream;
-      xyzfile->open("dataqmmm02.xyz", std::ios::app);
+      xyzfile->open("dataqmmm03.xyz", std::ios::app);
 
       emotionfile = new (std::nothrow) std::ofstream;
-      emotionfile->open("dataqmmm02.emotion", std::ios::app);
+      emotionfile->open("dataqmmm03.emotion", std::ios::app);
    }
 
    // QM energy and forces
