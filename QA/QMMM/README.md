@@ -73,11 +73,30 @@ How to compile: mpic++ -O3 qmmm-example02.cpp qmmm.cpp ../../build_library/libpw
 
 <img src="./xampl2.svg">
 
+This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting options removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
+QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
 
 
+
+
+
+### Example 3 - implementation more suitable for LAMMPs ###
+
+Program filename: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm-example03.cpp
+
+Program library files: https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.cpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/qmmm.hpp
+                       https://github.com/ebylaska/PWDFT/blob/master/QA/QMMM/parsestring.hpp
+
+How to compile: mpic++ -O3 qmmm-example03.cpp qmmm.cpp ../../build_library/libpwdft.so 
+
+<img src="./xampl3.svg">
 
 This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting options removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
 QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
+
+
+
 
 
 
