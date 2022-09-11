@@ -27,6 +27,7 @@ This example calls:
     
 - Functions used that are contained in qmmm.cpp:
     - `qmmm.QMMM_electrostatic_potential(qion,rion1,uion);`
+    - `qmmm.QMMM_electrostatic_force(qion,rion1,fion)`
     - `ELJ=qmmm.QMMM_LJ_Energy(rion1);`
     - `qmmm.QMMM_LJ_Force(rion1,fion);`
     - `Espring=qmmm.spring_Energy(rion1);`
@@ -75,6 +76,21 @@ How to compile: mpic++ -O3 qmmm-example02.cpp qmmm.cpp ../../build_library/libpw
 
 This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting options removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
 QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
+
+This example calls:
+- `extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename);`
+- `extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
+                                                   bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename);`
+    - where removeqmmmcoulomb = true, and removeqmqmcoulomb = false.
+    
+- Functions used that are contained in qmmm.cpp:
+    - `qmmm.QMMM_electrostatic_potential(qion,rion1,uion);`
+    - `Eqq=qmmm.QMMM_electrostatic_energy(qion,rion1)`
+    - `qmmm.QMMM_electrostatic_force(qion,rion1,fion)`
+    - `ELJ=qmmm.QMMM_LJ_Energy(rion1);`
+    - `qmmm.QMMM_LJ_Force(rion1,fion);`
+    - `Espring=qmmm.spring_Energy(rion1);`
+    - `qmmm.spring_Force(rion1,fion);`
 
 
 To use this formulation of QM/MM requires the MD code to calculate
