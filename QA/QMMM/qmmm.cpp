@@ -1064,7 +1064,7 @@ double QMMM_Operator::MMMM_electrostatic_Energy(const double qion[], const doubl
 
 /****************************************************
  *                                                  *
- *         MMMM_Coulomb_electrostatic_Force         *
+ *             MMMM_electrostatic_Force             *
  *                                                  *
  ****************************************************/
 
