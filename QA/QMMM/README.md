@@ -37,12 +37,12 @@ To use this formulation of QM/MM requires the MD code to calculate
 - The forces on the QM atoms are included in the call to c_lammps_pspw_input_filename
 - The electrostatic potential on the QM atoms from the MM atoms
     - $U_I = \sum_{j=MM} {q_{j} \over |R_I - r_j| }$  
-    - function: *qmmm.QMMM_electrostatic_potential(qion,rion1,uion)*
+    - function: `qmmm.QMMM_electrostatic_potential(qion,rion1,uion)`
 - Forces on the QM and MM atoms from the electrostatic (Coulomb) forces between the QM and MM atoms
     - ${\vec F_I} = - Q_{I} \sum_{j=MM} q_{j} {{\vec R_I} - {\vec r_j} \over |R_I - r_j|^3 }$
     - ${\vec F_{j}} = - q_{j} \sum_{I=QM} Q_{I} {{\vec r_j} - {\vec R_I} \over |r_j - R_I|^3}$
     - function: `qmmm.QMMM_electrostatic_force(qion,rion1,fion)`
-    - Note the electostatic energy between the QM and MM atoms is already included in the call to c_lammps_pspw_qmmm_minimizer_filename
+    - Note the electostatic energy between the QM and MM atoms is already included in the call to `c_lammps_pspw_qmmm_minimizer_filename`
 - Forces on MM atoms from the electrostatic (Coulomb) forces between the MM atoms
     - This interaction not needed for the two water example.
    
@@ -76,6 +76,36 @@ How to compile: mpic++ -O3 qmmm-example02.cpp qmmm.cpp ../../build_library/libpw
 This example runs a QM/MM two water example in which the call to `c_lammps_pspw_qmmm_minimizer_filename` has the QM/QM Coulomb energies and forces, and the QM/MM Coulomb energies and forces removed by setting options removeqmmmcoulomb = true, and removeqmqmcoulomb = true.  User qmmm codes needs to include functions that calculate the electrostatic potentials on the QM atoms from the MM atoms, 
 QM/QM energies and forces, QM/MM energies and forces, and the MM/MM energies and forces. 
 
+
+To use this formulation of QM/MM requires the MD code to calculate
+- The electrostatic potential on the QM atoms from the MM atoms
+    - $U_I = \sum_{j=MM} {q_{j} \over |R_I - r_j| }$  
+    - function: `qmmm.QMMM_electrostatic_potential(qion,rion1,uion)`
+- Forces and energies on the QM atoms from the electrostatic (Coulomb) interactions between the QM and QM atoms
+    - ${\vec F_I} = - Q_{I} \sum_{J=QM} Q_{J} {{\vec R_I} - {\vec R_J} \over |R_I - R_J|^3 }$
+    - function: `Eqq=qmmm.QMQM_electrostatic_energy(qion,rion1)`
+    - function: `qmmm.QMQM_electrostatic_force(qion,rion1,fion)`
+
+- QMMM electrostatic energy and forces on the QM and MM atoms from the electrostatic (Coulomb) forces between the QM and MM atoms
+    - ${\vec F_I} = - Q_{I} \sum_{j=MM} q_{j} {{\vec R_I} - {\vec r_j} \over |R_I - r_j|^3 }$
+    - ${\vec F_{j}} = - q_{j} \sum_{I=QM} Q_{I} {{\vec r_j} - {\vec R_I} \over |r_j - R_I|^3}$
+    - function: `Eqq=qmmm.QMMM_electrostatic_energy(qion,rion1)`
+    - function: `qmmm.QMMM_electrostatic_force(qion,rion1,fion)`
+    - Note the electostatic energy between the QM and MM atoms is already included in the call to `c_lammps_pspw_qmmm_minimizer_filename`
+- Forces on MM atoms from the electrostatic (Coulomb) forces between the MM atoms
+    - This interaction not needed for the two water example.
+   
+- The electrostatic (Coulomb) energy and forces between the MM atoms.
+    - This interaction is not needed for the two water example. 
+  
+- The LJ energy and forces between the QM and MM atoms
+    - functions: `ELJ=qmmm.QMMM_LJ_Energy(rion1)` and `qmmm.QMMM_LJ_Force(rion1,fion)`
+
+- The LJ energy and forces between the MM atoms
+    - This interaction is not needed for the two water example.
+
+- The spring energy and forces between the MM atoms
+    - functions: `Espring=qmmm.spring_Energy(rion1)` and `qmmm.spring_Force(rion1,fion)`
 
 
 
