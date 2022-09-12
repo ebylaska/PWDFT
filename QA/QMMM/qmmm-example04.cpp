@@ -232,10 +232,10 @@ int main(int argc, char* argv[])
 
    if (taskid==MASTER) {
       xyzfile = new (std::nothrow) std::ofstream;
-      xyzfile->open("dataqmmm04.xyz", std::ios::app);
+      xyzfile->open("bataqmmm04.xyz", std::ios::app);
 
       emotionfile = new (std::nothrow) std::ofstream;
-      emotionfile->open("dataqmmm04.emotion", std::ios::app);
+      emotionfile->open("bataqmmm04.emotion", std::ios::app);
    }
 
    // QM energy and forces

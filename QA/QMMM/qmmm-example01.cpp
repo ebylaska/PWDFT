@@ -232,10 +232,10 @@ int main(int argc, char* argv[])
 
    if (taskid==MASTER) {
       xyzfile = new (std::nothrow) std::ofstream;
-      xyzfile->open("dataqmmm01.xyz", std::ios::app);
+      xyzfile->open("bataqmmm01.xyz", std::ios::app);
 
       emotionfile = new (std::nothrow) std::ofstream;
-      emotionfile->open("dataqmmm01.emotion", std::ios::app);
+      emotionfile->open("bataqmmm01.emotion", std::ios::app);
    }
 
 
