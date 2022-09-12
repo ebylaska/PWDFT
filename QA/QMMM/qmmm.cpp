@@ -846,6 +846,11 @@ QMMM_Operator::QMMM_Operator(std::string nwinput)
 
       size_frag[ia] = tsize;
 
+      if (mystring_contains(mystring_lowercase(frag),"self_interaction"))
+         self_interaction[ia] = true;
+      else
+         self_interaction[ia] = false;
+
       if (mystring_contains(mystring_lowercase(frag),"index_start"))
       {
          std::vector<std::string> ss = mystring_split0(mystring_trim(mystring_split(mystring_split(frag,"index_start")[1],"\n")[0]));
