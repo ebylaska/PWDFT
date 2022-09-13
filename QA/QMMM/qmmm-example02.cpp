@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
       std::cout << "@ Initial Forces" << std::endl;
       for (auto ii=0; ii<nion; ++ii)
             std::cout << "@ ii=" << ii << " " << symbol[ii] << "\tfion: " << Ffmt(12,6) << fion[3*ii] << " " << Ffmt(12,6) << fion[3*ii+1] << " " << Ffmt(12,6) << fion[3*ii+2]
-                      << " mass = "  << qmmm.mass[ii] << " uion = " << uion[ii] << std::endl;
+                      << " mass = "  << qmmm.mass[ii] << " uion = " << uion[ii] << " qion = " << qion[ii] << std::endl;
       std::cout << "@" << std::endl;
       std::cout << std::endl;
 
