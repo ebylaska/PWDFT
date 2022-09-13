@@ -430,12 +430,16 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string& nwfilename, std:
    }
 }
 
-extern void lammps_pspw_cpmd_start(MPI_Comm comm_world,std::ostream& coutput) {
+extern int lammps_pspw_cpmd_start(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_start(comm_world,lammps_rtdbstring,coutput);
+   return ierr;
 }
-extern void lammps_pspw_cpmd_stop(MPI_Comm comm_world,std::ostream& coutput) {
+extern int lammps_pspw_cpmd_stop(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_stop(comm_world,coutput);
+   return ierr;
 }
+
+
 
 // *************************************************************************
 //
