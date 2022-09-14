@@ -434,6 +434,25 @@ extern int lammps_pspw_cpmd_start(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_start(comm_world,lammps_rtdbstring,coutput);
    return ierr;
 }
+
+extern int lammps_pspw_cpmd_run(MPI_Comm comm_world, double *rion, double *uion, 
+                                double *fion, double *qion, double *E,
+                                bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::ostream& coutput) {
+   double Etot,Eapc;
+   auto ierr = ctask_cpmd_run(comm_world,rion,uion,qion,fion,&Etot,&Eapc,coutput);
+   if (removeqmmmcoulomb)
+      *E = Etot - Eapc;
+   else
+      *E = Etot;
+   
+   if (removeqmqmcoulomb)
+   {
+   }
+
+
+   return ierr;
+}
+
 extern int lammps_pspw_cpmd_stop(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_stop(comm_world,coutput);
    return ierr;

@@ -375,15 +375,46 @@ int ctask_cpmd_start(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream
 
 }
 
-//int cpmd_run(MPI_)
-//{
-//         inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,
-//                    &mykin,&mycoulomb12,&myxc,
-//                    &mypsp,&mystrfac,&myewald,
-//                    psi0,psi1,psi2,Hpsi,psi_r,
-//                    dn,hml,lmbda,
-//                    it_in,E);
-//}
+
+/*********************************************
+ *                                           *
+ *            ctask_cpmd_run                 *
+ *                                           *
+ *********************************************/
+int ctask_cpmd_run(MPI_Comm comm_world0, 
+                   double *rion, double *uion, 
+                   double *qion, double *fion, double *Etot, double *Eapc,
+                   std::ostream& coutput)
+{
+   // input rion, uion
+   std::memcpy(myion->rion1,rion,3*myion->nion);
+   std::memcpy(mypsp->myapc->uion,uion,myion->nion);
+
+   bool verlet = false;
+   inner_loop_md(verlet,sa_alpha,*control,mygrid,myion,mynose,
+                 mykin,mycoulomb12,myxc,
+                 mypsp,mystrfac,myewald,
+                 psi0,psi1,psi2,Hpsi,psi_r,
+                 dn,hml,lmbda,
+                 1,E);
+
+   // output fion, qion, Etot, and Eapc 
+   std::memcpy(fion,myion->fion1,3*myion->nion);
+   std::memcpy(qion,mypsp->myapc->qion,myion->nion);
+
+   *Etot = E[0];
+   *Eapc = 0;
+
+   return 0;
+
+}
+
+
+/*********************************************
+ *                                           *
+ *            ctask_cpmd_stop                *
+ *                                           *
+ *********************************************/
 
 /* deallocate memory */
 int ctask_cpmd_stop(MPI_Comm comm_world0, std::ostream& coutput)
