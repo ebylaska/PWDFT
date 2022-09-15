@@ -434,7 +434,6 @@ extern int lammps_pspw_cpmd_start(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_start(comm_world,lammps_rtdbstring,coutput);
    return ierr;
 }
-
 extern int lammps_pspw_cpmd_run(MPI_Comm comm_world, double *rion, double *uion, 
                                 double *fion, double *qion, double *E,
                                 bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::ostream& coutput) {
@@ -452,7 +451,6 @@ extern int lammps_pspw_cpmd_run(MPI_Comm comm_world, double *rion, double *uion,
 
    return ierr;
 }
-
 extern int lammps_pspw_cpmd_stop(MPI_Comm comm_world,std::ostream& coutput) {
    auto ierr = pwdft::ctask_cpmd_stop(comm_world,coutput);
    return ierr;
@@ -523,8 +521,57 @@ extern int lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *ri
    return ierr;
 }
 
+extern int lammps_pspw_cpmd_start_filename(MPI_Comm comm_world,std::string& filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_cpmd_start(comm_world,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_cpmd_start(comm_world,nwout);
+   }
+   return ierr;
+}
 
+extern int lammps_pspw_cpmd_run_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E,
+                                         bool removeqmmmcoulomb, bool removeqmqmcoulomb, std::string& filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_cpmd_run(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_cpmd_run(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,nwout);
+   }
+   return ierr;
+}
 
+extern int lammps_pspw_cpmd_stop_filename(MPI_Comm comm_world,std::string& filename)
+{
+   int ierr;
+   if (filename.empty())
+   {
+      NullBuffer null_buffer;
+      std::ostream null_stream(&null_buffer);
+      ierr = lammps_pspw_cpmd_stop(comm_world,null_stream);
+   }
+   else
+   {
+      std::ofstream nwout(filename,std::ios_base::app);
+      ierr = lammps_pspw_cpmd_stop(comm_world,nwout);
+   }
+   return ierr;
+}
 
 extern void lammps_pspw_input_filename(MPI_Comm comm_world, std::string& nwfilename, std::string& filename)
 {
@@ -578,6 +625,25 @@ extern int c_lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_qmmm_nominimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
+
+extern int c_lammps_pspw_cpmd_start_filename(MPI_Comm comm_world, const char *cfilename)
+{
+   std::string filename = convertcstring(cfilename);
+   return lammps_pspw_cpmd_start_filename(comm_world,filename);
+}
+
+extern int c_lammps_pspw_cpmd_run_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+                                           bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
+{
+   std::string filename = convertcstring(cfilename);
+   return lammps_pspw_cpmd_run_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
+} 
+
+extern int c_lammps_pspw_cpmd_stop_filename(MPI_Comm comm_world, const char *cfilename)
+{
+   std::string filename = convertcstring(cfilename);
+   return lammps_pspw_cpmd_stop_filename(comm_world,filename);
+}
 
 extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
 {

@@ -402,8 +402,8 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
    std::memcpy(fion,myion->fion1,3*myion->nion);
    std::memcpy(qion,mypsp->myapc->qion,myion->nion);
 
-   *Etot = E[0];
-   *Eapc = 0;
+   *Etot = E[1];
+   *Eapc = mypsp->myapc->Eapc;
 
    return 0;
 
