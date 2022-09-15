@@ -398,6 +398,15 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
                  dn,hml,lmbda,
                  1,E);
 
+   bool oprint = (myparallel->is_master() && control->print_level("medium"));
+   if (oprint)
+   {
+      coutput << Ifmt(10) << 1*control->loop(0) 
+              << Efmt(19,10) << E[0] << Efmt(19,10) << E[1] 
+              << Efmt(14,5)  << E[2] << Efmt(14,5)  << E[3] 
+              << Ffmt(14,2)  << myion->Temperature() << std::endl; 
+   }
+
    // output fion, qion, Etot, and Eapc 
    std::memcpy(fion,myion->fion1,3*myion->nion);
    std::memcpy(qion,mypsp->myapc->qion,myion->nion);
