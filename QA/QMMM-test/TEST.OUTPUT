@@ -1,0 +1,69 @@
+Hello world
+np=1 taskid=0
+argc=1
+nwfilename=water2.nw
+debugfilename=qmmm-example04.nwout
+i=2 j=1 k=3 ks =47.744 theta=109.4
+nion=6
+nion_qm=3
+nion_mm=3
+nkatm=4
+nion =6
+nion_mm =3
+nion_qm =3
+
+QMMM_LJ_Energy qm=0 mm=3 epsilon12=0.00024764 sigma12=5.98204 elj=0.00155867
+QMMM_LJ_Energy qm=0 mm=4 epsilon12=0 sigma12=3.49102 elj=-0
+QMMM_LJ_Energy qm=0 mm=5 epsilon12=0 sigma12=3.49102 elj=-0
+QMMM_LJ_Energy qm=1 mm=3 epsilon12=0.000131774 sigma12=3.65242 elj=-1.61719e-05
+QMMM_LJ_Energy qm=1 mm=4 epsilon12=0 sigma12=1.1614 elj=-0
+QMMM_LJ_Energy qm=1 mm=5 epsilon12=0 sigma12=1.1614 elj=-0
+QMMM_LJ_Energy qm=2 mm=3 epsilon12=0.000131774 sigma12=3.65242 elj=-1.36123e-05
+QMMM_LJ_Energy qm=2 mm=4 epsilon12=0 sigma12=1.1614 elj=-0
+QMMM_LJ_Energy qm=2 mm=5 epsilon12=0 sigma12=1.1614 elj=-0
+ELJ=0.00152888
+INTO spring_bond_frag bs1=0 ks1=3 nbs=2 w1=0
+spring_bond_frag b=0 ii=0 jj=1 dr=-0.108489 Kr0=0.24734 Espring(ii,jj)=0.00291117
+spring_bond_frag b=1 ii=0 jj=2 dr=-0.0884632 Kr0=0.24734 Espring(ii,jj)=0.00193562
+INTO spring_angle_frag bs1=0 ks1=3 nas=1 w1=0
+spring_angle_frag a=0 ii=1 jj=0 kk=2 q=-0.0862204 Kr0=0.0760861 Eangle(ii,jj,kk)=0.000565621
+Espring=0.00541241
+
+
+@ ii=0 O	rion:     0.305304    -0.099989     0.062688 mass = 29156.961490 uion = 0.032168 qion = 0.000000 epsilon =0.000248 sigma=5.982040
+@ ii=1 H	rion:     1.517553     0.697559    -0.966898 mass = 1837.473120 uion = 0.018472 qion = 0.000000 epsilon =0.000070 sigma=1.322809
+@ ii=2 H	rion:    -0.615240    -1.265312    -0.923245 mass = 1837.473120 uion = 0.019171 qion = 0.000000 epsilon =0.000070 sigma=1.322809
+@ ii=3 O	rion:     0.040174     0.957659     5.350342 mass = 29156.961490 uion = 0.000000 qion = -0.847600 epsilon =0.000248 sigma=5.982040
+@ ii=4 H	rion:    -1.362567     2.046763     5.212581 mass = 1837.473120 uion = 0.000000 qion = 0.423800 epsilon =0.000000 sigma=1.000000
+@ ii=5 H	rion:     0.298993     0.343709     3.676834 mass = 1837.473120 uion = 0.000000 qion = 0.423800 epsilon =0.000000 sigma=1.000000
+
+@ Initial Kinetic Energy = 0.000000000000000e+00
+INTO QMMM_LJ_Energy
+QMMM_LJ_Energy qm=0 mm=3 epsilon12=2.476400395387728e-04 sigma12=5.982040035739845e+00 elj=1.558669011048586e-03
+QMMM_LJ_Energy qm=0 mm=4 epsilon12=0.000000000000000e+00 sigma12=3.491020017869923e+00 elj=-0.000000000000000e+00
+QMMM_LJ_Energy qm=0 mm=5 epsilon12=0.000000000000000e+00 sigma12=3.491020017869923e+00 elj=-0.000000000000000e+00
+QMMM_LJ_Energy qm=1 mm=3 epsilon12=1.317741064310102e-04 sigma12=3.652424425089423e+00 elj=-1.617185231544911e-05
+QMMM_LJ_Energy qm=1 mm=4 epsilon12=0.000000000000000e+00 sigma12=1.161404407219500e+00 elj=-0.000000000000000e+00
+QMMM_LJ_Energy qm=1 mm=5 epsilon12=0.000000000000000e+00 sigma12=1.161404407219500e+00 elj=-0.000000000000000e+00
+QMMM_LJ_Energy qm=2 mm=3 epsilon12=1.317741064310102e-04 sigma12=3.652424425089423e+00 elj=-1.361229136665340e-05
+QMMM_LJ_Energy qm=2 mm=4 epsilon12=0.000000000000000e+00 sigma12=1.161404407219500e+00 elj=-0.000000000000000e+00
+QMMM_LJ_Energy qm=2 mm=5 epsilon12=0.000000000000000e+00 sigma12=1.161404407219500e+00 elj=-0.000000000000000e+00
+
+
+INTO spring_Energy
+INTO spring_bond_frag bs1=0 ks1=3 nbs=2 w1=0
+spring_bond_frag b=0 ii=0 jj=1 dr=-1.084892812550355e-01 Kr0=2.473399337922554e-01 Espring(ii,jj)=2.911172259316777e-03
+spring_bond_frag b=1 ii=0 jj=2 dr=-8.846323931034905e-02 Kr0=2.473399337922554e-01 Espring(ii,jj)=1.935619178268429e-03
+INTO spring_angle_frag bs1=0 ks1=3 nas=1 w1=0
+spring_angle_frag a=0 ii=1 jj=0 kk=2 q=-8.622037668914029e-02 Kr0=7.608611688829151e-02 Eangle(ii,jj,kk)=5.656206440184695e-04
+@ Initial Energy = -1.692668411758871e+01 Coulomb = -2.719861579389318e-01 Initial LJ Energy = 1.528884867366484e-03 Initial Spring Energy = 5.412412081603676e-03
+@
+@ Initial Forces
+@ ii=0 	fion:    -0.001224    -0.000589     0.010834 mass = 29156.961490 uion = 0.032168 qion = -0.742570
+@ ii=1 	fion:     0.000550    -0.001412    -0.004480 mass = 1837.473120 uion = 0.018472 qion = 0.372203
+@ ii=2 	fion:     0.002159     0.000453    -0.003645 mass = 1837.473120 uion = 0.019171 qion = 0.370366
+@ ii=3 	fion:     0.029605    -0.012700     0.047914 mass = 29156.961490 uion = 0.000000 qion = -0.847600
+@ ii=4 	fion:    -0.040896     0.032966     0.000553 mass = 1837.473120 uion = 0.000000 qion = 0.423800
+@ ii=5 	fion:     0.011437    -0.020196    -0.049399 mass = 1837.473120 uion = 0.000000 qion = 0.423800
+@
+
