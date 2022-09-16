@@ -1010,9 +1010,17 @@ double QMMM_Operator::Coulomb_Energy(const double qion[], const double rion[])
    // total q-q interactions
    for (auto ii=0; ii<(nion-1); ++ii)
       for (auto jj=ii+1; jj<nion; ++jj)
-         E += Q_Electrostatic_self(&rion[3*ii],qion[ii], 
-                                   &rion[3*jj],qion[jj]);
-
+      {
+         double ecoul = Q_Electrostatic_self(&rion[3*ii],qion[ii], 
+                                             &rion[3*jj],qion[jj]);
+         std::cout << "Coulomb_Energy ii=" << ii
+                   << " jj=" << jj
+                   << " ecoul=" << ecoul 
+                   << " || qii=" << qion[ii]
+                   <<    " qjj=" << qion[jj] << std::endl;
+         E += ecoul;
+      }
+   std::cout << std::endl;
    return E;
 }
 
@@ -1084,8 +1092,13 @@ double QMMM_Operator::MMMM_electrostatic_Energy(const double qion[], const doubl
          {
             int kk1 = ks1+a;
             int kk2 = ks1+b;
-            E -= Q_Electrostatic_self(&rion[3*kk1],qion[kk1],
-                                      &rion[3*kk2],qion[kk2]);
+            double eself = Q_Electrostatic_self(&rion[3*kk1],qion[kk1],
+                                                &rion[3*kk2],qion[kk2]);
+            E -= eself;
+            std::cout << "MM-MM self energy w1=" << w1
+                      << " kk1=" << kk1
+                      << " kk2=" << kk2
+                      << " Eself=" << -eself << std::endl;
          }
       }
    }

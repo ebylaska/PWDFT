@@ -247,6 +247,7 @@ int main(int argc, char* argv[])
    // Electrostatic energy between qm and mm atoms - Note this energy has been subtracted from the
    // c_lammps_pspw_qmmm_minimizer_filename qm energy and needs to be added back in.
    // Also the electrostatic forces between the qm and mm atoms also need to be added.
+   std::cout << "INTO Coulomb energies" << std::endl;
    Eqq = qmmm.Coulomb_Energy(qion,rion1)  
        + qmmm.MMMM_electrostatic_Energy(qion,rion1); 
    qmmm.Coulomb_Force(qion,rion1,fion);
@@ -254,6 +255,7 @@ int main(int argc, char* argv[])
    Etotal += Eqq;
 
    // ELJ = Lennard-Jones energy and forces
+   std::cout << std::endl;
    std::cout << "INTO QMMM_LJ_Energy" << std::endl;
    ELJ = qmmm.QMMM_LJ_Energy(rion1);
    qmmm.QMMM_LJ_Force(rion1,fion);
