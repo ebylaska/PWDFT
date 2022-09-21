@@ -70,7 +70,11 @@ static double *E;
  *           ctask_cpmd_start             *
  *                                        *
  ******************************************/
-int ctask_cpmd_start(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& coutput)
+int ctask_cpmd_start(MPI_Comm comm_world0,std::string& rtdbstring,
+                   double *rion, double *uion,
+                   double *qion, double *fion, double *Etot, double *Eapc,
+                   std::ostream& coutput)
+
 {
    myparallel = new Parallel(comm_world0);
 
@@ -231,6 +235,10 @@ int ctask_cpmd_start(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream
 
 
 
+   // input rion, uion
+   std::memcpy(myion->rion1,rion,3*myion->nion);
+   std::memcpy(mypsp->myapc->uion,uion,myion->nion);
+
 
 
 //                 |**************************|
@@ -368,8 +376,30 @@ int ctask_cpmd_start(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream
       coutput << "     -------------------------------------------------------------------------------------\n";
    }
 
-   // Newton step - first step using velocity
 
+   // Newton step - first step using velocity
+   bool verlet = false;
+   inner_loop_md(verlet,sa_alpha,*control,mygrid,myion,mynose,
+                 mykin,mycoulomb12,myxc,
+                 mypsp,mystrfac,myewald,
+                 psi0,psi1,psi2,Hpsi,psi_r,
+                 dn,hml,lmbda,
+                 1,E);
+
+   if (oprint)
+   {
+      coutput << Ifmt(10) << 0
+              << Efmt(19,10) << E[0] << Efmt(19,10) << E[1] 
+              << Efmt(14,5)  << E[2] << Efmt(14,5)  << E[3] 
+              << Ffmt(14,2)  << myion->Temperature() << std::endl; 
+   }
+
+   // output fion, qion, Etot, and Eapc 
+   std::memcpy(fion,myion->fion1,3*myion->nion);
+   std::memcpy(qion,mypsp->myapc->qion,myion->nion);
+
+   *Etot = E[1];
+   *Eapc = mypsp->myapc->Eapc;
 
    return 0;
 
@@ -390,7 +420,7 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
    std::memcpy(myion->rion1,rion,3*myion->nion);
    std::memcpy(mypsp->myapc->uion,uion,myion->nion);
 
-   bool verlet = false;
+   bool verlet = true;
    inner_loop_md(verlet,sa_alpha,*control,mygrid,myion,mynose,
                  mykin,mycoulomb12,myxc,
                  mypsp,mystrfac,myewald,
