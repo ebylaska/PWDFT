@@ -23,9 +23,9 @@ using namespace std;
 
 extern void c_lammps_pspw_input_filename(MPI_Comm,const char*,const char*);
 extern int  c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,const char*);
-extern int  c_lammps_pspw_cpmd_start_filename(MPI_Comm,const char*);
+extern int  c_lammps_pspw_cpmd_start_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,const char*);
+extern int  c_lammps_pspw_cpmd_run_filename(MPI_Comm,  double*,double*,double*,double*,double*,bool,bool,const char*);
 extern int  c_lammps_pspw_cpmd_stop_filename(MPI_Comm,const char*);
-extern int  c_lammps_pspw_cpmd_run_filename(MPI_Comm,double*,double*,double*,double*,double*,bool,bool,const char*);
 
 #define	MASTER 		0
 #define ANGTOBOHR	1.88972687777
@@ -183,9 +183,7 @@ int main(int argc, char* argv[])
 
 
    // Initialize lammps_pspw interface 
-   c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,NULL);
-   ierr += c_lammps_pspw_cpmd_start_filename(MPI_COMM_WORLD,cdebugfilename);
-
+   c_lammps_pspw_input_filename(MPI_COMM_WORLD,cnwfilename,cdebugfilename);
 
 
    double unita[9] = {26.0,  0.0,  0.0,
@@ -243,13 +241,16 @@ int main(int argc, char* argv[])
       emotionfile->open("bataqmmm01.emotion", std::ios::app);
    }
 
-   std::cout << "input cpmd_run!" << std::endl;
-   ierr += c_lammps_pspw_cpmd_run_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,cdebugfilename);
-   ierr += c_lammps_pspw_cpmd_stop_filename(MPI_COMM_WORLD,cdebugfilename);
 
    // QM energy and forces
-   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,NULL);
+   ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,cdebugfilename);
    Etotal = Eqm;
+   std::cout << "Eqm1 = " << Eqm << std::endl;
+
+
+   std::cout << "input cpmd_start!" << std::endl;
+   ierr += c_lammps_pspw_cpmd_start_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,cdebugfilename);
+   //std::cout << "Eqm2 = " << Eqm << std::endl;
 
    // Electrostatic energy between qm and mm atoms - Note this energy is already included from c_lammps_pspw_qmmm_minimizer_filename.
    // However, the electrostatic forces between the qm and mm atoms is not included in this c_lammps_pspw_qmmm_minimizer_filename.
@@ -292,7 +293,7 @@ int main(int argc, char* argv[])
    }
    MPI_Bcast(rion2,3*nion,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD);
 
-   for (auto it=0; it<200; ++it)
+   for (auto it=0; it<10; ++it)
    {
 
       memcpy(rion0,rion1,3*nion*sizeof(double));
@@ -301,7 +302,8 @@ int main(int argc, char* argv[])
 
       qmmm.QMMM_electrostatic_potential(qion,rion1,uion);
 
-      ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,NULL);
+      //ierr += c_lammps_pspw_qmmm_minimizer_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,NULL);
+      ierr += c_lammps_pspw_cpmd_run_filename(MPI_COMM_WORLD,rion1,uion,fion,qion,&Eqm,false,false,cdebugfilename);
       Etotal = Eqm;
 
       // Electrostatic energy between qm and mm atoms - Note this energy is already included from c_lammps_pspw_qmmm_minimizer_filename.
@@ -350,6 +352,7 @@ int main(int argc, char* argv[])
       }
 
    }
+   ierr += c_lammps_pspw_cpmd_stop_filename(MPI_COMM_WORLD,cdebugfilename);
 
 
    if (taskid==MASTER)
