@@ -654,11 +654,11 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
       coutput << "\n";
       coutput << " -----------------"    << "\n";
       coutput << " cputime in seconds"   << "\n";
-      coutput << " prologue    : " << t1 << "\n";
-      coutput << " main loop   : " << t2 << "\n";
-      coutput << " epilogue    : " << t3 << "\n";
-      coutput << " total       : " << t4 << "\n";
-      coutput << " cputime/step: " << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
+      coutput << " prologue    : " << Efmt(9,3) << t1 << "\n";
+      coutput << " main loop   : " << Efmt(9,3) << t2 << "\n";
+      coutput << " epilogue    : " << Efmt(9,3) << t3 << "\n";
+      coutput << " total       : " << Efmt(9,3) << t4 << "\n";
+      coutput << " cputime/step: " << Efmt(9,3) << av << " ( " << myelectron.counter << " evaluations, " << util_linesearch_counter() << " linesearches)\n";
       coutput << "\n";
 
       nwpw_timing_print_final(myelectron.counter,coutput);
