@@ -300,6 +300,8 @@ public:
         inuse[ic] = false;
     }
 
+    void T_free() { inuse[ib_prj] = false; }
+
     void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 
         int ib = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) nprj));
@@ -314,7 +316,6 @@ public:
 
         inuse[ib] = false;
         inuse[ib_prj] = false;
-
     }
 
     /* psi_dev functions*/

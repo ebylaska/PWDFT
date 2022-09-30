@@ -21,6 +21,10 @@ void gdevice_TN_dgemm(int npack, int ne, int nprj, double alpha, double *a, doub
   mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
 }
 
+void gdevice_T_free() { 
+   mygdevice.T_free(); 
+}
+
 void gdevice_NN_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *c)
 {
   mygdevice.NN_dgemm(npack,ne,alpha,a,b,beta,c);

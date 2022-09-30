@@ -1837,7 +1837,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
         ntmp = nn*nprjall;
         DSCAL_PWDFT(ntmp,scal,sw2,one);
 
-        //gdevice_NT_dgemm(nshift,nn,nprjall,rmone,prjtmp,sw2,rone,Hpsi);
+        gdevice_T_free();
 
         //for (ll=0; ll<nprjall; ++ll)
         ll = 0;
@@ -1963,6 +1963,8 @@ double Pseudopotential::e_nonlocal(double *psi)
         DSCAL_PWDFT(ntmp,scal,sw2,one);
 
         esum += DDOT_PWDFT(ntmp,sw1,one,sw2,one);
+
+        gdevice_T_free();
     }
     if (mypneb->ispin==1) esum *= 2.0;
 

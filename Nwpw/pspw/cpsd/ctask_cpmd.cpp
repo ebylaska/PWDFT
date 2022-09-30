@@ -47,7 +47,7 @@ static nwpw_Nose_Hoover   *mynose;
 
 static bool verlet = false;
 static bool SA;
-static int version,nfft[3],ne[2],ispin;
+static int version,nfft[3],ne[2],ispin,current_iteration;
 static double sa_alpha[2],sa_decay[2];
 static double unita[9];
 static double cpu1,cpu2,cpu3,cpu4;
@@ -367,6 +367,8 @@ int ctask_cpmd_start(MPI_Comm comm_world0,std::string& rtdbstring,
 // *****************     start iterations     **********************
 //                 |**************************|
 
+   current_iteration = 1;
+
    if (myparallel->is_master()) seconds(&cpu2);
    if (oprint)
    {
@@ -388,7 +390,7 @@ int ctask_cpmd_start(MPI_Comm comm_world0,std::string& rtdbstring,
 
    if (oprint)
    {
-      coutput << Ifmt(10) << 0
+      coutput << Ifmt(10) << current_iteration
               << Efmt(19,10) << E[0] << Efmt(19,10) << E[1] 
               << Efmt(14,5)  << E[2] << Efmt(14,5)  << E[3] 
               << Ffmt(14,2)  << myion->Temperature() << std::endl; 
@@ -398,7 +400,7 @@ int ctask_cpmd_start(MPI_Comm comm_world0,std::string& rtdbstring,
    std::memcpy(fion,myion->fion1,3*myion->nion);
    std::memcpy(qion,mypsp->myapc->qion,myion->nion);
 
-   *Etot = E[1];
+   *Etot = E[1]+E[2];
    *Eapc = mypsp->myapc->Eapc;
 
    return 0;
@@ -416,6 +418,7 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
                    double *qion, double *fion, double *Etot, double *Eapc,
                    std::ostream& coutput)
 {
+   ++current_iteration;
    // input rion, uion
    std::memcpy(myion->rion1,rion,3*myion->nion);
    std::memcpy(mypsp->myapc->uion,uion,myion->nion);
@@ -431,7 +434,7 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
    bool oprint = (myparallel->is_master() && control->print_level("medium"));
    if (oprint)
    {
-      coutput << Ifmt(10) << 1*control->loop(0) 
+      coutput << Ifmt(10) << current_iteration
               << Efmt(19,10) << E[0] << Efmt(19,10) << E[1] 
               << Efmt(14,5)  << E[2] << Efmt(14,5)  << E[3] 
               << Ffmt(14,2)  << myion->Temperature() << std::endl; 
@@ -441,7 +444,7 @@ int ctask_cpmd_run(MPI_Comm comm_world0,
    std::memcpy(fion,myion->fion1,3*myion->nion);
    std::memcpy(qion,mypsp->myapc->qion,myion->nion);
 
-   *Etot = E[1];
+   *Etot = E[1]+E[2];
    *Eapc = mypsp->myapc->Eapc;
 
    return 0;

@@ -532,6 +532,7 @@ public:
 #endif
      }
 
+     void T_free() { }
 
      void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 #if 0

@@ -356,10 +356,12 @@ public:
                 << "SYCL status: " << e.code() << std::endl;
     }
     // inuse[ia] = false;
-    // inuse[ib_prj] = false;
+    //inuse[ib_prj] = false;
     inuse[ic] = false;
 #endif
   }
+
+  void T_free() { inuse[ib_prj] = false; }
 
   void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a,
                 double *host_b, double beta, double *host_c) {
