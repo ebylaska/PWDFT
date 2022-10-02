@@ -282,28 +282,28 @@ public:
         //int ia = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) ne));
         //int ib = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) nprj));
         b_prj  = host_b;
-        ib_prj = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) nprj));
+        ib_prj[0] = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) nprj));
         int ic = fetch_dev_mem_indx(((size_t) ne)         * ((size_t) nprj));
 
         //cudaMemcpy(dev_mem[ia],host_a,npack2*ne*sizeof(double));
         //cudaMemcpy(dev_mem[ib],host_b,npack2*nprj*sizeof(double));
        
-        NWPW_CUDA_ERROR(   cudaMemcpy(dev_mem[ib_prj],host_b,npack2*nprj*sizeof(double),cudaMemcpyHostToDevice) );
+        NWPW_CUDA_ERROR(   cudaMemcpy(dev_mem[ib_prj[0]],host_b,npack2*nprj*sizeof(double),cudaMemcpyHostToDevice) );
         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
 				       matT,matN,
 				       ne,nprj,npack2,&alpha,
 				       dev_mem[ia_psi[0]],npack2,
-				       dev_mem[ib_prj],   npack2,
+				       dev_mem[ib_prj[0]],   npack2,
 				       &beta,dev_mem[ic], ne) );
       
         cudaMemcpy(host_c,dev_mem[ic],ne*nprj*sizeof(double),cudaMemcpyDeviceToHost);
 
         //inuse[ia] = false;
-        //inuse[ib_prj] = false;
+        //inuse[ib_prj[0]] = false;
         inuse[ic] = false;
     }
 
-    void T_free() { inuse[ib_prj] = false; }
+    void T_free() { inuse[ib_prj[0]] = false; }
 
     void NT_dgemm(int npack2, int ne, int nprj, double alpha, double *host_a, double *host_b, double beta, double *host_c) {
 
@@ -312,12 +312,12 @@ public:
         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
 				       matN,matT,
 				       npack2,ne,nprj, &alpha,
-				       dev_mem[ib_prj],npack2,
+				       dev_mem[ib_prj[0]],npack2,
 				       dev_mem[ib],ne,
 				       &beta,dev_mem[ia_hpsi[0]],npack2) );
 
         inuse[ib] = false;
-        inuse[ib_prj] = false;
+        inuse[ib_prj[0]] = false;
     }
 
 
