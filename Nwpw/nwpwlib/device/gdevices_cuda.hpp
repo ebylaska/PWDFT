@@ -175,7 +175,7 @@ public:
     double *dev_mem[25];
     int    tile_fac=1;
     int    tile_npack2_max;
-    int    tile_npack2[9];
+    int    tile_npack2[9],tile_start2[9];;
     double *a_psi,*a_hpsi,*b_prj;
     int    ia_psi[2],ia_hpsi[2],ib_prj[2];
 
@@ -327,8 +327,10 @@ public:
     void psi_alloc(int npack1, int ne, int tile_fac0=1) {
         tile_fac        = tile_fac0;
         tile_npack2_max = (((2*npack1)%tile_fac)==0) ? (2*npack1)/tile_fac : (2*npack1)/tile_fac + 1;
-        for (auto i=0; i<tile_fac; ++i)
-           tile_npack2[i] = (((2*npack1)%tile_fac)<i) ? (2*npack1)/tile_fac+1 : (2*npack1)/tile_fac;
+        for (auto i=0; i<tile_fac; ++i) tile_npack2[i] = (((2*npack1)%tile_fac)<i) ? (2*npack1)/tile_fac+1 : (2*npack1)/tile_fac;
+
+        tile_start2[0] = 0;
+        for (auto i=1; i<tile_fac; ++i) tile_start2[i] = tile_start2[i-1] + tile_npack2[i-1];
 
         ia_psi[0]  = fetch_dev_mem_indx(((size_t) tile_npack2_max) * ((size_t) ne));
         ia_hpsi[0] = fetch_dev_mem_indx(((size_t) tile_npack2_max) * ((size_t) ne));
@@ -348,11 +350,17 @@ public:
     }
     void psi_copy_host2gpu(int npack1, int ne, double *psi) {
         a_psi = psi;
-        cudaMemcpy(dev_mem[ia_psi[0]],psi,2*npack1*ne*sizeof(double),cudaMemcpyHostToDevice);
+        //cudaMemcpy(dev_mem[ia_psi[0]],psi,tile_npack2_max*ne*sizeof(double),cudaMemcpyHostToDevice);
+        cublasSetMatrix(tile_npack2[0],ne,sizeof(double),
+                        psi,2*npack1,
+                        dev_mem[ia_psi[0]],tile_npack2[0]);
     }
     void hpsi_copy_host2gpu(int npack1, int ne, double *hpsi) {
         a_hpsi = hpsi;
-        cudaMemcpy(dev_mem[ia_hpsi[0]],hpsi,2*npack1*ne*sizeof(double),cudaMemcpyHostToDevice);
+        //cudaMemcpy(dev_mem[ia_hpsi[0]],hpsi,2*npack1*ne*sizeof(double),cudaMemcpyHostToDevice);
+        cublasSetMatrix(tile_npack2[0],ne,sizeof(double),
+                        hpsi,2*npack1,
+                        dev_mem[ia_hpsi[0]],tile_npack2[0]);
     }
     void psi_copy_gpu2host(int npack1, int ne, double *psi) {
         cudaMemcpy(psi, dev_mem[ia_psi[0]], 2*ne*npack1*sizeof(double),cudaMemcpyDeviceToHost);
