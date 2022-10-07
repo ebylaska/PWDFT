@@ -109,6 +109,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
    /* read wavefunction */
    psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
@@ -207,6 +208,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
 
 
 
+
 //                 |**************************|
 // *****************   summary of input data  **********************
 //                 |**************************|
@@ -227,6 +229,8 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout << " parallel mapping         : balanced" << "\n";
       else
          std::cout << " parallel mapping         : not balanced" << "\n";
+      if (control.tile_factor()>1)
+         std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
 
       std::cout << "\n options:\n";
       std::cout << "   ion motion           = ";
@@ -573,6 +577,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete [] eig;
+   gdevice_psi_dealloc();
 
 
    // write results to the json

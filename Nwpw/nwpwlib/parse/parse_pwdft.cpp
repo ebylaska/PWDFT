@@ -980,6 +980,11 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          ss = mystring_split0(line);
          if (ss.size()>1) nwpwjson["mapping"] = std::stoi(ss[1]);
       }
+      else if (mystring_contains(line,"tile_factor"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) nwpwjson["tile_factor"] = std::stoi(ss[1]);
+      }
       else if (mystring_contains(line,"1d-slab"))
       {
          nwpwjson["mapping"] = 1;

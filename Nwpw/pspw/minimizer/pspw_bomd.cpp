@@ -146,7 +146,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
    /* initialize gdevice memory */
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
 
    /* setup structure factor */

@@ -184,6 +184,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pmapping1d = 1;
    if (rtdbjson["nwpw"]["mapping1d"].is_number_integer()) pmapping1d = rtdbjson["nwpw"]["mapping1d"];
 
+   /* set ptile_factor for linear algebra gpu pipeline */
+   ptile_factor = 1;
+   if (rtdbjson["nwpw"]["tile_factor"].is_number_integer()) ptile_factor = rtdbjson["nwpw"]["tile_factor"];
+
    /* qsize */
    pqsize = 4;
    if (rtdbjson["nwpw"]["pfft3_qsize"].is_number_integer()) pqsize = rtdbjson["nwpw"]["pfft3_qsize"];

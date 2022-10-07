@@ -391,7 +391,7 @@ public:
   }
 
   /* psi_dev functions*/
-  void psi_alloc(int npack, int ne) {
+  void psi_alloc(int npack, int ne, int tile_fac0=1) {
     ia_psi = fetch_dev_mem_indx(2 * ((size_t)npack) * ((size_t)ne));
     ia_hpsi = fetch_dev_mem_indx(2 * ((size_t)npack) * ((size_t)ne));
   }

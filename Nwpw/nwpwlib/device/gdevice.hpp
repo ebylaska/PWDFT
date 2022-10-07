@@ -9,7 +9,7 @@ void gdevice_T_free();
 void gdevice_NN_dgemm(int, int, double, double *, double *, double, double *);
 void gdevice_NT_dgemm(int, int, int, double, double *, double *, double, double *);
 
-void gdevice_psi_alloc(int, int);
+void gdevice_psi_alloc(int, int, int);
 void gdevice_psi_dealloc();
 
 void gdevice_psi_copy_host2gpu(int, int, double *);

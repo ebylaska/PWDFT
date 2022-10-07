@@ -27,7 +27,7 @@ class Control2 {
    bool   pfast_erf = false;
 
    int pbo_steps[2],pbo_algorithm;
-   int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d;
+   int ploop[2],pngrid[3],pnpsp,pncut,pmapping,pmapping1d,ptile_factor;;
    int pnp_dimensions[3],pewald_grid[3];
    int pcode,ptask;
    int pispin,pmultiplicity,pne[2],ptotal_ion_charge,plmax_multipole;
@@ -131,6 +131,7 @@ public:
    int np_orbital()            { return pnp_dimensions[1]; }
    int mapping1d()             { return pmapping1d; }
    int mapping()               { return pmapping; }
+   int tile_factor()           { return ptile_factor; }
    int balance()               { return pbalance; }
    int ngrid(const int i)      { return pngrid[i]; }
    int loop(const int i)       { return ploop[i]; }

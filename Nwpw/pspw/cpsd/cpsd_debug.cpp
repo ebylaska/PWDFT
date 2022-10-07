@@ -144,7 +144,7 @@ int cpsd_debug(MPI_Comm comm_world0, string& rtdbstring)
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],1);
    MPI_Barrier(comm_world0);
 
    cout << "HELLO I\n";

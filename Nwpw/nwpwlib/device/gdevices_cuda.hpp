@@ -418,6 +418,7 @@ public:
            ia_psi[1]  = fetch_dev_mem_indx(((size_t) tile_npack2_max) * ((size_t) ne));
            ia_hpsi[1] = fetch_dev_mem_indx(((size_t) tile_npack2_max) * ((size_t) ne));
         }
+        std::cout << "Into psi_alloc, tile_factor = " << tile_fac << std::endl;
     }
     void psi_dealloc() {
         inuse[ia_psi[0]]  = false;

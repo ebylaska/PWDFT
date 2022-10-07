@@ -155,7 +155,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1]);
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
    //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
