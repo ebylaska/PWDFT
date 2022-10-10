@@ -16,6 +16,11 @@ void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, do
   mygdevice.TN3_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cbb);
 }
 
+void gdevice_TN1_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *c)
+{
+  mygdevice.TN1_dgemm(npack,ne,alpha,a,b,beta,c);
+}
+
 void gdevice_TN_dgemm(int npack, int ne, int nprj, double alpha, double *a, double *b, double beta, double *c)
 {
   mygdevice.TN_dgemm(npack,ne,nprj,alpha,a,b,beta,c);
@@ -85,7 +90,12 @@ void gdevice_batch_fft_init(int nx,int ny,int nz, int nq1, int nq2, int nq3)
   if (mygdevice.hasgpu) mygdevice.batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 }
-
+void gdevice_batch_fft_end()
+{
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+  if (mygdevice.hasgpu) mygdevice.batch_fft_end();
+#endif
+}
 void gdevice_batch_cfftx(bool forward,int nx,int nq,int n2ft3d,double *a)
 {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)

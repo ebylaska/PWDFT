@@ -246,6 +246,11 @@ void Pneb::gg_Sum2(double *psi1, double *psi2)
       psi2[i] += psi1[i];
 }
 
+/*************************************
+ *                                   *
+ *         Pneb::gg_Minus2           *
+ *                                   *
+ *************************************/
 void Pneb::gg_Minus2(double *psi1, double *psi2)
 {
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
@@ -253,6 +258,11 @@ void Pneb::gg_Minus2(double *psi1, double *psi2)
       psi2[i] -= psi1[i];
 }
 
+/*************************************
+ *                                   *
+ *         Pneb::ggg_Minus           *
+ *                                   *
+ *************************************/
 void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
 {
    int nsize = 2*(neq[0]+neq[1])*PGrid::npack(1);
@@ -260,8 +270,11 @@ void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
       psi3[i] = psi1[i] - psi2[i];
 }
 
-
-
+/*************************************
+ *                                   *
+ *         Pneb::g_zero              *
+ *                                   *
+ *************************************/
 void Pneb::g_zero(double *psi2)
 {
    int one=1;
@@ -272,6 +285,12 @@ void Pneb::g_zero(double *psi2)
    //dcopy_(&nsize,&rzero,&zero,psi2,&one);
    std::memset(psi2, 0, nsize*sizeof(double));
 }
+
+/*************************************
+ *                                   *
+ *         Pneb::gh_fftb             *
+ *                                   *
+ *************************************/
 void Pneb::gh_fftb(double *psi, double *psi_r)
 {
    int n,done;
@@ -303,6 +322,11 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
 
 }
 
+/*************************************
+ *                                   *
+ *         Pneb::hr_aSumSqr          *
+ *                                   *
+ *************************************/
 void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 {
    int n,ms,k,indx0,indx1;
@@ -331,6 +355,11 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 
 
+/*************************************
+ *                                   *
+ *      Pneb::ggm_sym_Multiply       *
+ *                                   *
+ *************************************/
 void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 {
 
@@ -360,24 +389,29 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
       for (ms=0; ms<ispin; ++ms)
       {
          n       = ne[ms];
-         shift1  = shift0;
-         mshift1 = mshift0;
-         for (k=1; k<=n; ++k)
+         gdevice_TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
+
+         if (ng0>0)
          {
-            DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
-                    rtwo,
-                    &psi1[shift0], ng,
-                    &psi2[shift1],ng,
-                    rzero,
-                    &hml[mshift1],k);
-             DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
-                    rmone,
-                    &psi1[shift0],ng,
-                    &psi2[shift1],ng,
-                    rone,
-                    &hml[mshift1],k);
-             shift1  += ng;
-             mshift1 += n;
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+               //DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
+               //        rtwo,
+               //        &psi1[shift0], ng,
+               //        &psi2[shift1],ng,
+               //        rzero,
+               //        &hml[mshift1],k);
+                DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+                       rmone,
+                       &psi1[shift0],ng,
+                       &psi2[shift1],ng,
+                       rone,
+                       &hml[mshift1],k);
+                shift1  += ng;
+                mshift1 += n;
+             }
           }
           for (k=0; k<n; ++k)
           for (j=k+1; j<n; ++j)
@@ -386,10 +420,14 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
          shift0  += ng*ne[0];
          mshift0 += ne[0]*ne[0];
       }
-     d3db::parall->Vector_SumAll(1,ne[0]*ne[0] + ne[1]*ne[1],hml);
+      d3db::parall->Vector_SumAll(1,ne[0]*ne[0] + ne[1]*ne[1],hml);
    }
 }
-
+/*************************************
+ *                                   *
+ *      Pneb::ffm_sym_Multiply       *
+ *                                   *
+ *************************************/
 void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 {
    nwpw_timing_function ftimer(15);
@@ -428,25 +466,30 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
       for (ms=ms1; ms<ms2; ++ms)
       {
          n       = ne[ms];
-         shift1  = shift0;
-         mshift1 = mshift0;
-         for (k=1; k<=n; ++k)
-         {
-            DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
-                    rtwo,
-                    &psi1[shift0],ng,
-                    &psi2[shift1],ng,
-                    rzero,
-                    &hml[mshift1],k);
-            DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
-                    rmone,
-                    &psi1[shift0],ng,
-                    &psi2[shift1],ng,
-                    rone,
-                    &hml[mshift1],k);
+         gdevice_TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
 
-            shift1  += ng;
-            mshift1 += n;
+         if (ng0>0)
+         {
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+               //DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
+               //        rtwo,
+               //        &psi1[shift0],ng,
+               //        &psi2[shift1],ng,
+               //        rzero,
+               //        &hml[mshift1],k);
+               DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+                       rmone,
+                       &psi1[shift0],ng,
+                       &psi2[shift1],ng,
+                       rone,
+                       &hml[mshift1],k);
+
+               shift1  += ng;
+               mshift1 += n;
+            }
          }
          for (k=0; k<n; ++k)
          for (j=k+1; j<n; ++j)
@@ -497,18 +540,21 @@ void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
       for (ms=ms1; ms<ms2; ++ms)
       {  
          n       = ne[ms];
-         DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng,
-                    rtwo,
-                    &psi1[shift0],ng,
-                    &psi2[shift0],ng,
-                    rzero,
-                    &hml[mshift0],n);
-         DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
-                    rmone,
-                    &psi1[shift0],ng,
-                    &psi2[shift0],ng,
-                    rone,
-                    &hml[mshift0],n);
+         gdevice_TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
+
+         //DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng,
+         //           rtwo,
+         //           &psi1[shift0],ng,
+         //           &psi2[shift0],ng,
+         //           rzero,
+         //           &hml[mshift0],n);
+         if (ng0>0)
+            DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+                       rmone,
+                       &psi1[shift0],ng,
+                       &psi2[shift0],ng,
+                       rone,
+                       &hml[mshift0],n);
          shift0  += ng*ne[0];
          mshift0 += ne[0]*ne[0];
       }

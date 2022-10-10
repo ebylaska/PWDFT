@@ -475,6 +475,10 @@ d3db::~d3db()
 {
    int i,nb;
 
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+   gdevice_batch_fft_end();
+#endif
+
    if (maptype==1)
    {
       delete [] iq_to_i1[0];

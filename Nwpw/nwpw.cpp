@@ -799,6 +799,7 @@ int main(int argc, char* argv[])
      /* Energy or Gradient task */
      if ((task==1) || (task==2))
      {
+        if (oprint) std::cout << std::endl << "Running energy calculation - rtdbstr = " << rtdbstr << std::endl << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD,rtdbstr,std::cout);
      }
