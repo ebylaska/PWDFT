@@ -2303,6 +2303,119 @@ void Pseudopotential::grad_v_lr_local(const double *rho, double *fion)
    DAXPY_PWDFT(nion3,rone,ftmp,one,fion,one);
 }
 
+/*******************************************
+ *                                         *
+ *    Pseudopotential::grad_v_lr_local     *
+ *                                         *
+ *******************************************/
+void Pseudopotential::grad_v_lr_local(const int ispin, const double *dn, double *fion)
+{
+   nwpw_timing_function ftimer(5);
+
+   int n2ft3d = mypneb->n2ft3d;
+   int nion   = myion->nion;
+   int nion3  = 3*nion;
+   int one    = 1;
+   double rone = 1.0;
+   double sqrt_pi = std::sqrt(4.0*std::atan(1.0));
+   double omega = mypneb->lattice->omega();
+   double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+   double dv    = omega*scal1;
+   double rho;
+
+   double ftmp[nion3];
+
+   if (mypneb->lattice->fast_erf())
+   {
+      // Error function parameters
+      double xerf,yerf;
+      double c1=0.07052307840;
+      double c2=0.04228201230;
+      double c3=0.00927052720;
+      double c4=0.00015201430;
+      double c5=0.00027656720;
+      double c6=0.00004306380;
+
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         int ia = myion->katm[ii];
+         auto c = 1.0/rlocal[ia];
+         auto q = -zv[ia];
+         auto xii = myion->rion(0,ii);
+         auto yii = myion->rion(1,ii);
+         auto zii = myion->rion(2,ii);
+
+         auto fx=0.0;
+         auto fy=0.0;
+         auto fz=0.0;
+         for (auto i=0; i<n2ft3d; ++i)
+         {
+            auto rx = xii - mypneb->PGrid::r_grid[3*i];
+            auto ry = yii - mypneb->PGrid::r_grid[3*i+1];
+            auto rz = zii - mypneb->PGrid::r_grid[3*i+2];
+            auto r = std::sqrt(rx*rx + ry*ry + rz*rz);
+            double v;
+            if (r>1.0e-8)
+            {
+               xerf=r*c;
+               auto  yerf1 = (1.0
+                           + xerf*(c1 + xerf*(c2
+                           + xerf*(c3 + xerf*(c4
+                           + xerf*(c5 + xerf*c6))))));
+               auto yerf4  = yerf1*yerf1*yerf1*yerf1;
+               auto yerf16 = yerf4*yerf4*yerf4*yerf4;
+               yerf = (1.0 - 1.0/yerf16);
+               v    = (q*( (2.0/sqrt_pi)*(r*c)*std::exp(-(r*c)*(r*c)) - yerf)/(r*r*r));
+            }
+            else
+               v = 0.0;
+
+            rho = (dn[i]+dn[i+(ispin-1)*n2ft3d]);
+            fx += rho*rx*v;
+            fy += rho*ry*v;
+            fz += rho*rz*v;
+         }
+         ftmp[3*ii]   = -fx*dv;
+         ftmp[3*ii+1] = -fy*dv;
+         ftmp[3*ii+2] = -fz*dv;
+      }
+   }
+   else
+   {
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         int ia = myion->katm[ii];
+         auto c = 1.0/rlocal[ia];
+         auto q = -zv[ia];
+         auto xii = myion->rion(0,ii);
+         auto yii = myion->rion(1,ii);
+         auto zii = myion->rion(2,ii);
+
+         auto fx=0.0;
+         auto fy=0.0;
+         auto fz=0.0;
+         for (auto i=0; i<n2ft3d; ++i)
+         {
+            auto rx = xii - mypneb->PGrid::r_grid[3*i];
+            auto ry = yii - mypneb->PGrid::r_grid[3*i+1];
+            auto rz = zii - mypneb->PGrid::r_grid[3*i+2];
+            auto r = std::sqrt(rx*rx + ry*ry + rz*rz);
+            auto v = (r>1.0e-8) ? (q*( (2.0/sqrt_pi)*(r*c)*std::exp(-(r*c)*(r*c)) - std::erf(r*c))/(r*r*r)) : 0.0;
+            rho = (dn[i]+dn[i+(ispin-1)*n2ft3d]);
+
+            fx += rho*rx*v;
+            fy += rho*ry*v;
+            fz += rho*rz*v;
+         }
+         ftmp[3*ii]   = -fx*dv;
+         ftmp[3*ii+1] = -fy*dv;
+         ftmp[3*ii+2] = -fz*dv;
+      }
+   }
+   mypneb->PGrid::parall->Vector_SumAll(1,3*nion,ftmp);
+   DAXPY_PWDFT(nion3,rone,ftmp,one,fion,one);
+}
+
 
 
 

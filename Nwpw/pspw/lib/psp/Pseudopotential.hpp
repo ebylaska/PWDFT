@@ -175,6 +175,7 @@ public:
 
     void v_lr_local(double *);
     void grad_v_lr_local(const double *, double *);
+    void grad_v_lr_local(const int, const double *, double *);
 
     double e_nonlocal(double *);
 
