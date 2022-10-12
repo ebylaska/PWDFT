@@ -120,7 +120,11 @@ public:
    double gen_all_energies() {
       myelectron->run(psi1,rho1,dng1,rho1_all);
       myelectron->gen_energies_en(psi1,rho1,dng1,rho1_all,E,en);
-      E[4] = myewald->energy();
+      
+      /*  ion-ion energy */
+      if (myelectron->is_periodic())  E[4] = myewald->energy();
+      if (myelectron->is_aperiodic()) E[4] = myion->ion_ion_energy();
+  
       E[0] += E[4];
 
       /* generate eigenvalues */
@@ -138,6 +142,7 @@ public:
    double pxc()      { return myelectron->pxc(rho1); }
    double eke()      { return myelectron->eke(psi1); }
    double vl_ave()   { return myelectron->vl_ave(dng1); }
+   double vlr_ave()   { return myelectron->vlr_ave(rho1); }
    double vnl_ave()  { return myelectron->vnl_ave(psi1); }
    double eion()     { return myewald->energy(); }
 

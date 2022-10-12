@@ -3,7 +3,7 @@
 #include	"Pneb.hpp"
 #include	"Ion.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include        "Strfac.hpp"
 #include	"Pseudopotential.hpp"
@@ -21,14 +21,15 @@ namespace pwdft {
  *  Electron_Operators::Electron_Operators  *
  *                                          *
  ********************************************/
-Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, Coulomb_Operator *mycoulomb0, XC_Operator *myxc0,  Pseudopotential *mypsp0)
+Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, Coulomb12_Operator *mycoulomb120, XC_Operator *myxc0,  Pseudopotential *mypsp0)
 {
    mygrid  = mygrid0;
    myke      = myke0;
-   mycoulomb = mycoulomb0;
+   mycoulomb12 = mycoulomb120;
    mypsp     = mypsp0;
    myxc      = myxc0;
-
+   periodic  = mycoulomb12->has_coulomb1;
+   aperiodic = mycoulomb12->has_coulomb2;
 
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
@@ -40,9 +41,12 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, C
    xce   = mygrid->r_nalloc(ispin);
 
    x   = mygrid->r_alloc();
+   rho = mygrid->r_alloc();
    vall= mygrid->r_alloc();
    vl  = mygrid->c_pack_allocate(0);
-   vc  = mygrid->c_pack_allocate(0);
+   if (periodic)  vc    = mygrid->c_pack_allocate(0);
+   if (aperiodic) vc    = mygrid->r_alloc();
+   if (aperiodic) vlr_l = mygrid->r_alloc();
 
    hmltmp = mygrid->m_allocate(-1,1);
 
@@ -102,10 +106,10 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
    /* generate dn */
    mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
-   /* generate dng */
+   /* generate rho and dng */
    double *tmp = x;
-   mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
-   mygrid->r_SMul(scal1,tmp);
+   mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+   mygrid->rr_SMul(scal1,rho,tmp);
    mygrid->rc_fft3d(tmp);
    mygrid->c_pack(0,tmp);
    mygrid->cc_pack_copy(0,tmp,dng);
@@ -131,8 +135,13 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
  ********************************************/
 void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dnall)
 {
-   // generate coulomb potential */
-   mycoulomb->vcoulomb(dng,vc);
+   /* generate coulomb potential */
+   if (periodic)  mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+   if (aperiodic) 
+   { 
+      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
+   }
 
    // generate exchange-correlation potential */
    myxc->v_exc_all(ispin,dnall,xcp,xce);
@@ -159,6 +168,10 @@ void Electron_Operators::gen_vl_potential()
 
    /* generate local psp */
    mypsp->v_local(vl,0,dng0,fion0);
+
+   /* generate long range local psp */
+   if (aperiodic) mypsp->v_lr_local(vlr_l);
+
 }
 
 /***********************************************
@@ -184,9 +197,11 @@ void Electron_Operators::gen_Hpsi_k(double *psi)
 
    mygrid->g_zero(Hpsi);
 
-   psi_H(mygrid,myke,mypsp,
-         psi, psi_r, vl, vc, xcp,
-         Hpsi, move,fion0);
+   /* get Hpsi */
+   if (periodic)  psi_H(mygrid,myke,mypsp,psi,psi_r,vl,vc,xcp,Hpsi,move,fion0);
+   if (aperiodic) psi_Hv4(mygrid,myke,mypsp,psi,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion0);
+
+
 
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -268,7 +283,17 @@ void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall
  ********************************************/
 double Electron_Operators::vl_ave(double *dng)
 {
-   return mygrid->cc_pack_dot(0,dng,vl);
+   return  mygrid->cc_pack_dot(0,dng,vl);
+}
+
+/********************************************
+ *                                          *
+ *       Electron_Operators::vlr_ave        *
+ *                                          *
+ ********************************************/
+double Electron_Operators::vlr_ave(double *dn)
+{
+   return (mygrid->rr_dot(dn,vlr_l)+ mygrid->rr_dot(&dn[(ispin-1)*n2ft3d],vlr_l))*dv;
 }
 
 
@@ -304,7 +329,17 @@ double Electron_Operators::eorbit(double *psi)
  ********************************************/
 double Electron_Operators::ehartree(double *dng)
 {
-   return mycoulomb->ecoulomb(dng);
+   return mycoulomb12->mycoulomb1->ecoulomb(dng);
+}
+
+/********************************************
+ *                                          *
+ *       Electron_Operators::ehartree2      *
+ *                                          *
+ ********************************************/
+double Electron_Operators::ehartree2(double *dn)
+{
+   return 0.5*(mygrid->rr_dot(dn,vc)+ mygrid->rr_dot(&dn[(ispin-1)*n2ft3d],vc))*dv;
 }
   
 
@@ -376,7 +411,11 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
    eorbit0  = mygrid->m_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0+eorbit0;
 
-   ehartr0 = mycoulomb->ecoulomb(dng);
+   if (periodic) 
+      ehartr0 = mycoulomb12->mycoulomb1->ecoulomb(dng);
+   else
+      ehartr0 = 0.5*(mygrid->rr_dot(dn,vc)+ mygrid->rr_dot(&dn[(ispin-1)*n2ft3d],vc))*dv;
+ 
    exc0    = mygrid->rr_dot(dnall,xce);
    pxc0    = mygrid->rr_dot(dn,xcp);
    if (ispin==1)
@@ -422,7 +461,9 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, d
    eorbit0  = mygrid->m_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0+eorbit0;
 
-   ehartr0 = mycoulomb->ecoulomb(dng);
+   if (periodic)  ehartr0 = mycoulomb12->mycoulomb1->ecoulomb(dng);
+   if (aperiodic) ehartr0 = 0.5*(mygrid->rr_dot(dn,vc)+ mygrid->rr_dot(&dn[(ispin-1)*n2ft3d],vc))*dv;
+  
    exc0    = mygrid->rr_dot(dnall,xce);
    pxc0    = mygrid->rr_dot(dn,xcp);
    if (ispin==1)
@@ -448,7 +489,8 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, d
    E[4] = 0.0;
 
    E[5] =  myke->ke_ave(psi);
-   E[6] = mygrid->cc_pack_dot(0,dng,vl);
+   E[6] = this->vl_ave(dng);
+   if (aperiodic) E[6] += this->vlr_ave(dn);
    E[7] = mypsp->e_nonlocal(psi);
    E[8] = 2*ehartr0;
    E[9] = pxc0;

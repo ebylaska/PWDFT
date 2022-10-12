@@ -87,31 +87,37 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid)
    double fdny = ((double) dny);
    double fdnz = ((double) dnz);
    double dV   = domega/(fdnx*fdny*fdnz);
+   double temp;
 
    //short-range part of Greens function
    std::memset(gk,0,dnfft3d*sizeof(double));
-   for (auto k3 = (-dnzh+1); k3<  dnzh; ++k3)
-   for (auto k2 = (-dnyh+1); k2<  dnyh; ++k2)
-   for (auto k1 = 0;         k1<  dnxh; ++k1)
+   for (auto k = 0; k<dnz;  ++k)
+   for (auto j = 0; j<dny;  ++j)
+   for (auto i = 0; i<=dnxh; ++i)
    {
-      auto gx = k1*dunitg[0] + k2*dunitg[3] + k3*dunitg[6];
-      auto gy = k1*dunitg[1] + k2*dunitg[4] + k3*dunitg[7];
-      auto gz = k1*dunitg[2] + k2*dunitg[5] + k3*dunitg[8];
-      auto gg = gx*gx + gy*gy + gz*gz;
-
-      auto i=k1; if (i < 0) i += dnx;
-      auto j=k2; if (j < 0) j += dny;
-      auto k=k3; if (k < 0) k += dnz; 
+      auto i1=i;
+      auto j1=j;
+      auto k1=k;
 
       auto indx = myd3db2->ijktoindex(i,j,k);
       auto p    = myd3db2->ijktop(i,j,k);
       if (p==taskid)
       {
-         double temp;
-         if ((i+j+k)>0)
-           temp = (fourpi/gg)*(1.0 - std::exp(-gg/(4.00*EPSILON*EPSILON)));
+         if ((i1+j1+k1)>0)
+         {
+            if (j1 > dnyh) j1 -= dny;
+            if (k1 > dnzh) k1 -= dnz; 
+
+            auto gx = i1*dunitg[0] + j1*dunitg[3] + k1*dunitg[6];
+            auto gy = i1*dunitg[1] + j1*dunitg[4] + k1*dunitg[7];
+            auto gz = i1*dunitg[2] + j1*dunitg[5] + k1*dunitg[8];
+            auto gg = gx*gx + gy*gy + gz*gz;
+
+            temp = (fourpi/gg)*(1.0 - std::exp(-gg/(4.00*EPSILON*EPSILON)));
+         }
          else
-           temp = pi/(EPSILON*EPSILON);
+            temp = pi/(EPSILON*EPSILON);
+
          gk[indx] = temp;
       }
    }
@@ -138,9 +144,9 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid)
          auto k1=k;
          auto j1=j;
          auto i1=i;
-         if (k1>dnz/2) k1 -= dnz;
-         if (j1>dny/2) j1 -= dny;
-         if (i1>dnx/2) i1 -= dnx;
+         if (k1>=dnz/2) k1 -= dnz;
+         if (j1>=dny/2) j1 -= dny;
+         if (i1>=dnx/2) i1 -= dnx;
 
          //call D3dB_ijktoindex2p(2,i,j,k,index1,p)
          auto indx = myd3db2->ijktoindex2(i,j,k);
@@ -179,13 +185,13 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid)
          auto k1=k;
          auto j1=j;
          auto i1=i;
-         if (k1>dnz/2) k1 -= dnz;
-         if (j1>dny/2) j1 -= dny;
-         if (i1>dnx/2) i1 -= dnx;
+         if (k1>=dnz/2) k1 -= dnz;
+         if (j1>=dny/2) j1 -= dny;
+         if (i1>=dnx/2) i1 -= dnx;
 
          //call D3dB_ijktoindex2p(2,i,j,k,index1,p)
-         auto indx = myd3db2->ijktoindex(i,j,k);
-         auto p    = myd3db2->ijktop(i,j,k);
+         auto indx = myd3db2->ijktoindex2(i,j,k);
+         auto p    = myd3db2->ijktop2(i,j,k);
          if (p==taskid)
          {
             auto x = i1*dunita[0]/fdnx + j1*dunita[3]/fdny + k1*dunita[6]/fdnz;
@@ -208,7 +214,9 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid)
    // add long-range part to short-range part             
    // note that only real parts of tranformed grl are used
    for (auto k=0; k<dnfft3d; ++k)
+   {
       gk[k] += glr[2*k];
+   }
 
    delete [] tmp;
 }
@@ -250,6 +258,7 @@ void Coulomb2_Operator::vcoulomb(const double *dn, double *vcout)
    mypneb->r_SMul(dscale,vcout);
 
 }
+
 
 
 

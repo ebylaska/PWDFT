@@ -19,7 +19,7 @@
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
@@ -148,7 +148,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
 
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
 
    /* initialize xc */
    XC_Operator      myxc(&mygrid,control);
@@ -157,7 +157,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
    /* initialize electron operators */
-   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
+   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb12, &myxc, &mypsp);
 
    // setup ewald
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);

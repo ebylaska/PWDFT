@@ -20,7 +20,7 @@
 #include	"Strfac.hpp"
 #include        "nwpw_Nose_Hoover.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
@@ -155,7 +155,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
 
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
 
    /* initialize xc */
    XC_Operator      myxc(&mygrid,control);
@@ -164,7 +164,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
    /* initialize electron operators */
-   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
+   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb12, &myxc, &mypsp);
 
    // setup ewald
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);

@@ -38,8 +38,10 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
    double eke,elocal,enlocal,dt,dte,Eold;
-   double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
+   bool periodic  = (control.version==3);
+   bool aperiodic = (control.version==4);
    bool move = control.geometry_optimize();
    double omega = mygrid->lattice->omega();
 
@@ -68,10 +70,15 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
-   if (mycoulomb12->has_coulomb1)
+   if (periodic)
+   {
       vc  = mygrid->c_pack_allocate(0);
-   else if (mycoulomb12->has_coulomb2)
-      vc  = mygrid->r_alloc();
+   }
+   else if (aperiodic)
+   {
+      vc    = mygrid->r_alloc();
+      vlr_l = mygrid->r_alloc();
+   }
 
    vpsi=x;
 
@@ -80,6 +87,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    /* generate local psp*/
    mypsp->v_local(vl,0,dng,fion);
    
+
 
    //myewald->phafac();
 
@@ -134,12 +142,19 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
              mygrid->rr_copy(&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
       }
 
-      /* generate local potential */
+      /* generate local potentials */
       if ((move) || (mypsp->myapc->v_apc_on))
       {
          mypsp->v_local(vl,move,dng,fion);
          if (mypsp->myapc->v_apc_on)
             mypsp->myapc->V_APC(dng,mypsp->zv,vl,move,fion);
+      }
+
+      /* long-range psp for charge systems */
+      if (aperiodic)
+      {
+         mypsp->v_lr_local(vlr_l);
+         if (move) mypsp->grad_v_lr_local(rho,fion);
       }
 
       /* apply k-space operators */
@@ -149,15 +164,20 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       //mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
-      if (mycoulomb12->has_coulomb1) mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
-      if (mycoulomb12->has_coulomb2) mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
+      if (periodic)  
+         mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+      else if (aperiodic) 
+         mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
       myxc->v_exc_all(ispin,dnall,xcp,xce);
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
       /* get Hpsi */
-      psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
+      if (periodic)
+         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
+      else if (aperiodic) 
+         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion);
 
 
      /* apply r-space operators  - Expensive*/
@@ -209,12 +229,12 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    if (ispin==1) eorbit = eorbit+eorbit;
 
    /* hartree energy and ion-ion energy */
-   if (mycoulomb12->has_coulomb1) 
+   if (periodic) 
    {
       ehartr  = mycoulomb12->mycoulomb1->ecoulomb(dng);
       eion    = myewald->energy();
    }
-   if (mycoulomb12->has_coulomb2)
+   else if (aperiodic)
    {
        ehartr  = 0.5*mygrid->rr_dot(rho,vc)*dv;
        eion = myion->ion_ion_energy();
@@ -309,9 +329,12 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
-   if (mycoulomb12->has_coulomb1)
+   if (periodic)
       mygrid->c_pack_deallocate(vc);
-   else if (mycoulomb12->has_coulomb2)
+   else if (aperiodic)
+   {
       mygrid->r_dealloc(vc);
+      mygrid->r_dealloc(vlr_l);
+   }
 }
 }

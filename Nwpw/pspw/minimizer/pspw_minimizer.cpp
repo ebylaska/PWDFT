@@ -19,7 +19,7 @@
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
 #include	"exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
@@ -135,7 +135,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& 
    unita[6] = mylattice.unita1d(6);
    unita[7] = mylattice.unita1d(7);
    unita[8] = mylattice.unita1d(8);
-   version = 3;
+   version = control.version;
 
 
    // initialize parallel grid structure 
@@ -151,7 +151,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& 
 
    // initialize operators
    Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
 
    // initialize xc
    XC_Operator      myxc(&mygrid,control);
@@ -164,7 +164,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& 
          mypsp.myapc->myborn->writejsonstr(rtdbstring);
 
    // initialize electron operators
-   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb, &myxc, &mypsp);
+   Electron_Operators myelectron(&mygrid,&mykin, &mycoulomb12, &myxc, &mypsp);
 
    // setup ewald 
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);

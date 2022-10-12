@@ -106,9 +106,9 @@ static void expand_hilbert2d(const int np, const int ny, const int nz,
          if (pmap_in[j+k*ny]==p)
          {
             qmap_out[j    + (k)   *2*ny] = qmap_in[j+k*ny];
-            qmap_out[j+ny + (k)   *2*ny] = qmap_in[j+k*ny] + nqp;
-            qmap_out[j    + (k+nz)*2*ny] = qmap_in[j+k*ny] + 2*nqp;
-            qmap_out[j+ny + (k+nz)*2*ny] = qmap_in[j+k*ny] + 3*nqp;
+            qmap_out[j+ny + (k)   *2*ny] = qmap_in[j+k*ny] + (nqp+1);
+            qmap_out[j    + (k+nz)*2*ny] = qmap_in[j+k*ny] + 2*(nqp+1);
+            qmap_out[j+ny + (k+nz)*2*ny] = qmap_in[j+k*ny] + 3*(nqp+1);
          }
    }
 }
@@ -147,8 +147,9 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
    maptype = mapin;
 
    /* slab mapping */
-   if (maptype==1)
+   if ((maptype==1) || (maptype==-1))
    {
+      maptype = 1;
       qmap[0] =  new (std::nothrow) int[nz]();
       pmap[0] =  new (std::nothrow) int[nz]();
       kmap    =  new (std::nothrow) int[nz]();

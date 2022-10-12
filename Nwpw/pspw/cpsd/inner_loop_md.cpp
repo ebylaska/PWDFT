@@ -15,6 +15,7 @@
 #include        "exchange_correlation.hpp"
 #include        "nwpw_Nose_Hoover.hpp"
 #include        "Pseudopotential.hpp"
+#include        "psi_H.hpp"
 //#include	"v_exc.hpp"
 #include	"inner_loop_md.hpp"
 
@@ -37,10 +38,12 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
    double eke,eki,elocal,enlocal,dt,dte,fmass,Eold;
-   double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
    bool move = true;
    bool nose = mynose->on();
+   bool periodic  = (control.version==3);
+   bool aperiodic = (control.version==4);
    double sse = 1.0;
    double ssr = 1.0;
    double omega = mygrid->lattice->omega();
@@ -81,10 +84,13 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
-   if (mycoulomb12->has_coulomb1)
+   if (periodic)
       vc  = mygrid->c_pack_allocate(0);
-   else if (mycoulomb12->has_coulomb2)
-      vc  = mygrid->r_alloc();
+   else if (aperiodic)
+   {
+      vc    = mygrid->r_alloc();
+      vlr_l = mygrid->r_alloc();
+   }
    vpsi=x;
 
    //new double[3*(myion->nion)]();
@@ -126,8 +132,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
       /* generate dng */
-      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
-      mygrid->r_SMul(scal1,tmp);
+      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mygrid->rr_SMul(scal1,rho,tmp);
       mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
@@ -149,38 +155,55 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       if (move) mypsp->v_local(vl,move,dng,fion);
       if (mypsp->myapc->v_apc_on) mypsp->myapc->V_APC(dng,mypsp->zv,vl,move,fion);
 
+      /* long-range psp for charge systems */
+      if (aperiodic)
+      {
+         mypsp->v_lr_local(vlr_l);
+         if (move) mypsp->grad_v_lr_local(rho,fion);
+      }
+
       /* apply k-space operators */
-      myke->ke(psi1,Hpsi);
-      mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
+      //myke->ke(psi1,Hpsi);
+      //mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
-      if (mycoulomb12->has_coulomb1) mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
-      //if (mycoulomb12->has_coulomb2) mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
+      if (periodic) 
+         mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+      else if (aperiodic) 
+         mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
       myxc->v_exc_all(ispin,dnall,xcp,xce);
 
-      /* apply r-space operators */
-      mygrid->cc_pack_SMul(0,scal2,vl,vall);
-      mygrid->cc_pack_Sum2(0,vc,vall);
-      mygrid->c_unpack(0,vall);
-      mygrid->cr_fft3d(vall);
-      indx1 = 0;
-      indx2 = 0;
-      for (ms=0; ms<ispin; ++ms) 
-      { 
-         mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
-         for (i=0; i<(mygrid->neq[ms]); ++i)
-         {
-            mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
-            mygrid->rc_fft3d(vpsi);
-            mygrid->c_pack(1,vpsi);
-            mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
 
-            indx1 += shift1;
-            indx2 += shift2;
-         }
-      }
+      /* get Hpsi */
+      if (periodic)
+         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
+      else if (aperiodic)
+         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion);
+
+
+      /* apply r-space operators */
+      //mygrid->cc_pack_SMul(0,scal2,vl,vall);
+      //mygrid->cc_pack_Sum2(0,vc,vall);
+      //mygrid->c_unpack(0,vall);
+      //mygrid->cr_fft3d(vall);
+      //indx1 = 0;
+      //indx2 = 0;
+      //for (ms=0; ms<ispin; ++ms) 
+      //{ 
+      //   mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
+      //   for (i=0; i<(mygrid->neq[ms]); ++i)
+      //   {
+      //      mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
+      //      mygrid->rc_fft3d(vpsi);
+      //      mygrid->c_pack(1,vpsi);
+      //      mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+      //
+      //      indx1 += shift1;
+      //      indx2 += shift2;
+      //   }
+      //}
 
       /* get the ewald force */
       myewald->force(fion);
@@ -367,9 +390,12 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
-   if (mycoulomb12->has_coulomb1)
+   if (periodic)
       mygrid->c_pack_deallocate(vc);
-   else if (mycoulomb12->has_coulomb2)
+   else if (aperiodic)
+   {
       mygrid->r_dealloc(vc);
+      mygrid->r_dealloc(vlr_l);
+   }
 }
 }

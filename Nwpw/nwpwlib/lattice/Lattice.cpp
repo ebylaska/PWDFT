@@ -89,6 +89,7 @@ Lattice::Lattice(Control2& control)
    if (wcut0 < pwcut) pwcut = wcut0;
 
    pfast_erf   = control.fast_erf();
+   paperiodic = (control.version==4);
 }
 
 

@@ -1594,16 +1594,28 @@ void d3db::tc_Mul(const double *ptr1, double *ptr3)
    int m = nfft3d%5;
    if (m>0)
       for (i=0; i<m; ++i)
-         ptr3[2*i] *= ptr1[i];
+      {
+         ptr3[2*i]   *= ptr1[i];
+         ptr3[2*i+1] *= ptr1[i];
+      }
    if (nfft3d<5)
       return;
    for (i=m; i<nfft3d; i+=5)
    {
       ptr3[2*(i)]   *= ptr1[i];
-      ptr3[2*(i+1)] *= ptr1[i+1];
-      ptr3[2*(i+2)] *= ptr1[i+2];
-      ptr3[2*(i+3)] *= ptr1[i+3];
-      ptr3[2*(i+4)] *= ptr1[i+4];
+      ptr3[2*(i)+1] *= ptr1[i];
+
+      ptr3[2*(i+1)]   *= ptr1[i+1];
+      ptr3[2*(i+1)+1] *= ptr1[i+1];
+
+      ptr3[2*(i+2)]   *= ptr1[i+2];
+      ptr3[2*(i+2)+1] *= ptr1[i+2];
+
+      ptr3[2*(i+3)]   *= ptr1[i+3];
+      ptr3[2*(i+3)+1] *= ptr1[i+3];
+
+      ptr3[2*(i+4)]   *= ptr1[i+4];
+      ptr3[2*(i+4)+1] *= ptr1[i+4];
    }
    return;
 }
@@ -3021,17 +3033,17 @@ void d3db::r_setrandom(double *a)
  *        d3db::hr2r_expand     *
  *                              *
  ********************************/
-// expands a grid that is ((nx+2)/2,ny/2,nz/2) to (nx+2,ny,nz)
+// expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx+2,ny,nz)
 void d3db::hr2r_expand(const double *ah, double *a)
 {
    std::memset(a,0,n2ft3d*sizeof(double));
    if (maptype==1)
    {
      int nxh = nx/2; 
-     int nyh = ny/2; 
      int nqh = nq/2;
-     for (auto q=0; q<nqh; ++q) 
+     int nyh = ny/2; 
      for (auto j=0; j<nyh; ++j) 
+     for (auto q=0; q<nqh; ++q) 
      for (auto i=0; i<nxh; ++i) 
         a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
    }
