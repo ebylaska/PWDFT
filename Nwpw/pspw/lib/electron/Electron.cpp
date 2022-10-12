@@ -541,9 +541,22 @@ void Electron_Operators::semicore_force(double *fion)
 void Electron_Operators::vl_force(double *dng, double *fion) 
 {
    mypsp->f_local(dng,fion);
-
-
 }
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::vlr_force       *
+ *                                          *
+ ********************************************/
+void Electron_Operators::vlr_force(double *dn, double *fion) 
+{
+   if (aperiodic)
+   {
+      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mypsp->grad_v_lr_local(rho,fion);
+   }
+}
+
 
 /********************************************
  *                                          *

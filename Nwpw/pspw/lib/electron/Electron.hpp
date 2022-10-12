@@ -80,6 +80,7 @@ public:
     void add_dteHpsi(double, double *, double *);
 
     void vl_force(double *, double *);
+    void vlr_force(double *, double *);
     void vnl_force(double *, double *);
     void semicore_force(double *);
 

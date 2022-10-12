@@ -219,7 +219,7 @@ public:
 
    void psi_1local_force(double *grad_ion) { 
       myelectron->vl_force(dng1,grad_ion);
-      if (myelectron->is_aperiodic()) mypsp->grad_v_lr_local(ispin,rho1,grad_ion);
+      if (myelectron->is_aperiodic()) myelectron->vlr_force(rho1,grad_ion);
    }
 
    void psi_1nonlocal_force(double *grad_ion) { myelectron->vnl_force(psi1,grad_ion); }
