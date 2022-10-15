@@ -62,16 +62,17 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int ispin,
        }
     }
 
+    g_rnd_algorihm = control.initial_psi_random_algorithm();
 }
 
 
 
 /*************************************
  *                                   *
- *      Pneb::g_generate_random      *
+ *      Pneb::g_generate1_random     *
  *                                   *
  *************************************/
-void Pneb::g_generate_random(double *psi)
+void Pneb::g_generate1_random(double *psi)
 {
    int ms,n,indx,i,pj,qj,taskid_j;
    int filling[4],nfft[3];
@@ -132,6 +133,19 @@ void Pneb::g_generate2_random(double *psi)
 
 }
 
+
+/*************************************
+ *                                   *
+ *      Pneb::g_generate_random      *
+ *                                   *
+ *************************************/
+void Pneb::g_generate_random(double *psi)
+{
+   if (g_rnd_algorihm==1)
+      this->g_generate1_random(psi);
+   else
+      this->g_generate2_random(psi);
+}
 
 
 
@@ -784,6 +798,8 @@ void Pneb::m_diagonalize(double *hml, double *eig)
             n = ne[ms];
 
             //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+
+            d3db::parall->Barrier();
 
             //ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
             EIGEN_PWDFT(n, &(hml[shift2]), &(eig[shift1]), xmp1, nn, ierr);

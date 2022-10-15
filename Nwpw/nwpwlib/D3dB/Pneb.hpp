@@ -26,6 +26,7 @@ class Pneb : public PGrid, public d1db  {
    int *ma[2],*ma1[2],*ma2[2],*mc[2],*na[2],*nc[2];
    int mcq[2],ncq[2];
    int  ncqmax;
+   int g_rnd_algorihm=1;
 
 
 public:
@@ -50,6 +51,7 @@ public:
         }
 
         void g_generate_random(double *);
+        void g_generate1_random(double *);
         void g_generate2_random(double *);
         void g_read(const int, double *);
         void g_write(const int, double *);

@@ -165,7 +165,9 @@ public:
 
       /* apply psi2 = psi1 + dte*Hpsi1 */
       myelectron->run(psi1,rho1,dng1,rho1_all);
-      myelectron->add_dteHpsi((-dte),psi1,psi2);
+
+      //myelectron->add_dteHpsi((-dte),psi1,psi2);
+      myelectron->add_dteHpsi((dte),psi1,psi2);
 
       /* lagrange multiplier - Expensive */
       mygrid->ggm_lambda(dte,psi1,psi2,lmbda);

@@ -81,6 +81,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
 
    for (auto ii=0; ii<60; ++ii) E[ii] = 0.0;
 
+
    if (oprint)
    {
       if (minimizer==1) coutput << "     ============ Grassmann conjugate gradient iteration ============" << std::endl;
@@ -108,10 +109,10 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
    /* generate phase factors and local psp and semicore density */
    mymolecule.phafacs_vl_potential_semicore();
 
-   if (mymolecule.newpsi) 
+   if (mymolecule.newpsi)
    {
       for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-      //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+      if (oprint) coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
    }
 
    //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
@@ -119,6 +120,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
    int bfgscount = 0;
    int icount = 0;
    bool converged = false;
+
 
    if (minimizer==1) {
       while ((icount < it_out) && (!converged))

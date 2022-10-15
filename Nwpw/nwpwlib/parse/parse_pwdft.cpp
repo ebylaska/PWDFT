@@ -980,6 +980,11 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          ss = mystring_split0(line);
          if (ss.size()>1) nwpwjson["mapping"] = std::stoi(ss[1]);
       }
+      else if (mystring_contains(line,"initial_psi_random_algorithm"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
+      }
       else if (mystring_contains(line,"tile_factor"))
       {
          ss = mystring_split0(line);
@@ -1050,6 +1055,11 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (ss.size()==2) nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[1]),1.0e-4};
          if (ss.size()==3) nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),1.0e-4};
          if (ss.size()>3)  nwpwjson["tolerances"] = {std::stod(ss[1]),std::stod(ss[2]),std::stod(ss[3])};
+      }
+      else if (mystring_contains(line,"time_step"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()>1) nwpwjson["time_step"] = std::stod(ss[1]);
       }
       else if (mystring_contains(line,"intitial_velocities"))
       {

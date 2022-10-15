@@ -147,6 +147,7 @@ void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dna
    myxc->v_exc_all(ispin,dnall,xcp,xce);
    //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
+
    // generate apc potential */
    if (mypsp->myapc->v_apc_on) 
    {
@@ -200,8 +201,6 @@ void Electron_Operators::gen_Hpsi_k(double *psi)
    /* get Hpsi */
    if (periodic)  psi_H(mygrid,myke,mypsp,psi,psi_r,vl,vc,xcp,Hpsi,move,fion0);
    if (aperiodic) psi_Hv4(mygrid,myke,mypsp,psi,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion0);
-
-
 
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -314,6 +313,7 @@ double Electron_Operators::vnl_ave(double *psi)
  ********************************************/
 double Electron_Operators::eorbit(double *psi)
 {
+
    mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
    //mygrid->m_scal(-1.0,hmltmp);
    double eorbit0 = mygrid->m_trace(hmltmp);

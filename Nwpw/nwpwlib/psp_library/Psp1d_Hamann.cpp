@@ -347,6 +347,7 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name, const int p
    myparall->Brdcst_iValue(0,0,&lmax0);
    myparall->Brdcst_iValue(0,0,&lmax);
    myparall->Brdcst_iValue(0,0,&locp);
+   myparall->Brdcst_Values(0,0,1,&rlocal);
    myparall->Brdcst_Values(0,0,(lmax0+1),rc);
    myparall->Brdcst_iValue(0,0,&nrho);
    myparall->Brdcst_Values(0,0,1,&drho);
@@ -629,6 +630,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    double *f  = new double[nrho];
    double a,xx;
 
+
    memset(vl_ray,0,nray*sizeof(double));
    memset(vnl_ray,0,lmaxnray*sizeof(double));
    memset(rho_sc_k_ray,0,nray2*sizeof(double));
@@ -731,6 +733,7 @@ void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
    myparall->Vector_SumAll(0,2*nray,rho_sc_k_ray);
    myparall->Vector_SumAll(0,nray,vl_ray);
    myparall->Vector_SumAll(0,lmaxnray,vnl_ray);
+
 
    /* G==0 local */
    if (version==3)

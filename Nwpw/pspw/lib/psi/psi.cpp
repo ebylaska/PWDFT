@@ -25,6 +25,7 @@
 namespace pwdft {
 
 
+
 /*****************************************************
  *                                                   *
  *               wvfnc_expander_convert              *
@@ -101,6 +102,7 @@ static void wvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], doub
       psi2[2*dindx+1] = psi1[2*indx+1];
    }
 }
+
 
 /*****************************************************
  *                                                   *
@@ -324,8 +326,9 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
    else {
       if (myparall->base_stdio_print) 
          coutput << " generating random psi from scratch" << std::endl;
-      //mypneb->g_generate_random(psi2);
-      mypneb->g_generate2_random(psi2);
+      mypneb->g_generate_random(psi2);
+      //mypneb->g_generate1_random(psi2);
+      //mypneb->g_generate2_random(psi2);
    }
 
    /* ortho check */

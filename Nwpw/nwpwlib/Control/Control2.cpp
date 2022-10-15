@@ -188,6 +188,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    ptile_factor = 1;
    if (rtdbjson["nwpw"]["tile_factor"].is_number_integer()) ptile_factor = rtdbjson["nwpw"]["tile_factor"];
 
+   /* set pinitial_psi_random_algorithm for wavefunction initialization */
+   pinitial_psi_random_algorithm = 1;
+   if (rtdbjson["nwpw"]["initial_psi_random_algorithm"].is_number_integer()) pinitial_psi_random_algorithm = rtdbjson["nwpw"]["initial_psi_random_algorithm"];
+
    /* qsize */
    pqsize = 4;
    if (rtdbjson["nwpw"]["pfft3_qsize"].is_number_integer()) pqsize = rtdbjson["nwpw"]["pfft3_qsize"];

@@ -40,6 +40,7 @@ class Control2 {
 
    int pminimizer = 1;
    int plmbfgs_size = 2;
+   int  pinitial_psi_random_algorithm = 1;
 
 
    int    pdriver_maxiter     = 30;
@@ -146,6 +147,7 @@ public:
    int total_ion_charge()       { return ptotal_ion_charge; }
    int lmax_multipole()         { return plmax_multipole; }
    std::string xc_name()	{ return xcstring; }
+   int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
 
    int *ne_ptr()                { return pne; }
 

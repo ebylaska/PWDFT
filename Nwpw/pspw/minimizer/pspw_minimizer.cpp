@@ -323,6 +323,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& 
    if (myparallel.is_master()) seconds(&cpu2);
 
 
+
 //*                |***************************|
 //******************     call CG minimizer     **********************
 //*                |***************************|
