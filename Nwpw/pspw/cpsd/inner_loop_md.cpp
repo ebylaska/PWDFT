@@ -205,8 +205,11 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       //   }
       //}
 
-      /* get the ewald force */
-      myewald->force(fion);
+      /* get the ion-ion force */
+      if (periodic)
+         myewald->force(fion); /* get the ewald force */
+      else if (aperiodic)
+         myion->ion_ion_force(fion); /* get the ion-ion force */
 
       /* get the semicore force - needs to be checked */
       if (mypsp->has_semicore())
