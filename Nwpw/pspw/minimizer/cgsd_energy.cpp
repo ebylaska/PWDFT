@@ -209,7 +209,7 @@ void cgsd_energy_gradient(Molecule& mymolecule, double *grad_ion)
    mymolecule.psi_1nonlocal_force(grad_ion);
    mymolecule.semicore_force(grad_ion);
 
-   mymolecule.ewald_fion(grad_ion);
+   mymolecule.ion_fion(grad_ion);
    mymolecule.psi_1apc_force(grad_ion);
 
 }

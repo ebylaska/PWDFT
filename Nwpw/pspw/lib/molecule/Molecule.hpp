@@ -144,7 +144,15 @@ public:
    double vl_ave()   { return myelectron->vl_ave(dng1); }
    double vlr_ave()   { return myelectron->vlr_ave(rho1); }
    double vnl_ave()  { return myelectron->vnl_ave(psi1); }
-   double eion()     { return myewald->energy(); }
+   double eion() { 
+      double ee = 0.0;
+      if (myelectron->is_periodic())  
+         ee =  myewald->energy();
+      if (myelectron->is_aperiodic()) 
+         ee =  myion->ion_ion_energy();
+      return ee;
+   }
+
 
    /* molecule - generate current hamiltonian */
    void gen_hml() { myelectron->gen_hml(psi1,hml); }
@@ -227,6 +235,10 @@ public:
    void psi_1nonlocal_force(double *grad_ion) { myelectron->vnl_force(psi1,grad_ion); }
    void semicore_force(double *grad_ion)      { myelectron->semicore_force(grad_ion); }
    void ewald_fion(double *grad_ion)          { myewald->force(grad_ion); }
+   void ion_fion(double *grad_ion)  { 
+      if (myelectron->is_periodic())  myewald->force(grad_ion); 
+      if (myelectron->is_aperiodic()) myion->ion_ion_force(grad_ion);
+   }
 
    void psi_1apc_force(double *grad_ion)      { myelectron->apc_force(dng1,grad_ion); }
 
