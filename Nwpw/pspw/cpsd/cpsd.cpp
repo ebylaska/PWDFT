@@ -377,6 +377,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
          mypsp.myapc->dngen_APC(dn,false);
 
 
+
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
@@ -402,8 +403,8 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       //   std::cout << mypsp.myapc->shortprint_APC();
 
       std::cout << "\n\n";
-      std::cout << std::fixed << " number of electrons: spin up= " << std::setw(11) << std::setprecision(5) << en[0]
-		<< "  down= " << std::setw(11) << std::setprecision(5) << en[ispin]
+      std::cout << std::fixed << " number of electrons: spin up= " << Ffmt(11,5) << en[0]
+		<< "  down= " << Ffmt(11,5) << en[ispin-1]
 		<< " (real space)";
       std::cout << std::endl << std::endl;
       std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;  
@@ -436,7 +437,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       }
       for (i=0; i<ne[1]; ++i)
       {
-         std::cout << Efmt(18,7) << eig[i+nn] << eig[i]    << " (" << Ffmt(8,3) << eig[i+nn]*ev << eig[i]*ev << "eV) " 
+         std::cout << Efmt(18,7) << eig[i+nn]              << " (" << Ffmt(8,3) << eig[i+nn]*ev              << "eV) " 
                    << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" << Ffmt(8,3) << eig[i+(ispin-1)*ne[0]]*ev << "eV)"  << std::endl;
          //printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
          //printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");

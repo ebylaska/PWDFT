@@ -16,7 +16,7 @@
 #include        "exchange_correlation.hpp"
 #include        "Pseudopotential.hpp"
 #include        "psi_H.hpp"
-//#include	"v_exc.hpp"
+#include	"v_exc.hpp"
 #include	"inner_loop.hpp"
 
 namespace pwdft {
@@ -120,14 +120,14 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       /* generate dn */
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
+
       /* generate dng */
-      //mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
-      //mygrid->r_SMul(scal1,tmp);
       mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
       mygrid->rr_SMul(scal1,rho,tmp);
       mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
+
 
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore())
@@ -170,15 +170,26 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
          mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
+      std::memset(xcp,0,ispin*n2ft3d);
+      std::memset(xce,0,ispin*n2ft3d);
       myxc->v_exc_all(ispin,dnall,xcp,xce);
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
+
+      for (k=0; k<n2ft3d; ++k)
+         std::cout << "k=" << k 
+                   << " xce=" << xce[k] 
+                   << " xcp=" << xcp[k] << " " << xcp[k+n2ft3d] << std::endl;
+      for (k=0; k<n2ft3d; ++k)
+         std::cout << "k=" << k 
+                   << " dnall=" << dnall[k] 
+                   << " " << dnall[k+n2ft3d]  << std::endl;
+
 
       /* get Hpsi */
       if (periodic)
          psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
       else if (aperiodic) 
          psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion);
-
 
      /* apply r-space operators  - Expensive*/
      //mygrid->cc_pack_SMul(0,scal2,vl,vall);
@@ -258,6 +269,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    }
    exc *= dv;
    pxc *= dv;
+
 
    /* average Kohn-Sham kineticl energy */
    eke     = myke->ke_ave(psi1);

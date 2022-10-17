@@ -68,7 +68,7 @@ namespace pwdft {
 #define one3rd (1.00/3.00)
 #define for3rd (4.00/3.00)
 #define one6th (1.00/6.00)
-#define dncut  1.0e-20
+#define dncut  1.0e-30
 
 void v_exc(const int ispin, const int n2ft3d, double *dn, 
            double *xcp, double *xce, double *x)
@@ -81,19 +81,23 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
    double *rhoup,*xcpup,*xceup;
    double *rhodn,*xcpdn,*xcedn;
 
-   pi      = 4.00*atan(1.00);
+   pi      = 4.00*std::atan(1.00);
 
    /* define arrays and such */
-   rhoup = dn;   rhodn = &dn[ (ispin-1)*n2ft3d];
-   xcpup = xcp;  xcpdn = &xcp[(ispin-1)*n2ft3d];
-   xceup = xce;  xcedn = &xce[(ispin-1)*n2ft3d];
+   //rhoup = dn;   rhodn = &dn[ (ispin-1)*n2ft3d];
+   //xcpup = xcp;  xcpdn = &xcp[(ispin-1)*n2ft3d];
+   //xceup = xce;  xcedn = &xce[(ispin-1)*n2ft3d];
+
+   rhoup = dn;   rhodn = dn  + (ispin-1)*n2ft3d;
+   xcpup = xcp;  xcpdn = xcp + (ispin-1)*n2ft3d;
+   xceup = xce;  xcedn = xce + (ispin-1)*n2ft3d;
    
 
    /* square root of wigner radius */
    for (k=0; k<n2ft3d; ++k)
    {
         rho=rhoup[k]+rhodn[k]+dncut;
-        x[k]=crs/pow(rho,one6th);
+        x[k]=crs/std::pow(rho,one6th);
    }
   
 
@@ -103,9 +107,9 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
       xx=1.00/(x[k]*(x[k]+bp)+cp);
       xx1 = x[k] + cp3;
       xx1 *= xx1;
-      xceup[k]= cp1*log(xx*x[k]*x[k])
-            + cp2*log(xx*xx1)
-            + cp4*atan(cp5/(x[k]+cp6));
+      xceup[k]= cp1*std::log(xx*x[k]*x[k])
+            + cp2*std::log(xx*xx1)
+            + cp4*std::atan(cp5/(x[k]+cp6));
 
       xx1 = x[k]+dp6;
       xx1 *= xx1;
@@ -130,11 +134,11 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
       for (k=0; k<n2ft3d; ++k)
       {
         xx=1.00/(x[k]*(x[k]+bf)+cf);
-        xx1 = x[k]+cf6;
+        xx1 = x[k]+cf3;
         xx1 *= xx1;
-        xcedn[k]=cf1*log(xx*x[k]*x[k])
-                     +cf2*log(xx*xx1)
-                     +cf4*atan(cf5/(x[k]+cf6));
+        xcedn[k]=cf1*std::log(xx*x[k]*x[k])
+                     +cf2*std::log(xx*xx1)
+                     +cf4*std::atan(cf5/(x[k]+cf6));
 
         xx1 = x[k]+df6;
         xx1 *= xx1;
@@ -156,11 +160,13 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
       for (k=0; k<n2ft3d; ++k)
       {
          rho=rhoup[k]+rhodn[k]+dncut;
+         std::cout << " lda k=" << k << " finalxcp=" << xcpup[k] << " " << xcpdn[k] <<   std::endl;
+
          zup=2.00*rhoup[k]/rho;
          zdw=2.00*rhodn[k]/rho;
-         f=(zup*(pow(zup,one3rd))+zdw*(pow(zdw,one3rd))-2.00)*fc;
+         f=(zup*(std::pow(zup,one3rd))+zdw*(std::pow(zdw,one3rd))-2.00)*fc;
          xcpup[k]=(1.00-f)*xcpup[k]+f*xcpdn[k];
-         df=(pow(zup,one3rd)-pow(zdw,one3rd))*(xceup[k]-xcedn[k])*fd;
+         df=(std::pow(zup,one3rd)-std::pow(zdw,one3rd))*(xceup[k]-xcedn[k])*fd;
          xcpdn[k]=xcpup[k]-zup*df;
          xcpup[k]=xcpup[k]+zdw*df;
          xceup[k]=xceup[k]+f*(xcedn[k]-xceup[k]);

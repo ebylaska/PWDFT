@@ -548,7 +548,7 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       }
       for (i=0; i<ne[1]; ++i)
       {
-         std::cout << Efmt(18,7) << eig[i+nn] << eig[i]    << " (" << Ffmt(8,3) << eig[i+nn]*ev << eig[i]*ev << "eV) "
+         std::cout << Efmt(18,7) << eig[i+nn]              << " (" << Ffmt(8,3) << eig[i+nn]*ev              << "eV) "
                    << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" << Ffmt(8,3) << eig[i+(ispin-1)*ne[0]]*ev << "eV)"  << std::endl;
          //printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
          //printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");

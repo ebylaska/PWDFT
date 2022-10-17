@@ -253,7 +253,7 @@ public:
       os << eoln << eoln;
 
       os << std::fixed << " number of electrons: spin up= " << std::setw(11) << std::setprecision(5) << mymolecule.en[0] 
-                                         << "  down= " << std::setw(11) << std::setprecision(5) << mymolecule.en[mymolecule.ispin] 
+                                         << "  down= " << std::setw(11) << std::setprecision(5) << mymolecule.en[mymolecule.ispin-1] 
                                          << " (real space)";
       os << eoln << eoln;
       if (mymolecule.mypsp->myapc->v_apc_on)

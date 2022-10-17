@@ -350,7 +350,7 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
    double rzero = 0.0;
 
    //dcopy_(&nsize,&rzero,&zero,dn,&one);
-   std::memset(dn, 0, nsize * sizeof(double));
+   std::memset(dn,0,nsize*sizeof(double));
 
    indx0 = 0;
    indx1 = 0;
@@ -365,6 +365,7 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
       indx0 += n2ft3d;
    }
    d3db::parall->Vector_SumAll(2,ispin*n2ft3d,dn);
+
 }
 
 
@@ -767,7 +768,7 @@ double Pneb::m_trace(double *hml)
    {
       for (i=0; i<ne[ms]; ++i)
          sum += hml[i+i*ne[ms]+mshift];
-      mshift += ne[0];
+      mshift += ne[0]*ne[0];
    }
    return sum;
 }
