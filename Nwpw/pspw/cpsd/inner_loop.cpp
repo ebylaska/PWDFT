@@ -18,6 +18,7 @@
 #include        "psi_H.hpp"
 #include	"v_exc.hpp"
 #include	"inner_loop.hpp"
+#include        "iofmt.hpp"
 
 namespace pwdft {
 
@@ -175,14 +176,14 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       myxc->v_exc_all(ispin,dnall,xcp,xce);
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
-      for (k=0; k<n2ft3d; ++k)
-         std::cout << "k=" << k 
-                   << " xce=" << xce[k] 
-                   << " xcp=" << xcp[k] << " " << xcp[k+n2ft3d] << std::endl;
-      for (k=0; k<n2ft3d; ++k)
-         std::cout << "k=" << k 
-                   << " dnall=" << dnall[k] 
-                   << " " << dnall[k+n2ft3d]  << std::endl;
+      //for (k=0; k<n2ft3d; ++k)
+      //   std::cout << "k=" << k 
+      //             << " xce=" << xce[k] 
+      //             << " xcp=" << xcp[k] << " " << xcp[k+n2ft3d] << std::endl;
+      //for (k=0; k<n2ft3d; ++k)
+      //   std::cout << "k=" << k 
+      //             << " dnall=" << dnall[k] 
+      //             << " " << dnall[k+n2ft3d]  << std::endl;
 
 
       /* get Hpsi */
@@ -241,6 +242,17 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->m_scal(-1.0,hml);
    eorbit  = mygrid->m_trace(hml);
    if (ispin==1) eorbit = eorbit+eorbit;
+   /*
+   std::cout << "hmlup=" << Ffmt(20,15) << hml[0] << " " << hml[1] << " " << hml[2] << " " << hml[3] << std::endl; 
+   std::cout << "      " << hml[4] << " " << hml[5] << " " << hml[6] << " " << hml[7] << std::endl; 
+   std::cout << "      " << hml[8] << " " << hml[9] << " " << hml[10] << " " << hml[11] << std::endl; 
+   std::cout << "      " << hml[12] << " " << hml[13] << " " << hml[14] << " " << hml[15] << std::endl; 
+
+   std::cout << "hmldn=" << Ffmt(20,15) << hml[16+0] << " " << hml[16+1] << " " << hml[16+2] << std::endl; 
+   std::cout << "      " << hml[16+3] << " " << hml[16+4] << " " << hml[16+5] << std::endl; 
+   std::cout << "      " << hml[16+6] << " " << hml[16+7] << " " << hml[16+8] << std::endl; 
+   */
+
 
    /* hartree energy and ion-ion energy */
    if (periodic) 

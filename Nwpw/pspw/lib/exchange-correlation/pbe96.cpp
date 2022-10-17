@@ -52,6 +52,7 @@ namespace pwdft {
 #define B3_3	0.8802600e0
 #define B4_3	0.4967100e0
 
+
 /* Perdew-Wang92 LDA functional */
 static void LSDT(double a, double a1, double b1, double b2, double b3, double b4, double srs, double *ec, double *ec_rs)
 {
@@ -60,7 +61,7 @@ static void LSDT(double a, double a1, double b1, double b2, double b3, double b4
    q1  = 2.00*a*srs*(b1+srs*(b2+srs*(b3+srs*b4)));
    q1p = a*((b1/srs)+2.00*b2+srs*(3.00*b3+srs*4.00*b4));
    qd  =1.00/(q1*q1+q1);
-   ql  = -log(qd*q1*q1);
+   ql  = -std::log(qd*q1*q1);
 
    *ec = q0*ql;
    *ec_rs = -2.0e0*a*a1*ql-q0*q1p*qd;
@@ -146,8 +147,8 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
    double fnxdn,fdnxdn;          // d(n*ex)/d|grad nup|, d(n*ex)/d|grad ndn|
    double fncup,fncdn;           // d(n*ec)/dnup, d(n*ec)/dndn
 
-   double pi = 4.00*atan(1.00);
-   double rs_scale = pow((0.750/pi),onethird);
+   double pi = 4.00*std::atan(1.00);
+   double rs_scale = std::pow((0.750/pi),onethird);
    double fdnx_const = -3.00/(8.00*pi);
 
    for (int i=0; i<n2ft3d; ++i)
@@ -165,10 +166,10 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
       n     = 2.00*nup;
       agr   = 2.00*agrup;
 
-      n_onethird = pow((3.00*n/pi),onethird);
+      n_onethird = std::pow((3.00*n/pi),onethird);
       ex_lda     = -0.750*n_onethird;
 
-      kf = pow((3.00*pi*pi*n),onethird);
+      kf = std::pow((3.00*pi*pi*n),onethird);
       s  = agr/(2.00*kf*n);
       P0 = 1.00 + (MU/KAPPA)*s*s;
 
@@ -183,10 +184,10 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
       n     = 2.00*ndn;
       agr   = 2.00*agrdn;
 
-      n_onethird = pow((3.00*n/pi),onethird);
+      n_onethird = std::pow((3.00*n/pi),onethird);
       ex_lda     = -0.750*n_onethird;
 
-      kf = pow((3.00*pi*pi*n),onethird);
+      kf = std::pow((3.00*pi*pi*n),onethird);
       s  = agr/(2.00*kf*n);
       P0 = 1.00 + (MU/KAPPA)*s*s;
 
@@ -209,10 +210,10 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
       zet = (nup-ndn)/n;
       zet_nup = -(zet - 1.00);
       zet_ndn = -(zet + 1.00);
-      zetpm_1_3 = pow((1.00+zet*alpha_zeta),onethirdm);
-      zetmm_1_3 = pow((1.00-zet*alpha_zeta),onethirdm);
-      zetp_1_3  = pow((1.00+zet*alpha_zeta)*zetpm_1_3,2);;
-      zetm_1_3  = pow((1.00-zet*alpha_zeta)*zetmm_1_3,2);
+      zetpm_1_3 = std::pow((1.00+zet*alpha_zeta),onethirdm);
+      zetmm_1_3 = std::pow((1.00-zet*alpha_zeta),onethirdm);
+      zetp_1_3  = std::pow((1.00+zet*alpha_zeta)*zetpm_1_3,2);;
+      zetm_1_3  = std::pow((1.00-zet*alpha_zeta)*zetmm_1_3,2);
 
       zetp_1_3  = (1.00+zet*alpha_zeta)*zetpm_1_3; zetp_1_3 *= zetp_1_3;
       zetm_1_3  = (1.00-zet*alpha_zeta)*zetmm_1_3; zetm_1_3 *= zetm_1_3;
@@ -225,16 +226,16 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
 
 
       /* calculate Wigner radius */
-      rs  = rs_scale/pow(n,onethird);
-      rss = sqrt(rs);
+      rs  = rs_scale/std::pow(n,onethird);
+      rss = std::sqrt(rs);
 
       /* calculate n*drs/dn */
       rs_n = onethirdm*rs/n;
       rs_n = onethirdm*rs;
 
       /* calculate t */
-      kf = pow((3.00*pi*pi*n),onethird);
-      ks = sqrt(4.00*kf/pi);
+      kf = std::pow((3.00*pi*pi*n),onethird);
+      ks = std::sqrt(4.00*kf/pi);
         
       twoksg = 2.00*ks*phi;
        
@@ -389,10 +390,10 @@ void gen_PBE96_BW_restricted(const int n2ft3d,
       agr = agr_in[i];
         
       /* calculate unpolarized Exchange energies and potentials */
-      n_onethird = pow((3.00*n/pi),onethird);
+      n_onethird = std::pow((3.00*n/pi),onethird);
       ex_lda     = -0.750*n_onethird;
 
-      kf = pow((3.00*pi*pi*n),onethird);
+      kf = std::pow((3.00*pi*pi*n),onethird);
       s  = agr/(2.00*kf*n);
       P0 = 1.00 + (MU/KAPPA)*s*s;
 
@@ -407,11 +408,11 @@ void gen_PBE96_BW_restricted(const int n2ft3d,
       /* calculate unpolarized correlation energies and potentials */
 
       /* calculate rs and t */
-      rs    = rs_scale/pow(n,onethird);
-      rss   = sqrt(rs);
+      rs    = rs_scale/std::pow(n,onethird);
+      rss   = std::sqrt(rs);
 
-      kf = pow((3.00*pi*pi*n),onethird);
-      ks = sqrt(4.00*kf/pi);
+      kf = std::pow((3.00*pi*pi*n),onethird);
+      ks = std::sqrt(4.00*kf/pi);
       t  = agr/(2.00*ks*n);
 
 
@@ -425,10 +426,10 @@ void gen_PBE96_BW_restricted(const int n2ft3d,
       t2 = t*t;
       t4 = t2*t2;
       B = -ec_lda/GAMMA;
-      B = BOG/(exp(B)-1.00+ETA);
+      B = BOG/(std::exp(B)-1.00+ETA);
       Q4 = 1.00 + B*t2;
       Q5 = 1.00 + B*t2 + B*B*t4;
-      H = GAMMA*log(1.00 + BOG*Q4*t2/Q5);
+      H = GAMMA*std::log(1.00 + BOG*Q4*t2/Q5);
 
 
       /* PBE96 correlation fdn and fdnc derivatives */

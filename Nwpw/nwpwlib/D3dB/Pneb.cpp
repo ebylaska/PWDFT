@@ -404,7 +404,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
       for (ms=0; ms<ispin; ++ms)
       {
          n       = ne[ms];
-         gdevice_TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
+         gdevice_TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
 
          if (ng0>0)
          {
@@ -420,10 +420,10 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
                //        &hml[mshift1],k);
                 DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
                        rmone,
-                       &psi1[shift0],ng,
-                       &psi2[shift1],ng,
+                       psi1+shift0,ng,
+                       psi2+shift1,ng,
                        rone,
-                       &hml[mshift1],k);
+                       hml+mshift1,k);
                 shift1  += ng;
                 mshift1 += n;
              }
@@ -789,7 +789,7 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     else
     {
         //double *xmp1 = new (std::nothrow) double[nn]();
-        int nn  = ne[0]*ne[0]+4;
+        int nn  = ne[0]*ne[0]+14;
         double xmp1[nn];
 
         shift1 = 0;
@@ -803,10 +803,10 @@ void Pneb::m_diagonalize(double *hml, double *eig)
             d3db::parall->Barrier();
 
             //ierr=LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, &hml[shift2], n, &eig[shift1]);
-            EIGEN_PWDFT(n, &(hml[shift2]), &(eig[shift1]), xmp1, nn, ierr);
+            EIGEN_PWDFT(n,hml+shift2,eig+shift1,xmp1,nn,ierr);
             if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
 
-            eigsrt(&(eig[shift1]), &(hml[shift2]), n);
+            eigsrt(eig+shift1,hml+shift2,n);
             shift1 += ne[0];
             shift2 += ne[0]*ne[0];
         }

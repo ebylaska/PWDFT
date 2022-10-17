@@ -1,4 +1,4 @@
-
+ 
 #include        <cmath>
 #include        <cstdlib>
 #include	"nwpw_timing.hpp"
@@ -41,7 +41,7 @@ namespace pwdft {
 #define cp3   1.049800e-01
 #define cf3   3.250000e-01
 #define cp4   3.878329e-02
-#define cf4   3.878329e-02
+#define cf4   5.249122e-02
 #define cp5   3.075995e+00
 #define cf5   2.365463e+00
 #define cp6   1.863720e+00
@@ -137,16 +137,17 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
         xx1 = x[k]+cf3;
         xx1 *= xx1;
         xcedn[k]=cf1*std::log(xx*x[k]*x[k])
-                     +cf2*std::log(xx*xx1)
-                     +cf4*std::atan(cf5/(x[k]+cf6));
+                +cf2*std::log(xx*xx1)
+                +cf4*std::atan(cf5/(x[k]+cf6));
 
         xx1 = x[k]+df6;
         xx1 *= xx1;
         xcpdn[k]=xcedn[k]
-                     -one6th*x[k]*(
-                        df1/x[k]+df2/(x[k]+df3)
-                       +df4*xx*(2.00*x[k]+bf)
-                       +df5/(xx1+df7) );
+                -one6th*x[k]*(
+                               df1/x[k]
+                             + df2/(x[k]+df3)
+                             + df4*xx*(2.00*x[k]+bf)
+                             + df5/(xx1+df7) );
       }
 
       /* ferromagnetic exchange-energy & potential */
@@ -160,8 +161,6 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
       for (k=0; k<n2ft3d; ++k)
       {
          rho=rhoup[k]+rhodn[k]+dncut;
-         std::cout << " lda k=" << k << " finalxcp=" << xcpup[k] << " " << xcpdn[k] <<   std::endl;
-
          zup=2.00*rhoup[k]/rho;
          zdw=2.00*rhodn[k]/rho;
          f=(zup*(std::pow(zup,one3rd))+zdw*(std::pow(zdw,one3rd))-2.00)*fc;

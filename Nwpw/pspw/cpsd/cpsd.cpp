@@ -410,7 +410,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;  
       std::cout << " total orbital energy: " << Efmt(19,10) << E[1] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
       std::cout << " hartree energy      : " << Efmt(19,10) << E[2] << " (" << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl; 
-      std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
       if (mypsp.myapc->v_apc_on) 
          std::cout << " APC energy          : " << Efmt(19,10) << E[51] << " (" << Efmt(15,5)  << E[51]/myion.nion << " /ion)" << std::endl;
       std::cout << " ion-ion energy      : " << Efmt(19,10) << E[4] << " (" << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
