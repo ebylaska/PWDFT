@@ -108,16 +108,16 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
       xx1 = x[k] + cp3;
       xx1 *= xx1;
       xceup[k]= cp1*std::log(xx*x[k]*x[k])
-            + cp2*std::log(xx*xx1)
-            + cp4*std::atan(cp5/(x[k]+cp6));
+              + cp2*std::log(xx*xx1)
+              + cp4*std::atan(cp5/(x[k]+cp6));
 
       xx1 = x[k]+dp6;
       xx1 *= xx1;
       xcpup[k]=xceup[k]
-            -one6th*x[k]*(
-                 dp1/x[k]+dp2/(x[k]+dp3)
-                +dp4*xx*(2.00*x[k]+bp)
-                +dp5/(xx1+dp7) );
+              -one6th*x[k]*(
+                            dp1/x[k]+dp2/(x[k]+dp3)
+                           +dp4*xx*(2.00*x[k]+bp)
+                           +dp5/(xx1+dp7) );
    }
 
    /* paramagnetic exchange energy & potential */
@@ -165,7 +165,7 @@ void v_exc(const int ispin, const int n2ft3d, double *dn,
          zdw=2.00*rhodn[k]/rho;
          f=(zup*(std::pow(zup,one3rd))+zdw*(std::pow(zdw,one3rd))-2.00)*fc;
          xcpup[k]=(1.00-f)*xcpup[k]+f*xcpdn[k];
-         df=(std::pow(zup,one3rd)-std::pow(zdw,one3rd))*(xceup[k]-xcedn[k])*fd;
+         df=(std::pow(zup,one3rd)-std::pow(zdw,one3rd))*(xcedn[k]-xceup[k])*fd;
          xcpdn[k]=xcpup[k]-zup*df;
          xcpup[k]=xcpup[k]+zdw*df;
          xceup[k]=xceup[k]+f*(xcedn[k]-xceup[k]);
