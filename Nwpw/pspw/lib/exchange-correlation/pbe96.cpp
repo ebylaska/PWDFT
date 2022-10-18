@@ -208,15 +208,21 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
       agr   = agr_in[i+2*n2ft3d];
 
       zet = (nup-ndn)/n;
+
+      //zet_nup = -(zet - 1.0d0)
+      //zet_ndn = -(zet + 1.0d0)
       zet_nup = -(zet - 1.00);
       zet_ndn = -(zet + 1.00);
+
+      //zetpm_1_3 = (1.0d0+zet*alpha_zeta)**onethirdm
+      //zetmm_1_3 = (1.0d0-zet*alpha_zeta)**onethirdm
       zetpm_1_3 = std::pow((1.00+zet*alpha_zeta),onethirdm);
       zetmm_1_3 = std::pow((1.00-zet*alpha_zeta),onethirdm);
-      zetp_1_3  = std::pow((1.00+zet*alpha_zeta)*zetpm_1_3,2);;
-      zetm_1_3  = std::pow((1.00-zet*alpha_zeta)*zetmm_1_3,2);
 
-      zetp_1_3  = (1.00+zet*alpha_zeta)*zetpm_1_3; zetp_1_3 *= zetp_1_3;
-      zetm_1_3  = (1.00-zet*alpha_zeta)*zetmm_1_3; zetm_1_3 *= zetm_1_3;
+      //zetp_1_3  = (1.0d0+zet*alpha_zeta)*zetpm_1_3**2
+      //zetm_1_3  = (1.0d0-zet*alpha_zeta)*zetmm_1_3**2
+      zetp_1_3  = (1.00+zet*alpha_zeta)*zetpm_1_3*zetpm_1_3;
+      zetm_1_3  = (1.00-zet*alpha_zeta)*zetmm_1_3*zetmm_1_3;
 
       phi = 0.50*(zetp_1_3*zetp_1_3 + zetm_1_3*zetm_1_3);
       phi_zet = alpha_zeta*( zetpm_1_3 - zetmm_1_3)/3.00;
@@ -332,7 +338,6 @@ void gen_PBE96_BW_unrestricted(const int n2ft3d,
       fdn[i]          = x_parameter*fdnxup;
       fdn[i+n2ft3d]   = x_parameter*fdnxdn;
       fdn[i+2*n2ft3d] = c_parameter*t_agr*Hpbe_t;
-
    }
 }
       
