@@ -133,8 +133,6 @@ public:
         void cccc_pack_Sum(const int, const double *, const double *, const double *, double *);
         void tcc_pack_aMulAdd(const int, const double, const double *, const double *, double *);
 
-
-
         void c_pack_addzero(const int, const double, double *);
 
         void c_pack_zero(const int, double *);
@@ -153,6 +151,14 @@ public:
         //int  cr_pfft3b(const int, double *);
         //int  rc_pfft3f(const int, double *);
 
+        void regenerate_r_grid();
+        void initialize_r_grid() {
+           if (!has_r_grid) {
+              has_r_grid = true;
+              r_grid = r_nalloc(3);
+              this->regenerate_r_grid();
+           }
+        }
 };
 
 }

@@ -1106,5 +1106,42 @@ void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
+
+/**********************************
+ *                                *
+ *    PGrid::regenerate_r_grid    *
+ *                                *
+ **********************************/
+void PGrid::regenerate_r_grid() {
+   int nxh = nx/2;
+   int nyh = ny/2;
+   int nzh = nz/2;
+   double a[9];
+   for (auto i=0; i<3; ++i) {
+      a[i]   = lattice->unita1d(0+i)/((double) nx);
+      a[3+i] = lattice->unita1d(3+i)/((double) ny);
+      a[6+i] = lattice->unita1d(6+i)/((double) nz);
+   }
+
+   /* grid points in coordination space */
+   for (auto k3=(-nzh); k3<nzh; ++k3)
+   for (auto k2=(-nyh); k2<nyh; ++k2)
+   for (auto k1=(-nxh); k1<nxh; ++k1)
+   { 
+      int i = k1 + nxh;
+      int j = k2 + nyh;
+      int k = k3 + nzh;
+      int indx = ijktoindex2(i,j,k);
+      int p    = ijktop2(i,j,k);
+
+      if (p==parall->taskid_i())
+      { 
+         r_grid[3*indx]   = a[0]*k1 + a[3]*k2 + a[6]*k3;
+         r_grid[3*indx+1] = a[1]*k1 + a[4]*k2 + a[7]*k3;
+         r_grid[3*indx+2] = a[2]*k1 + a[5]*k2 + a[8]*k3;
+      }
+   }
+}
+
 }
 
