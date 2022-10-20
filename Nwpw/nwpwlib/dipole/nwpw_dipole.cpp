@@ -107,6 +107,14 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
 
 
    // calculate the center of density 
+   if (!mypneb->has_r_grid) mypneb->initialize_r_grid();
+
+      call D3dB_rr_dot(1,dbl_mb(rgx(1)),dn(1,1),cdx1)
+      call D3dB_rr_dot(1,dbl_mb(rgy(1)),dn(1,1),cdy1)
+      call D3dB_rr_dot(1,dbl_mb(rgz(1)),dn(1,1),cdz1)
+      cdx1 = cdx1*dv
+      cdy1 = cdy1*dv
+      cdz1 = cdz1*dv
 
 
    // check for ferromagnetic case 
