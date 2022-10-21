@@ -29,6 +29,7 @@ class nwpw_dipole {
    Ion    *myion;
    Strfac *mystrfac;
    double dv;
+   int n2ft3d,ispin,*ne;
 
 public:
 
@@ -43,7 +44,8 @@ public:
    }
 
    void gen_dipole(const double *, double *);
-   //void gen_molecular_dipole(double *, double *);
+   void gen_molecular_dipole(const double *, double *);
+
    //void gen_aperiodic_dipole(double *, double *);
    //void gen_periodic_dipole(double *, double *);
 
