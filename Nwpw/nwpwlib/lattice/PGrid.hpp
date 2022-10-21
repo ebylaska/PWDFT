@@ -159,6 +159,8 @@ public:
               this->regenerate_r_grid();
            }
         }
+        void generate_r_sym_grid(double *);
+        void generate_r_sym_mask(double *);
 };
 
 }

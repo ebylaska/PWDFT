@@ -1,12 +1,43 @@
 
+#include	"nwpw_dipole.hpp"
+
+namespace pwdft {
+
+
+/* Constructor */ 
+
+/*************************************
+ *                                   *
+ *      nwpw_dipole::nwpw_dipole     *
+ *                                   *
+ *************************************/
+nwpw_dipole::nwpw_dipole(Ion *myion0, Pneb *mypneb0, Strfac *mystrfac0, Control2&)
+{
+   mypneb   = mypneb0;
+   myion    = myion0;
+   mystrfac = mystrfac0;
+
+   double omega = mypneb->lattice->omega();
+   double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+   dv = omega*scal1;
+
+}
+
+/* Object functions */
 
 /*************************************
  *                                   *
  *      nwpw_dipole::gen_dipole      *
  *                                   *
  *************************************/
-void nwpw_dipole::gen_dipole(double *dn, double *dipole) 
+void nwpw_dipole::gen_dipole(const double *dn, double *dipole) 
 {
+
+   int ispin  = mypneb->ispin;
+   int n2ft3d = mypneb->n2ft3d;
+   int *ne    = mypneb->ne;
+
+   double *r_sym_grid = mypneb->r_nalloc(3);
 
    // center of mass 
    double GX = 0.00;
@@ -15,10 +46,11 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
    double tmass = 0.0;
    for (auto ii=0; ii<myion->nion; ++ii)
    {
-      tmass += myion->amass[ii]
-      GX += myion->mass[ii]*myion->rion(0,ii);
-      GY += myion->mass[ii]*myion->rion(1,ii);
-      GZ += myion->mass[ii]*myion->rion(2,ii);
+      double massii = myion->mass[ii];
+      tmass += massii;
+      GX += massii*myion->rion(0,ii);
+      GY += massii*myion->rion(1,ii);
+      GZ += massii*myion->rion(2,ii);
    }
    GX /= tmass;
    GY /= tmass;
@@ -82,9 +114,9 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
          }
       }
    }
-   cqGx /= tcharge;
-   cqGy /= tcharge;
-   cqGz /= tcharge;
+   cqGX /= tcharge;
+   cqGY /= tcharge;
+   cqGZ /= tcharge;
 
    // molecular center of ionic charge
    double qGX = 0.0;
@@ -107,9 +139,9 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
 
 
    // calculate the center of density 
-   if (!mypneb->has_r_grid) mypneb->initialize_r_grid();
-   double cdv1[3],cdv2[3],cdv3[3],rmax;
-   mypneb->nrr_vdot(3,r_grid,dn,cdv1);
+   mypneb->generate_r_sym_grid(r_sym_grid);
+   double cdv1[3],cdv2[3],cdv3[3];
+   mypneb->nrr_vdot(3,r_sym_grid,dn,cdv1);
    cdv1[0] *= dv;
    cdv1[1] *= dv;
    cdv1[2] *= dv;
@@ -117,7 +149,7 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
    // check for ferromagnetic case 
    if (ne[ispin]>0)
    {
-      mypneb->nrr_vdot(3,r_grid,dn[n2ft3d],cdv2);
+      mypneb->nrr_vdot(3,r_sym_grid,dn+n2ft3d,cdv2);
       cdv2[0] *= dv;
       cdv2[1] *= dv;
       cdv2[2] *= dv;
@@ -129,18 +161,37 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
       cdv2[2] = 0.0;
    }
 
-   cdx3[0] = cdx1[0] + cdx2[0]
-   cdy3[1] = cdy1[1] + cdy2[1]
-   cdz3[2] = cdz1[2] + cdz2[2]
+   cdv3[0] = cdv1[0] + cdv2[0];
+   cdv3[1] = cdv1[1] + cdv2[1];
+   cdv3[2] = cdv1[2] + cdv2[2];
 
 
    // calculate dipole with respect to center of mass 
-   rmax = dv*rr_dot(r_sym_grid,dn);
-   cdv1=cdx1/rmax
-   cdv1=cdy1/rmax
-   cdv1=cdz1/rmax
+   mypneb->generate_r_sym_mask(r_sym_grid);
+   rmax = dv*mypneb->rr_dot(r_sym_grid,dn);
+   cdv1[0] /= rmax;
+   cdv1[1] /= rmax;
+   cdv1[2] /= rmax;
+   if (ne[ispin]>0)
+   {
+     int rmax2 = dv*mypneb->rr_dot(r_sym_grid,dn+(ispin-1)*n2ft3d);
+     cdv2[0] /= rmax2;
+     cdv2[1] /= rmax2;
+     cdv2[2] /= rmax2;
+     rmax += rmax2;
+   }
+   cdv3[0] /= rmax;
+   cdv3[1] /= rmax;
+   cdv3[2] /= rmax;
 
+   // calculate dipole with respect to center of mass 
+   double pcharge   = tcharge;;
+   double ncharge   = ((double) (ne[0]+ne[ispin-1]));
+   dipole[0] = -ncharge*cdv3[0] + pcharge*qGX - GX*(pcharge-ncharge);
+   dipole[1] = -ncharge*cdv3[1] + pcharge*qGY - GY*(pcharge-ncharge);
+   dipole[2] = -ncharge*cdv3[2] + pcharge*qGZ - GZ*(pcharge-ncharge);
 
+   mypneb->r_dealloc(r_sym_grid);
 }
 
-
+}
