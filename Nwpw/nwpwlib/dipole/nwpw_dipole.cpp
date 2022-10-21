@@ -9,10 +9,10 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
 {
 
    // center of mass 
-   double GX=0.00;
-   double GY=0.00;
-   double GZ=0.00;
-   double tmass=0.0;
+   double GX = 0.00;
+   double GY = 0.00;
+   double GZ = 0.00;
+   double tmass = 0.0;
    for (auto ii=0; ii<myion->nion; ++ii)
    {
       tmass += myion->amass[ii]
@@ -108,19 +108,37 @@ void nwpw_dipole::gen_dipole(double *dn, double *dipole)
 
    // calculate the center of density 
    if (!mypneb->has_r_grid) mypneb->initialize_r_grid();
-
-      call D3dB_rr_dot(1,dbl_mb(rgx(1)),dn(1,1),cdx1)
-      call D3dB_rr_dot(1,dbl_mb(rgy(1)),dn(1,1),cdy1)
-      call D3dB_rr_dot(1,dbl_mb(rgz(1)),dn(1,1),cdz1)
-      cdx1 = cdx1*dv
-      cdy1 = cdy1*dv
-      cdz1 = cdz1*dv
-
+   double cdv1[3],cdv2[3],cdv3[3],rmax;
+   mypneb->nrr_vdot(3,r_grid,dn,cdv1);
+   cdv1[0] *= dv;
+   cdv1[1] *= dv;
+   cdv1[2] *= dv;
 
    // check for ferromagnetic case 
+   if (ne[ispin]>0)
+   {
+      mypneb->nrr_vdot(3,r_grid,dn[n2ft3d],cdv2);
+      cdv2[0] *= dv;
+      cdv2[1] *= dv;
+      cdv2[2] *= dv;
+   }
+   else
+   {
+      cdv2[0] = 0.0;
+      cdv2[1] = 0.0;
+      cdv2[2] = 0.0;
+   }
+
+   cdx3[0] = cdx1[0] + cdx2[0]
+   cdy3[1] = cdy1[1] + cdy2[1]
+   cdz3[2] = cdz1[2] + cdz2[2]
 
 
    // calculate dipole with respect to center of mass 
+   rmax = dv*rr_dot(r_sym_grid,dn);
+   cdv1=cdx1/rmax
+   cdv1=cdy1/rmax
+   cdv1=cdz1/rmax
 
 
 }

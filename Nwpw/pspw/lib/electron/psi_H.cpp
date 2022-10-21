@@ -67,13 +67,13 @@ void psi_H(Pneb *mygrid,
    mygrid->cr_fft3d(vall);
    for (int ms=0; ms<ispin; ++ms)
    {
-      mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
+      mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
       for (int i=0; i<(mygrid->neq[ms]); ++i)
       {
-         mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
+         mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
          mygrid->rc_fft3d(vpsi);
          mygrid->c_pack(1,vpsi);
-         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
 
          indx1 += shift1;
          indx2 += shift2;
@@ -154,13 +154,13 @@ void psi_Hv4(Pneb *mygrid,
    /* apply r-space operators  - Expensive*/
    for (int ms=0; ms<ispin; ++ms)
    {
-      mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
+      mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
       for (int i=0; i<(mygrid->neq[ms]); ++i)
       {
-         mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
+         mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
          mygrid->rc_fft3d(vpsi);
          mygrid->c_pack(1,vpsi);
-         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
 
          indx1 += shift1;
          indx2 += shift2;

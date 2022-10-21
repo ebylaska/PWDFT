@@ -1705,6 +1705,35 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
    return parall->SumAll(1,sum);
 }
 
+/********************************
+ *                              *
+ *         d3db::nrr_vdot       *
+ *                              *
+ ********************************/
+void d3db::nrr_vdot(const int n, const double *ptr1, const double *ptr2, double *v)
+{
+   int m = n2ft3d%5;
+   for (auto k=0; k<n; ++k) v[k] = 0.0;
+   if (m>0)
+      for (auto i=0; i<m; ++i)
+      for (auto k=0; k<n; ++k)
+         v[k] += ptr1[n*i+k]*ptr2[i];
+   if (n2ft3d>=5)
+   {
+      for (auto i=m; i<n2ft3d; i+=5)
+      for (auto k=0; k<n; ++k)
+      {
+         v[k] += ptr1[n*i+k]     * ptr2[i]
+              +  ptr1[n*(i+1)+k] * ptr2[i+1]
+              +  ptr1[n*(i+2)+k] * ptr2[i+2]
+              +  ptr1[n*(i+3)+k] * ptr2[i+3]
+              +  ptr1[n*(i+4)+k] * ptr2[i+4];
+      }
+      parall->Vector_SumAll(1,n,v);
+   }
+}
+
+
 
 /********************************
  *                              *

@@ -57,6 +57,7 @@ public:
         void     rrr_SMulAdd(const double, const double *, const double *, double *);
         double	 r_dsum(const double *);
         double	 rr_dot(const double *, const double *);
+        void     nrr_vdot(const int, const double *, const double *, double *);
         void  	 r_zero_ends(double *);
         void  	 r_abs(double *);
 

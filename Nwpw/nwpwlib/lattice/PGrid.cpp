@@ -443,6 +443,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    if (has_r_grid)
    {
       r_grid = r_nalloc(3);
+      r_nzero(3,r_grid);
       double a[9];
       for (auto i=0; i<3; ++i) {
          a[i]   = lattice->unita1d(0+i)/((double) nx);
@@ -1122,6 +1123,8 @@ void PGrid::regenerate_r_grid() {
       a[3+i] = lattice->unita1d(3+i)/((double) ny);
       a[6+i] = lattice->unita1d(6+i)/((double) nz);
    }
+
+   r_nzero(3,r_grid);
 
    /* grid points in coordination space */
    for (auto k3=(-nzh); k3<nzh; ++k3)
