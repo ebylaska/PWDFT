@@ -295,5 +295,22 @@ void nwpw_dipole::gen_molecular_dipole(const double *dn, double *dipole)
    mypneb->r_dealloc(r_sym_grid);
 }
 
+/***********************************************
+ *                                             *
+ *        nwpw_dipole::gen_Resta_dipole        *
+ *                                             *
+ ***********************************************/
+void nwpw_dipole::gen_Resta_dipole(const double *psi, double *dipole) 
+{
+
+   // allocate psi_r and translate matrices
+   double *psi_r  = mypneb->h_allocate();
+   double *psi_r2 = mypneb->h_allocate();
+
+
+   mypneb->h_deallocate(psi_r);
+   mypneb->h_deallocate(psi_r2);
+}
+
 
 }

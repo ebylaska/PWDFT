@@ -98,6 +98,19 @@ public:
         }
         void m_deallocate(double *ptr) { delete [] ptr;}
 
+        double *w_allocate(const int mb, const int nblock) {
+           double *ptr;
+           int nsize;
+           if (mb==-1)
+              nsize = 2*(ne[0]*ne[0] + ne[1]*ne[1]);
+           else
+              nsize = 2*ne[mb]*ne[mb];
+
+           ptr = new (std::nothrow) double [nblock*nsize]();
+           return ptr;
+        }
+        void w_deallocate(double *ptr) { delete [] ptr;}
+
 
         double gg_traceall(double *, double *);
         void gg_copy(double *, double *);

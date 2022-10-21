@@ -33,6 +33,8 @@ class nwpw_dipole {
 
 public:
 
+   double autoDebye = 2.5416;
+
    bool dipole_on;
 
 
@@ -45,9 +47,9 @@ public:
 
    void gen_dipole(const double *, double *);
    void gen_molecular_dipole(const double *, double *);
-
    //void gen_aperiodic_dipole(double *, double *);
-   //void gen_periodic_dipole(double *, double *);
+
+   void gen_Resta_dipole(const double *, double *);
 
    //double Qtot_APC(const int);
    //std::string shortprint_APC();
