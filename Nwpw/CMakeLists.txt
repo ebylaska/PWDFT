@@ -25,7 +25,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 #set(CMAKE_Fortran_FLAGS "-Ofast")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_Fortran_FLAGS "-O3")
+
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+   set(CMAKE_Fortran_FLAGS "-O3 -fallow-argument-mismatch")
+   message("-- Using -fallow-argument-mismatch compiler option")
+else()
+   set(CMAKE_Fortran_FLAGS "-O3")
+endif()
 
 #Configure Sycll
 if (NWPW_SYCL)

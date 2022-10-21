@@ -21,6 +21,8 @@
 
 #define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr) ierr =	LAPACKE_dgels(LAPACK_COL_MAJOR, 'N', m, n, nrhs ,a, ida, b, idb);
 
+#define ZGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) cblas_zgemm(CblasColMajor,TRANSCONV(s1),TRANSCONV(s2),n,m,k,alpha,a,ida,b,idb,beta,c,idc)
+
 #else
 
 
@@ -51,7 +53,12 @@ extern "C" void dgelss_(int *, int *, int *,
                        double *, double *, int *,
                        double *, int *, int *);
 
-
+extern "C" void zgemm_(char *, char *, int *, int *, int *,
+                       double *, 
+                       double *, int *,
+                       double *, int *,
+                       double *,
+                       double *, int *);
 
 
 
@@ -68,6 +75,8 @@ extern "C" void dgelss_(int *, int *, int *,
 #define	DLACPY_PWDFT(s1,m,n,a,ida,b,idb)	dlacpy_(s1,&(m),&(n),a,&(ida),b,&(idb))
 
 #define DGELSS_PWDFT(m,n,nrhs,a,ida,b,idb,s1,rcond,rank,work,iwork,ierr)	dgelss_(&(m),&(n),&(nrhs),a,&(ida),b,&(idb),s1,&(rcond),&(rank),work,&(iwork),&(ierr))
+
+#define ZGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) zgemm_(s1,s2,&(n),&(m),&(k),&(alpha),a,&(ida),b,&(idb),&(beta),c,&(idc))
 
 
 #endif
