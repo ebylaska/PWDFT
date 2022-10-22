@@ -27,8 +27,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-check_fortran_compiler_flag("-fallow-argument-mismatch" FC_HAS_CPP_FLAG)
-if(NOT FC_HAS_CPP_FLAG)
+check_fortran_compiler_flag("-fallow-argument-mismatch" FC_HAS_MISMATCH_FLAG)
+if(NOT FC_HAS_MISMATCH_FLAG)
    set(CMAKE_Fortran_FLAGS "-O3")
 else()
    message("-- Using -fallow-argument-mismatch gfortran option")
