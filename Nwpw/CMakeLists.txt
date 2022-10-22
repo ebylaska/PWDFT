@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Enable Fortran
 enable_language(Fortran)
+include(CheckFortranCompilerFlag)
 
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -26,12 +27,14 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-   set(CMAKE_Fortran_FLAGS "-O3 -fallow-argument-mismatch")
-   message("-- Using -fallow-argument-mismatch compiler option")
-else()
+check_fortran_compiler_flag("-fallow-argument-mismatch" FC_HAS_CPP_FLAG)
+if(NOT FC_HAS_CPP_FLAG)
    set(CMAKE_Fortran_FLAGS "-O3")
+else()
+   message("-- Using -fallow-argument-mismatch gfortran option")
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
 endif()
+
 
 #Configure Sycll
 if (NWPW_SYCL)
