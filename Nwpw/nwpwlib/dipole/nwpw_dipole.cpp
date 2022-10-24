@@ -1,4 +1,5 @@
 
+#include        "iofmt.hpp"
 #include	"nwpw_dipole.hpp"
 
 namespace pwdft {
@@ -310,6 +311,25 @@ void nwpw_dipole::gen_Resta_dipole(const double *psi, double *dipole)
 
    mypneb->h_deallocate(psi_r);
    mypneb->h_deallocate(psi_r2);
+}
+
+
+std::string nwpw_dipole::shortprint_dipole(const double dipole[])
+{
+   double mu = std::sqrt(dipole[0]*dipole[0] + dipole[1]*dipole[1] + dipole[2]*dipole[2]);
+   std::stringstream stream;
+
+   stream << std::endl;
+   stream << "== Molecular Dipole wrt Center of Mass ==" << std::endl << std::endl;
+   stream << "mu   = (" << Ffmt(10,4) << dipole[0] << " " 
+                        << Ffmt(10,4) << dipole[1] << " " 
+                        << Ffmt(10,4) << dipole[2] << " ) au" << std::endl;
+   stream << "|mu| =  " << Ffmt(10,4) <<  mu           << " au ( " 
+                        << Ffmt(10,4) <<  mu*autoDebye << " Debye )"  
+                        << std::endl;
+   stream << std::endl;
+
+   return stream.str();
 }
 
 

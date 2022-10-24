@@ -116,6 +116,8 @@ public:
         void gg_copy(double *, double *);
         void g_zero(double *);
         void hr_aSumSqr(const double, double *, double *);
+        void hhr_aSumMul(const double, const double *, const double *, double *);
+
         void ggm_sym_Multiply(double *, double *, double *);
         void ffm_sym_Multiply(const int, double *, double *, double *);
         void ffm_Multiply(const int, double *, double *, double *);

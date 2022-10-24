@@ -52,9 +52,9 @@ public:
    void gen_Resta_dipole(const double *, double *);
 
    //double Qtot_APC(const int);
-   //std::string shortprint_APC();
    //std::string print_APC(const double *);
 
+   std::string shortprint_dipole(const double *);
 
 };
 

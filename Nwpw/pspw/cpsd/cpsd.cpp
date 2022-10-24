@@ -30,6 +30,8 @@
 #include	"nwpw_timing.hpp"
 #include        "gdevice.hpp"
 
+#include	"nwpw_dipole.hpp"
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -376,6 +378,9 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       if (!(mypsp.myapc->v_apc_on)) 
          mypsp.myapc->dngen_APC(dn,false);
 
+   nwpw_dipole mydipole(&myion,&mygrid,&mystrfac, control);
+   double dipole[3];
+   mydipole.gen_dipole(dn,dipole);
 
 
 //                  |***************************|
@@ -447,10 +452,16 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       // write APC analysis
       if (mypsp.myapc->apc_on)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+
+      // write dipoles
+      std::cout << mydipole.shortprint_dipole(dipole); 
+
    }
 
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename(),std::cout);
    MPI_Barrier(comm_world0);
+
+
 
    /* deallocate memory */
    mygrid.g_deallocate(psi1);

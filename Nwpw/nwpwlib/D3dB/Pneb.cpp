@@ -368,6 +368,50 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 
 }
 
+/*************************************
+ *                                   *
+ *         Pneb::hhr_aSumMul         *
+ *                                   *
+ *************************************/
+/*
+   This routine calculates the perturbation density.
+
+   dn12(r) = Sum_i (psi0_i(r)*psi1_i(r) + psi1_i(r)*psi0_i(r) )
+
+   where
+
+   psi_i(r) = psi0_i(r) + lmbda*psi1_i(r)
+   dn12(r) = n(r) = Sum_i (psi_i(r)*psi_i(r)) 
+                  = Sum_i ( psi0_i(r)*psi0_i(r) 
+                          + lmbda*(psi0_i(r)*psi1_i(r) + psi1_i(r)*psi0_i(r)) 
+                          + lmbda^2*psi1_i(r)*psi1_i(r) )
+*/
+void Pneb::hhr_aSumMul(const double alpha, const double *psir0, const double *psir1, double *dn12)
+{
+   int n,ms,k,indx0,indx1;
+   int one=1;
+   int zero=0;
+   int nsize = n2ft3d*ispin;
+   double rzero = 0.0;
+
+   std::memset(dn12,0,nsize*sizeof(double));
+
+   indx0 = 0;
+   indx1 = 0;
+   for (ms=0; ms<ispin; ++ms)
+   {
+      for (n=0; n<(neq[ms]); ++n)
+      {
+         for (k=0; k<n2ft3d; ++k)
+            dn12[indx0+k] += alpha*psir0[indx1+k]*psir1[indx1+k];
+         indx1 += n2ft3d;
+      }
+      indx0 += n2ft3d;
+   }
+   d3db::parall->Vector_SumAll(2,ispin*n2ft3d,dn12);
+
+}
+
 
 
 /*************************************
