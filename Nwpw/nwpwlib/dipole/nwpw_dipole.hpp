@@ -35,6 +35,7 @@ public:
 
    double autoDebye = 2.5416;
 
+   double mdipole[3],mcdv1[3],mcdv2[3],mcdv3[3],mqv1[3];
    bool dipole_on;
 
 
@@ -45,16 +46,17 @@ public:
    ~nwpw_dipole() {
    }
 
-   void gen_dipole(const double *, double *);
-   void gen_molecular_dipole(const double *, double *);
+   void gen_dipole(const double *);
    //void gen_aperiodic_dipole(double *, double *);
 
    void gen_Resta_dipole(const double *, double *);
 
+   void gen_molecular_dipole(const double *, double *);
+
    //double Qtot_APC(const int);
    //std::string print_APC(const double *);
 
-   std::string shortprint_dipole(const double *);
+   std::string shortprint_dipole();
 
 };
 

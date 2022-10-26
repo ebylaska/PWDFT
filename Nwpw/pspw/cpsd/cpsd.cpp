@@ -379,8 +379,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
          mypsp.myapc->dngen_APC(dn,false);
 
    nwpw_dipole mydipole(&myion,&mygrid,&mystrfac, control);
-   double dipole[3];
-   mydipole.gen_dipole(dn,dipole);
+   mydipole.gen_dipole(dn);
 
 
 //                  |***************************|
@@ -454,7 +453,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
 
       // write dipoles
-      std::cout << mydipole.shortprint_dipole(dipole); 
+      std::cout << mydipole.shortprint_dipole(); 
 
    }
 
