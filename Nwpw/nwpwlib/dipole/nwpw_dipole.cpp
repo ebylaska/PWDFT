@@ -148,7 +148,7 @@ void nwpw_dipole::gen_dipole(const double *dn)
    mcdv1[2] *= dv;
 
    // check for ferromagnetic case 
-   if (ne[ispin-1]>0)
+   if (ne[ispin-1]!=0)
    {
       mypneb->nrr_vdot(3,r_sym_grid,dn+(ispin-1)*n2ft3d,mcdv2);
       mcdv2[0] *= dv;
@@ -173,9 +173,9 @@ void nwpw_dipole::gen_dipole(const double *dn)
    mcdv1[0] /= rmax;
    mcdv1[1] /= rmax;
    mcdv1[2] /= rmax;
-   if (ne[ispin-1]>0)
+   if (ne[ispin-1]!=0)
    {
-     int rmax2 = dv*mypneb->rr_dot(r_sym_grid,dn+(ispin-1)*n2ft3d);
+     double rmax2 = dv*mypneb->rr_dot(r_sym_grid,dn+(ispin-1)*n2ft3d);
      mcdv2[0] /= rmax2;
      mcdv2[1] /= rmax2;
      mcdv2[2] /= rmax2;
@@ -184,6 +184,7 @@ void nwpw_dipole::gen_dipole(const double *dn)
    mcdv3[0] /= rmax;
    mcdv3[1] /= rmax;
    mcdv3[2] /= rmax;
+
 
    // calculate dipole with respect to center of mass 
    double pcharge   = tcharge;;
@@ -283,6 +284,7 @@ void nwpw_dipole::gen_molecular_dipole(const double *dn, double *dipole)
      cdv2[0] /= rmax2;
      cdv2[1] /= rmax2;
      cdv2[2] /= rmax2;
+     std::cout << "rmax2=" << rmax2 << std::endl;
      rmax += rmax2;
    }
    cdv3[0] /= rmax;
@@ -316,6 +318,11 @@ void nwpw_dipole::gen_Resta_dipole(const double *psi, double *dipole)
    mypneb->h_deallocate(psi_r2);
 }
 
+/***********************************************
+ *                                             *
+ *        nwpw_dipole::shortprint_dipole       *
+ *                                             *
+ ***********************************************/
 
 std::string nwpw_dipole::shortprint_dipole()
 {

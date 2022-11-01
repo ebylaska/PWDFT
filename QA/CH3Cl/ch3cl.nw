@@ -37,7 +37,7 @@ nwpw
   end
 end
 
-task pspw energy
+#task pspw energy
 task pspw steepest_descent
 
 
