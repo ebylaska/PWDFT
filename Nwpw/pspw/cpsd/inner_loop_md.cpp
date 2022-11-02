@@ -215,6 +215,10 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       if (mypsp->has_semicore())
          mypsp->semicore_xc_fion(xcp,fion);
 
+      /* get forces from external Efield */
+      if (mypsp->myefield->efield_on)
+         mypsp->myefield->efield_ion_fion(fion);
+
 
       /* car-parrinello Verlet step */
       if (verlet) 

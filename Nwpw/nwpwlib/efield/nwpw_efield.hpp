@@ -85,7 +85,7 @@ public:
     *                                *
     **********************************/
    // calculates the forces between the QM ions and efield. Note the ions are positive.
-   void efield_ion_fion(double *fion){
+   void efield_ion_fion(double *fion) {
       if (efield_on && (efield_type==2))
       {
          for (auto ii=0; ii<myion->nion; ++ii)
