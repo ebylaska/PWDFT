@@ -44,14 +44,14 @@ nwpw_efield::nwpw_efield(Ion *myion0, Pneb *mypneb0, Strfac *mystrfac0, Control2
       efield_center[2] = control.Efield_center(2);
 
       v_field =  mypneb->r_alloc();
+      std::memset(v_field,0,n2ft3d*sizeof(double));
 
-      double *r_sym_grid = mypneb->r_nalloc(3);
-      mypneb->generate_r_sym_grid(r_sym_grid);
+      mypneb->initialize_r_grid();
+      double *r_grid = mypneb->r_grid;
       for (auto k=0; k<n2ft3d; ++k)
-         v_field[k] +=  efield_vector[0]*(r_sym_grid[3*k]  - efield_center[0])
-                     +  efield_vector[1]*(r_sym_grid[3*k+1]- efield_center[1])
-                     +  efield_vector[2]*(r_sym_grid[3*k+2]- efield_center[2]);
-      mypneb->r_dealloc(r_sym_grid);
+         v_field[k] +=  (- efield_vector[0]*(r_grid[3*k]  - efield_center[0])
+                         - efield_vector[1]*(r_grid[3*k+1]- efield_center[1])
+                         - efield_vector[2]*(r_grid[3*k+2]- efield_center[2]));
    }
 
    /* write out efield header */

@@ -28,7 +28,7 @@ nwpw
    
    lmbfgs
 
-   efield on vector 0.001 0.002 0.003 rgrid
+   efield on 0.001 0.002 0.003 rgrid
    
    xc pbe
    cutoff 30.0
