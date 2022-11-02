@@ -52,6 +52,7 @@ nwpw_efield::nwpw_efield(Ion *myion0, Pneb *mypneb0, Strfac *mystrfac0, Control2
          v_field[k] +=  (- efield_vector[0]*(r_grid[3*k]  - efield_center[0])
                          - efield_vector[1]*(r_grid[3*k+1]- efield_center[1])
                          - efield_vector[2]*(r_grid[3*k+2]- efield_center[2]));
+      mypneb->r_zero_ends(v_field);
    }
 
    /* write out efield header */
