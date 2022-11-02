@@ -390,6 +390,16 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string& rtdbstring, std::ostream& 
       }
    }
 
+   // dipole analysis 
+   if (mypsp.mydipole->dipole_on)
+   {
+       double *mdipole = mypsp.mydipole->mdipole;
+       double mu = std::sqrt(mdipole[0]*mdipole[0] + mdipole[1]*mdipole[1] + mdipole[2]*mdipole[2]);
+       rtdbjson["nwpw"]["dipole"] = std::vector<double>(mdipole,&mdipole[3]);
+       rtdbjson["nwpw"]["dipole_magnitude"] = mu;
+   }
+
+
    // write psi 
    if (flag > 0) mymolecule.writepsi(control.output_movecs_filename(),coutput);
    MPI_Barrier(comm_world0);

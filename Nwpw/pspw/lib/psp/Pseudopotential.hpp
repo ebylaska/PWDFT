@@ -9,8 +9,9 @@
 #include	"Strfac.hpp"
 #include	"Paw_compcharge.hpp"
 #include	"Paw_xc.hpp"
-#include	"nwpw_apc.hpp"
 #include	"nwpw_efield.hpp"
+#include	"nwpw_apc.hpp"
+#include	"nwpw_dipole.hpp"
 
 namespace pwdft {
 
@@ -33,6 +34,7 @@ class	Pseudopotential {
 public:
    nwpw_efield    *myefield;
    nwpw_apc       *myapc;
+   nwpw_dipole    *mydipole;
    Paw_compcharge *mypaw_compcharge;
    Paw_xc         *mypaw_xc;
 
@@ -161,6 +163,7 @@ public:
 
       delete myefield;
       delete myapc;
+      delete mydipole;
       mypneb->r_dealloc(semicore_density);
     }
 

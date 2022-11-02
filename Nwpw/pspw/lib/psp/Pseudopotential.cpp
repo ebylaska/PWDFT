@@ -1088,6 +1088,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
 
     myefield = new nwpw_efield(myion,mypneb,mystrfac,control,coutput);
     myapc    = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
+    mydipole = new nwpw_dipole(myion,mypneb,mystrfac,control);
 
     psp_version = control.version;
 

@@ -197,6 +197,7 @@ void nwpw_dipole::gen_dipole(const double *dn)
    mqv1[2] = qGZ;
 
    mypneb->r_dealloc(r_sym_grid);
+   dipole_on = true;
 }
 
 /***********************************************
@@ -316,6 +317,7 @@ void nwpw_dipole::gen_Resta_dipole(const double *psi, double *dipole)
 
    mypneb->h_deallocate(psi_r);
    mypneb->h_deallocate(psi_r2);
+   dipole_on = true;
 }
 
 /***********************************************
@@ -326,30 +328,33 @@ void nwpw_dipole::gen_Resta_dipole(const double *psi, double *dipole)
 
 std::string nwpw_dipole::shortprint_dipole()
 {
-   double mu = std::sqrt(mdipole[0]*mdipole[0] + mdipole[1]*mdipole[1] + mdipole[2]*mdipole[2]);
    std::stringstream stream;
 
-   stream << "== Center of Charge ==" << std::endl << std::endl;
-   stream << "spin up    = (" << Ffmt(10,4) << mcdv1[0] << " " 
-                              << Ffmt(10,4) << mcdv1[1] << " " 
-                              << Ffmt(10,4) << mcdv1[2] << " )" << std::endl;
-   stream << "spin down  = (" << Ffmt(10,4) << mcdv2[0] << " " 
-                              << Ffmt(10,4) << mcdv2[1] << " " 
-                              << Ffmt(10,4) << mcdv2[2] << " )" << std::endl;
-   stream << "     total = (" << Ffmt(10,4) << mcdv3[0] << " " 
-                              << Ffmt(10,4) << mcdv3[1] << " " 
-                              << Ffmt(10,4) << mcdv3[2] << " )" << std::endl;
-   stream << "ionic      = (" << Ffmt(10,4) << mqv1[0] << " " 
-                              << Ffmt(10,4) << mqv1[1] << " " 
-                              << Ffmt(10,4) << mqv1[2] << " )" << std::endl;
-   stream << std::endl;
-   stream << "== Molecular Dipole wrt Center of Mass ==" << std::endl << std::endl;
-   stream << "mu   = (" << Ffmt(10,4) << mdipole[0] << " " 
-                        << Ffmt(10,4) << mdipole[1] << " " 
-                        << Ffmt(10,4) << mdipole[2] << " ) au" << std::endl;
-   stream << "|mu| =  " << Ffmt(10,4) <<  mu           << " au ( " 
-                        << Ffmt(10,4) <<  mu*autoDebye << " Debye )"  
-                        << std::endl;
+   if (dipole_on)
+   {
+      double mu = std::sqrt(mdipole[0]*mdipole[0] + mdipole[1]*mdipole[1] + mdipole[2]*mdipole[2]);
+      stream << "== Center of Charge ==" << std::endl << std::endl;
+      stream << "spin up    = (" << Ffmt(10,4) << mcdv1[0] << " " 
+                                 << Ffmt(10,4) << mcdv1[1] << " " 
+                                 << Ffmt(10,4) << mcdv1[2] << " )" << std::endl;
+      stream << "spin down  = (" << Ffmt(10,4) << mcdv2[0] << " " 
+                                 << Ffmt(10,4) << mcdv2[1] << " " 
+                                 << Ffmt(10,4) << mcdv2[2] << " )" << std::endl;
+      stream << "     total = (" << Ffmt(10,4) << mcdv3[0] << " " 
+                                 << Ffmt(10,4) << mcdv3[1] << " " 
+                                 << Ffmt(10,4) << mcdv3[2] << " )" << std::endl;
+      stream << "ionic      = (" << Ffmt(10,4) << mqv1[0] << " " 
+                                 << Ffmt(10,4) << mqv1[1] << " " 
+                                 << Ffmt(10,4) << mqv1[2] << " )" << std::endl;
+      stream << std::endl;
+      stream << "== Molecular Dipole wrt Center of Mass ==" << std::endl << std::endl;
+      stream << "mu   = (" << Ffmt(10,4) << mdipole[0] << " " 
+                           << Ffmt(10,4) << mdipole[1] << " " 
+                           << Ffmt(10,4) << mdipole[2] << " ) au" << std::endl;
+      stream << "|mu| =  " << Ffmt(10,4) <<  mu           << " au ( " 
+                           << Ffmt(10,4) <<  mu*autoDebye << " Debye )"  
+                           << std::endl;
+   }
    stream << std::endl;
 
    return stream.str();

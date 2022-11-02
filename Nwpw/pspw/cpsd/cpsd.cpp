@@ -30,7 +30,6 @@
 #include	"nwpw_timing.hpp"
 #include        "gdevice.hpp"
 
-#include	"nwpw_dipole.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -382,8 +381,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       if (!(mypsp.myapc->v_apc_on)) 
          mypsp.myapc->dngen_APC(dn,false);
 
-   nwpw_dipole mydipole(&myion,&mygrid,&mystrfac, control);
-   mydipole.gen_dipole(dn);
+   mypsp.mydipole->gen_dipole(dn);
 
 
 //                  |***************************|
@@ -476,7 +474,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
          std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
 
       // write dipoles
-      std::cout << mydipole.shortprint_dipole(); 
+      std::cout << mypsp.mydipole->shortprint_dipole(); 
 
    }
 
@@ -507,6 +505,14 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
       for (auto ii=0; ii<myion.nion; ++ii)
          qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
       rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+   }
+
+   if (mypsp.mydipole->dipole_on)
+   {
+      double *mdipole = mypsp.mydipole->mdipole;
+      double mu       = std::sqrt(mdipole[0]*mdipole[0] + mdipole[1]*mdipole[1] + mdipole[2]*mdipole[2]);
+      rtdbjson["nwpw"]["dipole"] = std::vector<double>(mdipole,&mdipole[3]);
+      rtdbjson["nwpw"]["dipole_magnitude"] = mu;
    }
 
    // set rtdbjson initialize_wavefunction option to false

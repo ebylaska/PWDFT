@@ -43,12 +43,9 @@ public:
    nwpw_dipole(Ion *, Pneb *, Strfac *, Control2&);
 
    /* destructor */
-   ~nwpw_dipole() {
-   }
+   ~nwpw_dipole() { }
 
    void gen_dipole(const double *);
-   //void gen_aperiodic_dipole(double *, double *);
-
    void gen_Resta_dipole(const double *, double *);
 
    void gen_molecular_dipole(const double *, double *);

@@ -131,6 +131,9 @@ public:
       myelectron->gen_hml(psi1,hml);
       mygrid->m_diagonalize(hml,eig);
 
+      /* generate dipole */
+      mypsp->mydipole->gen_dipole(rho1);
+
       return E[0];
    }
 
@@ -291,6 +294,9 @@ public:
                           mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]], 
                           mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev);
       os << eoln;
+
+      // write dipoles
+      os << mymolecule.mypsp->mydipole->shortprint_dipole();
 
 
       os.copyfmt(init);
