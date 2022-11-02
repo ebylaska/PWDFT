@@ -1086,7 +1086,8 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin, Strfac *mystrfaci
     mypneb   = mypnebin;
     mystrfac = mystrfacin;
 
-    myapc  = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
+    myefield = new nwpw_efield(myion,mypneb,mystrfac,control,coutput);
+    myapc    = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
 
     psp_version = control.version;
 

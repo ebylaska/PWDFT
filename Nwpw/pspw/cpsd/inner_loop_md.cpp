@@ -327,6 +327,15 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
 
       eion    = myewald->energy();
       elocal  = mygrid->cc_pack_dot(0,dng,vl);
+
+      /* add in long range part here*/
+      if (aperiodic)
+         elocal += dv*mygrid->rr_dot(rho,vlr_l);
+
+      /* add in other real-space fields here*/
+      if (mypsp->myefield->efield_on)
+         elocal += dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+
       mygrid->g_zero(Hpsi);
       mypsp->v_nonlocal(psi1,Hpsi);
       enlocal = -mygrid->gg_traceall(psi1,Hpsi);
@@ -348,18 +357,37 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
       E[5] = ehartr;
       E[6] = exc;
       E[7] = eion;
-
       E[8] = elocal;
       E[9] = enlocal;
       E[10] = 2*ehartr;
       E[11] = pxc;
 
+      /* get APC energies */
       if (mypsp->myapc->v_apc_on)
       {
          E[51] = mypsp->myapc->Eapc;
          E[52] = mypsp->myapc->Papc;
          E[1]  = E[1] + E[51] - E[52];
       }
+
+      /* get Efield energies */
+      if (mypsp->myefield->efield_on)
+      {
+         if (mypsp->myefield->efield_type==0)
+         {
+            E[48] = 0.0;
+            E[49] = 0.0;
+            E[1]  += E[48] - E[49];
+         }
+         else
+         {
+            E[48] = dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+            E[49] = mypsp->myefield->efield_ion_energy();
+            E[1]  += E[49];
+         }
+      }
+
+
 
       /* Running Sums - Energy and Energy**2 sum */
       E[24] += E[1];

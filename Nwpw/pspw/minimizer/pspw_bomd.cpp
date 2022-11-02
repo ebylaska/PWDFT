@@ -275,6 +275,9 @@ int pspw_bomd(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutput
                    << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
       coutput << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
       coutput << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      coutput << mypsp.myefield->shortprint_efield();
+
       coutput << "\n";
       coutput <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
                 << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;

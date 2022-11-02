@@ -62,6 +62,9 @@ class Control2 {
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
 
+   bool   pefield_on;
+   int    pefield_type;
+   std::vector<double> pefield_vector,pefield_center;
 
    bool   papc_on;
    int    papc_nga;
@@ -239,6 +242,21 @@ public:
       }
    }
 
+   // Efield
+   bool Efield_on()    { return pefield_on; }
+   int Efield_type()    { return pefield_type; }
+   double Efield_center(const int i){ 
+      if (i>=pefield_center.size())
+         return 0.0;
+      else
+         return pefield_center[i];
+   }
+   double Efield_vector(const int i){ 
+      if (i>=pefield_vector.size())
+         return 0.0;
+      else
+         return pefield_vector[i];
+   }
 
    // APC
    bool APC_on()    { return papc_on; }

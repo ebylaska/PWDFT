@@ -65,6 +65,11 @@ void psi_H(Pneb *mygrid,
    mygrid->cc_pack_Sum2(0,vc,vall);
    mygrid->c_unpack(0,vall);
    mygrid->cr_fft3d(vall);
+
+   /* add v_field to vall */
+   if (mypsp->myefield->efield_on)
+      mygrid->cc_pack_Sum2(0,mypsp->myefield->v_field,vall);
+
    for (int ms=0; ms<ispin; ++ms)
    {
       mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
@@ -149,6 +154,10 @@ void psi_Hv4(Pneb *mygrid,
 
    /* add vall += vlr_l + vc */
    mygrid->rrr_Sum2Add(vlr_l,vc,vall);
+
+   /* add v_field to vall */
+   if (mypsp->myefield->efield_on)
+      mygrid->cc_pack_Sum2(0,mypsp->myefield->v_field,vall);
 
 
    /* apply r-space operators  - Expensive*/

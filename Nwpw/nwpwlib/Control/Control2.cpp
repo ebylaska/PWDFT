@@ -490,6 +490,25 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["minimizer"].is_number_integer())   pminimizer   = rtdbjson["nwpw"]["minimizer"];
    if (rtdbjson["nwpw"]["lmbfgs_size"].is_number_integer()) plmbfgs_size = rtdbjson["nwpw"]["lmbfgs_size"];
 
+   // Efield data
+   pefield_on  = false;
+   pefield_type = 2;
+   if (!rtdbjson["nwpw"]["efield"].is_null()) {
+      if (rtdbjson["nwpw"]["efield"]["on"].is_boolean())          pefield_on   = rtdbjson["nwpw"]["efield"]["on"];
+      if (rtdbjson["nwpw"]["efield"]["type"].is_number_integer()) pefield_type = rtdbjson["nwpw"]["efield"]["type"];
+
+      if (!rtdbjson["nwpw"]["efield"]["center"].is_null()) {
+         size_t nu = rtdbjson["nwpw"]["efield"]["center"].size();
+         for (size_t i=0; i<nu; ++i) 
+            pefield_center.push_back(rtdbjson["nwpw"]["efield"]["center"][i]);
+      }
+      if (!rtdbjson["nwpw"]["efield"]["vector"].is_null()) {
+         size_t nu = rtdbjson["nwpw"]["efield"]["vector"].size();
+         for (size_t i=0; i<nu; ++i) 
+            pefield_vector.push_back(rtdbjson["nwpw"]["efield"]["vector"][i]);
+      }
+   }
+
    // APC data
    papc_on  = false;
    papc_nga = 0;

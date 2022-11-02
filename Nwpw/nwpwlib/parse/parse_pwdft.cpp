@@ -1160,6 +1160,19 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (mystring_contains(line,"bradii"))    
             nwpwjson["born"]["bradii"] = mystring_double_list(line,"bradii");
       }
+      else if (mystring_contains(line,"efield")) {
+         if  (nwpwjson["efield"].is_null()) {
+            json efield;
+            nwpwjson["efield"] = efield;
+         }
+         nwpwjson["efield"]["on"] = true;
+         if (mystring_contains(line," off"))      nwpwjson["efield"]["on"]   = false;
+         if (mystring_contains(line," periodic")) nwpwjson["efield"]["type"] = 0;
+         if (mystring_contains(line," APC"))      nwpwjson["efield"]["type"] = 1;
+         if (mystring_contains(line," rgrid"))    nwpwjson["efield"]["type"] = 2;
+         if (mystring_contains(line," center"))   nwpwjson["efield"]["center"]  =  mystring_double_list(line,"center");
+         if (mystring_contains(line," vector"))   nwpwjson["efield"]["vector"]  =  mystring_double_list(line,"vector");
+      }
 
       ++cur;
       if (mystring_contains(lines[cur],"end"))

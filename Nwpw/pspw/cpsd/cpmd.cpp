@@ -288,6 +288,8 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       std::cout << " number of constraints = " << Ifmt(5) << 0 << " ( DOF = " << Ifmt(6) << myion.ndof() << " )" << std::endl;
       std::cout << std::endl;
 
+      std::cout << mypsp.myefield->shortprint_efield();
+
       std::cout <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
                 << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
@@ -538,6 +540,16 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
       //   printf(" K.S. V_APC energy   : %19.10le (%15.5le /ion)\n",      E[52],E[52]/myion.nion);
       //viral = (E[9]+E[8]+E[7]+E[6])/E[5];
       //printf(" Viral Coefficient   : %19.10le\n",viral);
+
+      if (mypsp.myefield->efield_on)
+      {
+         std::cout << std::endl;
+         std::cout << " Electric Field Energies" << std::endl;
+         std::cout << " -----------------------" << std::endl;
+         std::cout << " - Electric Field Energy   : " << Efmt(19,10) << E[48]+E[49] << std::endl;
+         std::cout << " - Electric Field/Electron : " << Efmt(19,10) << E[48]       << std::endl;
+         std::cout << " - Electric Field/Ion      : " << Efmt(19,10) << E[49]       << std::endl;
+      }
 
       std::cout << "\n orbital energies:" << std::endl;
       nn = ne[0] - ne[1];

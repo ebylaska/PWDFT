@@ -495,12 +495,31 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng, d
    E[8] = 2*ehartr0;
    E[9] = pxc0;
 
+   /* get APC energies */
    if (mypsp->myapc->v_apc_on)
    {
       E[51] = mypsp->myapc->Eapc;
       E[52] = mypsp->myapc->Papc;
       E[0]  = E[0] + E[51] - E[52];
    }
+
+   /* get Efield energies */
+   if (mypsp->myefield->efield_on)
+   {
+      if (mypsp->myefield->efield_type==0)
+      {
+         E[48] = 0.0;
+         E[49] = 0.0;
+         E[0] += E[48] - E[49];
+      }
+      else
+      {
+         E[48] = dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+         E[49] = mypsp->myefield->efield_ion_energy();
+         E[0] += E[49];
+      }
+   }
+
 
    en[0] = dv*mygrid->r_dsum(dn);
    en[1] = en[0];

@@ -253,9 +253,13 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
                    << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
       std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
       std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      std::cout << mypsp.myefield->shortprint_efield();
+
       std::cout << std::endl;
       std::cout <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
                 << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+
 
       std::cout << std::endl;
       std::cout << " supercell:" << std::endl;
@@ -412,6 +416,15 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
 		<< " (real space)";
       std::cout << std::endl << std::endl;
       std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;  
+
+      if (mypsp.myefield->efield_on)
+      {
+         std::cout << std::endl;
+         std::cout << " QM Energies" << std::endl;
+         std::cout << " -----------" << std::endl;
+         std::cout << " total  QM energy    : " << Efmt(19,10) << (E[0]-E[48]-E[49]) << " (" << Efmt(15,5) << (E[0]-E[48]-E[49])/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      }
+
       std::cout << " total orbital energy: " << Efmt(19,10) << E[1] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
       std::cout << " hartree energy      : " << Efmt(19,10) << E[2] << " (" << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl; 
       std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
@@ -431,6 +444,16 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
 
       viral = (E[9]+E[8]+E[7]+E[6])/E[5];
       std::cout << " Viral Coefficient   : " << Efmt(19,10) << viral << std::endl;
+
+      if (mypsp.myefield->efield_on)
+      {
+         std::cout << std::endl;
+         std::cout << " Electric Field Energies" << std::endl;
+         std::cout << " -----------------------" << std::endl;
+         std::cout << " - Electric Field Energy   : " << Efmt(19,10) << E[48]+E[49] << std::endl;
+         std::cout << " - Electric Field/Electron : " << Efmt(19,10) << E[48]       << std::endl;
+         std::cout << " - Electric Field/Ion      : " << Efmt(19,10) << E[49]       << std::endl;
+      }
 
       std::cout << "\n orbital energies:\n"; 
       nn = ne[0] - ne[1];

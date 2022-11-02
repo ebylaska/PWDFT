@@ -39,7 +39,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
    double eke,elocal,enlocal,dt,dte,Eold;
-   double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vfield,*vpsi,*sumi;
    double *fion;
    bool periodic  = (control.version==3);
    bool aperiodic = (control.version==4);
@@ -67,8 +67,9 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    xcp   = mygrid->r_nalloc(ispin);
    xce   = mygrid->r_nalloc(ispin);
    dnall = mygrid->r_nalloc(ispin);
-   x   = mygrid->r_alloc();
-   vall= mygrid->r_alloc();
+   x     = mygrid->r_alloc();
+   vall  = mygrid->r_alloc();
+   vfield= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
    if (periodic)
@@ -288,7 +289,14 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
    /* average Kohn-Sham local psp energy */
    elocal  = mygrid->cc_pack_dot(0,dng,vl);
+
    /* add in long range part here*/
+   if (aperiodic)
+      elocal += dv*mygrid->rr_dot(rho,vlr_l);
+
+   /* add in other real-space fields here*/
+   if (mypsp->myefield->efield_on)
+      elocal += dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
 
    /* average Kohn-Sham v_nonlocal energy */
    mygrid->g_zero(Hpsi);
@@ -307,12 +315,33 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    E[8] = 2*ehartr;
    E[9] = pxc;
 
+   /* get APC energies */
    if (mypsp->myapc->v_apc_on)
    {
       E[51] = mypsp->myapc->Eapc;
       E[52] = mypsp->myapc->Papc;
       E[0]  = E[0] + E[51] - E[52];
    }
+
+
+   /* get Efield energies */
+   if (mypsp->myefield->efield_on)
+   {
+      if (mypsp->myefield->efield_type==0)
+      {  
+         E[48] = 0.0;
+         E[49] = 0.0;
+         E[0]  = E[0] + E[48] - E[49];
+      } 
+      else
+      {
+         E[48] = dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+         E[49] = mypsp->myefield->efield_ion_energy();
+         E[0]  = E[0] + E[49];
+      }
+   }
+
+
 
    /* set convergence variables */
    *deltae = (E[0]-Eold)/(dt*control.loop(0));
