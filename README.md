@@ -92,6 +92,24 @@ cd PWDFT/QA/C2_steepest_descent
 srun -n 24 ../../build/pwdft c2-sd.nw
 ```
 
+# Build instructions on Polaris-CUDA
+
+## Required Modules on Polaris-CUDA
+```
+module purge
+module load cmake cpe-cuda aocl
+module load PrgEnv-nvhpc
+module unload craype-accel-nvidia80
+
+```
+
+## Build Instructions on Polaris-CUDA (starting from PWDFT directory)
+```
+mkdir build_cuda
+cd build-cuda
+cmake -DNWPW_CUDA=ON  -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_Fortran_COMPILER=ftn ../Nwpw/
+```
+
 
 # Build instructions on NERSC Cori-CUDA
 
