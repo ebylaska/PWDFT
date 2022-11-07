@@ -109,7 +109,7 @@ mkdir build_cuda
 cd build-cuda
 cmake -DNWPW_CUDA=ON  -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_Fortran_COMPILER=ftn ../Nwpw/
 ```
-## Running on Cori-CUDA
+## Running on Polaris-CUDA
 ```
 qsub -q  debug -I -l walltime=01:00:00 -lselect=1 -A myproject -l filesystems=home:eagle:grand
 module purge
