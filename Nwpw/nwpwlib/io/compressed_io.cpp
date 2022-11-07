@@ -25,16 +25,17 @@
 *************************************************************************
 */
 
-#include        <iostream>
-#include        <cmath>
+//#include        <stdlib.h>
+//#include        <stdio.h>
+//#include        <math.h>
+//#include        <string>
+//
+
 #include        <cstdlib>
-using namespace std;
+#include        <cstdio>
+#include        <cmath>
+#include        <cstring>
 
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "Int64.h"
 
 
@@ -43,6 +44,11 @@ using namespace std;
  * return 1 if the file exist otherwise return 0
  */
 #include <sys/stat.h>
+
+namespace pwdft {
+
+
+
 int cfileexists(const char* filename){
     struct stat buffer;
     int exist = stat(filename,&buffer);
@@ -80,19 +86,23 @@ void cread(int unit, char *c, const int n)
 
 void iwrite(const int unit, const int *i, const int n)
 {
+   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
    Int64 *itmp;
    itmp = new Int64[n];
    for (int j=0; j<n; ++j)  itmp[j] = (Int64) i[j];
    (void) fwrite(itmp, sizeof(Int64), n, fd[unit]);
+   //free(itmp);
    delete [] itmp;
 }
 
 void iread(const int unit, int *i, const int n)
 {
+   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
    Int64 *itmp;
    itmp = new Int64[n];
    (void) fread(itmp, sizeof(Int64), n, fd[unit]);
    for (int j=0; j<n; ++j)  i[j] = (int) itmp[j];
+   //free(itmp);
    delete [] itmp;
 }
 
@@ -136,5 +146,7 @@ void openfile(const int unit, const char *filename, const char *mode)
 void closefile(const int unit)
 {
    (void) fclose(fd[unit]);
+}
+
 }
 

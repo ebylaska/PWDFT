@@ -1,0 +1,45 @@
+Title "Chlorobenzene test"
+
+memory 1900 mb
+start chlorobenzene-pspw
+echo
+
+
+
+geometry noautosym noautoz nocenter
+C         0.108305     1.304502     0.000093
+C        -1.140437     0.730774    -0.000073
+C        -1.246990    -0.640023    -0.000170
+C        -0.118976    -1.426978    -0.000168
+C         1.123036    -0.837577    -0.000175
+C         1.244832     0.531288    -0.000070
+H        -2.013172     1.351631    -0.000016
+H        -2.219468    -1.092069    -0.000147
+H        -0.208190    -2.495026    -0.000089
+H         2.007007    -1.444802    -0.000149
+H         2.208730     0.998300    -0.000016
+Cl        0.253196     3.025609     0.000795
+end
+
+nwpw
+   pseudopotentials
+   H  library pspw_default
+   C  library pspw_default
+   Cl library pspw_default
+   end
+
+   simulation_cell
+     SC 26.0
+   end
+   2d-hcurve
+   
+   xc pbe
+   cutoff 30.0
+   apc 
+   steepest_descent
+      geometry_optimize
+      loop 1 10
+   end
+end
+
+task pspw steepest_descent

@@ -5,7 +5,8 @@
 
 	this class is used defining 3d parallel maps
 */
-using namespace std;
+
+namespace pwdft {
 
 
 class Mapping3 {
@@ -24,34 +25,38 @@ public:
 
         /* copy constructor */
         //Mapping3(const Mapping3&);
-           
+
         /* destructor */
 	~Mapping3();
 
         int ijktoindex(const int i, const int j, const int k) {
            if (maptype==1)
-              return (i + j*(nx/2+1) + qmap[0][k]*(nx/2+1)*ny); 
+              return (i + j*(nx/2+1) + qmap[0][k]*(nx/2+1)*ny);
            else
-              return (k + qmap[2][i+j*(nx/2+1)]*nz); 
+              return (k + qmap[2][i+j*(nx/2+1)]*nz);
         }
+
         int ijktoindex1(const int i, const int j, const int k) {
            if (maptype==1)
-              return (i + k*(nx/2+1) + qmap[0][j]*(nx/2+1)*nz); 
+              return (i + k*(nx/2+1) + qmap[0][j]*(nx/2+1)*nz);
            else
-              return (j + qmap[1][k+i*nz]*ny); 
+              return (j + qmap[1][k+i*nz]*ny);
         }
         int ijktoindex2(const int i, const int j, const int k) {
            if (maptype==1)
-              return (i + k*(nx+2) + qmap[0][j]*(nx+2)*ny); 
+              return (i + k*(nx+2) + qmap[0][j]*(nx+2)*ny);
            else
-              return (i + qmap[0][j+k*ny]*(nx+2)); 
+              return (i + qmap[0][j+k*ny]*(nx+2));
         }
         int ijktoindex2t(const int i, const int j, const int k) {
            if (maptype==1)
-              return (i + k*(nx+2) + qmap[0][j]*(nx/2+1)*ny); 
+              return (i + k*(nx+2) + qmap[0][j]*(nx/2+1)*ny);
            else
-              return (i + qmap[0][j+k*ny]*(nx/2+1)); 
+              return (i + qmap[0][j+k*ny]*(nx/2+1));
         }
+
+
+
         int ijktop(const int i, const int j, const int k) {
            if (maptype==1)
               return (pmap[0][k]);
@@ -71,6 +76,30 @@ public:
               return (pmap[0][j+k*ny]);
         }
 
+
+        int ijktoq(const int i, const int j, const int k) {
+           if (maptype==1)
+              return (qmap[0][k]);
+           else
+              return (qmap[2][i+j*(nx/2+1)]);
+        }
+
+        int ijktoq1(const int i, const int j, const int k) {
+           if (maptype==1)
+              return (qmap[0][j]);
+           else
+              return (qmap[1][k+i*nz]);
+        }
+
+        int ijktoq2(const int i, const int j, const int k) {
+           if (maptype==1)
+              return (qmap[0][j]);
+           else
+              return (qmap[0][j+k*ny]);
+        }
+
 };
+
+}
 
 #endif

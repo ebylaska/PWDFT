@@ -2,7 +2,7 @@
 #define _IONS_H_
 
 
-using namespace std;
+
 
 #include	"rtdb.hpp"
 

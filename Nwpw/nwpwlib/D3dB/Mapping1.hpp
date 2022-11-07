@@ -5,7 +5,9 @@
 
 	this class is used defining 1d parallel maps
 */
-using namespace std;
+
+namespace pwdft {
+
 
 class Mapping1 {
 
@@ -15,11 +17,12 @@ class Mapping1 {
 
 public:
         int ispin,ne[2];
-        int maptype1,neq[2];
+        int maptype1;
+        int neq[2]; // Number of wave functions
 
 	/* Constructors */
 	Mapping1();
-	Mapping1(const int, const int, const int, const int, int *);
+	Mapping1(const int, const int, const int, const int, const int *);
 
         /* destructor */
 	~Mapping1() {
@@ -32,8 +35,10 @@ public:
            }
         }
 
-        int msntoindex(const int ms, const int n) { return qmap[ms][n]; }
+        int msntoindex(const int ms, const int n) { return (qmap[ms][n] + ms*neq[0]); }
         int msntop(const int ms, const int n)     { return pmap[ms][n]; }
 };
+
+}
 
 #endif

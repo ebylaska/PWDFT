@@ -1,0 +1,40 @@
+#
+# $Id$
+#
+Comment: Lu pseudopotential parameters
+Comment: Relativistic TM, quadratic semicore
+
+[lmax] 3
+[locp] 0
+[rlocal] 1.0
+
+<atom>
+ Lu
+  71.00  174.967  10 3
+   1   0    2.00
+   2   0    2.00
+   2   1    6.00
+   3   0    2.00
+   3   1    6.00
+   3   2   10.00
+   4   0    2.00
+   4   1    6.00
+   4   2   10.00
+   4   3   14.00
+   5   0    2.00
+   5   1    6.00
+   5   2    1.00
+   6   0    2.00
+<end>
+<solver> pauli                         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut>
+0       1.287000
+1       1.493000
+2       2.233000
+3       0.878000
+<end>
+<kb_expansion>
+0 2
+<end>
+

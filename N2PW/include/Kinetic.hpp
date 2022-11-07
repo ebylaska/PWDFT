@@ -2,7 +2,7 @@
 #define _KINETIC_H_
 
 
-using namespace std;
+
 
 #include	"Pneb.hpp"
 

@@ -1,0 +1,28 @@
+Title "Hellow Dolly using bohrs"
+
+memory 1900 mb
+start h2-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz nocenter units bohrs
+system crystal cartesian
+   lattice_vectors
+    24.0  0.0  0.0
+     0.0 24.0  0.0
+     0.0  0.0 24.0
+end
+
+H 0 0 0    
+H 0 0 1.2  
+end
+
+nwpw
+   apc on
+   cutoff 10.0
+   xc pbe
+end
+#task pspw steepest_descent
+task pspw gradient
+

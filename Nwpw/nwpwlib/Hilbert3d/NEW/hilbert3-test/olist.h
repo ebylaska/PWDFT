@@ -1,5 +1,4 @@
-#ifndef _OLIST_H_
-#define _OLIST_H_
+#pragma once
 /* olist.h -
    Author - Eric Bylaska
 
@@ -7,7 +6,6 @@
 
 #include        <iostream>
 #include        <cstdlib>
-using namespace std;
 
 class OList {
 
@@ -62,5 +60,3 @@ public:
 //extern	int	index_olist();
 //extern	void	destroy_olist();
 //extern	void	print_olist();
-
-#endif

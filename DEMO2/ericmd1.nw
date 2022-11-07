@@ -1,0 +1,18 @@
+
+memory 900 mb
+restart eric
+echo
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+nwpw
+   car-parrinello
+     intitial_velocities 300.0 9990
+     time_step 5.0
+     #fake_mass 750.0
+     fake_mass 400000.00
+     loop 1 10
+   end
+end
+task pspw car-parrinello

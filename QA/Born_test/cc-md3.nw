@@ -1,0 +1,39 @@
+Title "CC Born test"
+echo
+
+memory 1900 mb
+start cc-born3
+
+permanent_dir ./perm3
+scratch_dir   ./perm3
+
+geometry units angstroms noautosym  noautoz nocenter
+C    -0.302804 1.234427 1.298566
+C   0.075206 0.050102 0.012408
+end
+
+nwpw
+
+   simulation_cell
+     SC 26.0
+     #boundary_conditions aperiodic
+   end
+   xc pbe
+   cutoff 30.0
+   2d-hcurve
+
+   born relax on
+   
+   steepest_descent
+      geometry_optimize
+      loop 1 2
+      fake_mass 750.0
+      time_step 5.0
+   end
+   vectors output jjj.elc voutput jjj.velc
+   
+end
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+
+task pspw steepest_descent

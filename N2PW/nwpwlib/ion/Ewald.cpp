@@ -2,7 +2,7 @@
    Author - Eric Bylaska
 */
 
-using namespace std;
+
 
 #include	<string.h>
 

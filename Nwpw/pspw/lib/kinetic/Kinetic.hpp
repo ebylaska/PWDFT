@@ -2,9 +2,11 @@
 #define _KINETIC_H_
 
 
-using namespace std;
+
 
 #include	"Pneb.hpp"
+
+namespace pwdft {
 
 class	Kinetic_Operator {
 
@@ -24,5 +26,7 @@ public:
     void   ke(double *, double *);
     double ke_ave(double *);
 };
+
+}
 
 #endif

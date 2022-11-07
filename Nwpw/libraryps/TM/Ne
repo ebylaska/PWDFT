@@ -1,0 +1,27 @@
+#
+# $Id$
+#
+Comment: Ne pseudopotential parameters
+Comment: Fitted 12-27-04
+Comment: by E.J. Bylaska, somewhat based on Khein and Allens' TM database
+Comment: relativistic TM, quadratic semicore
+
+[lmax] 1
+[locp] 1
+[rlocal] 1.0
+<atom>
+Ne
+10.0 20.0 1 2 
+1  0      2.0
+2  0      2.00
+2  1      6.00
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut> 
+   0    2.4838633
+   1    2.4838633
+<end>
+
+<semicore> 0.328   <end>
+<semicore_type> quadratic <end>

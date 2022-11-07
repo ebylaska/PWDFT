@@ -1,0 +1,521 @@
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+ retcontex=0 context=0x7fb55450b130 retcommand=0
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+Number of platforms = 1
+ - 0 patform_id= 2147418112 num_devices= 3
+   -- 0 device_id= 4294967295 num_cores= 16 mem= 17179869184  2300 MHz wfloat=4 wdouble=2 avail=1 has_cl_khr_fp64=1
+   -- 1 device_id= 16925952 num_cores= 24 mem=  1610612736  1200 MHz wfloat=1 wdouble=0 avail=1 has_cl_khr_fp64=0
+   -- 2 device_id= 16915968 num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+
+ - Using platform_id=2147418112 device_id=16915968 vendor=AMD num_cores= 24 mem=  4278190080  1450 MHz wfloat=1 wdouble=1 avail=1 has_cl_khr_fp64=1
+ retcontex=0 context=0x7fa717708a60 retcommand=0
+ retcontex=0 context=0x7fe598708e20 retcommand=0
+ retcontex=0 context=0x7ff9b2406830 retcommand=0
+ retcontex=0 context=0x7facaea040d0 retcommand=0
+ retcontex=0 context=0x7fbae1a0f700 retcommand=0
+ retcontex=0 context=0x7ffcd74139b0 retcommand=0
+../build/pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+
+memory 1900 mb
+start eric
+echo
+
+permanent_dir ./perm
+scratch_dir   ./perm
+#psp_library_dir /home/ericpsps
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+
+
+geometry noautoz nocenter noautosym
+Cu   -1.32092   -1.29661   -2.32473
+Cu    0.19961   -1.86282   -4.14087
+Cu   -0.31099    2.73962    0.45543
+Cu   -0.83334    0.76736   -1.03273
+Cu    1.23160    2.09181   -1.42823
+Cu    0.78438    0.10041   -2.81555
+Cu    1.57742   -0.19592   -0.44540
+Cu    1.00022   -2.20677   -1.84354
+Cu    1.70543    4.02957   -0.04581
+Cu    2.01925    1.81074    0.98033
+Cu   -4.27957    0.06569    1.36564
+Cu   -2.85153   -0.65864   -0.48073
+Cu   -2.30017    1.40668    0.87985
+Cu   -2.09703   -0.92187    1.89833
+Cu   -0.05068    0.48468    1.52509
+Cu   -0.60568   -1.67227    0.04555
+Cu    0.13673   -1.82241    2.44305
+Cu    1.74149   -2.47524    0.50341
+Cu    2.22440   -0.44229    1.97599
+Cu    2.36252   -2.71904    2.86318
+C     4.66632   -0.31269    0.00667
+O     3.36811    0.02089   -0.74763
+H     4.02050   -1.13205    0.33461
+H     4.79414   -0.34608   -1.07888
+H     5.64271   -0.40683    0.48877
+H     2.80704    5.20478   -0.15285
+end
+
+
+nwpw
+   pseudopotentials
+   H library pspw_default
+   C library pspw_default
+   Cu library pspw_default
+   end
+   simulation_cell
+     FCC 38.0
+     #ngrid 80 80 80
+   end
+   mapping 2
+   #nobalance
+   #np_dimensions -1 5
+   cutoff 50.0
+   loop 10 10
+   steepest_descent
+     #input_wavefunction_filename  eric.movecs
+     input_wavefunction_filename  test2d.movecs
+     output_wavefunction_filename test2d.movecs
+     loop 1 10
+     #geometry_optimize
+   end
+   #vectors output test2.movecs
+end
+task pspw energy
+#task pspw noit_energy
+
+task pspw steepest_descent
+#task pspw steepest_descent
+
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Sat Jan 23 19:25:41 2021
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Sat Jan 23 21:36:07 2021
+       nproc                 = 7
+       input                 = cunano-10d.nw
+
+
+
+rtdbstr={"current_task":"task pspw energy","dbname":"eric","foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,6.0,8.0,1.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-2.496176852835094,-2.450237614052714,-4.393102697431583,0.3772082045804538,-3.5202193660465952,-7.825109654331263,-0.5876858851884942,5.177131112833539,0.8606379069789893,-1.5747842553232572,1.4501001345967488,-1.9515767201862233,2.327386527535128,3.95294772017153,-2.6989633486696136,1.4822632709223802,0.1897473865133178,-5.320618007146419,2.9808915689058635,-0.3702351156825936,-0.841683955313532,1.8901417282974877,-4.170190619818687,-3.4837854489867732,3.2227953927039894,7.6147831518023095,-0.08656834753684979,3.815829202440165,3.4218024365613493,1.8525550783846314,-8.08721464894731,0.1241361001898202,2.580685399044391,-5.388610348215527,-1.2446491251183311,-0.9084479744900633,-4.346691027152058,2.6582397536157143,1.662675411052113,-3.9628120898319175,-1.7420816970922446,3.5873235359010716,-0.0957713131012344,0.9159123921449543,2.882002207923472,-1.1445692367631344,-3.1601320789226763,0.08607701877981899,0.25838223441854336,-3.443855538848078,4.616695076400369,3.290938911852184,-4.677525355972759,0.9513069599110578,4.203506488997352,-0.8358069074890482,3.734079656174194,4.464515442540021,-5.138240551988563,5.410625655982484,8.818066175030625,-0.5908984193690803,0.0126044723438286,6.364804999396184,0.0394763759014362,-1.4128158408420655,7.5976433370858905,-2.139264305371989,0.6323212130387538,9.05961095089092,-0.6539963701277663,-2.0387875745591906,10.663175733020251,-0.7687972239340014,0.9236413714382465,5.304536438983604,9.835608030841414,-0.288844617354453],"masses":[62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,12.0,15.99491,1.008,1.008,1.008,1.008],"nion":26,"symbols":["Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","C","O","H","H","H","H"],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":68,"nwinput_lines":["","memory 1900 mb","start eric","echo","","permanent_dir ./perm","scratch_dir   ./perm","","","set nwpw:kbpp_ray    .true.","set nwpw:kbpp_filter .true.","","","geometry noautoz nocenter noautosym","Cu   -1.32092   -1.29661   -2.32473","Cu    0.19961   -1.86282   -4.14087","Cu   -0.31099    2.73962    0.45543","Cu   -0.83334    0.76736   -1.03273","Cu    1.23160    2.09181   -1.42823","Cu    0.78438    0.10041   -2.81555","Cu    1.57742   -0.19592   -0.44540","Cu    1.00022   -2.20677   -1.84354","Cu    1.70543    4.02957   -0.04581","Cu    2.01925    1.81074    0.98033","Cu   -4.27957    0.06569    1.36564","Cu   -2.85153   -0.65864   -0.48073","Cu   -2.30017    1.40668    0.87985","Cu   -2.09703   -0.92187    1.89833","Cu   -0.05068    0.48468    1.52509","Cu   -0.60568   -1.67227    0.04555","Cu    0.13673   -1.82241    2.44305","Cu    1.74149   -2.47524    0.50341","Cu    2.22440   -0.44229    1.97599","Cu    2.36252   -2.71904    2.86318","C     4.66632   -0.31269    0.00667","O     3.36811    0.02089   -0.74763","H     4.02050   -1.13205    0.33461","H     4.79414   -0.34608   -1.07888","H     5.64271   -0.40683    0.48877","H     2.80704    5.20478   -0.15285","end","","","nwpw","   pseudopotentials","   H library pspw_default","   C library pspw_default","   Cu library pspw_default","   end","   simulation_cell","     FCC 38.0","     ","   end","   mapping 2","   ","   ","   cutoff 50.0","   loop 10 10","   steepest_descent","     ","     input_wavefunction_filename  test2d.movecs","     output_wavefunction_filename test2d.movecs","     loop 1 10","     ","   end","   ","end","task pspw energy","","","task pspw steepest_descent","","",""],"nwinput_nlines":74,"nwpw":{"cutoff":[50.0,100.0],"loop":[10,10],"mapping":2,"pseudopotentials":{"C":"pspw_default","Cu":"pspw_default","H":"pspw_default"},"simulation_cell":{"unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"steepest_descent":{"input_wavefunction_filename":"test2d.movecs","loop":[1,10],"output_wavefunction_filename":"test2d.movecs"}},"nwpw:kbpp_filter":".true.","nwpw:kbpp_ray":".true.","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm"}
+task0=1
+rtdbstr={"current_task":"task pspw steepest_descent","dbname":"eric","foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,6.0,8.0,1.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-2.496176852835094,-2.450237614052714,-4.393102697431583,0.3772082045804538,-3.5202193660465952,-7.825109654331263,-0.5876858851884942,5.177131112833539,0.8606379069789893,-1.5747842553232572,1.4501001345967488,-1.9515767201862233,2.327386527535128,3.95294772017153,-2.6989633486696136,1.4822632709223802,0.1897473865133178,-5.320618007146419,2.9808915689058635,-0.3702351156825936,-0.841683955313532,1.8901417282974877,-4.170190619818687,-3.4837854489867732,3.2227953927039894,7.6147831518023095,-0.08656834753684979,3.815829202440165,3.4218024365613493,1.8525550783846314,-8.08721464894731,0.1241361001898202,2.580685399044391,-5.388610348215527,-1.2446491251183311,-0.9084479744900633,-4.346691027152058,2.6582397536157143,1.662675411052113,-3.9628120898319175,-1.7420816970922446,3.5873235359010716,-0.0957713131012344,0.9159123921449543,2.882002207923472,-1.1445692367631344,-3.1601320789226763,0.08607701877981899,0.25838223441854336,-3.443855538848078,4.616695076400369,3.290938911852184,-4.677525355972759,0.9513069599110578,4.203506488997352,-0.8358069074890482,3.734079656174194,4.464515442540021,-5.138240551988563,5.410625655982484,8.818066175030625,-0.5908984193690803,0.0126044723438286,6.364804999396184,0.0394763759014362,-1.4128158408420655,7.5976433370858905,-2.139264305371989,0.6323212130387538,9.05961095089092,-0.6539963701277663,-2.0387875745591906,10.663175733020251,-0.7687972239340014,0.9236413714382465,5.304536438983604,9.835608030841414,-0.288844617354453],"masses":[62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,12.0,15.99491,1.008,1.008,1.008,1.008],"nion":26,"symbols":["Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","C","O","H","H","H","H"],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":71,"nwinput_lines":["","memory 1900 mb","start eric","echo","","permanent_dir ./perm","scratch_dir   ./perm","","","set nwpw:kbpp_ray    .true.","set nwpw:kbpp_filter .true.","","","geometry noautoz nocenter noautosym","Cu   -1.32092   -1.29661   -2.32473","Cu    0.19961   -1.86282   -4.14087","Cu   -0.31099    2.73962    0.45543","Cu   -0.83334    0.76736   -1.03273","Cu    1.23160    2.09181   -1.42823","Cu    0.78438    0.10041   -2.81555","Cu    1.57742   -0.19592   -0.44540","Cu    1.00022   -2.20677   -1.84354","Cu    1.70543    4.02957   -0.04581","Cu    2.01925    1.81074    0.98033","Cu   -4.27957    0.06569    1.36564","Cu   -2.85153   -0.65864   -0.48073","Cu   -2.30017    1.40668    0.87985","Cu   -2.09703   -0.92187    1.89833","Cu   -0.05068    0.48468    1.52509","Cu   -0.60568   -1.67227    0.04555","Cu    0.13673   -1.82241    2.44305","Cu    1.74149   -2.47524    0.50341","Cu    2.22440   -0.44229    1.97599","Cu    2.36252   -2.71904    2.86318","C     4.66632   -0.31269    0.00667","O     3.36811    0.02089   -0.74763","H     4.02050   -1.13205    0.33461","H     4.79414   -0.34608   -1.07888","H     5.64271   -0.40683    0.48877","H     2.80704    5.20478   -0.15285","end","","","nwpw","   pseudopotentials","   H library pspw_default","   C library pspw_default","   Cu library pspw_default","   end","   simulation_cell","     FCC 38.0","     ","   end","   mapping 2","   ","   ","   cutoff 50.0","   loop 10 10","   steepest_descent","     ","     input_wavefunction_filename  test2d.movecs","     output_wavefunction_filename test2d.movecs","     loop 1 10","     ","   end","   ","end","task pspw energy","","","task pspw steepest_descent","","",""],"nwinput_nlines":74,"nwpw":{"cutoff":[50.0,100.0],"loop":[10,10],"mapping":2,"pseudopotentials":{"C":"pspw_default","Cu":"pspw_default","H":"pspw_default"},"simulation_cell":{"unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"steepest_descent":{"input_wavefunction_filename":"test2d.movecs","loop":[1,10],"output_wavefunction_filename":"test2d.movecs"}},"nwpw:kbpp_filter":".true.","nwpw:kbpp_ray":".true.","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm"}
+task =5
+          *****************************************************
+          *                                                   *
+          *     Car-Parrinello calculation for molecules,     *
+          *       microclusters, liquids, and materials       *
+          *                                                   *
+          *     [     steepest descent minimization   ]       *
+          *     [          C++ implementation         ]       *
+          *                                                   *
+          *            version #7.00   09/20/18               *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska     *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jan 23 21:36:07 2021 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+ C library pspw_default
+ Cu library pspw_default
+ H library pspw_default
+
+ input psi exists, reading from file: ./perm/test2d.movecs
+ reading formatted psp filename: ./perm/Cu.vpp
+ reading formatted psp filename: ./perm/C.vpp
+ reading formatted psp filename: ./perm/O.vpp
+ reading formatted psp filename: ./perm/H.vpp
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/test2d.movecs
+
+ number of processors used: 7
+ processor grid           : 7 x1
+ parallel mapping         : hilbert
+ parallel mapping         : balanced
+
+ options:
+   ion motion           = no
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+     1 :   Cu   core charge: 11.0  lmax=2
+           comment : Troullier-Martins pseudopotential
+           pseudopotential type            :   0
+           highest angular component       :   2
+           local potential used            :   0
+           number of non-local projections :   8
+           semicore corrections included   :  0.480 (radius)  9.114 (charge)
+           cutoff =    2.055   2.299   2.055
+     2 :    C   core charge:  4.0  lmax=2
+           comment : Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+           pseudopotential type            :   0
+           highest angular component       :   2
+           local potential used            :   2
+           number of non-local projections :   4
+           cutoff =    0.800   0.850   0.850
+     3 :    O   core charge:  6.0  lmax=2
+           comment : Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+           pseudopotential type            :   0
+           highest angular component       :   2
+           local potential used            :   2
+           number of non-local projections :   4
+           cutoff =    0.700   0.700   0.700
+     4 :    H   core charge:  1.0  lmax=1
+           comment : Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+           pseudopotential type            :   0
+           highest angular component       :   1
+           local potential used            :   1
+           number of non-local projections :   1
+           cutoff =    0.800   0.800
+
+ atom composition:
+   Cu : 20   C : 1   O : 1   H : 4
+
+ initial ion positions (au):
+   1 Cu	(   -2.49618   -2.45024   -4.39310 ) - atomic mass = 62.930
+   2 Cu	(    0.37721   -3.52022   -7.82511 ) - atomic mass = 62.930
+   3 Cu	(   -0.58769    5.17713    0.86064 ) - atomic mass = 62.930
+   4 Cu	(   -1.57478    1.45010   -1.95158 ) - atomic mass = 62.930
+   5 Cu	(    2.32739    3.95295   -2.69896 ) - atomic mass = 62.930
+   6 Cu	(    1.48226    0.18975   -5.32062 ) - atomic mass = 62.930
+   7 Cu	(    2.98089   -0.37024   -0.84168 ) - atomic mass = 62.930
+   8 Cu	(    1.89014   -4.17019   -3.48379 ) - atomic mass = 62.930
+   9 Cu	(    3.22280    7.61478   -0.08657 ) - atomic mass = 62.930
+  10 Cu	(    3.81583    3.42180    1.85256 ) - atomic mass = 62.930
+  11 Cu	(   -8.08721    0.12414    2.58069 ) - atomic mass = 62.930
+  12 Cu	(   -5.38861   -1.24465   -0.90845 ) - atomic mass = 62.930
+  13 Cu	(   -4.34669    2.65824    1.66268 ) - atomic mass = 62.930
+  14 Cu	(   -3.96281   -1.74208    3.58732 ) - atomic mass = 62.930
+  15 Cu	(   -0.09577    0.91591    2.88200 ) - atomic mass = 62.930
+  16 Cu	(   -1.14457   -3.16013    0.08608 ) - atomic mass = 62.930
+  17 Cu	(    0.25838   -3.44386    4.61670 ) - atomic mass = 62.930
+  18 Cu	(    3.29094   -4.67753    0.95131 ) - atomic mass = 62.930
+  19 Cu	(    4.20351   -0.83581    3.73408 ) - atomic mass = 62.930
+  20 Cu	(    4.46452   -5.13824    5.41063 ) - atomic mass = 62.930
+  21 C	(    8.81807   -0.59090    0.01260 ) - atomic mass = 12.000
+  22 O	(    6.36480    0.03948   -1.41282 ) - atomic mass = 15.995
+  23 H	(    7.59764   -2.13926    0.63232 ) - atomic mass =  1.008
+  24 H	(    9.05961   -0.65400   -2.03879 ) - atomic mass =  1.008
+  25 H	(   10.66318   -0.76880    0.92364 ) - atomic mass =  1.008
+  26 H	(    5.30454    9.83561   -0.28884 ) - atomic mass =  1.008
+
+ number of electrons: spin up=   117 ( 117 per task) down=   117 ( 117 per task)
+
+ supercell:
+      volume :   13718.00
+      lattice:    a1=<   19.000   19.000    0.000 >
+                  a2=<   19.000    0.000   19.000 >
+                  a3=<    0.000   19.000   19.000 >
+      reciprocal: b1=<    0.165    0.165   -0.165 >
+                  b2=<    0.165   -0.165    0.165 >
+                  b3=<   -0.165    0.165    0.165 >
+      density cutoff= 100.000 fft=  100 x  100 x  100  (  282860 waves    40408 per task)
+      wavefnc cutoff=  50.000 fft=  100 x  100 x  100  (  115733 waves    16533 per task)
+
+ ewald parameters:
+      energy cutoff= 100.000 fft=  100 x  100 x  100  (  282860 waves    40409 per task)
+      summation: cut radius=    8.553 and   1   mandelung=   1.79174723
+
+ technical parameters:
+      time step=       5.80  ficticious mass= 400000.00
+      tolerance=  1.000e-09 (energy)   1.000e-09 (density)   1.000e-04 (ion)
+      max iterations =         10 (    1 inner    10 outer)
+
+
+
+     ========================== iteration ==========================
+          >>> iteration started at Sat Jan 23 21:36:10 2021  <<<
+     iter.             Energy       DeltaE     DeltaPsi     DeltaIon
+     ---------------------------------------------------------------
+         1  -1.0232687213e+03 -1.76426e+02  3.85239e-03  0.00000e+00
+         2  -1.0243493524e+03 -1.86316e-01  3.76884e-03  0.00000e+00
+         3  -1.0254096123e+03 -1.82803e-01  3.68744e-03  0.00000e+00
+         4  -1.0264500344e+03 -1.79383e-01  3.60815e-03  0.00000e+00
+         5  -1.0274711350e+03 -1.76052e-01  3.53089e-03  0.00000e+00
+         6  -1.0284734143e+03 -1.72807e-01  3.45563e-03  0.00000e+00
+         7  -1.0294573565e+03 -1.69645e-01  3.38231e-03  0.00000e+00
+         8  -1.0304234305e+03 -1.66564e-01  3.31087e-03  0.00000e+00
+         9  -1.0313720904e+03 -1.63562e-01  3.24126e-03  0.00000e+00
+        10  -1.0323037758e+03 -1.60635e-01  3.17343e-03  0.00000e+00
+          *** arrived at the Maximum iteration.   terminated ***
+          >>> iteration ended at   Sat Jan 23 21:37:11 2021  <<<
+
+
+          =============  summary of results  =================
+
+ final ion positions (au):
+   1 Cu	(   -2.49618   -2.45024   -4.39310 ) - atomic mass = 62.930
+   2 Cu	(    0.37721   -3.52022   -7.82511 ) - atomic mass = 62.930
+   3 Cu	(   -0.58769    5.17713    0.86064 ) - atomic mass = 62.930
+   4 Cu	(   -1.57478    1.45010   -1.95158 ) - atomic mass = 62.930
+   5 Cu	(    2.32739    3.95295   -2.69896 ) - atomic mass = 62.930
+   6 Cu	(    1.48226    0.18975   -5.32062 ) - atomic mass = 62.930
+   7 Cu	(    2.98089   -0.37024   -0.84168 ) - atomic mass = 62.930
+   8 Cu	(    1.89014   -4.17019   -3.48379 ) - atomic mass = 62.930
+   9 Cu	(    3.22280    7.61478   -0.08657 ) - atomic mass = 62.930
+  10 Cu	(    3.81583    3.42180    1.85256 ) - atomic mass = 62.930
+  11 Cu	(   -8.08721    0.12414    2.58069 ) - atomic mass = 62.930
+  12 Cu	(   -5.38861   -1.24465   -0.90845 ) - atomic mass = 62.930
+  13 Cu	(   -4.34669    2.65824    1.66268 ) - atomic mass = 62.930
+  14 Cu	(   -3.96281   -1.74208    3.58732 ) - atomic mass = 62.930
+  15 Cu	(   -0.09577    0.91591    2.88200 ) - atomic mass = 62.930
+  16 Cu	(   -1.14457   -3.16013    0.08608 ) - atomic mass = 62.930
+  17 Cu	(    0.25838   -3.44386    4.61670 ) - atomic mass = 62.930
+  18 Cu	(    3.29094   -4.67753    0.95131 ) - atomic mass = 62.930
+  19 Cu	(    4.20351   -0.83581    3.73408 ) - atomic mass = 62.930
+  20 Cu	(    4.46452   -5.13824    5.41063 ) - atomic mass = 62.930
+  21 C	(    8.81807   -0.59090    0.01260 ) - atomic mass = 12.000
+  22 O	(    6.36480    0.03948   -1.41282 ) - atomic mass = 15.995
+  23 H	(    7.59764   -2.13926    0.63232 ) - atomic mass =  1.008
+  24 H	(    9.05961   -0.65400   -2.03879 ) - atomic mass =  1.008
+  25 H	(   10.66318   -0.76880    0.92364 ) - atomic mass =  1.008
+  26 H	(    5.30454    9.83561   -0.28884 ) - atomic mass =  1.008
+
+
+ total     energy    :   -1.0323037758e+03 (   -3.97040e+01 /ion)
+ total orbital energy:   -1.3318415214e+02 (   -1.13833e+00 /electron)
+ hartree energy      :    1.3473505020e+03 (    1.15158e+01 /electron)
+ exc-corr energy     :   -3.4776597770e+02 (   -2.97236e+00 /electron)
+ ion-ion energy      :    6.0587016877e+02 (    2.33027e+01 /ion)
+
+ K.S. kinetic energy :    6.6748307610e+02 (    5.70498e+00 /electron)
+ K.S. V_l energy     :   -2.6223006748e+03 (   -2.24128e+01 /electron)
+ K.S. V_nl energy    :   -6.8294088023e+02 (   -5.83710e+00 /electron)
+ K.S. V_Hart energy  :    2.6947010041e+03 (    2.30316e+01 /electron)
+ K.S. V_xc energy    :   -1.9012668733e+02 (   -1.62501e+00 /electron)
+ Viral Coefficient   :   -1.1995318936e+00
+
+ orbital energies:
+     1.3608361e-01 (   3.703eV)
+     1.0729039e-01 (   2.920eV)
+     8.6511636e-02 (   2.354eV)
+     8.4099803e-02 (   2.288eV)
+     6.6473485e-02 (   1.809eV)
+     6.0051004e-02 (   1.634eV)
+     5.3282990e-02 (   1.450eV)
+     4.6494198e-02 (   1.265eV)
+     1.7525679e-02 (   0.477eV)
+     1.0482594e-02 (   0.285eV)
+    -5.3147822e-03 (  -0.145eV)
+    -1.3492298e-02 (  -0.367eV)
+    -4.5854434e-02 (  -1.248eV)
+    -5.2229871e-02 (  -1.421eV)
+    -5.8035658e-02 (  -1.579eV)
+    -6.3861381e-02 (  -1.738eV)
+    -7.1183638e-02 (  -1.937eV)
+    -8.3903073e-02 (  -2.283eV)
+    -1.0188987e-01 (  -2.773eV)
+    -1.1500495e-01 (  -3.129eV)
+    -1.2017124e-01 (  -3.270eV)
+    -1.2919080e-01 (  -3.515eV)
+    -1.4096575e-01 (  -3.836eV)
+    -1.5293919e-01 (  -4.162eV)
+    -1.6217881e-01 (  -4.413eV)
+    -1.8271170e-01 (  -4.972eV)
+    -1.9056897e-01 (  -5.186eV)
+    -1.9698147e-01 (  -5.360eV)
+    -2.0674528e-01 (  -5.626eV)
+    -2.1068161e-01 (  -5.733eV)
+    -2.2612670e-01 (  -6.153eV)
+    -2.3011274e-01 (  -6.262eV)
+    -2.4832661e-01 (  -6.757eV)
+    -2.5975401e-01 (  -7.068eV)
+    -2.6852610e-01 (  -7.307eV)
+    -2.7439552e-01 (  -7.467eV)
+    -2.8253580e-01 (  -7.688eV)
+    -2.8986997e-01 (  -7.888eV)
+    -3.0462400e-01 (  -8.289eV)
+    -3.1352226e-01 (  -8.531eV)
+    -3.3335628e-01 (  -9.071eV)
+    -3.3936571e-01 (  -9.235eV)
+    -3.5170878e-01 (  -9.571eV)
+    -3.6329405e-01 (  -9.886eV)
+    -3.7559311e-01 ( -10.220eV)
+    -3.8150426e-01 ( -10.381eV)
+    -3.8635401e-01 ( -10.513eV)
+    -3.9995850e-01 ( -10.884eV)
+    -4.2005045e-01 ( -11.430eV)
+    -4.3096288e-01 ( -11.727eV)
+    -4.3944319e-01 ( -11.958eV)
+    -4.5380978e-01 ( -12.349eV)
+    -4.6615388e-01 ( -12.685eV)
+    -4.7186315e-01 ( -12.840eV)
+    -4.8982592e-01 ( -13.329eV)
+    -4.9696991e-01 ( -13.523eV)
+    -5.2261399e-01 ( -14.221eV)
+    -5.3519134e-01 ( -14.563eV)
+    -5.3604502e-01 ( -14.587eV)
+    -5.6021398e-01 ( -15.244eV)
+    -5.7037746e-01 ( -15.521eV)
+    -5.8090913e-01 ( -15.807eV)
+    -5.9908579e-01 ( -16.302eV)
+    -6.1407368e-01 ( -16.710eV)
+    -6.3881828e-01 ( -17.383eV)
+    -6.4605541e-01 ( -17.580eV)
+    -6.5280662e-01 ( -17.764eV)
+    -7.0260404e-01 ( -19.119eV)
+    -7.1786490e-01 ( -19.534eV)
+    -7.3118260e-01 ( -19.897eV)
+    -7.4521521e-01 ( -20.278eV)
+    -7.6560646e-01 ( -20.833eV)
+    -7.7748919e-01 ( -21.157eV)
+    -7.9154889e-01 ( -21.539eV)
+    -8.1391686e-01 ( -22.148eV)
+    -8.3501946e-01 ( -22.722eV)
+    -8.4783932e-01 ( -23.071eV)
+    -8.6984609e-01 ( -23.670eV)
+    -8.7662927e-01 ( -23.854eV)
+    -9.0221165e-01 ( -24.551eV)
+    -9.1002150e-01 ( -24.763eV)
+    -9.2102954e-01 ( -25.063eV)
+    -9.3743490e-01 ( -25.509eV)
+    -9.5123525e-01 ( -25.885eV)
+    -9.6783125e-01 ( -26.336eV)
+    -9.7258174e-01 ( -26.466eV)
+    -9.7681124e-01 ( -26.581eV)
+    -9.8305509e-01 ( -26.751eV)
+    -9.9520964e-01 ( -27.081eV)
+    -1.0002425e+00 ( -27.218eV)
+    -1.0076927e+00 ( -27.421eV)
+    -1.0183023e+00 ( -27.710eV)
+    -1.0187227e+00 ( -27.721eV)
+    -1.0264599e+00 ( -27.932eV)
+    -1.0299394e+00 ( -28.026eV)
+    -1.0374080e+00 ( -28.230eV)
+    -1.0416415e+00 ( -28.345eV)
+    -1.0525329e+00 ( -28.641eV)
+    -1.0569162e+00 ( -28.760eV)
+    -1.0600622e+00 ( -28.846eV)
+    -1.0647733e+00 ( -28.974eV)
+    -1.0660970e+00 ( -29.010eV)
+    -1.0741904e+00 ( -29.230eV)
+    -1.0770944e+00 ( -29.309eV)
+    -1.0804005e+00 ( -29.399eV)
+    -1.0838607e+00 ( -29.494eV)
+    -1.0865336e+00 ( -29.566eV)
+    -1.0904877e+00 ( -29.674eV)
+    -1.0954561e+00 ( -29.809eV)
+    -1.1007237e+00 ( -29.952eV)
+    -1.1034305e+00 ( -30.026eV)
+    -1.1075097e+00 ( -30.137eV)
+    -1.1167717e+00 ( -30.389eV)
+    -1.1195386e+00 ( -30.464eV)
+    -1.1262450e+00 ( -30.647eV)
+    -1.1480415e+00 ( -31.240eV)
+    -1.3190096e+00 ( -35.892eV)
+
+ output psi filename: ./perm/test2d.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.430241e+00
+ main loop   : 5.085369e+01
+ epilogue    : 2.472801e+00
+ total       : 5.675673e+01
+ cputime/step: 5.085369e+00
+
+ Time spent doing      total        step             percent
+ total time            6.646713e+01 6.646713e+00     100.00%
+ total FFT time        2.785884e+01 2.785884e+00      41.91%
+ lagrange multipliers  7.180733e+00 7.180733e-01      10.80%
+ exchange correlation  1.162196e-01 1.162196e-02       0.17%
+ local potentials      2.140407e-01 2.140407e-02       0.32%
+ non-local potentials  1.165362e+01 1.165362e+00      17.53%
+ ffm_dgemm             1.218734e+01 1.218734e+00      18.34%
+ fmf_dgemm             9.411518e-01 9.411518e-02       1.42%
+ m_diagonalize         1.899191e-02 1.899191e-03       0.03%
+ mmm_multiply          8.487869e-01 8.487869e-02       1.28%
+
+ >>> job completed at     Sat Jan 23 21:37:13 2021 <<<
+rtdbstr={"current_task":"task pspw steepest_descent","dbname":"eric","foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,29.0,6.0,8.0,1.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-2.496176852835094,-2.450237614052714,-4.393102697431583,0.3772082045804538,-3.5202193660465952,-7.825109654331263,-0.5876858851884942,5.177131112833539,0.8606379069789893,-1.5747842553232572,1.4501001345967488,-1.9515767201862233,2.327386527535128,3.95294772017153,-2.6989633486696136,1.4822632709223802,0.1897473865133178,-5.320618007146419,2.9808915689058635,-0.3702351156825936,-0.841683955313532,1.8901417282974877,-4.170190619818687,-3.4837854489867732,3.2227953927039894,7.6147831518023095,-0.08656834753684979,3.815829202440165,3.4218024365613493,1.8525550783846314,-8.08721464894731,0.1241361001898202,2.580685399044391,-5.388610348215527,-1.2446491251183311,-0.9084479744900633,-4.346691027152058,2.6582397536157143,1.662675411052113,-3.9628120898319175,-1.7420816970922446,3.5873235359010716,-0.0957713131012344,0.9159123921449543,2.882002207923472,-1.1445692367631344,-3.1601320789226763,0.08607701877981899,0.25838223441854336,-3.443855538848078,4.616695076400369,3.290938911852184,-4.677525355972759,0.9513069599110578,4.203506488997352,-0.8358069074890482,3.734079656174194,4.464515442540021,-5.138240551988563,5.410625655982484,8.818066175030625,-0.5908984193690803,0.0126044723438286,6.364804999396184,0.0394763759014362,-1.4128158408420655,7.5976433370858905,-2.139264305371989,0.6323212130387538,9.05961095089092,-0.6539963701277663,-2.0387875745591906,10.663175733020251,-0.7687972239340014,0.9236413714382465,5.304536438983604,9.835608030841414,-0.288844617354453],"masses":[62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,62.9298,12.0,15.99491,1.008,1.008,1.008,1.008],"nion":26,"symbols":["Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","Cu","C","O","H","H","H","H"],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":74,"nwinput_lines":["","memory 1900 mb","start eric","echo","","permanent_dir ./perm","scratch_dir   ./perm","","","set nwpw:kbpp_ray    .true.","set nwpw:kbpp_filter .true.","","","geometry noautoz nocenter noautosym","Cu   -1.32092   -1.29661   -2.32473","Cu    0.19961   -1.86282   -4.14087","Cu   -0.31099    2.73962    0.45543","Cu   -0.83334    0.76736   -1.03273","Cu    1.23160    2.09181   -1.42823","Cu    0.78438    0.10041   -2.81555","Cu    1.57742   -0.19592   -0.44540","Cu    1.00022   -2.20677   -1.84354","Cu    1.70543    4.02957   -0.04581","Cu    2.01925    1.81074    0.98033","Cu   -4.27957    0.06569    1.36564","Cu   -2.85153   -0.65864   -0.48073","Cu   -2.30017    1.40668    0.87985","Cu   -2.09703   -0.92187    1.89833","Cu   -0.05068    0.48468    1.52509","Cu   -0.60568   -1.67227    0.04555","Cu    0.13673   -1.82241    2.44305","Cu    1.74149   -2.47524    0.50341","Cu    2.22440   -0.44229    1.97599","Cu    2.36252   -2.71904    2.86318","C     4.66632   -0.31269    0.00667","O     3.36811    0.02089   -0.74763","H     4.02050   -1.13205    0.33461","H     4.79414   -0.34608   -1.07888","H     5.64271   -0.40683    0.48877","H     2.80704    5.20478   -0.15285","end","","","nwpw","   pseudopotentials","   H library pspw_default","   C library pspw_default","   Cu library pspw_default","   end","   simulation_cell","     FCC 38.0","     ","   end","   mapping 2","   ","   ","   cutoff 50.0","   loop 10 10","   steepest_descent","     ","     input_wavefunction_filename  test2d.movecs","     output_wavefunction_filename test2d.movecs","     loop 1 10","     ","   end","   ","end","task pspw energy","","","task pspw steepest_descent","","",""],"nwinput_nlines":74,"nwpw":{"cutoff":[50.0,100.0],"loop":[10,10],"mapping":2,"pseudopotentials":{"C":"pspw_default","Cu":"pspw_default","H":"pspw_default"},"simulation_cell":{"unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"steepest_descent":{"input_wavefunction_filename":"test2d.movecs","loop":[1,10],"output_wavefunction_filename":"test2d.movecs"}},"nwpw:kbpp_filter":".true.","nwpw:kbpp_ray":".true.","permanent_dir":"./perm","psp_library_dir":"","pspw":{"energies":[-1032.3037757886857,-133.18415214409706,1347.3505020385148,-347.76597769989985,605.8701687674334,667.4830760994896,-2622.3006747695363,-682.9408802323325,2694.7010040770297,-190.12668732639273,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-1032.3037757886857},"scratch_dir":"./perm"}
+task =0
+writing rtdbjson = ./perm/eric.json
+Deallocating Gdevices
+Deallocating Gdevices
+Deallocating Gdevices
+Deallocating Gdevices
+Deallocating Gdevices
+Deallocating Gdevices
+Deallocating Gdevices

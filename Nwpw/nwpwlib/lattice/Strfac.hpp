@@ -1,9 +1,14 @@
 #ifndef	_STRFAC_H_
 #define _STRFAC_H_
 
+#pragma once
 
 #include        "PGrid.hpp"
 #include	"Ion.hpp"
+
+namespace pwdft {
+
+
 
 class	Strfac {
    int    *i_indx[2],*j_indx[2],*k_indx[2];
@@ -28,11 +33,11 @@ public:
             delete [] wx1;
             delete [] wy1;
             delete [] wz1;
-         }
+    }
 
     void phafac();
     void strfac_pack(const int, const int, double *);
-
 };
+}
 
 #endif

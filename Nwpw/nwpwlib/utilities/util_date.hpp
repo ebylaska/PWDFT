@@ -5,7 +5,12 @@
 
 */
 
+namespace pwdft {
+
+
 extern char *util_date();
 extern void seconds(double *);
+
+}
 
 #endif

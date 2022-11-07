@@ -1,10 +1,8 @@
-#ifndef	_COULOMB_H_
-#define _COULOMB_H_
-
-
-using namespace std;
+#pragma once
 
 #include	"Pneb.hpp"
+
+namespace pwdft {
 
 class	Coulomb_Operator {
 
@@ -25,4 +23,4 @@ public:
     double ecoulomb(double *);
 };
 
-#endif
+}

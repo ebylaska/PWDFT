@@ -2,18 +2,18 @@
    Author - Eric Bylaska
 */
 
-
-#include	<string.h>
-
-
+#include        <cstdlib>
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
+#include	<cstring>
 #include        <cmath>
-#include        <cstdlib>
-using namespace std;
+#include        <iomanip>
 
 #include	"Strfac.hpp"
+
+namespace pwdft {
+
+
 
 /* Constructors */
 
@@ -48,11 +48,12 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
       unitg[i+j*3] = lattice->unitg(i,j);
       unita[i+j*3] = lattice->unita(i,j);
    }
-      
+
    /* allocate memory */
    wx1 = new double [2*(myion->nion)*(mygrid->nx)];
    wy1 = new double [2*(myion->nion)*(mygrid->ny)];
    wz1 = new double [2*(myion->nion)*(mygrid->nz)];
+
    i_indx[0] = new int[mygrid->npack(0)];
    j_indx[0] = new int[mygrid->npack(0)];
    k_indx[0] = new int[mygrid->npack(0)];
@@ -89,8 +90,6 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid)
    delete [] kk_indx;
    delete [] jj_indx;
    delete [] ii_indx;
-
-
 }
 
 
@@ -106,8 +105,8 @@ void Strfac::phafac()
    double cw1x,cw2x,cw3x;
    double cw1y,cw2y,cw3y;
 
-   pi  = 4.00*atan(1.0);
-   
+   pi  = 4.00*std::atan(1.0);
+
    nx = (mygrid->nx);
    ny = (mygrid->ny);
    nz = (mygrid->nz);
@@ -127,10 +126,9 @@ void Strfac::phafac()
           + unitg[7]*myion->rion1[1+3*i]
           + unitg[8]*myion->rion1[2+3*i]+pi;
 
-      cw1x=cos(sw1); cw1y=-sin(sw1);
-      cw2x=cos(sw2); cw2y=-sin(sw2);
-      cw3x=cos(sw3); cw3y=-sin(sw3);
-      
+      cw1x=std::cos(sw1); cw1y=-std::sin(sw1);
+      cw2x=std::cos(sw2); cw2y=-std::sin(sw2);
+      cw3x=std::cos(sw3); cw3y=-std::sin(sw3);
       wx1[2*i*nx] = 1.0; wx1[2*i*nx+1] = 0.0;
       wy1[2*i*ny] = 1.0; wy1[2*i*ny+1] = 0.0;
       wz1[2*i*nz] = 1.0; wz1[2*i*nz+1] = 0.0;
@@ -143,6 +141,7 @@ void Strfac::phafac()
          wx1[2*(nx-k + i*nx)]   =  wx1[2*(k + i*nx)];
          wx1[2*(nx-k + i*nx)+1] = -wx1[2*(k + i*nx)+1];
       }
+
       for (k=1; k<=nyh; ++k)
       {
          a = wy1[2*(k-1 + i*ny)];
@@ -167,21 +166,33 @@ void Strfac::phafac()
       wz1[2*(nzh+i*nz)] = 0.0; wz1[2*(nzh+i*nz)+1] = 0.0;
 
    }
+
 }
 
-void strfac_sub(const int npack,
-                const int indxi[],
-                const int indxj[],
-                const int indxk[],
-                const double exi[],
-                const double exj[],
-                const double exk[],
-                double strx[])
+/*********************************
+ *                               *
+ *       Strfac::strfac_pack     *
+ *                               *
+ *********************************/
+void Strfac::strfac_pack(const int nb, const int ii, double *strx)
 {
-   int i;
-   double ai,aj,ak,c,d;
-   double bi,bj,bk;
-   for (i=0; i<npack; ++i)
+   int npack,nx,ny,nz;
+   npack = mygrid->npack(nb);
+   nx = mygrid->nx;
+   ny = mygrid->ny;
+   nz = mygrid->nz;
+
+   const int *indxi = i_indx[nb];
+   const int *indxj = j_indx[nb];
+   const int *indxk = k_indx[nb];
+
+   const double *exi = &wx1[2*ii * nx];
+   const double *exj = &wy1[2*ii * ny];
+   const double *exk = &wz1[2*ii * nz];
+
+   double ai, aj, ak, bi, bj, bk;
+   double c, d;
+   for (int i=0; i<npack; ++i)
    {
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i]+1];
       aj = exj[2*indxj[i]]; bj = exj[2*indxj[i]+1];
@@ -193,26 +204,5 @@ void strfac_sub(const int npack,
    }
 }
 
-/*********************************
- *                               *
- *       Strfac::strfac_pack     *
- *                               *
- *********************************/
-void Strfac::strfac_pack(const int nb, const int ii, double *ss)
-{
-   int npack,nx,ny,nz;
-
-   npack = mygrid->npack(nb);
-   nx = mygrid->nx; 
-   ny = mygrid->ny; 
-   nz = mygrid->nz;
-   strfac_sub(npack,
-              i_indx[nb],
-              j_indx[nb],
-              k_indx[nb],
-              &wx1[2*ii*nx],
-              &wy1[2*ii*ny],
-              &wz1[2*ii*nz],
-              ss);
 }
 

@@ -3,9 +3,7 @@
 */
 
 /*
-using namespace std;
-
-#include	<string.h>
+#include	<string>
 #include        <iostream>
 #include        <cstdio>
 #include        <stdio.h>
@@ -16,6 +14,8 @@ using namespace std;
 #include	"PGrid.hpp"
 #include	"Coulomb.hpp"
 
+
+namespace pwdft {
 
 /*******************************************
  *                                         *
@@ -93,4 +93,6 @@ double Coulomb_Operator::ecoulomb(double *dng)
    ave *= 0.5*(mypneb->lattice->omega());
 
    return ave;
+}
+
 }

@@ -7,6 +7,9 @@
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 
+namespace pwdft {
+
+
 
 static void get_cube(double *unita, double *unitg, double *omega)
 {
@@ -85,5 +88,51 @@ Lattice::Lattice(Control2& control)
    pwcut = pecut;
    if (wcut0 < pwcut) pwcut = wcut0;
 
+   pfast_erf   = control.fast_erf();
+   paperiodic = (control.version==4);
 }
 
+
+/********************************
+ *                              *
+ *           abc_abg            *
+ *                              *
+ ********************************/
+void Lattice::abc_abg(double *a1, double *b1, double *c1, double *alpha1, double *beta1, double *gamma1)
+{
+   double pi = 4.00*atan(1.00);
+   double a = sqrt(pow(unita(0,0),2.0)
+                 + pow(unita(1,0),2.0)
+                 + pow(unita(2,0),2.0));
+   double b = sqrt(pow(unita(0,1),2.0)
+                 + pow(unita(1,1),2.0)
+                 + pow(unita(2,1),2.0));
+   double c = sqrt(pow(unita(0,2),2.0)
+                 + pow(unita(1,2),2.0)
+                 + pow(unita(2,2),2.0));
+
+
+   double d2 = pow((unita(0,1)-unita(0,2)),2.0)
+             + pow((unita(1,1)-unita(1,2)),2.0)
+             + pow((unita(2,1)-unita(2,2)),2.0);
+   double alpha = (b*b + c*c - d2)/(2.00*b*c);
+   alpha = acos(alpha)*180.00/pi;
+
+   d2 = pow((unita(0,2)-unita(0,0)),2.0)
+      + pow((unita(1,2)-unita(1,0)),2.0)
+      + pow((unita(2,2)-unita(2,0)),2.0);
+   double beta = (c*c + a*a - d2)/(2.00*c*a);
+   beta = acos(beta)*180.00/pi;
+
+   d2 = pow((unita(0,0)-unita(0,1)),2.0)
+      + pow((unita(1,0)-unita(1,1)),2.0)
+      + pow((unita(2,0)-unita(2,1)),2.0);
+   double  gamma = (a*a + b*b - d2)/(2.00*a*b);
+   gamma = acos(gamma)*180.00/pi;
+
+   /* return values */
+   *a1 = a; *b1 = b; *c1 = c;
+   *alpha1 = alpha; *beta1  = beta; *gamma1 = gamma;
+}
+
+}

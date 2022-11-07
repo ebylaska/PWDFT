@@ -1,0 +1,41 @@
+title "cifocd structure 7108304"
+
+start ocd7108304
+
+memory 1900 mb
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+geometry nocenter noautosym noautoz
+   system crystal
+      lat_a 11.85317
+      lat_b 11.85317
+      lat_c 11.85317
+      alpha 90
+      beta  90
+      gamma 90
+   end
+
+Si+4 0 0.37007 0.18402
+O-2 0 0.5 0.22345
+O-2 0 0.29129 0.29129
+O-2 0.10858 0.10858 0.34809
+
+symmetry Pm-3m
+end
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set includestress  .true.              #this option tells driver to optimize the unit cell
+set includelattice .true.              #this option tells driver to optimize cell using a,b,c,alpha,beta,gamma
+set nwpw:frozen_lattice:thresh 999.0   #large number guarentees the lattice gridding does not adjust during optimization
+set nwpw:cif_filename  nwcif_7108304
+
+nwpw
+   xc pbe96
+   lmbfgs
+   loop 2 2
+end
+task pspw energy
+

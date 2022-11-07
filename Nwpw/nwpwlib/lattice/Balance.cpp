@@ -6,6 +6,9 @@
 
 #include	"Balance.hpp"
 
+namespace pwdft {
+
+
 void nwave2_sort(const int n,  const int *f, int *indx)
 {
    int i,j,idum;
@@ -279,6 +282,38 @@ void Balance::c_balance(const int nb, double *a)
 
 /********************************
  *                              *
+ *    Balance::t_unbalance      *
+ *                              *
+ ********************************/
+
+void Balance::t_unbalance(const int nb, double *a)
+{
+   int j,pto,pfrom,msglen,indx;
+
+   if (sender_list[nb])
+      for (j=0; j<npacket_list[nb]; ++j)
+      {
+         pfrom  = proc_to_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx   = indx_start_list[nb][j];
+         if (msglen>0)
+            parall->dreceive(1,9,pfrom,msglen,&a[indx]);
+      }
+
+   if (receiver_list[nb])
+      for (j=0; j<npacket_list[nb]; ++j)
+      {
+         pto    = proc_from_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx   = indx_start_list[nb][j];
+         if (msglen>0)
+            parall->dsend(1,9,pto,msglen,&a[indx]);
+      }
+}
+
+
+/********************************
+ *                              *
  *    Balance::t_balance        *
  *                              *
  ********************************/
@@ -341,3 +376,4 @@ void Balance::i_balance(const int nb, int *a)
       }
 }
 
+}

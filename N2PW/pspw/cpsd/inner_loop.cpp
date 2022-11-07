@@ -4,7 +4,7 @@
 #include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include        "Parallel.hpp"
 #include        "control.hpp"

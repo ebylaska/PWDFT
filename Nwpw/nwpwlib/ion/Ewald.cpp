@@ -3,20 +3,22 @@
 */
 
 
-#include	<string.h>
+#include	<cstring>
 
 
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
 
-using namespace std;
+
 
 #include	"Control2.hpp"
 #include	"Ewald.hpp"
 //#include	"Pseudopotential.hpp"
+
+namespace pwdft {
+
 
 /*************************************
  *                                   *
@@ -364,6 +366,7 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2& contr
       }
    }
 
+
    /* find vg and vcx */
    for (i=0; i<enpack; ++i) vg[i]  = 0.0;
    for (i=0; i<enpack; ++i) vcx[i] = 0.0;
@@ -710,4 +713,6 @@ void Ewald::force(double *fion)
    }
    if (tnp>1) ewaldparall->Vector_SumAll(0,3*nion,ftmp);
    for (i=0; i<3*nion; ++i) fion[i] += ftmp[i];
+}
+
 }

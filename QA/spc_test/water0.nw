@@ -1,0 +1,35 @@
+title "swnc: e theory=pspw xc=pbe formula=H4O2 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start pspw-pbe-H2O-mylabel
+
+memory 1900 mb
+
+#permanent_dir ./perm
+#scratch_dir   ./perm
+
+charge 0
+
+geometry noautoz nocenter noautosym
+O    1.6155e-01 -5.2915e-02  3.3183e-02
+H    8.0312e-01  3.6918e-01 -5.1172e-01
+H   -3.2559e-01 -6.6960e-01 -4.8858e-01
+end
+
+nwpw
+  simulation_cell
+    SC 25.0
+  end
+  cutoff 30.0
+  mult 1
+  xc pbe96
+  apc on
+  #tolerances 1.0e-9 1.0e-9
+
+  2d-hilbert
+  #vectors output jjj.elc
+end
+task pspw gradient
+

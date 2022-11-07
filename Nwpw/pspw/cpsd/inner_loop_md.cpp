@@ -1,10 +1,9 @@
 
 #include        <iostream>
 #include        <cstdio>
-#include        <stdio.h>
 #include        <cmath>
 #include        <cstdlib>
-using namespace std;
+
 
 #include        "Parallel.hpp"
 #include        "Control2.hpp"
@@ -12,29 +11,41 @@ using namespace std;
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include        "Kinetic.hpp"
-#include        "Coulomb.hpp"
+#include        "Coulomb12.hpp"
+#include        "exchange_correlation.hpp"
+#include        "nwpw_Nose_Hoover.hpp"
 #include        "Pseudopotential.hpp"
-#include	"v_exc.hpp"
+#include        "psi_H.hpp"
+//#include	"v_exc.hpp"
 #include	"inner_loop_md.hpp"
 
 
-void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion, 
+namespace pwdft {
+
+
+void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb *mygrid, Ion *myion, nwpw_Nose_Hoover *mynose,
                 Kinetic_Operator *myke, 
-                Coulomb_Operator *mycoulomb, 
+                Coulomb12_Operator *mycoulomb12, 
+                XC_Operator      *myxc, 
                 Pseudopotential *mypsp, Strfac *mystrfac, Ewald *myewald,
-                double *psi1, double *psi2, double *Hpsi, double *psi_r,
+                double *psi0, double *psi1, double *psi2, double *Hpsi, double *psi_r,
                 double *dn, double *hml,double *lmbda,
-                double E[], double *deltae, double *deltac, double *deltar)
+                const int it_in, double E[])
 {
-   int it,it_in,i,n2ft3d,neall,ispin,k,ms;
+   int it,i,n2ft3d,neall,ispin,k,ms;
    int shift1,shift2,indx1,indx2;
    int one=1;
    double scal1,scal2,dv,dc;
    double eorbit,eion,exc,ehartr,pxc;
-   double eke,elocal,enlocal,dt,dte,Eold;
-   double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
+   double eke,eki,elocal,enlocal,dt,dte,fmass,Eold;
+   double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vall,*vpsi,*sumi;
    double *fion;
-   bool move = control.geometry_optimize();
+   bool move = true;
+   bool nose = mynose->on();
+   bool periodic  = (control.version==3);
+   bool aperiodic = (control.version==4);
+   double sse = 1.0;
+   double ssr = 1.0;
    double omega = mygrid->lattice->omega();
 
    ispin = mygrid->ispin;
@@ -48,9 +59,20 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    scal2 = 1.0/omega;
    dv = omega*scal1;
 
+   double sa1 = 1.0;
+   double sa2 = 1.0;
+   if (!nose) 
+   {
+      sa1 =    1.0/(2.0-sa_alpha[0]);
+      sa2 = sa_alpha[0]/(2.0-sa_alpha[0]);
+   }
+
    dt = control.time_step();
-   dte = dt /sqrt(control.fake_mass());
-   it_in = control.loop(0);
+   fmass = control.fake_mass();
+   dte = dt*dt/fmass;
+   if (!verlet) dte=0.5*dte;
+
+
 
    /* allocate temporary memory */
    rho   = mygrid->r_alloc();
@@ -62,29 +84,38 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    vall= mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl  = mygrid->c_pack_allocate(0);
-   vc  = mygrid->c_pack_allocate(0);
+   if (periodic)
+      vc  = mygrid->c_pack_allocate(0);
+   else if (aperiodic)
+   {
+      vc    = mygrid->r_alloc();
+      vlr_l = mygrid->r_alloc();
+   }
    vpsi=x;
 
-   fion = new double[3*(myion->nion)];
+   //new double[3*(myion->nion)]();
+   fion = myion->fion1;
 
    /* generate local psp*/
-   mypsp->v_local(vl,0,dng,fion);
+   //mypsp->v_local(vl,0,dng,fion);
    
 
    //myewald->phafac();
 
    for (it=0; it<it_in; ++it)
    {
+      /* shift wavefuntion */
       mygrid->g_zero(Hpsi);
+      mygrid->gg_copy(psi1,psi0);
       mygrid->gg_copy(psi2,psi1);
       //mygrid->gh_fftb(psi1,psi_r);
 
-      if (move)
-      {
-         myion->shift();
-         mystrfac->phafac();
-         myewald->phafac();
-      }
+      /* skip shift ion if newton step */
+      if (verlet) myion->shift();
+      if (nose && verlet) mynose->shift();
+
+      mystrfac->phafac();
+      myewald->phafac();
 
       indx1 = 0;
       indx2 = 0;
@@ -101,8 +132,8 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
       /* generate dng */
-      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],tmp);
-      mygrid->r_SMul(scal1,tmp);
+      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mygrid->rr_SMul(scal1,rho,tmp);
       mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
@@ -110,7 +141,7 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore())
       {
-         if ((move)||(it==0)) mypsp->semicore_density_update();
+         mypsp->semicore_density_update();
          for (ms=0; ms<ispin; ++ms)
             mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
       }
@@ -122,127 +153,268 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
 
       /* generate local potential */
       if (move) mypsp->v_local(vl,move,dng,fion);
+      if (mypsp->myapc->v_apc_on) mypsp->myapc->V_APC(dng,mypsp->zv,vl,move,fion);
+
+      /* long-range psp for charge systems */
+      if (aperiodic)
+      {
+         mypsp->v_lr_local(vlr_l);
+         if (move) mypsp->grad_v_lr_local(rho,fion);
+      }
 
       /* apply k-space operators */
-      myke->ke(psi1,Hpsi);
-      mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
+      //myke->ke(psi1,Hpsi);
+      //mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
 
       /* generate coulomb potential */
-      mycoulomb->vcoulomb(dng,vc);
+      if (periodic) 
+         mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
+      else if (aperiodic) 
+         mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
 
       /* generate exchange-correlation potential */
-      v_exc(ispin,shift2,dnall,xcp,xce,x);
+      myxc->v_exc_all(ispin,dnall,xcp,xce);
+
+
+      /* get Hpsi */
+      if (periodic)
+         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vc,xcp,Hpsi,move,fion);
+      else if (aperiodic)
+         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vc,xcp,Hpsi,move,fion);
+
 
       /* apply r-space operators */
-     mygrid->cc_SMul(0,scal2,vl,vall);
-     mygrid->cc_Sum2(0,vc,vall);
-     mygrid->c_unpack(0,vall);
-     mygrid->cr_fft3d(vall);
-     indx1 = 0;
-     indx2 = 0;
-     for (ms=0; ms<ispin; ++ms) 
-     { 
-         mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
-         for (i=0; i<(mygrid->neq[ms]); ++i)
-         {
-            mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
-            mygrid->rc_fft3d(vpsi);
-            mygrid->c_pack(1,vpsi);
-            mygrid->cc_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+      //mygrid->cc_pack_SMul(0,scal2,vl,vall);
+      //mygrid->cc_pack_Sum2(0,vc,vall);
+      //mygrid->c_unpack(0,vall);
+      //mygrid->cr_fft3d(vall);
+      //indx1 = 0;
+      //indx2 = 0;
+      //for (ms=0; ms<ispin; ++ms) 
+      //{ 
+      //   mygrid->rrr_Sum(vall,&xcp[ms*n2ft3d],tmp);
+      //   for (i=0; i<(mygrid->neq[ms]); ++i)
+      //   {
+      //      mygrid->rrr_Mul(tmp,&psi_r[indx2],vpsi);
+      //      mygrid->rc_fft3d(vpsi);
+      //      mygrid->c_pack(1,vpsi);
+      //      mygrid->cc_pack_daxpy(1,(-scal1),vpsi,&Hpsi[indx1]);
+      //
+      //      indx1 += shift1;
+      //      indx2 += shift2;
+      //   }
+      //}
 
-            indx1 += shift1;
-            indx2 += shift2;
-         }
-     }
+      /* get the ion-ion force */
+      if (periodic)
+         myewald->force(fion); /* get the ewald force */
+      else if (aperiodic)
+         myion->ion_ion_force(fion); /* get the ion-ion force */
 
-     /* do a steepest descent step */
-     mygrid->gg_SMul(dte,Hpsi,psi2);
-     mygrid->gg_Sum2(psi1,psi2);
+      /* get the semicore force - needs to be checked */
+      if (mypsp->has_semicore())
+         mypsp->semicore_xc_fion(xcp,fion);
 
-     if (move) 
-     {
-        myewald->force(fion);
-        myion->optimize_step(fion);
-     }
-
-     /* lagrange multiplier */
-     mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
-   }
-
-   /* total energy calculation */
-   mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
-   mygrid->m_scal(-1.0,hml);
-   eorbit  = mygrid->m_trace(hml);
-   if (ispin==1) eorbit = eorbit+eorbit;
-
-   ehartr  = mycoulomb->ecoulomb(dng);
-   exc     = mygrid->rr_dot(dnall,xce);
-   pxc     = mygrid->rr_dot(dn,xcp);
-   if (ispin==1)
-   {
-      exc = exc+exc;
-      pxc = pxc+pxc;
-   }
-   else
-   {
-      exc += mygrid->rr_dot(&dnall[n2ft3d],xce);
-      pxc += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
-   }
-   exc *= dv;
-   pxc *= dv;
-
-   eion    = myewald->energy();
-   eke     = myke->ke_ave(psi1);
-   elocal  = mygrid->cc_pack_dot(0,dng,vl);
-   mygrid->g_zero(Hpsi);
-   mypsp->v_nonlocal(psi1,Hpsi);
-   enlocal = -mygrid->gg_traceall(psi1,Hpsi);
+      /* get forces from external Efield */
+      if (mypsp->myefield->efield_on)
+         mypsp->myefield->efield_ion_fion(fion);
 
 
-   Eold = E[0];
-   E[0] = eorbit + eion + exc - ehartr - pxc;
-   E[1] = eorbit;
-   E[2] = ehartr;
-   E[3] = exc;
-   E[4] = eion;
-   E[5] = eke;
-   E[6] = elocal;
-   E[7] = enlocal;
-   E[8] = 2*ehartr;
-   E[9] = pxc;
-
-   /* set convergence variables */
-   *deltae = (E[0]-Eold)/(dt*control.loop(0));
-
-   /* deltac */
-   sumi    = new double[neall];
-   mygrid->ggg_Minus(psi2,psi1,Hpsi);
-   for (i=0; i<neall; ++i) 
-      sumi[i] = mygrid->cc_pack_idot(1,&Hpsi[i*shift1],&Hpsi[i*shift1]);
-   mygrid->d3db::parall->Vector_SumAll(1,neall,sumi);
-   dc = 0.0;
-   for (i=0; i<neall; ++i) 
-      if (sumi[i]>dc) dc=sumi[i];
-   dc = mygrid->d3db::parall->MaxAll(2,dc);
-   *deltac = dc/dte;
-   delete [] sumi;
-
-   /* deltar */ 
-   *deltar = 0.0;
-   if (move)
-   {
-      double sum;
-      for (auto ii=0; ii<(myion->nion); ++ii)
+      /* car-parrinello Verlet step */
+      if (verlet) 
       {
-         sum = sqrt( fion[3*ii]  *fion[3*ii] 
-                   + fion[3*ii+1]*fion[3*ii+1] 
-                   + fion[3*ii+2]*fion[3*ii+2]);
-         if (sum>(*deltar)) *deltar = sum;
+         /* constant temperature */
+         if (nose)
+         {
+            sse = mynose->sse();
+            ssr = mynose->ssr();
+
+            mygrid->gg_SMul(0.5*dte,Hpsi,psi2);
+            mygrid->gg_daxpy(-1.0,psi0,psi2);
+            mygrid->gg_daxpy( 1.0,psi1,psi2);
+ 
+            mygrid->g_Scale(2.0*sse,psi2);
+            mygrid->gg_daxpy( 1.0,psi0,psi2);
+ 
+            //myion->Verlet_step(ssr,fion);
+            myion->Nose_step(ssr,fion);
+         }
+         /* constant energy */
+         else
+         {
+            mygrid->gg_SMul(dte*sa1,Hpsi,psi2);
+            mygrid->gg_daxpy(-1.0*sa2,psi0,psi2);
+            mygrid->gg_daxpy( 2.0*sa1,psi1,psi2);
+ 
+            myion->Verlet_step(fion,sa_alpha[1]);
+         }
       }
+
+      /* car-parrinello Newton step */
+      else
+      {
+         double r = 1.0;
+         double s = 1.0;
+         /* constant temperature */
+         if (nose)
+         {
+            r = (1.0-0.5*dt*mynose->dXr());
+            s = (1.0-0.5*dt*mynose->dXe());
+         }
+       
+         mygrid->gg_SMul(dte,Hpsi,psi2);
+         mygrid->gg_daxpy(s*dt*sa_alpha[0],psi0,psi2);
+         mygrid->gg_Sum2(psi1,psi2);
+
+         myion->Newton_step(fion,sa_alpha[1]*r);
+      }
+
+      /* lagrange multiplier */
+      double dte0 = dte;
+      if (nose && verlet) dte0 *= sse;
+      mygrid->ggm_lambda(dte0,psi1,psi2,lmbda);
+
+
+      /* update thermostats */
+      if (nose)
+      {
+         if (verlet)
+         {
+            double nesum = 1.0*(mygrid->ne[0] + mygrid->ne[ispin-1]);
+            double kefac = 0.5*fmass/(dt*dt);
+            eke = kefac*(nesum - mygrid->gg_traceall(psi2,psi0));
+            eki = myion->eki1;
+            mynose->Verlet_step(eke,eki);
+         }
+         else
+         {
+            eke = fmass*mygrid->gg_traceall(psi0,psi0);
+            //eki = myion->ke();
+            eki = myion->eki1;
+            mynose->Newton_step(eke,eki);
+         }
+      }
+
+
+   } /* it, innerloop */
+
+
+
+   /****************************/
+   /* total energy calculation */
+   /****************************/
+
+   /* if newton then skip energy calculations */
+   if (verlet)
+   {
+      mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
+      mygrid->m_scal(-1.0,hml);
+
+      eorbit  = mygrid->m_trace(hml);
+      if (ispin==1) eorbit = eorbit+eorbit;
+
+      if (mycoulomb12->has_coulomb1) ehartr  = mycoulomb12->mycoulomb1->ecoulomb(dng);
+      exc     = mygrid->rr_dot(dnall,xce);
+      pxc     = mygrid->rr_dot(dn,xcp);
+      if (ispin==1)
+      {
+         exc = exc+exc;
+         pxc = pxc+pxc;
+      }
+      else
+      {
+         exc += mygrid->rr_dot(&dnall[n2ft3d],xce);
+         pxc += mygrid->rr_dot(&dn[n2ft3d],&xcp[n2ft3d]);
+      }
+      exc *= dv;
+      pxc *= dv;
+
+      eion    = myewald->energy();
+      elocal  = mygrid->cc_pack_dot(0,dng,vl);
+
+      /* add in long range part here*/
+      if (aperiodic)
+         elocal += dv*mygrid->rr_dot(rho,vlr_l);
+
+      /* add in other real-space fields here*/
+      if (mypsp->myefield->efield_on)
+         elocal += dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+
+      mygrid->g_zero(Hpsi);
+      mypsp->v_nonlocal(psi1,Hpsi);
+      enlocal = -mygrid->gg_traceall(psi1,Hpsi);
+
+      /* set wavefunction velocity and kinetic enegy of psi */
+      double h = 1.0/(2.0*dt);
+      mygrid->g_Scale(-h,psi0);
+      mygrid->gg_daxpy(h,psi2,psi0);
+      eke = fmass*mygrid->gg_traceall(psi0,psi0);
+
+
+      Eold = E[0];
+      E[1] = eorbit + eion + exc - ehartr - pxc;
+      E[2] = eke;
+      E[3] = myion->ke();
+      //E[3] = myion->eki1;
+
+      E[4] = eorbit;
+      E[5] = ehartr;
+      E[6] = exc;
+      E[7] = eion;
+      E[8] = elocal;
+      E[9] = enlocal;
+      E[10] = 2*ehartr;
+      E[11] = pxc;
+
+      /* get APC energies */
+      if (mypsp->myapc->v_apc_on)
+      {
+         E[51] = mypsp->myapc->Eapc;
+         E[52] = mypsp->myapc->Papc;
+         E[1]  = E[1] + E[51] - E[52];
+      }
+
+      /* get Efield energies */
+      if (mypsp->myefield->efield_on)
+      {
+         if (mypsp->myefield->efield_type==0)
+         {
+            E[48] = 0.0;
+            E[49] = 0.0;
+            E[1]  += E[48] - E[49];
+         }
+         else
+         {
+            E[48] = dv*mygrid->rr_dot(rho,mypsp->myefield->v_field);
+            E[49] = mypsp->myefield->efield_ion_energy();
+            E[1]  += E[49];
+         }
+      }
+
+
+
+      /* Running Sums - Energy and Energy**2 sum */
+      E[24] += E[1];
+      E[25] += E[1]*E[1];
+      E[26] += (E[1]+E[2]+E[3]);
+      E[27] += (E[1]+E[2]+E[3])*(E[1]+E[2]+E[3]);
+
+
+      /* Nose thermostat energies */
+      if (nose)
+      {
+        E[8] = mynose->e_energy();
+        E[9] = mynose->r_energy();
+        E[0] = E[1]+E[2]+E[3]+E[8]+E[9];
+      }
+
+      /* add kinetic energies */
+      else
+      {
+        E[0] = E[1]+E[2]+E[3];
+      }
+
    }
-
-
-   delete [] fion;
 
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);
@@ -253,5 +425,12 @@ void inner_loop_md(bool verlet, Control2& control, Pneb *mygrid, Ion *myion,
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
-   mygrid->c_pack_deallocate(vc);
+   if (periodic)
+      mygrid->c_pack_deallocate(vc);
+   else if (aperiodic)
+   {
+      mygrid->r_dealloc(vc);
+      mygrid->r_dealloc(vlr_l);
+   }
+}
 }

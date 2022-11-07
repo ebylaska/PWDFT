@@ -1,12 +1,11 @@
 
 #include	<iostream>
 #include	<cstdio>
-#include	<stdio.h>
 #include	<cmath>
 #include	<cstdlib>
 #include	<string>
-using namespace std;
 
+#include        "iofmt.hpp"
 #include	"Parallel.hpp"
 //#include	"control.hpp"
 #include	"Control2.hpp"
@@ -18,18 +17,33 @@ using namespace std;
 #include	"Ewald.hpp"
 #include	"Strfac.hpp"
 #include	"Kinetic.hpp"
-#include	"Coulomb.hpp"
+#include	"Coulomb12.hpp"
+#include        "exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
-#include	"rtdb.hpp"
+//#include	"rtdb.hpp"
 #include	"mpi.h"
+
+#include	"psp_library.hpp"
+#include	"psp_file_check.hpp"
+#include	"nwpw_timing.hpp"
+#include        "gdevice.hpp"
+
 
 #include "json.hpp"
 using json = nlohmann::json;
 
 
-int cpsd(MPI_Comm comm_world0, string& rtdbstring)
+namespace pwdft {
+
+
+/******************************************
+ *                                        *
+ *                cpsd                    *
+ *                                        *
+ ******************************************/
+int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
 {
    //Parallel myparallel(argc,argv);
    Parallel myparallel(comm_world0);
@@ -38,47 +52,100 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    int version,nfft[3],ne[2],ispin;
    int i,ii,ia,nn,ngrid[3],matype,nelem,icount,done;
    char date[26];
-   double sum1,sum2,ev;
+   double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4;
-   double E[50],deltae,deltac,deltar,viral,unita[9];
+   double E[60],deltae,deltac,deltar,viral,unita[9],en[2];
    double *psi1,*psi2,*Hpsi,*psi_r;
    double *dn;
    double *hml,*lmbda,*eig;
 
-   for (ii=0; ii<50; ++ii) E[ii] = 0.0;
+   Control2 control(myparallel.np(),rtdbstring);
 
-   if (myparallel.is_master())
+   bool hprint = (myparallel.is_master() && control.print_level("high"));
+   bool oprint = (myparallel.is_master() && control.print_level("medium"));
+   bool lprint = (myparallel.is_master() && control.print_level("low"));
+
+   /* reset Parallel base_stdio_print = lprint */
+   myparallel.base_stdio_print = lprint;
+
+
+   for (ii=0; ii<60; ++ii) E[ii] = 0.0;
+
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint)
    {
-      seconds(&cpu1);
-      ios_base::sync_with_stdio();
-      cout << "          *****************************************************\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     Car-Parrinello calculation for molecules,     *\n";
-      cout << "          *       microclusters, liquids, and materials       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *     [     steepest descent minimization   ]       *\n";
-      cout << "          *     [          C++ implementation         ]       *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *            version #7.00   09/20/18               *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *    This code was developed by Eric J. Bylaska     *\n";
-      cout << "          *                                                   *\n";
-      cout << "          *****************************************************\n";
-      cout << "          >>> job started at       " << util_date() << " <<<\n";
+      std::ios_base::sync_with_stdio();
+      std::cout << "          *****************************************************\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     Car-Parrinello calculation for molecules,     *\n";
+      std::cout << "          *       microclusters, liquids, and materials       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *     [     steepest descent minimization   ]       *\n";
+      std::cout << "          *     [          C++ implementation         ]       *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *            version #7.00   09/20/18               *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *    This code was developed by Eric J. Bylaska     *\n";
+      std::cout << "          *                                                   *\n";
+      std::cout << "          *****************************************************\n";
+      std::cout << "          >>> job started at       " << util_date() << " <<<\n";
    }
 
    //control_read(myrtdb);
    //control_read(myparallel.np(),rtdbstring);
-   Control2 control(myparallel.np(),rtdbstring);
 
-   Lattice mylattice(control);
-   //myparallel.init2d(control_np_orbital());
+   /* initialize processor grid structure */
    myparallel.init2d(control.np_orbital(),control.pfft3_qsize());
+   MPI_Barrier(comm_world0);
+
+   /* initialize lattice */
+   Lattice mylattice(control);
+
+   /* read in ion structure */
+   //Ion myion(myrtdb);
+   Ion myion(rtdbstring,control);
+   MPI_Barrier(comm_world0);
+
+   /* Check for and generate psp files                       */
+   /* - this routine also sets the valence charges in myion, */
+   /*   and total_ion_charge and ne in control               */
+   psp_file_check(&myparallel,&myion,control,std::cout);
+   MPI_Barrier(comm_world0);
 
 
-   /* initialize lattice, parallel grid structure */
-   psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne,control.input_movecs_filename());
-   Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
+   /* debug output - print charge, ispin, and ne */
+/*
+   if (myparallel.is_master()) 
+   { 
+       std::cout << endl;
+       std::cout << "total_ion_charge = " << myion.total_zv() << endl;
+       std::cout << "ispin = " << control.ispin() << endl;
+       std::cout << "ne = " << control.ne(0) << " " << control.ne(1) << endl;
+       std::cout << "ne = " << control.ne_ptr()[0] << " " << control.ne_ptr()[1] << endl;
+   }
+*/
+
+   /* fetch ispin and ne psi information from control */
+   ispin = control.ispin();
+   ne[0] = control.ne(0);
+   ne[1] = control.ne(1);
+   nfft[0] = control.ngrid(0);
+   nfft[1] = control.ngrid(1);
+   nfft[2] = control.ngrid(2);
+   unita[0] = mylattice.unita1d(0);
+   unita[1] = mylattice.unita1d(1);
+   unita[2] = mylattice.unita1d(2);
+   unita[3] = mylattice.unita1d(3);
+   unita[4] = mylattice.unita1d(4);
+   unita[5] = mylattice.unita1d(5);
+   unita[6] = mylattice.unita1d(6);
+   unita[7] = mylattice.unita1d(7);
+   unita[8] = mylattice.unita1d(8);
+   version = 3;
+
+
+   /* initialize parallel grid structure */
+   Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
 
    /* initialize psi1 and psi2 */
    psi1  = mygrid.g_allocate(1);
@@ -89,38 +156,25 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    hml   = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig   = new double[ne[0]+ne[1]];
+   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
-   psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   //psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
+                                  control.input_movecs_initialize(),psi2,std::cout);
+   MPI_Barrier(comm_world0);
 
-   /* ortho check */
-   sum2  = mygrid.gg_traceall(psi2,psi2);
-   sum1  = ne[0]+ne[1];
-   if (ispin==1) sum1 *= 2;
-   if (fabs(sum2-sum1)>1.0e-10)
-   {
-      if (myparallel.is_master())
-         printf("Warning: Gram-Schmidt Being performed on psi2\n");
-   }
-
-
-
-   /* read in ion structure */
-   //Ion myion(myrtdb);
-   Ion myion(rtdbstring,control);
 
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
    mystrfac.phafac();
 
    /* initialize operators */
-   Kinetic_Operator mykin(&mygrid);
-   Coulomb_Operator mycoulomb(&mygrid);
+   Kinetic_Operator   mykin(&mygrid);
+   Coulomb12_Operator mycoulomb12(&mygrid,control);
+   XC_Operator        myxc(&mygrid,control);
 
-   //Coulomb_Operator mycoul(mygrid);
-   //XC_Operator      myxc(mygrid);
-
-   
-   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control);
+   /* initialize psps */
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
@@ -132,118 +186,132 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
 // *****************   summary of input data  **********************
 //                 |**************************|
 
-   if (myparallel.is_master())
+   if (oprint)
    {
-      cout << "\n\n";
-      cout << "          ==============  summary of input  ==================\n";
-      cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
-      cout << "\n";
-      cout << " number of processors used: " << myparallel.np() << "\n";
-      cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) cout << " parallel mapping         : slab"    << "\n";
-      if (mygrid.maptype==2) cout << " parallel mapping         : hilbert" << "\n";
+      std::cout << "\n";
+      std::cout << "          ==============  summary of input  ==================\n";
+      std::cout << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      std::cout << "\n";
+      std::cout << " number of processors used: " << myparallel.np() << "\n";
+      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
       if (mygrid.isbalanced()) 
-         cout << " parallel mapping         : balanced" << "\n";
+         std::cout << " parallel mapping         : balanced" << "\n";
       else
-         cout << " parallel mapping         : not balanced" << "\n";
+         std::cout << " parallel mapping         : not balanced" << "\n";
 
-      cout << "\n options:\n";
-      cout << "   ion motion           = ";
+      std::cout << "\n options:\n";
+      std::cout << "   ion motion           = ";
       if (control.geometry_optimize())
-         cout << "yes\n";
+         std::cout << "yes\n";
       else
-         cout << "no\n";
-      cout << "   boundary conditions  = ";
-      cout << "periodic\n";
+         std::cout << "no\n";
+      std::cout << "   boundary conditions  = ";
+      if (control.version==3) std::cout << "periodic\n";
+      if (control.version==4) std::cout << "aperiodic\n";
 
-      cout << "   electron spin        = ";
+      std::cout << "   electron spin        = ";
       if (ispin==1)
-         cout << "restricted\n";
+         std::cout << "restricted\n";
       else
-         cout << "unrestricted\n";
-      cout << "   exchange-correlation = ";
-         cout << "LDA (Vosko et al) parameterization\n";
+         std::cout << "unrestricted\n";
+      std::cout << myxc;
+      //std::cout << "   exchange-correlation = ";
+      //std::cout << "LDA (Vosko et al) parameterization\n";
   
-      cout << "\n elements involved in the cluster:\n";
-      for (ia=0; ia<myion.nkatm; ++ia)
-      {
-         printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
-                 ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
-         printf("           comment : %s\n",mypsp.comment[ia]);
-         printf("           pseudopotential type            : %3d\n",mypsp.psp_type[ia]);
-         printf("           highest angular component       : %3d\n",mypsp.lmax[ia]);
-         printf("           local potential used            : %3d\n",mypsp.locp[ia]);
-         printf("           number of non-local projections : %3d\n",mypsp.nprj[ia]);
-         if (mypsp.semicore[ia])
-            printf("           semicore corrections included   : %6.3lf (radius) %6.3lf (charge)\n",mypsp.rcore[ia],mypsp.ncore(ia));
-         printf("           cutoff = ");
-         for (ii=0; ii<=mypsp.lmax[ia]; ++ii)
-            printf("%8.3lf",mypsp.rc[ia][ii]);
-         printf("\n");
-      }
+      //std::cout << "\n elements involved in the cluster:\n";
+      //for (ia=0; ia<myion.nkatm; ++ia)
+      //{
+      //   printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
+      //           ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
+      //   printf("           comment : %s\n",mypsp.comment[ia]);
+      //   printf("           pseudopotential type            : %3d\n",mypsp.psp_type[ia]);
+      //   printf("           highest angular component       : %3d\n",mypsp.lmax[ia]);
+      //   printf("           local potential used            : %3d\n",mypsp.locp[ia]);
+      //   printf("           number of non-local projections : %3d\n",mypsp.nprj[ia]);
+      //   if (mypsp.semicore[ia])
+      //      printf("           semicore corrections included   : %6.3lf (radius) %6.3lf (charge)\n",mypsp.rcore[ia],mypsp.ncore(ia));
+      //   printf("           cutoff = ");
+      //   for (ii=0; ii<=mypsp.lmax[ia]; ++ii)
+      //      printf("%8.3lf",mypsp.rc[ia][ii]);
+      //   printf("\n");
+      //}
+      std::cout << mypsp.print_pspall();
 
-      cout << "\n atom composition:" << "\n";
+      std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
+
+      std::cout << "\n atom composition:" << std::endl;
       for (ia=0; ia<myion.nkatm; ++ia)
-         cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      cout << "\n\n initial ion positions (au):" << "\n";
+         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      std::cout << "\n\n initial ion positions (au):" << std::endl;
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      cout << "\n";
-      printf(" number of electrons: spin up=%6d (%4d per task) down=%6d (%4d per task)\n",
-             mygrid.ne[0],mygrid.neq[0],mygrid.ne[ispin-1],mygrid.neq[ispin-1]);
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii)
+                   << "\t( " << Ffmt(10,5) << myion.rion1[3*ii] << " " << Ffmt(10,5) << myion.rion1[3*ii+1] << " " << Ffmt(10,5) << myion.rion1[3*ii+2]
+                   << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl;
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " << Ffmt(10,5) << myion.com(1) << " " << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
-      cout << "\n";
-      cout << " supercell:\n";
-      printf("      volume : %10.2lf\n",mylattice.omega());
-      printf("      lattice:    a1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,0),mylattice.unita(1,0),mylattice.unita(2,0));
-      printf("                  a2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,1),mylattice.unita(1,1),mylattice.unita(2,1));
-      printf("                  a3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unita(0,2),mylattice.unita(1,2),mylattice.unita(2,2));
-      printf("      reciprocal: b1=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,0),mylattice.unitg(1,0),mylattice.unitg(2,0));
-      printf("                  b2=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,1),mylattice.unitg(1,1),mylattice.unitg(2,1));
-      printf("                  b3=< %8.3lf %8.3lf %8.3lf >\n",mylattice.unitg(0,2),mylattice.unitg(1,2),mylattice.unitg(2,2));
+      std::cout << mypsp.myefield->shortprint_efield();
 
-      printf("      density cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.ecut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(0),mygrid.npack(0));
-      printf("      wavefnc cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             mylattice.wcut(),mygrid.nx,mygrid.ny,mygrid.nz,mygrid.npack_all(1),mygrid.npack(1));
-
-      cout << "\n";
-      cout << " ewald parameters:\n";
-      printf("      energy cutoff= %7.3lf fft= %4d x %4d x %4d  (%8d waves %8d per task)\n",
-             myewald.ecut(),myewald.nx(),myewald.ny(),myewald.nz(),myewald.npack_all(),myewald.npack());
-      printf("      summation: cut radius=  %7.3lf and %3d   mandelung= %12.8lf\n",
-             myewald.rcut(),myewald.ncut(),myewald.mandelung());
-
-      cout << "\n";
-      cout << " technical parameters:\n";
-      printf("      time step= %10.2lf  ficticious mass=%10.2lf\n",
-             control.time_step(),control.fake_mass());
-      printf("      tolerance=%11.3le (energy) %11.3le (density) %11.3le (ion)\n",
-             control.tolerances(0),control.tolerances(1),control.tolerances(2));
-      printf("      max iterations = %10d (%5d inner %5d outer)\n",
-             control.loop(0)*control.loop(1),control.loop(0),control.loop(1));
-      cout << "\n\n\n";
+      std::cout << std::endl;
+      std::cout <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+                << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
 
+      std::cout << std::endl;
+      std::cout << " supercell:" << std::endl;
+      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
+      std::cout << "      lattice:    a1 = < " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      std::cout << "                  a2 = < " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      std::cout << "                  a3 = < " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      std::cout << "      reciprocal: b1 = < " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      std::cout << "                  b2 = < " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      std::cout << "                  b3 = < " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
+
+      {double aa1,bb1,cc1,alpha1,beta1,gamma1;
+       mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
+       std::cout << "      lattice:    a =    " << Ffmt(8,3) << aa1    << " b =   " << Ffmt(8,3) << bb1   << " c =    " << Ffmt(8,3) << cc1 << std::endl;
+       std::cout << "                  alpha =" << Ffmt(8,3) << alpha1 << " beta =" << Ffmt(8,3) << beta1 << " gamma =" << Ffmt(8,3) << gamma1<< std::endl;}
+      std::cout << "      density cutoff =" << Ffmt(7,3) << mylattice.ecut()
+                << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
+      std::cout << "      wavefnc cutoff =" << Ffmt(7,3) << mylattice.wcut()
+                << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
+      std::cout << "\n";
+      std::cout << " Ewald parameters:\n";
+      std::cout << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
+                << " fft= " << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz()
+                << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
+      std::cout << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
+      std::cout << "                       Mandelung Wigner-Seitz =" << Ffmt(12,8) << myewald.mandelung()
+                << " (alpha =" << Ffmt(12,8) << myewald.rsalpha() << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
+
+      std::cout << std::endl;
+      std::cout << " technical parameters:\n";
+      std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step() << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
+      std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0) << " (energy) "
+                                       << Efmt(12,3) << control.tolerances(1) << " (density) "
+                                       << Efmt(12,3) << control.tolerances(2) << " (ion)\n";
+      std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
+                << " (" << Ifmt(5) << control.loop(0) << " inner " << Ifmt(5) << control.loop(1) << " outer)"
+                << std::endl;
 
    }
 
 //                 |**************************|
 // *****************   start iterations       **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu2);
+   if (oprint) 
    {
-      seconds(&cpu2);
-      cout << "         ================ iteration =========================\n";
-      cout << "     >>> iteration started at " << util_date() << " <<<\n";
-      cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon\n";
-      cout << "     ---------------------------------------------------------------\n";
-
-
+      std::cout << std::endl << std::endl << std::endl;
+      std::cout << "     ========================== iteration ==========================" << std::endl;
+      std::cout << "          >>> iteration started at " << util_date() << "  <<<"        << std::endl;
+      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon" << std::endl;
+      std::cout << "     ---------------------------------------------------------------" << std::endl;
    }
    done   = 0;
    icount = 0;
@@ -251,41 +319,44 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    {
       ++icount;
       inner_loop(control,&mygrid,&myion,
-                 &mykin,&mycoulomb,
+                 &mykin,&mycoulomb12,&myxc,
                  &mypsp,&mystrfac,&myewald,
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
                  E,&deltae,&deltac,&deltar);
 
-      if (myparallel.is_master())
-         printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
-                                       E[0],deltae,deltac,deltar);
+      if (oprint)
+         std::cout << Ifmt(10) << icount*control.loop(0) << Efmt(19,10) << E[0] 
+                   << Efmt(13,5) << deltae << Efmt(13,5) << deltac << Efmt(13,5) << deltar << std::endl; 
+         //printf("%10d%19.10le%13.5le%13.5le%13.5le\n",icount*control.loop(0),
+         //                              E[0],deltae,deltac,deltar);
 
       /* check for competion */
       if ((deltae>0.0)&&(icount>1))
       {
          done = 1;
-         cout << "         *** Energy going up. iteration terminated\n";
+         if (oprint)
+            std::cout << "         *** Energy going up. iteration terminated\n";
       }
-      else if ((fabs(deltae)<control.tolerances(0)) &&
+      else if ((std::fabs(deltae)<control.tolerances(0)) &&
                (deltac      <control.tolerances(1)) &&
                (deltar      <control.tolerances(2)))
       {
          done = 1;
-         if (myparallel.is_master())
-            cout << "         *** tolerance ok.    iteration terminated\n";
+         if (oprint)
+            std::cout << "         *** tolerance ok.    iteration terminated\n";
       }
       else if (icount>=control.loop(1))
       {
          done = 1;
-         if (myparallel.is_master())
-            cout << "         *** arrived at the Maximum iteration.   terminated\n";
+         if (oprint)
+            std::cout << "          *** arrived at the Maximum iteration.   terminated ***\n";
       }
    }
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu3);
+   if (oprint) 
    {
-      seconds(&cpu3);
-      cout << "     >>> iteration ended at   " << util_date() << " <<<\n";
+      std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n";
    }
 
 
@@ -293,52 +364,124 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_diagonalize(hml,eig);
 
 
+   /* calculate real-space number of electrons, en */
+   {
+      double omega = mylattice.omega();
+      double scal1 = 1.0/((double) ((mygrid.nx)*(mygrid.ny)*(mygrid.nz)));
+      double dv = omega*scal1;
+
+      en[0] = dv*mygrid.r_dsum(dn);
+      en[1] = en[0];
+      if (ispin > 1)
+         en[1] =  dv*mygrid.r_dsum(&dn[mygrid.n2ft3d]);
+   }
+
+   // calculate APC if v_apc_on==false
+   if (mypsp.myapc->apc_on)
+      if (!(mypsp.myapc->v_apc_on)) 
+         mypsp.myapc->dngen_APC(dn,false);
+
+   mypsp.mydipole->gen_dipole(dn);
+
+
 //                  |***************************|
 // ****************** report summary of results **********************
 //                  |***************************|
-   if (myparallel.is_master()) 
+   if (oprint) 
    {
-      cout << "\n\n";
-      cout << "          =============  summary of results  =================\n";
-      cout << "\n final ion positions (au):" << "\n";
+      std::cout << "\n\n";
+      std::cout << "          =============  summary of results  =================\n";
+      std::cout << "\n final ion positions (au):" << "\n";
       for (ii=0; ii<myion.nion; ++ii)
-         printf("%4d %s\t( %10.5lf %10.5lf %10.5lf ) - atomic mass = %6.3lf\n",ii+1,myion.symbol(ii),
-                                               myion.rion1[3*ii],
-                                               myion.rion1[3*ii+1],
-                                               myion.rion1[3*ii+2],
-                                               myion.amu(ii));
-      cout << "\n\n";
-      printf(" total     energy    : %19.10le (%15.5le /ion)\n",      E[0],E[0]/myion.nion);
-      printf(" total orbital energy: %19.10le (%15.5le /electron)\n", E[1],E[1]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" hartree energy      : %19.10le (%15.5le /electron)\n", E[2],E[2]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" exc-corr energy     : %19.10le (%15.5le /electron)\n", E[3],E[3]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" ion-ion energy      : %19.10le (%15.5le /ion)\n",      E[4],E[4]/myion.nion);
-      printf("\n");
-      printf(" K.S. kinetic energy : %19.10le (%15.5le /electron)\n",      E[5],E[5]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_l energy     : %19.10le (%15.5le /electron)\n",      E[6],E[6]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_nl energy    : %19.10le (%15.5le /electron)\n",      E[7],E[7]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_Hart energy  : %19.10le (%15.5le /electron)\n",      E[8],E[8]/(mygrid.ne[0]+mygrid.ne[1]));
-      printf(" K.S. V_xc energy    : %19.10le (%15.5le /electron)\n",      E[9],E[9]/(mygrid.ne[0]+mygrid.ne[1]));
-      viral = (E[9]+E[8]+E[7]+E[6])/E[5];
-      printf(" Viral Coefficient   : %19.10le\n",viral);
+         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) 
+                   << "\t( " 
+                   << Ffmt(10,5) << myion.rion1[3*ii]   << " " 
+                   << Ffmt(10,5) << myion.rion1[3*ii+1] << " " 
+                   << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = " << Ffmt(6,3) << myion.amu(ii) << std::endl; 
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " 
+                                 << Ffmt(10,5) << myion.gc(1) << " " 
+                                 << Ffmt(10,5) << myion.gc(2) << " )" <<  std::endl; 
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " " 
+                                 << Ffmt(10,5) << myion.com(1) << " " 
+                                 << Ffmt(10,5) << myion.com(2) << " )" <<  std::endl; 
 
-      printf("\n orbital energies:\n"); 
+      //if (mypsp.myapc->v_apc_on)
+      //   std::cout << mypsp.myapc->shortprint_APC();
+
+      std::cout << "\n\n";
+      std::cout << std::fixed << " number of electrons: spin up= " << Ffmt(11,5) << en[0]
+		<< "  down= " << Ffmt(11,5) << en[ispin-1]
+		<< " (real space)";
+      std::cout << std::endl << std::endl;
+      std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;  
+
+      if (mypsp.myefield->efield_on)
+      {
+         std::cout << std::endl;
+         std::cout << " QM Energies" << std::endl;
+         std::cout << " -----------" << std::endl;
+         std::cout << " total  QM energy    : " << Efmt(19,10) << (E[0]-E[48]-E[49]) << " (" << Efmt(15,5) << (E[0]-E[48]-E[49])/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      }
+
+      std::cout << " total orbital energy: " << Efmt(19,10) << E[1] << " (" << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " hartree energy      : " << Efmt(19,10) << E[2] << " (" << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl; 
+      std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " (" << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      if (mypsp.myapc->v_apc_on) 
+         std::cout << " APC energy          : " << Efmt(19,10) << E[51] << " (" << Efmt(15,5)  << E[51]/myion.nion << " /ion)" << std::endl;
+      std::cout << " ion-ion energy      : " << Efmt(19,10) << E[4] << " (" << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
+
+      std::cout << std::endl;
+      std::cout << " K.S. kinetic energy : " << Efmt(19,10) << E[5] << " (" << Efmt(15,5) << E[5]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_l energy     : " << Efmt(19,10) << E[6] << " (" << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_nl_energy    : " << Efmt(19,10) << E[7] << " (" << Efmt(15,5) << E[7]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_Hart energy  : " << Efmt(19,10) << E[8] << " (" << Efmt(15,5) << E[8]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_xc energy    : " << Efmt(19,10) << E[9] << " (" << Efmt(15,5) << E[9]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
+      if (mypsp.myapc->v_apc_on) 
+         std::cout << " K.S. V_APC energy   : " << Efmt(19,10) << E[52] << " (" << Efmt(15,5) << E[52]/myion.nion << " /ion)" << std::endl;
+
+      viral = (E[9]+E[8]+E[7]+E[6])/E[5];
+      std::cout << " Viral Coefficient   : " << Efmt(19,10) << viral << std::endl;
+
+      if (mypsp.myefield->efield_on)
+      {
+         std::cout << std::endl;
+         std::cout << " Electric Field Energies" << std::endl;
+         std::cout << " -----------------------" << std::endl;
+         std::cout << " - Electric Field Energy   : " << Efmt(19,10) << E[48]+E[49] << std::endl;
+         std::cout << " - Electric Field/Electron : " << Efmt(19,10) << E[48]       << std::endl;
+         std::cout << " - Electric Field/Ion      : " << Efmt(19,10) << E[49]       << std::endl;
+      }
+
+      std::cout << "\n orbital energies:\n"; 
       nn = ne[0] - ne[1];
       ev = 27.2116;
       for (i=0; i<nn; ++i)
       {
-         printf("%18.7le",eig[i]); printf(" ("); printf("%8.3f",eig[i]*ev); printf("eV)\n");
+         std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i]*ev << "eV)" << std::endl;
       }
       for (i=0; i<ne[1]; ++i)
       {
-         printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
-         printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
+         std::cout << Efmt(18,7) << eig[i+nn]              << " (" << Ffmt(8,3) << eig[i+nn]*ev              << "eV) " 
+                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" << Ffmt(8,3) << eig[i+(ispin-1)*ne[0]]*ev << "eV)"  << std::endl;
+         //printf("%18.7le",eig[i+nn]); printf(" ("); printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
+         //printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" ("); printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
       }
+      std::cout << std::endl;
 
-      cout << "\n output psi filename: " << control.output_movecs_filename() << "\n";
+      // write APC analysis
+      if (mypsp.myapc->apc_on)
+         std::cout <<  mypsp.myapc->print_APC(mypsp.zv);
+
+      // write dipoles
+      std::cout << mypsp.mydipole->shortprint_dipole(); 
+
    }
 
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename());
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename(),std::cout);
+   MPI_Barrier(comm_world0);
+
+
 
    /* deallocate memory */
    mygrid.g_deallocate(psi1);
@@ -349,38 +492,69 @@ int cpsd(MPI_Comm comm_world0, string& rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete [] eig;
+   gdevice_psi_dealloc();
+
 
    // write results to the json
    auto rtdbjson =  json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"]   = E[0];
    rtdbjson["pspw"]["energies"] = E;
+   if (mypsp.myapc->apc_on)
+   {
+      double qion[myion.nion];
+      for (auto ii=0; ii<myion.nion; ++ii)
+         qion[ii] = -mypsp.myapc->Qtot_APC(ii) + mypsp.zv[myion.katm[ii]];
+      rtdbjson["nwpw"]["apc"]["q"] = std::vector<double>(qion,&qion[myion.nion]);
+   }
+
+   if (mypsp.mydipole->dipole_on)
+   {
+      double *mdipole = mypsp.mydipole->mdipole;
+      double mu       = std::sqrt(mdipole[0]*mdipole[0] + mdipole[1]*mdipole[1] + mdipole[2]*mdipole[2]);
+      rtdbjson["nwpw"]["dipole"] = std::vector<double>(mdipole,&mdipole[3]);
+      rtdbjson["nwpw"]["dipole_magnitude"] = mu;
+   }
+
+   // set rtdbjson initialize_wavefunction option to false
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean()) rtdbjson["nwpw"]["initialize_wavefunction"] = false;
+
    rtdbstring    = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
+
+
 
 //                 |**************************|
 // *****************   report consumed time   **********************
 //                 |**************************|
-   if (myparallel.is_master()) 
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint) 
    {
-      seconds(&cpu4);
       double t1 = cpu2-cpu1;
       double t2 = cpu3-cpu2;
       double t3 = cpu4-cpu3;
       double t4 = cpu4-cpu1;
       double av = t2/((double ) control.loop(0)*icount);
-      cout.setf(ios::scientific);
-      cout << "\n";
-      cout << " -----------------"    << "\n";
-      cout << " cputime in seconds"   << "\n";
-      cout << " prologue    : " << t1 << "\n";
-      cout << " main loop   : " << t2 << "\n";
-      cout << " epilogue    : " << t3 << "\n";
-      cout << " total       : " << t4 << "\n";
-      cout << " cputime/step: " << av << "\n";
-      cout << "\n";
-      cout << " >>> job completed at     " << util_date() << " <<<\n";
+      //std::cout.setf(ios::scientific);
+      std::cout << std::scientific;
+      std::cout << std::endl;
+      std::cout << " -----------------"    << std::endl;
+      std::cout << " cputime in seconds"   << std::endl;
+      std::cout << " prologue    : " << t1 << std::endl;
+      std::cout << " main loop   : " << t2 << std::endl;
+      std::cout << " epilogue    : " << t3 << std::endl;
+      std::cout << " total       : " << t4 << std::endl;
+      std::cout << " cputime/step: " << av << std::endl;
+      std::cout << std::endl;
+
+      nwpw_timing_print_final(control.loop(0)*icount,std::cout);
+
+      std::cout << std::endl;
+      std::cout << " >>> job completed at     " << util_date() << " <<<" << std::endl;;
 
    }
 
+   MPI_Barrier(comm_world0);
    return 0;
+}
+
 }

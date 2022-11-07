@@ -1,0 +1,1 @@
+dpcpp -I$MKLROOT/include -Icommon -DMKL_ILP64 -DSYCL_DEVICES_gpu -O3 -std=c++11 -fsycl -o baseline_MKL_sycl2 baseline_MKL_sycl2.cpp -L$MKLROOT/lib/intel64 -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lOpenCL

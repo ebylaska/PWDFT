@@ -2,7 +2,7 @@
 #define _COULOMB_H_
 
 
-using namespace std;
+
 
 #include	"Pneb.hpp"
 

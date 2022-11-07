@@ -1,0 +1,46 @@
+Title "Water2 QM/MM test"
+echo
+
+memory 1900 mb
+start water2-qmmm
+
+permanent_dir ./perm_qmmm
+scratch_dir   ./perm_qmmm
+
+geometry units angstroms noautosym  noautoz nocenter
+O         0.161560    -0.052912     0.033173
+H         0.803054     0.369132    -0.511660
+H        -0.325571    -0.669574    -0.488560
+#O         0.021259     0.506771     2.831278 charge -0.8476 
+#H        -0.721039     1.083100     2.758378 charge  0.4238
+#H         0.158220     0.181883     1.945696 charge  0.4238
+end
+
+#lj_qm_parameters H 0.044    0.700 
+#lj_qm_parameters O 0.155394 3.165558
+#lj_mm_parameters O 0.155394 3.165558
+
+#fragment water
+#size 3
+#index_start 4
+#bond_spring 1 2    554.25 1.0
+#bond_spring 1 3    554.25 1.0
+#angle_spring 2 1 3 47.744 109.4
+#end
+
+
+
+nwpw
+
+   simulation_cell
+     SC 26.0
+   end
+   xc pbe
+   cutoff 30.0
+   2d-hcurve
+   tolerances 1.0e-9 1.0-9
+   apc on
+   
+end
+
+task pspw gradient

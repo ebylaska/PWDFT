@@ -1,0 +1,25 @@
+Title "Hellow Dolly"
+
+memory 1900 mb
+start chloride-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz center
+Cl 0 0 0    
+end
+
+charge -1 
+
+nwpw
+   apc on
+   simulation_cell
+     SC 20.0
+   end
+   cutoff 10.0
+   xc beef
+end
+#task pspw steepest_descent
+task pspw gradient
+

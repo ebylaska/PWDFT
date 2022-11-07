@@ -1,0 +1,31 @@
+Title "Water2 QM/MM test"
+echo
+
+memory 1900 mb
+start water2-qmmm
+
+permanent_dir ./perm_ftest
+scratch_dir   ./perm_ftest
+
+geometry units angstroms noautosym  noautoz nocenter
+O         0.161560    -0.052912     0.033173
+H         0.803054     0.369132    -0.511660
+H        -0.325571    -0.669574    -0.488560
+O         0.021259     0.506771     2.831278 
+H        -0.721039     1.083100     2.758378 
+H         0.158220     0.181883     1.945696 
+end
+
+nwpw
+
+   simulation_cell
+     SC 26.0
+   end
+   xc pbe
+   cutoff 30.0
+   2d-hcurve
+   tolerances 1.0e-9 1.0-9
+   
+end
+
+task pspw gradient

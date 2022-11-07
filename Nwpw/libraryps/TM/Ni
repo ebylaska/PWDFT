@@ -1,0 +1,33 @@
+#
+# $Id$
+#
+Comment: Ni pseudopotential parameters
+Comment: Fitted 12-28-04
+Comment: by E.J. Bylaska, somewhat based on Khein and Allens' TM database
+Comment: relativistic TM, quadratic semicore
+
+
+[lmax] 2
+[locp] 0
+[rlocal] 1.0
+<atom>
+Ni
+28.0 59.0 5 2
+1  0      2.00
+2  0      2.00
+2  1      6.00
+3  0      2.00
+3  1      6.00
+4  0      2.00
+3  2      8.00
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut> 
+   0   2.9454613
+   1   2.9454613
+   2   2.2939080
+<end>
+
+<semicore> 0.74   <end>
+<semicore_type> quadratic <end>

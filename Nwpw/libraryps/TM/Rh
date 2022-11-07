@@ -1,0 +1,37 @@
+#
+# $Id$
+#
+Comment: Rh pseudopotential parameters
+Comment: Fitted 12-28-04
+Comment: by E.J. Bylaska, based on Khein and Allens' TM data base
+Comment: relativistic TM, quadratic semicore
+
+
+[lmax] 2
+[locp] 0
+[rlocal] 1.0
+<atom>
+Rh
+45.0 103.0 8 3
+1  0      2.00
+2  0      2.00
+2  1      6.00
+3  0      2.00
+3  1      6.00
+3  2     10.00
+4  0      2.00
+4  1      6.00
+5  0      1.00
+4  2      7.99
+5  1      0.01
+<end>
+<solver>          pauli         <end>
+<pseudopotential> troullier-martins    <end>
+<rcut> 
+   0    2.5684846
+   1    2.9841622
+   2    2.1832450
+<end>
+
+<semicore> 1.22   <end>
+<semicore_type> quadratic <end>

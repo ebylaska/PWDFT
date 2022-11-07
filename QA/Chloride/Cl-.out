@@ -1,0 +1,474 @@
+
+pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+Title "Hellow Dolly"
+
+memory 1900 mb
+start chloride-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz center
+Cl 0 0 0    
+end
+
+charge -1 
+
+nwpw
+   apc on
+   simulation_cell
+     SC 20.0
+   end
+   cutoff 10.0
+   xc beef
+end
+#task pspw steepest_descent
+task pspw gradient
+
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Thu Apr 14 17:53:54 2022
+       source                = /home/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /home/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Fri Apr 15 19:28:19 2022
+       nproc                 = 8
+       input                 = Cl-.nw
+
+
+
+First rtdbstr={"charge":-1,"current_task":"task pspw gradient","dbname":"chloride-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[17.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[34.96885],"nion":1,"symbols":["Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"nwinput_cur":24,"nwinput_lines":["Title \"Hellow Dolly\"","","memory 1900 mb","start chloride-pspw","echo","","","","geometry noautosym noautoz center","Cl 0 0 0    ","end","","charge -1 ","","nwpw","   apc on","   simulation_cell","     SC 20.0","   end","   cutoff 10.0","   xc beef","end","","task pspw gradient","",""],"nwinput_nlines":26,"nwpw":{"apc":{"on":true},"cutoff":[10.0,20.0],"simulation_cell":{"unita":[20.0,0.0,0.0,0.0,20.0,0.0,0.0,0.0,20.0]},"xc":"beef"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"Hellow Dolly"}
+First task=2
+
+
+Running staged energy optimization - lowlevel_rtdbstr = {"charge":-1,"current_task":"energy","dbname":"chloride-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[17.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[34.96885],"nion":1,"symbols":["Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"nwinput_cur":24,"nwinput_lines":["Title \"Hellow Dolly\"","","memory 1900 mb","start chloride-pspw","echo","","","","geometry noautosym noautoz center","Cl 0 0 0    ","end","","charge -1 ","","nwpw","   apc on","   simulation_cell","     SC 20.0","   end","   cutoff 10.0","   xc beef","end","","task pspw gradient","",""],"nwinput_nlines":26,"nwpw":{"apc":{"on":true},"cutoff":[5.0,10.0],"simulation_cell":{"unita":[20.0,0.0,0.0,0.0,20.0,0.0,0.0,0.0,20.0]},"xc":"beef"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"Hellow Dolly"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Fri Apr 15 19:28:19 2022 <<<
+
+ psp_library: /home/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+ generating 1d pseudopotential file: ./Cl.psp
+
+ initializing nwpw_APC object
+ ----------------------------
+ nga =   3 ngs =     3
+ Gc  =   2.50000
+ APC gamma: 0 0.60000
+ APC gamma: 1 0.90000
+ APC gamma: 2 1.35000
+ - not self-consistent
+
+ writing formatted psp filename: ./Cl.vpp
+ generating random psi from scratch
+ Warning - Gram-Schmidt being performed on psi2
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./chloride-pspw.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = BEEF (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: Cl  valence charge :  7.0  lmax=2
+             comment : Troullier-Martins pseudopotential
+             pseudopotential type            :  0
+             highest angular component       :  2
+             local potential used            :  2
+             number of non-local projections :  4
+             semicore corrections inlcuded   :  1.300 (radius) 0.275 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge:  -1.000
+
+ atom composition:
+   Cl : 1
+
+ initial ion positions (au):
+   1 Cl	(    0.00000    0.00000    0.00000 ) - atomic mass = 34.969
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ number of electrons: spin up=     4 (   4 per task) down=     4 (   4 per task)
+
+ supercell:
+      volume =    8000.00
+      lattice:    a1=<   20.000    0.000    0.000 >
+                  a2=<    0.000   20.000    0.000 >
+                  a3=<    0.000    0.000   20.000 >
+      reciprocal: b1=<    0.314    0.000    0.000 >
+                  b2=<    0.000    0.314    0.000 >
+                  b3=<    0.000    0.000    0.314 >
+      lattice:    a=      20.000 b=     20.000 c=      20.000
+                  alpha=  90.000 beta=  90.000 gamma=  90.000
+      density cutoff=  10.000 fft=   30 x   30 x   30  (    6027 waves      756 per task)
+      wavefnc cutoff=   5.000 fft=   30 x   30 x   30  (    2169 waves      271 per task)
+
+ ewald parameters:
+      energy cutoff=  10.000 fft=   30 x   30 x   30  (    6027 waves      754 per task)
+      Ewald summation: cut radius=    6.366 and   1
+                       Mandelung Wigner-Seitz=   1.76011888 (alpha=  2.83729748 rs=12.40700982)
+
+ technical parameters:
+      time step=        5.80  ficticious mass=  400000.00
+      tolerance=   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann conjugate gradient
+
+
+
+     ============ Grassmann conjugate gradient iteration ============
+          >>> iteration started at Fri Apr 15 19:28:19 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        - 10 steepest descent iterations performed
+        10      -1.312342414120e+01   -2.280082e-01    3.099793e-04
+        - 10 steepest descent iterations performed
+        20      -1.498270067241e+01   -4.116656e-02    5.172859e-06
+        - 10 steepest descent iterations performed
+        30      -1.517083349324e+01   -1.543557e-03    1.131063e-05
+        40      -1.517626404429e+01   -3.961776e-05    1.256564e-07
+        50      -1.517632113762e+01   -8.166762e-08    2.393287e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Fri Apr 15 19:28:20 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     4.00000  down=     4.00000 (real space)
+
+ total     energy    :   -1.5176321138e+01 (   -1.51763e+01 /ion)
+ total orbital energy:   -1.7252484250e+00 (   -4.31312e-01 /electron)
+ hartree energy      :    1.0733111383e+01 (    2.68328e+00 /electron)
+ exc-corr energy     :   -3.2675003687e+00 (   -8.16875e-01 /electron)
+ ion-ion energy      :   -3.4756894124e+00 (   -3.47569e+00 /ion)
+
+ kinetic (planewave) :    5.3908334619e+00 (    1.34771e+00 /electron)
+ V_local (planewave) :   -2.8514175026e+01 (   -7.12854e+00 /electron)
+ V_nl    (planewave) :    3.9570988240e+00 (    9.89275e-01 /electron)
+ V_Coul  (planewave) :    2.1466222767e+01 (    5.36656e+00 /electron)
+ V_xc    (planewave) :   -4.0252284519e+00 (   -1.00631e+00 /electron)
+ Viral Coefficient   :   -1.3200337086e+00
+
+ orbital energy:
+    -1.2031649e-01 (  -3.274eV)
+    -1.2031844e-01 (  -3.274eV)
+    -1.2032157e-01 (  -3.274eV)
+    -5.0166771e-01 ( -13.651eV)
+
+
+*************************************************************
+**                                                         **
+**          PSPW Atomic Point Charge (APC) Analysis        **
+**                                                         **
+**   Point charge analysis based on paper by P.E. Blochl   **
+**         (J. Chem. Phys. vol 103, page 7422, 1995)       **
+**                                                         **
+*************************************************************
+
+ nwpw_APC object
+ ---------------
+ nga =   3 ngs =     3
+ Gc  =   2.50000
+ APC gamma: 0 0.60000
+ APC gamma: 1 0.90000
+ APC gamma: 2 1.35000
+ - not self-consistent
+
+
+ charge analysis on each atom
+ ----------------------------
+
+      no  atom        Qelc        Qion      Qtotal
+   -----  ----     -------     -------     -------
+       1    Cl      -8.000       7.000      -1.000
+       Total Q      -8.000       7.000      -1.000
+
+
+ gaussian coefficients of model density
+ --------------------------------------
+
+      no  atom     g=0.000     g=0.600     g=0.900     g=1.350
+   -----  ----     -------     -------     -------     -------
+       1    Cl       7.000     -10.276      21.494     -19.218
+
+
+ output psi to filename: ./chloride-pspw.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.17890e-01
+ main loop   : 1.04887e+00
+ epilogue    : 1.29000e-03
+ total       : 1.36805e+00
+ cputime/step: 5.16684e-03 ( 203 evaluations, 9 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            1.612309e+00 7.942410e-03     100.00%
+ total FFT time        6.692553e-01 3.296824e-03      41.51%
+ lagrange multipliers  2.168161e-03 1.068060e-05       0.13%
+ local potentials      3.239900e-05 1.596010e-07       0.00%
+ non-local potentials  1.541003e-02 7.591148e-05       0.96%
+ ffm_dgemm             8.412029e-03 4.143857e-05       0.52%
+ fmf_dgemm             1.474093e-02 7.261542e-05       0.91%
+ m_diagonalize         3.319620e-04 1.635281e-06       0.02%
+ mmm_multiply          3.120220e-04 1.537054e-06       0.02%
+
+ >>> job completed at     Fri Apr 15 19:28:20 2022 <<<
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Fri Apr 15 19:28:20 2022 <<<
+
+ psp_library: /home/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_APC object
+ ----------------------------
+ nga =   3 ngs =     3
+ Gc  =   2.50000
+ APC gamma: 0 0.60000
+ APC gamma: 1 0.90000
+ APC gamma: 2 1.35000
+ - not self-consistent
+
+ writing formatted psp filename: ./Cl.vpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... psi:1 spin:1
+ converting .... psi:2 spin:1
+ converting .... psi:3 spin:1
+ converting .... psi:4 spin:1
+
+ input psi exists, reading from file: ./chloride-pspw.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./chloride-pspw.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = BEEF (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: Cl  valence charge :  7.0  lmax=2
+             comment : Troullier-Martins pseudopotential
+             pseudopotential type            :  0
+             highest angular component       :  2
+             local potential used            :  2
+             number of non-local projections :  4
+             semicore corrections inlcuded   :  1.300 (radius) 0.283 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge:  -1.000
+
+ atom composition:
+   Cl : 1
+
+ initial ion positions (au):
+   1 Cl	(    0.00000    0.00000    0.00000 ) - atomic mass = 34.969
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ number of electrons: spin up=     4 (   4 per task) down=     4 (   4 per task)
+
+ supercell:
+      volume =    8000.00
+      lattice:    a1=<   20.000    0.000    0.000 >
+                  a2=<    0.000   20.000    0.000 >
+                  a3=<    0.000    0.000   20.000 >
+      reciprocal: b1=<    0.314    0.000    0.000 >
+                  b2=<    0.000    0.314    0.000 >
+                  b3=<    0.000    0.000    0.314 >
+      lattice:    a=      20.000 b=     20.000 c=      20.000
+                  alpha=  90.000 beta=  90.000 gamma=  90.000
+      density cutoff=  20.000 fft=   42 x   42 x   42  (   17133 waves     2141 per task)
+      wavefnc cutoff=  10.000 fft=   42 x   42 x   42  (    6027 waves      753 per task)
+
+ ewald parameters:
+      energy cutoff=  20.000 fft=   42 x   42 x   42  (   17133 waves     2142 per task)
+      Ewald summation: cut radius=    6.366 and   1
+                       Mandelung Wigner-Seitz=   1.76011888 (alpha=  2.83729748 rs=12.40700982)
+
+ technical parameters:
+      time step=        5.80  ficticious mass=  400000.00
+      tolerance=   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann conjugate gradient
+
+
+
+     ============ Grassmann conjugate gradient iteration ============
+          >>> iteration started at Fri Apr 15 19:28:20 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        - 10 steepest descent iterations performed
+        10      -1.531539143182e+01   -1.174490e-06    3.458206e-10
+        20      -1.531539172402e+01   -7.227321e-08    8.210869e-11
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Fri Apr 15 19:28:21 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     4.00000  down=     4.00000 (real space)
+
+ total     energy    :   -1.5315391724e+01 (   -1.53154e+01 /ion)
+ total orbital energy:   -1.7674894053e+00 (   -4.41872e-01 /electron)
+ hartree energy      :    1.0831749594e+01 (    2.70794e+00 /electron)
+ exc-corr energy     :   -3.3029466027e+00 (   -8.25737e-01 /electron)
+ ion-ion energy      :   -3.4756894124e+00 (   -3.47569e+00 /ion)
+
+ kinetic (planewave) :    5.6076820225e+00 (    1.40192e+00 /electron)
+ V_local (planewave) :   -2.8648224632e+01 (   -7.16206e+00 /electron)
+ V_nl    (planewave) :    3.6720373064e+00 (    9.18009e-01 /electron)
+ V_Coul  (planewave) :    2.1663499189e+01 (    5.41587e+00 /electron)
+ V_xc    (planewave) :   -4.0624832908e+00 (   -1.01562e+00 /electron)
+ Viral Coefficient   :   -1.3151907327e+00
+
+ orbital energy:
+    -1.1671978e-01 (  -3.176eV)
+    -1.1672032e-01 (  -3.176eV)
+    -1.1672165e-01 (  -3.176eV)
+    -5.3358295e-01 ( -14.520eV)
+
+
+ Ion Forces (au):
+   1 Cl	(   -0.00001   -0.00001   -0.00000 )
+
+
+
+*************************************************************
+**                                                         **
+**          PSPW Atomic Point Charge (APC) Analysis        **
+**                                                         **
+**   Point charge analysis based on paper by P.E. Blochl   **
+**         (J. Chem. Phys. vol 103, page 7422, 1995)       **
+**                                                         **
+*************************************************************
+
+ nwpw_APC object
+ ---------------
+ nga =   3 ngs =     3
+ Gc  =   2.50000
+ APC gamma: 0 0.60000
+ APC gamma: 1 0.90000
+ APC gamma: 2 1.35000
+ - not self-consistent
+
+
+ charge analysis on each atom
+ ----------------------------
+
+      no  atom        Qelc        Qion      Qtotal
+   -----  ----     -------     -------     -------
+       1    Cl      -8.000       7.000      -1.000
+       Total Q      -8.000       7.000      -1.000
+
+
+ gaussian coefficients of model density
+ --------------------------------------
+
+      no  atom     g=0.000     g=0.600     g=0.900     g=1.350
+   -----  ----     -------     -------     -------     -------
+       1    Cl       7.000     -10.426      21.571     -19.145
+
+
+ output psi to filename: ./chloride-pspw.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 7.24560e-02
+ main loop   : 9.39311e-01
+ epilogue    : 6.83900e-03
+ total       : 1.01861e+00
+ cputime/step: 1.91696e-02 ( 49 evaluations, 2 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            2.631822e+00 5.371066e-02     100.00%
+ total FFT time        1.359422e+00 2.774330e-02      51.65%
+ lagrange multipliers  3.745529e-03 7.643937e-05       0.14%
+ local potentials      2.380490e-04 4.858143e-06       0.01%
+ non-local potentials  2.300541e-02 4.694981e-04       0.87%
+ ffm_dgemm             1.302662e-02 2.658493e-04       0.49%
+ fmf_dgemm             2.389192e-02 4.875903e-04       0.91%
+ m_diagonalize         4.360150e-04 8.898265e-06       0.02%
+ mmm_multiply          4.020500e-04 8.205102e-06       0.02%
+
+ >>> job completed at     Fri Apr 15 19:28:21 2022 <<<
+
+Next rtdbstr={"charge":-1,"current_task":"task pspw gradient","dbname":"chloride-pspw","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[17.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[34.96885],"nion":1,"symbols":["Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":26,"nwinput_lines":["Title \"Hellow Dolly\"","","memory 1900 mb","start chloride-pspw","echo","","","","geometry noautosym noautoz center","Cl 0 0 0    ","end","","charge -1 ","","nwpw","   apc on","   simulation_cell","     SC 20.0","   end","   cutoff 10.0","   xc beef","end","","task pspw gradient","",""],"nwinput_nlines":26,"nwpw":{"apc":{"on":true,"q":[-1.000000000003638]},"cutoff":[10.0,20.0],"simulation_cell":{"unita":[20.0,0.0,0.0,0.0,20.0,0.0,0.0,0.0,20.0]},"xc":"beef"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.1167197821538391,-0.11672032230541737,-0.11672164842292737,-0.5335829497699022],"energies":[-15.315391724015885,-1.767489405304173,10.831749594457314,-3.3029466026746817,-3.47568941236376,5.607682022526159,-28.648224632340174,3.6720373063792833,21.663499188914628,-4.062483290784043,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-15.315391724015885,"fion":[-6.46997268888353e-06,-6.559583303002895e-06,-6.012299108864455e-07],"gradient":[6.46997268888353e-06,6.559583303002895e-06,6.012299108864455e-07]},"scratch_dir":".","title":"Hellow Dolly"}
+Next task =0
+
+writing rtdbjson = ./chloride-pspw.json

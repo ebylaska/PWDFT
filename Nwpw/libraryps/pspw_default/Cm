@@ -1,0 +1,43 @@
+Comment: Cm pseudopotential parameters
+Comment: Fitted by Eric J. Bylaska
+Comment: relativistic TM
+
+[lmax] 3
+[locp] 0
+[rlocal] 1.0
+[cutoff] 50.0
+
+<comment> Parameterized Troullier-Martins psp <end>
+
+ <atom>
+ Cm
+  0.960000E+02  247.0000   13 4
+      1 0 2.0
+      2 0 2.0
+      2 1 6.0
+      3 0 2.0
+      3 1 6.0
+      3 2 10.0
+      4 0 2.0
+      4 1 6.0
+      4 2 10.0
+      4 3 14.0
+      5 0 2.0
+      5 1 6.0
+      5 2 10.0
+      6 0 2.0
+      6 1 6.0
+      5 3 6.999
+      6 2 0.001
+ <end>
+ <solver> pauli			        <end>
+ <pseudopotential> troullier-martins	<end>
+<rcut>
+      0 1.30
+      1 1.55
+      2 2.35
+      3 1.20
+<end>
+
+
+

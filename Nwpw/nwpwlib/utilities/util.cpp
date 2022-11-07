@@ -1,5 +1,20 @@
 
+//extern "C" {
+//#include        "compressed_io.h"
+//}
+#include        "compressed_io.hpp"
+
+#include        <iomanip>
+#include        <iostream>
+#include	<cstdlib>
+#include	<cmath>
+
+#include        "Parallel.hpp"
 #include	"util.hpp"
+
+
+namespace pwdft {
+
 
 void c_aindexcopy(const int n, const int *indx, double *A, double *B)
 {
@@ -96,5 +111,262 @@ void eigsrt(double *D, double *V, int n)
          }
       }
    }
+}
+
+
+
+/**************************************
+ *                                    *
+ *         util_getfilling            *
+ *                                    *
+ **************************************/
+void util_getfilling(int f, int nfft[], int *filling, double zvalue[])
+{
+   int h = (f%2);
+   int f2 = (f-h)/2;
+   int k=0;
+   while ((k+1)*(k+2)*(k+3) <= (6*f2))
+      ++k;
+
+   f2 -= k*(k+1)*(k+2)/6;
+   int j=0;
+   while ((j+1)*(j+2) <= (2*f2))
+      ++j;
+
+   int i = f2 - j*(j+1)/2;
+
+   filling[0] = i;
+   if (i==0) 
+   {
+      filling[1] = j;
+      filling[2] = k;
+   }
+   else
+   {
+
+      if (((j+1)%2)==0)
+         filling[1] = (j+1)/2;
+      else 
+         filling[1] = -(j+1)/2;
+
+      if (((k+1)%2)==0)
+         filling[2] = (k+1)/2;
+      else 
+         filling[2] = -(k+1)/2;
+   }
+
+   if ((i==0) && (j==0) && (k==0))
+   {
+      filling[3] = 0;
+      zvalue[0] = 1.0;
+      zvalue[1] = 0.0;
+   }
+   else if (h==0)
+   {
+      filling[3] = 2;
+      zvalue[0] = 1.0/sqrt(2.0);
+      zvalue[1] = 0.0;
+   }
+   else
+   {
+      filling[3] = -2;
+      zvalue[0] = 0.0;
+      zvalue[1] = 1.0/sqrt(2.0);
+   }
+
+   /* modularize the filling */
+   int inc2c =( nfft[0]/2 + 1);
+   filling[0] = (filling[0]+inc2c)%inc2c;
+   filling[1] = (filling[1]+nfft[1])%nfft[1];
+   filling[2] = (filling[2]+nfft[2])%nfft[2];
+}
+
+
+/**************************************
+ *                                    *
+ *           util_random              *
+ *                                    *
+ **************************************/
+
+/* returns a random number between 0 and 1
+
+   Entry - seed - if zero set a seed with srand
+   Exit - returns a random number between 0 and 1
+   Uses - rand and srand stdlib functions
+*/
+double util_random(const int seed)
+{
+   if (seed>0) std::srand(((double) seed));
+   return ( (double) std::rand()/RAND_MAX);
+}
+
+
+/**************************************
+ *                                    *
+ *           util_filefind            *
+ *                                    *
+ **************************************/
+bool util_filefind(Parallel *myparall, char *fname)
+{
+   int ifound;
+
+   if (myparall->is_master())
+      ifound = cfileexists(fname);
+
+   myparall->Brdcst_iValue(0,0,&ifound);
+
+   return (ifound>0);
+}
+
+
+/**************************************
+ *                                    *
+ *           util_spline              *
+ *                                    *
+ **************************************/
+void   util_spline(const double *x, const double *y, const int n, const double yp1, const double ypn, double *y2, double *utmp)
+{
+   double sig,p,qn,un;
+
+   if (yp1>0.99e30)
+   {
+      y2[0]   = 0.0;
+      utmp[0] = 0.0;
+   }
+   else
+   {
+      y2[0]   = -0.5;
+      utmp[0] = 3.0 / (x[1]-x[0]) * ( (y[1]-y[0]) / (x[1]-x[0]) - yp1);
+   }
+   for (auto i=1; i<(n-1); ++i)
+   {
+      sig = (x[i]-x[i-1]) / (x[i+1]-x[i-1]);
+      p = sig*y2[i-1] + 2.00;
+      y2[i] = (sig-1.00) / p;
+      utmp[i] = (
+                 6.00 *
+                 (
+                   (y[i+1]-y[i  ]) / (x[i+1]-x[i  ])
+                 - (y[i  ]-y[i-1]) / (x[i  ]-x[i-1])
+                 )
+                 / (x[i+1]-x[i-1]) - sig*utmp[i-1]
+               )
+               / p;
+   }
+   
+   if (ypn>0.99e30)
+   {
+      qn = 0.0;
+      un = 0.0;
+   }
+   else
+   {
+      qn = 0.5;
+      un = 3.00 / (x[n-1]-x[n-2])
+              * ( ypn - (y[n-1]-y[n-2]) / (x[n-1]-x[n-2]) );
+   
+   }
+
+   y2[n-1] = (un-qn*utmp[n-2]) / (qn*y2[n-2]+1.00);
+   for (auto k=n-2; k>=0; --k)
+      y2[k] = y2[k]*y2[k+1] + utmp[k];
+
+}
+
+
+
+/**************************************
+ *                                    *
+ *           util_splint              *
+ *                                    *
+ **************************************/
+double util_splint(const double *xa, const double *ya, const double *y2a, const int n, const int nx, const double x)
+{
+   int khi = nx;
+   int klo = nx-1;
+
+   while ((xa[klo]>x) || (xa[khi]<x))
+   {
+      if (xa[klo]>x)
+      {
+        klo = klo - 1;
+        khi = khi - 1;
+      }
+      if (xa[khi]<x)
+      {
+           klo = klo + 1;
+           khi = khi + 1;
+      }
+   }
+
+   double h = xa[khi]-xa[klo];
+   double a = (xa[khi]-x)/h;
+   double b = (x-xa[klo])/h;
+   
+   return  (a*ya[klo] + b*ya[khi] + ((a*a*a-a)*y2a[klo] + (b*b*b-b)*y2a[khi]) * h*h / 6.0);
+}
+
+
+
+/**************************************
+ *                                    *
+ *           util_filter              *
+ *                                    *
+ **************************************/
+void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
+{
+   int    ncut = 15;
+   double qmax = sqrt(ecut+ecut);
+   double g;
+
+   for (auto i=0; i<nray; ++i)
+   {
+      g = g_ray[i];
+      if (g > (qmax-0.2))
+      {
+         v_ray[i] *= ( 1.0 - pow((1.0-exp(-pow((g/qmax),ncut))),ncut) );
+      }
+   }
+}
+
+/**************************************
+ *                                    *
+ *       util_print_elapsed_time      *
+ *                                    *
+ **************************************/
+void util_print_elapsed_time(const double autime)
+{
+   double sectime = autime * 2.41889e-17;
+    
+   std::cout << std::endl << std::endl;
+   if (sectime<1.0e-12)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-15) << " fs" << std::endl;
+   else if (sectime<1.0e-9)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-12) << " ps" << std::endl;
+   else if (sectime<1.0e-9)
+      std::cout << " Elapsed time of simulation was" 
+                << std::right << std::fixed << std::setw(8) << std::setprecision(3) 
+                << (sectime/1.0e-9) << " ns" << std::endl;
+}
+
+
+
+#ifdef _MATPRINT_
+void util_matprint(std::string matlabel, int n, double *A) {
+   std::cout << "util_matprint: " << matlabel << std::endl;
+   for (int i=0; i<n; ++i)
+   {
+      for (int j=0; j<n; ++j) std::cout << A[i+j*n] << " ";
+      std::cout << std::endl;
+   }
+   std::cout << std::endl;
+}
+#endif
+
+
 }
 

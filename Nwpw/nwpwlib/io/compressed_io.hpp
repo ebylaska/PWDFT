@@ -1,9 +1,12 @@
 #ifndef _COMPRESSED_IO_H_
 #define _COMPRESSED_IO_H_
-/* compressed_io.hpp -
+/* compressed_io.h -
    Author - Eric Bylaska
 
 */
+
+namespace pwdft {
+
 
 extern void cwrite(const int, char *, const int);
 extern void cread(const int, char *, const int);
@@ -14,5 +17,7 @@ extern void dread(const int, double *, const int);
 extern void openfile(const int, const char *, const char *);
 extern void closefile(const int);
 extern int  cfileexists(const char *);
+
+}
 
 #endif

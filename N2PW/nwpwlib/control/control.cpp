@@ -3,7 +3,7 @@
 #include        <cmath>
 #include        <cstdlib>
 #include	"Int64.h"
-using namespace std;
+
 
 static double unita[9],tolerances[3],scaling[2];
 static double time_step,fake_mass,ks_alpha,ecut,wcut,rcut;
