@@ -109,7 +109,17 @@ mkdir build_cuda
 cd build-cuda
 cmake -DNWPW_CUDA=ON  -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_Fortran_COMPILER=ftn ../Nwpw/
 ```
+## Running on Cori-CUDA
+```
+qsub -q  debug -I -l walltime=01:00:00 -lselect=1 -A myproject -l filesystems=home:eagle:grand
+module purge
+module load cmake cpe-cuda aocl
+module load PrgEnv-nvhpc
+module unload craype-accel-nvidia80
 
+mpiexec -n 2 --ppn 2 --cpu-bind=verbose --cpu-bind depth--env CUDA_VISIBLE_DEVICES=2 ./pwdft nwinput.nw
+
+```
 
 # Build instructions on NERSC Cori-CUDA
 
