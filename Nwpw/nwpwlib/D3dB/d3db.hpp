@@ -66,11 +66,13 @@ public:
         void     rr_addsqr(const double *, double *);
         void     r_sqrt(double *);
 
+
         void  	 rrr_Sum2Add(const double *, const double *, double *);
         void  	 rrr_Sum(const double *, const double *, double *);
         void  	 rr_Sum(const double *, double *);
         void  	 rrr_Mul(const double *, const double *, double *);
         void  	 rr_Mul(const double *, double *);
+        void  	 arrr_Minus(const double, const double *, const double *, double *);
         void  	 rrr_Minus(const double *, const double *, double *);
         void  	 rr_Minus(const double *, double *);
 
@@ -78,6 +80,9 @@ public:
         void  	 rrr_Divide(const double *, const double *, double *);
 
         void  	 rr_daxpy(const double, const double *, double *);
+
+        void     rrrrr_SumMulAdd(const double *, const double *, const double *, const double *, double *);
+
         //void  	 r_read(const int, const int, double *);
 	void     c_read(const int, double *, const int);
 	void     c_write(const int, double *, const int);

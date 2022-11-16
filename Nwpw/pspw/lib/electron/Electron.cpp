@@ -234,7 +234,7 @@ void Electron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi)
  ********************************************/
 void Electron_Operators::gen_Tangent(double *psi, double *hml, double *THpsi)
 {
-   mygrid->fmf_Multiply(1,psi,hml,1.0,THpsi,-1.0);
+   mygrid->fmf_Multiply(-1,psi,hml,1.0,THpsi,-1.0);
 }
 
 /********************************************

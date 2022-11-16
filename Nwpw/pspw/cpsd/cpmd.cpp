@@ -465,10 +465,10 @@ int cpmd(MPI_Comm comm_world0, std::string& rtdbstring)
    mygrid.m_diagonalize(hml,eig);
 
    /* rotate current psi and psi0 */
-   mygrid.fmf_Multiply(0,psi1,hml,1.0, psi2,0.0);
+   mygrid.fmf_Multiply(-1,psi1,hml,1.0,psi2,0.0);
 
    mygrid.gg_copy(psi0,psi1);
-   mygrid.fmf_Multiply(0,psi1,hml,1.0, psi0,0.0);
+   mygrid.fmf_Multiply(-1,psi1,hml,1.0,psi0,0.0);
 
 
 

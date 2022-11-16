@@ -403,7 +403,7 @@ void Pneb::hhr_aSumMul(const double alpha, const double *psir0, const double *ps
       for (n=0; n<(neq[ms]); ++n)
       {
          for (k=0; k<n2ft3d; ++k)
-            dn12[indx0+k] += alpha*psir0[indx1+k]*psir1[indx1+k];
+            dn12[indx0+k] += alpha*(psir0[indx1+k]*psir1[indx1+k] + psir1[indx1+k]*psir0[indx1+k]);
          indx1 += n2ft3d;
       }
       indx0 += n2ft3d;
