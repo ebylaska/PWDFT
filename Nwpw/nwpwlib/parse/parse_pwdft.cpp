@@ -301,7 +301,7 @@ static json parse_geometry(json geom, int *curptr, std::vector<std::string> line
       if (mystring_contains(mystring_lowercase(lines[cur]),"end"))
       {
          --endcount;
-         ++cur;
+         if (endcount>0) ++cur;
       }
    }
 
@@ -1360,9 +1360,11 @@ json parse_rtdbjson(json rtdb)
    int n   = rtdb["nwinput_nlines"];
    int cur = rtdb["nwinput_cur"];
 
+
    bool foundtask = false;
    while ((cur<n) && (!foundtask))
    {
+
       if (mystring_contains(mystring_lowercase(lines[cur]),"unset "))
       {
          std::vector<std::string> ss = mystring_split0(lines[cur]);
@@ -1481,6 +1483,7 @@ std::string parse_nwinput(std::string nwinput)
 
    // split nwinput into lines
    std::vector<std::string> lines = mystring_split(nwinput,"\n");
+
 
    // Remove comments
    for (auto i = lines.begin(); i != lines.end(); ++i)

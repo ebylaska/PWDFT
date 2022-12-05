@@ -37,6 +37,9 @@ DFPT_Operators::DFPT_Operators(Pneb *mygrid0, Kinetic_Operator *myke0,
    ispin = mygrid->ispin;
    neall = mygrid->neq[0] + mygrid->neq[1];
 
+   aperiodic = mycoulomb12->has_coulomb2;
+   periodic = mycoulomb12->has_coulomb1;
+
    /* allocate memory */
    Hpsi1  = mygrid->g_allocate(1);
    psi1   = mygrid->g_allocate(1);
@@ -55,6 +58,7 @@ DFPT_Operators::DFPT_Operators(Pneb *mygrid0, Kinetic_Operator *myke0,
    xcpm   = mygrid->r_nalloc(ispin);
    if (periodic)  vc1 = mygrid->c_pack_allocate(0);
    if (aperiodic) vc1 = mygrid->r_alloc();
+   
 
    tmp  = mygrid->r_alloc();
 
