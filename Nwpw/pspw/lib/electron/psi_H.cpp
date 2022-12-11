@@ -157,7 +157,7 @@ void psi_Hv4(Pneb *mygrid,
 
    /* add v_field to vall */
    if (mypsp->myefield->efield_on)
-      mygrid->cc_pack_Sum2(0,mypsp->myefield->v_field,vall);
+      mygrid->rr_Sum(mypsp->myefield->v_field,vall);
 
 
    /* apply r-space operators  - Expensive*/
