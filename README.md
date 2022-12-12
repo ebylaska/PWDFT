@@ -31,14 +31,15 @@ $ cmake .
 
 # Build instructions on JLSE
 
-## Required Modules
+## `SYCL` backend
+### Required Modules
 ```
 export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
 module load oneapi
 module load cmake
 ```
 
-## Build Instructions (for `SYCL` backend)
+### Build Instructions (for `SYCL` backend)
 ```
 cd PWDFT
 ```
@@ -49,10 +50,33 @@ cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 make -j4
 ```
 
-## Running on JSLE
+### Running on JSLE
 ```
 qsub -I -n 1 -t 60 -q arcticus
 ```
+
+## CUDA backend
+### Required Modules
+```
+export MODULEPATH=/soft/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles
+module add cmake/3.20.3   cuda/11.6.2    gcc/9.5.0
+module add openmpi/4.1.1-gcc
+```
+
+### Build Instructions (for CUDA backend)
+```
+cd PWDFT
+mkdir build_cuda
+cd build_cuda
+cmake -DNWPW_CUDA=ON ../Nwpw/
+make -j4
+```
+
+### Running on JSLE in V100
+```
+qsub  -I -t 30  -n 1 -q gpu_v100_smx2_debug
+```
+
 
 # Build Instructions on NERSC Cori-Haswell
 
