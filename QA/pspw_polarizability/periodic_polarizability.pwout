@@ -1,0 +1,1360 @@
+pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+#echo
+#
+# Compute the polarizability of a Be atom using a finite field.
+#
+#    Formulae:
+#
+#    E(F) ~= E(0) - 0.5*alpha*F**2
+#
+#    Polarizability = alpha ~= 2*(E(0)-E(F))/F**2
+#
+#
+#                  NWChem PSPW Results
+#------------------------------------------------------
+#                        LDA/25 Ry            LDA/25 Ry			
+#		         Periodic Boundary   Aperiodic Boundary		
+#------------------------------------------------------
+# E(F=0.01)          -0.9958459140        -0.9957933307
+# E(F=0.00)          -0.9935824285        -0.9935832263
+#
+# Polarizability     45.3                 44.2
+#
+#
+#                                NWChemEx PWDFT rgrid Efield Results
+#-------------------------------------------------------------------------------------------------
+#		LDA/50 Ry		P_x	P_y	P_z	[alpha_ij]	2*(E(0)-E(F))/F**2
+#		Periodic Boundary
+#-------------------------------------------------------------------------------------------------
+# F  = 0.00 	-9.9348957601e-01	 0.0000	 0.0000	 0.0000	 
+#
+# F_x=-0.01	-9.9573140762e-01	 0.4535	 0.0000	 0.0000	     45.35	              44.8
+# F_x= 0.01	-9.9573121495e-01	-0.4534  0.0000	 0.0000      45.34                    44.8
+#
+# F_y=-0.01 	-9.9573140762e-01	-0.0000	 0.4535	 0.0000	    -45.35                    44.8
+# F_y= 0.01 	-9.9573121495e-01	 0.0000	-0.4534  0.0000      45.34                    44.8
+#
+# F_z=-0.01	-9.9573140762e-01	 0.0000	 0.0000	 0.4535	     45.35                    44.8
+# F_z= 0.01	-9.9573121496e-01	 0.0000	 0.0000	-0.4534	     45.34                    44.8
+#
+# Polarizability Tensor = [alpha_ij] = [-dP_i/dF_j]
+#
+#                         --                          --
+#                         | alpha_xx alpha_xy alpha_xz |
+#                       = | alpha_yx alpha_yy alpha_yz |
+#                         | alpha_zx alpha_zy alpha_zz |
+#                         --                          --
+#
+#                         --                          --
+#                         |   45.35     0.00     0.00  |
+#                       = |    0.00    45.35     0.00  |
+#                         |    0.00     0.00    45.35  |
+#                         --                          --
+#
+#		LDA/50 Ry		P_x	P_y	P_z	[alpha_ij]	2*(E(0)-E(F))/F**2
+#		Aperiodic Boundary
+#-------------------------------------------------------------------------------------------------
+# F  = 0.00 	-9.9400806319e-01 	 0.0000	 0.0000	 0.0000	 
+#
+# F_x=-0.01	-9.9573140762e-01	 0.4535	 0.0000	 0.0000	     45.35	              44.8
+# F_x= 0.01	-9.9573121495e-01	-0.4534  0.0000	 0.0000      45.34                    44.8
+#
+# F_y=-0.01 	-9.9573140762e-01	-0.0000	 0.4535	 0.0000	    -45.35                    44.8
+# F_y= 0.01 	-9.9573121495e-01	 0.0000	-0.4534  0.0000      45.34                    44.8
+#
+# F_z=-0.01	-9.9573140762e-01	 0.0000	 0.0000	 0.4535	     45.35                    44.8
+# F_z= 0.01	-9.9573121496e-01	 0.0000	 0.0000	-0.4534	     45.34                    44.8
+#
+#
+#
+
+
+title "Be polarizability using periodic PSPW"
+
+start Be
+permanent_dir ./perm
+scratch_dir   ./perm
+
+#**** Get polarizability using a periodic cell ****
+nwpw
+   simulation_cell
+      SC 26.0
+   end
+   lmbfgs
+
+   cutoff 25.0
+   tolerances 1.0e-12 1.0e-12
+end
+
+geometry noautosym
+Be  0.0 0.0 0.0
+end
+
+task pspw energy
+
+# +-dFx calculations
+nwpw
+   efield on -0.0100  0.0000  0.0000 rgrid
+end
+task pspw energy
+nwpw
+   efield on  0.0100  0.0000  0.0000 rgrid
+end
+task pspw energy
+
+# +-dFy calculations
+nwpw
+   efield on  0.0000 -0.0100  0.0000 rgrid
+end
+task pspw energy
+nwpw
+   efield on  0.0000  0.0100  0.0000 rgrid
+end
+task pspw energy
+
+# +-dFz calculations
+nwpw
+   efield on  0.0000  0.0000 -0.0100 rgrid
+end
+task pspw energy
+nwpw
+   efield on  0.0000  0.0000  0.0100 rgrid
+end
+task pspw energy
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Wed Nov 16 09:25:04 2022
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Sun Dec 11 14:58:16 2022
+       nproc                 = 8
+       input                 = periodic_polarizability.nw
+
+
+
+First rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"nwinput_cur":92,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+First task=1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"nwinput_cur":92,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:58:16 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:58:16 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.934756356522e-01   -5.715027e-06    2.002272e-08
+        20      -9.934891888238e-01   -1.159756e-07    3.474608e-10
+        30      -9.934895473761e-01   -1.084089e-08    6.283577e-12
+        40      -9.934895753715e-01   -8.302024e-10    2.960045e-13
+        50      -9.934895778882e-01   -1.210771e-10    2.676205e-14
+        60      -9.934895781166e-01   -7.910117e-12    5.239160e-15
+        70      -9.934895781387e-01   -9.625634e-13    7.327536e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:58:26 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9348957814e-01 (   -9.93490e-01 /ion)
+ total orbital energy:   -4.0762301676e-01 (   -4.07623e-01 /electron)
+ hartree energy      :    4.7865296548e-01 (    4.78653e-01 /electron)
+ exc-corr energy     :   -3.6831171258e-01 (   -3.68312e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0252360033e-01 (    3.02524e-01 /electron)
+ V_local (planewave) :   -1.4812731305e+00 (   -1.48127e+00 /electron)
+ V_nl    (planewave) :    2.9317235138e-01 (    2.93172e-01 /electron)
+ V_Coul  (planewave) :    9.5730593096e-01 (    9.57306e-01 /electron)
+ V_xc    (planewave) :   -4.7935176894e-01 (   -4.79352e-01 /electron)
+ Viral Coefficient   :   -2.3474089833e+00
+
+ orbital energy:
+    -2.0381151e-01 (  -5.546eV)
+
+== Center of Charge ==
+
+spin up    = (   -0.0000     0.0000     0.0000 )
+spin down  = (   -0.0000     0.0000     0.0000 )
+     total = (   -0.0000     0.0000     0.0000 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.0000    -0.0000    -0.0000 ) au
+|mu| =      0.0000 au (     0.0000 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 1.942e-01
+ main loop   : 1.021e+01
+ epilogue    : 6.903e-03
+ total       : 1.041e+01
+ cputime/step: 4.817e-02 ( 212 evaluations, 65 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            1.059497e+01 4.997628e-02     100.00%
+ total FFT time        6.854770e+00 3.233382e-02      64.70%
+ exchange correlation  1.426947e+00 6.730881e-03      13.47%
+ local potentials      1.711647e-03 8.073807e-06       0.02%
+ non-local potentials  1.470095e-01 6.934411e-04       1.39%
+ ffm_dgemm             3.801698e-02 1.793254e-04       0.36%
+ fmf_dgemm             6.251863e-02 2.948992e-04       0.59%
+ m_diagonalize         2.951120e-04 1.392038e-06       0.00%
+ mmm_multiply          3.012320e-04 1.420906e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:58:26 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":98,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[2.6422765192203465e-15,-7.480643718351596e-14,-9.475601017651923e-06],"dipole_magnitude":9.475601017651923e-06,"efield":{"on":true,"type":2,"vector":[-0.01,0.0,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20381150837951148],"energies":[-0.9934895781386971,-0.40762301675902296,0.478652965480087,-0.36831171257638895,-0.21825365226773996,0.3025236003342588,-1.4812731304878466,0.2931723513789309,0.957305930960174,-0.47935176894454196,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9934895781386971},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":98,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[2.6422765192203465e-15,-7.480643718351596e-14,-9.475601017651923e-06],"dipole_magnitude":9.475601017651923e-06,"efield":{"on":true,"type":2,"vector":[-0.01,0.0,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20381150837951148],"energies":[-0.9934895781386971,-0.40762301675902296,0.478652965480087,-0.36831171257638895,-0.21825365226773996,0.3025236003342588,-1.4812731304878466,0.2931723513789309,0.957305930960174,-0.47935176894454196,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9934895781386971},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:58:26 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (  -0.01000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:58:26 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.957081073147e-01   -8.178894e-06    3.290887e-08
+        20      -9.957293751938e-01   -3.900391e-07    4.763806e-10
+        30      -9.957310941414e-01   -9.397800e-08    7.883485e-11
+        40      -9.957313466310e-01   -1.254145e-08    4.162193e-12
+        50      -9.957313999516e-01   -3.833943e-09    1.255712e-12
+        60      -9.957314077756e-01   -3.083546e-10    8.022970e-14
+        70      -9.957314094034e-01   -4.261524e-11    1.230977e-14
+        80      -9.957314096939e-01   -1.023792e-11    8.541970e-15
+        90      -9.957314097276e-01   -2.793321e-13    8.607988e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:58:41 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573140973e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164428858e-01 (   -4.11644e-01 /electron)
+ hartree energy      :    4.7654409291e-01 (    4.76544e-01 /electron)
+ exc-corr energy     :   -3.6722841724e-01 (   -3.67228e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096685701e-01 (    3.00967e-01 /electron)
+ V_local (planewave) :   -1.4741590537e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093369125e-01 (    2.90934e-01 /electron)
+ V_Coul  (planewave) :    9.5308818582e-01 (    9.53088e-01 /electron)
+ V_xc    (planewave) :   -4.7793904126e-01 (   -4.77939e-01 /electron)
+ Viral Coefficient   :   -2.3526717359e+00
+
+ orbital energy:
+    -2.0582214e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (   -0.2267    -0.0000     0.0000 )
+spin down  = (   -0.2267    -0.0000     0.0000 )
+     total = (   -0.2267    -0.0000     0.0000 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.4535     0.0000    -0.0000 ) au
+|mu| =      0.4535 au (     1.1526 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 1.965e-01
+ main loop   : 1.401e+01
+ epilogue    : 8.357e-03
+ total       : 1.421e+01
+ cputime/step: 4.863e-02 ( 288 evaluations, 88 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            2.484707e+01 8.627454e-02     100.00%
+ total FFT time        1.631614e+01 5.665326e-02      65.67%
+ exchange correlation  3.461763e+00 1.202001e-02      13.93%
+ local potentials      2.990111e-03 1.038233e-05       0.01%
+ non-local potentials  3.662590e-01 1.271733e-03       1.47%
+ ffm_dgemm             8.595862e-02 2.984674e-04       0.35%
+ fmf_dgemm             1.470491e-01 5.105870e-04       0.59%
+ m_diagonalize         6.508870e-04 2.260024e-06       0.00%
+ mmm_multiply          7.199500e-04 2.499826e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:58:41 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":102,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[0.45348043055368775,1.0541775013758783e-14,-1.0085541092650866e-10],"dipole_magnitude":0.45348043055368775,"efield":{"on":true,"type":2,"vector":[0.01,0.0,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582214428909126],"energies":[-0.9957314097276065,-0.4116442885781825,0.47654409290849675,-0.36722841723771976,-0.21825365226773996,0.3009668570149876,-1.4741590537400069,0.2909336912548327,0.9530881858169935,-0.47793904126453235,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534927660450041,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957314097276065},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":102,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[0.45348043055368775,1.0541775013758783e-14,-1.0085541092650866e-10],"dipole_magnitude":0.45348043055368775,"efield":{"on":true,"type":2,"vector":[0.01,0.0,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582214428909126],"energies":[-0.9957314097276065,-0.4116442885781825,0.47654409290849675,-0.36722841723771976,-0.21825365226773996,0.3009668570149876,-1.4741590537400069,0.2909336912548327,0.9530881858169935,-0.47793904126453235,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534927660450041,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957314097276065},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:58:41 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.01000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:58:41 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.956429419567e-01   -2.934803e-05    1.167148e-07
+        20      -9.957244410628e-01   -1.368117e-06    1.679580e-09
+        30      -9.957301043630e-01   -2.674047e-07    1.933988e-10
+        40      -9.957309954426e-01   -4.682957e-08    1.429621e-11
+        50      -9.957311889977e-01   -9.078684e-09    2.295512e-12
+        60      -9.957312122314e-01   -6.038471e-10    1.619566e-13
+        70      -9.957312160733e-01   -2.243040e-10    6.095252e-14
+        80      -9.957312168974e-01   -6.513179e-11    1.400228e-14
+        90      -9.957312170349e-01   -4.600542e-12    3.349563e-15
+       100      -9.957312170624e-01   -8.566481e-13    2.564859e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:58:58 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573121706e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164191149e-01 (   -4.11642e-01 /electron)
+ hartree energy      :    4.7654664813e-01 (    4.76547e-01 /electron)
+ exc-corr energy     :   -3.6722964443e-01 (   -3.67230e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096827533e-01 (    3.00968e-01 /electron)
+ V_local (planewave) :   -1.4741626432e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093408622e-01 (    2.90934e-01 /electron)
+ V_Coul  (planewave) :    9.5309329626e-01 (    9.53093e-01 /electron)
+ V_xc    (planewave) :   -4.7794063924e-01 (   -4.77941e-01 /electron)
+ Viral Coefficient   :   -2.3526595923e+00
+
+ orbital energy:
+    -2.0582096e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (    0.2267    -0.0000    -0.0000 )
+spin down  = (    0.2267    -0.0000    -0.0000 )
+     total = (    0.2267    -0.0000    -0.0000 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (   -0.4534     0.0000     0.0000 ) au
+|mu| =      0.4534 au (     1.1525 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 2.194e-01
+ main loop   : 1.675e+01
+ epilogue    : 8.640e-03
+ total       : 1.698e+01
+ cputime/step: 5.269e-02 ( 318 evaluations, 96 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            4.189327e+01 1.317398e-01     100.00%
+ total FFT time        2.766262e+01 8.698937e-02      66.03%
+ exchange correlation  5.817771e+00 1.829488e-02      13.89%
+ local potentials      5.046694e-03 1.587011e-05       0.01%
+ non-local potentials  6.300063e-01 1.981152e-03       1.50%
+ ffm_dgemm             1.480591e-01 4.655946e-04       0.35%
+ fmf_dgemm             2.516212e-01 7.912616e-04       0.60%
+ m_diagonalize         1.114021e-03 3.503211e-06       0.00%
+ mmm_multiply          1.238173e-03 3.893626e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:58:58 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":108,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-0.4534357713737172,1.784397894280127e-15,6.333399189376426e-14],"dipole_magnitude":0.4534357713737172,"efield":{"on":true,"type":2,"vector":[0.0,-0.01,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582095574257842],"energies":[-0.9957312170623703,-0.41164191148515683,0.4765466481282931,-0.36722964442596,-0.21825365226773996,0.30096827532771864,-1.4741626431500154,0.29093408622009576,0.9530932962565862,-0.4779406392447796,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534286894756937,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957312170623703},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":108,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-0.4534357713737172,1.784397894280127e-15,6.333399189376426e-14],"dipole_magnitude":0.4534357713737172,"efield":{"on":true,"type":2,"vector":[0.0,-0.01,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582095574257842],"energies":[-0.9957312170623703,-0.41164191148515683,0.4765466481282931,-0.36722964442596,-0.21825365226773996,0.30096827532771864,-1.4741626431500154,0.29093408622009576,0.9530932962565862,-0.4779406392447796,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534286894756937,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957312170623703},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:58:58 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000   -0.01000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:58:58 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.956914644938e-01   -1.398484e-05    5.251143e-08
+        20      -9.957284893017e-01   -5.867166e-07    9.199003e-10
+        30      -9.957309265640e-01   -1.185888e-07    8.762470e-11
+        40      -9.957313501454e-01   -1.383615e-08    2.754751e-12
+        50      -9.957313983745e-01   -2.414857e-09    3.715800e-13
+        60      -9.957314076471e-01   -4.173230e-10    1.351156e-13
+        70      -9.957314093623e-01   -1.089716e-10    2.654119e-14
+        80      -9.957314096643e-01   -9.403478e-12    3.366723e-15
+        90      -9.957314097262e-01   -5.697665e-13    9.713424e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:59:14 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573140973e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164417597e-01 (   -4.11644e-01 /electron)
+ hartree energy      :    4.7654422542e-01 (    4.76544e-01 /electron)
+ exc-corr energy     :   -3.6722848272e-01 (   -3.67228e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096695999e-01 (    3.00967e-01 /electron)
+ V_local (planewave) :   -1.4741592725e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093370577e-01 (    2.90934e-01 /electron)
+ V_Coul  (planewave) :    9.5308845084e-01 (    9.53088e-01 /electron)
+ V_xc    (planewave) :   -4.7793912666e-01 (   -4.77939e-01 /electron)
+ Viral Coefficient   :   -2.3526710125e+00
+
+ orbital energy:
+    -2.0582209e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (    0.0000    -0.2267     0.0000 )
+spin down  = (    0.0000    -0.2267     0.0000 )
+     total = (    0.0000    -0.2267     0.0000 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (   -0.0000     0.4535    -0.0000 ) au
+|mu| =      0.4535 au (     1.1526 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 2.384e-01
+ main loop   : 1.579e+01
+ epilogue    : 8.124e-03
+ total       : 1.604e+01
+ cputime/step: 5.354e-02 ( 295 evaluations, 90 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            5.799314e+01 1.965869e-01     100.00%
+ total FFT time        3.838536e+01 1.301199e-01      66.19%
+ exchange correlation  8.064197e+00 2.733626e-02      13.91%
+ local potentials      6.522542e-03 2.211031e-05       0.01%
+ non-local potentials  8.571502e-01 2.905594e-03       1.48%
+ ffm_dgemm             2.019702e-01 6.846448e-04       0.35%
+ fmf_dgemm             3.468628e-01 1.175806e-03       0.60%
+ m_diagonalize         1.501005e-03 5.088153e-06       0.00%
+ mmm_multiply          1.704165e-03 5.776831e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:59:14 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":112,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-4.2498214656826486e-07,0.45347701784425104,-2.2744335939427566e-14],"dipole_magnitude":0.45347701784445016,"efield":{"on":true,"type":2,"vector":[0.0,0.01,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582208798544735],"energies":[-0.995731409726161,-0.4116441759708947,0.4765442254211225,-0.3672284827222523,-0.21825365226773996,0.30096695999458106,-1.4741592724619528,0.2909337057684166,0.953088450842245,-0.4779391266558484,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534893458327217,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.995731409726161},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":112,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-4.2498214656826486e-07,0.45347701784425104,-2.2744335939427566e-14],"dipole_magnitude":0.45347701784445016,"efield":{"on":true,"type":2,"vector":[0.0,0.01,0.0]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582208798544735],"energies":[-0.995731409726161,-0.4116441759708947,0.4765442254211225,-0.3672284827222523,-0.21825365226773996,0.30096695999458106,-1.4741592724619528,0.2909337057684166,0.953088450842245,-0.4779391266558484,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534893458327217,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.995731409726161},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:59:14 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.01000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:59:14 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.956429331407e-01   -2.933213e-05    1.165761e-07
+        20      -9.957244194172e-01   -1.377763e-06    1.711395e-09
+        30      -9.957300773878e-01   -2.753649e-07    2.034026e-10
+        40      -9.957309887128e-01   -4.437580e-08    1.536738e-11
+        50      -9.957311876871e-01   -1.188068e-08    3.735241e-12
+        60      -9.957312114041e-01   -7.016179e-10    1.952760e-13
+        70      -9.957312161067e-01   -2.083005e-10    5.888678e-14
+        80      -9.957312168871e-01   -4.729350e-11    1.493754e-14
+        90      -9.957312170357e-01   -7.290724e-12    3.192812e-15
+       100      -9.957312170647e-01   -6.885603e-13    4.442860e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:59:31 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573121706e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164165545e-01 (   -4.11642e-01 /electron)
+ hartree energy      :    4.7654695044e-01 (    4.76547e-01 /electron)
+ exc-corr energy     :   -3.6722979632e-01 (   -3.67230e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096852270e-01 (    3.00969e-01 /electron)
+ V_local (planewave) :   -1.4741632528e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093425209e-01 (    2.90934e-01 /electron)
+ V_Coul  (planewave) :    9.5309390089e-01 (    9.53094e-01 /electron)
+ V_xc    (planewave) :   -4.7794083742e-01 (   -4.77941e-01 /electron)
+ Viral Coefficient   :   -2.3526577827e+00
+
+ orbital energy:
+    -2.0582083e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (    0.0000     0.2267    -0.0000 )
+spin down  = (    0.0000     0.2267    -0.0000 )
+     total = (    0.0000     0.2267    -0.0000 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (   -0.0000    -0.4534     0.0000 ) au
+|mu| =      0.4534 au (     1.1524 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 2.349e-01
+ main loop   : 1.748e+01
+ epilogue    : 8.739e-03
+ total       : 1.772e+01
+ cputime/step: 5.427e-02 ( 322 evaluations, 98 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            7.580085e+01 2.354064e-01     100.00%
+ total FFT time        5.037047e+01 1.564300e-01      66.45%
+ exchange correlation  1.055390e+01 3.277610e-02      13.92%
+ local potentials      8.405604e-03 2.610436e-05       0.01%
+ non-local potentials  1.125912e+00 3.496620e-03       1.49%
+ ffm_dgemm             2.666544e-01 8.281194e-04       0.35%
+ fmf_dgemm             4.552442e-01 1.413802e-03       0.60%
+ m_diagonalize         1.985534e-03 6.166255e-06       0.00%
+ mmm_multiply          2.278884e-03 7.077280e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:59:31 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":118,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-1.012794942735603e-11,-0.45343116448043663,4.307629792722603e-15],"dipole_magnitude":0.45343116448043663,"efield":{"on":true,"type":2,"vector":[0.0,0.0,-0.01]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.2058208277254078],"energies":[-0.9957312170647155,-0.4116416554508156,0.4765469504448298,-0.3672297963202084,-0.21825365226773996,0.30096852270384916,-1.4741632528317958,0.29093425208507323,0.9530939008896596,-0.4779408374188784,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534240878723525,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957312170647155},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":118,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-1.012794942735603e-11,-0.45343116448043663,4.307629792722603e-15],"dipole_magnitude":0.45343116448043663,"efield":{"on":true,"type":2,"vector":[0.0,0.0,-0.01]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.2058208277254078],"energies":[-0.9957312170647155,-0.4116416554508156,0.4765469504448298,-0.3672297963202084,-0.21825365226773996,0.30096852270384916,-1.4741632528317958,0.29093425208507323,0.9530939008896596,-0.4779408374188784,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534240878723525,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957312170647155},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:59:31 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000   -0.01000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:59:32 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.956914513778e-01   -1.397309e-05    5.239680e-08
+        20      -9.957284886689e-01   -5.878828e-07    9.248308e-10
+        30      -9.957309254549e-01   -1.190193e-07    8.842398e-11
+        40      -9.957313482832e-01   -1.514777e-08    3.283826e-12
+        50      -9.957313973874e-01   -2.388794e-09    4.475210e-13
+        60      -9.957314076841e-01   -5.765632e-10    1.997249e-13
+        70      -9.957314093516e-01   -1.077280e-10    1.934189e-14
+        80      -9.957314096587e-01   -1.195100e-11    2.574652e-15
+        90      -9.957314097258e-01   -1.395550e-12    1.756573e-15
+       100      -9.957314097271e-01   -2.683409e-13    3.072185e-16
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 14:59:49 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573140973e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164428791e-01 (   -4.11644e-01 /electron)
+ hartree energy      :    4.7654409384e-01 (    4.76544e-01 /electron)
+ exc-corr energy     :   -3.6722841791e-01 (   -3.67228e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096687813e-01 (    3.00967e-01 /electron)
+ V_local (planewave) :   -1.4741590664e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093367528e-01 (    2.90934e-01 /electron)
+ V_Coul  (planewave) :    9.5308818768e-01 (    9.53088e-01 /electron)
+ V_xc    (planewave) :   -4.7793904219e-01 (   -4.77939e-01 /electron)
+ Viral Coefficient   :   -2.3526716629e+00
+
+ orbital energy:
+    -2.0582214e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (    0.0000     0.0000    -0.2267 )
+spin down  = (    0.0000     0.0000    -0.2267 )
+     total = (    0.0000     0.0000    -0.2267 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (   -0.0000    -0.0000     0.4535 ) au
+|mu| =      0.4535 au (     1.1526 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 2.407e-01
+ main loop   : 1.669e+01
+ epilogue    : 8.510e-03
+ total       : 1.694e+01
+ cputime/step: 5.563e-02 ( 300 evaluations, 92 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            9.285970e+01 3.095323e-01     100.00%
+ total FFT time        6.199698e+01 2.066566e-01      66.76%
+ exchange correlation  1.290210e+01 4.300700e-02      13.89%
+ local potentials      1.052377e-02 3.507923e-05       0.01%
+ non-local potentials  1.415946e+00 4.719821e-03       1.52%
+ ffm_dgemm             3.272604e-01 1.090868e-03       0.35%
+ fmf_dgemm             5.565639e-01 1.855213e-03       0.60%
+ m_diagonalize         2.451391e-03 8.171303e-06       0.00%
+ mmm_multiply          2.792972e-03 9.309907e-06       0.00%
+
+ >>> job completed at     Sun Dec 11 14:59:49 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":122,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-1.3238692464093492e-13,-3.771826345697027e-07,0.45347970424755685],"dipole_magnitude":0.4534797042477137,"efield":{"on":true,"type":2,"vector":[0.0,0.0,0.01]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582214395291643],"energies":[-0.9957314097270689,-0.41164428790583285,0.4765440938384748,-0.36722841790819016,-0.21825365226773996,0.30096687812803036,-1.4741590664036384,0.2909336752752986,0.9530881876769496,-0.47793904219316896,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.00453492038930297,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957314097270689},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":122,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[-1.3238692464093492e-13,-3.771826345697027e-07,0.45347970424755685],"dipole_magnitude":0.4534797042477137,"efield":{"on":true,"type":2,"vector":[0.0,0.0,0.01]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.20582214395291643],"energies":[-0.9957314097270689,-0.41164428790583285,0.4765440938384748,-0.36722841790819016,-0.21825365226773996,0.30096687812803036,-1.4741590664036384,0.2909336752752986,0.9530881876769496,-0.47793904219316896,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.00453492038930297,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957314097270689},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sun Dec 11 14:59:49 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./perm/Be.vpp
+ input psi exists, reading from file: ./perm/Be.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/Be.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x1
+ parallel mapping         : 1d-slab
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = LDA (Vosko et al) parameterization
+
+ elements involved in the cluster:
+      1: Be  valence charge =  2.0  lmax =1
+             comment = Hamann pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             cutoff =    1.219   1.219
+
+ total charge =   0.000
+
+ atom composition:
+   Be : 1
+
+ initial ion positions (au):
+   1 Be	(    0.00000    0.00000    0.00000 ) - atomic mass =  9.012
+   G.C.	(    0.00000    0.00000    0.00000 )
+ C.O.M.	(    0.00000    0.00000    0.00000 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000    0.01000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     1 (   1 per task) down =     1 (   1 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 50.000 fft =  84 x   84 x   84  (  148386 waves    18548 per task)
+      wavefnc cutoff = 25.000 fft =  84 x   84 x   84  (   52508 waves     6567 per task)
+
+ Ewald parameters:
+      energy cutoff =  50.000 fft =  84 x   84 x   84  (  148386 waves    18549 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-12 (energy)    1.000e-12 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Sun Dec 11 14:59:49 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        10      -9.956429985768e-01   -2.937113e-05    1.170228e-07
+        20      -9.957244597964e-01   -1.358769e-06    1.646422e-09
+        30      -9.957301292957e-01   -2.601021e-07    1.849802e-10
+        40      -9.957310676421e-01   -3.370899e-08    7.145266e-12
+        50      -9.957311961950e-01   -4.635050e-09    6.014035e-13
+        60      -9.957312138639e-01   -7.257264e-10    2.170876e-13
+        70      -9.957312165208e-01   -1.053446e-10    2.031956e-14
+        80      -9.957312169748e-01   -2.842182e-11    1.374833e-14
+        90      -9.957312170269e-01   -2.028377e-13    3.335564e-19
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sun Dec 11 15:00:05 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     1.00000  down=     1.00000 (real space)
+
+
+ total     energy    :   -9.9573121703e-01 (   -9.95731e-01 /ion)
+ total orbital energy:   -4.1164078535e-01 (   -4.11641e-01 /electron)
+ hartree energy      :    4.7654797387e-01 (    4.76548e-01 /electron)
+ exc-corr energy     :   -3.6723030133e-01 (   -3.67230e-01 /electron)
+ ion-ion energy      :   -2.1825365227e-01 (   -2.18254e-01 /ion)
+
+ kinetic (planewave) :    3.0096919569e-01 (    3.00969e-01 /electron)
+ V_local (planewave) :   -1.4741649891e+00 (   -1.47416e+00 /electron)
+ V_nl    (planewave) :    2.9093461643e-01 (    2.90935e-01 /electron)
+ V_Coul  (planewave) :    9.5309594774e-01 (    9.53096e-01 /electron)
+ V_xc    (planewave) :   -4.7794149579e-01 (   -4.77941e-01 /electron)
+ Viral Coefficient   :   -2.3526524671e+00
+
+ orbital energy:
+    -2.0582039e-01 (  -5.601eV)
+
+== Center of Charge ==
+
+spin up    = (   -0.0000    -0.0000     0.2267 )
+spin down  = (   -0.0000    -0.0000     0.2267 )
+     total = (   -0.0000    -0.0000     0.2267 )
+ionic      = (    0.0000     0.0000     0.0000 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.0000     0.0000    -0.4534 ) au
+|mu| =      0.4534 au (     1.1524 Debye )
+
+ output psi to filename: ./perm/Be.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 2.332e-01
+ main loop   : 1.598e+01
+ epilogue    : 8.058e-03
+ total       : 1.622e+01
+ cputime/step: 5.399e-02 ( 296 evaluations, 84 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            1.091955e+02 3.689037e-01     100.00%
+ total FFT time        7.305262e+01 2.467994e-01      66.90%
+ exchange correlation  1.516728e+01 5.124080e-02      13.89%
+ local potentials      1.218391e-02 4.116186e-05       0.01%
+ non-local potentials  1.687183e+00 5.699942e-03       1.55%
+ ffm_dgemm             3.847610e-01 1.299868e-03       0.35%
+ fmf_dgemm             6.498162e-01 2.195325e-03       0.60%
+ m_diagonalize         2.878981e-03 9.726287e-06       0.00%
+ mmm_multiply          3.244872e-03 1.096241e-05       0.00%
+
+ >>> job completed at     Sun Dec 11 15:00:05 2022 <<<
+
+Next rtdbstr={"current_task":"task pspw energy","dbname":"Be","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[4.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0],"masses":[9.01218],"nion":1,"symbols":["Be"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":123,"nwinput_lines":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","title \"Be polarizability using periodic PSPW\"","","start Be","permanent_dir ./perm","scratch_dir   ./perm","","","nwpw","   simulation_cell","      SC 26.0","   end","   lmbfgs","","   cutoff 25.0","   tolerances 1.0e-12 1.0e-12","end","","geometry noautosym","Be  0.0 0.0 0.0","end","","task pspw energy","","","nwpw","   efield on -0.0100  0.0000  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0100  0.0000  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000 -0.0100  0.0000 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0100  0.0000 rgrid","end","task pspw energy","","","nwpw","   efield on  0.0000  0.0000 -0.0100 rgrid","end","task pspw energy","nwpw","   efield on  0.0000  0.0000  0.0100 rgrid","end","task pspw energy",""],"nwinput_nlines":123,"nwpw":{"cutoff":[25.0,50.0],"dipole":[5.49686764860791e-14,1.3160090193049939e-10,-0.45341308555225085],"dipole_magnitude":0.45341308555225085,"efield":{"on":true,"type":2,"vector":[0.0,0.0,0.01]},"initialize_wavefunction":null,"minimizer":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"tolerances":[1e-12,1e-12,0.0001]},"permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.205820392675275],"energies":[-0.9957312170269199,-0.41164078535055,0.4765479738696448,-0.3672303013257324,-0.21825365226773996,0.30096919568701846,-1.4741649891491269,0.2909346164305161,0.9530959477392896,-0.4779414957867473,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.004534060271493158,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-0.9957312170269199},"scratch_dir":"./perm","title":"Be polarizability using periodic PSPW"}
+Next task =0
+
+writing rtdbjson = ./perm/Be.json

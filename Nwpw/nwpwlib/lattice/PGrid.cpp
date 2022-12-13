@@ -36,8 +36,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    int nwave_in[2],nwave_out[2];
    double *G1, *G2,*G3;
    double ggcut,eps,ggmax,ggmin;
-   int *zero_arow3,*zero_arow2;
-   int yzslab,zrow;
+   bool *zero_arow3,*zero_arow2;
+   bool yzslab,zrow;
 
    lattice = inlattice;
 
@@ -228,14 +228,14 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    if (maptype==1)
    {
 
-      zero_row3[0]   = new (std::nothrow) int[(nxh+1)*nq];
-      zero_row3[1]   = new (std::nothrow) int[(nxh+1)*nq];
-      zero_row2[0]   = new (std::nothrow) int[(nxh+1)*nq];
-      zero_row2[1]   = new (std::nothrow) int[(nxh+1)*nq];
-      zero_slab23[0] = new (std::nothrow) int[nxh+1];
-      zero_slab23[1] = new (std::nothrow) int[nxh+1];
+      zero_row3[0]   = new (std::nothrow) bool[(nxh+1)*nq];
+      zero_row3[1]   = new (std::nothrow) bool[(nxh+1)*nq];
+      zero_row2[0]   = new (std::nothrow) bool[(nxh+1)*nq];
+      zero_row2[1]   = new (std::nothrow) bool[(nxh+1)*nq];
+      zero_slab23[0] = new (std::nothrow) bool[nxh+1];
+      zero_slab23[1] = new (std::nothrow) bool[nxh+1];
 
-      zero_arow3 = new int [(nxh+1)*ny];
+      zero_arow3 = new bool [(nxh+1)*ny];
       for (auto nb=0; nb<=1; ++nb)
       {
          if (nb==0)
@@ -244,8 +244,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             ggcut = lattice->wggcut();
 
          /* find zero_row3 - (i,j,*) rows that are zero */
-         for (auto i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i]  = 1;
-         for (auto i=0; i<((nxh+1)*ny); ++i) zero_arow3[i] = 1;
+         for (auto i=0; i<((nxh+1)*nq); ++i) zero_row3[nb][i] = true;
+         for (auto i=0; i<((nxh+1)*ny); ++i) zero_arow3[i] = true;
 
          for (auto k2=(-nyh+1); k2<nyh; ++k2)
          for (auto k1=0;        k1<nxh; ++k1)
@@ -253,7 +253,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             auto i = k1; auto j = k2;
             if (i<0) i = i + nx;
             if (j<0) j = j + ny;
-            zrow = 1;
+            zrow = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             {
                auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
@@ -261,20 +261,21 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
                auto gg = gx*gx + gy*gy + gz*gz;
                     gg = gg-ggcut;
-               if (gg<(-eps)) zrow = 0;
+               if (gg<(-eps)) zrow = false;
             }
             if (!zrow)
             {
-               zero_arow3[i+(nxh+1)*j] = 0;
+               zero_arow3[i+(nxh+1)*j] = false;
                q = ijktoq1(0,j,0);
                p = ijktop1(0,j,0);
                if (p==parall->taskid_i())
                {
-                 zero_row3[nb][i+(nxh+1)*q] = 0;
+                 zero_row3[nb][i+(nxh+1)*q] = false;
                }
              }
          }
          // call D3dB_c_ptranspose_jk_init(nb,log_mb(zero_arow3(1)))
+         c_ptranspose_jk_init(nb,zero_arow3);
 
 
          /* find zero_slab23 - (i,*,*) slabs that are zero */
@@ -285,7 +286,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          {
             auto i = k1;
             if (i<0) i = i + nx;
-            yzslab = 1;
+            yzslab = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             for (auto k2=(-nyh+1); k2<nyh; ++k2)
             {
@@ -294,10 +295,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
                auto gg = gx*gx + gy*gy + gz*gz;
                     gg = gg-ggcut;
-               if (gg<(-eps)) yzslab = 0;
+               if (gg<(-eps)) yzslab = false;
             }
             if (!yzslab)
-               zero_slab23[nb][i] = 0;
+               zero_slab23[nb][i] = false;
          }
 
          /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
@@ -318,15 +319,15 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
    else
    {
-      zero_row3[0] = new (std::nothrow) int[nq3]();
-      zero_row3[1] = new (std::nothrow) int[nq3]();
-      zero_row2[0] = new (std::nothrow) int[nq2]();
-      zero_row2[1] = new (std::nothrow) int[nq2]();
-      zero_slab23[0] = new (std::nothrow) int[nxh+1]();
-      zero_slab23[1] = new (std::nothrow) int[nxh+1]();
+      zero_row3[0] = new (std::nothrow) bool[nq3]();
+      zero_row3[1] = new (std::nothrow) bool[nq3]();
+      zero_row2[0] = new (std::nothrow) bool[nq2]();
+      zero_row2[1] = new (std::nothrow) bool[nq2]();
+      zero_slab23[0] = new (std::nothrow) bool[nxh+1]();
+      zero_slab23[1] = new (std::nothrow) bool[nxh+1]();
 
-      zero_arow2 = new (std::nothrow) int [(nxh+1)*nz]();
-      zero_arow3 = new (std::nothrow) int [(nxh+1)*ny]();
+      zero_arow2 = new (std::nothrow) bool [(nxh+1)*nz]();
+      zero_arow3 = new (std::nothrow) bool [(nxh+1)*ny]();
 
       for (auto nb=0; nb<=1; ++nb)
       {
@@ -337,10 +338,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
          // find zero_row3 - (i,j,*) rows that are zero 
          for (auto q=0; q<nq3; ++q)
-            zero_row3[nb][q] =  1;
+            zero_row3[nb][q] = true;
 
          for (auto q=0; q<(nxh+1)*ny; ++q)
-            zero_arow3[q] = 1;
+            zero_arow3[q] = true;
 
 
          for (auto k2=(-nyh+1); k2<nyh; ++k2)
@@ -349,7 +350,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             auto i = k1; auto j = k2;
             if (i<0) i = i + nx;
             if (j<0) j = j + ny;
-            zrow = 1;
+            zrow = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             {
                auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
@@ -357,17 +358,17 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
                auto gg = gx*gx + gy*gy + gz*gz;
                gg= gg-ggcut;
-               if (gg<(-eps)) zrow = 0;
+               if (gg<(-eps)) zrow = false;
             }
             if (!zrow)
             {
                //zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
-               zero_arow3[i+(nxh+1)*j] = 0;
+               zero_arow3[i+(nxh+1)*j] = false;
                q = ijktoq(i,j,0);
                p = ijktop(i,j,0);
                if (p==parall->taskid_i())
                {
-                 zero_row3[nb][q] = 0;
+                 zero_row3[nb][q] = false;
                }
              }
          }
@@ -380,7 +381,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          {
             auto i = k1;
             if (i<0) i = i + nx;
-            yzslab = 1;
+            yzslab = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
             for (auto k2=(-nyh+1); k2<nyh; ++k2)
             {
@@ -389,10 +390,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
                auto gg = gx*gx + gy*gy + gz*gz;
                gg= gg-ggcut;
-               if (gg<(-eps)) yzslab = 0;
+               if (gg<(-eps)) yzslab = false;
             }
             if (!yzslab)
-               zero_slab23[nb][i] = 0;
+               zero_slab23[nb][i] = false;
          }
 
          // find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*)
@@ -407,6 +408,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
 
          //call D3dB_c_ptranspose_ijk_init(nb,log_mb(zero_arow2(1)),log_mb(zero_arow3(1)))
+         c_ptranspose_ijk_init(nb,zero_arow2,zero_arow3);
 
       }
 

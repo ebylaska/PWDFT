@@ -373,7 +373,6 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
             p_i2_start[nb][i] = new (std::nothrow) int[np+1]();
       }
 
-
    }
 
    /* setup timereverse indexes */
@@ -565,7 +564,7 @@ d3db::~d3db()
  *      d3db::c_ptranspose_jk_init        *
  *                                        *
  ******************************************/
-void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
+void d3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3)
 {
    int index1,index2,index3;
    int jndex1,jndex2,jndex3;
@@ -599,8 +598,8 @@ void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
             {
                //iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
                //iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
-               iszero_ii = (zero_arow3[i + (nx/2+1)*k]==1);
-               iszero_jj = (zero_arow3[i + (nx/2+1)*j]==1);
+               iszero_ii = (zero_arow3[i + (nx/2+1)*k]);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*j]);
                if (!iszero_ii)
                {
                   p_iq_to_i1[nb][0][index1] = ijktoindex(i,j,k);
@@ -621,8 +620,8 @@ void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
             {
                //iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
                //iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
-               iszero_ii = (zero_arow3[i + (nx/2+1)*k]==1);
-               iszero_jj = (zero_arow3[i + (nx/2+1)*j]==1);
+               iszero_ii = (zero_arow3[i + (nx/2+1)*k]);
+               iszero_jj = (zero_arow3[i + (nx/2+1)*j]);
                if (!iszero_ii)
                {
                   p_iq_to_i2[nb][0][index2] = ijktoindex(i,k,j);
@@ -660,7 +659,7 @@ void d3db::c_ptranspose_jk_init(const int nb, int *zero_arow3)
  *      d3db::c_ptranspose_ijk_init       *
  *                                        *
  ******************************************/
-void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
+void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow3)
 {
    int index1,index2,index3,proc_to,proc_from,phere,pto;
    bool iszero;
@@ -684,7 +683,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
-         iszero = (zero_arow2[i+k*(nx/2+1)]==1);
+         iszero = (zero_arow2[i+k*(nx/2+1)]);
 
          phere = ijktop2(i,j,k);
          pto   = ijktop1(i,j,k);
@@ -737,7 +736,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
-         iszero = (zero_arow3[i+j*(nx/2+1)]==1);
+         iszero = (zero_arow3[i+j*(nx/2+1)]);
 
          phere = ijktop1(i,j,k);
          pto   = ijktop(i,j,k);
@@ -789,7 +788,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
-         iszero = (zero_arow3[i+j*(nx/2+1)]==1);
+         iszero = (zero_arow3[i+j*(nx/2+1)]);
 
          phere = ijktop(i,j,k);
          pto   = ijktop1(i,j,k);
@@ -841,7 +840,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, int *zero_arow2, int *zero_arow3)
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
-         iszero = (zero_arow2[i+k*(nx/2+1)]==1);
+         iszero = (zero_arow2[i+k*(nx/2+1)]);
 
          phere = ijktop1(i,j,k);
          pto   = ijktop2(i,j,k);

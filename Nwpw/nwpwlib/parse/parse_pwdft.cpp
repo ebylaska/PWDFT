@@ -1172,6 +1172,11 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          if (mystring_contains(line," rgrid"))    nwpwjson["efield"]["type"] = 2;
          if (mystring_contains(line," center"))   nwpwjson["efield"]["center"]  =  mystring_double_list(line,"center");
          if (mystring_contains(line," vector"))   nwpwjson["efield"]["vector"]  =  mystring_double_list(line,"vector");
+
+         if ((nwpwjson["efield"]["on"]) && 
+             (mystring_contains(line," on")) && 
+             (!mystring_contains(line," vector")))
+            nwpwjson["efield"]["vector"]  =  mystring_double_list(line,"on");
       }
 
       ++cur;

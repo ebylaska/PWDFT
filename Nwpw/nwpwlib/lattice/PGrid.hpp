@@ -27,7 +27,7 @@ class PGrid : public d3db {
 
 
    /* pfft data */
-   int *zero_row2[2], *zero_row3[2], *zero_slab23[2];
+   bool *zero_row2[2], *zero_row3[2], *zero_slab23[2];
 
    /* pfft_queue data */
    int aqmax,aqsize,alast_index;

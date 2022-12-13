@@ -32,6 +32,7 @@ class d3db : public Mapping3 {
     int **p_jq_to_i1[2],**p_jq_to_i2[2],**p_jz_to_i2[2];
     int **p_j1_start[2],**p_j2_start[2];
 
+
     double *tmpx,*tmpy,*tmpz;
 
 public:
@@ -120,8 +121,8 @@ public:
         void     tc_Mul(const double *, double *);
 
         /* ptranspose operators */
- 	void     c_ptranspose_jk_init(const int, int  *);
-	void     c_ptranspose_ijk_init(const int, int *, int *);
+ 	void     c_ptranspose_jk_init(const int, bool  *);
+	void     c_ptranspose_ijk_init(const int, bool *, bool *);
 
 };
 }
