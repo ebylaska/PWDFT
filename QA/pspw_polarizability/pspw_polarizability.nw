@@ -1,0 +1,123 @@
+#echo
+#
+# Compute the polarizability of a Be atom using a finite field.
+#
+#    Formulae:
+#
+#    E(F) ~= E(0) - 0.5*alpha*F**2
+#
+#    Polarizability = alpha ~= 2*(E(0)-E(F))/F**2
+#
+#
+#                  NWChem PSPW Results
+#------------------------------------------------------
+#                        LDA/25 Ry            LDA/25 Ry			
+#		         Periodic Boundary   Aperiodic Boundary		
+#------------------------------------------------------
+# E(F=0.01)          -0.9958459140        -0.9957933307
+# E(F=0.00)          -0.9935824285        -0.9935832263
+#
+# Polarizability     45.3                 44.2
+#
+#
+#                                NWChemEx PWDFT rgrid Efield Results
+#-------------------------------------------------------------------------------------------------
+#		LDA/50 Ry		P_x	P_y	P_z	[alpha_ij]	2*(E(0)-E(F))/F**2
+#		Periodic Boundary
+#-------------------------------------------------------------------------------------------------
+# F  = 0.00 	-9.9348957601e-01	 0.0000	 0.0000	 0.0000	 
+#
+# F_x=-0.01	-9.9573140762e-01	 0.4535	 0.0000	 0.0000	     45.35	              44.8
+# F_x= 0.01	-9.9573121495e-01	-0.4534  0.0000	 0.0000      45.34                    44.8
+#
+# F_y=-0.01 	-9.9573140762e-01	-0.0000	 0.4535	 0.0000	    -45.35                    44.8
+# F_y= 0.01 	-9.9573121495e-01	 0.0000	-0.4534  0.0000      45.34                    44.8
+#
+# F_z=-0.01	-9.9573140762e-01	 0.0000	 0.0000	 0.4535	     45.35                    44.8
+# F_z= 0.01	-9.9573121496e-01	 0.0000	 0.0000	-0.4534	     45.34                    44.8
+#
+# Polarizability Tensor = [alpha_ij] = [-dP_i/dF_j]
+#
+#                         --                          --
+#                         | alpha_xx alpha_xy alpha_xz |
+#                       = | alpha_yx alpha_yy alpha_yz |
+#                         | alpha_zx alpha_zy alpha_zz |
+#                         --                          --
+#
+#                         --                          --
+#                         |   45.35     0.00     0.00  |
+#                       = |    0.00    45.35     0.00  |
+#                         |    0.00     0.00    45.35  |
+#                         --                          --
+#
+#		LDA/50 Ry		P_x	P_y	P_z	[alpha_ij]	2*(E(0)-E(F))/F**2
+#		Aperiodic Boundary
+#-------------------------------------------------------------------------------------------------
+# F  = 0.00 	-9.9400806319e-01 	 0.0000	 0.0000	 0.0000	 
+#
+# F_x=-0.01	-9.9573140762e-01	 0.4535	 0.0000	 0.0000	     45.35	              44.8
+# F_x= 0.01	-9.9573121495e-01	-0.4534  0.0000	 0.0000      45.34                    44.8
+#
+# F_y=-0.01 	-9.9573140762e-01	-0.0000	 0.4535	 0.0000	    -45.35                    44.8
+# F_y= 0.01 	-9.9573121495e-01	 0.0000	-0.4534  0.0000      45.34                    44.8
+#
+# F_z=-0.01	-9.9573140762e-01	 0.0000	 0.0000	 0.4535	     45.35                    44.8
+# F_z= 0.01	-9.9573121496e-01	 0.0000	 0.0000	-0.4534	     45.34                    44.8
+#
+#
+#
+
+
+title "Be polarizability using PSPW"
+
+start Be
+permanent_dir ./perm
+scratch_dir   ./perm
+
+
+#**** Get polarizability using a periodic cell ****
+nwpw
+   simulation_cell
+      SC 26.0
+      boundary_conditions aperiodic
+   end
+   lmbfgs
+
+   cutoff 25.0
+   tolerances 1.0e-12 1.0e-12
+end
+
+geometry noautosym
+Be  0.0 0.0 0.0
+end
+
+task pspw energy
+
+
+nwpw
+   efield on vector -0.0100  0.0000  0.0000 rgrid
+end
+task pspw energy
+nwpw
+   efield on vector  0.0100  0.0000  0.0000 rgrid
+end
+task pspw energy
+
+nwpw
+   efield on vector  0.0000 -0.0100  0.0000 rgrid
+end
+task pspw energy
+nwpw
+   efield on vector  0.0000  0.0100  0.0000 rgrid
+end
+task pspw energy
+
+
+nwpw
+   efield on vector  0.0000  0.0000 -0.0100 rgrid
+end
+task pspw energy
+nwpw
+   efield on vector  0.0000  0.0000  0.0100 rgrid
+end
+task pspw energy

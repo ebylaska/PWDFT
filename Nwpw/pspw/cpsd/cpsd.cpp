@@ -20,6 +20,7 @@
 #include	"Coulomb12.hpp"
 #include        "exchange_correlation.hpp"
 #include	"Pseudopotential.hpp"
+#include	"DFPT.hpp"
 #include	"inner_loop.hpp"
 #include	"psi.hpp"
 //#include	"rtdb.hpp"
@@ -180,6 +181,8 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
 
+   /* setup dfpt */
+   DFPT_Operators mydfpt(&mygrid,&mykin,&mycoulomb12,&myxc,&mypsp,1.0e-3);
 
 
 //                 |**************************|
@@ -324,6 +327,8 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
                  psi1,psi2,Hpsi,psi_r,
                  dn,hml,lmbda,
                  E,&deltae,&deltac,&deltar);
+
+      //mydfpt.start(psi1,psi_r
 
       if (oprint)
          std::cout << Ifmt(10) << icount*control.loop(0) << Efmt(19,10) << E[0] 

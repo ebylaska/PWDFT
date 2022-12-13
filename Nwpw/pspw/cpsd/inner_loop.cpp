@@ -175,6 +175,8 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       std::memset(xcp,0,ispin*n2ft3d);
       std::memset(xce,0,ispin*n2ft3d);
       myxc->v_exc_all(ispin,dnall,xcp,xce);
+
+
       //v_exc(ispin,shift2,dnall,xcp,xce,x);
 
       //for (k=0; k<n2ft3d; ++k)

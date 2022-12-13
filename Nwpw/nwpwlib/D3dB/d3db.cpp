@@ -1198,6 +1198,37 @@ void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, 
 
 
 
+/********************************
+ *                              *
+ *     d3db::rrrrr_SumMulAdd    *
+ *                              *
+ ********************************/
+/* 
+   ptr5 = (ptr1+ptr2)*ptr3 + pt4
+*/
+void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2, 
+                           const double *ptr3, const double *ptr4, 
+                           double *ptr5)
+{
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr5[i] = (ptr1[i] + ptr2[i])*ptr3[i] + ptr4[i];
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {
+      ptr5[i]   = (ptr1[i]   + ptr2[i])  *ptr3[i]   + ptr4[i];
+      ptr5[i+1] = (ptr1[i+1] + ptr2[i+1])*ptr3[i+1] + ptr4[i+1];
+      ptr5[i+2] = (ptr1[i+2] + ptr2[i+2])*ptr3[i+2] + ptr4[i+2];
+      ptr5[i+3] = (ptr1[i+3] + ptr2[i+3])*ptr3[i+3] + ptr4[i+3];
+      ptr5[i+4] = (ptr1[i+4] + ptr2[i+4])*ptr3[i+4] + ptr4[i+4];
+   }
+   return;
+}
+
+
 
 /********************************
  *                              *
@@ -1503,6 +1534,30 @@ void d3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
       ptr3[i+2] = ptr1[i+2] - ptr2[i+2];
       ptr3[i+3] = ptr1[i+3] - ptr2[i+3];
       ptr3[i+4] = ptr1[i+4] - ptr2[i+4];
+   }
+}
+
+/********************************
+ *                              *
+ *         d3db::arrr_Minus     *
+ *                              *
+ ********************************/
+void d3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2, double *ptr3)
+{  
+   int i;
+   int m = n2ft3d%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = a*(ptr1[i] - ptr2[i]);
+   if (n2ft3d<5)
+      return;
+   for (i=m; i<n2ft3d; i+=5)
+   {  
+      ptr3[i]   = a*(ptr1[i]   - ptr2[i]);
+      ptr3[i+1] = a*(ptr1[i+1] - ptr2[i+1]);
+      ptr3[i+2] = a*(ptr1[i+2] - ptr2[i+2]);
+      ptr3[i+3] = a*(ptr1[i+3] - ptr2[i+3]);
+      ptr3[i+4] = a*(ptr1[i+4] - ptr2[i+4]);
    }
 }
 
