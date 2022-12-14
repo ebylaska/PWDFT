@@ -360,6 +360,10 @@ public:
     inuse[ic] = false;
 #endif
   }
+  void TN1_dgemm(int npack,int ne,  double alpha, double *host_a, double *host_b, double beta, double *host_c) {
+	  // DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_c,ne);
+        //TN_dgemm(ne,nprj,npack,alpha,host_a,npack,host_b,npack,beta,host_c);
+  }
 
   void T_free() { inuse[ib_prj] = false; }
 
@@ -442,6 +446,11 @@ public:
     desc_x->commit(*device_queue);
     desc_y->commit(*device_queue);
     desc_z->commit(*device_queue);
+  }
+  void batch_fft_end() {
+    delete desc_x;
+    delete desc_y;
+    delete desc_z;
   }
 
   void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {

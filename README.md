@@ -29,30 +29,88 @@ $ cd build
 $ cmake .
 ```
 
-# Build instructions on JLSE
+## Build instructions on Sunspot
 
-## Required Modules
+### Required Modules
+
+```
+module add gcc/11.2.0
+module add cray-libpals/1.2.3
+module add intel_compute_runtime/release/pvc-prq-66
+module add oneapi-prgenv/2022.10.15.006.001
+module add mpich/50.1/icc-all-pmix-gpu
+module add spack/linux-sles15-x86_64-ldpath
+module add oneapi/eng-compiler/2022.10.15.006
+module add ncurses/6.1.20180317-gcc-11.2.0-zedoshf
+module add libfabric/1.15.2.0
+module add openssl/1.1.1d-gcc-11.2.0-amlvxob
+module add cray-pals/1.2.3
+module add cmake/3.24.2-gcc-11.2.0-pcasswq
+```
+
+### Getting the code and building instrunctions
+
+```
+export HTTP_PROXY=http://proxy.alcf.anl.gov:3128
+export HTTPS_PROXY=http://proxy.alcf.anl.gov:3128
+export http_proxy=http://proxy.alcf.anl.gov:3128
+export https_proxy=http://proxy.alcf.anl.gov:3128
+git config --global http.proxy http://proxy.alcf.anl.gov:3128
+git clone https://github.com/alvarovm/PWDFT.git
+
+cd PWDFT
+cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
+cd build_sycl
+make 
+```
+### Running
+```
+qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q workq -I
+```
+
+# Examples on JSLE
+## `SYCL` backend
+### Required Modules
 ```
 export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
 module load oneapi
 module load cmake
 ```
 
-## Build Instructions (for `SYCL` backend)
+### Build Instructions (for `SYCL` backend)
 ```
 cd PWDFT
-```
-```
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
-```
-```
 make -j4
 ```
 
-## Running on JSLE
+### Running on Articus
 ```
 qsub -I -n 1 -t 60 -q arcticus
 ```
+
+## CUDA backend
+### Required Modules
+```
+export MODULEPATH=/soft/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles
+module add cmake/3.20.3   cuda/11.6.2    gcc/9.5.0
+module add openmpi/4.1.1-gcc
+```
+
+### Build Instructions (for CUDA backend)
+```
+cd PWDFT
+mkdir build_cuda
+cd build_cuda
+cmake -DNWPW_CUDA=ON ../Nwpw/
+make -j4
+```
+
+### Running on JSLE in V100
+```
+qsub  -I -t 30  -n 1 -q gpu_v100_smx2_debug
+```
+
 
 # Build Instructions on NERSC Cori-Haswell
 
@@ -92,6 +150,34 @@ cd PWDFT/QA/C2_steepest_descent
 srun -n 24 ../../build/pwdft c2-sd.nw
 ```
 
+# Build instructions on Polaris-CUDA
+
+## Required Modules on Polaris-CUDA
+```
+module purge
+module load cmake cpe-cuda aocl
+module load PrgEnv-nvhpc
+module unload craype-accel-nvidia80
+
+```
+
+## Build Instructions on Polaris-CUDA (starting from PWDFT directory)
+```
+mkdir build_cuda
+cd build-cuda
+cmake -DNWPW_CUDA=ON  -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_Fortran_COMPILER=ftn ../Nwpw/
+```
+## Running on Polaris-CUDA
+```
+qsub -q  debug -I -l walltime=01:00:00 -lselect=1 -A myproject -l filesystems=home:eagle:grand
+module purge
+module load cmake cpe-cuda aocl
+module load PrgEnv-nvhpc
+module unload craype-accel-nvidia80
+
+mpiexec -n 2 --ppn 2 --cpu-bind=verbose --cpu-bind depth--env CUDA_VISIBLE_DEVICES=2 ./pwdft nwinput.nw
+
+```
 
 # Build instructions on NERSC Cori-CUDA
 
