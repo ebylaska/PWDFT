@@ -1,0 +1,688 @@
+pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+title "CH3Cl - aperiodic PBE/30 Ry
+#machinejob:expert
+
+echo
+
+start pspw-pbe-ch3cl-aperiodic
+
+memory 1900 mb
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+charge 0
+
+geometry noautosym nocenter noautoz
+C   0.456014 -1.041025 -0.142619
+H   1.534496 -0.935588 -0.168315
+H   0.149455 -1.660229 0.692550
+H   0.086258 -1.445367 -1.077867
+Cl   -0.263152 0.600745 0.082298
+end
+set nwpw:cif_filename  ch3cl
+
+
+nwpw
+  simulation_cell
+     FCC 38.0
+     boundary_conditions aperiodic
+  end
+
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 30.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman 
+
+  2d-hcurve
+end
+
+task pspw energy
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Wed Dec 14 11:12:17 2022
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Wed Dec 14 11:51:21 2022
+       nproc                 = 4
+       input                 = dungeon02.nw
+
+
+
+First rtdbstr={"charge":0,"current_task":"task pspw energy","dbname":"pspw-pbe-ch3cl-aperiodic","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":41,"nwinput_lines":["title \"CH3Cl - aperiodic PBE/30 Ry","","","echo","","start pspw-pbe-ch3cl-aperiodic","","memory 1900 mb","","permanent_dir ./perm","scratch_dir   ./perm","","charge 0","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","set nwpw:cif_filename  ch3cl","","","nwpw","  simulation_cell","     FCC 38.0","     boundary_conditions aperiodic","  end","","  ","  ","  cutoff 30.0","  mult 1","  xc pbe96","  lmbfgs grassman ","","  2d-hcurve","end","","task pspw energy",""],"nwinput_nlines":42,"nwpw":{"cutoff":[30.0,60.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"xc":"pbe96"},"nwpw:cif_filename":"ch3cl","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"CH3Cl - aperiodic PBE/30 Ry"}
+First task=1
+
+
+Running staged energy optimization - lowlevel_rtdbstr = {"charge":0,"current_task":"energy","dbname":"pspw-pbe-ch3cl-aperiodic","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":41,"nwinput_lines":["title \"CH3Cl - aperiodic PBE/30 Ry","","","echo","","start pspw-pbe-ch3cl-aperiodic","","memory 1900 mb","","permanent_dir ./perm","scratch_dir   ./perm","","charge 0","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","set nwpw:cif_filename  ch3cl","","","nwpw","  simulation_cell","     FCC 38.0","     boundary_conditions aperiodic","  end","","  ","  ","  cutoff 30.0","  mult 1","  xc pbe96","  lmbfgs grassman ","","  2d-hcurve","end","","task pspw energy",""],"nwinput_nlines":42,"nwpw":{"cutoff":[10.0,20.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"xc":"pbe96"},"nwpw:cif_filename":"ch3cl","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"CH3Cl - aperiodic PBE/30 Ry"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Wed Dec 14 11:51:21 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./perm/C.vpp
+
+ writing formatted psp filename: ./perm/H.vpp
+
+ writing formatted psp filename: ./perm/Cl.vpp
+ generating random psi from scratch
+ Warning - Gram-Schmidt being performed on psi2
+         - exact norm = 14 norm=17.439 corrected norm=14 (error=3.43904)
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.283 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   13718.00
+      lattice:    a1 = <   19.000   19.000    0.000 >
+                  a2 = <   19.000    0.000   19.000 >
+                  a3 = <    0.000   19.000   19.000 >
+      reciprocal: b1 = <    0.165    0.165   -0.165 >
+                  b2 = <    0.165   -0.165    0.165 >
+                  b3 = <   -0.165    0.165    0.165 >
+      lattice:    a =      26.870 b =     26.870 c =      26.870
+                  alpha =  60.000 beta =  60.000 gamma =  60.000
+      density cutoff = 20.000 fft =  48 x   48 x   48  (   27158 waves     6791 per task)
+      wavefnc cutoff = 10.000 fft =  48 x   48 x   48  (   10414 waves     2605 per task)
+
+ Ewald parameters:
+      energy cutoff =  20.000 fft =  48 x   48 x   48  (   27158 waves     6790 per task)
+      Ewald summation: cut radius =   8.553 and   1
+                       Mandelung Wigner-Seitz =  1.79174723 (alpha =  2.88828212 rs = 14.85026019)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Wed Dec 14 11:51:21 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        - 10 steepest descent iterations performed
+        10      -2.099343252684e+01   -8.224607e-01    1.872910e-02
+        20      -2.256340183593e+01   -7.579240e-03    6.178198e-05
+        30      -2.257394164681e+01   -4.463152e-05    6.016339e-08
+        40      -2.257401438534e+01   -5.489485e-07    3.511815e-10
+        50      -2.257401536645e+01   -6.645099e-08    2.835240e-11
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Wed Dec 14 11:51:45 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2574015366e+01 (   -4.51480e+00 /ion)
+ total orbital energy:   -6.2289913998e+00 (   -8.89856e-01 /electron)
+ hartree energy      :    3.7517440819e+01 (    5.35963e+00 /electron)
+ exc-corr energy     :   -5.8777926478e+00 (   -8.39685e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.0924037644e+01 (    1.56058e+00 /electron)
+ V_local (planewave) :   -8.8052749352e+01 (   -1.25790e+01 /electron)
+ V_nl    (planewave) :    3.2914306449e+00 (    4.70204e-01 /electron)
+ V_Coul  (planewave) :    7.5034881639e+01 (    1.07193e+01 /electron)
+ V_xc    (planewave) :   -7.4265919747e+00 (   -1.06094e+00 /electron)
+ Viral Coefficient   :   -1.5702096242e+00
+
+ orbital energy:
+    -2.6249799e-01 (  -7.143eV)
+    -2.6281888e-01 (  -7.152eV)
+    -3.7744751e-01 ( -10.271eV)
+    -4.0584081e-01 ( -11.044eV)
+    -4.0620531e-01 ( -11.053eV)
+    -6.2229333e-01 ( -16.934eV)
+    -7.7739187e-01 ( -21.154eV)
+
+== Center of Charge ==
+
+spin up    = (    0.2148    -0.4903    -0.0671 )
+spin down  = (    0.2148    -0.4903    -0.0671 )
+     total = (    0.2148    -0.4903    -0.0671 )
+ionic      = (    0.2365    -0.5399    -0.0740 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.3046    -0.6952    -0.0957 ) au
+|mu| =      0.7650 au (     1.9444 Debye )
+
+ output psi to filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 6.490e-01
+ main loop   : 2.316e+01
+ epilogue    : 4.847e-02
+ total       : 2.386e+01
+ cputime/step: 1.448e-01 ( 160 evaluations, 45 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            2.475572e+01 1.547233e-01     100.00%
+ total FFT time        1.792623e+01 1.120389e-01      72.41%
+ lagrange multipliers  3.658044e-02 2.286278e-04       0.15%
+ local potentials      1.483881e-02 9.274258e-05       0.06%
+ non-local potentials  6.892065e-01 4.307541e-03       2.78%
+ ffm_dgemm             5.388298e-01 3.367686e-03       2.18%
+ fmf_dgemm             1.128352e+00 7.052201e-03       4.56%
+ m_diagonalize         2.003169e-03 1.251981e-05       0.01%
+ mmm_multiply          2.215086e-03 1.384429e-05       0.01%
+
+ >>> job completed at     Wed Dec 14 11:51:45 2022 <<<
+
+Running staged energy optimization - lowlevel_rtdbstr = {"charge":0,"current_task":"energy","dbname":"pspw-pbe-ch3cl-aperiodic","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":41,"nwinput_lines":["title \"CH3Cl - aperiodic PBE/30 Ry","","","echo","","start pspw-pbe-ch3cl-aperiodic","","memory 1900 mb","","permanent_dir ./perm","scratch_dir   ./perm","","charge 0","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","set nwpw:cif_filename  ch3cl","","","nwpw","  simulation_cell","     FCC 38.0","     boundary_conditions aperiodic","  end","","  ","  ","  cutoff 30.0","  mult 1","  xc pbe96","  lmbfgs grassman ","","  2d-hcurve","end","","task pspw energy",""],"nwinput_nlines":42,"nwpw":{"cutoff":[20.0,40.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"xc":"pbe96"},"nwpw:cif_filename":"ch3cl","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"CH3Cl - aperiodic PBE/30 Ry"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Wed Dec 14 11:51:45 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./perm/C.vpp
+
+ writing formatted psp filename: ./perm/H.vpp
+
+ writing formatted psp filename: ./perm/Cl.vpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... psi:1 spin:1
+ converting .... psi:2 spin:1
+ converting .... psi:3 spin:1
+ converting .... psi:4 spin:1
+ converting .... psi:5 spin:1
+ converting .... psi:6 spin:1
+ converting .... psi:7 spin:1
+
+ input psi exists, reading from file: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   13718.00
+      lattice:    a1 = <   19.000   19.000    0.000 >
+                  a2 = <   19.000    0.000   19.000 >
+                  a3 = <    0.000   19.000   19.000 >
+      reciprocal: b1 = <    0.165    0.165   -0.165 >
+                  b2 = <    0.165   -0.165    0.165 >
+                  b3 = <   -0.165    0.165    0.165 >
+      lattice:    a =      26.870 b =     26.870 c =      26.870
+                  alpha =  60.000 beta =  60.000 gamma =  60.000
+      density cutoff = 40.000 fft =  64 x   64 x   64  (   72119 waves    18029 per task)
+      wavefnc cutoff = 20.000 fft =  64 x   64 x   64  (   29312 waves     7328 per task)
+
+ Ewald parameters:
+      energy cutoff =  40.000 fft =  64 x   64 x   64  (   72119 waves    18030 per task)
+      Ewald summation: cut radius =   8.553 and   1
+                       Mandelung Wigner-Seitz =  1.79174723 (alpha =  2.88828212 rs = 14.85026019)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Wed Dec 14 11:51:47 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        - 10 steepest descent iterations performed
+        10      -2.269063986843e+01   -2.937767e-05    1.420473e-07
+        20      -2.269067802093e+01   -2.635620e-07    1.020382e-09
+        30      -2.269067839167e+01   -7.549492e-08    1.397859e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Wed Dec 14 11:52:19 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2690678392e+01 (   -4.53814e+00 /ion)
+ total orbital energy:   -6.2098552493e+00 (   -8.87122e-01 /electron)
+ hartree energy      :    3.7659216760e+01 (    5.37989e+00 /electron)
+ exc-corr energy     :   -5.9043984644e+00 (   -8.43485e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.1269622296e+01 (    1.60995e+00 /electron)
+ V_local (planewave) :   -8.8256823049e+01 (   -1.26081e+01 /electron)
+ V_nl    (planewave) :    2.9180865401e+00 (    4.16870e-01 /electron)
+ V_Coul  (planewave) :    7.5318433521e+01 (    1.07598e+01 /electron)
+ V_xc    (planewave) :   -7.4591745566e+00 (   -1.06560e+00 /electron)
+ Viral Coefficient   :   -1.5510260314e+00
+
+ orbital energy:
+    -2.6155596e-01 (  -7.117eV)
+    -2.6157271e-01 (  -7.118eV)
+    -3.7707083e-01 ( -10.261eV)
+    -4.0649848e-01 ( -11.061eV)
+    -4.0661023e-01 ( -11.065eV)
+    -6.1545442e-01 ( -16.747eV)
+    -7.7616499e-01 ( -21.121eV)
+
+== Center of Charge ==
+
+spin up    = (    0.2149    -0.4906    -0.0672 )
+spin down  = (    0.2149    -0.4906    -0.0672 )
+     total = (    0.2149    -0.4906    -0.0672 )
+ionic      = (    0.2365    -0.5399    -0.0740 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.3027    -0.6907    -0.0944 ) au
+|mu| =      0.7600 au (     1.9317 Debye )
+
+ output psi to filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 1.632e+00
+ main loop   : 3.128e+01
+ epilogue    : 5.678e-02
+ total       : 3.297e+01
+ cputime/step: 3.680e-01 ( 85 evaluations, 23 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            5.889125e+01 6.928382e-01     100.00%
+ total FFT time        4.169746e+01 4.905583e-01      70.80%
+ lagrange multipliers  1.418947e-01 1.669349e-03       0.24%
+ local potentials      7.086787e-02 8.337396e-04       0.12%
+ non-local potentials  1.832195e+00 2.155523e-02       3.11%
+ ffm_dgemm             1.376474e+00 1.619381e-02       2.34%
+ fmf_dgemm             2.896376e+00 3.407501e-02       4.92%
+ m_diagonalize         3.495710e-03 4.112600e-05       0.01%
+ mmm_multiply          3.277016e-03 3.855313e-05       0.01%
+
+ >>> job completed at     Wed Dec 14 11:52:19 2022 <<<
+
+Running energy calculation - rtdbstr = {"charge":0,"current_task":"task pspw energy","dbname":"pspw-pbe-ch3cl-aperiodic","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":41,"nwinput_lines":["title \"CH3Cl - aperiodic PBE/30 Ry","","","echo","","start pspw-pbe-ch3cl-aperiodic","","memory 1900 mb","","permanent_dir ./perm","scratch_dir   ./perm","","charge 0","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","set nwpw:cif_filename  ch3cl","","","nwpw","  simulation_cell","     FCC 38.0","     boundary_conditions aperiodic","  end","","  ","  ","  cutoff 30.0","  mult 1","  xc pbe96","  lmbfgs grassman ","","  2d-hcurve","end","","task pspw energy",""],"nwinput_nlines":42,"nwpw":{"cutoff":[30.0,60.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"xc":"pbe96"},"nwpw:cif_filename":"ch3cl","permanent_dir":"./perm","psp_library_dir":"","scratch_dir":"./perm","title":"CH3Cl - aperiodic PBE/30 Ry"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Wed Dec 14 11:52:19 2022 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./perm/C.vpp
+
+ writing formatted psp filename: ./perm/H.vpp
+
+ writing formatted psp filename: ./perm/Cl.vpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... psi:1 spin:1
+ converting .... psi:2 spin:1
+ converting .... psi:3 spin:1
+ converting .... psi:4 spin:1
+ converting .... psi:5 spin:1
+ converting .... psi:6 spin:1
+ converting .... psi:7 spin:1
+
+ input psi exists, reading from file: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+          ==============  summary of input  ==================
+
+ input psi filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00000    0.00000    0.00000 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   13718.00
+      lattice:    a1 = <   19.000   19.000    0.000 >
+                  a2 = <   19.000    0.000   19.000 >
+                  a3 = <    0.000   19.000   19.000 >
+      reciprocal: b1 = <    0.165    0.165   -0.165 >
+                  b2 = <    0.165   -0.165    0.165 >
+                  b3 = <   -0.165    0.165    0.165 >
+      lattice:    a =      26.870 b =     26.870 c =      26.870
+                  alpha =  60.000 beta =  60.000 gamma =  60.000
+      density cutoff = 60.000 fft =  80 x   80 x   80  (  136317 waves    34080 per task)
+      wavefnc cutoff = 30.000 fft =  80 x   80 x   80  (   53698 waves    13426 per task)
+
+ Ewald parameters:
+      energy cutoff =  60.000 fft =  80 x   80 x   80  (  136317 waves    34080 per task)
+      Ewald summation: cut radius =   8.553 and   1
+                       Mandelung Wigner-Seitz =  1.79174723 (alpha =  2.88828212 rs = 14.85026019)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================== Grassmann lmbfgs iteration ==================
+          >>> iteration started at Wed Dec 14 11:52:23 2022  <<<
+     iter.                 Energy          DeltaE        DeltaRho
+     ----------------------------------------------------------------
+        - 10 steepest descent iterations performed
+        10      -2.269826506528e+01   -7.865024e-07    7.438471e-09
+        20      -2.269826636162e+01   -9.409905e-08    5.946165e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Wed Dec 14 11:53:05 2022  <<<
+
+     ==============  energy results (Molecule object)  ==============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2698266362e+01 (   -4.53965e+00 /ion)
+ total orbital energy:   -6.2115323280e+00 (   -8.87362e-01 /electron)
+ hartree energy      :    3.7665233071e+01 (    5.38075e+00 /electron)
+ exc-corr energy     :   -5.9053185343e+00 (   -8.43617e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.1264057890e+01 (    1.60915e+00 /electron)
+ V_local (planewave) :   -8.8284222127e+01 (   -1.26120e+01 /electron)
+ V_nl    (planewave) :    2.9383658130e+00 (    4.19767e-01 /electron)
+ V_Coul  (planewave) :    7.5330466142e+01 (    1.07615e+01 /electron)
+ V_xc    (planewave) :   -7.4602000460e+00 (   -1.06574e+00 /electron)
+ Viral Coefficient   :   -1.5514471240e+00
+
+ orbital energy:
+    -2.6145063e-01 (  -7.114eV)
+    -2.6145909e-01 (  -7.115eV)
+    -3.7712914e-01 ( -10.262eV)
+    -4.0680988e-01 ( -11.070eV)
+    -4.0681495e-01 ( -11.070eV)
+    -6.1562974e-01 ( -16.752eV)
+    -7.7647273e-01 ( -21.129eV)
+
+== Center of Charge ==
+
+spin up    = (    0.2150    -0.4908    -0.0672 )
+spin down  = (    0.2150    -0.4908    -0.0672 )
+     total = (    0.2150    -0.4908    -0.0672 )
+ionic      = (    0.2365    -0.5399    -0.0740 )
+
+== Molecular Dipole wrt Center of Mass ==
+
+mu   = (    0.3012    -0.6877    -0.0942 ) au
+|mu| =      0.7566 au (     1.9231 Debye )
+
+ output psi to filename: ./perm/pspw-pbe-ch3cl-aperiodic.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.046e+00
+ main loop   : 4.118e+01
+ epilogue    : 1.066e-01
+ total       : 4.433e+01
+ cputime/step: 7.100e-01 ( 58 evaluations, 15 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            1.044790e+02 1.801363e+00     100.00%
+ total FFT time        7.344288e+01 1.266256e+00      70.29%
+ lagrange multipliers  3.282734e-01 5.659886e-03       0.31%
+ local potentials      1.779263e-01 3.067696e-03       0.17%
+ non-local potentials  3.198318e+00 5.514342e-02       3.06%
+ ffm_dgemm             2.300849e+00 3.966981e-02       2.20%
+ fmf_dgemm             4.859131e+00 8.377812e-02       4.65%
+ m_diagonalize         4.083289e-03 7.040153e-05       0.00%
+ mmm_multiply          4.099109e-03 7.067429e-05       0.00%
+
+ >>> job completed at     Wed Dec 14 11:53:05 2022 <<<
+
+Next rtdbstr={"charge":0,"current_task":"task pspw energy","dbname":"pspw-pbe-ch3cl-aperiodic","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":42,"nwinput_lines":["title \"CH3Cl - aperiodic PBE/30 Ry","","","echo","","start pspw-pbe-ch3cl-aperiodic","","memory 1900 mb","","permanent_dir ./perm","scratch_dir   ./perm","","charge 0","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","set nwpw:cif_filename  ch3cl","","","nwpw","  simulation_cell","     FCC 38.0","     boundary_conditions aperiodic","  end","","  ","  ","  cutoff 30.0","  mult 1","  xc pbe96","  lmbfgs grassman ","","  2d-hcurve","end","","task pspw energy",""],"nwinput_nlines":42,"nwpw":{"cutoff":[30.0,60.0],"dipole":[0.30124683413314335,-0.687679830155556,-0.09415316396784057],"dipole_magnitude":0.7566492068079971,"initialize_wavefunction":null,"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[19.0,19.0,0.0,19.0,0.0,19.0,0.0,19.0,19.0]},"xc":"pbe96"},"nwpw:cif_filename":"ch3cl","permanent_dir":"./perm","psp_library_dir":"","pspw":{"eigenvalues":[-0.26145063376452915,-0.2614590873757712,-0.37712914446175155,-0.40680988057913664,-0.4068149457499875,-0.6156297371194177,-0.7764727349625958],"energies":[-22.698266361615012,-6.211532328026379,37.66523307104186,-5.90531853434938,19.62361752580817,11.264057889746317,-88.28422212681846,2.93836581295697,75.33046614208372,-7.460200045994438,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-22.698266361615012},"scratch_dir":"./perm","title":"CH3Cl - aperiodic PBE/30 Ry"}
+Next task =0
+
+writing rtdbjson = ./perm/pspw-pbe-ch3cl-aperiodic.json
