@@ -7,7 +7,7 @@ static Gdevices mygdevice;
 
 #ifdef NWPW_SYCL
 sycl::queue* get_syclQue() {
-  return mygdevice.device_queue;
+  return mygdevice.stream[0];
 }
 #endif // NWPW_SYCL
 
