@@ -41,6 +41,7 @@ end
 nwpw
    simulation_cell
      FCC 38.0
+     ngrid 32 32 32
    end
    xc beef
    cutoff 15.0
