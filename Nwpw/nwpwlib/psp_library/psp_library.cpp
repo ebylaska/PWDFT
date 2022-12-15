@@ -49,7 +49,7 @@ static int convert_psp_type(char *test)
 static bool psp_read_header(char *fname, double *zv)
 {
    int i,ifound,ihasae;
-   char atom[2];
+   char atom[3];
    FILE *fp;
 
    ifound = cfileexists(fname);
