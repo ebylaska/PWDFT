@@ -33,6 +33,7 @@ class d3db : public Mapping3 {
     int **p_j1_start[2],**p_j2_start[2];
 
 public:
+    /* fft tabulations of of trigonometry functions */
     double *tmpx,*tmpy,*tmpz;
 
     Parallel  *parall;
