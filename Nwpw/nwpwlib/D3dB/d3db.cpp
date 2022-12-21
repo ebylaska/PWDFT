@@ -4,10 +4,10 @@
 	this class is used for defining 3d parallel maps
 */
 
-#include        "compressed_io.hpp"
+#include "compressed_io.hpp"
 #include	"util.hpp"
 #include	"fft.h"
-#include        <cmath>
+#include <cmath>
 
 #include "blas.h"
 
@@ -2057,7 +2057,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
 
 
 
-static void cshift1_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
+void d3db::cshift1_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
 {
    int i,j,indx;
    indx = 1;
@@ -2070,7 +2070,7 @@ static void cshift1_fftb(const int n1,const int n2, const int n3, const int n4, 
       indx += (n1+2);
    }
 }
-static void cshift_fftf(const int n1,const int n2, const int n3, const int n4, double *a)
+void d3db::cshift_fftf(const int n1,const int n2, const int n3, const int n4, double *a)
 {
    int i,j,indx;
    indx = 1;
@@ -2100,7 +2100,7 @@ static void cshift_fftf_ab(const int n1,const int n2, const int n3, const int n4
       indx += (n1+2);
    }
 }
-static void zeroend_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
+void d3db::zeroend_fftb(const int n1,const int n2, const int n3, const int n4, double *a)
 {
    int i,indx;
    indx = n1+1;
@@ -2421,6 +2421,9 @@ void d3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
+#else
        indx = 0;
        for (q=0; q<nq1; ++q)
        {
@@ -2428,12 +2431,17 @@ void d3db::rc_fft3d(double *a)
           indx += nxh2;
        }
        cshift_fftf(nx,nq1,1,1,a);
+#endif
+
        c_transpose_ijk(0,a,tmp2,tmp3);
 
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
+#else
        indx = 0;
        for (q=0; q<nq2; ++q)
        {
@@ -2441,11 +2449,15 @@ void d3db::rc_fft3d(double *a)
           indx += (2*ny);
        }
        c_transpose_ijk(1,a,tmp2,tmp3);
+#endif
 
       /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
+#else
        indx = 0;
        for (q=0; q<nq3; ++q)
        {
@@ -2453,6 +2465,7 @@ void d3db::rc_fft3d(double *a)
           indx += 2*nz;
        }
    }
+#endif
 
    delete [] tmp3;
    delete [] tmp2;
@@ -2700,6 +2713,45 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
 }
 
 
+/********************************
+ *                              *
+ *    d3db::c_ptranspose_jk     *
+ *                              *
+ ********************************/
+void d3db::c_ptranspose_jk(const int nb, double *a, double *tmp1, double *tmp2)
+{
+   int it,proc_from,proc_to;
+   int msglen;
+
+   parall->astart(1,np);
+
+   c_bindexcopy(nfft3d,p_iq_to_i1[nb][0],a,tmp1);
+
+   /* it = 0, transpose data on same thread */
+   msglen = 2*(p_i2_start[nb][0][1] - p_i2_start[nb][0][0]);
+   int one=1;
+   DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][0][0]]),one,&(tmp2[2*p_i2_start[nb][0][0]]),one);
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = 2*(p_i2_start[nb][0][it+1] - p_i2_start[nb][0][it]);
+      if (msglen>0)
+         parall->adreceive(1,1,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = 2*(p_i1_start[nb][0][it+1] - p_i1_start[nb][0][it]);
+      if (msglen>0)
+         parall->dsend(1,1,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
+   }
+   parall->aend(1);
+   c_aindexcopy(nfft3d,p_iq_to_i2[nb][0],tmp2,a);
+}
+
 
 
 /********************************
@@ -2779,6 +2831,61 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
    parall->aend(1);
    t_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
+
+
+
+
+/********************************
+ *                              *
+ *    d3db::c_ptranspose_ijk    *
+ *                              *
+ ********************************/
+void d3db::c_ptranspose_ijk(const int nb, const int op,double *a,double *tmp1,double *tmp2)
+{
+   int nnfft3d,it,proc_from,proc_to;
+   int msglen;
+
+   parall->astart(1,np);
+
+   /* pack a array */
+   if ((op==0)||(op==4)) nnfft3d = (nx/2+1)*nq1;
+   if ((op==1)||(op==3)) nnfft3d = (ny)    *nq2;
+   if ((op==2)||(op==5)) nnfft3d = (nz)    *nq3;
+   c_bindexcopy(nnfft3d,p_iq_to_i1[nb][op],a,tmp1);
+
+   /* it = 0, transpose data on same thread */
+   msglen = 2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
+   int one=1;
+   DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][op][0]]),one,&(tmp2[2*p_i2_start[nb][op][0]]),one);
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = 2*(p_i2_start[nb][op][it+1] - p_i2_start[nb][op][it]);
+      if (msglen>0)
+         parall->adreceive(1,1,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = 2*(p_i1_start[nb][op][it+1] - p_i1_start[nb][op][it]);
+      if (msglen>0)
+         parall->dsend(1,1,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
+   }
+
+   /* wait for completion of mp_send, also do a sync */
+   parall->aend(1);
+
+   /* unpack a array */
+   if ((op==3)||(op==5)) nnfft3d = (nx/2+1)*nq1;
+   if ((op==0)||(op==2)) nnfft3d = (ny)    *nq2;
+   if ((op==1)||(op==4)) nnfft3d = (nz)    *nq3;
+   c_aindexcopy(nnfft3d,p_iq_to_i2[nb][op],tmp2,a);
+
+}
+
 
 
 

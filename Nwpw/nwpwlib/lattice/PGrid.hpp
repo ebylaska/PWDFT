@@ -39,15 +39,14 @@ class PGrid : public d3db {
 
 
 public:
-        /* lattice pointer */
-        Lattice *lattice;
+   /* lattice pointer */
+   Lattice *lattice;
 
-        /* r_grid data */
-        bool has_r_grid = false;
-        double *r_grid;
+   /* r_grid data */
+   bool has_r_grid = false;
+   double *r_grid;
 
-
-        /* constructor */
+   /* constructor */
 	PGrid(Parallel *, Lattice *, int, int, int, int, int);
 	PGrid(Parallel *, Lattice *, Control2&);
 
@@ -104,7 +103,6 @@ public:
         }
         void c_pack_deallocate(double *ptr) { delete [] ptr;}
 
-
         void c_unpack(const int, double *);
         void c_pack(const int, double *);
         void cc_pack_copy(const int, double *, double *);
@@ -148,8 +146,8 @@ public:
         void cr_pfft3b_queuein(const int, double *);
         void cr_pfft3b_queueout(const int, double *);
         int  cr_pfft3b_queuefilled();
-        //int  cr_pfft3b(const int, double *);
-        //int  rc_pfft3f(const int, double *);
+        void cr_pfft3b(const int, double *);
+        void rc_pfft3f(const int, double *);
 
         void regenerate_r_grid();
         void initialize_r_grid() {

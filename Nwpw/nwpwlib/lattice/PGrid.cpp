@@ -6,12 +6,13 @@
 
 
 
-#include        <cmath>
-#include 	<cstring> //memset
-#include        <iostream>
+#include <cmath>
+#include <cstring> //memset
+#include <iostream>
 #include	"Control2.hpp"
 #include	"Lattice.hpp"
 #include	"util.hpp"
+#include "fft.h"
 #include	"nwpw_timing.hpp"
 #include	"gdevice.hpp"
 
@@ -275,7 +276,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
              }
          }
          // call D3dB_c_ptranspose_jk_init(nb,log_mb(zero_arow3(1)))
-         c_ptranspose_jk_init(nb,zero_arow3);
+         d3db::c_ptranspose_jk_init(nb,zero_arow3);
 
 
          /* find zero_slab23 - (i,*,*) slabs that are zero */
@@ -408,7 +409,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
 
          //call D3dB_c_ptranspose_ijk_init(nb,log_mb(zero_arow2(1)),log_mb(zero_arow3(1)))
-         c_ptranspose_ijk_init(nb,zero_arow2,zero_arow3);
+         d3db::c_ptranspose_ijk_init(nb,zero_arow2,zero_arow3);
 
       }
 
@@ -813,6 +814,383 @@ void PGrid::ii_pack_copy(const int nb, int *a, int *b)
    int i;
    int ng  = nida[nb]+nidb[nb];
    for (i=0; i<ng; ++i) b[i] = a[i];
+}
+
+
+/********************************
+ *                              *
+ *    PGrid:cr_pfft3b           *
+ *                              *
+ ********************************/
+/* This routine performs the operation of a three dimensional 
+  complex to complex inverse fft:
+   A(nx,ny(nb),nz(nb)) <- FFT3^(-1)[A(kx,ky,kz)]
+*/
+void PGrid::cr_pfft3b(const int nb, double *a)
+{
+
+   nwpw_timing_function ftime(1);
+   int i,j,k,jj,kk,q,indx,indx0,indx2,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
+   double *tmp2 = new (std::nothrow) double [2*nfft3d]();
+   double *tmp3 = new (std::nothrow) double [2*nfft3d]();
+
+   nxh  = nx/2+1;
+   nxhy = nxh*ny;
+   nxhz = nxh*nz;
+   nxh2  = nx+2;
+   nxhy2 = nxh2*ny;
+   nxhz2 = nxh2*nz;
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      /***************************************************
+       ***     do fft along kz dimension               ***
+       ***     A(kx,nz,ky) <- fft1d^(-1)[A(kx,kz,ky)]  ***
+       ***************************************************/
+       indx0=0;
+       indx2=0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             if (!zero_row3[nb][indx2])
+             {
+                kk   = 0;
+                indx = 2*i+indx0;
+                for (k=0; k<nz; ++k)
+                {
+                   tmp2[kk]   = a[indx];
+                   tmp2[kk+1] = a[indx+1];
+                   kk   += 2;
+                   indx += nxh2;
+                }
+
+                dcfftb_(&nz,tmp2,d3db::tmpz);
+
+                kk   = 0;
+                indx = 2*i+indx0;
+                for (k=0; k<nz; ++k)
+                {
+                   a[indx]   = tmp2[kk];
+                   a[indx+1] = tmp2[kk+1];
+                   kk   += 2;
+                   indx += nxh2;
+                }
+             }
+             ++indx2;
+          }
+          indx0 += nxhz2;
+       }
+
+
+      /***********************************************
+       ***         Do a ptranspose of A            ***
+       ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
+       ************************************************/
+      d3db::c_ptranspose_jk(nb,a,tmp2,tmp3);
+
+      /*************************************************
+       ***        do fft along ky dimension          ***
+       ***    A(kx,ny,nz) <- fft1d^(-1)[A(kx,ky,nz)] ***
+       *************************************************/
+       indx0=0;
+       indx2=0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             if (!zero_row2[nb][indx2])
+             {
+                jj   = 0;
+                indx = 2*i+indx0;
+                for (j=0; j<ny; ++j)
+                {
+                   tmp2[jj]   = a[indx];
+                   tmp2[jj+1] = a[indx+1];
+                   jj   += 2;
+                   indx += nxh2;
+                }
+
+                dcfftb_(&ny,tmp2,d3db::tmpy);
+
+                jj   = 0;
+                indx = 2*i+indx0;
+                for (j=0; j<ny; ++j)
+                {
+                   a[indx]   = tmp2[jj];
+                   a[indx+1] = tmp2[jj+1];
+                   jj   += 2;
+                   indx += nxh2;
+                }
+             }
+             ++indx2;
+          }
+          indx0 += nxhy2;
+       }
+
+
+      /************************************************
+       ***     do fft along kx dimension            ***
+       ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
+       ************************************************/
+       d3db::cshift1_fftb(nx,ny,nq,1,a);
+       indx = 0;
+       for (q=0; q<nq; ++q)
+       for (j=0; j<ny; ++j)
+       {
+          drfftb_(&nx,&a[indx],d3db::tmpx);
+          indx += nxh2;
+       }
+       d3db::zeroend_fftb(nx,ny,nq,1,a);
+
+   }
+
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+
+      /************************************************
+       ***     do fft along kz dimension            ***
+       ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
+       ************************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
+#else
+       indx = 0;
+       for (q=0; q<nq3; ++q)
+       {
+          if (!zero_row3[nb][q])
+             dcfftb_(&nz,&a[indx],d3db::tmpz);
+          indx += 2*nz;
+       }
+#endif
+       d3db::c_ptranspose_ijk(nb,2,a,tmp2,tmp3);
+
+
+      /************************************************
+       ***     do fft along ky dimension            ***
+       ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
+       ************************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
+#else
+       indx = 0;
+       for (q=0; q<nq2; ++q)
+       {
+          if (!zero_row2[nb][q])
+             dcfftb_(&ny,&a[indx],d3db::tmpy);
+          indx += (2*ny);
+       }
+#endif
+       d3db::c_ptranspose_ijk(nb,3,a,tmp2,tmp3);
+
+
+      /************************************************
+       ***     do fft along kx dimension            ***
+       ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
+       ************************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
+#else
+       d3db::cshift1_fftb(nx,nq1,1,1,a);
+       indx = 0;
+       for (q=0; q<nq1; ++q)
+       {
+          drfftb_(&nx,&a[indx],d3db::tmpx);
+          indx += nxh2;
+       }
+#endif
+       d3db::zeroend_fftb(nx,nq1,1,1,a);
+
+   }
+
+   delete [] tmp3;
+   delete [] tmp2;
+}
+
+
+/********************************
+ *                              *
+ *       PGrid::rc_pfft3f       *
+ *                              *
+ ********************************/
+/*
+   This routine performs the operation of a three dimensional 
+   complex to complex fft:
+      A(kx,ky,kz) <- FFT3[A(nx(nb),ny(nb),nz(nb))]
+*/
+void PGrid::rc_pfft3f(const int nb, double *a)
+{
+   nwpw_timing_function ftime(1);
+   int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
+   double *tmp2 = new (std::nothrow) double[2*nfft3d]();
+   double *tmp3 = new (std::nothrow) double[2*nfft3d]();
+
+   nxh  = nx/2+1;
+   nxhy = nxh*ny;
+   nxhz = nxh*nz;
+   nxh2  = nx+2;
+   nxhy2 = nxh2*ny;
+   nxhz2 = nxh2*nz;
+
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      /********************************************
+       ***     do fft along nx dimension        ***
+       ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
+       ********************************************/
+       indx = 0;
+       for (q=0; q<nq; ++q)
+       for (j=0; j<ny; ++j)
+       {
+          drfftf_(&nx,&a[indx],tmpx);
+          indx += nxh2;
+       }
+       d3db::cshift_fftf(nx,ny,nq,1,a);
+
+
+      /********************************************
+       ***     do fft along ny dimension        ***
+       ***   A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]  ***
+       ********************************************/
+       indx0=0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             jj   = 0;
+             indx = 2*i+indx0;
+             for (j=0; j<ny; ++j)
+             {
+                tmp2[jj]   = a[indx];
+                tmp2[jj+1] = a[indx+1];
+                jj   += 2;
+                indx += nxh2;
+             }
+
+             dcfftf_(&ny,tmp2,tmpy);
+
+             jj   = 0;
+             indx = 2*i+indx0;
+             for (j=0; j<ny; ++j)
+             {
+                a[indx]   = tmp2[jj];
+                a[indx+1] = tmp2[jj+1];
+                jj   += 2;
+                indx += nxh2;
+             }
+          }
+          indx0 += nxhy2;
+       }
+
+      /********************************************
+       ***         Do a transpose of A          ***
+       ***      A(ky,nz,ky) <- A(kx,ky,nz)      ***
+       ********************************************/
+       d3db::c_ptranspose_jk(nb,a,tmp2,tmp3);
+
+      /********************************************
+       ***     do fft along nz dimension        ***
+       ***   A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]  ***
+       ********************************************/
+       indx0=0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             kk   = 0;
+             indx = 2*i+indx0;
+             for (k=0; k<nz; ++k)
+             {
+                tmp2[kk]   = a[indx];
+                tmp2[kk+1] = a[indx+1];
+                kk   += 2;
+                indx += nxh2;
+             }
+
+             dcfftf_(&nz,tmp2,tmpz);
+
+             kk   = 0;
+             indx = 2*i+indx0;
+             for (k=0; k<nz; ++k)
+             {
+                a[indx]   = tmp2[kk];
+                a[indx+1] = tmp2[kk+1];
+                kk   += 2;
+                indx += nxh2;
+             }
+          }
+          indx0 += nxhz2;
+       }
+
+
+   }
+
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      /********************************************
+       ***     do fft along nx dimension        ***
+       ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
+       ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
+#else
+       indx = 0;
+       for (q=0; q<nq1; ++q)
+       {
+          drfftf_(&nx,&a[indx],tmpx);
+          indx += nxh2;
+       }
+       d3db::cshift_fftf(nx,nq1,1,1,a);
+#endif
+       d3db::c_ptranspose_ijk(nb,0,a,tmp2,tmp3);
+
+      /********************************************
+       ***     do fft along ny dimension        ***
+       ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
+       ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
+#else
+       indx = 0;
+       for (q=0; q<nq2; ++q)
+       {
+          dcfftf_(&ny,&a[indx],tmpy);
+          indx += (2*ny);
+       }
+#endif
+       d3db::c_ptranspose_ijk(nb,1,a,tmp2,tmp3);
+
+      /********************************************
+       ***     do fft along nz dimension        ***
+       ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
+       ********************************************/
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+       gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
+#else
+       indx = 0;
+       for (q=0; q<nq3; ++q)
+       {
+          dcfftf_(&nz,&a[indx],tmpz);
+          indx += 2*nz;
+       }
+#endif
+   }
+
+   delete [] tmp3;
+   delete [] tmp2;
 }
 
 
