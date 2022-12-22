@@ -889,7 +889,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
        ***         Do a ptranspose of A            ***
        ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
        ************************************************/
-      d3db::c_ptranspose_jk(nb,a,tmp2,tmp3);
+      d3db::c_ptranspose1_jk(nb,a,tmp2,tmp3);
 
       /*************************************************
        ***        do fft along ky dimension          ***
@@ -1100,7 +1100,8 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        ***         Do a transpose of A          ***
        ***      A(ky,nz,ky) <- A(kx,ky,nz)      ***
        ********************************************/
-       d3db::c_ptranspose_jk(nb,a,tmp2,tmp3);
+       d3db::c_ptranspose2_jk(nb,a,tmp2,tmp3);
+       //d3db::c_transpose_jk(a,tmp2,tmp3);
 
       /********************************************
        ***     do fft along nz dimension        ***

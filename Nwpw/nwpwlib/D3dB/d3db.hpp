@@ -124,7 +124,8 @@ public:
     /* ptranspose operators */
     void     c_ptranspose_jk_init(const int, bool  *);
     void     c_ptranspose_ijk_init(const int, bool *, bool *);
-    void     c_ptranspose_jk(const int, double *, double *, double *);
+    void     c_ptranspose1_jk(const int, double *, double *, double *);
+    void     c_ptranspose2_jk(const int, double *, double *, double *);
     void     c_ptranspose_ijk(const int, const int, double *, double *, double *);
 
 };

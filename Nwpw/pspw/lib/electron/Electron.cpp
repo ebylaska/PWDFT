@@ -111,6 +111,7 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
    double *tmp = x;
    mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
    mygrid->rr_SMul(scal1,rho,tmp);
+   //mygrid->rc_fft3d(tmp);
    mygrid->rc_pfft3f(0,tmp);
    mygrid->c_pack(0,tmp);
    mygrid->cc_pack_copy(0,tmp,dng);
