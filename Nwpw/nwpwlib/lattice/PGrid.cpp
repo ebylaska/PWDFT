@@ -403,6 +403,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          {
             q = ijktoq1(i,0,k);
             p = ijktop1(i,0,k);
+            zero_arow2[i+(nxh+1)*k] = zero_slab23[nb][i];
             if (p==parall->taskid_i())
                zero_row2[nb][q] = zero_slab23[nb][i];
          }
@@ -412,8 +413,6 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          d3db::c_ptranspose_ijk_init(nb,zero_arow2,zero_arow3);
 
       }
-
-
       delete [] zero_arow3;
       delete [] zero_arow2;
 
@@ -1027,7 +1026,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
 void PGrid::rc_pfft3f(const int nb, double *a)
 {
    nwpw_timing_function ftime(1);
-   int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
+   int i,j,k,jj,kk,q,indx,indx0,indx2,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
    double *tmp2 = new (std::nothrow) double[2*nfft3d]();
    double *tmp3 = new (std::nothrow) double[2*nfft3d]();
 
@@ -1063,31 +1062,36 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        ***   A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]  ***
        ********************************************/
        indx0=0;
+       indx2=0;
        for (q=0; q<nq; ++q)
        {
           for (i=0; i<nxh; ++i)
           {
-             jj   = 0;
-             indx = 2*i+indx0;
-             for (j=0; j<ny; ++j)
+             if (!zero_row2[nb][indx2])
              {
-                tmp2[jj]   = a[indx];
-                tmp2[jj+1] = a[indx+1];
-                jj   += 2;
-                indx += nxh2;
-             }
+                jj   = 0;
+                indx = 2*i+indx0;
+                for (j=0; j<ny; ++j)
+                {
+                   tmp2[jj]   = a[indx];
+                   tmp2[jj+1] = a[indx+1];
+                   jj   += 2;
+                   indx += nxh2;
+                }
 
-             dcfftf_(&ny,tmp2,tmpy);
+                dcfftf_(&ny,tmp2,tmpy);
 
-             jj   = 0;
-             indx = 2*i+indx0;
-             for (j=0; j<ny; ++j)
-             {
-                a[indx]   = tmp2[jj];
-                a[indx+1] = tmp2[jj+1];
-                jj   += 2;
-                indx += nxh2;
+                jj   = 0;
+                indx = 2*i+indx0;
+                for (j=0; j<ny; ++j)
+                {
+                   a[indx]   = tmp2[jj];
+                   a[indx+1] = tmp2[jj+1];
+                   jj   += 2;
+                   indx += nxh2;
+                }
              }
+             ++indx2;
           }
           indx0 += nxhy2;
        }
@@ -1103,31 +1107,36 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        ***   A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]  ***
        ********************************************/
        indx0=0;
+       indx2=0;
        for (q=0; q<nq; ++q)
        {
           for (i=0; i<nxh; ++i)
           {
-             kk   = 0;
-             indx = 2*i+indx0;
-             for (k=0; k<nz; ++k)
+             if (!zero_row3[nb][indx2])
              {
-                tmp2[kk]   = a[indx];
-                tmp2[kk+1] = a[indx+1];
-                kk   += 2;
-                indx += nxh2;
-             }
+                kk   = 0;
+                indx = 2*i+indx0;
+                for (k=0; k<nz; ++k)
+                {
+                   tmp2[kk]   = a[indx];
+                   tmp2[kk+1] = a[indx+1];
+                   kk   += 2;
+                   indx += nxh2;
+                }
 
-             dcfftf_(&nz,tmp2,tmpz);
+                dcfftf_(&nz,tmp2,tmpz);
 
-             kk   = 0;
-             indx = 2*i+indx0;
-             for (k=0; k<nz; ++k)
-             {
-                a[indx]   = tmp2[kk];
-                a[indx+1] = tmp2[kk+1];
-                kk   += 2;
-                indx += nxh2;
+                kk   = 0;
+                indx = 2*i+indx0;
+                for (k=0; k<nz; ++k)
+                {
+                   a[indx]   = tmp2[kk];
+                   a[indx+1] = tmp2[kk+1];
+                   kk   += 2;
+                   indx += nxh2;
+                }
              }
+             ++indx2;
           }
           indx0 += nxhz2;
        }
@@ -1150,7 +1159,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        indx = 0;
        for (q=0; q<nq1; ++q)
        {
-          drfftf_(&nx,&a[indx],tmpx);
+          drfftf_(&nx,&a[indx],d3db::tmpx);
           indx += nxh2;
        }
        d3db::cshift_fftf(nx,nq1,1,1,a);
@@ -1167,7 +1176,8 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        indx = 0;
        for (q=0; q<nq2; ++q)
        {
-          dcfftf_(&ny,&a[indx],tmpy);
+          if (!zero_row2[nb][q])
+             dcfftf_(&ny,&a[indx],d3db::tmpy);
           indx += (2*ny);
        }
 #endif
@@ -1183,7 +1193,8 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        indx = 0;
        for (q=0; q<nq3; ++q)
        {
-          dcfftf_(&nz,&a[indx],tmpz);
+          if (!zero_row3[nb][q])
+             dcfftf_(&nz,&a[indx],d3db::tmpz);
           indx += 2*nz;
        }
 #endif

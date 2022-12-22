@@ -41,6 +41,7 @@ void c_bindexcopy(const int n, const int *indx, double *A, double *B)
       ii += 2;
    }
 }
+
 void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
 {
    int ii,jj;
@@ -51,6 +52,17 @@ void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
       B[jj]   = A[ii];
       B[jj+1] = -A[ii+1];
       ii += 2;
+   }
+}
+
+void c_bindexzero(const int n, const int *indx, double *B)
+{
+   int ii,jj;
+   for (int i=0; i<n; ++i)
+   {
+      jj      = 2*indx[i];
+      B[jj]   = 0.0;
+      B[jj+1] = 0.0;
    }
 }
 

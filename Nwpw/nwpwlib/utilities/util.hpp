@@ -15,6 +15,7 @@ namespace pwdft {
 extern void c_aindexcopy(const int, const int *, double *, double *);
 extern void c_bindexcopy(const int, const int *, double *, double *);
 extern void c_bindexcopy_conjg(const int, const int *, double *, double *);
+extern void c_bindexzero(const int, const int *, double *);
 
 extern void t_aindexcopy(const int, const int *, double *, double *);
 extern void t_bindexcopy(const int, const int *, double *, double *);

@@ -82,7 +82,7 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       /* allocate ptranspose indexes */
       for (auto nb=0; nb<2; ++nb)
       {
-	 p_iq_to_i1[nb] = new (std::nothrow) int*[1](); p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
+         p_iq_to_i1[nb] = new (std::nothrow) int*[1](); p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
          p_iq_to_i2[nb] = new (std::nothrow) int*[1](); p_iq_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
          p_iz_to_i2[nb] = new (std::nothrow) int*[1](); p_iz_to_i2[nb][0] = new (std::nothrow) int[(nx/2+1)*ny*nq]();
          p_i1_start[nb] = new (std::nothrow) int*[1](); p_i1_start[nb][0] = new (std::nothrow) int[nz+1]();
@@ -693,7 +693,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
          {
             if (!iszero)
             {
-               p_iq_to_i1[nb][0][ijktoindex2t(i,j,k)] = index1;
+               p_iq_to_i1[nb][0][index1] = ijktoindex2t(i,j,k);
                ++index1;
             }
          }
@@ -918,7 +918,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
    /**************************************************/
    index1 = 0;
    index2 = 0;
-   index2 = 0;
+   index3 = 0;
    for (auto it=0; it<np; ++it)
    {
       proc_to   = (taskid+it)%np;
@@ -2845,13 +2845,14 @@ void d3db::c_ptranspose_ijk(const int nb, const int op,double *a,double *tmp1,do
    int nnfft3d,it,proc_from,proc_to;
    int msglen;
 
+   int n1 = p_i1_start[nb][op][np];
+   int n2 = p_i2_start[nb][op][np];
+   int n3 = p_iz_to_i2_count[nb][op];
+
    parall->astart(1,np);
 
    /* pack a array */
-   if ((op==0)||(op==4)) nnfft3d = (nx/2+1)*nq1;
-   if ((op==1)||(op==3)) nnfft3d = (ny)    *nq2;
-   if ((op==2)||(op==5)) nnfft3d = (nz)    *nq3;
-   c_bindexcopy(nnfft3d,p_iq_to_i1[nb][op],a,tmp1);
+   c_aindexcopy(n1,p_iq_to_i1[nb][op],a,tmp1);
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
@@ -2879,10 +2880,8 @@ void d3db::c_ptranspose_ijk(const int nb, const int op,double *a,double *tmp1,do
    parall->aend(1);
 
    /* unpack a array */
-   if ((op==3)||(op==5)) nnfft3d = (nx/2+1)*nq1;
-   if ((op==0)||(op==2)) nnfft3d = (ny)    *nq2;
-   if ((op==1)||(op==4)) nnfft3d = (nz)    *nq3;
-   c_aindexcopy(nnfft3d,p_iq_to_i2[nb][op],tmp2,a);
+   c_bindexcopy(n2,p_iq_to_i2[nb][op],tmp2,a);
+   c_bindexzero(n3,p_iz_to_i2[nb][op],a);
 
 }
 

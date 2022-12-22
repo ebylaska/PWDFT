@@ -77,7 +77,8 @@ void Electron_Operators::gen_psi_r(double *psi)
    {
       mygrid->cc_pack_copy(1,&psi[indx1],&psi_r[indx2]);
       mygrid->c_unpack(1,&psi_r[indx2]);
-      mygrid->cr_fft3d(&psi_r[indx2]);
+      //mygrid->cr_fft3d(&psi_r[indx2]);
+      mygrid->cr_pfft3b(1,&psi_r[indx2]);
       indx1 += shift1;
       indx2 += shift2;
    }
@@ -110,7 +111,7 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
    double *tmp = x;
    mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
    mygrid->rr_SMul(scal1,rho,tmp);
-   mygrid->rc_fft3d(tmp);
+   mygrid->rc_pfft3f(0,tmp);
    mygrid->c_pack(0,tmp);
    mygrid->cc_pack_copy(0,tmp,dng);
 
