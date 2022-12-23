@@ -29,6 +29,7 @@ class Parallel {
     MPI_Request  **request;
     MPI_Status   **statuses;
 
+
 public:
         int dim;
         bool base_stdio_print = true;
@@ -87,9 +88,11 @@ public:
 
        /* asend/areceives */
        void astart(const int, const int);
+       void awaitall(const int);
        void aend(const int);
        void    adsend(const int, const int, const int, const int, double *);
        void adreceive(const int, const int, const int, const int, double *);
+
 
 };
 

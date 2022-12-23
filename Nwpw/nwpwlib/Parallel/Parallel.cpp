@@ -322,8 +322,6 @@ void Parallel::ireceive(const int d, const int tag, const int procfrom, const in
 }  
 
 
-
-
 /********************************
  *                              *
  *       Parallel::astart       *
@@ -331,7 +329,7 @@ void Parallel::ireceive(const int d, const int tag, const int procfrom, const in
  ********************************/
 void Parallel::astart(const int d, const int sz)
 {
-   if (npi[d]>1)
+   if ((d>2) ? true : (npi[d]>1))
    {
       reqcnt[d]  = 0;
       //request[d] = new MPI::Request[sz];
@@ -341,6 +339,19 @@ void Parallel::astart(const int d, const int sz)
 }
 /********************************
  *                              *
+ *       Parallel::awaitall     *
+ *                              *
+ ********************************/
+void Parallel::awaitall(const int d)
+{
+   if ((d>2) ? true : (npi[d]>1))
+   {
+      MPI_Waitall(reqcnt[d],request[d],statuses[d]);
+   }
+}
+
+/********************************
+ *                              *
  *       Parallel::aend         *
  *                              *
  ********************************/
@@ -348,7 +359,8 @@ void Parallel::aend(const int d)
 {
    //MPI::Status status[reqcnt[d]];
    //request[d][0].Waitall(reqcnt[d],request[d],status);
-   if (npi[d]>1)
+   //if (npi[d]>1)
+   if ((d>2) ? true : (npi[d]>1))
    {
       //request[d][0].Waitall(reqcnt[d],request[d]);
       MPI_Waitall(reqcnt[d],request[d],statuses[d]);
@@ -359,14 +371,15 @@ void Parallel::aend(const int d)
 
 /********************************
  *                              *
- *       Parallel::adreceive     *
+ *       Parallel::adreceive    *
  *                              *
  ********************************/
 void Parallel::adreceive(const int d, const int tag, const int procfrom, const int n, double *sum)
 {
    //MPI::Status status;
    //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
-   if (npi[d]>1) MPI_Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag,comm_i[d],&request[d][reqcnt[d]++]);
+   if ((d>2) ? true : (npi[d]>1)) 
+      MPI_Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag,comm_i[((d>2) ? 1 : d)],&request[d][reqcnt[d]++]);
 }
 
 /********************************
@@ -377,7 +390,11 @@ void Parallel::adreceive(const int d, const int tag, const int procfrom, const i
 void Parallel::adsend(const int d, const int tag, const int procto, const int n, double *sum)
 {
    //if (npi[d]>1) request[d][reqcnt[d]++] = comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
-   if (npi[d]>1) MPI_Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag,comm_i[d],&request[d][reqcnt[d]++]);
+   if ((d>2) ? true : (npi[d]>1)) 
+      MPI_Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag,comm_i[((d>2) ? 1 : d)],&request[d][reqcnt[d]++]);
 }
+
+
+
 
 }
