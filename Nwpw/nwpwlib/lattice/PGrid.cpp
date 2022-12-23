@@ -1207,7 +1207,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
 
 /********************************
  *                              *
- *       c_unpack_start         *
+ *     PGrid::c_unpack_start    *
  *                              *
  ********************************/
 void PGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1218,7 +1218,7 @@ void PGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2, int request
 
 /********************************
  *                              *
- *       c_unpack_mid           *
+ *     PGrid::c_unpack_mid      *
  *                              *
  ********************************/
 void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1227,7 +1227,7 @@ void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, int request_i
 
 /********************************
  *                              *
- *       c_unpack_end           *
+ *     PGrid::c_unpack_end      *
  *                              *
  ********************************/
 void PGrid::c_unpack_end(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1236,7 +1236,7 @@ void PGrid::c_unpack_end(const int nb, double *tmp1, double *tmp2, int request_i
 
 /********************************
  *                              *
- *           pfftbz             *
+ *        PGrid::pfftbz         *
  *                              *
  ********************************/
 void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1244,7 +1244,7 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
 
 /********************************
  *                              *
- *           pfftby             *
+ *        PGrid::pfftby         *
  *                              *
  ********************************/
 void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1252,7 +1252,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
 
 /********************************
  *                              *
- *           pfftbx             *
+ *        PGrid::pfftbx         *
  *                              *
  ********************************/
 void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
@@ -1262,7 +1262,7 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
 
 /********************************
  *                              *
- *          pfftb_step          *
+ *       PGrid::pfftb_step      *
  *                              *
  ********************************/
 void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, double *tmp2, int request_indx)
@@ -1377,13 +1377,46 @@ int  PGrid::cr_pfft3b_queuefilled()
    return (aqsize>=aqmax);
 }
 
+/********************************
+ *                              *
+ *        PGrid::pfftfx         *
+ *                              *
+ ********************************/
+void PGrid::pfftfx(const int nb, double *tmp1, double *tmp2, int request_indx)
+{}
 
 /********************************
  *                              *
- *          pfftf_step          *
+ *        PGrid::pfftfy         *
  *                              *
  ********************************/
-static void pfftf_step(const int step, const int nb, double *a, double *tmp1, double *tmp2, int request_indx)
+void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
+{}
+
+/********************************
+ *                              *
+ *        PGrid::pfftfz         *
+ *                              *
+ ********************************/
+void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
+{}
+
+/********************************
+ *                              *
+ *      PGrid::pfftf_final      *
+ *                              *
+ ********************************/
+void PGrid::pfftf_final(const int nb, double *tmp1, double *tmp2, int request_indx)
+{}
+
+
+
+/********************************
+ *                              *
+ *       PGrid::pfftf_step      *
+ *                              *
+ ********************************/
+void PGrid::pfftf_step(const int step, const int nb, double *a, double *tmp1, double *tmp2, int request_indx)
 {
     if (step==0)
     {

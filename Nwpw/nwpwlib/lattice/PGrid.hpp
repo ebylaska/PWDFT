@@ -169,6 +169,11 @@ public:
         void rc_pfft3f_queueout(const int, double *);
         int  rc_pfft3f_queuefilled();
         void rc_pfft3f(const int, double *);
+        void pfftf_step(const int, const int, double *, double *, double *, int);
+        void pfftfx(const int, double *, double *, int);
+        void pfftfy(const int, double *, double *, int);
+        void pfftfz(const int, double *, double *, int);
+        void pfftf_final(const int, double *, double *, int);
 
         void regenerate_r_grid();
         void initialize_r_grid() {
