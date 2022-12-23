@@ -34,6 +34,10 @@ class PGrid : public d3db {
    int    *aqindx,*aqstatus;
    double *atmp;
 
+   int bqmax,bqsize,blast_index;
+   int    *bqindx,*bqstatus;
+   double *btmp;
+
    /* zplane data */
    double *zplane_tmp1,*zplane_tmp2;
 
@@ -47,7 +51,7 @@ public:
    double *r_grid;
 
    /* constructor */
-	PGrid(Parallel *, Lattice *, int, int, int, int, int);
+	PGrid(Parallel *, Lattice *, int, int, int, int, int, int);
 	PGrid(Parallel *, Lattice *, Control2&);
 
         /* destructor */
@@ -69,6 +73,12 @@ public:
             delete [] zplane_tmp1;
             delete [] zplane_tmp2;
             if (has_r_grid) delete [] r_grid;
+            delete [] atmp;
+            delete [] aqindx;
+            delete [] aqstatus;
+            delete [] btmp;
+            delete [] bqindx;
+            delete [] bqstatus;
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
@@ -147,6 +157,17 @@ public:
         void cr_pfft3b_queueout(const int, double *);
         int  cr_pfft3b_queuefilled();
         void cr_pfft3b(const int, double *);
+        void pfftb_step(const int, const int, double *, double *, double *, int);
+        void c_unpack_start(const int, double *, double *, int);
+        void c_unpack_mid(const int, double *, double *, int);
+        void c_unpack_end(const int, double *, double *, int);
+        void pfftbz(const int, double *, double *, int);
+        void pfftby(const int, double *, double *, int);
+        void pfftbx(const int, double *, double *, int);
+
+        void rc_pfft3f_queuein(const int, double *);
+        void rc_pfft3f_queueout(const int, double *);
+        int  rc_pfft3f_queuefilled();
         void rc_pfft3f(const int, double *);
 
         void regenerate_r_grid();
