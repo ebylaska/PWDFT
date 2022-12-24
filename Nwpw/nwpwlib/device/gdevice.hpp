@@ -24,5 +24,11 @@ void gdevice_batch_fft_end();
 void gdevice_batch_cfftx(bool,int,int,int,double *);
 void gdevice_batch_cffty(bool,int,int,int,double *);
 void gdevice_batch_cfftz(bool,int,int,int,double *);
+void gdevice_batch_cfftx_tmpx(bool,int,int,int,double *,double *);
+void gdevice_batch_cffty_tmpy(bool,int,int,int,double *,double *);
+void gdevice_batch_cfftz_tmpz(bool,int,int,int,double *,double *);
+
+void gdevice_batch_cffty_tmpy_zero(bool,int,int,int,double *,double *,bool *);
+void gdevice_batch_cfftz_tmpz_zero(bool,int,int,int,double *,double *,bool *);
 
 } // namespace pwdft

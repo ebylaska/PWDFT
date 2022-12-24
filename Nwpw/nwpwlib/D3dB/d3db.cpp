@@ -2222,7 +2222,7 @@ void d3db::cr_fft3d(double *a)
        for (q=0; q<nq; ++q)
        for (j=0; j<ny; ++j)
        {
-          drfftb_(&nx,&a[indx],tmpx);
+          drfftb_(&nx,a+indx,tmpx);
           indx += nxh2;
        }
        zeroend_fftb(nx,ny,nq,1,a);
@@ -2239,38 +2239,46 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
+       gdevice_batch_cfftz_tmpz(false,nz,nq3,n2ft3d,a,tmpz);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
        indx = 0;
        for (q=0; q<nq3; ++q)
        {
-          dcfftb_(&nz,&a[indx],tmpz);
+          dcfftb_(&nz,a+indx,tmpz);
           indx += 2*nz;
        }
 #endif
+       */
        c_transpose_ijk(2,a,tmp2,tmp3);
 
       /************************************************
        ***     do fft along ky dimension            ***
        ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
        ************************************************/
+       gdevice_batch_cffty_tmpy(false,ny,nq2,n2ft3d,a,tmpy);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
        indx = 0;
        for (q=0; q<nq2; ++q)
        {
-          dcfftb_(&ny,&a[indx],tmpy);
+          dcfftb_(&ny,a+indx,tmpy);
           indx += (2*ny);
        }
 #endif
+       */
        c_transpose_ijk(3,a,tmp2,tmp3);
 
       /************************************************
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
+       gdevice_batch_cfftx_tmpx(false,nx,nq1,n2ft3d,a,tmpx);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
 #else
@@ -2282,6 +2290,7 @@ void d3db::cr_fft3d(double *a)
           indx += nxh2;
        }
 #endif
+       */
        zeroend_fftb(nx,nq1,1,1,a);
 
    }
@@ -2421,6 +2430,8 @@ void d3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
+       gdevice_batch_cfftx_tmpx(true,nx,nq1,n2ft3d,a,tmpx);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
 #else
@@ -2432,13 +2443,15 @@ void d3db::rc_fft3d(double *a)
        }
        cshift_fftf(nx,nq1,1,1,a);
 #endif
-
+       */
        c_transpose_ijk(0,a,tmp2,tmp3);
 
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
+       gdevice_batch_cffty_tmpy(true,ny,nq2,n2ft3d,a,tmpy);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
 #else
@@ -2448,13 +2461,16 @@ void d3db::rc_fft3d(double *a)
           dcfftf_(&ny,&a[indx],tmpy);
           indx += (2*ny);
        }
-       c_transpose_ijk(1,a,tmp2,tmp3);
 #endif
+       */
+       c_transpose_ijk(1,a,tmp2,tmp3);
 
       /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
+       gdevice_batch_cfftz_tmpz(true,nz,nq3,n2ft3d,a,tmpz);
+       /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
 #else
@@ -2464,8 +2480,9 @@ void d3db::rc_fft3d(double *a)
           dcfftf_(&nz,&a[indx],tmpz);
           indx += 2*nz;
        }
-   }
 #endif
+   */
+   }
 
    delete [] tmp3;
    delete [] tmp2;
