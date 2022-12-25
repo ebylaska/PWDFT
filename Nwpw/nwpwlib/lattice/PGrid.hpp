@@ -157,10 +157,10 @@ public:
         void cr_pfft3b_queueout(const int, double *);
         int  cr_pfft3b_queuefilled();
         void cr_pfft3b(const int, double *);
-        void pfftb_step(const int, const int, double *, double *, double *, int);
-        void c_unpack_start(const int, double *, double *, int);
-        void c_unpack_mid(const int, double *, double *, int);
-        void c_unpack_end(const int, double *, double *, int);
+        void pfftb_step(const int, const int, double *, double *, double *, const int);
+        void c_unpack_start(const int, double *, double *, const int, const int);
+        void c_unpack_mid(const int, double *, double *, const int, const int);
+        void c_unpack_end(const int, double *, double *, const int);
         void pfftbz(const int, double *, double *, int);
         void pfftby(const int, double *, double *, int);
         void pfftbx(const int, double *, double *, int);

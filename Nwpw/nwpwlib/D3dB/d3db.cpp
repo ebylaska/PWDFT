@@ -2729,6 +2729,42 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
    }
 }
 
+/**************************************
+ *                                    *
+ *    d3db::c_ptranspose1_jk_start    *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
+{}
+
+/**************************************
+ *                                    *
+ *    d3db::c_ptranspose_ijk_start    *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose_ijk_start(const int nb, const int op, double *a, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
+{}
+
+/**************************************
+ *                                    *
+ *    d3db::c_ptranspose1_jk_end      *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int request_indx)
+{
+   parall->awaitall(request_indx);
+}
+
+/**************************************
+ *                                    *
+ *    d3db::c_ptranspose_ijk_end      *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose_ijk_end(const int nb, const int op, double *a, double *tmp2, const int request_indx)
+{
+   parall->awaitall(request_indx);
+}
+
 
 /********************************
  *                              *
@@ -3252,6 +3288,63 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
    c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
 
 }
+
+/**************************************
+ *                                    *
+ *      d3db::c_timereverse_start     *
+ *                                    *
+ **************************************/
+void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
+{
+   int nnfft3d,indx,it,proc_from,proc_to;
+   int msglen;
+
+
+   indx    = t_i1_start[0];
+   nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
+   c_aindexcopy(nnfft3d,&t_iq_to_i1[indx],a,&tmp1[indx]);
+
+   /* it = 0, transpose data on same thread */
+   msglen = 2*(t_i2_start[1] - t_i2_start[0]);
+   //int one=1;
+   //DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
+   std::memcpy(tmp2+2*t_i2_start[0],
+               tmp1+2*t_i1_start[0],
+               msglen*sizeof(double));
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = 2*(t_i2_start[it+1] - t_i2_start[it]);
+      if (msglen>0)
+         parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*t_i2_start[it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = 2*(t_i1_start[it+1] - t_i1_start[it]);
+      if (msglen>0)
+         parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*t_i1_start[it]]);
+   }
+
+}
+
+/**************************************
+ *                                    *
+ *      d3db::c_timereverse_end       *
+ *                                    *
+ **************************************/
+void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2, const int request_indx)
+{
+   int indx    = t_i2_start[0];
+   int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
+
+   parall->awaitall(request_indx);
+   c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+}
+
 
 
 /********************************

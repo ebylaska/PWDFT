@@ -345,7 +345,7 @@ void Parallel::awaitall(const int d)
 {
    if ((d>2) ? true : (npi[d]>1))
    {
-      MPI_Waitall(reqcnt[d],request[d],statuses[d]);
+      if (reqcnt[d]>0) MPI_Waitall(reqcnt[d],request[d],statuses[d]);
       reqcnt[d] = 0;
    }
 }
@@ -362,7 +362,7 @@ void Parallel::aend(const int d)
    if ((d>2) ? true : (npi[d]>1))
    {
       //request[d][0].Waitall(reqcnt[d],request[d]);
-      MPI_Waitall(reqcnt[d],request[d],statuses[d]);
+      if (reqcnt[d]>0) MPI_Waitall(reqcnt[d],request[d],statuses[d]);
       delete [] request[d];
       delete [] statuses[d];
       reqcnt[d] = 0;

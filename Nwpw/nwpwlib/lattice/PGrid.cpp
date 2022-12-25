@@ -1228,10 +1228,10 @@ void PGrid::rc_pfft3f(const int nb, double *a)
  *     PGrid::c_unpack_start    *
  *                              *
  ********************************/
-void PGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2, int request_indx)
+void PGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
 {
-   //if (balanced)
-   //   mybalance->c_unbalance_start(nb,tmp1,request_indx);
+   if (balanced)
+      mybalance->c_unbalance_start(nb,tmp1,request_indx,msgtype);
 }
 
 /********************************
@@ -1239,8 +1239,16 @@ void PGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2, int request
  *     PGrid::c_unpack_mid      *
  *                              *
  ********************************/
-void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, int request_indx)
+void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
 {
+   if (balanced)
+      mybalance->c_unbalance_end(nb,tmp1,request_indx);
+
+   std::memcpy(tmp2,tmp1,2*(nida[nb]+nidb2[nb])*sizeof(double));
+   std::memset(tmp1,0,n2ft3d*sizeof(double));
+   c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp2,tmp1);
+
+   d3db::c_timereverse_start(tmp1,zplane_tmp1,zplane_tmp2,request_indx,msgtype);
 }
 
 /********************************
@@ -1248,8 +1256,9 @@ void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, int request_i
  *     PGrid::c_unpack_end      *
  *                              *
  ********************************/
-void PGrid::c_unpack_end(const int nb, double *tmp1, double *tmp2, int request_indx)
+void PGrid::c_unpack_end(const int nb, double *tmp1, double *tmp2, const int request_indx)
 {
+   d3db::c_timereverse_end(tmp1,zplane_tmp1,zplane_tmp2,request_indx);
 }
 
 /********************************
@@ -1311,6 +1320,11 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
           }
           indx0 += nxhz2;
        }
+      /***********************************************
+       ***         Do a ptranspose of A            ***
+       ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
+       ************************************************/
+      d3db::c_ptranspose1_jk_start(nb,tmp1,tmp2,tmp1,request_indx,44);
    }
    /*************************
     **** hilbert mapping ****
@@ -1337,6 +1351,7 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
 #endif
        */
 
+       d3db::c_ptranspose_ijk_start(nb,2,tmp1,tmp2,tmp1,request_indx,45);
    }
 }
 
@@ -1354,6 +1369,12 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
     **********************/
    if (maptype==1)
    {
+      /***********************************************
+       ***         Do a ptranspose of A            ***
+       ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
+       ************************************************/
+      d3db::c_ptranspose1_jk_end(nb,tmp2,tmp1,request_indx);
+
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]  ***
@@ -1398,11 +1419,13 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
     *************************/
    else
    {
+       d3db::c_ptranspose_ijk_end(nb,2,tmp2,tmp1,request_indx);
+
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-       gdevice_batch_cffty_tmpy_zero(true,ny,nq2,n2ft3d,tmp1,d3db::tmpy,zero_row2[nb]);
+       gdevice_batch_cffty_tmpy_zero(true,ny,nq2,n2ft3d,tmp2,d3db::tmpy,zero_row2[nb]);
        /*
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
        gdevice_batch_cffty(true,ny,nq2,n2ft3d,tmp1);
@@ -1416,6 +1439,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
        }
 #endif
        */
+       d3db::c_ptranspose_ijk_start(nb,3,tmp2,tmp1,tmp2,request_indx,46);
    }
 }
 
@@ -1485,26 +1509,28 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
  *       PGrid::pfftb_step      *
  *                              *
  ********************************/
-void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, double *tmp2, int request_indx)
+void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, double *tmp2, const int request_indx)
 {
     if (step==0)
     {
        // unpack start
        std::memcpy(tmp1,a,n2ft3d*sizeof(double));
-       //c_unpack_start(nb,tmp1,tmp2,request_indx,47)
+       this->c_unpack_start(nb,tmp1,tmp2,request_indx,47);
     }
     else if (step==1)
     {
        // unpack mid
+       this->c_unpack_mid(nb,tmp1,tmp2,request_indx,48);
     }
     else if (step==2)
     {
        // unpack end; mem-->dev
+       this->c_unpack_end(nb,tmp1,tmp2,request_indx);
     }
     else if (step==3)
     {
        // pfftbz dev-->dev->mem
-       pfftbz(nb,tmp1,tmp2,request_indx);
+       this->pfftbz(nb,tmp1,tmp2,request_indx);
     }
     else if (step==4)
     {
