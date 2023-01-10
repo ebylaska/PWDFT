@@ -1,0 +1,37 @@
+title "H2 - PBE/1 Ry"
+
+echo
+
+start pspw1-pbe-pfft
+
+memory 1900 mb
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+charge 0
+
+geometry noautosym nocenter noautoz
+H   0.0 0.0 -0.4
+H   0.0 0.0  0.4
+end
+set nwpw:cif_filename  h2
+
+
+nwpw
+  simulation_cell
+     FCC 38.0
+     ngrid 4 4 4
+  end
+
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 0.5
+  mult 1
+  xc pbe96
+  lmbfgs grassman 
+
+  2d-hcurve
+end
+
+task pspw noit_energy
