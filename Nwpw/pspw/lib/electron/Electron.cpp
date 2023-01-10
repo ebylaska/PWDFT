@@ -4,14 +4,15 @@
 #include	"Ion.hpp"
 #include	"Kinetic.hpp"
 #include	"Coulomb12.hpp"
-#include        "exchange_correlation.hpp"
-#include        "Strfac.hpp"
+#include "exchange_correlation.hpp"
+#include "Strfac.hpp"
 #include	"Pseudopotential.hpp"
 //#include        "v_exc.hpp"
 
 #include	"psi_H.hpp"
 
 #include	"Electron.hpp"
+#define mytaskid 1
 
 namespace pwdft {
 
@@ -70,7 +71,9 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, C
 void Electron_Operators::gen_psi_r(double *psi)
 {
    /* convert psi(G) to psi(r) */
-   //mygrid->gh_fftb(psi1,psi_r);
+   mygrid->gh_fftb(psi,psi_r);
+   
+   /*
    int indx1 = 0;
    int indx2 = 0;
    for (int i=0; i<neall; ++i)
@@ -82,7 +85,8 @@ void Electron_Operators::gen_psi_r(double *psi)
       indx1 += shift1;
       indx2 += shift2;
    }
-
+   */
+   
 }
 
 /********************************************
@@ -103,7 +107,6 @@ void Electron_Operators::gen_density(double *dn)
  ********************************************/
 void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall)
 {
-
    /* generate dn */
    mygrid->hr_aSumSqr(scal2,psi_r,dn);
 

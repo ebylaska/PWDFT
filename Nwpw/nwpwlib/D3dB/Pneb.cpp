@@ -311,9 +311,17 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    int indx1,indx1n,shift1;
    int indx2,indx2n,shift2;
 
+   double xx = 1.0;
+   d3db::parall->SumAll(0,xx);
+   d3db::parall->Barrier();
+   std::cout << std::endl;
+   d3db::parall->Barrier();
+
+
+
    n = neq[0]+neq[1];
    shift1 = 2*PGrid::npack(1);
-   shift2 = 2*n2ft3d;
+   shift2 = n2ft3d;
    indx1  = indx1n = 0;
    indx2  = indx2n = 0;
    done = 0;
@@ -321,19 +329,18 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    {
       if (indx1<n)
       {
-         cr_pfft3b_queuein(1,&psi[indx1n]);
+         cr_pfft3b_queuein(1,psi+indx1n);
          indx1n += shift1;
          ++indx1;
       }
       if (cr_pfft3b_queuefilled() || (indx1>=n))
       {
-         cr_pfft3b_queueout(1,&psi_r[indx2n]);
+         cr_pfft3b_queueout(1,psi_r+indx2n);
          indx2n += shift2;
          ++indx2;
       }
       done = ((indx1>=n) && (indx2>=n));
    }
-
 }
 
 /*************************************

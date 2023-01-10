@@ -1970,6 +1970,11 @@ double Pseudopotential::e_nonlocal(double *psi)
     }
     if (mypneb->ispin==1) esum *= 2.0;
 
+    delete [] exi;
+    delete [] prjtmp;
+    delete [] sw1;
+    delete [] sw2;
+
     return esum;
 }
 

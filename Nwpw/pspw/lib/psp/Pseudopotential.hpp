@@ -106,15 +106,18 @@ public:
 
       }
       delete [] vl;
+      delete [] Gijl;
       delete [] vnl;
       delete [] ncore_atom;
       delete [] comment;
       delete [] nprj;
       delete [] lmax;
+      delete [] lmmax;
       delete [] locp;
       delete [] nmax;
       delete [] psp_type;
       delete [] zv;
+      delete [] amass;
       delete [] n_projector;
       delete [] l_projector;
       delete [] m_projector;

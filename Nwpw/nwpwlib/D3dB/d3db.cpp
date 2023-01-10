@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <math.h>
+#define mytaskid 1
 
 namespace pwdft {
 
@@ -462,7 +463,6 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
    gdevice_batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 
-//#endif
 }
 
 /********************************
@@ -685,6 +685,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       {
          iszero = (zero_arow2[i+k*(nx/2+1)]);
 
+         // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+         // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+
          phere = ijktop2(i,j,k);
          pto   = ijktop1(i,j,k);
 
@@ -738,8 +741,12 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       {
          iszero = (zero_arow3[i+j*(nx/2+1)]);
 
+         // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+         // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+
          phere = ijktop1(i,j,k);
          pto   = ijktop(i,j,k);
+
           /* packing scheme */
          if ((phere==taskid) && (pto==proc_to))
          {
@@ -790,6 +797,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       {
          iszero = (zero_arow3[i+j*(nx/2+1)]);
 
+         // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+         // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+
          phere = ijktop(i,j,k);
          pto   = ijktop1(i,j,k);
 
@@ -822,6 +832,7 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
    p_i2_start[nb][2][np] = index2;
    p_iz_to_i2_count[nb][2] = index3;
 
+
    /**************************************************/
    /* map2to1 mapping - done - tranpose operation #3 */
    /*     (nx/2+1,ny,nz)  <-- (ny,nz,nx/2+1)         */
@@ -841,6 +852,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       for (auto i=0; i<(nx/2+1); ++i)
       {
          iszero = (zero_arow2[i+k*(nx/2+1)]);
+
+         // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+         // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
 
          phere = ijktop1(i,j,k);
          pto   = ijktop2(i,j,k);
@@ -891,6 +905,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
+         // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+         // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+
          phere = ijktop2(i,j,k);
          pto   = ijktop(i,j,k);
 
@@ -929,6 +946,9 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       for (auto j=0; j<ny;       ++j)
       for (auto i=0; i<(nx/2+1); ++i)
       {
+         // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+         // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+
          phere = ijktop(i,j,k);
          pto   = ijktop2(i,j,k);
 
@@ -949,10 +969,6 @@ void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
    p_i1_start[nb][5][np] = index1;
    p_i2_start[nb][5][np] = index2;
    p_iz_to_i2_count[nb][5] = index3;
-
-
-
-
 
 }
 
@@ -1741,8 +1757,9 @@ void d3db::rr_Divide(const double *ptr2, double *ptr3)
 double d3db::rr_dot(const double *ptr1, const double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
    double sum=0.0;
+  
+   int m = n2ft3d%5;
    if (m>0)
       for (i=0; i<m; ++i)
          sum += ptr1[i]*ptr2[i];
@@ -1756,6 +1773,7 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
           +  ptr1[i+3] * ptr2[i+3]
           +  ptr1[i+4] * ptr2[i+4];
    }
+   
    return parall->SumAll(1,sum);
 }
 
@@ -2795,10 +2813,11 @@ void d3db::c_ptranspose_ijk_start(const int nb, const int op, double *a, double 
 
    int n1 = p_i1_start[nb][op][np];
 
-   /* pack a array */
+   /* pack a array - tmp1->tmp2 */
    c_aindexcopy(n1,p_iq_to_i1[nb][op],a,tmp1);
 
-   /* it = 0, transpose data on same thread */
+
+   /* it = 0, transpose data on same thread  - tmp2->tmp1*/
    msglen = 2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
    //int one=1;
    //DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][op][0]]),one,&(tmp2[2*p_i2_start[nb][op][0]]),one);
@@ -2841,6 +2860,7 @@ void d3db::c_ptranspose_ijk_end(const int nb, const int op, double *a, double *t
    /* unpack a array */
    c_bindexcopy(n2,p_iq_to_i2[nb][op],tmp2,a);
    c_bindexzero(n3,p_iz_to_i2[nb][op],a);
+
 }
 
 
@@ -3048,6 +3068,7 @@ void d3db::c_ptranspose_ijk(const int nb, const int op,double *a,double *tmp1,do
 
    /* pack a array */
    c_aindexcopy(n1,p_iq_to_i1[nb][op],a,tmp1);
+
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
@@ -3281,7 +3302,7 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
 
    indx    = t_i1_start[0];
    nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-   t_aindexcopy(nnfft3d,&t_iq_to_i1[indx],a,&tmp1[indx]);
+   t_aindexcopy(nnfft3d,t_iq_to_i1+indx,a,tmp1+indx);
 
    // !!! DEBUG WARNING possible issue with memcpy 
    /* it = 0, transpose data on same thread */
@@ -3333,7 +3354,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
 
    indx    = t_i1_start[0];
    nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-   c_aindexcopy(nnfft3d,&t_iq_to_i1[indx],a,&tmp1[indx]);
+   c_aindexcopy(nnfft3d,t_iq_to_i1+indx,a,tmp1+indx);
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(t_i2_start[1] - t_i2_start[0]);
@@ -3363,7 +3384,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
 
    indx    = t_i2_start[0];
    nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
-   c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+   c_bindexcopy_conjg(nnfft3d,t_iq_to_i2+indx,tmp2+indx,a);
 
 }
 
@@ -3380,7 +3401,7 @@ void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2, const int 
 
    indx    = t_i1_start[0];
    nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-   c_aindexcopy(nnfft3d,&t_iq_to_i1[indx],a,&tmp1[indx]);
+   c_aindexcopy(nnfft3d,t_iq_to_i1+indx,a,tmp1+indx);
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(t_i2_start[1] - t_i2_start[0]);
@@ -3420,7 +3441,7 @@ void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2, const int re
    int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
 
    parall->awaitall(request_indx);
-   c_bindexcopy_conjg(nnfft3d,&t_iq_to_i2[indx],&tmp2[indx],a);
+   c_bindexcopy_conjg(nnfft3d,t_iq_to_i2+indx,tmp2+indx,a);
 }
 
 

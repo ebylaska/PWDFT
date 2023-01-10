@@ -193,7 +193,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["initial_psi_random_algorithm"].is_number_integer()) pinitial_psi_random_algorithm = rtdbjson["nwpw"]["initial_psi_random_algorithm"];
 
    /* qsize */
-   pqsize = 4;
+   pqsize = 5;
    if (rtdbjson["nwpw"]["pfft3_qsize"].is_number_integer()) pqsize = rtdbjson["nwpw"]["pfft3_qsize"];
 
    /* get np_dimensions */

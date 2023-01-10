@@ -1,9 +1,9 @@
-#ifndef	_MOLECULE_HPP_
+#ifndef _MOLECULE_HPP_
 #define _MOLECULE_HPP_
 
 
-#include        <iostream>
-#include 	<iomanip> 
+#include <iostream>
+#include <iomanip> 
 #include	<vector>
 
 
@@ -11,7 +11,7 @@
 #include	"Pneb.hpp"
 #include	"Ion.hpp"
 #include	"Ewald.hpp"
-#include        "Strfac.hpp"
+#include "Strfac.hpp"
 #include	"Pseudopotential.hpp"
 #include	"Electron.hpp"
 #include	"psi.hpp"

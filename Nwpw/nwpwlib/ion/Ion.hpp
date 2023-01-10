@@ -62,6 +62,7 @@ public:
       delete [] rion0;
       delete [] rion1;
       delete [] rion2;
+      delete [] vionhalf;
       delete [] fion1;
     }
 

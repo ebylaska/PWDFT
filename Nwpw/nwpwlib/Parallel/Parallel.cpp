@@ -3,6 +3,8 @@
 	this class is used for defining 3d parallel maps
 */
 
+#include        <iostream> // DEBUG
+
 #include        <cmath>
 #include        <cstdlib>
 

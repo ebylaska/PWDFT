@@ -1,4 +1,4 @@
-title "CH3Cl - PBE/30 Ry
+title "CH3Cl - PBE/30 Ry"
 #machinejob:expert
 
 echo
@@ -34,8 +34,10 @@ nwpw
   mult 1
   xc pbe96
   lmbfgs grassman 
+  tolerances 1.0e-12 1.0-12
 
   2d-hcurve
+  #1d-slab
 end
 
 task pspw energy

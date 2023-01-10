@@ -4,6 +4,7 @@
 */
 
 
+#include <iostream>
 #include	"Balance.hpp"
 
 namespace pwdft {
