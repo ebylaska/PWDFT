@@ -182,7 +182,7 @@ int cpsd(MPI_Comm comm_world0, std::string& rtdbstring)
    myewald.phafac();
 
    /* setup dfpt */
-   DFPT_Operators mydfpt(&mygrid,&mykin,&mycoulomb12,&myxc,&mypsp,1.0e-3);
+   //DFPT_Operators mydfpt(&mygrid,&mykin,&mycoulomb12,&myxc,&mypsp,1.0e-3);
 
 
 //                 |**************************|

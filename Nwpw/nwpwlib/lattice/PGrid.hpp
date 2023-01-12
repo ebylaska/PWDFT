@@ -79,6 +79,11 @@ public:
             delete [] btmp;
             delete [] bqindx;
             delete [] bqstatus;
+
+            // deallocate async buffer data
+            for (auto q=0; q<aqmax; ++q)
+               parall->aend(3+q);
+
         }
 
         double *Gxyz(const int i) { return &Garray[i*nfft3d]; }
@@ -152,6 +157,7 @@ public:
 
         void i_pack(const int, int *);
         void ii_pack_copy(const int, int *, int *);
+
 
         void cr_pfft3b_queuein(const int, double *);
         void cr_pfft3b_queueout(const int, double *);

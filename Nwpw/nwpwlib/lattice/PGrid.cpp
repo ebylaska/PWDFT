@@ -491,6 +491,10 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    bqstatus = new (std::nothrow) int[bqmax]();
    btmp     = new (std::nothrow) double[2*bqmax*n2ft3d]();
 
+   /* initialize async buffer data for pfft */
+   for (auto q=0; q<aqmax; ++q)
+       parall->astart(3+q,parall->np_i());
+
 
 
 }
@@ -1246,21 +1250,11 @@ void PGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2, const int req
    if (balanced)
       mybalance->c_unbalance_end(nb,tmp1,request_indx);
 
-/* OK
-       double enrr0 = d3db::rr_dot(tmp1,tmp1);
-       std::cout << "NORM-1a,nida,nidb=" << enrr0 << " " << nida[nb] << " " << nidb2[nb] << " nb=" << nb << std::endl;
-       */
-
    std::memcpy(tmp2,tmp1,2*(nida[nb]+nidb2[nb])*sizeof(double));
    std::memset(tmp1,0,n2ft3d*sizeof(double));
 
    c_bindexcopy((nida[nb]+nidb2[nb]),packarray[nb],tmp2,tmp1);
    //c_bindexcopy(nida[nb]+nidb[nb],packarray[nb],tmp2,tmp1);
-
-/* NOT OK
-       double enrr1 = d3db::rr_dot(tmp1,tmp1);
-       std::cout << "NORM-1b,n2ft3d=" << enrr1 << " " << n2ft3d << std::endl;
-       */
 
    d3db::c_timereverse_start(tmp1,zplane_tmp1,zplane_tmp2,request_indx,msgtype);
 }
@@ -1531,7 +1525,7 @@ void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, do
 {
     if (step==0)
     {
-       parall->astart(request_indx,parall->np_i());
+       //parall->astart(request_indx,parall->np_i());
 
        // unpack start, tmp1-->tmp1
        std::memcpy(tmp1,a,2*(nida[nb]+nidb[nb])*sizeof(double));
@@ -1561,7 +1555,7 @@ void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, do
     {
        // pfftbx mem->dev->dev->mem
        pfftbx(nb,tmp1,tmp2,request_indx);
-       parall->aend(request_indx);
+       //parall->aend(request_indx);
     }
 
 }
@@ -1670,13 +1664,6 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
 void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
 {}
 
-/********************************
- *                              *
- *      PGrid::pfftf_final      *
- *                              *
- ********************************/
-void PGrid::pfftf_final(const int nb, double *tmp1, double *tmp2, int request_indx)
-{}
 
 
 

@@ -1993,9 +1993,11 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
     double *exi,*vtmp,*xtmp,*Gx,*Gy,*Gz;
 
     npack0 = mypneb->npack(0);
+    xtmp = new (std::nothrow) double[npack0]();
     if (move)
     {
-        xtmp = new (std::nothrow) double[npack0]();
+        //xtmp = new (std::nothrow) double[npack0]();
+
         //Gx = new (std::nothrow) double [mypneb->nfft3d]();
         //Gy = new (std::nothrow) double [mypneb->nfft3d]();
         //Gz = new (std::nothrow) double [mypneb->nfft3d]();
@@ -2038,13 +2040,11 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng, double
     }
     delete [] exi;
     delete [] vtmp;
-    if (move)
-    {
-        delete [] xtmp;
-        //delete [] Gx;
-        //delete [] Gy;
-        //delete [] Gz;
-    }
+    delete [] xtmp;
+    //if (move)
+    //{
+        //delete [] xtmp;
+    //}
 }
 
 

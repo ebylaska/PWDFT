@@ -87,7 +87,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
    fion = new double[3*(myion->nion)]();
 
    /* generate local psp*/
-   mypsp->v_local(vl,0,dng,fion);
+   mypsp->v_local(vl,false,dng,fion);
    
 
 
@@ -383,6 +383,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
    delete [] fion;
 
+   mygrid->r_dealloc(vfield);
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(xcp);
    mygrid->r_dealloc(xce);

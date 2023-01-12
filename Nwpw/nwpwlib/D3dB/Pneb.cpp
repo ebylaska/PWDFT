@@ -311,13 +311,6 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    int indx1,indx1n,shift1;
    int indx2,indx2n,shift2;
 
-   double xx = 1.0;
-   d3db::parall->SumAll(0,xx);
-   d3db::parall->Barrier();
-   std::cout << std::endl;
-   d3db::parall->Barrier();
-
-
 
    n = neq[0]+neq[1];
    shift1 = 2*PGrid::npack(1);
