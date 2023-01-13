@@ -566,7 +566,7 @@ public:
            inuse[ia_hpsi[1]] = false;
         }
     }
-    void psi_copy_host2gpu(const int npack1, const int ne, const double *psi) {
+    void psi_copy_host2gpu(int npack1, int ne, const double *psi) {
         //cudaMemcpy(dev_mem[ia_psi[0]],psi,tile_npack2_max*ne*sizeof(double),cudaMemcpyHostToDevice);
         a_psi = psi;
         NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(tile_npack2[0],ne,sizeof(double),
