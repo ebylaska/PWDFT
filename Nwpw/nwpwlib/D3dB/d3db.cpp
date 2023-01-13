@@ -2803,6 +2803,61 @@ void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int
 
 /**************************************
  *                                    *
+ *    d3db::c_ptranspose2_jk_start    *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose2_jk_start(const int nb, double *a, double *tmp1, double *tmp2, const int request_indx, const int msgtype)
+{
+   int it,proc_from,proc_to;
+   int msglen;
+
+   int n1 = p_j1_start[nb][0][np];
+
+   c_aindexcopy(n1,p_jq_to_i1[nb][0],a,tmp1);
+
+   /* it = 0, transpose data on same thread */
+   msglen = 2*(p_j2_start[nb][0][1] - p_j2_start[nb][0][0]);
+   //int one=1;
+   //DCOPY_PWDFT(msglen,&(tmp1[2*p_j1_start[nb][0][0]]),one,&(tmp2[2*p_j2_start[nb][0][0]]),one);
+   std::memcpy(tmp2+2*p_j2_start[nb][0][0],
+               tmp1+2*p_j1_start[nb][0][0],
+               msglen*sizeof(double));
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = 2*(p_j2_start[nb][0][it+1] - p_j2_start[nb][0][it]);
+      if (msglen>0)
+         parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_j2_start[nb][0][it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = 2*(p_j1_start[nb][0][it+1] - p_j1_start[nb][0][it]);
+      if (msglen>0)
+         parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_j1_start[nb][0][it]]);
+   }
+}
+
+/**************************************
+ *                                    *
+ *    d3db::c_ptranspose2_jk_end      *
+ *                                    *
+ **************************************/
+void d3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2, const int request_indx)
+{
+   parall->awaitall(request_indx);
+
+   int n2 = p_j2_start[nb][0][np];
+   c_bindexcopy(n2,p_jq_to_i2[nb][0],tmp2,a);
+   c_bindexzero(nfft3d-n2,p_jz_to_i2[nb][0],a);
+}
+
+
+/**************************************
+ *                                    *
  *    d3db::c_ptranspose_ijk_start    *
  *                                    *
  **************************************/
