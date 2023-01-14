@@ -23,6 +23,7 @@
 *   16 - fmf_dgemm
 *   17 - m_diagonalize
 *   18 - mmm_dgemm
+*   19 - SCtimesVtrans
 
 *
 *   20 - phase factors
@@ -143,6 +144,7 @@ public:
        print_timer("fmf_dgemm            ", times[16],counter,times[0],coutput);
        print_timer("m_diagonalize        ", times[17],counter,times[0],coutput);
        print_timer("mmm_multiply         ", times[18],counter,times[0],coutput);
+       print_timer("SCVtrans             ", times[19],counter,times[0],coutput);
        print_timer("queue fft            ", times[30],counter,times[0],coutput);
        print_timer("queue fft serial     ", times[31],counter,times[0],coutput);
        print_timer("queue fft parallel   ", times[32],counter,times[0],coutput);

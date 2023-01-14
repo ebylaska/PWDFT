@@ -900,7 +900,7 @@ void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
 void Pneb::mm_SCtimesVtrans(const int mb, const double t, double *S, double *Vt, 
                             double *A, double *B, double *SA, double *SB)
 {
-   nwpw_timing_function ftimer(18);
+   nwpw_timing_function ftimer(19);
    int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
    int j,k,indx1,indx2;
    if (mb==-1)
@@ -935,7 +935,7 @@ void Pneb::mm_SCtimesVtrans(const int mb, const double t, double *S, double *Vt,
 void Pneb::mm_SCtimesVtrans2(const int mb, const double t, double *S, double *Vt,
                              double *A, double *B, double *SA, double *SB)
 {
-   nwpw_timing_function ftimer(18);
+   nwpw_timing_function ftimer(19);
    int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
    int j,k,indx1,indx2;
    if (mb==-1)
@@ -970,7 +970,7 @@ void Pneb::mm_SCtimesVtrans2(const int mb, const double t, double *S, double *Vt
 void Pneb::mm_SCtimesVtrans3(const int mb, const double t, double *S, double *Vt,
                              double *A, double *B, double *SA, double *SB)
 {
-   nwpw_timing_function ftimer(18);
+   nwpw_timing_function ftimer(19);
    int ms,n,ms1,ms2,ishift2,shift2,ishift1,shift1,nj;
    int j,k,indx1,indx2;
    if (mb==-1)
@@ -1021,10 +1021,10 @@ void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double
 
          DGEMM_PWDFT((char *) "N",(char *) "N",n,n,n,
 		     alpha,
-		     &a[shift2], n,
-		     &b[shift2], n,
+		     a+shift2, n,
+		     b+shift2, n,
 		     beta,
-		     &c[shift2], n);
+		     c+shift2, n);
       }
    }
 }
@@ -1047,10 +1047,10 @@ void Pneb::mmm_Multiply2(const int mb, double *a, double *b, double alpha, doubl
 
          DGEMM_PWDFT((char *) "T",(char *) "N",n,n,n,
                      alpha,
-                     &a[shift2], n,
-                     &b[shift2], n,
+                     a+shift2, n,
+                     b+shift2, n,
                      beta,
-                     &c[shift2], n);
+                     c+shift2, n);
       }
    }
 }
