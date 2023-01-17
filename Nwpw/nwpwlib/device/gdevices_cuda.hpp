@@ -534,6 +534,75 @@ public:
        if (tile_fac>1) inuse[ib_prj[1]] = false;
     }
 
+       
+   /************************************** 
+    *                                    *
+    *              MM6_dgemm             *
+    *                                    *
+    **************************************/
+    void MM6_dgemm(int ne, 
+                   double *host_s21, double *host_s12, double *host_s11, 
+                   double *host_sa0, double *host_sa1, double *host_st1) {
+       double rzero=0.0;
+       double rone =1.0;
+       int i_s21 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+       int i_s12 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+       int i_s11 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+       int i_sa0 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+       int i_st1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //tmp
+       int i_sa1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input-output
+
+       NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(ne,ne,sizeof(double),host_s12,ne,dev_mem[i_s21],ne,stream[0]) );
+       NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(ne,ne,sizeof(double),host_s11,ne,dev_mem[i_s11],ne,stream[1]) );
+     
+       NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_s21,ne,dev_mem[i_s21],ne) );
+       NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_sa0,ne,dev_mem[i_sa0],ne) );
+       NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_sa1,ne,dev_mem[i_sa1],ne) );
+
+       //mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+       NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+ 		                      matN,matN,
+	                              ne,ne,ne, &rone,
+                                      dev_mem[i_s21],ne,
+                                      dev_mem[i_sa0],ne,
+                                      &rone,dev_mem[i_sa1],ne) );
+
+       //mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+       NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[0]) );
+       NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+ 		                      matN,matN,
+	                              ne,ne,ne, &rone,
+                                      dev_mem[i_sa0],ne,
+                                      dev_mem[i_s12],ne,
+                                      &rone,dev_mem[i_sa1],ne) );
+
+       //mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+       NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[1]) );
+       NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+ 		                      matN,matN,
+	                              ne,ne,ne, &rone,
+                                      dev_mem[i_s11],ne,
+                                      dev_mem[i_sa0],ne,
+                                      &rzero,dev_mem[i_st1],ne) );
+
+       //mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+       NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+ 		                      matN,matN,
+	                              ne,ne,ne, &rone,
+                                      dev_mem[i_sa0],ne,
+                                      dev_mem[i_st1],ne,
+                                      &rone,dev_mem[i_sa1],ne) );
+
+       NWPW_CUBLAS_ERROR( cublasGetMatrix(ne,ne,sizeof(double),dev_mem[i_sa1],ne,host_sa1,ne) );
+
+       inuse[i_s22] = false;
+       inuse[i_s12] = false;
+       inuse[i_s11] = false;
+       inuse[i_sa0] = false;
+       inuse[i_st1] = false;
+       inuse[i_sa1] = false;
+    }
+
 
     /********************/
     /* psi_dev functions*/

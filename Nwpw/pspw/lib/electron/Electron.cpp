@@ -71,9 +71,8 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0, C
 void Electron_Operators::gen_psi_r(double *psi)
 {
    /* convert psi(G) to psi(r) */
-   mygrid->gh_fftb(psi,psi_r);
+   //mygrid->gh_fftb(psi,psi_r);
    
-   /*
    int indx1 = 0;
    int indx2 = 0;
    for (int i=0; i<neall; ++i)
@@ -85,7 +84,6 @@ void Electron_Operators::gen_psi_r(double *psi)
       indx1 += shift1;
       indx2 += shift2;
    }
-   */
    
 }
 

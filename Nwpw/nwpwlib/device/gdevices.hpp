@@ -63,6 +63,25 @@ public:
         DGEMM_PWDFT((char *) "N",(char *) "T",npack,ne,nprj,alpha,host_a,npack,host_b,ne,beta,host_c,npack);
      }
 
+    void MM6_dgemm(int ne, 
+                   double *host_s21, double *host_s12, double *host_s11,
+                   double *host_sa0, double *host_sa1, double *host_st1) {
+       double rzero=0.0;
+       double rone =1.0;
+
+       // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+       DGEMM_PWDFT((char *) "N",(char *) "N",ne,ne,ne,rone,host_s21,ne,host_sa0,ne,rone,host_sa1,ne); 
+
+       // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+       DGEMM_PWDFT((char *) "N",(char *) "N",ne,ne,ne,rone,host_sa0,ne,host_s12,ne,rone,host_sa1,ne); 
+
+       // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+       DGEMM_PWDFT((char *) "N",(char *) "N",ne,ne,ne,rone,host_s11,ne,host_sa0,ne,rzero,host_st1,ne); 
+
+       // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+       DGEMM_PWDFT((char *) "N",(char *) "N",ne,ne,ne,rone,host_sa0,ne,host_st1,ne,rone,host_sa1,ne); 
+    }
+
      void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx) {
         int nxh2 = nx+2;
         if (forward)

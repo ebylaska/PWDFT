@@ -1003,7 +1003,6 @@ void Pneb::mm_SCtimesVtrans3(const int mb, const double t, double *S, double *Vt
 }
 
 
-
 void Pneb::mmm_Multiply(const int mb, double *a, double *b, double alpha, double *c, double beta)
 {
    nwpw_timing_function ftimer(18);
@@ -1108,10 +1107,11 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 	while ((!done) && ((ii++)<ITERLMD)) {
 	    DCOPY_PWDFT(nn, s22, one, sa1, one);
 
-	    mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
-	    mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
-	    mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
-	    mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+	    //mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+	    //mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+	    //mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+	    //mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+            gdevice_MM6_dgemm(ne[ms],s12,s12,s11,sa0,sa1,st1);
 
 	    //DCOPY_PWDFT(nn, sa1, one, st1, one);
             std::memcpy(st1,sa1,nn*sizeof(double));
@@ -1132,6 +1132,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
 
 	//DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
         std::memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+        //std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
 
     } // for loop - ms
 
