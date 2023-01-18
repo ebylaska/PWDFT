@@ -595,7 +595,7 @@ public:
 
        NWPW_CUBLAS_ERROR( cublasGetMatrix(ne,ne,sizeof(double),dev_mem[i_sa1],ne,host_sa1,ne) );
 
-       inuse[i_s22] = false;
+       inuse[i_s21] = false;
        inuse[i_s12] = false;
        inuse[i_s11] = false;
        inuse[i_sa0] = false;
