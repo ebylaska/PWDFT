@@ -19,6 +19,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 enable_language(Fortran)
 include(CheckFortranCompilerFlag)
 
+#set default CMAKE_BUILD_TYPE
+set(CMAKE_BUILD_TYPE release)
+
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_DEBUG "-O3")
@@ -91,6 +94,24 @@ endif (NWPW_HIP)
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${bounds}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${dialect}")
+
+if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_Fortran_COMPILER_ID} STREQUAL "IntelLLVM")
+  message("-- Using ${CMAKE_Fortran_COMPILER_ID} Fortran Compiler ")
+  #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -m64")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
+  set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xhost" CACHE STRING "" FORCE)
+ 
+  #list(APPEND CMAKE_MODULE_PATH "$ENV{MKLROOT}/lib/cmake/mkl")
+  set(MKL_DIR "$ENV{MKLROOT}/lib/cmake/mkl")
+  find_package(MKL REQUIRED)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake)
+  include_directories(${MKL_INCLUDE_DIRS})
+elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
+   message("-- Using ${CMAKE_Fortran_COMPILER_ID} Fortran Compiler ")
+   # adding "-m64 -fdefault-integer-8" below won't work
+   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
+   set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -m64 -ffast-math  -Wuninitialized -fno-aggressive-loop-optimizations -std=legacy -fopenmp -fno-tree-dominator-opts  -Wuninitialized -fno-aggressive-loop-optimizations -O3  -mfpmath=sse  -fno-tree-dominator-opts  -ffast-math  -fprefetch-loop-arrays  -ftree-vectorize    -mtune=native" CACHE STRING "" FORCE)
+endif()
 
 
 #Configure OpenCl
