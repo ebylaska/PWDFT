@@ -1019,6 +1019,8 @@ void PGrid::cr_pfft3b(const int nb, double *a)
 #endif
  */
        d3db::zeroend_fftb(nx,nq1,1,1,a);
+       if (n2ft3d_map<n2ft3d)
+          std::memset(a+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
 
    }
 
@@ -1464,6 +1466,8 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
        ************************************************/
        gdevice_batch_cfftx_tmpx(false,nx,nq1,n2ft3d,tmp1,d3db::tmpx);
        d3db::zeroend_fftb(nx,nq1,1,1,tmp1);
+       if (n2ft3d_map<n2ft3d)
+          std::memset(tmp1+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
 
    }
 

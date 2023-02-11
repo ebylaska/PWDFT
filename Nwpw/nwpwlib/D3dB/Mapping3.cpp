@@ -167,6 +167,9 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
        nfft3d=(nx/2+1)*ny*nq;
        n2ft3d=2*nfft3d;
 
+       nfft3d_map=nfft3d;
+       n2ft3d_map=n2ft3d;
+
    }
 
    /* hilbert or hcurve  mapping */
@@ -192,6 +195,7 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
          nq1 = generate_map_indexes(taskid,np,ny,nz,      pmap[0],qmap[0]);
          nq2 = generate_map_indexes(taskid,np,nz,(nx/2+1),pmap[1],qmap[1]);
          nq3 = generate_map_indexes(taskid,np,(nx/2+1),ny,pmap[2],qmap[2]);
+
 
       /* double grid map1 defined wrt to single grid         */
       /* makes expand and contract routines trivial parallel */
@@ -226,6 +230,9 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
       if ((ny*nq2) > nfft3d) nfft3d=ny*nq2;
       if ((nz*nq3) > nfft3d) nfft3d=nz*nq3;
       n2ft3d = 2*nfft3d;
+
+      nfft3d_map = nz*nq3;
+      n2ft3d_map = (nx+2)*nq1;
    }
 }
 

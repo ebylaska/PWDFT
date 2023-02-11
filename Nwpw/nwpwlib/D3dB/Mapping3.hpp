@@ -15,7 +15,7 @@ class Mapping3 {
 
 public:
         int np,taskid;
-        int maptype,n2ft3d,nfft3d;
+        int maptype,n2ft3d,nfft3d,n2ft3d_map,nfft3d_map;
         int nx,ny,nz;
         int nq,nq1,nq2,nq3;
 

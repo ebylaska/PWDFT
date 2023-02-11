@@ -84,7 +84,6 @@ void Electron_Operators::gen_psi_r(double *psi)
       indx1 += shift1;
       indx2 += shift2;
    }
-   
 }
 
 /********************************************

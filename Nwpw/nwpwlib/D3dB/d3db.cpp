@@ -1135,7 +1135,7 @@ void d3db::rr_copy(const double *ptr1, double *ptr2)
  ********************************/
 void d3db::tt_copy(const double *ptr1, double *ptr2)
 {
-   std::memcpy(ptr2,ptr1,nfft3d*sizeof(double));
+   std::memcpy(ptr2,ptr1,nfft3d_map*sizeof(double));
    /*
    int i;
    int m = nfft3d%7;
@@ -1169,13 +1169,13 @@ void d3db::tt_copy(const double *ptr1, double *ptr2)
 void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr2[i] = da*ptr1[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i]   = da*ptr1[i];
       ptr2[i+1] = da*ptr1[i+1];
@@ -1194,13 +1194,13 @@ void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
 void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = da*ptr1[i] + ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = da*ptr1[i]   + ptr2[i];
       ptr3[i+1] = da*ptr1[i+1] + ptr2[i+1];
@@ -1226,13 +1226,13 @@ void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
                            double *ptr5)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr5[i] = (ptr1[i] + ptr2[i])*ptr3[i] + ptr4[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr5[i]   = (ptr1[i]   + ptr2[i])  *ptr3[i]   + ptr4[i];
       ptr5[i+1] = (ptr1[i+1] + ptr2[i+1])*ptr3[i+1] + ptr4[i+1];
@@ -1253,13 +1253,13 @@ void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
 void d3db::r_SMul(const double da, double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr2[i] *= da;
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i]   *= da;
       ptr2[i+1] *= da;
@@ -1305,6 +1305,10 @@ void d3db::r_zero_ends(double *A)
          A[index]   = 0.0;
          A[index+1] = 0.0;
        }
+       if (n2ft3d_map<n2ft3d) 
+          std::memset(A+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
+
+
    }
 }
 
@@ -1317,13 +1321,13 @@ void d3db::r_zero_ends(double *A)
 void d3db::r_abs(double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr2[i] = std::abs(ptr2[i]);
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i]   = std::abs(ptr2[i]);
       ptr2[i+1] = std::abs(ptr2[i+1]);
@@ -1341,13 +1345,13 @@ void d3db::r_abs(double *ptr2)
 void d3db::r_sqr(double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr2[i] *= ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i]   *= ptr2[i];
       ptr2[i+1] *= ptr2[i+1];
@@ -1365,13 +1369,13 @@ void d3db::r_sqr(double *ptr2)
 void d3db::rr_sqr(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = ptr2[i]*ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = ptr2[i]  *ptr2[i];
       ptr3[i+1] = ptr2[i+1]*ptr2[i+1];
@@ -1389,13 +1393,13 @@ void d3db::rr_sqr(const double *ptr2, double *ptr3)
 void d3db::rr_addsqr(const double *ptr2, double *ptr3)
 {  
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] += ptr2[i]*ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {  
       ptr3[i]   += ptr2[i]  *ptr2[i];
       ptr3[i+1] += ptr2[i+1]*ptr2[i+1];
@@ -1413,13 +1417,13 @@ void d3db::rr_addsqr(const double *ptr2, double *ptr3)
 void d3db::r_sqrt(double *ptr2)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr2[i] = sqrt(ptr2[i]);
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i]   = sqrt(ptr2[i]);
       ptr2[i+1] = sqrt(ptr2[i+1]);
@@ -1438,14 +1442,14 @@ void d3db::r_sqrt(double *ptr2)
 double d3db::r_dsum(const double *ptr)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    double sum=0.0;
    if (m>0)
       for (i=0; i<m; ++i)
          sum += ptr[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return sum;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       sum += ptr[i]
           +  ptr[i+1]
@@ -1464,13 +1468,13 @@ double d3db::r_dsum(const double *ptr)
 void d3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] += ptr1[i] + ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   += ptr1[i]   + ptr2[i];
       ptr3[i+1] += ptr1[i+1] + ptr2[i+1];
@@ -1488,13 +1492,13 @@ void d3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3)
 void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = ptr1[i] + ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = ptr1[i]   + ptr2[i];
       ptr3[i+1] = ptr1[i+1] + ptr2[i+1];
@@ -1512,13 +1516,13 @@ void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
 void d3db::rr_Sum(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] += ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   += ptr2[i];
       ptr3[i+1] += ptr2[i+1];
@@ -1536,13 +1540,13 @@ void d3db::rr_Sum(const double *ptr2, double *ptr3)
 void d3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
 {  
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = ptr1[i] - ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {  
       ptr3[i]   = ptr1[i]   - ptr2[i];
       ptr3[i+1] = ptr1[i+1] - ptr2[i+1];
@@ -1560,13 +1564,13 @@ void d3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
 void d3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2, double *ptr3)
 {  
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = a*(ptr1[i] - ptr2[i]);
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {  
       ptr3[i]   = a*(ptr1[i]   - ptr2[i]);
       ptr3[i+1] = a*(ptr1[i+1] - ptr2[i+1]);
@@ -1585,13 +1589,13 @@ void d3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2, do
 void d3db::rr_Minus(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] -= ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   -= ptr2[i];
       ptr3[i+1] -= ptr2[i+1];
@@ -1610,13 +1614,13 @@ void d3db::rr_Minus(const double *ptr2, double *ptr3)
 void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = ptr1[i] * ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = ptr1[i]   * ptr2[i];
       ptr3[i+1] = ptr1[i+1] * ptr2[i+1];
@@ -1635,13 +1639,13 @@ void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
 void d3db::rr_Mul(const double *ptr1, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] *= ptr1[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   *= ptr1[i];
       ptr3[i+1] *= ptr1[i+1];
@@ -1661,16 +1665,16 @@ void d3db::rr_Mul(const double *ptr1, double *ptr3)
 void d3db::tc_Mul(const double *ptr1, double *ptr3)
 {
    int i;
-   int m = nfft3d%5;
+   int m = nfft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
       {
          ptr3[2*i]   *= ptr1[i];
          ptr3[2*i+1] *= ptr1[i];
       }
-   if (nfft3d<5)
+   if (nfft3d_map<5)
       return;
-   for (i=m; i<nfft3d; i+=5)
+   for (i=m; i<nfft3d_map; i+=5)
    {
       ptr3[2*(i)]   *= ptr1[i];
       ptr3[2*(i)+1] *= ptr1[i];
@@ -1702,13 +1706,13 @@ void d3db::tc_Mul(const double *ptr1, double *ptr3)
 void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = (std::abs(ptr2[i])>ETA_DIV)   ? (ptr1[i]   / ptr2[i])   : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1])>ETA_DIV) ? (ptr1[i+1] / ptr2[i+1]) : (0.0);
@@ -1727,13 +1731,13 @@ void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 void d3db::rr_Divide(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {  
       ptr3[i]   = (std::abs(ptr2[i])>ETA_DIV)   ? (ptr3[i]   / ptr2[i])   : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1])>ETA_DIV) ? (ptr3[i+1] / ptr2[i+1]) : (0.0);
@@ -1751,7 +1755,7 @@ void d3db::rr_Divide(const double *ptr2, double *ptr3)
 
 /********************************
  *                              *
- *         d3db::rr_dot        *
+ *         d3db::rr_dot         *
  *                              *
  ********************************/
 double d3db::rr_dot(const double *ptr1, const double *ptr2)
@@ -1759,13 +1763,13 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
    int i;
    double sum=0.0;
   
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          sum += ptr1[i]*ptr2[i];
-   if (n2ft3d<5)
+   if (n2ft3d_map<5)
       return sum;
-   for (i=m; i<n2ft3d; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       sum += ptr1[i]   * ptr2[i]
           +  ptr1[i+1] * ptr2[i+1]
@@ -1784,15 +1788,15 @@ double d3db::rr_dot(const double *ptr1, const double *ptr2)
  ********************************/
 void d3db::nrr_vdot(const int n, const double *ptr1, const double *ptr2, double *v)
 {
-   int m = n2ft3d%5;
+   int m = n2ft3d_map%5;
    for (auto k=0; k<n; ++k) v[k] = 0.0;
    if (m>0)
       for (auto i=0; i<m; ++i)
       for (auto k=0; k<n; ++k)
          v[k] += ptr1[n*i+k]*ptr2[i];
-   if (n2ft3d>=5)
+   if (n2ft3d_map>=5)
    {
-      for (auto i=m; i<n2ft3d; i+=5)
+      for (auto i=m; i<n2ft3d_map; i+=5)
       for (auto k=0; k<n; ++k)
       {
          v[k] += ptr1[n*i+k]     * ptr2[i]
@@ -2310,6 +2314,11 @@ void d3db::cr_fft3d(double *a)
 #endif
        */
        zeroend_fftb(nx,nq1,1,1,a);
+       if (n2ft3d_map<n2ft3d)
+          std::memset(a+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
+
+
+
 
    }
 
