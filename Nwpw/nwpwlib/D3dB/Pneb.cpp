@@ -141,6 +141,9 @@ void Pneb::g_generate2_random(double *psi)
  *************************************/
 void Pneb::g_generate_random(double *psi)
 {
+   int taskid = d1db::parall->taskid();
+   util_random(taskid+91);
+
    if (g_rnd_algorihm==1)
       this->g_generate1_random(psi);
    else
