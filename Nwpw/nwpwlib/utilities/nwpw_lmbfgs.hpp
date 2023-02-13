@@ -38,8 +38,10 @@ public:
 
       for (auto k=0; k<max_m; ++k) indx[k] = k;
 
-      DCOPY_PWDFT(nsize,x0,one,&sylist[2*m*nsize],    one);
-      DCOPY_PWDFT(nsize,g0,one,&sylist[(2*m+1)*nsize],one);
+      //DCOPY_PWDFT(nsize,x0,one,&sylist[2*m*nsize],    one);
+      //DCOPY_PWDFT(nsize,g0,one,&sylist[(2*m+1)*nsize],one);
+      std::memcpy(sylist+(2*m)  *nsize,x0,nsize*sizeof(double));
+      std::memcpy(sylist+(2*m+1)*nsize,g0,nsize*sizeof(double));
    }
 
    /* destructor */
@@ -50,9 +52,12 @@ public:
    }
 
    void lmbfgs(double *x, double *g, double *q) {
-      DCOPY_PWDFT(nsize,g,one,q,one);
-      DCOPY_PWDFT(nsize,x,one,&sylist[(2*(indx[m+1]))  *nsize],one);
-      DCOPY_PWDFT(nsize,g,one,&sylist[(2*(indx[m+1])+1)*nsize],one);
+      //DCOPY_PWDFT(nsize,g,one,q,one);
+      //DCOPY_PWDFT(nsize,x,one,&sylist[(2*(indx[m+1]))  *nsize],one);
+      //DCOPY_PWDFT(nsize,g,one,&sylist[(2*(indx[m+1])+1)*nsize],one);
+      std::memcpy(q,g,nsize*sizeof(double));
+      std::memcpy(sylist+(2*(indx[m+1]))  *nsize,x,nsize*sizeof(double));
+      std::memcpy(sylist+(2*(indx[m+1])+1)*nsize,g,nsize*sizeof(double));
 
       DAXPY_PWDFT(nsize,mrone,x,one,&sylist[(2*indx[m])  *nsize],one);
       DAXPY_PWDFT(nsize,mrone,g,one,&sylist[(2*indx[m]+1)*nsize],one);

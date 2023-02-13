@@ -120,7 +120,8 @@ static void Multiply_Gijl_sw1(int nn,
     int nnn = nn*nprj;
     int nna = nn;
 
-    DCOPY_PWDFT(nnn,&rzero,zero,sw2,one);
+    //DCOPY_PWDFT(nnn,&rzero,zero,sw2,one);
+    std::memset(sw2,0,nnn*sizeof(double));
 
     for (b=0; b<nprj; ++b)
         for (a=0; a<nprj; ++a)

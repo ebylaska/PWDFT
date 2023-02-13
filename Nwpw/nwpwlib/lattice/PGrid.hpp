@@ -176,6 +176,8 @@ public:
         int  rc_pfft3f_queuefilled();
         void rc_pfft3f(const int, double *);
         void pfftf_step(const int, const int, double *, double *, double *, int);
+        void c_pack_start(const int, double *, double *, const int, const int);
+        void c_pack_end(const int, double *, const int);
         void pfftfx(const int, double *, double *, int);
         void pfftfy(const int, double *, double *, int);
         void pfftfz(const int, double *, double *, int);

@@ -319,6 +319,48 @@ void Balance::c_balance(const int nb, double *a)
       }
 }
 
+/***********************************
+ *                                 *
+ *    Balance::c_balance_start     *
+ *                                 *
+ ***********************************/
+void Balance::c_balance_start(const int nb, double *a, const int request_indx, const int msgtype)
+{
+   int j,pto,pfrom,msglen,indx;
+
+   if (sender_list[nb])
+      for (j=0; j<npacket_list[nb]; ++j)
+      {
+         pto    = proc_to_list[nb][j];
+         msglen = 2*packet_size_list[nb][j];
+         indx   = 2*indx_start_list[nb][j];
+         if (msglen>0)
+            parall->adsend(request_indx,msgtype,pto,msglen,a+indx);
+      }
+
+   if (receiver_list[nb])
+      for (j=0; j<npacket_list[nb]; ++j)
+      {
+         pfrom  = proc_from_list[nb][j];
+         msglen = 2*packet_size_list[nb][j];
+         indx   = 2*indx_start_list[nb][j];
+         if (msglen>0)
+            parall->adreceive(request_indx,msgtype,pfrom,msglen,a+indx);
+      }
+}
+
+/***********************************
+ *                                 *
+ *    Balance::c_balance_end       *
+ *                                 *
+ ***********************************/
+void Balance::c_balance_end(const int nb, double *a, const int request_indx)
+{
+   parall->awaitall(request_indx);
+}
+
+
+
 
 /********************************
  *                              *

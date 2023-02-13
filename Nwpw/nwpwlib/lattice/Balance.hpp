@@ -41,6 +41,9 @@ public:
 
    void c_unbalance_start(const int,double *,const int,const int);
    void c_unbalance_end(const int,double *,const int);
+
+   void c_balance_start(const int,double *,const int,const int);
+   void c_balance_end(const int,double *,const int);
 };
 
 }
