@@ -628,45 +628,45 @@ static std::string convertcstring(const char *cstring)
       return rstring;
    }
 }
-extern int c_lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, const char *cfilename)
+extern "C" int c_lammps_pspw_aimd_minimizer_filename(MPI_Comm comm_world, double *rion, double *fion, double *E, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_aimd_minimizer_filename(comm_world,rion,fion,E,filename);
 }
-extern int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+extern "C" int c_lammps_pspw_qmmm_minimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
                                                  bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_qmmm_minimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
-extern int c_lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+extern "C" int c_lammps_pspw_qmmm_nominimizer_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
                                                    bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_qmmm_nominimizer_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
 
-extern int c_lammps_pspw_cpmd_start_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+extern "C" int c_lammps_pspw_cpmd_start_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
                                              bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_cpmd_start_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 }
 
-extern int c_lammps_pspw_cpmd_run_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
+extern "C" int c_lammps_pspw_cpmd_run_filename(MPI_Comm comm_world, double *rion, double *uion, double *fion, double *qion, double *E, 
                                            bool removeqmmmcoulomb, bool removeqmqmcoulomb, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_cpmd_run_filename(comm_world,rion,uion,fion,qion,E,removeqmmmcoulomb,removeqmqmcoulomb,filename);
 } 
 
-extern int c_lammps_pspw_cpmd_stop_filename(MPI_Comm comm_world, const char *cfilename)
+extern "C" int c_lammps_pspw_cpmd_stop_filename(MPI_Comm comm_world, const char *cfilename)
 {
    std::string filename = convertcstring(cfilename);
    return lammps_pspw_cpmd_stop_filename(comm_world,filename);
 }
 
-extern void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
+extern "C" void c_lammps_pspw_input_filename(MPI_Comm comm_world, const char *cnwfilename, const char *cfilename)
 {
    std::string nwfilename = convertcstring(cnwfilename);
    std::string filename   = convertcstring(cfilename);
