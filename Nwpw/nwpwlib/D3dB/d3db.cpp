@@ -2144,7 +2144,7 @@ void d3db::cr_fft3d(double *a)
 {
 
    nwpw_timing_function ftime(1);
-   int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2;
+   int i,j,k,jj,kk,q,indx,indx0,nxh,nxh2,nxhy,nxhy2,nxhz,nxhz2,nn,shift;
    double *tmp2 = new (std::nothrow) double [2*nfft3d]();
    double *tmp3 = new (std::nothrow) double [2*nfft3d]();
 
@@ -2164,6 +2164,51 @@ void d3db::cr_fft3d(double *a)
        ***     do fft along kz dimension               ***
        ***     A(kx,nz,ky) <- fft1d^(-1)[A(kx,kz,ky)]  ***
        ***************************************************/
+       indx0 = 0;
+       nn = 0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             kk   = 0;
+             indx = 2*i+indx0;
+             shift = 2*nz*nn;
+             for (k=0; k<nz; ++k)
+             {
+                tmp2[kk  +shift] = a[indx];
+                tmp2[kk+1+shift] = a[indx+1];
+                kk   += 2;
+                indx += nxh2;
+             }
+             ++nn;
+          }
+          indx0 += nxhz2;
+       }
+
+       gdevice_batch_cfftz_tmpz(false,nz,nn,n2ft3d,tmp2,tmpz);
+
+       indx0 = 0;
+       nn = 0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             kk   = 0;
+             indx = 2*i+indx0;
+             shift = 2*nz*nn;
+             for (k=0; k<nz; ++k)
+             {
+                a[indx]   = tmp2[kk  +shift];
+                a[indx+1] = tmp2[kk+1+shift];
+                kk   += 2;
+                indx += nxh2;
+             }
+             ++nn;
+          }
+          indx0 += nxhz2;
+       }
+
+       /*
        indx0=0;
        for (q=0; q<nq; ++q)
        {
@@ -2193,6 +2238,7 @@ void d3db::cr_fft3d(double *a)
           }
           indx0 += nxhz2;
        }
+       */
 
       /***********************************************
        ***         Do a transpose of A             ***
@@ -2204,6 +2250,51 @@ void d3db::cr_fft3d(double *a)
        ***        do fft along ky dimension          ***
        ***    A(kx,ny,nz) <- fft1d^(-1)[A(kx,ky,nz)] ***
        *************************************************/
+       indx0 = 0;
+       nn = 0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             jj   = 0;
+             indx = 2*i+indx0;
+             shift = 2*ny*nn;
+             for (j=0; j<ny; ++j)
+             {
+                tmp2[jj  +shift] = a[indx];
+                tmp2[jj+1+shift] = a[indx+1];
+                jj   += 2;
+                indx += nxh2;
+             }
+             ++nn;
+          }
+          indx0 += nxhy2;
+       }
+
+       gdevice_batch_cffty_tmpy(false,ny,nn,n2ft3d,tmp2,tmpy);
+
+       indx0 = 0;
+       nn = 0;
+       for (q=0; q<nq; ++q)
+       {
+          for (i=0; i<nxh; ++i)
+          {
+             jj   = 0;
+             indx = 2*i+indx0;
+             shift = 2*ny*nn;
+             for (j=0; j<ny; ++j)
+             {
+                a[indx]   = tmp2[jj  +shift];
+                a[indx+1] = tmp2[jj+1+shift];
+                jj   += 2;
+                indx += nxh2;
+             }
+             ++nn;
+          }
+          indx0 += nxhy2;
+       }
+
+       /*
        indx0=0;
        for (q=0; q<nq; ++q)
        {
@@ -2233,12 +2324,14 @@ void d3db::cr_fft3d(double *a)
           }
           indx0 += nxhy2;
        }
+       */
 
 
       /************************************************
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
+       /*
        cshift1_fftb(nx,ny,nq,1,a);
        indx = 0;
        for (q=0; q<nq; ++q)
@@ -2248,6 +2341,8 @@ void d3db::cr_fft3d(double *a)
           indx += nxh2;
        }
        zeroend_fftb(nx,ny,nq,1,a);
+       */
+       gdevice_batch_cfftx_tmpx(false,nx,ny*nq,n2ft3d,a,tmpx);
 
 
    }
