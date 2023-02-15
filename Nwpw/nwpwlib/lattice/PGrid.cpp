@@ -1289,7 +1289,7 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
     **********************/
    if (maptype==1)
    {
-      int kk,indx;
+      int kk,indx,shift;
       int nxh   = nx/2+1;
       int nxh2  = nx+2;
       int nxhz2 = nxh2*nz;
@@ -1298,6 +1298,63 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
        ***     do fft along kz dimension               ***
        ***     A(kx,nz,ky) <- fft1d^(-1)[A(kx,kz,ky)]  ***
        ***************************************************/
+      int indx0= 0;
+      int indx2= 0;
+      int nn = 0;
+      for (auto q=0; q<nq; ++q)
+      {
+         for (auto i=0; i<nxh; ++i)
+         {
+            if (!zero_row3[nb][indx2])
+            {
+               kk    = 0;
+               indx  = 2*i+indx0;
+               shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k)
+               {
+                  tmp2[kk  +shift] = tmp1[indx];
+                  tmp2[kk+1+shift] = tmp1[indx+1];
+                  kk   += 2;
+                  indx += nxh2;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxhz2;
+      }
+
+      gdevice_batch_cfftz_tmpz(false,nz,nn,n2ft3d,tmp2,d3db::tmpz);
+      //for (auto i=0; i<nn; ++i)
+      //   dcfftb_(&nz,tmp2+2*nz*i,d3db::tmpz);
+
+      indx0 = 0;
+      indx2 = 0;
+      nn = 0;
+      for (auto q=0; q<nq; ++q)
+      {
+         for (auto i=0; i<nxh; ++i)
+         {
+            if (!zero_row3[nb][indx2])
+            {
+               kk    = 0;
+               indx  = 2*i+indx0;
+               shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k)
+               {
+                  tmp1[indx]   = tmp2[kk  +shift];
+                  tmp1[indx+1] = tmp2[kk+1+shift];
+                  kk   += 2;
+                  indx += nxh2;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxhz2;
+      }
+
+      /*
        int indx0=0;
        int indx2=0;
        for (auto q=0; q<nq; ++q)
@@ -1332,12 +1389,13 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
           }
           indx0 += nxhz2;
        }
+       */
 
-       /***********************************************
-        ***         Do a ptranspose of A            ***
-        ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
-        ************************************************/
-       d3db::c_ptranspose1_jk_start(nb,tmp1,tmp2,tmp1,request_indx,44);
+      /***********************************************
+       ***         Do a ptranspose of A            ***
+       ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
+       ************************************************/
+      d3db::c_ptranspose1_jk_start(nb,tmp1,tmp2,tmp1,request_indx,44);
    }
    /*************************
     **** hilbert mapping ****
@@ -1369,7 +1427,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
     **********************/
    if (maptype==1)
    {
-      int jj,indx;
+      int jj,indx,shift;
       int nxh   = nx/2+1;
       int nxh2  = nx+2;
       int nxhy2 = nxh2*ny;
@@ -1384,6 +1442,63 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
        ***     do fft along ny dimension        ***
        ***   A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]  ***
        ********************************************/
+      int indx0 = 0;
+      int indx2 = 0;
+      int nn = 0;
+      for (auto q=0; q<nq; ++q)
+      {
+         for (auto i=0; i<nxh; ++i)
+         {
+            if (!zero_row2[nb][indx2])
+            {
+               jj    = 0;
+               indx  = 2*i+indx0;
+               shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j)
+               {
+                  tmp1[jj  +shift] = tmp2[indx];
+                  tmp1[jj+1+shift] = tmp2[indx+1];
+                  jj   += 2;
+                  indx += nxh2;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxhy2;
+      }
+
+      gdevice_batch_cffty_tmpy(false,ny,nn,n2ft3d,tmp1,d3db::tmpy);
+      //for (auto i=0; i<nn; ++i)
+      //   dcfftb_(&ny,tmp1+2*ny*i,d3db::tmpy);
+
+      indx0 = 0;
+      indx2 = 0;
+      nn = 0;
+      for (auto q=0; q<nq; ++q)
+      {
+         for (auto i=0; i<nxh; ++i)
+         {
+            if (!zero_row2[nb][indx2])
+            {
+               jj    = 0;
+               indx  = 2*i+indx0;
+               shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j)
+               {
+                  tmp2[indx]   = tmp1[jj  +shift];
+                  tmp2[indx+1] = tmp1[jj+1+shift];
+                  jj   += 2;
+                  indx += nxh2;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxhy2;
+      }
+
+      /*
       int indx0=0;
       int indx2=0;
       for (auto q=0; q<nq; ++q)
@@ -1418,6 +1533,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
           }
           indx0 += nxhy2;
       }
+      */
    }
    /*************************
     **** hilbert mapping ****
