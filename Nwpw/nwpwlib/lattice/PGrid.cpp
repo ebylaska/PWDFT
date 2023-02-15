@@ -493,7 +493,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    /* initialize async buffer data for pfft */
    for (auto q=0; q<aqmax; ++q)
-       parall->astart(3+q,parall->np_i());
+       parall->astart(3+q,2*parall->np_i()+1);
 
 
 
@@ -854,7 +854,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
     **** slab mapping ****
     **********************/
    if (maptype==1)
-   {
+   { 
       /***************************************************
        ***     do fft along kz dimension               ***
        ***     A(kx,nz,ky) <- fft1d^(-1)[A(kx,kz,ky)]  ***
@@ -1332,11 +1332,12 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
           }
           indx0 += nxhz2;
        }
-      /***********************************************
-       ***         Do a ptranspose of A            ***
-       ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
-       ************************************************/
-      d3db::c_ptranspose1_jk_start(nb,tmp1,tmp2,tmp1,request_indx,44);
+
+       /***********************************************
+        ***         Do a ptranspose of A            ***
+        ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
+        ************************************************/
+       d3db::c_ptranspose1_jk_start(nb,tmp1,tmp2,tmp1,request_indx,44);
    }
    /*************************
     **** hilbert mapping ****
@@ -1395,20 +1396,20 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
                 indx = 2*i+indx0;
                 for (auto j=0; j<ny; ++j)
                 {
-                   tmp2[jj]   = tmp1[indx];
-                   tmp2[jj+1] = tmp1[indx+1];
+                   tmp1[jj]   = tmp2[indx];
+                   tmp1[jj+1] = tmp2[indx+1];
                    jj   += 2;
                    indx += nxh2;
                 }
 
-                dcfftf_(&ny,tmp2,tmpy);
+                dcfftb_(&ny,tmp1,tmpy);
 
                 jj   = 0;
                 indx = 2*i+indx0;
                 for (auto j=0; j<ny; ++j)
                 {
-                   tmp1[indx]   = tmp2[jj];
-                   tmp1[indx+1] = tmp2[jj+1];
+                   tmp2[indx]   = tmp1[jj];
+                   tmp2[indx+1] = tmp1[jj+1];
                    jj   += 2;
                    indx += nxh2;
                 }
@@ -1455,8 +1456,9 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
       ***     do fft along kx dimension            ***
       ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
       ************************************************/
-      gdevice_batch_cfftx_tmpx(false,nx,ny*nq,n2ft3d,tmp1,d3db::tmpx);
-      d3db::zeroend_fftb(nx,ny,nq,1,tmp1);
+      gdevice_batch_cfftx_tmpx(false,nx,ny*nq,n2ft3d,tmp2,d3db::tmpx);
+      d3db::zeroend_fftb(nx,ny,nq,1,tmp2);
+      std::memcpy(tmp1,tmp2,n2ft3d*sizeof(double));
    }
    /*************************
     **** hilbert mapping ****
@@ -1502,7 +1504,7 @@ void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, do
     }
     else if (step==2)
     {
-       // unpack end; mem-->dev
+       // unpack end; mem-->dev,  out=tmp1
        this->c_unpack_end(nb,tmp1,tmp2,request_indx);
     }
     else if (step==3)
@@ -1513,6 +1515,7 @@ void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1, do
     else if (step==4)
     {
        // pfftby mem->dev-->dev->mem
+       //in=tmp1, tmp2->tmp1, tmp1=in , tmp2=tmp
        pfftby(nb,tmp1,tmp2,request_indx);
     }
     else if (step==5)

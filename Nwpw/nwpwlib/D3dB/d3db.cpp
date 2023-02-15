@@ -2785,14 +2785,16 @@ void d3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1, double 
       proc_from = (taskid-it+np)%np;
       msglen = 2*(p_i2_start[nb][0][it+1] - p_i2_start[nb][0][it]);
       if (msglen>0)
-         parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
+         parall->adreceive(request_indx,msgtype,proc_from,msglen,tmp2+2*p_i2_start[nb][0][it]);
+         //parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
    }
    for (it=1; it<np; ++it)
    {
       proc_to = (taskid+it)%np;
       msglen = 2*(p_i1_start[nb][0][it+1] - p_i1_start[nb][0][it]);
       if (msglen>0)
-         parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
+         parall->adsend(request_indx,msgtype,proc_to,msglen,tmp1+2*p_i1_start[nb][0][it]);
+         //parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
    }
 }
 
@@ -2808,6 +2810,7 @@ void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int
    int n2 = p_i2_start[nb][0][np];
    c_bindexcopy(n2,p_iq_to_i2[nb][0],tmp2,a);
    c_bindexzero(nfft3d-n2,p_iz_to_i2[nb][0],a);
+
 }
 
 /**************************************
@@ -2897,14 +2900,16 @@ void d3db::c_ptranspose_ijk_start(const int nb, const int op, double *a, double 
       proc_from = (taskid-it+np)%np;
       msglen = 2*(p_i2_start[nb][op][it+1] - p_i2_start[nb][op][it]);
       if (msglen>0)
-         parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
+         parall->adreceive(request_indx,msgtype,proc_from,msglen,tmp2+2*p_i2_start[nb][op][it]);
+         //parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
    }
    for (it=1; it<np; ++it)
    {
       proc_to = (taskid+it)%np;
       msglen = 2*(p_i1_start[nb][op][it+1] - p_i1_start[nb][op][it]);
       if (msglen>0)
-         parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
+         parall->adsend(request_indx,msgtype,proc_to,msglen,tmp1+2*p_i1_start[nb][op][it]);
+         //parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
    }
 }
 
