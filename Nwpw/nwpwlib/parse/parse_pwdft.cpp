@@ -1010,7 +1010,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
       }
       else if (mystring_contains(line,"loop"))
       {
-	 std::vector<int> loop;
+	      std::vector<int> loop;
          loop.push_back(1);
          loop.push_back(1);
          ss = mystring_split0(line);
@@ -1020,7 +1020,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
       }
       else if (mystring_contains(line,"bo_steps"))
       {
-	 std::vector<int> loop;
+	      std::vector<int> loop;
          loop.push_back(1);
          loop.push_back(1);
          ss = mystring_split0(line);
@@ -1048,6 +1048,16 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          ss = mystring_split0(line);
          if (ss.size()==2) nwpwjson["cutoff"] = {std::stod(ss[1]),2*std::stod(ss[1])};
          if (ss.size()>2)  nwpwjson["cutoff"] = {std::stod(ss[1]),std::stod(ss[2])};
+      }
+      else if (mystring_contains(line,"ewald_ncut"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) nwpwjson["ewald_ncut"] = std::stoi(ss[1]);
+      }
+      else if (mystring_contains(line,"ewald_rcut"))
+      {
+         ss = mystring_split0(line);
+         if (ss.size()==2) nwpwjson["ewald_rcut"] = std::stod(ss[1]);
       }
       else if (mystring_contains(line,"tolerances"))
       {
