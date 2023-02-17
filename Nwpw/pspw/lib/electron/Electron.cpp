@@ -73,7 +73,7 @@ void Electron_Operators::gen_psi_r(double *psi)
    /* convert psi(G) to psi(r) */
    mygrid->gh_fftb(psi,psi_r);
   
-  /*
+   /*
    int indx1 = 0;
    int indx2 = 0;
    for (int i=0; i<neall; ++i)

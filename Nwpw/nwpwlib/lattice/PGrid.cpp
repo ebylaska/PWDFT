@@ -1958,7 +1958,7 @@ int  PGrid::cr_pfft3b_queuefilled()
  *        PGrid::pfftfx         *
  *                              *
  ********************************/
-void PGrid::pfftfx(const int nb, double *tmp1, double *tmp2, int request_indx)
+void PGrid::pfftfx(const int nb, double *a, double *tmp1, double *tmp2, int request_indx)
 {
 
    /**** slab mapping ****/
@@ -1978,7 +1978,8 @@ void PGrid::pfftfx(const int nb, double *tmp1, double *tmp2, int request_indx)
       }
       d3db::cshift_fftf(nx,ny,nq,1,tmp1);
       */
-      gdevice_batch_cfftx_tmpx(true,nx,ny*nq,n2ft3d,tmp1,d3db::tmpx);
+      gdevice_batch_cfftx_tmpx(true,nx,ny*nq,n2ft3d,a,d3db::tmpx);
+      std::memcpy(tmp1,a,n2ft3d*sizeof(double));
    }
 
    /**** hilbert mapping ****/
@@ -1986,9 +1987,9 @@ void PGrid::pfftfx(const int nb, double *tmp1, double *tmp2, int request_indx)
    {
       // do fft along nx dimension    
       // A(kx,ny,nz) <- fft1d[A(nx,ny,nz)] 
-       gdevice_batch_cfftx_tmpx(true,nx,nq1,n2ft3d,tmp1,d3db::tmpx);
+       gdevice_batch_cfftx_tmpx(true,nx,nq1,n2ft3d,a,d3db::tmpx); 
 
-       d3db::c_ptranspose_ijk_start(nb,0,tmp1,tmp2,tmp1,request_indx,40);
+       d3db::c_ptranspose_ijk_start(nb,0,a,tmp1,tmp2,request_indx,40);
 
    }
 }
@@ -2038,7 +2039,7 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
          indx0 += nxhy2;
       }
 
-      gdevice_batch_cffty_tmpy(true,ny,nn,n2ft3d,tmp1,d3db::tmpy);
+      gdevice_batch_cffty_tmpy(true,ny,nn,n2ft3d,tmp2,d3db::tmpy);
 
       indx0 = 0;
       indx2 = 0;
@@ -2112,12 +2113,14 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
    /**** hilbert mapping ****/
    else
    {
+       //in=tmp1, out=tmp2
       d3db::c_ptranspose_ijk_end(nb,0,tmp1,tmp2,request_indx);
 
       // do fft along ny dimension       
       // A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]
       gdevice_batch_cffty_tmpy_zero(true,ny,nq2,n2ft3d,tmp1,d3db::tmpy,zero_row2[nb]);
        
+       //in=tmp2, out=tmp2
       d3db::c_ptranspose_ijk_start(nb,1,tmp1,tmp2,tmp1,request_indx,42);
    }
 
@@ -2157,8 +2160,8 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
                shift = 2*nz*nn;
                for (auto k=0; k<nz; ++k)
                {
-                  tmp2[kk  +shift] = tmp1[indx];
-                  tmp2[kk+1+shift] = tmp1[indx+1];
+                  tmp1[kk  +shift] = tmp2[indx];
+                  tmp1[kk+1+shift] = tmp2[indx+1];
                   kk   += 2;
                   indx += nxh2;
                }
@@ -2185,8 +2188,8 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
                shift = 2*nz*nn;
                for (auto k=0; k<nz; ++k)
                {
-                  tmp1[indx]   = tmp2[kk  +shift];
-                  tmp1[indx+1] = tmp2[kk+1+shift];
+                  tmp2[indx]   = tmp1[kk  +shift];
+                  tmp2[indx+1] = tmp1[kk+1+shift];
                   kk   += 2;
                   indx += nxh2;
                }
@@ -2239,11 +2242,12 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
    /**** hilbert mapping ****/
    else
    {
+       //in=tmp1, out=tmp2
       d3db::c_ptranspose_ijk_end(nb,1,tmp2,tmp1,request_indx);
 
       // do fft along nz dimension      
       // A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]
-      gdevice_batch_cfftz_tmpz_zero(true,nz,nq3,n2ft3d,tmp1,d3db::tmpz,zero_row3[nb]);
+      gdevice_batch_cfftz_tmpz_zero(true,nz,nq3,n2ft3d,tmp2,d3db::tmpz,zero_row3[nb]);
    }
 
 }
@@ -2259,20 +2263,19 @@ void PGrid::pfftf_step(const int step, const int nb, double *a, double *tmp1, do
 {
     if (step==0)
     {
-       // pfftfx mem-->device
-       pfftfx(nb,a,tmp1,request_indx);
+       // pfftfx mem-->device, in=a out=tmp2
+       pfftfx(nb,a,tmp1,tmp2,request_indx);
     }
     else if (step==1)
     {
-       // pfftfy device
+       // pfftfy device, in=tmp1
        pfftfy(nb,tmp1,tmp2,request_indx);
     }
     else if (step==2)
     {
        // pfftfz device-->mem
        pfftfz(nb,tmp1,tmp2,request_indx);
-       this->c_pack_start(nb,tmp1,tmp2,request_indx,47);
-
+       this->c_pack_start(nb,tmp2,tmp1,request_indx,47);
     }
     else if (step==3)
     {
@@ -2324,7 +2327,7 @@ void PGrid::c_pack_end(const int nb, double *tmp1, const int request_indx)
  *    PGrid:rc_pfft3f_queuein   *
  *                              *
  ********************************/
-void PGrid::rc_pfft3f_queuein(const int nb, double *a)
+void PGrid::rc_pfft3f_queuein(const int nb, double *b)
 {
    int shift1,shift2;
    int np = parall->np_i();
@@ -2335,7 +2338,7 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *a)
        int status = bqstatus[indx]+1;
        shift1 = n2ft3d*(2*indx);
        shift2 = n2ft3d*(2*indx+1);
-       pfftf_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
+       pfftf_step(status,nb,b,btmp+shift1,btmp+shift2,indx+3);
        ++bqstatus[indx];
    }
 
@@ -2346,10 +2349,10 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *a)
    bqstatus[blast_index] = 0;
 
    //status = 0;
-   shift1 = n2ft3d*(2*alast_index);
-   shift2 = n2ft3d*(2*alast_index+1);
+   shift1 = n2ft3d*(2*blast_index);
+   shift2 = n2ft3d*(2*blast_index+1);
 
-   pfftf_step(0,nb,a,atmp+shift1,atmp+shift2,blast_index+3);
+   pfftf_step(0,nb,b,btmp+shift1,btmp+shift2,blast_index+3);
 }
 
 
@@ -2358,7 +2361,7 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *a)
  *    PGrid:rc_pfft3f_queueout  *
  *                              *
  ********************************/
-void PGrid::rc_pfft3f_queueout(const int nb, double *a)
+void PGrid::rc_pfft3f_queueout(const int nb, double *b)
 {
    int shift1,shift2;
    int indx1 = bqindx[0];
@@ -2372,15 +2375,15 @@ void PGrid::rc_pfft3f_queueout(const int nb, double *a)
           int status = bqstatus[indx]+1;
           shift1 = n2ft3d*(2*indx);
           shift2 = n2ft3d*(2*indx+1);
-          pfftf_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
+          pfftf_step(status,nb,b,btmp+shift1,btmp+shift2,indx+3);
           ++bqstatus[indx];
       }
    }
    double scal1 = 1.0/((double) ((nx)*(ny)*(nz)));
-   double enrr0 = scal1*d3db::rr_dot(atmp,atmp);
+   double enrr0 = scal1*d3db::rr_dot(btmp,btmp);
 
-   shift1 = n2ft3d*(2*indx1);
-   std::memcpy(a,atmp+shift1,n2ft3d*sizeof(double));
+   shift2 = n2ft3d*(2*indx1+1);
+   std::memcpy(b,btmp+shift2,n2ft3d*sizeof(double));
    --bqsize;
    for (auto q=0; q<bqsize; ++q)
       bqindx[q] = bqindx[q+1];
