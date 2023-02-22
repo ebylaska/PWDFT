@@ -45,6 +45,12 @@ void gdevice_MM6_dgemm(int ne, double *s21, double *s12, double *s11, double *sa
     mygdevice.MM6_dgemm(ne,s21,s12,s11,sa0,sa1,st1);
 }
 
+void gdevice_NN_eigensolver(int ispin, int ne[], double *a, double *w)
+{
+  mygdevice.NN_eigensolver(ispin,ne,a,w);
+}
+
+
 
 void gdevice_psi_alloc(int npack, int ne, int tfac0=1)
 { 

@@ -327,8 +327,6 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       if (myparall->base_stdio_print) 
          coutput << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);
-      //mypneb->g_generate1_random(psi2);
-      //mypneb->g_generate2_random(psi2);
    }
 
    /* ortho check */

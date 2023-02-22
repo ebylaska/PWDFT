@@ -12,6 +12,8 @@ void gdevice_NT_dgemm(int, int, int, double, double *, double *, double, double 
 
 void gdevice_MM6_dgemm(int, double *, double *, double*, double *, double *, double *);
 
+void gdevice_NN_eigensolver(int, int *, double *, double *);
+
 void gdevice_psi_alloc(int, int, int);
 void gdevice_psi_dealloc();
 

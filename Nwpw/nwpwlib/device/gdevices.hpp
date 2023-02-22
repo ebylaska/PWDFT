@@ -13,7 +13,41 @@
 #include        "blas.h"
 #endif
 
+#include        <cstring> //memset()
+#include        <stdexcept> // runtime_error()
+
 namespace pwdft {
+
+static void eigsrt_device(double *D, double *V, int n)
+{
+   int i,j,k;
+   double p;
+
+   for (i=0; i<(n-1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for(j=i+1; j<n; ++j)
+         if (D[j]>=p)
+         {
+            k = j;
+            p = D[j];
+         }
+
+      if (k!=i)
+      {
+         D[k] = D[i];
+         D[i] = p;
+         for (j=0; j<n; ++j)
+         {
+            p = V[j+i*n];
+            V[j+i*n] = V[j+k*n];
+            V[j+k*n] = p;
+         }
+      }
+   }
+}
+
 
   // just HOST side calls
 #if !defined(NWPW_CUDA) && !defined(NWPW_HIP) && !defined(NWPW_SYCL) && !defined(NWPW_OPENCL)
@@ -80,6 +114,30 @@ public:
 
        // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
        DGEMM_PWDFT((char *) "N",(char *) "N",ne,ne,ne,rone,host_sa0,ne,host_st1,ne,rone,host_sa1,ne); 
+    }
+
+    void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig)
+    {
+       int n,ierr;
+       int nn  = ne[0]*ne[0]+14;
+       double xmp1[nn];
+       //double *xmp1 = new (std::nothrow) double[nn]();
+
+       int shift1 = 0;
+       int shift2 = 0;
+       for (int ms=0; ms<ispin; ++ms)
+       {
+          n = ne[ms];
+
+          //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+          // d3db::parall->Barrier();
+          EIGEN_PWDFT(n,host_hml+shift2,host_eig+shift1,xmp1,nn,ierr);
+          //if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
+
+          eigsrt_device(host_eig+shift1,host_hml+shift2,n);
+          shift1 += ne[0];
+          shift2 += ne[0]*ne[0];
+       }
     }
 
      void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx) {

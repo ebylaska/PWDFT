@@ -102,7 +102,8 @@ void Pneb::g_generate1_random(double *psi)
 
          PGrid::c_pack(1,tmp2);
          indx = 2*PGrid::npack(1)*qj;
-         PGrid::cc_pack_copy(1,tmp2,&(psi[indx]));
+         PGrid::cc_pack_copy(1,tmp2,psi+indx);
+         PGrid::c_pack_noimagzero(1,psi+indx);
       }
    }
 
@@ -127,7 +128,7 @@ void Pneb::g_generate2_random(double *psi)
 
          PGrid::c_pack(1,tmp2);
          int indx = 2*PGrid::npack(1)*qj;
-         PGrid::cc_pack_copy(1,tmp2,&(psi[indx]));
+         PGrid::cc_pack_copy(1,tmp2,psi+indx);
       }
    }
 
@@ -174,7 +175,7 @@ void Pneb::g_read(const int iunit, double *psi)
       {
          indx = 2*PGrid::npack(1)*qj;
          PGrid::c_pack(1,tmp2);
-         PGrid::cc_pack_copy(1,tmp2,&(psi[indx]));
+         PGrid::cc_pack_copy(1,tmp2,psi+indx);
       }
    }
 
@@ -195,7 +196,7 @@ void Pneb::g_write(const int iunit, double *psi)
       if (pj==taskid_j)
       {
          indx = 2*PGrid::npack(1)*qj;
-         PGrid::cc_pack_copy(1,&(psi[indx]),tmp2);
+         PGrid::cc_pack_copy(1,psi+indx,tmp2);
          PGrid::c_unpack(1,tmp2);
       }
       c_write(iunit,tmp2,pj);
@@ -213,7 +214,7 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    indx = 0;
    for (n=0; n<(neq[0]+neq[1]); ++n)
    {
-      sum += PGrid::cc_pack_idot(1,&psi1[indx],&psi2[indx]);
+      sum += PGrid::cc_pack_idot(1,psi1+indx,psi2+indx);
       indx += 2*PGrid::npack(1);
    }
    if (ispin==1) sum *= 2.0;

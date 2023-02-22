@@ -520,7 +520,7 @@ void PGrid::c_unpack(const int nb, double *a)
    //DCOPY_PWDFT(nn,a,one,tmp,one);
    //dcopy_(&n2ft3d,&rzero,&zero,a,&one);
    std::memcpy(tmp,a,nn*sizeof(double));
-   std::memset(a, 0, n2ft3d * sizeof(double));
+   std::memset(a,0,2*nfft3d*sizeof(double));
    c_bindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
    //c_bindexcopy(nida[nb]+nidb[nb],packarray[nb],tmp,a);
 
@@ -540,12 +540,12 @@ void PGrid::c_unpack(const int nb, double *a)
 void PGrid::c_pack(const int nb, double *a)
 {
    int one=1;
-   double *tmp = new (std::nothrow) double [n2ft3d];
+   double *tmp = new (std::nothrow) double [2*nfft3d];
 
    //DCOPY_PWDFT(n2ft3d,a,one,tmp,one);
-   std::memcpy(tmp,a,n2ft3d*sizeof(double));
+   std::memcpy(tmp,a,2*nfft3d*sizeof(double));
 
-   std::memset(a, 0, n2ft3d * sizeof(double));
+   std::memset(a,0,2*nfft3d*sizeof(double));
 
    c_aindexcopy(nida[nb]+nidb2[nb],packarray[nb],tmp,a);
 
@@ -2582,6 +2582,18 @@ void PGrid::c_pack_addzero(const int nb, const double vzero, double *a)
 {
    int pzero = ijktop(0,0,0);
    if (pzero==parall->taskid_i()) a[0] += vzero;
+}
+
+/********************************
+ *                              *
+ *   PGrid:c_pack_noimagzero    *
+ *                              *
+ ********************************/
+
+void PGrid::c_pack_noimagzero(const int nb, double *a)
+{
+   int pzero = ijktop(0,0,0);
+   if (pzero==parall->taskid_i()) a[1] = 0.0;
 }
 
 

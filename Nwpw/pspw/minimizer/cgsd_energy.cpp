@@ -111,8 +111,9 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
 
    if (mymolecule.newpsi)
    {
-      for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-      if (oprint) coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+      int it_in0 = 15;
+      for (int it=0; it<it_in0; ++it) mymolecule.sd_update(dte);
+      if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
    }
 
    //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
@@ -128,8 +129,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
          ++icount;
          if (stalled)
          {
-  	    //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-            //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+  	         for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
+            if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
             bfgscount = 0;
          }
          deltae_old = deltae;
@@ -155,8 +156,8 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
          ++icount;
          if (stalled)
          {
-  	    //for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
-            //if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+  	         for (int it=0; it<it_in; ++it) mymolecule.sd_update(dte);
+            if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
             bfgscount = 0;
          }
          deltae_old = deltae;

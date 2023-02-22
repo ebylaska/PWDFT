@@ -77,6 +77,7 @@ void psi_H(Pneb *mygrid,
    if (mypsp->myefield->efield_on)
       mygrid->rr_Sum(mypsp->myefield->v_field,vall);
 
+
 /*
    for (ms=0; ms<ispin; ++ms)
    {
@@ -92,7 +93,9 @@ void psi_H(Pneb *mygrid,
          indx2 += shift2;
       }
    }
-*/
+   */
+
+
 
    mygrid->rrr_Sum(vall,xcp,tmp);
    while (!done)
@@ -121,6 +124,7 @@ void psi_H(Pneb *mygrid,
       }
       done = ((indx1>=n2) && (indx2>=n2));
    }
+
 
 
    /* deallocate temporary memory */

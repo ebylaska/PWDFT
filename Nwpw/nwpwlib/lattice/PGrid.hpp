@@ -147,6 +147,7 @@ public:
         void tcc_pack_aMulAdd(const int, const double, const double *, const double *, double *);
 
         void c_pack_addzero(const int, const double, double *);
+        void c_pack_noimagzero(const int,double *);
 
         void c_pack_zero(const int, double *);
         void c_pack_SMul(const int, const double, double *);
