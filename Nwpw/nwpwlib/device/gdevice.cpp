@@ -11,6 +11,11 @@ sycl::queue* get_syclQue() {
 }
 #endif // NWPW_SYCL
 
+void gdevice_TN4_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cba, double *cbb)
+{
+  mygdevice.TN4_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cba,cbb);
+}
+
 void gdevice_TN3_dgemm(int npack, int ne, double alpha, double *a, double *b, double beta, double *caa, double *cab, double *cbb)
 {
   mygdevice.TN3_dgemm(npack,ne,alpha,a,b,beta,caa,cab,cbb);

@@ -189,12 +189,42 @@ public:
       psi1 = t2;
    }
 
+   /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
+   void sd_update_sic(double dte) {
+
+      /* apply psi2 = psi1 + dte*Hpsi1 */
+      myelectron->run(psi1,rho1,dng1,rho1_all);
+
+      //myelectron->add_dteHpsi((-dte),psi1,psi2);
+      myelectron->add_dteHpsi((dte),psi1,psi2);
+
+      /* lagrange multiplier - Expensive */
+      mygrid->ggm_lambda_sic(dte,psi1,psi2,lmbda);
+
+      /* pointer swap of psi2 and psi1 */
+      double *t2 = psi2;
+      psi2 = psi1;
+      psi1 = t2;
+   }
+
+
    double psi_1get_Tgradient(double *G1)
    {
       double total_energy;
       myelectron->run(psi1,rho1,dng1,rho1_all);
       total_energy = myelectron->energy(psi1,rho1,dng1,rho1_all) + myewald->energy();
       myelectron->gen_hml(psi1,hml);
+      myelectron->get_Tgradient(psi1,hml,G1);
+
+      return total_energy;
+   }
+
+   double psi_1get_TSgradient(double *G1)
+   {
+      double total_energy;
+      myelectron->run(psi1,rho1,dng1,rho1_all);
+      total_energy = myelectron->energy(psi1,rho1,dng1,rho1_all) + myewald->energy();
+      myelectron->gen_hmlt(psi1,hml);
       myelectron->get_Tgradient(psi1,hml,G1);
 
       return total_energy;

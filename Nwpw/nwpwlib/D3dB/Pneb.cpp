@@ -486,6 +486,61 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
       d3db::parall->Vector_SumAll(1,ne[0]*ne[0] + ne[1]*ne[1],hml);
    }
 }
+
+/*************************************
+ *                                   *
+ *        Pneb::ggm_Multiply         *
+ *                                   *
+ *************************************/
+void Pneb::ggm_Multiply(double *psi1, double *psi2, double *hml)
+{
+
+   nwpw_timing_function ftimer(15);
+   int n,shift0,mshift0;
+
+   int one = 1;
+   int ng  = 2*PGrid::npack(1);
+   int ng0 = 2*PGrid::nzero(1);
+
+   double rzero = 0.0;
+   double rtwo  = 2.0;
+   double rone =  1.0;
+   double rmone = -1.0;
+
+   if (parallelized)
+   {
+        std::ostringstream msg;
+        msg << "NWPW Error: ggm_Multiply() parallelized is NOT supported\n"
+       << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
+   }
+   else
+   {
+      shift0  = 0;
+      mshift0 = 0;
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         n       = ne[ms];
+         gdevice_TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+
+         if (ng0>0)
+            DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng0,
+                       rmone,
+                       psi1+shift0,ng,
+                       psi2+shift0,ng,
+                       rone,
+                       hml+mshift0,n);
+
+         shift0  += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1,ne[0]*ne[0] + ne[1]*ne[1],hml);
+   }
+}
+
+
+
+
 /*************************************
  *                                   *
  *      Pneb::ffm_sym_Multiply       *
@@ -712,6 +767,104 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    }
 }
 
+
+void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
+              double* s11, double* s21, double *s12, double* s22)
+{
+   nwpw_timing_function ftimer(15);
+   int ms,ms1,ms2,ishift2,j,k,n,shift0,shift1,mshift0,mshift1,nn;
+   int one = 1;
+   int ng  = 2*PGrid::npack(1);
+   int ng0 = 2*PGrid::nzero(1);
+
+   double rzero = 0.0;
+   double rtwo  = 2.0;
+   double rone =  1.0;
+   double rmone = -1.0;
+
+   if (parallelized)
+   {
+        std::ostringstream msg;
+        msg << "NWPW Error: ffm4_sym_Multiply() parallelized is NOT supported\n"
+       << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
+   }
+   else
+   {
+      if (mb==-1)
+      {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];
+          nn=ne[0]*ne[0]+ne[1]*ne[1];
+          shift0  = 0;
+          mshift0 = 0;
+      }
+      else
+      {   ms1=mb; ms2=mb+1; ishift2=0;
+          nn = ne[mb]*ne[mb];
+          shift0  = mb*ne[0]*ng;
+          mshift0 = 0;
+      }
+      for (ms=ms1; ms<ms2; ++ms)
+      {
+         n       = ne[ms];
+
+         gdevice_TN4_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,s11+mshift0,s21+mshift0,s12+mshift0,s22+mshift0);
+
+         if (ng0>0)
+         {
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (k=1; k<=n; ++k)
+            {
+      DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+             rmone,
+             psi1+shift0,ng,
+             psi1+shift1,ng,
+             rone,
+             s11+mshift1,k);
+      DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+             rmone,
+             psi2+shift0,ng,
+             psi1+shift1,ng,
+             rone,
+             s21+mshift1,k);
+      DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+             rmone,
+             psi1+shift0,ng,
+             psi2+shift1,ng,
+             rone,
+             s12+mshift1,k);
+      DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng0,
+             rmone,
+             psi2+shift0,ng,
+             psi2+shift1,ng,
+             rone,
+             s22+mshift1,k);
+               shift1  += ng;
+               mshift1 += n;
+            }
+         }
+
+         for (k=0; k<n; ++k) {
+            for (j=k+1; j<n; ++j) {
+              s11[mshift0 + j + k*n] = s11[mshift0 + k + j*n];
+              s21[mshift0 + j + k*n] = s21[mshift0 + k + j*n];
+              s12[mshift0 + j + k*n] = s12[mshift0 + k + j*n];
+              s22[mshift0 + j + k*n] = s22[mshift0 + k + j*n];
+            }
+         }
+
+         shift0  += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1,nn,s11);
+      d3db::parall->Vector_SumAll(1,nn,s21);
+      d3db::parall->Vector_SumAll(1,nn,s12);
+      d3db::parall->Vector_SumAll(1,nn,s22);
+   }
+}
+
+
+
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha, double *psi2, double beta)
 {
    nwpw_timing_function ftimer(16);
@@ -901,6 +1054,50 @@ void Pneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
    }
 }
 
+
+
+void Pneb::m_scale_s22_s21_s12_s11(const int mb, const double dte, double *s22, double *s21, double *s12, double *s11)
+{
+   int j,k,ms,ms1,ms2,ishift2,indx0,indx,indxt;
+
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0;}
+
+   for (ms=ms1; ms<ms2; ++ms)
+   {
+      indx0 = ms*ishift2;
+      for (k=0; k<ne[ms]; ++k)
+      {
+          s22[indx0] = (1.0-s22[indx0])*(0.5/dte);
+          s21[indx0] = (1.0-s21[indx0])*(0.5);
+          s12[indx0] = (1.0-s12[indx0])*(0.5);
+          s11[indx0] *= -0.5*dte;
+
+          indx  = indx0 + 1;
+          indxt = indx0 + ne[ms];
+          for (j=(k+1); j<ne[ms]; ++j)
+          {
+             s22[indx]  *= (-0.5/dte);
+             s22[indxt] *= (-0.5/dte);
+             s21[indx]  *= -0.5;
+             s21[indxt] *= -0.5;
+             s12[indx]  *= -0.5;
+             s12[indxt] *= -0.5;
+             s11[indx]  *= -0.5*dte;
+             s11[indxt] *= -0.5*dte;
+
+             indx  += 1;
+             indxt += ne[ms];
+          }
+          indx0 += (ne[ms]+1);
+      }
+   }
+}
+
+
+
 void Pneb::mm_SCtimesVtrans(const int mb, const double t, double *S, double *Vt, 
                             double *A, double *B, double *SA, double *SB)
 {
@@ -1079,6 +1276,38 @@ void Pneb::mm_transpose(const int mb, double *a, double *b)
    }
 }
 
+/********************************
+ *                              *
+ *   Pneb::mm_Kiril_Btransform  *
+ *                              *
+ ********************************/
+void Pneb::mm_Kiril_Btransform(const int mb, double *a, double *b)
+{
+   int ms1,ms2,ishift2;
+   if (mb==-1)
+   {   ms1=0; ms2=ispin; ishift2=ne[0]*ne[0];}
+   else
+   {   ms1=mb; ms2=mb+1; ishift2=0;}
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int shift2 = ms*ishift2;
+      for (auto i=0; i<ne[ms]; ++i)
+      for (auto j=0; j<i; ++j)
+      {
+          int indx = i + j*i + shift2;
+          double tmp = 0.5*(a[indx]+b[indx]);
+          a[indx] = tmp;
+          b[indx] = tmp;
+      }
+   }
+}
+
+/********************************
+ *                              *
+ *     Pneb::ggm_lambda         *
+ *                              *
+ ********************************/
+
 #define ITERLMD         220
 #define CONVGLMD        1e-15
 #define CONVGLMD2       1e-12
@@ -1145,6 +1374,77 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
     fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
 }
 
+
+/********************************
+ *                              *
+ *     Pneb::ggm_lambda_sic     *
+ *                              *
+ ********************************/
+// Lagrange multiplier for Stiefel and  SIC and(expensive method)
+void Pneb::ggm_lambda_sic(double dte, double *psi1, double *psi2, double *lmbda)
+{
+    nwpw_timing_function ftimer(3);
+
+    int one=1;
+    double rmone = -1.0;
+    double adiff = 0.0;
+
+    for (int ms=0; ms<ispin; ++ms) {
+
+   int nn = m_size(ms);
+
+   ffm4_sym_Multiply(ms, psi1, psi2, s11, s21, s12, s22);
+   mm_Kiril_Btransform(ms,s12,s21);
+
+   m_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12,s11);
+
+        int jj;
+   int ii   = 0;
+   int done = 0;
+
+   //DCOPY_PWDFT(nn, s21, one, s12, one);
+   //DCOPY_PWDFT(nn, s22, one, sa0, one);
+   std::memcpy(s12,s21,nn*sizeof(double));
+   std::memcpy(sa0,s22,nn*sizeof(double));
+
+
+   while ((!done) && ((ii++)<ITERLMD)) {
+       //DCOPY_PWDFT(nn, s22, one, sa1, one);
+       std::memcpy(sa1,s22,nn*sizeof(double));
+
+       //mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+       //mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+       //mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+       //mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+       gdevice_MM6_dgemm(ne[ms],s12,s12,s11,sa0,sa1,st1);
+
+       //DCOPY_PWDFT(nn, sa1, one, st1, one);
+       std::memcpy(st1,sa1,nn*sizeof(double));
+       DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+       jj = IDAMAX_PWDFT(nn, st1, one);
+       adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
+
+       if (adiff < CONVGLMD)
+         done = 1;
+       else
+          std::memcpy(sa0,sa1,nn*sizeof(double)); //DCOPY_PWDFT(nn, sa1, one, sa0, one);
+   }
+   //printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d done=%d\n",nn,jj,adiff,ii,done);
+
+   if (adiff>CONVGLMD2) {
+       if (!done) printf("ierr=10 adiff=%le\n",adiff);
+   }
+
+   //DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+   std::memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+        //std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
+
+    } // for loop - ms
+
+    /* correction due to contraint */
+    fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
+}
+
 /********************************
  *                              *
  *        Pneb::g_ortho         *
@@ -1166,6 +1466,7 @@ void Pneb::g_ortho(double *psi)
    }
    else
    {
+      // npj==1
       for (auto ms=0; ms<ispin; ++ms)
       {
          ishift = ms*ne[0]*2*PGrid::npack(1);
@@ -1187,6 +1488,239 @@ void Pneb::g_ortho(double *psi)
       }
    }
 }
+
+/********************************
+ *                              *
+ *        Pneb::fm_QR           *
+ *                              *
+ ********************************/
+/*
+   Performs a modified Gram-Schmidt QR.
+*/
+void Pneb::fm_QR(const int mb, double *Q, double *R)
+{
+   int n,ms1,ms2,ishift2,shift2;
+   int ishift,indxj,indxk,indxm;
+   double w;
+   if (mb==-1)
+   {   
+       ms1=0; ms2=ispin; ishift2=ne[0]*ne[0]; 
+       std::memset(R,0,(ne[0]*ne[0]+ne[1]*ne[1])*sizeof(double));
+   }
+   else
+   { 
+      ms1=mb; ms2=mb+1; ishift2=0; 
+      std::memset(R,0,(ne[mb]*ne[mb])*sizeof(double));
+   }
+
+   // npj>1
+   if (parallelized)
+   {
+        std::ostringstream msg;
+        msg << "NWPW Error: fm_QR parallelized is NOT supported\n"
+	    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+        throw(std::runtime_error(msg.str()));
+   }
+
+   // npj==1
+   else 
+   {
+      for (auto ms=ms1; ms<ms2; ++ms)
+      {
+         ishift = ms*ne[0]*2*PGrid::npack(1);
+         for (auto k=0; k<ne[ms]; ++k)
+         {
+            indxk = 2*PGrid::npack(1)*k + ishift;
+            indxm = k + k*ne[ms] + ms*ishift2;
+            w = PGrid::cc_pack_dot(1,Q+indxk,Q+indxk);
+            w = sqrt(w);
+            R[indxm] = w;
+            w = 1.0/w;
+            PGrid::c_pack_SMul(1,w,Q+indxk);
+
+            for (auto j=k+1; j<ne[ms]; ++j)
+            {
+               indxj = 2*PGrid::npack(1)*j  + ishift;
+               indxm = k + j*ne[ms] + ms*ishift2;
+               w = PGrid::cc_pack_dot(1,Q+indxk,Q+indxj);
+               R[indxm] = w;
+               PGrid::cc_pack_daxpy(1,-w,Q+indxk,Q+indxj);
+            }
+         }
+      }
+   }
+}
+
+/********************************
+ *                              *
+ *     Pneb::mmm4_AR_to_T4      *
+ *                              *
+ ********************************/
+void Pneb::mmm4_AR_to_T4(const int mb, const double *A, const double *R, double *T4)
+{
+   int ms1,ms2,ishift1,ishift2;
+   if (mb==-1) 
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift1 = ne[0]*ne[0];
+      ishift2 = 4*ne[0]*ne[0];
+      std::memset(T4,0,(4*ne[0]*ne[0]+ne[1]*ne[1])*sizeof(double));
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb;
+      ishift1 = 0;
+      ishift2 = 0;
+      std::memset(T4,0,(4*ne[mb]*ne[mb])*sizeof(double));
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      const int n=ne[ms];
+      const double *Asub = A + ms*ishift1;
+      const double *Rsub = R + ms*ishift1;
+      double *Tsub = T4 + ms*ishift2;
+
+      //**** copy A to upper-left of T ****
+      for (auto j=0; j<n; ++j)
+      for (auto i=0; i<n; ++i)
+         Tsub[i+j*(2*n)] = Asub[i+j*n];
+   
+      //**** copy R to lower-left of T ****
+      for (auto j=0; j<n; ++j)
+      for (auto i=0; i<n; ++i)
+         Tsub[(i+n)+j*(2*n)] = Rsub[i+j*n];
+
+      //**** copy -R^t to upper-right of T ****
+      for (auto j=0; j<n; ++j)
+      for (auto i=0; i<n; ++i)
+         Tsub[i+(j+n)*(2*n)] = -Rsub[j+i*n];
+   }
+}
+
+/********************************
+ *                              *
+ *     Pneb::m4_FactorSkew      *
+ *                              *
+ ********************************/
+void Pneb::m4_FactorSkew(const int mb, double *K4, double *V4, double *W4, double *Sigma)
+{
+   int ms1,ms2,ishift1,ishift2;
+   if (mb==-1)
+   { ms1=0; ms2=ispin; ishift1=2*ne[0]; ishift2=4*ne[0]*ne[0]; }
+   else
+   { ms1=mb; ms2=mb; ishift1=0; ishift2=0; }
+
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int n = 2*ne[ms];
+      int shift1 = ms*ishift1;
+      int shift2 = ms*ishift2;
+
+      FACTOR_SKEW_PWDFT(n,K4+shift2,V4+shift2,W4+shift2,Sigma+shift1);
+   }
+}
+
+
+/********************************
+ *                              *
+ *    mm4_RotationSkew_sub1     *
+ *                              *
+ ********************************/
+static void mm4_RotateSkew_sub1(const int n,const double t, const double *Sigma, double *SA, double *SB)
+{
+   for (auto i=0; i<n; ++i)
+   {
+      SA[i] = cos(Sigma[i]*t);
+      SB[i] = sin(Sigma[i]*t);
+   }
+}
+
+/********************************
+ *                              *
+ *    mm4_RotationSkew_sub2     *
+ *                              *
+ ********************************/
+static void mm4_RotateSkew_sub2(const int n, const double *SA, const double *SB, const double *V, const double *W,  double *A, double *B)
+{
+   for (auto j=0; j<n; ++j)
+   for (auto i=0; i<n; ++i)
+   {
+      int indx = i+j*n;
+      A[indx] = V[indx]*SA[j] + W[indx]*SB[j];
+      B[indx] = W[indx]*SA[j] - V[indx]*SB[j];
+   }
+}
+
+/********************************
+ *                              *
+ *    Pneb::m4_RotationSkew     *
+ *                              *
+ ********************************/
+void Pneb::m4_RotationSkew(const int mb, const double t, double *V4, double *W4, double *Sigma, double *A4, double *B4, double *R4)
+{
+   int ms1,ms2,ishift1,ishift2,nj;
+   if (mb==-1)
+   { ms1=0; ms2=ispin; ishift1=2*ne[0]; ishift2=4*ne[0]*ne[0]; nj=2*(ne[0]+ne[1]); }
+   else
+   { ms1=mb; ms2=mb;   ishift1=0;       ishift2=0;             nj=2*ne[mb];}
+
+   double rzero = 0.0;
+   double rone  = 1.0;
+   double SA[nj]; 
+   double SB[nj];
+
+   mm4_RotateSkew_sub1(nj,t,Sigma,SA,SB);
+
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int n=2*ne[ms];
+      int shift1 = ms*ishift1;
+      int shift2 = ms*ishift2;
+      mm4_RotateSkew_sub2(n,SA+shift1,SB+shift1,V4+shift2,W4+shift2,A4+shift2,B4+shift2);
+      
+      DGEMM_PWDFT((char *) "N",(char *) "T",n,n,n,rone,
+                  V4+shift2,n,
+                  A4+shift2,n,
+                  rzero,
+                  R4+shift2,n);
+      DGEMM_PWDFT((char *) "N",(char *) "T",n,n,n,rone,
+                  W4+shift2,n,
+                  B4+shift2,n,
+                  rone,
+                  R4+shift2,n);
+   }
+}
+
+/********************************
+ *                              *
+ *     Pneb::m4_R4_to_MN        *
+ *                              *
+ ********************************/
+void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N)
+{
+   int ms1,ms2,ishift1,ishift2;
+   if (mb==-1)
+   { ms1=0; ms2=ispin; ishift1=ne[0]*ne[0]; ishift2=4*ne[0]*ne[0]; }
+   else
+   { ms1=mb; ms2=mb;   ishift1=0;           ishift2=0;             }
+
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+       int n=ne[ms];
+       int shift1 = ms*ishift1;
+       int shift2 = ms*ishift2;
+
+       for (auto j=0; j<n; ++j)
+       for (auto i=0; i<n; ++i)
+       {
+           M[i+j*n] = R4[i    +j*(2*n)];
+           N[i+j*n] = R4[(i+n)+j*(2*n)];
+       }
+   }
+}
+
 
 }
 

@@ -55,6 +55,7 @@ public:
     void get_Gradient(double *);
     void gen_Tangent(double *, double *, double *);
     void gen_hml(double *, double *);
+    void gen_hmlt(double *, double *);
     void gen_Hpsi_k(double *);
     void gen_psi_r(double *);
     void gen_density(double *);

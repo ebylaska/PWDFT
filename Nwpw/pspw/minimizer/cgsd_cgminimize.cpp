@@ -29,7 +29,7 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
  *            cgsd_cgminimize             *
  *                                        *
  ******************************************/
-double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, double *deltae, double *deltac, 
+double cgsd_cgminimize(Molecule& mymolecule, Geodesic *mygeodesic, double *E, double *deltae, double *deltac, 
                        int current_iteration, int it_in, double tole, double tolc)
 {
    bool   done = false;
@@ -42,7 +42,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    double tmin0,deltae0;
 
    Pneb *mygrid = mymolecule.mygrid;
-   mygeodesic_ptr = &mygeodesic;
+   mygeodesic_ptr = mygeodesic;
 
 
    /* get the initial gradient and direction */
@@ -67,7 +67,7 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
    while ((!done) && ((it++) < it_in))
    {
       /* initialize the geoedesic line data structure */
-      dEold = mygeodesic.start(H0,&max_sigma, &min_sigma);
+      dEold = mygeodesic->start(H0,&max_sigma, &min_sigma);
 
       /* line search */
       if (tmin > deltat_min)
@@ -85,14 +85,14 @@ double cgsd_cgminimize(Molecule& mymolecule, Geodesic& mygeodesic, double *E, do
       tmin = tmin0;
       *deltae = deltae0;
       *deltac = mymolecule.rho_error();
-      mygeodesic.psi_final(tmin);
+      mygeodesic->psi_final(tmin);
 
 
       /* exit loop early */
       done = ((it >= it_in) || ((std::fabs(*deltae)<tole) && (*deltac<tolc)));
 
       /* transport the previous search directions */
-      mygeodesic.psi_1transport(tmin,H0);
+      mygeodesic->psi_1transport(tmin,H0);
 
       /* make psi1 <--- psi2(tmin) */
       mymolecule.swap_psi1_psi2();

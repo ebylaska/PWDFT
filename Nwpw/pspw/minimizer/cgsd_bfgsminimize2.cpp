@@ -12,26 +12,26 @@
 #include        "Ion.hpp"
 #include        "Pneb.hpp"
 #include        "Molecule.hpp"
-#include        "Geodesic.hpp"
-#include        "pspw_lmbfgs.hpp"
+#include        "Geodesic2.hpp"
+#include        "pspw_lmbfgs2.hpp"
 
 
 namespace pwdft {
 
 /* create dummy function call to Geodesic class functions */
-static Geodesic *mygeodesic_ptr;
+static Geodesic2 *mygeodesic_ptr;
 static double dummy_energy(double t)  { return mygeodesic_ptr->energy(t); }
 static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 
 
 /******************************************
  *                                        *
- *            cgsd_bfgsminimize           *
+ *           cgsd_bfgsminimize2           *
  *                                        *
  ******************************************/
-double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic *mygeodesic, pspw_lmbfgs &psi_lmbfgs, 
-                         double *E, double *deltae, double *deltac, 
-                         int current_iteration, int it_in, double tole, double tolc)
+double cgsd_bfgsminimize2(Molecule& mymolecule, Geodesic2 *mygeodesic, pspw_lmbfgs2 &psi_lmbfgs, 
+                          double *E, double *deltae, double *deltac, 
+                          int current_iteration, int it_in, double tole, double tolc)
 {
    bool   done = false;
    double tmin = 0.0;
@@ -51,7 +51,7 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic *mygeodesic, pspw_lmbfgs
    double *G0 = mygrid->g_allocate(1);
    double *S0 = mygrid->g_allocate(1);
 
-   total_energy  = mymolecule.psi_1get_Tgradient(G0);
+   total_energy  = mymolecule.psi_1get_TSgradient(G0);
    sum1 = mygrid->gg_traceall(G0,G0);
    Enew = total_energy;
 
@@ -80,7 +80,7 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic *mygeodesic, pspw_lmbfgs
    while ((!done) && ((it++) < it_in))
    {
       /* initialize the geoedesic line data structure */
-      dEold = mygeodesic->start(S0,&max_sigma, &min_sigma);
+      dEold = mygeodesic->start(mymolecule.psi1,S0,&max_sigma, &min_sigma);
 
       /* line search */
       if (tmin > deltat_min)
@@ -110,7 +110,7 @@ double cgsd_bfgsminimize(Molecule& mymolecule, Geodesic *mygeodesic, pspw_lmbfgs
       if (!done)
       {
          /* get the new gradient - also updates densities */
-         total_energy  = mymolecule.psi_1get_Tgradient(G0);
+         total_energy  = mymolecule.psi_1get_TSgradient(G0);
          psi_lmbfgs.fetch(tmin,G0,S0);
 
          // reset to gradient if <S0|G0> <= 0.0

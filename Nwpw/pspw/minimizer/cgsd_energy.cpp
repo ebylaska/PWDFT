@@ -11,8 +11,9 @@
 #include        "Ion.hpp"
 #include        "Pneb.hpp"
 #include        "Molecule.hpp"
-#include	"Geodesic.hpp"
+#include	"Geodesic12.hpp"
 #include	"pspw_lmbfgs.hpp"
+#include	"pspw_lmbfgs2.hpp"
 
 #include	"cgsd.hpp"
 
@@ -99,22 +100,15 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
 
    }
 
-
    //if (minimizer > 1) pspw_Grsm_list_start()
    if ((minimizer==5) || (minimizer==8)) it_out = 1;
 
-   Geodesic mygeodesic(minimizer,&mymolecule);
+   Geodesic12 mygeodesic12(minimizer,&mymolecule,control);
 
 
    /* generate phase factors and local psp and semicore density */
    mymolecule.phafacs_vl_potential_semicore();
 
-   if (mymolecule.newpsi)
-   {
-      int it_in0 = 15;
-      for (int it=0; it<it_in0; ++it) mymolecule.sd_update(dte);
-      if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
-   }
 
    //std::cout << "cgsd_energy: minimizer = " << minimizer << std::endl;
    deltae = -1.0e-03;
@@ -124,6 +118,12 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
 
 
    if (minimizer==1) {
+      if (mymolecule.newpsi)
+      {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it) mymolecule.sd_update(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
       while ((icount < it_out) && (!converged))
       {
          ++icount;
@@ -134,7 +134,7 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
             bfgscount = 0;
          }
          deltae_old = deltae;
-         total_energy = cgsd_cgminimize(mymolecule,mygeodesic,
+         total_energy = cgsd_cgminimize(mymolecule,mygeodesic12.mygeodesic1,
                                         E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
          ++bfgscount; 
          if (oprint)
@@ -150,7 +150,13 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
       }
       
    } else if (minimizer==2) {
-      pspw_lmbfgs psi_lmbfgs(&mygeodesic,lmbfgs_size);
+      if (mymolecule.newpsi)
+      {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it) mymolecule.sd_update(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
+      pspw_lmbfgs psi_lmbfgs(mygeodesic12.mygeodesic1,lmbfgs_size);
       while ((icount < it_out) && (!converged))
       {
          ++icount;
@@ -161,13 +167,76 @@ double cgsd_energy(Control2& control, Molecule& mymolecule, bool doprint, std::o
             bfgscount = 0;
          }
          deltae_old = deltae;
-         total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic,psi_lmbfgs,
+         total_energy = cgsd_bfgsminimize(mymolecule,mygeodesic12.mygeodesic1,psi_lmbfgs,
                                           E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
          ++bfgscount; 
          if (oprint)
             coutput << Ifmt(10) << icount*it_in 
                     << Efmt(25,12) << total_energy 
                     << Efmt(16,6) << deltae 
+                    << Efmt(16,6) << deltac << std::endl;
+         if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
+            stalled = true;
+         else
+            stalled = false;
+         converged = (std::fabs(deltae)<tole) && (deltac<tolc);
+      }
+   } else if (minimizer==4) {
+      if (mymolecule.newpsi)
+      {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it) mymolecule.sd_update_sic(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
+      while ((icount < it_out) && (!converged))
+      {
+         ++icount;
+         if (stalled)
+         {
+            for (int it=0; it<it_in; ++it) mymolecule.sd_update_sic(dte);
+            if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+         total_energy = cgsd_cgminimize2(mymolecule,mygeodesic12.mygeodesic2,
+                                        E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         ++bfgscount;
+         if (oprint)
+            coutput << Ifmt(10) << icount*it_in
+                    << Efmt(25,12) << total_energy
+                    << Efmt(16,6) << deltae
+                    << Efmt(16,6) << deltac << std::endl;
+         if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
+            stalled = true;
+         else
+            stalled = false;
+         converged = (std::fabs(deltae)<tole) && (deltac<tolc);
+      }
+   } else if (minimizer==7) {
+      if (mymolecule.newpsi)
+      {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it) mymolecule.sd_update_sic(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
+      pspw_lmbfgs2 psi_lmbfgs2(mygeodesic12.mygeodesic2,lmbfgs_size);
+      while ((icount < it_out) && (!converged))
+      {
+         ++icount;
+         if (stalled)
+         {
+            for (int it=0; it<it_in; ++it) mymolecule.sd_update_sic(dte);
+            if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+         total_energy = cgsd_bfgsminimize2(mymolecule,mygeodesic12.mygeodesic2,psi_lmbfgs2,
+                                           E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
+         ++bfgscount;
+         if (oprint)
+            coutput << Ifmt(10) << icount*it_in
+                    << Efmt(25,12) << total_energy
+                    << Efmt(16,6) << deltae
                     << Efmt(16,6) << deltac << std::endl;
          if ((std::fabs(deltae)>fabs(deltae_old)) || (std::fabs(deltae)>1.0e-2) || (deltae>0.0))
             stalled = true;

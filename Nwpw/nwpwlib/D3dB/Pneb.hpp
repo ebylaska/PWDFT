@@ -111,6 +111,19 @@ public:
         }
         void w_deallocate(double *ptr) { delete [] ptr;}
 
+        double *m4_allocate(const int mb, const int nblock) {
+           double *ptr;
+           int nsize;
+           if (mb==-1)
+              nsize = 4*(ne[0]*ne[0] + ne[1]*ne[1]);
+           else
+              nsize = 4*ne[mb]*ne[mb];
+
+           ptr = new (std::nothrow) double [nblock*nsize]();
+           return ptr;
+        }
+        void m4_deallocate(double *ptr) { delete [] ptr;}
+
 
         double gg_traceall(double *, double *);
         void gg_copy(double *, double *);
@@ -119,13 +132,24 @@ public:
         void hhr_aSumMul(const double, const double *, const double *, double *);
 
         void ggm_sym_Multiply(double *, double *, double *);
+        void ggm_Multiply(double *, double *, double *);
         void ffm_sym_Multiply(const int, double *, double *, double *);
         void ffm_Multiply(const int, double *, double *, double *);
         void ggm_SVD(double *, double *, double *, double *);
 
+        void ffm4_sym_Multiply(const int, double *, double *, double*, double*, double *, double*);
         void ffm3_sym_Multiply(const int, double *, double *, double*, double*, double*);
+        void m_scale_s22_s21_s12_s11(const int, const double, double *s22, double *s21, double *s12, double *s11);
         void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21, double *s11);
         void fmf_Multiply(const int, double *, double *, double, double *, double);
+
+        void fm_QR(const int, double *, double *);
+
+        void mmm4_AR_to_T4(const int, const double *, const double *, double *);
+        void m4_FactorSkew(const int, double *, double *, double *, double *S);
+        void m4_RotationSkew(const int, const double, double *, double *, double *, double *, double *, double *);
+        void m4_R4_to_MN(const int, const double *, double *, double *);
+
 
         void  mm_SCtimesVtrans(const int, const double, double *, double *, 
                                double *, double *, double *, double *);
@@ -140,10 +164,13 @@ public:
         void mmm_Multiply(const int, double *, double *, double, double*, double);
         void mmm_Multiply2(const int, double *, double *, double, double*, double);
         void mm_transpose(const int, double *, double *);
+        void mm_Kiril_Btransform(const int, double *, double *);
 
 
         void gh_fftb(double *, double *);
         void ggm_lambda(double, double *, double *, double *);
+        //void ggm_lambda2(double, double *, double *, double *);
+        void ggm_lambda_sic(double, double *, double *, double *);
         void g_ortho(double *);
 
         void gg_SMul(double, double *, double *);

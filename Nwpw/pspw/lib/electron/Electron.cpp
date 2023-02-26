@@ -223,6 +223,18 @@ void Electron_Operators::gen_hml(double *psi, double *hml)
 
 /********************************************
  *                                          *
+ *      Electron_Operators::gen_hmlt        *
+ *                                          *
+ ********************************************/
+void Electron_Operators::gen_hmlt(double *psi, double *hmlt) 
+{
+   mygrid->ggm_Multiply(psi,Hpsi,hmlt);
+}
+
+
+
+/********************************************
+ *                                          *
  *      Electron_Operators::get_Tgradient   *
  *                                          *
  ********************************************/

@@ -247,6 +247,98 @@ public:
         return ii;
     }
 
+   /**************************************
+    *                                    *
+    *              TN4_dgemm             *
+    *                                    *
+    **************************************/
+    /* This function computes <host_a|host_a>, <host_a|host_b>, and <host_b|host_b> overlap matrices.
+
+        host_caa = beta*host_caa + alpha*host_a'*host_a
+        host_cab = beta*host_cab + alpha*host_a'*host_b
+        host_cba = beta*host_cba + alpha*host_b'*host_a
+        host_cbb = beta*host_cbb + alpha*host_b'*host_b
+
+       Entry - npack2,ne: matrix size
+               alpha, beta: standard dgemm parameters
+               host_a: (npack2xne) matrix
+               host_b: (npack2xne) matrix
+       Exit - host_caa,host_cab,host_cba,host_cbb: (nexne) matrices
+       Uses - device memory for (npack2xne) matrices ia_psi, and ia_hpsi allocated previously with psi_alloc
+            - temporary device memory for (nexne) matrices ic11, ic12, ic21, and ic22.
+    */
+    void TN4_dgemm(int npack2, int ne, double alpha, double *host_a, double *host_b, double beta, double *host_caa, double *host_cab, double *host_cba, double *host_cbb) {
+       int ic11 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne));
+       int ic12 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne));
+       int ic21 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne));
+       int ic22 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne));
+
+       if (std::fabs(beta)>0.0) {
+          NWPW_CUDA_ERROR( cudaMemcpy(dev_mem[ic11], host_caa,ne*ne*sizeof(double),cudaMemcpyHostToDevice) );
+          NWPW_CUDA_ERROR( cudaMemcpy(dev_mem[ic12], host_cab,ne*ne*sizeof(double),cudaMemcpyHostToDevice) );
+          NWPW_CUDA_ERROR( cudaMemcpy(dev_mem[ic21], host_cba,ne*ne*sizeof(double),cudaMemcpyHostToDevice) );
+          NWPW_CUDA_ERROR( cudaMemcpy(dev_mem[ic22], host_cbb,ne*ne*sizeof(double),cudaMemcpyHostToDevice) );
+       }
+
+      // copy host_a,host_b --> dev_mem
+      NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(tile_npack2[0],ne,sizeof(double),
+                                              &host_a[tile_start2[0]],npack2,
+                                              dev_mem[ia_psi[0]],tile_npack2[0],stream[0]) );
+      NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(tile_npack2[0],ne,sizeof(double),
+                                              &host_b[tile_start2[0]],npack2,
+                                              dev_mem[ia_hpsi[0]],tile_npack2[0],stream[0]) );
+
+      double beta0 = beta;
+      for (auto tt=0; tt<tile_fac; ++tt) {
+         int ttp1 = tt+1;
+         if (ttp1<tile_fac) {
+            NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(tile_npack2[ttp1],ne,sizeof(double),
+                                                    &host_a[tile_start2[ttp1]],npack2,
+                                                    dev_mem[ia_psi[ttp1%2]],tile_npack2[ttp1],stream[ttp1%2]) );
+            NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(tile_npack2[ttp1],ne,sizeof(double),
+                                                    &host_b[tile_start2[ttp1]],npack2,
+                                                    dev_mem[ia_hpsi[ttp1%2]],tile_npack2[ttp1],stream[ttp1%2]) );
+         }
+         NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[tt%2]) );
+         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+                                        matT, matN,
+                                        ne,ne,tile_npack2[tt],&alpha,
+                                        dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                                        dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                                        &beta0,dev_mem[ic11],ne) );
+         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+                                        matT, matN,
+                                        ne,ne,tile_npack2[tt],&alpha,
+                                        dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                                        dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                                        &beta0,dev_mem[ic12],ne) );
+         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+                                        matT, matN,
+                                        ne,ne,tile_npack2[tt],&alpha,
+                                        dev_mem[ia_hpsi[tt%2]], tile_npack2[tt],
+                                        dev_mem[ia_psi[tt%2]],  tile_npack2[tt],
+                                        &beta0,dev_mem[ic21],ne) );
+         NWPW_CUBLAS_ERROR( cublasDgemm(master_handle,
+                                        matT, matN,
+                                        ne,ne,tile_npack2[tt],&alpha,
+                                        dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                                        dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                                        &beta0,dev_mem[ic22],ne) );
+         beta0 = 1.0;
+      }
+
+      NWPW_CUDA_ERROR( cudaMemcpy(host_caa,dev_mem[ic11],ne*ne*sizeof(double),cudaMemcpyDeviceToHost) );
+      NWPW_CUDA_ERROR( cudaMemcpy(host_cab,dev_mem[ic12],ne*ne*sizeof(double),cudaMemcpyDeviceToHost) );
+      NWPW_CUDA_ERROR( cudaMemcpy(host_cba,dev_mem[ic21],ne*ne*sizeof(double),cudaMemcpyDeviceToHost) );
+      NWPW_CUDA_ERROR( cudaMemcpy(host_cbb,dev_mem[ic22],ne*ne*sizeof(double),cudaMemcpyDeviceToHost) );
+
+      inuse[ic11] = false;
+      inuse[ic12] = false;
+      inuse[ic21] = false;
+      inuse[ic22] = false;
+   }
+
+
    /************************************** 
     *                                    *
     *              TN3_dgemm             *

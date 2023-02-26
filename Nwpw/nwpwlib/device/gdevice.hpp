@@ -2,6 +2,7 @@
 
 namespace pwdft {
 
+void gdevice_TN4_dgemm(int, int, double, double *, double *, double, double *, double *, double *, double *);
 void gdevice_TN3_dgemm(int, int, double, double *, double *, double, double *, double *, double *);
 void gdevice_TN1_dgemm(int, int, double, double *, double *, double, double *);
 void gdevice_TN_dgemm( int, int, int, double, double *, double *, double, double *);
