@@ -137,5 +137,9 @@ public:
     void     c_ptranspose2_jk_end(const int, double *, double *, const int);
     void     c_ptranspose_ijk_end(const int, const int, double *, double *, const int);
 
+    /* gcube io */
+    std::string r_formatwrite_reverse(double *);
+    std::string r_formatwrite(double *);
+
 };
 }

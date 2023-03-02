@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <math.h>
+#include "iofmt.hpp"
 #define mytaskid 1
 
 namespace pwdft {
@@ -2076,6 +2077,121 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
 
    }
 }
+
+/***********************************************
+ *                                            *
+ *            d3db::r_formatwrite             *
+ *                                            *
+ **********************************************/
+std::string d3db::r_formatwrite(double *a)
+{
+   std::stringstream stream;
+
+   int taskid   = parall->taskid();
+   
+   double tmp[nx];
+
+   /************************************
+    **** slab and hilbert  mappings ****
+    ************************************/
+
+   /**** master node gathers and write to file ****/
+   if (taskid==MASTER)
+   {
+      for (auto k=0; k<nz; ++k)
+      for (auto j=0; j<ny; ++j)
+      {
+         for (auto i=0; i<nx; ++i)
+         {
+            int index  = ijktoindex2(i,j,k);
+            int p_from = ijktop2(i,j,k);
+            if (p_from==MASTER)
+               tmp[i] = a[index];
+            else
+                parall->dreceive(0,189,p_from,1,tmp+index);
+         }
+         for (auto i=0; i<nx; i+=6)
+             for (auto i1=i; i1<std::min(i+6,nx); ++i1)
+                stream << Efmt(13,5) << tmp[i1];
+         stream << std::endl;
+      }
+   }
+   /**** not master node ****/
+   else
+   {
+      for (auto k=0; k<nz; ++k)
+      for (auto j=0; j<ny; ++j)
+      {
+         for (auto i=0; i<nx; ++i)
+         {
+            int index  = ijktoindex2(i,j,k);
+            int p_here = ijktop2(i,j,k);
+            if (p_here==taskid)
+               parall->dsend(0,189,MASTER,1,a+index);
+         }
+      }
+   }
+
+   return stream.str();
+}
+
+
+/***********************************************
+ *                                            *
+ *         d3db::r_formatwrite_reverse        *
+ *                                            *
+ **********************************************/
+std::string d3db::r_formatwrite_reverse(double *a)
+{
+   std::stringstream stream;
+
+   int taskid   = parall->taskid();
+   double tmp[nz];
+
+   /************************************
+    **** slab and hilbert  mappings ****
+    ************************************/
+
+   /**** master node gathers and write to file ****/
+   if (taskid==MASTER)
+   {
+      for (auto i=0; i<nx; ++i)
+      for (auto j=0; j<ny; ++j)
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            int index  = ijktoindex2(i,j,k);
+            int p_from = ijktop2(i,j,k);
+            if (p_from==MASTER)
+               tmp[k] = a[index];
+            else
+                parall->dreceive(0,189,p_from,1,tmp+index);
+         }
+         for (auto k=0; k<nz; k+=6) 
+             for (auto k1=k; k1<std::min(k+6,nz); ++k1)
+                stream << Efmt(13,5) << tmp[k1];
+         stream << std::endl;
+      }
+   }
+   /**** not master node ****/
+   else
+   {
+      for (auto i=0; i<nx; ++i)
+      for (auto j=0; j<ny; ++j)
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            int index  = ijktoindex2(i,j,k);
+            int p_here = ijktop2(i,j,k);
+            if (p_here==taskid)
+               parall->dsend(0,189,MASTER,1,a+index);
+         }
+      }
+   }
+
+   return stream.str();
+}
+
 
 
 

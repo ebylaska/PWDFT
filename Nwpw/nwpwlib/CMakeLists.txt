@@ -3,6 +3,7 @@
 file(GLOB src_blas      blas/*.f)
 file(GLOB src_lapack    lapack/*.f)
 file(GLOB_RECURSE src_fftpack   fftpack/*.f)
+file(GLOB_RECURSE src_fextra    fextra/*.f)
 #file(GLOB_RECURSE src_nwpwxc    nwpwxc/*.F)
 file(GLOB_RECURSE src_Control   Control/*.hpp Control/*.cpp Control/*.h Control/*.c)
 file(GLOB_RECURSE src_Parallel  Parallel/*.hpp Parallel/*.cpp)
@@ -25,10 +26,10 @@ file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
 # create the nwpwlib library
 if(MKL_FOUND)
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_aimd_analysis}  ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_nwpwxc} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_aimd_analysis}  ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 else()
    message("-- including interal blas routines contained in project")
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_aimd_analysis} ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_aimd_analysis} ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 endif()
 
 # adding target_include_directories to nwpwlib

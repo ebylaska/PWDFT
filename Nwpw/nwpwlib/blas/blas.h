@@ -60,12 +60,6 @@ extern "C" void zgemm_(char *, char *, int *, int *, int *,
                        double *,
                        double *, int *);
 
-extern "C" void factor_skew_(int *,
-                             double *,
-                             double *,
-                             double *,
-                             double *);
-
 
 
 #define	DSCAL_PWDFT(n,alpha,a,ida)		dscal_(&(n),&(alpha),a,&(ida))
@@ -84,11 +78,15 @@ extern "C" void factor_skew_(int *,
 
 #define ZGEMM_PWDFT(s1,s2,n,m,k,alpha,a,ida,b,idb,beta,c,idc) zgemm_(s1,s2,&(n),&(m),&(k),&(alpha),a,&(ida),b,&(idb),&(beta),c,&(idc))
 
-#define FACTOR_SKEW_PWDFT(n,k,v,w,s)   factor_skew_(&(n),k,v,w,s)
-
-
 #endif
 
+extern "C" void factor_skew_(int *,
+                             double *,
+                             double *,
+                             double *,
+                             double *);
+
+#define FACTOR_SKEW_PWDFT(n,k,v,w,s)   factor_skew_(&(n),k,v,w,s)
 
 #endif
 
