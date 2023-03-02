@@ -708,7 +708,7 @@ public:
       oneapi::mkl::blas::column_major::gemm(*stream[0],
                                             matN,matN,
                                             ne,ne,ne,rone,
-                                            dev_mem[i_s21],ne
+                                            dev_mem[i_s21],ne,
                                             dev_mem[i_sa0],ne,
                                             rone,dev_mem[i_sa1],ne);
  
@@ -717,7 +717,7 @@ public:
       oneapi::mkl::blas::column_major::gemm(*stream[1],
                                             matN,matN,
                                             ne,ne,ne,rone,
-                                            dev_mem[i_sa0],ne
+                                            dev_mem[i_sa0],ne,
                                             dev_mem[i_s12],ne,
                                             rone,dev_mem[i_sa1],ne);
 
@@ -725,7 +725,7 @@ public:
       oneapi::mkl::blas::column_major::gemm(*stream[1],
                                             matN,matN,
                                             ne,ne,ne,rone,
-                                            dev_mem[i_s11],ne
+                                            dev_mem[i_s11],ne,
                                             dev_mem[i_sa0],ne,
                                             rzero,dev_mem[i_st1],ne);
 
@@ -733,7 +733,7 @@ public:
       oneapi::mkl::blas::column_major::gemm(*stream[1],
                                             matN,matN,
                                             ne,ne,ne,rone,
-                                            dev_mem[i_sa0],ne
+                                            dev_mem[i_sa0],ne,
                                             dev_mem[i_st1],ne,
                                             rone,dev_mem[i_sa1],ne);
       syclGetMatrixAsync(ne,ne,sizeof(double),
