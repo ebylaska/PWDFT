@@ -989,10 +989,11 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     }
     else
     {
-        //double *xmp1 = new (std::nothrow) double[nn]();
+       gdevice_NN_eigensolver(ispin,ne,hml,eig);
+
+/*      //double *xmp1 = new (std::nothrow) double[nn]();
         int nn  = ne[0]*ne[0]+14;
         double xmp1[nn];
-
         shift1 = 0;
         shift2 = 0;
         for (int ms=0; ms<ispin; ++ms)
@@ -1011,8 +1012,8 @@ void Pneb::m_diagonalize(double *hml, double *eig)
             shift1 += ne[0];
             shift2 += ne[0]*ne[0];
         }
-
         //delete [] xmp1;
+        */
     }
     nwpw_timing_end(17);
 }

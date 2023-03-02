@@ -289,6 +289,104 @@ public:
 
    /**************************************
     *                                    *
+    *              TN4_dgemm             *
+    *                                    *
+    **************************************/
+    /* This function computes <host_a|host_a>, <host_a|host_b>, <host_b|host_a>, and <host_b|host_b> overlap matrices.
+
+        host_caa = beta*host_caa + alpha*host_a'*host_a
+        host_cab = beta*host_cab + alpha*host_a'*host_b
+        host_cba = beta*host_cba + alpha*host_b'*host_a
+        host_cbb = beta*host_cbb + alpha*host_b'*host_b
+
+       Entry - npack2,ne: matrix size
+               alpha, beta: standard dgemm parameters
+               host_a: (npack2xne) matrix
+               host_b: (npack2xne) matrix
+       Exit - host_caa,host_cab,host_cba, host_cbb: (nexne) matrices
+       Uses - device memory for (npack2xne) matrices ia_psi, and ia_hpsi allocated previously with psi_alloc
+            - temporary device memory for (nexne) matrices ic11, ic12, and ic22.
+    */
+  void TN4_dgemm(int npack2, int ne, double alpha, double *host_a,
+                 double *host_b, double beta, double *host_caa,
+                 double *host_cab, double *host_cba, double *host_cbb) {
+    int ic11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic21 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+
+    if (std::fabs(beta)>0.0) {
+      stream[0]->memcpy(dev_mem[ic11], host_caa, ne*ne*sizeof(double));
+      stream[0]->memcpy(dev_mem[ic12], host_cab, ne*ne*sizeof(double));
+      stream[0]->memcpy(dev_mem[ic21], host_cba, ne*ne*sizeof(double));
+      stream[0]->memcpy(dev_mem[ic22], host_cbb, ne*ne*sizeof(double));
+    }
+
+    // copy host_a,host_b --> dev_mem
+    syclSetMatrixAsync(tile_npack2[0],ne,sizeof(double),
+                       &host_a[tile_start2[0]],npack2,
+                       dev_mem[ia_psi[0]],tile_npack2[0],stream[0]);
+    syclSetMatrixAsync(tile_npack2[0],ne,sizeof(double),
+                       &host_b[tile_start2[0]],npack2,
+                       dev_mem[ia_hpsi[0]],tile_npack2[0],stream[0]);
+
+    double beta0 = beta;
+    for (auto tt=0; tt<tile_fac; ++tt) {
+      int ttp1 = tt+1;
+      if (ttp1<tile_fac) {
+        syclSetMatrixAsync(tile_npack2[ttp1],ne,sizeof(double),
+                           &host_a[tile_start2[ttp1]],npack2,
+                           dev_mem[ia_psi[ttp1%2]],tile_npack2[ttp1],stream[ttp1%2]);
+        syclSetMatrixAsync(tile_npack2[ttp1],ne,sizeof(double),
+                           &host_b[tile_start2[ttp1]],npack2,
+                           dev_mem[ia_hpsi[ttp1%2]],tile_npack2[ttp1],stream[ttp1%2]);
+      }
+      stream[tt%2]->wait();;
+
+      oneapi::mkl::blas::column_major::gemm(*stream[tt%2],
+                  matT, matN,
+                  ne,ne,tile_npack2[tt],alpha,
+                  dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                  dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                  beta0,dev_mem[ic11],ne);
+      oneapi::mkl::blas::column_major::gemm(*stream[tt%2],
+                  matT, matN,
+                  ne,ne,tile_npack2[tt],alpha,
+                  dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                  dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                  beta0,dev_mem[ic12],ne);
+      oneapi::mkl::blas::column_major::gemm(*stream[tt%2],
+                  matT, matN,
+                  ne,ne,tile_npack2[tt],alpha,
+                  dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                  dev_mem[ia_psi[tt%2]], tile_npack2[tt],
+                  beta0,dev_mem[ic21],ne);
+      oneapi::mkl::blas::column_major::gemm(*stream[tt%2],
+                  matT, matN,
+                  ne,ne,tile_npack2[tt],alpha,
+                  dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                  dev_mem[ia_hpsi[tt%2]],tile_npack2[tt],
+                  beta0,dev_mem[ic22],ne);
+      beta0 = 1.0;
+    }
+
+
+    stream[0]->memcpy(host_caa, dev_mem[ic11], ne * ne * sizeof(double));
+    stream[0]->memcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double));
+    stream[0]->memcpy(host_cba, dev_mem[ic21], ne * ne * sizeof(double));
+    stream[0]->memcpy(host_cbb, dev_mem[ic22], ne * ne * sizeof(double));
+
+    stream[0]->wait();
+
+    inuse[ic11] = false;
+    inuse[ic12] = false;
+    inuse[ic21] = false;
+    inuse[ic22] = false;
+  }
+
+
+   /**************************************
+    *                                    *
     *              TN3_dgemm             *
     *                                    *
     **************************************/
@@ -580,6 +678,79 @@ public:
     if (tile_fac>1) inuse[ib_prj[1]] = false;
   }
 
+
+  /**************************************
+   *                                    *
+   *              MM6_dgemm             *
+   *                                    *
+   **************************************/
+   void MM6_dgemm(int ne,
+                   double *host_s21, double *host_s12, double *host_s11,
+                   double *host_sa0, double *host_sa1, double *host_st1) {
+      double rzero=0.0;
+      double rone =1.0;
+      int i_s21 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+      int i_s12 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+      int i_s11 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+      int i_sa0 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input
+      int i_st1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //tmp
+      int i_sa1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input-output
+
+      syclSetMatrixAsync(ne,ne,sizeof(double),host_s21,ne,dev_mem[i_s21],ne,stream[0]);
+      syclSetMatrixAsync(ne,ne,sizeof(double),host_sa0,ne,dev_mem[i_sa0],ne,stream[0]);
+      syclSetMatrixAsync(ne,ne,sizeof(double),host_sa1,ne,dev_mem[i_sa1],ne,stream[0]);
+
+      syclSetMatrixAsync(ne,ne,sizeof(double),host_s12,ne,dev_mem[i_s12],ne,stream[1]);
+      syclSetMatrixAsync(ne,ne,sizeof(double),host_s11,ne,dev_mem[i_s11],ne,stream[1]);
+
+      //mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+                                            matN,matN,
+                                            ne,ne,ne,rone,
+                                            dev_mem[i_s21],ne
+                                            dev_mem[i_sa0],ne,
+                                            rone,dev_mem[i_sa1],ne);
+ 
+      //mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+      stream[1]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[1],
+                                            matN,matN,
+                                            ne,ne,ne,rone,
+                                            dev_mem[i_sa0],ne
+                                            dev_mem[i_s12],ne,
+                                            rone,dev_mem[i_sa1],ne);
+
+      //mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+      oneapi::mkl::blas::column_major::gemm(*stream[1],
+                                            matN,matN,
+                                            ne,ne,ne,rone,
+                                            dev_mem[i_s11],ne
+                                            dev_mem[i_sa0],ne,
+                                            rzero,dev_mem[i_st1],ne);
+
+      //mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+      oneapi::mkl::blas::column_major::gemm(*stream[1],
+                                            matN,matN,
+                                            ne,ne,ne,rone,
+                                            dev_mem[i_sa0],ne
+                                            dev_mem[i_st1],ne,
+                                            rone,dev_mem[i_sa1],ne);
+      syclGetMatrixAsync(ne,ne,sizeof(double),
+                         dev_mem[i_sa1],ne,
+                         host_sa1,ne,stream[1]);
+      stream[1]->wait();
+
+      inuse[i_s21] = false;
+      inuse[i_s12] = false;
+      inuse[i_s11] = false;
+      inuse[i_sa0] = false;
+      inuse[i_st1] = false;
+      inuse[i_sa1] = false;
+   }
+
+
+
   /********************/
   /* psi_dev functions*/
   /********************/
@@ -716,6 +887,62 @@ public:
 
     inuse[ia_dev] = false;
   }
+
+
+  // routines below need to be made into sycl or removed
+
+static void eigsrt_device(double *D, double *V, int n) {
+   int i,j,k;
+   double p;
+
+   for (i=0; i<(n-1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for(j=i+1; j<n; ++j)
+         if (D[j]>=p)
+         {
+            k = j;
+            p = D[j];
+         }
+
+      if (k!=i)
+      {
+         D[k] = D[i];
+         D[i] = p;
+         for (j=0; j<n; ++j)
+         {
+            p = V[j+i*n];
+            V[j+i*n] = V[j+k*n];
+            V[j+k*n] = p;
+         }
+      }
+   }
+}
+
+  void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
+       int n,ierr;
+       int nn  = ne[0]*ne[0]+14;
+       double xmp1[nn];
+       //double *xmp1 = new (std::nothrow) double[nn]();
+
+       int shift1 = 0;
+       int shift2 = 0;
+       for (int ms=0; ms<ispin; ++ms)
+       {
+          n = ne[ms];
+
+          //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+          // d3db::parall->Barrier();
+          EIGEN_PWDFT(n,host_hml+shift2,host_eig+shift1,xmp1,nn,ierr);
+          //if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
+
+          eigsrt_device(host_eig+shift1,host_hml+shift2,n);
+          shift1 += ne[0];
+          shift2 += ne[0]*ne[0];
+       }
+  }
+
 
 }; // class Gdevices
 

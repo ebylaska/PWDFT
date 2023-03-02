@@ -644,11 +644,12 @@ public:
        int i_st1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //tmp
        int i_sa1 = fetch_dev_mem_indx(((size_t) ne)    * ((size_t) ne)); //input-output
 
-       NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(ne,ne,sizeof(double),host_s12,ne,dev_mem[i_s21],ne,stream[0]) );
+       NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(ne,ne,sizeof(double),host_s12,ne,dev_mem[i_s12],ne,stream[0]) );
        NWPW_CUBLAS_ERROR( cublasSetMatrixAsync(ne,ne,sizeof(double),host_s11,ne,dev_mem[i_s11],ne,stream[1]) );
      
        NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_s21,ne,dev_mem[i_s21],ne) );
        NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_sa0,ne,dev_mem[i_sa0],ne) );
+       NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_s11,ne,dev_mem[i_s11],ne) );
        NWPW_CUBLAS_ERROR( cublasSetMatrix(ne,ne,sizeof(double),host_sa1,ne,dev_mem[i_sa1],ne) );
 
        //mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
@@ -854,6 +855,62 @@ public:
 
         inuse[ia_dev] = false;
     }
+
+
+    // routines below need to be made into sycl or removed
+
+static void eigsrt_device(double *D, double *V, int n) {
+   int i,j,k;
+   double p;
+
+   for (i=0; i<(n-1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for(j=i+1; j<n; ++j)
+         if (D[j]>=p)
+         {
+            k = j;
+            p = D[j];
+         }
+
+      if (k!=i)
+      {
+         D[k] = D[i];
+         D[i] = p;
+         for (j=0; j<n; ++j)
+         {
+            p = V[j+i*n];
+            V[j+i*n] = V[j+k*n];
+            V[j+k*n] = p;
+         }
+      }
+   }
+}
+
+
+   void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
+      int n,ierr;
+      int nn  = ne[0]*ne[0]+14;
+      double xmp1[nn];
+      //double *xmp1 = new (std::nothrow) double[nn]();
+
+      int shift1 = 0;
+      int shift2 = 0;
+      for (int ms=0; ms<ispin; ++ms)
+      {
+         n = ne[ms];
+
+         //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+         // d3db::parall->Barrier();
+         EIGEN_PWDFT(n,host_hml+shift2,host_eig+shift1,xmp1,nn,ierr);
+         //if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
+
+         eigsrt_device(host_eig+shift1,host_hml+shift2,n);
+         shift1 += ne[0];
+         shift2 += ne[0]*ne[0];
+      }
+   }
 
 
 };
