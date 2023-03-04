@@ -154,15 +154,9 @@ public:
     if( ERR != CUBLAS_STATUS_SUCCESS )                          \
         throw cublas_exception( __FILE__, __LINE__, ERR );
 
-#define NWPW_CUSOLVER_ERROR(err)                                                                        \
-    do {                                                                                           \
-        cusolverStatus_t err_ = (err);                                                             \
-        if (err_ != CUSOLVER_STATUS_SUCCESS) {                                                     \
-            printf("cusolver error %d at %s:%d\n", err_, __FILE__, __LINE__);                      \
-            throw std::runtime_error("cusolver error");                                            \
-        }                                                                                          \
-    } while (0)
-
+#define NWPW_CUSOLVER_ERROR( ERR )                            \
+    if( ERR != CUSOLVER_STATUS_SUCCESS )                      \
+        throw cusolver_exception( __FILE__, __LINE__, ERR );
 
 
 /* Gdevices (CUDA) object - 
