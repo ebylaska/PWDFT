@@ -924,7 +924,7 @@ static void eigsrt_device(double *D, double *V, int n) {
       int i_a1[ispin],i_w1[ispin],info[ispin];
       int shift1 = 0;
       int shift2 = 0;
-      for (ms=0; ms<ispin; ++ms)
+      for (auto ms=0; ms<ispin; ++ms)
       {
          int nn = ne[ms]*ne[ms];
          i_a1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) * ((size_t) ne[ms])); //input-output
@@ -945,7 +945,7 @@ static void eigsrt_device(double *D, double *V, int n) {
 
       shift1 = 0;
       shift2 = 0;
-      for (int ms=0; ms<ispin; ++ms)
+      for (auto ms=0; ms<ispin; ++ms)
       {
          NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[ms]) );
 
@@ -960,7 +960,7 @@ static void eigsrt_device(double *D, double *V, int n) {
         shift1 += ne[0];
         shift2 += ne[0]*ne[0];
       }
-      for (int ms=0; ms<ispin; ++ms)
+      for (auto ms=0; ms<ispin; ++ms)
          NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[ms]));
    }
 
