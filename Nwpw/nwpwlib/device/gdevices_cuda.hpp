@@ -957,12 +957,12 @@ static void eigsrt_device(double *D, double *V, int n) {
          NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[ms]) );
 
          // compute spectrum
-         int n = ne[ms];
-         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd(cusolverH,jobz,uplo,n,dev_mem[i_a1[ms]],n,dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
+         int nn = ne[ms]*ne[ms];
+         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd(cusolverH,jobz,uplo,ne[ms],dev_mem[i_a1[ms]],n,dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
 
-        NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
-        NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
-        NWPW_CUDA_ERROR(cudaMemcpyAsync(info+ms,d_info[ms],sizeof(int),cudaMemcpyDeviceToHost,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(info+ms,d_info[ms],sizeof(int),cudaMemcpyDeviceToHost,stream[ms]));
 
         shift1 += ne[0];
         shift2 += ne[0]*ne[0];
