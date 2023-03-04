@@ -213,7 +213,7 @@ public:
 
         std::cout << "Into cublasCreate" << std::endl;
 
-        NWPW_CUBLAS_ERROR( cublasCreate(&master_handle) );
+        NWPW_CUDA_ERROR( cublasCreate(&master_handle) );
 
         // allocate cuda streams
         for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR( cudaStreamCreate(&stream[i]) );
