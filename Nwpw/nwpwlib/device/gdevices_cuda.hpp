@@ -234,8 +234,6 @@ public:
         NWPW_CUDA_ERROR(cusolverDnSetStream(cusolverH, solverstream));
 
         // query working space of syevd
-        NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, m, d_A, lda, d_W, &lwork));
-        NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(double) * lwork));
         for (int i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_info[i]),sizeof(int)));
 
     }
