@@ -9,6 +9,7 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cufft.h>
+#include <cusolverDn.h>
 
 #include <stdexcept>
 #include <string>
@@ -181,6 +182,11 @@ class Gdevices {
     cublasOperation_t matT = CUBLAS_OP_T;
     cublasOperation_t matN = CUBLAS_OP_N;
 
+    cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR; // compute eigenvalues and eigenvectors.
+    cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
+    cusolverDnHandle_t cusolverH = NULL;
+    cudaStream_t solverstream = NULL;
+
     cudaStream_t stream[2];
 
 public:
@@ -197,6 +203,10 @@ public:
     double *a_psi,*a_hpsi,*b_prj;
     int    ia_psi[2],ia_hpsi[2],ib_prj[2];
 
+    int *d_info[2];
+    int lwork=0;
+    double *d_work;
+
     /* constructor */
     Gdevices() {
         ndev_mem = 0;
@@ -207,6 +217,18 @@ public:
 
         // allocate cuda streams
         for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR( cudaStreamCreate(&stream[i]) );
+
+
+        // create cusolver handle, bind a stream 
+        CUSOLVER_CHECK(cusolverDnCreate(&cusolverH));
+        CUDA_CHECK(cudaStreamCreateWithFlags(&solverstream, cudaStreamNonBlocking));
+        CUSOLVER_CHECK(cusolverDnSetStream(cusolverH, solverstream));
+
+        // query working space of syevd
+        CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, m, d_A, lda, d_W, &lwork));
+        CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(double) * lwork));
+        for (int i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_info[i]),sizeof(int)));
+
     }
 
     /* deconstructor */
@@ -220,6 +242,15 @@ public:
         for (auto i=0; i<2; ++i) cudaStreamDestroy(stream[i]);
 
         cublasDestroy(master_handle);
+
+
+       /* free cusolver resources */
+       for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaFree(d_info[i]));
+       NWPW_CUDA_ERROR(cudaFree(d_work));
+       NWPW_CUSOLVER_ERROR(cusolverDnDestroy(cusolverH));
+
+       NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
+       NWPW_CUDA_ERROR(cudaDeviceReset());
 
         // free fft descriptors
         //cufftDestroy(forward_plan_x);
@@ -890,26 +921,47 @@ static void eigsrt_device(double *D, double *V, int n) {
 
 
    void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
-      int n,ierr;
-      int nn  = ne[0]*ne[0]+14;
-      double xmp1[nn];
-      //double *xmp1 = new (std::nothrow) double[nn]();
-
+      int i_a1[ispin],i_w1[ispin],info[ispin];
       int shift1 = 0;
       int shift2 = 0;
-      for (int ms=0; ms<ispin; ++ms)
+      for (ms=0; ms<ispin; ++ms)
       {
-         n = ne[ms];
-
-         //eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
-         // d3db::parall->Barrier();
-         EIGEN_PWDFT(n,host_hml+shift2,host_eig+shift1,xmp1,nn,ierr);
-         //if (ierr != 0) throw std::runtime_error(std::string("NWPW Error: EIGEN_PWDFT failed!"));
-
-         eigsrt_device(host_eig+shift1,host_hml+shift2,n);
+         int nn = ne[ms]*ne[ms];
+         i_a1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) * ((size_t) ne[ms])); //input-output
+         i_w1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) );                    //output
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_a1[ms]],host_hml+shift2, nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_w1[ms]],host_eig+shift1, nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
          shift1 += ne[0];
          shift2 += ne[0]*ne[0];
       }
+
+      // allocate work space for syevd
+      if (lwork==0)
+      {
+         // query working space of syevd
+         CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, ne[0], dev_mem[i_a1[0]],n,dev_mem[i_w1[0]],&lwork));
+         NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
+      }
+
+      shift1 = 0;
+      shift2 = 0;
+      for (int ms=0; ms<ispin; ++ms)
+      {
+         NWPW_CUDA_ERROR( cudaStreamSynchronize(stream[ms]) );
+
+         // compute spectrum
+         n = ne[ms];
+         CUSOLVER_CHECK(cusolverDnDsyevd(cusolverH,jobz,uplo,n,dev_mem[i_a1[ms]],n,dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
+
+        NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
+        NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
+        NWPW_CUDA_ERROR(cudaMemcpyAsync(info+ms,d_info[ms],sizeof(int),cudaMemcpyDeviceToHost,stream[ms]));
+
+        shift1 += ne[0];
+        shift2 += ne[0]*ne[0];
+      }
+      for (int ms=0; ms<ispin; ++ms)
+         NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[ms]));
    }
 
 
