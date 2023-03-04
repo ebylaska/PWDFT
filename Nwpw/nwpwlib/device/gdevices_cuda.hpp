@@ -154,6 +154,15 @@ public:
     if( ERR != CUBLAS_STATUS_SUCCESS )                          \
         throw cublas_exception( __FILE__, __LINE__, ERR );
 
+#define NWPW_CUSOLVER_ERROR(err)                                                                        \
+    do {                                                                                           \
+        cusolverStatus_t err_ = (err);                                                             \
+        if (err_ != CUSOLVER_STATUS_SUCCESS) {                                                     \
+            printf("cusolver error %d at %s:%d\n", err_, __FILE__, __LINE__);                      \
+            throw std::runtime_error("cusolver error");                                            \
+        }                                                                                          \
+    } while (0)
+
 
 
 /* Gdevices (CUDA) object - 
@@ -220,13 +229,13 @@ public:
 
 
         // create cusolver handle, bind a stream 
-        CUSOLVER_CHECK(cusolverDnCreate(&cusolverH));
-        CUDA_CHECK(cudaStreamCreateWithFlags(&solverstream, cudaStreamNonBlocking));
-        CUSOLVER_CHECK(cusolverDnSetStream(cusolverH, solverstream));
+        NWPW_CUSOLVER_ERROR(cusolverDnCreate(&cusolverH));
+        NWPW_CUDA_ERROR(cudaStreamCreateWithFlags(&solverstream, cudaStreamNonBlocking));
+        NWPW_CUDA_ERROR(cusolverDnSetStream(cusolverH, solverstream));
 
         // query working space of syevd
-        CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, m, d_A, lda, d_W, &lwork));
-        CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(double) * lwork));
+        NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, m, d_A, lda, d_W, &lwork));
+        NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(double) * lwork));
         for (int i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_info[i]),sizeof(int)));
 
     }
@@ -939,7 +948,7 @@ static void eigsrt_device(double *D, double *V, int n) {
       if (lwork==0)
       {
          // query working space of syevd
-         CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, ne[0], dev_mem[i_a1[0]],n,dev_mem[i_w1[0]],&lwork));
+         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, ne[0], dev_mem[i_a1[0]],n,dev_mem[i_w1[0]],&lwork));
          NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
       }
 
@@ -951,7 +960,7 @@ static void eigsrt_device(double *D, double *V, int n) {
 
          // compute spectrum
          n = ne[ms];
-         CUSOLVER_CHECK(cusolverDnDsyevd(cusolverH,jobz,uplo,n,dev_mem[i_a1[ms]],n,dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
+         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd(cusolverH,jobz,uplo,n,dev_mem[i_a1[ms]],n,dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
 
         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
