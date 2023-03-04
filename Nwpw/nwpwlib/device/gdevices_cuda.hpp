@@ -938,8 +938,8 @@ static void eigsrt_device(double *D, double *V, int n) {
          int nn = ne[ms]*ne[ms];
          i_a1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) * ((size_t) ne[ms])); //input-output
          i_w1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) );                    //output
-         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_a1[ms]],host_hml+shift2, nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
-         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_w1[ms]],host_eig+shift1, nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_a1[ms]],host_hml+shift2,nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_w1[ms]],host_eig+shift1,nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
          shift1 += ne[0];
          shift2 += ne[0]*ne[0];
       }
@@ -948,7 +948,7 @@ static void eigsrt_device(double *D, double *V, int n) {
       if (lwork==0)
       {
          // query working space of syevd
-         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, ne[0], dev_mem[i_a1[0]],n,dev_mem[i_w1[0]],&lwork));
+         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH,jobz,uplo,ne[0],dev_mem[i_a1[0]],ne[0],dev_mem[i_w1[0]],&lwork));
          NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
       }
 
