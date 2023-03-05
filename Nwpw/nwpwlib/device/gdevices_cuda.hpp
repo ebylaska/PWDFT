@@ -142,6 +142,30 @@ public:
         file_(file), line_(line), err_code_(err) { }
 };
 
+
+class cusolver_exception : public std::exception {
+
+    std::string file_;
+    int         line_;
+    cudaError_t err_code_;
+
+    const char* what() const noexcept override {
+        std::stringstream ss;
+        ss << "CUSOLVER Exception, " << cudaGetErrorString( err_code_ ) << " at " << std::endl
+           << file_ << " : " << line_ << std::endl;
+        auto msg = ss.str();
+        return strdup( msg.c_str() );
+    }
+
+public:
+
+    cusolver_exception( std::string file, int line, cudaError_t err ) :
+        file_(file), line_(line), err_code_(err) { }
+};
+
+
+
+
 #define NWPW_CUDA_ERROR( ERR )                                  \
     if( ERR != cudaSuccess )                                    \
         throw cuda_exception( __FILE__, __LINE__, ERR );
@@ -156,7 +180,7 @@ public:
 
 #define NWPW_CUSOLVER_ERROR( ERR )                            \
     if( ERR != CUSOLVER_STATUS_SUCCESS )                      \
-        throw cuda_exception( __FILE__, __LINE__, ERR );
+        throw cusolver_exception( __FILE__, __LINE__, ERR );
 
 
 /* Gdevices (CUDA) object - 
