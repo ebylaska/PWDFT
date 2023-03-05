@@ -156,7 +156,7 @@ public:
 
 #define NWPW_CUSOLVER_ERROR( ERR )                            \
     if( ERR != CUSOLVER_STATUS_SUCCESS )                      \
-        throw cusolver_exception( __FILE__, __LINE__, ERR );
+        throw cuda_exception( __FILE__, __LINE__, ERR );
 
 
 /* Gdevices (CUDA) object - 
