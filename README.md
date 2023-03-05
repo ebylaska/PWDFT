@@ -29,6 +29,20 @@ $ cd build
 $ cmake .
 ```
 
+# Timings 
+| machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |  mmm_mult |
+| :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|        --:|
+| QA/CCO-Cu_surface
+| WE45090     | 1      |  |  |  |  |  |    |  |
+| WE45090     | 2      | 2.701e+01 | 6.422e+00 | 6.663e+00 | 1.270e+01 | 9.692e-01 | 4.015e-02 | 7.448e-02  |
+| WE45090     | 4      |  |  |  |  |  |    |  |
+| WE45090     | 6      | 1.795e+01 | 3.499e+00 | 5.071e+00 | 8.675e+00 | 4.499e-01 | 4.439e-02 | 8.899e-02 |
+| WE45090-GPU | 1      |  |  |  |  |  |    |  |
+| WE45090-GPU | 2      |  |  |  |  |  |    |  |
+| WE45090-GPU | 4      |  |  |  |  |  |    |  |
+| WE45090-GPU | 6      | 7.632e+00 | 1.009e+00 | 9.066e-01 | 1.362e+00 | 4.035e+00 |   4.910e-02 | 1.013e-01 |
+
+
 ## Build instructions on Sunspot
 
 ### Required Modules
