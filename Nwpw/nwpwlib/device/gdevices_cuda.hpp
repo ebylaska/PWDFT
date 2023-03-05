@@ -6,15 +6,47 @@
 
 //#include        "gdevice.hpp"
 
-#include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cufft.h>
+#include <cuda_runtime.h>
 #include <cusolverDn.h>
+//#include "cusolver_utils.h"
 
 #include <stdexcept>
 #include <string>
 #include <sstream>
 #include <iostream>
+
+
+#include <cmath>
+#include <functional>
+#include <iostream>
+#include <random>
+#include <stdexcept>
+#include <string>
+
+#include <cuComplex.h>
+#include <cuda_runtime_api.h>
+#include <cublas_api.h>
+#include <cusolverDn.h>
+#include <library_types.h>
+
+//
+#ifndef cusolver_int_t
+#define cusolver_int_t int
+#endif
+
+// cusolver API error checking
+#define CUSOLVER_CHECK(err)                                                                        \
+    do {                                                                                           \
+        cusolverStatus_t err_ = (err);                                                             \
+        if (err_ != CUSOLVER_STATUS_SUCCESS) {                                                     \
+            printf("cusolver error %d at %s:%d\n", err_, __FILE__, __LINE__);                      \
+            throw std::runtime_error("cusolver error");                                            \
+        }                                                                                          \
+    } while (0)
+
+
 
 class cuda_exception : public std::exception {
 
@@ -143,27 +175,6 @@ public:
 };
 
 
-class cusolver_exception : public std::exception {
-
-    std::string file_;
-    int         line_;
-    cudaError_t err_code_;
-
-    const char* what() const noexcept override {
-        std::stringstream ss;
-        ss << "CUSOLVER Exception, " << cudaGetErrorString( err_code_ ) << " at " << std::endl
-           << file_ << " : " << line_ << std::endl;
-        auto msg = ss.str();
-        return strdup( msg.c_str() );
-    }
-
-public:
-
-    cusolver_exception( std::string file, int line, cudaError_t err ) :
-        file_(file), line_(line), err_code_(err) { }
-};
-
-
 
 
 #define NWPW_CUDA_ERROR( ERR )                                  \
@@ -177,10 +188,6 @@ public:
 #define NWPW_CUBLAS_ERROR( ERR )                                \
     if( ERR != CUBLAS_STATUS_SUCCESS )                          \
         throw cublas_exception( __FILE__, __LINE__, ERR );
-
-#define NWPW_CUSOLVER_ERROR( ERR )                            \
-    if( ERR != CUSOLVER_STATUS_SUCCESS )                      \
-        throw cusolver_exception( __FILE__, __LINE__, ERR );
 
 
 /* Gdevices (CUDA) object - 
@@ -240,19 +247,20 @@ public:
 
         std::cout << "Into cublasCreate" << std::endl;
 
-        NWPW_CUDA_ERROR( cublasCreate(&master_handle) );
+        NWPW_CUBLAS_ERROR( cublasCreate(&master_handle) );
 
         // allocate cuda streams
-        for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR( cudaStreamCreate(&stream[i]) );
+        for (auto i=0; i<2; ++i) 
+           NWPW_CUDA_ERROR( cudaStreamCreate(&stream[i]) );
 
 
         // create cusolver handle, bind a stream 
-        NWPW_CUSOLVER_ERROR(cusolverDnCreate(&cusolverH));
-        NWPW_CUDA_ERROR(cudaStreamCreateWithFlags(&solverstream, cudaStreamNonBlocking));
-        NWPW_CUDA_ERROR(cusolverDnSetStream(cusolverH, solverstream));
+        CUSOLVER_CHECK( cusolverDnCreate(&cusolverH) );
+        NWPW_CUDA_ERROR( cudaStreamCreateWithFlags(&solverstream, cudaStreamNonBlocking) );
+        CUSOLVER_CHECK( cusolverDnSetStream(cusolverH, solverstream) );
 
         // query working space of syevd
-        for (int i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_info[i]),sizeof(int)));
+        for (int i=0; i<2; ++i)  NWPW_CUDA_ERROR( cudaMalloc(reinterpret_cast<void **>(&d_info[i]),sizeof(int)) );
 
     }
 
@@ -260,22 +268,22 @@ public:
     ~Gdevices() {
 
         // free dev_mem
-        for (auto i=0; i<ndev_mem; ++i)  cudaFree(dev_mem[i]);
+        for (auto i=0; i<ndev_mem; ++i) NWPW_CUDA_ERROR( cudaFree(dev_mem[i]) );
         ndev_mem = 0;
 
         // free cuda streams
-        for (auto i=0; i<2; ++i) cudaStreamDestroy(stream[i]);
+        for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR( cudaStreamDestroy(stream[i]) );
 
-        cublasDestroy(master_handle);
+        NWPW_CUBLAS_ERROR( cublasDestroy(master_handle) );
 
 
        /* free cusolver resources */
-       for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR(cudaFree(d_info[i]));
-       NWPW_CUDA_ERROR(cudaFree(d_work));
-       NWPW_CUSOLVER_ERROR(cusolverDnDestroy(cusolverH));
+       for (auto i=0; i<2; ++i) NWPW_CUDA_ERROR( cudaFree(d_info[i]) );
+       NWPW_CUDA_ERROR( cudaFree(d_work) );
+       CUSOLVER_CHECK( cusolverDnDestroy(cusolverH) );
 
-       NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
-       NWPW_CUDA_ERROR(cudaDeviceReset());
+       NWPW_CUDA_ERROR( cudaStreamDestroy(solverstream) );
+       cudaDeviceReset();
 
         // free fft descriptors
         //cufftDestroy(forward_plan_x);
@@ -964,7 +972,7 @@ static void eigsrt_device(double *D, double *V, int n) {
       if (lwork==0)
       {
          // query working space of syevd
-         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd_bufferSize(cusolverH,jobz,uplo,ne[0],dev_mem[i_a1[0]],ne[0],dev_mem[i_w1[0]],&lwork));
+         CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH,jobz,uplo,ne[0],dev_mem[i_a1[0]],ne[0],dev_mem[i_w1[0]],&lwork));
          NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
       }
 
@@ -976,7 +984,7 @@ static void eigsrt_device(double *D, double *V, int n) {
 
          // compute spectrum
          int nn = ne[ms]*ne[ms];
-         NWPW_CUSOLVER_ERROR(cusolverDnDsyevd(cusolverH,jobz,uplo,ne[ms],dev_mem[i_a1[ms]],ne[ms],dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
+         CUSOLVER_CHECK(cusolverDnDsyevd(cusolverH,jobz,uplo,ne[ms],dev_mem[i_a1[ms]],ne[ms],dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
 
          NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
          NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
