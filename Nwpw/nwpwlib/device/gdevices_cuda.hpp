@@ -963,7 +963,9 @@ static void eigsrt_device(double *D, double *V, int n) {
          i_a1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) * ((size_t) ne[ms])); //input-output
          i_w1[ms] = fetch_dev_mem_indx(((size_t) ne[ms]) );                    //output
          NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_a1[ms]],host_hml+shift2,nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
-         NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_w1[ms]],host_eig+shift1,nn*sizeof(double),cudaMemcpyHostToDevice,stream[ms]));
+         //NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[i_a1[ms]],host_hml+shift2,nn*sizeof(double),cudaMemcpyHostToDevice));
+         //NWPW_CUDA_ERROR(cudaMemcpyAsync(dev_mem[i_w1[ms]],host_eig+shift1,ne[ms]*sizeof(double),cudaMemcpyHostToDevice));
+        
          shift1 += ne[0];
          shift2 += ne[0]*ne[0];
       }
@@ -986,18 +988,27 @@ static void eigsrt_device(double *D, double *V, int n) {
          int nn = ne[ms]*ne[ms];
          CUSOLVER_CHECK(cusolverDnDsyevd(cusolverH,jobz,uplo,ne[ms],dev_mem[i_a1[ms]],ne[ms],dev_mem[i_w1[ms]],d_work,lwork,d_info[ms]));
 
+         NWPW_CUDA_ERROR( cudaStreamSynchronize(solverstream) );
+
          NWPW_CUDA_ERROR(cudaMemcpyAsync(host_hml+shift2,dev_mem[i_a1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
-         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift2,dev_mem[i_w1[ms]],nn*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
+         NWPW_CUDA_ERROR(cudaMemcpyAsync(host_eig+shift1,dev_mem[i_w1[ms]],ne[ms]*sizeof(double),cudaMemcpyDeviceToHost,stream[ms]));
          NWPW_CUDA_ERROR(cudaMemcpyAsync(info+ms,d_info[ms],sizeof(int),cudaMemcpyDeviceToHost,stream[ms]));
 
-        shift1 += ne[0];
-        shift2 += ne[0]*ne[0];
+         shift1 += ne[0];
+         shift2 += ne[0]*ne[0];
       }
+
+      shift1 = 0;
+      shift2 = 0;
       for (auto ms=0; ms<ispin; ++ms)
+      {
          NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[ms]));
+         NWPW_CUDA_ERROR( cudaFree(d_work) );
+         eigsrt_device(host_eig+shift1,host_hml+shift2,ne[ms]);
+         shift1 += ne[0];
+         shift2 += ne[0]*ne[0];
+      }
 
-      NWPW_CUDA_ERROR( cudaFree(d_work) );
    }
-
 
 };
