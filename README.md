@@ -53,20 +53,6 @@ $ cmake .
 These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified, since the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 
 
-## HPC timings
-| machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |  mmm_mult |
-| :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|        --:|
-| **QA/CCO-Cu_surface**
-| Sunspot     | 1      | 7.704e+00 | 1.111e+00 | 6.044e-01 | 1.116e+00 | 1.872e+00 | 2.167e-02 | 8.414e-03 |
-| Sunspot     | 2      | 4.097e+00 | 5.656e-01 | 3.095e-01 | 5.794e-01 | 1.053e+00 | 1.021e-02 | 8.398e-03 |
-| Sunspot     | 4      |  |  |  |  |  |    |  |
-| Sunspot     | 6      |  |  |  |  |  |    |  |
-| Sunspot     | 8      |  |  |  |  |  |    |  |
-| Sunspot-GPU | 1      |  |  |  |  |  |    |  |
-| Sunspot-GPU | 2      |  |  |  |  |  |    |  |
-| Sunspot-GPU | 4      |  |  |  |  |  |    |  |
-| Sunspot-GPU | 6      |  |  |  |  |  |    |  |
-
 
 # Compiling and Running Instructions 
 
