@@ -30,6 +30,7 @@ $ cmake .
 ```
 
 # Timings 
+## laptop timings
 | machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |  mmm_mult |
 | :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|        --:|
 | **QA/CCO-Cu_surface**
@@ -48,6 +49,11 @@ $ cmake .
 | WE45090-GPU | 4      | 6.895e+00 | 1.078e+00 | 1.193e+00 | 1.459e+00 | 2.922e+00 | 4.405e-02 | 8.771e-02 |
 | WE45090-GPU | 6      | 7.884e+00 | 1.037e+00 | 9.116e-01 | 1.486e+00 | 4.183e+00 | 4.977e-02 | 1.044e-01 |
 | WE45090-GPU | 8      |  |  |  |  |  |    |  |
+
+## HPC timings
+| machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |  mmm_mult |
+| :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|        --:|
+| **QA/CCO-Cu_surface**
 | Sunspot     | 1      |  |  |  |  |  |    |  |
 | Sunspot     | 2      |  |  |  |  |  |    |  |
 
