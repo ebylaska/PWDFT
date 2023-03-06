@@ -50,7 +50,7 @@ $ cmake .
 | WE45090-GPU | 6      | 7.884e+00 | 1.037e+00 | 9.116e-01 | 1.486e+00 | 4.183e+00 | 4.977e-02 | 1.044e-01 |
 | WE45090-GPU | 8      |  |  |  |  |  |    |  |
 
-These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified in that the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, need to test the competiveness of pipeling FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus the MPI-only algorithm.
+These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified in that the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 
 
 ## HPC timings
