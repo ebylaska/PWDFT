@@ -95,34 +95,35 @@ void psi_H(Pneb *mygrid,
    }
    */
 
+   { nwpw_timing_function ftimer(1);
 
-
-   mygrid->rrr_Sum(vall,xcp,tmp);
-   while (!done)
-   {
-      if (indx1<n2)
+      mygrid->rrr_Sum(vall,xcp,tmp);
+      while (!done)
       {
-         if (indx1>=n1)
+         if (indx1<n2)
          {
-            ms = 1;
-            mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-         }
+            if (indx1>=n1)
+            {
+               ms = 1;
+               mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
+            }
          
-         mygrid->rrr_Mul(tmp,psi_r+indx1n,vpsi);
+            mygrid->rrr_Mul(tmp,psi_r+indx1n,vpsi);
 
-         mygrid->rc_pfft3f_queuein(1,vpsi);
-         indx1n += shift2;
-         ++indx1;
-      }
+            mygrid->rc_pfft3f_queuein(1,vpsi);
+            indx1n += shift2;
+            ++indx1;
+         }
 
-      if ((mygrid->rc_pfft3f_queuefilled()) || (indx1>=n2))
-      {
-         mygrid->rc_pfft3f_queueout(1,vpsi);
-         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx2n);
-         indx2n += shift1;
-         ++indx2;
+         if ((mygrid->rc_pfft3f_queuefilled()) || (indx1>=n2))
+         {
+            mygrid->rc_pfft3f_queueout(1,vpsi);
+            mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx2n);
+            indx2n += shift1;
+            ++indx2;
+         }
+         done = ((indx1>=n2) && (indx2>=n2));
       }
-      done = ((indx1>=n2) && (indx2>=n2));
    }
 
 
@@ -203,18 +204,21 @@ void psi_Hv4(Pneb *mygrid,
 
 
    /* apply r-space operators  - Expensive*/
-   for (int ms=0; ms<ispin; ++ms)
-   {
-      mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-      for (int i=0; i<(mygrid->neq[ms]); ++i)
-      {
-         mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
-         mygrid->rc_fft3d(vpsi);
-         mygrid->c_pack(1,vpsi);
-         mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
+   {  nwpw_timing_function ftimer(1);
 
-         indx1 += shift1;
-         indx2 += shift2;
+      for (int ms=0; ms<ispin; ++ms)
+      {
+         mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
+         for (int i=0; i<(mygrid->neq[ms]); ++i)
+         {
+            mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
+            mygrid->rc_fft3d(vpsi);
+            mygrid->c_pack(1,vpsi);
+            mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
+
+            indx1 += shift1;
+            indx2 += shift2;
+         }
       }
    }
 

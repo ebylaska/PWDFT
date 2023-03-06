@@ -311,6 +311,7 @@ void Pneb::g_zero(double *psi2)
  *************************************/
 void Pneb::gh_fftb(double *psi, double *psi_r)
 {
+   nwpw_timing_function ftimer(1);
    int n,done;
    int indx1,indx1n,shift1;
    int indx2,indx2n,shift2;
@@ -989,7 +990,13 @@ void Pneb::m_diagonalize(double *hml, double *eig)
     }
     else
     {
-       gdevice_NN_eigensolver(ispin,ne,hml,eig);
+       int n  = ne[0] + ne[1];
+       int nn = ne[0]*ne[0] + ne[1]*ne[1];
+
+       if (d1db::parall->is_master()) gdevice_NN_eigensolver(ispin,ne,hml,eig);
+       d1db::parall->Brdcst_Values(0,0,nn,hml);
+       d1db::parall->Brdcst_Values(0,0,n,eig);
+
 
 /*      //double *xmp1 = new (std::nothrow) double[nn]();
         int nn  = ne[0]*ne[0]+14;

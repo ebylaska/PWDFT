@@ -973,8 +973,8 @@ static void eigsrt_device(double *D, double *V, int n) {
       {
          // query working space of syevd
          CUSOLVER_CHECK(cusolverDnDsyevd_bufferSize(cusolverH,jobz,uplo,ne[0],dev_mem[i_a1[0]],ne[0],dev_mem[i_w1[0]],&lwork));
-         NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
       }
+      NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_work),sizeof(double) * lwork));
 
       shift1 = 0;
       shift2 = 0;
@@ -995,6 +995,8 @@ static void eigsrt_device(double *D, double *V, int n) {
       }
       for (auto ms=0; ms<ispin; ++ms)
          NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[ms]));
+
+      NWPW_CUDA_ERROR( cudaFree(d_work) );
    }
 
 
