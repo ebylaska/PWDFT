@@ -34,7 +34,7 @@ public:
    bool born_on,born_relax;
 
    double *vradii,*bradii;
-   double dielec;
+   double dielec,rcut;
 
    /* constructor */
    nwpw_born(Ion *, Parallel *, Control2&, std::ostream&);

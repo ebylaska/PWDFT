@@ -86,12 +86,15 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
    fion = new double[3*(myion->nion)]();
 
+
    /* generate local psp*/
    mypsp->v_local(vl,false,dng,fion);
    
 
 
    //myewald->phafac();
+
+   //|-\____|\/-----\/\/->    Start Parallel Section    <-\/\/-----\/|____/-|
 
    for (it=0; it<it_in; ++it)
    {
@@ -245,21 +248,14 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
      mygrid->ggm_lambda(dte,psi1,psi2,lmbda);
    }
 
+   //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
+
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi1,Hpsi,hml);
    mygrid->m_scal(-1.0,hml);
    eorbit  = mygrid->m_trace(hml);
    if (ispin==1) eorbit = eorbit+eorbit;
-   /*
-   std::cout << "hmlup=" << Ffmt(20,15) << hml[0] << " " << hml[1] << " " << hml[2] << " " << hml[3] << std::endl; 
-   std::cout << "      " << hml[4] << " " << hml[5] << " " << hml[6] << " " << hml[7] << std::endl; 
-   std::cout << "      " << hml[8] << " " << hml[9] << " " << hml[10] << " " << hml[11] << std::endl; 
-   std::cout << "      " << hml[12] << " " << hml[13] << " " << hml[14] << " " << hml[15] << std::endl; 
 
-   std::cout << "hmldn=" << Ffmt(20,15) << hml[16+0] << " " << hml[16+1] << " " << hml[16+2] << std::endl; 
-   std::cout << "      " << hml[16+3] << " " << hml[16+4] << " " << hml[16+5] << std::endl; 
-   std::cout << "      " << hml[16+6] << " " << hml[16+7] << " " << hml[16+8] << std::endl; 
-   */
 
 
    /* hartree energy and ion-ion energy */

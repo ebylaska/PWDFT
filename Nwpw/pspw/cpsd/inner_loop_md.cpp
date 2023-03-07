@@ -102,6 +102,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
 
    //myewald->phafac();
 
+   //|-\____|\/-----\/\/->    Start Parallel Section    <-\/\/-----\/|____/-|
+
    for (it=0; it<it_in; ++it)
    {
       /* shift wavefuntion */
@@ -298,6 +300,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2& control, Pneb 
 
    } /* it, innerloop */
 
+   //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 
 
    /****************************/

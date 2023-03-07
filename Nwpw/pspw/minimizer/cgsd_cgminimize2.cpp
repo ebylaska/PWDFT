@@ -49,6 +49,8 @@ double cgsd_cgminimize2(Molecule& mymolecule, Geodesic2 *mygeodesic2, double *E,
    double *G1 = mygrid->g_allocate(1);
    double *H0 = mygrid->g_allocate(1);
 
+   //|-\____|\/-----\/\/->    Start Parallel Section    <-\/\/-----\/|____/-|
+
    total_energy  = mymolecule.psi_1get_TSgradient(G1);
    sum1 = mygrid->gg_traceall(G1,G1);
    Enew = total_energy;
@@ -127,6 +129,7 @@ double cgsd_cgminimize2(Molecule& mymolecule, Geodesic2 *mygeodesic2, double *E,
    // Making an extra call to electron.run and energy
    total_energy  = mymolecule.gen_all_energies();
 
+   //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 
    mygrid->g_deallocate(H0);
    mygrid->g_deallocate(G1);

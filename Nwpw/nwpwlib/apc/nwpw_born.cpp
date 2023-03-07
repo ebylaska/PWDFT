@@ -89,7 +89,7 @@ static double born_radius(const int ii, const int nion, const double rion[], con
 // this routine need to parallelized!!!
 
 static double born_energy0(const int nion, const double rion[], const double bradii[],
-                           const double q[], const double dielec)
+                           const double q[], const double dielec, const double rcut)
 {
    double Gsolv = 0.0;
    double screen = (1.0 - 1.0/dielec);
@@ -103,7 +103,8 @@ static double born_energy0(const int nion, const double rion[], const double bra
       double dist2 = dx*dx + dy*dy + dz*dz;
       double C     = std::exp(-0.25*dist2/(bradii[ii]*bradii[jj]));
       double f     = std::sqrt(dist2 + bradii[ii]*bradii[jj]*C);
-      Gsolv -=  0.5*screen*q[ii]*q[jj]/f;
+      double gg    = std::erf(std::sqrt(dist2)/rcut);
+      Gsolv -=  0.5*screen*q[ii]*q[jj]*gg/f;
    }
    return Gsolv;
 }
@@ -114,13 +115,15 @@ static double born_energy0(const int nion, const double rion[], const double bra
  *                                         *
  *******************************************/
 static double born_dgsolv(const double screen, const double qi, const double qj, 
-                        const double bi, const double bj, const double xx)
+                          const double bi, const double bj, const double rcut, const double xx)
 {
+   double gg  = std::erf(std::sqrt(xx)/rcut);
+   double dgg = (1.00/std::sqrt(xx*4.0*std::atan(1.0)))*std::exp(-xx/(rcut*rcut))/rcut;
    double C = std::exp(-0.25*xx/(bi*bj));
    double f = std::sqrt(xx + bi*bj*C);
-   double gsolv = -0.5*screen*qi*qj/f;
+   double gsolv = -0.5*screen*qi*qj*gg/f;
 
-   return (-0.5*gsolv*(1.0-0.25*C)/(f*f));
+   return (-0.5*gsolv*(1.0-0.25*C)/(f*f) - 0.5*screen*qi*qj*dgg/f);
 }
 
 /*******************************************
@@ -132,7 +135,7 @@ static double born_dgsolv(const double screen, const double qi, const double qj,
 // this routine need to parallelized!!!
 
 static void born_fion0(const int nion, const double rion[], const double bradii[],
-                       const double q[], const double dielec,
+                       const double q[], const double dielec, const double rcut,
                        double fion[])
 {
    double screen = (1.0 - 1.0/dielec);
@@ -145,7 +148,7 @@ static void born_fion0(const int nion, const double rion[], const double bradii[
       double dz = rion[3*ii+2]-rion[3*jj+2];
       double dist2 = dx*dx + dy*dy + dz*dz;
 
-      double dGsolv = born_dgsolv(screen,q[ii],q[jj],bradii[ii],bradii[jj],dist2);
+      double dGsolv = born_dgsolv(screen,q[ii],q[jj],bradii[ii],bradii[jj],rcut,dist2);
 
       fion[3*ii]   -= 2.0*dGsolv*dx;
       fion[3*ii+1] -= 2.0*dGsolv*dy;
@@ -166,7 +169,7 @@ static void born_fion0(const int nion, const double rion[], const double bradii[
 // this routine need to parallelized!!!
 
 static void born_dVdq0(const int nion, const double rion[], const double bradii[],
-                       const double q[], const double dielec,
+                       const double q[], const double dielec, const double rcut,
                        double u[])
 {
    //double Gsolv = 0.0;
@@ -181,12 +184,13 @@ static void born_dVdq0(const int nion, const double rion[], const double bradii[
       double dy = rion[3*ii+1]-rion[3*jj+1];
       double dz = rion[3*ii+2]-rion[3*jj+2];
       double dist2 = dx*dx + dy*dy + dz*dz;
-     
-      double C = std::exp(-0.25*dist2/(bradii[ii]*bradii[jj]));
-      double f = std::sqrt(dist2 + bradii[ii]*bradii[jj]*C);
 
-      u[ii] += 0.5*screen*q[jj]/f;
-      u[jj] += 0.5*screen*q[ii]/f;
+      double gg = std::erf(std::sqrt(dist2)/rcut);
+      double C  = std::exp(-0.25*dist2/(bradii[ii]*bradii[jj]));
+      double f  = std::sqrt(dist2 + bradii[ii]*bradii[jj]*C);
+
+      u[ii] += 0.5*screen*q[jj]*gg/f;
+      u[jj] += 0.5*screen*q[ii]*gg/f;
       //Gsolv -=  0.5*screen*q[ii]*q[jj]/f;
    }
 }
@@ -211,6 +215,7 @@ nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control, std:
    if (born_on)
    {
       dielec = control.born_dielec();
+      rcut   = control.born_rcut();
       vradii = new (std::nothrow) double [myion->nion];
       bradii = new (std::nothrow) double [myion->nion];
 
@@ -267,7 +272,7 @@ nwpw_born::nwpw_born(Ion *myionin, Parallel *myparallin, Control2& control, std:
  *******************************************/
 double nwpw_born::energy(const double q[])
 {
-   return born_energy0(myion->nion,myion->rion1,bradii,q,dielec);
+   return born_energy0(myion->nion,myion->rion1,bradii,q,dielec,rcut);
 }
 
 
@@ -281,7 +286,7 @@ double nwpw_born::energy(const double q[])
 
 void nwpw_born::fion(const double q[], double fion[])
 {
-   born_fion0(myion->nion,myion->rion1,bradii,q,dielec,fion);
+   born_fion0(myion->nion,myion->rion1,bradii,q,dielec,rcut,fion);
 }
 
 
@@ -292,7 +297,7 @@ void nwpw_born::fion(const double q[], double fion[])
  *******************************************/
 void nwpw_born::dVdq(const double q[], double u[])
 {
-   born_dVdq0(myion->nion,myion->rion1,bradii,q,dielec,u);
+   born_dVdq0(myion->nion,myion->rion1,bradii,q,dielec,rcut,u);
 }
 
 /*******************************************
@@ -310,6 +315,7 @@ std::string nwpw_born::header_print()
    stream << "     charge from a dielectric medium, Chem. Phys. Lett., vol 246, pages 122-129." << std::endl;
    stream << std::endl;
    stream << "    dielectric constant=" << std::fixed << std::setw(11) << std::setprecision(6) << dielec << std::endl;
+   stream << "    dielectric rcut    =" << std::fixed << std::setw(11) << std::setprecision(6) << rcut   << std::endl;
    if (born_relax)
       stream << "    self-consistent solvation" << std::endl;
    else
@@ -333,7 +339,7 @@ std::string nwpw_born::header_print()
  *******************************************/
 std::string nwpw_born::Qprint(const double q[])
 {
-   double Gsolv = born_energy0(myion->nion,myion->rion1,bradii,q,dielec);
+   double Gsolv = born_energy0(myion->nion,myion->rion1,bradii,q,dielec,rcut);
 
    std::stringstream stream;
 
@@ -345,6 +351,7 @@ std::string nwpw_born::Qprint(const double q[])
    stream << "     vol. 246, pages 122-129." << std::endl;
    stream << std::endl;
    stream << "   - dielectric constant -eps- =" << std::fixed << std::setw(11) << std::setprecision(6) << dielec << std::endl;
+   stream << "   - dielectric rcut           =" << std::fixed << std::setw(11) << std::setprecision(6) << rcut   << std::endl;
    stream << std::endl;
    for (auto ii=0; ii<myion->nion; ++ii)
       stream << "   - Born radius: " << std::left << std::setw(4) << myion->symbol(ii)

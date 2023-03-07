@@ -540,6 +540,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       if (bornjson["on"].is_boolean())    pborn_on    = bornjson["on"];
       if (bornjson["relax"].is_boolean()) pborn_relax = bornjson["relax"];
       if (bornjson["dielec"].is_number_float()) pborn_dielec = bornjson["dielec"];
+      if (bornjson["rcut"].is_number_float()  ) pborn_rcut   = bornjson["rcut"];
 
       if (!bornjson["bradii"].is_null()) {
          size_t nu = bornjson["bradii"].size();
