@@ -26,7 +26,16 @@
 
 | machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |
 | :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|
-| **QA/CCO-Cu_surface20
+| **CCO-Cu_surface20**
+| MPI-GPU     | 1    |  |  |  |  |  |  |  |
+| MPI-GPU     | 2    |  |  |  | |  | |  |
+| MPI-GPU     | 4   |  |  |  | |  | |  |
+| MPI-GPU     | 6   | 3.779e+00 |  |  | |  | |  |
+
+
+| machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |
+| :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|
+| **CCO-Cu_surface30**
 | MPI-GPU     | 1    |  |  |  |  |  |  |  |
 | MPI-GPU     | 2    |  |  |  | |  | |  |
 | MPI-GPU     | 4   |  |  |  | |  | |  |
