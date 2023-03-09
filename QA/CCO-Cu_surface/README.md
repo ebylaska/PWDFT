@@ -29,8 +29,8 @@
 | **CCO-Cu_surface20**
 | MPI-GPU     | 1    |  |  |  |  |  |  |  |
 | MPI-GPU     | 2    |  |  |  | |  | |  |
-| MPI-GPU     | 4   |  |  |  | |  | |  |
-| MPI-GPU     | 6   | 3.779e+00 |  |  | |  | |  |
+| MPI-GPU     | 4   | 4.954e+00 | 1.830e-01 | 5.771e-02 | 5.922e-02 | 2.271e+00 | 1.139e-02|
+| MPI-GPU     | 6   | 3.779e+00 | 1.406e-01 | 4.690e-02 | 4.645e-02 | 1.819e+00 | 1.102e-02| 
 
 
 | machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |
