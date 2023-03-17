@@ -335,10 +335,16 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
                mygrid.c_pack_deallocate(dng);
                mygrid.c_pack_deallocate(vc);
             }
-            //else if (control.version==4)
-               //mycoulomb12.mycoulomb2->vcoulomb(rho,vc);
+            else if (control.version==4)
+            {
+               double *tmp = mygrid.r_alloc();
 
-            cube_comment = "SCF Potential Density";
+               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,tmp);
+               mycoulomb12.mycoulomb2->vcoulomb(tmp,rho);
+
+               mygrid.r_dealloc(tmp);
+            } 
+            cube_comment = "SCF Electrostatic Potential";
          }
 
          mydplot.gcube_write(cubename,cubetype,cube_comment,rho);
