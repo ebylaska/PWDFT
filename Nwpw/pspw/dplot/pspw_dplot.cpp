@@ -6,6 +6,7 @@
 #include	<string>
 #include	<vector>
 //
+#include "parsestring.hpp"
 #include "iofmt.hpp"
 #include "util_linesearch.hpp"
 #include	"Parallel.hpp"
@@ -133,6 +134,71 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
    /* initialize nwpw_dplot */
    nwpw_dplot mydplot(&myion,&mygrid,control);
 
+
+//                 |**************************|
+// *****************   summary of input data  **********************
+//                 |**************************|
+   if (oprint)
+   {
+      coutput << "\n";
+      coutput << "          ==============  summary of input  ==================\n";
+      coutput << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      coutput << "\n";
+      coutput << " number of processors used: " << myparallel.np() << "\n";
+      coutput << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
+      if (mygrid.maptype==1) coutput << " parallel mapping         : 1d-slab"    << "\n";
+      if (mygrid.maptype==2) coutput << " parallel mapping         : 2d-hilbert" << "\n";
+      if (mygrid.maptype==3) coutput << " parallel mapping         : 2d-hcurve" << "\n";
+      if (mygrid.isbalanced())
+         coutput << " parallel mapping         : balanced" << "\n";
+      else
+         coutput << " parallel mapping         : not balanced" << "\n";
+
+      coutput << "\n options:\n";
+      coutput << "   boundary conditions  = ";
+      if (control.version==3) coutput << "periodic\n";
+      if (control.version==4) coutput << "aperiodic\n";
+
+      coutput << std::endl;
+      coutput <<" number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0] << " (" << Ifmt(4) << mygrid.neq[0]
+              << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " (" << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+
+      coutput << std::endl;
+      coutput << " ncell              = " << Ifmt(2) << mydplot.ncell[0] 
+                                          << Ifmt(2) << mydplot.ncell[1] 
+                                          << Ifmt(2) << mydplot.ncell[2] << std::endl;
+      coutput << " position tolerance = " << Efmt(12,6) << mydplot.position_tolerance << std::endl;
+      coutput << "             origin = " << Ffmt(8,3) << mydplot.origin[0]
+                                          << Ffmt(8,3) << mydplot.origin[1]
+                                          << Ffmt(8,3) << mydplot.origin[2] << std::endl;
+
+      coutput << std::endl;
+      coutput << " supercell:" << std::endl;
+      coutput << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
+      coutput << "      lattice:    a1 = < " << Ffmt(8,3) << mylattice.unita(0,0) << " " << Ffmt(8,3) << mylattice.unita(1,0) << " " << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
+      coutput << "                  a2 = < " << Ffmt(8,3) << mylattice.unita(0,1) << " " << Ffmt(8,3) << mylattice.unita(1,1) << " " << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
+      coutput << "                  a3 = < " << Ffmt(8,3) << mylattice.unita(0,2) << " " << Ffmt(8,3) << mylattice.unita(1,2) << " " << Ffmt(8,3) << mylattice.unita(2,2) << " >\n";
+      coutput << "      reciprocal: b1 = < " << Ffmt(8,3) << mylattice.unitg(0,0) << " " << Ffmt(8,3) << mylattice.unitg(1,0) << " " << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
+      coutput << "                  b2 = < " << Ffmt(8,3) << mylattice.unitg(0,1) << " " << Ffmt(8,3) << mylattice.unitg(1,1) << " " << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
+      coutput << "                  b3 = < " << Ffmt(8,3) << mylattice.unitg(0,2) << " " << Ffmt(8,3) << mylattice.unitg(1,2) << " " << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
+
+      {double aa1,bb1,cc1,alpha1,beta1,gamma1;
+       mylattice.abc_abg(&aa1,&bb1,&cc1,&alpha1,&beta1,&gamma1);
+       coutput << "      lattice:    a =    " << Ffmt(8,3) << aa1    << " b =   " << Ffmt(8,3) << bb1   << " c =    " << Ffmt(8,3) << cc1 << std::endl;
+       coutput << "                  alpha =" << Ffmt(8,3) << alpha1 << " beta =" << Ffmt(8,3) << beta1 << " gamma =" << Ffmt(8,3) << gamma1<< std::endl;}
+      coutput << "      density cutoff =" << Ffmt(7,3) << mylattice.ecut()
+              << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+              << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves " << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
+      coutput << "      wavefnc cutoff =" << Ffmt(7,3) << mylattice.wcut()
+              << " fft =" << Ifmt(4) << mygrid.nx << " x " << Ifmt(4) << mygrid.ny << " x " << Ifmt(4) << mygrid.nz
+              << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
+      coutput << std::endl;
+   }
+
+   /* translate system if origin is not zero */
+
+
+
    /* convert psi(G) to psi(r) - Expensive */
    int indx1 = 0;
    int indx2 = 0;
@@ -165,9 +231,20 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             if (oprint) coutput << " generating cubefile - orbital     " << Ifmt(5) << cubetype 
                                 << " - cubefilename = " << cubename 
                                 << " (json key=" << cubekey << ")" << std::endl;
-             int ishift = (cubetype-1)*n2ft3d;;
-             std::memcpy(rho,psi_r+ishift,n2ft3d*sizeof(double));
-             cube_comment = "SCF Molecular Orbitals";
+            int ishift = (cubetype-1)*n2ft3d;;
+            std::memcpy(rho,psi_r+ishift,n2ft3d*sizeof(double));
+            cube_comment = "SCF Molecular Orbitals";
+         }
+         // orbital2
+         else if (cubetype==-99)
+         {
+            int i =  std::stoi(mystring_split(mystring_split(cubekey,"orbital2-")[1],"-")[0]);
+            int j =  std::stoi(mystring_split(mystring_split(cubekey,"orbital2-")[1],"-")[1]);
+            if (oprint) coutput << " generating cubefile - orbital2    " << Ifmt(5) << i << Ifmt(5) << j
+                                << " - cubefilename = " << cubename 
+                                << " (json key=" << cubekey << ")" << std::endl;
+            mygrid.rrr_Mul(psi_r+(i-1)*n2ft3d,psi_r+(j-1)*n2ft3d,rho);
+            cube_comment = "SCF Molecular Orbitals squared";
          }
          // total density
          else if (cubetype==-1)
@@ -215,14 +292,15 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
                                 << " (json key=" << cubekey << ")" << std::endl;
             mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
             mygrid.r_SMul(scal1,rho);
-            mygrid.rc_fft3d(rho);
             mygrid.r_zero_ends(rho);
+            mygrid.rc_fft3d(rho);
             double *Gx  = mygrid.Gxyz(0);
             double *Gy  = mygrid.Gxyz(1);
             double *Gz  = mygrid.Gxyz(2);
             for (auto k=0; k<(mygrid.nfft3d); ++k)
                rho[k] *= -0.5*(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
             mygrid.cr_fft3d(rho);
+            mygrid.r_zero_ends(rho);
             cube_comment = "SCF Laplacian Density";
          }
          // potential density
@@ -231,6 +309,35 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             if (oprint) coutput << " generating cubefile - potential density"
                                 << " - cubefilename = " << cubename 
                                 << " (json key=" << cubekey << ")" << std::endl;
+            Coulomb12_Operator mycoulomb12(&mygrid,control);
+
+            /* generate coulomb potential */
+            if (control.version==3)
+            {
+               double *dng = mygrid.c_pack_allocate(0);
+               double *vc  = mygrid.c_pack_allocate(0);
+               double *tmp = mygrid.r_alloc();
+
+               /* generate dng */
+               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
+               mygrid.rr_SMul(scal1,rho,tmp);
+               mygrid.rc_fft3d(tmp);
+               mygrid.c_pack(0,tmp);
+               mygrid.cc_pack_copy(0,tmp,dng);
+
+               mycoulomb12.mycoulomb1->vcoulomb(dng,vc);
+               mygrid.cc_pack_copy(0,vc,rho);
+               mygrid.c_unpack(1,rho);
+               mygrid.cr_fft3d(rho);
+               mygrid.r_zero_ends(rho);
+
+               mygrid.r_dealloc(tmp);
+               mygrid.c_pack_deallocate(dng);
+               mygrid.c_pack_deallocate(vc);
+            }
+            //else if (control.version==4)
+               //mycoulomb12.mycoulomb2->vcoulomb(rho,vc);
+
             cube_comment = "SCF Potential Density";
          }
 

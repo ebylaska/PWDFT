@@ -678,7 +678,8 @@ int Control2::cubetype_cubefiles(const int i)
          ++count;
       }
 
-      if (mystring_contains(key,"orbital"))           cubetype = std::stoi(mystring_split(key,"-")[1]);
+      if (mystring_contains(key,"orbital-"))          cubetype = std::stoi(mystring_split(key,"-")[1]);
+      if (mystring_contains(key,"orbital2-"))         cubetype = -99;
       if (mystring_contains(key,"density-total"))     cubetype = -1;
       if (mystring_contains(key,"density-diff"))      cubetype = -2;
       if (mystring_contains(key,"density-alpha"))     cubetype = -3;

@@ -32,14 +32,16 @@ class nwpw_dplot {
    double dv;
    int n2ft3d,ispin,*ne;
 
-   int ncell[3] = {1, 1, 1};
-   double position_tolerance = 0.0;
 
    int num_cubefiles = 0;
    std::vector<std::string> filename;
    std::vector<int> cubetype;
 
 public:
+
+   int ncell[3] = {0, 0, 0};
+   double position_tolerance = 0.0;
+   double origin[3] = {0.0, 0.0, 0.0};
 
    /* constructor */
    nwpw_dplot(Ion *, Pneb *, Control2&);

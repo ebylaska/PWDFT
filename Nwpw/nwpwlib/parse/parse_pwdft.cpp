@@ -906,28 +906,53 @@ static json parse_dplot(json dplot, int *curptr,
          if (ss.size()>1)
             dplot["vectors"] = ss[1];
       }
-      if (mystring_contains(lines[cur],"orbital"))
+      else if (mystring_contains(lines[cur],"ncell"))
+      { 
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()==4)
+            dplot["ncell"] = {std::stoi(ss[1]), std::stoi(ss[3]), std::stoi(ss[3])};
+      }
+      else if (mystring_contains(lines[cur],"origin"))
+      { 
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()==4)
+            dplot["origin"] = {std::stod(ss[1]), std::stod(ss[3]), std::stod(ss[3])};
+      }
+      else if (mystring_contains(lines[cur],"position_tolerance"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>1)
+            dplot["position_tolerance"] = std::stod(ss[1]);
+      }
+      else if (mystring_contains(lines[cur],"orbital2"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>3)
+            if (mystring_contains(ss[0],"orbital2"))
+                dplot["orbital2-"+ss[1]+"-"+ss[2]] = ss[3];
+      }
+      else if (mystring_contains(lines[cur],"orbital"))
       {
          ss = mystring_split0(lines[cur]);
          if (ss.size()>2)
             if (mystring_contains(ss[0],"orbital"))
                 dplot["orbital-"+ss[1]] = ss[2];
       }
-      if (mystring_contains(lines[cur],"density"))
+      else if (mystring_contains(lines[cur],"density"))
       {
          ss = mystring_split0(lines[cur]);
          if (ss.size()>2)
             if (mystring_contains(ss[0],"density"))
                 dplot["density-"+ss[1]] = ss[2];
       }
-      if (mystring_contains(lines[cur],"elf"))
+      else if (mystring_contains(lines[cur],"elf"))
       {
          ss = mystring_split0(lines[cur]);
          if (ss.size()>2)
             if (mystring_contains(ss[0],"elf"))
                 dplot["elf-"+ss[1]] = ss[2];
       }
-      if (mystring_contains(lines[cur],"limitxyz"))
+      else if (mystring_contains(lines[cur],"limitxyz"))
       {
          std::vector<std::string> fourlines = {mystring_trim(lines[cur]),mystring_trim(lines[cur+1]),mystring_trim(lines[cur+2]),mystring_trim(lines[cur+3])};
          dplot["limitxyz"] = fourlines;
