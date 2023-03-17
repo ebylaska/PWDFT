@@ -856,6 +856,14 @@ int main(int argc, char* argv[])
         ierr += pwdft::pspw_bomd(MPI_COMM_WORLD,rtdbstr,std::cout);
      }
 
+     /* dplot task */
+     if (task==8) 
+     {
+        if (oprint) std::cout << std::endl << "Running dplot - rtdbstr = " << rtdbstr << std::endl << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_dplot(MPI_COMM_WORLD,rtdbstr,std::cout);
+     }
+
      // parse json string 
      rtdbstr = parse_rtdbstring(rtdbstr);
      MPI_Barrier(MPI_COMM_WORLD);

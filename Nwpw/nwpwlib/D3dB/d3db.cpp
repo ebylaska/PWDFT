@@ -2111,9 +2111,12 @@ std::string d3db::r_formatwrite(double *a)
                 parall->dreceive(0,189,p_from,1,tmp+index);
          }
          for (auto i=0; i<nx; i+=6)
+         {
              for (auto i1=i; i1<std::min(i+6,nx); ++i1)
                 stream << Efmt(13,5) << tmp[i1];
-         stream << std::endl;
+             stream << std::endl;
+         }
+         //stream << std::endl;
       }
    }
    /**** not master node ****/
@@ -2168,9 +2171,12 @@ std::string d3db::r_formatwrite_reverse(double *a)
                 parall->dreceive(0,189,p_from,1,tmp+index);
          }
          for (auto k=0; k<nz; k+=6) 
+         {
              for (auto k1=k; k1<std::min(k+6,nz); ++k1)
                 stream << Efmt(13,5) << tmp[k1];
-         stream << std::endl;
+             stream << std::endl;
+         }
+         //stream << std::endl;
       }
    }
    /**** not master node ****/

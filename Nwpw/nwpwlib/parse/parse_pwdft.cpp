@@ -10,6 +10,8 @@
 
 
 using json = nlohmann::json;
+//using ordered_json = nlohmann::ordered_json;
+//using json = nlohmann::ordered_json;
 
 
 
@@ -349,7 +351,7 @@ static json parse_geometry(json geom, int *curptr, std::vector<std::string> line
 }
 /**************************************************
  *                                                *
- *              parse_pseudopotentials             *
+ *              parse_pseudopotentials            *
  *                                                *
  **************************************************/
 static json parse_pseudopotentials(json pseudopotentials, int *curptr,
@@ -384,7 +386,6 @@ static json parse_pseudopotentials(json pseudopotentials, int *curptr,
  *                parse_simulation_cell           *
  *                                                *
  **************************************************/
-
 static json parse_simulation_cell(json celljson, int *curptr, std::vector<std::string> lines)
 {
    int cur = *curptr;
@@ -882,6 +883,65 @@ static json parse_car_parrinello(json cpmdjson, int *curptr, std::vector<std::st
    return cpmdjson;
 }
 
+/**************************************************
+ *                                                *
+ *                  parse_dplot                   *
+ *                                                *
+ **************************************************/
+static json parse_dplot(json dplot, int *curptr,
+                        std::vector<std::string> lines)
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+
+   while (endcount>0)
+   {
+      line = lines[cur];
+      if (mystring_contains(lines[cur],"vectors"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>1)
+            dplot["vectors"] = ss[1];
+      }
+      if (mystring_contains(lines[cur],"orbital"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>2)
+            if (mystring_contains(ss[0],"orbital"))
+                dplot["orbital-"+ss[1]] = ss[2];
+      }
+      if (mystring_contains(lines[cur],"density"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>2)
+            if (mystring_contains(ss[0],"density"))
+                dplot["density-"+ss[1]] = ss[2];
+      }
+      if (mystring_contains(lines[cur],"elf"))
+      {
+         ss = mystring_split0(lines[cur]);
+         if (ss.size()>2)
+            if (mystring_contains(ss[0],"elf"))
+                dplot["elf-"+ss[1]] = ss[2];
+      }
+      if (mystring_contains(lines[cur],"limitxyz"))
+      {
+         std::vector<std::string> fourlines = {mystring_trim(lines[cur]),mystring_trim(lines[cur+1]),mystring_trim(lines[cur+2]),mystring_trim(lines[cur+3])};
+         dplot["limitxyz"] = fourlines;
+         cur+=3;
+      }
+
+      ++cur;
+      if (mystring_contains(lines[cur],"end"))
+         --endcount;
+   }
+   *curptr = cur;
+   return dplot;
+}
+
 
 
 /**************************************************
@@ -950,6 +1010,17 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          }
          *curptr = cur;
          nwpwjson["car-parrinello"] = parse_car_parrinello(nwpwjson["car-parrinello"],curptr,lines);
+         cur = *curptr;
+      }
+      else if (mystring_contains(line,"dplot"))
+      {
+         if  (nwpwjson["dplot"].is_null())
+         {
+            json dplot;
+            nwpwjson["dplot"] = dplot;
+         }
+         *curptr = cur;
+         nwpwjson["dplot"] = parse_dplot(nwpwjson["dplot"],curptr,lines);
          cur = *curptr;
       }
       else if (mystring_contains(line,"initialize_wavefunction"))
@@ -1556,6 +1627,7 @@ int parse_task(std::string rtdbstring)
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"steepest_descent")) task = 5;
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"car-parrinello"))   task = 6;
          if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"born-oppenheimer")) task = 7;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"dplot"))            task = 8;
       }
    }
 

@@ -655,5 +655,76 @@ void Control2::add_scratch_dir(char fname[])
    }
 }
 
+
+int Control2::number_cubefiles() 
+{
+   json rtdbjson = json::parse(myrtdbstring);
+   int num_cubefiles = 0;
+   if (!rtdbjson["nwpw"]["dplot"].is_null())
+      num_cubefiles = rtdbjson["nwpw"]["dplot"].size();
+   return num_cubefiles;
+}
+
+int Control2::cubetype_cubefiles(const int i) 
+{
+   int cubetype = 0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"].is_null())
+   {
+      int count = 0;
+      std::string key = "";
+      for (auto& el : rtdbjson["nwpw"]["dplot"].items()) {
+         if (count==i) key = mystring_lowercase(el.key());
+         ++count;
+      }
+
+      if (mystring_contains(key,"orbital"))           cubetype = std::stoi(mystring_split(key,"-")[1]);
+      if (mystring_contains(key,"density-total"))     cubetype = -1;
+      if (mystring_contains(key,"density-diff"))      cubetype = -2;
+      if (mystring_contains(key,"density-alpha"))     cubetype = -3;
+      if (mystring_contains(key,"density-up"))        cubetype = -3;
+      if (mystring_contains(key,"density-beta"))      cubetype = -4;
+      if (mystring_contains(key,"density-down"))      cubetype = -4;
+      if (mystring_contains(key,"density-laplacian")) cubetype = -5;
+      if (mystring_contains(key,"density-potential")) cubetype = -6;
+      if (mystring_contains(key,"elf"))               cubetype = -7;
+   }
+   return cubetype;
+}
+
+std::string Control2::cubename_cubefiles(const int i) 
+{
+   std::string cubename = "";
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"].is_null())
+   {
+
+      int count = 0;
+      for (auto& el : rtdbjson["nwpw"]["dplot"].items()) {
+         if (count==i) cubename = el.value();
+         ++count;
+      }
+   }
+   return cubename;
+}
+
+std::string Control2::cubekey_cubefiles(const int i)
+{
+   std::string cubekey = "";
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"].is_null())
+   {
+
+      int count = 0;
+      for (auto& el : rtdbjson["nwpw"]["dplot"].items()) {
+         if (count==i) cubekey = el.key();
+         ++count;
+      }
+   }
+   return cubekey;
+}
+
+
+
 }
 

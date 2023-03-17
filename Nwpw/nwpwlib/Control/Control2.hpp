@@ -358,6 +358,13 @@ public:
       return gga;
    }
 
+   // cubefiles
+   int number_cubefiles();
+   int cubetype_cubefiles(const int);
+   std::string cubename_cubefiles(const int);
+   std::string cubekey_cubefiles(const int);
+
+
 };
 
 }
