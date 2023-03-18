@@ -2168,7 +2168,7 @@ std::string d3db::r_formatwrite_reverse(double *a)
             if (p_from==MASTER)
                tmp[k] = a[index];
             else
-                parall->dreceive(0,189,p_from,1,tmp+index);
+                parall->dreceive(0,189,p_from,1,tmp+k);
          }
          for (auto k=0; k<nz; k+=6) 
          {
