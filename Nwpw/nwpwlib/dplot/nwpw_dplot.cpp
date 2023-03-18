@@ -30,6 +30,14 @@ nwpw_dplot::nwpw_dplot(Ion *myion0, Pneb *mypneb0, Control2& control)
 
    permanent_dir_str = control.permanent_dir_str;
 
+   position_tolerance = control.position_tolerance_cubefiles();
+   ncell[0] = control.ncell_cubefiles(0);
+   ncell[1] = control.ncell_cubefiles(1);
+   ncell[2] = control.ncell_cubefiles(2);
+   origin[0] = control.origin_cubefiles(0);
+   origin[1] = control.origin_cubefiles(1);
+   origin[2] = control.origin_cubefiles(2);
+
 }
 
 /* Object functions */

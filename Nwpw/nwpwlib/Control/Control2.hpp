@@ -363,6 +363,9 @@ public:
    int cubetype_cubefiles(const int);
    std::string cubename_cubefiles(const int);
    std::string cubekey_cubefiles(const int);
+   double position_tolerance_cubefiles();
+   double origin_cubefiles(const int);
+   int ncell_cubefiles(const int);
 
 
 };

@@ -725,6 +725,34 @@ std::string Control2::cubekey_cubefiles(const int i)
    return cubekey;
 }
 
+double Control2::position_tolerance_cubefiles()
+{
+   double tol=0.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"]["position_tolerance"].is_null())
+      tol = rtdbjson["nwpw"]["dplot"]["position_tolerance"];
+   return tol;
+}
+
+int Control2::ncell_cubefiles(const int i) 
+{
+   int n=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"]["ncell"].is_null())
+      n = rtdbjson["nwpw"]["dplot"]["ncell"][i];
+
+   return n;
+}
+
+double Control2::origin_cubefiles(const int i) 
+{
+   double origin = 0.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["nwpw"]["dplot"]["ncell"].is_null())
+      origin = rtdbjson["nwpw"]["dplot"]["origin"][i];
+
+   return origin;
+}
 
 
 }
