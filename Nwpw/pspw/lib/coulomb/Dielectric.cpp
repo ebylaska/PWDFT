@@ -27,8 +27,8 @@ Dielectric_Operator::Dielectric_Operator(Pneb *mygrid, Control2& control)
 
    n2ft3d = mypneb->n2ft3d;
 
-   r_grid     = mypneb->r_nalloc(3);
-   mypneb->generate_r_sym_grid(r_grid);
+   mypneb->initialize_r_grid();
+   r_grid = mypneb->r_grid;
 
    epsilon    = mypneb->r_alloc();
    sw         = mypneb->r_alloc();
