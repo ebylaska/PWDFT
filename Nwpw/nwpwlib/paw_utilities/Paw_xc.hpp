@@ -1,6 +1,8 @@
 #ifndef _PAW_XC_HPP_
 #define _PAW_XC_HPP_
 
+#pragma once
+
 #include        "Ion.hpp"
 #include        "Ewald.hpp"
 #include	"Pneb.hpp"

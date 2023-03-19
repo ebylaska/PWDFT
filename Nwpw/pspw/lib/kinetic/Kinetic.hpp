@@ -1,5 +1,5 @@
-#ifndef	_KINETIC_H_
-#define _KINETIC_H_
+#ifndef _KINETIC_HPP_
+#define _KINETIC_HPP_
 
 
 

@@ -1276,7 +1276,7 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
          nwpwjson["efield"]["on"] = true;
          if (mystring_contains(line," off"))      nwpwjson["efield"]["on"]   = false;
          if (mystring_contains(line," periodic")) nwpwjson["efield"]["type"] = 0;
-         if (mystring_contains(line," APC"))      nwpwjson["efield"]["type"] = 1;
+         if (mystring_contains(line," apc"))      nwpwjson["efield"]["type"] = 1;
          if (mystring_contains(line," rgrid"))    nwpwjson["efield"]["type"] = 2;
          if (mystring_contains(line," center"))   nwpwjson["efield"]["center"]  =  mystring_double_list(line,"center");
          if (mystring_contains(line," vector"))   nwpwjson["efield"]["vector"]  =  mystring_double_list(line,"vector");
@@ -1285,6 +1285,16 @@ static json parse_nwpw(json nwpwjson, int *curptr, std::vector<std::string> line
              (mystring_contains(line," on")) && 
              (!mystring_contains(line," vector")))
             nwpwjson["efield"]["vector"]  =  mystring_double_list(line,"on");
+      }
+      else if (mystring_contains(line,"generalized_poisson")) {
+         nwpwjson["generalized_poisson"]["on"] = true;
+         if (mystring_contains(line," off"))    nwpwjson["generalized_poisson"]["on"]     = false;
+         if (mystring_contains(line," dielec")) 
+            nwpwjson["generalized_poisson"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line," dielec")[1]))[0]);
+         if (mystring_contains(line," rho0"))   
+            nwpwjson["generalized_poisson"]["rho0"]   = std::stod(mystring_split0(mystring_trim(mystring_split(line," rho0")[1]))[0]);
+         if (mystring_contains(line," beta"))
+            nwpwjson["generalized_poisson"]["beta"]   = std::stod(mystring_split0(mystring_trim(mystring_split(line," beta")[1]))[0]);
       }
 
       ++cur;

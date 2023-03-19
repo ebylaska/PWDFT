@@ -1,6 +1,8 @@
 #ifndef _IOFMT_HPP_
 #define _IOFMT_HPP_
 
+#pragma once
+
 #include        <iomanip>
 #include        <iostream>
 #include	<cstring>

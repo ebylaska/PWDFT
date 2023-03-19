@@ -1,6 +1,8 @@
 #ifndef _NWPW_TIMING_HPP_
 #define _NWPW_TIMING_HPP_
 
+#pragma once
+
 #include        "nwpw_timers.hpp"
 
 namespace pwdft {

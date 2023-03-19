@@ -1,6 +1,9 @@
 #ifndef _UTIL_TESSERAL_HPP_
 #define _UTIL_TESSERAL_HPP_
 
+#pragma once
+
+
 #include        <complex>
 
 namespace pwdft {

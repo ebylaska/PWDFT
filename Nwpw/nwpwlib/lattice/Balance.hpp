@@ -1,5 +1,8 @@
-#ifndef _BALANCE_H_
-#define _BALANCE_H_
+#ifndef _BALANCE_HPP_
+#define _BALANCE_HPP_
+
+#pragma once
+
 /* Balance.h
    Author - Eric Bylaska
 

@@ -1,6 +1,8 @@
 #ifndef _PSPW_LMBFGS2_HPP_
 #define _PSPW_LMBFGS2_HPP_
 
+#pragma once
+
 #include        <cmath>
 #include        "Geodesic2.hpp"
 

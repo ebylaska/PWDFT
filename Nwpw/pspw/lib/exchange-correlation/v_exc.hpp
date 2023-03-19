@@ -1,5 +1,5 @@
-#ifndef _VEXC_H_
-#define _VEXC_H_
+#ifndef _VEXC_HPP_
+#define _VEXC_HPP_
 
 namespace pwdft {
 

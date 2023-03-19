@@ -1,3 +1,6 @@
+#ifndef _ELECTRON_HPP_
+#define _ELECTRON_HPP_
+
 #pragma once
 
 #include	"Pneb.hpp"
@@ -94,3 +97,5 @@ public:
 };
 
 }
+
+#endif

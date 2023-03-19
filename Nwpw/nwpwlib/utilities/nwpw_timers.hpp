@@ -1,5 +1,9 @@
 #ifndef _nwpw_timers_HPP_
 #define _nwpw_timers_HPP_
+
+#pragma once
+
+
 /* nwpw_timers.hpp
    Author - Eric Bylaska
         this class is used to keep track of timings.

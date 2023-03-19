@@ -1,6 +1,8 @@
 #ifndef _PARSE_PWDFT_HPP_
 #define _PARSE_PWDFT_HPP_
 
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <vector>

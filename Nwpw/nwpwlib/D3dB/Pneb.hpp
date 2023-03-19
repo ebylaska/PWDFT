@@ -1,3 +1,9 @@
+#ifndef _PNEB_HPP_
+#define _PNEB_HPP_
+
+#pragma once
+
+
 /* Pneb.h
    Author - Eric Bylaska
 */
@@ -185,3 +191,5 @@ public:
 
 };
 }
+
+#endif

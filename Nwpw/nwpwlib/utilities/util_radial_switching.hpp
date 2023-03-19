@@ -1,6 +1,8 @@
 #ifndef _util_RADIAL_SWITCHING_HPP_
 #define _util_RADIAL_SWITCHING_HPP_
 
+#pragma once
+
 namespace pwdft {
 using namespace pwdft;
 

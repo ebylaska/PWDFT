@@ -1,5 +1,8 @@
 #ifndef _COMPRESSED_IO_H_
 #define _COMPRESSED_IO_H_
+
+#pragma once
+
 /* compressed_io.h -
    Author - Eric Bylaska
 

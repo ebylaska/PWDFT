@@ -1,5 +1,8 @@
-#ifndef _PGRID_H_
-#define _PGRID_H_
+#ifndef _PGRID_HPP_
+#define _PGRID_HPP_
+
+#pragma once
+
 /* d3db.h
    Author - Eric Bylaska
 

@@ -1,6 +1,9 @@
 #ifndef _NWPW_APC_HPP_
 #define _NWPW_APC_HPP_
 
+#pragma once
+
+
 // ********************************************************************
 // *                                                                  *
 // *       nwpw_apc : used to generate derived atomic point charges   *

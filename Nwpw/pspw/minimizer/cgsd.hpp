@@ -1,5 +1,9 @@
 #ifndef _CGSD_HPP_
 #define _CGSD_HPP_
+
+#pragma once
+
+
 namespace pwdft {
 
 #include        "Molecule.hpp"

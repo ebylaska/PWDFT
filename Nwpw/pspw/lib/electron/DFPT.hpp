@@ -1,3 +1,6 @@
+#ifndef _DFPT_HPP_
+#define _DFPT_HPP_
+
 #pragma once
 
 #include	"Pneb.hpp"
@@ -62,3 +65,5 @@ public:
 };
 
 }
+
+#endif

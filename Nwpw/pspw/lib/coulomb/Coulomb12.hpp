@@ -1,3 +1,6 @@
+#ifndef _COULOMB12_HPP_
+#define _COULOMB12_HPP_
+
 #pragma once
 
 #include	"Control2.hpp"
@@ -30,3 +33,5 @@ public:
 };
 
 }
+
+#endif

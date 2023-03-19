@@ -1,5 +1,5 @@
-#ifndef	_IONS_H_
-#define _IONS_H_
+#ifndef _IONS_HPP_
+#define _IONS_HPP_
 
 
 #include        <cstring>

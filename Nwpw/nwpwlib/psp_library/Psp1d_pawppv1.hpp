@@ -1,5 +1,5 @@
-#ifndef	_PSP1D_PAWPPV1_H_
-#define _PSP1D_PAWPPV1_H_
+#ifndef _PSP1D_PAWPPV1_HPP_
+#define _PSP1D_PAWPPV1_HPP_
 
 #include        "Parallel.hpp"
 #include        "PGrid.hpp"

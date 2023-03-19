@@ -343,6 +343,105 @@ void util_filter(int nray, double *g_ray, double ecut, double *v_ray)
 
 /**************************************
  *                                    *
+ *        util_fattebert_dielec       *
+ *                                    *
+ **************************************/
+/* Computes the dielectric function using the local model of the density from Jean-Luc Fattebert.
+   Reference: Fattebert JL, Gygi F. First‐principles molecular dynamics simulations in a continuum solvent. 
+              International journal of quantum chemistry. 2003;93(2):139-47.
+   Suggested parameter values: 
+      water - eps=78.36, rho0=0.0004 au, and beta=1.3 bohr 
+              
+*/
+void util_fattebert_dielec(const int n2ft3d, 
+                           const double eps, const double beta, const double rho0,
+                           const double *rho, double *epsilon)
+{
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       auto x     = std::pow(rho[k]/rho0,2*beta);
+       epsilon[k] = 1.0 + 0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
+   }
+}
+
+/**************************************
+ *                                    *
+ *   util_weighted_fattebert_dielec   *
+ *                                    *
+ **************************************/
+/* Computes the weighted dielectric function using the local model of the density from Jean-Luc Fattebert.
+   Reference: Fattebert JL, Gygi F. First‐principles molecular dynamics simulations in a continuum solvent.
+              International journal of quantum chemistry. 2003;93(2):139-47.
+   Suggested parameter values:
+      water - eps=78.36, rho0=0.0004 au, and beta=1.3 bohr
+
+*/
+void util_weighted_fattebert_dielec(const int n2ft3d,
+                                    const double eps, const double beta, const double rho0,
+                                    const double *rho, const double *w, double *epsilon)
+{
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       auto x     = std::pow(rho[k]/rho0,2*beta);
+       epsilon[k] = 1.0 + w[k]*0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
+   }
+}
+
+
+
+/**************************************
+ *                                    *
+ *        util_switching_function     *
+ *                                    *
+ **************************************/
+/*  The switching function is defined by
+    where s = 0.0                              if r<=s_d
+          s = 1.0-(1.0-(r-s_d)**2/s_rho**2)**2 if r>s_d and r<(s_d+s_rho)
+          s = 1.0                              if r>(s_d+s_rho)
+*/
+double util_switching_function(const double s_d, const double s_rho, const double r)
+{
+   // calculate dielectric switching function 
+   double eps=1.0;
+
+   if (r<=s_d)
+      eps = 0.0;
+   else if (r<(s_d+s_rho)) {
+      auto x = (r-s_d)/s_rho;
+      auto y = 1.0-x*x;
+      eps = 1.0-y*y;
+   }
+   return eps;
+}
+
+/**************************************
+ *                                    *
+ *       util_dswitching_function     *
+ *                                    *
+ **************************************/
+/* The dswitching/dr function is defined by 
+   where  s = 0.0                                               if r<=s_d
+          s = 4.0*((r-s_d)/s_rho**2)*(1.0-(r-s_d)**2/s_rho**2)  if r>s_d and r<(s_d+s_rho)
+          s = 0.0                                               if r>(s_d+s_rho)
+*/
+double util_dswitching_function(const double s_d, const double s_rho, const double r)
+{
+   // calculate the derivative of switching function
+   double deps=0.0;
+
+   if (r<=s_d)
+      deps = 0.0;
+   else if (r<(s_d+s_rho)) {
+      auto x  = (r-s_d)/s_rho;
+      auto xx = 1.0-x*x;
+      deps = 4.0*(x/s_rho)*xx;
+   }
+   return deps;
+}
+
+
+/**************************************
+ *                                    *
  *       util_print_elapsed_time      *
  *                                    *
  **************************************/

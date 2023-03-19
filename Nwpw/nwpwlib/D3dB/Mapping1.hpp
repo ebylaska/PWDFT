@@ -1,5 +1,8 @@
-#ifndef _MAPPING1d_H_
-#define _MAPPING1d_H_
+#ifndef _MAPPING1d_HPP_
+#define _MAPPING1d_HPP_
+
+#pragma once
+
 /* mapping.h
    Author - Eric Bylaska
 

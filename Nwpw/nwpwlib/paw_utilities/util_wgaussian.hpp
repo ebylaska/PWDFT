@@ -1,6 +1,8 @@
 #ifndef _UTIL_wgaussian_HPP_
 #define _UTIL_wgaussian_HPP_
 
+#pragma once
+
 //#include      <iomanip>
 #include        <iostream>
 #include        <cstdlib>

@@ -1,5 +1,8 @@
 #ifndef _LATTICE_HPP_
 #define _LATTICE_HPP_
+
+#pragma once
+
 /* Lattice.hpp
    Author - Eric Bylaska
 

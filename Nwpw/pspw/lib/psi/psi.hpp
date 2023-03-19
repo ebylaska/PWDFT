@@ -1,5 +1,7 @@
-#ifndef _PSIGETHEADER_H_
-#define _PSIGETHEADER_H_
+#ifndef _PSIGETHEADER_HPP_
+#define _PSIGETHEADER_HPP_
+
+#pragma once
 
 #include	"Parallel.hpp"
 #include	"Pneb.hpp"

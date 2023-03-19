@@ -1,5 +1,7 @@
-#ifndef _PSI_H_
-#define _PSI_H_
+#ifndef _PSI_HPP_
+#define _PSI_HPP_
+
+#pragma once
 
 #include        "Pneb.hpp"
 #include        "Kinetic.hpp"

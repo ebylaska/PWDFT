@@ -1,5 +1,8 @@
 #ifndef _CGSD_ENERGY_HPP_
 #define _CGSD_ENERGY_HPP_
+
+#pragma once
+
 namespace pwdft {
 
 #include        "Molecule.hpp"

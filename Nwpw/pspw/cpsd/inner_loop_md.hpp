@@ -1,5 +1,5 @@
-#ifndef _INNERLOOP_MD_H_
-#define _INNERLOOP_MD_H_
+#ifndef _INNERLOOP_MD_HPP_
+#define _INNERLOOP_MD_HPP_
 
 
 

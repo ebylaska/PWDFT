@@ -1,5 +1,9 @@
-#ifndef _hilbert_H_
-#define _hilbert_H_
+#ifndef _hilbert_HPP_
+#define _hilbert_HPP_
+
+#pragma once
+
+
 /* hilbert.h -
    Author - Eric Bylaska
 */

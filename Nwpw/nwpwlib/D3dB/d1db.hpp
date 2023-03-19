@@ -1,5 +1,5 @@
-#ifndef _D1dB_H_
-#define _D1dB_H_
+#ifndef _D1dB_HPP_
+#define _D1dB_HPP_
 /* d1db.h
    Author - Eric Bylaska
 

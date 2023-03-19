@@ -1,5 +1,8 @@
 #ifndef _CONTROL2_HPP_
 #define _CONTROL2_HPP_
+
+#pragma once
+
 /* Control2.hpp
    Author - Eric Bylaska
 */
@@ -81,6 +84,11 @@ class Control2 {
    double pnose_pe,pnose_pr,pnose_te,pnose_tr,pnose_ne_chain,pnose_eke0;
    std::vector<double> pnose_xem,pnose_xe0,pnose_xe1,pnose_qe,
                        pnose_xrm,pnose_xr0,pnose_xr1,pnose_qr;
+
+   bool   pgpoisson_on = false;
+   double pgpoisson_dielec = 78.4;
+   double pgpoisson_rho0   = 0.0004;
+   double pgpoisson_beta   = 1.2;
 
    bool   psa_on;
    double psa_decay[2] = {1.0,1.0};
@@ -284,6 +292,12 @@ public:
    double born_vradii(const int i) { return ((i>=pborn_vradii.size()) ? 0.0 : pborn_vradii[i]); }
    double born_dielec() { return pborn_dielec; }
    double born_rcut()   { return pborn_rcut; }
+
+   // Generalized Poisson
+   bool gpoisson_on()    { return pgpoisson_on; }
+   double gpoisson_dielec() { return pgpoisson_dielec; }
+   double gpoisson_rho0()   { return pgpoisson_rho0; }
+   double gpoisson_beta()   { return pgpoisson_beta; }
 
 
    // Nose

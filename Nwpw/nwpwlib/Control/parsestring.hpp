@@ -1,3 +1,6 @@
+#ifndef _PARSESTRING_HPP_
+#define _PARSESTRING_HPP_
+
 #pragma once
 
 #include	<vector>
@@ -147,3 +150,5 @@ inline bool mystring_isfloat(const std::string s)
 }
 
 }
+
+#endif

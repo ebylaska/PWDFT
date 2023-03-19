@@ -1,6 +1,9 @@
 #ifndef _NWPW_DPLOT_HPP_
 #define _NWPW_DPLOT_HPP_
 
+#pragma once
+
+
 // ********************************************************************
 // *                                                                  *
 // *       nwpw_dplot: used to generate Gaussian cube files from a    *

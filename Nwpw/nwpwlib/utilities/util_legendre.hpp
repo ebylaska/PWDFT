@@ -1,6 +1,8 @@
 #ifndef _UTIL_LEGENDRE_HPP_
 #define _UTIL_LEGENDRE_HPP_
 
+#pragma once
+
 namespace pwdft {
 
 

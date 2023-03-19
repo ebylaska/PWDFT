@@ -1,5 +1,8 @@
 #ifndef _nwpw_lmbfgs_HPP_
 #define _nwpw_lmbfgs_HPP_
+
+#pragma once
+
 /* nwpw_lmbfgs.hpp
    Author - Eric Bylaska
         this class is used to keep perform lmfgs steps

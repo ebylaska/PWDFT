@@ -20,6 +20,8 @@
 #include	"inner_loop.hpp"
 #include        "iofmt.hpp"
 
+#include "nwpw_dplot.hpp"
+
 namespace pwdft {
 
 
@@ -375,6 +377,77 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
          if (sum>(*deltar)) *deltar = sum;
       }
    }
+
+
+   // Plotting Fattebert dielectric function
+   {
+      double *Gx = mygrid->Gpackxyz(0,0);
+      double *Gy = mygrid->Gpackxyz(0,1);
+      double *Gz = mygrid->Gpackxyz(0,2);
+
+      double *eps    = mygrid->r_alloc();
+      double *sw     = mygrid->r_alloc();
+      double *r_grid = mygrid->r_nalloc(3);
+      double *grx    = r_grid;
+      double *gry    = r_grid+n2ft3d;
+      double *grz    = r_grid+2*n2ft3d;
+
+      mygrid->generate_r_sym_grid(r_grid);
+
+      for (auto k=0; k<n2ft3d; ++k)
+         sw[k] = util_switching_function(-5.0,1.2,r_grid[3*k+2]);
+
+
+      /* initialize nwpw_dplot */
+      double epsmin = 999.0;
+      nwpw_dplot mydplot(myion,mygrid,control);
+
+
+      /* compute dielec function */
+      /*util_weighted_fattebert_dielec(n2ft3d,
+                         control.gpoisson_dielec(),
+                         control.gpoisson_beta(),
+                         control.gpoisson_rho0(),
+                         rho,sw,eps);
+      */
+      util_fattebert_dielec(n2ft3d,
+                         control.gpoisson_dielec(),
+                         control.gpoisson_beta(),
+                         control.gpoisson_rho0(),
+                         rho,eps);
+
+      for (auto k=0; k<n2ft3d; ++k)
+         if (eps[k]<epsmin) epsmin= eps[k];
+      std::cout << "EPSMIN=" << epsmin << std::endl;    
+
+      mydplot.gcube_write("wdielec.cube",-1,"SCF dielec function",eps);
+
+      /* calculate rho tmp1=rho(g) */
+      mygrid->rr_SMul(scal1,eps,sw);
+      mygrid->rc_fft3d(sw);
+      mygrid->c_pack(0,sw);
+
+      /* calculate gr = grad n */
+      mygrid->tcc_pack_iMul(0,Gx,sw,grx);
+      mygrid->tcc_pack_iMul(0,Gy,sw,gry);
+      mygrid->tcc_pack_iMul(0,Gz,sw,grz);
+      mygrid->c_unpack(0,grx);
+      mygrid->c_unpack(0,gry);
+      mygrid->c_unpack(0,grz);
+      mygrid->cr_fft3d(grx);
+      mygrid->cr_fft3d(gry);
+      mygrid->cr_fft3d(grz);
+
+      mydplot.gcube_write("dxwdielec.cube",-1,"SCF x dielec function",grx);
+      mydplot.gcube_write("dywdielec.cube",-1,"SCF y dielec function",gry);
+      mydplot.gcube_write("dzwdielec.cube",-1,"SCF z dielec function",grz);
+
+
+      mygrid->r_dealloc(r_grid);
+      mygrid->r_dealloc(sw);
+      mygrid->r_dealloc(eps);
+   }
+
 
 
    delete [] fion;

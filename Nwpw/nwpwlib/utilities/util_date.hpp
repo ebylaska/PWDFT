@@ -1,5 +1,9 @@
-#ifndef _UTIL_DATE_H_
-#define _UTIL_DATE_H_
+#ifndef _UTIL_DATE_HPP_
+#define _UTIL_DATE_HPP_
+
+#pragma once
+
+
 /* util_date.h -
    Author - Eric Bylaska
 

@@ -1,5 +1,10 @@
+#ifndef _COULOMB2_HPP_
+#define _COULOMB2_HPP_
+
 #pragma once
 
+#include "Control2.hpp"
+#include "Dielectric.hpp"
 #include	"Pneb.hpp"
 
 namespace pwdft {
@@ -17,20 +22,27 @@ class	Coulomb2_Operator {
    /* cutoff constant */
    double EPSILON=1.0;
 
+   bool has_dielec = false;
+   Dielectric_Operator *mydielec;
+
 
 public:
 
    /* Constructors */
-   Coulomb2_Operator(Pneb *);
+   Coulomb2_Operator(Pneb *, Control2&);
 
    /* destructor */
    ~Coulomb2_Operator() {
          delete [] gk;
          delete [] tmpx;
          delete myd3db2;
+
+         if (has_dielec) delete mydielec;
     }
 
     void   vcoulomb(const double *, double *);
 };
 
 }
+
+#endif

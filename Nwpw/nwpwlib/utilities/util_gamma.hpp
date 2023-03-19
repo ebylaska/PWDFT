@@ -1,6 +1,8 @@
 #ifndef _UTIL_GAMMA_HPP_
 #define _UTIL_GAMMA_HPP_
 
+#pragma once
+
 namespace pwdft {
 
 

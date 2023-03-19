@@ -1,6 +1,8 @@
 #ifndef _NWPW_BORN_HPP_
 #define _NWPW_BORN_HPP_
 
+#pragma once
+
 // ****************************************************************************
 // *                                                                          *
 // *       nwpw_born : used to calculate an extended born model using         *

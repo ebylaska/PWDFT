@@ -1,5 +1,5 @@
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef _UTIL_HPP_
+#define _UTIL_HPP_
 
 #include        "Parallel.hpp"
 #include	"util_legendre.hpp"
@@ -34,7 +34,13 @@ extern double util_splint(const double *, const double *, const double *, const 
 
 extern void util_filter(int, double *, double, double *);
 
+extern void util_fattebert_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_weighted_fattebert_dielec(const int, const double, const double, const double, const double *, const double *,  double *);
+extern double util_switching_function(const double, const double, const double);
+extern double util_dswitching_function(const double, const double, const double);
+
 extern void util_print_elapsed_time(const double);
+
 
 
 

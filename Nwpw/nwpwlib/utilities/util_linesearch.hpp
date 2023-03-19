@@ -1,6 +1,8 @@
 #ifndef _UTIL_LINESEARCH_HPP_
 #define _UTIL_LINESEARCH_HPP_
 
+#pragma once
+
 namespace pwdft {
 
 

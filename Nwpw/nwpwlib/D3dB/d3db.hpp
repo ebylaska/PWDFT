@@ -1,3 +1,6 @@
+#ifndef _D3dB_HPP_
+#define _D3dB_HPP_
+
 /* d3db.h
    Author - Eric Bylaska
 
@@ -143,3 +146,5 @@ public:
 
 };
 }
+
+#endif

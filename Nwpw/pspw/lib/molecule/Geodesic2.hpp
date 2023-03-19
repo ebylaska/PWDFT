@@ -1,5 +1,7 @@
-#ifndef	_GEODESIC2_HPP_
+#ifndef _GEODESIC2_HPP_
 #define _GEODESIC2_HPP_
+
+#pragma once
 
 #include	<cmath>
 #include	"Pneb.hpp"

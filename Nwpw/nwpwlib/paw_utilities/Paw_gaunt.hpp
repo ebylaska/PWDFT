@@ -1,6 +1,8 @@
 #ifndef _PAW_GAUNT_HPP_
 #define _PAW_GAUNT_HPP_
 
+#pragma once
+
 namespace pwdft {
 
 

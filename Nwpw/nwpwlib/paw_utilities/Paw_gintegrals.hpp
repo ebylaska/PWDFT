@@ -1,6 +1,8 @@
 #ifndef _PAW_GINTEGRALS_HPP_
 #define _PAW_GINTEGRALS_HPP_
 
+#pragma once
+
 #include        "Parallel.hpp"
 #include        "Ion.hpp"
 #include        "Ewald.hpp"

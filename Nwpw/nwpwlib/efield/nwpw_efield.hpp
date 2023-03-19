@@ -1,6 +1,8 @@
 #ifndef _NWPW_EFIELD_HPP_
 #define _NWPW_EFIELD_HPP_
 
+#pragma once
+
 // ********************************************************************
 // *                                                                  *
 // *       nwpw_efield: used to generate aperiodic and periodic       *

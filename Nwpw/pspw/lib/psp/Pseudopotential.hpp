@@ -1,3 +1,6 @@
+#ifndef _PSEUDOPOTENTIAL_HPP_
+#define _PSEUDOPOTENTIAL_HPP_ 
+
 #pragma once
 
 //
@@ -209,3 +212,5 @@ public:
 };
  
 }
+
+#endif

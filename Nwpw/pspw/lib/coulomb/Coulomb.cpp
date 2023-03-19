@@ -9,9 +9,7 @@
 #include        <stdio.h>
 #include        <cstdlib>
 */
-#include        <cmath>
-
-#include	"PGrid.hpp"
+#include <cmath>
 #include	"Coulomb.hpp"
 
 
@@ -22,7 +20,7 @@ namespace pwdft {
  *     Coulomb_Operator::Coulomb_Operator  *
  *                                         *
  *******************************************/
-Coulomb_Operator::Coulomb_Operator(Pneb *mygrid)
+Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2& control)
 {
    int k,pzero,zero,taskid;
    double gg;
@@ -51,6 +49,14 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid)
    mypneb->tt_pack_copy(0,tmp,vg);
 
    delete [] tmp;
+
+   if (control.gpoisson_on())
+   {
+      has_dielec = true;
+      mydielec   = new (std::nothrow) Dielectric_Operator(mypneb,control);
+   }
+
+
 }
 
 

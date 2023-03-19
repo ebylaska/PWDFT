@@ -54,6 +54,8 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number, std::strin
    std::string cube_filename = permanent_dir_str + "/" + cfilename;
    std::string cube_string   = mypneb->r_formatwrite_reverse(rho);  
 
+   mypneb->d3db::parall->Barrier();
+
    double np1 = ((double) mypneb->nx);
    double np2 = ((double) mypneb->ny);
    double np3 = ((double) mypneb->nz);
@@ -114,6 +116,8 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number, std::strin
       // write orbital grid
       cube_stream << cube_string;
    }
+
+   mypneb->d3db::parall->Barrier();
 }
 
 /*************************************

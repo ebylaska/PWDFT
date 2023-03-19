@@ -1,5 +1,5 @@
-#ifndef	_EWALD_H_
-#define _EWALD_H_
+#ifndef _EWALD_HPP_
+#define _EWALD_HPP_
 
 
 #include        "Parallel.hpp"

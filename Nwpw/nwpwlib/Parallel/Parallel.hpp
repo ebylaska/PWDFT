@@ -1,5 +1,6 @@
-#ifndef _Parallel_H_
-#define _Parallel_H_
+#ifndef _Parallel_HPP_
+#define _Parallel_HPP_
+
 /* Parallel.h
    Author - Eric Bylaska
 	this class is used defining nd parallel geometries

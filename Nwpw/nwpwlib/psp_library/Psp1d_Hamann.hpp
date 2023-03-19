@@ -1,5 +1,5 @@
-#ifndef	_PSP1D_HAMANN_H_
-#define _PSP1D_HAMANN_H_
+#ifndef _PSP1D_HAMANN_HPP_
+#define _PSP1D_HAMANN_HPP_
 
 #include        "Parallel.hpp"
 #include        "PGrid.hpp"

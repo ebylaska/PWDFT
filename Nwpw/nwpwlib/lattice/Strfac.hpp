@@ -1,4 +1,4 @@
-#ifndef	_STRFAC_H_
+#ifndef _STRFAC_H_
 #define _STRFAC_H_
 
 #pragma once

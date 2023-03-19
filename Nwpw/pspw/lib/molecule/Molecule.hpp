@@ -1,6 +1,7 @@
 #ifndef _MOLECULE_HPP_
 #define _MOLECULE_HPP_
 
+#pragma once
 
 #include <iostream>
 #include <iomanip> 

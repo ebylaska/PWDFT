@@ -1,5 +1,8 @@
-#ifndef _OLIST_H_
-#define _OLIST_H_
+#ifndef _OLIST_HPP_
+#define _OLIST_HPP_
+
+#pragma once
+
 /* olist.hpp -
    Author - Eric Bylaska
 

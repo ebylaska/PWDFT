@@ -1,5 +1,5 @@
-#ifndef _EXCHANGE_CORRELATION_H_
-#define _EXCHANGE_CORRELATION_H_
+#ifndef _EXCHANGE_CORRELATION_HPP_
+#define _EXCHANGE_CORRELATION_HPP_
 
 
 #include        <iostream>
@@ -73,4 +73,4 @@ public:
 
 } // namespace pwdft
 
-#endif // _EXCHANGE_CORRELATION_H_
+#endif // _EXCHANGE_CORRELATION_HPP_
