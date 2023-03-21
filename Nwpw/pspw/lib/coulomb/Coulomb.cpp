@@ -30,8 +30,17 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2& control)
    vg          = new double [mygrid->npack(0)];
    double *tmp = new double [mygrid->nfft3d];
    double fourpi = 16.0*atan(1.0);
+   //double kk0 = 0.0; // where k0 = the uniform background potential 
 
    mypneb = mygrid;
+
+   if (control.gpoisson_on())
+   {
+      has_dielec = true;
+      mydielec   = new (std::nothrow) Dielectric_Operator(mypneb,control);
+    //  kk0 = 1.0;
+   }
+
 
    taskid = mypneb->d3db::parall->taskid_i();
    pzero  = mypneb->ijktop(0,0,0);
@@ -42,26 +51,27 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2& control)
       gg     = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
       if ((pzero==taskid)&&(k==zero))
          tmp[k] = 0.0;
+     //    tmp[k] = (kk0==0.0) ? 0.0 : (-1.0/kk0);
       else
          tmp[k] = fourpi/gg;
+         //tmp[k] = fourpi/(gg-kk0);
    }
    mypneb->t_pack(0,tmp);
    mypneb->tt_pack_copy(0,tmp,vg);
 
    delete [] tmp;
 
-   if (control.gpoisson_on())
-   {
-      has_dielec = true;
-      mydielec   = new (std::nothrow) Dielectric_Operator(mypneb,control);
-   }
-
 
 }
 
 
 
-void Coulomb_Operator::vcoulomb(double *dng, double *vcout)
+/*******************************************
+ *                                         *
+ *        Coulomb_Operator::vcoulomb       *
+ *                                         *
+ *******************************************/
+void Coulomb_Operator::vcoulomb(const double *dng, double *vcout)
 {
    int k,k1,ksize;
 
@@ -75,7 +85,12 @@ void Coulomb_Operator::vcoulomb(double *dng, double *vcout)
    }
 }
 
-double Coulomb_Operator::ecoulomb(double *dng)
+/*******************************************
+ *                                         *
+ *        Coulomb_Operator::ecoulomb       *
+ *                                         *
+ *******************************************/
+double Coulomb_Operator::ecoulomb(const double *dng)
 {
    int k,k1,k2,n,nsize,ksize1,ksize2;
    double ave;
@@ -100,5 +115,43 @@ double Coulomb_Operator::ecoulomb(double *dng)
 
    return ave;
 }
+
+/*******************************************
+ *                                         *
+ *    Coulomb_Operator::vcoulomb_dielec    *
+ *                                         *
+ *******************************************/
+void Coulomb_Operator::vcoulomb_dielec(const double *dng, double *vcout)
+{
+    double scal1  = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+    double fourpi = 16.0*atan(1.0);
+    double *q = mypneb->r_alloc();
+    double *w = mypneb->r_alloc();
+    double *p = mydielec->p;
+
+    mypneb->cc_pack_copy(0,dng,q);
+    mypneb->c_unpack(0,q);
+    mypneb->cr_fft3d(q);
+    mydielec->generate_scaled(q);
+    mypneb->r_SMul(fourpi,q);
+
+    // set initial w
+ 
+    //Solve inhomogeneous Helmholtz equation
+    //  -laplacian[ w(r) ] + p(r)*w(r) = q(r)
+
+    // convert w to vcout, vcout = w/sqrt(epsilon);
+    mydielec->generate_scaled(w);
+
+    // fourier transform to real-space
+    mypneb->r_SMul(scal1,w);
+    mypneb->rc_fft3d(w);
+    mypneb->c_pack(0,w);
+    mypneb->cc_pack_copy(0,w,vcout);
+
+    mypneb->r_dealloc(w);
+    mypneb->r_dealloc(q);
+}
+
 
 }

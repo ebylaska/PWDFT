@@ -294,11 +294,18 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             mygrid.r_SMul(scal1,rho);
             mygrid.r_zero_ends(rho);
             mygrid.rc_fft3d(rho);
-            double *Gx  = mygrid.Gxyz(0);
-            double *Gy  = mygrid.Gxyz(1);
-            double *Gz  = mygrid.Gxyz(2);
-            for (auto k=0; k<(mygrid.nfft3d); ++k)
-               rho[k] *= -0.5*(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
+            mygrid.c_pack(0,rho);
+            double *Gx  = mygrid.Gpackxyz(0,0);
+            double *Gy  = mygrid.Gpackxyz(0,1);
+            double *Gz  = mygrid.Gpackxyz(0,2);
+            int kk=0;
+            for (auto k=0; k<mygrid.npack(0); ++k)
+            {
+               rho[kk]   *= -(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
+               rho[kk+1] *= -(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
+               kk+=2;
+            }
+            mygrid.c_unpack(0,rho);
             mygrid.cr_fft3d(rho);
             mygrid.r_zero_ends(rho);
             cube_comment = "SCF Laplacian Density";
@@ -327,7 +334,7 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
 
                mycoulomb12.mycoulomb1->vcoulomb(dng,vc);
                mygrid.cc_pack_copy(0,vc,rho);
-               mygrid.c_unpack(1,rho);
+               mygrid.c_unpack(0,rho);
                mygrid.cr_fft3d(rho);
                mygrid.r_zero_ends(rho);
 

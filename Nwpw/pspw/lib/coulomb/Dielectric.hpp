@@ -16,7 +16,7 @@ class	Dielectric_Operator {
    double *r_grid;
 
 public:
-   double *epsilon, *sw, *depsilondx, *depsilondy, *depsilondz;
+   double *epsilon, *sw, *p;
 
    /* Constructors */
    Dielectric_Operator(Pneb *, Control2&);
@@ -25,12 +25,11 @@ public:
    ~Dielectric_Operator() {
        mypneb->r_dealloc(epsilon);
        mypneb->r_dealloc(sw);
-       mypneb->r_dealloc(depsilondx);
-       mypneb->r_dealloc(depsilondy);
-       mypneb->r_dealloc(depsilondz);
+       mypneb->r_dealloc(p);
     }
 
-    void   rho_generate(double *);
+    void generate_dielec(const double *);
+    void generate_scaled(double *);
 };
 
 }

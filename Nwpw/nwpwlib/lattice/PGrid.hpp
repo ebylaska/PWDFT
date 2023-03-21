@@ -123,7 +123,7 @@ public:
 
         void c_unpack(const int, double *);
         void c_pack(const int, double *);
-        void cc_pack_copy(const int, double *, double *);
+        void cc_pack_copy(const int, const double *, double *);
         double cc_pack_dot(const int, double *, double *);
         double cc_pack_idot(const int, double *, double *);
         void cc_pack_indot(const int, const int, double *, double *, double *);

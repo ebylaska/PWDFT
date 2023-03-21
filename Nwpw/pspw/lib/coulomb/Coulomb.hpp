@@ -16,6 +16,7 @@ class	Coulomb_Operator {
 
    bool has_dielec = false;
    Dielectric_Operator *mydielec;
+   double k0;
 
 public:
 
@@ -28,8 +29,9 @@ public:
          if (has_dielec) delete mydielec;
     }
 
-    void   vcoulomb(double *, double *);
-    double ecoulomb(double *);
+    void   vcoulomb(const double *, double *);
+    double ecoulomb(const double *);
+    void   vcoulomb_dielec(const double *, double *);
 };
 
 }

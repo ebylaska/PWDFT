@@ -561,7 +561,7 @@ void PGrid::c_pack(const int nb, double *a)
  *       PGrid:cc_pack_copy     *
  *                              *
  ********************************/
-void PGrid::cc_pack_copy(const int nb, double *a, double *b)
+void PGrid::cc_pack_copy(const int nb, const double *a, double *b)
 {
    int one = 1;
    //int ng  = 2*(nida[nb]+nidb[nb]);

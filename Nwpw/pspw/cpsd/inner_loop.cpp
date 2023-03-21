@@ -380,7 +380,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
 
    // Plotting Fattebert dielectric function
-   {
+   if (false) {
       double *Gx = mygrid->Gpackxyz(0,0);
       double *Gy = mygrid->Gpackxyz(0,1);
       double *Gz = mygrid->Gpackxyz(0,2);
