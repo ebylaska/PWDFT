@@ -370,6 +370,9 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             Strfac mystrfac(&myion, &mygrid);
             mystrfac.phafac();
 
+            /* define rcut */
+            double rcut = 1.0;
+
             /* generate coulomb potential */
             if (control.version==3)
             {
@@ -380,7 +383,6 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
                double *Gx  = mygrid.Gpackxyz(0,0);
                double *Gy  = mygrid.Gpackxyz(0,1);
                double *Gz  = mygrid.Gpackxyz(0,2);
-               double rcut = 1.0;
                double w    = 0.25*rcut*rcut;
 
                /* generate dng */
@@ -423,12 +425,33 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             }
             else if (control.version==4)
             {
-               double *tmp = mygrid.r_alloc();
+               double sqrt_pi = std::sqrt(4.0*std::atan(1.0));
+               double c       = 1.00/rcut;
+
+               mygrid.initialize_r_grid();
+               double *r_grid = mygrid.r_grid;
+               double *tmp    = mygrid.r_alloc();
 
                mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,tmp);
                mycoulomb12.mycoulomb2->vcoulomb(tmp,rho);
-               //if (cubetype==-7)call pspw_add_core_pot(1.0d0,dbl_mb(rho(1)))
-
+               
+               for (auto ii=0; ii<myion.nion; ++ii)
+               {
+                  auto ia  = myion.katm[ii];
+                  auto q   = -myion.zv_psp[ia];
+                  auto xii = myion.rion(0,ii);
+                  auto yii = myion.rion(1,ii);
+                  auto zii = myion.rion(2,ii);
+                  for (auto i=0; i<n2ft3d; ++i)
+                  {
+                     auto x = (r_grid[3*i]   - xii);
+                     auto y = (r_grid[3*i+1] - yii);
+                     auto z = (r_grid[3*i+2] - zii);
+                     auto r = std::sqrt(x*x + y*y + z*z);
+                 
+                     rho[i] += ((r>1.0e-15) ? (q/r)*std::erf(r*c) : 2.0*q*c/sqrt_pi);
+                  }
+               }
                mygrid.r_dealloc(tmp);
             }
             cube_comment = "SCF Full Electrostatic Potential";
