@@ -2780,6 +2780,126 @@ void PGrid::generate_r_sym_mask(double *rmask)
 }
 
 
+/************************************
+ *                                  *
+ *       PGrid::c_Laplacian         *
+ *                                  *
+ ************************************/
+void PGrid::c_Laplacian(const int nb, double *w)
+{
+   int npack0  = this->npack(nb);
+   double *Gx  = this->Gpackxyz(nb,0);
+   double *Gy  = this->Gpackxyz(nb,1);
+   double *Gz  = this->Gpackxyz(nb,2);
+   int kk=0;
+   for (auto k=0; k<npack0; ++k)
+   {
+       auto gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+       w[kk]   *= -gg;
+       w[kk+1] *= -gg;
+       kk+=2;
+   }
+}
+
+/************************************
+ *                                  *
+ *       PGrid::cc_Laplacian        *
+ *                                  *
+ ************************************/
+void PGrid::cc_Laplacian(const int nb, const double *w0, double *w)
+{
+   int npack0  = this->npack(nb);
+   double *Gx  = this->Gpackxyz(nb,0);
+   double *Gy  = this->Gpackxyz(nb,1);
+   double *Gz  = this->Gpackxyz(nb,2);
+   int kk=0;
+   for (auto k=0; k<npack0; ++k)
+   {
+       auto gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+       w[kk]   = -w0[kk]  *gg;
+       w[kk+1] = -w0[kk+1]*gg;
+       kk+=2;
+   }
+}
+
+/************************************
+ *                                  *
+ *      PGrid::rr_Laplacian         *
+ *                                  *
+ ************************************/
+void PGrid::rr_Laplacian(const int nb, const double *w0, double *w)
+{
+    double scal1 = 1.0/((double) ((nx)*(ny)*(nz)));
+
+    rr_SMul(scal1,w0,w);
+    this->rc_pfft3f(nb,w);
+    this->c_pack(nb,w);
+
+    this->c_Laplacian(nb,w);
+
+    this->c_unpack(nb,w);
+    this->cr_pfft3b(nb,w);
+}
+
+/************************************
+ *                                  *
+ *       PGrid::rr_Helmholtz        *
+ *                                  *
+ ************************************/
+void PGrid::rr_Helmholtz(const int nb, const double *k2, const double *w, double *Hw)
+{
+   this->rr_Laplacian(nb,w,Hw);
+   this->rrr_Mul2Add(k2,w,Hw);
+}
+
+/************************************
+ *                                  *
+ *   PGrid::rrr_solve_Helmholtz     *
+ *                                  *
+ ************************************/
+/* The routine solves the inhomogeneous Helmholtz equation 
+
+ ∇^2 w(r) + k2(r)w(r) = b(r)  using CG.
+
+ Entry - nb: 0-density grid, 1-wvfnc grid
+         k2(r): wavenumber function
+         b(r): source term
+
+ Entry/Exit - w0(r) : initial guess / output solution
+
+*/
+void PGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b, double *w)
+{
+    double alpha;
+    double delta = 1.0;
+    double *Aw = r_alloc();
+    double *R  = r_alloc();
+    double *HR = r_alloc();
+
+    int it=0;
+    while ((it<10) && (delta>0.01))
+    {
+       //compute the Aw and the residual
+       this->rr_Helmholtz(nb,k2,w,Aw);
+       this->rrr_Minus(b,Aw,R);
+
+       this->rr_Helmholtz(nb,k2,R,HR);
+       delta = rr_dot(R,R);
+       alpha = delta/rr_dot(R,HR);
+
+       std::cout << "it=" << it << " delta=" << delta << " alpha=" << alpha << std::endl;
+
+
+       rr_daxpy(alpha,R,w);
+       ++it;
+    }
+
+    r_dealloc(HR);
+    r_dealloc(R);
+    r_dealloc(Aw);
+}
+
+
 
 }
 

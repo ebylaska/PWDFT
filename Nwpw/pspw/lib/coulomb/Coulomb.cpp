@@ -51,10 +51,8 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2& control)
       gg     = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
       if ((pzero==taskid)&&(k==zero))
          tmp[k] = 0.0;
-     //    tmp[k] = (kk0==0.0) ? 0.0 : (-1.0/kk0);
       else
          tmp[k] = fourpi/gg;
-         //tmp[k] = fourpi/(gg-kk0);
    }
    mypneb->t_pack(0,tmp);
    mypneb->tt_pack_copy(0,tmp,vg);
@@ -129,25 +127,36 @@ void Coulomb_Operator::vcoulomb_dielec(const double *dng, double *vcout)
     double *w = mypneb->r_alloc();
     double *p = mydielec->p;
 
+
     mypneb->cc_pack_copy(0,dng,q);
     mypneb->c_unpack(0,q);
     mypneb->cr_fft3d(q);
-    mydielec->generate_scaled(q);
-    mypneb->r_SMul(fourpi,q);
 
-    // set initial w
+    mydielec->generate_dielec(q);
+
+    mydielec->generate_scaled(q);
+    mypneb->r_SMul(-fourpi,q);
+
+    // set initial w in real-space
+    vcoulomb(dng,w);
+    mypneb->c_unpack(0,w);
+    mypneb->cr_fft3d(w);
+
  
-    //Solve inhomogeneous Helmholtz equation
-    //  -laplacian[ w(r) ] + p(r)*w(r) = q(r)
+    //Solve inhomogeneous Helmholtz equation in real-space
+    //  laplacian[ w(r) ] + p(r)*w(r) = q(r)
+    mypneb->rrr_solve_Helmholtz(0,p,q,w);
 
     // convert w to vcout, vcout = w/sqrt(epsilon);
     mydielec->generate_scaled(w);
 
-    // fourier transform to real-space
+
+    // Fourier transform from real-space to reciprocal space
     mypneb->r_SMul(scal1,w);
     mypneb->rc_fft3d(w);
     mypneb->c_pack(0,w);
     mypneb->cc_pack_copy(0,w,vcout);
+
 
     mypneb->r_dealloc(w);
     mypneb->r_dealloc(q);

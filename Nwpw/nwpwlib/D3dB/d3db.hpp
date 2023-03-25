@@ -75,6 +75,7 @@ public:
     void  	 rrr_Sum(const double *, const double *, double *);
     void  	 rr_Sum(const double *, double *);
     void  	 rrr_Mul(const double *, const double *, double *);
+    void  	 rrr_Mul2Add(const double *, const double *, double *);
     void  	 rr_Mul(const double *, double *);
     void  	 arrr_Minus(const double, const double *, const double *, double *);
     void  	 rrr_Minus(const double *, const double *, double *);

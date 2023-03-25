@@ -442,6 +442,8 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       mydplot.gcube_write("dywdielec.cube",-1,"SCF y dielec function",gry);
       mydplot.gcube_write("dzwdielec.cube",-1,"SCF z dielec function",grz);
 
+      //mycoulomb12->mycoulomb1->mydielec->generate_dielec(rho);
+      mycoulomb12->mycoulomb1->vcoulomb_dielec(dng,sw);
 
       mygrid->r_dealloc(r_grid);
       mygrid->r_dealloc(sw);

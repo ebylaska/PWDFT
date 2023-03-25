@@ -121,6 +121,13 @@ public:
         }
         void c_pack_deallocate(double *ptr) { delete [] ptr;}
 
+        double *t_pack_allocate(const int nb) {
+           double *ptr;
+           ptr = new (std::nothrow) double [npack(nb)]();
+           return ptr;
+        }
+        void t_pack_deallocate(double *ptr) { delete [] ptr;}
+
         void c_unpack(const int, double *);
         void c_pack(const int, double *);
         void cc_pack_copy(const int, const double *, double *);
@@ -197,6 +204,12 @@ public:
         }
         void generate_r_sym_grid(double *);
         void generate_r_sym_mask(double *);
+
+        void c_Laplacian(const int, double *);
+        void cc_Laplacian(const int, const double *, double *);
+        void rr_Laplacian(const int, const double *, double *);
+        void rr_Helmholtz(const int, const double *, const double *, double *);
+        void rrr_solve_Helmholtz(const int, const double *, const double *, double *);
 };
 
 }

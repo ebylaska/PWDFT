@@ -310,37 +310,42 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             mygrid.r_zero_ends(rho);
             cube_comment = "SCF Laplacian Density";
          }
-         // potential density
-         else if (cubetype==-6)
+         // electrostatic potential density
+         else if (cubetype==-6) 
          {
             if (oprint) coutput << " generating cubefile - potential density"
                                 << " - cubefilename = " << cubename 
                                 << " (json key=" << cubekey << ")" << std::endl;
+
             Coulomb12_Operator mycoulomb12(&mygrid,control);
 
             /* generate coulomb potential */
             if (control.version==3)
             {
-               double *dng = mygrid.c_pack_allocate(0);
                double *vc  = mygrid.c_pack_allocate(0);
                double *tmp = mygrid.r_alloc();
 
                /* generate dng */
-               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
-               mygrid.rr_SMul(scal1,rho,tmp);
+               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,tmp);
+               mygrid.r_zero_ends(tmp);
                mygrid.rc_fft3d(tmp);
                mygrid.c_pack(0,tmp);
-               mygrid.cc_pack_copy(0,tmp,dng);
+               mygrid.c_pack_SMul(0,scal1,tmp);
 
-               mycoulomb12.mycoulomb1->vcoulomb(dng,vc);
-               mygrid.cc_pack_copy(0,vc,rho);
-               mygrid.c_unpack(0,rho);
-               mygrid.cr_fft3d(rho);
-               mygrid.r_zero_ends(rho);
+               mygrid.c_pack_SMul(0,scal2,tmp);
+
+               mycoulomb12.mycoulomb1->vcoulomb(tmp,vc);
+
+               mygrid.cc_pack_copy(0,vc,tmp);
+               mygrid.c_unpack(0,tmp);
+               mygrid.cr_fft3d(tmp);
+               mygrid.r_zero_ends(tmp);
+
+               mygrid.rr_copy(tmp,rho);
 
                mygrid.r_dealloc(tmp);
-               mygrid.c_pack_deallocate(dng);
                mygrid.c_pack_deallocate(vc);
+
             }
             else if (control.version==4)
             {
@@ -353,6 +358,91 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
             } 
             cube_comment = "SCF Electrostatic Potential";
          }
+         // full electrostatic potential density
+         else if (cubetype==-7)
+         {
+            if (oprint) coutput << " generating cubefile - full potential density"
+                                << " - cubefilename = " << cubename 
+                                << " (json key=" << cubekey << ")" << std::endl;
+
+             /* setup Coulomb operator and structure factor */
+            Coulomb12_Operator mycoulomb12(&mygrid,control);
+            Strfac mystrfac(&myion, &mygrid);
+            mystrfac.phafac();
+
+            /* generate coulomb potential */
+            if (control.version==3)
+            {
+               double *vc  = mygrid.c_pack_allocate(0);
+               double *vg  = mygrid.t_pack_allocate(0);
+               double *exi = mygrid.c_pack_allocate(0);
+               double *tmp = mygrid.r_alloc();
+               double *Gx  = mygrid.Gpackxyz(0,0);
+               double *Gy  = mygrid.Gpackxyz(0,1);
+               double *Gz  = mygrid.Gpackxyz(0,2);
+               double rcut = 1.0;
+               double w    = 0.25*rcut*rcut;
+
+               /* generate dng */
+               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,tmp);
+               mygrid.r_zero_ends(tmp);
+               mygrid.rc_fft3d(tmp);
+               mygrid.c_pack(0,tmp);
+               mygrid.c_pack_SMul(0,scal1,tmp);
+               
+               // add negative ion charges 
+               for (auto ii=0; ii<myion.nion; ++ii)
+               {
+                   auto ia   = myion.katm[ii];
+                   auto scal = -myion.zv_psp[ia]/omega;
+                   for (auto k=0; k<mygrid.npack(0); ++k)
+                   {
+                      auto gg = (Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
+                      vg[k] = scal*std::exp(-w*gg);
+                   }
+                   mystrfac.strfac_pack(0,ii,exi);
+                   mygrid.tc_pack_Mul(0,vg,exi);
+                   mygrid.cc_pack_Sum2(0,exi,tmp);
+               }
+               mygrid.c_pack_SMul(0,scal2,tmp);
+
+               mycoulomb12.mycoulomb1->vcoulomb(tmp,vc);
+
+               mygrid.cc_pack_copy(0,vc,tmp);
+               mygrid.c_unpack(0,tmp);
+               mygrid.cr_fft3d(tmp);
+               mygrid.r_zero_ends(tmp);
+
+               mygrid.rr_copy(tmp,rho);
+
+               mygrid.r_dealloc(tmp);
+               mygrid.t_pack_deallocate(vg);
+               mygrid.c_pack_deallocate(exi);
+               mygrid.c_pack_deallocate(vc);
+
+            }
+            else if (control.version==4)
+            {
+               double *tmp = mygrid.r_alloc();
+
+               mygrid.rrr_Sum(dn,dn+(ispin-1)*n2ft3d,tmp);
+               mycoulomb12.mycoulomb2->vcoulomb(tmp,rho);
+               //if (cubetype==-7)call pspw_add_core_pot(1.0d0,dbl_mb(rho(1)))
+
+               mygrid.r_dealloc(tmp);
+            }
+            cube_comment = "SCF Full Electrostatic Potential";
+         }
+
+         // ELF density
+         else if (cubetype==-8)
+         {
+            if (oprint) coutput << " generating cubefile - ELF density"
+                                << " - cubefilename = " << cubename 
+                                << " (json key=" << cubekey << ")" << std::endl;
+            cube_comment = "SCF ELF";
+         } 
+
 
          mydplot.gcube_write(cubename,cubetype,cube_comment,rho);
       }

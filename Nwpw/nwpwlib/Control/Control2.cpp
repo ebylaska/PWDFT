@@ -697,7 +697,8 @@ int Control2::cubetype_cubefiles(const int i)
       if (mystring_contains(key,"density-down"))      cubetype = -4;
       if (mystring_contains(key,"density-laplacian")) cubetype = -5;
       if (mystring_contains(key,"density-potential")) cubetype = -6;
-      if (mystring_contains(key,"elf"))               cubetype = -7;
+      if (mystring_contains(key,"density-fullpotential")) cubetype = -7;
+      if (mystring_contains(key,"elf"))                   cubetype = -8;
    }
    return cubetype;
 }
