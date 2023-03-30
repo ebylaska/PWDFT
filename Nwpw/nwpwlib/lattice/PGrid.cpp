@@ -2795,8 +2795,8 @@ void PGrid::c_Laplacian(const int nb, double *w)
    for (auto k=0; k<npack0; ++k)
    {
        auto gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
-       w[kk]   *= -gg;
-       w[kk+1] *= -gg;
+       w[kk]   *= (-gg);
+       w[kk+1] *= (-gg);
        kk+=2;
    }
 }
@@ -2870,24 +2870,32 @@ void PGrid::rr_Helmholtz(const int nb, const double *k2, const double *w, double
 */
 void PGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b, double *w)
 {
-    double alpha;
+    double alpha,alpha0;
     double delta = 1.0;
     double *Aw = r_alloc();
     double *R  = r_alloc();
     double *HR = r_alloc();
+    
+    double omega = this->lattice->omega();
+    double scal1 = 1.0/((double) ((nx)*(ny)*(nz)));
+    double dv    = omega*scal1;
+
+    this->r_zero(w);
 
     int it=0;
-    while ((it<10) && (delta>0.01))
+    while ((it<10000) && (delta>0.01))
     {
        //compute the Aw and the residual
        this->rr_Helmholtz(nb,k2,w,Aw);
        this->rrr_Minus(b,Aw,R);
 
        this->rr_Helmholtz(nb,k2,R,HR);
-       delta = rr_dot(R,R);
-       alpha = delta/rr_dot(R,HR);
+       delta = rr_dot(R,R)*dv;
+       //alpha = -1.0e-6;
+       alpha0 = delta/rr_dot(R,HR);
+       alpha = 1.0e-5*alpha0;
 
-       std::cout << "it=" << it << " delta=" << delta << " alpha=" << alpha << std::endl;
+       std::cout << "it=" << it << " delta=" << delta << " alpha0=" << alpha0 << " alpha=" << alpha << std::endl;
 
 
        rr_daxpy(alpha,R,w);

@@ -125,8 +125,8 @@ Mapping3::Mapping3()
 {
    maptype=0; n2ft3d=0; nfft3d=0;
    nx=0; ny=0; nz=0;
-   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL;
-   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL;
+   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL; qmap[3] = NULL; qmap[4] = NULL; qmap[5] = NULL;
+   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL; pmap[3] = NULL; pmap[4] = NULL; pmap[5] = NULL;
    kmap = NULL;
 }
 
@@ -135,8 +135,8 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
 {
    int p,q;
 
-   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL;
-   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL;
+   qmap[0] = NULL; qmap[1] = NULL; qmap[2] = NULL; qmap[3] = NULL; qmap[4] = NULL; qmap[5] = NULL;
+   pmap[0] = NULL; pmap[1] = NULL; pmap[2] = NULL; pmap[3] = NULL; pmap[4] = NULL; pmap[5] = NULL;
    kmap = NULL;
 
    np      = npin;
@@ -179,22 +179,38 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
       qmap[1] =  new (std::nothrow) int[nz*(nx/2+1)](); pmap[1] =  new (std::nothrow) int[nz*(nx/2+1)]();
       qmap[2] =  new (std::nothrow) int[(nx/2+1)*ny](); pmap[2] =  new (std::nothrow) int[(nx/2+1)*ny]();
 
+      qmap[3] =  new (std::nothrow) int[ny*nz]();       pmap[3] =  new (std::nothrow) int[ny*nz]();
+      qmap[4] =  new (std::nothrow) int[nz*(nx+2)]();   pmap[4] =  new (std::nothrow) int[nz*(nx+2)]();
+      qmap[5] =  new (std::nothrow) int[(nx+2)*ny]();   pmap[5] =  new (std::nothrow) int[(nx+2)*ny]();
+
       if (maptype>0) {
          if (maptype==2)
          {
             hilbert2d_map(ny,nz,pmap[0]);
             hilbert2d_map(nz,(nx/2+1),pmap[1]);
             hilbert2d_map((nx/2+1),ny,pmap[2]);
+
+            hilbert2d_map(ny,nz,pmap[3]);
+            hilbert2d_map(nz,(nx+2),pmap[4]);
+            hilbert2d_map((nx+2),ny,pmap[5]);
          }
          if (maptype==3)
          {
             hcurve2d_map(ny,nz,pmap[0]);
             hcurve2d_map(nz,(nx/2+1),pmap[1]);
             hcurve2d_map((nx/2+1),ny,pmap[2]);
+
+            hcurve2d_map(ny,nz,pmap[3]);
+            hcurve2d_map(nz,(nx+2),pmap[4]);
+            hcurve2d_map((nx+2),ny,pmap[5]);
          }
          nq1 = generate_map_indexes(taskid,np,ny,nz,      pmap[0],qmap[0]);
          nq2 = generate_map_indexes(taskid,np,nz,(nx/2+1),pmap[1],qmap[1]);
          nq3 = generate_map_indexes(taskid,np,(nx/2+1),ny,pmap[2],qmap[2]);
+
+         nqr1 = generate_map_indexes(taskid,np,ny,nz,    pmap[3],qmap[3]);
+         nqr2 = generate_map_indexes(taskid,np,nz,(nx+2),pmap[4],qmap[4]);
+         nqr3 = generate_map_indexes(taskid,np,(nx+2),ny,pmap[5],qmap[5]);
 
 
       /* double grid map1 defined wrt to single grid         */
@@ -210,19 +226,30 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
             hilbert2d_map(nyh,nzh,    pmap_h0);
             hilbert2d_map(nz,(nx/2+1),pmap[1]);
             hilbert2d_map((nx/2+1),ny,pmap[2]);
+
+            hilbert2d_map(nz,(nx+2),pmap[4]);
+            hilbert2d_map((nx+2),ny,pmap[5]);
          }
          if (maptype==-3)
          {
             hcurve2d_map(nyh,nzh,    pmap_h0);
             hcurve2d_map(nz,(nx/2+1),pmap[1]);
             hcurve2d_map((nx/2+1),ny,pmap[2]);
+
+            hcurve2d_map(nz,(nx+2),pmap[4]);
+            hcurve2d_map((nx+2),ny,pmap[5]);
          }
          nq1 = 4*generate_map_indexes(taskid,np,nyh,nzh,  pmap_h0,qmap_h0);
          nq2 = generate_map_indexes(taskid,np,nz,(nx/2+1),pmap[1],qmap[1]);
          nq3 = generate_map_indexes(taskid,np,(nx/2+1),ny,pmap[2],qmap[2]);
+
+         nqr1 = nq1;
+         nqr2 = generate_map_indexes(taskid,np,nz,(nx+2),pmap[4],qmap[4]);
+         nqr3 = generate_map_indexes(taskid,np,(nx+2),ny,pmap[5],qmap[5]);
          maptype = -maptype;
 
          expand_hilbert2d(np,nyh,nzh,pmap_h0,qmap_h0,     pmap[0],qmap[0]);
+         expand_hilbert2d(np,nyh,nzh,pmap_h0,qmap_h0,     pmap[3],qmap[3]);
          delete [] pmap_h0;
          delete [] qmap_h0;
       }
@@ -230,9 +257,13 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
       if ((ny*nq2) > nfft3d) nfft3d=ny*nq2;
       if ((nz*nq3) > nfft3d) nfft3d=nz*nq3;
       n2ft3d = 2*nfft3d;
-
       nfft3d_map = nz*nq3;
       n2ft3d_map = (nx+2)*nq1;
+
+      nrft3d = (nx+2)*nqr1;
+      if ((ny*nqr2) > nfft3d) nrft3d=ny*nqr2;
+      if ((nz*nqr3) > nfft3d) nrft3d=nz*nqr3;
+      nrft3d_map = (nx+2)*nqr1;
    }
 }
 
@@ -244,7 +275,7 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
  ********************************/
 Mapping3::~Mapping3()
 {
-   for (int i=0; i<3; ++i)
+   for (int i=0; i<6; ++i)
    {
       if (qmap[i]) delete [] pmap[i];
       if (pmap[i]) delete [] qmap[i];

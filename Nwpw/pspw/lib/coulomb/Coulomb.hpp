@@ -15,10 +15,10 @@ class	Coulomb_Operator {
    Pneb   *mypneb;
 
    bool has_dielec = false;
-   Dielectric_Operator *mydielec;
    double k0;
 
 public:
+   Dielectric_Operator *mydielec;
 
    /* Constructors */
    Coulomb_Operator(Pneb *, Control2&);
@@ -32,6 +32,7 @@ public:
     void   vcoulomb(const double *, double *);
     double ecoulomb(const double *);
     void   vcoulomb_dielec(const double *, double *);
+    void   vcoulomb_dielec2(const double *, double *, double *);
 };
 
 }

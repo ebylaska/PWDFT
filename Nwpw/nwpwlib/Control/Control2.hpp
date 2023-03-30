@@ -88,7 +88,7 @@ class Control2 {
    bool   pgpoisson_on = false;
    double pgpoisson_dielec = 78.4;
    double pgpoisson_rho0   = 0.0004;
-   double pgpoisson_beta   = 1.2;
+   double pgpoisson_beta   = 1.3;
 
    bool   psa_on;
    double psa_decay[2] = {1.0,1.0};

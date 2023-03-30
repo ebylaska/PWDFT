@@ -120,11 +120,39 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
 
       i1_start = new (std::nothrow) int*[6]();
       for (auto i=0; i<6; ++i)
-	 i1_start[i] = new (std::nothrow) int[np+1]();
+	      i1_start[i] = new (std::nothrow) int[np+1]();
 
       i2_start = new (std::nothrow) int*[6]();
       for (auto i=0; i<6; ++i)
          i2_start[i] = new (std::nothrow) int[np+1]();
+
+
+      iq_to_ir1 = new (std::nothrow) int*[6]();
+      iq_to_ir1[0] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_ir1[1] = new (std::nothrow) int[ny*nq2]();
+      iq_to_ir1[2] = new (std::nothrow) int[nz*nq3]();
+
+      iq_to_ir1[3] = new (std::nothrow) int[ny*nq2]();
+      iq_to_ir1[4] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_ir1[5] = new (std::nothrow) int[nz*nq3]();
+
+      iq_to_ir2 = new (std::nothrow) int*[6]();
+      iq_to_ir2[0] = new (std::nothrow) int[ny*nq2]();
+      iq_to_ir2[1] = new (std::nothrow) int[nz*nq3]();
+      iq_to_ir2[2] = new (std::nothrow) int[ny*nq2]();
+
+      iq_to_ir2[3] = new (std::nothrow) int[(nx/2+1)*nq1]();
+      iq_to_ir2[4] = new (std::nothrow) int[nz*nq3]();
+      iq_to_ir2[5] = new (std::nothrow) int[(nx/2+1)*nq1]();
+
+      ir1_start = new (std::nothrow) int*[6]();
+      for (auto i=0; i<6; ++i)
+	      ir1_start[i] = new (std::nothrow) int[np+1]();
+
+      ir2_start = new (std::nothrow) int*[6]();
+      for (auto i=0; i<6; ++i)
+         ir2_start[i] = new (std::nothrow) int[np+1]();
+
 
 
       /**************************************************/
@@ -162,6 +190,38 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[0][np] = index1;
       i2_start[0][np] = index2;
 
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[0][it] = index1;
+         ir2_start[0][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop2(i,j,k);
+            pto   = ijkrtop1(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[0][ijkrtoindex2t(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[0][ijkrtoindex1(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[0][np] = index1;
+      ir2_start[0][np] = index2;
+
 
       /**************************************************/
       /* map2to3 mapping - done - tranpose operation #1 */
@@ -198,6 +258,41 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[1][np] = index1;
       i2_start[1][np] = index2;
 
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[1][it] = index1;
+         ir2_start[1][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop1(i,j,k);
+            pto   = ijkrtop(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[1][ijkrtoindex1(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[1][ijkrtoindex(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[1][np] = index1;
+      ir2_start[1][np] = index2;
+
+
+
+
       /**************************************************/
       /* map3to2 mapping - done - tranpose operation #2 */
       /**************************************************/
@@ -232,6 +327,41 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       }
       i1_start[2][np] = index1;
       i2_start[2][np] = index2;
+
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[2][it] = index1;
+         ir2_start[2][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop(i,j,k);
+            pto   = ijkrtop1(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[2][ijkrtoindex(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[2][ijkrtoindex1(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[2][np] = index1;
+      ir2_start[2][np] = index2;
+
+
+
 
       /**************************************************/
       /* map2to1 mapping - done - tranpose operation #3 */
@@ -268,6 +398,41 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[3][np] = index1;
       i2_start[3][np] = index2;
 
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[3][it] = index1;
+         ir2_start[3][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop1(i,j,k);
+            pto   = ijkrtop2(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[3][ijkrtoindex1(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[3][ijkrtoindex2t(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[3][np] = index1;
+      ir2_start[3][np] = index2;
+
+
+
+
       /**************************************************/
       /* map1to3 mapping - done - tranpose operation #4 */
       /**************************************************/
@@ -303,6 +468,40 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       i1_start[4][np] = index1;
       i2_start[4][np] = index2;
 
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[4][it] = index1;
+         ir2_start[4][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop2(i,j,k);
+            pto   = ijkrtop(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[4][ijkrtoindex2t(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[4][ijkrtoindex(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[4][np] = index1;
+      ir2_start[4][np] = index2;
+
+
+
       /**************************************************/
       /* map3to1 mapping - done - tranpose operation #5 */
       /**************************************************/
@@ -337,6 +536,38 @@ d3db::d3db(Parallel *inparall,const int inmaptype, const int nx, const int ny, c
       }
       i1_start[5][np] = index1;
       i2_start[5][np] = index2;
+
+      index1 = 0;
+      index2 = 0;
+      for (auto it=0; it<np; ++it)
+      {
+         proc_to   = (taskid+it)%np;
+         proc_from = (taskid-it+np)%np;
+         ir1_start[5][it] = index1;
+         ir2_start[5][it] = index2;
+         for (auto k=0; k<nz;     ++k)
+         for (auto j=0; j<ny;     ++j)
+         for (auto i=0; i<(nx+2); ++i)
+         {
+            phere = ijkrtop(i,j,k);
+            pto   = ijkrtop2(i,j,k);
+
+            /* packing scheme */
+            if ((phere==taskid) && (pto==proc_to))
+            {
+               iq_to_ir1[5][ijkrtoindex(i,j,k)] = index1;
+               ++index1;
+            }
+            /* unpacking scheme */
+            if ((pto==taskid) && (phere==proc_from))
+            {
+               iq_to_ir2[5][ijkrtoindex2t(i,j,k)] = index2;
+               ++index2;
+            }
+         }
+      }
+      ir1_start[5][np] = index1;
+      ir2_start[5][np] = index2;
 
 
       /* allocate ptranspose indexes */
@@ -528,6 +759,18 @@ d3db::~d3db()
       delete [] iq_to_i2;
       delete [] i1_start;
       delete [] i2_start;
+
+      for (i=0; i<6; ++i)
+      {
+         delete [] iq_to_ir1[i];
+         delete [] iq_to_ir2[i];
+         delete [] ir1_start[i];
+         delete [] ir2_start[i];
+      }
+      delete [] iq_to_ir1;
+      delete [] iq_to_ir2;
+      delete [] ir1_start;
+      delete [] ir2_start;
 
       for (nb=0; nb<2; ++nb)
       {
@@ -3473,6 +3716,49 @@ void d3db::t_transpose_jk(double *a, double *tmp1, double *tmp2)
    t_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
 
+/********************************
+ *                              *
+ *    d3db::r_transpose_jk      *
+ *                              *
+ ********************************/
+void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
+{
+   int it,proc_from,proc_to;
+   int msglen;
+
+   parall->astart(1,np);
+
+   c_bindexcopy(nfft3d,iq_to_i1[0],a,tmp1);
+
+   /* it = 0, transpose data on same thread */
+   msglen = 2*(i2_start[0][1] - i2_start[0][0]);
+   //int one=1;
+   //DCOPY_PWDFT(msglen,&(tmp1[i1_start[0][0]]),one,&(tmp2[i2_start[0][0]]),one);
+   std::memcpy(tmp2+2*i2_start[0][0],
+               tmp1+2*i1_start[0][0],
+               msglen*sizeof(double));
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = 2*(i2_start[0][it+1] - i2_start[0][it]);
+      if (msglen>0)
+         parall->adreceive(1,1,proc_from,msglen,&tmp2[i2_start[0][it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = 2*(i1_start[0][it+1] - i1_start[0][it]);
+      if (msglen>0)
+         parall->dsend(1,1,proc_to,msglen,&tmp1[i1_start[0][it]]);
+   }
+   parall->aend(1);
+   c_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
+}
+
+
 
 
 
@@ -3642,6 +3928,59 @@ void d3db::t_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
    if ((op==0)||(op==2)) nnfft3d = (ny)    *nq2;
    if ((op==1)||(op==4)) nnfft3d = (nz)    *nq3;
    t_aindexcopy(nnfft3d,iq_to_i2[op],tmp2,a);
+}
+
+/********************************
+ *                              *
+ *    d3db::r_transpose_ijk     *
+ *                              *
+ ********************************/
+void d3db::r_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
+{
+   int nnfft3d,it,proc_from,proc_to;
+   int msglen;
+
+   parall->astart(1,np);
+
+   /* pack a array */
+   if ((op==0)||(op==4)) nnfft3d = (nx+2)*nqr1;
+   if ((op==1)||(op==3)) nnfft3d = (ny)  *nqr2;
+   if ((op==2)||(op==5)) nnfft3d = (nz)  *nqr3;
+   t_bindexcopy(nnfft3d,iq_to_ir1[op],a,tmp1);
+
+   /* it = 0, transpose data on same thread */
+   msglen = (ir2_start[op][1] - ir2_start[op][0]);
+   //int one=1;
+   //DCOPY_PWDFT(msglen,&(tmp1[i1_start[op][0]]),one,&(tmp2[i2_start[op][0]]),one);
+   std::memcpy(tmp2+ir2_start[op][0],
+               tmp1+ir1_start[op][0],
+               msglen*sizeof(double));
+
+   /* receive packed array data */
+   for (it=1; it<np; ++it)
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid-it+np)%np;
+      msglen = (ir2_start[op][it+1] - ir2_start[op][it]);
+      if (msglen>0)
+         parall->adreceive(1,1,proc_from,msglen,&tmp2[ir2_start[op][it]]);
+   }
+   for (it=1; it<np; ++it)
+   {
+      proc_to = (taskid+it)%np;
+      msglen = (ir1_start[op][it+1] - ir1_start[op][it]);
+      if (msglen>0)
+         parall->dsend(1,1,proc_to,msglen,&tmp1[ir1_start[op][it]]);
+   }
+
+   /* wait for completion of mp_send, also do a sync */
+   parall->aend(1);
+
+   /* unpack a array */
+   if ((op==3)||(op==5)) nnfft3d = (nx+2)*nqr1;
+   if ((op==0)||(op==2)) nnfft3d = (ny)  *nqr2;
+   if ((op==1)||(op==4)) nnfft3d = (nz)  *nqr3;
+   t_aindexcopy(nnfft3d,iq_to_ir2[op],tmp2,a);
 }
 
 
@@ -3991,6 +4330,185 @@ void d3db::r2hr_contract(const double *a, double *ah)
         ah[i + q*(nxh+2)] = a[i + q*(nx+2)];
    }
 }
+
+/**************************************
+ *                                    *
+ *     d3db::rrrr_periodic_gradient   *
+ *                                    *
+ **************************************/
+// computes the periodic gradient on a (nx,ny,nz) grid.
+#define one_over_60	1.66666666666667e-2
+void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *grz) 
+{
+   int nx2 = nx+2;
+
+   if (maptype==1)
+   {
+      double *a    = this->r_alloc();
+      double *tmp2 = new (std::nothrow) double [2*nfft3d]();
+      double *tmp3 = new (std::nothrow) double [2*nfft3d]();
+      std::memcpy(a,rho,n2ft3d*sizeof(double));
+      r_transpose_jk(a,tmp2,tmp3);
+      delete [] tmp3;
+      delete [] tmp2;
+
+      // x gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f = rho + q*(nx+2)*ny;
+         for (auto i=0; i<nx; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nx;
+            im2 = i-2; if (im2<0)  im2 += nx;
+            im1 = i-1; if (im1<0)  im1 += nx;
+            ip1 = i+1; if (ip1>nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>nx) ip3 -= nx;
+
+            for (auto j=0; j<ny; ++j)
+               grx[i+j*nx2] =  one_over_60*(  -1.0*f[im3+j*nx2]
+                                           +   9.0*f[im2+j*nx2]
+                                           -  45.0*f[im1+j*nx2]
+                                           +  45.0*f[ip1+j*nx2]
+                                           -   9.0*f[ip2+j*nx2]
+                                           +   1.0*f[ip3+j*nx2]);
+         }
+      }
+      // y gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int jm3,jm2,jm1,jp1,jp2,jp3;
+         const double *f = rho + q*(nx+2)*ny;
+         for (auto j=0; j<ny; ++j)
+         {
+            jm3 = j-3; if (jm3<0)  jm3 += ny;
+            jm2 = j-2; if (jm2<0)  jm2 += ny;
+            jm1 = j-1; if (jm1<0)  jm1 += ny;
+            jp1 = j+1; if (jp1>ny) jp1 -= ny;
+            jp2 = j+2; if (jp2>ny) jp2 -= ny;
+            jp3 = j+3; if (jp3>ny) jp3 -= ny;
+            for (auto i=0; i<nx; ++i)
+               gry[i+j*nx2] =  one_over_60*(  -1.0*f[i+jm3*nx2]
+                                           +   9.0*f[i+jm2*nx2]
+                                           -  45.0*f[i+jm1*nx2]
+                                           +  45.0*f[i+jp1*nx2]
+                                           -   9.0*f[i+jp2*nx2]
+                                           +   1.0*f[i+jp3*nx2]);
+         }
+      }
+
+      // z gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int km3,km2,km1,kp1,kp2,kp3;
+         const double *f = a + q*(nx+2)*nz;
+         for (auto k=0; k<nz; ++k)
+         {
+            km3 = k-3; if (km3<0)  km3 += nz;
+            km2 = k-2; if (km2<0)  km2 += nz;
+            km1 = k-1; if (km1<0)  km1 += nz;
+            kp1 = k+1; if (kp1>nz) kp1 -= nz;
+            kp2 = k+2; if (kp2>nz) kp2 -= nz;
+            kp3 = k+3; if (kp3>nz) kp3 -= nz;
+            for (auto i=0; i<nx; ++i)
+               grz[i+k*nx2] =  one_over_60*(  -1.0*f[i+km3*nx2]
+                                           +   9.0*f[i+km2*nx2]
+                                           -  45.0*f[i+km1*nx2]
+                                           +  45.0*f[i+kp1*nx2]
+                                           -   9.0*f[i+kp2*nx2]
+                                           +   1.0*f[i+kp3*nx2]);
+         }
+      }
+      this->r_dealloc(a);
+   }
+   else
+   {
+      double *a    = this->r_alloc();
+      double *tmp2 = new (std::nothrow) double [nrft3d]();
+      double *tmp3 = new (std::nothrow) double [nrft3d]();
+      // x gradient
+      for (auto q=0; q<nqr1; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f = rho + q*(nx+2);
+         double *df = grx + q*(nx+2);
+         for (auto i=0; i<nx; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nx;
+            im2 = i-2; if (im2<0)  im2 += nx;
+            im1 = i-1; if (im1<0)  im1 += nx;
+            ip1 = i+1; if (ip1>nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>nx) ip3 -= nx;
+            df[i] =  one_over_60*(  -1.0*f[im3]
+                                 +   9.0*f[im2]
+                                 -  45.0*f[im1]
+                                 +  45.0*f[ip1]
+                                 -   9.0*f[ip2]
+                                 +   1.0*f[ip3]);
+         }
+      }
+
+      // y gradient
+      std::memcpy(a,rho,nrft3d*sizeof(double));
+      this->r_transpose_ijk(0,a,tmp2,tmp3);
+      for (auto q=0; q<nqr2; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f = a + q*(ny);
+         double *df = gry + q*(ny);
+         for (auto i=0; i<ny; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += ny;
+            im2 = i-2; if (im2<0)  im2 += ny;
+            im1 = i-1; if (im1<0)  im1 += ny;
+            ip1 = i+1; if (ip1>ny) ip1 -= ny;
+            ip2 = i+2; if (ip2>ny) ip2 -= ny;
+            ip3 = i+3; if (ip3>ny) ip3 -= ny;
+            df[i] =  one_over_60*(  -1.0*f[im3]
+                                 +   9.0*f[im2]
+                                 -  45.0*f[im1]
+                                 +  45.0*f[ip1]
+                                 -   9.0*f[ip2]
+                                 +   1.0*f[ip3]);
+         }
+      }
+      this->r_transpose_ijk(3,gry,tmp2,tmp3);
+
+      // z gradient
+      std::memcpy(a,rho,nrft3d*sizeof(double));
+      this->r_transpose_ijk(4,a,tmp2,tmp3);
+      for (auto q=0; q<nqr3; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f = a + q*(nz);
+         double *df = grz + q*(nz);
+         for (auto i=0; i<nz; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nz;
+            im2 = i-2; if (im2<0)  im2 += nz;
+            im1 = i-1; if (im1<0)  im1 += nz;
+            ip1 = i+1; if (ip1>nz) ip1 -= nz;
+            ip2 = i+2; if (ip2>nz) ip2 -= nz;
+            ip3 = i+3; if (ip3>nz) ip3 -= nz;
+            df[i] =  one_over_60*(  -1.0*f[im3]
+                                 +   9.0*f[im2]
+                                 -  45.0*f[im1]
+                                 +  45.0*f[ip1]
+                                 -   9.0*f[ip2]
+                                 +   1.0*f[ip3]);
+         }
+      }
+      this->r_transpose_ijk(5,grz,tmp2,tmp3);
+
+
+      delete [] tmp3;
+      delete [] tmp2;
+      this->r_dealloc(a);
+   }
+}
+
 
 
 }

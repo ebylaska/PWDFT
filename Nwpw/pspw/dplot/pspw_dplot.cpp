@@ -196,6 +196,20 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
    }
 
    /* translate system if origin is not zero */
+   if ((mydplot.origin[0]!=0.0) && (mydplot.origin[1]!=0.0) && (mydplot.origin[2]!=0.0))
+   {
+      if (oprint) coutput << "...translating origin..." << std::endl << std::endl << std::endl;
+      /*
+      auto trans[3] = { -mydplot.origin[0], 
+                         -mydplot.origin[1], 
+                         -mydplot.origin[2]}; 
+      myion.translate(trans);
+
+      Strfac mystrfac(&myion, &mygrid);
+      mystrfac.phafac();
+      call psi_translate(origin, npack1,(ne(1)+ne(2)), dcpl_mb(psi2(1)))
+      */
+   }
 
 
 

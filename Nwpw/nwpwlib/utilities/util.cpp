@@ -359,7 +359,7 @@ void util_fattebert_dielec(const int n2ft3d,
 {
    for (auto k=0; k<n2ft3d; ++k)
    {
-       auto x     = std::pow(rho[k]/rho0,2*beta);
+       auto x     = std::pow((rho[k]/rho0),2.0*beta);
        epsilon[k] = 1.0 + 0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
    }
 }
@@ -382,7 +382,7 @@ void util_weighted_fattebert_dielec(const int n2ft3d,
 {
    for (auto k=0; k<n2ft3d; ++k)
    {
-       auto x     = std::pow(rho[k]/rho0,2*beta);
+       auto x     = std::pow((rho[k]/rho0),2*beta);
        epsilon[k] = 1.0 + w[k]*0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
    }
 }

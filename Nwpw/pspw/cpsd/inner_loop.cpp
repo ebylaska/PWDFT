@@ -380,7 +380,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
 
 
    // Plotting Fattebert dielectric function
-   if (false) {
+   if (true) {
       double *Gx = mygrid->Gpackxyz(0,0);
       double *Gy = mygrid->Gpackxyz(0,1);
       double *Gz = mygrid->Gpackxyz(0,2);
@@ -442,8 +442,52 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       mydplot.gcube_write("dywdielec.cube",-1,"SCF y dielec function",gry);
       mydplot.gcube_write("dzwdielec.cube",-1,"SCF z dielec function",grz);
 
-      //mycoulomb12->mycoulomb1->mydielec->generate_dielec(rho);
-      mycoulomb12->mycoulomb1->vcoulomb_dielec(dng,sw);
+      /* calculate ggr = lap n */
+
+
+      mycoulomb12->mycoulomb1->mydielec->generate_dielec(rho);
+      double *p = mycoulomb12->mycoulomb1->mydielec->p;
+
+      mydplot.gcube_write("pdielec.cube",-1,"SCF p dielec function",p);
+
+      //mycoulomb12->mycoulomb1->vcoulomb_dielec(rho,sw);
+      mycoulomb12->mycoulomb1->vcoulomb_dielec2(rho,dng,sw);
+
+      double sum4 = mygrid->cc_pack_dot(0,sw,dng)*omega;
+      std::cout << "Coulomb=            " << Ffmt(20,15) << sum4 << std::endl;
+
+      double sum4b = mygrid->r_dsum(p)*dv;
+      std::cout << "sum(p)*dv           " << Ffmt(20,15) << sum4b << std::endl;
+
+      double sum4c = mygrid->r_dsum(eps)*dv;
+      std::cout << "sum(dielc)*dv       " << Ffmt(20,15) << sum4c << std::endl;
+
+      double sum4d = mygrid->rr_dot(rho,eps)*dv;
+      std::cout << "sum(rho*dielc)*dv       " << Ffmt(20,15) << sum4d << std::endl;
+
+
+
+
+       mygrid->c_unpack(0,sw);
+       mygrid->cr_fft3d(sw);
+       mygrid->r_zero_ends(sw);
+       //mygrid->r_SMul(scal2,sw);
+       mydplot.gcube_write("swpotential.cube",-1,"SCF sw potential",sw);
+
+      double sum4e = mygrid->rr_dot(sw,eps)*dv;
+      std::cout << "sum(sw*dielc)*dv       " << Ffmt(20,15) << sum4e << std::endl;
+
+      double sum4f = mygrid->r_dsum(sw)*dv;
+      std::cout << "sum(sw)*dv       " << Ffmt(20,15) << sum4f << std::endl;
+
+      double sum4g = mygrid->rr_dot(sw,p)*dv;
+      std::cout << "sum(p*sw)*dv       " << Ffmt(20,15) << sum4g << std::endl;
+
+      double sum4h = mygrid->rr_dot(sw,rho)*dv;
+      std::cout << "sum(rho*sw)*dv       " << Ffmt(20,15) << sum4h << std::endl;
+
+
+
 
       mygrid->r_dealloc(r_grid);
       mygrid->r_dealloc(sw);
