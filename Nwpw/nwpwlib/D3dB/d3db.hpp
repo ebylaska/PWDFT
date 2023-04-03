@@ -24,6 +24,7 @@ class d3db : public Mapping3 {
     int **iq_to_i1,**iq_to_i2;
     int **i1_start,**i2_start;
 
+    bool initialized_r_transpose = false;
     int **iq_to_ir1,**iq_to_ir2;
     int **ir1_start,**ir2_start;
 
@@ -104,12 +105,10 @@ public:
 
     void     c_transpose_jk(double *, double *, double *);
     void     t_transpose_jk(double *, double *, double *);
-    void     r_transpose_jk(double *, double *, double *);
 
     void     c_transpose_ijk(const int, double *, double *, double *);
 
     void     t_transpose_ijk(const int, double *, double *, double *);
-    void     r_transpose_ijk(const int, double *, double *, double *);
 
     void     t_timereverse(double *, double *, double *);
     void     c_timereverse(double *, double *, double *);
@@ -151,7 +150,12 @@ public:
     std::string r_formatwrite_reverse(double *);
     std::string r_formatwrite(double *);
 
-    /* real-space gradients */
+
+    /* real-space transposes and gradients */
+    void     r_transpose_ijk_init();
+    void     r_transpose_ijk_end();
+    void     r_transpose_jk(double *, double *, double *);
+    void     r_transpose_ijk(const int, double *, double *, double *);
     void     rrrr_gradient(const double *, double *, double *, double *);
 
 };

@@ -386,6 +386,7 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       double *Gz = mygrid->Gpackxyz(0,2);
 
       double *eps    = mygrid->r_alloc();
+      double *deps    = mygrid->r_alloc();
       double *sw     = mygrid->r_alloc();
       double *r_grid = mygrid->r_nalloc(3);
       double *grx    = r_grid;
@@ -410,37 +411,70 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
                          control.gpoisson_rho0(),
                          rho,sw,eps);
       */
-      util_fattebert_dielec(n2ft3d,
+      util_andreussi_dielec(n2ft3d,
                          control.gpoisson_dielec(),
-                         control.gpoisson_beta(),
-                         control.gpoisson_rho0(),
+                         0.0001,0.0035,
                          rho,eps);
+
+      mygrid->rrrr_gradient(eps,grx,gry,grz);
+      mygrid->r_zero_ends(grx);
+      mygrid->r_zero_ends(gry);
+      mygrid->r_zero_ends(grz);
+      mydplot.gcube_write("realdxpotential.cube",-1,"SCF sw potential",grx);
+      mydplot.gcube_write("realdypotential.cube",-1,"SCF sw potential",gry);
+      mydplot.gcube_write("realdzpotential.cube",-1,"SCF sw potential",grz);
 
       for (auto k=0; k<n2ft3d; ++k)
          if (eps[k]<epsmin) epsmin= eps[k];
       std::cout << "EPSMIN=" << epsmin << std::endl;    
 
-      mydplot.gcube_write("wdielec.cube",-1,"SCF dielec function",eps);
+      mydplot.gcube_write("Cwdielec.cube",-1,"SCF dielec function",eps);
+
+      util_dandreussi_dielec(n2ft3d,
+                         control.gpoisson_dielec(),
+                         0.0001,0.0035,
+                         rho,deps);
+
+      mygrid->rr_Divide(eps,deps);
+      mygrid->r_zero_ends(deps);
+
+      /*
+      util_dfattebert_dielec(n2ft3d,
+                         control.gpoisson_dielec(),
+                         control.gpoisson_beta(),
+                         control.gpoisson_rho0(),
+                         rho,eps);
+      */
+      mydplot.gcube_write("Cdwdielec.cube",-1,"SCF dielec function",deps);
+
 
       /* calculate rho tmp1=rho(g) */
-      mygrid->rr_SMul(scal1,eps,sw);
-      mygrid->rc_fft3d(sw);
-      mygrid->c_pack(0,sw);
+      //mygrid->rr_SMul(scal1,eps,sw);
+      //mygrid->rc_fft3d(sw);
+      //mygrid->c_pack(0,sw);
 
       /* calculate gr = grad n */
-      mygrid->tcc_pack_iMul(0,Gx,sw,grx);
-      mygrid->tcc_pack_iMul(0,Gy,sw,gry);
-      mygrid->tcc_pack_iMul(0,Gz,sw,grz);
+      mygrid->tcc_pack_iMul(0,Gx,dng,grx);
+      mygrid->tcc_pack_iMul(0,Gy,dng,gry);
+      mygrid->tcc_pack_iMul(0,Gz,dng,grz);
       mygrid->c_unpack(0,grx);
       mygrid->c_unpack(0,gry);
       mygrid->c_unpack(0,grz);
       mygrid->cr_fft3d(grx);
       mygrid->cr_fft3d(gry);
       mygrid->cr_fft3d(grz);
+      mygrid->rr_Mul(deps,grx);
+      mygrid->rr_Mul(deps,gry);
+      mygrid->rr_Mul(deps,grz);
 
-      mydplot.gcube_write("dxwdielec.cube",-1,"SCF x dielec function",grx);
-      mydplot.gcube_write("dywdielec.cube",-1,"SCF y dielec function",gry);
-      mydplot.gcube_write("dzwdielec.cube",-1,"SCF z dielec function",grz);
+
+      //mygrid->r_transpose_ijk(0,grx,gry,grz);
+      //mydplot.gcube_write("r0wdielec.cube",-1,"SCF x dielec function",grx);
+      //mygrid->rrrr_gradient(eps,grx,gry,grz);
+
+      mydplot.gcube_write("Cdxwdielec.cube",-1,"SCF x dielec function",grx);
+      mydplot.gcube_write("Cdywdielec.cube",-1,"SCF y dielec function",gry);
+      mydplot.gcube_write("Cdzwdielec.cube",-1,"SCF z dielec function",grz);
 
       /* calculate ggr = lap n */
 
@@ -486,12 +520,60 @@ void inner_loop(Control2& control, Pneb *mygrid, Ion *myion,
       double sum4h = mygrid->rr_dot(sw,rho)*dv;
       std::cout << "sum(rho*sw)*dv       " << Ffmt(20,15) << sum4h << std::endl;
 
+      auto nx = mygrid->nx;
+      auto ny = mygrid->ny;
+      auto nz = mygrid->nz;
+      for (auto k=0; k<nz;   ++k)
+      for (auto j=0; j<ny;   ++j)
+      for (auto i=0; i<nx+2; ++i)
+      {
+         int indx = mygrid->ijkrtoindex2t(i,j,k);
+         sw[indx] = i;
+      }
 
+     //int indx = ijktoindex2(i,j,k);
+     //int p    = ijktop2(i,j,k);
+
+      for (auto k=0; k<nz;   ++k)
+      for (auto j=0; j<ny;   ++j)
+      for (auto i=0; i<nx+2; ++i)
+      {
+         int indx = mygrid->ijkrtoindex2t(i,j,k);
+         std::cout << "i=" << i << " j=" << j << " k=" << k << " sw=" << sw[indx] << std::endl;
+      }
+
+      //#(i,j,k) --> (j,k,i)
+      mygrid->r_transpose_ijk(0,sw,eps,deps);
+      //#(j,k,i) --> (i,j,k)
+      mygrid->r_transpose_ijk(3,sw,eps,deps);
+
+      //#(j,k,i) --> (k,i,j)
+      //mygrid->r_transpose_ijk(1,sw,eps,deps);
+
+
+      //#(i,j,k) --> (k,i,j)
+      mygrid->r_transpose_ijk(4,sw,eps,deps);
+
+      //#(k,i,j) --> (i,j,k)
+      mygrid->r_transpose_ijk(5,sw,eps,deps);
+
+      //for (auto q=0; q<mygrid->nqr2;   ++q)
+      //for (auto j=0; j<ny;   ++j)
+      //   std::cout << "j=" << j << " q=" << q << " sw2=" << sw[j + q*ny] << std::endl;
+
+      //for (auto q=0; q<mygrid->nqr3; ++q)
+      //for (auto k=0; k<nz;   ++k)
+      //    std::cout << "k=" << k << " q=" << q << " sw2=" << sw[k + q*nz] << std::endl;
+
+      for (auto q=0; q<mygrid->nqr1; ++q)
+      for (auto i=0; i<(nx+2); ++i)
+         std::cout << "i=" << i << " q=" << q << " sw2=" << sw[i + q*(nx+2)] << std::endl;
 
 
       mygrid->r_dealloc(r_grid);
       mygrid->r_dealloc(sw);
       mygrid->r_dealloc(eps);
+      mygrid->r_dealloc(deps);
    }
 
 

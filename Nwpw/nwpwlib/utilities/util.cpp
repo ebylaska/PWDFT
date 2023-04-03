@@ -366,6 +366,32 @@ void util_fattebert_dielec(const int n2ft3d,
 
 /**************************************
  *                                    *
+ *        util_dfattebert_dielec      *
+ *                                    *
+ **************************************/
+/* Computes the derivative of dielectric function wrt rho using the local model of the density from Jean-Luc Fattebert.
+   Reference: Fattebert JL, Gygi F. First‐principles molecular dynamics simulations in a continuum solvent.
+              International journal of quantum chemistry. 2003;93(2):139-47.
+   Suggested parameter values:
+      water - eps=78.36, rho0=0.0004 au, and beta=1.3 bohr
+
+*/
+void util_dfattebert_dielec(const int n2ft3d,
+                            const double eps, const double beta, const double rho0,
+                            const double *rho, double *depsilon)
+{
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       auto x = std::pow((rho[k]/rho0),2.0*beta);
+       auto y = std::pow((rho[k]/rho0),2.0*beta-1.0)/rho0;
+       auto z = (x+1.0)*(x+1.0);
+       //epsilon[k] = 1.0 + 0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
+       depsilon[k] = -2.0*beta*(eps-1.0)*y/z;
+   }
+}
+
+/**************************************
+ *                                    *
  *   util_weighted_fattebert_dielec   *
  *                                    *
  **************************************/
@@ -386,6 +412,145 @@ void util_weighted_fattebert_dielec(const int n2ft3d,
        epsilon[k] = 1.0 + w[k]*0.5*(eps-1.0)*(1.0 + (1.0-x)/(1.0+x));
    }
 }
+
+
+/**************************************
+ *                                    *
+ *        util_andreussi_dielec       *
+ *                                    *
+ **************************************/
+/* Computes the dielectric function using the first local model of the density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari, 
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_andreussi_dielec(const int n2ft3d,
+                           const double eps, const double rhomin, const double rhomax,
+                           const double *rho, double *epsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if (rho[k]>rhomax)
+           epsilon[k] = 1.0;
+       else if (rho[k]<rhomin)
+           epsilon[k] = eps;
+       else
+       {  
+           auto x = twopi*(rhomax-rho[k])/(rhomax-rhomin);
+           epsilon[k] = 1.0 + ((eps-1.0)/twopi)*(x - sin(x));
+       }
+   }
+}
+
+
+/**************************************
+ *                                    *
+ *        util_dandreussi_dielec      *
+ *                                    *
+ **************************************/
+/* Computes the derivative of dielectric function wrt to rho  using the first local 
+   model of the density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari,
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_dandreussi_dielec(const int n2ft3d,
+                           const double eps, const double rhomin, const double rhomax,
+                           const double *rho, double *depsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if ((rho[k]>rhomin) && (rho[k]<rhomax))
+       {
+           auto x = twopi*(rhomax-rho[k])/(rhomax-rhomin);
+           auto dxdrho = -twopi/(rhomax-rhomin);
+           depsilon[k] = ((eps-1.0)/twopi)*(1.0 - cos(x))*dxdrho;
+       }
+       else
+          depsilon[k] = 0.0;
+   }
+}
+
+/**************************************
+ *                                    *
+ *        util_andreussi2_dielec       *
+ *                                    *
+ **************************************/
+/* Computes the dielectric function using the second local model of the density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari,
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_andreussi2_dielec(const int n2ft3d,
+                           const double eps, const double rhomin, const double rhomax,
+                           const double *rho, double *epsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if (rho[k]>rhomax)
+           epsilon[k] = 1.0;
+       else if (rho[k]<rhomin)
+           epsilon[k] = eps;
+       else
+       {
+           auto x = twopi*(log(rhomax)-log(rho[k]))/(log(rhomax)-log(rhomin));
+           auto t = (log(eps)/twopi)*(x - sin(x));
+           epsilon[k] = exp(t);
+       }
+   }
+}
+
+/**************************************
+ *                                    *
+ *        util_dandreussi2_dielec     *
+ *                                    *
+ **************************************/
+/* Computes the dielectric function using the second local model of the density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari,
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_dandreussi2_dielec(const int n2ft3d,
+                             const double eps, const double rhomin, const double rhomax,
+                             const double *rho, double *depsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if ((rho[k]>rhomin) && (rho[k]<rhomax))
+       {
+           auto x = twopi*(log(rhomax)-log(rho[k]))/(log(rhomax)-log(rhomin));
+           auto t = (log(eps)/twopi)*(x - sin(x));
+           auto dtdx = (log(eps)/twopi)*(1.0-cos(x));
+           auto dxdrho = twopi/(rho[k]*(log(rhomin)-log(rhomax)));
+           depsilon[k] = exp(t)*dtdx*dxdrho;
+       }
+       else
+          depsilon[k] = 0.0;
+   }
+}
+
+
+
 
 
 

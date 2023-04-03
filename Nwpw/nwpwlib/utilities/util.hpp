@@ -35,6 +35,12 @@ extern double util_splint(const double *, const double *, const double *, const 
 extern void util_filter(int, double *, double, double *);
 
 extern void util_fattebert_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_andreussi_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_andreussi2_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_dfattebert_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_dandreussi_dielec(const int, const double, const double, const double, const double *, double *);
+extern void util_dandreussi2_dielec(const int, const double, const double, const double, const double *, double *);
+
 extern void util_weighted_fattebert_dielec(const int, const double, const double, const double, const double *, const double *,  double *);
 extern double util_switching_function(const double, const double, const double);
 extern double util_dswitching_function(const double, const double, const double);

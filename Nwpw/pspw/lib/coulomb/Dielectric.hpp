@@ -16,7 +16,7 @@ class	Dielectric_Operator {
    double *r_grid;
 
 public:
-   double *epsilon, *sw, *p;
+   double *epsilon, *depsilon, *sw, *p;
    double *epsilon_x, *epsilon_y, *epsilon_z;
    double *w_x, *w_y, *w_z;
 
@@ -26,6 +26,7 @@ public:
    /* destructor */
    ~Dielectric_Operator() {
        mypneb->r_dealloc(epsilon);
+       mypneb->r_dealloc(depsilon);
        mypneb->r_dealloc(sw);
        mypneb->r_dealloc(p);
        mypneb->r_dealloc(epsilon_x);

@@ -29,7 +29,8 @@ Dielectric_Operator::Dielectric_Operator(Pneb *mygrid, Control2& control)
    mypneb->initialize_r_grid();
    r_grid = mypneb->r_grid;
 
-   epsilon = mypneb->r_alloc();
+   epsilon  = mypneb->r_alloc();
+   depsilon = mypneb->r_alloc();
    sw      = mypneb->r_alloc();
    p       = mypneb->r_alloc();
 
@@ -62,6 +63,7 @@ void Dielectric_Operator::generate_dielec(const double *rho)
    std::cout << "rho0=  " << rho0 << std::endl;
    std::cout << "beta=  " << beta << std::endl;
    util_fattebert_dielec(n2ft3d,dielec,beta,rho0,rho,epsilon);
+   //util_dfattebert_dielec(n2ft3d,dielec,beta,rho0,rho,depsilon);
 
    /* calculate fft of epsilon */
    mypneb->rr_SMul(scal1,epsilon,sw);
