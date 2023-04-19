@@ -89,6 +89,8 @@ class Control2 {
    double pgpoisson_dielec = 78.4;
    double pgpoisson_rho0   = 0.0004;
    double pgpoisson_beta   = 1.3;
+   double pgpoisson_rhomin = 0.0001;
+   double pgpoisson_rhomax = 0.0035;
 
    bool   psa_on;
    double psa_decay[2] = {1.0,1.0};
@@ -298,6 +300,8 @@ public:
    double gpoisson_dielec() { return pgpoisson_dielec; }
    double gpoisson_rho0()   { return pgpoisson_rho0; }
    double gpoisson_beta()   { return pgpoisson_beta; }
+   double gpoisson_rhomin()   { return pgpoisson_rhomin; }
+   double gpoisson_rhomax()   { return pgpoisson_rhomax; }
 
 
    // Nose

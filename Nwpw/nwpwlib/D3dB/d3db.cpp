@@ -1319,6 +1319,69 @@ void d3db::r_zero_ends(double *A)
 
 /********************************
  *                              *
+ *       d3db::r_zero_mends     *
+ *                              *
+ ********************************/
+void d3db::r_zero_mends(double *A)
+{
+   int index;
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      for (auto q=0; q<nq; ++q)
+      for (auto k=0; k<nz; ++k)
+      {
+        //index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+        index = nx + k*(nx+2) + q*(nx+2)*ny;
+        A[index]   = 0.0;
+        A[index+1] = 0.0;
+      }
+   }
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      for (auto q=0; q<nq1; ++q)
+      {
+         index = nx + q*(nx+2);
+         A[index]   = 0.0;
+         A[index+1] = 0.0;
+       }
+       if (n2ft3d_map<n2ft3d)
+          std::memset(A+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
+
+   }
+
+   /* grid points in coordination space */
+   int nzh = nz/2;
+   int nyh = ny/2;
+   int nxh = nx/2;
+   for (auto k3=(-nzh); k3<nzh; ++k3)
+   for (auto k2=(-nyh); k2<nyh; ++k2)
+   for (auto k1=(-nxh); k1<nxh; ++k1)
+   {
+      int i = k1 + nxh;
+      int j = k2 + nyh;
+      int k = k3 + nzh;
+      int indx = ijktoindex2(i,j,k);
+      int p    = ijktop2(i,j,k);
+
+      if (p==parall->taskid_i())
+         if ((k1==(-nxh)) || (k1==(nxh-1)) || 
+             (k2==(-nyh)) || (k2==(nyh-1)) || 
+             (k3==(-nzh)) || (k3==(nzh-1)))
+             A[indx] = 0.0;
+   }
+}
+
+
+
+/********************************
+ *                              *
  *          d3db::r_abs         *
  *                              *
  ********************************/
@@ -1659,6 +1722,61 @@ void d3db::rr_Mul(const double *ptr1, double *ptr3)
    }
    return;
 }
+
+/********************************
+ *                              *
+ *     d3db::rrr_SqrMulAdd      *
+ *                              *
+ ********************************/
+void d3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d_map%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] += ptr1[i]*ptr1[i] * ptr2[i];
+   if (n2ft3d_map<5)
+      return;
+   for (i=m; i<n2ft3d_map; i+=5)
+   {
+      ptr3[i]   += (ptr1[i]  *ptr1[i]  ) * ptr2[i];
+      ptr3[i+1] += (ptr1[i+1]*ptr1[i+1]) * ptr2[i+1];
+      ptr3[i+2] += (ptr1[i+2]*ptr1[i+2]) * ptr2[i+2];
+      ptr3[i+3] += (ptr1[i+3]*ptr1[i+3]) * ptr2[i+3];
+      ptr3[i+4] += (ptr1[i+4]*ptr1[i+4]) * ptr2[i+4];
+   }
+   return;
+}
+
+/******************************************
+ *                                        *
+ *     d3db::rrrrrrr_Sqr3MulPlusMul2      *
+ *                                        *
+ ******************************************/
+void d3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2, 
+                                   const double *ptr3, const double *ptr4, 
+                                   const double *ptr5, const double *ptr6, 
+                                   double *ptr7)
+{
+   int i;
+   int m = n2ft3d_map%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])*ptr4[i] + ptr5[i]*ptr6[i];
+   if (n2ft3d_map<5)
+      return;
+   for (i=m; i<n2ft3d_map; i+=5)
+   {
+      ptr7[i]   = (ptr1[i]*ptr1[i]     + ptr2[i]*ptr2[i]     + ptr3[i]*ptr3[i])    *ptr4[i]   + ptr5[i]*ptr6[i];
+      ptr7[i+1] = (ptr1[i+1]*ptr1[i+1] + ptr2[i+1]*ptr2[i+1] + ptr3[i+1]*ptr3[i+1])*ptr4[i+1] + ptr5[i+1]*ptr6[i+1];
+      ptr7[i+2] = (ptr1[i+1]*ptr1[i+2] + ptr2[i+2]*ptr2[i+2] + ptr3[i+2]*ptr3[i+2])*ptr4[i+2] + ptr5[i+2]*ptr6[i+2];
+      ptr7[i+3] = (ptr1[i+1]*ptr1[i+3] + ptr2[i+3]*ptr2[i+3] + ptr3[i+3]*ptr3[i+3])*ptr4[i+3] + ptr5[i+3]*ptr6[i+3];
+      ptr7[i+4] = (ptr1[i+1]*ptr1[i+4] + ptr2[i+4]*ptr2[i+4] + ptr3[i+4]*ptr3[i+4])*ptr4[i+4] + ptr5[i+4]*ptr6[i+4];
+   }
+   return;
+}
+
+
 
 
 /********************************
@@ -4333,9 +4451,6 @@ void d3db::r_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
 
    parall->astart(1,np);
 
-   std::cout << "nrq1=" << nqr1 << std::endl;
-   std::cout << "(nx+2)*nrq1=" << (nx+2)*nqr1 << std::endl;
-   std::cout << "n2ft3d=" << n2ft3d << std::endl;
    /* pack a array */
    if ((op==0)||(op==4)) nnfft3d = (nx+2)*nqr1;
    if ((op==1)||(op==3)) nnfft3d = (ny)  *nqr2;
@@ -4349,12 +4464,6 @@ void d3db::r_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
    std::memcpy(tmp2+ir2_start[op][0],
                tmp1+ir1_start[op][0],
                msglen*sizeof(double));
-
-   std::cout << "ir1_start[0]=" << ir1_start[op][0] << std::endl;
-   std::cout << "ir1_start[1]=" << ir1_start[op][1] << std::endl;
-   std::cout << "ir2_start[0]=" << ir2_start[op][0] << std::endl;
-   std::cout << "ir2_start[1]=" << ir2_start[op][1] << std::endl;
-   std::cout << "msglen=" << msglen << std::endl;
 
    /* receive packed array data */
    for (it=1; it<np; ++it)
@@ -4376,9 +4485,6 @@ void d3db::r_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
    /* wait for completion of mp_send, also do a sync */
    parall->aend(1);
 
-   std::cout << "nrq2=" << nqr2 << std::endl;
-   std::cout << "ny*nrq2=" << ny*nqr2 << std::endl;
-   std::cout << "n2ft3d=" << n2ft3d << std::endl;
    /* unpack a array */
    if ((op==3)||(op==5)) nnfft3d = (nx+2)*nqr1;
    if ((op==0)||(op==2)) nnfft3d = (ny)  *nqr2;
@@ -4394,7 +4500,7 @@ void d3db::r_transpose_ijk(const int op,double *a,double *tmp1,double *tmp2)
  **************************************/
 // computes the periodic gradient on a (nx,ny,nz) grid.
 #define one_over_60	1.66666666666667e-2
-void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *grz) 
+void d3db::rrrr_periodic_gradient(const double *rho, double *grx, double *gry, double *grz)
 {
    int nx2 = nx+2;
 
@@ -4404,79 +4510,83 @@ void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *gr
       double *tmp2 = new (std::nothrow) double [2*nfft3d]();
       double *tmp3 = new (std::nothrow) double [2*nfft3d]();
       std::memcpy(a,rho,n2ft3d*sizeof(double));
-      r_transpose_jk(a,tmp2,tmp3);
-      delete [] tmp3;
-      delete [] tmp2;
+      this->r_transpose_jk(a,tmp2,tmp3);
 
       // x gradient
       for (auto q=0; q<nq; ++q)
       {
          int im3,im2,im1,ip1,ip2,ip3;
-         const double *f = rho + q*(nx+2)*ny;
+         const double *f = rho + q*(nx+2)*nz;
+         double      *df = grx + q*(nx+2)*nz;
          for (auto i=0; i<nx; ++i)
          {
             im3 = i-3; if (im3<0)  im3 += nx;
             im2 = i-2; if (im2<0)  im2 += nx;
             im1 = i-1; if (im1<0)  im1 += nx;
-            ip1 = i+1; if (ip1>nx) ip1 -= nx;
-            ip2 = i+2; if (ip2>nx) ip2 -= nx;
-            ip3 = i+3; if (ip3>nx) ip3 -= nx;
+            ip1 = i+1; if (ip1>=nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>=nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>=nx) ip3 -= nx;
 
             for (auto j=0; j<ny; ++j)
-               grx[i+j*nx2] =  one_over_60*(  -1.0*f[im3+j*nx2]
-                                           +   9.0*f[im2+j*nx2]
-                                           -  45.0*f[im1+j*nx2]
-                                           +  45.0*f[ip1+j*nx2]
-                                           -   9.0*f[ip2+j*nx2]
-                                           +   1.0*f[ip3+j*nx2]);
+               df[i+j*nx2] =  one_over_60*(  -1.0*f[im3+j*nx2]
+                                          +   9.0*f[im2+j*nx2]
+                                          -  45.0*f[im1+j*nx2]
+                                          +  45.0*f[ip1+j*nx2]
+                                          -   9.0*f[ip2+j*nx2]
+                                          +   1.0*f[ip3+j*nx2]);
          }
       }
       // y gradient
       for (auto q=0; q<nq; ++q)
       {
          int jm3,jm2,jm1,jp1,jp2,jp3;
-         const double *f = rho + q*(nx+2)*ny;
+         const double *f = a   + q*(nx+2)*ny;
+         double      *df = gry + q*(nx+2)*ny;
          for (auto j=0; j<ny; ++j)
          {
             jm3 = j-3; if (jm3<0)  jm3 += ny;
             jm2 = j-2; if (jm2<0)  jm2 += ny;
             jm1 = j-1; if (jm1<0)  jm1 += ny;
-            jp1 = j+1; if (jp1>ny) jp1 -= ny;
-            jp2 = j+2; if (jp2>ny) jp2 -= ny;
-            jp3 = j+3; if (jp3>ny) jp3 -= ny;
+            jp1 = j+1; if (jp1>=ny) jp1 -= ny;
+            jp2 = j+2; if (jp2>=ny) jp2 -= ny;
+            jp3 = j+3; if (jp3>=ny) jp3 -= ny;
             for (auto i=0; i<nx; ++i)
-               gry[i+j*nx2] =  one_over_60*(  -1.0*f[i+jm3*nx2]
-                                           +   9.0*f[i+jm2*nx2]
-                                           -  45.0*f[i+jm1*nx2]
-                                           +  45.0*f[i+jp1*nx2]
-                                           -   9.0*f[i+jp2*nx2]
-                                           +   1.0*f[i+jp3*nx2]);
+               df[i+j*nx2] =  one_over_60*(  -1.0*f[i+jm3*nx2]
+                                          +   9.0*f[i+jm2*nx2]
+                                          -  45.0*f[i+jm1*nx2]
+                                          +  45.0*f[i+jp1*nx2]
+                                          -   9.0*f[i+jp2*nx2]
+                                          +   1.0*f[i+jp3*nx2]);
          }
       }
+      r_transpose_jk(gry,tmp2,tmp3);
 
       // z gradient
       for (auto q=0; q<nq; ++q)
       {
          int km3,km2,km1,kp1,kp2,kp3;
-         const double *f = a + q*(nx+2)*nz;
+         const double *f = rho + q*(nx+2)*nz;
+         double      *df = grz + q*(nx+2)*nz;
          for (auto k=0; k<nz; ++k)
          {
             km3 = k-3; if (km3<0)  km3 += nz;
             km2 = k-2; if (km2<0)  km2 += nz;
             km1 = k-1; if (km1<0)  km1 += nz;
-            kp1 = k+1; if (kp1>nz) kp1 -= nz;
-            kp2 = k+2; if (kp2>nz) kp2 -= nz;
-            kp3 = k+3; if (kp3>nz) kp3 -= nz;
+            kp1 = k+1; if (kp1>=nz) kp1 -= nz;
+            kp2 = k+2; if (kp2>=nz) kp2 -= nz;
+            kp3 = k+3; if (kp3>=nz) kp3 -= nz;
             for (auto i=0; i<nx; ++i)
-               grz[i+k*nx2] =  one_over_60*(  -1.0*f[i+km3*nx2]
-                                           +   9.0*f[i+km2*nx2]
-                                           -  45.0*f[i+km1*nx2]
-                                           +  45.0*f[i+kp1*nx2]
-                                           -   9.0*f[i+kp2*nx2]
-                                           +   1.0*f[i+kp3*nx2]);
+               df[i+k*nx2] =  one_over_60*(  -1.0*f[i+km3*nx2]
+                                          +   9.0*f[i+km2*nx2]
+                                          -  45.0*f[i+km1*nx2]
+                                          +  45.0*f[i+kp1*nx2]
+                                          -   9.0*f[i+kp2*nx2]
+                                          +   1.0*f[i+kp3*nx2]);
          }
       }
       this->r_dealloc(a);
+      delete [] tmp3;
+      delete [] tmp2;
    }
    else
    {
@@ -4494,9 +4604,9 @@ void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *gr
             im3 = i-3; if (im3<0)  im3 += nx;
             im2 = i-2; if (im2<0)  im2 += nx;
             im1 = i-1; if (im1<0)  im1 += nx;
-            ip1 = i+1; if (ip1>nx) ip1 -= nx;
-            ip2 = i+2; if (ip2>nx) ip2 -= nx;
-            ip3 = i+3; if (ip3>nx) ip3 -= nx;
+            ip1 = i+1; if (ip1>=nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>=nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>=nx) ip3 -= nx;
             df[i] =  one_over_60*(  -1.0*f[im3]
                                  +   9.0*f[im2]
                                  -  45.0*f[im1]
@@ -4519,9 +4629,9 @@ void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *gr
             im3 = i-3; if (im3<0)  im3 += ny;
             im2 = i-2; if (im2<0)  im2 += ny;
             im1 = i-1; if (im1<0)  im1 += ny;
-            ip1 = i+1; if (ip1>ny) ip1 -= ny;
-            ip2 = i+2; if (ip2>ny) ip2 -= ny;
-            ip3 = i+3; if (ip3>ny) ip3 -= ny;
+            ip1 = i+1; if (ip1>=ny) ip1 -= ny;
+            ip2 = i+2; if (ip2>=ny) ip2 -= ny;
+            ip3 = i+3; if (ip3>=ny) ip3 -= ny;
             df[i] =  one_over_60*(  -1.0*f[im3]
                                  +   9.0*f[im2]
                                  -  45.0*f[im1]
@@ -4545,9 +4655,9 @@ void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *gr
             im3 = i-3; if (im3<0)  im3 += nz;
             im2 = i-2; if (im2<0)  im2 += nz;
             im1 = i-1; if (im1<0)  im1 += nz;
-            ip1 = i+1; if (ip1>nz) ip1 -= nz;
-            ip2 = i+2; if (ip2>nz) ip2 -= nz;
-            ip3 = i+3; if (ip3>nz) ip3 -= nz;
+            ip1 = i+1; if (ip1>=nz) ip1 -= nz;
+            ip2 = i+2; if (ip2>=nz) ip2 -= nz;
+            ip3 = i+3; if (ip3>=nz) ip3 -= nz;
             df[i] =  one_over_60*(  -1.0*f[im3]
                                  +   9.0*f[im2]
                                  -  45.0*f[im1]
@@ -4563,6 +4673,203 @@ void d3db::rrrr_gradient(const double *rho, double *grx, double *gry, double *gr
       delete [] tmp2;
       this->r_dealloc(a);
    }
+   this->r_zero_ends(grx);
+   this->r_zero_ends(gry);
+   this->r_zero_ends(grz);
+}
+
+
+/**************************************
+ *                                    *
+ *    d3db::rrrr_periodic_laplacian   *
+ *                                    *
+ **************************************/
+// computes the periodic gradient on a (nx,ny,nz) grid.
+#define one_over_180 5.55555555555556e-3
+void d3db::rrrr_periodic_laplacian(const double *rho, double *grxx, double *gryy, double *grzz)
+{
+   int nx2 = nx+2;
+
+   if (maptype==1)
+   {
+      double *a    = this->r_alloc();
+      double *tmp2 = new (std::nothrow) double [2*nfft3d]();
+      double *tmp3 = new (std::nothrow) double [2*nfft3d]();
+      std::memcpy(a,rho,n2ft3d*sizeof(double));
+      this->r_transpose_jk(a,tmp2,tmp3);
+
+      // xx gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f   = rho  + q*(nx+2)*nz;
+         double       *ddf = grxx + q*(nx+2)*nz;
+         for (auto i=0; i<nx; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nx;
+            im2 = i-2; if (im2<0)  im2 += nx;
+            im1 = i-1; if (im1<0)  im1 += nx;
+            ip1 = i+1; if (ip1>=nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>=nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>=nx) ip3 -= nx;
+
+            for (auto j=0; j<ny; ++j)
+               ddf[i+j*nx2] =  one_over_180*(   2.0*f[im3+j*nx2]
+                                            -  27.0*f[im2+j*nx2]
+                                            + 270.0*f[im1+j*nx2]
+                                            - 490.0*f[i  +j*nx2]
+                                            + 270.0*f[ip1+j*nx2]
+                                            -  27.0*f[ip2+j*nx2]
+                                            +   2.0*f[ip3+j*nx2]);
+         }
+      }
+
+      // yy gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int jm3,jm2,jm1,jp1,jp2,jp3;
+         const double *f   = a    + q*(nx+2)*ny;
+         double       *ddf = gryy + q*(nx+2)*ny;
+         for (auto j=0; j<ny; ++j)
+         {
+            jm3 = j-3; if (jm3<0)  jm3 += ny;
+            jm2 = j-2; if (jm2<0)  jm2 += ny;
+            jm1 = j-1; if (jm1<0)  jm1 += ny;
+            jp1 = j+1; if (jp1>=ny) jp1 -= ny;
+            jp2 = j+2; if (jp2>=ny) jp2 -= ny;
+            jp3 = j+3; if (jp3>=ny) jp3 -= ny;
+            for (auto i=0; i<nx; ++i)
+               ddf[i+j*nx2] =  one_over_180*(   2.0*f[i+jm3*nx2]
+                                            -  27.0*f[i+jm2*nx2]
+                                            + 270.0*f[i+jm1*nx2]
+                                            - 490.0*f[i+  j*nx2]
+                                            + 270.0*f[i+jp1*nx2]
+                                            -  27.0*f[i+jp2*nx2]
+                                            +   2.0*f[i+jp3*nx2]);
+         }
+      }
+      this->r_transpose_jk(gryy,tmp2,tmp3);
+
+      // zz gradient
+      for (auto q=0; q<nq; ++q)
+      {
+         int km3,km2,km1,kp1,kp2,kp3;
+         const double *f   = rho  + q*(nx+2)*nz;
+         double       *ddf = grzz + q*(nx+2)*nz;
+         for (auto k=0; k<nz; ++k)
+         {
+            km3 = k-3; if (km3<0)  km3 += nz;
+            km2 = k-2; if (km2<0)  km2 += nz;
+            km1 = k-1; if (km1<0)  km1 += nz;
+            kp1 = k+1; if (kp1>=nz) kp1 -= nz;
+            kp2 = k+2; if (kp2>=nz) kp2 -= nz;
+            kp3 = k+3; if (kp3>=nz) kp3 -= nz;
+            for (auto i=0; i<nx; ++i)
+               ddf[i+k*nx2] =  one_over_180*(   2.0*f[i+km3*nx2]
+                                            -  27.0*f[i+km2*nx2]
+                                            + 270.0*f[i+km1*nx2]
+                                            - 490.0*f[i+  k*nx2]
+                                            + 270.0*f[i+kp1*nx2]
+                                            -  27.0*f[i+kp2*nx2]
+                                            +   2.0*f[i+kp3*nx2]);
+         }
+      }
+
+      this->r_dealloc(a);
+      delete [] tmp3;
+      delete [] tmp2;
+   }
+   else
+   {
+      double *a    = this->r_alloc();
+      double *tmp2 = new (std::nothrow) double [nrft3d]();
+      double *tmp3 = new (std::nothrow) double [nrft3d]();
+
+      // xx gradient
+      for (auto q=0; q<nqr1; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f  = rho  + q*(nx+2);
+         double      *ddf = grxx + q*(nx+2);
+         for (auto i=0; i<nx; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nx;
+            im2 = i-2; if (im2<0)  im2 += nx;
+            im1 = i-1; if (im1<0)  im1 += nx;
+            ip1 = i+1; if (ip1>=nx) ip1 -= nx;
+            ip2 = i+2; if (ip2>=nx) ip2 -= nx;
+            ip3 = i+3; if (ip3>=nx) ip3 -= nx;
+            ddf[i] =  one_over_180*(   2.0*f[im3]
+                                   -  27.0*f[im2]
+                                   + 270.0*f[im1]
+                                   - 490.0*f[i]
+                                   + 270.0*f[ip1]
+                                   -  27.0*f[ip2]
+                                   +   2.0*f[ip3]);
+         }
+      }
+
+      // yy gradient
+      std::memcpy(a,rho,nrft3d*sizeof(double));
+      this->r_transpose_ijk(0,a,tmp2,tmp3); //#(i,j,k) --> (j,k,i)
+      for (auto q=0; q<nqr2; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f   = a + q*(ny);
+         double       *ddf = gryy + q*(ny);
+         for (auto i=0; i<ny; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += ny;
+            im2 = i-2; if (im2<0)  im2 += ny;
+            im1 = i-1; if (im1<0)  im1 += ny;
+            ip1 = i+1; if (ip1>=ny) ip1 -= ny;
+            ip2 = i+2; if (ip2>=ny) ip2 -= ny;
+            ip3 = i+3; if (ip3>=ny) ip3 -= ny;
+            ddf[i] =  one_over_180*(   2.0*f[im3]
+                                   -  27.0*f[im2]
+                                   + 270.0*f[im1]
+                                   - 490.0*f[i]
+                                   + 270.0*f[ip1]
+                                   -  27.0*f[ip2]
+                                   +   2.0*f[ip3]);
+         }
+      }
+      this->r_transpose_ijk(3,gryy,tmp2,tmp3); //#(j,k,i) --> (i,j,k)
+
+      // zz gradient
+      std::memcpy(a,rho,nrft3d*sizeof(double));
+      this->r_transpose_ijk(4,a,tmp2,tmp3);
+      for (auto q=0; q<nqr3; ++q)
+      {
+         int im3,im2,im1,ip1,ip2,ip3;
+         const double *f   = a + q*(nz);
+         double       *ddf = grzz + q*(nz);
+         for (auto i=0; i<nz; ++i)
+         {
+            im3 = i-3; if (im3<0)  im3 += nz;
+            im2 = i-2; if (im2<0)  im2 += nz;
+            im1 = i-1; if (im1<0)  im1 += nz;
+            ip1 = i+1; if (ip1>=nz) ip1 -= nz;
+            ip2 = i+2; if (ip2>=nz) ip2 -= nz;
+            ip3 = i+3; if (ip3>=nz) ip3 -= nz;
+            ddf[i] =  one_over_180*(   2.0*f[im3]
+                                  -  27.0*f[im2]
+                                  + 270.0*f[im1]
+                                  - 490.0*f[i]
+                                  + 270.0*f[ip1]
+                                  -  27.0*f[ip2]
+                                  +   2.0*f[ip3]);
+         }
+      }
+      this->r_transpose_ijk(5,grzz,tmp2,tmp3);
+
+      delete [] tmp3;
+      delete [] tmp2;
+      this->r_dealloc(a);
+   }
+   this->r_zero_ends(grxx);
+   this->r_zero_ends(gryy);
+   this->r_zero_ends(grzz);
 }
 
 /************************************************ 

@@ -2486,7 +2486,7 @@ void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, 
 
 /********************************
  *                              *
- *      PGrid:ttc_pack_iMul     *
+ *      PGrid:tcc_pack_iMul     *
  *                              *
  ********************************/
 void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double *c)
@@ -2502,6 +2502,30 @@ void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double
       ii += 2;
    }
 }
+
+/*******************************************
+ *                                         *
+ *     PGrid:tcr_pack_iMul_unpack_fft      *
+ *                                         *
+ *******************************************/
+void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c)
+{
+   int i,ii;
+   int ng  = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = -b[ii+1]*a[i];
+      c[ii+1] =  b[ii]  *a[i];
+      ii += 2;
+   }
+   this->c_unpack(nb,c);
+   this->cr_pfft3b(nb,c);
+   this->d3db::r_zero_ends(c);
+}
+
+
 
 /********************************
  *                              *
@@ -2906,6 +2930,59 @@ void PGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b,
     r_dealloc(R);
     r_dealloc(Aw);
 }
+
+/************************************
+ *                                  *
+ *   PGrid::rrrr_FD_gradient        *
+ *                                  *
+ ************************************/
+void PGrid::rrrr_FD_gradient(const double *rho, double *rhox, double *rhoy, double *rhoz)
+{
+   double ua[9];
+   for (auto i=0; i<3; ++i) {
+      ua[i]   = lattice->unita1d(0+i)/((double) nx);
+      ua[3+i] = lattice->unita1d(3+i)/((double) ny);
+      ua[6+i] = lattice->unita1d(6+i)/((double) nz);
+   }
+   double dx = std::sqrt(ua[0]*ua[0] + ua[1]*ua[1] + ua[2]*ua[2]);
+   double dy = std::sqrt(ua[3]*ua[3] + ua[4]*ua[4] + ua[5]*ua[5]);
+   double dz = std::sqrt(ua[6]*ua[6] + ua[7]*ua[7] + ua[8]*ua[8]);
+   
+   this->rrrr_periodic_gradient(rho,rhox,rhoy,rhoz);
+   for (auto i=0; i<n2ft3d; ++i)
+   {
+       rhox[i] /= dx;
+       rhoy[i] /= dy;
+       rhoz[i] /= dz;
+   }
+}
+
+/************************************
+ *                                  *
+ *   PGrid::rrrr_FD_laplacian       *
+ *                                  *
+ ************************************/
+void PGrid::rrrr_FD_laplacian(const double *rho, double *rhoxx, double *rhoyy, double *rhozz)
+{
+   double ua[9];
+   for (auto i=0; i<3; ++i) {
+      ua[i]   = lattice->unita1d(0+i)/((double) nx);
+      ua[3+i] = lattice->unita1d(3+i)/((double) ny);
+      ua[6+i] = lattice->unita1d(6+i)/((double) nz);
+   }
+   double dxx = (ua[0]*ua[0] + ua[1]*ua[1] + ua[2]*ua[2]);
+   double dyy = (ua[3]*ua[3] + ua[4]*ua[4] + ua[5]*ua[5]);
+   double dzz = (ua[6]*ua[6] + ua[7]*ua[7] + ua[8]*ua[8]);
+
+   this->rrrr_periodic_laplacian(rho,rhoxx,rhoyy,rhozz);
+   for (auto i=0; i<n2ft3d; ++i)
+   {
+       rhoxx[i] /= (dxx);
+       rhoyy[i] /= (dyy);
+       rhozz[i] /= (dzz);
+   }
+}
+
 
 
 

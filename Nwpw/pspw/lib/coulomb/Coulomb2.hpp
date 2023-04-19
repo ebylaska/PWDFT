@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Control2.hpp"
-#include "Dielectric.hpp"
 #include	"Pneb.hpp"
 
 namespace pwdft {
@@ -22,9 +21,6 @@ class	Coulomb2_Operator {
    /* cutoff constant */
    double EPSILON=1.0;
 
-   bool has_dielec = false;
-   Dielectric_Operator *mydielec;
-
 
 public:
 
@@ -36,8 +32,6 @@ public:
          delete [] gk;
          delete [] tmpx;
          delete myd3db2;
-
-         if (has_dielec) delete mydielec;
     }
 
     void   vcoulomb(const double *, double *);

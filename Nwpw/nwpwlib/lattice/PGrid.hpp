@@ -194,6 +194,8 @@ public:
         void pfftfz(const int, double *, double *, int);
         void pfftf_final(const int, double *, double *, int);
 
+        void tcr_pack_iMul_unpack_fft(const int, const double *, const double *, double *);
+
         void regenerate_r_grid();
         void initialize_r_grid() {
            if (!has_r_grid) {
@@ -210,6 +212,22 @@ public:
         void rr_Laplacian(const int, const double *, double *);
         void rr_Helmholtz(const int, const double *, const double *, double *);
         void rrr_solve_Helmholtz(const int, const double *, const double *, double *);
+
+        void rrrr_FD_gradient(const double *,  double *, double *, double *);
+        void rrrr_FD_laplacian(const double *, double *, double *, double *);
+
+        void t_pack_gaussian(const int nb, const double rcut, double *gauss) {
+            double w=rcut*rcut/4.0;
+            int npack0 =  nida[nb]+nidb[nb];
+            double *gx = Gpackxyz(nb,0);
+            double *gy = Gpackxyz(nb,1);
+            double *gz = Gpackxyz(nb,2);
+            for (auto k=0; k<npack0; ++k)
+            {
+                auto gg = gx[k]*gx[k] + gy[k]*gy[k] + gz[k]*gz[k];
+                gauss[k] = std::exp(-w*gg);
+            }
+        }
 };
 
 }

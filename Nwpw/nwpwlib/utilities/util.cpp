@@ -481,12 +481,49 @@ void util_dandreussi_dielec(const int n2ft3d,
    }
 }
 
+
+
+/**************************************
+ *                                    *
+ *        util_ddandreussi_dielec     *
+ *                                    *
+ **************************************/
+/* Computes the second derivative of dielectric function wrt to rho  using the first local
+   model of the density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari,
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_ddandreussi_dielec(const int n2ft3d,
+                             const double eps, const double rhomin, const double rhomax,
+                             const double *rho, double *ddepsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if ((rho[k]>rhomin) && (rho[k]<rhomax))
+       {
+           auto x = twopi*(rhomax-rho[k])/(rhomax-rhomin);
+           auto dxdrho = -twopi/(rhomax-rhomin);
+           ddepsilon[k] = ((eps-1.0)/twopi)*(sin(x))*dxdrho*dxdrho;
+       }
+       else
+          ddepsilon[k] = 0.0;
+   }
+}
+
+
 /**************************************
  *                                    *
  *        util_andreussi2_dielec       *
  *                                    *
  **************************************/
-/* Computes the dielectric function using the second local model of the density from Andreussi, Dabo, and Marzari
+/* Computes the dielectric function using the second local model of the 
+   density from Andreussi, Dabo, and Marzari
    Reference: Andreussi, Dabo, and Marzari,
               J. Chem. Phys.136, 064102 (2012)
    Suggested parameter values:
@@ -520,7 +557,8 @@ void util_andreussi2_dielec(const int n2ft3d,
  *        util_dandreussi2_dielec     *
  *                                    *
  **************************************/
-/* Computes the dielectric function using the second local model of the density from Andreussi, Dabo, and Marzari
+/* Computes the derivative of the dielectric function using the second local model of the 
+   density from Andreussi, Dabo, and Marzari
    Reference: Andreussi, Dabo, and Marzari,
               J. Chem. Phys.136, 064102 (2012)
    Suggested parameter values:
@@ -548,6 +586,44 @@ void util_dandreussi2_dielec(const int n2ft3d,
           depsilon[k] = 0.0;
    }
 }
+
+/**************************************
+ *                                    *
+ *        util_ddandreussi2_dielec    *
+ *                                    *
+ **************************************/
+/* Computes the second derivative dielectric function using the second local model of the 
+   density from Andreussi, Dabo, and Marzari
+   Reference: Andreussi, Dabo, and Marzari,
+              J. Chem. Phys.136, 064102 (2012)
+   Suggested parameter values:
+      water - eps=78.36, rhomin=0.0001 au, and rhomax=0.0035 bohr
+      ρmax=0.0035 a.u. and ρmin=0.0001 a.u.
+
+*/
+void util_ddandreussi2_dielec(const int n2ft3d,
+                             const double eps, const double rhomin, const double rhomax,
+                             const double *rho, double *ddepsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+
+   for (auto k=0; k<n2ft3d; ++k)
+   {
+       if ((rho[k]>rhomin) && (rho[k]<rhomax))
+       {
+           auto x = twopi*(log(rhomax)-log(rho[k]))/(log(rhomax)-log(rhomin));
+           auto t = (log(eps)/twopi)*(x - sin(x));
+           auto dtdx   = (log(eps)/twopi)*(1.0-cos(x));
+           auto d2tdx2 = (log(eps)/twopi)*(sin(x));
+           auto dxdrho   = twopi/(rho[k]*(log(rhomin)-log(rhomax)));
+           auto d2xdrho2 = twopi/(rho[k]*rho[k]*(log(rhomax)-log(rhomin)));
+           ddepsilon[k] = exp(t)*(d2tdx2*dxdrho*dxdrho + dtdx*d2xdrho2 + dtdx*dtdx*dxdrho*dxdrho);
+       }
+       else
+          ddepsilon[k] = 0.0;
+   }
+}
+
 
 
 

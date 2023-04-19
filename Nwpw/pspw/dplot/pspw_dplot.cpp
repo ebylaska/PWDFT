@@ -379,10 +379,10 @@ int pspw_dplot(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutpu
                                 << " - cubefilename = " << cubename 
                                 << " (json key=" << cubekey << ")" << std::endl;
 
-             /* setup Coulomb operator and structure factor */
-            Coulomb12_Operator mycoulomb12(&mygrid,control);
+            /* setup Coulomb operator and structure factor */
             Strfac mystrfac(&myion, &mygrid);
             mystrfac.phafac();
+            Coulomb12_Operator mycoulomb12(&mygrid,control);
 
             /* define rcut */
             double rcut = 1.0;

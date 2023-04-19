@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Control2.hpp"
+#include "Strfac.hpp"
 #include	"Pneb.hpp"
 
 namespace pwdft {
@@ -11,6 +12,7 @@ namespace pwdft {
 class	Dielectric_Operator {
 
    Pneb   *mypneb;
+   Strfac *mystrfac;
    int    n2ft3d;
    double dielec, rho0, beta;
    double *r_grid;
@@ -19,9 +21,10 @@ public:
    double *epsilon, *depsilon, *sw, *p;
    double *epsilon_x, *epsilon_y, *epsilon_z;
    double *w_x, *w_y, *w_z;
+   double *rho_induced,*rho_ion;
 
    /* Constructors */
-   Dielectric_Operator(Pneb *, Control2&);
+   Dielectric_Operator(Pneb *, Strfac *, Control2&);
 
    /* destructor */
    ~Dielectric_Operator() {
@@ -35,6 +38,8 @@ public:
        mypneb->r_dealloc(w_x);
        mypneb->r_dealloc(w_y);
        mypneb->r_dealloc(w_z);
+       mypneb->r_dealloc(rho_induced);
+       mypneb->r_dealloc(rho_ion);
     }
 
     void generate_dielec(const double *);

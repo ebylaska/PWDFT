@@ -560,6 +560,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       if (gpoissonjson["dielec"].is_number_float()) pgpoisson_dielec = gpoissonjson["dielec"];
       if (gpoissonjson["rho0"].is_number_float())   pgpoisson_rho0   = gpoissonjson["rho0"];
       if (gpoissonjson["beta"].is_number_float())   pgpoisson_beta   = gpoissonjson["beta"];
+      if (gpoissonjson["rhomin"].is_number_float()) pgpoisson_rhomin = gpoissonjson["rhomin"];
+      if (gpoissonjson["rhomax"].is_number_float()) pgpoisson_rhomax = gpoissonjson["rhomax"];
    }
 
    // Nose data

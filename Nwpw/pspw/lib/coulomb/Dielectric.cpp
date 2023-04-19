@@ -18,12 +18,36 @@ namespace pwdft {
 
 /********************************************
  *                                          *
+ *            generate_rho_ion              *
+ *                                          *
+ ********************************************/
+/*static void generate_rho_ion(Pneb *mypneb, Strfac *mystrfac, double rc,  double *rho_ion)
+{
+    int nion       = mystrfac->myion->nion;
+    double *gauss  = mypneb->t_pack_allocate(0);
+    double *katm   = mystrfac->myion->katm;
+    double *zv_psp = mystrfac->myion->zv_psp;
+
+    mypneb->c_pack_zero(0,rho_ion);
+    mypneb->t_pack_gaussian(0,rc,gauss);
+    for (auto ii=0; ii<nion; ++ii)
+    {
+       mystrfac->strfac_pack(0,ii,exi)
+       mypneb->tcc_pack_aMulAdd(0,zv_psp[katm[ii]],gauss,exi,rho_ion);
+    }
+}
+*/
+
+/********************************************
+ *                                          *
  * Dielectric_Operator::Dielectric_Operator *
  *                                          *
  ********************************************/
-Dielectric_Operator::Dielectric_Operator(Pneb *mygrid, Control2& control)
+Dielectric_Operator::Dielectric_Operator(Pneb *mygrid, Strfac *mystrfacin, Control2& control)
 {
-   mypneb = mygrid;
+   mypneb   = mygrid;
+   mystrfac = mystrfacin;
+
    n2ft3d = mypneb->n2ft3d;
 
    mypneb->initialize_r_grid();
@@ -42,9 +66,14 @@ Dielectric_Operator::Dielectric_Operator(Pneb *mygrid, Control2& control)
    w_y = mypneb->r_alloc();
    w_z = mypneb->r_alloc();
 
+   rho_induced = mypneb->r_alloc();
+   rho_ion     = mypneb->r_alloc();
+   //generate_rho_ion(mypneb,mystrfac,rho_ion);
+
    dielec = control.gpoisson_dielec();
    rho0   = control.gpoisson_rho0();
    beta   = control.gpoisson_beta();
+
 }
 
 /********************************************

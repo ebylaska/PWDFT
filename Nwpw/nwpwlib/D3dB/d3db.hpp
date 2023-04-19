@@ -69,6 +69,7 @@ public:
     double  rr_dot(const double *, const double *);
     void     nrr_vdot(const int, const double *, const double *, double *);
     void     r_zero_ends(double *);
+    void     r_zero_mends(double *);
     void     r_abs(double *);
 
     void     r_sqr(double *);
@@ -156,7 +157,16 @@ public:
     void     r_transpose_ijk_end();
     void     r_transpose_jk(double *, double *, double *);
     void     r_transpose_ijk(const int, double *, double *, double *);
-    void     rrrr_gradient(const double *, double *, double *, double *);
+    void     rrrr_periodic_gradient(const double *, double *, double *, double *);
+    void     rrrr_periodic_laplacian(const double *, double *, double *, double *);
+
+    /* real-space special gradients */
+    void     rrr_SqrMulAdd(const double *, const double *, double *);
+    void     rrrrrrr_Sqr3MulPlusMul2(const double *, const double *,
+                                     const double *, const double *,
+                                     const double *, const double *,
+                                     double *);
+
 
 };
 }

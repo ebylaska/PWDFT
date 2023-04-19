@@ -143,7 +143,7 @@ int pspw_geovib(MPI_Comm comm_world0,std::string& rtdbstring,std::ostream& coutp
 
 
    /* setup structure factor */
-   Strfac mystrfac(&myion, &mygrid);
+   Strfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
 
    /* initialize operators */
