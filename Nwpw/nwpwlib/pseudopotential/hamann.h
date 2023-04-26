@@ -8,7 +8,7 @@
 
 */
 
-void	Suggested_Param_Hamann();
-void	solve_Hamann();
+void Suggested_Param_Hamann();
+void solve_Hamann();
 
 #endif

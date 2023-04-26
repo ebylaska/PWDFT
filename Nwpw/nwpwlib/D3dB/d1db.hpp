@@ -6,26 +6,23 @@
   this class is container of operations for distributed 3d blocks
 */
 
-#include	"Parallel.hpp"
-#include	"Mapping1.hpp"
+#include "Mapping1.hpp"
+#include "Parallel.hpp"
 
 namespace pwdft {
 
-
 class d1db : public Mapping1 {
 
-
 public:
-        Parallel  *parall;
+  Parallel *parall;
 
-        /* constructor */
-	d1db(Parallel *, const int, const int, int *);
+  /* constructor */
+  d1db(Parallel *, const int, const int, int *);
 
-        /* destructor */
-        ~d1db() {}
-
+  /* destructor */
+  ~d1db() {}
 };
 
-}
+} // namespace pwdft
 
 #endif

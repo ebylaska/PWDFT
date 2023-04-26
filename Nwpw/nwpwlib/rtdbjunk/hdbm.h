@@ -13,9 +13,6 @@
 #define FALSE 0
 #endif
 
-
-
-
 /*
   Routines that support a simple in core hash table.
   *SUMMARY*
@@ -25,21 +22,21 @@
   } datum;
   typedef hdbm int;
   DATUMS_MATCH(a, b)
-  *RECOMMENDATIONS* 
+  *RECOMMENDATIONS*
          Ensure that datums extracted from the table are always
          freed using datum_free().  This routine complements
          datum_make(), datum_duplicate() and datum_wrap().
 */
 
-typedef struct datum {		/* The fundamental data type */
-  void *dptr;			/* Ndbm uses char * */
+typedef struct datum { /* The fundamental data type */
+  void *dptr;          /* Ndbm uses char * */
   int dsize;
 } datum;
 
-typedef int hdbm;		/* Handle to refer to hashtable */
+typedef int hdbm; /* Handle to refer to hashtable */
 
-#define DATUMS_MATCH(a, b) (a.dsize == b.dsize && \
-			   memcmp(a.dptr, b.dptr, (size_t) a.dsize) == 0)
+#define DATUMS_MATCH(a, b)                                                     \
+  (a.dsize == b.dsize && memcmp(a.dptr, b.dptr, (size_t)a.dsize) == 0)
 
 /*
   Determine if db is a valid handle for an open hashtable.
@@ -57,7 +54,7 @@ extern void datum_wrap(const void *, int, datum *);
 
 /*
   Make a datum by duplicating the data described
-  by the arguments. 
+  by the arguments.
   Return  1 if successful
           0 if failed to allocate necessary memory
 */
@@ -85,7 +82,7 @@ extern void datum_print_string(datum);
 extern void datum_free(datum);
 
 /*
-  Open a database with given name. 
+  Open a database with given name.
   If (use_file)
      Store all keys in memory.  Store all keys and values on disk.
      Name is interpreted as the path to a file.
@@ -105,9 +102,8 @@ extern int hdbm_open(const char *, int, hdbm *);
 */
 extern int hdbm_close(hdbm);
 
-
 /*
-  Delete any original content of fileto and then copy the 
+  Delete any original content of fileto and then copy the
   database in filefrom into fileto.  Both files are closed
   at the end of the operation.
 */
@@ -120,7 +116,7 @@ extern int hdbm_file_flush(hdbm);
 
 /*
   Compress out dead space from database on disk which
-  must be closed 
+  must be closed
 */
 extern int hdbm_file_compress(const char *);
 
@@ -135,7 +131,7 @@ extern int hdbm_insert(hdbm, datum, datum);
   Insert a new entry into the table overwriting any existing match.
 */
 extern int hdbm_replace(hdbm, datum, datum);
-    
+
 /*
   return true/false if key is present
   false is also returned if there are other errors
@@ -144,7 +140,7 @@ extern int hdbm_probe(hdbm, datum);
 
 /*
   return size of value if key is present
-  
+
   if key is not present or there are other errors return -1
 */
 extern int hdbm_size(hdbm, datum, int *);
@@ -153,7 +149,7 @@ extern int hdbm_size(hdbm, datum, int *);
   Read the value associated with the key
   On success return datum in value and true
   On value not present or another error return false.
-   
+
   The pointer returned in value points to a copy of the data which
   should be released with datum_free().
 */
@@ -174,7 +170,7 @@ extern int hdbm_delete(hdbm, datum);
   Otherwise return false.
 */
 extern int hdbm_extract(hdbm, datum, datum *);
-    
+
 /*
   Second routine of iterator through keys in the database.
   On success return next key and true

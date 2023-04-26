@@ -8,7 +8,7 @@
 
 */
 
-void	Suggested_Param_Troullier();
-void	solve_Troullier();
+void Suggested_Param_Troullier();
+void solve_Troullier();
 
 #endif

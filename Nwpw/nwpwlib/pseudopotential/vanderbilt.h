@@ -5,8 +5,8 @@
 
 */
 
-void	Suggested_Param_Vanderbilt();
-void	solve_Vanderbilt();
+void Suggested_Param_Vanderbilt();
+void solve_Vanderbilt();
 
 #endif
 /* $Id$ */

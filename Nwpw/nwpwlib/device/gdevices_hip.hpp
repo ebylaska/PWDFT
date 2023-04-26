@@ -160,7 +160,7 @@ public:
     throw hip_exception(__FILE__, __LINE__, ERR);
 
 #define NWPW_ROCFFT_ERROR(ERR)                                                 \
-  if (ERR != ROCFFT_SUCCESS)                                                    \
+  if (ERR != ROCFFT_SUCCESS)                                                   \
     throw rocfft_exception(__FILE__, __LINE__, ERR);
 
 #define NWPW_ROCBLAS_ERROR(ERR)                                                \
@@ -670,13 +670,13 @@ public:
 
     int y_inembed[] = {ny};
     int y_onembed[] = {ny};
-    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_y, 1, &ny, y_inembed, 1, ny, y_onembed,
-                                   1, ny, CUFFT_Z2Z, nq2));
+    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_y, 1, &ny, y_inembed, 1, ny,
+                                    y_onembed, 1, ny, CUFFT_Z2Z, nq2));
 
     int z_inembed[] = {nz};
     int z_onembed[] = {nz};
-    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_z, 1, &nz, z_inembed, 1, nz, z_onembed,
-                                   1, nz, CUFFT_Z2Z, nq3));
+    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_z, 1, &nz, z_inembed, 1, nz,
+                                    z_onembed, 1, nz, CUFFT_Z2Z, nq3));
   }
 
   void batch_fft_end() {
@@ -702,10 +702,10 @@ public:
           forward_plan_x, reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev]),
           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev])));
     } else {
-      NWPW_ROCFFT_ERROR(
-        rocfft_execute(backward_plan_x,
-                       reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-                       reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
+      NWPW_ROCFFT_ERROR(rocfft_execute(
+          backward_plan_x,
+          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+          reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
     }
 
     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
@@ -740,7 +740,7 @@ public:
   void batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
     NWPW_HIP_ERROR(hipMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                              hipMemcpyHostToDevice));
+                             hipMemcpyHostToDevice));
 
     if (forward) {
       NWPW_ROCFFT_ERROR(cufftExecZ2Z(

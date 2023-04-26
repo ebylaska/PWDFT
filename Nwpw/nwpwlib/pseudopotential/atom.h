@@ -1,4 +1,4 @@
-#ifndef	_ATOM_H_
+#ifndef _ATOM_H_
 #define _ATOM_H_
 /* atom.h -
    author - Eric Bylaska and Patrick Nichols
@@ -7,17 +7,16 @@
 #include <stdio.h>
 
 /* Solver type: Solve_Type */
-#define	Schrodinger	-8001
-#define Pauli		-8002
-#define Dirac		-8003
-#define ZORA            -8004
+#define Schrodinger -8001
+#define Pauli -8002
+#define Dirac -8003
+#define ZORA -8004
 /* atom.c */
 extern void init_Atom(char *filename);
 extern void end_Atom();
 extern void Thomas_Fermi(double Z, double Vtmp[]);
 extern void solve_Atom(void);
-extern void solve_Scattering_State_Atom(int nt, int lt, 
-	double et, double rmax);
+extern void solve_Scattering_State_Atom(int nt, int lt, double et, double rmax);
 extern char *solver_Name_Atom(void);
 extern int solver_Type_Atom(void);
 extern void print_Atom(FILE *fp);

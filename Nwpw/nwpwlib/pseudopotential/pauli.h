@@ -11,7 +11,7 @@
 
 */
 
-extern void   R_Pauli();
-extern void   R_Pauli_Fixed_E();
+extern void R_Pauli();
+extern void R_Pauli_Fixed_E();
 
 #endif

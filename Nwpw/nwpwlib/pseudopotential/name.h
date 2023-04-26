@@ -1,9 +1,9 @@
 /*
  $Id$
 */
-#ifndef	_NAME_H_
+#ifndef _NAME_H_
 #define _NAME_H_
 
-extern	char * spd_Name(int);
+extern char *spd_Name(int);
 
 #endif

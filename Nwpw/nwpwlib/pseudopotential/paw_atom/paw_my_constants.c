@@ -3,6 +3,4 @@
    $Id$
 */
 
-void paw_my_constants()
-{
-}
+void paw_my_constants() {}

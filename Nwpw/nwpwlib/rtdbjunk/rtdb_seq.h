@@ -3,11 +3,10 @@
 #ifndef RTDB_SEQ_H
 #define RTDB_SEQ_H
 
-
 /*
   All routines return TRUE (1) on success, FALSE (0) on failure.
   int rtdb_parallel(const int mode)
-  
+
     Set the parallel access mode of all databases to mode and
     return the previous setting
   int rtdb_open(const char *filename, const char *mode, int *handle)
@@ -24,16 +23,16 @@
   int rtdb_clone(const int handle, const char *suffix)
     Copy the data base file
     handle   = handle to RTDB
-    suffix   
+    suffix
   int rtdb_close(const int handle, const char *mode)
     Close the data base
     handle   = handle to RTDB
     mode     = 'keep'    Preserve the data base file to enable restart
                'delete'  Delete the data base file freeing all resources
-               mode is overridden by opening the data base with 
-               mode='scratch' in which instance it is always deleted 
+               mode is overridden by opening the data base with
+               mode='scratch' in which instance it is always deleted
                upon closing
-  int rtdb_get_info(const int handle, const char *name, int *ma_type, 
+  int rtdb_get_info(const int handle, const char *name, int *ma_type,
                     int *nelem, char date[26])
     Get info about an entry from the data base
     handle   = handle to RTDB
@@ -60,7 +59,7 @@
   int rtdb_ma_get(const int handle, const char *name, int *ma_type,
                   int *nelem, int *ma_handle)
     Get an entry from the data base returning an MA handle
-  
+
     handle   = handle to RTDB
     name     = entry name (null terminated character string)
     ma_type  = returns MA type of the entry
@@ -90,24 +89,21 @@
          0 if key was not present, or if an error occured
     handle  = handle to RTDB
     name    = name of entry to delete
-		   
+
 */
-
-
-
 
 /* datatypes */
 #ifndef _RTDB_DATATYPE_H_
 #define _RTDB_DATATYPE_H_
-#define rtdb_char   0       /* char */
-#define rtdb_long   2    /* long int */
-#define rtdb_byte   1009    /* byte */
-#define rtdb_int    1010    /* int */
-#define rtdb_log    1011    /* log */
-#define rtdb_float  1012    /* float */
-#define rtdb_double 1013    /* double */
-#define rtdb_complex 1014    /* complex*/
-#define rtdb_double_complex 1015    /* double complex*/
+#define rtdb_char 0              /* char */
+#define rtdb_long 2              /* long int */
+#define rtdb_byte 1009           /* byte */
+#define rtdb_int 1010            /* int */
+#define rtdb_log 1011            /* log */
+#define rtdb_float 1012          /* float */
+#define rtdb_double 1013         /* double */
+#define rtdb_complex 1014        /* complex*/
+#define rtdb_double_complex 1015 /* double complex*/
 #endif
 
 //#define rtdb_char   0    /* char */
@@ -120,22 +116,19 @@
   for internal use only
 */
 
-
 extern int rtdb_seq_open(const char *, const char *, int *);
 extern int rtdb_seq_copy(const int, const char *);
-extern int rtdb_seq_getfname(const int,  char [36]);
+extern int rtdb_seq_getfname(const int, char[36]);
 extern int rtdb_seq_close(const int, const char *);
-extern int rtdb_seq_put(const int, const char *, const int, const int, 
-		    const void *);
-extern int rtdb_seq_get(const int, const char *, const int, const int,
-		    void *);
-extern int rtdb_seq_get_info(const int, const char *, int *, int *, char [26]);
-//extern int rtdb_seq_ma_get(const int, const char *, int *, int *, int *);
+extern int rtdb_seq_put(const int, const char *, const int, const int,
+                        const void *);
+extern int rtdb_seq_get(const int, const char *, const int, const int, void *);
+extern int rtdb_seq_get_info(const int, const char *, int *, int *, char[26]);
+// extern int rtdb_seq_ma_get(const int, const char *, int *, int *, int *);
 extern int rtdb_seq_ma_get(const int, const char *, int *, int *, void **);
 extern int rtdb_seq_first(const int, const int, char *);
 extern int rtdb_seq_next(const int, const int, char *);
 extern int rtdb_seq_print(const int, const int);
 extern int rtdb_seq_delete(const int, const char *);
-
 
 #endif
