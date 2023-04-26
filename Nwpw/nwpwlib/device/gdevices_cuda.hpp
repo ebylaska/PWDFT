@@ -1011,7 +1011,7 @@ static void eigsrt_device(double *D, double *V, int n) {
 
       for (auto ms=0; ms<ispin; ++ms)
       {
-         inuse[i_a1[ms]] 
+         inuse[i_a1[ms]];
          inuse[i_w1[ms]];
       }
    }
