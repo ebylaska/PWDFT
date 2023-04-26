@@ -1009,6 +1009,11 @@ static void eigsrt_device(double *D, double *V, int n) {
          shift2 += ne[0]*ne[0];
       }
 
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         inuse[i_a1[ms]] 
+         inuse[i_w1[ms]];
+      }
    }
 
 };
