@@ -110,7 +110,15 @@ elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
    message("-- Using ${CMAKE_Fortran_COMPILER_ID} Fortran Compiler ")
    # adding "-m64 -fdefault-integer-8" below won't work
    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
-   set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -m64 -ffast-math  -Wuninitialized -fno-aggressive-loop-optimizations -std=legacy -fopenmp -fno-tree-dominator-opts  -Wuninitialized -fno-aggressive-loop-optimizations -O3  -mfpmath=sse  -fno-tree-dominator-opts  -ffast-math  -fprefetch-loop-arrays  -ftree-vectorize    -mtune=native" CACHE STRING "" FORCE)
+
+   message( STATUS "Architecture: ${CMAKE_SYSTEM_PROCESSOR}" )
+   if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
+      set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -m64 -ffast-math  -Wuninitialized -fno-aggressive-loop-optimizations -std=legacy -fopenmp -fno-tree-dominator-opts  -Wuninitialized -fno-aggressive-loop-optimizations -O3  -fno-tree-dominator-opts  -ffast-math  -fprefetch-loop-arrays  -ftree-vectorize    -mtune=native" CACHE STRING "" FORCE)
+   else()
+      set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -m64 -ffast-math  -Wuninitialized -fno-aggressive-loop-optimizations -std=legacy -fopenmp -fno-tree-dominator-opts  -Wuninitialized -fno-aggressive-loop-optimizations -O3  -mfpmath=sse  -fno-tree-dominator-opts  -ffast-math  -fprefetch-loop-arrays  -ftree-vectorize    -mtune=native" CACHE STRING "" FORCE)
+   endif()
+   message( STATUS "Fortran flag release: ${CMAKE_Fortran_FLAGS_RELEASE}" )
+
 endif()
 
 

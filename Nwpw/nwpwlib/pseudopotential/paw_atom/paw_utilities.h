@@ -4,6 +4,7 @@
    $Id$
 */
 
+#include <stdio.h>
 #define NIL ((char *)EOF)
 
 extern char *paw_get_word(FILE *stream);
