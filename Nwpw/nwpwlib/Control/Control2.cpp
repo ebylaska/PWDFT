@@ -745,6 +745,12 @@ Control2::Control2(const int np0, const std::string rtdbstring) {
       pgpoisson_rhomin = gpoissonjson["rhomin"];
     if (gpoissonjson["rhomax"].is_number_float())
       pgpoisson_rhomax = gpoissonjson["rhomax"];
+    if (gpoissonjson["rcut_ion"].is_number_float())
+      pgpoisson_rcut_ion = gpoissonjson["rcut_ion"];
+    if (gpoissonjson["alpha"].is_number_float())
+      pgpoisson_alpha = gpoissonjson["alpha"];
+    if (gpoissonjson["model"].is_number_integer())
+      pgpoisson_model = gpoissonjson["model"];
   }
 
   // Nose data
