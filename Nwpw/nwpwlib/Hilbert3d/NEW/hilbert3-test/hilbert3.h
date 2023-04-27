@@ -5,6 +5,6 @@
 
 */
 
-extern  void    hilbert3d_map(const int, const int, const int, int *);
+extern void hilbert3d_map(const int, const int, const int, int *);
 
 #endif

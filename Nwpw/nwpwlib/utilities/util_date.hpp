@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 /* util_date.h -
    Author - Eric Bylaska
 
@@ -11,10 +10,9 @@
 
 namespace pwdft {
 
-
 extern char *util_date();
 extern void seconds(double *);
 
-}
+} // namespace pwdft
 
 #endif

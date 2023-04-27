@@ -31,13 +31,12 @@
 //#include        <string>
 //
 
-#include        <cstdlib>
-#include        <cstdio>
-#include        <cmath>
-#include        <cstring>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "Int64.h"
-
 
 /*
  * Check if a file exist using stat() function
@@ -47,23 +46,24 @@
 
 namespace pwdft {
 
-
-
-int cfileexists(const char* filename){
-    struct stat buffer;
-    int exist = stat(filename,&buffer);
-    if(exist == 0)
-        return 1;
-    else // -1
-        return 0;
+int cfileexists(const char *filename) {
+  struct stat buffer;
+  int exist = stat(filename, &buffer);
+  if (exist == 0)
+    return 1;
+  else // -1
+    return 0;
 }
 
+#define MAX_UNIT 10
 
-#define MAX_UNIT	10
+static FILE *fd[MAX_UNIT]; /* the file descriptor of the pipe */
 
-static FILE* fd[MAX_UNIT];	/* the file descriptor of the pipe */
-
-#define BAIL(X) { fprintf(stderr, X); exit(-1); }
+#define BAIL(X)                                                                \
+  {                                                                            \
+    fprintf(stderr, X);                                                        \
+    exit(-1);                                                                  \
+  }
 
 /*
 *************************************************************************
@@ -73,47 +73,43 @@ static FILE* fd[MAX_UNIT];	/* the file descriptor of the pipe */
 *************************************************************************
 */
 
-void cwrite(int unit, char *c, const int n)
-{
+void cwrite(int unit, char *c, const int n) {
 
-   (void) fwrite(c, sizeof(char), n, fd[unit]);
+  (void)fwrite(c, sizeof(char), n, fd[unit]);
 }
 
-void cread(int unit, char *c, const int n)
-{
-   (void) fread(c, sizeof(char), n, fd[unit]);
+void cread(int unit, char *c, const int n) {
+  (void)fread(c, sizeof(char), n, fd[unit]);
 }
 
-void iwrite(const int unit, const int *i, const int n)
-{
-   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
-   Int64 *itmp;
-   itmp = new Int64[n];
-   for (int j=0; j<n; ++j)  itmp[j] = (Int64) i[j];
-   (void) fwrite(itmp, sizeof(Int64), n, fd[unit]);
-   //free(itmp);
-   delete [] itmp;
+void iwrite(const int unit, const int *i, const int n) {
+  // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+  Int64 *itmp;
+  itmp = new Int64[n];
+  for (int j = 0; j < n; ++j)
+    itmp[j] = (Int64)i[j];
+  (void)fwrite(itmp, sizeof(Int64), n, fd[unit]);
+  // free(itmp);
+  delete[] itmp;
 }
 
-void iread(const int unit, int *i, const int n)
-{
-   //Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
-   Int64 *itmp;
-   itmp = new Int64[n];
-   (void) fread(itmp, sizeof(Int64), n, fd[unit]);
-   for (int j=0; j<n; ++j)  i[j] = (int) itmp[j];
-   //free(itmp);
-   delete [] itmp;
+void iread(const int unit, int *i, const int n) {
+  // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+  Int64 *itmp;
+  itmp = new Int64[n];
+  (void)fread(itmp, sizeof(Int64), n, fd[unit]);
+  for (int j = 0; j < n; ++j)
+    i[j] = (int)itmp[j];
+  // free(itmp);
+  delete[] itmp;
 }
 
-void dwrite(const int unit, const double *d, const int n)
-{
-   (void) fwrite(d, sizeof(double), n, fd[unit]);
+void dwrite(const int unit, const double *d, const int n) {
+  (void)fwrite(d, sizeof(double), n, fd[unit]);
 }
 
-void dread(const int unit, double *d, const int n)
-{
-   (void) fread(d, sizeof(double), n, fd[unit]);
+void dread(const int unit, double *d, const int n) {
+  (void)fread(d, sizeof(double), n, fd[unit]);
 }
 
 /*
@@ -131,22 +127,17 @@ void dread(const int unit, double *d, const int n)
 
 #define FUDGE_FACTOR (8)
 
-void openfile(const int unit, const char *filename, const char *mode)
-{
+void openfile(const int unit, const char *filename, const char *mode) {
 
-   if ((*mode == 'r') || (*mode == 'R')) {
-      if (!(fd[unit] = fopen(filename, "rb")))
-         BAIL("ERROR:  Could not open pipe from input file\n");
-   } else {
-      if (!(fd[unit] = fopen(filename, "wb")))
-         BAIL("ERROR:  Could not open pipe to output file\n");
-   }
+  if ((*mode == 'r') || (*mode == 'R')) {
+    if (!(fd[unit] = fopen(filename, "rb")))
+      BAIL("ERROR:  Could not open pipe from input file\n");
+  } else {
+    if (!(fd[unit] = fopen(filename, "wb")))
+      BAIL("ERROR:  Could not open pipe to output file\n");
+  }
 }
 
-void closefile(const int unit)
-{
-   (void) fclose(fd[unit]);
-}
+void closefile(const int unit) { (void)fclose(fd[unit]); }
 
-}
-
+} // namespace pwdft

@@ -8,7 +8,7 @@
 
 */
 
-void	Suggested_Param_Rappe();
-void	solve_Rappe();
+void Suggested_Param_Rappe();
+void solve_Rappe();
 
 #endif

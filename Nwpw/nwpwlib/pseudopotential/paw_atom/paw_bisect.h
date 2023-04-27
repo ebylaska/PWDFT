@@ -5,7 +5,6 @@
    $Id$
 */
 
-extern double paw_bisection(double (*my_func)(double), double , double , double );
+extern double paw_bisection(double (*my_func)(double), double, double, double);
 
 #endif
-

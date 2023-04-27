@@ -4,228 +4,188 @@ $Id: hilbert.c,v 1.6 2005-10-07 19:34:21 bylaska Exp $
    This file contains 2d hilbert mapping routines
 */
 
-#include <cmath>
 #include "olist.hpp"
+#include <cmath>
 
 namespace pwdft {
 
+#define bottom_left 0
+#define bottom_right 1
+#define top_left 2
+#define top_right 3
 
+#define right 0
+#define left 1
+#define up 2
+#define down 3
 
-#define bottom_left     0
-#define bottom_right    1
-#define top_left        2
-#define top_right       3
+int parent(int i) { return (i / 2); }
+int corner(int i, int j) { return (2 * (j % 2) + (i % 2)); }
+int hilbert_dir(int i, int j, int level, int high, int *start) {
+  int direction, parent_direction, crnr, length, count;
 
-#define right   0
-#define left    1
-#define up      2
-#define down    3
+  length = 1;
+  for (count = 0; count < (high - level); ++count)
+    length = length * 4;
 
-int     parent(int i) { return(i/2); }
-int     corner(int i,int j) { return(2*(j%2) + (i%2)); }
-int     hilbert_dir(int i,int j,int level,int high,int *start)
-{
-   int  direction,parent_direction,
-        crnr,length,
-        count;
+  if (level == 0) {
+    direction = right;
+    *start = 0;
+  } else {
+    parent_direction =
+        hilbert_dir(parent(i), parent(j), level - 1, high, start);
+    crnr = corner(i, j);
 
-   length = 1;
-   for (count=0; count<(high-level); ++count)
-      length = length*4;
-
-   if (level == 0)
-   {
-      direction = right;
-      *start    = 0;
-   }
-   else
-   {
-      parent_direction = hilbert_dir(parent(i),parent(j),
-                                     level-1,high,
-                                     start);
-      crnr = corner(i,j);
-
-
-      if (parent_direction == right)
-      {
-         if (crnr == bottom_left)
-         {
-            direction = up;
-            *start    = *start + 0*length;
-         }
-         if (crnr == bottom_right)
-         {
-            direction = down;
-            *start    = *start + 3*length;
-         }
-         if (crnr == top_left)
-         {
-            direction = right;
-            *start    = *start + 1*length;
-         }
-         if (crnr == top_right)
-         {
-            direction = right;
-            *start    = *start + 2*length;
-         }
+    if (parent_direction == right) {
+      if (crnr == bottom_left) {
+        direction = up;
+        *start = *start + 0 * length;
       }
-
-      if (parent_direction == left)
-      {
-         if (crnr == bottom_left)
-         {
-            direction = left;
-            *start    = *start + 2*length;
-         }
-         if (crnr == bottom_right)
-         {
-            direction = left;
-            *start    = *start + 1*length;
-         }
-         if (crnr == top_left)
-         {
-            direction = up;
-            *start    = *start + 3*length;
-         }
-         if (crnr == top_right)
-         {
-            direction = down;
-            *start    = *start + 0*length;
-         }
+      if (crnr == bottom_right) {
+        direction = down;
+        *start = *start + 3 * length;
       }
-
-      if (parent_direction == up)
-      {
-         if (crnr == bottom_left)
-         {
-            direction = right;
-            *start    = *start + 0*length;
-         }
-         if (crnr == bottom_right)
-         {
-            direction = up;
-            *start    = *start + 1*length;
-         }
-         if (crnr == top_left)
-         {
-            direction = left;
-            *start    = *start + 3*length;
-         }
-         if (crnr == top_right)
-         {
-            direction = up;
-            *start    = *start + 2*length;
-         }
+      if (crnr == top_left) {
+        direction = right;
+        *start = *start + 1 * length;
       }
-
-      if (parent_direction == down)
-      {
-         if (crnr == bottom_left)
-         {
-            direction = down;
-            *start    = *start + 2*length;
-         }
-         if (crnr == bottom_right)
-         {
-            direction = right;
-            *start    = *start + 3*length;
-         }
-         if (crnr == top_left)
-         {
-            direction = down;
-            *start    = *start + 1*length;
-         }
-         if (crnr == top_right)
-         {
-            direction = left;
-            *start    = *start + 0*length;
-         }
+      if (crnr == top_right) {
+        direction = right;
+        *start = *start + 2 * length;
       }
-   }
-   return direction;
+    }
+
+    if (parent_direction == left) {
+      if (crnr == bottom_left) {
+        direction = left;
+        *start = *start + 2 * length;
+      }
+      if (crnr == bottom_right) {
+        direction = left;
+        *start = *start + 1 * length;
+      }
+      if (crnr == top_left) {
+        direction = up;
+        *start = *start + 3 * length;
+      }
+      if (crnr == top_right) {
+        direction = down;
+        *start = *start + 0 * length;
+      }
+    }
+
+    if (parent_direction == up) {
+      if (crnr == bottom_left) {
+        direction = right;
+        *start = *start + 0 * length;
+      }
+      if (crnr == bottom_right) {
+        direction = up;
+        *start = *start + 1 * length;
+      }
+      if (crnr == top_left) {
+        direction = left;
+        *start = *start + 3 * length;
+      }
+      if (crnr == top_right) {
+        direction = up;
+        *start = *start + 2 * length;
+      }
+    }
+
+    if (parent_direction == down) {
+      if (crnr == bottom_left) {
+        direction = down;
+        *start = *start + 2 * length;
+      }
+      if (crnr == bottom_right) {
+        direction = right;
+        *start = *start + 3 * length;
+      }
+      if (crnr == top_left) {
+        direction = down;
+        *start = *start + 1 * length;
+      }
+      if (crnr == top_right) {
+        direction = left;
+        *start = *start + 0 * length;
+      }
+    }
+  }
+  return direction;
 }
 
-int     hilbert2d(int i,int j,int level)
-{
-   int  start,direction;
-   direction = hilbert_dir(i,j,level,level,&start);
-   return start;
+int hilbert2d(int i, int j, int level) {
+  int start, direction;
+  direction = hilbert_dir(i, j, level, level, &start);
+  return start;
 }
 
+void hilbert2d_map(const int sizex, const int sizey, int *map) {
+  int i, j, size;
+  int ii, jj, iii, jjj;
+  int level, count;
+  double dx, dy, x2, y2, dx2, dy2;
+  int *map2, *mapii, *mapjj;
 
-void hilbert2d_map(const int sizex, const int sizey, int *map)
-{
-    int i,j,size;
-    int ii,jj,iii,jjj;
-    int level,count;
-    double dx,dy,x2,y2,dx2,dy2;
-    int *map2,*mapii,*mapjj;
+  size = sizex;
+  if (sizey > size)
+    size = sizey;
 
-   size = sizex;
-   if (sizey>size) size = sizey;
+  /* get the level of map */
+  count = 1;
+  level = 0;
+  while (count < size) {
+    ++level;
+    count = count * 2;
+  }
 
-   /* get the level of map */
-   count = 1;
-   level = 0;
-   while (count < size)
-   {
-      ++level;
-      count = count*2;
-   }
+  map2 = new int[count * count];
+  mapii = new int[count * count];
+  mapjj = new int[count * count];
+  OList olist2(count * count);
 
-   map2  = new int[count*count];
-   mapii = new int[count*count];
-   mapjj = new int[count*count];
-   OList olist2(count*count);
+  for (jj = 0; jj < count; ++jj)
+    for (ii = 0; ii < count; ++ii) {
 
-   for (jj=0; jj<count; ++jj)
-   for (ii=0; ii<count; ++ii)
-   {
+      map2[ii + jj * count] = hilbert2d(ii, jj, level);
+      olist2.insert(map2[ii + jj * count]);
+    }
+  for (jj = 0; jj < count; ++jj)
+    for (ii = 0; ii < count; ++ii)
+      map2[ii + jj * count] = olist2.index(map2[ii + jj * count]);
 
-      map2[ii+jj*count] = hilbert2d(ii,jj,level);
-      olist2.insert(map2[ii+jj*count]);
-   }
-   for (jj=0; jj<count; ++jj)
-   for (ii=0; ii<count; ++ii)
-      map2[ii+jj*count] = olist2.index(map2[ii+jj*count]);
+  for (jj = 0; jj < count; ++jj)
+    for (ii = 0; ii < count; ++ii) {
+      mapii[map2[ii + jj * count]] = ii;
+      mapjj[map2[ii + jj * count]] = jj;
+    }
 
+  dx2 = 1.0 / ((double)count);
+  dy2 = 1.0 / ((double)count);
+  dx = 1.0 / ((double)sizex);
+  dy = 1.0 / ((double)sizey);
 
-   for (jj=0; jj<count; ++jj)
-   for (ii=0; ii<count; ++ii)
-   {
-      mapii[map2[ii+jj*count]] = ii;
-      mapjj[map2[ii+jj*count]] = jj;
-   }
+  for (j = 0; j < sizex * sizey; ++j)
+    map[j] = -9;
 
+  iii = 0;
+  for (jjj = 0; jjj < count * count; ++jjj) {
+    ii = mapii[jjj];
+    jj = mapjj[jjj];
 
-   dx2 = 1.0/((double) count);
-   dy2 = 1.0/((double) count);
-   dx =  1.0/((double) sizex);
-   dy =  1.0/((double) sizey);
+    x2 = dx2 * (ii + 0.5);
+    y2 = dy2 * (jj + 0.5);
+    i = ((int)rint((x2 / dx) - 0.5));
+    j = ((int)rint((y2 / dy) - 0.5));
 
-   for (j=0; j<sizex*sizey; ++j) map[j] = -9;
-
-   iii = 0;
-   for (jjj=0; jjj<count*count; ++jjj)
-   {
-      ii = mapii[jjj];
-      jj = mapjj[jjj];
-
-      x2 = dx2*(ii+0.5);
-      y2 = dy2*(jj+0.5);
-      i = ((int) rint((x2/dx) - 0.5));
-      j = ((int) rint((y2/dy) - 0.5));
-
-      if (map[i+j*sizex] == -9)
-      {
-        map[i+j*sizex] = iii;
-        ++iii;
-      }
-   }
-   delete [] mapii;
-   delete [] mapjj;
-   delete [] map2;
-
+    if (map[i + j * sizex] == -9) {
+      map[i + j * sizex] = iii;
+      ++iii;
+    }
+  }
+  delete[] mapii;
+  delete[] mapjj;
+  delete[] map2;
 }
-}
-
+} // namespace pwdft

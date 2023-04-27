@@ -1,32 +1,26 @@
 #ifndef _KINETIC_HPP_
 #define _KINETIC_HPP_
 
-
-
-
-#include	"Pneb.hpp"
+#include "Pneb.hpp"
 
 namespace pwdft {
 
-class	Kinetic_Operator {
+class Kinetic_Operator {
 
-   double *tg;
-   Pneb   *mypneb;
+  double *tg;
+  Pneb *mypneb;
 
 public:
+  /* Constructors */
+  Kinetic_Operator(Pneb *);
 
-   /* Constructors */
-   Kinetic_Operator(Pneb *);
+  /* destructor */
+  ~Kinetic_Operator() { delete[] tg; }
 
-   /* destructor */
-   ~Kinetic_Operator() {
-         delete [] tg;
-    }
-
-    void   ke(double *, double *);
-    double ke_ave(double *);
+  void ke(double *, double *);
+  double ke_ave(double *);
 };
 
-}
+} // namespace pwdft
 
 #endif
