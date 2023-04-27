@@ -43,13 +43,14 @@ __kernel void NNmatmul(const int M, const int N, const int K, \n\
   "ab_acc;\n    Caa[i+j*N+NN+NN] = bb_acc;\n}\n"
 
 //#define TN3matmul_src	"#pragma OPENCL EXTENSION cl_khr_fp64 :
-//enable\n\n__kernel void TN3matmul(const int M, const int N,\n const __global
-//double *A, \n                     const __global double *B, \n __global double
-//*Caa) {\n    \n    // Get the index of the current element\n    int i =
-//get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the operation\n
-//int NN = N*N;\n    double acc[3] = {0.0, 0.0, 0.0};\n    for (int l=0; l<M;
+// enable\n\n__kernel void TN3matmul(const int M, const int N,\n const __global
+// double *A, \n                     const __global double *B, \n __global
+// double *Caa) {\n    \n    // Get the index of the current element\n    int i
+//= get_global_id(0);\n    int j = get_global_id(1);\n\n    // Do the
+// operation\n int NN = N*N;\n    double acc[3] = {0.0, 0.0, 0.0};\n    for (int
+// l=0; l<M;
 //++l) {\n       acc[0] += A[l + i*M]*A[l + j*M];\n       acc[1] += A[l +
-//i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n Caa[i+j*N]
+// i*M]*B[l + j*M];\n       acc[2] += B[l + i*M]*B[l + j*M];\n    }\n Caa[i+j*N]
 //= acc[0];\n    Caa[i+j*N+NN]    = acc[1];\n    Caa[i+j*N+NN+NN] = acc[2];\n}"
 
 #define NTmatmul_src                                                           \
