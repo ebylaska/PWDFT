@@ -1875,13 +1875,12 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx) {
       nxhz2;
 
 <<<<<<< HEAD
-   /**** slab mapping ****/
-   if (maptype==1)
-   {
-      int jj,indx,nn,shift;
-      int nxh   = nx/2+1;
-      int nxh2  = nx+2;
-      int nxhy2 = nxh2*ny;
+  /**** slab mapping ****/
+  if (maptype == 1) {
+    int jj, indx, nn, shift;
+    int nxh = nx / 2 + 1;
+    int nxh2 = nx + 2;
+    int nxhy2 = nxh2 * ny;
 =======
   /**** slab mapping ****/
   if (maptype == 1) {
