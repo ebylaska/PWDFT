@@ -904,6 +904,7 @@ public:
     ndev_mem = 0;
   }
 
+
   void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
