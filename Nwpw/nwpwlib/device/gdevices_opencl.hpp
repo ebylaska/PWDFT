@@ -101,6 +101,32 @@ __kernel void NNmatmul(const int M, const int N, const int K, \n\
   "-iexi * vnl[i+l*ng0];\n         prj[2*i+1 + (l+nprjall)*ng] =  rexi * "     \
   "vnl[i+l*ng0];\n      }\n   }\n}"
 
+  #define fft0_fac2_src                                                        \
+  "#pragma OPENCL EXTENSION cl_khr_fp64 : enable \n\n\
+__kernel void fft0_fac2_src(const int isgn, const int n, const int s, const bool eo, \n\
+                     const __global double *x, \n\
+                     __global double *y) { \n\n\
+    // Get the index of the current element  \n\
+    int q = get_global_id(0); \\q=0...s \n\
+    int p = get_global_id(1); \\p=0...m \n\n\
+    if (n == 1) { if (eo) y[q] = x[q]; } \n\
+    else { \n\
+       const int m = n / 2; \n\
+       const double theta0 = 2 * M_PI / n; \n\
+       double wx=cos(p*theta0); \n\
+       double wy=sin(p*theta0); \n\
+       double ax = x[2*(q + s*(p + 0))]; \n\
+       double ay = x[2*(q + s*(p + 0))+1]; \n\
+       double bx = x[2*(q + s*(p + m))]; \n\
+       double by = x[2*(q + s*(p + m))+1]; \n\n\
+       y[2*(q + s*(2*p + 0))]   =  ax + bx; \n\
+       y[2*(q + s*(2*p + 0))+1] =  ay + by; \n\
+       y[2*(q + s*(2*p + 1))]   = (ax - bx)*wx - (ay - by)*wy \n\
+       y[2*(q + s*(2*p + 1))+1] = (ay - by)*wx + (ay - by)*wx \n\
+    } \n\
+    }\n \0\0"
+
+
 #include "blas.h"
 #include <iostream>
 
