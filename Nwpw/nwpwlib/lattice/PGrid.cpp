@@ -2009,7 +2009,7 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
       int jj,indx,nn,shift;
       int nxh   = nx/2+1;
       int nxh2  = nx+2;
-      int nxhy2 = nxh2*ny;;
+      int nxhy2 = nxh2*ny;
 
       // do fft along ny dimension      
       // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
