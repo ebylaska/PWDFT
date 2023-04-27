@@ -1874,23 +1874,12 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx) {
   int i, j, k, jj, kk, q, indx, indx0, indx2, nxh, nxh2, nxhy, nxhy2, nxhz,
       nxhz2;
 
-<<<<<<< HEAD
-   /**** slab mapping ****/
-   if (maptype==1)
-   {
-      int jj,indx,nn,shift;
-      int nxh   = nx/2+1;
-      int nxh2  = nx+2;
-      int nxhy2 = nxh2*ny;
-=======
   /**** slab mapping ****/
   if (maptype == 1) {
     int jj, indx, nn, shift;
     int nxh = nx / 2 + 1;
     int nxh2 = nx + 2;
     int nxhy2 = nxh2 * ny;
-    ;
->>>>>>> 2235aa58bcb1c4375c7a90df9eb92662ff01d298
 
     // do fft along ny dimension
     // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
