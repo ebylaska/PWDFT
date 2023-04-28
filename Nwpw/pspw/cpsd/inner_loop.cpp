@@ -353,7 +353,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    }
  
    // Plotting Fattebert dielectric function
-    if (true)
+    if (false)
     {
        double *sw = mygrid->r_alloc();
        double *sw2 = mygrid->r_alloc();

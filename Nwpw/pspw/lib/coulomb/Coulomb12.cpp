@@ -335,6 +335,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       eold = epol;
       epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
 
+/*
       double energy = mypneb->r_dsum(rho_ind1) * dv;
       double sumion = mypneb->r_dsum(rho_ion) * dv;
       double sumelc = mypneb->r_dsum(rho) * dv;
@@ -346,6 +347,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
                   << " " << sumion << " " << epol << " " << eelc << " " << eion
                   << " " << epol-eold << std::endl;
       }
+*/
    }
 
    mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
