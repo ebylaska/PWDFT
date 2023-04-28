@@ -799,7 +799,8 @@ void PGrid::ii_pack_copy(const int nb, int *a, int *b) {
   complex to complex inverse fft:
    A(nx,ny(nb),nz(nb)) <- FFT3^(-1)[A(kx,ky,kz)]
 */
-void PGrid::cr_pfft3b(const int nb, double *a) {
+void PGrid::cr_pfft3b(const int nb, double *a)
+{
 
   nwpw_timing_function ftime(1);
   int i, j, k, jj, kk, q, indx, indx0, indx2, nxh, nxh2, nxhy, nxhy2, nxhz,
@@ -1102,7 +1103,8 @@ void PGrid::cr_pfft3b(const int nb, double *a) {
    complex to complex fft:
       A(kx,ky,kz) <- FFT3[A(nx(nb),ny(nb),nz(nb))]
 */
-void PGrid::rc_pfft3f(const int nb, double *a) {
+void PGrid::rc_pfft3f(const int nb, double *a) 
+{
   nwpw_timing_function ftime(1);
   int i, j, k, jj, kk, q, indx, indx0, indx2, nxh, nxh2, nxhy, nxhy2, nxhz,
       nxhz2, nn, shift;

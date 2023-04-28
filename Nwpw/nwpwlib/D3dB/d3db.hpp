@@ -75,6 +75,7 @@ public:
   void r_sqrt(double *);
 
   void rrr_Sum2Add(const double *, const double *, double *);
+  void rrrr_Sum(const double *, const double *, const double *, double *);
   void rrr_Sum(const double *, const double *, double *);
   void rr_Sum(const double *, double *);
   void rrr_Mul(const double *, const double *, double *);

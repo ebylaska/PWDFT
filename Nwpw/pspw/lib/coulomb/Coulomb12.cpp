@@ -86,7 +86,7 @@ void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
       this->generate_dng_ion(mypneb, myion, mystrfac, 1.0, dng_ion);
       std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
       mypneb->c_unpack(0,rho_ion);
-      mypneb->cr_fft3d(rho_ion);
+      mypneb->cr_pfft3b(0,rho_ion);
       mypneb->r_zero_ends(rho_ion);
       rho_ion_not_set  = false;
 
@@ -131,9 +131,9 @@ double Coulomb12_Operator::v_dielectric(const double *rho, const double *dng,
   mypneb->c_unpack(0, epsilon_x);
   mypneb->c_unpack(0, epsilon_y);
   mypneb->c_unpack(0, epsilon_z);
-  mypneb->cr_fft3d(epsilon_x);
-  mypneb->cr_fft3d(epsilon_y);
-  mypneb->cr_fft3d(epsilon_z);
+  mypneb->cr_pfft3b(0,epsilon_x);
+  mypneb->cr_pfft3b(0,epsilon_y);
+  mypneb->cr_pfft3b(0,epsilon_z);
   mypneb->rr_Mul(depsilon, epsilon_x);
   mypneb->rr_Mul(depsilon, epsilon_y);
   mypneb->rr_Mul(depsilon, epsilon_z);
@@ -253,7 +253,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
       std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
       mypneb->c_unpack(0,rho_ion);
-      mypneb->cr_fft3d(rho_ion);
+      mypneb->cr_pfft3b(0,rho_ion);
       mycoulomb2->vcoulomb(rho_ion,v_ion);
 
       rho_ion_not_set = false;
@@ -290,7 +290,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
   {
      vdielec0_not_set = false;
      mypneb->rr_SMul(scal1,vdielec0,p);
-     mypneb->rc_fft3d(p);
+     mypneb->rc_pfft3f(0,p);
      mypneb->c_pack(0,p);
 
      mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
@@ -310,7 +310,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
   {
      ++it;
      mypneb->rr_SMul(scal1,vdielec0,p);
-     mypneb->rc_fft3d(p);
+     mypneb->rc_pfft3f(0,p);
      mypneb->c_pack(0,p);
      mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
      mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
@@ -326,6 +326,31 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
      eold = epol;
      epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
+  }
+
+  mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
+  mypneb->r_SMul(scal1,p);
+  mypneb->rc_pfft3f(0,p);
+  mypneb->c_pack(0,p);
+
+  mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+  mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+  mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_z);
+  for (auto i=0; i<n2ft3d; ++i)
+     vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
+
+  mypneb->rrr_Sum(vdielec0,vks0,vdielec);
+
+  double eelc = 0.5*mypneb->rr_dot(rho,vdielec0)*dv;
+  double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
+  double pelc = mypneb->rr_dot(rho,vdielec)*dv;
+
+  *Edielec = eelc + eion;
+  *Pdielec = pelc;
+
+   /* calculate force */
+  if (move)
+  {
   }
 
 }
