@@ -34,6 +34,7 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control) {
     rhomax = control.gpoisson_rhomax();
 
     maxit_pol = control.gpoisson_maxit();
+    model_pol = control.gpoisson_model();
     alpha_pol = control.gpoisson_alpha();
     tole_pol  = control.tolerances(0);
     rcut_ion  = control.gpoisson_rcut_ion();
@@ -611,5 +612,40 @@ double Coulomb12_Operator::v_dielectric2_aperiodic(
 
   return epol;
 }
+
+/****************************************************
+ *                                                  *
+ *    Coulomb12_Operator::shortprint_dielectric     *
+ *                                                  *
+ ****************************************************/
+std::string Coulomb12_Operator::shortprint_dielectric()
+{
+
+   if (has_dielec){
+
+      std::stringstream stream;
+
+      stream << std::endl;
+      stream << " dielectric field:" << std::endl;
+      stream << "   - dielectric constant -eps- =" << Ffmt(10,3) << dielec << std::endl;
+      if (model_pol==0) stream << "   - model    =  Andreussi" << std::endl;
+      if (model_pol==1) stream << "   - model    = Andreussi2" << std::endl;
+      if (model_pol==2) stream << "   - model    =  Fattebert" << std::endl;
+      stream << "   - maxit    = " << Ifmt(10)   << maxit_pol << std::endl;
+      stream << "   - alpha    = " << Ffmt(10,3) << alpha_pol << std::endl;
+      stream << "   - rcut_ion = " << Ffmt(10,3) << rcut_ion << " au" << std::endl;
+      stream << "   - rhomin   = " << Efmt(10,3) << rhomin   << " au" << std::endl;
+      stream << "   - rhomax   = " << Efmt(10,3) << rhomax   << " au" << std::endl;
+      stream << "   - tole     = " << Efmt(10,3) << tole_pol << std::endl;
+      stream << std::endl;
+
+      return stream.str();
+   }
+   else
+      return "";
+}
+
+
+
 
 } // namespace pwdft

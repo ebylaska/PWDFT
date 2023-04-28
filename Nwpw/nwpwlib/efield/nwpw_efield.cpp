@@ -70,28 +70,33 @@ nwpw_efield::nwpw_efield(Ion *myion0, Pneb *mypneb0, Strfac *mystrfac0,
  ***********************************************/
 
 std::string nwpw_efield::shortprint_efield() {
-  double mu = std::sqrt(efield_vector[0] * efield_vector[0] +
-                        efield_vector[1] * efield_vector[1] +
-                        efield_vector[2] * efield_vector[2]);
-  std::stringstream stream;
 
-  stream << std::endl;
-  // stream << "== Electric Field ==" << std::endl << std::endl;
-  if (efield_type == 0)
-    stream << " periodic Electric field:" << std::endl;
-  if (efield_type == 1)
-    stream << " APC Electric field:" << std::endl;
-  if (efield_type == 2)
-    stream << " real space Electric field:" << std::endl;
-  stream << "     Electric Field (au) = (" << Ffmt(10, 5) << efield_vector[0]
-         << " " << Ffmt(10, 5) << efield_vector[1] << " " << Ffmt(10, 5)
-         << efield_vector[2] << " )" << std::endl;
-  stream << "             Center (au) = (" << Ffmt(10, 5) << efield_center[0]
-         << " " << Ffmt(10, 5) << efield_center[1] << " " << Ffmt(10, 5)
-         << efield_center[2] << " )" << std::endl;
-  stream << std::endl;
+   if (efield_on){
+      double mu = std::sqrt(efield_vector[0] * efield_vector[0] +
+                            efield_vector[1] * efield_vector[1] +
+                            efield_vector[2] * efield_vector[2]);
+      std::stringstream stream;
 
-  return stream.str();
+      stream << std::endl;
+      // stream << "== Electric Field ==" << std::endl << std::endl;
+      if (efield_type == 0)
+        stream << " periodic Electric field:" << std::endl;
+      if (efield_type == 1)
+        stream << " APC Electric field:" << std::endl;
+      if (efield_type == 2)
+        stream << " real space Electric field:" << std::endl;
+      stream << "     Electric Field (au) = (" << Ffmt(10, 5) << efield_vector[0]
+             << " " << Ffmt(10, 5) << efield_vector[1] << " " << Ffmt(10, 5)
+             << efield_vector[2] << " )" << std::endl;
+      stream << "             Center (au) = (" << Ffmt(10, 5) << efield_center[0]
+             << " " << Ffmt(10, 5) << efield_center[1] << " " << Ffmt(10, 5)
+             << efield_center[2] << " )" << std::endl;
+      stream << std::endl;
+
+      return stream.str();
+   }
+   else
+      return "";
 }
 
 } // namespace pwdft

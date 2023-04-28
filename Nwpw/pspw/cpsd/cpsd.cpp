@@ -288,6 +288,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring) {
               << myion.com(2) << " )" << std::endl;
 
     std::cout << mypsp.myefield->shortprint_efield();
+    std::cout << mycoulomb12.shortprint_dielectric();
 
     std::cout << std::endl;
     std::cout << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]

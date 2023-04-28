@@ -25,9 +25,10 @@ class Coulomb12_Operator {
   double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap;
   double *w_x, *w_y, *w_z;
   double *rho_ind0, *rho_ind1;
-  double tole_pol = 1.0e-7;
-  double alpha_pol;
-  int    model_pol, maxit_pol;
+  double tole_pol  = 1.0e-7;
+  double alpha_pol = 0.41;;
+  int model_pol = 0;
+  int maxit_pol = 2000;
 
   double *rho_ion, *dng_ion, *v_ion, rcut_ion;
 
@@ -83,6 +84,9 @@ public:
                                  const bool, double *, double *, nwpw_dplot *);
 
   void generate_dng_ion(Pneb *, Ion *, Strfac *, double, double *);
+
+  std::string shortprint_dielectric();
+
 };
 
 } // namespace pwdft
