@@ -343,38 +343,40 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
   }
 
   // Plotting Fattebert dielectric function
-  if (false) {
-    double *sw = mygrid->r_alloc();
-    double *sw2 = mygrid->r_alloc();
-    // double *r_grid = mygrid->r_nalloc(3);
-    // double *grx    = r_grid;
-    // double *gry    = r_grid+n2ft3d;
-    // double *grz    = r_grid+2*n2ft3d;
-    double *rho_ion = mygrid->r_alloc();
-    double *dng_ion = mygrid->r_alloc();
-    double *v_ion = mygrid->r_alloc();
+   if (true)
+   {
+      double *sw = mygrid->r_alloc();
+      double *sw2 = mygrid->r_alloc();
+      // double *r_grid = mygrid->r_nalloc(3);
+      // double *grx    = r_grid;
+      // double *gry    = r_grid+n2ft3d;
+      // double *grz    = r_grid+2*n2ft3d;
+      double *rho_ion = mygrid->r_alloc();
+      double *dng_ion = mygrid->r_alloc();
+      double *v_ion = mygrid->r_alloc();
 
-    // mygrid->generate_r_sym_grid(r_grid);
+      // mygrid->generate_r_sym_grid(r_grid);
 
-    // for (auto k=0; k<n2ft3d; ++k)
-    //    sw[k] = util_switching_function(-5.0,1.2,r_grid[3*k+2]);
+      // for (auto k=0; k<n2ft3d; ++k)
+      //    sw[k] = util_switching_function(-5.0,1.2,r_grid[3*k+2]);
 
-    /* initialize nwpw_dplot */
-    double epsmin = 999.0;
-    nwpw_dplot mydplot(myion, mygrid, control);
+      /* initialize nwpw_dplot */
+      double epsmin = 999.0;
+      nwpw_dplot mydplot(myion, mygrid, control);
 
-    mycoulomb12->generate_dng_ion(mygrid, myion, mystrfac, 1.0, dng_ion);
-    std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
-    mygrid->c_unpack(0, rho_ion);
-    mygrid->cr_fft3d(rho_ion);
-    mygrid->r_zero_ends(rho_ion);
-    mycoulomb12->mycoulomb2->vcoulomb(rho_ion, v_ion);
+      mycoulomb12->generate_dng_ion(mygrid, myion, mystrfac, 1.0, dng_ion);
+      std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
+      mygrid->c_unpack(0, rho_ion);
+      //mygrid->cr_fft3d(rho_ion);
+      mygrid->cr_pfft3b(0,rho_ion);
+      mygrid->r_zero_ends(rho_ion);
+      mycoulomb12->mycoulomb2->vcoulomb(rho_ion, v_ion);
 
-    mycoulomb12->v_dielectric2_aperiodic(rho, dng, rho_ion, dng_ion, vc, v_ion,
-                                         false, sw, sw2, &mydplot);
+      mycoulomb12->v_dielectric2_aperiodic(rho, dng, rho_ion, dng_ion, vc, v_ion,
+                                           false, sw, sw2, &mydplot);
 
-    mycoulomb12->v_dielectric2_aperiodic(rho, dng, rho_ion, dng_ion, vc, v_ion,
-                                         true, sw, sw2, &mydplot);
+      mycoulomb12->v_dielectric2_aperiodic(rho, dng, rho_ion, dng_ion, vc, v_ion,
+                                           true, sw, sw2, &mydplot);
 
     // mycoulomb12->v_dielectric_aperiodic(rho,dng,vc,vlr_l,sw,&mydplot);
 
@@ -384,7 +386,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
     // mygrid->r_dealloc(r_grid);
     mygrid->r_dealloc(sw);
     mygrid->r_dealloc(sw2);
-  }
+   }
 
   delete[] fion;
 
