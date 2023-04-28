@@ -1,4 +1,3 @@
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -51,7 +50,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring) {
   char date[26];
   double sum1, sum2, ev, zv;
   double cpu1, cpu2, cpu3, cpu4;
-  double E[60], deltae, deltac, deltar, viral, unita[9], en[2];
+  double E[70], deltae, deltac, deltar, viral, unita[9], en[2];
   double *psi1, *psi2, *Hpsi, *psi_r;
   double *dn;
   double *hml, *lmbda, *eig;
@@ -463,140 +462,141 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring) {
   //                  |***************************|
   // ****************** report summary of results **********************
   //                  |***************************|
-  if (oprint) {
-    std::cout << "\n\n";
-    std::cout
-        << "          =============  summary of results  =================\n";
-    std::cout << "\n final ion positions (au):"
-              << "\n";
-    for (ii = 0; ii < myion.nion; ++ii)
-      std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
-                << Ffmt(10, 5) << myion.rion1[3 * ii] << " " << Ffmt(10, 5)
-                << myion.rion1[3 * ii + 1] << " " << Ffmt(10, 5)
-                << myion.rion1[3 * ii + 2]
-                << " ) - atomic mass = " << Ffmt(6, 3) << myion.amu(ii)
-                << std::endl;
-    std::cout << "   G.C.\t( " << Ffmt(10, 5) << myion.gc(0) << " "
-              << Ffmt(10, 5) << myion.gc(1) << " " << Ffmt(10, 5) << myion.gc(2)
-              << " )" << std::endl;
-    std::cout << " C.O.M.\t( " << Ffmt(10, 5) << myion.com(0) << " "
-              << Ffmt(10, 5) << myion.com(1) << " " << Ffmt(10, 5)
-              << myion.com(2) << " )" << std::endl;
+   if (oprint)
+   {
+      std::cout << "\n\n";
+      std::cout << "          =============  summary of results  =================\n";
+      std::cout << "\n final ion positions (au):" << "\n";
+      for (ii = 0; ii < myion.nion; ++ii)
+        std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+                  << Ffmt(10,5) << myion.rion1[3*ii] << " " 
+                  << Ffmt(10,5) << myion.rion1[3*ii+1] << " " 
+                  << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = " 
+                  << Ffmt(6,3) << myion.amu(ii) << std::endl;
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " "
+                                 << Ffmt(10,5) << myion.gc(1) << " " 
+                                 << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " "
+                                 << Ffmt(10,5) << myion.com(1) << " " 
+                                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+ 
+      // if (mypsp.myapc->v_apc_on)
+      //    std::cout << mypsp.myapc->shortprint_APC();
 
-    // if (mypsp.myapc->v_apc_on)
-    //    std::cout << mypsp.myapc->shortprint_APC();
+      std::cout << "\n\n";
+      std::cout << std::fixed << " number of electrons: spin up= " 
+                << Ffmt(11,5) << en[0] << "  down= " 
+                << Ffmt(11,5) << en[ispin-1] << " (real space)";
+      std::cout << std::endl << std::endl;
+      std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " (" 
+                << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;
 
-    std::cout << "\n\n";
-    std::cout << std::fixed << " number of electrons: spin up= " << Ffmt(11, 5)
-              << en[0] << "  down= " << Ffmt(11, 5) << en[ispin - 1]
-              << " (real space)";
-    std::cout << std::endl << std::endl;
-    std::cout << " total     energy    : " << Efmt(19, 10) << E[0] << " ("
-              << Efmt(15, 5) << E[0] / myion.nion << " /ion)" << std::endl;
+      if (mypsp.myefield->efield_on) {
+        std::cout << std::endl;
+        std::cout << " QM Energies" << std::endl;
+        std::cout << " -----------" << std::endl;
+        std::cout << " total  QM energy    : " << Efmt(19,10) << (E[0]-E[48]-E[49]) 
+                  << " (" << Efmt(15,5) << (E[0]-E[48]-E[49])/(mygrid.ne[0]+mygrid.ne[1])
+                  << " /electron)" << std::endl;
+       }
 
-    if (mypsp.myefield->efield_on) {
-      std::cout << std::endl;
-      std::cout << " QM Energies" << std::endl;
-      std::cout << " -----------" << std::endl;
-      std::cout << " total  QM energy    : " << Efmt(19, 10)
-                << (E[0] - E[48] - E[49]) << " (" << Efmt(15, 5)
-                << (E[0] - E[48] - E[49]) / (mygrid.ne[0] + mygrid.ne[1])
+      std::cout << " total orbital energy: " << Efmt(19,10) << E[1] << " ("
+                << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1])
                 << " /electron)" << std::endl;
-    }
+      std::cout << " hartree energy      : " << Efmt(19,10) << E[2] << " ("
+                << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      std::cout << " exc-corr energy     : " << Efmt(19,10) << E[3] << " ("
+                << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      if (mypsp.myapc->v_apc_on)
+        std::cout << " APC energy          : " << Efmt(19,10) << E[51] << " ("
+                  << Efmt(15,5) << E[51]/myion.nion << " /ion)" << std::endl;
+      std::cout << " ion-ion energy      : " << Efmt(19,10) << E[4] << " ("
+                << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
 
-    std::cout << " total orbital energy: " << Efmt(19, 10) << E[1] << " ("
-              << Efmt(15, 5) << E[1] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " hartree energy      : " << Efmt(19, 10) << E[2] << " ("
-              << Efmt(15, 5) << E[2] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " exc-corr energy     : " << Efmt(19, 10) << E[3] << " ("
-              << Efmt(15, 5) << E[3] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    if (mypsp.myapc->v_apc_on)
-      std::cout << " APC energy          : " << Efmt(19, 10) << E[51] << " ("
-                << Efmt(15, 5) << E[51] / myion.nion << " /ion)" << std::endl;
-    std::cout << " ion-ion energy      : " << Efmt(19, 10) << E[4] << " ("
-              << Efmt(15, 5) << E[4] / myion.nion << " /ion)" << std::endl;
-
-    std::cout << std::endl;
-    std::cout << " K.S. kinetic energy : " << Efmt(19, 10) << E[5] << " ("
-              << Efmt(15, 5) << E[5] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " K.S. V_l energy     : " << Efmt(19, 10) << E[6] << " ("
-              << Efmt(15, 5) << E[6] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " K.S. V_nl_energy    : " << Efmt(19, 10) << E[7] << " ("
-              << Efmt(15, 5) << E[7] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " K.S. V_Hart energy  : " << Efmt(19, 10) << E[8] << " ("
-              << Efmt(15, 5) << E[8] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-    std::cout << " K.S. V_xc energy    : " << Efmt(19, 10) << E[9] << " ("
-              << Efmt(15, 5) << E[9] / (mygrid.ne[0] + mygrid.ne[1])
-              << " /electron)" << std::endl;
-
-    if (mypsp.myapc->v_apc_on)
-      std::cout << " K.S. V_APC energy   : " << Efmt(19, 10) << E[52] << " ("
-                << Efmt(15, 5) << E[52] / myion.nion << " /ion)" << std::endl;
-
-    viral = (E[9] + E[8] + E[7] + E[6]) / E[5];
-    std::cout << " Viral Coefficient   : " << Efmt(19, 10) << viral
-              << std::endl;
-
-    if (mypsp.myefield->efield_on) {
       std::cout << std::endl;
-      std::cout << " Electric Field Energies" << std::endl;
-      std::cout << " -----------------------" << std::endl;
-      std::cout << " - Electric Field Energy   : " << Efmt(19, 10)
-                << E[48] + E[49] << std::endl;
-      std::cout << " - Electric Field/Electron : " << Efmt(19, 10) << E[48]
-                << std::endl;
-      std::cout << " - Electric Field/Ion      : " << Efmt(19, 10) << E[49]
-                << std::endl;
-    }
+      std::cout << " K.S. kinetic energy : " << Efmt(19,10) << E[5] << " ("
+                << Efmt(15,5) << E[5]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      std::cout << " K.S. V_l energy     : " << Efmt(19,10) << E[6] << " ("
+                << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      std::cout << " K.S. V_nl_energy    : " << Efmt(19,10) << E[7] << " ("
+                << Efmt(15,5) << E[7]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      std::cout << " K.S. V_Hart energy  : " << Efmt(19,10) << E[8] << " ("
+                << Efmt(15,5) << E[8]/(mygrid.ne[0]+mygrid.ne[1])
+                << " /electron)" << std::endl;
+      std::cout << " K.S. V_xc energy    : " << Efmt(19,10) << E[9] << " ("
+                << Efmt(15,5) << E[9]/(mygrid.ne[0]+mygrid.ne[1])
+               << " /electron)" << std::endl;
 
-    std::cout << "\n orbital energies:\n";
-    nn = ne[0] - ne[1];
-    ev = 27.2116;
-    for (i = 0; i < nn; ++i) {
-      std::cout << Efmt(18, 7) << eig[i] << " (" << Ffmt(8, 3) << eig[i] * ev
-                << "eV)" << std::endl;
-    }
-    for (i = 0; i < ne[1]; ++i) {
-      std::cout << Efmt(18, 7) << eig[i + nn] << " (" << Ffmt(8, 3)
-                << eig[i + nn] * ev << "eV) " << Efmt(18, 7)
-                << eig[i + (ispin - 1) * ne[0]] << " (" << Ffmt(8, 3)
-                << eig[i + (ispin - 1) * ne[0]] * ev << "eV)" << std::endl;
-      // printf("%18.7le",eig[i+nn]); printf(" (");
-      // printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
-      // printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" (");
-      // printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
-    }
-    std::cout << std::endl;
+      if (mycoulomb12.dielectric_on())
+         std::cout << " K.S. V_dielec energy: " 
+                   << Efmt(19,10) << E[62] << " ("
+                   << Efmt(15,5) << E[62]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      if (mypsp.myapc->v_apc_on)
+         std::cout << " K.S. V_APC energy   : " 
+                   << Efmt(19,10) << E[52] << " ("
+                   << Efmt(15,5) << E[52]/myion.nion << " /ion)" << std::endl;
 
-    // write APC analysis
-    if (mypsp.myapc->apc_on)
-      std::cout << mypsp.myapc->print_APC(mypsp.zv);
 
-    // write dipoles
-    std::cout << mypsp.mydipole->shortprint_dipole();
-  }
 
-  psi_write(&mygrid, &version, nfft, unita, &ispin, ne, psi1,
-            control.output_movecs_filename(), std::cout);
-  MPI_Barrier(comm_world0);
+      viral = (E[9] + E[8] + E[7] + E[6]) / E[5];
+      std::cout << " Viral Coefficient   : " << Efmt(19,10) << viral << std::endl;
 
-  /* deallocate memory */
-  mygrid.g_deallocate(psi1);
-  mygrid.g_deallocate(psi2);
-  mygrid.g_deallocate(Hpsi);
-  mygrid.h_deallocate(psi_r);
-  mygrid.r_dealloc(dn);
-  mygrid.m_deallocate(hml);
-  mygrid.m_deallocate(lmbda);
-  delete[] eig;
-  gdevice_psi_dealloc();
+      if (mypsp.myefield->efield_on) {
+         std::cout << std::endl;
+         std::cout << " Electric Field Energies" << std::endl;
+         std::cout << " -----------------------" << std::endl;
+         std::cout << " - Electric Field Energy   : " << Efmt(19,10) << E[48] + E[49] << std::endl;
+         std::cout << " - Electric Field/Electron : " << Efmt(19,10) << E[48] << std::endl;
+         std::cout << " - Electric Field/Ion      : " << Efmt(19,10) << E[49] << std::endl;
+      }
+
+      std::cout << "\n orbital energies:\n";
+      nn = ne[0] - ne[1];
+      ev = 27.2116;
+      for (i=0; i<nn; ++i) 
+      {
+        std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV)" << std::endl;
+      }
+      for (i=0; i<ne[1]; ++i)
+      {
+         std::cout << Efmt(18,7) << eig[i+nn] << " (" 
+                   << Ffmt(8,3) << eig[i + nn] * ev << "eV) " 
+                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" 
+                   << Ffmt(8,3) << eig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
+         // printf("%18.7le",eig[i+nn]); printf(" (");
+         // printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
+         // printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" (");
+         // printf("%8.3lf",eig[i+(ispin-1)*ne[0]]*ev); printf("eV)\n");
+      }
+      std::cout << std::endl;
+
+     // write APC analysis
+      if (mypsp.myapc->apc_on)
+         std::cout << mypsp.myapc->print_APC(mypsp.zv);
+
+      // write dipoles
+      std::cout << mypsp.mydipole->shortprint_dipole();
+   }
+
+   psi_write(&mygrid, &version, nfft, unita, &ispin, ne, psi1,
+             control.output_movecs_filename(), std::cout);
+   MPI_Barrier(comm_world0);
+
+   /* deallocate memory */
+   mygrid.g_deallocate(psi1);
+   mygrid.g_deallocate(psi2);
+   mygrid.g_deallocate(Hpsi);
+   mygrid.h_deallocate(psi_r);
+   mygrid.r_dealloc(dn);
+   mygrid.m_deallocate(hml);
+   mygrid.m_deallocate(lmbda);
+   delete[] eig;
+   gdevice_psi_dealloc();
 
   // write results to the json
   auto rtdbjson = json::parse(rtdbstring);

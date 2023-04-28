@@ -75,21 +75,22 @@ public:
       }
    }
 
-  void initialize_dielectric(Ion *, Strfac *);
+   bool dielectric_on() { return has_dielec; }
+   void initialize_dielectric(Ion *, Strfac *);
 
-  double v_dielectric(const double *, const double *, const double *,
-                      const double *, double *);
+   double v_dielectric(const double *, const double *, const double *,
+                       const double *, double *);
 
-  void v_dielectric_aperiodic(const double *, const double *, const double *,
-                              double *, bool, double *);
+   void v_dielectric_aperiodic(const double *, const double *, const double *,
+                               double *, bool, double *);
 
-  double v_dielectric2_aperiodic(const double *, const double *, const double *,
-                                 const double *, const double *, const double *,
-                                 const bool, double *, double *, nwpw_dplot *);
+   double v_dielectric2_aperiodic(const double *, const double *, const double *,
+                                  const double *, const double *, const double *,
+                                  const bool, double *, double *, nwpw_dplot *);
 
-  void generate_dng_ion(Pneb *, Ion *, Strfac *, double, double *);
+   void generate_dng_ion(Pneb *, Ion *, Strfac *, double, double *);
 
-  std::string shortprint_dielectric();
+   std::string shortprint_dielectric();
 
 };
 

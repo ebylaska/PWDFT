@@ -292,25 +292,37 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
   E[8] = 2 * ehartr;
   E[9] = pxc;
 
-  /* get APC energies */
-  if (mypsp->myapc->v_apc_on) {
-    E[51] = mypsp->myapc->Eapc;
-    E[52] = mypsp->myapc->Papc;
-    E[0] = E[0] + E[51] - E[52];
-  }
+   /* get APC energies */
+   if (mypsp->myapc->v_apc_on) 
+   {
+      E[51] = mypsp->myapc->Eapc;
+      E[52] = mypsp->myapc->Papc;
+      E[0] = E[0] + E[51] - E[52];
+   }
 
-  /* get Efield energies */
-  if (mypsp->myefield->efield_on) {
-    if (mypsp->myefield->efield_type == 0) {
-      E[48] = 0.0;
-      E[49] = 0.0;
-      E[0] = E[0] + E[48] - E[49];
-    } else {
-      E[48] = dv * mygrid->rr_dot(rho, mypsp->myefield->v_field);
-      E[49] = mypsp->myefield->efield_ion_energy();
-      E[0] = E[0] + E[49];
-    }
-  }
+   /* get dielectric energies */
+   if (mycoulomb12->dielectric_on())
+   {
+      E[61] = mycoulomb12->edielec;
+      E[62] = mycoulomb12->pdielec;
+      E[0] = E[0] + E[61] - E[62];
+   }
+
+   /* get Efield energies */
+   if (mypsp->myefield->efield_on) {
+      if (mypsp->myefield->efield_type == 0) 
+      {
+         E[48] = 0.0;
+         E[49] = 0.0;
+         E[0] = E[0] + E[48] - E[49];
+      } 
+      else
+      {
+         E[48] = dv * mygrid->rr_dot(rho, mypsp->myefield->v_field);
+         E[49] = mypsp->myefield->efield_ion_energy();
+         E[0] = E[0] + E[49];
+      }
+   }
 
   /* set convergence variables */
   *deltae = (E[0] - Eold) / (dt * control.loop(0));
