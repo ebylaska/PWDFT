@@ -182,6 +182,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring) {
   /* initialize operators */
   Kinetic_Operator mykin(&mygrid);
   Coulomb12_Operator mycoulomb12(&mygrid, control);
+  mycoulomb12.initialize_dielectric(&myion,&mystrfac);
   XC_Operator myxc(&mygrid, control);
 
   /* initialize psps */
