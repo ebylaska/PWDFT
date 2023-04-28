@@ -1417,21 +1417,23 @@ void d3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, 
  *         d3db::rrr_Sum        *
  *                              *
  ********************************/
-void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map%5;
+   if (m > 0)
+      for (i = 0; i<m; ++i)
+         ptr3[i] = ptr1[i] + ptr2[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i=m; i<n2ft3d_map; i+=5)
+   {
       ptr3[i] = ptr1[i] + ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = ptr1[i] + ptr2[i];
-    ptr3[i + 1] = ptr1[i + 1] + ptr2[i + 1];
-    ptr3[i + 2] = ptr1[i + 2] + ptr2[i + 2];
-    ptr3[i + 3] = ptr1[i + 3] + ptr2[i + 3];
-    ptr3[i + 4] = ptr1[i + 4] + ptr2[i + 4];
-  }
+      ptr3[i+1] = ptr1[i+1] + ptr2[i+1];
+      ptr3[i+2] = ptr1[i+2] + ptr2[i+2];
+      ptr3[i+3] = ptr1[i+3] + ptr2[i+3];
+      ptr3[i+4] = ptr1[i+4] + ptr2[i+4];
+   }
 }
 
 /********************************

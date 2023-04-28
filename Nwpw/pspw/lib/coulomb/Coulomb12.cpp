@@ -233,125 +233,135 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
                                                 double *vdielec, double *Edielec, double *Pdielec, 
                                                 bool move, double *fion)
 {
+   int n2ft3d = mypneb->n2ft3d;
+   int npack0 = mypneb->npack(0);
+   double *Gx = mypneb->Gpackxyz(0,0);
+   double *Gy = mypneb->Gpackxyz(0,1);
+   double *Gz = mypneb->Gpackxyz(0,2);
+   double omega = mypneb->lattice->omega();
+   double scal1 = 1.0/((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+   double scal2 = 1.0/omega;
+   double dv = omega*scal1;
+   double fourpi = 16.0*std::atan(1.0);
+   double overfourpi = 1.0/fourpi;
+   double energy = 0.0;
 
-  int n2ft3d = mypneb->n2ft3d;
-  int npack0 = mypneb->npack(0);
-  double *Gx = mypneb->Gpackxyz(0,0);
-  double *Gy = mypneb->Gpackxyz(0,1);
-  double *Gz = mypneb->Gpackxyz(0,2);
-  double omega = mypneb->lattice->omega();
-  double scal1 = 1.0/((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
-  double scal2 = 1.0/omega;
-  double dv = omega*scal1;
-  double fourpi = 16.0*std::atan(1.0);
-  double overfourpi = 1.0/fourpi;
-  double energy = 0.0;
+   /* re-calcuate rho_ion, dng_ion, v_ion */
+   if ((move) || (rho_ion_not_set))
+   {
+       this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
+       std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
+       mypneb->c_unpack(0,rho_ion);
+       mypneb->cr_pfft3b(0,rho_ion);
+       mycoulomb2->vcoulomb(rho_ion,v_ion);
+ 
+       rho_ion_not_set = false;
+   }
 
-  /* re-calcuate rho_ion, dng_ion, v_ion */
-  if ((move) || (rho_ion_not_set))
-  {
-      this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
-      std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
-      mypneb->c_unpack(0,rho_ion);
-      mypneb->cr_pfft3b(0,rho_ion);
-      mycoulomb2->vcoulomb(rho_ion,v_ion);
+   /* generate caclcuate dielectric */
+   if (model_pol==0) util_andreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+   if (model_pol==0) util_dandreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
 
-      rho_ion_not_set = false;
-  }
-
-  /* generate caclcuate dielectric */
-  if (model_pol==0) util_andreussi_dielec(n2ft3d, dielec, rhomin, rhomax, rho, epsilon);
-  if (model_pol==0) util_dandreussi_dielec(n2ft3d, dielec, rhomin, rhomax, rho, depsilon);
-
-  mypneb->rr_Divide(epsilon, depsilon);
-  mypneb->r_zero_ends(depsilon);
-
-  mypneb->tcr_pack_iMul_unpack_fft(0, Gx, dng, epsilon_x);
-  mypneb->tcr_pack_iMul_unpack_fft(0, Gy, dng, epsilon_y);
-  mypneb->tcr_pack_iMul_unpack_fft(0, Gz, dng, epsilon_z);
-  mypneb->rr_Mul(depsilon, epsilon_x);
-  mypneb->rr_Mul(depsilon, epsilon_y);
-  mypneb->rr_Mul(depsilon, epsilon_z);
-
-  for (auto i=0; i<n2ft3d; ++i) 
-  {
-     rho_ind0[i] = (1.0 / epsilon[i] - 1.0) * (rho[i] + rho_ion[i]);
-     p[i] = vh[i] + v_ion[i];
-  }
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
-  for (auto i=0; i<n2ft3d; ++i)
-     rho_ind0[i] += overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]);
+   if (model_pol==1) util_andreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+   if (model_pol==1) util_dandreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
 
 
-  std::memcpy(rho_ind1,rho_ind0,n2ft3d*sizeof(double));
-  if (vdielec0_not_set)
-  {
-     vdielec0_not_set = false;
-     mypneb->rr_SMul(scal1,vdielec0,p);
-     mypneb->rc_pfft3f(0,p);
-     mypneb->c_pack(0,p);
+   mypneb->rr_Divide(epsilon, depsilon);
+   mypneb->r_zero_ends(depsilon);
 
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
-     for (auto i=0; i<n2ft3d; ++i)
-        rho_ind1[i] += overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]);
-  }
-  mycoulomb2->vcoulomb(rho_ind1,vdielec0);
-  mypneb->r_zero_ends(vdielec0);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,epsilon_x);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,epsilon_y);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gz,dng,epsilon_z);
+   mypneb->rr_Mul(depsilon, epsilon_x);
+   mypneb->rr_Mul(depsilon, epsilon_y);
+   mypneb->rr_Mul(depsilon, epsilon_z);
 
-  /* iteration=0,1,... */
-  double eold = 0.0;
-  double epol = 0.5*mypneb->rr_dot(rho_ind1, vdielec) * dv;
-  int it = 0;
-  while ((std::abs(epol - eold) > tole_pol) && (it<maxit_pol)) 
-  {
-     ++it;
-     mypneb->rr_SMul(scal1,vdielec0,p);
-     mypneb->rc_pfft3f(0,p);
-     mypneb->c_pack(0,p);
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
-     mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
-     for (auto i=0; i<n2ft3d; ++i) 
-     {
-        rho_ind1[i] = (1.0-alpha_pol)*rho_ind1[i]
-                    + alpha_pol*( rho_ind0[i] 
-                                + overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]));
-     }
-     mycoulomb2->vcoulomb(rho_ind1,vdielec0);
-     mypneb->r_zero_ends(vdielec0);
+   for (auto i=0; i<n2ft3d; ++i) 
+   {
+      rho_ind0[i] = (1.0 / epsilon[i] - 1.0) * (rho[i] + rho_ion[i]);
+      p[i] = vh[i] + v_ion[i];
+   }
 
-     eold = epol;
-     epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
-  }
+   mypneb->rr_SMul(scal1,vdielec0,p);
+   mypneb->rc_pfft3f(0,p);
+   mypneb->c_pack(0,p);
 
-  mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
-  mypneb->r_SMul(scal1,p);
-  mypneb->rc_pfft3f(0,p);
-  mypneb->c_pack(0,p);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
+   for (auto i=0; i<n2ft3d; ++i)
+      rho_ind0[i] += overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]);
 
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
-  mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_z);
-  for (auto i=0; i<n2ft3d; ++i)
-     vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
 
-  mypneb->rrr_Sum(vdielec0,vks0,vdielec);
+   std::memcpy(rho_ind1,rho_ind0,n2ft3d*sizeof(double));
+   if (vdielec0_not_set)
+   {
+      vdielec0_not_set = false;
+      mypneb->rr_SMul(scal1,vdielec0,p);
+      mypneb->rc_pfft3f(0,p);
+      mypneb->c_pack(0,p);
 
-  double eelc = 0.5*mypneb->rr_dot(rho,vdielec0)*dv;
-  double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
-  double pelc = mypneb->rr_dot(rho,vdielec)*dv;
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
+      for (auto i=0; i<n2ft3d; ++i)
+         rho_ind1[i] += overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]);
+   }
+   mycoulomb2->vcoulomb(rho_ind1,vdielec0);
+   mypneb->r_zero_ends(vdielec0);
 
-  *Edielec = eelc + eion;
-  *Pdielec = pelc;
+   /* iteration=0,1,... */
+   double eold = 0.0;
+   double epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec)*dv;
+   int it = 0;
+   while ((std::abs(epol - eold) > tole_pol) && (it<maxit_pol)) 
+   {
+      ++it;
+      mypneb->rr_SMul(scal1,vdielec0,p);
+      mypneb->rc_pfft3f(0,p);
+      mypneb->c_pack(0,p);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
+      for (auto i=0; i<n2ft3d; ++i) 
+      {
+         rho_ind1[i] = (1.0-alpha_pol)*rho_ind1[i]
+                     + alpha_pol*( rho_ind0[i] 
+                                 + overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]));
+      }
+      mycoulomb2->vcoulomb(rho_ind1,vdielec0);
+      mypneb->r_zero_ends(vdielec0);
 
-   /* calculate force */
-  if (move)
-  {
-  }
+      eold = epol;
+      epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
+      if (mypneb->d3db::parall->is_master())
+         std::cout << Ifmt(5) << it << Efmt(15,6) << epol << " " << epol-eold << std::endl;
+   }
+
+   mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
+   mypneb->r_SMul(scal1,p);
+   mypneb->rc_pfft3f(0,p);
+   mypneb->c_pack(0,p);
+
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+   mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
+   for (auto i=0; i<n2ft3d; ++i)
+      vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
+
+   mypneb->rrr_Sum(vdielec0,vks0,vdielec);
+ 
+   double eelc = 0.5*mypneb->rr_dot(rho,vdielec0)*dv;
+   double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
+   double pelc = mypneb->rr_dot(rho,vdielec)*dv;
+
+   *Edielec = eelc + eion;
+   *Pdielec = pelc;
+
+    /* calculate force */
+   if (move)
+   {
+   }
 
 }
 

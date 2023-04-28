@@ -378,7 +378,10 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       mycoulomb12->v_dielectric2_aperiodic(rho, dng, rho_ion, dng_ion, vc, v_ion,
                                            true, sw, sw2, &mydplot);
 
-    // mycoulomb12->v_dielectric_aperiodic(rho,dng,vc,vlr_l,sw,&mydplot);
+     double edielec,pdielec;
+     mycoulomb12->v_dielectric_aperiodic(rho,dng,vc,sw,&edielec,&pdielec,false,fion);
+     std::cout << "Edielec = " << edielec << std::endl;
+     std::cout << "Pdielec = " << pdielec << std::endl;
 
     mygrid->r_dealloc(v_ion);
     mygrid->r_dealloc(rho_ion);
