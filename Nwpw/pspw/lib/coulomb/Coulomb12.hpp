@@ -15,64 +15,65 @@
 namespace pwdft {
 
 class Coulomb12_Operator {
-  Pneb *mypneb;
+   Pneb *mypneb;
 
 
-  // Dielectric variables
-  bool has_dielec = false;
-  double dielec, rhomin, rhomax, beta, rho0;
-  double *epsilon, *depsilon, *ddepsilon, *sw, *p;
-  double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap;
-  double *w_x, *w_y, *w_z;
-  double *rho_ind0, *rho_ind1;
-  double tole_pol  = 1.0e-7;
-  double alpha_pol = 0.41;;
-  int model_pol = 0;
-  int maxit_pol = 2000;
+   // Dielectric variables
+   bool has_dielec = false;
+   double dielec, rhomin, rhomax, beta, rho0;
+   double *epsilon, *depsilon, *ddepsilon, *sw, *p;
+   double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap;
+   double *w_x, *w_y, *w_z;
+   double *rho_ind0, *rho_ind1;
+   double tole_pol  = 1.0e-7;
+   double alpha_pol = 0.41;;
+   int model_pol = 0;
+   int maxit_pol = 2000;
 
-  bool vdielec0_not_set = true;
-  bool rho_ion_not_set  = true;
-  double *rho_ion,*dng_ion,*v_ion,*vdielec0,*vks0;
-  double rcut_ion;
+   bool vdielec0_set = false;
+   bool rho_ion_set  = false;
+   double *rho_ion,*dng_ion,*v_ion,*vdielec0,*vks0;
+   double rcut_ion;
 
-  Ion    *myion;
-  Strfac *mystrfac;
+   Ion    *myion;
+   Strfac *mystrfac;
 
 public:
+   double edielec,pdielec;
 
-  bool has_coulomb1 = false;
-  Coulomb_Operator *mycoulomb1;
+   bool has_coulomb1 = false;
+   Coulomb_Operator *mycoulomb1;
 
-  bool has_coulomb2 = false;
-  Coulomb2_Operator *mycoulomb2;
+   bool has_coulomb2 = false;
+   Coulomb2_Operator *mycoulomb2;
 
-  /* Constructors */
-  Coulomb12_Operator(Pneb *, Control2 &);
+   /* Constructors */
+   Coulomb12_Operator(Pneb *, Control2 &);
 
-  /* destructor */
-  ~Coulomb12_Operator() {
-    if (has_coulomb1)
-      delete mycoulomb1;
-    if (has_coulomb2)
-      delete mycoulomb2;
-    if (has_dielec) {
-       mypneb->r_dealloc(epsilon);
-       mypneb->r_dealloc(depsilon);
-       mypneb->r_dealloc(epsilon_x);
-       mypneb->r_dealloc(epsilon_y);
-       mypneb->r_dealloc(epsilon_z);
-       mypneb->r_dealloc(sw);
-       mypneb->r_dealloc(p);
-       mypneb->r_dealloc(w_x);
-       mypneb->r_dealloc(w_y);
-       mypneb->r_dealloc(w_z);
-       mypneb->r_dealloc(rho_ind0);
-       mypneb->r_dealloc(rho_ind1);
-       mypneb->r_dealloc(rho_ion);
-       mypneb->r_dealloc(vdielec0);
-       mypneb->r_dealloc(vks0);
-    }
-  }
+   /* destructor */
+   ~Coulomb12_Operator() {
+      if (has_coulomb1)
+       delete mycoulomb1;
+      if (has_coulomb2)
+        delete mycoulomb2;
+      if (has_dielec) {
+         mypneb->r_dealloc(epsilon);
+         mypneb->r_dealloc(depsilon);
+         mypneb->r_dealloc(epsilon_x);
+         mypneb->r_dealloc(epsilon_y);
+         mypneb->r_dealloc(epsilon_z);
+         mypneb->r_dealloc(sw);
+         mypneb->r_dealloc(p);
+         mypneb->r_dealloc(w_x);
+         mypneb->r_dealloc(w_y);
+         mypneb->r_dealloc(w_z);
+         mypneb->r_dealloc(rho_ind0);
+         mypneb->r_dealloc(rho_ind1);
+         mypneb->r_dealloc(rho_ion);
+         mypneb->r_dealloc(vdielec0);
+         mypneb->r_dealloc(vks0);
+      }
+   }
 
   void initialize_dielectric(Ion *, Strfac *);
 
@@ -80,7 +81,7 @@ public:
                       const double *, double *);
 
   void v_dielectric_aperiodic(const double *, const double *, const double *,
-                              double *, double *, double *, bool, double *);
+                              double *, bool, double *);
 
   double v_dielectric2_aperiodic(const double *, const double *, const double *,
                                  const double *, const double *, const double *,

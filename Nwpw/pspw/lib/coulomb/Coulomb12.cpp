@@ -64,8 +64,8 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       vdielec0 = mypneb->r_alloc();
       vks0     = mypneb->r_alloc();
 
-      rho_ion_not_set  = true;
-      vdielec0_not_set = true;
+      rho_ion_set  = false;
+      vdielec0_set  = false;
    }
 }
 
@@ -80,7 +80,7 @@ void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
    myion    = myion0;
    mystrfac = mystrfac0;
 
-   if ((has_dielec)  && (rho_ion_not_set))
+   if ((has_dielec)  && (!rho_ion_set))
    {
       int n2ft3d = mypneb->n2ft3d;
       this->generate_dng_ion(mypneb, myion, mystrfac, 1.0, dng_ion);
@@ -88,7 +88,7 @@ void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
       mypneb->c_unpack(0,rho_ion);
       mypneb->cr_pfft3b(0,rho_ion);
       mypneb->r_zero_ends(rho_ion);
-      rho_ion_not_set  = false;
+      rho_ion_set = true;
 
       if (has_coulomb1) mycoulomb1->vcoulomb(dng_ion,v_ion);
       if (has_coulomb2) mycoulomb2->vcoulomb(rho_ion,v_ion);
@@ -230,8 +230,7 @@ double Coulomb12_Operator::v_dielectric(const double *rho, const double *dng,
  *                                                   *
  *****************************************************/
 void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double *dng, const double *vh, 
-                                                double *vdielec, double *Edielec, double *Pdielec, 
-                                                bool move, double *fion)
+                                                double *vdielec, bool move, double *fion)
 {
    int n2ft3d = mypneb->n2ft3d;
    int npack0 = mypneb->npack(0);
@@ -247,7 +246,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double energy = 0.0;
 
    /* re-calcuate rho_ion, dng_ion, v_ion */
-   if ((move) || (rho_ion_not_set))
+   if ((move) || (!rho_ion_set))
    {
        this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
        std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
@@ -255,7 +254,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
        mypneb->cr_pfft3b(0,rho_ion);
        mycoulomb2->vcoulomb(rho_ion,v_ion);
  
-       rho_ion_not_set = false;
+       rho_ion_set = true;
    }
 
    /* generate caclcuate dielectric */
@@ -296,9 +295,8 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
 
    std::memcpy(rho_ind1,rho_ind0,n2ft3d*sizeof(double));
-   if (vdielec0_not_set)
+   if (vdielec0_set)
    {
-      vdielec0_not_set = false;
       mypneb->rr_SMul(scal1,vdielec0,p);
       mypneb->rc_pfft3f(0,p);
       mypneb->c_pack(0,p);
@@ -367,8 +365,9 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
    double pelc = mypneb->rr_dot(rho,vdielec)*dv;
 
-   *Edielec = eelc + eion;
-   *Pdielec = pelc;
+   edielec = eelc + eion;
+   pdielec = pelc;
+   vdielec0_set = true;
 
     /* calculate force */
    if (move)
