@@ -2323,20 +2323,21 @@ void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b,
  *     PGrid:tcr_pack_iMul_unpack_fft      *
  *                                         *
  *******************************************/
-void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a,
-                                     const double *b, double *c) {
-  int i, ii;
-  int ng = nida[nb] + nidb[nb];
+void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c) 
+{
+   int i, ii;
+   int ng = nida[nb] + nidb[nb];
 
-  ii = 0;
-  for (i = 0; i < ng; ++i) {
-    c[ii] = -b[ii + 1] * a[i];
-    c[ii + 1] = b[ii] * a[i];
-    ii += 2;
-  }
-  this->c_unpack(nb, c);
-  this->cr_pfft3b(nb, c);
-  this->d3db::r_zero_ends(c);
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = -b[ii+1]* a[i];
+      c[ii+1] = b[ii]   * a[i];
+      ii += 2;
+   }
+   this->c_unpack(nb,c);
+   this->cr_pfft3b(nb,c);
+   this->d3db::r_zero_ends(c);
 }
 
 /********************************

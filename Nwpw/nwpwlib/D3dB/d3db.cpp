@@ -1130,21 +1130,23 @@ void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
  *          d3db::r_SMul        *
  *                              *
  ********************************/
-void d3db::r_SMul(const double da, double *ptr2) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void d3db::r_SMul(const double da, double *ptr2) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr2[i] *= da;
+   if (n2ft3d_map < 5)
+      return;
+   for (i=m; i<n2ft3d_map; i+=5)
+   {
       ptr2[i] *= da;
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr2[i] *= da;
-    ptr2[i + 1] *= da;
-    ptr2[i + 2] *= da;
-    ptr2[i + 3] *= da;
-    ptr2[i + 4] *= da;
-  }
+      ptr2[i + 1] *= da;
+      ptr2[i + 2] *= da;
+      ptr2[i + 3] *= da;
+      ptr2[i + 4] *= da;
+   }
 }
 
 /********************************

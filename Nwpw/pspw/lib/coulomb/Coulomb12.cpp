@@ -272,17 +272,19 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,epsilon_x);
    mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,epsilon_y);
    mypneb->tcr_pack_iMul_unpack_fft(0,Gz,dng,epsilon_z);
-   mypneb->rr_Mul(depsilon, epsilon_x);
-   mypneb->rr_Mul(depsilon, epsilon_y);
-   mypneb->rr_Mul(depsilon, epsilon_z);
+   mypneb->rr_Mul(depsilon,epsilon_x);
+   mypneb->rr_Mul(depsilon,epsilon_y);
+   mypneb->rr_Mul(depsilon,epsilon_z);
 
    for (auto i=0; i<n2ft3d; ++i) 
    {
       rho_ind0[i] = (1.0 / epsilon[i] - 1.0) * (rho[i] + rho_ion[i]);
       p[i] = vh[i] + v_ion[i];
    }
+   mypneb->r_zero_ends(rho_ind0);
+   mypneb->r_zero_ends(p);
 
-   mypneb->rr_SMul(scal1,vdielec0,p);
+   mypneb->r_SMul(scal1,p);
    mypneb->rc_pfft3f(0,p);
    mypneb->c_pack(0,p);
 
@@ -312,9 +314,9 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
    /* iteration=0,1,... */
    double eold = 0.0;
-   double epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec)*dv;
+   double epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
    int it = 0;
-   while ((std::abs(epol - eold) > tole_pol) && (it<maxit_pol)) 
+   while ((std::abs(epol-eold) > tole_pol) && (it<maxit_pol)) 
    {
       ++it;
       mypneb->rr_SMul(scal1,vdielec0,p);
@@ -325,17 +327,27 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
       for (auto i=0; i<n2ft3d; ++i) 
       {
-         rho_ind1[i] = (1.0-alpha_pol)*rho_ind1[i]
-                     + alpha_pol*( rho_ind0[i] 
-                                 + overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]));
+       rho_ind1[i] = (1.0 - alpha_pol)*rho_ind1[i]
+                   + alpha_pol*(rho_ind0[i] 
+                           + overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]));
       }
       mycoulomb2->vcoulomb(rho_ind1,vdielec0);
       mypneb->r_zero_ends(vdielec0);
 
       eold = epol;
       epol = 0.5*mypneb->rr_dot(rho_ind1,vdielec0)*dv;
+
+      double energy = mypneb->r_dsum(rho_ind1) * dv;
+      double sumion = mypneb->r_dsum(rho_ion) * dv;
+      double sumelc = mypneb->r_dsum(rho) * dv;
+      double eelc = mypneb->rr_dot(rho, vdielec) * dv;
+      double eion = mypneb->rr_dot(rho_ion, vdielec) * dv;
       if (mypneb->d3db::parall->is_master())
-         std::cout << Ifmt(5) << it << Efmt(15,6) << epol << " " << epol-eold << std::endl;
+      {
+        std::cout << Ifmt(5) << it << Efmt(15,6) << energy << " " << sumelc
+                  << " " << sumion << " " << epol << " " << eelc << " " << eion
+                  << " " << epol-eold << std::endl;
+      }
    }
 
    mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
@@ -563,7 +575,7 @@ double Coulomb12_Operator::v_dielectric2_aperiodic(
     for (auto i=0; i<n2ft3d; ++i)
     {
        rho_ind1[i] = (1.0 - alpha_pol)*rho_ind1[i]
-                   + alpha*(rho_ind0[i] 
+                   + alpha_pol*(rho_ind0[i] 
                            + overfourpi*(w_x[i]*epsilon_x[i] + w_y[i]*epsilon_y[i] + w_z[i]*epsilon_z[i]));
     }
     mycoulomb2->vcoulomb(rho_ind1, vdielec);
