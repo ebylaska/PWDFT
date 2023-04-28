@@ -27,12 +27,16 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control) {
 
   if (control.gpoisson_on()) {
     has_dielec = true;
-    dielec = control.gpoisson_dielec();
-    rho0 = control.gpoisson_rho0();
-    beta = control.gpoisson_beta();
+    dielec    = control.gpoisson_dielec();
+    rho0      = control.gpoisson_rho0();
+    beta      = control.gpoisson_beta();
     rhomin = control.gpoisson_rhomin();
     rhomax = control.gpoisson_rhomax();
-    tole_pol = control.tolerances(0);
+
+    maxit_pol = control.gpoisson_maxit();
+    alpha_pol = control.gpoisson_alpha();
+    tole_pol  = control.tolerances(0);
+    rcut_ion  = control.gpoisson_rcut_ion();
 
     epsilon = mypneb->r_alloc();
     depsilon = mypneb->r_alloc();
@@ -51,9 +55,39 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control) {
 
     rho_ind0 = mypneb->r_alloc();
     rho_ind1 = mypneb->r_alloc();
+
     rho_ion = mypneb->r_alloc();
+    dng_ion = mypneb->r_alloc();
+    v_ion = mypneb->r_alloc();
   }
 }
+
+
+/****************************************************
+ *                                                  *
+ *    Coulomb12_Operator::initialize_dielectric     *
+ *                                                  *
+ ****************************************************/
+void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
+{
+   myion    = myion0;
+   mystrfac = mystrfac0;
+
+   if (has_dielec) 
+   {
+      int n2ft3d = mypneb->n2ft3d;
+      this->generate_dng_ion(mypneb, myion, mystrfac, 1.0, dng_ion);
+      std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
+      mypneb->c_unpack(0, rho_ion);
+      mypneb->cr_fft3d(rho_ion);
+      mypneb->r_zero_ends(rho_ion);
+
+     if (has_coulomb1) mycoulomb1->vcoulomb(dng_ion,v_ion);
+     if (has_coulomb2) mycoulomb2->vcoulomb(rho_ion,v_ion);
+   }
+
+}
+
 
 /*******************************************
  *                                         *
@@ -186,9 +220,10 @@ double Coulomb12_Operator::v_dielectric(const double *rho, const double *dng,
  *    Coulomb12_Operator::v_dielectric_aperiodic     *
  *                                                   *
  *****************************************************/
-double Coulomb12_Operator::v_dielectric_aperiodic(
-    const double *rho, const double *dng, const double *vh, const double *vloc,
-    double *vdielec, nwpw_dplot *mydplot) {
+void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double *dng, const double *vh, 
+                                                double *vdielec, double *Edielec, double *Pdielec, 
+                                                bool move, double *fion)
+{
 
   int n2ft3d = mypneb->n2ft3d;
   int npack0 = mypneb->npack(0);
@@ -202,6 +237,8 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
   double fourpi = 16.0 * std::atan(1.0);
   double overfourpi = 1.0 / fourpi;
   double energy = 0.0;
+
+  /* calcuate rho_ion, dng_ion, v_ion */
 
   util_andreussi_dielec(n2ft3d, dielec, rhomin, rhomax, rho, epsilon);
   util_dandreussi_dielec(n2ft3d, dielec, rhomin, rhomax, rho, depsilon);
@@ -225,26 +262,10 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
   mypneb->r_zero_ends(epsilon_y);
   mypneb->r_zero_ends(epsilon_z);
 
-  mypneb->rr_SMul(scal1, vloc, rho_ion);
-  mypneb->r_zero_ends(rho_ion);
-  mypneb->rc_fft3d(rho_ion);
-  mypneb->c_pack(0, rho_ion);
-
-  for (auto k = 0; k < npack0; ++k) {
-    auto gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
-    rho_ion[2 * k] *= (gg / fourpi);
-    rho_ion[2 * k + 1] *= (gg / fourpi);
-  }
-  // rho_ion[0] = -rho[0];
-  // rho_ion[1] = -rho[1];
-  mypneb->c_unpack(0, rho_ion);
-  mypneb->cr_fft3d(rho_ion);
-  mypneb->r_zero_mends(rho_ion);
-  mydplot->gcube_write("AP1_rho_ion0.cube", -1, "SCF dielec function", rho_ion);
 
   for (auto i = 0; i < n2ft3d; ++i) {
     rho_ind0[i] = (1.0 / epsilon[i] - 1.0) * (rho[i] + rho_ion[i]);
-    sw[i] = vh[i] + vloc[i];
+    sw[i] = vh[i] + v_ion[i];
   }
   mypneb->r_zero_mends(rho_ind0);
   mypneb->r_zero_ends(sw);
@@ -273,8 +294,6 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
   mycoulomb2->vcoulomb(rho_ind0, vdielec);
   mypneb->r_zero_ends(vdielec);
 
-  mydplot->gcube_write("AP1_rho_ind0.cube", -1, "SCF dielec function",
-                       rho_ind0);
 
   std::cout << "   it    rho_ind1*dv    rho_ion*dv         epol     eelc-ind   "
                "   eion-ind     epol-eold"
@@ -283,9 +302,8 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
   std::memcpy(rho_ind1, rho_ind0, n2ft3d * sizeof(double));
   double eold = 0.0;
   double epol = 0.5 * mypneb->rr_dot(rho_ind1, vdielec) * dv;
-  double alpha = 0.41;
   int it = 0;
-  while (std::abs(epol - eold) > tole_pol) {
+  while ((std::abs(epol - eold) > tole_pol) && (it<maxit_pol)) {
     ++it;
     mypneb->rr_SMul(scal1, vdielec, p);
     mypneb->rc_fft3d(p);
@@ -305,10 +323,10 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
     mypneb->r_zero_ends(w_z);
     for (auto i = 0; i < n2ft3d; ++i) {
       rho_ind1[i] =
-          (1.0 - alpha) * rho_ind1[i] +
-          +alpha * (rho_ind0[i] + overfourpi * (w_x[i] * epsilon_x[i] +
-                                                w_y[i] * epsilon_y[i] +
-                                                w_z[i] * epsilon_z[i]));
+          (1.0 - alpha_pol) * rho_ind1[i] +
+          +alpha_pol * (rho_ind0[i] + overfourpi * (w_x[i] * epsilon_x[i] +
+                                                    w_y[i] * epsilon_y[i] +
+                                                    w_z[i] * epsilon_z[i]));
     }
     mypneb->r_zero_mends(rho_ind1);
     mycoulomb2->vcoulomb(rho_ind1, vdielec);
@@ -325,28 +343,7 @@ double Coulomb12_Operator::v_dielectric_aperiodic(
               << epol << " " << eelc << " " << eion << " " << epol - eold
               << std::endl;
   }
-  mydplot->gcube_write("AP1_vdielecff.cube", -1, "SCF dielec function",
-                       vdielec);
-  mydplot->gcube_write("AP1_rho_indff.cube", -1, "SCF dielec function",
-                       rho_ind1);
-  mydplot->gcube_write("AP1_epsilon.cube", -1, "SCF dielec function", epsilon);
-  mydplot->gcube_write("AP1_epsilon_x.cube", -1, "SCF dielec function",
-                       epsilon_x);
-  mydplot->gcube_write("AP1_epsilon_y.cube", -1, "SCF dielec function",
-                       epsilon_y);
-  mydplot->gcube_write("AP1_epsilon_z.cube", -1, "SCF dielec function",
-                       epsilon_z);
-  mydplot->gcube_write("AP1_epsilon_lap.cube", -1, "SCF dielec function",
-                       epsilon_lap);
 
-  std::memcpy(sw, rho_ion, n2ft3d * sizeof(double));
-  mydplot->gcube_write("AP1_rho_ion.cube", -1, "SCF dielec function", sw);
-  std::memcpy(sw, rho, n2ft3d * sizeof(double));
-  mydplot->gcube_write("AP1_rho_elc.cube", -1, "SCF dielec function", sw);
-  std::memcpy(sw, vloc, n2ft3d * sizeof(double));
-  mydplot->gcube_write("AP1_vloc.cube", -1, "SCF dielec function", sw);
-
-  return energy;
 }
 
 /*****************************************************
@@ -426,7 +423,9 @@ double Coulomb12_Operator::v_dielectric2_aperiodic(
     const double *rho, const double *dng, const double *rho_ion,
     const double *dng_ion, const double *vh, const double *vloc,
     const bool restart, double *vdielec, double *vks_dielec,
-    nwpw_dplot *mydplot) {
+    nwpw_dplot *mydplot)
+{
+
   bool debug = true;
   int n2ft3d = mypneb->n2ft3d;
   int npack0 = mypneb->npack(0);

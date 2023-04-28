@@ -1334,6 +1334,9 @@ static json parse_nwpw(json nwpwjson, int *curptr,
       if (mystring_contains(line, " alpha"))
         nwpwjson["generalized_poisson"]["alpha"] = std::stod(mystring_split0(
             mystring_trim(mystring_split(line, " alpha")[1]))[0]);
+      if (mystring_contains(line, " maxit"))
+        nwpwjson["generalized_poisson"]["maxit"] = std::stoi(mystring_split0(
+            mystring_trim(mystring_split(line, " maxit")[1]))[0]);
 
       if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
       if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;

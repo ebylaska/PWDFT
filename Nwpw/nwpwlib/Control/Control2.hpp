@@ -83,6 +83,7 @@ class Control2 {
 
   bool pgpoisson_on = false;
   int    pgpoisson_model  = 0;
+  int    pgpoisson_maxit  = 2000;
   double pgpoisson_dielec = 78.4;
   double pgpoisson_rho0 = 0.0004;
   double pgpoisson_beta = 1.3;
@@ -292,6 +293,7 @@ public:
   // Generalized Poisson
   bool gpoisson_on() { return pgpoisson_on; }
   int  gpoisson_model() { return pgpoisson_model; }
+  int  gpoisson_maxit() { return pgpoisson_maxit; }
   double gpoisson_dielec() { return pgpoisson_dielec; }
   double gpoisson_rho0() { return pgpoisson_rho0; }
   double gpoisson_beta() { return pgpoisson_beta; }

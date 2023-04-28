@@ -751,6 +751,8 @@ Control2::Control2(const int np0, const std::string rtdbstring) {
       pgpoisson_alpha = gpoissonjson["alpha"];
     if (gpoissonjson["model"].is_number_integer())
       pgpoisson_model = gpoissonjson["model"];
+    if (gpoissonjson["maxit"].is_number_integer())
+      pgpoisson_maxit = gpoissonjson["maxit"];
   }
 
   // Nose data
