@@ -338,8 +338,8 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       double energy = mypneb->r_dsum(rho_ind1) * dv;
       double sumion = mypneb->r_dsum(rho_ion) * dv;
       double sumelc = mypneb->r_dsum(rho) * dv;
-      double eelc = mypneb->rr_dot(rho, vdielec) * dv;
-      double eion = mypneb->rr_dot(rho_ion, vdielec) * dv;
+      double eelc = mypneb->rr_dot(rho,vdielec0) * dv;
+      double eion = mypneb->rr_dot(rho_ion,vdielec0) * dv;
       if (mypneb->d3db::parall->is_master())
       {
         std::cout << Ifmt(5) << it << Efmt(15,6) << energy << " " << sumelc
