@@ -83,8 +83,8 @@ void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
    if ((has_dielec)  && (!rho_ion_set))
    {
       int n2ft3d = mypneb->n2ft3d;
-      this->generate_dng_ion(mypneb, myion, mystrfac, 1.0, dng_ion);
-      std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
+      this->generate_dng_ion(dng_ion);
+      std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
       mypneb->c_unpack(0,rho_ion);
       mypneb->cr_pfft3b(0,rho_ion);
       mypneb->r_zero_ends(rho_ion);
@@ -238,7 +238,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double *Gy = mypneb->Gpackxyz(0,1);
    double *Gz = mypneb->Gpackxyz(0,2);
    double omega = mypneb->lattice->omega();
-   double scal1 = 1.0/((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+   double scal1 = 1.0/((double)((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
    double scal2 = 1.0/omega;
    double dv = omega*scal1;
    double fourpi = 16.0*std::atan(1.0);
@@ -248,7 +248,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    /* re-calcuate rho_ion, dng_ion, v_ion */
    if ((move) || (!rho_ion_set))
    {
-      this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
+      this->generate_dng_ion(dng_ion);
       std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
       mypneb->c_unpack(0,rho_ion);
       mypneb->cr_pfft3b(0,rho_ion);
@@ -377,6 +377,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double pelc = mypneb->rr_dot(rho,vdielec)*dv;
 
 
+/*
    mypneb->rr_SMul(scal1,vdielec0,p);
    mypneb->r_zero_ends(p);
    mypneb->rc_pfft3f(0,p);
@@ -384,6 +385,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double egion = 0.5*omega*mypneb->cc_pack_dot(0,p,dng_ion);
    std::cout << "eion=" << eion << " eion(g)=" << egion<< std::endl;
    std::cout << "omega*dng(0)=" << omega*dng_ion[0] << std::endl;
+   */
 
 
    edielec = eelc + eion;
@@ -395,7 +397,12 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    {
       mypneb->rr_SMul(scal1,vdielec0,p);
       mypneb->rc_pfft3f(0,p);
+      mypneb->c_pack(0,p);
       this->dng_ion_vdielec0_fion(p,fion);
+
+      //std::memset(fion,0,3*12*sizeof(double));
+      //for (auto ii=0; ii<12; ++ii)
+      //   std::cout << "ii=" << ii << " fion= " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
    }
 
 }
@@ -414,9 +421,45 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
  E = 0.5*omega*<dng_ion(G)|vdielec(G)>
 
+ iG*dng_ion(ii,G)*vdielec(G)
+
+ g*(a.x-ia*y)*(b.x+i*b.y)
+
 */
 void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
 {
+   int nion  = myion->nion;
+   int *katm = myion->katm;
+
+   double *Gx = mypneb->Gpackxyz(0,0);
+   double *Gy = mypneb->Gpackxyz(0,1);
+   double *Gz = mypneb->Gpackxyz(0,2);
+
+   double *zv_psp  = myion->zv_psp;
+   double *gauss   = mypneb->t_pack_allocate(0);
+   double *xtmp    = mypneb->t_pack_allocate(0);
+   double *exi     = mypneb->c_pack_allocate(0);
+   double *dng_tmp = mypneb->c_pack_allocate(0);
+
+   mypneb->t_pack_gaussian(0,rcut_ion,gauss);
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      mystrfac->strfac_pack(0,ii,exi);
+      mypneb->tcc_pack_aMul(0,zv_psp[katm[ii]],gauss,exi,dng_tmp);
+
+      //mypneb->cct_pack_iconjgMulb(0,vg,dng_tmp,xtmp);
+      mypneb->cct_pack_iconjgMulb(0,dng_tmp,vg,xtmp);
+      //mypneb->cct_pack_iconjgMul(0,dng_tmp,vg,xtmp);
+
+      fion[3*ii]   += 0.5*mypneb->tt_pack_dot(0,Gx,xtmp);
+      fion[3*ii+1] += 0.5*mypneb->tt_pack_dot(0,Gy,xtmp);
+      fion[3*ii+2] += 0.5*mypneb->tt_pack_dot(0,Gz,xtmp);
+   }
+
+   mypneb->c_pack_deallocate(dng_tmp);
+   mypneb->c_pack_deallocate(exi);
+   mypneb->t_pack_deallocate(xtmp);
+   mypneb->t_pack_deallocate(gauss);
 }
 
 /*****************************************************
@@ -424,27 +467,27 @@ void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
  *    Coulomb12_Operator::generate_dng_ion           *
  *                                                   *
  *****************************************************/
-void Coulomb12_Operator::generate_dng_ion(Pneb *mypneb, Ion *myion,
-                                          Strfac *mystrfac, double rc,
-                                          double *dng_ion) 
+void Coulomb12_Operator::generate_dng_ion(double *dng_ion) 
 {
    int nion = myion->nion;
    int *katm = myion->katm;
    double *gauss = mypneb->t_pack_allocate(0);
+   double *exi   = mypneb->c_pack_allocate(0);
    double *zv_psp = myion->zv_psp;
-   double *exi = mypneb->r_alloc();
    double omega = mypneb->lattice->omega();
    double scal2 = 1.0 / omega;
  
    mypneb->c_pack_zero(0,dng_ion);
-   mypneb->t_pack_gaussian(0,rc,gauss);
+   mypneb->t_pack_gaussian(0,rcut_ion,gauss);
    for (auto ii=0; ii<nion; ++ii)
    {
       mystrfac->strfac_pack(0,ii,exi);
       mypneb->tcc_pack_aMulAdd(0,zv_psp[katm[ii]],gauss,exi,dng_ion);
    }
-   mypneb->c_pack_SMul(0, -scal2, dng_ion);
-   mypneb->r_dealloc(exi);
+   mypneb->c_pack_SMul(0,-scal2,dng_ion);
+
+   mypneb->c_pack_deallocate(exi);
+   mypneb->t_pack_deallocate(gauss);
 }
 
 /*****************************************************

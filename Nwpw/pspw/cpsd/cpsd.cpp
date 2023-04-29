@@ -366,8 +366,8 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl << std::endl << std::endl;
       std::cout << "     ========================== iteration ==========================" << std::endl;
       std::cout << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;
-      std::cout << "     iter.             Energy       DeltaE     DeltaPsi      DeltaIon" << std::endl;
-      std::cout << "      ---------------------------------------------------------------" << std::endl;
+      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon" << std::endl;
+      std::cout << "     ---------------------------------------------------------------" << std::endl;
    }
    done   = 0;
    icount = 0;
@@ -454,6 +454,16 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " "
                                  << Ffmt(10,5) << myion.com(1) << " " 
                                  << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      if (control.geometry_optimize())
+      {
+         std::cout << "\n final ion forces (au):" << "\n";
+         for (ii = 0; ii < myion.nion; ++ii)
+            std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+                      << Ffmt(10,5) << myion.fion1[3*ii]   << " " 
+                      << Ffmt(10,5) << myion.fion1[3*ii+1] << " " 
+                      << Ffmt(10,5) << myion.fion1[3*ii+2] << std::endl;
+      }
  
       // if (mypsp.myapc->v_apc_on)
       //    std::cout << mypsp.myapc->shortprint_APC();

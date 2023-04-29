@@ -2252,17 +2252,37 @@ void PGrid::tc_pack_copy(const int nb, double *a, double *b) {
  *      PGrid:tcc_pack_Mul      *
  *                              *
  ********************************/
-void PGrid::tcc_pack_Mul(const int nb, const double *a, const double *b,
-                         double *c) {
-  int i, ii;
-  int ng = nida[nb] + nidb[nb];
+void PGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
+{
+   int i, ii;
+   int ng = nida[nb]+nidb[nb];
+ 
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = b[ii]*  a[i];
+      c[ii+1] = b[ii+1]*a[i];
+      ii += 2;
+   }
+}
 
-  ii = 0;
-  for (i = 0; i < ng; ++i) {
-    c[ii] = b[ii] * a[i];
-    c[ii + 1] = b[ii + 1] * a[i];
-    ii += 2;
-  }
+/********************************
+ *                              *
+ *      PGrid:tcc_pack_aMul     *
+ *                              *
+ ********************************/
+void PGrid::tcc_pack_aMul(const int nb, const double alpha, const double *a, const double *b, double *c)
+{
+   int i, ii;
+   int ng = nida[nb]+nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = alpha*b[ii]*  a[i];
+      c[ii+1] = alpha*b[ii+1]*a[i];
+      ii += 2;
+   }
 }
 
 /********************************
@@ -2287,17 +2307,18 @@ void PGrid::tc_pack_Mul(const int nb, const double *a, double *c) {
  *    PGrid:tcc_pack_aMulAdd    *
  *                              *
  ********************************/
-void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a,
-                             const double *b, double *c) {
-  int i, ii;
-  int ng = nida[nb] + nidb[nb];
-
-  ii = 0;
-  for (i = 0; i < ng; ++i) {
-    c[ii] += alpha * b[ii] * a[i];
-    c[ii + 1] += alpha * b[ii + 1] * a[i];
-    ii += 2;
-  }
+void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, const double *b, double *c) 
+{
+   int i, ii;
+   int ng = nida[nb] + nidb[nb];
+ 
+   ii=0;
+   for (i=0; i<ng; ++i) 
+   {
+      c[ii]   += alpha*b[ii] * a[i];
+      c[ii+1] += alpha*b[ii+1]*a[i];
+      ii += 2;
+   }
 }
 
 /********************************
@@ -2488,10 +2509,10 @@ void PGrid::cc_pack_daxpy(const int nb, const double alpha, const double *a,
  *   PGrid:cct_pack_iconjgMul   *
  *                              *
  ********************************/
-void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b,
-                               double *c) {
-  for (int i = 0; i < (nida[nb] + nidb[nb]); ++i)
-    c[i] = a[2 * i] * b[2 * i + 1] - a[2 * i + 1] * b[2 * i];
+void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c) 
+{
+   for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
+      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
 }
 
 /********************************
@@ -2499,10 +2520,10 @@ void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b,
  *  PGrid:cct_pack_iconjgMulb   *
  *                              *
  ********************************/
-void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b,
-                                double *c) {
-  for (int i = 0; i < (nida[nb] + nidb[nb]); ++i)
-    c[i] = a[2 * i + 1] * b[2 * i] - a[2 * i] * b[2 * i + 1];
+void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c) 
+{
+   for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
+      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
 /**********************************

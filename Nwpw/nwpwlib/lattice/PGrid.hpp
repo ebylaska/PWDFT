@@ -149,6 +149,7 @@ public:
   void tc_pack_copy(const int, double *, double *);
 
   void tcc_pack_Mul(const int, const double *, const double *, double *);
+  void tcc_pack_aMul(const int, const double, const double *, const double *, double *);
   void tc_pack_Mul(const int, const double *, double *);
   void tcc_pack_iMul(const int, const double *, const double *, double *);
   void tc_pack_iMul(const int, const double *, double *);

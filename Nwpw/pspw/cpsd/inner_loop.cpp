@@ -86,7 +86,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
  
    vpsi = x;
  
-   fion = new double[3 * (myion->nion)]();
+   //fion = new double[3 * (myion->nion)]();
+   fion = myion->fion1;
  
    /* generate local psp*/
    mypsp->v_local(vl,false,dng,fion);
@@ -374,7 +375,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
        double epsmin = 999.0;
        nwpw_dplot mydplot(myion, mygrid, control);
  
-       mycoulomb12->generate_dng_ion(mygrid, myion, mystrfac, 1.0, dng_ion);
+       mycoulomb12->generate_dng_ion(dng_ion);
        std::memcpy(rho_ion, dng_ion, n2ft3d * sizeof(double));
        mygrid->c_unpack(0, rho_ion);
        //mygrid->cr_fft3d(rho_ion);
@@ -404,7 +405,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
      mygrid->r_dealloc(sw2);
     }
  
-   delete[] fion;
+   //delete[] fion;
  
    mygrid->r_dealloc(vfield);
    mygrid->r_dealloc(tmp);
