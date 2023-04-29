@@ -248,21 +248,30 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    /* re-calcuate rho_ion, dng_ion, v_ion */
    if ((move) || (!rho_ion_set))
    {
-       this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
-       std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
-       mypneb->c_unpack(0,rho_ion);
-       mypneb->cr_pfft3b(0,rho_ion);
-       mycoulomb2->vcoulomb(rho_ion,v_ion);
+      this->generate_dng_ion(mypneb,myion,mystrfac,rcut_ion,dng_ion);
+      std::memcpy(rho_ion,dng_ion,n2ft3d*sizeof(double));
+      mypneb->c_unpack(0,rho_ion);
+      mypneb->cr_pfft3b(0,rho_ion);
+      mycoulomb2->vcoulomb(rho_ion,v_ion);
  
-       rho_ion_set = true;
+      rho_ion_set = true;
    }
 
    /* generate caclcuate dielectric */
-   if (model_pol==0) util_andreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
-   if (model_pol==0) util_dandreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+   if (model_pol==0)
+   {
+      util_andreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+      util_dandreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+   }
 
-   if (model_pol==1) util_andreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
-   if (model_pol==1) util_dandreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+   if (model_pol==1)
+   {
+      util_andreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+      util_dandreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+   }
+   if (model_pol==2)
+   {
+   }
 
 
    mypneb->rr_Divide(epsilon, depsilon);
@@ -367,6 +376,16 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
    double pelc = mypneb->rr_dot(rho,vdielec)*dv;
 
+
+   mypneb->rr_SMul(scal1,vdielec0,p);
+   mypneb->r_zero_ends(p);
+   mypneb->rc_pfft3f(0,p);
+   mypneb->c_pack(0,p);
+   double egion = 0.5*omega*mypneb->cc_pack_dot(0,p,dng_ion);
+   std::cout << "eion=" << eion << " eion(g)=" << egion<< std::endl;
+   std::cout << "omega*dng(0)=" << omega*dng_ion[0] << std::endl;
+
+
    edielec = eelc + eion;
    pdielec = pelc;
    vdielec0_set = true;
@@ -374,8 +393,30 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
     /* calculate force */
    if (move)
    {
+      mypneb->rr_SMul(scal1,vdielec0,p);
+      mypneb->rc_pfft3f(0,p);
+      this->dng_ion_vdielec0_fion(p,fion);
    }
 
+}
+
+/*****************************************************
+ *                                                   *
+ *    Coulomb12_Operator::rho_ion_vdielec_fion       *
+ *                                                   *
+ *****************************************************/
+ /*
+                  /
+                  |
+ dE/dR =d/dR 0.5* | rho_ion(r)*vdielec(r) dr
+                  |
+                  /
+
+ E = 0.5*omega*<dng_ion(G)|vdielec(G)>
+
+*/
+void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
+{
 }
 
 /*****************************************************
@@ -385,23 +426,25 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
  *****************************************************/
 void Coulomb12_Operator::generate_dng_ion(Pneb *mypneb, Ion *myion,
                                           Strfac *mystrfac, double rc,
-                                          double *dng_ion) {
-  int nion = myion->nion;
-  int *katm = myion->katm;
-  double *gauss = mypneb->t_pack_allocate(0);
-  double *zv_psp = myion->zv_psp;
-  double *exi = mypneb->r_alloc();
-  double omega = mypneb->lattice->omega();
-  double scal2 = 1.0 / omega;
-
-  mypneb->c_pack_zero(0, dng_ion);
-  mypneb->t_pack_gaussian(0, rc, gauss);
-  for (auto ii = 0; ii < nion; ++ii) {
-    mystrfac->strfac_pack(0, ii, exi);
-    mypneb->tcc_pack_aMulAdd(0, zv_psp[katm[ii]], gauss, exi, dng_ion);
-  }
-  mypneb->c_pack_SMul(0, -scal2, dng_ion);
-  mypneb->r_dealloc(exi);
+                                          double *dng_ion) 
+{
+   int nion = myion->nion;
+   int *katm = myion->katm;
+   double *gauss = mypneb->t_pack_allocate(0);
+   double *zv_psp = myion->zv_psp;
+   double *exi = mypneb->r_alloc();
+   double omega = mypneb->lattice->omega();
+   double scal2 = 1.0 / omega;
+ 
+   mypneb->c_pack_zero(0,dng_ion);
+   mypneb->t_pack_gaussian(0,rc,gauss);
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      mystrfac->strfac_pack(0,ii,exi);
+      mypneb->tcc_pack_aMulAdd(0,zv_psp[katm[ii]],gauss,exi,dng_ion);
+   }
+   mypneb->c_pack_SMul(0, -scal2, dng_ion);
+   mypneb->r_dealloc(exi);
 }
 
 /*****************************************************

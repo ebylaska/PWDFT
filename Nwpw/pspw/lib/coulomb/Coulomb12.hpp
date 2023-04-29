@@ -89,6 +89,7 @@ public:
                                   const bool, double *, double *, nwpw_dplot *);
 
    void generate_dng_ion(Pneb *, Ion *, Strfac *, double, double *);
+   void dng_ion_vdielec0_fion(const double *, double *);
 
    std::string shortprint_dielectric();
 

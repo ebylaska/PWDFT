@@ -1154,33 +1154,38 @@ void d3db::r_SMul(const double da, double *ptr2)
  *       d3db::r_zero_ends      *
  *                              *
  ********************************/
-void d3db::r_zero_ends(double *A) {
-  int index;
-
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype == 1) {
-    for (auto q = 0; q < nq; ++q)
-      for (auto k = 0; k < nz; ++k) {
-        // index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
-        index = nx + k * (nx + 2) + q * (nx + 2) * ny;
-        A[index] = 0.0;
-        A[index + 1] = 0.0;
+void d3db::r_zero_ends(double *A)
+{
+   int index;
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) 
+   {
+      for (auto q=0; q<nq; ++q)
+         for (auto k=0; k<nz; ++k)
+         {
+            // index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+            index = nx + k * (nx+2) + q*(nx+2)*ny;
+            A[index] = 0.0;
+            A[index+1] = 0.0;
+         }
+   }
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      for (auto q=0; q<nq1; ++q) 
+      {
+         index = nx + q*(nx+2);
+         A[index]   = 0.0;
+         A[index+1] = 0.0;
       }
-  }
-  /*************************
-   **** hilbert mapping ****
-   *************************/
-  else {
-    for (auto q = 0; q < nq1; ++q) {
-      index = nx + q * (nx + 2);
-      A[index] = 0.0;
-      A[index + 1] = 0.0;
-    }
-    if (n2ft3d_map < n2ft3d)
-      std::memset(A + n2ft3d_map, 0, (n2ft3d - n2ft3d_map) * sizeof(double));
-  }
+      if (n2ft3d_map<n2ft3d)
+         std::memset(A+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
+   }
 }
 
 /********************************
@@ -1188,52 +1193,57 @@ void d3db::r_zero_ends(double *A) {
  *       d3db::r_zero_mends     *
  *                              *
  ********************************/
-void d3db::r_zero_mends(double *A) {
-  int index;
-
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype == 1) {
-    for (auto q = 0; q < nq; ++q)
-      for (auto k = 0; k < nz; ++k) {
-        // index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
-        index = nx + k * (nx + 2) + q * (nx + 2) * ny;
-        A[index] = 0.0;
-        A[index + 1] = 0.0;
+void d3db::r_zero_mends(double *A)
+{
+   int index;
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) {
+      for (auto q = 0; q < nq; ++q)
+         for (auto k = 0; k < nz; ++k)
+         {
+            // index = nx + (k-1)*(nx+2) + (q-1)*(nx+2)*ny;
+            index = nx + k * (nx + 2) + q * (nx + 2) * ny;
+            A[index] = 0.0;
+            A[index + 1] = 0.0;
+         }
+   }
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else 
+   {
+      for (auto q=0; q<nq1; ++q)
+      {
+         index = nx + q*(nx+2);
+         A[index]   = 0.0;
+         A[index+1] = 0.0;
       }
-  }
-  /*************************
-   **** hilbert mapping ****
-   *************************/
-  else {
-    for (auto q = 0; q < nq1; ++q) {
-      index = nx + q * (nx + 2);
-      A[index] = 0.0;
-      A[index + 1] = 0.0;
-    }
-    if (n2ft3d_map < n2ft3d)
-      std::memset(A + n2ft3d_map, 0, (n2ft3d - n2ft3d_map) * sizeof(double));
-  }
-
-  /* grid points in coordination space */
-  int nzh = nz / 2;
-  int nyh = ny / 2;
-  int nxh = nx / 2;
-  for (auto k3 = (-nzh); k3 < nzh; ++k3)
-    for (auto k2 = (-nyh); k2 < nyh; ++k2)
-      for (auto k1 = (-nxh); k1 < nxh; ++k1) {
-        int i = k1 + nxh;
-        int j = k2 + nyh;
-        int k = k3 + nzh;
-        int indx = ijktoindex2(i, j, k);
-        int p = ijktop2(i, j, k);
-
-        if (p == parall->taskid_i())
-          if ((k1 == (-nxh)) || (k1 == (nxh - 1)) || (k2 == (-nyh)) ||
-              (k2 == (nyh - 1)) || (k3 == (-nzh)) || (k3 == (nzh - 1)))
-            A[indx] = 0.0;
-      }
+      if (n2ft3d_map<n2ft3d)
+         std::memset(A+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
+   }
+ 
+   /* grid points in coordination space */
+   int nzh = nz / 2;
+   int nyh = ny / 2;
+   int nxh = nx / 2;
+   for (auto k3 = (-nzh); k3 < nzh; ++k3)
+      for (auto k2 = (-nyh); k2 < nyh; ++k2)
+         for (auto k1 = (-nxh); k1 < nxh; ++k1) 
+         {
+            int i = k1 + nxh;
+            int j = k2 + nyh;
+            int k = k3 + nzh;
+            int indx = ijktoindex2(i, j, k);
+            int p = ijktop2(i, j, k);
+            
+            if (p == parall->taskid_i())
+               if ((k1 == (-nxh))  || (k1 == (nxh-1)) || (k2 == (-nyh)) ||
+                   (k2 == (nyh-1)) || (k3 == (-nzh))  || (k3 == (nzh-1)))
+                  A[indx] = 0.0;
+         }
 }
 
 /********************************
