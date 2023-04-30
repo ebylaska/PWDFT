@@ -23,12 +23,14 @@ class Control2 {
   double ptotal_charge;
 
   bool puse_grid_cmp = false;
-  ;
+  
   bool pfast_erf = false;
+
+  bool pdeltae_check = true;
 
   int pbo_steps[2], pbo_algorithm;
   int ploop[2], pngrid[3], pnpsp, pncut, pmapping, pmapping1d, ptile_factor;
-  ;
+ 
   int pnp_dimensions[3], pewald_grid[3];
   int pcode, ptask;
   int pispin, pmultiplicity, pne[2], ptotal_ion_charge, plmax_multipole;
@@ -162,6 +164,7 @@ public:
 
   int *ne_ptr() { return pne; }
 
+  bool deltae_check() { return pdeltae_check; } 
   bool geometry_optimize() { return pgeometry_optimize; }
   bool use_grid_cmp() { return puse_grid_cmp; }
   bool fast_erf() { return pfast_erf; }

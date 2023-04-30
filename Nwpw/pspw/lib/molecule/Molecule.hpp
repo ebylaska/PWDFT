@@ -71,7 +71,7 @@ public:
   double *psi2, *rho2, *rho2_all, *dng2;
   double *lmbda, *hml, *eig;
 
-  double E[60], en[2];
+  double E[70], en[2];
 
   bool newpsi;
 

@@ -430,6 +430,7 @@ void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
 {
    int nion  = myion->nion;
    int *katm = myion->katm;
+   int npack0 = mypneb->npack(0);
 
    double *Gx = mypneb->Gpackxyz(0,0);
    double *Gy = mypneb->Gpackxyz(0,1);
@@ -438,6 +439,7 @@ void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
    double *zv_psp  = myion->zv_psp;
    double *gauss   = mypneb->t_pack_allocate(0);
    double *xtmp    = mypneb->t_pack_allocate(0);
+   //double *xtmp2   = mypneb->t_pack_allocate(0);
    double *exi     = mypneb->c_pack_allocate(0);
    double *dng_tmp = mypneb->c_pack_allocate(0);
 
@@ -449,16 +451,19 @@ void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
 
       //mypneb->cct_pack_iconjgMulb(0,vg,dng_tmp,xtmp);
       mypneb->cct_pack_iconjgMulb(0,dng_tmp,vg,xtmp);
-      //mypneb->cct_pack_iconjgMul(0,dng_tmp,vg,xtmp);
+      //mypneb->cct_pack_iconjgMul(0,dng_tmp,vg,xtmp2);
+      //for (auto k=0; k<npack0; ++k)
+      //    xtmp[k] = 0.5*(xtmp[k] - xtmp2[k]);
 
-      fion[3*ii]   += 0.5*mypneb->tt_pack_dot(0,Gx,xtmp);
-      fion[3*ii+1] += 0.5*mypneb->tt_pack_dot(0,Gy,xtmp);
-      fion[3*ii+2] += 0.5*mypneb->tt_pack_dot(0,Gz,xtmp);
+      fion[3*ii]   += mypneb->tt_pack_dot(0,Gx,xtmp);
+      fion[3*ii+1] += mypneb->tt_pack_dot(0,Gy,xtmp);
+      fion[3*ii+2] += mypneb->tt_pack_dot(0,Gz,xtmp);
    }
 
    mypneb->c_pack_deallocate(dng_tmp);
    mypneb->c_pack_deallocate(exi);
    mypneb->t_pack_deallocate(xtmp);
+   //mypneb->t_pack_deallocate(xtmp2);
    mypneb->t_pack_deallocate(gauss);
 }
 

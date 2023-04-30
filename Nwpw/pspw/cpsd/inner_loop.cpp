@@ -66,19 +66,20 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    xce = mygrid->r_nalloc(ispin);
    dnall = mygrid->r_nalloc(ispin);
    x = mygrid->r_alloc();
-   vcall = mygrid->r_alloc();
    vfield = mygrid->r_alloc();
    dng = mygrid->c_pack_allocate(0);
    vl = mygrid->c_pack_allocate(0);
    if (periodic) 
    {
       vc = mygrid->c_pack_allocate(0);
+      vcall = mygrid->c_pack_allocate(0);
       if (mycoulomb12->dielectric_on())
          vdielec = mygrid->c_pack_allocate(0);
    } 
    else if (aperiodic) 
    {
-      vc = mygrid->r_alloc();
+      vc    = mygrid->r_alloc();
+      vcall = mygrid->r_alloc();
       vlr_l = mygrid->r_alloc();
       if (mycoulomb12->dielectric_on())
          vdielec = mygrid->r_alloc();

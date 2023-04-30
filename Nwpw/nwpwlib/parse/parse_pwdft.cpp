@@ -652,8 +652,14 @@ static json parse_steepest_descent(json sdjson, int *curptr,
       if (ss.size() > 3)
         sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
                                 std::stod(ss[3])};
+    } else if (mystring_contains(line, "deltae_check")) {
+         if (mystring_contains(line, " off"))   sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " no"))    sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " false")) sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " on"))    sdjson["deltae_check"] = true;
+         if (mystring_contains(line, " yes"))   sdjson["deltae_check"] = true;
+         if (mystring_contains(line, " true"))  sdjson["deltae_check"] = true;
     }
-
     ++cur;
     if (mystring_contains(lines[cur], "end"))
       --endcount;

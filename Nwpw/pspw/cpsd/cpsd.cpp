@@ -149,8 +149,8 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Hpsi = mygrid.g_allocate(1);
    psi_r = mygrid.h_allocate();
    dn = mygrid.r_nalloc(ispin);
-   hml = mygrid.m_allocate(-1, 1);
-   lmbda = mygrid.m_allocate(-1, 1);
+   hml = mygrid.m_allocate(-1,1);
+   lmbda = mygrid.m_allocate(-1,1);
    eig = new double[ne[0] + ne[1]];
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
  
@@ -170,10 +170,10 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    XC_Operator myxc(&mygrid, control);
  
    /* initialize psps */
-   Pseudopotential mypsp(&myion, &mygrid, &mystrfac, control, std::cout);
+   Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
  
    /* setup ewald */
-   Ewald myewald(&myparallel, &myion, &mylattice, control, mypsp.zv);
+   Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
  
    /* setup dfpt */
@@ -335,9 +335,8 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                             << Ifmt(4) << myewald.nz() 
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " 
                          << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
-      std::cout << "      Ewald summation: cut radius = " << Ffmt(7, 3)
-                << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut()
-                << std::endl;
+      std::cout << "      Ewald summation: cut radius = "
+                << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
       std::cout << "                       Mandelung Wigner-Seitz ="
                 << Ffmt(12,8) << myewald.mandelung()
                 << " (alpha =" << Ffmt(12,8) << myewald.rsalpha()
@@ -354,6 +353,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1) 
                 << " (" << Ifmt(5) << control.loop(0) << " inner " 
                         << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
+      if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
    }
  
    //                 |**************************|
@@ -390,7 +390,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       //                               E[0],deltae,deltac,deltar);
      
       /* check for competion */
-      if ((deltae > 0.0) && (icount > 1)) 
+      if ((deltae > 0.0) && (icount > 1) && control.deltae_check()) 
       {
          done = 1;
          if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
@@ -459,10 +459,15 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       {
          std::cout << "\n final ion forces (au):" << "\n";
          for (ii = 0; ii < myion.nion; ++ii)
-            std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+            std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
                       << Ffmt(10,5) << myion.fion1[3*ii]   << " " 
                       << Ffmt(10,5) << myion.fion1[3*ii+1] << " " 
-                      << Ffmt(10,5) << myion.fion1[3*ii+2] << std::endl;
+                      << Ffmt(10,5) << myion.fion1[3*ii+2] << " )" << std::endl;
+
+         std::cout << "   |F|/nion  = " << Ffmt(12,6) << myion.rms_fion(myion.fion1) << std::endl
+                   << "   max|Fatom|= " << Ffmt(12,6) << myion.max_fion(myion.fion1) << "  ("
+                                        << Ffmt(8,3) << myion.max_fion(myion.fion1) * (27.2116/0.529177)
+                                        << " eV/Angstrom)" << std::endl << std::endl;
       }
  
       // if (mypsp.myapc->v_apc_on)

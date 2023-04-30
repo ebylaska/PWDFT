@@ -24,46 +24,58 @@ namespace pwdft {
 Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0,
                                        Coulomb12_Operator *mycoulomb120,
                                        XC_Operator *myxc0,
-                                       Pseudopotential *mypsp0) {
-  mygrid = mygrid0;
-  myke = myke0;
-  mycoulomb12 = mycoulomb120;
-  mypsp = mypsp0;
-  myxc = myxc0;
-  periodic = mycoulomb12->has_coulomb1;
-  aperiodic = mycoulomb12->has_coulomb2;
+                                       Pseudopotential *mypsp0) 
+{
+   mygrid = mygrid0;
+   myke = myke0;
+   mycoulomb12 = mycoulomb120;
+   mypsp = mypsp0;
+   myxc = myxc0;
+   periodic = mycoulomb12->has_coulomb1;
+   aperiodic = mycoulomb12->has_coulomb2;
+ 
+   ispin = mygrid->ispin;
+   neall = mygrid->neq[0] + mygrid->neq[1];
+ 
+   /* allocate memory */
+   Hpsi = mygrid->g_allocate(1);
+   psi_r = mygrid->h_allocate();
+   xcp = mygrid->r_nalloc(ispin);
+   xce = mygrid->r_nalloc(ispin);
+ 
+   x = mygrid->r_alloc();
+   rho = mygrid->r_alloc();
+   vall = mygrid->r_alloc();
+   vl = mygrid->c_pack_allocate(0);
+   if (periodic)
+   {
+      vc = mygrid->c_pack_allocate(0);
+      vcall = mygrid->c_pack_allocate(0);
+      if (mycoulomb12->dielectric_on())
+         vdielec = mygrid->c_pack_allocate(0);
+   }
+   if (aperiodic)
+   {
+      vc = mygrid->r_alloc();
+      vcall= mygrid->r_alloc();
+      if (mycoulomb12->dielectric_on())
+         vdielec = mygrid->r_alloc();
+   }
 
-  ispin = mygrid->ispin;
-  neall = mygrid->neq[0] + mygrid->neq[1];
-
-  /* allocate memory */
-  Hpsi = mygrid->g_allocate(1);
-  psi_r = mygrid->h_allocate();
-  xcp = mygrid->r_nalloc(ispin);
-  xce = mygrid->r_nalloc(ispin);
-
-  x = mygrid->r_alloc();
-  rho = mygrid->r_alloc();
-  vall = mygrid->r_alloc();
-  vl = mygrid->c_pack_allocate(0);
-  if (periodic)
-    vc = mygrid->c_pack_allocate(0);
-  if (aperiodic)
-    vc = mygrid->r_alloc();
-  if (aperiodic)
-    vlr_l = mygrid->r_alloc();
-
-  hmltmp = mygrid->m_allocate(-1, 1);
-
-  omega = mygrid->lattice->omega();
-  scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
-  scal2 = 1.0 / omega;
-  dv = omega * scal1;
-
-  n2ft3d = (mygrid->n2ft3d);
-  shift1 = 2 * (mygrid->npack(1));
-  npack1 = shift1;
-  shift2 = (mygrid->n2ft3d);
+   if (aperiodic)
+      vlr_l = mygrid->r_alloc();
+ 
+   hmltmp = mygrid->m_allocate(-1, 1);
+ 
+   omega = mygrid->lattice->omega();
+   scal1 = 1.0/((double)((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));
+   scal2 = 1.0/omega;
+   dv = omega*scal1;
+ 
+   n2ft3d = (mygrid->n2ft3d);
+   shift1 = 2 * (mygrid->npack(1));
+   npack1 = shift1;
+   shift2 = (mygrid->n2ft3d);
 }
 
 /********************************************
@@ -71,23 +83,24 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0,
  *      Electron_Operators::gen_psi_r       *
  *                                          *
  ********************************************/
-void Electron_Operators::gen_psi_r(double *psi) {
-  /* convert psi(G) to psi(r) */
-  mygrid->gh_fftb(psi, psi_r);
-
-  /*
-   int indx1 = 0;
-   int indx2 = 0;
-   for (int i=0; i<neall; ++i)
-   {
-      mygrid->cc_pack_copy(1,&psi[indx1],&psi_r[indx2]);
-      mygrid->c_unpack(1,&psi_r[indx2]);
-      //mygrid->cr_fft3d(&psi_r[indx2]);
-      mygrid->cr_pfft3b(1,&psi_r[indx2]);
-      indx1 += shift1;
-      indx2 += shift2;
-   }
-   */
+void Electron_Operators::gen_psi_r(double *psi) 
+{
+   /* convert psi(G) to psi(r) */
+   mygrid->gh_fftb(psi,psi_r);
+ 
+   /*
+    int indx1 = 0;
+    int indx2 = 0;
+    for (int i=0; i<neall; ++i)
+    {
+       mygrid->cc_pack_copy(1,&psi[indx1],&psi_r[indx2]);
+       mygrid->c_unpack(1,&psi_r[indx2]);
+       //mygrid->cr_fft3d(&psi_r[indx2]);
+       mygrid->cr_pfft3b(1,&psi_r[indx2]);
+       indx1 += shift1;
+       indx2 += shift2;
+    }
+    */
 }
 
 /********************************************
@@ -134,26 +147,40 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall) {
  *  Electron_Operators::gen_scf_potentials  *
  *                                          *
  ********************************************/
-void Electron_Operators::gen_scf_potentials(double *dn, double *dng,
-                                            double *dnall) {
-  /* generate coulomb potential */
-  if (periodic)
-    mycoulomb12->mycoulomb1->vcoulomb(dng, vc);
-  if (aperiodic) {
-    mygrid->rrr_Sum(dn, &dn[(ispin - 1) * n2ft3d], rho);
-    mycoulomb12->mycoulomb2->vcoulomb(rho, vc);
-  }
+void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dnall)
+{
+   /* generate coulomb potential */
+   if (periodic)
+   {
+      mycoulomb12->mycoulomb1->vcoulomb(dng, vc);
+      std::memcpy(vcall,vc,n2ft3d*sizeof(double));
+   }
 
-  // generate exchange-correlation potential */
-  myxc->v_exc_all(ispin, dnall, xcp, xce);
-  // v_exc(ispin,shift2,dnall,xcp,xce,x);
+   if (aperiodic)
+   {
+      mygrid->rrr_Sum(dn, &dn[(ispin - 1) * n2ft3d], rho);
+      mycoulomb12->mycoulomb2->vcoulomb(rho, vc);
 
-  // generate apc potential */
-  if (mypsp->myapc->v_apc_on) {
-    double fion0[1];
-    gen_vl_potential();
-    mypsp->myapc->V_APC(dng, mypsp->zv, vl, false, fion0);
-  }
+      std::memcpy(vcall,vc,n2ft3d*sizeof(double));
+      if (mycoulomb12->dielectric_on())
+      {
+         double fion_tmp[3];
+         mycoulomb12->v_dielectric_aperiodic(rho,dng,vc,vdielec,false,fion_tmp);
+         mygrid->rr_Sum(vdielec,vcall);
+      }
+   }
+ 
+   // generate exchange-correlation potential */
+   myxc->v_exc_all(ispin, dnall, xcp, xce);
+   // v_exc(ispin,shift2,dnall,xcp,xce,x);
+ 
+   // generate apc potential */
+   if (mypsp->myapc->v_apc_on)
+   {
+      double fion0[1];
+      gen_vl_potential();
+      mypsp->myapc->V_APC(dng, mypsp->zv, vl, false, fion0);
+   }
 }
 
 /********************************************
