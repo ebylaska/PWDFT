@@ -607,62 +607,60 @@ static json parse_steepest_descent(json sdjson, int *curptr,
   std::vector<std::string> ss;
 
   while (endcount > 0) {
-    line = mystring_lowercase(lines[cur]);
-
-    if (mystring_contains(line, "loop")) {
-      std::vector<int> loop = {1, 1};
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        loop[0] = std::stoi(ss[1]);
-      if (ss.size() > 2)
-        loop[1] = std::stoi(ss[2]);
-      sdjson["loop"] = loop;
-    } else if (mystring_contains(line, "xc")) {
-      sdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
-    } else if (mystring_contains(line, "geometry_optimize")) {
-      sdjson["geometry_optimize"] = true;
-    } else if (mystring_contains(line, "input_wavefunction_filename")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        sdjson["input_wavefunction_filename"] = ss[1];
-    } else if (mystring_contains(line, "output_wavefunction_filename")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        sdjson["output_wavefunction_filename"] = ss[1];
-    } else if (mystring_contains(line, "time_step")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        sdjson["time_step"] = std::stod(ss[1]);
-    } else if (mystring_contains(line, "fake_mass")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        sdjson["fake_mass"] = std::stod(ss[1]);
-    } else if (mystring_contains(line, "cutoff")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        sdjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
-      if (ss.size() > 2)
-        sdjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
-    } else if (mystring_contains(line, "tolerances")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
-      if (ss.size() == 3)
-        sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
-      if (ss.size() > 3)
-        sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
-                                std::stod(ss[3])};
-    } else if (mystring_contains(line, "deltae_check")) {
-         if (mystring_contains(line, " off"))   sdjson["deltae_check"] = false;
-         if (mystring_contains(line, " no"))    sdjson["deltae_check"] = false;
-         if (mystring_contains(line, " false")) sdjson["deltae_check"] = false;
-         if (mystring_contains(line, " on"))    sdjson["deltae_check"] = true;
-         if (mystring_contains(line, " yes"))   sdjson["deltae_check"] = true;
-         if (mystring_contains(line, " true"))  sdjson["deltae_check"] = true;
-    }
-    ++cur;
-    if (mystring_contains(lines[cur], "end"))
-      --endcount;
+     line = mystring_lowercase(lines[cur]);
+    
+     if (mystring_contains(line, "loop")) {
+        std::vector<int> loop = {1,1};
+        ss = mystring_split0(line);
+        if (ss.size() > 1) loop[0] = std::stoi(ss[1]);
+        if (ss.size() > 2) loop[1] = std::stoi(ss[2]);
+        sdjson["loop"] = loop;
+     } else if (mystring_contains(line, "xc")) {
+        sdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+     } else if (mystring_contains(line, "geometry_optimize")) {
+        sdjson["geometry_optimize"] = true;
+        if (mystring_contains(line, " off"))   sdjson["geometry_optimize"] = false;
+        if (mystring_contains(line, " no"))    sdjson["geometry_optimize"] = false;
+        if (mystring_contains(line, " false")) sdjson["geometry_optimize"] = false;
+        if (mystring_contains(line, " on"))    sdjson["geometry_optimize"] = true;
+        if (mystring_contains(line, " yes"))   sdjson["geometry_optimize"] = true;
+        if (mystring_contains(line, " true"))  sdjson["geometry_optimize"] = true;
+     } else if (mystring_contains(line, "input_wavefunction_filename")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           sdjson["input_wavefunction_filename"] = ss[1];
+     } else if (mystring_contains(line, "output_wavefunction_filename")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           sdjson["output_wavefunction_filename"] = ss[1];
+     } else if (mystring_contains(line, "time_step")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           sdjson["time_step"] = std::stod(ss[1]);
+     } else if (mystring_contains(line, "fake_mass")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           sdjson["fake_mass"] = std::stod(ss[1]);
+     } else if (mystring_contains(line, "cutoff")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2) sdjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
+        if (ss.size() > 2)  sdjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
+     } else if (mystring_contains(line, "tolerances")) {
+        ss = mystring_split0(line);
+        if (ss.size()==2) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
+        if (ss.size()==3) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
+        if (ss.size()>3)  sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3])};
+     } else if (mystring_contains(line, "deltae_check")) {
+        if (mystring_contains(line, " off"))   sdjson["deltae_check"] = false;
+        if (mystring_contains(line, " no"))    sdjson["deltae_check"] = false;
+        if (mystring_contains(line, " false")) sdjson["deltae_check"] = false;
+        if (mystring_contains(line, " on"))    sdjson["deltae_check"] = true;
+        if (mystring_contains(line, " yes"))   sdjson["deltae_check"] = true;
+        if (mystring_contains(line, " true"))  sdjson["deltae_check"] = true;
+     }
+     ++cur;
+     if (mystring_contains(lines[cur], "end"))
+        --endcount;
   }
 
   *curptr = cur;
