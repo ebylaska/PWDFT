@@ -88,6 +88,7 @@ public:
                                   const double *, const double *, const double *,
                                   const bool, double *, double *, nwpw_dplot *);
 
+   void dielectric_fion(double *);
    void generate_dng_ion(double *);
    void dng_ion_vdielec0_fion(const double *, double *);
 

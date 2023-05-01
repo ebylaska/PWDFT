@@ -80,40 +80,27 @@ int pspw_bomd(MPI_Comm comm_world0, std::string &rtdbstring,
   // double *dn;
   // double *hml,*lmbda,*eig;
 
-  for (ii = 0; ii < 60; ++ii)
-    E[ii] = 0.0;
+  for (ii=0; ii<70; ++ii)
+     E[ii] = 0.0;
 
-  if (myparallel.is_master())
-    seconds(&cpu1);
-  if (oprint) {
-    std::ios_base::sync_with_stdio();
-    coutput
-        << "          *****************************************************\n";
-    coutput
-        << "          *                                                   *\n";
-    coutput
-        << "          *   PWDFT PSPW Born-Oppenheimer molecular dynamics  *\n";
-    coutput
-        << "          *                                                   *\n";
-    coutput
-        << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
-    coutput
-        << "          *  [              C++ implementation             ]  *\n";
-    coutput
-        << "          *                                                   *\n";
-    coutput
-        << "          *              version #7.00   02/27/21             *\n";
-    coutput
-        << "          *                                                   *\n";
-    coutput
-        << "          *    This code was developed by Eric J. Bylaska,    *\n";
-    coutput
-        << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
-    coutput
-        << "          *                                                   *\n";
-    coutput
-        << "          *****************************************************\n";
-    coutput << "          >>> job started at       " << util_date() << " <<<\n";
+  if (myparallel.is_master()) seconds(&cpu1);
+  if (oprint) 
+  {
+     std::ios_base::sync_with_stdio();
+     coutput << "          *****************************************************\n";
+     coutput << "          *                                                   *\n";
+     coutput << "          *   PWDFT PSPW Born-Oppenheimer molecular dynamics  *\n";
+     coutput << "          *                                                   *\n";
+     coutput << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
+     coutput << "          *  [              C++ implementation             ]  *\n";
+     coutput << "          *                                                   *\n";
+     coutput << "          *              version #7.00   02/27/21             *\n";
+     coutput << "          *                                                   *\n";
+     coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
+     coutput << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
+     coutput << "          *                                                   *\n";
+     coutput << "          *****************************************************\n";
+     coutput << "          >>> job started at       " << util_date() << " <<<\n";
   }
 
   /* initialize processor grid structure */
@@ -220,23 +207,16 @@ int pspw_bomd(MPI_Comm comm_world0, std::string &rtdbstring,
 
   if (oprint) {
     coutput << "\n";
-    coutput
-        << "          ==============  summary of input  ==================\n";
+    coutput << "     ===================  summary of input  =======================" << std::endl;
     coutput << "\n input psi filename: " << control.input_movecs_filename()
             << "\n";
     coutput << "\n";
     coutput << " number of processors used: " << myparallel.np() << "\n";
     coutput << " processor grid           : " << myparallel.np_i() << " x"
             << myparallel.np_j() << "\n";
-    if (mygrid.maptype == 1)
-      coutput << " parallel mapping         : 1d-slab"
-              << "\n";
-    if (mygrid.maptype == 2)
-      coutput << " parallel mapping         : 2d-hilbert"
-              << "\n";
-    if (mygrid.maptype == 3)
-      coutput << " parallel mapping         : 2d-hcurve"
-              << "\n";
+    if (mygrid.maptype == 1) coutput << " parallel mapping         : 1d-slab" << "\n";
+    if (mygrid.maptype == 2) coutput << " parallel mapping         : 2d-hilbert" << "\n";
+    if (mygrid.maptype == 3) coutput << " parallel mapping         : 2d-hcurve" << "\n";
     if (mygrid.isbalanced())
       coutput << " parallel mapping         : balanced"
               << "\n";

@@ -145,6 +145,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
    Coulomb12_Operator mycoulomb12(&mygrid,control);
+   mycoulomb12.initialize_dielectric(&myion,&mystrfac);
  
    /* initialize xc */
    XC_Operator myxc(&mygrid,control);
@@ -187,7 +188,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    if (oprint) 
    {
       coutput << "\n";
-      coutput << "          ==============  summary of input  ==================\n";
+      coutput << "     ===================  summary of input  =======================" << std::endl;
       coutput << "\n input psi filename: " << control.input_movecs_filename()
               << "\n";
       coutput << "\n";
@@ -260,6 +261,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
      
       coutput << mypsp.myefield->shortprint_efield();
+      coutput << mycoulomb12.shortprint_dielectric();
      
       coutput << "\n";
       coutput << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
@@ -454,26 +456,26 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
      coutput << " ---------------------------------\n\n";
    }
    cgsd_energy_gradient(mymolecule, fion);
-   if (oprint) {
-     coutput << " ion forces (au):"
-             << "\n";
-     for (auto ii = 0; ii < mymolecule.myion->nion; ++ii)
-       coutput << " " << Ifmt(5) << ii + 1 << " " << mymolecule.myion->symbol(ii)
-               << "  ( " << Ffmt(12, 6) << fion[3 * ii] << " " << Ffmt(12, 6)
-               << fion[3 * ii + 1] << " " << Ffmt(12, 6) << fion[3 * ii + 2]
-               << " )\n";
-     coutput << "      C.O.M. ( " << Ffmt(12, 6)
-             << mymolecule.myion->com_fion(fion, 0) << " " << Ffmt(12, 6)
-             << mymolecule.myion->com_fion(fion, 1) << " " << Ffmt(12, 6)
-             << mymolecule.myion->com_fion(fion, 2) << " )\n";
-     coutput << "   |F|/nion  = " << std::setprecision(6) << std::fixed
-             << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
-             << "   max|Fatom|= " << std::setprecision(6) << std::fixed
-             << std::setw(12) << mymolecule.myion->max_fion(fion) << "  ("
-             << std::setprecision(3) << std::fixed << std::setw(8)
-             << mymolecule.myion->max_fion(fion) * (27.2116 / 0.529177)
-             << " eV/Angstrom)" << std::endl
-             << std::endl;
+   if (oprint) 
+   {
+      coutput << " ion forces (au):" << std::endl;
+      for (auto ii = 0; ii < mymolecule.myion->nion; ++ii)
+         coutput << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii) << "\t( " 
+                 << Ffmt(12,6) << fion[3*ii]   << " " 
+                 << Ffmt(12,6) << fion[3*ii+1] << " " 
+                 << Ffmt(12,6) << fion[3*ii+2] << " )" << std::endl;
+      coutput << "      C.O.M. ( " 
+              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " " 
+              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " " 
+              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )" << std::endl;;
+      coutput << "   |F|/nion  = " << std::setprecision(6) << std::fixed
+              << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
+              << "   max|Fatom|= " << std::setprecision(6) << std::fixed
+              << std::setw(12) << mymolecule.myion->max_fion(fion) << "  ("
+              << std::setprecision(3) << std::fixed << std::setw(8)
+              << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)
+              << " eV/Angstrom)" << std::endl
+              << std::endl;
    }
    DSCAL_PWDFT(nfsize, mrone, fion, one);
  
@@ -516,10 +518,14 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
       }
       seconds(&cpustep);
-      coutput << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " "
-              << Efmt(11,3) << EV - Eold << " " << Ffmt(8,5) << Gmax << " "
-              << Ffmt(8,5) << Grms << " " << Ffmt(8,5) << Xrms << " "
-              << Ffmt(8,5) << Xmax << " " << Ffmt(10,1) << cpustep - cpu1 << " "
+      coutput << "@ " << Ifmt(4) << it << " " 
+              << Ffmt(18,9) << EV << " "
+              << Efmt(11,3) << EV - Eold << " " 
+              << Ffmt(8,5) << Gmax << " "
+              << Ffmt(8,5) << Grms << " " 
+              << Ffmt(8,5) << Xrms << " "
+              << Ffmt(8,5) << Xmax << " " 
+              << Ffmt(10,1) << cpustep - cpu1 << " "
               << Ifmt(9) << myelectron.counter << std::endl;
       // printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf
       // %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
@@ -600,11 +606,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          coutput << " ion forces (au):"
                  << "\n";
          for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-           coutput << " " << Ifmt(5) << ii + 1 << " "
-                   << mymolecule.myion->symbol(ii) << "  ( " 
-                   << Ffmt(12,6) << fion[3*ii] << " " 
-                   << Ffmt(12,6) << fion[3*ii+1] << " "
-                   << Ffmt(12,6) << fion[3*ii+2] << " )\n";
+            coutput << " " << Ifmt(5) << ii + 1 << " "
+                    << mymolecule.myion->symbol(ii) << "\t( " 
+                    << Ffmt(12,6) << fion[3*ii] << " " 
+                    << Ffmt(12,6) << fion[3*ii+1] << " "
+                    << Ffmt(12,6) << fion[3*ii+2] << " )" << std::endl;
          coutput << "      C.O.M. ( " 
                  << Ffmt(12,6) << mymolecule.myion->com_fion(fion, 0) << " " 
                  << Ffmt(12,6) << mymolecule.myion->com_fion(fion, 1) << " " 
@@ -661,10 +667,14 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
             coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
          }
          seconds(&cpustep);
-         coutput << "@ " << Ifmt(4) << it << " " << Ffmt(18, 9) << EV << " "
-                 << Efmt(11, 3) << EV - Eold << " " << Ffmt(8, 5) << Gmax << " "
-                 << Ffmt(8, 5) << Grms << " " << Ffmt(8, 5) << Xrms << " "
-                 << Ffmt(8, 5) << Xmax << " " << Ffmt(10, 1) << cpustep - cpu1
+         coutput << "@ " << Ifmt(4) << it << " " 
+                 << Ffmt(18,9) << EV << " "
+                 << Efmt(11,3) << EV - Eold << " " 
+                 << Ffmt(8,5) << Gmax << " "
+                 << Ffmt(8,5) << Grms << " " 
+                 << Ffmt(8,5) << Xrms << " "
+                 << Ffmt(8,5) << Xmax << " " 
+                 << Ffmt(10,1) << cpustep - cpu1
                  << " " << Ifmt(9) << myelectron.counter << std::endl;
           // printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf
           // %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);

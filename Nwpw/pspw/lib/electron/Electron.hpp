@@ -94,9 +94,12 @@ public:
    void vnl_force(double *, double *);
    void semicore_force(double *);
  
-   void apc_force(double *, double *);
+   bool is_dielectric_on() { return mycoulomb12->dielectric_on(); }
+   void dielectric_force(double *);
  
    bool is_v_apc_on() { return mypsp->myapc->v_apc_on; }
+   void apc_force(double *, double *);
+
    bool is_aperiodic() { return aperiodic; }
    bool is_periodic() { return periodic; }
 };

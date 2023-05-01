@@ -409,6 +409,21 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
 /*****************************************************
  *                                                   *
+ *       Coulomb12_Operator::dielectric_fion         *
+ *                                                   *
+ *****************************************************/
+void Coulomb12_Operator::dielectric_fion(double *fion)
+{
+   double scal1 = 1.0/((double)((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+
+   mypneb->rr_SMul(scal1,vdielec0,p);
+   mypneb->rc_pfft3f(0,p);
+   mypneb->c_pack(0,p);
+   this->dng_ion_vdielec0_fion(p,fion);
+}
+
+/*****************************************************
+ *                                                   *
  *    Coulomb12_Operator::rho_ion_vdielec_fion       *
  *                                                   *
  *****************************************************/

@@ -208,7 +208,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (oprint) 
    {
       std::cout << std::endl << std::endl;
-      std::cout << "          ==============  summary of input  ==================" << std::endl;
+      std::cout << "     ===================  summary of input  =======================" << std::endl;
       std::cout << "\n input psi filename:  " << control.input_movecs_filename() << std::endl;
       std::cout << " input vpsi filename: " << control.input_v_movecs_filename() << std::endl;
       std::cout << std::endl;
@@ -500,7 +500,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    {
       util_print_elapsed_time(icount * control.loop(0) * control.time_step());
       std::cout << std::endl << std::endl;
-      std::cout << "          =============  summary of results  =================" << std::endl;
+      std::cout << "     ===================  summary of results ======================" << std::endl;
       std::cout << "\n final position of ions (au):" << std::endl;
       for (ii = 0; ii < myion.nion; ++ii)
          std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "

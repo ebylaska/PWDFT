@@ -187,7 +187,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (oprint) 
    {
       std::cout << "\n";
-      std::cout << "          ==============  summary of input  ==================\n";
+      std::cout << "     ===================  summary of input  =======================" << std::endl;
       std::cout << "\n input psi filename: " << control.input_movecs_filename()
                 << "\n";
       std::cout << "\n";
@@ -427,8 +427,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (oprint)
    {
       std::cout << std::endl << std::endl;
-      std::cout << "          =============  summary of results  =================" << std::endl;
-
+      std::cout << "     ===================  summary of results ======================" << std::endl;
       if (control.geometry_optimize()) 
           std::cout << myion.print_bond_angle_torsions()
                     << std::endl << std::endl;
@@ -491,14 +490,17 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " exc-corr energy     : " 
                 << Efmt(19,10) << E[3] << " ("
                 << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
-      if (mypsp.myapc->v_apc_on)
-         std::cout << " APC energy          : " 
-                   << Efmt(19,10) << E[51] << " ("
-                   << Efmt(15,5) << E[51]/myion.nion << " /ion)" << std::endl;
+
       if (mycoulomb12.dielectric_on())
          std::cout << " dielectric energy   : " 
                    << Efmt(19,10) << E[61] << " ("
                    << Efmt(15,5) << E[61]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
+      if (mypsp.myapc->v_apc_on)
+         std::cout << " APC energy          : " 
+                   << Efmt(19,10) << E[51] << " ("
+                   << Efmt(15,5) << E[51]/myion.nion << " /ion)" << std::endl;
+
       std::cout << " ion-ion energy      : " 
                 << Efmt(19,10) << E[4] << " ("
                 << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
@@ -523,6 +525,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << " K.S. V_dielec energy: " 
                    << Efmt(19,10) << E[62] << " ("
                    << Efmt(15,5) << E[62]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
       if (mypsp.myapc->v_apc_on)
          std::cout << " K.S. V_APC energy   : " 
                    << Efmt(19,10) << E[52] << " ("

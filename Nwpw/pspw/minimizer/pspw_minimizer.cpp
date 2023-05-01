@@ -181,8 +181,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    if (oprint) 
    {
       coutput << "\n";
-      coutput
-          << "          ==============  summary of input  ==================\n";
+      coutput << "     ===================  summary of input  =======================" << std::endl;
       coutput << "\n input psi filename: " << control.input_movecs_filename() << "\n";
       coutput << "\n";
       coutput << " number of processors used: " << myparallel.np() << "\n";
@@ -236,6 +235,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
      
       coutput << mypsp.myefield->shortprint_efield();
+      coutput << mycoulomb12.shortprint_dielectric();
      
       coutput << "\n";
       coutput << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
