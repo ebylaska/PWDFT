@@ -217,28 +217,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       else
          std::cout << "unrestricted\n";
       std::cout << myxc;
-      // std::cout << "   exchange-correlation = ";
-      // std::cout << "LDA (Vosko et al) parameterization\n";
-      
-      // std::cout << "\n elements involved in the cluster:\n";
-      // for (ia=0; ia<myion.nkatm; ++ia)
-      //{
-      //    printf("    %2d : %4s   core charge: %4.1lf  lmax=%1d\n",
-      //            ia+1,myion.atom(ia),mypsp.zv[ia],mypsp.lmax[ia]);
-      //    printf("           comment : %s\n",mypsp.comment[ia]);
-      //    printf("           pseudopotential type            :
-      //    %3d\n",mypsp.psp_type[ia]); printf("           highest angular
-      //    component       : %3d\n",mypsp.lmax[ia]); printf("           local
-      //    potential used            : %3d\n",mypsp.locp[ia]); printf(" number of
-      //    non-local projections : %3d\n",mypsp.nprj[ia]); if
-      //    (mypsp.semicore[ia])
-      //       printf("           semicore corrections included   : %6.3lf
-      //       (radius) %6.3lf (charge)\n",mypsp.rcore[ia],mypsp.ncore(ia));
-      //    printf("           cutoff = ");
-      //    for (ii=0; ii<=mypsp.lmax[ia]; ++ii)
-      //       printf("%8.3lf",mypsp.rc[ia][ii]);
-      //    printf("\n");
-      // }
+     
       std::cout << mypsp.print_pspall();
       
       std::cout << "\n total charge =" << Ffmt(8,3) << control.total_charge() << std::endl;
@@ -447,9 +426,14 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    //                  |***************************|
    if (oprint)
    {
-      std::cout << "\n\n";
-      std::cout << "          =============  summary of results  =================\n";
-      std::cout << "\n final ion positions (au):" << "\n";
+      std::cout << std::endl << std::endl;
+      std::cout << "          =============  summary of results  =================" << std::endl;
+
+      if (control.geometry_optimize()) 
+          std::cout << myion.print_bond_angle_torsions()
+                    << std::endl << std::endl;
+       
+      std::cout << "\n final ion positions (au):" << std::endl;
       for (ii = 0; ii < myion.nion; ++ii)
         std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
                   << Ffmt(10,5) << myion.rion1[3*ii] << " " 
@@ -465,7 +449,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
       if (control.geometry_optimize())
       {
-         std::cout << "\n final ion forces (au):" << "\n";
+         std::cout << "\n final ion forces (au):" << std::endl;
          for (ii = 0; ii < myion.nion; ++ii)
             std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
                       << Ffmt(10,5) << myion.fion1[3*ii]   << " " 
@@ -481,7 +465,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       // if (mypsp.myapc->v_apc_on)
       //    std::cout << mypsp.myapc->shortprint_APC();
 
-      std::cout << "\n\n";
+      std::cout << std::endl << std::endl;
       std::cout << std::fixed << " number of electrons: spin up= " 
                 << Ffmt(11,5) << en[0] << "  down= " 
                 << Ffmt(11,5) << en[ispin-1] << " (real space)";
@@ -583,6 +567,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
       // write dipoles
       std::cout << mypsp.mydipole->shortprint_dipole();
+
    }
 
    psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename(),std::cout);

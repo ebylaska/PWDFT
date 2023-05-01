@@ -508,16 +508,12 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       }
       if (it == 0) {
          coutput << std::endl << std::endl;
-         coutput << "@ Step             Energy     Delta E     Gmax     Grms     "
-                    "Xrms     Xmax   Walltime\n";
-         coutput << "@ ---- ------------------ ----------- -------- -------- "
-                    "-------- -------- ----------\n";
+         coutput << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+         coutput << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
       } else {
          coutput << std::endl << std::endl;
-         coutput << "  Step             Energy     Delta E     Gmax     Grms     "
-                    "Xrms     Xmax   Walltime\n";
-         coutput << "  ---- ------------------ ----------- -------- -------- "
-                    "-------- -------- ----------\n";
+         coutput << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+         coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
       }
       seconds(&cpustep);
       coutput << "@ " << Ifmt(4) << it << " " << Ffmt(18,9) << EV << " "
