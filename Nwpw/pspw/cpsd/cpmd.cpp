@@ -45,9 +45,9 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
  
    bool verlet, SA;
    int version, nfft[3], ne[2], ispin;
-   int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
+   int  ngrid[3], matype, nelem, icount, done;
    char date[26];
-   double sum1, sum2, ev;
+   double sum1, sum2;
    double cpu1, cpu2, cpu3, cpu4;
    double E[70], viral, unita[9];
    double eave, evar, have, hvar, qave, qvar, eke;
@@ -66,7 +66,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
  
-   for (ii=0; ii<70; ++ii)
+   for (auto ii=0; ii<70; ++ii)
       E[ii] = 0.0;
  
    if (myparallel.is_master()) seconds(&cpu1);
@@ -139,6 +139,8 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* initialize operators */
    Kinetic_Operator mykin(&mygrid);
    Coulomb12_Operator mycoulomb12(&mygrid, control);
+   mycoulomb12.initialize_dielectric(&myion,&mystrfac);
+
    XC_Operator myxc(&mygrid, control);
  
    Pseudopotential mypsp(&myion, &mygrid, &mystrfac, control, std::cout);
@@ -243,14 +245,14 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << "\n total charge =" << Ffmt(8, 3) << control.total_charge() << std::endl;
      
       std::cout << "\n atom composition:" << std::endl;
-      for (ia = 0; ia < myion.nkatm; ++ia)
+      for (auto ia=0; ia<myion.nkatm; ++ia)
         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
       std::cout << "\n\n initial ion positions of ions (au):" << std::endl;
-      for (ii = 0; ii < myion.nion; ++ii)
+      for (auto ii = 0; ii < myion.nion; ++ii)
         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
-                  << Ffmt(10,5) << myion.rion(0, ii) << " " 
-                  << Ffmt(10,5) << myion.rion(1, ii) << " " 
-                  << Ffmt(10,5) << myion.rion(2, ii) << " ) - atomic mass = " 
+                  << Ffmt(10,5) << myion.rion(0,ii) << " " 
+                  << Ffmt(10,5) << myion.rion(1,ii) << " " 
+                  << Ffmt(10,5) << myion.rion(2,ii) << " ) - atomic mass = " 
                   << Ffmt(6,3) << myion.amu(ii) << std::endl;
       std::cout << "   G.C.\t( " << Ffmt(10, 5) << myion.gc(0) << " "
                 << Ffmt(10,5) << myion.gc(1) << " " << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
@@ -259,11 +261,11 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
      
       std::cout << "\n\n initial velocity of ions (au):" << std::endl;
-      for (ii = 0; ii < myion.nion; ++ii)
+      for (auto ii = 0; ii<myion.nion; ++ii)
         std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
-                  << Ffmt(10,5) << myion.vion(0, ii) << " " 
-                  << Ffmt(10,5) << myion.vion(1, ii) << " " 
-                  << Ffmt(10,5) << myion.vion(2, ii) << " )" << std::endl;
+                  << Ffmt(10,5) << myion.vion(0,ii) << " " 
+                  << Ffmt(10,5) << myion.vion(1,ii) << " " 
+                  << Ffmt(10,5) << myion.vion(2,ii) << " )" << std::endl;
       std::cout << "   G.C.\t( " 
                 << Ffmt(10,5) << myion.vgc(0) << " "
                 << Ffmt(10,5) << myion.vgc(1) << " " 
@@ -277,6 +279,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
      
       std::cout << mypsp.myefield->shortprint_efield();
+      std::cout << mycoulomb12.shortprint_dielectric();
      
       std::cout << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
                 << " (" << Ifmt(4) << mygrid.neq[0]
@@ -344,11 +347,9 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
      
       std::cout << std::endl;
       std::cout << " technical parameters:" << std::endl;
-      if (myion.fix_translation)
-        std::cout << "      translation constrained" << std::endl;
-      if (myion.fix_rotation)
-        std::cout << "      rotation constrained" << std::endl;
-      std::cout << "      time step =" << Ffmt(11,2) << control.time_step()
+      if (myion.fix_translation) std::cout << "      translation constrained" << std::endl;
+      if (myion.fix_rotation)    std::cout << "      rotation constrained"    << std::endl;
+      std::cout << "      time step =" << Ffmt(11,2)  << control.time_step()
                 << " ficticious mass =" << Ffmt(11,2) << control.fake_mass()
                 << std::endl;
       // printf("      tolerance=%12.3le (energy) %12.3le (density) %12.3le
@@ -407,8 +408,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (control.loop(1) > 0) 
    {
       // Initialize AIMD running data
-      nwpw_aimd_running_data mymotion_data(control, &myparallel, &mygrid, &myion,
-                                           E, hml, psi1, dn);
+      nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
      
       int it_in = control.loop(0);
       verlet = true;
@@ -417,9 +417,9 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       while (!done) 
       {
          ++icount;
-         inner_loop_md(verlet, sa_alpha, control, &mygrid, &myion, &mynose, &mykin,
-                       &mycoulomb12, &myxc, &mypsp, &mystrfac, &myewald, psi0,
-                       psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, it_in, E);
+         inner_loop_md(verlet,sa_alpha,control,&mygrid,&myion,&mynose,&mykin,
+                       &mycoulomb12,&myxc,&mypsp,&mystrfac,&myewald,psi0,
+                       psi1,psi2,Hpsi,psi_r,dn,hml,lmbda,it_in,E);
          eke += E[2];
          
          // Update Metadynamics and TAMD
@@ -502,7 +502,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl << std::endl;
       std::cout << "     ===================  summary of results ======================" << std::endl;
       std::cout << "\n final position of ions (au):" << std::endl;
-      for (ii = 0; ii < myion.nion; ++ii)
+      for (auto ii=0; ii<myion.nion; ++ii)
          std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
                    << Ffmt(10,5) << myion.rion(0,ii) << " " 
                    << Ffmt(10,5) << myion.rion(1,ii) << " " 
@@ -517,7 +517,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(10,5) << myion.com(1) << " " 
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
       std::cout << "\n final velocity of ions (au):" << std::endl;
-      for (ii = 0; ii < myion.nion; ++ii)
+      for (auto ii=0; ii<myion.nion; ++ii)
          std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
                    << Ffmt(10,5) << myion.vion(0,ii) << " " 
                    << Ffmt(10,5) << myion.vion(1,ii) << " " 
@@ -545,9 +545,16 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Efmt(15,5) << E[5]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
       std::cout << " exc-corr energy         : " << Efmt(19,10) << E[6] << " ("
                 << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
+      if (mycoulomb12.dielectric_on())
+         std::cout << " dielectric energy   : "
+                   << Efmt(19,10) << E[61] << " ("
+                   << Efmt(15,5) << E[61]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
       if (mypsp.myapc->v_apc_on)
          std::cout << " APC energy              : " << Efmt(19,10) << E[51]
                    << " (" << Efmt(15,5) << E[51] / myion.nion << " /ion)" << std::endl;
+
       std::cout << " ion-ion energy          : " << Efmt(19, 10) << E[7] << " ("
                 << Efmt(15,5) << E[7] / myion.nion << " /ion)" << std::endl
                 << std::endl;
@@ -594,12 +601,12 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       }
      
       std::cout << "\n orbital energies:" << std::endl;
-      nn = ne[0] - ne[1];
-      ev = 27.2116;
-      for (i = 0; i < nn; ++i) {
+      int nn = ne[0] - ne[1];
+      double ev = 27.2116;
+      for (auto i=0; i<nn; ++i) {
          std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i]*ev << "eV)" << std::endl;
       }
-      for (i = 0; i < ne[1]; ++i) {
+      for (auto i=0; i <ne[1]; ++i) {
          std::cout << Efmt(18,7) << eig[i+nn] << " (" 
                    << Ffmt(8,3) << eig[i+nn] * ev << "eV) " 
                    << Efmt(18,7) << eig[i+(ispin-1)* ne[0]] << " (" 

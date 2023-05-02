@@ -549,13 +549,14 @@ void PGrid::c_pack(const int nb, double *a) {
  *       PGrid:cc_pack_copy     *
  *                              *
  ********************************/
-void PGrid::cc_pack_copy(const int nb, const double *a, double *b) {
-  int one = 1;
-  // int ng  = 2*(nida[nb]+nidb[nb]);
-  int ng = 2 * (nida[nb] + nidb[nb]);
+void PGrid::cc_pack_copy(const int nb, const double *a, double *b) 
+{
+   int one = 1;
+   // int ng  = 2*(nida[nb]+nidb[nb]);
+   int ng = 2*(nida[nb]+nidb[nb]);
 
-  // DCOPY_PWDFT(ng,a,one,b,one);
-  std::memcpy(b, a, ng * sizeof(double));
+   // DCOPY_PWDFT(ng,a,one,b,one);
+   std::memcpy(b,a,ng*sizeof(double));
 }
 
 /********************************

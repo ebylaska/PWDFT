@@ -182,11 +182,12 @@ double util_random(const int seed) {
  *           util_filefind            *
  *                                    *
  **************************************/
-bool util_filefind(Parallel *myparall, char *fname) {
+bool util_filefind(Parallel *myparall, char *fname) 
+{
   int ifound;
 
   if (myparall->is_master())
-    ifound = cfileexists(fname);
+     ifound = cfileexists(fname);
 
   myparall->Brdcst_iValue(0, 0, &ifound);
 

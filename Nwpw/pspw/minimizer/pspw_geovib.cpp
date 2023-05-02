@@ -246,17 +246,18 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << "\n atom composition:" << "\n";
       for (ia = 0; ia < myion.nkatm; ++ia)
          coutput << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      coutput << "\n\n initial ion positions (au):" << "\n";
+      coutput << "\n\n initial ion positions (au):" << std::endl;
       for (ii=0; ii<myion.nion; ++ii)
-         coutput << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
+         coutput << Ifmt(5) << ii+1 << " " 
+                 << Lfmt(2) << myion.symbol(ii) << " ( "
                  << Ffmt(10,5) << myion.rion1[3*ii] << " " 
                  << Ffmt(10,5) << myion.rion1[3*ii+1] << " " 
                  << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = " 
                  << Ffmt(6,3)  << myion.amu(ii) << std::endl;
-      coutput << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " " 
+      coutput << "    G.C. ( " << Ffmt(10,5) << myion.gc(0) << " " 
                                << Ffmt(10,5) << myion.gc(1) << " " 
                                << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
-      coutput << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " "
+      coutput << "  C.O.M. ( " << Ffmt(10,5) << myion.com(0) << " "
                                << Ffmt(10,5) << myion.com(1) << " " 
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
      
@@ -460,18 +461,19 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    {
       coutput << " ion forces (au):" << std::endl;
       for (auto ii = 0; ii < mymolecule.myion->nion; ++ii)
-         coutput << " " << Ifmt(5) << ii+1 << " " << mymolecule.myion->symbol(ii) << "\t( " 
-                 << Ffmt(12,6) << fion[3*ii]   << " " 
-                 << Ffmt(12,6) << fion[3*ii+1] << " " 
-                 << Ffmt(12,6) << fion[3*ii+2] << " )" << std::endl;
-      coutput << "      C.O.M. ( " 
-              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,0) << " " 
-              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,1) << " " 
-              << Ffmt(12,6) << mymolecule.myion->com_fion(fion,2) << " )" << std::endl;;
-      coutput << "   |F|/nion  = " << std::setprecision(6) << std::fixed
-              << std::setw(12) << mymolecule.myion->rms_fion(fion) << std::endl
-              << "   max|Fatom|= " << std::setprecision(6) << std::fixed
-              << std::setw(12) << mymolecule.myion->max_fion(fion) << "  ("
+         coutput << Ifmt(5) << ii+1 << " "
+                 << Lfmt(2) << mymolecule.myion->symbol(ii) << "  ( " 
+                 << Ffmt(10,5) << fion[3*ii]   << " " 
+                 << Ffmt(10,5) << fion[3*ii+1] << " " 
+                 << Ffmt(10,5) << fion[3*ii+2] << " )" << std::endl;
+      coutput << "  C.O.M.  ( " 
+              << Ffmt(10,5) << mymolecule.myion->com_fion(fion,0) << " " 
+              << Ffmt(10,5) << mymolecule.myion->com_fion(fion,1) << " " 
+              << Ffmt(10,5) << mymolecule.myion->com_fion(fion,2) << " )" << std::endl;;
+      coutput << "|F|/nion  = " << std::setprecision(5) << std::fixed
+              << std::setw(10) << mymolecule.myion->rms_fion(fion) << std::endl
+              << "max|Fatom|= " << std::setprecision(5) << std::fixed
+              << std::setw(10) << mymolecule.myion->max_fion(fion) << "  ("
               << std::setprecision(3) << std::fixed << std::setw(8)
               << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)
               << " eV/Angstrom)" << std::endl
@@ -606,17 +608,17 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          coutput << " ion forces (au):"
                  << "\n";
          for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
-            coutput << " " << Ifmt(5) << ii + 1 << " "
-                    << mymolecule.myion->symbol(ii) << "\t( " 
-                    << Ffmt(12,6) << fion[3*ii] << " " 
-                    << Ffmt(12,6) << fion[3*ii+1] << " "
-                    << Ffmt(12,6) << fion[3*ii+2] << " )" << std::endl;
-         coutput << "      C.O.M. ( " 
-                 << Ffmt(12,6) << mymolecule.myion->com_fion(fion, 0) << " " 
-                 << Ffmt(12,6) << mymolecule.myion->com_fion(fion, 1) << " " 
-                 << Ffmt(12,6) << mymolecule.myion->com_fion(fion, 2) << " )\n";
-         coutput << "   |F|/nion  = " << Ffmt(12,6) << mymolecule.myion->rms_fion(fion) << std::endl
-                 << "   max|Fatom|= " << Ffmt(12,6) << mymolecule.myion->max_fion(fion) << "  ("
+            coutput << Ifmt(5) << ii+1 << " "
+                    << Lfmt(2) << mymolecule.myion->symbol(ii) << "  ( " 
+                    << Ffmt(10,5) << fion[3*ii] << " " 
+                    << Ffmt(10,5) << fion[3*ii+1] << " "
+                    << Ffmt(10,5) << fion[3*ii+2] << " )" << std::endl;
+         coutput << "  C.O.M.  ( " 
+                 << Ffmt(10,5) << mymolecule.myion->com_fion(fion,0) << " " 
+                 << Ffmt(10,5) << mymolecule.myion->com_fion(fion,1) << " " 
+                 << Ffmt(10,5) << mymolecule.myion->com_fion(fion,2) << " )\n";
+         coutput << "|F|/nion  = " << Ffmt(10,5) << mymolecule.myion->rms_fion(fion) << std::endl
+                 << "max|Fatom|= " << Ffmt(10,5) << mymolecule.myion->max_fion(fion) << "  ("
                  << Ffmt(8,3) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)
                  << " eV/Angstrom)" << std::endl << std::endl;
       }

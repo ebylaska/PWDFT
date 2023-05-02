@@ -407,32 +407,22 @@ Ion::Ion(std::string rtdbstring, Control2 &control) {
   ke_count = 0;
   ke_total = 0.0;
   kg_total = 0.0;
-  if (rtdbjson["nwpw"]["ke_count"].is_number_integer())
-    ke_count = rtdbjson["nwpw"]["ke_count"];
-  if (rtdbjson["nwpw"]["ke_total"].is_number_float())
-    ke_total = rtdbjson["nwpw"]["ke_total"];
-  if (rtdbjson["nwpw"]["kg_total"].is_number_float())
-    kg_total = rtdbjson["nwpw"]["kg_total"];
+  if (rtdbjson["nwpw"]["ke_count"].is_number_integer()) ke_count = rtdbjson["nwpw"]["ke_count"];
+  if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
+  if (rtdbjson["nwpw"]["kg_total"].is_number_float())   kg_total = rtdbjson["nwpw"]["kg_total"];
 
-  if (rtdbjson["nwpw"]["fix_translation"].is_boolean())
-    fix_translation = rtdbjson["nwpw"]["fix_translation"];
-  if (rtdbjson["nwpw"]["fix_rotation"].is_boolean())
-    fix_rotation = rtdbjson["nwpw"]["fix_rotation"];
+  if (rtdbjson["nwpw"]["fix_translation"].is_boolean()) fix_translation = rtdbjson["nwpw"]["fix_translation"];
+  if (rtdbjson["nwpw"]["fix_rotation"].is_boolean())    fix_rotation    = rtdbjson["nwpw"]["fix_rotation"];
 
   dof_translation = !fix_translation;
-  dof_rotation = !fix_rotation;
-  if (rtdbjson["nwpw"]["dof_translation"].is_boolean())
-    dof_translation = rtdbjson["nwpw"]["dof_translation"];
-  if (rtdbjson["nwpw"]["dof_rotation"].is_boolean())
-    dof_rotation = rtdbjson["nwpw"]["dof_rotation"];
 
-  g_dof = 3.0 * nion - 6.0;
-  if (dof_translation)
-    g_dof += 3;
-  if (dof_rotation)
-    g_dof += 3;
-  if (g_dof < 1)
-    g_dof = 1.0;
+  if (rtdbjson["nwpw"]["dof_translation"].is_boolean()) dof_translation = rtdbjson["nwpw"]["dof_translation"];
+  if (rtdbjson["nwpw"]["dof_rotation"].is_boolean())    dof_rotation    = rtdbjson["nwpw"]["dof_rotation"];
+
+  g_dof = 3.0*nion - 6.0;
+  if (dof_translation) g_dof += 3;
+  if (dof_rotation)    g_dof += 3;
+  if (g_dof < 1)       g_dof = 1.0;
 
   /*  DEBUG CHECK
      std::cout << "NION=" << nion << std::endl;

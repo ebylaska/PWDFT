@@ -151,98 +151,97 @@ void psp_library::psp_check(const char *atom, Control2 &control, double *zv,
  *     psp_library::psp_generator_auto     *
  *                                         *
  *******************************************/
-void psp_library::psp_generator_auto(const char *atom, Control2 &control,
-                                     std::ostream &coutput) {
-  char fname[256], tname[256];
-  char sdir_name[256], dir_name[256];
-  char psp_in[10], psp_out[10];
-  char aatom[10];
-
-  int ptype = this->psp_type(atom);
-  int lmax = this->psp_lmax(atom);
-  int locp = this->psp_locp(atom);
-  double rlocal = this->psp_rlocal(atom);
-
-  bool oprint = control.print_level("medium");
-
-  strcpy(aatom, atom);
-  strcpy(fname, atom);
-  strcat(fname, ".psp");
-  strcpy(psp_out, fname);
-  control.add_permanent_dir(fname);
-  std::string mypsp_fname(fname);
-  std::string mypsp_libname = this->psp_libname(atom);
-
-  strcpy(tname, "junk");
-  strcat(tname, ".inp");
-  strcpy(psp_in, tname);
-  control.add_permanent_dir(tname);
-  std::string mypsp_junkname(tname);
-
-  std::string pspinput = mystring_readfile(mypsp_libname);
-
-  mystring_writefile(mypsp_junkname, pspinput);
-
-  if (oprint)
-    coutput << " generating 1d pseudopotential file: " << mypsp_fname
-            << std::endl;
-
-  strcpy(sdir_name, control.scratch_dir());
-  strcpy(dir_name, control.permanent_dir());
-  int n9 = strlen(sdir_name);
-  int n0 = strlen(dir_name);
-  int n1 = strlen(psp_in);
-  int n2 = strlen(psp_out);
-  int n3 = strlen(aatom);
-  int efg00 = 0;
-
-  int debug = 0;
-  int print = 0;
-  debug = control.print_level("debug");
-  print = control.print_level("high");
-
-  if ((ptype == 0) || (ptype == 7)) {
-    pspsolve(&print, &debug, &lmax, &locp, &rlocal, &efg00, sdir_name, &n9,
-             dir_name, &n0, psp_in, &n1, psp_out, &n2);
-
-  } else if (ptype == 1) {
-    if (oprint)
-      coutput << " -- psp_type=1 not tested" << std::endl;
-    hgh_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
-              psp_in, &n1, psp_out, &n2);
-
-  } else if (ptype == 2) {
-    if (oprint)
-      coutput << " -- psp_type=2 not tested" << std::endl;
-    cpi_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
-              psp_in, &n1, psp_out, &n2, aatom, &n3);
-  } else if (ptype == 3) {
-    if (oprint)
-      coutput << " -- psp_type=3 not tested" << std::endl;
-    teter_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
-                psp_in, &n1, psp_out, &n2, aatom, &n3);
-  } else if (ptype == 4) {
-    if (oprint)
-      coutput << " -- psp_type=4 not tested" << std::endl;
-    paw_atom_driver(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name,
-                    &n0, psp_in, &n1, psp_out, &n2, aatom, &n3);
-  } else if (ptype == 5) {
-    if (oprint)
-      coutput << " -- psp_type=5 not tested" << std::endl;
-    qmmm_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
+void psp_library::psp_generator_auto(const char *atom, Control2 &control, std::ostream &coutput) 
+{
+   char fname[256], tname[256];
+   char sdir_name[256], dir_name[256];
+   char psp_in[10], psp_out[10];
+   char aatom[10];
+ 
+   int ptype = this->psp_type(atom);
+   int lmax  = this->psp_lmax(atom);
+   int locp  = this->psp_locp(atom);
+   double rlocal = this->psp_rlocal(atom);
+ 
+   bool oprint = control.print_level("medium");
+ 
+   strcpy(aatom, atom);
+   strcpy(fname, atom);
+   strcat(fname, ".psp");
+   strcpy(psp_out, fname);
+   control.add_permanent_dir(fname);
+   std::string mypsp_fname(fname);
+   std::string mypsp_libname = this->psp_libname(atom);
+ 
+   strcpy(tname, "junk");
+   strcat(tname, ".inp");
+   strcpy(psp_in, tname);
+   control.add_permanent_dir(tname);
+   std::string mypsp_junkname(tname);
+ 
+   std::string pspinput = mystring_readfile(mypsp_libname);
+ 
+   mystring_writefile(mypsp_junkname,pspinput);
+ 
+   if (oprint)
+      coutput << " generating 1d pseudopotential file: " << mypsp_fname << std::endl;
+ 
+   strcpy(sdir_name, control.scratch_dir());
+   strcpy(dir_name, control.permanent_dir());
+   int n9 = strlen(sdir_name);
+   int n0 = strlen(dir_name);
+   int n1 = strlen(psp_in);
+   int n2 = strlen(psp_out);
+   int n3 = strlen(aatom);
+   int efg00 = 0;
+ 
+   int debug = 0;
+   int print = 0;
+   debug = control.print_level("debug");
+   print = control.print_level("high");
+ 
+   if ((ptype == 0) || (ptype == 7)) {
+     pspsolve(&print, &debug, &lmax, &locp, &rlocal, &efg00, sdir_name, &n9,
+              dir_name, &n0, psp_in, &n1, psp_out, &n2);
+ 
+   } else if (ptype == 1) {
+     if (oprint)
+       coutput << " -- psp_type=1 not tested" << std::endl;
+     hgh_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
+               psp_in, &n1, psp_out, &n2);
+ 
+   } else if (ptype == 2) {
+     if (oprint)
+       coutput << " -- psp_type=2 not tested" << std::endl;
+     cpi_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
                psp_in, &n1, psp_out, &n2, aatom, &n3);
-  } else if (ptype == 6) {
-    if (oprint)
-      coutput << " -- psp_type=6 not tested" << std::endl;
-    carter_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
+   } else if (ptype == 3) {
+     if (oprint)
+       coutput << " -- psp_type=3 not tested" << std::endl;
+     teter_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
                  psp_in, &n1, psp_out, &n2, aatom, &n3);
-  } else {
-    if (oprint)
-      coutput << " -- unknown psp_type, psp_type=" << ptype << std::endl;
-  }
-
-  /* delete the junk.inp file */
-  std::remove(tname);
+   } else if (ptype == 4) {
+     if (oprint)
+       coutput << " -- psp_type=4 not tested" << std::endl;
+     paw_atom_driver(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name,
+                     &n0, psp_in, &n1, psp_out, &n2, aatom, &n3);
+   } else if (ptype == 5) {
+     if (oprint)
+       coutput << " -- psp_type=5 not tested" << std::endl;
+     qmmm_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
+                psp_in, &n1, psp_out, &n2, aatom, &n3);
+   } else if (ptype == 6) {
+     if (oprint)
+       coutput << " -- psp_type=6 not tested" << std::endl;
+     carter_parse(&debug, &lmax, &locp, &rlocal, sdir_name, &n9, dir_name, &n0,
+                  psp_in, &n1, psp_out, &n2, aatom, &n3);
+   } else {
+     if (oprint)
+       coutput << " -- unknown psp_type, psp_type=" << ptype << std::endl;
+   }
+ 
+   /* delete the junk.inp file */
+   std::remove(tname);
 }
 
 /*******************************************

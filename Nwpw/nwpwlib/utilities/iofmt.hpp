@@ -12,6 +12,7 @@
 #define Ffmt(w, p)                                                             \
   std::right << std::setw(w) << std::setprecision(p) << std::fixed
 #define Ifmt(w) std::right << std::setw(w)
+#define Lfmt(w) std::left << std::setw(w)
 
 // static void iofmt_forceprint(std::string forcelabel, double *A) {
 //    int nion=2;

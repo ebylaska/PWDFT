@@ -629,279 +629,277 @@ static int vpp_get_psp_type(Parallel *myparall, char *pspname) {
  *                vpp_generate             *
  *                                         *
  *******************************************/
-static void vpp_generate(
-    PGrid *mygrid, char *pspname, char *fname, char *comment, int *psp_type,
-    int psp_version_in, int *version, int *nfft, double *unita, char *atom,
-    double *amass, double *zv, int *lmmax, int *lmax, int *locp, int *nmax,
-    double **rc, int *nprj, int **n_projector, int **l_projector,
-    int **m_projector, int **b_projector, double **Gijl, double *rlocal,
-    bool *semicore, double *rcore, double **ncore, double *vl, double *vlpaw,
-    double **vnl, double *log_amesh, double *r1, double *rmax, double *sigma,
-    double *zion, int *n1dgrid, int *n1dbasis, int **nae, int **nps, int **lps,
-    int *icut, double **eig, double **phi_ae, double **dphi_ae, double **phi_ps,
-    double **dphi_ps, double **core_ae, double **core_ps,
-    double **core_ae_prime, double **core_ps_prime, double **rgrid,
-    double *core_kin_energy, double *core_ion_energy, double **hartree_matrix,
-    double **comp_charge_matrix, double **comp_pot_matrix,
-    std::ostream &coutput) {
-  int i, nn;
-  double *tmp2, *prj;
-  Parallel *myparall = mygrid->parall;
-
-  *psp_type = vpp_get_psp_type(myparall, pspname);
-
-  if ((*psp_type == 0) || (*psp_type == 9)) {
-
-    int nray = mygrid->n_ray();
-    Psp1d_Hamann psp1d(myparall, pspname, psp_version_in);
-
-    nfft[0] = mygrid->nx;
-    nfft[1] = mygrid->ny;
-    nfft[2] = mygrid->nz;
-    for (auto i = 0; i < 9; ++i)
-      unita[i] = mygrid->lattice->unita1d(i);
-
-    atom[0] = psp1d.atom[0];
-    atom[1] = psp1d.atom[1];
-    *amass = psp1d.amass;
-    *zv = psp1d.zv;
-    for (auto i = 0; i < 80; ++i)
-      comment[i] = psp1d.comment[i];
-
-    *psp_type = psp1d.psp_type;
-    *version = psp1d.version;
-    *lmax = psp1d.lmax;
-    *locp = psp1d.locp;
-    *nmax = psp1d.nmax;
-    *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
-
-    *nprj = psp1d.nprj;
-    *semicore = psp1d.semicore;
-    *rcore = psp1d.rcore;
-    *rlocal = psp1d.rlocal;
-
-    *rc = new (std::nothrow) double[*lmax + 1]();
-    for (auto l = 0; l <= (*lmax); ++l)
-      (*rc)[l] = psp1d.rc[l];
-
-    /* allocate Gijl and copy from psp1d */
-    int nn = (psp1d.nmax) * (psp1d.nmax) * (psp1d.lmax + 1);
-    *Gijl = new (std::nothrow) double[nn]();
-    for (auto l = 0; l < nn; ++l) {
-      (*Gijl)[l] = psp1d.vnlnrm[l];
-    }
-
-    /* allocate n_projector, l_projector, m_projector, and b_projector and copy
-     * from psp1d */
-    if (psp1d.nprj > 0) {
-      *n_projector = new (std::nothrow) int[psp1d.nprj]();
-      *l_projector = new (std::nothrow) int[psp1d.nprj]();
-      *m_projector = new (std::nothrow) int[psp1d.nprj]();
-      *b_projector = new (std::nothrow) int[psp1d.nprj]();
-
-      for (auto l = 0; l < psp1d.nprj; ++l) {
-        (*n_projector)[l] = psp1d.n_prj[l];
-        (*l_projector)[l] = psp1d.l_prj[l];
-        (*m_projector)[l] = psp1d.m_prj[l];
-        (*b_projector)[l] = psp1d.b_prj[l];
+static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *comment, int *psp_type,
+                         int psp_version_in, int *version, int *nfft, double *unita, char *atom,
+                         double *amass, double *zv, int *lmmax, int *lmax, int *locp, int *nmax,
+                         double **rc, int *nprj, int **n_projector, int **l_projector,
+                         int **m_projector, int **b_projector, double **Gijl, double *rlocal,
+                         bool *semicore, double *rcore, double **ncore, double *vl, double *vlpaw,
+                         double **vnl, double *log_amesh, double *r1, double *rmax, double *sigma,
+                         double *zion, int *n1dgrid, int *n1dbasis, int **nae, int **nps, int **lps,
+                         int *icut, double **eig, double **phi_ae, double **dphi_ae, double **phi_ps,
+                         double **dphi_ps, double **core_ae, double **core_ps,
+                         double **core_ae_prime, double **core_ps_prime, double **rgrid,
+                         double *core_kin_energy, double *core_ion_energy, double **hartree_matrix,
+                         double **comp_charge_matrix, double **comp_pot_matrix,
+                         std::ostream &coutput) 
+{
+   int i, nn;
+   double *tmp2, *prj;
+   Parallel *myparall = mygrid->parall;
+ 
+   *psp_type = vpp_get_psp_type(myparall,pspname);
+ 
+   if ((*psp_type == 0) || (*psp_type == 9)) {
+ 
+     int nray = mygrid->n_ray();
+     Psp1d_Hamann psp1d(myparall,pspname,psp_version_in);
+ 
+     nfft[0] = mygrid->nx;
+     nfft[1] = mygrid->ny;
+     nfft[2] = mygrid->nz;
+     for (auto i = 0; i < 9; ++i)
+       unita[i] = mygrid->lattice->unita1d(i);
+ 
+     atom[0] = psp1d.atom[0];
+     atom[1] = psp1d.atom[1];
+     *amass = psp1d.amass;
+     *zv = psp1d.zv;
+     for (auto i = 0; i < 80; ++i)
+       comment[i] = psp1d.comment[i];
+ 
+     *psp_type = psp1d.psp_type;
+     *version = psp1d.version;
+     *lmax = psp1d.lmax;
+     *locp = psp1d.locp;
+     *nmax = psp1d.nmax;
+     *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
+ 
+     *nprj = psp1d.nprj;
+     *semicore = psp1d.semicore;
+     *rcore = psp1d.rcore;
+     *rlocal = psp1d.rlocal;
+ 
+     *rc = new (std::nothrow) double[*lmax + 1]();
+     for (auto l = 0; l <= (*lmax); ++l)
+       (*rc)[l] = psp1d.rc[l];
+ 
+     /* allocate Gijl and copy from psp1d */
+     int nn = (psp1d.nmax) * (psp1d.nmax) * (psp1d.lmax + 1);
+     *Gijl = new (std::nothrow) double[nn]();
+     for (auto l = 0; l < nn; ++l) {
+       (*Gijl)[l] = psp1d.vnlnrm[l];
+     }
+ 
+     /* allocate n_projector, l_projector, m_projector, and b_projector and copy
+      * from psp1d */
+     if (psp1d.nprj > 0) {
+       *n_projector = new (std::nothrow) int[psp1d.nprj]();
+       *l_projector = new (std::nothrow) int[psp1d.nprj]();
+       *m_projector = new (std::nothrow) int[psp1d.nprj]();
+       *b_projector = new (std::nothrow) int[psp1d.nprj]();
+ 
+       for (auto l = 0; l < psp1d.nprj; ++l) {
+         (*n_projector)[l] = psp1d.n_prj[l];
+         (*l_projector)[l] = psp1d.l_prj[l];
+         (*m_projector)[l] = psp1d.m_prj[l];
+         (*b_projector)[l] = psp1d.b_prj[l];
+       }
+     }
+ 
+     /*  allocate and generate ray formatted grids */
+     double *G_ray = mygrid->generate_G_ray();
+     double *vl_ray = new (std::nothrow) double[nray]();
+     double *vnl_ray =
+         new (std::nothrow) double[(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
+     double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
+     psp1d.vpp_generate_ray(myparall, nray, G_ray, vl_ray, vnl_ray,
+                            rho_sc_k_ray);
+ 
+     /* filter the ray formatted grids */
+     double ecut = mygrid->lattice->ecut();
+     double wcut = mygrid->lattice->wcut();
+     util_filter(nray, G_ray, ecut, vl_ray);
+     for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
+       util_filter(nray, G_ray, wcut, &(vnl_ray[l * nray]));
+     if (*semicore) {
+       util_filter(nray, G_ray, ecut, rho_sc_k_ray);
+       util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
+     }
+ 
+     /* allocate vnl and ncore  generate formated grids */
+     *vnl = new (std::nothrow) double[(psp1d.nprj) * (mygrid->npack(1))]();
+     if (*semicore)
+       *ncore = new (std::nothrow) double[5 * mygrid->npack(0)]();
+ 
+     /*  generate formatted grids using splines */
+     psp1d.vpp_generate_spline(mygrid, nray, G_ray, vl_ray, vnl_ray,
+                               rho_sc_k_ray, vl, *vnl, *ncore);
+ 
+     /* deallocate ray formatted grids */
+     delete[] rho_sc_k_ray;
+     delete[] vnl_ray;
+     delete[] vl_ray;
+     delete[] G_ray;
+ 
+   } 
+   else if (*psp_type == 1) {
+      if (myparall->base_stdio_print)
+         coutput << "in vpp_generate Not finished, hghppv1 psp_type = " << *psp_type << std::endl;
+   } 
+   else if (*psp_type == 2) {
+      if (myparall->base_stdio_print)
+         coutput << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type << std::endl;
+   } 
+   else if (*psp_type == 4) 
+   {
+      if (myparall->base_stdio_print)
+         coutput << "in vpp_generate Not finished, pawppv1 psp_type = " << *psp_type << std::endl;
+     
+      int nray = mygrid->n_ray();
+      Psp1d_pawppv1 paw1d(myparall,pspname);
+     
+      nfft[0] = mygrid->nx;
+      nfft[1] = mygrid->ny;
+      nfft[2] = mygrid->nz;
+      for (auto i=0; i<9; ++i)
+         unita[i] = mygrid->lattice->unita1d(i);
+     
+      atom[0] = paw1d.atom[0];
+      atom[1] = paw1d.atom[1];
+      *amass = paw1d.amass;
+      *zv = paw1d.zv;
+      for (auto i = 0; i < 80; ++i)
+        comment[i] = paw1d.comment[i];
+     
+      *psp_type = paw1d.psp_type;
+      *version = paw1d.version;
+      *lmax = paw1d.lmax;
+      *locp = paw1d.locp;
+      *nmax = paw1d.nmax;
+      //*lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
+     
+      *nprj = paw1d.nprj;
+      *semicore = false;
+      *rcore = 0.0;
+      *rlocal = paw1d.rlocal;
+      *rc = new (std::nothrow) double[*lmax + 1]();
+      for (auto l = 0; l <= (*lmax); ++l)
+        (*rc)[l] = paw1d.rc[l];
+     
+      /* allocate n_projector, l_projector, m_projector, and b_projector and copy
+       * from psp1d */
+      if (paw1d.nprj > 0) {
+        *n_projector = new int[paw1d.nprj]();
+        *l_projector = new int[paw1d.nprj]();
+        *m_projector = new int[paw1d.nprj]();
+        *b_projector = new int[paw1d.nprj]();
+     
+        for (auto l = 0; l < paw1d.nprj; ++l) {
+          (*n_projector)[l] = paw1d.n_prj[l];
+          (*l_projector)[l] = paw1d.l_prj[l];
+          (*m_projector)[l] = paw1d.m_prj[l];
+          (*b_projector)[l] = paw1d.b_prj[l];
+        }
       }
-    }
-
-    /*  allocate and generate ray formatted grids */
-    double *G_ray = mygrid->generate_G_ray();
-    double *vl_ray = new (std::nothrow) double[nray]();
-    double *vnl_ray =
-        new (std::nothrow) double[(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
-    double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
-    psp1d.vpp_generate_ray(myparall, nray, G_ray, vl_ray, vnl_ray,
-                           rho_sc_k_ray);
-
-    /* filter the ray formatted grids */
-    double ecut = mygrid->lattice->ecut();
-    double wcut = mygrid->lattice->wcut();
-    util_filter(nray, G_ray, ecut, vl_ray);
-    for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
-      util_filter(nray, G_ray, wcut, &(vnl_ray[l * nray]));
-    if (*semicore) {
-      util_filter(nray, G_ray, ecut, rho_sc_k_ray);
-      util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
-    }
-
-    /* allocate vnl and ncore  generate formated grids */
-    *vnl = new (std::nothrow) double[(psp1d.nprj) * (mygrid->npack(1))]();
-    if (*semicore)
-      *ncore = new (std::nothrow) double[5 * mygrid->npack(0)]();
-
-    /*  generate formatted grids using splines */
-    psp1d.vpp_generate_spline(mygrid, nray, G_ray, vl_ray, vnl_ray,
-                              rho_sc_k_ray, vl, *vnl, *ncore);
-
-    /* deallocate ray formatted grids */
-    delete[] rho_sc_k_ray;
-    delete[] vnl_ray;
-    delete[] vl_ray;
-    delete[] G_ray;
-
-  } else if (*psp_type == 1) {
-    if (myparall->base_stdio_print)
-      coutput << "in vpp_generate Not finished, hghppv1 psp_type = "
-              << *psp_type << std::endl;
-  } else if (*psp_type == 2) {
-    if (myparall->base_stdio_print)
-      coutput << "in vpp_generate Not finished, kbppv3e psp_type = "
-              << *psp_type << std::endl;
-  } else if (*psp_type == 4) {
-    if (myparall->base_stdio_print)
-      coutput << "in vpp_generate Not finished, pawppv1 psp_type = "
-              << *psp_type << std::endl;
-
-    int nray = mygrid->n_ray();
-    Psp1d_pawppv1 paw1d(myparall, pspname);
-
-    nfft[0] = mygrid->nx;
-    nfft[1] = mygrid->ny;
-    nfft[2] = mygrid->nz;
-    for (auto i = 0; i < 9; ++i)
-      unita[i] = mygrid->lattice->unita1d(i);
-
-    atom[0] = paw1d.atom[0];
-    atom[1] = paw1d.atom[1];
-    *amass = paw1d.amass;
-    *zv = paw1d.zv;
-    for (auto i = 0; i < 80; ++i)
-      comment[i] = paw1d.comment[i];
-
-    *psp_type = paw1d.psp_type;
-    *version = paw1d.version;
-    *lmax = paw1d.lmax;
-    *locp = paw1d.locp;
-    *nmax = paw1d.nmax;
-    //*lmmax=((*lmax)+1)*((*lmax)+1) - (2*(*locp)+1);
-
-    *nprj = paw1d.nprj;
-    *semicore = false;
-    *rcore = 0.0;
-    *rlocal = paw1d.rlocal;
-    *rc = new (std::nothrow) double[*lmax + 1]();
-    for (auto l = 0; l <= (*lmax); ++l)
-      (*rc)[l] = paw1d.rc[l];
-
-    /* allocate n_projector, l_projector, m_projector, and b_projector and copy
-     * from psp1d */
-    if (paw1d.nprj > 0) {
-      *n_projector = new int[paw1d.nprj]();
-      *l_projector = new int[paw1d.nprj]();
-      *m_projector = new int[paw1d.nprj]();
-      *b_projector = new int[paw1d.nprj]();
-
-      for (auto l = 0; l < paw1d.nprj; ++l) {
-        (*n_projector)[l] = paw1d.n_prj[l];
-        (*l_projector)[l] = paw1d.l_prj[l];
-        (*m_projector)[l] = paw1d.m_prj[l];
-        (*b_projector)[l] = paw1d.b_prj[l];
+     
+      *log_amesh = paw1d.log_amesh;
+      *r1 = paw1d.r1;
+      *rmax = paw1d.rmax;
+      *sigma = paw1d.sigma;
+      *zion = paw1d.zion;
+      *n1dgrid = paw1d.n1dgrid;
+      *n1dbasis = paw1d.nbasis;
+      *icut = paw1d.icut;
+     
+      *core_kin_energy = paw1d.core_kin_energy;
+      *core_ion_energy = paw1d.core_ion_energy;
+     
+      if (paw1d.nbasis > 0) {
+        *nae = new (std::nothrow) int[paw1d.nbasis]();
+        *nps = new (std::nothrow) int[paw1d.nbasis]();
+        *lps = new (std::nothrow) int[paw1d.nbasis]();
+     
+        *eig = new double[paw1d.nbasis]();
+     
+        *phi_ae  = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
+        *dphi_ae = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
+        *phi_ps  = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
+        *dphi_ps = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
       }
-    }
-
-    *log_amesh = paw1d.log_amesh;
-    *r1 = paw1d.r1;
-    *rmax = paw1d.rmax;
-    *sigma = paw1d.sigma;
-    *zion = paw1d.zion;
-    *n1dgrid = paw1d.n1dgrid;
-    *n1dbasis = paw1d.nbasis;
-    *icut = paw1d.icut;
-
-    *core_kin_energy = paw1d.core_kin_energy;
-    *core_ion_energy = paw1d.core_ion_energy;
-
-    if (paw1d.nbasis > 0) {
-      *nae = new (std::nothrow) int[paw1d.nbasis]();
-      *nps = new (std::nothrow) int[paw1d.nbasis]();
-      *lps = new (std::nothrow) int[paw1d.nbasis]();
-
-      *eig = new double[paw1d.nbasis]();
-
-      *phi_ae = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
-      *dphi_ae = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
-      *phi_ps = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
-      *dphi_ps = new (std::nothrow) double[paw1d.nbasis * paw1d.n1dgrid]();
-    }
-    *core_ae = new (std::nothrow) double[paw1d.n1dgrid]();
-    *core_ps = new (std::nothrow) double[paw1d.n1dgrid]();
-    *core_ae_prime = new (std::nothrow) double[paw1d.n1dgrid]();
-    *core_ps_prime = new (std::nothrow) double[paw1d.n1dgrid]();
-    *rgrid = new (std::nothrow) double[paw1d.n1dgrid]();
-
-    for (auto l = 0; l < paw1d.nbasis; ++l) {
-      (*nae)[l] = paw1d.nae[l];
-      (*nps)[l] = paw1d.nps[l];
-      (*lps)[l] = paw1d.lps[l];
-
-      (*eig)[l] = paw1d.eig[l];
-    }
-    for (auto il = 0; il < (paw1d.nbasis * paw1d.n1dgrid); ++il) {
-      (*phi_ae)[il] = paw1d.phi_ae[il];
-      (*dphi_ae)[il] = paw1d.dphi_ae[il];
-      (*phi_ps)[il] = paw1d.phi_ps[il];
-      (*dphi_ps)[il] = paw1d.dphi_ps[il];
-    }
-    for (auto i = 0; i < (paw1d.n1dgrid); ++i) {
-      (*core_ae)[i] = paw1d.core_ae[i];
-      (*core_ps)[i] = paw1d.core_ps[i];
-      (*core_ae_prime)[i] = paw1d.core_ae_prime[i];
-      (*core_ps_prime)[i] = paw1d.core_ps_prime[i];
-      (*rgrid)[i] = paw1d.rgrid[i];
-    }
-
-    /*  allocate paw matrices */
-    *Gijl = new (std::nothrow) double[(paw1d.nmax) * (paw1d.nmax) *
-                                      (paw1d.lmax + 1) * 5]();
-    *comp_charge_matrix =
-        new (std::nothrow) double[(paw1d.nbasis) * (paw1d.nbasis) *
-                                  (2 * paw1d.lmax + 1)]();
-    *comp_pot_matrix =
-        new (std::nothrow) double[(paw1d.nbasis) * (paw1d.nbasis) *
-                                  (2 * paw1d.lmax + 1)]();
-    *hartree_matrix = new (
-        std::nothrow) double[(paw1d.nbasis) * (paw1d.nbasis) * (paw1d.nbasis) *
-                             (paw1d.nbasis) * (2 * paw1d.lmax + 1)]();
-
-    paw1d.vpp_generate_paw_matrices(myparall, *Gijl, *comp_charge_matrix,
-                                    *comp_pot_matrix, *hartree_matrix);
-
-    /*  allocate and generate ray formatted grids */
-    double *G_ray = mygrid->generate_G_ray();
-    double *vl_ray = new (std::nothrow) double[nray]();
-    double *vlpaw_ray = new (std::nothrow) double[nray]();
-    double *vnl_ray = new (std::nothrow) double[(paw1d.nbasis) * nray]();
-
-    paw1d.vpp_generate_ray(myparall, nray, G_ray, vl_ray, vlpaw_ray, vnl_ray);
-
-    /* filter the ray formatted grids */
-    double ecut = mygrid->lattice->ecut();
-    double wcut = mygrid->lattice->wcut();
-    util_filter(nray, G_ray, ecut, vl_ray);
-    util_filter(nray, G_ray, ecut, vlpaw_ray);
-    for (auto l = 0; l < (paw1d.nbasis); ++l)
-      util_filter(nray, G_ray, wcut, &(vnl_ray[l * nray]));
-
-    /* allocate vnl and other paw data then generate formated grids */
-    *vnl = new (std::nothrow) double[(paw1d.nprj) * (mygrid->npack(1))]();
-
-    /*  generate formatted grids using splines */
-    paw1d.vpp_generate_spline(mygrid, nray, G_ray, vl_ray, vlpaw_ray, vnl_ray,
-                              vl, vlpaw, *vnl);
-
-    /* deallocate ray formatted grids */
-    delete[] vnl_ray;
-    delete[] vlpaw_ray;
-    delete[] vl_ray;
-    delete[] G_ray;
-  } else {
-    if (myparall->base_stdio_print)
-      coutput << "in vpp_generate Not finished, psp_type = " << *psp_type
-              << std::endl;
-  }
+      *core_ae       = new (std::nothrow) double[paw1d.n1dgrid]();
+      *core_ps       = new (std::nothrow) double[paw1d.n1dgrid]();
+      *core_ae_prime = new (std::nothrow) double[paw1d.n1dgrid]();
+      *core_ps_prime = new (std::nothrow) double[paw1d.n1dgrid]();
+      *rgrid         = new (std::nothrow) double[paw1d.n1dgrid]();
+     
+      for (auto l=0; l<paw1d.nbasis; ++l) 
+      {
+         (*nae)[l] = paw1d.nae[l];
+         (*nps)[l] = paw1d.nps[l];
+         (*lps)[l] = paw1d.lps[l];
+        
+         (*eig)[l] = paw1d.eig[l];
+      }
+      for (auto il = 0; il < (paw1d.nbasis * paw1d.n1dgrid); ++il) 
+      {
+         (*phi_ae)[il] = paw1d.phi_ae[il];
+         (*dphi_ae)[il] = paw1d.dphi_ae[il];
+         (*phi_ps)[il] = paw1d.phi_ps[il];
+         (*dphi_ps)[il] = paw1d.dphi_ps[il];
+      }
+      for (auto i = 0; i < (paw1d.n1dgrid); ++i) 
+      {
+         (*core_ae)[i] = paw1d.core_ae[i];
+         (*core_ps)[i] = paw1d.core_ps[i];
+         (*core_ae_prime)[i] = paw1d.core_ae_prime[i];
+         (*core_ps_prime)[i] = paw1d.core_ps_prime[i];
+         (*rgrid)[i] = paw1d.rgrid[i];
+      }
+     
+      /*  allocate paw matrices */
+      *Gijl               = new (std::nothrow) double[(paw1d.nmax)*(paw1d.nmax)*(paw1d.lmax+1)*5]();
+      *comp_charge_matrix = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+      *comp_pot_matrix    = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+      *hartree_matrix     = new (std::nothrow) double[(paw1d.nbasis)*(paw1d.nbasis)*(paw1d.nbasis) 
+                                                      *(paw1d.nbasis)*(2*paw1d.lmax+1)]();
+     
+      paw1d.vpp_generate_paw_matrices(myparall,*Gijl,*comp_charge_matrix,*comp_pot_matrix,*hartree_matrix);
+     
+      /*  allocate and generate ray formatted grids */
+      double *G_ray = mygrid->generate_G_ray();
+      double *vl_ray = new (std::nothrow) double[nray]();
+      double *vlpaw_ray = new (std::nothrow) double[nray]();
+      double *vnl_ray = new (std::nothrow) double[(paw1d.nbasis) * nray]();
+     
+      paw1d.vpp_generate_ray(myparall, nray, G_ray, vl_ray, vlpaw_ray, vnl_ray);
+     
+      /* filter the ray formatted grids */
+      double ecut = mygrid->lattice->ecut();
+      double wcut = mygrid->lattice->wcut();
+      util_filter(nray,G_ray,ecut,vl_ray);
+      util_filter(nray,G_ray,ecut,vlpaw_ray);
+      for (auto l=0; l<(paw1d.nbasis); ++l)
+         util_filter(nray,G_ray,wcut,&(vnl_ray[l*nray]));
+     
+      /* allocate vnl and other paw data then generate formated grids */
+      *vnl = new (std::nothrow) double[(paw1d.nprj) * (mygrid->npack(1))]();
+     
+      /*  generate formatted grids using splines */
+      paw1d.vpp_generate_spline(mygrid, nray, G_ray, vl_ray, vlpaw_ray, vnl_ray,
+                                vl, vlpaw, *vnl);
+     
+      /* deallocate ray formatted grids */
+      delete[] vnl_ray;
+      delete[] vlpaw_ray;
+      delete[] vl_ray;
+      delete[] G_ray;
+   } 
+   else 
+   {
+      if (myparall->base_stdio_print)
+         coutput << "in vpp_generate Not finished, psp_type = " << *psp_type << std::endl;
+   }
 }
 
 /* Constructors */
@@ -913,228 +911,233 @@ static void vpp_generate(
  *******************************************/
 Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
                                  Strfac *mystrfacin, Control2 &control,
-                                 std::ostream &coutput) {
-  int ia, version, nfft[3];
-  int *n_ptr, *l_ptr, *m_ptr, *b_ptr;
-  double *rc_ptr, *G_ptr, *vnl_ptr, *ncore_ptr;
-  int *nae_ptr, *nps_ptr, *lps_ptr;
-  double *eig_ptr, *phi_ae_ptr, *dphi_ae_ptr, *phi_ps_ptr, *dphi_ps_ptr;
-  double *core_ae_ptr, *core_ps_ptr, *core_ae_prime_ptr, *core_ps_prime_ptr,
-      *rgrid_ptr;
-  double *hartree_matrix_ptr, *comp_charge_matrix_ptr, *comp_pot_matrix_ptr;
+                                 std::ostream &coutput) 
+{
+   int ia,version,nfft[3];
+   int *n_ptr,*l_ptr,*m_ptr,*b_ptr;
 
-  double unita[9];
-  char fname[256], pspname[256], aname[2];
-  char fname2[256];
+   double *rc_ptr,*G_ptr,*vnl_ptr,*ncore_ptr;
+   int *nae_ptr,*nps_ptr,*lps_ptr;
 
-  myion = myionin;
-  mypneb = mypnebin;
-  mystrfac = mystrfacin;
-
-  myefield = new nwpw_efield(myion, mypneb, mystrfac, control, coutput);
-  myapc = new nwpw_apc(myion, mypneb, mystrfac, control, coutput);
-  mydipole = new nwpw_dipole(myion, mypneb, mystrfac, control);
-
-  psp_version = control.version;
-
-  npsp = myion->nkatm;
-  nprj_max = 0;
-
-  psp_type = new int[npsp]();
-  lmax = new int[npsp]();
-  lmmax = new int[npsp]();
-  locp = new int[npsp]();
-  nmax = new int[npsp]();
-  nprj = new int[npsp]();
-  semicore = new bool[npsp + 1]();
-
-  n_projector = new int *[npsp]();
-  l_projector = new int *[npsp]();
-  m_projector = new int *[npsp]();
-  b_projector = new int *[npsp]();
-
-  zv = new (std::nothrow) double[npsp]();
-  amass = new (std::nothrow) double[npsp]();
-  rlocal = new (std::nothrow) double[npsp]();
-  rcore = new (std::nothrow) double[npsp]();
-  ncore_sum = new (std::nothrow) double[npsp]();
-  rc = new (std::nothrow) double *[npsp]();
-
-  vl = new (std::nothrow) double *[npsp]();
-  for (ia = 0; ia < npsp; ++ia)
-    vl[ia] = new (std::nothrow) double[mypneb->npack(0)]();
-
-  Gijl = new (std::nothrow) double *[npsp]();
-  vnl = new (std::nothrow) double *[npsp]();
-  ncore_atom = new (std::nothrow) double *[npsp]();
-  semicore_density = mypneb->r_alloc();
-
-  comment = new char *[npsp]();
-  for (ia = 0; ia < npsp; ++ia)
-    comment[ia] = new char[80]();
-
-  semicore[npsp] = false;
-
-  // *** paw data  ***
-  pawexist = false;
-  vlpaw = new (std::nothrow) double *[npsp]();
-  for (ia = 0; ia < npsp; ++ia)
-    vlpaw[ia] = new (std::nothrow) double[mypneb->npack(0)]();
-
-  hartree_matrix = new (std::nothrow) double *[npsp]();
-  comp_charge_matrix = new (std::nothrow) double *[npsp]();
-  comp_pot_matrix = new (std::nothrow) double *[npsp]();
-
-  rgrid = new (std::nothrow) double *[npsp]();
-  eig = new (std::nothrow) double *[npsp]();
-  phi_ae = new (std::nothrow) double *[npsp]();
-  dphi_ae = new (std::nothrow) double *[npsp]();
-  phi_ps = new (std::nothrow) double *[npsp]();
-  dphi_ps = new (std::nothrow) double *[npsp]();
-  core_ae = new (std::nothrow) double *[npsp]();
-  core_ps = new (std::nothrow) double *[npsp]();
-  core_ae_prime = new (std::nothrow) double *[npsp]();
-  core_ps_prime = new (std::nothrow) double *[npsp]();
-
-  log_amesh = new (std::nothrow) double[npsp]();
-  r1 = new (std::nothrow) double[npsp]();
-  rmax = new (std::nothrow) double[npsp]();
-  sigma = new (std::nothrow) double[npsp]();
-  zion = new (std::nothrow) double[npsp]();
-  core_kin = new (std::nothrow) double[npsp]();
-  core_ion = new (std::nothrow) double[npsp]();
-
-  n1dgrid = new (std::nothrow) int[npsp]();
-  n1dbasis = new (std::nothrow) int[npsp]();
-  icut = new (std::nothrow) int[npsp]();
-  nae = new (std::nothrow) int *[npsp]();
-  nps = new (std::nothrow) int *[npsp]();
-  lps = new (std::nothrow) int *[npsp]();
-
-  for (ia = 0; ia < npsp; ++ia) {
-    strcpy(fname, myion->atom(ia));
-    strcat(fname, ".vpp");
-    control.add_permanent_dir(fname);
-
-    if (vpp_formatter_check(mypneb, fname, psp_version)) {
-      strcpy(pspname, myion->atom(ia));
-      strcat(pspname, ".psp");
-      control.add_permanent_dir(pspname);
-      vpp_generate(
-          mypneb, pspname, fname, comment[ia], &psp_type[ia], psp_version,
-          &version, nfft, unita, aname, &amass[ia], &zv[ia], &lmmax[ia],
-          &lmax[ia], &locp[ia], &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr,
-          &m_ptr, &b_ptr, &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia],
-          &ncore_ptr, vl[ia], vlpaw[ia], &vnl_ptr, &log_amesh[ia], &r1[ia],
-          &rmax[ia], &sigma[ia], &zion[ia], &n1dgrid[ia], &n1dbasis[ia],
-          &nae_ptr, &nps_ptr, &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr,
-          &dphi_ae_ptr, &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
-          &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr, &core_kin[ia],
-          &core_ion[ia], &hartree_matrix_ptr, &comp_charge_matrix_ptr,
-          &comp_pot_matrix_ptr, coutput);
-
-      // writing .vpp file to fname
-      vpp_write(mypneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
-                aname, amass[ia], zv[ia], lmmax[ia], lmax[ia], locp[ia],
-                nmax[ia], rc_ptr, nprj[ia], n_ptr, l_ptr, m_ptr, b_ptr, G_ptr,
-                rlocal[ia], semicore[ia], rcore[ia], ncore_ptr, vl[ia], vnl_ptr,
-                log_amesh[ia], r1[ia], rmax[ia], sigma[ia], zion[ia],
-                n1dgrid[ia], n1dbasis[ia], nae_ptr, nps_ptr, lps_ptr, icut[ia],
-                eig_ptr, phi_ae_ptr, dphi_ae_ptr, phi_ps_ptr, dphi_ps_ptr,
-                core_ae_ptr, core_ps_ptr, core_ae_prime_ptr, core_ps_prime_ptr,
-                rgrid_ptr, core_kin[ia], core_ion[ia], hartree_matrix_ptr,
-                comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
-    } else {
-      vpp_read(mypneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
-               aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
-               &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
-               &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia], &ncore_ptr,
-               vl[ia], &vnl_ptr, &log_amesh[ia], &r1[ia], &rmax[ia], &sigma[ia],
-               &zion[ia], &n1dgrid[ia], &n1dbasis[ia], &nae_ptr, &nps_ptr,
-               &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr, &dphi_ae_ptr,
-               &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
-               &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr,
-               &core_kin[ia], &core_ion[ia], &hartree_matrix_ptr,
-               &comp_charge_matrix_ptr, &comp_pot_matrix_ptr, coutput);
-    }
-
-    rc[ia] = rc_ptr;
-    n_projector[ia] = n_ptr;
-    l_projector[ia] = l_ptr;
-    m_projector[ia] = m_ptr;
-    b_projector[ia] = b_ptr;
-    Gijl[ia] = G_ptr;
-    vnl[ia] = vnl_ptr;
-    if (nprj[ia] > nprj_max)
-      nprj_max = nprj[ia];
-
-    if (semicore[ia]) {
-      ncore_atom[ia] = ncore_ptr;
-      ncore_sum[ia] =
-          semicore_check(mypneb, semicore[ia], rcore[ia], ncore_atom[ia]);
-      semicore[npsp] = true;
-    }
-
-    if (psp_type[ia] == 4) {
-      pawexist = true;
-      nae[ia] = nae_ptr;
-      nps[ia] = nps_ptr;
-      lps[ia] = lps_ptr;
-      eig[ia] = eig_ptr;
-      phi_ae[ia] = phi_ae_ptr;
-      dphi_ae[ia] = dphi_ae_ptr;
-      phi_ps[ia] = phi_ps_ptr;
-      dphi_ps[ia] = dphi_ps_ptr, core_ae[ia] = core_ae_ptr;
-      core_ps[ia] = core_ps_ptr;
-      core_ae_prime[ia] = core_ae_prime_ptr;
-      core_ps_prime[ia] = core_ps_prime_ptr;
-      rgrid[ia] = rgrid_ptr;
-      hartree_matrix[ia] = hartree_matrix_ptr;
-      comp_charge_matrix[ia] = comp_charge_matrix_ptr;
-      comp_pot_matrix[ia] = comp_pot_matrix_ptr;
-    }
-  }
-
-  /* define the maximum number of projectors  */
-  nprj_max *= 10;
-  // nprj_max = 0;
-  // for (auto ii=0; ii < myion->nion; ++ii)
-  //     nprj_max += nprj[myion->katm[ii]];
-
-  if (pawexist) {
-    // call psp_paw_init()
-    mypaw_compcharge =
-        new Paw_compcharge(myion, mypneb, control, nprj, n1dbasis, psp_type,
-                           lmax, sigma, nprj_max, l_projector, m_projector,
-                           b_projector, comp_charge_matrix, hartree_matrix);
-    mypaw_xc =
-        new Paw_xc(myion, mypneb, control, nprj, n1dbasis, n1dgrid, psp_type,
-                   lmax, l_projector, m_projector, b_projector);
-
-    // Paw_compcharge_init(ion_nion(),npsp,
-    //                           int_mb(nprj(1)),
-    //                           int_mb(n1dbasis(1)),
-    //                           int_mb(psp_type(1)),
-    //                           int_mb(lmax(1)),
-    //                           dbl_mb(sigma(1)),
-    //                           nmax_max*lmmax_max,
-    //                           int_mb(l_projector(1)),
-    //                           int_mb(m_projector(1)),
-    //                           int_mb(b_projector(1)),
-    //                           int_mb(comp_charge_matrix(1)),
-    //                           int_mb(hartree_matrix(1)))
-
-    // nwpw_xc_init(ion_nion(),npsp,
-    //                 int_mb(nprj(1)),
-    //                 int_mb(n1dbasis(1)),
-    //                 int_mb(n1dgrid(1)),
-    //                 int_mb(psp_type(1)),
-    //                 int_mb(lmax(1)),
-    //                 nmax_max*lmmax_max,
-    //                 int_mb(l_projector(1)),
-    //                 int_mb(m_projector(1)),
-    //                 int_mb(b_projector(1)))
-  }
+   double *eig_ptr,*phi_ae_ptr,*dphi_ae_ptr,*phi_ps_ptr,*dphi_ps_ptr;
+   double *core_ae_ptr, *core_ps_ptr, *core_ae_prime_ptr, *core_ps_prime_ptr,*rgrid_ptr;
+   double *hartree_matrix_ptr,*comp_charge_matrix_ptr,*comp_pot_matrix_ptr;
+ 
+   double unita[9];
+   char fname[256], pspname[256], aname[2];
+   char fname2[256];
+ 
+   myion = myionin;
+   mypneb = mypnebin;
+   mystrfac = mystrfacin;
+ 
+   myefield = new nwpw_efield(myion,mypneb,mystrfac,control,coutput);
+   myapc    = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
+   mydipole = new nwpw_dipole(myion,mypneb,mystrfac,control);
+ 
+   psp_version = control.version;
+ 
+   npsp = myion->nkatm;
+   nprj_max = 0;
+ 
+   psp_type = new int[npsp]();
+   lmax     = new int[npsp]();
+   lmmax    = new int[npsp]();
+   locp     = new int[npsp]();
+   nmax     = new int[npsp]();
+   nprj     = new int[npsp]();
+   semicore = new bool[npsp + 1]();
+ 
+   n_projector = new int *[npsp]();
+   l_projector = new int *[npsp]();
+   m_projector = new int *[npsp]();
+   b_projector = new int *[npsp]();
+ 
+   zv        = new (std::nothrow) double[npsp]();
+   amass     = new (std::nothrow) double[npsp]();
+   rlocal    = new (std::nothrow) double[npsp]();
+   rcore     = new (std::nothrow) double[npsp]();
+   ncore_sum = new (std::nothrow) double[npsp]();
+   rc        = new (std::nothrow) double *[npsp]();
+ 
+   vl = new (std::nothrow) double *[npsp]();
+   for (ia=0; ia<npsp; ++ia)
+      vl[ia] = new (std::nothrow) double[mypneb->npack(0)]();
+ 
+   Gijl       = new (std::nothrow) double *[npsp]();
+   vnl        = new (std::nothrow) double *[npsp]();
+   ncore_atom = new (std::nothrow) double *[npsp]();
+   semicore_density = mypneb->r_alloc();
+ 
+   comment = new char *[npsp]();
+   for (ia=0; ia<npsp; ++ia)
+      comment[ia] = new char[80]();
+ 
+   semicore[npsp] = false;
+ 
+   // *** paw data  ***
+   pawexist = false;
+   vlpaw = new (std::nothrow) double *[npsp]();
+   for (ia=0; ia<npsp; ++ia)
+      vlpaw[ia] = new (std::nothrow) double[mypneb->npack(0)]();
+ 
+   hartree_matrix     = new (std::nothrow) double *[npsp]();
+   comp_charge_matrix = new (std::nothrow) double *[npsp]();
+   comp_pot_matrix    = new (std::nothrow) double *[npsp]();
+ 
+   rgrid   = new (std::nothrow) double *[npsp]();
+   eig     = new (std::nothrow) double *[npsp]();
+   phi_ae  = new (std::nothrow) double *[npsp]();
+   dphi_ae = new (std::nothrow) double *[npsp]();
+   phi_ps  = new (std::nothrow) double *[npsp]();
+   dphi_ps = new (std::nothrow) double *[npsp]();
+   core_ae = new (std::nothrow) double *[npsp]();
+   core_ps = new (std::nothrow) double *[npsp]();
+   core_ae_prime = new (std::nothrow) double *[npsp]();
+   core_ps_prime = new (std::nothrow) double *[npsp]();
+ 
+   log_amesh = new (std::nothrow) double[npsp]();
+   r1        = new (std::nothrow) double[npsp]();
+   rmax      = new (std::nothrow) double[npsp]();
+   sigma     = new (std::nothrow) double[npsp]();
+   zion      = new (std::nothrow) double[npsp]();
+   core_kin  = new (std::nothrow) double[npsp]();
+   core_ion  = new (std::nothrow) double[npsp]();
+ 
+   n1dgrid  = new (std::nothrow) int[npsp]();
+   n1dbasis = new (std::nothrow) int[npsp]();
+   icut     = new (std::nothrow) int[npsp]();
+   nae      = new (std::nothrow) int *[npsp]();
+   nps      = new (std::nothrow) int *[npsp]();
+   lps      = new (std::nothrow) int *[npsp]();
+ 
+   for (ia = 0; ia < npsp; ++ia) 
+   {
+      strcpy(fname, myion->atom(ia));
+      strcat(fname, ".vpp");
+      control.add_permanent_dir(fname);
+     
+      if (vpp_formatter_check(mypneb, fname, psp_version)) 
+      {
+         strcpy(pspname, myion->atom(ia));
+         strcat(pspname, ".psp");
+         control.add_permanent_dir(pspname);
+         vpp_generate(mypneb, pspname, fname, comment[ia], &psp_type[ia], psp_version,
+                      &version, nfft, unita, aname, &amass[ia], &zv[ia], &lmmax[ia],
+                      &lmax[ia], &locp[ia], &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr,
+                      &m_ptr, &b_ptr, &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia],
+                      &ncore_ptr, vl[ia], vlpaw[ia], &vnl_ptr, &log_amesh[ia], &r1[ia],
+                      &rmax[ia], &sigma[ia], &zion[ia], &n1dgrid[ia], &n1dbasis[ia],
+                      &nae_ptr, &nps_ptr, &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr,
+                      &dphi_ae_ptr, &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
+                      &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr, &core_kin[ia],
+                      &core_ion[ia], &hartree_matrix_ptr, &comp_charge_matrix_ptr,
+                      &comp_pot_matrix_ptr, coutput);
+        
+         // writing .vpp file to fname
+         vpp_write(mypneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
+                   aname, amass[ia], zv[ia], lmmax[ia], lmax[ia], locp[ia],
+                   nmax[ia], rc_ptr, nprj[ia], n_ptr, l_ptr, m_ptr, b_ptr, G_ptr,
+                   rlocal[ia], semicore[ia], rcore[ia], ncore_ptr, vl[ia], vnl_ptr,
+                   log_amesh[ia], r1[ia], rmax[ia], sigma[ia], zion[ia],
+                   n1dgrid[ia], n1dbasis[ia], nae_ptr, nps_ptr, lps_ptr, icut[ia],
+                   eig_ptr, phi_ae_ptr, dphi_ae_ptr, phi_ps_ptr, dphi_ps_ptr,
+                   core_ae_ptr, core_ps_ptr, core_ae_prime_ptr, core_ps_prime_ptr,
+                   rgrid_ptr, core_kin[ia], core_ion[ia], hartree_matrix_ptr,
+                   comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
+      } 
+      else 
+      {
+         vpp_read(mypneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
+                  aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
+                  &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
+                  &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia], &ncore_ptr,
+                  vl[ia], &vnl_ptr, &log_amesh[ia], &r1[ia], &rmax[ia], &sigma[ia],
+                  &zion[ia], &n1dgrid[ia], &n1dbasis[ia], &nae_ptr, &nps_ptr,
+                  &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr, &dphi_ae_ptr,
+                  &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
+                  &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr,
+                  &core_kin[ia], &core_ion[ia], &hartree_matrix_ptr,
+                  &comp_charge_matrix_ptr, &comp_pot_matrix_ptr, coutput);
+      }
+     
+      rc[ia]          = rc_ptr;
+      n_projector[ia] = n_ptr;
+      l_projector[ia] = l_ptr;
+      m_projector[ia] = m_ptr;
+      b_projector[ia] = b_ptr;
+      Gijl[ia]        = G_ptr;
+      vnl[ia]         = vnl_ptr;
+      if (nprj[ia] > nprj_max)
+         nprj_max = nprj[ia];
+     
+      if (semicore[ia]) 
+      {
+         ncore_atom[ia] = ncore_ptr;
+         ncore_sum[ia]  = semicore_check(mypneb,semicore[ia],rcore[ia],ncore_atom[ia]);
+         semicore[npsp] = true;
+      }
+     
+      if (psp_type[ia] == 4) 
+      {
+         pawexist = true;
+         nae[ia] = nae_ptr;
+         nps[ia] = nps_ptr;
+         lps[ia] = lps_ptr;
+         eig[ia] = eig_ptr;
+         phi_ae[ia]        = phi_ae_ptr;
+         dphi_ae[ia]       = dphi_ae_ptr;
+         phi_ps[ia]        = phi_ps_ptr;
+         dphi_ps[ia]       = dphi_ps_ptr, core_ae[ia] = core_ae_ptr;
+         core_ps[ia]       = core_ps_ptr;
+         core_ae_prime[ia] = core_ae_prime_ptr;
+         core_ps_prime[ia] = core_ps_prime_ptr;
+         rgrid[ia]              = rgrid_ptr;
+         hartree_matrix[ia]     = hartree_matrix_ptr;
+         comp_charge_matrix[ia] = comp_charge_matrix_ptr;
+         comp_pot_matrix[ia]    = comp_pot_matrix_ptr;
+      }
+   }
+ 
+   /* define the maximum number of projectors  */
+   nprj_max *= 10;
+   // nprj_max = 0;
+   // for (auto ii=0; ii < myion->nion; ++ii)
+   //     nprj_max += nprj[myion->katm[ii]];
+ 
+   if (pawexist) 
+   {
+      // call psp_paw_init()
+      mypaw_compcharge = new Paw_compcharge(myion,mypneb,control,nprj,n1dbasis,psp_type,
+                                           lmax,sigma,nprj_max,l_projector,m_projector,
+                                            b_projector,comp_charge_matrix,hartree_matrix);
+      mypaw_xc = new Paw_xc(myion,mypneb,control,nprj,n1dbasis,n1dgrid,psp_type,
+                            lmax,l_projector,m_projector,b_projector);
+     
+      // Paw_compcharge_init(ion_nion(),npsp,
+      //                           int_mb(nprj(1)),
+      //                           int_mb(n1dbasis(1)),
+      //                           int_mb(psp_type(1)),
+      //                           int_mb(lmax(1)),
+      //                           dbl_mb(sigma(1)),
+      //                           nmax_max*lmmax_max,
+      //                           int_mb(l_projector(1)),
+      //                           int_mb(m_projector(1)),
+      //                           int_mb(b_projector(1)),
+      //                           int_mb(comp_charge_matrix(1)),
+      //                           int_mb(hartree_matrix(1)))
+     
+      // nwpw_xc_init(ion_nion(),npsp,
+      //                 int_mb(nprj(1)),
+      //                 int_mb(n1dbasis(1)),
+      //                 int_mb(n1dgrid(1)),
+      //                 int_mb(psp_type(1)),
+      //                 int_mb(lmax(1)),
+      //                 nmax_max*lmmax_max,
+      //                 int_mb(l_projector(1)),
+      //                 int_mb(m_projector(1)),
+      //                 int_mb(b_projector(1)))
+   }
 }
 /*******************************************
  *                                         *

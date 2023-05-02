@@ -8,6 +8,7 @@
 
 namespace pwdft {
 
+extern bool directories_check(Parallel *, Control2 &, std::ostream &);
 extern void psp_file_check(Parallel *, Ion *, Control2 &, std::ostream &);
 
 }

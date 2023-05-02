@@ -36,7 +36,7 @@ public:
   double g_dof = 1.0;
 
   bool fix_translation = true;
-  bool dof_translation = true;
+  bool dof_translation = false;
 
   bool fix_rotation = false;
   bool dof_rotation = false;
@@ -64,87 +64,83 @@ public:
   /* functions */
 
   void shift() {
-    for (auto i = 0; i < (3 * nion); ++i)
-      rion0[i] = rion1[i];
-    for (auto i = 0; i < (3 * nion); ++i)
-      rion1[i] = rion2[i];
+     for (auto i=0; i<(3*nion); ++i)
+        rion0[i] = rion1[i];
+     for (auto i=0; i<(3*nion); ++i)
+        rion1[i] = rion2[i];
   }
   void shift21() {
-    // for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
-    std::memcpy(rion1, rion2, 3 * nion * sizeof(double));
+     // for (auto i=0; i<(3*nion); ++i) rion1[i] = rion2[i];
+     std::memcpy(rion1, rion2, 3 * nion * sizeof(double));
   }
   void vshift() {
-    for (auto i = 0; i < (3 * nion); ++i)
-      rion0[i] = vionhalf[i];
+     for (auto i = 0; i < (3 * nion); ++i)
+        rion0[i] = vionhalf[i];
   }
 
-  char *symbol(const int i) { return &atomarray[3 * katm[i]]; }
-  char *atom(const int ia) { return &atomarray[3 * ia]; }
-  double amu(const int i) { return mass[i] / 1822.89; }
+  char *symbol(const int i) { return &atomarray[3*katm[i]]; }
+  char *atom(const int ia) { return &atomarray[3*ia]; }
+  double amu(const int i) { return mass[i]/1822.89; }
   void writejsonstr(std::string &);
-  double rion(int i, int ii) { return rion1[3 * ii + i]; }
-  double vion(int i, int ii) { return rion0[3 * ii + i]; }
-  double fion(int i, int ii) { return fion1[3 * ii + i]; }
+  double rion(int i, int ii) { return rion1[3*ii+i]; }
+  double vion(int i, int ii) { return rion0[3*ii+i]; }
+  double fion(int i, int ii) { return fion1[3*ii+i]; }
 
   int ndof() {
-    int dof = 3 * nion - 6;
-    if (dof_translation)
-      dof += 3;
-    if (dof_rotation)
-      dof += 3;
-    if (dof < 1)
-      dof = 1;
-    return dof;
+     int dof = 3*nion - 6;
+     if (dof_translation) dof += 3;
+     if (dof_rotation)    dof += 3;
+     if (dof < 1)         dof = 1;
+     return dof;
   }
   void remove_com_translation();
   void remove_rotation();
 
   double total_mass() {
-    double tmass = 0.0;
-    for (auto ii = 0; ii < nion; ++ii)
-      tmass += mass[ii];
-    return tmass;
+     double tmass = 0.0;
+     for (auto ii = 0; ii < nion; ++ii)
+        tmass += mass[ii];
+     return tmass;
   }
   double gc(int i) {
-    double ss = 0.0;
-    for (auto ii = 0; ii < nion; ++ii)
-      ss += rion1[3 * ii + i];
-    return ss / ((double)nion);
+     double ss = 0.0;
+     for (auto ii = 0; ii < nion; ++ii)
+        ss += rion1[3 * ii + i];
+     return ss / ((double)nion);
   }
   double vgc(int i) {
-    double ss = 0.0;
-    for (auto ii = 0; ii < nion; ++ii)
-      ss += rion0[3 * ii + i];
-    return ss / ((double)nion);
+     double ss = 0.0;
+     for (auto ii = 0; ii < nion; ++ii)
+        ss += rion0[3 * ii + i];
+     return ss / ((double)nion);
   }
   double com(int i) {
-    double tmass = 0.0;
-    double ss = 0.0;
-    for (auto ii = 0; ii < nion; ++ii) {
-      tmass += mass[ii];
-      ss += mass[ii] * rion1[3 * ii + i];
-    }
-    return ss / tmass;
+     double tmass = 0.0;
+     double ss = 0.0;
+     for (auto ii = 0; ii < nion; ++ii) {
+        tmass += mass[ii];
+       ss += mass[ii] * rion1[3 * ii + i];
+     }
+     return ss / tmass;
   }
   double vcom(int i) {
-    double tmass = 0.0;
-    double ss = 0.0;
-    for (auto ii = 0; ii < nion; ++ii) {
-      tmass += mass[ii];
-      ss += mass[ii] * rion0[3 * ii + i];
-    }
-    return ss / tmass;
+     double tmass = 0.0;
+     double ss = 0.0;
+     for (auto ii = 0; ii < nion; ++ii) {
+        tmass += mass[ii];
+        ss += mass[ii] * rion0[3 * ii + i];
+     }
+     return ss / tmass;
   }
 
   double ke() {
-    double eki = 0.0;
-    for (auto ii = 0; ii < nion; ++ii) {
-      eki += 0.5 * mass[ii] *
-             (rion0[3 * ii] * rion0[3 * ii] +
-              rion0[3 * ii + 1] * rion0[3 * ii + 1] +
-              rion0[3 * ii + 2] * rion0[3 * ii + 2]);
-    }
-    return eki;
+     double eki = 0.0;
+     for (auto ii = 0; ii < nion; ++ii) {
+        eki += 0.5*mass[ii]*( rion0[3*ii]*rion0[3*ii] 
+                            + rion0[3*ii+1]*rion0[3*ii+1] 
+                            + rion0[3*ii+2]*rion0[3*ii+2]);
+     }
+     return eki;
   }
 
   double ke_com() {
@@ -237,17 +233,15 @@ public:
     }
 
     // remove translation
-    if (fix_translation)
-      remove_com_translation();
+    if (fix_translation) remove_com_translation();
 
     // remove rotation
-    if (fix_rotation)
-      remove_rotation();
+    if (fix_rotation) remove_rotation();
 
     // update current velocities - place in r0
-    double h = 1.0 / (2.0 * time_step);
-    for (auto i = 0; i < (3 * nion); ++i)
-      rion0[i] = h * (rion2[i] - rion0[i]);
+    double h = 1.0/(2.0*time_step);
+    for (auto i=0; i<(3*nion); ++i)
+       rion0[i] = h*(rion2[i] - rion0[i]);
 
     // add current kinetic energies to running averages
     eki1 = this->ke();

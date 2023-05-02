@@ -68,17 +68,17 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
  
    Control2 control(myparallel.np(), rtdbstring);
    int flag = control.task();
- 
+
    bool hprint = (myparallel.is_master() && control.print_level("high"));
    bool oprint = (myparallel.is_master() && control.print_level("medium"));
    bool lprint = (myparallel.is_master() && control.print_level("low"));
- 
+  
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
- 
-   if (myparallel.is_master())
-      seconds(&cpu1);
-   if (oprint) {
+  
+   if (myparallel.is_master()) seconds(&cpu1);
+   if (oprint) 
+   {
       std::ios_base::sync_with_stdio();
       coutput << "          *****************************************************\n";
       coutput << "          *                                                   *\n";
@@ -95,26 +95,27 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";
    }
- 
+  
    // control_read(myrtdb);
    // control_read(myparallel.np(),rtdbstring);
- 
+  
    // initialize processor grid structure
    myparallel.init2d(control.np_orbital(), control.pfft3_qsize());
+  
  
    // initialize lattice
    Lattice mylattice(control);
- 
+  
    // read in ion structure
    // Ion myion(myrtdb);
    Ion myion(rtdbstring, control);
- 
+  
    // Check for and generate psp files
    // - this routine also sets the valence charges in myion,
    //   and total_ion_charge and ne in control
-   psp_file_check(&myparallel, &myion, control, coutput);
+   psp_file_check(&myparallel,&myion,control,coutput);
    MPI_Barrier(comm_world0);
- 
+  
    // fetch ispin and ne psi information from control
    ispin = control.ispin();
    ne[0] = control.ne(0);
@@ -132,51 +133,51 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    unita[7] = mylattice.unita1d(7);
    unita[8] = mylattice.unita1d(8);
    version = control.version;
- 
+  
    // initialize parallel grid structure
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
- 
+  
    // initialize gdevice memory
    gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
- 
+  
    // setup structure factor
    Strfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
- 
+  
    // initialize operators
    Kinetic_Operator mykin(&mygrid);
    Coulomb12_Operator mycoulomb12(&mygrid,control);
    mycoulomb12.initialize_dielectric(&myion,&mystrfac);
- 
+  
    // initialize xc
    XC_Operator myxc(&mygrid,control);
- 
+  
    // initialize psp
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
- 
+  
    // append Born information to rtdb for restarts
    if (mypsp.myapc->born_on)
-     mypsp.myapc->myborn->writejsonstr(rtdbstring);
- 
+      mypsp.myapc->myborn->writejsonstr(rtdbstring);
+  
    // initialize electron operators
    Electron_Operators myelectron(&mygrid,&mykin,&mycoulomb12,&myxc,&mypsp);
- 
+  
    // setup ewald
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
- 
+  
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),
                        control.input_movecs_initialize(),&mygrid,&myion,
                        &mystrfac,&myewald,&myelectron,&mypsp,coutput);
- 
+  
    /* intialize the linesearch */
    util_linesearch_init();
- 
+  
    //                 |**************************|
    // *****************   summary of input data  **********************
    //                 |**************************|
- 
+  
    MPI_Barrier(comm_world0);
    if (oprint) 
    {
@@ -344,14 +345,14 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    }
    MPI_Barrier(comm_world0);
    if (myparallel.is_master()) seconds(&cpu2);
- 
+  
    //*                |***************************|
    //******************     call CG minimizer     **********************
    //*                |***************************|
- 
+  
    // calculate energy
    double EV = 0.0;
- 
+  
    if (flag < 0) 
    {
       EV = cgsd_noit_energy(mymolecule, true, coutput);
@@ -361,13 +362,13 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       EV = cgsd_energy(control, mymolecule, true, coutput);
    }
    if (myparallel.is_master()) seconds(&cpu3);
- 
+  
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"] = EV;
    rtdbjson["pspw"]["energies"] = mymolecule.E;
    rtdbjson["pspw"]["eigenvalues"] = mymolecule.eig_vector();
- 
+  
    // calculate fion
    if (flag == 2) 
    {
@@ -390,7 +391,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
      
       // delete [] fion;
    }
- 
+  
    // APC analysis
    if (mypsp.myapc->apc_on) 
    {
@@ -408,7 +409,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          coutput << mypsp.myapc->print_APC(mypsp.zv);
       }
    }
- 
+  
    // dipole analysis
    if (mypsp.mydipole->dipole_on) 
    {
@@ -417,20 +418,20 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       rtdbjson["nwpw"]["dipole"] = std::vector<double>(mdipole,&mdipole[3]);
       rtdbjson["nwpw"]["dipole_magnitude"] = mu;
    }
- 
+  
    // write psi
    if (flag > 0)
       mymolecule.writepsi(control.output_movecs_filename(), coutput);
    MPI_Barrier(comm_world0);
- 
+  
    // set rtdbjson initialize_wavefunction option to false
    if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean())
       rtdbjson["nwpw"]["initialize_wavefunction"] = false;
- 
+  
    // write rtdbjson
    rtdbstring = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);
- 
+  
    //                 |**************************|
    // *****************   report consumed time   **********************
    //                 |**************************|
@@ -461,12 +462,12 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << std::endl;
       coutput << " >>> job completed at     " << util_date() << " <<<" << std::endl;;
    }
- 
+  
    // deallocate memory
    gdevice_psi_dealloc();
- 
+  
    MPI_Barrier(comm_world0);
- 
+
    return 0;
 }
 
