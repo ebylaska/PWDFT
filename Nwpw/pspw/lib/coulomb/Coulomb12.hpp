@@ -60,10 +60,22 @@ public:
 
    /* destructor */
    ~Coulomb12_Operator() {
+      // plot cube files before exiting
+      if (cube_dielec) {
+         nwpw_dplot mydplot(myion,mypneb,*tmpcontrol);
+         mydplot.gcube_write("rho_ion.cube", -1, "SCF dielec function", rho_ion);
+         mydplot.gcube_write("rho_ind.cube", -1, "SCF dielec function", rho_ind1);
+         mydplot.gcube_write("vdielec.cube", -1, "SCF dielec function", vdielec0);
+         mydplot.gcube_write("vks.cube", -1, "SCF dielec function", vks0);
+         mydplot.gcube_write("epsilon.cube", -1, "SCF dielec function", epsilon);
+         mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
+         mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function",epsilon_y);
+         mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function",epsilon_z);
+      }
       if (has_coulomb1)
-       delete mycoulomb1;
+         delete mycoulomb1;
       if (has_coulomb2)
-        delete mycoulomb2;
+         delete mycoulomb2;
       if (has_dielec) {
          mypneb->r_dealloc(epsilon);
          mypneb->r_dealloc(depsilon);

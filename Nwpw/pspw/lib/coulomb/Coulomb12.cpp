@@ -500,17 +500,6 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
          mypneb->r_dealloc(tmp);
       }
       
-      // cube_dielec
-      if (cube_dielec)
-      {
-         nwpw_dplot mydplot(myion,mypneb,*tmpcontrol);
-         mydplot.gcube_write("epsilon.cube", -1, "SCF dielec function", epsilon);
-         mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
-         mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function",epsilon_y);
-         mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function",epsilon_z);
-      }
-
-
 
       /*
       mypneb->rr_periodic_gaussian_filter(1.0,epsilon_x,tmp); mypneb->rr_copy(tmp,epsilon_x);
