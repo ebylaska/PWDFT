@@ -376,7 +376,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
       mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
       for (auto i=0; i<n2ft3d; ++i)
-         vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
+         vks0[i] = -0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
  
       mypneb->rrr_Sum(vdielec0,vks0,vdielec);
    }
@@ -475,6 +475,11 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
          mypneb->rr_Divide(epsilon, depsilon);
          mypneb->r_zero_ends(epsilon);
          mypneb->r_zero_ends(depsilon);
+         if (filter_dielec>0.0)
+         {
+            mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon,sw);  mypneb->rr_copy(sw,epsilon);
+            mypneb->rr_periodic_gaussian_filter(filter_dielec,depsilon,sw); mypneb->rr_copy(sw,depsilon);
+         }
        
          mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,epsilon_x);
          mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,epsilon_y);
@@ -490,15 +495,18 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
       mypneb->rr_screen0(epsilon,epsilon_screen);
 
       // Gaussian filter
+      /*
       if (filter_dielec>0.0)
       {
          double *tmp = mypneb->r_alloc();
          mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon,tmp);   mypneb->rr_copy(tmp,epsilon);
+         mypneb->rr_periodic_gaussian_filter(filter_dielec,depsilon,tmp);  mypneb->rr_copy(tmp,depsilon);
          mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_x,tmp); mypneb->rr_copy(tmp,epsilon_x); 
          mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_y,tmp); mypneb->rr_copy(tmp,epsilon_y);
          mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_z,tmp); mypneb->rr_copy(tmp,epsilon_z);
          mypneb->r_dealloc(tmp);
       }
+      */
       
 
       /*

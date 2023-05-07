@@ -368,19 +368,22 @@ void util_weighted_fattebert_dielec(const int n2ft3d, const double eps,
 */
 void util_andreussi_dielec(const int n2ft3d, const double eps,
                            const double rhomin, const double rhomax,
-                           const double *rho, double *epsilon) {
-  double twopi = 8.0 * std::atan(1.0);
-
-  for (auto k = 0; k < n2ft3d; ++k) {
-    if (rho[k] > rhomax)
-      epsilon[k] = 1.0;
-    else if (rho[k] < rhomin)
-      epsilon[k] = eps;
-    else {
-      auto x = twopi * (rhomax - rho[k]) / (rhomax - rhomin);
-      epsilon[k] = 1.0 + ((eps - 1.0) / twopi) * (x - sin(x));
-    }
-  }
+                           const double *rho, double *epsilon) 
+{
+   double twopi = 8.0*std::atan(1.0);
+ 
+   for (auto k=0; k<n2ft3d; ++k) 
+   {
+      if (rho[k]>rhomax)
+         epsilon[k] = 1.0;
+      else if (rho[k]<rhomin)
+         epsilon[k] = eps;
+      else 
+      {
+         auto x = twopi*(rhomax-rho[k])/(rhomax-rhomin);
+         epsilon[k] = 1.0+((eps-1.0)/twopi)*(x-std::sin(x));
+      }
+   }
 }
 
 /**************************************
@@ -397,17 +400,21 @@ void util_andreussi_dielec(const int n2ft3d, const double eps,
 */
 void util_dandreussi_dielec(const int n2ft3d, const double eps,
                             const double rhomin, const double rhomax,
-                            const double *rho, double *depsilon) {
-  double twopi = 8.0 * std::atan(1.0);
-
-  for (auto k = 0; k < n2ft3d; ++k) {
-    if ((rho[k] > rhomin) && (rho[k] < rhomax)) {
-      auto x = twopi * (rhomax - rho[k]) / (rhomax - rhomin);
-      auto dxdrho = -twopi / (rhomax - rhomin);
-      depsilon[k] = ((eps - 1.0) / twopi) * (1.0 - cos(x)) * dxdrho;
-    } else
-      depsilon[k] = 0.0;
-  }
+                            const double *rho, double *depsilon) 
+{
+   double twopi = 8.0*std::atan(1.0);
+ 
+   for (auto k=0; k<n2ft3d; ++k) 
+   {
+      if ((rho[k] > rhomin) && (rho[k] < rhomax)) 
+      {
+         auto x = twopi*(rhomax-rho[k])/(rhomax-rhomin);
+         auto dxdrho = -twopi/(rhomax-rhomin);
+         depsilon[k] = ((eps-1.0)/twopi)*(1.0-std::cos(x))*dxdrho;
+      } 
+      else
+         depsilon[k] = 0.0;
+   }
 }
 
 /**************************************
@@ -424,22 +431,26 @@ void util_dandreussi_dielec(const int n2ft3d, const double eps,
 */
 void util_ddandreussi_dielec(const int n2ft3d, const double eps,
                              const double rhomin, const double rhomax,
-                             const double *rho, double *ddepsilon) {
-  double twopi = 8.0 * std::atan(1.0);
-
-  for (auto k = 0; k < n2ft3d; ++k) {
-    if ((rho[k] > rhomin) && (rho[k] < rhomax)) {
-      auto x = twopi * (rhomax - rho[k]) / (rhomax - rhomin);
-      auto dxdrho = -twopi / (rhomax - rhomin);
-      ddepsilon[k] = ((eps - 1.0) / twopi) * (sin(x)) * dxdrho * dxdrho;
-    } else
-      ddepsilon[k] = 0.0;
-  }
+                             const double *rho, double *ddepsilon) 
+{
+   double twopi = 8.0 * std::atan(1.0);
+ 
+   for (auto k=0; k<n2ft3d; ++k) 
+   {
+      if ((rho[k]>rhomin) && (rho[k]<rhomax)) 
+      {
+         auto x = twopi * (rhomax-rho[k])/(rhomax-rhomin);
+         auto dxdrho = -twopi / (rhomax - rhomin);
+         ddepsilon[k] = ((eps-1.0)/twopi)*(std::sin(x))*dxdrho*dxdrho;
+      } 
+      else
+         ddepsilon[k] = 0.0;
+   }
 }
 
 /**************************************
  *                                    *
- *        util_andreussi2_dielec       *
+ *        util_andreussi2_dielec      *
  *                                    *
  **************************************/
 /* Computes the dielectric function using the second local model of the
@@ -453,21 +464,23 @@ void util_ddandreussi_dielec(const int n2ft3d, const double eps,
 */
 void util_andreussi2_dielec(const int n2ft3d, const double eps,
                             const double rhomin, const double rhomax,
-                            const double *rho, double *epsilon) {
-  double twopi = 8.0 * std::atan(1.0);
-
-  for (auto k = 0; k < n2ft3d; ++k) {
-    if (rho[k] > rhomax)
-      epsilon[k] = 1.0;
-    else if (rho[k] < rhomin)
-      epsilon[k] = eps;
-    else {
-      auto x =
-          twopi * (log(rhomax) - log(rho[k])) / (log(rhomax) - log(rhomin));
-      auto t = (log(eps) / twopi) * (x - sin(x));
-      epsilon[k] = exp(t);
-    }
-  }
+                            const double *rho, double *epsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+ 
+   for (auto k = 0; k < n2ft3d; ++k)
+   {
+      if (rho[k]>rhomax)
+         epsilon[k] = 1.0;
+      else if (rho[k]<rhomin)
+         epsilon[k] = eps;
+      else 
+      {
+         auto x = twopi*(std::log(rhomax)-std::log(rho[k]))/(std::log(rhomax)-std::log(rhomin));
+         auto t = (std::log(eps)/twopi)*(x-std::sin(x));
+         epsilon[k] = std::exp(t);
+      }
+   }
 }
 
 /**************************************
@@ -484,20 +497,23 @@ void util_andreussi2_dielec(const int n2ft3d, const double eps,
 */
 void util_dandreussi2_dielec(const int n2ft3d, const double eps,
                              const double rhomin, const double rhomax,
-                             const double *rho, double *depsilon) {
-  double twopi = 8.0 * std::atan(1.0);
-
-  for (auto k = 0; k < n2ft3d; ++k) {
-    if ((rho[k] > rhomin) && (rho[k] < rhomax)) {
-      auto x =
-          twopi * (log(rhomax) - log(rho[k])) / (log(rhomax) - log(rhomin));
-      auto t = (log(eps) / twopi) * (x - sin(x));
-      auto dtdx = (log(eps) / twopi) * (1.0 - cos(x));
-      auto dxdrho = twopi / (rho[k] * (log(rhomin) - log(rhomax)));
-      depsilon[k] = exp(t) * dtdx * dxdrho;
-    } else
-      depsilon[k] = 0.0;
-  }
+                             const double *rho, double *depsilon)
+{
+   double twopi = 8.0*std::atan(1.0);
+ 
+   for (auto k=0; k<n2ft3d; ++k) 
+   {
+      if ((rho[k]>rhomin) && (rho[k]<rhomax)) 
+      {
+         auto x = twopi*(std::log(rhomax)-std::log(rho[k]))/(std::log(rhomax)-std::log(rhomin));
+         auto t = (std::log(eps)/twopi)*(x-std::sin(x));
+         auto dtdx = (std::log(eps)/twopi)*(1.0-std::cos(x));
+         auto dxdrho = twopi/(rho[k]*(std::log(rhomin)-std::log(rhomax)));
+         depsilon[k] = std::exp(t)*dtdx*dxdrho;
+      } 
+      else
+         depsilon[k] = 0.0;
+   }   
 }
 
 /**************************************
