@@ -1711,26 +1711,24 @@ void d3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
  *                              *
  ********************************/
 #define ETA_DIV 1.0e-9
-void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+     for (i = 0; i < m; ++i)
+       ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i]/ptr2[i]) : (0.0);
+   if (n2ft3d_map < 5)
+     return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
-    ptr3[i + 1] =
-        (std::abs(ptr2[i + 1]) > ETA_DIV) ? (ptr1[i + 1] / ptr2[i + 1]) : (0.0);
-    ptr3[i + 2] =
-        (std::abs(ptr2[i + 2]) > ETA_DIV) ? (ptr1[i + 2] / ptr2[i + 2]) : (0.0);
-    ptr3[i + 3] =
-        (std::abs(ptr2[i + 3]) > ETA_DIV) ? (ptr1[i + 3] / ptr2[i + 3]) : (0.0);
-    ptr3[i + 4] =
-        (std::abs(ptr2[i + 4]) > ETA_DIV) ? (ptr1[i + 4] / ptr2[i + 4]) : (0.0);
-  }
-  return;
+      ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr1[i+1]/ptr2[i+1]) : (0.0);
+      ptr3[i+2] = (std::abs(ptr2[i+2]) > ETA_DIV) ? (ptr1[i+2]/ptr2[i+2]) : (0.0);
+      ptr3[i+3] = (std::abs(ptr2[i+3]) > ETA_DIV) ? (ptr1[i+3]/ptr2[i+3]) : (0.0);
+      ptr3[i+4] = (std::abs(ptr2[i+4]) > ETA_DIV) ? (ptr1[i+4]/ptr2[i+4]) : (0.0);
+   }
+   return;
 }
 
 /********************************
@@ -1738,27 +1736,53 @@ void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3) {
  *         d3db::rr_Divide      *
  *                              *
  ********************************/
-void d3db::rr_Divide(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void d3db::rr_Divide(const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map%5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i]/ptr2[i]) : (0.0);
+   if (n2ft3d_map<5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
-    ptr3[i + 1] =
-        (std::abs(ptr2[i + 1]) > ETA_DIV) ? (ptr3[i + 1] / ptr2[i + 1]) : (0.0);
-    ptr3[i + 2] =
-        (std::abs(ptr2[i + 2]) > ETA_DIV) ? (ptr3[i + 2] / ptr2[i + 2]) : (0.0);
-    ptr3[i + 3] =
-        (std::abs(ptr2[i + 3]) > ETA_DIV) ? (ptr3[i + 3] / ptr2[i + 3]) : (0.0);
-    ptr3[i + 4] =
-        (std::abs(ptr2[i + 4]) > ETA_DIV) ? (ptr3[i + 4] / ptr2[i + 4]) : (0.0);
-  }
-  return;
+      ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr3[i+1]/ptr2[i+1]) : (0.0);
+      ptr3[i+2] = (std::abs(ptr2[i+2]) > ETA_DIV) ? (ptr3[i+2]/ptr2[i+2]) : (0.0);
+      ptr3[i+3] = (std::abs(ptr2[i+3]) > ETA_DIV) ? (ptr3[i+3]/ptr2[i+3]) : (0.0);
+      ptr3[i+4] = (std::abs(ptr2[i+4]) > ETA_DIV) ? (ptr3[i+4]/ptr2[i+4]) : (0.0);
+   }
+   return;
 }
+
+/********************************
+ *                              *
+ *         d3db::rr_screen0     *
+ *                              *
+ ********************************/
+// This subroutine is used to calculate screen0 = (1.0/epsilon-1.0)
+void d3db::rr_screen0(const double *ptr2, double *ptr3)
+{
+   int i;
+   int m = n2ft3d_map%5;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
+   if (n2ft3d_map<5)
+      return;
+   for (i=m; i<n2ft3d_map; i+=5)
+   {
+      ptr3[i]   = (std::abs(ptr2[i])   > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
+      ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (1.0/ptr2[i+1]-1.0) : (0.0);
+      ptr3[i+2] = (std::abs(ptr2[i+2]) > ETA_DIV) ? (1.0/ptr2[i+2]-1.0) : (0.0);
+      ptr3[i+3] = (std::abs(ptr2[i+3]) > ETA_DIV) ? (1.0/ptr2[i+3]-1.0) : (0.0);
+      ptr3[i+4] = (std::abs(ptr2[i+4]) > ETA_DIV) ? (1.0/ptr2[i+4]-1.0) : (0.0);
+   }
+   return;
+}
+
+
 
 /********************************
  *                              *

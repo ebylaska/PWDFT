@@ -727,7 +727,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       auto gpoissonjson = rtdbjson["nwpw"]["generalized_poisson"];
       if (gpoissonjson["on"].is_boolean())            pgpoisson_on = gpoissonjson["on"];
       if (gpoissonjson["relax_dielec"].is_boolean())  pgpoisson_relax_dielec = gpoissonjson["relax_dielec"];
+      if (gpoissonjson["cube_dielec"].is_boolean())   pgpoisson_cube_dielec = gpoissonjson["cube_dielec"];
       if (gpoissonjson["dielec"].is_number_float())   pgpoisson_dielec = gpoissonjson["dielec"];
+      if (gpoissonjson["filter"].is_number_float())   pgpoisson_filter = gpoissonjson["filter"];
       if (gpoissonjson["rho0"].is_number_float())     pgpoisson_rho0 = gpoissonjson["rho0"];
       if (gpoissonjson["beta"].is_number_float())     pgpoisson_beta = gpoissonjson["beta"];
       if (gpoissonjson["rhomin"].is_number_float())   pgpoisson_rhomin = gpoissonjson["rhomin"];

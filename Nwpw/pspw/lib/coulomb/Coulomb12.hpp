@@ -22,9 +22,11 @@ class Coulomb12_Operator {
    bool has_dielec = false;
    bool relax_dielec  = true;
    bool notset_dielec = true;
+   bool cube_dielec  = false;
    double dielec, rhomin, rhomax, beta, rho0;
+   double filter_dielec = 0.0;
    double *epsilon, *depsilon, *ddepsilon, *sw, *p;
-   double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap;
+   double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap, *epsilon_screen;
    double *w_x, *w_y, *w_z;
    double *rho_ind0, *rho_ind1;
    double tole_pol  = 1.0e-7;
@@ -65,6 +67,7 @@ public:
       if (has_dielec) {
          mypneb->r_dealloc(epsilon);
          mypneb->r_dealloc(depsilon);
+         mypneb->r_dealloc(epsilon_screen);
          mypneb->r_dealloc(epsilon_x);
          mypneb->r_dealloc(epsilon_y);
          mypneb->r_dealloc(epsilon_z);

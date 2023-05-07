@@ -1221,111 +1221,116 @@ static json parse_nwpw(json nwpwjson, int *curptr,
       if (mystring_contains(line, "voutput"))
         nwpwjson["output_v_wavefunction_filename"] = mystring_split0(
             mystring_trim(mystring_split(line, "voutput")[1]))[0];
-    } else if (mystring_contains(line, "translation")) {
-      if (mystring_contains(line, " off"))
-        nwpwjson["fix_translation"] = true;
-      else if (mystring_contains(line, " no"))
-        nwpwjson["fix_translation"] = true;
-      else if (mystring_contains(line, " false"))
-        nwpwjson["fix_translation"] = true;
-
-      else if (mystring_contains(line, " yes"))
-        nwpwjson["fix_translation"] = false;
-      else if (mystring_contains(line, " true"))
-        nwpwjson["fix_translation"] = false;
-      else if (mystring_contains(line, " on"))
-        nwpwjson["fix_translation"] = false;
-      else if (mystring_contains(line, " allow_translation"))
-        nwpwjson["fix_translation"] = false;
-      else
-        nwpwjson["fix_translation"] = true;
-    } else if (mystring_contains(line, "rotation")) {
-      if (mystring_contains(line, " off"))
-        nwpwjson["fix_rotation"] = true;
-      else if (mystring_contains(line, " no"))
-        nwpwjson["fix_rotation"] = true;
-      else if (mystring_contains(line, " false"))
-        nwpwjson["fix_rotation"] = true;
-      else if (mystring_contains(line, " yes"))
-        nwpwjson["fix_rotation"] = false;
-      else if (mystring_contains(line, " true"))
-        nwpwjson["fix_rotation"] = false;
-      else if (mystring_contains(line, " on"))
-        nwpwjson["fix_rotation"] = false;
-      else
-        nwpwjson["fix_rotation"] = false;
-    } else if (mystring_contains(line, "apc")) {
-      if (nwpwjson["apc"].is_null()) {
-        json apc;
-        nwpwjson["apc"] = apc;
-      }
-      nwpwjson["apc"]["on"] = true;
-      if (mystring_contains(line, " off"))
-        nwpwjson["apc"]["on"] = false;
-      if (mystring_contains(line, "gc"))
-        nwpwjson["apc"]["Gc"] = mystring_double_list(line, "gc")[0];
-      if (mystring_contains(line, "gamma"))
-        nwpwjson["apc"]["gamma"] = mystring_double_list(line, "gamma");
-      if (mystring_contains(line, "u"))
-        nwpwjson["apc"]["u"] = mystring_double_list(line, "u");
-      if (mystring_contains(line, "q"))
-        nwpwjson["apc"]["q"] = mystring_double_list(line, "q");
-    } else if (mystring_contains(line, "born")) {
-      if (nwpwjson["born"].is_null()) {
-        json born;
-        nwpwjson["born"] = born;
-      }
-      nwpwjson["born"]["on"] = true;
-      if (mystring_contains(line, " off"))
-        nwpwjson["born"]["on"] = false;
-      if (mystring_contains(line, " norelax"))
-        nwpwjson["born"]["relax"] = false;
-      else if (mystring_contains(line, " relax"))
-        nwpwjson["born"]["relax"] = true;
-      if (mystring_contains(line, "dielec"))
-        nwpwjson["born"]["dielec"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " dielec")[1]))[0]);
-      if (mystring_contains(line, "rcut"))
-        nwpwjson["born"]["rcut"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " rcut")[1]))[0]);
-      if (mystring_contains(line, "bradii"))
-        nwpwjson["born"]["bradii"] = mystring_double_list(line, "bradii");
-    } else if (mystring_contains(line, "efield")) {
-      if (nwpwjson["efield"].is_null()) {
-        json efield;
-        nwpwjson["efield"] = efield;
-      }
-      nwpwjson["efield"]["on"] = true;
-      if (mystring_contains(line, " off"))
-        nwpwjson["efield"]["on"] = false;
-      if (mystring_contains(line, " periodic"))
-        nwpwjson["efield"]["type"] = 0;
-      if (mystring_contains(line, " apc"))
-        nwpwjson["efield"]["type"] = 1;
-      if (mystring_contains(line, " rgrid"))
-        nwpwjson["efield"]["type"] = 2;
-      if (mystring_contains(line, " center"))
-        nwpwjson["efield"]["center"] = mystring_double_list(line, "center");
-      if (mystring_contains(line, " vector"))
-        nwpwjson["efield"]["vector"] = mystring_double_list(line, "vector");
-
-      if ((nwpwjson["efield"]["on"]) && (mystring_contains(line, " on")) &&
-          (!mystring_contains(line, " vector")))
-        nwpwjson["efield"]["vector"] = mystring_double_list(line, "on");
-
+    } 
+    else if (mystring_contains(line, "translation")) 
+    {
+       if (mystring_contains(line, " off"))        nwpwjson["fix_translation"] = true;
+       else if (mystring_contains(line, " no"))    nwpwjson["fix_translation"] = true;
+       else if (mystring_contains(line, " false")) nwpwjson["fix_translation"] = true;
+      
+       else if (mystring_contains(line, " yes")) nwpwjson["fix_translation"] = false;
+       else if (mystring_contains(line, " true")) nwpwjson["fix_translation"] = false;
+       else if (mystring_contains(line, " on")) nwpwjson["fix_translation"] = false;
+       else if (mystring_contains(line, " allow_translation"))
+          nwpwjson["fix_translation"] = false;
+       else
+          nwpwjson["fix_translation"] = true;
+    } 
+    else if (mystring_contains(line, "rotation")) 
+    {
+       if (mystring_contains(line, " off"))        nwpwjson["fix_rotation"] = true;
+       else if (mystring_contains(line, " no"))    nwpwjson["fix_rotation"] = true;
+       else if (mystring_contains(line, " false")) nwpwjson["fix_rotation"] = true;
+       else if (mystring_contains(line, " yes"))   nwpwjson["fix_rotation"] = false;
+       else if (mystring_contains(line, " true"))  nwpwjson["fix_rotation"] = false;
+       else if (mystring_contains(line, " on"))    nwpwjson["fix_rotation"] = false;
+       else
+         nwpwjson["fix_rotation"] = false;
+    } 
+    else if (mystring_contains(line, "apc")) 
+    {
+       if (nwpwjson["apc"].is_null()) {
+         json apc;
+         nwpwjson["apc"] = apc;
+       }
+       nwpwjson["apc"]["on"] = true;
+       if (mystring_contains(line, " off"))  nwpwjson["apc"]["on"] = false;
+       if (mystring_contains(line, "gc"))    nwpwjson["apc"]["Gc"] = mystring_double_list(line, "gc")[0];
+       if (mystring_contains(line, "gamma")) nwpwjson["apc"]["gamma"] = mystring_double_list(line, "gamma");
+       if (mystring_contains(line, "u"))     nwpwjson["apc"]["u"] = mystring_double_list(line, "u");
+       if (mystring_contains(line, "q"))     nwpwjson["apc"]["q"] = mystring_double_list(line, "q");
+    } 
+    else if (mystring_contains(line, "born")) 
+    {
+       if (nwpwjson["born"].is_null()) {
+         json born;
+         nwpwjson["born"] = born;
+       }
+       nwpwjson["born"]["on"] = true;
+       if (mystring_contains(line, " off"))        nwpwjson["born"]["on"] = false;
+       if (mystring_contains(line, " norelax"))    nwpwjson["born"]["relax"] = false;
+       else if (mystring_contains(line, " relax")) nwpwjson["born"]["relax"] = true;
+       if (mystring_contains(line, "dielec"))
+          nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
+       if (mystring_contains(line, "rcut"))
+          nwpwjson["born"]["rcut"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut")[1]))[0]);
+       if (mystring_contains(line, "bradii"))
+          nwpwjson["born"]["bradii"] = mystring_double_list(line, "bradii");
+    } 
+    else if (mystring_contains(line, "efield")) 
+    {
+       if (nwpwjson["efield"].is_null()) {
+         json efield;
+         nwpwjson["efield"] = efield;
+       }
+       nwpwjson["efield"]["on"] = true;
+       if (mystring_contains(line, " off"))      nwpwjson["efield"]["on"] = false;
+       if (mystring_contains(line, " periodic")) nwpwjson["efield"]["type"] = 0;
+       if (mystring_contains(line, " apc"))      nwpwjson["efield"]["type"] = 1;
+       if (mystring_contains(line, " rgrid"))    nwpwjson["efield"]["type"] = 2;
+       if (mystring_contains(line, " center"))   nwpwjson["efield"]["center"] = mystring_double_list(line, "center");
+       if (mystring_contains(line, " vector"))   nwpwjson["efield"]["vector"] = mystring_double_list(line, "vector");
+      
+       if ((nwpwjson["efield"]["on"]) && (mystring_contains(line, " on")) &&
+           (!mystring_contains(line, " vector")))
+         nwpwjson["efield"]["vector"] = mystring_double_list(line, "on");
     } 
     else if (mystring_contains(line, "generalized_poisson")) 
     {
+       std::string check = mystring_split0(mystring_trim(mystring_split(line, "generalized_poisson")[1]))[0];
        nwpwjson["generalized_poisson"]["on"] = true;
-       if (mystring_contains(line, " off"))
-          nwpwjson["generalized_poisson"]["on"] = false;
+       if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["on"] = false;
+       if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["on"] = false;
+       if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["on"] = false;
+       if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["on"] = true;
+       if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["on"] = true;
+       if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["on"] = true;
 
        if (mystring_contains(line, " relax_dielec"))
+       {
+          check = mystring_split0(mystring_trim(mystring_split(line, " relax_dielec")[1]))[0];
           nwpwjson["generalized_poisson"]["relax_dielec"] = true; // default
-       if (mystring_contains(line, " fix_dielec"))
-          nwpwjson["generalized_poisson"]["relax_dielec"] = false;
-       if (mystring_contains(line, " unfix_dielec"))
-          nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+          if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+          if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+          if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+          if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+          if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+          if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+       }
+       if (mystring_contains(line, " fix_dielec"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+       if (mystring_contains(line, " unfix_dielec")) nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+
+       if (mystring_contains(line, " cube_dielec"))
+       {
+          check = mystring_split0(mystring_trim(mystring_split(line, " cube_dielec")[1]))[0];
+          nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+          if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+          if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+          if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+          if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+          if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+          if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+       }
 
        if (mystring_contains(line, " dielec"))
           nwpwjson["generalized_poisson"]["dielec"] 
@@ -1357,6 +1362,14 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, " rmax"))
           nwpwjson["generalized_poisson"]["rmax"] 
           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmax")[1]))[0]);
+       if (mystring_contains(line, " filter"))
+       {
+          double x = std::stod(mystring_split0(mystring_trim(mystring_split(line, " filter")[1]))[0]);
+          if (std::isnan(x))
+             x = 1.0;
+          nwpwjson["generalized_poisson"]["filter"] = x;
+       }
+
        if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
        if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
        if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;

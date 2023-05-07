@@ -31,8 +31,13 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
    if (control.gpoisson_on())
    {
       has_dielec = true;
-      relax_dielec = control.gpoisson_relax_dielec();
-      dielec     = control.gpoisson_dielec();
+      relax_dielec  = control.gpoisson_relax_dielec();
+      cube_dielec  = control.gpoisson_cube_dielec();
+
+      dielec        = control.gpoisson_dielec();
+      filter_dielec = control.gpoisson_filter();
+
+
       rho0       = control.gpoisson_rho0();
       beta       = control.gpoisson_beta();
       rhomin = control.gpoisson_rhomin();
@@ -55,6 +60,7 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       sw = mypneb->r_alloc();
       p = mypneb->r_alloc();
 
+      epsilon_screen = mypneb->r_alloc();
       epsilon_x = mypneb->r_alloc();
       epsilon_y = mypneb->r_alloc();
       epsilon_z = mypneb->r_alloc();
@@ -71,10 +77,13 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       vdielec0 = mypneb->r_alloc();
       vks0     = mypneb->r_alloc();
 
+      //initialize dplot capabilties
+      if (cube_dielec)
+         tmpcontrol = &control;
+
       rho_ion_set  = false;
       vdielec0_set  = false;
    }
-   tmpcontrol = &control;
 }
 
 
@@ -282,8 +291,9 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 
    for (auto i=0; i<n2ft3d; ++i) 
    {
-      rho_ind0[i] = (1.0/epsilon[i]-1.0) * (rho[i] + rho_ion[i]);
-      p[i] = vh[i] + v_ion[i];
+      //rho_ind0[i] = (1.0/epsilon[i]-1.0) * (rho[i] + rho_ion[i]);
+      rho_ind0[i] = epsilon_screen[i]*(rho[i]+rho_ion[i]);
+      p[i]        = vh[i]+v_ion[i];
    }
    mypneb->r_zero_ends(rho_ind0);
    mypneb->r_zero_ends(p);
@@ -421,7 +431,6 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
 {
    if (notset_dielec || relax_dielec)
    {
-      nwpw_dplot mydplot(myion,mypneb,*tmpcontrol);
       int n2ft3d = mypneb->n2ft3d;
       if (model_pol==3)
       {
@@ -475,23 +484,32 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
          mypneb->rr_Mul(depsilon,epsilon_z);
 
       }
-      //mydplot.gcube_write("epsilon.cube", -1, "SCF dielec function", epsilon);
-      //mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function", epsilon_x);
-      //mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function", epsilon_y);
-      //mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function", epsilon_z);
-      
-      mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
-      mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function",epsilon_y);
-      mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function",epsilon_z);
 
-      double *tmp = mypneb->r_alloc();
-      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_x,tmp); 
-      mydplot.gcube_write("smooth_epsilon_x.cube", -1, "SCF dielec function",tmp);
-      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_y,tmp); 
-      mydplot.gcube_write("smooth_epsilon_y.cube", -1, "SCF dielec function",tmp);
-      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_z,tmp); 
-      mydplot.gcube_write("smooth_epsilon_z.cube", -1, "SCF dielec function",tmp);
-      mypneb->r_dealloc(tmp);
+
+      //screen_epsilon[i] = (1.0/epsilon[i]-1.0)
+      mypneb->rr_screen0(epsilon,epsilon_screen);
+
+      // Gaussian filter
+      if (filter_dielec>0.0)
+      {
+         double *tmp = mypneb->r_alloc();
+         mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon,tmp);   mypneb->rr_copy(tmp,epsilon);
+         mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_x,tmp); mypneb->rr_copy(tmp,epsilon_x); 
+         mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_y,tmp); mypneb->rr_copy(tmp,epsilon_y);
+         mypneb->rr_periodic_gaussian_filter(filter_dielec,epsilon_z,tmp); mypneb->rr_copy(tmp,epsilon_z);
+         mypneb->r_dealloc(tmp);
+      }
+      
+      // cube_dielec
+      if (cube_dielec)
+      {
+         nwpw_dplot mydplot(myion,mypneb,*tmpcontrol);
+         mydplot.gcube_write("epsilon.cube", -1, "SCF dielec function", epsilon);
+         mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
+         mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function",epsilon_y);
+         mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function",epsilon_z);
+      }
+
 
 
       /*
@@ -866,7 +884,13 @@ std::string Coulomb12_Operator::shortprint_dielectric()
          stream << "      relax dielectric          = true"  << std::endl;
       else
          stream << "      relax dielectric          = false" << std::endl;
+      if (cube_dielec)
+         stream << "      cube dielectric           = true"  << std::endl;
+      else
+         stream << "      cube dielectric           = false" << std::endl;
       stream << "      dielectric constant -eps- = " << LFfmt(10,3) << dielec << std::endl;
+      if (filter_dielec>0.0)
+         stream << "      Gaussian filter -sigma-   = " << LFfmt(10,3)   << filter_dielec << std::endl;
       if (model_pol==0) stream << "      model    =  Andreussi" << std::endl;
       if (model_pol==1) stream << "      model    = Andreussi2" << std::endl;
       if (model_pol==2) stream << "      model    =  Fattebert" << std::endl;

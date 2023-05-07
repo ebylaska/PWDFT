@@ -87,6 +87,7 @@ public:
 
   void rr_Divide(const double *, double *);
   void rrr_Divide(const double *, const double *, double *);
+  void rr_screen0(const double *, double *);
 
   void rr_daxpy(const double, const double *, double *);
 
