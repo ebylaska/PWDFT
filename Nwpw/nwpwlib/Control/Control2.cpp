@@ -722,28 +722,22 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      papc_on = true;
  
    // Generalized Poisson data
-   if (!rtdbjson["nwpw"]["generalized_poisson"].is_null()) {
-     auto gpoissonjson = rtdbjson["nwpw"]["generalized_poisson"];
-     if (gpoissonjson["on"].is_boolean())
-       pgpoisson_on = gpoissonjson["on"];
-     if (gpoissonjson["dielec"].is_number_float())
-       pgpoisson_dielec = gpoissonjson["dielec"];
-     if (gpoissonjson["rho0"].is_number_float())
-       pgpoisson_rho0 = gpoissonjson["rho0"];
-     if (gpoissonjson["beta"].is_number_float())
-       pgpoisson_beta = gpoissonjson["beta"];
-     if (gpoissonjson["rhomin"].is_number_float())
-       pgpoisson_rhomin = gpoissonjson["rhomin"];
-     if (gpoissonjson["rhomax"].is_number_float())
-       pgpoisson_rhomax = gpoissonjson["rhomax"];
-     if (gpoissonjson["rcut_ion"].is_number_float())
-       pgpoisson_rcut_ion = gpoissonjson["rcut_ion"];
-     if (gpoissonjson["alpha"].is_number_float())
-       pgpoisson_alpha = gpoissonjson["alpha"];
-     if (gpoissonjson["model"].is_number_integer())
-       pgpoisson_model = gpoissonjson["model"];
-     if (gpoissonjson["maxit"].is_number_integer())
-       pgpoisson_maxit = gpoissonjson["maxit"];
+   if (!rtdbjson["nwpw"]["generalized_poisson"].is_null()) 
+   {
+      auto gpoissonjson = rtdbjson["nwpw"]["generalized_poisson"];
+      if (gpoissonjson["on"].is_boolean())            pgpoisson_on = gpoissonjson["on"];
+      if (gpoissonjson["relax_dielec"].is_boolean())  pgpoisson_relax_dielec = gpoissonjson["relax_dielec"];
+      if (gpoissonjson["dielec"].is_number_float())   pgpoisson_dielec = gpoissonjson["dielec"];
+      if (gpoissonjson["rho0"].is_number_float())     pgpoisson_rho0 = gpoissonjson["rho0"];
+      if (gpoissonjson["beta"].is_number_float())     pgpoisson_beta = gpoissonjson["beta"];
+      if (gpoissonjson["rhomin"].is_number_float())   pgpoisson_rhomin = gpoissonjson["rhomin"];
+      if (gpoissonjson["rhomax"].is_number_float())   pgpoisson_rhomax = gpoissonjson["rhomax"];
+      if (gpoissonjson["rmin"].is_number_float())     pgpoisson_rmin = gpoissonjson["rmin"];
+      if (gpoissonjson["rmax"].is_number_float())     pgpoisson_rmax = gpoissonjson["rmax"];
+      if (gpoissonjson["rcut_ion"].is_number_float()) pgpoisson_rcut_ion = gpoissonjson["rcut_ion"];
+      if (gpoissonjson["alpha"].is_number_float())    pgpoisson_alpha = gpoissonjson["alpha"];
+      if (gpoissonjson["model"].is_number_integer())  pgpoisson_model = gpoissonjson["model"];
+      if (gpoissonjson["maxit"].is_number_integer())  pgpoisson_maxit = gpoissonjson["maxit"];
    }
  
    // Nose data

@@ -233,210 +233,211 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 //
 // }
 
-Ion::Ion(std::string rtdbstring, Control2 &control) {
-  double amu_to_mass = 1822.89;
-
-  auto rtdbjson = json::parse(rtdbstring);
-
-  std::string geomname = "geometry";
-  if (rtdbjson["geometry"].is_string())
-    geomname = rtdbjson["geometry"];
-
-  json geomjson = rtdbjson["geometries"][geomname];
-
-  nion = geomjson["nion"];
-
-  auto symbols = geomjson["symbols"];
-
-  std::vector<std::string> tmpsymbols;
-  for (auto i = 0; i < symbols.size(); ++i) {
-    auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
-    if (match == end(tmpsymbols))
-      tmpsymbols.push_back(symbols[i]);
-  }
-  nkatm = tmpsymbols.size();
-
-  time_step = control.time_step();
-
-  charge = new double[nion];
-  mass = new double[nion];
-  dti = new double[nion];
-  rion0 = new double[3 * nion];
-  rion1 = new double[3 * nion];
-  rion2 = new double[3 * nion];
-  vionhalf = new double[3 * nion];
-  fion1 = new double[3 * nion];
-  katm = new int[nion];
-  natm = new int[nkatm];
-  atomarray = new char[3 * nkatm];
-  zv_psp = new double[nkatm];
-
-  for (auto ia = 0; ia < nkatm; ++ia) {
-    natm[ia] = 0.0;
-    strcpy(&atomarray[3 * ia], const_cast<char *>(tmpsymbols[ia].data()));
-  }
-  for (auto i = 0; i < nion; ++i) {
-    charge[i] = (double)geomjson["charges"][i];
-    mass[i] = ((double)geomjson["masses"][i]) * amu_to_mass;
-    dti[i] = (time_step * time_step) / mass[i];
-
-    rion0[3 * i] = (geomjson["velocities"][3 * i].is_number_float())
-                       ? (double)geomjson["velocities"][3 * i]
-                       : 0.0;
-    rion0[3 * i + 1] = (geomjson["velocities"][3 * i + 1].is_number_float())
-                           ? (double)geomjson["velocities"][3 * i + 1]
-                           : 0.0;
-    rion0[3 * i + 2] = (geomjson["velocities"][3 * i + 2].is_number_float())
-                           ? (double)geomjson["velocities"][3 * i + 2]
-                           : 0.0;
-
-    rion1[3 * i] = (double)geomjson["coords"][3 * i];
-    rion1[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
-    rion1[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
-
-    rion2[3 * i] = (double)geomjson["coords"][3 * i];
-    rion2[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
-    rion2[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
-
-    fion1[3 * i] = 0.0;
-    fion1[3 * i + 1] = 0.0;
-    fion1[3 * i + 2] = 0.0;
-
-    auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
-    if (match != end(tmpsymbols)) {
-      auto ia = std::distance(begin(tmpsymbols), match);
-      katm[i] = ia;
-      natm[ia] += 1;
-    }
-  }
-
-  // generate random initial velocities  (temperature, seed) - only set with
-  // random velocities if seed > 0
-  seed = -1;
-  Tf = -1.0;
-  double vgx, vgy, vgz, rr0, rr1, rr2, rr3, rr4, rr5;
-  double twopi = 16.0 * atan(1.0);
-
-  if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0]
-          .is_number_float())
-    Tf = rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0];
-  else if (rtdbjson["nwpw"]["initial_velocities"][0].is_number_float())
-    Tf = rtdbjson["nwpw"]["initial_velocities"][0];
-
-  if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1]
-          .is_number_integer())
-    seed = rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1];
-  else if (rtdbjson["nwpw"]["initial_velocities"][1].is_number_integer())
-    seed = rtdbjson["nwpw"]["initial_velocities"][1];
-
-  if ((Tf >= 0.0) && (seed > 0)) {
-    std::srand(seed);
-    for (auto i = 0; i < nion; ++i) {
-      rr0 = ((double)std::rand()) / ((double)RAND_MAX);
-      rr1 = ((double)std::rand()) / ((double)RAND_MAX);
-      rr2 = ((double)std::rand()) / ((double)RAND_MAX);
-      rr3 = ((double)std::rand()) / ((double)RAND_MAX);
-      rr4 = ((double)std::rand()) / ((double)RAND_MAX);
-      rr5 = ((double)std::rand()) / ((double)RAND_MAX);
-      // std::cout << "RANDS=" << rr0 << " " << rr1;
-      // std::cout <<      " " << rr2 << " " << rr3;
-      // std::cout <<      " " << rr4 << " " << rr5 << std::endl;
-      // std::cout <<      " seed=" << seed;
-      // std::cout <<      " Tf=" << Tf << std::endl;
-
-      vgx = -(2.00 * kb * Tf / mass[i]) * log(rr0);
-      vgy = cos(twopi * rr1);
-      rion0[3 * i] = sqrt(vgx) * vgy;
-
-      vgx = -(2.00 * kb * Tf / mass[i]) * log(rr2);
-      vgy = cos(twopi * rr3);
-      rion0[3 * i + 1] = sqrt(vgx) * vgy;
-
-      vgx = -(2.00 * kb * Tf / mass[i]) * log(rr4);
-      vgy = cos(twopi * rr5);
-      rion0[3 * i + 2] = sqrt(vgx) * vgy;
-    }
-
-    // rescale velocities
-    center_v_mass(nion, mass, rion0, &vgx, &vgy, &vgz);
-    for (auto i = 0; i < nion; ++i) {
-      rion0[3 * i] -= vgx;
-      rion0[3 * i + 1] -= vgy;
-      rion0[3 * i + 2] -= vgz;
-    }
-    eki0 = ke();
-    double Tscale;
-    if (nion > 2)
-      Tscale = 2.0 * eki0 / (3.0 * nion - 6.0) / kb;
-    else
-      Tscale = 2.0 * eki0 / kb;
-    Tscale = sqrt(Tf / Tscale);
-    for (auto i = 0; i < (3 * nion); ++i)
-      rion0[i] *= Tscale;
-  }
-
-  // generate initial kinetic energies
-  ekg = ke_com();
-  eki0 = ke();
-
-  // shift by velocity COM
-  bool do_com_shift = true;
-  if (rtdbjson["nwpw"]["car-parrinello"]["com_shift"].is_boolean())
-    do_com_shift = rtdbjson["nwpw"]["car-parrinello"]["com_shift"];
-
-  if (do_com_shift) {
-    center_v_mass(nion, mass, rion0, &vgx, &vgy, &vgz);
-    for (auto i = 0; i < nion; ++i) {
-      rion0[3 * i] -= vgx;
-      rion0[3 * i + 1] -= vgy;
-      rion0[3 * i + 2] -= vgz;
-    }
-  }
-
-  // scale velocities then find kinetic energy
-  // rr0 = control.scaling(1);
-  rr0 = control.ion_scaling();
-  for (auto i = 0; i < (3 * nion); ++i)
-    rion0[i] *= rr0;
-  eki1 = ke();
-
-  // set intitial vionhalf
-  std::memcpy(vionhalf, rion0, 3 * nion * sizeof(double));
-
-  // set ke_count, ke_total,and kg_total and g_dof
-  ke_count = 0;
-  ke_total = 0.0;
-  kg_total = 0.0;
-  if (rtdbjson["nwpw"]["ke_count"].is_number_integer()) ke_count = rtdbjson["nwpw"]["ke_count"];
-  if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
-  if (rtdbjson["nwpw"]["kg_total"].is_number_float())   kg_total = rtdbjson["nwpw"]["kg_total"];
-
-  if (rtdbjson["nwpw"]["fix_translation"].is_boolean()) fix_translation = rtdbjson["nwpw"]["fix_translation"];
-  if (rtdbjson["nwpw"]["fix_rotation"].is_boolean())    fix_rotation    = rtdbjson["nwpw"]["fix_rotation"];
-
-  dof_translation = !fix_translation;
-
-  if (rtdbjson["nwpw"]["dof_translation"].is_boolean()) dof_translation = rtdbjson["nwpw"]["dof_translation"];
-  if (rtdbjson["nwpw"]["dof_rotation"].is_boolean())    dof_rotation    = rtdbjson["nwpw"]["dof_rotation"];
-
-  g_dof = 3.0*nion - 6.0;
-  if (dof_translation) g_dof += 3;
-  if (dof_rotation)    g_dof += 3;
-  if (g_dof < 1)       g_dof = 1.0;
-
-  /*  DEBUG CHECK
-     std::cout << "NION=" << nion << std::endl;
-     std::cout << "NKATM=" << nkatm << std::endl;
-     for (auto i=0; i<nion; ++i)
-     {
-        std::cout << "I=" << i << std::endl;
-        std::cout << "   KATM=" << katm[i] << std::endl;
-        std::cout << "   MASS=" << mass[i] << std::endl;
-        std::cout << "   CHARGE=" << charge[i] << std::endl;
+Ion::Ion(std::string rtdbstring, Control2 &control) 
+{
+   double amu_to_mass = 1822.89;
+ 
+   auto rtdbjson = json::parse(rtdbstring);
+ 
+   std::string geomname = "geometry";
+   if (rtdbjson["geometry"].is_string())
+     geomname = rtdbjson["geometry"];
+ 
+   json geomjson = rtdbjson["geometries"][geomname];
+ 
+   nion = geomjson["nion"];
+ 
+   auto symbols = geomjson["symbols"];
+ 
+   std::vector<std::string> tmpsymbols;
+   for (auto i = 0; i < symbols.size(); ++i) {
+     auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
+     if (match == end(tmpsymbols))
+       tmpsymbols.push_back(symbols[i]);
+   }
+   nkatm = tmpsymbols.size();
+ 
+   time_step = control.time_step();
+ 
+   charge = new double[nion];
+   mass = new double[nion];
+   dti = new double[nion];
+   rion0 = new double[3 * nion];
+   rion1 = new double[3 * nion];
+   rion2 = new double[3 * nion];
+   vionhalf = new double[3 * nion];
+   fion1 = new double[3 * nion];
+   katm = new int[nion];
+   natm = new int[nkatm];
+   atomarray = new char[3 * nkatm];
+   zv_psp = new double[nkatm];
+ 
+   for (auto ia = 0; ia < nkatm; ++ia) {
+     natm[ia] = 0.0;
+     strcpy(&atomarray[3 * ia], const_cast<char *>(tmpsymbols[ia].data()));
+   }
+   for (auto i = 0; i < nion; ++i) {
+     charge[i] = (double)geomjson["charges"][i];
+     mass[i] = ((double)geomjson["masses"][i]) * amu_to_mass;
+     dti[i] = (time_step * time_step) / mass[i];
+ 
+     rion0[3 * i] = (geomjson["velocities"][3 * i].is_number_float())
+                        ? (double)geomjson["velocities"][3 * i]
+                        : 0.0;
+     rion0[3 * i + 1] = (geomjson["velocities"][3 * i + 1].is_number_float())
+                            ? (double)geomjson["velocities"][3 * i + 1]
+                            : 0.0;
+     rion0[3 * i + 2] = (geomjson["velocities"][3 * i + 2].is_number_float())
+                            ? (double)geomjson["velocities"][3 * i + 2]
+                            : 0.0;
+ 
+     rion1[3 * i] = (double)geomjson["coords"][3 * i];
+     rion1[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
+     rion1[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
+ 
+     rion2[3 * i] = (double)geomjson["coords"][3 * i];
+     rion2[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
+     rion2[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
+ 
+     fion1[3 * i] = 0.0;
+     fion1[3 * i + 1] = 0.0;
+     fion1[3 * i + 2] = 0.0;
+ 
+     auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
+     if (match != end(tmpsymbols)) {
+       auto ia = std::distance(begin(tmpsymbols), match);
+       katm[i] = ia;
+       natm[ia] += 1;
      }
-     std::cout << "NATM=" << natm[0] << std::endl;
-     std::cout << "ATOMARRAY=" << atomarray << std::endl;
-  */
+   }
+ 
+   // generate random initial velocities  (temperature, seed) - only set with
+   // random velocities if seed > 0
+   seed = -1;
+   Tf = -1.0;
+   double vgx, vgy, vgz, rr0, rr1, rr2, rr3, rr4, rr5;
+   double twopi = 16.0 * atan(1.0);
+ 
+   if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0]
+           .is_number_float())
+     Tf = rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][0];
+   else if (rtdbjson["nwpw"]["initial_velocities"][0].is_number_float())
+     Tf = rtdbjson["nwpw"]["initial_velocities"][0];
+ 
+   if (rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1]
+           .is_number_integer())
+     seed = rtdbjson["nwpw"]["car-parrinello"]["initial_velocities"][1];
+   else if (rtdbjson["nwpw"]["initial_velocities"][1].is_number_integer())
+     seed = rtdbjson["nwpw"]["initial_velocities"][1];
+ 
+   if ((Tf >= 0.0) && (seed > 0)) {
+     std::srand(seed);
+     for (auto i = 0; i < nion; ++i) {
+       rr0 = ((double)std::rand()) / ((double)RAND_MAX);
+       rr1 = ((double)std::rand()) / ((double)RAND_MAX);
+       rr2 = ((double)std::rand()) / ((double)RAND_MAX);
+       rr3 = ((double)std::rand()) / ((double)RAND_MAX);
+       rr4 = ((double)std::rand()) / ((double)RAND_MAX);
+       rr5 = ((double)std::rand()) / ((double)RAND_MAX);
+       // std::cout << "RANDS=" << rr0 << " " << rr1;
+       // std::cout <<      " " << rr2 << " " << rr3;
+       // std::cout <<      " " << rr4 << " " << rr5 << std::endl;
+       // std::cout <<      " seed=" << seed;
+       // std::cout <<      " Tf=" << Tf << std::endl;
+ 
+       vgx = -(2.00 * kb * Tf / mass[i]) * log(rr0);
+       vgy = cos(twopi * rr1);
+       rion0[3 * i] = sqrt(vgx) * vgy;
+ 
+       vgx = -(2.00 * kb * Tf / mass[i]) * log(rr2);
+       vgy = cos(twopi * rr3);
+       rion0[3 * i + 1] = sqrt(vgx) * vgy;
+ 
+       vgx = -(2.00 * kb * Tf / mass[i]) * log(rr4);
+       vgy = cos(twopi * rr5);
+       rion0[3 * i + 2] = sqrt(vgx) * vgy;
+     }
+ 
+     // rescale velocities
+     center_v_mass(nion, mass, rion0, &vgx, &vgy, &vgz);
+     for (auto i = 0; i < nion; ++i) {
+       rion0[3 * i] -= vgx;
+       rion0[3 * i + 1] -= vgy;
+       rion0[3 * i + 2] -= vgz;
+     }
+     eki0 = ke();
+     double Tscale;
+     if (nion > 2)
+       Tscale = 2.0 * eki0 / (3.0 * nion - 6.0) / kb;
+     else
+       Tscale = 2.0 * eki0 / kb;
+     Tscale = sqrt(Tf / Tscale);
+     for (auto i = 0; i < (3 * nion); ++i)
+       rion0[i] *= Tscale;
+   }
+ 
+   // generate initial kinetic energies
+   ekg = ke_com();
+   eki0 = ke();
+ 
+   // shift by velocity COM
+   bool do_com_shift = true;
+   if (rtdbjson["nwpw"]["car-parrinello"]["com_shift"].is_boolean())
+     do_com_shift = rtdbjson["nwpw"]["car-parrinello"]["com_shift"];
+ 
+   if (do_com_shift) {
+     center_v_mass(nion, mass, rion0, &vgx, &vgy, &vgz);
+     for (auto i = 0; i < nion; ++i) {
+       rion0[3 * i] -= vgx;
+       rion0[3 * i + 1] -= vgy;
+       rion0[3 * i + 2] -= vgz;
+     }
+   }
+ 
+   // scale velocities then find kinetic energy
+   // rr0 = control.scaling(1);
+   rr0 = control.ion_scaling();
+   for (auto i = 0; i < (3 * nion); ++i)
+     rion0[i] *= rr0;
+   eki1 = ke();
+ 
+   // set intitial vionhalf
+   std::memcpy(vionhalf, rion0, 3 * nion * sizeof(double));
+ 
+   // set ke_count, ke_total,and kg_total and g_dof
+   ke_count = 0;
+   ke_total = 0.0;
+   kg_total = 0.0;
+   if (rtdbjson["nwpw"]["ke_count"].is_number_integer()) ke_count = rtdbjson["nwpw"]["ke_count"];
+   if (rtdbjson["nwpw"]["ke_total"].is_number_float())   ke_total = rtdbjson["nwpw"]["ke_total"];
+   if (rtdbjson["nwpw"]["kg_total"].is_number_float())   kg_total = rtdbjson["nwpw"]["kg_total"];
+ 
+   if (rtdbjson["nwpw"]["fix_translation"].is_boolean()) fix_translation = rtdbjson["nwpw"]["fix_translation"];
+   if (rtdbjson["nwpw"]["fix_rotation"].is_boolean())    fix_rotation    = rtdbjson["nwpw"]["fix_rotation"];
+ 
+   dof_translation = !fix_translation;
+ 
+   if (rtdbjson["nwpw"]["dof_translation"].is_boolean()) dof_translation = rtdbjson["nwpw"]["dof_translation"];
+   if (rtdbjson["nwpw"]["dof_rotation"].is_boolean())    dof_rotation    = rtdbjson["nwpw"]["dof_rotation"];
+ 
+   g_dof = 3.0*nion - 6.0;
+   if (dof_translation) g_dof += 3;
+   if (dof_rotation)    g_dof += 3;
+   if (g_dof < 1)       g_dof = 1.0;
+ 
+   /*  DEBUG CHECK
+      std::cout << "NION=" << nion << std::endl;
+      std::cout << "NKATM=" << nkatm << std::endl;
+      for (auto i=0; i<nion; ++i)
+      {
+         std::cout << "I=" << i << std::endl;
+         std::cout << "   KATM=" << katm[i] << std::endl;
+         std::cout << "   MASS=" << mass[i] << std::endl;
+         std::cout << "   CHARGE=" << charge[i] << std::endl;
+      }
+      std::cout << "NATM=" << natm[0] << std::endl;
+      std::cout << "ATOMARRAY=" << atomarray << std::endl;
+   */
 }
 
 /*******************************

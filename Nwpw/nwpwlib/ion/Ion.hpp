@@ -168,44 +168,51 @@ public:
     return (2.0 * (kg_total / ((double)ke_count)) / kb);
   }
 
-  double ion_ion_energy() {
-    double eion = 0.0;
-    for (auto ii = 0; ii < (nion - 1); ++ii) {
-      double qii = zv_psp[katm[ii]];
-      for (auto jj = ii + 1; jj < nion; ++jj) {
-        double qjj = zv_psp[katm[jj]];
-        double x = rion1[3 * ii] - rion1[3 * jj];
-        double y = rion1[3 * ii + 1] - rion1[3 * jj + 1];
-        double z = rion1[3 * ii + 2] - rion1[3 * jj + 2];
-        double r = std::sqrt(x * x + y * y + z * z);
-        if (r > 1.0e-6)
-          eion += qii * qjj / r;
-      }
-    }
-    return eion;
+  double ion_ion_energy() 
+  {
+     double eion=0.0;
+     for (auto ii=0; ii<(nion-1); ++ii) 
+     {
+        double qii = zv_psp[katm[ii]];
+        for (auto jj=ii+1; jj<nion; ++jj) 
+        {
+           double qjj = zv_psp[katm[jj]];
+           double x = rion1[3*ii]   - rion1[3*jj];
+           double y = rion1[3*ii+1] - rion1[3*jj+1];
+           double z = rion1[3*ii+2] - rion1[3*jj+2];
+           double r = std::sqrt(x*x + y*y + z*z);
+           if (r>1.0e-6) 
+              eion += qii*qjj/r;
+        }
+     }
+     return eion;
   }
 
-  void ion_ion_force(double *fion) {
-    for (auto ii = 0; ii < (nion - 1); ++ii) {
-      double qii = zv_psp[katm[ii]];
-      for (auto jj = ii + 1; jj < nion; ++jj) {
-        double qjj = zv_psp[katm[jj]];
-        double x = rion1[3 * ii] - rion1[3 * jj];
-        double y = rion1[3 * ii + 1] - rion1[3 * jj + 1];
-        double z = rion1[3 * ii + 2] - rion1[3 * jj + 2];
-        double r = std::sqrt(x * x + y * y + z * z);
-        if (r > 1.0e-6) {
-          double v = qii * qjj / (r * r * r);
-          fion[3 * ii] += (x * v);
-          fion[3 * ii + 1] += (y * v);
-          fion[3 * ii + 2] += (z * v);
-
-          fion[3 * jj] -= (x * v);
-          fion[3 * jj + 1] -= (y * v);
-          fion[3 * jj + 2] -= (z * v);
+  void ion_ion_force(double *fion) 
+  {
+     for (auto ii=0; ii<(nion-1); ++ii) 
+     {
+        double qii = zv_psp[katm[ii]];
+        for (auto jj=ii+1; jj<nion; ++jj) 
+        {
+           double qjj = zv_psp[katm[jj]];
+           double x = rion1[3 * ii] - rion1[3 * jj];
+           double y = rion1[3 * ii + 1] - rion1[3 * jj + 1];
+           double z = rion1[3 * ii + 2] - rion1[3 * jj + 2];
+           double r = std::sqrt(x * x + y * y + z * z);
+           if (r > 1.0e-6) 
+           {
+              double v = qii * qjj / (r * r * r);
+              fion[3 * ii] += (x * v);
+              fion[3 * ii + 1] += (y * v);
+              fion[3 * ii + 2] += (z * v);
+             
+              fion[3 * jj] -= (x * v);
+              fion[3 * jj + 1] -= (y * v);
+              fion[3 * jj + 2] -= (z * v);
+           }
         }
-      }
-    }
+     }
   }
 
   void optimize_step(const double *fion) {

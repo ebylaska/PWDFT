@@ -1,6 +1,8 @@
 #ifndef _UTIL_HPP_
 #define _UTIL_HPP_
 
+#pragma once
+
 #include "Parallel.hpp"
 #include "util_gamma.hpp"
 #include "util_legendre.hpp"
@@ -8,6 +10,7 @@
 #include "util_tesseral.hpp"
 //#include	"util_wgaussian.hpp"
 #include "util_linesearch.hpp"
+
 
 namespace pwdft {
 
@@ -51,6 +54,12 @@ extern void util_ddandreussi_dielec(const int, const double, const double,
                                     const double, const double *, double *);
 extern void util_ddandreussi2_dielec(const int, const double, const double,
                                      const double, const double *, double *);
+extern void util_sphere_dielec(const int, const double *, const double *,
+                               const double, const double, const double,
+                               double *);
+extern void util_sphere_gradient_dielec(const int, const double *, const double *,
+                                        const double, const double, const double,
+                                        double *, double *, double *);
 
 extern void util_weighted_fattebert_dielec(const int, const double,
                                            const double, const double,

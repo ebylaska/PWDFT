@@ -203,8 +203,8 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       // else
       //    coutput << "no\n";
       coutput << "   boundary conditions  = ";
-      if (control.version == 3) coutput << "periodic\n";
-      if (control.version == 4) coutput << "aperiodic\n";
+      if (control.version==3) coutput << "periodic\n";
+      if (control.version==4) coutput << "aperiodic\n";
      
       coutput << "   electron spin        = ";
       if (ispin == 1)
@@ -290,16 +290,19 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
               << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves " << Ifmt(8) << mygrid.npack(1) << " per task)" 
               << std::endl;
       coutput << std::endl;
-      coutput << " Ewald parameters:\n";
-      coutput << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
-              << " fft =" << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz() 
-              << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" 
-              << std::endl;
-      coutput << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " 
-              << Ifmt(3) << myewald.ncut() << std::endl;
-      coutput << "                       Mandelung Wigner-Seitz =" 
-              << Ffmt(12, 8) << myewald.mandelung() << " (alpha =" << Ffmt(12,8) << myewald.rsalpha() 
-              << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
+      if (control.version==3)
+      {
+         coutput << " Ewald parameters:\n";
+         coutput << "      energy cutoff = " << Ffmt(7,3) << myewald.ecut()
+                 << " fft =" << Ifmt(4) << myewald.nx() << " x " << Ifmt(4) << myewald.ny() << " x " << Ifmt(4) << myewald.nz() 
+                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves " << Ifmt(8) << myewald.npack() << " per task)" 
+                 << std::endl;
+         coutput << "      Ewald summation: cut radius = " << Ffmt(7,3) << myewald.rcut() << " and " 
+                 << Ifmt(3) << myewald.ncut() << std::endl;
+         coutput << "                       Mandelung Wigner-Seitz =" 
+                 << Ffmt(12, 8) << myewald.mandelung() << " (alpha =" << Ffmt(12,8) << myewald.rsalpha() 
+                 << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
+      }
      
       if (flag > 0) 
       {

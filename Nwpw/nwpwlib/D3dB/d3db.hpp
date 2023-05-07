@@ -167,6 +167,10 @@ public:
   void rrrrrrr_Sqr3MulPlusMul2(const double *, const double *, const double *,
                                const double *, const double *, const double *,
                                double *);
+
+  /* real-space Gaussian filters */
+  void rr_periodic_gaussian_filter(const double, const double *, double *);
+
 };
 } // namespace pwdft
 

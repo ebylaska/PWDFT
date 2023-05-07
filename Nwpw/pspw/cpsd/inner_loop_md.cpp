@@ -39,8 +39,8 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
    double *fion;
    bool move = true;
    bool nose = mynose->on();
-   bool periodic = (control.version == 3);
-   bool aperiodic = (control.version == 4);
+   bool periodic  = (control.version==3);
+   bool aperiodic = (control.version==4);
    double sse = 1.0;
    double ssr = 1.0;
    double omega = mygrid->lattice->omega();
@@ -135,7 +135,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       
       /* generate dng */
       mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
-      mygrid->rr_SMul(scal1, rho, tmp);
+      mygrid->rr_SMul(scal1,rho,tmp);
       mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0, tmp);
       mygrid->cc_pack_copy(0, tmp, dng);
@@ -161,7 +161,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       if (aperiodic) {
          mypsp->v_lr_local(vlr_l);
          if (move)
-           mypsp->grad_v_lr_local(rho, fion);
+           mypsp->grad_v_lr_local(rho,fion);
       }
       
       /* apply k-space operators */
@@ -176,7 +176,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       }
       else if (aperiodic)
       {
-         mycoulomb12->mycoulomb2->vcoulomb(rho, vc);
+         mycoulomb12->mycoulomb2->vcoulomb(rho,vc);
          std::memcpy(vcall,vc,n2ft3d*sizeof(double));
          if (mycoulomb12->dielectric_on())
          {
@@ -300,7 +300,7 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
          ehartr = mycoulomb12->mycoulomb1->ecoulomb(dng);
          eion = myewald->energy();
       } else if (aperiodic) {
-         ehartr = 0.5 * mygrid->rr_dot(rho, vc) * dv;
+         ehartr = 0.5*mygrid->rr_dot(rho,vc)*dv;
          eion = myion->ion_ion_energy();
       }
 

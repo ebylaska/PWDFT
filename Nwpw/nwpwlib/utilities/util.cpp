@@ -284,6 +284,7 @@ void util_filter(int nray, double *g_ray, double ecut, double *v_ray) {
   }
 }
 
+
 /**************************************
  *                                    *
  *        util_fattebert_dielec       *
@@ -531,6 +532,66 @@ void util_ddandreussi2_dielec(const int n2ft3d, const double eps,
       ddepsilon[k] = 0.0;
   }
 }
+
+/**************************************
+ *                                    *
+ *        util_sphere_dielec          *
+ *                                    *
+ **************************************/
+/* 
+*/
+void util_sphere_dielec(const int n2ft3d, const double *rgrid,const double *rshift,
+                        const double eps, const double R0, const double R1, 
+                        double *epsilon)
+{
+   double s_d   = R0;
+   double s_rho = R1-s_d;
+
+ 
+   for (auto i=0; i<n2ft3d; ++i)
+   {
+      double dx = rgrid[3*i]   - rshift[0];
+      double dy = rgrid[3*i+1] - rshift[1];
+      double dz = rgrid[3*i+2] - rshift[2];
+      double r  = std::sqrt(dx*dx+ dy*dy + dz*dz);
+      epsilon[i] = 1+(eps-1)*util_switching_function(s_d,s_rho,r);
+   }
+}
+
+/**************************************
+ *                                    *
+ *    util_sphere_gradient_dielec     *
+ *                                    *
+ **************************************/
+void util_sphere_gradient_dielec(const int n2ft3d, const double *rgrid, const double *rshift,
+                                 const double eps, const double R0, const double R1, 
+                                 double *epsilon_x, double *epsilon_y, double *epsilon_z)
+{
+   double s_d   = R0;
+   double s_rho = R1-s_d;
+
+   for (auto i=0; i<n2ft3d; ++i)
+   {
+      double dx = rgrid[3*i]   - rshift[0];
+      double dy = rgrid[3*i+1] - rshift[1];
+      double dz = rgrid[3*i+2] - rshift[2];
+      double r  = std::sqrt(dx*dx + dy*dy + dz*dz);
+      double dfdr = (eps-1)*util_dswitching_function(s_d,s_rho,r);
+      if (r>1.0e-6)
+      {
+         epsilon_x[i] = (dfdr)*dx/r;
+         epsilon_y[i] = (dfdr)*dy/r;
+         epsilon_z[i] = (dfdr)*dz/r;
+      }
+      else
+      {
+         epsilon_x[i] = 0.0;
+         epsilon_y[i] = 0.0;
+         epsilon_z[i] = 0.0;
+      }
+   }
+}
+
 
 /**************************************
  *                                    *

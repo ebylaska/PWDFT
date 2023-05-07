@@ -20,6 +20,8 @@ class Coulomb12_Operator {
 
    // Dielectric variables
    bool has_dielec = false;
+   bool relax_dielec  = true;
+   bool notset_dielec = true;
    double dielec, rhomin, rhomax, beta, rho0;
    double *epsilon, *depsilon, *ddepsilon, *sw, *p;
    double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap;
@@ -27,6 +29,9 @@ class Coulomb12_Operator {
    double *rho_ind0, *rho_ind1;
    double tole_pol  = 1.0e-7;
    double alpha_pol = 0.41;;
+   double rcenter_pol[3] = {0.0,0.0,0.0};
+   double rmin_pol = 1.2;
+   double rmax_pol = 1.6;
    int model_pol = 0;
    int maxit_pol = 2000;
 
@@ -37,6 +42,7 @@ class Coulomb12_Operator {
 
    Ion    *myion;
    Strfac *mystrfac;
+   Control2 *tmpcontrol;
 
 public:
    double edielec,pdielec;
@@ -88,6 +94,7 @@ public:
                                   const double *, const double *, const double *,
                                   const bool, double *, double *, nwpw_dplot *);
 
+   void dielectric_generate(const double *, const double *);
    void dielectric_fion(double *);
    void generate_dng_ion(double *);
    void dng_ion_vdielec0_fion(const double *, double *);

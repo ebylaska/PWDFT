@@ -84,6 +84,7 @@ class Control2 {
        pnose_xr0, pnose_xr1, pnose_qr;
  
    bool pgpoisson_on = false;
+   bool pgpoisson_relax_dielec = true;
    int    pgpoisson_model  = 0;
    int    pgpoisson_maxit  = 2000;
    double pgpoisson_dielec = 78.4;
@@ -93,6 +94,9 @@ class Control2 {
    double pgpoisson_rhomax = 0.0035;
    double pgpoisson_alpha  = 0.41;
    double pgpoisson_rcut_ion = 1.0;
+   double pgpoisson_rmin = 1.0;
+   double pgpoisson_rmax = 2.2;
+   double pgpoisson_rcenter[3] = {0.0,0.0,0.0};
  
    bool psa_on;
    double psa_decay[2] = {1.0, 1.0};
@@ -295,6 +299,7 @@ public:
  
    // Generalized Poisson
    bool gpoisson_on() { return pgpoisson_on; }
+   bool gpoisson_relax_dielec() { return pgpoisson_relax_dielec; }
    int  gpoisson_model() { return pgpoisson_model; }
    int  gpoisson_maxit() { return pgpoisson_maxit; }
    double gpoisson_dielec() { return pgpoisson_dielec; }
@@ -304,6 +309,9 @@ public:
    double gpoisson_rhomax() { return pgpoisson_rhomax; }
    double gpoisson_alpha()    { return pgpoisson_alpha; }
    double gpoisson_rcut_ion() { return pgpoisson_rcut_ion; }
+   double gpoisson_rmin() { return pgpoisson_rmin; }
+   double gpoisson_rmax() { return pgpoisson_rmax; }
+   double gpoisson_rcenter(const int i) { return pgpoisson_rcenter[i]; }
  
  
    // Nose

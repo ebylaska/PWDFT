@@ -31,9 +31,10 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
    if (control.gpoisson_on())
    {
       has_dielec = true;
-      dielec    = control.gpoisson_dielec();
-      rho0      = control.gpoisson_rho0();
-      beta      = control.gpoisson_beta();
+      relax_dielec = control.gpoisson_relax_dielec();
+      dielec     = control.gpoisson_dielec();
+      rho0       = control.gpoisson_rho0();
+      beta       = control.gpoisson_beta();
       rhomin = control.gpoisson_rhomin();
       rhomax = control.gpoisson_rhomax();
 
@@ -42,6 +43,12 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       alpha_pol = control.gpoisson_alpha();
       tole_pol  = control.tolerances(0);
       rcut_ion  = control.gpoisson_rcut_ion();
+
+      rcenter_pol[0] = control.gpoisson_rcenter(0);
+      rcenter_pol[1] = control.gpoisson_rcenter(1);
+      rcenter_pol[2] = control.gpoisson_rcenter(2);
+      rmin_pol = control.gpoisson_rmin();
+      rmax_pol = control.gpoisson_rmax();
 
       epsilon = mypneb->r_alloc();
       depsilon = mypneb->r_alloc();
@@ -67,6 +74,7 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       rho_ion_set  = false;
       vdielec0_set  = false;
    }
+   tmpcontrol = &control;
 }
 
 
@@ -257,23 +265,10 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       rho_ion_set = true;
    }
 
-   /* generate caclcuate dielectric */
-   if (model_pol==0)
-   {
-      util_andreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
-      util_dandreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
-   }
+   /* generate caclulate dielectric and dielectric gradients */
+   this->dielectric_generate(rho,dng);
 
-   if (model_pol==1)
-   {
-      util_andreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
-      util_dandreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
-   }
-   if (model_pol==2)
-   {
-   }
-
-
+/*
    mypneb->rr_Divide(epsilon, depsilon);
    mypneb->r_zero_ends(depsilon);
 
@@ -283,10 +278,11 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
    mypneb->rr_Mul(depsilon,epsilon_x);
    mypneb->rr_Mul(depsilon,epsilon_y);
    mypneb->rr_Mul(depsilon,epsilon_z);
+   */
 
    for (auto i=0; i<n2ft3d; ++i) 
    {
-      rho_ind0[i] = (1.0 / epsilon[i] - 1.0) * (rho[i] + rho_ion[i]);
+      rho_ind0[i] = (1.0/epsilon[i]-1.0) * (rho[i] + rho_ion[i]);
       p[i] = vh[i] + v_ion[i];
    }
    mypneb->r_zero_ends(rho_ind0);
@@ -359,18 +355,23 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
 */
    }
 
-   mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
-   mypneb->r_SMul(scal1,p);
-   mypneb->rc_pfft3f(0,p);
-   mypneb->c_pack(0,p);
-
-   mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
-   mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
-   mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
-   for (auto i=0; i<n2ft3d; ++i)
-      vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
-
-   mypneb->rrr_Sum(vdielec0,vks0,vdielec);
+   if (relax_dielec)
+   {
+      mypneb->rrrr_Sum(vdielec0,vh,v_ion,p);
+      mypneb->r_SMul(scal1,p);
+      mypneb->rc_pfft3f(0,p);
+      mypneb->c_pack(0,p);
+ 
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gx,p,w_x);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gy,p,w_y);
+      mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
+      for (auto i=0; i<n2ft3d; ++i)
+         vks0[i] = 0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
+ 
+      mypneb->rrr_Sum(vdielec0,vks0,vdielec);
+   }
+   else
+      std::memcpy(vdielec,vdielec0,n2ft3d*sizeof(double));
  
    double eelc = 0.5*mypneb->rr_dot(rho,vdielec0)*dv;
    double eion = 0.5*mypneb->rr_dot(rho_ion,vdielec0)*dv;
@@ -405,6 +406,107 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       //   std::cout << "ii=" << ii << " fion= " << fion[3*ii] << " " << fion[3*ii+1] << " " << fion[3*ii+2] << std::endl;
    }
 
+}
+
+/*****************************************************
+ *                                                   *
+ *       Coulomb12_Operator::dielectric_generate     *
+ *                                                   *
+ *****************************************************/
+/* 
+   Caclulates the  dielectric and dielectric gradients 
+
+*/
+void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dng)
+{
+   if (notset_dielec || relax_dielec)
+   {
+      nwpw_dplot mydplot(myion,mypneb,*tmpcontrol);
+      int n2ft3d = mypneb->n2ft3d;
+      if (model_pol==3)
+      {
+
+         mypneb->initialize_r_grid();
+         double *r_grid = mypneb->r_grid;
+
+         util_sphere_dielec(n2ft3d,r_grid,rcenter_pol,dielec,rmin_pol,rmax_pol,epsilon);
+         util_sphere_gradient_dielec(n2ft3d,r_grid,rcenter_pol,dielec,rmin_pol,rmax_pol,
+                                     epsilon_x,epsilon_y,epsilon_z);
+         mypneb->r_zero_ends(epsilon);
+         mypneb->r_zero_ends(epsilon_x);
+         mypneb->r_zero_ends(epsilon_y);
+         mypneb->r_zero_ends(epsilon_z);
+      }
+      else
+      {
+         double *Gx = mypneb->Gpackxyz(0,0);
+         double *Gy = mypneb->Gpackxyz(0,1);
+         double *Gz = mypneb->Gpackxyz(0,2);
+       
+         /* generate caclcuate dielectric */
+         if (model_pol==0)
+         {
+            util_andreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+            util_dandreussi_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+         }
+       
+         if (model_pol==1)
+         {
+            util_andreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,epsilon);
+            util_dandreussi2_dielec(n2ft3d,dielec,rhomin,rhomax,rho,depsilon);
+         }
+         if (model_pol==2)
+         {
+            util_fattebert_dielec(n2ft3d,dielec,beta,rho0,rho,epsilon);
+            util_dfattebert_dielec(n2ft3d,dielec,beta,rho0,rho,epsilon);
+         }
+       
+       
+         /* generate caclulate dielectric gradients */
+         mypneb->rr_Divide(epsilon, depsilon);
+         mypneb->r_zero_ends(epsilon);
+         mypneb->r_zero_ends(depsilon);
+       
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,epsilon_x);
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,epsilon_y);
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gz,dng,epsilon_z);
+         mypneb->rr_Mul(depsilon,epsilon_x);
+         mypneb->rr_Mul(depsilon,epsilon_y);
+         mypneb->rr_Mul(depsilon,epsilon_z);
+
+      }
+      //mydplot.gcube_write("epsilon.cube", -1, "SCF dielec function", epsilon);
+      //mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function", epsilon_x);
+      //mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function", epsilon_y);
+      //mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function", epsilon_z);
+      
+      mydplot.gcube_write("epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
+      mydplot.gcube_write("epsilon_y.cube", -1, "SCF dielec function",epsilon_y);
+      mydplot.gcube_write("epsilon_z.cube", -1, "SCF dielec function",epsilon_z);
+
+      double *tmp = mypneb->r_alloc();
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_x,tmp); 
+      mydplot.gcube_write("smooth_epsilon_x.cube", -1, "SCF dielec function",tmp);
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_y,tmp); 
+      mydplot.gcube_write("smooth_epsilon_y.cube", -1, "SCF dielec function",tmp);
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_z,tmp); 
+      mydplot.gcube_write("smooth_epsilon_z.cube", -1, "SCF dielec function",tmp);
+      mypneb->r_dealloc(tmp);
+
+
+      /*
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_x,tmp); mypneb->rr_copy(tmp,epsilon_x);
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_y,tmp); mypneb->rr_copy(tmp,epsilon_y);
+      mypneb->rr_periodic_gaussian_filter(1.0,epsilon_z,tmp); mypneb->rr_copy(tmp,epsilon_z);
+      mypneb->r_dealloc(tmp);
+      mypneb->r_zero_ends(epsilon);
+      mypneb->r_zero_ends(epsilon_x);
+      mypneb->r_zero_ends(epsilon_y);
+      mypneb->r_zero_ends(epsilon_z);
+      mydplot.gcube_write("smooth_epsilon_x.cube", -1, "SCF dielec function",epsilon_x);
+      */
+     
+   }
 }
 
 /*****************************************************
@@ -760,15 +862,36 @@ std::string Coulomb12_Operator::shortprint_dielectric()
 
       stream << std::endl;
       stream << " dielectric field:" << std::endl;
-      stream << "      dielectric constant -eps- =" << Ffmt(10,3) << dielec << std::endl;
+      if (relax_dielec)
+         stream << "      relax dielectric          = true"  << std::endl;
+      else
+         stream << "      relax dielectric          = false" << std::endl;
+      stream << "      dielectric constant -eps- = " << LFfmt(10,3) << dielec << std::endl;
       if (model_pol==0) stream << "      model    =  Andreussi" << std::endl;
       if (model_pol==1) stream << "      model    = Andreussi2" << std::endl;
       if (model_pol==2) stream << "      model    =  Fattebert" << std::endl;
+      if (model_pol==3) stream << "      model    =  sphere"    << std::endl;
       stream << "      maxit    = " << Ifmt(10)   << maxit_pol << std::endl;
       stream << "      alpha    = " << Ffmt(10,3) << alpha_pol << std::endl;
       stream << "      rcut_ion = " << Ffmt(10,3) << rcut_ion << " au" << std::endl;
-      stream << "      rhomin   = " << Efmt(10,3) << rhomin   << " au" << std::endl;
-      stream << "      rhomax   = " << Efmt(10,3) << rhomax   << " au" << std::endl;
+      if (model_pol==3) 
+      {
+         stream << "      rmin     = " << Efmt(10,3) << rmin_pol << " au" << std::endl;
+         stream << "      rmax     = " << Efmt(10,3) << rmax_pol << " au" << std::endl;
+         stream << "      rcenter  = <" << Ffmt(10,3) << rcenter_pol[0] << " " 
+                                        << Ffmt(10,3) << rcenter_pol[1] << " " 
+                                        << Ffmt(10,3) << rcenter_pol[2] << "> au" << std::endl;
+      }
+      else if (model_pol==2) 
+      {
+         stream << "      rho0     = " << Efmt(10,3) << rho0   << " au" << std::endl;
+         stream << "      beta     = " << Efmt(10,3) << beta   << " au" << std::endl;
+      }
+      else
+      {
+         stream << "      rhomin   = " << Efmt(10,3) << rhomin   << " au" << std::endl;
+         stream << "      rhomax   = " << Efmt(10,3) << rhomax   << " au" << std::endl;
+      }
       stream << "      tole     = " << Efmt(10,3) << tole_pol << std::endl;
 
       return stream.str();

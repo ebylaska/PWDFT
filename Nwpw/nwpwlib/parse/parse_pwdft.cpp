@@ -1312,39 +1312,55 @@ static json parse_nwpw(json nwpwjson, int *curptr,
       if ((nwpwjson["efield"]["on"]) && (mystring_contains(line, " on")) &&
           (!mystring_contains(line, " vector")))
         nwpwjson["efield"]["vector"] = mystring_double_list(line, "on");
-    } else if (mystring_contains(line, "generalized_poisson")) {
-      nwpwjson["generalized_poisson"]["on"] = true;
-      if (mystring_contains(line, " off"))
-        nwpwjson["generalized_poisson"]["on"] = false;
-      if (mystring_contains(line, " dielec"))
-        nwpwjson["generalized_poisson"]["dielec"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " dielec")[1]))[0]);
-      if (mystring_contains(line, " rho0"))
-        nwpwjson["generalized_poisson"]["rho0"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " rho0")[1]))[0]);
-      if (mystring_contains(line, " beta"))
-        nwpwjson["generalized_poisson"]["beta"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " beta")[1]))[0]);
-      if (mystring_contains(line, " rhomin"))
-        nwpwjson["generalized_poisson"]["rhomin"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " rhomin")[1]))[0]);
-      if (mystring_contains(line, " rhomax"))
-        nwpwjson["generalized_poisson"]["rhomax"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " rhomax")[1]))[0]);
 
-      if (mystring_contains(line, " rcut_ion"))
-        nwpwjson["generalized_poisson"]["rcut_ion"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " rcut_ion")[1]))[0]);
-      if (mystring_contains(line, " alpha"))
-        nwpwjson["generalized_poisson"]["alpha"] = std::stod(mystring_split0(
-            mystring_trim(mystring_split(line, " alpha")[1]))[0]);
-      if (mystring_contains(line, " maxit"))
-        nwpwjson["generalized_poisson"]["maxit"] = std::stoi(mystring_split0(
-            mystring_trim(mystring_split(line, " maxit")[1]))[0]);
+    } 
+    else if (mystring_contains(line, "generalized_poisson")) 
+    {
+       nwpwjson["generalized_poisson"]["on"] = true;
+       if (mystring_contains(line, " off"))
+          nwpwjson["generalized_poisson"]["on"] = false;
 
-      if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
-      if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
-      if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
+       if (mystring_contains(line, " relax_dielec"))
+          nwpwjson["generalized_poisson"]["relax_dielec"] = true; // default
+       if (mystring_contains(line, " fix_dielec"))
+          nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+       if (mystring_contains(line, " unfix_dielec"))
+          nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+
+       if (mystring_contains(line, " dielec"))
+          nwpwjson["generalized_poisson"]["dielec"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
+       if (mystring_contains(line, " rho0"))
+          nwpwjson["generalized_poisson"]["rho0"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rho0")[1]))[0]);
+       if (mystring_contains(line, " beta"))
+          nwpwjson["generalized_poisson"]["beta"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " beta")[1]))[0]);
+       if (mystring_contains(line, " rhomin"))
+          nwpwjson["generalized_poisson"]["rhomin"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomin")[1]))[0]);
+       if (mystring_contains(line, " rhomax"))
+          nwpwjson["generalized_poisson"]["rhomax"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomax")[1]))[0]);
+       if (mystring_contains(line, " rcut_ion"))
+          nwpwjson["generalized_poisson"]["rcut_ion"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut_ion")[1]))[0]);
+       if (mystring_contains(line, " alpha"))
+          nwpwjson["generalized_poisson"]["alpha"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " alpha")[1]))[0]);
+       if (mystring_contains(line, " maxit"))
+          nwpwjson["generalized_poisson"]["maxit"] 
+          = std::stoi(mystring_split0(mystring_trim(mystring_split(line, " maxit")[1]))[0]);
+       if (mystring_contains(line, " rmin"))
+          nwpwjson["generalized_poisson"]["rmin"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmin")[1]))[0]);
+       if (mystring_contains(line, " rmax"))
+          nwpwjson["generalized_poisson"]["rmax"] 
+          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmax")[1]))[0]);
+       if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
+       if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
+       if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
+       if (mystring_contains(line, " sphere"))     nwpwjson["generalized_poisson"]["model"] = 3;
     }
 
     ++cur;

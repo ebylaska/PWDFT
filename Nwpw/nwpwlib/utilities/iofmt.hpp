@@ -11,6 +11,8 @@
   std::right << std::setw(w) << std::setprecision(p) << std::scientific
 #define Ffmt(w, p)                                                             \
   std::right << std::setw(w) << std::setprecision(p) << std::fixed
+#define LFfmt(w, p)                                                             \
+  std::left << std::setw(w) << std::setprecision(p) << std::fixed
 #define Ifmt(w) std::right << std::setw(w)
 #define Lfmt(w) std::left << std::setw(w)
 

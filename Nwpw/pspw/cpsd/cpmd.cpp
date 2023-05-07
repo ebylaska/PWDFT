@@ -22,6 +22,7 @@
 #include "inner_loop_md.hpp"
 #include "nwpw_Nose_Hoover.hpp"
 #include "nwpw_aimd_running_data.hpp"
+#include "psp_file_check.hpp"
 #include "psi.hpp"
 #include "util_date.hpp"
 //#include	"rtdb.hpp"
@@ -97,7 +98,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* initialize lattice, parallel grid structure */
    psi_get_header(&myparallel,&version,nfft,unita,&ispin,ne,control.input_movecs_filename());
    Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
- 
+
    /* initialize psi0, psi1, and psi2 */
    psi0 = mygrid.g_allocate(1);
    psi1 = mygrid.g_allocate(1);
@@ -131,6 +132,11 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* read in ion structure */
    // Ion myion(myrtdb);
    Ion myion(rtdbstring, control);
+
+   /* Check for and generate psp files                       */
+   /* - this routine also sets the valence charges in myion, */
+   /*   and total_ion_charge and ne in control               */
+   psp_file_check(&myparallel, &myion, control, std::cout);
  
    /* setup structure factor */
    Strfac mystrfac(&myion, &mygrid);
@@ -547,7 +553,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
 
       if (mycoulomb12.dielectric_on())
-         std::cout << " dielectric energy   : "
+         std::cout << " dielectric energy       : "
                    << Efmt(19,10) << E[61] << " ("
                    << Efmt(15,5) << E[61]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
 
