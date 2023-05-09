@@ -12,6 +12,13 @@ namespace pwdft {
  *  Coulomb12_Operator::Coulomb12_Operator *
  *                                         *
  *******************************************/
+/*  This constructor initializes the Coulomb12 operator object based on the provided 
+ *  Pneb object and Control2 object.                
+ *                                               
+ *  Parameters:                                 
+ *  - mygrid: pointer to Pneb object           
+ *  - control: reference to Control2 object   
+ */                                           
 Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
 {
    mypneb = mygrid;
@@ -92,6 +99,17 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
  *    Coulomb12_Operator::initialize_dielectric     *
  *                                                  *
  ****************************************************/
+ /*
+ *  Initializes the dielectric constant for the Coulomb operator. Sets the ion 
+ *  charge density,calculates the electrostatic potential and energy due to the 
+ *  ion, and updates the ion-dependent parts of the operator.              
+ *                                                
+ *  Arguments:                                    
+ *  - myion0: pointer to Ion object               
+ *  - mystrfac0: pointer to Strfac object        
+ *                                              
+ *  Returns: none                              
+ */
 void Coulomb12_Operator::initialize_dielectric(Ion *myion0, Strfac *mystrfac0)
 {
    myion    = myion0;
@@ -246,6 +264,33 @@ double Coulomb12_Operator::v_dielectric(const double *rho, const double *dng,
  *    Coulomb12_Operator::v_dielectric_aperiodic     *
  *                                                   *
  *****************************************************/
+/**
+ * Calculates the aperiodic dielectric contribution to the Coulomb operator
+ *
+ * The aperiodic dielectric contribution is computed using a Poisson solver,
+ * and it depends on the charge density rho and the electronic polarizability
+ * tensor dng. The Poisson solver also requires the values of the Hartree
+ * potential vh and the ion-induced charge density rho_ion, which are
+ * generated or updated by this function if `move` is true or if they have
+ * not been previously set.
+ *
+ * The result is stored in the `vdielec` array, which should have the same size
+ * as the `rho` array. The optional `fion` array is used to store the ion-induced
+ * forces, if provided and `move` is true.
+ *
+ * @param rho        Pointer to the charge density array of size `n2ft3d`.
+ * @param dng        Pointer to the fourier transform of the density of size `npack0`.
+ * @param vh         Pointer to the Hartree potential array of size `n2ft3d`.
+ * @param vdielec    Pointer to the output array of size `n2ft3d`.
+ * @param move       Whether to re-generate the rho_ion, dng_ion, and v_ion
+ *                   arrays. If true, these arrays will be generated or updated
+ *                   even if they have been previously set. Otherwise, they will
+ *                   be reused if available.
+ * @param fion       Optional pointer to the array used to store the ion-induced
+ *                   forces. If not null and `move` is true, the forces will be
+ *                   computed and stored in this array. Otherwise, the array
+ *                   will not be modified.
+ */
 void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double *dng, const double *vh, 
                                                 double *vdielec, bool move, double *fion)
 {
@@ -424,9 +469,21 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
  *                                                   *
  *****************************************************/
 /* 
-   Caclulates the  dielectric and dielectric gradients 
-
-*/
+ *   Description: This method calculates the dielectric constant and        
+ *                dielectric gradients required for the calculation of the  
+ *                Coulomb 1-2 operator. The dielectric constant is generated 
+ *                on a grid of points and may be filtered with a periodic    
+ *                Gaussian filter. This function receives the density and    
+ *                the fourier transform of the density as input parameters.                     
+ *                                                                           
+ *   Parameters:  rho - An array containing the density values.              
+ *                dng - An array containing the Fourier tranform density values.    
+ *                                                                           
+ *   Remarks:     This function is called only when the dielectric constant  
+ *                is not set or when it needs to be updated. The dielectric  
+ *                constant is used by the Coulomb12_Operator to calculate    
+ *                electrostatic forces and energies.                         
+ */                                                                          
 void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dng)
 {
    if (notset_dielec || relax_dielec)
@@ -467,7 +524,7 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
          if (model_pol==2)
          {
             util_fattebert_dielec(n2ft3d,dielec,beta,rho0,rho,epsilon);
-            util_dfattebert_dielec(n2ft3d,dielec,beta,rho0,rho,epsilon);
+            util_dfattebert_dielec(n2ft3d,dielec,beta,rho0,rho,depsilon);
          }
        
        
@@ -529,6 +586,20 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
  *       Coulomb12_Operator::dielectric_fion         *
  *                                                   *
  *****************************************************/
+ /*
+ * Function: Coulomb12_Operator::dielectric_fion
+ * ----------------------------------------------
+ * This function calculates the force on ions due to the dielectric field. The input argument is a pointer to an
+ * array fion that will contain the calculated force values. The function first calculates the electrostatic potential
+ * due to the dielectric field and then calculates the force by taking the negative gradient of the potential.
+ * The calculated force values are stored in the array fion.
+ *
+ * Parameters:
+ *    - fion: pointer to an array of double values that will contain the calculated force values
+ *
+ * Returns: void
+ */
+
 void Coulomb12_Operator::dielectric_fion(double *fion)
 {
    double scal1 = 1.0/((double)((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
@@ -551,13 +622,27 @@ void Coulomb12_Operator::dielectric_fion(double *fion)
                   |
                   /
 
- E = 0.5*omega*<dng_ion(G)|vdielec(G)>
+ * Computes the force on the ions due to the potential from the dielectric
+ * using the charge density rho_ion and the vdielec operator. The force is
+ * stored in fion. The calculation is based on the equation:
+ *
+ * dE/dR = d/dR 0.5 * integral(rho_ion(r) * vdielec(r) dr)
+ *
+ * The energy E is given by:
+ *
+ * E = 0.5 * omega * <dng_ion(G) | vdielec(G)>
+ *
+ * where omega is the cell volume, G is a wavevector, and dng_ion(G) is the
+ * Fourier transform of rho_ion.
+ *
+ * Inputs:
+ *   - vg: the vdielec operator evaluated on the potential (double array)
+ *   - fion: the force on the ions (double array)
+ *
+ * Outputs:
+ *   - fion: the force on the ions (double array)
+ */
 
- iG*dng_ion(ii,G)*vdielec(G)
-
- g*(a.x-ia*y)*(b.x+i*b.y)
-
-*/
 void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
 {
    int nion  = myion->nion;
@@ -604,6 +689,31 @@ void Coulomb12_Operator::dng_ion_vdielec0_fion(const double *vg, double *fion)
  *    Coulomb12_Operator::generate_dng_ion           *
  *                                                   *
  *****************************************************/
+ /*
+ * Function name: Coulomb12_Operator::generate_dng_ion
+ *
+ * Purpose: Generates the dng_ion array, which contains the ionic density
+ *          on the simulation grid. The ionic density is computed as a sum
+ *          of the individual Gaussian densities of the ions in the system.
+ *
+ * Input:
+ *   - none
+ *
+ * Output:
+ *   - dng_ion: double pointer to the array containing the ionic density on
+ *              the simulation grid
+ *
+ * Description:
+ *   This function calculates the ionic density on the simulation grid by
+ *   summing the individual Gaussian densities of the ions in the system. The
+ *   Gaussian density for each ion is calculated using the strfac_pack function
+ *   of the StructureFactor class and then added to the dng_ion array using the
+ *   tcc_pack_aMulAdd function of the Tensor class. The Gaussian density is
+ *   evaluated up to the cutoff radius rcut_ion. The ionic density is then scaled
+ *   by the reciprocal of the volume of the simulation cell and stored in the
+ *   dng_ion array.
+ */
+
 void Coulomb12_Operator::generate_dng_ion(double *dng_ion) 
 {
    int nion = myion->nion;
@@ -868,9 +978,29 @@ double Coulomb12_Operator::v_dielectric2_aperiodic(
  *    Coulomb12_Operator::shortprint_dielectric     *
  *                                                  *
  ****************************************************/
+ /*  The function `std::string Coulomb12_Operator::shortprint_dielectric()` is a 
+     member function of the `Coulomb12_Operator` class. It returns a string that 
+     contains a short summary of the parameters and settings related to the dielectric calculation. 
+
+     The function first checks if the `has_dielec` flag is set to true. If it is, then the function 
+     creates a `stringstream` object named `stream` and writes a header for the dielectric field section.
+
+     It then prints several key parameters related to the dielectric calculation, including whether or 
+     not to relax the dielectric field, whether or not to cube the dielectric field, the dielectric 
+     constant, and if applicable, the Gaussian filter parameters. The function then prints the polarization 
+     model, maximum number of iterations, alpha value, and other related parameters.
+
+     If the `model_pol` is set to 3, then the function also prints additional parameters related to the 
+     sphere model, such as the minimum and maximum radii and the center of the sphere. If `model_pol` is 
+     set to 2, then the function prints the rho0 and beta parameters. If `model_pol` is not equal to 2 or 3, 
+     then the function prints the minimum and maximum rho values.
+
+     Finally, the function returns the `stream` object as a string if `has_dielec` is true, otherwise it 
+     returns an empty string.
+*/
+
 std::string Coulomb12_Operator::shortprint_dielectric()
 {
-
    if (has_dielec){
 
       std::stringstream stream;

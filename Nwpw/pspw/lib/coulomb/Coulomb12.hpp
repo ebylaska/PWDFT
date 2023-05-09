@@ -3,6 +3,28 @@
 
 #pragma once
 
+
+/*
+Coulomb12.hpp
+This file contains the declaration of the Coulomb12_Operator class, which is
+responsible for handling the Coulomb interaction between charged particles
+in a periodic system, taking into account the effects of dielectric screening.
+The Coulomb interaction is split into two parts: the short-range part is
+handled by Coulomb_Operator, and the long-range part is handled by
+Coulomb2_Operator. The Coulomb12_Operator class combines the two and also
+includes the necessary methods for computing the dielectric screening
+contribution.
+
+This class is used in the Plane-Wave Density Functional Theory (PWDFT) code,
+and is part of the pwdft namespace.
+
+Author: Eric J. Bylaska
+Date: 5/9/2023
+*/
+
+
+
+
 #include "Control2.hpp"
 #include "Coulomb.hpp"
 #include "Coulomb2.hpp"

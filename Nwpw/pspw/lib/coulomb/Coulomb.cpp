@@ -1,6 +1,27 @@
-/* Kinetic.C -
+/* Coulomb.cpp -
    Author - Eric Bylaska
 */
+
+/**
+ * class: Coulomb_Operator
+ *
+ * brief: Class for computing the Coulomb operator in electronic structure calculations.
+ *
+ * The Coulomb operator is an integral operator that appears in many electronic
+ * structure methods. This class provides methods to compute the Coulomb operator
+ * and its associated energy, given the density in reciprocal space. The Coulomb
+ * operator is defined as:
+ *
+ *   V(r) = ∫ d³r' ρ(r')/|r - r'|,
+ *
+ * where ρ(r') is the electron density at position r'.
+ *
+ * This class requires a Pneb object to define the grid on which the density is
+ * represented, and a Control2 object to provide some options for the computation.
+ *
+ * author: Eric J. Bylaska
+ * date: 5/9/2023
+ */
 
 /*
 #include        <cstdio>

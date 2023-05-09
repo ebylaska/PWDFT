@@ -1,6 +1,15 @@
-/* Coulomb2.C -
+/* Coulomb2.cpp -
    Author - Eric Bylaska
 */
+/**
+ * The Coulomb2_Operator class computes the Coulomb interaction energy between two charge distributions in three dimensions
+ * using the aperiodic convolution algorithm. The class takes in the positions and charges of the two distributions and
+ * the box size (i.e. the size of the periodic cell) as inputs. The class provides a public method, vcoulomb(),
+ * which returns the Coulomb potential energy of the two distributions.
+ *
+ * Author: Eric J. Bylaska
+ * Date: 5/9/2023
+ */
 
 /*
 #include        <cstdio>
