@@ -8,6 +8,7 @@
 #include "fft.h"
 #include "util.hpp"
 #include <cmath>
+#include <vector>
 
 #include "blas.h"
 
@@ -18,7 +19,8 @@
 
 #include "iofmt.hpp"
 #include <cstring>
-#include <math.h>
+//#include <math.h>
+
 #define mytaskid 1
 
 namespace pwdft {
