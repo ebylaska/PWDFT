@@ -67,7 +67,7 @@ if (NWPW_CUDA)
    message("-- Using cublas, cufft: " ${CUDAToolkit_INCLUDE_DIRS})
    include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
-   add_definitions(-DNWPW_CUDA=1)
+   add_definitions(-DNWPW_CUDA)
    set(MKL_FOUND True)
 endif (NWPW_CUDA)
 
@@ -75,19 +75,23 @@ endif (NWPW_CUDA)
 if (NWPW_HIP)
    message("-- Using NWPW_HIP")
 
+   unset(CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
+
    list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
 
    find_package(hip REQUIRED)
    find_package(rocblas REQUIRED)
    find_package(rocfft REQUIRED)
    set(GPU_TARGETS "gfx906,gfx908,gfx90a" CACHE STRING "GPU targets to compile for")
+   message("-- HIP Architecuture: " ${GPU_TARGETS})
 
    set(ROCBLAS_INCLUDE_DIRS ${ROCM_PATH}/rocblas)
    set(ROCFFT_INCLUDE_DIRS ${ROCM_PATH}/rocfft)
    message("-- Using rocblas, rocfft: " ${ROCBLAS_INCLUDE_DIRS}, ${ROCFFT_INCLUDE_DIRS})
    include_directories(${ROCBLAS_INCLUDE_DIRS} ${ROCFFT_INCLUDE_DIRS})
 
-   add_definitions(-DNWPW_HIP=1)
+   add_definitions(-DNWPW_HIP)
    set(MKL_FOUND True)
 endif (NWPW_HIP)
 
@@ -100,7 +104,7 @@ if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_Fortran_COMPILER_ID}
   #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -m64")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
   set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xhost" CACHE STRING "" FORCE)
- 
+
   #list(APPEND CMAKE_MODULE_PATH "$ENV{MKLROOT}/lib/cmake/mkl")
   set(MKL_DIR "$ENV{MKLROOT}/lib/cmake/mkl")
   find_package(MKL REQUIRED)

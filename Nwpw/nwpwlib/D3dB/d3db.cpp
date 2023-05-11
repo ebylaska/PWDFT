@@ -8,6 +8,7 @@
 #include "fft.h"
 #include "util.hpp"
 #include <cmath>
+#include <vector>
 
 #include "blas.h"
 

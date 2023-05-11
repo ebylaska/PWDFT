@@ -4,9 +4,9 @@
 
 #include "blas.h"
 
-//#include        "gdevice.hpp"
+// #include        "gdevice.hpp"
 
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <rocblas.h>
 #include <rocfft.h>
 
@@ -41,7 +41,7 @@ class rocfft_exception : public std::exception {
   int line_;
   rocfft_status err_code_;
 
-  static const char *_rocfftGetErrorEnum(rocfftResult error) {
+  static const char *_rocfftGetErrorEnum(rocfft_status error) {
     switch (error) {
     case rocfft_status_success:
       return "ROCFFT_STATUS_SUCCESS";
@@ -83,7 +83,7 @@ class rocfft_exception : public std::exception {
   }
 
 public:
-  rocfft_exception(std::string file, int line, rocfftResult err)
+  rocfft_exception(std::string file, int line, rocfft_status err)
       : file_(file), line_(line), err_code_(err) {}
 };
 
@@ -155,17 +155,29 @@ public:
       : file_(file), line_(line), err_code_(err) {}
 };
 
-#define NWPW_HIP_ERROR(ERR)                                                    \
-  if (ERR != hipSuccess)                                                       \
-    throw hip_exception(__FILE__, __LINE__, ERR);
+#define NWPW_HIP_ERROR(CALL)                                                   \
+  do {                                                                         \
+    hipError_t err = CALL;                                                     \
+    if (err != hipSuccess) {                                                   \
+      throw hip_exception(__FILE__, __LINE__, err);                            \
+    }                                                                          \
+  } while (0)
 
-#define NWPW_ROCFFT_ERROR(ERR)                                                 \
-  if (ERR != ROCFFT_SUCCESS)                                                   \
-    throw rocfft_exception(__FILE__, __LINE__, ERR);
+#define NWPW_ROCFFT_ERROR(CALL)                                                \
+  do {                                                                         \
+    rocfft_status err = CALL;                                                  \
+    if (err != rocfft_status_success) {                                        \
+      throw rocfft_exception(__FILE__, __LINE__, err);                         \
+    }                                                                          \
+  } while (0)
 
-#define NWPW_ROCBLAS_ERROR(ERR)                                                \
-  if (ERR != rocblas_status_success)                                           \
-    throw rocblas_exception(__FILE__, __LINE__, ERR);
+#define NWPW_ROCBLAS_ERROR(CALL)                                               \
+  do {                                                                         \
+    rocblas_status err = CALL;                                                 \
+    if (err != rocblas_status_success) {                                       \
+      throw rocblas_exception(__FILE__, __LINE__, err);                        \
+    }                                                                          \
+  } while (0)
 
 /* Gdevices (HIP) object -
 
@@ -187,8 +199,10 @@ public:
 class Gdevices {
 
   rocfft_execution_info pExecInfo = nullptr;
-  rocfft_plan forward_plan_x = nullptr, plan_y = nullptr, plan_z = nullptr;
-  rocfft_plan backward_plan_x = nullptr;
+  rocfft_plan forward_plan_x{nullptr}, forward_plan_y{nullptr},
+      forward_plan_z{nullptr};
+  rocfft_plan backward_plan_x{nullptr}, backward_plan_y{nullptr},
+      backward_plan_z{nullptr};
 
   rocblas_handle master_handle = 0;
   rocblas_operation matT = rocblas_operation_transpose;
@@ -222,6 +236,7 @@ public:
     for (auto i = 0; i < 2; ++i)
       NWPW_HIP_ERROR(hipStreamCreate(&stream[i]));
 
+    NWPW_ROCFFT_ERROR(rocfft_setup());
     NWPW_ROCFFT_ERROR(rocfft_execution_info_create(&pExecInfo));
     NWPW_ROCFFT_ERROR(rocfft_execution_info_set_stream(pExecInfo, stream[0]));
   }
@@ -231,21 +246,17 @@ public:
 
     // free dev_mem
     for (auto i = 0; i < ndev_mem; ++i)
-      NWPW_HIP_ERROR(hipFree(dev_mem[i]));
+      hipFree(dev_mem[i]);
     ndev_mem = 0;
 
     // free hip streams
     for (auto i = 0; i < 2; ++i)
-      NWPW_HIP_ERROR(hipStreamDestroy(stream[i]));
+      hipStreamDestroy(stream[i]);
 
     rocblas_destroy_handle(master_handle);
 
     // free fft descriptors
-    NWPW_ROCFFT_ERROR(rocfft_execution_info_destroy(pExecInfo));
-    // cufftDestroy(forward_plan_x);
-    // cufftDestroy(plan_y);
-    // cufftDestroy(plan_z);
-    // cufftDestroy(backward_plan_x);
+    rocfft_cleanup();
   }
 
   int fetch_dev_mem_indx(const size_t ndsize) {
@@ -266,6 +277,108 @@ public:
 
     NWPW_HIP_ERROR(hipMemset(dev_mem[ii], 0, ndsize * sizeof(double)));
     return ii;
+  }
+
+  /**************************************
+   *                                    *
+   *              TN4_dgemm             *
+   *                                    *
+   **************************************/
+  /* This function computes <host_a|host_a>, <host_a|host_b>, and
+     <host_b|host_b> overlap matrices.
+
+      host_caa = beta*host_caa + alpha*host_a'*host_a
+      host_cab = beta*host_cab + alpha*host_a'*host_b
+      host_cba = beta*host_cba + alpha*host_b'*host_a
+      host_cbb = beta*host_cbb + alpha*host_b'*host_b
+
+     Entry - npack2,ne: matrix size
+             alpha, beta: standard dgemm parameters
+             host_a: (npack2xne) matrix
+             host_b: (npack2xne) matrix
+     Exit - host_caa,host_cab,host_cba,host_cbb: (nexne) matrices
+     Uses - device memory for (npack2xne) matrices ia_psi, and ia_hpsi allocated
+     previously with psi_alloc
+          - temporary device memory for (nexne) matrices ic11, ic12, ic21, and
+     ic22.
+  */
+  void TN4_dgemm(int npack2, int ne, double alpha, double *host_a,
+                 double *host_b, double beta, double *host_caa,
+                 double *host_cab, double *host_cba, double *host_cbb) {
+    int ic11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic21 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+
+    if (std::fabs(beta) > 0.0) {
+      NWPW_HIP_ERROR(hipMemcpy(dev_mem[ic11], host_caa,
+                               ne * ne * sizeof(double),
+                               hipMemcpyHostToDevice));
+      NWPW_HIP_ERROR(hipMemcpy(dev_mem[ic12], host_cab,
+                               ne * ne * sizeof(double),
+                               hipMemcpyHostToDevice));
+      NWPW_HIP_ERROR(hipMemcpy(dev_mem[ic21], host_cba,
+                               ne * ne * sizeof(double),
+                               hipMemcpyHostToDevice));
+      NWPW_HIP_ERROR(hipMemcpy(dev_mem[ic22], host_cbb,
+                               ne * ne * sizeof(double),
+                               hipMemcpyHostToDevice));
+    }
+
+    // copy host_a,host_b --> dev_mem
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+        tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
+        dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+        tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
+        dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
+
+    double beta0 = beta;
+    for (auto tt = 0; tt < tile_fac; ++tt) {
+      int ttp1 = tt + 1;
+      if (ttp1 < tile_fac) {
+        NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+            tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]],
+            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+            stream[ttp1 % 2]));
+        NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+            tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]],
+            npack2, dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
+            stream[ttp1 % 2]));
+      }
+      NWPW_HIP_ERROR(hipStreamSynchronize(stream[tt % 2]));
+      NWPW_ROCBLAS_ERROR(rocblas_dgemm(
+          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
+          tile_npack2[tt], &beta0, dev_mem[ic11], ne));
+      NWPW_ROCBLAS_ERROR(rocblas_dgemm(
+          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
+          tile_npack2[tt], &beta0, dev_mem[ic12], ne));
+      NWPW_ROCBLAS_ERROR(rocblas_dgemm(
+          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+          dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
+          tile_npack2[tt], &beta0, dev_mem[ic21], ne));
+      NWPW_ROCBLAS_ERROR(rocblas_dgemm(
+          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+          dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
+          tile_npack2[tt], &beta0, dev_mem[ic22], ne));
+      beta0 = 1.0;
+    }
+
+    NWPW_HIP_ERROR(hipMemcpy(host_caa, dev_mem[ic11], ne * ne * sizeof(double),
+                             hipMemcpyDeviceToHost));
+    NWPW_HIP_ERROR(hipMemcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double),
+                             hipMemcpyDeviceToHost));
+    NWPW_HIP_ERROR(hipMemcpy(host_cba, dev_mem[ic21], ne * ne * sizeof(double),
+                             hipMemcpyDeviceToHost));
+    NWPW_HIP_ERROR(hipMemcpy(host_cbb, dev_mem[ic22], ne * ne * sizeof(double),
+                             hipMemcpyDeviceToHost));
+
+    inuse[ic11] = false;
+    inuse[ic12] = false;
+    inuse[ic21] = false;
+    inuse[ic22] = false;
   }
 
   /**************************************
@@ -586,6 +699,69 @@ public:
       inuse[ib_prj[1]] = false;
   }
 
+  /**************************************
+   *                                    *
+   *              MM6_dgemm             *
+   *                                    *
+   **************************************/
+  void MM6_dgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
+                 double *host_sa0, double *host_sa1, double *host_st1) {
+    double rzero = 0.0;
+    double rone = 1.0;
+    int i_s21 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input
+    int i_s12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input
+    int i_s11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input
+    int i_sa0 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input
+    int i_st1 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // tmp
+    int i_sa1 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input-output
+
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+        ne, ne, sizeof(double), host_s12, ne, dev_mem[i_s12], ne, stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(
+        ne, ne, sizeof(double), host_s11, ne, dev_mem[i_s11], ne, stream[1]));
+
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix(ne, ne, sizeof(double), host_s21, ne,
+                                          dev_mem[i_s21], ne));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix(ne, ne, sizeof(double), host_sa0, ne,
+                                          dev_mem[i_sa0], ne));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix(ne, ne, sizeof(double), host_s11, ne,
+                                          dev_mem[i_s11], ne));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix(ne, ne, sizeof(double), host_sa1, ne,
+                                          dev_mem[i_sa1], ne));
+
+    // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+    NWPW_ROCBLAS_ERROR(rocblas_dgemm(master_handle, matN, matN, ne, ne, ne,
+                                     &rone, dev_mem[i_s21], ne, dev_mem[i_sa0],
+                                     ne, &rone, dev_mem[i_sa1], ne));
+
+    // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_dgemm(master_handle, matN, matN, ne, ne, ne,
+                                     &rone, dev_mem[i_sa0], ne, dev_mem[i_s12],
+                                     ne, &rone, dev_mem[i_sa1], ne));
+
+    // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[1]));
+    NWPW_ROCBLAS_ERROR(rocblas_dgemm(master_handle, matN, matN, ne, ne, ne,
+                                     &rone, dev_mem[i_s11], ne, dev_mem[i_sa0],
+                                     ne, &rzero, dev_mem[i_st1], ne));
+
+    // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+    NWPW_ROCBLAS_ERROR(rocblas_dgemm(master_handle, matN, matN, ne, ne, ne,
+                                     &rone, dev_mem[i_sa0], ne, dev_mem[i_st1],
+                                     ne, &rone, dev_mem[i_sa1], ne));
+
+    NWPW_ROCBLAS_ERROR(rocblas_get_matrix(ne, ne, sizeof(double),
+                                          dev_mem[i_sa1], ne, host_sa1, ne));
+
+    inuse[i_s21] = false;
+    inuse[i_s12] = false;
+    inuse[i_s11] = false;
+    inuse[i_sa0] = false;
+    inuse[i_st1] = false;
+    inuse[i_sa1] = false;
+  }
+
   /********************/
   /* psi_dev functions*/
   /********************/
@@ -664,27 +840,47 @@ public:
   /* fft functions (uses rocFFT) */
   /*******************************/
   void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-    std::cout << "Into batch_fft_init" << std::endl;
-    NWPW_ROCFFT_ERROR(cufftPlan1d(&forward_plan_x, nx, CUFFT_D2Z, nq1));
-    NWPW_ROCFFT_ERROR(cufftPlan1d(&backward_plan_x, nx, CUFFT_Z2D, nq1));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &forward_plan_x, rocfft_placement_inplace,
+        rocfft_transform_type_real_forward, rocfft_precision_double, (size_t)1,
+        reinterpret_cast<const size_t *>(&nx), (size_t)nq1, nullptr));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &backward_plan_x, rocfft_placement_inplace,
+        rocfft_transform_type_real_inverse, rocfft_precision_double, (size_t)1,
+        reinterpret_cast<const size_t *>(&nx), (size_t)nq1, nullptr));
 
-    int y_inembed[] = {ny};
-    int y_onembed[] = {ny};
-    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_y, 1, &ny, y_inembed, 1, ny,
-                                    y_onembed, 1, ny, CUFFT_Z2Z, nq2));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &forward_plan_y, rocfft_placement_inplace,
+        rocfft_transform_type_complex_forward, rocfft_precision_double,
+        (size_t)1, reinterpret_cast<const size_t *>(&ny), (size_t)nq2,
+        nullptr));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &backward_plan_y, rocfft_placement_inplace,
+        rocfft_transform_type_complex_inverse, rocfft_precision_double,
+        (size_t)1, reinterpret_cast<const size_t *>(&ny), (size_t)nq2,
+        nullptr));
 
-    int z_inembed[] = {nz};
-    int z_onembed[] = {nz};
-    NWPW_ROCFFT_ERROR(cufftPlanMany(&plan_z, 1, &nz, z_inembed, 1, nz,
-                                    z_onembed, 1, nz, CUFFT_Z2Z, nq3));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &forward_plan_z, rocfft_placement_inplace,
+        rocfft_transform_type_complex_forward, rocfft_precision_double,
+        (size_t)1, reinterpret_cast<const size_t *>(&nz), (size_t)nq3,
+        nullptr));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &backward_plan_z, rocfft_placement_inplace,
+        rocfft_transform_type_complex_inverse, rocfft_precision_double,
+        (size_t)1, reinterpret_cast<const size_t *>(&nz), (size_t)nq3,
+        nullptr));
   }
 
   void batch_fft_end() {
     // free fft descriptors
-    cufftDestroy(forward_plan_x);
-    cufftDestroy(plan_y);
-    cufftDestroy(plan_z);
-    cufftDestroy(backward_plan_x);
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_x));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_y));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_z));
+
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_x));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_y));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_z));
 
     // free dev_mem
     for (auto i = 0; i < ndev_mem; ++i)
@@ -699,13 +895,12 @@ public:
 
     if (forward) {
       NWPW_ROCFFT_ERROR(rocfft_execute(
-          forward_plan_x, reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev])));
+          forward_plan_x, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     } else {
       NWPW_ROCFFT_ERROR(rocfft_execute(
-          backward_plan_x,
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
+          backward_plan_x, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     }
 
     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
@@ -720,15 +915,13 @@ public:
                              hipMemcpyHostToDevice));
 
     if (forward) {
-      NWPW_ROCFFT_ERROR(cufftExecZ2Z(
-          plan_y, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_FORWARD));
+      NWPW_ROCFFT_ERROR(rocfft_execute(
+          forward_plan_y, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     } else {
-      NWPW_ROCFFT_ERROR(cufftExecZ2Z(
-          plan_y, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_INVERSE));
+      NWPW_ROCFFT_ERROR(rocfft_execute(
+          backward_plan_y, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     }
 
     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
@@ -743,20 +936,66 @@ public:
                              hipMemcpyHostToDevice));
 
     if (forward) {
-      NWPW_ROCFFT_ERROR(cufftExecZ2Z(
-          plan_z, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_FORWARD));
+      NWPW_ROCFFT_ERROR(rocfft_execute(
+          forward_plan_z, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     } else {
-      NWPW_ROCFFT_ERROR(cufftExecZ2Z(
-          plan_z, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_INVERSE));
+      NWPW_ROCFFT_ERROR(rocfft_execute(
+          backward_plan_z, reinterpret_cast<void **>(&(dev_mem[ia_dev])),
+          nullptr, nullptr));
     }
 
     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
                              hipMemcpyDeviceToHost));
 
     inuse[ia_dev] = false;
+  }
+
+  static void eigsrt_device(double *D, double *V, int n) {
+    int i, j, k;
+    double p;
+
+    for (i = 0; i < (n - 1); ++i) {
+      k = i;
+      p = D[i];
+      for (j = i + 1; j < n; ++j)
+        if (D[j] >= p) {
+          k = j;
+          p = D[j];
+        }
+
+      if (k != i) {
+        D[k] = D[i];
+        D[i] = p;
+        for (j = 0; j < n; ++j) {
+          p = V[j + i * n];
+          V[j + i * n] = V[j + k * n];
+          V[j + k * n] = p;
+        }
+      }
+    }
+  }
+
+  void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
+    int n, ierr;
+    int nn = ne[0] * ne[0] + 14;
+    double xmp1[nn];
+    // double *xmp1 = new (std::nothrow) double[nn]();
+
+    int shift1 = 0;
+    int shift2 = 0;
+    for (int ms = 0; ms < ispin; ++ms) {
+      n = ne[ms];
+
+      // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+      //  d3db::parall->Barrier();
+      EIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, ierr);
+      // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
+      // EIGEN_PWDFT failed!"));
+
+      eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+      shift1 += ne[0];
+      shift2 += ne[0] * ne[0];
+    }
   }
 };
