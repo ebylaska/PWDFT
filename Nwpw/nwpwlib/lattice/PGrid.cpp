@@ -1032,7 +1032,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
     gdevice_batch_cfftz_tmpz_zero(false, nz, nq3, n2ft3d, a, d3db::tmpz,
                                   zero_row3[nb]);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
@@ -1053,7 +1053,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
     gdevice_batch_cffty_tmpy_zero(false, ny, nq2, n2ft3d, a, d3db::tmpy,
                                   zero_row2[nb]);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
@@ -1073,7 +1073,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
      ************************************************/
     gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, d3db::tmpx);
     /*
-    #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+    #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
            gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
     #else
            d3db::cshift1_fftb(nx,nq1,1,1,a);
@@ -1332,7 +1332,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
      ********************************************/
     gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, d3db::tmpx);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
 #else
     indx = 0;
@@ -1353,7 +1353,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
     gdevice_batch_cffty_tmpy_zero(true, ny, nq2, n2ft3d, a, d3db::tmpy,
                                   zero_row2[nb]);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
@@ -1374,7 +1374,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
     gdevice_batch_cfftz_tmpz_zero(true, nz, nq3, n2ft3d, a, d3db::tmpz,
                                   zero_row3[nb]);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
 #else
     indx = 0;

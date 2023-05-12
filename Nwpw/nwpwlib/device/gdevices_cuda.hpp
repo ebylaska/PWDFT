@@ -876,7 +876,6 @@ public:
   /* fft functions (uses cuFFT) */
   /******************************/
   void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-    std::cout << "Into batch_fft_init" << std::endl;
     NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x, nx, CUFFT_D2Z, nq1));
     NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x, nx, CUFFT_Z2D, nq1));
 
@@ -892,7 +891,6 @@ public:
   }
 
   void batch_fft_end() {
-    // free fft descriptors
     cufftDestroy(forward_plan_x);
     cufftDestroy(plan_y);
     cufftDestroy(plan_z);

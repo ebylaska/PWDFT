@@ -10,5 +10,5 @@ endif()
 if(NWPW_HIP)
   target_link_libraries( nwpwlib PUBLIC roc::rocblas )
   target_link_libraries( nwpwlib PUBLIC roc::rocfft )
+  target_link_libraries( nwpwlib PUBLIC roc::rocsolver )
 endif()
-

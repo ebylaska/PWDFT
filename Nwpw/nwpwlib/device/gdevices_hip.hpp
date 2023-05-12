@@ -790,40 +790,39 @@ public:
   /* fft functions (uses rocFFT) */
   /*******************************/
   void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
+    size_t length_nx = (size_t)nx;
+    size_t length_ny = (size_t)ny;
+    size_t length_nz = (size_t)nz;
+
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &forward_plan_x, rocfft_placement_inplace,
         rocfft_transform_type_real_forward, rocfft_precision_double, (size_t)1,
-        reinterpret_cast<const size_t *>(&nx), (size_t)nq1, nullptr));
+        &length_nx, (size_t)nq1, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &backward_plan_x, rocfft_placement_inplace,
         rocfft_transform_type_real_inverse, rocfft_precision_double, (size_t)1,
-        reinterpret_cast<const size_t *>(&nx), (size_t)nq1, nullptr));
+        &length_nx, (size_t)nq1, nullptr));
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &forward_plan_y, rocfft_placement_inplace,
         rocfft_transform_type_complex_forward, rocfft_precision_double,
-        (size_t)1, reinterpret_cast<const size_t *>(&ny), (size_t)nq2,
-        nullptr));
+        (size_t)1, &length_ny, (size_t)nq2, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &backward_plan_y, rocfft_placement_inplace,
         rocfft_transform_type_complex_inverse, rocfft_precision_double,
-        (size_t)1, reinterpret_cast<const size_t *>(&ny), (size_t)nq2,
-        nullptr));
+        (size_t)1, &length_ny, (size_t)nq2, nullptr));
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &forward_plan_z, rocfft_placement_inplace,
         rocfft_transform_type_complex_forward, rocfft_precision_double,
-        (size_t)1, reinterpret_cast<const size_t *>(&nz), (size_t)nq3,
-        nullptr));
+        (size_t)1, &length_nz, (size_t)nq3, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &backward_plan_z, rocfft_placement_inplace,
         rocfft_transform_type_complex_inverse, rocfft_precision_double,
-        (size_t)1, reinterpret_cast<const size_t *>(&nz), (size_t)nq3,
-        nullptr));
+        (size_t)1, &length_nz, (size_t)nq3, nullptr));
   }
 
   void batch_fft_end() {
-    // free fft descriptors
     NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_x));
     NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_y));
     NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_z));

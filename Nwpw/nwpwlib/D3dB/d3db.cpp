@@ -434,7 +434,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny,
   dcffti_(&ny, tmpy);
   dcffti_(&nz, tmpz);
 
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined (NWPW_SYCL) || defined (NWPW_CUDA) || defined(NWPW_HIP)
   gdevice_batch_fft_init(nx, ny, nz, nq1, nq2, nq3);
 #endif
 }
@@ -447,7 +447,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny,
 d3db::~d3db() {
   int i, nb;
 
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   gdevice_batch_fft_end();
 #endif
 
@@ -2450,7 +2450,7 @@ void d3db::cr_fft3d(double *a) {
      ************************************************/
     gdevice_batch_cfftz_tmpz(false, nz, nq3, n2ft3d, a, tmpz);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
@@ -2469,7 +2469,7 @@ void d3db::cr_fft3d(double *a) {
      ************************************************/
     gdevice_batch_cffty_tmpy(false, ny, nq2, n2ft3d, a, tmpy);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
@@ -2488,7 +2488,7 @@ void d3db::cr_fft3d(double *a) {
      ************************************************/
     gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, tmpx);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
 #else
     cshift1_fftb(nx,nq1,1,1,a);
@@ -2714,7 +2714,7 @@ void d3db::rc_fft3d(double *a) {
      ********************************************/
     gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, tmpx);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
 #else
     indx = 0;
@@ -2734,7 +2734,7 @@ void d3db::rc_fft3d(double *a) {
      ********************************************/
     gdevice_batch_cffty_tmpy(true, ny, nq2, n2ft3d, a, tmpy);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
@@ -2753,7 +2753,7 @@ void d3db::rc_fft3d(double *a) {
      ********************************************/
     gdevice_batch_cfftz_tmpz(true, nz, nq3, n2ft3d, a, tmpz);
     /*
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
