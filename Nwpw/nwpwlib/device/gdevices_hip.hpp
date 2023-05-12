@@ -93,58 +93,10 @@ class rocblas_exception : public std::exception {
   int line_;
   rocblas_status err_code_;
 
-  static const char *_rocblasGetErrorEnum(rocblas_status error) {
-    switch (error) {
-    case rocblas_status_success:
-      return "ROCBLAS_STATUS_SUCCESS";
-
-    case rocblas_status_invalid_handle:
-      return "ROCBLAS_STATUS_INVALID_HANDLE";
-
-    case rocblas_status_not_implemented:
-      return "ROCBLAS_STATUS_NOT_IMPLEMENTED";
-
-    case rocblas_status_invalid_pointer:
-      return "ROCBLAS_STATUS_INVALID_POINTER";
-
-    case rocblas_status_invalid_size:
-      return "ROCBLAS_STATUS_INVALID_SIZE";
-
-    case rocblas_status_memory_error:
-      return "ROCBLAS_STATUS_MEMORY_ERROR";
-
-    case rocblas_status_internal_error:
-      return "ROCBLAS_STATUS_INTERNAL_ERROR";
-
-    case rocblas_status_perf_degraded:
-      return "ROCBLAS_STATUS_PERF_DEGRADED";
-
-    case rocblas_status_size_query_mismatch:
-      return "ROCBLAS_STATUS_SIZE_QUERY_MISMATCH";
-
-    case rocblas_status_size_increased:
-      return "ROCBLAS_STATUS_SIZE_INCREASED";
-
-    case rocblas_status_size_unchanged:
-      return "ROCBLAS_STATUS_SIZE_UNCHANGED";
-
-    case rocblas_status_invalid_value:
-      return "ROCBLAS_STATUS_INVALID_VALUE";
-
-    case rocblas_status_continue:
-      return "ROBLAS_STATUS_CONTINUE";
-
-    case rocblas_status_check_numerics_fail:
-      return "ROCBLAS_STATUS_CHECK_NUMERICS_FAIL";
-    }
-
-    return "<unknown>";
-  }
-
   const char *what() const noexcept override {
     std::stringstream ss;
     ss << "rocBLAS Exception, "
-       << " Error Code: " << _rocblasGetErrorEnum(err_code_) << std::endl
+       << " Error Code: " << rocblas_status_to_string(err_code_) << std::endl
        << " at " << file_ << " : " << line_ << std::endl;
     auto msg = ss.str();
     return strdup(msg.c_str());
@@ -227,8 +179,6 @@ public:
   /* constructor */
   Gdevices() {
     ndev_mem = 0;
-
-    std::cout << "Into rocblasCreate" << std::endl;
 
     NWPW_ROCBLAS_ERROR(rocblas_create_handle(&master_handle));
 
