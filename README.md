@@ -160,6 +160,18 @@ make -j
 ```
 </details>
 
+##  Build Instructions for NERSC Perlmutter
+<details>
+<summary>Toggle for Details</summary>
+
+CMake Build/Install
+```
+cmake -H. -Bbuild_cuda -DNWPW_CUDA=ON ./Nwpw -DCMAKE_CUDA_ARCHITECTURES=80 -DCUDA_cublas_LIBRARY=${CRAY_CUDATOOLKIT_DIR}/../../math_libs/${CRAY_CUDATOOLKIT_VERSION#*_}/lib64/libcublas.so -DCUDA_cufft_LIBRARY=${CRAY_CUDATOOLKIT_DIR}/../../math_libs/${CRAY_CUDATOOLKIT_VERSION#*_}/lib64/libcufft.so -DCUDA_cusolver_LIBRARY=${CRAY_CUDATOOLKIT_DIR}/../../math_libs/${CRAY_CUDATOOLKIT_VERSION#*_}/lib64/libcusolver.so
+cd build_cuda
+make
+```
+</details>
+
 ##  Build Instructions on NERSC Cori-Haswell
 
 ### required modules on Cori-Haswell
