@@ -115,7 +115,7 @@ void cpi_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
   while ((w != ((char *)EOF)) && (strcmp("<linear>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d %lf", &nrl, &drl);
+    (void) fscanf(fp, "%d %lf", &nrl, &drl);
     rmax = ((double)(nrl - 1)) * drl;
   }
   fclose(fp);
@@ -135,21 +135,21 @@ void cpi_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
 
   argc = to_eoln(fp);
 
-  fscanf(fp, "%lf %d", &Zion, &lmaxp);
+  (void) fscanf(fp, "%lf %d", &Zion, &lmaxp);
   lmax = lmaxp - 1;
 
-  fscanf(fp, "%lf %lf %lf %lf", &dum1, &dum2, &dum3, &dum4);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
-  fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf %lf", &dum1, &dum2, &dum3, &dum4);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
+  (void) fscanf(fp, "%lf %lf %lf ", &dum1, &dum2, &dum3);
 
-  fscanf(fp, "%d %lf", &Ngrid, &amesh);
+  (void) fscanf(fp, "%d %lf", &Ngrid, &amesh);
   al = log(amesh);
 
   psi = (double *)malloc(Ngrid * sizeof(double));
@@ -161,7 +161,7 @@ void cpi_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
   sc_drho = (double *)malloc(Ngrid * sizeof(double));
 
   for (i = 0; i < Ngrid; ++i) {
-    fscanf(fp, "%d %lf %lf %lf", &j, &r, &ul, &vl);
+    (void) fscanf(fp, "%d %lf %lf %lf", &j, &r, &ul, &vl);
     rgrid[i] = r;
     psi[i] = ul;
     psp[i] = vl;
@@ -204,10 +204,10 @@ void cpi_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
   }
 
   for (p = 1; p < lmaxp; ++p) {
-    fscanf(fp, "%d %lf", &idum, &dum1);
+    (void) fscanf(fp, "%d %lf", &idum, &dum1);
 
     for (i = 0; i < Ngrid; ++i) {
-      fscanf(fp, "%d %lf %lf %lf", &j, &r, &ul, &vl);
+      (void) fscanf(fp, "%d %lf %lf %lf", &j, &r, &ul, &vl);
       rgrid[i] = r;
       psi[i] = ul;
       psp[i] = vl;
@@ -238,7 +238,7 @@ void cpi_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
     sc_rho[0] = ul;
     sc_drho[0] = vl;
     for (i = 1; i < Ngrid; ++i) {
-      fscanf(fp, "%lf   %lf %lf %lf", &r, &ul, &vl, &dum1);
+      (void) fscanf(fp, "%lf   %lf %lf %lf", &r, &ul, &vl, &dum1);
       rgrid[i] = r;
       sc_rho[i] = ul;
       sc_drho[i] = vl;

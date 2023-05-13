@@ -96,12 +96,12 @@ void init_Atom(char *filename) {
   }
 
   /* set the name of the atom */
-  fscanf(fp, "%s", atom_name);
+  (void) fscanf(fp, "%s", atom_name);
 
   /* read in atom info. from the stream */
-  fscanf(fp, "%le", &Zion);
-  fscanf(fp, "%le", &amass);
-  fscanf(fp, "%d %d", &Ncore, &Nvalence);
+  (void) fscanf(fp, "%le", &Zion);
+  (void) fscanf(fp, "%le", &amass);
+  (void) fscanf(fp, "%d %d", &Ncore, &Nvalence);
 
   if (Solver_Type != Dirac && Solver_Type != ZORA) {
     Ncv = Ncore + Nvalence;
@@ -119,7 +119,7 @@ void init_Atom(char *filename) {
     /* set eigenvalue arrays */
     lmax = 0;
     for (i = 0; i < Ncv; ++i) {
-      fscanf(fp, "%d %d %le", &n[i], &l[i], &fill[i]);
+      (void) fscanf(fp, "%d %d %le", &n[i], &l[i], &fill[i]);
       if (l[i] > lmax)
         lmax = l[i];
     }
@@ -157,7 +157,7 @@ void init_Atom(char *filename) {
     lmax = 0;
     ncvh = Ncv / 2;
     for (i = 0; i < ncvh; ++i) {
-      fscanf(fp, "%d %d %le", &nx, &lx, &fillx);
+      (void) fscanf(fp, "%d %d %le", &nx, &lx, &fillx);
       lmax = (lmax > lx) ? lmax : lx;
       n[2 * i] = nx;
       n[2 * i + 1] = nx;

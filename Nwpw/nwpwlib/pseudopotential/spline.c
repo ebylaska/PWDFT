@@ -27,7 +27,7 @@ void init_Linear(char *filename) {
   while ((w != ((char *)EOF)) && (strcmp("<linear>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d %lf", &nrl, &drl);
+    (void) fscanf(fp, "%d %lf", &nrl, &drl);
   }
   fclose(fp);
   nl = (int *)malloc(nrl * sizeof(int));
@@ -37,7 +37,7 @@ void init_Linear(char *filename) {
   while ((w != ((char *)EOF)) && (strcmp("<fixzero>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d", &zeroflag);
+    (void) fscanf(fp, "%d", &zeroflag);
   }
   fclose(fp);
 }

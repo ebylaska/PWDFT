@@ -95,7 +95,7 @@ void teter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_pt
   while ((w != ((char *)EOF)) && (strcmp("<linear>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d %lf", &nrl, &drl);
+    (void) fscanf(fp, "%d %lf", &nrl, &drl);
     rmax = ((double)(nrl - 1)) * drl;
   }
   fclose(fp);
@@ -116,19 +116,19 @@ void teter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_pt
   argc = to_eoln(fp);
   argc = get_line(fp, comment, 255);
 
-  fscanf(fp, "%lf %lf %d", &zatom, &zion, &pspdat);
+  (void) fscanf(fp, "%lf %lf %d", &zatom, &zion, &pspdat);
   argc = to_eoln(fp);
-  fscanf(fp, "%d %d %d %d %d %lf", &pspcode, &pspxc, &lmax, &locp, &Ngrid,
+  (void) fscanf(fp, "%d %d %d %d %d %lf", &pspcode, &pspxc, &lmax, &locp, &Ngrid,
          &r2well);
   lmaxp = lmax + 1;
   argc = to_eoln(fp);
 
   for (p = 0; p <= lmax; ++p) {
-    fscanf(fp, "%d %lf %lf %d %lf", &l, &e99, &e999, &(n[p]), &(rcore[p]));
+    (void) fscanf(fp, "%d %lf %lf %d %lf", &l, &e99, &e999, &(n[p]), &(rcore[p]));
     to_eoln(fp);
     to_eoln(fp);
   }
-  fscanf(fp, "%lf %lf %lf", &rchrg, &fchrg, &qchrg);
+  (void) fscanf(fp, "%lf %lf %lf", &rchrg, &fchrg, &qchrg);
 
   psi = (double *)malloc(Ngrid * sizeof(double));
   psp = (double *)malloc(Ngrid * sizeof(double));
@@ -179,7 +179,7 @@ void teter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_pt
     to_eoln(fp);
     to_eoln(fp);
     for (i = 0; i < Ngrid; ++i)
-      fscanf(fp, "%lf", &(psp[i]));
+      (void) fscanf(fp, "%lf", &(psp[i]));
 
     cpi_Spline(rgrid, psp, Ngrid - 4, 0.0, 0.0, tmp, tmp2);
     pspl[p][0] = psp[280];
@@ -195,7 +195,7 @@ void teter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_pt
     to_eoln(fp);
     to_eoln(fp);
     for (i = 0; i < Ngrid; ++i)
-      fscanf(fp, "%lf", &(psi[i]));
+      (void) fscanf(fp, "%lf", &(psi[i]));
 
     cpi_Spline(rgrid, psi, Ngrid - 4, 0.0, 0.0, tmp, tmp2);
     psil[p][0] = psi[280];

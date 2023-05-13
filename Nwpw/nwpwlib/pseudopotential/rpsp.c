@@ -136,7 +136,7 @@ void init_RelPsp(char *filename)
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%d", &ltmp);
+      (void) sscanf(w, "%d", &ltmp);
       w = get_word(fp);
       Nvalence = 2 * ltmp + 2;
     }
@@ -152,9 +152,9 @@ void init_RelPsp(char *filename)
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%d", &ltmp);
+      (void) sscanf(w, "%d", &ltmp);
       w = get_word(fp);
-      sscanf(w, "%lf", &rctmp);
+      (void) sscanf(w, "%lf", &rctmp);
       w = get_word(fp);
       rcut[2 * ltmp] = rctmp;
       rcut[2 * ltmp + 1] = rctmp;
@@ -171,9 +171,9 @@ void init_RelPsp(char *filename)
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%d", &ltmp);
+      (void) sscanf(w, "%d", &ltmp);
       w = get_word(fp);
-      sscanf(w, "%lf", &rctmp);
+      (void) sscanf(w, "%lf", &rctmp);
       w = get_word(fp);
       eigenvalue[2 * ltmp] = rctmp;
       eigenvalue[2 * ltmp + 1] = rctmp;
@@ -191,7 +191,7 @@ void init_RelPsp(char *filename)
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%lf", &rctmp);
+      (void) sscanf(w, "%lf", &rctmp);
       w = get_word(fp);
       r_semicore = rctmp;
     }
