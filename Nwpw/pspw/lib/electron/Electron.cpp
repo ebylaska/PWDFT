@@ -153,7 +153,7 @@ void Electron_Operators::gen_scf_potentials(double *dn, double *dng, double *dna
    if (periodic)
    {
       mycoulomb12->mycoulomb1->vcoulomb(dng, vc);
-      std::memcpy(vcall,vc,n2ft3d*sizeof(double));
+      mygrid->cc_pack_copy(0,vc,vcall);
    }
 
    if (aperiodic)
