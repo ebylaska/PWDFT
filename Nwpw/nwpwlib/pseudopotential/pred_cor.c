@@ -37,9 +37,8 @@ Corrector_In
    Exit  - returns the value of y[?] + F(....)
 */
 
-double Predictor_In(i, y, f)
-int i;
-double y[], f[];
+//double Predictor_In(i, y, f)
+double Predictor_In(const int i, const double y[], const double f[])
 {
 
   double tmp;
@@ -75,9 +74,8 @@ double y[], f[];
 
 */
 
-double Predictor_Out(i, y, f)
-int i;
-double y[], f[];
+//double Predictor_Out(i, y, f)
+double Predictor_Out(const int i, const double y[], const double f[])
 {
 
   double tmp;
@@ -114,9 +112,8 @@ double y[], f[];
 
 */
 
-double Corrector_In(i, y, f)
-int i;
-double y[], f[];
+//double Corrector_In(i, y, f)
+double Corrector_In(const int i, const double y[], const double f[])
 {
 
   double tmp;
@@ -153,9 +150,8 @@ double y[], f[];
 
 */
 
-double Corrector_In_F(i, f)
-int i;
-double f[];
+//double Corrector_In_F(i, f)
+double Corrector_In_F(const int i, const double f[])
 {
 
   double tmp;
@@ -192,9 +188,8 @@ double f[];
 
 */
 
-double Corrector_Out(i, y, f)
-int i;
-double y[], f[];
+//double Corrector_Out(i, y, f)
+double Corrector_Out(const int i, const double y[], const double f[])
 {
 
   double tmp;
@@ -226,9 +221,8 @@ double y[], f[];
 
 */
 
-double Derivative7_1(i, f)
-int i;
-double f[];
+//double Derivative7_1(i, f)
+double Derivative7_1(const int i, const double f[])
 {
 
   double tmp;
@@ -253,9 +247,8 @@ double f[];
 
 */
 
-double Derivative7_2(i, f)
-int i;
-double f[];
+//double Derivative7_2(i, f)
+double Derivative7_2(const int i, const double f[])
 {
 
   double tmp;
@@ -280,9 +273,8 @@ double f[];
 
 */
 
-double Derivative7_3(i, f)
-int i;
-double f[];
+//double Derivative7_3(i, f)
+double Derivative7_3(const int i, const double f[])
 {
 
   double tmp;
@@ -307,9 +299,8 @@ double f[];
 
 */
 
-double Derivative7_4(i, f)
-int i;
-double f[];
+//double Derivative7_4(i, f)
+double Derivative7_4(const int i, const double f[])
 {
 
   double tmp;
@@ -334,9 +325,8 @@ double f[];
 
 */
 
-double Derivative7_5(i, f)
-int i;
-double f[];
+//double Derivative7_5(i, f)
+double Derivative7_5(const int i, const double f[])
 {
 
   double tmp;
@@ -361,9 +351,8 @@ double f[];
 
 */
 
-double Derivative7_6(i, f)
-int i;
-double f[];
+//double Derivative7_6(i, f)
+double Derivative7_6(const int i, const double f[])
 {
 
   double tmp;
@@ -387,9 +376,8 @@ double f[];
 
 */
 
-double Derivative7_7(i, f)
-int i;
-double f[];
+//double Derivative7_7(i, f)
+double Derivative7_7(const int i, const double f[])
 {
 
   double tmp;
@@ -413,9 +401,8 @@ double f[];
 
 */
 
-double Laplacian7_4(i, f)
-int i;
-double f[];
+//double Laplacian7_4(i, f)
+double Laplacian7_4(const int i, const double f[])
 {
 
   double tmp;
@@ -440,9 +427,8 @@ double f[];
 
 */
 
-double Derivative5_1(i, f)
-int i;
-double f[];
+//double Derivative5_1(i, f)
+double Derivative5_1(const int i, const double f[])
 {
 
   double tmp;
@@ -467,9 +453,8 @@ double f[];
 
 */
 
-double Derivative5_2(i, f)
-int i;
-double f[];
+//double Derivative5_2(i, f)
+double Derivative5_2(const int i, const double f[])
 {
 
   double tmp;
@@ -494,9 +479,8 @@ double f[];
 
 */
 
-double Derivative5_3(i, f)
-int i;
-double f[];
+//double Derivative5_3(i, f)
+double Derivative5_3(const int i, const double f[])
 {
 
   double tmp;
@@ -522,9 +506,8 @@ double f[];
 
 */
 
-double Derivative5_4(i, f)
-int i;
-double f[];
+//double Derivative5_4(i, f)
+double Derivative5_4(const int i, const double f[])
 {
 
   double tmp;
@@ -549,9 +532,8 @@ double f[];
 
 */
 
-double Derivative5_5(i, f)
-int i;
-double f[];
+//double Derivative5_5(i, f)
+double Derivative5_5(const int i, const double f[])
 {
 
   double tmp;

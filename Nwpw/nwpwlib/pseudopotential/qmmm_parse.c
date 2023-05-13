@@ -9,22 +9,11 @@
 //#include "typesf2c.h"
 #include "get_word.h"
 
-void qmmm_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
-                dir_name, n0, in_filename, n1, out_filename, n2, atom,
-                n3) int *debug_ptr;
-int *lmax_ptr;
-int *locp_ptr;
-double *rlocal_ptr;
-char sdir_name[];
-int *n9;
-char dir_name[];
-int *n0;
-char in_filename[];
-int *n1;
-char out_filename[];
-int *n2;
-char atom[];
-int *n3;
+//void qmmm_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
+//                dir_name, n0, in_filename, n1, out_filename, n2, atom, n3) 
+void qmmm_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
+                char sdir_name[], int *n9, char dir_name[], int *n0,
+                char in_filename[], int *n1, char out_filename[], int *n2, char atom[], int *n3)
 {
 
   int debug;

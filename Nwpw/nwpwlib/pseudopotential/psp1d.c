@@ -530,9 +530,7 @@ char *solver_Name_Psp() {
   return s;
 }
 
-void print_Psp(fp)
-
-    FILE *fp;
+void print_Psp(FILE *fp)
 {
   int i;
 
@@ -600,12 +598,12 @@ void print_Psp(fp)
 } /* print_Atom */
 
 /********************************
- *				*
+ *                               *
  * set_(solver parameters)_Atom	*
- *				*
+ *                               *
  ********************************/
 
-void set_Solver_Psp(solver) int solver;
+void set_Solver_Psp(int solver) 
 { Solver_Type = solver; }
 
 int Vanderbilt_Psp() {

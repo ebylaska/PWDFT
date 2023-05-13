@@ -79,7 +79,8 @@ void paw_init_atom(char *atom, char *infile) {
   paw_init_vosko();
 
   /*initialize potential*/
-  paw_init_potential(Zion);
+  //paw_init_potential(Zion);
+  paw_init_potential();
 
   /*initialize orbitals*/
   paw_init_orbitals_from_file(fp);

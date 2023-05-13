@@ -18,22 +18,10 @@
  **/
 #include "rpspsolve.inc"
 
-void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, efg_ptr,
-              sdir_name, n9, dir_name, n0, in_filename, n1, out_filename,
-              n2) int *print_ptr;
-int *debug_ptr;
-int *lmax_ptr;
-int *locp_ptr;
-double *rlocal_ptr;
-int *efg_ptr;
-char sdir_name[];
-int *n9;
-char dir_name[];
-int *n0;
-char in_filename[];
-int *n1;
-char out_filename[];
-int *n2;
+//void pspsolve(print_ptr, debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, efg_ptr,
+//              sdir_name, n9, dir_name, n0, in_filename, n1, out_filename, n2) 
+void pspsolve(int *print_ptr, int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr, int *efg_ptr,
+              char sdir_name[], int *n9, char dir_name[], int *n0, char in_filename[], int *n1, char out_filename[], int *n2)
 {
 
   int i, j, k, l, p, Nlinear, Nvalence, Ncore, istate, mch, kb_extra;

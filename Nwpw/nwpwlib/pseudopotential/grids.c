@@ -28,12 +28,12 @@ static Grids_List_Type using_grids_list;
 static Grids_List_Type unused_grids_stack;
 
 /********************************
- *				*
- *         init_Grids		*
- *				*
+ *	                             *
+ *         init_Grids           *
+ *	                             *
  ********************************/
 
-void init_Grids(Np) int Np;
+void init_Grids(int Np)
 {
   Ngrid_points = Np;
   using_grids_list = NIL;
@@ -42,11 +42,12 @@ void init_Grids(Np) int Np;
 } /* init_Grids */
 
 /********************************
- *				*
- *        end_Grids		*
- *				*
+ *                              *
+ *        end_Grids             *
+ *                              *
  ********************************/
-void end_Grids() {
+void end_Grids(void) 
+{
   Grids_List_Type node;
 
   while (using_grids_list != NIL) {
@@ -68,7 +69,7 @@ void end_Grids() {
  *				*
  ********************************/
 
-double *alloc_Grid() {
+double *alloc_Grid(void) {
   double *grid_return;
   Grids_List_Type node;
 
@@ -94,9 +95,9 @@ double *alloc_Grid() {
 } /* alloc_Grid */
 
 /********************************
- *				*
- *      dealloc_Grid		*
- *				*
+ *                              *
+ *      dealloc_Grid            *
+ *                              *
  ********************************/
 
 void dealloc_Grid(double *grid) {
@@ -119,11 +120,11 @@ void dealloc_Grid(double *grid) {
   /* error: grid not found */
   if (!done) {
     printf("Error in dealloc_Grid: grid not found\n");
-    printf("              address: %lx\n", grid);
+    printf("              address: %lx\n", (unsigned long) grid);
     cur = using_grids_list;
     printf("Address List:");
     while (cur != NIL) {
-      printf("%lx ", cur->grid);
+      printf("%lx ", (unsigned long) cur->grid);
       cur = cur->next;
     }
     printf("\n");

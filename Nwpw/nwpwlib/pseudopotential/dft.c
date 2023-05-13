@@ -160,7 +160,8 @@ void R_Screening_Cut(double *Vx) {
   }
 }
 
-void R_Exchange_DFT(double *rho, double *Vx, double *Ex, double *Px) {
+void R_Exchange_DFT(double *rho, double *Vx, double *Ex, double *Px) 
+{
   int k, Ngrid;
 
   if (Exchange_Type == Exchange_Dirac)

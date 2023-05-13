@@ -13,9 +13,9 @@
 #include <stdio.h>
 
 /********************************
- *				*
- *         R_revPBE_Exchange	*
- *				*
+ *	                             *
+ *      R_revPBE_Exchange       *
+ *	                             *
  ********************************/
 
 /* this routine calculates the PBE
@@ -27,10 +27,8 @@
            Px[]:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_revPBE_Exchange(rho, Vx, Ex, Px)
-
-    double rho[],
-    Vx[], *Ex, *Px;
+//void R_revPBE_Exchange(rho, Vx, Ex, Px)
+void R_revPBE_Exchange(double rho[], double Vx[], double  *Ex, double *Px)
 {
   int i;
   double mu, kappa;

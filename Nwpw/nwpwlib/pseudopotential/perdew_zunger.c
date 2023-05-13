@@ -29,9 +29,9 @@
 #define small_number 1.0e-80
 
 /********************************
- *				*
+ *	                             *
  *   correlation_perdew_zunger  *
- *				*
+ *	                             *
  ********************************/
 
 /* this routine calculates the spin
@@ -44,10 +44,8 @@
            Pc:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_Perdew_Zunger(rho, Vc, Ec, Pc)
-
-    double rho[],
-    Vc[], *Ec, *Pc;
+//void R_Perdew_Zunger(rho, Vc, Ec, Pc)
+void R_Perdew_Zunger(double rho[], double Vc[], double *Ec, double *Pc)
 {
   int i;
   double onethird, fourthird, twothird;

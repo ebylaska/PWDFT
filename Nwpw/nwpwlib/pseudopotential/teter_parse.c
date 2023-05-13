@@ -9,26 +9,16 @@
 //#include "typesf2c.h"
 #include "get_word.h"
 
-extern double tetercc();
-extern double cpi_Splint();
-extern void cpi_Spline();
+extern double tetercc(double);
+extern double cpi_Splint(double [], double [], double [], int, int, double);
+extern void cpi_Spline(double [], double [], int, double, double, double [], double []);
 
-void teter_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
-                 dir_name, n0, in_filename, n1, out_filename, n2, atom,
-                 n3) int *debug_ptr;
-int *lmax_ptr;
-int *locp_ptr;
-double *rlocal_ptr;
-char sdir_name[];
-int *n9;
-char dir_name[];
-int *n0;
-char in_filename[];
-int *n1;
-char out_filename[];
-int *n2;
-char atom[];
-int *n3;
+//void teter_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
+//                 dir_name, n0, in_filename, n1, out_filename, n2, atom,
+//                 n3) 
+void teter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
+                 char sdir_name[], int *n9, char dir_name[], int *n0,
+                 char in_filename[], int *n1, char out_filename[], int *n2, char atom[], int *n3)
 {
 
   int debug;
@@ -351,7 +341,8 @@ int *n3;
 
 } /* main */
 
-double tetercc(double xx) {
+double tetercc(double xx) 
+{
 
   /*The c s are coefficients for Taylor expansion of the analytic form near
    * xx=0, 1/2, and 1. */

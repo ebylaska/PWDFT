@@ -60,12 +60,12 @@ static double *q;
 static int Solver_Type = Hamann;
 
 /********************************
- *				*
- *	  init_RelPsp 		*
- *				*
+ *	                             *
+ *	         init_RelPsp         *
+ *	                             *
  ********************************/
-
-void init_RelPsp(char *filename) {
+void init_RelPsp(char *filename) 
+{
   int p, p1, p2;
   int ltmp, semicore_type;
   double rctmp;
@@ -355,12 +355,12 @@ void print_RelPsp(FILE *fp) {
 } /* print_Atom */
 
 /********************************
- *				*
- * set_(solver parameters)_Atom	*
- *				*
+ *                              *
+ * set_(solver parameters)_Atom *
+ *                              *
  ********************************/
 
-void set_Solver_RelPsp(solver) int solver;
+void set_Solver_RelPsp(int solver)
 {
   Solver_Type = solver;
   fprintf(stdout, " RelPsp:: Only Hamann or TM Solver is available\n");

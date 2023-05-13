@@ -29,8 +29,7 @@
 
 */
 
-double R_Hartree(n, charge, Vh)
-double n[], charge, Vh[];
+double R_Hartree(double n[], double charge, double Vh[])
 {
   int i, Ngrid;
   double log_amesh;

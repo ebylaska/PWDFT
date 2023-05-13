@@ -245,13 +245,12 @@ void end_Atom() {
 }
 
 /********************************
- *				*
- *        Thomas_Fermi		*
- *				*
+ *                              *
+ *        Thomas_Fermi          *
+ *                              *
  ********************************/
 
-void Thomas_Fermi(Z, Vtmp) double Z;
-double Vtmp[];
+void Thomas_Fermi(double Z, double Vtmp[]) 
 {
   int i, Ngrid;
   double *rgrid, x, t;
@@ -271,12 +270,13 @@ double Vtmp[];
 } /* Thomas_Fermi */
 
 /********************************
- *				*
- *	   solve_Atom		*
- *				*
+ *                              *
+ *	        solve_Atom		     *
+ *                              *
  ********************************/
 
-void solve_Atom() {
+void solve_Atom() 
+{
   int i, k, Ngrid;
   int it, converged, sz;
   double Etmp, echarge, Z;
@@ -615,19 +615,18 @@ void print_Atom(FILE *fp) {
 
 } /* print_Atom */
 
-/********************************
- *				*
+/*********************************
+ *                               *
  * set_(solver parameters)_Atom	*
- *				*
+ *                               *
  ********************************/
+void set_Solver_Atom(int solver) { Solver_Type = solver; }
 
-void set_Solver_Atom(solver) int solver;
-{ Solver_Type = solver; }
 
 /********************************
- *				*
- *	      E_Atom 		*
- *				*
+ *				                    *
+ *	          E_Atom             *
+ *				                    *
  ********************************/
 
 double E_Atom() { return Total_E; } /*E_Atom */

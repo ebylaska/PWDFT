@@ -56,7 +56,7 @@ static double *rgrid;
    Entry - Z:    charge of the system
 */
 
-void init_LogGrid(Z) double Z;
+void init_LogGrid(double Z)
 {
   int i;
 
@@ -87,9 +87,10 @@ void init_LogGrid(Z) double Z;
  *         end_LogGrid          *
  *                              *
  ********************************/
-void end_LogGrid() {
-  dealloc_Grid(rgrid);
-  end_Grids();
+void end_LogGrid() 
+{
+   dealloc_Grid(rgrid);
+   end_Grids();
 }
 
 /********************************
@@ -101,12 +102,13 @@ void end_LogGrid() {
 /* returns the pointer to a loggrid array.
 
 */
-double *alloc_LogGrid() {
-  double *tt;
-
-  tt = alloc_Grid();
-  Zero_LogGrid(tt);
-  return tt;
+double *alloc_LogGrid(void) 
+{
+   double *tt;
+ 
+   tt = alloc_Grid();
+   Zero_LogGrid(tt);
+   return tt;
 
 } /* alloc_LogGrid */
 
@@ -119,7 +121,7 @@ double *alloc_LogGrid() {
 /* deallocates the LogGrid array
 
 */
-void dealloc_LogGrid(grid) double *grid;
+void dealloc_LogGrid(double *grid)
 { dealloc_Grid(grid); } /* dealloc_LogGrid */
 
 /********************************
@@ -131,7 +133,7 @@ void dealloc_LogGrid(grid) double *grid;
 /* returns the pointer to the rgrid array.
 
 */
-double *r_LogGrid() { return rgrid; } /* r_LogGrid */
+double *r_LogGrid(void) { return rgrid; } /* r_LogGrid */
 
 /********************************
  *                              *
@@ -142,8 +144,7 @@ double *r_LogGrid() { return rgrid; } /* r_LogGrid */
 /* returns the pointer to the rgrid array.
 
 */
-int index_r_LogGrid(r)
-double r;
+int index_r_LogGrid(double r)
 {
   int index;
 
@@ -162,7 +163,7 @@ double r;
 
 */
 
-int N_LogGrid() { return N; } /* N_LogGrid */
+int N_LogGrid(void) { return N; } /* N_LogGrid */
 
 /********************************
  *                              *
@@ -174,7 +175,7 @@ int N_LogGrid() { return N; } /* N_LogGrid */
 
 */
 
-double log_amesh_LogGrid() { return log_amesh; } /* log_amesh_LogGrid */
+double log_amesh_LogGrid(void) { return log_amesh; } /* log_amesh_LogGrid */
 
 /********************************
  *                              *
@@ -186,16 +187,15 @@ double log_amesh_LogGrid() { return log_amesh; } /* log_amesh_LogGrid */
 
 */
 
-double amesh_LogGrid() { return (amesh); } /* amesh_LogGrid */
+double amesh_LogGrid(void) { return (amesh); } /* amesh_LogGrid */
 
 /********************************
- *				*
+ *				                    *
  *      Integrate_LogGrid       *
- *				*
+ *		                    		*
  ********************************/
 
-double Integrate_LogGrid(f)
-double f[];
+double Integrate_LogGrid(double f[])
 {
   int i;
   double sum;
@@ -219,9 +219,9 @@ double f[];
 }
 
 /********************************
- *				*
+ *	                             *
  *  Integrate_LogGrid_na_nb     *
- *				*
+ *                              *
  ********************************/
 
 double Integrate_LogGrid_na_nb(int na, int nb, double f[]) {
@@ -244,12 +244,12 @@ double Integrate_LogGrid_na_nb(int na, int nb, double f[]) {
 }
 
 /********************************
- *				*
- *         Zero_LogGrid		*
- *				*
+ *                              *
+ *         Zero_LogGrid         *
+ *                              *
  ********************************/
 
-void Zero_LogGrid(grid) double *grid;
+void Zero_LogGrid(double *grid)
 {
   int i;
 
@@ -259,15 +259,12 @@ void Zero_LogGrid(grid) double *grid;
 } /* Zero_LogGrid */
 
 /********************************
- *				*
- *       Copy_LogGrid		*
- *				*
+ *                              *
+ *       Copy_LogGrid           *
+ *                              *
  ********************************/
 
-void Copy_LogGrid(gridnew, gridold)
-
-    double *gridnew,
-    *gridold;
+void Copy_LogGrid(double *gridnew, double *gridold)
 {
   int i;
   for (i = 0; i < N; ++i)
@@ -275,9 +272,9 @@ void Copy_LogGrid(gridnew, gridold)
 }
 
 /**********************************
- *				  *
- *       Norm_LogGrid 	   	  *
- *				  *
+ *				                      *
+ *       Norm_LogGrid 	   	   *
+ *				                      *
  **********************************/
 
 /* This routine calculates the Norm
@@ -287,10 +284,7 @@ void Copy_LogGrid(gridnew, gridold)
    and approaches zero as r**(2*gamma)
 
 */
-double Norm_LogGrid(M, gamma, u)
-int M;
-double gamma;
-double u[];
+double Norm_LogGrid(int M, double gamma, double u[])
 {
   int i;
   double r0, sum;
@@ -312,9 +306,9 @@ double u[];
 } /* Norm_LogGrid */
 
 /**********************************
- *				  *
- *       Integrate2_LogGrid 	  *
- *				  *
+ *				                      *
+ *       Integrate2_LogGrid 	    *
+ *				                      *
  **********************************/
 
 /* This routine calculates the integral fo function f,
@@ -322,10 +316,7 @@ double u[];
    like an exponential as r-> infinity
 
 */
-double Integrate2_LogGrid(M, nu, f)
-int M;
-double nu;
-double f[];
+double Integrate2_LogGrid(int M, int nu, double f[])
 {
   int i;
   double r0, sum;
@@ -346,15 +337,12 @@ double f[];
 } /* Integrate2_LogGrid */
 
 /********************************
- *				*
- *       Derivative_LogGrid	*
- *				*
+ *	                             *
+ *       Derivative_LogGrid     *
+ *                              *
  ********************************/
 
-void Derivative_LogGrid(f, df)
-
-    double f[],
-    df[];
+void Derivative_LogGrid(const double f[], double df[])
 {
   int i;
 
@@ -367,6 +355,7 @@ void Derivative_LogGrid(f, df)
   df[N - 1] = Derivative5_5(N - 1, f) / (log_amesh * rgrid[N - 1]);
 
 } /* Derivative_LogGrid */
+
 
 void Plot_LogGrid(char *name, double *f) {
   int i;

@@ -24,10 +24,10 @@
 #include "vosko.h"
 
 extern void init_DFT(char *);
-extern double R_Hartree_DFT();
-extern void R_Exchange_DFT();
-extern void R_Correlation_DFT();
-extern void R_Screening_Cut();
+extern double R_Hartree_DFT(double *, double, double *);
+extern void R_Exchange_DFT(double *, double *, double *, double *);
+extern void R_Correlation_DFT(double *, double *, double *, double *);
+extern void R_Screening_Cut(double *);
 
 /* Hartree type: Hartree_Type */
 #define Hartree_On -8101
@@ -50,12 +50,12 @@ extern void R_Screening_Cut();
 #define Correlation_Off -8307
 
 /* used for setting solver parameters */
-extern void set_Hartree_DFT();
-extern void set_Exchange_DFT();
-extern void set_Correlation_DFT();
+extern void set_Hartree_DFT(int);
+extern void set_Exchange_DFT(int);
+extern void set_Correlation_DFT(int);
 
-extern char *hartree_Name_DFT();
-extern char *exchange_Name_DFT();
-extern char *correlation_Name_DFT();
+extern char *hartree_Name_DFT(void);
+extern char *exchange_Name_DFT(void);
+extern char *correlation_Name_DFT(void);
 
 #endif
