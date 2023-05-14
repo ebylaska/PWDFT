@@ -199,7 +199,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
          rtdbjson["nwpw"]["initial_psi_random_algorithm"];
  
    /* qsize */
-   pqsize = 5;
+   pqsize = 10;
    if (rtdbjson["nwpw"]["pfft3_qsize"].is_number_integer())
      pqsize = rtdbjson["nwpw"]["pfft3_qsize"];
  

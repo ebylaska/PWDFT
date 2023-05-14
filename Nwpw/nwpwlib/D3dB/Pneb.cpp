@@ -28,8 +28,7 @@ namespace pwdft {
 //   : PGrid(inparall, inlattice, control),
 //     d1db(inparall,control.mapping1d(),ispin,ne)
 
-Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
-           int *ne)
+Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin, int *ne)
     : d1db(inparall, control.mapping1d(), ispin, ne),
       PGrid(inparall, inlattice, control) {
 

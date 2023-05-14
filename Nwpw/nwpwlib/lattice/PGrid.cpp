@@ -469,23 +469,25 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   }
 
   /* initialize pfft3 queues */
-  aqmax = pfft3_qsize0;
+  //aqmax = pfft3_qsize0;
+  aqmax = 11;
   aqsize = 0;
   alast_index = aqmax - 1;
   aqindx = new (std::nothrow) int[aqmax]();
   aqstatus = new (std::nothrow) int[aqmax]();
-  atmp = new (std::nothrow) double[2 * aqmax * n2ft3d]();
+  atmp = new (std::nothrow) double[2*aqmax * n2ft3d]();
 
-  bqmax = pfft3_qsize0;
+  //bqmax = pfft3_qsize0;
+  bqmax = 10;
   bqsize = 0;
   blast_index = bqmax - 1;
   bqindx = new (std::nothrow) int[bqmax]();
   bqstatus = new (std::nothrow) int[bqmax]();
-  btmp = new (std::nothrow) double[2 * bqmax * n2ft3d]();
+  btmp = new (std::nothrow) double[2*bqmax * n2ft3d]();
 
   /* initialize async buffer data for pfft */
-  for (auto q = 0; q < aqmax; ++q)
-    parall->astart(3 + q, 2 * parall->np_i() + 1);
+  for (auto q=0; q<aqmax; ++q)
+    parall->astart(3+q, 2*parall->np_i()+1);
 }
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2 &control)
@@ -494,7 +496,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2 &control)
             control.pfft3_qsize()) {}
 
 /********************************
- *                              *
+ *                     8        *
  *       PGrid:c_unpack         *
  *                              *
  ********************************/
@@ -1734,31 +1736,65 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx) {
  *                              *
  ********************************/
 void PGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1,
-                       double *tmp2, const int request_indx) {
-  if (step == 0) {
-    // parall->astart(request_indx,parall->np_i());
+                       double *tmp2, const int request_indx) 
+{
+   std::cout << "bstep=" << step << std::endl;
+   if (step==0) 
+   {
+      // parall->astart(request_indx,parall->np_i());
+  
+      // unpack start, tmp1-->tmp1
+      std::memcpy(tmp1, a, 2 * (nida[nb] + nidb[nb]) * sizeof(double));
+      this->c_unpack_start(nb, tmp1, tmp2, request_indx, 47);
+   } 
+   else if (step==1) 
+   {
+      // unpack mid
+      this->c_unpack_mid(nb, tmp1, tmp2, request_indx, 48);
+   } 
+   else if (step==2) 
+   {
+      // unpack end; mem-->dev,  out=tmp1
+      this->c_unpack_end(nb, tmp1, tmp2, request_indx);
+   } 
 
-    // unpack start, tmp1-->tmp1
-    std::memcpy(tmp1, a, 2 * (nida[nb] + nidb[nb]) * sizeof(double));
-    this->c_unpack_start(nb, tmp1, tmp2, request_indx, 47);
-  } else if (step == 1) {
-    // unpack mid
-    this->c_unpack_mid(nb, tmp1, tmp2, request_indx, 48);
-  } else if (step == 2) {
-    // unpack end; mem-->dev,  out=tmp1
-    this->c_unpack_end(nb, tmp1, tmp2, request_indx);
-  } else if (step == 3) {
-    // pfftbz dev-->dev->mem,  tmp1->tmp1
-    this->pfftbz(nb, tmp1, tmp2, request_indx);
-  } else if (step == 4) {
-    // pfftby mem->dev-->dev->mem
-    // in=tmp1, tmp2->tmp1, tmp1=in , tmp2=tmp
-    pfftby(nb, tmp1, tmp2, request_indx);
-  } else if (step == 5) {
-    // pfftbx mem->dev->dev->mem
-    pfftbx(nb, tmp1, tmp2, request_indx);
-    // parall->aend(request_indx);
-  }
+   else if (step==3) 
+   {
+      // pfftbz dev-->dev->mem,  tmp1->tmp1
+      this->pfftbz(nb, tmp1, tmp2, request_indx);
+   } 
+   else if (step==4) 
+   {
+   }
+   else if (step==5) 
+   {
+   }
+
+   else if (step==6) 
+   {
+      // pfftby mem->dev-->dev->mem
+      // in=tmp1, tmp2->tmp1, tmp1=in , tmp2=tmp
+      pfftby(nb, tmp1, tmp2, request_indx);
+   } 
+   else if (step==7) 
+   {
+   }
+   else if (step==8) 
+   {
+   }
+
+   else if (step==9) 
+   {
+      // pfftbx mem->dev->dev->mem
+      pfftbx(nb, tmp1, tmp2, request_indx);
+      // parall->aend(request_indx);
+   }
+   else if (step==10) 
+   {
+   } 
+   else if (step==11) 
+   {
+   }
 }
 
 /********************************
@@ -1802,7 +1838,7 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a) {
   int shift1, shift2;
   int indx1 = aqindx[0];
 
-  while (aqstatus[indx1] < 5) {
+  while (aqstatus[indx1] < 11) {
 
     for (auto q = 0; q < aqsize; ++q) {
       int indx = aqindx[q];
@@ -2113,23 +2149,54 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx) {
 void PGrid::pfftf_step(const int step, const int nb, double *a, double *tmp1,
                        double *tmp2, int request_indx) 
 {
+   std::cout << "fstep=" << step << std::endl;
    if (step==0) 
    {
-     // pfftfx mem-->device, in=a out=tmp2
-     pfftfx(nb, a, tmp1, tmp2, request_indx);
+      // zeroth fftx step
+      // pfftfx mem-->device, in=a out=tmp2
+      pfftfx(nb, a, tmp1, tmp2, request_indx);
    } 
    else if (step==1) 
    {
+      // first fftx step
+   }
+   else if (step==2) 
+   {
+      // second fftx step
+   }
+
+   else if (step==3) 
+   {
+      // zeroth ffty step
       // pfftfy device, in=tmp1
       pfftfy(nb, tmp1, tmp2, request_indx);
    } 
-   else if (step==2) 
+   else if (step==4) 
    {
+      // first ffty step
+   }
+   else if (step==5) 
+   {
+      // second ffty step
+   }
+
+   else if (step==6) 
+   {
+      // zeroth fftz step
       // pfftfz device-->mem
       pfftfz(nb, tmp1, tmp2, request_indx);
       this->c_pack_start(nb, tmp2, tmp1, request_indx, 47);
    } 
-   else if (step==3) 
+   else if (step==7) 
+   {
+      // first fftz step
+   }
+   else if (step==8) 
+   {
+      // second fftz step
+   }
+
+   else if (step==9) 
    {
       // pfftf final
       this->c_pack_end(nb, tmp2, request_indx);
@@ -2179,11 +2246,11 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *b) {
   int shift1, shift2;
   int np = parall->np_i();
 
-  for (auto q = 0; q < bqsize; ++q) {
+  for (auto q=0; q<bqsize; ++q) {
     int indx = bqindx[q];
     int status = bqstatus[indx] + 1;
-    shift1 = n2ft3d * (2 * indx);
-    shift2 = n2ft3d * (2 * indx + 1);
+    shift1 = n2ft3d * (2*indx);
+    shift2 = n2ft3d * (2*indx + 1);
     pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
     ++bqstatus[indx];
   }
@@ -2211,16 +2278,17 @@ void PGrid::rc_pfft3f_queueout(const int nb, double *b) {
   int shift1, shift2;
   int indx1 = bqindx[0];
 
-  while (bqstatus[indx1] < 5) {
-
-    for (auto q = 0; q < bqsize; ++q) {
-      int indx = bqindx[q];
-      int status = bqstatus[indx] + 1;
-      shift1 = n2ft3d * (2 * indx);
-      shift2 = n2ft3d * (2 * indx + 1);
-      pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
-      ++bqstatus[indx];
-    }
+  while (bqstatus[indx1] < 9) 
+  {
+     for (auto q=0; q<bqsize; ++q) 
+     {
+        int indx = bqindx[q];
+        int status = bqstatus[indx] + 1;
+        shift1 = n2ft3d * (2 * indx);
+        shift2 = n2ft3d * (2 * indx + 1);
+        pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
+        ++bqstatus[indx];
+     }
   }
   double scal1 = 1.0 / ((double)((nx) * (ny) * (nz)));
   double enrr0 = scal1 * d3db::rr_dot(btmp, btmp);
@@ -2228,7 +2296,7 @@ void PGrid::rc_pfft3f_queueout(const int nb, double *b) {
   shift2 = n2ft3d * (2 * indx1 + 1);
   std::memcpy(b, btmp + shift2, n2ft3d * sizeof(double));
   --bqsize;
-  for (auto q = 0; q < bqsize; ++q)
+  for (auto q=0; q<bqsize; ++q)
     bqindx[q] = bqindx[q + 1];
 }
 
