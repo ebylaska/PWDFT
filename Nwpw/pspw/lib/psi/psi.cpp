@@ -297,13 +297,14 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
 
   /* read psi from file if psi_exist and not forcing wavefunction initialization
    */
-  if (psi_filefind(mypneb, filename) && (!wvfnc_initialize)) {
-    newpsi = psi_check_convert(mypneb, filename, coutput);
+  if (psi_filefind(mypneb,filename) && (!wvfnc_initialize)) 
+  {
+     newpsi = psi_check_convert(mypneb,filename,coutput);
 
-    if (myparall->base_stdio_print)
-      coutput << " input psi exists, reading from file: " << filename
-              << std::endl;
-    psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+     if (myparall->base_stdio_print)
+        coutput << " input psi exists, reading from file: " << filename << std::endl;
+
+     psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
   }
 
   /* generate new psi */
