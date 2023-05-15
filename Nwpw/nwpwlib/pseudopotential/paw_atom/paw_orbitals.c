@@ -71,7 +71,7 @@ void paw_init_orbitals_from_file(FILE *fp) {
     exit(1);
   } else {
     /* read number of core, valence and virtual orbitals */
-    fscanf(fp, "%d %d %d", &Nvalence, &Nvirt, &Nscat);
+    (void) fscanf(fp, "%d %d %d", &Nvalence, &Nvirt, &Nscat);
 
     Nbound = Nvalence + Nvirt;
     Ntotal = Nvalence + Nvirt + Nscat;
@@ -85,10 +85,10 @@ void paw_init_orbitals_from_file(FILE *fp) {
 
     /*read orbital indexes arrays*/
     for (i = 0; i < Nbound; ++i)
-      fscanf(fp, "%d %d %lf", &n[i], &l[i], &fill[i]);
+      (void) fscanf(fp, "%d %d %lf", &n[i], &l[i], &fill[i]);
 
     for (i = Nbound; i < Ntotal; ++i)
-      fscanf(fp, "%d %d %lf %lf", &n[i], &l[i], &fill[i], &eigenvalue[i]);
+      (void) fscanf(fp, "%d %d %lf %lf", &n[i], &l[i], &fill[i], &eigenvalue[i]);
   }
 
   /*allocating additional memory*/

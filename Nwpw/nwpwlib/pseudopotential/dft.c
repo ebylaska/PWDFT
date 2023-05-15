@@ -62,7 +62,7 @@ void init_DFT(char *filename) {
   while ((w != NIL) && (strcmp("<alpha>", w) != 0))
     w = get_word(fp);
   if (w != NIL) {
-    fscanf(fp, "%lf", &alpha);
+    (void) fscanf(fp, "%lf", &alpha);
     set_Dirac_alpha(alpha);
   }
   fclose(fp);
@@ -98,7 +98,7 @@ void init_DFT(char *filename) {
   while ((w != NIL) && (strcmp("<screening_cut>", w) != 0))
     w = get_word(fp);
   if (w != NIL) {
-    fscanf(fp, "%lf", &screening_cut);
+    (void) fscanf(fp, "%lf", &screening_cut);
   }
   fclose(fp);
 
@@ -109,7 +109,7 @@ void init_DFT(char *filename) {
   while ((w != NIL) && (strcmp("<blyp_screening_cut>", w) != 0))
     w = get_word(fp);
   if (w != NIL) {
-    fscanf(fp, "%lf", &blyp_screening_cut);
+    (void) fscanf(fp, "%lf", &blyp_screening_cut);
   }
   fclose(fp);
 }
@@ -160,7 +160,8 @@ void R_Screening_Cut(double *Vx) {
   }
 }
 
-void R_Exchange_DFT(double *rho, double *Vx, double *Ex, double *Px) {
+void R_Exchange_DFT(double *rho, double *Vx, double *Ex, double *Px) 
+{
   int k, Ngrid;
 
   if (Exchange_Type == Exchange_Dirac)

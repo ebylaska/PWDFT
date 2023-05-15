@@ -53,91 +53,92 @@ namespace pwdft {
  *                                         *
  *******************************************/
 
-XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control) {
-  mypneb = mygrid;
-  xc_name = control.xc_name();
-
-  std::transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
-
-  gga = 0;
-
-  if (xc_name.compare("vosko") == 0)
-    gga = 0;
-  if (xc_name.compare("lda") == 0)
-    gga = 0;
-
-  if (xc_name.compare("pbe") == 0)
-    gga = 10;
-  if (xc_name.compare("pbe96") == 0)
-    gga = 10;
-  if (xc_name.compare("blyp") == 0)
-    gga = 11;
-  if (xc_name.compare("revpbe") == 0)
-    gga = 12;
-  if (xc_name.compare("pbesol") == 0)
-    gga = 13;
-  if (xc_name.compare("hser") == 0)
-    gga = 14;
-  if (xc_name.compare("b3lypr") == 0)
-    gga = 15;
-  if (xc_name.compare("beef") == 0)
-    gga = 16;
-  if (xc_name.compare("xbeef-cpbe") == 0)
-    gga = 17;
-
-  if (xc_name.compare("pbe0") == 0)
-    gga = 110;
-  if (xc_name.compare("blyp0") == 0)
-    gga = 111;
-  if (xc_name.compare("revpbe0") == 0)
-    gga = 112;
-  if (xc_name.compare("bnl") == 0)
-    gga = 113;
-  if (xc_name.compare("hse") == 0)
-    gga = 114;
-  if (xc_name.compare("b3lyp") == 0)
-    gga = 115;
-
-  if (xc_name.compare("hartree-fock") == 0)
-    gga = 200;
-  if (xc_name.compare("hf") == 0)
-    gga = 200;
-
-  use_lda = false;
-  use_gga = false;
-  use_mgga = false;
-  if (gga == 0) {
-    use_lda = true;
-    xtmp = new double[mypneb->ispin * mypneb->n2ft3d];
-  }
-  if ((gga >= 10) && (gga < 100)) {
-    use_gga = true;
-    if (mypneb->ispin == 1) {
-      rho = new double[mypneb->n2ft3d];
-
-      grx = new double[mypneb->n2ft3d];
-      gry = new double[mypneb->n2ft3d];
-      grz = new double[mypneb->n2ft3d];
-
-      agr = new double[mypneb->n2ft3d];
-      fn = new double[mypneb->n2ft3d];
-      fdn = new double[mypneb->n2ft3d];
-    } else {
-      rho = new double[2 * mypneb->n2ft3d];
-
-      grx = new double[3 * mypneb->n2ft3d];
-      gry = new double[3 * mypneb->n2ft3d];
-      grz = new double[3 * mypneb->n2ft3d];
-
-      agr = new double[3 * mypneb->n2ft3d];
-      fn = new double[2 * mypneb->n2ft3d];
-      fdn = new double[3 * mypneb->n2ft3d];
-    }
-  }
-  if ((gga >= 300))
-    use_mgga = true;
-
-  // std::cout << "xc_name =" << xc_name << std::endl;
+XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control) 
+{
+   mypneb = mygrid;
+   xc_name = control.xc_name();
+ 
+   std::transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
+ 
+   gga = 0;
+ 
+   if (xc_name.compare("vosko") == 0)
+     gga = 0;
+   if (xc_name.compare("lda") == 0)
+     gga = 0;
+ 
+   if (xc_name.compare("pbe") == 0)
+     gga = 10;
+   if (xc_name.compare("pbe96") == 0)
+     gga = 10;
+   if (xc_name.compare("blyp") == 0)
+     gga = 11;
+   if (xc_name.compare("revpbe") == 0)
+     gga = 12;
+   if (xc_name.compare("pbesol") == 0)
+     gga = 13;
+   if (xc_name.compare("hser") == 0)
+     gga = 14;
+   if (xc_name.compare("b3lypr") == 0)
+     gga = 15;
+   if (xc_name.compare("beef") == 0)
+     gga = 16;
+   if (xc_name.compare("xbeef-cpbe") == 0)
+     gga = 17;
+ 
+   if (xc_name.compare("pbe0") == 0)
+     gga = 110;
+   if (xc_name.compare("blyp0") == 0)
+     gga = 111;
+   if (xc_name.compare("revpbe0") == 0)
+     gga = 112;
+   if (xc_name.compare("bnl") == 0)
+     gga = 113;
+   if (xc_name.compare("hse") == 0)
+     gga = 114;
+   if (xc_name.compare("b3lyp") == 0)
+     gga = 115;
+ 
+   if (xc_name.compare("hartree-fock") == 0)
+     gga = 200;
+   if (xc_name.compare("hf") == 0)
+     gga = 200;
+ 
+   use_lda = false;
+   use_gga = false;
+   use_mgga = false;
+   if (gga == 0) {
+     use_lda = true;
+     xtmp = new double[mypneb->ispin * mypneb->n2ft3d];
+   }
+   if ((gga >= 10) && (gga < 100)) {
+     use_gga = true;
+     if (mypneb->ispin == 1) {
+       rho = new double[mypneb->n2ft3d];
+ 
+       grx = new double[mypneb->n2ft3d];
+       gry = new double[mypneb->n2ft3d];
+       grz = new double[mypneb->n2ft3d];
+ 
+       agr = new double[mypneb->n2ft3d];
+       fn = new double[mypneb->n2ft3d];
+       fdn = new double[mypneb->n2ft3d];
+     } else {
+       rho = new double[2 * mypneb->n2ft3d];
+ 
+       grx = new double[3 * mypneb->n2ft3d];
+       gry = new double[3 * mypneb->n2ft3d];
+       grz = new double[3 * mypneb->n2ft3d];
+ 
+       agr = new double[3 * mypneb->n2ft3d];
+       fn = new double[2 * mypneb->n2ft3d];
+       fdn = new double[3 * mypneb->n2ft3d];
+     }
+   }
+   if ((gga >= 300))
+     use_mgga = true;
+ 
+   // std::cout << "xc_name =" << xc_name << std::endl;
 }
 
 /*******************************************

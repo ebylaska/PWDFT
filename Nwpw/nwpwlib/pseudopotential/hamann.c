@@ -18,9 +18,9 @@
 #define SMALL 1.0e-9
 
 /********************************
- *				*
- *    Suggested_Param_Hamann	*
- *				*
+ *	                             *
+ *    Suggested_Param_Hamann	  *
+ *	                             *
  ********************************/
 
 /*  This routine returns suggested parameters
@@ -42,15 +42,7 @@ values for the Hamann prescription.
 #define CSC 1.9
 #define CSC1 4.0
 
-void Suggested_Param_Hamann(num_states_psp, n_psp, l_psp, e_psp, fill_psp,
-                            rcut_psp)
-
-    int *num_states_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
+void Suggested_Param_Hamann(int *num_states_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[], double rcut_psp[])
 {
   int p, npsps;
   int i, l, lmax;
@@ -133,9 +125,9 @@ double rcut_psp[];
 } /* Suggested_Params_Hamann */
 
 /********************************
- *				*
+ *				                    *
  *         solve_Hamann	        *
- *				*
+ *				                    *
  ********************************/
 
 /*  This routine solves for the Hamann psp
@@ -152,32 +144,11 @@ double rcut_psp[];
 */
 #define ALAM 3.5
 
-void solve_Hamann(num_psp, n_psp, l_psp, e_psp, fill_psp, rcut_psp, r_psi_psp,
-                  r_psi_prime_psp, rho_psp, rho_semicore, V_psp, eall_psp,
-                  eh_psp, ph_psp, ex_psp, px_psp, ec_psp, pc_psp, kb_expansion,
-                  r_psi_extra, r_psi_prime_extra)
-
-    int num_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
-double **r_psi_psp;
-double **r_psi_prime_psp;
-double *rho_psp;
-double *rho_semicore;
-double **V_psp;
-double *eall_psp;
-double *eh_psp;
-double *ph_psp;
-double *ex_psp;
-double *px_psp;
-double *ec_psp;
-double *pc_psp;
-int kb_expansion[];
-double **r_psi_extra;
-double **r_psi_prime_extra;
+void solve_Hamann(int num_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[], double rcut_psp[],
+                  double **r_psi_psp, double **r_psi_prime_psp, double *rho_psp, double *rho_semicore,
+                  double **V_psp, double *eall_psp, double *eh_psp, double *ph_psp,
+                  double *ex_psp, double *px_psp, double *ec_psp, double *pc_psp,
+                  int kb_expansion[], double **r_psi_extra, double **r_psi_prime_extra)
 {
   int iteration, converged, p, i, k, match, mch, nrc, Ngrid;
   double al, amesh, rmax, texp, Zion;

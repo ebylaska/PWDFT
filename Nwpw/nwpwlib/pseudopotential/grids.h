@@ -7,9 +7,9 @@
    author - Eric Bylaska
 */
 
-extern void init_Grids();
-extern void end_Grids();
-extern double *alloc_Grid();
+extern void init_Grids(int);
+extern void end_Grids(void);
+extern double *alloc_Grid(void);
 extern void dealloc_Grid(double *);
 
 #endif

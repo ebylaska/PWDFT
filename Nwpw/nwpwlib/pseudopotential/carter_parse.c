@@ -9,22 +9,11 @@
 //#include "typesf2c.h"
 #include "get_word.h"
 
-void carter_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
-                  dir_name, n0, in_filename, n1, out_filename, n2, atom,
-                  n3) int *debug_ptr;
-int *lmax_ptr;
-int *locp_ptr;
-double *rlocal_ptr;
-char sdir_name[];
-int *n9;
-char dir_name[];
-int *n0;
-char in_filename[];
-int *n1;
-char out_filename[];
-int *n2;
-char atom[];
-int *n3;
+//void carter_parse(debug_ptr, lmax_ptr, locp_ptr, rlocal_ptr, sdir_name, n9,
+//                  dir_name, n0, in_filename, n1, out_filename, n2, atom, n3) 
+void carter_parse(int *debug_ptr, int *lmax_ptr, int *locp_ptr, double *rlocal_ptr,
+                  char sdir_name[], int *n9, char dir_name[], int *n0,
+                  char in_filename[], int *n1, char out_filename[], int *n2, char atom[], int *n3)
 {
 
   int debug;
@@ -107,14 +96,14 @@ int *n3;
   argc = to_eoln(fp);
   argc = get_line(fp, comment, 255);
 
-  fscanf(fp, "%lf %lf %d", &zatom, &zion, &pspdat);
+  (void) fscanf(fp, "%lf %lf %d", &zatom, &zion, &pspdat);
   argc = to_eoln(fp);
-  fscanf(fp, "%d %d %d %d %d %lf", &pspcode, &pspxc, &lmax, &locp, &Ngrid,
+  (void) fscanf(fp, "%d %d %d %d %d %lf", &pspcode, &pspxc, &lmax, &locp, &Ngrid,
          &r2well);
   lmaxp = lmax + 1;
   argc = to_eoln(fp);
 
-  fscanf(fp, "%lf %lf %lf", &rchrg, &fchrg, &qchrg);
+  (void) fscanf(fp, "%lf %lf %lf", &rchrg, &fchrg, &qchrg);
   argc = to_eoln(fp);
   argc = to_eoln(fp);
   argc = to_eoln(fp);
@@ -127,7 +116,7 @@ int *n3;
 
   /* read in rgrid and pseudopotentials */
   for (i = 0; i < Ngrid; ++i)
-    fscanf(fp, "%d %lf %lf", &k, &(rgrid[i]), &(psp[i]));
+    (void) fscanf(fp, "%d %lf %lf", &k, &(rgrid[i]), &(psp[i]));
 
   /* define psi=0 */
   for (i = 0; i < Ngrid; ++i)

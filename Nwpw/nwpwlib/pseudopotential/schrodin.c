@@ -27,12 +27,7 @@
  *                                *
  **********************************/
 
-void R_Schrodinger(n, l, v, mch, Eig, u, uprime) int n, l;
-double v[];
-int *mch;
-double *Eig;
-double u[], uprime[];
-
+void R_Schrodinger(int n, int l, double v[], int *mch, double *Eig, double u[], double uprime[])
 {
   int i, j, iteration, node, match, Ninf, Ngrid;
 
@@ -230,12 +225,7 @@ double u[], uprime[];
  *                                *
  **********************************/
 
-void R_Schrodinger_Fixed_E(n, l, v, match, E, u, uprime) int n, l;
-double v[];
-int match;
-double E;
-double u[], uprime[];
-
+void R_Schrodinger_Fixed_E(int n, int l, double v[], int match, double E, double u[], double uprime[])
 {
   int i, j, Ngrid;
 
@@ -311,15 +301,8 @@ double u[], uprime[];
  *                                *
  **********************************/
 
-void R_Schrodinger_Fixed_Logderiv(n, l, v, match, u_logderiv, Eig, u,
-                                  uprime) int n,
-    l;
-double v[];
-int match;
-double u_logderiv;
-double *Eig;
-double u[], uprime[];
-
+void R_Schrodinger_Fixed_Logderiv(int n, int l, double v[], int match, double u_logderiv, 
+                                  double *Eig, double u[], double uprime[])
 {
   int i, j, iteration, node, Ngrid;
 

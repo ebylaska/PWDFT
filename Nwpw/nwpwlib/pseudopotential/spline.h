@@ -7,11 +7,11 @@
  */
 
 extern void init_Linear(char *);
-extern void end_Linear();
-extern int nrl_Linear();
-extern double drl_Linear();
-extern void Log_to_Linear();
-extern void Log_to_Linear_zero();
+extern void end_Linear(void);
+extern int nrl_Linear(void);
+extern double drl_Linear(void);
+extern void Log_to_Linear(double [], double [], double []);
+extern void Log_to_Linear_zero(double [], double [], double []);
 extern void normalize_Linear(double *);
 extern void normalize_Linear2(double *, double *);
 

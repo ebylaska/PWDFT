@@ -17,9 +17,9 @@
 #define small_number 1.0e-80
 
 /********************************
- *				*
- *   R_Perdew_Wang              *
- *				*
+ *                              *
+ *        R_Perdew_Wang         *
+ *                              *
  ********************************/
 
 /* this routine calculates the spin
@@ -32,10 +32,8 @@
            Pc_out:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_Perdew_Wang(rho, Vc_out, Ec_out, Pc_out)
-
-    double rho[],
-    Vc_out[], *Ec_out, *Pc_out;
+//void R_Perdew_Wang(rho, Vc_out, Ec_out, Pc_out)
+void R_Perdew_Wang(double rho[], double Vc_out[], double *Ec_out, double *Pc_out)
 {
   int i;
   double onethird;

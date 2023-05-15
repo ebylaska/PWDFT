@@ -21,9 +21,9 @@
 #define small_number 1.0e-80
 
 /********************************
- *				*
- *   R_PBE96_correlation          *
- *				*
+ *                              *
+ *     R_PBE96_correlation      *
+ *                              *
  ********************************/
 
 /* this routine calculates the spin
@@ -36,10 +36,8 @@
            Pc_out:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_PBE96_Correlation(rho, Vc_out, Ec_out, Pc_out)
-
-    double rho[],
-    Vc_out[], *Ec_out, *Pc_out;
+//void R_PBE96_Correlation(rho, Vc_out, Ec_out, Pc_out)
+void R_PBE96_Correlation(double rho[], double Vc_out[], double *Ec_out, double *Pc_out)
 {
   int i;
   double BOG;

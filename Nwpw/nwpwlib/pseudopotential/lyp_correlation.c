@@ -12,10 +12,8 @@
          Pc:   variational corrections for eigenvalues
 */
 
-void R_LYP_Correlation(rho, Vc, Ec, Pc)
-
-    double rho[],
-    Vc[], *Ec, *Pc;
+//void R_LYP_Correlation(rho, Vc, Ec, Pc)
+void R_LYP_Correlation(double rho[], double Vc[], double *Ec, double *Pc)
 {
   /* local variables */
   int i;

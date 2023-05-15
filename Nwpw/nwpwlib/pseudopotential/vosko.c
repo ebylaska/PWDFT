@@ -73,10 +73,8 @@
            Pc:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_Vosko(rho, Vc, Ec, Pc)
-
-    double rho[],
-    Vc[], *Ec, *Pc;
+//void R_Vosko(rho, Vc, Ec, Pc)
+void R_Vosko(double rho[], double Vc[], double *Ec, double *Pc)
 {
   int i;
   double onesixth, onethird, fourthird, twothird;

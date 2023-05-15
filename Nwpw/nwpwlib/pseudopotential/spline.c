@@ -27,7 +27,7 @@ void init_Linear(char *filename) {
   while ((w != ((char *)EOF)) && (strcmp("<linear>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d %lf", &nrl, &drl);
+    (void) fscanf(fp, "%d %lf", &nrl, &drl);
   }
   fclose(fp);
   nl = (int *)malloc(nrl * sizeof(int));
@@ -37,7 +37,7 @@ void init_Linear(char *filename) {
   while ((w != ((char *)EOF)) && (strcmp("<fixzero>", w) != 0))
     w = get_word(fp);
   if (w != ((char *)EOF)) {
-    fscanf(fp, "%d", &zeroflag);
+    (void) fscanf(fp, "%d", &zeroflag);
   }
   fclose(fp);
 }
@@ -49,16 +49,13 @@ int nrl_Linear() { return nrl; }
 double drl_Linear() { return drl; }
 
 /********************************
- *				*
- *	     Spline		*
- *				*
+ *                              *
+ *	           Spline            *
+ *                              *
  ********************************/
 
-void Spline(x, y, n, yp1, ypn, y2) double x[], y[];
-int n;
-double yp1;
-double ypn;
-double y2[];
+//void Spline(x, y, n, yp1, ypn, y2) 
+void Spline(double x[], double y[], int n, double yp1, double ypn, double y2[])
 {
   int i, k;
   double sig, qn, un, p;
@@ -108,13 +105,8 @@ double y2[];
  *				*
  ********************************/
 
-double Splint(xa, ya, y2a, n, nx, x)
-double xa[];
-double ya[];
-double y2a[];
-int n;
-int nx;
-double x;
+//double Splint(xa, ya, y2a, n, nx, x)
+double Splint(double xa[], double ya[], double y2a[], int n, int nx, double x)
 {
   int khi, klo;
   double h, a, b;
@@ -154,14 +146,13 @@ double x;
 } /* Splint */
 
 /********************************
- *				*
- *	Log_to_Linear		*
- *				*
+ *	                             *
+ *	       Log_to_Linear		     *
+ *	                             *
  ********************************/
 
-void Log_to_Linear(ulog, rl, ulin) double ulog[];
-double rl[];
-double ulin[];
+//void Log_to_Linear(ulog, rl, ulin) 
+void Log_to_Linear(double ulog[], double rl[], double ulin[])
 {
   int i, Ngrid;
   /*
@@ -199,9 +190,8 @@ double ulin[];
  *                              *
  ********************************/
 
-void Log_to_Linear_zero(ulog, rl, ulin) double ulog[];
-double rl[];
-double ulin[];
+//void Log_to_Linear_zero(ulog, rl, ulin) 
+void Log_to_Linear_zero(double ulog[], double rl[], double ulin[])
 {
   int i, Ngrid;
   /*

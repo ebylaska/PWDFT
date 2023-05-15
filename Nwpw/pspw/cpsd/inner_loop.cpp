@@ -116,9 +116,9 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       indx2 = 0;
       for (i = 0; i < neall; ++i) 
       {
-         mygrid->cc_pack_copy(1,&psi1[indx1],&psi_r[indx2]);
-         mygrid->c_unpack(1,&psi_r[indx2]);
-         mygrid->cr_fft3d(&psi_r[indx2]);
+         mygrid->cc_pack_copy(1,psi1+indx1,psi_r+indx2);
+         mygrid->c_unpack(1,psi_r+indx2);
+         mygrid->cr_fft3d(psi_r+indx2);
          indx1 += shift1;
          indx2 += shift2;
       }
@@ -127,7 +127,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
      
       /* generate dng */
-      mygrid->rrr_Sum(dn,&dn[(ispin-1)*n2ft3d],rho);
+      mygrid->rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
       mygrid->rr_SMul(scal1, rho, tmp);
       mygrid->rc_pfft3f(0,tmp);
       mygrid->c_pack(0,tmp);
@@ -138,13 +138,13 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       {
          if ((move) || (it == 0))
             mypsp->semicore_density_update();
-         for (ms = 0; ms < ispin; ++ms)
-            mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,&dn[ms*n2ft3d],&dnall[ms*n2ft3d]);
+         for (ms=0; ms<ispin; ++ms)
+            mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,dn+ms*n2ft3d,dnall+ms*n2ft3d);
       } 
       else 
       {
          for (ms=0; ms<ispin; ++ms)
-            mygrid->rr_copy(&dn[ms * n2ft3d], &dnall[ms * n2ft3d]);
+            mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
       }
      
       /* generate local potentials */
@@ -173,7 +173,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       if (periodic)
       {
          mycoulomb12->mycoulomb1->vcoulomb(dng,vc);
-         std::memcpy(vcall,vc,n2ft3d*sizeof(double));
+         mygrid->cc_pack_copy(0,vc,vcall);
       }
       else if (aperiodic)
       {
@@ -252,11 +252,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    exc = mygrid->rr_dot(dnall, xce);
    pxc = mygrid->rr_dot(dn, xcp);
    if (ispin == 1) {
-     exc = exc + exc;
-     pxc = pxc + pxc;
+      exc = exc + exc;
+      pxc = pxc + pxc;
    } else {
-     exc += mygrid->rr_dot(&dnall[n2ft3d], xce);
-     pxc += mygrid->rr_dot(&dn[n2ft3d], &xcp[n2ft3d]);
+      exc += mygrid->rr_dot(dnall+n2ft3d, xce);
+      pxc += mygrid->rr_dot(dn+n2ft3d, xcp+n2ft3d);
    }
    exc *= dv;
    pxc *= dv;
@@ -330,8 +330,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    /* deltac */
    sumi = new double[neall]();
    mygrid->ggg_Minus(psi2, psi1, Hpsi);
-   for (i = 0; i < neall; ++i)
-     sumi[i] = mygrid->cc_pack_idot(1, &Hpsi[i * shift1], &Hpsi[i * shift1]);
+   for (i=0; i<neall; ++i)
+      sumi[i] = mygrid->cc_pack_idot(1, Hpsi+i*shift1, Hpsi+i*shift1 );
    mygrid->d3db::parall->Vector_SumAll(1, neall, sumi);
    dc = 0.0;
    for (i = 0; i < neall; ++i)
@@ -414,15 +414,18 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    mygrid->r_dealloc(xce);
    mygrid->r_dealloc(dnall);
    mygrid->r_dealloc(x);
-   mygrid->r_dealloc(vcall);
    mygrid->r_dealloc(rho);
    mygrid->c_pack_deallocate(dng);
    mygrid->c_pack_deallocate(vl);
    if (periodic)
+   {
       mygrid->c_pack_deallocate(vc);
+      mygrid->c_pack_deallocate(vcall);
+   }
    else if (aperiodic) 
    {
       mygrid->r_dealloc(vc);
+      mygrid->r_dealloc(vcall);
       mygrid->r_dealloc(vlr_l);
    }
    if (mycoulomb12->dielectric_on())

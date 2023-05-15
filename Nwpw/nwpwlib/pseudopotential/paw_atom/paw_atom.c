@@ -67,7 +67,7 @@ void paw_init_atom(char *atom, char *infile) {
     exit(1);
 
   } else {
-    fscanf(fp, "%le", &Zion);
+    (void) fscanf(fp, "%le", &Zion);
   }
 
   /*initialize log grid*/
@@ -79,7 +79,8 @@ void paw_init_atom(char *atom, char *infile) {
   paw_init_vosko();
 
   /*initialize potential*/
-  paw_init_potential(Zion);
+  //paw_init_potential(Zion);
+  paw_init_potential();
 
   /*initialize orbitals*/
   paw_init_orbitals_from_file(fp);
@@ -282,13 +283,13 @@ void paw_init_paw_atom(char *infile) {
     printf("error, <paw_basis> section was not found \n");
     exit(1);
   } else {
-    fscanf(fp, "%d", &nbasis);
+    (void) fscanf(fp, "%d", &nbasis);
     n = (int *)malloc(nbasis * sizeof(int));
     l = (int *)malloc(nbasis * sizeof(int));
     r_orb = (double *)malloc(nbasis * sizeof(double));
 
     for (i = 0; i <= nbasis - 1; i++)
-      fscanf(fp, "%d %d %lf", &n[i], &l[i], &r_orb[i]);
+      (void) fscanf(fp, "%d %d %lf", &n[i], &l[i], &r_orb[i]);
   }
 
   /* potential matching radius */
@@ -297,7 +298,7 @@ void paw_init_paw_atom(char *infile) {
     printf("Aborting the program\n");
     exit(1);
   } else {
-    fscanf(fp, "%le", &r_pot);
+    (void) fscanf(fp, "%le", &r_pot);
   }
 
   /* potential at zero */
@@ -306,7 +307,7 @@ void paw_init_paw_atom(char *infile) {
     printf("Aborting the program\n");
     exit(1);
   } else {
-    fscanf(fp, "%le", &c0);
+    (void) fscanf(fp, "%le", &c0);
   }
 
   /* compensation charge radius */
@@ -315,7 +316,7 @@ void paw_init_paw_atom(char *infile) {
     printf("Aborting the program\n");
     exit(1);
   } else {
-    fscanf(fp, "%le", &r_comp);
+    (void) fscanf(fp, "%le", &r_comp);
   }
 
   /* node constraint*/
@@ -325,7 +326,7 @@ void paw_init_paw_atom(char *infile) {
       printf(" nodal_constraint will be set to \"on\" \n");
     strcpy(nodal_constraint, "off");
   } else {
-    fscanf(fp, "%s", nodal_constraint);
+    (void) fscanf(fp, "%s", nodal_constraint);
   }
 
   /*projector method*/
@@ -335,7 +336,7 @@ void paw_init_paw_atom(char *infile) {
       printf(" <projector_method> will be set to Vanderbilt \n");
     strcpy(projector_method, "vanderbilt");
   } else {
-    fscanf(fp, "%s", projector_method);
+    (void) fscanf(fp, "%s", projector_method);
   }
 
   fclose(fp);
@@ -396,17 +397,16 @@ void paw_solve_paw_atom(char *infile) {
     if (paw_debug())
       printf(" scattering test will not be performed \n");
   } else {
-    fscanf(fp, "%d", &n);
+    (void) fscanf(fp, "%d", &n);
     l = (int *)malloc(n * sizeof(int));
     number_points = (int *)malloc(n * sizeof(int));
     e1 = (double *)malloc(n * sizeof(double));
     e2 = (double *)malloc(n * sizeof(double));
     r = (double *)malloc(n * sizeof(double));
 
-    for (i = 0; i <= n - 1; i++) {
-
-      fscanf(fp, "%d %lf %lf %lf %d", &l[i], &e1[i], &e2[i], &r[i],
-             &number_points[i]);
+    for (i=0; i<=n - 1; i++) 
+    {
+       (void) fscanf(fp, "%d %lf %lf %lf %d", &l[i], &e1[i], &e2[i], &r[i], &number_points[i]);
     }
     for (i = 0; i <= n - 1; i++) {
       paw_scattering_test(e1[i], e2[i], number_points[i], l[i], r[i]);

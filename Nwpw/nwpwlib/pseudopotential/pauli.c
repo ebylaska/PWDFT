@@ -26,12 +26,8 @@
  *                                *
  **********************************/
 
-void R_Pauli(n, l, Z, v, mch, Eig, u, uprime) int n, l;
-double Z;
-double v[];
-int *mch;
-double *Eig;
-double u[], uprime[];
+//void R_Pauli(n, l, Z, v, mch, Eig, u, uprime) 
+void R_Pauli(int n, int l, double Z, double v[], int *mch, double *Eig, double u[], double uprime[])
 
 {
   int i, j, iteration, node, match, Ninf, Ngrid;
@@ -282,12 +278,8 @@ double u[], uprime[];
  *                                *
  **********************************/
 
-void R_Pauli_Fixed_E(n, l, Z, v, match, E, u, uprime) int n, l;
-double Z;
-double v[];
-int match;
-double E;
-double u[], uprime[];
+//void R_Pauli_Fixed_E(n, l, Z, v, match, E, u, uprime) 
+void R_Pauli_Fixed_E(int n, int l, double Z, double v[], int match, double E, double u[], double uprime[])
 
 {
   int i, j, node, Ngrid;

@@ -66,16 +66,12 @@ public:
   double efield_ion_energy() {
     double eetmp = 0.0;
     if (efield_on) {
-      for (auto ii = 0; ii < myion->nion; ++ii) {
-        double qii = myion->zv_psp[myion->katm[ii]];
-        eetmp =
-            eetmp +
-            qii * efield_vector[0] * (myion->rion1[3 * ii] - efield_center[0]) +
-            qii * efield_vector[1] *
-                (myion->rion1[3 * ii + 1] - efield_center[1]) +
-            qii * efield_vector[2] *
-                (myion->rion1[3 * ii + 2] - efield_center[2]);
-      }
+       for (auto ii=0; ii<myion->nion; ++ii) {
+          double qii = myion->zv_psp[myion->katm[ii]];
+          eetmp += qii*efield_vector[0]*(myion->rion1[3*ii]   - efield_center[0]) 
+                 + qii*efield_vector[1]*(myion->rion1[3*ii+1] - efield_center[1])
+                 + qii*efield_vector[2]*(myion->rion1[3*ii+2] - efield_center[2]);
+       }
     }
     return eetmp;
   }
@@ -88,14 +84,14 @@ public:
   // calculates the forces between the QM ions and efield. Note the ions are
   // positive.
   void efield_ion_fion(double *fion) {
-    if (efield_on && (efield_type == 0) && (efield_type == 2)) {
-      for (auto ii = 0; ii < myion->nion; ++ii) {
-        double qii = myion->zv_psp[myion->katm[ii]];
-        fion[3 * ii] -= qii * efield_vector[0];
-        fion[3 * ii + 1] -= qii * efield_vector[1];
-        fion[3 * ii + 2] -= qii * efield_vector[2];
-      }
-    }
+     if (efield_on && ((efield_type==0)||(efield_type==2)) ) {
+        for (auto ii=0; ii<myion->nion; ++ii) {
+           double qii = myion->zv_psp[myion->katm[ii]];
+           fion[3*ii]   -= qii*efield_vector[0];
+           fion[3*ii+1] -= qii*efield_vector[1];
+           fion[3*ii+2] -= qii*efield_vector[2];
+        }
+     }
   }
 
   /**********************************

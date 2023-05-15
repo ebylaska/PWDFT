@@ -62,7 +62,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
    char date[26];
    double sum1, sum2, ev, zv;
    double cpu1, cpu2, cpu3, cpu4, cpustep;
-   double E[60], deltae, deltac, deltar, viral, unita[9];
+   double E[70], deltae, deltac, deltar, viral, unita[9];
    double sa_alpha[2], sa_decay[2], Te_init, Tr_init, Te_new, Tr_new;
    double kb = 3.16679e-6;
  

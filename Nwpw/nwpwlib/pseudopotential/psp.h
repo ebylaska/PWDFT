@@ -13,10 +13,10 @@
 extern void init_Psp(char *);
 extern void end_Psp();
 extern void solve_Psp();
-extern void print_Psp();
-extern double E_Psp();
+extern void print_Psp(FILE *);
+extern double E_Psp(void);
 extern double eigenvalue_Psp(int);
-extern double *V_Psp();
+extern double *V_Psp(int);
 extern double *rho_Psp();
 extern double *rho_semicore_Psp();
 extern double *drho_semicore_Psp();
@@ -34,11 +34,11 @@ extern double Zion_Psp();
 extern int state_Psp(int, int);
 extern int Vanderbilt_Psp();
 extern double *Vlocal_Psp();
-extern double *Beta_Psp();
-extern double *r_hard_psi_il_Psp();
-extern double *r_psi_il_Psp();
-extern double D0_Psp();
-extern double q_Psp();
+extern double *Beta_Psp(int,int);
+extern double *r_hard_psi_il_Psp(int,int);
+extern double *r_psi_il_Psp(int,int);
+extern double D0_Psp(int,int,int);
+extern double q_Psp(int, int, int);
 extern double rcut_il_Psp(int, int);
 extern int Vanderbilt_Psp();
 extern int NormConserving_Psp();
@@ -49,7 +49,7 @@ extern int kb_expansion_Psp(int);
 extern double *r_psi_extra_Psp(int);
 
 /* used for setting solver parameters */
-extern void set_Solver_Psp();
+extern void set_Solver_Psp(int);
 
 #endif
 /* $Id$ */

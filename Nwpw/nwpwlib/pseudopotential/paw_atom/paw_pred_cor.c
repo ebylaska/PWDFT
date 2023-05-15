@@ -21,7 +21,7 @@ Corrector_In
 
 /********************************
  *                              *
- *       paw_Predictor_In           *
+ *       paw_Predictor_In       *
  *                              *
  ********************************/
 
@@ -47,7 +47,7 @@ double paw_Predictor_In(int i, double y[], double f[]) {
 
 /********************************
  *                              *
- *       paw_Predictor_Out          *
+ *       paw_Predictor_Out      *
  *                              *
  ********************************/
 
@@ -116,7 +116,7 @@ double paw_Corrector_In(int i, double y[], double f[]) {
 
 /********************************
  *                              *
- *       paw_Corrector_In_F         *
+ *       paw_Corrector_In_F     *
  *                              *
  ********************************/
 
@@ -145,7 +145,7 @@ double paw_Corrector_In_F(int i, double f[]) {
 
 /********************************
  *                              *
- *       paw_Corrector_Out          *
+ *       paw_Corrector_Out      *
  *                              *
  ********************************/
 

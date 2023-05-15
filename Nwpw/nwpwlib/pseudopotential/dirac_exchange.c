@@ -16,26 +16,26 @@
 static double alpha = 0.6666666666666666667;
 
 /********************************
- *			 	*
- *        set_Dirac_alpha	*
- *				*
+ *	                             *
+ *        set_Dirac_alpha	     *
+ *	                             *
  ********************************/
 
-void set_Dirac_alpha(aa) double aa;
+void set_Dirac_alpha(double aa)
 { alpha = aa; }
 
 /********************************
- *				*
- *         Dirac_alpha		*
- *				*
+ *                              *
+ *         Dirac_alpha          *
+ *                              *
  ********************************/
 
 double Dirac_alpha() { return alpha; }
 
 /********************************
- *				*
- *         R_Dirac_Exchange	*
- *				*
+ *				                    *
+ *       R_Dirac_Exchange       *
+ *				                    *
  ********************************/
 
 /* this routine calculates the spin
@@ -47,10 +47,7 @@ double Dirac_alpha() { return alpha; }
            Px:  The variational exchange corrections for the eigenvalues.
 */
 
-void R_Dirac_Exchange(rho, Vx, Ex, Px)
-
-    double rho[],
-    Vx[], *Ex, *Px;
+void R_Dirac_Exchange(double rho[], double *Vx, double *Ex, double *Px)
 {
   int i;
   double onethird;

@@ -17,10 +17,8 @@ char *get_word(FILE *stream) {
     return NIL;
 }
 
-int get_line(stream, line, maxlen)
-FILE *stream;
-char *line;
-int maxlen;
+//int get_line(stream, line, maxlen)
+int get_line(FILE *stream, char *line, int maxlen)
 {
   int c, i;
 
@@ -35,8 +33,8 @@ int maxlen;
   return i;
 }
 
-int to_eoln(stream)
-FILE *stream;
+//int to_eoln(stream)
+int to_eoln(FILE *stream)
 {
   int c, i;
 
@@ -112,7 +110,7 @@ int get_string(FILE *stream, char *string) {
     ++n;
   }
 
-  if ((c == '\n')) {
+  if (c=='\n') {
     ungetc(c, stream);
     --n;
   }
@@ -134,7 +132,7 @@ int remove_blanks(FILE *stream) {
   ungetc(c, stream);
 
   value = 1;
-  if ((c == '\n')) {
+  if (c=='\n') {
     value = 0;
     --n;
   }

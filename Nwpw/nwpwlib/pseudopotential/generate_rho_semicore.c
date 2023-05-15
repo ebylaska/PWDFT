@@ -19,10 +19,8 @@
    Exit  - rho_semicore: the semicore density
 */
 
-void generate_rho_semicore(semicore_type, rho_core, r_semicore, rho_semicore)
-
-    int semicore_type;
-double rho_core[], r_semicore, rho_semicore[];
+//void generate_rho_semicore(semicore_type, rho_core, r_semicore, rho_semicore)
+void generate_rho_semicore(int semicore_type, double rho_core[], double r_semicore, double rho_semicore[])
 {
 
   int k, index;

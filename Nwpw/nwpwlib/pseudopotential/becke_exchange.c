@@ -16,10 +16,8 @@ exit:  - Vx[]: exchange potential
 #define minchi 1.0e-6
 #define maxchi 10.0
 
-void R_Becke_Exchange(rho, Vx, Ex, Px)
-
-    double rho[],
-    Vx[], *Ex, *Px;
+//void R_Becke_Exchange(rho, Vx, Ex, Px)
+void R_Becke_Exchange(double rho[], double Vx[], double *Ex, double *Px)
 {
   /*local variables*/
   int i;

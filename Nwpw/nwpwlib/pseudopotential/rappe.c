@@ -21,9 +21,9 @@
 #define SMALL 1.0e-9
 
 /********************************
- *				*
- *    Suggested_Param_Rappe *
- *				*
+ *                              *
+ *    Suggested_Param_Rappe     *
+ *                              *
  ********************************/
 
 /*  This routine returns suggested parameters
@@ -41,15 +41,7 @@ values for the Rappe prescription.
 
 */
 
-void Suggested_Param_Rappe(num_states_psp, n_psp, l_psp, e_psp, fill_psp,
-                           rcut_psp)
-
-    int *num_states_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
+void Suggested_Param_Rappe(int *num_states_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[], double rcut_psp[])
 {
   int p, npsps;
   int i, l, lmax;
@@ -124,9 +116,9 @@ double rcut_psp[];
 } /* Suggested_Params_Rappe */
 
 /********************************
- *				*
- *         solve_Rappe      *
- *				*
+ *                              *
+ *         solve_Rappe          *
+ *                              *
  ********************************/
 
 /*  This routine solves for the Rappe psp
@@ -142,28 +134,13 @@ double rcut_psp[];
 
 */
 
-void solve_Rappe(num_psp, n_psp, l_psp, e_psp, fill_psp, rcut_psp, r_psi_psp,
-                 r_psi_prime_psp, rho_psp, rho_semicore, V_psp, eall_psp,
-                 eh_psp, ph_psp, ex_psp, px_psp, ec_psp, pc_psp)
-
-    int num_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
-double **r_psi_psp;
-double **r_psi_prime_psp;
-double *rho_psp;
-double *rho_semicore;
-double **V_psp;
-double *eall_psp;
-double *eh_psp;
-double *ph_psp;
-double *ex_psp;
-double *px_psp;
-double *ec_psp;
-double *pc_psp;
+//void solve_Rappe(num_psp, n_psp, l_psp, e_psp, fill_psp, rcut_psp, r_psi_psp,
+//                 r_psi_prime_psp, rho_psp, rho_semicore, V_psp, eall_psp,
+//                 eh_psp, ph_psp, ex_psp, px_psp, ec_psp, pc_psp)
+void solve_Rappe(int num_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[], double rcut_psp[],
+                 double **r_psi_psp, double **r_psi_prime_psp, double *rho_psp, double *rho_semicore,
+                 double **V_psp, double *eall_psp, double *eh_psp, double *ph_psp,
+                 double *ex_psp, double *px_psp, double *ec_psp, double *pc_psp)
 {
   int istate, i, l, k, match, mch, Ngrid;
   double al, amesh, rmax, Zion;

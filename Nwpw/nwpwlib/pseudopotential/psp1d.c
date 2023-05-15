@@ -132,7 +132,7 @@ void init_Psp(char *filename) {
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%d", &ltmp);
+      (void) sscanf(w, "%d", &ltmp);
       w = get_word(fp);
       npsp_states = ltmp;
     }
@@ -194,7 +194,7 @@ void init_Psp(char *filename) {
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%d", &ltmp);
+      (void) sscanf(w, "%d", &ltmp);
       w = get_word(fp);
       Nvalence = ltmp;
     }
@@ -213,11 +213,11 @@ void init_Psp(char *filename) {
     if (w != NIL) {
       w = get_word(fp);
       while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         rlocal = rctmp;
 
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         clocal = rctmp;
       }
@@ -233,22 +233,22 @@ void init_Psp(char *filename) {
     if (w != NIL) {
       w = get_word(fp);
       while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-        sscanf(w, "%d", &ltmp);
+        (void) sscanf(w, "%d", &ltmp);
         w = get_word(fp);
-        sscanf(w, "%d", &p1);
+        (void) sscanf(w, "%d", &p1);
         w = get_word(fp);
-        sscanf(w, "%d", &p2);
+        (void) sscanf(w, "%d", &p2);
         w = get_word(fp);
 
         n[ltmp] = p1;
         l[ltmp] = p2;
         lmax = Max(lmax, p2);
 
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         eigenvalue[ltmp] = rctmp;
 
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         rcut[ltmp] = rctmp;
         fill[ltmp] = 0.0;
@@ -299,9 +299,9 @@ void init_Psp(char *filename) {
     if (w != NIL) {
       w = get_word(fp);
       while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-        sscanf(w, "%d", &ltmp);
+        (void) sscanf(w, "%d", &ltmp);
         w = get_word(fp);
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         rcut[ltmp] = rctmp;
       }
@@ -317,9 +317,9 @@ void init_Psp(char *filename) {
     if (w != NIL) {
       w = get_word(fp);
       while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-        sscanf(w, "%d", &ltmp);
+        (void) sscanf(w, "%d", &ltmp);
         w = get_word(fp);
-        sscanf(w, "%d", &p1);
+        (void) sscanf(w, "%d", &p1);
         w = get_word(fp);
         kb_expansion[ltmp] = p1;
       }
@@ -335,9 +335,9 @@ void init_Psp(char *filename) {
     if (w != NIL) {
       w = get_word(fp);
       while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-        sscanf(w, "%d", &ltmp);
+        (void) sscanf(w, "%d", &ltmp);
         w = get_word(fp);
-        sscanf(w, "%lf", &rctmp);
+        (void) sscanf(w, "%lf", &rctmp);
         w = get_word(fp);
         eigenvalue[ltmp] = rctmp;
       }
@@ -355,7 +355,7 @@ void init_Psp(char *filename) {
   if (w != NIL) {
     w = get_word(fp);
     while ((w != NIL) && (strcmp("<end>", w) != 0)) {
-      sscanf(w, "%lf", &rctmp);
+      (void) sscanf(w, "%lf", &rctmp);
       w = get_word(fp);
       r_semicore = rctmp;
     }
@@ -530,9 +530,7 @@ char *solver_Name_Psp() {
   return s;
 }
 
-void print_Psp(fp)
-
-    FILE *fp;
+void print_Psp(FILE *fp)
 {
   int i;
 
@@ -600,12 +598,12 @@ void print_Psp(fp)
 } /* print_Atom */
 
 /********************************
- *				*
+ *                               *
  * set_(solver parameters)_Atom	*
- *				*
+ *                               *
  ********************************/
 
-void set_Solver_Psp(solver) int solver;
+void set_Solver_Psp(int solver) 
 { Solver_Type = solver; }
 
 int Vanderbilt_Psp() {

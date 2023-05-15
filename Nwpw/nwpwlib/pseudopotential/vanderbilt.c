@@ -19,9 +19,9 @@
 #define MAXIT 2
 
 /********************************
- *				*
- *  Suggested_Param_Vanderbilt	*
- *				*
+ *	                             *
+ *  Suggested_Param_Vanderbilt  *
+ *	                             *
  ********************************/
 
 /*  This routine returns suggested parameters
@@ -43,16 +43,10 @@ values for the Vanderbilt prescription.
 #define CSC 3.0
 #define CSC1 4.0
 
-void Suggested_Param_Vanderbilt(num_states_psp, n_psp, l_psp, e_psp, fill_psp,
-                                rcut_psp, rlocal, clocal)
-
-    int *num_states_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
-double *rlocal, *clocal;
+//void Suggested_Param_Vanderbilt(num_states_psp, n_psp, l_psp, e_psp, fill_psp,
+//                                rcut_psp, rlocal, clocal)
+void Suggested_Param_Vanderbilt(int *num_states_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[],
+                                double rcut_psp[], double *rlocal, double *clocal)
 {
   int p, npsps;
   int i, l, lmax;
@@ -137,9 +131,9 @@ double *rlocal, *clocal;
 } /* Suggested_Params_Vanderbilt */
 
 /********************************
- *				*
- *         solve_Vanderbilt      *
- *				*
+ *                              *
+ *        solve_Vanderbilt      *
+ *                              *
  ********************************/
 
 /*  This routine solves for the Troullier-Martins psp
@@ -155,35 +149,15 @@ double *rlocal, *clocal;
 
 */
 
-void solve_Vanderbilt(num_psp, n_psp, l_psp, e_psp, fill_psp, rcut_psp, rlocal,
-                      clocal, ns, indx_il, indx_ijl, r_hard_psi_psp, r_psi_psp,
-                      r_psi_prime_psp, rho_psp, rho_semicore, V_psp, Vlocal, D0,
-                      q, eall_psp, eh_psp, ph_psp, ex_psp, px_psp, ec_psp,
-                      pc_psp)
-
-    int num_psp;
-int n_psp[];
-int l_psp[];
-double e_psp[];
-double fill_psp[];
-double rcut_psp[];
-double rlocal, clocal;
-int ns[10], indx_il[4][10], indx_ijl[4][4][10];
-double **r_hard_psi_psp;
-double **r_psi_psp;
-double **r_psi_prime_psp;
-double *rho_psp;
-double *rho_semicore;
-double **V_psp;
-double *Vlocal;
-double *D0, *q;
-double *eall_psp;
-double *eh_psp;
-double *ph_psp;
-double *ex_psp;
-double *px_psp;
-double *ec_psp;
-double *pc_psp;
+//void solve_Vanderbilt(num_psp, n_psp, l_psp, e_psp, fill_psp, rcut_psp, rlocal,
+//                      clocal, ns, indx_il, indx_ijl, r_hard_psi_psp, r_psi_psp,
+//                      r_psi_prime_psp, rho_psp, rho_semicore, V_psp, Vlocal, D0,
+//                      q, eall_psp, eh_psp, ph_psp, ex_psp, px_psp, ec_psp, pc_psp)
+void solve_Vanderbilt(int num_psp, int n_psp[], int l_psp[], double e_psp[], double fill_psp[], double rcut_psp[],
+                      double rlocal, double clocal, int ns[10], int indx_il[4][10], int indx_ijl[4][4][10],
+                      double **r_hard_psi_psp, double **r_psi_psp, double **r_psi_prime_psp, double *rho_psp, double *rho_semicore,
+                      double **V_psp, double *Vlocal, double *D0, double *q, double *eall_psp,
+                      double *eh_psp, double *ph_psp, double *ex_psp, double *px_psp, double *ec_psp, double *pc_psp)
 {
   int i, l, j, k, it, match, match_R, Ngrid;
   double al, amesh, Zion;

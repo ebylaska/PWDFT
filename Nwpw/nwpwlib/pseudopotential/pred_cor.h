@@ -12,26 +12,26 @@ formulas for integrating inward and outward.
 This file also contains 5th order derivatives.
 
 */
-extern double Predictor_In();
-extern double Predictor_Out();
+extern double Predictor_In(const int, const double [], const double []);
+extern double Predictor_Out(const int, const double [], const double []);
 
-extern double Corrector_In();
-extern double Corrector_In_F();
-extern double Corrector_Out();
+extern double Corrector_In(const int, const double [], const double []);
+extern double Corrector_In_F(const int, const double []);
+extern double Corrector_Out(const int, const double [], const double []);
 
-extern double Derivative5_1();
-extern double Derivative5_2();
-extern double Derivative5_3();
-extern double Derivative5_4();
-extern double Derivative5_5();
+extern double Derivative5_1(const int, const double []);
+extern double Derivative5_2(const int, const double []);
+extern double Derivative5_3(const int, const double []);
+extern double Derivative5_4(const int, const double []);
+extern double Derivative5_5(const int, const double []);
 
-extern double Derivative7_1();
-extern double Derivative7_2();
-extern double Derivative7_3();
-extern double Derivative7_4();
-extern double Derivative7_5();
-extern double Derivative7_6();
-extern double Derivative7_7();
-extern double Laplacian7_4();
+extern double Derivative7_1(const int, const double []);
+extern double Derivative7_2(const int, const double []);
+extern double Derivative7_3(const int, const double []);
+extern double Derivative7_4(const int, const double []);
+extern double Derivative7_5(const int, const double []);
+extern double Derivative7_6(const int, const double []);
+extern double Derivative7_7(const int, const double []);
+extern double Laplacian7_4(const int, const double []);
 
 #endif
