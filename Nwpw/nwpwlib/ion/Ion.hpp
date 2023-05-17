@@ -8,6 +8,7 @@
 //#include        "iofmt.hpp"
 //#include	"rtdb.hpp"
 #include "Control2.hpp"
+#include "ion_bond.hpp"
 #include "ion_bondings.hpp"
 #include "ion_rcovalent.hpp"
 
@@ -17,6 +18,8 @@ class Ion {
 
   char *atomarray;
 
+  bool has_constraints = false;
+  ion_bond     *mybond;
   ion_bondings *mybondings;
 
 public:
@@ -62,6 +65,7 @@ public:
      delete[] rion2;
      delete[] vionhalf;
      delete[] fion1;
+     delete mybond;
      delete mybondings;
    }
  

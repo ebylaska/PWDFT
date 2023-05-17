@@ -426,7 +426,9 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    if (dof_rotation)    g_dof += 3;
    if (g_dof < 1)       g_dof = 1.0;
  
+   mybond     = new (std::nothrow) ion_bond(rion1,control);
    mybondings = new (std::nothrow) ion_bondings(rion1,control);
+   has_constraints = mybond->has_bond() || mybondings->has_bondings();
 
    /*  DEBUG CHECK
       std::cout << "NION=" << nion << std::endl;
@@ -583,9 +585,13 @@ void Ion::remove_rotation() {
  *******************************************/
 std::string Ion::print_constraints() 
 {
-    std::string tmp = " ion constraints:\n";
-    tmp += mybondings->print_all();
-
+    std::string tmp = "";
+    if (has_constraints)
+    {
+       tmp = " ion constraints:\n";
+       tmp += mybond->print_all();
+       tmp += mybondings->print_all();
+    }
     return tmp;
 }
 

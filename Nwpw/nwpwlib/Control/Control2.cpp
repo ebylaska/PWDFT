@@ -976,6 +976,51 @@ double Control2::origin_cubefiles(const int i)
    return origin;
 }
 
+
+// bond constraints
+int Control2::nhb_bond()
+{
+   int nhb = 0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["bond"].is_null())
+      nhb = rtdbjson["constraints"]["bond"].size();
+   return nhb;
+}
+int Control2::i0_bond(const int i)
+{
+   int i0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["bond"][i]["i0"].is_null())
+      i0 = rtdbjson["constraints"]["bond"][i]["i0"];
+   return i0;
+}
+int Control2::j0_bond(const int i)
+{
+   int j0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["bond"][i]["j0"].is_null())
+      j0 = rtdbjson["constraints"]["bond"][i]["j0"];
+   return j0;
+}
+double Control2::K0_bond(const int i)
+{
+   double K0=0.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["bond"][i]["K0"].is_null())
+      K0 = rtdbjson["constraints"]["bond"][i]["K0"];
+   return K0;
+}
+double Control2::R0_bond(const int i)
+{
+   double R0=1.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["bond"][i]["R0"].is_null())
+      R0 = rtdbjson["constraints"]["bond"][i]["R0"];
+   return R0;
+}
+
+
+// bondings constraints
 //### Adding reaction ###
 //# reaction_type    = AB + C --> AC + B
 //# reaction_indexes = 1 2 6
@@ -1007,7 +1052,7 @@ std::vector<int> Control2::indx_bondings(const int i)
 }
 double Control2::K0_bondings(const int i)
 {
-   double K0=-1.0;
+   double K0=1.0;
    json rtdbjson = json::parse(myrtdbstring);
    if (!rtdbjson["constraints"]["bondings"][i]["K0"].is_null())
       K0 = rtdbjson["constraints"]["bondings"][i]["K0"];

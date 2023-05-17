@@ -1521,6 +1521,7 @@ static json parse_driver(json driverjson, int *curptr,
 //constraints
 //   clear
 //   spring bondings 1.000000 -2.400 1.0 1 2 -1.0 1 6
+//   spring bond 1 2 1.000000 1.2 
 //end
 
 static json parse_constraints(json constraintsjson, int *curptr, std::vector<std::string> lines) 
@@ -1558,7 +1559,22 @@ static json parse_constraints(json constraintsjson, int *curptr, std::vector<std
         constraintsjson["bondings"][bcount]["indexes"] = indexes;
         constraintsjson["bondings"][bcount]["K0"]      = K0;
         constraintsjson["bondings"][bcount]["gamma0"]  = gamma0;
-     } 
+     
+     } else if ((mystring_contains(line, "spring")) && 
+                (mystring_contains(line, "bond"))) {
+        int bcount = 0;
+        if (!constraintsjson["bond"].is_null())
+           bcount = constraintsjson["bond"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " bond")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        double K0 = std::stod(ss[2]);
+        double R0 = std::stod(ss[3]);
+        constraintsjson["bond"][bcount]["i0"] = i0;
+        constraintsjson["bond"][bcount]["i0"] = j0;
+        constraintsjson["bond"][bcount]["K0"] = K0;
+        constraintsjson["bond"][bcount]["R0"] = R0;
+     }
  
      ++cur;
      if (mystring_contains(lines[cur], "end"))

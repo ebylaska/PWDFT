@@ -433,6 +433,13 @@ public:
    double origin_cubefiles(const int);
    int ncell_cubefiles(const int);
 
+   // bond
+   int nhb_bond();
+   int    i0_bond(const int);
+   int    j0_bond(const int);
+   double K0_bond(const int);
+   double R0_bond(const int);
+
    // bondings
    int nhc_bondings();
    std::vector<double> coef_bondings(const int);
