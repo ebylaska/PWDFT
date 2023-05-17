@@ -103,6 +103,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    // Ion myion(myrtdb);
    Ion myion(rtdbstring, control);
    MPI_Barrier(comm_world0);
+
  
    /* Check for and generate psp files                       */
    /* - this routine also sets the valence charges in myion, */
@@ -240,6 +241,9 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(10,5) << myion.com(0) << " "
                 << Ffmt(10,5) << myion.com(1) << " " 
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      if (control.geometry_optimize())
+         std::cout << std::endl << myion.print_constraints();
       
       std::cout << mypsp.myefield->shortprint_efield();
       std::cout << mycoulomb12.shortprint_dielectric();

@@ -12,6 +12,7 @@
 using json = nlohmann::json;
 
 #include "Control2.hpp"
+#include "ion_bondings.hpp"
 #include "Ion.hpp"
 
 namespace pwdft {
@@ -425,6 +426,8 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    if (dof_rotation)    g_dof += 3;
    if (g_dof < 1)       g_dof = 1.0;
  
+   mybondings = new (std::nothrow) ion_bondings(rion1,control);
+
    /*  DEBUG CHECK
       std::cout << "NION=" << nion << std::endl;
       std::cout << "NKATM=" << nkatm << std::endl;
@@ -571,5 +574,21 @@ void Ion::remove_rotation() {
     }
   }
 }
+
+
+/*******************************************
+ *                                         *
+ *         Ion::print_constraints          *
+ *                                         *
+ *******************************************/
+std::string Ion::print_constraints() 
+{
+    std::string tmp = " ion constraints:\n";
+    tmp += mybondings->print_all();
+
+    return tmp;
+}
+
+
 
 } // namespace pwdft
