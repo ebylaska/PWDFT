@@ -241,7 +241,8 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         for (auto j=0; j<this->n0[i]; ++j)
            stream << Ffmt(17,6) << this->coef[i][j]  
                   << Ifmt(7) << this->indx[i][2*j]
-                  << Ifmt(7) << this->indx[i][2*j+1] << std::endl;;
+                  << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+        stream << std::endl;
      }
      return stream.str();
   }
