@@ -173,7 +173,7 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
     *         ion_bond::print_all             *
     *                                         *
     *******************************************/
-   std::string ion_bond::print_all()
+   std::string ion_bond::print_all(const int opt)
    {
      if (nhb==0) 
         return "";
@@ -192,10 +192,25 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
            double R = std::sqrt(x*x + y*y + z*z);
            double espring=this->spring_energy(i);
  
-           stream << "      bond spring #             :" << Ifmt(5) << i << std::endl;
-           stream << "      spring parameters (K0,R0) :" << Ffmt(12,6) << this->K0[i] << Ffmt(12,6) << this->R0[i] << std::endl;
-           stream << "      R                         :" << Ffmt(12,6) << R   << std::endl;
-           stream << "      spring energy             :" << Ffmt(12,6) << espring << std::endl;
+           if (opt==0)
+           {
+              stream << "      bond spring #" << Ifmt(5) << i << std::endl;
+              stream << "      spring parameters:" << std::endl;
+              stream << "         K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
+              stream << "         R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
+              stream << "      R             =" << Ffmt(12,6) << R   << std::endl;
+              stream << "      spring energy =" << Ffmt(12,6) << espring << std::endl;
+           }
+           if (opt==1)
+           {
+              stream << " bond spring #" << Ifmt(5) << i << std::endl;
+              stream << " spring parameters:" << std::endl;
+              stream << "    K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
+              stream << "    R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
+              stream << " R             =" << Ffmt(12,6) << R   << std::endl;
+              stream << " spring energy =" << Ffmt(12,6) << espring << std::endl;
+           }
+
            stream << std::endl;
         }
         return stream.str();

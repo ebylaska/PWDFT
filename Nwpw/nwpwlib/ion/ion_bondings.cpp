@@ -225,7 +225,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
     *       ion_bondings::print_all          *
     *                                         *
     *******************************************/
-   std::string ion_bondings::print_all()
+   std::string ion_bondings::print_all(const int opt)
    {
        std::stringstream stream;
 
@@ -233,15 +233,34 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
      {
         double espring=this->spring_energy(i);
         double gamma=this->spring_gamma(i);
-        stream << "      bondings spring #            :" << Ifmt(5) << i << std::endl;
-        stream << "      spring parameters (K0,gamma0):" << Ffmt(12,6) << this->K0[i] << Ffmt(12,6) << this->gamma0[i] << std::endl;
-        stream << "      gamma                        :" << Ffmt(12,6) << gamma   << std::endl;
-        stream << "      spring energy                :" << Ffmt(12,6) << espring << std::endl;
-        stream << "      coefficient index1 index2    :" << std::endl;
-        for (auto j=0; j<this->n0[i]; ++j)
-           stream << Ffmt(17,6) << this->coef[i][j]  
-                  << Ifmt(7) << this->indx[i][2*j]
-                  << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+        if (opt==0)
+        {
+           stream << "      bondings spring #" << Ifmt(5) << i << std::endl;
+           stream << "      spring parameters:" << std::endl;
+           stream << "         coefficient index1 index2:    " << std::endl;
+           for (auto j=0; j<this->n0[i]; ++j)
+              stream << Ffmt(20,6) << this->coef[i][j]  
+                     << Ifmt(7) << this->indx[i][2*j]
+                     << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+           stream << "         K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
+           stream << "         gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
+           stream << "      gamma         =" << Ffmt(12,6) << gamma   << std::endl;
+           stream << "      spring energy =" << Ffmt(12,6) << espring << std::endl;
+        }
+        if (opt==1)
+        {
+           stream << " bondings spring #" << Ifmt(5) << i << std::endl;
+           stream << " spring parameters:" << std::endl;
+           stream << "    coefficient index1 index2:    " << std::endl;
+           for (auto j=0; j<this->n0[i]; ++j)
+              stream << Ffmt(15,6) << this->coef[i][j]  
+                     << Ifmt(7) << this->indx[i][2*j]
+                     << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+           stream << "    K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
+           stream << "    gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
+           stream << " gamma         =" << Ffmt(12,6) << gamma   << std::endl;
+           stream << " spring energy =" << Ffmt(12,6) << espring << std::endl;
+        }
         stream << std::endl;
      }
      return stream.str();

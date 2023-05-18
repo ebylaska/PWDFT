@@ -19,6 +19,8 @@ class Ion {
   char *atomarray;
 
   bool has_constraints = false;
+  bool has_bond_constraints = false;
+  bool has_bondings_constraints = false;
   ion_bond     *mybond;
   ion_bondings *mybondings;
 
@@ -425,13 +427,18 @@ public:
    double rms_fion(const double *fion) {
      double ss = 0.0;
      for (auto ii = 0; ii < nion; ++ii) {
-       ss += fion[3 * ii] * fion[3 * ii] + fion[3 * ii + 1] * fion[3 * ii + 1] +
-             fion[3 * ii + 2] * fion[3 * ii + 2];
+       ss += fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
      }
      return sqrt(ss) / ((double)nion);
    }
 
-   std::string print_constraints();
+   // ion contraints access functions
+   bool has_ion_constraints() {return has_constraints;}
+   bool has_ion_bond_constraints()     {return has_bond_constraints;}
+   bool has_ion_bondings_constraints() {return has_bondings_constraints;}
+   double energy_ion_bond_constraints()    { return mybond->energy();}
+   double energy_ion_bondings_constraints() { return mybondings->energy();}
+   std::string print_constraints(const int);
 
 };
 } // namespace pwdft

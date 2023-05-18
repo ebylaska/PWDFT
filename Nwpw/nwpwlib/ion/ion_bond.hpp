@@ -50,7 +50,7 @@ public:
   double spring_energy(const int) ;
   double energy();
   double energyfion(double *);
-  std::string print_all();
+  std::string print_all(const int);
 };
 } // namespace pwdft
 
