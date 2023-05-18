@@ -1571,7 +1571,7 @@ static json parse_constraints(json constraintsjson, int *curptr, std::vector<std
         double K0 = std::stod(ss[2]);
         double R0 = std::stod(ss[3]);
         constraintsjson["bond"][bcount]["i0"] = i0;
-        constraintsjson["bond"][bcount]["i0"] = j0;
+        constraintsjson["bond"][bcount]["j0"] = j0;
         constraintsjson["bond"][bcount]["K0"] = K0;
         constraintsjson["bond"][bcount]["R0"] = R0;
      }

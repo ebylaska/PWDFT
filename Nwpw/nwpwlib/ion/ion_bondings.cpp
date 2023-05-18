@@ -109,8 +109,8 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
       for (auto ii=0; ii<n0[i]; ++ii)
       {
           auto coef_tmp = coef[i][ii];
-          auto ii0 = indx[i][2*ii];
-          auto ii1 = indx[i][2*ii+1];
+          auto ii0 = indx[i][2*ii]   - 1;
+          auto ii1 = indx[i][2*ii+1] - 1;
           auto x = rion[3*ii0]   - rion[3*ii1];
           auto y = rion[3*ii0+1] - rion[3*ii1+1];
           auto z = rion[3*ii0+2] - rion[3*ii1+2];
@@ -179,8 +179,8 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         for (auto ii=0; ii<n0[i]; ++ii)
         {
             auto coef_tmp = coef[i][ii];
-            auto ii0 = indx[i][2*ii];
-            auto ii1 = indx[i][2*ii+1];
+            auto ii0 = indx[i][2*ii]   - 1;
+            auto ii1 = indx[i][2*ii+1] - 1;
             auto x = rion[3*ii0]   - rion[3*ii1];
             auto y = rion[3*ii0+1] - rion[3*ii1+1];
             auto z = rion[3*ii0+2] - rion[3*ii1+2];
@@ -193,8 +193,8 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         for (auto ii=0; ii<n0[i]; ++ii)
         {
             auto coef_tmp = coef[i][ii];
-            auto ii0 = indx[i][2*ii];
-            auto ii1 = indx[i][2*ii+1];
+            auto ii0 = indx[i][2*ii]   - 1;
+            auto ii1 = indx[i][2*ii+1] - 1;
             auto x = rion[3*ii0]   - rion[3*ii1];
             auto y = rion[3*ii0+1] - rion[3*ii1+1];
             auto z = rion[3*ii0+2] - rion[3*ii1+2];
@@ -235,7 +235,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         double gamma=this->spring_gamma(i);
         if (opt==0)
         {
-           stream << "      bondings spring #" << Ifmt(5) << i << std::endl;
+           stream << "      bondings spring #" << Ifmt(5) << i+1 << std::endl;
            stream << "      spring parameters:" << std::endl;
            stream << "         coefficient index1 index2:    " << std::endl;
            for (auto j=0; j<this->n0[i]; ++j)
@@ -249,7 +249,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         }
         if (opt==1)
         {
-           stream << " bondings spring #" << Ifmt(5) << i << std::endl;
+           stream << " bondings spring #" << Ifmt(5) << i+1 << std::endl;
            stream << " spring parameters:" << std::endl;
            stream << "    coefficient index1 index2:    " << std::endl;
            for (auto j=0; j<this->n0[i]; ++j)

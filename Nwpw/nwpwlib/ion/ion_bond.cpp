@@ -93,8 +93,8 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
     */
    double ion_bond::spring_energy(const int i)
    {
-       auto ii0 = i0[i];
-       auto jj0 = j0[i];
+       auto ii0 = i0[i]-1;
+       auto jj0 = j0[i]-1;
        auto x = rion[3*ii0]   - rion[3*jj0];
        auto y = rion[3*ii0+1] - rion[3*jj0+1];
        auto z = rion[3*ii0+2] - rion[3*jj0+2];
@@ -139,8 +139,8 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
      double eb=0.0;
      for (auto i=0; i<nhb; ++i)
      {
-        auto ii0 = i0[i];
-        auto jj0 = j0[i];
+        auto ii0 = i0[i]-1;
+        auto jj0 = j0[i]-1;
         auto x = rion[3*ii0]   - rion[3*jj0];
         auto y = rion[3*ii0+1] - rion[3*jj0+1];
         auto z = rion[3*ii0+2] - rion[3*jj0+2];
@@ -183,8 +183,8 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
 
         for (auto i=0; i<nhb; ++i)
         {
-           auto ii0 = i0[i];
-           auto jj0 = j0[i];
+           auto ii0 = i0[i]-1;
+           auto jj0 = j0[i]-1;
            auto x = rion[3*ii0]   - rion[3*jj0];
            auto y = rion[3*ii0+1] - rion[3*jj0+1];
            auto z = rion[3*ii0+2] - rion[3*jj0+2];
@@ -194,8 +194,10 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
  
            if (opt==0)
            {
-              stream << "      bond spring #" << Ifmt(5) << i << std::endl;
+              stream << "      bond spring #" << Ifmt(5) << i+1 << std::endl;
               stream << "      spring parameters:" << std::endl;
+              stream << "         i0         =" << Ifmt(12) << this->i0[i] << std::endl;
+              stream << "         j0         =" << Ifmt(12) << this->j0[i] << std::endl;
               stream << "         K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
               stream << "         R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
               stream << "      R             =" << Ffmt(12,6) << R   << std::endl;
@@ -203,8 +205,10 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
            }
            if (opt==1)
            {
-              stream << " bond spring #" << Ifmt(5) << i << std::endl;
+              stream << " bond spring #" << Ifmt(5) << i+1 << std::endl;
               stream << " spring parameters:" << std::endl;
+              stream << "    i0         =" << Ifmt(12) << this->i0[i] << std::endl;
+              stream << "    j0         =" << Ifmt(12) << this->j0[i] << std::endl;
               stream << "    K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
               stream << "    R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
               stream << " R             =" << Ffmt(12,6) << R   << std::endl;
