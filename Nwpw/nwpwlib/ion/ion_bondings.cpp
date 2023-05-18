@@ -91,6 +91,23 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
    }
 }
 
+  /**************************************
+   *                                    *
+   *  ion_bondings::ij_spring_distance  *
+   *                                    *
+   **************************************/
+   double ion_bondings::ij_spring_distance(const int i, const int j)
+   {
+      auto coef_tmp = coef[i][j];
+      auto ii0 = indx[i][2*j]   - 1;
+      auto ii1 = indx[i][2*j+1] - 1;
+      auto x = rion[3*ii0]   - rion[3*ii1];
+      auto y = rion[3*ii0+1] - rion[3*ii1+1];
+      auto z = rion[3*ii0+2] - rion[3*ii1+2];
+      min_diff_xyz(&x,&y,&z);
+      double dist = std::sqrt(x*x + y*y + z*z);
+      return dist;
+   }
 
   /**************************************
    *                                    *
@@ -237,11 +254,12 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         {
            stream << "      bondings spring #" << Ifmt(5) << i+1 << std::endl;
            stream << "      spring parameters:" << std::endl;
-           stream << "         coefficient index1 index2:    " << std::endl;
+           stream << "         coefficient index1 index2       distance" << std::endl;
            for (auto j=0; j<this->n0[i]; ++j)
               stream << Ffmt(20,6) << this->coef[i][j]  
                      << Ifmt(7) << this->indx[i][2*j]
-                     << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+                     << Ifmt(7) << this->indx[i][2*j+1]
+                     << Ffmt(15,6) << this->ij_spring_distance(i,j) << std::endl;
            stream << "         K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
            stream << "         gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
            stream << "      gamma         =" << Ffmt(12,6) << gamma   << std::endl;
@@ -251,11 +269,12 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
         {
            stream << " bondings spring #" << Ifmt(5) << i+1 << std::endl;
            stream << " spring parameters:" << std::endl;
-           stream << "    coefficient index1 index2:    " << std::endl;
+           stream << "    coefficient index1 index2       distance" << std::endl;
            for (auto j=0; j<this->n0[i]; ++j)
               stream << Ffmt(15,6) << this->coef[i][j]  
                      << Ifmt(7) << this->indx[i][2*j]
-                     << Ifmt(7) << this->indx[i][2*j+1] << std::endl;
+                     << Ifmt(7) << this->indx[i][2*j+1]
+                     << Ffmt(15,6) << this->ij_spring_distance(i,j) << std::endl;
            stream << "    K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
            stream << "    gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
            stream << " gamma         =" << Ffmt(12,6) << gamma   << std::endl;

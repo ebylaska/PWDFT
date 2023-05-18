@@ -54,6 +54,7 @@ public:
   bool has_bondings() {return bondings_exists;}
 
   void min_diff_xyz(double *, double *, double *);
+  double ij_spring_distance(const int, const int);
   double spring_gamma(const int);
   double spring_energy(const int) ;
   double energy();
