@@ -1854,7 +1854,7 @@ void PGrid::pfftfx(const int nb, double *a, double *tmp1, double *tmp2,
     }
     d3db::cshift_fftf(nx,ny,nq,1,tmp1);
     */
-    gdevice_batch_cfftx_tmpx(true, nx, ny * nq, n2ft3d, a, d3db::tmpx);
+    gdevice_batch_cfftx_tmpx(true, nx, ny*nq, n2ft3d, a, d3db::tmpx);
     std::memcpy(tmp1, a, n2ft3d * sizeof(double));
   }
 
@@ -2111,21 +2111,29 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx) {
  *                              *
  ********************************/
 void PGrid::pfftf_step(const int step, const int nb, double *a, double *tmp1,
-                       double *tmp2, int request_indx) {
-  if (step == 0) {
-    // pfftfx mem-->device, in=a out=tmp2
-    pfftfx(nb, a, tmp1, tmp2, request_indx);
-  } else if (step == 1) {
-    // pfftfy device, in=tmp1
-    pfftfy(nb, tmp1, tmp2, request_indx);
-  } else if (step == 2) {
-    // pfftfz device-->mem
-    pfftfz(nb, tmp1, tmp2, request_indx);
-    this->c_pack_start(nb, tmp2, tmp1, request_indx, 47);
-  } else if (step == 3) {
-    // pfftf final
-    this->c_pack_end(nb, tmp2, request_indx);
-  }
+                       double *tmp2, int request_indx) 
+{
+   if (step==0) 
+   {
+     // pfftfx mem-->device, in=a out=tmp2
+     pfftfx(nb, a, tmp1, tmp2, request_indx);
+   } 
+   else if (step==1) 
+   {
+      // pfftfy device, in=tmp1
+      pfftfy(nb, tmp1, tmp2, request_indx);
+   } 
+   else if (step==2) 
+   {
+      // pfftfz device-->mem
+      pfftfz(nb, tmp1, tmp2, request_indx);
+      this->c_pack_start(nb, tmp2, tmp1, request_indx, 47);
+   } 
+   else if (step==3) 
+   {
+      // pfftf final
+      this->c_pack_end(nb, tmp2, request_indx);
+   }
 }
 
 /********************************

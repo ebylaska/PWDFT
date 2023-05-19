@@ -52,7 +52,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    char date[26];
    double sum1, sum2, ev, zv;
    double cpu1, cpu2, cpu3, cpu4;
-   double E[70], deltae, deltac, deltar, viral, unita[9], en[2];
+   double E[80], deltae, deltac, deltar, viral, unita[9], en[2];
    double *psi1, *psi2, *Hpsi, *psi_r;
    double *dn;
    double *hml, *lmbda, *eig;
@@ -103,6 +103,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    // Ion myion(myrtdb);
    Ion myion(rtdbstring, control);
    MPI_Barrier(comm_world0);
+
  
    /* Check for and generate psp files                       */
    /* - this routine also sets the valence charges in myion, */
@@ -240,6 +241,9 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(10,5) << myion.com(0) << " "
                 << Ffmt(10,5) << myion.com(1) << " " 
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      if (control.geometry_optimize())
+         std::cout << std::endl << myion.print_constraints(0);
       
       std::cout << mypsp.myefield->shortprint_efield();
       std::cout << mycoulomb12.shortprint_dielectric();
@@ -428,10 +432,6 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    {
       std::cout << std::endl << std::endl;
       std::cout << "     ===================  summary of results ======================" << std::endl;
-      if (control.geometry_optimize()) 
-          std::cout << myion.print_bond_angle_torsions()
-                    << std::endl << std::endl;
-       
       std::cout << "\n final ion positions (au):" << std::endl;
       for (ii = 0; ii < myion.nion; ++ii)
         std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
@@ -464,7 +464,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       // if (mypsp.myapc->v_apc_on)
       //    std::cout << mypsp.myapc->shortprint_APC();
 
-      std::cout << std::endl << std::endl;
+      std::cout << std::endl;
       std::cout << std::fixed << " number of electrons: spin up= " 
                 << Ffmt(11,5) << en[0] << "  down= " 
                 << Ffmt(11,5) << en[ispin-1] << " (real space)";
@@ -535,6 +535,17 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " Viral Coefficient   : " 
                 << Efmt(19,10) << viral << std::endl;
 
+      if (myion.has_ion_constraints())
+      {
+         std::cout << std::endl;
+         if (myion.has_ion_bond_constraints())     
+            std::cout << " spring bond         : " << Efmt(19,10) << E[70] << " ("
+                                                   << Efmt(15,5)  << E[70]/myion.nion << " /ion)" << std::endl;
+         if (myion.has_ion_bondings_constraints()) 
+            std::cout << " spring bondings     : " << Efmt(19,10) << E[71] << " ("
+                                                   << Efmt(15,5)  << E[71]/myion.nion << " /ion)" << std::endl;
+      }
+
       if (mypsp.myefield->efield_on) {
          std::cout << std::endl;
          std::cout << " Electric Field Energies" << std::endl;
@@ -564,7 +575,14 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       }
       std::cout << std::endl;
 
-     // write APC analysis
+      // write geometry and constraints analysis
+      if (control.geometry_optimize())
+      {
+         std::cout << myion.print_bond_angle_torsions();
+         std::cout << std::endl << myion.print_constraints(1);
+      }
+
+      // write APC analysis
       if (mypsp.myapc->apc_on)
          std::cout << mypsp.myapc->print_APC(mypsp.zv);
 

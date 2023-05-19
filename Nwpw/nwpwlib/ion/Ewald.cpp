@@ -80,352 +80,352 @@ static double mandelung_get(Lattice *lattice) {
  *                               *
  *********************************/
 // Ewald::Ewald(Parallel *inparall, Ion *inion, Pseudopotential *inpsp)
-Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice,
-             Control2 &control, double *inzv) {
-  int i, j, k, l, k1, k2, k3;
-  int enxh, enyh, enzh, enpack0;
-  int tnp, tid, dutask;
-  double g1, g2, g3, gg1, gg2, gg3, gg, ggcut;
-  double pi, pi4, rs, w, term;
-  double q, z, zz;
-  double eps = 1.0e-12;
-
-  ewaldparall = inparall;
-  ewaldion = inion;
-  ewaldlattice = inlattice;
-  tnp = ewaldparall->np();
-  tid = ewaldparall->taskid();
-
-  for (j = 0; j < 3; ++j)
-    for (i = 0; i < 3; ++i) {
-      unitg[i + j * 3] = ewaldlattice->unitg(i, j);
-      unita[i + j * 3] = ewaldlattice->unita(i, j);
-    }
-
-  enx = control.ewald_ngrid(0);
-  eny = control.ewald_ngrid(1);
-  enz = control.ewald_ngrid(2);
-  enxh = enx / 2;
-  enyh = eny / 2;
-  enzh = enz / 2;
-
-  /* determine ggcut */
-  g1 = unitg[0] * (enxh);
-  g2 = unitg[1] * (enxh);
-  g3 = unitg[2] * (enxh);
-  gg1 = g1 * g1 + g2 * g2 + g3 * g3;
-
-  g1 = unitg[3] * (enyh);
-  g2 = unitg[4] * (enyh);
-  g3 = unitg[5] * (enyh);
-  gg2 = g1 * g1 + g2 * g2 + g3 * g3;
-
-  g1 = unitg[6] * (enzh);
-  g2 = unitg[7] * (enzh);
-  g3 = unitg[8] * (enzh);
-  gg3 = g1 * g1 + g2 * g2 + g3 * g3;
-
-  ggcut = gg1;
-  if (gg2 < ggcut)
-    ggcut = gg2;
-  if (gg3 < ggcut)
-    ggcut = gg3;
-  if ((2.0 * control.ecut()) < ggcut)
-    ggcut = 2.0 * control.ecut();
-  eecut = 0.5 * ggcut;
-
-  /* determine enpack */
-  dutask = 0;
-  enpack = 0;
-  enida = 0;
-  k1 = 0;
-  k2 = 0;
-  k3 = 0;
-  g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-  g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-  g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-  gg = g1 * g1 + g2 * g2 + g3 * g3;
-  if ((gg - ggcut) < (-eps)) {
-    if (dutask == tid) {
-      enpack++;
-      enida++;
-    }
-    dutask = (dutask + 1) % tnp;
-  }
-  for (k = 1; k < enzh; ++k) {
-    k1 = 0;
-    k2 = 0;
-    k3 = k;
-    g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-    g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-    g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-    gg = g1 * g1 + g2 * g2 + g3 * g3;
-    if ((gg - ggcut) < (-eps)) {
-      if (dutask == tid)
-        enpack++;
-      dutask = (dutask + 1) % tnp;
-    }
-  }
-
-  for (k = (-enzh + 1); k < enzh; ++k)
-    for (j = 1; j < enyh; ++j) {
-      k1 = 0;
-      k2 = j;
-      k3 = k;
-      g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-      g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-      g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-      gg = g1 * g1 + g2 * g2 + g3 * g3;
-      if ((gg - ggcut) < (-eps)) {
-        if (dutask == tid)
-          enpack++;
-        dutask = (dutask + 1) % tnp;
-      }
-    }
-
-  for (k = (-enzh + 1); k < enzh; ++k)
-    for (j = (-enyh + 1); j < enyh; ++j)
-      for (i = 1; i < enxh; ++i) {
-        k1 = i;
-        k2 = j;
-        k3 = k;
-        g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-        g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-        g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-        gg = g1 * g1 + g2 * g2 + g3 * g3;
-
-        if ((gg - ggcut) < (-eps)) {
-          if (dutask == tid)
-            enpack++;
-          dutask = (dutask + 1) % tnp;
-        }
-      }
-  enpack_all = ewaldparall->ISumAll(0, enpack);
-
-  encut = control.ewald_ncut();
-  enshl3d = (2 * encut + 1) * (2 * encut + 1) * (2 * encut + 1);
-  ercut = control.ewald_rcut();
-  pi = 4.00 * atan(1.0);
-  pi4 = 4.00 * pi;
-  if (encut <= 0)
-    encut = 1;
-  if (ercut <= 0.00) {
-    rs = unita[0] * unita[0] + unita[1] * unita[1] + unita[2] * unita[2];
-    rs = sqrt(rs);
-    ercut = rs / pi;
-
-    rs = unita[3] * unita[3] + unita[4] * unita[4] + unita[5] * unita[5];
-    rs = sqrt(rs);
-    w = rs / pi;
-    if (w < ercut)
-      ercut = w;
-
-    rs = unita[6] * unita[6] + unita[7] * unita[7] + unita[8] * unita[8];
-    rs = sqrt(rs);
-    w = rs / pi;
-    if (w < ercut)
-      ercut = w;
-  }
-  w = 0.25 * ercut * ercut;
-
-  /* allocate memory */
-  eG = new double[3 * enpack];
-  vg = new double[enpack];
-  ss = new double[2 * enpack];
-  exi = new double[2 * enpack];
-  tmp3 = new double[enpack];
-  ftmp = new double[3 * (ewaldion->nion)];
-  vcx = new double[enpack];
-  rcell = new double[3 * enshl3d];
-  ewx1 = new double[2 * (ewaldion->nion) * enx];
-  ewy1 = new double[2 * (ewaldion->nion) * eny];
-  ewz1 = new double[2 * (ewaldion->nion) * enz];
-  zv = new double[ewaldion->nkatm];
-  i_indx = new int[enpack];
-  j_indx = new int[enpack];
-  k_indx = new int[enpack];
-
-  /* determine eG */
-  for (i = 0; i < (3 * enpack); ++i)
-    eG[i] = 0.0;
-  dutask = 0;
-  enpack0 = 0;
-  k1 = 0;
-  k2 = 0;
-  k3 = 0;
-  g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-  g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-  g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-  gg = g1 * g1 + g2 * g2 + g3 * g3;
-  if ((gg - ggcut) < (-eps)) {
-    if (dutask == tid) {
-      eG[enpack0] = g1;
-      eG[enpack0 + enpack] = g2;
-      eG[enpack0 + 2 * enpack] = g3;
-      i = k1;
-      if (i < 0)
-        i += enx;
-      j = k2;
-      if (j < 0)
-        j += eny;
-      k = k3;
-      if (k < 0)
-        k += enz;
-      i_indx[enpack0] = i;
-      j_indx[enpack0] = j;
-      k_indx[enpack0] = k;
-      enpack0++;
-    }
-    dutask = (dutask + 1) % tnp;
-  }
-  k1 = 0;
-  k2 = 0;
-  for (k3 = 1; k3 < enzh; ++k3) {
-    g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-    g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-    g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-    gg = g1 * g1 + g2 * g2 + g3 * g3;
-    if ((gg - ggcut) < (-eps)) {
-      if (dutask == tid) {
-        eG[enpack0] = g1;
-        eG[enpack0 + enpack] = g2;
-        eG[enpack0 + 2 * enpack] = g3;
-        i = k1;
-        if (i < 0)
-          i += enx;
-        j = k2;
-        if (j < 0)
-          j += eny;
-        k = k3;
-        if (k < 0)
-          k += enz;
-        i_indx[enpack0] = i;
-        j_indx[enpack0] = j;
-        k_indx[enpack0] = k;
-        enpack0++;
-      }
-      dutask = (dutask + 1) % tnp;
-    }
-  }
-
-  k1 = 0;
-  for (k3 = (-enzh + 1); k3 < enzh; ++k3)
-    for (k2 = 1; k2 < enyh; ++k2) {
-      g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-      g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-      g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-      gg = g1 * g1 + g2 * g2 + g3 * g3;
-      if ((gg - ggcut) < (-eps)) {
-        if (dutask == tid) {
-          eG[enpack0] = g1;
-          eG[enpack0 + enpack] = g2;
-          eG[enpack0 + 2 * enpack] = g3;
-          i = k1;
-          if (i < 0)
-            i += enx;
-          j = k2;
-          if (j < 0)
-            j += eny;
-          k = k3;
-          if (k < 0)
-            k += enz;
-          i_indx[enpack0] = i;
-          j_indx[enpack0] = j;
-          k_indx[enpack0] = k;
-          enpack0++;
-        }
-        dutask = (dutask + 1) % tnp;
-      }
-    }
-
-  for (k3 = (-enzh + 1); k3 < enzh; ++k3)
-    for (k2 = (-enyh + 1); k2 < enyh; ++k2)
-      for (k1 = 1; k1 < enxh; ++k1) {
-        g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
-        g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
-        g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
-        gg = g1 * g1 + g2 * g2 + g3 * g3;
-
-        if ((gg - ggcut) < (-eps)) {
-          if (dutask == tid) {
-            eG[enpack0] = g1;
-            eG[enpack0 + enpack] = g2;
-            eG[enpack0 + 2 * enpack] = g3;
-            i = k1;
-            if (i < 0)
-              i += enx;
-            j = k2;
-            if (j < 0)
-              j += eny;
-            k = k3;
-            if (k < 0)
-              k += enz;
-            i_indx[enpack0] = i;
-            j_indx[enpack0] = j;
-            k_indx[enpack0] = k;
-            enpack0++;
-          }
-          dutask = (dutask + 1) % tnp;
-        }
-      }
-
-  /* find vg and vcx */
-  for (i = 0; i < enpack; ++i)
-    vg[i] = 0.0;
-  for (i = 0; i < enpack; ++i)
-    vcx[i] = 0.0;
-
-  for (k = enida; k < enpack; ++k) {
-    g1 = eG[k];
-    g2 = eG[k + enpack];
-    g3 = eG[k + 2 * enpack];
-    gg = g1 * g1 + g2 * g2 + g3 * g3;
-    term = pi4 / gg;
-    vcx[k] = term;
-    vg[k] = term * exp(-w * gg);
-  }
-
-  /* set the mandelung constant */
-  alpha = mandelung_get(ewaldlattice);
-
-  /* set the ion charges */
-  for (i = 0; i < (ewaldion->nkatm); ++i)
-    zv[i] = inzv[i];
-  // zv[i] = inpsp->zv[i];
-
-  /* ewald summation */
-  rs = pow(3.0 * ewaldlattice->omega() / pi4, 1.0 / 3.0);
-  zz = 0.0;
-  z = 0.0;
-  for (i = 0; i < (ewaldion->nion); ++i) {
-    q = zv[ewaldion->katm[i]];
-    zz += q * q;
-    z += q;
-  }
-  cewald = 0.0;
-  for (i = 0; i < enpack; ++i)
-    cewald += vg[i];
-  cewald *= 2.0;
-  if (tnp > 1)
-    cewald = ewaldparall->SumAll(0, cewald);
-
-  cewald = -0.50 * zz * (alpha / rs + cewald / ewaldlattice->omega()) -
-           0.50 * (z * z - zz) * ercut * ercut * pi / ewaldlattice->omega();
-
-  /* set rcell */
-  l = 0;
-  rcell[l] = 0.0;
-  rcell[l + enshl3d] = 0.0;
-  rcell[l + 2 * enshl3d] = 0.0;
-  for (k = -encut; k <= encut; ++k)
-    for (j = -encut; j <= encut; ++j)
-      for (i = -encut; i <= encut; ++i)
-        if (!((i == 0) && (j == 0) && (k == 0))) {
-          ++l;
-          rcell[l] = i * unita[0] + j * unita[3] + k * unita[6];
-          rcell[l + enshl3d] = i * unita[1] + j * unita[4] + k * unita[7];
-          rcell[l + 2 * enshl3d] = i * unita[2] + j * unita[5] + k * unita[8];
-        }
+Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2 &control, double *inzv) 
+{
+   int i, j, k, l, k1, k2, k3;
+   int enxh, enyh, enzh, enpack0;
+   int tnp, tid, dutask;
+   double g1, g2, g3, gg1, gg2, gg3, gg, ggcut;
+   double pi, pi4, rs, w, term;
+   double q, z, zz;
+   double eps = 1.0e-12;
+ 
+   ewaldparall = inparall;
+   ewaldion = inion;
+   ewaldlattice = inlattice;
+   tnp = ewaldparall->np();
+   tid = ewaldparall->taskid();
+ 
+   for (j = 0; j < 3; ++j)
+     for (i = 0; i < 3; ++i) {
+       unitg[i + j * 3] = ewaldlattice->unitg(i, j);
+       unita[i + j * 3] = ewaldlattice->unita(i, j);
+     }
+ 
+   enx = control.ewald_ngrid(0);
+   eny = control.ewald_ngrid(1);
+   enz = control.ewald_ngrid(2);
+   enxh = enx / 2;
+   enyh = eny / 2;
+   enzh = enz / 2;
+ 
+   /* determine ggcut */
+   g1 = unitg[0] * (enxh);
+   g2 = unitg[1] * (enxh);
+   g3 = unitg[2] * (enxh);
+   gg1 = g1 * g1 + g2 * g2 + g3 * g3;
+ 
+   g1 = unitg[3] * (enyh);
+   g2 = unitg[4] * (enyh);
+   g3 = unitg[5] * (enyh);
+   gg2 = g1 * g1 + g2 * g2 + g3 * g3;
+ 
+   g1 = unitg[6] * (enzh);
+   g2 = unitg[7] * (enzh);
+   g3 = unitg[8] * (enzh);
+   gg3 = g1 * g1 + g2 * g2 + g3 * g3;
+ 
+   ggcut = gg1;
+   if (gg2 < ggcut)
+     ggcut = gg2;
+   if (gg3 < ggcut)
+     ggcut = gg3;
+   if ((2.0 * control.ecut()) < ggcut)
+     ggcut = 2.0 * control.ecut();
+   eecut = 0.5 * ggcut;
+ 
+   /* determine enpack */
+   dutask = 0;
+   enpack = 0;
+   enida = 0;
+   k1 = 0;
+   k2 = 0;
+   k3 = 0;
+   g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+   g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+   g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+   gg = g1 * g1 + g2 * g2 + g3 * g3;
+   if ((gg - ggcut) < (-eps)) {
+     if (dutask == tid) {
+       enpack++;
+       enida++;
+     }
+     dutask = (dutask + 1) % tnp;
+   }
+   for (k = 1; k < enzh; ++k) {
+     k1 = 0;
+     k2 = 0;
+     k3 = k;
+     g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+     g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+     g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+     gg = g1 * g1 + g2 * g2 + g3 * g3;
+     if ((gg - ggcut) < (-eps)) {
+       if (dutask == tid)
+         enpack++;
+       dutask = (dutask + 1) % tnp;
+     }
+   }
+ 
+   for (k = (-enzh + 1); k < enzh; ++k)
+     for (j = 1; j < enyh; ++j) {
+       k1 = 0;
+       k2 = j;
+       k3 = k;
+       g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+       g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+       g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+       gg = g1 * g1 + g2 * g2 + g3 * g3;
+       if ((gg - ggcut) < (-eps)) {
+         if (dutask == tid)
+           enpack++;
+         dutask = (dutask + 1) % tnp;
+       }
+     }
+ 
+   for (k = (-enzh + 1); k < enzh; ++k)
+     for (j = (-enyh + 1); j < enyh; ++j)
+       for (i = 1; i < enxh; ++i) {
+         k1 = i;
+         k2 = j;
+         k3 = k;
+         g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+         g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+         g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+         gg = g1 * g1 + g2 * g2 + g3 * g3;
+ 
+         if ((gg - ggcut) < (-eps)) {
+           if (dutask == tid)
+             enpack++;
+           dutask = (dutask + 1) % tnp;
+         }
+       }
+   enpack_all = ewaldparall->ISumAll(0, enpack);
+ 
+   encut = control.ewald_ncut();
+   enshl3d = (2 * encut + 1) * (2 * encut + 1) * (2 * encut + 1);
+   ercut = control.ewald_rcut();
+   pi = 4.00 * atan(1.0);
+   pi4 = 4.00 * pi;
+   if (encut <= 0)
+     encut = 1;
+   if (ercut <= 0.00) {
+     rs = unita[0] * unita[0] + unita[1] * unita[1] + unita[2] * unita[2];
+     rs = sqrt(rs);
+     ercut = rs / pi;
+ 
+     rs = unita[3] * unita[3] + unita[4] * unita[4] + unita[5] * unita[5];
+     rs = sqrt(rs);
+     w = rs / pi;
+     if (w < ercut)
+       ercut = w;
+ 
+     rs = unita[6] * unita[6] + unita[7] * unita[7] + unita[8] * unita[8];
+     rs = sqrt(rs);
+     w = rs / pi;
+     if (w < ercut)
+       ercut = w;
+   }
+   w = 0.25 * ercut * ercut;
+ 
+   /* allocate memory */
+   eG = new double[3 * enpack];
+   vg = new double[enpack];
+   ss = new double[2 * enpack];
+   exi = new double[2 * enpack];
+   tmp3 = new double[enpack];
+   ftmp = new double[3 * (ewaldion->nion)];
+   vcx = new double[enpack];
+   rcell = new double[3 * enshl3d];
+   ewx1 = new double[2 * (ewaldion->nion) * enx];
+   ewy1 = new double[2 * (ewaldion->nion) * eny];
+   ewz1 = new double[2 * (ewaldion->nion) * enz];
+   zv = new double[ewaldion->nkatm];
+   i_indx = new int[enpack];
+   j_indx = new int[enpack];
+   k_indx = new int[enpack];
+ 
+   /* determine eG */
+   for (i = 0; i < (3 * enpack); ++i)
+     eG[i] = 0.0;
+   dutask = 0;
+   enpack0 = 0;
+   k1 = 0;
+   k2 = 0;
+   k3 = 0;
+   g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+   g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+   g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+   gg = g1 * g1 + g2 * g2 + g3 * g3;
+   if ((gg - ggcut) < (-eps)) {
+     if (dutask == tid) {
+       eG[enpack0] = g1;
+       eG[enpack0 + enpack] = g2;
+       eG[enpack0 + 2 * enpack] = g3;
+       i = k1;
+       if (i < 0)
+         i += enx;
+       j = k2;
+       if (j < 0)
+         j += eny;
+       k = k3;
+       if (k < 0)
+         k += enz;
+       i_indx[enpack0] = i;
+       j_indx[enpack0] = j;
+       k_indx[enpack0] = k;
+       enpack0++;
+     }
+     dutask = (dutask + 1) % tnp;
+   }
+   k1 = 0;
+   k2 = 0;
+   for (k3 = 1; k3 < enzh; ++k3) {
+     g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+     g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+     g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+     gg = g1 * g1 + g2 * g2 + g3 * g3;
+     if ((gg - ggcut) < (-eps)) {
+       if (dutask == tid) {
+         eG[enpack0] = g1;
+         eG[enpack0 + enpack] = g2;
+         eG[enpack0 + 2 * enpack] = g3;
+         i = k1;
+         if (i < 0)
+           i += enx;
+         j = k2;
+         if (j < 0)
+           j += eny;
+         k = k3;
+         if (k < 0)
+           k += enz;
+         i_indx[enpack0] = i;
+         j_indx[enpack0] = j;
+         k_indx[enpack0] = k;
+         enpack0++;
+       }
+       dutask = (dutask + 1) % tnp;
+     }
+   }
+ 
+   k1 = 0;
+   for (k3 = (-enzh + 1); k3 < enzh; ++k3)
+     for (k2 = 1; k2 < enyh; ++k2) {
+       g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+       g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+       g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+       gg = g1 * g1 + g2 * g2 + g3 * g3;
+       if ((gg - ggcut) < (-eps)) {
+         if (dutask == tid) {
+           eG[enpack0] = g1;
+           eG[enpack0 + enpack] = g2;
+           eG[enpack0 + 2 * enpack] = g3;
+           i = k1;
+           if (i < 0)
+             i += enx;
+           j = k2;
+           if (j < 0)
+             j += eny;
+           k = k3;
+           if (k < 0)
+             k += enz;
+           i_indx[enpack0] = i;
+           j_indx[enpack0] = j;
+           k_indx[enpack0] = k;
+           enpack0++;
+         }
+         dutask = (dutask + 1) % tnp;
+       }
+     }
+ 
+   for (k3 = (-enzh + 1); k3 < enzh; ++k3)
+     for (k2 = (-enyh + 1); k2 < enyh; ++k2)
+       for (k1 = 1; k1 < enxh; ++k1) {
+         g1 = k1 * unitg[0] + k2 * unitg[3] + k3 * unitg[6];
+         g2 = k1 * unitg[1] + k2 * unitg[4] + k3 * unitg[7];
+         g3 = k1 * unitg[2] + k2 * unitg[5] + k3 * unitg[8];
+         gg = g1 * g1 + g2 * g2 + g3 * g3;
+ 
+         if ((gg - ggcut) < (-eps)) {
+           if (dutask == tid) {
+             eG[enpack0] = g1;
+             eG[enpack0 + enpack] = g2;
+             eG[enpack0 + 2 * enpack] = g3;
+             i = k1;
+             if (i < 0)
+               i += enx;
+             j = k2;
+             if (j < 0)
+               j += eny;
+             k = k3;
+             if (k < 0)
+               k += enz;
+             i_indx[enpack0] = i;
+             j_indx[enpack0] = j;
+             k_indx[enpack0] = k;
+             enpack0++;
+           }
+           dutask = (dutask + 1) % tnp;
+         }
+       }
+ 
+   /* find vg and vcx */
+   for (i = 0; i < enpack; ++i)
+     vg[i] = 0.0;
+   for (i = 0; i < enpack; ++i)
+     vcx[i] = 0.0;
+ 
+   for (k = enida; k < enpack; ++k) {
+     g1 = eG[k];
+     g2 = eG[k + enpack];
+     g3 = eG[k + 2 * enpack];
+     gg = g1 * g1 + g2 * g2 + g3 * g3;
+     term = pi4 / gg;
+     vcx[k] = term;
+     vg[k] = term * exp(-w * gg);
+   }
+ 
+   /* set the mandelung constant */
+   alpha = mandelung_get(ewaldlattice);
+ 
+   /* set the ion charges */
+   for (i = 0; i < (ewaldion->nkatm); ++i)
+     zv[i] = inzv[i];
+   // zv[i] = inpsp->zv[i];
+ 
+   /* ewald summation */
+   rs = pow(3.0 * ewaldlattice->omega() / pi4, 1.0 / 3.0);
+   zz = 0.0;
+   z = 0.0;
+   for (i = 0; i < (ewaldion->nion); ++i) {
+     q = zv[ewaldion->katm[i]];
+     zz += q * q;
+     z += q;
+   }
+   cewald = 0.0;
+   for (i = 0; i < enpack; ++i)
+     cewald += vg[i];
+   cewald *= 2.0;
+   if (tnp > 1)
+     cewald = ewaldparall->SumAll(0, cewald);
+ 
+   cewald = -0.50 * zz * (alpha / rs + cewald / ewaldlattice->omega()) -
+            0.50 * (z * z - zz) * ercut * ercut * pi / ewaldlattice->omega();
+ 
+   /* set rcell */
+   l = 0;
+   rcell[l] = 0.0;
+   rcell[l + enshl3d] = 0.0;
+   rcell[l + 2 * enshl3d] = 0.0;
+   for (k = -encut; k <= encut; ++k)
+     for (j = -encut; j <= encut; ++j)
+       for (i = -encut; i <= encut; ++i)
+         if (!((i == 0) && (j == 0) && (k == 0))) {
+           ++l;
+           rcell[l] = i * unita[0] + j * unita[3] + k * unita[6];
+           rcell[l + enshl3d] = i * unita[1] + j * unita[4] + k * unita[7];
+           rcell[l + 2 * enshl3d] = i * unita[2] + j * unita[5] + k * unita[8];
+         }
 }
 
 /*********************************

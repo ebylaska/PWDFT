@@ -135,7 +135,9 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol,
 
   double autoang = 0.529177;
   std::string msg = "";
+
   msg += "\n";
+  msg += " == Bonds, Angles, and Torsions ==\n\n";
   msg += " Number of Atoms = " + std::to_string(nion) + "\n\n";
 
   msg += "\n";
@@ -336,8 +338,7 @@ std::string ion_print_bond_angle_torsions(int nion, int *katm, char *symbol,
           }
 
   msg += "\n\n";
-  msg += "  XYZ format geometry\n";
-  msg += "  -------------------\n";
+  msg += " == XYZ format geometry ==\n\n";
   msg += std::to_string(nion) + "\n\n";
 
   for (auto ii = 0; ii < nion; ++ii) {

@@ -1391,7 +1391,6 @@ static json parse_nwpw(json nwpwjson, int *curptr,
  *                parse_driver                    *
  *                                                *
  **************************************************/
-
 static json parse_driver(json driverjson, int *curptr,
                          std::vector<std::string> lines) {
   // json driverjson;
@@ -1511,6 +1510,85 @@ static json parse_driver(json driverjson, int *curptr,
 
 /**************************************************
  *                                                *
+ *                parse_constraints               *
+ *                                                *
+ **************************************************/
+ //### Adding reaction ###
+//# reaction_type    = AB + C --> AC + B
+//# reaction_indexes = 1 2 6
+//# reaction_gamma   = -2.400
+//##### current gamma=-2.400 ######
+//constraints
+//   clear
+//   spring bondings 1.000000 -2.400 1.0 1 2 -1.0 1 6
+//   spring bond 1 2 1.000000 1.2 
+//end
+
+static json parse_constraints(json constraintsjson, int *curptr, std::vector<std::string> lines) 
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+ 
+   while (endcount > 0) {
+     line = mystring_lowercase(lines[cur]);
+ 
+     if (mystring_contains(line, "clear")) {
+         constraintsjson.clear();
+         
+     } else if ((mystring_contains(line, "spring")) && 
+                (mystring_contains(line, "bondings"))) {
+        int bcount = 0;
+        if (!constraintsjson["bondings"].is_null())
+           bcount = constraintsjson["bondings"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " bondings")[1]));
+        int    n0      = (ss.size()-2)/3;
+        double K0     = std::stod(ss[0]);
+        double gamma0 = std::stod(ss[1]);
+        std::vector<int> indexes;
+        std::vector<double> coef;
+        for (auto i=0; i<n0; ++i)
+        {
+            coef.push_back(std::stod(ss[3*i+2]));
+            indexes.push_back(std::stoi(ss[3*i+3]));
+            indexes.push_back(std::stoi(ss[3*i+4]));
+        }
+        constraintsjson["bondings"][bcount]["coef"]    = coef;
+        constraintsjson["bondings"][bcount]["indexes"] = indexes;
+        constraintsjson["bondings"][bcount]["K0"]      = K0;
+        constraintsjson["bondings"][bcount]["gamma0"]  = gamma0;
+     
+     } else if ((mystring_contains(line, "spring")) && 
+                (mystring_contains(line, "bond"))) {
+        int bcount = 0;
+        if (!constraintsjson["bond"].is_null())
+           bcount = constraintsjson["bond"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " bond")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        double K0 = std::stod(ss[2]);
+        double R0 = std::stod(ss[3]);
+        constraintsjson["bond"][bcount]["i0"] = i0;
+        constraintsjson["bond"][bcount]["j0"] = j0;
+        constraintsjson["bond"][bcount]["K0"] = K0;
+        constraintsjson["bond"][bcount]["R0"] = R0;
+     }
+ 
+     ++cur;
+     if (mystring_contains(lines[cur], "end"))
+       --endcount;
+   }
+   *curptr = cur;
+   return constraintsjson;
+}
+
+
+
+
+/**************************************************
+ *                                                *
  *                parse_rtdbjson                  *
  *                                                *
  **************************************************/
@@ -1548,6 +1626,9 @@ json parse_rtdbjson(json rtdb) {
       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
       rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
+      rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
+
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "task")) {
       rtdb["current_task"] = lines[cur];
       foundtask = true;
@@ -1598,34 +1679,29 @@ std::string parse_nwinput(std::string nwinput) {
           mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
   }
   if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
-    if (!mystring_contains(
-            mystring_trim(
-                mystring_split(mystring_split(nwinput, "psp_library_dir")[0],
-                               "\n")
-                    .back()),
-            "#"))
-      psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(
-          mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
+    if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
+       psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
   }
 
   // fetch the dbname
   std::string dbname = "nwchemex";
   if (mystring_contains(mystring_lowercase(nwinput), "start"))
-    dbname = mystring_trim(
+     dbname = mystring_trim(
         mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
 
   json rtdb;
   if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
-    // read a JSON file
-    std::string dbname0 = permanent_dir + "/" + dbname + ".json";
-    std::ifstream ifile(dbname0);
-    ifile >> rtdb;
+     // read a JSON file
+     std::string dbname0 = permanent_dir + "/" + dbname + ".json";
+     std::ifstream ifile(dbname0);
+     ifile >> rtdb;
   } else {
-    // intialize the rtdb structure
-    json nwpw, geometries, driver;
-    rtdb["nwpw"] = nwpw;
-    rtdb["geometries"] = geometries;
-    rtdb["driver"] = driver;
+     // intialize the rtdb structure
+     json nwpw, geometries, driver, constraints;
+     rtdb["nwpw"] = nwpw;
+     rtdb["geometries"] = geometries;
+     rtdb["driver"] = driver;
+     rtdb["constraints"] = constraints;
   }
 
   // set the dbname
