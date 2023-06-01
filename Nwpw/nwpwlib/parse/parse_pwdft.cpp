@@ -1685,12 +1685,19 @@ std::string parse_nwinput(std::string nwinput) {
 
   // fetch the dbname
   std::string dbname = "nwchemex";
-  if (mystring_contains(mystring_lowercase(nwinput), "start"))
-     dbname = mystring_trim(
-        mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+  if (mystring_contains(mystring_lowercase(nwinput), "start")) {
+     if (!mystring_contains(
+        mystring_trim(mystring_split(
+                              mystring_split(nwinput, "start")[0], "\n")
+                              .back()),
+            "#"))
+        dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+  }
 
   json rtdb;
-  if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
+  //if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
+  if (!mystring_contains( mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#")) {
+
      // read a JSON file
      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
      std::ifstream ifile(dbname0);
