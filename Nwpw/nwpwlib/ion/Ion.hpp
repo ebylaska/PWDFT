@@ -440,6 +440,22 @@ public:
    double energy_ion_bondings_constraints() { return mybondings->energy();}
    std::string print_constraints(const int);
 
+   void add_contraint_force(double *fion) {
+      if (has_constraints) {
+          double econstraint = 0.0;
+         if (has_bond_constraints)     econstraint += mybond->energyfion(fion);
+         if (has_bondings_constraints) econstraint += mybondings->energyfion(fion);
+      }
+   }
+   double add_contraint_energyforce(double *fion) {
+      double econstraint = 0.0;
+      if (has_constraints) {
+         if (has_bond_constraints)     econstraint += mybond->energyfion(fion);
+         if (has_bondings_constraints) econstraint += mybondings->energyfion(fion);
+      }
+      return econstraint;
+   }
+
 };
 } // namespace pwdft
 

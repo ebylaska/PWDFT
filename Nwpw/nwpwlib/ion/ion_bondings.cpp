@@ -206,7 +206,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
             gamma += coef_tmp*dist;
         }
         eb  +=  K0[i]*std::pow((gamma-gamma0[i]),2);
-        double deb = 2*K0[i]*(gamma-gamma0[i]);
+        double deb = -2*K0[i]*(gamma-gamma0[i]);
         for (auto ii=0; ii<n0[i]; ++ii)
         {
             auto coef_tmp = coef[i][ii];

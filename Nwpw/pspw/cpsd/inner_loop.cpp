@@ -223,7 +223,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
             mypsp->myefield->efield_ion_fion(fion);
         
          /* steepest descent step */
-         //myion->add_contraint_force(fion);
+         myion->add_contraint_force(fion);
 
          /* steepest descent step */
          myion->optimize_step(fion);

@@ -59,7 +59,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    char date[26];
    double sum1,sum2,ev,zv;
    double cpu1,cpu2,cpu3,cpu4,cpustep;
-   double E[70],deltae,deltac,deltar,viral,unita[9];
+   double E[80],deltae,deltac,deltar,viral,unita[9];
  
    Control2 control(myparallel.np(),rtdbstring);
    int flag = control.task();
@@ -260,9 +260,12 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << "  C.O.M. ( " << Ffmt(10,5) << myion.com(0) << " "
                                << Ffmt(10,5) << myion.com(1) << " " 
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
-     
+
+      coutput << std::endl << myion.print_constraints(0);
+
       coutput << mypsp.myefield->shortprint_efield();
       coutput << mycoulomb12.shortprint_dielectric();
+    
      
       coutput << "\n";
       coutput << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
@@ -579,6 +582,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          coutput << "  Geometry for Step " << it << "\n";
          coutput << " ---------------------------------\n";
          coutput << mymolecule.myion->print_bond_angle_torsions();
+         coutput << std::endl << myion.print_constraints(1);
       }
  
       /*  calculate energy */
@@ -621,6 +625,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
                  << "max|Fatom|= " << Ffmt(10,5) << mymolecule.myion->max_fion(fion) << "  ("
                  << Ffmt(8,3) << mymolecule.myion->max_fion(fion)*(27.2116/0.529177)
                  << " eV/Angstrom)" << std::endl << std::endl;
+
+         //coutput << std::endl << myion.print_constraints(1);
+
       }
       DSCAL_PWDFT(nfsize, mrone, fion, one);
  
@@ -718,6 +725,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << "  Final Geometry \n";
       coutput << " ---------------------------------\n";
       coutput << mymolecule.myion->print_bond_angle_torsions();
+      coutput << std::endl << myion.print_constraints(1);
       coutput << "\n\n";
    }
    if (myparallel.is_master())
