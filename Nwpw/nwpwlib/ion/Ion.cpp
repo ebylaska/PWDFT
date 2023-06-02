@@ -15,6 +15,13 @@ using json = nlohmann::json;
 #include "ion_bondings.hpp"
 #include "Ion.hpp"
 
+
+
+#define xyzstream(S, X, Y, Z, VX, VY, VZ)                                      \
+  std::left << std::setw(3) << (S) << E124 << (X) << E124 << (Y) << E124       \
+            << (Z) << E124 << (VX) << E124 << (VY) << E124 << (VZ)
+
+
 namespace pwdft {
 
 /*******************************
@@ -275,41 +282,41 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
  
    for (auto ia = 0; ia < nkatm; ++ia) {
      natm[ia] = 0.0;
-     strcpy(&atomarray[3 * ia], const_cast<char *>(tmpsymbols[ia].data()));
+     strcpy(&atomarray[3*ia], const_cast<char *>(tmpsymbols[ia].data()));
    }
-   for (auto i = 0; i < nion; ++i) {
-     charge[i] = (double)geomjson["charges"][i];
-     mass[i] = ((double)geomjson["masses"][i]) * amu_to_mass;
-     dti[i] = (time_step * time_step) / mass[i];
- 
-     rion0[3 * i] = (geomjson["velocities"][3 * i].is_number_float())
-                        ? (double)geomjson["velocities"][3 * i]
-                        : 0.0;
-     rion0[3 * i + 1] = (geomjson["velocities"][3 * i + 1].is_number_float())
-                            ? (double)geomjson["velocities"][3 * i + 1]
-                            : 0.0;
-     rion0[3 * i + 2] = (geomjson["velocities"][3 * i + 2].is_number_float())
-                            ? (double)geomjson["velocities"][3 * i + 2]
-                            : 0.0;
- 
-     rion1[3 * i] = (double)geomjson["coords"][3 * i];
-     rion1[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
-     rion1[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
- 
-     rion2[3 * i] = (double)geomjson["coords"][3 * i];
-     rion2[3 * i + 1] = (double)geomjson["coords"][3 * i + 1];
-     rion2[3 * i + 2] = (double)geomjson["coords"][3 * i + 2];
- 
-     fion1[3 * i] = 0.0;
-     fion1[3 * i + 1] = 0.0;
-     fion1[3 * i + 2] = 0.0;
- 
-     auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
-     if (match != end(tmpsymbols)) {
-       auto ia = std::distance(begin(tmpsymbols), match);
-       katm[i] = ia;
-       natm[ia] += 1;
-     }
+   for (auto i=0; i<nion; ++i) {
+      charge[i] = (double)geomjson["charges"][i];
+      mass[i] = ((double)geomjson["masses"][i]) * amu_to_mass;
+      dti[i] = (time_step * time_step) / mass[i];
+    
+      rion0[3*i] = (geomjson["velocities"][3 * i].is_number_float())
+                         ? (double)geomjson["velocities"][3 * i]
+                         : 0.0;
+      rion0[3*i+1] = (geomjson["velocities"][3 * i + 1].is_number_float())
+                             ? (double)geomjson["velocities"][3 * i + 1]
+                             : 0.0;
+      rion0[3*i+2] = (geomjson["velocities"][3 * i + 2].is_number_float())
+                             ? (double)geomjson["velocities"][3 * i + 2]
+                             : 0.0;
+    
+      rion1[3*i]   = (double)geomjson["coords"][3*i];
+      rion1[3*i+1] = (double)geomjson["coords"][3*i + 1];
+      rion1[3*i+2] = (double)geomjson["coords"][3*i + 2];
+    
+      rion2[3*i]   = (double)geomjson["coords"][3*i];
+      rion2[3*i+1] = (double)geomjson["coords"][3*i + 1];
+      rion2[3*i+2] = (double)geomjson["coords"][3*i + 2];
+    
+      fion1[3*i] = 0.0;
+      fion1[3*i+1] = 0.0;
+      fion1[3*i+2] = 0.0;
+    
+      auto match = std::find(begin(tmpsymbols), end(tmpsymbols), symbols[i]);
+      if (match != end(tmpsymbols)) {
+        auto ia = std::distance(begin(tmpsymbols), match);
+        katm[i] = ia;
+        natm[ia] += 1;
+      }
    }
  
    // generate random initial velocities  (temperature, seed) - only set with
@@ -444,6 +451,28 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       std::cout << "ATOMARRAY=" << atomarray << std::endl;
    */
 }
+
+/*******************************
+ *                             *
+ *      Ion::writefilename     *
+ *                             *
+ *******************************/
+void Ion::writefilename(std::string &filename) 
+{
+   // open xyz file
+   /*
+   std::ofstream xyz(filename.data(),std::ios::app);
+         
+   double AACONV = 0.529177;
+
+   xyz << nion << std::endl << std::endl;
+   for (auto ii=0; ii<nion; ++ii)
+      xyz << xyzstream(symbol(ii), 
+                       rion(0,ii)*AACONV,rion(1,ii)*AACONV,rion(2,ii)*AACONV,
+                       vion(0,ii)*AACONV,vion(1,ii)*AACONV,vion(2,ii)*AACONV) << std::endl;
+                       */
+}
+
 
 /*******************************
  *                             *

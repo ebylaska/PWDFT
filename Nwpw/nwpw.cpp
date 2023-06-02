@@ -849,9 +849,9 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (oprint)
-    std::cout << "First rtdbstr=" << rtdbstr << std::endl;
+     std::cout << "First rtdbstr=" << rtdbstr << std::endl;
   if (oprint)
-    std::cout << "First task=" << task << std::endl << std::endl;
+     std::cout << "First task=" << task << std::endl << std::endl;
 
   // Initialize wavefunction
   if (parse_initialize_wvfnc(rtdbstr, true)) {
@@ -947,12 +947,22 @@ int main(int argc, char *argv[]) {
 
     /* dplot task */
     if (task == 8) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running dplot - rtdbstr = " << rtdbstr << std::endl
-                  << std::endl;
-      MPI_Barrier(MPI_COMM_WORLD);
-      ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
+       if (oprint)
+          std::cout << std::endl
+                    << "Running dplot - rtdbstr = " << rtdbstr << std::endl
+                    << std::endl;
+       MPI_Barrier(MPI_COMM_WORLD);
+       ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
+    }
+
+    /* file generate task */
+    if (task == 9) {
+       if (oprint)
+       {
+          std::cout << std::endl
+                    << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
+          ierr += pwdft::file_generate(rtdbstr);
+       }
     }
 
     // parse json string

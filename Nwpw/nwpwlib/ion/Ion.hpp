@@ -91,6 +91,7 @@ public:
    char *symbol(const int i) { return &atomarray[3*katm[i]]; }
    char *atom(const int ia) { return &atomarray[3*ia]; }
    double amu(const int i) { return mass[i]/1822.89; }
+   void writefilename(std::string &);
    void writejsonstr(std::string &);
    double rion(int i, int ii) { return rion1[3*ii+i]; }
    double vion(int i, int ii) { return rion0[3*ii+i]; }

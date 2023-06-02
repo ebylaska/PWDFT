@@ -26,6 +26,7 @@
 #include "inner_loop.hpp"
 #include "psi.hpp"
 #include "util_date.hpp"
+//#include "nwpw_aimd_running_data.hpp"
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
@@ -429,6 +430,8 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    // allocate temporary memory from stack
    double fion[3 * myion.nion];
    double sion[3 * myion.nion];
+
+
  
    bool done = false;
    int it = 0;

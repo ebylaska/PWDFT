@@ -1602,43 +1602,35 @@ json parse_rtdbjson(json rtdb) {
   while ((cur < n) && (!foundtask)) {
 
     if (mystring_contains(mystring_lowercase(lines[cur]), "unset ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 1)
-        auto count_erase = rtdb.erase(ss[1]);
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 1)
+          auto count_erase = rtdb.erase(ss[1]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "set ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 2)
-        rtdb[ss[1]] = ss[2];
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 2)
+          rtdb[ss[1]] = ss[2];
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "start")) {
-      rtdb["dbname"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
+       rtdb["dbname"] = mystring_trim( mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "geometry")) {
-      rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
+       rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "title")) {
-      rtdb["title"] = mystring_trim(mystring_ireplace(
-          mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"),
-                         "title")[1],
-          "\"", ""));
+       rtdb["title"] = mystring_trim(mystring_ireplace( mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"), "title")[1], "\"", ""));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "charge")) {
-      rtdb["charge"] = std::stoi(mystring_trim(
-          mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
+       rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "nwpw")) {
-      rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
+       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
-      rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+       rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
-      rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
-
+       rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "task")) {
-      rtdb["current_task"] = lines[cur];
-      foundtask = true;
+       rtdb["current_task"] = lines[cur];
+       foundtask = true;
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "print")) {
-      rtdb["print"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
-    } else if (mystring_contains(mystring_lowercase(lines[cur]),
-                                 "redirect_filename")) {
-      rtdb["redirect_filename"] = mystring_trim(mystring_split(
-          mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
+       rtdb["print"] = mystring_trim(
+           mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "redirect_filename")) {
+       rtdb["redirect_filename"] = mystring_trim(mystring_split(mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
     }
 
     ++cur;
@@ -1759,30 +1751,19 @@ int parse_task(std::string rtdbstring) {
   auto rtdb = json::parse(rtdbstring);
   int task = 0;
   if (rtdb["foundtask"]) {
-    // Look for pspw jobs
-    if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))
-        task = 1;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "gradient"))
-        task = 2;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "optimize"))
-        task = 3;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))
-        task = 4;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "steepest_descent"))
-        task = 5;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "car-parrinello"))
-        task = 6;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "born-oppenheimer"))
-        task = 7;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))
-        task = 8;
-    }
+     // Look for pspw jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 5;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 6;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
+     }
+     // Look for file jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=9; }
   }
 
   return task;

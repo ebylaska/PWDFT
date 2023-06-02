@@ -15,6 +15,8 @@ extern int pspw_geovib(MPI_Comm, std::string &, std::ostream &);
 extern int pspw_bomd(MPI_Comm, std::string &, std::ostream &);
 extern int pspw_dplot(MPI_Comm, std::string &, std::ostream &);
 
+extern int file_generate(std::string &);
+
 extern int ctask_cpmd_start(MPI_Comm, std::string &, double *, double *,
                             double *, double *, double *, double *,
                             std::ostream &);
