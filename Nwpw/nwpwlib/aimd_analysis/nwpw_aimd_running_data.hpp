@@ -49,6 +49,7 @@ class nwpw_aimd_running_data {
   bool cif_open = false;
   std::ofstream *cif;
   std::string cif_filename, cif_bakfile;
+  bool cif_shift_cell = true;
 
   bool calculate_dipole = false;
   bool dipole_motion_open = false;

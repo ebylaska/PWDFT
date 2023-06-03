@@ -748,6 +748,10 @@ static json parse_car_parrinello(json cpmdjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() > 1)
         cpmdjson["ion_motion_filename"] = ss[1];
+    } else if (mystring_contains(line, "cif_filename")) {
+      ss = mystring_split0(line);
+      if (ss.size() > 1)
+        cpmdjson["cif_filename"] = ss[1];
     } else if (mystring_contains(line, "eigmotion_filename")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)

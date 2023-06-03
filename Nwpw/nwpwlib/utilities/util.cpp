@@ -8,9 +8,12 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include "Parallel.hpp"
 #include "util.hpp"
+#include "util_date.hpp"
+#include "iofmt.hpp"
 
 namespace pwdft {
 
@@ -659,6 +662,7 @@ double util_dswitching_function(const double s_d, const double s_rho,
   }
   return deps;
 }
+
 
 /**************************************
  *                                    *
