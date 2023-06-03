@@ -1691,15 +1691,19 @@ std::string parse_nwinput(std::string nwinput) {
   }
 
   json rtdb;
-  //if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
-  if (!mystring_contains( mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#")) {
-
+  // read a JSON file
+  if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
+      (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+  {
+     
      // read a JSON file
      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
      std::ifstream ifile(dbname0);
      ifile >> rtdb;
-  } else {
-     // intialize the rtdb structure
+  } 
+  // intialize the rtdb structure
+  else 
+  {
      json nwpw, geometries, driver, constraints;
      rtdb["nwpw"] = nwpw;
      rtdb["geometries"] = geometries;
