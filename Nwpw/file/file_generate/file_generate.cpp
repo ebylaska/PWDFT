@@ -4,6 +4,11 @@
 #include <iostream>
 #include <string>
 
+#include <fstream>
+#include <iomanip>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "iofmt.hpp"
 #include "util_date.hpp"
 
@@ -16,7 +21,36 @@ using json = nlohmann::json;
 
 #include "parsestring.hpp"
 
+
+// Option for C++17
+//#include  <filesystem>
+// namespace fs = std::filesystem;
+
+// Option for C++ before C++17
+namespace fs {
+inline bool exists(const std::string &filename) {
+   struct stat buffer;
+   return (stat(filename.c_str(), &buffer) == 0);
+}
+inline void remove(const std::string &filename) {
+   int result = std::remove(filename.c_str());
+}
+inline void copy(const std::string &source_filename,
+                 const std::string &dest_filename) {
+   std::ifstream src(source_filename, std::ios::binary);
+   std::ofstream dst(dest_filename, std::ios::binary);
+   dst << src.rdbuf();
+}
+} // namespace fs
+
+
 namespace pwdft {
+
+static bool is_number(const std::string& s)
+{
+   return !s.empty() && std::find_if(s.begin(),
+        s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
 
 /******************************************
  *                                        *
@@ -30,7 +64,7 @@ int file_generate(std::string &rtdbstring)
    std::cout << "current_task=" << rtdbjson["current_task"] << std::endl;
 
    // XYZ file generation
-   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "xyz")) 
+   if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " xyz")) 
    {
       //std::vector<std::string> ss;
       auto ss = mystring_split0(rtdbjson["current_task"]);
@@ -114,7 +148,7 @@ int file_generate(std::string &rtdbstring)
    }
 
    // CIF file generation
-   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "cif")) 
+   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " cif")) 
    {
       double shift = 0.5;
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "shift")) 
@@ -262,7 +296,7 @@ int file_generate(std::string &rtdbstring)
       }
    }
    // ion_motion file generation
-   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "ion_motion")) 
+   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " ion_motion")) 
    {
       double time = 0.0;
       if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "time")) 
@@ -355,8 +389,66 @@ int file_generate(std::string &rtdbstring)
                            << std::endl;
       }
    }
+   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " json")) 
+   {
+      auto ss = mystring_split0(rtdbjson["current_task"]);
+      std::string data_filename = "eric.json";
+      if (ss.size() > 1)
+          data_filename = ss[ss.size()-1];
+
+      std::ofstream data_stream;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " new"))
+         data_stream.open(data_filename);
+      else
+         data_stream.open(data_filename, std::ios_base::app);
+
+      data_stream << rtdbstring << std::endl;;
+   }
+   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " rtdb"))
+   {
+      auto ss = mystring_split0(rtdbjson["current_task"]);
+      std::string data_filename = "eric.data";
+      if (ss.size() > 1)
+          data_filename = ss[ss.size()-1];
+
+      std::ofstream data_stream;
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " new"))
+         data_stream.open(data_filename);
+      else
+         data_stream.open(data_filename, std::ios_base::app);
+
+      auto subrtdb = rtdbjson;
+      auto tmp = mystring_split(rtdbjson["current_task"]," rtdb")[1];
+      auto tt = mystring_split(tmp,"[");
+      for (auto i=1; i<tt.size(); ++i)
+      {
+         auto  v1 = mystring_split(tt[i],"]")[0];
+         v1.erase(remove(v1.begin(),v1.end(),'\"'),v1.end());
+
+         if (is_number(v1))
+            subrtdb = subrtdb[std::stoi(v1)];
+         else
+            subrtdb = subrtdb[v1];
+      }
+      data_stream << subrtdb << std::endl;
+   }
+   else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), " copy"))
+   {
+      auto tmp = mystring_split(rtdbjson["current_task"]," copy")[1];
+      auto ss  = mystring_split0(tmp);
+      std::string input_filename;
+      std::string output_filename;
+      if (ss.size() > 1)
+      {
+         input_filename  = ss[ss.size()-2];
+         output_filename = ss[ss.size()-1];
+         if (fs::exists(input_filename)) fs::copy(input_filename, output_filename);
+      }
+
+   }
 
    return 0;
 }
+
 
 } // namespace pwdft
