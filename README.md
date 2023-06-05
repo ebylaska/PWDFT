@@ -51,10 +51,13 @@ $ cmake .
 | WE45090-GPU | 4      | 6.895e+00 | 1.078e+00 | 1.193e+00 | 1.459e+00 | 2.922e+00 | 4.405e-02 | 8.771e-02 |
 | WE45090-GPU | 6      | 7.884e+00 | 1.037e+00 | 9.116e-01 | 1.486e+00 | 4.183e+00 | 4.977e-02 | 1.044e-01 |
 | WE45090-GPU | 8      |  |  |  |  |  |    |  |
+|      |      |  |  |  |  |  |  | |
 | perlmutter-GPU | 1   | 2.924e+00 | 3.580e-01 | 3.084e-02 | 3.595e-02 | 2.188e+00 | 6.219e-03  |  |
 | perlmutter-GPU | 2   | 1.639e+00 | 2.246e-01 | 2.258e-02 | 2.222e-02 | 1.219e+00 | 5.878e-03  |  |
 | perlmutter-GPU | 3   | 1.246e+00 | 1.575e-01 | 2.566e-02 | 1.520e-02 | 9.523e-01 | 4.568e-03  |  |
-| perlmutter-GPU | 4   | 1.249e+00 | 2.193e-01 | 2.699e-02 | 2.015e-02 | 8.854e-01 | 4.580e-03  |  |
+| perlmutter-GPU | 4   | 1.080e+00 | 1.657e-01 | 1.588e-02 | 1.874e-02 | 7.948e-01 | 6.037e-03  |  |
+|      |      |  |  |  |  |  |  | |
+| perlmutter-CPU | 1   |  | |  |  |  |   |  |
 
 These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified, since the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 
