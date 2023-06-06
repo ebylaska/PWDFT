@@ -34,6 +34,6 @@
 | perlmutter-CPU | 6   |  |  |  |  |  |  |  |
 | perlmutter-CPU | 8   |  |  |  |  |  |  |  |
 | perlmutter-CPU | 16  |  |  |  |  |  |  |  |
-| perlmutter-CPU | 32  |  |  |  |  |  |  |  |
-| perlmutter-CPU | 64  |  |  |  |  |  |  |  |
-| perlmutter-CPU | 128 |  |  |  |  |  |  |  |
+| perlmutter-CPU | 32  | 8.414e+00 | 2.960e+00 | 2.524e+00 | 1.041e+00 | 7.433e-01 | 7.290e-03 |  |
+| perlmutter-CPU | 64  | 5.349e+00 | 1.519e+00 | 1.562e+00 | 6.833e-01 | 5.196e-01 | 7.450e-03 |  |
+| perlmutter-CPU | 128 | 4.099e+00 | 1.227e+00 | 9.893e-01 | 4.387e-01 | 3.770e-01 | 9.901e-03 |  |
