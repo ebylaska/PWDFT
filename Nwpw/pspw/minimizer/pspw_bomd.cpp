@@ -31,7 +31,7 @@
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"
@@ -141,7 +141,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
                control.ne_ptr());
  
    /* initialize gdevice memory */
-   gdevice_psi_alloc(mygrid.npack(1), mygrid.neq[0] + mygrid.neq[1],
+   mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1), mygrid.neq[0] + mygrid.neq[1],
                      control.tile_factor());
  
    /* setup structure factor */
@@ -723,7 +723,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
    }
  
    /* deallocate memory */
-   gdevice_psi_dealloc();
+   mygrid.d3db::mygdevice.psi_dealloc();
    // delete [] fion;
    // delete [] sion;
  

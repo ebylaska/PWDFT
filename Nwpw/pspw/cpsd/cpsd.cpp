@@ -26,7 +26,7 @@
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"
@@ -154,7 +154,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    hml = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig = new double[ne[0] + ne[1]];
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+   mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
  
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
@@ -603,7 +603,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete[] eig;
-   gdevice_psi_dealloc();
+   mygrid.d3db::mygdevice.psi_dealloc();
 
    // write results to the json
    auto rtdbjson = json::parse(rtdbstring);

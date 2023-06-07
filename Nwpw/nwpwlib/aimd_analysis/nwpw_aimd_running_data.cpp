@@ -4,7 +4,7 @@
 
 #include "nwpw_aimd_running_data.hpp"
 #include "blas.h"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "util_date.hpp"
 #include <cmath>

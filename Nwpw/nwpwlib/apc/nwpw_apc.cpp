@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 
 #include "blas.h"

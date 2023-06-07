@@ -11,6 +11,7 @@
 
 #include "Mapping3.hpp"
 #include "Parallel.hpp"
+#include "gdevice2.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -18,6 +19,7 @@
 namespace pwdft {
 
 class d3db : public Mapping3 {
+
 
   /* transpose indexings */
   int **iq_to_i1, **iq_to_i2;
@@ -38,7 +40,10 @@ class d3db : public Mapping3 {
   int **p_jq_to_i1[2], **p_jq_to_i2[2], **p_jz_to_i2[2];
   int **p_j1_start[2], **p_j2_start[2];
 
+
 public:
+  gdevice2 mygdevice;
+
   /* fft tabulations of of trigonometry functions */
   double *tmpx, *tmpy, *tmpz;
 

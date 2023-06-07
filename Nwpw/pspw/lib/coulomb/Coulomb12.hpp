@@ -50,6 +50,7 @@ class Coulomb12_Operator {
    double *epsilon, *depsilon, *ddepsilon, *sw, *p;
    double *epsilon_x, *epsilon_y, *epsilon_z, *epsilon_lap, *epsilon_screen;
    double *w_x, *w_y, *w_z;
+   double *rho_x, *rho_y, *rho_z;
    double *rho_ind0, *rho_ind1;
    double tole_pol  = 1.0e-7;
    double alpha_pol = 0.41;;
@@ -110,6 +111,9 @@ public:
          mypneb->r_dealloc(w_x);
          mypneb->r_dealloc(w_y);
          mypneb->r_dealloc(w_z);
+         mypneb->r_dealloc(rho_x);
+         mypneb->r_dealloc(rho_y);
+         mypneb->r_dealloc(rho_z);
          mypneb->r_dealloc(rho_ind0);
          mypneb->r_dealloc(rho_ind1);
          mypneb->r_dealloc(rho_ion);

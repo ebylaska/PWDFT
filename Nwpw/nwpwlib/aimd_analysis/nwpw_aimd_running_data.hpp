@@ -15,7 +15,7 @@
 #include "Ion.hpp"
 #include "Parallel.hpp"
 #include "Pneb.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 
 namespace pwdft {
 

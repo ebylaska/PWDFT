@@ -11,7 +11,7 @@
 #include "Paw_xc.hpp"
 #include "Pneb.hpp"
 #include "Strfac.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_apc.hpp"
 #include "nwpw_dipole.hpp"
 #include "nwpw_efield.hpp"

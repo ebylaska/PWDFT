@@ -244,6 +244,7 @@ public:
       }
     }
   }
+
   void batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d, double *a,
                         double *tmpz) {
     if (forward) {

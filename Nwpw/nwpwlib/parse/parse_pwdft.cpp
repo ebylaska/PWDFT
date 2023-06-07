@@ -1651,88 +1651,76 @@ json parse_rtdbjson(json rtdb) {
  *                                                *
  **************************************************/
 
-std::string parse_nwinput(std::string nwinput) {
-  // fetch the permanent_dir and scratch_dir
-  std::string permanent_dir = ".";
-  std::string scratch_dir = ".";
-  std::string psp_library_dir = "";
-  if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
-    if (!mystring_contains(
-            mystring_trim(mystring_split(
-                              mystring_split(nwinput, "permanent_dir")[0], "\n")
-                              .back()),
-            "#"))
-      permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split(
-          mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
-    if (!mystring_contains(
-            mystring_trim(
-                mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n")
-                    .back()),
-            "#"))
-      scratch_dir = mystring_rtrim_slash(mystring_trim(
-          mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
-    if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
-       psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
-  }
-
-  // fetch the dbname
-  std::string dbname = "nwchemex";
-  if (mystring_contains(mystring_lowercase(nwinput), "start")) {
-     if (!mystring_contains(
-        mystring_trim(mystring_split(
-                              mystring_split(nwinput, "start")[0], "\n")
-                              .back()),
-            "#"))
-        dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
-  }
-
-  json rtdb;
-  // read a JSON file
-  if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
-      (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
-  {
-     
-     // read a JSON file
-     std::string dbname0 = permanent_dir + "/" + dbname + ".json";
-     std::ifstream ifile(dbname0);
-     ifile >> rtdb;
-  } 
-  // intialize the rtdb structure
-  else 
-  {
-     json nwpw, geometries, driver, constraints;
-     rtdb["nwpw"] = nwpw;
-     rtdb["geometries"] = geometries;
-     rtdb["driver"] = driver;
-     rtdb["constraints"] = constraints;
-  }
-
-  // set the dbname
-  rtdb["dbname"] = dbname;
-
-  // set the permanent_dir and scratch_dir
-  rtdb["permanent_dir"] = permanent_dir;
-  rtdb["scratch_dir"] = scratch_dir;
-  rtdb["psp_library_dir"] = psp_library_dir;
-
-  // split nwinput into lines
-  std::vector<std::string> lines = mystring_split(nwinput, "\n");
-
-  // Remove comments
-  for (auto i = lines.begin(); i != lines.end(); ++i)
-    *i = mystring_split(*i, "#")[0];
-
-  rtdb["nwinput_lines"] = lines;
-  rtdb["nwinput_nlines"] = lines.size();
-  rtdb["nwinput_cur"] = 0;
-
-  rtdb = parse_rtdbjson(rtdb);
-
-  return rtdb.dump();
+std::string parse_nwinput(std::string nwinput) 
+{
+   // fetch the permanent_dir and scratch_dir
+   std::string permanent_dir = ".";
+   std::string scratch_dir = ".";
+   std::string psp_library_dir = "";
+   if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
+     if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[0], "\n") .back()), "#"))
+       permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n") .back()), "#"))
+       scratch_dir = mystring_rtrim_slash(mystring_trim(
+           mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
+        psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
+   }
+ 
+   // fetch the dbname
+   std::string dbname = "nwchemex";
+   if (mystring_contains(mystring_lowercase(nwinput), "start")) {
+      if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "start")[0], "\n") .back()), "#"))
+         dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+   }
+ 
+   json rtdb;
+   // read a JSON file
+   if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
+       (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+   {
+      
+      // read a JSON file
+      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
+      std::ifstream ifile(dbname0);
+      ifile >> rtdb;
+   } 
+   // intialize the rtdb structure
+   else 
+   {
+      json nwpw, geometries, driver, constraints;
+      rtdb["nwpw"] = nwpw;
+      rtdb["geometries"] = geometries;
+      rtdb["driver"] = driver;
+      rtdb["constraints"] = constraints;
+   }
+ 
+   // set the dbname
+   rtdb["dbname"] = dbname;
+ 
+   // set the permanent_dir and scratch_dir
+   rtdb["permanent_dir"] = permanent_dir;
+   rtdb["scratch_dir"] = scratch_dir;
+   rtdb["psp_library_dir"] = psp_library_dir;
+ 
+   // split nwinput into lines
+   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+ 
+   // Remove comments
+   for (auto i=lines.begin(); i!=lines.end(); ++i)
+      *i = mystring_split(*i, "#")[0];
+ 
+   rtdb["nwinput_lines"] = lines;
+   rtdb["nwinput_nlines"] = lines.size();
+   rtdb["nwinput_cur"] = 0;
+ 
+   rtdb = parse_rtdbjson(rtdb);
+ 
+   return rtdb.dump();
 }
 
 /**************************************************

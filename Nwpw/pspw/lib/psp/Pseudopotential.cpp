@@ -8,7 +8,7 @@
 
 #include "Psp1d_Hamann.hpp"
 #include "Psp1d_pawppv1.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "util.hpp"
 
@@ -1174,8 +1174,8 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) {
 #if 1
 
   // Copy psi to device
-  gdevice_psi_copy_host2gpu(nshift0, nn, psi);
-  gdevice_hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+  mypneb->d3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
 
   ii = 0;
   while (ii < (myion->nion)) {
@@ -1231,9 +1231,9 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) {
     //                sw2,   nn,
     //                rone,
     //                Hpsi,nshift);
-    gdevice_NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
+    mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
   }
-  gdevice_hpsi_copy_gpu2host(nshift0, nn, Hpsi);
+  mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
 #else
 
   for (ii = 0; ii < (myion->nion); ++ii) {
@@ -1273,7 +1273,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) {
       //       sw2,   nn,
       //       rone,
       //       Hpsi,nshift);
-      gdevice_NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
+      mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
 
     } /*if nprj>0*/
   }   /*ii*/
@@ -1321,8 +1321,8 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
   sw2 = new (std::nothrow) double[nn * nprj_max]();
 
   // Copy psi to device
-  gdevice_psi_copy_host2gpu(nshift0, nn, psi);
-  gdevice_hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+  mypneb->d3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
 
   if (move) {
     xtmp = new (std::nothrow) double[nshift0]();
@@ -1415,7 +1415,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
     //                sw2,   nn,
     //                rone,
     //                Hpsi,nshift);
-    gdevice_NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
+    mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
 
     if (move) {
       // for (ll=0; ll<nprjall; ++ll)
@@ -1438,7 +1438,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
     }
   }
 
-  gdevice_hpsi_copy_gpu2host(nshift0, nn, Hpsi);
+  mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
 
 #else
 
@@ -1545,8 +1545,8 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion) {
   sw2 = new (std::nothrow) double[nn * nprj_max]();
 
   // Copy psi to device
-  gdevice_psi_copy_host2gpu(nshift0, nn, psi);
-  // gdevice_hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+  // mypneb->d3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
 
   xtmp = new (std::nothrow) double[nshift0]();
   sum = new (std::nothrow) double[3 * nn * nprj_max]();
@@ -1624,7 +1624,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion) {
     ntmp = nn * nprjall;
     DSCAL_PWDFT(ntmp, scal, sw2, one);
 
-    gdevice_T_free();
+    mypneb->d3db::mygdevice.T_free();
 
     // for (ll=0; ll<nprjall; ++ll)
     ll = 0;
@@ -1644,7 +1644,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion) {
       }
     }
   }
-  // gdevice_hpsi_copy_gpu2host(nshift0,nn,Hpsi);
+  // mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0,nn,Hpsi);
 
   delete[] xtmp;
   delete[] sum;
@@ -1690,7 +1690,7 @@ double Pseudopotential::e_nonlocal(double *psi) {
   parall = mypneb->d3db::parall;
 
   // Copy psi to device
-  gdevice_psi_copy_host2gpu(nshift0, nn, psi);
+  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
 
   ii = 0;
   while (ii < (myion->nion)) {
@@ -1742,7 +1742,7 @@ double Pseudopotential::e_nonlocal(double *psi) {
 
     esum += DDOT_PWDFT(ntmp, sw1, one, sw2, one);
 
-    gdevice_T_free();
+    mypneb->d3db::mygdevice.T_free();
   }
   if (mypneb->ispin == 1)
     esum *= 2.0;
