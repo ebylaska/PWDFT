@@ -48,7 +48,7 @@ void gdevice2::NN_eigensolver(int ispin, int ne[], double *a, double *w) {
 
 void gdevice2::psi_alloc(int npack, int ne, int tfac0 = 1) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
-   if (mygdevice..hasgpu)
+   if (mygdevice2.hasgpu)
       mygdevice2.psi_alloc(npack, ne, tfac0);
 #endif
 }
