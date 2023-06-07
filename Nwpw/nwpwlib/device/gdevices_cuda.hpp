@@ -897,8 +897,10 @@ public:
      ++fftcount;
   }
 
-  void batch_fft_end() {
+  void batch_fft_end(int nx, int ny, int nz) {
+
      // free fft descriptors
+     
      for (auto i=0; i<fftcount; ++i)
      {
         cufftDestroy(forward_plan_x[i]);
@@ -917,7 +919,7 @@ public:
   void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
      int fft_indx = 0;
      for (auto i=1; i<fftcount; ++i)
-        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+        if (nx==nxfft[i])
            fft_indx = i;
          
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
@@ -944,7 +946,7 @@ public:
   void batch_cffty(bool forward, int ny, int nq, int n2ft3d, double *a) {
      int fft_indx = 0;
      for (auto i=1; i<fftcount; ++i)
-        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+        if (ny==nyfft[i])
            fft_indx = i;
     
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
@@ -972,7 +974,7 @@ public:
   void batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
      int fft_indx = 0;
      for (auto i=1; i<fftcount; ++i)
-        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+        if (nz==nzfft[i])
            fft_indx = i;
     
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));

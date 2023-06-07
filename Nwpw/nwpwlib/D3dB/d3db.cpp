@@ -454,7 +454,7 @@ d3db::~d3db() {
   int i, nb;
 
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
-  mygdevice.batch_fft_end();
+  mygdevice.batch_fft_end(nx,ny,nz);
 #endif
 
   if (maptype == 1) {

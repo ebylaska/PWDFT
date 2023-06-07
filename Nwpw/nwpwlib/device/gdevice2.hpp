@@ -37,7 +37,7 @@ public:
    void hpsi_copy_gpu2host(int, int, double *);
   
    void batch_fft_init(int, int, int, int, int, int);
-   void batch_fft_end();
+   void batch_fft_end(int, int, int);
    void batch_cfftx(bool, int, int, int, double *);
    void batch_cffty(bool, int, int, int, double *);
    void batch_cfftz(bool, int, int, int, double *);

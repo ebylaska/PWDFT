@@ -112,10 +112,10 @@ void gdevice2::batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3)
       mygdevice2->batch_fft_init(nx, ny, nz, nq1, nq2, nq3);
 #endif
 }
-void gdevice2::batch_fft_end() {
+void gdevice2::batch_fft_end(int nx, int ny, int nz) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
-      mygdevice2->batch_fft_end();
+      mygdevice2->batch_fft_end(nx,ny,nz);
 #endif
 }
 
