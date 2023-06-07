@@ -176,12 +176,13 @@ configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nw
 # create the nwpwlib and pspw libraries
 add_subdirectory(nwpwlib)
 add_subdirectory(pspw)
+add_subdirectory(file)
 
 
 if(MAKE_LIBRARY)
    # create the pwdftlib shared library
    message("-- Creating pwdft shared library!")
-   add_library(pwdft SHARED nwpw.cpp nwpwlib pspw)
+   add_library(pwdft SHARED nwpw.cpp nwpwlib pspw file)
    #add_library(pwdft STATIC nwpw.cpp)
    target_include_directories(pwdft PUBLIC "${PROJECT_BINARY_DIR}")
 else()
@@ -193,15 +194,15 @@ endif()
 
 
 if(OpenCL_FOUND)
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} ${OpenCL_LIBRARY})
+   target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES} ${OpenCL_LIBRARY})
 elseif(NWPW_CUDA)
    target_include_directories(pwdft PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} CUDA::cudart CUDA::cublas CUDA::cusolver CUDA::cufft)
+   target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES} CUDA::cudart CUDA::cublas CUDA::cusolver CUDA::cufft)
 elseif(NWPW_HIP)
-   target_include_directories(pwdft PUBLIC ${ROCBLAS_INCLUDE_DIRS} ${ROCFFT_INCLUDE_DIRS} ${ROCSOLVER_INCLUDE_DIRS})  
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES} hip::device)
+   target_include_directories(pwdft PUBLIC ${ROCBLAS_INCLUDE_DIRS} ${ROCFFT_INCLUDE_DIRS} ${ROCSOLVER_INCLUDE_DIRS})
+   target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES} hip::device)
 else()
-   target_link_libraries(pwdft pspw nwpwlib ${MPI_LIBRARIES})
+   target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES})
 endif()
 
 

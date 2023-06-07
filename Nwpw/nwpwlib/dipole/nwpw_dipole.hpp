@@ -17,7 +17,7 @@
 #include "Ion.hpp"
 #include "Pneb.hpp"
 #include "Strfac.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 
 namespace pwdft {
 

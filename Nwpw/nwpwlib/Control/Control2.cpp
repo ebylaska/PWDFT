@@ -140,6 +140,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    pfei_on = false;
    pcif_on = false;
+   pcif_shift_cell = true;
    pmulliken_on = false;
    pdipole_on = false;
  
@@ -344,8 +345,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())
-       ion_motion_filename =
-           rtdbjson["nwpw"]["car-parrinello"]["motion_filename"];
+       ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["ion_motion_filename"];
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string())
        emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
@@ -371,13 +371,16 @@ Control2::Control2(const int np0, const std::string rtdbstring)
              .is_string())
        dipole_motion_filename =
            rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
- 
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["fei_on"].is_boolean())
        pfei_on = rtdbjson["nwpw"]["car-parrinello"]["fei_on"];
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["cif_on"].is_boolean())
        pcif_on = rtdbjson["nwpw"]["car-parrinello"]["cif_on"];
+   if (ptask == 6)
+     if (rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"].is_boolean())
+       pcif_shift_cell = rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"];
+
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["dipole_on"].is_boolean())
        pdipole_on = rtdbjson["nwpw"]["car-parrinello"]["dipole_on"];

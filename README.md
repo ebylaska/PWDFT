@@ -51,6 +51,22 @@ $ cmake .
 | WE45090-GPU | 4      | 6.895e+00 | 1.078e+00 | 1.193e+00 | 1.459e+00 | 2.922e+00 | 4.405e-02 | 8.771e-02 |
 | WE45090-GPU | 6      | 7.884e+00 | 1.037e+00 | 9.116e-01 | 1.486e+00 | 4.183e+00 | 4.977e-02 | 1.044e-01 |
 | WE45090-GPU | 8      |  |  |  |  |  |    |  |
+|      |      |  |  |  |  |  |  | |
+| perlmutter-GPU | 1   | 2.924e+00 | 3.580e-01 | 3.084e-02 | 3.595e-02 | 2.188e+00 | 6.219e-03  |  |
+| perlmutter-GPU | 2   | 1.639e+00 | 2.246e-01 | 2.258e-02 | 2.222e-02 | 1.219e+00 | 5.878e-03  |  |
+| perlmutter-GPU | 3   | 1.246e+00 | 1.575e-01 | 2.566e-02 | 1.520e-02 | 9.523e-01 | 4.568e-03  |  |
+| perlmutter-GPU | 4   | 1.080e+00 | 1.657e-01 | 1.588e-02 | 1.874e-02 | 7.948e-01 | 6.037e-03  |  |
+|      |      |  |  |  |  |  |  | |
+| perlmutter-CPU | 1   | 1.750e+01 | 7.615e+00 | 4.218e+00 | 2.856e+00 | 2.000e+00 | 5.851e-03 |  |
+| perlmutter-CPU | 2   | 1.018e+01 | 3.822e+00 | 2.135e+00 | 1.371e+00 | 2.127e+00 | 6.039e-03 |  |
+| perlmutter-CPU | 3   | 6.945e+00 | 2.520e+00 | 1.351e+00 | 9.250e-01 | 1.499e+00 | 6.011e-03 |  |
+| perlmutter-CPU | 4   | 5.765e+00 | 2.103e+00 | 1.067e+00 | 7.114e-01 | 1.254e+00 | 6.465e-03 |  |
+| perlmutter-CPU | 6   | 3.753e+00 | 1.138e+00 | 6.549e-01 | 3.859e-01 | 8.889e-01 | 6.006e-03 |  |
+| perlmutter-CPU | 8   | 2.739e+00 | 8.779e-01 | 5.078e-01 | 2.521e-01 | 4.427e-01 | 6.179e-03 |  |
+| perlmutter-CPU | 16  | 1.789e+00 | 4.439e-01 | 2.408e-01 | 1.404e-01 | 3.154e-01 | 7.301e-03 |  |
+| perlmutter-CPU | 32  | 1.343e+00 | 2.417e-01 | 1.227e-01 | 7.259e-02 | 2.748e-01 | 7.184e-03 |  |
+| perlmutter-CPU | 64  | 1.126e+00 | 1.514e-01 | 9.311e-02 | 3.653e-02 | 1.691e-01 | 7.429e-03 |  |
+| perlmutter-CPU | 128 | 1.335e+00 | 1.298e-01 | 8.846e-02 | 2.510e-02 | 1.530e-01 | 9.429e-03 |  |
 
 These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified, since the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 

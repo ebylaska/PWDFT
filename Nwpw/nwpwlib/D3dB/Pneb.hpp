@@ -14,7 +14,7 @@
 #include "PGrid.hpp"
 #include "Parallel.hpp"
 #include "d1db.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "util.hpp"
 

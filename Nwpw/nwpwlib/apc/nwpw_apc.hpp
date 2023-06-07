@@ -19,7 +19,7 @@
 #include "Ion.hpp"
 #include "Pneb.hpp"
 #include "Strfac.hpp"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_born.hpp"
 
 namespace pwdft {

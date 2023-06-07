@@ -759,21 +759,30 @@ int main(int argc, char *argv[]) {
     nwpw_libraryps = libraryps0;
 
   if (oprint) {
-    std::cout << argv[0] << " (NWChemEx) - Version " << Nwpw_VERSION_MAJOR
-              << "." << Nwpw_VERSION_MINOR << std::endl;
-    if (argc > 1) {
-      nwfilename = argv[1];
-      nwinput = "";
-      std::ifstream nwfile(argv[1]);
-      if (nwfile.good()) {
-        while (getline(nwfile, line))
-          nwinput += line + "\n";
-      }
-      nwfile.close();
-    } else {
-      nwfilename = "stdin";
-      while (getline(std::cin, line))
-        nwinput += line + "\n";
+    std::cout << argv[0] << " (NWChemEx) - Version " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
+    if (argc > 1) 
+    {
+       nwfilename = argv[1];
+       nwinput = "";
+       std::ifstream nwfile(argv[1]);
+       if (nwfile.good()) {
+          while (getline(nwfile, line))
+          {
+            nwinput  += line + "\n";
+            //nwinput  += mystring_split(line,"#")[0] + "\n";
+          }
+       }
+       nwfile.close();
+    } 
+    else 
+    {
+       nwfilename = "stdin";
+       nwinput = "";
+       while (getline(std::cin, line))
+       {
+          nwinput  += line + "\n";
+          //nwinput  += mystring_split(line,"#")[0] + "\n";
+       }
     }
     std::cout << std::endl;
     std::cout << "============================== echo of input deck "
@@ -849,9 +858,9 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (oprint)
-    std::cout << "First rtdbstr=" << rtdbstr << std::endl;
+     std::cout << "First rtdbstr=" << rtdbstr << std::endl;
   if (oprint)
-    std::cout << "First task=" << task << std::endl << std::endl;
+     std::cout << "First task=" << task << std::endl << std::endl;
 
   // Initialize wavefunction
   if (parse_initialize_wvfnc(rtdbstr, true)) {
@@ -947,12 +956,22 @@ int main(int argc, char *argv[]) {
 
     /* dplot task */
     if (task == 8) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running dplot - rtdbstr = " << rtdbstr << std::endl
-                  << std::endl;
-      MPI_Barrier(MPI_COMM_WORLD);
-      ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
+       if (oprint)
+          std::cout << std::endl
+                    << "Running dplot - rtdbstr = " << rtdbstr << std::endl
+                    << std::endl;
+       MPI_Barrier(MPI_COMM_WORLD);
+       ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
+    }
+
+    /* file generate task */
+    if (task == 9) {
+       if (oprint)
+       {
+          std::cout << std::endl
+                    << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
+          ierr += pwdft::file_generate(rtdbstr);
+       }
     }
 
     // parse json string

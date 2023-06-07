@@ -12,7 +12,7 @@
 
 #include "blas.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 
 #include "d3db.hpp"
@@ -32,15 +32,16 @@ namespace pwdft {
  ********************************/
 
 d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz)
-    : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz) 
+    : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz)
 {
    int index1, index2, proc_to, proc_from;
    int nyh, nzh;
    int phere, pto, pfrom;
- 
+
    parall = inparall;
- 
-   if (maptype==1) 
+
+
+   if (maptype==1)
    {
      iq_to_i1 = new (std::nothrow) int *[1];
      iq_to_i1[0] = new (std::nothrow) int[(nx/2+1) * ny * nq]();
@@ -57,7 +58,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        proc_from = (taskid - it + np) % np;
        i1_start[0][it] = index1;
        i2_start[0][it] = index2;
- 
+
        for (auto k = 0; k < nz; ++k)
          for (auto j = 0; j < ny; ++j) {
            /* packing scheme */
@@ -68,7 +69,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
                iq_to_i1[0][ijktoindex(i, j, k)] = index1;
                ++index1;
              }
- 
+
            /* unpacking scheme */
            phere = ijktop(0, 0, j);
            pfrom = ijktop(0, 0, k);
@@ -81,7 +82,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[0][np] = index1;
      i2_start[0][np] = index2;
- 
+
      /* allocate ptranspose indexes */
      for (auto nb = 0; nb < 2; ++nb) {
        p_iq_to_i1[nb] = new (std::nothrow) int *[1]();
@@ -94,7 +95,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        p_i1_start[nb][0] = new (std::nothrow) int[nz + 1]();
        p_i2_start[nb] = new (std::nothrow) int *[1]();
        p_i2_start[nb][0] = new (std::nothrow) int[nz + 1]();
- 
+
        p_jq_to_i1[nb] = new (std::nothrow) int *[1]();
        p_jq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
        p_jq_to_i2[nb] = new (std::nothrow) int *[1]();
@@ -106,34 +107,34 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        p_j2_start[nb] = new (std::nothrow) int *[1]();
        p_j2_start[nb][0] = new (std::nothrow) int[nz + 1]();
      }
- 
+
    } else {
      iq_to_i1 = new (std::nothrow) int *[6]();
      iq_to_i1[0] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
      iq_to_i1[1] = new (std::nothrow) int[ny * nq2]();
      iq_to_i1[2] = new (std::nothrow) int[nz * nq3]();
- 
+
      iq_to_i1[3] = new (std::nothrow) int[ny * nq2]();
      iq_to_i1[4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
      iq_to_i1[5] = new (std::nothrow) int[nz * nq3]();
- 
+
      iq_to_i2 = new (std::nothrow) int *[6]();
      iq_to_i2[0] = new (std::nothrow) int[ny * nq2]();
      iq_to_i2[1] = new (std::nothrow) int[nz * nq3]();
      iq_to_i2[2] = new (std::nothrow) int[ny * nq2]();
- 
+
      iq_to_i2[3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
      iq_to_i2[4] = new (std::nothrow) int[nz * nq3]();
      iq_to_i2[5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
- 
+
      i1_start = new (std::nothrow) int *[6]();
      for (auto i = 0; i < 6; ++i)
        i1_start[i] = new (std::nothrow) int[np + 1]();
- 
+
      i2_start = new (std::nothrow) int *[6]();
      for (auto i = 0; i < 6; ++i)
        i2_start[i] = new (std::nothrow) int[np + 1]();
- 
+
      /***********************************************************************/
      /* map1to2 mapping - done - tranpose operation #0  (j,k,i) <-- (i,j,k) */
      /***********************************************************************/
@@ -149,7 +150,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx / 2 + 1); ++i) {
              phere = ijktop2(i, j, k);
              pto = ijktop1(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[0][ijktoindex2t(i, j, k)] = index1;
@@ -164,7 +165,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[0][np] = index1;
      i2_start[0][np] = index2;
- 
+
      /***********************************************************************/
      /* map2to3 mapping - done - tranpose operation #1 (k,i,j) <-- (j,k,i)  */
      /***********************************************************************/
@@ -180,7 +181,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx / 2 + 1); ++i) {
              phere = ijktop1(i, j, k);
              pto = ijktop(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[1][ijktoindex1(i, j, k)] = index1;
@@ -195,7 +196,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[1][np] = index1;
      i2_start[1][np] = index2;
- 
+
      /***********************************************************************/
      /* map3to2 mapping - done - tranpose operation #2  (j,k,i) <-- (k,i,j) */
      /***********************************************************************/
@@ -211,7 +212,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx / 2 + 1); ++i) {
              phere = ijktop(i, j, k);
              pto = ijktop1(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[2][ijktoindex(i, j, k)] = index1;
@@ -226,7 +227,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[2][np] = index1;
      i2_start[2][np] = index2;
- 
+
      /***********************************************************************/
      /* map2to1 mapping - done - tranpose operation #3  (i,j,k) <-- (j,k,i) */
      /***********************************************************************/
@@ -242,7 +243,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx / 2 + 1); ++i) {
              phere = ijktop1(i, j, k);
              pto = ijktop2(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[3][ijktoindex1(i, j, k)] = index1;
@@ -257,7 +258,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[3][np] = index1;
      i2_start[3][np] = index2;
- 
+
      /**********************************************************************/
      /* map1to3 mapping - done - tranpose operation #4 (k,i,j) <-- (i,j,k) */
      /**********************************************************************/
@@ -273,7 +274,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx/2 + 1); ++i) {
              phere = ijktop2(i, j, k);
              pto = ijktop(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[4][ijktoindex2t(i, j, k)] = index1;
@@ -288,7 +289,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[4][np] = index1;
      i2_start[4][np] = index2;
- 
+
      /**********************************************************************/
      /* map3to1 mapping - done - tranpose operation #5 (i,j,k) <-- (k,i,j) */
      /**********************************************************************/
@@ -304,7 +305,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            for (auto i = 0; i < (nx / 2 + 1); ++i) {
              phere = ijktop(i, j, k);
              pto = ijktop2(i, j, k);
- 
+
              /* packing scheme */
              if ((phere == taskid) && (pto == proc_to)) {
                iq_to_i1[5][ijktoindex(i, j, k)] = index1;
@@ -319,7 +320,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      }
      i1_start[5][np] = index1;
      i2_start[5][np] = index2;
- 
+
      /* allocate ptranspose indexes */
      for (auto nb = 0; nb < 2; ++nb) {
        p_iq_to_i1[nb] = new (std::nothrow) int *[6];
@@ -329,7 +330,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        p_iq_to_i1[nb][3] = new (std::nothrow) int[ny * nq2]();
        p_iq_to_i1[nb][4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
        p_iq_to_i1[nb][5] = new (std::nothrow) int[nz * nq3]();
- 
+
        p_iq_to_i2[nb] = new (std::nothrow) int *[6];
        p_iq_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
        p_iq_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
@@ -337,7 +338,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        p_iq_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
        p_iq_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
        p_iq_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
- 
+
        p_iz_to_i2[nb] = new (std::nothrow) int *[6];
        p_iz_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
        p_iz_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
@@ -345,17 +346,17 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
        p_iz_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
        p_iz_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
        p_iz_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
- 
+
        p_i1_start[nb] = new (std::nothrow) int *[6];
        for (auto i = 0; i < 6; ++i)
          p_i1_start[nb][i] = new (std::nothrow) int[np + 1]();
- 
+
        p_i2_start[nb] = new (std::nothrow) int *[6];
        for (auto i = 0; i < 6; ++i)
          p_i2_start[nb][i] = new (std::nothrow) int[np + 1]();
      }
    }
- 
+
    /* setup timereverse indexes */
    zplane_size = timereverse_size() + 1;
    t_iq_to_i1 = new (std::nothrow) int[zplane_size]();
@@ -371,7 +372,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      proc_from = (taskid - it + np) % np;
      t_i1_start[it] = index1;
      t_i2_start[it] = index2;
- 
+
      /* k=(0,0,k3) */
      for (auto k = 1; k < nzh; ++k) {
        auto k1 = k;
@@ -382,7 +383,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
          k2 += nz;
        phere = ijktop(0, 0, k1);
        pto = ijktop(0, 0, k2);
- 
+
        /* packing scheme */
        if ((phere == taskid) && (pto == proc_to)) {
          t_iq_to_i1[index1] = ijktoindex(0, 0, k1);
@@ -394,7 +395,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
          ++index2;
        }
      }
- 
+
      /* k=(0,k2,k3) */
      for (auto k = (-nzh + 1); k < nzh; ++k)
        for (auto j = 1; j < nyh; ++j) {
@@ -412,7 +413,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
            k2 += nz;
          phere = ijktop(0, j1, k1);
          pto = ijktop(0, j2, k2);
- 
+
          /* packing scheme */
          if ((phere == taskid) && (pto == proc_to)) {
            t_iq_to_i1[index1] = ijktoindex(0, j1, k1);
@@ -427,7 +428,7 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
    }
    t_i1_start[np] = index1;
    t_i2_start[np] = index2;
- 
+
    /* setup ffts */
    tmpx = new (std::nothrow) double[2*(2*nx+15)]();
    tmpy = new (std::nothrow) double[2*(2*ny+15)]();
@@ -437,10 +438,10 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
    dcffti_(&nz,tmpz);
 
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
-   if (maptype==1) 
-      gdevice_batch_fft_init(nx,ny,nz,ny*nq,(nx/2+1)*nq,(nx/2+1)*nq);
+   if (maptype==1)
+      mygdevice.batch_fft_init(nx,ny,nz,ny*nq,(nx/2+1)*nq,(nx/2+1)*nq);
    else
-      gdevice_batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
+      mygdevice.batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 }
 
@@ -452,8 +453,8 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
 d3db::~d3db() {
   int i, nb;
 
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-  gdevice_batch_fft_end();
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+  mygdevice.batch_fft_end(nx,ny,nz);
 #endif
 
   if (maptype == 1) {
@@ -1136,7 +1137,7 @@ void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
  *          d3db::r_SMul        *
  *                              *
  ********************************/
-void d3db::r_SMul(const double da, double *ptr2) 
+void d3db::r_SMul(const double da, double *ptr2)
 {
    int i;
    int m = n2ft3d_map % 5;
@@ -1163,11 +1164,11 @@ void d3db::r_SMul(const double da, double *ptr2)
 void d3db::r_zero_ends(double *A)
 {
    int index;
- 
+
    /**********************
     **** slab mapping ****
     **********************/
-   if (maptype == 1) 
+   if (maptype == 1)
    {
       for (auto q=0; q<nq; ++q)
          for (auto k=0; k<nz; ++k)
@@ -1183,7 +1184,7 @@ void d3db::r_zero_ends(double *A)
     *************************/
    else
    {
-      for (auto q=0; q<nq1; ++q) 
+      for (auto q=0; q<nq1; ++q)
       {
          index = nx + q*(nx+2);
          A[index]   = 0.0;
@@ -1202,7 +1203,7 @@ void d3db::r_zero_ends(double *A)
 void d3db::r_zero_mends(double *A)
 {
    int index;
- 
+
    /**********************
     **** slab mapping ****
     **********************/
@@ -1219,7 +1220,7 @@ void d3db::r_zero_mends(double *A)
    /*************************
     **** hilbert mapping ****
     *************************/
-   else 
+   else
    {
       for (auto q=0; q<nq1; ++q)
       {
@@ -1230,21 +1231,21 @@ void d3db::r_zero_mends(double *A)
       if (n2ft3d_map<n2ft3d)
          std::memset(A+n2ft3d_map,0,(n2ft3d-n2ft3d_map)*sizeof(double));
    }
- 
+
    /* grid points in coordination space */
    int nzh = nz / 2;
    int nyh = ny / 2;
    int nxh = nx / 2;
    for (auto k3 = (-nzh); k3 < nzh; ++k3)
       for (auto k2 = (-nyh); k2 < nyh; ++k2)
-         for (auto k1 = (-nxh); k1 < nxh; ++k1) 
+         for (auto k1 = (-nxh); k1 < nxh; ++k1)
          {
             int i = k1 + nxh;
             int j = k2 + nyh;
             int k = k3 + nzh;
             int indx = ijktoindex2(i, j, k);
             int p = ijktop2(i, j, k);
-            
+
             if (p == parall->taskid_i())
                if ((k1 == (-nxh))  || (k1 == (nxh-1)) || (k2 == (-nyh)) ||
                    (k2 == (nyh-1)) || (k3 == (-nzh))  || (k3 == (nzh-1)))
@@ -1409,7 +1410,7 @@ void d3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) {
  *         d3db::rrrr_Sum       *
  *                              *
  ********************************/
-void d3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, double *ptr4) 
+void d3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, double *ptr4)
 {
    int i;
    int m = n2ft3d_map%5;
@@ -1435,7 +1436,7 @@ void d3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, 
  *         d3db::rrr_Sum        *
  *                              *
  ********************************/
-void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3) 
+void d3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
    int m = n2ft3d_map%5;
@@ -1717,7 +1718,7 @@ void d3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
  *                              *
  ********************************/
 #define ETA_DIV 1.0e-9
-void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3) 
+void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
    int m = n2ft3d_map % 5;
@@ -1726,7 +1727,7 @@ void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
        ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i]/ptr2[i]) : (0.0);
    if (n2ft3d_map < 5)
      return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr1[i+1]/ptr2[i+1]) : (0.0);
@@ -1742,7 +1743,7 @@ void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
  *         d3db::rr_Divide      *
  *                              *
  ********************************/
-void d3db::rr_Divide(const double *ptr2, double *ptr3) 
+void d3db::rr_Divide(const double *ptr2, double *ptr3)
 {
    int i;
    int m = n2ft3d_map%5;
@@ -1751,7 +1752,7 @@ void d3db::rr_Divide(const double *ptr2, double *ptr3)
          ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i]/ptr2[i]) : (0.0);
    if (n2ft3d_map<5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr3[i+1]/ptr2[i+1]) : (0.0);
@@ -2294,7 +2295,7 @@ void d3db::cr_fft3d(double *a) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, tmpz);
+    mygdevice.batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, tmpz);
 
     indx0 = 0;
     nn = 0;
@@ -2374,7 +2375,7 @@ void d3db::cr_fft3d(double *a) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp2, tmpy);
+    mygdevice.batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp2, tmpy);
 
     indx0 = 0;
     nn = 0;
@@ -2441,7 +2442,7 @@ void d3db::cr_fft3d(double *a) {
     }
     zeroend_fftb(nx,ny,nq,1,a);
     */
-    gdevice_batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, a, tmpx);
+    mygdevice.batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, a, tmpx);
 
   }
   /*************************
@@ -2453,10 +2454,10 @@ void d3db::cr_fft3d(double *a) {
      ***     do fft along kz dimension            ***
      ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
      ************************************************/
-    gdevice_batch_cfftz_tmpz(false, nz, nq3, n2ft3d, a, tmpz);
+    mygdevice.batch_cfftz_tmpz(false, nz, nq3, n2ft3d, a, tmpz);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    mygdevice.batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq3; ++q)
@@ -2472,10 +2473,10 @@ void d3db::cr_fft3d(double *a) {
      ***     do fft along ky dimension            ***
      ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
      ************************************************/
-    gdevice_batch_cffty_tmpy(false, ny, nq2, n2ft3d, a, tmpy);
+    mygdevice.batch_cffty_tmpy(false, ny, nq2, n2ft3d, a, tmpy);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    mygdevice.batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq2; ++q)
@@ -2491,10 +2492,10 @@ void d3db::cr_fft3d(double *a) {
      ***     do fft along kx dimension            ***
      ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
      ************************************************/
-    gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, tmpx);
+    mygdevice.batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, tmpx);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || defined(NWPW_HIP)
+    mygdevice.batch_cfftx(false,nx,nq1,n2ft3d,a);
 #else
     cshift1_fftb(nx,nq1,1,1,a);
     indx = 0;
@@ -2553,7 +2554,7 @@ void d3db::rc_fft3d(double *a) {
     }
     cshift_fftf(nx,ny,nq,1,a);
     */
-    gdevice_batch_cfftx_tmpx(true, nx, ny * nq, n2ft3d, a, tmpx);
+    mygdevice.batch_cfftx_tmpx(true, nx, ny*nq, n2ft3d, a, tmpx);
 
     /********************************************
      ***     do fft along ny dimension        ***
@@ -2577,7 +2578,7 @@ void d3db::rc_fft3d(double *a) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, tmpy);
+    mygdevice.batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, tmpy);
 
     indx0 = 0;
     nn = 0;
@@ -2657,7 +2658,7 @@ void d3db::rc_fft3d(double *a) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp2, tmpz);
+    mygdevice.batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp2, tmpz);
 
     indx0 = 0;
     nn = 0;
@@ -2717,10 +2718,10 @@ void d3db::rc_fft3d(double *a) {
      ***     do fft along nx dimension        ***
      ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
      ********************************************/
-    gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, tmpx);
+    mygdevice.batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, tmpx);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    mygdevice.batch_cfftx(true,nx,nq1,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq1; ++q)
@@ -2737,10 +2738,10 @@ void d3db::rc_fft3d(double *a) {
      ***     do fft along ny dimension        ***
      ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
      ********************************************/
-    gdevice_batch_cffty_tmpy(true, ny, nq2, n2ft3d, a, tmpy);
+    mygdevice.batch_cffty_tmpy(true, ny, nq2, n2ft3d, a, tmpy);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    mygdevice.batch_cffty(true,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq2; ++q)
@@ -2756,10 +2757,10 @@ void d3db::rc_fft3d(double *a) {
      ***     do fft along nz dimension        ***
      ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
      ********************************************/
-    gdevice_batch_cfftz_tmpz(true, nz, nq3, n2ft3d, a, tmpz);
+    mygdevice.batch_cfftz_tmpz(true, nz, nq3, n2ft3d, a, tmpz);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    mygdevice.batch_cfftz(true,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq3; ++q)
@@ -3258,22 +3259,22 @@ void d3db::c_ptranspose2_jk(const int nb, double *a, double *tmp1,
  *    d3db::c_transpose_jk      *
  *                              *
  ********************************/
-void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2) 
+void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
- 
+
    parall->astart(1, np);
- 
+
    c_bindexcopy(nfft3d,iq_to_i1[0],a,tmp1);
- 
+
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[0][1]-i2_start[0][0]);
    // int one=1;
    // DCOPY_PWDFT(msglen,&(tmp1[2*i1_start[0][0]]),one,&(tmp2[2*i2_start[0][0]]),one);
    std::memcpy(tmp2+2*i2_start[0][0],tmp1+2*i1_start[0][0],msglen*sizeof(double));
- 
+
    /* receive packed array data */
-   for (auto it=1; it<np; ++it) 
+   for (auto it=1; it<np; ++it)
    {
       /* synchronous receive of tmp */
       auto proc_from = (taskid - it + np) % np;
@@ -3281,7 +3282,7 @@ void d3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
       if (msglen > 0)
          parall->adreceive(1,1,proc_from,msglen,&tmp2[2*i2_start[0][it]]);
    }
-   for (auto it=1; it<np; ++it) 
+   for (auto it=1; it<np; ++it)
    {
       auto proc_to = (taskid + it) % np;
       msglen = 2*(i1_start[0][it+1] - i1_start[0][it]);
@@ -4080,20 +4081,20 @@ void d3db::r_transpose_ijk_end() {
  *    d3db::r_transpose_jk      *
  *                              *
  ********************************/
-void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2) 
+void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
- 
+
    parall->astart(1,np);
- 
+
    c_bindexcopy(nfft3d, iq_to_i1[0], a, tmp1);
- 
+
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[0][1] - i2_start[0][0]);
    std::memcpy(tmp2+2*i2_start[0][0],tmp1+2*i1_start[0][0],msglen*sizeof(double));
- 
+
    /* receive packed array data */
-   for (auto it=1; it<np; ++it) 
+   for (auto it=1; it<np; ++it)
    {
       /* synchronous receive of tmp */
       auto proc_from = (taskid - it + np) % np;
@@ -4101,7 +4102,7 @@ void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
       if (msglen > 0)
          parall->adreceive(1,1,proc_from, msglen, &tmp2[i2_start[0][it]]);
    }
-   for (auto it=1; it<np; ++it) 
+   for (auto it=1; it<np; ++it)
    {
       auto proc_to = (taskid+it)%np;
       msglen = 2*(i1_start[0][it+1] - i1_start[0][it]);
@@ -4178,25 +4179,25 @@ void d3db::r_transpose_ijk(const int op, double *a, double *tmp1,
  **************************************/
 // computes the periodic gradient on a (n1,n2,n3) grid.
 #define one_over_60 1.66666666666667e-2
-void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho2, double *drho3) 
+void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho2, double *drho3)
 {
    int nx2 = nx + 2;
- 
-   if (maptype == 1) 
+
+   if (maptype == 1)
    {
       double *a = this->r_alloc();
       double *tmp2 = new (std::nothrow) double[2*nfft3d]();
       double *tmp3 = new (std::nothrow) double[2*nfft3d]();
       std::memcpy(a,rho,n2ft3d*sizeof(double));
       this->r_transpose_jk(a,tmp2,tmp3);
-     
+
       // drho1 gradient
-      for (auto q=0; q<nq; ++q) 
+      for (auto q=0; q<nq; ++q)
       {
          int im3,im2,im1,ip1,ip2,ip3;
          const double *f = rho + q * (nx2)*nz;
          double *df1 = drho1 + q*(nx2)*nz;
-         for (auto i=0; i<nx; ++i) 
+         for (auto i=0; i<nx; ++i)
          {
             im3 = i-3; if (im3<0) im3 += nx;
             im2 = i-2; if (im2<0) im2 += nx;
@@ -4204,21 +4205,21 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
             ip1 = i+1; if (ip1>=nx) ip1 -= nx;
             ip2 = i+2; if (ip2>=nx) ip2 -= nx;
             ip3 = i+3; if (ip3>=nx) ip3 -= nx;
-           
+
             for (auto j = 0; j < ny; ++j)
-               df1[i+ j*nx2] = one_over_60*(  -1.0*f[im3+j*nx2] +  9.0*f[im2+j*nx2] 
-                                            - 45.0*f[im1+j*nx2] + 45.0*f[ip1+j*nx2] 
+               df1[i+ j*nx2] = one_over_60*(  -1.0*f[im3+j*nx2] +  9.0*f[im2+j*nx2]
+                                            - 45.0*f[im1+j*nx2] + 45.0*f[ip1+j*nx2]
                                             -  9.0*f[ip2+j*nx2] +  1.0*f[ip3+j*nx2]);
          }
       }
 
       // drho2 gradient
-      for (auto q=0; q<nq; ++q) 
+      for (auto q=0; q<nq; ++q)
       {
          int jm3,jm2,jm1,jp1,jp2,jp3;
          const double *f = a + q*(nx2)*ny;
          double *df2 = drho2 + q*(nx2)*ny;
-         for (auto j=0; j<ny; ++j) 
+         for (auto j=0; j<ny; ++j)
          {
             jm3 = j-3; if (jm3<0) jm3 += ny;
             jm2 = j-2; if (jm2<0) jm2 += ny;
@@ -4227,20 +4228,20 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
             jp2 = j+2; if (jp2>=ny) jp2 -= ny;
             jp3 = j+3; if (jp3>=ny) jp3 -= ny;
             for (auto i = 0; i<nx; ++i)
-               df2[i+j*nx2] = one_over_60*( -1.0*f[i+jm3*nx2] +  9.0*f[i+jm2*nx2] 
-                                          - 45.0*f[i+jm1*nx2] + 45.0*f[i+jp1*nx2] 
+               df2[i+j*nx2] = one_over_60*( -1.0*f[i+jm3*nx2] +  9.0*f[i+jm2*nx2]
+                                          - 45.0*f[i+jm1*nx2] + 45.0*f[i+jp1*nx2]
                                           -  9.0*f[i+jp2*nx2] +  1.0*f[i+jp3*nx2]);
          }
       }
       r_transpose_jk(drho2,tmp2,tmp3);
-     
+
       // drho3 gradient
-      for (auto q = 0; q < nq; ++q) 
+      for (auto q = 0; q < nq; ++q)
       {
          int km3,km2,km1,kp1,kp2,kp3;
          const double *f = rho + q*(nx2)*nz;
          double *df3 = drho3 + q*(nx2)*nz;
-         for (auto k=0; k<nz; ++k) 
+         for (auto k=0; k<nz; ++k)
          {
             km3 = k-3; if (km3<0) km3 += nz;
             km2 = k-2; if (km2<0) km2 += nz;
@@ -4257,20 +4258,20 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
       this->r_dealloc(a);
       delete[] tmp3;
       delete[] tmp2;
-   } 
-   else 
+   }
+   else
    {
       double *a = this->r_alloc();
       double *tmp2 = new (std::nothrow) double[nrft3d]();
       double *tmp3 = new (std::nothrow) double[nrft3d]();
 
       // drho1 gradient
-      for (auto q=0; q<nqr1; ++q) 
+      for (auto q=0; q<nqr1; ++q)
       {
          int im3,im2,im1,ip1,ip2,ip3;
          const double *f = rho + q*(nx+2);
          double *df1 = drho1 + q*(nx2);
-         for (auto i=0; i<nx; ++i) 
+         for (auto i=0; i<nx; ++i)
          {
             im3 = i-3; if (im3 < 0) im3 += nx;
             im2 = i-2; if (im2 < 0) im2 += nx;
@@ -4282,17 +4283,17 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
                                  + 45.0*f[ip1] - 9.0*f[ip2] +  1.0*f[ip3]);
          }
       }
-     
+
       // drho2 gradient
       std::memcpy(a,rho,nrft3d*sizeof(double));
       this->r_transpose_ijk(0,a,tmp2,tmp3); //#(i,j,k) --> (j,k,i)
 
-      for (auto q=0; q<nqr2; ++q) 
+      for (auto q=0; q<nqr2; ++q)
       {
          int jm3,jm2,jm1,jp1,jp2,jp3;
          const double *f = a + q*(ny);
          double *df2 = drho2 + q*(ny);
-         for (auto j=0; j<ny; ++j) 
+         for (auto j=0; j<ny; ++j)
          {
             jm3 = j-3; if (jm3<0) jm3 += ny;
             jm2 = j-2; if (jm2<0) jm2 += ny;
@@ -4300,21 +4301,21 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
             jp1 = j+1; if (jp1>=ny) jp1 -= ny;
             jp2 = j+2; if (jp2>=ny) jp2 -= ny;
             jp3 = j+3; if (jp3>=ny) jp3 -= ny;
-            df2[j] = one_over_60*( -1.0*f[jm3] + 9.0*f[jm2] - 45.0*f[jm1] 
+            df2[j] = one_over_60*( -1.0*f[jm3] + 9.0*f[jm2] - 45.0*f[jm1]
                                  + 45.0*f[jp1] - 9.0*f[jp2] +  1.0*f[jp3]);
          }
       }
       this->r_transpose_ijk(3,drho2,tmp2,tmp3); //#(j,k,i) --> (i,j,k)
-     
+
       // drho3 gradient
       std::memcpy(a,rho,nrft3d*sizeof(double));
       this->r_transpose_ijk(4,a,tmp2, tmp3);
-      for (auto q=0; q<nqr3; ++q) 
+      for (auto q=0; q<nqr3; ++q)
       {
          int km3,km2,km1,kp1,kp2,kp3;
          const double *f = a + q*(nz);
          double *df3 = drho3 + q*(nz);
-         for (auto k=0; k<nz; ++k) 
+         for (auto k=0; k<nz; ++k)
          {
             km3 = k-3; if (km3<0) km3 += nz;
             km2 = k-2; if (km2<0) km2 += nz;
@@ -4327,7 +4328,7 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
          }
       }
       this->r_transpose_ijk(5,drho3,tmp2,tmp3);
-     
+
       delete[] tmp3;
       delete[] tmp2;
       this->r_dealloc(a);
@@ -4589,7 +4590,7 @@ void d3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
    // Compute the filter coefficients
    std::vector<double> coeff(nfilter);
    double sum = 0.0;
-   for (auto i=0; i<nfilter; ++i) 
+   for (auto i=0; i<nfilter; ++i)
    {
       coeff[i] = std::exp(-0.5*std::pow((i-(nfilter-1)/2)/sigma,2));
       sum += coeff[i];
@@ -4602,7 +4603,7 @@ void d3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
       double *c    = this->r_alloc();
       double *tmp2 = this->r_alloc();
       double *tmp3 = this->r_alloc();
-       
+
       // Apply the filter along the x axis
       for (auto q=0; q<nq; ++q)
       {
@@ -4632,7 +4633,7 @@ void d3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
 
       // transpose z and y
       this->c_transpose_jk(b,tmp2,tmp3);
-      
+
       this->r_dealloc(tmp3);
       this->r_dealloc(tmp2);
       this->r_dealloc(c);
@@ -4678,7 +4679,7 @@ void d3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
          PERIODIC_GAUSSIAN_FILTER(nz,nfilter,coeff,f,f1);
       }
 
-      // tranpose operation #5 (i,j,k) <-- (k,i,j) 
+      // tranpose operation #5 (i,j,k) <-- (k,i,j)
       // rotate b(nx,ny,nz) <-- b(nz,nx,ny)
       this->r_transpose_ijk(5,b,tmp2,tmp3);
 

@@ -105,6 +105,7 @@ class Control2 {
  
    bool pfei_on;
    bool pcif_on;
+   bool pcif_shift_cell = true;
    bool pdipole_on;
    bool pmulliken_on;
 
@@ -363,6 +364,7 @@ public:
  
    // CIF
    bool CIF_on() { return pcif_on; }
+   bool CIF_shift_cell() { return pcif_shift_cell; }
  
    // Mulliken
    bool Mulliken_on() { return pmulliken_on; }

@@ -91,6 +91,7 @@ public:
    char *symbol(const int i) { return &atomarray[3*katm[i]]; }
    char *atom(const int ia) { return &atomarray[3*ia]; }
    double amu(const int i) { return mass[i]/1822.89; }
+   void writefilename(std::string &);
    void writejsonstr(std::string &);
    double rion(int i, int ii) { return rion1[3*ii+i]; }
    double vion(int i, int ii) { return rion0[3*ii+i]; }
@@ -439,6 +440,22 @@ public:
    double energy_ion_bond_constraints()    { return mybond->energy();}
    double energy_ion_bondings_constraints() { return mybondings->energy();}
    std::string print_constraints(const int);
+
+   void add_contraint_force(double *fion) {
+      if (has_constraints) {
+          double econstraint = 0.0;
+         if (has_bond_constraints)     econstraint += mybond->energyfion(fion);
+         if (has_bondings_constraints) econstraint += mybondings->energyfion(fion);
+      }
+   }
+   double add_contraint_energyforce(double *fion) {
+      double econstraint = 0.0;
+      if (has_constraints) {
+         if (has_bond_constraints)     econstraint += mybond->energyfion(fion);
+         if (has_bondings_constraints) econstraint += mybondings->energyfion(fion);
+      }
+      return econstraint;
+   }
 
 };
 } // namespace pwdft

@@ -71,7 +71,7 @@ public:
    double *psi2,*rho2,*rho2_all,*dng2;
    double *lmbda,*hml,*eig;
  
-   double E[70],en[2];
+   double E[80],en[2];
  
    bool newpsi;
  
@@ -138,6 +138,17 @@ public:
         E[4] = myion->ion_ion_energy();
       
       E[0] += E[4];
+
+      /* get contraints energies */
+      if (myion->has_ion_bond_constraints()) {
+         E[70] = myion->energy_ion_bond_constraints();
+         E[0] += E[70];
+      }
+      if (myion->has_ion_bondings_constraints()) {
+         E[71] = myion->energy_ion_bondings_constraints();
+         E[0] +=  E[71];
+      }
+
       
       /* generate eigenvalues */
       myelectron->gen_hml(psi1, hml);
@@ -288,6 +299,8 @@ public:
          myewald->force(grad_ion);
       if (myelectron->is_aperiodic())
          myion->ion_ion_force(grad_ion);
+
+      myion->add_contraint_force(grad_ion);
    }
  
    void psi_1apc_force(double *grad_ion) 
@@ -348,6 +361,17 @@ public:
      
       os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
          << (mymolecule.E[9]+mymolecule.E[8]+mymolecule.E[7]+mymolecule.E[6])/mymolecule.E[5];
+
+      if (mymolecule.myion->has_ion_constraints())
+      {
+         os << std::endl;
+         if (mymolecule.myion->has_ion_bond_constraints())
+            os << " spring bond         : " << Efmt(19,10) << mymolecule.E[70] << " ("
+                                             << Efmt(15,5)  << mymolecule.E[70]/mymolecule.myion->nion << " /ion)" << std::endl;
+         if (mymolecule.myion->has_ion_bondings_constraints())
+            os << " spring bondings     : " << Efmt(19,10) << mymolecule.E[71] << " ("
+                                            << Efmt(15,5)  << mymolecule.E[71]/mymolecule.myion->nion << " /ion)" << std::endl;
+      }
       os << eoln;
       os << eoln;
       os << " orbital energy:" << eoln;

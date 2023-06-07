@@ -402,8 +402,7 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml) {
     mshift0 = 0;
     for (ms = 0; ms < ispin; ++ms) {
       n = ne[ms];
-      gdevice_TN1_dgemm(ng, n, rtwo, psi1 + shift0, psi2 + shift0, rzero,
-                        hml + mshift0);
+      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
 
       if (ng0 > 0) {
         shift1 = shift0;
@@ -462,8 +461,7 @@ void Pneb::ggm_Multiply(double *psi1, double *psi2, double *hml) {
     mshift0 = 0;
     for (auto ms = 0; ms < ispin; ++ms) {
       n = ne[ms];
-      gdevice_TN1_dgemm(ng, n, rtwo, psi1 + shift0, psi2 + shift0, rzero,
-                        hml + mshift0);
+      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
 
       if (ng0 > 0)
         DGEMM_PWDFT((char *)"T", (char *)"N", n, n, ng0, rmone, psi1 + shift0,
@@ -518,8 +516,7 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2,
     }
     for (ms = ms1; ms < ms2; ++ms) {
       n = ne[ms];
-      gdevice_TN1_dgemm(ng, n, rtwo, &psi1[shift0], &psi2[shift0], rzero,
-                        &hml[mshift0]);
+      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
 
       if (ng0 > 0) {
         shift1 = shift0;
@@ -586,8 +583,7 @@ void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml) {
     }
     for (ms = ms1; ms < ms2; ++ms) {
       n = ne[ms];
-      gdevice_TN1_dgemm(ng, n, rtwo, &psi1[shift0], &psi2[shift0], rzero,
-                        &hml[mshift0]);
+      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
 
       // DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng,
       //            rtwo,
@@ -642,8 +638,7 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
     for (ms = ms1; ms < ms2; ++ms) {
       n = ne[ms];
 
-      gdevice_TN3_dgemm(ng, n, rtwo, &psi1[shift0], &psi2[shift0], rzero,
-                        &s11[mshift0], &s21[mshift0], &s22[mshift0]);
+      d3db::mygdevice.TN3_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&s11[mshift0],&s21[mshift0],&s22[mshift0]);
 
       if (ng0 > 0) {
         shift1 = shift0;
@@ -718,9 +713,9 @@ void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
     for (ms = ms1; ms < ms2; ++ms) {
       n = ne[ms];
 
-      gdevice_TN4_dgemm(ng, n, rtwo, psi1 + shift0, psi2 + shift0, rzero,
-                        s11 + mshift0, s21 + mshift0, s12 + mshift0,
-                        s22 + mshift0);
+      d3db::mygdevice.TN4_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,
+                                s11+mshift0,s21+mshift0,s12+mshift0,
+                                s22+mshift0);
 
       if (ng0 > 0) {
         shift1 = shift0;
@@ -796,8 +791,8 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
       //	     &hml[mshift1],n,
       //	     beta,
       //	     &psi2[shift1],ng);
-      gdevice_NN_dgemm(ng, n, alpha, &psi1[shift1], &hml[mshift1], beta,
-                       &psi2[shift1]);
+      d3db::mygdevice.NN_dgemm(ng, n, alpha, &psi1[shift1], &hml[mshift1], beta,
+                               &psi2[shift1]);
 
       shift1 += ne[0] * ng;
       mshift1 += ishift2;
@@ -877,7 +872,7 @@ void Pneb::m_diagonalize(double *hml, double *eig) {
     int nn = ne[0] * ne[0] + ne[1] * ne[1];
 
     if (d1db::parall->is_master())
-      gdevice_NN_eigensolver(ispin, ne, hml, eig);
+       d3db::mygdevice.NN_eigensolver(ispin, ne, hml, eig);
     d1db::parall->Brdcst_Values(0, 0, nn, hml);
     d1db::parall->Brdcst_Values(0, 0, n, eig);
 
@@ -1248,7 +1243,7 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda) {
       // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
       // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
       // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
-      gdevice_MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
+      d3db::mygdevice.MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
 
       // DCOPY_PWDFT(nn, sa1, one, st1, one);
       std::memcpy(st1, sa1, nn * sizeof(double));
@@ -1321,7 +1316,7 @@ void Pneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
       // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
       // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
       // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
-      gdevice_MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
+      d3db::mygdevice.MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
 
       // DCOPY_PWDFT(nn, sa1, one, st1, one);
       std::memcpy(st1, sa1, nn * sizeof(double));

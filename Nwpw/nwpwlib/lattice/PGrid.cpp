@@ -7,7 +7,7 @@
 #include "Control2.hpp"
 #include "Lattice.hpp"
 #include "fft.h"
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "util.hpp"
 #include <cmath>
@@ -549,7 +549,7 @@ void PGrid::c_pack(const int nb, double *a) {
  *       PGrid:cc_pack_copy     *
  *                              *
  ********************************/
-void PGrid::cc_pack_copy(const int nb, const double *a, double *b) 
+void PGrid::cc_pack_copy(const int nb, const double *a, double *b)
 {
    int one = 1;
    // int ng  = 2*(nida[nb]+nidb[nb]);
@@ -669,7 +669,7 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
   // 	       b,ng,
   // 	       rzero,
   // 	       sum,nn);
-  gdevice_TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
+  d3db::mygdevice.TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
 
   if (ng0 > 0) {
     DGEMM_PWDFT((char *)"T", (char *)"N", nn, nprj, ng0, rmone, a, ng, b, ng,
@@ -846,7 +846,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, d3db::tmpz);
+    d3db::mygdevice.batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, d3db::tmpz);
 
     indx0 = 0;
     indx2 = 0;
@@ -939,7 +939,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp2, d3db::tmpy);
+    d3db::mygdevice.batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp2, d3db::tmpy);
 
     indx0 = 0;
     indx2 = 0;
@@ -1015,7 +1015,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
      }
      d3db::zeroend_fftb(nx,ny,nq,1,a);
     */
-    gdevice_batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, a, d3db::tmpx);
     d3db::zeroend_fftb(nx, ny, nq, 1, a);
 
   }
@@ -1029,11 +1029,11 @@ void PGrid::cr_pfft3b(const int nb, double *a)
      ***     do fft along kz dimension            ***
      ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
      ************************************************/
-    gdevice_batch_cfftz_tmpz_zero(false, nz, nq3, n2ft3d, a, d3db::tmpz,
+    d3db::mygdevice.batch_cfftz_tmpz_zero(false, nz, nq3, n2ft3d, a, d3db::tmpz,
                                   zero_row3[nb]);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    d3db::mygdevice.batch_cfftz(false,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq3; ++q)
@@ -1050,11 +1050,11 @@ void PGrid::cr_pfft3b(const int nb, double *a)
      ***     do fft along ky dimension            ***
      ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
      ************************************************/
-    gdevice_batch_cffty_tmpy_zero(false, ny, nq2, n2ft3d, a, d3db::tmpy,
+    d3db::mygdevice.batch_cffty_tmpy_zero(false, ny, nq2, n2ft3d, a, d3db::tmpy,
                                   zero_row2[nb]);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    d3db::mygdevice.batch_cffty(false,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq2; ++q)
@@ -1071,10 +1071,10 @@ void PGrid::cr_pfft3b(const int nb, double *a)
      ***     do fft along kx dimension            ***
      ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
      ************************************************/
-    gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, d3db::tmpx);
     /*
-    #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-           gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
+    #if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+           d3db::mygdevice.batch_cfftx(false,nx,nq1,n2ft3d,a);
     #else
            d3db::cshift1_fftb(nx,nq1,1,1,a);
            indx = 0;
@@ -1104,7 +1104,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
    complex to complex fft:
       A(kx,ky,kz) <- FFT3[A(nx(nb),ny(nb),nz(nb))]
 */
-void PGrid::rc_pfft3f(const int nb, double *a) 
+void PGrid::rc_pfft3f(const int nb, double *a)
 {
   nwpw_timing_function ftime(1);
   int i, j, k, jj, kk, q, indx, indx0, indx2, nxh, nxh2, nxhy, nxhy2, nxhz,
@@ -1137,7 +1137,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
     }
     d3db::cshift_fftf(nx,ny,nq,1,a);
     */
-    gdevice_batch_cfftx_tmpx(true, nx, ny * nq, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(true, nx, ny * nq, n2ft3d, a, d3db::tmpx);
 
     /********************************************
      ***     do fft along ny dimension        ***
@@ -1165,7 +1165,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, d3db::tmpy);
+    d3db::mygdevice.batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, d3db::tmpy);
 
     indx0 = 0;
     indx2 = 0;
@@ -1259,7 +1259,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp2, d3db::tmpz);
+    d3db::mygdevice.batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp2, d3db::tmpz);
 
     indx0 = 0;
     indx2 = 0;
@@ -1330,7 +1330,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
      ***     do fft along nx dimension        ***
      ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
      ********************************************/
-    gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, d3db::tmpx);
     /*
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
     gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
@@ -1350,11 +1350,11 @@ void PGrid::rc_pfft3f(const int nb, double *a)
      ***     do fft along ny dimension        ***
      ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
      ********************************************/
-    gdevice_batch_cffty_tmpy_zero(true, ny, nq2, n2ft3d, a, d3db::tmpy,
+    d3db::mygdevice.batch_cffty_tmpy_zero(true, ny, nq2, n2ft3d, a, d3db::tmpy,
                                   zero_row2[nb]);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    d3db::mygdevice.batch_cffty(true,ny,nq2,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq2; ++q)
@@ -1371,11 +1371,11 @@ void PGrid::rc_pfft3f(const int nb, double *a)
      ***     do fft along nz dimension        ***
      ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
      ********************************************/
-    gdevice_batch_cfftz_tmpz_zero(true, nz, nq3, n2ft3d, a, d3db::tmpz,
+    d3db::mygdevice.batch_cfftz_tmpz_zero(true, nz, nq3, n2ft3d, a, d3db::tmpz,
                                   zero_row3[nb]);
     /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+    d3db::mygdevice.batch_cfftz(true,nz,nq3,n2ft3d,a);
 #else
     indx = 0;
     for (q=0; q<nq3; ++q)
@@ -1475,7 +1475,7 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, d3db::tmpz);
+    d3db::mygdevice.batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, d3db::tmpz);
     // for (auto i=0; i<nn; ++i)
     //    dcfftb_(&nz,tmp2+2*nz*i,d3db::tmpz);
 
@@ -1553,7 +1553,7 @@ void PGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx) {
      ***     do fft along kz dimension            ***
      ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
      ************************************************/
-    gdevice_batch_cfftz_tmpz_zero(false, nz, nq3, n2ft3d, tmp1, d3db::tmpz,
+    d3db::mygdevice.batch_cfftz_tmpz_zero(false, nz, nq3, n2ft3d, tmp1, d3db::tmpz,
                                   zero_row3[nb]);
 
     d3db::c_ptranspose_ijk_start(nb, 2, tmp1, tmp2, tmp1, request_indx, 45);
@@ -1609,7 +1609,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp1, d3db::tmpy);
+    d3db::mygdevice.batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp1, d3db::tmpy);
     // for (auto i=0; i<nn; ++i)
     //    dcfftb_(&ny,tmp1+2*ny*i,d3db::tmpy);
 
@@ -1682,7 +1682,7 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx) {
      ***     do fft along ny dimension        ***
      ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
      ********************************************/
-    gdevice_batch_cffty_tmpy_zero(false, ny, nq2, n2ft3d, tmp2, d3db::tmpy,
+    d3db::mygdevice.batch_cffty_tmpy_zero(false, ny, nq2, n2ft3d, tmp2, d3db::tmpy,
                                   zero_row2[nb]);
 
     d3db::c_ptranspose_ijk_start(nb, 3, tmp2, tmp1, tmp2, request_indx, 46);
@@ -1707,7 +1707,7 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx) {
      ***     do fft along kx dimension            ***
      ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
      ************************************************/
-    gdevice_batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, tmp2, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, tmp2, d3db::tmpx);
     d3db::zeroend_fftb(nx, ny, nq, 1, tmp2);
     std::memcpy(tmp1, tmp2, n2ft3d * sizeof(double));
   }
@@ -1721,7 +1721,7 @@ void PGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx) {
      ***     do fft along kx dimension            ***
      ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
      ************************************************/
-    gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, tmp1, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(false, nx, nq1, n2ft3d, tmp1, d3db::tmpx);
     d3db::zeroend_fftb(nx, nq1, 1, 1, tmp1);
     if (n2ft3d_map < n2ft3d)
       std::memset(tmp1 + n2ft3d_map, 0, (n2ft3d - n2ft3d_map) * sizeof(double));
@@ -1854,7 +1854,7 @@ void PGrid::pfftfx(const int nb, double *a, double *tmp1, double *tmp2,
     }
     d3db::cshift_fftf(nx,ny,nq,1,tmp1);
     */
-    gdevice_batch_cfftx_tmpx(true, nx, ny*nq, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(true, nx, ny*nq, n2ft3d, a, d3db::tmpx);
     std::memcpy(tmp1, a, n2ft3d * sizeof(double));
   }
 
@@ -1862,7 +1862,7 @@ void PGrid::pfftfx(const int nb, double *a, double *tmp1, double *tmp2,
   else {
     // do fft along nx dimension
     // A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]
-    gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, d3db::tmpx);
+    d3db::mygdevice.batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, d3db::tmpx);
 
     d3db::c_ptranspose_ijk_start(nb, 0, a, tmp1, tmp2, request_indx, 40);
   }
@@ -1908,7 +1908,7 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, d3db::tmpy);
+    d3db::mygdevice.batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, d3db::tmpy);
 
     indx0 = 0;
     indx2 = 0;
@@ -1982,7 +1982,7 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx) {
 
     // do fft along ny dimension
     // A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]
-    gdevice_batch_cffty_tmpy_zero(true, ny, nq2, n2ft3d, tmp1, d3db::tmpy,
+    d3db::mygdevice.batch_cffty_tmpy_zero(true, ny, nq2, n2ft3d, tmp1, d3db::tmpy,
                                   zero_row2[nb]);
 
     // in=tmp2, out=tmp2
@@ -2030,7 +2030,7 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp1, d3db::tmpz);
+    d3db::mygdevice.batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp1, d3db::tmpz);
 
     indx0 = 0;
     indx2 = 0;
@@ -2100,7 +2100,7 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx) {
 
     // do fft along nz dimension
     // A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]
-    gdevice_batch_cfftz_tmpz_zero(true, nz, nq3, n2ft3d, tmp2, d3db::tmpz,
+    d3db::mygdevice.batch_cfftz_tmpz_zero(true, nz, nq3, n2ft3d, tmp2, d3db::tmpz,
                                   zero_row3[nb]);
   }
 }
@@ -2111,25 +2111,25 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx) {
  *                              *
  ********************************/
 void PGrid::pfftf_step(const int step, const int nb, double *a, double *tmp1,
-                       double *tmp2, int request_indx) 
+                       double *tmp2, int request_indx)
 {
-   if (step==0) 
+   if (step==0)
    {
      // pfftfx mem-->device, in=a out=tmp2
      pfftfx(nb, a, tmp1, tmp2, request_indx);
-   } 
-   else if (step==1) 
+   }
+   else if (step==1)
    {
       // pfftfy device, in=tmp1
       pfftfy(nb, tmp1, tmp2, request_indx);
-   } 
-   else if (step==2) 
+   }
+   else if (step==2)
    {
       // pfftfz device-->mem
       pfftfz(nb, tmp1, tmp2, request_indx);
       this->c_pack_start(nb, tmp2, tmp1, request_indx, 47);
-   } 
-   else if (step==3) 
+   }
+   else if (step==3)
    {
       // pfftf final
       this->c_pack_end(nb, tmp2, request_indx);
@@ -2265,7 +2265,7 @@ void PGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double 
 {
    int i, ii;
    int ng = nida[nb]+nidb[nb];
- 
+
    ii = 0;
    for (i=0; i<ng; ++i)
    {
@@ -2316,13 +2316,13 @@ void PGrid::tc_pack_Mul(const int nb, const double *a, double *c) {
  *    PGrid:tcc_pack_aMulAdd    *
  *                              *
  ********************************/
-void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, const double *b, double *c) 
+void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, const double *b, double *c)
 {
    int i, ii;
    int ng = nida[nb] + nidb[nb];
- 
+
    ii=0;
-   for (i=0; i<ng; ++i) 
+   for (i=0; i<ng; ++i)
    {
       c[ii]   += alpha*b[ii] * a[i];
       c[ii+1] += alpha*b[ii+1]*a[i];
@@ -2353,7 +2353,7 @@ void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b,
  *     PGrid:tcr_pack_iMul_unpack_fft      *
  *                                         *
  *******************************************/
-void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c) 
+void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c)
 {
    int i, ii;
    int ng = nida[nb] + nidb[nb];
@@ -2518,7 +2518,7 @@ void PGrid::cc_pack_daxpy(const int nb, const double alpha, const double *a,
  *   PGrid:cct_pack_iconjgMul   *
  *                              *
  ********************************/
-void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c) 
+void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
@@ -2529,7 +2529,7 @@ void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, d
  *  PGrid:cct_pack_iconjgMulb   *
  *                              *
  ********************************/
-void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c) 
+void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (int i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];

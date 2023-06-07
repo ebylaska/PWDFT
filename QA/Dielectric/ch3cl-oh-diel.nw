@@ -1,0 +1,342 @@
+title "swnc: e theory=pspw xc=pbe formula=H4C1O1Cl1 charge=-1 mult=1"
+#machinejob:expert
+
+echo
+
+start pspw-pbe-H4C1O1Cl1
+
+memory 1900 mb
+
+permanent_dir ./perm2
+scratch_dir   ./perm2
+
+charge -1
+
+geometry noautoz nocenter noautosym
+C     1.71860   -0.82643   -0.63523
+Cl    0.21776   -1.61557   -1.17818
+H     1.75812   -0.82241    0.45960
+H     2.56020   -1.40395   -1.01945
+H     1.76421    0.18828   -1.03412
+O     3.78151    0.13758    0.24028
+H     4.58777    0.48305    0.67239
+end
+
+
+nwpw
+  simulation_cell
+     SC 26.0
+     boundary_conditions aperiodic
+  end
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 30.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman 
+
+  2d-hcurve
+end
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set nwpw:cif_filename H4C1O1Cl1
+
+task pspw energy ignore
+task file xyz append path2.xyz
+
+nwpw
+   generalized_Poisson filter 1.0 dielec 78.0 alpha 0.1 relax_dielec on cube_dielec on
+   steepest_descent
+      loop 10 500
+      time_step 1.0
+      deltae_check false
+   end
+end
+task pspw steepest_descent
+#task pspw energy ignore
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = -3.000
+##### current gamma=-3.000 ######
+constraints
+   clear
+   spring bondings 0.100000 -3.000 1.0 1 2 -1.0 1 6
+end
+nwpw
+   steepest_descent
+      geometry_optimize
+      loop 10 500
+      time_step 1.0
+      deltae_check false
+   end
+end
+
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/00vdielec.cube
+task file copy perm2/rho_ind.cube perm2/00rhodielec.cube
+
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = -2.400
+##### current gamma=-2.400 ######
+constraints
+   clear
+   spring bondings 0.100000 -2.400 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/01vdielec.cube
+task file copy perm2/rho_ind.cube perm2/01rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = -1.800
+##### current gamma=-1.800 ######
+constraints
+   clear
+   spring bondings 0.100000 -1.800 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/02vdielec.cube
+task file copy perm2/rho_ind.cube perm2/02rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = -1.200
+##### current gamma=-1.200 ######
+constraints
+   clear
+   spring bondings 0.100000 -1.200 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/03vdielec.cube
+task file copy perm2/rho_ind.cube perm2/03rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = -0.600
+##### current gamma=-0.600 ######
+constraints
+   clear
+   spring bondings 0.100000 -0.600 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/04vdielec.cube
+task file copy perm2/rho_ind.cube perm2/04rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 0.000
+##### current gamma=0.000 ######
+constraints
+   clear
+   spring bondings 0.100000 0.000 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/05vdielec.cube
+task file copy perm2/rho_ind.cube perm2/05rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 0.600
+##### current gamma=0.600 ######
+constraints
+   clear
+   spring bondings 0.100000 0.600 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/06vdielec.cube
+task file copy perm2/rho_ind.cube perm2/06rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 1.200
+##### current gamma=1.200 ######
+constraints
+   clear
+   spring bondings 0.100000 1.200 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/07vdielec.cube
+task file copy perm2/rho_ind.cube perm2/07rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 1.800
+##### current gamma=1.800 ######
+constraints
+   clear
+   spring bondings 0.100000 1.800 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/08vdielec.cube
+task file copy perm2/rho_ind.cube perm2/08rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 2.400
+##### current gamma=2.400 ######
+constraints
+   clear
+   spring bondings 0.100000 2.400 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/09vdielec.cube
+task file copy perm2/rho_ind.cube perm2/09rhodielec.cube
+
+
+### restart here ###
+
+### Adding reaction ###
+# reaction_type    = AB + C --> AC + B
+# reaction_indexes = 1 2 6
+# reaction_gamma   = 3.000
+##### current gamma=3.000 ######
+constraints
+   clear
+   spring bondings 0.100000 3.000 1.0 1 2 -1.0 1 6
+end
+
+driver
+   clear
+   maxiter 30
+end
+#task pspw optimize ignore
+task pspw steepest_descent
+task file xyz append path2.xyz
+task file cif append path2.cif
+task file rtdb["pspw"]["energies"][0] path2.data
+task file copy perm2/vdielec.cube perm2/10vdielec.cube
+task file copy perm2/rho_ind.cube perm2/10rhodielec.cube
+

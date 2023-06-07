@@ -748,6 +748,10 @@ static json parse_car_parrinello(json cpmdjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() > 1)
         cpmdjson["ion_motion_filename"] = ss[1];
+    } else if (mystring_contains(line, "cif_filename")) {
+      ss = mystring_split0(line);
+      if (ss.size() > 1)
+        cpmdjson["cif_filename"] = ss[1];
     } else if (mystring_contains(line, "eigmotion_filename")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)
@@ -1602,43 +1606,35 @@ json parse_rtdbjson(json rtdb) {
   while ((cur < n) && (!foundtask)) {
 
     if (mystring_contains(mystring_lowercase(lines[cur]), "unset ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 1)
-        auto count_erase = rtdb.erase(ss[1]);
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 1)
+          auto count_erase = rtdb.erase(ss[1]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "set ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 2)
-        rtdb[ss[1]] = ss[2];
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 2)
+          rtdb[ss[1]] = ss[2];
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "start")) {
-      rtdb["dbname"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
+       rtdb["dbname"] = mystring_trim( mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "geometry")) {
-      rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
+       rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "title")) {
-      rtdb["title"] = mystring_trim(mystring_ireplace(
-          mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"),
-                         "title")[1],
-          "\"", ""));
+       rtdb["title"] = mystring_trim(mystring_ireplace( mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"), "title")[1], "\"", ""));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "charge")) {
-      rtdb["charge"] = std::stoi(mystring_trim(
-          mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
+       rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "nwpw")) {
-      rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
+       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
-      rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+       rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
-      rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
-
+       rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "task")) {
-      rtdb["current_task"] = lines[cur];
-      foundtask = true;
+       rtdb["current_task"] = lines[cur];
+       foundtask = true;
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "print")) {
-      rtdb["print"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
-    } else if (mystring_contains(mystring_lowercase(lines[cur]),
-                                 "redirect_filename")) {
-      rtdb["redirect_filename"] = mystring_trim(mystring_split(
-          mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
+       rtdb["print"] = mystring_trim(
+           mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "redirect_filename")) {
+       rtdb["redirect_filename"] = mystring_trim(mystring_split(mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
     }
 
     ++cur;
@@ -1655,77 +1651,76 @@ json parse_rtdbjson(json rtdb) {
  *                                                *
  **************************************************/
 
-std::string parse_nwinput(std::string nwinput) {
-  // fetch the permanent_dir and scratch_dir
-  std::string permanent_dir = ".";
-  std::string scratch_dir = ".";
-  std::string psp_library_dir = "";
-  if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
-    if (!mystring_contains(
-            mystring_trim(mystring_split(
-                              mystring_split(nwinput, "permanent_dir")[0], "\n")
-                              .back()),
-            "#"))
-      permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split(
-          mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
-    if (!mystring_contains(
-            mystring_trim(
-                mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n")
-                    .back()),
-            "#"))
-      scratch_dir = mystring_rtrim_slash(mystring_trim(
-          mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
-    if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
-       psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
-  }
-
-  // fetch the dbname
-  std::string dbname = "nwchemex";
-  if (mystring_contains(mystring_lowercase(nwinput), "start"))
-     dbname = mystring_trim(
-        mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
-
-  json rtdb;
-  if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
-     // read a JSON file
-     std::string dbname0 = permanent_dir + "/" + dbname + ".json";
-     std::ifstream ifile(dbname0);
-     ifile >> rtdb;
-  } else {
-     // intialize the rtdb structure
-     json nwpw, geometries, driver, constraints;
-     rtdb["nwpw"] = nwpw;
-     rtdb["geometries"] = geometries;
-     rtdb["driver"] = driver;
-     rtdb["constraints"] = constraints;
-  }
-
-  // set the dbname
-  rtdb["dbname"] = dbname;
-
-  // set the permanent_dir and scratch_dir
-  rtdb["permanent_dir"] = permanent_dir;
-  rtdb["scratch_dir"] = scratch_dir;
-  rtdb["psp_library_dir"] = psp_library_dir;
-
-  // split nwinput into lines
-  std::vector<std::string> lines = mystring_split(nwinput, "\n");
-
-  // Remove comments
-  for (auto i = lines.begin(); i != lines.end(); ++i)
-    *i = mystring_split(*i, "#")[0];
-
-  rtdb["nwinput_lines"] = lines;
-  rtdb["nwinput_nlines"] = lines.size();
-  rtdb["nwinput_cur"] = 0;
-
-  rtdb = parse_rtdbjson(rtdb);
-
-  return rtdb.dump();
+std::string parse_nwinput(std::string nwinput) 
+{
+   // fetch the permanent_dir and scratch_dir
+   std::string permanent_dir = ".";
+   std::string scratch_dir = ".";
+   std::string psp_library_dir = "";
+   if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
+     if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[0], "\n") .back()), "#"))
+       permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n") .back()), "#"))
+       scratch_dir = mystring_rtrim_slash(mystring_trim(
+           mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
+        psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
+   }
+ 
+   // fetch the dbname
+   std::string dbname = "nwchemex";
+   if (mystring_contains(mystring_lowercase(nwinput), "start")) {
+      if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "start")[0], "\n") .back()), "#"))
+         dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+   }
+ 
+   json rtdb;
+   // read a JSON file
+   if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
+       (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+   {
+      
+      // read a JSON file
+      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
+      std::ifstream ifile(dbname0);
+      ifile >> rtdb;
+   } 
+   // intialize the rtdb structure
+   else 
+   {
+      json nwpw, geometries, driver, constraints;
+      rtdb["nwpw"] = nwpw;
+      rtdb["geometries"] = geometries;
+      rtdb["driver"] = driver;
+      rtdb["constraints"] = constraints;
+   }
+ 
+   // set the dbname
+   rtdb["dbname"] = dbname;
+ 
+   // set the permanent_dir and scratch_dir
+   rtdb["permanent_dir"] = permanent_dir;
+   rtdb["scratch_dir"] = scratch_dir;
+   rtdb["psp_library_dir"] = psp_library_dir;
+ 
+   // split nwinput into lines
+   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+ 
+   // Remove comments
+   for (auto i=lines.begin(); i!=lines.end(); ++i)
+      *i = mystring_split(*i, "#")[0];
+ 
+   rtdb["nwinput_lines"] = lines;
+   rtdb["nwinput_nlines"] = lines.size();
+   rtdb["nwinput_cur"] = 0;
+ 
+   rtdb = parse_rtdbjson(rtdb);
+ 
+   return rtdb.dump();
 }
 
 /**************************************************
@@ -1752,30 +1747,19 @@ int parse_task(std::string rtdbstring) {
   auto rtdb = json::parse(rtdbstring);
   int task = 0;
   if (rtdb["foundtask"]) {
-    // Look for pspw jobs
-    if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))
-        task = 1;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "gradient"))
-        task = 2;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "optimize"))
-        task = 3;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))
-        task = 4;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "steepest_descent"))
-        task = 5;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "car-parrinello"))
-        task = 6;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "born-oppenheimer"))
-        task = 7;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))
-        task = 8;
-    }
+     // Look for pspw jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 5;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 6;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
+     }
+     // Look for file jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=9; }
   }
 
   return task;
