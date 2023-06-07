@@ -201,8 +201,10 @@ public:
 
 class Gdevices {
 
-  cufftHandle forward_plan_x = 0, plan_y = 0, plan_z = 0;
-  cufftHandle backward_plan_x = 0;
+  int fftcount = 0;
+  int nxfft[2],nyfft[2], nzfft[2];
+  cufftHandle forward_plan_x[2]  = 0, plan_y[2] = 0, plan_z[2] = 0;
+  cufftHandle backward_plan_x[2] = 0;
 
   cublasHandle_t master_handle = 0;
   cublasOperation_t matT = CUBLAS_OP_T;
@@ -875,100 +877,124 @@ public:
   /* fft functions (uses cuFFT) */
   /******************************/
   void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-    std::cout << "Into batch_fft_init" << std::endl;
-    NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x, nx, CUFFT_D2Z, nq1));
-    NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x, nx, CUFFT_Z2D, nq1));
+     std::cout << "Into batch_fft_init" << std::endl;
+     NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x[fftcount], nx, CUFFT_D2Z, nq1));
+     NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x[fftcount], nx, CUFFT_Z2D, nq1));
+    
+     int y_inembed[] = {ny};
+     int y_onembed[] = {ny};
+     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_y[fftcount], 1, &ny, y_inembed, 1, ny, y_onembed,
+                                    1, ny, CUFFT_Z2Z, nq2));
+    
+     int z_inembed[] = {nz};
+     int z_onembed[] = {nz};
+     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_z[fftcount], 1, &nz, z_inembed, 1, nz, z_onembed,
+                                    1, nz, CUFFT_Z2Z, nq3));
+     nxfft[fftcount] = nx;
+     nyfft[fftcount] = ny;
+     nzfft[fftcount] = nz;
 
-    int y_inembed[] = {ny};
-    int y_onembed[] = {ny};
-    NWPW_CUFFT_ERROR(cufftPlanMany(&plan_y, 1, &ny, y_inembed, 1, ny, y_onembed,
-                                   1, ny, CUFFT_Z2Z, nq2));
-
-    int z_inembed[] = {nz};
-    int z_onembed[] = {nz};
-    NWPW_CUFFT_ERROR(cufftPlanMany(&plan_z, 1, &nz, z_inembed, 1, nz, z_onembed,
-                                   1, nz, CUFFT_Z2Z, nq3));
+     ++fftcount;
   }
 
   void batch_fft_end() {
-    // free fft descriptors
-    cufftDestroy(forward_plan_x);
-    cufftDestroy(plan_y);
-    cufftDestroy(plan_z);
-    cufftDestroy(backward_plan_x);
-
-    // free dev_mem
-    for (auto i = 0; i < ndev_mem; ++i)
-      NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
-    ndev_mem = 0;
+     // free fft descriptors
+     for (auto i=0; i<fftcount; ++i)
+     {
+        cufftDestroy(forward_plan_x[i]);
+        cufftDestroy(plan_y[i]);
+        cufftDestroy(plan_z[i]);
+        cufftDestroy(backward_plan_x[i]);
+     }
+     fftcount = 0;
+    
+     // free dev_mem
+     for (auto i=0; i<ndev_mem; ++i)
+        NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
+     ndev_mem = 0;
   }
 
   void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
-    int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-    cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-               cudaMemcpyHostToDevice);
-
-    if (forward) {
-      NWPW_CUFFT_ERROR(cufftExecD2Z(
-          forward_plan_x, reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev])));
-    } else {
-      NWPW_CUFFT_ERROR(
-          cufftExecZ2D(backward_plan_x,
-                       reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-                       reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
-    }
-
-    cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-               cudaMemcpyDeviceToHost);
-
-    inuse[ia_dev] = false;
+     int fft_indx = 0;
+     for (auto i=1; i<fftcount; ++i)
+        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+           fft_indx = i;
+         
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
+                cudaMemcpyHostToDevice);
+    
+     if (forward) {
+       NWPW_CUFFT_ERROR(cufftExecD2Z(
+           forward_plan_x[fft_indx], reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev]),
+           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev])));
+     } else {
+       NWPW_CUFFT_ERROR(
+           cufftExecZ2D(backward_plan_x[fft_indx],
+                        reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+                        reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
+     }
+    
+     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
+                cudaMemcpyDeviceToHost);
+    
+     inuse[ia_dev] = false;
   }
 
   void batch_cffty(bool forward, int ny, int nq, int n2ft3d, double *a) {
-    int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-    cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-               cudaMemcpyHostToDevice);
-
-    if (forward) {
-      NWPW_CUFFT_ERROR(cufftExecZ2Z(
-          plan_y, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_FORWARD));
-    } else {
-      NWPW_CUFFT_ERROR(cufftExecZ2Z(
-          plan_y, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_INVERSE));
-    }
-
-    cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-               cudaMemcpyDeviceToHost);
-
-    inuse[ia_dev] = false;
+     int fft_indx = 0;
+     for (auto i=1; i<fftcount; ++i)
+        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+           fft_indx = i;
+    
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
+                cudaMemcpyHostToDevice);
+    
+     if (forward) {
+       NWPW_CUFFT_ERROR(cufftExecZ2Z(
+           plan_y[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           CUFFT_FORWARD));
+     } else {
+       NWPW_CUFFT_ERROR(cufftExecZ2Z(
+           plan_y[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           CUFFT_INVERSE));
+     }
+    
+     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
+                cudaMemcpyDeviceToHost);
+    
+     inuse[ia_dev] = false;
   }
 
   void batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
-    int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-    cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-               cudaMemcpyHostToDevice);
-
-    if (forward) {
-      NWPW_CUFFT_ERROR(cufftExecZ2Z(
-          plan_z, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_FORWARD));
-    } else {
-      NWPW_CUFFT_ERROR(cufftExecZ2Z(
-          plan_z, reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
-          CUFFT_INVERSE));
-    }
-
-    cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-               cudaMemcpyDeviceToHost);
-
-    inuse[ia_dev] = false;
+     int fft_indx = 0;
+     for (auto i=1; i<fftcount; ++i)
+        if ((nx==nxfft[i]) && (ny==nyfft[i]) && (nz==nzfft[i]))
+           fft_indx = i;
+    
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
+                cudaMemcpyHostToDevice);
+    
+     if (forward) {
+       NWPW_CUFFT_ERROR(cufftExecZ2Z(
+           plan_z[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           CUFFT_FORWARD));
+     } else {
+       NWPW_CUFFT_ERROR(cufftExecZ2Z(
+           plan_z[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
+           CUFFT_INVERSE));
+     }
+    
+     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
+                cudaMemcpyDeviceToHost);
+    
+     inuse[ia_dev] = false;
   }
 
   // routines below need to be made into sycl or removed
@@ -977,7 +1003,7 @@ public:
     int i, j, k;
     double p;
 
-    for (i = 0; i < (n - 1); ++i) {
+    for (i=0; i<(n-1); ++i) {
       k = i;
       p = D[i];
       for (j = i + 1; j < n; ++j)
