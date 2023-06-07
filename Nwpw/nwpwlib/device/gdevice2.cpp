@@ -86,7 +86,7 @@ void gdevice2::psi_copy_host2gpu(int npack, int ne, double *psi) {
 
 void gdevice2::psi_copy_gpu2host(int npack, int ne, double *psi) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
-   if (mygdevice2->.hasgpu)
+   if (mygdevice2->hasgpu)
       mygdevice2->psi_copy_gpu2host(npack, ne, psi);
 #endif
 }
