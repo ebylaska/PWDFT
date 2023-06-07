@@ -5,11 +5,14 @@
 // using namespace pwdft;
 namespace pwdft {
 
+
 class gdevice2 {
 
-Gdevices mygdevice2;
+Gdevices *mygdevice2;
 
 public:
+
+   gdevice2();
 
    void TN4_dgemm(int, int, double, double *, double *, double, double *, double *, double *, double *);
    void TN3_dgemm(int, int, double, double *, double *, double, double *, double *, double *);

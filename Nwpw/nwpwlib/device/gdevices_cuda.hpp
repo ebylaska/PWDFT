@@ -253,28 +253,27 @@ public:
     CUSOLVER_CHECK(cusolverDnSetStream(cusolverH, solverstream));
 
     // query working space of syevd
-    for (int i = 0; i < 2; ++i)
-      NWPW_CUDA_ERROR(
-          cudaMalloc(reinterpret_cast<void **>(&d_info[i]), sizeof(int)));
+    for (int i=0; i<2; ++i)
+      NWPW_CUDA_ERROR(cudaMalloc(reinterpret_cast<void **>(&d_info[i]), sizeof(int)));
   }
 
   /* deconstructor */
   ~Gdevices() {
 
     // free dev_mem
-    for (auto i = 0; i < ndev_mem; ++i)
-      NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
+    for (auto i=0; i<ndev_mem; ++i)
+       NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
     ndev_mem = 0;
 
     // free cuda streams
-    for (auto i = 0; i < 2; ++i)
-      NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
+    for (auto i=0; i<2; ++i)
+       NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
 
     NWPW_CUBLAS_ERROR(cublasDestroy(master_handle));
 
     /* free cusolver resources */
-    for (auto i = 0; i < 2; ++i)
-      NWPW_CUDA_ERROR(cudaFree(d_info[i]));
+    for (auto i=0; i<2; ++i)
+       NWPW_CUDA_ERROR(cudaFree(d_info[i]));
     NWPW_CUDA_ERROR(cudaFree(d_work));
     CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
 
