@@ -203,8 +203,8 @@ class Gdevices {
 
   int fftcount = 0;
   int nxfft[2],nyfft[2], nzfft[2];
-  cufftHandle forward_plan_x[2]  = 0, plan_y[2] = 0, plan_z[2] = 0;
-  cufftHandle backward_plan_x[2] = 0;
+  cufftHandle forward_plan_x[2]  = {0,0}, plan_y[2] = {0,0}, plan_z[2] = {0,0};
+  cufftHandle backward_plan_x[2] = {0,0};
 
   cublasHandle_t master_handle = 0;
   cublasOperation_t matT = CUBLAS_OP_T;
