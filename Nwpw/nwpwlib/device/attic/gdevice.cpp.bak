@@ -158,7 +158,7 @@ void gdevice_batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d,
                               double *a, double *tmpz) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
   if (mygdevice.hasgpu)
-    mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
+     mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
 #else
   mygdevice.batch_cfftz_tmpz(forward, nz, nq, n2ft3d, a, tmpz);
 #endif
@@ -167,7 +167,7 @@ void gdevice_batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d,
                                    double *a, double *tmpz, bool *zero) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
   if (mygdevice.hasgpu)
-    mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
+     mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
 #else
   mygdevice.batch_cfftz_tmpz_zero(forward, nz, nq, n2ft3d, a, tmpz, zero);
 #endif

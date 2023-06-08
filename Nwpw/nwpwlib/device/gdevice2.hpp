@@ -36,17 +36,15 @@ public:
    void psi_copy_gpu2host(int, int, double *);
    void hpsi_copy_gpu2host(int, int, double *);
   
-   void batch_fft_init(int, int, int, int, int, int);
-   void batch_fft_end(int, int, int);
-   void batch_cfftx(bool, int, int, int, double *);
-   void batch_cffty(bool, int, int, int, double *);
-   void batch_cfftz(bool, int, int, int, double *);
-   void batch_cfftx_tmpx(bool, int, int, int, double *, double *);
-   void batch_cffty_tmpy(bool, int, int, int, double *, double *);
-   void batch_cfftz_tmpz(bool, int, int, int, double *, double *);
+   int  batch_fft_init(int, int, int, int, int, int);
+   void batch_fft_end(int);
   
-   void batch_cffty_tmpy_zero(bool, int, int, int, double *, double *, bool *);
-   void batch_cfftz_tmpz_zero(bool, int, int, int, double *, double *, bool *);
+   void batch_cfftx_tmpx(int, bool, int, int, int, double *, double *);
+   void batch_cffty_tmpy(int, bool, int, int, int, double *, double *);
+   void batch_cfftz_tmpz(int, bool, int, int, int, double *, double *);
+  
+   void batch_cffty_tmpy_zero(int, bool, int, int, int, double *, double *, bool *);
+   void batch_cfftz_tmpz_zero(int, bool, int, int, int, double *, double *, bool *);
 };
 
 } // namespace pwdft

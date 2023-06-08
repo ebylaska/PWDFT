@@ -45,6 +45,7 @@ public:
   gdevice2 mygdevice;
 
   /* fft tabulations of of trigonometry functions */
+  int fft_tag=-1;
   double *tmpx, *tmpy, *tmpz;
 
   Parallel *parall;

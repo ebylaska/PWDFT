@@ -876,7 +876,7 @@ public:
   /******************************/
   /* fft functions (uses cuFFT) */
   /******************************/
-  void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
+  int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
      std::cout << "Into batch_fft_init" << std::endl;
      NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x[fftcount], nx, CUFFT_D2Z, nq1));
      NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x[fftcount], nx, CUFFT_Z2D, nq1));
@@ -894,21 +894,21 @@ public:
      nyfft[fftcount] = ny;
      nzfft[fftcount] = nz;
 
+     int tags = fftcount;
      ++fftcount;
+
+     return tag;
   }
 
-  void batch_fft_end(int nx, int ny, int nz) {
+  void batch_fft_end(int tag) {
 
      // free fft descriptors
+     cufftDestroy(forward_plan_x[tag]);
+     cufftDestroy(plan_y[tag]);
+     cufftDestroy(plan_z[tag]);
+     cufftDestroy(backward_plan_x[tag]);
      
-     for (auto i=0; i<fftcount; ++i)
-     {
-        cufftDestroy(forward_plan_x[i]);
-        cufftDestroy(plan_y[i]);
-        cufftDestroy(plan_z[i]);
-        cufftDestroy(backward_plan_x[i]);
-     }
-     fftcount = 0;
+     --fftcount;
     
      // free dev_mem
      for (auto i=0; i<ndev_mem; ++i)
@@ -916,11 +916,7 @@ public:
      ndev_mem = 0;
   }
 
-  void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
-     int fft_indx = 0;
-     for (auto i=1; i<fftcount; ++i)
-        if (nx==nxfft[i])
-           fft_indx = i;
+  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) {
          
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
@@ -943,11 +939,7 @@ public:
      inuse[ia_dev] = false;
   }
 
-  void batch_cffty(bool forward, int ny, int nq, int n2ft3d, double *a) {
-     int fft_indx = 0;
-     for (auto i=1; i<fftcount; ++i)
-        if (ny==nyfft[i])
-           fft_indx = i;
+  void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a) {
     
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
@@ -971,11 +963,7 @@ public:
      inuse[ia_dev] = false;
   }
 
-  void batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
-     int fft_indx = 0;
-     for (auto i=1; i<fftcount; ++i)
-        if (nz==nzfft[i])
-           fft_indx = i;
+  void batch_cfftz(const fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) {
     
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
