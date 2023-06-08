@@ -127,8 +127,6 @@ void gdevice2::batch_cfftx_tmpx(const int tag,bool forward, int nx, int nq, int 
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cfftx(tag,forward, nx, nq, n2ft3d, a);
-   else
-      mygdevice2->batch_cfftx_tmpx(forward, nx, nq, n2ft3d, a, tmpx);
 #else
    mygdevice2->batch_cfftx_tmpx(forward, nx, nq, n2ft3d, a, tmpx);
 #endif
@@ -140,8 +138,6 @@ void gdevice2::batch_cffty_tmpy(const int tag,bool forward, int ny, int nq, int 
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cffty(tag,forward, ny, nq, n2ft3d, a);
-   else
-      mygdevice2->batch_cffty_tmpy(forward, ny, nq, n2ft3d, a, tmpy);
 #else
    mygdevice2->batch_cffty_tmpy(forward, ny, nq, n2ft3d, a, tmpy);
 #endif
@@ -153,8 +149,6 @@ void gdevice2::batch_cffty_tmpy_zero(const int tag, bool forward, int ny, int nq
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cffty(tag,forward,ny,nq,n2ft3d,a);
-   else
-      mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, n2ft3d, a, tmpy, zero);
 #else
    mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, n2ft3d, a, tmpy, zero);
 #endif
@@ -166,8 +160,6 @@ void gdevice2::batch_cfftz_tmpz(const int tag, bool forward, int nz, int nq, int
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cfftz(tag, forward, nz, nq, n2ft3d, a);
-   else
-      mygdevice2->batch_cfftz_tmpz(forward, nz, nq, n2ft3d, a, tmpz);
 #else
    mygdevice2->batch_cfftz_tmpz(forward, nz, nq, n2ft3d, a, tmpz);
 #endif
@@ -177,8 +169,6 @@ void gdevice2::batch_cfftz_tmpz_zero(const int tag, bool forward, int nz, int nq
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cfftz(tag,forward, nz, nq, n2ft3d, a);
-   else
-      mygdevice2->batch_cfftz_tmpz_zero(forward, nz, nq, n2ft3d, a, tmpz, zero);
 #else
    mygdevice2->batch_cfftz_tmpz_zero(forward, nz, nq, n2ft3d, a, tmpz, zero);
 #endif
