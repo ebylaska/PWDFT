@@ -963,7 +963,7 @@ public:
      inuse[ia_dev] = false;
   }
 
-  void batch_cfftz(const fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) {
+  void batch_cfftz(const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) {
     
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
