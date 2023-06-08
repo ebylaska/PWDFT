@@ -16,9 +16,11 @@ nwpw
    apc on
    simulation_cell
      SC 20.0
+     boundary_conditions aperiodic
    end
    cutoff 10.0
    xc beef
+   2d-hcurve   #still need to fix 1d-slab with aperiodic
 end
 #task pspw steepest_descent
 task pspw gradient
