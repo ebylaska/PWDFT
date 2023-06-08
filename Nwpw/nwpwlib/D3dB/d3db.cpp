@@ -3551,7 +3551,7 @@ void d3db::c_addrandom(double *a) {
 void d3db::r_setrandom(double *a) {
   double fac = 1.0 / (1.0 * nfft3d);
   for (auto i = 0; i < n2ft3d; ++i)
-    a[i] = fac * (0.50 - util_random(0));
+     a[i] = fac*(0.50 - util_random(0));
 }
 
 /********************************
@@ -3562,21 +3562,23 @@ void d3db::r_setrandom(double *a) {
 // expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx+2,ny,nz)
 void d3db::hr2r_expand(const double *ah, double *a) {
   std::memset(a, 0, n2ft3d * sizeof(double));
-  if (maptype == 1) {
-    int nxh = nx / 2;
-    int nqh = nq / 2;
-    int nyh = ny / 2;
-    for (auto j = 0; j < nyh; ++j)
-      for (auto q = 0; q < nqh; ++q)
-        for (auto i = 0; i < nxh; ++i)
-          a[i + j * (nx + 2) + q * (nx + 2) * ny] =
-              ah[i + j * (nxh + 2) + q * (nxh + 2) * nyh];
-  } else {
-    int nxh = nx / 2;
-    int nq1h = nq1 / 4;
-    for (auto q = 0; q < nq1h; ++q)
-      for (auto i = 0; i < nxh; ++i)
-        a[i + q * (nx + 2)] = ah[i + q * (nxh + 2)];
+  if (maptype == 1) 
+  {
+     int nxh = nx/2;
+     int nqh = nq/2;
+     int nyh = ny/2;
+     for (auto j=0; j<nyh; ++j)
+        for (auto q=0; q<nqh; ++q)
+           for (auto i=0; i<nxh; ++i)
+              a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
+  } 
+  else 
+  {
+     int nxh = nx/2;
+     int nq1h = nq1/4;
+     for (auto q=0; q<nq1h; ++q)
+        for (auto i=0; i<nxh; ++i)
+           a[i + q*(nx+2)] = ah[i + q*(nxh+2)];
   }
 }
 
@@ -3588,21 +3590,23 @@ void d3db::hr2r_expand(const double *ah, double *a) {
 // contracts to a grid that is (nx,ny,nz) --> ((nx+2)/2,ny/2,nz/2)
 void d3db::r2hr_contract(const double *a, double *ah) {
   std::memset(ah, 0, n2ft3d / 8 * sizeof(double));
-  if (maptype == 1) {
-    int nxh = nx / 2;
-    int nyh = ny / 2;
-    int nqh = nq / 2;
-    for (auto q = 0; q < nqh; ++q)
-      for (auto j = 0; j < nyh; ++j)
-        for (auto i = 0; i < nxh; ++i)
-          ah[i + j * (nxh + 2) + q * (nxh + 2) * nyh] =
-              a[i + j * (nx + 2) + q * (nx + 2) * ny];
-  } else {
-    int nxh = nx / 2;
-    int nq1h = nq1 / 4;
-    for (auto q = 0; q < nq1h; ++q)
-      for (auto i = 0; i < nxh; ++i)
-        ah[i + q * (nxh + 2)] = a[i + q * (nx + 2)];
+  if (maptype == 1) 
+  {
+     int nxh = nx/2;
+     int nyh = ny/2;
+     int nqh = nq/2;
+     for (auto q=0; q<nqh; ++q)
+        for (auto j=0; j<nyh; ++j)
+           for (auto i=0; i<nxh; ++i)
+              ah[i + j*(nxh+2) + q*(nxh+2)*nyh] = a[i + j*(nx+2) + q*(nx+2)*ny];
+  } 
+  else 
+  {
+     int nxh = nx/2;
+     int nq1h = nq1/4;
+     for (auto q=0; q<nq1h; ++q)
+        for (auto i=0; i<nxh; ++i)
+           ah[i + q*(nxh+2)] = a[i + q*(nx+2)];
   }
 }
 

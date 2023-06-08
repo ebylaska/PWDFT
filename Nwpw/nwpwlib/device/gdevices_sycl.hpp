@@ -214,8 +214,9 @@ class Gdevices {
   std::map<size_t, std::set<double *>> free_list_gpu, free_list_host;
   std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
 
-  desc_real_t *desc_x;
-  desc_cmplx_t *desc_y, *desc_z;
+  int fftcount = 0;
+  desc_real_t *desc_x[2];
+  desc_cmplx_t *desc_y[2], *desc_z[2];
 
   sycl::event h2d_event, fftevent, d2h_event;
 
@@ -815,47 +816,53 @@ public:
   }
 
   /* fft functions*/
-  void batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-    desc_x = new desc_real_t(nx);
-    desc_x->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
-                      nq1);
-    desc_x->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx + 2);
-    desc_x->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx + 2);
-
-    desc_y = new desc_cmplx_t(ny);
-    desc_y->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
-                      nq2);
-    desc_y->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny);
-    desc_y->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny);
-
-    desc_z = new desc_cmplx_t(nz);
-    desc_z->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
-                      nq3);
-    desc_z->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz);
-    desc_z->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz);
-
-    desc_x->commit(*stream[0]);
-    desc_y->commit(*stream[0]);
-    desc_z->commit(*stream[0]);
+  int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
+     desc_x[fftcount] = new desc_real_t(nx);
+     desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                       nq1);
+     desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx + 2);
+     desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx + 2);
+    
+     desc_y[fftcount] = new desc_cmplx_t(ny);
+     desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                       nq2);
+     desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny);
+     desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny);
+    
+     desc_z[fftcount] = new desc_cmplx_t(nz);
+     desc_z[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+                       nq3);
+     desc_z[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nz);
+     desc_z[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nz);
+    
+     desc_x[fftcount]->commit(*stream[0]);
+     desc_y[fftcount]->commit(*stream[0]);
+     desc_z[fftcount]->commit(*stream[0]);
+    
+     int tag = fftcount;
+     ++fftcount;
+    
+     return tag;
   }
 
-  void batch_fft_end() {
-    delete desc_x;
-    delete desc_y;
-    delete desc_z;
+  void batch_fft_end(const int tag) {
+    delete desc_x[tag];
+    delete desc_y[tag];
+    delete desc_z[tag];
+    --fftcount;
 
     ndev_mem = 0;
   }
 
-  void batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
+  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) {
     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
 
     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double));
 
     if (forward)
-      compute_forward(*desc_x, dev_mem[ia_dev]);
+      compute_forward(*desc_x[fft_indx], dev_mem[ia_dev]);
     else
-      compute_backward(*desc_x, dev_mem[ia_dev]);
+      compute_backward(*desc_x[fft_indx], dev_mem[ia_dev]);
 
     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double));
     stream[0]->wait();
@@ -863,15 +870,15 @@ public:
     inuse[ia_dev] = false;
   }
 
-  void batch_cffty(bool forward, int ny, int nq, int n2ft3d, double *a) {
+  void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a) {
     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
 
     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double));
 
     if (forward)
-      compute_forward(*desc_y, dev_mem[ia_dev]);
+      compute_forward(*desc_y[fft_indx], dev_mem[ia_dev]);
     else
-      compute_backward(*desc_y, dev_mem[ia_dev]);
+      compute_backward(*desc_y[fft_indx], dev_mem[ia_dev]);
 
     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double));
     stream[0]->wait();
@@ -879,15 +886,15 @@ public:
     inuse[ia_dev] = false;
   }
 
-  void batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
+  void batch_cfftz(const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) {
     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
 
     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double));
 
     if (forward)
-      compute_forward(*desc_z, dev_mem[ia_dev]);
+      compute_forward(*desc_z[fft_indx], dev_mem[ia_dev]);
     else
-      compute_backward(*desc_z, dev_mem[ia_dev]);
+      compute_backward(*desc_z[fft_indx], dev_mem[ia_dev]);
 
     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double));
     stream[0]->wait();
