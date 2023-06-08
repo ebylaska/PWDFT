@@ -894,13 +894,13 @@ public:
      nyfft[fftcount] = ny;
      nzfft[fftcount] = nz;
 
-     int tags = fftcount;
+     int tag = fftcount;
      ++fftcount;
 
      return tag;
   }
 
-  void batch_fft_end(int tag) {
+  void batch_fft_end(const int tag) {
 
      // free fft descriptors
      cufftDestroy(forward_plan_x[tag]);
