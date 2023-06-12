@@ -968,11 +968,11 @@ public:
 
      if (stage==0)
      {
-        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,fftstream[da]);
+        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,ifft_stream[da]);
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(fftstream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
         if (forward) 
         {
           NWPW_CUFFT_ERROR(cufftExecD2Z(forward_plan_x[fft_indx], 
@@ -985,11 +985,11 @@ public:
                             reinterpret_cast<cufftDoubleComplex *> (dev_mem[ia_dev]),
                             reinterpret_cast<cufftDoubleReal *> (dev_mem[ia_dev])));
         }
-        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,fftstream[da]);
+        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,ifft_stream[da]);
      }
      else if (stage==2)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(fftstream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
      }
      //inuse[ia_dev] = false;
   }
@@ -1055,11 +1055,11 @@ public:
 
      if (stage==0)
      {
-        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,fftstream[da]);
+        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,ifft_stream[da]);
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(fftstream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
         if (forward) {
           NWPW_CUFFT_ERROR(cufftExecZ2Z(
               plan_z[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
@@ -1071,11 +1071,11 @@ public:
               reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
               CUFFT_INVERSE));
         }
-        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,fftstream[da]);
+        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,ifft_stream[da]);
      }
      else if (stage==2)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(fftstream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
      }
 
      //inuse[ia_dev] = false;
