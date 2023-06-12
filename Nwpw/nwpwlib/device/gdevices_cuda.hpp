@@ -225,9 +225,9 @@ public:
 
   /* device memory */
   int ndev_mem = 0;
-  bool inuse[19] = {false};
-  size_t ndsize_mem[19];
-  double *dev_mem[19];
+  bool inuse[29] = {false};
+  size_t ndsize_mem[29];
+  double *dev_mem[29];
   int tile_fac = 1;
   int tile_npack2_max;
   int tile_npack2[19], tile_start2[19];
@@ -263,11 +263,13 @@ public:
   /* deconstructor */
   ~Gdevices() {
 
+    std::cout << "FREE Gdevices" <<  std::endl;
     // free dev_mem
     for (auto i=0; i<ndev_mem; ++i)
        NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
     ndev_mem = 0;
 
+    std::cout << "FREE Gdevicesstream " <<  std::endl;
     // free cuda streams
     for (auto i=0; i<12; ++i)
        NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
@@ -280,6 +282,7 @@ public:
     NWPW_CUDA_ERROR(cudaFree(d_work));
     CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
 
+    std::cout << "FREE Gdevices solverstream " <<  std::endl;
     NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
     cudaDeviceReset();
 
