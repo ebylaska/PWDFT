@@ -451,85 +451,86 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
  *                              *
  ********************************/
 d3db::~d3db() {
-  int i, nb;
+   int i, nb;
 
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA)
-  mygdevice.batch_fft_end(fft_tag);
+   if (mygdevice.has_gpu())
+      mygdevice.batch_fft_end(fft_tag);
 #endif
 
-  if (maptype == 1) {
-    delete[] iq_to_i1[0];
-    delete[] iq_to_i1;
-
-    delete[] iq_to_i2[0];
-    delete[] iq_to_i2;
-
-    delete[] i1_start[0];
-    delete[] i1_start;
-    delete[] i2_start[0];
-    delete[] i2_start;
-    for (nb = 0; nb < 2; ++nb) {
-      delete[] p_iq_to_i1[nb][0];
-      delete[] p_iq_to_i1[nb];
-      delete[] p_iq_to_i2[nb][0];
-      delete[] p_iq_to_i2[nb];
-      delete[] p_iz_to_i2[nb][0];
-      delete[] p_iz_to_i2[nb];
-      delete[] p_i1_start[nb][0];
-      delete[] p_i1_start[nb];
-      delete[] p_i2_start[nb][0];
-      delete[] p_i2_start[nb];
-      delete[] p_jq_to_i1[nb][0];
-      delete[] p_jq_to_i1[nb];
-      delete[] p_jq_to_i2[nb][0];
-      delete[] p_jq_to_i2[nb];
-      delete[] p_jz_to_i2[nb][0];
-      delete[] p_jz_to_i2[nb];
-      delete[] p_j1_start[nb][0];
-      delete[] p_j1_start[nb];
-      delete[] p_j2_start[nb][0];
-      delete[] p_j2_start[nb];
-    }
-  } else {
-    this->r_transpose_ijk_end();
-
-    for (i = 0; i < 6; ++i) {
-      delete[] iq_to_i1[i];
-      delete[] iq_to_i2[i];
-      delete[] i1_start[i];
-      delete[] i2_start[i];
-    }
-    delete[] iq_to_i1;
-    delete[] iq_to_i2;
-    delete[] i1_start;
-    delete[] i2_start;
-
-    for (nb = 0; nb < 2; ++nb) {
-      for (i = 0; i < 6; ++i) {
-        delete[] p_iq_to_i1[nb][i];
-        delete[] p_iq_to_i2[nb][i];
-        delete[] p_iz_to_i2[nb][i];
-        delete[] p_i1_start[nb][i];
-        delete[] p_i2_start[nb][i];
+   if (maptype == 1) {
+      delete[] iq_to_i1[0];
+      delete[] iq_to_i1;
+     
+      delete[] iq_to_i2[0];
+      delete[] iq_to_i2;
+     
+      delete[] i1_start[0];
+      delete[] i1_start;
+      delete[] i2_start[0];
+      delete[] i2_start;
+      for (nb = 0; nb < 2; ++nb) {
+         delete[] p_iq_to_i1[nb][0];
+         delete[] p_iq_to_i1[nb];
+         delete[] p_iq_to_i2[nb][0];
+         delete[] p_iq_to_i2[nb];
+         delete[] p_iz_to_i2[nb][0];
+         delete[] p_iz_to_i2[nb];
+         delete[] p_i1_start[nb][0];
+         delete[] p_i1_start[nb];
+         delete[] p_i2_start[nb][0];
+         delete[] p_i2_start[nb];
+         delete[] p_jq_to_i1[nb][0];
+         delete[] p_jq_to_i1[nb];
+         delete[] p_jq_to_i2[nb][0];
+         delete[] p_jq_to_i2[nb];
+         delete[] p_jz_to_i2[nb][0];
+         delete[] p_jz_to_i2[nb];
+         delete[] p_j1_start[nb][0];
+         delete[] p_j1_start[nb];
+         delete[] p_j2_start[nb][0];
+         delete[] p_j2_start[nb];
       }
-      delete[] p_iq_to_i1[nb];
-      delete[] p_iq_to_i2[nb];
-      delete[] p_iz_to_i2[nb];
-      delete[] p_i1_start[nb];
-      delete[] p_i2_start[nb];
-    }
-  }
-
-  delete[] t_iq_to_i1;
-  delete[] t_iq_to_i2;
-  delete[] t_i1_start;
-  delete[] t_i2_start;
-
-  delete[] tmpx;
-  delete[] tmpy;
-  delete[] tmpz;
-
-  //#endif
+   } else {
+      this->r_transpose_ijk_end();
+     
+      for (i = 0; i < 6; ++i) {
+         delete[] iq_to_i1[i];
+         delete[] iq_to_i2[i];
+         delete[] i1_start[i];
+         delete[] i2_start[i];
+      }
+      delete[] iq_to_i1;
+      delete[] iq_to_i2;
+      delete[] i1_start;
+      delete[] i2_start;
+     
+      for (nb = 0; nb < 2; ++nb) {
+         for (i = 0; i < 6; ++i) {
+            delete[] p_iq_to_i1[nb][i];
+            delete[] p_iq_to_i2[nb][i];
+            delete[] p_iz_to_i2[nb][i];
+            delete[] p_i1_start[nb][i];
+            delete[] p_i2_start[nb][i];
+         }
+         delete[] p_iq_to_i1[nb];
+         delete[] p_iq_to_i2[nb];
+         delete[] p_iz_to_i2[nb];
+         delete[] p_i1_start[nb];
+         delete[] p_i2_start[nb];
+      }
+   }
+ 
+   delete[] t_iq_to_i1;
+   delete[] t_iq_to_i2;
+   delete[] t_i1_start;
+   delete[] t_i2_start;
+ 
+   delete[] tmpx;
+   delete[] tmpy;
+   delete[] tmpz;
+ 
+   //#endif
 }
 
 /******************************************

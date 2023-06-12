@@ -12,6 +12,7 @@ Gdevices *mygdevice2;
 
 public:
 
+   /* constructor */
    gdevice2();
 
    void TN4_dgemm(int, int, double, double *, double *, double, double *, double *, double *, double *);
@@ -38,13 +39,25 @@ public:
   
    int  batch_fft_init(int, int, int, int, int, int);
    void batch_fft_end(int);
+
+   void batch_fft_pipeline_mem_init(const int,const int);
+   void batch_fft_pipeline_mem_end();
+
+   void batch_cfftx_tmpx(const int, bool, int, int, int, double *, double *);
+   void batch_cffty_tmpy(const int, bool, int, int, int, double *, double *);
+   void batch_cfftz_tmpz(const int, bool, int, int, int, double *, double *);
+
+   void batch_cfftx_stages_tmpx(const int,const int, bool, int, int, int, double *, double *,int);
+   void batch_cffty_stages_tmpy(const int,const int, bool, int, int, int, double *, double *,int);
+   void batch_cfftz_stages_tmpz(const int,const int, bool, int, int, int, double *, double *,int);
   
-   void batch_cfftx_tmpx(int, bool, int, int, int, double *, double *);
-   void batch_cffty_tmpy(int, bool, int, int, int, double *, double *);
-   void batch_cfftz_tmpz(int, bool, int, int, int, double *, double *);
-  
-   void batch_cffty_tmpy_zero(int, bool, int, int, int, double *, double *, bool *);
-   void batch_cfftz_tmpz_zero(int, bool, int, int, int, double *, double *, bool *);
+   void batch_cffty_tmpy_zero(const int, bool, int, int, int, double *, double *, bool *);
+   void batch_cfftz_tmpz_zero(const int, bool, int, int, int, double *, double *, bool *);
+
+   void batch_cffty_stages_tmpy_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
+   void batch_cfftz_stages_tmpz_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
+
+   bool has_gpu() { return mygdevice2->hasgpu; }
 };
 
 } // namespace pwdft

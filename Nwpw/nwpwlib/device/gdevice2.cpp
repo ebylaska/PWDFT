@@ -121,6 +121,20 @@ void gdevice2::batch_fft_end(const int tag) {
 #endif
 }
 
+void gdevice2::batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_fft_pipeline_mem_init(nstages,n2ft3d);
+#endif
+}
+
+void gdevice2::batch_fft_pipeline_mem_end() {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_fft_pipeline_mem_end();
+#endif
+}
+
 
 void gdevice2::batch_cfftx_tmpx(const int tag,bool forward, int nx, int nq, int n2ft3d,
                               double *a, double *tmpx) {
@@ -131,6 +145,15 @@ void gdevice2::batch_cfftx_tmpx(const int tag,bool forward, int nx, int nq, int 
    mygdevice2->batch_cfftx_tmpx(forward, nx, nq, n2ft3d, a, tmpx);
 #endif
 }
+
+void gdevice2::batch_cfftx_stages_tmpx(const int stage, const int tag,bool forward, int nx, int nq, int n2ft3d,
+                              double *a, double *tmpx, int da) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_cfftx_stages(stage,tag,forward, nx, nq, n2ft3d, a,da);
+#endif
+}
+
 
 
 void gdevice2::batch_cffty_tmpy(const int tag,bool forward, int ny, int nq, int n2ft3d,
@@ -143,7 +166,6 @@ void gdevice2::batch_cffty_tmpy(const int tag,bool forward, int ny, int nq, int 
 #endif
 }
 
-
 void gdevice2::batch_cffty_tmpy_zero(const int tag, bool forward, int ny, int nq, int n2ft3d,
                                    double *a, double *tmpy, bool *zero) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
@@ -153,6 +175,26 @@ void gdevice2::batch_cffty_tmpy_zero(const int tag, bool forward, int ny, int nq
    mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, n2ft3d, a, tmpy, zero);
 #endif
 }
+
+void gdevice2::batch_cffty_stages_tmpy(const int stage,const int tag,bool forward, int ny, int nq, int n2ft3d,
+                              double *a, double *tmpy, int da) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_cffty_stages(stage,tag,forward, ny, nq, n2ft3d, a,da);
+#endif
+}
+
+void gdevice2::batch_cffty_stages_tmpy_zero(const int stage, const int tag, bool forward, int ny, int nq, int n2ft3d,
+                                   double *a, double *tmpy, bool *zero, int da) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_cffty_stages(stage,tag,forward,ny,nq,n2ft3d,a,da);
+#endif
+}
+
+
+
+
 
 
 void gdevice2::batch_cfftz_tmpz(const int tag, bool forward, int nz, int nq, int n2ft3d,
@@ -164,6 +206,7 @@ void gdevice2::batch_cfftz_tmpz(const int tag, bool forward, int nz, int nq, int
    mygdevice2->batch_cfftz_tmpz(forward, nz, nq, n2ft3d, a, tmpz);
 #endif
 }
+
 void gdevice2::batch_cfftz_tmpz_zero(const int tag, bool forward, int nz, int nq, int n2ft3d,
                                    double *a, double *tmpz, bool *zero) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA)
@@ -173,5 +216,23 @@ void gdevice2::batch_cfftz_tmpz_zero(const int tag, bool forward, int nz, int nq
    mygdevice2->batch_cfftz_tmpz_zero(forward, nz, nq, n2ft3d, a, tmpz, zero);
 #endif
 }
+
+void gdevice2::batch_cfftz_stages_tmpz(const int stage, const int tag, bool forward, int nz, int nq, int n2ft3d,
+                              double *a, double *tmpz, const int da) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_cfftz_stages(stage, tag, forward, nz, nq, n2ft3d, a,da);
+#endif
+}
+
+void gdevice2::batch_cfftz_stages_tmpz_zero(const int stage, const int tag, bool forward, int nz, int nq, int n2ft3d,
+                                   double *a, double *tmpz, bool *zero, int da) {
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_cfftz_stages(stage, tag,forward, nz, nq, n2ft3d, a,da);
+#endif
+}
+
+
 
 } // namespace pwdft
