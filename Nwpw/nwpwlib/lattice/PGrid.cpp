@@ -493,7 +493,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   btmp = new (std::nothrow) double[2*bqmax*n2ft3d]();
 
   /* initialize async buffer data for pfft */
-  for (auto q=0; q<bqmax; ++q)
+  for (auto q=0; q<aqmax; ++q)
     parall->astart(3+q, 2*parall->np_i()+1);
 }
 
