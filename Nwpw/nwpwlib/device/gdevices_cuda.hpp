@@ -919,6 +919,7 @@ public:
 
   void batch_fft_end(const int tag) {
 
+    std::cout << "FFTEND A" << std::endl;
      // free fft descriptors
      cufftDestroy(forward_plan_x[tag]);
      cufftDestroy(plan_y[tag]);
@@ -927,6 +928,7 @@ public:
      
      --fftcount;
 
+    std::cout << "FFTEND B, ndev_mem=" << ndev_mem << std::endl;
     
      // free dev_mem
      for (auto i=0; i<ndev_mem; ++i)
@@ -935,6 +937,7 @@ public:
         NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
      }
      ndev_mem = 0;
+    std::cout << "FFTEND C, ndev_mem=" << ndev_mem << std::endl;
   }
 
   void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) {
