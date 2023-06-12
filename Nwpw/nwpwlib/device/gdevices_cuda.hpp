@@ -1022,7 +1022,7 @@ public:
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(tream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
         if (forward) {
           NWPW_CUFFT_ERROR(cufftExecZ2Z(plan_y[fft_indx], 
               reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
