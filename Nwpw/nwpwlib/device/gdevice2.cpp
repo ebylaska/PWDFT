@@ -128,13 +128,6 @@ void gdevice2::batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) 
 #endif
 }
 
-void gdevice2::batch_fft_pipeline_mem_end() {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
-   if (mygdevice2->hasgpu)
-      mygdevice2->batch_fft_pipeline_mem_end();
-#endif
-}
-
 
 void gdevice2::batch_cfftx_tmpx(const int tag,bool forward, int nx, int nq, int n2ft3d,
                               double *a, double *tmpx) {

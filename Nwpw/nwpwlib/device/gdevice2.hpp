@@ -41,7 +41,6 @@ public:
    void batch_fft_end(int);
 
    void batch_fft_pipeline_mem_init(const int,const int);
-   void batch_fft_pipeline_mem_end();
 
    void batch_cfftx_tmpx(const int, bool, int, int, int, double *, double *);
    void batch_cffty_tmpy(const int, bool, int, int, int, double *, double *);

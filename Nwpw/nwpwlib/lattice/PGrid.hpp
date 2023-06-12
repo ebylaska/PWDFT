@@ -86,9 +86,6 @@ public:
      for (auto q = 0; q<aqmax; ++q)
        parall->aend(3+q);
     
-     if (d3db::mygdevice.has_gpu())
-        d3db::mygdevice.batch_fft_pipeline_mem_end();
-
   }
 
   double *Gxyz(const int i) { return &Garray[i * nfft3d]; }

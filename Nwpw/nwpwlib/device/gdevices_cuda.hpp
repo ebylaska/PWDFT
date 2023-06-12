@@ -207,7 +207,6 @@ class Gdevices {
   cufftHandle backward_plan_x[2] = {0,0};
   int ifft_dev[15];
   int ifft_n;
-  cudaStream_t ifft_stream[15];
 
   cublasHandle_t master_handle = 0;
   cublasOperation_t matT = CUBLAS_OP_T;
@@ -219,7 +218,7 @@ class Gdevices {
   cusolverDnHandle_t cusolverH = NULL;
   cudaStream_t solverstream = NULL;
 
-  cudaStream_t stream[2];
+  cudaStream_t stream[12];
 
 public:
   bool hasgpu = true;
@@ -248,7 +247,7 @@ public:
     NWPW_CUBLAS_ERROR(cublasCreate(&master_handle));
 
     // allocate cuda streams
-    for (auto i = 0; i<2; ++i)
+    for (auto i=0; i<12; ++i)
        NWPW_CUDA_ERROR(cudaStreamCreate(&stream[i]));
 
     // create cusolver handle, bind a stream
@@ -270,7 +269,7 @@ public:
     ndev_mem = 0;
 
     // free cuda streams
-    for (auto i=0; i<2; ++i)
+    for (auto i=0; i<12; ++i)
        NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
 
     NWPW_CUBLAS_ERROR(cublasDestroy(master_handle));
@@ -908,18 +907,9 @@ public:
 
      // allocate memory and cuda streams
      for (auto i=0; i<ifft_n; ++i)
-     {
         ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
-        NWPW_CUDA_ERROR(cudaStreamCreate(&ifft_stream[i]));
-     }
   }
 
-  void batch_fft_pipeline_mem_end() {
-     // deallocate memory and cuda streams
-     for (auto i=0; i<ifft_n; ++i)
-        NWPW_CUDA_ERROR(cudaStreamDestroy(ifft_stream[i]));
-     ifft_n = 0;
-  }
 
   void batch_fft_end(const int tag) {
 
@@ -968,11 +958,11 @@ public:
 
      if (stage==0)
      {
-        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,ifft_stream[da]);
+        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
         if (forward) 
         {
           NWPW_CUFFT_ERROR(cufftExecD2Z(forward_plan_x[fft_indx], 
@@ -985,11 +975,11 @@ public:
                             reinterpret_cast<cufftDoubleComplex *> (dev_mem[ia_dev]),
                             reinterpret_cast<cufftDoubleReal *> (dev_mem[ia_dev])));
         }
-        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,ifft_stream[da]);
+        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,stream[da]);
      }
      else if (stage==2)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
      }
      //inuse[ia_dev] = false;
   }
@@ -1028,11 +1018,11 @@ public:
      int ia_dev = ifft_dev[da];
      if (stage==0)
      {
-        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,ifft_stream[da]);
+        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(tream[da]));
         if (forward) {
           NWPW_CUFFT_ERROR(cufftExecZ2Z(plan_y[fft_indx], 
               reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
@@ -1044,11 +1034,11 @@ public:
               reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
               CUFFT_INVERSE));
         }
-        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,ifft_stream[da]);
+        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,stream[da]);
      }
      else if (stage==2)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
      }
      //inuse[ia_dev] = false;
   }
@@ -1087,11 +1077,11 @@ public:
 
      if (stage==0)
      {
-        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,ifft_stream[da]);
+        cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
         if (forward) {
           NWPW_CUFFT_ERROR(cufftExecZ2Z(
               plan_z[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
@@ -1103,11 +1093,11 @@ public:
               reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
               CUFFT_INVERSE));
         }
-        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,ifft_stream[da]);
+        cudaMemcpyAsync(a,dev_mem[ia_dev],n2ft3d*sizeof(double),cudaMemcpyDeviceToHost,stream[da]);
      }
      else if (stage==2)
      {
-        NWPW_CUDA_ERROR(cudaStreamSynchronize(ifft_stream[da]));
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
      }
 
      //inuse[ia_dev] = false;
