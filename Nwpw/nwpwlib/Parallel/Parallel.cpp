@@ -95,7 +95,7 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize) {
 
   // ii = 3+control.pfft3_qsize();
   // request = new MPI::Request*[ii];
-  ii = 3 + pfft3_qsize;
+  ii = 3 + (pfft3_qsize+2);
   reqcnt = new int[ii]();
   request = new MPI_Request *[ii]();
   statuses = new MPI_Status *[ii]();
