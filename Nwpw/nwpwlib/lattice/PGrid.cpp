@@ -1758,7 +1758,7 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
   shift2 = n2ft3d*(2*alast_index+1);
 
   if (d3db::mygdevice.has_gpu())
-     pfftb_step7(status,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
+     pfftb_step7(0,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
   else
      pfftb_step(0, nb, a, atmp + shift1, atmp + shift2, alast_index + 3);
 }
