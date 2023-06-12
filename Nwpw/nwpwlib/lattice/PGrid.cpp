@@ -473,7 +473,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   aqmax = pfft3_qsize0;
   if (d3db::mygdevice.has_gpu()) 
   {
-      std::cout << "HAS GPU!!!!" << std::endl;
+     std::cout << "HAS GPU!!!!" << std::endl;
      aqmax += 2;
      d3db::mygdevice.batch_fft_pipeline_mem_init(aqmax,n2ft3d);
   }
@@ -493,7 +493,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   btmp = new (std::nothrow) double[2*bqmax*n2ft3d]();
 
   /* initialize async buffer data for pfft */
-  for (auto q = 0; q < aqmax; ++q)
+  for (auto q=0; q<aqmax; ++q)
     parall->astart(3+q, 2*parall->np_i()+1);
 }
 

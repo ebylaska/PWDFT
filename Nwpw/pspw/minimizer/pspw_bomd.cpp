@@ -728,6 +728,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
    // delete [] sion;
  
    MPI_Barrier(comm_world0);
+   std::cout << "END pspw_bomd" << std::endl;
  
    return 0;
 }
