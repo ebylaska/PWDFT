@@ -266,7 +266,10 @@ public:
     std::cout << "FREE Gdevices" <<  std::endl;
     // free dev_mem
     for (auto i=0; i<ndev_mem; ++i)
+    {
+       inuse[i] = false;
        NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
+    }
     ndev_mem = 0;
 
     std::cout << "FREE Gdevicesstream " <<  std::endl;
@@ -927,7 +930,10 @@ public:
     
      // free dev_mem
      for (auto i=0; i<ndev_mem; ++i)
+     {
+        inuse[i] = false;
         NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
+     }
      ndev_mem = 0;
   }
 
