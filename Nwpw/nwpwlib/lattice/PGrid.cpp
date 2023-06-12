@@ -1739,8 +1739,10 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
     int status = aqstatus[indx] + 1;
     shift1 = n2ft3d*(2*indx);
     shift2 = n2ft3d*(2*indx + 1);
-    pfftb_step(status, nb, a, atmp + shift1, atmp + shift2, indx + 3);
-    //pfftb_step7(status, nb, a, atmp+shift1, atmp+shift2, indx+3,indx);
+    if (d3db::mygdevice.has_gpu())
+       pfftb_step7(status, nb, a, atmp+shift1, atmp+shift2, indx+3,indx);
+    else
+       pfftb_step(status, nb, a, atmp + shift1, atmp + shift2, indx + 3);
     ++aqstatus[indx];
   }
 
@@ -1755,8 +1757,10 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
   shift1 = n2ft3d*(2*alast_index);
   shift2 = n2ft3d*(2*alast_index+1);
 
-  pfftb_step(0, nb, a, atmp + shift1, atmp + shift2, alast_index + 3);
-  //pfftb_step7(status,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
+  if (d3db::mygdevice.has_gpu())
+     pfftb_step7(status,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
+  else
+     pfftb_step(0, nb, a, atmp + shift1, atmp + shift2, alast_index + 3);
 }
 
 /********************************
@@ -1776,8 +1780,10 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a) {
       int status = aqstatus[indx] + 1;
       shift1 = n2ft3d * (2*indx);
       shift2 = n2ft3d * (2*indx+1);
-      pfftb_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
-      //pfftb_step7(status,nb,a,atmp+shift1,atmp+shift2,indx+3,indx);
+      if (d3db::mygdevice.has_gpu())
+         pfftb_step7(status,nb,a,atmp+shift1,atmp+shift2,indx+3,indx);
+      else
+         pfftb_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
       ++aqstatus[indx];
     }
   }
