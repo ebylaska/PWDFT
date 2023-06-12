@@ -82,12 +82,12 @@ public:
      delete[] bqindx;
      delete[] bqstatus;
     
-    std::cout << "delete pgrid, aqmax=" << aqmax << std::endl
+    std::cout << "delete pgrid, aqmax=" << aqmax << std::endl;
      // deallocate async buffer data
-     for (auto q = 0; q<aqmax; ++q)
+     for (auto q = 0; q<bqmax; ++q)
        parall->aend(3+q);
 
-    std::cout << "delete Pgrid end" << std::endl
+    std::cout << "delete Pgrid end" << std::endl;
     
   }
 
