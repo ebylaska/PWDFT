@@ -263,7 +263,6 @@ public:
   /* deconstructor */
   ~Gdevices() {
 
-    std::cout << "FREE Gdevices" <<  std::endl;
     // free dev_mem
     for (auto i=0; i<ndev_mem; ++i)
     {
@@ -272,7 +271,6 @@ public:
     }
     ndev_mem = 0;
 
-    std::cout << "FREE Gdevicesstream " <<  std::endl;
     // free cuda streams
     for (auto i=0; i<12; ++i)
        NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
@@ -285,7 +283,6 @@ public:
     NWPW_CUDA_ERROR(cudaFree(d_work));
     CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
 
-    std::cout << "FREE Gdevices solverstream " <<  std::endl;
     NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
     cudaDeviceReset();
 
@@ -919,7 +916,6 @@ public:
 
   void batch_fft_end(const int tag) {
 
-    std::cout << "FFTEND A" << std::endl;
      // free fft descriptors
      cufftDestroy(forward_plan_x[tag]);
      cufftDestroy(plan_y[tag]);
@@ -928,8 +924,6 @@ public:
      
      --fftcount;
 
-    std::cout << "FFTEND B, ndev_mem=" << ndev_mem << std::endl;
-    
      // free dev_mem
      for (auto i=0; i<ndev_mem; ++i)
      {
@@ -937,7 +931,6 @@ public:
         NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
      }
      ndev_mem = 0;
-    std::cout << "FFTEND C, ndev_mem=" << ndev_mem << std::endl;
   }
 
   void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) {

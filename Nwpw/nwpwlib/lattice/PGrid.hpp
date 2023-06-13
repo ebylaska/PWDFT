@@ -82,12 +82,10 @@ public:
      delete[] bqindx;
      delete[] bqstatus;
     
-    std::cout << "delete pgrid, aqmax=" << aqmax << std::endl;
      // deallocate async buffer data
-     for (auto q = 0; q<bqmax; ++q)
+     for (auto q=0; q<aqmax; ++q)
        parall->aend(3+q);
 
-    std::cout << "delete Pgrid end" << std::endl;
     
   }
 
@@ -183,7 +181,7 @@ public:
   int cr_pfft3b_queuefilled();
   void cr_pfft3b(const int, double *);
   void pfftb_step(const int, const int, double *, double *, double *, const int);
-  void pfftb_step7(const int, const int, double *, double *, double *, const int,const int);
+  void pfftb_step12(const int, const int, double *, double *, double *, const int,const int);
 
   void c_unpack_start(const int, double *, double *, const int, const int);
   void c_unpack_mid(const int, double *, double *, const int, const int);
@@ -197,12 +195,34 @@ public:
   int rc_pfft3f_queuefilled();
   void rc_pfft3f(const int, double *);
   void pfftf_step(const int, const int, double *, double *, double *, int);
+  void pfftf_step10(const int, const int, double *, double *, double *, int,int);
   void c_pack_start(const int, double *, double *, const int, const int);
   void c_pack_end(const int, double *, const int);
   void pfftfx(const int, double *, double *, double *, int);
   void pfftfy(const int, double *, double *, int);
   void pfftfz(const int, double *, double *, int);
   void pfftf_final(const int, double *, double *, int);
+
+  void pfftfx_start(const int, double *, double *, double *, int,int);
+  void pfftfx_compute(const int, double *, double *, double *, int,int);
+  void pfftfx_end(const int, double *, double *, double *, int,int);
+
+  void pfftfy_start(const int, double *, double *, int,int);
+  void pfftfy_compute(const int, double *, double *, int,int);
+  void pfftfy_end(const int, double *, double *, int,int);
+
+  void pfftfz_start(const int, double *, double *, int,int);
+  void pfftfz_compute(const int, double *, double *, int,int);
+  void pfftfz_end(const int, double *, double *, int,int);
+
+
+  void pfftbx_start(const int, double *, double *, int,int);
+  void pfftbx_compute(const int, double *, double *, int,int);
+  void pfftbx_end(const int, double *, double *, int,int);
+
+  void pfftby_start(const int, double *, double *, int, int);
+  void pfftby_compute(const int, double *, double *, int, int);
+  void pfftby_end(const int, double *, double *, int, int);
 
   void pfftbz_start(const int, double *, double *, int, int);
   void pfftbz_compute(const int, double *, double *, int, int);
