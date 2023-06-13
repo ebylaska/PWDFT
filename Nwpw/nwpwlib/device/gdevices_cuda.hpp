@@ -963,6 +963,7 @@ public:
 
      if (stage==0)
      {
+        inuse[ia_dev] = true;
         cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
@@ -985,8 +986,8 @@ public:
      else if (stage==2)
      {
         NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
+        inuse[ia_dev] = false;
      }
-     //inuse[ia_dev] = false;
   }
 
 
@@ -1010,8 +1011,7 @@ public:
            CUFFT_INVERSE));
      }
     
-     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-                cudaMemcpyDeviceToHost);
+     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double), cudaMemcpyDeviceToHost);
     
      inuse[ia_dev] = false;
   }
@@ -1023,6 +1023,7 @@ public:
      int ia_dev = ifft_dev[da];
      if (stage==0)
      {
+        inuse[ia_dev] = true;
         cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
@@ -1044,8 +1045,8 @@ public:
      else if (stage==2)
      {
         NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
+        inuse[ia_dev] = false;
      }
-     //inuse[ia_dev] = false;
   }
 
 
@@ -1075,13 +1076,14 @@ public:
   }
 
 
-  void batch_cfftz_stages(const int stage,const int fft_indx,bool forward,int nz,int nq,int n2ft3d,double *a,int da) {
-
+  void batch_cfftz_stages(const int stage,const int fft_indx,bool forward,int nz,int nq,int n2ft3d,double *a,int da) 
+  {
      //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      int ia_dev = ifft_dev[da];
 
      if (stage==0)
      {
+        inuse[ia_dev] = true;
         cudaMemcpyAsync(dev_mem[ia_dev],a,n2ft3d*sizeof(double),cudaMemcpyHostToDevice,stream[da]);
      }
      else if (stage==1)
@@ -1103,9 +1105,8 @@ public:
      else if (stage==2)
      {
         NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[da]));
+        inuse[ia_dev] = false;
      }
-
-     //inuse[ia_dev] = false;
   }
 
 
