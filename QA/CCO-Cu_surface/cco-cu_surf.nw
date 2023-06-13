@@ -141,7 +141,7 @@ nwpw
   lmbfgs grassman 
   loop 1 1
   steepest_descent
-     loop 1 1
+     loop 10 2
   end
 
   2d-hcurve
