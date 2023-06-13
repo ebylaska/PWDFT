@@ -885,7 +885,7 @@ public:
      inuse[ia_dev] = false;
   }
 
-  void batch_cfftx_stages(const int stage, const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a, double da) 
+  void batch_cfftx_stages(const int stage, const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a, int da) 
   {
      //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      int ia_dev = ifft_dev[da];
