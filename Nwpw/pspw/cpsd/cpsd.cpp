@@ -187,20 +187,22 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
  
    if (oprint) 
    {
-      std::cout << "\n";
+      std::cout << std::endl;
       std::cout << "     ===================  summary of input  =======================" << std::endl;
-      std::cout << "\n input psi filename: " << control.input_movecs_filename()
-                << "\n";
-      std::cout << "\n";
-      std::cout << " number of processors used: " << myparallel.np() << "\n";
-      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << "\n";
-      if (mygrid.maptype == 1) std::cout << " parallel mapping         : 1d-slab" << "\n";
-      if (mygrid.maptype == 2) std::cout << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype == 3) std::cout << " parallel mapping         : 2d-hcurve" << "\n";
+      std::cout << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
+      std::cout << std::endl;
+      std::cout << " number of processors used: " << myparallel.np() << std::endl;
+      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << std::endl;
+      if (mygrid.maptype == 1) std::cout << " parallel mapping         : 1d-slab" << std::endl;
+      if (mygrid.maptype == 2) std::cout << " parallel mapping         : 2d-hilbert" << std::endl;
+      if (mygrid.maptype == 3) std::cout << " parallel mapping         : 2d-hcurve" << std::endl;
       if (mygrid.isbalanced())
-         std::cout << " parallel mapping         : balanced" << "\n";
+         std::cout << " parallel mapping         : balanced" << std::endl;
       else
-         std::cout << " parallel mapping         : not balanced" << "\n";
+         std::cout << " parallel mapping         : not balanced" << std::endl;
+      if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged gpu fft" << std::endl;
+      if (control.tile_factor() > 1)
+         std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
       
       std::cout << "\n options:\n";
       std::cout << "   ion motion           = ";

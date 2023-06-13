@@ -207,23 +207,23 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
    //                 |**************************|
  
    if (oprint) {
-     coutput << "\n";
+     coutput << std::endl;
      coutput << "     ===================  summary of input  =======================" << std::endl;
-     coutput << "\n input psi filename: " << control.input_movecs_filename()
-             << "\n";
-     coutput << "\n";
-     coutput << " number of processors used: " << myparallel.np() << "\n";
-     coutput << " processor grid           : " << myparallel.np_i() << " x"
-             << myparallel.np_j() << "\n";
-     if (mygrid.maptype == 1) coutput << " parallel mapping         : 1d-slab" << "\n";
-     if (mygrid.maptype == 2) coutput << " parallel mapping         : 2d-hilbert" << "\n";
-     if (mygrid.maptype == 3) coutput << " parallel mapping         : 2d-hcurve" << "\n";
+     coutput << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
+     coutput << std::endl;
+     coutput << " number of processors used: " << myparallel.np() << std::endl;
+     coutput << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << std::endl;
+     if (mygrid.maptype == 1) coutput << " parallel mapping         : 1d-slab" << std::endl;
+     if (mygrid.maptype == 2) coutput << " parallel mapping         : 2d-hilbert" << std::endl;
+     if (mygrid.maptype == 3) coutput << " parallel mapping         : 2d-hcurve" << std::endl;
      if (mygrid.isbalanced())
-       coutput << " parallel mapping         : balanced"
-               << "\n";
+        coutput << " parallel mapping         : balanced" << std::endl;
      else
-       coutput << " parallel mapping         : not balanced"
-               << "\n";
+        coutput << " parallel mapping         : not balanced" << std::endl;
+     if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged gpu fft" << std::endl;
+     if (control.tile_factor() > 1)
+         coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
+
  
      coutput << "\n options:\n";
      coutput << "   boundary conditions  = ";

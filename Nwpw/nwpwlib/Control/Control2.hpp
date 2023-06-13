@@ -109,6 +109,8 @@ class Control2 {
    bool pdipole_on;
    bool pmulliken_on;
 
+   bool pstaged_gpu_fft = true;
+
 public:
    int version = 3;
  
@@ -196,6 +198,8 @@ public:
    void add_scratch_dir(char *);
  
    bool out_of_time() { return false; } // needs to be implemented
+
+   bool staged_gpu_fft() { return pstaged_gpu_fft; }
  
    int print_level(std::string plevel) {
      int doprt = 0;

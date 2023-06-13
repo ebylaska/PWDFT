@@ -1378,7 +1378,18 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
        if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
        if (mystring_contains(line, " sphere"))     nwpwjson["generalized_poisson"]["model"] = 3;
+    
+    } else if (mystring_contains(line, "staged_gpu_fft")) {
+       std::string check = mystring_split0(mystring_trim(mystring_split(line, "staged_gpu_fft")[1]))[0];
+       nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "off"))   nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "no"))    nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "false")) nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "on"))    nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "yes"))   nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "true"))  nwpwjson["staged_gpu_fft"]["on"] = true;
     }
+
 
     ++cur;
     if (mystring_contains(lines[cur], "end"))

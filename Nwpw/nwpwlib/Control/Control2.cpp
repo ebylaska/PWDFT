@@ -745,6 +745,13 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       if (gpoissonjson["model"].is_number_integer())  pgpoisson_model = gpoissonjson["model"];
       if (gpoissonjson["maxit"].is_number_integer())  pgpoisson_maxit = gpoissonjson["maxit"];
    }
+
+   // staged_gpu_fft
+   if (!rtdbjson["nwpw"]["staged_gpu_fft"].is_null()) 
+   {
+      auto gstaged = rtdbjson["nwpw"]["staged_gpu_fft"];
+      if (gstaged["on"].is_boolean()) pstaged_gpu_fft = gstaged["on"];
+   }
  
    // Nose data
    pnose_on = false;

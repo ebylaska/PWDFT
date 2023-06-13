@@ -42,7 +42,10 @@ class PGrid : public d3db {
   /* zplane data */
   double *zplane_tmp1, *zplane_tmp2;
 
+
 public:
+  bool staged_gpu_fft_pipeline;
+
   /* lattice pointer */
   Lattice *lattice;
 
@@ -51,7 +54,7 @@ public:
   double *r_grid;
 
   /* constructor */
-  PGrid(Parallel *, Lattice *, int, int, int, int, int, int);
+  PGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool);
   PGrid(Parallel *, Lattice *, Control2 &);
 
   /* destructor */

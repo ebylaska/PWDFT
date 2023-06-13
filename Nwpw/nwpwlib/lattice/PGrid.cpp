@@ -31,7 +31,7 @@ namespace pwdft {
 // d3db(inparall,control.mapping(),control.ngrid(0),control.ngrid(1),control.ngrid(2))
 
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
-             int nx0, int ny0, int nz0, int pfft3_qsize0)
+             int nx0, int ny0, int nz0, int pfft3_qsize0, bool staged_gpu_fft_pipeline0)
     : d3db(inparall, mapping0, nx0, ny0, nz0) {
   int nxh, nyh, nzh, p, q, indx, nb;
   int nwave_in[2], nwave_out[2];
@@ -469,11 +469,12 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   }
 
   /* initialize pfft3 queues */
+  staged_gpu_fft_pipeline = staged_gpu_fft_pipeline0 && d3db::mygdevice.has_gpu();
   //aqmax = 5;
   aqmax = pfft3_qsize0;
-  if (d3db::mygdevice.has_gpu()) 
+  if (staged_gpu_fft_pipeline)
   {
-     std::cout << "HAS GPU!!!!" << std::endl;
+     std::cout << "Using Staged GPU fft pipeline!!!!" << std::endl;
      aqmax += 6;
      d3db::mygdevice.batch_fft_pipeline_mem_init(aqmax,n2ft3d);
   }
@@ -485,7 +486,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
   atmp = new (std::nothrow) double[2*aqmax*n2ft3d]();
 
   bqmax = pfft3_qsize0;
-  if (d3db::mygdevice.has_gpu()) bqmax += 6;
+  if (staged_gpu_fft_pipeline) bqmax += 6;
   
   //bqmax = aqmax;
   bqsize = 0;
@@ -502,7 +503,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 PGrid::PGrid(Parallel *inparall, Lattice *inlattice, Control2 &control)
     : PGrid(inparall, inlattice, control.mapping(), control.balance(),
             control.ngrid(0), control.ngrid(1), control.ngrid(2),
-            control.pfft3_qsize()) {}
+            control.pfft3_qsize(), control.staged_gpu_fft()) {}
 
 /********************************
  *                              *
@@ -2064,7 +2065,7 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
     int status = aqstatus[indx] + 1;
     shift1 = n2ft3d*(2*indx);
     shift2 = n2ft3d*(2*indx + 1);
-    if (d3db::mygdevice.has_gpu())
+    if (staged_gpu_fft_pipeline)
        pfftb_step12(status, nb, a, atmp+shift1, atmp+shift2, indx+3,indx);
     else
        pfftb_step(status, nb, a, atmp + shift1, atmp + shift2, indx + 3);
@@ -2082,7 +2083,7 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
   shift1 = n2ft3d*(2*alast_index);
   shift2 = n2ft3d*(2*alast_index+1);
 
-  if (d3db::mygdevice.has_gpu())
+  if (staged_gpu_fft_pipeline)
      pfftb_step12(0,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
   else
      pfftb_step(0, nb, a, atmp + shift1, atmp + shift2, alast_index + 3);
@@ -2105,7 +2106,7 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a) {
       int status = aqstatus[indx] + 1;
       shift1 = n2ft3d * (2*indx);
       shift2 = n2ft3d * (2*indx+1);
-      if (d3db::mygdevice.has_gpu())
+      if (staged_gpu_fft_pipeline)
          pfftb_step12(status,nb,a,atmp+shift1,atmp+shift2,indx+3,indx);
       else
          pfftb_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
@@ -2888,7 +2889,7 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *b) {
      int status = bqstatus[indx] + 1;
      shift1 = n2ft3d * (2*indx);
      shift2 = n2ft3d * (2*indx + 1);
-     if (d3db::mygdevice.has_gpu())
+     if (staged_gpu_fft_pipeline)
         pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx + 3,indx);
      else
         pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
@@ -2906,7 +2907,7 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *b) {
   shift1 = n2ft3d * (2*blast_index);
   shift2 = n2ft3d * (2*blast_index + 1);
 
-  if (d3db::mygdevice.has_gpu())
+  if (staged_gpu_fft_pipeline)
      pfftf_step10(0, nb, b, btmp + shift1, btmp + shift2, blast_index + 3,blast_index);
   else
      pfftf_step(0, nb, b, btmp + shift1, btmp + shift2, blast_index + 3);
@@ -2929,7 +2930,7 @@ void PGrid::rc_pfft3f_queueout(const int nb, double *b) {
       int status = bqstatus[indx] + 1;
       shift1 = n2ft3d * (2*indx);
       shift2 = n2ft3d * (2*indx + 1);
-      if (d3db::mygdevice.has_gpu())
+      if (staged_gpu_fft_pipeline)
          pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx + 3,indx);
       else
          pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
