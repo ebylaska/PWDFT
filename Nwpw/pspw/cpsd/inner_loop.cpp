@@ -101,7 +101,6 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
-      // mygrid->gh_fftb(psi1,psi_r);
      
       if (move)
       {
@@ -112,6 +111,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       }
      
       /* convert psi(G) to psi(r) - Expensive */
+      mygrid->gh_fftb(psi1,psi_r);
+      /*
       indx1 = 0;
       indx2 = 0;
       for (i = 0; i < neall; ++i) 
@@ -122,6 +123,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
          indx1 += shift1;
          indx2 += shift2;
       }
+      */
      
       /* generate dn */
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
