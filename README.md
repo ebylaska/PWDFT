@@ -114,7 +114,8 @@ make
 ```
 qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q workq -I
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
-
+```
+```
 mpiexec -n 6 --ppn 6  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
 ```
 
