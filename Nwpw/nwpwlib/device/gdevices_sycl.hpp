@@ -257,11 +257,13 @@ public:
     };
 
     // allocate SYCL streams
+
     for (auto i=0; i<12; ++i) {
       stream.push_back(new sycl::queue(
           sycl::gpu_selector_v, asyncHandler,
           sycl::property_list{sycl::property::queue::in_order{}}));
     }
+
   }
 
   /* deconstructor */
@@ -896,7 +898,7 @@ public:
      }
      else if (stage==1)
      {
-        stream[da]->wait();
+        //stream[da]->wait();
         if (forward)
           compute_forward(*desc_x[fft_indx], dev_mem[ia_dev]);
         else
@@ -940,7 +942,7 @@ public:
      }
      else if (stage==1)
      {
-        stream[da]->wait();
+        //stream[da]->wait();
         if (forward)
            compute_forward(*desc_y[fft_indx], dev_mem[ia_dev]);
         else
@@ -984,7 +986,7 @@ public:
      }
      else if (stage==1)
      {
-        stream[da]->wait();
+        //stream[da]->wait();
         if (forward)
            compute_forward(*desc_z[fft_indx], dev_mem[ia_dev]);
         else
