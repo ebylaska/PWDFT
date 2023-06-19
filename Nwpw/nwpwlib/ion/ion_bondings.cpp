@@ -44,14 +44,14 @@ ion_bondings::ion_bondings(double *rion1, Control2 &control)
       ua[6] = control.unita(0,2); ua[7] = control.unita(1,2); ua[8] = control.unita(2,2);
       get_ub(ua,ub);
 
-      n0     = new (std::nothrow) int[nhc]();
-      K0     = new (std::nothrow) double [nhc]();
-      gamma0 = new (std::nothrow) double [nhc]();
-      coef   = new (std::nothrow) double* [nhc]();
-      indx   = new (std::nothrow) int* [nhc]();
+      n0       = new (std::nothrow) int[nhc]();
+      Kspring0 = new (std::nothrow) double [nhc]();
+      gamma0   = new (std::nothrow) double [nhc]();
+      coef     = new (std::nothrow) double* [nhc]();
+      indx     = new (std::nothrow) int* [nhc]();
       for (auto i=0; i<nhc; ++i) {
-         K0[i]     = control.K0_bondings(i);
-         gamma0[i] = control.gamma0_bondings(i);
+         Kspring0[i] = control.Kspring0_bondings(i);
+         gamma0[i]  = control.gamma0_bondings(i);
 
          std::vector<double> tmp = control.coef_bondings(i);
          std::vector<int>   itmp = control.indx_bondings(i);
@@ -151,7 +151,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
    double ion_bondings::spring_energy(const int i)
    {
        double gamma = this->spring_gamma(i);
-       return K0[i]*std::pow((gamma-gamma0[i]),2);
+       return Kspring0[i]*std::pow((gamma-gamma0[i]),2);
    }
 
 
@@ -171,7 +171,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
       for (auto i=0; i<nhc; ++i)
       {
          double gamma  = this->spring_gamma(i);
-         eb += K0[i]*std::pow((gamma-gamma0[i]),2);
+         eb += Kspring0[i]*std::pow((gamma-gamma0[i]),2);
       }
       return eb;
    }
@@ -205,8 +205,8 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
             double dist = std::sqrt(x*x + y*y + z*z);
             gamma += coef_tmp*dist;
         }
-        eb  +=  K0[i]*std::pow((gamma-gamma0[i]),2);
-        double deb = -2*K0[i]*(gamma-gamma0[i]);
+        eb  +=  Kspring0[i]*std::pow((gamma-gamma0[i]),2);
+        double deb = -2*Kspring0[i]*(gamma-gamma0[i]);
         for (auto ii=0; ii<n0[i]; ++ii)
         {
             auto coef_tmp = coef[i][ii];
@@ -260,7 +260,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
                      << Ifmt(7) << this->indx[i][2*j]
                      << Ifmt(7) << this->indx[i][2*j+1]
                      << Ffmt(15,6) << this->ij_spring_distance(i,j) << std::endl;
-           stream << "         K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
+           stream << "         Kspring0   =" << Ffmt(12,6) << this->Kspring0[i]     << std::endl;
            stream << "         gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
            stream << "      gamma         =" << Ffmt(12,6) << gamma   << std::endl;
            stream << "      spring energy =" << Ffmt(12,6) << espring << std::endl;
@@ -275,7 +275,7 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
                      << Ifmt(7) << this->indx[i][2*j]
                      << Ifmt(7) << this->indx[i][2*j+1]
                      << Ffmt(15,6) << this->ij_spring_distance(i,j) << std::endl;
-           stream << "    K0         =" << Ffmt(12,6) << this->K0[i]     << std::endl;
+           stream << "    Kspring0   =" << Ffmt(12,6) << this->Kspring0[i]     << std::endl;
            stream << "    gamma0     =" << Ffmt(12,6) << this->gamma0[i] << std::endl;
            stream << " gamma         =" << Ffmt(12,6) << gamma   << std::endl;
            stream << " spring energy =" << Ffmt(12,6) << espring << std::endl;

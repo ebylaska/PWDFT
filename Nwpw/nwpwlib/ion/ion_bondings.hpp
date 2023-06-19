@@ -20,7 +20,7 @@ class ion_bondings
    bool periodic;
    int nhc;
    int    *n0;
-   double *K0;
+   double *Kspring0;
    double *gamma0;
 
    int    **indx;
@@ -44,7 +44,7 @@ public:
          }
          delete [] indx;
          delete [] coef;
-         delete [] K0;
+         delete [] Kspring0;
          delete [] gamma0;
          delete [] n0;
       }

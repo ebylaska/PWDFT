@@ -1559,9 +1559,9 @@ static json parse_constraints(json constraintsjson, int *curptr, std::vector<std
         if (!constraintsjson["bondings"].is_null())
            bcount = constraintsjson["bondings"].size();
         ss = mystring_split0(mystring_trim(mystring_split(line, " bondings")[1]));
-        int    n0      = (ss.size()-2)/3;
-        double K0     = std::stod(ss[0]);
-        double gamma0 = std::stod(ss[1]);
+        int    n0       = (ss.size()-2)/3;
+        double Kspring0 = std::stod(ss[0]);
+        double gamma0   = std::stod(ss[1]);
         std::vector<int> indexes;
         std::vector<double> coef;
         for (auto i=0; i<n0; ++i)
@@ -1570,26 +1570,100 @@ static json parse_constraints(json constraintsjson, int *curptr, std::vector<std
             indexes.push_back(std::stoi(ss[3*i+3]));
             indexes.push_back(std::stoi(ss[3*i+4]));
         }
-        constraintsjson["bondings"][bcount]["coef"]    = coef;
-        constraintsjson["bondings"][bcount]["indexes"] = indexes;
-        constraintsjson["bondings"][bcount]["K0"]      = K0;
-        constraintsjson["bondings"][bcount]["gamma0"]  = gamma0;
+        constraintsjson["bondings"][bcount]["coef"]     = coef;
+        constraintsjson["bondings"][bcount]["indexes"]  = indexes;
+        constraintsjson["bondings"][bcount]["Kspring0"] = Kspring0;
+        constraintsjson["bondings"][bcount]["gamma0"]   = gamma0;
+
+     } else if ((mystring_contains(line, "spring")) &&  
+                (mystring_contains(line, " cbond"))) {   
+        int cbcount = 0;
+        if (!constraintsjson["cbond"].is_null())
+           cbcount = constraintsjson["cbond"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " cbond")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double Rij0 = std::stod(ss[5]);
+        double Rkl0 = std::stod(ss[6]);
+        constraintsjson["cbond"][cbcount]["i0"]       = i0;
+        constraintsjson["cbond"][cbcount]["j0"]       = j0;
+        constraintsjson["cbond"][cbcount]["k0"]       = k0;
+        constraintsjson["cbond"][cbcount]["l0"]       = l0;
+        constraintsjson["cbond"][cbcount]["Kspring0"] = Kspring0;
+        constraintsjson["cbond"][cbcount]["Rij0"]     = Rij0;
+        constraintsjson["cbond"][cbcount]["Rkl0"]     = Rkl0;
      
      } else if ((mystring_contains(line, "spring")) && 
-                (mystring_contains(line, "bond"))) {
+                (mystring_contains(line, " bond"))) {
         int bcount = 0;
         if (!constraintsjson["bond"].is_null())
            bcount = constraintsjson["bond"].size();
         ss = mystring_split0(mystring_trim(mystring_split(line, " bond")[1]));
         int i0 = std::stoi(ss[0]);
         int j0 = std::stoi(ss[1]);
-        double K0 = std::stod(ss[2]);
+        double Kspring0 = std::stod(ss[2]);
         double R0 = std::stod(ss[3]);
-        constraintsjson["bond"][bcount]["i0"] = i0;
-        constraintsjson["bond"][bcount]["j0"] = j0;
-        constraintsjson["bond"][bcount]["K0"] = K0;
-        constraintsjson["bond"][bcount]["R0"] = R0;
+        constraintsjson["bond"][bcount]["i0"]       = i0;
+        constraintsjson["bond"][bcount]["j0"]       = j0;
+        constraintsjson["bond"][bcount]["Kspring0"] = Kspring0;
+        constraintsjson["bond"][bcount]["R0"]       = R0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, "angle"))) {
+        int acount = 0;
+        if (!constraintsjson["angle"].is_null())
+           acount = constraintsjson["angle"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " angle")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        double Kspring0 = std::stod(ss[3]);
+        double Theta0   = std::stod(ss[4]);
+        constraintsjson["angle"][acount]["i0"]       = i0;
+        constraintsjson["angle"][acount]["j0"]       = j0;
+        constraintsjson["angle"][acount]["k0"]       = k0;
+        constraintsjson["angle"][acount]["Kspring0"] = Kspring0;
+        constraintsjson["angle"][acount]["Theta0"]   = Theta0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, " dihedral"))) {
+        int dcount = 0;
+        if (!constraintsjson["dihedral"].is_null())
+           dcount = constraintsjson["dihedral"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " dihedral")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double phi0     = std::stod(ss[5]);
+        constraintsjson["dihedral"][dcount]["i0"]       = i0;
+        constraintsjson["dihedral"][dcount]["j0"]       = j0;
+        constraintsjson["dihedral"][dcount]["k0"]       = k0;
+        constraintsjson["dihedral"][dcount]["l0"]       = l0;
+        constraintsjson["dihedral"][dcount]["Kspring0"] = Kspring0;
+        constraintsjson["dihedral"][dcount]["phi0"]     = phi0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, " cihedral"))) {
+        int ccount = 0;
+        if (!constraintsjson["cihedral"].is_null())
+           ccount = constraintsjson["cihedral"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " cihedral")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double phi0     = std::stod(ss[5]);
+        constraintsjson["cihedral"][ccount]["i0"]       = i0;
+        constraintsjson["cihedral"][ccount]["j0"]       = j0;
+        constraintsjson["cihedral"][ccount]["k0"]       = k0;
+        constraintsjson["cihedral"][ccount]["l0"]       = l0;
+        constraintsjson["cihedral"][ccount]["Kspring0"] = Kspring0;
+        constraintsjson["cihedral"][ccount]["phi0"]     = phi0;
      }
+
  
      ++cur;
      if (mystring_contains(lines[cur], "end"))

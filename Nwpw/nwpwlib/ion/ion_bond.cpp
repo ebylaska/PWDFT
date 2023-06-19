@@ -46,14 +46,14 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
 
       i0 = new (std::nothrow) int[nhb]();
       j0 = new (std::nothrow) int[nhb]();
-      K0 = new (std::nothrow) double [nhb]();
-      R0 = new (std::nothrow) double [nhb]();
+      Kspring0 = new (std::nothrow) double [nhb]();
+      R0       = new (std::nothrow) double [nhb]();
       for (auto i=0; i<nhb; ++i)
       {
          i0[i] = control.i0_bond(i);
          j0[i] = control.j0_bond(i);
-         K0[i] = control.K0_bond(i);
-         R0[i] = control.R0_bond(i);
+         Kspring0[i] = control.Kspring0_bond(i);
+         R0[i]       = control.R0_bond(i);
       }
    }
 }
@@ -101,7 +101,7 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
        min_diff_xyz(&x,&y,&z);
        double R = std::sqrt(x*x + y*y + z*z);
     
-       return 0.5*K0[i]*std::pow((R-R0[i]),2);
+       return Kspring0[i]*std::pow((R-R0[i]),2);
    }
 
 
@@ -147,8 +147,8 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
         min_diff_xyz(&x,&y,&z);
         double R = std::sqrt(x*x + y*y + z*z);
        
-        eb +=  0.5*K0[i]*std::pow((R-R0[i]),2);
-        double deb = K0[i]*(R-R0[i]);
+        eb +=  Kspring0[i]*std::pow((R-R0[i]),2);
+        double deb = 2.0*Kspring0[i]*(R-R0[i]);
        
         fion[3*ii0]   += deb*(x/R);
         fion[3*ii0+1] += deb*(y/R);
@@ -198,7 +198,7 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
               stream << "      spring parameters:" << std::endl;
               stream << "         i0         =" << Ifmt(12) << this->i0[i] << std::endl;
               stream << "         j0         =" << Ifmt(12) << this->j0[i] << std::endl;
-              stream << "         K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
+              stream << "         Ksping0    =" << Ffmt(12,6) << this->Kspring0[i] << std::endl;
               stream << "         R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
               stream << "      R             =" << Ffmt(12,6) << R   << std::endl;
               stream << "      spring energy =" << Ffmt(12,6) << espring << std::endl;
@@ -209,7 +209,7 @@ ion_bond::ion_bond(double *rion1, Control2 &control)
               stream << " spring parameters:" << std::endl;
               stream << "    i0         =" << Ifmt(12) << this->i0[i] << std::endl;
               stream << "    j0         =" << Ifmt(12) << this->j0[i] << std::endl;
-              stream << "    K0         =" << Ffmt(12,6) << this->K0[i] << std::endl;
+              stream << "    Ksping0    =" << Ffmt(12,6) << this->Kspring0[i] << std::endl;
               stream << "    R0         =" << Ffmt(12,6) << this->R0[i] << std::endl;
               stream << " R             =" << Ffmt(12,6) << R   << std::endl;
               stream << " spring energy =" << Ffmt(12,6) << espring << std::endl;

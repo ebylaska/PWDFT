@@ -1,5 +1,5 @@
-#ifndef _ION_BOND_HPP_
-#define _ION_BOND_HPP_
+#ifndef _ION_ANGLE_HPP_
+#define _ION_ANGLE_HPP_
 
 #pragma once
 
@@ -13,15 +13,15 @@
 
 namespace pwdft {
 
-class ion_bond
+class ion_angle
 {
 
-   bool bond_exists=false;;
+   bool angle_exists=false;;
    bool periodic;
-   int nhb;
-   int    *i0,*j0;
+   int nha;
+   int    *i0,*j0,*k0;
    double *Kspring0;
-   double *R0;
+   double *Theta0;
   
    double ua[9],ub[9];
    double *rion;
@@ -30,21 +30,22 @@ class ion_bond
 public:
 
   /* Constructors */
-  ion_bond(double *, Control2 &);
+  ion_angle(double *, Control2 &);
 
 
   /* destructor */
-  ~ion_bond() {
-      if (bond_exists) {
+  ~ion_angle() {
+      if (angle_exists) {
          delete [] i0;
          delete [] j0;
+         delete [] k0;
          delete [] Kspring0;
-         delete [] R0;
+         delete [] Theta0;
       }
   }
 
   /* functions */
-  bool has_bond() {return bond_exists;}
+  bool has_angle() {return angle_exists;}
 
   void min_diff_xyz(double *, double *, double *);
   double spring_energy(const int) ;

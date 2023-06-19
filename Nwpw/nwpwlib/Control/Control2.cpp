@@ -1012,13 +1012,13 @@ int Control2::j0_bond(const int i)
       j0 = rtdbjson["constraints"]["bond"][i]["j0"];
    return j0;
 }
-double Control2::K0_bond(const int i)
+double Control2::Kspring0_bond(const int i)
 {
-   double K0=0.0;
+   double Kspring0=0.0;
    json rtdbjson = json::parse(myrtdbstring);
-   if (!rtdbjson["constraints"]["bond"][i]["K0"].is_null())
-      K0 = rtdbjson["constraints"]["bond"][i]["K0"];
-   return K0;
+   if (!rtdbjson["constraints"]["bond"][i]["Kspring0"].is_null())
+      Kspring0 = rtdbjson["constraints"]["bond"][i]["Kspring0"];
+   return Kspring0;
 }
 double Control2::R0_bond(const int i)
 {
@@ -1028,6 +1028,127 @@ double Control2::R0_bond(const int i)
       R0 = rtdbjson["constraints"]["bond"][i]["R0"];
    return R0;
 }
+
+// cbond constraints
+int Control2::nhcb_cbond()
+{
+   int nhcb = 0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"].is_null())
+      nhcb = rtdbjson["constraints"]["cbond"].size();
+   return nhcb;
+}
+int Control2::i0_cbond(const int i)
+{
+   int i0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["i0"].is_null())
+      i0 = rtdbjson["constraints"]["cbond"][i]["i0"];
+   return i0;
+}
+int Control2::j0_cbond(const int i)
+{
+   int j0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["j0"].is_null())
+      j0 = rtdbjson["constraints"]["cbond"][i]["j0"];
+   return j0;
+}
+int Control2::k0_cbond(const int i)
+{
+   int k0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["k0"].is_null())
+      k0 = rtdbjson["constraints"]["cbond"][i]["k0"];
+   return k0;
+}
+int Control2::l0_cbond(const int i)
+{
+   int l0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["l0"].is_null())
+      l0 = rtdbjson["constraints"]["cbond"][i]["l0"];
+   return l0;
+}
+double Control2::Kspring0_cbond(const int i)
+{
+   double Kspring0=0.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["Kspring0"].is_null())
+      Kspring0 = rtdbjson["constraints"]["cbond"][i]["Kspring0"];
+   return Kspring0;
+}
+double Control2::Rij0_cbond(const int i)
+{
+   double Rij0=1.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["Rij0"].is_null())
+      Rij0 = rtdbjson["constraints"]["cbond"][i]["Rij0"];
+   return Rij0;
+}
+double Control2::Rkl0_cbond(const int i)
+{
+   double Rkl0=1.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["cbond"][i]["Rkl0"].is_null())
+      Rkl0 = rtdbjson["constraints"]["cbond"][i]["Rkl0"];
+   return Rkl0;
+}
+
+
+
+
+
+// angle constraints
+int Control2::nha_angle()
+{
+   int nha = 0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"].is_null())
+      nha = rtdbjson["constraints"]["angle"].size();
+   return nha;
+}
+int Control2::i0_angle(const int i)
+{
+   int i0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"][i]["i0"].is_null())
+      i0 = rtdbjson["constraints"]["angle"][i]["i0"];
+   return i0;
+}
+int Control2::j0_angle(const int i)
+{
+   int j0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"][i]["j0"].is_null())
+      j0 = rtdbjson["constraints"]["angle"][i]["j0"];
+   return j0;
+}
+int Control2::k0_angle(const int i)
+{
+   int k0=0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"][i]["k0"].is_null())
+      k0 = rtdbjson["constraints"]["angle"][i]["k0"];
+   return k0;
+}
+double Control2::Kspring0_angle(const int i)
+{
+   double Kspring0=0.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"][i]["Kspring0"].is_null())
+      Kspring0 = rtdbjson["constraints"]["angle"][i]["Kspring0"];
+   return Kspring0;
+}
+double Control2::Theta0_angle(const int i)
+{
+   double Theta0=1.0;
+   json rtdbjson = json::parse(myrtdbstring);
+   if (!rtdbjson["constraints"]["angle"][i]["Theta0"].is_null())
+      Theta0 = rtdbjson["constraints"]["angle"][i]["Theta0"];
+   return Theta0;
+}
+
 
 
 // bondings constraints
@@ -1060,13 +1181,13 @@ std::vector<int> Control2::indx_bondings(const int i)
    json rtdbjson = json::parse(myrtdbstring);
    return  rtdbjson["constraints"]["bondings"][i]["indexes"];
 }
-double Control2::K0_bondings(const int i)
+double Control2::Kspring0_bondings(const int i)
 {
-   double K0=1.0;
+   double Kspring0=1.0;
    json rtdbjson = json::parse(myrtdbstring);
-   if (!rtdbjson["constraints"]["bondings"][i]["K0"].is_null())
-      K0 = rtdbjson["constraints"]["bondings"][i]["K0"];
-   return K0;
+   if (!rtdbjson["constraints"]["bondings"][i]["Kspring0"].is_null())
+      Kspring0 = rtdbjson["constraints"]["bondings"][i]["Kspring0"];
+   return Kspring0;
 }
 double Control2::gamma0_bondings(const int i)
 {

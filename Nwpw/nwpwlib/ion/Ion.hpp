@@ -9,6 +9,8 @@
 //#include	"rtdb.hpp"
 #include "Control2.hpp"
 #include "ion_bond.hpp"
+//#include "ion_cbond.hpp"
+//#include "ion_angle.hpp"
 #include "ion_bondings.hpp"
 #include "ion_rcovalent.hpp"
 
@@ -22,6 +24,8 @@ class Ion {
   bool has_bond_constraints = false;
   bool has_bondings_constraints = false;
   ion_bond     *mybond;
+  //ion_cbond    *mycbond;
+  //ion_angle    *myangle;
   ion_bondings *mybondings;
 
 public:
@@ -68,6 +72,8 @@ public:
      delete[] vionhalf;
      delete[] fion1;
      delete mybond;
+     //delete mycbond;
+     //delete myangle;
      delete mybondings;
    }
  
