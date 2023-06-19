@@ -1,5 +1,7 @@
-#ifndef _NWPW_QMMM_HPP_
-#define _NWPW_QMMM_HPP_
+#ifdef _NWPW_QMMM_HPP_
+
+//#ifndef _NWPW_QMMM_HPP_
+//#define _NWPW_QMMM_HPP_
 
 #pragma once
 
@@ -224,3 +226,5 @@ public:
 } // namespace pwdft
 
 #endif
+
+
