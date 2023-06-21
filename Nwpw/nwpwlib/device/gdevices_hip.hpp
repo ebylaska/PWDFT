@@ -150,7 +150,6 @@ public:
 
 class Gdevices {
 
-  rocfft_execution_info pExecInfo = nullptr;
   rocfft_plan forward_plan_x{nullptr}, forward_plan_y{nullptr},
       forward_plan_z{nullptr};
   rocfft_plan backward_plan_x{nullptr}, backward_plan_y{nullptr},
@@ -187,13 +186,10 @@ public:
       NWPW_HIP_ERROR(hipStreamCreate(&stream[i]));
 
     NWPW_ROCFFT_ERROR(rocfft_setup());
-    NWPW_ROCFFT_ERROR(rocfft_execution_info_create(&pExecInfo));
-    NWPW_ROCFFT_ERROR(rocfft_execution_info_set_stream(pExecInfo, stream[0]));
   }
 
   /* deconstructor */
   ~Gdevices() {
-
     // free dev_mem
     for (auto i = 0; i < ndev_mem; ++i)
       hipFree(dev_mem[i]);
@@ -586,8 +582,8 @@ public:
           tile_npack2[tt], &beta0, dev_mem[ic], ne));
       beta0 = 1.0;
     }
-    hipMemcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double),
-              hipMemcpyDeviceToHost);
+    NWPW_HIP_ERROR(hipMemcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double),
+                             hipMemcpyDeviceToHost));
 
     // inuse[ia] = false;
     // inuse[ib_prj[0]] = false;

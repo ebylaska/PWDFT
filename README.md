@@ -158,6 +158,37 @@ cmake -Bbuild_hip -DNWPW_HIP=ON ./Nwpw -DGPU_TARGETS=gfx90a
 cd build_hip
 make -j
 ```
+4. Job submission script via `sbatch job_submit.sbatch`
+```
+#!/bin/bash
+
+#SBATCH -A 
+#SBATCH -J 
+#SBATCH -o %x-%j.out
+#SBATCH -t 00:15:00
+#SBATCH -N 1
+#SBATCH -C nvme
+#SBATCH --mail-user=
+#SBATCH --mail-type=END
+
+module load amd-mixed
+module list
+
+export MPICH_GPU_SUPPORT_ENABLED=0
+export OMP_NUM_THREADS=1
+export GA_NUM_PROGRESS_RANKS_PER_NODE=1
+export CRAYPE_LINK_TYPE=dynamic
+
+date
+
+NNODES=1
+NRANKS_PER_NODE=8
+NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
+
+INPUT_FILE=
+
+srun -N${NNODES} -n${NTOTRANKS} -c1 --ntasks-per-gpu=1 --gpus-per-node=8 --gpu-bind=closest $PWD/pwdft ${INPUT_FILE}
+```
 </details>
 
 ##  Build Instructions for NERSC Perlmutter

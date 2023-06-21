@@ -39,7 +39,7 @@ else()
 endif()
 
 
-#Configure Sycll
+#Configure SYCL
 if (NWPW_SYCL)
   message("-- Using NWPW_SYCL")
 
