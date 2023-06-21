@@ -83,7 +83,10 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 ```
 module purge
 module restore
+module load cray-libpals/1.2.12 cray-pals/1.2.12 append-deps/default prepend-deps/default libfabric/1.15.2.0
 module load oneapi/eng-compiler/2023.05.15.003
+module load intel_compute_runtime/release/agama-devel-627
+module load mpich/52.2/icc-all-pmix-gpu
 module load spack cmake
 ```
 
