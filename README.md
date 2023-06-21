@@ -121,6 +121,9 @@ qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
 export MPIR_CVAR_ENABLE_GPU=0
 mpiexec -n 12 --ppn 12  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
 ```
+```
+mpiexec -n 6 --ppn 6  --env OMP_NUM_THREADS=1 --cpu-bind list:2:10:18:26:34:42 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
+```
 
 ## Examples on JSLE -  `SYCL` backend
 ## CUDA backend
