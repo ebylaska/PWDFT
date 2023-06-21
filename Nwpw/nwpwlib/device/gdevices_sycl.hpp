@@ -826,7 +826,7 @@ public:
      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                        nq1);
      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx + 2);
-     desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx + 2);
+     desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx/2 + 1);
     
      desc_y[fftcount] = new desc_cmplx_t(ny);
      desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
