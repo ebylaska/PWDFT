@@ -105,9 +105,16 @@ cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 cd build_sycl
 make 
 ```
+```
+cd PWDFT/build_sycl
+cmake -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ../Nwpw
+```
+
+
 ### Running
 ```
 qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q debug -I
+qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
 ```
 ```
