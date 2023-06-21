@@ -81,18 +81,10 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 ### Required Modules
 
 ```
-module add gcc/11.2.0
-module add cray-libpals/1.2.3
-module add intel_compute_runtime/release/pvc-prq-66
-module add oneapi-prgenv/2022.10.15.006.001
-module add mpich/50.1/icc-all-pmix-gpu
-module add spack/linux-sles15-x86_64-ldpath
-module add oneapi/eng-compiler/2022.10.15.006
-module add ncurses/6.1.20180317-gcc-11.2.0-zedoshf
-module add libfabric/1.15.2.0
-module add openssl/1.1.1d-gcc-11.2.0-amlvxob
-module add cray-pals/1.2.3
-module add cmake/3.24.2-gcc-11.2.0-pcasswq
+module purge
+module restore
+module load oneapi/eng-compiler/2023.05.15.003
+module load spack cmake
 ```
 
 ### Getting the code and building instrunctions
@@ -116,29 +108,10 @@ qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q workq -I
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
 ```
 ```
-mpiexec -n 6 --ppn 6  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
+mpiexec -n 12 --ppn 12  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
 ```
 
 ## Examples on JSLE -  `SYCL` backend
-### Required Modules
-```
-export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
-module load oneapi
-module load cmake
-```
-
-### Build Instructions (for `SYCL` backend)
-```
-cd PWDFT
-cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
-make -j4
-```
-
-### Running on Articus
-```
-qsub -I -n 1 -t 60 -q arcticus
-```
-
 ## CUDA backend
 ### Required Modules
 ```
