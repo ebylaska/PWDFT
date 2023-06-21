@@ -104,8 +104,8 @@ make
 ```
 ### Running
 ```
-qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q workq -I
-qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
+qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q debug -I
+qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
 ```
 ```
 export MPIR_CVAR_ENABLE_GPU=0
