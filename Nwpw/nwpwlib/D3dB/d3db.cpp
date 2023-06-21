@@ -12,7 +12,7 @@
 
 #include "blas.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 
 #include "d3db.hpp"
@@ -31,412 +31,417 @@ namespace pwdft {
  *                              *
  ********************************/
 
-d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny,
-           const int nz)
-    : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz) {
-  int index1, index2, proc_to, proc_from;
-  int nyh, nzh;
-  int phere, pto, pfrom;
+d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz)
+    : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz) 
+{
+   int index1, index2, proc_to, proc_from;
+   int nyh, nzh;
+   int phere, pto, pfrom;
+ 
+   parall = inparall;
 
-  parall = inparall;
+ 
+   if (maptype==1) 
+   {
+     iq_to_i1 = new (std::nothrow) int *[1];
+     iq_to_i1[0] = new (std::nothrow) int[(nx/2+1) * ny * nq]();
+     iq_to_i2 = new (std::nothrow) int *[1];
+     iq_to_i2[0] = new (std::nothrow) int[(nx/2+1) * ny * nq]();
+     i1_start = new (std::nothrow) int *[1];
+     i1_start[0] = new (std::nothrow) int[nz+1]();
+     i2_start = new (std::nothrow) int *[1];
+     i2_start[0] = new (std::nothrow) int[nz+1]();
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[0][it] = index1;
+       i2_start[0][it] = index2;
+ 
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j) {
+           /* packing scheme */
+           phere = ijktop(0, 0, k);
+           pto = ijktop(0, 0, j);
+           if ((phere == taskid) && (pto == proc_to))
+             for (auto i = 0; i < (nx/2+1); ++i) {
+               iq_to_i1[0][ijktoindex(i, j, k)] = index1;
+               ++index1;
+             }
+ 
+           /* unpacking scheme */
+           phere = ijktop(0, 0, j);
+           pfrom = ijktop(0, 0, k);
+           if ((phere == taskid) && (pfrom == proc_from))
+             for (auto i = 0; i < (nx/2+1); ++i) {
+               iq_to_i2[0][ijktoindex(i, k, j)] = index2;
+               ++index2;
+             }
+         }
+     }
+     i1_start[0][np] = index1;
+     i2_start[0][np] = index2;
+ 
+     /* allocate ptranspose indexes */
+     for (auto nb = 0; nb < 2; ++nb) {
+       p_iq_to_i1[nb] = new (std::nothrow) int *[1]();
+       p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_iq_to_i2[nb] = new (std::nothrow) int *[1]();
+       p_iq_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_iz_to_i2[nb] = new (std::nothrow) int *[1]();
+       p_iz_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_i1_start[nb] = new (std::nothrow) int *[1]();
+       p_i1_start[nb][0] = new (std::nothrow) int[nz + 1]();
+       p_i2_start[nb] = new (std::nothrow) int *[1]();
+       p_i2_start[nb][0] = new (std::nothrow) int[nz + 1]();
+ 
+       p_jq_to_i1[nb] = new (std::nothrow) int *[1]();
+       p_jq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_jq_to_i2[nb] = new (std::nothrow) int *[1]();
+       p_jq_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_jz_to_i2[nb] = new (std::nothrow) int *[1]();
+       p_jz_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
+       p_j1_start[nb] = new (std::nothrow) int *[1]();
+       p_j1_start[nb][0] = new (std::nothrow) int[nz + 1]();
+       p_j2_start[nb] = new (std::nothrow) int *[1]();
+       p_j2_start[nb][0] = new (std::nothrow) int[nz + 1]();
+     }
+ 
+   } else {
+     iq_to_i1 = new (std::nothrow) int *[6]();
+     iq_to_i1[0] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+     iq_to_i1[1] = new (std::nothrow) int[ny * nq2]();
+     iq_to_i1[2] = new (std::nothrow) int[nz * nq3]();
+ 
+     iq_to_i1[3] = new (std::nothrow) int[ny * nq2]();
+     iq_to_i1[4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+     iq_to_i1[5] = new (std::nothrow) int[nz * nq3]();
+ 
+     iq_to_i2 = new (std::nothrow) int *[6]();
+     iq_to_i2[0] = new (std::nothrow) int[ny * nq2]();
+     iq_to_i2[1] = new (std::nothrow) int[nz * nq3]();
+     iq_to_i2[2] = new (std::nothrow) int[ny * nq2]();
+ 
+     iq_to_i2[3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+     iq_to_i2[4] = new (std::nothrow) int[nz * nq3]();
+     iq_to_i2[5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+ 
+     i1_start = new (std::nothrow) int *[6]();
+     for (auto i = 0; i < 6; ++i)
+       i1_start[i] = new (std::nothrow) int[np + 1]();
+ 
+     i2_start = new (std::nothrow) int *[6]();
+     for (auto i = 0; i < 6; ++i)
+       i2_start[i] = new (std::nothrow) int[np + 1]();
+ 
+     /***********************************************************************/
+     /* map1to2 mapping - done - tranpose operation #0  (j,k,i) <-- (i,j,k) */
+     /***********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[0][it] = index1;
+       i2_start[0][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             phere = ijktop2(i, j, k);
+             pto = ijktop1(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[0][ijktoindex2t(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[0][ijktoindex1(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[0][np] = index1;
+     i2_start[0][np] = index2;
+ 
+     /***********************************************************************/
+     /* map2to3 mapping - done - tranpose operation #1 (k,i,j) <-- (j,k,i)  */
+     /***********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[1][it] = index1;
+       i2_start[1][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             phere = ijktop1(i, j, k);
+             pto = ijktop(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[1][ijktoindex1(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[1][ijktoindex(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[1][np] = index1;
+     i2_start[1][np] = index2;
+ 
+     /***********************************************************************/
+     /* map3to2 mapping - done - tranpose operation #2  (j,k,i) <-- (k,i,j) */
+     /***********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[2][it] = index1;
+       i2_start[2][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             phere = ijktop(i, j, k);
+             pto = ijktop1(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[2][ijktoindex(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[2][ijktoindex1(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[2][np] = index1;
+     i2_start[2][np] = index2;
+ 
+     /***********************************************************************/
+     /* map2to1 mapping - done - tranpose operation #3  (i,j,k) <-- (j,k,i) */
+     /***********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[3][it] = index1;
+       i2_start[3][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             phere = ijktop1(i, j, k);
+             pto = ijktop2(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[3][ijktoindex1(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[3][ijktoindex2t(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[3][np] = index1;
+     i2_start[3][np] = index2;
+ 
+     /**********************************************************************/
+     /* map1to3 mapping - done - tranpose operation #4 (k,i,j) <-- (i,j,k) */
+     /**********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[4][it] = index1;
+       i2_start[4][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx/2 + 1); ++i) {
+             phere = ijktop2(i, j, k);
+             pto = ijktop(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[4][ijktoindex2t(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[4][ijktoindex(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[4][np] = index1;
+     i2_start[4][np] = index2;
+ 
+     /**********************************************************************/
+     /* map3to1 mapping - done - tranpose operation #5 (i,j,k) <-- (k,i,j) */
+     /**********************************************************************/
+     index1 = 0;
+     index2 = 0;
+     for (auto it = 0; it < np; ++it) {
+       proc_to = (taskid + it) % np;
+       proc_from = (taskid - it + np) % np;
+       i1_start[5][it] = index1;
+       i2_start[5][it] = index2;
+       for (auto k = 0; k < nz; ++k)
+         for (auto j = 0; j < ny; ++j)
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             phere = ijktop(i, j, k);
+             pto = ijktop2(i, j, k);
+ 
+             /* packing scheme */
+             if ((phere == taskid) && (pto == proc_to)) {
+               iq_to_i1[5][ijktoindex(i, j, k)] = index1;
+               ++index1;
+             }
+             /* unpacking scheme */
+             if ((pto == taskid) && (phere == proc_from)) {
+               iq_to_i2[5][ijktoindex2t(i, j, k)] = index2;
+               ++index2;
+             }
+           }
+     }
+     i1_start[5][np] = index1;
+     i2_start[5][np] = index2;
+ 
+     /* allocate ptranspose indexes */
+     for (auto nb = 0; nb < 2; ++nb) {
+       p_iq_to_i1[nb] = new (std::nothrow) int *[6];
+       p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+       p_iq_to_i1[nb][1] = new (std::nothrow) int[ny * nq2]();
+       p_iq_to_i1[nb][2] = new (std::nothrow) int[nz * nq3]();
+       p_iq_to_i1[nb][3] = new (std::nothrow) int[ny * nq2]();
+       p_iq_to_i1[nb][4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+       p_iq_to_i1[nb][5] = new (std::nothrow) int[nz * nq3]();
+ 
+       p_iq_to_i2[nb] = new (std::nothrow) int *[6];
+       p_iq_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
+       p_iq_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
+       p_iq_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
+       p_iq_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+       p_iq_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
+       p_iq_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+ 
+       p_iz_to_i2[nb] = new (std::nothrow) int *[6];
+       p_iz_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
+       p_iz_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
+       p_iz_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
+       p_iz_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+       p_iz_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
+       p_iz_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
+ 
+       p_i1_start[nb] = new (std::nothrow) int *[6];
+       for (auto i = 0; i < 6; ++i)
+         p_i1_start[nb][i] = new (std::nothrow) int[np + 1]();
+ 
+       p_i2_start[nb] = new (std::nothrow) int *[6];
+       for (auto i = 0; i < 6; ++i)
+         p_i2_start[nb][i] = new (std::nothrow) int[np + 1]();
+     }
+   }
+ 
+   /* setup timereverse indexes */
+   zplane_size = timereverse_size() + 1;
+   t_iq_to_i1 = new (std::nothrow) int[zplane_size]();
+   t_iq_to_i2 = new (std::nothrow) int[zplane_size]();
+   t_i1_start = new (std::nothrow) int[np + 1]();
+   t_i2_start = new (std::nothrow) int[np + 1]();
+   nyh = ny / 2;
+   nzh = nz / 2;
+   index1 = 0;
+   index2 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     t_i1_start[it] = index1;
+     t_i2_start[it] = index2;
+ 
+     /* k=(0,0,k3) */
+     for (auto k = 1; k < nzh; ++k) {
+       auto k1 = k;
+       auto k2 = -k;
+       if (k1 < 0)
+         k1 += nz;
+       if (k2 < 0)
+         k2 += nz;
+       phere = ijktop(0, 0, k1);
+       pto = ijktop(0, 0, k2);
+ 
+       /* packing scheme */
+       if ((phere == taskid) && (pto == proc_to)) {
+         t_iq_to_i1[index1] = ijktoindex(0, 0, k1);
+         ++index1;
+       }
+       /* unpacking scheme */
+       if ((pto == taskid) && (phere == proc_from)) {
+         t_iq_to_i2[index2] = ijktoindex(0, 0, k2);
+         ++index2;
+       }
+     }
+ 
+     /* k=(0,k2,k3) */
+     for (auto k = (-nzh + 1); k < nzh; ++k)
+       for (auto j = 1; j < nyh; ++j) {
+         auto j1 = j;
+         auto k1 = k;
+         if (j1 < 0)
+           j1 += ny;
+         if (k1 < 0)
+           k1 += nz;
+         auto j2 = -j;
+         auto k2 = -k;
+         if (j2 < 0)
+           j2 += ny;
+         if (k2 < 0)
+           k2 += nz;
+         phere = ijktop(0, j1, k1);
+         pto = ijktop(0, j2, k2);
+ 
+         /* packing scheme */
+         if ((phere == taskid) && (pto == proc_to)) {
+           t_iq_to_i1[index1] = ijktoindex(0, j1, k1);
+           ++index1;
+         }
+         /* unpacking scheme */
+         if ((pto == taskid) && (phere == proc_from)) {
+           t_iq_to_i2[index2] = ijktoindex(0, j2, k2);
+           ++index2;
+         }
+       }
+   }
+   t_i1_start[np] = index1;
+   t_i2_start[np] = index2;
+ 
+   /* setup ffts */
+   tmpx = new (std::nothrow) double[2*(2*nx+15)]();
+   tmpy = new (std::nothrow) double[2*(2*ny+15)]();
+   tmpz = new (std::nothrow) double[2*(2*nz+15)]();
+   drffti_(&nx,tmpx);
+   dcffti_(&ny,tmpy);
+   dcffti_(&nz,tmpz);
 
-  if (maptype == 1) {
-    iq_to_i1 = new (std::nothrow) int *[1];
-    iq_to_i1[0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-    iq_to_i2 = new (std::nothrow) int *[1];
-    iq_to_i2[0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-    i1_start = new (std::nothrow) int *[1];
-    i1_start[0] = new (std::nothrow) int[nz + 1]();
-    i2_start = new (std::nothrow) int *[1];
-    i2_start[0] = new (std::nothrow) int[nz + 1]();
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[0][it] = index1;
-      i2_start[0][it] = index2;
-
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j) {
-          /* packing scheme */
-          phere = ijktop(0, 0, k);
-          pto = ijktop(0, 0, j);
-          if ((phere == taskid) && (pto == proc_to))
-            for (auto i = 0; i < (nx / 2 + 1); ++i) {
-              iq_to_i1[0][ijktoindex(i, j, k)] = index1;
-              ++index1;
-            }
-
-          /* unpacking scheme */
-          phere = ijktop(0, 0, j);
-          pfrom = ijktop(0, 0, k);
-          if ((phere == taskid) && (pfrom == proc_from))
-            for (auto i = 0; i < (nx / 2 + 1); ++i) {
-              iq_to_i2[0][ijktoindex(i, k, j)] = index2;
-              ++index2;
-            }
-        }
-    }
-    i1_start[0][np] = index1;
-    i2_start[0][np] = index2;
-
-    /* allocate ptranspose indexes */
-    for (auto nb = 0; nb < 2; ++nb) {
-      p_iq_to_i1[nb] = new (std::nothrow) int *[1]();
-      p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_iq_to_i2[nb] = new (std::nothrow) int *[1]();
-      p_iq_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_iz_to_i2[nb] = new (std::nothrow) int *[1]();
-      p_iz_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_i1_start[nb] = new (std::nothrow) int *[1]();
-      p_i1_start[nb][0] = new (std::nothrow) int[nz + 1]();
-      p_i2_start[nb] = new (std::nothrow) int *[1]();
-      p_i2_start[nb][0] = new (std::nothrow) int[nz + 1]();
-
-      p_jq_to_i1[nb] = new (std::nothrow) int *[1]();
-      p_jq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_jq_to_i2[nb] = new (std::nothrow) int *[1]();
-      p_jq_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_jz_to_i2[nb] = new (std::nothrow) int *[1]();
-      p_jz_to_i2[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * ny * nq]();
-      p_j1_start[nb] = new (std::nothrow) int *[1]();
-      p_j1_start[nb][0] = new (std::nothrow) int[nz + 1]();
-      p_j2_start[nb] = new (std::nothrow) int *[1]();
-      p_j2_start[nb][0] = new (std::nothrow) int[nz + 1]();
-    }
-
-  } else {
-    iq_to_i1 = new (std::nothrow) int *[6]();
-    iq_to_i1[0] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-    iq_to_i1[1] = new (std::nothrow) int[ny * nq2]();
-    iq_to_i1[2] = new (std::nothrow) int[nz * nq3]();
-
-    iq_to_i1[3] = new (std::nothrow) int[ny * nq2]();
-    iq_to_i1[4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-    iq_to_i1[5] = new (std::nothrow) int[nz * nq3]();
-
-    iq_to_i2 = new (std::nothrow) int *[6]();
-    iq_to_i2[0] = new (std::nothrow) int[ny * nq2]();
-    iq_to_i2[1] = new (std::nothrow) int[nz * nq3]();
-    iq_to_i2[2] = new (std::nothrow) int[ny * nq2]();
-
-    iq_to_i2[3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-    iq_to_i2[4] = new (std::nothrow) int[nz * nq3]();
-    iq_to_i2[5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-
-    i1_start = new (std::nothrow) int *[6]();
-    for (auto i = 0; i < 6; ++i)
-      i1_start[i] = new (std::nothrow) int[np + 1]();
-
-    i2_start = new (std::nothrow) int *[6]();
-    for (auto i = 0; i < 6; ++i)
-      i2_start[i] = new (std::nothrow) int[np + 1]();
-
-    /***********************************************************************/
-    /* map1to2 mapping - done - tranpose operation #0  (j,k,i) <-- (i,j,k) */
-    /***********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[0][it] = index1;
-      i2_start[0][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop2(i, j, k);
-            pto = ijktop1(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[0][ijktoindex2t(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[0][ijktoindex1(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[0][np] = index1;
-    i2_start[0][np] = index2;
-
-    /***********************************************************************/
-    /* map2to3 mapping - done - tranpose operation #1 (k,i,j) <-- (j,k,i)  */
-    /***********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[1][it] = index1;
-      i2_start[1][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop1(i, j, k);
-            pto = ijktop(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[1][ijktoindex1(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[1][ijktoindex(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[1][np] = index1;
-    i2_start[1][np] = index2;
-
-    /***********************************************************************/
-    /* map3to2 mapping - done - tranpose operation #2  (j,k,i) <-- (k,i,j) */
-    /***********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[2][it] = index1;
-      i2_start[2][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop(i, j, k);
-            pto = ijktop1(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[2][ijktoindex(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[2][ijktoindex1(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[2][np] = index1;
-    i2_start[2][np] = index2;
-
-    /***********************************************************************/
-    /* map2to1 mapping - done - tranpose operation #3  (i,j,k) <-- (j,k,i) */
-    /***********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[3][it] = index1;
-      i2_start[3][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop1(i, j, k);
-            pto = ijktop2(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[3][ijktoindex1(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[3][ijktoindex2t(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[3][np] = index1;
-    i2_start[3][np] = index2;
-
-    /**********************************************************************/
-    /* map1to3 mapping - done - tranpose operation #4 (k,i,j) <-- (i,j,k) */
-    /**********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[4][it] = index1;
-      i2_start[4][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop2(i, j, k);
-            pto = ijktop(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[4][ijktoindex2t(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[4][ijktoindex(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[4][np] = index1;
-    i2_start[4][np] = index2;
-
-    /**********************************************************************/
-    /* map3to1 mapping - done - tranpose operation #5 (i,j,k) <-- (k,i,j) */
-    /**********************************************************************/
-    index1 = 0;
-    index2 = 0;
-    for (auto it = 0; it < np; ++it) {
-      proc_to = (taskid + it) % np;
-      proc_from = (taskid - it + np) % np;
-      i1_start[5][it] = index1;
-      i2_start[5][it] = index2;
-      for (auto k = 0; k < nz; ++k)
-        for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            phere = ijktop(i, j, k);
-            pto = ijktop2(i, j, k);
-
-            /* packing scheme */
-            if ((phere == taskid) && (pto == proc_to)) {
-              iq_to_i1[5][ijktoindex(i, j, k)] = index1;
-              ++index1;
-            }
-            /* unpacking scheme */
-            if ((pto == taskid) && (phere == proc_from)) {
-              iq_to_i2[5][ijktoindex2t(i, j, k)] = index2;
-              ++index2;
-            }
-          }
-    }
-    i1_start[5][np] = index1;
-    i2_start[5][np] = index2;
-
-    /* allocate ptranspose indexes */
-    for (auto nb = 0; nb < 2; ++nb) {
-      p_iq_to_i1[nb] = new (std::nothrow) int *[6];
-      p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-      p_iq_to_i1[nb][1] = new (std::nothrow) int[ny * nq2]();
-      p_iq_to_i1[nb][2] = new (std::nothrow) int[nz * nq3]();
-      p_iq_to_i1[nb][3] = new (std::nothrow) int[ny * nq2]();
-      p_iq_to_i1[nb][4] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-      p_iq_to_i1[nb][5] = new (std::nothrow) int[nz * nq3]();
-
-      p_iq_to_i2[nb] = new (std::nothrow) int *[6];
-      p_iq_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
-      p_iq_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
-      p_iq_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
-      p_iq_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-      p_iq_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
-      p_iq_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-
-      p_iz_to_i2[nb] = new (std::nothrow) int *[6];
-      p_iz_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
-      p_iz_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
-      p_iz_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
-      p_iz_to_i2[nb][3] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-      p_iz_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
-      p_iz_to_i2[nb][5] = new (std::nothrow) int[(nx / 2 + 1) * nq1]();
-
-      p_i1_start[nb] = new (std::nothrow) int *[6];
-      for (auto i = 0; i < 6; ++i)
-        p_i1_start[nb][i] = new (std::nothrow) int[np + 1]();
-
-      p_i2_start[nb] = new (std::nothrow) int *[6];
-      for (auto i = 0; i < 6; ++i)
-        p_i2_start[nb][i] = new (std::nothrow) int[np + 1]();
-    }
-  }
-
-  /* setup timereverse indexes */
-  zplane_size = timereverse_size() + 1;
-  t_iq_to_i1 = new (std::nothrow) int[zplane_size]();
-  t_iq_to_i2 = new (std::nothrow) int[zplane_size]();
-  t_i1_start = new (std::nothrow) int[np + 1]();
-  t_i2_start = new (std::nothrow) int[np + 1]();
-  nyh = ny / 2;
-  nzh = nz / 2;
-  index1 = 0;
-  index2 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    t_i1_start[it] = index1;
-    t_i2_start[it] = index2;
-
-    /* k=(0,0,k3) */
-    for (auto k = 1; k < nzh; ++k) {
-      auto k1 = k;
-      auto k2 = -k;
-      if (k1 < 0)
-        k1 += nz;
-      if (k2 < 0)
-        k2 += nz;
-      phere = ijktop(0, 0, k1);
-      pto = ijktop(0, 0, k2);
-
-      /* packing scheme */
-      if ((phere == taskid) && (pto == proc_to)) {
-        t_iq_to_i1[index1] = ijktoindex(0, 0, k1);
-        ++index1;
-      }
-      /* unpacking scheme */
-      if ((pto == taskid) && (phere == proc_from)) {
-        t_iq_to_i2[index2] = ijktoindex(0, 0, k2);
-        ++index2;
-      }
-    }
-
-    /* k=(0,k2,k3) */
-    for (auto k = (-nzh + 1); k < nzh; ++k)
-      for (auto j = 1; j < nyh; ++j) {
-        auto j1 = j;
-        auto k1 = k;
-        if (j1 < 0)
-          j1 += ny;
-        if (k1 < 0)
-          k1 += nz;
-        auto j2 = -j;
-        auto k2 = -k;
-        if (j2 < 0)
-          j2 += ny;
-        if (k2 < 0)
-          k2 += nz;
-        phere = ijktop(0, j1, k1);
-        pto = ijktop(0, j2, k2);
-
-        /* packing scheme */
-        if ((phere == taskid) && (pto == proc_to)) {
-          t_iq_to_i1[index1] = ijktoindex(0, j1, k1);
-          ++index1;
-        }
-        /* unpacking scheme */
-        if ((pto == taskid) && (phere == proc_from)) {
-          t_iq_to_i2[index2] = ijktoindex(0, j2, k2);
-          ++index2;
-        }
-      }
-  }
-  t_i1_start[np] = index1;
-  t_i2_start[np] = index2;
-
-  /* setup ffts */
-  tmpx = new (std::nothrow) double[2 * (2 * nx + 15)]();
-  tmpy = new (std::nothrow) double[2 * (2 * ny + 15)]();
-  tmpz = new (std::nothrow) double[2 * (2 * nz + 15)]();
-  drffti_(&nx, tmpx);
-  dcffti_(&ny, tmpy);
-  dcffti_(&nz, tmpz);
-
-#if defined (NWPW_SYCL) || defined (NWPW_CUDA) || defined(NWPW_HIP)
-  gdevice_batch_fft_init(nx, ny, nz, nq1, nq2, nq3);
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+   if (maptype==1) 
+      fft_tag = mygdevice.batch_fft_init(nx,ny,nz,ny*nq,(nx/2+1)*nq,(nx/2+1)*nq);
+   else
+     fft_tag = mygdevice.batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 }
 
@@ -446,85 +451,86 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny,
  *                              *
  ********************************/
 d3db::~d3db() {
-  int i, nb;
+   int i, nb;
 
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-  gdevice_batch_fft_end();
+#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+   if (mygdevice.has_gpu())
+      mygdevice.batch_fft_end(fft_tag);
 #endif
 
-  if (maptype == 1) {
-    delete[] iq_to_i1[0];
-    delete[] iq_to_i1;
-
-    delete[] iq_to_i2[0];
-    delete[] iq_to_i2;
-
-    delete[] i1_start[0];
-    delete[] i1_start;
-    delete[] i2_start[0];
-    delete[] i2_start;
-    for (nb = 0; nb < 2; ++nb) {
-      delete[] p_iq_to_i1[nb][0];
-      delete[] p_iq_to_i1[nb];
-      delete[] p_iq_to_i2[nb][0];
-      delete[] p_iq_to_i2[nb];
-      delete[] p_iz_to_i2[nb][0];
-      delete[] p_iz_to_i2[nb];
-      delete[] p_i1_start[nb][0];
-      delete[] p_i1_start[nb];
-      delete[] p_i2_start[nb][0];
-      delete[] p_i2_start[nb];
-      delete[] p_jq_to_i1[nb][0];
-      delete[] p_jq_to_i1[nb];
-      delete[] p_jq_to_i2[nb][0];
-      delete[] p_jq_to_i2[nb];
-      delete[] p_jz_to_i2[nb][0];
-      delete[] p_jz_to_i2[nb];
-      delete[] p_j1_start[nb][0];
-      delete[] p_j1_start[nb];
-      delete[] p_j2_start[nb][0];
-      delete[] p_j2_start[nb];
-    }
-  } else {
-    this->r_transpose_ijk_end();
-
-    for (i = 0; i < 6; ++i) {
-      delete[] iq_to_i1[i];
-      delete[] iq_to_i2[i];
-      delete[] i1_start[i];
-      delete[] i2_start[i];
-    }
-    delete[] iq_to_i1;
-    delete[] iq_to_i2;
-    delete[] i1_start;
-    delete[] i2_start;
-
-    for (nb = 0; nb < 2; ++nb) {
-      for (i = 0; i < 6; ++i) {
-        delete[] p_iq_to_i1[nb][i];
-        delete[] p_iq_to_i2[nb][i];
-        delete[] p_iz_to_i2[nb][i];
-        delete[] p_i1_start[nb][i];
-        delete[] p_i2_start[nb][i];
+   if (maptype == 1) {
+      delete[] iq_to_i1[0];
+      delete[] iq_to_i1;
+     
+      delete[] iq_to_i2[0];
+      delete[] iq_to_i2;
+     
+      delete[] i1_start[0];
+      delete[] i1_start;
+      delete[] i2_start[0];
+      delete[] i2_start;
+      for (nb = 0; nb < 2; ++nb) {
+         delete[] p_iq_to_i1[nb][0];
+         delete[] p_iq_to_i1[nb];
+         delete[] p_iq_to_i2[nb][0];
+         delete[] p_iq_to_i2[nb];
+         delete[] p_iz_to_i2[nb][0];
+         delete[] p_iz_to_i2[nb];
+         delete[] p_i1_start[nb][0];
+         delete[] p_i1_start[nb];
+         delete[] p_i2_start[nb][0];
+         delete[] p_i2_start[nb];
+         delete[] p_jq_to_i1[nb][0];
+         delete[] p_jq_to_i1[nb];
+         delete[] p_jq_to_i2[nb][0];
+         delete[] p_jq_to_i2[nb];
+         delete[] p_jz_to_i2[nb][0];
+         delete[] p_jz_to_i2[nb];
+         delete[] p_j1_start[nb][0];
+         delete[] p_j1_start[nb];
+         delete[] p_j2_start[nb][0];
+         delete[] p_j2_start[nb];
       }
-      delete[] p_iq_to_i1[nb];
-      delete[] p_iq_to_i2[nb];
-      delete[] p_iz_to_i2[nb];
-      delete[] p_i1_start[nb];
-      delete[] p_i2_start[nb];
-    }
-  }
-
-  delete[] t_iq_to_i1;
-  delete[] t_iq_to_i2;
-  delete[] t_i1_start;
-  delete[] t_i2_start;
-
-  delete[] tmpx;
-  delete[] tmpy;
-  delete[] tmpz;
-
-  //#endif
+   } else {
+      this->r_transpose_ijk_end();
+     
+      for (i = 0; i < 6; ++i) {
+         delete[] iq_to_i1[i];
+         delete[] iq_to_i2[i];
+         delete[] i1_start[i];
+         delete[] i2_start[i];
+      }
+      delete[] iq_to_i1;
+      delete[] iq_to_i2;
+      delete[] i1_start;
+      delete[] i2_start;
+     
+      for (nb = 0; nb < 2; ++nb) {
+         for (i = 0; i < 6; ++i) {
+            delete[] p_iq_to_i1[nb][i];
+            delete[] p_iq_to_i2[nb][i];
+            delete[] p_iz_to_i2[nb][i];
+            delete[] p_i1_start[nb][i];
+            delete[] p_i2_start[nb][i];
+         }
+         delete[] p_iq_to_i1[nb];
+         delete[] p_iq_to_i2[nb];
+         delete[] p_iz_to_i2[nb];
+         delete[] p_i1_start[nb];
+         delete[] p_i2_start[nb];
+      }
+   }
+ 
+   delete[] t_iq_to_i1;
+   delete[] t_iq_to_i2;
+   delete[] t_i1_start;
+   delete[] t_i2_start;
+ 
+   delete[] tmpx;
+   delete[] tmpy;
+   delete[] tmpz;
+ 
+   //#endif
 }
 
 /******************************************
@@ -2290,7 +2296,7 @@ void d3db::cr_fft3d(double *a) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(false, nz, nn, n2ft3d, tmp2, tmpz);
+    mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nn, n2ft3d, tmp2, tmpz);
 
     indx0 = 0;
     nn = 0;
@@ -2310,37 +2316,6 @@ void d3db::cr_fft3d(double *a) {
       indx0 += nxhz2;
     }
 
-    /*
-    indx0=0;
-    for (q=0; q<nq; ++q)
-    {
-       for (i=0; i<nxh; ++i)
-       {
-          kk   = 0;
-          indx = 2*i+indx0;
-          for (k=0; k<nz; ++k)
-          {
-             tmp2[kk]   = a[indx];
-             tmp2[kk+1] = a[indx+1];
-             kk   += 2;
-             indx += nxh2;
-          }
-
-          dcfftb_(&nz,tmp2,tmpz);
-
-          kk   = 0;
-          indx = 2*i+indx0;
-          for (k=0; k<nz; ++k)
-          {
-             a[indx]   = tmp2[kk];
-             a[indx+1] = tmp2[kk+1];
-             kk   += 2;
-             indx += nxh2;
-          }
-       }
-       indx0 += nxhz2;
-    }
-    */
 
     /***********************************************
      ***         Do a transpose of A             ***
@@ -2370,7 +2345,7 @@ void d3db::cr_fft3d(double *a) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(false, ny, nn, n2ft3d, tmp2, tmpy);
+    mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nn, n2ft3d, tmp2, tmpy);
 
     indx0 = 0;
     nn = 0;
@@ -2389,55 +2364,8 @@ void d3db::cr_fft3d(double *a) {
       }
       indx0 += nxhy2;
     }
-
-    /*
-    indx0=0;
-    for (q=0; q<nq; ++q)
-    {
-       for (i=0; i<nxh; ++i)
-       {
-          jj   = 0;
-          indx = 2*i+indx0;
-          for (j=0; j<ny; ++j)
-          {
-             tmp2[jj]   = a[indx];
-             tmp2[jj+1] = a[indx+1];
-             jj   += 2;
-             indx += nxh2;
-          }
-
-          dcfftb_(&ny,tmp2,tmpy);
-
-          jj   = 0;
-          indx = 2*i+indx0;
-          for (j=0; j<ny; ++j)
-          {
-             a[indx]   = tmp2[jj];
-             a[indx+1] = tmp2[jj+1];
-             jj   += 2;
-             indx += nxh2;
-          }
-       }
-       indx0 += nxhy2;
-    }
-    */
-
-    /************************************************
-     ***     do fft along kx dimension            ***
-     ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
-     ************************************************/
-    /*
-    cshift1_fftb(nx,ny,nq,1,a);
-    indx = 0;
-    for (q=0; q<nq; ++q)
-    for (j=0; j<ny; ++j)
-    {
-       drfftb_(&nx,a+indx,tmpx);
-       indx += nxh2;
-    }
-    zeroend_fftb(nx,ny,nq,1,a);
-    */
-    gdevice_batch_cfftx_tmpx(false, nx, ny * nq, n2ft3d, a, tmpx);
+    
+    mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, ny * nq, n2ft3d, a, tmpx);
 
   }
   /*************************
@@ -2449,58 +2377,24 @@ void d3db::cr_fft3d(double *a) {
      ***     do fft along kz dimension            ***
      ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
      ************************************************/
-    gdevice_batch_cfftz_tmpz(false, nz, nq3, n2ft3d, a, tmpz);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(false,nz,nq3,n2ft3d,a);
-#else
-    indx = 0;
-    for (q=0; q<nq3; ++q)
-    {
-       dcfftb_(&nz,a+indx,tmpz);
-       indx += 2*nz;
-    }
-#endif
-    */
+    mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, n2ft3d, a, tmpz);
+    
     c_transpose_ijk(2, a, tmp2, tmp3);
 
     /************************************************
      ***     do fft along ky dimension            ***
      ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
      ************************************************/
-    gdevice_batch_cffty_tmpy(false, ny, nq2, n2ft3d, a, tmpy);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(false,ny,nq2,n2ft3d,a);
-#else
-    indx = 0;
-    for (q=0; q<nq2; ++q)
-    {
-       dcfftb_(&ny,a+indx,tmpy);
-       indx += (2*ny);
-    }
-#endif
-    */
+    mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, n2ft3d, a, tmpy);
+   
     c_transpose_ijk(3, a, tmp2, tmp3);
 
     /************************************************
      ***     do fft along kx dimension            ***
      ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
      ************************************************/
-    gdevice_batch_cfftx_tmpx(false, nx, nq1, n2ft3d, a, tmpx);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftx(false,nx,nq1,n2ft3d,a);
-#else
-    cshift1_fftb(nx,nq1,1,1,a);
-    indx = 0;
-    for (q=0; q<nq1; ++q)
-    {
-       drfftb_(&nx,&a[indx],tmpx);
-       indx += nxh2;
-    }
-#endif
-    */
+    mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, n2ft3d, a, tmpx);
+   
     zeroend_fftb(nx, nq1, 1, 1, a);
     if (n2ft3d_map < n2ft3d)
       std::memset(a + n2ft3d_map, 0, (n2ft3d - n2ft3d_map) * sizeof(double));
@@ -2539,17 +2433,7 @@ void d3db::rc_fft3d(double *a) {
      ***     do fft along nx dimension        ***
      ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
      ********************************************/
-    /*
-    indx = 0;
-    for (q=0; q<nq; ++q)
-    for (j=0; j<ny; ++j)
-    {
-       drfftf_(&nx,&a[indx],tmpx);
-       indx += nxh2;
-    }
-    cshift_fftf(nx,ny,nq,1,a);
-    */
-    gdevice_batch_cfftx_tmpx(true, nx, ny * nq, n2ft3d, a, tmpx);
+    mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, ny*nq, n2ft3d, a, tmpx);
 
     /********************************************
      ***     do fft along ny dimension        ***
@@ -2573,7 +2457,7 @@ void d3db::rc_fft3d(double *a) {
       indx0 += nxhy2;
     }
 
-    gdevice_batch_cffty_tmpy(true, ny, nn, n2ft3d, tmp2, tmpy);
+    mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nn, n2ft3d, tmp2, tmpy);
 
     indx0 = 0;
     nn = 0;
@@ -2593,37 +2477,6 @@ void d3db::rc_fft3d(double *a) {
       indx0 += nxhy2;
     }
 
-    /*
-    indx0=0;
-    for (q=0; q<nq; ++q)
-    {
-       for (i=0; i<nxh; ++i)
-       {
-          jj   = 0;
-          indx = 2*i+indx0;
-          for (j=0; j<ny; ++j)
-          {
-             tmp2[jj]   = a[indx];
-             tmp2[jj+1] = a[indx+1];
-             jj   += 2;
-             indx += nxh2;
-          }
-
-          dcfftf_(&ny,tmp2,tmpy);
-
-          jj   = 0;
-          indx = 2*i+indx0;
-          for (j=0; j<ny; ++j)
-          {
-             a[indx]   = tmp2[jj];
-             a[indx+1] = tmp2[jj+1];
-             jj   += 2;
-             indx += nxh2;
-          }
-       }
-       indx0 += nxhy2;
-    }
-    */
 
     /********************************************
      ***         Do a transpose of A          ***
@@ -2653,7 +2506,7 @@ void d3db::rc_fft3d(double *a) {
       indx0 += nxhz2;
     }
 
-    gdevice_batch_cfftz_tmpz(true, nz, nn, n2ft3d, tmp2, tmpz);
+    mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nn, n2ft3d, tmp2, tmpz);
 
     indx0 = 0;
     nn = 0;
@@ -2672,38 +2525,7 @@ void d3db::rc_fft3d(double *a) {
       }
       indx0 += nxhz2;
     }
-
-    /*
-    indx0=0;
-    for (q=0; q<nq; ++q)
-    {
-       for (i=0; i<nxh; ++i)
-       {
-          kk   = 0;
-          indx = 2*i+indx0;
-          for (k=0; k<nz; ++k)
-          {
-             tmp2[kk]   = a[indx];
-             tmp2[kk+1] = a[indx+1];
-             kk   += 2;
-             indx += nxh2;
-          }
-
-          dcfftf_(&nz,tmp2,tmpz);
-
-          kk   = 0;
-          indx = 2*i+indx0;
-          for (k=0; k<nz; ++k)
-          {
-             a[indx]   = tmp2[kk];
-             a[indx+1] = tmp2[kk+1];
-             kk   += 2;
-             indx += nxh2;
-          }
-       }
-       indx0 += nxhz2;
-    }
-    */
+    
   }
   /*************************
    **** hilbert mapping ****
@@ -2713,58 +2535,23 @@ void d3db::rc_fft3d(double *a) {
      ***     do fft along nx dimension        ***
      ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
      ********************************************/
-    gdevice_batch_cfftx_tmpx(true, nx, nq1, n2ft3d, a, tmpx);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftx(true,nx,nq1,n2ft3d,a);
-#else
-    indx = 0;
-    for (q=0; q<nq1; ++q)
-    {
-       drfftf_(&nx,&a[indx],tmpx);
-       indx += nxh2;
-    }
-    cshift_fftf(nx,nq1,1,1,a);
-#endif
-    */
+    mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, n2ft3d, a, tmpx);
+    
     c_transpose_ijk(0, a, tmp2, tmp3);
 
     /********************************************
      ***     do fft along ny dimension        ***
      ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
      ********************************************/
-    gdevice_batch_cffty_tmpy(true, ny, nq2, n2ft3d, a, tmpy);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cffty(true,ny,nq2,n2ft3d,a);
-#else
-    indx = 0;
-    for (q=0; q<nq2; ++q)
-    {
-       dcfftf_(&ny,&a[indx],tmpy);
-       indx += (2*ny);
-    }
-#endif
-    */
+    mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, n2ft3d, a, tmpy);
+   
     c_transpose_ijk(1, a, tmp2, tmp3);
 
     /********************************************
      ***     do fft along nz dimension        ***
      ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
      ********************************************/
-    gdevice_batch_cfftz_tmpz(true, nz, nq3, n2ft3d, a, tmpz);
-    /*
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
-    gdevice_batch_cfftz(true,nz,nq3,n2ft3d,a);
-#else
-    indx = 0;
-    for (q=0; q<nq3; ++q)
-    {
-       dcfftf_(&nz,&a[indx],tmpz);
-       indx += 2*nz;
-    }
-#endif
-*/
+    mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nq3, n2ft3d, a, tmpz);
   }
 
   delete[] tmp3;
@@ -3765,7 +3552,7 @@ void d3db::c_addrandom(double *a) {
 void d3db::r_setrandom(double *a) {
   double fac = 1.0 / (1.0 * nfft3d);
   for (auto i = 0; i < n2ft3d; ++i)
-    a[i] = fac * (0.50 - util_random(0));
+     a[i] = fac*(0.50 - util_random(0));
 }
 
 /********************************
@@ -3776,21 +3563,23 @@ void d3db::r_setrandom(double *a) {
 // expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx+2,ny,nz)
 void d3db::hr2r_expand(const double *ah, double *a) {
   std::memset(a, 0, n2ft3d * sizeof(double));
-  if (maptype == 1) {
-    int nxh = nx / 2;
-    int nqh = nq / 2;
-    int nyh = ny / 2;
-    for (auto j = 0; j < nyh; ++j)
-      for (auto q = 0; q < nqh; ++q)
-        for (auto i = 0; i < nxh; ++i)
-          a[i + j * (nx + 2) + q * (nx + 2) * ny] =
-              ah[i + j * (nxh + 2) + q * (nxh + 2) * nyh];
-  } else {
-    int nxh = nx / 2;
-    int nq1h = nq1 / 4;
-    for (auto q = 0; q < nq1h; ++q)
-      for (auto i = 0; i < nxh; ++i)
-        a[i + q * (nx + 2)] = ah[i + q * (nxh + 2)];
+  if (maptype == 1) 
+  {
+     int nxh = nx/2;
+     int nqh = nq/2;
+     int nyh = ny/2;
+     for (auto j=0; j<nyh; ++j)
+        for (auto q=0; q<nqh; ++q)
+           for (auto i=0; i<nxh; ++i)
+              a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
+  } 
+  else 
+  {
+     int nxh = nx/2;
+     int nq1h = nq1/4;
+     for (auto q=0; q<nq1h; ++q)
+        for (auto i=0; i<nxh; ++i)
+           a[i + q*(nx+2)] = ah[i + q*(nxh+2)];
   }
 }
 
@@ -3802,21 +3591,23 @@ void d3db::hr2r_expand(const double *ah, double *a) {
 // contracts to a grid that is (nx,ny,nz) --> ((nx+2)/2,ny/2,nz/2)
 void d3db::r2hr_contract(const double *a, double *ah) {
   std::memset(ah, 0, n2ft3d / 8 * sizeof(double));
-  if (maptype == 1) {
-    int nxh = nx / 2;
-    int nyh = ny / 2;
-    int nqh = nq / 2;
-    for (auto q = 0; q < nqh; ++q)
-      for (auto j = 0; j < nyh; ++j)
-        for (auto i = 0; i < nxh; ++i)
-          ah[i + j * (nxh + 2) + q * (nxh + 2) * nyh] =
-              a[i + j * (nx + 2) + q * (nx + 2) * ny];
-  } else {
-    int nxh = nx / 2;
-    int nq1h = nq1 / 4;
-    for (auto q = 0; q < nq1h; ++q)
-      for (auto i = 0; i < nxh; ++i)
-        ah[i + q * (nxh + 2)] = a[i + q * (nx + 2)];
+  if (maptype == 1) 
+  {
+     int nxh = nx/2;
+     int nyh = ny/2;
+     int nqh = nq/2;
+     for (auto q=0; q<nqh; ++q)
+        for (auto j=0; j<nyh; ++j)
+           for (auto i=0; i<nxh; ++i)
+              ah[i + j*(nxh+2) + q*(nxh+2)*nyh] = a[i + j*(nx+2) + q*(nx+2)*ny];
+  } 
+  else 
+  {
+     int nxh = nx/2;
+     int nq1h = nq1/4;
+     for (auto q=0; q<nq1h; ++q)
+        for (auto i=0; i<nxh; ++i)
+           ah[i + q*(nxh+2)] = a[i + q*(nx+2)];
   }
 }
 

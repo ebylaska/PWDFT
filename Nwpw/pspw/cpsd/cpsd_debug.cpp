@@ -25,7 +25,7 @@ using namespace std;
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"

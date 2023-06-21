@@ -26,7 +26,7 @@
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"
@@ -127,8 +127,8 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
   psi_r = mygrid.h_allocate();
   dn = mygrid.r_nalloc(ispin);
   rho = mygrid.r_alloc();
-  gdevice_psi_alloc(mygrid.npack(1), mygrid.neq[0] + mygrid.neq[1],
-                    control.tile_factor());
+  mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],
+                                   control.tile_factor());
 
   bool newpsi = psi_read(&mygrid, control.input_movecs_filename(),
                          control.input_movecs_initialize(), psi1, coutput);
@@ -532,7 +532,7 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
   mygrid.h_deallocate(psi_r);
   mygrid.r_dealloc(dn);
   mygrid.r_dealloc(rho);
-  gdevice_psi_dealloc();
+  mygrid.d3db::mygdevice.psi_dealloc();
 
   MPI_Barrier(comm_world0);
 

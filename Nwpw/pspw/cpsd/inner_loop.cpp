@@ -34,7 +34,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    int shift1, shift2, indx1, indx2;
    int one = 1;
    double scal1, scal2, dv, dc;
-   double eorbit, eion, exc, ehartr, pxc;
+   double eorbit, eion, econstraint, exc, ehartr, pxc;
    double eke, elocal, enlocal, dt, dte, Eold;
    double *vl,*vlr_l,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vcall,*vfield,*vpsi,*sumi;
    double *vdielec;
@@ -101,7 +101,6 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
-      // mygrid->gh_fftb(psi1,psi_r);
      
       if (move)
       {
@@ -112,6 +111,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       }
      
       /* convert psi(G) to psi(r) - Expensive */
+      mygrid->gh_fftb(psi1,psi_r);
+      /*
       indx1 = 0;
       indx2 = 0;
       for (i = 0; i < neall; ++i) 
@@ -122,6 +123,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
          indx1 += shift1;
          indx2 += shift2;
       }
+      */
      
       /* generate dn */
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
@@ -223,6 +225,9 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
             mypsp->myefield->efield_ion_fion(fion);
         
          /* steepest descent step */
+         myion->add_contraint_force(fion);
+
+         /* steepest descent step */
          myion->optimize_step(fion);
       }
      
@@ -291,38 +296,52 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    E[7] = enlocal;
    E[8] = 2 * ehartr;
    E[9] = pxc;
+
  
-    /* get APC energies */
-    if (mypsp->myapc->v_apc_on) 
-    {
-       E[51] = mypsp->myapc->Eapc;
-       E[52] = mypsp->myapc->Papc;
-       E[0] = E[0] + E[51] - E[52];
-    }
+   /* get APC energies */
+   if (mypsp->myapc->v_apc_on) 
+   {
+      E[51] = mypsp->myapc->Eapc;
+      E[52] = mypsp->myapc->Papc;
+      E[0] = E[0] + E[51] - E[52];
+   }
  
-    /* get dielectric energies */
-    if (mycoulomb12->dielectric_on())
-    {
-       E[61] = mycoulomb12->edielec;
-       E[62] = mycoulomb12->pdielec;
-       E[0] = E[0] + E[61] - E[62];
-    }
+   /* get dielectric energies */
+   if (mycoulomb12->dielectric_on())
+   {
+      E[61] = mycoulomb12->edielec;
+      E[62] = mycoulomb12->pdielec;
+      E[0] = E[0] + E[61] - E[62];
+   }
  
-    /* get Efield energies */
-    if (mypsp->myefield->efield_on) {
-       if (mypsp->myefield->efield_type == 0) 
-       {
-          E[48] = 0.0;
-          E[49] = 0.0;
-          E[0] = E[0] + E[48] - E[49];
-       } 
-       else
-       {
-          E[48] = dv * mygrid->rr_dot(rho, mypsp->myefield->v_field);
-          E[49] = mypsp->myefield->efield_ion_energy();
-          E[0] = E[0] + E[49];
-       }
-    }
+   /* get Efield energies */
+   if (mypsp->myefield->efield_on) {
+      if (mypsp->myefield->efield_type == 0) 
+      {
+         E[48] = 0.0;
+         E[49] = 0.0;
+         E[0] = E[0] + E[48] - E[49];
+      } 
+      else
+      {
+         E[48] = dv * mygrid->rr_dot(rho, mypsp->myefield->v_field);
+         E[49] = mypsp->myefield->efield_ion_energy();
+         E[0] = E[0] + E[49];
+      }
+   }
+
+   /* get contraints energies */
+   if (myion->has_ion_bond_constraints()) 
+   {
+      E[70] = myion->energy_ion_bond_constraints();
+      E[0] = E[0] + E[70];
+   }
+   if (myion->has_ion_bondings_constraints()) 
+   {
+      E[71] = myion->energy_ion_bondings_constraints();
+      E[0] = E[0] + E[71];
+   }
+
  
    /* set convergence variables */
    *deltae = (E[0] - Eold) / (dt * control.loop(0));

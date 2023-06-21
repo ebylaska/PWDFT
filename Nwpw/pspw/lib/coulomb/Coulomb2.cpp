@@ -47,8 +47,7 @@ Coulomb2_Operator::Coulomb2_Operator(Pneb *mygrid, Control2 &control) {
   int dnz = 2 * mypneb->nz;
   int dmaptype = -mypneb->maptype;
 
-  myd3db2 =
-      new (std::nothrow) d3db(mypneb->d3db::parall, dmaptype, dnx, dny, dnz);
+  myd3db2 = new (std::nothrow) d3db(mypneb->d3db::parall, dmaptype, dnx, dny, dnz);
 
   dnfft3d = myd3db2->nfft3d;
   dn2ft3d = myd3db2->n2ft3d;

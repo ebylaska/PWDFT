@@ -53,6 +53,22 @@ static void get_cube(double *unita, double *unitg, double *omega) {
    *omega = fabs(volume);
 }
 
+static void get_ub(double *unita, double *ub)
+{
+   ub[0] = unita[4]*unita[8] - unita[5]*unita[7];
+   ub[1] = unita[5]*unita[6] - unita[3]*unita[8];
+   ub[2] = unita[3]*unita[7] - unita[4]*unita[6];
+   ub[3] = unita[7]*unita[2] - unita[8]*unita[1];
+   ub[4] = unita[8]*unita[0] - unita[6]*unita[2];
+   ub[5] = unita[6]*unita[1] - unita[7]*unita[0];
+   ub[6] = unita[1]*unita[5] - unita[2]*unita[4];
+   ub[7] = unita[2]*unita[3] - unita[0]*unita[5];
+   ub[8] = unita[0]*unita[4] - unita[1]*unita[3];
+   double volume = unita[0]*ub[0] + unita[1]*ub[1] + unita[2]*ub[2];
+   for (auto i=0; i<9; ++i) 
+      ub[i] /= volume;
+}
+
 
 
 /********************************
@@ -86,6 +102,7 @@ Lattice::Lattice(Control2 &control)
    punita[7] = control.unita(1,2);
    punita[8] = control.unita(2,2);
    get_cube(punita,punitg,&pomega);
+   get_ub(punita,pub);
  
    nx = control.ngrid(0);
    ny = control.ngrid(1);
@@ -166,6 +183,43 @@ void Lattice::abc_abg(double *a1, double *b1, double *c1,
    *alpha1 = alpha;
    *beta1 = beta;
    *gamma1 = gamma;
+}
+
+/********************************
+ *                              *
+ *         min_diff_xyz         *
+ *                              *
+ ********************************/
+void Lattice::min_diff_xyz(double *x, double *y, double *z)
+{
+   if (!paperiodic)
+   {
+      double c0 = (*x)*ub(0,0) + (*y)*ub(1,0) + (*z)*ub(2,0);
+      double c1 = (*x)*ub(0,1) + (*y)*ub(1,1) + (*z)*ub(2,1);
+      double c2 = (*x)*ub(0,2) + (*y)*ub(1,2) + (*z)*ub(2,2);
+      *x = unita(0,0)*c0 + unita(0,1)*c1 + unita(0,2)*c2;
+      *y = unita(1,0)*c0 + unita(1,1)*c1 + unita(1,2)*c2;
+      *z = unita(2,0)*c0 + unita(2,1)*c1 + unita(2,2)*c2;
+   }
+}
+
+/********************************
+ *                              *
+ *           min_diff           *
+ *                              *
+ ********************************/
+void Lattice::min_diff(double *rxyz)
+{
+   if (!paperiodic)
+   {
+      double c0 = rxyz[0]*ub(0,0) + rxyz[1]*ub(1,0) + rxyz[2]*ub(2,0);
+      double c1 = rxyz[0]*ub(0,1) + rxyz[1]*ub(1,1) + rxyz[2]*ub(2,1);
+      double c2 = rxyz[0]*ub(0,2) + rxyz[1]*ub(1,2) + rxyz[2]*ub(2,2);
+      rxyz[0] = unita(0,0)*c0 + unita(0,1)*c1 + unita(0,2)*c2;
+      rxyz[1] = unita(1,0)*c0 + unita(1,1)*c1 + unita(1,2)*c2;
+      rxyz[2] = unita(2,0)*c0 + unita(2,1)*c1 + unita(2,2)*c2;
+   }
+
 }
 
 } // namespace pwdft

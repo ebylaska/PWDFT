@@ -29,7 +29,7 @@
 //#include	"rtdb.hpp"
 #include "mpi.h"
 
-#include "gdevice.hpp"
+//#include "gdevice.hpp"
 #include "nwpw_timing.hpp"
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"
@@ -138,7 +138,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    Pneb mygrid(&myparallel,&mylattice,control,control.ispin(),control.ne_ptr());
   
    // initialize gdevice memory
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+   mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
   
    // setup structure factor
    Strfac mystrfac(&myion,&mygrid);
@@ -183,18 +183,20 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    {
       coutput << "\n";
       coutput << "     ===================  summary of input  =======================" << std::endl;
-      coutput << "\n input psi filename: " << control.input_movecs_filename() << "\n";
+      coutput << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
       coutput << "\n";
-      coutput << " number of processors used: " << myparallel.np() << "\n";
-      coutput << " processor grid           : " << myparallel.np_i() << " x"
-              << myparallel.np_j() << "\n";
-      if (mygrid.maptype==1) coutput << " parallel mapping         : 1d-slab" << "\n";
-      if (mygrid.maptype==2) coutput << " parallel mapping         : 2d-hilbert" << "\n";
-      if (mygrid.maptype==3) coutput << " parallel mapping         : 2d-hcurve" << "\n";
+      coutput << " number of processors used: " << myparallel.np() << std::endl;
+      coutput << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << std::endl;
+      if (mygrid.maptype==1) coutput << " parallel mapping         : 1d-slab" << std::endl;
+      if (mygrid.maptype==2) coutput << " parallel mapping         : 2d-hilbert" << std::endl;
+      if (mygrid.maptype==3) coutput << " parallel mapping         : 2d-hcurve" << std::endl;
       if (mygrid.isbalanced())
-         coutput << " parallel mapping         : balanced" << "\n";
+         coutput << " parallel mapping         : balanced" << std::endl;
       else
-         coutput << " parallel mapping         : not balanced" << "\n";
+         coutput << " parallel mapping         : not balanced" << std::endl;
+      if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged gpu fft" << std::endl;
+      if (control.tile_factor() > 1)
+         coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
      
       coutput << "\n options:\n";
       // coutput << "   geometry optimize    = ";
@@ -467,7 +469,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    }
   
    // deallocate memory
-   gdevice_psi_dealloc();
+   mygrid.d3db::mygdevice.psi_dealloc();
   
    MPI_Barrier(comm_world0);
 

@@ -748,6 +748,10 @@ static json parse_car_parrinello(json cpmdjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() > 1)
         cpmdjson["ion_motion_filename"] = ss[1];
+    } else if (mystring_contains(line, "cif_filename")) {
+      ss = mystring_split0(line);
+      if (ss.size() > 1)
+        cpmdjson["cif_filename"] = ss[1];
     } else if (mystring_contains(line, "eigmotion_filename")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)
@@ -1374,7 +1378,18 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
        if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
        if (mystring_contains(line, " sphere"))     nwpwjson["generalized_poisson"]["model"] = 3;
+    
+    } else if (mystring_contains(line, "staged_gpu_fft")) {
+       std::string check = mystring_split0(mystring_trim(mystring_split(line, "staged_gpu_fft")[1]))[0];
+       nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "off"))   nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "no"))    nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "false")) nwpwjson["staged_gpu_fft"]["on"] = false;
+       if (mystring_contains(check, "on"))    nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "yes"))   nwpwjson["staged_gpu_fft"]["on"] = true;
+       if (mystring_contains(check, "true"))  nwpwjson["staged_gpu_fft"]["on"] = true;
     }
+
 
     ++cur;
     if (mystring_contains(lines[cur], "end"))
@@ -1391,7 +1406,6 @@ static json parse_nwpw(json nwpwjson, int *curptr,
  *                parse_driver                    *
  *                                                *
  **************************************************/
-
 static json parse_driver(json driverjson, int *curptr,
                          std::vector<std::string> lines) {
   // json driverjson;
@@ -1511,6 +1525,159 @@ static json parse_driver(json driverjson, int *curptr,
 
 /**************************************************
  *                                                *
+ *                parse_constraints               *
+ *                                                *
+ **************************************************/
+ //### Adding reaction ###
+//# reaction_type    = AB + C --> AC + B
+//# reaction_indexes = 1 2 6
+//# reaction_gamma   = -2.400
+//##### current gamma=-2.400 ######
+//constraints
+//   clear
+//   spring bondings 1.000000 -2.400 1.0 1 2 -1.0 1 6
+//   spring bond 1 2 1.000000 1.2 
+//end
+
+static json parse_constraints(json constraintsjson, int *curptr, std::vector<std::string> lines) 
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+ 
+   while (endcount > 0) {
+     line = mystring_lowercase(lines[cur]);
+ 
+     if (mystring_contains(line, "clear")) {
+         constraintsjson.clear();
+         
+     } else if ((mystring_contains(line, "spring")) && 
+                (mystring_contains(line, "bondings"))) {
+        int bcount = 0;
+        if (!constraintsjson["bondings"].is_null())
+           bcount = constraintsjson["bondings"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " bondings")[1]));
+        int    n0       = (ss.size()-2)/3;
+        double Kspring0 = std::stod(ss[0]);
+        double gamma0   = std::stod(ss[1]);
+        std::vector<int> indexes;
+        std::vector<double> coef;
+        for (auto i=0; i<n0; ++i)
+        {
+            coef.push_back(std::stod(ss[3*i+2]));
+            indexes.push_back(std::stoi(ss[3*i+3]));
+            indexes.push_back(std::stoi(ss[3*i+4]));
+        }
+        constraintsjson["bondings"][bcount]["coef"]     = coef;
+        constraintsjson["bondings"][bcount]["indexes"]  = indexes;
+        constraintsjson["bondings"][bcount]["Kspring0"] = Kspring0;
+        constraintsjson["bondings"][bcount]["gamma0"]   = gamma0;
+
+     } else if ((mystring_contains(line, "spring")) &&  
+                (mystring_contains(line, " cbond"))) {   
+        int cbcount = 0;
+        if (!constraintsjson["cbond"].is_null())
+           cbcount = constraintsjson["cbond"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " cbond")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double Rij0 = std::stod(ss[5]);
+        double Rkl0 = std::stod(ss[6]);
+        constraintsjson["cbond"][cbcount]["i0"]       = i0;
+        constraintsjson["cbond"][cbcount]["j0"]       = j0;
+        constraintsjson["cbond"][cbcount]["k0"]       = k0;
+        constraintsjson["cbond"][cbcount]["l0"]       = l0;
+        constraintsjson["cbond"][cbcount]["Kspring0"] = Kspring0;
+        constraintsjson["cbond"][cbcount]["Rij0"]     = Rij0;
+        constraintsjson["cbond"][cbcount]["Rkl0"]     = Rkl0;
+     
+     } else if ((mystring_contains(line, "spring")) && 
+                (mystring_contains(line, " bond"))) {
+        int bcount = 0;
+        if (!constraintsjson["bond"].is_null())
+           bcount = constraintsjson["bond"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " bond")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        double Kspring0 = std::stod(ss[2]);
+        double R0 = std::stod(ss[3]);
+        constraintsjson["bond"][bcount]["i0"]       = i0;
+        constraintsjson["bond"][bcount]["j0"]       = j0;
+        constraintsjson["bond"][bcount]["Kspring0"] = Kspring0;
+        constraintsjson["bond"][bcount]["R0"]       = R0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, "angle"))) {
+        int acount = 0;
+        if (!constraintsjson["angle"].is_null())
+           acount = constraintsjson["angle"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " angle")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        double Kspring0 = std::stod(ss[3]);
+        double Theta0   = std::stod(ss[4]);
+        constraintsjson["angle"][acount]["i0"]       = i0;
+        constraintsjson["angle"][acount]["j0"]       = j0;
+        constraintsjson["angle"][acount]["k0"]       = k0;
+        constraintsjson["angle"][acount]["Kspring0"] = Kspring0;
+        constraintsjson["angle"][acount]["Theta0"]   = Theta0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, " dihedral"))) {
+        int dcount = 0;
+        if (!constraintsjson["dihedral"].is_null())
+           dcount = constraintsjson["dihedral"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " dihedral")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double phi0     = std::stod(ss[5]);
+        constraintsjson["dihedral"][dcount]["i0"]       = i0;
+        constraintsjson["dihedral"][dcount]["j0"]       = j0;
+        constraintsjson["dihedral"][dcount]["k0"]       = k0;
+        constraintsjson["dihedral"][dcount]["l0"]       = l0;
+        constraintsjson["dihedral"][dcount]["Kspring0"] = Kspring0;
+        constraintsjson["dihedral"][dcount]["phi0"]     = phi0;
+     } else if ((mystring_contains(line, "spring")) &&
+                (mystring_contains(line, " cihedral"))) {
+        int ccount = 0;
+        if (!constraintsjson["cihedral"].is_null())
+           ccount = constraintsjson["cihedral"].size();
+        ss = mystring_split0(mystring_trim(mystring_split(line, " cihedral")[1]));
+        int i0 = std::stoi(ss[0]);
+        int j0 = std::stoi(ss[1]);
+        int k0 = std::stoi(ss[2]);
+        int l0 = std::stoi(ss[3]);
+        double Kspring0 = std::stod(ss[4]);
+        double phi0     = std::stod(ss[5]);
+        constraintsjson["cihedral"][ccount]["i0"]       = i0;
+        constraintsjson["cihedral"][ccount]["j0"]       = j0;
+        constraintsjson["cihedral"][ccount]["k0"]       = k0;
+        constraintsjson["cihedral"][ccount]["l0"]       = l0;
+        constraintsjson["cihedral"][ccount]["Kspring0"] = Kspring0;
+        constraintsjson["cihedral"][ccount]["phi0"]     = phi0;
+     }
+
+ 
+     ++cur;
+     if (mystring_contains(lines[cur], "end"))
+       --endcount;
+   }
+   *curptr = cur;
+   return constraintsjson;
+}
+
+
+
+
+/**************************************************
+ *                                                *
  *                parse_rtdbjson                  *
  *                                                *
  **************************************************/
@@ -1524,40 +1691,35 @@ json parse_rtdbjson(json rtdb) {
   while ((cur < n) && (!foundtask)) {
 
     if (mystring_contains(mystring_lowercase(lines[cur]), "unset ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 1)
-        auto count_erase = rtdb.erase(ss[1]);
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 1)
+          auto count_erase = rtdb.erase(ss[1]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "set ")) {
-      std::vector<std::string> ss = mystring_split0(lines[cur]);
-      if (ss.size() > 2)
-        rtdb[ss[1]] = ss[2];
+       std::vector<std::string> ss = mystring_split0(lines[cur]);
+       if (ss.size() > 2)
+          rtdb[ss[1]] = ss[2];
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "start")) {
-      rtdb["dbname"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
+       rtdb["dbname"] = mystring_trim( mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "geometry")) {
-      rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
+       rtdb["geometries"] = parse_geometry(rtdb["geometries"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "title")) {
-      rtdb["title"] = mystring_trim(mystring_ireplace(
-          mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"),
-                         "title")[1],
-          "\"", ""));
+       rtdb["title"] = mystring_trim(mystring_ireplace( mystring_split(mystring_ireplace(lines[cur], "TITLE", "title"), "title")[1], "\"", ""));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "charge")) {
-      rtdb["charge"] = std::stoi(mystring_trim(
-          mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
+       rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "nwpw")) {
-      rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
+       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
-      rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+       rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
+       rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "task")) {
-      rtdb["current_task"] = lines[cur];
-      foundtask = true;
+       rtdb["current_task"] = lines[cur];
+       foundtask = true;
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "print")) {
-      rtdb["print"] = mystring_trim(
-          mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
-    } else if (mystring_contains(mystring_lowercase(lines[cur]),
-                                 "redirect_filename")) {
-      rtdb["redirect_filename"] = mystring_trim(mystring_split(
-          mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
+       rtdb["print"] = mystring_trim(
+           mystring_split(mystring_split(lines[cur], "print")[1], "\n")[0]);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "redirect_filename")) {
+       rtdb["redirect_filename"] = mystring_trim(mystring_split(mystring_split(lines[cur], "redirect_filename")[1], "\n")[0]);
     }
 
     ++cur;
@@ -1574,82 +1736,76 @@ json parse_rtdbjson(json rtdb) {
  *                                                *
  **************************************************/
 
-std::string parse_nwinput(std::string nwinput) {
-  // fetch the permanent_dir and scratch_dir
-  std::string permanent_dir = ".";
-  std::string scratch_dir = ".";
-  std::string psp_library_dir = "";
-  if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
-    if (!mystring_contains(
-            mystring_trim(mystring_split(
-                              mystring_split(nwinput, "permanent_dir")[0], "\n")
-                              .back()),
-            "#"))
-      permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split(
-          mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
-    if (!mystring_contains(
-            mystring_trim(
-                mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n")
-                    .back()),
-            "#"))
-      scratch_dir = mystring_rtrim_slash(mystring_trim(
-          mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
-  }
-  if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
-    if (!mystring_contains(
-            mystring_trim(
-                mystring_split(mystring_split(nwinput, "psp_library_dir")[0],
-                               "\n")
-                    .back()),
-            "#"))
-      psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(
-          mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
-  }
-
-  // fetch the dbname
-  std::string dbname = "nwchemex";
-  if (mystring_contains(mystring_lowercase(nwinput), "start"))
-    dbname = mystring_trim(
-        mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
-
-  json rtdb;
-  if (mystring_contains(mystring_lowercase(nwinput), "restart")) {
-    // read a JSON file
-    std::string dbname0 = permanent_dir + "/" + dbname + ".json";
-    std::ifstream ifile(dbname0);
-    ifile >> rtdb;
-  } else {
-    // intialize the rtdb structure
-    json nwpw, geometries, driver;
-    rtdb["nwpw"] = nwpw;
-    rtdb["geometries"] = geometries;
-    rtdb["driver"] = driver;
-  }
-
-  // set the dbname
-  rtdb["dbname"] = dbname;
-
-  // set the permanent_dir and scratch_dir
-  rtdb["permanent_dir"] = permanent_dir;
-  rtdb["scratch_dir"] = scratch_dir;
-  rtdb["psp_library_dir"] = psp_library_dir;
-
-  // split nwinput into lines
-  std::vector<std::string> lines = mystring_split(nwinput, "\n");
-
-  // Remove comments
-  for (auto i = lines.begin(); i != lines.end(); ++i)
-    *i = mystring_split(*i, "#")[0];
-
-  rtdb["nwinput_lines"] = lines;
-  rtdb["nwinput_nlines"] = lines.size();
-  rtdb["nwinput_cur"] = 0;
-
-  rtdb = parse_rtdbjson(rtdb);
-
-  return rtdb.dump();
+std::string parse_nwinput(std::string nwinput) 
+{
+   // fetch the permanent_dir and scratch_dir
+   std::string permanent_dir = ".";
+   std::string scratch_dir = ".";
+   std::string psp_library_dir = "";
+   if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
+     if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[0], "\n") .back()), "#"))
+       permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n") .back()), "#"))
+       scratch_dir = mystring_rtrim_slash(mystring_trim(
+           mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
+   }
+   if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
+     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
+        psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
+   }
+ 
+   // fetch the dbname
+   std::string dbname = "nwchemex";
+   if (mystring_contains(mystring_lowercase(nwinput), "start")) {
+      if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "start")[0], "\n") .back()), "#"))
+         dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+   }
+ 
+   json rtdb;
+   // read a JSON file
+   if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
+       (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+   {
+      
+      // read a JSON file
+      std::string dbname0 = permanent_dir + "/" + dbname + ".json";
+      std::ifstream ifile(dbname0);
+      ifile >> rtdb;
+   } 
+   // intialize the rtdb structure
+   else 
+   {
+      json nwpw, geometries, driver, constraints;
+      rtdb["nwpw"] = nwpw;
+      rtdb["geometries"] = geometries;
+      rtdb["driver"] = driver;
+      rtdb["constraints"] = constraints;
+   }
+ 
+   // set the dbname
+   rtdb["dbname"] = dbname;
+ 
+   // set the permanent_dir and scratch_dir
+   rtdb["permanent_dir"] = permanent_dir;
+   rtdb["scratch_dir"] = scratch_dir;
+   rtdb["psp_library_dir"] = psp_library_dir;
+ 
+   // split nwinput into lines
+   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+ 
+   // Remove comments
+   for (auto i=lines.begin(); i!=lines.end(); ++i)
+      *i = mystring_split(*i, "#")[0];
+ 
+   rtdb["nwinput_lines"] = lines;
+   rtdb["nwinput_nlines"] = lines.size();
+   rtdb["nwinput_cur"] = 0;
+ 
+   rtdb = parse_rtdbjson(rtdb);
+ 
+   return rtdb.dump();
 }
 
 /**************************************************
@@ -1676,30 +1832,19 @@ int parse_task(std::string rtdbstring) {
   auto rtdb = json::parse(rtdbstring);
   int task = 0;
   if (rtdb["foundtask"]) {
-    // Look for pspw jobs
-    if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))
-        task = 1;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "gradient"))
-        task = 2;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "optimize"))
-        task = 3;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))
-        task = 4;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "steepest_descent"))
-        task = 5;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "car-parrinello"))
-        task = 6;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),
-                            "born-oppenheimer"))
-        task = 7;
-      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))
-        task = 8;
-    }
+     // Look for pspw jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 5;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 6;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
+     }
+     // Look for file jobs
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=9; }
   }
 
   return task;

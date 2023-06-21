@@ -109,7 +109,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    hml = mygrid.m_allocate(-1, 1);
    lmbda = mygrid.m_allocate(-1, 1);
    eig = new double[ne[0] + ne[1]];
-   gdevice_psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+   mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
  
    /* read wavefunction */
    psi_read0(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
@@ -229,6 +229,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << " parallel mapping         : balanced" << std::endl;
       else
          std::cout << " parallel mapping         : not balanced" << std::endl;
+      if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged gpu fft" << "\n";
       if (control.tile_factor() > 1)
          std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
      
@@ -642,7 +643,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete[] eig;
-   gdevice_psi_dealloc();
+   mygrid.d3db::mygdevice.psi_dealloc();
  
    // write results to the json
    auto rtdbjson = json::parse(rtdbstring);

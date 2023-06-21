@@ -40,17 +40,35 @@ $ cmake .
 | mac-m1      | 6      | 1.018e+01 | 2.415e+00 | 3.311e+00 | 3.449e+00 | 3.274e-01 | 4.599e-02 | 1.785e-01 |
 | mac-m1      | 8      | 8.539e+00 | 1.848e+00 | 2.417e+00 | 3.187e+00 | **2.792e-01** | 4.307e-02 | 1.605e-01 |
 |      |      |  |  |  |  |  |  | |
-| WE45090     | 1      | 5.029e+01 | 1.198e+01 | 1.262e+01 | 2.359e+01 | 1.780e+00 | 3.892e-02 | 7.100e-02 |
-| WE45090     | 2      | 2.701e+01 | 6.422e+00 | 6.663e+00 | 1.270e+01 | 9.692e-01 | 4.015e-02 | 7.448e-02 |
-| WE45090     | 4      | 1.900e+01 | 4.062e+00 | 5.126e+00 | 8.980e+00 | 6.095e-01 | 4.154e-02 | 9.022e-02 |
-| WE45090     | 6      | 1.795e+01 | 3.499e+00 | 5.071e+00 | 8.675e+00 | 4.499e-01 | 4.439e-02 | 8.899e-02 |
-| WE45090     | 8      | 1.756e+01 | 3.279e+00 | 4.983e+00 | 8.534e+00 |**4.010e-01**| 4.633e-02 | 9.845e-02 |
+| WE45090     | 1      | 2.786e+01 | 1.298e+01 | 6.825e+00 | 4.932e+00 | 2.154e+00 | 6.489e-03 | 7.100e-02 |
+| WE45090     | 2      | 1.514e+01 | 6.859e+00 | 3.674e+00 | 2.543e+00 | 1.136e+00 | 6.998e-03 | 7.448e-02 |
+| WE45090     | 4      | 1.055e+01 | 4.408e+00 | 2.725e+00 | 1.775e+00 | 6.635e-01 | 6.676e-03 | 9.022e-02 |
+| WE45090     | 6      | 9.858e+00 | 3.886e+00 | 2.660e+00 | 1.709e+00 | 4.967e-01 | 7.285e-03 | 8.899e-02 |
+| WE45090     | 8      | 9.450e+00 | 3.542e+00 | 2.594e+00 | 1.669e+00 | 4.279e-01 | 7.650e-03 | 9.845e-02 |
 |      |      |  |  |  |  |  |  | |
-| **WE45090-GPU** | **1**  | **5.878e+00** | **1.050e+00** |**7.224e-01**  |**1.180e+00**| 2.614e+00 | 3.999e-02 | 7.225e-02 |
-| WE45090-GPU | 2      | 5.928e+00 | 1.053e+00 | 1.062e+00 | 1.346e+00 | 2.217e+00 | 4.219e-02 | 7.679e-02 |
-| WE45090-GPU | 4      | 6.895e+00 | 1.078e+00 | 1.193e+00 | 1.459e+00 | 2.922e+00 | 4.405e-02 | 8.771e-02 |
-| WE45090-GPU | 6      | 7.884e+00 | 1.037e+00 | 9.116e-01 | 1.486e+00 | 4.183e+00 | 4.977e-02 | 1.044e-01 |
+| WE45090-GPU | 1      | 4.773e+00 | 1.140e+00 | 7.054e-01 | 2.313e-01 | 2.481e+00 | 6.870e-03 | 7.225e-02 |
+| **WE45090-GPU** | 2  | 4.387e+00 | 1.037e+00 | 9.929e-01 | 2.427e-01 | 1.911e+00 | 7.432e-03 | 7.679e-02 |
+| WE45090-GPU | 4      | 4.164e+00 | 9.757e-01 | 9.960e-01 | 2.452e-01 | 1.667e+00 | 8.277e-03 | 8.771e-02 |
+| WE45090-GPU | 6      | 4.765e+00 | 1.076e+00 | 8.142e-01 | 2.564e-01 | 2.217e+00  | 7.819e-03 | 1.044e-01 |
 | WE45090-GPU | 8      |  |  |  |  |  |    |  |
+|      |      |  |  |  |  |  |  | |
+| WE45090-nwchem | 8   | 5.194e+00 |  |  |  |  |    |  |
+|      |      |  |  |  |  |  |  | |
+| perlmutter-GPU | 1   | 2.924e+00 | 3.580e-01 | 3.084e-02 | 3.595e-02 | 2.188e+00 | 6.219e-03  |  |
+| perlmutter-GPU | 2   | 1.639e+00 | 2.246e-01 | 2.258e-02 | 2.222e-02 | 1.219e+00 | 5.878e-03  |  |
+| perlmutter-GPU | 3   | 1.246e+00 | 1.575e-01 | 2.566e-02 | 1.520e-02 | 9.523e-01 | 4.568e-03  |  |
+| perlmutter-GPU | 4   | 1.080e+00 | 1.657e-01 | 1.588e-02 | 1.874e-02 | 7.948e-01 | 6.037e-03  |  |
+|      |      |  |  |  |  |  |  | |
+| perlmutter-CPU | 1   | 1.750e+01 | 7.615e+00 | 4.218e+00 | 2.856e+00 | 2.000e+00 | 5.851e-03 |  |
+| perlmutter-CPU | 2   | 1.018e+01 | 3.822e+00 | 2.135e+00 | 1.371e+00 | 2.127e+00 | 6.039e-03 |  |
+| perlmutter-CPU | 3   | 6.945e+00 | 2.520e+00 | 1.351e+00 | 9.250e-01 | 1.499e+00 | 6.011e-03 |  |
+| perlmutter-CPU | 4   | 5.765e+00 | 2.103e+00 | 1.067e+00 | 7.114e-01 | 1.254e+00 | 6.465e-03 |  |
+| perlmutter-CPU | 6   | 3.753e+00 | 1.138e+00 | 6.549e-01 | 3.859e-01 | 8.889e-01 | 6.006e-03 |  |
+| perlmutter-CPU | 8   | 2.739e+00 | 8.779e-01 | 5.078e-01 | 2.521e-01 | 4.427e-01 | 6.179e-03 |  |
+| perlmutter-CPU | 16  | 1.789e+00 | 4.439e-01 | 2.408e-01 | 1.404e-01 | 3.154e-01 | 7.301e-03 |  |
+| perlmutter-CPU | 32  | 1.343e+00 | 2.417e-01 | 1.227e-01 | 7.259e-02 | 2.748e-01 | 7.184e-03 |  |
+| perlmutter-CPU | 64  | 1.126e+00 | 1.514e-01 | 9.311e-02 | 3.653e-02 | 1.691e-01 | 7.429e-03 |  |
+| perlmutter-CPU | 128 | 1.335e+00 | 1.298e-01 | 8.846e-02 | 2.510e-02 | 1.530e-01 | 9.429e-03 |  |
 
 These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified, since the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 
@@ -63,18 +81,13 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 ### Required Modules
 
 ```
-module add gcc/11.2.0
-module add cray-libpals/1.2.3
-module add intel_compute_runtime/release/pvc-prq-66
-module add oneapi-prgenv/2022.10.15.006.001
-module add mpich/50.1/icc-all-pmix-gpu
-module add spack/linux-sles15-x86_64-ldpath
-module add oneapi/eng-compiler/2022.10.15.006
-module add ncurses/6.1.20180317-gcc-11.2.0-zedoshf
-module add libfabric/1.15.2.0
-module add openssl/1.1.1d-gcc-11.2.0-amlvxob
-module add cray-pals/1.2.3
-module add cmake/3.24.2-gcc-11.2.0-pcasswq
+module purge
+module restore
+module load cray-libpals/1.2.12 cray-pals/1.2.12 append-deps/default prepend-deps/default libfabric/1.15.2.0
+module load oneapi/eng-compiler/2023.05.15.003
+module load intel_compute_runtime/release/agama-devel-627
+module load mpich/52.2/icc-all-pmix-gpu
+module load spack cmake
 ```
 
 ### Getting the code and building instrunctions
@@ -85,39 +98,34 @@ export HTTPS_PROXY=http://proxy.alcf.anl.gov:3128
 export http_proxy=http://proxy.alcf.anl.gov:3128
 export https_proxy=http://proxy.alcf.anl.gov:3128
 git config --global http.proxy http://proxy.alcf.anl.gov:3128
-git clone https://github.com/alvarovm/PWDFT.git
+git clone https://github.com/ebylaska/PWDFT.git
 
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 cd build_sycl
 make
 ```
+```
+cd PWDFT/build_sycl
+cmake -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ../Nwpw
+```
+
+
 ### Running
 ```
-qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q workq -I
+qsub -l select=1 -l walltime=30:00 -A Aurora_deployment -q debug -I
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
+qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
+```
+```
+export MPIR_CVAR_ENABLE_GPU=0
+mpiexec -n 12 --ppn 12  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
+```
+```
+mpiexec -n 6 --ppn 6  --env OMP_NUM_THREADS=1 --cpu-bind list:2:10:18:26:34:42 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
 ```
 
 ## Examples on JSLE -  `SYCL` backend
-### Required Modules
-```
-export MODULEPATH=$MODULEPATH:/soft/modulefiles:/soft/restricted/CNDA/modules
-module load oneapi
-module load cmake
-```
-
-### Build Instructions (for `SYCL` backend)
-```
-cd PWDFT
-cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
-make -j4
-```
-
-### Running on Articus
-```
-qsub -I -n 1 -t 60 -q arcticus
-```
-
 ## CUDA backend
 ### Required Modules
 ```

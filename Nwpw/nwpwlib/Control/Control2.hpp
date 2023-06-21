@@ -105,8 +105,11 @@ class Control2 {
  
    bool pfei_on;
    bool pcif_on;
+   bool pcif_shift_cell = true;
    bool pdipole_on;
    bool pmulliken_on;
+
+   bool pstaged_gpu_fft = true;
 
 public:
    int version = 3;
@@ -195,6 +198,8 @@ public:
    void add_scratch_dir(char *);
  
    bool out_of_time() { return false; } // needs to be implemented
+
+   bool staged_gpu_fft() { return pstaged_gpu_fft; }
  
    int print_level(std::string plevel) {
      int doprt = 0;
@@ -363,6 +368,7 @@ public:
  
    // CIF
    bool CIF_on() { return pcif_on; }
+   bool CIF_shift_cell() { return pcif_shift_cell; }
  
    // Mulliken
    bool Mulliken_on() { return pmulliken_on; }
@@ -432,6 +438,39 @@ public:
    double position_tolerance_cubefiles();
    double origin_cubefiles(const int);
    int ncell_cubefiles(const int);
+
+   // bond
+   int nhb_bond();
+   int    i0_bond(const int);
+   int    j0_bond(const int);
+   double Kspring0_bond(const int);
+   double R0_bond(const int);
+
+   // cbond
+   int nhcb_cbond();
+   int    i0_cbond(const int);
+   int    j0_cbond(const int);
+   int    k0_cbond(const int);
+   int    l0_cbond(const int);
+   double Kspring0_cbond(const int);
+   double Rij0_cbond(const int);
+   double Rkl0_cbond(const int);
+
+   // angle
+   int nha_angle();
+   int    i0_angle(const int);
+   int    j0_angle(const int);
+   int    k0_angle(const int);
+   double Kspring0_angle(const int);
+   double Theta0_angle(const int);
+
+   // bondings
+   int nhc_bondings();
+   std::vector<double> coef_bondings(const int);
+   std::vector<int> indx_bondings(const int);
+   double Kspring0_bondings(const int);
+   double gamma0_bondings(const int);
+
 };
 
 } // namespace pwdft

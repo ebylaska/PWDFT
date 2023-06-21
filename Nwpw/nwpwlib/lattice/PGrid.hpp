@@ -42,7 +42,10 @@ class PGrid : public d3db {
   /* zplane data */
   double *zplane_tmp1, *zplane_tmp2;
 
+
 public:
+  bool staged_gpu_fft_pipeline;
+
   /* lattice pointer */
   Lattice *lattice;
 
@@ -51,40 +54,42 @@ public:
   double *r_grid;
 
   /* constructor */
-  PGrid(Parallel *, Lattice *, int, int, int, int, int, int);
+  PGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool);
   PGrid(Parallel *, Lattice *, Control2 &);
 
   /* destructor */
   ~PGrid() {
-    delete[] Garray;
-    delete[] Gpack[0];
-    // delete [] Gpack[1];
-    delete[] masker[0];
-    // delete [] masker[1];
-    delete[] packarray[0];
-    // delete [] packarray[1];
-    if (balanced)
-      delete mybalance;
-    delete[] zero_row3[0];
-    delete[] zero_row3[1];
-    delete[] zero_row2[0];
-    delete[] zero_row2[1];
-    delete[] zero_slab23[0];
-    delete[] zero_slab23[1];
-    delete[] zplane_tmp1;
-    delete[] zplane_tmp2;
-    if (has_r_grid)
-      delete[] r_grid;
-    delete[] atmp;
-    delete[] aqindx;
-    delete[] aqstatus;
-    delete[] btmp;
-    delete[] bqindx;
-    delete[] bqstatus;
+     delete[] Garray;
+     delete[] Gpack[0];
+     // delete [] Gpack[1];
+     delete[] masker[0];
+     // delete [] masker[1];
+     delete[] packarray[0];
+     // delete [] packarray[1];
+     if (balanced)
+       delete mybalance;
+     delete[] zero_row3[0];
+     delete[] zero_row3[1];
+     delete[] zero_row2[0];
+     delete[] zero_row2[1];
+     delete[] zero_slab23[0];
+     delete[] zero_slab23[1];
+     delete[] zplane_tmp1;
+     delete[] zplane_tmp2;
+     if (has_r_grid)
+       delete[] r_grid;
+     delete[] atmp;
+     delete[] aqindx;
+     delete[] aqstatus;
+     delete[] btmp;
+     delete[] bqindx;
+     delete[] bqstatus;
+    
+     // deallocate async buffer data
+     for (auto q=0; q<aqmax; ++q)
+       parall->aend(3+q);
 
-    // deallocate async buffer data
-    for (auto q = 0; q < aqmax; ++q)
-      parall->aend(3 + q);
+    
   }
 
   double *Gxyz(const int i) { return &Garray[i * nfft3d]; }
@@ -178,8 +183,9 @@ public:
   void cr_pfft3b_queueout(const int, double *);
   int cr_pfft3b_queuefilled();
   void cr_pfft3b(const int, double *);
-  void pfftb_step(const int, const int, double *, double *, double *,
-                  const int);
+  void pfftb_step(const int, const int, double *, double *, double *, const int);
+  void pfftb_step12(const int, const int, double *, double *, double *, const int,const int);
+
   void c_unpack_start(const int, double *, double *, const int, const int);
   void c_unpack_mid(const int, double *, double *, const int, const int);
   void c_unpack_end(const int, double *, double *, const int);
@@ -192,12 +198,38 @@ public:
   int rc_pfft3f_queuefilled();
   void rc_pfft3f(const int, double *);
   void pfftf_step(const int, const int, double *, double *, double *, int);
+  void pfftf_step10(const int, const int, double *, double *, double *, int,int);
   void c_pack_start(const int, double *, double *, const int, const int);
   void c_pack_end(const int, double *, const int);
   void pfftfx(const int, double *, double *, double *, int);
   void pfftfy(const int, double *, double *, int);
   void pfftfz(const int, double *, double *, int);
   void pfftf_final(const int, double *, double *, int);
+
+  void pfftfx_start(const int, double *, double *, double *, int,int);
+  void pfftfx_compute(const int, double *, double *, double *, int,int);
+  void pfftfx_end(const int, double *, double *, double *, int,int);
+
+  void pfftfy_start(const int, double *, double *, int,int);
+  void pfftfy_compute(const int, double *, double *, int,int);
+  void pfftfy_end(const int, double *, double *, int,int);
+
+  void pfftfz_start(const int, double *, double *, int,int);
+  void pfftfz_compute(const int, double *, double *, int,int);
+  void pfftfz_end(const int, double *, double *, int,int);
+
+
+  void pfftbx_start(const int, double *, double *, int,int);
+  void pfftbx_compute(const int, double *, double *, int,int);
+  void pfftbx_end(const int, double *, double *, int,int);
+
+  void pfftby_start(const int, double *, double *, int, int);
+  void pfftby_compute(const int, double *, double *, int, int);
+  void pfftby_end(const int, double *, double *, int, int);
+
+  void pfftbz_start(const int, double *, double *, int, int);
+  void pfftbz_compute(const int, double *, double *, int, int);
+  void pfftbz_end(const int, double *, double *, int, int);
 
   void tcr_pack_iMul_unpack_fft(const int, const double *, const double *,
                                 double *);

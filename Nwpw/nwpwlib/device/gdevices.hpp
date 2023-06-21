@@ -178,105 +178,104 @@ public:
     }
   }
 
-  void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a,
-                        double *tmpx) {
-    int nxh2 = nx + 2;
-    if (forward) {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        drfftf_(&nx, a + indx, tmpx);
-        indx += nxh2;
-      }
-      indx = 1;
-      for (auto j = 0; j < (nq); ++j) {
-        for (auto i = nx; i >= 2; --i) {
-          a[indx + i - 1] = a[indx + i - 2];
-        }
-        a[indx + 1 - 1] = 0.0;
-        a[indx + nx + 1 - 1] = 0.0;
-        indx += nxh2;
-      }
-    } else {
-      int indx = 1;
-      for (auto j = 0; j < nq; ++j) {
-        for (auto i = 2; i <= nx; ++i)
-          a[indx + i - 2] = a[indx + i - 1];
-        indx += nxh2;
-      }
-      indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        drfftb_(&nx, a + indx, tmpx);
-        indx += nxh2;
-      }
-    }
+  void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx) {
+     int nxh2 = nx + 2;
+     if (forward) {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         drfftf_(&nx, a + indx, tmpx);
+         indx += nxh2;
+       }
+       indx = 1;
+       for (auto j = 0; j < (nq); ++j) {
+         for (auto i = nx; i >= 2; --i) {
+           a[indx + i - 1] = a[indx + i - 2];
+         }
+         a[indx + 1 - 1] = 0.0;
+         a[indx + nx + 1 - 1] = 0.0;
+         indx += nxh2;
+       }
+     } else {
+       int indx = 1;
+       for (auto j = 0; j < nq; ++j) {
+         for (auto i = 2; i <= nx; ++i)
+           a[indx + i - 2] = a[indx + i - 1];
+         indx += nxh2;
+       }
+       indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         drfftb_(&nx, a + indx, tmpx);
+         indx += nxh2;
+       }
+     }
   }
-  void batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d, double *a,
-                        double *tmpy) {
-    if (forward) {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        dcfftf_(&ny, a + indx, tmpy);
-        indx += (2 * ny);
-      }
-    } else {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        dcfftb_(&ny, a + indx, tmpy);
-        indx += (2 * ny);
-      }
-    }
+  void batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy) {
+     if (forward) {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         dcfftf_(&ny, a + indx, tmpy);
+         indx += (2 * ny);
+       }
+     } else {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         dcfftb_(&ny, a + indx, tmpy);
+         indx += (2 * ny);
+       }
+     }
   }
   void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d,
                              double *a, double *tmpy, bool *zero) {
-    if (forward) {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        if (!zero[q])
-          dcfftf_(&ny, a + indx, tmpy);
-        indx += (2 * ny);
-      }
-    } else {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        if (!zero[q])
-          dcfftb_(&ny, a + indx, tmpy);
-        indx += (2 * ny);
-      }
-    }
+     if (forward) {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         if (!zero[q])
+           dcfftf_(&ny, a + indx, tmpy);
+         indx += (2 * ny);
+       }
+     } else {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         if (!zero[q])
+           dcfftb_(&ny, a + indx, tmpy);
+         indx += (2 * ny);
+       }
+     }
   }
+
   void batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d, double *a,
                         double *tmpz) {
-    if (forward) {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        dcfftf_(&nz, a + indx, tmpz);
-        indx += (2 * nz);
-      }
-    } else {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        dcfftb_(&nz, a + indx, tmpz);
-        indx += (2 * nz);
-      }
-    }
+     if (forward) {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         dcfftf_(&nz, a + indx, tmpz);
+         indx += (2 * nz);
+       }
+     } else {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         dcfftb_(&nz, a + indx, tmpz);
+         indx += (2 * nz);
+       }
+     }
   }
   void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d,
                              double *a, double *tmpz, bool *zero) {
-    if (forward) {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        if (!zero[q])
-          dcfftf_(&nz, a + indx, tmpz);
-        indx += (2 * nz);
-      }
-    } else {
-      int indx = 0;
-      for (auto q = 0; q < nq; ++q) {
-        if (!zero[q])
-          dcfftb_(&nz, a + indx, tmpz);
-        indx += (2 * nz);
-      }
-    }
+     if (forward) {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         if (!zero[q])
+           dcfftf_(&nz, a + indx, tmpz);
+         indx += (2 * nz);
+       }
+     } else {
+       int indx = 0;
+       for (auto q = 0; q < nq; ++q) {
+         if (!zero[q])
+           dcfftb_(&nz, a + indx, tmpz);
+         indx += (2 * nz);
+       }
+     }
   }
 };
 

@@ -74,6 +74,9 @@ Coulomb12_Operator::Coulomb12_Operator(Pneb *mygrid, Control2 &control)
       w_x = mypneb->r_alloc();
       w_y = mypneb->r_alloc();
       w_z = mypneb->r_alloc();
+      rho_x = mypneb->r_alloc();
+      rho_y = mypneb->r_alloc();
+      rho_z = mypneb->r_alloc();
 
       rho_ind0 = mypneb->r_alloc();
       rho_ind1 = mypneb->r_alloc();
@@ -422,6 +425,7 @@ void Coulomb12_Operator::v_dielectric_aperiodic(const double *rho, const double 
       mypneb->tcr_pack_iMul_unpack_fft(0,Gz,p,w_z);
       for (auto i=0; i<n2ft3d; ++i)
          vks0[i] = -0.5*overfourpi*depsilon[i]*(w_x[i]*w_x[i] + w_y[i]*w_y[i] + w_z[i]*w_z[i]);
+                 //- 0.5*(w_x[i]*rho_x[i] + w_y[i]*rho_y[i] + w_x[i]*rho_z[i]);
  
       mypneb->rrr_Sum(vdielec0,vks0,vdielec);
    }
@@ -538,6 +542,10 @@ void Coulomb12_Operator::dielectric_generate(const double *rho, const double *dn
             mypneb->rr_periodic_gaussian_filter(filter_dielec,depsilon,sw); mypneb->rr_copy(sw,depsilon);
          }
        
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,rho_x);
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,rho_y);
+         mypneb->tcr_pack_iMul_unpack_fft(0,Gz,dng,rho_z);
+
          mypneb->tcr_pack_iMul_unpack_fft(0,Gx,dng,epsilon_x);
          mypneb->tcr_pack_iMul_unpack_fft(0,Gy,dng,epsilon_y);
          mypneb->tcr_pack_iMul_unpack_fft(0,Gz,dng,epsilon_z);
