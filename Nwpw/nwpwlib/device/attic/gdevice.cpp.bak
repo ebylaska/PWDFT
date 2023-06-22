@@ -52,42 +52,42 @@ void gdevice_NN_eigensolver(int ispin, int ne[], double *a, double *w) {
 }
 
 void gdevice_psi_alloc(int npack, int ne, int tfac0 = 1) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.psi_alloc(npack, ne, tfac0);
 #endif
 }
 
 void gdevice_psi_dealloc() {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.psi_dealloc();
 #endif
 }
 
 void gdevice_psi_copy_host2gpu(int npack, int ne, double *psi) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.psi_copy_host2gpu(npack, ne, psi);
 #endif
 }
 
 void gdevice_psi_copy_gpu2host(int npack, int ne, double *psi) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.psi_copy_gpu2host(npack, ne, psi);
 #endif
 }
 
 void gdevice_hpsi_copy_host2gpu(int npack, int ne, double *psi) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.hpsi_copy_host2gpu(npack, ne, psi);
 #endif
 }
 
 void gdevice_hpsi_copy_gpu2host(int npack, int ne, double *psi) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.hpsi_copy_gpu2host(npack, ne, psi);
 #endif
@@ -95,27 +95,27 @@ void gdevice_hpsi_copy_gpu2host(int npack, int ne, double *psi) {
 
 /* fft functions*/
 void gdevice_batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_fft_init(nx, ny, nz, nq1, nq2, nq3);
 #endif
 }
 void gdevice_batch_fft_end() {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_fft_end();
 #endif
 }
 
 void gdevice_batch_cfftx(bool forward, int nx, int nq, int n2ft3d, double *a) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cfftx(forward, nx, nq, n2ft3d, a);
 #endif
 }
 void gdevice_batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d,
                               double *a, double *tmpx) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cfftx(forward, nx, nq, n2ft3d, a);
 #else
@@ -124,14 +124,14 @@ void gdevice_batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d,
 }
 
 void gdevice_batch_cffty(bool forward, int ny, int nq, int n2ft3d, double *a) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cffty(forward, ny, nq, n2ft3d, a);
 #endif
 }
 void gdevice_batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d,
                               double *a, double *tmpy) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cffty(forward, ny, nq, n2ft3d, a);
 #else
@@ -140,7 +140,7 @@ void gdevice_batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d,
 }
 void gdevice_batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d,
                                    double *a, double *tmpy, bool *zero) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cffty(forward, ny, nq, n2ft3d, a);
 #else
@@ -149,14 +149,14 @@ void gdevice_batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d,
 }
 
 void gdevice_batch_cfftz(bool forward, int nz, int nq, int n2ft3d, double *a) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
     mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
 #endif
 }
 void gdevice_batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d,
                               double *a, double *tmpz) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
      mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
 #else
@@ -165,7 +165,7 @@ void gdevice_batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d,
 }
 void gdevice_batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d,
                                    double *a, double *tmpz, bool *zero) {
-#if defined(NWPW_SYCL) || defined(NWPW_CUDA)
+#if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
   if (mygdevice.hasgpu)
      mygdevice.batch_cfftz(forward, nz, nq, n2ft3d, a);
 #else

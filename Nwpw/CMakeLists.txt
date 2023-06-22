@@ -39,7 +39,7 @@ else()
 endif()
 
 
-#Configure Sycll
+#Configure SYCL
 if (NWPW_SYCL)
   message("-- Using NWPW_SYCL")
 
@@ -69,7 +69,7 @@ if (NWPW_CUDA)
    message("-- Using cusolver: " ${CUDA_cusolver_LIBRARY})
    message("-- Using cufft   : " ${CUDA_cufft_LIBRARY})
 
-   add_definitions(-DNWPW_CUDA=1)
+   add_definitions(-DNWPW_CUDA)
    set(MKL_FOUND True)
 endif (NWPW_CUDA)
 
@@ -77,19 +77,26 @@ endif (NWPW_CUDA)
 if (NWPW_HIP)
    message("-- Using NWPW_HIP")
 
+   unset(CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
+
    list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
 
    find_package(hip REQUIRED)
    find_package(rocblas REQUIRED)
    find_package(rocfft REQUIRED)
+   find_package(rocsolver REQUIRED)
    set(GPU_TARGETS "gfx906,gfx908,gfx90a" CACHE STRING "GPU targets to compile for")
+   message("-- HIP Architecuture: " ${GPU_TARGETS})
 
    set(ROCBLAS_INCLUDE_DIRS ${ROCM_PATH}/rocblas)
    set(ROCFFT_INCLUDE_DIRS ${ROCM_PATH}/rocfft)
-   message("-- Using rocblas, rocfft: " ${ROCBLAS_INCLUDE_DIRS}, ${ROCFFT_INCLUDE_DIRS})
-   include_directories(${ROCBLAS_INCLUDE_DIRS} ${ROCFFT_INCLUDE_DIRS})
+   set(ROCSOLVER_INCLUDE_DIRS ${ROCM_PATH}/rocsolver)
+   message("-- Using rocblas  : " ${ROCBLAS_INCLUDE_DIRS})
+   message("-- Using rocfft   : " ${ROCFFT_INCLUDE_DIRS})
+   message("-- Using rocsolver: " ${ROCSOLVER_INCLUDE_DIRS})
 
-   add_definitions(-DNWPW_HIP=1)
+   add_definitions(-DNWPW_HIP)
    set(MKL_FOUND True)
 endif (NWPW_HIP)
 
@@ -192,6 +199,7 @@ elseif(NWPW_CUDA)
    target_include_directories(pwdft PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
    target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES} CUDA::cudart CUDA::cublas CUDA::cusolver CUDA::cufft)
 elseif(NWPW_HIP)
+   target_include_directories(pwdft PUBLIC ${ROCBLAS_INCLUDE_DIRS} ${ROCFFT_INCLUDE_DIRS} ${ROCSOLVER_INCLUDE_DIRS})  
    target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES} hip::device)
 else()
    target_link_libraries(pwdft pspw file nwpwlib ${MPI_LIBRARIES})

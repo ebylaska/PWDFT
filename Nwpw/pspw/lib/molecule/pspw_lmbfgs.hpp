@@ -68,7 +68,7 @@ public:
     sum = mygeodesic->mygrid->gg_traceall(yy, ss);
 
     //*** exit if dividing by small number ***
-    if (abs(sum) > 1.0e-15) {
+    if (std::abs(sum) > 1.0e-15) {
       rho[m] = 1.0 / sum;
 
       sum = mygeodesic->mygrid->gg_traceall(ss, s);

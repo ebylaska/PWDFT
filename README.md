@@ -20,16 +20,16 @@ Standard cmake build commands
 cmake [<options>] <path-to-source>
 $ mkdir build ; cd build
 $ cmake ../src
- 
+
 cmake [<options>] -S <path-to-source> -B <path-to-build>
-$ cmake -S src -B build 
+$ cmake -S src -B build
 
 cmake [<options>] <path-to-existing-build>
 $ cd build
 $ cmake .
 ```
 
-# Timings 
+# Timings
 ## laptop timings
 | machine     | ncpus  |   cputime | non-local |       ffm |       fmf |       fft | diagonalize |  mmm_mult |
 | :----:      | :----: |       ---:|        --:|        --:|        --:|      ---: |          --:|        --:|
@@ -37,7 +37,7 @@ $ cmake .
 | mac-m1      | 1      | 4.763e+01 | 1.413e+01 | 1.794e+01 | 1.217e+01 | 1.353e+00 | 3.725e-02 | 1.642e-01 |
 | mac-m1      | 2      | 2.523e+01 | 7.349e+00 | 9.440e+00 | 6.547e+00 | 7.941e-01 | 4.310e-02 | 1.684e-01 |
 | mac-m1      | 4      | 1.405e+01 | 3.887e+00 | 4.742e+00 | 4.125e+00 | 4.404e-01 | 4.183e-02 | 1.715e-01 |
-| mac-m1      | 6      | 1.018e+01 | 2.415e+00 | 3.311e+00 | 3.449e+00 | 3.274e-01 | 4.599e-02 | 1.785e-01 | 
+| mac-m1      | 6      | 1.018e+01 | 2.415e+00 | 3.311e+00 | 3.449e+00 | 3.274e-01 | 4.599e-02 | 1.785e-01 |
 | mac-m1      | 8      | 8.539e+00 | 1.848e+00 | 2.417e+00 | 3.187e+00 | **2.792e-01** | 4.307e-02 | 1.605e-01 |
 |      |      |  |  |  |  |  |  | |
 | WE45090     | 1      | 2.786e+01 | 1.298e+01 | 6.825e+00 | 4.932e+00 | 2.154e+00 | 6.489e-03 | 7.100e-02 |
@@ -74,7 +74,7 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 
 
 
-# Compiling and Running Instructions 
+# Compiling and Running Instructions
 
 ## Build instructions on Sunspot
 
@@ -103,7 +103,7 @@ git clone https://github.com/ebylaska/PWDFT.git
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
 cd build_sycl
-make 
+make
 ```
 ```
 cd PWDFT/build_sycl
@@ -148,6 +148,56 @@ make -j4
 qsub  -I -t 30  -n 1 -q gpu_v100_smx2_debug
 ```
 
+##  Build Instructions for OLCF Frontier
+<details>
+<summary>Toggle for Details</summary>
+
+1. Login to Frontier:
+```
+ssh frontier.olcf.ornl.gov
+```
+2. Modules to load:
+```
+module load amd-mixed
+```
+3. CMake Build/Install
+```
+cmake -Bbuild_hip -DNWPW_HIP=ON ./Nwpw -DGPU_TARGETS=gfx90a
+cd build_hip
+make -j
+```
+4. Job submission script via `sbatch job_submit.sbatch`
+```
+#!/bin/bash
+
+#SBATCH -A 
+#SBATCH -J 
+#SBATCH -o %x-%j.out
+#SBATCH -t 00:15:00
+#SBATCH -N 1
+#SBATCH -C nvme
+#SBATCH --mail-user=
+#SBATCH --mail-type=END
+
+module load amd-mixed
+module list
+
+export MPICH_GPU_SUPPORT_ENABLED=0
+export OMP_NUM_THREADS=1
+export GA_NUM_PROGRESS_RANKS_PER_NODE=1
+export CRAYPE_LINK_TYPE=dynamic
+
+date
+
+NNODES=1
+NRANKS_PER_NODE=8
+NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
+
+INPUT_FILE=
+
+srun -N${NNODES} -n${NTOTRANKS} -c1 --ntasks-per-gpu=1 --gpus-per-node=8 --gpu-bind=closest $PWD/pwdft ${INPUT_FILE}
+```
+</details>
 
 ##  Build Instructions for NERSC Perlmutter
 <details>
@@ -257,7 +307,7 @@ To generate a library clean the build directory and then regenerate cmake with
 ```
 cmake ../Nwpw -DMAKE_LIBRARY=true
 ```
-on Linux use: 
+on Linux use:
 ```
 cmake ../Nwpw -DMAKE_LIBRARY=true -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 ```
