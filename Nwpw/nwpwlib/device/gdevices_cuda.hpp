@@ -886,7 +886,7 @@ public:
 
      // free fft descriptors
      NWPW_CUFFT_ERROR(cufftDestroy(forward_plan_x[tag]));
-     NWPW_CUFFT_ERROR9cufftDestroy(plan_y[tag]));
+     NWPW_CUFFT_ERROR(cufftDestroy(plan_y[tag]));
      NWPW_CUFFT_ERROR(cufftDestroy(plan_z[tag]));
      NWPW_CUFFT_ERROR(cufftDestroy(backward_plan_x[tag]));
 

@@ -165,7 +165,7 @@ make -j4
 qsub  -I -t 30  -n 1 -q gpu_v100_smx2_debug
 ```
 
-##  Build Instructions for OLCF Frontier
+##  Instructions for OLCF Frontier
 <details>
 <summary>Toggle for Details</summary>
 
@@ -187,8 +187,8 @@ make -j
 ```
 #!/bin/bash
 
-#SBATCH -A 
-#SBATCH -J 
+#SBATCH -A
+#SBATCH -J
 #SBATCH -o %x-%j.out
 #SBATCH -t 00:15:00
 #SBATCH -N 1
@@ -201,7 +201,6 @@ module list
 
 export MPICH_GPU_SUPPORT_ENABLED=0
 export OMP_NUM_THREADS=1
-export GA_NUM_PROGRESS_RANKS_PER_NODE=1
 export CRAYPE_LINK_TYPE=dynamic
 
 date
@@ -210,13 +209,14 @@ NNODES=1
 NRANKS_PER_NODE=8
 NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
 
-INPUT_FILE=
+PWDFT_EXE=
+PWDFT_INPUT=
 
-srun -N${NNODES} -n${NTOTRANKS} -c1 --ntasks-per-gpu=1 --gpus-per-node=8 --gpu-bind=closest $PWD/pwdft ${INPUT_FILE}
+srun -N${NNODES} -n${NTOTRANKS} -c1 --ntasks-per-gpu=1 --gpus-per-node=8 --gpu-bind=closest ${PWDFT_EXE} ${PWDFT_INPUT}
 ```
 </details>
 
-##  Build Instructions for NERSC Perlmutter
+##  Instructions for NERSC Perlmutter
 <details>
 <summary>Toggle for Details</summary>
 
@@ -266,34 +266,75 @@ cd PWDFT/QA/C2_steepest_descent
 srun -n 24 ../../build/pwdft c2-sd.nw
 ```
 
-## Build instructions on Polaris-CUDA
+##  Instructions for ALCF Polaris
+<details>
+<summary>Toggle for Details</summary>
 
-### Required Modules on Polaris-CUDA
+1. Login to Frontier:
 ```
-module purge
-module load cmake cpe-cuda aocl
-module load PrgEnv-nvhpc
-module unload craype-accel-nvidia80
+ssh polaris.alcf.anl.gov
+```
+2. Modules to load:
+```
+module load PrgEnv-gnu cudatoolkit-standalone cmake
+```
+3. CMake Build/Install
+```
+cmake -Bbuild_cuda -DNWPW_CUDA=ON ./Nwpw -DCMAKE_CUDA_ARCHITECTURES=80
+cd build_cuda
+make -j
+```
+4. Job submission script via `qsub polaris_submit.pbs`. Please note that it needs an additional bash-script to bind the GPU-IDs to MPI-ranks.
+The script below is the MPI-ranks with GPUs affinity script:
+```
+#!/bin/bash
+num_gpus=4
+# need to assign GPUs in reverse order due to topology
+# See Polaris Device Affinity Information https://www.alcf.anl.gov/support/user-guides/polaris/hardware-overview/machine-overview/index.html
+gpu=$((${num_gpus} - 1 - ${PMI_LOCAL_RANK} % ${num_gpus}))
 
+unset CUDA_VISIBLE_DEVICES
+if [ ${PMI_LOCAL_RANK} -ne 4 ]; then
+   export CUDA_VISIBLE_DEVICES=$gpu
+fi
+#echo "RANK= ${PMI_RANK} LOCAL_RANK= ${PMI_LOCAL_RANK} gpu= ${CUDA_VISIBLE_DEVICES}"
+exec "$@"
 ```
+The actual job-script is below:
+```
+#!/bin/bash
 
-### Build Instructions on Polaris-CUDA (starting from PWDFT directory)
-```
-mkdir build_cuda
-cd build-cuda
-cmake -DNWPW_CUDA=ON  -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_Fortran_COMPILER=ftn ../Nwpw/
-```
-### Running on Polaris-CUDA
-```
-qsub -q  debug -I -l walltime=01:00:00 -lselect=1 -A myproject -l filesystems=home:eagle:grand
-module purge
-module load cmake cpe-cuda aocl
-module load PrgEnv-nvhpc
-module unload craype-accel-nvidia80
+#PBS -N develop
+#PBS -l select=8:system=polaris
+#PBS -l place=scatter
+#PBS -l walltime=01:00:00
+#PBS -l filesystems=home:eagle
+#PBS -A
+#PBS -q workq
 
-mpiexec -n 2 --ppn 2 --cpu-bind=verbose --cpu-bind depth--env CUDA_VISIBLE_DEVICES=2 ./pwdft nwinput.nw
+module load PrgEnv-gnu cudatoolkit-standalone/11.8.0 cmake
+module list
 
+export MPICH_GPU_SUPPORT_ENABLED=0
+export CRAYPE_LINK_TYPE=dynamic
+env
+nvidia-smi topo -m
+
+cd ${PBS_O_WORKDIR}
+
+NNODES=`wc -l < $PBS_NODEFILE`
+NRANKS_PER_NODE=4
+NTHREADS=1
+
+NTOTRANKS=$(( NNODES * NRANKS_PER_NODE ))
+echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NRANKS_PER_NODE} THREADS_PER_RANK= ${NTHREADS}"
+
+PWDFT_EXE=
+PWDFT_INPUT=
+
+mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --cpu-bind list:24:16:8:0 --env OMP_NUM_THREADS=${NTHREADS} ./gpu_bind_affinity.sh ${PWDFT_EXE} ${PWDFT_INPUT}
 ```
+</details>
 
 ## Build instructions on NERSC Cori-CUDA
 
