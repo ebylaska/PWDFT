@@ -312,7 +312,7 @@ The actual job-script is below:
 #PBS -A
 #PBS -q workq
 
-module load PrgEnv-gnu cudatoolkit-standalone/11.8.0 cmake
+module load PrgEnv-gnu cudatoolkit-standalone
 module list
 
 export MPICH_GPU_SUPPORT_ENABLED=0
@@ -332,7 +332,7 @@ echo "NUM_OF_NODES= ${NNODES} TOTAL_NUM_RANKS= ${NTOTRANKS} RANKS_PER_NODE= ${NR
 PWDFT_EXE=
 PWDFT_INPUT=
 
-mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --cpu-bind list:24:16:8:0 --env OMP_NUM_THREADS=${NTHREADS} ./gpu_bind_affinity.sh ${PWDFT_EXE} ${PWDFT_INPUT}
+mpiexec -n ${NTOTRANKS} --ppn ${NRANKS_PER_NODE} --mem-bind list:0:1:2:3 --cpu-bind list:0-7:8-15:16-23:24-31 --env OMP_NUM_THREADS=${NTHREADS} ./gpu_bind_affinity.sh ${PWDFT_EXE} ${PWDFT_INPUT}
 ```
 </details>
 

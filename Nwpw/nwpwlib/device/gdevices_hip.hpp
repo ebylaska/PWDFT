@@ -185,8 +185,7 @@ public:
 
     // allocate hip streams
     for (auto i = 0; i < 12; ++i)
-      NWPW_HIP_ERROR(
-          hipStreamCreateWithFlags(&stream[i], hipStreamNonBlocking));
+      NWPW_HIP_ERROR(hipStreamCreate(&stream[i]));
 
     NWPW_ROCFFT_ERROR(rocfft_setup());
   }

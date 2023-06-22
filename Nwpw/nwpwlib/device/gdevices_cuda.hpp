@@ -218,7 +218,7 @@ public:
 
     // allocate cuda streams
     for (auto i=0; i<12; ++i)
-      NWPW_CUDA_ERROR(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+      NWPW_CUDA_ERROR(cudaStreamCreate(&stream[i]));
 
     // create cusolver handle, bind a stream
     CUSOLVER_CHECK(cusolverDnCreate(&cusolverH));
