@@ -90,6 +90,23 @@ module load mpich/52.2/icc-all-pmix-gpu
 module load spack cmake
 ```
 
+OLD MODULES
+```
+module add gcc/11.2.0
+module add cray-libpals/1.2.3
+module add intel_compute_runtime/release/pvc-prq-66
+module add oneapi-prgenv/2022.10.15.006.001
+module add mpich/50.1/icc-all-pmix-gpu
+module add spack/linux-sles15-x86_64-ldpath
+module add oneapi/eng-compiler/2022.10.15.006
+module add ncurses/6.1.20180317-gcc-11.2.0-zedoshf
+module add libfabric/1.15.2.0
+module add openssl/1.1.1d-gcc-11.2.0-amlvxob
+module add cray-pals/1.2.3
+module add cmake/3.24.2-gcc-11.2.0-pcasswq
+```
+
+
 ### Getting the code and building instrunctions
 
 ```
