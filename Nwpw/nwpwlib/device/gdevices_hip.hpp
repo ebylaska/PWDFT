@@ -151,9 +151,11 @@ public:
 class Gdevices {
 
   int fftcount = 0;
-
+  int nxfft[2], nyfft[2], nzfft[2];
   rocfft_plan forward_plan_x[2], forward_plan_y[2], forward_plan_z[2];
   rocfft_plan backward_plan_x[2], backward_plan_y[2], backward_plan_z[2];
+  int ifft_dev[15];
+  int ifft_n;
 
   rocblas_handle master_handle = 0;
   rocblas_operation matT = rocblas_operation_transpose;
@@ -183,7 +185,8 @@ public:
 
     // allocate hip streams
     for (auto i = 0; i < 12; ++i)
-      NWPW_HIP_ERROR(hipStreamCreate(&stream[i], hipStreamNonBlocking));
+      NWPW_HIP_ERROR(
+          hipStreamCreateWithFlags(&stream[i], hipStreamNonBlocking));
 
     NWPW_ROCFFT_ERROR(rocfft_setup());
   }
@@ -793,29 +796,29 @@ public:
     size_t length_nz = (size_t)nz;
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &forward_plan_x, rocfft_placement_inplace,
+        &forward_plan_x[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_real_forward, rocfft_precision_double, (size_t)1,
         &length_nx, (size_t)nq1, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &backward_plan_x, rocfft_placement_inplace,
+        &backward_plan_x[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_real_inverse, rocfft_precision_double, (size_t)1,
         &length_nx, (size_t)nq1, nullptr));
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &forward_plan_y, rocfft_placement_inplace,
+        &forward_plan_y[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_complex_forward, rocfft_precision_double,
         (size_t)1, &length_ny, (size_t)nq2, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &backward_plan_y, rocfft_placement_inplace,
+        &backward_plan_y[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_complex_inverse, rocfft_precision_double,
         (size_t)1, &length_ny, (size_t)nq2, nullptr));
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &forward_plan_z, rocfft_placement_inplace,
+        &forward_plan_z[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_complex_forward, rocfft_precision_double,
         (size_t)1, &length_nz, (size_t)nq3, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &backward_plan_z, rocfft_placement_inplace,
+        &backward_plan_z[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_complex_inverse, rocfft_precision_double,
         (size_t)1, &length_nz, (size_t)nq3, nullptr));
 
@@ -837,14 +840,14 @@ public:
       ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
   }
 
-  void batch_fft_end() {
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_x));
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_y));
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_z));
+  void batch_fft_end(const int tag) {
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_x[tag]));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_y[tag]));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(forward_plan_z[tag]));
 
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_x));
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_y));
-    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_z));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_x[tag]));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_y[tag]));
+    NWPW_ROCFFT_ERROR(rocfft_plan_destroy(backward_plan_z[tag]));
 
     --fftcount;
 
