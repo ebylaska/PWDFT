@@ -884,12 +884,12 @@ public:
      std::cout << "Into batch_fft_init" << std::endl;
      NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x[fftcount], nx, CUFFT_D2Z, nq1));
      NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x[fftcount], nx, CUFFT_Z2D, nq1));
-    
+
      int y_inembed[] = {ny};
      int y_onembed[] = {ny};
      NWPW_CUFFT_ERROR(cufftPlanMany(&plan_y[fftcount], 1, &ny, y_inembed, 1, ny, y_onembed,
                                     1, ny, CUFFT_Z2Z, nq2));
-    
+
      int z_inembed[] = {nz};
      int z_onembed[] = {nz};
      NWPW_CUFFT_ERROR(cufftPlanMany(&plan_z[fftcount], 1, &nz, z_inembed, 1, nz, z_onembed,
@@ -937,7 +937,7 @@ public:
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
                 cudaMemcpyHostToDevice);
-    
+
      if (forward) {
        NWPW_CUFFT_ERROR(cufftExecD2Z(
            forward_plan_x[fft_indx], reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev]),
@@ -948,10 +948,10 @@ public:
                         reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
                         reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
      }
-    
+
      cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
                 cudaMemcpyDeviceToHost);
-    
+
      inuse[ia_dev] = false;
   }
 
@@ -997,7 +997,7 @@ public:
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
      cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
                 cudaMemcpyHostToDevice);
-    
+
      if (forward) {
        NWPW_CUFFT_ERROR(cufftExecZ2Z(
            plan_y[fft_indx], reinterpret_cast<cufftDoubleComplex *>(dev_mem[ia_dev]),
@@ -1070,7 +1070,7 @@ public:
     
      cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
                 cudaMemcpyDeviceToHost);
-    
+
      inuse[ia_dev] = false;
   }
 
