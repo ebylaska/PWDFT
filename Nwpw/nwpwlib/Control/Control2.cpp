@@ -180,7 +180,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      ptotal_charge = rtdbjson["charge"];
  
    /* get parallel mappings */
-   pmapping = 1;
+   //pmapping = 1;
+   pmapping = 3;
    if (rtdbjson["nwpw"]["mapping"].is_number_integer())
      pmapping = rtdbjson["nwpw"]["mapping"];
  

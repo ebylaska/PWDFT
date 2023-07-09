@@ -44,7 +44,6 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
   int ms = 0;
   int n1 = mygrid->neq[0];
   int n2 = mygrid->neq[0] + mygrid->neq[1];
-  ;
 
   bool done = false;
 
@@ -71,8 +70,9 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
 
   /* add v_field to vall */
   if (mypsp->myefield->efield_on)
-    mygrid->rr_Sum(mypsp->myefield->v_field, vall);
+    mygrid->rr_Sum(mypsp->myefield->v_field,vall);
 
+  
   /*
      for (ms=0; ms<ispin; ++ms)
      {
@@ -88,35 +88,39 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
            indx2 += shift2;
         }
      }
-     */
+  */
+ 
+  { nwpw_timing_function ftimer(1);
 
-  {
-    nwpw_timing_function ftimer(1);
-
-    mygrid->rrr_Sum(vall, xcp, tmp);
-    while (!done) {
-      if (indx1 < n2) {
-        if (indx1 >= n1) {
-          ms = 1;
-          mygrid->rrr_Sum(vall, xcp + ms * n2ft3d, tmp);
-        }
-
-        mygrid->rrr_Mul(tmp, psi_r + indx1n, vpsi);
-
-        mygrid->rc_pfft3f_queuein(1, vpsi);
-        indx1n += shift2;
-        ++indx1;
-      }
-
-      if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2)) {
-        mygrid->rc_pfft3f_queueout(1, vpsi);
-        mygrid->cc_pack_daxpy(1, (-scal1), vpsi, Hpsi + indx2n);
-        indx2n += shift1;
-        ++indx2;
-      }
-      done = ((indx1 >= n2) && (indx2 >= n2));
+    mygrid->rrr_Sum(vall,xcp,tmp);
+    while (!done) 
+    {
+       if (indx1<n2) 
+       {
+          if (indx1>=n1) 
+          {
+             ms = 1;
+             mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
+          }
+          
+          mygrid->rrr_Mul(tmp,psi_r+indx1n,vpsi);
+          
+          mygrid->rc_pfft3f_queuein(1,vpsi);
+          indx1n += shift2;
+          ++indx1;
+       }
+       
+       if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2)) 
+       {
+          mygrid->rc_pfft3f_queueout(1,vpsi);
+          mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx2n);
+          indx2n += shift1;
+          ++indx2;
+       }
+       done = ((indx1 >= n2) && (indx2 >= n2));
     }
   }
+  
 
   /* deallocate temporary memory */
   mygrid->r_dealloc(tmp);
