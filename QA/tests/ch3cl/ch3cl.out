@@ -1,0 +1,1073 @@
+pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+Title "CH3Cl Efield test"
+
+memory stack 500 mb heap 750 mb global 10 mb
+
+start ch3cl-pspw
+
+echo
+
+geometry noautosym nocenter noautoz
+C   0.456014 -1.041025 -0.142619
+H   1.534496 -0.935588 -0.168315
+H   0.149455 -1.660229 0.692550
+H   0.086258 -1.445367 -1.077867
+Cl   -0.263152 0.600745 0.082298
+end
+
+nwpw
+   simulation_cell
+     SC 26.0
+     boundary_conditions aperiodic
+   end
+   
+   lmbfgs
+   
+   xc pbe
+   cutoff 30.0
+   steepest_descent
+     #geometry_optimize
+     time_step 5.8
+     loop 1 10
+  end
+  2d-hcurve
+end
+task pspw energy
+
+nwpw
+   efield on vector 0.001 0.002 0.003 rgrid
+end
+task pspw energy
+task pspw steepest_descent
+
+
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Sun Jun 18 21:05:32 2023
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+       date                  = Sat Jul  8 17:43:17 2023
+       nproc                 = 4
+       input                 = ch3cl.nw
+
+
+
+First rtdbstr={"constraints":null,"current_task":"task pspw energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":34,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3Cl Efield test"}
+First task=1
+
+
+Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"current_task":"energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":34,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[10.0,20.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3Cl Efield test"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jul  8 17:43:17 2023 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+ generating 1d pseudopotential file: ./C.psp
+ generating 1d pseudopotential file: ./H.psp
+ generating 1d pseudopotential file: ./Cl.psp
+
+ writing formatted psp filename: ./C.vpp
+
+ writing formatted psp filename: ./H.vpp
+
+ writing formatted psp filename: ./Cl.vpp
+ generating random psi from scratch
+ Warning - Gram-Schmidt being performed on psi2
+         - exact norm = 14 norm=17.0709 corrected norm=14 (error=3.07089)
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./ch3cl-pspw.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.283 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 20.000 fft =  54 x   54 x   54  (   37447 waves     9364 per task)
+      wavefnc cutoff = 10.000 fft =  54 x   54 x   54  (   13373 waves     3344 per task)
+
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================= Grassmann lmbfgs iteration =================
+          >>> iteration started at Sat Jul  8 17:43:17 2023  <<<
+     iter.                   Energy          DeltaE        DeltaRho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -1.969455612493e+01   -1.140415e+00    2.318043e-02
+        - 10 steepest descent iterations performed
+        20      -2.233984265760e+01   -1.090733e-01    1.022389e-03
+        - 10 steepest descent iterations performed
+        30      -2.257528896818e+01   -8.571013e-04    4.182046e-06
+        40      -2.257649844723e+01   -4.986614e-06    1.493024e-08
+        50      -2.257650698880e+01   -6.283845e-08    1.300012e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sat Jul  8 17:43:22 2023  <<<
+
+     =============  energy results (Molecule object)  =============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2576506989e+01 (   -4.51530e+00 /ion)
+ total orbital energy:   -6.2281500467e+00 (   -8.89736e-01 /electron)
+ hartree energy      :    3.7520465544e+01 (    5.36007e+00 /electron)
+ exc-corr energy     :   -5.8785025780e+00 (   -8.39786e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.0929374787e+01 (    1.56134e+00 /electron)
+ V_local (planewave) :   -8.8062441216e+01 (   -1.25803e+01 /electron)
+ V_nl    (planewave) :    3.2909789490e+00 (    4.70140e-01 /electron)
+ V_Coul  (planewave) :    7.5040931087e+01 (    1.07201e+01 /electron)
+ V_xc    (planewave) :   -7.4269936537e+00 (   -1.06100e+00 /electron)
+ Viral Coefficient   :   -1.5698541928e+00
+
+ orbital energy:
+    -2.6259431e-01 (  -7.146eV)
+    -2.6270255e-01 (  -7.149eV)
+    -3.7743392e-01 ( -10.271eV)
+    -4.0604847e-01 ( -11.049eV)
+    -4.0614150e-01 ( -11.052eV)
+    -6.2198837e-01 ( -16.925eV)
+    -7.7716592e-01 ( -21.148eV)
+
+ == Center of Charge ==
+
+ spin up    = (    0.2147    -0.4902    -0.0671 )
+ spin down  = (    0.2147    -0.4902    -0.0671 )
+      total = (    0.2147    -0.4902    -0.0671 )
+ ionic      = (    0.2365    -0.5399    -0.0740 )
+
+ == Molecular Dipole wrt Center of Mass ==
+
+ mu   = (    0.3049    -0.6965    -0.0957 ) au
+ |mu| =      0.7664 au (     1.9478 Debye )
+
+ output psi to filename: ./ch3cl-pspw.movecs
+
+ ------------------
+ cputime in seconds
+ prologue    : 4.288e-01
+ main loop   : 4.571e+00
+ epilogue    : 1.661e-02
+ total       : 5.016e+00
+ cputime/step: 2.252e-02 ( 203 evaluations, 50 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            5.080963e+00 2.502937e-02     100.00%
+ total FFT time        3.192962e+00 1.572888e-02      62.84%
+ lagrange multipliers  1.530408e-02 7.538957e-05       0.30%
+ local potentials      6.297874e-03 3.102401e-05       0.12%
+ non-local potentials  1.352274e-01 6.661450e-04       2.66%
+ ffm_dgemm             1.125017e-01 5.541954e-04       2.21%
+ fmf_dgemm             5.593377e-02 2.755358e-04       1.10%
+ m_diagonalize         4.607500e-04 2.269704e-06       0.01%
+ mmm_multiply          5.725100e-05 2.820246e-07       0.00%
+ SCVtrans              6.675100e-05 3.288227e-07       0.00%
+
+ >>> job completed at     Sat Jul  8 17:43:22 2023 <<<
+
+Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"current_task":"energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":34,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[20.0,40.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3Cl Efield test"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jul  8 17:43:22 2023 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./C.vpp
+
+ writing formatted psp filename: ./H.vpp
+
+ writing formatted psp filename: ./Cl.vpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... psi:1 spin:1
+ converting .... psi:2 spin:1
+ converting .... psi:3 spin:1
+ converting .... psi:4 spin:1
+ converting .... psi:5 spin:1
+ converting .... psi:6 spin:1
+ converting .... psi:7 spin:1
+
+ input psi exists, reading from file: ./ch3cl-pspw.movecs
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./ch3cl-pspw.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 40.000 fft =  80 x   80 x   80  (  106048 waves    26512 per task)
+      wavefnc cutoff = 20.000 fft =  80 x   80 x   80  (   37447 waves     9364 per task)
+
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================= Grassmann lmbfgs iteration =================
+          >>> iteration started at Sat Jul  8 17:43:22 2023  <<<
+     iter.                   Energy          DeltaE        DeltaRho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -2.269004339715e+01   -3.632708e-05    2.006754e-07
+        20      -2.269009009012e+01   -3.182545e-07    1.469597e-09
+        30      -2.269009051838e+01   -8.387219e-08    1.424293e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sat Jul  8 17:43:29 2023  <<<
+
+     =============  energy results (Molecule object)  =============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2690090518e+01 (   -4.53802e+00 /ion)
+ total orbital energy:   -6.2091585961e+00 (   -8.87023e-01 /electron)
+ hartree energy      :    3.7659360425e+01 (    5.37991e+00 /electron)
+ exc-corr energy     :   -5.9041136753e+00 (   -8.43445e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.1266916799e+01 (    1.60956e+00 /electron)
+ V_local (planewave) :   -8.8258892390e+01 (   -1.26084e+01 /electron)
+ V_nl    (planewave) :    2.9230207967e+00 (    4.17574e-01 /electron)
+ V_Coul  (planewave) :    7.5318720850e+01 (    1.07598e+01 /electron)
+ V_xc    (planewave) :   -7.4589246522e+00 (   -1.06556e+00 /electron)
+ Viral Coefficient   :   -1.5510965162e+00
+
+ orbital energy:
+    -2.6152635e-01 (  -7.117eV)
+    -2.6152901e-01 (  -7.117eV)
+    -3.7702499e-01 ( -10.259eV)
+    -4.0651244e-01 ( -11.062eV)
+    -4.0655651e-01 ( -11.063eV)
+    -6.1540523e-01 ( -16.746eV)
+    -7.7602477e-01 ( -21.117eV)
+
+ == Center of Charge ==
+
+ spin up    = (    0.2149    -0.4906    -0.0672 )
+ spin down  = (    0.2149    -0.4906    -0.0672 )
+      total = (    0.2149    -0.4906    -0.0672 )
+ ionic      = (    0.2365    -0.5399    -0.0740 )
+
+ == Molecular Dipole wrt Center of Mass ==
+
+ mu   = (    0.3030    -0.6911    -0.0948 ) au
+ |mu| =      0.7605 au (     1.9329 Debye )
+
+ output psi to filename: ./ch3cl-pspw.movecs
+
+ ------------------
+ cputime in seconds
+ prologue    : 3.524e-01
+ main loop   : 7.007e+00
+ epilogue    : 3.301e-02
+ total       : 7.393e+00
+ cputime/step: 7.617e-02 ( 92 evaluations, 23 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            1.247757e+01 1.356258e-01     100.00%
+ total FFT time        8.239552e+00 8.956035e-02      66.03%
+ lagrange multipliers  3.417325e-02 3.714484e-04       0.27%
+ local potentials      2.680792e-02 2.913904e-04       0.21%
+ non-local potentials  3.516382e-01 3.822155e-03       2.82%
+ ffm_dgemm             2.601428e-01 2.827640e-03       2.08%
+ fmf_dgemm             1.476775e-01 1.605190e-03       1.18%
+ m_diagonalize         7.644600e-04 8.309348e-06       0.01%
+ mmm_multiply          9.050000e-05 9.836957e-07       0.00%
+ SCVtrans              1.296210e-04 1.408924e-06       0.00%
+
+ >>> job completed at     Sat Jul  8 17:43:29 2023 <<<
+
+Running energy calculation - rtdbstr = {"constraints":null,"current_task":"task pspw energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":34,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3Cl Efield test"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jul  8 17:43:29 2023 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./C.vpp
+
+ writing formatted psp filename: ./H.vpp
+
+ writing formatted psp filename: ./Cl.vpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... psi:1 spin:1
+ converting .... psi:2 spin:1
+ converting .... psi:3 spin:1
+ converting .... psi:4 spin:1
+ converting .... psi:5 spin:1
+ converting .... psi:6 spin:1
+ converting .... psi:7 spin:1
+
+ input psi exists, reading from file: ./ch3cl-pspw.movecs
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./ch3cl-pspw.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 60.000 fft =  96 x   96 x   96  (  195216 waves    48804 per task)
+      wavefnc cutoff = 30.000 fft =  96 x   96 x   96  (   69013 waves    17254 per task)
+
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================= Grassmann lmbfgs iteration =================
+          >>> iteration started at Sat Jul  8 17:43:30 2023  <<<
+     iter.                   Energy          DeltaE        DeltaRho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -2.269828868618e+01   -1.038780e-06    1.421465e-08
+        20      -2.269829051525e+01   -8.769207e-08    5.729065e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sat Jul  8 17:43:39 2023  <<<
+
+     =============  energy results (Molecule object)  =============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2698290515e+01 (   -4.53966e+00 /ion)
+ total orbital energy:   -6.2113992251e+00 (   -8.87343e-01 /electron)
+ hartree energy      :    3.7665383164e+01 (    5.38077e+00 /electron)
+ exc-corr energy     :   -5.9053403551e+00 (   -8.43620e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.1264255959e+01 (    1.60918e+00 /electron)
+ V_local (planewave) :   -8.8284469632e+01 (   -1.26121e+01 /electron)
+ V_nl    (planewave) :    2.9382628234e+00 (    4.19752e-01 /electron)
+ V_Coul  (planewave) :    7.5330766328e+01 (    1.07615e+01 /electron)
+ V_xc    (planewave) :   -7.4602147032e+00 (   -1.06574e+00 /electron)
+ Viral Coefficient   :   -1.5514256111e+00
+
+ orbital energy:
+    -2.6145121e-01 (  -7.115eV)
+    -2.6145650e-01 (  -7.115eV)
+    -3.7712692e-01 ( -10.262eV)
+    -4.0679231e-01 ( -11.069eV)
+    -4.0680450e-01 ( -11.070eV)
+    -6.1560258e-01 ( -16.752eV)
+    -7.7646560e-01 ( -21.129eV)
+
+ == Center of Charge ==
+
+ spin up    = (    0.2150    -0.4908    -0.0672 )
+ spin down  = (    0.2150    -0.4908    -0.0672 )
+      total = (    0.2150    -0.4908    -0.0672 )
+ ionic      = (    0.2365    -0.5399    -0.0740 )
+
+ == Molecular Dipole wrt Center of Mass ==
+
+ mu   = (    0.3011    -0.6875    -0.0942 ) au
+ |mu| =      0.7564 au (     1.9225 Debye )
+
+ output psi to filename: ./ch3cl-pspw.movecs
+
+ ------------------
+ cputime in seconds
+ prologue    : 5.548e-01
+ main loop   : 9.139e+00
+ epilogue    : 5.409e-02
+ total       : 9.748e+00
+ cputime/step: 1.406e-01 ( 65 evaluations, 16 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            2.223625e+01 3.420962e-01     100.00%
+ total FFT time        1.477382e+01 2.272895e-01      66.44%
+ lagrange multipliers  7.246525e-02 1.114850e-03       0.33%
+ local potentials      6.131429e-02 9.432968e-04       0.28%
+ non-local potentials  6.192666e-01 9.527178e-03       2.78%
+ ffm_dgemm             4.615114e-01 7.100176e-03       2.08%
+ fmf_dgemm             2.624630e-01 4.037892e-03       1.18%
+ m_diagonalize         9.738360e-04 1.498209e-05       0.00%
+ mmm_multiply          1.128760e-04 1.736554e-06       0.00%
+ SCVtrans              1.818270e-04 2.797338e-06       0.00%
+
+ >>> job completed at     Sat Jul  8 17:43:39 2023 <<<
+
+Next rtdbstr={"constraints":null,"current_task":"task pspw energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":39,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"dipole":[0.30114331065135774,-0.6874548779487278,-0.09419494514073606],"dipole_magnitude":0.7564087456234405,"efield":{"on":true,"type":2,"vector":[0.001,0.002,0.003]},"initialize_wavefunction":null,"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.26145120558826357,-0.2614564979509795,-0.37712692082518484,-0.4067923097161424,-0.40680450074102265,-0.6156025766838354,-0.7764656010342004],"energies":[-22.69829051524995,-6.2113992250792585,37.66538316413811,-5.905340355067625,19.62361752580817,11.264255958713168,-88.28446963222149,2.938262823379346,75.33076632827623,-7.460214703226874,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.9609956116897586e+243,6.052870644272e-310,2.999393627791262e-241,2.913958965952045e+257,3.285269e-317,1.0655986769561075e-255,2.1800378325e-314,2.1800378325e-314,2.1800383424e-314,0.0,0.0,0.0,0.0,0.0,0.0,8.887795736585723e+252,6.964076156821255e+252,1.3184226459201713e-231,1.6e-322],"energy":-22.69829051524995},"scratch_dir":".","title":"CH3Cl Efield test"}
+Next task =1
+
+
+Running energy calculation - rtdbstr = {"constraints":null,"current_task":"task pspw energy","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":39,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"dipole":[0.30114331065135774,-0.6874548779487278,-0.09419494514073606],"dipole_magnitude":0.7564087456234405,"efield":{"on":true,"type":2,"vector":[0.001,0.002,0.003]},"initialize_wavefunction":null,"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.26145120558826357,-0.2614564979509795,-0.37712692082518484,-0.4067923097161424,-0.40680450074102265,-0.6156025766838354,-0.7764656010342004],"energies":[-22.69829051524995,-6.2113992250792585,37.66538316413811,-5.905340355067625,19.62361752580817,11.264255958713168,-88.28446963222149,2.938262823379346,75.33076632827623,-7.460214703226874,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.9609956116897586e+243,6.052870644272e-310,2.999393627791262e-241,2.913958965952045e+257,3.285269e-317,1.0655986769561075e-255,2.1800378325e-314,2.1800378325e-314,2.1800383424e-314,0.0,0.0,0.0,0.0,0.0,0.0,8.887795736585723e+252,6.964076156821255e+252,1.3184226459201713e-231,1.6e-322],"energy":-22.69829051524995},"scratch_dir":".","title":"CH3Cl Efield test"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT PSPW Calculation              *
+          *                                                   *
+          *  [ (Grassmann/Stiefel manifold implementation) ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   02/27/21             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Abhishek Bagusetty, David H. Bross, ...        *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jul  8 17:43:39 2023 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./C.vpp
+
+ reading formatted psp filename: ./H.vpp
+
+ reading formatted psp filename: ./Cl.vpp
+ input psi exists, reading from file: ./ch3cl-pspw.movecs
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./ch3cl-pspw.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00100    0.00200    0.00300 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 60.000 fft =  96 x   96 x   96  (  195216 waves    48804 per task)
+      wavefnc cutoff = 30.000 fft =  96 x   96 x   96  (   69013 waves    17254 per task)
+
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+      minimizer = Grassmann lmbfgs
+
+
+
+     ================= Grassmann lmbfgs iteration =================
+          >>> iteration started at Sat Jul  8 17:43:39 2023  <<<
+     iter.                   Energy          DeltaE        DeltaRho
+     --------------------------------------------------------------
+        10      -2.269985211410e+01   -1.074029e-06    7.592128e-09
+        20      -2.269985459304e+01   -9.375191e-08    2.760786e-10
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Sat Jul  8 17:43:48 2023  <<<
+
+     =============  energy results (Molecule object)  =============
+
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+
+ total     energy    :   -2.2699854593e+01 (   -4.53997e+00 /ion)
+ total orbital energy:   -6.1990308668e+00 (   -8.85576e-01 /electron)
+ hartree energy      :    3.7664384879e+01 (    5.38063e+00 /electron)
+ exc-corr energy     :   -5.9052869628e+00 (   -8.43612e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ kinetic (planewave) :    1.1263707305e+01 (    1.60910e+00 /electron)
+ V_local (planewave) :   -8.8283423867e+01 (   -1.26119e+01 /electron)
+ V_nl    (planewave) :    2.9389173148e+00 (    4.19845e-01 /electron)
+ V_Coul  (planewave) :    7.5328769758e+01 (    1.07613e+01 /electron)
+ V_xc    (planewave) :   -7.4601443130e+00 (   -1.06573e+00 /electron)
+ Viral Coefficient   :   -1.5515212384e+00
+
+ orbital energy:
+    -2.6182668e-01 (  -7.125eV)
+    -2.6202843e-01 (  -7.130eV)
+    -3.7669636e-01 ( -10.251eV)
+    -4.0378221e-01 ( -10.988eV)
+    -4.0505066e-01 ( -11.022eV)
+    -6.1374154e-01 ( -16.701eV)
+    -7.7638956e-01 ( -21.127eV)
+
+ == Center of Charge ==
+
+ spin up    = (    0.2164    -0.4857    -0.0612 )
+ spin down  = (    0.2164    -0.4857    -0.0612 )
+      total = (    0.2164    -0.4857    -0.0612 )
+ ionic      = (    0.2365    -0.5399    -0.0740 )
+
+ == Molecular Dipole wrt Center of Mass ==
+
+ mu   = (    0.2813    -0.7588    -0.1782 ) au
+ |mu| =      0.8287 au (     2.1061 Debye )
+
+ output psi to filename: ./ch3cl-pspw.movecs
+
+ ------------------
+ cputime in seconds
+ prologue    : 4.896e-01
+ main loop   : 8.108e+00
+ epilogue    : 5.449e-02
+ total       : 8.652e+00
+ cputime/step: 1.423e-01 ( 57 evaluations, 17 linesearches)
+
+ Time spent doing      total        step             percent
+ total time            3.090510e+01 5.421947e-01     100.00%
+ total FFT time        2.047426e+01 3.591975e-01      66.25%
+ lagrange multipliers  7.246525e-02 1.271320e-03       0.23%
+ local potentials      9.540983e-02 1.673857e-03       0.31%
+ non-local potentials  8.597884e-01 1.508401e-02       2.78%
+ ffm_dgemm             6.575555e-01 1.153606e-02       2.13%
+ fmf_dgemm             3.850123e-01 6.754602e-03       1.25%
+ m_diagonalize         1.185086e-03 2.079098e-05       0.00%
+ mmm_multiply          1.361300e-04 2.388246e-06       0.00%
+ SCVtrans              2.355020e-04 4.131614e-06       0.00%
+
+ >>> job completed at     Sat Jul  8 17:43:48 2023 <<<
+
+Next rtdbstr={"constraints":null,"current_task":"task pspw steepest_descent","dbname":"ch3cl-pspw","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":40,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"dipole":[0.2813083649153273,-0.758819574140606,-0.17815468817408325],"dipole_magnitude":0.8286619547129399,"efield":{"on":true,"type":2,"vector":[0.001,0.002,0.003]},"initialize_wavefunction":null,"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.2618266821711297,-0.2620284250768477,-0.37669635853627004,-0.40378221491852984,-0.4050506582124558,-0.6137415351501728,-0.7763895593148619],"energies":[-22.699854593038225,-6.199030866760537,37.66438487911576,-5.905286962785754,19.62361752580817,11.263707305070183,-88.28342386679032,2.938917314844578,75.32876975823152,-7.4601443129866984,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.013142934870271752,-0.01491372317105133,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.626044405913427e-217,5.21501808816135e-310,2.1e-322,-2.37e-322,2.913958965952045e+257,3.285269e-317,1.0655986769561075e-255,2.1800378325e-314,2.1800378325e-314,5.303774483501195e+180,5.53e-322,2.481040258324024e-265,5.21501808816135e-310,2.1e-322,-2.37e-322,0.0,8.887795736585723e+252,6.964076156821255e+252,1.3184226459201713e-231,1.6e-322],"energy":-22.699854593038225},"scratch_dir":".","title":"CH3Cl Efield test"}
+Next task =5
+
+          *****************************************************
+          *                                                   *
+          *     Car-Parrinello calculation for molecules,     *
+          *       microclusters, liquids, and materials       *
+          *                                                   *
+          *     [     steepest descent minimization   ]       *
+          *     [          C++ implementation         ]       *
+          *                                                   *
+          *            version #7.00   09/20/18               *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska     *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Sat Jul  8 17:43:48 2023 <<<
+
+ psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
+
+
+ input psi exists, reading from file: ./ch3cl-pspw.movecs
+
+ initializing nwpw_efield object
+ -------------------------------
+
+ reading formatted psp filename: ./C.vpp
+
+ reading formatted psp filename: ./H.vpp
+
+ reading formatted psp filename: ./Cl.vpp
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./ch3cl-pspw.movecs
+
+ number of processors used: 4
+ processor grid           : 4 x1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   ion motion           = no
+   boundary conditions  = aperiodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+
+ elements involved in the cluster:
+      1: C   valence charge =  4.0  lmax =2
+             comment = Parameterized (J.Phys.Chem., vol 100, page 6966) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.850   0.850
+      2: H   valence charge =  1.0  lmax =1
+             comment = Parameterized (Chem.Phys.Lett., vol 322, page 447) Hamman psp 
+             pseudopotential type            =  0
+             highest angular component       =  1
+             local potential used            =  1
+             number of non-local projections =  1
+             aperiodic cutoff radius         =  1.000
+             cutoff =    0.800   0.800
+      3: Cl  valence charge =  7.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  2
+             number of non-local projections =  4
+             aperiodic cutoff radius         =  1.000
+             semicore corrections inlcuded   =  1.300 (radius) 0.284 (charge)
+             cutoff =    1.340   1.450   1.450
+
+ total charge =   0.000
+
+ atom composition:
+   C : 1   H : 3   Cl : 1
+
+ initial ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ real space Electric field:
+     Electric Field (au) = (   0.00100    0.00200    0.00300 )
+             Center (au) = (   0.00000    0.00000    0.00000 )
+
+
+ number of electrons: spin up =     7 (   7 per task) down =     7 (   7 per task)
+
+ supercell:
+      volume =   17576.00
+      lattice:    a1 = <   26.000    0.000    0.000 >
+                  a2 = <    0.000   26.000    0.000 >
+                  a3 = <    0.000    0.000   26.000 >
+      reciprocal: b1 = <    0.242    0.000    0.000 >
+                  b2 = <    0.000    0.242    0.000 >
+                  b3 = <    0.000    0.000    0.242 >
+      lattice:    a =      26.000 b =     26.000 c =      26.000
+                  alpha =  90.000 beta =  90.000 gamma =  90.000
+      density cutoff = 60.000 fft =  96 x   96 x   96  (  195216 waves    48804 per task)
+      wavefnc cutoff = 30.000 fft =  96 x   96 x   96  (   69013 waves    17254 per task)
+
+ Ewald parameters:
+      energy cutoff =  60.000 fft=   96 x   96 x   96  (  195216 waves    48804 per task)
+      Ewald summation: cut radius =   8.276 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs = 16.12911276)
+
+ technical parameters:
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =         10 (    1 inner    10 outer)
+
+
+
+     ========================== iteration ==========================
+          >>> iteration started at Sat Jul  8 17:43:48 2023  <<<
+     iter.             Energy       DeltaE     DeltaPsi     DeltaIon
+     ---------------------------------------------------------------
+         1  -2.2699854593e+01 -3.91377e+00  6.56862e-10  0.00000e+00
+         2  -2.2699854607e+01 -2.49153e-09  4.59851e-10  0.00000e+00
+         *** tolerance ok.    iteration terminated
+          >>> iteration ended at   Sat Jul  8 17:43:48 2023  <<<
+
+
+     ===================  summary of results ======================
+
+ final ion positions (au):
+   1 C	(    0.86174   -1.96725   -0.26951 ) - atomic mass = 12.000
+   2 H	(    2.89978   -1.76800   -0.31807 ) - atomic mass =  1.008
+   3 H	(    0.28243   -3.13738    1.30873 ) - atomic mass =  1.008
+   4 H	(    0.16300   -2.73135   -2.03687 ) - atomic mass =  1.008
+   5 Cl	(   -0.49729    1.13524    0.15552 ) - atomic mass = 34.969
+   G.C.	(    0.74193   -1.69375   -0.23204 )
+ C.O.M.	(   -0.07354    0.16789    0.02300 )
+
+ number of electrons: spin up=     7.00000  down=     7.00000 (real space)
+
+ total     energy    :   -2.2699854607e+01 (   -4.53997e+00 /ion)
+
+ QM Energies
+ -----------
+ total  QM energy    :   -2.2698083819e+01 (   -3.24258e+00 /electron)
+ total orbital energy:   -6.1990308968e+00 (   -8.85576e-01 /electron)
+ hartree energy      :    3.7664384912e+01 (    5.38063e+00 /electron)
+ exc-corr energy     :   -5.9052870422e+00 (   -8.43612e-01 /electron)
+ ion-ion energy      :    1.9623617526e+01 (    3.92472e+00 /ion)
+
+ K.S. kinetic energy :    1.1263708732e+01 (    1.60910e+00 /electron)
+ K.S. V_l energy     :   -8.8270275843e+01 (   -1.26100e+01 /electron)
+ K.S. V_nl_energy    :    2.9389108307e+00 (    4.19844e-01 /electron)
+ K.S. V_Hart energy  :    7.5328769825e+01 (    1.07613e+01 /electron)
+ K.S. V_xc energy    :   -7.4601444412e+00 (   -1.06573e+00 /electron)
+ Viral Coefficient   :   -1.5503543322e+00
+
+ Electric Field Energies
+ -----------------------
+ - Electric Field Energy   :   -1.7707883217e-03
+ - Electric Field/Electron :    1.3142934849e-02
+ - Electric Field/Ion      :   -1.4913723171e-02
+
+ orbital energies:
+    -2.6182670e-01 (  -7.125eV)
+    -2.6202843e-01 (  -7.130eV)
+    -3.7669636e-01 ( -10.251eV)
+    -4.0378222e-01 ( -10.988eV)
+    -4.0505064e-01 ( -11.022eV)
+    -6.1374156e-01 ( -16.701eV)
+    -7.7638954e-01 ( -21.127eV)
+
+ == Center of Charge ==
+
+ spin up    = (    0.2164    -0.4857    -0.0612 )
+ spin down  = (    0.2164    -0.4857    -0.0612 )
+      total = (    0.2164    -0.4857    -0.0612 )
+ ionic      = (    0.2365    -0.5399    -0.0740 )
+
+ == Molecular Dipole wrt Center of Mass ==
+
+ mu   = (    0.2813    -0.7588    -0.1782 ) au
+ |mu| =      0.8287 au (     2.1061 Debye )
+
+ output psi to filename: ./ch3cl-pspw.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 4.753e-01
+ main loop   : 3.343e-01
+ epilogue    : 6.058e-02
+ total       : 8.702e-01
+ cputime/step: 1.672e-01
+
+ Time spent doing      total        step             percent
+ total time            3.178944e+01 1.589472e+01     100.00%
+ total FFT time        2.070190e+01 1.035095e+01      65.12%
+ lagrange multipliers  7.708325e-02 3.854162e-02       0.24%
+ local potentials      1.295545e-01 6.477727e-02       0.41%
+ non-local potentials  8.744393e-01 4.372197e-01       2.75%
+ ffm_dgemm             6.635391e-01 3.317696e-01       2.09%
+ fmf_dgemm             3.858546e-01 1.929273e-01       1.21%
+ m_diagonalize         1.860878e-03 9.304390e-04       0.01%
+ mmm_multiply          1.361300e-04 6.806500e-05       0.00%
+ SCVtrans              2.355020e-04 1.177510e-04       0.00%
+
+ >>> job completed at     Sat Jul  8 17:43:48 2023 <<<
+
+Next rtdbstr={"constraints":null,"current_task":"task pspw steepest_descent","dbname":"ch3cl-pspw","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":0,"charges":[6.0,1.0,1.0,1.0,17.0],"conv":1.88972598858,"coords":[0.86174150695632,-1.9672519972614946,-0.26951083076529103,2.8997769705720557,-1.768004958203585,-0.3180692297678427,0.2824289976232239,-3.1373778882941847,1.308729733391079,0.16300398432293364,-2.731347582935909,-2.0368732821327584,-0.49728517334680417,1.135243439009492,0.15552066940815684],"masses":[12.0,1.008,1.008,1.008,34.96885],"nion":5,"symbols":["C","H","H","H","Cl"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":43,"nwinput_lines":["Title \"CH3Cl Efield test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3cl-pspw","","echo","","geometry noautosym nocenter noautoz","C   0.456014 -1.041025 -0.142619","H   1.534496 -0.935588 -0.168315","H   0.149455 -1.660229 0.692550","H   0.086258 -1.445367 -1.077867","Cl   -0.263152 0.600745 0.082298","end","","nwpw","   simulation_cell","     SC 26.0","     boundary_conditions aperiodic","   end","   ","   lmbfgs","   ","   xc pbe","   cutoff 30.0","   steepest_descent","     ","     time_step 5.8","     loop 1 10","  end","  2d-hcurve","end","task pspw energy","","nwpw","   efield on vector 0.001 0.002 0.003 rgrid","end","task pspw energy","task pspw steepest_descent","","",""],"nwinput_nlines":43,"nwpw":{"cutoff":[30.0,60.0],"dipole":[0.2813077787757764,-0.7588188614468173,-0.17815497390748397],"dipole_magnitude":0.8286611645390302,"efield":{"on":true,"type":2,"vector":[0.001,0.002,0.003]},"initialize_wavefunction":null,"mapping":3,"minimizer":2,"simulation_cell":{"boundary_conditions":"aperiodic","unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"steepest_descent":{"loop":[1,10],"time_step":5.8},"xc":"pbe"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.2618266821711297,-0.2620284250768477,-0.37669635853627004,-0.40378221491852984,-0.4050506582124558,-0.6137415351501728,-0.7763895593148619],"energies":[-22.699854607489076,-6.199030896793237,37.66438491236542,-5.905287042150143,19.62361752580817,11.26370873173904,-88.27027584277826,2.938910830697507,75.32876982473084,-7.460144441182602,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.013142934849355652,-0.01491372317105133,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.4287275545e-314,1.54394266627271e+229,5.21501819264833e-310,0.0,2.1607121267e-314,0.0,2e-323,2.160685882e-314,2.1607121267e-314,0.0],"energy":-22.699854607489076},"scratch_dir":".","title":"CH3Cl Efield test"}
+Next task =0
+
+writing rtdbjson = ./ch3cl-pspw.json
