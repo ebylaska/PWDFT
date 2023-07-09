@@ -29,8 +29,15 @@
 
 # Executables
 *.exe
-*.out
 *.app
+
+# Outputs
+*.out
+*.check
+
+# QA Outputs
+QA
+tags
 
 # NWPW binary files
 *.db
