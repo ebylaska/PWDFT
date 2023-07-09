@@ -26,7 +26,7 @@ echo " "
 
 echo "Short QA/tests:"
 echo " "
-./runtest.bash -n $NPROCS C2
+./runtest.bash -n $NPROCS methane C2
 
 echo " "
 echo "Medium QA/tests:"
