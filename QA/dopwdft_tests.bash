@@ -9,7 +9,7 @@ fi
 echo "Running QA tests: NPROCS="$NPROCS
 echo " "
 
-echo "Short tests:
+echo "Short tests:"
 echo " "
 ./runtest.bash -n $NPROCS C2
 
