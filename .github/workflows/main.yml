@@ -75,7 +75,7 @@ jobs:
 
       - name: Run the methane QA
         run: |
-          echo Running the methan QA test.
+          echo Running the methane QA test.
           cd QA
           chmod +x ./runtest_github.bash
           OUTPUT1=$(./runtest_github.bash -n 1 methane)
