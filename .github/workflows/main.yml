@@ -69,6 +69,7 @@ jobs:
             echo "OK"
           else
             echo "Failed"
+            cat ./testoutputs/C2.out
             exit 1
           fi
 
@@ -83,6 +84,7 @@ jobs:
             echo "OK"
           else
             echo "Failed"
+            cat ./testoutputs/methane.out
             exit 1
           fi
                 

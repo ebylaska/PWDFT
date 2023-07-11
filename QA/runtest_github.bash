@@ -76,7 +76,7 @@ do
    echo    "      Current directory:" `pwd`
    echo    "      Executable:" $RUNPWDFT  $i.nw ">" $i.out
    echo    "      Running...."
-   $RUNPWDFT $i.nw | tee $i.out
+   $RUNPWDFT $i.nw > $i.out
    echo "...Finished"
    RUNSTATUS=$?
    if [ $RUNSTATUS -ne 0 ];then
