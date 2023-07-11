@@ -75,7 +75,7 @@ do
    echo    "   Executing pwdft:"
    echo    "      Current directory:" `pwd`
    echo    "      Executable:" $RUNPWDFT  $i.nw ">" $i.out
-   echo    "      Running...."
+   echo -n "      Running...."
    $RUNPWDFT $i.nw > $i.out
    echo "...Finished"
    RUNSTATUS=$?
