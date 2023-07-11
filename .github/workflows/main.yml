@@ -88,6 +88,21 @@ jobs:
             exit 1
           fi
                 
+      - name: Run the benzene QA
+        run: |
+          echo Running the benzene QA test.
+          cd QA
+          chmod +x ./runtest_github.bash
+          OUTPUT1=$(./runtest_github.bash -n 2 benzene)
+          echo "$OUTPUT1"
+          if [[ $OUTPUT1 == *"Verifying output: OK"* ]]; then
+            echo "OK"
+          else
+            echo "Failed"
+            cat ./testoutputs/benzene.out
+            exit 1
+          fi
+
 #      - name: Run the DEMOs -  multi-line script
 #        run: |
 #          echo Add other actions to build,
