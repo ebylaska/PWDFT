@@ -1,4 +1,4 @@
-#!/usr/bin/env bash  -f
+#!/bin/bash -f
 
 #
 #define the pwdft and python3 binaries
