@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -f
+#!/bin/bash -f
 
 #
 #define the pwdft and python3 binaries
@@ -14,7 +14,7 @@ fi
 
 
 if [[ $# -eq 0 ]] ; then
-  echo "runtest.bash [-n nproc | -p nproc | -h] testdir1 [testdir2 ...]"
+  echo "runtest_github.bash [-n nproc | -p nproc | -h] testdir1 [testdir2 ...]"
   echo " -procs nproc sets the number of processors to use"
   exit 0
 fi
@@ -75,9 +75,9 @@ do
    echo    "   Executing pwdft:"
    echo    "      Current directory:" `pwd`
    echo    "      Executable:" $RUNPWDFT  $i.nw ">" $i.out
-   echo -n "      Running...."
-   $RUNPWDFT $i.nw > $i.out
-   echo "Finished"
+   echo    "      Running...."
+   $RUNPWDFT $i.nw | tee $i.out
+   echo "...Finished"
    RUNSTATUS=$?
    if [ $RUNSTATUS -ne 0 ];then
       echo "   Execution failed!"
