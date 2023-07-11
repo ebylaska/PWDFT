@@ -28,7 +28,7 @@ nwpw
 
    xc pbe
    cutoff 30.0
-   1d-slab
+   #1d-slab
 end
 
 task pspw optimize

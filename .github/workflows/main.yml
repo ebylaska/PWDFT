@@ -58,10 +58,38 @@ jobs:
         run: cmake --build build && ls
 
       # Runs a set of commands using the runners shell
-      - name: Run the DEMOs -  multi-line script
+      - name: Run the C2 QA 
         run: |
-          echo Add other actions to build,
-          echo Running DEMO2/ericmd00.nw 
-          cd DEMO2 && cat ericmd00.nw && ../build/pwdft ericmd00.nw
-          echo Running CuNanoDEMO/cunano00.nw 
-          cd ../CuNanoDEMO && cat cunano00.nw && ../build/pwdft cunano00.nw
+          echo Running the C2 QA test.
+          cd QA 
+          chmod +x ./runtest.bash
+          OUTPUT1=$(./runtest.bash -n 1 C2)
+          echo "$OUTPUT1"
+          if [[ $OUTPUT1 == *"Verifying output: OK"* ]]; then
+            echo "OK"
+          else
+            echo "Failed"
+            exit 1
+          fi
+
+      - name: Run the methane QA
+        run: |
+          echo Running the methan QA test.
+          cd QA
+          chmod +x ./runtest.bash
+          OUTPUT1=$(./runtest.bash -n 1 methane)
+          echo "$OUTPUT1"
+          if [[ $OUTPUT1 == *"Verifying output: OK"* ]]; then
+            echo "OK"
+          else
+            echo "Failed"
+            exit 1
+          fi
+                
+#      - name: Run the DEMOs -  multi-line script
+#        run: |
+#          echo Add other actions to build,
+#          echo Running DEMO2/ericmd00.nw 
+#          cd DEMO2 && cat ericmd00.nw && ../build/pwdft ericmd00.nw
+#          echo Running CuNanoDEMO/cunano00.nw 
+#          cd ../CuNanoDEMO && cat cunano00.nw && ../build/pwdft cunano00.nw
