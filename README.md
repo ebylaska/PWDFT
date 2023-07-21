@@ -107,7 +107,7 @@ module add cmake/3.24.2-gcc-11.2.0-pcasswq
 ```
 
 
-### Getting the code and building instrunctions
+### Getting the code and building instructions
 
 ```
 export HTTP_PROXY=http://proxy.alcf.anl.gov:3128
