@@ -33,11 +33,12 @@ public:
   ~Mapping3();
 
   // complex mapping
-  int ijktoindex(const int i, const int j, const int k) {
-    if (maptype == 1)
-      return (i + j * (nx / 2 + 1) + qmap[0][k] * (nx / 2 + 1) * ny);
-    else
-      return (k + qmap[2][i + j * (nx / 2 + 1)] * nz);
+  int ijktoindex(const int i, const int j, const int k) 
+  {
+     if (maptype == 1)
+        return (i + j * (nx/2+1) + qmap[0][k]*(nx/2+1)*ny);
+     else
+        return (k + qmap[2][i + j * (nx / 2 + 1)] * nz);
   }
 
   int ijktoindex1(const int i, const int j, const int k) {
@@ -59,12 +60,14 @@ public:
       return (i + qmap[0][j + k * ny] * (nx / 2 + 1));
   }
 
-  int ijktop(const int i, const int j, const int k) {
-    if (maptype == 1)
-      return (pmap[0][k]);
-    else
-      return (pmap[2][i + j * (nx / 2 + 1)]);
+  int ijktop(const int i, const int j, const int k) 
+  {
+     if (maptype == 1)
+        return (pmap[0][k]);
+     else
+        return (pmap[2][i + j * (nx/2+1)]);
   }
+
   int ijktop1(const int i, const int j, const int k) {
     if (maptype == 1)
       return (pmap[0][j]);

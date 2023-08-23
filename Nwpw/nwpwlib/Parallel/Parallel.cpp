@@ -56,6 +56,11 @@ Parallel::Parallel(MPI_Comm comm_world0) {
   base_stdio_print = (taskidi[0] == MASTER);
 }
 
+/********************************
+ *                              *
+ *       Parallel::init2d       *
+ *                              *
+ ********************************/
 void Parallel::init2d(const int ncolumns, const int pfft3_qsize) 
 {
    int ii;
@@ -103,6 +108,7 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
  
    MPI_Barrier(comm_world);
 }
+
 
 /********************************
  *                              *
@@ -183,13 +189,14 @@ int Parallel::ISumAll(const int d, const int sum) {
  ********************************/
 void Parallel::Vector_SumAll(const int d, const int n, double *sum) {
   double *sumout;
-  if (npi[d] > 1) {
-    sumout = new double[n];
-    // comm_i[d].Allreduce(sum,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM);
-    MPI_Allreduce(sum, sumout, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
-    for (int i = 0; i < n; ++i)
-      sum[i] = sumout[i];
-    delete[] sumout;
+  if (npi[d] > 1)
+  {
+     sumout = new double[n];
+     // comm_i[d].Allreduce(sum,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM);
+     MPI_Allreduce(sum, sumout, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
+     for (int i = 0; i < n; ++i)
+        sum[i] = sumout[i];
+     delete[] sumout;
   }
 }
 
@@ -262,11 +269,11 @@ void Parallel::Brdcst_cValues(const int d, const int root, const int n,
  *       Parallel::dsend        *
  *                              *
  ********************************/
-void Parallel::dsend(const int d, const int tag, const int procto, const int n,
-                     double *sum) {
+void Parallel::dsend(const int d, const int tag, const int procto, const int n, double *sum) 
+{
   // if (npi[d]>1) comm_i[d].Send(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
-  if (npi[d] > 1)
-    MPI_Send(sum, n, MPI_DOUBLE_PRECISION, procto, tag, comm_i[d]);
+   if (npi[d] > 1)
+      MPI_Send(sum, n, MPI_DOUBLE_PRECISION, procto, tag, comm_i[d]);
 }
 
 /********************************
@@ -314,42 +321,48 @@ void Parallel::ireceive(const int d, const int tag, const int procfrom,
  *       Parallel::astart       *
  *                              *
  ********************************/
-void Parallel::astart(const int d, const int sz) {
-  if ((d > 2) ? true : (npi[d] > 1)) {
-    reqcnt[d] = 0;
-    request[d] = new MPI_Request[sz];
-    statuses[d] = new MPI_Status[sz];
-  }
+void Parallel::astart(const int d, const int sz) 
+{
+   if ((d > 2) ? true : (npi[d] > 1)) 
+   {
+      reqcnt[d]   = 0;
+      request[d]  = new MPI_Request[sz];
+      statuses[d] = new MPI_Status[sz];
+   }
 }
 /********************************
  *                              *
  *       Parallel::awaitall     *
  *                              *
  ********************************/
-void Parallel::awaitall(const int d) {
-  if ((d > 2) ? true : (npi[d] > 1)) {
-    if (reqcnt[d] > 0)
-      MPI_Waitall(reqcnt[d], request[d], statuses[d]);
-    reqcnt[d] = 0;
-  }
+void Parallel::awaitall(const int d) 
+{
+   if ((d > 2) ? true : (npi[d] > 1)) 
+   {
+      if (reqcnt[d] > 0)
+         MPI_Waitall(reqcnt[d], request[d], statuses[d]);
+      reqcnt[d] = 0;
+   }
 }
 /********************************
  *                              *
  *       Parallel::aend         *
  *                              *
  ********************************/
-void Parallel::aend(const int d) {
-  // MPI::Status status[reqcnt[d]];
-  // request[d][0].Waitall(reqcnt[d],request[d],status);
-  // if (npi[d]>1)
-  if ((d > 2) ? true : (npi[d] > 1)) {
-    // request[d][0].Waitall(reqcnt[d],request[d]);
-    if (reqcnt[d] > 0)
-      MPI_Waitall(reqcnt[d], request[d], statuses[d]);
-    delete[] request[d];
-    delete[] statuses[d];
-    reqcnt[d] = 0;
-  }
+void Parallel::aend(const int d) 
+{
+   // MPI::Status status[reqcnt[d]];
+   // request[d][0].Waitall(reqcnt[d],request[d],status);
+   // if (npi[d]>1)
+   if ((d > 2) ? true : (npi[d] > 1)) 
+   {
+      // request[d][0].Waitall(reqcnt[d],request[d]);
+      if (reqcnt[d] > 0)
+         MPI_Waitall(reqcnt[d], request[d], statuses[d]);
+      delete[] request[d];
+      delete[] statuses[d];
+      reqcnt[d] = 0;
+   }
 }
 
 /********************************
@@ -357,14 +370,14 @@ void Parallel::aend(const int d) {
  *       Parallel::adreceive    *
  *                              *
  ********************************/
-void Parallel::adreceive(const int d, const int tag, const int procfrom,
-                         const int n, double *sum) {
-  // MPI::Status status;
-  // if (npi[d]>1) request[d][reqcnt[d]++] =
-  // comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
-  if ((d > 2) ? true : (npi[d] > 1))
-    MPI_Irecv(sum, n, MPI_DOUBLE_PRECISION, procfrom, tag,
-              comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
+void Parallel::adreceive(const int d, const int tag, const int procfrom, const int n, double *sum) 
+{
+   // MPI::Status status;
+   // if (npi[d]>1) request[d][reqcnt[d]++] =
+   // comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
+   if ((d > 2) ? true : (npi[d] > 1))
+     MPI_Irecv(sum, n, MPI_DOUBLE_PRECISION, procfrom, tag,
+               comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
 }
 
 /********************************
@@ -372,13 +385,13 @@ void Parallel::adreceive(const int d, const int tag, const int procfrom,
  *       Parallel::adsend        *
  *                              *
  ********************************/
-void Parallel::adsend(const int d, const int tag, const int procto, const int n,
-                      double *sum) {
-  // if (npi[d]>1) request[d][reqcnt[d]++] =
-  // comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
-  if ((d > 2) ? true : (npi[d] > 1))
-    MPI_Isend(sum, n, MPI_DOUBLE_PRECISION, procto, tag,
-              comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
+void Parallel::adsend(const int d, const int tag, const int procto, const int n, double *sum) 
+{
+   // if (npi[d]>1) request[d][reqcnt[d]++] =
+   // comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
+   if ((d > 2) ? true : (npi[d] > 1))
+     MPI_Isend(sum, n, MPI_DOUBLE_PRECISION, procto, tag,
+               comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
 }
 
 } // namespace pwdft

@@ -64,8 +64,8 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
 
   /* apply r-space operators  - Expensive*/
   mygrid->cc_pack_SMul(0, scal2, vl, vall);
-  mygrid->cc_pack_Sum2(0, vc, vall);
-  mygrid->c_unpack(0, vall);
+  mygrid->cc_pack_Sum2(0,vc,vall);
+  mygrid->c_unpack(0,vall);
   mygrid->cr_fft3d(vall);
 
   /* add v_field to vall */
@@ -74,21 +74,27 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
 
   
   /*
-     for (ms=0; ms<ispin; ++ms)
-     {
-        mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-        for (int i=0; i<(mygrid->neq[ms]); ++i)
-        {
-           mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
-           mygrid->rc_fft3d(vpsi);
-           mygrid->c_pack(1,vpsi);
-           mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
+   std::cout << "INTO psiH rc_fftd  -------------------" << std::endl;
 
-           indx1 += shift1;
-           indx2 += shift2;
-        }
-     }
-  */
+    //OLD - stable?
+    for (ms=0; ms<ispin; ++ms)
+    {
+       mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
+       for (int i=0; i<(mygrid->neq[ms]); ++i)
+       {
+           std::cout << "psiH i=" << i << " -------------------" << std::endl;
+          mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
+          mygrid->rc_fft3d(vpsi);
+          mygrid->c_pack(1,vpsi);
+          mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
+
+          indx1 += shift1;
+          indx2 += shift2;
+       }
+    }
+   std::cout << "OUT psiH rc_fftd  -------------------" << std::endl;
+   */
+ 
  
   { nwpw_timing_function ftimer(1);
 
@@ -120,6 +126,7 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
        done = ((indx1 >= n2) && (indx2 >= n2));
     }
   }
+  
   
 
   /* deallocate temporary memory */

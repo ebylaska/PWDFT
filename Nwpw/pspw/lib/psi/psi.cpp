@@ -320,16 +320,17 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
 
   if ((mypneb->ispin) == 1)
     sum1 *= 2;
-  if (std::fabs(sum2 - sum1) > 1.0e-10) {
-    if (myparall->base_stdio_print)
-      coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
-    mypneb->g_ortho(psi2);
+  if (std::fabs(sum2 - sum1) > 1.0e-10) 
+  {
+     if (myparall->base_stdio_print)
+        coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+     mypneb->g_ortho(psi2);
 
-    double sum3 = mypneb->gg_traceall(psi2, psi2);
-    if (myparall->base_stdio_print)
-      coutput << "         - exact norm = " << sum1 << " norm=" << sum2
-              << " corrected norm=" << sum3
-              << " (error=" << std::abs(sum2 - sum1) << ")" << std::endl;
+     double sum3 = mypneb->gg_traceall(psi2, psi2);
+     if (myparall->base_stdio_print)
+       coutput << "         - exact norm = " << sum1 << " norm=" << sum2
+               << " corrected norm=" << sum3
+               << " (error=" << std::abs(sum2 - sum1) << ")" << std::endl;
   }
 
   return newpsi;

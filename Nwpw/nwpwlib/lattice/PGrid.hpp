@@ -22,6 +22,11 @@ class PGrid : public d3db {
 
   Balance *mybalance;
   int balanced;
+
+  /* pgrid_tmp data */
+  double *pgrid_tmp1,*pgrid_tmp2;
+
+  /* G grid data */
   double *Garray, *Gpack[2];
   double Gmax, Gmin;
   int *masker[2], *packarray[2];
@@ -43,6 +48,7 @@ class PGrid : public d3db {
   double *zplane_tmp1, *zplane_tmp2;
 
 
+
 public:
   bool staged_gpu_fft_pipeline;
 
@@ -59,43 +65,42 @@ public:
 
   /* destructor */
   ~PGrid() {
-     delete[] Garray;
-     delete[] Gpack[0];
-     // delete [] Gpack[1];
-     delete[] masker[0];
-     // delete [] masker[1];
-     delete[] packarray[0];
-     // delete [] packarray[1];
+     delete [] pgrid_tmp1;
+     delete [] pgrid_tmp2;
+     delete [] Garray;
+     delete [] Gpack[0];
+     delete [] Gpack[1];
+     delete [] masker[0];
+     delete [] masker[1];
+     delete [] packarray[0];
+     delete [] packarray[1];
      if (balanced)
        delete mybalance;
-     delete[] zero_row3[0];
-     delete[] zero_row3[1];
-     delete[] zero_row2[0];
-     delete[] zero_row2[1];
-     delete[] zero_slab23[0];
-     delete[] zero_slab23[1];
-     delete[] zplane_tmp1;
-     delete[] zplane_tmp2;
+     delete [] zero_row3[0];
+     delete [] zero_row3[1];
+     delete [] zero_row2[0];
+     delete [] zero_row2[1];
+     delete [] zero_slab23[0];
+     delete [] zero_slab23[1];
+     delete [] zplane_tmp1;
+     delete [] zplane_tmp2;
      if (has_r_grid)
-       delete[] r_grid;
-     delete[] atmp;
-     delete[] aqindx;
-     delete[] aqstatus;
-     delete[] btmp;
-     delete[] bqindx;
-     delete[] bqstatus;
+       delete [] r_grid;
+     delete [] atmp;
+     delete [] aqindx;
+     delete [] aqstatus;
+     delete [] btmp;
+     delete [] bqindx;
+     delete [] bqstatus;
     
      // deallocate async buffer data
      for (auto q=0; q<aqmax; ++q)
        parall->aend(3+q);
 
-    
   }
 
-  double *Gxyz(const int i) { return &Garray[i * nfft3d]; }
-  double *Gpackxyz(const int nb, const int i) {
-    return &(Gpack[nb][i * (nida[nb] + nidb[nb])]);
-  }
+  double *Gxyz(const int i) { return Garray + i*nfft3d; }
+  double *Gpackxyz(const int nb, const int i) { return  Gpack[nb] + i*(nida[nb]+nidb[nb]); }
   double Gmax_ray() { return Gmax; }
   double Gmin_ray() { return Gmin; }
   double dGmin_ray() { return 0.01 * Gmin; }

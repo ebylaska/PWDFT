@@ -22,6 +22,9 @@
 
 #define DDOT_PWDFT(n, a, ida, b, idb) cblas_ddot(n, a, ida, b, idb);
 
+#define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
+  auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, s1, m, n, a, ida, b, idb)
+
 #define DGELSS_PWDFT(m, n, nrhs, a, ida, b, idb, s1, rcond, rank, work, iwork, \
                      ierr)                                                     \
   ierr = LAPACKE_dgels(LAPACK_COL_MAJOR, 'N', m, n, nrhs, a, ida, b, idb);
@@ -50,6 +53,7 @@ extern "C" void dlacpy_(char *, int *, int *, double *, int *, double *, int *);
 extern "C" void dgelss_(int *, int *, int *, double *, int *, double *, int *,
                         double *, double *, int *, double *, int *, int *);
 
+
 extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);
 
@@ -67,6 +71,7 @@ extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
   dsyev_((char *)"V", (char *)"U", &(n), hml, &(n), eig, xtmp, &(nn), &ierr)
 
 #define DDOT_PWDFT(n, a, ida, b, idb) ddot_(&(n), a, &ida, b, &(idb))
+
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   dlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))
 
@@ -75,13 +80,16 @@ extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
   dgelss_(&(m), &(n), &(nrhs), a, &(ida), b, &(idb), s1, &(rcond), &(rank),    \
           work, &(iwork), &(ierr))
 
+
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   zgemm_(s1, s2, &(n), &(m), &(k), &(alpha), a, &(ida), b, &(idb), &(beta), c, \
          &(idc))
 
 #endif
 
+
 extern "C" void factor_skew_(int *, double *, double *, double *, double *);
+
 
 #define FACTOR_SKEW_PWDFT(n, k, v, w, s) factor_skew_(&(n), k, v, w, s)
 

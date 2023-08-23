@@ -119,7 +119,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       {
          mygrid->cc_pack_copy(1,psi1+indx1,psi_r+indx2);
          mygrid->c_unpack(1,psi_r+indx2);
-         mygrid->cr_fft3d(psi_r+indx2);
+         mygrid->cr_pfft3b(1,psi_r+indx2);
          indx1 += shift1;
          indx2 += shift2;
       }
@@ -132,9 +132,10 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       mygrid->rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
       mygrid->rr_SMul(scal1, rho, tmp);
       mygrid->rc_pfft3f(0,tmp);
+      //mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
-     
+
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore()) 
       {
@@ -234,6 +235,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       /* lagrange multiplier - Expensive */
       mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
    }
+
  
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
  

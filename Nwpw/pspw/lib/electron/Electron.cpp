@@ -88,16 +88,29 @@ void Electron_Operators::gen_psi_r(double *psi)
    /* convert psi(G) to psi(r) */
    mygrid->gh_fftb(psi,psi_r);
  
-   
-   /*
+  /* 
     int indx1 = 0;
     int indx2 = 0;
     for (int i=0; i<neall; ++i)
     {
-       mygrid->cc_pack_copy(1,&psi[indx1],&psi_r[indx2]);
-       mygrid->c_unpack(1,&psi_r[indx2]);
-       //mygrid->cr_fft3d(&psi_r[indx2]);
-       mygrid->cr_pfft3b(1,&psi_r[indx2]);
+       double sum1 = mygrid->cc_pack_dot(1,psi+indx1,psi+indx1);
+       std::cout << "sum1 = " << sum1 << std::endl; 
+
+       mygrid->cc_pack_copy(1,psi+indx1,psi_r+indx2);
+       double sum2 = mygrid->cc_pack_dot(1,psi_r+indx2,psi_r+indx2);
+       std::cout << "sum2 = " << sum2 << std::endl; 
+
+       mygrid->c_unpack(1,psi_r+indx2);
+
+       double sum3 = mygrid->cc_dot(psi_r+indx2,psi_r+indx2);
+       std::cout << "sum3 = " << sum3 << std::endl; 
+
+       mygrid->cr_fft3d(psi_r+indx2);
+       //mygrid->cr_pfft3b(1,psi_r + indx2);
+
+       double sum4 = mygrid->rr_dot(psi_r+indx2,psi_r+indx2);
+       std::cout << "sum4 = " << sum4*scal2*dv << " dv*scal2=" << dv*scal2 <<  std::endl; 
+
        indx1 += shift1;
        indx2 += shift2;
     }

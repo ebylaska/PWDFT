@@ -1,4 +1,3 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 __kernel void matmul(const int M, const int N, const int K,
                      const __global double *A, 

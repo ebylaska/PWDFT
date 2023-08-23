@@ -17,61 +17,79 @@
 
 namespace pwdft {
 
+/*#include <algorithm>
 void c_aindexcopy(const int n, const int *indx, double *A, double *B) {
-  int ii, jj;
-  ii = 0;
-  for (int i = 0; i < n; ++i) {
-    jj = 2 * indx[i];
-    B[ii] = A[jj];
-    B[ii + 1] = A[jj + 1];
-    ii += 2;
-  }
+    for (auto i = 0; i < n; ++i) {
+        auto jj = 2 * indx[i];
+        std::copy(A + jj, A + jj + 2, B + 2 * i);
+    }
+}
+*/
+
+void c_aindexcopy(const int n, const int *indx, double *A, double *B) 
+{
+   int ii = 0;
+   for (auto i=0; i<n; ++i) 
+   {
+      auto jj = 2*indx[i];
+      B[ii]   = A[jj];
+      B[ii+1] = A[jj+1];
+      ii += 2;
+   }
 }
 
-void c_bindexcopy(const int n, const int *indx, double *A, double *B) {
-  int ii, jj;
-  ii = 0;
-  for (int i = 0; i < n; ++i) {
-    jj = 2 * indx[i];
-    B[jj] = A[ii];
-    B[jj + 1] = A[ii + 1];
-    ii += 2;
-  }
+void c_bindexcopy(const int n, const int *indx, double *A, double *B) 
+{
+   int ii = 0;
+   for (auto i=0; i<n; ++i) 
+   {
+      auto jj = 2*indx[i];
+      B[jj]   = A[ii];
+      B[jj+1] = A[ii+1];
+      ii += 2;
+   }
 }
 
-void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B) {
-  int ii, jj;
-  ii = 0;
-  for (int i = 0; i < n; ++i) {
-    jj = 2 * indx[i];
-    B[jj] = A[ii];
-    B[jj + 1] = -A[ii + 1];
-    ii += 2;
-  }
+void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B) 
+{
+   int ii, jj;
+   ii = 0;
+   for (auto i = 0; i < n; ++i) 
+   {
+      jj = 2 * indx[i];
+      B[jj] = A[ii];
+      B[jj + 1] = -A[ii + 1];
+      ii += 2;
+   }
 }
 
-void c_bindexzero(const int n, const int *indx, double *B) {
-  int ii, jj;
-  for (int i = 0; i < n; ++i) {
-    jj = 2 * indx[i];
-    B[jj] = 0.0;
-    B[jj + 1] = 0.0;
-  }
+void c_bindexzero(const int n, const int *indx, double *B) 
+{
+   int ii, jj;
+   for (auto i = 0; i < n; ++i) 
+   {
+      jj = 2 * indx[i];
+      B[jj] = 0.0;
+      B[jj + 1] = 0.0;
+   }
 }
 
-void t_aindexcopy(const int n, const int *indx, double *A, double *B) {
-  for (int i = 0; i < n; ++i)
-    B[i] = A[indx[i]];
+void t_aindexcopy(const int n, const int *indx, double *A, double *B) 
+{
+   for (auto i = 0; i < n; ++i)
+      B[i] = A[indx[i]];
 }
 
-void t_bindexcopy(const int n, const int *indx, double *A, double *B) {
-  for (int i = 0; i < n; ++i)
-    B[indx[i]] = A[i];
+void t_bindexcopy(const int n, const int *indx, double *A, double *B) 
+{
+   for (auto i = 0; i < n; ++i)
+      B[indx[i]] = A[i];
 }
 
-void i_aindexcopy(const int n, const int *indx, int *A, int *B) {
-  for (int i = 0; i < n; ++i)
-    B[i] = A[indx[i]];
+void i_aindexcopy(const int n, const int *indx, int *A, int *B) 
+{
+   for (auto i = 0; i < n; ++i)
+      B[i] = A[indx[i]];
 }
 
 /**************************************

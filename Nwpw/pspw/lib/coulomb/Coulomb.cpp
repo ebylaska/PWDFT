@@ -75,16 +75,16 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2 &control) {
  *        Coulomb_Operator::vcoulomb       *
  *                                         *
  *******************************************/
-void Coulomb_Operator::vcoulomb(const double *dng, double *vcout) {
-  int k, k1, ksize;
-
-  ksize = (mypneb->npack(0));
-  k1 = 0;
-  for (k = 0; k < ksize; ++k) {
-    vcout[k1] = vg[k] * dng[k1];
-    vcout[k1 + 1] = vg[k] * dng[k1 + 1];
-    k1 += 2;
-  }
+void Coulomb_Operator::vcoulomb(const double *dng, double *vcout) 
+{
+   int ksize = (mypneb->npack(0));
+   int k1 = 0;
+   for (auto k=0; k<ksize; ++k) 
+   {
+      vcout[k1]   = vg[k] * dng[k1];
+      vcout[k1+1] = vg[k] * dng[k1+1];
+      k1 += 2;
+   }
 }
 
 /*******************************************
@@ -92,27 +92,27 @@ void Coulomb_Operator::vcoulomb(const double *dng, double *vcout) {
  *        Coulomb_Operator::ecoulomb       *
  *                                         *
  *******************************************/
-double Coulomb_Operator::ecoulomb(const double *dng) {
-  int k, k1, k2, n, nsize, ksize1, ksize2;
-  double ave;
+double Coulomb_Operator::ecoulomb(const double *dng) 
+{
+   int ksize1 = (mypneb->nzero(0));
+   int ksize2 = (mypneb->npack(0));
+   double ave = 0.0;
 
-  ksize1 = (mypneb->nzero(0));
-  ksize2 = (mypneb->npack(0));
-  ave = 0.0;
-  k1 = 0;
-  for (k = 0; k < ksize1; ++k) {
-    ave += vg[k] * (dng[k1] * dng[k1] + dng[k1 + 1] * dng[k1 + 1]);
-    k1 += 2;
-  }
-  for (k = ksize1; k < ksize2; ++k) {
-    ave += 2.0 * vg[k] * (dng[k1] * dng[k1] + dng[k1 + 1] * dng[k1 + 1]);
-    k1 += 2;
-  }
-  ave = mypneb->d3db::parall->SumAll(1, ave);
-  // ave *= 0.5*lattice_omega();
-  ave *= 0.5 * (mypneb->lattice->omega());
-
-  return ave;
+   int k1 = 0;
+   for (auto k=0; k<ksize1; ++k) 
+   {
+      ave += vg[k] * (dng[k1]*dng[k1] + dng[k1+1]*dng[k1+1]);
+      k1 += 2;
+   }
+   for (auto k=ksize1; k<ksize2; ++k) 
+   {
+      ave += 2.0 * vg[k] * (dng[k1]*dng[k1] + dng[k1+1]*dng[k1+1]);
+      k1  += 2;
+   }
+   ave = mypneb->d3db::parall->SumAll(1,ave);
+   ave *= 0.5*(mypneb->lattice->omega());
+ 
+   return ave;
 }
 
 } // namespace pwdft

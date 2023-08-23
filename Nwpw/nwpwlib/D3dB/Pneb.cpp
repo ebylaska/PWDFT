@@ -28,38 +28,87 @@ namespace pwdft {
 //   : PGrid(inparall, inlattice, control),
 //     d1db(inparall,control.mapping1d(),ispin,ne)
 
-Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
-           int *ne)
-    : d1db(inparall, control.mapping1d(), ispin, ne),
-      PGrid(inparall, inlattice, control) {
+Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin, int *ne)
+     : d1db(inparall, control.mapping1d(), ispin, ne), PGrid(inparall, inlattice, control) 
+{
 
-  int np_i = d1db::parall->np_i();
-  int np_j = d1db::parall->np_j();
-  parallelized = (np_j > 1);
-
-  s22 = new (std::nothrow) double[7 * ne[0] * ne[0]]();
-  s21 = &s22[1 * ne[0] * ne[0]];
-  s12 = &s22[2 * ne[0] * ne[0]];
-  s11 = &s22[3 * ne[0] * ne[0]];
-  sa1 = &s22[4 * ne[0] * ne[0]];
-  sa0 = &s22[5 * ne[0] * ne[0]];
-  st1 = &s22[6 * ne[0] * ne[0]];
-
-  if (parallelized) {
-    mcq[0] = mcq[1] = 0;
-    ncq[0] = ncq[1] = 0;
-    ncqmax = 0;
-    for (auto ms = 0; ms < ispin; ++ms) {
-      ma[ms] = new (std::nothrow) int[np_i];
-      ma1[ms] = new (std::nothrow) int[np_i];
-      ma2[ms] = new (std::nothrow) int[np_i];
-      mc[ms] = new (std::nothrow) int[np_i];
-      na[ms] = new (std::nothrow) int[np_j];
-      nc[ms] = new (std::nothrow) int[np_j];
-    }
-  }
-
-  g_rnd_algorihm = control.initial_psi_random_algorithm();
+   int np_i = d1db::parall->np_i();
+   int np_j = d1db::parall->np_j();
+   int taskid_i = d1db::parall->taskid_i();
+   int taskid_j = d1db::parall->taskid_j();
+ 
+   parallelized = (np_j > 1);
+ 
+   s22 = new (std::nothrow) double[7 * ne[0] * ne[0]]();
+   s21 = &s22[1 * ne[0] * ne[0]];
+   s12 = &s22[2 * ne[0] * ne[0]];
+   s11 = &s22[3 * ne[0] * ne[0]];
+   sa1 = &s22[4 * ne[0] * ne[0]];
+   sa0 = &s22[5 * ne[0] * ne[0]];
+   st1 = &s22[6 * ne[0] * ne[0]];
+ 
+   if (parallelized) 
+   {
+      mcq[0] = mcq[1] = 0;
+      ncq[0] = ncq[1] = 0;
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+         ma[ms]  = new (std::nothrow) int[np_i];
+         ma1[ms] = new (std::nothrow) int[np_i];
+         ma2[ms] = new (std::nothrow) int[np_i];
+         mc[ms] = new (std::nothrow) int[np_i];
+         na[ms] = new (std::nothrow) int[np_j];
+         nc[ms] = new (std::nothrow) int[np_j];
+ 
+         {  auto i=0; auto j=0;
+            for (auto k=0; k<ne[ms]; ++k)
+            {
+               mc[ms][i] += 1;
+               nc[ms][j] += 1;
+               na[ms][j] += 1;
+               i = (i+1)%np_i;
+               j = (j+1)%np_j;
+            }
+         }
+ 
+         ma[ms][taskid_i]  = 2*PGrid::npack(1);
+         ma1[ms][taskid_i] = 2*PGrid::nzero(1);
+         ma2[ms][taskid_i] = n2ft3d;
+         d1db::parall->Vector_ISumAll(1,np_i,ma[ms]);
+         d1db::parall->Vector_ISumAll(1,np_i,ma1[ms]);
+         d1db::parall->Vector_ISumAll(1,np_i,ma2[ms]);
+ 
+         mcq[ms] = mc[ms][taskid_i];
+         ncq[ms] = nc[ms][taskid_j];
+ 
+         mcqmax[ms] = 0;
+         for (auto i=0; i<np_i; ++i)
+             if (mc[ms][i] > mcqmax[ms])
+                mcqmax[ms] = mc[ms][i];
+ 
+         ncqmax[ms] = 0;
+         for (auto j=0; j<np_j; ++j)
+             if (nc[ms][j] > ncqmax[ms])
+                ncqmax[ms] = nc[ms][j];
+              
+         ncqmax0 = 0;
+         for (auto j=0; j<np_j; ++j)
+            if (nc[0][j] > ncqmax0)
+               ncqmax0 = nc[0][j];
+ 
+         npack1_all = 0;
+         nida1_all  = 0;
+         n2ft3d_all = 0;
+         for (auto i=0; i<np_i; ++i)
+         {
+            npack1_all += ma[ms][i];
+            nida1_all  += ma1[ms][i];
+            n2ft3d_all += ma2[ms][i];
+         }
+      }
+   }
+ 
+   g_rnd_algorihm = control.initial_psi_random_algorithm();
 }
 
 /*************************************
@@ -67,59 +116,64 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
  *      Pneb::g_generate1_random     *
  *                                   *
  *************************************/
-void Pneb::g_generate1_random(double *psi) {
-  int ms, n, indx, i, pj, qj, taskid_j;
-  int filling[4], nfft[3];
-  double zvalue[2];
-  // double *tmp2 = new (std::nothrow) double[n2ft3d]();
-
-  double tmp2[n2ft3d];
-
-  nfft[0] = nx;
-  nfft[1] = ny;
-  nfft[2] = nz;
-
-  taskid_j = d1db::parall->taskid_j();
-  for (ms = 0; ms < ispin; ++ms)
-    for (n = 0; n < ne[ms]; ++n) {
-      util_getfilling(n, nfft, filling, zvalue);
-
-      qj = msntoindex(ms, n);
-      pj = msntop(ms, n);
-
-      if (pj == taskid_j) {
-        r_zero(tmp2);
-        d3db::c_setpw(filling, zvalue, tmp2);
-        d3db::c_addrandom(tmp2);
-
-        PGrid::c_pack(1, tmp2);
-        indx = 2 * PGrid::npack(1) * qj;
-        PGrid::cc_pack_copy(1, tmp2, psi + indx);
-        PGrid::c_pack_noimagzero(1, psi + indx);
+void Pneb::g_generate1_random(double *psi) 
+{
+   int ms, n, indx, i, pj, qj, taskid_j;
+   int filling[4], nfft[3];
+   double zvalue[2];
+   // double *tmp2 = new (std::nothrow) double[n2ft3d]();
+ 
+   double tmp2[n2ft3d];
+ 
+   nfft[0] = nx;
+   nfft[1] = ny;
+   nfft[2] = nz;
+ 
+   taskid_j = d1db::parall->taskid_j();
+   for (ms = 0; ms < ispin; ++ms)
+      for (n = 0; n < ne[ms]; ++n) 
+      {
+         util_getfilling(n, nfft, filling, zvalue);
+        
+         qj = msntoindex(ms, n);
+         pj = msntop(ms, n);
+        
+         if (pj == taskid_j) 
+         {
+            r_zero(tmp2);
+            d3db::c_setpw(filling, zvalue, tmp2);
+            d3db::c_addrandom(tmp2);
+           
+            PGrid::c_pack(1, tmp2);
+            indx = 2 * PGrid::npack(1) * qj;
+            PGrid::cc_pack_copy(1, tmp2, psi + indx);
+            PGrid::c_pack_noimagzero(1, psi + indx);
+         }
       }
-    }
-
-  // delete [] tmp2;
+ 
+   // delete [] tmp2;
 }
 
-void Pneb::g_generate2_random(double *psi) {
-  double tmp2[n2ft3d];
-
-  int taskid_j = d1db::parall->taskid_j();
-  for (auto ms = 0; ms < ispin; ++ms)
-    for (auto n = 0; n < ne[ms]; ++n) {
-      int qj = msntoindex(ms, n);
-      int pj = msntop(ms, n);
-      if (pj == taskid_j) {
-        d3db::r_setrandom(tmp2);
-        d3db::r_zero_ends(tmp2);
-        d3db::rc_fft3d(tmp2);
-
-        PGrid::c_pack(1, tmp2);
-        int indx = 2 * PGrid::npack(1) * qj;
-        PGrid::cc_pack_copy(1, tmp2, psi + indx);
+void Pneb::g_generate2_random(double *psi) 
+{
+   double tmp2[n2ft3d];
+ 
+   int taskid_j = d1db::parall->taskid_j();
+   for (auto ms = 0; ms < ispin; ++ms)
+      for (auto n = 0; n < ne[ms]; ++n) 
+      {
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         if (pj == taskid_j) {
+           d3db::r_setrandom(tmp2);
+           d3db::r_zero_ends(tmp2);
+           d3db::rc_fft3d(tmp2);
+        
+           PGrid::c_pack(1, tmp2);
+           int indx = 2 * PGrid::npack(1) * qj;
+           PGrid::cc_pack_copy(1, tmp2, psi + indx);
+         }
       }
-    }
 }
 
 /*************************************
@@ -142,72 +196,82 @@ void Pneb::g_generate_random(double *psi) {
  *           Pneb::g_read            *
  *                                   *
  *************************************/
-void Pneb::g_read(const int iunit, double *psi) {
-  int ms, n, indx, i, pj, qj, taskid_j;
-  double *tmp2 = new (std::nothrow) double[n2ft3d]();
-
-  taskid_j = d1db::parall->taskid_j();
-
-  for (ms = 0; ms < ispin; ++ms)
-    for (n = 0; n < ne[ms]; ++n) {
-      qj = msntoindex(ms, n);
-      pj = msntop(ms, n);
-      c_read(iunit, tmp2, pj);
-      if (pj == taskid_j) {
-        indx = 2 * PGrid::npack(1) * qj;
-        PGrid::c_pack(1, tmp2);
-        PGrid::cc_pack_copy(1, tmp2, psi + indx);
+void Pneb::g_read(const int iunit, double *psi) 
+{
+   int ms, n, indx, i, pj, qj, taskid_j;
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+ 
+   taskid_j = d1db::parall->taskid_j();
+ 
+   for (ms=0; ms<ispin; ++ms)
+      for (n=0; n<ne[ms]; ++n) 
+      {
+         qj = msntoindex(ms, n);
+         pj = msntop(ms, n);
+         c_read(iunit, tmp2, pj);
+         if (pj == taskid_j) 
+         {
+            indx = 2*PGrid::npack(1)*qj;
+            PGrid::c_pack(1, tmp2);
+            PGrid::cc_pack_copy(1, tmp2, psi + indx);
+         }
       }
-    }
-
-  delete[] tmp2;
+ 
+   delete[] tmp2;
 }
 
-void Pneb::g_write(const int iunit, double *psi) {
-  int ms, n, indx, i, pj, qj, taskid_j;
-  double *tmp2 = new (std::nothrow) double[n2ft3d]();
-
-  taskid_j = d1db::parall->taskid_j();
-  for (ms = 0; ms < ispin; ++ms)
-    for (n = 0; n < ne[ms]; ++n) {
-      qj = msntoindex(ms, n);
-      pj = msntop(ms, n);
-      if (pj == taskid_j) {
-        indx = 2 * PGrid::npack(1) * qj;
-        PGrid::cc_pack_copy(1, psi + indx, tmp2);
-        PGrid::c_unpack(1, tmp2);
-      }
-      c_write(iunit, tmp2, pj);
-    }
-
-  delete[] tmp2;
+void Pneb::g_write(const int iunit, double *psi) 
+{
+   int ms, n, indx, i, pj, qj, taskid_j;
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+ 
+   taskid_j = d1db::parall->taskid_j();
+   for (ms = 0; ms < ispin; ++ms)
+     for (n = 0; n < ne[ms]; ++n) 
+     {
+        qj = msntoindex(ms, n);
+        pj = msntop(ms, n);
+        if (pj == taskid_j) 
+        {
+           indx = 2 * PGrid::npack(1) * qj;
+           PGrid::cc_pack_copy(1, psi + indx, tmp2);
+           PGrid::c_unpack(1, tmp2);
+        }
+        c_write(iunit, tmp2, pj);
+     }
+ 
+   delete[] tmp2;
 }
 
-double Pneb::gg_traceall(double *psi1, double *psi2) {
-  int n, indx;
-  double sum = 0.0;
-
-  indx = 0;
-  for (n = 0; n < (neq[0] + neq[1]); ++n) {
-    sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
-    indx += 2 * PGrid::npack(1);
-  }
-  if (ispin == 1)
-    sum *= 2.0;
-
-  return d3db::parall->SumAll(0, sum);
+double Pneb::gg_traceall(double *psi1, double *psi2) 
+{
+   int n, indx;
+   double sum = 0.0;
+ 
+   indx = 0;
+   for (n = 0; n < (neq[0] + neq[1]); ++n) 
+   {
+      sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
+      indx += 2 * PGrid::npack(1);
+   }
+   if (ispin == 1)
+      sum *= 2.0;
+ 
+   return d3db::parall->SumAll(0, sum);
 }
 
-void Pneb::gg_copy(double *psi1, double *psi2) {
-  int one = 1;
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  std::memcpy(psi2, psi1, nsize * sizeof(double));
-  // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
+void Pneb::gg_copy(double *psi1, double *psi2) 
+{
+   int one = 1;
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   std::memcpy(psi2, psi1, nsize * sizeof(double));
+   // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
-void Pneb::gg_SMul(double alpha, double *psi1, double *psi2) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi2[i] = alpha * psi1[i];
+void Pneb::gg_SMul(double alpha, double *psi1, double *psi2) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi2[i] = alpha * psi1[i];
 }
 // void Pneb::g_SMul1(double alpha,double *psi1)
 //{
@@ -216,22 +280,25 @@ void Pneb::gg_SMul(double alpha, double *psi1, double *psi2) {
 //       psi1[i] *= alpha;
 // }
 
-void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi2[i] += alpha * psi1[i];
+void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi2[i] += alpha * psi1[i];
 }
 
-void Pneb::g_Scale(double alpha, double *psi1) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi1[i] *= alpha;
+void Pneb::g_Scale(double alpha, double *psi1) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi1[i] *= alpha;
 }
 
-void Pneb::gg_Sum2(double *psi1, double *psi2) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi2[i] += psi1[i];
+void Pneb::gg_Sum2(double *psi1, double *psi2) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi2[i] += psi1[i];
 }
 
 /*************************************
@@ -239,10 +306,11 @@ void Pneb::gg_Sum2(double *psi1, double *psi2) {
  *         Pneb::gg_Minus2           *
  *                                   *
  *************************************/
-void Pneb::gg_Minus2(double *psi1, double *psi2) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi2[i] -= psi1[i];
+void Pneb::gg_Minus2(double *psi1, double *psi2) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi2[i] -= psi1[i];
 }
 
 /*************************************
@@ -250,10 +318,11 @@ void Pneb::gg_Minus2(double *psi1, double *psi2) {
  *         Pneb::ggg_Minus           *
  *                                   *
  *************************************/
-void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3) {
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  for (int i = 0; i < nsize; ++i)
-    psi3[i] = psi1[i] - psi2[i];
+void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3) 
+{
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   for (int i = 0; i < nsize; ++i)
+      psi3[i] = psi1[i] - psi2[i];
 }
 
 /*************************************
@@ -261,14 +330,15 @@ void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3) {
  *         Pneb::g_zero              *
  *                                   *
  *************************************/
-void Pneb::g_zero(double *psi2) {
-  int one = 1;
-  int zero = 0;
-  int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
-  double rzero = 0.0;
+void Pneb::g_zero(double *psi2) 
+{
+   int one = 1;
+   int zero = 0;
+   int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
+   double rzero = 0.0;
 
-  // dcopy_(&nsize,&rzero,&zero,psi2,&one);
-  std::memset(psi2, 0, nsize * sizeof(double));
+   // dcopy_(&nsize,&rzero,&zero,psi2,&one);
+   std::memset(psi2, 0, nsize * sizeof(double));
 }
 
 /*************************************
@@ -276,31 +346,35 @@ void Pneb::g_zero(double *psi2) {
  *         Pneb::gh_fftb             *
  *                                   *
  *************************************/
-void Pneb::gh_fftb(double *psi, double *psi_r) {
-  nwpw_timing_function ftimer(1);
-  int n, done;
-  int indx1, indx1n, shift1;
-  int indx2, indx2n, shift2;
-
-  n = neq[0] + neq[1];
-  shift1 = 2 * PGrid::npack(1);
-  shift2 = n2ft3d;
-  indx1 = indx1n = 0;
-  indx2 = indx2n = 0;
-  done = 0;
-  while (!done) {
-    if (indx1 < n) {
-      cr_pfft3b_queuein(1, psi + indx1n);
-      indx1n += shift1;
-      ++indx1;
-    }
-    if (cr_pfft3b_queuefilled() || (indx1 >= n)) {
-      cr_pfft3b_queueout(1, psi_r + indx2n);
-      indx2n += shift2;
-      ++indx2;
-    }
-    done = ((indx1 >= n) && (indx2 >= n));
-  }
+void Pneb::gh_fftb(double *psi, double *psi_r) 
+{
+   nwpw_timing_function ftimer(1);
+   int n, done;
+   int indx1, indx1n, shift1;
+   int indx2, indx2n, shift2;
+ 
+   n = neq[0] + neq[1];
+   shift1 = 2 * PGrid::npack(1);
+   shift2 = n2ft3d;
+   indx1 = indx1n = 0;
+   indx2 = indx2n = 0;
+   done = 0;
+   while (!done) 
+   {
+      if (indx1 < n) 
+      {
+         cr_pfft3b_queuein(1, psi + indx1n);
+         indx1n += shift1;
+         ++indx1;
+      }
+      if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
+      {
+         cr_pfft3b_queueout(1, psi_r + indx2n);
+         indx2n += shift2;
+         ++indx2;
+      }
+      done = ((indx1 >= n) && (indx2 >= n));
+   }
 }
 
 /*************************************
@@ -308,27 +382,30 @@ void Pneb::gh_fftb(double *psi, double *psi_r) {
  *         Pneb::hr_aSumSqr          *
  *                                   *
  *************************************/
-void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn) {
-  int n, ms, k, indx0, indx1;
-  int one = 1;
-  int zero = 0;
-  int nsize = n2ft3d * ispin;
-  double rzero = 0.0;
-
-  // dcopy_(&nsize,&rzero,&zero,dn,&one);
-  std::memset(dn, 0, nsize * sizeof(double));
-
-  indx0 = 0;
-  indx1 = 0;
-  for (ms = 0; ms < ispin; ++ms) {
-    for (n = 0; n < (neq[ms]); ++n) {
-      for (k = 0; k < n2ft3d; ++k)
-        dn[indx0 + k] += alpha * psir[indx1 + k] * psir[indx1 + k];
-      indx1 += n2ft3d;
-    }
-    indx0 += n2ft3d;
-  }
-  d3db::parall->Vector_SumAll(2, ispin * n2ft3d, dn);
+void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn) 
+{
+   int n,ms,k,indx0,indx1;
+   int one = 1;
+   int zero = 0;
+   int nsize = n2ft3d * ispin;
+   double rzero = 0.0;
+ 
+   // dcopy_(&nsize,&rzero,&zero,dn,&one);
+   std::memset(dn,0,nsize*sizeof(double));
+ 
+   indx0 = 0;
+   indx1 = 0;
+   for (ms=0; ms<ispin; ++ms) 
+   {
+      for (n=0; n<(neq[ms]); ++n) 
+      {
+         for (k=0; k<n2ft3d; ++k)
+            dn[indx0+k] += alpha*psir[indx1+k]*psir[indx1+k];
+         indx1 += n2ft3d;
+      }
+      indx0 += n2ft3d;
+   }
+   d3db::parall->Vector_SumAll(2, ispin * n2ft3d, dn);
 }
 
 /*************************************
@@ -350,27 +427,30 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn) {
                           + lmbda^2*psi1_i(r)*psi1_i(r) )
 */
 void Pneb::hhr_aSumMul(const double alpha, const double *psir0,
-                       const double *psir1, double *dn12) {
-  int n, ms, k, indx0, indx1;
-  int one = 1;
-  int zero = 0;
-  int nsize = n2ft3d * ispin;
-  double rzero = 0.0;
-
-  std::memset(dn12, 0, nsize * sizeof(double));
-
-  indx0 = 0;
-  indx1 = 0;
-  for (ms = 0; ms < ispin; ++ms) {
-    for (n = 0; n < (neq[ms]); ++n) {
-      for (k = 0; k < n2ft3d; ++k)
-        dn12[indx0 + k] += alpha * (psir0[indx1 + k] * psir1[indx1 + k] +
-                                    psir1[indx1 + k] * psir0[indx1 + k]);
-      indx1 += n2ft3d;
-    }
-    indx0 += n2ft3d;
-  }
-  d3db::parall->Vector_SumAll(2, ispin * n2ft3d, dn12);
+                       const double *psir1, double *dn12) 
+{
+   int n, ms, k, indx0, indx1;
+   int one = 1;
+   int zero = 0;
+   int nsize = n2ft3d * ispin;
+   double rzero = 0.0;
+ 
+   std::memset(dn12, 0, nsize * sizeof(double));
+ 
+   indx0 = 0;
+   indx1 = 0;
+   for (ms = 0; ms < ispin; ++ms) 
+   {
+      for (n = 0; n < (neq[ms]); ++n) 
+      {
+         for (k=0; k<n2ft3d; ++k)
+            dn12[indx0+k] += alpha*( psir0[indx1+k]*psir1[indx1+k] 
+                                   + psir1[indx1+k]*psir0[indx1+k]);
+         indx1 += n2ft3d;
+      }
+      indx0 += n2ft3d;
+   }
+   d3db::parall->Vector_SumAll(2, ispin * n2ft3d, dn12);
 }
 
 /*************************************
@@ -378,58 +458,91 @@ void Pneb::hhr_aSumMul(const double alpha, const double *psir0,
  *      Pneb::ggm_sym_Multiply       *
  *                                   *
  *************************************/
-void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml) {
+void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml) 
+{
+   nwpw_timing_function ftimer(15);
+ 
+   int one = 1;
+   int ng =  2*PGrid::npack(1);
+   int ng0 = 2*PGrid::nzero(1);
+ 
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+ 
+   if (parallelized) 
+   {
+      std::ostringstream msg;
+      msg << "NWPW Error: ggm_sym_Multiply() parallelized is NOT supported\n"
+          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      throw(std::runtime_error(msg.str()));
 
-  nwpw_timing_function ftimer(15);
-  int ms, j, k, n, shift0, shift1, mshift0, mshift1;
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+/*          DMatrix_DGEMM2d_
+                     call DMatrix_dgemm2c_omp(ne(ms),ne(ms),npack1_all,128,
+     >              A1(shift),A2(shift),int_mb(ma(1,ms)+taskid_i),
+     >                                  int_mb(ma(1,ms)),
+     >                                  int_mb(ma1(1,ms)),
+     >                                  int_mb(na(1,ms)),
+     >              dbl_mb(mat_tmp(1)+shift2),
+     >                                        int_mb(mc(1,ms)+taskid_i),
+     >                                        int_mb(mc(1,ms)),
+     >                                        int_mb(nc(1,ms)),
+     >              taskid_i,taskid_j,
+     >              np_i,np_j,
+     >              comm_i, comm_j,
+     >              tid,nthr,
+     >              dbl_mb(work1(1)),dbl_mb(work2(1)),
+     >              dbl_mb(thrwork1(1)+tid*nn))
+         call Dneall_m_gather(mall(mb),mpack(mb),int_mb(mindx(1,mb)),
+     >                        dbl_mb(mat_tmp(1)),hml)
 
-  int one = 1;
-  int ng = 2 * PGrid::npack(1);
-  int ng0 = 2 * PGrid::nzero(1);
+*/
 
-  double rzero = 0.0;
-  double rtwo = 2.0;
-  double rone = 1.0;
-  double rmone = -1.0;
-
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: ggm_sym_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    shift0 = 0;
-    mshift0 = 0;
-    for (ms = 0; ms < ispin; ++ms) {
-      n = ne[ms];
-      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
-
-      if (ng0 > 0) {
-        shift1 = shift0;
-        mshift1 = mshift0;
-        for (k = 1; k <= n; ++k) {
-          // DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
-          //         rtwo,
-          //         &psi1[shift0], ng,
-          //         &psi2[shift1],ng,
-          //         rzero,
-          //         &hml[mshift1],k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      psi1 + shift0, ng, psi2 + shift1, ng, rone, hml + mshift1,
-                      k);
-          shift1 += ng;
-          mshift1 += n;
-        }
       }
-      for (k = 0; k < n; ++k)
-        for (j = k + 1; j < n; ++j)
-          hml[mshift0 + j + k * n] = hml[mshift0 + k + j * n];
-
-      shift0 += ng * ne[0];
-      mshift0 += ne[0] * ne[0];
-    }
-    d3db::parall->Vector_SumAll(1, ne[0] * ne[0] + ne[1] * ne[1], hml);
-  }
+   } 
+   else 
+   {
+      auto shift0  = 0;
+      auto mshift0 = 0;
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+         auto n = ne[ms];
+         d3db::mygdevice.TN1_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+        
+         if (ng0 > 0) 
+         {
+            auto shift1  = shift0;
+            auto mshift1 = mshift0;
+            for (auto k=1; k<=n; ++k) 
+            {
+               // DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
+               //         rtwo,
+               //         &psi1[shift0], ng,
+               //         &psi2[shift1],ng,
+               //         rzero,
+               //         &hml[mshift1],k);
+               DGEMM_PWDFT((char *)"T", (char *)"N",k,one,ng0,
+                           rmone,
+                           psi1+shift0,ng, 
+                           psi2+shift1,ng, 
+                           rone, 
+                           hml+mshift1, k);
+               shift1 += ng;
+               mshift1 += n;
+            }
+         }
+         for (auto k=0; k<n; ++k)
+            for (auto j=k+1; j<n; ++j)
+               hml[mshift0+j+k*n] = hml[mshift0+k+j*n];
+        
+         shift0 += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1,ne[0]*ne[0]+ne[1]*ne[1],hml);
+   }
 }
 
 /*************************************
@@ -1448,43 +1561,48 @@ void Pneb::fm_QR(const int mb, double *Q, double *R) {
  *     Pneb::mmm4_AR_to_T4      *
  *                              *
  ********************************/
-void Pneb::mmm4_AR_to_T4(const int mb, const double *A, const double *R,
-                         double *T4) {
-  int ms1, ms2, ishift1, ishift2;
-  if (mb == -1) {
-    ms1 = 0;
-    ms2 = ispin;
-    ishift1 = ne[0] * ne[0];
-    ishift2 = 4 * ne[0] * ne[0];
-    std::memset(T4, 0, (4 * ne[0] * ne[0] + ne[1] * ne[1]) * sizeof(double));
-  } else {
-    ms1 = mb;
-    ms2 = mb;
-    ishift1 = 0;
-    ishift2 = 0;
-    std::memset(T4, 0, (4 * ne[mb] * ne[mb]) * sizeof(double));
-  }
-  for (auto ms = ms1; ms < ms2; ++ms) {
-    const int n = ne[ms];
-    const double *Asub = A + ms * ishift1;
-    const double *Rsub = R + ms * ishift1;
-    double *Tsub = T4 + ms * ishift2;
+void Pneb::mmm4_AR_to_T4(const int mb, const double *A, const double *R, double *T4) 
+{
+   int ms1, ms2, ishift1, ishift2;
+   if (mb == -1) 
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift1 = ne[0] * ne[0];
+      ishift2 = 4 * ne[0] * ne[0];
+      std::memset(T4, 0, (4 * ne[0] * ne[0] + ne[1] * ne[1]) * sizeof(double));
+   } 
+   else 
+   {
+      ms1 = mb;
+      ms2 = mb;
+      ishift1 = 0;
+      ishift2 = 0;
+      std::memset(T4, 0, (4 * ne[mb] * ne[mb]) * sizeof(double));
+   }
 
-    //**** copy A to upper-left of T ****
-    for (auto j = 0; j < n; ++j)
-      for (auto i = 0; i < n; ++i)
-        Tsub[i + j * (2 * n)] = Asub[i + j * n];
-
-    //**** copy R to lower-left of T ****
-    for (auto j = 0; j < n; ++j)
-      for (auto i = 0; i < n; ++i)
-        Tsub[(i + n) + j * (2 * n)] = Rsub[i + j * n];
-
-    //**** copy -R^t to upper-right of T ****
-    for (auto j = 0; j < n; ++j)
-      for (auto i = 0; i < n; ++i)
-        Tsub[i + (j + n) * (2 * n)] = -Rsub[j + i * n];
-  }
+   for (auto ms = ms1; ms < ms2; ++ms) 
+   {
+      const int n = ne[ms];
+      const double *Asub = A + ms * ishift1;
+      const double *Rsub = R + ms * ishift1;
+      double *Tsub = T4 + ms * ishift2;
+     
+      //**** copy A to upper-left of T ****
+      for (auto j = 0; j < n; ++j)
+         for (auto i = 0; i < n; ++i)
+            Tsub[i + j * (2 * n)] = Asub[i + j * n];
+     
+      //**** copy R to lower-left of T ****
+      for (auto j = 0; j < n; ++j)
+         for (auto i = 0; i < n; ++i)
+            Tsub[(i + n) + j * (2 * n)] = Rsub[i + j * n];
+     
+      //**** copy -R^t to upper-right of T ****
+      for (auto j = 0; j < n; ++j)
+         for (auto i = 0; i < n; ++i)
+            Tsub[i + (j + n) * (2 * n)] = -Rsub[j + i * n];
+   }
 }
 
 /********************************
@@ -1522,11 +1640,13 @@ void Pneb::m4_FactorSkew(const int mb, double *K4, double *V4, double *W4,
  *                              *
  ********************************/
 static void mm4_RotateSkew_sub1(const int n, const double t,
-                                const double *Sigma, double *SA, double *SB) {
-  for (auto i = 0; i < n; ++i) {
-    SA[i] = cos(Sigma[i] * t);
-    SB[i] = sin(Sigma[i] * t);
-  }
+                                const double *Sigma, double *SA, double *SB) 
+{
+   for (auto i = 0; i < n; ++i) 
+   {
+      SA[i] = cos(Sigma[i] * t);
+      SB[i] = sin(Sigma[i] * t);
+   }
 }
 
 /********************************
@@ -1593,31 +1713,37 @@ void Pneb::m4_RotationSkew(const int mb, const double t, double *V4, double *W4,
  *     Pneb::m4_R4_to_MN        *
  *                              *
  ********************************/
-void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N) {
-  int ms1, ms2, ishift1, ishift2;
-  if (mb == -1) {
-    ms1 = 0;
-    ms2 = ispin;
-    ishift1 = ne[0] * ne[0];
-    ishift2 = 4 * ne[0] * ne[0];
-  } else {
-    ms1 = mb;
-    ms2 = mb;
-    ishift1 = 0;
-    ishift2 = 0;
-  }
-
-  for (auto ms = ms1; ms < ms2; ++ms) {
-    int n = ne[ms];
-    int shift1 = ms * ishift1;
-    int shift2 = ms * ishift2;
-
-    for (auto j = 0; j < n; ++j)
-      for (auto i = 0; i < n; ++i) {
-        M[i + j * n] = R4[i + j * (2 * n)];
-        N[i + j * n] = R4[(i + n) + j * (2 * n)];
-      }
-  }
+void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N) 
+{
+   int ms1, ms2, ishift1, ishift2;
+   if (mb == -1) 
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift1 = ne[0] * ne[0];
+      ishift2 = 4 * ne[0] * ne[0];
+   } 
+   else 
+   {
+      ms1 = mb;
+      ms2 = mb;
+      ishift1 = 0;
+      ishift2 = 0;
+   }
+ 
+   for (auto ms = ms1; ms < ms2; ++ms) 
+   {
+      int n = ne[ms];
+      int shift1 = ms * ishift1;
+      int shift2 = ms * ishift2;
+     
+      for (auto j = 0; j < n; ++j)
+         for (auto i = 0; i < n; ++i) 
+         {
+            M[i + j * n] = R4[i + j * (2 * n)];
+            N[i + j * n] = R4[(i + n) + j * (2 * n)];
+         }
+   }
 }
 
 } // namespace pwdft

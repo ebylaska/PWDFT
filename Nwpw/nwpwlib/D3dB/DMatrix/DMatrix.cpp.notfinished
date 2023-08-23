@@ -22,9 +22,11 @@ void DMatrix_dgemm1(int m, int n, int k, int nblock,
                     MPI_Comm comm_i, MPI_Comm comm_j,
                     double  *work1, double *work2)
 {
-
-   for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
-      C[ij] = beta*C[ij];
+   int one=1;
+   int nn=(nc[taskid_j]*mc[taskid_i]); 
+   DSCAL_PWDFT(nn,beta,C,one);
+   //for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
+   //   C[ij] = beta*C[ij];
 
    int iwrk,shift,ierr;
    int ii=0;
@@ -59,16 +61,21 @@ void DMatrix_dgemm1(int m, int n, int k, int nblock,
       /* broadcast work2  within my column */
       ierr = MPI_Bcast(work2,iwrk*nb[taskid_j],MPI_DOUBLE_PRECISION,icur,comm_i);
 
-
-
-
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
-         DGEMM_PWDFT((char *) "N",(char *) "N",mc[taskid_i],nc[taskid_j],iwrk,
+         d3db::mygdevice.NN_dgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                                  alpha,
+                                  work1,ma[taskid_i],
+                                  work2,iwrk,
+                                  rone,
+                                  C,ldc);
+
+         /* DGEMM_PWDFT((char *) "N",(char *) "N",mc[taskid_i],nc[taskid_j],iwrk,
                    alpha,
                    work1,ma[taskid_i],
                    work2,iwrk,
                    rone,
                    C,ldc);
+         */
 
       ii += iwrk;
       jj += iwrk;
@@ -108,8 +115,11 @@ void DMatrix_dgemm2(int m, int n, int k, int nblock,
                     double  *work1, double *work2)
 {
 
-   for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
-      C[ij] = beta*C[ij];
+   int one=1;
+   int nn=(nc[taskid_j]*mc[taskid_i]); 
+   DSCAL_PWDFT(nn,beta,C,one);
+   //for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
+   //   C[ij] = beta*C[ij];
 
    int iwrk,shift,ierr;
    int ii=0;
@@ -203,8 +213,11 @@ void DMatrix_dgemm3(int m, int n, int k, int nblock,
                     double  *work1, double *work2)
 {
 
-   for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
-      C[ij] = beta*C[ij];
+   int one=1;
+   int nn=(nc[taskid_j]*mc[taskid_i]); 
+   DSCAL_PWDFT(nn,beta,C,one);
+   //for (auto ij=0; ij<(nc[taskid_j]*mc[taskid_i]); ++ij)
+   //   C[ij] = beta*C[ij];
 
    int iwrk,shift,ierr;
    int ii=0;

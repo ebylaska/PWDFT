@@ -28,7 +28,9 @@ class Pneb : public PGrid, public d1db {
 
   int *ma[2], *ma1[2], *ma2[2], *mc[2], *na[2], *nc[2];
   int mcq[2], ncq[2];
-  int ncqmax;
+  int mcqmax[2],ncqmax[2];
+  int mall[2] ,mpack[2];
+  int ncqmax0, npack1_all, nida1_all, n2ft3d_all;
   int g_rnd_algorihm = 1;
 
 public:
@@ -39,14 +41,14 @@ public:
   ~Pneb() {
     delete[] s22;
     if (parallelized)
-      for (int ms = 0; ms < ispin; ++ms) {
-        delete[] ma[ms];
-        delete[] ma1[ms];
-        delete[] ma2[ms];
-        delete[] mc[ms];
-        delete[] na[ms];
-        delete[] nc[ms];
-      }
+       for (int ms=0; ms<ispin; ++ms) {
+          delete[] ma[ms];
+          delete[] ma1[ms];
+          delete[] ma2[ms];
+          delete[] mc[ms];
+          delete[] na[ms];
+          delete[] nc[ms];
+       }
   }
 
   void g_generate_random(double *);
@@ -69,21 +71,25 @@ public:
     return ptr;
   }
 
-  double *h_allocate() {
-    double *ptr;
-    ptr = new (std::nothrow) double[(neq[0] + neq[1]) * n2ft3d]();
-    return ptr;
+  double *h_allocate() 
+  {
+     double *ptr;
+     ptr = new (std::nothrow) double[(neq[0] + neq[1]) * n2ft3d]();
+     return ptr;
   }
+
   void h_deallocate(double *ptr) { delete[] ptr; }
 
-  int m_size(const int mb) {
-    int nsize;
-    if (mb == -1)
-      nsize = ne[0] * ne[0] + ne[1] * ne[1];
-    else
-      nsize = ne[mb] * ne[mb];
-    return nsize;
+  int m_size(const int mb) 
+  {
+     int nsize;
+     if (mb == -1)
+       nsize = ne[0] * ne[0] + ne[1] * ne[1];
+     else
+       nsize = ne[mb] * ne[mb];
+     return nsize;
   }
+
   double *m_allocate(const int mb, const int nblock) {
     double *ptr;
     int nsize;
