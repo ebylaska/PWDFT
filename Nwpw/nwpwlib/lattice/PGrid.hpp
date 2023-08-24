@@ -23,9 +23,6 @@ class PGrid : public d3db {
   Balance *mybalance;
   int balanced;
 
-  /* pgrid_tmp data */
-  double *pgrid_tmp1,*pgrid_tmp2;
-
   /* G grid data */
   double *Garray, *Gpack[2];
   double Gmax, Gmin;
@@ -65,8 +62,6 @@ public:
 
   /* destructor */
   ~PGrid() {
-     delete [] pgrid_tmp1;
-     delete [] pgrid_tmp2;
      delete [] Garray;
      delete [] Gpack[0];
      delete [] Gpack[1];

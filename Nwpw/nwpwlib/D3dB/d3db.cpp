@@ -430,6 +430,11 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
    t_i2_start[np] = index2;
 
    /* setup ffts */
+   d3db_tmp1 = new (std::nothrow) double[2*nfft3d]();
+   d3db_tmp2 = new (std::nothrow) double[2*nfft3d]();
+
+
+   /* setup ffts */
    tmpx = new (std::nothrow) double[2*(2*nx+15)]();
    tmpy = new (std::nothrow) double[2*(2*ny+15)]();
    tmpz = new (std::nothrow) double[2*(2*nz+15)]();
@@ -521,14 +526,17 @@ d3db::~d3db() {
       }
    }
  
-   delete[] t_iq_to_i1;
-   delete[] t_iq_to_i2;
-   delete[] t_i1_start;
-   delete[] t_i2_start;
+   delete [] t_iq_to_i1;
+   delete [] t_iq_to_i2;
+   delete [] t_i1_start;
+   delete [] t_i2_start;
  
-   delete[] tmpx;
-   delete[] tmpy;
-   delete[] tmpz;
+   delete [] tmpx;
+   delete [] tmpy;
+   delete [] tmpz;
+
+   delete [] d3db_tmp1;
+   delete [] d3db_tmp2;
  
    //#endif
 }
@@ -1964,116 +1972,119 @@ void d3db::t_dealloc(double *ptr) { delete[] ptr; }
  *         d3db::c_read         *
  *                              *
  ********************************/
-void d3db::c_read(const int iunit, double *a, const int jcol) {
-  int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
-  int taskid = parall->taskid();
-  int taskid_j = parall->taskid_j();
-  int np_j = parall->np_j();
-
-  if (jcol < 0) {
-    jstart = 0;
-    jend = np_j - 1;
-    fillcolumn = 1;
-  } else {
-    jstart = jend = jcol;
-    fillcolumn = (taskid_j == jcol);
-  }
-
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype==1) 
-  {
-     double *tmp = new (std::nothrow) double[(nx+2)*ny]();
-     // double tmp[(nx+2)*ny];
-     int bsize = (nx+2)*ny;
-
+void d3db::c_read(const int iunit, double *a, const int jcol) 
+{
+   int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
+ 
+   if (jcol < 0) {
+     jstart = 0;
+     jend = np_j - 1;
+     fillcolumn = 1;
+   } else {
+     jstart = jend = jcol;
+     fillcolumn = (taskid_j == jcol);
+   }
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx+2)*ny]();
+      // double tmp[(nx+2)*ny];
+      int bsize = (nx+2)*ny;
+ 
+      /**** master node reads from file and distributes ****/
+      if (taskid == MASTER)
+        for (int k=0; k<nz; ++k) 
+        {
+           dread(iunit, tmp, bsize);
+ 
+           index = 2*ijktoindex(0, 0, k);
+           ii = ijktop(0, 0, k);
+           for (jj = jstart; jj <= jend; ++jj) 
+           {
+              p_to = parall->convert_taskid_ij(ii,jj);
+              if (p_to == MASTER)
+                for (int k=0; k<bsize; ++k)
+                   a[index + k] = tmp[k];
+              else
+                 parall->dsend(0, 9, p_to, bsize, tmp);
+           }
+        }
+ 
+      /**** not master node ****/
+      else if (fillcolumn)
+         for (int k = 0; k < nz; ++k) 
+         {
+           index = 2 * ijktoindex(0, 0, k);
+           ii = ijktop(0, 0, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) 
+           {
+              parall->dreceive(0, 9, MASTER, bsize, tmp);
+              for (int k=0; k<bsize; ++k)
+                 a[index+k] = tmp[k];
+           }
+         }
+      delete[] tmp;
+   }
+ 
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else {
+     // double *tmp = new (std::nothrow) double[nx+2]();
+     double tmp[nx + 2];
+     int bsize = (nx + 2);
+ 
      /**** master node reads from file and distributes ****/
      if (taskid == MASTER)
-       for (int k=0; k<nz; ++k) 
-       {
-          dread(iunit, tmp, bsize);
-
-          index = 2*ijktoindex(0, 0, k);
-          ii = ijktop(0, 0, k);
-          for (jj = jstart; jj <= jend; ++jj) 
-          {
-             p_to = parall->convert_taskid_ij(ii,jj);
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+ 
+           dread(iunit, tmp, bsize);
+ 
+           index = ijktoindex2(0, j, k);
+           ii = ijktop2(0, j, k);
+           for (int jj = jstart; jj <= jend; ++jj) {
+             p_to = parall->convert_taskid_ij(ii, jj);
+ 
              if (p_to == MASTER)
-               for (int k=0; k<bsize; ++k)
-                  a[index + k] = tmp[k];
+               for (int k = 0; k < bsize; ++k)
+                 a[index + k] = tmp[k];
              else
-                parall->dsend(0, 9, p_to, bsize, tmp);
-          }
-       }
-
+               parall->dsend(0, 9, p_to, bsize, tmp);
+           }
+         }
+ 
      /**** not master node ****/
      else if (fillcolumn)
-        for (int k = 0; k < nz; ++k) 
-        {
-          index = 2 * ijktoindex(0, 0, k);
-          ii = ijktop(0, 0, k);
-          p_here = parall->convert_taskid_ij(ii, taskid_j);
-          if (p_here == taskid) 
-          {
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+           index = ijktoindex2(0, j, k);
+           ii = ijktop2(0, j, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) {
              parall->dreceive(0, 9, MASTER, bsize, tmp);
-             for (int k=0; k<bsize; ++k)
-                a[index+k] = tmp[k];
-          }
-        }
-     delete[] tmp;
-  }
-
-  /*************************
-   **** hilbert mapping ****
-   *************************/
-  else {
-    // double *tmp = new (std::nothrow) double[nx+2]();
-    double tmp[nx + 2];
-    int bsize = (nx + 2);
-
-    /**** master node reads from file and distributes ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-
-          dread(iunit, tmp, bsize);
-
-          index = ijktoindex2(0, j, k);
-          ii = ijktop2(0, j, k);
-          for (int jj = jstart; jj <= jend; ++jj) {
-            p_to = parall->convert_taskid_ij(ii, jj);
-
-            if (p_to == MASTER)
-              for (int k = 0; k < bsize; ++k)
-                a[index + k] = tmp[k];
-            else
-              parall->dsend(0, 9, p_to, bsize, tmp);
-          }
-        }
-
-    /**** not master node ****/
-    else if (fillcolumn)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          index = ijktoindex2(0, j, k);
-          ii = ijktop2(0, j, k);
-          p_here = parall->convert_taskid_ij(ii, taskid_j);
-          if (p_here == taskid) {
-            parall->dreceive(0, 9, MASTER, bsize, tmp);
-            for (int k = 0; k < bsize; ++k)
-              a[index + k] = tmp[k];
-          }
-        }
-
-    // double tmp1[2*nfft3d];
-    // double tmp2[2*nfft3d];
-    double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-    double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-    c_transpose_ijk(4, a, tmp1, tmp2);
-    delete[] tmp2;
-    delete[] tmp1;
-  }
+             for (int k = 0; k < bsize; ++k)
+               a[index + k] = tmp[k];
+           }
+         }
+ 
+     // double tmp1[2*nfft3d];
+     // double tmp2[2*nfft3d];
+     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+     double *tmp1 = d3db::d3db_tmp1;
+     double *tmp2 = d3db::d3db_tmp2;
+     c_transpose_ijk(4, a, tmp1, tmp2);
+     //delete[] tmp2;
+     //delete[] tmp1;
+   }
 }
 
 /********************************
@@ -2129,54 +2140,54 @@ void d3db::c_write(const int iunit, double *a, const int jcol) {
   /*************************
    **** hilbert mapping ****
    *************************/
-  else {
-    // double *tmp1 = new (std::nothrow) double[2*nfft3d];
-    // double *tmp2 = new (std::nothrow) double[2*nfft3d];
-    {
-      double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-      double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-      c_transpose_ijk(5, a, tmp1, tmp2);
-      delete[] tmp2;
-      delete[] tmp1;
-    }
-    // delete [] tmp2;
-    // delete [] tmp1;
-
-    // double *tmp = new (std::nothrow) double[nx+2];
-    double tmp[nx + 2];
-    int bsize = (nx + 2);
-
-    /**** master node write to file and fetches from other nodes ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          ii = ijktop2(0, j, k);
-          p_from = parall->convert_taskid_ij(ii, jcol);
-          if (p_from == MASTER) {
-            index = ijktoindex2(0, j, k);
-            for (int k = 0; k < bsize; ++k)
-              tmp[k] = a[index + k];
-          } else {
-            parall->dreceive(0, 9, p_from, bsize, tmp);
-          }
-          dwrite(iunit, tmp, bsize);
-        }
-
-    /**** not master node ****/
-    else
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          ii = ijktop2(0, j, k);
-          p_here = parall->convert_taskid_ij(ii, taskid_j);
-          if (p_here == taskid) {
-            index = ijktoindex2(0, j, k);
-            for (int k = 0; k < bsize; ++k)
-              tmp[k] = a[index + k];
-            parall->dsend(0, 9, MASTER, bsize, tmp);
-          }
-        }
-
-    // delete [] tmp;
+  else 
+  {
+     // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+     // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+     double *tmp1 = d3db::d3db_tmp1;
+     double *tmp2 = d3db::d3db_tmp2;
+     c_transpose_ijk(5, a, tmp1, tmp2);
+    
+     // delete [] tmp2;
+     // delete [] tmp1;
+    
+     // double *tmp = new (std::nothrow) double[nx+2];
+     double tmp[nx + 2];
+     int bsize = (nx + 2);
+    
+     /**** master node write to file and fetches from other nodes ****/
+     if (taskid == MASTER)
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+           ii = ijktop2(0, j, k);
+           p_from = parall->convert_taskid_ij(ii, jcol);
+           if (p_from == MASTER) {
+             index = ijktoindex2(0, j, k);
+             for (int k = 0; k < bsize; ++k)
+               tmp[k] = a[index + k];
+           } else {
+             parall->dreceive(0, 9, p_from, bsize, tmp);
+           }
+           dwrite(iunit, tmp, bsize);
+         }
+    
+     /**** not master node ****/
+     else
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+           ii = ijktop2(0, j, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) {
+             index = ijktoindex2(0, j, k);
+             for (int k = 0; k < bsize; ++k)
+               tmp[k] = a[index + k];
+             parall->dsend(0, 9, MASTER, bsize, tmp);
+           }
+         }
+    
+     // delete [] tmp;
   }
 }
 
@@ -2782,11 +2793,9 @@ void d3db::t_read(const int iunit, double *a, const int jcol) {
 
     // double tmp1[2*nfft3d];
     // double tmp2[2*nfft3d];
-    double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-    double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+    double *tmp1 = d3db::d3db_tmp1;
+    double *tmp2 = d3db::d3db_tmp2;
     t_transpose_ijk(4, a, tmp1, tmp2);
-    delete[] tmp2;
-    delete[] tmp1;
   }
 }
 
@@ -2795,100 +2804,99 @@ void d3db::t_read(const int iunit, double *a, const int jcol) {
  *         d3db::t_write        *
  *                              *
  ********************************/
-void d3db::t_write(const int iunit, double *a, const int jcol) {
-  int index, ii, jj, p_from, p_here;
-  int taskid = parall->taskid();
-  int taskid_j = parall->taskid_j();
-  int np_j = parall->np_j();
-
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype == 1) {
-    double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
-    // double tmp[(nx+2)*ny];
-    int bsize = (nx / 2 + 1) * ny;
-
-    /**** master node gathers and write to file ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k) {
-        ii = ijktop(0, 0, k);
-        p_from = parall->convert_taskid_ij(ii, jcol);
-        if (p_from == MASTER) {
-          index = ijktoindex(0, 0, k);
-          for (int k = 0; k < bsize; ++k)
-            tmp[k] = a[index + k];
-        } else {
-          parall->dreceive(0, 9, p_from, bsize, tmp);
-        }
-        dwrite(iunit, tmp, bsize);
-      }
-
-    /**** not master node ****/
-    else
-      for (int k = 0; k < nz; ++k) {
-        index = ijktoindex(0, 0, k);
-        ii = ijktop(0, 0, k);
-        p_here = parall->convert_taskid_ij(ii, taskid_j);
-        if (p_here == taskid) {
-          for (int k = 0; k < bsize; ++k)
-            tmp[k] = a[index + k];
-          parall->dsend(0, 9, MASTER, bsize, tmp);
-        }
-      }
-
-    delete[] tmp;
-  }
-
-  /*************************
-   **** hilbert mapping ****
-   *************************/
-  else {
-    { // double tmp1[2*nfft3d];
+void d3db::t_write(const int iunit, double *a, const int jcol) 
+{
+   int index, ii, jj, p_from, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) {
+     double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
+     // double tmp[(nx+2)*ny];
+     int bsize = (nx / 2 + 1) * ny;
+ 
+     /**** master node gathers and write to file ****/
+     if (taskid == MASTER)
+       for (int k = 0; k < nz; ++k) {
+         ii = ijktop(0, 0, k);
+         p_from = parall->convert_taskid_ij(ii, jcol);
+         if (p_from == MASTER) {
+           index = ijktoindex(0, 0, k);
+           for (int k = 0; k < bsize; ++k)
+             tmp[k] = a[index + k];
+         } else {
+           parall->dreceive(0, 9, p_from, bsize, tmp);
+         }
+         dwrite(iunit, tmp, bsize);
+       }
+ 
+     /**** not master node ****/
+     else
+       for (int k = 0; k < nz; ++k) {
+         index = ijktoindex(0, 0, k);
+         ii = ijktop(0, 0, k);
+         p_here = parall->convert_taskid_ij(ii, taskid_j);
+         if (p_here == taskid) {
+           for (int k = 0; k < bsize; ++k)
+             tmp[k] = a[index + k];
+           parall->dsend(0, 9, MASTER, bsize, tmp);
+         }
+       }
+ 
+     delete[] tmp;
+   }
+ 
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else 
+   {
+      // double tmp1[2*nfft3d];
       // double tmp2[2*nfft3d];
-      double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-      double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+      double *tmp1 = d3db::d3db_tmp1;
+      double *tmp2 = d3db::d3db_tmp2;
       t_transpose_ijk(5, a, tmp1, tmp2);
-      delete[] tmp2;
-      delete[] tmp1;
-    }
-
-    // double *tmp = new (std::nothrow) double[nx/2+1];
-    double tmp[nx / 2 + 1];
-    int bsize = (nx / 2 + 1);
-
-    /**** master node write to file and fetches from other nodes ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          ii = ijktop2(0, j, k);
-          p_from = parall->convert_taskid_ij(ii, jcol);
-          if (p_from == MASTER) {
-            index = ijktoindex2t(0, j, k);
-            for (int k = 0; k < bsize; ++k)
-              tmp[k] = a[index + k];
-          } else {
-            parall->dreceive(0, 9, p_from, bsize, tmp);
+     
+      // double *tmp = new (std::nothrow) double[nx/2+1];
+      double tmp[nx / 2 + 1];
+      int bsize = (nx / 2 + 1);
+     
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid == MASTER)
+        for (int k = 0; k < nz; ++k)
+          for (int j = 0; j < ny; ++j) {
+            ii = ijktop2(0, j, k);
+            p_from = parall->convert_taskid_ij(ii, jcol);
+            if (p_from == MASTER) {
+              index = ijktoindex2t(0, j, k);
+              for (int k = 0; k < bsize; ++k)
+                tmp[k] = a[index + k];
+            } else {
+              parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
           }
-          dwrite(iunit, tmp, bsize);
-        }
-
-    /**** not master node ****/
-    else
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          ii = ijktop2(0, j, k);
-          p_here = parall->convert_taskid_ij(ii, taskid_j);
-          if (p_here == taskid) {
-            index = ijktoindex2t(0, j, k);
-            for (int k = 0; k < bsize; ++k)
-              tmp[k] = a[index + k];
-            parall->dsend(0, 9, MASTER, bsize, tmp);
+     
+      /**** not master node ****/
+      else
+        for (int k = 0; k < nz; ++k)
+          for (int j = 0; j < ny; ++j) {
+            ii = ijktop2(0, j, k);
+            p_here = parall->convert_taskid_ij(ii, taskid_j);
+            if (p_here == taskid) {
+              index = ijktoindex2t(0, j, k);
+              for (int k = 0; k < bsize; ++k)
+                tmp[k] = a[index + k];
+              parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
           }
-        }
-
-    // delete [] tmp;
-  }
+     
+      // delete [] tmp;
+   }
 }
 
 /**************************************
@@ -4092,8 +4100,8 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
    if (maptype == 1)
    {
       double *a = this->r_alloc();
-      double *tmp2 = new (std::nothrow) double[2*nfft3d]();
-      double *tmp3 = new (std::nothrow) double[2*nfft3d]();
+      double *tmp2 = d3db::d3db_tmp1;
+      double *tmp3 = d3db::d3db_tmp2;
       std::memcpy(a,rho,n2ft3d*sizeof(double));
       this->r_transpose_jk(a,tmp2,tmp3);
 
@@ -4162,8 +4170,6 @@ void d3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
          }
       }
       this->r_dealloc(a);
-      delete[] tmp3;
-      delete[] tmp2;
    }
    else
    {
@@ -4256,85 +4262,86 @@ void d3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
                                    double *gryy, double *grzz) {
   int nx2 = nx + 2;
 
-  if (maptype == 1) {
-    double *a = this->r_alloc();
-    double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-    double *tmp3 = new (std::nothrow) double[2 * nfft3d]();
-    std::memcpy(a, rho, n2ft3d * sizeof(double));
-    this->r_transpose_jk(a, tmp2, tmp3);
-
-    // xx gradient
-    for (auto q = 0; q < nq; ++q) {
-      int im3, im2, im1, ip1, ip2, ip3;
-      const double *f = rho + q * (nx + 2) * nz;
-      double *ddf = grxx + q * (nx + 2) * nz;
-      for (auto i = 0; i < nx; ++i) {
-        im3 = i - 3; if (im3 < 0) im3 += nx;
-        im2 = i - 2; if (im2 < 0) im2 += nx;
-        im1 = i - 1; if (im1 < 0) im1 += nx;
-        ip1 = i + 1; if (ip1 >= nx) ip1 -= nx;
-        ip2 = i + 2; if (ip2 >= nx) ip2 -= nx;
-        ip3 = i + 3; if (ip3 >= nx) ip3 -= nx;
-
-        for (auto j = 0; j < ny; ++j)
-          ddf[i + j * nx2] =
-              one_over_180 *
-              (2.0 * f[im3 + j * nx2] - 27.0 * f[im2 + j * nx2] +
-               270.0 * f[im1 + j * nx2] - 490.0 * f[i + j * nx2] +
-               270.0 * f[ip1 + j * nx2] - 27.0 * f[ip2 + j * nx2] +
-               2.0 * f[ip3 + j * nx2]);
-      }
-    }
-
-    // yy gradient
-    for (auto q = 0; q < nq; ++q) {
-      int jm3, jm2, jm1, jp1, jp2, jp3;
-      const double *f = a + q * (nx + 2) * ny;
-      double *ddf = gryy + q * (nx + 2) * ny;
-      for (auto j = 0; j < ny; ++j) {
-        jm3 = j - 3; if (jm3 < 0) jm3 += ny;
-        jm2 = j - 2; if (jm2 < 0) jm2 += ny;
-        jm1 = j - 1; if (jm1 < 0) jm1 += ny;
-        jp1 = j + 1; if (jp1 >= ny) jp1 -= ny;
-        jp2 = j + 2; if (jp2 >= ny) jp2 -= ny;
-        jp3 = j + 3; if (jp3 >= ny) jp3 -= ny;
-        for (auto i = 0; i < nx; ++i)
-          ddf[i + j * nx2] =
-              one_over_180 *
-              (2.0 * f[i + jm3 * nx2] - 27.0 * f[i + jm2 * nx2] +
-               270.0 * f[i + jm1 * nx2] - 490.0 * f[i + j * nx2] +
-               270.0 * f[i + jp1 * nx2] - 27.0 * f[i + jp2 * nx2] +
-               2.0 * f[i + jp3 * nx2]);
-      }
-    }
-    this->r_transpose_jk(gryy, tmp2, tmp3);
-
-    // zz gradient
-    for (auto q = 0; q < nq; ++q) {
-      int km3, km2, km1, kp1, kp2, kp3;
-      const double *f = rho + q * (nx + 2) * nz;
-      double *ddf = grzz + q * (nx + 2) * nz;
-      for (auto k = 0; k < nz; ++k) {
-        km3 = k - 3; if (km3 < 0) km3 += nz;
-        km2 = k - 2; if (km2 < 0) km2 += nz;
-        km1 = k - 1; if (km1 < 0) km1 += nz;
-        kp1 = k + 1; if (kp1 >= nz) kp1 -= nz;
-        kp2 = k + 2; if (kp2 >= nz) kp2 -= nz;
-        kp3 = k + 3; if (kp3 >= nz) kp3 -= nz;
-        for (auto i = 0; i < nx; ++i)
-          ddf[i + k * nx2] =
-              one_over_180 *
-              (2.0 * f[i + km3 * nx2] - 27.0 * f[i + km2 * nx2] +
-               270.0 * f[i + km1 * nx2] - 490.0 * f[i + k * nx2] +
-               270.0 * f[i + kp1 * nx2] - 27.0 * f[i + kp2 * nx2] +
-               2.0 * f[i + kp3 * nx2]);
-      }
-    }
-
-    this->r_dealloc(a);
-    delete[] tmp3;
-    delete[] tmp2;
-  } else {
+  if (maptype == 1) 
+  {
+     double *a = this->r_alloc();
+     double *tmp2 = d3db::d3db_tmp1;
+     double *tmp3 = d3db::d3db_tmp2;
+     std::memcpy(a, rho, n2ft3d * sizeof(double));
+     this->r_transpose_jk(a, tmp2, tmp3);
+    
+     // xx gradient
+     for (auto q = 0; q < nq; ++q) {
+       int im3, im2, im1, ip1, ip2, ip3;
+       const double *f = rho + q * (nx + 2) * nz;
+       double *ddf = grxx + q * (nx + 2) * nz;
+       for (auto i = 0; i < nx; ++i) {
+         im3 = i - 3; if (im3 < 0) im3 += nx;
+         im2 = i - 2; if (im2 < 0) im2 += nx;
+         im1 = i - 1; if (im1 < 0) im1 += nx;
+         ip1 = i + 1; if (ip1 >= nx) ip1 -= nx;
+         ip2 = i + 2; if (ip2 >= nx) ip2 -= nx;
+         ip3 = i + 3; if (ip3 >= nx) ip3 -= nx;
+    
+         for (auto j = 0; j < ny; ++j)
+           ddf[i + j * nx2] =
+               one_over_180 *
+               (2.0 * f[im3 + j * nx2] - 27.0 * f[im2 + j * nx2] +
+                270.0 * f[im1 + j * nx2] - 490.0 * f[i + j * nx2] +
+                270.0 * f[ip1 + j * nx2] - 27.0 * f[ip2 + j * nx2] +
+                2.0 * f[ip3 + j * nx2]);
+       }
+     }
+    
+     // yy gradient
+     for (auto q = 0; q < nq; ++q) {
+       int jm3, jm2, jm1, jp1, jp2, jp3;
+       const double *f = a + q * (nx + 2) * ny;
+       double *ddf = gryy + q * (nx + 2) * ny;
+       for (auto j = 0; j < ny; ++j) {
+         jm3 = j - 3; if (jm3 < 0) jm3 += ny;
+         jm2 = j - 2; if (jm2 < 0) jm2 += ny;
+         jm1 = j - 1; if (jm1 < 0) jm1 += ny;
+         jp1 = j + 1; if (jp1 >= ny) jp1 -= ny;
+         jp2 = j + 2; if (jp2 >= ny) jp2 -= ny;
+         jp3 = j + 3; if (jp3 >= ny) jp3 -= ny;
+         for (auto i = 0; i < nx; ++i)
+           ddf[i + j * nx2] =
+               one_over_180 *
+               (2.0 * f[i + jm3 * nx2] - 27.0 * f[i + jm2 * nx2] +
+                270.0 * f[i + jm1 * nx2] - 490.0 * f[i + j * nx2] +
+                270.0 * f[i + jp1 * nx2] - 27.0 * f[i + jp2 * nx2] +
+                2.0 * f[i + jp3 * nx2]);
+       }
+     }
+     this->r_transpose_jk(gryy, tmp2, tmp3);
+    
+     // zz gradient
+     for (auto q = 0; q < nq; ++q) {
+       int km3, km2, km1, kp1, kp2, kp3;
+       const double *f = rho + q * (nx + 2) * nz;
+       double *ddf = grzz + q * (nx + 2) * nz;
+       for (auto k = 0; k < nz; ++k) {
+         km3 = k - 3; if (km3 < 0) km3 += nz;
+         km2 = k - 2; if (km2 < 0) km2 += nz;
+         km1 = k - 1; if (km1 < 0) km1 += nz;
+         kp1 = k + 1; if (kp1 >= nz) kp1 -= nz;
+         kp2 = k + 2; if (kp2 >= nz) kp2 -= nz;
+         kp3 = k + 3; if (kp3 >= nz) kp3 -= nz;
+         for (auto i = 0; i < nx; ++i)
+           ddf[i + k * nx2] =
+               one_over_180 *
+               (2.0 * f[i + km3 * nx2] - 27.0 * f[i + km2 * nx2] +
+                270.0 * f[i + km1 * nx2] - 490.0 * f[i + k * nx2] +
+                270.0 * f[i + kp1 * nx2] - 27.0 * f[i + kp2 * nx2] +
+                2.0 * f[i + kp3 * nx2]);
+       }
+     }
+    
+     this->r_dealloc(a);
+  } 
+  else 
+  {
     double *a = this->r_alloc();
     double *tmp2 = new (std::nothrow) double[nrft3d]();
     double *tmp3 = new (std::nothrow) double[nrft3d]();

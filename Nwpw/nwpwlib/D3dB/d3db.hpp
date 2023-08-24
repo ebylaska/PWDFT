@@ -51,6 +51,9 @@ public:
   Parallel *parall;
   int zplane_size;
 
+  /* d3db_tmp data */
+  double *d3db_tmp1,*d3db_tmp2;
+
   /* constructor */
   d3db(Parallel *, const int, const int, const int, const int);
 
