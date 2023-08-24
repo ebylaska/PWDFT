@@ -2946,13 +2946,13 @@ void d3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1,
  *    d3db::c_ptranspose1_jk_end      *
  *                                    *
  **************************************/
-void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2,
-                                const int request_indx) {
-  parall->awaitall(request_indx);
+void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int request_indx) 
+{
+   parall->awaitall(request_indx);
 
-  int n2 = p_i2_start[nb][0][np];
-  c_bindexcopy(n2, p_iq_to_i2[nb][0], tmp2, a);
-  c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a);
+   int n2 = p_i2_start[nb][0][np];
+   c_bindexcopy(n2, p_iq_to_i2[nb][0], tmp2, a);
+   c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a);
 }
 
 /**************************************

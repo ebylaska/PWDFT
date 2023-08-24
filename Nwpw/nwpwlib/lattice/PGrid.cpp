@@ -328,16 +328,15 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          d3db::c_ptranspose_jk_init(nb, zero_arow3);
         
          /* find zero_slab23 - (i,*,*) slabs that are zero */
-         for (auto i = 0; i < nxh; ++i)
+         for (auto i=0; i<(nxh+1); ++i)
             zero_slab23[nb][i] = true;
         
          for (auto k1 = 0; k1<nxh; ++k1) 
          {
-            auto i = k1;
-            if (i < 0) i += nx;
+            auto i = k1; if (i<0) i += nx;
             yzslab = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
-               for (auto k2 = (-nyh + 1); k2 < nyh; ++k2) 
+               for (auto k2=(-nyh+1); k2<nyh; ++k2) 
                {
                   auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
                   auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
@@ -1473,8 +1472,8 @@ void PGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
              auto shift = 2 * ny * nn;
              for (auto j = 0; j < ny; ++j) 
              {
-                tmp2[indx3] = tmp1[jj + shift];
-                tmp2[indx3 + 1] = tmp1[jj + 1 + shift];
+                tmp2[indx3]   = tmp1[jj   + shift];
+                tmp2[indx3+1] = tmp1[jj+1 + shift];
                 jj += 2;
                 indx3 += nxh2;
              }
@@ -1813,20 +1812,21 @@ void PGrid::pfftby_start(const int nb, double *tmp1, double *tmp2, int request_i
      int indx0 = 0;
      int indx2 = 0;
      int nn = 0;
-     for (auto q = 0; q < nq; ++q) {
-       for (auto i = 0; i < nxh; ++i) {
-         if (!zero_row2[nb][indx2]) {
-           auto jj = 0;
-           auto indx3 = 2 * i + indx0;
-           auto shift = 2 * ny * nn;
-           for (auto j = 0; j < ny; ++j) 
-           {
-              tmp1[jj   + shift] = tmp2[indx3];
-              tmp1[jj+1 + shift] = tmp2[indx3 + 1];
-              jj += 2;
-              indx3 += nxh2;
-           }
-           nn += 1;
+     for (auto q=0; q<nq; ++q) {
+       for (auto i=0; i<nxh; ++i) {
+         if (!zero_row2[nb][indx2]) 
+         {
+            auto jj = 0;
+            auto indx3 = 2 * i + indx0;
+            auto shift = 2 * ny * nn;
+            for (auto j = 0; j < ny; ++j) 
+            {
+               tmp1[jj   + shift] = tmp2[indx3];
+               tmp1[jj+1 + shift] = tmp2[indx3 + 1];
+               jj += 2;
+               indx3 += nxh2;
+            }
+            nn += 1;
          }
          ++indx2;
        }
@@ -2291,18 +2291,19 @@ void PGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
       nn = 0;
       for (auto q=0; q<nq; ++q) {
         for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) {
-            auto jj = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * ny * nn;
-            for (auto j = 0; j < ny; ++j) 
-            {
-               tmp1[indx3] = tmp2[jj + shift];
-               tmp1[indx3 + 1] = tmp2[jj + 1 + shift];
-               jj += 2;
-               indx3 += nxh2;
-            }
-            ++nn;
+          if (!zero_row2[nb][indx2]) 
+          {
+             auto jj = 0;
+             auto indx3 = 2 * i + indx0;
+             auto shift = 2 * ny * nn;
+             for (auto j = 0; j < ny; ++j) 
+             {
+                tmp1[indx3] = tmp2[jj + shift];
+                tmp1[indx3 + 1] = tmp2[jj + 1 + shift];
+                jj += 2;
+                indx3 += nxh2;
+             }
+             ++nn;
           }
           ++indx2;
         }
@@ -2352,8 +2353,8 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q = 0; q < nq; ++q) {
-        for (auto i = 0; i < nxh; ++i) {
+      for (auto q=0; q<nq; ++q) {
+        for (auto i=0; i<nxh; ++i) {
           if (!zero_row3[nb][indx2]) 
           {
              auto kk = 0;
@@ -2378,8 +2379,8 @@ void PGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q = 0; q < nq; ++q) {
-        for (auto i = 0; i < nxh; ++i) {
+      for (auto q=0; q<nq; ++q) {
+        for (auto i=0; i<nxh; ++i) {
           if (!zero_row3[nb][indx2]) 
           {
              auto kk = 0;

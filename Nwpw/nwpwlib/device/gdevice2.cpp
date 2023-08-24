@@ -149,8 +149,8 @@ void gdevice2::batch_cfftx_stages_tmpx(const int stage, const int tag,bool forwa
 
 
 
-void gdevice2::batch_cffty_tmpy(const int tag,bool forward, int ny, int nq, int n2ft3d,
-                              double *a, double *tmpy) {
+void gdevice2::batch_cffty_tmpy(const int tag, bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy) 
+{
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cffty(tag,forward, ny, nq, n2ft3d, a);
