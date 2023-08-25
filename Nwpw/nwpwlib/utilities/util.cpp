@@ -65,12 +65,12 @@ void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
 
 void c_bindexzero(const int n, const int *indx, double *B) 
 {
-   int ii, jj;
-   for (auto i = 0; i < n; ++i) 
+   int jj;
+   for (auto i=0; i<n; ++i) 
    {
       jj = 2 * indx[i];
-      B[jj] = 0.0;
-      B[jj + 1] = 0.0;
+      B[jj]   = 0.0;
+      B[jj+1] = 0.0;
    }
 }
 
