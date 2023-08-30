@@ -106,6 +106,28 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
             n2ft3d_all += ma2[ms][i];
          }
       }
+
+
+      work1 = new (std::nothrow) double[2*2*64*ma2[0][taskid_i]]();
+      int nework = 2*64*nc[0][taskid_j];
+      if (nework<mcq[0]*ncq[0]) nework = mcq[0]*ncq[0];
+      work2 = new (std::nothrow) double[3*nework]();
+      bcolwork = new (std::nothrow) double[ne[0]*ncqmax0]();
+      bwork2   = new (std::nothrow) double[ne[0]*ncqmax0]();
+      rwork1   = new (std::nothrow) double[2*(na[0][0]*ma2[0][taskid_i])]();
+      rwork2   = new (std::nothrow) double[2*(na[0][0]*ma2[0][taskid_i])]();
+      mat_tmp  = new (std::nothrow) double[3*(mcq[0]*ncq[0] + mcq[1]*ncq[1])]();
+
+      mindx[0] = new (std::nothrow) int[(mcq[0]*ncq[0] + mcq[1]*ncq[1])]();
+      mindx[1] = new (std::nothrow) int[(mcq[0]*ncq[0])]();
+      if (ispin>1) mindx[2] = new (std::nothrow) int[(mcq[1]*ncq[1])]();
+
+      mall[0]  = ne[0]*ne[0] + ne[1]*ne[1];
+      mall[1]  = ne[0]*ne[0];
+      mall[2]  = ne[1]*ne[1];
+      mpack[0] = mcq[0]*ncq[0] + mcq[1]*ncq[1];
+      mpack[1] = mcq[0]*ncq[0];
+      mpack[2] = mcq[1]*ncq[1];
    }
  
    g_rnd_algorihm = control.initial_psi_random_algorithm();
@@ -660,6 +682,12 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2,
   }
 }
 
+
+/*************************************
+ *                                   *
+ *        Pneb::ffm_Multiply         *
+ *                                   *
+ *************************************/
 void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml) {
   nwpw_timing_function ftimer(15);
   int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
@@ -714,160 +742,226 @@ void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml) {
   }
 }
 
+/*************************************
+ *                                   *
+ *      Pneb::ffm3_sym_Multiply      *
+ *                                   *
+ *************************************/
+
+ /* 
+  Description:                                    
+  This function performs symmetric matrix         
+  multiplication and manipulation operations. It  
+  operates on input arrays psi1 and psi2, and     
+  calculates and stores the results in arrays s11,
+  s21, and s22. The calculations are performed based 
+  on the given parameters and matrix properties.    
+                                                   
+  Parameters:                                     
+  - mb: Index specifying the block of matrices to 
+        operate on. If mb is -1, full matrix      
+        multiplication is performed. Otherwise, a 
+        subset of matrices is used for calculations. 
+  - psi1, psi2: Pointers to double arrays containing 
+                input matrix data.                  
+  - s11, s21, s22: Pointers to double arrays where 
+                  the results will be stored.     
+*/
+
 void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
-                             double *s11, double *s21, double *s22) {
-  nwpw_timing_function ftimer(15);
-  int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
-  int one = 1;
-  int ng = 2 * PGrid::npack(1);
-  int ng0 = 2 * PGrid::nzero(1);
-
-  double rzero = 0.0;
-  double rtwo = 2.0;
-  double rone = 1.0;
-  double rmone = -1.0;
-
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    if (mb == -1) {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
-      nn = ne[0] * ne[0] + ne[1] * ne[1];
-      shift0 = 0;
-      mshift0 = 0;
-    } else {
-      ms1 = mb;
-      ms2 = mb + 1;
-      ishift2 = 0;
-      nn = ne[mb] * ne[mb];
-      shift0 = mb * ne[0] * ng;
-      mshift0 = 0;
-    }
-    for (ms = ms1; ms < ms2; ++ms) {
-      n = ne[ms];
-
-      d3db::mygdevice.TN3_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&s11[mshift0],&s21[mshift0],&s22[mshift0]);
-
-      if (ng0 > 0) {
-        shift1 = shift0;
-        mshift1 = mshift0;
-        for (k = 1; k <= n; ++k) {
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      &psi1[shift0], ng, &psi1[shift1], ng, rone, &s11[mshift1],
-                      k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      &psi1[shift0], ng, &psi2[shift1], ng, rone, &s21[mshift1],
-                      k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      &psi2[shift0], ng, &psi2[shift1], ng, rone, &s22[mshift1],
-                      k);
-          shift1 += ng;
-          mshift1 += n;
-        }
+                             double *s11, double *s21, double *s22) 
+{
+   nwpw_timing_function ftimer(15);
+   int ms1, ms2, ishift2, n, shift0, shift1, mshift0, mshift1, nn;
+   int one = 1;
+   int ng  = 2*PGrid::npack(1);
+   int ng0 = 2*PGrid::nzero(1);
+ 
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+ 
+   if (parallelized) 
+   {
+      std::ostringstream msg;
+      msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
+          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      throw(std::runtime_error(msg.str()));
+      if (mb==-1)
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = mcq[0]*ncq[0];
+         nn = mcqmax[0]*ncqmax[0]+mcqmax[1]*ncqmax[1];
+      }
+      else
+      {
+         ms1 = mb;
+         ms2 = mb+1;
+         ishift2 = 0;
+         nn = mcqmax[mb]*ncqmax[mb];
       }
 
-      for (k = 0; k < n; ++k) {
-        for (j = k + 1; j < n; ++j) {
-          s11[mshift0 + j + k * n] = s11[mshift0 + k + j * n];
-          s21[mshift0 + j + k * n] = s21[mshift0 + k + j * n];
-          s22[mshift0 + j + k * n] = s22[mshift0 + k + j * n];
-        }
-      }
 
-      shift0 += ng * ne[0];
-      mshift0 += ne[0] * ne[0];
-    }
-    d3db::parall->Vector_SumAll(1, nn, s11);
-    d3db::parall->Vector_SumAll(1, nn, s21);
-    d3db::parall->Vector_SumAll(1, nn, s22);
-  }
+   } 
+   else 
+   {
+      if (mb == -1) 
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = ne[0]*ne[0];
+         nn = ne[0]*ne[0] + ne[1]*ne[1];
+         shift0 = 0;
+         mshift0 = 0;
+      } 
+      else 
+      {
+         ms1 = mb;
+         ms2 = mb + 1;
+         ishift2 = 0;
+         nn = ne[mb]*ne[mb];
+         shift0 = mb*ne[0]*ng;
+         mshift0 = 0;
+      }
+      for (auto ms=ms1; ms<ms2; ++ms) 
+      {
+         n = ne[ms];
+        
+         d3db::mygdevice.TN3_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,s11+mshift0,s21+mshift0,s22+mshift0);
+        
+         if (ng0 > 0) 
+         {
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (auto k=1; k<=n; ++k) 
+            {
+               DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                           psi1+shift0,ng, 
+                           psi1+shift1,ng, 
+                           rone, 
+                           s11+mshift1,k);
+               DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                           psi1+shift0,ng, 
+                           psi2+shift1,ng, 
+                           rone, 
+                           s21+mshift1,k);
+               DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                           psi2+shift0,ng, 
+                           psi2+shift1,ng, 
+                           rone, 
+                           s22+mshift1,k);
+               shift1  += ng;
+               mshift1 += n;
+            }
+         }
+        
+         for (auto k=0; k<n; ++k) 
+         {
+            for (auto j=k+1; j<n; ++j) 
+            {
+               s11[mshift0+j+k*n] = s11[mshift0+k+j*n];
+               s21[mshift0+j+k*n] = s21[mshift0+k+j*n];
+               s22[mshift0+j+k*n] = s22[mshift0+k+j*n];
+            }
+         }
+        
+         shift0  += ng*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1, nn, s11);
+      d3db::parall->Vector_SumAll(1, nn, s21);
+      d3db::parall->Vector_SumAll(1, nn, s22);
+   }
 }
 
+
+/*************************************
+ *                                   *
+ *      Pneb::ffm4_sym_Multiply      *
+ *                                   *
+ *************************************/
 void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
-                             double *s11, double *s21, double *s12,
-                             double *s22) {
-  nwpw_timing_function ftimer(15);
-  int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
-  int one = 1;
-  int ng = 2 * PGrid::npack(1);
-  int ng0 = 2 * PGrid::nzero(1);
-
-  double rzero = 0.0;
-  double rtwo = 2.0;
-  double rone = 1.0;
-  double rmone = -1.0;
-
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: ffm4_sym_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    if (mb == -1) {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
-      nn = ne[0] * ne[0] + ne[1] * ne[1];
-      shift0 = 0;
-      mshift0 = 0;
-    } else {
-      ms1 = mb;
-      ms2 = mb + 1;
-      ishift2 = 0;
-      nn = ne[mb] * ne[mb];
-      shift0 = mb * ne[0] * ng;
-      mshift0 = 0;
-    }
-    for (ms = ms1; ms < ms2; ++ms) {
-      n = ne[ms];
-
-      d3db::mygdevice.TN4_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,
-                                s11+mshift0,s21+mshift0,s12+mshift0,
-                                s22+mshift0);
-
-      if (ng0 > 0) {
-        shift1 = shift0;
-        mshift1 = mshift0;
-        for (k = 1; k <= n; ++k) {
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      psi1 + shift0, ng, psi1 + shift1, ng, rone, s11 + mshift1,
-                      k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      psi2 + shift0, ng, psi1 + shift1, ng, rone, s21 + mshift1,
-                      k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      psi1 + shift0, ng, psi2 + shift1, ng, rone, s12 + mshift1,
-                      k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      psi2 + shift0, ng, psi2 + shift1, ng, rone, s22 + mshift1,
-                      k);
-          shift1 += ng;
-          mshift1 += n;
-        }
-      }
-
-      for (k = 0; k < n; ++k) {
-        for (j = k + 1; j < n; ++j) {
-          s11[mshift0 + j + k * n] = s11[mshift0 + k + j * n];
-          s21[mshift0 + j + k * n] = s21[mshift0 + k + j * n];
-          s12[mshift0 + j + k * n] = s12[mshift0 + k + j * n];
-          s22[mshift0 + j + k * n] = s22[mshift0 + k + j * n];
-        }
-      }
-
-      shift0 += ng * ne[0];
-      mshift0 += ne[0] * ne[0];
-    }
-    d3db::parall->Vector_SumAll(1, nn, s11);
-    d3db::parall->Vector_SumAll(1, nn, s21);
-    d3db::parall->Vector_SumAll(1, nn, s12);
-    d3db::parall->Vector_SumAll(1, nn, s22);
-  }
+                             double *s11, double *s21, double *s12, double *s22) 
+{
+   nwpw_timing_function ftimer(15);
+   int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
+   int one = 1;
+   int ng = 2 * PGrid::npack(1);
+   int ng0 = 2 * PGrid::nzero(1);
+ 
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+ 
+   if (parallelized) {
+     std::ostringstream msg;
+     msg << "NWPW Error: ffm4_sym_Multiply() parallelized is NOT supported\n"
+         << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+     throw(std::runtime_error(msg.str()));
+   } else {
+     if (mb == -1) {
+       ms1 = 0;
+       ms2 = ispin;
+       ishift2 = ne[0] * ne[0];
+       nn = ne[0] * ne[0] + ne[1] * ne[1];
+       shift0 = 0;
+       mshift0 = 0;
+     } else {
+       ms1 = mb;
+       ms2 = mb + 1;
+       ishift2 = 0;
+       nn = ne[mb] * ne[mb];
+       shift0 = mb * ne[0] * ng;
+       mshift0 = 0;
+     }
+     for (ms = ms1; ms < ms2; ++ms) {
+       n = ne[ms];
+ 
+       d3db::mygdevice.TN4_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,
+                                 s11+mshift0,s21+mshift0,s12+mshift0,
+                                 s22+mshift0);
+ 
+       if (ng0 > 0) {
+         shift1 = shift0;
+         mshift1 = mshift0;
+         for (k = 1; k <= n; ++k) {
+           DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                       psi1 + shift0, ng, psi1 + shift1, ng, rone, s11 + mshift1,
+                       k);
+           DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                       psi2 + shift0, ng, psi1 + shift1, ng, rone, s21 + mshift1,
+                       k);
+           DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                       psi1 + shift0, ng, psi2 + shift1, ng, rone, s12 + mshift1,
+                       k);
+           DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                       psi2 + shift0, ng, psi2 + shift1, ng, rone, s22 + mshift1,
+                       k);
+           shift1 += ng;
+           mshift1 += n;
+         }
+       }
+ 
+       for (k = 0; k < n; ++k) {
+         for (j = k + 1; j < n; ++j) {
+           s11[mshift0 + j + k * n] = s11[mshift0 + k + j * n];
+           s21[mshift0 + j + k * n] = s21[mshift0 + k + j * n];
+           s12[mshift0 + j + k * n] = s12[mshift0 + k + j * n];
+           s22[mshift0 + j + k * n] = s22[mshift0 + k + j * n];
+         }
+       }
+ 
+       shift0 += ng * ne[0];
+       mshift0 += ne[0] * ne[0];
+     }
+     d3db::parall->Vector_SumAll(1, nn, s11);
+     d3db::parall->Vector_SumAll(1, nn, s21);
+     d3db::parall->Vector_SumAll(1, nn, s12);
+     d3db::parall->Vector_SumAll(1, nn, s22);
+   }
 }
 
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
@@ -1639,6 +1733,18 @@ void Pneb::m4_FactorSkew(const int mb, double *K4, double *V4, double *W4,
  *    mm4_RotationSkew_sub1     *
  *                              *
  ********************************/
+ /*
+  Description:
+    This function calculates the sine and cosine values of the scaled Sigma values multiplied by 't',
+    and stores the results in arrays SA and SB. The operation is performed element-wise for the given size 'n'.
+
+  Parameters:
+    - n: Size of the arrays.
+    - t: Scaling factor for the rotation angle.
+    - Sigma: Pointer to a double array containing input matrix data.
+    - SA: Pointer to a double array where the cosine results will be stored.
+    - SB: Pointer to a double array where the sine results will be stored.
+*/
 static void mm4_RotateSkew_sub1(const int n, const double t,
                                 const double *Sigma, double *SA, double *SB) 
 {
@@ -1654,6 +1760,19 @@ static void mm4_RotateSkew_sub1(const int n, const double t,
  *    mm4_RotationSkew_sub2     *
  *                              *
  ********************************/
+ /*
+  Description:
+    This function performs a rotation and skew transformation on matrices V and W using the precalculated
+    sine and cosine values from arrays SA and SB. The resulting matrices A and B are stored accordingly.
+    The operation is performed element-wise for the given size 'n'.
+
+  Parameters:
+    - n: Size of the arrays.
+    - SA, SB: Pointers to double arrays containing precalculated sine and cosine values.
+    - V, W: Pointers to double arrays containing input matrix data.
+    - A: Pointer to a double array where the rotated matrix A will be stored.
+    - B: Pointer to a double array where the skewed matrix B will be stored.
+*/
 static void mm4_RotateSkew_sub2(const int n, const double *SA, const double *SB,
                                 const double *V, const double *W, double *A,
                                 double *B) {
@@ -1670,6 +1789,23 @@ static void mm4_RotateSkew_sub2(const int n, const double *SA, const double *SB,
  *    Pneb::m4_RotationSkew     *
  *                              *
  ********************************/
+ /*
+  Description:
+    This function performs a rotation and skew transformation on given matrices V4 and W4, storing the
+    results in matrices A4, B4, and R4. The transformation is based on the provided parameters and
+    matrix properties. The operation is performed within specified matrix blocks determined by 'mb' and
+    matrix sizes 'ne'.
+
+  Parameters:
+    - mb: Index specifying the block of matrices to operate on. If mb is -1, the entire matrix V4 and W4
+          are used for calculations. Otherwise, a subset of matrices is used.
+    - t: Rotation angle for the transformation.
+    - V4, W4: Pointers to double arrays containing input matrix data.
+    - Sigma: Pointer to a double array for storing intermediate transformation values.
+    - A4, B4: Pointers to double arrays where the resulting matrices A4 and B4 will be stored.
+    - R4: Pointer to a double array where the final transformed matrix R4 will be stored.
+*/
+
 void Pneb::m4_RotationSkew(const int mb, const double t, double *V4, double *W4,
                            double *Sigma, double *A4, double *B4, double *R4) {
   int ms1, ms2, ishift1, ishift2, nj;
@@ -1713,6 +1849,19 @@ void Pneb::m4_RotationSkew(const int mb, const double t, double *V4, double *W4,
  *     Pneb::m4_R4_to_MN        *
  *                              *
  ********************************/
+/*
+  Description:
+    This function converts a given matrix R4 to two matrices M and N. The matrices M and N are
+    extracted from specific subblocks of R4 based on the provided index 'mb' and matrix sizes 'ne'.
+    The operation is performed according to the specified parameters and matrix properties.
+    
+  Parameters:
+    - mb: Index specifying the block of matrices to operate on. If mb is -1, the entire matrix R4 is
+          used to extract M and N. Otherwise, a subset of matrices is used for calculations.
+    - R4: Pointer to a double array containing the input matrix data (R4).
+    - M: Pointer to a double array where the resulting matrix M will be stored.
+    - N: Pointer to a double array where the resulting matrix N will be stored.
+*/
 void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N) 
 {
    int ms1, ms2, ishift1, ishift2;

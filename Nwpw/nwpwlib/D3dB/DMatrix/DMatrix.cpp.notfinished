@@ -11,7 +11,36 @@
  *         DMatrix_dgemm1          *
  *                                 *
  ***********************************/
-void DMatrix_dgemm1(int m, int n, int k, int nblock,
+
+ /*
+  Description:
+    This function performs a distributed matrix multiplication using the DGEMM algorithm with additional parallelism
+    through MPI communication. It calculates the product of matrices A and B and accumulates the result into matrix C,
+    considering the specified block size and process grid configuration. The function manages data distribution and
+    communication to perform the multiplication efficiently.
+
+  Parameters:
+    - m, n, k: Dimensions of the matrices involved in the multiplication.
+    - nblock: Block size for matrix multiplication.
+    - alpha: Scalar constant for the multiplication operation.
+    - A: Pointer to the input matrix A.
+    - lda: Leading dimension of matrix A.
+    - ma, na: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - B: Pointer to the input matrix B.
+    - ldb: Leading dimension of matrix B.
+    - mb, nb: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - beta: Scalar constant for scaling matrix C.
+    - C: Pointer to the output matrix C, where the result is accumulated.
+    - ldc: Leading dimension of matrix C.
+    - mc, nc: Pointers to arrays specifying row and column dimensions of result submatrices for each process.
+    - taskid_i, taskid_j: Task IDs within the process grid.
+    - np_i, np_j: Number of processes in each dimension.
+    - comm_i, comm_j: MPI communicators for process rows and columns.
+    - work1: Temporary workspace array.
+    - work2: Temporary workspace array.
+*/
+
+static void DMatrix_dgemm1(Parallel *parall, myarint m, int n, int k, int nblock,
                     double alpha,
                     double *A, int lda, int *ma, int *na,
                     double *B, int ldb, int *mb, int *nb,
@@ -96,13 +125,38 @@ void DMatrix_dgemm1(int m, int n, int k, int nblock,
 }
 
 
-
-
 /***********************************
  *                                 *
  *         DMatrix_dgemm2          *
  *                                 *
  ***********************************/
+ /*
+  Description:
+    This function performs a distributed matrix multiplication with additional parallelism through MPI communication.
+    It calculates the product of matrices transpose(A) and B and accumulates the result into matrix C. The operation is block-wise
+    and involves managing data distribution and communication for efficient computation.
+
+  Parameters:
+    - m, n, k: Dimensions of the matrices involved in multiplication.
+    - nblock: Block size for matrix multiplication.
+    - alpha: Scalar constant for the multiplication operation.
+    - A: Pointer to the input matrix A.
+    - lda: Leading dimension of matrix A.
+    - ma, na: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - B: Pointer to the input matrix B.
+    - ldb: Leading dimension of matrix B.
+    - mb, nb: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - beta: Scalar constant for scaling matrix C.
+    - C: Pointer to the output matrix C where the result is accumulated.
+    - ldc: Leading dimension of matrix C.
+    - mc, nc: Pointers to arrays specifying row and column dimensions of result submatrices for each process.
+    - taskid_i, taskid_j: Task IDs within the process grid.
+    - np_i, np_j: Number of processes in each dimension.
+    - comm_i, comm_j: MPI communicators for process rows and columns.
+    - work1: Temporary workspace array.
+    - work2: Temporary workspace array.
+*/
+
 void DMatrix_dgemm2(int m, int n, int k, int nblock,
                     double alpha,
                     double *A, int lda, int *ma, int *na,
@@ -201,6 +255,33 @@ void DMatrix_dgemm2(int m, int n, int k, int nblock,
  *         DMatrix_dgemm3          *
  *                                 *
  ***********************************/
+/*
+  Description:
+    This function performs a distributed matrix multiplication with additional parallelism through MPI communication.
+    It calculates the product of matrices A and transpose(B) and accumulates the result into matrix C. The operation is block-wise
+    and involves managing data distribution and communication for efficient computation.
+    
+  Parameters:
+    - m, n, k: Dimensions of the matrices involved in multiplication.
+    - nblock: Block size for matrix multiplication.
+    - alpha: Scalar constant for the multiplication operation.
+    - A: Pointer to the input matrix A.
+    - lda: Leading dimension of matrix A.
+    - ma, na: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - B: Pointer to the input matrix B.
+    - ldb: Leading dimension of matrix B.
+    - mb, nb: Pointers to arrays specifying row and column dimensions of submatrices for each process.
+    - beta: Scalar constant for scaling matrix C.
+    - C: Pointer to the output matrix C where the result is accumulated.
+    - ldc: Leading dimension of matrix C.
+    - mc, nc: Pointers to arrays specifying row and column dimensions of result submatrices for each process.
+    - taskid_i, taskid_j: Task IDs within the process grid.
+    - np_i, np_j: Number of processes in each dimension.
+    - comm_i, comm_j: MPI communicators for process rows and columns.
+    - work1: Temporary workspace array.
+    - work2: Temporary workspace array.
+*/
+
 void DMatrix_dgemm3(int m, int n, int k, int nblock,
                     double alpha,
                     double *A, int lda, int *ma, int *na,

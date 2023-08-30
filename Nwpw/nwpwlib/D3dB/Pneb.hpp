@@ -25,11 +25,15 @@ class Pneb : public PGrid, public d1db {
   // int ispin,ne[2],neq[2];
   int parallelized;
   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1;
+  double *mat_tmp, *work1, *work2;
+  double *bcolwork, *bwork2, *rwork1, *rwork2;
 
   int *ma[2], *ma1[2], *ma2[2], *mc[2], *na[2], *nc[2];
+  int *m2c[2], *n2c[2];
   int mcq[2], ncq[2];
+  int m2cq[2],n2cq[2];
   int mcqmax[2],ncqmax[2];
-  int mall[2] ,mpack[2];
+  int mall[3] ,mpack[3], *mindx[3];
   int ncqmax0, npack1_all, nida1_all, n2ft3d_all;
   int g_rnd_algorihm = 1;
 
@@ -39,16 +43,29 @@ public:
 
   /* destructor */
   ~Pneb() {
-    delete[] s22;
-    if (parallelized)
-       for (int ms=0; ms<ispin; ++ms) {
-          delete[] ma[ms];
-          delete[] ma1[ms];
-          delete[] ma2[ms];
-          delete[] mc[ms];
-          delete[] na[ms];
-          delete[] nc[ms];
-       }
+     delete[] s22;
+     if (parallelized)
+     {
+        delete [] mindx[0];
+        for (int ms=0; ms<ispin; ++ms) {
+           delete[] ma[ms];
+           delete[] ma1[ms];
+           delete[] ma2[ms];
+           delete[] mc[ms];
+           delete[] na[ms];
+           delete[] nc[ms];
+           //delete[] m2c[ms];
+           //delete[] n2c[ms];
+           delete [] mindx[ms+1];
+        }
+        delete [] mat_tmp;
+        delete [] work1;
+        delete [] work2;
+        delete [] rwork1;
+        delete [] rwork2;
+        delete [] bcolwork;
+        delete [] bwork2;
+     }
   }
 
   void g_generate_random(double *);

@@ -32,7 +32,7 @@ namespace pwdft {
  ********************************/
 
 d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz)
-    : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz)
+     : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz)
 {
    int index1, index2, proc_to, proc_from;
    int nyh, nzh;

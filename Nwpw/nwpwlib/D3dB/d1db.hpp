@@ -8,6 +8,7 @@
 
 #include "Mapping1.hpp"
 #include "Parallel.hpp"
+#include "gdevice2.hpp"
 
 namespace pwdft {
 
@@ -21,6 +22,28 @@ public:
 
   /* destructor */
   ~d1db() {}
+
+  /* SUMMA matrix mutiplications */
+  void DMatrix_dgemm1(Parallel *parall, gdevice2 *,
+                      int, int, int, int,
+                      double, double *, int, int *, int *,
+                              double *, int, int *, int *,
+                      double, double *, int, int *, int *,
+                      double *, double *);
+
+  void DMatrix_dgemm2(Parallel *parall, gdevice2 *,
+                      int, int, int, int,
+                      double, double *, int, int *, int *,
+                              double *, int, int *, int *,
+                      double, double *, int, int *, int *,
+                      double *, double *);
+
+  void DMatrix_dgemm3(Parallel *parall, gdevice2 *,
+                      int, int, int, int,
+                      double, double *, int, int *, int *,
+                              double *, int, int *, int *,
+                      double, double *, int, int *, int *,
+                      double *, double *);
 };
 
 } // namespace pwdft

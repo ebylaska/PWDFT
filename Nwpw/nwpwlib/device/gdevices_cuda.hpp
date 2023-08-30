@@ -597,6 +597,107 @@ public:
 
   /**************************************
    *                                    *
+   *              NN_dgemm1             *
+   *                                    *
+   **************************************/
+  void NN_dgemm1(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda, k, sizeof(double), host_a, lda, dev_mem[ia], lda, stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb, n, sizeof(double), host_b, ldb, dev_mem[ib], ldb, stream[0]));
+
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+    NWPW_CUBLAS_ERROR(cublasDgemm(master_handle,matN,matN,m,n,k, 
+                                  &alpha, 
+                                  dev_mem[ia],lda,
+                                  dev_mem[ib],ldb,
+                                  &beta,
+                                  dev_mem[ic],ldc);
+    NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+  /**************************************
+   *                                    *
+   *              TN_dgemm2             *
+   *                                    *
+   **************************************/
+  void TN_dgemm2(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)m));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda, m, sizeof(double), host_a, lda, dev_mem[ia], lda, stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb, n, sizeof(double), host_b, ldb, dev_mem[ib], ldb, stream[0]));
+
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+    NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, m, n, k, 
+                                  &alpha, 
+                                  dev_mem[ia], lda,
+                                  dev_mem[ib], ldb,
+                                  &beta,
+                                  dev_mem[ic],ldc);
+
+    NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+  /**************************************
+   *                                    *
+   *              NT_dgemm3             *
+   *                                    *
+   **************************************/
+  void NT_dgemm3(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)k));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb,k,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]));
+
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+    NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matT, m, n, k,
+                                  &alpha, 
+                                  dev_mem[ia], lda,
+                                  dev_mem[ib], ldb,
+                                  &beta,
+                                  dev_mem[ic],ldc);
+
+    NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
+    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+
+
+
+
+  /**************************************
+   *                                    *
    *              TN_dgemm              *
    *                                    *
    **************************************/

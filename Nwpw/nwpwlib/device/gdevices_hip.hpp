@@ -534,6 +534,103 @@ public:
     inuse[ib] = false;
   }
 
+   /**************************************
+   *                                    *
+   *              NN_dgemm1             *
+   *                                    *
+   **************************************/
+  void NN_dgemm1(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]));
+
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+    NWPW_ROCBLAS_ERROR(roclas_dgemm(master_handle,matN,matN,m,n,k,
+                                    &alpha,
+                                    dev_mem[ia],lda,
+                                    dev_mem[ib],ldb,
+                                    &beta,
+                                    dev_mem[ic],ldc);
+    NWPW_ROCBLAS_ERROR(rocblas_get_matrix_async(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+  /**************************************
+   *                                    *
+   *              TN_dgemm2             *
+   *                                    *
+   **************************************/
+  void TN_dgemm2(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)m));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(lda,m,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]));
+   
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+    NWPW_ROCBLAS_ERROR(roclas_dgemm(master_handle,matT,matN,m,n,k,
+                                    &alpha,
+                                    dev_mem[ia],lda,
+                                    dev_mem[ib],ldb,
+                                    &beta,
+                                    dev_mem[ic],ldc);
+    NWPW_ROCBLAS_ERROR(rocblas_get_matrix_async(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+  /**************************************
+   *                                    *
+   *              NT_dgemm3             *
+   *                                    *
+   **************************************/
+  void NT_dgemm3(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+    int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+    int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)k));
+    int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]));
+    NWPW_ROCBLAS_ERROR(rocblas_set_matrix_async(ldb,k,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]));
+
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+    NWPW_ROCBLAS_ERROR(roclas_dgemm(master_handle,matN,matT,m,n,k,
+                                    &alpha,
+                                    dev_mem[ia],lda,
+                                    dev_mem[ib],ldb,
+                                    &beta,
+                                    dev_mem[ic],ldc);
+    NWPW_ROCBLAS_ERROR(rocblas_get_matrix_async(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+    NWPW_HIP_ERROR(hipStreamSynchronize(stream[0]));
+
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[ic] = false;
+  }
+
+
   /**************************************
    *                                    *
    *              TN_dgemm              *

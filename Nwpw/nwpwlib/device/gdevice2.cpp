@@ -49,6 +49,16 @@ void gdevice2::NN_dgemm(int npack, int ne, double alpha, double *a, double *b,
    mygdevice2->NN_dgemm(npack, ne, alpha, a, b, beta, c);
 }
 
+void gdevice2::NN_dgemm1(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+   mygdevice2->NN_dgemm1(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
+}
+void gdevice2::TN_dgemm2(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+   mygdevice2->TN_dgemm2(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
+}
+void gdevice2::NT_dgemm3(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+   mygdevice2->NT_dgemm3(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
+}
+
 void gdevice2::NT_dgemm(int npack, int ne, int nprj, double alpha, double *a,
                       double *b, double beta, double *c) {
    mygdevice2->NT_dgemm(npack, ne, nprj, alpha, a, b, beta, c);

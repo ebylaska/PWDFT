@@ -126,6 +126,33 @@ public:
                 host_b, ne, beta, host_c, npack);
   }
 
+  void NN_dgemm1(int m, int n, int k, 
+                 double alpha, 
+                 double *host_a, int lda, 
+                 double *host_b, int ldb,
+                 double beta, 
+                 double *host_c,int ldc) {
+     DGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }
+  void TN_dgemm2(int m, int n, int k, 
+                 double alpha, 
+                 double *host_a, int lda, 
+                 double *host_b, int ldb,
+                 double beta, 
+                 double *host_c,int ldc) {
+     DGEMM_PWDFT((char *)"T", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }
+  void NT_dgemm3(int m, int n, int k, 
+                 double alpha, 
+                 double *host_a, int lda, 
+                 double *host_b, int ldb,
+                 double beta, 
+                 double *host_c,int ldc) {
+     DGEMM_PWDFT((char *)"N", (char *)"T", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }
+
+
+
   void NT_dgemm(int npack, int ne, int nprj, double alpha, double *host_a,
                 double *host_b, double beta, double *host_c) {
 

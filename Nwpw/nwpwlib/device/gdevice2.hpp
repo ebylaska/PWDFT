@@ -23,6 +23,10 @@ public:
   
    void NN_dgemm(int, int, double, double *, double *, double, double *);
    void NT_dgemm(int, int, int, double, double *, double *, double, double *);
+
+   void NN_dgemm1(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void TN_dgemm2(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void NT_dgemm3(int, int, int, double, double *, int, double *, int, double, double *,int);
   
    void MM6_dgemm(int, double *, double *, double *, double *, double *, double *);
   
