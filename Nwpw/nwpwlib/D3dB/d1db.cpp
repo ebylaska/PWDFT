@@ -13,6 +13,7 @@
 
 */
 
+#include <iostream>
 #include "Mapping1.hpp"
 #include "Parallel.hpp"
 #include "blas.h"
@@ -82,7 +83,7 @@ void d1db::DMatrix_dgemm1(Parallel *parall,
    auto taskid_i = parall->taskid_i();
    auto taskid_j = parall->taskid_j();
    auto np_i = parall->np_i();
-   auto np_j = parall->np_i();
+   auto np_j = parall->np_j();
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
@@ -201,7 +202,7 @@ void d1db::DMatrix_dgemm2(Parallel *parall,
    auto taskid_i = parall->taskid_i();
    auto taskid_j = parall->taskid_j();
    auto np_i = parall->np_i();
-   auto np_j = parall->np_i();
+   auto np_j = parall->np_j();
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
@@ -268,7 +269,7 @@ void d1db::DMatrix_dgemm2(Parallel *parall,
          shift = 0;
          for (auto i=ii; i<(ii+iwrk); ++ i)
          {
-            DAXPY_PWDFT(nc[taskid_j],rone,&work1[shift],iwrk,&C[i],mc[taskid_i]);
+            DAXPY_PWDFT(nc[taskid_j],rone,work1+shift,iwrk,C+i,mc[taskid_i]);
             ++shift;
          }
       }
@@ -335,7 +336,7 @@ void d1db::DMatrix_dgemm3(Parallel *parall,
    auto taskid_i = parall->taskid_i();
    auto taskid_j = parall->taskid_j();
    auto np_i = parall->np_i();
-   auto np_j = parall->np_i();
+   auto np_j = parall->np_j();
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
@@ -413,6 +414,102 @@ void d1db::DMatrix_dgemm3(Parallel *parall,
 
    }
 }
+
+
+/***********************************
+ *                                 *
+ *         DMatrix_dgemm2c         *
+ *                                 *
+ ***********************************/
+
+void d1db::DMatrix_dgemm2c(Parallel *parall,
+                          gdevice2 *mygdevice,
+                          int m, int n, int k, int nblock,
+                          double *A, double *B, int lda, int *ma, int *ma1, int *na,
+                          double *C, int ldc, int *mc, int *nc,
+                          double  *work1, double *work2)
+{
+   auto taskid_i = parall->taskid_i();
+   auto taskid_j = parall->taskid_j();
+   auto np_i = parall->np_i();
+   auto np_j = parall->np_j();
+
+   int n2     = na[taskid_j];
+   int npack2 = ma[taskid_i];
+   int nida2  = ma1[taskid_i];
+
+   int one=1;
+   int nn=(nc[taskid_j]*mc[taskid_i]);
+   std::memset(C,0,nn*sizeof(double));
+
+   int iwrk,shift;
+   int ii=0;
+   int jj=0;
+   int kk=0;
+   int icur=0;
+   int jcur=0;
+   double rone=1.0;
+   double rzero=0.0;
+
+   while (kk<m)
+   {
+      iwrk = MIN(nblock, mc[icur]-ii);
+      iwrk = MIN(iwrk,   na[jcur]-jj);
+
+      nn=(nc[taskid_j]*iwrk);
+      std::memset(work2,0,nn*sizeof(double));
+
+      /* iwrk*nc(taskid_j) submatrix !=0 */
+      if (ma[taskid_i]>0)
+      {
+         /* pack current iwrk columns of A into work1 */
+         if (taskid_j==jcur)
+         {
+            DLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
+                         A+jj*lda,lda,
+                         work1, ma[taskid_i]);
+         }
+
+         /* broadcast work1  within my row */
+         //ierr = MPI_Bcast(work1,iwrk*ma[taskid_i],MPI_DOUBLE_PRECISION,jcur,comm_j);
+         parall->Brdcst_Values(2,jcur,iwrk*ma[taskid_i],work1);
+
+         if ((iwrk>0) && (na[taskid_j]>0))
+            mygdevice->TN_dgemm2c(iwrk,n2,npack2,nida2,work1,B,work2);
+      }
+
+      /* summ to node that holds current rows of C */
+      //ierr = MPI_Reduce(work2,work1,nc[taskid_j]*iwrk,MPI_DOUBLE_PRECISION,MPI_SUM,icur,comm_i);
+      parall->Reduce_Values(1,icur,nc[taskid_j]*iwrk,work2,work1);
+
+      /* add to current rows of C */
+      if (taskid_i==icur)
+      {
+         shift = 0;
+         for (auto i=ii; i<(ii+iwrk); ++i)
+         {
+            DAXPY_PWDFT(nc[taskid_j],rone,work1+shift,iwrk,C+i,mc[taskid_i]);
+            ++shift;
+         }
+      }
+      ii += iwrk;
+      jj += iwrk;
+      kk += iwrk;
+
+      if (jj>=na[jcur])
+      {
+        ++jcur;
+        jj=0;
+      }
+      if (ii>=mc[icur])
+      {
+        ++icur;
+        ii=0;
+      }
+
+   }
+}
+
 
 } // namespace pwdft
 

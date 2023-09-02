@@ -221,7 +221,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " input vpsi filename: " << control.input_v_movecs_filename() << std::endl;
       std::cout << std::endl;
       std::cout << " number of processors used: " << myparallel.np() << std::endl;
-      std::cout << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << std::endl;
+      std::cout << " processor grid           : " << myparallel.np_i() << " x " << myparallel.np_j() << std::endl;
       if (mygrid.maptype==1) std::cout << " parallel mapping         : 1d-slab" << std::endl;
       if (mygrid.maptype==2) std::cout << " parallel mapping         : 2d-hilbert" << std::endl;
       if (mygrid.maptype==3) std::cout << " parallel mapping         : 2d-hcurve" << std::endl;

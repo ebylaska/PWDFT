@@ -360,14 +360,15 @@ vpp_read(PGrid *mygrid, char *fname, char *comment, int *psp_type, int *version,
   mygrid->tt_pack_copy(0, tmp2, vl);
 
   /* reading vnl 3d block */
-  if (*nprj > 0) {
-    *vnl = new (std::nothrow) double[(*nprj) * (mygrid->npack(1))]();
-    prj = *vnl;
-    for (i = 0; i < (*nprj); ++i) {
-      mygrid->t_read(5, tmp2, -1);
-      mygrid->t_pack(1, tmp2);
-      mygrid->tt_pack_copy(1, tmp2, &prj[i * mygrid->npack(1)]);
-    }
+  if (*nprj > 0) 
+  {
+     *vnl = new (std::nothrow) double[(*nprj) * (mygrid->npack(1))]();
+     prj = *vnl;
+     for (i = 0; i < (*nprj); ++i) {
+        mygrid->t_read(5, tmp2, -1);
+        mygrid->t_pack(1, tmp2);
+        mygrid->tt_pack_copy(1, tmp2, &prj[i * mygrid->npack(1)]);
+     }
   }
   if (*semicore) {
     nn = 5 * mygrid->npack(0);
@@ -1144,96 +1145,96 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
  *     Pseudopotential::v_nonlocal         *
  *                                         *
  *******************************************/
-void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) {
-
-  nwpw_timing_function ftimer(6);
-  bool done;
-  int ii, ia, l, nshift0, sd_function, i;
-  int jj, ll, jstart, jend, nprjall;
-  double *exi;
-  double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
-  Parallel *parall;
-  double omega = mypneb->lattice->omega();
-  // double scal = 1.0/lattice_omega();
-  double scal = 1.0 / omega;
-  int one = 1;
-  int ntmp, nshift, nn;
-  double rone = 1.0;
-  double rmone = -1.0;
-
-  nn = mypneb->neq[0] + mypneb->neq[1];
-  nshift0 = mypneb->npack(1);
-  nshift = 2 * mypneb->npack(1);
-  exi = new (std::nothrow) double[nshift]();
-  prjtmp = new (std::nothrow) double[nprj_max * nshift]();
-  sw1 = new (std::nothrow) double[nn * nprj_max]();
-  sw2 = new (std::nothrow) double[nn * nprj_max]();
-
-  parall = mypneb->d3db::parall;
+void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) 
+{
+   nwpw_timing_function ftimer(6);
+   bool done;
+   int ii, ia, l, nshift0, sd_function, i;
+   int jj, ll, jstart, jend, nprjall;
+   double *exi;
+   double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
+   Parallel *parall;
+   double omega = mypneb->lattice->omega();
+   // double scal = 1.0/lattice_omega();
+   double scal = 1.0 / omega;
+   int one = 1;
+   int ntmp, nshift, nn;
+   double rone = 1.0;
+   double rmone = -1.0;
+ 
+   nn = mypneb->neq[0] + mypneb->neq[1];
+   nshift0 = mypneb->npack(1);
+   nshift = 2 * mypneb->npack(1);
+   exi = new (std::nothrow) double[nshift]();
+   prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   sw1 = new (std::nothrow) double[nn * nprj_max]();
+   sw2 = new (std::nothrow) double[nn * nprj_max]();
+ 
+   parall = mypneb->d3db::parall;
 
 #if 1
 
-  // Copy psi to device
-  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
-  mypneb->d3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
-
-  ii = 0;
-  while (ii < (myion->nion)) {
-    ia = myion->katm[ii];
-    nprjall = 0;
-    jstart = ii;
-    done = false;
-    while (!done) {
-      // generate projectors
-      if (nprj[ia] > 0) {
-        mystrfac->strfac_pack(1, ii, exi);
-        for (l = 0; l < nprj[ia]; ++l) {
-          sd_function = !(l_projector[ia][l] & 1);
-          prj = &(prjtmp[(l + nprjall) * nshift]);
-          vnlprj = &(vnl[ia][l * nshift0]);
-          if (sd_function)
-            mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-          else
-            mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-        }
-        nprjall += nprj[ia];
-      }
-      ++ii;
-      if (ii < (myion->nion)) {
-        ia = myion->katm[ii];
-        done = ((nprjall + nprj[ia]) > nprj_max);
-      } else {
-        done = true;
-      }
-    }
-    jend = ii;
-    mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-    parall->Vector_SumAll(1, nn * nprjall, sw1);
-
-    /* sw2 = Gijl*sw1 */
-    ll = 0;
-    for (jj = jstart; jj < jend; ++jj) {
-      ia = myion->katm[jj];
-      if (nprj[ia] > 0) {
-        Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                          l_projector[ia], m_projector[ia], Gijl[ia],
-                          &(sw1[ll * nn]), &(sw2[ll * nn]));
-        ll += nprj[ia];
-      }
-    }
-
-    ntmp = nn * nprjall;
-    DSCAL_PWDFT(ntmp, scal, sw2, one);
-
-    // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
-    //                rmone,
-    //                prjtmp,nshift,
-    //                sw2,   nn,
-    //                rone,
-    //                Hpsi,nshift);
-    mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
-  }
-  mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
+   // Copy psi to device
+   mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+   mypneb->d3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+ 
+   ii = 0;
+   while (ii < (myion->nion)) {
+     ia = myion->katm[ii];
+     nprjall = 0;
+     jstart = ii;
+     done = false;
+     while (!done) {
+       // generate projectors
+       if (nprj[ia] > 0) {
+         mystrfac->strfac_pack(1, ii, exi);
+         for (l = 0; l < nprj[ia]; ++l) {
+           sd_function = !(l_projector[ia][l] & 1);
+           prj = &(prjtmp[(l + nprjall) * nshift]);
+           vnlprj = &(vnl[ia][l * nshift0]);
+           if (sd_function)
+             mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+           else
+             mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+         }
+         nprjall += nprj[ia];
+       }
+       ++ii;
+       if (ii < (myion->nion)) {
+         ia = myion->katm[ii];
+         done = ((nprjall + nprj[ia]) > nprj_max);
+       } else {
+         done = true;
+       }
+     }
+     jend = ii;
+     mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
+     parall->Vector_SumAll(1, nn * nprjall, sw1);
+ 
+     /* sw2 = Gijl*sw1 */
+     ll = 0;
+     for (jj = jstart; jj < jend; ++jj) {
+       ia = myion->katm[jj];
+       if (nprj[ia] > 0) {
+         Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                           l_projector[ia], m_projector[ia], Gijl[ia],
+                           &(sw1[ll * nn]), &(sw2[ll * nn]));
+         ll += nprj[ia];
+       }
+     }
+ 
+     ntmp = nn * nprjall;
+     DSCAL_PWDFT(ntmp, scal, sw2, one);
+ 
+     // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
+     //                rmone,
+     //                prjtmp,nshift,
+     //                sw2,   nn,
+     //                rone,
+     //                Hpsi,nshift);
+     mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
+   }
+   mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
 #else
 
   for (ii = 0; ii < (myion->nion); ++ii) {
@@ -1279,10 +1280,10 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi) {
   }   /*ii*/
 #endif
 
-  delete[] sw2;
-  delete[] sw1;
-  delete[] prjtmp;
-  delete[] exi;
+   delete[] sw2;
+   delete[] sw1;
+   delete[] prjtmp;
+   delete[] exi;
 }
 
 /*******************************************
@@ -1663,96 +1664,102 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion) {
  *     Pseudopotential::e_nonlocal         *
  *                                         *
  *******************************************/
-double Pseudopotential::e_nonlocal(double *psi) {
-  nwpw_timing_function ftimer(6);
-  bool done;
-  int ii, ia, l, nshift0, sd_function, i;
-  int jj, ll, jstart, jend, nprjall;
-  double *exi;
-  double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
-  Parallel *parall;
-  double omega = mypneb->lattice->omega();
-  double scal = 1.0 / omega;
-  int one = 1;
-  int ntmp, nshift, nn;
-  double rone = 1.0;
-  double rmone = -1.0;
-  double esum = 0.0;
+double Pseudopotential::e_nonlocal(double *psi) 
+{
+   nwpw_timing_function ftimer(6);
 
-  nn = mypneb->neq[0] + mypneb->neq[1];
-  nshift0 = mypneb->npack(1);
-  nshift = 2 * mypneb->npack(1);
-  exi = new (std::nothrow) double[nshift]();
-  prjtmp = new (std::nothrow) double[nprj_max * nshift]();
-  sw1 = new (std::nothrow) double[nn * nprj_max]();
-  sw2 = new (std::nothrow) double[nn * nprj_max]();
-
-  parall = mypneb->d3db::parall;
-
-  // Copy psi to device
-  mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
-
-  ii = 0;
-  while (ii < (myion->nion)) {
-    ia = myion->katm[ii];
-    nprjall = 0;
-    jstart = ii;
-    done = false;
-    while (!done) {
-      // generate projectors
-      if (nprj[ia] > 0) {
-        mystrfac->strfac_pack(1, ii, exi);
-        for (l = 0; l < nprj[ia]; ++l) {
-          sd_function = !(l_projector[ia][l] & 1);
-          prj = &(prjtmp[(l + nprjall) * nshift]);
-          vnlprj = &(vnl[ia][l * nshift0]);
-          if (sd_function)
-            mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-          else
-            mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-        }
-        nprjall += nprj[ia];
+   Parallel *parall = mypneb->d3db::parall;
+   double omega = mypneb->lattice->omega();
+   double scal = 1.0 / omega;
+   int one = 1;
+   double rone = 1.0;
+   double rmone = -1.0;
+   double esum = 0.0;
+ 
+   int nn = mypneb->neq[0] + mypneb->neq[1];
+   int nshift0 = mypneb->npack(1);
+   int nshift = 2 * mypneb->npack(1);
+   double *exi    = new (std::nothrow) double[nshift]();
+   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   double *sw1    = new (std::nothrow) double[nn * nprj_max]();
+   double *sw2    = new (std::nothrow) double[nn * nprj_max]();
+ 
+   // Copy psi to device
+   mypneb->d3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+ 
+   auto ii = 0;
+   while (ii<(myion->nion)) 
+   {
+      auto ia = myion->katm[ii];
+      auto nprjall = 0;
+      auto jstart = ii;
+      auto done = false;
+      while (!done) 
+      {
+         // generate projectors
+         if (nprj[ia] > 0) 
+         {
+            mystrfac->strfac_pack(1, ii, exi);
+            for (auto l=0; l<nprj[ia]; ++l) 
+            {
+               auto sd_function = !(l_projector[ia][l] & 1);
+               auto prj    = prjtmp+(l+nprjall)*nshift;
+               auto vnlprj = vnl[ia]+l*nshift0;
+               if (sd_function)
+                  mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+               else
+                  mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii<(myion->nion)) 
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall + nprj[ia]) > nprj_max);
+         } 
+         else 
+         {
+            done = true;
+         }
       }
-      ++ii;
-      if (ii < (myion->nion)) {
-        ia = myion->katm[ii];
-        done = ((nprjall + nprj[ia]) > nprj_max);
-      } else {
-        done = true;
+      auto jend = ii;
+      mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
+      parall->Vector_SumAll(1, nn * nprjall, sw1);
+
+      /* sw2 = Gijl*sw1 */
+      auto ll = 0;
+      for (auto jj=jstart; jj<jend; ++jj) 
+      {
+         ia = myion->katm[jj];
+         if (nprj[ia] > 0) 
+         {
+            Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                              l_projector[ia], m_projector[ia], Gijl[ia],
+                              sw1+ll*nn, sw2+ll*nn);
+            ll += nprj[ia];
+         }
       }
-    }
-    jend = ii;
-    mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-    parall->Vector_SumAll(1, nn * nprjall, sw1);
+     
+      auto ntmp = nn*nprjall;
+      DSCAL_PWDFT(ntmp, scal, sw2, one);
+     
+      esum += DDOT_PWDFT(ntmp, sw1, one, sw2, one);
+      mypneb->d3db::mygdevice.T_free();
+   }
 
-    /* sw2 = Gijl*sw1 */
-    ll = 0;
-    for (jj = jstart; jj < jend; ++jj) {
-      ia = myion->katm[jj];
-      if (nprj[ia] > 0) {
-        Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                          l_projector[ia], m_projector[ia], Gijl[ia],
-                          &(sw1[ll * nn]), &(sw2[ll * nn]));
-        ll += nprj[ia];
-      }
-    }
 
-    ntmp = nn * nprjall;
-    DSCAL_PWDFT(ntmp, scal, sw2, one);
+   esum = parall->SumAll(2,esum);
 
-    esum += DDOT_PWDFT(ntmp, sw1, one, sw2, one);
-
-    mypneb->d3db::mygdevice.T_free();
-  }
-  if (mypneb->ispin == 1)
-    esum *= 2.0;
-
-  delete[] exi;
-  delete[] prjtmp;
-  delete[] sw1;
-  delete[] sw2;
-
-  return esum;
+   if (mypneb->ispin == 1)
+      esum *= 2.0;
+ 
+   delete[] exi;
+   delete[] prjtmp;
+   delete[] sw1;
+   delete[] sw2;
+ 
+   return esum;
 }
 
 /*******************************************
@@ -1760,62 +1767,64 @@ double Pseudopotential::e_nonlocal(double *psi) {
  *     Pseudopotential::v_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::v_local(double *vout, const bool move, double *dng,
-                              double *fion) {
-  nwpw_timing_function ftimer(5);
-  int ii, ia, nshift, npack0;
-  double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
-
-  npack0 = mypneb->npack(0);
-  xtmp = new (std::nothrow) double[npack0]();
-  if (move) {
-    // xtmp = new (std::nothrow) double[npack0]();
-
-    // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-    // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-    // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-    // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-    // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-    // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-    // mypneb->t_pack(0,Gx);
-    // mypneb->t_pack(0,Gy);
-    // mypneb->t_pack(0,Gz);
-
-    Gx = mypneb->Gpackxyz(0, 0);
-    Gy = mypneb->Gpackxyz(0, 1);
-    Gz = mypneb->Gpackxyz(0, 2);
-  }
-
-  mypneb->c_pack_zero(0, vout);
-  nshift = 2 * npack0;
-  exi = new (std::nothrow) double[nshift]();
-  vtmp = new (std::nothrow) double[nshift]();
-  for (ii = 0; ii < (myion->nion); ++ii) {
-    ia = myion->katm[ii];
-    mystrfac->strfac_pack(0, ii, exi);
-    // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
-    mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
-    mypneb->cc_pack_Sum2(0, vtmp, vout);
-
-    if (move) {
-      // double xx =  mypneb->cc_pack_dot(0,dng,dng);
-      // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
-
-      mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
-      // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
-
-      fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
-      fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
-      fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
-    }
-  }
-  delete[] exi;
-  delete[] vtmp;
-  delete[] xtmp;
-  // if (move)
-  //{
-  // delete [] xtmp;
-  //}
+void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion) 
+{
+   nwpw_timing_function ftimer(5);
+   int ii, ia, nshift, npack0;
+   double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
+ 
+   npack0 = mypneb->npack(0);
+   xtmp = new (std::nothrow) double[npack0]();
+   if (move) 
+   {
+      // xtmp = new (std::nothrow) double[npack0]();
+     
+      // Gx = new (std::nothrow) double [mypneb->nfft3d]();
+      // Gy = new (std::nothrow) double [mypneb->nfft3d]();
+      // Gz = new (std::nothrow) double [mypneb->nfft3d]();
+      // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+      // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+      // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+      // mypneb->t_pack(0,Gx);
+      // mypneb->t_pack(0,Gy);
+      // mypneb->t_pack(0,Gz);
+     
+      Gx = mypneb->Gpackxyz(0, 0);
+      Gy = mypneb->Gpackxyz(0, 1);
+      Gz = mypneb->Gpackxyz(0, 2);
+   }
+ 
+   mypneb->c_pack_zero(0, vout);
+   nshift = 2 * npack0;
+   exi = new (std::nothrow) double[nshift]();
+   vtmp = new (std::nothrow) double[nshift]();
+   for (ii = 0; ii < (myion->nion); ++ii) 
+   {
+      ia = myion->katm[ii];
+      mystrfac->strfac_pack(0, ii, exi);
+      // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+      mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
+      mypneb->cc_pack_Sum2(0, vtmp, vout);
+     
+      if (move) {
+        // double xx =  mypneb->cc_pack_dot(0,dng,dng);
+        // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+     
+        mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
+        // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+     
+        fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
+        fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
+        fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
+      }
+   }
+   delete[] exi;
+   delete[] vtmp;
+   delete[] xtmp;
+   // if (move)
+   //{
+   // delete [] xtmp;
+   //}
 }
 
 /*******************************************
@@ -1823,54 +1832,56 @@ void Pseudopotential::v_local(double *vout, const bool move, double *dng,
  *     Pseudopotential::f_local            *
  *                                         *
  *******************************************/
-void Pseudopotential::f_local(double *dng, double *fion) {
-  nwpw_timing_function ftimer(5);
-  int ii, ia, nshift, npack0;
-  double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
-
-  npack0 = mypneb->npack(0);
-
-  xtmp = new (std::nothrow) double[npack0]();
-  // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-  // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-  // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-  // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-  // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-  // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-  // mypneb->t_pack(0,Gx);
-  // mypneb->t_pack(0,Gy);
-  // mypneb->t_pack(0,Gz);
-
-  Gx = mypneb->Gpackxyz(0, 0);
-  Gy = mypneb->Gpackxyz(0, 1);
-  Gz = mypneb->Gpackxyz(0, 2);
-
-  nshift = 2 * npack0;
-  exi = new (std::nothrow) double[nshift]();
-  vtmp = new (std::nothrow) double[nshift]();
-  for (ii = 0; ii < (myion->nion); ++ii) {
-    ia = myion->katm[ii];
-    mystrfac->strfac_pack(0, ii, exi);
-    // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
-    mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
-
-    // double xx =  mypneb->cc_pack_dot(0,dng,dng);
-    // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
-
-    mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
-    // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
-
-    fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
-    fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
-    fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
-  }
-  delete[] exi;
-  delete[] vtmp;
-
-  delete[] xtmp;
-  // delete [] Gx;
-  // delete [] Gy;
-  // delete [] Gz;
+void Pseudopotential::f_local(double *dng, double *fion) 
+{
+   nwpw_timing_function ftimer(5);
+   int ii, ia, nshift, npack0;
+   double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
+ 
+   npack0 = mypneb->npack(0);
+ 
+   xtmp = new (std::nothrow) double[npack0]();
+   // Gx = new (std::nothrow) double [mypneb->nfft3d]();
+   // Gy = new (std::nothrow) double [mypneb->nfft3d]();
+   // Gz = new (std::nothrow) double [mypneb->nfft3d]();
+   // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
+   // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
+   // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
+   // mypneb->t_pack(0,Gx);
+   // mypneb->t_pack(0,Gy);
+   // mypneb->t_pack(0,Gz);
+ 
+   Gx = mypneb->Gpackxyz(0, 0);
+   Gy = mypneb->Gpackxyz(0, 1);
+   Gz = mypneb->Gpackxyz(0, 2);
+ 
+   nshift = 2 * npack0;
+   exi = new (std::nothrow) double[nshift]();
+   vtmp = new (std::nothrow) double[nshift]();
+   for (ii = 0; ii < (myion->nion); ++ii) 
+   {
+      ia = myion->katm[ii];
+      mystrfac->strfac_pack(0, ii, exi);
+      // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+      mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
+     
+      // double xx =  mypneb->cc_pack_dot(0,dng,dng);
+      // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+     
+      mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
+      // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+     
+      fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
+      fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
+      fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
+   }
+   delete[] exi;
+   delete[] vtmp;
+ 
+   delete[] xtmp;
+   // delete [] Gx;
+   // delete [] Gy;
+   // delete [] Gz;
 }
 
 /*******************************************
@@ -1882,74 +1893,78 @@ void Pseudopotential::f_local(double *dng, double *fion) {
       This routine calculates the long-range part of the
       local pseudopotential (used by version4)
 */
-void Pseudopotential::v_lr_local(double *vlr_out) {
-  nwpw_timing_function ftimer(5);
-
-  int n2ft3d = mypneb->n2ft3d;
-  int nion = myion->nion;
-  double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
-
-  std::memset(vlr_out, 0, n2ft3d * sizeof(double));
-
-  if (mypneb->lattice->fast_erf()) {
-    // Error function parameters
-    double xerf, yerf;
-    double c1 = 0.07052307840;
-    double c2 = 0.04228201230;
-    double c3 = 0.00927052720;
-    double c4 = 0.00015201430;
-    double c5 = 0.00027656720;
-    double c6 = 0.00004306380;
-
-    for (auto ii = 0; ii < nion; ++ii) {
-      int ia = myion->katm[ii];
-      auto c = 1.0 / rlocal[ia];
-      auto q = -zv[ia];
-      auto xii = myion->rion(0, ii);
-      auto yii = myion->rion(1, ii);
-      auto zii = myion->rion(2, ii);
-
-      for (auto i = 0; i < n2ft3d; ++i) {
-        auto dx = mypneb->PGrid::r_grid[3 * i] - xii;
-        auto dy = mypneb->PGrid::r_grid[3 * i + 1] - yii;
-        auto dz = mypneb->PGrid::r_grid[3 * i + 2] - zii;
-        auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
-        if (r > 1.0 - 15) {
-          xerf = r * c;
-          auto yerf1 =
-              (1.0 +
-               xerf *
-                   (c1 +
-                    xerf *
-                        (c2 +
-                         xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
-          auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
-          auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
-          yerf = (1.0 - 1.0 / yerf16);
-          vlr_out[i] += (q / r) * yerf;
-        } else
-          vlr_out[i] += (2.0 * q * c / sqrt_pi);
+void Pseudopotential::v_lr_local(double *vlr_out) 
+{
+   nwpw_timing_function ftimer(5);
+ 
+   int n2ft3d = mypneb->n2ft3d;
+   int nion = myion->nion;
+   double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
+ 
+   std::memset(vlr_out, 0, n2ft3d * sizeof(double));
+ 
+   if (mypneb->lattice->fast_erf()) 
+   {
+      // Error function parameters
+      double xerf, yerf;
+      double c1 = 0.07052307840;
+      double c2 = 0.04228201230;
+      double c3 = 0.00927052720;
+      double c4 = 0.00015201430;
+      double c5 = 0.00027656720;
+      double c6 = 0.00004306380;
+     
+      for (auto ii = 0; ii < nion; ++ii) {
+        int ia = myion->katm[ii];
+        auto c = 1.0 / rlocal[ia];
+        auto q = -zv[ia];
+        auto xii = myion->rion(0, ii);
+        auto yii = myion->rion(1, ii);
+        auto zii = myion->rion(2, ii);
+     
+        for (auto i = 0; i < n2ft3d; ++i) {
+          auto dx = mypneb->PGrid::r_grid[3 * i] - xii;
+          auto dy = mypneb->PGrid::r_grid[3 * i + 1] - yii;
+          auto dz = mypneb->PGrid::r_grid[3 * i + 2] - zii;
+          auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
+          if (r > 1.0 - 15) {
+            xerf = r * c;
+            auto yerf1 =
+                (1.0 +
+                 xerf *
+                     (c1 +
+                      xerf *
+                          (c2 +
+                           xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
+            auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
+            auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
+            yerf = (1.0 - 1.0 / yerf16);
+            vlr_out[i] += (q / r) * yerf;
+          } else
+            vlr_out[i] += (2.0 * q * c / sqrt_pi);
+        }
       }
-    }
-  } else {
-    for (auto ii = 0; ii < nion; ++ii) {
-      int ia = myion->katm[ii];
-      auto c = 1.0 / rlocal[ia];
-      auto q = -zv[ia];
-      auto xii = myion->rion(0, ii);
-      auto yii = myion->rion(1, ii);
-      auto zii = myion->rion(2, ii);
-
-      for (auto i = 0; i < n2ft3d; ++i) {
-        auto dx = mypneb->PGrid::r_grid[3 * i] - xii;
-        auto dy = mypneb->PGrid::r_grid[3 * i + 1] - yii;
-        auto dz = mypneb->PGrid::r_grid[3 * i + 2] - zii;
-        auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
-        vlr_out[i] += (r > 1.0e-15) ? ((q / r) * std::erf(r * c))
-                                    : (2.0 * q * c / sqrt_pi);
+   } 
+   else 
+   {
+      for (auto ii = 0; ii < nion; ++ii) {
+        int ia = myion->katm[ii];
+        auto c = 1.0 / rlocal[ia];
+        auto q = -zv[ia];
+        auto xii = myion->rion(0, ii);
+        auto yii = myion->rion(1, ii);
+        auto zii = myion->rion(2, ii);
+     
+        for (auto i = 0; i < n2ft3d; ++i) {
+          auto dx = mypneb->PGrid::r_grid[3 * i] - xii;
+          auto dy = mypneb->PGrid::r_grid[3 * i + 1] - yii;
+          auto dz = mypneb->PGrid::r_grid[3 * i + 2] - zii;
+          auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
+          vlr_out[i] += (r > 1.0e-15) ? ((q / r) * std::erf(r * c))
+                                      : (2.0 * q * c / sqrt_pi);
+        }
       }
-    }
-  }
+   }
 }
 
 /*******************************************
@@ -1961,111 +1976,112 @@ void Pseudopotential::v_lr_local(double *vlr_out) {
     This routine calculates the gradient of the long-range part of the
     local pseudopotential (used by version 4)
 */
-void Pseudopotential::grad_v_lr_local(const double *rho, double *fion) {
-  nwpw_timing_function ftimer(5);
-
-  int n2ft3d = mypneb->n2ft3d;
-  int nion = myion->nion;
-  int nion3 = 3 * nion;
-  int one = 1;
-  double rone = 1.0;
-  double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
-  double omega = mypneb->lattice->omega();
-  double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
-  double dv = omega * scal1;
-
-  double ftmp[nion3];
-
-  if (mypneb->lattice->fast_erf()) {
-    // Error function parameters
-    double xerf, yerf;
-    double c1 = 0.07052307840;
-    double c2 = 0.04228201230;
-    double c3 = 0.00927052720;
-    double c4 = 0.00015201430;
-    double c5 = 0.00027656720;
-    double c6 = 0.00004306380;
-
-    for (auto ii = 0; ii < nion; ++ii) {
-      int ia = myion->katm[ii];
-      auto c = 1.0 / rlocal[ia];
-      auto q = -zv[ia];
-      auto xii = myion->rion(0, ii);
-      auto yii = myion->rion(1, ii);
-      auto zii = myion->rion(2, ii);
-
-      auto fx = 0.0;
-      auto fy = 0.0;
-      auto fz = 0.0;
-      for (auto i = 0; i < n2ft3d; ++i) {
-        auto rx = xii - mypneb->PGrid::r_grid[3 * i];
-        auto ry = yii - mypneb->PGrid::r_grid[3 * i + 1];
-        auto rz = zii - mypneb->PGrid::r_grid[3 * i + 2];
-        auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
-        double v;
-        if (r > 1.0e-8) {
-          xerf = r * c;
-          auto yerf1 =
-              (1.0 +
-               xerf *
-                   (c1 +
-                    xerf *
-                        (c2 +
-                         xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
-          auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
-          auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
-          yerf = (1.0 - 1.0 / yerf16);
-          v = (q *
-               ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
-                yerf) /
-               (r * r * r));
-        } else
-          v = 0.0;
-
-        fx += rho[i] * rx * v;
-        fy += rho[i] * ry * v;
-        fz += rho[i] * rz * v;
-      }
-      ftmp[3 * ii] = -fx * dv;
-      ftmp[3 * ii + 1] = -fy * dv;
-      ftmp[3 * ii + 2] = -fz * dv;
-    }
-  } else {
-    for (auto ii = 0; ii < nion; ++ii) {
-      int ia = myion->katm[ii];
-      auto c = 1.0 / rlocal[ia];
-      auto q = -zv[ia];
-      auto xii = myion->rion(0, ii);
-      auto yii = myion->rion(1, ii);
-      auto zii = myion->rion(2, ii);
-
-      auto fx = 0.0;
-      auto fy = 0.0;
-      auto fz = 0.0;
-      for (auto i = 0; i < n2ft3d; ++i) {
-        auto rx = xii - mypneb->PGrid::r_grid[3 * i];
-        auto ry = yii - mypneb->PGrid::r_grid[3 * i + 1];
-        auto rz = zii - mypneb->PGrid::r_grid[3 * i + 2];
-        auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
-        auto v =
-            (r > 1.0e-8)
-                ? (q *
-                   ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
-                    std::erf(r * c)) /
-                   (r * r * r))
-                : 0.0;
-
-        fx += rho[i] * rx * v;
-        fy += rho[i] * ry * v;
-        fz += rho[i] * rz * v;
-      }
-      ftmp[3 * ii] = -fx * dv;
-      ftmp[3 * ii + 1] = -fy * dv;
-      ftmp[3 * ii + 2] = -fz * dv;
-    }
-  }
-  mypneb->PGrid::parall->Vector_SumAll(1, 3 * nion, ftmp);
-  DAXPY_PWDFT(nion3, rone, ftmp, one, fion, one);
+void Pseudopotential::grad_v_lr_local(const double *rho, double *fion) 
+{
+   nwpw_timing_function ftimer(5);
+ 
+   int n2ft3d = mypneb->n2ft3d;
+   int nion = myion->nion;
+   int nion3 = 3 * nion;
+   int one = 1;
+   double rone = 1.0;
+   double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
+   double omega = mypneb->lattice->omega();
+   double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+   double dv = omega * scal1;
+ 
+   double ftmp[nion3];
+ 
+   if (mypneb->lattice->fast_erf()) {
+     // Error function parameters
+     double xerf, yerf;
+     double c1 = 0.07052307840;
+     double c2 = 0.04228201230;
+     double c3 = 0.00927052720;
+     double c4 = 0.00015201430;
+     double c5 = 0.00027656720;
+     double c6 = 0.00004306380;
+ 
+     for (auto ii = 0; ii < nion; ++ii) {
+       int ia = myion->katm[ii];
+       auto c = 1.0 / rlocal[ia];
+       auto q = -zv[ia];
+       auto xii = myion->rion(0, ii);
+       auto yii = myion->rion(1, ii);
+       auto zii = myion->rion(2, ii);
+ 
+       auto fx = 0.0;
+       auto fy = 0.0;
+       auto fz = 0.0;
+       for (auto i = 0; i < n2ft3d; ++i) {
+         auto rx = xii - mypneb->PGrid::r_grid[3 * i];
+         auto ry = yii - mypneb->PGrid::r_grid[3 * i + 1];
+         auto rz = zii - mypneb->PGrid::r_grid[3 * i + 2];
+         auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
+         double v;
+         if (r > 1.0e-8) {
+           xerf = r * c;
+           auto yerf1 =
+               (1.0 +
+                xerf *
+                    (c1 +
+                     xerf *
+                         (c2 +
+                          xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
+           auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
+           auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
+           yerf = (1.0 - 1.0 / yerf16);
+           v = (q *
+                ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
+                 yerf) /
+                (r * r * r));
+         } else
+           v = 0.0;
+ 
+         fx += rho[i] * rx * v;
+         fy += rho[i] * ry * v;
+         fz += rho[i] * rz * v;
+       }
+       ftmp[3 * ii] = -fx * dv;
+       ftmp[3 * ii + 1] = -fy * dv;
+       ftmp[3 * ii + 2] = -fz * dv;
+     }
+   } else {
+     for (auto ii = 0; ii < nion; ++ii) {
+       int ia = myion->katm[ii];
+       auto c = 1.0 / rlocal[ia];
+       auto q = -zv[ia];
+       auto xii = myion->rion(0, ii);
+       auto yii = myion->rion(1, ii);
+       auto zii = myion->rion(2, ii);
+ 
+       auto fx = 0.0;
+       auto fy = 0.0;
+       auto fz = 0.0;
+       for (auto i = 0; i < n2ft3d; ++i) {
+         auto rx = xii - mypneb->PGrid::r_grid[3 * i];
+         auto ry = yii - mypneb->PGrid::r_grid[3 * i + 1];
+         auto rz = zii - mypneb->PGrid::r_grid[3 * i + 2];
+         auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
+         auto v =
+             (r > 1.0e-8)
+                 ? (q *
+                    ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
+                     std::erf(r * c)) /
+                    (r * r * r))
+                 : 0.0;
+ 
+         fx += rho[i] * rx * v;
+         fy += rho[i] * ry * v;
+         fz += rho[i] * rz * v;
+       }
+       ftmp[3 * ii] = -fx * dv;
+       ftmp[3 * ii + 1] = -fy * dv;
+       ftmp[3 * ii + 2] = -fz * dv;
+     }
+   }
+   mypneb->PGrid::parall->Vector_SumAll(1, 3 * nion, ftmp);
+   DAXPY_PWDFT(nion3, rone, ftmp, one, fion, one);
 }
 
 /********************************************

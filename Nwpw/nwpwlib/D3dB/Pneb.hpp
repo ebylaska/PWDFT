@@ -23,6 +23,7 @@ namespace pwdft {
 class Pneb : public PGrid, public d1db {
 
   // int ispin,ne[2],neq[2];
+  bool mparallelized=false;
   int parallelized;
   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1;
   double *mat_tmp, *work1, *work2;

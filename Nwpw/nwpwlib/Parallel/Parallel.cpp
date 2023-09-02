@@ -274,6 +274,8 @@ void Parallel::Reduce_Values(const int d, const int root, const int n,
    // if (npi[d]>1) comm_i[d].Bcast(sum,n,MPI_DOUBLE_PRECISION,root);
    if (npi[d] > 1)
       MPI_Reduce(sumin,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM,root,comm_i[d]);
+   else
+      std::memcpy(sumout,sumin,n*sizeof(double));
 }
 
 

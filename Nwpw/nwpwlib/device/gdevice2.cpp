@@ -28,18 +28,22 @@ void gdevice2::TN4_dgemm(int npack, int ne, double alpha, double *a, double *b,
 }
 
 void gdevice2::TN3_dgemm(int npack, int ne, double alpha, double *a, double *b,
-                       double beta, double *caa, double *cab, double *cbb) {
+                         double beta, double *caa, double *cab, double *cbb) {
    mygdevice2->TN3_dgemm(npack, ne, alpha, a, b, beta, caa, cab, cbb);
 }
 
 void gdevice2::TN1_dgemm(int npack, int ne, double alpha, double *a, double *b,
-                       double beta, double *c) {
+                         double beta, double *c) {
    mygdevice2->TN1_dgemm(npack, ne, alpha, a, b, beta, c);
 }
 
 void gdevice2::TN_dgemm(int npack, int ne, int nprj, double alpha, double *a,
-                      double *b, double beta, double *c) {
+                        double *b, double beta, double *c) {
    mygdevice2->TN_dgemm(npack, ne, nprj, alpha, a, b, beta, c);
+}
+void gdevice2::TN_dgemm2c(int n, int m, int npack2, int nida2,
+                          double *a, double *b, double *c) {
+   mygdevice2->TN_dgemm2c(n, m, npack2, nida2, a, b, c);
 }
 
 void gdevice2::T_free() { mygdevice2->T_free(); }

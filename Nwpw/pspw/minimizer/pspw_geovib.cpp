@@ -193,7 +193,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
       coutput << "\n";
       coutput << " number of processors used: " << myparallel.np() << std::endl;
-      coutput << " processor grid           : " << myparallel.np_i() << " x" << myparallel.np_j() << std::endl;
+      coutput << " processor grid           : " << myparallel.np_i() << " x " << myparallel.np_j() << std::endl;
       if (mygrid.maptype == 1) coutput << " parallel mapping         : 1d-slab" << std::endl;
       if (mygrid.maptype == 2) coutput << " parallel mapping         : 2d-hilbert" << std::endl;
       if (mygrid.maptype == 3) coutput << " parallel mapping         : 2d-hcurve" << std::endl;

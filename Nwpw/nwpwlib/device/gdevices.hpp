@@ -142,6 +142,18 @@ public:
                  double *host_c,int ldc) {
      DGEMM_PWDFT((char *)"T", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   }
+  void TN_dgemm2c(int n, int m, int npack2, int nida2, 
+                 double *host_a, double *host_b, double *host_c) {
+     double rtwo  = 2.0;
+     double rone  = 1.0;
+     double rmone = -1.0;
+     double rzero = 0.0;
+
+     DGEMM_PWDFT((char *)"T", (char *)"N", n,m,npack2,rtwo,host_a,npack2,host_b,npack2,rzero,host_c,n);
+     if (nida2>0)
+        DGEMM_PWDFT((char *)"T", (char *)"N", n,m,nida2,rmone,host_a,npack2,host_b,npack2,rone,host_c,n);
+  }
+
   void NT_dgemm3(int m, int n, int k, 
                  double alpha, 
                  double *host_a, int lda, 

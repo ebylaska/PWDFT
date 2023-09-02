@@ -2691,112 +2691,121 @@ void d3db::rc_fft3d(double *a)
  *         d3db::t_read         *
  *                              *
  ********************************/
-void d3db::t_read(const int iunit, double *a, const int jcol) {
-  int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
-  int taskid = parall->taskid();
-  int taskid_j = parall->taskid_j();
-  int np_j = parall->np_j();
-
-  if (jcol < 0) {
-    jstart = 0;
-    jend = np_j - 1;
-    fillcolumn = 1;
-  } else {
-    jstart = jend = jcol;
-    fillcolumn = (taskid_j == jcol);
-  }
-
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype == 1) {
-    double *tmp = new (std::nothrow) double[(nx / 2 + 1) * ny]();
-    // double tmp[(nx/2+1)*ny];
-    int bsize = (nx / 2 + 1) * ny;
-
-    /**** master node reads from file and distributes ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k) {
-        dread(iunit, tmp, bsize);
-
-        index = ijktoindex(0, 0, k);
-        ii = ijktop(0, 0, k);
-        for (jj = jstart; jj <= jend; ++jj) {
-          p_to = parall->convert_taskid_ij(ii, jj);
-
-          if (p_to == MASTER)
-            for (int k = 0; k < bsize; ++k)
-              a[index + k] = tmp[k];
-          else
-            parall->dsend(0, 9, p_to, bsize, tmp);
-        }
-      }
-
-    /**** not master node ****/
-    else if (fillcolumn)
-      for (int k = 0; k < nz; ++k) {
-        index = ijktoindex(0, 0, k);
-        ii = ijktop(0, 0, k);
-        p_here = parall->convert_taskid_ij(ii, taskid_j);
-        if (p_here == taskid) {
-          parall->dreceive(0, 9, MASTER, bsize, tmp);
-          for (int k = 0; k < bsize; ++k)
-            a[index + k] = tmp[k];
-        }
-      }
-
-    delete[] tmp;
-  }
-
-  /*************************
-   **** hilbert mapping ****
-   *************************/
-  else {
-    // double *tmp = new (std::nothrow) double[nx/2+1]();
-    double tmp[nx / 2 + 1];
-    int bsize = (nx / 2 + 1);
-
-    /**** master node reads from file and distributes ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-
-          dread(iunit, tmp, bsize);
-
-          index = ijktoindex2t(0, j, k);
-          ii = ijktop2(0, j, k);
-          for (int jj = jstart; jj <= jend; ++jj) {
-            p_to = parall->convert_taskid_ij(ii, jj);
-
-            if (p_to == MASTER)
-              for (int k = 0; k < bsize; ++k)
-                a[index + k] = tmp[k];
-            else
-              parall->dsend(0, 9, p_to, bsize, tmp);
-          }
-        }
-
-    /**** not master node ****/
-    else if (fillcolumn)
-      for (int k = 0; k < nz; ++k)
-        for (int j = 0; j < ny; ++j) {
-          index = ijktoindex2t(0, j, k);
-          ii = ijktop2(0, j, k);
-          p_here = parall->convert_taskid_ij(ii, taskid_j);
-          if (p_here == taskid) {
-            parall->dreceive(0, 9, MASTER, bsize, tmp);
-            for (int k = 0; k < bsize; ++k)
-              a[index + k] = tmp[k];
-          }
-        }
-    // delete [] tmp;
-
-    // double tmp1[2*nfft3d];
-    // double tmp2[2*nfft3d];
-    double *tmp1 = d3db::d3db_tmp1;
-    double *tmp2 = d3db::d3db_tmp2;
-    t_transpose_ijk(4, a, tmp1, tmp2);
-  }
+void d3db::t_read(const int iunit, double *a, const int jcol) 
+{
+   int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
+   int taskid = parall->taskid();
+   int taskid_i = parall->taskid_i();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
+ 
+   if (jcol < 0) 
+   {
+      jstart = 0;
+      jend = np_j - 1;
+      fillcolumn = 1;
+   } 
+   else 
+   {
+      jstart = jend = jcol;
+      fillcolumn = (taskid_j == jcol);
+   }
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx / 2 + 1) * ny]();
+      // double tmp[(nx/2+1)*ny];
+      int bsize = (nx / 2 + 1) * ny;
+     
+      /**** master node reads from file and distributes ****/
+      if (taskid == MASTER)
+         for (auto k=0; k<nz; ++k) 
+         {
+            dread(iunit, tmp, bsize);
+           
+            index = ijktoindex(0, 0, k);
+            ii = ijktop(0, 0, k);
+            for (jj = jstart; jj <= jend; ++jj) {
+              p_to = parall->convert_taskid_ij(ii, jj);
+           
+              if (p_to == MASTER)
+                 for (auto k = 0; k < bsize; ++k)
+                    a[index + k] = tmp[k];
+              else
+                parall->dsend(0, 9, p_to, bsize, tmp);
+            }
+         }
+     
+      /**** not master node ****/
+      else if (fillcolumn)
+         for (int k = 0; k < nz; ++k) 
+         {
+            index = ijktoindex(0, 0, k);
+            ii = ijktop(0, 0, k);
+            p_here = parall->convert_taskid_ij(ii, taskid_j);
+            if (p_here == taskid) 
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               for (int k = 0; k < bsize; ++k)
+                  a[index + k] = tmp[k];
+            }
+         }
+     
+      delete[] tmp;
+   }
+ 
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else {
+     // double *tmp = new (std::nothrow) double[nx/2+1]();
+     double tmp[nx / 2 + 1];
+     int bsize = (nx / 2 + 1);
+ 
+     /**** master node reads from file and distributes ****/
+     if (taskid == MASTER)
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+ 
+           dread(iunit, tmp, bsize);
+ 
+           index = ijktoindex2t(0, j, k);
+           ii = ijktop2(0, j, k);
+           for (int jj = jstart; jj <= jend; ++jj) {
+             p_to = parall->convert_taskid_ij(ii, jj);
+ 
+             if (p_to == MASTER)
+               for (int k = 0; k < bsize; ++k)
+                 a[index + k] = tmp[k];
+             else
+               parall->dsend(0, 9, p_to, bsize, tmp);
+           }
+         }
+ 
+     /**** not master node ****/
+     else if (fillcolumn)
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+           index = ijktoindex2t(0, j, k);
+           ii = ijktop2(0, j, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) {
+             parall->dreceive(0, 9, MASTER, bsize, tmp);
+             for (int k = 0; k < bsize; ++k)
+               a[index + k] = tmp[k];
+           }
+         }
+     // delete [] tmp;
+ 
+     // double tmp1[2*nfft3d];
+     // double tmp2[2*nfft3d];
+     double *tmp1 = d3db::d3db_tmp1;
+     double *tmp2 = d3db::d3db_tmp2;
+     t_transpose_ijk(4, a, tmp1, tmp2);
+   }
 }
 
 /********************************
@@ -3624,40 +3633,44 @@ void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2,
  *         d3db::c_setpw        *
  *                              *
  ********************************/
-void d3db::c_setpw(const int filling[], const double *cvalue, double *a) {
-  int i = filling[0];
-  int j = filling[1];
-  int k = filling[2];
-
-  int indx = ijktoindex(i, j, k);
-  int p = ijktop(i, j, k);
-  if (p == parall->taskid_i()) {
-    a[2 * indx] = cvalue[0];
-    a[2 * indx + 1] = cvalue[1];
-  }
-
-  /* set the conjugate on the i==0 plane */
-  if ((i == 0) && (j != 0) && (k != 0)) {
-    int jc = j;
-    if (jc > (ny / 2))
-      jc -= ny;
-    jc = -jc;
-    if (jc < 0)
-      jc += ny;
-
-    int kc = k;
-    if (kc > (nz / 2))
-      kc -= nz;
-    kc = -kc;
-    if (kc < 0)
-      kc += nz;
-    indx = ijktoindex(i, jc, kc);
-    p = ijktop(i, jc, kc);
-    if (p == parall->taskid_i()) {
+void d3db::c_setpw(const int filling[], const double *cvalue, double *a) 
+{
+   int i = filling[0];
+   int j = filling[1];
+   int k = filling[2];
+ 
+   int indx = ijktoindex(i, j, k);
+   int p = ijktop(i, j, k);
+   if (p == parall->taskid_i()) 
+   {
       a[2 * indx] = cvalue[0];
-      a[2 * indx + 1] = -cvalue[1];
-    }
-  }
+      a[2 * indx + 1] = cvalue[1];
+   }
+ 
+   /* set the conjugate on the i==0 plane */
+   if ((i == 0) && (j != 0) && (k != 0)) 
+   {
+      int jc = j;
+      if (jc > (ny / 2))
+        jc -= ny;
+      jc = -jc;
+      if (jc < 0)
+        jc += ny;
+     
+      int kc = k;
+      if (kc > (nz / 2))
+        kc -= nz;
+      kc = -kc;
+      if (kc < 0)
+        kc += nz;
+      indx = ijktoindex(i, jc, kc);
+      p = ijktop(i, jc, kc);
+      if (p == parall->taskid_i()) 
+      {
+         a[2 * indx] = cvalue[0];
+         a[2 * indx + 1] = -cvalue[1];
+      }
+   }
 }
 
 /********************************

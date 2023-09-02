@@ -44,6 +44,12 @@ public:
                               double *, int, int *, int *,
                       double, double *, int, int *, int *,
                       double *, double *);
+
+  void DMatrix_dgemm2c(Parallel *, gdevice2 *,
+                          int, int, int, int,
+                          double *, double *, int, int *, int *, int *,
+                          double *, int, int *, int *,
+                          double  *, double *);
 };
 
 } // namespace pwdft
