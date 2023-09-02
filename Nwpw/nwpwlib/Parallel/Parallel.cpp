@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 
 #include "Control2.hpp"
 #include "Parallel.hpp"
