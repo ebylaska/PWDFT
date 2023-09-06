@@ -22,8 +22,9 @@
 
 #define DDOT_PWDFT(n, a, ida, b, idb) cblas_ddot(n, a, ida, b, idb);
 
+#define GUCONV(a) ((a == "G") ? 'G' : a[0])
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
-  auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, s1, m, n, a, ida, b, idb)
+  auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, GUCONV(s1), m, n, a, ida, b, idb)
 
 #define DGELSS_PWDFT(m, n, nrhs, a, ida, b, idb, s1, rcond, rank, work, iwork, \
                      ierr)                                                     \
