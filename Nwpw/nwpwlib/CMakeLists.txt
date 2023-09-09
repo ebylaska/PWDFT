@@ -9,6 +9,7 @@ file(GLOB_RECURSE src_Control   Control/*.hpp Control/*.cpp Control/*.h Control/
 file(GLOB_RECURSE src_Parallel  Parallel/*.hpp Parallel/*.cpp)
 file(GLOB_RECURSE src_io        io/*.hpp io/*.cpp)
 file(GLOB_RECURSE src_ion       ion/*.hpp ion/*.cpp)
+file(GLOB_RECURSE src_symmetry  symmetry/*.hpp symmetry/*.cpp)
 file(GLOB_RECURSE src_efield    efield/*.hpp efield/*.cpp)
 file(GLOB_RECURSE src_apc       apc/*.hpp apc/*.cpp)
 file(GLOB_RECURSE src_dipole    dipole/*.hpp dipole/*.cpp)
@@ -27,10 +28,10 @@ file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
 # create the nwpwlib library
 if(MKL_FOUND)
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis}  ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_symmetry} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis}  ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 else()
    message("-- including interal blas routines contained in project")
-add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis} ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
+add_library(nwpwlib ${src_D3dB} ${src_ion} ${src_symmetry} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis} ${src_thermostats} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 endif()
 
 # adding target_include_directories to nwpwlib
@@ -57,6 +58,7 @@ add_subdirectory(dplot)
 add_subdirectory(dipole)
 add_subdirectory(apc)
 add_subdirectory(efield)
+add_subdirectory(symmetry)
 add_subdirectory(ion)
 add_subdirectory(D3dB)
 add_subdirectory(device)

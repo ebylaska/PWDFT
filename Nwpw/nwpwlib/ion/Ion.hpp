@@ -52,6 +52,12 @@ public:
  
    bool fix_rotation = false;
    bool dof_rotation = false;
+
+   //Molecular point group symmetry
+   double sym_tolerance = 0.001;
+   double inertia_tensor[9], inertia_axes[9], inertia_moments[3];
+   std::string rotation_type;
+   std::string group_name;
  
    /* Constructors */
    // Ion(RTDB&, Control2&);

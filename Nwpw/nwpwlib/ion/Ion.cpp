@@ -13,6 +13,7 @@ using json = nlohmann::json;
 
 #include "Control2.hpp"
 #include "ion_bondings.hpp"
+#include "symmetry_elements.hpp"
 #include "Ion.hpp"
 
 
@@ -280,11 +281,13 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    atomarray = new char[3 * nkatm];
    zv_psp = new double[nkatm];
  
-   for (auto ia = 0; ia < nkatm; ++ia) {
-     natm[ia] = 0.0;
-     strcpy(&atomarray[3*ia], const_cast<char *>(tmpsymbols[ia].data()));
+   for (auto ia = 0; ia < nkatm; ++ia) 
+   {
+      natm[ia] = 0.0;
+      strcpy(&atomarray[3*ia], const_cast<char *>(tmpsymbols[ia].data()));
    }
-   for (auto i=0; i<nion; ++i) {
+   for (auto i=0; i<nion; ++i) 
+   {
       charge[i] = (double)geomjson["charges"][i];
       mass[i] = ((double)geomjson["masses"][i]) * amu_to_mass;
       dti[i] = (time_step * time_step) / mass[i];
@@ -318,6 +321,12 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
         natm[ia] += 1;
       }
    }
+
+   //Check for Point group here????
+   determine_point_group(rion1,mass,nion,
+                         sym_tolerance,
+                         group_name,rotation_type,
+                         inertia_tensor,inertia_moments,inertia_axes);
  
    // generate random initial velocities  (temperature, seed) - only set with
    // random velocities if seed > 0
