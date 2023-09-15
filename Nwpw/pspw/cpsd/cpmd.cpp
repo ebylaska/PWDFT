@@ -287,7 +287,9 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
 
       std::cout << std::endl;
       std::cout << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << myion.sym_tolerance << ")" <<  std::endl;
-      std::cout << "   group name   : " << myion.group_name << "  (rotation type : " << myion.rotation_type <<")" <<  std::endl;
+      std::cout << "   group name   : " << myion.group_name 
+                                        << "  (group rank = " << myion.group_rank 
+                                        << " rotation type : " << myion.rotation_type <<")" <<  std::endl;
       std::cout << "   inertia axes : e1 = <" << Ffmt(8,3) << myion.inertia_axes[0] << " "
                                      << Ffmt(8,3) << myion.inertia_axes[1] << " "
                                      << Ffmt(8,3) << myion.inertia_axes[2] << " > - "

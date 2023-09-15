@@ -331,7 +331,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
 
    determine_point_group(rion1,mass,nion,
                          sym_tolerance,
-                         group_name,rotation_type,
+                         group_name,group_rank,rotation_type,
                          inertia_tensor,inertia_moments,inertia_axes,
                          rion_sym);
     std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array

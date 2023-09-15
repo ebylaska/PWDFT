@@ -7,7 +7,7 @@ namespace pwdft {
 using namespace pwdft;
 
 extern void determine_point_group(const double *, const double *, const int, const double,
-                                  std::string&, std::string&, double *, double *, double *, double *);
+                                  std::string&, int&, std::string&, double *, double *, double *, double *);
 
 } // namespace pwdft
 

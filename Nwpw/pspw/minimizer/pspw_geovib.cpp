@@ -262,7 +262,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
 
       coutput << std::endl;
       coutput << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << myion.sym_tolerance << ")" <<  std::endl;
-      coutput << "   group name   : " << myion.group_name << "  (rotation type : " << myion.rotation_type <<")" <<  std::endl;
+      coutput << "   group name   : " << myion.group_name 
+                                      << "  (group rank = " << myion.group_rank 
+                                      << " rotation type : " << myion.rotation_type <<")" <<  std::endl;
       coutput << "   inertia axes : e1 = <" << Ffmt(8,3) << myion.inertia_axes[0] << " "
                                             << Ffmt(8,3) << myion.inertia_axes[1] << " "
                                             << Ffmt(8,3) << myion.inertia_axes[2] << " > - " 

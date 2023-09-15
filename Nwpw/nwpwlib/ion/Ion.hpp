@@ -58,6 +58,7 @@ public:
    double inertia_tensor[9], inertia_axes[9], inertia_moments[3];
    std::string rotation_type;
    std::string group_name;
+   int group_rank;
  
    /* Constructors */
    // Ion(RTDB&, Control2&);

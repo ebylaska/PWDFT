@@ -2026,7 +2026,7 @@ static bool has_proper_rotation_Cnv(const double* rion, const double* ion_mass, 
  */
 static void determine_spherical_group(const double *rion, const double *ion_mass, const int nion,
                            const double sym_tolerance,
-                           std::string&  group_name, std::string& rotation_type,
+                           std::string&  group_name, int& group_rank, std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes)
 {
     //There are enough atoms to compute a multipole2
@@ -2071,26 +2071,43 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
    {
       bool has_inversion = has_inversion_center(rion,ion_mass,nion,sym_tolerance);
       if (has_inversion)
+      {
          group_name = "I_h";
+         group_rank = 120;
+      }
       else 
+      {
          group_name = "I";
+         group_rank = 60;
+      }
    }
    else
    {
        //group_name = "T_d, T, T_h, O_h, O";
+       // still have to look for T and O groups!
 
        bool has_inversion = has_inversion_center(rion,ion_mass,nion,sym_tolerance);
 
        if (has_inversion)
        {
           if (abs_octapole<sym_tolerance)
+          {
              group_name = "O_h";
+             group_rank = 48;
+          }
           else
+          {
              group_name = "T_h";
+             group_rank = 24;
+          }
        }
        else
+       {
           group_name = "T_d";
-
+          group_rank = 24;
+       }
+       //group_name = "O"; group_rank = 24;
+       //group_name = "T"; group_rank = 12;
 
        //if ((abs_octapole/27.0)<sym_tolerance)
        //   group_name = "O_h O, Th";
@@ -2107,7 +2124,7 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
  *******************************************/
 static void determine_symmetric_group(const double *rion, const double *ion_mass, const int nion,
                            const double sym_tolerance,
-                           std::string&  group_name, std::string& rotation_type,
+                           std::string&  group_name, int& group_rank, std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes)
 {
    bool has_Cn=false;
@@ -2164,24 +2181,46 @@ static void determine_symmetric_group(const double *rion, const double *ion_mass
       if (has_sigma_v)
       {
          // Check if n is odd or  has_i 
-         if ((n%2==1) ^ has_inversion)
+         //if ((n%2==1) ^ has_inversion)
+         if ((n%2==1) != has_inversion)
+         {
             group_name = "D_" + std::to_string(n) + "h";
+            group_rank = 4*n;
+         }
          else
+         {
             group_name = "D_" + std::to_string(n) + "d";
+            group_rank = 4*n;
+         }
       }
       else
+      {
          group_name = "D_" + std::to_string(n);
+         group_rank = 2*n;
+      }
    }
    else
    {
       if (has_sigma_v)
+      {
          group_name = "C_" + std::to_string(n) + "v";
+         group_rank = 2*n;
+      }
       else if (has_sigma_xy)
+      {
          group_name = "C_" + std::to_string(n) + "h";
+         group_rank = 2*n;
+      }
       else if (has_S2nz)
+      {
          group_name = "S_" + std::to_string(2*n);
+         group_rank = 2*n;
+      }
       else
+      {
          group_name = "C_" + std::to_string(n);
+         group_rank = n;
+      }
    }
 }
 
@@ -2193,7 +2232,7 @@ static void determine_symmetric_group(const double *rion, const double *ion_mass
 
 static void determine_asymmetric_group(const double *rion, const double *ion_mass, const int nion,
                            const double sym_tolerance,
-                           std::string&  group_name, std::string& rotation_type,
+                           std::string&  group_name, int& group_rank,  std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes)
 {
    group_name = "D_2h, D_2, C_2v, C_2h, C2, Ci, Cs, C1";
@@ -2216,27 +2255,51 @@ static void determine_asymmetric_group(const double *rion, const double *ion_mas
    if (c2_count==3)
    {
       if (has_sigma_xy)
+      {
          group_name = "D_2h";
+         group_rank = 8;
+      }
       else
+      {
          group_name = "D_2";
+         group_rank = 4;
+      }
    }
    else if (c2_count==1)
    {
       if ((has_sigma_yz) && (has_sigma_xz))
+      {
          group_name = "C_2v";
+         group_rank = 4;
+      }
       else if (has_sigma_xy)
+      {
          group_name = "C_2h";
+         group_rank = 4;
+      }
       else
+      {
          group_name = "C_2";
+         group_rank = 2;
+      }
    }
    else
    {
       if (has_inversion)
+      {
          group_name = "Ci";
+         group_rank = 2;
+      }
       else if (has_sigma_yz || has_sigma_xz || has_sigma_xy)
+      {
          group_name = "Cs";
+         group_rank = 2;
+      }
       else
+      {
          group_name = "C1";
+         group_rank = 1;
+      }
    }
 }
 
@@ -2248,9 +2311,9 @@ static void determine_asymmetric_group(const double *rion, const double *ion_mas
  *******************************************/
 void determine_point_group(const double *rion, const double *ion_mass, const int nion,
                            const double sym_tolerance,
-                           std::string&  group_name, std::string& rotation_type,
+                           std::string&  group_name, int &group_rank, std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes, 
-                           double *rion2) 
+                           double *rion2)
 {
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
@@ -2272,6 +2335,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    {
       rotation_type = "point";
       group_name = "SO(3)";
+      group_rank = -1;
       inertia_axes[0] = 1.0; inertia_axes[1] = 0.0; inertia_axes[2] = 0.0;
       inertia_axes[3] = 0.0; inertia_axes[4] = 1.0; inertia_axes[5] = 0.0;
       inertia_axes[6] = 0.0; inertia_axes[7] = 0.0; inertia_axes[8] = 1.0;
@@ -2288,6 +2352,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
          group_name = "D∞h";
       else 
          group_name = "C∞v";
+      group_rank = -1;
    }
    else if ((((inertia_moments[0]-inertia_moments[2])/m_total) < sym_tolerance) && (nion>3))
    {
@@ -2298,7 +2363,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
       determine_spherical_group(rion2,ion_mass,nion,
                                 sym_tolerance,
-                                group_name,rotation_type,
+                                group_name,group_rank,rotation_type,
                                 inertia_tensor,inertia_moments,inertia_axes);
    }
    else if (((inertia_moments[0]-inertia_moments[1])/m_total) < sym_tolerance)
@@ -2310,7 +2375,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
-                                group_name,rotation_type,
+                                group_name,group_rank,rotation_type,
                                 inertia_tensor,inertia_moments,inertia_axes);
    }
    else if (((inertia_moments[1]-inertia_moments[2])/m_total) < sym_tolerance)
@@ -2343,7 +2408,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
-                                group_name,rotation_type,
+                                group_name,group_rank,rotation_type,
                                 inertia_tensor,inertia_moments,inertia_axes);
    }
    else
@@ -2377,7 +2442,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
       determine_asymmetric_group(rion2,ion_mass,nion,
                                  sym_tolerance,
-                                 group_name,rotation_type,
+                                 group_name,group_rank,rotation_type,
                                  inertia_tensor,inertia_moments,inertia_axes);
    }
 
