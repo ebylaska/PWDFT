@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 #include <iostream>
 
 #include "json.hpp"
@@ -323,10 +324,17 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    }
 
    //Check for Point group here????
+   double *rion_sym = fion1; //temporary
+   sym_tolerance = (geomjson["symmetry_tolerance"].is_number_float())
+                           ? (double) geomjson["symmetry_tolerance"] 
+                           : 0.001;
+
    determine_point_group(rion1,mass,nion,
                          sym_tolerance,
                          group_name,rotation_type,
-                         inertia_tensor,inertia_moments,inertia_axes);
+                         inertia_tensor,inertia_moments,inertia_axes,
+                         rion_sym);
+    std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
  
    // generate random initial velocities  (temperature, seed) - only set with
    // random velocities if seed > 0

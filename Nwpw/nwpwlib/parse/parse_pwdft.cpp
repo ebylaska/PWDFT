@@ -172,6 +172,11 @@ static json parse_geometry(json geom, int *curptr,
     autosym = 0;
   else if (mystring_contains(mystring_lowercase(lines[cur]), "autosym"))
     autosym = 1;
+  else if (mystring_contains(mystring_lowercase(lines[cur]),"symmetry_tolerance"))
+    geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"symmetry_tolerance")[1]);
+  else if (mystring_contains(mystring_lowercase(lines[cur]),"sym_tolerance"))
+    geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"sym_tolerance")[1]);
+
 
   geomjson["conv"] = conv;
   geomjson["center"] = center;
