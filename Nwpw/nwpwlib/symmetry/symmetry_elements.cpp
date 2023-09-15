@@ -2164,7 +2164,7 @@ static void determine_symmetric_group(const double *rion, const double *ion_mass
       if (has_sigma_v)
       {
          // Check if n is odd or  has_i 
-         if ((n%2==1) || has_inversion)
+         if ((n%2==1) ^ has_inversion)
             group_name = "D_" + std::to_string(n) + "h";
          else
             group_name = "D_" + std::to_string(n) + "d";
