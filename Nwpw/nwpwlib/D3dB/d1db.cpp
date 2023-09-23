@@ -30,18 +30,18 @@ namespace pwdft {
  *                                 *
  ***********************************/
 static void DMatrix_start_rot(Parallel *parall,
-                             int j,
-                             double *A, double *W, int lda, int *na,
+                             const int j,
+                             double *A, double *W, const int lda, const int *na,
                              const int rqst_indx)
 {
-   auto taskid_j = parall->taskid_j();
-   auto np_j = parall->np_j();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
 
-   auto proc_to   = (taskid_j+j) % np_j;
-   auto proc_from = (taskid_j-j+np_j) % np_j;
-   auto msgtype   = j;
-   auto amsglen = lda*na[taskid_j];
-   auto wmsglen = lda*na[proc_from];
+   int proc_to   = (taskid_j+j) % np_j;
+   int proc_from = (taskid_j-j+np_j) % np_j;
+   int msgtype   = j;
+   int amsglen = lda*na[taskid_j];
+   int wmsglen = lda*na[proc_from];
 
    if (wmsglen>0)
        parall->a2dreceive(rqst_indx,msgtype,proc_from,wmsglen,W);
@@ -74,7 +74,7 @@ d1db::d1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne
 {
   parall = inparall;
 
-  auto np_j = parall->np_j();
+  int np_j = parall->np_j();
   if (np_j>1)
   {
      request1_indx = parall->max_reqstat-2;
