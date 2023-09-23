@@ -917,34 +917,48 @@ double *d3db::r_nalloc(const int nn) {
  *                              *
  ********************************/
 void d3db::r_dealloc(double *ptr) { delete[] ptr; }
+ 
+
 
 /********************************
  *                              *
  *         d3db::r_zero         *
  *                              *
  ********************************/
-void d3db::r_zero(double *ptr) {
-  std::memset(ptr, 0, n2ft3d * sizeof(double));
-  /*int i;
-  int m = n2ft3d%7;
-  if (m>0)
-     for (i=0; i<m; ++i)
-        ptr[i] = 0.0;
-  if (n2ft3d<7)
-     return;
-
-  for (i=m; i<n2ft3d; i+=7)
-  {
-     ptr[i]   = 0.0;
-     ptr[i+1] = 0.0;
-     ptr[i+2] = 0.0;
-     ptr[i+3] = 0.0;
-     ptr[i+4] = 0.0;
-     ptr[i+5] = 0.0;
-     ptr[i+6] = 0.0;
-  }
-  return;
-  */
+/**
+ * @brief Fill a double array with zeros.
+ *
+ * This function fills a given double array `ptr` with zeros. The size of the array to be filled is determined by the value of `n2ft3d`.
+ *
+ * @param ptr A pointer to the double array to be filled with zeros.
+ *
+ * @return None.
+ *
+ * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the value of `n2ft3d`, which specifies the number of zeros to fill.
+ */
+void d3db::r_zero(double *ptr) 
+{
+   std::memset(ptr, 0, n2ft3d * sizeof(double));
+   /*int i;
+   int m = n2ft3d%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr[i] = 0.0;
+   if (n2ft3d<7)
+      return;
+ 
+   for (i=m; i<n2ft3d; i+=7)
+   {
+      ptr[i]   = 0.0;
+      ptr[i+1] = 0.0;
+      ptr[i+2] = 0.0;
+      ptr[i+3] = 0.0;
+      ptr[i+4] = 0.0;
+      ptr[i+5] = 0.0;
+      ptr[i+6] = 0.0;
+   }
+   return;
+   */
 }
 
 /********************************
@@ -952,28 +966,41 @@ void d3db::r_zero(double *ptr) {
  *         d3db::r_nzero        *
  *                              *
  ********************************/
-void d3db::r_nzero(int n, double *ptr) {
-  std::memset(ptr, 0, n * n2ft3d * sizeof(double));
-  /*int i;
-  int m = (n*n2ft3d)%7;
-  if (m>0)
-     for (i=0; i<m; ++i)
-        ptr[i] = 0.0;
-  if ((n*n2ft3d)<7)
-     return;
-
-  for (i=m; i<(n*n2ft3d); i+=7)
-  {
-     ptr[i]   = 0.0;
-     ptr[i+1] = 0.0;
-     ptr[i+2] = 0.0;
-     ptr[i+3] = 0.0;
-     ptr[i+4] = 0.0;
-     ptr[i+5] = 0.0;
-     ptr[i+6] = 0.0;
-  }
-  return;
-  */
+/**
+ * @brief Fill a double array with zeros.
+ *
+ * This function fills a given double array `ptr` with zeros. The number of zeros to be filled is determined by the value of `n` multiplied by `n2ft3d`.
+ *
+ * @param n The number of repetitions for filling zeros.
+ * @param ptr A pointer to the double array to be filled with zeros.
+ *
+ * @return None.
+ *
+ * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the product of `n` and `n2ft3d`, which specifies the number of zeros to fill.
+ */
+void d3db::r_nzero(int n, double *ptr) 
+{
+   std::memset(ptr, 0, n * n2ft3d * sizeof(double));
+   /*int i;
+   int m = (n*n2ft3d)%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr[i] = 0.0;
+   if ((n*n2ft3d)<7)
+      return;
+ 
+   for (i=m; i<(n*n2ft3d); i+=7)
+   {
+      ptr[i]   = 0.0;
+      ptr[i+1] = 0.0;
+      ptr[i+2] = 0.0;
+      ptr[i+3] = 0.0;
+      ptr[i+4] = 0.0;
+      ptr[i+5] = 0.0;
+      ptr[i+6] = 0.0;
+   }
+   return;
+   */
 }
 
 /********************************
@@ -981,29 +1008,42 @@ void d3db::r_nzero(int n, double *ptr) {
  *         d3db::t_nzero        *
  *                              *
  ********************************/
-void d3db::t_nzero(int n, double *ptr) {
-  std::memset(ptr, 0, n * nfft3d * sizeof(double));
-  /*
-  int i;
-  int m = (n*nfft3d)%7;
-  if (m>0)
-     for (i=0; i<m; ++i)
-        ptr[i] = 0.0;
-  if ((n*nfft3d)<7)
-     return;
-
-  for (i=m; i<(n*nfft3d); i+=7)
-  {
-     ptr[i]   = 0.0;
-     ptr[i+1] = 0.0;
-     ptr[i+2] = 0.0;
-     ptr[i+3] = 0.0;
-     ptr[i+4] = 0.0;
-     ptr[i+5] = 0.0;
-     ptr[i+6] = 0.0;
-  }
-  return;
-  */
+/**
+ * @brief Fill a double array with zeros.
+ *
+ * This function fills a given double array `ptr` with zeros. The number of zeros to be filled is determined by the value of `n` multiplied by `nfft3d`.
+ *
+ * @param n The number of repetitions for filling zeros.
+ * @param ptr A pointer to the double array to be filled with zeros.
+ *
+ * @return None.
+ *
+ * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the product of `n` and `nfft3d`, which specifies the number of zeros to fill.
+ */
+void d3db::t_nzero(int n, double *ptr) 
+{
+   std::memset(ptr, 0, n * nfft3d * sizeof(double));
+   /*
+   int i;
+   int m = (n*nfft3d)%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr[i] = 0.0;
+   if ((n*nfft3d)<7)
+      return;
+ 
+   for (i=m; i<(n*nfft3d); i+=7)
+   {
+      ptr[i]   = 0.0;
+      ptr[i+1] = 0.0;
+      ptr[i+2] = 0.0;
+      ptr[i+3] = 0.0;
+      ptr[i+4] = 0.0;
+      ptr[i+5] = 0.0;
+      ptr[i+6] = 0.0;
+   }
+   return;
+   */
 }
 
 /********************************
@@ -1011,29 +1051,44 @@ void d3db::t_nzero(int n, double *ptr) {
  *        d3db::rr_copy         *
  *                              *
  ********************************/
-void d3db::rr_copy(const double *ptr1, double *ptr2) {
-  std::memcpy(ptr2, ptr1, n2ft3d * sizeof(double));
-  /*
-  int i;
-  int m = n2ft3d%7;
-  if (m>0)
-     for (i=0; i<m; ++i)
-        ptr2[i] = ptr1[i];
-  if (n2ft3d<7)
-     return;
-
-  for (i=m; i<n2ft3d; i+=7)
-  {
-     ptr2[i]   = ptr1[i];
-     ptr2[i+1] = ptr1[i+1];
-     ptr2[i+2] = ptr1[i+2];
-     ptr2[i+3] = ptr1[i+3];
-     ptr2[i+4] = ptr1[i+4];
-     ptr2[i+5] = ptr1[i+5];
-     ptr2[i+6] = ptr1[i+6];
-  }
-  return;
-  */
+/**
+ * @brief Copy the elements of one double array to another.
+ *
+ * This function efficiently copies the elements from the source double array `ptr1` to the destination double array `ptr2`.
+ * The size of the arrays determines the number of elements to be copied, which is specified by the value of `n2ft3d`.
+ *
+ * @param ptr1 A pointer to the source double array containing the elements to be copied.
+ * @param ptr2 A pointer to the destination double array where the copied elements will be stored.
+ *
+ * @return None.
+ *
+ * @note The function uses memory copying to efficiently transfer the elements from `ptr1` to `ptr2`. The size of the operation
+ *       is determined by the value of `n2ft3d`, which specifies the number of elements to copy.
+ */
+void d3db::rr_copy(const double *ptr1, double *ptr2) 
+{
+   std::memcpy(ptr2, ptr1, n2ft3d * sizeof(double));
+   /*
+   int i;
+   int m = n2ft3d%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] = ptr1[i];
+   if (n2ft3d<7)
+      return;
+ 
+   for (i=m; i<n2ft3d; i+=7)
+   {
+      ptr2[i]   = ptr1[i];
+      ptr2[i+1] = ptr1[i+1];
+      ptr2[i+2] = ptr1[i+2];
+      ptr2[i+3] = ptr1[i+3];
+      ptr2[i+4] = ptr1[i+4];
+      ptr2[i+5] = ptr1[i+5];
+      ptr2[i+6] = ptr1[i+6];
+   }
+   return;
+   */
 }
 
 /********************************
@@ -1041,29 +1096,45 @@ void d3db::rr_copy(const double *ptr1, double *ptr2) {
  *        d3db::tt_copy         *
  *                              *
  ********************************/
-void d3db::tt_copy(const double *ptr1, double *ptr2) {
-  std::memcpy(ptr2, ptr1, nfft3d_map * sizeof(double));
-  /*
-  int i;
-  int m = nfft3d%7;
-  if (m>0)
-     for (i=0; i<m; ++i)
-        ptr2[i] = ptr1[i];
-  if (nfft3d<7)
-     return;
-
-  for (i=m; i<nfft3d; i+=7)
-  {
-     ptr2[i]   = ptr1[i];
-     ptr2[i+1] = ptr1[i+1];
-     ptr2[i+2] = ptr1[i+2];
-     ptr2[i+3] = ptr1[i+3];
-     ptr2[i+4] = ptr1[i+4];
-     ptr2[i+5] = ptr1[i+5];
-     ptr2[i+6] = ptr1[i+6];
-  }
-  return;
-  */
+ /**
+ * @brief Copy elements from one double array to another.
+ *
+ * This function performs a deep copy of the elements from the source double array `ptr1` to the destination
+ * double array `ptr2`. The size of the copy is determined by the value of `nfft3d_map`. The function uses
+ * `std::memcpy` for efficient copying.
+ *
+ * @param ptr1 A pointer to the source double array containing the elements to be copied.
+ * @param ptr2 A pointer to the destination double array where the copied elements will be stored.
+ *
+ * @return None.
+ *
+ * @note The function efficiently copies the elements from `ptr1` to `ptr2` using `std::memcpy`. The size
+ *       of the copy is determined by the value of `nfft3d_map`, which specifies the number of elements to copy.
+ */
+void d3db::tt_copy(const double *ptr1, double *ptr2) 
+{
+   std::memcpy(ptr2, ptr1, nfft3d_map * sizeof(double));
+   /*
+   int i;
+   int m = nfft3d%7;
+   if (m>0)
+      for (i=0; i<m; ++i)
+         ptr2[i] = ptr1[i];
+   if (nfft3d<7)
+      return;
+ 
+   for (i=m; i<nfft3d; i+=7)
+   {
+      ptr2[i]   = ptr1[i];
+      ptr2[i+1] = ptr1[i+1];
+      ptr2[i+2] = ptr1[i+2];
+      ptr2[i+3] = ptr1[i+3];
+      ptr2[i+4] = ptr1[i+4];
+      ptr2[i+5] = ptr1[i+5];
+      ptr2[i+6] = ptr1[i+6];
+   }
+   return;
+   */
 }
 
 /********************************
@@ -1071,6 +1142,23 @@ void d3db::tt_copy(const double *ptr1, double *ptr2) {
  *        d3db::rr_SMul         *
  *                              *
  ********************************/
+ /**
+ * @brief Multiply each element of a double array by a scalar value.
+ *
+ * This function multiplies each element of the source double array `ptr1` by the scalar value `da` and stores
+ * the result in the destination double array `ptr2`. The size of the arrays and the scalar value `da` determine
+ * the number of elements to process.
+ *
+ * @param da The scalar value to multiply with each element of `ptr1`.
+ * @param ptr1 A pointer to the source double array containing the elements to be multiplied.
+ * @param ptr2 A pointer to the destination double array where the multiplied elements will be stored.
+ *
+ * @return None.
+ *
+ * @note The function efficiently performs element-wise multiplication of `ptr1` with the scalar `da` and stores
+ *       the result in `ptr2`. The size of the operation is determined by the value of `n2ft3d_map`, which specifies
+ *       the number of elements to process.
+ */
 void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2) 
 {
    int i;
@@ -1096,6 +1184,26 @@ void d3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
  *        d3db::rrr_SMulAdd     *
  *                              *
  ********************************/
+ /**
+ * @brief Perform element-wise scaling, addition, and addition of double arrays and store the result.
+ *
+ * This function performs an element-wise scaling of the input double array `ptr1` by the scalar `da`, then
+ * adds the elements of the scaled array to the elements of the `ptr2` array. The final result is stored in
+ * the `ptr3` array. It applies these operations to each element of the arrays individually. The function is
+ * optimized for processing arrays with a size greater than or equal to 5 elements.
+ *
+ * @param da   A scalar value for scaling the elements of `ptr1`.
+ * @param ptr1 A pointer to the input double array to be scaled.
+ * @param ptr2 A pointer to the second input double array for addition.
+ * @param ptr3 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function scales each element of `ptr1` by the scalar `da`, adds the elements of the scaled
+ *       array to the elements of `ptr2`, and stores the result in `ptr3` for corresponding elements in
+ *       the arrays. Loop unrolling is applied for efficiency when processing arrays with a size greater
+ *       than or equal to 5 elements.
+ */
 void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
                        double *ptr3) {
   int i;
@@ -1123,6 +1231,28 @@ void d3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
 /*
    ptr5 = (ptr1+ptr2)*ptr3 + pt4
 */
+/**
+ * @brief Perform element-wise addition, multiplication, and addition of double arrays and store the result.
+ *
+ * This function performs an element-wise addition of the input double arrays `ptr1` and `ptr2`, then
+ * multiplies the result by the elements of the `ptr3` array, and finally adds the elements of the `ptr4`
+ * array. The result is stored in the `ptr5` array. It applies these operations to each element of the
+ * arrays individually. The function is optimized for processing arrays with a size greater than or equal
+ * to 5 elements.
+ *
+ * @param ptr1 A pointer to the first input double array for addition.
+ * @param ptr2 A pointer to the second input double array for addition.
+ * @param ptr3 A pointer to the double array for multiplication.
+ * @param ptr4 A pointer to the double array for addition.
+ * @param ptr5 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the element-wise sum of `ptr1` and `ptr2`, multiplies the result by the
+ *       elements of `ptr3`, and then adds the elements of `ptr4` to the final result stored in `ptr5`
+ *       for corresponding elements in the arrays. Loop unrolling is applied for efficiency when
+ *       processing arrays with a size greater than or equal to 5 elements.
+ */
 void d3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
                            const double *ptr3, const double *ptr4,
                            double *ptr5) {
@@ -1540,21 +1670,42 @@ void d3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2,
  *         d3db::rr_Minus       *
  *                              *
  ********************************/
-void d3db::rr_Minus(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+ /**
+ * @brief Perform element-wise subtraction of two double arrays and store the result.
+ *
+ * This function performs an element-wise subtraction between the input double array
+ * `ptr2` and the output double array `ptr3`, and stores the result in `ptr3`. It subtracts
+ * each element `ptr2[i]` from the corresponding element `ptr3[i]` and assigns the result
+ * to `ptr3[i]`. The function is optimized for processing arrays with a size greater than
+ * or equal to 5 elements.
+ *
+ * @param ptr2 A pointer to the input double array for subtraction.
+ * @param ptr3 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the element-wise subtraction of `ptr2` from `ptr3` for
+ *       corresponding elements in the arrays. The result is stored in the `ptr3` array.
+ *       Loop unrolling is applied for efficiency when processing arrays with a size
+ *       greater than or equal to 5 elements.
+ */
+void d3db::rr_Minus(const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] -= ptr2[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] -= ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] -= ptr2[i];
-    ptr3[i + 1] -= ptr2[i + 1];
-    ptr3[i + 2] -= ptr2[i + 2];
-    ptr3[i + 3] -= ptr2[i + 3];
-    ptr3[i + 4] -= ptr2[i + 4];
-  }
+      ptr3[i + 1] -= ptr2[i + 1];
+      ptr3[i + 2] -= ptr2[i + 2];
+      ptr3[i + 3] -= ptr2[i + 3];
+      ptr3[i + 4] -= ptr2[i + 4];
+   }
 }
 
 /********************************
@@ -1562,22 +1713,44 @@ void d3db::rr_Minus(const double *ptr2, double *ptr3) {
  *         d3db::rrr_Mul        *
  *                              *
  ********************************/
-void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+ /**
+ * @brief Perform element-wise multiplication between two double arrays and store the result.
+ *
+ * This function performs an element-wise multiplication between the input double arrays
+ * `ptr1` and `ptr2`, and stores the result in the output double array `ptr3`. It multiplies
+ * each element `ptr1[i]` with the corresponding element `ptr2[i]` and assigns the result
+ * to `ptr3[i]`. The function is optimized for processing arrays with a size greater than
+ * or equal to 5 elements.
+ *
+ * @param ptr1 A pointer to the first input double array for multiplication.
+ * @param ptr2 A pointer to the second input double array for multiplication.
+ * @param ptr3 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the element-wise multiplication of `ptr1` and `ptr2` for
+ *       corresponding elements in the arrays. The result is stored in the `ptr3` array.
+ *       Loop unrolling is applied for efficiency when processing arrays with a size
+ *       greater than or equal to 5 elements.
+ */
+void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] = ptr1[i] * ptr2[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] = ptr1[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = ptr1[i] * ptr2[i];
-    ptr3[i + 1] = ptr1[i + 1] * ptr2[i + 1];
-    ptr3[i + 2] = ptr1[i + 2] * ptr2[i + 2];
-    ptr3[i + 3] = ptr1[i + 3] * ptr2[i + 3];
-    ptr3[i + 4] = ptr1[i + 4] * ptr2[i + 4];
-  }
-  return;
+      ptr3[i + 1] = ptr1[i + 1] * ptr2[i + 1];
+      ptr3[i + 2] = ptr1[i + 2] * ptr2[i + 2];
+      ptr3[i + 3] = ptr1[i + 3] * ptr2[i + 3];
+      ptr3[i + 4] = ptr1[i + 4] * ptr2[i + 4];
+   }
+   return;
 }
 
 /********************************
@@ -1585,22 +1758,42 @@ void d3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3) {
  *         d3db::rr_Mul         *
  *                              *
  ********************************/
-void d3db::rr_Mul(const double *ptr1, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+ /**
+ * @brief Perform an element-wise multiplication with another double array.
+ *
+ * This function performs an element-wise multiplication on the input double arrays
+ * `ptr1` and `ptr3`. It multiplies each element `ptr3[i]` by the corresponding
+ * element `ptr1[i]` and stores the result in `ptr3`. The function is optimized for
+ * processing arrays with a size greater than or equal to 5 elements.
+ *
+ * @param ptr1 A pointer to the input double array used for multiplication.
+ * @param ptr3 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the element-wise multiplication of `ptr3` by `ptr1` for
+ *       corresponding elements in the arrays. The result is stored in the `ptr3`
+ *       array. Loop unrolling is applied for efficiency when processing arrays with
+ *       a size greater than or equal to 5 elements.
+ */
+void d3db::rr_Mul(const double *ptr1, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] *= ptr1[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] *= ptr1[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] *= ptr1[i];
-    ptr3[i + 1] *= ptr1[i + 1];
-    ptr3[i + 2] *= ptr1[i + 2];
-    ptr3[i + 3] *= ptr1[i + 3];
-    ptr3[i + 4] *= ptr1[i + 4];
-  }
-  return;
+      ptr3[i + 1] *= ptr1[i + 1];
+      ptr3[i + 2] *= ptr1[i + 2];
+      ptr3[i + 3] *= ptr1[i + 3];
+      ptr3[i + 4] *= ptr1[i + 4];
+   }
+   return;
 }
 
 /********************************
@@ -1608,22 +1801,43 @@ void d3db::rr_Mul(const double *ptr1, double *ptr3) {
  *     d3db::rrr_SqrMulAdd      *
  *                              *
  ********************************/
-void d3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] += ptr1[i] * ptr1[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += (ptr1[i] * ptr1[i]) * ptr2[i];
-    ptr3[i + 1] += (ptr1[i + 1] * ptr1[i + 1]) * ptr2[i + 1];
-    ptr3[i + 2] += (ptr1[i + 2] * ptr1[i + 2]) * ptr2[i + 2];
-    ptr3[i + 3] += (ptr1[i + 3] * ptr1[i + 3]) * ptr2[i + 3];
-    ptr3[i + 4] += (ptr1[i + 4] * ptr1[i + 4]) * ptr2[i + 4];
-  }
-  return;
+ /**
+ * @brief Compute an element-wise operation involving squares and multiplication.
+ *
+ * This function performs an element-wise operation on the input arrays `ptr1`, `ptr2`,
+ * and `ptr3`. It computes `(ptr1[i]^2) * ptr2[i] + ptr3[i]` for each element `i` in
+ * the arrays and stores the result in the `ptr3` array. The function is optimized for
+ * processing arrays with a size greater than or equal to 5 elements.
+ *
+ * @param ptr1 A pointer to the first input double array.
+ * @param ptr2 A pointer to the second input double array.
+ * @param ptr3 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the specified element-wise operation for corresponding
+ *       elements in the input arrays `ptr1`, `ptr2`, and `ptr3`. The result is stored
+ *       in the `ptr3` array. Loop unrolling is applied for efficiency when processing
+ *       arrays with a size greater than or equal to 5 elements.
+ */
+void d3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] += ptr1[i]*ptr1[i]*ptr2[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
+      ptr3[i]   += (ptr1[i]*ptr1[i])*ptr2[i];
+      ptr3[i+1] += (ptr1[i+1]*ptr1[i+1])*ptr2[i+1];
+      ptr3[i+2] += (ptr1[i+2]*ptr1[i+2])*ptr2[i+2];
+      ptr3[i+3] += (ptr1[i+3]*ptr1[i+3])*ptr2[i+3];
+      ptr3[i+4] += (ptr1[i+4]*ptr1[i+4])*ptr2[i+4];
+   }
+   return;
 }
 
 /******************************************
@@ -1631,41 +1845,52 @@ void d3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3) {
  *     d3db::rrrrrrr_Sqr3MulPlusMul2      *
  *                                        *
  ******************************************/
+ /**
+ * @brief Compute a complex expression involving multiple array operations.
+ *
+ * This function computes a complex expression involving multiple array operations:
+ * `(ptr1[i]^2 + ptr2[i]^2 + ptr3[i]^2) * ptr4[i] + ptr5[i] * ptr6[i]`, where each
+ * term in the expression corresponds to elements in different arrays. The result is
+ * stored in the `ptr7` array. The function is optimized for processing arrays with
+ * a size greater than or equal to 5 elements.
+ *
+ * @param ptr1 A pointer to the first input double array.
+ * @param ptr2 A pointer to the second input double array.
+ * @param ptr3 A pointer to the third input double array.
+ * @param ptr4 A pointer to the fourth input double array.
+ * @param ptr5 A pointer to the fifth input double array.
+ * @param ptr6 A pointer to the sixth input double array.
+ * @param ptr7 A pointer to the output double array where the result is stored.
+ *
+ * @return None.
+ *
+ * @note The function computes the specified complex expression element-wise for
+ *       corresponding elements in the input arrays `ptr1`, `ptr2`, `ptr3`, `ptr4`,
+ *       `ptr5`, and `ptr6`. The result is stored in the `ptr7` array. Loop unrolling
+ *       is applied for efficiency when processing arrays with a size greater than or
+ *       equal to 5 elements.
+ */
 void d3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
                                    const double *ptr3, const double *ptr4,
                                    const double *ptr5, const double *ptr6,
-                                   double *ptr7) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr7[i] = (ptr1[i] * ptr1[i] + ptr2[i] * ptr2[i] + ptr3[i] * ptr3[i]) *
-                    ptr4[i] +
-                ptr5[i] * ptr6[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr7[i] =
-        (ptr1[i] * ptr1[i] + ptr2[i] * ptr2[i] + ptr3[i] * ptr3[i]) * ptr4[i] +
-        ptr5[i] * ptr6[i];
-    ptr7[i + 1] = (ptr1[i + 1] * ptr1[i + 1] + ptr2[i + 1] * ptr2[i + 1] +
-                   ptr3[i + 1] * ptr3[i + 1]) *
-                      ptr4[i + 1] +
-                  ptr5[i + 1] * ptr6[i + 1];
-    ptr7[i + 2] = (ptr1[i + 1] * ptr1[i + 2] + ptr2[i + 2] * ptr2[i + 2] +
-                   ptr3[i + 2] * ptr3[i + 2]) *
-                      ptr4[i + 2] +
-                  ptr5[i + 2] * ptr6[i + 2];
-    ptr7[i + 3] = (ptr1[i + 1] * ptr1[i + 3] + ptr2[i + 3] * ptr2[i + 3] +
-                   ptr3[i + 3] * ptr3[i + 3]) *
-                      ptr4[i + 3] +
-                  ptr5[i + 3] * ptr6[i + 3];
-    ptr7[i + 4] = (ptr1[i + 1] * ptr1[i + 4] + ptr2[i + 4] * ptr2[i + 4] +
-                   ptr3[i + 4] * ptr3[i + 4]) *
-                      ptr4[i + 4] +
-                  ptr5[i + 4] * ptr6[i + 4];
-  }
-  return;
+                                   double *ptr7) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])*ptr4[i] + ptr5[i]*ptr6[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
+      ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])* ptr4[i] + ptr5[i]*ptr6[i];
+      ptr7[i+1] = (ptr1[i+1]*ptr1[i+1] + ptr2[i+1]*ptr2[i+1] + ptr3[i+1]*ptr3[i+1])*ptr4[i+1] + ptr5[i+1]*ptr6[i+1];
+      ptr7[i+2] = (ptr1[i+1]*ptr1[i+2] + ptr2[i+2]*ptr2[i+2] + ptr3[i+2]*ptr3[i+2])*ptr4[i+2] + ptr5[i+2]*ptr6[i+2];
+      ptr7[i+3] = (ptr1[i+1]*ptr1[i+3] + ptr2[i+3]*ptr2[i+3] + ptr3[i+3]*ptr3[i+3])*ptr4[i+3] + ptr5[i+3]*ptr6[i+3];
+      ptr7[i+4] = (ptr1[i+1]*ptr1[i+4] + ptr2[i+4]*ptr2[i+4] + ptr3[i+4]*ptr3[i+4])*ptr4[i+4] + ptr5[i+4]*ptr6[i+4];
+   }
+   return;
 }
 
 /********************************
@@ -1673,33 +1898,54 @@ void d3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
  *         d3db::tc_Mul         *
  *                              *
  ********************************/
-void d3db::tc_Mul(const double *ptr1, double *ptr3) {
-  int i;
-  int m = nfft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i) {
-      ptr3[2 * i] *= ptr1[i];
-      ptr3[2 * i + 1] *= ptr1[i];
-    }
-  if (nfft3d_map < 5)
-    return;
-  for (i = m; i < nfft3d_map; i += 5) {
-    ptr3[2 * (i)] *= ptr1[i];
-    ptr3[2 * (i) + 1] *= ptr1[i];
-
-    ptr3[2 * (i + 1)] *= ptr1[i + 1];
-    ptr3[2 * (i + 1) + 1] *= ptr1[i + 1];
-
-    ptr3[2 * (i + 2)] *= ptr1[i + 2];
-    ptr3[2 * (i + 2) + 1] *= ptr1[i + 2];
-
-    ptr3[2 * (i + 3)] *= ptr1[i + 3];
-    ptr3[2 * (i + 3) + 1] *= ptr1[i + 3];
-
-    ptr3[2 * (i + 4)] *= ptr1[i + 4];
-    ptr3[2 * (i + 4) + 1] *= ptr1[i + 4];
-  }
-  return;
+ /**
+ * @brief Element-wise complex multiplication of two complex double arrays.
+ *
+ * This function performs element-wise complex multiplication of two complex double
+ * arrays, `ptr1` and `ptr3`. It multiplies the real and imaginary parts of each
+ * complex number in `ptr3` by the corresponding real value in `ptr1`. The result is
+ * updated in place in the `ptr3` array.
+ *
+ * @param ptr1 A pointer to the input double array containing the real values.
+ * @param ptr3 A pointer to the complex double array where the result is updated.
+ *
+ * @return None.
+ *
+ * @note The function computes element-wise complex multiplication by multiplying both
+ *       the real and imaginary parts of each complex number in `ptr3` by the
+ *       corresponding real value in `ptr1`. Loop unrolling is applied for efficiency
+ *       when processing arrays with a size greater than or equal to 5 complex numbers.
+ */
+void d3db::tc_Mul(const double *ptr1, double *ptr3) 
+{
+   int i;
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i) 
+      {
+         ptr3[2 * i] *= ptr1[i];
+         ptr3[2 * i + 1] *= ptr1[i];
+      }
+   if (nfft3d_map < 5)
+      return;
+   for (i = m; i < nfft3d_map; i += 5) 
+   {
+      ptr3[2 * (i)] *= ptr1[i];
+      ptr3[2 * (i) + 1] *= ptr1[i];
+     
+      ptr3[2 * (i + 1)] *= ptr1[i + 1];
+      ptr3[2 * (i + 1) + 1] *= ptr1[i + 1];
+     
+      ptr3[2 * (i + 2)] *= ptr1[i + 2];
+      ptr3[2 * (i + 2) + 1] *= ptr1[i + 2];
+     
+      ptr3[2 * (i + 3)] *= ptr1[i + 3];
+      ptr3[2 * (i + 3) + 1] *= ptr1[i + 3];
+     
+      ptr3[2 * (i + 4)] *= ptr1[i + 4];
+      ptr3[2 * (i + 4) + 1] *= ptr1[i + 4];
+   }
+   return;
 }
 
 /********************************
@@ -1707,6 +1953,24 @@ void d3db::tc_Mul(const double *ptr1, double *ptr3) {
  *         d3db::rrr_Mul2Add    *
  *                              *
  ********************************/
+ /**
+ * @brief Element-wise multiplication and addition of two double arrays.
+ *
+ * This function performs element-wise multiplication of two double arrays, `ptr1` and
+ * `ptr2`, and adds the result to the corresponding elements of `ptr3`. It is designed
+ * to optimize the operation with loop unrolling for efficiency.
+ *
+ * @param ptr1 A pointer to the first input double array for multiplication.
+ * @param ptr2 A pointer to the second input double array for multiplication.
+ * @param ptr3 A pointer to the output double array where the result is added.
+ *
+ * @return None.
+ *
+ * @note The function computes the element-wise multiplication of `ptr1` and `ptr2` and
+ *       adds the result to the corresponding elements of `ptr3`. Loop unrolling is
+ *       applied for efficiency in processing arrays with a size greater than or equal
+ *       to 5 elements.
+ */
 void d3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
   int i;
   int m = n2ft3d_map % 5;
@@ -1730,6 +1994,26 @@ void d3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
  *         d3db::rrr_Divide     *
  *                              *
  ********************************/
+ /**
+ * @brief Element-wise division of two double arrays with safety checks.
+ *
+ * This function performs element-wise division of two double arrays, `ptr1` and `ptr2`,
+ * with appropriate safety checks to avoid division by zero. The result is stored in
+ * `ptr3`. If the absolute value of an element in `ptr2` is greater than the defined
+ * constant `ETA_DIV` (1.0e-9), the division is performed; otherwise, the corresponding
+ * element in `ptr3` is set to 0.0.
+ *
+ * @param ptr1 A pointer to the first input double array for division.
+ * @param ptr2 A pointer to the second input double array for division.
+ * @param ptr3 A pointer to the output double array to store the result.
+ *
+ * @return None.
+ *
+ * @note The function computes the division element-wise and checks if the absolute
+ *       value of each element in `ptr2` is greater than `ETA_DIV` before performing
+ *       division. If the condition is met, it computes `ptr1[i] / ptr2[i]` for each
+ *       element `i`, otherwise, it sets `ptr3[i]` to 0.0.
+ */
 #define ETA_DIV 1.0e-9
 void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 {
@@ -1756,6 +2040,24 @@ void d3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
  *         d3db::rr_Divide      *
  *                              *
  ********************************/
+ /**
+ * @brief Element-wise division of two double arrays with safety checks.
+ *
+ * This function performs element-wise division of two double arrays, `ptr3` and `ptr2`,
+ * with appropriate safety checks to avoid division by zero. The result is stored in
+ * `ptr3`. If the absolute value of an element in `ptr2` is greater than `ETA_DIV`, the
+ * division is performed; otherwise, the corresponding element in `ptr3` is set to 0.0.
+ *
+ * @param ptr2 A pointer to the input double array for division.
+ * @param ptr3 A pointer to the output double array to store the result.
+ *
+ * @return None.
+ *
+ * @note The function computes the division element-wise and checks if the absolute
+ *       value of each element in `ptr2` is greater than `ETA_DIV` before performing
+ *       division. If the condition is met, it computes `ptr3[i] / ptr2[i]` for each
+ *       element `i`, otherwise, it sets `ptr3[i]` to 0.0.
+ */
 void d3db::rr_Divide(const double *ptr2, double *ptr3)
 {
    int i;
@@ -1781,7 +2083,24 @@ void d3db::rr_Divide(const double *ptr2, double *ptr3)
  *         d3db::rr_screen0     *
  *                              *
  ********************************/
-// This subroutine is used to calculate screen0 = (1.0/epsilon-1.0)
+/**
+ * @brief Calculate the screening factor screen0 = (1.0/epsilon - 1.0).
+ *
+ * This function computes the screening factor `screen0` as (1.0/epsilon - 1.0), where
+ * `epsilon` is a double array provided as `ptr2`. The result is stored in `ptr3`. The
+ * calculation is performed element-wise with appropriate handling for values close to
+ * zero to avoid division by zero.
+ *
+ * @param ptr2 A pointer to the input double array `epsilon`.
+ * @param ptr3 A pointer to the output double array `screen0`.
+ *
+ * @return None.
+ *
+ * @note The function computes `screen0` element-wise, and for each element of `epsilon`,
+ *       it checks if the absolute value is greater than `ETA_DIV` to avoid division by
+ *       zero. If the absolute value is greater, it calculates (1.0/epsilon - 1.0),
+ *       otherwise, it sets the corresponding element of `screen0` to 0.0.
+ */
 void d3db::rr_screen0(const double *ptr2, double *ptr3)
 {
    int i;
@@ -1809,6 +2128,19 @@ void d3db::rr_screen0(const double *ptr2, double *ptr3)
  *         d3db::rr_daxpy       *
  *                              *
  ********************************/
+ /**
+ * @brief Perform a scaled vector addition of two double arrays.
+ *
+ * This function performs a scaled vector addition of two double arrays, `ptr1` and
+ * `ptr2`, with a scaling factor `alpha`. The operation updates the values of `ptr2`
+ * in place. It uses loop unrolling for efficiency when applicable.
+ *
+ * @param alpha The scaling factor applied to `ptr1` before addition.
+ * @param ptr1 A pointer to the first double array.
+ * @param ptr2 A pointer to the second double array, which is updated with the result.
+ *
+ * @return None.
+ */
 void d3db::rr_daxpy(const double alpha, const double *ptr1, double *ptr2) 
 {
    int i;
@@ -1833,6 +2165,19 @@ void d3db::rr_daxpy(const double alpha, const double *ptr1, double *ptr2)
  *         d3db::rr_dot         *
  *                              *
  ********************************/
+ /**
+ * @brief Compute the dot product of two double arrays.
+ *
+ * This function calculates the dot product of two double arrays, `ptr1` and `ptr2`,
+ * with appropriate parallelization. It uses a loop unrolling technique to optimize
+ * the calculation for efficiency. The result is a double value representing the dot
+ * product of the arrays.
+ *
+ * @param ptr1 A pointer to the first double array.
+ * @param ptr2 A pointer to the second double array.
+ *
+ * @return The dot product of the two input arrays as a double value.
+ */
 double d3db::rr_dot(const double *ptr1, const double *ptr2) 
 {
    int i;
@@ -1948,8 +2293,6 @@ double d3db::cc_dot(const double *ptr1, const double *ptr2)
 }
 
 
-
-
 /********************************
  *                              *
  *         d3db::t_alloc        *
@@ -1967,11 +2310,32 @@ double *d3db::t_alloc() {
  ********************************/
 void d3db::t_dealloc(double *ptr) { delete[] ptr; }
 
+
+
+
 /********************************
  *                              *
  *         d3db::c_read         *
  *                              *
  ********************************/
+ /**
+ * @brief Read data from an input unit with support for parallel computing.
+ *
+ * This function is responsible for reading data from a specified input unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data retrieval and distribution efficiently.
+ *
+ * @param iunit An integer specifying the input unit to read data from.
+ * @param a A pointer to a double array where the read data will be stored.
+ * @param jcol An integer specifying the column index for parallelization.
+ *
+ * @return None.
+ *
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable, the parallelization parameters, and the distribution of data from
+ *       the input unit to the specified array.
+ */
 void d3db::c_read(const int iunit, double *a, const int jcol) 
 {
    int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
@@ -1979,13 +2343,16 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
    int taskid_j = parall->taskid_j();
    int np_j = parall->np_j();
  
-   if (jcol < 0) {
-     jstart = 0;
-     jend = np_j - 1;
-     fillcolumn = 1;
-   } else {
-     jstart = jend = jcol;
-     fillcolumn = (taskid_j == jcol);
+   if (jcol < 0) 
+   {
+      jstart = 0;
+      jend = np_j - 1;
+      fillcolumn = 1;
+   } 
+   else 
+   {
+      jstart = jend = jcol;
+      fillcolumn = (taskid_j == jcol);
    }
  
    /**********************
@@ -2092,103 +2459,142 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
  *         d3db::c_write        *
  *                              *
  ********************************/
-void d3db::c_write(const int iunit, double *a, const int jcol) {
-  int index, ii, jj, p_from, p_here;
-  int taskid = parall->taskid();
-  int taskid_j = parall->taskid_j();
-  int np_j = parall->np_j();
+ /**
+ * @brief Write data to an output unit with support for parallel computing.
+ *
+ * This function is responsible for writing data to a specified output unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data transfer and writing efficiently.
+ *
+ * @param iunit An integer specifying the output unit to write data to.
+ * @param a A pointer to a double array containing the data to be written.
+ * @param jcol An integer specifying the column index for parallelization.
+ *
+ * @return None.
+ *
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable and the parallelization parameters. It supports both "slab mapping"
+ *       and "hilbert mapping" for data distribution.
+ */
+void d3db::c_write(const int iunit, double *a, const int jcol) 
+{
+   int index, ii, jj, p_from, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
 
-  /**********************
-   **** slab mapping ****
-   **********************/
-  if (maptype == 1) {
-    double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
-    // double tmp[(nx+2)*ny];
-    int bsize = (nx + 2) * ny;
-
-    /**** master node gathers and write to file ****/
-    if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k) {
-        ii = ijktop(0, 0, k);
-        p_from = parall->convert_taskid_ij(ii, jcol);
-        if (p_from == MASTER) {
-          index = 2 * ijktoindex(0, 0, k);
-          for (int k = 0; k < bsize; ++k)
-            tmp[k] = a[index + k];
-        } else {
-          parall->dreceive(0, 9, p_from, bsize, tmp);
-        }
-        dwrite(iunit, tmp, bsize);
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
+      // double tmp[(nx+2)*ny];
+      int bsize = (nx + 2) * ny;
+      
+      /**** master node gathers and write to file ****/
+      if (taskid == MASTER)
+      for (int k = 0; k < nz; ++k) 
+      {
+         ii = ijktop(0, 0, k);
+         p_from = parall->convert_taskid_ij(ii, jcol);
+         if (p_from == MASTER) 
+         {
+            index = 2 * ijktoindex(0, 0, k);
+            for (int k = 0; k < bsize; ++k)
+               tmp[k] = a[index + k];
+         } 
+         else 
+         {
+            parall->dreceive(0, 9, p_from, bsize, tmp);
+         }
+         dwrite(iunit, tmp, bsize);
       }
-
-    /**** not master node ****/
-    else
-      for (int k = 0; k < nz; ++k) {
-        index = 2 * ijktoindex(0, 0, k);
-        ii = ijktop(0, 0, k);
-        p_here = parall->convert_taskid_ij(ii, taskid_j);
-        if (p_here == taskid) {
-          for (int k = 0; k < bsize; ++k)
-            tmp[k] = a[index + k];
-          parall->dsend(0, 9, MASTER, bsize, tmp);
-        }
+      
+      /**** not master node ****/
+      else
+      {
+         for (int k = 0; k < nz; ++k) 
+         {
+            index = 2 * ijktoindex(0, 0, k);
+            ii = ijktop(0, 0, k);
+            p_here = parall->convert_taskid_ij(ii, jcol);
+            if (p_here == taskid) 
+            {
+               for (int k = 0; k < bsize; ++k)
+                  tmp[k] = a[index + k];
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
+         }
       }
-
-    delete[] tmp;
-  }
+      
+      delete[] tmp;
+   }
 
   /*************************
    **** hilbert mapping ****
    *************************/
-  else 
-  {
-     // double *tmp1 = new (std::nothrow) double[2*nfft3d];
-     // double *tmp2 = new (std::nothrow) double[2*nfft3d];
-     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-     double *tmp1 = d3db::d3db_tmp1;
-     double *tmp2 = d3db::d3db_tmp2;
-     c_transpose_ijk(5, a, tmp1, tmp2);
-    
-     // delete [] tmp2;
-     // delete [] tmp1;
-    
-     // double *tmp = new (std::nothrow) double[nx+2];
-     double tmp[nx + 2];
-     int bsize = (nx + 2);
-    
-     /**** master node write to file and fetches from other nodes ****/
-     if (taskid == MASTER)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           ii = ijktop2(0, j, k);
-           p_from = parall->convert_taskid_ij(ii, jcol);
-           if (p_from == MASTER) {
-             index = ijktoindex2(0, j, k);
-             for (int k = 0; k < bsize; ++k)
-               tmp[k] = a[index + k];
-           } else {
-             parall->dreceive(0, 9, p_from, bsize, tmp);
-           }
-           dwrite(iunit, tmp, bsize);
+   else 
+   {
+      if (taskid_j==jcol)
+      {
+         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+         double *tmp1 = d3db::d3db_tmp1;
+         double *tmp2 = d3db::d3db_tmp2;
+         c_transpose_ijk(5, a, tmp1, tmp2);
+     
+         // delete [] tmp2;
+         // delete [] tmp1;
+      }
+     
+      // double *tmp = new (std::nothrow) double[nx+2];
+      double tmp[nx + 2];
+      int bsize = (nx + 2);
+     
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid == MASTER)
+      {
+         for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) 
+         {
+            ii = ijktop2(0, j, k);
+            p_from = parall->convert_taskid_ij(ii, jcol);
+            if (p_from == MASTER) 
+            {
+               index = ijktoindex2(0, j, k);
+               for (int k = 0; k < bsize; ++k)
+                  tmp[k] = a[index + k];
+            } 
+            else 
+            {
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
          }
-    
-     /**** not master node ****/
-     else
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           ii = ijktop2(0, j, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) {
-             index = ijktoindex2(0, j, k);
-             for (int k = 0; k < bsize; ++k)
-               tmp[k] = a[index + k];
-             parall->dsend(0, 9, MASTER, bsize, tmp);
-           }
+      } 
+      /**** not master node ****/
+      else
+      {
+         for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) 
+         {
+            ii = ijktop2(0, j, k);
+            p_here = parall->convert_taskid_ij(ii, jcol);
+            if (p_here == taskid) 
+            {
+               index = ijktoindex2(0, j, k);
+               for (int k = 0; k < bsize; ++k)
+                  tmp[k] = a[index + k];
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
          }
-    
-     // delete [] tmp;
-  }
+      }
+      // delete [] tmp;
+   }
 }
 
 /***********************************************
@@ -2196,51 +2602,63 @@ void d3db::c_write(const int iunit, double *a, const int jcol) {
  *            d3db::r_formatwrite             *
  *                                            *
  **********************************************/
-std::string d3db::r_formatwrite(double *a) {
-  std::stringstream stream;
-
-  int taskid = parall->taskid();
-
-  double tmp[nx];
-
-  /************************************
-   **** slab and hilbert  mappings ****
-   ************************************/
-
-  /**** master node gathers and write to file ****/
-  if (taskid == MASTER) {
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j) {
-        for (auto i = 0; i < nx; ++i) {
-          int index = ijktoindex2(i, j, k);
-          int p_from = ijktop2(i, j, k);
-          if (p_from == MASTER)
-            tmp[i] = a[index];
-          else
-            parall->dreceive(0, 189, p_from, 1, tmp + index);
-        }
-        for (auto i = 0; i < nx; i += 6) {
-          for (auto i1 = i; i1 < std::min(i + 6, nx); ++i1)
-            stream << Efmt(13, 5) << tmp[i1];
-          stream << std::endl;
-        }
-        // stream << std::endl;
-      }
-  }
-  /**** not master node ****/
-  else {
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j) {
-        for (auto i = 0; i < nx; ++i) {
-          int index = ijktoindex2(i, j, k);
-          int p_here = ijktop2(i, j, k);
-          if (p_here == taskid)
-            parall->dsend(0, 189, MASTER, 1, a + index);
-        }
-      }
-  }
-
-  return stream.str();
+/**
+ * @brief Format and write a double array to a string stream.
+ *
+ * This function formats and writes a double array `a` to a string stream. The formatted data is organized as a table, where each row represents a 1D slice of the array. The data is formatted with specified width and precision and then written to the string stream.
+ *
+ * @param a A pointer to the double array to be formatted and written.
+ *
+ * @return A string containing the formatted data.
+ *
+ * @note The function performs data formatting and writing based on task-specific conditions, such as the task's ID and parallelization. It efficiently manages the data exchange between the master node and other nodes in a parallel environment.
+ */
+std::string d3db::r_formatwrite(double *a) 
+{
+   std::stringstream stream;
+ 
+   int taskid = parall->taskid();
+ 
+   double tmp[nx];
+ 
+   /************************************
+    **** slab and hilbert  mappings ****
+    ************************************/
+ 
+   /**** master node gathers and write to file ****/
+   if (taskid == MASTER) {
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j) {
+         for (auto i = 0; i < nx; ++i) {
+           int index = ijktoindex2(i, j, k);
+           int p_from = ijktop2(i, j, k);
+           if (p_from == MASTER)
+             tmp[i] = a[index];
+           else
+             parall->dreceive(0, 189, p_from, 1, tmp + index);
+         }
+         for (auto i = 0; i < nx; i += 6) {
+           for (auto i1 = i; i1 < std::min(i + 6, nx); ++i1)
+             stream << Efmt(13, 5) << tmp[i1];
+           stream << std::endl;
+         }
+         // stream << std::endl;
+       }
+   }
+   /**** not master node ****/
+   else {
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j) {
+         for (auto i = 0; i < nx; ++i) {
+           int index = ijktoindex2(i, j, k);
+           int p_here = ijktop2(i, j, k);
+           if (p_here == taskid)
+             parall->dsend(0, 189, MASTER, 1, a + index);
+         }
+       }
+   }
+ 
+   return stream.str();
 }
 
 /***********************************************
@@ -2248,50 +2666,62 @@ std::string d3db::r_formatwrite(double *a) {
  *         d3db::r_formatwrite_reverse        *
  *                                            *
  **********************************************/
-std::string d3db::r_formatwrite_reverse(double *a) {
-  std::stringstream stream;
-
-  int taskid = parall->taskid();
-  double tmp[nz];
-
-  /************************************
-   **** slab and hilbert  mappings ****
-   ************************************/
-
-  /**** master node gathers and write to file ****/
-  if (taskid == MASTER) {
-    for (auto i = 0; i < nx; ++i)
-      for (auto j = 0; j < ny; ++j) {
-        for (auto k = 0; k < nz; ++k) {
-          int index = ijktoindex2(i, j, k);
-          int p_from = ijktop2(i, j, k);
-          if (p_from == MASTER)
-            tmp[k] = a[index];
-          else
-            parall->dreceive(0, 189, p_from, 1, tmp + k);
-        }
-        for (auto k = 0; k < nz; k += 6) {
-          for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
-            stream << Efmt(13, 5) << tmp[k1];
-          stream << std::endl;
-        }
-        // stream << std::endl;
-      }
-  }
-  /**** not master node ****/
-  else {
-    for (auto i = 0; i < nx; ++i)
-      for (auto j = 0; j < ny; ++j) {
-        for (auto k = 0; k < nz; ++k) {
-          int index = ijktoindex2(i, j, k);
-          int p_here = ijktop2(i, j, k);
-          if (p_here == taskid)
-            parall->dsend(0, 189, MASTER, 1, a + index);
-        }
-      }
-  }
-
-  return stream.str();
+/**
+ * @brief Format and write a double array to a string stream in reverse order.
+ *
+ * This function is similar to `d3db::r_formatwrite`, but it formats and writes the given double array `a` in reverse order (along the k dimension) to a string stream. The formatted data is written in rows and columns, with each row containing up to 6 elements from the array. The output is intended to be used for debugging or saving data to a file.
+ *
+ * @param a A pointer to the double array to be formatted and written in reverse order.
+ *
+ * @return A string containing the formatted data in reverse order along the k dimension.
+ *
+ * @note The function performs a data gathering operation among parallel tasks to construct the formatted string. The size and structure of the output string are determined by the dimensions of the array and the number of tasks involved in the parallel computation.
+ */
+std::string d3db::r_formatwrite_reverse(double *a) 
+{
+   std::stringstream stream;
+ 
+   int taskid = parall->taskid();
+   double tmp[nz];
+ 
+   /************************************
+    **** slab and hilbert  mappings ****
+    ************************************/
+ 
+   /**** master node gathers and write to file ****/
+   if (taskid == MASTER) {
+     for (auto i = 0; i < nx; ++i)
+       for (auto j = 0; j < ny; ++j) {
+         for (auto k = 0; k < nz; ++k) {
+           int index = ijktoindex2(i, j, k);
+           int p_from = ijktop2(i, j, k);
+           if (p_from == MASTER)
+             tmp[k] = a[index];
+           else
+             parall->dreceive(0, 189, p_from, 1, tmp + k);
+         }
+         for (auto k = 0; k < nz; k += 6) {
+           for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
+             stream << Efmt(13, 5) << tmp[k1];
+           stream << std::endl;
+         }
+         // stream << std::endl;
+       }
+   }
+   /**** not master node ****/
+   else {
+     for (auto i = 0; i < nx; ++i)
+       for (auto j = 0; j < ny; ++j) {
+         for (auto k = 0; k < nz; ++k) {
+           int index = ijktoindex2(i, j, k);
+           int p_here = ijktop2(i, j, k);
+           if (p_here == taskid)
+             parall->dsend(0, 189, MASTER, 1, a + index);
+         }
+       }
+   }
+ 
+   return stream.str();
 }
 
 void d3db::cshift1_fftb(const int n1, const int n2, const int n3, const int n4,

@@ -102,10 +102,11 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
  
    // ii = 3+control.pfft3_qsize();
    // request = new MPI::Request*[ii];
-   ii = 3 + (pfft3_qsize+6);
-   reqcnt = new int[ii]();
-   request = new MPI_Request *[ii]();
-   statuses = new MPI_Status *[ii]();
+   //          ii = 3 + (pfft3_qsize+6);
+   max_reqstat = 4 + (pfft3_qsize+6);
+   reqcnt = new int[max_reqstat]();
+   request = new MPI_Request *[max_reqstat]();
+   statuses = new MPI_Status *[max_reqstat]();
  
    MPI_Barrier(comm_world);
 }
@@ -341,6 +342,7 @@ void Parallel::ireceive(const int d, const int tag, const int procfrom,
  ********************************/
 void Parallel::astart(const int d, const int sz) 
 {
+   //this will need to be changed to  d>3 when k-points added
    if ((d > 2) ? true : (npi[d] > 1)) 
    {
       reqcnt[d]   = 0;
@@ -355,10 +357,15 @@ void Parallel::astart(const int d, const int sz)
  ********************************/
 void Parallel::awaitall(const int d) 
 {
+   //this will need to be changed to  d>3 when k-points added
    if ((d > 2) ? true : (npi[d] > 1)) 
    {
       if (reqcnt[d] > 0)
-         MPI_Waitall(reqcnt[d], request[d], statuses[d]);
+      {
+         int ierr = MPI_Waitall(reqcnt[d], request[d], statuses[d]);
+    std::cout << "taskid_j=" << taskidi[2] << " D=" << d << " npi[2]=" << npi[2] 
+              << " REQCNT=" << reqcnt[d] << " ierr=" << ierr << std::endl;
+      }
       reqcnt[d] = 0;
    }
 }
@@ -372,6 +379,8 @@ void Parallel::aend(const int d)
    // MPI::Status status[reqcnt[d]];
    // request[d][0].Waitall(reqcnt[d],request[d],status);
    // if (npi[d]>1)
+
+   //this will need to be changed to  d>3 when k-points added
    if ((d > 2) ? true : (npi[d] > 1)) 
    {
       // request[d][0].Waitall(reqcnt[d],request[d]);
@@ -393,6 +402,8 @@ void Parallel::adreceive(const int d, const int tag, const int procfrom, const i
    // MPI::Status status;
    // if (npi[d]>1) request[d][reqcnt[d]++] =
    // comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
+
+   //this will need to be changed to  d>3 when k-points added
    if ((d > 2) ? true : (npi[d] > 1))
      MPI_Irecv(sum, n, MPI_DOUBLE_PRECISION, procfrom, tag,
                comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
@@ -400,16 +411,54 @@ void Parallel::adreceive(const int d, const int tag, const int procfrom, const i
 
 /********************************
  *                              *
- *       Parallel::adsend        *
+ *       Parallel::adsend       *
  *                              *
  ********************************/
 void Parallel::adsend(const int d, const int tag, const int procto, const int n, double *sum) 
 {
    // if (npi[d]>1) request[d][reqcnt[d]++] =
    // comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
+
+   //this will need to be changed to  d>3 when k-points added
    if ((d > 2) ? true : (npi[d] > 1))
      MPI_Isend(sum, n, MPI_DOUBLE_PRECISION, procto, tag,
                comm_i[((d > 2) ? 1 : d)], &request[d][reqcnt[d]++]);
 }
+
+
+/********************************
+ *                              *
+ *       Parallel::a2dreceive   *
+ *                              *
+ ********************************/
+void Parallel::a2dreceive(const int d, const int tag, const int procfrom, const int n, double *sum)
+{
+   // MPI::Status status;
+   // if (npi[d]>1) request[d][reqcnt[d]++] =
+   // comm_i[d].Irecv(sum,n,MPI_DOUBLE_PRECISION,procfrom,tag);
+
+   //this will need to be changed to  d>3 when k-points added
+   if ((d > 2) ? true : (npi[d] > 1))
+     MPI_Irecv(sum, n, MPI_DOUBLE_PRECISION, procfrom, tag,
+               comm_i[((d > 2) ? 2 : d)], &request[d][reqcnt[d]++]);
+}
+
+/********************************
+ *                              *
+ *       Parallel::a2dsend      *
+ *                              *
+ ********************************/
+void Parallel::a2dsend(const int d, const int tag, const int procto, const int n, double *sum)
+{
+   // if (npi[d]>1) request[d][reqcnt[d]++] =
+   // comm_i[d].Isend(sum,n,MPI_DOUBLE_PRECISION,procto,tag);
+
+   //this will need to be changed to  d>3 when k-points added
+   if ((d > 2) ? true : (npi[d] > 1))
+     MPI_Isend(sum, n, MPI_DOUBLE_PRECISION, procto, tag,
+               comm_i[((d > 2) ? 2 : d)], &request[d][reqcnt[d]++]);
+}
+
+
 
 } // namespace pwdft

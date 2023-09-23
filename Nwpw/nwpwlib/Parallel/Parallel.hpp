@@ -30,6 +30,7 @@ class Parallel {
    MPI_Status **statuses;
 
 public:
+   int max_reqstat;
    int dim;
    bool base_stdio_print = true;
  
@@ -96,6 +97,9 @@ public:
    void aend(const int);
    void adsend(const int, const int, const int, const int, double *);
    void adreceive(const int, const int, const int, const int, double *);
+
+   void a2dsend(const int, const int, const int, const int, double *);
+   void a2dreceive(const int, const int, const int, const int, double *);
 };
 
 } // namespace pwdft

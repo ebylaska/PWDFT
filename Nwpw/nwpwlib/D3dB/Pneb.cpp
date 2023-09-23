@@ -289,6 +289,18 @@ void Pneb::g_generate_random(double *psi) {
  *           Pneb::g_read            *
  *                                   *
  *************************************/
+ /**
+ * @brief Read data from an input unit within a parallel computing framework.
+ *
+ * This function is responsible for reading data from a specified input unit based
+ * on the input parameters. It operates within a parallel computing framework and uses
+ * the PGrid class for data manipulation.
+ *
+ * @param iunit An integer specifying the input unit to read data from.
+ * @param psi A pointer to a double array where the read data will be stored.
+ *
+ * @return None.
+ */
 void Pneb::g_read(const int iunit, double *psi) 
 {
    int ms, n, indx, i, pj, qj, taskid_j;
@@ -313,6 +325,24 @@ void Pneb::g_read(const int iunit, double *psi)
    delete[] tmp2;
 }
 
+
+/*************************************
+ *                                   *
+ *           Pneb::g_write           *
+ *                                   *
+ *************************************/
+/**
+ * @brief Write data to an output unit within a parallel computing framework.
+ *
+ * This function is responsible for writing data to a specified output unit based on
+ * the input parameters. It operates within a parallel computing framework and uses
+ * the PGrid class for data manipulation.
+ *
+ * @param iunit An integer specifying the output unit to write data to.
+ * @param psi A pointer to a double array containing the data to be written.
+ *
+ * @return None.
+ */
 void Pneb::g_write(const int iunit, double *psi) 
 {
    int ms, n, indx, i, pj, qj, taskid_j;
@@ -320,22 +350,39 @@ void Pneb::g_write(const int iunit, double *psi)
  
    taskid_j = d1db::parall->taskid_j();
    for (ms = 0; ms < ispin; ++ms)
-     for (n = 0; n < ne[ms]; ++n) 
-     {
-        qj = msntoindex(ms, n);
-        pj = msntop(ms, n);
-        if (pj == taskid_j) 
-        {
-           indx = 2 * PGrid::npack(1) * qj;
-           PGrid::cc_pack_copy(1, psi + indx, tmp2);
-           PGrid::c_unpack(1, tmp2);
-        }
-        c_write(iunit, tmp2, pj);
-     }
+   for (n = 0; n < ne[ms]; ++n) 
+   {
+      qj = msntoindex(ms, n);
+      pj = msntop(ms, n);
+      if (pj == taskid_j) 
+      {
+         indx = 2 * PGrid::npack(1) * qj;
+         PGrid::cc_pack_copy(1, psi + indx, tmp2);
+         PGrid::c_unpack(1, tmp2);
+      }
+      c_write(iunit, tmp2, pj);
+   }
  
    delete[] tmp2;
 }
 
+/*************************************
+ *                                   *
+ *           Pneb::gg_traceall       *
+ *                                   *
+ *************************************/
+/**
+ * @brief Calculate the trace of the inner product between two sets of spinor wave functions.
+ *
+ * This function calculates the trace of the inner product between two sets of spinor wave functions, represented by the arrays `psi1` and `psi2`. The trace is computed by summing the inner product of corresponding elements in the arrays.
+ *
+ * @param psi1 A pointer to the first set of spinor wave functions.
+ * @param psi2 A pointer to the second set of spinor wave functions.
+ *
+ * @return The trace of the inner product between the two sets of spinor wave functions.
+ *
+ * @note This function assumes that the sizes of `psi1` and `psi2` are compatible, and it operates on elements in pairs. The `neq` and `ispin` variables are used to determine the sizes and characteristics of the wave functions.
+ */
 double Pneb::gg_traceall(double *psi1, double *psi2) 
 {
    int n, indx;
@@ -353,6 +400,11 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    return d3db::parall->SumAll(0, sum);
 }
 
+/*************************************
+ *                                   *
+ *           Pneb::gg_copy           *
+ *                                   *
+ *************************************/
 void Pneb::gg_copy(double *psi1, double *psi2) 
 {
    int one = 1;
@@ -360,6 +412,12 @@ void Pneb::gg_copy(double *psi1, double *psi2)
    std::memcpy(psi2, psi1, nsize * sizeof(double));
    // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
+
+/*************************************
+ *                                   *
+ *           Pneb::gg_SMul           *
+ *                                   *
+ *************************************/
 void Pneb::gg_SMul(double alpha, double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -373,6 +431,11 @@ void Pneb::gg_SMul(double alpha, double *psi1, double *psi2)
 //       psi1[i] *= alpha;
 // }
 
+/*************************************
+ *                                   *
+ *           Pneb::gg_daxpy          *
+ *                                   *
+ *************************************/
 void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -380,6 +443,11 @@ void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2)
       psi2[i] += alpha * psi1[i];
 }
 
+/*************************************
+ *                                   *
+ *           Pneb::g_Scale           *
+ *                                   *
+ *************************************/
 void Pneb::g_Scale(double alpha, double *psi1) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -387,6 +455,11 @@ void Pneb::g_Scale(double alpha, double *psi1)
       psi1[i] *= alpha;
 }
 
+/*************************************
+ *                                   *
+ *           Pneb::gg_Sum2           *
+ *                                   *
+ *************************************/
 void Pneb::gg_Sum2(double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -411,6 +484,17 @@ void Pneb::gg_Minus2(double *psi1, double *psi2)
  *         Pneb::ggg_Minus           *
  *                                   *
  *************************************/
+/**
+ * @brief Element-wise subtraction of two sets of spinor wave functions.
+ *
+ * This function performs element-wise subtraction of two sets of spinor wave functions, `psi1` and `psi2`, and stores the result in `psi3`.
+ *
+ * @param psi1 A pointer to the first set of spinor wave functions.
+ * @param psi2 A pointer to the second set of spinor wave functions.
+ * @param psi3 A pointer to the resulting set of spinor wave functions after subtraction.
+ *
+ * @note This function assumes that the sizes of `psi1`, `psi2`, and `psi3` are compatible, and it operates on elements in pairs. The `neq` variable is used to determine the sizes of the wave functions.
+ */
 void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -439,6 +523,18 @@ void Pneb::g_zero(double *psi2)
  *         Pneb::gh_fftb             *
  *                                   *
  *************************************/
+/**
+ * @brief Perform a forward Fast Fourier Transform (FFT) of a set of wave functions using the PFFT3B library.
+ *
+ * This function performs a forward Fast Fourier Transform (FFT) of a set of wave functions, `psi`, using the PFFT3B library and stores the result in `psi_r`. The transform is performed along one dimension.
+
+ * @param psi A pointer to the input set of wave functions to be transformed.
+ * @param psi_r A pointer to the resulting transformed wave functions.
+ *
+ * @note This function uses the cr_pfft3b_queue library to perform the FFT. It queues the input wave functions for transformation and retrieves the transformed results.
+
+ * @warning The behavior of this function depends on the initialization and configuration of the pfft3b_queue library. Ensure that the library is properly initialized and configured before calling this function.
+ */
 void Pneb::gh_fftb(double *psi, double *psi_r) 
 {
    nwpw_timing_function ftimer(1);
@@ -475,6 +571,17 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
  *         Pneb::hr_aSumSqr          *
  *                                   *
  *************************************/
+/**
+ * @brief Calculate the sum of squares of components of a set of wave functions with an optional scaling factor.
+ *
+ * This function calculates the sum of squares of the components of a set of wave functions, `psir`, with an optional scaling factor `alpha`. The result is stored in the `dn` array.
+
+ * @param alpha An optional scaling factor applied to the sum of squares.
+ * @param psir A pointer to the input set of wave functions.
+ * @param dn A pointer to the resulting sum of squares of components.
+ *
+ * @note This function performs the calculation for each component of the wave functions in the `psir` array and accumulates the results in the `dn` array.
+ */
 void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn) 
 {
    int n,ms,k,indx0,indx1;
@@ -519,6 +626,22 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
                           + lmbda*(psi0_i(r)*psi1_i(r) + psi1_i(r)*psi0_i(r))
                           + lmbda^2*psi1_i(r)*psi1_i(r) )
 */
+/**
+ * @brief Calculate the perturbation density with a mixed product of two sets of wave functions.
+ *
+ * This function calculates the perturbation density `dn12(r)` using a mixed product of two sets of wave functions `psi0_i(r)` and `psi1_i(r)` with an optional scaling factor `alpha`. The result is stored in the `dn12` array.
+
+ * @param alpha An optional scaling factor applied to the mixed product.
+ * @param psir0 A pointer to the first set of wave functions.
+ * @param psir1 A pointer to the second set of wave functions.
+ * @param dn12 A pointer to the resulting perturbation density.
+ *
+ * @note This function performs the calculation for each component of the wave functions in the `psir0` and `psir1` arrays and accumulates the results in the `dn12` array according to the formula:
+ * \f[
+ * dn12(r) = \sum_i \left( \psi0_i(r) \psi1_i(r) + \psi1_i(r) \psi0_i(r) \right)
+ * \f]
+ * where \f$\psi_i(r) = \psi0_i(r) + \lambda \psi1_i(r)\f$, and \f$\lambda\f$ is the optional scaling factor.
+ */
 void Pneb::hhr_aSumMul(const double alpha, const double *psir0,
                        const double *psir1, double *dn12) 
 {
@@ -551,6 +674,17 @@ void Pneb::hhr_aSumMul(const double alpha, const double *psir0,
  *      Pneb::ggm_sym_Multiply       *
  *                                   *
  *************************************/
+/**
+ * @brief Multiply two sets of wave functions with symmetry considerations.
+ *
+ * This function multiplies two sets of wave functions `psi1` and `psi2` and stores the result in the `hml` matrix while considering symmetry properties. The function is parallelized for performance improvements.
+
+ * @param psi1 A pointer to the first set of wave functions.
+ * @param psi2 A pointer to the second set of wave functions.
+ * @param hml A pointer to the resulting matrix.
+ *
+ * @note This function performs matrix multiplication of `psi1` and `psi2` with symmetry considerations. The result is stored in the `hml` matrix, which should be pre-allocated with sufficient memory. Symmetry is taken into account to optimize the calculation.
+ */
 void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml) 
 {
    nwpw_timing_function ftimer(15);
@@ -566,11 +700,6 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
  
    if (parallelized) 
    {
-      //std::ostringstream msg;
-      //msg << "NWPW Error: ggm_sym_Multiply() parallelized is NOT supported\n"
-      //    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-      //throw(std::runtime_error(msg.str()));
-
       auto taskid_i = d1db::parall->taskid_i();
       auto taskid_j = d1db::parall->taskid_j();
       auto ishift2 = mcq[0]*ncq[0];
@@ -606,12 +735,6 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
             auto mshift1 = mshift0;
             for (auto k=1; k<=n; ++k) 
             {
-               // DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
-               //         rtwo,
-               //         &psi1[shift0], ng,
-               //         &psi2[shift1],ng,
-               //         rzero,
-               //         &hml[mshift1],k);
                DGEMM_PWDFT((char *)"T", (char *)"N",k,one,ng0,
                            rmone,
                            psi1+shift0,npack1, 
@@ -638,6 +761,17 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
  *        Pneb::ggm_Multiply         *
  *                                   *
  *************************************/
+/**
+ * @brief Multiply two sets of wave functions without considering symmetry.
+ *
+ * This function multiplies two sets of wave functions `psi1` and `psi2` and stores the result in the `hml` matrix without considering symmetry properties. The function is parallelized for performance improvements.
+
+ * @param psi1 A pointer to the first set of wave functions.
+ * @param psi2 A pointer to the second set of wave functions.
+ * @param hml A pointer to the resulting matrix.
+ *
+ * @note This function performs matrix multiplication of `psi1` and `psi2` without taking symmetry into account. The result is stored in the `hml` matrix, which should be pre-allocated with sufficient memory. Parallelization is applied for improved performance.
+ */
 void Pneb::ggm_Multiply(double *psi1, double *psi2, double *hml) {
 
   nwpw_timing_function ftimer(15);
@@ -694,57 +828,59 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2,
   double rone = 1.0;
   double rmone = -1.0;
 
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    if (mb == -1) {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
-      nn = ne[0] * ne[0] + ne[1] * ne[1];
-      shift0 = 0;
-      mshift0 = 0;
-    } else {
-      ms1 = mb;
-      ms2 = mb + 1;
-      ishift2 = 0;
-      nn = ne[mb] * ne[mb];
-      shift0 = mb * ne[0] * ng;
-      mshift0 = 0;
-    }
-    for (ms = ms1; ms < ms2; ++ms) {
-      n = ne[ms];
-      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
-
-      if (ng0 > 0) {
-        shift1 = shift0;
-        mshift1 = mshift0;
-        for (k = 1; k <= n; ++k) {
-          // DGEMM_PWDFT((char *) "T",(char *) "N",k,one,ng,
-          //         rtwo,
-          //         &psi1[shift0],ng,
-          //         &psi2[shift1],ng,
-          //         rzero,
-          //         &hml[mshift1],k);
-          DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                      &psi1[shift0], ng, &psi2[shift1], ng, rone, &hml[mshift1],
-                      k);
-
-          shift1 += ng;
-          mshift1 += n;
+  if (parallelized) 
+  {
+     std::ostringstream msg;
+     msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
+         << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+     throw(std::runtime_error(msg.str()));
+  } 
+  else 
+  {
+     if (mb == -1) 
+     {
+        ms1 = 0;
+        ms2 = ispin;
+        ishift2 = ne[0] * ne[0];
+        nn = ne[0] * ne[0] + ne[1] * ne[1];
+        shift0 = 0;
+        mshift0 = 0;
+     } 
+     else 
+     {
+        ms1 = mb;
+        ms2 = mb + 1;
+        ishift2 = 0;
+        nn = ne[mb] * ne[mb];
+        shift0 = mb * ne[0] * ng;
+        mshift0 = 0;
+     }
+     for (ms = ms1; ms < ms2; ++ms) 
+     {
+        n = ne[ms];
+        d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
+       
+        if (ng0 > 0) 
+        {
+           shift1 = shift0;
+           mshift1 = mshift0;
+           for (k = 1; k <= n; ++k) 
+           {
+              DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                          &psi1[shift0], ng, &psi2[shift1], ng, rone, &hml[mshift1], k);
+             
+              shift1 += ng;
+              mshift1 += n;
+           }
         }
-      }
-      for (k = 0; k < n; ++k)
+        for (k = 0; k < n; ++k)
         for (j = k + 1; j < n; ++j)
-          hml[mshift0 + j + k * n] = hml[mshift0 + k + j * n];
-
-      shift0 += ng * ne[0];
-      mshift0 += ne[0] * ne[0];
-    }
-    d3db::parall->Vector_SumAll(1, nn, hml);
+           hml[mshift0 + j + k * n] = hml[mshift0 + k + j * n];
+       
+        shift0  += ng*ne[0];
+        mshift0 += ne[0]*ne[0];
+     }
+     d3db::parall->Vector_SumAll(1, nn, hml);
   }
 }
 
@@ -754,58 +890,60 @@ void Pneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2,
  *        Pneb::ffm_Multiply         *
  *                                   *
  *************************************/
-void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml) {
-  nwpw_timing_function ftimer(15);
-  int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
-
-  int one = 1;
-  int ng = 2 * PGrid::npack(1);
-  int ng0 = 2 * PGrid::nzero(1);
-
-  double rzero = 0.0;
-  double rtwo = 2.0;
-  double rone = 1.0;
-  double rmone = -1.0;
-
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    if (mb == -1) {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
-      nn = ne[0] * ne[0] + ne[1] * ne[1];
-      shift0 = 0;
-      mshift0 = 0;
-    } else {
-      ms1 = mb;
-      ms2 = mb + 1;
-      ishift2 = 0;
-      nn = ne[mb] * ne[mb];
-      shift0 = mb * ne[0] * ng;
-      mshift0 = 0;
-    }
-    for (ms = ms1; ms < ms2; ++ms) {
-      n = ne[ms];
-      d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
-
-      // DGEMM_PWDFT((char *) "T",(char *) "N",n,n,ng,
-      //            rtwo,
-      //            &psi1[shift0],ng,
-      //            &psi2[shift0],ng,
-      //            rzero,
-      //            &hml[mshift0],n);
-      if (ng0 > 0)
-        DGEMM_PWDFT((char *)"T", (char *)"N", n, n, ng0, rmone, &psi1[shift0],
-                    ng, &psi2[shift0], ng, rone, &hml[mshift0], n);
-      shift0 += ng * ne[0];
-      mshift0 += ne[0] * ne[0];
-    }
-    d3db::parall->Vector_SumAll(1, nn, hml);
-  }
+void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml) 
+{
+   nwpw_timing_function ftimer(15);
+   int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
+ 
+   int one = 1;
+   int ng = 2 * PGrid::npack(1);
+   int ng0 = 2 * PGrid::nzero(1);
+ 
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+ 
+   if (parallelized) 
+   {
+     std::ostringstream msg;
+     msg << "NWPW Error: ffm_sym_Multiply() parallelized is NOT supported\n"
+         << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+     throw(std::runtime_error(msg.str()));
+   } 
+   else 
+   {
+      if (mb == -1) 
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = ne[0] * ne[0];
+         nn = ne[0] * ne[0] + ne[1] * ne[1];
+         shift0 = 0;
+         mshift0 = 0;
+      } 
+      else 
+      {
+         ms1 = mb;
+         ms2 = mb + 1;
+         ishift2 = 0;
+         nn = ne[mb] * ne[mb];
+         shift0 = mb * ne[0] * ng;
+         mshift0 = 0;
+      }
+      for (ms = ms1; ms < ms2; ++ms) 
+      {
+         n = ne[ms];
+         d3db::mygdevice.TN1_dgemm(ng,n,rtwo,&psi1[shift0],&psi2[shift0],rzero,&hml[mshift0]);
+        
+         if (ng0 > 0)
+            DGEMM_PWDFT((char *)"T", (char *)"N", n, n, ng0, rmone, &psi1[shift0],
+                        ng, &psi2[shift0], ng, rone, &hml[mshift0], n);
+         shift0 += ng * ne[0];
+         mshift0 += ne[0] * ne[0];
+      }
+      d3db::parall->Vector_SumAll(1, nn, hml);
+   }
 }
 
 /*************************************
@@ -840,8 +978,8 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    nwpw_timing_function ftimer(15);
    int ms1, ms2, ishift2, n, shift0, shift1, mshift0, mshift1, nn;
    int one = 1;
-   int ng  = 2*PGrid::npack(1);
-   int ng0 = 2*PGrid::nzero(1);
+   int npack1 = 2*PGrid::npack(1);
+   int ng0    = 2*PGrid::nzero(1);
  
    double rzero = 0.0;
    double rtwo = 2.0;
@@ -850,10 +988,10 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
  
    if (parallelized) 
    {
-      std::ostringstream msg;
-      msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
-          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-      throw(std::runtime_error(msg.str()));
+      //std::ostringstream msg;
+      //msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
+      //    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      //throw(std::runtime_error(msg.str()));
       if (mb==-1)
       {
          ms1 = 0;
@@ -869,7 +1007,63 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
          nn = mcqmax[mb]*ncqmax[mb];
       }
 
+      auto taskid_i = d1db::parall->taskid_i();
+      auto taskid_j = d1db::parall->taskid_j();
+      auto ishift2 = mcq[0]*ncq[0];
 
+      //s11
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s11,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s11);
+      d1db::parall->Vector_SumAll(0,mall[0],s11);
+
+      //s21
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi2+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s21,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s21);
+      d1db::parall->Vector_SumAll(0,mall[0],s21);
+
+      //s22
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi2+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s22,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s22);
+      d1db::parall->Vector_SumAll(0,mall[0],s22);
    } 
    else 
    {
@@ -888,14 +1082,15 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
          ms2 = mb + 1;
          ishift2 = 0;
          nn = ne[mb]*ne[mb];
-         shift0 = mb*ne[0]*ng;
+         //shift0 = mb*ne[0]*ng;
+         shift0 = mb*ne[0]*npack1;
          mshift0 = 0;
       }
       for (auto ms=ms1; ms<ms2; ++ms) 
       {
          n = ne[ms];
         
-         d3db::mygdevice.TN3_dgemm(ng,n,rtwo,psi1+shift0,psi2+shift0,rzero,s11+mshift0,s21+mshift0,s22+mshift0);
+         d3db::mygdevice.TN3_dgemm(npack1,n,rtwo,psi1+shift0,psi2+shift0,rzero,s11+mshift0,s21+mshift0,s22+mshift0);
         
          if (ng0 > 0) 
          {
@@ -904,21 +1099,21 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
             for (auto k=1; k<=n; ++k) 
             {
                DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                           psi1+shift0,ng, 
-                           psi1+shift1,ng, 
+                           psi1+shift0,npack1, 
+                           psi1+shift1,npack1, 
                            rone, 
                            s11+mshift1,k);
                DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                           psi1+shift0,ng, 
-                           psi2+shift1,ng, 
+                           psi1+shift0,npack1, 
+                           psi2+shift1,npack1, 
                            rone, 
                            s21+mshift1,k);
                DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
-                           psi2+shift0,ng, 
-                           psi2+shift1,ng, 
+                           psi2+shift0,npack1, 
+                           psi2+shift1,npack1, 
                            rone, 
                            s22+mshift1,k);
-               shift1  += ng;
+               shift1  += npack1;
                mshift1 += n;
             }
          }
@@ -933,7 +1128,7 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
             }
          }
         
-         shift0  += ng*ne[0];
+         shift0  += npack1*ne[0];
          mshift0 += ne[0]*ne[0];
       }
       d3db::parall->Vector_SumAll(1, nn, s11);
@@ -948,6 +1143,21 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
  *      Pneb::ffm4_sym_Multiply      *
  *                                   *
  *************************************/
+/**
+ * @brief Multiply two sets of wave functions with symmetry consideration.
+ *
+ * This function multiplies two sets of wave functions `psi1` and `psi2` with symmetry consideration and stores the result in the `s11`, `s21`, `s12`, and `s22` matrices. The function is parallelized for performance improvements.
+ *
+ * @param mb An integer specifying the band index. If `mb` is -1, the function operates on all bands.
+ * @param psi1 A pointer to the first set of wave functions.
+ * @param psi2 A pointer to the second set of wave functions.
+ * @param s11 A pointer to the resulting matrix for symmetry operation 11.
+ * @param s21 A pointer to the resulting matrix for symmetry operation 21.
+ * @param s12 A pointer to the resulting matrix for symmetry operation 12.
+ * @param s22 A pointer to the resulting matrix for symmetry operation 22.
+ *
+ * @note This function performs matrix multiplication of `psi1` and `psi2` with symmetry consideration and stores the results in four different matrices `s11`, `s21`, `s12`, and `s22`. The matrices should be pre-allocated with sufficient memory. Parallelization is applied for improved performance.
+ */
 void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
                              double *s11, double *s21, double *s12, double *s22) 
 {
@@ -967,6 +1177,8 @@ void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
      msg << "NWPW Error: ffm4_sym_Multiply() parallelized is NOT supported\n"
          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
      throw(std::runtime_error(msg.str()));
+
+
    } else {
      if (mb == -1) {
        ms1 = 0;
@@ -1030,47 +1242,115 @@ void Pneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
    }
 }
 
+/*************************************
+ *                                   *
+ *        Pneb::fmf_Multiply         *
+ *                                   *
+ *************************************/
+/**
+ * @brief Multiply wave functions with a Hermitian matrix and scaling.
+ *
+ * This function multiplies a set of wave functions `psi1` with a Hermitian matrix `hml` and scales the result by `alpha`, then adds it to another set of wave functions `psi2` scaled by `beta`. The function is parallelized for performance improvements.
+ *
+ * @param mb An integer specifying the band index. If `mb` is -1, the function operates on all bands.
+ * @param psi1 A pointer to the first set of wave functions.
+ * @param hml A pointer to the Hermitian matrix.
+ * @param alpha A scaling factor for the multiplication of `psi1` with `hml`.
+ * @param psi2 A pointer to the second set of wave functions.
+ * @param beta A scaling factor for the addition of the result to `psi2`.
+ *
+ * @note This function performs the multiplication of `psi1` with the Hermitian matrix `hml`, scales the result by `alpha`, and then adds it to `psi2` scaled by `beta`. The matrices and vectors should be pre-allocated with sufficient memory. Parallelization is applied for improved performance.
+ */
 void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
-                        double *psi2, double beta) {
-  nwpw_timing_function ftimer(16);
-  int ms, ms1, ms2, n, shift1, mshift1, ishift2;
-  int ng = 2 * PGrid::npack(1);
+                        double *psi2, double beta) 
+{
+   nwpw_timing_function ftimer(16);
+   int ms, ms1, ms2, n, nn,shift1, mshift1, ishift2,ishift3;
+   int npack1 = 2 * PGrid::npack(1);
 
-  if (parallelized) {
-    std::ostringstream msg;
-    msg << "NWPW Error: fmf_Multiply() parallelized is NOT supported\n"
-        << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
-    throw(std::runtime_error(msg.str()));
-  } else {
-    if (mb == -1) {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
-      shift1 = 0;
-      mshift1 = 0;
-    } else {
-      ms1 = mb;
-      ms2 = mb + 1;
-      ishift2 = 0;
-      shift1 = mb * ne[0] * ng;
-      mshift1 = 0;
-    }
-    for (ms = ms1; ms < ms2; ++ms) {
-      n = ne[ms];
+   if (parallelized) 
+   {
+      if (mb==-1)
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = mcq[0]*ncq[0];
+         ishift3 = ne[0]*ne[0];
+         nn = mcqmax[0]*ncqmax[0]+mcqmax[1]*ncqmax[1];
+      }
+      else
+      {
+         ms1 = mb;
+         ms2 = mb+1;
+         ishift2 = 0;
+         ishift3 = 0;
+         nn = mcqmax[mb]*ncqmax[mb];
+      }
+      auto taskid_i = d1db::parall->taskid_i();
+      auto taskid_j = d1db::parall->taskid_j();
 
-      // DGEMM_PWDFT((char *) "N",(char *) "N",ng,n,n,
-      //	     alpha,
-      //	     &psi1[shift1],ng,
-      //	     &hml[mshift1],n,
-      //	     beta,
-      //	     &psi2[shift1],ng);
-      d3db::mygdevice.NN_dgemm(ng, n, alpha, &psi1[shift1], &hml[mshift1], beta,
-                               &psi2[shift1]);
-
-      shift1 += ne[0] * ng;
-      mshift1 += ishift2;
-    }
-  }
+      std::cout << "hml= [" << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12] << ";" << std::endl 
+                << "      " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13] << ";" << std::endl 
+                << "      " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14] << ";" << std::endl 
+                << "      " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15] << "]" << std::endl;
+      std::cout << "alpha=" << alpha << " beta=" << beta << std::endl;
+      std::cout << "mb=" << mb << " ms1=" << ms1 << " ms2=" << ms2 << std::endl;
+      std::cout << "ishift2=" << ishift2 << std::endl;
+      std::cout << "ne=" << ne[0] << " " << ne[1] << " npack1_all=" << npack1_all << std::endl;
+      std::cout << "mcq=" << mcq[0] << " " << mcq[1] 
+                << " mc=" << mc[0][0] 
+                << " nc=" << nc[0][0] << " " << nc[0][1] << " " << nc[0][2] << " " << nc[0][3] << std::endl;
+ 
+      for (auto ms=ms1; ms<ms2; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift3 = ms*ishift3;
+            d1db::DMatrix_dgemm1_rot2(d1db::parall, &mygdevice,
+                          npack1_all,ne[ms],ne[ms],128,
+                          alpha,
+                          psi1+shift0,ma[ms][taskid_i],ma[ms],na[ms],
+                          hml+shift3,mcq[ms],mc[ms],nc[ms],
+                          beta,
+                          psi2+shift0,ma[ms][taskid_i],ma[ms],na[ms],
+                          bcolwork,bwork2,work1,work2);
+         }
+      }
+   } 
+   else 
+   {
+      std::cout << "hml0= [" << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12] << ";" << std::endl 
+                << "       " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13] << ";" << std::endl 
+                << "       " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14] << ";" << std::endl 
+                << "       " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15] << "]" << std::endl;
+      std::cout << "alpha=" << alpha << " beta=" << beta << std::endl;
+      std::cout << "mb=" << mb << " ms1=" << ms1 << " ms2=" << ms2 << std::endl;
+      if (mb == -1) 
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = ne[0]*ne[0];
+         shift1 = 0;
+         mshift1 = 0;
+      } 
+      else 
+      {
+         ms1 = mb;
+         ms2 = mb + 1;
+         ishift2 = 0;
+         shift1 = mb * ne[0]*npack1;
+         mshift1 = 0;
+      }
+      for (ms=ms1; ms<ms2; ++ms) 
+      {
+         n = ne[ms];
+        
+         d3db::mygdevice.NN_dgemm(npack1, n, alpha, &psi1[shift1], &hml[mshift1], beta, &psi2[shift1]);
+         shift1 += ne[0]*npack1;
+         mshift1 += ishift2;
+      }
+   }
 }
 
 void Pneb::ggm_SVD(double *A, double *U, double *S, double *V) {
@@ -1473,68 +1753,70 @@ void Pneb::mm_Kiril_Btransform(const int mb, double *a, double *b) {
 #define CONVGLMD2 1e-12
 
 // Lagrange multiplier (expensive method)
-void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda) {
-  nwpw_timing_function ftimer(3);
-
-  int one = 1;
-  double rmone = -1.0;
-  double adiff = 0.0;
-
-  for (int ms = 0; ms < ispin; ++ms) {
-
-    int nn = m_size(ms);
-
-    ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
-    m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
-
-    int jj;
-    int ii = 0;
-    int done = 0;
-
-    // DCOPY_PWDFT(nn, s21, one, s12, one);
-    // DCOPY_PWDFT(nn, s22, one, sa0, one);
-    std::memcpy(s12, s21, nn * sizeof(double));
-    std::memcpy(sa0, s22, nn * sizeof(double));
-
-    while ((!done) && ((ii++) < ITERLMD)) {
-      // DCOPY_PWDFT(nn, s22, one, sa1, one);
-      std::memcpy(sa1, s22, nn * sizeof(double));
-
-      // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
-      // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
-      // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
-      // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
-      d3db::mygdevice.MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
-
-      // DCOPY_PWDFT(nn, sa1, one, st1, one);
-      std::memcpy(st1, sa1, nn * sizeof(double));
-      DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
-      jj = IDAMAX_PWDFT(nn, st1, one);
-      adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
-
-      if (adiff < CONVGLMD)
-        done = 1;
-      else
-        std::memcpy(sa0, sa1,
-                    nn *
-                        sizeof(double)); // DCOPY_PWDFT(nn, sa1, one, sa0, one);
-    }
-    // printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d
-    // done=%d\n",nn,jj,adiff,ii,done);
-
-    if (adiff > CONVGLMD2) {
-      if (!done)
-        printf("ierr=10 adiff=%le\n", adiff);
-    }
-
-    // DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
-    std::memcpy(&lmbda[ms * ne[0] * ne[0]], sa1, nn * sizeof(double));
-    // std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
-
-  } // for loop - ms
-
-  /* correction due to contraint */
-  fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
+void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda) 
+{
+   nwpw_timing_function ftimer(3);
+ 
+   int one = 1;
+   double rmone = -1.0;
+   double adiff = 0.0;
+ 
+   for (int ms = 0; ms < ispin; ++ms) {
+ 
+     int nn = m_size(ms);
+ 
+     ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
+     m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
+ 
+     int jj;
+     int ii = 0;
+     int done = 0;
+ 
+     // DCOPY_PWDFT(nn, s21, one, s12, one);
+     // DCOPY_PWDFT(nn, s22, one, sa0, one);
+     std::memcpy(s12, s21, nn * sizeof(double));
+     std::memcpy(sa0, s22, nn * sizeof(double));
+ 
+     while ((!done) && ((ii++) < ITERLMD)) {
+       // DCOPY_PWDFT(nn, s22, one, sa1, one);
+       std::memcpy(sa1, s22, nn * sizeof(double));
+ 
+       // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
+       // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
+       // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
+       // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
+       d3db::mygdevice.MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
+ 
+       // DCOPY_PWDFT(nn, sa1, one, st1, one);
+       std::memcpy(st1, sa1, nn * sizeof(double));
+       DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+       jj = IDAMAX_PWDFT(nn, st1, one);
+       adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
+ 
+       if (adiff < CONVGLMD)
+         done = 1;
+       else
+         std::memcpy(sa0, sa1,
+                     nn *
+                         sizeof(double)); // DCOPY_PWDFT(nn, sa1, one, sa0, one);
+     }
+     // printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d
+     // done=%d\n",nn,jj,adiff,ii,done);
+ 
+     if (adiff > CONVGLMD2) {
+       if (!done)
+         printf("ierr=10 adiff=%le\n", adiff);
+     }
+ 
+     // DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
+     std::memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+     // std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
+ 
+   } // for loop - ms
+ 
+   /* correction due to contraint */
+   std::cout << "into fmf_Multiply" << std::endl;
+   fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
 }
 
 /********************************

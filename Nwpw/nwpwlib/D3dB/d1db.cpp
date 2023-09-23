@@ -24,6 +24,45 @@
 
 namespace pwdft {
 
+/***********************************
+ *                                 *
+ *       DMatrix_start_rot         *
+ *                                 *
+ ***********************************/
+static void DMatrix_start_rot(Parallel *parall,
+                             int j,
+                             double *A, double *W, int lda, int *na,
+                             const int rqst_indx)
+{
+   auto taskid_j = parall->taskid_j();
+   auto np_j = parall->np_j();
+
+   auto proc_to   = (taskid_j+j) % np_j;
+   auto proc_from = (taskid_j-j+np_j) % np_j;
+   auto msgtype   = j;
+   auto amsglen = lda*na[taskid_j];
+   auto wmsglen = lda*na[proc_from];
+
+   if (wmsglen>0)
+       parall->a2dreceive(rqst_indx,msgtype,proc_from,wmsglen,W);
+
+   if (amsglen>0)
+      parall->a2dsend(rqst_indx,msgtype,proc_to,amsglen,A);
+}
+
+/***********************************
+ *                                 *
+ *        DMatrix_end_rot          *
+ *                                 *
+ ***********************************/
+static void DMatrix_end_rot(Parallel *parall, const int request_indx)
+{
+    parall->awaitall(request_indx);
+}
+
+
+
+
 /********************************
  *                              *
  *         Constructors         *
@@ -34,6 +73,15 @@ d1db::d1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne
      : Mapping1(inmaptype, inparall->np_j(), inparall->taskid_j(), inispin, inne) 
 {
   parall = inparall;
+
+  auto np_j = parall->np_j();
+  if (np_j>1)
+  {
+     request1_indx = parall->max_reqstat-2;
+     request2_indx = parall->max_reqstat-1;
+     parall->astart(request1_indx,2*np_j+2);
+     parall->astart(request2_indx,2*np_j+2);
+  }
 }
 
 
@@ -508,6 +556,193 @@ void d1db::DMatrix_dgemm2c(Parallel *parall,
       }
 
    }
+}
+
+/***********************************
+ *                                 *
+ *         DMatrix_dgemm1_rot2     *
+ *                                 *
+ ***********************************/
+
+void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
+                          gdevice2 *mygdevice,
+                          int m, int n, int k, int nblock,
+                          double alpha,
+                          double *A, int lda, int *ma, int *na,
+                          double *B, int ldb, int *mb, int *nb,
+                          double beta,
+                          double *C, int ldc, int *mc, int *nc,
+                          double *Bcol, double *Bwork, double  *work1, double *work2)
+{
+
+   std::cout << "lda=" << lda << " ldb=" << ldb << " ldc=" << ldc << std::endl;
+   std::cout << "mc=" << mc[0] << " nc=" << nc[0] << " " << nc[1] << " " << nc[2] << " " << nc[3] << std::endl;
+
+   auto taskid = parall->taskid();
+   auto taskid_i = parall->taskid_i();
+   auto taskid_j = parall->taskid_j();
+   auto np_i = parall->np_i();
+   auto np_j = parall->np_j();
+
+   int jcur=0;
+   double rone=1.0;
+   double rzero=0.0;
+
+
+   int iwrk;
+   int ii = 0;
+   int bshift = 0;
+   int bshift2[np_j+1]; bshift2[0] = 0;
+
+   //collect B into columns
+   for (auto jj=1; jj<=np_j; ++jj)
+   {
+      bshift     += na[jj-1]*nb[taskid_j];
+      bshift2[jj] = bshift;
+   }
+   std::cout << "BSHIFT2=" << bshift2[0] << " " 
+                           << bshift2[1] << " " 
+                           << bshift2[2] << " " 
+                           << bshift2[3] << " " 
+                           << bshift2[4] << std::endl;
+
+   int ne0 = 0;
+   for (auto i=0; i<np_i; ++i) 
+      ne0 += mb[i];
+
+   int j1 = 0;
+   for (auto jj=0; jj<taskid_j; ++jj)
+      j1 += nb[jj];
+   //std::cout << "TASKID_J=" << taskid_j << " ne0=" << ne0 << " j1=" << j1 << std::endl;
+
+
+   bshift = 0;
+   int iwrk2 = nb[taskid_j];
+   ii = 0;
+   for (jcur=0; jcur<np_j; ++jcur)
+   {
+      iwrk = na[jcur];
+      for (auto j=0; j<iwrk2; ++j)
+      for (auto i=0; i<iwrk;  ++i)
+      {
+         Bwork[bshift+i+j*iwrk] = B[ii+i+(j+j1)*ne0];
+      }
+      bshift += iwrk*iwrk2;
+      ii     += iwrk;
+   }
+   //std::cout << "IWRK=" << iwrk << " NA=" << na[0] << " " << na[1] << " " << na[2] << " " << na[3] << std::endl;
+
+
+   //C = beta*C
+   int one=1;
+   int nn=(nc[taskid_j]*mc[taskid_i]);
+   DSCAL_PWDFT(nn,beta,C,one);
+
+   DMatrix_start_rot(parall,1,A,work1,lda,na,request1_indx);
+
+   jcur = taskid_j;
+   iwrk = na[jcur];
+   //std::cout << "     --A--taskid=" << taskid << " jcur=" << jcur << " iwrk=" << iwrk << " " << bshift2[jcur] << std::endl;
+
+   if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+   {
+      std::cout << "     xxxx M1: " << taskid_i << " " << taskid_j 
+                << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " "<< iwrk 
+                << " jcur=" << jcur << " Bwork1=" << Bwork[bshift2[jcur]] << std::endl;
+      mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           A,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+   }
+
+   bool jeven = true;
+   for (auto j=2; j<(np_j); ++j)
+   {
+       if (jeven)
+       {
+          jeven = false;
+          jcur = (jcur-1+np_j) % np_j;
+          iwrk = na[jcur];
+          DMatrix_end_rot(parall,request1_indx);
+          DMatrix_start_rot(parall,j,A,work2,lda,na,request2_indx);
+          if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+          {
+             std::cout << "     xxxx M2: " << taskid_i << " " << taskid_j 
+                       << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
+                       << " jcur=" << jcur << " Bwork2=" << Bwork[bshift2[jcur]] << " j=" << j << " jeven" << std::endl;
+             mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                                  alpha,
+                                  work1,lda,
+                                  Bwork+bshift2[jcur],iwrk,
+                                  rone,
+                                  C,ldc);
+          }
+       }
+       else
+       {
+          jeven = true;
+          jcur = (jcur-1+np_j) % np_j;
+          iwrk = na[jcur];
+          DMatrix_end_rot(parall,request2_indx);
+          DMatrix_start_rot(parall,j,A,work1,lda,na,request1_indx);
+          if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+          {
+             std::cout << "     xxxx M3: " << taskid_i << " " << taskid_j 
+                       << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
+                       << " jcur=" << jcur << " Bwork3=" << Bwork[bshift2[jcur]] << " j=" << j << " jodd" << std::endl;
+             mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                                  alpha,
+                                  work2,lda,
+                                  Bwork+bshift2[jcur],iwrk,
+                                  rone,
+                                  C,ldc);
+          }
+       }
+   //std::cout << "     --B--taskid=" << taskid << " j=" << j << " jeven=" << jeven << " jcur=" << jcur << std::endl;
+
+   }
+
+   if (jeven)
+   {
+      jcur = (jcur-1+np_j) % np_j;
+      iwrk = na[jcur];
+      DMatrix_end_rot(parall,request1_indx);
+      if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+      {
+          std::cout << "     xxxx M4: " << taskid_i << " " << taskid_j 
+                    << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
+                       << " jcur=" << jcur << " Bwork4=" << Bwork[bshift2[jcur]] << " jeven" << std::endl;
+         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                              alpha,
+                              work1,lda,
+                              Bwork+bshift2[jcur],iwrk,
+                              rone,
+                              C,ldc);
+      }
+   }
+   else
+   {
+      jcur = (jcur-1+np_j) % np_j;
+      iwrk = na[jcur];
+      DMatrix_end_rot(parall,request1_indx);
+      if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
+      {
+          std::cout << "     xxxx M5: " << taskid_i << " " << taskid_j 
+                    << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " "<< iwrk 
+                    << " jcur=" << jcur << " Bwork5=" << Bwork[bshift2[jcur]] << " jodd" << std::endl;
+         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                              alpha,
+                              work2,lda,
+                              Bwork+bshift2[jcur],iwrk,
+                              rone,
+                              C,ldc);
+      }
+   }
+   std::cout << "     --C--taskid=" << taskid << " jcur=" << jcur << " jeven=" << jeven << std::endl;
+
+
 }
 
 

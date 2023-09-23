@@ -550,7 +550,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    /* initialize async buffer data for pfft */
    for (auto q=0; q<aqmax; ++q)
-      parall->astart(3+q, 2*parall->np_i()+1);
+      parall->astart(4+q, 2*parall->np_i()+1);
 
 }
 
@@ -2158,9 +2158,9 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
     shift1 = n2ft3d*(2*indx);
     shift2 = n2ft3d*(2*indx + 1);
     if (staged_gpu_fft_pipeline)
-       pfftb_step12(status, nb, a, atmp+shift1, atmp+shift2, indx+3,indx);
+       pfftb_step12(status, nb, a, atmp+shift1, atmp+shift2, indx+4,indx);
     else
-       pfftb_step(status, nb, a, atmp + shift1, atmp + shift2, indx + 3);
+       pfftb_step(status, nb, a, atmp+shift1, atmp+shift2, indx+4);
     ++aqstatus[indx];
   }
 
@@ -2176,9 +2176,9 @@ void PGrid::cr_pfft3b_queuein(const int nb, double *a) {
   shift2 = n2ft3d*(2*alast_index+1);
 
   if (staged_gpu_fft_pipeline)
-     pfftb_step12(0,nb,a,atmp+shift1,atmp+shift2, alast_index+3,alast_index);
+     pfftb_step12(0,nb,a,atmp+shift1,atmp+shift2, alast_index+4,alast_index);
   else
-     pfftb_step(0, nb, a, atmp + shift1, atmp + shift2, alast_index + 3);
+     pfftb_step(0, nb, a, atmp+shift1, atmp+shift2, alast_index+4);
 }
 
 /********************************
@@ -2199,9 +2199,9 @@ void PGrid::cr_pfft3b_queueout(const int nb, double *a) {
       shift1 = n2ft3d * (2*indx);
       shift2 = n2ft3d * (2*indx+1);
       if (staged_gpu_fft_pipeline)
-         pfftb_step12(status,nb,a,atmp+shift1,atmp+shift2,indx+3,indx);
+         pfftb_step12(status,nb,a,atmp+shift1,atmp+shift2,indx+4,indx);
       else
-         pfftb_step(status,nb,a,atmp+shift1,atmp+shift2,indx+3);
+         pfftb_step(status,nb,a,atmp+shift1,atmp+shift2,indx+4);
       ++aqstatus[indx];
     }
   }
@@ -2964,9 +2964,9 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *b) {
      shift1 = n2ft3d * (2*indx);
      shift2 = n2ft3d * (2*indx + 1);
      if (staged_gpu_fft_pipeline)
-        pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx + 3,indx);
+        pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx+4,indx);
      else
-        pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
+        pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx+4);
      ++bqstatus[indx];
   }
 
@@ -2982,9 +2982,9 @@ void PGrid::rc_pfft3f_queuein(const int nb, double *b) {
   shift2 = n2ft3d * (2*blast_index + 1);
 
   if (staged_gpu_fft_pipeline)
-     pfftf_step10(0, nb, b, btmp + shift1, btmp + shift2, blast_index + 3,blast_index);
+     pfftf_step10(0, nb, b, btmp + shift1, btmp + shift2, blast_index+4,blast_index);
   else
-     pfftf_step(0, nb, b, btmp + shift1, btmp + shift2, blast_index + 3);
+     pfftf_step(0, nb, b, btmp + shift1, btmp + shift2, blast_index+4);
 }
 
 /********************************
@@ -3005,9 +3005,9 @@ void PGrid::rc_pfft3f_queueout(const int nb, double *b) {
       shift1 = n2ft3d * (2*indx);
       shift2 = n2ft3d * (2*indx + 1);
       if (staged_gpu_fft_pipeline)
-         pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx + 3,indx);
+         pfftf_step10(status, nb, b, btmp + shift1, btmp + shift2, indx+4,indx);
       else
-         pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx + 3);
+         pfftf_step(status, nb, b, btmp + shift1, btmp + shift2, indx+4);
       ++bqstatus[indx];
     }
   }

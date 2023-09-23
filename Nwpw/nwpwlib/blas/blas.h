@@ -62,7 +62,7 @@ extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
 #define DAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
   daxpy_(&(n), &(alpha), a, &(ida), b, &(idb))
 #define DGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
-  dgemm_(s1, s2, &(n), &(m), &(k), &(alpha), a, &(ida), b, &(idb), &(beta), c, \
+  dgemm_(s1, s2, &(n), &(m), &(k), &(alpha), (a), &(ida), (b), &(idb), &(beta), (c), \
          &(idc))
 
 #define IDAMAX_PWDFT(nn, hml, one) idamax_(&(nn), hml, &(one))

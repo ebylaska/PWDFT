@@ -161,21 +161,25 @@ static json parse_geometry(json geom, int *curptr,
     conv = 0.01 * angs_to_au;
 
   if (mystring_contains(mystring_lowercase(lines[cur]), "nocenter"))
-    center = 0;
+     center = 0;
   else if (mystring_contains(mystring_lowercase(lines[cur]), "center"))
-    center = 1;
+     center = 1;
+
   if (mystring_contains(mystring_lowercase(lines[cur]), "noautoz"))
-    autoz = 0;
+     autoz = 0;
   else if (mystring_contains(mystring_lowercase(lines[cur]), "autoz"))
-    autoz = 1;
+     autoz = 1;
+
   if (mystring_contains(mystring_lowercase(lines[cur]), "noautosym"))
-    autosym = 0;
+     autosym = 0;
   else if (mystring_contains(mystring_lowercase(lines[cur]), "autosym"))
-    autosym = 1;
-  else if (mystring_contains(mystring_lowercase(lines[cur]),"symmetry_tolerance"))
-    geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"symmetry_tolerance")[1]);
-  else if (mystring_contains(mystring_lowercase(lines[cur]),"sym_tolerance"))
-    geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"sym_tolerance")[1]);
+     autosym = 1;
+
+  if (mystring_contains(mystring_lowercase(lines[cur]),"symmetry_tolerance"))
+     geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"symmetry_tolerance")[1]);
+
+  if (mystring_contains(mystring_lowercase(lines[cur]),"sym_tolerance"))
+     geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"sym_tolerance")[1]);
 
 
   geomjson["conv"] = conv;
