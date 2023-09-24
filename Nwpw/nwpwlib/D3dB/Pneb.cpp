@@ -62,7 +62,8 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
          std::memset(ma[ms], 0,np_i*sizeof(int));
          std::memset(ma1[ms],0,np_i*sizeof(int));
          std::memset(ma2[ms],0,np_i*sizeof(int));
-         std::memset(mc[ms],0,np_j*sizeof(int));
+         std::memset(mc[ms], 0,np_i*sizeof(int));
+
          std::memset(na[ms],0,np_j*sizeof(int));
          std::memset(nc[ms],0,np_j*sizeof(int));
  
