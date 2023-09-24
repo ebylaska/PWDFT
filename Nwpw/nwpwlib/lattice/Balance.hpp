@@ -3,7 +3,7 @@
 
 #pragma once
 
-/* Balance.h
+/* Balance.hpp
    Author - Eric Bylaska
 
 */
@@ -13,6 +13,21 @@ namespace pwdft {
 
 #define MAXSIZE_MAX 2
 
+/**
+ * @class Balance
+ * @brief Class for load balancing in parallel computing.
+ *
+ * The `Balance` class provides load balancing capabilities for parallel computations within
+ * the parallel computing framework. It includes methods for load balancing, unbalancing, and
+ * other related operations.
+ *
+ * @author Eric Bylaska
+ * @date 2023-09-20
+ *
+ * @note Detailed function descriptions and implementation can be found in corresponding source files.
+ *
+ * @see Parallel.hpp
+ */
 class Balance {
 
   Parallel *parall;
