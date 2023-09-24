@@ -3,7 +3,7 @@
 
 #pragma once
 
-/* hilbert.h -
+/* hilbert.hpp -
    Author - Eric Bylaska
 */
 

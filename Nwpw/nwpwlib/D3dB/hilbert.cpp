@@ -19,8 +19,62 @@ namespace pwdft {
 #define up 2
 #define down 3
 
+
+/***********************************
+ *                                 *
+ *              parent             *
+ *                                 *
+ ***********************************/
+/**
+ * @brief Calculate the parent node of a binary tree given a node index.
+ *
+ * This function calculates and returns the index of the parent node of a node
+ * in a binary tree. It divides the given node index by 2 to find the parent
+ * node index.
+ *
+ * @param i  The index of the node for which the parent node is calculated.
+ * @return   The index of the parent node.
+ */
 int parent(int i) { return (i / 2); }
+
+
+/***********************************
+ *                                 *
+ *              corner             *
+ *                                 *
+ ***********************************/
+/**
+ * @brief Determine the corner type of a cell or grid element.
+ *
+ * This function calculates and returns an integer representing the corner type
+ * of a cell or grid element based on its row and column indices.
+ *
+ * @param i  The row index of the cell or grid element.
+ * @param j  The column index of the cell or grid element.
+ * @return   An integer representing the corner type.
+ */
 int corner(int i, int j) { return (2 * (j % 2) + (i % 2)); }
+
+
+/***********************************
+ *                                 *
+ *          hilbert_dir            *
+ *                                 *
+ ***********************************/
+/**
+ * @brief Calculate the direction of a point in a Hilbert curve.
+ *
+ * This function calculates the direction of a point in a Hilbert curve based on
+ * its coordinates (i, j), the current recursion level (level), and the highest
+ * level (high). It also updates the starting position (start) of the curve segment.
+ *
+ * @param i       The x-coordinate of the point.
+ * @param j       The y-coordinate of the point.
+ * @param level   The current recursion level.
+ * @param high    The highest recursion level.
+ * @param start   Pointer to the starting position, which is updated by the function.
+ * @return        The direction of the point in the Hilbert curve (e.g., up, down, left, right).
+ */
 int hilbert_dir(int i, int j, int level, int high, int *start) {
   int direction, parent_direction, crnr, length, count;
 
@@ -115,12 +169,48 @@ int hilbert_dir(int i, int j, int level, int high, int *start) {
   return direction;
 }
 
+
+/***********************************
+ *                                 *
+ *            hilbert2d            *
+ *                                 *
+ ***********************************/
+/**
+ * @brief Compute the starting position of a Hilbert curve traversal in 2D.
+ *
+ * This function calculates the starting position of a Hilbert curve traversal
+ * in a 2D grid based on the given coordinates (`i`, `j`) and the level of the
+ * Hilbert curve.
+ *
+ * @param i      The x-coordinate in the grid.
+ * @param j      The y-coordinate in the grid.
+ * @param level  The level of the Hilbert curve.
+ * @return       The starting position of the Hilbert curve traversal.
+ */
 int hilbert2d(int i, int j, int level) {
   int start, direction;
   direction = hilbert_dir(i, j, level, level, &start);
   return start;
 }
 
+
+/***********************************
+ *                                 *
+ *         hilbert2d_map           *
+ *                                 *
+ ***********************************/
+/**
+ * @brief Generate a Hilbert curve-based mapping for a 2D grid.
+ *
+ * This function generates a Hilbert curve-based mapping for a 2D grid of size
+ * `sizex` by `sizey`. The resulting mapping is stored in the `map` array, where
+ * each element corresponds to a cell in the original grid, and it represents
+ * the order of the cell in the Hilbert curve traversal.
+ *
+ * @param sizex The size of the grid in the x-direction.
+ * @param sizey The size of the grid in the y-direction.
+ * @param map   An array to store the Hilbert curve-based mapping.
+ */
 void hilbert2d_map(const int sizex, const int sizey, int *map) {
   int i, j, size;
   int ii, jj, iii, jjj;

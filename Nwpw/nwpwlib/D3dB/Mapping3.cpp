@@ -1,8 +1,13 @@
-/* Mapping3.C
+/* Mapping3.cpp
    Author - Eric Bylaska
 
         this class is used for defining 3d parallel maps
 */
+
+/**
+ * @class Mapping3
+ * @brief Class for defining 3D parallel maps.
+ */
 
 /*
 #include        <cmath>
@@ -22,49 +27,65 @@ namespace pwdft {
  *        generate_map_indexes     *
  *                                 *
  ***********************************/
-static int generate_map_indexes(int taskid, int np, int ny, int nz, int *pmap,
-                                int *qmap) {
-  int nq, q, p;
-  int *indx_proc;
-  int *indx_q;
-  int nq1 = (ny * nz) / np;
-  int rmdr1 = (ny * nz) % np;
-  int nq2 = nq1;
-
-  indx_proc = new (std::nothrow) int[ny * nz]();
-  indx_q = new (std::nothrow) int[ny * nz]();
-
-  if (rmdr1 > 0)
-    ++nq2;
-  nq = 0;
-  p = 0;
-  q = 0;
-  for (int i = 0; i < (ny * nz); ++i) {
-    indx_proc[i] = p;
-    indx_q[i] = q;
-    if (taskid == p)
-      ++nq;
-    ++q;
-    if (q >= nq2) {
-      q = 0;
-      ++p;
-      p = p % np;
-      if (p >= rmdr1)
-        nq2 = nq1;
-    }
-  }
-
-  for (int k = 0; k < nz; ++k)
-    for (int j = 0; j < ny; ++j) {
-      p = indx_proc[pmap[j + k * ny]];
-      q = indx_q[pmap[j + k * ny]];
-      pmap[j + k * ny] = p;
-      qmap[j + k * ny] = q;
-    }
-  delete[] indx_proc;
-  delete[] indx_q;
-
-  return nq;
+/**
+ * @brief Generate mapping indexes for parallel tasks.
+ *
+ * This function generates mapping indexes for parallel tasks based on the specified
+ * parameters. It assigns processor IDs and task IDs (P-map and Q-map) to grid
+ * points in a distributed manner, allowing for load balancing among processes.
+ *
+ * @param taskid The ID of the current task.
+ * @param np The total number of parallel processes.
+ * @param ny The size of the Y dimension of the grid.
+ * @param nz The size of the Z dimension of the grid.
+ * @param pmap An array to store the processor IDs (P-map) for each grid point.
+ * @param qmap An array to store the task IDs (Q-map) for each grid point.
+ *
+ * @return The number of grid points assigned to the current task (taskid).
+ */
+static int generate_map_indexes(int taskid, int np, int ny, int nz, int *pmap, int *qmap) 
+{
+   int nq, q, p;
+   int *indx_proc;
+   int *indx_q;
+   int nq1 = (ny * nz) / np;
+   int rmdr1 = (ny * nz) % np;
+   int nq2 = nq1;
+ 
+   indx_proc = new (std::nothrow) int[ny * nz]();
+   indx_q = new (std::nothrow) int[ny * nz]();
+ 
+   if (rmdr1 > 0)
+     ++nq2;
+   nq = 0;
+   p = 0;
+   q = 0;
+   for (int i = 0; i < (ny * nz); ++i) {
+     indx_proc[i] = p;
+     indx_q[i] = q;
+     if (taskid == p)
+       ++nq;
+     ++q;
+     if (q >= nq2) {
+       q = 0;
+       ++p;
+       p = p % np;
+       if (p >= rmdr1)
+         nq2 = nq1;
+     }
+   }
+ 
+   for (int k = 0; k < nz; ++k)
+     for (int j = 0; j < ny; ++j) {
+       p = indx_proc[pmap[j + k * ny]];
+       q = indx_q[pmap[j + k * ny]];
+       pmap[j + k * ny] = p;
+       qmap[j + k * ny] = q;
+     }
+   delete[] indx_proc;
+   delete[] indx_q;
+ 
+   return nq;
 }
 
 /***********************************
@@ -76,36 +97,51 @@ static int generate_map_indexes(int taskid, int np, int ny, int nz, int *pmap,
 // integer qmap_in(ny,nz)
 // integer pmap_out(2*ny,2*nz)
 // integer qmap_out(2*ny,2*nz)
-
+/**
+ * @brief Expand a 2D Hilbert mapping to a larger size.
+ *
+ * This function expands a 2D Hilbert mapping defined on a smaller grid to a larger
+ * grid, effectively creating a higher-resolution mapping. It updates both the
+ * `pmap_out` and `qmap_out` arrays with the expanded mapping information.
+ *
+ * @param np The number of parallel processes.
+ * @param ny The size of the Y dimension.
+ * @param nz The size of the Z dimension.
+ * @param pmap_in The input P-map (processor mapping) for the smaller grid.
+ * @param qmap_in The input Q-map (task mapping) for the smaller grid.
+ * @param pmap_out The output P-map for the expanded grid.
+ * @param qmap_out The output Q-map for the expanded grid.
+ */
 static void expand_hilbert2d(const int np, const int ny, const int nz,
                              const int pmap_in[], const int qmap_in[],
-                             int pmap_out[], int qmap_out[]) {
-  for (auto k = 0; k < nz; ++k)
-    for (auto j = 0; j < ny; ++j) {
-      pmap_out[j + (k)*2 * ny] = pmap_in[j + k * ny];
-      pmap_out[j + ny + (k)*2 * ny] = pmap_in[j + k * ny];
-      pmap_out[j + (k + nz) * 2 * ny] = pmap_in[j + k * ny];
-      pmap_out[j + ny + (k + nz) * 2 * ny] = pmap_in[j + k * ny];
-    }
-
-  for (auto p = 0; p < np; ++p) {
-    int nqp = 0;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        if (pmap_in[j + k * ny] == p)
-          if (qmap_in[j + k * ny] > nqp)
-            nqp = qmap_in[j + k * ny];
-
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        if (pmap_in[j + k * ny] == p) {
-          qmap_out[j + (k)*2 * ny] = qmap_in[j + k * ny];
-          qmap_out[j + ny + (k)*2 * ny] = qmap_in[j + k * ny] + (nqp + 1);
-          qmap_out[j + (k + nz) * 2 * ny] = qmap_in[j + k * ny] + 2 * (nqp + 1);
-          qmap_out[j + ny + (k + nz) * 2 * ny] =
-              qmap_in[j + k * ny] + 3 * (nqp + 1);
-        }
-  }
+                             int pmap_out[], int qmap_out[]) 
+{
+   for (auto k = 0; k < nz; ++k)
+     for (auto j = 0; j < ny; ++j) {
+       pmap_out[j + (k)*2 * ny] = pmap_in[j + k * ny];
+       pmap_out[j + ny + (k)*2 * ny] = pmap_in[j + k * ny];
+       pmap_out[j + (k + nz) * 2 * ny] = pmap_in[j + k * ny];
+       pmap_out[j + ny + (k + nz) * 2 * ny] = pmap_in[j + k * ny];
+     }
+ 
+   for (auto p = 0; p < np; ++p) {
+     int nqp = 0;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         if (pmap_in[j + k * ny] == p)
+           if (qmap_in[j + k * ny] > nqp)
+             nqp = qmap_in[j + k * ny];
+ 
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         if (pmap_in[j + k * ny] == p) {
+           qmap_out[j + (k)*2 * ny] = qmap_in[j + k * ny];
+           qmap_out[j + ny + (k)*2 * ny] = qmap_in[j + k * ny] + (nqp + 1);
+           qmap_out[j + (k + nz) * 2 * ny] = qmap_in[j + k * ny] + 2 * (nqp + 1);
+           qmap_out[j + ny + (k + nz) * 2 * ny] =
+               qmap_in[j + k * ny] + 3 * (nqp + 1);
+         }
+   }
 }
 
 /********************************
@@ -113,7 +149,11 @@ static void expand_hilbert2d(const int np, const int ny, const int nz,
  *         Constructors         *
  *                              *
  ********************************/
-
+/**
+ * @brief Destructor for the Mapping3 class.
+ *
+ * This destructor releases the dynamically allocated memory for various member variables.
+ */
 Mapping3::Mapping3() {
   maptype = 0;
   n2ft3d = 0;
@@ -136,6 +176,18 @@ Mapping3::Mapping3() {
   kmap = NULL;
 }
 
+/**
+ * @brief Constructor for the Mapping3 class with parameters.
+ *
+ * This constructor initializes the `Mapping3` object with the provided parameters.
+ *
+ * @param mapin The mapping type.
+ * @param npin The number of parallel processes.
+ * @param taskidin The ID of the current task.
+ * @param nxin The size of the X dimension.
+ * @param nyin The size of the Y dimension.
+ * @param nzin The size of the Z dimension.
+ */
 Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
                    const int nxin, const int nyin, const int nzin) {
   int p, q;
@@ -293,11 +345,17 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
   }
 }
 
+
 /********************************
  *                              *
  *          Destructors         *
  *                              *
  ********************************/
+/**
+ * @brief Destructor for the Mapping3 class.
+ *
+ * This destructor releases the dynamically allocated memory for various member variables.
+ */
 Mapping3::~Mapping3() {
   for (int i = 0; i < 6; ++i) {
     if (qmap[i])
@@ -313,5 +371,6 @@ Mapping3::~Mapping3() {
     // int *h_i1_start[6],*h_i2_start[6];
   }
 }
+
 
 } // namespace pwdft
