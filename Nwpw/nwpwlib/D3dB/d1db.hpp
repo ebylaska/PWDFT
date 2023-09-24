@@ -1,6 +1,6 @@
 #ifndef _D1dB_HPP_
 #define _D1dB_HPP_
-/* d1db.h
+/* d1db.hpp
    Author - Eric Bylaska
 
   this class is container of operations for distributed 3d blocks
@@ -11,6 +11,16 @@
 #include "gdevice2.hpp"
 
 namespace pwdft {
+
+/**
+ * @class d1db
+ * @brief Container for operations on distributed 3D blocks.
+ *
+ * The `d1db` class is designed to handle operations related to distributed 3D blocks.
+ * It provides functionality for performing matrix multiplications and other mathematical
+ * operations on distributed data structures. This class is often used in conjunction
+ * with the `Parallel` and `gdevice2` classes to manage parallelism and device operations.
+ */
 
 class d1db : public Mapping1 {
 

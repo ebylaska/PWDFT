@@ -4,6 +4,16 @@
         this class is used for defining 3d parallel maps
 */
 
+/**
+ * @class d1db
+ * @brief Container for operations on distributed 3D blocks.
+ *
+ * The `d1db` class is designed to handle operations related to distributed 3D blocks.
+ * It provides functionality for performing matrix multiplications and other mathematical
+ * operations on distributed data structures. This class is often used in conjunction
+ * with the `Parallel` and `gdevice2` classes to manage parallelism and device operations.
+ */
+
 /*
 #include        <cmath>
 #include        <cstdio>
@@ -29,6 +39,28 @@ namespace pwdft {
  *       DMatrix_start_rot         *
  *                                 *
  ***********************************/
+/**
+ * @brief Start a rotation operation in a distributed matrix.
+ *
+ * This function initiates a rotation operation for a distributed matrix. It performs
+ * asynchronous communication between neighboring processes to exchange matrix data
+ * required for the rotation operation. The rotation operation is typically used in
+ * matrix-matrix multiplication routines.
+ *
+ * @param parall A pointer to the Parallel object managing parallelism.
+ * @param j The rotation index or step.
+ * @param A Pointer to the source matrix data to be rotated.
+ * @param W Pointer to the workspace matrix data required for rotation.
+ * @param lda Leading dimension of the matrices A and W.
+ * @param na Array of dimensions for distributed blocks along the specified axis.
+ * @param rqst_indx An index indicating the request index for asynchronous communication.
+ *
+ * @note This function is used in the context of distributed matrix operations and
+ *       should be called in coordination with similar functions for other matrix
+ *       dimensions.
+ *
+ * @see DMatrix_dgemm1, DMatrix_dgemm2, DMatrix_dgemm3
+ */
 static void DMatrix_start_rot(Parallel *parall,
                              const int j,
                              double *A, double *W, const int lda, const int *na,
@@ -50,17 +82,33 @@ static void DMatrix_start_rot(Parallel *parall,
       parall->a2dsend(rqst_indx,msgtype,proc_to,amsglen,A);
 }
 
+
 /***********************************
  *                                 *
  *        DMatrix_end_rot          *
  *                                 *
  ***********************************/
+/**
+ * @brief Complete a rotation operation in a distributed matrix.
+ *
+ * This function finalizes a rotation operation for a distributed matrix. It ensures
+ * that any asynchronous communication initiated by the corresponding
+ * `DMatrix_start_rot` call has completed. The rotation operation is typically used in
+ * matrix-matrix multiplication routines.
+ *
+ * @param parall A pointer to the Parallel object managing parallelism.
+ * @param request_indx The index of the request array associated with the rotation operation.
+ *
+ * @note This function is used in the context of distributed matrix operations and
+ *       should be called in coordination with similar functions for other matrix
+ *       dimensions.
+ *
+ * @see DMatrix_start_rot, DMatrix_dgemm1, DMatrix_dgemm2, DMatrix_dgemm3
+ */
 static void DMatrix_end_rot(Parallel *parall, const int request_indx)
 {
-    parall->awaitall(request_indx);
+   parall->awaitall(request_indx);
 }
-
-
 
 
 /********************************
@@ -68,7 +116,22 @@ static void DMatrix_end_rot(Parallel *parall, const int request_indx)
  *         Constructors         *
  *                              *
  ********************************/
-
+/**
+ * @brief Constructor for the d1db class.
+ *
+ * This constructor initializes an instance of the d1db class, which is used for
+ * distributed 3D block operations. It sets up the necessary data structures and
+ * communication channels for distributed matrix operations.
+ *
+ * @param inparall A pointer to the Parallel object managing parallelism.
+ * @param inmaptype The mapping type for distributed operations.
+ * @param inispin The initial spin value.
+ * @param inne An array specifying the dimensions of the distributed block.
+ *
+ * @note This constructor also initiates asynchronous communication channels if
+ *       the number of processes in the j-dimension (np_j) is greater than 1.
+ *       These channels are used in distributed matrix operations.
+ */
 d1db::d1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne)
      : Mapping1(inmaptype, inparall->np_j(), inparall->taskid_j(), inispin, inne) 
 {
@@ -117,7 +180,6 @@ d1db::d1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne
     - work1: Temporary workspace array.
     - work2: Temporary workspace array.
 */
-
 void d1db::DMatrix_dgemm1(Parallel *parall, 
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
@@ -206,6 +268,7 @@ void d1db::DMatrix_dgemm1(Parallel *parall,
    }
 }
 
+
 /***********************************
  *                                 *
  *         DMatrix_dgemm2          *
@@ -236,7 +299,6 @@ void d1db::DMatrix_dgemm1(Parallel *parall,
     - work1: Temporary workspace array.
     - work2: Temporary workspace array.
 */
-
 void d1db::DMatrix_dgemm2(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
@@ -469,7 +531,37 @@ void d1db::DMatrix_dgemm3(Parallel *parall,
  *         DMatrix_dgemm2c         *
  *                                 *
  ***********************************/
-
+/**
+ * @brief Perform a distributed matrix-matrix multiplication for Block 2 (Column-Cyclic).
+ *
+ * This function performs a distributed matrix-matrix multiplication for Block 2
+ * using a column-cyclic distribution. It uses a parallel device (mygdevice) to
+ * perform the computation efficiently. The input matrices A, B, and C are distributed,
+ * and the multiplication is performed as part of a parallel computation.
+ *
+ * @param parall A pointer to the Parallel object managing parallelism.
+ * @param mygdevice A pointer to the parallel device for efficient computation.
+ * @param m The number of rows in matrix C.
+ * @param n The number of columns in matrix C.
+ * @param k The inner dimension for the matrix multiplication.
+ * @param nblock The block size for distributed matrices.
+ * @param A Pointer to matrix A (distributed).
+ * @param B Pointer to matrix B (distributed).
+ * @param lda Leading dimension of matrix A.
+ * @param ma Array specifying the dimensions of the distributed block in matrix A.
+ * @param ma1 Array specifying the dimensions of the distributed block in matrix A.
+ * @param na Array specifying the dimensions of the distributed block in matrix A.
+ * @param C Pointer to matrix C (distributed).
+ * @param ldc Leading dimension of matrix C.
+ * @param mc Array specifying the dimensions of the distributed block in matrix C.
+ * @param nc Array specifying the dimensions of the distributed block in matrix C.
+ * @param work1 Temporary storage for intermediate computation.
+ * @param work2 Temporary storage for intermediate computation.
+ *
+ * @note This function is part of a distributed matrix multiplication algorithm
+ *       and involves complex data distribution and computation operations.
+ *       It uses parallel device (mygdevice) for optimized computation.
+ */
 void d1db::DMatrix_dgemm2c(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
@@ -554,7 +646,6 @@ void d1db::DMatrix_dgemm2c(Parallel *parall,
         ++icur;
         ii=0;
       }
-
    }
 }
 
@@ -563,7 +654,43 @@ void d1db::DMatrix_dgemm2c(Parallel *parall,
  *         DMatrix_dgemm1_rot2     *
  *                                 *
  ***********************************/
-
+/**
+ * @brief Perform a distributed matrix-matrix multiplication with rotation for Block 2.
+ *
+ * This function performs a distributed matrix-matrix multiplication with rotation
+ * for Block 2. It uses a parallel device (mygdevice) to perform the computation
+ * efficiently. The input matrices A, B, and C are distributed, and the multiplication
+ * is performed as part of a parallel computation.
+ *
+ * @param parall A pointer to the Parallel object managing parallelism.
+ * @param mygdevice A pointer to the parallel device for efficient computation.
+ * @param m The number of rows in matrix C.
+ * @param n The number of columns in matrix C.
+ * @param k The inner dimension for the matrix multiplication.
+ * @param nblock The block size for distributed matrices.
+ * @param alpha The scaling factor for the multiplication.
+ * @param A Pointer to matrix A (distributed).
+ * @param lda Leading dimension of matrix A.
+ * @param ma Array specifying the dimensions of the distributed block in matrix A.
+ * @param na Array specifying the dimensions of the distributed block in matrix A.
+ * @param B Pointer to matrix B (distributed).
+ * @param ldb Leading dimension of matrix B.
+ * @param mb Array specifying the dimensions of the distributed block in matrix B.
+ * @param nb Array specifying the dimensions of the distributed block in matrix B.
+ * @param beta The scaling factor for matrix C.
+ * @param C Pointer to matrix C (distributed).
+ * @param ldc Leading dimension of matrix C.
+ * @param mc Array specifying the dimensions of the distributed block in matrix C.
+ * @param nc Array specifying the dimensions of the distributed block in matrix C.
+ * @param Bcol Pointer to matrix Bcol (unmodified).
+ * @param Bwork Temporary storage for matrix B.
+ * @param work1 Temporary storage for intermediate computation.
+ * @param work2 Temporary storage for intermediate computation.
+ *
+ * @note This function is part of a distributed matrix multiplication algorithm
+ *       and involves complex data distribution and rotation operations.
+ *       It uses parallel device (mygdevice) for optimized computation.
+ */
 void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
@@ -574,20 +701,15 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
                           double *C, int ldc, int *mc, int *nc,
                           double *Bcol, double *Bwork, double  *work1, double *work2)
 {
-
-   std::cout << "lda=" << lda << " ldb=" << ldb << " ldc=" << ldc << std::endl;
-   std::cout << "mc=" << mc[0] << " nc=" << nc[0] << " " << nc[1] << " " << nc[2] << " " << nc[3] << std::endl;
-
-   auto taskid = parall->taskid();
-   auto taskid_i = parall->taskid_i();
-   auto taskid_j = parall->taskid_j();
-   auto np_i = parall->np_i();
-   auto np_j = parall->np_j();
+   int taskid = parall->taskid();
+   int taskid_i = parall->taskid_i();
+   int taskid_j = parall->taskid_j();
+   int np_i = parall->np_i();
+   int np_j = parall->np_j();
 
    int jcur=0;
    double rone=1.0;
    double rzero=0.0;
-
 
    int iwrk;
    int ii = 0;
@@ -600,11 +722,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       bshift     += na[jj-1]*nb[taskid_j];
       bshift2[jj] = bshift;
    }
-   std::cout << "BSHIFT2=" << bshift2[0] << " " 
-                           << bshift2[1] << " " 
-                           << bshift2[2] << " " 
-                           << bshift2[3] << " " 
-                           << bshift2[4] << std::endl;
 
    int ne0 = 0;
    for (auto i=0; i<np_i; ++i) 
@@ -613,8 +730,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
    int j1 = 0;
    for (auto jj=0; jj<taskid_j; ++jj)
       j1 += nb[jj];
-   //std::cout << "TASKID_J=" << taskid_j << " ne0=" << ne0 << " j1=" << j1 << std::endl;
-
 
    bshift = 0;
    int iwrk2 = nb[taskid_j];
@@ -630,8 +745,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       bshift += iwrk*iwrk2;
       ii     += iwrk;
    }
-   //std::cout << "IWRK=" << iwrk << " NA=" << na[0] << " " << na[1] << " " << na[2] << " " << na[3] << std::endl;
-
 
    //C = beta*C
    int one=1;
@@ -642,13 +755,9 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
 
    jcur = taskid_j;
    iwrk = na[jcur];
-   //std::cout << "     --A--taskid=" << taskid << " jcur=" << jcur << " iwrk=" << iwrk << " " << bshift2[jcur] << std::endl;
 
    if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
    {
-      std::cout << "     xxxx M1: " << taskid_i << " " << taskid_j 
-                << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " "<< iwrk 
-                << " jcur=" << jcur << " Bwork1=" << Bwork[bshift2[jcur]] << std::endl;
       mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,
                            A,lda,
@@ -669,9 +778,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
           DMatrix_start_rot(parall,j,A,work2,lda,na,request2_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
-             std::cout << "     xxxx M2: " << taskid_i << " " << taskid_j 
-                       << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
-                       << " jcur=" << jcur << " Bwork2=" << Bwork[bshift2[jcur]] << " j=" << j << " jeven" << std::endl;
              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                                   alpha,
                                   work1,lda,
@@ -689,9 +795,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
           DMatrix_start_rot(parall,j,A,work1,lda,na,request1_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
-             std::cout << "     xxxx M3: " << taskid_i << " " << taskid_j 
-                       << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
-                       << " jcur=" << jcur << " Bwork3=" << Bwork[bshift2[jcur]] << " j=" << j << " jodd" << std::endl;
              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                                   alpha,
                                   work2,lda,
@@ -700,8 +803,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
                                   C,ldc);
           }
        }
-   //std::cout << "     --B--taskid=" << taskid << " j=" << j << " jeven=" << jeven << " jcur=" << jcur << std::endl;
-
    }
 
    if (jeven)
@@ -711,9 +812,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       DMatrix_end_rot(parall,request1_indx);
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
-          std::cout << "     xxxx M4: " << taskid_i << " " << taskid_j 
-                    << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " " << iwrk 
-                       << " jcur=" << jcur << " Bwork4=" << Bwork[bshift2[jcur]] << " jeven" << std::endl;
          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                               alpha,
                               work1,lda,
@@ -729,9 +827,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       DMatrix_end_rot(parall,request1_indx);
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
-          std::cout << "     xxxx M5: " << taskid_i << " " << taskid_j 
-                    << " m,n,k:" <<   mc[taskid_i] << " " << nc[taskid_j] << " "<< iwrk 
-                    << " jcur=" << jcur << " Bwork5=" << Bwork[bshift2[jcur]] << " jodd" << std::endl;
          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                               alpha,
                               work2,lda,
@@ -740,9 +835,6 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
                               C,ldc);
       }
    }
-   std::cout << "     --C--taskid=" << taskid << " jcur=" << jcur << " jeven=" << jeven << std::endl;
-
-
 }
 
 

@@ -12,6 +12,18 @@ namespace pwdft {
 
 #define MASTER 0
 
+/**
+ * @class Parallel
+ * @brief Provides MPI-based parallelism and communication management.
+ *
+ * The `Parallel` class encapsulates functionality for managing MPI-based parallel
+ * computations. It allows users to distribute tasks across multiple MPI processes,
+ * perform collective operations, and handle data communication between processes.
+ *
+ * This class is designed to work in a multi-dimensional parallel computing environment,
+ * supporting both 1D and 2D process grids.
+ */
+
 class Parallel {
    int thrid = 0;
    int nthr = 1;
