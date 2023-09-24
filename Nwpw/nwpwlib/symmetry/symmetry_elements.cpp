@@ -232,6 +232,18 @@ static bool is_square(std::vector<std::array<double, 3>> &points, const double t
        }
    }
 
+   /*std::cout << " ---- small_dist=" << small_dist 
+             << "  small_count=" << small_count
+             << "  large_dist="  << large_dist
+             << "  large_count=" << large_count;
+   std::cout << " distances=" << distances[0] << " " 
+             << distances[1] << " " 
+             << distances[2] << " " 
+             << distances[3] << " " 
+             << distances[4] << " " 
+             << distances[5] << std::endl;
+             */
+
    return small_count == 4 && large_count == 2;
 }
 
@@ -1718,6 +1730,139 @@ static bool has_sigma_v_axis(const double* rion, const double* ion_mass, const i
 }
 
 
+                       
+/*******************************************
+ *                                         *
+ *         has_proper_rotation_C4          *
+ *                                         *
+ *******************************************/
+static bool has_proper_rotation_C4(const double* rion, const double* ion_mass, const int nion, const double sym_tolerance,
+                                   int& c4_uniqueCount, int& s8_uniqueCount)
+{  
+   int count=0;
+   double try_axis[3],try_axisc[3], r1[3],r2[3];
+   double theta4     = 2*M_PI/4.0;
+   double theta8     = M_PI/4.0;
+   double cos_theta4 = std::cos(theta4);
+         
+   bool found = false;
+
+   //std::map<double, std::array<double, 3>> dist_vec;
+   std::vector<std::array<double, 3>> c4_axes;
+   std::vector<std::array<double, 3>> s8_axes;
+
+   for (int i=0;   i<nion; ++i)
+   for (int j=i+1; j<nion; ++j)
+   if (ion_mass[i] == ion_mass[j])
+   for (int k=j+1; k<nion; ++k)
+   if (ion_mass[k] == ion_mass[i])
+   for (int l=k+1; l<nion; ++l)
+   if (ion_mass[l] == ion_mass[i])
+   {
+      // Check if the 5 lowest keys are approximately equal
+      if (is_square(i,j,k,l,rion,nion, sym_tolerance))
+      {
+          ++count;
+
+         //Extract the points based on the i,j,k,l,m indices
+         std::vector<std::array<double, 3>> points;
+         points.push_back({rion[3*i], rion[3*i+1], rion[3*i+2]});
+         points.push_back({rion[3*j], rion[3*j+1], rion[3*j+2]});
+         points.push_back({rion[3*k], rion[3*k+1], rion[3*k+2]});
+         points.push_back({rion[3*l], rion[3*l+1], rion[3*l+2]});
+
+         //Define the center for sorting
+         std::array<double, 3> center = calculate_center(points);
+
+         //Sort points in increasing order of their angles with respect to the center
+         sort_points_spherical(points, center);
+         double magc = std::sqrt(center[0]*center[0] + center[1]*center[1] + center[2]*center[2]);
+
+         r1[0] = points[1][0] - points[0][0];
+         r1[1] = points[1][1] - points[0][1];
+         r1[2] = points[1][2] - points[0][2];
+         r2[0] = points[2][0] - points[1][0];
+         r2[1] = points[2][1] - points[1][1];
+         r2[2] = points[2][2] - points[1][2];
+
+         //Generate the rotation axis
+         normalized_cross_product(r2,r1,try_axis);
+         bool has_c4_rotation  = has_rotation_axis(rion,ion_mass,nion,try_axis,theta4,sym_tolerance);
+         bool has_s8_rotation = has_improper_rotation_axis(rion,ion_mass,nion,try_axis,theta8,sym_tolerance);
+
+         if (has_c4_rotation)
+            c4_axes.push_back({try_axis[0],try_axis[1],try_axis[2]});
+
+         if (has_s8_rotation)
+            s8_axes.push_back({try_axis[0],try_axis[1],try_axis[2]});
+      }
+   }
+
+   double tolerance = sym_tolerance;
+
+   // Sort and count unique points within the specified tolerance
+   // Replace auto with explicit parameter types (e.g., const std::array<double, 3>&)
+   std::sort(c4_axes.begin(), c4_axes.end(), [tolerance](const std::array<double, 3>& a, const std::array<double, 3>& b) {
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(a[i] - b[i]) > tolerance) {
+            return a[i] < b[i];
+        }
+    }
+    return false; // a and b are considered equal within tolerance
+   });
+
+   c4_axes.erase(std::unique(c4_axes.begin(), c4_axes.end(), [tolerance](const std::array<double, 3>& a, const std::array<double, 3>& b) {
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(a[i] - b[i]) > tolerance) {
+            return true; // Points are different
+        }
+    }
+    return false; // Points are considered equal within tolerance
+   }), c4_axes.end());
+
+
+   //Count the number of unique points
+   c4_uniqueCount = c4_axes.size();
+
+   //std::cout << "There are " << c4_uniqueCount << " unique C4 axes!" << std::endl;
+   //found = (c4_uniqueCount == 6);
+   found = (c4_uniqueCount > 0);
+
+
+   // Sort and count unique points within the specified tolerance
+   // Replace auto with explicit parameter types (e.g., const std::array<double, 3>&)
+   std::sort(s8_axes.begin(), s8_axes.end(), [tolerance](const std::array<double, 3>& a, const std::array<double, 3>& b) {
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(a[i] - b[i]) > tolerance) {
+            return a[i] < b[i];
+        }
+    }
+    return false; // a and b are considered equal within tolerance
+   });
+
+   s8_axes.erase(std::unique(s8_axes.begin(), s8_axes.end(), [tolerance](const std::array<double, 3>& a, const std::array<double, 3>& b) {
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(a[i] - b[i]) > tolerance) {
+            return true; // Points are different
+        }
+    }
+    return false; // Points are considered equal within tolerance
+   }), s8_axes.end());
+
+   //Count the number of unique points
+   s8_uniqueCount = s8_axes.size();
+
+   //std::cout << "There are " << s8_uniqueCount << " unique S8 axes!" << std::endl;
+
+   return found;
+}
+
+
+
+
+
+
+
 /*******************************************
  *                                         *
  *         has_proper_rotation_C5          *
@@ -2064,6 +2209,7 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
                        + std::abs(Ozzx) + std::abs(Ozzy) + std::abs(Ozzz);
 
    bool has_c5 = has_proper_rotation_C5(rion,ion_mass,nion,sym_tolerance);
+   //std::cout << "has_c5=" << has_c5 << std::endl;
 
    //bool is_spherical = (diagonal_sum < sym_tolerance) && (abssum > sym_tolerance);
    bool is_spherical = has_c5;
@@ -2085,26 +2231,56 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
    {
        //group_name = "T_d, T, T_h, O_h, O";
        // still have to look for T and O groups!
-
+       int  c4_uniqueCount,s8_uniqueCount;
        bool has_inversion = has_inversion_center(rion,ion_mass,nion,sym_tolerance);
+       bool has_c4 = has_proper_rotation_C4(rion,ion_mass,nion,sym_tolerance,c4_uniqueCount,s8_uniqueCount);
+       bool has_sigma_v = has_sigma_v_axis(rion,ion_mass,nion,sym_tolerance);
 
-       if (has_inversion)
+       //std::cout << "c4_uniqueCount=" <<  c4_uniqueCount << std::endl;
+       //std::cout << "s8_uniqueCount=" <<  s8_uniqueCount << std::endl;
+       //std::cout << "has_c4=" << has_c4 << std::endl;
+       //std::cout << "has_inversion=" << has_inversion << std::endl;
+       //std::cout << "has_sigma_v=" << has_sigma_v << std::endl;
+
+       if (has_c4)
        {
-          if (abs_octapole<sym_tolerance)
+          if (has_inversion)
           {
              group_name = "O_h";
              group_rank = 48;
           }
           else
           {
-             group_name = "T_h";
+             group_name = "O";
              group_rank = 24;
           }
        }
        else
        {
-          group_name = "T_d";
-          group_rank = 24;
+          if (has_inversion)
+          {
+             if (abs_octapole<sym_tolerance)
+             {
+                 std::cout << "FOUND HERE?" << std::endl;
+                group_name = "O_h";
+                group_rank = 48;
+             }
+             else
+             {
+                group_name = "T_h";
+                group_rank = 24;
+             }
+          }
+          else if (has_sigma_v)
+          {
+             group_name = "T_d";
+             group_rank = 24;
+          }
+          else
+          {
+             group_name = "T";
+             group_rank = 12;
+          }
        }
        //group_name = "O"; group_rank = 24;
        //group_name = "T"; group_rank = 12;
