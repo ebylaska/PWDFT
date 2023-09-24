@@ -1,8 +1,14 @@
-/* Mapping1.C
+/* Mapping1.cpp
    Author - Eric Bylaska
 
         this class is used for defining 1d parallel maps
 */
+
+/**
+ * @class Mapping1
+ * @brief Class for defining 1D parallel maps.
+ */
+
 /*
 #include        <cmath>
 #include        <cstdlib>

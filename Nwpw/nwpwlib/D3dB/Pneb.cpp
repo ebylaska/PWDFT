@@ -1,8 +1,18 @@
-/* Pneb.C
+/* Pneb.cpp
    Author - Eric Bylaska
 
         this class is used for defining 3d parallel maps
 */
+
+/**
+ * @brief Class representing the PNEB (Parallel NEB) calculation.
+ *
+ * The `Pneb` class is responsible for managing the Parallel NEB (PNEB) calculation.
+ * It inherits properties and methods from several base classes such as `PGrid` and `d1db`.
+ * The PNEB calculation involves complex operations related to parallelization,
+ * matrix manipulations, and more.
+ */
+
 
 #include <cmath>
 #include <cstdio>
@@ -402,11 +412,21 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    return d3db::parall->SumAll(0, sum);
 }
 
+
 /*************************************
  *                                   *
  *           Pneb::gg_copy           *
  *                                   *
  *************************************/
+/**
+ * @brief Copy the elements of one array to another.
+ *
+ * This function copies the elements from the source array `psi1` to the destination
+ * array `psi2`.
+ *
+ * @param psi1  The source array.
+ * @param psi2  The destination array where the elements are copied.
+ */
 void Pneb::gg_copy(double *psi1, double *psi2) 
 {
    int one = 1;
@@ -415,11 +435,22 @@ void Pneb::gg_copy(double *psi1, double *psi2)
    // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
 
+
 /*************************************
  *                                   *
  *           Pneb::gg_SMul           *
  *                                   *
  *************************************/
+/**
+ * @brief Multiply an array by a scalar: psi2 = alpha * psi1.
+ *
+ * This function multiplies each element of the `psi1` array by the scalar `alpha`
+ * and stores the result in the `psi2` array.
+ *
+ * @param alpha The scalar value to multiply with each element of `psi1`.
+ * @param psi1  The source array.
+ * @param psi2  The destination array where the result is stored.
+ */
 void Pneb::gg_SMul(double alpha, double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -438,6 +469,15 @@ void Pneb::gg_SMul(double alpha, double *psi1, double *psi2)
  *           Pneb::gg_daxpy          *
  *                                   *
  *************************************/
+/**
+ * @brief Perform a linear combination of two arrays: psi2 += alpha * psi1.
+ *
+ * This function computes the linear combination `psi2 += alpha * psi1` for arrays `psi1` and `psi2`.
+ *
+ * @param alpha The scaling factor to apply to the `psi1` array before adding to `psi2`.
+ * @param psi1  The source array.
+ * @param psi2  The destination array where the result is stored.
+ */
 void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -445,11 +485,20 @@ void Pneb::gg_daxpy(double alpha, double *psi1, double *psi2)
       psi2[i] += alpha * psi1[i];
 }
 
+
 /*************************************
  *                                   *
  *           Pneb::g_Scale           *
  *                                   *
  *************************************/
+/**
+ * @brief Scale the elements of an array by a given factor.
+ *
+ * This function scales each element of the input array `psi1` by the specified factor `alpha`.
+ *
+ * @param alpha The scaling factor to apply to the array elements.
+ * @param psi1  The array to be scaled.
+ */
 void Pneb::g_Scale(double alpha, double *psi1) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -457,11 +506,21 @@ void Pneb::g_Scale(double alpha, double *psi1)
       psi1[i] *= alpha;
 }
 
+
 /*************************************
  *                                   *
  *           Pneb::gg_Sum2           *
  *                                   *
  *************************************/
+/**
+ * @brief Element-wise addition of two arrays.
+ *
+ * This function performs element-wise addition, adding the elements of
+ * array `psi1` to the elements of array `psi2`, and stores the result in `psi2`.
+ *
+ * @param psi1  The array to add to `psi2`.
+ * @param psi2  The array to which `psi1` is added, and where the result is stored.
+ */
 void Pneb::gg_Sum2(double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
@@ -469,17 +528,28 @@ void Pneb::gg_Sum2(double *psi1, double *psi2)
       psi2[i] += psi1[i];
 }
 
+
 /*************************************
  *                                   *
  *         Pneb::gg_Minus2           *
  *                                   *
  *************************************/
+/**
+ * @brief Element-wise subtraction of one array from another.
+ *
+ * This function performs element-wise subtraction, subtracting the elements of
+ * array `psi1` from the elements of array `psi2`, and stores the result in `psi2`.
+ *
+ * @param psi1  The array to subtract from `psi2`.
+ * @param psi2  The array from which `psi1` is subtracted, and where the result is stored.
+ */
 void Pneb::gg_Minus2(double *psi1, double *psi2) 
 {
    int nsize = 2 * (neq[0] + neq[1]) * PGrid::npack(1);
    for (int i = 0; i < nsize; ++i)
       psi2[i] -= psi1[i];
 }
+
 
 /*************************************
  *                                   *
@@ -504,6 +574,7 @@ void Pneb::ggg_Minus(double *psi1, double *psi2, double *psi3)
       psi3[i] = psi1[i] - psi2[i];
 }
 
+
 /*************************************
  *                                   *
  *         Pneb::g_zero              *
@@ -519,6 +590,7 @@ void Pneb::g_zero(double *psi2)
    // dcopy_(&nsize,&rzero,&zero,psi2,&one);
    std::memset(psi2, 0, nsize * sizeof(double));
 }
+
 
 /*************************************
  *                                   *
@@ -1291,18 +1363,6 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
       auto taskid_i = d1db::parall->taskid_i();
       auto taskid_j = d1db::parall->taskid_j();
 
-      std::cout << "hml= [" << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12] << ";" << std::endl 
-                << "      " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13] << ";" << std::endl 
-                << "      " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14] << ";" << std::endl 
-                << "      " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15] << "]" << std::endl;
-      std::cout << "alpha=" << alpha << " beta=" << beta << std::endl;
-      std::cout << "mb=" << mb << " ms1=" << ms1 << " ms2=" << ms2 << std::endl;
-      std::cout << "ishift2=" << ishift2 << std::endl;
-      std::cout << "ne=" << ne[0] << " " << ne[1] << " npack1_all=" << npack1_all << std::endl;
-      std::cout << "mcq=" << mcq[0] << " " << mcq[1] 
-                << " mc=" << mc[0][0] 
-                << " nc=" << nc[0][0] << " " << nc[0][1] << " " << nc[0][2] << " " << nc[0][3] << std::endl;
- 
       for (auto ms=ms1; ms<ms2; ++ms)
       {
          if (ne[ms]>0)
@@ -1322,12 +1382,6 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
    } 
    else 
    {
-      std::cout << "hml0= [" << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12] << ";" << std::endl 
-                << "       " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13] << ";" << std::endl 
-                << "       " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14] << ";" << std::endl 
-                << "       " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15] << "]" << std::endl;
-      std::cout << "alpha=" << alpha << " beta=" << beta << std::endl;
-      std::cout << "mb=" << mb << " ms1=" << ms1 << " ms2=" << ms2 << std::endl;
       if (mb == -1) 
       {
          ms1 = 0;
@@ -1817,7 +1871,6 @@ void Pneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
    } // for loop - ms
  
    /* correction due to contraint */
-   std::cout << "into fmf_Multiply" << std::endl;
    fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
 }
 
