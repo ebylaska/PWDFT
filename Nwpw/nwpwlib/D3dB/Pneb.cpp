@@ -1314,7 +1314,7 @@ void Pneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
                           hml+shift3,mcq[ms],mc[ms],nc[ms],
                           beta,
                           psi2+shift0,ma[ms][taskid_i],ma[ms],na[ms],
-                          bcolwork,bwork2,work1,work2);
+                          bcolwork,bwork2,rwork1,rwork2);
          }
       }
    } 
