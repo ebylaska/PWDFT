@@ -1,6 +1,16 @@
-/* Pseudopotential.C -
+/* Pseudopotential.cpp - 
    Author - Eric Bylaska
 */
+
+/**
+ * @class Pseudopotential
+ * @brief Class for managing pseudopotential data and calculations.
+ *
+ * The Pseudopotential class encapsulates operations and data related to
+ * pseudopotentials used in electronic structure calculations. It provides
+ * methods for handling non-local and local pseudopotentials, semicore
+ * corrections, and other properties used in electronic structure calculations.
+ */
 
 #include <cmath>
 #include <cstring>
