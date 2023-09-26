@@ -272,6 +272,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
  ******************************************/
 void cgsd_energy_gradient(Molecule &mymolecule, double *grad_ion) 
 {
+
    mymolecule.psi_1local_force(grad_ion);
    mymolecule.psi_1nonlocal_force(grad_ion);
    mymolecule.semicore_force(grad_ion);
