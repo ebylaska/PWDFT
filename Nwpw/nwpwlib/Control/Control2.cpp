@@ -208,25 +208,26 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    /* get np_dimensions */
    // if (!myrtdb.get("nwpw:np_dimensions",rtdb_int,3,np_dimensions))
-   if (rtdbjson["nwpw"]["np_dimensions"].is_null()) {
-     pnp_dimensions[0] = np;
-     pnp_dimensions[1] = 1;
-     pnp_dimensions[2] = 1;
-   } else {
-     pnp_dimensions[0] = rtdbjson["nwpw"]["np_dimensions"][0];
-     pnp_dimensions[1] = rtdbjson["nwpw"]["np_dimensions"][1];
- 
-     pnp_dimensions[2] = 1;
-     if (pnp_dimensions[1] < 1)
-       pnp_dimensions[1] = 1;
-     if (pnp_dimensions[0] < 1)
-       pnp_dimensions[0] = 1;
- 
-     /* reset np_dimensions[1] if it is not a  multiple of np2 */
-     np = np / pnp_dimensions[2];
-     while (((np % pnp_dimensions[1]) != 0) && (pnp_dimensions[1] > 1))
-       pnp_dimensions[1] = pnp_dimensions[1] - 1;
-     pnp_dimensions[0] = np / pnp_dimensions[1];
+   if (rtdbjson["nwpw"]["np_dimensions"].is_null()) 
+   {
+      pnp_dimensions[0] = np;
+      pnp_dimensions[1] = 1;
+      pnp_dimensions[2] = 1;
+   } 
+   else 
+   {
+      pnp_dimensions[0] = rtdbjson["nwpw"]["np_dimensions"][0];
+      pnp_dimensions[1] = rtdbjson["nwpw"]["np_dimensions"][1];
+      pnp_dimensions[2] = 1;
+
+      if (pnp_dimensions[1] < 1) pnp_dimensions[1] = 1;
+      if (pnp_dimensions[0] < 1) pnp_dimensions[0] = 1;
+     
+      /* reset np_dimensions[1] if it is not a  multiple of np2 */
+      np = np / pnp_dimensions[2];
+      while (((np % pnp_dimensions[1]) != 0) && (pnp_dimensions[1] > 1))
+         pnp_dimensions[1] = pnp_dimensions[1] - 1;
+      pnp_dimensions[0] = np / pnp_dimensions[1];
    }
  
    puse_grid_cmp = false;

@@ -89,6 +89,7 @@ public:
     return (2.0 * myelectron->eorbit(A));
   }
 
+
   void get(double t, double *Yold, double *Ynew) {
     mygrid->mm_SCtimesVtrans(-1, t, S, Vt, tmp1, tmp3, tmpC, tmpS);
 

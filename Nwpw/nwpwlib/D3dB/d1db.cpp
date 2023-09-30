@@ -30,6 +30,8 @@
 #include "gdevice2.hpp"
 #include "d1db.hpp"
 
+#include "iofmt.hpp"
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 namespace pwdft {
@@ -701,6 +703,9 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
                           double *C, int ldc, int *mc, int *nc,
                           double *Bcol, double *Bwork, double  *work1, double *work2)
 {
+
+
+
    int taskid = parall->taskid();
    int taskid_i = parall->taskid_i();
    int taskid_j = parall->taskid_j();
@@ -715,6 +720,16 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
    int ii = 0;
    int bshift = 0;
    int bshift2[np_j+1]; bshift2[0] = 0;
+
+/*
+   double *Aall = new (std::nothrow) double[4*lda]();
+   double *C2 = new (std::nothrow) double[ldc]();
+   std::memset(Aall,0,4*lda*sizeof(double));
+   std::memcpy(Aall+lda*taskid_j,A,lda*sizeof(double));
+   parall->Vector_SumAll(2,4*lda,Aall);
+   std::memcpy(C2,C,ldc*sizeof(double));
+   */
+
 
    //collect B into columns
    for (auto jj=1; jj<=np_j; ++jj)
@@ -747,10 +762,24 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
    }
 
    //C = beta*C
+   double tmphml[16];
+   std::memset(tmphml,0,16*sizeof(double));
+
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
    DSCAL_PWDFT(nn,beta,C,one);
 
+
+/*
+              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],4,
+                           alpha,
+                           Aall,lda,
+                           B+4*taskid_j,4,
+                           beta,
+                           C2,ldc);
+              */
+
+   std::memset(work1,0,lda*na[taskid_j]*sizeof(double));
    DMatrix_start_rot(parall,1,A,work1,lda,na,request1_indx);
 
    jcur = taskid_j;
@@ -758,12 +787,25 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
 
    if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
    {
+      
       mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,
                            A,lda,
                            Bwork+bshift2[jcur],iwrk,
                            rone,
                            C,ldc);
+     
+
+     /*
+      mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           Aall+jcur*lda,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+      */
+
+      tmphml[4*taskid_j] =  Bwork[bshift2[jcur]];
    }
 
    bool jeven = true;
@@ -775,15 +817,27 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
           jcur = (jcur-1+np_j) % np_j;
           iwrk = na[jcur];
           DMatrix_end_rot(parall,request1_indx);
+          std::memset(work2,0,lda*na[taskid_j]*sizeof(double));
           DMatrix_start_rot(parall,j,A,work2,lda,na,request2_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
+          
              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                                   alpha,
                                   work1,lda,
                                   Bwork+bshift2[jcur],iwrk,
                                   rone,
                                   C,ldc);
+             /*
+              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           Aall+jcur*lda,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+              */
+
+              tmphml[4*taskid_j+1] =  Bwork[bshift2[jcur]];
           }
        }
        else
@@ -792,15 +846,27 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
           jcur = (jcur-1+np_j) % np_j;
           iwrk = na[jcur];
           DMatrix_end_rot(parall,request2_indx);
+          std::memset(work1,0,lda*na[taskid_j]*sizeof(double));
           DMatrix_start_rot(parall,j,A,work1,lda,na,request1_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
+           
              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                                   alpha,
                                   work2,lda,
                                   Bwork+bshift2[jcur],iwrk,
                                   rone,
                                   C,ldc);
+            /*
+              mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           Aall+jcur*lda,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+              */
+
+              tmphml[4*taskid_j+2] =  Bwork[bshift2[jcur]];
           }
        }
    }
@@ -812,12 +878,23 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       DMatrix_end_rot(parall,request1_indx);
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
+          
          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                               alpha,
                               work1,lda,
                               Bwork+bshift2[jcur],iwrk,
                               rone,
                               C,ldc);
+         /*
+          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           Aall+jcur*lda,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+          */
+
+          tmphml[4*taskid_j+3] =  Bwork[bshift2[jcur]];
       }
    }
    else
@@ -827,14 +904,44 @@ void d1db::DMatrix_dgemm1_rot2(Parallel *parall,
       DMatrix_end_rot(parall,request1_indx);
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
+    
          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                               alpha,
                               work2,lda,
                               Bwork+bshift2[jcur],iwrk,
                               rone,
                               C,ldc);
+        /*
+         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
+                           alpha,
+                           Aall+jcur*lda,lda,
+                           Bwork+bshift2[jcur],iwrk,
+                           rone,
+                           C,ldc);
+         */
+
       }
    }
+/*
+   if (parall->is_master())
+      std::cout << std::endl << "B= [" << Efmt(15,10)
+                            << B[0] << " " << B[4] << " " << B[8]  << " " << B[12]  << std::endl
+                << "      " << B[1] << " " << B[5] << " " << B[9]  << " " << B[13]  << std::endl
+                << "      " << B[2] << " " << B[6] << " " << B[10] << " " << B[14]  << std::endl
+                << "      " << B[3] << " " << B[7] << " " << B[11] << " " << B[15]  << "]"<< std::endl << std::endl;
+
+   parall->Vector_SumAll(2,16,tmphml);
+   if (parall->is_master())
+      std::cout << "TMPHML= [" << Efmt(15,10)
+                            << tmphml[0] << " " << tmphml[4] << " " << tmphml[8]  << " " << tmphml[12]  << std::endl
+                << "      " << tmphml[1] << " " << tmphml[5] << " " << tmphml[9]  << " " << tmphml[13]  << std::endl
+                << "      " << tmphml[2] << " " << tmphml[6] << " " << tmphml[10] << " " << tmphml[14]  << std::endl
+                << "      " << tmphml[3] << " " << tmphml[7] << " " << tmphml[11] << " " << tmphml[15]  << "]"<< std::endl << std::endl;
+                */
+
+   //std::memcpy(C,C2,ldc*sizeof(double));
+   //delete [] Aall;
+   //delete [] C2;
 }
 
 

@@ -133,27 +133,26 @@ void Electron_Operators::gen_density(double *dn) {
  *                                          *
  ********************************************/
 void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall) {
-  /* generate dn */
-  mygrid->hr_aSumSqr(scal2, psi_r, dn);
-
-  /* generate rho and dng */
-  double *tmp = x;
-  mygrid->rrr_Sum(dn, &dn[(ispin - 1) * n2ft3d], rho);
-  mygrid->rr_SMul(scal1, rho, tmp);
-  // mygrid->rc_fft3d(tmp);
-  mygrid->rc_pfft3f(0, tmp);
-  mygrid->c_pack(0, tmp);
-  mygrid->cc_pack_copy(0, tmp, dng);
-
-  /* generate dnall - used for semicore corrections */
-  if (mypsp->has_semicore()) {
-    for (int ms = 0; ms < ispin; ++ms)
-      mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, &dn[ms * n2ft3d],
-                          &dnall[ms * n2ft3d]);
-  } else {
-    for (int ms = 0; ms < ispin; ++ms)
-      mygrid->rr_copy(&dn[ms * n2ft3d], &dnall[ms * n2ft3d]);
-  }
+   /* generate dn */
+   mygrid->hr_aSumSqr(scal2, psi_r, dn);
+ 
+   /* generate rho and dng */
+   double *tmp = x;
+   mygrid->rrr_Sum(dn, dn+(ispin-1)*n2ft3d, rho);
+   mygrid->rr_SMul(scal1, rho, tmp);
+   // mygrid->rc_fft3d(tmp);
+   mygrid->rc_pfft3f(0, tmp);
+   mygrid->c_pack(0, tmp);
+   mygrid->cc_pack_copy(0, tmp, dng);
+ 
+   /* generate dnall - used for semicore corrections */
+   if (mypsp->has_semicore()) {
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, dn+ms*n2ft3d, dnall+ms*n2ft3d);
+   } else {
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
+   }
 }
 
 /********************************************
@@ -356,11 +355,19 @@ double Electron_Operators::vnl_ave(double *psi)
  ********************************************/
 double Electron_Operators::eorbit(double *psi) 
 {
+   //if (mygrid->d3db::parall->is_master())
+   //   std::cout << "Eorbit into ggm_sym_Multiply" << std::endl;
+
    mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
+
+   //if (mygrid->d3db::parall->is_master())
+   //   std::cout << "OUT Eorbit into ggm_sym_Multiply" << std::endl;
+
    // mygrid->m_scal(-1.0,hmltmp);
    double eorbit0 = mygrid->m_trace(hmltmp);
    if (ispin==1)
       eorbit0 = eorbit0 + eorbit0;
+
  
    return eorbit0;
 }
