@@ -681,12 +681,160 @@ double util_dswitching_function(const double s_d, const double s_rho,
   return deps;
 }
 
+/**************************************
+ *                                    *
+ *    util_kiril_coulomb_transform    *
+ *                                    *
+ **************************************/
+/*     This function returns the fourier transform of
+*
+*             if flag==1  v_kiril = exp(-(r/rcut)**pp)/r
+*     or      if flag==2  v_kiril = (1.0d0-(1.0d0-dexp(-(r/rcut)**pp2))**pp)/r
+*
+*     Entry - gg: g squared
+*             rcut:
+*             pp:
+*
+*     Exit - returns
+*                              /infty
+*                             |
+*      v_kiril(g) = (4*pi)  * | r**2 * v_kiril(r)* j0(gr) dr
+*                             |
+*                            / 0
+*/
+/**
+ * \brief Computes the Fourier transform of the Kiril Coulomb potential with Bessel function.
+ *
+ * This function returns the Fourier transform of:
+ * - \( v_{kiril} = \frac{e^{-\left(\frac{r}{rcut}\right)^{pp}}}{r} \) if flag == 1
+ * - \( v_{kiril} = \frac{1.0 - \left(1.0 - e^{-\left(\frac{r}{rcut}\right)^{pp2}}\right)^{pp}}{r} \) if flag == 2
+ *
+ * The function performs a numerical integration using the trapezoidal rule and includes the Bessel function of the first kind.
+ *
+ * \param flag Determines the form of the potential.
+ * \param gg   The squared magnitude of the wave vector.
+ * \param rcut A parameter for the potential.
+ * \param pp   Another parameter for the potential.
+ * \return     The Fourier transform value at \( g \).
+ */
+double util_kiril_coulomb_transform(const int flag, const double gg, const double rcut, const double pp) 
+{
+   int nrho = 15000;
+   double pp2    = pp + 2.0;
+   double drho   = 2.0*rcut/((double) nrho);
+   double q      = std::sqrt(gg);
+   double fourpi = 16.0 * std::atan(1.0);
+      
+   double sum = 0.0;
+   double r   = 0.0;
+
+   if (flag == 1) 
+   {
+       for (auto i=2; i<nrho; ++i)
+       {
+         r += drho;
+         sum += std::sin(q*r)* std::exp(-std::pow(r/rcut,pp));
+       }
+       r = drho*(nrho-1);
+       sum += sum + 0.5*std::sin(q*r)* std::exp(-std::pow(r/rcut,pp));
+   }
+   else 
+   {
+      for (auto i=2; i<nrho; ++i)
+      {
+         r += drho;
+          sum += std::sin(q * r) * (1.0 - std::pow(1.0 - std::exp(-std::pow(r / rcut, pp2)), pp));
+      }
+      r = drho*(nrho-1);
+      sum += 0.5*std::sin(q * r) * (1.0 - std::pow(1.0 - std::exp(-std::pow(r / rcut, pp2)), pp));
+   }
+   return (fourpi/q)*sum*drho;
+}
+
+
+/**************************************
+ *                                    *
+ *   util_kiril_coulomb_transform0    *
+ *                                    *
+ **************************************/
+/*     This function returns the fourier transform of 
+*
+*           if flag==1   v_kiril = exp(-(r/rcut)**pp)/r
+*     or    if flag==2   v_kiril = (1.0d0-(1.0d0-dexp(-(r/rcut)**pp2))**pp)/r
+*
+*     Entry - 
+*             rcut: 
+*             pp:
+*                                           
+*     Exit - returns 
+*                              /infty
+*                             | 
+*      v_kiril(g=0) = (4*pi)* | r**2 * v_kiril(r) dr
+*                             |
+*                            / 0
+*/
+/**
+ * \brief Computes the Fourier transform of the Kiril Coulomb potential.
+ *
+ * This function returns the Fourier transform of:
+ * - \( v_{kiril} = \frac{e^{-\left(\frac{r}{rcut}\right)^{pp}}}{r} \) if flag == 1
+ * - \( v_{kiril} = \frac{1.0 - \left(1.0 - e^{-\left(\frac{r}{rcut}\right)^{pp2}}\right)^{pp}}{r} \) if flag == 2
+ *
+ * The function performs a numerical integration using the trapezoidal rule.
+ *
+ * \param flag Determines the form of the potential.
+ * \param rcut A parameter for the potential.
+ * \param pp   Another parameter for the potential.
+ * \return     The Fourier transform value at \( g = 0 \).
+ */
+double util_kiril_coulomb_transform0(const int flag, const double rcut, const double pp) 
+{
+   int nrho = 15000;
+   double pp2    = pp + 2.0;
+   double drho   = 2.0*rcut/((double) nrho);
+   double fourpi = 16.0 * std::atan(1.0);
+
+   double sum = 0.0;
+   double r   = 0.0;
+
+   if (flag == 1)
+   {
+       for (auto i=2; i<nrho; ++i)
+       {
+         r += drho;
+         sum += r * std::exp(-std::pow(r/rcut,pp));
+       }
+       r = drho*(nrho-1);
+       sum += sum + 0.5 * r * std::exp(-std::pow(r/rcut,pp));
+   }
+   else 
+   {
+      for (auto i=2; i<nrho; ++i)
+      {
+         r += drho;
+          sum += r * (1.0 - std::pow(1.0 - std::exp(-std::pow(r / rcut, pp2)), pp));
+      }
+      r = drho*(nrho-1);
+      sum += 0.5 * r * (1.0 - std::pow(1.0 - std::exp(-std::pow(r / rcut, pp2)), pp));
+   }
+
+   return fourpi*sum*drho;
+}
+
 
 /**************************************
  *                                    *
  *       util_print_elapsed_time      *
  *                                    *
  **************************************/
+/**
+ * \brief  Prints the elapsed time of a simulation in different units.
+ *
+ * This function prints the elapsed time of a simulation in different units 
+ * (femtoseconds, picoseconds, or nanoseconds) based on its magnitude.
+ *
+ * \param  autime The elapsed time in atomic units.
+ */
 void util_print_elapsed_time(const double autime) {
   double sectime = autime * 2.41889e-17;
 
@@ -699,11 +847,12 @@ void util_print_elapsed_time(const double autime) {
     std::cout << " Elapsed time of simulation was" << std::right << std::fixed
               << std::setw(8) << std::setprecision(3) << (sectime / 1.0e-12)
               << " ps" << std::endl;
-  else if (sectime < 1.0e-9)
+  else 
     std::cout << " Elapsed time of simulation was" << std::right << std::fixed
               << std::setw(8) << std::setprecision(3) << (sectime / 1.0e-9)
               << " ns" << std::endl;
 }
+
 
 #ifdef _MATPRINT_
 void util_matprint(std::string matlabel, int n, double *A) {

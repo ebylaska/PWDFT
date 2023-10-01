@@ -19,6 +19,161 @@ namespace pwdft {
 
 /*******************************************
  *                                         *
+ *         coulomb_screened_kernel         *
+ *                                         *
+ *******************************************/
+static void coulomb_screened_kernel(Pneb *mygrid,
+                                   const int screening_type, const double rcut, const double pp, 
+                                   const double attenuation,
+                                   double *vg)
+{
+   double epsilon = 1.0;
+   if (screening_type==2) epsilon=attenuation;
+
+   int nxh = (mygrid->nx/2);
+   int nyh = (mygrid->ny/2);
+   int nzh = (mygrid->nz/2);
+
+   double pp2 = pp + 2.0;
+   double omega = mygrid->lattice->omega();
+   double scal1 = 1.0/((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+   double dv = omega * scal1;
+   double pi = 4.0*atan(1.0);
+   double fourpi = 4*pi;
+   double sqrt_pi = std::sqrt(pi);
+   double eps = 1.0e-12;
+   double *Gx = mygrid->Gxyz(0);
+   double *Gy = mygrid->Gxyz(1);
+   double *Gz = mygrid->Gxyz(2);
+   double gg;
+
+   mygrid->initialize_r_grid();
+   double *r_grid = mygrid->r_grid;
+
+   int taskid = mygrid->d3db::parall->taskid_i();
+   int pzero  = mygrid->ijktop(0, 0, 0);
+   int zero   = mygrid->ijktoindex(0, 0, 0);
+
+   int npack0 = mygrid->npack(0);
+   int n2ft3d = mygrid->n2ft3d;
+   int nfft3d = mygrid->nfft3d;
+   double *glr = new double[n2ft3d];
+   double *gk  = new double[2*nfft3d];
+   double *tmp = new double[nfft3d];
+
+   // Use aperiodic definitions of kernel 
+   if ((screening_type==0) || (screening_type==2))
+   {
+      double *gk = new double[2*nfft3d];
+      double *gr = new double[n2ft3d];
+      double epsilon2 = epsilon*epsilon;
+ 
+      // short-range part of Greens function set only for short-range
+      std::memset(gk,0,2*nfft3d*sizeof(double));
+      for (auto k=0; k<nfft3d; ++k) 
+      {
+         gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+         if ((pzero == taskid) && (k == zero))
+            gk[2*k] = pi/epsilon2;
+         else
+            gk[2*k] = (fourpi / gg)*(1.0 - std::exp(-gg/(4.0*epsilon2)));
+      }
+      mygrid->cr_fft3d(gk);
+      mygrid->r_SMul(scal1,gk);
+
+      // long-range part of Greens function
+      std::memset(glr,0,n2ft3d*sizeof(double));
+      for (auto k=0; k<n2ft3d; ++k)
+      {
+          double x = r_grid[3*k];
+          double y = r_grid[3*k+1];
+          double z = r_grid[3*k+2];
+          double temp = std::sqrt(x*x + y*y + z*z);
+          if (temp>1.0e-10) 
+              temp = std::erf((epsilon*temp)/temp);
+           else
+              temp = 2.0*epsilon/sqrt_pi;
+         glr[k] = temp*dv;
+      }
+      mygrid->rr_Sum(gk,glr);
+
+      // multiply by the screening function ****
+      for (auto k=0; k<n2ft3d; ++k)
+      {
+         double x = r_grid[3*k];
+         double y = r_grid[3*k+1];
+         double z = r_grid[3*k+2];
+         double temp = std::sqrt(x*x + y*y + z*z);
+         glr[k] = glr[k]* (1.0 - std::pow((1.0 - std::exp(-std::pow((temp/rcut),pp2))), pp));
+      }
+      mygrid->r_zero_ends(glr);
+      mygrid->rc_fft3d(glr);
+
+      for (auto k=0; k<nfft3d; ++k)
+          tmp[k] = glr[2*k];
+      mygrid->t_pack(0, tmp);
+      mygrid->tt_pack_copy(0, tmp, vg);
+
+   }
+
+   // screening_type == 1 use periodic definitions of kernel
+   else if (screening_type==1)
+   {
+      std::memset(vg,0,npack0*sizeof(double));
+      for (auto k=0; k<npack0; ++k) 
+      {
+         gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+         if (gg < eps)
+            vg[k] = 5.633714987781071* std::pow(omega,(2.0/3.0)) /pi;
+         else
+            vg[k] = (fourpi / gg);
+      }
+   }
+
+   // screening_type == 3 use periodic definitions of cutoff-kernel
+   else if (screening_type==3)
+   {
+      std::memset(vg,0,npack0*sizeof(double));
+      for (auto k=0; k<npack0; ++k) 
+      {
+         gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+         if (gg < eps)
+            vg[k] = util_kiril_coulomb_transform0(3,rcut,pp);
+         else
+            vg[k] = util_kiril_coulomb_transform(3,gg,rcut,pp);
+      }
+   }
+
+   // screeing_type == 4 use erfc definitions of kernel 
+   else if (screening_type==4)
+   {
+      double invrcut  = 1.0/rcut;
+      double invrcut2 = invrcut*invrcut;
+      std::memset(vg,0,npack0*sizeof(double));
+      for (auto k=0; k<npack0; ++k)
+      {
+         gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+         if (gg < eps )
+            vg[k] = pi/invrcut2;
+         else
+            vg[k] = (fourpi/gg) * (1.0 - exp(-gg/(4.0*invrcut2)));
+      }
+   }
+
+
+   // screeing_type == 5 Filtered exchange definitions of kernel   ******
+   else if (screening_type==5)
+   {
+      std::memset(vg,0,npack0*sizeof(double));
+      //coulomb filter here
+   }
+   delete[] tmp;
+   delete[] glr;
+   delete[] gk;
+}
+
+/*******************************************
+ *                                         *
  *       HFX_Operator::HFX_Operator        *
  *                                         *
  *******************************************/
@@ -59,6 +214,10 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
    {
       hfx_parameter = std::stod(mystring_split(mystring_lowercase(xc_name), "-scaling_parameter")[1]);
    }
+   if (mystring_contains(mystring_lowercase(xc_name), "-attenuation"))
+   {
+      attenuation =  std::stod(mystring_split(mystring_lowercase(xc_name), "-attenuation")[1]);
+   }
 
    // set the number of hfx orbitals
    ispin = mygrid->ispin;
@@ -80,22 +239,15 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
       if (mystring_contains(mystring_lowercase(xc_name), "-periodic"))  { solver_type = 0; }
       if (mystring_contains(mystring_lowercase(xc_name), "-aperiodic")) { solver_type = 1; }
 
-      int k, pzero, zero, taskid;
-      double gg;
-      double *Gx = mygrid->Gxyz(0);
-      double *Gy = mygrid->Gxyz(1);
-      double *Gz = mygrid->Gxyz(2);
-      vg = new double[mygrid->npack(0)];
-      double *tmp = new double[mygrid->nfft3d];
-      double fourpi = 16.0 * atan(1.0);
 
+      vg = new double[mygrid->npack(0)];
       
       new_coulomb2 = false;
 
       // periodic solver
       if (solver_type==0)
       {
-         //call coulomb_screened_init(flag,rcut,pp)
+         coulomb_screened_kernel(mygrid,screening_type,rcut,pp,attenuation,vg);
       }
       // aperiodic solver 
       else if (solver_type==1)
@@ -115,23 +267,6 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
 //*     ***** flag==4 use erfc definitions of kernel            ******
 //*     ***** flag==5 Filtered exchange definitions of kernel   ******
  
- /*
-      taskid = mypneb->d3db::parall->taskid_i();
-      pzero = mypneb->ijktop(0, 0, 0);
-      zero = mypneb->ijktoindex(0, 0, 0);
- 
-      for (k = 0; k < (mypneb->nfft3d); ++k) {
-        gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
-        if ((pzero == taskid) && (k == zero))
-          tmp[k] = 0.0;
-        else
-          tmp[k] = fourpi / gg;
-      }
-      mypneb->t_pack(0, tmp);
-      mypneb->tt_pack_copy(0, tmp, vg);
-      */
-  
-      delete[] tmp;
    }
 }
 

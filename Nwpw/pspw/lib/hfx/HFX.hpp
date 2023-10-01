@@ -36,6 +36,7 @@ public:
    double rcut = 8.0;
    double pp = 8.0;
    double hfx_parameter = 1.0;
+   double attenuation = 1.0;
    double ehfx = 0.0;
    double phfx = 0.0;
  
@@ -113,6 +114,8 @@ public:
             os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
             os << "    - HFX screening power   (-screening_power)   = " << Efmt(8,3) << hfx.pp << std::endl;
             os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
+            if (hfx.screening_type==2)
+               os << "    - HFX attenuation parameter (-attenuation)   = " << hfx.attenuation << std::endl;
          }
          else
             os << "    - HFX free-space coulomb solver (-aperiodic)" << std::endl;
