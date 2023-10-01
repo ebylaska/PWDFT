@@ -548,6 +548,13 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    xcstring = "";
    if (rtdbjson["nwpw"]["xc"].is_string())
       xcstring = rtdbjson["nwpw"]["xc"];
+
+   // check for HFX stuff
+   std::string myxc_name = xcstring;
+   std::transform(myxc_name.begin(), myxc_name.end(), myxc_name.begin(), ::tolower);
+
+
+
  
    punita[0] = 20.0;
    punita[1] = 0.0;

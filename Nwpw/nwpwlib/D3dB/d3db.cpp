@@ -1,8 +1,13 @@
-/* d3db.C
+/* d3db.cpp
    Author - Eric Bylaska
 
         this class is used for defining 3d parallel maps
 */
+
+/**
+ * @class d3db
+ * @brief Container class for distributed 3D blocks operations.
+ */
 
 #include "compressed_io.hpp"
 #include "fft.h"
@@ -30,7 +35,17 @@ namespace pwdft {
  *         Constructors         *
  *                              *
  ********************************/
-
+/**
+ * @brief Constructor for the `d3db` class.
+ *
+ * This constructor initializes an instance of the `d3db` class with the given parameters.
+ *
+ * @param inparall A pointer to a `Parallel` object.
+ * @param inmaptype An integer specifying the mapping type.
+ * @param nx The number of grid points in the x-direction.
+ * @param ny The number of grid points in the y-direction.
+ * @param nz The number of grid points in the z-direction.
+ */
 d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz)
      : Mapping3(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz)
 {
@@ -455,7 +470,8 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
  *          Destructors         *
  *                              *
  ********************************/
-d3db::~d3db() {
+d3db::~d3db() 
+{
    int i, nb;
 
 #if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
@@ -546,78 +562,79 @@ d3db::~d3db() {
  *      d3db::c_ptranspose_jk_init        *
  *                                        *
  ******************************************/
-void d3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3) {
-  int index1, index2, index3;
-  int jndex1, jndex2, jndex3;
-  int proc_to, proc_from, phere, pto, pfrom;
-  bool iszero_ii, iszero_jj;
-
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  jndex1 = 0;
-  jndex2 = 0;
-  jndex3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][0][it] = index1;
-    p_i2_start[nb][0][it] = index2;
-
-    p_j1_start[nb][0][it] = jndex1;
-    p_j2_start[nb][0][it] = jndex2;
-
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j) {
-        /* packing scheme */
-        phere = ijktop(0, 0, k);
-        pto = ijktop(0, 0, j);
-        if ((phere == taskid) && (pto == proc_to))
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            // iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
-            // iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
-            iszero_ii = (zero_arow3[i + (nx / 2 + 1) * k]);
-            iszero_jj = (zero_arow3[i + (nx / 2 + 1) * j]);
-            if (!iszero_ii) {
-              p_iq_to_i1[nb][0][index1] = ijktoindex(i, j, k);
-              ++index1;
-            }
-            if (!iszero_jj) {
-              p_jq_to_i1[nb][0][jndex1] = ijktoindex(i, j, k);
-              ++jndex1;
-            }
-          }
-
-        /* unpacking scheme */
-        phere = ijktop(0, 0, j);
-        pfrom = ijktop(0, 0, k);
-        if ((phere == taskid) && (pfrom == proc_from))
-          for (auto i = 0; i < (nx / 2 + 1); ++i) {
-            // iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
-            // iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
-            iszero_ii = (zero_arow3[i + (nx / 2 + 1) * k]);
-            iszero_jj = (zero_arow3[i + (nx / 2 + 1) * j]);
-            if (!iszero_ii) {
-              p_iq_to_i2[nb][0][index2] = ijktoindex(i, k, j);
-              ++index2;
-            } else {
-              p_iz_to_i2[nb][0][index3] = ijktoindex(i, k, j);
-              ++index3;
-            }
-            if (!iszero_jj) {
-              p_jq_to_i2[nb][0][jndex2] = ijktoindex(i, k, j);
-              ++jndex2;
-            } else {
-              p_jz_to_i2[nb][0][jndex3] = ijktoindex(i, k, j);
-              ++jndex3;
-            }
-          }
-      }
-  }
-  p_i1_start[nb][0][np] = index1;
-  p_i2_start[nb][0][np] = index2;
-  p_j1_start[nb][0][np] = jndex1;
-  p_j2_start[nb][0][np] = jndex2;
+void d3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3) 
+{
+   int index1, index2, index3;
+   int jndex1, jndex2, jndex3;
+   int proc_to, proc_from, phere, pto, pfrom;
+   bool iszero_ii, iszero_jj;
+ 
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   jndex1 = 0;
+   jndex2 = 0;
+   jndex3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][0][it] = index1;
+     p_i2_start[nb][0][it] = index2;
+ 
+     p_j1_start[nb][0][it] = jndex1;
+     p_j2_start[nb][0][it] = jndex2;
+ 
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j) {
+         /* packing scheme */
+         phere = ijktop(0, 0, k);
+         pto = ijktop(0, 0, j);
+         if ((phere == taskid) && (pto == proc_to))
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             // iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+             // iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+             iszero_ii = (zero_arow3[i + (nx / 2 + 1) * k]);
+             iszero_jj = (zero_arow3[i + (nx / 2 + 1) * j]);
+             if (!iszero_ii) {
+               p_iq_to_i1[nb][0][index1] = ijktoindex(i, j, k);
+               ++index1;
+             }
+             if (!iszero_jj) {
+               p_jq_to_i1[nb][0][jndex1] = ijktoindex(i, j, k);
+               ++jndex1;
+             }
+           }
+ 
+         /* unpacking scheme */
+         phere = ijktop(0, 0, j);
+         pfrom = ijktop(0, 0, k);
+         if ((phere == taskid) && (pfrom == proc_from))
+           for (auto i = 0; i < (nx / 2 + 1); ++i) {
+             // iszero_ii = (zero_arow3[i + (nx/2+1)*(k-1)]==1);
+             // iszero_jj = (zero_arow3[i + (nx/2+1)*(j-1)]==1);
+             iszero_ii = (zero_arow3[i + (nx / 2 + 1) * k]);
+             iszero_jj = (zero_arow3[i + (nx / 2 + 1) * j]);
+             if (!iszero_ii) {
+               p_iq_to_i2[nb][0][index2] = ijktoindex(i, k, j);
+               ++index2;
+             } else {
+               p_iz_to_i2[nb][0][index3] = ijktoindex(i, k, j);
+               ++index3;
+             }
+             if (!iszero_jj) {
+               p_jq_to_i2[nb][0][jndex2] = ijktoindex(i, k, j);
+               ++jndex2;
+             } else {
+               p_jz_to_i2[nb][0][jndex3] = ijktoindex(i, k, j);
+               ++jndex3;
+             }
+           }
+       }
+   }
+   p_i1_start[nb][0][np] = index1;
+   p_i2_start[nb][0][np] = index2;
+   p_j1_start[nb][0][np] = jndex1;
+   p_j2_start[nb][0][np] = jndex2;
 }
 
 /******************************************
@@ -625,291 +642,312 @@ void d3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3) {
  *      d3db::c_ptranspose_ijk_init       *
  *                                        *
  ******************************************/
-void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2,
-                                 bool *zero_arow3) {
-  int index1, index2, index3, proc_to, proc_from, phere, pto;
-  bool iszero;
-
-  /**************************************************/
-  /* map1to2 mapping - done - tranpose operation #0 */
-  /*  (ny,nz,nx/2+1)  <-- (nx/2+1,ny,nz)            */
-  /*   use zero_arow2                               */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][0][it] = index1;
-    p_i2_start[nb][0][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          iszero = (zero_arow2[i + k * (nx / 2 + 1)]);
-
-          // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
-          // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
-
-          phere = ijktop2(i, j, k);
-          pto = ijktop1(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            if (!iszero) {
-              p_iq_to_i1[nb][0][index1] = ijktoindex2t(i, j, k);
-              ++index1;
-            }
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            if (!iszero) {
-              p_iq_to_i2[nb][0][index2] = ijktoindex1(i, j, k);
-              ++index2;
-            } else {
-              p_iz_to_i2[nb][0][index3] = ijktoindex1(i, j, k);
-              ++index3;
-            }
-          }
-        }
-  }
-  p_i1_start[nb][0][np] = index1;
-  p_i2_start[nb][0][np] = index2;
-  p_iz_to_i2_count[nb][0] = index3;
-
-  /**************************************************/
-  /* map2to3 mapping - done - tranpose operation #1 */
-  /*     (nz,nx/2+1,ny)  <-- (ny,nz,nx/2+1)         */
-  /*     use zero_arow3                             */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][1][it] = index1;
-    p_i2_start[nb][1][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          iszero = (zero_arow3[i + j * (nx / 2 + 1)]);
-
-          // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
-          // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
-
-          phere = ijktop1(i, j, k);
-          pto = ijktop(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            if (!iszero) {
-              p_iq_to_i1[nb][1][index1] = ijktoindex1(i, j, k);
-              ++index1;
-            }
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            if (!iszero) {
-              p_iq_to_i2[nb][1][index2] = ijktoindex(i, j, k);
-              ++index2;
-            } else {
-              p_iz_to_i2[nb][1][index3] = ijktoindex(i, j, k);
-              ++index3;
-            }
-          }
-        }
-  }
-  p_i1_start[nb][1][np] = index1;
-  p_i2_start[nb][1][np] = index2;
-  p_iz_to_i2_count[nb][1] = index3;
-
-  /**************************************************/
-  /* map3to2 mapping - done - tranpose operation #2 */
-  /*     (ny,nz,nx/2+1)  <-- (nz,nx/2+1,ny)         */
-  /*     use zero_arow3                             */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][2][it] = index1;
-    p_i2_start[nb][2][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          iszero = (zero_arow3[i + j * (nx / 2 + 1)]);
-
-          // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
-          // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
-
-          phere = ijktop(i, j, k);
-          pto = ijktop1(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            if (!iszero) {
-              p_iq_to_i1[nb][2][index1] = ijktoindex(i, j, k);
-              ++index1;
-            }
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            if (!iszero) {
-              p_iq_to_i2[nb][2][index2] = ijktoindex1(i, j, k);
-              ++index2;
-            } else {
-              p_iz_to_i2[nb][2][index3] = ijktoindex1(i, j, k);
-              ++index3;
-            }
-          }
-        }
-  }
-  p_i1_start[nb][2][np] = index1;
-  p_i2_start[nb][2][np] = index2;
-  p_iz_to_i2_count[nb][2] = index3;
-
-  /**************************************************/
-  /* map2to1 mapping - done - tranpose operation #3 */
-  /*     (nx/2+1,ny,nz)  <-- (ny,nz,nx/2+1)         */
-  /*     use zero_arow2                             */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][3][it] = index1;
-    p_i2_start[nb][3][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          iszero = (zero_arow2[i + k * (nx / 2 + 1)]);
-
-          // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
-          // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
-
-          phere = ijktop1(i, j, k);
-          pto = ijktop2(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            if (!iszero) {
-              p_iq_to_i1[nb][3][index1] = ijktoindex1(i, j, k);
-              ++index1;
-            }
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            if (!iszero) {
-              p_iq_to_i2[nb][3][index2] = ijktoindex2t(i, j, k);
-              ++index2;
-            } else {
-              p_iz_to_i2[nb][3][index3] = ijktoindex2t(i, j, k);
-              ++index3;
-            }
-          }
-        }
-  }
-  p_i1_start[nb][3][np] = index1;
-  p_i2_start[nb][3][np] = index2;
-  p_iz_to_i2_count[nb][3] = index3;
-
-  /**************************************************/
-  /* map1to3 mapping - done - tranpose operation #4 */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][4][it] = index1;
-    p_i2_start[nb][4][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
-          // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
-
-          phere = ijktop2(i, j, k);
-          pto = ijktop(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            p_iq_to_i1[nb][4][index1] = ijktoindex2t(i, j, k);
-            ++index1;
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            p_iq_to_i2[nb][4][index2] = ijktoindex(i, j, k);
-            ++index2;
-          }
-        }
-  }
-  p_i1_start[nb][4][np] = index1;
-  p_i2_start[nb][4][np] = index2;
-  p_iz_to_i2_count[nb][4] = index3;
-
-  /**************************************************/
-  /* map3to1 mapping - done - tranpose operation #5 */
-  /**************************************************/
-  index1 = 0;
-  index2 = 0;
-  index3 = 0;
-  for (auto it = 0; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    proc_from = (taskid - it + np) % np;
-    p_i1_start[nb][5][it] = index1;
-    p_i2_start[nb][5][it] = index2;
-    for (auto k = 0; k < nz; ++k)
-      for (auto j = 0; j < ny; ++j)
-        for (auto i = 0; i < (nx / 2 + 1); ++i) {
-          // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
-          // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
-
-          phere = ijktop(i, j, k);
-          pto = ijktop2(i, j, k);
-
-          /* packing scheme */
-          if ((phere == taskid) && (pto == proc_to)) {
-            p_iq_to_i1[nb][5][index1] = ijktoindex(i, j, k);
-            ++index1;
-          }
-          /* unpacking scheme */
-          if ((pto == taskid) && (phere == proc_from)) {
-            p_iq_to_i2[nb][5][index2] = ijktoindex2t(i, j, k);
-            ++index2;
-          }
-        }
-  }
-  p_i1_start[nb][5][np] = index1;
-  p_i2_start[nb][5][np] = index2;
-  p_iz_to_i2_count[nb][5] = index3;
+void d3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow3) 
+{
+   int index1, index2, index3, proc_to, proc_from, phere, pto;
+   bool iszero;
+ 
+   /**************************************************/
+   /* map1to2 mapping - done - tranpose operation #0 */
+   /*  (ny,nz,nx/2+1)  <-- (nx/2+1,ny,nz)            */
+   /*   use zero_arow2                               */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][0][it] = index1;
+     p_i2_start[nb][0][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           iszero = (zero_arow2[i + k * (nx / 2 + 1)]);
+ 
+           // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+           // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+ 
+           phere = ijktop2(i, j, k);
+           pto = ijktop1(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             if (!iszero) {
+               p_iq_to_i1[nb][0][index1] = ijktoindex2t(i, j, k);
+               ++index1;
+             }
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             if (!iszero) {
+               p_iq_to_i2[nb][0][index2] = ijktoindex1(i, j, k);
+               ++index2;
+             } else {
+               p_iz_to_i2[nb][0][index3] = ijktoindex1(i, j, k);
+               ++index3;
+             }
+           }
+         }
+   }
+   p_i1_start[nb][0][np] = index1;
+   p_i2_start[nb][0][np] = index2;
+   p_iz_to_i2_count[nb][0] = index3;
+ 
+   /**************************************************/
+   /* map2to3 mapping - done - tranpose operation #1 */
+   /*     (nz,nx/2+1,ny)  <-- (ny,nz,nx/2+1)         */
+   /*     use zero_arow3                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][1][it] = index1;
+     p_i2_start[nb][1][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           iszero = (zero_arow3[i + j * (nx / 2 + 1)]);
+ 
+           // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+           // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+ 
+           phere = ijktop1(i, j, k);
+           pto = ijktop(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             if (!iszero) {
+               p_iq_to_i1[nb][1][index1] = ijktoindex1(i, j, k);
+               ++index1;
+             }
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             if (!iszero) {
+               p_iq_to_i2[nb][1][index2] = ijktoindex(i, j, k);
+               ++index2;
+             } else {
+               p_iz_to_i2[nb][1][index3] = ijktoindex(i, j, k);
+               ++index3;
+             }
+           }
+         }
+   }
+   p_i1_start[nb][1][np] = index1;
+   p_i2_start[nb][1][np] = index2;
+   p_iz_to_i2_count[nb][1] = index3;
+ 
+   /**************************************************/
+   /* map3to2 mapping - done - tranpose operation #2 */
+   /*     (ny,nz,nx/2+1)  <-- (nz,nx/2+1,ny)         */
+   /*     use zero_arow3                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][2][it] = index1;
+     p_i2_start[nb][2][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           iszero = (zero_arow3[i + j * (nx / 2 + 1)]);
+ 
+           // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+           // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+ 
+           phere = ijktop(i, j, k);
+           pto = ijktop1(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             if (!iszero) {
+               p_iq_to_i1[nb][2][index1] = ijktoindex(i, j, k);
+               ++index1;
+             }
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             if (!iszero) {
+               p_iq_to_i2[nb][2][index2] = ijktoindex1(i, j, k);
+               ++index2;
+             } else {
+               p_iz_to_i2[nb][2][index3] = ijktoindex1(i, j, k);
+               ++index3;
+             }
+           }
+         }
+   }
+   p_i1_start[nb][2][np] = index1;
+   p_i2_start[nb][2][np] = index2;
+   p_iz_to_i2_count[nb][2] = index3;
+ 
+   /**************************************************/
+   /* map2to1 mapping - done - tranpose operation #3 */
+   /*     (nx/2+1,ny,nz)  <-- (ny,nz,nx/2+1)         */
+   /*     use zero_arow2                             */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][3][it] = index1;
+     p_i2_start[nb][3][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           iszero = (zero_arow2[i + k * (nx / 2 + 1)]);
+ 
+           // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
+           // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+ 
+           phere = ijktop1(i, j, k);
+           pto = ijktop2(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             if (!iszero) {
+               p_iq_to_i1[nb][3][index1] = ijktoindex1(i, j, k);
+               ++index1;
+             }
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             if (!iszero) {
+               p_iq_to_i2[nb][3][index2] = ijktoindex2t(i, j, k);
+               ++index2;
+             } else {
+               p_iz_to_i2[nb][3][index3] = ijktoindex2t(i, j, k);
+               ++index3;
+             }
+           }
+         }
+   }
+   p_i1_start[nb][3][np] = index1;
+   p_i2_start[nb][3][np] = index2;
+   p_iz_to_i2_count[nb][3] = index3;
+ 
+   /**************************************************/
+   /* map1to3 mapping - done - tranpose operation #4 */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][4][it] = index1;
+     p_i2_start[nb][4][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+           // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+ 
+           phere = ijktop2(i, j, k);
+           pto = ijktop(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             p_iq_to_i1[nb][4][index1] = ijktoindex2t(i, j, k);
+             ++index1;
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             p_iq_to_i2[nb][4][index2] = ijktoindex(i, j, k);
+             ++index2;
+           }
+         }
+   }
+   p_i1_start[nb][4][np] = index1;
+   p_i2_start[nb][4][np] = index2;
+   p_iz_to_i2_count[nb][4] = index3;
+ 
+   /**************************************************/
+   /* map3to1 mapping - done - tranpose operation #5 */
+   /**************************************************/
+   index1 = 0;
+   index2 = 0;
+   index3 = 0;
+   for (auto it = 0; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     proc_from = (taskid - it + np) % np;
+     p_i1_start[nb][5][it] = index1;
+     p_i2_start[nb][5][it] = index2;
+     for (auto k = 0; k < nz; ++k)
+       for (auto j = 0; j < ny; ++j)
+         for (auto i = 0; i < (nx / 2 + 1); ++i) {
+           // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
+           // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
+ 
+           phere = ijktop(i, j, k);
+           pto = ijktop2(i, j, k);
+ 
+           /* packing scheme */
+           if ((phere == taskid) && (pto == proc_to)) {
+             p_iq_to_i1[nb][5][index1] = ijktoindex(i, j, k);
+             ++index1;
+           }
+           /* unpacking scheme */
+           if ((pto == taskid) && (phere == proc_from)) {
+             p_iq_to_i2[nb][5][index2] = ijktoindex2t(i, j, k);
+             ++index2;
+           }
+         }
+   }
+   p_i1_start[nb][5][np] = index1;
+   p_i2_start[nb][5][np] = index2;
+   p_iz_to_i2_count[nb][5] = index3;
 }
+
 
 /********************************
  *                              *
  *         d3db::r_alloc        *
  *                              *
  ********************************/
-double *d3db::r_alloc() {
-  double *ptr = new (std::nothrow) double[n2ft3d]();
-  return ptr;
+/**
+ * @brief Allocate memory for a real-space array and initialize all elements to zero.
+ *
+ * This function allocates memory for a real-space array and initializes all its
+ * elements to zero. It is used to create real-space arrays for various calculations.
+ *
+ * @return A pointer to the allocated real-space array.
+ */
+double *d3db::r_alloc() 
+{
+   double *ptr = new (std::nothrow) double[n2ft3d]();
+   return ptr;
 }
+
 
 /********************************
  *                              *
  *         d3db::r_nalloc       *
  *                              *
  ********************************/
-double *d3db::r_nalloc(const int nn) {
-  double *ptr = new (std::nothrow) double[n2ft3d * nn]();
-  return ptr;
+/**
+ * @brief Allocate a 1D array with extended size for real-space data.
+ *
+ * This function allocates a 1D array for storing real-space data with extended size.
+ *
+ * @param nn The number of elements to allocate.
+ * @return A pointer to the allocated array or nullptr if allocation fails.
+ */
+double *d3db::r_nalloc(const int nn) 
+{
+   double *ptr = new (std::nothrow) double[n2ft3d * nn]();
+   return ptr;
 }
+
 
 /********************************
  *                              *
@@ -3923,43 +3961,60 @@ int d3db::timereverse_size() {
  *      d3db::t_timereverse     *
  *                              *
  ********************************/
-void d3db::t_timereverse(double *a, double *tmp1, double *tmp2) {
-  int nnfft3d, indx, it, proc_from, proc_to;
-  int msglen;
-
-  parall->astart(1, np);
-
-  indx = t_i1_start[0];
-  nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-  t_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
-
-  // !!! DEBUG WARNING possible issue with memcpy
-  /* it = 0, transpose data on same thread */
-  msglen = (t_i2_start[1] - t_i2_start[0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-  std::memcpy(tmp2 + t_i2_start[0], tmp1 + t_i1_start[0],
-              msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* asynchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = (t_i2_start[it + 1] - t_i2_start[it]);
-    if (msglen > 0)
-      parall->adreceive(1, 1, proc_from, msglen, &tmp2[2 * t_i2_start[it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = (t_i1_start[it + 1] - t_i1_start[it]);
-    if (msglen > 0)
-      parall->dsend(1, 1, proc_to, msglen, &tmp1[2 * t_i1_start[it]]);
-  }
-  parall->aend(1);
-
-  indx = t_i2_start[0];
-  nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
-  t_bindexcopy(nnfft3d, &t_iq_to_i2[indx], &tmp2[indx], a);
+/**
+ * @brief Reverses the time indices of a real array using parallel data transfer.
+ *
+ * This function performs a time reversal operation on a real array by reversing the
+ * time indices of the data. It uses parallel data transfer to efficiently handle
+ * distributed data.
+ *
+ * @param a      Real input/output array to be time-reversed.
+ * @param tmp1   Temporary real array used for intermediate calculations.
+ * @param tmp2   Temporary real array used for intermediate calculations.
+ *
+ * The function operates on real numbers represented as double values. The input array
+ * `a` is modified in place to store the time-reversed data.
+ */
+void d3db::t_timereverse(double *a, double *tmp1, double *tmp2) 
+{
+   int nnfft3d, indx, it, proc_from, proc_to;
+   int msglen;
+ 
+   parall->astart(1, np);
+ 
+   indx = t_i1_start[0];
+   nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
+   t_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
+ 
+   // !!! DEBUG WARNING possible issue with memcpy
+   /* it = 0, transpose data on same thread */
+   msglen = (t_i2_start[1] - t_i2_start[0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
+   std::memcpy(tmp2 + t_i2_start[0], tmp1 + t_i1_start[0],
+               msglen * sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) 
+   {
+      /* asynchronous receive of tmp */
+      proc_from = (taskid - it + np) % np;
+      msglen = (t_i2_start[it + 1] - t_i2_start[it]);
+      if (msglen > 0)
+         parall->adreceive(1, 1, proc_from, msglen, &tmp2[2 * t_i2_start[it]]);
+   }
+   for (it = 1; it < np; ++it) 
+   {
+      proc_to = (taskid + it) % np;
+      msglen = (t_i1_start[it + 1] - t_i1_start[it]);
+      if (msglen > 0)
+         parall->dsend(1, 1, proc_to, msglen, &tmp1[2 * t_i1_start[it]]);
+   }
+   parall->aend(1);
+ 
+   indx = t_i2_start[0];
+   nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
+   t_bindexcopy(nnfft3d, &t_iq_to_i2[indx], &tmp2[indx], a);
 }
 
 /********************************
@@ -3967,42 +4022,60 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2) {
  *      d3db::c_timereverse     *
  *                              *
  ********************************/
-void d3db::c_timereverse(double *a, double *tmp1, double *tmp2) {
-  int nnfft3d, indx, it, proc_from, proc_to;
-  int msglen;
-
-  parall->astart(1, np);
-
-  indx = t_i1_start[0];
-  nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-  c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
-
-  /* it = 0, transpose data on same thread */
-  msglen = 2 * (t_i2_start[1] - t_i2_start[0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-  std::memcpy(tmp2 + 2 * t_i2_start[0], tmp1 + 2 * t_i1_start[0],
-              msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* synchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = 2 * (t_i2_start[it + 1] - t_i2_start[it]);
-    if (msglen > 0)
-      parall->adreceive(1, 1, proc_from, msglen, &tmp2[2 * t_i2_start[it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = 2 * (t_i1_start[it + 1] - t_i1_start[it]);
-    if (msglen > 0)
-      parall->dsend(1, 1, proc_to, msglen, &tmp1[2 * t_i1_start[it]]);
-  }
-  parall->aend(1);
-
-  indx = t_i2_start[0];
-  nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
-  c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2 + indx, a);
+/**
+ * @brief Reverses the time indices of a complex array using parallel data transfer.
+ *
+ * This function performs a time reversal operation on a complex array by reversing the
+ * time indices of the data. It uses parallel data transfer to efficiently handle
+ * distributed data.
+ *
+ * @param a      Complex input/output array to be time-reversed.
+ * @param tmp1   Temporary complex array used for intermediate calculations.
+ * @param tmp2   Temporary complex array used for intermediate calculations.
+ *
+ * The function operates on complex numbers represented as pairs of double values
+ * (real and imaginary parts). The input array `a` is modified in place to store the
+ * time-reversed data.
+ */
+void d3db::c_timereverse(double *a, double *tmp1, double *tmp2) 
+{
+   int nnfft3d, indx, it, proc_from, proc_to;
+   int msglen;
+ 
+   parall->astart(1, np);
+ 
+   indx = t_i1_start[0];
+   nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
+   c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
+ 
+   /* it = 0, transpose data on same thread */
+   msglen = 2 * (t_i2_start[1] - t_i2_start[0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
+   std::memcpy(tmp2 + 2 * t_i2_start[0], tmp1 + 2 * t_i1_start[0],
+               msglen * sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) 
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid - it + np) % np;
+      msglen = 2 * (t_i2_start[it + 1] - t_i2_start[it]);
+      if (msglen > 0)
+         parall->adreceive(1, 1, proc_from, msglen, &tmp2[2 * t_i2_start[it]]);
+   }
+   for (it = 1; it < np; ++it) 
+   {
+      proc_to = (taskid + it) % np;
+      msglen = 2 * (t_i1_start[it + 1] - t_i1_start[it]);
+      if (msglen > 0)
+         parall->dsend(1, 1, proc_to, msglen, &tmp1[2 * t_i1_start[it]]);
+   }
+   parall->aend(1);
+ 
+   indx = t_i2_start[0];
+   nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
+   c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2 + indx, a);
 }
 
 /**************************************
@@ -4010,38 +4083,64 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2) {
  *      d3db::c_timereverse_start     *
  *                                    *
  **************************************/
+/**
+ * @brief Start the process of time reversal for a complex array.
+ *
+ * This function initiates the process of time reversal for the complex array 'a' using temporary arrays 'tmp1' and 'tmp2'.
+ *
+ * @param a             The input complex array to be reversed.
+ * @param tmp1          Temporary complex array for data manipulation.
+ * @param tmp2          Temporary complex array for data manipulation.
+ * @param request_indx  An integer representing the request index.
+ * @param msgtype       An integer representing the message type.
+ *
+ * @details
+ * - The function initiates the time reversal process for the complex array 'a' using temporary arrays 'tmp1' and 'tmp2'.
+ * - It performs data manipulation on these arrays and handles message passing between tasks.
+ * - The 'request_indx' and 'msgtype' parameters are used for message passing operations.
+ *
+ * @param nnfft3d       The total size of the complex arrays 'a', 'tmp1', and 'tmp2'.
+ * @param indx          The starting index for the temporary array 'tmp1'.
+ * @param it            Loop variable for iteration.
+ * @param proc_from     The source task ID for message receiving.
+ * @param proc_to       The destination task ID for message sending.
+ * @param msglen        The length of the message data.
+ *
+ * @note The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
+ */
 void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2,
-                               const int request_indx, const int msgtype) {
-  int nnfft3d, indx, it, proc_from, proc_to;
-  int msglen;
-
-  indx = t_i1_start[0];
-  nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-  c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
-
-  /* it = 0, transpose data on same thread */
-  msglen = 2 * (t_i2_start[1] - t_i2_start[0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-  std::memcpy(tmp2 + 2 * t_i2_start[0], tmp1 + 2 * t_i1_start[0],
-              msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* synchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = 2 * (t_i2_start[it + 1] - t_i2_start[it]);
-    if (msglen > 0)
-      parall->adreceive(request_indx, msgtype, proc_from, msglen,
-                        &tmp2[2 * t_i2_start[it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = 2 * (t_i1_start[it + 1] - t_i1_start[it]);
-    if (msglen > 0)
-      parall->adsend(request_indx, msgtype, proc_to, msglen,
-                     &tmp1[2 * t_i1_start[it]]);
-  }
+                               const int request_indx, const int msgtype) 
+{
+   int nnfft3d, indx, it, proc_from, proc_to;
+   int msglen;
+ 
+   indx = t_i1_start[0];
+   nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
+   c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
+ 
+   /* it = 0, transpose data on same thread */
+   msglen = 2 * (t_i2_start[1] - t_i2_start[0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
+   std::memcpy(tmp2 + 2 * t_i2_start[0], tmp1 + 2 * t_i1_start[0],
+               msglen * sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) {
+     /* synchronous receive of tmp */
+     proc_from = (taskid - it + np) % np;
+     msglen = 2 * (t_i2_start[it + 1] - t_i2_start[it]);
+     if (msglen > 0)
+       parall->adreceive(request_indx, msgtype, proc_from, msglen,
+                         &tmp2[2 * t_i2_start[it]]);
+   }
+   for (it = 1; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     msglen = 2 * (t_i1_start[it + 1] - t_i1_start[it]);
+     if (msglen > 0)
+       parall->adsend(request_indx, msgtype, proc_to, msglen,
+                      &tmp1[2 * t_i1_start[it]]);
+   }
 }
 
 /**************************************
@@ -4049,20 +4148,66 @@ void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2,
  *      d3db::c_timereverse_end       *
  *                                    *
  **************************************/
-void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2,
-                             const int request_indx) {
-  int indx = t_i2_start[0];
-  int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
+/**
+ * @brief Perform the final step of time reversal on a complex array.
+ *
+ * This function completes the time reversal process for a complex array 'a'. It conjugates the elements of the temporary
+ * array 'tmp2' and copies them back to the original array 'a' using index mappings.
+ *
+ * @param a             The original complex array to which the time reversal is applied.
+ * @param tmp1          A temporary complex array used in the time reversal process.
+ * @param tmp2          A temporary complex array with conjugated values.
+ * @param request_indx  An integer indicating the request index used for synchronization.
+ *
+ * @note The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
+ *
+ * @details
+ * - The function completes the time reversal process for a complex array 'a' using the temporary arrays 'tmp1' and 'tmp2'.
+ * - The 'request_indx' parameter is used to ensure proper synchronization, and it should correspond to the synchronization
+ *   request index previously used in the time reversal process.
+ * - The time reversal involves conjugating the elements of 'tmp2' and copying them back to 'a' based on index mappings.
+ * - The size of the operation is determined by 'nnfft3d', which represents the number of elements to be processed.
+ *
+ */
+void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2, const int request_indx) 
+{
+   int indx = t_i2_start[0];
+   int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
 
-  parall->awaitall(request_indx);
-  c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2 + indx, a);
+   parall->awaitall(request_indx);
+   c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2 + indx, a);
 }
+
 
 /********************************
  *                              *
  *         d3db::c_setpw        *
  *                              *
  ********************************/
+/**
+ * @brief Set complex values in an array based on a specific pattern.
+ *
+ * This function sets complex values in the array 'a' based on the specified 'filling' indices and 'cvalue'.
+ *
+ * @param filling   An integer array representing the indices (i, j, k) where the complex value should be set.
+ * @param cvalue    A complex value (double[2]) to be assigned to the array 'a' at the specified indices.
+ * @param a         The complex array where values will be set.
+ *
+ * @note The function assumes that memory for 'a' has been allocated appropriately by the caller.
+ *
+ * @details
+ * - The function sets complex values in the array 'a' based on the indices provided in the 'filling' array and the 'cvalue'.
+ * - The 'filling' array should contain the indices (i, j, k) specifying where the complex value should be assigned in 'a'.
+ * - The complex value 'cvalue' is assigned to the array 'a' at the specified indices.
+ * - The function also sets the conjugate value in a specific case where i == 0, j != 0, and k != 0.
+ *
+ * @param i         The 'i' index indicating the position where the complex value should be set.
+ * @param j         The 'j' index indicating the position where the complex value should be set.
+ * @param k         The 'k' index indicating the position where the complex value should be set.
+ * @param indx      The calculated index in the array 'a' based on the provided (i, j, k) indices.
+ * @param p         The task ID associated with the calculated (i, j, k) indices.
+ *
+ */
 void d3db::c_setpw(const int filling[], const double *cvalue, double *a) 
 {
    int i = filling[0];
@@ -4108,11 +4253,32 @@ void d3db::c_setpw(const int filling[], const double *cvalue, double *a)
  *        d3db::c_addrandom     *
  *                              *
  ********************************/
-
-void d3db::c_addrandom(double *a) {
-  double fac = 1.0 / sqrt(1.0 * nfft3d);
-  for (auto i = 0; i < n2ft3d; ++i)
-    a[i] += fac * (0.50 - util_random(0));
+/**
+ * @brief Add random values to the elements of an array.
+ *
+ * This function adds random values to each element of the input array 'a'. The random values are generated between -0.25
+ * and 0.25, scaled by a factor based on the size of the grid (nfft3d), and then added to the corresponding elements of 'a'.
+ *
+ * @param a  The array of elements to which random values will be added.
+ *
+ * @note The function assumes that memory for 'a' has been allocated appropriately by the caller.
+ *
+ * @details
+ * - The function uses a linear congruential pseudorandom number generator to generate random values.
+ * - The scaling factor 'fac' is calculated as 1.0 divided by the square root of the total number of elements in the grid ('nfft3d').
+ * - For each element of the array 'a', a random value between -0.25 and 0.25, scaled by 'fac', is generated and added.
+ *
+ * @par Pseudorandom Number Generator:
+ * - The pseudorandom number generator used by this function is based on the 'util_random' function.
+ * - It generates pseudorandom numbers in the range [0, 1).
+ * - The generated random values are then transformed to the range [-0.25, 0.25].
+ *
+ */
+void d3db::c_addrandom(double *a) 
+{
+   double fac = 1.0 / sqrt(1.0 * nfft3d);
+   for (auto i = 0; i < n2ft3d; ++i)
+      a[i] += fac * (0.50 - util_random(0));
 }
 
 /********************************
@@ -4120,10 +4286,32 @@ void d3db::c_addrandom(double *a) {
  *        d3db::r_setrandom     *
  *                              *
  ********************************/
-void d3db::r_setrandom(double *a) {
-  double fac = 1.0 / (1.0 * nfft3d);
-  for (auto i = 0; i < n2ft3d; ++i)
-     a[i] = fac*(0.50 - util_random(0));
+/**
+ * @brief Set the elements of an array to random values.
+ *
+ * This function sets the elements of the input array 'a' to random values between -0.25 and 0.25, scaled by a factor
+ * based on the size of the grid (nfft3d).
+ *
+ * @param a  The array of elements to be filled with random values.
+ *
+ * @note The function assumes that memory for 'a' has been allocated appropriately by the caller.
+ *
+ * @details
+ * - The function uses a linear congruential pseudorandom number generator to generate random values.
+ * - The scaling factor 'fac' is calculated as 1.0 divided by the total number of elements in the grid ('nfft3d').
+ * - Each element of the array 'a' is set to a random value between -0.25 and 0.25, scaled by 'fac'.
+ *
+ * @par Pseudorandom Number Generator:
+ * - The pseudorandom number generator used by this function is based on the 'util_random' function.
+ * - It generates pseudorandom numbers in the range [0, 1).
+ * - The generated random values are then transformed to the range [-0.25, 0.25].
+ *
+ */
+void d3db::r_setrandom(double *a) 
+{
+   double fac = 1.0 / (1.0 * nfft3d);
+   for (auto i = 0; i < n2ft3d; ++i)
+      a[i] = fac*(0.50 - util_random(0));
 }
 
 /********************************
@@ -4132,26 +4320,55 @@ void d3db::r_setrandom(double *a) {
  *                              *
  ********************************/
 // expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx+2,ny,nz)
-void d3db::hr2r_expand(const double *ah, double *a) {
-  std::memset(a, 0, n2ft3d * sizeof(double));
-  if (maptype == 1) 
-  {
-     int nxh = nx/2;
-     int nqh = nq/2;
-     int nyh = ny/2;
-     for (auto j=0; j<nyh; ++j)
-        for (auto q=0; q<nqh; ++q)
-           for (auto i=0; i<nxh; ++i)
-              a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
-  } 
-  else 
-  {
-     int nxh = nx/2;
-     int nq1h = nq1/4;
-     for (auto q=0; q<nq1h; ++q)
-        for (auto i=0; i<nxh; ++i)
-           a[i + q*(nx+2)] = ah[i + q*(nxh+2)];
-  }
+/**
+ * @brief Expand a grid from ((nx/2+2), ny/2, nz/2) to (nx+2, ny, nz).
+ *
+ * This function performs a grid expansion operation from the input array 'ah' to the output array 'a'. It is designed
+ * for a specific mapping type (maptype) and grid sizes.
+ *
+ * @param ah  The input contracted grid array of size ((nx/2+2), ny/2, nz/2).
+ * @param a   The output expanded grid array of size (nx+2, ny, nz).
+ *
+ * @note The function assumes that memory for 'ah' and 'a' has been allocated appropriately by the caller.
+ * @note The function uses 'maptype' to determine the appropriate expansion method.
+ *
+ * @param maptype The mapping type used for expansion:
+ * - If 'maptype' is 1, a 3D expansion is performed.
+ * - If 'maptype' is not 1, a 2D expansion is performed.
+ *
+ * @details
+ * - For maptype = 1 (3D expansion):
+ *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2, nz/2) is expanded to 'a' with dimensions (nx+2, ny, nz).
+ *
+ * - For maptype != 1 (2D expansion):
+ *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2) is expanded to 'a' with dimensions (nx+2, ny).
+ *
+ * @par Implementation Details:
+ * - The function uses nested loops to iterate over the input grid and perform the expansion according to the specified maptype.
+ * - The resulting expanded grid 'a' is filled with the expanded values.
+ *
+ */
+void d3db::hr2r_expand(const double *ah, double *a) 
+{
+   std::memset(a, 0, n2ft3d * sizeof(double));
+   if (maptype == 1) 
+   {
+      int nxh = nx/2;
+      int nqh = nq/2;
+      int nyh = ny/2;
+      for (auto j=0; j<nyh; ++j)
+         for (auto q=0; q<nqh; ++q)
+            for (auto i=0; i<nxh; ++i)
+               a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
+   } 
+   else 
+   {
+      int nxh = nx/2;
+      int nq1h = nq1/4;
+      for (auto q=0; q<nq1h; ++q)
+         for (auto i=0; i<nxh; ++i)
+            a[i + q*(nx+2)] = ah[i + q*(nxh+2)];
+   }
 }
 
 /********************************
@@ -4160,26 +4377,55 @@ void d3db::hr2r_expand(const double *ah, double *a) {
  *                              *
  ********************************/
 // contracts to a grid that is (nx,ny,nz) --> ((nx+2)/2,ny/2,nz/2)
-void d3db::r2hr_contract(const double *a, double *ah) {
-  std::memset(ah, 0, n2ft3d / 8 * sizeof(double));
-  if (maptype == 1) 
-  {
-     int nxh = nx/2;
-     int nyh = ny/2;
-     int nqh = nq/2;
-     for (auto q=0; q<nqh; ++q)
-        for (auto j=0; j<nyh; ++j)
-           for (auto i=0; i<nxh; ++i)
-              ah[i + j*(nxh+2) + q*(nxh+2)*nyh] = a[i + j*(nx+2) + q*(nx+2)*ny];
-  } 
-  else 
-  {
-     int nxh = nx/2;
-     int nq1h = nq1/4;
-     for (auto q=0; q<nq1h; ++q)
-        for (auto i=0; i<nxh; ++i)
-           ah[i + q*(nxh+2)] = a[i + q*(nx+2)];
-  }
+/**
+ * @brief Contract a grid from (nx, ny, nz) to ((nx + 2) / 2, ny / 2, nz / 2).
+ *
+ * This function performs a grid contraction operation from the input array 'a' to the output array 'ah'. It is designed
+ * for a specific mapping type (maptype) and grid sizes.
+ *
+ * @param a   The input grid array of size (nx, ny, nz).
+ * @param ah  The output contracted grid array of size ((nx + 2) / 2, ny / 2, nz / 2).
+ *
+ * @note The function assumes that memory for 'a' and 'ah' has been allocated appropriately by the caller.
+ * @note The function uses 'maptype' to determine the appropriate contraction method.
+ *
+ * @param maptype The mapping type used for contraction:
+ * - If 'maptype' is 1, a 3D contraction is performed.
+ * - If 'maptype' is not 1, a 2D contraction is performed.
+ *
+ * @details
+ * - For maptype = 1 (3D contraction):
+ *   - The input grid 'a' with dimensions (nx, ny, nz) is contracted to 'ah' with dimensions ((nx + 2) / 2, ny / 2, nz / 2).
+ *
+ * - For maptype != 1 (2D contraction):
+ *   - The input grid 'a' with dimensions (nx, ny) is contracted to 'ah' with dimensions ((nx + 2) / 2, ny / 4).
+ *
+ * @par Implementation Details:
+ * - The function uses nested loops to iterate over the input grid and perform the contraction according to the specified maptype.
+ * - The resulting contracted grid 'ah' is filled with the contracted values.
+ *
+ */
+void d3db::r2hr_contract(const double *a, double *ah) 
+{
+   std::memset(ah, 0, n2ft3d / 8 * sizeof(double));
+   if (maptype == 1) 
+   {
+      int nxh = nx/2;
+      int nyh = ny/2;
+      int nqh = nq/2;
+      for (auto q=0; q<nqh; ++q)
+         for (auto j=0; j<nyh; ++j)
+            for (auto i=0; i<nxh; ++i)
+               ah[i + j*(nxh+2) + q*(nxh+2)*nyh] = a[i + j*(nx+2) + q*(nx+2)*ny];
+   } 
+   else 
+   {
+      int nxh = nx/2;
+      int nq1h = nq1/4;
+      for (auto q=0; q<nq1h; ++q)
+         for (auto i=0; i<nxh; ++i)
+            ah[i + q*(nxh+2)] = a[i + q*(nx+2)];
+   }
 }
 
 /************************************************
@@ -4438,6 +4684,28 @@ void d3db::r_transpose_ijk_end() {
  *    d3db::r_transpose_jk      *
  *                              *
  ********************************/
+/**
+ * @brief Perform a transpose operation along the jk-plane on arrays 'a', 'tmp1', and 'tmp2'.
+ *
+ * This function is designed for parallel data communication and transposition in a scientific computing context.
+ *
+ * @param a The input array to be transposed.
+ * @param tmp1 Temporary storage array for intermediate data.
+ * @param tmp2 Temporary storage array for intermediate data.
+ *
+ * @note The function assumes that it has been initialized and is executed within a parallel computing environment.
+ * @note The function performs parallel data communication and transposition along the jk-plane.
+ *
+ * @par Parallel Communication:
+ * - The function is designed for parallel processing with 'np' processes. It uses 'parall' for communication and synchronization.
+ * - Parallel communication operations include data packing, in-thread transposition, data receiving, and data sending.
+ *
+ * @par Memory Management:
+ * - The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
+ *
+ * @author [Your Name]
+ * @date [Date]
+ */
 void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
@@ -4475,58 +4743,80 @@ void d3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
  *    d3db::r_transpose_ijk     *
  *                              *
  ********************************/
-void d3db::r_transpose_ijk(const int op, double *a, double *tmp1,
-                           double *tmp2) {
-  if (!initialized_r_transpose)
-    this->r_transpose_ijk_init();
-
-  int nnfft3d, it, proc_from, proc_to;
-  int msglen;
-
-  parall->astart(1, np);
-
-  /* pack a array */
-  if ((op == 0) || (op == 4))
-    nnfft3d = (nx + 2) * nqr1;
-  if ((op == 1) || (op == 3))
-    nnfft3d = (ny)*nqr2;
-  if ((op == 2) || (op == 5))
-    nnfft3d = (nz)*nqr3;
-  t_bindexcopy(nnfft3d, iq_to_ir1[op], a, tmp1);
-
-  /* it = 0, transpose data on same thread */
-  msglen = (ir2_start[op][1] - ir2_start[op][0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[i1_start[op][0]]),one,&(tmp2[i2_start[op][0]]),one);
-  std::memcpy(tmp2 + ir2_start[op][0], tmp1 + ir1_start[op][0],
-              msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* synchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = (ir2_start[op][it + 1] - ir2_start[op][it]);
-    if (msglen > 0)
-      parall->adreceive(1, 1, proc_from, msglen, &tmp2[ir2_start[op][it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = (ir1_start[op][it + 1] - ir1_start[op][it]);
-    if (msglen > 0)
-      parall->dsend(1, 1, proc_to, msglen, &tmp1[ir1_start[op][it]]);
-  }
-
-  /* wait for completion of mp_send, also do a sync */
-  parall->aend(1);
-
-  /* unpack a array */
-  if ((op == 3) || (op == 5))
-    nnfft3d = (nx + 2) * nqr1;
-  if ((op == 0) || (op == 2))
-    nnfft3d = (ny)*nqr2;
-  if ((op == 1) || (op == 4))
-    nnfft3d = (nz)*nqr3;
-  t_aindexcopy(nnfft3d, iq_to_ir2[op], tmp2, a);
+/**
+ * @brief Perform a transpose operation on arrays 'a', 'tmp1', and 'tmp2' based on the specified operation 'op'.
+ *
+ * This function is designed for parallel data communication and transposition in a scientific computing context.
+ *
+ * @param op The operation code that specifies the type of transpose operation to perform.
+ *           Valid values are:
+ *           - 0: Transpose along the x-axis
+ *           - 1: Transpose along the y-axis
+ *           - 2: Transpose along the z-axis
+ *           - 3: Transpose along the x-axis (with additional operations)
+ *           - 4: Transpose along the y-axis (with additional operations)
+ *           - 5: Transpose along the z-axis (with additional operations)
+ * @param a The input array to be transposed.
+ * @param tmp1 Temporary storage array for intermediate data.
+ * @param tmp2 Temporary storage array for intermediate data.
+ *
+ * @note The function assumes that it has been initialized using 'r_transpose_ijk_init' prior to invocation.
+ * @note The function performs parallel data communication and transposition based on the specified 'op'.
+ *
+ * @par Parallel Communication:
+ * - The function is designed for parallel processing with 'np' processes. It uses 'parall' for communication and synchronization.
+ * - Parallel communication operations include data packing, in-thread transposition, data receiving, and data sending.
+ *
+ * @par Memory Management:
+ * - The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
+ *
+ */
+void d3db::r_transpose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
+{
+   if (!initialized_r_transpose)
+      this->r_transpose_ijk_init();
+ 
+   int nnfft3d, it, proc_from, proc_to;
+   int msglen;
+ 
+   parall->astart(1, np);
+ 
+   /* pack a array */
+   if ((op == 0) || (op == 4)) nnfft3d = (nx + 2) * nqr1;
+   if ((op == 1) || (op == 3)) nnfft3d = (ny)*nqr2;
+   if ((op == 2) || (op == 5)) nnfft3d = (nz)*nqr3;
+   t_bindexcopy(nnfft3d, iq_to_ir1[op], a, tmp1);
+ 
+   /* it = 0, transpose data on same thread */
+   msglen = (ir2_start[op][1] - ir2_start[op][0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[i1_start[op][0]]),one,&(tmp2[i2_start[op][0]]),one);
+   std::memcpy(tmp2 + ir2_start[op][0], tmp1 + ir1_start[op][0], msglen*sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) 
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid - it + np) % np;
+      msglen = (ir2_start[op][it + 1] - ir2_start[op][it]);
+      if (msglen > 0)
+         parall->adreceive(1, 1, proc_from, msglen, &tmp2[ir2_start[op][it]]);
+   }
+   for (it = 1; it < np; ++it) {
+     proc_to = (taskid + it) % np;
+     msglen = (ir1_start[op][it + 1] - ir1_start[op][it]);
+     if (msglen > 0)
+       parall->dsend(1, 1, proc_to, msglen, &tmp1[ir1_start[op][it]]);
+   }
+ 
+   /* wait for completion of mp_send, also do a sync */
+   parall->aend(1);
+ 
+   /* unpack a array */
+   if ((op == 3) || (op == 5)) nnfft3d = (nx + 2) * nqr1;
+   if ((op == 0) || (op == 2)) nnfft3d = (ny)*nqr2;
+   if ((op == 1) || (op == 4)) nnfft3d = (nz)*nqr3;
+   t_aindexcopy(nnfft3d, iq_to_ir2[op], tmp2, a);
 }
 
 /**************************************
@@ -4936,6 +5226,15 @@ void d3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
  *                                            *
  **********************************************/
 // computes the 3D Gaussian filter function
+/**
+ * @brief Compute a 3D Gaussian filter for periodic data.
+ *
+ * This function computes a 3D Gaussian filter for periodic data with the specified sigma value.
+ *
+ * @param sigma The standard deviation of the Gaussian filter.
+ * @param a The input real-space data.
+ * @param b The output filtered data.
+ */
 void d3db::rr_periodic_gaussian_filter(const double sigma, const double *a, double *b)
 {
    int nx2 = nx+2;

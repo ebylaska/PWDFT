@@ -111,9 +111,24 @@ class Control2 {
 
    bool pstaged_gpu_fft = true;
 
+   // vdw variables - resetable
+   std::string poptions_disp;
+   bool phas_disp = false;
+   bool phas_vdw = false;
+   bool pis_vdw2 = false;
+   bool pis_grimme2 = false;
+
+   // HFX variables - resetable
+   bool pHFX = false;
+   bool pHFX_relax = false;
+   int    pHFX_screening_type = 0;
+   double pHFX_parameter = 0.0;
+   double pHFX_screening_radius = 0.0;
+
+
 public:
    int version = 3;
- 
+
    /* constructor */
    Control2(const int, const std::string);
  
@@ -378,56 +393,55 @@ public:
  
    // GGA value
    int get_gga() {
-     std::string myxc_name = this->xc_name();
- 
-     std::transform(myxc_name.begin(), myxc_name.end(), myxc_name.begin(),
-                    ::tolower);
- 
-     int gga = 0;
- 
-     if (myxc_name.compare("vosko") == 0)
-       gga = 0;
-     if (myxc_name.compare("lda") == 0)
-       gga = 0;
- 
-     if (myxc_name.compare("pbe") == 0)
-       gga = 10;
-     if (myxc_name.compare("pbe96") == 0)
-       gga = 10;
-     if (myxc_name.compare("blyp") == 0)
-       gga = 11;
-     if (myxc_name.compare("revpbe") == 0)
-       gga = 12;
-     if (myxc_name.compare("pbesol") == 0)
-       gga = 13;
-     if (myxc_name.compare("hser") == 0)
-       gga = 14;
-     if (myxc_name.compare("b3lypr") == 0)
-       gga = 15;
-     if (myxc_name.compare("beef") == 0)
-       gga = 16;
-     if (myxc_name.compare("xbeef-cpbe") == 0)
-       gga = 17;
- 
-     if (myxc_name.compare("pbe0") == 0)
-       gga = 110;
-     if (myxc_name.compare("blyp0") == 0)
-       gga = 111;
-     if (myxc_name.compare("revpbe0") == 0)
-       gga = 112;
-     if (myxc_name.compare("bnl") == 0)
-       gga = 113;
-     if (myxc_name.compare("hse") == 0)
-       gga = 114;
-     if (myxc_name.compare("b3lyp") == 0)
-       gga = 115;
- 
-     if (myxc_name.compare("hartree-fock") == 0)
-       gga = 200;
-     if (myxc_name.compare("hf") == 0)
-       gga = 200;
- 
-     return gga;
+      std::string myxc_name = this->xc_name();
+     
+      std::transform(myxc_name.begin(), myxc_name.end(), myxc_name.begin(),
+                     ::tolower);
+     
+      int gga = 0;
+     
+      if (myxc_name.compare("vosko") == 0)
+        gga = 0;
+      if (myxc_name.compare("lda") == 0)
+        gga = 0;
+     
+      if (myxc_name.compare("pbe") == 0)
+        gga = 10;
+      if (myxc_name.compare("pbe96") == 0)
+        gga = 10;
+      if (myxc_name.compare("blyp") == 0)
+        gga = 11;
+      if (myxc_name.compare("revpbe") == 0)
+        gga = 12;
+      if (myxc_name.compare("pbesol") == 0)
+        gga = 13;
+      if (myxc_name.compare("hser") == 0)
+        gga = 14;
+      if (myxc_name.compare("b3lypr") == 0)
+        gga = 15;
+      if (myxc_name.compare("beef") == 0)
+        gga = 16;
+      if (myxc_name.compare("xbeef-cpbe") == 0)
+        gga = 17;
+     
+      if (myxc_name.compare("pbe0") == 0)
+         gga = 110;
+      if (myxc_name.compare("blyp0") == 0)
+         gga = 111;
+      if (myxc_name.compare("revpbe0") == 0)
+         gga = 112;
+      if (myxc_name.compare("bnl") == 0)
+         gga = 113;
+      if (myxc_name.compare("hse") == 0)
+         gga = 114;
+      if (myxc_name.compare("b3lyp") == 0)
+         gga = 115;
+      if (myxc_name.compare("hartree-fock") == 0)
+         gga = 200;
+      if (myxc_name.compare("hf") == 0)
+         gga = 200;
+     
+      return gga;
    }
  
    // cubefiles

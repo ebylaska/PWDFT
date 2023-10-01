@@ -18,6 +18,11 @@
 
 namespace pwdft {
 
+
+/**
+ * @class d3db
+ * @brief Container class for distributed 3D blocks operations.
+ */
 class d3db : public Mapping3 {
 
    /* transpose indexings */
@@ -57,6 +62,10 @@ public:
    d3db(Parallel *, const int, const int, const int, const int);
  
    /* destructor */
+
+    /**
+     * @brief Destructor for the d3db class.
+     */
    ~d3db();
  
    /* r array operators */

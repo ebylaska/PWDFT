@@ -19,6 +19,7 @@
 #include "Pseudopotential.hpp"
 #include "Strfac.hpp"
 #include "exchange_correlation.hpp"
+#include "HFX.hpp"
 #include "inner_loop.hpp"
 #include "psi.hpp"
 #include "util_date.hpp"
@@ -170,6 +171,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Coulomb12_Operator mycoulomb12(&mygrid, control);
    mycoulomb12.initialize_dielectric(&myion,&mystrfac);
    XC_Operator myxc(&mygrid, control);
+   HFX_Operator myhfx(&mygrid, mycoulomb12.has_coulomb2, mycoulomb12.mycoulomb2, control);
  
    /* initialize psps */
    Pseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
@@ -220,6 +222,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       else
          std::cout << "unrestricted\n";
       std::cout << myxc;
+      std::cout << myhfx;
      
       std::cout << mypsp.print_pspall();
       

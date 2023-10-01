@@ -42,6 +42,7 @@
 #include "v_bwexc.hpp"
 #include "v_exc.hpp"
 #include <algorithm>
+#include "parsestring.hpp"
 
 namespace pwdft {
 
@@ -58,52 +59,31 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control)
    mypneb = mygrid;
    xc_name = control.xc_name();
  
-   std::transform(xc_name.begin(), xc_name.end(), xc_name.begin(), ::tolower);
- 
    gga = 0;
  
-   if (xc_name.compare("vosko") == 0)
-     gga = 0;
-   if (xc_name.compare("lda") == 0)
-     gga = 0;
- 
-   if (xc_name.compare("pbe") == 0)
-     gga = 10;
-   if (xc_name.compare("pbe96") == 0)
-     gga = 10;
-   if (xc_name.compare("blyp") == 0)
-     gga = 11;
-   if (xc_name.compare("revpbe") == 0)
-     gga = 12;
-   if (xc_name.compare("pbesol") == 0)
-     gga = 13;
-   if (xc_name.compare("hser") == 0)
-     gga = 14;
-   if (xc_name.compare("b3lypr") == 0)
-     gga = 15;
-   if (xc_name.compare("beef") == 0)
-     gga = 16;
-   if (xc_name.compare("xbeef-cpbe") == 0)
-     gga = 17;
- 
-   if (xc_name.compare("pbe0") == 0)
-     gga = 110;
-   if (xc_name.compare("blyp0") == 0)
-     gga = 111;
-   if (xc_name.compare("revpbe0") == 0)
-     gga = 112;
-   if (xc_name.compare("bnl") == 0)
-     gga = 113;
-   if (xc_name.compare("hse") == 0)
-     gga = 114;
-   if (xc_name.compare("b3lyp") == 0)
-     gga = 115;
- 
-   if (xc_name.compare("hartree-fock") == 0)
-     gga = 200;
-   if (xc_name.compare("hf") == 0)
-     gga = 200;
- 
+   if (mystring_contains(mystring_lowercase(xc_name), "vosko")) gga = 0;
+   if (mystring_contains(mystring_lowercase(xc_name), "lda"))   gga = 0;
+
+   if (mystring_contains(mystring_lowercase(xc_name), "pbe"))        gga = 10;
+   if (mystring_contains(mystring_lowercase(xc_name), "pbe96"))      gga = 10;
+   if (mystring_contains(mystring_lowercase(xc_name), "blyp"))       gga = 11;
+   if (mystring_contains(mystring_lowercase(xc_name), "revpbe"))     gga = 12;
+   if (mystring_contains(mystring_lowercase(xc_name), "pbesol"))     gga = 13;
+   if (mystring_contains(mystring_lowercase(xc_name), "hser"))       gga = 14;
+   if (mystring_contains(mystring_lowercase(xc_name), "b3lypr"))     gga = 15;
+   if (mystring_contains(mystring_lowercase(xc_name), "beef"))       gga = 16;
+   if (mystring_contains(mystring_lowercase(xc_name), "xbeef-cpbe")) gga = 17;
+   
+   if (mystring_contains(mystring_lowercase(xc_name), "pbe0"))    gga = 110;
+   if (mystring_contains(mystring_lowercase(xc_name), "blyp0"))   gga = 111;
+   if (mystring_contains(mystring_lowercase(xc_name), "revpbe0")) gga = 112;
+   if (mystring_contains(mystring_lowercase(xc_name), "bnl"))     gga = 113;
+   if (mystring_contains(mystring_lowercase(xc_name), "hse"))     gga = 114;
+   if (mystring_contains(mystring_lowercase(xc_name), "b3lyp"))   gga = 115;
+
+   if (mystring_contains(mystring_lowercase(xc_name), "hartree-fock")) gga = 200;
+   if (mystring_contains(mystring_lowercase(xc_name), "hf"))           gga = 200;
+
    use_lda = false;
    use_gga = false;
    use_mgga = false;
