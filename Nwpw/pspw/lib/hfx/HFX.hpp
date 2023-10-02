@@ -23,6 +23,8 @@ class HFX_Operator {
    double *vg;
    double *ehfx_orb[2];
 
+   std::string kernel_filter_filename;
+
 public:
    bool hfx_on = false; 
    bool hfx_virtual_on = true;
@@ -107,21 +109,49 @@ public:
             os << "    - HFX alpha orbitals :" << std::endl;
             os << "    - HFX beta orbitals  :" << std::endl;
          }
+
      
          if (hfx.solver_type==0)
          {
             os << "    - HFX screened coulomb solver (-periodic)" << std::endl;
-            os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
-            os << "    - HFX screening power   (-screening_power)   = " << Efmt(8,3) << hfx.pp << std::endl;
-            os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
-            if (hfx.screening_type==2)
+
+            if (hfx.screening_type==0) {
+               os << "    - HFX standard cutoff Coulomb kernel - doi.org/10.1002/jcc.21598" <<  std::endl;
+               os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
+               os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
+               os << "    - HFX screening power   (-screening_power)   = " << Efmt(8,3) << hfx.pp << std::endl;
+            }
+            if (hfx.screening_type==1) os << "    - HFX periodic kernel" <<  std::endl;
+            if (hfx.screening_type==2) {
+               os << "    - HFX standard cutoff Coulomb kernel with attenuation - doi.org/10.1002/jcc.21598" <<  std::endl;
+               os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
                os << "    - HFX attenuation parameter (-attenuation)   = " << hfx.attenuation << std::endl;
+               os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
+               os << "    - HFX screening power   (-screening_power)   = " << Efmt(8,3) << hfx.pp << std::endl;
+            }
+            if (hfx.screening_type==3) {
+               os << "    - HFX Kiril Tsemekhman's periodic cutoff Coulomb kernel" <<  std::endl;
+               os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
+               os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
+               os << "    - HFX screening power   (-screening_power)   = " << Efmt(8,3) << hfx.pp << std::endl;
+            }
+            if (hfx.screening_type==4) {
+               os << "    - HFX periodic erfc Coulomb kernel" <<  std::endl;
+               os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
+               os << "    - HFX screening radius  (-screening_radius)  = " << Efmt(8,3) << hfx.rcut  << std::endl;
+            }
+            if (hfx.screening_type==5) {
+               os << "    - HFX filtered Coulomb kernel - doi.org/10.1186/s41313-020-00019-9" <<  std::endl;
+               os << "    - HFX screening type    (-screening_type)    = " << hfx.screening_type << std::endl;
+               os << "    - HFX filter filename (-filter_filename)     = " << hfx.kernel_filter_filename << std::endl;
+            }
          }
          else
             os << "    - HFX free-space coulomb solver (-aperiodic)" << std::endl;
-     
+
          if (hfx.hfx_parameter!=1.0) 
             os << "    - HFX scaling parameter (-scaling_parameter) = " << Efmt(8,3) << hfx.hfx_parameter << std::endl;
+     
       }
       return os;
    }

@@ -184,6 +184,8 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
    has_coulomb2 = has_coulomb2_in;
    mycoulomb2   = mycoulomb2_in;
 
+   kernel_filter_filename = control.permanent_dir_str  + "/filtered_kernel.dat";
+
    // parse for exchange-correlation functional that contain exact exchange
    std::string xc_name = control.xc_name();
 
@@ -216,7 +218,13 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
    }
    if (mystring_contains(mystring_lowercase(xc_name), "-attenuation"))
    {
-      attenuation =  std::stod(mystring_split(mystring_lowercase(xc_name), "-attenuation")[1]);
+      attenuation = std::stod(mystring_split(mystring_lowercase(xc_name), "-attenuation")[1]);
+   }
+   if (mystring_contains(mystring_lowercase(xc_name), "-filter_filename"))
+   {
+      kernel_filter_filename = std::stod(mystring_split(mystring_lowercase(xc_name), "-filter_filename")[1]);
+      if (!mystring_contains(kernel_filter_filename,"/"))
+         kernel_filter_filename = control.permanent_dir_str  + kernel_filter_filename;
    }
 
    // set the number of hfx orbitals

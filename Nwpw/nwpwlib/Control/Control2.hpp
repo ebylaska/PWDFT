@@ -62,7 +62,7 @@ class Control2 {
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
- 
+
    bool pefield_on;
    int pefield_type;
    std::vector<double> pefield_vector, pefield_center;

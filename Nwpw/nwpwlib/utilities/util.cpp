@@ -666,19 +666,19 @@ double util_switching_function(const double s_d, const double s_rho,
    r<(s_d+s_rho) s = 0.0                                               if
    r>(s_d+s_rho)
 */
-double util_dswitching_function(const double s_d, const double s_rho,
-                                const double r) {
-  // calculate the derivative of switching function
-  double deps = 0.0;
-
-  if (r <= s_d)
-    deps = 0.0;
-  else if (r < (s_d + s_rho)) {
-    auto x = (r - s_d) / s_rho;
-    auto xx = 1.0 - x * x;
-    deps = 4.0 * (x / s_rho) * xx;
-  }
-  return deps;
+double util_dswitching_function(const double s_d, const double s_rho, const double r) 
+{
+   // calculate the derivative of switching function
+   double deps = 0.0;
+ 
+   if (r <= s_d)
+     deps = 0.0;
+   else if (r < (s_d + s_rho)) {
+     auto x = (r - s_d) / s_rho;
+     auto xx = 1.0 - x * x;
+     deps = 4.0 * (x / s_rho) * xx;
+   }
+   return deps;
 }
 
 /**************************************
@@ -687,20 +687,20 @@ double util_dswitching_function(const double s_d, const double s_rho,
  *                                    *
  **************************************/
 /*     This function returns the fourier transform of
-*
-*             if flag==1  v_kiril = exp(-(r/rcut)**pp)/r
-*     or      if flag==2  v_kiril = (1.0d0-(1.0d0-dexp(-(r/rcut)**pp2))**pp)/r
-*
-*     Entry - gg: g squared
-*             rcut:
-*             pp:
-*
-*     Exit - returns
-*                              /infty
-*                             |
-*      v_kiril(g) = (4*pi)  * | r**2 * v_kiril(r)* j0(gr) dr
-*                             |
-*                            / 0
+ *
+ *             if flag==1  v_kiril = exp(-(r/rcut)**pp)/r
+ *     or      if flag==2  v_kiril = (1.0d0-(1.0d0-dexp(-(r/rcut)**pp2))**pp)/r
+ *
+ *     Entry - gg: g squared
+ *             rcut:
+ *             pp:
+ *
+ *     Exit - returns
+ *                              /infty
+ *                             |
+ *      v_kiril(g) = (4*pi)  * | r**2 * v_kiril(r)* j0(gr) dr
+ *                             |
+ *                            / 0
 */
 /**
  * \brief Computes the Fourier transform of the Kiril Coulomb potential with Bessel function.
@@ -719,7 +719,8 @@ double util_dswitching_function(const double s_d, const double s_rho,
  */
 double util_kiril_coulomb_transform(const int flag, const double gg, const double rcut, const double pp) 
 {
-   int nrho = 15000;
+   //int nrho = 15000;
+   int nrho = 100;
    double pp2    = pp + 2.0;
    double drho   = 2.0*rcut/((double) nrho);
    double q      = std::sqrt(gg);
@@ -789,7 +790,8 @@ double util_kiril_coulomb_transform(const int flag, const double gg, const doubl
  */
 double util_kiril_coulomb_transform0(const int flag, const double rcut, const double pp) 
 {
-   int nrho = 15000;
+   //int nrho = 15000;
+   int nrho = 100;
    double pp2    = pp + 2.0;
    double drho   = 2.0*rcut/((double) nrho);
    double fourpi = 16.0 * std::atan(1.0);
