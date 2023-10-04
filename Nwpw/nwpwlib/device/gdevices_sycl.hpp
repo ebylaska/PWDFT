@@ -648,6 +648,20 @@ public:
      stream[0]->wait();
   }
 
+ void TN_dgemm2c(int n, int m, int npack2, int nida2,
+                 double *host_a, double *host_b, double *host_c) {
+     double rtwo  = 2.0;
+     double rone  = 1.0;
+     double rmone = -1.0;
+     double rzero = 0.0;
+
+     DGEMM_PWDFT((char *)"T", (char *)"N", n,m,npack2,rtwo,host_a,npack2,host_b,npack2,rzero,host_c,n);
+     if (nida2>0)
+        DGEMM_PWDFT((char *)"T", (char *)"N", n,m,nida2,rmone,host_a,npack2,host_b,npack2,rone,host_c,n);
+  }
+
+
+
   /**************************************
    *                                    *
    *              NT_dgemm3             *
