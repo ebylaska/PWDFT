@@ -26,6 +26,7 @@ public:
    Lattice(Control2 &);
  
    double unita1d(const int i) { return punita[i]; }
+   double unitg1d(const int i) { return punitg[i]; }
    double unita(const int i, const int j) { return punita[i+j*3]; }
    double unitg(const int i, const int j) { return punitg[i+j*3]; }
    double ub(const int i, const int j)    { return pub[i+j*3]; }

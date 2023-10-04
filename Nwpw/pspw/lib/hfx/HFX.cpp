@@ -11,6 +11,7 @@
 */
 #include <cmath>
 #include "Coulomb2.hpp"
+#include "filon_filter.hpp"
 #include "HFX.hpp"
 
 #include "parsestring.hpp"
@@ -22,9 +23,11 @@ namespace pwdft {
  *         coulomb_screened_kernel         *
  *                                         *
  *******************************************/
+//extern void coulomb_filter(Pneb *, double *, const std::string);
 static void coulomb_screened_kernel(Pneb *mygrid,
                                    const int screening_type, const double rcut, const double pp, 
                                    const double attenuation,
+                                   const std::string kernel_filter_filename,
                                    double *vg)
 {
    double epsilon = 1.0;
@@ -42,9 +45,9 @@ static void coulomb_screened_kernel(Pneb *mygrid,
    double fourpi = 4*pi;
    double sqrt_pi = std::sqrt(pi);
    double eps = 1.0e-12;
-   double *Gx = mygrid->Gxyz(0);
-   double *Gy = mygrid->Gxyz(1);
-   double *Gz = mygrid->Gxyz(2);
+   double *Gx = mygrid->Gpackxyz(0,0);
+   double *Gy = mygrid->Gpackxyz(0,1);
+   double *Gz = mygrid->Gpackxyz(0,2);
    double gg;
 
    mygrid->initialize_r_grid();
@@ -166,6 +169,7 @@ static void coulomb_screened_kernel(Pneb *mygrid,
    {
       std::memset(vg,0,npack0*sizeof(double));
       //coulomb filter here
+      coulomb_filter(mygrid,vg,kernel_filter_filename);
    }
    delete[] tmp;
    delete[] glr;
@@ -255,7 +259,7 @@ HFX_Operator::HFX_Operator(Pneb *mygrid, bool has_coulomb2_in, Coulomb2_Operator
       // periodic solver
       if (solver_type==0)
       {
-         coulomb_screened_kernel(mygrid,screening_type,rcut,pp,attenuation,vg);
+         coulomb_screened_kernel(mygrid,screening_type,rcut,pp,attenuation,kernel_filter_filename,vg);
       }
       // aperiodic solver 
       else if (solver_type==1)
