@@ -203,6 +203,42 @@ inline void syclGetMatrixAsync(int rows, int cols, size_t elem_size,
   }
 }
 
+void dpct_memcpy_add(sycl::queue &que, double *to_ptr, const double *from_ptr,
+                         size_t to_ld, size_t from_ld, size_t row_size, int cols) {
+        // This function handles non-contiguous memory copy and addition
+        que->submit([&](sycl::handler &cgh) {
+            cgh.parallel_for(sycl::range<2>(cols, row_size), [=](sycl::id<2> id) {
+                int col = id[0];
+                int row = id[1];
+                to_ptr[col * to_ld + row] += from_ptr[col * from_ld + row];
+            });
+        });
+}
+
+inline void syclGetAddMatrixAsync(int rows, int cols, size_t elem_size,
+                                  const void *from_ptr, int from_ld, void *to_ptr,
+                                  int to_ld, sycl::queue *que) {
+    if (to_ld == from_ld) {
+        // If the leading dimensions are the same, we can use a simple loop to add
+        size_t num_elems = ((cols - 1) * to_ld + rows);
+        double* host_from = (double*) from_ptr;
+        double* host_to = (double*) to_ptr;
+        que->submit([&](sycl::handler &cgh) {
+            cgh.parallel_for(sycl::range<1>(num_elems), [=](sycl::id<1> i) {
+                host_to[i] += host_from[i];
+            });
+        });
+    } else {
+        dpct_memcpy_add(*que, to_ptr, from_ptr, elem_size * to_ld,
+                                elem_size * from_ld, elem_size * rows, cols,
+                                detail::device_to_host);
+    }
+}
+
+
+
+
+
 sycl::queue *get_syclQue();
 
 class Gdevices {
@@ -648,19 +684,64 @@ public:
      stream[0]->wait();
   }
 
- void TN_dgemm2c(int n, int m, int npack2, int nida2,
-                 double *host_a, double *host_b, double *host_c) {
-     double rtwo  = 2.0;
-     double rone  = 1.0;
-     double rmone = -1.0;
-     double rzero = 0.0;
+  /**************************************
+   *                                    *
+   *              TN_dgemm2c            *
+   *                                    *
+   **************************************/
+/**
+ * @brief Performs a specialized matrix multiplication and addition operation.
+ *
+ * This function computes the matrix product of host_a (transposed) and host_b, 
+ * multiplies the result by a scalar, and adds the result to host_c. The computation 
+ * is distributed between the CPU and a GPU device for efficiency. The CPU computation 
+ * is done using the DGEMM_PWDFT function, while the GPU computation uses the MKL's gemm function.
+ *
+ * @param n       Number of rows in the resulting matrix.
+ * @param m       Number of columns in the resulting matrix.
+ * @param npack2  Leading dimension of host_a and host_b.
+ * @param nida2   Parameter for the DGEMM_PWDFT function to determine the extent of computation.
+ * @param host_a  Pointer to the first input matrix.
+ * @param host_b  Pointer to the second input matrix.
+ * @param host_c  Pointer to the output matrix. This matrix is also used as an input for the addition operation.
+ *
+ * @note The matrices host_a and host_b are transferred to the device asynchronously. 
+ *       The CPU starts its computation immediately after initiating the data transfer to the GPU. 
+ *       Once the GPU computation is complete, the results are added to host_c, which already contains 
+ *       the results of the CPU computation.
+ */
+   void TN_dgemm2c(int n, int m, int npack2, int nida2,
+                   double *host_a, double *host_b, double *host_c) {
+      constexpr double rtwo  = 2.0;
+      constexpr double rone  = 1.0;
+      constexpr double rmone = -1.0;
+      constexpr double rzero = 0.0;
+     
+      int ia = fetch_dev_mem_indx(static_cast<size_t>(npack2) * n);
+      int ib = fetch_dev_mem_indx(static_cast<size_t>(npack2) * m);
+      int ic = fetch_dev_mem_indx(static_cast<size_t>(n) * m);
 
-     DGEMM_PWDFT((char *)"T", (char *)"N", n,m,npack2,rtwo,host_a,npack2,host_b,npack2,rzero,host_c,n);
-     if (nida2>0)
-        DGEMM_PWDFT((char *)"T", (char *)"N", n,m,nida2,rmone,host_a,npack2,host_b,npack2,rone,host_c,n);
-  }
+      syclSetMatrixAsync(npack2,n,sizeof(double),host_a,npack2,dev_mem[ia],npack2,stream[0]);
+      syclSetMatrixAsync(npack2,m,sizeof(double),host_b,npack2,dev_mem[ib],npack2,stream[0]);
 
-
+      // Start the DGEMM_PWDFT operation on the CPU
+      if (nida2 > 0) {
+         DGEMM_PWDFT("T", "N", n, m, nida2, rmone, host_a, npack2, host_b, npack2, rzero, host_c, n);
+      }
+     
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[0], 
+         matT,matN,n,m,npack2, 
+         rtwo,
+         dev_mem[ia],npack2, 
+         dev_mem[ib],npack2, 
+         rzero,
+         dev_mem[ic],n);
+     
+      syclGetAddMatrixAsync(n,m,sizeof(double),dev_mem[ic],n,host_c,n,stream[0]);
+      stream[0]->wait();
+   }
+   
 
   /**************************************
    *                                    *
