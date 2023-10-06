@@ -12,6 +12,7 @@
 #include <sstream>
 #include <sycl/sycl.hpp>
 
+#include "fft.h"
 #include "blas.h"
 #include <oneapi/mkl.hpp>
 
