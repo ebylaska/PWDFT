@@ -523,6 +523,11 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    /* initialize pfft3 queues */
    staged_gpu_fft_pipeline = staged_gpu_fft_pipeline0 && d3db::mygdevice.has_gpu();
+
+#ifdef NWPW_SYCL
+   staged_gpu_fft_pipeline = false;
+#endif
+
    //aqmax = 5;
    aqmax = pfft3_qsize0;
    if (staged_gpu_fft_pipeline)

@@ -457,7 +457,8 @@ d3db::d3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
    dcffti_(&ny,tmpy);
    dcffti_(&nz,tmpz);
 
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+/*if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP) */
+#if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (maptype==1) 
      fft_tag = mygdevice.batch_fft_init(nx,ny,nz,ny*nq,(nx/2+1)*nq,(nx/2+1)*nq);
    else
@@ -474,7 +475,7 @@ d3db::~d3db()
 {
    int i, nb;
 
-#if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP)
+#if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (mygdevice.has_gpu())
       mygdevice.batch_fft_end(fft_tag);
 #endif

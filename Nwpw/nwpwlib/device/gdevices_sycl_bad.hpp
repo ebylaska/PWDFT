@@ -1011,7 +1011,6 @@ public:
 
   /* fft functions*/
   int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
-      /*
      desc_x[fftcount] = new desc_real_t(nx);
      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                        nq1);
@@ -1038,174 +1037,158 @@ public:
      ++fftcount;
     
      return tag;
-     */
   }
 
 
   void batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
-   //  ifft_n = nstages;
+     ifft_n = nstages;
 
-  //   // allocate memory and cuda streams
-  //   for (auto i=0; i<ifft_n; ++i)
-  //      ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
+     // allocate memory and cuda streams
+     for (auto i=0; i<ifft_n; ++i)
+        ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
   }
 
 
 
   void batch_fft_end(const int tag) {
-   // delete desc_x[tag];
-   // delete desc_y[tag];
-   // delete desc_z[tag];
-   // --fftcount;
+    delete desc_x[tag];
+    delete desc_y[tag];
+    delete desc_z[tag];
+    --fftcount;
 
-    //ndev_mem = 0;
+    ndev_mem = 0;
   }
 
-
-  void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
+  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) 
   {
-     int nxh2 = nx + 2;
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+    
+     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double));
+    
      if (forward)
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           drfftf_(&nx, a + indx, tmpx);
-           indx += nxh2;
-        }
-        indx = 1;
-        for (auto j = 0; j < (nq); ++j)
-        {
-           for (auto i = nx; i >= 2; --i)
-           {
-              a[indx + i - 1] = a[indx + i - 2];
-           }
-           a[indx + 1 - 1] = 0.0;
-           a[indx + nx + 1 - 1] = 0.0;
-           indx += nxh2;
-        }
-     }
+       compute_forward(*desc_x[fft_indx], dev_mem[ia_dev]);
      else
+       compute_backward(*desc_x[fft_indx], dev_mem[ia_dev]);
+    
+     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double));
+     stream[0]->wait();
+    
+     inuse[ia_dev] = false;
+  }
+
+  void batch_cfftx_stages(const int stage, const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a, int da) 
+  {
+     //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     int ia_dev = ifft_dev[da];
+     if (stage==0)
      {
-        int indx = 1;
-        for (auto j = 0; j < nq; ++j)
-        {
-           for (auto i = 2; i <= nx; ++i)
-              a[indx + i - 2] = a[indx + i - 1];
-           indx += nxh2;
-        }
-        indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           drfftb_(&nx, a + indx, tmpx);
-           indx += nxh2;
-        }
+        inuse[ia_dev] = true;
+        stream[da]->memcpy(dev_mem[ia_dev], a, n2ft3d*sizeof(double));
+     }
+     else if (stage==1)
+     {
+        //stream[da]->wait();
+        if (forward)
+          compute_forward(*desc_x[fft_indx], dev_mem[ia_dev]);
+        else
+          compute_backward(*desc_x[fft_indx], dev_mem[ia_dev]);
+    
+        stream[da]->memcpy(a, dev_mem[ia_dev], n2ft3d*sizeof(double));
+     }
+     else if (stage==2)
+     {
+        stream[da]->wait();
+        inuse[ia_dev] = false;
      }
   }
 
-
-
-
-
-  void batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy)
+  void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a) 
   {
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+    
+     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d*sizeof(double));
+    
      if (forward)
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           dcfftf_(&ny, a + indx, tmpy);
-           indx += (2 * ny);
-        }
-     }
+       compute_forward(*desc_y[fft_indx], dev_mem[ia_dev]);
      else
+       compute_backward(*desc_y[fft_indx], dev_mem[ia_dev]);
+    
+     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d*sizeof(double));
+     stream[0]->wait();
+    
+     inuse[ia_dev] = false;
+  }
+
+  void batch_cffty_stages(const int stage, const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a, int da) 
+  {
+     //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     int ia_dev = ifft_dev[da];
+    
+     if (stage==0)
      {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           dcfftb_(&ny, a + indx, tmpy);
-           indx += (2 * ny);
-        }
+        inuse[ia_dev] = true;
+        stream[da]->memcpy(dev_mem[ia_dev], a, n2ft3d*sizeof(double));
+     }
+     else if (stage==1)
+     {
+        //stream[da]->wait();
+        if (forward)
+           compute_forward(*desc_y[fft_indx], dev_mem[ia_dev]);
+        else
+           compute_backward(*desc_y[fft_indx], dev_mem[ia_dev]);
+    
+        stream[da]->memcpy(a, dev_mem[ia_dev], n2ft3d*sizeof(double));
+     }
+     else if (stage==2)
+     {
+        stream[da]->wait();
+        inuse[ia_dev] = false;
      }
   }
 
-
-  void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy, bool *zero)
+  void batch_cfftz(const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) 
   {
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+    
+     stream[0]->memcpy(dev_mem[ia_dev], a, n2ft3d*sizeof(double));
+    
      if (forward)
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           if (!zero[q])
-              dcfftf_(&ny, a + indx, tmpy);
-           indx += (2 * ny);
-        }
-     }
+       compute_forward(*desc_z[fft_indx], dev_mem[ia_dev]);
      else
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           if (!zero[q])
-              dcfftb_(&ny, a + indx, tmpy);
-           indx += (2 * ny);
-        }
-     }
+       compute_backward(*desc_z[fft_indx], dev_mem[ia_dev]);
+    
+     stream[0]->memcpy(a, dev_mem[ia_dev], n2ft3d*sizeof(double));
+     stream[0]->wait();
+    
+     inuse[ia_dev] = false;
   }
 
-
-
-
-  void batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz) 
+  void batch_cfftz_stages(const int stage,const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a, int da) 
   {
-     if (forward) 
+     //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     int ia_dev = ifft_dev[da];
+
+     if (stage==0)
      {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q) 
-        {
-           dcfftf_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
-        }
-     } 
-     else 
+        inuse[ia_dev] = true;
+        stream[da]->memcpy(dev_mem[ia_dev], a, n2ft3d*sizeof(double));
+     }
+     else if (stage==1)
      {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q) 
-        {
-           dcfftb_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
-        }
+        //stream[da]->wait();
+        if (forward)
+           compute_forward(*desc_z[fft_indx], dev_mem[ia_dev]);
+        else
+           compute_backward(*desc_z[fft_indx], dev_mem[ia_dev]);
+
+        stream[da]->memcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double));
+     }
+     else if (stage==2)
+     {
+        stream[da]->wait();
+        inuse[ia_dev] = false;
      }
   }
-
-
-  void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz, bool *zero)
-  {
-     if (forward)
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           if (!zero[q])
-              dcfftf_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
-        }
-     }
-     else
-     {
-        int indx = 0;
-        for (auto q = 0; q < nq; ++q)
-        {
-           if (!zero[q])
-              dcfftb_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
-        }
-     }
-  }
-
-
-  
 
 
 
