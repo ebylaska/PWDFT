@@ -168,6 +168,7 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t to_pitch,
                      sycl::range<3>(from_pitch, y, 1), sycl::id<3>(0, 0, 0),
                      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), direction);
 }
+
 } // namespace detail
 
 inline void syclSetMatrixAsync(int rows, int cols, size_t elem_size,
@@ -203,39 +204,6 @@ inline void syclGetMatrixAsync(int rows, int cols, size_t elem_size,
                         detail::device_to_host);
   }
 }
-
-void dpct_memcpy_add(sycl::queue &que, double *to_ptr, const double *from_ptr,
-                         size_t to_ld, size_t from_ld, size_t row_size, int cols) {
-        // This function handles non-contiguous memory copy and addition
-        que->submit([&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<2>(cols, row_size), [=](sycl::id<2> id) {
-                int col = id[0];
-                int row = id[1];
-                to_ptr[col * to_ld + row] += from_ptr[col * from_ld + row];
-            });
-        });
-}
-
-inline void syclGetAddMatrixAsync(int rows, int cols, size_t elem_size,
-                                  const void *from_ptr, int from_ld, void *to_ptr,
-                                  int to_ld, sycl::queue *que) {
-    if (to_ld == from_ld) {
-        // If the leading dimensions are the same, we can use a simple loop to add
-        size_t num_elems = ((cols - 1) * to_ld + rows);
-        double* host_from = (double*) from_ptr;
-        double* host_to = (double*) to_ptr;
-        que->submit([&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>(num_elems), [=](sycl::id<1> i) {
-                host_to[i] += host_from[i];
-            });
-        });
-    } else {
-        dpct_memcpy_add(*que, to_ptr, from_ptr, elem_size * to_ld,
-                                elem_size * from_ld, elem_size * rows, cols,
-                                detail::device_to_host);
-    }
-}
-
 
 
 
@@ -726,9 +694,6 @@ public:
       syclSetMatrixAsync(npack2,m,sizeof(double),host_b,npack2,dev_mem[ib],npack2,stream[0]);
 
       // Start the DGEMM_PWDFT operation on the CPU
-      if (nida2 > 0) {
-         DGEMM_PWDFT("T", "N", n, m, nida2, rmone, host_a, npack2, host_b, npack2, rzero, host_c, n);
-      }
      
       stream[0]->wait();
       oneapi::mkl::blas::column_major::gemm(*stream[0], 
@@ -739,8 +704,12 @@ public:
          rzero,
          dev_mem[ic],n);
      
-      syclGetAddMatrixAsync(n,m,sizeof(double),dev_mem[ic],n,host_c,n,stream[0]);
+      syclGetMatrixAsync(n,m,sizeof(double),dev_mem[ic],n,host_c,n,stream[0]);
       stream[0]->wait();
+
+      if (nida2 > 0) {
+         DGEMM_PWDFT("T", "N", n, m, nida2, rmone, host_a, npack2, host_b, npack2, rzero, host_c, n);
+      }
    }
    
 
