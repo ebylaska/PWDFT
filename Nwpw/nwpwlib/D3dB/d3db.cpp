@@ -3292,40 +3292,48 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
    /**********************
     **** slab mapping ****
     **********************/
-   if (maptype == 1) {
-     double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
-     // double tmp[(nx+2)*ny];
-     int bsize = (nx / 2 + 1) * ny;
- 
-     /**** master node gathers and write to file ****/
-     if (taskid == MASTER)
-       for (int k = 0; k < nz; ++k) {
-         ii = ijktop(0, 0, k);
-         p_from = parall->convert_taskid_ij(ii, jcol);
-         if (p_from == MASTER) {
-           index = ijktoindex(0, 0, k);
-           for (int k = 0; k < bsize; ++k)
-             tmp[k] = a[index + k];
-         } else {
-           parall->dreceive(0, 9, p_from, bsize, tmp);
+   if (maptype == 1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
+      // double tmp[(nx+2)*ny];
+      int bsize = (nx / 2 + 1) * ny;
+     
+      /**** master node gathers and write to file ****/
+      if (taskid == MASTER)
+         for (int k = 0; k < nz; ++k) 
+         {
+            ii = ijktop(0, 0, k);
+            p_from = parall->convert_taskid_ij(ii, jcol);
+            if (p_from == MASTER) 
+            {
+               index = ijktoindex(0, 0, k);
+               for (int k = 0; k < bsize; ++k)
+                  tmp[k] = a[index + k];
+            } 
+            else 
+            {
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
          }
-         dwrite(iunit, tmp, bsize);
-       }
- 
-     /**** not master node ****/
-     else
-       for (int k = 0; k < nz; ++k) {
-         index = ijktoindex(0, 0, k);
-         ii = ijktop(0, 0, k);
-         p_here = parall->convert_taskid_ij(ii, taskid_j);
-         if (p_here == taskid) {
-           for (int k = 0; k < bsize; ++k)
-             tmp[k] = a[index + k];
-           parall->dsend(0, 9, MASTER, bsize, tmp);
+     
+      /**** not master node ****/
+      else
+         for (int k = 0; k < nz; ++k) 
+         {
+            index = ijktoindex(0, 0, k);
+            ii = ijktop(0, 0, k);
+            //p_here = parall->convert_taskid_ij(ii, taskid_j);
+            p_here = parall->convert_taskid_ij(ii, jcol);
+            if (p_here == taskid) 
+            {
+               for (int k = 0; k < bsize; ++k)
+                  tmp[k] = a[index + k];
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
          }
-       }
- 
-     delete[] tmp;
+     
+      delete[] tmp;
    }
  
    /*************************
@@ -3361,21 +3369,25 @@ void d3db::t_write(const int iunit, double *a, const int jcol)
      
       /**** not master node ****/
       else
-        for (int k = 0; k < nz; ++k)
-          for (int j = 0; j < ny; ++j) {
-            ii = ijktop2(0, j, k);
-            p_here = parall->convert_taskid_ij(ii, taskid_j);
-            if (p_here == taskid) {
-              index = ijktoindex2t(0, j, k);
-              for (int k = 0; k < bsize; ++k)
-                tmp[k] = a[index + k];
-              parall->dsend(0, 9, MASTER, bsize, tmp);
+         for (int k = 0; k < nz; ++k)
+            for (int j = 0; j < ny; ++j) 
+            {
+               ii = ijktop2(0, j, k);
+               //p_here = parall->convert_taskid_ij(ii, taskid_j);
+               p_here = parall->convert_taskid_ij(ii, jcol);
+               if (p_here == taskid) 
+               {
+                  index = ijktoindex2t(0, j, k);
+                  for (int k = 0; k < bsize; ++k)
+                     tmp[k] = a[index + k];
+                  parall->dsend(0, 9, MASTER, bsize, tmp);
+               }
             }
-          }
      
       // delete [] tmp;
    }
 }
+
 
 /**************************************
  *                                    *

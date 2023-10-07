@@ -65,6 +65,91 @@ static FILE *fd[MAX_UNIT]; /* the file descriptor of the pipe */
     exit(-1);                                                                  \
   }
 
+
+const size_t BUFFER_SIZE = 4096; // 4 KB buffer
+static char buffer[MAX_UNIT][BUFFER_SIZE];
+static size_t bufferIndex[MAX_UNIT] = {0};
+static bool bufferwrite[MAX_UNIT] = {false};;
+
+static size_t readPos[MAX_UNIT] = {0};
+static size_t writePos[MAX_UNIT] = {0};
+
+
+static void refillBuffer(const int unit)
+{
+    if (writePos[unit] == BUFFER_SIZE) {
+        // If buffer is full, clear it
+        readPos[unit] = 0;
+        writePos[unit] = 0;
+    }
+
+    size_t bytesRead = fread(buffer[unit] + writePos[unit], 1, BUFFER_SIZE - writePos[unit], fd[unit]);
+    printf("Refilled buffer for unit %d with %zu bytes.\n", unit, bytesRead);
+ 
+    if (bytesRead == 0 && ferror(fd[unit])) {
+        BAIL("Failed to read from file\n");
+    }
+    writePos[unit] += bytesRead;
+}
+
+static void flushBufferWrite(const int unit) 
+{
+   size_t bytesWritten = fwrite(buffer[unit], 1, bufferIndex[unit], fd[unit]);
+   // Handle error
+   if (bytesWritten < bufferIndex[unit]) {
+       BAIL("Failed to write BUFFER to file\n");
+   }
+}
+
+
+
+#define BUFFERED_READ(unit, data_ptr, elem_size, num_elems)                   \
+    do {                                                                      \
+        size_t dataSize = (num_elems) * (elem_size);                          \
+        size_t bytesAvailable = writePos[unit] - readPos[unit];               \
+                                                                              \
+        while (dataSize > bytesAvailable) {                                   \
+            std::memcpy((data_ptr), buffer[unit] + readPos[unit], bytesAvailable); \
+            dataSize -= bytesAvailable;                                       \
+            (data_ptr) += bytesAvailable;                                     \
+            readPos[unit] += bytesAvailable;                                  \
+            refillBuffer(unit);                                               \
+            bytesAvailable = writePos[unit] - readPos[unit];                  \
+        }                                                                     \
+                                                                              \
+        std::memcpy((data_ptr), buffer[unit] + readPos[unit], dataSize);      \
+        readPos[unit] += dataSize;                                            \
+    } while (0)
+
+
+#define BUFFERED_WRITE(unit, data_ptr, elem_size, num_elems)                  \
+    do {                                                                      \
+        size_t dataSize = (num_elems) * (elem_size);                          \
+                                                                              \
+        if (dataSize > BUFFER_SIZE)                                           \
+        {                                                                     \
+            if (bufferIndex[unit] > 0)                                        \
+            {                                                                 \
+                flushBufferWrite(unit);                                       \
+                bufferIndex[unit] = 0;                                        \
+            }                                                                 \
+            (void)fwrite((data_ptr), (elem_size), (num_elems), fd[unit]);     \
+        }                                                                     \
+        else                                                                  \
+        {                                                                     \
+            if (bufferIndex[unit] + dataSize > BUFFER_SIZE)                   \
+            {                                                                 \
+                flushBufferWrite(unit);                                       \
+                bufferIndex[unit] = 0;                                        \
+            }                                                                 \
+            std::memcpy(buffer[unit] + bufferIndex[unit], (data_ptr), dataSize); \
+            bufferIndex[unit] += dataSize;                                    \
+        }                                                                     \
+    } while (0)
+
+
+
+
 /*
 *************************************************************************
 *									*
@@ -73,44 +158,64 @@ static FILE *fd[MAX_UNIT]; /* the file descriptor of the pipe */
 *************************************************************************
 */
 
-void cwrite(int unit, char *c, const int n) {
+void cread(int unit, char *c, const int n) 
+{
+   //BUFFERED_READ(unit, c, sizeof(char), n);
+   (void)fread(c, sizeof(char), n, fd[unit]);
 
-  (void)fwrite(c, sizeof(char), n, fd[unit]);
 }
 
-void cread(int unit, char *c, const int n) {
-  (void)fread(c, sizeof(char), n, fd[unit]);
+void iread(const int unit, int *i, const int n) 
+{
+   // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+   Int64 *itmp;
+   itmp = new Int64[n];
+
+   //BUFFERED_READ(unit, itmp, sizeof(Int64), n);
+   (void)fread(itmp, sizeof(Int64), n, fd[unit]);
+
+   for (int j = 0; j < n; ++j)
+     i[j] = (int)itmp[j];
+   // free(itmp);
+   delete[] itmp;
 }
 
-void iwrite(const int unit, const int *i, const int n) {
-  // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
-  Int64 *itmp;
-  itmp = new Int64[n];
-  for (int j = 0; j < n; ++j)
-    itmp[j] = (Int64)i[j];
-  (void)fwrite(itmp, sizeof(Int64), n, fd[unit]);
-  // free(itmp);
-  delete[] itmp;
+void dread(const int unit, double *d, const int n) 
+{
+   //BUFFERED_READ(unit, d, sizeof(double), n);
+   (void)fread(d, sizeof(double), n, fd[unit]);
 }
 
-void iread(const int unit, int *i, const int n) {
-  // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
-  Int64 *itmp;
-  itmp = new Int64[n];
-  (void)fread(itmp, sizeof(Int64), n, fd[unit]);
-  for (int j = 0; j < n; ++j)
-    i[j] = (int)itmp[j];
-  // free(itmp);
-  delete[] itmp;
+
+void cwrite(int unit, char *c, const int n) 
+{
+   BUFFERED_WRITE(unit, c, sizeof(char), n);
+   //(void)fwrite(c, sizeof(char), n, fd[unit]);
 }
 
-void dwrite(const int unit, const double *d, const int n) {
-  (void)fwrite(d, sizeof(double), n, fd[unit]);
+void iwrite(const int unit, const int *i, const int n) 
+{
+   // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
+   Int64 *itmp;
+   itmp = new Int64[n];
+   for (int j = 0; j < n; ++j)
+     itmp[j] = (Int64)i[j];
+
+   BUFFERED_WRITE(unit, itmp, sizeof(Int64), n);
+   //(void)fwrite(itmp, sizeof(Int64), n, fd[unit]);
+
+   // free(itmp);
+   delete[] itmp;
 }
 
-void dread(const int unit, double *d, const int n) {
-  (void)fread(d, sizeof(double), n, fd[unit]);
+void dwrite(const int unit, const double *d, const int n) 
+{
+   BUFFERED_WRITE(unit, d, sizeof(double), n);
+   //(void)fwrite(d, sizeof(double), n, fd[unit]);
 }
+
+
+
 
 /*
 *************************************************************************
@@ -130,14 +235,23 @@ void dread(const int unit, double *d, const int n) {
 void openfile(const int unit, const char *filename, const char *mode) {
 
   if ((*mode == 'r') || (*mode == 'R')) {
+    bufferwrite[unit] = false;
     if (!(fd[unit] = fopen(filename, "rb")))
-      BAIL("ERROR:  Could not open pipe from input file\n");
+       BAIL("ERROR:  Could not open pipe from input file\n");
   } else {
+    bufferwrite[unit] = true;
     if (!(fd[unit] = fopen(filename, "wb")))
-      BAIL("ERROR:  Could not open pipe to output file\n");
+       BAIL("ERROR:  Could not open pipe to output file\n");
   }
+  bufferIndex[unit] = 0;
 }
 
-void closefile(const int unit) { (void)fclose(fd[unit]); }
+void closefile(const int unit) 
+{ 
+   if (bufferwrite[unit] && (bufferIndex[unit] > 0))
+      flushBufferWrite(unit);
+
+   (void)fclose(fd[unit]); 
+}
 
 } // namespace pwdft
