@@ -71,26 +71,36 @@ static char buffer[MAX_UNIT][BUFFER_SIZE];
 static size_t bufferIndex[MAX_UNIT] = {0};
 static bool bufferwrite[MAX_UNIT] = {false};;
 
-static size_t readPos[MAX_UNIT] = {0};
-static size_t writePos[MAX_UNIT] = {0};
+// Use IIFE to initialize readbuffer1 and readbuffer2
+/*
+static char* readbuffer1[MAX_UNIT] = []() -> char* [MAX_UNIT] {
+    static char* temp[MAX_UNIT];
+    for (size_t i = 0; i < MAX_UNIT; ++i) {
+        temp[i] = buffer[i];
+    }
+    return temp;
+}();
+
+static char* readbuffer2[MAX_UNIT] = []() -> char* [MAX_UNIT] {
+    static char* temp[MAX_UNIT];
+    for (size_t i = 0; i < MAX_UNIT; ++i) {
+        temp[i] = &buffer[i][BUFFER_SIZE/2];
+    }
+    return temp;
+}();
+
+*/
 
 
-static void refillBuffer(const int unit)
+static size_t refillBuffer(const int unit)
 {
-    if (writePos[unit] == BUFFER_SIZE) {
-        // If buffer is full, clear it
-        readPos[unit] = 0;
-        writePos[unit] = 0;
-    }
+   size_t bytesRead = fread(buffer[unit], 1, BUFFER_SIZE, fd[unit]);
+   if (bytesRead == 0 && ferror(fd[unit])) 
+      BAIL("Failed to read from file\n");
 
-    size_t bytesRead = fread(buffer[unit] + writePos[unit], 1, BUFFER_SIZE - writePos[unit], fd[unit]);
-    printf("Refilled buffer for unit %d with %zu bytes.\n", unit, bytesRead);
- 
-    if (bytesRead == 0 && ferror(fd[unit])) {
-        BAIL("Failed to read from file\n");
-    }
-    writePos[unit] += bytesRead;
+   return bytesRead;
 }
+
 
 static void flushBufferWrite(const int unit) 
 {
@@ -102,24 +112,6 @@ static void flushBufferWrite(const int unit)
 }
 
 
-
-#define BUFFERED_READ(unit, data_ptr, elem_size, num_elems)                   \
-    do {                                                                      \
-        size_t dataSize = (num_elems) * (elem_size);                          \
-        size_t bytesAvailable = writePos[unit] - readPos[unit];               \
-                                                                              \
-        while (dataSize > bytesAvailable) {                                   \
-            std::memcpy((data_ptr), buffer[unit] + readPos[unit], bytesAvailable); \
-            dataSize -= bytesAvailable;                                       \
-            (data_ptr) += bytesAvailable;                                     \
-            readPos[unit] += bytesAvailable;                                  \
-            refillBuffer(unit);                                               \
-            bytesAvailable = writePos[unit] - readPos[unit];                  \
-        }                                                                     \
-                                                                              \
-        std::memcpy((data_ptr), buffer[unit] + readPos[unit], dataSize);      \
-        readPos[unit] += dataSize;                                            \
-    } while (0)
 
 
 #define BUFFERED_WRITE(unit, data_ptr, elem_size, num_elems)                  \
