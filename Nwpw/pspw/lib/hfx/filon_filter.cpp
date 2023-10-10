@@ -932,7 +932,7 @@ void coulomb_filter(Pneb *mygrid, double *vfilter, const std::string filename)
       // write vfilter 3d block
       mygrid->tt_pack_copy(0, vfilter,tmp2);
       mygrid->t_unpack(0, tmp2);
-      mygrid->t_write(6, tmp2, 0);
+      mygrid->t_write_buffer(6, tmp2, 0);
 
       if (myparall->is_master()) 
          closefile(5);

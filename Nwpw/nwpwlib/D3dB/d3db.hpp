@@ -116,6 +116,7 @@ public:
    // void  	 r_read(const int, const int, double *);
    void c_read(const int, double *, const int);
    void c_write(const int, double *, const int);
+   void c_write_buffer(const int, double *, const int);
  
    void cr_fft3d(double *);
    void rc_fft3d(double *);
@@ -149,6 +150,7 @@ public:
    void t_dealloc(double *);
    void t_read(const int, double *, const int);
    void t_write(const int, double *, const int);
+   void t_write_buffer(const int, double *, const int);
    void t_nzero(int, double *);
    void tc_Mul(const double *, double *);
  

@@ -374,7 +374,7 @@ void Pneb::g_write(const int iunit, double *psi)
          PGrid::cc_pack_copy(1, psi + indx, tmp2);
          PGrid::c_unpack(1, tmp2);
       }
-      c_write(iunit, tmp2, pj);
+      c_write_buffer(iunit, tmp2, pj);
    }
  
    delete[] tmp2;

@@ -66,10 +66,12 @@ static FILE *fd[MAX_UNIT]; /* the file descriptor of the pipe */
   }
 
 
+/*
 const size_t BUFFER_SIZE = 4096; // 4 KB buffer
 static char buffer[MAX_UNIT][BUFFER_SIZE];
 static size_t bufferIndex[MAX_UNIT] = {0};
 static bool bufferwrite[MAX_UNIT] = {false};;
+*/
 
 // Use IIFE to initialize readbuffer1 and readbuffer2
 /*
@@ -92,6 +94,7 @@ static char* readbuffer2[MAX_UNIT] = []() -> char* [MAX_UNIT] {
 */
 
 
+/*
 static size_t refillBuffer(const int unit)
 {
    size_t bytesRead = fread(buffer[unit], 1, BUFFER_SIZE, fd[unit]);
@@ -111,6 +114,7 @@ static void flushBufferWrite(const int unit)
    }
 }
 
+*/
 
 
 
@@ -181,8 +185,8 @@ void dread(const int unit, double *d, const int n)
 
 void cwrite(int unit, char *c, const int n) 
 {
-   BUFFERED_WRITE(unit, c, sizeof(char), n);
-   //(void)fwrite(c, sizeof(char), n, fd[unit]);
+   //BUFFERED_WRITE(unit, c, sizeof(char), n);
+   (void)fwrite(c, sizeof(char), n, fd[unit]);
 }
 
 void iwrite(const int unit, const int *i, const int n) 
@@ -193,8 +197,8 @@ void iwrite(const int unit, const int *i, const int n)
    for (int j = 0; j < n; ++j)
      itmp[j] = (Int64)i[j];
 
-   BUFFERED_WRITE(unit, itmp, sizeof(Int64), n);
-   //(void)fwrite(itmp, sizeof(Int64), n, fd[unit]);
+   //BUFFERED_WRITE(unit, itmp, sizeof(Int64), n);
+   (void)fwrite(itmp, sizeof(Int64), n, fd[unit]);
 
    // free(itmp);
    delete[] itmp;
@@ -202,8 +206,8 @@ void iwrite(const int unit, const int *i, const int n)
 
 void dwrite(const int unit, const double *d, const int n) 
 {
-   BUFFERED_WRITE(unit, d, sizeof(double), n);
-   //(void)fwrite(d, sizeof(double), n, fd[unit]);
+   //BUFFERED_WRITE(unit, d, sizeof(double), n);
+   (void)fwrite(d, sizeof(double), n, fd[unit]);
 }
 
 
@@ -227,21 +231,21 @@ void dwrite(const int unit, const double *d, const int n)
 void openfile(const int unit, const char *filename, const char *mode) {
 
   if ((*mode == 'r') || (*mode == 'R')) {
-    bufferwrite[unit] = false;
+    //bufferwrite[unit] = false;
     if (!(fd[unit] = fopen(filename, "rb")))
        BAIL("ERROR:  Could not open pipe from input file\n");
   } else {
-    bufferwrite[unit] = true;
+    //bufferwrite[unit] = true;
     if (!(fd[unit] = fopen(filename, "wb")))
        BAIL("ERROR:  Could not open pipe to output file\n");
   }
-  bufferIndex[unit] = 0;
+  //bufferIndex[unit] = 0;
 }
 
 void closefile(const int unit) 
 { 
-   if (bufferwrite[unit] && (bufferIndex[unit] > 0))
-      flushBufferWrite(unit);
+   //if (bufferwrite[unit] && (bufferIndex[unit] > 0))
+   //   flushBufferWrite(unit);
 
    (void)fclose(fd[unit]); 
 }
