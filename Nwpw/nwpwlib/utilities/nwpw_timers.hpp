@@ -130,6 +130,7 @@ public:
     coutput << " Time spent doing      total        step             percent"
             << std::endl;
     print_timer("total time           ", times[0], counter, times[0], coutput);
+    print_timer("total i/o time       ", times[50],counter, times[0], coutput);
     print_timer("total FFT time       ", times[1], counter, times[0], coutput);
     print_timer("total dot products   ", times[2], counter, times[0], coutput);
     print_timer("lagrange multipliers ", times[3], counter, times[0], coutput);

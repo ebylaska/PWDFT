@@ -260,6 +260,7 @@ static void vpp_read(PGrid *mygrid, char *fname, char *comment, int *psp_type, i
                      double **hartree_matrix, double **comp_charge_matrix,
                      double **comp_pot_matrix, std::ostream &coutput) 
 {
+   nwpw_timing_function ftimer(50);
    int i, nn;
    double *tmp2, *prj;
    Parallel *parall = mygrid->parall;
@@ -600,6 +601,7 @@ static void vpp_write(PGrid *mygrid, char *fname, char *comment, int psp_type, i
                       double core_ion_energy, double *hartree_matrix, double *comp_charge_matrix,
                       double *comp_pot_matrix, std::ostream &coutput) 
 {
+   nwpw_timing_function ftimer(50);
    int i, nn;
    double *prj;
    Parallel *parall = mygrid->parall;
