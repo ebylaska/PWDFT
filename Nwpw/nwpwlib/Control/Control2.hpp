@@ -126,6 +126,7 @@ class Control2 {
    double pHFX_screening_radius = 0.0;
 
    int pio_norbs_max = 100;
+   int pio_buffer = true;
 
 
 public:
@@ -188,6 +189,7 @@ public:
    std::string xc_name() { return xcstring; }
    int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
    int io_norbs_max() { return pio_norbs_max; }
+   bool io_buffer() { return pio_buffer; }
  
    int *ne_ptr() { return pne; }
  

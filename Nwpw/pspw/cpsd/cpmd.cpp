@@ -372,6 +372,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
      
       std::cout << std::endl;
       std::cout << " technical parameters:" << std::endl;
+      if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
       if (myion.fix_translation) std::cout << "      translation constrained" << std::endl;
       if (myion.fix_rotation)    std::cout << "      rotation constrained"    << std::endl;
       std::cout << "      time step =" << Ffmt(11,2)  << control.time_step()

@@ -49,6 +49,7 @@ class Pneb : public PGrid, public d1db {
    int g_rnd_algorihm = 1;
 
    int io_norbs_max = 10;
+   bool io_buffer = true;
 
 public:
    /* constructors */

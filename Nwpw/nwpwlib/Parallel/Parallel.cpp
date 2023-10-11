@@ -320,6 +320,23 @@ void Parallel::Vector_SumAll(const int d, const int n, double *sum) {
   }
 }
 
+/********************************
+ *                              *
+ *     Vector_SumAll_buffer     *
+ *                              *
+ ********************************/
+void Parallel::Vector_SumAll_buffer(const int d, const int n, double *sum, double *buffer) 
+{
+   if (npi[d] > 1)
+   {
+       std::cout << " into allreduce " << std::endl;
+      MPI_Allreduce(sum, buffer, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
+       std::cout << " out allreduce " << std::endl;
+      std::memcpy(sum,buffer,n*sizeof(double));
+   }
+}
+
+
 
 /********************************
  *                              *

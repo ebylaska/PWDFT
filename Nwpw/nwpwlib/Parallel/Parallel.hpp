@@ -82,6 +82,7 @@ public:
    /* SumAll */
    double SumAll(const int, const double);
    void Vector_SumAll(const int, const int, double *);
+   void Vector_SumAll_buffer(const int, const int, double *, double *);
    int ISumAll(const int, const int);
    void Vector_ISumAll(const int, const int, int *);
  

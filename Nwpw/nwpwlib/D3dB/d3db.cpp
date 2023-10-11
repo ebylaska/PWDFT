@@ -2522,6 +2522,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
    int np_j = parall->np_j();
+   int idum[1] = {1};
 
    /**********************
     **** slab mapping ****
@@ -2541,11 +2542,12 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
          if (p_from == MASTER) 
          {
             index = 2 * ijktoindex(0, 0, k);
-            for (int k = 0; k < bsize; ++k)
-               tmp[k] = a[index + k];
+            for (int kk = 0; kk < bsize; ++kk)
+               tmp[kk] = a[index + kk];
          } 
          else 
          {
+            parall->isend(0, 7, p_from, 1, idum);
             parall->dreceive(0, 9, p_from, bsize, tmp);
          }
          dwrite(iunit, tmp, bsize);
@@ -2561,8 +2563,9 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             p_here = parall->convert_taskid_ij(ii, jcol);
             if (p_here == taskid) 
             {
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
+               parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
@@ -2605,11 +2608,12 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             if (p_from == MASTER) 
             {
                index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
             } 
             else 
             {
+               parall->isend(0, 7, p_from, 1, idum);
                parall->dreceive(0, 9, p_from, bsize, tmp);
             }
             dwrite(iunit, tmp, bsize);
@@ -2626,8 +2630,9 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
             if (p_here == taskid) 
             {
                index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
+               parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
@@ -2648,136 +2653,59 @@ void d3db::c_write_buffer(const int iunit, double *a, const int jcol)
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
 
+   int buff_count = (nx+2)*ny*nz;
+   double *buffer = new (std::nothrow) double[buff_count]();
+   std::memset(buffer,0,buff_count*sizeof(double));
  
    /**********************
     **** slab mapping ****
     **********************/
    if (maptype == 1)
    {
-      double *tmp = new (std::nothrow) double[(nx + 2) * ny]();
-      // double tmp[(nx+2)*ny];
-      int bsize = (nx + 2) * ny;
-
-
-      /**** master node gathers and write to file ****/
-      if (taskid == MASTER)
+      for (int k = 0; k < nz; ++k)
       {
-         int buff_count = 0;
-         double *buffer = new (std::nothrow) double[bsize*nz]();
-
-         for (int k = 0; k < nz; ++k)
-         {
-            ii = ijktop(0, 0, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
-            if (p_from == MASTER)
-            {
-               index = 2 * ijktoindex(0, 0, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
-            }
-            else
-            {
-               parall->dreceive(0, 9, p_from, bsize, tmp);
-            }
-           // dwrite(iunit, tmp, bsize);
-           std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
-           buff_count += bsize;
-         }
-        dwrite(iunit,buffer,buff_count);
-        delete [] buffer;
-      }
-
-      /**** not master node ****/
-      else
-      {
-         for (int k = 0; k < nz; ++k)
+         ii = ijktop(0, 0, k);
+         p_here = parall->convert_taskid_ij(ii, jcol);
+         if (p_here==taskid)
          {
             index = 2 * ijktoindex(0, 0, k);
-            ii = ijktop(0, 0, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid)
-            {
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
-               parall->dsend(0, 9, MASTER, bsize, tmp);
-            }
+            for (int ij = 0; ij<(nx+2)*ny; ++ij)
+               buffer[ij+k*(nx+2)*ny] = a[index+ij];
          }
       }
-
-      delete[] tmp;
    }
 
-  /*************************
-   **** hilbert mapping ****
-   *************************/
+   /*************************
+    **** hilbert mapping ****
+    *************************/
    else
    {
       if (taskid_j==jcol)
       {
-         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
-         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
-         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = d3db::d3db_tmp1;
          double *tmp2 = d3db::d3db_tmp2;
          c_transpose_ijk(5, a, tmp1, tmp2);
-
-         // delete [] tmp2;
-         // delete [] tmp1;
       }
-
-      // double *tmp = new (std::nothrow) double[nx+2];
-      double tmp[nx + 2];
-      int bsize = (nx + 2);
-
-
-      /**** master node write to file and fetches from other nodes ****/
-      if (taskid == MASTER)
+      for (int k = 0; k < nz; ++k)
+      for (int j = 0; j < ny; ++j)
       {
-         int buff_count = 0;
-         double *buffer = new (std::nothrow) double[bsize*ny*nz]();
-
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j)
+         ii = ijktop2(0, j, k);
+         p_here = parall->convert_taskid_ij(ii, jcol);
+         if (p_here == taskid)
          {
-            ii = ijktop2(0, j, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
-            if (p_from == MASTER)
-            {
-               index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
-            }
-            else
-            {
-               parall->dreceive(0, 9, p_from, bsize, tmp);
-            }
-            //dwrite(iunit, tmp, bsize);
-           std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
-           buff_count += bsize;
-         }
-         dwrite(iunit, buffer, buff_count);
-         delete [] buffer;
-      }
-      /**** not master node ****/
-      else
-      {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j)
-         {
-            ii = ijktop2(0, j, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid)
-            {
-               index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
-               parall->dsend(0, 9, MASTER, bsize, tmp);
-            }
+            index = ijktoindex2(0, j, k);
+            for (int i=0; i<(nx+2); ++i)
+               buffer[i + j*(nx+2) + k*(nx+2)*ny] = a[index+i];
          }
       }
-      // delete [] tmp;
    }
+
+   double *buffer2 = new (std::nothrow) double[buff_count]();
+   parall->Reduce_Values(1,MASTER,buff_count,buffer,buffer2);
+   if (parall->is_master())
+      dwrite(iunit,buffer2,buff_count);
+   delete [] buffer2;
+   delete [] buffer;
 }
 
 
@@ -2834,8 +2762,8 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             if (p_from == MASTER)
             {
                index = 2 * ijktoindex(0, 0, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
             }
             else
             {
@@ -2858,8 +2786,8 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             p_here = parall->convert_taskid_ij(ii, jcol);
             if (p_here == taskid)
             {
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
@@ -2908,8 +2836,8 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             if (p_from == MASTER)
             {
                index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
             }
             else
             {
@@ -2933,8 +2861,8 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             if (p_here == taskid)
             {
                index = ijktoindex2(0, j, k);
-               for (int k = 0; k < bsize; ++k)
-                  tmp[k] = a[index + k];
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }

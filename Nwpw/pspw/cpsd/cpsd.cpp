@@ -351,6 +351,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       
       std::cout << std::endl;
       std::cout << " technical parameters:\n";
+      if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
       std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step() 
                 << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
       std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0)

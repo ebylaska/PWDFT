@@ -218,6 +218,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
    g_rnd_algorihm = control.initial_psi_random_algorithm();
 
    io_norbs_max = control.io_norbs_max();
+   io_buffer    = control.io_buffer();
 }
 
 /*************************************
@@ -364,16 +365,6 @@ void Pneb::g_write(const int iunit, double *psi)
    int ms, n, indx, i, pj, qj, taskid_j;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   int norbs_max = ne[0];
-   if (ispin>1) norbs_max += ne[1];
-   if (norbs_max > io_norbs_max) norbs_max = io_norbs_max;
-
-   int buff_max = norbs_max*(nx+2)*ny*nz;
-   int buff_count = 0;
-   double *buffer;
-   if (d1db::parall->is_master())
-      buffer = new (std::nothrow) double[norbs_max*(nx+2)*ny*nz]();
- 
    taskid_j = d1db::parall->taskid_j();
    for (ms = 0; ms < ispin; ++ms)
    for (n = 0; n < ne[ms]; ++n) 
@@ -386,13 +377,12 @@ void Pneb::g_write(const int iunit, double *psi)
          PGrid::cc_pack_copy(1, psi + indx, tmp2);
          PGrid::c_unpack(1, tmp2);
       }
-      //c_write_buffer(iunit,tmp2,pj);
-      c_write_buffer_max(iunit,tmp2,pj,buff_max,buff_count,buffer);
+      if (io_buffer)
+         c_write_buffer(iunit,tmp2,pj);
+      else
+         c_write(iunit,tmp2,pj);
    }
-   c_write_buffer_max_final(iunit,buff_count,buffer);
 
-   if (d1db::parall->is_master())
-      delete[] buffer;
    delete[] tmp2;
 }
 
