@@ -619,7 +619,7 @@ public:
                                   dev_mem[ia],lda,
                                   dev_mem[ib],ldb,
                                   &beta,
-                                  dev_mem[ic],ldc);
+                                  dev_mem[ic],ldc));
     NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
 
@@ -651,7 +651,7 @@ public:
                                   dev_mem[ia], lda,
                                   dev_mem[ib], ldb,
                                   &beta,
-                                  dev_mem[ic],ldc);
+                                  dev_mem[ic],ldc));
 
     NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
@@ -683,7 +683,7 @@ public:
                                   dev_mem[ia], lda,
                                   dev_mem[ib], ldb,
                                   &beta,
-                                  dev_mem[ic],ldc);
+                                  dev_mem[ic],ldc));
 
     NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
