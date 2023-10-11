@@ -125,7 +125,7 @@ class Control2 {
    double pHFX_parameter = 0.0;
    double pHFX_screening_radius = 0.0;
 
-   int pio_norbs_max = 10;
+   int pio_norbs_max = 100;
 
 
 public:
