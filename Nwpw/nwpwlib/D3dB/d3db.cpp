@@ -2823,7 +2823,7 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
       {
          if ((buff_max - buff_count) < (bsize*nz))
          {
-            dwrite(iunit,buffer,buff_count*sizeof(double));
+            dwrite(iunit,buffer,buff_count);
             buff_count = 0;
          }
 
@@ -2896,7 +2896,7 @@ void d3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
       {
          if ((buff_max - buff_count) < (bsize*ny*nz))
          {
-            dwrite(iunit, buffer, buff_count*sizeof(double));
+            dwrite(iunit, buffer, buff_count);
             buff_count = 0;
          }
 
