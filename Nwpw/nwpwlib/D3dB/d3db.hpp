@@ -117,6 +117,8 @@ public:
    void c_read(const int, double *, const int);
    void c_write(const int, double *, const int);
    void c_write_buffer(const int, double *, const int);
+   void c_write_buffer_max(const int, double *, const int, const int, int &, double *);
+   void c_write_buffer_max_final(const int, int &, double *);
  
    void cr_fft3d(double *);
    void rc_fft3d(double *);

@@ -1095,6 +1095,10 @@ static json parse_nwpw(json nwpwjson, int *curptr,
         nwpwjson["initialize_wavefunction"] = true;
       else
         nwpwjson["initialize_wavefunction"] = true;
+    } else if (mystring_contains(line, "io_norbs_max")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "nobalance")) {
       nwpwjson["nobalance"] = true;
     } else if (mystring_contains(line, "use_grid_cmp")) {

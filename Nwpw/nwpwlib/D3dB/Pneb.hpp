@@ -48,6 +48,8 @@ class Pneb : public PGrid, public d1db {
    int ncqmax0, npack1_all, nida1_all, n2ft3d_all;
    int g_rnd_algorihm = 1;
 
+   int io_norbs_max = 10;
+
 public:
    /* constructors */
    Pneb(Parallel *, Lattice *, Control2 &, int, int *);

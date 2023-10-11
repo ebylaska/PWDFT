@@ -229,18 +229,21 @@ Control2::Control2(const int np0, const std::string rtdbstring)
          pnp_dimensions[1] = pnp_dimensions[1] - 1;
       pnp_dimensions[0] = np / pnp_dimensions[1];
    }
+
+   if (rtdbjson["nwpw"]["io_norbs_max"].is_number_integer())
+      pio_norbs_max = rtdbjson["nwpw"]["io_norbs_max"];
  
    puse_grid_cmp = false;
    if (rtdbjson["nwpw"]["use_grid_cmp"].is_boolean())
-     puse_grid_cmp = rtdbjson["nwpw"]["use_grid_cmp"];
+      puse_grid_cmp = rtdbjson["nwpw"]["use_grid_cmp"];
  
    pfast_erf = false;
    if (rtdbjson["nwpw"]["fast_erf"].is_boolean())
-     pfast_erf = rtdbjson["nwpw"]["fast_erf"];
+      pfast_erf = rtdbjson["nwpw"]["fast_erf"];
  
    plmax_multipole = 0;
    if (rtdbjson["nwpw"]["lmax_multipole"].is_number_integer())
-     plmax_multipole = rtdbjson["nwpw"]["lmax_multipole"];
+      plmax_multipole = rtdbjson["nwpw"]["lmax_multipole"];
  
    pbalance = 1;
    if (rtdbjson["nwpw"]["nobalance"].is_boolean())

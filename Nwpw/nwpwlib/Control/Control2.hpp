@@ -125,6 +125,8 @@ class Control2 {
    double pHFX_parameter = 0.0;
    double pHFX_screening_radius = 0.0;
 
+   int pio_norbs_max = 10;
+
 
 public:
    int version = 3;
@@ -185,6 +187,7 @@ public:
    int lmax_multipole() { return plmax_multipole; }
    std::string xc_name() { return xcstring; }
    int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
+   int io_norbs_max() { return pio_norbs_max; }
  
    int *ne_ptr() { return pne; }
  
