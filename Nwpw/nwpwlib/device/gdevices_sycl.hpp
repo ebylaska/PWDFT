@@ -620,6 +620,10 @@ public:
 
      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
      stream[0]->wait();
+
+     inuse[ia] = false;
+     inuse[ib] = false;
+     inuse[ic] = false;
   }
 
   /**************************************
@@ -651,6 +655,10 @@ public:
 
      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
      stream[0]->wait();
+
+     inuse[ia] = false;
+     inuse[ib] = false;
+     inuse[ic] = false;
   }
 
   /**************************************
@@ -710,6 +718,10 @@ public:
       if (nida2 > 0) {
          DGEMM_PWDFT("T", "N", n, m, nida2, rmone, host_a, npack2, host_b, npack2, rzero, host_c, n);
       }
+
+     inuse[ia] = false;
+     inuse[ib] = false;
+     inuse[ic] = false;
    }
    
 
@@ -742,6 +754,10 @@ public:
 
      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
      stream[0]->wait();
+
+     inuse[ia] = false;
+     inuse[ib] = false;
+     inuse[ic] = false;
   }
 
 

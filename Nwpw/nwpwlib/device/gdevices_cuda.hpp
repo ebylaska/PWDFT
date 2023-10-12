@@ -315,73 +315,55 @@ public:
     int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
 
     if (std::fabs(beta) > 0.0) {
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic11], host_caa,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic21], host_cba,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic22], host_cbb,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
+      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic11], host_caa, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic21], host_cba, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic22], host_cbb, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
     }
 
     // copy host_a,host_b --> dev_mem
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
-        dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
-        dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
+                                           dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
+                                           dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
 
     double beta0 = beta;
     for (auto tt = 0; tt < tile_fac; ++tt) {
       int ttp1 = tt + 1;
       if (ttp1 < tile_fac) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]],
-            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]],
-            npack2, dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
+        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]], npack2, 
+                                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]], npack2, 
+                                               dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
       }
       NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic11], ne));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic12], ne));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic21], ne));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic22], ne));
+      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                    dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                    dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                    &beta0, 
+                                    dev_mem[ic11], ne));
+      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                    dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                    dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                    &beta0, 
+                                    dev_mem[ic12], ne));
+      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                    dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                    dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                    &beta0, 
+                                    dev_mem[ic21], ne));
+      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                    dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                    dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                    &beta0, 
+                                    dev_mem[ic22], ne));
       beta0 = 1.0;
     }
 
-    NWPW_CUDA_ERROR(cudaMemcpy(host_caa, dev_mem[ic11],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cba, dev_mem[ic21],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cbb, dev_mem[ic22],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
+    NWPW_CUDA_ERROR(cudaMemcpy(host_caa, dev_mem[ic11], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+    NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+    NWPW_CUDA_ERROR(cudaMemcpy(host_cba, dev_mem[ic21], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+    NWPW_CUDA_ERROR(cudaMemcpy(host_cbb, dev_mem[ic22], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
 
     inuse[ic11] = false;
     inuse[ic12] = false;
@@ -412,73 +394,62 @@ public:
   */
   void TN3_dgemm(int npack2, int ne, double alpha, double *host_a,
                  double *host_b, double beta, double *host_caa,
-                 double *host_cab, double *host_cbb) {
-    int ic11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
-    int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
-    int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
-
-    if (std::fabs(beta) > 0.0) {
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic11], host_caa,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic22], host_cbb,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-    }
-
-    // copy host_a,host_b --> dev_mem
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
-        dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
-        dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
-
-    double beta0 = beta;
-    for (auto tt = 0; tt < tile_fac; ++tt) {
-      int ttp1 = tt + 1;
-      if (ttp1 < tile_fac) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]],
-            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]],
-            npack2, dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-      }
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic11], ne));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic12], ne));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic22], ne));
-      beta0 = 1.0;
-    }
-
-    NWPW_CUDA_ERROR(cudaMemcpy(host_caa, dev_mem[ic11],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cbb, dev_mem[ic22],
-                               ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-
-    inuse[ic11] = false;
-    inuse[ic12] = false;
-    inuse[ic22] = false;
+                 double *host_cab, double *host_cbb) 
+  {
+     int ic11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+     int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+     int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    
+     if (std::fabs(beta) > 0.0) 
+     {
+        NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic11], host_caa, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+        NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+        NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic22], host_cbb, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+     }
+    
+     // copy host_a,host_b --> dev_mem
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
+                                            dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
+                                            dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
+    
+     double beta0 = beta;
+     for (auto tt = 0; tt < tile_fac; ++tt) 
+     {
+        int ttp1 = tt + 1;
+        if (ttp1 < tile_fac) 
+        {
+           NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]], npack2, 
+                                                  dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+           NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]], npack2, 
+                                                  dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+        }
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
+        NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                      dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                      dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                      &beta0, 
+                                      dev_mem[ic11], ne));
+        NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                      dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                      dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                      &beta0, 
+                                      dev_mem[ic12], ne));
+        NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                      dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                      dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                      &beta0, 
+                                      dev_mem[ic22], ne));
+        beta0 = 1.0;
+     }
+    
+     NWPW_CUDA_ERROR(cudaMemcpy(host_caa, dev_mem[ic11], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+     NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+     NWPW_CUDA_ERROR(cudaMemcpy(host_cbb, dev_mem[ic22], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+    
+     inuse[ic11] = false;
+     inuse[ic12] = false;
+     inuse[ic22] = false;
   }
 
   /**************************************
@@ -500,49 +471,87 @@ public:
           - temporary device memory for (nexne) matrix, ic12.
   */
   void TN1_dgemm(int npack2, int ne, double alpha, double *host_a,
-                 double *host_b, double beta, double *host_cab) {
-    int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
-
-    if (std::fabs(beta) > 0.0) {
-      NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab,
-                                 ne * ne * sizeof(double),
-                                 cudaMemcpyHostToDevice));
-    }
-
-    // copy host_a,host_b --> dev_mem
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
-        dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
-        dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
-
-    double beta0 = beta;
-    for (auto tt = 0; tt < tile_fac; ++tt) {
-      int ttp1 = tt + 1;
-      if (ttp1 < tile_fac) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]],
-            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]],
-            npack2, dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-      }
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic12], ne));
-      beta0 = 1.0;
-    }
-
-    NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double),
-                               cudaMemcpyDeviceToHost));
-
-    inuse[ic12] = false;
+                 double *host_b, double beta, double *host_cab) 
+  {
+     int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+    
+     if (std::fabs(beta) > 0.0) 
+     {
+        NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ic12], host_cab, ne * ne * sizeof(double), cudaMemcpyHostToDevice));
+     }
+    
+     // copy host_a,host_b --> dev_mem
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
+                                            dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), &host_b[tile_start2[0]], npack2,
+                                            dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
+    
+     double beta0 = beta;
+     for (auto tt = 0; tt < tile_fac; ++tt) 
+     {
+        int ttp1 = tt + 1;
+        if (ttp1 < tile_fac) 
+        {
+           NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]], npack2, 
+                                                  dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+           NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), &host_b[tile_start2[ttp1]], npack2, 
+                                                  dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+        }
+        NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
+        NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, ne, tile_npack2[tt], &alpha,
+                                      dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                      dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                      &beta0, 
+                                      dev_mem[ic12], ne));
+        beta0 = 1.0;
+     }
+    
+     NWPW_CUDA_ERROR(cudaMemcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double), cudaMemcpyDeviceToHost));
+    
+     inuse[ic12] = false;
   }
+
+  /**************************************
+   *                                    *
+   *              TN_dgemm2c            *
+   *                                    *
+   **************************************/
+   void TN_dgemm2c(int n, int m, int npack2, int nida2,
+                   double *host_a, double *host_b, double *host_c) {
+      constexpr double rtwo  = 2.0;
+      constexpr double rone  = 1.0;
+      constexpr double rmone = -1.0;
+      constexpr double rzero = 0.0;
+
+      int ia = fetch_dev_mem_indx(static_cast<size_t>(npack2) * n);
+      int ib = fetch_dev_mem_indx(static_cast<size_t>(npack2) * m);
+      int ic = fetch_dev_mem_indx(static_cast<size_t>(n) * m);
+
+      //syclSetMatrixAsync(npack2,n,sizeof(double),host_a,npack2,dev_mem[ia],npack2,stream[0]);
+      //syclSetMatrixAsync(npack2,m,sizeof(double),host_b,npack2,dev_mem[ib],npack2,stream[0]);
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(npack2,n,sizeof(double),host_a,npack2,dev_mem[ia],npack2,stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(npack2,m,sizeof(double),host_b,npack2,dev_mem[ib],npack2,stream[0]));
+
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, n, m, npack2, &rtwo,
+                                    dev_mem[ia], npack2, 
+                                    dev_mem[ib], npack2, 
+                                    &rzero, 
+                                    dev_mem[ic],n));
+
+      NWPW_CUDA_ERROR(cudaMemcpy(host_c,dev_mem[ic],n*m*sizeof(double),cudaMemcpyDeviceToHost));
+
+      if (nida2 > 0) {
+         DGEMM_PWDFT("T", "N", n, m, nida2, rmone, host_a, npack2, host_b, npack2, rzero, host_c, n);
+      }
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
+
+
+
 
   /**************************************
    *                                    *
@@ -558,25 +567,19 @@ public:
 
     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, ne, sizeof(double), host_b, ne,
                                            dev_mem[ib], ne, stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_a[tile_start2[0]], npack2,
-        dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], ne, sizeof(double), &host_c[tile_start2[0]], npack2,
-        dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), host_a+tile_start2[0], npack2,
+                                           dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), host_c+tile_start2[0], npack2,
+                                           dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]));
 
     // double beta0 = beta;
     for (auto tt = 0; tt < tile_fac; ++tt) {
       int ttp1 = tt + 1;
       if (ttp1 < tile_fac) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_a[tile_start2[ttp1]],
-            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &host_c[tile_start2[ttp1]],
-            npack2, dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
+        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), host_a+tile_start2[ttp1], npack2, 
+                                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), host_c+tile_start2[ttp1], npack2, 
+                                               dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1], stream[ttp1 % 2]));
       }
       NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
       NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matN, tile_npack2[tt],
@@ -585,7 +588,7 @@ public:
                                     dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt]));
       NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(
           tile_npack2[tt], ne, sizeof(double), dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &host_c[tile_start2[tt]], npack2, stream[tt % 2]));
+          tile_npack2[tt], host_c+tile_start2[tt], npack2, stream[tt % 2]));
     }
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[(tile_fac - 1) % 2]));
     // NWPW_CUDA_ERROR(
@@ -693,9 +696,6 @@ public:
   }
 
 
-
-
-
   /**************************************
    *                                    *
    *              TN_dgemm              *
@@ -713,43 +713,36 @@ public:
     b_prj = host_b;
     ib_prj[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
     if (tile_fac > 1)
-      ib_prj[1] =
-          fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
+       ib_prj[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
     int ic = fetch_dev_mem_indx(((size_t)ne) * ((size_t)nprj));
 
     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, nprj, sizeof(double), host_c, ne,
                                            dev_mem[ic], ne, stream[0]));
 
     if (tile_fac > 1)
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-          tile_npack2[0], ne, sizeof(double), &a_psi[tile_start2[0]], npack2,
-          dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[0], nprj, sizeof(double), &b_prj[tile_start2[0]], npack2,
-        dev_mem[ib_prj[0]], tile_npack2[0], stream[0]));
+       NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), a_psi+tile_start2[0], npack2,
+                                              dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], nprj, sizeof(double), b_prj+tile_start2[0], npack2,
+                                           dev_mem[ib_prj[0]], tile_npack2[0], stream[0]));
 
     double beta0 = beta;
     for (auto tt = 0; tt < tile_fac; ++tt) {
-      int ttp1 = tt + 1;
-      if (ttp1 < tile_fac) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], ne, sizeof(double), &a_psi[tile_start2[ttp1]],
-            npack2, dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttp1], nprj, sizeof(double), &b_prj[tile_start2[ttp1]],
-            npack2, dev_mem[ib_prj[ttp1 % 2]], tile_npack2[ttp1],
-            stream[ttp1 % 2]));
-      }
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(
-          master_handle, matT, matN, ne, nprj, tile_npack2[tt], &alpha,
-          dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ib_prj[tt % 2]],
-          tile_npack2[tt], &beta0, dev_mem[ic], ne));
-      beta0 = 1.0;
+       int ttp1 = tt + 1;
+       if (ttp1 < tile_fac) {
+          NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double), a_psi+tile_start2[ttp1], npack2, 
+                                                 dev_mem[ia_psi[ttp1%2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+          NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttp1], nprj, sizeof(double), b_prj+tile_start2[ttp1], npack2, 
+                                                 dev_mem[ib_prj[ttp1%2]], tile_npack2[ttp1], stream[ttp1 % 2]));
+       }
+       NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
+       NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matT, matN, ne, nprj, tile_npack2[tt], &alpha,
+                                     dev_mem[ia_psi[tt % 2]], tile_npack2[tt], 
+                                     dev_mem[ib_prj[tt % 2]], tile_npack2[tt], 
+                                     &beta0, 
+                                     dev_mem[ic], ne));
+       beta0 = 1.0;
     }
-    cudaMemcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double),
-               cudaMemcpyDeviceToHost);
+    cudaMemcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double), cudaMemcpyDeviceToHost);
 
     // inuse[ia] = false;
     // inuse[ib_prj[0]] = false;
@@ -757,12 +750,24 @@ public:
     inuse[ic] = false;
   }
 
+
+  
+  /**************************************
+   *                                    *
+   *              T_free                *
+   *                                    *
+   **************************************/
   void T_free() {
     inuse[ib_prj[0]] = false;
     if (tile_fac > 1)
       inuse[ib_prj[1]] = false;
   }
 
+  /**************************************
+   *                                    *
+   *             NT_dgemm               *
+   *                                    *
+   **************************************/
   void NT_dgemm(int npack2, int ne, int nprj, double alpha, double *host_a,
                 double *host_b, double beta, double *host_c) {
     // DGEMM_PWDFT((char *) "N",(char *)
@@ -771,38 +776,28 @@ public:
     int ib = fetch_dev_mem_indx(((size_t)ne) * ((size_t)nprj));
 
     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, nprj, sizeof(double), host_b, ne,
-                                           dev_mem[ib], ne,
-                                           stream[(tile_fac - 1) % 2]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[tile_fac - 1], ne, sizeof(double),
-        &host_c[tile_start2[tile_fac - 1]], npack2,
-        dev_mem[ia_hpsi[(tile_fac - 1) % 2]], tile_npack2[tile_fac - 1],
-        stream[(tile_fac - 1) % 2]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[tile_fac - 1], nprj, sizeof(double),
-        &host_a[tile_start2[tile_fac - 1]], npack2,
-        dev_mem[ib_prj[(tile_fac - 1) % 2]], tile_npack2[tile_fac - 1],
-        stream[(tile_fac - 1) % 2]));
+                                           dev_mem[ib], ne, stream[(tile_fac - 1) % 2]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[tile_fac - 1], ne, sizeof(double), &host_c[tile_start2[tile_fac - 1]], npack2,
+                                           dev_mem[ia_hpsi[(tile_fac - 1) % 2]], tile_npack2[tile_fac - 1], stream[(tile_fac - 1) % 2]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[tile_fac - 1], nprj, sizeof(double), &host_a[tile_start2[tile_fac - 1]], npack2,
+                                           dev_mem[ib_prj[(tile_fac - 1) % 2]], tile_npack2[tile_fac - 1], stream[(tile_fac - 1) % 2]));
     for (auto tt = tile_fac - 1; tt >= 0; --tt) {
-      int ttm1 = tt - 1;
-      if (ttm1 >= 0) {
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttm1], ne, sizeof(double), &host_c[tile_start2[ttm1]],
-            npack2, dev_mem[ia_hpsi[ttm1 % 2]], tile_npack2[ttm1],
-            stream[ttm1 % 2]));
-        NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-            tile_npack2[ttm1], nprj, sizeof(double), &host_a[tile_start2[ttm1]],
-            npack2, dev_mem[ib_prj[ttm1 % 2]], tile_npack2[ttm1],
-            stream[ttm1 % 2]));
-      }
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matT, tile_npack2[tt],
-                                    ne, nprj, &alpha, dev_mem[ib_prj[tt % 2]],
-                                    tile_npack2[tt], dev_mem[ib], ne, &beta,
-                                    dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt]));
-      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(
-          tile_npack2[tt], ne, sizeof(double), dev_mem[ia_hpsi[tt % 2]],
-          tile_npack2[tt], &host_c[tile_start2[tt]], npack2, stream[tt % 2]));
+       int ttm1 = tt - 1;
+       if (ttm1 >= 0) {
+          NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttm1], ne, sizeof(double), &host_c[tile_start2[ttm1]], npack2, 
+                                                 dev_mem[ia_hpsi[ttm1 % 2]], tile_npack2[ttm1], stream[ttm1 % 2]));
+          NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[ttm1], nprj, sizeof(double), &host_a[tile_start2[ttm1]], npack2, 
+                                                 dev_mem[ib_prj[ttm1 % 2]], tile_npack2[ttm1], stream[ttm1 % 2]));
+       }
+       NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[tt % 2]));
+       NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matT, tile_npack2[tt],
+                                     ne, nprj, &alpha, 
+                                     dev_mem[ib_prj[tt % 2]], tile_npack2[tt], 
+                                     dev_mem[ib], ne, 
+                                     &beta,
+                                     dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt]));
+       NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(tile_npack2[tt], ne, sizeof(double), dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], 
+                                              &host_c[tile_start2[tt]], npack2, stream[tt % 2]));
     }
 
     inuse[ib] = false;
@@ -827,44 +822,45 @@ public:
     int i_st1 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // tmp
     int i_sa1 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne)); // input-output
 
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, ne, sizeof(double), host_s12, ne,
-                                           dev_mem[i_s12], ne, stream[0]));
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, ne, sizeof(double), host_s11, ne,
-                                           dev_mem[i_s11], ne, stream[1]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, ne, sizeof(double), host_s12, ne, dev_mem[i_s12], ne, stream[0]));
+    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ne, ne, sizeof(double), host_s11, ne, dev_mem[i_s11], ne, stream[1]));
 
-    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_s21, ne,
-                                      dev_mem[i_s21], ne));
-    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_sa0, ne,
-                                      dev_mem[i_sa0], ne));
-    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_s11, ne,
-                                      dev_mem[i_s11], ne));
-    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_sa1, ne,
-                                      dev_mem[i_sa1], ne));
+    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_s21, ne, dev_mem[i_s21], ne));
+    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_sa0, ne, dev_mem[i_sa0], ne));
+    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_s11, ne, dev_mem[i_s11], ne));
+    NWPW_CUBLAS_ERROR(cublasSetMatrix(ne, ne, sizeof(double), host_sa1, ne, dev_mem[i_sa1], ne));
 
     // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
     NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matN, ne, ne, ne, &rone,
-                                  dev_mem[i_s21], ne, dev_mem[i_sa0], ne, &rone,
+                                  dev_mem[i_s21], ne, 
+                                  dev_mem[i_sa0], ne, 
+                                  &rone,
                                   dev_mem[i_sa1], ne));
 
     // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
     NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matN, ne, ne, ne, &rone,
-                                  dev_mem[i_sa0], ne, dev_mem[i_s12], ne, &rone,
+                                  dev_mem[i_sa0], ne, 
+                                  dev_mem[i_s12], ne, 
+                                  &rone,
                                   dev_mem[i_sa1], ne));
 
     // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
     NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matN, ne, ne, ne, &rone,
-                                  dev_mem[i_s11], ne, dev_mem[i_sa0], ne,
-                                  &rzero, dev_mem[i_st1], ne));
+                                  dev_mem[i_s11], ne, 
+                                  dev_mem[i_sa0], ne,
+                                  &rzero, 
+                                  dev_mem[i_st1], ne));
 
     // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
     NWPW_CUBLAS_ERROR(cublasDgemm(master_handle, matN, matN, ne, ne, ne, &rone,
-                                  dev_mem[i_sa0], ne, dev_mem[i_st1], ne, &rone,
+                                  dev_mem[i_sa0], ne, 
+                                  dev_mem[i_st1], ne, 
+                                  &rone,
                                   dev_mem[i_sa1], ne));
 
-    NWPW_CUBLAS_ERROR(cublasGetMatrix(ne, ne, sizeof(double), dev_mem[i_sa1],
-                                      ne, host_sa1, ne));
+    NWPW_CUBLAS_ERROR(cublasGetMatrix(ne, ne, sizeof(double), dev_mem[i_sa1], ne, host_sa1, ne));
 
     inuse[i_s21] = false;
     inuse[i_s12] = false;
@@ -877,93 +873,135 @@ public:
   /********************/
   /* psi_dev functions*/
   /********************/
+
+  /**************************************
+   *                                    *
+   *              psi_alloc             *
+   *                                    *
+   **************************************/
   void psi_alloc(int npack1, int ne, int tile_fac0 = 1) {
-    tile_fac = tile_fac0;
-
-    tile_npack2_max = (((2 * npack1) % tile_fac) == 0)
-                          ? (2 * npack1) / tile_fac
-                          : (2 * npack1) / tile_fac + 1;
-    // for (auto i=0; i<tile_fac; ++i) tile_npack2[i] =
-    // (i<((2*npack1)%tile_fac)) ? (2*npack1)/tile_fac+1 : (2*npack1)/tile_fac;
-    for (auto i = 0; i < tile_fac; ++i)
-      tile_npack2[i] = (2 * npack1) / tile_fac;
-    for (auto i = 0; i < ((2 * npack1) % tile_fac); ++i)
-      tile_npack2[i] += 1;
-
-    tile_start2[0] = 0;
-    for (auto i = 1; i < tile_fac; ++i)
-      tile_start2[i] = tile_start2[i - 1] + tile_npack2[i - 1];
-
-    ia_psi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
-    ia_hpsi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
-
-    if (tile_fac > 1) {
-      ia_psi[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
-      ia_hpsi[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
-    }
-    std::cout << "Into psi_alloc, tile_factor = " << tile_fac
-              << " ndev_mem=" << ndev_mem << std::endl;
+     tile_fac = tile_fac0;
+    
+     tile_npack2_max = (((2 * npack1) % tile_fac) == 0)
+                           ? (2 * npack1) / tile_fac
+                           : (2 * npack1) / tile_fac + 1;
+     // for (auto i=0; i<tile_fac; ++i) tile_npack2[i] =
+     // (i<((2*npack1)%tile_fac)) ? (2*npack1)/tile_fac+1 : (2*npack1)/tile_fac;
+     for (auto i = 0; i < tile_fac; ++i)
+        tile_npack2[i] = (2 * npack1) / tile_fac;
+     for (auto i = 0; i < ((2 * npack1) % tile_fac); ++i)
+        tile_npack2[i] += 1;
+    
+     tile_start2[0] = 0;
+     for (auto i = 1; i < tile_fac; ++i)
+        tile_start2[i] = tile_start2[i - 1] + tile_npack2[i - 1];
+    
+     ia_psi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
+     ia_hpsi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
+    
+     if (tile_fac > 1) {
+        ia_psi[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
+        ia_hpsi[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
+     }
+     std::cout << "Into psi_alloc, tile_factor = " << tile_fac << " ndev_mem=" << ndev_mem << std::endl;
   }
+
+  /**************************************
+   *                                    *
+   *              psi_dealloc           *
+   *                                    *
+   **************************************/
   void psi_dealloc() {
-    inuse[ia_psi[0]] = false;
-    inuse[ia_hpsi[0]] = false;
-    if (tile_fac > 1) {
-      inuse[ia_psi[1]] = false;
-      inuse[ia_hpsi[1]] = false;
-    }
+     inuse[ia_psi[0]] = false;
+     inuse[ia_hpsi[0]] = false;
+     if (tile_fac > 1) {
+        inuse[ia_psi[1]] = false;
+        inuse[ia_hpsi[1]] = false;
+     }
   }
-  void psi_copy_host2gpu(int npack1, int ne, double *psi) {
-    // cudaMemcpy(dev_mem[ia_psi[0]],psi,tile_npack2_max*ne*sizeof(double),cudaMemcpyHostToDevice);
-    a_psi = psi;
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
-                                           psi, 2 * npack1, dev_mem[ia_psi[0]],
-                                           tile_npack2[0], stream[0]));
+
+  /**************************************
+   *                                    *
+   *           psi_copy_host2gpu        *
+   *                                    *
+   **************************************/
+  void psi_copy_host2gpu(int npack1, int ne, double *psi) 
+  {
+     // cudaMemcpy(dev_mem[ia_psi[0]],psi,tile_npack2_max*ne*sizeof(double),cudaMemcpyHostToDevice);
+     a_psi = psi;
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[0], ne, sizeof(double), psi, 2*npack1, 
+                                            dev_mem[ia_psi[0]], tile_npack2[0], stream[0]));
   }
-  void hpsi_copy_host2gpu(int npack1, int ne, double *hpsi) {
-    // cudaMemcpy(dev_mem[ia_hpsi[0]],hpsi,2*npack1*ne*sizeof(double),cudaMemcpyHostToDevice);
-    int tt = tile_fac - 1;
-    a_hpsi = hpsi;
-    NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(
-        tile_npack2[tt], ne, sizeof(double), &hpsi[tile_start2[tt]], 2 * npack1,
-        dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], stream[tt % 2]));
+
+  /**************************************
+   *                                    *
+   *          hpsi_copy_host2gpu        *
+   *                                    *
+   **************************************/
+  void hpsi_copy_host2gpu(int npack1, int ne, double *hpsi) 
+  {
+     // cudaMemcpy(dev_mem[ia_hpsi[0]],hpsi,2*npack1*ne*sizeof(double),cudaMemcpyHostToDevice);
+     int tt = tile_fac - 1;
+     a_hpsi = hpsi;
+     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(tile_npack2[tt], ne, sizeof(double), &hpsi[tile_start2[tt]], 2 * npack1,
+                                            dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], stream[tt % 2]));
   }
-  void psi_copy_gpu2host(int npack1, int ne, double *psi) {
-    // cudaMemcpy(psi, dev_mem[ia_psi[0]],
-    // 2*ne*npack1*sizeof(double),cudaMemcpyDeviceToHost);
-    if (tile_fac == 1) {
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-      NWPW_CUBLAS_ERROR(cublasGetMatrix(tile_npack2[0], ne, sizeof(double),
-                                        dev_mem[ia_psi[0]], tile_npack2[0], psi,
-                                        2 * npack1));
-    }
+
+  /**************************************
+   *                                    *
+   *           psi_copy_gpu2host        *
+   *                                    *
+   **************************************/
+  void psi_copy_gpu2host(int npack1, int ne, double *psi) 
+  {
+     // cudaMemcpy(psi, dev_mem[ia_psi[0]],
+     // 2*ne*npack1*sizeof(double),cudaMemcpyDeviceToHost);
+     if (tile_fac == 1) {
+       NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+       NWPW_CUBLAS_ERROR(cublasGetMatrix(tile_npack2[0], ne, sizeof(double), dev_mem[ia_psi[0]], tile_npack2[0], 
+                                         psi, 2 * npack1));
+     }
   }
-  void hpsi_copy_gpu2host(int npack1, int ne, double *hpsi) {
-    NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-    // cudaMemcpy(hpsi, dev_mem[ia_hpsi[0]],
-    // 2*ne*npack1*sizeof(double),cudaMemcpyDeviceToHost); if (tile_fac==1) {
-    //     NWPW_CUBLAS_ERROR( cublasGetMatrix(tile_npack2[0],ne,sizeof(double),
-    //                                        dev_mem[ia_hpsi[0]],tile_npack2[0],
-    //                                        hpsi,2*npack1));
-    // }
+
+
+  /**************************************
+   *                                    *
+   *          hpsi_copy_gpu2host        *
+   *                                    *
+   **************************************/
+  void hpsi_copy_gpu2host(int npack1, int ne, double *hpsi) 
+  {
+     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+     // cudaMemcpy(hpsi, dev_mem[ia_hpsi[0]],
+     // 2*ne*npack1*sizeof(double),cudaMemcpyDeviceToHost); if (tile_fac==1) {
+     //     NWPW_CUBLAS_ERROR( cublasGetMatrix(tile_npack2[0],ne,sizeof(double),
+     //                                        dev_mem[ia_hpsi[0]],tile_npack2[0],
+     //                                        hpsi,2*npack1));
+     // }
   }
+
 
   /******************************/
   /* fft functions (uses cuFFT) */
   /******************************/
-  int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) {
+
+  /**************************************
+   *                                    *
+   *          batch_fft_init            *
+   *                                    *
+   **************************************/
+  int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) 
+  {
      std::cout << "Into batch_fft_init" << std::endl;
      NWPW_CUFFT_ERROR(cufftPlan1d(&forward_plan_x[fftcount], nx, CUFFT_D2Z, nq1));
      NWPW_CUFFT_ERROR(cufftPlan1d(&backward_plan_x[fftcount], nx, CUFFT_Z2D, nq1));
 
      int y_inembed[] = {ny};
      int y_onembed[] = {ny};
-     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_y[fftcount], 1, &ny, y_inembed, 1, ny, y_onembed,
-                                    1, ny, CUFFT_Z2Z, nq2));
-
+     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_y[fftcount], 1, &ny, y_inembed, 1, ny, y_onembed, 1, ny, CUFFT_Z2Z, nq2));
      int z_inembed[] = {nz};
      int z_onembed[] = {nz};
-     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_z[fftcount], 1, &nz, z_inembed, 1, nz, z_onembed,
-                                    1, nz, CUFFT_Z2Z, nq3));
+     NWPW_CUFFT_ERROR(cufftPlanMany(&plan_z[fftcount], 1, &nz, z_inembed, 1, nz, z_onembed, 1, nz, CUFFT_Z2Z, nq3));
      nxfft[fftcount] = nx;
      nyfft[fftcount] = ny;
      nzfft[fftcount] = nz;
@@ -974,15 +1012,26 @@ public:
      return tag;
   }
 
-  void batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
-     ifft_n = nstages;
+  /**************************************
+   *                                    *
+   *    batch_fft_pipeline_mem_init     *
+   *                                    *
+   **************************************/
+  void batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) 
+  {
+      ifft_n = nstages;
 
-     // allocate memory and cuda streams
-     for (auto i=0; i<ifft_n; ++i)
-        ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
+      // allocate memory and cuda streams
+      for (auto i=0; i<ifft_n; ++i)
+         ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
   }
 
 
+  /**************************************
+   *                                    *
+   *          batch_fft_end             *
+   *                                    *
+   **************************************/
   void batch_fft_end(const int tag) {
 
      // free fft descriptors
@@ -1002,11 +1051,16 @@ public:
      ndev_mem = 0;
   }
 
-  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) {
 
+  /**************************************
+   *                                    *
+   *          batch_cfftx               *
+   *                                    *
+   **************************************/
+  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) 
+  {
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-     NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                                cudaMemcpyHostToDevice));
+     NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double), cudaMemcpyHostToDevice));
 
      if (forward) {
        NWPW_CUFFT_ERROR(cufftExecD2Z(
@@ -1019,12 +1073,16 @@ public:
                         reinterpret_cast<cufftDoubleReal *>(dev_mem[ia_dev])));
      }
 
-     NWPW_CUDA_ERROR(cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-                                cudaMemcpyDeviceToHost));
+     NWPW_CUDA_ERROR(cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double), cudaMemcpyDeviceToHost));
 
      inuse[ia_dev] = false;
   }
 
+  /**************************************
+   *                                    *
+   *          batch_cfftx_stages        *
+   *                                    *
+   **************************************/
   void batch_cfftx_stages(const int stage, const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a, int da)
   {
      //int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
@@ -1060,13 +1118,15 @@ public:
   }
 
 
-
-
-  void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a) {
-
+  /**************************************
+   *                                    *
+   *          batch_cffty               *
+   *                                    *
+   **************************************/
+  void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a) 
+  {
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-     NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                                cudaMemcpyHostToDevice));
+     NWPW_CUDA_ERROR(cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double), cudaMemcpyHostToDevice));
 
      if (forward) {
        NWPW_CUFFT_ERROR(cufftExecZ2Z(
@@ -1086,6 +1146,11 @@ public:
   }
 
 
+  /**************************************
+   *                                    *
+   *          batch_cffty_stages        *
+   *                                    *
+   **************************************/
   void batch_cffty_stages(const int stage, const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a, int da)
   {
      //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
@@ -1119,12 +1184,15 @@ public:
   }
 
 
-
-  void batch_cfftz(const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) {
-
+  /**************************************
+   *                                    *
+   *          batch_cfftz               *
+   *                                    *
+   **************************************/
+  void batch_cfftz(const int fft_indx, bool forward, int nz, int nq, int n2ft3d, double *a) 
+  {
      int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                cudaMemcpyHostToDevice);
+     cudaMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double), cudaMemcpyHostToDevice);
 
      if (forward) {
        NWPW_CUFFT_ERROR(cufftExecZ2Z(
@@ -1138,13 +1206,17 @@ public:
            CUFFT_INVERSE));
      }
 
-     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-                cudaMemcpyDeviceToHost);
+     cudaMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double), cudaMemcpyDeviceToHost);
 
      inuse[ia_dev] = false;
   }
 
 
+  /**************************************
+   *                                    *
+   *          batch_cfftz_stages        *
+   *                                    *
+   **************************************/
   void batch_cfftz_stages(const int stage,const int fft_indx,bool forward,int nz,int nq,int n2ft3d,double *a,int da)
   {
      //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
@@ -1182,6 +1254,11 @@ public:
 
   // routines below need to be made into sycl or removed
 
+  /**************************************
+   *                                    *
+   *          eigsrt_device             *
+   *                                    *
+   **************************************/
   static void eigsrt_device(double *D, double *V, int n) {
     int i, j, k;
     double p;
@@ -1276,26 +1353,34 @@ public:
      }
   */
 
-  void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
-    int n, ierr;
-    int nn = ne[0] * ne[0] + 14;
-    double xmp1[nn];
-    // double *xmp1 = new (std::nothrow) double[nn]();
-
-    int shift1 = 0;
-    int shift2 = 0;
-    for (int ms = 0; ms < ispin; ++ms) {
-      n = ne[ms];
-
-      // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
-      //  d3db::parall->Barrier();
-      EIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, ierr);
-      // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
-      // EIGEN_PWDFT failed!"));
-
-      eigsrt_device(host_eig + shift1, host_hml + shift2, n);
-      shift1 += ne[0];
-      shift2 += ne[0] * ne[0];
-    }
+  /**************************************
+   *                                    *
+   *          NN_eigensolver            *
+   *                                    *
+   **************************************/
+  void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
+  {
+     int n, ierr;
+     int nn = ne[0] * ne[0] + 14;
+     double xmp1[nn];
+     // double *xmp1 = new (std::nothrow) double[nn]();
+    
+     int shift1 = 0;
+     int shift2 = 0;
+     for (int ms = 0; ms < ispin; ++ms) 
+     {
+        n = ne[ms];
+       
+        // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+        //  d3db::parall->Barrier();
+        EIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, ierr);
+        // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
+        // EIGEN_PWDFT failed!"));
+       
+        eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+        shift1 += ne[0];
+        shift2 += ne[0] * ne[0];
+     }
   }
+
 };
