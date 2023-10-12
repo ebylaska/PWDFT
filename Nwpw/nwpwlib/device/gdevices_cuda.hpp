@@ -517,11 +517,12 @@ public:
    *                                    *
    **************************************/
    void TN_dgemm2c(int n, int m, int npack2, int nida2,
-                   double *host_a, double *host_b, double *host_c) {
-      constexpr double rtwo  = 2.0;
-      constexpr double rone  = 1.0;
-      constexpr double rmone = -1.0;
-      constexpr double rzero = 0.0;
+                   double *host_a, double *host_b, double *host_c) 
+   {
+      double rtwo  = 2.0;
+      double rone  = 1.0;
+      double rmone = -1.0;
+      double rzero = 0.0;
 
       int ia = fetch_dev_mem_indx(static_cast<size_t>(npack2) * n);
       int ib = fetch_dev_mem_indx(static_cast<size_t>(npack2) * m);
