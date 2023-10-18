@@ -72,7 +72,7 @@ endif(MKL_STATIC)
 set(MKL_INTERFACE_LIBNAME "mkl_intel${MKL_INTERFACE_LAYER}")
 
 find_library(MKL_INTERFACE_LIBRARY ${MKL_INTERFACE_LIBNAME}
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 get_filename_component(MKL_LIBRARY_DIR ${MKL_INTERFACE_LIBRARY} PATH)
 
 ######################## Threading layer ########################
@@ -83,25 +83,25 @@ else(MKL_MULTI_THREADED)
 endif(MKL_MULTI_THREADED)
 
 find_library(MKL_THREADING_LIBRARY ${MKL_THREADING_LIBNAME}
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 
 ####################### Computational layer #####################
 find_library(MKL_CORE_LIBRARY mkl_core
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 find_library(MKL_FFT_LIBRARY mkl_cdft_core
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 find_library(MKL_SCALAPACK_LIBRARY mkl_scalapack${MKL_INTERFACE_LAYER}
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 if( NWPW_SYCL )
   find_library(MKL_ONEMKL_LIBRARY mkl_sycl
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 endif(NWPW_SYCL)
 find_library(MKL_BLACS_LIBRARY mkl_blacs_intelmpi${MKL_INTERFACE_LAYER}
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 
 ############################ RTL layer ##########################
 find_library(MKL_FFT_LIBRARY mkl_rt
-    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/)
+    PATHS ${MKL_ROOT}/lib/${MKL_ARCH}/ ${MKL_ROOT}/lib)
 
 if( NWPW_SYCL )
 

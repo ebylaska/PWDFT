@@ -62,7 +62,7 @@ if (NWPW_CUDA)
 
    enable_language(CUDA)
    find_package(CUDAToolkit REQUIRED)
-   set(CMAKE_CUDA_ARCHITECTURES "60;70;80" CACHE STRING "GPU targets to compile for")
+   set(CMAKE_CUDA_ARCHITECTURES "60;70;80;90" CACHE STRING "GPU targets to compile for")
    message("-- CUDA Architecuture: " ${CMAKE_CUDA_ARCHITECTURES})
 
    message("-- Using cublas  : " ${CUDA_cublas_LIBRARY})
