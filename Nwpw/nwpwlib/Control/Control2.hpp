@@ -145,6 +145,7 @@ public:
    std::string permanent_dir_str,scratch_dir_str;
  
    // Access functions
+   double * unita_ptr() { return punita; }
    double unita(const int i, const int j) { return punita[i + j * 3]; }
    double unita1d(const int ii) { return punita[ii]; }
    double tolerances(const int i) { return ptolerances[i]; }
@@ -448,6 +449,14 @@ public:
      
       return gga;
    }
+
+   // vdw
+   std::string options_disp() { return poptions_disp; }
+   bool has_disp()           { return phas_disp; }
+   bool has_vdw()            { return phas_vdw; }
+   bool is_vdw2()            { return pis_vdw2; }
+   bool is_grimme2()         { return pis_grimme2; }
+
  
    // cubefiles
    int number_cubefiles();

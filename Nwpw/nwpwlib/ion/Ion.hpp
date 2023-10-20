@@ -28,6 +28,7 @@ class Ion {
   //ion_angle    *myangle;
   ion_bondings *mybondings;
 
+
 public:
    int ion_total_charge;
    int nion, nkatm; // number of ions
@@ -40,6 +41,11 @@ public:
    double *vionhalf;              // temp velocities
    double *fion1;                 // forces of ions
    double time_step;
+
+   //dispersion
+   std::string disp_options;
+   bool disp_on = false;
+   double *ua_disp;
  
    /* init_ke variables */
    int ke_count, seed, Tf;
@@ -59,6 +65,7 @@ public:
    std::string rotation_type;
    std::string group_name;
    int group_rank;
+
  
    /* Constructors */
    // Ion(RTDB&, Control2&);
@@ -469,6 +476,11 @@ public:
       }
       return econstraint;
    }
+
+   // ion dispersion access functions
+   //double disp_energy();
+   
+
 
 };
 } // namespace pwdft

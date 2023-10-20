@@ -215,18 +215,16 @@ static bool psi_check_convert(Pneb *mypneb, char *filename,
   int version0, ispin0, nfft0[3], ne0[2];
   double unita0[9];
   bool converted = false;
-  ;
 
   psi_get_header(myparall, &version0, nfft0, unita0, &ispin0, ne0, filename);
-
-  if ((nfft0[0] != mypneb->nx) || (nfft0[1] != mypneb->ny) ||
-      (nfft0[2] != mypneb->nz)) {
-    if (myparall->base_stdio_print)
-      coutput << " psi grids are being converted: " << std::endl
-              << " -----------------------------: " << std::endl;
-
-    wvfnc_expander(mypneb, filename, coutput);
-    converted = true;
+  if ((nfft0[0] != mypneb->nx) || (nfft0[1] != mypneb->ny) || (nfft0[2] != mypneb->nz)) 
+  {
+     if (myparall->base_stdio_print)
+        coutput << " psi grids are being converted: " << std::endl
+                << " -----------------------------: " << std::endl;
+    
+     wvfnc_expander(mypneb, filename, coutput);
+     converted = true;
   }
 
   return converted;
@@ -265,7 +263,9 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
   myparall->Brdcst_iValues(0, 0, 2, ne);
 
   /* reads in c format and automatically packs the result to g format */
-  mypneb->g_read(4, psi);
+  //mypneb->g_read(4,ispin,psi);
+  mypneb->g_read_ne(4,ne,psi);
+  
 
   if (myparall->is_master())
     closefile(4);
@@ -313,6 +313,18 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);
    }
+   newpsi = newpsi || (ispin != mypneb->ispin)
+                   || (ne[0] != mypneb->ne[0])
+                   || (ne[1] != mypneb->ne[1])
+                   || (std::abs(unita[0] - mypneb->lattice->unita1d(0)) > 1.0e-4) 
+                   || (std::abs(unita[1] - mypneb->lattice->unita1d(1)) > 1.0e-4) 
+                   || (std::abs(unita[2] - mypneb->lattice->unita1d(2)) > 1.0e-4) 
+                   || (std::abs(unita[3] - mypneb->lattice->unita1d(3)) > 1.0e-4) 
+                   || (std::abs(unita[4] - mypneb->lattice->unita1d(4)) > 1.0e-4) 
+                   || (std::abs(unita[5] - mypneb->lattice->unita1d(5)) > 1.0e-4) 
+                   || (std::abs(unita[6] - mypneb->lattice->unita1d(6)) > 1.0e-4) 
+                   || (std::abs(unita[7] - mypneb->lattice->unita1d(7)) > 1.0e-4) 
+                   || (std::abs(unita[8] - mypneb->lattice->unita1d(8)) > 1.0e-4);
  
    /* ortho check */
    double sum2 = mypneb->gg_traceall(psi2, psi2);

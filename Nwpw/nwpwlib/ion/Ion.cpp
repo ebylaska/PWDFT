@@ -18,6 +18,7 @@ using json = nlohmann::json;
 #include "Ion.hpp"
 
 
+//extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, double *, double *, double *);
 
 #define xyzstream(S, X, Y, Z, VX, VY, VZ)                                      \
   std::left << std::setw(3) << (S) << E124 << (X) << E124 << (Y) << E124       \
@@ -454,6 +455,16 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    mybondings = new (std::nothrow) ion_bondings(rion1,control); has_bondings_constraints = mybondings->has_bondings();
    has_constraints = has_bond_constraints || has_bondings_constraints;
 
+   // dispersion stuff
+   disp_on = control.has_disp();
+   if (disp_on)
+   {
+      disp_options = control.options_disp();
+      if (control.version==3)
+         disp_options += " -pbc";
+      ua_disp = control.unita_ptr();
+   }
+
    /*  DEBUG CHECK
       std::cout << "NION=" << nion << std::endl;
       std::cout << "NKATM=" << nkatm << std::endl;
@@ -642,6 +653,31 @@ std::string Ion::print_constraints(const int opt)
     return tmp;
 }
 
+
+
+
+/*******************************************
+ *                                         *
+ *           Ion::disp_energy              *
+ *                                         *
+ *******************************************/
+ /*
+double Ion::disp_energy() 
+{
+   double edisp = 0.0; 
+   if (disp_on)
+   {
+      double g[3*nion];
+      double g_lat[9];
+      int icharge[nion];
+      for (auto ii=0; ii<nion; ++ii)
+          icharge[ii] = static_cast<int>(charge[ii]);
+      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+   }
+   return edisp;
+}
+*/
+   
 
 
 } // namespace pwdft

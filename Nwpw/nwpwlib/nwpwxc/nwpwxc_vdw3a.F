@@ -233,8 +233,8 @@ c values >5 might lead to bumps in the potential
 
       logical  inp_strtok
       external inp_strtok
-      integer  ga_nodeid
-      external ga_nodeid
+      !integer  ga_nodeid
+      !external ga_nodeid
 
 !      write(*,'(94(F12.8,'',''))')r2r4
 !      stop
@@ -379,7 +379,7 @@ c                                      endif
 c      if(index(ftmp,'-pot')    .ne.0) then
       enddo
 
-      echo = echo.and.(ga_nodeid().eq.0)
+      !echo = echo.and.(ga_nodeid().eq.0)
 c     Check command line input
 
 
@@ -2895,5 +2895,53 @@ c     endif
       endif
 
       end subroutine nwpwxc_limit
+
+      logical function inp_strtok(z, sep, istart, iend)
+      implicit none
+      character*(*) z   !< [Input] The string to parse
+      character*(*) sep !< [Input] The token separators
+      integer istart    !< [Output] The start of next token
+      integer iend      !< [Output] The end of next token
+
+      integer i, k, length, nsep
+c
+      if (istart .eq. 0) then
+         istart = 1
+      else
+         istart = iend + 1
+      endif
+c
+c     Scan start forward to next non-separator
+c
+      length = len(z)
+      nsep   = len(sep)
+c
+      do i = istart, length
+         do k = 1, nsep
+            if (z(i:i) .eq. sep(k:k)) goto 10
+         enddo
+         goto 20
+ 10      continue
+      enddo
+      inp_strtok = .false.      ! No more tokens
+      return
+c
+ 20   istart = i                ! Beginning of next token
+c
+c     Scan end forward to one-before next separator
+c
+      do i = istart+1, length
+         do k = 1, nsep
+            if (z(i:i) .eq. sep(k:k)) goto 30
+         enddo
+      enddo
+ 30   iend = i - 1
+c
+      inp_strtok = .true.
+c
+      end
+
+
+
 
 

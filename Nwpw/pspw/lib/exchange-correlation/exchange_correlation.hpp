@@ -14,9 +14,13 @@ class XC_Operator {
   double *xtmp;
   double *rho, *grx, *gry, *grz, *agr, *fn, *fdn;
 
-  std::string xc_name;
+  std::string xc_name,options_disp;
   int gga;
   bool use_lda, use_gga, use_mgga;
+
+  bool has_disp = false;
+  bool has_vdw  = false;
+  bool is_grimme2,is_vdw2;
 
 public:
   /* Constructors */

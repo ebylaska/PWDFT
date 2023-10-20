@@ -345,6 +345,47 @@ void Pneb::g_read(const int iunit, double *psi)
 
 /*************************************
  *                                   *
+ *           Pneb::g_read_ne         *
+ *                                   *
+ *************************************/
+void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
+{
+   int ms, n, indx, i, pj, qj, taskid_j;
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+ 
+   taskid_j = d1db::parall->taskid_j();
+ 
+   for (ms=0; ms<ispin; ++ms)
+      for (n=0; n<ne[ms]; ++n) 
+      {
+         qj = msntoindex(ms, n);
+         pj = msntop(ms, n);
+         if (n<ne0[ms])
+         {
+            c_read(iunit, tmp2, pj);
+         }
+         else
+         {
+            d3db::r_setrandom(tmp2);
+            d3db::r_zero_ends(tmp2);
+            d3db::rc_fft3d(tmp2);
+         }
+         
+         if (pj == taskid_j) 
+         {
+            indx = 2*PGrid::npack(1)*qj;
+            PGrid::c_pack(1, tmp2);
+            PGrid::cc_pack_copy(1, tmp2, psi + indx);
+         }
+      }
+ 
+   delete[] tmp2;
+}
+
+
+
+/*************************************
+ *                                   *
  *           Pneb::g_write           *
  *                                   *
  *************************************/

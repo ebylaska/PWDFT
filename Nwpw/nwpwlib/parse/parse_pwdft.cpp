@@ -1170,26 +1170,38 @@ static json parse_nwpw(json nwpwjson, int *curptr,
       if (ss.size() > 2)
         nwpwjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
     } else if (mystring_contains(line, "ewald_ncut")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["ewald_ncut"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          nwpwjson["ewald_ncut"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "ewald_rcut")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["ewald_rcut"] = std::stod(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          nwpwjson["ewald_rcut"] = std::stod(ss[1]);
+    } else if ((mystring_contains(line, "unrestricted")) || (mystring_contains(line, "odft"))) {
+       nwpwjson["ispin"] = 2;
+    } else if (mystring_contains(line, "restricted")) {
+       nwpwjson["ispin"] = 1;
+    } else if (mystring_contains(line, "mult")) {
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+       {
+          int mult = std::stoi(ss[1]);
+          nwpwjson["mult"] = mult;
+          if (mult > 1) nwpwjson["ispin"] = 2;
+       }
     } else if (mystring_contains(line, "tolerances")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
-      if (ss.size() == 3)
-        nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
-      if (ss.size() > 3)
-        nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
-                                  std::stod(ss[3])};
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
+       if (ss.size() == 3)
+          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
+       if (ss.size() > 3)
+          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
+                                   std::stod(ss[3])};
     } else if (mystring_contains(line, "time_step")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        nwpwjson["time_step"] = std::stod(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["time_step"] = std::stod(ss[1]);
     } else if (mystring_contains(line, "intitial_velocities")) {
       ss = mystring_split0(line);
       if (ss.size() == 2)
