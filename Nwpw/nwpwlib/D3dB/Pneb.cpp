@@ -215,7 +215,7 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
       }
    }
  
-   g_rnd_algorihm = control.initial_psi_random_algorithm();
+   g_rnd_algorithm = control.initial_psi_random_algorithm();
 
    io_norbs_max = control.io_norbs_max();
    io_buffer    = control.io_buffer();
@@ -295,7 +295,7 @@ void Pneb::g_generate_random(double *psi) {
   int taskid = d1db::parall->taskid();
   util_random(taskid + 91);
 
-  if (g_rnd_algorihm == 1)
+  if (g_rnd_algorithm == 1)
     this->g_generate1_random(psi);
   else
     this->g_generate2_random(psi);

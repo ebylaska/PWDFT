@@ -198,8 +198,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    /* set pinitial_psi_random_algorithm for wavefunction initialization */
    pinitial_psi_random_algorithm = 1;
    if (rtdbjson["nwpw"]["initial_psi_random_algorithm"].is_number_integer())
-     pinitial_psi_random_algorithm =
-         rtdbjson["nwpw"]["initial_psi_random_algorithm"];
+      pinitial_psi_random_algorithm = rtdbjson["nwpw"]["initial_psi_random_algorithm"];
  
    /* qsize */
    pqsize = 5;
@@ -573,6 +572,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["geometry"].is_string())
      geomname = rtdbjson["geometry"];
  
+   if (rtdbjson["geometries"][geomname]["is_crystal"].is_boolean())
+     pis_crystal = rtdbjson["geometries"][geomname]["is_crystal"];
+
    if (rtdbjson["geometries"][geomname]["unita"][0].is_number_float())
      punita[0] = rtdbjson["geometries"][geomname]["unita"][0];
    if (rtdbjson["geometries"][geomname]["unita"][1].is_number_float())
@@ -614,6 +616,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      punita[7] = rtdbjson["nwpw"]["simulation_cell"]["unita"][7];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][8].is_number_float())
      punita[8] = rtdbjson["nwpw"]["simulation_cell"]["unita"][8];
+
  
    pngrid[0] = -1;
    pngrid[1] = -1;

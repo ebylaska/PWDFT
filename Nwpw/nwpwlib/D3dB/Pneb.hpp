@@ -46,7 +46,7 @@ class Pneb : public PGrid, public d1db {
    int mcqmax[2],ncqmax[2];
    int mall[3] ,mpack[3], *mindx[3];
    int ncqmax0, npack1_all, nida1_all, n2ft3d_all;
-   int g_rnd_algorihm = 1;
+   int g_rnd_algorithm = 1;
 
    int io_norbs_max = 10;
    bool io_buffer = true;

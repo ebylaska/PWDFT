@@ -8,10 +8,13 @@
 #include <cstring>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+
 
 #include "json.hpp"
 using json = nlohmann::json;
 
+#include "iofmt.hpp"
 #include "Control2.hpp"
 #include "ion_bondings.hpp"
 #include "symmetry_elements.hpp"
@@ -330,11 +333,22 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                            ? (double) geomjson["symmetry_tolerance"] 
                            : 0.001;
 
-   determine_point_group(rion1,mass,nion,
-                         sym_tolerance,
-                         group_name,group_rank,rotation_type,
-                         inertia_tensor,inertia_moments,inertia_axes,
-                         rion_sym);
+   if (control.is_crystal())
+   {
+      is_crystal = true;
+      rotation_type = "crystal";
+      group_name = "P1";
+      group_rank = 1;
+   }
+   else
+   {
+      determine_point_group(rion1,mass,nion,
+                            sym_tolerance,
+                            group_name,group_rank,rotation_type,
+                            inertia_tensor,inertia_moments,inertia_axes,
+                            rion_sym);
+   }
+
     std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
  
    // generate random initial velocities  (temperature, seed) - only set with
@@ -651,6 +665,42 @@ std::string Ion::print_constraints(const int opt)
        if (has_bondings_constraints) tmp += mybondings->print_all(opt);
     }
     return tmp;
+}
+
+
+
+/*******************************************
+ *                                         *
+ *        Ion::print_symmetry_group        *
+ *                                         *
+ *******************************************/
+std::string Ion::print_symmetry_group()
+{
+   std::stringstream stream;
+
+   std::ios init(NULL);
+   init.copyfmt(stream);
+
+   stream << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << this->sym_tolerance << ")" <<  std::endl;
+   stream << "   group name   : " << this->group_name
+                                  << "  (group rank = "  << this->group_rank
+                                  << " rotation type : " << this->rotation_type <<")" <<  std::endl;
+   if (!is_crystal)
+   {
+      stream << "   inertia axes : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[1] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[2] << " > - "
+                                           << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
+      stream << "                  e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[4] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[5] << " > - "
+                                           << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
+      stream << "                  e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[7] << " "
+                                           << Ffmt(8,3) << this->inertia_axes[8] << " > - "
+                                           << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
+   }
+   return stream.str();
 }
 
 

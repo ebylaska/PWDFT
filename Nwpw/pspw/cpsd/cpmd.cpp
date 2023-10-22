@@ -286,23 +286,8 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
 
       std::cout << std::endl;
-      std::cout << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << myion.sym_tolerance << ")" <<  std::endl;
-      std::cout << "   group name   : " << myion.group_name 
-                                        << "  (group rank = " << myion.group_rank 
-                                        << " rotation type : " << myion.rotation_type <<")" <<  std::endl;
-      std::cout << "   inertia axes : e1 = <" << Ffmt(8,3) << myion.inertia_axes[0] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[1] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[2] << " > - "
-                                     << "moment =" << Efmt(14,7) << myion.inertia_moments[0] << std::endl;
-      std::cout << "                  e2 = <" << Ffmt(8,3) << myion.inertia_axes[3] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[4] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[5] << " > - "
-                                     << "moment =" << Efmt(14,7) << myion.inertia_moments[1] << std::endl;
-      std::cout << "                  e3 = <" << Ffmt(8,3) << myion.inertia_axes[6] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[7] << " "
-                                     << Ffmt(8,3) << myion.inertia_axes[8] << " > - "
-                                     << "moment =" << Efmt(14,7) << myion.inertia_moments[2] << std::endl;
-     
+      std::cout << myion.print_symmetry_group();
+
       std::cout << mypsp.myefield->shortprint_efield();
       std::cout << mycoulomb12.shortprint_dielectric();
      

@@ -187,6 +187,7 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["autoz"] = autoz;
   geomjson["autosym"] = autosym;
 
+  bool is_crystal = false;
   bool fractional = false;
   std::vector<double> unita = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
@@ -206,6 +207,7 @@ static json parse_geometry(json geom, int *curptr,
     line = lines[cur];
 
     if (mystring_contains(line, "system crystal")) {
+      is_crystal=true;
       if (mystring_contains(line, "cartesian")) {
         fractional = false;
       } else {
@@ -414,6 +416,8 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["masses"] = masses;
   geomjson["charges"] = charges;
   geomjson["unita"] = unita;
+  geomjson["is_crystal"] = is_crystal;
+  geomjson["fractional"] = fractional;
 
   *curptr = cur;
 

@@ -59,6 +59,8 @@ public:
    bool fix_rotation = false;
    bool dof_rotation = false;
 
+   bool is_crystal = false;
+
    //Molecular point group symmetry
    double sym_tolerance = 0.001;
    double inertia_tensor[9], inertia_axes[9], inertia_moments[3];
@@ -477,9 +479,12 @@ public:
       return econstraint;
    }
 
+
+
    // ion dispersion access functions
    //double disp_energy();
    
+   std::string print_symmetry_group();
 
 
 };
