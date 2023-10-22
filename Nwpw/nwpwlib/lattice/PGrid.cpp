@@ -532,7 +532,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    aqmax = pfft3_qsize0;
    if (staged_gpu_fft_pipeline)
    {
-      std::cout << "Using Staged GPU fft pipeline!!!!" << std::endl;
+      //std::cout << "Using Staged GPU fft pipeline!!!!" << std::endl;
       aqmax += 6;
       d3db::mygdevice.batch_fft_pipeline_mem_init(aqmax,n2ft3d);
    }
