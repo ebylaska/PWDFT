@@ -234,36 +234,35 @@ public:
    }
  
    /* deconstructor */
-   ~Gdevices() {
- 
-     // free dev_mem
-     for (auto i=0; i<ndev_mem; ++i)
-     {
-        inuse[i] = false;
-        NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
-     }
-     ndev_mem = 0;
- 
-     // free cuda streams
-     for (auto i=0; i<12; ++i)
-        NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
- 
-     NWPW_CUBLAS_ERROR(cublasDestroy(master_handle));
- 
-     /* free cusolver resources */
-     for (auto i=0; i<2; ++i)
-        NWPW_CUDA_ERROR(cudaFree(d_info[i]));
-     NWPW_CUDA_ERROR(cudaFree(d_work));
-     CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
- 
-     NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
-     cudaDeviceReset();
- 
-     // free fft descriptors
-     // cufftDestroy(forward_plan_x);
-     // cufftDestroy(plan_y);
-     // cufftDestroy(plan_z);
-     // cufftDestroy(backward_plan_x);
+   ~Gdevices() noexcept(false) {
+      // free dev_mem
+      for (auto i=0; i<ndev_mem; ++i)
+      {
+         inuse[i] = false;
+         NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
+      }
+      ndev_mem = 0;
+     
+      // free cuda streams
+      for (auto i=0; i<12; ++i)
+         NWPW_CUDA_ERROR(cudaStreamDestroy(stream[i]));
+     
+      NWPW_CUBLAS_ERROR(cublasDestroy(master_handle));
+     
+      /* free cusolver resources */
+      for (auto i=0; i<2; ++i)
+         NWPW_CUDA_ERROR(cudaFree(d_info[i]));
+      NWPW_CUDA_ERROR(cudaFree(d_work));
+      CUSOLVER_CHECK(cusolverDnDestroy(cusolverH));
+     
+      NWPW_CUDA_ERROR(cudaStreamDestroy(solverstream));
+      cudaDeviceReset();
+     
+      // free fft descriptors
+      // cufftDestroy(forward_plan_x);
+      // cufftDestroy(plan_y);
+      // cufftDestroy(plan_z);
+      // cufftDestroy(backward_plan_x);
    }
  
    int fetch_dev_mem_indx(const size_t ndsize) 
