@@ -1,0 +1,37 @@
+Title "CH3 blyp mult=2  test"
+
+memory stack 500 mb heap 750 mb global 10 mb
+
+start ch3-pspw-blyp
+
+echo
+
+#permanent_dir ./perm
+#scratch_dir   ./perm
+
+
+geometry noautosym noautoz
+C        -0.001019     0.000174    -0.001546
+H         0.906455    -0.108803    -0.546844
+H        -0.530793    -0.864249     0.322362
+H        -0.363318     0.970746     0.242949
+end
+
+
+nwpw
+   simulation_cell
+     SC 26.0
+   end
+   
+   lmbfgs
+
+   mult 2
+   xc blyp
+   cutoff 50.0
+   #1d-slab
+   #np_dimensions -1 2
+end
+
+task pspw optimize
+
+

@@ -87,6 +87,21 @@ jobs:
             cat ./testoutputs/methane.out
             exit 1
           fi
+
+      - name: Run the methyl triplet  QA
+        run: |
+          echo Running the methyl triplet QA test.
+          cd QA
+          chmod +x ./runtest_github.bash
+          OUTPUT1=$(./runtest_github.bash -n 1 methyl-triplet)
+          echo "$OUTPUT1"
+          if [[ $OUTPUT1 == *"Verifying output: OK"* ]]; then
+            echo "OK"
+          else
+            echo "Failed"
+            cat ./testoutputs/methyl-triplet.out
+            exit 1
+          fi
                 
       - name: Run the benzene QA
         run: |
