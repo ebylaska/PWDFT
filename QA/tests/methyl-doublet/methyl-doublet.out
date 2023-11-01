@@ -75,9 +75,9 @@ task pspw optimize
        version               = 1.0
        default psp libraries = /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
 
-       date                  = Wed Nov  1 14:56:32 2023
+       date                  = Wed Nov  1 15:09:39 2023
        nproc                 = 1
-       input                 = methyl-triplet.nw
+       input                 = methyl-doublet.nw
 
 
 
@@ -100,7 +100,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
           *    Abhishek Bagusetty, David H. Bross, ...        *
           *                                                   *
           *****************************************************
-          >>> job started at       Wed Nov  1 14:56:32 2023 <<<
+          >>> job started at       Wed Nov  1 15:09:39 2023 <<<
 
  psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
 
@@ -194,7 +194,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
 
      ================= Grassmann lmbfgs iteration =================
-          >>> iteration started at Wed Nov  1 14:56:33 2023  <<<
+          >>> iteration started at Wed Nov  1 15:09:39 2023  <<<
      iter.                   Energy          DeltaE        DeltaRho
      --------------------------------------------------------------
         - 15 steepest descent iterations performed
@@ -208,7 +208,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
         60      -7.367663365606e+00   -2.070932e-07    1.522821e-10
         70      -7.367663842775e+00   -6.456986e-08    4.030832e-11
      *** tolerance ok. iteration terminated
-          >>> iteration ended at   Wed Nov  1 14:56:58 2023  <<<
+          >>> iteration ended at   Wed Nov  1 15:10:04 2023  <<<
 
      =============  energy results (Molecule object)  =============
 
@@ -251,26 +251,26 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
  ------------------
  cputime in seconds
- prologue    : 2.255e-01
- main loop   : 2.579e+01
- epilogue    : 4.417e-03
- total       : 2.602e+01
- cputime/step: 1.040e-01 ( 248 evaluations, 64 linesearches)
+ prologue    : 2.231e-01
+ main loop   : 2.539e+01
+ epilogue    : 5.798e-03
+ total       : 2.562e+01
+ cputime/step: 1.024e-01 ( 248 evaluations, 64 linesearches)
 
  Time spent doing      total        step             percent
- total time            2.620117e+01 1.056499e-01     100.00%
- total i/o time        1.974467e-02 7.961559e-05       0.08%
- total FFT time        1.095711e+01 4.418191e-02      41.82%
- lagrange multipliers  4.801892e-02 1.936247e-04       0.18%
- local potentials      1.876667e-03 7.567206e-06       0.01%
- non-local potentials  4.771685e-01 1.924066e-03       1.82%
- ffm_dgemm             3.946812e-01 1.591456e-03       1.51%
- fmf_dgemm             2.547420e-01 1.027186e-03       0.97%
- m_diagonalize         5.298330e-04 2.136423e-06       0.00%
- mmm_multiply          6.317700e-05 2.547460e-07       0.00%
- SCVtrans              1.509120e-04 6.085161e-07       0.00%
+ total time            2.580692e+01 1.040602e-01     100.00%
+ total i/o time        2.073142e-02 8.359442e-05       0.08%
+ total FFT time        1.078458e+01 4.348623e-02      41.79%
+ lagrange multipliers  4.690583e-02 1.891364e-04       0.18%
+ local potentials      1.241208e-03 5.004871e-06       0.00%
+ non-local potentials  4.702984e-01 1.896364e-03       1.82%
+ ffm_dgemm             3.876141e-01 1.562960e-03       1.50%
+ fmf_dgemm             2.480306e-01 1.000124e-03       0.96%
+ m_diagonalize         4.857970e-04 1.958859e-06       0.00%
+ mmm_multiply          5.775900e-05 2.328992e-07       0.00%
+ SCVtrans              1.554240e-04 6.267097e-07       0.00%
 
- >>> job completed at     Wed Nov  1 14:56:58 2023 <<<
+ >>> job completed at     Wed Nov  1 15:10:04 2023 <<<
 
 Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"current_task":"energy","dbname":"ch3-pspw-blyp","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[6.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-0.0019526423928195947,0.00035855286584597325,-0.0029294073427762273,1.7129245593678273,-0.20557811619163666,-1.0333932094634732,-1.0030803382668005,-1.6331640553604434,0.6091679581661944,-0.6865984783293649,1.8344736850539136,0.45909914823509085],"fractional":false,"is_crystal":false,"masses":[12.0,1.008,1.008,1.008],"nion":4,"symbols":["C","H","H","H"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":35,"nwinput_lines":["Title \"CH3 blyp mult=2  test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3-pspw-blyp","","echo","","","","","","geometry noautosym noautoz","C        -0.001019     0.000174    -0.001546","H         0.906455    -0.108803    -0.546844","H        -0.530793    -0.864249     0.322362","H        -0.363318     0.970746     0.242949","end","","","nwpw","   simulation_cell","     SC 26.0","   end","   ","   lmbfgs","","   mult 2","   xc blyp","   cutoff 50.0","   ","   ","end","","task pspw optimize","","",""],"nwinput_nlines":38,"nwpw":{"cutoff":[25.0,50.0],"ispin":2,"minimizer":2,"mult":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"xc":"blyp"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3 blyp mult=2  test"}
 
@@ -287,7 +287,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
           *    Abhishek Bagusetty, David H. Bross, ...        *
           *                                                   *
           *****************************************************
-          >>> job started at       Wed Nov  1 14:56:58 2023 <<<
+          >>> job started at       Wed Nov  1 15:10:04 2023 <<<
 
  psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
 
@@ -387,7 +387,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
 
      ================= Grassmann lmbfgs iteration =================
-          >>> iteration started at Wed Nov  1 14:56:59 2023  <<<
+          >>> iteration started at Wed Nov  1 15:10:04 2023  <<<
      iter.                   Energy          DeltaE        DeltaRho
      --------------------------------------------------------------
         - 15 steepest descent iterations performed
@@ -395,7 +395,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
         20      -7.403377740556e+00   -3.365340e-07    2.145045e-09
         30      -7.403378552449e+00   -7.264857e-08    1.408757e-10
      *** tolerance ok. iteration terminated
-          >>> iteration ended at   Wed Nov  1 14:57:31 2023  <<<
+          >>> iteration ended at   Wed Nov  1 15:10:37 2023  <<<
 
      =============  energy results (Molecule object)  =============
 
@@ -438,26 +438,26 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
  ------------------
  cputime in seconds
- prologue    : 1.713e-01
- main loop   : 3.260e+01
- epilogue    : 1.593e-02
- total       : 3.279e+01
- cputime/step: 3.361e-01 ( 97 evaluations, 25 linesearches)
+ prologue    : 1.701e-01
+ main loop   : 3.286e+01
+ epilogue    : 2.064e-02
+ total       : 3.305e+01
+ cputime/step: 3.387e-01 ( 97 evaluations, 25 linesearches)
 
  Time spent doing      total        step             percent
- total time            5.900126e+01 6.082604e-01     100.00%
- total i/o time        7.041267e-02 7.259038e-04       0.12%
- total FFT time        2.771733e+01 2.857456e-01      46.98%
- lagrange multipliers  1.064018e-01 1.096926e-03       0.18%
- local potentials      6.148625e-03 6.338789e-05       0.01%
- non-local potentials  1.268902e+00 1.308146e-02       2.15%
- ffm_dgemm             8.331429e-01 8.589102e-03       1.41%
- fmf_dgemm             5.367502e-01 5.533508e-03       0.91%
- m_diagonalize         7.712060e-04 7.950577e-06       0.00%
- mmm_multiply          9.992900e-05 1.030196e-06       0.00%
- SCVtrans              2.139970e-04 2.206155e-06       0.00%
+ total time            5.886136e+01 6.068182e-01     100.00%
+ total i/o time        7.398100e-02 7.626907e-04       0.13%
+ total FFT time        2.796979e+01 2.883483e-01      47.52%
+ lagrange multipliers  1.042469e-01 1.074710e-03       0.18%
+ local potentials      5.993166e-03 6.178522e-05       0.01%
+ non-local potentials  1.252170e+00 1.290897e-02       2.13%
+ ffm_dgemm             8.180540e-01 8.433546e-03       1.39%
+ fmf_dgemm             5.252930e-01 5.415392e-03       0.89%
+ m_diagonalize         7.333800e-04 7.560619e-06       0.00%
+ mmm_multiply          9.287600e-05 9.574845e-07       0.00%
+ SCVtrans              2.174150e-04 2.241392e-06       0.00%
 
- >>> job completed at     Wed Nov  1 14:57:31 2023 <<<
+ >>> job completed at     Wed Nov  1 15:10:37 2023 <<<
 
 Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"current_task":"energy","dbname":"ch3-pspw-blyp","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[6.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-0.0019526423928195947,0.00035855286584597325,-0.0029294073427762273,1.7129245593678273,-0.20557811619163666,-1.0333932094634732,-1.0030803382668005,-1.6331640553604434,0.6091679581661944,-0.6865984783293649,1.8344736850539136,0.45909914823509085],"fractional":false,"is_crystal":false,"masses":[12.0,1.008,1.008,1.008],"nion":4,"symbols":["C","H","H","H"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":35,"nwinput_lines":["Title \"CH3 blyp mult=2  test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3-pspw-blyp","","echo","","","","","","geometry noautosym noautoz","C        -0.001019     0.000174    -0.001546","H         0.906455    -0.108803    -0.546844","H        -0.530793    -0.864249     0.322362","H        -0.363318     0.970746     0.242949","end","","","nwpw","   simulation_cell","     SC 26.0","   end","   ","   lmbfgs","","   mult 2","   xc blyp","   cutoff 50.0","   ","   ","end","","task pspw optimize","","",""],"nwinput_nlines":38,"nwpw":{"cutoff":[37.5,75.0],"ispin":2,"minimizer":2,"mult":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"xc":"blyp"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3 blyp mult=2  test"}
 
@@ -474,7 +474,7 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
           *    Abhishek Bagusetty, David H. Bross, ...        *
           *                                                   *
           *****************************************************
-          >>> job started at       Wed Nov  1 14:57:31 2023 <<<
+          >>> job started at       Wed Nov  1 15:10:37 2023 <<<
 
  psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
 
@@ -574,14 +574,14 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
 
      ================= Grassmann lmbfgs iteration =================
-          >>> iteration started at Wed Nov  1 14:57:31 2023  <<<
+          >>> iteration started at Wed Nov  1 15:10:38 2023  <<<
      iter.                   Energy          DeltaE        DeltaRho
      --------------------------------------------------------------
         - 15 steepest descent iterations performed
         10      -7.410668939691e+00   -8.011212e-07    2.250917e-08
         20      -7.410670551663e+00   -8.562131e-08    8.234012e-10
      *** tolerance ok. iteration terminated
-          >>> iteration ended at   Wed Nov  1 14:58:18 2023  <<<
+          >>> iteration ended at   Wed Nov  1 15:11:24 2023  <<<
 
      =============  energy results (Molecule object)  =============
 
@@ -624,26 +624,26 @@ Running staged energy optimization - lowlevel_rtdbstr = {"constraints":null,"cur
 
  ------------------
  cputime in seconds
- prologue    : 2.943e-01
- main loop   : 4.696e+01
- epilogue    : 4.089e-02
- total       : 4.729e+01
- cputime/step: 6.346e-01 ( 74 evaluations, 17 linesearches)
+ prologue    : 2.879e-01
+ main loop   : 4.623e+01
+ epilogue    : 3.955e-02
+ total       : 4.656e+01
+ cputime/step: 6.247e-01 ( 74 evaluations, 17 linesearches)
 
  Time spent doing      total        step             percent
- total time            1.063095e+02 1.436615e+00     100.00%
- total i/o time        1.831264e-01 2.474681e-03       0.17%
- total FFT time        4.962888e+01 6.706605e-01      46.68%
- lagrange multipliers  2.142586e-01 2.895387e-03       0.20%
- local potentials      1.393600e-02 1.883243e-04       0.01%
- non-local potentials  2.385697e+00 3.223914e-02       2.24%
- ffm_dgemm             1.417846e+00 1.916008e-02       1.33%
- fmf_dgemm             9.290621e-01 1.255489e-02       0.87%
- m_diagonalize         9.446210e-04 1.276515e-05       0.00%
- mmm_multiply          1.355540e-04 1.831811e-06       0.00%
- SCVtrans              2.590360e-04 3.500486e-06       0.00%
+ total time            1.054321e+02 1.424758e+00     100.00%
+ total i/o time        1.823345e-01 2.463980e-03       0.17%
+ total FFT time        4.952065e+01 6.691980e-01      46.97%
+ lagrange multipliers  2.101090e-01 2.839310e-03       0.20%
+ local potentials      1.292712e-02 1.746909e-04       0.01%
+ non-local potentials  2.365333e+00 3.196396e-02       2.24%
+ ffm_dgemm             1.391984e+00 1.881059e-02       1.32%
+ fmf_dgemm             9.110359e-01 1.231130e-02       0.86%
+ m_diagonalize         9.035440e-04 1.221005e-05       0.00%
+ mmm_multiply          1.228830e-04 1.660581e-06       0.00%
+ SCVtrans              2.615320e-04 3.534216e-06       0.00%
 
- >>> job completed at     Wed Nov  1 14:58:18 2023 <<<
+ >>> job completed at     Wed Nov  1 15:11:24 2023 <<<
 
 Running geometry optimization calculation - rtdbstr = {"constraints":null,"current_task":"task pspw optimize","dbname":"ch3-pspw-blyp","driver":null,"foundtask":true,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[6.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-0.0019526423928195947,0.00035855286584597325,-0.0029294073427762273,1.7129245593678273,-0.20557811619163666,-1.0333932094634732,-1.0030803382668005,-1.6331640553604434,0.6091679581661944,-0.6865984783293649,1.8344736850539136,0.45909914823509085],"fractional":false,"is_crystal":false,"masses":[12.0,1.008,1.008,1.008],"nion":4,"symbols":["C","H","H","H"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":35,"nwinput_lines":["Title \"CH3 blyp mult=2  test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3-pspw-blyp","","echo","","","","","","geometry noautosym noautoz","C        -0.001019     0.000174    -0.001546","H         0.906455    -0.108803    -0.546844","H        -0.530793    -0.864249     0.322362","H        -0.363318     0.970746     0.242949","end","","","nwpw","   simulation_cell","     SC 26.0","   end","   ","   lmbfgs","","   mult 2","   xc blyp","   cutoff 50.0","   ","   ","end","","task pspw optimize","","",""],"nwinput_nlines":38,"nwpw":{"cutoff":[50.0,100.0],"ispin":2,"minimizer":2,"mult":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"xc":"blyp"},"permanent_dir":".","psp_library_dir":"","scratch_dir":".","title":"CH3 blyp mult=2  test"}
 
@@ -660,7 +660,7 @@ Running geometry optimization calculation - rtdbstr = {"constraints":null,"curre
           *    Abhishek Bagusetty, David H. Bross, ...        *
           *                                                   *
           *****************************************************
-          >>> job started at       Wed Nov  1 14:58:19 2023 <<<
+          >>> job started at       Wed Nov  1 15:11:24 2023 <<<
 
  psp_library: /Users/bylaska/Codes/PWDFT/Nwpw/libraryps
 
@@ -816,14 +816,14 @@ H        -0.363332     0.970761     0.242945
  ---------------------------------
 
      ================= Grassmann lmbfgs iteration =================
-          >>> iteration started at Wed Nov  1 14:58:19 2023  <<<
+          >>> iteration started at Wed Nov  1 15:11:24 2023  <<<
      iter.                   Energy          DeltaE        DeltaRho
      --------------------------------------------------------------
         - 15 steepest descent iterations performed
         10      -7.411728294096e+00   -1.625426e-07    4.272229e-09
         20      -7.411728392905e+00   -9.880977e-08    2.248587e-09
      *** tolerance ok. iteration terminated
-          >>> iteration ended at   Wed Nov  1 14:59:04 2023  <<<
+          >>> iteration ended at   Wed Nov  1 15:12:08 2023  <<<
 
      =============  energy results (Molecule object)  =============
 
@@ -880,7 +880,7 @@ max|Fatom|=    0.00055  (   0.028 eV/Angstrom)
 
 @ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime
 @ ---- ------------------ ----------- -------- -------- -------- -------- ----------
-@    0       -7.411728393  -7.412e+00  0.00055  0.00018  0.00005  0.00016       45.2        50
+@    0       -7.411728393  -7.412e+00  0.00055  0.00018  0.00005  0.00016       44.5        50
                                                      ok       ok       ok
 
 
@@ -926,13 +926,13 @@ H        -0.363339     0.970737     0.242913
  ---------------------------------
 
      ================= Grassmann lmbfgs iteration =================
-          >>> iteration started at Wed Nov  1 14:59:04 2023  <<<
+          >>> iteration started at Wed Nov  1 15:12:08 2023  <<<
      iter.                   Energy          DeltaE        DeltaRho
      --------------------------------------------------------------
         - 15 steepest descent iterations performed
         10      -7.411728586895e+00   -8.587930e-08    1.462520e-09
      *** tolerance ok. iteration terminated
-          >>> iteration ended at   Wed Nov  1 14:59:31 2023  <<<
+          >>> iteration ended at   Wed Nov  1 15:12:36 2023  <<<
 
      =============  energy results (Molecule object)  =============
 
@@ -992,7 +992,7 @@ max|Fatom|=    0.00031  (   0.016 eV/Angstrom)
 
   Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime
   ---- ------------------ ----------- -------- -------- -------- -------- ----------
-@    1       -7.411728587  -1.940e-07  0.00031  0.00012  0.00004  0.00009       72.9        81
+@    1       -7.411728587  -1.940e-07  0.00031  0.00012  0.00004  0.00009       71.8        81
                                             ok       ok       ok       ok
 
 
@@ -1032,28 +1032,28 @@ H        -0.363347     0.970713     0.242878
 
  -----------------
  cputime in seconds
- prologue    : 3.966e-01
- main loop   : 7.246e+01
- epilogue    : 5.817e-02
- total       : 7.292e+01
- cputime/step: 8.946e-01 ( 81 evaluations, 16 linesearches)
+ prologue    : 3.778e-01
+ main loop   : 7.147e+01
+ epilogue    : 5.794e-02
+ total       : 7.190e+01
+ cputime/step: 8.823e-01 ( 81 evaluations, 16 linesearches)
 
  Time spent doing      total        step             percent
- total time            1.792607e+02 2.213095e+00     100.00%
- total i/o time        3.533667e-01 4.362551e-03       0.20%
- total FFT time        8.392771e+01 1.036145e+00      46.82%
- lagrange multipliers  5.516731e-01 6.810779e-03       0.31%
- local potentials      4.521679e-02 5.582320e-04       0.03%
- non-local potentials  4.390997e+00 5.420984e-02       2.45%
- ffm_dgemm             2.387481e+00 2.947507e-02       1.33%
- fmf_dgemm             1.560132e+00 1.926089e-02       0.87%
- m_diagonalize         1.121080e-03 1.384049e-05       0.00%
- mmm_multiply          1.672200e-04 2.064444e-06       0.00%
- SCVtrans              3.036140e-04 3.748321e-06       0.00%
+ total time            1.773636e+02 2.189674e+00     100.00%
+ total i/o time        3.413840e-01 4.214618e-03       0.19%
+ total FFT time        8.327678e+01 1.028108e+00      46.95%
+ lagrange multipliers  5.437300e-01 6.712717e-03       0.31%
+ local potentials      4.106250e-02 5.069444e-04       0.02%
+ non-local potentials  4.354517e+00 5.375947e-02       2.46%
+ ffm_dgemm             2.347903e+00 2.898645e-02       1.32%
+ fmf_dgemm             1.533673e+00 1.893423e-02       0.86%
+ m_diagonalize         1.078542e-03 1.331533e-05       0.00%
+ mmm_multiply          1.525540e-04 1.883383e-06       0.00%
+ SCVtrans              3.092860e-04 3.818346e-06       0.00%
 
- >>> job completed at     Wed Nov  1 14:59:31 2023 <<<
+ >>> job completed at     Wed Nov  1 15:12:36 2023 <<<
 
-Next rtdbstr={"constraints":null,"current_task":"task pspw optimize","dbname":"ch3-pspw-blyp","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[6.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-0.0018425843109180393,0.000295811778669195,-0.0028084191675311738,1.7128755993089317,-0.20545090948588332,-1.0334859733827935,-1.0032312836884307,-1.6330802881029443,0.6091044284696271,-0.6866268268615932,1.8343818505681184,0.4589736355585145],"fractional":false,"is_crystal":false,"masses":[12.0,1.008,1.008,1.008],"nion":4,"symbols":["C","H","H","H"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":38,"nwinput_lines":["Title \"CH3 blyp mult=2  test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3-pspw-blyp","","echo","","","","","","geometry noautosym noautoz","C        -0.001019     0.000174    -0.001546","H         0.906455    -0.108803    -0.546844","H        -0.530793    -0.864249     0.322362","H        -0.363318     0.970746     0.242949","end","","","nwpw","   simulation_cell","     SC 26.0","   end","   ","   lmbfgs","","   mult 2","   xc blyp","   cutoff 50.0","   ","   ","end","","task pspw optimize","","",""],"nwinput_nlines":38,"nwpw":{"cutoff":[50.0,100.0],"initialize_wavefunction":null,"ispin":2,"minimizer":2,"mult":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"xc":"blyp"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.19591476288631507,-0.37676027775962767,-0.3772003956868447,-0.6123359381498205,-0.3678470000461823,-0.3682566974261187,-0.5790596453735992],"energies":[-7.41172858689482,-2.8773747173285082,9.505553358576057,-2.769897050394803,4.16391489346434,5.738876520970053,-23.47886194675773,-0.5713143627561008,19.011106717152114,-3.5771816459402075,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6.7903865311e-313,5.66634e-319,0.0,3.0425923246e-314,6.7903865311e-313,5.66634e-319,0.0,3.0425923404e-314,6.7903865311e-313,0.0,1.040194e-317,0.0,3.13151306251402e-294,0.0,4e-323,0.0,2.130042753e-314],"energy":-7.41172858689482},"scratch_dir":".","title":"CH3 blyp mult=2  test"}
+Next rtdbstr={"constraints":null,"current_task":"task pspw optimize","dbname":"ch3-pspw-blyp","driver":null,"foundtask":false,"geometries":{"geometry":{"autosym":0,"autoz":0,"center":1,"charges":[6.0,1.0,1.0,1.0],"conv":1.88972598858,"coords":[-0.0018425843109180393,0.000295811778669195,-0.0028084191675311738,1.7128755993089317,-0.20545090948588332,-1.0334859733827935,-1.0032312836884307,-1.6330802881029443,0.6091044284696271,-0.6866268268615932,1.8343818505681184,0.4589736355585145],"fractional":false,"is_crystal":false,"masses":[12.0,1.008,1.008,1.008],"nion":4,"symbols":["C","H","H","H"],"unita":[1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":38,"nwinput_lines":["Title \"CH3 blyp mult=2  test\"","","memory stack 500 mb heap 750 mb global 10 mb","","start ch3-pspw-blyp","","echo","","","","","","geometry noautosym noautoz","C        -0.001019     0.000174    -0.001546","H         0.906455    -0.108803    -0.546844","H        -0.530793    -0.864249     0.322362","H        -0.363318     0.970746     0.242949","end","","","nwpw","   simulation_cell","     SC 26.0","   end","   ","   lmbfgs","","   mult 2","   xc blyp","   cutoff 50.0","   ","   ","end","","task pspw optimize","","",""],"nwinput_nlines":38,"nwpw":{"cutoff":[50.0,100.0],"initialize_wavefunction":null,"ispin":2,"minimizer":2,"mult":2,"simulation_cell":{"unita":[26.0,0.0,0.0,0.0,26.0,0.0,0.0,0.0,26.0]},"xc":"blyp"},"permanent_dir":".","psp_library_dir":"","pspw":{"eigenvalues":[-0.19591476288631507,-0.37676027775962767,-0.3772003956868447,-0.6123359381498205,-0.3678470000461823,-0.3682566974261187,-0.5790596453735992],"energies":[-7.41172858689482,-2.8773747173285082,9.505553358576057,-2.769897050394803,4.16391489346434,5.738876520970053,-23.47886194675773,-0.5713143627561008,19.011106717152114,-3.5771816459402075,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6.7903865311e-313,5.66634e-319,0.0,3.042430429e-314,6.7903865311e-313,5.66634e-319,0.0,3.042430445e-314,6.7903865311e-313,0.0,1.040194e-317,0.0,3.13151306251402e-294,0.0,4e-323,0.0,2.130204648e-314],"energy":-7.41172858689482},"scratch_dir":".","title":"CH3 blyp mult=2  test"}
 Next task =0
 
 writing rtdbjson = ./ch3-pspw-blyp.json

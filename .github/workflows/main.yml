@@ -88,18 +88,18 @@ jobs:
             exit 1
           fi
 
-      - name: Run the methyl triplet  QA
+      - name: Run the methyl doublet  QA
         run: |
-          echo Running the methyl triplet QA test.
+          echo Running the methyl doublet QA test.
           cd QA
           chmod +x ./runtest_github.bash
-          OUTPUT1=$(./runtest_github.bash -n 1 methyl-triplet)
+          OUTPUT1=$(./runtest_github.bash -n 1 methyl-doublet)
           echo "$OUTPUT1"
           if [[ $OUTPUT1 == *"Verifying output: OK"* ]]; then
             echo "OK"
           else
             echo "Failed"
-            cat ./testoutputs/methyl-triplet.out
+            cat ./testoutputs/methyl-doublet.out
             exit 1
           fi
                 
