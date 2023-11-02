@@ -605,80 +605,338 @@ static json parse_simulation_cell(json celljson, int *curptr,
   return celljson;
 }
 
+
+/**************************************************
+ *                                                *
+ *        monkhorst_pack_timereversal_prune       *
+ *                                                *
+ **************************************************/
+ /**
+ * @brief Prune and update a JSON array of k-vectors.
+ *
+ * This function prunes and updates a JSON array of k-vectors (KS) to merge
+ * similar k-vectors within a specified tolerance and handle time reversal.
+ *
+ * @param ks A reference to the JSON array containing k-vectors to be pruned.
+ *
+ * @details
+ * - The function iterates through the k-vectors and merges similar k-vectors
+ *   based on a specified tolerance.
+ * - K-vectors with their 4th component (weight) less than or equal to 0.0 are
+ *   considered invalid and are set to 0.0.
+ * - The function also ensures time reversal by negating k-vectors with a
+ *   negative norm.
+ * - The original JSON array 'ks' is replaced with the updated data.
+ *
+ * @note
+ * - The function assumes that 'ks' is a JSON array of JSON objects, where each
+ *   object represents a k-vector with components [kx, ky, kz, weight].
+ * - The tolerance for merging similar k-vectors is set to 1.0e-9.
+ */
+static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& ks) 
+{
+   size_t nks = ks.size();
+   size_t nks2 = 0;
+   std::vector<double> kvector;
+
+   std::vector<std::vector<double>> updated_ks;
+
+   for (size_t i = 0; i < nks - 1; ++i)
+   {
+      if (ks[i][3] > 0.0)
+      {
+         for (size_t j = i + 1; j < nks; ++j)
+         {
+            if (std::abs(ks[i][0] + ks[j][0]) < 1.0e-9 &&
+                std::abs(ks[i][1] + ks[j][1]) < 1.0e-9 &&
+                std::abs(ks[i][2] + ks[j][2]) < 1.0e-9) {
+                double tmp3 = ks[i][3] + ks[j][3];
+                ks[i][3] = tmp3;
+                ks[j][3] = 0.0;
+            }
+         }
+      }
+   }
+
+   for (size_t i = 0; i < nks; ++i)
+   {
+      if (std::abs(ks[i][3]) > 1.0e-9)
+      {
+         kvector = {ks[i][0], ks[i][1], ks[i][2], ks[i][3]};
+         updated_ks.push_back(kvector);
+         nks2++;
+      }
+   }
+
+   for (size_t i = 0; i < nks2; ++i)
+   {
+      double norm = updated_ks[i][0] + updated_ks[i][1] + updated_ks[i][2];
+      if (norm < 0.0) {
+        updated_ks[i][0] = -updated_ks[i][0];
+        updated_ks[i][1] = -updated_ks[i][1];
+        updated_ks[i][2] = -updated_ks[i][2];
+      }
+   }
+
+   // Replace the original brillouin_zone with the updated data
+   ks = updated_ks;
+}
+
+
+/**************************************************
+ *                                                *
+ *             monkhorst_pack_set                 *
+ *                                                *
+ **************************************************/
+ /**
+ * @brief Generate Monkhorst-Pack k-vectors and update a JSON array.
+ *
+ * This function generates Monkhorst-Pack k-vectors for a given mesh size (nx, ny, nz)
+ * and updates a JSON array (ks) with the generated k-vectors. It also handles time reversal
+ * if needed.
+ *
+ * @param nx The number of k-vectors along the x-axis.
+ * @param ny The number of k-vectors along the y-axis.
+ * @param nz The number of k-vectors along the z-axis.
+ * @param ks A reference to the JSON array that will store the generated k-vectors.
+ *
+ * @details
+ * - The function calculates the number of k-vectors (num_kvectors) based on the mesh size.
+ * - It calculates the weight for each k-vector based on the number of k-vectors.
+ * - The k-vectors are generated and added to the JSON array 'ks' with their weights.
+ * - If timereverse is true (all inputs nx, ny, nz are positive), it calls the
+ *   'monkhorst_pack_timereversal_prune' function to prune and update the k-vectors
+ *   to ensure time reversal symmetry.
+ *
+ * @note
+ * - The generated k-vectors are based on the Monkhorst-Pack grid.
+ * - The 'ks' JSON array should be initialized before calling this function.
+ */
+static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::vector<std::vector<double>>& ks)
+{
+   int nkx = nx;
+   int nky = ny;
+   int nkz = nz;
+   std::vector<double> kvector;
+
+
+   bool timereverse = true;
+   if (nkx<0)
+   {
+      nkx = -nkx;
+      timereverse = false;
+   }
+   if (nky<0)
+   {
+      nky = -nky;
+      timereverse = false;
+   }
+   if (nkz<0)
+   {
+      nkz = -nkz;
+      timereverse = false;
+   }
+ 
+   int num_kvectors = nkx*nky*nkz;
+   double weight = 1.0/static_cast<double>(num_kvectors);
+   double xxx = 1.0/(2.0*nkx);
+   double yyy = 1.0/(2.0*nky);
+   double zzz = 1.0/(2.0*nkz);
+   for (auto i3=0; i3<nkz; ++i3)
+   for (auto i2=0; i2<nky; ++i2)
+   for (auto i1=0; i1<nkx; ++i1)
+   {
+      double xx = 1.0 + 2*i1 - nkx;
+      double yy = 1.0 + 2*i2 - nky;
+      double zz = 1.0 + 2*i3 - nkz;
+ 
+      double kx = xx*xxx;
+      double ky = yy*yyy;
+      double kz = zz*zzz;
+ 
+      kvector = {kx,ky,kz,weight};
+      ks.push_back(kvector);
+   }
+
+   if (timereverse) 
+      monkhorst_pack_timereversal_prune(ks);
+}
+
+
+/**************************************************
+ *                                                *
+ *                parse_brillouin_zone            *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Parse Brillouin zone information from a list of lines.
+ *
+ * This function parses Brillouin zone information from a list of lines and updates
+ * a JSON object (brillouinjson) with the parsed data.
+ *
+ * @param brillouinjson A JSON object that will store the parsed Brillouin zone information.
+ * @param curptr A pointer to the current line index to keep track of parsing progress.
+ * @param lines A vector of strings representing the lines of input data to be parsed.
+ * @return A JSON object containing the parsed Brillouin zone information.
+ *
+ * @details
+ * - The function iterates through the lines of input data, looking for specific keywords.
+ * - If it encounters a "kvector" keyword, it extracts the k-vector components and weight
+ *   and adds them to the JSON object 'brillouinjson'.
+ * - If it encounters a "monkhorst-pack" keyword, it extracts mesh size information and
+ *   calls the 'monkhorst_pack_set' function to generate and update k-vectors.
+ * - Other keywords like "path" and "max_kpoints_print" can be added as needed.
+ * - The parsing process continues until the "end" keyword is encountered.
+ *
+ * @note
+ * - The 'brillouinjson' JSON object should be initialized before calling this function.
+ * - This function assumes that 'lines' contains the input data to be parsed.
+ * - Additional keywords and parsing logic can be added as needed for specific input formats.
+ */
+static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<std::string> lines) 
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+
+   while (endcount > 0) 
+   {
+      line = mystring_lowercase(lines[cur]);
+      if (mystring_contains(line, "kvector")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 3)
+         {
+            std::vector<double> kvector;
+            if (ss.size() > 4) 
+               kvector = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3]), std::stod(ss[4])};
+            else
+               kvector = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3]), -1.0};
+         
+            if (brillouinjson["kvectors"].is_null())
+            {
+               std::vector<std::vector<double>> kvectors;
+               kvectors.push_back(kvector);
+               brillouinjson["kvectors"] = kvectors;
+            }
+            else
+               brillouinjson["kvectors"].push_back(kvector);
+         }
+      } else if (mystring_contains(line, "monkhorst-pack")) {
+         ss = mystring_split0(line);
+         int nkx=1,nky=1,nkz=1;
+         if (ss.size() > 1) nkx = std::stoi(ss[1]);
+         if (ss.size() > 2) nky = std::stoi(ss[2]);
+         if (ss.size() > 3) nkz = std::stoi(ss[3]);
+
+         std::vector<std::vector<double>> kvectors;
+         // Check if "kvectors" key exists in the JSON object
+         if (!brillouinjson["kvectors"].is_null() && brillouinjson["kvectors"].is_array()) 
+         {
+             // Convert the JSON array to a vector of vectors of doubles
+             kvectors = brillouinjson["kvectors"].get<std::vector<std::vector<double>>>();
+         }
+         monkhorst_pack_set(nkx,nky,nkz,kvectors);
+         brillouinjson["kvectors"] = kvectors;
+
+      } else if (mystring_contains(line, "path")) {
+         //band_path_set(brillouinjson);
+
+      } else if (mystring_contains(line, "zone_name")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1) brillouinjson["zone_name"] = ss[1];
+
+      } else if (mystring_contains(line, "max_kpoints_print")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1) brillouinjson["max_kpoints_print"] = std::stoi(ss[1]);
+      }
+
+      ++cur;
+      if (mystring_contains(lines[cur], "end"))
+         --endcount;
+   }
+
+   *curptr = cur;
+
+   return brillouinjson;
+}
+
+
 /**************************************************
  *                                                *
  *                parse_steepest_descent          *
  *                                                *
  **************************************************/
 
-static json parse_steepest_descent(json sdjson, int *curptr,
-                                   std::vector<std::string> lines) {
-  int cur = *curptr;
-  int endcount = 1;
-  ++cur;
-  std::string line;
-  std::vector<std::string> ss;
+static json parse_steepest_descent(json sdjson, int *curptr, std::vector<std::string> lines) 
+{
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+ 
+   while (endcount > 0) {
+      line = mystring_lowercase(lines[cur]);
+     
+      if (mystring_contains(line, "loop")) {
+         std::vector<int> loop = {1,1};
+         ss = mystring_split0(line);
+         if (ss.size() > 1) loop[0] = std::stoi(ss[1]);
+         if (ss.size() > 2) loop[1] = std::stoi(ss[2]);
+         sdjson["loop"] = loop;
+      } else if (mystring_contains(line, "xc")) {
+         sdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+      } else if (mystring_contains(line, "geometry_optimize")) {
+         sdjson["geometry_optimize"] = true;
+         if (mystring_contains(line, " off"))   sdjson["geometry_optimize"] = false;
+         if (mystring_contains(line, " no"))    sdjson["geometry_optimize"] = false;
+         if (mystring_contains(line, " false")) sdjson["geometry_optimize"] = false;
+         if (mystring_contains(line, " on"))    sdjson["geometry_optimize"] = true;
+         if (mystring_contains(line, " yes"))   sdjson["geometry_optimize"] = true;
+         if (mystring_contains(line, " true"))  sdjson["geometry_optimize"] = true;
+      } else if (mystring_contains(line, "input_wavefunction_filename")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1)
+            sdjson["input_wavefunction_filename"] = ss[1];
+      } else if (mystring_contains(line, "output_wavefunction_filename")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1)
+            sdjson["output_wavefunction_filename"] = ss[1];
+      } else if (mystring_contains(line, "time_step")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1)
+            sdjson["time_step"] = std::stod(ss[1]);
+      } else if (mystring_contains(line, "fake_mass")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1)
+            sdjson["fake_mass"] = std::stod(ss[1]);
+      } else if (mystring_contains(line, "cutoff")) {
+         ss = mystring_split0(line);
+         if (ss.size() == 2) sdjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
+         if (ss.size() > 2)  sdjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
+      } else if (mystring_contains(line, "tolerances")) {
+         ss = mystring_split0(line);
+         if (ss.size()==2) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
+         if (ss.size()==3) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
+         if (ss.size()>3)  sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3])};
+      } else if (mystring_contains(line, "deltae_check")) {
+         if (mystring_contains(line, " off"))   sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " no"))    sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " false")) sdjson["deltae_check"] = false;
+         if (mystring_contains(line, " on"))    sdjson["deltae_check"] = true;
+         if (mystring_contains(line, " yes"))   sdjson["deltae_check"] = true;
+         if (mystring_contains(line, " true"))  sdjson["deltae_check"] = true;
+      }
+      ++cur;
+      if (mystring_contains(lines[cur], "end"))
+         --endcount;
+   }
 
-  while (endcount > 0) {
-     line = mystring_lowercase(lines[cur]);
-    
-     if (mystring_contains(line, "loop")) {
-        std::vector<int> loop = {1,1};
-        ss = mystring_split0(line);
-        if (ss.size() > 1) loop[0] = std::stoi(ss[1]);
-        if (ss.size() > 2) loop[1] = std::stoi(ss[2]);
-        sdjson["loop"] = loop;
-     } else if (mystring_contains(line, "xc")) {
-        sdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
-     } else if (mystring_contains(line, "geometry_optimize")) {
-        sdjson["geometry_optimize"] = true;
-        if (mystring_contains(line, " off"))   sdjson["geometry_optimize"] = false;
-        if (mystring_contains(line, " no"))    sdjson["geometry_optimize"] = false;
-        if (mystring_contains(line, " false")) sdjson["geometry_optimize"] = false;
-        if (mystring_contains(line, " on"))    sdjson["geometry_optimize"] = true;
-        if (mystring_contains(line, " yes"))   sdjson["geometry_optimize"] = true;
-        if (mystring_contains(line, " true"))  sdjson["geometry_optimize"] = true;
-     } else if (mystring_contains(line, "input_wavefunction_filename")) {
-        ss = mystring_split0(line);
-        if (ss.size() > 1)
-           sdjson["input_wavefunction_filename"] = ss[1];
-     } else if (mystring_contains(line, "output_wavefunction_filename")) {
-        ss = mystring_split0(line);
-        if (ss.size() > 1)
-           sdjson["output_wavefunction_filename"] = ss[1];
-     } else if (mystring_contains(line, "time_step")) {
-        ss = mystring_split0(line);
-        if (ss.size() > 1)
-           sdjson["time_step"] = std::stod(ss[1]);
-     } else if (mystring_contains(line, "fake_mass")) {
-        ss = mystring_split0(line);
-        if (ss.size() > 1)
-           sdjson["fake_mass"] = std::stod(ss[1]);
-     } else if (mystring_contains(line, "cutoff")) {
-        ss = mystring_split0(line);
-        if (ss.size() == 2) sdjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
-        if (ss.size() > 2)  sdjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
-     } else if (mystring_contains(line, "tolerances")) {
-        ss = mystring_split0(line);
-        if (ss.size()==2) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
-        if (ss.size()==3) sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
-        if (ss.size()>3)  sdjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3])};
-     } else if (mystring_contains(line, "deltae_check")) {
-        if (mystring_contains(line, " off"))   sdjson["deltae_check"] = false;
-        if (mystring_contains(line, " no"))    sdjson["deltae_check"] = false;
-        if (mystring_contains(line, " false")) sdjson["deltae_check"] = false;
-        if (mystring_contains(line, " on"))    sdjson["deltae_check"] = true;
-        if (mystring_contains(line, " yes"))   sdjson["deltae_check"] = true;
-        if (mystring_contains(line, " true"))  sdjson["deltae_check"] = true;
-     }
-     ++cur;
-     if (mystring_contains(lines[cur], "end"))
-        --endcount;
-  }
+   *curptr = cur;
 
-  *curptr = cur;
-
-  return sdjson;
+   return sdjson;
 }
 
 /**************************************************
@@ -1039,140 +1297,175 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           if (mystring_contains(line,"steepest_descent"))
           if (mystring_contains(line,"car-parrinello"))
     */
-    if (mystring_contains(line, "simulation_cell")) {
-      if (nwpwjson["simulation_cell"].is_null()) {
-        json simulation_cell;
-        nwpwjson["simulation_cell"] = simulation_cell;
-      }
-      *curptr = cur;
-      nwpwjson["simulation_cell"] =
-          parse_simulation_cell(nwpwjson["simulation_cell"], curptr, lines);
-      cur = *curptr;
-    } else if (mystring_contains(line, "pseudopotentials")) {
-      if (nwpwjson["pseudopotentials"].is_null()) {
-        json pseudopotentials;
-        nwpwjson["pseudopotentials"] = pseudopotentials;
-      }
-      *curptr = cur;
-      nwpwjson["pseudopotentials"] =
-          parse_pseudopotentials(nwpwjson["pseudopotentials"], curptr, lines);
-      cur = *curptr;
-    } else if (mystring_contains(line, "steepest_descent")) {
-      if (nwpwjson["steepest_descent"].is_null()) {
-        json steepest_descent;
-        nwpwjson["steepest_descent"] = steepest_descent;
-      }
-      *curptr = cur;
-      nwpwjson["steepest_descent"] =
-          parse_steepest_descent(nwpwjson["steepest_descent"], curptr, lines);
-      cur = *curptr;
-    } else if (mystring_contains(line, "car-parrinello")) {
-      if (nwpwjson["car-parrinello"].is_null()) {
-        json car_parrinello;
-        nwpwjson["car-parrinello"] = car_parrinello;
-      }
-      *curptr = cur;
-      nwpwjson["car-parrinello"] =
-          parse_car_parrinello(nwpwjson["car-parrinello"], curptr, lines);
-      cur = *curptr;
-    } else if (mystring_contains(line, "dplot")) {
-      if (nwpwjson["dplot"].is_null()) {
-        json dplot;
-        nwpwjson["dplot"] = dplot;
-      }
-      *curptr = cur;
-      nwpwjson["dplot"] = parse_dplot(nwpwjson["dplot"], curptr, lines);
-      cur = *curptr;
-    } else if (mystring_contains(line, "initialize_wavefunction")) {
-      if (mystring_contains(line, " off"))
-        nwpwjson["initialize_wavefunction"] = false;
-      else if (mystring_contains(line, " no"))
-        nwpwjson["initialize_wavefunction"] = false;
-      else if (mystring_contains(line, " false"))
-        nwpwjson["initialize_wavefunction"] = false;
+    if (mystring_contains(line, "simulation_cell")) 
+    {
+       if (nwpwjson["simulation_cell"].is_null()) {
+         json simulation_cell;
+         nwpwjson["simulation_cell"] = simulation_cell;
+       }
+       *curptr = cur;
+       nwpwjson["simulation_cell"] = parse_simulation_cell(nwpwjson["simulation_cell"], curptr, lines);
+       cur = *curptr;
 
-      else if (mystring_contains(line, " yes"))
-        nwpwjson["initialize_wavefunction"] = true;
-      else if (mystring_contains(line, " true"))
-        nwpwjson["initialize_wavefunction"] = true;
-      else if (mystring_contains(line, " on"))
-        nwpwjson["initialize_wavefunction"] = true;
-      else
-        nwpwjson["initialize_wavefunction"] = true;
+    } else if (mystring_contains(line, "brillouin_zone")) {
+       if (nwpwjson["brillouin_zone"].is_null() || (mystring_contains(line, "reset"))) 
+       {
+          json brillouin_zone;
+          //json kpoints = nlohmann::json::array();
+          nwpwjson["brillouin_zone"] = brillouin_zone;
+       }
+       *curptr = cur;
+       nwpwjson["brillouin_zone"] = parse_brillouin_zone(nwpwjson["brillouin_zone"], curptr, lines);
+       cur = *curptr;
+    } 
+    else if (mystring_contains(line, "monkhorst-pack")) 
+    {
+       if (nwpwjson["brillouin_zone"].is_null())
+       {
+          //json kpoints = nlohmann::json::array();
+          json brillouinjson;
+          nwpwjson["brillouin_zone"] = brillouinjson;
+       }
+       ss = mystring_split0(line);
+       int nkx=1,nky=1,nkz=1;
+       if (ss.size() > 1) nkx = std::stoi(ss[1]);
+       if (ss.size() > 2) nky = std::stoi(ss[2]);
+       if (ss.size() > 3) nkz = std::stoi(ss[3]);
+
+       std::vector<std::vector<double>> kvectors;
+       if (!nwpwjson["brillouin_zone"]["kvectors"].is_null() && nwpwjson["brillouin_zone"]["kvectors"].is_array()) 
+       {
+             // Convert the JSON array to a vector of vectors of doubles
+             kvectors = nwpwjson["brillouin_zone"]["kvectors"].get<std::vector<std::vector<double>>>();
+       }
+       monkhorst_pack_set(nkx,nky,nkz,kvectors);
+       nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
+
+
+    } 
+    else if (mystring_contains(line, "pseudopotentials")) 
+    {
+       if (nwpwjson["pseudopotentials"].is_null()) {
+         json pseudopotentials;
+         nwpwjson["pseudopotentials"] = pseudopotentials;
+       }
+       *curptr = cur;
+       nwpwjson["pseudopotentials"] = parse_pseudopotentials(nwpwjson["pseudopotentials"], curptr, lines);
+       cur = *curptr;
+    } else if (mystring_contains(line, "steepest_descent")) {
+       if (nwpwjson["steepest_descent"].is_null()) {
+         json steepest_descent;
+         nwpwjson["steepest_descent"] = steepest_descent;
+       }
+       *curptr = cur;
+       nwpwjson["steepest_descent"] = parse_steepest_descent(nwpwjson["steepest_descent"], curptr, lines);
+       cur = *curptr;
+    } else if (mystring_contains(line, "car-parrinello")) {
+       if (nwpwjson["car-parrinello"].is_null()) {
+         json car_parrinello;
+         nwpwjson["car-parrinello"] = car_parrinello;
+       }
+       *curptr = cur;
+       nwpwjson["car-parrinello"] =
+           parse_car_parrinello(nwpwjson["car-parrinello"], curptr, lines);
+       cur = *curptr;
+    } else if (mystring_contains(line, "dplot")) {
+       if (nwpwjson["dplot"].is_null()) {
+         json dplot;
+         nwpwjson["dplot"] = dplot;
+       }
+       *curptr = cur;
+       nwpwjson["dplot"] = parse_dplot(nwpwjson["dplot"], curptr, lines);
+       cur = *curptr;
+    } else if (mystring_contains(line, "initialize_wavefunction")) {
+       if (mystring_contains(line, " off"))
+         nwpwjson["initialize_wavefunction"] = false;
+       else if (mystring_contains(line, " no"))
+         nwpwjson["initialize_wavefunction"] = false;
+       else if (mystring_contains(line, " false"))
+         nwpwjson["initialize_wavefunction"] = false;
+      
+       else if (mystring_contains(line, " yes"))
+         nwpwjson["initialize_wavefunction"] = true;
+       else if (mystring_contains(line, " true"))
+         nwpwjson["initialize_wavefunction"] = true;
+       else if (mystring_contains(line, " on"))
+         nwpwjson["initialize_wavefunction"] = true;
+       else
+         nwpwjson["initialize_wavefunction"] = true;
     } else if (mystring_contains(line, "io_norbs_max")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+         nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "nobalance")) {
-      nwpwjson["nobalance"] = true;
+       nwpwjson["nobalance"] = true;
     } else if (mystring_contains(line, "use_grid_cmp")) {
-      nwpwjson["use_grid_cmp"] = true;
+       nwpwjson["use_grid_cmp"] = true;
     } else if (mystring_contains(line, "fast_erf")) {
-      nwpwjson["fast_erf"] = true;
+       nwpwjson["fast_erf"] = true;
     } else if (mystring_contains(line, "mapping")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        nwpwjson["mapping"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["mapping"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "initial_psi_random_algorithm")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "tile_factor")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        nwpwjson["tile_factor"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["tile_factor"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "1d-slab")) {
-      nwpwjson["mapping"] = 1;
+       nwpwjson["mapping"] = 1;
     } else if (mystring_contains(line, "2d-hilbert")) {
-      nwpwjson["mapping"] = 2;
+       nwpwjson["mapping"] = 2;
     } else if (mystring_contains(line, "2d-hcurve")) {
-      nwpwjson["mapping"] = 3;
+       nwpwjson["mapping"] = 3;
     } else if (mystring_contains(line, "np_dimensions")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 2)
-        nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2])};
-      if (ss.size() > 3)
-        nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2]),
-                                     std::stoi(ss[3])};
+       ss = mystring_split0(line);
+       if (ss.size() > 2)
+         nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2])};
+       if (ss.size() > 3)
+         nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2]), std::stoi(ss[3])};
     } else if (mystring_contains(line, "loop")) {
-      std::vector<int> loop;
-      loop.push_back(1);
-      loop.push_back(1);
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        loop[0] = std::stoi(ss[1]);
-      if (ss.size() > 2)
-        loop[1] = std::stoi(ss[2]);
-      nwpwjson["loop"] = loop;
+       std::vector<int> loop;
+       loop.push_back(1);
+       loop.push_back(1);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+         loop[0] = std::stoi(ss[1]);
+       if (ss.size() > 2)
+         loop[1] = std::stoi(ss[2]);
+       nwpwjson["loop"] = loop;
     } else if (mystring_contains(line, "bo_steps")) {
-      std::vector<int> loop;
-      loop.push_back(1);
-      loop.push_back(1);
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        loop[0] = std::stoi(ss[1]);
-      if (ss.size() > 2)
-        loop[1] = std::stoi(ss[2]);
-      nwpwjson["bo_steps"] = loop;
+       std::vector<int> loop;
+       loop.push_back(1);
+       loop.push_back(1);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+         loop[0] = std::stoi(ss[1]);
+       if (ss.size() > 2)
+         loop[1] = std::stoi(ss[2]);
+       nwpwjson["bo_steps"] = loop;
     } else if (mystring_contains(line, "bo_time_step")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        nwpwjson["bo_time_step"] = std::stod(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["bo_time_step"] = std::stod(ss[1]);
     } else if (mystring_contains(line, "bo_algorithm")) {
-      if (mystring_contains(line, " leap-frog"))
-        nwpwjson["bo_algorithm"] = 2;
-      else if (mystring_contains(line, " velocity-verlet"))
-        nwpwjson["bo_algorithm"] = 1;
-      else
-        nwpwjson["bo_algorithm"] = 0;
+       if (mystring_contains(line, " leap-frog"))
+          nwpwjson["bo_algorithm"] = 2;
+       else if (mystring_contains(line, " velocity-verlet"))
+          nwpwjson["bo_algorithm"] = 1;
+       else
+          nwpwjson["bo_algorithm"] = 0;
     } else if (mystring_contains(line, "xc")) {
-      nwpwjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+        nwpwjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
     } else if (mystring_contains(line, "cutoff")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
-      if (ss.size() > 2)
-        nwpwjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          nwpwjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
+       if (ss.size() > 2)
+          nwpwjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
     } else if (mystring_contains(line, "ewald_ncut")) {
        ss = mystring_split0(line);
        if (ss.size() == 2)
@@ -1207,53 +1500,53 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (ss.size() > 1)
           nwpwjson["time_step"] = std::stod(ss[1]);
     } else if (mystring_contains(line, "intitial_velocities")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        nwpwjson["initial_velocities"] = {std::stod(ss[1]), 12345};
-      else if (ss.size() > 2)
-        nwpwjson["initial_velocities"] = {std::stod(ss[1]), std::stoi(ss[2])};
-      else
-        nwpwjson["initial_velocities"] = {298.15, 12345};
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+         nwpwjson["initial_velocities"] = {std::stod(ss[1]), 12345};
+       else if (ss.size() > 2)
+         nwpwjson["initial_velocities"] = {std::stod(ss[1]), std::stoi(ss[2])};
+       else
+         nwpwjson["initial_velocities"] = {298.15, 12345};
     } else if (mystring_contains(line, "cg")) {
-      if (mystring_contains(line, "stiefel"))
-        nwpwjson["minimizer"] = 4;
-      else
-        nwpwjson["minimizer"] = 1;
+       if (mystring_contains(line, "stiefel"))
+         nwpwjson["minimizer"] = 4;
+       else
+         nwpwjson["minimizer"] = 1;
 
     } else if (mystring_contains(line, "lmbfgs")) {
-      if (mystring_contains(line, "stiefel"))
-        nwpwjson["minimizer"] = 7;
-      else
-        nwpwjson["minimizer"] = 2;
-
-      int lmbfgs_size = 2;
-      ss = mystring_split0(line);
-      for (auto iis = 0; iis < ss.size(); ++iis)
-        if (mystring_isfloat(ss[iis]))
-          lmbfgs_size = std::stoi(ss[iis]);
-      if (lmbfgs_size > 2)
-        nwpwjson["lmbfgs_size"] = lmbfgs_size;
+       if (mystring_contains(line, "stiefel"))
+         nwpwjson["minimizer"] = 7;
+       else
+         nwpwjson["minimizer"] = 2;
+ 
+       int lmbfgs_size = 2;
+       ss = mystring_split0(line);
+       for (auto iis = 0; iis < ss.size(); ++iis)
+         if (mystring_isfloat(ss[iis]))
+            lmbfgs_size = std::stoi(ss[iis]);
+       if (lmbfgs_size > 2)
+          nwpwjson["lmbfgs_size"] = lmbfgs_size;
     } else if (mystring_contains(line, "scf")) {
-      if (mystring_contains(line, "potential"))
-        nwpwjson["minimizer"] = 5;
-      else
-        nwpwjson["minimizer"] = 8;
+       if (mystring_contains(line, "potential"))
+          nwpwjson["minimizer"] = 5;
+       else
+          nwpwjson["minimizer"] = 8;
     } else if (mystring_contains(line, "vectors")) {
-      if (mystring_contains(line, " input"))
-        nwpwjson["input_wavefunction_filename"] = mystring_split0(
-            mystring_trim(mystring_split(line, " input")[1]))[0];
+       if (mystring_contains(line, " input"))
+         nwpwjson["input_wavefunction_filename"] = mystring_split0(
+             mystring_trim(mystring_split(line, " input")[1]))[0];
 
-      if (mystring_contains(line, " output"))
-        nwpwjson["output_wavefunction_filename"] = mystring_split0(
-            mystring_trim(mystring_split(line, " output")[1]))[0];
+       if (mystring_contains(line, " output"))
+         nwpwjson["output_wavefunction_filename"] = mystring_split0(
+             mystring_trim(mystring_split(line, " output")[1]))[0];
 
-      if (mystring_contains(line, "vinput"))
-        nwpwjson["input_v_wavefunction_filename"] = mystring_split0(
-            mystring_trim(mystring_split(line, "vinput")[1]))[0];
+       if (mystring_contains(line, "vinput"))
+         nwpwjson["input_v_wavefunction_filename"] = mystring_split0(
+             mystring_trim(mystring_split(line, "vinput")[1]))[0];
 
-      if (mystring_contains(line, "voutput"))
-        nwpwjson["output_v_wavefunction_filename"] = mystring_split0(
-            mystring_trim(mystring_split(line, "voutput")[1]))[0];
+       if (mystring_contains(line, "voutput"))
+         nwpwjson["output_v_wavefunction_filename"] = mystring_split0(
+             mystring_trim(mystring_split(line, "voutput")[1]))[0];
     } 
     else if (mystring_contains(line, "translation")) 
     {

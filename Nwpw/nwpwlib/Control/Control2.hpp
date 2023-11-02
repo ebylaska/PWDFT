@@ -129,6 +129,9 @@ class Control2 {
    int pio_norbs_max = 100;
    int pio_buffer = true;
 
+   // Brillouin variables 
+   int pnbrillouin=0;
+
 
 public:
    int version = 3;
@@ -194,6 +197,8 @@ public:
    bool io_buffer() { return pio_buffer; }
  
    int *ne_ptr() { return pne; }
+
+   int nbrillouin() { return pnbrillouin; }
  
    bool deltae_check() { return pdeltae_check; } 
    bool geometry_optimize() { return pgeometry_optimize; }
