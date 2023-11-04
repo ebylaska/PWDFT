@@ -403,8 +403,8 @@ c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
      
 
    /* setup ffts */
-   c3db_tmp1 = new (std::nothrow) double[2*cnfft3d]();
-   c3db_tmp2 = new (std::nothrow) double[2*cnfft3d]();
+   c3db_tmp1 = new (std::nothrow) double[2*nfft3d]();
+   c3db_tmp2 = new (std::nothrow) double[2*nfft3d]();
 
 
    /* setup ffts */
@@ -916,7 +916,7 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
  */
 double *c3db::c_alloc()
 {
-   double *ptr = new (std::nothrow) double[2*cnfft3d]();
+   double *ptr = new (std::nothrow) double[2*nfft3d]();
    return ptr;
 }
 
@@ -936,7 +936,7 @@ double *c3db::c_alloc()
  */
 double *c3db::c_nalloc(const int nn)
 {
-   double *ptr = new (std::nothrow) double[2*cnfft3d * nn]();
+   double *ptr = new (std::nothrow) double[2*nfft3d * nn]();
    return ptr;
 }
 
@@ -958,7 +958,7 @@ double *c3db::c_nalloc(const int nn)
  */
 double *c3db::r_alloc() 
 {
-   double *ptr = new (std::nothrow) double[cn2ft3d]();
+   double *ptr = new (std::nothrow) double[n2ft3d]();
    return ptr;
 }
 
@@ -978,7 +978,7 @@ double *c3db::r_alloc()
  */
 double *c3db::r_nalloc(const int nn) 
 {
-   double *ptr = new (std::nothrow) double[cn2ft3d * nn]();
+   double *ptr = new (std::nothrow) double[n2ft3d * nn]();
    return ptr;
 }
 
@@ -1000,17 +1000,17 @@ void c3db::r_dealloc(double *ptr) { delete[] ptr; }
 /**
  * @brief Fill a double array with zeros.
  *
- * This function fills a given double array `ptr` with zeros. The size of the array to be filled is determined by the value of `cn2ft3d`.
+ * This function fills a given double array `ptr` with zeros. The size of the array to be filled is determined by the value of `n2ft3d`.
  *
  * @param ptr A pointer to the double array to be filled with zeros.
  *
  * @return None.
  *
- * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the value of `cn2ft3d`, which specifies the number of zeros to fill.
+ * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the value of `n2ft3d`, which specifies the number of zeros to fill.
  */
 void c3db::r_zero(double *ptr) 
 {
-   std::memset(ptr, 0, cn2ft3d * sizeof(double));
+   std::memset(ptr, 0, n2ft3d * sizeof(double));
 }
 
 /********************************
@@ -1021,18 +1021,18 @@ void c3db::r_zero(double *ptr)
 /**
  * @brief Fill a double array with zeros.
  *
- * This function fills a given double array `ptr` with zeros. The number of zeros to be filled is determined by the value of `n` multiplied by `cn2ft3d`.
+ * This function fills a given double array `ptr` with zeros. The number of zeros to be filled is determined by the value of `n` multiplied by `n2ft3d`.
  *
  * @param n The number of repetitions for filling zeros.
  * @param ptr A pointer to the double array to be filled with zeros.
  *
  * @return None.
  *
- * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the product of `n` and `cn2ft3d`, which specifies the number of zeros to fill.
+ * @note The function efficiently fills the array with zeros using memory operations. The size of the operation is determined by the product of `n` and `n2ft3d`, which specifies the number of zeros to fill.
  */
 void c3db::r_nzero(int n, double *ptr) 
 {
-   std::memset(ptr, 0, n * cn2ft3d * sizeof(double));
+   std::memset(ptr, 0, n * n2ft3d * sizeof(double));
 }
 
 
@@ -1045,7 +1045,7 @@ void c3db::r_nzero(int n, double *ptr)
  * @brief Copy the elements of one double array to another.
  *
  * This function efficiently copies the elements from the source double array `ptr1` to the destination double array `ptr2`.
- * The size of the arrays determines the number of elements to be copied, which is specified by the value of `cn2ft3d`.
+ * The size of the arrays determines the number of elements to be copied, which is specified by the value of `n2ft3d`.
  *
  * @param ptr1 A pointer to the source double array containing the elements to be copied.
  * @param ptr2 A pointer to the destination double array where the copied elements will be stored.
@@ -1053,11 +1053,11 @@ void c3db::r_nzero(int n, double *ptr)
  * @return None.
  *
  * @note The function uses memory copying to efficiently transfer the elements from `ptr1` to `ptr2`. The size of the operation
- *       is determined by the value of `cn2ft3d`, which specifies the number of elements to copy.
+ *       is determined by the value of `n2ft3d`, which specifies the number of elements to copy.
  */
 void c3db::rr_copy(const double *ptr1, double *ptr2) 
 {
-   std::memcpy(ptr2, ptr1, cn2ft3d * sizeof(double));
+   std::memcpy(ptr2, ptr1, n2ft3d * sizeof(double));
 }
 
 
@@ -1080,19 +1080,19 @@ void c3db::rr_copy(const double *ptr1, double *ptr2)
  * @return None.
  *
  * @note The function efficiently performs element-wise multiplication of `ptr1` with the scalar `da` and stores
- *       the result in `ptr2`. The size of the operation is determined by the value of `cn2ft3d_map`, which specifies
+ *       the result in `ptr2`. The size of the operation is determined by the value of `n2ft3d_map`, which specifies
  *       the number of elements to process.
  */
 void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr2[i] = da * ptr1[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr2[i]   = da * ptr1[i];
       ptr2[i+1] = da * ptr1[i+1];
@@ -1131,13 +1131,13 @@ void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
 void c3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
                        double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] = da * ptr1[i] + ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] = da * ptr1[i] + ptr2[i];
     ptr3[i + 1] = da * ptr1[i + 1] + ptr2[i + 1];
     ptr3[i + 2] = da * ptr1[i + 2] + ptr2[i + 2];
@@ -1181,13 +1181,13 @@ void c3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
                            const double *ptr3, const double *ptr4,
                            double *ptr5) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr5[i] = (ptr1[i] + ptr2[i]) * ptr3[i] + ptr4[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr5[i] = (ptr1[i] + ptr2[i]) * ptr3[i] + ptr4[i];
     ptr5[i + 1] = (ptr1[i + 1] + ptr2[i + 1]) * ptr3[i + 1] + ptr4[i + 1];
     ptr5[i + 2] = (ptr1[i + 2] + ptr2[i + 2]) * ptr3[i + 2] + ptr4[i + 2];
@@ -1205,13 +1205,13 @@ void c3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
 void c3db::r_SMul(const double da, double *ptr2)
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr2[i] *= da;
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i=m; i<cn2ft3d_map; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr2[i] *= da;
       ptr2[i + 1] *= da;
@@ -1228,13 +1228,13 @@ void c3db::r_SMul(const double da, double *ptr2)
  ********************************/
 void c3db::r_abs(double *ptr2) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr2[i] = std::abs(ptr2[i]);
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr2[i] = std::abs(ptr2[i]);
     ptr2[i + 1] = std::abs(ptr2[i + 1]);
     ptr2[i + 2] = std::abs(ptr2[i + 2]);
@@ -1250,13 +1250,13 @@ void c3db::r_abs(double *ptr2) {
  ********************************/
 void c3db::r_sqr(double *ptr2) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr2[i] *= ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr2[i] *= ptr2[i];
     ptr2[i + 1] *= ptr2[i + 1];
     ptr2[i + 2] *= ptr2[i + 2];
@@ -1272,13 +1272,13 @@ void c3db::r_sqr(double *ptr2) {
  ********************************/
 void c3db::rr_sqr(const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] = ptr2[i] * ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] = ptr2[i] * ptr2[i];
     ptr3[i + 1] = ptr2[i + 1] * ptr2[i + 1];
     ptr3[i + 2] = ptr2[i + 2] * ptr2[i + 2];
@@ -1294,13 +1294,13 @@ void c3db::rr_sqr(const double *ptr2, double *ptr3) {
  ********************************/
 void c3db::rr_addsqr(const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] += ptr2[i] * ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] += ptr2[i] * ptr2[i];
     ptr3[i + 1] += ptr2[i + 1] * ptr2[i + 1];
     ptr3[i + 2] += ptr2[i + 2] * ptr2[i + 2];
@@ -1316,13 +1316,13 @@ void c3db::rr_addsqr(const double *ptr2, double *ptr3) {
  ********************************/
 void c3db::r_sqrt(double *ptr2) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr2[i] = sqrt(ptr2[i]);
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr2[i] = sqrt(ptr2[i]);
     ptr2[i + 1] = sqrt(ptr2[i + 1]);
     ptr2[i + 2] = sqrt(ptr2[i + 2]);
@@ -1339,14 +1339,14 @@ void c3db::r_sqrt(double *ptr2) {
 double c3db::r_dsum(const double *ptr) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    double sum = 0.0;
    if (m > 0)
       for (i = 0; i < m; ++i)
          sum += ptr[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return sum;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       sum += ptr[i] + ptr[i+1] + ptr[i+2] + ptr[i+3] + ptr[i+4];
    }
@@ -1360,13 +1360,13 @@ double c3db::r_dsum(const double *ptr)
  ********************************/
 void c3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] += ptr1[i] + ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] += ptr1[i] + ptr2[i];
     ptr3[i + 1] += ptr1[i + 1] + ptr2[i + 1];
     ptr3[i + 2] += ptr1[i + 2] + ptr2[i + 2];
@@ -1383,15 +1383,15 @@ void c3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) {
 void c3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, double *ptr4)
 {
    int i;
-   int m = cn2ft3d_map%5;
+   int m = n2ft3d_map%5;
    if (m>0)
    {
       for (i=0; i<m; ++i)
          ptr4[i] = ptr1[i] + ptr2[i] + ptr3[i];
    }
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i=m; i<cn2ft3d_map; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr4[i]   = ptr1[i]   + ptr2[i]   + ptr3[i];
       ptr4[i+1] = ptr1[i+1] + ptr2[i+1] + ptr3[i+1];
@@ -1409,13 +1409,13 @@ void c3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, 
 void c3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = cn2ft3d_map%5;
+   int m = n2ft3d_map%5;
    if (m > 0)
       for (i = 0; i<m; ++i)
          ptr3[i] = ptr1[i] + ptr2[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i=m; i<cn2ft3d_map; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i] = ptr1[i] + ptr2[i];
       ptr3[i+1] = ptr1[i+1] + ptr2[i+1];
@@ -1432,13 +1432,13 @@ void c3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
  ********************************/
 void c3db::rr_Sum(const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] += ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] += ptr2[i];
     ptr3[i + 1] += ptr2[i + 1];
     ptr3[i + 2] += ptr2[i + 2];
@@ -1454,13 +1454,13 @@ void c3db::rr_Sum(const double *ptr2, double *ptr3) {
  ********************************/
 void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] = ptr1[i] - ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] = ptr1[i] - ptr2[i];
     ptr3[i + 1] = ptr1[i + 1] - ptr2[i + 1];
     ptr3[i + 2] = ptr1[i + 2] - ptr2[i + 2];
@@ -1477,13 +1477,13 @@ void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3) {
 void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2,
                       double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] = a * (ptr1[i] - ptr2[i]);
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] = a * (ptr1[i] - ptr2[i]);
     ptr3[i + 1] = a * (ptr1[i + 1] - ptr2[i + 1]);
     ptr3[i + 2] = a * (ptr1[i + 2] - ptr2[i + 2]);
@@ -1519,13 +1519,13 @@ void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2,
 void c3db::rr_Minus(const double *ptr2, double *ptr3) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr3[i] -= ptr2[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr3[i] -= ptr2[i];
       ptr3[i + 1] -= ptr2[i + 1];
@@ -1563,13 +1563,13 @@ void c3db::rr_Minus(const double *ptr2, double *ptr3)
 void c3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr3[i] = ptr1[i] * ptr2[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr3[i] = ptr1[i] * ptr2[i];
       ptr3[i + 1] = ptr1[i + 1] * ptr2[i + 1];
@@ -1606,13 +1606,13 @@ void c3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
 void c3db::rr_Mul(const double *ptr1, double *ptr3) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr3[i] *= ptr1[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr3[i] *= ptr1[i];
       ptr3[i + 1] *= ptr1[i + 1];
@@ -1650,13 +1650,13 @@ void c3db::rr_Mul(const double *ptr1, double *ptr3)
 void c3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr3[i] += ptr1[i]*ptr1[i]*ptr2[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr3[i]   += (ptr1[i]*ptr1[i])*ptr2[i];
       ptr3[i+1] += (ptr1[i+1]*ptr1[i+1])*ptr2[i+1];
@@ -1703,13 +1703,13 @@ void c3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
                                    double *ptr7) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])*ptr4[i] + ptr5[i]*ptr6[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])* ptr4[i] + ptr5[i]*ptr6[i];
       ptr7[i+1] = (ptr1[i+1]*ptr1[i+1] + ptr2[i+1]*ptr2[i+1] + ptr3[i+1]*ptr3[i+1])*ptr4[i+1] + ptr5[i+1]*ptr6[i+1];
@@ -1746,16 +1746,16 @@ void c3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
 void c3db::rc_Mul(const double *ptr1, double *ptr3) 
 {
    int i;
-   int m = cnfft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i) 
       {
          ptr3[2 * i] *= ptr1[i];
          ptr3[2 * i + 1] *= ptr1[i];
       }
-   if (cnfft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < cnfft3d_map; i += 5) 
+   for (i = m; i < nfft3d_map; i += 5) 
    {
       ptr3[2 * (i)] *= ptr1[i];
       ptr3[2 * (i) + 1] *= ptr1[i];
@@ -1800,13 +1800,13 @@ void c3db::rc_Mul(const double *ptr1, double *ptr3)
  */
 void c3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
   int i;
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] += ptr1[i] * ptr2[i];
-  if (cn2ft3d_map < 5)
+  if (n2ft3d_map < 5)
     return;
-  for (i = m; i < cn2ft3d_map; i += 5) {
+  for (i = m; i < n2ft3d_map; i += 5) {
     ptr3[i] += ptr1[i] * ptr2[i];
     ptr3[i + 1] += ptr1[i + 1] * ptr2[i + 1];
     ptr3[i + 2] += ptr1[i + 2] * ptr2[i + 2];
@@ -1845,13 +1845,13 @@ void c3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
 void c3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
      for (i = 0; i < m; ++i)
        ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i]/ptr2[i]) : (0.0);
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
      return;
-   for (i = m; i < cn2ft3d_map; i += 5)
+   for (i = m; i < n2ft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr1[i+1]/ptr2[i+1]) : (0.0);
@@ -1888,13 +1888,13 @@ void c3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 void c3db::rr_Divide(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = cn2ft3d_map%5;
+   int m = n2ft3d_map%5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i]/ptr2[i]) : (0.0);
-   if (cn2ft3d_map<5)
+   if (n2ft3d_map<5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5)
+   for (i = m; i < n2ft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr3[i+1]/ptr2[i+1]) : (0.0);
@@ -1931,13 +1931,13 @@ void c3db::rr_Divide(const double *ptr2, double *ptr3)
 void c3db::rr_screen0(const double *ptr2, double *ptr3)
 {
    int i;
-   int m = cn2ft3d_map%5;
+   int m = n2ft3d_map%5;
    if (m>0)
       for (i=0; i<m; ++i)
          ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
-   if (cn2ft3d_map<5)
+   if (n2ft3d_map<5)
       return;
-   for (i=m; i<cn2ft3d_map; i+=5)
+   for (i=m; i<n2ft3d_map; i+=5)
    {
       ptr3[i]   = (std::abs(ptr2[i])   > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (1.0/ptr2[i+1]-1.0) : (0.0);
@@ -1971,13 +1971,13 @@ void c3db::rr_screen0(const double *ptr2, double *ptr3)
 void c3db::rr_daxpy(const double alpha, const double *ptr1, double *ptr2) 
 {
    int i;
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          ptr2[i] += alpha * ptr1[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       ptr2[i]   += alpha*ptr1[i];
       ptr2[i+1] += alpha*ptr1[i+1];
@@ -2010,13 +2010,13 @@ double c3db::rr_dot(const double *ptr1, const double *ptr2)
    int i;
    double sum = 0.0;
  
-   int m = cn2ft3d_map % 5;
+   int m = n2ft3d_map % 5;
    if (m > 0)
       for (i = 0; i < m; ++i)
          sum += ptr1[i]*ptr2[i];
-   if (cn2ft3d_map < 5)
+   if (n2ft3d_map < 5)
       return sum;
-   for (i = m; i < cn2ft3d_map; i += 5) 
+   for (i = m; i < n2ft3d_map; i += 5) 
    {
       sum += ptr1[i]*ptr2[i] 
            + ptr1[i+1]*ptr2[i+1] 
@@ -2035,15 +2035,15 @@ double c3db::rr_dot(const double *ptr1, const double *ptr2)
  ********************************/
 void c3db::nrr_vdot(const int n, const double *ptr1, const double *ptr2,
                     double *v) {
-  int m = cn2ft3d_map % 5;
+  int m = n2ft3d_map % 5;
   for (auto k = 0; k < n; ++k)
     v[k] = 0.0;
   if (m > 0)
     for (auto i = 0; i < m; ++i)
       for (auto k = 0; k < n; ++k)
         v[k] += ptr1[n * i + k] * ptr2[i];
-  if (cn2ft3d_map >= 5) {
-    for (auto i = m; i < cn2ft3d_map; i += 5)
+  if (n2ft3d_map >= 5) {
+    for (auto i = m; i < n2ft3d_map; i += 5)
       for (auto k = 0; k < n; ++k) {
         v[k] += ptr1[n * i + k] * ptr2[i] +
                 ptr1[n * (i + 1) + k] * ptr2[i + 1] +
@@ -2096,7 +2096,7 @@ double c3db::cc_dot(const double *ptr1, const double *ptr2)
       int taskid_i = parall->taskid_i();
 
       //***** kx!=0 plane, so double count *****
-      for (auto index=0; index<cnfft3d; ++index)
+      for (auto index=0; index<nfft3d; ++index)
       {
          sum += (ptr1[2*index]  *ptr2[2*index] + ptr1[2*index+1]*ptr2[2*index+1]);
       }
@@ -2249,10 +2249,10 @@ void c3db::c_read(const int iunit, double *a, const int jcol)
            }
          }
  
-     // double tmp1[2*cnfft3d];
-     // double tmp2[2*cnfft3d];
-     //double *tmp1 = new (std::nothrow) double[2 * cnfft3d]();
-     //double *tmp2 = new (std::nothrow) double[2 * cnfft3d]();
+     // double tmp1[2*nfft3d];
+     // double tmp2[2*nfft3d];
+     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
      double *tmp1 = c3db::c3db_tmp1;
      double *tmp2 = c3db::c3db_tmp2;
      c_transpose_ijk(4, a, tmp1, tmp2);
@@ -2348,10 +2348,10 @@ void c3db::c_write(const int iunit, double *a, const int jcol)
    {
       if (taskid_j==jcol)
       {
-         // double *tmp1 = new (std::nothrow) double[2*cnfft3d];
-         // double *tmp2 = new (std::nothrow) double[2*cnfft3d];
-         //double *tmp1 = new (std::nothrow) double[2 * cnfft3d]();
-         //double *tmp2 = new (std::nothrow) double[2 * cnfft3d]();
+         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
          c_transpose_ijk(5, a, tmp1, tmp2);
@@ -2568,10 +2568,10 @@ void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
    {
       if (taskid_j==jcol)
       {
-         // double *tmp1 = new (std::nothrow) double[2*cnfft3d];
-         // double *tmp2 = new (std::nothrow) double[2*cnfft3d];
-         //double *tmp1 = new (std::nothrow) double[2 * cnfft3d]();
-         //double *tmp2 = new (std::nothrow) double[2 * cnfft3d]();
+         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
          c_transpose_ijk(5, a, tmp1, tmp2);
@@ -2826,8 +2826,8 @@ void c3db::cr_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i, j, k, jj, kk, q, indx, indx0, nxy, nxz, nn, shift;
-   double *tmp2 = new (std::nothrow) double[2 * cnfft3d]();
-   double *tmp3 = new (std::nothrow) double[2 * cnfft3d]();
+   double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+   double *tmp3 = new (std::nothrow) double[2 * nfft3d]();
  
    nxy = nx * ny;
    nxz = nx * nz;
@@ -2837,7 +2837,7 @@ void c3db::cr_fft3d(double *a)
     **********************/
    if (maptype == 1) 
    {
-      std::memset(tmp2,0,2*cnfft3d*sizeof(double));
+      std::memset(tmp2,0,2*nfft3d*sizeof(double));
 
       /***************************************************
        ***     do fft along kz dimension               ***
@@ -2864,7 +2864,7 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxz;
       }
      
-      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nn, 2*cnfft3d, tmp2, tmpz);
+      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nn, 2*nfft3d, tmp2, tmpz);
      
       indx0 = 0;
       nn = 0;
@@ -2918,7 +2918,7 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxy;
       }
      
-      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nn, 2*cnfft3d, tmp2, tmpy);
+      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nn, 2*nfft3d, tmp2, tmpy);
      
       indx0 = 0;
       nn = 0;
@@ -2941,7 +2941,7 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxy;
       }
 
-      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, ny * nq, 2*cnfft3d, a, tmpx);
+      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, ny * nq, 2*nfft3d, a, tmpx);
    }
 
    /*************************
@@ -2954,7 +2954,7 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
-      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, 2*cnfft3d, a, tmpz);
+      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, 2*nfft3d, a, tmpz);
       
       c_transpose_ijk(2, a, tmp2, tmp3);
      
@@ -2962,7 +2962,7 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along ky dimension            ***
        ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
        ************************************************/
-      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, 2*cnfft3d, a, tmpy);
+      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, 2*nfft3d, a, tmpy);
      
       c_transpose_ijk(3, a, tmp2, tmp3);
      
@@ -2970,11 +2970,11 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
-      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, 2*cnfft3d, a, tmpx);
+      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, 2*nfft3d, a, tmpx);
      
       zeroend_fftb(nx, nq1, 1, 1, a);
-      if (cnfft3d_map < cnfft3d)
-         std::memset(a + cn2ft3d_map, 0, 2*(cnfft3d - cnfft3d_map) * sizeof(double));
+      if (nfft3d_map < nfft3d)
+         std::memset(a + n2ft3d_map, 0, 2*(nfft3d - nfft3d_map) * sizeof(double));
    }
  
    delete[] tmp3;
@@ -2991,8 +2991,8 @@ void c3db::rc_fft3d(double *a)
 
    nwpw_timing_function ftime(1);
    int i, j, k, jj, kk, q, indx, indx0, nxy, nxz, nn, shift;
-   double *tmp2 = new (std::nothrow) double[2 * cnfft3d]();
-   double *tmp3 = new (std::nothrow) double[2 * cnfft3d]();
+   double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+   double *tmp3 = new (std::nothrow) double[2 * nfft3d]();
  
    nxy = nx * ny;
    nxz = nx * nz;
@@ -3006,7 +3006,7 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, ny*nq, 2*cnfft3d, a, tmpx);
+      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, ny*nq, 2*nfft3d, a, tmpx);
 
       /********************************************
        ***     do fft along ny dimension        ***
@@ -3033,7 +3033,7 @@ void c3db::rc_fft3d(double *a)
          indx0 += nxy;
       }
      
-      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nn, 2*cnfft3d, tmp2, tmpy);
+      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nn, 2*nfft3d, tmp2, tmpy);
      
       indx0 = 0;
       nn = 0;
@@ -3088,7 +3088,7 @@ void c3db::rc_fft3d(double *a)
          indx0 += nxz;
       }
      
-      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nn, 2*cn2ft3d, tmp2, tmpz);
+      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nn, 2*n2ft3d, tmp2, tmpz);
      
       indx0 = 0;
       nn = 0;
@@ -3122,7 +3122,7 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, 2*cnfft3d, a, tmpx);
+      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, 2*nfft3d, a, tmpx);
       
       c_transpose_ijk(0, a, tmp2, tmp3);
      
@@ -3130,7 +3130,7 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, 2*cnfft3d, a, tmpy);
+      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, 2*nfft3d, a, tmpy);
      
       c_transpose_ijk(1, a, tmp2, tmp3);
      
@@ -3138,7 +3138,7 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
-      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nq3, 2*cn2ft3d, a, tmpz);
+      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nq3, 2*n2ft3d, a, tmpz);
    }
  
    delete[] tmp3;
@@ -3200,7 +3200,7 @@ void c3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int
 
    int n2 = p_i2_start[nb][0][np];
    c_bindexcopy(n2, p_iq_to_i2[nb][0], tmp2, a);
-   c_bindexzero(cnfft3d - n2, p_iz_to_i2[nb][0], a);
+   c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a);
 }
 
 /**************************************
@@ -3256,7 +3256,7 @@ void c3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2,
 
    int n2 = p_j2_start[nb][0][np];
    c_bindexcopy(n2, p_jq_to_i2[nb][0], tmp2, a);
-   c_bindexzero(cnfft3d - n2, p_jz_to_i2[nb][0], a);
+   c_bindexzero(nfft3d - n2, p_jz_to_i2[nb][0], a);
 }
 
 /**************************************
@@ -3268,7 +3268,7 @@ void c3db::c_ptranspose_ijk_start(const int nb, const int op, double *a,
                                   double *tmp1, double *tmp2,
                                   const int request_indx, const int msgtype) 
 {
-   int ncnfft3d, it, proc_from, proc_to;
+   int nnfft3d, it, proc_from, proc_to;
    int msglen;
  
    int n1 = p_i1_start[nb][op][np];
@@ -3366,7 +3366,7 @@ void c3db::c_ptranspose1_jk(const int nb, double *a, double *tmp1, double *tmp2)
    parall->aend(1);
  
    c_bindexcopy(n2, p_iq_to_i2[nb][0], tmp2, a);
-   c_bindexzero(cnfft3d - n2, p_iz_to_i2[nb][0], a);
+   c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a);
 }
 
 /********************************
@@ -3410,7 +3410,7 @@ void c3db::c_ptranspose2_jk(const int nb, double *a, double *tmp1, double *tmp2)
    parall->aend(1);
  
    c_bindexcopy(n2, p_jq_to_i2[nb][0],tmp2,a);
-   c_bindexzero(cnfft3d-n2,p_jz_to_i2[nb][0],a);
+   c_bindexzero(nfft3d-n2,p_jz_to_i2[nb][0],a);
 }
 
 
@@ -3425,7 +3425,7 @@ void c3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 
    parall->astart(1, np);
 
-   c_bindexcopy(cnfft3d,iq_to_i1[0],a,tmp1);
+   c_bindexcopy(nfft3d,iq_to_i1[0],a,tmp1);
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[0][1]-i2_start[0][0]);
@@ -3450,7 +3450,7 @@ void c3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
          parall->dsend(1,1,proc_to,msglen,&tmp1[2*i1_start[0][it]]);
    }
    parall->aend(1);
-   c_aindexcopy(cnfft3d,iq_to_i2[0],tmp2,a);
+   c_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
 
 
@@ -3461,7 +3461,7 @@ void c3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
  ********************************/
 void c3db::c_ptranspose_ijk(const int nb, const int op, double *a, double *tmp1, double *tmp2) 
 {
-   int ncnfft3d, it, proc_from, proc_to;
+   int nnfft3d, it, proc_from, proc_to;
    int msglen;
  
    int n1 = p_i1_start[nb][op][np];
@@ -3511,16 +3511,16 @@ void c3db::c_ptranspose_ijk(const int nb, const int op, double *a, double *tmp1,
 void c3db::c_transpose_ijk(const int op, double *a, double *tmp1,
                            double *tmp2) 
 {
-   int ncnfft3d, it, proc_from, proc_to;
+   int nnfft3d, it, proc_from, proc_to;
    int msglen;
  
    parall->astart(1, np);
  
    /* pack a array */
-   if ((op == 0) || (op == 4)) ncnfft3d = (nx) * nq1;
-   if ((op == 1) || (op == 3)) ncnfft3d = (ny)*nq2;
-   if ((op == 2) || (op == 5)) ncnfft3d = (nz)*nq3;
-   c_bindexcopy(ncnfft3d, iq_to_i1[op], a, tmp1);
+   if ((op == 0) || (op == 4)) nnfft3d = (nx) * nq1;
+   if ((op == 1) || (op == 3)) nnfft3d = (ny)*nq2;
+   if ((op == 2) || (op == 5)) nnfft3d = (nz)*nq3;
+   c_bindexcopy(nnfft3d, iq_to_i1[op], a, tmp1);
  
    /* it = 0, transpose data on same thread */
    msglen = 2 * (i2_start[op][1] - i2_start[op][0]);
@@ -3548,10 +3548,10 @@ void c3db::c_transpose_ijk(const int op, double *a, double *tmp1,
    parall->aend(1);
  
    /* unpack a array */
-   if ((op == 3) || (op == 5)) ncnfft3d = (nx) * nq1;
-   if ((op == 0) || (op == 2)) ncnfft3d = (ny)*nq2;
-   if ((op == 1) || (op == 4)) ncnfft3d = (nz)*nq3;
-   c_aindexcopy(ncnfft3d, iq_to_i2[op], tmp2, a);
+   if ((op == 3) || (op == 5)) nnfft3d = (nx) * nq1;
+   if ((op == 0) || (op == 2)) nnfft3d = (ny)*nq2;
+   if ((op == 1) || (op == 4)) nnfft3d = (nz)*nq3;
+   c_aindexcopy(nnfft3d, iq_to_i2[op], tmp2, a);
 }
 
 
@@ -3633,7 +3633,7 @@ void c3db::c_setpw(const int filling[], const double *cvalue, double *a)
  * @brief Add random values to the elements of an array.
  *
  * This function adds random values to each element of the input array 'a'. The random values are generated between -0.25
- * and 0.25, scaled by a factor based on the size of the grid (cnfft3d), and then added to the corresponding elements of 'a'.
+ * and 0.25, scaled by a factor based on the size of the grid (nfft3d), and then added to the corresponding elements of 'a'.
  *
  * @param a  The array of elements to which random values will be added.
  *
@@ -3641,7 +3641,7 @@ void c3db::c_setpw(const int filling[], const double *cvalue, double *a)
  *
  * @details
  * - The function uses a linear congruential pseudorandom number generator to generate random values.
- * - The scaling factor 'fac' is calculated as 1.0 divided by the square root of the total number of elements in the grid ('cnfft3d').
+ * - The scaling factor 'fac' is calculated as 1.0 divided by the square root of the total number of elements in the grid ('nfft3d').
  * - For each element of the array 'a', a random value between -0.25 and 0.25, scaled by 'fac', is generated and added.
  *
  * @par Pseudorandom Number Generator:
@@ -3652,8 +3652,8 @@ void c3db::c_setpw(const int filling[], const double *cvalue, double *a)
  */
 void c3db::c_addrandom(double *a) 
 {
-   double fac = 1.0 / sqrt(1.0 * cnfft3d);
-   for (auto i = 0; i < cn2ft3d; ++i)
+   double fac = 1.0 / sqrt(1.0 * nfft3d);
+   for (auto i = 0; i < n2ft3d; ++i)
       a[i] += fac * (0.50 - util_random(0));
 }
 
@@ -3666,7 +3666,7 @@ void c3db::c_addrandom(double *a)
  * @brief Set the elements of an array to random values.
  *
  * This function sets the elements of the input array 'a' to random values between -0.25 and 0.25, scaled by a factor
- * based on the size of the grid (cnfft3d).
+ * based on the size of the grid (nfft3d).
  *
  * @param a  The array of elements to be filled with random values.
  *
@@ -3674,7 +3674,7 @@ void c3db::c_addrandom(double *a)
  *
  * @details
  * - The function uses a linear congruential pseudorandom number generator to generate random values.
- * - The scaling factor 'fac' is calculated as 1.0 divided by the total number of elements in the grid ('cnfft3d').
+ * - The scaling factor 'fac' is calculated as 1.0 divided by the total number of elements in the grid ('nfft3d').
  * - Each element of the array 'a' is set to a random value between -0.25 and 0.25, scaled by 'fac'.
  *
  * @par Pseudorandom Number Generator:
@@ -3685,8 +3685,8 @@ void c3db::c_addrandom(double *a)
  */
 void c3db::r_setrandom(double *a) 
 {
-   double fac = 1.0 / (1.0 * cnfft3d);
-   for (auto i = 0; i < cn2ft3d; ++i)
+   double fac = 1.0 / (1.0 * nfft3d);
+   for (auto i = 0; i < n2ft3d; ++i)
       a[i] = fac*(0.50 - util_random(0));
 }
 
@@ -3695,15 +3695,15 @@ void c3db::r_setrandom(double *a)
  *        c3db::hr2r_expand     *
  *                              *
  ********************************/
-// expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx+2,ny,nz)
+// expands a grid that is ((nx/2+2),ny/2,nz/2) to (nx,ny,nz)
 /**
- * @brief Expand a grid from ((nx/2+2), ny/2, nz/2) to (nx+2, ny, nz).
+ * @brief Expand a grid from ((nx/2+2), ny/2, nz/2) to (nx, ny, nz).
  *
  * This function performs a grid expansion operation from the input array 'ah' to the output array 'a'. It is designed
  * for a specific mapping type (maptype) and grid sizes.
  *
- * @param ah  The input contracted grid array of size ((nx/2+2), ny/2, nz/2).
- * @param a   The output expanded grid array of size (nx+2, ny, nz).
+ * @param ah  The input contracted grid array of size ((nx/2), ny/2, nz/2).
+ * @param a   The output expanded grid array of size (nx, ny, nz).
  *
  * @note The function assumes that memory for 'ah' and 'a' has been allocated appropriately by the caller.
  * @note The function uses 'maptype' to determine the appropriate expansion method.
@@ -3714,10 +3714,10 @@ void c3db::r_setrandom(double *a)
  *
  * @details
  * - For maptype = 1 (3D expansion):
- *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2, nz/2) is expanded to 'a' with dimensions (nx+2, ny, nz).
+ *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2, nz/2) is expanded to 'a' with dimensions (nx, ny, nz).
  *
  * - For maptype != 1 (2D expansion):
- *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2) is expanded to 'a' with dimensions (nx+2, ny).
+ *   - The input contracted grid 'ah' with dimensions ((nx/2+2), ny/2) is expanded to 'a' with dimensions (nx, ny).
  *
  * @par Implementation Details:
  * - The function uses nested loops to iterate over the input grid and perform the expansion according to the specified maptype.
@@ -3726,7 +3726,7 @@ void c3db::r_setrandom(double *a)
  */
 void c3db::hr2r_expand(const double *ah, double *a) 
 {
-   std::memset(a, 0, cn2ft3d * sizeof(double));
+   std::memset(a, 0, n2ft3d * sizeof(double));
    if (maptype == 1) 
    {
       int nxh = nx/2;
@@ -3735,7 +3735,7 @@ void c3db::hr2r_expand(const double *ah, double *a)
       for (auto j=0; j<nyh; ++j)
          for (auto q=0; q<nqh; ++q)
             for (auto i=0; i<nxh; ++i)
-               a[i + j*(nx+2) + q*(nx+2)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
+               a[i + j*(nx) + q*(nx)*ny] = ah[i + j*(nxh+2) + q*(nxh+2)*nyh];
    } 
    else 
    {
@@ -3743,7 +3743,7 @@ void c3db::hr2r_expand(const double *ah, double *a)
       int nq1h = nq1/4;
       for (auto q=0; q<nq1h; ++q)
          for (auto i=0; i<nxh; ++i)
-            a[i + q*(nx+2)] = ah[i + q*(nxh+2)];
+            a[i + q*(nx)] = ah[i + q*(nxh+2)];
    }
 }
 
@@ -3783,7 +3783,7 @@ void c3db::hr2r_expand(const double *ah, double *a)
  */
 void c3db::r2hr_contract(const double *a, double *ah) 
 {
-   std::memset(ah, 0, cn2ft3d / 8 * sizeof(double));
+   std::memset(ah, 0, n2ft3d / 8 * sizeof(double));
    if (maptype == 1) 
    {
       int nxh = nx/2;
@@ -4112,7 +4112,7 @@ void c3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
 
    parall->astart(1,np);
 
-   c_bindexcopy(cnfft3d, iq_to_i1[0], a, tmp1);
+   c_bindexcopy(nfft3d, iq_to_i1[0], a, tmp1);
 
    /* it = 0, transpose data on same thread */
    msglen = 2*(i2_start[0][1] - i2_start[0][0]);
@@ -4135,7 +4135,7 @@ void c3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
          parall->dsend(1,1,proc_to,msglen,&tmp1[i1_start[0][it]]);
    }
    parall->aend(1);
-   c_aindexcopy(cnfft3d,iq_to_i2[0],tmp2,a);
+   c_aindexcopy(nfft3d,iq_to_i2[0],tmp2,a);
 }
 
 /********************************
@@ -4176,16 +4176,16 @@ void c3db::r_transpose_ijk(const int op, double *a, double *tmp1, double *tmp2)
    if (!initialized_r_transpose)
       this->r_transpose_ijk_init();
  
-   int ncnfft3d, it, proc_from, proc_to;
+   int nnfft3d, it, proc_from, proc_to;
    int msglen;
  
    parall->astart(1, np);
  
    /* pack a array */
-   if ((op == 0) || (op == 4)) ncnfft3d = (nx + 2) * nqr1;
-   if ((op == 1) || (op == 3)) ncnfft3d = (ny)*nqr2;
-   if ((op == 2) || (op == 5)) ncnfft3d = (nz)*nqr3;
-   t_bindexcopy(ncnfft3d, iq_to_ir1[op], a, tmp1);
+   if ((op == 0) || (op == 4)) nnfft3d = (nx + 2) * nqr1;
+   if ((op == 1) || (op == 3)) nnfft3d = (ny)*nqr2;
+   if ((op == 2) || (op == 5)) nnfft3d = (nz)*nqr3;
+   t_bindexcopy(nnfft3d, iq_to_ir1[op], a, tmp1);
  
    /* it = 0, transpose data on same thread */
    msglen = (ir2_start[op][1] - ir2_start[op][0]);
@@ -4213,10 +4213,10 @@ void c3db::r_transpose_ijk(const int op, double *a, double *tmp1, double *tmp2)
    parall->aend(1);
  
    /* unpack a array */
-   if ((op == 3) || (op == 5)) ncnfft3d = (nx + 2) * nqr1;
-   if ((op == 0) || (op == 2)) ncnfft3d = (ny)*nqr2;
-   if ((op == 1) || (op == 4)) ncnfft3d = (nz)*nqr3;
-   t_aindexcopy(ncnfft3d, iq_to_ir2[op], tmp2, a);
+   if ((op == 3) || (op == 5)) nnfft3d = (nx) * nqr1;
+   if ((op == 0) || (op == 2)) nnfft3d = (ny)*nqr2;
+   if ((op == 1) || (op == 4)) nnfft3d = (nz)*nqr3;
+   t_aindexcopy(nnfft3d, iq_to_ir2[op], tmp2, a);
 }
 
 /**************************************
@@ -4234,7 +4234,7 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
       double *a = this->r_alloc();
       double *tmp2 = c3db::c3db_tmp1;
       double *tmp3 = c3db::c3db_tmp2;
-      std::memcpy(a,rho,cn2ft3d*sizeof(double));
+      std::memcpy(a,rho,n2ft3d*sizeof(double));
       this->r_transpose_jk(a,tmp2,tmp3);
 
       // drho1 gradient
@@ -4395,7 +4395,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
      double *a = this->r_alloc();
      double *tmp2 = c3db::c3db_tmp1;
      double *tmp3 = c3db::c3db_tmp2;
-     std::memcpy(a, rho, cn2ft3d * sizeof(double));
+     std::memcpy(a, rho, n2ft3d * sizeof(double));
      this->r_transpose_jk(a, tmp2, tmp3);
     
      // xx gradient

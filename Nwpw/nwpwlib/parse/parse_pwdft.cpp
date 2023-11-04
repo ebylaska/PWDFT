@@ -2165,6 +2165,9 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
      }
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
+     }
      // Look for file jobs
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=9; }
   }

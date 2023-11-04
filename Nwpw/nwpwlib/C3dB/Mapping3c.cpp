@@ -102,8 +102,8 @@ static int c_generate_map_indexes(int taskid, int np, int ny, int nz, int *pmap,
 Mapping3c::Mapping3c() 
 {
    maptype = 0;
-   cn2ft3d = 0;
-   cnfft3d = 0;
+   n2ft3d = 0;
+   nfft3d = 0;
    nx = 0;
    ny = 0;
    nz = 0;
@@ -182,11 +182,11 @@ Mapping3c::Mapping3c(const int mapin, const int npin, const int taskidin,
            ++q;
         }
      }
-     cnfft3d = (nx) * ny * nq;
-     cn2ft3d = cnfft3d;
+     nfft3d = (nx) * ny * nq;
+     n2ft3d = 2*nfft3d;
  
-     cnfft3d_map = cnfft3d;
-     cn2ft3d_map = cn2ft3d;
+     nfft3d_map = nfft3d;
+     n2ft3d_map = 2*n2ft3d;
  
    }
  
@@ -238,19 +238,19 @@ Mapping3c::Mapping3c(const int mapin, const int npin, const int taskidin,
         /* makes expand and contract routines trivial parallel */
       } 
       
-      cnfft3d = nx * nq1;
-      if ((ny * nq2) > cnfft3d)
-         cnfft3d = ny * nq2;
-      if ((nz * nq3) > cnfft3d)
-         cnfft3d = nz * nq3;
-      cn2ft3d = cnfft3d;
-      cnfft3d_map = nz * nq3;
-      cn2ft3d_map = nx * nq1;
+      nfft3d = nx * nq1;
+      if ((ny * nq2) > nfft3d)
+         nfft3d = ny * nq2;
+      if ((nz * nq3) > nfft3d)
+         nfft3d = nz * nq3;
+      n2ft3d = 2*nfft3d;
+      nfft3d_map = nz * nq3;
+      n2ft3d_map = 2*nx * nq1;
      
       nrft3d = nx * nqr1;
-      if ((ny * nqr2) > cnfft3d)
+      if ((ny * nqr2) > nfft3d)
          nrft3d = ny * nqr2;
-      if ((nz * nqr3) > cnfft3d)
+      if ((nz * nqr3) > nfft3d)
          nrft3d = nz * nqr3;
       nrft3d_map = nx * nqr1;
    }

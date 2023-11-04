@@ -51,8 +51,8 @@ public:
 
   void c_unbalance(const int, double *);
   void c_balance(const int, double *);
-  void t_unbalance(const int, double *);
-  void t_balance(const int, double *);
+  void r_unbalance(const int, double *);
+  void r_balance(const int, double *);
   void i_balance(const int, int *);
 
   void c_unbalance_start(const int, double *, const int, const int);

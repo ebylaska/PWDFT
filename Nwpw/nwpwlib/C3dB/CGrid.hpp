@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Balance.hpp"
+#include "CBalance.hpp"
 #include "Lattice.hpp"
 #include "Parallel.hpp"
 #include "c3db.hpp"
@@ -20,7 +20,7 @@ namespace pwdft {
 
 class CGrid : public c3db {
 
-   Balance *mybalance;
+   CBalance *mybalance;
    int balanced;
  
     /* nbrilq */
@@ -105,7 +105,7 @@ public:
  
    }
  
-   double *Gxyz(const int i) { return Garray + i*cnfft3d; }
+   double *Gxyz(const int i) { return Garray + i*nfft3d; }
    double *Gpackxyz(const int nb, const int i) { return  Gpack[nb] + i*(nidb[nb]); }
    double Gmax_ray() { return Gmax; }
    double Gmin_ray() { return Gmin; }
@@ -241,7 +241,7 @@ public:
    void pfftbz_compute(const int, double *, double *, int, int);
    void pfftbz_end(const int, double *, double *, int, int);
  
-   void tcr_pack_iMul_unpack_fft(const int, const double *, const double *,
+   void rcr_pack_iMul_unpack_fft(const int, const double *, const double *,
                                  double *);
  
    void regenerate_r_grid();

@@ -62,6 +62,8 @@ Parallel::Parallel(MPI_Comm comm_world0) {
   dim = 1;
 
   // comm_i[0]   = MPI_COMM_WORLD;
+ init2d_called = false;
+ init3d_called = false;
 
   comm_world = comm_world0;
   comm_i[0] = comm_world;
@@ -70,15 +72,19 @@ Parallel::Parallel(MPI_Comm comm_world0) {
 
   comm_i[1] = comm_i[0];
   comm_i[2] = comm_i[0];
+  comm_i[3] = comm_i[0];
   npi[1] = npi[0];
   npi[2] = 1;
+  npi[3] = 1;
   taskidi[1] = taskidi[0];
   taskidi[2] = 0;
+  taskidi[3] = 0;
 
   procNd = new int[npi[0]]();
 
   npi[1] = npi[0];
   npi[2] = 1;
+  npi[3] = 1;
   for (int i = 0; i < npi[0]; ++i)
     procNd[i] = i;
 
@@ -113,36 +119,39 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
    MPI_Group orig_group;
  
    MPI_Barrier(comm_world);
-   if (ncolumns > 1) {
-     dim = 2;
-     npi[1] = npi[0] / ncolumns;
-     npi[2] = ncolumns;
- 
-     int icount = 0;
-     for (int j = 0; j < npi[2]; ++j)
-       for (int i = 0; i < npi[1]; ++i) {
-         if (icount == taskidi[0]) {
-           taskidi[1] = i;
-           taskidi[2] = j;
+   if (ncolumns > 1) 
+   {
+      dim = 2;
+      npi[1] = npi[0] / ncolumns;
+      npi[2] = ncolumns;
+     
+      int icount = 0;
+      for (int j = 0; j < npi[2]; ++j)
+         for (int i = 0; i < npi[1]; ++i) 
+         {
+            if (icount == taskidi[0]) 
+            {
+               taskidi[1] = i;
+               taskidi[2] = j;
+            }
+            procNd[i + j * npi[1]] = icount;
+            icount = (icount + 1) % npi[0];
          }
-         procNd[i + j * npi[1]] = icount;
-         icount = (icount + 1) % npi[0];
-       }
- 
-     int *itmp = new int[npi[0]]();
- 
-     for (int i = 0; i < npi[1]; ++i)
-       itmp[i] = procNd[i + taskidi[2] * npi[1]];
-     MPI_Comm_group(comm_world, &orig_group);
-     MPI_Group_incl(orig_group, npi[1], itmp, &group_i[1]);
-     MPI_Comm_create(comm_world, group_i[1], &comm_i[1]);
- 
-     for (int j = 0; j < npi[2]; ++j)
-       itmp[j] = procNd[taskidi[1] + j * npi[1]];
-     MPI_Group_incl(orig_group, npi[2], itmp, &group_i[2]);
-     MPI_Comm_create(comm_world, group_i[2], &comm_i[2]);
- 
-     delete[] itmp;
+     
+      int *itmp = new int[npi[0]]();
+     
+      for (int i = 0; i < npi[1]; ++i)
+         itmp[i] = procNd[i + taskidi[2] * npi[1]];
+      MPI_Comm_group(comm_world, &orig_group);
+      MPI_Group_incl(orig_group, npi[1], itmp, &group_i[1]);
+      MPI_Comm_create(comm_world, group_i[1], &comm_i[1]);
+     
+      for (int j = 0; j < npi[2]; ++j)
+         itmp[j] = procNd[taskidi[1] + j * npi[1]];
+      MPI_Group_incl(orig_group, npi[2], itmp, &group_i[2]);
+      MPI_Comm_create(comm_world, group_i[2], &comm_i[2]);
+     
+      delete[] itmp;
    }
  
    // ii = 3+control.pfft3_qsize();
@@ -152,8 +161,80 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
    reqcnt = new int[max_reqstat]();
    request = new MPI_Request *[max_reqstat]();
    statuses = new MPI_Status *[max_reqstat]();
+   init2d_called = true;
  
    MPI_Barrier(comm_world);
+}
+
+
+/********************************
+ *                              *
+ *       Parallel::init3d       *
+ *                              *
+ ********************************/
+void Parallel::init3d(const int ncolumns, const int nzones, const int pfft3_qsize) 
+{
+
+   int ii;
+   MPI_Group orig_group;
+
+   MPI_Barrier(comm_world);
+   if (ncolumns > 1) 
+   {
+      dim = 3;
+      npi[1] = npi[0] / (ncolumns*nzones);
+      npi[2] = ncolumns;
+      npi[3] = nzones;
+     
+      int icount = 0;
+      for (int k = 0; k < npi[3]; ++k)
+         for (int j = 0; j < npi[2]; ++j)
+            for (int i = 0; i < npi[1]; ++i) 
+            {
+               if (icount == taskidi[0]) 
+               {
+                  taskidi[1] = i;
+                  taskidi[2] = j;
+                  taskidi[3] = k;
+               }
+               procNd[i + j*npi[1] + k*npi[1]*npi[2]] = icount;
+               icount = (icount + 1) % npi[0];
+            }
+     
+      int *itmp = new int[npi[0]]();
+     
+      for (int i = 0; i < npi[1]; ++i)
+         itmp[i] = procNd[i + taskidi[2]*npi[1] + taskidi[3]*npi[1]*npi[2]];
+      MPI_Comm_group(comm_world, &orig_group);
+      MPI_Group_incl(orig_group, npi[1], itmp, &group_i[1]);
+      MPI_Comm_create(comm_world, group_i[1], &comm_i[1]);
+     
+     
+      for (int j = 0; j < npi[2]; ++j)
+         itmp[j] = procNd[taskidi[1] + j*npi[1] + taskidi[3]*npi[1]*npi[2]];
+      MPI_Group_incl(orig_group, npi[2], itmp, &group_i[2]);
+      MPI_Comm_create(comm_world, group_i[2], &comm_i[2]);
+     
+     
+      for (int k=0; k<npi[3]; ++k)
+         itmp[k] = procNd[taskidi[1] + taskidi[2]*npi[1] + k*npi[1]*npi[2]];
+      MPI_Group_incl(orig_group, npi[3], itmp, &group_i[3]);
+      MPI_Comm_create(comm_world, group_i[3], &comm_i[3]);
+     
+      delete[] itmp;
+   }
+
+   // ii = 3+control.pfft3_qsize();
+   // request = new MPI::Request*[ii];
+   //          ii = 3 + (pfft3_qsize+6);
+   max_reqstat = 4 + (pfft3_qsize+6);
+   reqcnt = new int[max_reqstat]();
+   request = new MPI_Request *[max_reqstat]();
+   statuses = new MPI_Status *[max_reqstat]();
+   init3d_called = true;
+
+   MPI_Barrier(comm_world);
+
 }
 
 
@@ -187,9 +268,12 @@ Parallel::~Parallel()
  
    delete[] procNd;
  
-   delete[] reqcnt;
-   delete[] request;
-   delete[] statuses;
+   if (init2d_called || init3d_called)
+   {
+      delete[] reqcnt;
+      delete[] request;
+      delete[] statuses;
+   }
  
    MPI_Barrier(comm_world);
 }

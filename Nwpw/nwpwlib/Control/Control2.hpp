@@ -175,6 +175,7 @@ public:
    int lmbfgs_size() { return plmbfgs_size; }
    int task() { return ptask; }
    int np_orbital() { return pnp_dimensions[1]; }
+   int np_dimensions(const int i) { return pnp_dimensions[i]; }
    int mapping1d() { return pmapping1d; }
    int mapping() { return pmapping; }
    int tile_factor() { return ptile_factor; }

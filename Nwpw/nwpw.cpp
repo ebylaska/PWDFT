@@ -974,6 +974,13 @@ int main(int argc, char *argv[]) {
        }
     }
 
+    /* band steepest descent task */
+    if (task == 15) {
+      std::cout << "Running band Steepest Descent " << std::endl;
+      ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
+      std::cout << "out Steepest Descent " << std::endl;
+    }
+
     // parse json string
     rtdbstr = parse_rtdbstring(rtdbstr);
     MPI_Barrier(MPI_COMM_WORLD);

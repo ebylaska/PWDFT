@@ -20,7 +20,7 @@
  */
 
 
-#include "Balance.hpp"
+#include "CBalance.hpp"
 #include <iostream>
 
 namespace pwdft {
@@ -214,9 +214,9 @@ static void balance_init_a(Parallel *parall, const int nwavein, const int np,
  *                              *
  ********************************/
 /**
- * @brief Constructor for the Balance class.
+ * @brief Constructor for the CBalance class.
  *
- * This constructor initializes the `Balance` object by allocating memory for
+ * This constructor initializes the `CBalance` object by allocating memory for
  * various data structures used in balancing operations.
  *
  * @param inparall A pointer to the `Parallel` object.
@@ -224,7 +224,7 @@ static void balance_init_a(Parallel *parall, const int nwavein, const int np,
  * @param nidb An array containing wavefunction information.
  * @param nidb_out An array to store modified wavefunction information.
  */
-Balance::Balance(Parallel *inparall, const int maxsize0, const int *nidb, int *nidb_out) 
+CBalance::CBalance(Parallel *inparall, const int maxsize0, const int *nidb, int *nidb_out) 
 {
    parall = inparall;
    maxsize = maxsize0;
@@ -258,12 +258,12 @@ Balance::Balance(Parallel *inparall, const int maxsize0, const int *nidb, int *n
  *                              *
  ********************************/
 /**
- * @brief Destructor for the Balance class.
+ * @brief Destructor for the CBalance class.
  *
  * This destructor releases the memory allocated for various data structures
  * used for balancing operations.
  */
-Balance::~Balance() 
+CBalance::~CBalance() 
 {
    for (int nb = 0; nb < maxsize; ++nb) 
    {
@@ -277,7 +277,7 @@ Balance::~Balance()
 
 /***********************************
  *                                 *
- *    Balance::c_unbalance_start   *
+ *    CBalance::c_unbalance_start   *
  *                                 *
  ***********************************/
 /**
@@ -291,7 +291,7 @@ Balance::~Balance()
  * @param request_indx The index of the communication request to track.
  * @param msgtype The message type for communication.
  */
-void Balance::c_unbalance_start(const int nb, double *a, const int request_indx, const int msgtype) 
+void CBalance::c_unbalance_start(const int nb, double *a, const int request_indx, const int msgtype) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -319,7 +319,7 @@ void Balance::c_unbalance_start(const int nb, double *a, const int request_indx,
 
 /***********************************
  *                                 *
- *    Balance::c_unbalance_end     *
+ *    CBalance::c_unbalance_end     *
  *                                 *
  ***********************************/
 /**
@@ -332,14 +332,14 @@ void Balance::c_unbalance_start(const int nb, double *a, const int request_indx,
  * @param a An array of double precision data used for unbalancing.
  * @param request_indx The index of the communication request to wait for.
  */
-void Balance::c_unbalance_end(const int nb, double *a, const int request_indx) {
+void CBalance::c_unbalance_end(const int nb, double *a, const int request_indx) {
   parall->awaitall(request_indx);
 }
 
 
 /********************************
  *                              *
- *    Balance::c_unbalance      *
+ *    CBalance::c_unbalance      *
  *                              *
  ********************************/
 /**
@@ -351,7 +351,7 @@ void Balance::c_unbalance_end(const int nb, double *a, const int request_indx) {
  * @param nb The number of packets for which data unbalancing is performed.
  * @param a An array of double precision data to be unbalanced.
  */
-void Balance::c_unbalance(const int nb, double *a) {
+void CBalance::c_unbalance(const int nb, double *a) {
   int j, pto, pfrom, msglen, indx;
 
   if (sender_list[nb])
@@ -375,11 +375,11 @@ void Balance::c_unbalance(const int nb, double *a) {
 
 /********************************
  *                              *
- *    Balance::c_balance        *
+ *    CBalance::c_balance        *
  *                              *
  ********************************/
 /**
- * @brief Balance continuous data among parallel processes.
+ * @brief CBalance continuous data among parallel processes.
  *
  * This function balances continuous data among parallel processes by exchanging
  * data segments to achieve load balancing.
@@ -387,7 +387,7 @@ void Balance::c_unbalance(const int nb, double *a) {
  * @param nb The number of packets for which data balancing is performed.
  * @param a An array of double precision data to be balanced.
  */
-void Balance::c_balance(const int nb, double *a) 
+void CBalance::c_balance(const int nb, double *a) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -414,7 +414,7 @@ void Balance::c_balance(const int nb, double *a)
 
 /***********************************
  *                                 *
- *    Balance::c_balance_start     *
+ *   CBalance::c_balance_start     *
  *                                 *
  ***********************************/
 /**
@@ -429,7 +429,7 @@ void Balance::c_balance(const int nb, double *a)
  * @param request_indx The index of the communication request to track the progress.
  * @param msgtype The message type for communication.
  */
-void Balance::c_balance_start(const int nb, double *a, const int request_indx, const int msgtype) 
+void CBalance::c_balance_start(const int nb, double *a, const int request_indx, const int msgtype) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -456,7 +456,7 @@ void Balance::c_balance_start(const int nb, double *a, const int request_indx, c
 
 /***********************************
  *                                 *
- *    Balance::c_balance_end       *
+ *    CBalance::c_balance_end      *
  *                                 *
  ***********************************/
 /**
@@ -471,14 +471,14 @@ void Balance::c_balance_start(const int nb, double *a, const int request_indx, c
  * @param a An array of double precision data to be balanced.
  * @param request_indx The index of the communication request to await.
  */
-void Balance::c_balance_end(const int nb, double *a, const int request_indx) 
+void CBalance::c_balance_end(const int nb, double *a, const int request_indx) 
 {
   parall->awaitall(request_indx);
 }
 
 /********************************
  *                              *
- *    Balance::t_unbalance      *
+ *    CBalance::r_unbalance     *
  *                              *
  ********************************/
 /**
@@ -493,7 +493,7 @@ void Balance::c_balance_end(const int nb, double *a, const int request_indx)
  * @note The sender and receiver lists for each packet are determined by the
  *       previous configuration.
  */
-void Balance::t_unbalance(const int nb, double *a) 
+void CBalance::r_unbalance(const int nb, double *a) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -520,11 +520,11 @@ void Balance::t_unbalance(const int nb, double *a)
 
 /********************************
  *                              *
- *    Balance::t_balance        *
+ *    CBalance::r_balance       *
  *                              *
  ********************************/
 /**
- * @brief Balance the distribution of double precision data among parallel processes.
+ * @brief CBalance the distribution of double precision data among parallel processes.
  *
  * This function balances the distribution of double precision data among parallel processes.
  * It sends and receives data between processes to achieve a balanced distribution.
@@ -535,7 +535,7 @@ void Balance::t_unbalance(const int nb, double *a)
  * @note The sender and receiver lists for each packet are determined by the
  *       previous configuration.
  */
-void Balance::t_balance(const int nb, double *a) 
+void CBalance::r_balance(const int nb, double *a) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -562,11 +562,11 @@ void Balance::t_balance(const int nb, double *a)
 
 /********************************
  *                              *
- *    Balance::i_balance        *
+ *    CBalance::i_balance        *
  *                              *
  ********************************/
 /**
- * @brief Balance the distribution of integers among parallel processes.
+ * @brief CBalance the distribution of integers among parallel processes.
  *
  * This function balances the distribution of integers among parallel processes.
  * It sends and receives data between processes to achieve a balanced distribution.
@@ -577,7 +577,7 @@ void Balance::t_balance(const int nb, double *a)
  * @note The sender and receiver lists for each packet are determined by the
  *       previous configuration.
  */
-void Balance::i_balance(const int nb, int *a) 
+void CBalance::i_balance(const int nb, int *a) 
 {
    int j, pto, pfrom, msglen, indx;
  

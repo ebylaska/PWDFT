@@ -29,7 +29,7 @@ class Mapping3c {
 
 public:
    int np, taskid;
-   int maptype, cn2ft3d, cnfft3d, cn2ft3d_map, cnfft3d_map, nrft3d, nrft3d_map;
+   int maptype, n2ft3d, nfft3d, n2ft3d_map, nfft3d_map, nrft3d, nrft3d_map;
    int nx, ny, nz;
    int nq, nq1, nq2, nq3, nqr, nqr1, nqr2, nqr3;
  

@@ -29,17 +29,19 @@ class Parallel {
    int nthr = 1;
    int max_nthr = 1;
  
-   int npi[3], taskidi[3];
+   int npi[4], taskidi[4];
    int *reqcnt;
    int *procNd;
    // MPI::Intracomm comm_i[3];
    // MPI::Group     group_i[3];
    // MPI::Request  **request;
    MPI_Comm comm_world;
-   MPI_Comm comm_i[3];
-   MPI_Group group_i[3];
+   MPI_Comm comm_i[4];
+   MPI_Group group_i[4];
    MPI_Request **request;
    MPI_Status **statuses;
+   bool init2d_called = false;
+   bool init3d_called = false;
 
 public:
    int max_reqstat;
@@ -55,6 +57,9 @@ public:
  
    /* 2d proc geom constructor */
    void init2d(const int, const int);
+
+   /* 3d proc geom constructor */
+   void init3d(const int, const int, const int);
  
    int is_master() { return (taskidi[0] == MASTER); }
  
@@ -65,14 +70,20 @@ public:
    int taskid() { return taskidi[0]; }
    int taskid_i() { return taskidi[1]; }
    int taskid_j() { return taskidi[2]; }
+   int taskid_k() { return taskidi[3]; }
    int np() { return npi[0]; }
    int np_i() { return npi[1]; }
    int np_j() { return npi[2]; }
+   int np_k() { return npi[3]; }
  
    int convert_taskid_i(const int i) { return procNd[i + taskidi[2] * npi[1]]; }
    int convert_taskid_j(const int j) { return procNd[taskidi[1] + j * npi[1]]; }
    int convert_taskid_ij(const int i, const int j) {
      return procNd[i + j * npi[1]];
+   }
+
+   int convert_taskid_ijk(const int i, const int j, const int k) {
+     return procNd[i + j * npi[1] + k *npi[1]*npi[2]];
    }
  
    /* Barriers */
