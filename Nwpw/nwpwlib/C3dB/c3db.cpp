@@ -452,7 +452,6 @@ c3db::~c3db()
 {
    int i, nb;
 
-       std::cout << "c3db deallocate" << std::endl;
 #if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (mygdevice.has_gpu())
       mygdevice.batch_c_fft_end(fft_tag);
