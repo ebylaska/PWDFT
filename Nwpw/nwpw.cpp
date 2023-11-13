@@ -978,7 +978,6 @@ int main(int argc, char *argv[]) {
     if (task == 15) {
       std::cout << "Running band Steepest Descent " << std::endl;
       ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
-      std::cout << "out Steepest Descent " << std::endl;
     }
 
     // parse json string
