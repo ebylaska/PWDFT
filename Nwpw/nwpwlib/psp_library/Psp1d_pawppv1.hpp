@@ -2,6 +2,7 @@
 #define _PSP1D_PAWPPV1_HPP_
 
 #include "PGrid.hpp"
+#include "CGrid.hpp"
 #include "Parallel.hpp"
 
 namespace pwdft {
@@ -68,12 +69,14 @@ public:
   }
 
   /* G integration routines */
-  void vpp_generate_paw_matrices(Parallel *, double *, double *, double *,
-                                 double *);
-  void vpp_generate_ray(Parallel *, int, double *, double *, double *,
-                        double *);
-  void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *,
-                           double *, double *, double *);
+  void vpp_generate_paw_matrices(Parallel *, double *, double *, double *, double *);
+  void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
+  void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
+
+  void cpp_generate_paw_matrices(Parallel *, double *, double *, double *, double *);
+  void cpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
+  void cpp_generate_spline(CGrid *, int, double *, double *, double *, double *, double *, double *, double *);
+
 };
 
 } // namespace pwdft

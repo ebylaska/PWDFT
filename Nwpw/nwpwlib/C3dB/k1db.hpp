@@ -22,7 +22,7 @@ namespace pwdft {
  * with the `Parallel` and `gdevice2` classes to manage parallelism and device operations.
  */
 
-class k1db : public Mapping1 {
+class k1db : public Mapping1k {
 
 int request1_indx,request2_indx;
 

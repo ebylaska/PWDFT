@@ -935,4 +935,396 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray,
   delete[] vl_splineray;
 }
 
+
+
+
+/*******************************************
+ *                                         *
+ *     Psp1d_Hamann::cpp_generate_ray      *
+ *                                         *
+ *******************************************/
+void Psp1d_Hamann::cpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
+                                    double *vl_ray, double *vnl_ray,
+                                    double *rho_sc_k_ray) 
+{
+   /* set up indx(n,l) --> to wp */
+   int indx[5 * 4];
+   int nb = lmax + 1;
+   for (auto l = 0; l <= lmax; ++l) {
+     indx[l * 5] = l;
+     for (auto n1 = 1; n1 < n_expansion[l]; ++n1) {
+       indx[n1 + l * 5] = nb;
+       ++nb;
+     }
+   }
+ 
+   double pi = 4.00 * atan(1.0);
+   double twopi = 2.0 * pi;
+   double forpi = 4.0 * pi;
+ 
+   double P0 = sqrt(forpi);
+   double P1 = sqrt(3.0 * forpi);
+   double P2 = sqrt(15.0 * forpi);
+   double P3 = sqrt(105.0 * forpi);
+ 
+   double zero = 0.0;
+   int izero = 0;
+   int ione = 1;
+   int nray2 = 2 * nray;
+   int lmaxnray = (lmax + 1 + n_extra) * nray;
+ 
+   double q;
+   double *cs = new double[nrho];
+   double *sn = new double[nrho];
+   double *f = new double[nrho];
+   double a, xx;
+ 
+   memset(vl_ray, 0, nray * sizeof(double));
+   memset(vnl_ray, 0, lmaxnray * sizeof(double));
+   memset(rho_sc_k_ray, 0, nray2 * sizeof(double));
+ 
+   for (auto k1 = (1 + myparall->taskid()); k1 < nray; k1 += myparall->np()) {
+     q = G_ray[k1];
+     for (auto i = 0; i < nrho; ++i) {
+       cs[i] = cos(q * rho[i]);
+       sn[i] = sin(q * rho[i]);
+     }
+ 
+     /* h projectors */
+     /* h projectors */
+     /* f projectors */
+     if ((locp != 3) && (lmax > 2)) {
+       for (auto n = 0; n < n_expansion[3]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           xx = q * rho[i];
+           a = sn[i] / xx;
+           a = 15.0 * (a - cs[i]) / (xx * xx) - 6 * a + cs[i];
+           f[i] = a * wp[i + indx[n + 3 * 5] * nrho] * vp[i + 3 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 3 * 5] * nray] =
+             P3 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* d projectors */
+     if ((locp != 2) && (lmax > 1)) {
+       for (auto n = 0; n < n_expansion[2]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           a = 3.0 * (sn[i] / (q * rho[i]) - cs[i]) / (q * rho[i]) - sn[i];
+           f[i] = a * wp[i + indx[n + 2 * 5] * nrho] * vp[i + 2 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 2 * 5] * nray] =
+             P2 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* p projectors */
+     if ((locp != 1) && (lmax > 0)) {
+       for (auto n = 0; n < n_expansion[1]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           a = (sn[i] / (q * rho[i]) - cs[i]);
+           f[i] = a * wp[i + indx[n + 1 * 5] * nrho] * vp[i + 1 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 1 * 5] * nray] =
+             P1 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* s projectors */
+     if (locp != 0) {
+       for (auto n = 0; n < n_expansion[0]; ++n) {
+         for (auto i = 0; i < nrho; ++i)
+           f[i] = sn[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
+         vnl_ray[k1 + indx[n + 0 * 5] * nray] =
+             P0 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* local */
+     if (version == 3) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * vp[i + locp * nrho] * sn[i];
+       vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q -
+                    zv * forpi * cs[nrho - 1] / (q * q);
+     } else if (version == 4) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = (rho[i] * vp[i + locp * nrho] + zv * std::erf(rho[i] / rlocal)) *
+                sn[i];
+       vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
+     }
+ 
+     /* semicore density */
+     if (semicore) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * sqrt(rho_sc_r[i]) * sn[i];
+       rho_sc_k_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
+ 
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = (sn[i] / (q * rho[i]) - cs[i]) * rho_sc_r[i + nrho] * rho[i];
+       rho_sc_k_ray[k1 + nray] = util_simpson(nrho, f, drho) * forpi / q;
+     }
+   }
+   myparall->Vector_SumAll(0, 2 * nray, rho_sc_k_ray);
+   myparall->Vector_SumAll(0, nray, vl_ray);
+   myparall->Vector_SumAll(0, lmaxnray, vnl_ray);
+ 
+   /* G==0 local */
+   if (version == 3) {
+     for (auto i = 0; i < nrho; ++i) {
+       f[i] = vp[i + locp * nrho] * rho[i] * rho[i];
+     }
+     vl_ray[0] = forpi * util_simpson(nrho, f, drho) +
+                 twopi * zv * rho[nrho - 1] * rho[nrho - 1];
+   } else if (version == 4) {
+     for (auto i = 0; i < nrho; ++i)
+       f[i] = (vp[i + locp * nrho] * rho[i] + zv * std::erf(rho[i] / rlocal)) *
+              rho[i];
+     vl_ray[0] = forpi * util_simpson(nrho, f, drho);
+   }
+ 
+   /* G==0 semicore */
+   if (semicore) {
+     for (auto i = 0; i < nrho; ++i)
+       f[i] = sqrt(rho_sc_r[i]) * rho[i] * rho[i];
+     rho_sc_k_ray[0] = forpi * util_simpson(nrho, f, drho);
+     rho_sc_k_ray[0 + nray] = 0.0;
+   }
+ 
+   /* G==0 vnl */
+   for (auto l = 0; l <= lmax; ++l)
+     for (auto n = 0; n < n_expansion[l]; ++n)
+       vnl_ray[0 + indx[n + l * 5] * nray] = 0.0;
+ 
+   /* only j0 is non-zero at zero */
+   if (locp != 0)
+     for (auto n = 0; n < n_expansion[0]; ++n) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
+       vnl_ray[0 + indx[n + 0 * 5] * nray] = P0 * util_simpson(nrho, f, drho);
+     }
+ 
+   delete[] f;
+   delete[] sn;
+   delete[] cs;
+}
+
+
+
+
+/*******************************************
+ *                                         *
+ *   Psp1d_Hamann::cpp_generate_spline     *
+ *                                         *
+ *******************************************/
+void Psp1d_Hamann::cpp_generate_spline(CGrid *mygrid, int nray, double *G_ray,
+                                       double *vl_ray, double *vnl_ray,
+                                       double *rho_sc_k_ray, double *vl,
+                                       double *vnl, double *rho_sc_k) 
+{
+   /* set up indx(n,l) --> to wp */
+   int indx[5 * 4];
+   int nb = lmax + 1;
+   for (auto l = 0; l <= lmax; ++l) {
+     indx[l * 5] = l;
+     for (auto n1 = 1; n1 < n_expansion[l]; ++n1) {
+       indx[n1 + l * 5] = nb;
+       ++nb;
+     }
+   }
+ 
+   double pi = 4.00 * atan(1.0);
+ 
+   /* allocate spline grids */
+   double *vl_splineray = new double[nray];
+   double *vnl_splineray = new double[(lmax + 1 + n_extra) * nray];
+   double *rho_sc_k_splineray = new double[2 * nray];
+   double *tmp_splineray = new double[nray];
+ 
+   /* setup cubic bsplines */
+   double dG = G_ray[2] - G_ray[1];
+ 
+   /* five point formula */
+   double yp1 = (-50.00 * vl_ray[1] + 96.00 * vl_ray[2] - 72.00 * vl_ray[3] +
+                 32.00 * vl_ray[4] - 6.00 * vl_ray[5]) /
+                (24.00 * dG);
+   util_spline(&(G_ray[1]), &(vl_ray[1]), nray - 1, yp1, 0.00,
+               &(vl_splineray[1]), tmp_splineray);
+ 
+   for (auto l = 0; l <= lmax; ++l)
+     if (l != locp)
+       for (auto n = 0; n < n_expansion[l]; ++n)
+         util_spline(G_ray, &(vnl_ray[indx[n + 5 * l] * nray]), nray, 0.00, 0.00,
+                     &(vnl_splineray[indx[n + 5 * l] * nray]), tmp_splineray);
+ 
+   if (semicore) {
+     util_spline(G_ray, rho_sc_k_ray, nray, 0.00, 0.00, rho_sc_k_splineray,
+                 tmp_splineray);
+     util_spline(G_ray, &(rho_sc_k_ray[nray]), nray, 0.00, 0.00,
+                 &(rho_sc_k_splineray[nray]), tmp_splineray);
+   }
+ 
+   double q, qx, qy, qz, xx;
+   double *gx, *gy, *gz;
+   int npack0 = mygrid->npack(0);
+   int npack1 = mygrid->npack(1);
+   int nx, lcount;
+   mygrid->t_pack_nzero(0, 1, vl);
+   mygrid->t_pack_nzero(1, nprj, vnl);
+   if (semicore)
+     mygrid->t_pack_nzero(0, 4, rho_sc_k);
+ 
+   /* generate vl and rho_sc_k */
+   gx = mygrid->Gpackxyz(0, 0);
+   gy = mygrid->Gpackxyz(0, 1);
+   gz = mygrid->Gpackxyz(0, 2);
+   for (auto k = 0; k < npack0; ++k) {
+     qx = gx[k];
+     qy = gy[k];
+     qz = gz[k];
+     q = sqrt(qx * qx + qy * qy + qz * qz);
+     nx = (int)floor(q / dG);
+ 
+     if (q > 1.0e-9) {
+       qx /= q;
+       qy /= q;
+       qz /= q;
+       vl[k] = util_splint(&(G_ray[1]), &(vl_ray[1]), &(vl_splineray[1]),
+                           nray - 1, nx, q);
+       if (semicore) {
+         rho_sc_k[k] =
+             util_splint(G_ray, rho_sc_k_ray, rho_sc_k_splineray, nray, nx, q);
+         xx = util_splint(G_ray, &(rho_sc_k_ray[nray]),
+                          &(rho_sc_k_splineray[nray]), nray, nx, q);
+         rho_sc_k[k + npack0] = xx * qx;
+         rho_sc_k[k + 2 * npack0] = xx * qy;
+         rho_sc_k[k + 3 * npack0] = xx * qz;
+       }
+     } else {
+ 
+       vl[k] = vl_ray[0];
+       if (semicore) {
+         rho_sc_k[k] = rho_sc_k_ray[0];
+         rho_sc_k[k + npack0] = 0.0;
+         rho_sc_k[k + 2 * npack0] = 0.0;
+         rho_sc_k[k + 3 * npack0] = 0.0;
+       }
+     }
+   }
+ 
+   /* generate vnl */
+   gx = mygrid->Gpackxyz(1, 0);
+   gy = mygrid->Gpackxyz(1, 1);
+   gz = mygrid->Gpackxyz(1, 2);
+ 
+   for (auto k = 0; k < npack1; ++k) {
+     qx = gx[k];
+     qy = gy[k];
+     qz = gz[k];
+     q = sqrt(qx * qx + qy * qy + qz * qz);
+     nx = (int)floor(q / dG);
+ 
+     if (q > 1.0e-9) {
+       qx /= q;
+       qy /= q;
+       qz /= q;
+       lcount = nprj;
+ 
+       /* f projectors */
+ 
+       if ((locp != 3) && (lmax > 2))
+         for (auto n = 0; n < n_expansion[3]; ++n) {
+           xx = util_splint(G_ray, &(vnl_ray[indx[n + 3 * 5] * nray]),
+                            &(vnl_splineray[indx[n + 3 * 5] * nray]), nray, nx,
+                            q);
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * qy * (3.00 * (1.00 - qz * qz) - 4.00 * qy * qy) /
+               sqrt(24.00);
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qx * qy * qz;
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * qy * (5.00 * qz * qz - 1.00) / sqrt(40.00);
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * qz * (5.00 * qz * qz - 3.00) / sqrt(60.00);
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * qx * (5.00 * qz * qz - 1.00) / sqrt(40.00);
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qz * (qx * qx - qy * qy) / 2.00;
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * qx * (4.00 * qx * qx - 3.00 * (1.00 - qz * qz)) /
+               sqrt(24.00);
+         }
+ 
+       /* d projectors */
+       if ((locp != 2) && (lmax > 1))
+         for (auto n = 0; n < n_expansion[2]; ++n) {
+           xx = util_splint(G_ray, &(vnl_ray[indx[n + 2 * 5] * nray]),
+                            &(vnl_splineray[indx[n + 2 * 5] * nray]), nray, nx,
+                            q);
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qx * qy;
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qy * qz;
+           --lcount;
+           vnl[k + lcount * npack1] =
+               xx * (3.00 * qz * qz - 1.00) / (2.00 * sqrt(3.00));
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qz * qx;
+           --lcount;
+           vnl[k + lcount * npack1] = xx * (qx * qx - qy * qy) / (2.00);
+         }
+ 
+       /* p projectors */
+       if ((locp != 1) && (lmax > 0))
+         for (auto n = 0; n < n_expansion[1]; ++n) {
+           xx = util_splint(G_ray, &(vnl_ray[indx[n + 1 * 5] * nray]),
+                            &(vnl_splineray[indx[n + 1 * 5] * nray]), nray, nx,
+                            q);
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qy;
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qz;
+           --lcount;
+           vnl[k + lcount * npack1] = xx * qx;
+         }
+ 
+       /* s projectors */
+       if (locp != 0)
+         for (auto n = 0; n < n_expansion[0]; ++n) {
+           xx = util_splint(G_ray, &(vnl_ray[indx[n + 0 * 5] * nray]),
+                            &(vnl_splineray[indx[n + 0 * 5] * nray]), nray, nx,
+                            q);
+           --lcount;
+           vnl[k + lcount * npack1] = xx;
+         }
+     } else {
+       for (auto l = 0; l < nprj; ++l)
+         vnl[k + l * npack1] = 0.0;
+ 
+       /* only j0 is non-zero at zero */
+       if (locp != 0)
+         for (auto n = 0; n < n_expansion[0]; ++n)
+           vnl[k + indx[n + 0 * 5] * npack1] =
+               vnl_ray[0 + indx[n + 0 * 5] * nray];
+     }
+   }
+ 
+   /*  deallocate spineray formatted grids */
+   delete[] tmp_splineray;
+   delete[] rho_sc_k_splineray;
+   delete[] vnl_splineray;
+   delete[] vl_splineray;
+}
+
+
+
+
+
 } // namespace pwdft

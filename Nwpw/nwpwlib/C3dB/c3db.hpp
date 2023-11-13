@@ -35,11 +35,17 @@ class c3db : public Mapping3c {
  
  
    /* ptrans indexings */
-   int **p_iq_to_i1[2], **p_iq_to_i2[2], **p_iz_to_i2[2], p_iz_to_i2_count[2][6];
-   int **p_i1_start[2], **p_i2_start[2];
- 
-   int **p_jq_to_i1[2], **p_jq_to_i2[2], **p_jz_to_i2[2];
-   int **p_j1_start[2], **p_j2_start[2];
+   //int **p_iq_to_i1[2], **p_iq_to_i2[2], **p_iz_to_i2[2], p_iz_to_i2_count[2][6];
+   //int **p_i1_start[2], **p_i2_start[2];
+   //int **p_jq_to_i1[2], **p_jq_to_i2[2], **p_jz_to_i2[2];
+   //int **p_j1_start[2], **p_j2_start[2];
+
+   int p_nbrillq0=1;
+   int ***p_iq_to_i1, ***p_iq_to_i2, ***p_iz_to_i2, **p_iz_to_i2_count;
+   int ***p_i1_start, ***p_i2_start;
+
+   int ***p_jq_to_i1, ***p_jq_to_i2, ***p_jz_to_i2;
+   int ***p_j1_start, ***p_j2_start;
 
 
 public:
@@ -56,7 +62,7 @@ public:
    double *c3db_tmp1,*c3db_tmp2;
  
    /* constructor */
-   c3db(Parallel *, const int, const int, const int, const int);
+   c3db(Parallel *, const int, const int, const int, const int, const int);
  
    /* destructor */
 
@@ -119,6 +125,11 @@ public:
    void rrrrr_SumMulAdd(const double *, const double *, const double *,
                         const double *, double *);
 
+   void t_read(const int, double *, const int);
+   void t_write(const int, double *, const int);
+   void t_write_buffer(const int, double *, const int);
+   void t_write_buffer_max(const int, double *, const int, const int, int &, double *);
+   void t_write_buffer_max_final(const int, int &, double *);
  
    // void  	 r_read(const int, const int, double *);
    void c_read(const int, double *, const int);

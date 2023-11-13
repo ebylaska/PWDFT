@@ -228,12 +228,22 @@ CBalance::CBalance(Parallel *inparall, const int maxsize0, const int *nidb, int 
 {
    parall = inparall;
    maxsize = maxsize0;
+
+   proc_to_list     = new (std::nothrow) int*[maxsize]();
+   proc_from_list   = new (std::nothrow) int*[maxsize]();
+   packet_size_list = new (std::nothrow) int*[maxsize]();
+   indx_start_list  = new (std::nothrow) int*[maxsize]();
+
+   npacket_list     = new (std::nothrow) int[maxsize]();
+   receiver_list    = new (std::nothrow) int[maxsize]();
+   sender_list      = new (std::nothrow) int[maxsize]();
+
  
    int nb, nwave, nwave_out;
    int np = parall->np_i();
    int taskid = parall->taskid_i();
  
-   for (nb = 0; nb < maxsize; ++nb) 
+   for (nb=0; nb<maxsize; ++nb) 
    {
       proc_to_list[nb] = new int[np];
       proc_from_list[nb] = new int[np];
@@ -241,7 +251,7 @@ CBalance::CBalance(Parallel *inparall, const int maxsize0, const int *nidb, int 
       indx_start_list[nb] = new int[np];
    }
  
-   for (nb = 0; nb < maxsize; ++nb) 
+   for (nb=0; nb<maxsize; ++nb) 
    {
       nwave = nidb[nb];
       balance_init_a(parall, nwave, np, taskid, &nwave_out, &npacket_list[nb],
@@ -265,13 +275,21 @@ CBalance::CBalance(Parallel *inparall, const int maxsize0, const int *nidb, int 
  */
 CBalance::~CBalance() 
 {
-   for (int nb = 0; nb < maxsize; ++nb) 
+   for (int nb=0; nb<maxsize; ++nb) 
    {
       delete[] proc_to_list[nb];
       delete[] proc_from_list[nb];
       delete[] packet_size_list[nb];
       delete[] indx_start_list[nb];
    }
+   delete[] proc_to_list;
+   delete[] proc_from_list;
+   delete[] packet_size_list;
+   delete[] indx_start_list;
+
+   delete[] npacket_list;
+   delete[] receiver_list;
+   delete[] sender_list;
 }
 
 
@@ -518,6 +536,51 @@ void CBalance::r_unbalance(const int nb, double *a)
       }
 }
 
+
+/********************************
+ *                              *
+ *    CBalance::t_unbalance     *
+ *                              *
+ ********************************/
+/**
+ * @brief Unbalance the distribution of double precision data among parallel processes.
+ *
+ * This function unbalances the distribution of double precision data among parallel processes.
+ * It sends and receives data between processes to achieve an unbalanced distribution.
+ *
+ * @param nb The number of packets to unbalance.
+ * @param a An array of double precision data to unbalance.
+ *
+ * @note The sender and receiver lists for each packet are determined by the
+ *       previous configuration.
+ */
+void CBalance::t_unbalance(const int nb, double *a)
+{
+   int j, pto, pfrom, msglen, indx;
+
+   if (sender_list[nb])
+      for (j = 0; j < npacket_list[nb]; ++j)
+      {
+         pfrom = proc_to_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx = indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->dreceive(1, 9, pfrom, msglen, &a[indx]);
+      }
+
+   if (receiver_list[nb])
+      for (j = 0; j < npacket_list[nb]; ++j)
+      {
+         pto = proc_from_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx = indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->dsend(1, 9, pto, msglen, &a[indx]);
+      }
+}
+
+
+
 /********************************
  *                              *
  *    CBalance::r_balance       *
@@ -559,6 +622,51 @@ void CBalance::r_balance(const int nb, double *a)
             parall->dreceive(1, 9, pfrom, msglen, &a[indx]);
       }
 }
+
+
+
+/********************************
+ *                              *
+ *    CBalance::t_balance       *
+ *                              *
+ ********************************/
+/**
+ * @brief CBalance the distribution of double precision data among parallel processes.
+ *
+ * This function balances the distribution of double precision data among parallel processes.
+ * It sends and receives data between processes to achieve a balanced distribution.
+ *
+ * @param nb The number of packets to balance.
+ * @param a An array of double precision data to balance.
+ *
+ * @note The sender and receiver lists for each packet are determined by the
+ *       previous configuration.
+ */
+void CBalance::t_balance(const int nb, double *a)
+{
+   int j, pto, pfrom, msglen, indx;
+
+   if (sender_list[nb])
+      for (j = 0; j < npacket_list[nb]; ++j)
+      {
+         pto = proc_to_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx = indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->dsend(1, 9, pto, msglen, &a[indx]);
+      }
+
+   if (receiver_list[nb])
+      for (j = 0; j < npacket_list[nb]; ++j)
+      {
+         pfrom = proc_from_list[nb][j];
+         msglen = packet_size_list[nb][j];
+         indx = indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->dreceive(1, 9, pfrom, msglen, &a[indx]);
+      }
+}
+
 
 /********************************
  *                              *

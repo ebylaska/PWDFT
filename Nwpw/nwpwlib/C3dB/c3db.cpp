@@ -46,14 +46,29 @@ namespace pwdft {
  * @param ny The number of grid points in the y-direction.
  * @param nz The number of grid points in the z-direction.
  */
-c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz)
+c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, const int nz, const int nbrillq)
      : Mapping3c(inmaptype, inparall->np_i(), inparall->taskid_i(), nx, ny, nz)
 {
    int index1, index2, proc_to, proc_from;
    int nyh, nzh;
    int phere, pto, pfrom;
+   p_nbrillq0 = nbrillq;
 
    parall = inparall;
+
+   p_iq_to_i1 = new (std::nothrow) int **[nbrillq+1]; 
+   p_iq_to_i2 = new (std::nothrow) int **[nbrillq+1]; 
+   p_iz_to_i2 = new (std::nothrow) int **[nbrillq+1]; 
+   p_iz_to_i2_count = new (std::nothrow) int *[nbrillq+1]; 
+   p_i1_start = new (std::nothrow) int **[nbrillq+1]; 
+   p_i2_start = new (std::nothrow) int **[nbrillq+1]; 
+
+   p_jq_to_i1 = new (std::nothrow) int **[nbrillq+1]; 
+   p_jq_to_i2 = new (std::nothrow) int **[nbrillq+1]; 
+   p_jz_to_i2 = new (std::nothrow) int **[nbrillq+1]; 
+   p_j1_start = new (std::nothrow) int **[nbrillq+1]; 
+   p_j2_start = new (std::nothrow) int **[nbrillq+1]; 
+
 
 
    if (maptype==1)
@@ -103,6 +118,7 @@ c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
       /* allocate ptranspose indexes */
       for (auto nb = 0; nb < 2; ++nb) 
       {
+         p_iz_to_i2_count[nb] = new (std::nothrow) int[6];
          p_iq_to_i1[nb] = new (std::nothrow) int *[1]();
          p_iq_to_i1[nb][0] = new (std::nothrow) int[(nx) * ny * nq]();
          p_iq_to_i2[nb] = new (std::nothrow) int *[1]();
@@ -366,38 +382,40 @@ c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
       i2_start[5][np] = index2;
      
       /* allocate ptranspose indexes */
-      for (auto nb = 0; nb < 2; ++nb) {
-        p_iq_to_i1[nb] = new (std::nothrow) int *[6];
-        p_iq_to_i1[nb][0] = new (std::nothrow) int[nx * nq1]();
-        p_iq_to_i1[nb][1] = new (std::nothrow) int[ny * nq2]();
-        p_iq_to_i1[nb][2] = new (std::nothrow) int[nz * nq3]();
-        p_iq_to_i1[nb][3] = new (std::nothrow) int[ny * nq2]();
-        p_iq_to_i1[nb][4] = new (std::nothrow) int[nx * nq1]();
-        p_iq_to_i1[nb][5] = new (std::nothrow) int[nz * nq3]();
-     
-        p_iq_to_i2[nb] = new (std::nothrow) int *[6];
-        p_iq_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
-        p_iq_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
-        p_iq_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
-        p_iq_to_i2[nb][3] = new (std::nothrow) int[nx * nq1]();
-        p_iq_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
-        p_iq_to_i2[nb][5] = new (std::nothrow) int[nx * nq1]();
-     
-        p_iz_to_i2[nb] = new (std::nothrow) int *[6];
-        p_iz_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
-        p_iz_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
-        p_iz_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
-        p_iz_to_i2[nb][3] = new (std::nothrow) int[nx * nq1]();
-        p_iz_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
-        p_iz_to_i2[nb][5] = new (std::nothrow) int[nx * nq1]();
-     
-        p_i1_start[nb] = new (std::nothrow) int *[6];
-        for (auto i = 0; i < 6; ++i)
-          p_i1_start[nb][i] = new (std::nothrow) int[np + 1]();
-     
-        p_i2_start[nb] = new (std::nothrow) int *[6];
-        for (auto i = 0; i < 6; ++i)
-          p_i2_start[nb][i] = new (std::nothrow) int[np + 1]();
+      for (auto nb=0; nb<=nbrillq; ++nb) 
+      {
+         p_iq_to_i1[nb] = new (std::nothrow) int *[6];
+         p_iq_to_i1[nb][0] = new (std::nothrow) int[nx * nq1]();
+         p_iq_to_i1[nb][1] = new (std::nothrow) int[ny * nq2]();
+         p_iq_to_i1[nb][2] = new (std::nothrow) int[nz * nq3]();
+         p_iq_to_i1[nb][3] = new (std::nothrow) int[ny * nq2]();
+         p_iq_to_i1[nb][4] = new (std::nothrow) int[nx * nq1]();
+         p_iq_to_i1[nb][5] = new (std::nothrow) int[nz * nq3]();
+        
+         p_iq_to_i2[nb] = new (std::nothrow) int *[6];
+         p_iq_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
+         p_iq_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
+         p_iq_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
+         p_iq_to_i2[nb][3] = new (std::nothrow) int[nx * nq1]();
+         p_iq_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
+         p_iq_to_i2[nb][5] = new (std::nothrow) int[nx * nq1]();
+        
+         p_iz_to_i2_count[nb] = new (std::nothrow) int[6];
+         p_iz_to_i2[nb] = new (std::nothrow) int *[6];
+         p_iz_to_i2[nb][0] = new (std::nothrow) int[ny * nq2]();
+         p_iz_to_i2[nb][1] = new (std::nothrow) int[nz * nq3]();
+         p_iz_to_i2[nb][2] = new (std::nothrow) int[ny * nq2]();
+         p_iz_to_i2[nb][3] = new (std::nothrow) int[nx * nq1]();
+         p_iz_to_i2[nb][4] = new (std::nothrow) int[nz * nq3]();
+         p_iz_to_i2[nb][5] = new (std::nothrow) int[nx * nq1]();
+        
+         p_i1_start[nb] = new (std::nothrow) int *[6];
+         for (auto i=0; i<6; ++i)
+            p_i1_start[nb][i] = new (std::nothrow) int[np + 1]();
+        
+         p_i2_start[nb] = new (std::nothrow) int *[6];
+         for (auto i = 0; i<6; ++i)
+            p_i2_start[nb][i] = new (std::nothrow) int[np + 1]();
       }
    }
      
@@ -434,6 +452,7 @@ c3db::~c3db()
 {
    int i, nb;
 
+       std::cout << "c3db deallocate" << std::endl;
 #if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (mygdevice.has_gpu())
       mygdevice.batch_c_fft_end(fft_tag);
@@ -450,7 +469,8 @@ c3db::~c3db()
       delete[] i1_start;
       delete[] i2_start[0];
       delete[] i2_start;
-      for (nb = 0; nb < 2; ++nb) {
+      for (nb=0; nb<=p_nbrillq0; ++nb) 
+      {
          delete[] p_iq_to_i1[nb][0];
          delete[] p_iq_to_i1[nb];
          delete[] p_iq_to_i2[nb][0];
@@ -472,7 +492,9 @@ c3db::~c3db()
          delete[] p_j2_start[nb][0];
          delete[] p_j2_start[nb];
       }
-   } else {
+   } 
+   else 
+   {
       this->r_transpose_ijk_end();
      
       for (i = 0; i < 6; ++i) {
@@ -486,7 +508,7 @@ c3db::~c3db()
       delete[] i1_start;
       delete[] i2_start;
      
-      for (nb = 0; nb < 2; ++nb) {
+      for (nb=0; nb<=p_nbrillq0; ++nb) {
          for (i = 0; i < 6; ++i) {
             delete[] p_iq_to_i1[nb][i];
             delete[] p_iq_to_i2[nb][i];
@@ -499,8 +521,21 @@ c3db::~c3db()
          delete[] p_iz_to_i2[nb];
          delete[] p_i1_start[nb];
          delete[] p_i2_start[nb];
+         delete[] p_iz_to_i2_count[nb];
       }
    }
+   delete [] p_iq_to_i1;
+   delete [] p_iq_to_i2;
+   delete [] p_iz_to_i2; 
+   delete [] p_iz_to_i2_count;
+   delete [] p_i1_start; 
+   delete [] p_i2_start;
+
+   delete [] p_jq_to_i1;
+   delete [] p_jq_to_i2;
+   delete [] p_jz_to_i2;
+   delete [] p_j1_start;
+   delete [] p_j2_start;
  
    delete [] tmpx;
    delete [] tmpy;
@@ -2473,6 +2508,367 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
    delete [] buffer2;
    delete [] buffer;
 }
+
+
+
+
+
+/********************************
+ *                              *
+ *         c3db::t_read         *
+ *                              *
+ ********************************/
+ /**
+ * @brief Read data from an input unit with support for parallel computing.
+ *
+ * This function is responsible for reading data from a specified input unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data retrieval and distribution efficiently.
+ *
+ * @param iunit An integer specifying the input unit to read data from.
+ * @param a A pointer to a double array where the read data will be stored.
+ * @param jcol An integer specifying the column index for parallelization.
+ *
+ * @return None.
+ *
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable, the parallelization parameters, and the distribution of data from
+ *       the input unit to the specified array.
+ */
+void c3db::t_read(const int iunit, double *a, const int jcol) 
+{
+   int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
+ 
+   if (jcol < 0) 
+   {
+      jstart = 0;
+      jend = np_j - 1;
+      fillcolumn = 1;
+   } 
+   else 
+   {
+      jstart = jend = jcol;
+      fillcolumn = (taskid_j == jcol);
+   }
+ 
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx)*ny]();
+      int bsize = (nx)*ny;
+ 
+      /**** master node reads from file and distributes ****/
+      if (taskid == MASTER)
+        for (int k=0; k<nz; ++k) 
+        {
+           dread(iunit, tmp, bsize);
+ 
+           index = cijktoindex(0, 0, k);
+           ii = cijktop(0, 0, k);
+           for (jj = jstart; jj <= jend; ++jj) 
+           {
+              p_to = parall->convert_taskid_ij(ii,jj);
+              if (p_to == MASTER)
+                for (int k=0; k<bsize; ++k)
+                   a[index + k] = tmp[k];
+              else
+                 parall->dsend(0, 9, p_to, bsize, tmp);
+           }
+        }
+ 
+      /**** not master node ****/
+      else if (fillcolumn)
+         for (int k = 0; k < nz; ++k) 
+         {
+           index = cijktoindex(0, 0, k);
+           ii = cijktop(0, 0, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) 
+           {
+              parall->dreceive(0, 9, MASTER, bsize, tmp);
+              for (int k=0; k<bsize; ++k)
+                 a[index+k] = tmp[k];
+           }
+         }
+      delete[] tmp;
+   }
+ 
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else {
+     double tmp[nx];
+     int bsize = (nx);
+ 
+     /**** master node reads from file and distributes ****/
+     if (taskid == MASTER)
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+ 
+           dread(iunit, tmp, bsize);
+ 
+           index = cijktoindex2(0, j, k);
+           ii = cijktop2(0, j, k);
+           for (int jj = jstart; jj <= jend; ++jj) {
+             p_to = parall->convert_taskid_ij(ii, jj);
+ 
+             if (p_to == MASTER)
+               for (int k = 0; k < bsize; ++k)
+                 a[index + k] = tmp[k];
+             else
+               parall->dsend(0, 9, p_to, bsize, tmp);
+           }
+         }
+ 
+     /**** not master node ****/
+     else if (fillcolumn)
+       for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) {
+           index = cijktoindex2(0, j, k);
+           ii = cijktop2(0, j, k);
+           p_here = parall->convert_taskid_ij(ii, taskid_j);
+           if (p_here == taskid) {
+             parall->dreceive(0, 9, MASTER, bsize, tmp);
+             for (int k = 0; k < bsize; ++k)
+               a[index + k] = tmp[k];
+           }
+         }
+ 
+     // double tmp1[2*nfft3d];
+     // double tmp2[2*nfft3d];
+     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+     double *tmp1 = c3db::c3db_tmp1;
+     double *tmp2 = c3db::c3db_tmp2;
+     c_transpose_ijk(4, a, tmp1, tmp2);
+     //delete[] tmp2;
+     //delete[] tmp1;
+   }
+}
+
+
+/********************************
+ *                              *
+ *         c3db::t_write        *
+ *                              *
+ ********************************/
+ /**
+ * @brief Write data to an output unit with support for parallel computing.
+ *
+ * This function is responsible for writing data to a specified output unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data transfer and writing efficiently.
+ *
+ * @param iunit An integer specifying the output unit to write data to.
+ * @param a A pointer to a double array containing the data to be written.
+ * @param jcol An integer specifying the column index for parallelization.
+ *
+ * @return None.
+ *
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable and the parallelization parameters. It supports both "slab mapping"
+ *       and "hilbert mapping" for data distribution.
+ */
+void c3db::t_write(const int iunit, double *a, const int jcol) 
+{
+   int index, ii, jj, p_from, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int np_j = parall->np_j();
+   int idum[1] = {1};
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1) 
+   {
+      double *tmp = new (std::nothrow) double[(nx) * ny]();
+      int bsize = (nx) * ny;
+      
+      /**** master node gathers and write to file ****/
+      if (taskid == MASTER)
+      for (int k = 0; k < nz; ++k) 
+      {
+         ii = cijktop(0, 0, k);
+         p_from = parall->convert_taskid_ij(ii, jcol);
+         if (p_from == MASTER) 
+         {
+            index = cijktoindex(0, 0, k);
+            for (int kk = 0; kk < bsize; ++kk)
+               tmp[kk] = a[index + kk];
+         } 
+         else 
+         {
+            parall->isend(0, 7, p_from, 1, idum);
+            parall->dreceive(0, 9, p_from, bsize, tmp);
+         }
+         dwrite(iunit, tmp, bsize);
+      }
+      
+      /**** not master node ****/
+      else
+      {
+         for (int k = 0; k < nz; ++k) 
+         {
+            index = cijktoindex(0, 0, k);
+            ii = cijktop(0, 0, k);
+            p_here = parall->convert_taskid_ij(ii, jcol);
+            if (p_here == taskid) 
+            {
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
+               parall->ireceive(0, 7, MASTER, 1, idum);
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
+         }
+      }
+      
+      delete[] tmp;
+   }
+
+  /*************************
+   **** hilbert mapping ****
+   *************************/
+   else 
+   {
+      if (taskid_j==jcol)
+      {
+         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+         double *tmp1 = c3db::c3db_tmp1;
+         double *tmp2 = c3db::c3db_tmp2;
+         c_transpose_ijk(5, a, tmp1, tmp2);
+     
+         // delete [] tmp2;
+         // delete [] tmp1;
+      }
+     
+      double tmp[nx];
+      int bsize = (nx);
+     
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid == MASTER)
+      {
+         for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) 
+         {
+            ii = cijktop2(0, j, k);
+            p_from = parall->convert_taskid_ij(ii, jcol);
+            if (p_from == MASTER) 
+            {
+               index = cijktoindex2(0, j, k);
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
+            } 
+            else 
+            {
+               parall->isend(0, 7, p_from, 1, idum);
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
+         }
+      } 
+      /**** not master node ****/
+      else
+      {
+         for (int k = 0; k < nz; ++k)
+         for (int j = 0; j < ny; ++j) 
+         {
+            ii = cijktop2(0, j, k);
+            p_here = parall->convert_taskid_ij(ii, jcol);
+            if (p_here == taskid) 
+            {
+               index = cijktoindex2(0, j, k);
+               for (int kk = 0; kk < bsize; ++kk)
+                  tmp[kk] = a[index + kk];
+               parall->ireceive(0, 7, MASTER, 1, idum);
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
+         }
+      }
+      // delete [] tmp;
+   }
+}
+
+
+
+
+
+/********************************
+ *                              *
+ *     c3db::t_write_buffer     *
+ *                              *
+ ********************************/
+void c3db::t_write_buffer(const int iunit, double *a, const int jcol)
+{
+   int index, ii, jj, p_from, p_here;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+
+   int buff_count = (nx)*ny*nz;
+   double *buffer = new (std::nothrow) double[buff_count]();
+   std::memset(buffer,0,buff_count*sizeof(double));
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype == 1)
+   {
+      for (int k = 0; k < nz; ++k)
+      {
+         ii = cijktop(0, 0, k);
+         p_here = parall->convert_taskid_ij(ii, jcol);
+         if (p_here==taskid)
+         {
+            index = cijktoindex(0, 0, k);
+            for (int ij = 0; ij<(nx)*ny; ++ij)
+               buffer[ij+k*(nx)*ny] = a[index+ij];
+         }
+      }
+   }
+
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      if (taskid_j==jcol)
+      {
+         double *tmp1 = c3db::c3db_tmp1;
+         double *tmp2 = c3db::c3db_tmp2;
+         c_transpose_ijk(5, a, tmp1, tmp2);
+      }
+      for (int k = 0; k < nz; ++k)
+      for (int j = 0; j < ny; ++j)
+      {
+         ii = cijktop2(0, j, k);
+         p_here = parall->convert_taskid_ij(ii, jcol);
+         if (p_here == taskid)
+         {
+            index = cijktoindex2(0, j, k);
+            for (int i=0; i<(nx); ++i)
+               buffer[i + j*(nx) + k*(nx)*ny] = a[index+i];
+         }
+      }
+   }
+
+   double *buffer2 = new (std::nothrow) double[buff_count]();
+   parall->Reduce_Values(1,MASTER,buff_count,buffer,buffer2);
+   if (parall->is_master())
+      dwrite(iunit,buffer2,buff_count);
+   delete [] buffer2;
+   delete [] buffer;
+}
+
 
 
 /**********************************

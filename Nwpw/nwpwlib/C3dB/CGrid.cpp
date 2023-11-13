@@ -1,7 +1,7 @@
 /* CGrid.cpp
    Author - Eric Bylaska
 
-        this class is used for defining 3d parallel maps
+        this class is used for defining 3d c3db::parallel maps
 */
 
 #include "Control2.hpp"
@@ -35,17 +35,20 @@ namespace pwdft {
 // c3db(inparall,control.mapping(),control.ngrid(0),control.ngrid(1),control.ngrid(2))
 
 CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
-             int nx0, int ny0, int nz0, int pfft3_qsize0, bool staged_gpu_fft_pipeline0)
-    : c3db(inparall, mapping0, nx0, ny0, nz0) 
+             int nx0, int ny0, int nz0, int pfft3_qsize0, bool staged_gpu_fft_pipeline0, Brillouin *inbrillouin)
+    : k1db(inparall, mapping0, inbrillouin->nbrillouin),
+      c3db(inparall, mapping0, nx0, ny0, nz0, nbrillq) 
 {
    int nxh, nyh, nzh, p, q, indx, nb;
-   int nwave_in[2], nwave_out[2];
    double *G1, *G2, *G3;
    double ggcut, eps, ggmax, ggmin;
    bool *zero_arow3, *zero_arow2;
    bool yzslab, zrow;
+
+   int nwave_in[nbrillq+1], nwave_out[nbrillq+1];
  
    lattice = inlattice;
+   mybrillouin = inbrillouin;
  
    eps = 1.0e-12;
 
@@ -84,7 +87,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          
           auto indx = cijktoindex(i, j, k);
           auto p = cijktop(i, j, k);
-          if (p == parall->taskid_i()) {
+          if (p == c3db::parall->taskid_i()) {
             G1[indx] = gx;
             G2[indx] = gy;
             G3[indx] = gz;
@@ -92,26 +95,34 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
        }
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
- 
- 
-   // aligned Memory
-   std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
-   masker[0] = new (std::nothrow) int[aligned_size]();
-   masker[1] = new (std::nothrow) int[aligned_size]();
-   packarray[0] = new (std::nothrow) int[aligned_size]();
-   packarray[1] = new (std::nothrow) int[aligned_size]();
 
  
-   parall->Barrier();
-   for (int k = 0; k < (nfft3d); ++k) 
+   // aligned Memory
+   nidb         = new (std::nothrow) int[nbrillq+1]();
+   nidb2        = new (std::nothrow) int[nbrillq+1]();
+   nwave        = new (std::nothrow) int[nbrillq+1]();
+   nwave_all    = new (std::nothrow) int[nbrillq+1]();
+   nwave_entire = new (std::nothrow) int[nbrillq+1]();
+
+
+   std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
+   masker    = new (std::nothrow) int*[nbrillq+1]();
+   packarray = new (std::nothrow) int*[nbrillq+1]();
+   for (auto nbq=0; nbq<=nbrillq; ++nbq)
    {
-      masker[0][k] = 1;
-      masker[1][k] = 1;
-      packarray[0][k] = 0;
-      packarray[1][k] = 0;
+      masker[nbq]    = new (std::nothrow) int[aligned_size]();
+      packarray[nbq] = new (std::nothrow) int[aligned_size]();
+      for (auto k=0; k<(nfft3d); ++k) 
+      {
+         masker[nbq][k] = 1;
+         packarray[nbq][k] = 0;
+      }
    }
  
-   for (auto nb = 0; nb <= 1; ++nb) 
+   c3db::parall->Barrier();
+
+
+   for (auto nb=0; nb<=nbrillq; ++nb) 
    {
       nwave[nb] = 0;
       if (nb == 0)
@@ -132,7 +143,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             
              auto indx = cijktoindex(i, j, k);
              auto p = cijktop(i, j, k);
-             if (p == parall->taskid_i()) 
+             if (p == c3db::parall->taskid_i()) 
              {
                 auto gg = gx * gx + gy * gy + gz * gz;
                 gg = gg - ggcut;
@@ -144,10 +155,10 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
              }
           }
       nwave_entire[nb] = nwave[nb];
-      nwave_entire[nb] = parall->ISumAll(1, nwave_entire[nb]);
+      nwave_entire[nb] = c3db::parall->ISumAll(1, nwave_entire[nb]);
    }
  
-   for (auto nb=0; nb<=1; ++nb) 
+   for (auto nb=0; nb<=nbrillq; ++nb) 
    {
       nidb2[nb] = 0;
      
@@ -157,7 +168,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       auto k3 = 0;
       auto indx = cijktoindex(k1, k2, k3);
       auto p = cijktop(k1, k2, k3);
-      if (p == parall->taskid_i())
+      if (p == c3db::parall->taskid_i())
         if (!masker[nb][indx]) 
         {
            packarray[nb][nidb2[nb]] = indx;
@@ -172,7 +183,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          k3 = k;
          indx = cijktoindex(k1, k2, k3);
          p = cijktop(k1, k2, k3);
-         if (p == parall->taskid_i())
+         if (p == c3db::parall->taskid_i())
            if (!masker[nb][indx]) 
            {
               packarray[nb][nidb2[nb]] = indx;
@@ -190,7 +201,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             if (k3 < 0) k3 += nz;
             indx = cijktoindex(k1, k2, k3);
             p = cijktop(k1, k2, k3);
-            if (p == parall->taskid_i())
+            if (p == c3db::parall->taskid_i())
               if (!masker[nb][indx]) 
               {
                  packarray[nb][nidb2[nb]] = indx;
@@ -211,57 +222,53 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                if (k3 < 0) k3 += nz;
                indx = cijktoindex(k1, k2, k3);
                p = cijktop(k1, k2, k3);
-               if (p == parall->taskid_i())
+               if (p == c3db::parall->taskid_i())
                   if (!masker[nb][indx]) 
                   {
                      packarray[nb][nidb2[nb]] = indx;
                      ++nidb2[nb];
                   }
             }
+      nwave_in[nb] = nidb2[nb];
    }
- 
-   nwave_in[0] = nidb2[0];
-   nwave_in[1] = nidb2[1];
  
    // if (control.balance())
    if (balance0) 
    {
       balanced = 1;
-      mybalance = new CBalance(parall, 2, nwave_in, nwave_out);
+      mybalance = new CBalance(c3db::parall, nbrillq+1, nwave_in, nwave_out);
    } 
    else 
    {
       balanced = 0;
-      nwave_out[0] = nwave_in[0];
-      nwave_out[1] = nwave_in[1];
+      for (auto nbq=0; nbq<=nbrillq; ++nbq)
+          nwave_out[nbq] = nwave_in[0];
    }
-   nidb[0] = nidb2[0] + (nwave_out[0] - nwave_in[0]);
-   nidb[1] = nidb2[1] + (nwave_out[1] - nwave_in[1]);
- 
-   nwave_all[0] = nidb2[0];
-   nwave_all[1] = nidb2[1];
-   parall->Vector_ISumAll(1, 2, nwave_all);
- 
+
+   for (auto nbq=0; nbq<=nbrillq; ++nbq)
+   {
+      nidb[nbq] = nidb2[nbq] + (nwave_out[nbq] - nwave_in[nbq]);
+      nwave_all[nbq] = nidb2[nbq];
+   }
+   c3db::parall->Vector_ISumAll(1, nbrillq+1, nwave_all);
+
+   zero_row3 = new (std::nothrow) bool*[nbrillq+1];
+   zero_row2 = new (std::nothrow) bool*[nbrillq+1];
+   zero_slab23 = new (std::nothrow) bool*[nbrillq+1];
+   Gpack       = new (std::nothrow) double*[nbrillq+1];
+
    if (maptype == 1) 
    {
       // Calculate aligned memory size
-      //std::size_t aligned_sizeb = ((nxh+1) * (4*nq+2) * sizeof(bool) + Alignment - 1)  & ~(Alignment - 1);
-      //zero_row3[0] = new (std::nothrow) bool[aligned_sizeb];
-      //zero_row3[1] = zero_row3[0] + (nxh+1)*nq;
-      //zero_row2[0] = zero_row3[0] + 2*(nxh+1)*nq;
-      //zero_row2[1] = zero_row3[0] + 3*(nxh+1)*nq;
-      //zero_slab23[0] = zero_row3[0] + 4*(nxh+1)*nq;
-      //zero_slab23[1] = zero_row3[0] + (nxh+1)*(4*nq+1);
- 
-      zero_row3[0] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-      zero_row3[1] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-      zero_row2[0] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-      zero_row2[1] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-      zero_slab23[0] = new (std::nothrow) bool[nxh + 1];
-      zero_slab23[1] = new (std::nothrow) bool[nxh + 1];
+      for (auto nbq=0; nbq<=nbrillq; ++nbq)
+      {
+         zero_row3[nbq] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
+         zero_row2[nbq] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
+         zero_slab23[nbq] = new (std::nothrow) bool[nxh + 1];
+      }
      
       zero_arow3 = new bool[((nxh+1)*ny + Alignment - 1) & ~(Alignment - 1)];
-      for (auto nb = 0; nb <= 1; ++nb) 
+      for (auto nb=0; nb<=nbrillq; ++nb) 
       {
          if (nb == 0)
             ggcut = lattice->eggcut();
@@ -298,7 +305,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                   zero_arow3[i + (nxh + 1) * j] = false;
                   q = cijktoq1(0, j, 0);
                   p = cijktop1(0, j, 0);
-                  if (p == parall->taskid_i()) 
+                  if (p == c3db::parall->taskid_i()) 
                   {
                      zero_row3[nb][i + (nxh + 1) * q] = false;
                   }
@@ -340,7 +347,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             {
                q = cijktoq(i, 0, k);
                p = cijktop(i, 0, k);
-               if (p == parall->taskid_i())
+               if (p == c3db::parall->taskid_i())
                   zero_row2[nb][q] = zero_slab23[nb][i];
             }
       }
@@ -349,103 +356,106 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    } 
    else 
    {
-      zero_row3[0] = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
-      zero_row3[1] = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
-      zero_row2[0] = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
-      zero_row2[1] = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
-      zero_slab23[0] = new (std::nothrow) bool[nxh + 1]();
-      zero_slab23[1] = new (std::nothrow) bool[nxh + 1]();
+      for (auto nbq=0; nbq<=nbrillq; ++nbq)
+      {
+         zero_row3[nbq]   = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
+         zero_row2[nbq]   = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
+         zero_slab23[nbq] = new (std::nothrow) bool[nxh + 1]();
+      }
      
       zero_arow2 = new (std::nothrow) bool[((nxh+1)*nz + Alignment - 1) & ~(Alignment - 1)]();
       zero_arow3 = new (std::nothrow) bool[((nxh+1)*ny + Alignment - 1) & ~(Alignment - 1)]();
      
-      for (auto nb = 0; nb <= 1; ++nb) {
-        if (nb == 0)
-          ggcut = lattice->eggcut();
-        else
-          ggcut = lattice->wggcut();
-     
-        // find zero_row3 - (i,j,*) rows that are zero
-        for (auto q = 0; q < nq3; ++q)
-          zero_row3[nb][q] = true;
-     
-        for (auto q = 0; q < (nxh + 1) * ny; ++q)
-          zero_arow3[q] = true;
-     
-        for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-          for (auto k1 = 0; k1 < nxh; ++k1) {
-            auto i = k1;
-            auto j = k2;
-            if (i < 0) i += nx;
-            if (j < 0) j += ny;
-            zrow = true;
-            for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
-            {
-               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-               auto gg = gx*gx + gy*gy + gz*gz;
-               gg = gg - ggcut;
-               if (gg < (-eps))
-                  zrow = false;
-            }
-            if (!zrow) {
-              // zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
-              zero_arow3[i + (nxh + 1) * j] = false;
-              q = cijktoq(i, j, 0);
-              p = cijktop(i, j, 0);
-              if (p == parall->taskid_i()) {
-                zero_row3[nb][q] = false;
-              }
-            }
-          }
-     
-        /* find zero_slab23 - (i,*,*) slabs that are zero */
-        for (auto i = 0; i < (nxh + 1); ++i)
-          zero_slab23[nb][i] = true;
-     
-        for (auto k1=0; k1<nxh; ++k1) 
-        {
-           auto i = k1; if (i < 0) i += nx;
-           yzslab = true;
-           for (auto k3=(-nzh+1); k3<nzh; ++k3)
-              for (auto k2=(-nyh+1); k2<nyh; ++k2) 
-              {
-                 auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                 auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                 auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-                 auto gg = gx*gx + gy*gy + gz*gz;
-                 gg = gg - ggcut;
-                 if (gg < (-eps))
-                   yzslab = false;
-              }
-           if (!yzslab)
-             zero_slab23[nb][i] = false;
-        }
-     
-        // find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*)
-        for (auto k=0; k<nz; ++k)
-          for (auto i=0; i<(nxh+1); ++i) 
-          {
-             q = cijktoq1(i, 0, k);
-             p = cijktop1(i, 0, k);
-             zero_arow2[i + (nxh + 1) * k] = zero_slab23[nb][i];
-             if (p == parall->taskid_i())
-                zero_row2[nb][q] = zero_slab23[nb][i];
-          }
-     
-        c3db::c_ptranspose_ijk_init(nb, zero_arow2, zero_arow3);
+      for (auto nb=0; nb<=nbrillq; ++nb) 
+      {
+         if (nb==0)
+         {
+            ggcut = lattice->eggcut();
+         }
+         else
+            ggcut = lattice->wggcut();
+
+         // find zero_row3 - (i,j,*) rows that are zero
+         for (auto q=0; q<nq3; ++q)
+            zero_row3[nb][q] = true;
+
+         for (auto q=0; q < (nxh + 1) * ny; ++q)
+            zero_arow3[q] = true;
+
+         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
+           for (auto k1 = 0; k1 < nxh; ++k1) {
+             auto i = k1;
+             auto j = k2;
+             if (i < 0) i += nx;
+             if (j < 0) j += ny;
+             zrow = true;
+             for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
+             {
+                auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+                auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                auto gg = gx*gx + gy*gy + gz*gz;
+                gg = gg - ggcut;
+                if (gg < (-eps))
+                   zrow = false;
+             }
+             if (!zrow) {
+               // zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+               zero_arow3[i + (nxh + 1) * j] = false;
+               q = cijktoq(i, j, 0);
+               p = cijktop(i, j, 0);
+               if (p == c3db::parall->taskid_i()) {
+                 zero_row3[nb][q] = false;
+               }
+             }
+           }
+        
+         /* find zero_slab23 - (i,*,*) slabs that are zero */
+         for (auto i = 0; i < (nxh + 1); ++i)
+           zero_slab23[nb][i] = true;
+        
+         for (auto k1=0; k1<nxh; ++k1) 
+         {
+            auto i = k1; if (i < 0) i += nx;
+            yzslab = true;
+            for (auto k3=(-nzh+1); k3<nzh; ++k3)
+               for (auto k2=(-nyh+1); k2<nyh; ++k2) 
+               {
+                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                  auto gg = gx*gx + gy*gy + gz*gz;
+                  gg = gg - ggcut;
+                  if (gg < (-eps))
+                    yzslab = false;
+               }
+            if (!yzslab)
+              zero_slab23[nb][i] = false;
+         }
+        
+         // find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*)
+         for (auto k=0; k<nz; ++k)
+           for (auto i=0; i<(nxh+1); ++i) 
+           {
+              q = cijktoq1(i, 0, k);
+              p = cijktop1(i, 0, k);
+              zero_arow2[i + (nxh + 1) * k] = zero_slab23[nb][i];
+              if (p == c3db::parall->taskid_i())
+                 zero_row2[nb][q] = zero_slab23[nb][i];
+           }
+        
+         c3db::c_ptranspose_ijk_init(nb, zero_arow2, zero_arow3);
       }
       delete[] zero_arow3;
       delete[] zero_arow2;
    }
- 
-   Gpack[0] = new (std::nothrow) double[(3*(nidb[0]) + Alignment - 1) & ~(Alignment - 1)]();
-   Gpack[1] = new (std::nothrow) double[(3*(nidb[1]) + Alignment - 1) & ~(Alignment - 1)]();
+
+   for (auto nbq=0; nbq<=nbrillq; ++nbq)
+      Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]) + Alignment - 1) & ~(Alignment - 1)]();
  
    double *Gtmp = new (std::nothrow) double[nfft3d]();
    int one = 1;
-   for (auto nb = 0; nb <= 1; ++nb) 
+   for (auto nb=0; nb<=nbrillq; ++nb) 
    {
       for (auto i = 0; i < 3; ++i) 
       {
@@ -486,7 +496,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
              int indx = cijktoindex2(i, j, k);
              int p = cijktop2(i, j, k);
             
-             if (p == parall->taskid_i()) {
+             if (p == c3db::parall->taskid_i()) {
                r_grid[3*indx]   = a[0]*k1 + a[3]*k2 + a[6]*k3;
                r_grid[3*indx+1] = a[1]*k1 + a[4]*k2 + a[7]*k3;
                r_grid[3*indx+2] = a[2]*k1 + a[5]*k2 + a[8]*k3;
@@ -528,14 +538,14 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    /* initialize async buffer data for pfft */
    for (auto q=0; q<aqmax; ++q)
-      parall->astart(4+q, 2*parall->np_i()+1);
+      c3db::parall->astart(4+q, 2*c3db::parall->np_i()+1);
 
 }
 
-CGrid::CGrid(Parallel *inparall, Lattice *inlattice, Control2 &control)
+CGrid::CGrid(Parallel *inparall, Lattice *inlattice, Control2 &control, Brillouin *inbrillouin)
     : CGrid(inparall, inlattice, control.mapping(), control.balance(),
             control.ngrid(0), control.ngrid(1), control.ngrid(2),
-            control.pfft3_qsize(), control.staged_gpu_fft()) {}
+            control.pfft3_qsize(), control.staged_gpu_fft(), inbrillouin) {}
 
 /********************************
  *                              *
@@ -626,6 +636,70 @@ double CGrid::cc_pack_idot(const int nb, double *a, double *b)
 
 /********************************
  *                              *
+ *       CGrid:rr_pack_copy     *
+ *                              *
+ ********************************/
+void CGrid::rr_pack_copy(const int nb, const double *a, double *b)
+{
+   //int one = 1;
+   // int ng  = 2*(nidb[nb]);
+   int ng = (nidb[nb]);
+
+   // DCOPY_PWDFT(ng,a,one,b,one);
+   std::memcpy(b,a,ng*sizeof(double));
+}
+
+/********************************
+ *                              *
+ *       CGrid:tt_pack_copy     *
+ *                              *
+ ********************************/
+void CGrid::tt_pack_copy(const int nb, const double *a, double *b)
+{
+   //int one = 1;
+   // int ng  = 2*(nidb[nb]);
+   int ng = (nidb[nb]);
+
+   // DCOPY_PWDFT(ng,a,one,b,one);
+   std::memcpy(b,a,ng*sizeof(double));
+}
+
+/********************************
+ *                              *
+ *       CGrid:tt_pack_dot      *
+ *                              *
+ ********************************/
+double CGrid::tt_pack_dot(const int nb, double *a, double *b)
+{
+   int one = 1;
+   // int ng  = 2*(nidb[nb]);
+   int ng  = (nidb[nb]);
+
+   double tsum  = DDOT_PWDFT(ng, a,one,b,one);
+
+   return c3db::parall->SumAll(1,tsum);
+}
+
+
+/********************************
+ *                              *
+ *       CGrid:tt_pack_idot     *
+ *                              *
+ ********************************/
+double CGrid::tt_pack_idot(const int nb, double *a, double *b)
+{
+   int one = 1;
+   int ng = (nidb[nb]);
+   double tsum = 0.0;
+
+   tsum = DDOT_PWDFT(ng, a, one, b, one);
+
+   return tsum;
+}
+
+
+/********************************
+ *                              *
  *       CGrid:rr_pack_idot     *
  *                              *
  ********************************/
@@ -690,6 +764,25 @@ void CGrid::r_unpack(const int nb, double *a)
 
 /********************************
  *                              *
+ *       CGrid:t_unpack         *
+ *                              *
+ ********************************/
+void CGrid::t_unpack(const int nb, double *a)
+{
+   int nn = (nidb2[nb]);
+   if (balanced)
+      mybalance->t_unbalance(nb, a);
+
+   std::memcpy(c3db::c3db_tmp1, a, nn * sizeof(double));
+   std::memset(a, 0, nfft3d*sizeof(double));
+
+   t_bindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+}
+
+
+
+/********************************
+ *                              *
  *       CGrid:r_pack           *
  *                              *
  ********************************/
@@ -704,6 +797,23 @@ void CGrid::r_pack(const int nb, double *a)
       mybalance->r_balance(nb, a);
 }
 
+/********************************
+ *                              *
+ *       CGrid:t_pack           *
+ *                              *
+ ********************************/
+void CGrid::t_pack(const int nb, double *a)
+{
+   std::memcpy(c3db::c3db_tmp1,a,nfft3d*sizeof(double));
+   std::memset(a,0,nfft3d*sizeof(double));
+
+   t_aindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+
+   if (balanced)
+      mybalance->t_balance(nb, a);
+}
+
+
 
 /********************************
  *                              *
@@ -715,6 +825,20 @@ void CGrid::r_pack_nzero(const int nb, const int n, double *a)
    int ng = n * (nidb[nb]);
    std::memset(a, 0, ng * sizeof(double));
 }
+
+/********************************
+ *                              *
+ *       CGrid:t_pack_nzero     *
+ *                              *
+ ********************************/
+void CGrid::t_pack_nzero(const int nb, const int n, double *a)
+{
+   int ng = n * (nidb[nb]);
+   std::memset(a, 0, ng * sizeof(double));
+}
+
+
+
 
 /********************************
  *                              *
@@ -1403,7 +1527,7 @@ void CGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1,
                        double *tmp2, const int request_indx) 
 {
    if (step == 0) {
-     // parall->astart(request_indx,parall->np_i());
+     // c3db::parall->astart(request_indx,parall->np_i());
  
      // unpack start, tmp1-->tmp1
      std::memcpy(tmp1, a, 2 * (nidb[nb]) * sizeof(double));
@@ -1424,7 +1548,7 @@ void CGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1,
    } else if (step == 5) {
      // pfftbx mem->dev->dev->mem
      pfftbx(nb, tmp1, tmp2, request_indx);
-     // parall->aend(request_indx);
+     // c3db::parall->aend(request_indx);
    }
 }
 
@@ -1953,7 +2077,7 @@ void CGrid::pfftb_step12(const int step, const int nb, double *a, double *tmp1,
                          double *tmp2, const int request_indx, const int indx)
 {
    if (step == 0) {
-     // parall->astart(request_indx,parall->np_i());
+     // c3db::parall->astart(request_indx,parall->np_i());
 
      // unpack start, tmp1-->tmp1
      std::memcpy(tmp1, a, 2 * (nidb[nb]) * sizeof(double));
@@ -1989,7 +2113,7 @@ void CGrid::pfftb_step12(const int step, const int nb, double *a, double *tmp1,
      pfftbx_compute(nb, tmp1, tmp2, request_indx,indx);
    } else if (step == 11) {
      pfftbx_end(nb, tmp1, tmp2, request_indx,indx);
-     // parall->aend(request_indx);
+     // c3db::parall->aend(request_indx);
    }
 }
 
@@ -2000,7 +2124,7 @@ void CGrid::pfftb_step12(const int step, const int nb, double *a, double *tmp1,
  ********************************/
 void CGrid::cr_pfft3b_queuein(const int nb, double *a) {
   int shift1, shift2;
-  int np = parall->np_i();
+  int np = c3db::parall->np_i();
 
   for (auto q=0; q<aqsize; ++q) {
     int indx = aqindx[q];
@@ -2807,7 +2931,7 @@ void CGrid::c_pack_end(const int nb, double *tmp1, const int request_indx) {
 void CGrid::rc_pfft3f_queuein(const int nb, double *b) 
 {
    int shift1, shift2;
-   int np = parall->np_i();
+   int np = c3db::parall->np_i();
  
    for (auto q = 0; q < bqsize; ++q) {
       int indx = bqindx[q];
@@ -2897,12 +3021,52 @@ void CGrid::rc_pack_copy(const int nb, double *a, double *b) {
   }
 }
 
+
+/********************************
+ *                              *
+ *     CGrid:tc_pack_copy       *
+ *                              *
+ ********************************/
+void CGrid::tc_pack_copy(const int nb, double *a, double *b) 
+{
+   int i, ii;
+   int ng = nidb[nb];
+
+   ii = 0;
+   for (i = 0; i < ng; ++i) 
+   {
+      b[ii]   = a[i];
+      b[ii+1] = 0.0;
+      ii += 2;
+   }
+}
+
+
 /********************************
  *                              *
  *      CGrid:rcc_pack_Mul      *
  *                              *
  ********************************/
 void CGrid::rcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
+{
+   int i, ii;
+   int ng = nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i)
+   {
+      c[ii]   = b[ii]*  a[i];
+      c[ii+1] = b[ii+1]*a[i];
+      ii += 2;
+   }
+}
+
+/********************************
+ *                              *
+ *      CGrid:tcc_pack_Mul      *
+ *                              *
+ ********************************/
+void CGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
 {
    int i, ii;
    int ng = nidb[nb];
@@ -2987,6 +3151,27 @@ void CGrid::rcc_pack_iMul(const int nb, const double *a, const double *b, double
     ii += 2;
   }
 }
+
+
+/********************************
+ *                              *
+ *      CGrid:tcc_pack_iMul     *
+ *                              *
+ ********************************/
+void CGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double *c) 
+{
+   int i, ii;
+   int ng = nidb[nb];
+
+   ii = 0;
+   for (i=0; i<ng; ++i) 
+   {
+      c[ii] = -b[ii + 1] * a[i];
+      c[ii + 1] = b[ii] * a[i];
+      ii += 2;
+   }
+}
+
 
 /*******************************************
  *                                         *
@@ -3080,7 +3265,7 @@ void CGrid::cccc_pack_Sum(const int nb, const double *a, const double *b, const 
  ********************************/
 void CGrid::c_pack_addzero(const int nb, const double vzero, double *a) {
   int pzero = cijktop(0, 0, 0);
-  if (pzero == parall->taskid_i())
+  if (pzero == c3db::parall->taskid_i())
     a[0] += vzero;
 }
 
@@ -3093,7 +3278,7 @@ void CGrid::c_pack_addzero(const int nb, const double vzero, double *a) {
 void CGrid::c_pack_noimagzero(const int nb, double *a) 
 {
    int pzero = cijktop(0, 0, 0);
-   if (pzero == parall->taskid_i())
+   if (pzero == c3db::parall->taskid_i())
       a[1] = 0.0;
 }
 
@@ -3160,6 +3345,20 @@ void CGrid::ccr_pack_iconjgMul(const int nb, const double *a, const double *b, d
       c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
 }
 
+
+/********************************
+ *                              *
+ *   CGrid:cct_pack_iconjgMul   *
+ *                              *
+ ********************************/
+void CGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c)
+{
+   for (auto i=0; i<nidb[nb]; ++i)
+      c[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
+}
+
+
+
 /********************************
  *                              *
  *  CGrid:ccr_pack_iconjgMulb   *
@@ -3170,6 +3369,19 @@ void CGrid::ccr_pack_iconjgMulb(const int nb, const double *a, const double *b, 
    for (auto i=0; i<(nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
+
+
+/********************************
+ *                              *
+ *  CGrid:cct_pack_iconjgMulb   *
+ *                              *
+ ********************************/
+void CGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c)
+{
+   for (auto i=0; i<(nidb[nb]); ++i)
+      c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
+}
+
 
 /**********************************
  *                                *
@@ -3199,7 +3411,7 @@ void CGrid::regenerate_r_grid() {
         int indx = cijktoindex2(i, j, k);
         int p = cijktop2(i, j, k);
 
-        if (p == parall->taskid_i()) {
+        if (p == c3db::parall->taskid_i()) {
           r_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
           r_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
           r_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
@@ -3235,7 +3447,7 @@ void CGrid::generate_r_sym_grid(double *r_sym_grid) {
         int indx = cijktoindex2(i, j, k);
         int p = cijktop2(i, j, k);
 
-        if (p == parall->taskid_i()) {
+        if (p == c3db::parall->taskid_i()) {
           r_sym_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
           r_sym_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
           r_sym_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
@@ -3264,7 +3476,7 @@ void CGrid::generate_r_sym_mask(double *rmask) {
         int indx = cijktoindex2(i, j, k);
         int p = cijktop2(i, j, k);
 
-        if (p == parall->taskid_i())
+        if (p == c3db::parall->taskid_i())
           rmask[indx] = 1.0;
       }
 }

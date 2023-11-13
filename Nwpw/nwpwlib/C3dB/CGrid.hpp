@@ -13,18 +13,20 @@
 #include "CBalance.hpp"
 #include "Lattice.hpp"
 #include "Parallel.hpp"
+#include "Brillouin.hpp"
 #include "c3db.hpp"
+#include "k1db.hpp"
 #include <cmath>
 
 namespace pwdft {
 
-class CGrid : public c3db {
+class CGrid : public k1db, public c3db {
 
-   CBalance *mybalance;
+   CBalance  *mybalance;
    int balanced;
  
-    /* nbrilq */
-    int nbrillq;
+   /* Brillouin */
+   Brillouin *mybrillouin;
  
    /* G grid data */
    double *Garray, **Gpack;
@@ -58,8 +60,8 @@ public:
    double *r_grid;
  
    /* constructor */
-   CGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool);
-   CGrid(Parallel *, Lattice *, Control2 &);
+   CGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool, Brillouin *);
+   CGrid(Parallel *, Lattice *, Control2 &, Brillouin *);
  
    /* destructor */
    ~CGrid() {
@@ -78,11 +80,12 @@ public:
          delete [] zero_row2[nb];
          delete [] zero_slab23[nb];
       }
+      
       delete [] Gpack;
       delete [] masker;
       delete [] packarray;
       delete [] zero_row3;
-      delete [] zero_row3;
+      delete [] zero_row2;
       delete [] zero_slab23;
 
       if (balanced)
@@ -101,8 +104,7 @@ public:
      
       // deallocate async buffer data
       for (auto q=0; q<aqmax; ++q)
-        parall->aend(3+q);
- 
+        c3db::parall->aend(3+q);
    }
  
    double *Gxyz(const int i) { return Garray + i*nfft3d; }
@@ -158,10 +160,21 @@ public:
  
    void r_unpack(const int, double *);
    void r_pack(const int, double *);
-   void rr_pack_copy(const int, double *, double *);
+   void rr_pack_copy(const int, const double *, double *);
    void r_pack_nzero(const int, const int, double *);
+
+   double tt_pack_dot(const int, double *, double *);
+   double tt_pack_idot(const int, double *, double *);
+   void t_unpack(const int, double *);
+   void t_pack(const int, double *);
+   void tt_pack_copy(const int, const double *, double *);
+   void t_pack_nzero(const int, const int, double *);
+
+   void tcc_pack_Mul(const int, const double *, const double *, double *);
+   void tcc_pack_iMul(const int, const double *, const double *, double *);
  
    void rc_pack_copy(const int, double *, double *);
+   void tc_pack_copy(const int, double *, double *);
  
    void rcc_pack_Mul(const int, const double *, const double *, double *);
    void rcc_pack_aMul(const int, const double, const double *, const double *, double *);
@@ -186,6 +199,9 @@ public:
    void ccr_pack_iconjgMul(const int, const double *, const double *, double *);
    void ccr_pack_iconjgMulb(const int, const double *, const double *, double *);
  
+   void cct_pack_iconjgMul(const int, const double *, const double *, double *);
+   void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
+
    void i_pack(const int, int *);
    void ii_pack_copy(const int, int *, int *);
  

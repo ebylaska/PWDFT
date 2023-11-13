@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <iostream>
 
 namespace pwdft {
 
@@ -247,44 +248,51 @@ public:
      return doprt;
    }
  
-   void set_total_ion_charge(int icharge) {
-     ptotal_ion_charge = icharge;
- 
-     /* x = total number of electrons */
-     int x = (int)(ptotal_ion_charge - ptotal_charge);
- 
-     /* reassign ispin to agree with total number electrons - odd number of
-      * electrons ==> ispin=2 */
-     if (((x % 2) != 0) && (pispin == 1))
-       pispin = 2;
- 
-     /* reassign multiplicity to  agree with total number electrons */
-     /*  -- odd number of electrons and mult odd */
-     if (((x % 2) != 0) && ((pmultiplicity % 2) != 0)) {
-       pmultiplicity -= 1;
-       while (pmultiplicity > (x + 1))
-         pmultiplicity -= 2;
-       if (pmultiplicity < 1)
-         pmultiplicity = 2;
-     }
-     /*  -- even number of electrons and mult even */
-     if (((x % 2) == 0) && ((pmultiplicity % 2) == 0)) {
-       pmultiplicity -= 1;
-       while (pmultiplicity > (x + 1))
-         pmultiplicity -= 2;
-       if (pmultiplicity < 1)
-         pmultiplicity = 1;
-     }
- 
-     /* assign ne */
-     if (pispin == 1) {
-       pne[0] = x / 2;
-       pne[1] = 0;
-     } else {
-       int dx = pmultiplicity - 1;
-       pne[0] = (x + dx) / 2;
-       pne[1] = (x - dx) / 2;
-     }
+   void set_total_ion_charge(int icharge) 
+   {
+      ptotal_ion_charge = icharge;
+     
+      /* x = total number of electrons */
+      int x = (int)(ptotal_ion_charge - ptotal_charge);
+
+     
+      /* reassign ispin to agree with total number electrons - odd number of
+       * electrons ==> ispin=2 */
+      if (((x % 2) != 0) && (pispin == 1))
+         pispin = 2;
+     
+      /* reassign multiplicity to  agree with total number electrons */
+      /*  -- odd number of electrons and mult odd */
+      if (((x % 2) != 0) && ((pmultiplicity % 2) != 0)) 
+      {
+         pmultiplicity -= 1;
+         while (pmultiplicity > (x + 1))
+            pmultiplicity -= 2;
+         if (pmultiplicity < 1)
+            pmultiplicity = 2;
+      }
+      /*  -- even number of electrons and mult even */
+      if (((x % 2) == 0) && ((pmultiplicity % 2) == 0)) 
+      {
+         pmultiplicity -= 1;
+         while (pmultiplicity > (x + 1))
+            pmultiplicity -= 2;
+         if (pmultiplicity < 1)
+            pmultiplicity = 1;
+      }
+     
+      /* assign ne */
+      if (pispin == 1) 
+      {
+         pne[0] = x / 2;
+         pne[1] = 0;
+      } 
+      else 
+      {
+         int dx = pmultiplicity - 1;
+         pne[0] = (x + dx) / 2;
+         pne[1] = (x - dx) / 2;
+      }
    }
  
    // Efield

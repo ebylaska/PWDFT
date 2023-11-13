@@ -49,11 +49,12 @@ Mapping1k::Mapping1k(const int mapin, const int npin, const int taskidin, const 
    nbrillouin = 0;
    nbrillq    = 0;
 
-   nbrillouine = nbrillin;
+   nbrillouin = nbrillin;
    qmap = new (std::nothrow) int[nbrillouin];
    pmap = new (std::nothrow) int[nbrillouin];
    kmap = new (std::nothrow) int[nbrillouin];
    nqarray = new (std::nothrow) int[np];
+
 
    /* cyclic mapping */
    if (maptype1 == 0) 

@@ -33,14 +33,14 @@ class CBalance {
   Parallel *parall;
 
   int maxsize;
-  int *proc_to_list[MAXSIZE_MAX];
-  int *proc_from_list[MAXSIZE_MAX];
-  int *packet_size_list[MAXSIZE_MAX];
-  int *indx_start_list[MAXSIZE_MAX];
+  int **proc_to_list;
+  int **proc_from_list;
+  int **packet_size_list;
+  int **indx_start_list;
 
-  int npacket_list[MAXSIZE_MAX];
-  int receiver_list[MAXSIZE_MAX];
-  int sender_list[MAXSIZE_MAX];
+  int *npacket_list;
+  int *receiver_list;
+  int *sender_list;
 
 public:
   /* Constructors */
@@ -53,6 +53,8 @@ public:
   void c_balance(const int, double *);
   void r_unbalance(const int, double *);
   void r_balance(const int, double *);
+  void t_unbalance(const int, double *);
+  void t_balance(const int, double *);
   void i_balance(const int, int *);
 
   void c_unbalance_start(const int, double *, const int, const int);

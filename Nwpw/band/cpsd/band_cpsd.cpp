@@ -13,8 +13,10 @@
 #include "Ion.hpp"
 #include "Lattice.hpp"
 #include "Brillouin.hpp"
+#include "Cneb.hpp"
+#include "CPseudopotential.hpp"
 
-#include "Strfac.hpp"
+#include "CStrfac.hpp"
 
 #include "util_date.hpp"
 #include "mpi.h"
@@ -91,8 +93,36 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Ion myion(rtdbstring, control);
    MPI_Barrier(comm_world0);
 
+
+   /* Check for and generate psp files                       */
+   /* - this routine also sets the valence charges in myion, */
+   /*   and total_ion_charge and ne in control               */
+   psp_file_check(&myparallel, &myion, control, std::cout);
+   MPI_Barrier(comm_world0);
+
+
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
+   control.set_total_ion_charge(8);
+
+   std::cout << "ispin=" << control.ispin() << " ne=" << control.ne_ptr()[0] << " " << control.ne_ptr()[1] 
+             << " nbrillioun=" << mybrillouin.nbrillouin << std::endl;
+   /* initialize parallel grid structure */
+   Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+
+   /* setup structure factor */
+   CStrfac mystrfac(&myion,&mygrid);
+   mystrfac.phafac();
+
+   /* initialize psps */
+   CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
+
+   /* setup ewald */
+   Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
+   //Ewald myewald(&myparallel,&myion,&mylattice,control,zvpsp);
+   myewald.phafac();
+
+
 
    if (oprint)
    {
@@ -102,7 +132,6 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
       std::cout << " number of processors used: " << myparallel.np() << std::endl;
       std::cout << " processor grid           : " << myparallel.np_i() << " x " << myparallel.np_j() <<  " x " << myparallel.np_k() << std::endl;
-      /*
       if (mygrid.maptype == 1) std::cout << " parallel mapping         : 1d-slab" << std::endl;
       if (mygrid.maptype == 2) std::cout << " parallel mapping         : 2d-hilbert" << std::endl;
       if (mygrid.maptype == 3) std::cout << " parallel mapping         : 2d-hcurve" << std::endl;
@@ -113,7 +142,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged gpu fft" << std::endl;
       if (control.tile_factor() > 1)
          std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
-      */
+
+      std::cout << mypsp.print_pspall();
 
       std::cout << "\n atom composition:" << std::endl;
       for (ia = 0; ia < myion.nkatm; ++ia)
@@ -182,7 +212,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                    << Ffmt(8,3) << gamma1 << std::endl;
       }
 
-      /*
+      
       std::cout << "      density cutoff ="
                 << Ffmt(7,3) << mylattice.ecut()
                 << " fft =" << Ifmt(4) << mygrid.nx << " x "
@@ -197,8 +227,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                             << Ifmt(4) << mygrid.nz
                 << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves "
                          << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
-      */
-      /*
+    
       std::cout << "\n";
       std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = "
@@ -214,8 +243,6 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(12,8) << myewald.mandelung()
                 << " (alpha =" << Ffmt(12,8) << myewald.rsalpha()
                 << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
-      */
-
 
        /* print nbrillouin */
       std::cout << std::endl;
