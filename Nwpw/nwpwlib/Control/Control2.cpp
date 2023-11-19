@@ -217,10 +217,23 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    {
       pnp_dimensions[0] = rtdbjson["nwpw"]["np_dimensions"][0];
       pnp_dimensions[1] = rtdbjson["nwpw"]["np_dimensions"][1];
-      pnp_dimensions[2] = 1;
+      pnp_dimensions[2] = rtdbjson["nwpw"]["np_dimensions"][2];
 
+      if (pnp_dimensions[2] < 1) pnp_dimensions[2] = 1;
       if (pnp_dimensions[1] < 1) pnp_dimensions[1] = 1;
       if (pnp_dimensions[0] < 1) pnp_dimensions[0] = 1;
+
+      int  nbrill = 1;
+      if (!rtdbjson["nwpw"]["brillouin_zone"]["kvectors"].is_null())
+           nbrill = rtdbjson["nwpw"]["brillouin_zone"]["kvectors"].size();
+
+      // reset np_dimensions(3) if larger than nbrill 
+      if (pnp_dimensions[2]>nbrill) pnp_dimensions[2] = nbrill;
+
+      // reset np_dimensions(2) if it is not a  multiple of np 
+      while (np % pnp_dimensions[2] != 0 && pnp_dimensions[2] > 1) {
+         pnp_dimensions[2]--;
+      }
      
       /* reset np_dimensions[1] if it is not a  multiple of np2 */
       np = np / pnp_dimensions[2];

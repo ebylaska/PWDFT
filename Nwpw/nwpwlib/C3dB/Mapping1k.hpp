@@ -78,6 +78,9 @@ public:
     * @return Processor ID corresponding to the given k vector.
     */
    int ktop(const int k) { return pmap[k]; }
+
+
+   int ktoptok(const int k) { return kmap[k]; }
 };
 
 } // namespace pwdft

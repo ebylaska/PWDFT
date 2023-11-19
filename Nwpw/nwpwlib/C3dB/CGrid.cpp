@@ -104,6 +104,14 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nwave_all    = new (std::nothrow) int[nbrillq+1]();
    nwave_entire = new (std::nothrow) int[nbrillq+1]();
 
+   p_kvector = new (std::nothrow) double[3*nbrillq];
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      auto nb = k1db::ktoptok(nbq);
+      p_kvector[3*nbq]   = mybrillouin->kvector[3*nb];
+      p_kvector[3*nbq+1] = mybrillouin->kvector[3*nb+1];
+      p_kvector[3*nbq+2] = mybrillouin->kvector[3*nb+2];
+   }
 
    std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
    masker    = new (std::nothrow) int*[nbrillq+1]();
@@ -121,22 +129,32 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    c3db::parall->Barrier();
 
-
+   double kv[3];
    for (auto nb=0; nb<=nbrillq; ++nb) 
    {
       nwave[nb] = 0;
       if (nb == 0)
+      {
          ggcut = lattice->eggcut();
+         kv[0] = 0.0;
+         kv[1] = 0.0;
+         kv[2] = 0.0;
+      }
       else
+      {
          ggcut = lattice->wggcut();
+         kv[0] = p_kvector[3*(nb-1)];
+         kv[1] = p_kvector[3*(nb-1)+1];
+         kv[2] = p_kvector[3*(nb-1)+2];
+      }
      
       for (auto k3 = (-nzh + 1); k3 < nzh; ++k3)
         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
           for (auto k1 = 0; k1 < nxh; ++k1) 
           {
-             auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-             auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-             auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+             auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+             auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+             auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
              auto i = k1; if (i < 0) i += nx;
              auto j = k2; if (j < 0) j += ny;
              auto k = k3; if (k < 0) k += nz;

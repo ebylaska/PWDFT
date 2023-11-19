@@ -33,6 +33,8 @@ class CGrid : public k1db, public c3db {
    double Gmax, Gmin;
    int **masker, **packarray;
    int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2;
+
+   double *p_kvector;
  
    /* pfft data */
    bool **zero_row2, **zero_row3, **zero_slab23;
@@ -65,6 +67,7 @@ public:
  
    /* destructor */
    ~CGrid() {
+      delete [] p_kvector;
       delete [] Garray;
       delete [] nwave;
       delete [] nwave_entire;

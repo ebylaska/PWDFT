@@ -1427,6 +1427,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
          nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2])};
        if (ss.size() > 3)
          nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2]), std::stoi(ss[3])};
+
     } else if (mystring_contains(line, "loop")) {
        std::vector<int> loop;
        loop.push_back(1);

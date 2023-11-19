@@ -174,12 +174,11 @@ void Parallel::init2d(const int ncolumns, const int pfft3_qsize)
  ********************************/
 void Parallel::init3d(const int ncolumns, const int nzones, const int pfft3_qsize) 
 {
-
    int ii;
    MPI_Group orig_group;
 
    MPI_Barrier(comm_world);
-   if (ncolumns > 1) 
+   if ((ncolumns > 1)  || (nzones>1))
    {
       dim = 3;
       npi[1] = npi[0] / (ncolumns*nzones);
