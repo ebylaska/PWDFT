@@ -54,30 +54,62 @@ namespace pwdft {
  */
 static bool cpp_read_header(char *fname, char *comment, int *psp_type,
                             int *version, int nfft[], double unita[],
-                            char *atom, double *amass, double *zv) {
-  int i, ifound;
+                            char *atom, double *amass, double *zv,
+                            std::vector<double> kvectors) 
+{
+   int i, ifound;
+ 
+   ifound = cfileexists(fname);
+ 
+   if (ifound > 0) 
+   {
+      openfile(5, fname, "r");
+      cread(5, comment, 80);
+      comment[79] = '\0';
+      i = 78;
+      while (comment[i] == ' ')
+        comment[i--] = '\0';
+     
+      iread(5, psp_type, 1);
+      iread(5, version, 1);
+      iread(5, nfft, 3);
+      dread(5, unita, 9);
+      cread(5, atom, 2);
+      dread(5, amass, 1);
+      dread(5, zv, 1);
 
-  ifound = cfileexists(fname);
+      int lmax, locp, nmax, nprj;
+      iread(5, &lmax, 1);
+      iread(5, &locp, 1);
+      iread(5, &nmax, 1);
 
-  if (ifound > 0) {
-    openfile(5, fname, "r");
-    cread(5, comment, 80);
-    comment[79] = '\0';
-    i = 78;
-    while (comment[i] == ' ')
-      comment[i--] = '\0';
+      double rc[lmax+1];
+      dread(5, rc, (lmax+1));
+      iread(5, &nprj, 1);
+      if (nprj>0) 
+      {
+         int n_projector[nprj], l_projector[nprj], m_projector[nprj];
+         int rsize=nmax*nmax*(lmax+1);
+         double Gijl[rsize];
 
-    iread(5, psp_type, 1);
-    iread(5, version, 1);
-    iread(5, nfft, 3);
-    dread(5, unita, 9);
-    cread(5, atom, 2);
-    dread(5, amass, 1);
-    dread(5, zv, 1);
-    closefile(5);
-  }
+         iread(5, n_projector, nprj);
+         iread(5, l_projector, nprj);
+         iread(5, m_projector, nprj);
+         dread(5, Gijl, rsize);
+      }
+      double rcore;
+      dread(5, &rcore, 1);
 
-  return (ifound > 0);
+      int nbrillouin;
+      iread(5, &nbrillouin, 1);
+
+      kvectors.resize(3*nbrillouin);
+      dread(5, kvectors.data(), 3*nbrillouin);
+     
+      closefile(5);
+   }
+ 
+   return (ifound > 0);
 }
 
 /*****************************************************
@@ -98,33 +130,38 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
  * @param psp_version The expected PSP (Pseudopotential) version for compatibility.
  * @return `true` if reformatting is needed, `false` otherwise.
  */
-static bool cpp_formatter_check(CGrid *mygrid, char *fname,
-                                const int psp_version) {
-  char comment[80], atom[2];
-  int psp_type, version, nfft[3];
-  double unita[9], amass, zv;
-  double tol = 1.0e-9;
-  int ireformat;
+static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_version)
+{
+   char comment[80], atom[2];
+   int psp_type, version, nfft[3];
+   double unita[9], amass, zv;
+   std::vector<double> kvectors;
 
-  ireformat = 1;
-  if (mygrid->c3db::parall->is_master()) {
-    if (cpp_read_header(fname, comment, &psp_type, &version, nfft, unita, atom,
-                        &amass, &zv)) {
-      bool reformat = false;
-      for (auto i = 0; i < 9; ++i)
-        reformat = reformat ||
-                   (std::fabs(mygrid->lattice->unita1d(i) - unita[i]) > tol);
-      reformat = reformat || (mygrid->nx != nfft[0]);
-      reformat = reformat || (mygrid->ny != nfft[1]);
-      reformat = reformat || (mygrid->nz != nfft[2]);
-      reformat = reformat || (psp_version != version);
-      if (!reformat)
-        ireformat = 0;
-    }
-  }
-  mygrid->c3db::parall->Brdcst_iValue(0, 0, &ireformat);
+   double tol = 1.0e-9;
+   int ireformat;
+ 
+   ireformat = 1;
+   if (mygrid->c3db::parall->is_master()) {
+     if (cpp_read_header(fname, comment, &psp_type, &version, nfft, unita, atom, &amass, &zv, kvectors))
+     {
+        bool reformat = false;
+        for (auto i = 0; i < 9; ++i)
+           reformat = reformat || (std::fabs(mygrid->lattice->unita1d(i) - unita[i]) > tol);
+        reformat = reformat || (mygrid->nx != nfft[0]);
+        reformat = reformat || (mygrid->ny != nfft[1]);
+        reformat = reformat || (mygrid->nz != nfft[2]);
+        reformat = reformat || (psp_version != version);
 
-  return (ireformat == 1);
+        reformat = reformat || (kvectors.size()/3 != mygrid->nbrillouin);
+        std::cout << "CHECK nbrill=" << mygrid->nbrillouin << " " << kvectors.size()/2 << std::endl;
+
+        if (!reformat)
+           ireformat = 0;
+     }
+   }
+   mygrid->c3db::parall->Brdcst_iValue(0, 0, &ireformat);
+ 
+   return (ireformat == 1);
 }
 
 
@@ -354,126 +391,131 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
      *semicore = false;
  
    /* read in miscellaneous paw energies and 1d wavefunctions */
-   if (*psp_type == 4) {
-     nn = (*n1dbasis) * (*n1dbasis) * (*n1dbasis) * (*n1dbasis) *
-          (2 * (*lmax) + 1);
-     *hartree_matrix = new (std::nothrow) double[nn]();
-     if (parall->is_master())
-       dread(5, *hartree_matrix, nn);
-     parall->Brdcst_Values(0, 0, nn, *hartree_matrix);
- 
-     nn = (*n1dbasis) * (*n1dbasis) * (2 * (*lmax) + 1);
-     *comp_charge_matrix = new (std::nothrow) double[nn]();
-     if (parall->is_master())
-       dread(5, *comp_charge_matrix, nn);
-     parall->Brdcst_Values(0, 0, nn, *comp_charge_matrix);
- 
-     *comp_pot_matrix = new (std::nothrow) double[nn]();
-     if (parall->is_master())
-       dread(5, *comp_pot_matrix, nn);
-     parall->Brdcst_Values(0, 0, nn, *comp_pot_matrix);
- 
-     if (parall->is_master()) {
-       dread(5, core_kin_energy, 1);
-       dread(5, core_ion_energy, 1);
-     }
-     parall->Brdcst_Values(0, 0, 1, core_kin_energy);
-     parall->Brdcst_Values(0, 0, 1, core_ion_energy);
- 
-     if (parall->is_master()) {
-       iread(5, n1dgrid, 1);
-       iread(5, icut, 1);
-       dread(5, log_amesh, 1);
-       dread(5, r1, 1);
-       dread(5, rmax, 1);
-       dread(5, sigma, 1);
-       dread(5, zion, 1);
-     }
-     parall->Brdcst_iValue(0, 0, n1dgrid);
-     parall->Brdcst_iValue(0, 0, icut);
-     parall->Brdcst_Values(0, 0, 1, log_amesh);
-     parall->Brdcst_Values(0, 0, 1, r1);
-     parall->Brdcst_Values(0, 0, 1, rmax);
-     parall->Brdcst_Values(0, 0, 1, sigma);
-     parall->Brdcst_Values(0, 0, 1, zion);
- 
-     if ((*n1dbasis) > 0) {
-       nn = (*n1dbasis);
-       *nae = new (std::nothrow) int[nn]();
-       *nps = new (std::nothrow) int[nn]();
-       *lps = new (std::nothrow) int[nn]();
- 
-       *eig = new (std::nothrow) double[nn]();
- 
-       nn = (*n1dbasis) * (*n1dgrid);
-       *phi_ae = new (std::nothrow) double[nn]();
-       *dphi_ae = new (std::nothrow) double[nn]();
-       *phi_ps = new (std::nothrow) double[nn]();
-       *dphi_ps = new (std::nothrow) double[nn]();
-     }
-     nn = (*n1dgrid);
-     *core_ae = new (std::nothrow) double[nn]();
-     *core_ps = new (std::nothrow) double[nn]();
-     *core_ae_prime = new (std::nothrow) double[nn]();
-     *core_ps_prime = new (std::nothrow) double[nn]();
-     *rgrid = new (std::nothrow) double[nn]();
- 
-     nn = (*n1dbasis);
-     if (parall->is_master())
-       dread(5, *eig, nn);
-     parall->Brdcst_Values(0, 0, nn, *eig);
- 
-     if (parall->is_master())
-       iread(5, *nae, nn);
-     parall->Brdcst_iValues(0, 0, nn, *nae);
- 
-     if (parall->is_master())
-       iread(5, *nps, nn);
-     parall->Brdcst_iValues(0, 0, nn, *nps);
- 
-     if (parall->is_master())
-       iread(5, *lps, nn);
-     parall->Brdcst_iValues(0, 0, nn, *lps);
- 
-     nn = (*n1dgrid);
-     if (parall->is_master())
-       dread(5, *rgrid, nn);
-     parall->Brdcst_Values(0, 0, nn, *rgrid);
- 
-     nn = (*n1dbasis) * (*n1dgrid);
-     if (parall->is_master())
-       dread(5, *phi_ae, nn);
-     parall->Brdcst_Values(0, 0, nn, *phi_ae);
- 
-     if (parall->is_master())
-       dread(5, *dphi_ae, nn);
-     parall->Brdcst_Values(0, 0, nn, *dphi_ae);
- 
-     if (parall->is_master())
-       dread(5, *phi_ps, nn);
-     parall->Brdcst_Values(0, 0, nn, *phi_ps);
- 
-     if (parall->is_master())
-       dread(5, *dphi_ps, nn);
-     parall->Brdcst_Values(0, 0, nn, *dphi_ps);
- 
-     nn = (*n1dbasis) * (*n1dgrid);
-     if (parall->is_master())
-       dread(5, *core_ae, nn);
-     parall->Brdcst_Values(0, 0, nn, *core_ae);
- 
-     if (parall->is_master())
-       dread(5, *core_ps, nn);
-     parall->Brdcst_Values(0, 0, nn, *core_ps);
- 
-     if (parall->is_master())
-       dread(5, *core_ae_prime, nn);
-     parall->Brdcst_Values(0, 0, nn, *core_ae_prime);
- 
-     if (parall->is_master())
-       dread(5, *core_ps_prime, nn);
-     parall->Brdcst_Values(0, 0, nn, *core_ps_prime);
+   if (*psp_type == 4) 
+   {
+      nn = (*n1dbasis) * (*n1dbasis) * (*n1dbasis) * (*n1dbasis) * (2 * (*lmax) + 1);
+      *hartree_matrix = new (std::nothrow) double[nn]();
+      if (parall->is_master())
+         dread(5, *hartree_matrix, nn);
+      parall->Brdcst_Values(0, 0, nn, *hartree_matrix);
+     
+      nn = (*n1dbasis) * (*n1dbasis) * (2 * (*lmax) + 1);
+      *comp_charge_matrix = new (std::nothrow) double[nn]();
+      if (parall->is_master())
+         dread(5, *comp_charge_matrix, nn);
+      parall->Brdcst_Values(0, 0, nn, *comp_charge_matrix);
+     
+      *comp_pot_matrix = new (std::nothrow) double[nn]();
+      if (parall->is_master())
+         dread(5, *comp_pot_matrix, nn);
+      parall->Brdcst_Values(0, 0, nn, *comp_pot_matrix);
+     
+      if (parall->is_master()) 
+      {
+         dread(5, core_kin_energy, 1);
+         dread(5, core_ion_energy, 1);
+      }
+      parall->Brdcst_Values(0, 0, 1, core_kin_energy);
+      parall->Brdcst_Values(0, 0, 1, core_ion_energy);
+     
+      if (parall->is_master()) 
+      {
+         iread(5, n1dgrid, 1);
+         iread(5, icut, 1);
+         dread(5, log_amesh, 1);
+         dread(5, r1, 1);
+         dread(5, rmax, 1);
+         dread(5, sigma, 1);
+         dread(5, zion, 1);
+      }
+      parall->Brdcst_iValue(0, 0, n1dgrid);
+      parall->Brdcst_iValue(0, 0, icut);
+      parall->Brdcst_Values(0, 0, 1, log_amesh);
+      parall->Brdcst_Values(0, 0, 1, r1);
+      parall->Brdcst_Values(0, 0, 1, rmax);
+      parall->Brdcst_Values(0, 0, 1, sigma);
+      parall->Brdcst_Values(0, 0, 1, zion);
+     
+      if ((*n1dbasis) > 0) 
+      {
+         nn = (*n1dbasis);
+         *nae = new (std::nothrow) int[nn]();
+         *nps = new (std::nothrow) int[nn]();
+         *lps = new (std::nothrow) int[nn]();
+        
+         *eig = new (std::nothrow) double[nn]();
+        
+         nn = (*n1dbasis) * (*n1dgrid);
+         *phi_ae = new (std::nothrow) double[nn]();
+         *dphi_ae = new (std::nothrow) double[nn]();
+         *phi_ps = new (std::nothrow) double[nn]();
+         *dphi_ps = new (std::nothrow) double[nn]();
+      }
+      nn = (*n1dgrid);
+      *core_ae = new (std::nothrow) double[nn]();
+      *core_ps = new (std::nothrow) double[nn]();
+      *core_ae_prime = new (std::nothrow) double[nn]();
+      *core_ps_prime = new (std::nothrow) double[nn]();
+      *rgrid = new (std::nothrow) double[nn]();
+     
+      nn = (*n1dbasis);
+      if (parall->is_master())
+         dread(5, *eig, nn);
+      parall->Brdcst_Values(0, 0, nn, *eig);
+     
+      if (parall->is_master())
+         iread(5, *nae, nn);
+      parall->Brdcst_iValues(0, 0, nn, *nae);
+     
+      if (parall->is_master())
+         iread(5, *nps, nn);
+      parall->Brdcst_iValues(0, 0, nn, *nps);
+     
+      if (parall->is_master())
+         iread(5, *lps, nn);
+      parall->Brdcst_iValues(0, 0, nn, *lps);
+     
+      nn = (*n1dgrid);
+      if (parall->is_master())
+         dread(5, *rgrid, nn);
+      parall->Brdcst_Values(0, 0, nn, *rgrid);
+     
+      nn = (*n1dbasis) * (*n1dgrid);
+      if (parall->is_master())
+         dread(5, *phi_ae, nn);
+      parall->Brdcst_Values(0, 0, nn, *phi_ae);
+     
+      if (parall->is_master())
+         dread(5, *dphi_ae, nn);
+      parall->Brdcst_Values(0, 0, nn, *dphi_ae);
+     
+      if (parall->is_master())
+         dread(5, *phi_ps, nn);
+      parall->Brdcst_Values(0, 0, nn, *phi_ps);
+     
+      if (parall->is_master())
+         dread(5, *dphi_ps, nn);
+      parall->Brdcst_Values(0, 0, nn, *dphi_ps);
+     
+      nn = (*n1dbasis) * (*n1dgrid);
+      if (parall->is_master())
+         dread(5, *core_ae, nn);
+      parall->Brdcst_Values(0, 0, nn, *core_ae);
+     
+      if (parall->is_master())
+         dread(5, *core_ps, nn);
+      parall->Brdcst_Values(0, 0, nn, *core_ps);
+     
+      if (parall->is_master())
+         dread(5, *core_ae_prime, nn);
+      parall->Brdcst_Values(0, 0, nn, *core_ae_prime);
+     
+      if (parall->is_master())
+         dread(5, *core_ps_prime, nn);
+      parall->Brdcst_Values(0, 0, nn, *core_ps_prime);
    }
+
+   /* readin kvectors */
  
    /* readin vl 3d block */
    tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
@@ -1033,14 +1075,26 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
          util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
       }
      
-      /* allocate vnl and ncore  generate formated grids */
-      *vnl = new (std::nothrow) double[(psp1d.nprj) * (mygrid->npack(1))]();
+      /* allocate ncore generate formated grids for vl and ncore */
       if (*semicore)
          *ncore = new (std::nothrow) double[5 * mygrid->npack(0)]();
      
-      /*  generate formatted grids using splines */
-      psp1d.cpp_generate_spline(mygrid, nray, G_ray, vl_ray, vnl_ray,
-                                rho_sc_k_ray, vl, *vnl, *ncore);
+      /* generate formatted grid for vl and ncore using splines */
+      psp1d.cpp_generate_local_spline(mygrid, nray, G_ray, vl_ray, rho_sc_k_ray, vl, *ncore);
+
+
+      /* allocate vnl generate formated grids */
+      *vnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack(1))]();
+
+      for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
+      {
+         std::cout << "generate vnl nbq=" << nbq << std::endl;
+         std::cout << "   kvector=" << mygrid->pbrill_kvector(nbq)[0] 
+                   << " " << mygrid->pbrill_kvector(nbq)[1] 
+                   << " " << mygrid->pbrill_kvector(nbq)[2] << std::endl;
+         psp1d.cpp_generate_nonlocal_spline(mygrid, mygrid->pbrill_kvector(nbq), nray, G_ray, vnl_ray, *vnl + nbq*(psp1d.nprj)*(mygrid->npack(1)));
+      }
+
      
       /* deallocate ray formatted grids */
       delete[] rho_sc_k_ray;
@@ -1211,6 +1265,8 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
       if (myparall->base_stdio_print)
          coutput << "in cpp_generate Not finished, psp_type = " << *psp_type << std::endl;
    }
+
+   std::cout << "END cpp_generate!!" << std::endl;
 }
 
 
@@ -1263,6 +1319,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
  
    psp_version = control.version;
  
+   std::cout << "nbrillq=" << mypneb->nbrillq << std::endl;
    npsp = myion->nkatm;
    nprj_max = 0;
  
@@ -1361,6 +1418,8 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                       &comp_pot_matrix_ptr, coutput);
         
          // writing .cpp file to fname
+         std::cout << "cpp_write" << std::endl;
+         /*
          cpp_write(mypneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
                    aname, amass[ia], zv[ia], lmmax[ia], lmax[ia], locp[ia],
                    nmax[ia], rc_ptr, nprj[ia], n_ptr, l_ptr, m_ptr, b_ptr, G_ptr,
@@ -1371,6 +1430,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                    core_ae_ptr, core_ps_ptr, core_ae_prime_ptr, core_ps_prime_ptr,
                    rgrid_ptr, core_kin[ia], core_ion[ia], hartree_matrix_ptr,
                    comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
+         */
       } 
       else 
       {
@@ -1471,7 +1531,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
 
 /*******************************************
  *                                         *
- *     CPseudopotential::v_nonlocal         *
+ *     CPseudopotential::v_nonlocal        *
  *                                         *
  *******************************************/
 /**

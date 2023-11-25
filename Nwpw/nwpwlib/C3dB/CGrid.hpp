@@ -131,6 +131,8 @@ public:
        g_ray[i] = dGmin * i;
      return g_ray;
    }
+
+   double  *pbrill_kvector(const int i) { return p_kvector + 3*i; }
  
    int npack(const int nb) { return (nidb[nb]); }
    int npack_all(const int nb) { return nwave_all[nb]; }

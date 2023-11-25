@@ -103,7 +103,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
-   control.set_total_ion_charge(8);
+   //control.set_total_ion_charge(8);
 
    std::cout << "ispin=" << control.ispin() << " ne=" << control.ne_ptr()[0] << " " << control.ne_ptr()[1] 
              << " nbrillioun=" << mybrillouin.nbrillouin << std::endl;

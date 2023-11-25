@@ -863,134 +863,146 @@ int main(int argc, char *argv[]) {
      std::cout << "First task=" << task << std::endl << std::endl;
 
   // Initialize wavefunction
-  if (parse_initialize_wvfnc(rtdbstr, true)) {
-    bool wvfnc_initialize = parse_initialize_wvfnc(rtdbstr, false);
-    if (wvfnc_initialize)
-      rtdbstr = parse_initialize_wvfnc_set(rtdbstr, false);
-
-    std::string input_wavefunction_filename =
-        parse_input_wavefunction_filename(rtdbstr);
-    int wfound = 0;
-    if (taskid == MASTER) {
-      std::ifstream wfile(input_wavefunction_filename);
-      if (wfile.good())
-        wfound = 1;
-      wfile.close();
-    }
-    MPI_Bcast(&wfound, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-
-    if ((!wfound) || (wvfnc_initialize)) {
-      auto lowlevel_rtdbstrs = parse_gen_lowlevel_rtdbstrs(rtdbstr);
-      for (const auto &elem : lowlevel_rtdbstrs) {
-        // add initiale to el
-        std::string dum_rtdbstr = elem;
-        if (wvfnc_initialize) {
-          dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr, true);
-          wvfnc_initialize = false;
+  if ((task<10) && (parse_initialize_wvfnc(rtdbstr, true))) 
+  {
+     bool wvfnc_initialize = parse_initialize_wvfnc(rtdbstr, false);
+     if (wvfnc_initialize)
+        rtdbstr = parse_initialize_wvfnc_set(rtdbstr, false);
+    
+     std::string input_wavefunction_filename = parse_input_wavefunction_filename(rtdbstr);
+     int wfound = 0;
+     if (taskid == MASTER) 
+     {
+        std::ifstream wfile(input_wavefunction_filename);
+        if (wfile.good()) wfound = 1;
+        wfile.close();
+     }
+     MPI_Bcast(&wfound, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    
+     if ((!wfound) || (wvfnc_initialize)) 
+     {
+        auto lowlevel_rtdbstrs = parse_gen_lowlevel_rtdbstrs(rtdbstr);
+        for (const auto &elem : lowlevel_rtdbstrs) 
+        {
+           // add initiale to el
+           std::string dum_rtdbstr = elem;
+           if (wvfnc_initialize) 
+           {
+              dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr, true);
+              wvfnc_initialize = false;
+           }
+           if (oprint)
+              std::cout << std::endl
+                  << "Running staged energy optimization - lowlevel_rtdbstr = "
+                  << dum_rtdbstr << std::endl
+                  << std::endl;
+           ierr += pspw_minimizer(MPI_COMM_WORLD, dum_rtdbstr, std::cout);
         }
-        if (oprint)
-          std::cout
-              << std::endl
-              << "Running staged energy optimization - lowlevel_rtdbstr = "
-              << dum_rtdbstr << std::endl
-              << std::endl;
-        ierr += pspw_minimizer(MPI_COMM_WORLD, dum_rtdbstr, std::cout);
-      }
-    }
+     }
   }
 
+
   // Tasks
-  while (task > 0) {
-    /* Energy or Gradient task */
-    if ((task == 1) || (task == 2)) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running energy calculation - rtdbstr = " << rtdbstr
-                  << std::endl
-                  << std::endl;
-      MPI_Barrier(MPI_COMM_WORLD);
-      ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
-    }
-
-    /* Optimize task */
-    if (task == 3) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running geometry optimization calculation - rtdbstr = "
-                  << rtdbstr << std::endl
-                  << std::endl;
-      MPI_Barrier(MPI_COMM_WORLD);
-      ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
-    }
-
-    /* Frequency task */
-    if (task == 4) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running frequency calculation - rtdbstr = " << rtdbstr
-                  << std::endl
-                  << std::endl;
-    }
-
-    /* Steepest descent task */
-    if (task == 5) {
-      ierr += pwdft::cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
-    }
-
-    /* Car-Parrinello task */
-    if (task == 6) {
-      ierr += pwdft::cpmd(MPI_COMM_WORLD, rtdbstr); /* Car-Parrinello task */
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    /* Born-Oppenheimer task */
-    if (task == 7) {
-      if (oprint)
-        std::cout << std::endl
-                  << "Running Born-Oppenheimer molecular dynamics - rtdbstr = "
-                  << rtdbstr << std::endl
-                  << std::endl;
-      MPI_Barrier(MPI_COMM_WORLD);
-      ierr += pwdft::pspw_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
-    }
-
-    /* dplot task */
-    if (task == 8) {
-       if (oprint)
-          std::cout << std::endl
-                    << "Running dplot - rtdbstr = " << rtdbstr << std::endl
-                    << std::endl;
-       MPI_Barrier(MPI_COMM_WORLD);
-       ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
-    }
-
-    /* file generate task */
-    if (task == 9) {
-       if (oprint)
-       {
-          std::cout << std::endl
-                    << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
-          ierr += pwdft::file_generate(rtdbstr);
-       }
-    }
-
-    /* band steepest descent task */
-    if (task == 15) {
-      std::cout << "Running band Steepest Descent " << std::endl;
-      ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
-    }
-
-    // parse json string
-    rtdbstr = parse_rtdbstring(rtdbstr);
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    // Find next task
-    task = parse_task(rtdbstr);
-    if (oprint)
-      std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
-    if (oprint)
-      std::cout << "Next task =" << task << std::endl << std::endl;
-    MPI_Barrier(MPI_COMM_WORLD);
+  while (task > 0) 
+  {
+     /* Energy or Gradient task */
+     if ((task == 1) || (task == 2)) 
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running energy calculation - rtdbstr = " << rtdbstr
+                     << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+    
+     /* Optimize task */
+     if (task == 3) 
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running geometry optimization calculation - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+    
+     /* Frequency task */
+     if (task == 4) 
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running frequency calculation - rtdbstr = " << rtdbstr
+                     << std::endl
+                     << std::endl;
+     }
+    
+     /* Steepest descent task */
+     if (task == 5) 
+     {
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
+     }
+    
+     /* Car-Parrinello task */
+     if (task == 6) 
+     {
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::cpmd(MPI_COMM_WORLD, rtdbstr); /* Car-Parrinello task */
+     }
+    
+     /* Born-Oppenheimer task */
+     if (task == 7) 
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running Born-Oppenheimer molecular dynamics - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+    
+     /* dplot task */
+     if (task == 8) 
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running dplot - rtdbstr = " << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+    
+     /* file generate task */
+     if (task == 9) {
+        if (oprint)
+        {
+           std::cout << std::endl
+                     << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
+           ierr += pwdft::file_generate(rtdbstr);
+        }
+     }
+    
+     /* band steepest descent task */
+     if (task == 15) 
+     {
+        std::cout << "Running band Steepest Descent " << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
+     }
+    
+     // parse json string
+     rtdbstr = parse_rtdbstring(rtdbstr);
+     MPI_Barrier(MPI_COMM_WORLD);
+    
+     // Find next task
+     task = parse_task(rtdbstr);
+     if (oprint) std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
+     if (oprint) std::cout << "Next task =" << task << std::endl << std::endl;
+     MPI_Barrier(MPI_COMM_WORLD);
   }
 
   // int ijk = cpsd(argc,argv);
