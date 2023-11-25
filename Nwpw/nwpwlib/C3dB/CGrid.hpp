@@ -34,7 +34,7 @@ class CGrid : public k1db, public c3db {
    int **masker, **packarray;
    int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2;
 
-   double *p_kvector;
+   double *p_kvector, *p_weight;
  
    /* pfft data */
    bool **zero_row2, **zero_row3, **zero_slab23;
@@ -67,6 +67,7 @@ public:
  
    /* destructor */
    ~CGrid() {
+      delete [] p_weight;
       delete [] p_kvector;
       delete [] Garray;
       delete [] nwave;
@@ -133,6 +134,7 @@ public:
    }
 
    double  *pbrill_kvector(const int i) { return p_kvector + 3*i; }
+   double  pbrill_weight(const int i)   { return p_weight[i]; }
  
    int npack(const int nb) { return (nidb[nb]); }
    int npack_all(const int nb) { return nwave_all[nb]; }

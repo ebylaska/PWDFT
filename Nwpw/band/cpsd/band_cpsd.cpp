@@ -13,6 +13,7 @@
 #include "Ion.hpp"
 #include "Lattice.hpp"
 #include "Brillouin.hpp"
+#include "cKinetic.hpp"
 #include "Cneb.hpp"
 #include "CPseudopotential.hpp"
 
@@ -113,6 +114,9 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* setup structure factor */
    CStrfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
+
+   /* initialize operators */
+   cKinetic_Operator mykin(&mygrid);
 
    /* initialize psps */
    CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);

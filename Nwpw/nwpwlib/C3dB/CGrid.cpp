@@ -104,10 +104,12 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    nwave_all    = new (std::nothrow) int[nbrillq+1]();
    nwave_entire = new (std::nothrow) int[nbrillq+1]();
 
+   p_weight  = new (std::nothrow) double[nbrillq];
    p_kvector = new (std::nothrow) double[3*nbrillq];
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
       auto nb = k1db::ktoptok(nbq);
+      p_weight[nbq]      = mybrillouin->weight[nb];
       p_kvector[3*nbq]   = mybrillouin->kvector[3*nb];
       p_kvector[3*nbq+1] = mybrillouin->kvector[3*nb+1];
       p_kvector[3*nbq+2] = mybrillouin->kvector[3*nb+2];
