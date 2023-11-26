@@ -331,7 +331,7 @@ void Cneb::g_read(const int iunit, double *psi)
       {
          qj = msntoindex(ms, n);
          pj = msntop(ms, n);
-         c_read(iunit, tmp2, pj);
+         c_read(iunit, tmp2, pj, -1);
          if (pj == taskid_j) 
          {
             indx = 2*CGrid::npack(1)*qj;
@@ -363,7 +363,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          pj = msntop(ms, n);
          if (n<ne0[ms])
          {
-            c_read(iunit, tmp2, pj);
+            c_read(iunit, tmp2, pj,-1);
          }
          else
          {
@@ -419,13 +419,70 @@ void Cneb::g_write(const int iunit, double *psi)
          CGrid::c_unpack(1, tmp2);
       }
       if (io_buffer)
-         c_write_buffer(iunit,tmp2,pj);
+         c_write_buffer(iunit,tmp2,pj,-1);
       else
-         c_write(iunit,tmp2,pj);
+         c_write(iunit,tmp2,pj,-1);
    }
 
    delete[] tmp2;
 }
+
+
+/*************************************
+ *                                   *
+ *           Cneb::h_read            *
+ *                                   *
+ *************************************/
+void Cneb::h_read(const int iunit, const int nproj, double *proj)
+{
+   int taskid_k = c1db::parall->taskid_k();
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   for (auto n=0;  n<nproj;        ++n)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      t_read(iunit, tmp2, -1, -1);
+      if (pk == taskid_k)
+      {
+         int indx = n*n2ft3d + nproj*n2ft3d*qk;
+         c3db::rr_copy(tmp2, proj+indx);
+      }
+   }
+   delete[] tmp2;
+}
+
+
+/*************************************
+ *                                   *
+ *           Cneb::h_write           *
+ *                                   *
+ *************************************/
+void Cneb::h_write(const int iunit, const int nproj, const double *proj) 
+{
+   int taskid_k = c1db::parall->taskid_k();
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   for (auto n=0;   n<nproj;       ++n)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      if (pk == taskid_k)
+      {
+         int indx = n*n2ft3d + nproj*n2ft3d*qk;
+         c3db::rr_copy(proj+indx, tmp2);
+      }
+      if (io_buffer)
+         t_write_buffer(iunit,tmp2,-1, -1);
+      else
+         t_write(iunit,tmp2,-1, -1);
+   }
+
+   delete[] tmp2;
+}
+
 
 /*************************************
  *                                   *

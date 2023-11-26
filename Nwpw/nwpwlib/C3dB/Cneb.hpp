@@ -90,29 +90,47 @@ public:
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, double *);
    void g_write(const int, double *);
+
+   void h_read(const int, const int, double *);
+   void h_write(const int, const int, const double *);
+
+
  
    double *g_allocate(const int nb) {
      double *ptr;
-     ptr = new (std::nothrow) double[2 * (neq[0] + neq[1]) * CGrid::npack(nb)]();
+     ptr = new (std::nothrow) double[2*(neq[0]+neq[1]) * CGrid::npack(nb)]();
      return ptr;
    }
    void g_deallocate(double *ptr) { delete[] ptr; }
  
    double *g_nallocate(const int nb, const int nblock) {
      double *ptr;
-     ptr = new (std::nothrow) double[nblock * 2 * (neq[0] + neq[1]) *
-                                     CGrid::npack(nb)]();
+     ptr = new (std::nothrow) double[nblock * 2*(neq[0]+neq[1])*CGrid::npack(nb)]();
+     return ptr;
+   }
+
+   double *g_allocate_nbrillq_all() {
+     double *ptr;
+     ptr = new (std::nothrow) double[nbrillq*2*(neq[0]+neq[1]) * CGrid::npack1_max()]();
      return ptr;
    }
  
    double *h_allocate() 
    {
       double *ptr;
-      ptr = new (std::nothrow) double[(neq[0] + neq[1]) * n2ft3d]();
+      ptr = new (std::nothrow) double[(neq[0]+neq[1]) * n2ft3d]();
       return ptr;
    }
  
    void h_deallocate(double *ptr) { delete[] ptr; }
+
+   double *h_allocate_nbrillq_all() 
+   {
+      double *ptr;
+      ptr = new (std::nothrow) double[nbrillq*(neq[0]+neq[1]) * n2ft3d]();
+      return ptr;
+   }
+
  
    int m_size(const int mb) 
    {
@@ -138,17 +156,28 @@ public:
    void m_deallocate(double *ptr) { delete[] ptr; }
  
    double *w_allocate(const int mb, const int nblock) {
-     double *ptr;
-     int nsize;
-     if (mb == -1)
-       nsize = 2 * (ne[0] * ne[0] + ne[1] * ne[1]);
-     else
-       nsize = 2 * ne[mb] * ne[mb];
- 
-     ptr = new (std::nothrow) double[nblock * nsize]();
-     return ptr;
+      double *ptr;
+      int nsize;
+      if (mb == -1)
+        nsize = 2 * (ne[0] * ne[0] + ne[1] * ne[1]);
+      else
+        nsize = 2 * ne[mb] * ne[mb];
+     
+      ptr = new (std::nothrow) double[nblock * nsize]();
+      return ptr;
    }
    void w_deallocate(double *ptr) { delete[] ptr; }
+
+
+   double *w_allocate_nbrillq_all() {
+      double *ptr;
+      int nsize;
+      nsize = 2*(ne[0]*ne[0] + ne[1]*ne[1]);
+      
+      ptr = new (std::nothrow) double[nbrillq*nsize]();
+      return ptr;
+   }
+
  
    double *m4_allocate(const int mb, const int nblock) {
      double *ptr;

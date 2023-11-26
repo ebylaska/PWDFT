@@ -2179,121 +2179,305 @@ double c3db::cc_dot(const double *ptr1, const double *ptr2)
  *       variable, the parallelization parameters, and the distribution of data from
  *       the input unit to the specified array.
  */
-void c3db::c_read(const int iunit, double *a, const int jcol) 
+void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol) 
 {
-   int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
+   bool fillcolumn,fillzone;
+   int jstart, jend,  kstart, kend;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
    int np_j = parall->np_j();
+   int np_k = parall->np_k();
  
    if (jcol < 0) 
    {
       jstart = 0;
       jend = np_j - 1;
-      fillcolumn = 1;
+      fillcolumn = true;
    } 
    else 
    {
       jstart = jend = jcol;
       fillcolumn = (taskid_j == jcol);
    }
+   if (kcol < 0) 
+   {
+      kstart = 0;
+      kend = np_k - 1;
+      fillzone = true;
+   } 
+   else 
+   {
+      kstart = kend = kcol;
+      fillzone = (taskid_k == kcol);
+   }
+
  
    /**********************
     **** slab mapping ****
     **********************/
    if (maptype==1) 
    {
-      double *tmp = new (std::nothrow) double[(nx)*ny]();
-      int bsize = (nx)*ny;
+      int bsize = 2*(nx)*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
  
       /**** master node reads from file and distributes ****/
       if (taskid == MASTER)
-        for (int k=0; k<nz; ++k) 
-        {
-           dread(iunit, tmp, bsize);
- 
-           index = 2*cijktoindex(0, 0, k);
-           ii = cijktop(0, 0, k);
-           for (jj = jstart; jj <= jend; ++jj) 
-           {
-              p_to = parall->convert_taskid_ij(ii,jj);
-              if (p_to == MASTER)
-                for (int k=0; k<bsize; ++k)
-                   a[index + k] = tmp[k];
-              else
-                 parall->dsend(0, 9, p_to, bsize, tmp);
-           }
-        }
+      {
+         for (auto k=0; k<nz; ++k) 
+         {
+            dread(iunit, tmp, bsize);
+        
+            int index = 2*cijktoindex(0, 0, k);
+            int ii    = cijktop(0, 0, k);
+            for (auto kk=kstart; kk<=kend; ++kk) 
+            for (auto jj=jstart; jj<=jend; ++jj) 
+            {
+               int p_to = parall->convert_taskid_ijk(ii,jj,kk);
+               if (p_to==MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9,p_to,bsize,tmp);
+            }
+         }
+      }
  
       /**** not master node ****/
-      else if (fillcolumn)
-         for (int k = 0; k < nz; ++k) 
+      else if (fillcolumn && fillzone)
+      {
+         for (auto k=0; k<nz; ++k) 
          {
-           index = 2 * cijktoindex(0, 0, k);
-           ii = cijktop(0, 0, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) 
-           {
-              parall->dreceive(0, 9, MASTER, bsize, tmp);
-              for (int k=0; k<bsize; ++k)
-                 a[index+k] = tmp[k];
-           }
+            int index = 2*cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii,taskid_j,taskid_k);
+            if (p_here == taskid) 
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
          }
+      }
       delete[] tmp;
    }
  
    /*************************
     **** hilbert mapping ****
     *************************/
-   else {
-     double tmp[nx];
-     int bsize = (nx);
- 
-     /**** master node reads from file and distributes ****/
-     if (taskid == MASTER)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
- 
-           dread(iunit, tmp, bsize);
- 
-           index = cijktoindex2(0, j, k);
-           ii = cijktop2(0, j, k);
-           for (int jj = jstart; jj <= jend; ++jj) {
-             p_to = parall->convert_taskid_ij(ii, jj);
- 
-             if (p_to == MASTER)
-               for (int k = 0; k < bsize; ++k)
-                 a[index + k] = tmp[k];
-             else
-               parall->dsend(0, 9, p_to, bsize, tmp);
-           }
+   else 
+   {
+      int bsize = 2*(nx);
+      double tmp[nx];
+     
+      /**** master node reads from file and distributes ****/
+      if (taskid==MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
+         {
+            dread(iunit, tmp, bsize);
+        
+            int index = 2*cijktoindex2(0, j, k);
+            int ii    = cijktop2(0, j, k);
+            for (int kk = kstart; kk <= kend; ++kk) 
+            for (int jj = jstart; jj <= jend; ++jj) 
+            {
+               int p_to = parall->convert_taskid_ijk(ii, jj, kk);
+               if (p_to == MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
          }
- 
-     /**** not master node ****/
-     else if (fillcolumn)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           index = cijktoindex2(0, j, k);
-           ii = cijktop2(0, j, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) {
-             parall->dreceive(0, 9, MASTER, bsize, tmp);
-             for (int k = 0; k < bsize; ++k)
-               a[index + k] = tmp[k];
-           }
+      }
+      /**** not master node ****/
+      else if (fillcolumn && fillzone)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
+         {
+            int index = 2*cijktoindex2(0, j, k);
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, taskid_j, taskid_k);
+            if (p_here == taskid) 
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
          }
- 
-     // double tmp1[2*nfft3d];
-     // double tmp2[2*nfft3d];
-     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-     double *tmp1 = c3db::c3db_tmp1;
-     double *tmp2 = c3db::c3db_tmp2;
-     c_transpose_ijk(4, a, tmp1, tmp2);
-     //delete[] tmp2;
-     //delete[] tmp1;
+      }
+     
+      if (fillcolumn && fillzone)
+      {
+         double *tmp1 = c3db::c3db_tmp1;
+         double *tmp2 = c3db::c3db_tmp2;
+         c_transpose_ijk(4, a, tmp1, tmp2);
+      }
    }
 }
+
+
+
+/********************************
+ *                              *
+ *         c3db::r_read         *
+ *                              *
+ ********************************/
+ /**
+ * @brief Read data from an input unit with support for parallel computing.
+ *
+ * This function is responsible for reading data from a specified input unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data retrieval and distribution efficiently.
+ *
+ * @param iunit An integer specifying the input unit to read data from.
+ * @param a A pointer to a double array where the read data will be stored.
+ * @param jcol An integer specifying the column index for parallelization.
+ *
+ * @return None.
+ *
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable, the parallelization parameters, and the distribution of data from
+ *       the input unit to the specified array.
+ */
+void c3db::r_read(const int iunit, double *a, const int jcol, const int kcol, const bool dotrans)
+{
+   bool fillcolumn,fillzone;
+   int jstart, jend,  kstart, kend;
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
+   int np_j = parall->np_j();
+   int np_k = parall->np_k();
+
+   if (jcol < 0)
+   {
+      jstart = 0;
+      jend = np_j - 1;
+      fillcolumn = true;
+   }
+   else
+   {
+      jstart = jend = jcol;
+      fillcolumn = (taskid_j == jcol);
+   }
+   if (kcol < 0)
+   {
+      kstart = 0;
+      kend = np_k - 1;
+      fillzone = true;
+   }
+   else
+   {
+      kstart = kend = kcol;
+      fillzone = (taskid_k == kcol);
+   }
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1)
+   {
+      int bsize = (nx)*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
+
+      /**** master node reads from file and distributes ****/
+      if (taskid == MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            dread(iunit, tmp, bsize);
+
+            int index = cijktoindex(0, 0, k);
+            int ii    = cijktop(0, 0, k);
+            for (auto kk=kstart; kk<=kend; ++kk)
+            for (auto jj=jstart; jj<=jend; ++jj)
+            {
+               int p_to = parall->convert_taskid_ijk(ii,jj,kk);
+               if (p_to==MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9,p_to,bsize,tmp);
+            }
+         }
+      }
+
+      /**** not master node ****/
+      else if (fillcolumn && fillzone)
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            int index = cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii,taskid_j,taskid_k);
+            if (p_here == taskid)
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
+         }
+      }
+      delete[] tmp;
+   }
+
+
+   /*************************
+    **** hilbert mapping ****
+    *************************/
+   else
+   {
+      int bsize = (nx);
+      double tmp[nx];
+
+      /**** master node reads from file and distributes ****/
+      if (taskid==MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
+         {
+            dread(iunit, tmp, bsize);
+
+            int index = cijktoindex2(0, j, k);
+            int ii    = cijktop2(0, j, k);
+            for (int kk = kstart; kk <= kend; ++kk)
+            for (int jj = jstart; jj <= jend; ++jj)
+            {
+               int p_to = parall->convert_taskid_ijk(ii, jj, kk);
+               if (p_to == MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
+         }
+      }
+      /**** not master node ****/
+      else if (fillcolumn && fillzone)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
+         {
+            int index = cijktoindex2(0, j, k);
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, taskid_j, taskid_k);
+            if (p_here == taskid)
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
+         }
+      }
+
+      if (fillcolumn && fillzone && dotrans)
+      {
+         double *tmp1 = c3db::c3db_tmp1;
+         double *tmp2 = c3db::c3db_tmp2;
+         r_transpose_ijk(4, a, tmp1, tmp2);
+      }
+   }
+}
+
+
+
 
 /********************************
  *                              *
@@ -2318,60 +2502,60 @@ void c3db::c_read(const int iunit, double *a, const int jcol)
  *       variable and the parallelization parameters. It supports both "slab mapping"
  *       and "hilbert mapping" for data distribution.
  */
-void c3db::c_write(const int iunit, double *a, const int jcol) 
+void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol) 
 {
-   int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
    int np_j = parall->np_j();
+   int np_k = parall->np_k();
    int idum[1] = {1};
 
    /**********************
     **** slab mapping ****
     **********************/
-   if (maptype == 1) 
+   if (maptype==1) 
    {
-      double *tmp = new (std::nothrow) double[(nx) * ny]();
-      int bsize = (nx) * ny;
+      int bsize = 2*nx*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
       
       /**** master node gathers and write to file ****/
-      if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k) 
+      if (taskid==MASTER)
       {
-         ii = cijktop(0, 0, k);
-         p_from = parall->convert_taskid_ij(ii, jcol);
-         if (p_from == MASTER) 
+         for (auto k=0; k<nz; ++k) 
          {
-            index = 2 * cijktoindex(0, 0, k);
-            for (int kk = 0; kk < bsize; ++kk)
-               tmp[kk] = a[index + kk];
-         } 
-         else 
-         {
-            parall->isend(0, 7, p_from, 1, idum);
-            parall->dreceive(0, 9, p_from, bsize, tmp);
+            int ii = cijktop(0, 0, k);
+            int p_from = parall->convert_taskid_ijk(ii,jcol,kcol);
+            if (p_from == MASTER) 
+            {
+               int index = 2*cijktoindex(0, 0, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+            } 
+            else 
+            {
+               parall->isend(0, 7, p_from, 1, idum);
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
          }
-         dwrite(iunit, tmp, bsize);
       }
       
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k) 
+         for (auto k=0; k<nz; ++k) 
          {
-            index = 2 * cijktoindex(0, 0, k);
-            ii = cijktop(0, 0, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid) 
+            int index = 2 * cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid) 
             {
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
       }
-      
       delete[] tmp;
    }
 
@@ -2380,7 +2564,7 @@ void c3db::c_write(const int iunit, double *a, const int jcol)
    *************************/
    else 
    {
-      if (taskid_j==jcol)
+      if ((taskid_j==jcol) && (taskid_k==kcol))
       {
          // double *tmp1 = new (std::nothrow) double[2*nfft3d];
          // double *tmp2 = new (std::nothrow) double[2*nfft3d];
@@ -2394,22 +2578,21 @@ void c3db::c_write(const int iunit, double *a, const int jcol)
          // delete [] tmp1;
       }
      
-      double tmp[nx];
-      int bsize = (nx);
+      int bsize = 2*nx;
+      double tmp[bsize];
      
       /**** master node write to file and fetches from other nodes ****/
       if (taskid == MASTER)
       {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) 
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
          {
-            ii = cijktop2(0, j, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
-            if (p_from == MASTER) 
+            int ii = cijktop2(0, j, k);
+            int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_from==MASTER) 
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = 2*cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
             } 
             else 
             {
@@ -2422,16 +2605,15 @@ void c3db::c_write(const int iunit, double *a, const int jcol)
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) 
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
          {
-            ii = cijktop2(0, j, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid) 
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid) 
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = 2*cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
@@ -2441,19 +2623,164 @@ void c3db::c_write(const int iunit, double *a, const int jcol)
    }
 }
 
+/********************************
+ *                              *
+ *         c3db::r_write        *
+ *                              *
+ ********************************/
+ /**
+ * @brief Write data to an output unit with support for parallel computing.
+ *
+ * This function is responsible for writing data to a specified output unit, taking
+ * into account parallel computing. It supports two mapping types: "slab mapping"
+ * and "hilbert mapping." The function uses various parameters and parallelization
+ * techniques to handle data transfer and writing efficiently.
+ *
+ * @param iunit An integer specifying the output unit to write data to.
+ * @param a A pointer to a double array containing the data to be written.
+ * @param jcol An integer specifying the column index for parallelization.
+ *    
+ * @return None.
+ * 
+ * @note The behavior of this function depends on the mapping type set in the 'maptype'
+ *       variable and the parallelization parameters. It supports both "slab mapping"
+ *       and "hilbert mapping" for data distribution.
+ */
+void c3db::r_write(const int iunit, double *a, const int jcol, const int kcol, const bool dotrans)
+{  
+   int taskid = parall->taskid();
+   int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
+   int np_j = parall->np_j();
+   int np_k = parall->np_k();
+   int idum[1] = {1};
+
+   /**********************
+    **** slab mapping ****
+    **********************/
+   if (maptype==1) 
+   {     
+      int bsize = nx*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
+      
+      /**** master node gathers and write to file ****/
+      if (taskid==MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            int ii = cijktop(0, 0, k);
+            int p_from = parall->convert_taskid_ijk(ii,jcol,kcol);
+            if (p_from == MASTER)
+            {
+               int index = cijktoindex(0, 0, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+            }
+            else 
+            {  
+               parall->isend(0, 7, p_from, 1, idum);
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
+         }     
+      }     
+            
+      /**** not master node ****/
+      else
+      {
+         for (auto k=0; k<nz; ++k)
+         {
+            int index = cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid)
+            {
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+               parall->ireceive(0, 7, MASTER, 1, idum);
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
+         }
+      }
+      delete[] tmp;
+   }
+
+  /*************************
+   **** hilbert mapping ****
+   *************************/
+   else
+   {
+      if ((taskid_j==jcol) && (taskid_k==kcol) && dotrans)
+      {
+         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
+         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
+         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
+         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
+         double *tmp1 = c3db::c3db_tmp1;
+         double *tmp2 = c3db::c3db_tmp2;
+         r_transpose_ijk(5, a, tmp1, tmp2);
+
+         // delete [] tmp2;
+         // delete [] tmp1;
+      }
+
+      int bsize = nx;
+      double tmp[bsize];
+
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid == MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
+         {
+            int ii = cijktop2(0, j, k);
+            int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_from==MASTER)
+            {
+               int index = cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+            }
+            else
+            {
+               parall->isend(0, 7, p_from, 1, idum);
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
+         }
+      }
+      /**** not master node ****/
+      else
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
+         {
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid)
+            {
+               int index = cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+               parall->ireceive(0, 7, MASTER, 1, idum);
+               parall->dsend(0, 9, MASTER, bsize, tmp);
+            }
+         }
+      }
+   }
+}
+
+
+
 
 /********************************
  *                              *
  *     c3db::c_write_buffer     *
  *                              *
  ********************************/
-void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
+void c3db::c_write_buffer(const int iunit, double *a, const int jcol, const int kcol)
 {
-   int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
 
-   int buff_count = (nx)*ny*nz;
+   int buff_count = 2*(nx)*ny*nz;
    double *buffer = new (std::nothrow) double[buff_count]();
    std::memset(buffer,0,buff_count*sizeof(double));
  
@@ -2462,15 +2789,15 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype == 1)
    {
-      for (int k = 0; k < nz; ++k)
+      int bsize = 2*nx*ny;
+      for (auto k=0; k<nz; ++k)
       {
-         ii = cijktop(0, 0, k);
-         p_here = parall->convert_taskid_ij(ii, jcol);
+         int ii = cijktop(0, 0, k);
+         int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
          if (p_here==taskid)
          {
-            index = 2 * cijktoindex(0, 0, k);
-            for (int ij = 0; ij<(nx)*ny; ++ij)
-               buffer[ij+k*(nx)*ny] = a[index+ij];
+            int index = 2*cijktoindex(0, 0, k);
+            std::memcpy(buffer,a+index,bsize*sizeof(double));
          }
       }
    }
@@ -2480,7 +2807,8 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      if (taskid_j==jcol)
+      int bsize = 2*nx;
+      if ((taskid_j==jcol) && (taskid_k==kcol))
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
@@ -2489,13 +2817,12 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
       for (int k = 0; k < nz; ++k)
       for (int j = 0; j < ny; ++j)
       {
-         ii = cijktop2(0, j, k);
-         p_here = parall->convert_taskid_ij(ii, jcol);
-         if (p_here == taskid)
+         int ii = cijktop2(0, j, k);
+         int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+         if (p_here==taskid)
          {
-            index = cijktoindex2(0, j, k);
-            for (int i=0; i<(nx); ++i)
-               buffer[i + j*(nx) + k*(nx)*ny] = a[index+i];
+            int index = 2*cijktoindex2(0, j, k);
+            std::memcpy(buffer,a+index,bsize*sizeof(double));
          }
       }
    }
@@ -2535,23 +2862,37 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol)
  *       variable, the parallelization parameters, and the distribution of data from
  *       the input unit to the specified array.
  */
-void c3db::t_read(const int iunit, double *a, const int jcol) 
+void c3db::t_read(const int iunit, double *a, const int jcol, const int kcol) 
 {
-   int jstart, jend, fillcolumn, index, ii, jj, p_to, p_here;
+   bool fillcolumn,fillzone;
+   int jstart,jend,kstart,kend;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
    int np_j = parall->np_j();
+   int np_k = parall->np_k();
  
-   if (jcol < 0) 
+   if (jcol<0) 
    {
       jstart = 0;
       jend = np_j - 1;
-      fillcolumn = 1;
+      fillcolumn = true;
    } 
    else 
    {
       jstart = jend = jcol;
       fillcolumn = (taskid_j == jcol);
+   }
+   if (kcol<0) 
+   {
+      kstart = 0;
+      kend = np_k - 1;
+      fillzone = true;
+   } 
+   else 
+   {
+      kstart = kend = kcol;
+      fillzone = (taskid_k == kcol);
    }
  
    /**********************
@@ -2559,95 +2900,98 @@ void c3db::t_read(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype==1) 
    {
-      double *tmp = new (std::nothrow) double[(nx)*ny]();
       int bsize = (nx)*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
  
       /**** master node reads from file and distributes ****/
       if (taskid == MASTER)
-        for (int k=0; k<nz; ++k) 
-        {
-           dread(iunit, tmp, bsize);
- 
-           index = cijktoindex(0, 0, k);
-           ii = cijktop(0, 0, k);
-           for (jj = jstart; jj <= jend; ++jj) 
-           {
-              p_to = parall->convert_taskid_ij(ii,jj);
-              if (p_to == MASTER)
-                for (int k=0; k<bsize; ++k)
-                   a[index + k] = tmp[k];
-              else
-                 parall->dsend(0, 9, p_to, bsize, tmp);
-           }
-        }
+      {
+         for (int k=0; k<nz; ++k) 
+         {
+            dread(iunit, tmp, bsize);
+        
+            int index = cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            for (auto kk=kstart; kk<=kend; ++kk) 
+            for (auto jj=jstart; jj<=jend; ++jj) 
+            {
+               int p_to = parall->convert_taskid_ijk(ii,jj,kk);
+               if (p_to == MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
+         }
+      }
  
       /**** not master node ****/
-      else if (fillcolumn)
+      else if (fillcolumn && fillzone)
+      {
          for (int k = 0; k < nz; ++k) 
          {
-           index = cijktoindex(0, 0, k);
-           ii = cijktop(0, 0, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) 
-           {
-              parall->dreceive(0, 9, MASTER, bsize, tmp);
-              for (int k=0; k<bsize; ++k)
-                 a[index+k] = tmp[k];
-           }
+            int index = cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii, taskid_j, taskid_k);
+            if (p_here == taskid) 
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
          }
+      }
       delete[] tmp;
    }
  
    /*************************
     **** hilbert mapping ****
     *************************/
-   else {
-     double tmp[nx];
-     int bsize = (nx);
- 
-     /**** master node reads from file and distributes ****/
-     if (taskid == MASTER)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
- 
-           dread(iunit, tmp, bsize);
- 
-           index = cijktoindex2(0, j, k);
-           ii = cijktop2(0, j, k);
-           for (int jj = jstart; jj <= jend; ++jj) {
-             p_to = parall->convert_taskid_ij(ii, jj);
- 
-             if (p_to == MASTER)
-               for (int k = 0; k < bsize; ++k)
-                 a[index + k] = tmp[k];
-             else
-               parall->dsend(0, 9, p_to, bsize, tmp);
-           }
+   else 
+   {
+      int bsize = (nx);
+      double tmp[bsize];
+     
+      /**** master node reads from file and distributes ****/
+      if (taskid==MASTER)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
+         {
+            dread(iunit, tmp, bsize);
+        
+            int index = cijktoindex2(0, j, k);
+            int ii = cijktop2(0, j, k);
+            for (auto kk=kstart; kk<=kend; ++kk) 
+            for (auto jj=jstart; jj<=jend; ++jj) 
+            {
+               int p_to = parall->convert_taskid_ijk(ii, jj, kk);
+               if (p_to == MASTER)
+                  std::memcpy(a+index,tmp,bsize*sizeof(double));
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
          }
- 
-     /**** not master node ****/
-     else if (fillcolumn)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           index = cijktoindex2(0, j, k);
-           ii = cijktop2(0, j, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) {
-             parall->dreceive(0, 9, MASTER, bsize, tmp);
-             for (int k = 0; k < bsize; ++k)
-               a[index + k] = tmp[k];
-           }
+      }
+     
+      /**** not master node ****/
+      else if (fillcolumn && fillzone)
+      {
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
+         {
+            int index = cijktoindex2(0, j, k);
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, taskid_j, taskid_k);
+            if (p_here==taskid) 
+            {
+               parall->dreceive(0, 9, MASTER, bsize, tmp);
+               std::memcpy(a+index,tmp,bsize*sizeof(double));
+            }
          }
- 
-     // double tmp1[2*nfft3d];
-     // double tmp2[2*nfft3d];
-     //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-     //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
-     double *tmp1 = c3db::c3db_tmp1;
-     double *tmp2 = c3db::c3db_tmp2;
-     c_transpose_ijk(4, a, tmp1, tmp2);
-     //delete[] tmp2;
-     //delete[] tmp1;
+      }
+     
+      double *tmp1 = c3db::c3db_tmp1;
+      double *tmp2 = c3db::c3db_tmp2;
+      r_transpose_ijk(4, a, tmp1, tmp2);
    }
 }
 
@@ -2675,12 +3019,11 @@ void c3db::t_read(const int iunit, double *a, const int jcol)
  *       variable and the parallelization parameters. It supports both "slab mapping"
  *       and "hilbert mapping" for data distribution.
  */
-void c3db::t_write(const int iunit, double *a, const int jcol) 
+void c3db::t_write(const int iunit, double *a, const int jcol, const int kcol) 
 {
-   int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
-   int np_j = parall->np_j();
+   int taskid_k = parall->taskid_k();
    int idum[1] = {1};
 
    /**********************
@@ -2688,41 +3031,41 @@ void c3db::t_write(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype == 1) 
    {
-      double *tmp = new (std::nothrow) double[(nx) * ny]();
-      int bsize = (nx) * ny;
+      int bsize = nx*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
       
       /**** master node gathers and write to file ****/
-      if (taskid == MASTER)
-      for (int k = 0; k < nz; ++k) 
+      if (taskid==MASTER)
       {
-         ii = cijktop(0, 0, k);
-         p_from = parall->convert_taskid_ij(ii, jcol);
-         if (p_from == MASTER) 
+         for (auto k=0; k<nz; ++k) 
          {
-            index = cijktoindex(0, 0, k);
-            for (int kk = 0; kk < bsize; ++kk)
-               tmp[kk] = a[index + kk];
-         } 
-         else 
-         {
-            parall->isend(0, 7, p_from, 1, idum);
-            parall->dreceive(0, 9, p_from, bsize, tmp);
+            int ii = cijktop(0, 0, k);
+            int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_from==MASTER) 
+            {
+               int index = cijktoindex(0, 0, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
+            } 
+            else 
+            {
+               parall->isend(0, 7, p_from, 1, idum);
+               parall->dreceive(0, 9, p_from, bsize, tmp);
+            }
+            dwrite(iunit, tmp, bsize);
          }
-         dwrite(iunit, tmp, bsize);
       }
       
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k) 
+         for (auto k=0; k<nz; ++k) 
          {
-            index = cijktoindex(0, 0, k);
-            ii = cijktop(0, 0, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
+            int index = cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
             if (p_here == taskid) 
             {
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
@@ -2737,36 +3080,28 @@ void c3db::t_write(const int iunit, double *a, const int jcol)
    *************************/
    else 
    {
-      if (taskid_j==jcol)
+      if ((taskid_j==jcol) && (taskid_k==kcol))
       {
-         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
-         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
-         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(5, a, tmp1, tmp2);
-     
-         // delete [] tmp2;
-         // delete [] tmp1;
+         r_transpose_ijk(5, a, tmp1, tmp2);
       }
      
-      double tmp[nx];
-      int bsize = (nx);
+      int bsize = nx;
+      double tmp[bsize];
      
       /**** master node write to file and fetches from other nodes ****/
-      if (taskid == MASTER)
+      if (taskid==MASTER)
       {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) 
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
          {
-            ii = cijktop2(0, j, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
-            if (p_from == MASTER) 
+            int ii = cijktop2(0, j, k);
+            int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_from==MASTER) 
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
             } 
             else 
             {
@@ -2779,27 +3114,22 @@ void c3db::t_write(const int iunit, double *a, const int jcol)
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) 
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j) 
          {
-            ii = cijktop2(0, j, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid) 
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid) 
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->ireceive(0, 7, MASTER, 1, idum);
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
       }
-      // delete [] tmp;
    }
 }
-
-
-
 
 
 /********************************
@@ -2807,11 +3137,11 @@ void c3db::t_write(const int iunit, double *a, const int jcol)
  *     c3db::t_write_buffer     *
  *                              *
  ********************************/
-void c3db::t_write_buffer(const int iunit, double *a, const int jcol)
+void c3db::t_write_buffer(const int iunit, double *a, const int jcol, const int kcol)
 {
-   int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_k();
 
    int buff_count = (nx)*ny*nz;
    double *buffer = new (std::nothrow) double[buff_count]();
@@ -2822,15 +3152,15 @@ void c3db::t_write_buffer(const int iunit, double *a, const int jcol)
     **********************/
    if (maptype == 1)
    {
-      for (int k = 0; k < nz; ++k)
+      int bsize = nx*ny;
+      for (auto k=0; k<nz; ++k)
       {
-         ii = cijktop(0, 0, k);
-         p_here = parall->convert_taskid_ij(ii, jcol);
+         int ii = cijktop(0, 0, k);
+         int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
          if (p_here==taskid)
          {
-            index = cijktoindex(0, 0, k);
-            for (int ij = 0; ij<(nx)*ny; ++ij)
-               buffer[ij+k*(nx)*ny] = a[index+ij];
+            int index = cijktoindex(0, 0, k);
+            std::memcpy(buffer+k*nx*ny,a+index,nx*ny*sizeof(double));
          }
       }
    }
@@ -2840,22 +3170,21 @@ void c3db::t_write_buffer(const int iunit, double *a, const int jcol)
     *************************/
    else
    {
-      if (taskid_j==jcol)
+      if ((taskid_j==jcol) && (taskid_k==kcol))
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(5, a, tmp1, tmp2);
+         r_transpose_ijk(5, a, tmp1, tmp2);
       }
-      for (int k = 0; k < nz; ++k)
-      for (int j = 0; j < ny; ++j)
+      for (auto k=0; k<nz; ++k)
+      for (auto j=0; j<ny; ++j)
       {
-         ii = cijktop2(0, j, k);
-         p_here = parall->convert_taskid_ij(ii, jcol);
-         if (p_here == taskid)
+         int ii = cijktop2(0, j, k);
+         int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+         if (p_here==taskid)
          {
-            index = cijktoindex2(0, j, k);
-            for (int i=0; i<(nx); ++i)
-               buffer[i + j*(nx) + k*(nx)*ny] = a[index+i];
+            int index = cijktoindex2(0, j, k);
+            std::memcpy(buffer + j*nx + k*nx*ny, a+index, nx*sizeof(double));
          }
       }
    }
@@ -2890,21 +3219,21 @@ void c3db::c_write_buffer_max_final(const int iunit, int &buff_count, double *bu
  *   c3db::c_write_buffer_max   *
  *                              *
  ********************************/
-void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
+void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol, const int kcol,
                               const int buff_max, int &buff_count, double *buffer)
 {
    int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
+   int taskid_k = parall->taskid_j();
 
    /**********************
     **** slab mapping ****
     **********************/
    if (maptype == 1)
    {
-      double *tmp = new (std::nothrow) double[(nx) * ny]();
-      int bsize = (nx) * ny;
-
+      int bsize = 2*nx*ny;
+      double *tmp = new (std::nothrow) double[bsize]();
 
       /**** master node gathers and write to file ****/
       if (taskid == MASTER)
@@ -2915,44 +3244,39 @@ void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             buff_count = 0;
          }
 
-         for (int k = 0; k < nz; ++k)
+         for (auto k=0; k<nz; ++k)
          {
-            ii = cijktop(0, 0, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
-            if (p_from == MASTER)
+            int ii = cijktop(0, 0, k);
+            int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_from==MASTER)
             {
-               index = 2 * cijktoindex(0, 0, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = 2 * cijktoindex(0, 0, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
             }
             else
             {
                parall->dreceive(0, 9, p_from, bsize, tmp);
             }
-           // dwrite(iunit, tmp, bsize);
-           std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
-           buff_count += bsize;
+
+            std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
+            buff_count += bsize;
          }
-        //dwrite(iunit,buffer,buff_count);
-        //delete [] buffer;
       }
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k)
+         for (auto k=0; k<nz; ++k)
          {
-            index = 2 * cijktoindex(0, 0, k);
-            ii = cijktop(0, 0, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid)
+            int index = 2 * cijktoindex(0, 0, k);
+            int ii = cijktop(0, 0, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid)
             {
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
       }
-
       delete[] tmp;
    }
 
@@ -2961,25 +3285,18 @@ void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
    *************************/
    else
    {
-      if (taskid_j==jcol)
+      if ((taskid_j==jcol) && (taskid_k==kcol))
       {
-         // double *tmp1 = new (std::nothrow) double[2*nfft3d];
-         // double *tmp2 = new (std::nothrow) double[2*nfft3d];
-         //double *tmp1 = new (std::nothrow) double[2 * nfft3d]();
-         //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
          c_transpose_ijk(5, a, tmp1, tmp2);
-
-         // delete [] tmp2;
-         // delete [] tmp1;
       }
 
+      int bsize = 2*nx;
       double tmp[nx];
-      int bsize = (nx);
 
-     /**** master node write to file and fetches from other nodes ****/
-      if (taskid == MASTER)
+      /**** master node write to file and fetches from other nodes ****/
+      if (taskid==MASTER)
       {
          if ((buff_max - buff_count) < (bsize*ny*nz))
          {
@@ -2987,46 +3304,41 @@ void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol,
             buff_count = 0;
          }
 
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j)
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
          {
             ii = cijktop2(0, j, k);
-            p_from = parall->convert_taskid_ij(ii, jcol);
+            p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
             if (p_from == MASTER)
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = 2*cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
             }
             else
             {
                parall->dreceive(0, 9, p_from, bsize, tmp);
             }
-            //dwrite(iunit, tmp, bsize);
-           std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
-           buff_count += bsize;
+            std::memcpy(buffer+buff_count,tmp,bsize*sizeof(double));
+            buff_count += bsize;
          }
-         //dwrite(iunit, buffer, buff_count);
-         //delete [] buffer;
       }
+
       /**** not master node ****/
       else
       {
-         for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j)
+         for (auto k=0; k<nz; ++k)
+         for (auto j=0; j<ny; ++j)
          {
-            ii = cijktop2(0, j, k);
-            p_here = parall->convert_taskid_ij(ii, jcol);
-            if (p_here == taskid)
+            int ii = cijktop2(0, j, k);
+            int p_here = parall->convert_taskid_ijk(ii, jcol, kcol);
+            if (p_here==taskid)
             {
-               index = cijktoindex2(0, j, k);
-               for (int kk = 0; kk < bsize; ++kk)
-                  tmp[kk] = a[index + kk];
+               int index = 2*cijktoindex2(0, j, k);
+               std::memcpy(tmp,a+index,bsize*sizeof(double));
                parall->dsend(0, 9, MASTER, bsize, tmp);
             }
          }
       }
-      // delete [] tmp;
    }
 }
 

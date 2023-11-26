@@ -41,7 +41,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 {
    Parallel myparallel(comm_world0);
 
-   int version, nfft[3], ne[2], ispin;
+   int version, nfft[3], ne[2], ispin, nbrillq;
    int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
    char date[26];
    double sum1, sum2, ev, zv;
@@ -110,6 +110,18 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
              << " nbrillioun=" << mybrillouin.nbrillouin << std::endl;
    /* initialize parallel grid structure */
    Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+
+   /* initialize psi1 and psi2 */
+   ispin = control.ispin(); ne[0] = mygrid.ne[0]; ne[1] = mygrid.ne[1]; nbrillq = mygrid.nbrillq;
+   psi1 = mygrid.g_allocate_nbrillq_all();
+   psi2 = mygrid.g_allocate_nbrillq_all();
+   Hpsi = mygrid.g_allocate_nbrillq_all();
+   psi_r = mygrid.h_allocate_nbrillq_all();
+   dn    = mygrid.r_nalloc(ispin);
+   hml   = mygrid.w_allocate_nbrillq_all();
+   lmbda = mygrid.w_allocate_nbrillq_all();
+   eig   = new double[nbrillq*(ne[0]+ne[1])];
+
 
    /* setup structure factor */
    CStrfac mystrfac(&myion,&mygrid);
@@ -252,8 +264,26 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
       std::cout << " brillouin zone:" << std::endl;
       std::cout << mybrillouin.print_zone();
+      std::cout << std::endl;
    }
 
+   MPI_Barrier(comm_world0);
+
+
+   /* deallocate memory */
+   std::cout << "deallocate memory, taskid=" << myparallel.taskid() 
+             << " taskid_i=" << myparallel.taskid_i() 
+             << " taskid_j=" << myparallel.taskid_j() 
+             << " taskid_k=" << myparallel.taskid_k() << std::endl;
+   mygrid.g_deallocate(psi1);
+   mygrid.g_deallocate(psi2);
+   mygrid.g_deallocate(Hpsi);
+   mygrid.h_deallocate(psi_r);
+   mygrid.r_dealloc(dn);
+   mygrid.w_deallocate(hml);
+   mygrid.w_deallocate(lmbda);
+   delete [] eig;
+   //mygrid.d3db::mygdevice.psi_dealloc();
 
 
  

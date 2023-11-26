@@ -519,7 +519,7 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
  
    /* readin vl 3d block */
    tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
-   mygrid->t_read(5, tmp2, -1);
+   mygrid->t_read(5, tmp2, -1, -1);
    mygrid->t_pack(0, tmp2);
    mygrid->tt_pack_copy(0, tmp2, vl);
  
@@ -529,7 +529,7 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
       *vnl = new (std::nothrow) double[(*nprj) * (mygrid->npack(1))]();
       prj = *vnl;
       for (i = 0; i < (*nprj); ++i) {
-         mygrid->t_read(5, tmp2, -1);
+         mygrid->t_read(5, tmp2, -1, -1);
          mygrid->t_pack(1, tmp2);
          mygrid->tt_pack_copy(1, tmp2, &prj[i * mygrid->npack(1)]);
       }
@@ -539,19 +539,19 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
      *ncore = new (std::nothrow) double[nn]();
      prj = *ncore;
  
-     mygrid->t_read(5, tmp2, -1);
+     mygrid->t_read(5, tmp2, -1, -1);
      mygrid->t_pack(0, tmp2);
      mygrid->tt_pack_copy(0, tmp2, prj);
  
-     mygrid->t_read(5, tmp2, -1);
+     mygrid->t_read(5, tmp2, -1, -1);
      mygrid->t_pack(0, tmp2);
      mygrid->tt_pack_copy(0, tmp2, &prj[2 * mygrid->npack(0)]);
  
-     mygrid->t_read(5, tmp2, -1);
+     mygrid->t_read(5, tmp2, -1, -1);
      mygrid->t_pack(0, tmp2);
      mygrid->tt_pack_copy(0, tmp2, &prj[3 * mygrid->npack(0)]);
  
-     mygrid->t_read(5, tmp2, -1);
+     mygrid->t_read(5, tmp2, -1, -1);
      mygrid->t_pack(0, tmp2);
      mygrid->tt_pack_copy(0, tmp2, &prj[4 * mygrid->npack(0)]);
    }
@@ -735,7 +735,7 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
    /* readin vl 3d block */
    mygrid->tt_pack_copy(0, vl, tmp2);
    mygrid->t_unpack(0, tmp2);
-   mygrid->t_write_buffer(6, tmp2, 0);
+   mygrid->t_write_buffer(6, tmp2, 0,0);
  
    /* reading vnl 3d block */
    if (nprj > 0) 
@@ -745,7 +745,7 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
       {
          mygrid->tt_pack_copy(1, &prj[i * mygrid->npack(1)], tmp2);
          mygrid->t_unpack(1, tmp2);
-         mygrid->t_write_buffer(6, tmp2, 0);
+         mygrid->t_write_buffer(6, tmp2, 0,0);
       }
    }
  
@@ -755,19 +755,19 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
      
       mygrid->tt_pack_copy(0, prj, tmp2);
       mygrid->t_unpack(0, tmp2);
-      mygrid->t_write_buffer(6, tmp2, 0);
+      mygrid->t_write_buffer(6, tmp2, 0,0);
      
       mygrid->tt_pack_copy(0, &prj[2 * mygrid->npack(0)], tmp2);
       mygrid->t_unpack(0, tmp2);
-      mygrid->t_write_buffer(6, tmp2, 0);
+      mygrid->t_write_buffer(6, tmp2, 0,0);
      
       mygrid->tt_pack_copy(0, &prj[3 * mygrid->npack(0)], tmp2);
       mygrid->t_unpack(0, tmp2);
-      mygrid->t_write_buffer(6, tmp2, 0);
+      mygrid->t_write_buffer(6, tmp2, 0,0);
      
       mygrid->tt_pack_copy(0, &prj[4 * mygrid->npack(0)], tmp2);
       mygrid->t_unpack(0, tmp2);
-      mygrid->t_write_buffer(6, tmp2, 0);
+      mygrid->t_write_buffer(6, tmp2, 0,0);
    }
  
    delete[] tmp2;

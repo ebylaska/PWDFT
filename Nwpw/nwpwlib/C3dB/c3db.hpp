@@ -125,18 +125,22 @@ public:
    void rrrrr_SumMulAdd(const double *, const double *, const double *,
                         const double *, double *);
 
-   void t_read(const int, double *, const int);
-   void t_write(const int, double *, const int);
-   void t_write_buffer(const int, double *, const int);
-   void t_write_buffer_max(const int, double *, const int, const int, int &, double *);
-   void t_write_buffer_max_final(const int, int &, double *);
+   void t_read(const int, double *, const int, const int);
+   void t_write(const int, double *, const int, const int);
+   void t_write_buffer(const int, double *, const int, const int);
+
+   //void t_write_buffer_max(const int, double *, const int, const int, const int, int &, double *);
+   //void t_write_buffer_max_final(const int, int &, double *);
  
    // void  	 r_read(const int, const int, double *);
-   void c_read(const int, double *, const int);
-   void c_write(const int, double *, const int);
-   void c_write_buffer(const int, double *, const int);
-   void c_write_buffer_max(const int, double *, const int, const int, int &, double *);
+   void c_read(const int, double *, const int, const int);
+   void c_write(const int, double *, const int, const int);
+   void c_write_buffer(const int, double *, const int, const int);
+   void c_write_buffer_max(const int, double *, const int, const int, const int, int &, double *);
    void c_write_buffer_max_final(const int, int &, double *);
+
+   void r_read(const int, double *, const int, const int, const bool);
+   void r_write(const int, double *, const int, const int, const bool);
  
    void cr_fft3d(double *);
    void rc_fft3d(double *);

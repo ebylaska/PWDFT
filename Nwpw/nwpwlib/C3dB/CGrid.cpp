@@ -272,6 +272,11 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
    c3db::parall->Vector_ISumAll(1, nbrillq+1, nwave_all);
 
+   nidb1_max = 0; 
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+      if (nidb[nbq+1] > nidb1_max) nidb1_max = nidb[nbq+1];
+
+
    zero_row3 = new (std::nothrow) bool*[nbrillq+1];
    zero_row2 = new (std::nothrow) bool*[nbrillq+1];
    zero_slab23 = new (std::nothrow) bool*[nbrillq+1];

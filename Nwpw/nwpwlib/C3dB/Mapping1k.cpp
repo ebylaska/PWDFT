@@ -62,7 +62,7 @@ Mapping1k::Mapping1k(const int mapin, const int npin, const int taskidin, const 
       /* cyclic mapping */
       int p = 0;
       int q = 0;
-      for (auto k = 0; k < nbrillouin; ++k) 
+      for (auto k=0; k<nbrillouin; ++k) 
       {
          qmap[k] = q;
          pmap[k] = p;

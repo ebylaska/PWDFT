@@ -32,7 +32,7 @@ class CGrid : public k1db, public c3db {
    double *Garray, **Gpack;
    double Gmax, Gmin;
    int **masker, **packarray;
-   int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2;
+   int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2, nidb1_max;
 
    double *p_kvector, *p_weight;
  
@@ -133,16 +133,17 @@ public:
      return g_ray;
    }
 
-   double  *pbrill_kvector(const int i) { return p_kvector + 3*i; }
-   double  pbrill_weight(const int i)   { return p_weight[i]; }
+   double *pbrill_kvector(const int i) { return p_kvector + 3*i; }
+   double pbrill_weight(const int i)   { return p_weight[i]; }
  
+   int npack1_max() { return (nidb1_max); }
    int npack(const int nb) { return (nidb[nb]); }
    int npack_all(const int nb) { return nwave_all[nb]; }
    int isbalanced() { return balanced; }
  
    double *c_pack_allocate(const int nb) {
      double *ptr;
-     ptr = new (std::nothrow) double[2 * npack(nb)]();
+     ptr = new (std::nothrow) double[2*npack(nb)]();
      return ptr;
    }
    void c_pack_deallocate(double *ptr) { delete[] ptr; }
