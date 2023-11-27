@@ -91,7 +91,7 @@ Cneb::Cneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
             }
          }
  
-         ma[ms][taskid_i]  = 2*CGrid::npack(1);
+         ma[ms][taskid_i]  = 2*CGrid::npack1_max();
          //ma1[ms][taskid_i] = 2*CGrid::nzero(1);
          ma2[ms][taskid_i] = n2ft3d;
          c1db::parall->Vector_ISumAll(1,np_i,ma[ms]);
@@ -257,7 +257,7 @@ void Cneb::g_generate1_random(double *psi)
             c3db::c_addrandom(tmp2);
            
             CGrid::c_pack(1, tmp2);
-            indx = 2 * CGrid::npack(1) * qj;
+            indx = 2 * CGrid::npack1_max() * qj;
             CGrid::cc_pack_copy(1, tmp2, psi + indx);
             CGrid::c_pack_noimagzero(1, psi + indx);
          }
@@ -272,7 +272,7 @@ void Cneb::g_generate2_random(double *psi)
  
    int taskid_j = c1db::parall->taskid_j();
    for (auto ms = 0; ms < ispin; ++ms)
-      for (auto n = 0; n < ne[ms]; ++n) 
+   for (auto n = 0; n < ne[ms]; ++n) 
       {
          int qj = msntoindex(ms, n);
          int pj = msntop(ms, n);
@@ -281,7 +281,7 @@ void Cneb::g_generate2_random(double *psi)
            c3db::rc_fft3d(tmp2);
         
            CGrid::c_pack(1, tmp2);
-           int indx = 2 * CGrid::npack(1) * qj;
+           int indx = 2 * CGrid::npack1_max() * qj;
            CGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
       }
@@ -334,7 +334,7 @@ void Cneb::g_read(const int iunit, double *psi)
          c_read(iunit, tmp2, pj, -1);
          if (pj == taskid_j) 
          {
-            indx = 2*CGrid::npack(1)*qj;
+            indx = 2*CGrid::npack1_max()*qj;
             CGrid::c_pack(1, tmp2);
             CGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
@@ -373,7 +373,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          
          if (pj == taskid_j) 
          {
-            indx = 2*CGrid::npack(1)*qj;
+            indx = 2*CGrid::npack1_max()*qj;
             CGrid::c_pack(1, tmp2);
             CGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
@@ -414,7 +414,7 @@ void Cneb::g_write(const int iunit, double *psi)
       pj = msntop(ms, n);
       if (pj == taskid_j) 
       {
-         indx = 2 * CGrid::npack(1) * qj;
+         indx = 2 * CGrid::npack1_max() * qj;
          CGrid::cc_pack_copy(1, psi + indx, tmp2);
          CGrid::c_unpack(1, tmp2);
       }
@@ -510,7 +510,7 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
    for (n = 0; n < (neq[0] + neq[1]); ++n) 
    {
       sum += CGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
-      indx += 2 * CGrid::npack(1);
+      indx += 2 * CGrid::npack1_max();
    }
    if (ispin == 1)
       sum *= 2.0;
@@ -536,7 +536,7 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
 void Cneb::gg_copy(double *psi1, double *psi2) 
 {
    int one = 1;
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    std::memcpy(psi2, psi1, nsize * sizeof(double));
    // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
@@ -559,7 +559,7 @@ void Cneb::gg_copy(double *psi1, double *psi2)
  */
 void Cneb::gg_SMul(double alpha, double *psi1, double *psi2) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi2[i] = alpha * psi1[i];
 }
@@ -586,7 +586,7 @@ void Cneb::gg_SMul(double alpha, double *psi1, double *psi2)
  */
 void Cneb::gg_daxpy(double alpha, double *psi1, double *psi2) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi2[i] += alpha * psi1[i];
 }
@@ -607,7 +607,7 @@ void Cneb::gg_daxpy(double alpha, double *psi1, double *psi2)
  */
 void Cneb::g_Scale(double alpha, double *psi1) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi1[i] *= alpha;
 }
@@ -629,7 +629,7 @@ void Cneb::g_Scale(double alpha, double *psi1)
  */
 void Cneb::gg_Sum2(double *psi1, double *psi2) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi2[i] += psi1[i];
 }
@@ -651,7 +651,7 @@ void Cneb::gg_Sum2(double *psi1, double *psi2)
  */
 void Cneb::gg_Minus2(double *psi1, double *psi2) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi2[i] -= psi1[i];
 }
@@ -675,7 +675,7 @@ void Cneb::gg_Minus2(double *psi1, double *psi2)
  */
 void Cneb::ggg_Minus(double *psi1, double *psi2, double *psi3) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    for (int i = 0; i < nsize; ++i)
       psi3[i] = psi1[i] - psi2[i];
 }
@@ -690,7 +690,7 @@ void Cneb::g_zero(double *psi2)
 {
    int one = 1;
    int zero = 0;
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack(1);
+   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    double rzero = 0.0;
 
    // dcopy_(&nsize,&rzero,&zero,psi2,&one);
@@ -723,7 +723,7 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
    int indx2, indx2n, shift2;
  
    n = neq[0] + neq[1];
-   shift1 = 2 * CGrid::npack(1);
+   shift1 = 2 * CGrid::npack1_max();
    shift2 = n2ft3d;
    indx1 = indx1n = 0;
    indx2 = indx2n = 0;
@@ -869,7 +869,7 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
 {
    nwpw_timing_function ftimer(15);
  
-   int npack1 = 2*CGrid::npack(1);
+   int npack1 = 2*CGrid::npack1_max();
    //int ng0    = 2*CGrid::nzero(1);
  
    int one = 1;
@@ -961,7 +961,7 @@ void Cneb::ggm_Multiply(double *psi1, double *psi2, double *hml)
    int n, shift0, mshift0;
  
    int one = 1;
-   int npack1 = 2 * CGrid::npack(1);
+   int npack1 = 2 * CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
    double rzero = 0.0;
@@ -1024,7 +1024,7 @@ void Cneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
    int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
  
    int one = 1;
-   int npack1 = 2 * CGrid::npack(1);
+   int npack1 = 2 * CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
    double rzero = 0.0;
@@ -1133,7 +1133,7 @@ void Cneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
  
    int one = 1;
    //int ng = 2 * CGrid::npack(1);
-   int npack1 = 2 * CGrid::npack(1);
+   int npack1 = 2 * CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
    double rzero = 0.0;
@@ -1248,7 +1248,7 @@ void Cneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    nwpw_timing_function ftimer(15);
    int ms1, ms2, ishift2, n, shift0, shift1, mshift0, mshift1, nn;
    int one = 1;
-   int npack1 = 2*CGrid::npack(1);
+   int npack1 = 2*CGrid::npack1_max();
    //int ng0    = 2*CGrid::nzero(1);
  
    double rzero = 0.0;
@@ -1423,7 +1423,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
    nwpw_timing_function ftimer(15);
    int ms, ms1, ms2, ishift2, j, k, n, shift0, shift1, mshift0, mshift1, nn;
    int one = 1;
-   int npack1 = 2 * CGrid::npack(1);
+   int npack1 = 2 * CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
    double rzero = 0.0;
@@ -1615,7 +1615,7 @@ void Cneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
 {
    nwpw_timing_function ftimer(16);
    int ms, ms1, ms2, n, nn,shift1, mshift1, ishift2,ishift3;
-   int npack1 = 2 * CGrid::npack(1);
+   int npack1 = 2 * CGrid::npack1_max();
 
 /*
    if (c1db::parall->is_master())
@@ -1736,7 +1736,7 @@ void Cneb::ggm_SVD(double *A, double *U, double *S, double *V)
    for (n = 0; n < (neq[0] + neq[1]); ++n) 
    {
       tmp2[n] = CGrid::cc_pack_idot(1, U+indx, U+indx);
-      indx += 2*CGrid::npack(1);
+      indx += 2*CGrid::npack1_max();
    }
    c3db::parall->Vector_SumAll(1, neq[0] + neq[1], tmp2);
  
@@ -1747,7 +1747,7 @@ void Cneb::ggm_SVD(double *A, double *U, double *S, double *V)
    for (n = 0; n < (neq[0] + neq[1]); ++n) 
    {
       CGrid::c_pack_SMul(1, tmp2[n], U+indx);
-      indx += 2 * CGrid::npack(1);
+      indx += 2 * CGrid::npack1_max();
    }
  
    /* calculated sqrt(S^2) */
@@ -2462,7 +2462,7 @@ void Cneb::g_ortho(double *psi)
 
       int np_j = c1db::parall->np_j();
       int taskid_j = c1db::parall->taskid_j();
-      int npack1 = 2*CGrid::npack(1);
+      int npack1 = 2*CGrid::npack1_max();
       double *tmp = new (std::nothrow) double[npack1]();
 
       for (auto ms=0; ms<ispin; ++ms)
@@ -2584,9 +2584,9 @@ void Cneb::fm_QR(const int mb, double *Q, double *R) {
   // npj==1
   else {
     for (auto ms = ms1; ms < ms2; ++ms) {
-      ishift = ms * ne[0] * 2 * CGrid::npack(1);
+      ishift = ms * ne[0] * 2 * CGrid::npack1_max();
       for (auto k = 0; k < ne[ms]; ++k) {
-        indxk = 2 * CGrid::npack(1) * k + ishift;
+        indxk = 2 * CGrid::npack1_max() * k + ishift;
         indxm = k + k * ne[ms] + ms * ishift2;
         w = CGrid::cc_pack_dot(1, Q + indxk, Q + indxk);
         w = sqrt(w);
@@ -2595,7 +2595,7 @@ void Cneb::fm_QR(const int mb, double *Q, double *R) {
         CGrid::c_pack_SMul(1, w, Q + indxk);
 
         for (auto j = k + 1; j < ne[ms]; ++j) {
-          indxj = 2 * CGrid::npack(1) * j + ishift;
+          indxj = 2 * CGrid::npack1_max() * j + ishift;
           indxm = k + j * ne[ms] + ms * ishift2;
           w = CGrid::cc_pack_dot(1, Q + indxk, Q + indxj);
           R[indxm] = w;

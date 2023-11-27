@@ -15,8 +15,10 @@
 #include "Brillouin.hpp"
 #include "cKinetic.hpp"
 #include "cCoulomb.hpp"
+#include "cExchange_Correlation.hpp"
 #include "Cneb.hpp"
 #include "CPseudopotential.hpp"
+#include "cpsi.hpp"
 
 #include "CStrfac.hpp"
 
@@ -124,9 +126,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    eig   = new double[nbrillq*(ne[0]+ne[1])];
 
 
-   // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
-   //bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
-   //                       control.input_movecs_initialize(),psi2,std::cout);
+   // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,nbrill,psi2,control.input_movecs_filename());
+   bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),psi2,std::cout);
    MPI_Barrier(comm_world0);
 
    /* setup structure factor */
@@ -136,7 +137,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* initialize operators */
    cKinetic_Operator mykin(&mygrid);
    cCoulomb_Operator mycoulomb(&mygrid, control);
-   //cXC_Operator myxc(&mygrid, control);
+   cXC_Operator myxc(&mygrid, control);
 
    /* initialize psps */
    CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
@@ -166,12 +167,30 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (control.tile_factor() > 1)
          std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
 
+      std::cout << std::endl;
+      std::cout << " options:" << std::endl;
+      std::cout << "   ion motion           = ";
+      if (control.geometry_optimize())
+         std::cout << "yes" << std::endl;
+      else
+         std::cout << "no" << std::endl;
+      std::cout << "   boundary conditions  = periodic" << std::endl;
+      std::cout << "   electron spin        = ";
+      if (ispin == 1)
+         std::cout << "restricted" << std::endl;
+      else
+         std::cout << "unrestricted" << std::endl;
+      std::cout << myxc;
+
+
       std::cout << mypsp.print_pspall();
 
-      std::cout << "\n atom composition:" << std::endl;
+      std::cout << std::endl;
+      std::cout << " atom composition:" << std::endl;
       for (ia = 0; ia < myion.nkatm; ++ia)
          std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      std::cout << "\n\n initial ion positions (au):" << std::endl;
+      std::cout << std::endl << std::endl;
+      std::cout << " initial ion positions (au):" << std::endl;
       for (ii = 0; ii < myion.nion; ++ii)
          std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
                    << Ffmt(10,5) << myion.rion1[3*ii] << " "
