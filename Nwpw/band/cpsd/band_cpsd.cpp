@@ -14,6 +14,7 @@
 #include "Lattice.hpp"
 #include "Brillouin.hpp"
 #include "cKinetic.hpp"
+#include "cCoulomb.hpp"
 #include "Cneb.hpp"
 #include "CPseudopotential.hpp"
 
@@ -123,19 +124,25 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    eig   = new double[nbrillq*(ne[0]+ne[1])];
 
 
+   // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
+   //bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
+   //                       control.input_movecs_initialize(),psi2,std::cout);
+   MPI_Barrier(comm_world0);
+
    /* setup structure factor */
    CStrfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
 
    /* initialize operators */
    cKinetic_Operator mykin(&mygrid);
+   cCoulomb_Operator mycoulomb(&mygrid, control);
+   //cXC_Operator myxc(&mygrid, control);
 
    /* initialize psps */
    CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
-   //Ewald myewald(&myparallel,&myion,&mylattice,control,zvpsp);
    myewald.phafac();
 
 
