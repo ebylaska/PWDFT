@@ -55,7 +55,7 @@ namespace pwdft {
 static bool cpp_read_header(char *fname, char *comment, int *psp_type,
                             int *version, int nfft[], double unita[],
                             char *atom, double *amass, double *zv,
-                            std::vector<double> kvectors) 
+                            std::vector<double> &kvectors) 
 {
    int i, ifound;
  
@@ -86,17 +86,20 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
       double rc[lmax+1];
       dread(5, rc, (lmax+1));
       iread(5, &nprj, 1);
+
       if (nprj>0) 
       {
-         int n_projector[nprj], l_projector[nprj], m_projector[nprj];
+         int n_projector[nprj], l_projector[nprj], m_projector[nprj], b_projector[nprj];
          int rsize=nmax*nmax*(lmax+1);
          double Gijl[rsize];
 
          iread(5, n_projector, nprj);
          iread(5, l_projector, nprj);
          iread(5, m_projector, nprj);
+         iread(5, b_projector, nprj);
          dread(5, Gijl, rsize);
       }
+
       double rcore;
       dread(5, &rcore, 1);
 
@@ -105,7 +108,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
 
       kvectors.resize(3*nbrillouin);
       dread(5, kvectors.data(), 3*nbrillouin);
-     
+
       closefile(5);
    }
  
@@ -151,9 +154,12 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
         reformat = reformat || (mygrid->ny != nfft[1]);
         reformat = reformat || (mygrid->nz != nfft[2]);
         reformat = reformat || (psp_version != version);
-
         reformat = reformat || (kvectors.size()/3 != mygrid->nbrillouin);
-        std::cout << "CHECK nbrill=" << mygrid->nbrillouin << " " << kvectors.size()/2 << std::endl;
+        for (auto k=0; k<3*(mygrid->mybrillouin->nbrillouin); ++k)
+        {
+           double dk = std::abs(kvectors[k] - mygrid->mybrillouin->kvector[k]);
+           reformat = reformat || (dk > 1.0e-8);
+        }
 
         if (!reformat)
            ireformat = 0;
@@ -301,31 +307,33 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
    int i, nn;
    double *tmp2, *prj;
    Parallel *parall = mygrid->c3db::parall;
+   int taskid   = parall->taskid();
+   int taskid_k = parall->taskid_k();
  
    *rlocal = 0.0;
  
    if (parall->base_stdio_print)
-     coutput << std::endl
-             << " reading formatted psp filename: " << fname << std::endl;
+      coutput << std::endl << " reading formatted psp filename: " << fname << std::endl;
  
-   if (parall->is_master()) {
-     openfile(5, fname, "r");
-     cread(5, comment, 80);
-     comment[79] = '\0';
-     i = 78;
-     while (comment[i] == ' ')
-       comment[i--] = '\0';
- 
-     iread(5, psp_type, 1);
-     iread(5, version, 1);
-     iread(5, nfft, 3);
-     dread(5, unita, 9);
-     cread(5, atom, 2);
-     dread(5, amass, 1);
-     dread(5, zv, 1);
-     iread(5, lmax, 1);
-     iread(5, locp, 1);
-     iread(5, nmax, 1);
+   if (parall->is_master()) 
+   {
+      openfile(5, fname, "r");
+      cread(5, comment, 80);
+      comment[79] = '\0';
+      i = 78;
+      while (comment[i] == ' ')
+        comment[i--] = '\0';
+     
+      iread(5, psp_type, 1);
+      iread(5, version, 1);
+      iread(5, nfft, 3);
+      dread(5, unita, 9);
+      cread(5, atom, 2);
+      dread(5, amass, 1);
+      dread(5, zv, 1);
+      iread(5, lmax, 1);
+      iread(5, locp, 1);
+      iread(5, nmax, 1);
    }
    parall->Brdcst_cValues(0, 0, 80, comment);
    parall->Brdcst_iValue(0, 0, psp_type);
@@ -339,51 +347,51 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
    parall->Brdcst_iValue(0, 0, locp);
    parall->Brdcst_iValue(0, 0, nmax);
    *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
- 
+
    if (*psp_type == 4)
-     *n1dbasis = *locp;
+      *n1dbasis = *locp;
    else
-     *n1dbasis = *lmax + 1;
+      *n1dbasis = *lmax + 1;
  
    *rc = new (std::nothrow) double[*lmax + 1]();
-   if (parall->is_master()) {
-     dread(5, *rc, *lmax + 1);
-     iread(5, nprj, 1);
+   if (parall->is_master()) 
+   {
+      dread(5, *rc, *lmax + 1);
+      iread(5, nprj, 1);
    }
    parall->Brdcst_Values(0, 0, *lmax + 1, *rc);
    parall->Brdcst_iValue(0, 0, nprj);
-   if (*nprj > 0) {
-     *n_projector = new int[*nprj]();
-     *l_projector = new int[*nprj]();
-     *m_projector = new int[*nprj]();
-     *b_projector = new int[*nprj]();
-     if (parall->is_master()) {
-       iread(5, *n_projector, *nprj);
-       iread(5, *l_projector, *nprj);
-       iread(5, *m_projector, *nprj);
-       iread(5, *b_projector, *nprj);
-     }
-     parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
-     parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
-     parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
-     parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
- 
-     nn = (*nmax) * (*nmax) * (*lmax + 1);
-     if (*psp_type == 4)
-       nn *= 5;
-     *Gijl = new (std::nothrow) double[nn]();
-     if (parall->is_master()) {
-       dread(5, *Gijl, nn);
-     }
-     parall->Brdcst_Values(0, 0, nn, *Gijl);
+   if (*nprj > 0) 
+   {
+      *n_projector = new int[*nprj]();
+      *l_projector = new int[*nprj]();
+      *m_projector = new int[*nprj]();
+      *b_projector = new int[*nprj]();
+      if (parall->is_master()) 
+      {
+         iread(5, *n_projector, *nprj);
+         iread(5, *l_projector, *nprj);
+         iread(5, *m_projector, *nprj);
+         iread(5, *b_projector, *nprj);
+      }
+      parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
+     
+      nn = (*nmax) * (*nmax) * (*lmax + 1);
+      if (*psp_type == 4)
+         nn *= 5;
+      *Gijl = new (std::nothrow) double[nn]();
+      if (parall->is_master()) 
+         dread(5, *Gijl, nn);
+      parall->Brdcst_Values(0, 0, nn, *Gijl);
    }
  
-   if (parall->is_master()) {
-     if (*version == 4)
-       dread(5, rlocal, 1);
+   if (parall->is_master()) 
+   {
      dread(5, rcore, 1);
    }
-   parall->Brdcst_Values(0, 0, 1, rlocal);
    parall->Brdcst_Values(0, 0, 1, rcore);
    if (*rcore > 0.0)
      *semicore = true;
@@ -515,23 +523,42 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
       parall->Brdcst_Values(0, 0, nn, *core_ps_prime);
    }
 
-   /* readin kvectors */
- 
+   /* readin kvectors and then ignore */
+   int nbrillouin;
+   if (parall->is_master()) 
+   {
+      double kv[3];
+      iread(5, &nbrillouin, 1);
+      for (auto nb=0; nb<nbrillouin; ++nb)
+         dread(5, kv, 3);
+   }
+   parall->Brdcst_iValue(0, 0, &nbrillouin);
+
    /* readin vl 3d block */
    tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
-   mygrid->t_read(5, tmp2, -1, -1);
-   mygrid->t_pack(0, tmp2);
-   mygrid->tt_pack_copy(0, tmp2, vl);
+   mygrid->r_read(5, tmp2, -1, -1, true);
+   mygrid->r_pack(0, tmp2);
+   mygrid->rr_pack_copy(0, tmp2, vl);
+
  
    /* reading vnl 3d block */
    if (*nprj > 0) 
    {
-      *vnl = new (std::nothrow) double[(*nprj) * (mygrid->npack(1))]();
+      *vnl = new (std::nothrow) double[(*nprj) * (mygrid->npack1_max())]();
       prj = *vnl;
-      for (i = 0; i < (*nprj); ++i) {
-         mygrid->t_read(5, tmp2, -1, -1);
-         mygrid->t_pack(1, tmp2);
-         mygrid->tt_pack_copy(1, tmp2, &prj[i * mygrid->npack(1)]);
+      for (auto nb=0; nb<nbrillouin; ++nb)
+      {
+         int nbq = mygrid->ktoindex(nb);
+         int pk  = mygrid->ktop(nb);
+         for (i=0; i<(*nprj); ++i) 
+         {
+            mygrid->r_read(5, tmp2, -1, pk, true);
+            if (pk==taskid_k)
+            {
+               mygrid->r_pack(nbq, tmp2);
+               mygrid->rr_pack_copy(nbq, tmp2, prj + (i*mygrid->npack1_max()) );
+            }
+         }
       }
    }
    if (*semicore) {
@@ -539,21 +566,21 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
      *ncore = new (std::nothrow) double[nn]();
      prj = *ncore;
  
-     mygrid->t_read(5, tmp2, -1, -1);
-     mygrid->t_pack(0, tmp2);
-     mygrid->tt_pack_copy(0, tmp2, prj);
+     mygrid->r_read(5, tmp2, -1, -1, true);
+     mygrid->r_pack(0, tmp2);
+     mygrid->rr_pack_copy(0, tmp2, prj);
  
-     mygrid->t_read(5, tmp2, -1, -1);
-     mygrid->t_pack(0, tmp2);
-     mygrid->tt_pack_copy(0, tmp2, &prj[2 * mygrid->npack(0)]);
+     mygrid->r_read(5, tmp2, -1, -1, true);
+     mygrid->r_pack(0, tmp2);
+     mygrid->rr_pack_copy(0, tmp2, prj + (2*mygrid->npack(0)));
  
-     mygrid->t_read(5, tmp2, -1, -1);
-     mygrid->t_pack(0, tmp2);
-     mygrid->tt_pack_copy(0, tmp2, &prj[3 * mygrid->npack(0)]);
+     mygrid->r_read(5, tmp2, -1, -1, true);
+     mygrid->r_pack(0, tmp2);
+     mygrid->rr_pack_copy(0, tmp2, prj + (3 *mygrid->npack(0)));
  
-     mygrid->t_read(5, tmp2, -1, -1);
-     mygrid->t_pack(0, tmp2);
-     mygrid->tt_pack_copy(0, tmp2, &prj[4 * mygrid->npack(0)]);
+     mygrid->r_read(5, tmp2, -1, -1, true);
+     mygrid->r_pack(0, tmp2);
+     mygrid->rr_pack_copy(0, tmp2, prj + (4*mygrid->npack(0)));
    }
  
    delete[] tmp2;
@@ -644,9 +671,11 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
                       double *comp_pot_matrix, std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
-   int i, nn;
+   int nn;
    double *prj;
    Parallel *parall = mygrid->c3db::parall;
+   int taskid   = parall->taskid();
+   int taskid_k = parall->taskid_k();
  
    // double tmp2[mygrid->nfft3d];
    double *tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
@@ -685,12 +714,9 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
          iwrite(6, m_projector, nprj);
          iwrite(6, b_projector, nprj);
       }
-      nn = (nmax) * (nmax) * (lmax + 1);
-      if (psp_type == 4)
-         nn *= 5;
+      nn = nmax*nmax*(lmax + 1);
       dwrite(6, Gijl, nn);
-      if (version == 4)
-         dwrite(6, &rlocal, 1);
+
       dwrite(6, &rcore, 1);
       // double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
      
@@ -731,21 +757,38 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
          dwrite(6, core_ps_prime, n1dgrid);
       }
    }
+
+   /* write out brillouin zone */
+  int nbrillouin = mygrid->mybrillouin->nbrillouin;
+   if (parall->is_master()) 
+   {
+      iwrite(6, &nbrillouin, 1);
+      for (auto nb=0; nb<nbrillouin; ++nb)
+         dwrite(6, mygrid->mybrillouin->kvector+3*nb, 3);
+   }
  
-   /* readin vl 3d block */
+   /* write out vl 3d block */
    mygrid->tt_pack_copy(0, vl, tmp2);
    mygrid->t_unpack(0, tmp2);
    mygrid->t_write_buffer(6, tmp2, 0,0);
  
-   /* reading vnl 3d block */
+   /* write out vnl 3d block */
    if (nprj > 0) 
    {
       prj = vnl;
-      for (i = 0; i < (nprj); ++i) 
+      for (auto nb=0; nb<nbrillouin; ++nb) 
       {
-         mygrid->tt_pack_copy(1, &prj[i * mygrid->npack(1)], tmp2);
-         mygrid->t_unpack(1, tmp2);
-         mygrid->t_write_buffer(6, tmp2, 0,0);
+         int nbq = mygrid->ktoindex(nb);
+         int pk  = mygrid->ktop(nb);
+         for (auto i=0; i<(nprj); ++i) 
+         {
+            if (pk==taskid_k)
+            {
+               mygrid->tt_pack_copy(nbq, prj+i*mygrid->npack1_max(), tmp2);
+               mygrid->t_unpack(nbq, tmp2);
+            }
+            mygrid->t_write_buffer(6, tmp2,0,pk);
+         }
       }
    }
  
@@ -757,15 +800,15 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
       mygrid->t_unpack(0, tmp2);
       mygrid->t_write_buffer(6, tmp2, 0,0);
      
-      mygrid->tt_pack_copy(0, &prj[2 * mygrid->npack(0)], tmp2);
+      mygrid->tt_pack_copy(0, prj + 2*mygrid->npack(0), tmp2);
       mygrid->t_unpack(0, tmp2);
       mygrid->t_write_buffer(6, tmp2, 0,0);
      
-      mygrid->tt_pack_copy(0, &prj[3 * mygrid->npack(0)], tmp2);
+      mygrid->tt_pack_copy(0, prj + 3*mygrid->npack(0), tmp2);
       mygrid->t_unpack(0, tmp2);
       mygrid->t_write_buffer(6, tmp2, 0,0);
      
-      mygrid->tt_pack_copy(0, &prj[4 * mygrid->npack(0)], tmp2);
+      mygrid->tt_pack_copy(0, prj + 4*mygrid->npack(0), tmp2);
       mygrid->t_unpack(0, tmp2);
       mygrid->t_write_buffer(6, tmp2, 0,0);
    }
@@ -940,7 +983,6 @@ static int cpp_get_psp_type(Parallel *myparall, char *pspname) {
  * @param m_projector       A pointer to the output array for m-projector values.
  * @param b_projector       A pointer to the output array for b-projector values.
  * @param Gijl              A pointer to the output array for Gijl values.
- * @param rlocal            A pointer to the output rlocal value.
  * @param semicore          A pointer to the output semicore flag.
  * @param rcore             A pointer to the output rcore value.
  * @param ncore             A pointer to the output array for core density values.
@@ -1087,13 +1129,7 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
       *vnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack(1))]();
 
       for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
-      {
-         std::cout << "generate vnl nbq=" << nbq << std::endl;
-         std::cout << "   kvector=" << mygrid->pbrill_kvector(nbq)[0] 
-                   << " " << mygrid->pbrill_kvector(nbq)[1] 
-                   << " " << mygrid->pbrill_kvector(nbq)[2] << std::endl;
          psp1d.cpp_generate_nonlocal_spline(mygrid, mygrid->pbrill_kvector(nbq), nray, G_ray, vnl_ray, *vnl + nbq*(psp1d.nprj)*(mygrid->npack(1)));
-      }
 
      
       /* deallocate ray formatted grids */
@@ -1265,8 +1301,6 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
       if (myparall->base_stdio_print)
          coutput << "in cpp_generate Not finished, psp_type = " << *psp_type << std::endl;
    }
-
-   std::cout << "END cpp_generate!!" << std::endl;
 }
 
 
@@ -1319,7 +1353,6 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
  
    psp_version = control.version;
  
-   std::cout << "nbrillq=" << mypneb->nbrillq << std::endl;
    npsp = myion->nkatm;
    nprj_max = 0;
  
@@ -1418,8 +1451,6 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                       &comp_pot_matrix_ptr, coutput);
         
          // writing .cpp file to fname
-         std::cout << "cpp_write" << std::endl;
-         /*
          cpp_write(mypneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
                    aname, amass[ia], zv[ia], lmmax[ia], lmax[ia], locp[ia],
                    nmax[ia], rc_ptr, nprj[ia], n_ptr, l_ptr, m_ptr, b_ptr, G_ptr,
@@ -1430,7 +1461,6 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                    core_ae_ptr, core_ps_ptr, core_ae_prime_ptr, core_ps_prime_ptr,
                    rgrid_ptr, core_kin[ia], core_ion[ia], hartree_matrix_ptr,
                    comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
-         */
       } 
       else 
       {

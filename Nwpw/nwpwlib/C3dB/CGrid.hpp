@@ -25,8 +25,6 @@ class CGrid : public k1db, public c3db {
    CBalance  *mybalance;
    int balanced;
  
-   /* Brillouin */
-   Brillouin *mybrillouin;
  
    /* G grid data */
    double *Garray, **Gpack;
@@ -56,6 +54,9 @@ public:
  
    /* lattice pointer */
    Lattice *lattice;
+
+   /* Brillouin */
+   Brillouin *mybrillouin;
  
    /* r_grid data */
    bool has_r_grid = false;
