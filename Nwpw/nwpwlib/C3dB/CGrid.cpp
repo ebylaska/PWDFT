@@ -1282,9 +1282,10 @@ void CGrid::rc_pfft3f(const int nb, double *a)
  *                              *
  ********************************/
 void CGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2,
-                           const int request_indx, const int msgtype) {
-  if (balanced)
-    mybalance->c_unbalance_start(nb, tmp1, request_indx, msgtype);
+                           const int request_indx, const int msgtype) 
+{
+   if (balanced)
+      mybalance->c_unbalance_start(nb, tmp1, request_indx, msgtype);
 }
 
 /********************************
@@ -1293,15 +1294,15 @@ void CGrid::c_unpack_start(const int nb, double *tmp1, double *tmp2,
  *                              *
  ********************************/
 void CGrid::c_unpack_mid(const int nb, double *tmp1, double *tmp2,
-                         const int request_indx, const int msgtype) {
-  if (balanced)
-    mybalance->c_unbalance_end(nb, tmp1, request_indx);
-
-  std::memcpy(tmp2, tmp1, 2 * (nidb2[nb]) * sizeof(double));
-  std::memset(tmp1, 0, 2*nfft3d * sizeof(double));
-
-  c_bindexcopy((nidb2[nb]), packarray[nb], tmp2, tmp1);
-
+                         const int request_indx, const int msgtype) 
+{
+   if (balanced)
+     mybalance->c_unbalance_end(nb, tmp1, request_indx);
+ 
+   std::memcpy(tmp2, tmp1, 2 * (nidb2[nb]) * sizeof(double));
+   std::memset(tmp1, 0, 2*nfft3d * sizeof(double));
+ 
+   c_bindexcopy((nidb2[nb]), packarray[nb], tmp2, tmp1);
 }
 
 /********************************
@@ -3413,35 +3414,39 @@ void CGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
  *    CGrid::regenerate_r_grid    *
  *                                *
  **********************************/
-void CGrid::regenerate_r_grid() {
-  int nxh = nx / 2;
-  int nyh = ny / 2;
-  int nzh = nz / 2;
-  double a[9];
-  for (auto i = 0; i < 3; ++i) {
-    a[i] = lattice->unita1d(0 + i) / ((double)nx);
-    a[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
-    a[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
-  }
-
-  r_nzero(3, r_grid);
-
-  /* grid points in coordination space */
-  for (auto k3 = (-nzh); k3 < nzh; ++k3)
-    for (auto k2 = (-nyh); k2 < nyh; ++k2)
-      for (auto k1 = (-nxh); k1 < nxh; ++k1) {
-        int i = k1 + nxh;
-        int j = k2 + nyh;
-        int k = k3 + nzh;
-        int indx = cijktoindex2(i, j, k);
-        int p = cijktop2(i, j, k);
-
-        if (p == c3db::parall->taskid_i()) {
-          r_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
-          r_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
-          r_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
-        }
+void CGrid::regenerate_r_grid() 
+{
+   int nxh = nx / 2;
+   int nyh = ny / 2;
+   int nzh = nz / 2;
+   double a[9];
+   for (auto i = 0; i < 3; ++i) 
+   {
+      a[i] = lattice->unita1d(0 + i) / ((double)nx);
+      a[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
+      a[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
+   }
+ 
+   r_nzero(3, r_grid);
+ 
+   /* grid points in coordination space */
+   for (auto k3 = (-nzh); k3 < nzh; ++k3)
+   for (auto k2 = (-nyh); k2 < nyh; ++k2)
+   for (auto k1 = (-nxh); k1 < nxh; ++k1) 
+   {
+      int i = k1 + nxh;
+      int j = k2 + nyh;
+      int k = k3 + nzh;
+      int indx = cijktoindex2(i, j, k);
+      int p = cijktop2(i, j, k);
+ 
+      if (p == c3db::parall->taskid_i()) 
+      {
+         r_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
+         r_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
+         r_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
       }
+   }
 }
 
 /************************************
@@ -3449,35 +3454,39 @@ void CGrid::regenerate_r_grid() {
  *    CGrid::generate_r_sym_grid    *
  *                                  *
  ************************************/
-void CGrid::generate_r_sym_grid(double *r_sym_grid) {
-  int nxh = nx / 2;
-  int nyh = ny / 2;
-  int nzh = nz / 2;
-  double a[9];
-  for (auto i = 0; i < 3; ++i) {
-    a[i] = lattice->unita1d(0 + i) / ((double)nx);
-    a[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
-    a[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
-  }
-
-  r_nzero(3, r_sym_grid);
-
-  /* grid points in coordination space */
-  for (auto k3 = (-nzh + 1); k3 < nzh; ++k3)
-    for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-      for (auto k1 = (-nxh + 1); k1 < nxh; ++k1) {
-        int i = k1 + nxh;
-        int j = k2 + nyh;
-        int k = k3 + nzh;
-        int indx = cijktoindex2(i, j, k);
-        int p = cijktop2(i, j, k);
-
-        if (p == c3db::parall->taskid_i()) {
-          r_sym_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
-          r_sym_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
-          r_sym_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
-        }
+void CGrid::generate_r_sym_grid(double *r_sym_grid) 
+{
+   int nxh = nx / 2;
+   int nyh = ny / 2;
+   int nzh = nz / 2;
+   double a[9];
+   for (auto i = 0; i < 3; ++i) 
+   {
+      a[i] = lattice->unita1d(0 + i) / ((double)nx);
+      a[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
+      a[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
+   }
+ 
+   r_nzero(3, r_sym_grid);
+ 
+   /* grid points in coordination space */
+   for (auto k3 = (-nzh + 1); k3 < nzh; ++k3)
+   for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
+   for (auto k1 = (-nxh + 1); k1 < nxh; ++k1) 
+   {
+      int i = k1 + nxh;
+      int j = k2 + nyh;
+      int k = k3 + nzh;
+      int indx = cijktoindex2(i, j, k);
+      int p = cijktop2(i, j, k);
+ 
+      if (p == c3db::parall->taskid_i()) 
+      {
+         r_sym_grid[3 * indx] = a[0] * k1 + a[3] * k2 + a[6] * k3;
+         r_sym_grid[3 * indx + 1] = a[1] * k1 + a[4] * k2 + a[7] * k3;
+         r_sym_grid[3 * indx + 2] = a[2] * k1 + a[5] * k2 + a[8] * k3;
       }
+   }
 }
 
 /************************************
@@ -3485,25 +3494,27 @@ void CGrid::generate_r_sym_grid(double *r_sym_grid) {
  *    CGrid::generate_r_sym_mask    *
  *                                  *
  ************************************/
-void CGrid::generate_r_sym_mask(double *rmask) {
-  int nxh = nx / 2;
-  int nyh = ny / 2;
-  int nzh = nz / 2;
-  r_zero(rmask);
-
-  /* grid points in coordination space */
-  for (auto k3 = (-nzh); k3 < nzh; ++k3)
-    for (auto k2 = (-nyh); k2 < nyh; ++k2)
-      for (auto k1 = (-nxh); k1 < nxh; ++k1) {
-        int i = k1 + nxh;
-        int j = k2 + nyh;
-        int k = k3 + nzh;
-        int indx = cijktoindex2(i, j, k);
-        int p = cijktop2(i, j, k);
-
-        if (p == c3db::parall->taskid_i())
-          rmask[indx] = 1.0;
-      }
+void CGrid::generate_r_sym_mask(double *rmask) 
+{
+   int nxh = nx / 2;
+   int nyh = ny / 2;
+   int nzh = nz / 2;
+   r_zero(rmask);
+ 
+   /* grid points in coordination space */
+   for (auto k3 = (-nzh); k3 < nzh; ++k3)
+   for (auto k2 = (-nyh); k2 < nyh; ++k2)
+   for (auto k1 = (-nxh); k1 < nxh; ++k1) 
+   {
+      int i = k1 + nxh;
+      int j = k2 + nyh;
+      int k = k3 + nzh;
+      int indx = cijktoindex2(i, j, k);
+      int p = cijktop2(i, j, k);
+ 
+      if (p == c3db::parall->taskid_i())
+         rmask[indx] = 1.0;
+   }
 }
 
 /************************************
@@ -3511,18 +3522,20 @@ void CGrid::generate_r_sym_mask(double *rmask) {
  *       CGrid::c_Laplacian         *
  *                                  *
  ************************************/
-void CGrid::c_Laplacian(const int nb, double *w) {
-  int npack0 = this->npack(nb);
-  double *Gx = this->Gpackxyz(nb, 0);
-  double *Gy = this->Gpackxyz(nb, 1);
-  double *Gz = this->Gpackxyz(nb, 2);
-  int kk = 0;
-  for (auto k = 0; k < npack0; ++k) {
-    auto gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
-    w[kk] *= (-gg);
-    w[kk + 1] *= (-gg);
-    kk += 2;
-  }
+void CGrid::c_Laplacian(const int nb, double *w) 
+{
+   int npack0 = this->npack(nb);
+   double *Gx = this->Gpackxyz(nb, 0);
+   double *Gy = this->Gpackxyz(nb, 1);
+   double *Gz = this->Gpackxyz(nb, 2);
+   int kk = 0;
+   for (auto k = 0; k < npack0; ++k) 
+   {
+      auto gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
+      w[kk] *= (-gg);
+      w[kk + 1] *= (-gg);
+      kk += 2;
+   }
 }
 
 /************************************
@@ -3530,18 +3543,20 @@ void CGrid::c_Laplacian(const int nb, double *w) {
  *       CGrid::cc_Laplacian        *
  *                                  *
  ************************************/
-void CGrid::cc_Laplacian(const int nb, const double *w0, double *w) {
-  int npack0 = this->npack(nb);
-  double *Gx = this->Gpackxyz(nb, 0);
-  double *Gy = this->Gpackxyz(nb, 1);
-  double *Gz = this->Gpackxyz(nb, 2);
-  int kk = 0;
-  for (auto k = 0; k < npack0; ++k) {
-    auto gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
-    w[kk] = -w0[kk] * gg;
-    w[kk + 1] = -w0[kk + 1] * gg;
-    kk += 2;
-  }
+void CGrid::cc_Laplacian(const int nb, const double *w0, double *w) 
+{
+   int npack0 = this->npack(nb);
+   double *Gx = this->Gpackxyz(nb, 0);
+   double *Gy = this->Gpackxyz(nb, 1);
+   double *Gz = this->Gpackxyz(nb, 2);
+   int kk = 0;
+   for (auto k = 0; k < npack0; ++k) 
+   {
+      auto gg = Gx[k] * Gx[k] + Gy[k] * Gy[k] + Gz[k] * Gz[k];
+      w[kk] = -w0[kk] * gg;
+      w[kk + 1] = -w0[kk + 1] * gg;
+      kk += 2;
+   }
 }
 
 /************************************
@@ -3549,17 +3564,18 @@ void CGrid::cc_Laplacian(const int nb, const double *w0, double *w) {
  *      CGrid::rr_Laplacian         *
  *                                  *
  ************************************/
-void CGrid::rr_Laplacian(const int nb, const double *w0, double *w) {
-  double scal1 = 1.0 / ((double)((nx) * (ny) * (nz)));
-
-  rr_SMul(scal1, w0, w);
-  this->rc_pfft3f(nb, w);
-  this->c_pack(nb, w);
-
-  this->c_Laplacian(nb, w);
-
-  this->c_unpack(nb, w);
-  this->cr_pfft3b(nb, w);
+void CGrid::rr_Laplacian(const int nb, const double *w0, double *w) 
+{
+   double scal1 = 1.0 / ((double)((nx) * (ny) * (nz)));
+ 
+   rr_SMul(scal1, w0, w);
+   this->rc_pfft3f(nb, w);
+   this->c_pack(nb, w);
+ 
+   this->c_Laplacian(nb, w);
+ 
+   this->c_unpack(nb, w);
+   this->cr_pfft3b(nb, w);
 }
 
 /************************************
@@ -3567,10 +3583,10 @@ void CGrid::rr_Laplacian(const int nb, const double *w0, double *w) {
  *       CGrid::rr_Helmholtz        *
  *                                  *
  ************************************/
-void CGrid::rr_Helmholtz(const int nb, const double *k2, const double *w,
-                         double *Hw) {
-  this->rr_Laplacian(nb, w, Hw);
-  this->rrr_Mul2Add(k2, w, Hw);
+void CGrid::rr_Helmholtz(const int nb, const double *k2, const double *w, double *Hw) 
+{
+   this->rr_Laplacian(nb, w, Hw);
+   this->rrr_Mul2Add(k2, w, Hw);
 }
 
 /************************************
@@ -3589,42 +3605,43 @@ void CGrid::rr_Helmholtz(const int nb, const double *k2, const double *w,
  Entry/Exit - w0(r) : initial guess / output solution
 
 */
-void CGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b,
-                                double *w) {
-  double alpha, alpha0;
-  double delta = 1.0;
-  double *Aw = r_alloc();
-  double *R = r_alloc();
-  double *HR = r_alloc();
-
-  double omega = this->lattice->omega();
-  double scal1 = 1.0 / ((double)((nx) * (ny) * (nz)));
-  double dv = omega * scal1;
-
-  this->r_zero(w);
-
-  int it = 0;
-  while ((it < 10000) && (delta > 0.01)) {
-    // compute the Aw and the residual
-    this->rr_Helmholtz(nb, k2, w, Aw);
-    this->rrr_Minus(b, Aw, R);
-
-    this->rr_Helmholtz(nb, k2, R, HR);
-    delta = rr_dot(R, R) * dv;
-    // alpha = -1.0e-6;
-    alpha0 = delta / rr_dot(R, HR);
-    alpha = 1.0e-5 * alpha0;
-
-    std::cout << "it=" << it << " delta=" << delta << " alpha0=" << alpha0
-              << " alpha=" << alpha << std::endl;
-
-    rr_daxpy(alpha, R, w);
-    ++it;
-  }
-
-  r_dealloc(HR);
-  r_dealloc(R);
-  r_dealloc(Aw);
+void CGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b, double *w) 
+{
+   double alpha, alpha0;
+   double delta = 1.0;
+   double *Aw = r_alloc();
+   double *R = r_alloc();
+   double *HR = r_alloc();
+ 
+   double omega = this->lattice->omega();
+   double scal1 = 1.0 / ((double)((nx) * (ny) * (nz)));
+   double dv = omega * scal1;
+ 
+   this->r_zero(w);
+ 
+   int it = 0;
+   while ((it < 10000) && (delta > 0.01)) 
+   {
+      // compute the Aw and the residual
+      this->rr_Helmholtz(nb, k2, w, Aw);
+      this->rrr_Minus(b, Aw, R);
+     
+      this->rr_Helmholtz(nb, k2, R, HR);
+      delta = rr_dot(R, R) * dv;
+      // alpha = -1.0e-6;
+      alpha0 = delta / rr_dot(R, HR);
+      alpha = 1.0e-5 * alpha0;
+     
+      std::cout << "it=" << it << " delta=" << delta << " alpha0=" << alpha0
+                << " alpha=" << alpha << std::endl;
+     
+      rr_daxpy(alpha, R, w);
+      ++it;
+   }
+ 
+   r_dealloc(HR);
+   r_dealloc(R);
+   r_dealloc(Aw);
 }
 
 /************************************
@@ -3634,22 +3651,24 @@ void CGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b,
  ************************************/
 void CGrid::rrrr_FD_gradient(const double *rho, double *rhox, double *rhoy, double *rhoz) 
 {
-  double ua[9];
-  for (auto i = 0; i < 3; ++i) {
-    ua[i] = lattice->unita1d(0 + i) / ((double)nx);
-    ua[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
-    ua[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
-  }
-  double dx = std::sqrt(ua[0] * ua[0] + ua[1] * ua[1] + ua[2] * ua[2]);
-  double dy = std::sqrt(ua[3] * ua[3] + ua[4] * ua[4] + ua[5] * ua[5]);
-  double dz = std::sqrt(ua[6] * ua[6] + ua[7] * ua[7] + ua[8] * ua[8]);
-
-  this->rrrr_periodic_gradient(rho, rhox, rhoy, rhoz);
-  for (auto i = 0; i < nfft3d; ++i) {
-    rhox[i] /= dx;
-    rhoy[i] /= dy;
-    rhoz[i] /= dz;
-  }
+   double ua[9];
+   for (auto i = 0; i < 3; ++i) 
+   {
+      ua[i] = lattice->unita1d(0 + i) / ((double)nx);
+      ua[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
+      ua[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
+   }
+   double dx = std::sqrt(ua[0] * ua[0] + ua[1] * ua[1] + ua[2] * ua[2]);
+   double dy = std::sqrt(ua[3] * ua[3] + ua[4] * ua[4] + ua[5] * ua[5]);
+   double dz = std::sqrt(ua[6] * ua[6] + ua[7] * ua[7] + ua[8] * ua[8]);
+ 
+   this->rrrr_periodic_gradient(rho, rhox, rhoy, rhoz);
+   for (auto i = 0; i < nfft3d; ++i) 
+   {
+      rhox[i] /= dx;
+      rhoy[i] /= dy;
+      rhoz[i] /= dz;
+   }
 }
 
 /************************************
@@ -3657,24 +3676,26 @@ void CGrid::rrrr_FD_gradient(const double *rho, double *rhox, double *rhoy, doub
  *   CGrid::rrrr_FD_laplacian       *
  *                                  *
  ************************************/
-void CGrid::rrrr_FD_laplacian(const double *rho, double *rhoxx, double *rhoyy,
-                              double *rhozz) {
-  double ua[9];
-  for (auto i = 0; i < 3; ++i) {
-    ua[i] = lattice->unita1d(0 + i) / ((double)nx);
-    ua[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
-    ua[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
-  }
-  double dxx = (ua[0] * ua[0] + ua[1] * ua[1] + ua[2] * ua[2]);
-  double dyy = (ua[3] * ua[3] + ua[4] * ua[4] + ua[5] * ua[5]);
-  double dzz = (ua[6] * ua[6] + ua[7] * ua[7] + ua[8] * ua[8]);
-
-  this->rrrr_periodic_laplacian(rho, rhoxx, rhoyy, rhozz);
-  for (auto i = 0; i < nfft3d; ++i) {
-    rhoxx[i] /= (dxx);
-    rhoyy[i] /= (dyy);
-    rhozz[i] /= (dzz);
-  }
+void CGrid::rrrr_FD_laplacian(const double *rho, double *rhoxx, double *rhoyy, double *rhozz) 
+{
+   double ua[9];
+   for (auto i = 0; i < 3; ++i) 
+   {
+      ua[i] = lattice->unita1d(0 + i) / ((double)nx);
+      ua[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
+      ua[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
+   }
+   double dxx = (ua[0] * ua[0] + ua[1] * ua[1] + ua[2] * ua[2]);
+   double dyy = (ua[3] * ua[3] + ua[4] * ua[4] + ua[5] * ua[5]);
+   double dzz = (ua[6] * ua[6] + ua[7] * ua[7] + ua[8] * ua[8]);
+ 
+   this->rrrr_periodic_laplacian(rho, rhoxx, rhoyy, rhozz);
+   for (auto i = 0; i < nfft3d; ++i) 
+   {
+      rhoxx[i] /= (dxx);
+      rhoyy[i] /= (dyy);
+      rhozz[i] /= (dzz);
+   }
 }
 
 } // namespace pwdft
