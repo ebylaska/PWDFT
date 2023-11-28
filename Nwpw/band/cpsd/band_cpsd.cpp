@@ -44,7 +44,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 {
    Parallel myparallel(comm_world0);
 
-   int version, nfft[3], ne[2], ispin, nbrillq;
+   int version, nfft[3], ne[2], ispin, nbrillq, nbrillouin;
    int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
    char date[26];
    double sum1, sum2, ev, zv;
@@ -115,6 +115,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
 
    /* initialize psi1 and psi2 */
+   nbrillouin = mygrid.nbrillouin;
    ispin = control.ispin(); ne[0] = mygrid.ne[0]; ne[1] = mygrid.ne[1]; nbrillq = mygrid.nbrillq;
    psi1 = mygrid.g_allocate_nbrillq_all();
    psi2 = mygrid.g_allocate_nbrillq_all();
@@ -128,6 +129,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,nbrill,psi2,control.input_movecs_filename());
    bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),psi2,std::cout);
+   mygrid.gg_copy(psi2,psi1);
    MPI_Barrier(comm_world0);
 
    /* setup structure factor */
@@ -294,6 +296,9 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    }
 
    MPI_Barrier(comm_world0);
+
+   // write wavefunctions
+   //cpsi_write(&mygrid,&version,nfft,unita,&ispin,ne,&nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
    /* deallocate memory */

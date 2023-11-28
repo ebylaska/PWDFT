@@ -230,61 +230,77 @@ Cneb::Cneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
  *************************************/
 void Cneb::g_generate1_random(double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
    int filling[4], nfft[3];
    double zvalue[2];
-   // double *tmp2 = new (std::nothrow) double[n2ft3d]();
- 
-   double tmp2[n2ft3d];
+
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
  
    nfft[0] = nx;
    nfft[1] = ny;
    nfft[2] = nz;
  
-   taskid_j = c1db::parall->taskid_j();
-   for (ms = 0; ms < ispin; ++ms)
-      for (n = 0; n < ne[ms]; ++n) 
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
       {
          util_getfilling(n, nfft, filling, zvalue);
         
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
         
-         if (pj == taskid_j) 
+         if ((pj==taskid_j) && (pk==taskid_k))
          {
             r_zero(tmp2);
             c3db::c_setpw(filling, zvalue, tmp2);
             c3db::c_addrandom(tmp2);
            
             CGrid::c_pack(1, tmp2);
-            indx = 2 * CGrid::npack1_max() * qj;
+            int indx = ibshiftj*qj + ibshiftk*qk;
             CGrid::cc_pack_copy(1, tmp2, psi + indx);
             CGrid::c_pack_noimagzero(1, psi + indx);
          }
       }
- 
-   // delete [] tmp2;
+   }
+   delete [] tmp2;
 }
 
 void Cneb::g_generate2_random(double *psi) 
 {
-   double tmp2[n2ft3d];
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
  
+   int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
-   for (auto ms = 0; ms < ispin; ++ms)
-   for (auto n = 0; n < ne[ms]; ++n) 
-      {
-         int qj = msntoindex(ms, n);
-         int pj = msntop(ms, n);
-         if (pj == taskid_j) {
-           c3db::r_setrandom(tmp2);
-           c3db::rc_fft3d(tmp2);
-        
-           CGrid::c_pack(1, tmp2);
-           int indx = 2 * CGrid::npack1_max() * qj;
-           CGrid::cc_pack_copy(1, tmp2, psi + indx);
-         }
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
+         {
+            int qj = msntoindex(ms, n);
+            int pj = msntop(ms, n);
+            if ((pj == taskid_j) && (pk==taskid_k))
+            {
+              c3db::r_setrandom(tmp2);
+              c3db::rc_fft3d(tmp2);
+           
+              CGrid::c_pack(1, tmp2);
+              int indx = ibshiftj*qj + ibshiftk*qk;
+              CGrid::cc_pack_copy(1, tmp2, psi + indx);
+            }
       }
+   }
+   delete[] tmp2;
 }
 
 /*************************************
@@ -321,25 +337,31 @@ void Cneb::g_generate_random(double *psi) {
  */
 void Cneb::g_read(const int iunit, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
  
-   taskid_j = c1db::parall->taskid_j();
- 
-   for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne[ms]; ++n) 
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
       {
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
          c_read(iunit, tmp2, pj, -1);
-         if (pj == taskid_j) 
+         if ((pj==taskid_j) && (pk==taskid_k))
          {
-            indx = 2*CGrid::npack1_max()*qj;
-            CGrid::c_pack(1, tmp2);
-            CGrid::cc_pack_copy(1, tmp2, psi + indx);
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::c_pack(qk, tmp2);
+            CGrid::cc_pack_copy(qk, tmp2, psi + indx);
          }
       }
- 
+   }
    delete[] tmp2;
 }
 
@@ -351,16 +373,22 @@ void Cneb::g_read(const int iunit, double *psi)
  *************************************/
 void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
  
-   taskid_j = c1db::parall->taskid_j();
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
  
-   for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne[ms]; ++n) 
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
       {
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
          if (n<ne0[ms])
          {
             c_read(iunit, tmp2, pj,-1);
@@ -371,13 +399,14 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
             c3db::rc_fft3d(tmp2);
          }
          
-         if (pj == taskid_j) 
+         if ((pj==taskid_j) && (pk==taskid_k)) 
          {
-            indx = 2*CGrid::npack1_max()*qj;
-            CGrid::c_pack(1, tmp2);
-            CGrid::cc_pack_copy(1, tmp2, psi + indx);
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::c_pack(qk, tmp2);
+            CGrid::cc_pack_copy(qk, tmp2, psi + indx);
          }
       }
+   }
  
    delete[] tmp2;
 }
@@ -403,25 +432,34 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
  */
 void Cneb::g_write(const int iunit, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
+   int npack2 = 2*CGrid::npack1_max();
+   int ibshiftj = npack2;
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   taskid_j = c1db::parall->taskid_j();
-   for (ms = 0; ms < ispin; ++ms)
-   for (n = 0; n < ne[ms]; ++n) 
+   int taskid_k = c1db::parall->taskid_j();
+   int taskid_j = c1db::parall->taskid_j();
+
+   for (auto nb=0; nb<nbrillouin; ++nb)
    {
-      qj = msntoindex(ms, n);
-      pj = msntop(ms, n);
-      if (pj == taskid_j) 
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
       {
-         indx = 2 * CGrid::npack1_max() * qj;
-         CGrid::cc_pack_copy(1, psi + indx, tmp2);
-         CGrid::c_unpack(1, tmp2);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         if ((pj==taskid_j) && (pk==taskid_k))
+         {
+            int indx = ibshiftj*qj + ibshiftk+qk;
+            CGrid::cc_pack_copy(qk+1, psi+indx, tmp2);
+            CGrid::c_unpack(qk+1, tmp2);
+         }
+         if (io_buffer)
+            c_write_buffer(iunit,tmp2,pj,pk);
+         else
+            c_write(iunit,tmp2,pj,pk);
       }
-      if (io_buffer)
-         c_write_buffer(iunit,tmp2,pj,-1);
-      else
-         c_write(iunit,tmp2,pj,-1);
    }
 
    delete[] tmp2;
@@ -503,17 +541,20 @@ void Cneb::h_write(const int iunit, const int nproj, const double *proj)
  */
 double Cneb::gg_traceall(double *psi1, double *psi2) 
 {
-   int n, indx;
+   int npack2 = 2*CGrid::npack1_max();
+   int indx = 0;
    double sum = 0.0;
- 
-   indx = 0;
-   for (n = 0; n < (neq[0] + neq[1]); ++n) 
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
-      sum += CGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
-      indx += 2 * CGrid::npack1_max();
+      double weight = pbrill_weight(nbq);
+      for (auto n=0; n<(neq[0]+neq[1]); ++n) 
+      {
+         sum += CGrid::cc_pack_idot(nbq+1, psi1+indx, psi2+indx)*weight;
+         indx += npack2;
+      }
    }
-   if (ispin == 1)
-      sum *= 2.0;
+   if (ispin == 1) sum *= 2.0;
  
    return c3db::parall->SumAll(0, sum);
 }
@@ -535,10 +576,8 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
  */
 void Cneb::gg_copy(double *psi1, double *psi2) 
 {
-   int one = 1;
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
+   int nsize = nbrillq * 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
    std::memcpy(psi2, psi1, nsize * sizeof(double));
-   // DCOPY_PWDFT(nsize, psi1, one, psi2, one);
 }
 
 
@@ -559,7 +598,8 @@ void Cneb::gg_copy(double *psi1, double *psi2)
  */
 void Cneb::gg_SMul(double alpha, double *psi1, double *psi2) 
 {
-   int nsize = 2 * (neq[0] + neq[1]) * CGrid::npack1_max();
+   int npack2 = 2*CGrid::npack1_max();
+   int nsize = nbrillq*(neq[0]+neq[1])*npack2;
    for (int i = 0; i < nsize; ++i)
       psi2[i] = alpha * psi1[i];
 }
@@ -2462,63 +2502,69 @@ void Cneb::g_ortho(double *psi)
 
       int np_j = c1db::parall->np_j();
       int taskid_j = c1db::parall->taskid_j();
-      int npack1 = 2*CGrid::npack1_max();
-      double *tmp = new (std::nothrow) double[npack1]();
+      int taskid_k = c1db::parall->taskid_k();
 
-      for (auto ms=0; ms<ispin; ++ms)
+      int npack2 = 2*CGrid::npack1_max();
+      double *tmp = new (std::nothrow) double[npack2]();
+
+      for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
-         auto shift0 = ms*neq[0]*npack1;
-         auto kcur = np_j-1;
-         auto kk   = na[ms][kcur]-1;
-
-         for (auto k=ne[ms]-1; k>=0; --k)
+         int shiftk = nbq*ispin*(neq[0]+neq[1])*npack2; 
+         for (auto ms=0; ms<ispin; ++ms)
          {
-            if (kcur==taskid_j)
+            auto shift0 = ms*neq[0]*npack2;
+            auto kcur = np_j-1;
+            auto kk   = na[ms][kcur]-1;
+     
+            for (auto k=ne[ms]-1; k>=0; --k)
             {
-               indxk = npack1*kk + shift0;
-               w = CGrid::cc_pack_dot(1, psi+indxk, psi+indxk);
-               w = 1.0/std::sqrt(w);
-               CGrid::c_pack_SMul(1, w, psi+indxk);
-               std::memcpy(tmp,psi+indxk,npack1*sizeof(double));
-            }
-
-            if (kcur>0)
-                c1db::parall->Brdcst_Values(2,kcur,npack1,tmp);
-
-            //*** set j = k+1 ***
-            auto jj   = kk;
-            auto jcur = kcur;
-
-            --jj;
-            if (jj<0) 
-            {
-               --jcur;
-               jj = na[ms][jcur] - 1;
-            }
-
-            for (auto j=k-1; j>=0; --j)
-            {
-               if (jcur==taskid_j)
+               if (kcur==taskid_j)
                {
-                  indxj = npack1*jj + shift0;
-                  w = -CGrid::cc_pack_dot(1, tmp, psi+indxj);
-                  CGrid::cc_pack_daxpy(1, w, tmp, psi+indxj);
-
+                  int indxk = npack2*kk + shift0 + shiftk;
+                  double w = CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxk);
+                  w = 1.0/std::sqrt(w);
+                  CGrid::c_pack_SMul(nbq+1, w, psi+indxk);
+                  std::memcpy(tmp,psi+indxk,npack2*sizeof(double));
                }
-
+     
+               if (kcur>0)
+                   c1db::parall->Brdcst_Values(2,kcur,npack2,tmp);
+     
+               //*** set j = k+1 ***
+               auto jj   = kk;
+               auto jcur = kcur;
+     
                --jj;
                if (jj<0) 
                {
                   --jcur;
                   jj = na[ms][jcur] - 1;
                }
-            }
-
-            --kk;
-            if (kk<0) 
-            {
-               --kcur;
-               kk = na[ms][kcur] - 1;
+     
+               for (auto j=k-1; j>=0; --j)
+               {
+                  if (jcur==taskid_j) 
+                  {
+                     int indxj = npack2*jj + shift0 + shiftk;
+                     double w = -CGrid::cc_pack_dot(nbq+1, tmp, psi+indxj);
+                     CGrid::cc_pack_daxpy(nbq+1, w, tmp, psi+indxj);
+     
+                  }
+     
+                  --jj;
+                  if (jj<0) 
+                  {
+                     --jcur;
+                     jj = na[ms][jcur] - 1;
+                  }
+               }
+     
+               --kk;
+               if (kk<0) 
+               {
+                  --kcur;
+                  kk = na[ms][kcur] - 1;
+               }
             }
          }
       }
@@ -2528,21 +2574,27 @@ void Cneb::g_ortho(double *psi)
    else 
    {
       // npj==1
-      for (auto ms=0; ms<ispin; ++ms) 
+      int npack2 = 2*CGrid::npack1_max();
+
+      for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
-         ishift = ms*ne[0]*2*CGrid::npack(1);
-         for (auto k=ne[ms]-1; k>=0; --k) 
+         int ishiftk = nbq*ispin*(neq[0]+neq[1])*npack2; 
+         for (auto ms=0; ms<ispin; ++ms) 
          {
-            indxk = 2*CGrid::npack(1)*k + ishift;
-            w = CGrid::cc_pack_dot(1, psi+indxk, psi+indxk);
-            w = 1.0/std::sqrt(w);
-            CGrid::c_pack_SMul(1, w, psi+indxk);
-           
-            for (auto j=k-1; j>=0; --j) 
+            int ishift = ms*ne[0]*npack2;
+            for (auto k=ne[ms]-1; k>=0; --k) 
             {
-               indxj = 2 * CGrid::npack(1) * j + ishift;
-               w = -CGrid::cc_pack_dot(1, psi+indxk, psi+indxj);
-               CGrid::cc_pack_daxpy(1, w, psi+indxk, psi+indxj);
+               int indxk = npack2*k + ishift + ishiftk;
+               double w = CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxk);
+               w = 1.0/std::sqrt(w);
+               CGrid::c_pack_SMul(nbq+1, w, psi+indxk);
+              
+               for (auto j=k-1; j>=0; --j) 
+               {
+                  int indxj = npack2*j + ishift + ishiftk;
+                  double w = -CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxj);
+                  CGrid::cc_pack_daxpy(nbq+1, w, psi+indxk, psi+indxj);
+               }
             }
          }
       }

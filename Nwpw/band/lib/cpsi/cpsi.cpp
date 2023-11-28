@@ -116,7 +116,7 @@ static void cwvfnc_expander(Cneb *mycneb, char *filename, std::ostream &coutput)
  
    bool lprint = myparall->base_stdio_print;
  
-   int version, ispin, occupation, nfft[3], dnfft[3], ne[2];
+   int version, ispin, occupation, nfft[3], dnfft[3], ne[2], nbrillouin;
    double unita[9], dunita[9];
    char tmpfilename[256];
    strcpy(tmpfilename, filename);
@@ -129,6 +129,7 @@ static void cwvfnc_expander(Cneb *mycneb, char *filename, std::ostream &coutput)
      dread(4, unita, 9);
      iread(4, &ispin, 1);
      iread(4, ne, 2);
+     iread(4, &nbrillouin, 1);
      iread(4, &occupation, 1);
  
      dnfft[0] = mycneb->nx;
@@ -150,6 +151,7 @@ static void cwvfnc_expander(Cneb *mycneb, char *filename, std::ostream &coutput)
      dwrite(6, dunita, 9);
      iwrite(6, &ispin, 1);
      iwrite(6, ne, 2);
+     iwrite(6, &nbrillouin, 1);
      iwrite(6, &occupation, 1);
  
      int n2ft3d = (nfft[0] + 2) * nfft[1] * nfft[2];
@@ -191,7 +193,7 @@ static void cwvfnc_expander(Cneb *mycneb, char *filename, std::ostream &coutput)
  *                                                   *
  *****************************************************/
 void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
-                     double unita[], int *ispin, int ne[], char *filename) 
+                     double unita[], int *ispin, int ne[], int *nbrillouin, char *filename) 
 {
    if (myparall->is_master()) 
    {
@@ -202,6 +204,7 @@ void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
       dread(4, unita, 9);
       iread(4, ispin, 1);
       iread(4, ne, 2);
+      iread(4, nbrillouin, 1);
       closefile(4);
    }
    myparall->Brdcst_iValue(0, 0, version);
@@ -219,11 +222,11 @@ void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
 static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutput) 
 {
    Parallel *myparall = mycneb->c3db::parall;
-   int version0, ispin0, nfft0[3], ne0[2];
+   int version0, ispin0, nfft0[3], ne0[2], nbrillouin0;
    double unita0[9];
    bool converted = false;
  
-   cpsi_get_header(myparall, &version0, nfft0, unita0, &ispin0, ne0, filename);
+   cpsi_get_header(myparall, &version0, nfft0, unita0, &ispin0, ne0, &nbrillouin0, filename);
    if ((nfft0[0] != mycneb->nx) || (nfft0[1] != mycneb->ny) || (nfft0[2] != mycneb->nz)) 
    {
       if (myparall->base_stdio_print)
@@ -249,7 +252,7 @@ static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutp
 
 */
 void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
-               int *ispin, int ne[], double *psi, char *filename) 
+               int *ispin, int ne[], int *nbrillouin, double *psi, char *filename) 
 {
    int occupation;
  
@@ -263,6 +266,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
       dread(4, unita, 9);
       iread(4, ispin, 1);
       iread(4, ne, 2);
+      iread(4, nbrillouin, 1);
       iread(4, &occupation, 1);
    }
    myparall->Brdcst_iValue(0, 0, version);
@@ -270,6 +274,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_Values(0, 0, 9, unita);
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValue(0, 0, nbrillouin);
  
    /* reads in c format and automatically packs the result to g format */
    //mycneb->g_read(4,ispin,psi);
@@ -300,7 +305,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
 bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2, std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
-   int version, ispin, nfft[3], ne[2];
+   int version, ispin, nfft[3], ne[2],nbrillouin;
    double unita[9];
    Parallel *myparall = mycneb->c3db::parall;
    bool newpsi = true;
@@ -313,7 +318,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
       if (myparall->base_stdio_print)
          coutput << " input psi exists, reading from file: " << filename << std::endl;
  
-      cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+      cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, filename);
    }
  
    /* generate new psi */
@@ -323,6 +328,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
       mycneb->g_generate_random(psi2);
    }
    newpsi = newpsi || (ispin != mycneb->ispin)
+                   || (nbrillouin != mycneb->nbrillouin)
                    || (ne[0] != mycneb->ne[0])
                    || (ne[1] != mycneb->ne[1])
                    || (std::abs(unita[0] - mycneb->lattice->unita1d(0)) > 1.0e-4) 
@@ -363,7 +369,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
  *                                                   *
  *****************************************************/
 void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
-               int *ispin, int ne[], double *psi, char *filename,
+               int *ispin, int ne[], int *nbrillouin, double *psi, char *filename,
                std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
@@ -382,6 +388,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
       dwrite(6, unita, 9);
       iwrite(6, ispin, 1);
       iwrite(6, ne, 2);
+      iwrite(6, nbrillouin, 1);
       iwrite(6, &occupation, 1);
    }
  
