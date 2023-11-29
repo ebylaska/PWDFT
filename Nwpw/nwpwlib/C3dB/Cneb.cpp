@@ -248,6 +248,7 @@ void Cneb::g_generate1_random(double *psi)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+      int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
@@ -262,10 +263,10 @@ void Cneb::g_generate1_random(double *psi)
             c3db::c_setpw(filling, zvalue, tmp2);
             c3db::c_addrandom(tmp2);
            
-            CGrid::c_pack(1, tmp2);
+            CGrid::c_pack(nbq1, tmp2);
             int indx = ibshiftj*qj + ibshiftk*qk;
-            CGrid::cc_pack_copy(1, tmp2, psi + indx);
-            CGrid::c_pack_noimagzero(1, psi + indx);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+            CGrid::c_pack_noimagzero(nbq1, psi + indx);
          }
       }
    }
@@ -284,6 +285,7 @@ void Cneb::g_generate2_random(double *psi)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+      int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
          {
@@ -294,9 +296,9 @@ void Cneb::g_generate2_random(double *psi)
               c3db::r_setrandom(tmp2);
               c3db::rc_fft3d(tmp2);
            
-              CGrid::c_pack(1, tmp2);
+              CGrid::c_pack(nbq1, tmp2);
               int indx = ibshiftj*qj + ibshiftk*qk;
-              CGrid::cc_pack_copy(1, tmp2, psi + indx);
+              CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
             }
       }
    }
@@ -348,6 +350,7 @@ void Cneb::g_read(const int iunit, double *psi)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+      int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
@@ -357,8 +360,8 @@ void Cneb::g_read(const int iunit, double *psi)
          if ((pj==taskid_j) && (pk==taskid_k))
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
-            CGrid::c_pack(qk, tmp2);
-            CGrid::cc_pack_copy(qk, tmp2, psi + indx);
+            CGrid::c_pack(nbq1, tmp2);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
          }
       }
    }
@@ -384,6 +387,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+      int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
@@ -402,8 +406,8 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          if ((pj==taskid_j) && (pk==taskid_k)) 
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
-            CGrid::c_pack(qk, tmp2);
-            CGrid::cc_pack_copy(qk, tmp2, psi + indx);
+            CGrid::c_pack(nbq1, tmp2);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
          }
       }
    }
@@ -444,6 +448,7 @@ void Cneb::g_write(const int iunit, double *psi)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+      int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
@@ -451,9 +456,9 @@ void Cneb::g_write(const int iunit, double *psi)
          int pj = msntop(ms, n);
          if ((pj==taskid_j) && (pk==taskid_k))
          {
-            int indx = ibshiftj*qj + ibshiftk+qk;
-            CGrid::cc_pack_copy(qk+1, psi+indx, tmp2);
-            CGrid::c_unpack(qk+1, tmp2);
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
+            CGrid::c_unpack(nbq1, tmp2);
          }
          if (io_buffer)
             c_write_buffer(iunit,tmp2,pj,pk);
@@ -2509,7 +2514,7 @@ void Cneb::g_ortho(double *psi)
 
       for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
-         int shiftk = nbq*ispin*(neq[0]+neq[1])*npack2; 
+         int shiftk = nbq*(neq[0]+neq[1])*npack2; 
          for (auto ms=0; ms<ispin; ++ms)
          {
             auto shift0 = ms*neq[0]*npack2;
