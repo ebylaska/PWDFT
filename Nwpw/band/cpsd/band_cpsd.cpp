@@ -215,6 +215,13 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << std::endl << myion.print_constraints(0);
 
       std::cout << std::endl;
+      std::cout << " number of electrons: spin up ="
+                << Ifmt(6) << mygrid.ne[0] << " ("
+                << Ifmt(4) << mygrid.neq[0] << " per task) down ="
+                << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+                << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+
+      std::cout << std::endl;
       std::cout << " supercell:" << std::endl;
       std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega()
                 << std::endl;
@@ -298,7 +305,15 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    MPI_Barrier(comm_world0);
 
    // write wavefunctions
-   //cpsi_write(&mygrid,&version,nfft,unita,&ispin,ne,&nbrillouin,psi1,control.output_movecs_filename(),std::cout);
+   version = 5;
+   nfft[0] = mygrid.nx;
+   nfft[1] = mygrid.ny;
+   nfft[2] = mygrid.nz;
+   std::cout << "version=" << version<< std::endl;
+   std::cout << "nfft=" << nfft[0] << " " << nfft[1] << " " << nfft[2] << std::endl;
+   std::cout << "ispin=" << ispin << std::endl;
+   std::cout << "ne=" << ne[0] << " " << ne[1] << std::endl;
+   cpsi_write(&mygrid,&version,nfft,unita,&ispin,ne,&nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
    /* deallocate memory */

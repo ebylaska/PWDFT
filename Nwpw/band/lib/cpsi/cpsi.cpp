@@ -198,6 +198,7 @@ void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
    if (myparall->is_master()) 
    {
       // char *fname = control_input_movecs_filename();
+      std::cout << "filename=" << filename << std::endl;
       openfile(4, filename, "r");
       iread(4, version, 1);
       iread(4, nfft, 3);
@@ -206,12 +207,14 @@ void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
       iread(4, ne, 2);
       iread(4, nbrillouin, 1);
       closefile(4);
+      std::cout << "version=" << *version << std::endl;
    }
    myparall->Brdcst_iValue(0, 0, version);
    myparall->Brdcst_iValues(0, 0, 3, nfft);
    myparall->Brdcst_Values(0, 0, 9, unita);
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValue(0, 0, nbrillouin);
 }
 
 /*****************************************************
@@ -227,6 +230,9 @@ static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutp
    bool converted = false;
  
    cpsi_get_header(myparall, &version0, nfft0, unita0, &ispin0, ne0, &nbrillouin0, filename);
+   std::cout << " nibrillouin0=" << nbrillouin0 << std::endl;
+   std::cout << " NFFT0=" << nfft0[0] << " " << nfft0[1]  << " " << nfft0[2] << std::endl;
+   std::cout << " nx,ny,nz=" << mycneb->nx << " " <<mycneb->ny  << " " << mycneb->nz << std::endl;
    if ((nfft0[0] != mycneb->nx) || (nfft0[1] != mycneb->ny) || (nfft0[2] != mycneb->nz)) 
    {
       if (myparall->base_stdio_print)
@@ -275,6 +281,9 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
    myparall->Brdcst_iValue(0, 0, nbrillouin);
+
+   myparall->Brdcst_iValue(0, 0, &occupation);
+   std::cout << "occupation=" << occupation << std::endl;
  
    /* reads in c format and automatically packs the result to g format */
    //mycneb->g_read(4,ispin,psi);
@@ -382,6 +391,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
  
    if (myparall->is_master()) 
    {
+       std::cout << "write version=" << *version << std::endl;
       openfile(6, filename, "w");
       iwrite(6, version, 1);
       iwrite(6, nfft, 3);
@@ -391,6 +401,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
       iwrite(6, nbrillouin, 1);
       iwrite(6, &occupation, 1);
    }
+       std::cout << "occupation=" << occupation <<  std::endl;
  
    mycneb->g_write(6, psi);
  

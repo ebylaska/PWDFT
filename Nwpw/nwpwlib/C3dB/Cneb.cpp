@@ -388,21 +388,23 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
       int qk = ktoindex(nb);
       int pk = ktop(nb);
       int nbq1 = qk+1;
+
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
          int qj = msntoindex(ms, n);
          int pj = msntop(ms, n);
+
          if (n<ne0[ms])
          {
-            c_read(iunit, tmp2, pj,-1);
+            c3db::c_read(iunit, tmp2, pj,-1);
          }
          else
          {
             c3db::r_setrandom(tmp2);
             c3db::rc_fft3d(tmp2);
          }
-         
+
          if ((pj==taskid_j) && (pk==taskid_k)) 
          {
             int indx = ibshiftj*qj + ibshiftk*qk;

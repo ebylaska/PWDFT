@@ -2188,7 +2188,7 @@ void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol)
    int taskid_k = parall->taskid_k();
    int np_j = parall->np_j();
    int np_k = parall->np_k();
- 
+
    if (jcol < 0) 
    {
       jstart = 0;
@@ -2260,13 +2260,13 @@ void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol)
       delete[] tmp;
    }
  
-   /*************************
-    **** hilbert mapping ****
-    *************************/
+   /************************************
+    **** hilbert or hcurve  mapping ****
+    ************************************/
    else 
    {
       int bsize = 2*(nx);
-      double tmp[nx];
+      double tmp[bsize];
      
       /**** master node reads from file and distributes ****/
       if (taskid==MASTER)
