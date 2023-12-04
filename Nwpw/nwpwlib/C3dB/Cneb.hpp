@@ -88,7 +88,7 @@ public:
    void g_generate1_random(double *);
    void g_generate2_random(double *);
    void g_read(const int, double *);
-   void g_read_ne(const int, const int *, double *);
+   void g_read_ne(const int, const int *, const int, double *);
    void g_write(const int, double *);
 
    void h_read(const int, const int, double *);

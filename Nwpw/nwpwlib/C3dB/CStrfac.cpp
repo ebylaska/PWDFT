@@ -23,28 +23,24 @@ namespace pwdft {
 
 CStrfac::CStrfac(Ion *inion, CGrid *ingrid) 
 {
-   int i, j, k, l, k1, k2, k3;
-   int nx, ny, nz, nxh, nb, p, indx;
-   int tnp, tid;
    int *ii_indx, *jj_indx, *kk_indx;
  
    mygrid = ingrid;
    myion = inion;
-   tnp = mygrid->c3db::parall->np();
-   tid = mygrid->c3db::parall->taskid();
+   int tnp = mygrid->c3db::parall->np();
+   int tid = mygrid->c3db::parall->taskid();
    Lattice *lattice = mygrid->lattice;
  
-   nx = mygrid->nx;
-   ny = mygrid->ny;
-   nz = mygrid->nz;
-   nxh = nx / 2;
+   int nx = mygrid->nx;
+   int ny = mygrid->ny;
+   int nz = mygrid->nz;
  
-   for (j=0; j<3; ++j)
-      for (i=0; i<3; ++i) 
-      {
-         unitg[i + j * 3] = lattice->unitg(i, j);
-         unita[i + j * 3] = lattice->unita(i, j);
-      }
+   for (auto j=0; j<3; ++j)
+   for (auto i=0; i<3; ++i) 
+   {
+      unitg[i+j*3] = lattice->unitg(i, j);
+      unita[i+j*3] = lattice->unita(i, j);
+   }
  
    maxsize = mygrid->nbrillq+1;
    i_indx  = new (std::nothrow) int* [maxsize]();
@@ -66,24 +62,27 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
    ii_indx = new (std::nothrow) int[mygrid->nfft3d]();
    jj_indx = new (std::nothrow) int[mygrid->nfft3d]();
    kk_indx = new (std::nothrow) int[mygrid->nfft3d]();
-   for (nb = 0; nb < 2; ++nb) {
-     for (k = 0; k < nz; ++k)
-       for (j = 0; j < ny; ++j)
-         for (i = 0; i <= nxh; ++i) {
-           p = mygrid->cijktop(i, j, k);
-           if (p == tid) {
-             indx = mygrid->cijktoindex(i, j, k);
-             ii_indx[indx] = i;
-             jj_indx[indx] = j;
-             kk_indx[indx] = k;
-           }
+   for (auto nb=0; nb<maxsize; ++nb) 
+   {
+      for (auto k=0; k<nz; ++k)
+      for (auto j=0; j<ny; ++j)
+      for (auto i=0; i<nx; ++i) 
+      {
+         int p = mygrid->cijktop(i, j, k);
+         if (p==tid) 
+         {
+            int indx = mygrid->cijktoindex(i, j, k);
+            ii_indx[indx] = i;
+            jj_indx[indx] = j;
+            kk_indx[indx] = k;
          }
-     mygrid->i_pack(nb, ii_indx);
-     mygrid->i_pack(nb, jj_indx);
-     mygrid->i_pack(nb, kk_indx);
-     mygrid->ii_pack_copy(nb, ii_indx, i_indx[nb]);
-     mygrid->ii_pack_copy(nb, jj_indx, j_indx[nb]);
-     mygrid->ii_pack_copy(nb, kk_indx, k_indx[nb]);
+      }
+      mygrid->i_pack(nb, ii_indx);
+      mygrid->i_pack(nb, jj_indx);
+      mygrid->i_pack(nb, kk_indx);
+      mygrid->ii_pack_copy(nb, ii_indx, i_indx[nb]);
+      mygrid->ii_pack_copy(nb, jj_indx, j_indx[nb]);
+      mygrid->ii_pack_copy(nb, kk_indx, k_indx[nb]);
    }
  
    delete[] kk_indx;
@@ -176,15 +175,15 @@ void CStrfac::phafac()
 
 /*********************************
  *                               *
- *       CStrfac::strfac_pack     *
+ *      CStrfac::strfac_pack     *
  *                               *
  *********************************/
-void CStrfac::strfac_pack(const int nb, const int ii, double *strx) {
-   int npack, nx, ny, nz;
-   npack = mygrid->npack(nb);
-   nx = mygrid->nx;
-   ny = mygrid->ny;
-   nz = mygrid->nz;
+void CStrfac::strfac_pack(const int nb, const int ii, double *strx) 
+{
+   int npack = mygrid->npack(nb);
+   int nx = mygrid->nx;
+   int ny = mygrid->ny;
+   int nz = mygrid->nz;
  
    const int *indxi = i_indx[nb];
    const int *indxj = j_indx[nb];

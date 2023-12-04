@@ -374,7 +374,7 @@ void Cneb::g_read(const int iunit, double *psi)
  *           Cneb::g_read_ne         *
  *                                   *
  *************************************/
-void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
+void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, double *psi) 
 {
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
    int ibshiftj = 2*CGrid::npack1_max();
@@ -383,36 +383,61 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, double *psi)
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
  
-   for (auto nb=0; nb<nbrillouin; ++nb)
+   if (nbrillouin <= nbrillouin0)
    {
-      int qk = ktoindex(nb);
-      int pk = ktop(nb);
-      int nbq1 = qk+1;
-
-      for (auto ms=0; ms<ispin; ++ms)
-      for (auto n=0; n<ne[ms]; ++n) 
+      for (auto nb=0; nb<nbrillouin; ++nb)
       {
-         int qj = msntoindex(ms, n);
-         int pj = msntop(ms, n);
-
-         if (n<ne0[ms])
+         int qk = ktoindex(nb);
+         int pk = ktop(nb);
+         int nbq1 = qk+1;
+     
+         for (auto ms=0; ms<ispin; ++ms)
+         for (auto n=0; n<ne[ms]; ++n) 
          {
-            c3db::c_read(iunit, tmp2, pj,-1);
-         }
-         else
-         {
-            c3db::r_setrandom(tmp2);
-            c3db::rc_fft3d(tmp2);
-         }
-
-         if ((pj==taskid_j) && (pk==taskid_k)) 
-         {
-            int indx = ibshiftj*qj + ibshiftk*qk;
-            CGrid::c_pack(nbq1, tmp2);
-            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+            int qj = msntoindex(ms, n);
+            int pj = msntop(ms, n);
+     
+            if ((n<ne0[ms]) && (nb<nbrillouin0))
+            {
+               c3db::c_read(iunit, tmp2, pj,pk);
+            }
+            else
+            {
+                std::cout << "setranndom" << std::endl;
+               c3db::r_setrandom(tmp2);
+               c3db::rc_fft3d(tmp2);
+            }
+     
+            if ((pj==taskid_j) && (pk==taskid_k)) 
+            {
+               int indx = ibshiftj*qj + ibshiftk*qk;
+               std::cout << "nbq1=" << nbq1 << std::endl;
+               std::cout << "ms,n,indx,tmp2    =" << ms << " " << n << " " << indx << " "
+                         << tmp2[0] << " " 
+                         << tmp2[1] << " " 
+                         << tmp2[2] << " " 
+                         << tmp2[3] << " " 
+                         << tmp2[4] << " " 
+                         << tmp2[5] << " " 
+                         << tmp2[6] << " " 
+                         << tmp2[7] << std::endl;
+               CGrid::c_pack(nbq1, tmp2);
+               std::cout << "ms,n,indx,packtmp2=" << ms << " " << n << " " << indx << " "
+                         << tmp2[0] << " " 
+                         << tmp2[1] << " " 
+                         << tmp2[2] << " " 
+                         << tmp2[3] << " " 
+                         << tmp2[4] << " " 
+                         << tmp2[5] << " " 
+                         << tmp2[6] << " " 
+                         << tmp2[7] << std::endl;
+               CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+            }
          }
       }
    }
+   else
+       std::cout << "nbrillouin > nbrillouin0" << std::endl;
  
    delete[] tmp2;
 }
@@ -560,6 +585,7 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
          sum += CGrid::cc_pack_idot(nbq+1, psi1+indx, psi2+indx)*weight;
          indx += npack2;
       }
+      std::cout << nbq << " sum=" << sum << std::endl;
    }
    if (ispin == 1) sum *= 2.0;
  
@@ -2498,8 +2524,6 @@ void Cneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
 */
 void Cneb::g_ortho(double *psi) 
 {
-   int indxj, indxk, ishift;
-   double w;
    if (parallelized) 
    {
       //std::ostringstream msg;
@@ -2516,6 +2540,7 @@ void Cneb::g_ortho(double *psi)
 
       for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
+         int nbq1 = nbq+1;
          int shiftk = nbq*(neq[0]+neq[1])*npack2; 
          for (auto ms=0; ms<ispin; ++ms)
          {
@@ -2528,9 +2553,9 @@ void Cneb::g_ortho(double *psi)
                if (kcur==taskid_j)
                {
                   int indxk = npack2*kk + shift0 + shiftk;
-                  double w = CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxk);
+                  double w = CGrid::cc_pack_dot(nbq1, psi+indxk, psi+indxk);
                   w = 1.0/std::sqrt(w);
-                  CGrid::c_pack_SMul(nbq+1, w, psi+indxk);
+                  CGrid::c_pack_SMul(nbq1, w, psi+indxk);
                   std::memcpy(tmp,psi+indxk,npack2*sizeof(double));
                }
      
@@ -2553,8 +2578,8 @@ void Cneb::g_ortho(double *psi)
                   if (jcur==taskid_j) 
                   {
                      int indxj = npack2*jj + shift0 + shiftk;
-                     double w = -CGrid::cc_pack_dot(nbq+1, tmp, psi+indxj);
-                     CGrid::cc_pack_daxpy(nbq+1, w, tmp, psi+indxj);
+                     double w = -CGrid::cc_pack_dot(nbq1, tmp, psi+indxj);
+                     CGrid::cc_pack_daxpy(nbq1, w, tmp, psi+indxj);
      
                   }
      
@@ -2586,21 +2611,25 @@ void Cneb::g_ortho(double *psi)
       for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
          int ishiftk = nbq*ispin*(neq[0]+neq[1])*npack2; 
+         int nbq1 = nbq+1;
          for (auto ms=0; ms<ispin; ++ms) 
          {
             int ishift = ms*ne[0]*npack2;
             for (auto k=ne[ms]-1; k>=0; --k) 
             {
                int indxk = npack2*k + ishift + ishiftk;
-               double w = CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxk);
+               double w = CGrid::cc_pack_dot(nbq1, psi+indxk, psi+indxk);
+               std::complex<double> wwc =  CGrid::cc_pack_zdot(nbq1, psi+indxk, psi+indxk);
+               std::cout << "w=" << w << " wwc=" << wwc << std::endl;
                w = 1.0/std::sqrt(w);
-               CGrid::c_pack_SMul(nbq+1, w, psi+indxk);
+               CGrid::c_pack_SMul(nbq1, w, psi+indxk);
               
                for (auto j=k-1; j>=0; --j) 
                {
                   int indxj = npack2*j + ishift + ishiftk;
-                  double w = -CGrid::cc_pack_dot(nbq+1, psi+indxk, psi+indxj);
-                  CGrid::cc_pack_daxpy(nbq+1, w, psi+indxk, psi+indxj);
+                  std::complex<double> wc = -CGrid::cc_pack_zdot(nbq1, psi+indxk, psi+indxj);
+                  std::cout << "wc=" << wc << std::endl;
+                  CGrid::cc_pack_zaxpy(nbq1, wc, psi+indxk, psi+indxj);
                }
             }
          }

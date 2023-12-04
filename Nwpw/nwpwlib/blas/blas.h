@@ -21,6 +21,7 @@
   ierr = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, hml, n, eig)
 
 #define DDOT_PWDFT(n, a, ida, b, idb) cblas_ddot(n, a, ida, b, idb);
+#define ZDOTC_PWDFT(n, a, ida, b, idb) cblas_zdotc(n, a, ida, b, idb);
 
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
@@ -41,6 +42,8 @@ extern "C" void daxpy_(int *, double *, double *, int *, double *, int *);
 extern "C" void dscal_(int *, double *, double *, int *);
 extern "C" void dgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);
+
+extern "C" double zdotc_(int *, double *, int *, double *, int *);
 
 // extern "C" void eigen_(int *, int *, double *, double *, double *, int *);
 
@@ -71,6 +74,7 @@ extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
   dsyev_((char *)"V", (char *)"U", &(n), hml, &(n), eig, xtmp, &(nn), &ierr)
 
 #define DDOT_PWDFT(n, a, ida, b, idb) ddot_(&(n), a, &ida, b, &(idb))
+#define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
 
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   dlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))

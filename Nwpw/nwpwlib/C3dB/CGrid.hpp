@@ -17,6 +17,7 @@
 #include "c3db.hpp"
 #include "k1db.hpp"
 #include <cmath>
+#include <complex>
 
 namespace pwdft {
 
@@ -164,6 +165,8 @@ public:
    void cc_pack_indot(const int, const int, double *, double *, double *);
    double rr_pack_dot(const int, double *, double *);
    double rr_pack_idot(const int, double *, double *);
+
+   std::complex<double> cc_pack_zdot(const int, double *, double *);
  
    void cc_pack_inprjdot(const int, int, int, double *, double *, double *);
  
@@ -207,6 +210,8 @@ public:
    void cc_pack_daxpy(const int, const double, const double *, double *);
    void ccr_pack_iconjgMul(const int, const double *, const double *, double *);
    void ccr_pack_iconjgMulb(const int, const double *, const double *, double *);
+
+   void cc_pack_zaxpy(const int, const std::complex<double>, const double *, double *);
  
    void cct_pack_iconjgMul(const int, const double *, const double *, double *);
    void cct_pack_iconjgMulb(const int, const double *, const double *, double *);

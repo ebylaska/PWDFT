@@ -64,35 +64,30 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    ggmin = 9.9e9;
    ggmax = 0.0;
    for (auto k3=(-nzh+1); k3<=nzh; ++k3)
-     for (auto k2=(-nyh+1); k2<=nyh; ++k2)
-       for (auto k1=0; k1<=nxh; ++k1) 
-       {
-          auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0, 2);
-          auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1, 2);
-          auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2, 2);
-          auto gg = gx*gx + gy*gy + gz*gz;
-          if (gg > ggmax)
-            ggmax = gg;
-          if ((gg < ggmin) && (gg > 1.0e-6))
-            ggmin = gg;
-          auto i = k1;
-          if (i < 0)
-            i = i + nx;
-          auto j = k2;
-          if (j < 0)
-            j = j + ny;
-          auto k = k3;
-          if (k < 0)
-            k = k + nz;
-         
-          auto indx = cijktoindex(i, j, k);
-          auto p = cijktop(i, j, k);
-          if (p == c3db::parall->taskid_i()) {
-            G1[indx] = gx;
-            G2[indx] = gy;
-            G3[indx] = gz;
-          }
-       }
+   for (auto k2=(-nyh+1); k2<=nyh; ++k2)
+   for (auto k1=(-nxh+1); k1<=nxh; ++k1)
+   {
+      auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0, 2);
+      auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1, 2);
+      auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2, 2);
+      auto gg = gx*gx + gy*gy + gz*gz;
+      if (gg > ggmax)
+        ggmax = gg;
+      if ((gg < ggmin) && (gg > 1.0e-6))
+        ggmin = gg;
+      auto i = k1; if (i<0) i = i + nx;
+      auto j = k2; if (j<0) j = j + ny;
+      auto k = k3; if (k<0) k = k + nz;
+     
+      auto indx = cijktoindex(i, j, k);
+      auto p = cijktop(i, j, k);
+      if (p == c3db::parall->taskid_i()) 
+      {
+         G1[indx] = gx;
+         G2[indx] = gy;
+         G3[indx] = gz;
+      }
+   }
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
 
@@ -150,30 +145,30 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          kv[2] = p_kvector[3*(nb-1)+2];
       }
      
-      for (auto k3 = (-nzh + 1); k3 < nzh; ++k3)
-        for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-          for (auto k1 = 0; k1 < nxh; ++k1) 
-          {
-             auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
-             auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
-             auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
-             auto i = k1; if (i < 0) i += nx;
-             auto j = k2; if (j < 0) j += ny;
-             auto k = k3; if (k < 0) k += nz;
-            
-             auto indx = cijktoindex(i, j, k);
-             auto p = cijktop(i, j, k);
-             if (p == c3db::parall->taskid_i()) 
-             {
-                auto gg = gx * gx + gy * gy + gz * gz;
-                gg = gg - ggcut;
-                if (gg < (-eps)) 
-                {
-                   masker[nb][indx] = 0;
-                   ++nwave[nb];
-                }
-             }
-          }
+      for (auto k3 = (-nzh+1); k3<nzh; ++k3)
+      for (auto k2 = (-nyh+1); k2<nyh; ++k2)
+      for (auto k1 = (-nxh+1); k1<nxh; ++k1) 
+      {
+         auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+         auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+         auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
+         auto i = k1; if (i < 0) i += nx;
+         auto j = k2; if (j < 0) j += ny;
+         auto k = k3; if (k < 0) k += nz;
+        
+         auto indx = cijktoindex(i, j, k);
+         auto p = cijktop(i, j, k);
+         if (p == c3db::parall->taskid_i()) 
+         {
+            auto gg = gx*gx + gy*gy + gz*gz;
+            gg = gg - ggcut;
+            if (gg < (-eps)) 
+            {
+               masker[nb][indx] = 0;
+               ++nwave[nb];
+            }
+         }
+      }
       nwave_entire[nb] = nwave[nb];
       nwave_entire[nb] = c3db::parall->ISumAll(1, nwave_entire[nb]);
    }
@@ -182,73 +177,28 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    {
       nidb2[nb] = 0;
      
-      /* k=(0,0,0)  */
-      auto k1 = 0;
-      auto k2 = 0;
-      auto k3 = 0;
-      auto indx = cijktoindex(k1, k2, k3);
-      auto p = cijktop(k1, k2, k3);
-      if (p == c3db::parall->taskid_i())
-        if (!masker[nb][indx]) 
-        {
-           packarray[nb][nidb2[nb]] = indx;
-           ++nidb2[nb];
-        }
-     
-      // k=(0,0,k3) - neglect (0,0,-k3) points
-      for (auto k=1; k<=(nzh-1); ++k) 
+      // k=(k1,k2,k3)
+      for (auto k=(-nzh+1); k<=(nzh-1); ++k)
+      for (auto j=(-nyh+1); j<=(nyh-1); ++j)
+      for (auto i=(-nxh+1); i<=(nxh-1); ++i) 
       {
-         k1 = 0;
-         k2 = 0;
-         k3 = k;
+         int k1 = i;
+         int k2 = j;
+         int k3 = k;
+         if (k1 < 0) k1 += nx;
+         if (k2 < 0) k2 += ny;
+         if (k3 < 0) k3 += nz;
          indx = cijktoindex(k1, k2, k3);
          p = cijktop(k1, k2, k3);
          if (p == c3db::parall->taskid_i())
-           if (!masker[nb][indx]) 
-           {
-              packarray[nb][nidb2[nb]] = indx;
-              ++nidb2[nb];
-           }
-      }
-     
-      // k=(0,k2,k3) - neglect (0,-k2, -k3) points
-      for (auto k = (-nzh+1); k<=(nzh-1); ++k)
-         for (auto j=1; j<=(nyh-1); ++j) 
          {
-            k1 = 0;
-            k2 = j;
-            k3 = k;
-            if (k3 < 0) k3 += nz;
-            indx = cijktoindex(k1, k2, k3);
-            p = cijktop(k1, k2, k3);
-            if (p == c3db::parall->taskid_i())
-              if (!masker[nb][indx]) 
-              {
-                 packarray[nb][nidb2[nb]] = indx;
-                 ++nidb2[nb];
-              }
-         }
-     
-      // k=(k1,k2,k3)
-      for (auto k=(-nzh+1); k<=(nzh-1); ++k)
-         for (auto j=(-nyh+1); j<=(nyh-1); ++j)
-            for (auto i=(-nxh+1); i<=(nxh-1); ++i) 
+            if (!masker[nb][indx]) 
             {
-               k1 = i;
-               k2 = j;
-               k3 = k;
-               if (k1 < 0) k1 += nx;
-               if (k2 < 0) k2 += ny;
-               if (k3 < 0) k3 += nz;
-               indx = cijktoindex(k1, k2, k3);
-               p = cijktop(k1, k2, k3);
-               if (p == c3db::parall->taskid_i())
-                  if (!masker[nb][indx]) 
-                  {
-                     packarray[nb][nidb2[nb]] = indx;
-                     ++nidb2[nb];
-                  }
+               packarray[nb][nidb2[nb]] = indx;
+               ++nidb2[nb];
             }
+         }
+      }
       nwave_in[nb] = nidb2[nb];
    }
  
@@ -287,18 +237,28 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       // Calculate aligned memory size
       for (auto nbq=0; nbq<=nbrillq; ++nbq)
       {
-         zero_row3[nbq] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-         zero_row2[nbq] = new (std::nothrow) bool[((nxh + 1) * nq + Alignment - 1) & ~(Alignment - 1)];
-         zero_slab23[nbq] = new (std::nothrow) bool[nxh + 1];
+         zero_row3[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
+         zero_row2[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
+         zero_slab23[nbq] = new (std::nothrow) bool[nx];
       }
      
-      zero_arow3 = new bool[((nxh+1)*ny + Alignment - 1) & ~(Alignment - 1)];
+      zero_arow3 = new bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)];
       for (auto nb=0; nb<=nbrillq; ++nb) 
       {
          if (nb == 0)
+         {
             ggcut = lattice->eggcut();
+            kv[0] = 0.0;
+            kv[1] = 0.0;
+            kv[2] = 0.0;
+         }
          else
+         {
             ggcut = lattice->wggcut();
+            kv[0] = p_kvector[3*(nb-1)];
+            kv[1] = p_kvector[3*(nb-1)+1];
+            kv[2] = p_kvector[3*(nb-1)+2];
+         }
         
          /* find zero_row3 - (i,j,*) rows that are zero */
          for (auto i=0; i<((nxh+1)*nq); ++i)
@@ -307,8 +267,8 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          for (auto i=0; i<((nxh+1)*ny); ++i)
             zero_arow3[i] = true;
         
-         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-            for (auto k1 = 0; k1 < nxh; ++k1) 
+         for (auto k2 = (-nyh+1); k2<nyh; ++k2)
+         for (auto k1 = (-nxh+1); k1<nxh; ++k1) 
             {
                auto i = k1;
                auto j = k2;
@@ -317,9 +277,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                zrow = true;
                for (auto k3 = (-nzh+1); k3<nzh; ++k3) 
                {
-                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
                   auto gg = gx*gx + gy*gy + gz*gz;
                   gg = gg - ggcut;
                   if (gg < (-eps))
@@ -327,12 +287,12 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                }
                if (!zrow) 
                {
-                  zero_arow3[i + (nxh + 1) * j] = false;
+                  zero_arow3[i + nx*j] = false;
                   q = cijktoq1(0, j, 0);
                   p = cijktop1(0, j, 0);
                   if (p == c3db::parall->taskid_i()) 
                   {
-                     zero_row3[nb][i + (nxh + 1) * q] = false;
+                     zero_row3[nb][i + nx*q] = false;
                   }
                }
             }
@@ -341,40 +301,40 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
         
 
          /* find zero_slab2 - (i,*,*) slabs that are zero */
-         for (auto i=0; i<(nxh+1); ++i)
+         for (auto i=0; i<nx; ++i)
             zero_slab23[nb][i] = true;
         
-         for (auto k1 = 0; k1<nxh; ++k1) 
+         for (auto k1=(-nxh+1); k1<nxh; ++k1)
          {
             auto i = k1; if (i<0) i += nx;
             yzslab = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
-               for (auto k2=(-nyh+1); k2<nyh; ++k2) 
-               {
-                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-                  auto gg = gx*gx + gy*gy + gz*gz;
-                  gg = gg - ggcut;
-                  if (gg < (-eps))
-                     yzslab = false;
-               }
+            for (auto k2=(-nyh+1); k2<nyh; ++k2) 
+            {
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
+               auto gg = gx*gx + gy*gy + gz*gz;
+               gg = gg - ggcut;
+               if (gg < (-eps))
+                  yzslab = false;
+            }
             if (!yzslab) zero_slab23[nb][i] = false;
          }
 
          /* initialize zero_row2 */
-         for (auto i=0; i<((nxh+1)*nq); ++i)
+         for (auto i=0; i<(nx*nq); ++i)
             zero_row2[nb][i] = false;
         
          /* find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*) */
-         for (auto k = 0; k<nz; ++k)
-            for (auto i=0; i<(nxh+1); ++i) 
-            {
-               q = cijktoq(i, 0, k);
-               p = cijktop(i, 0, k);
-               if (p == c3db::parall->taskid_i())
-                  zero_row2[nb][q] = zero_slab23[nb][i];
-            }
+         for (auto k=0; k<nz; ++k)
+         for (auto i=0; i<nx; ++i) 
+         {
+            q = cijktoq(i, 0, k);
+            p = cijktop(i, 0, k);
+            if (p == c3db::parall->taskid_i())
+               zero_row2[nb][q] = zero_slab23[nb][i];
+         }
       }
      
       delete[] zero_arow3;
@@ -385,89 +345,100 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       {
          zero_row3[nbq]   = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
          zero_row2[nbq]   = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
-         zero_slab23[nbq] = new (std::nothrow) bool[nxh + 1]();
+         zero_slab23[nbq] = new (std::nothrow) bool[nx]();
       }
      
-      zero_arow2 = new (std::nothrow) bool[((nxh+1)*nz + Alignment - 1) & ~(Alignment - 1)]();
-      zero_arow3 = new (std::nothrow) bool[((nxh+1)*ny + Alignment - 1) & ~(Alignment - 1)]();
+      zero_arow2 = new (std::nothrow) bool[(nx*nz + Alignment - 1) & ~(Alignment - 1)]();
+      zero_arow3 = new (std::nothrow) bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)]();
      
       for (auto nb=0; nb<=nbrillq; ++nb) 
       {
          if (nb==0)
          {
             ggcut = lattice->eggcut();
+            kv[0] = 0.0;
+            kv[1] = 0.0;
+            kv[2] = 0.0;
          }
          else
+         {
             ggcut = lattice->wggcut();
+            kv[0] = p_kvector[3*(nb-1)];
+            kv[1] = p_kvector[3*(nb-1)+1];
+            kv[2] = p_kvector[3*(nb-1)+2];
+         }
 
          // find zero_row3 - (i,j,*) rows that are zero
          for (auto q=0; q<nq3; ++q)
             zero_row3[nb][q] = true;
 
-         for (auto q=0; q < (nxh + 1) * ny; ++q)
+         for (auto q=0; q < nx*ny; ++q)
             zero_arow3[q] = true;
 
          for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-           for (auto k1 = 0; k1 < nxh; ++k1) {
-             auto i = k1;
-             auto j = k2;
-             if (i < 0) i += nx;
-             if (j < 0) j += ny;
-             zrow = true;
-             for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
-             {
-                auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-                auto gg = gx*gx + gy*gy + gz*gz;
-                gg = gg - ggcut;
-                if (gg < (-eps))
-                   zrow = false;
-             }
-             if (!zrow) {
-               // zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
-               zero_arow3[i + (nxh + 1) * j] = false;
-               q = cijktoq(i, j, 0);
-               p = cijktop(i, j, 0);
-               if (p == c3db::parall->taskid_i()) {
+         for (auto k1 = (-nxh + 1); k1 < nxh; ++k1)
+         {
+            auto i = k1;
+            auto j = k2;
+            if (i < 0) i += nx;
+            if (j < 0) j += ny;
+            zrow = true;
+            for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
+            {
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
+               auto gg = gx*gx + gy*gy + gz*gz;
+               gg = gg - ggcut;
+               if (gg < (-eps))
+                  zrow = false;
+            }
+            if (!zrow) 
+            {
+              // zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
+              zero_arow3[i + nx*j] = false;
+              q = cijktoq(i, j, 0);
+              p = cijktop(i, j, 0);
+              if (p == c3db::parall->taskid_i()) 
+              {
                  zero_row3[nb][q] = false;
-               }
-             }
-           }
+              }
+            }
+         }
         
          /* find zero_slab23 - (i,*,*) slabs that are zero */
-         for (auto i = 0; i < (nxh + 1); ++i)
-           zero_slab23[nb][i] = true;
+         for (auto i=0; i<nx; ++i)
+            zero_slab23[nb][i] = true;
         
-         for (auto k1=0; k1<nxh; ++k1) 
+         for (auto k1=(-nxh+1); k1<nxh; ++k1)
          {
             auto i = k1; if (i < 0) i += nx;
             yzslab = true;
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
-               for (auto k2=(-nyh+1); k2<nyh; ++k2) 
-               {
-                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
-                  auto gg = gx*gx + gy*gy + gz*gz;
-                  gg = gg - ggcut;
-                  if (gg < (-eps))
-                    yzslab = false;
-               }
+            for (auto k2=(-nyh+1); k2<nyh; ++k2) 
+            {
+               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
+               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
+               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2) + kv[2];
+               auto gg = gx*gx + gy*gy + gz*gz;
+               gg = gg - ggcut;
+               if (gg < (-eps))
+                  yzslab = false;
+            }
             if (!yzslab)
               zero_slab23[nb][i] = false;
          }
         
          // find zero_row2 - (i,*,k) rows that are zero after fft of (i,j,*)
          for (auto k=0; k<nz; ++k)
-           for (auto i=0; i<(nxh+1); ++i) 
-           {
-              q = cijktoq1(i, 0, k);
-              p = cijktop1(i, 0, k);
-              zero_arow2[i + (nxh + 1) * k] = zero_slab23[nb][i];
-              if (p == c3db::parall->taskid_i())
-                 zero_row2[nb][q] = zero_slab23[nb][i];
-           }
+         for (auto i=0; i<nx; ++i) 
+         {
+            q = cijktoq1(i, 0, k);
+            p = cijktop1(i, 0, k);
+            zero_arow2[i + nx*k] = zero_slab23[nb][i];
+            if (p == c3db::parall->taskid_i())
+               zero_row2[nb][q] = zero_slab23[nb][i];
+         }
         
          c3db::c_ptranspose_ijk_init(nb, zero_arow2, zero_arow3);
       }
@@ -512,21 +483,22 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
      
       /* grid points in coordination space */
       for (auto k3 = (-nzh); k3 < nzh; ++k3)
-        for (auto k2 = (-nyh); k2 < nyh; ++k2)
-          for (auto k1 = (-nxh); k1 < nxh; ++k1) 
-          {
-             int i = k1 + nxh;
-             int j = k2 + nyh;
-             int k = k3 + nzh;
-             int indx = cijktoindex2(i, j, k);
-             int p = cijktop2(i, j, k);
-            
-             if (p == c3db::parall->taskid_i()) {
-               r_grid[3*indx]   = a[0]*k1 + a[3]*k2 + a[6]*k3;
-               r_grid[3*indx+1] = a[1]*k1 + a[4]*k2 + a[7]*k3;
-               r_grid[3*indx+2] = a[2]*k1 + a[5]*k2 + a[8]*k3;
-             }
-          }
+      for (auto k2 = (-nyh); k2 < nyh; ++k2)
+      for (auto k1 = (-nxh); k1 < nxh; ++k1) 
+      {
+         int i = k1 + nxh;
+         int j = k2 + nyh;
+         int k = k3 + nzh;
+         int indx = cijktoindex2(i, j, k);
+         int p = cijktop2(i, j, k);
+        
+         if (p == c3db::parall->taskid_i()) 
+         {
+            r_grid[3*indx]   = a[0]*k1 + a[3]*k2 + a[6]*k3;
+            r_grid[3*indx+1] = a[1]*k1 + a[4]*k2 + a[7]*k3;
+            r_grid[3*indx+2] = a[2]*k1 + a[5]*k2 + a[8]*k3;
+         }
+      }
    }
  
    /* initialize pfft3 queues */
@@ -656,6 +628,23 @@ double CGrid::cc_pack_idot(const int nb, double *a, double *b)
  
    tsum = DDOT_PWDFT(ng, a, one, b, one);
  
+   return tsum;
+}
+
+/********************************
+ *                              *
+ *       CGrid:cc_pack_zdot     *
+ *                              *
+ ********************************/
+std::complex<double> CGrid::cc_pack_zdot(const int nb, double *a, double *b) 
+{
+   int one = 1;
+   // int ng  = 2*(nidb[nb]);
+   int ng  = (nidb[nb]);
+ 
+   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   c3db::parall->Vector_SumAll(1,2,reinterpret_cast<double*>(&tsum));
+
    return tsum;
 }
 
@@ -1327,9 +1316,7 @@ void CGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
     **********************/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhz2 = nxh2 * nz;
+      auto nxz = nx*nz;
      
       /***************************************************
        ***     do fft along kz dimension               ***
@@ -1338,24 +1325,27 @@ void CGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q = 0; q < nq; ++q) {
-        for (auto i = 0; i < nxh; ++i) {
-          if (!zero_row3[nb][indx2]) {
-            auto kk = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * nz * nn;
-            for (auto k = 0; k < nz; ++k) 
+      for (auto q = 0; q < nq; ++q) 
+      {
+         for (auto i = 0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
             {
-               tmp2[kk   + shift] = tmp1[indx3];
-               tmp2[kk+1 + shift] = tmp1[indx3 + 1];
-               kk += 2;
-               indx3 += nxh2;
+               auto kk = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp2[kk   + shift] = tmp1[indx3];
+                  tmp2[kk+1 + shift] = tmp1[indx3 + 1];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               nn += 1;
             }
-            nn += 1;
-          }
-          ++indx2;
-        }
-        indx0 += nxhz2;
+            ++indx2;
+         }
+         indx0 += nxz;
       }
      
       c3db::mygdevice.batch_cfftz_tmpz(c3db::fft_tag,false, nz, nn, 2*nfft3d, tmp2, c3db::tmpz);
@@ -1365,24 +1355,27 @@ void CGrid::pfftbz(const int nb, double *tmp1, double *tmp2, int request_indx)
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q = 0; q < nq; ++q) {
-        for (auto i = 0; i < nxh; ++i) {
-          if (!zero_row3[nb][indx2]) {
-            auto kk = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * nz * nn;
-            for (auto k = 0; k < nz; ++k) 
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
             {
-               tmp1[indx3]   = tmp2[kk   + shift];
-               tmp1[indx3+1] = tmp2[kk+1 + shift];
-               kk += 2;
-               indx3 += nxh2;
+               auto kk = 0;
+               auto indx3 = 2 * i + indx0;
+               auto shift = 2 * nz * nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp1[indx3]   = tmp2[kk   + shift];
+                  tmp1[indx3+1] = tmp2[kk+1 + shift];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               nn += 1;
             }
-            nn += 1;
-          }
-          ++indx2;
-        }
-        indx0 += nxhz2;
+            ++indx2;
+         }
+         indx0 += nxz;
       }
      
      
@@ -1421,9 +1414,7 @@ void CGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
     **********************/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       /***********************************************
        ***         Do a ptranspose of A            ***
@@ -1438,25 +1429,27 @@ void CGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j=0; j<ny; ++j) 
-             {
-                tmp1[jj   + shift] = tmp2[indx3];
-                tmp1[jj+1 + shift] = tmp2[indx3 + 1];
-                jj += 2;
-                indx3 += nxh2;
-             }
-             nn += 1;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                  tmp1[jj   + shift] = tmp2[indx3];
+                  tmp1[jj+1 + shift] = tmp2[indx3 + 1];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
      
       c3db::mygdevice.batch_cffty_tmpy(c3db::fft_tag,false, ny, nn, 2*nfft3d, tmp1, c3db::tmpy);
@@ -1466,25 +1459,27 @@ void CGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j = 0; j < ny; ++j) 
-             {
-                tmp2[indx3]   = tmp1[jj   + shift];
-                tmp2[indx3+1] = tmp1[jj+1 + shift];
-                jj += 2;
-                indx3 += nxh2;
-             }
-             nn += 1;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j = 0; j < ny; ++j) 
+               {
+                  tmp2[indx3]   = tmp1[jj   + shift];
+                  tmp2[indx3+1] = tmp1[jj+1 + shift];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
    }
    /*************************
@@ -1591,9 +1586,7 @@ void CGrid::pfftbz_start(const int nb, double *tmp1, double *tmp2, int request_i
    **********************/
   if (maptype == 1) 
   {
-     auto nxh = nx / 2 + 1;
-     auto nxh2 = nx + 2;
-     auto nxhz2 = nxh2 * nz;
+     auto nxz = nx*nz;
     
      /***************************************************
       ***     do fft along kz dimension               ***
@@ -1604,25 +1597,25 @@ void CGrid::pfftbz_start(const int nb, double *tmp1, double *tmp2, int request_i
      int nn = 0;
      for (auto q=0; q<nq; ++q) 
      {
-        for (auto i=0; i<nxh; ++i) 
+        for (auto i=0; i<nx; ++i) 
         {
            if (!zero_row3[nb][indx2]) 
            {
               auto kk = 0;
-              auto indx3 = 2 * i + indx0;
-              auto shift = 2 * nz * nn;
+              auto indx3 = 2*i + indx0;
+              auto shift = 2*nz*nn;
               for (auto k=0; k<nz; ++k) 
               {
                  tmp2[kk   + shift] = tmp1[indx3];
                  tmp2[kk+1 + shift] = tmp1[indx3+1];
                  kk += 2;
-                 indx3 += nxh2;
+                 indx3 += nx;
               }
               nn += 1;
            }
            ++indx2;
         }
-        indx0 += nxhz2;
+        indx0 += nxz;
      }
     
      c3db::mygdevice.batch_cfftz_stages_tmpz(0,c3db::fft_tag,false, nz, nn, 2*nfft3d, tmp2, c3db::tmpz,da_indx);
@@ -1656,9 +1649,7 @@ void CGrid::pfftbz_compute(const int nb, double *tmp1, double *tmp2, int request
    **********************/
   if (maptype == 1) 
   {
-     auto nxh = nx / 2 + 1;
-     auto nxh2 = nx + 2;
-     auto nxhz2 = nxh2 * nz;
+     auto nxz = nx*nz;
     
      /***************************************************
       ***     do fft along kz dimension               ***
@@ -1667,13 +1658,16 @@ void CGrid::pfftbz_compute(const int nb, double *tmp1, double *tmp2, int request
      int indx0 = 0;
      int indx2 = 0;
      int nn = 0;
-     for (auto q=0; q<nq; ++q) {
-       for (auto i = 0; i < nxh; ++i) {
-         if (!zero_row3[nb][indx2]) {
-           nn += 1;
-         }
-         ++indx2;
-       }
+     for (auto q=0; q<nq; ++q) 
+     {
+        for (auto i=0; i<nx; ++i) 
+        {
+           if (!zero_row3[nb][indx2]) 
+           {
+              nn += 1;
+           }
+           ++indx2;
+        }
      }
     
      c3db::mygdevice.batch_cfftz_stages_tmpz(1,c3db::fft_tag,false, nz, nn, 2*nfft3d, tmp2, c3db::tmpz,da_indx);
@@ -1708,9 +1702,7 @@ void CGrid::pfftbz_end(const int nb, double *tmp1, double *tmp2, int request_ind
    **********************/
   if (maptype == 1) 
   {
-     auto nxh = nx / 2 + 1;
-     auto nxh2 = nx + 2;
-     auto nxhz2 = nxh2 * nz;
+     auto nxz = nx*nz;
     
      /***************************************************
       ***     do fft along kz dimension               ***
@@ -1721,7 +1713,7 @@ void CGrid::pfftbz_end(const int nb, double *tmp1, double *tmp2, int request_ind
      int nn = 0;
      for (auto q=0; q<nq; ++q) 
      {
-        for (auto i=0; i<nxh; ++i) 
+        for (auto i=0; i<nx; ++i) 
         {
            if (!zero_row3[nb][indx2]) 
            {
@@ -1738,25 +1730,27 @@ void CGrid::pfftbz_end(const int nb, double *tmp1, double *tmp2, int request_ind
      indx0 = 0;
      indx2 = 0;
      nn = 0;
-     for (auto q=0; q<nq; ++q) {
-       for (auto i=0; i<nxh; ++i) {
-         if (!zero_row3[nb][indx2]) 
-         {
-            auto kk = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * nz * nn;
-            for (auto k=0; k<nz; ++k) 
-            {
-               tmp1[indx3]   = tmp2[kk   + shift];
-               tmp1[indx3+1] = tmp2[kk+1 + shift];
-               kk += 2;
-               indx3 += nxh2;
-            }
-            nn += 1;
-         }
-         ++indx2;
-       }
-       indx0 += nxhz2;
+     for (auto q=0; q<nq; ++q) 
+     {
+        for (auto i=0; i<nx; ++i) 
+        {
+           if (!zero_row3[nb][indx2]) 
+           {
+              auto kk = 0;
+              auto indx3 = 2 * i + indx0;
+              auto shift = 2 * nz * nn;
+              for (auto k=0; k<nz; ++k) 
+              {
+                 tmp1[indx3]   = tmp2[kk   + shift];
+                 tmp1[indx3+1] = tmp2[kk+1 + shift];
+                 kk += 2;
+                 indx3 += nx;
+              }
+              nn += 1;
+           }
+           ++indx2;
+        }
+        indx0 += nxz;
      }
     
      /***********************************************
@@ -1797,9 +1791,7 @@ void CGrid::pfftby_start(const int nb, double *tmp1, double *tmp2, int request_i
    **********************/
   if (maptype == 1) 
   {
-     auto nxh = nx / 2 + 1;
-     auto nxh2 = nx + 2;
-     auto nxhy2 = nxh2 * ny;
+     auto nxy = nx*ny;
     
      /***********************************************
       ***         Do a ptranspose of A            ***
@@ -1814,25 +1806,27 @@ void CGrid::pfftby_start(const int nb, double *tmp1, double *tmp2, int request_i
      int indx0 = 0;
      int indx2 = 0;
      int nn = 0;
-     for (auto q=0; q<nq; ++q) {
-       for (auto i=0; i<nxh; ++i) {
-         if (!zero_row2[nb][indx2]) 
-         {
-            auto jj = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * ny * nn;
-            for (auto j = 0; j < ny; ++j) 
-            {
-               tmp1[jj   + shift] = tmp2[indx3];
-               tmp1[jj+1 + shift] = tmp2[indx3 + 1];
-               jj += 2;
-               indx3 += nxh2;
-            }
-            nn += 1;
-         }
-         ++indx2;
-       }
-       indx0 += nxhy2;
+     for (auto q=0; q<nq; ++q) 
+     {
+        for (auto i=0; i<nx; ++i) 
+        {
+           if (!zero_row2[nb][indx2]) 
+           {
+              auto jj = 0;
+              auto indx3 = 2*i + indx0;
+              auto shift = 2*ny*nn;
+              for (auto j = 0; j < ny; ++j) 
+              {
+                 tmp1[jj   + shift] = tmp2[indx3];
+                 tmp1[jj+1 + shift] = tmp2[indx3 + 1];
+                 jj += 2;
+                 indx3 += nx;
+              }
+              nn += 1;
+           }
+           ++indx2;
+        }
+        indx0 += nxy;
      }
     
      c3db::mygdevice.batch_cffty_stages_tmpy(0,c3db::fft_tag,false,ny,nn,2*nfft3d,tmp1,c3db::tmpy,da_indx);
@@ -1868,9 +1862,7 @@ void CGrid::pfftby_compute(const int nb, double *tmp1, double *tmp2, int request
     **********************/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       /********************************************
        ***     do fft along ny dimension        ***
@@ -1879,14 +1871,16 @@ void CGrid::pfftby_compute(const int nb, double *tmp1, double *tmp2, int request
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             nn += 1;
-          }
-          ++indx2;
-        }
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               nn += 1;
+            }
+            ++indx2;
+         }
       }
      
       c3db::mygdevice.batch_cffty_stages_tmpy(1,c3db::fft_tag,false, ny, nn, 2*nfft3d, tmp1, c3db::tmpy,da_indx);
@@ -1919,9 +1913,7 @@ void CGrid::pfftby_end(const int nb, double *tmp1, double *tmp2, int request_ind
     **********************/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       /********************************************
        ***     do fft along ny dimension        ***
@@ -1930,14 +1922,16 @@ void CGrid::pfftby_end(const int nb, double *tmp1, double *tmp2, int request_ind
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             nn += 1;
-          }
-          ++indx2;
-        }
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               nn += 1;
+            }
+            ++indx2;
+         }
       }
      
       c3db::mygdevice.batch_cffty_stages_tmpy(2,c3db::fft_tag,false, ny, nn, 2*nfft3d, tmp1, c3db::tmpy,da_indx);
@@ -1947,25 +1941,27 @@ void CGrid::pfftby_end(const int nb, double *tmp1, double *tmp2, int request_ind
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j = 0; j < ny; ++j) 
-             {
-                tmp2[indx3]   = tmp1[jj   + shift];
-                tmp2[indx3+1] = tmp1[jj+1 + shift];
-                jj += 2;
-                indx3 += nxh2;
-             }
-             nn += 1;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                  tmp2[indx3]   = tmp1[jj   + shift];
+                  tmp2[indx3+1] = tmp1[jj+1 + shift];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               nn += 1;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
    }
    /*************************
@@ -2256,34 +2252,34 @@ void CGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       // do fft along ny dimension
       // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q = 0; q < nq; ++q) {
-        for (auto i = 0; i < nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j = 0; j < ny; ++j) 
-             {
-                tmp2[jj   + shift] = tmp1[indx3];
-                tmp2[jj+1 + shift] = tmp1[indx3 + 1];
-                jj += 2;
-                indx3 += nxh2;
-             }
-             ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                  tmp2[jj   + shift] = tmp1[indx3];
+                  tmp2[jj+1 + shift] = tmp1[indx3 + 1];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
      
       c3db::mygdevice.batch_cffty_tmpy(c3db::fft_tag,true, ny, nn, 2*nfft3d, tmp2, c3db::tmpy);
@@ -2291,25 +2287,27 @@ void CGrid::pfftfy(const int nb, double *tmp1, double *tmp2, int request_indx)
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j = 0; j < ny; ++j) 
-             {
-                tmp1[indx3] = tmp2[jj + shift];
-                tmp1[indx3 + 1] = tmp2[jj + 1 + shift];
-                jj += 2;
-                indx3 += nxh2;
-             }
-             ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                  tmp1[indx3] = tmp2[jj + shift];
+                  tmp1[indx3 + 1] = tmp2[jj + 1 + shift];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
      
       // Do a transpose of A
@@ -2345,34 +2343,34 @@ void CGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
    {
       c3db::c_ptranspose2_jk_end(nb, tmp2, tmp1, request_indx);
      
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhz2 = nxh2 * nz;
+      auto nxz = nx*nz;
      
       // do fft along nz dimension
       // A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row3[nb][indx2]) 
-          {
-             auto kk = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * nz * nn;
-             for (auto k=0; k<nz; ++k) 
-             {
-                tmp1[kk   + shift] = tmp2[indx3];
-                tmp1[kk+1 + shift] = tmp2[indx3 + 1];
-                kk += 2;
-                indx3 += nxh2;
-             }
-             ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhz2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
+            {
+               auto kk = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp1[kk   + shift] = tmp2[indx3];
+                  tmp1[kk+1 + shift] = tmp2[indx3 + 1];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxz;
       }
      
       c3db::mygdevice.batch_cfftz_tmpz(c3db::fft_tag,true, nz, nn, 2*nfft3d, tmp1, c3db::tmpz);
@@ -2380,24 +2378,27 @@ void CGrid::pfftfz(const int nb, double *tmp1, double *tmp2, int request_indx)
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row3[nb][indx2]) 
-          {
-             auto kk = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * nz * nn;
-             for (auto k = 0; k < nz; ++k) {
-               tmp2[indx3]   = tmp1[kk   + shift];
-               tmp2[indx3+1] = tmp1[kk+1 + shift];
-               kk += 2;
-               indx3 += nxh2;
-             }
-             ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhz2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
+            {
+               auto kk = 0;
+               auto indx3 = 2 * i + indx0;
+               auto shift = 2 * nz * nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp2[indx3]   = tmp1[kk   + shift];
+                  tmp2[indx3+1] = tmp1[kk+1 + shift];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxz;
       }
    }
  
@@ -2528,33 +2529,34 @@ void CGrid::pfftfy_start(const int nb, double *tmp1, double *tmp2, int request_i
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       // do fft along ny dimension
       // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) {
-            auto jj = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * ny * nn;
-            for (auto j=0; j<ny; ++j) 
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
             {
-               tmp2[jj   + shift] = tmp1[indx3];
-               tmp2[jj+1 + shift] = tmp1[indx3 + 1];
-               jj += 2;
-               indx3 += nxh2;
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                  tmp2[jj   + shift] = tmp1[indx3];
+                  tmp2[jj+1 + shift] = tmp1[indx3 + 1];
+                  jj += 2;
+                  indx3 += nx;
+               }
+               ++nn;
             }
-            ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+            ++indx2;
+         }
+         indx0 += nxy;
       }
      
       c3db::mygdevice.batch_cffty_stages_tmpy(0,c3db::fft_tag,true, ny, nn, 2*nfft3d, tmp2, c3db::tmpy,da_indx);
@@ -2582,23 +2584,23 @@ void CGrid::pfftfy_compute(const int nb, double *tmp1, double *tmp2, int request
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       // do fft along ny dimension
       // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             ++nn;
-          }
-          ++indx2;
-        }
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               ++nn;
+            }
+            ++indx2;
+         }
       }
      
       c3db::mygdevice.batch_cffty_stages_tmpy(1,c3db::fft_tag,true, ny, nn, 2*nfft3d, tmp2, c3db::tmpy,da_indx);
@@ -2627,23 +2629,23 @@ void CGrid::pfftfy_end(const int nb, double *tmp1, double *tmp2, int request_ind
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhy2 = nxh2 * ny;
+      auto nxy = nx*ny;
      
       // do fft along ny dimension
       // A(kx,ky,nz) <- fft1d[A(kx,ny,nz)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             ++nn;
-          }
-          ++indx2;
-        }
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               ++nn;
+            }
+            ++indx2;
+         }
       }
      
       c3db::mygdevice.batch_cffty_stages_tmpy(2,c3db::fft_tag,true, ny, nn, 2*nfft3d, tmp2, c3db::tmpy,da_indx);
@@ -2651,25 +2653,27 @@ void CGrid::pfftfy_end(const int nb, double *tmp1, double *tmp2, int request_ind
       indx0 = 0;
       indx2 = 0;
       nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row2[nb][indx2]) 
-          {
-             auto jj = 0;
-             auto indx3 = 2 * i + indx0;
-             auto shift = 2 * ny * nn;
-             for (auto j=0; j<ny; ++j) 
-             {
-               tmp1[indx3]   = tmp2[jj   + shift];
-               tmp1[indx3+1] = tmp2[jj+1 + shift];
-               jj += 2;
-               indx3 += nxh2;
-             }
-             ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhy2;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row2[nb][indx2]) 
+            {
+               auto jj = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*ny*nn;
+               for (auto j=0; j<ny; ++j) 
+               {
+                 tmp1[indx3]   = tmp2[jj   + shift];
+                 tmp1[indx3+1] = tmp2[jj+1 + shift];
+                 jj += 2;
+                 indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxy;
       }
      
       // Do a transpose of A
@@ -2702,34 +2706,34 @@ void CGrid::pfftfz_start(const int nb, double *tmp1, double *tmp2, int request_i
    {
       c3db::c_ptranspose2_jk_end(nb, tmp2, tmp1, request_indx);
      
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhz2 = nxh2 * nz;
+      auto nxz = nx*nz;
      
       // do fft along nz dimension
       // A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row3[nb][indx2]) 
-          {
-            auto kk = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * nz * nn;
-            for (auto k=0; k<nz; ++k) 
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
             {
-              tmp1[kk   + shift] = tmp2[indx3];
-              tmp1[kk+1 + shift] = tmp2[indx3 + 1];
-              kk += 2;
-              indx3 += nxh2;
+               auto kk = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp1[kk   + shift] = tmp2[indx3];
+                  tmp1[kk+1 + shift] = tmp2[indx3 + 1];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               ++nn;
             }
-            ++nn;
-          }
-          ++indx2;
-        }
-        indx0 += nxhz2;
+            ++indx2;
+         }
+         indx0 += nxz;
       }
      
       c3db::mygdevice.batch_cfftz_stages_tmpz(0,c3db::fft_tag,true, nz, nn, 2*nfft3d, tmp1, c3db::tmpz,da_indx);
@@ -2757,23 +2761,23 @@ void CGrid::pfftfz_compute(const int nb, double *tmp1, double *tmp2, int request
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-      auto nxh = nx / 2 + 1;
-      auto nxh2 = nx + 2;
-      auto nxhz2 = nxh2 * nz;
+      auto nxz = nx*nz;
      
       // do fft along nz dimension
       // A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]
       int indx0 = 0;
       int indx2 = 0;
       int nn = 0;
-      for (auto q=0; q<nq; ++q) {
-        for (auto i=0; i<nxh; ++i) {
-          if (!zero_row3[nb][indx2]) 
-          {
-             ++nn;
-          }
-          ++indx2;
-        }
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
+            {
+               ++nn;
+            }
+            ++indx2;
+         }
       }
       c3db::mygdevice.batch_cfftz_stages_tmpz(1,c3db::fft_tag,true, nz, nn, 2*nfft3d, tmp1, c3db::tmpz,da_indx);
    }
@@ -2796,51 +2800,52 @@ void CGrid::pfftfz_end(const int nb, double *tmp1, double *tmp2, int request_ind
    /**** slab mapping ****/
    if (maptype == 1) 
    {
-     auto nxh = nx / 2 + 1;
-     auto nxh2 = nx + 2;
-     auto nxhz2 = nxh2 * nz;
- 
-     // do fft along nz dimension
-     // A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]
-     int indx0 = 0;
-     int indx2 = 0;
-     int nn = 0;
-     for (auto q=0; q<nq; ++q) {
-       for (auto i=0; i<nxh; ++i) {
-         if (!zero_row3[nb][indx2]) 
+      auto nxz = nx*nz;
+     
+      // do fft along nz dimension
+      // A(kx,kz,ky) <- fft1d[A(kx,nz,ky)]
+      int indx0 = 0;
+      int indx2 = 0;
+      int nn = 0;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
          {
-            ++nn;
-         }
-         ++indx2;
-       }
-     }
- 
-     c3db::mygdevice.batch_cfftz_stages_tmpz(2,c3db::fft_tag,true, nz, nn, 2*nfft3d, tmp1, c3db::tmpz,da_indx);
- 
-     indx0 = 0;
-     indx2 = 0;
-     nn = 0;
-     for (auto q=0; q<nq; ++q) {
-       for (auto i=0; i<nxh; ++i) {
-         if (!zero_row3[nb][indx2]) 
-         {
-            auto kk = 0;
-            auto indx3 = 2 * i + indx0;
-            auto shift = 2 * nz * nn;
-            for (auto k = 0; k < nz; ++k) 
+            if (!zero_row3[nb][indx2]) 
             {
-               tmp2[indx3]   = tmp1[kk   + shift];
-               tmp2[indx3+1] = tmp1[kk+1 + shift];
-               kk += 2;
-               indx3 += nxh2;
+               ++nn;
             }
-            ++nn;
+            ++indx2;
          }
-         ++indx2;
-       }
-       indx0 += nxhz2;
-     }
- 
+      }
+     
+      c3db::mygdevice.batch_cfftz_stages_tmpz(2,c3db::fft_tag,true, nz, nn, 2*nfft3d, tmp1, c3db::tmpz,da_indx);
+     
+      indx0 = 0;
+      indx2 = 0;
+      nn = 0;
+      for (auto q=0; q<nq; ++q) 
+      {
+         for (auto i=0; i<nx; ++i) 
+         {
+            if (!zero_row3[nb][indx2]) 
+            {
+               auto kk = 0;
+               auto indx3 = 2*i + indx0;
+               auto shift = 2*nz*nn;
+               for (auto k=0; k<nz; ++k) 
+               {
+                  tmp2[indx3]   = tmp1[kk   + shift];
+                  tmp2[indx3+1] = tmp1[kk+1 + shift];
+                  kk += 2;
+                  indx3 += nx;
+               }
+               ++nn;
+            }
+            ++indx2;
+         }
+         indx0 += nxz;
+      }
    }
  
    /**** hilbert mapping ****/
@@ -3359,6 +3364,45 @@ void CGrid::cc_pack_daxpy(const int nb, const double alpha, const double *a, dou
    for (auto i=0; i<ng; ++i)
       b[i] += alpha*a[i];
 }
+
+/********************************
+ *                              *
+ *      CGrid:cc_pack_zaxpy     *
+ *                              *
+ ********************************/
+/**
+ * @brief Performs a complex scaled vector addition (ZAXPY operation) on interleaved complex arrays.
+ *
+ * This function multiplies each element of an array 'a' (representing complex numbers in interleaved format)
+ * by a complex scalar 'alpha' and then adds the result to an array 'b'. The operation is defined as:
+ * b[i] = alpha * a[i] + b[i], where 'a' and 'b' are arrays of complex numbers represented in interleaved format.
+ *
+ * @param nb An integer index used to determine the number of complex elements in 'a' and 'b'.
+ *           The actual number of elements processed is derived from the 'nidb' array of the CGrid class.
+ * @param alpha A std::complex<double> scalar by which each element of 'a' is scaled.
+ * @param a Pointer to the first element of the input array, representing complex numbers in interleaved format.
+ * @param b Pointer to the first element of the output array, also in interleaved format.
+ *
+ * @note This function assumes that 'a' and 'b' are arrays of double representing complex numbers,
+ * where each complex number is stored as consecutive real and imaginary parts.
+ *
+ */
+void CGrid::cc_pack_zaxpy(const int nb, const std::complex<double> alpha, const double *a, double *b) 
+{
+   double realPart = alpha.real(); // Gets the real part of alpha
+   double imagPart = alpha.imag(); // Gets the imaginary part of alpha
+   int ng = (nidb[nb]);
+
+   int i1 = 0; int i2 = 1;
+   for (auto i=0; i<ng; ++i)
+   {
+      b[i1] += realPart*a[i1] - imagPart*a[i2];
+      b[i2] += imagPart*a[i1] + realPart*a[i2];
+      i1 += 2;
+      i2 += 2;
+   }
+}
+
 
 /********************************
  *                              *
