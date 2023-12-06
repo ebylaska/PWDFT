@@ -115,8 +115,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
 
    /* initialize psi1 and psi2 */
-   nbrillouin = mygrid.nbrillouin;
-   ispin = control.ispin(); ne[0] = mygrid.ne[0]; ne[1] = mygrid.ne[1]; nbrillq = mygrid.nbrillq;
+   //ispin = control.ispin(); 
+   nbrillouin = mygrid.nbrillouin; ispin = mygrid.ispin; ne[0] = mygrid.ne[0]; ne[1] = mygrid.ne[1]; nbrillq = mygrid.nbrillq;
    psi1 = mygrid.g_allocate_nbrillq_all();
    psi2 = mygrid.g_allocate_nbrillq_all();
    Hpsi = mygrid.g_allocate_nbrillq_all();
@@ -313,7 +313,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    std::cout << "nfft=" << nfft[0] << " " << nfft[1] << " " << nfft[2] << std::endl;
    std::cout << "ispin=" << ispin << std::endl;
    std::cout << "ne=" << ne[0] << " " << ne[1] << std::endl;
-   cpsi_write(&mygrid,&version,nfft,unita,&ispin,ne,&nbrillouin,psi1,control.output_movecs_filename(),std::cout);
+   cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
    /* deallocate memory */

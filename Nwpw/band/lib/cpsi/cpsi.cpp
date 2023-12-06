@@ -278,7 +278,6 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, nbrillouin);
 
    myparall->Brdcst_iValue(0, 0, &occupation);
-   std::cout << "occupation=" << occupation << std::endl;
  
    /* reads in c format and automatically packs the result to g format */
    //mycneb->g_read(4,ispin,psi);
@@ -392,6 +391,13 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    if (myparall->is_master()) 
    {
        std::cout << "write version=" << *version << std::endl;
+       std::cout << "write ispin=" << ispin[0] << std::endl;
+       std::cout << "write nfft= " << nfft[0] << " " << nfft[1] << " " << nfft[2] << std::endl;
+       std::cout << "write unita=" << unita[0] << " " << unita[1] << " " << unita[2] << " " << unita[3] << " " 
+                                   << unita[4] << " " << unita[5] << " " << unita[6] << " " << unita[7] << " " << unita[8] << std::endl;
+       std::cout << "write ne= " << ne[0] << " " << ne[1] << std::endl;
+       std::cout << "write nbrillouin= " << nbrillouin[0] << std::endl;
+       std::cout << "write occupation= " << occupation << std::endl;
       openfile(6, filename, "w");
       iwrite(6, version, 1);
       iwrite(6, nfft, 3);
@@ -401,9 +407,11 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
       iwrite(6, nbrillouin, 1);
       iwrite(6, &occupation, 1);
    }
-       std::cout << "occupation=" << occupation <<  std::endl;
  
    mycneb->g_write(6, psi);
+
+   if (occupation>0)
+       std::cout << "Erite the occupations here!" << std::endl;
  
    if (myparall->is_master())
       closefile(6);

@@ -403,7 +403,6 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
             }
             else
             {
-                std::cout << "setranndom" << std::endl;
                c3db::r_setrandom(tmp2);
                c3db::rc_fft3d(tmp2);
             }
@@ -411,7 +410,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
             if ((pj==taskid_j) && (pk==taskid_k)) 
             {
                int indx = ibshiftj*qj + ibshiftk*qk;
-               std::cout << "nbq1=" << nbq1 << std::endl;
+
                std::cout << "ms,n,indx,tmp2    =" << ms << " " << n << " " << indx << " "
                          << tmp2[0] << " " 
                          << tmp2[1] << " " 
@@ -463,6 +462,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
  */
 void Cneb::g_write(const int iunit, double *psi) 
 {
+    std::cout << "g_write" << std::endl;
    int npack2 = 2*CGrid::npack1_max();
    int ibshiftj = npack2;
    int ibshiftk = ibshiftj*(neq[0]+neq[1]);
@@ -485,11 +485,29 @@ void Cneb::g_write(const int iunit, double *psi)
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
+               std::cout << std::endl << "ms,n,indx,packedtmp2=" << ms << " " << n << " " << indx << " "
+                         << tmp2[0] << " "
+                         << tmp2[1] << " "
+                         << tmp2[2] << " "
+                         << tmp2[3] << " "
+                         << tmp2[4] << " "
+                         << tmp2[5] << " "
+                         << tmp2[6] << " "
+                         << tmp2[7] << std::endl;
             CGrid::c_unpack(nbq1, tmp2);
+               std::cout << "ms,n,indx,unpacktmp2=" << ms << " " << n << " " << indx << " "
+                         << tmp2[0] << " "
+                         << tmp2[1] << " "
+                         << tmp2[2] << " "
+                         << tmp2[3] << " "
+                         << tmp2[4] << " "
+                         << tmp2[5] << " "
+                         << tmp2[6] << " "
+                         << tmp2[7] << std::endl;
          }
-         if (io_buffer)
-            c_write_buffer(iunit,tmp2,pj,pk);
-         else
+         //if (io_buffer)
+         //   c_write_buffer(iunit,tmp2,pj,pk);
+         //else
             c_write(iunit,tmp2,pj,pk);
       }
    }

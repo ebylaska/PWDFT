@@ -557,8 +557,8 @@ void CGrid::c_unpack(const int nb, double *a)
    if (balanced)
       mybalance->c_unbalance(nb, a);
  
-   std::memcpy(c3db::c3db_tmp1, a, nn * sizeof(double));
-   std::memset(a, 0, 2*nfft3d * sizeof(double));
+   std::memcpy(c3db::c3db_tmp1,a,nn*sizeof(double));
+   std::memset(a, 0, 2*nfft3d*sizeof(double));
    c_bindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
  
 }
