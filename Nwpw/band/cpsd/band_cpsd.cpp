@@ -381,6 +381,119 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (myparallel.is_master()) seconds(&cpu3);
    if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
 
+     //                  |***************************|
+   // ****************** report summary of results **********************
+   //                  |***************************|
+   if (oprint)
+   {
+      std::cout << std::endl << std::endl;
+      std::cout << "     ===================  summary of results ======================" << std::endl;
+      std::cout << "\n final ion positions (au):" << std::endl;
+      for (ii = 0; ii < myion.nion; ++ii)
+        std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+                  << Ffmt(10,5) << myion.rion1[3*ii] << " "
+                  << Ffmt(10,5) << myion.rion1[3*ii+1] << " "
+                  << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = "
+                  << Ffmt(6,3) << myion.amu(ii) << std::endl;
+      std::cout << "   G.C.\t( " << Ffmt(10,5) << myion.gc(0) << " "
+                                 << Ffmt(10,5) << myion.gc(1) << " "
+                                 << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
+      std::cout << " C.O.M.\t( " << Ffmt(10,5) << myion.com(0) << " "
+                                 << Ffmt(10,5) << myion.com(1) << " "
+                                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
+
+      if (control.geometry_optimize())
+      {
+         std::cout << "\n final ion forces (au):" << std::endl;
+         for (ii = 0; ii < myion.nion; ++ii)
+            std::cout << Ifmt(4) << ii+1 << " " << myion.symbol(ii) << "\t( "
+                      << Ffmt(10,5) << myion.fion1[3*ii]   << " "
+                      << Ffmt(10,5) << myion.fion1[3*ii+1] << " "
+                      << Ffmt(10,5) << myion.fion1[3*ii+2] << " )" << std::endl;
+
+         std::cout << "   |F|/nion  = " << Ffmt(12,6) << myion.rms_fion(myion.fion1) << std::endl
+                   << "   max|Fatom|= " << Ffmt(12,6) << myion.max_fion(myion.fion1) << "  ("
+                                        << Ffmt(8,3) << myion.max_fion(myion.fion1) * (27.2116/0.529177)
+                                        << " eV/Angstrom)" << std::endl << std::endl;
+      }
+
+      std::cout << std::endl;
+      std::cout << std::fixed << " number of electrons: spin up= "
+                << Ffmt(11,5) << en[0] << "  down= "
+                << Ffmt(11,5) << en[ispin-1] << " (real space)";
+      std::cout << std::endl << std::endl;
+      std::cout << " total     energy    : " << Efmt(19,10) << E[0] << " ("
+                << Efmt(15,5) << E[0]/myion.nion << " /ion)" << std::endl;
+
+      std::cout << " total orbital energy: "
+                << Efmt(19,10) << E[1] << " ("
+                << Efmt(15,5) << E[1]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " hartree energy      : "
+                << Efmt(19,10) << E[2] << " ("
+                << Efmt(15,5) << E[2]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " exc-corr energy     : "
+                << Efmt(19,10) << E[3] << " ("
+                << Efmt(15,5) << E[3]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " ion-ion energy      : "
+                << Efmt(19,10) << E[4] << " ("
+                << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
+
+      std::cout << std::endl;
+      std::cout << " K.S. kinetic energy : "
+                << Efmt(19,10) << E[5] << " ("
+                << Efmt(15,5) << E[5]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_l energy     : "
+                << Efmt(19,10) << E[6] << " (" << Efmt(15,5) << E[6]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_nl_energy    : "
+                << Efmt(19,10) << E[7] << " ("
+                << Efmt(15,5) << E[7]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_Hart energy  : "
+                << Efmt(19,10) << E[8] << " ("
+                << Efmt(15,5) << E[8]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+      std::cout << " K.S. V_xc energy    : "
+                << Efmt(19,10) << E[9] << " ("
+                << Efmt(15,5) << E[9]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
+
+      viral = (E[9] + E[8] + E[7] + E[6]) / E[5];
+      std::cout << " Viral Coefficient   : "
+                << Efmt(19,10) << viral << std::endl;
+
+      if (myion.has_ion_constraints())
+      {
+         std::cout << std::endl;
+         if (myion.has_ion_bond_constraints())
+            std::cout << " spring bond         : " << Efmt(19,10) << E[70] << " ("
+                                                   << Efmt(15,5)  << E[70]/myion.nion << " /ion)" << std::endl;
+         if (myion.has_ion_bondings_constraints())
+            std::cout << " spring bondings     : " << Efmt(19,10) << E[71] << " ("
+                                                   << Efmt(15,5)  << E[71]/myion.nion << " /ion)" << std::endl;
+      }
+
+      std::cout << "\n orbital energies:\n";
+      nn = ne[0] - ne[1];
+      ev = 27.2116;
+      for (i=0; i<nn; ++i)
+      {
+         std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV)" << std::endl;
+      }
+      for (i=0; i<ne[1]; ++i)
+      {
+         std::cout << Efmt(18,7) << eig[i+nn] << " ("
+                   << Ffmt(8,3)  << eig[i + nn] * ev << "eV) "
+                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " ("
+                   << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
+      }
+      std::cout << std::endl;
+
+      // write geometry and constraints analysis
+      if (control.geometry_optimize())
+      {
+         std::cout << myion.print_bond_angle_torsions();
+         std::cout << std::endl << myion.print_constraints(1);
+      }
+   }
+
+
 
 
 
@@ -411,6 +524,52 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.w_deallocate(lmbda);
    delete [] eig;
    //mygrid.d3db::mygdevice.psi_dealloc();
+
+
+  // write results to the json
+   auto rtdbjson = json::parse(rtdbstring);
+   rtdbjson["pspw"]["energy"] = E[0];
+   rtdbjson["pspw"]["energies"] = E;
+
+   // set rtdbjson initialize_wavefunction option to false
+   if (rtdbjson["nwpw"]["initialize_wavefunction"].is_boolean())
+      rtdbjson["nwpw"]["initialize_wavefunction"] = false;
+
+   rtdbstring = rtdbjson.dump();
+   myion.writejsonstr(rtdbstring);
+
+
+
+
+
+   //                 |**************************|
+   // *****************   report consumed time   **********************
+   //                 |**************************|
+   if (myparallel.is_master()) seconds(&cpu4);
+   if (oprint)
+   {
+      double t1 = cpu2 - cpu1;
+      double t2 = cpu3 - cpu2;
+      double t3 = cpu4 - cpu3;
+      double t4 = cpu4 - cpu1;
+      double av = t2 / ((double)control.loop(0) * icount);
+      // std::cout.setf(ios::scientific);
+      std::cout << std::scientific;
+      std::cout << std::endl;
+      std::cout << " -----------------" << std::endl;
+      std::cout << " cputime in seconds" << std::endl;
+      std::cout << " prologue    : " << t1 << std::endl;
+      std::cout << " main loop   : " << t2 << std::endl;
+      std::cout << " epilogue    : " << t3 << std::endl;
+      std::cout << " total       : " << t4 << std::endl;
+      std::cout << " cputime/step: " << av << std::endl;
+      std::cout << std::endl;
+
+      nwpw_timing_print_final(control.loop(0) * icount, std::cout);
+
+      std::cout << std::endl;
+      std::cout << " >>> job completed at     " << util_date() << " <<<" << std::endl;
+   }
 
 
  
