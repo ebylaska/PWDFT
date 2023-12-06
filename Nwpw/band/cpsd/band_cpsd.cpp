@@ -19,10 +19,10 @@
 #include "Cneb.hpp"
 #include "CPseudopotential.hpp"
 #include "cpsi.hpp"
-
 #include "CStrfac.hpp"
-
 #include "util_date.hpp"
+#include "band_inner_loop.hpp"
+//#include "nwpw_aimd_running_cdata.hpp"
 #include "mpi.h"
 
 //#include "gdevice.hpp"
@@ -300,9 +300,90 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " brillouin zone:" << std::endl;
       std::cout << mybrillouin.print_zone();
       std::cout << std::endl;
+
+      std::cout << std::endl;
+      std::cout << " technical parameters:\n";
+      if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
+      std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step()
+                << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
+      std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0)
+                << " (energy) " << Efmt(12,3) << control.tolerances(1)
+                << " (density) " << Efmt(12,3) << control.tolerances(2)
+                << " (ion)\n";
+      std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
+                << " (" << Ifmt(5) << control.loop(0) << " inner "
+                        << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
+      if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
    }
 
    MPI_Barrier(comm_world0);
+
+   //                 |**************************|
+   // *****************   start iterations       **********************
+   //                 |**************************|
+   if (myparallel.is_master()) seconds(&cpu2);
+   if (oprint)
+   {
+      std::cout << std::endl << std::endl << std::endl;
+      std::cout << "     ========================== iteration ==========================" << std::endl;
+      std::cout << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;
+      std::cout << "     iter.             Energy       DeltaE     DeltaPsi     DeltaIon" << std::endl;
+      std::cout << "     ---------------------------------------------------------------" << std::endl;
+   }
+
+  if (control.loop(1) > 0) {
+
+      // Initialize AIMD running data
+      //nwpw_aimd_running_cdata mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
+
+      done   = 0;
+      icount = 0;
+      while (!done)
+      {
+         ++icount;
+      //   band_inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb, &myxc, &mypsp,
+      //                   &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
+      //                   &deltae, &deltac, &deltar);
+
+         // mydfpt.start(psi1,psi_r
+
+         // Update AIMD Running data
+         //if (control.geometry_optimize()) mymotion_data.update_iteration(icount);
+
+
+         if (oprint)
+            std::cout << Ifmt(10) << icount*control.loop(0)
+                      << Efmt(19,10) << E[0]
+                      << Efmt(13,5) << deltae
+                      << Efmt(13,5) << deltac
+                      << Efmt(13,5) << deltar << std::endl;
+
+         /* check for competion */
+         if ((deltae > 0.0) && (icount > 1) && control.deltae_check())
+         {
+            done = 1;
+            if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
+         }
+         else if ((std::fabs(deltae) < control.tolerances(0)) &&
+                  (deltac < control.tolerances(1)) &&
+                  (deltar < control.tolerances(2)))
+         {
+            done = 1;
+            if (oprint) std::cout << "         *** tolerance ok.    iteration terminated\n";
+         }
+         else if (icount >= control.loop(1))
+         {
+            done = 1;
+            if (oprint) std::cout << "          *** arrived at the Maximum iteration.    terminated ***\n";
+         }
+      }
+   }
+   if (myparallel.is_master()) seconds(&cpu3);
+   if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
+
+
+
+
 
    // write wavefunctions
    version = 5;

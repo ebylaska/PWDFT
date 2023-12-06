@@ -682,23 +682,23 @@ std::string Ion::print_symmetry_group()
    init.copyfmt(stream);
 
    stream << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << this->sym_tolerance << ")" <<  std::endl;
-   stream << "   group name   : " << this->group_name
-                                  << "  (group rank = "  << this->group_rank
-                                  << " rotation type : " << this->rotation_type <<")" <<  std::endl;
+   stream << "      group name   : " << this->group_name
+                                     << "  (group rank = "  << this->group_rank
+                                     << " rotation type : " << this->rotation_type <<")" <<  std::endl;
    if (!is_crystal)
    {
-      stream << "   inertia axes : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[1] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[2] << " > - "
-                                           << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
-      stream << "                  e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[4] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[5] << " > - "
-                                           << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
-      stream << "                  e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[7] << " "
-                                           << Ffmt(8,3) << this->inertia_axes[8] << " > - "
-                                           << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
+      stream << "      inertia axes : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[1] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[2] << " > - "
+                                              << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
+      stream << "                     e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[4] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[5] << " > - "
+                                              << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
+      stream << "                     e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[7] << " "
+                                              << Ffmt(8,3) << this->inertia_axes[8] << " > - "
+                                              << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
    }
    return stream.str();
 }

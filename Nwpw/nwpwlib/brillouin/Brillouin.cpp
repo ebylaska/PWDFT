@@ -85,10 +85,10 @@ std::string Brillouin::print_zone()
    std::ios init(NULL);
    init.copyfmt(stream);
 
-   stream << "   number of zone points = " << Ifmt(3) << nbrillouin << std::endl;
+   stream << "      number of zone points = " << Ifmt(3) << nbrillouin << std::endl;
    for (auto nb=0; nb<nbrillouin; ++nb)
    {
-      stream << "   weight = " << Ffmt(8,3) << weight[nb]
+      stream << "      weight = " << Ffmt(8,3) << weight[nb]
              << " ks = <" << Ffmt(8,3) << ksvector[3*nb]   << " "
                           << Ffmt(8,3) << ksvector[3*nb+1] << " "
                           << Ffmt(8,3) << ksvector[3*nb+2] << "> "
