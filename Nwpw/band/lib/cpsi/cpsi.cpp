@@ -347,7 +347,6 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
    /* ortho check */
    double sum2 = mycneb->gg_traceall(psi2, psi2);
    double sum1 = mycneb->ne[0] + mycneb->ne[1];
-   std::cout << "sum1,sum2=" << sum1 << " " << sum2 << std::endl;
  
    if ((mycneb->ispin) == 1)
       sum1 *= 2;
@@ -362,10 +361,6 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
         coutput << "         - exact norm = " << sum1 << " norm=" << sum2
                 << " corrected norm=" << sum3
                 << " (error=" << std::abs(sum2 - sum1) << ")" << std::endl;
-
-      mycneb->g_ortho(psi2);
-      double sum4 = mycneb->gg_traceall(psi2, psi2);
-      std::cout << "sum4=" << sum4 << std::endl;
    }
  
    return newpsi;
@@ -390,14 +385,6 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
  
    if (myparall->is_master()) 
    {
-       std::cout << "write version=" << *version << std::endl;
-       std::cout << "write ispin=" << ispin[0] << std::endl;
-       std::cout << "write nfft= " << nfft[0] << " " << nfft[1] << " " << nfft[2] << std::endl;
-       std::cout << "write unita=" << unita[0] << " " << unita[1] << " " << unita[2] << " " << unita[3] << " " 
-                                   << unita[4] << " " << unita[5] << " " << unita[6] << " " << unita[7] << " " << unita[8] << std::endl;
-       std::cout << "write ne= " << ne[0] << " " << ne[1] << std::endl;
-       std::cout << "write nbrillouin= " << nbrillouin[0] << std::endl;
-       std::cout << "write occupation= " << occupation << std::endl;
       openfile(6, filename, "w");
       iwrite(6, version, 1);
       iwrite(6, nfft, 3);

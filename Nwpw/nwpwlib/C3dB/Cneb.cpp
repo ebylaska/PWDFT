@@ -410,26 +410,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
             if ((pj==taskid_j) && (pk==taskid_k)) 
             {
                int indx = ibshiftj*qj + ibshiftk*qk;
-
-               std::cout << "ms,n,indx,tmp2    =" << ms << " " << n << " " << indx << " "
-                         << tmp2[0] << " " 
-                         << tmp2[1] << " " 
-                         << tmp2[2] << " " 
-                         << tmp2[3] << " " 
-                         << tmp2[4] << " " 
-                         << tmp2[5] << " " 
-                         << tmp2[6] << " " 
-                         << tmp2[7] << std::endl;
                CGrid::c_pack(nbq1, tmp2);
-               std::cout << "ms,n,indx,packtmp2=" << ms << " " << n << " " << indx << " "
-                         << tmp2[0] << " " 
-                         << tmp2[1] << " " 
-                         << tmp2[2] << " " 
-                         << tmp2[3] << " " 
-                         << tmp2[4] << " " 
-                         << tmp2[5] << " " 
-                         << tmp2[6] << " " 
-                         << tmp2[7] << std::endl;
                CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
             }
          }
@@ -462,7 +443,6 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
  */
 void Cneb::g_write(const int iunit, double *psi) 
 {
-    std::cout << "g_write" << std::endl;
    int npack2 = 2*CGrid::npack1_max();
    int ibshiftj = npack2;
    int ibshiftk = ibshiftj*(neq[0]+neq[1]);
@@ -485,25 +465,7 @@ void Cneb::g_write(const int iunit, double *psi)
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
-               std::cout << std::endl << "ms,n,indx,packedtmp2=" << ms << " " << n << " " << indx << " "
-                         << tmp2[0] << " "
-                         << tmp2[1] << " "
-                         << tmp2[2] << " "
-                         << tmp2[3] << " "
-                         << tmp2[4] << " "
-                         << tmp2[5] << " "
-                         << tmp2[6] << " "
-                         << tmp2[7] << std::endl;
             CGrid::c_unpack(nbq1, tmp2);
-               std::cout << "ms,n,indx,unpacktmp2=" << ms << " " << n << " " << indx << " "
-                         << tmp2[0] << " "
-                         << tmp2[1] << " "
-                         << tmp2[2] << " "
-                         << tmp2[3] << " "
-                         << tmp2[4] << " "
-                         << tmp2[5] << " "
-                         << tmp2[6] << " "
-                         << tmp2[7] << std::endl;
          }
          //if (io_buffer)
          //   c_write_buffer(iunit,tmp2,pj,pk);
@@ -603,7 +565,6 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
          sum += CGrid::cc_pack_idot(nbq+1, psi1+indx, psi2+indx)*weight;
          indx += npack2;
       }
-      std::cout << nbq << " sum=" << sum << std::endl;
    }
    if (ispin == 1) sum *= 2.0;
  

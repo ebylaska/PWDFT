@@ -2282,20 +2282,10 @@ void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol)
             for (int jj = jstart; jj <= jend; ++jj) 
             {
                int p_to = parall->convert_taskid_ijk(ii, jj, kk);
-               std::cout << "reading index =" << j << " " << k << " " << index;
                if (p_to == MASTER)
                   std::memcpy(a+index,tmp,bsize*sizeof(double));
                else
                   parall->dsend(0, 9, p_to, bsize, tmp);
-             std::cout << "   read tmp =  " << p_to << " " 
-                         << tmp[0] << " "
-                         << tmp[1] << " "
-                         << tmp[2] << " "
-                         << tmp[3] << " "
-                         << tmp[4] << " "
-                         << tmp[5] << " "
-                         << tmp[6] << " "
-                         << tmp[7] << std::endl;
             }
          }
       }
@@ -2320,26 +2310,7 @@ void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol)
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-
-                    std::cout << std::endl << "read  before transa =      "
-                         << a[0] << " "
-                         << a[1] << " "
-                         << a[2] << " "
-                         << a[3] << " "
-                         << a[4] << " "
-                         << a[5] << " "
-                         << a[6] << " "
-                         << a[7] << std::endl; 
          c_transpose_ijk(4, a, tmp1, tmp2);
-                    std::cout << "read after transa   =      "
-                         << a[0] << " "
-                         << a[1] << " "
-                         << a[2] << " "
-                         << a[3] << " "
-                         << a[4] << " "
-                         << a[5] << " "
-                         << a[6] << " "
-                         << a[7] << std::endl;
       }
    }
 }
@@ -2605,16 +2576,6 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
      
          // delete [] tmp2;
          // delete [] tmp1;
-
-             std::cout << "write transa        =      "
-                         << a[0] << " "
-                         << a[1] << " "
-                         << a[2] << " "
-                         << a[3] << " "
-                         << a[4] << " "
-                         << a[5] << " "
-                         << a[6] << " "
-                         << a[7] << std::endl;
       }
      
       int bsize = 2*nx;
@@ -2632,7 +2593,6 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
             {
                int index = 2*cijktoindex2(0, j, k);
                std::memcpy(tmp,a+index,bsize*sizeof(double));
-            std::cout << " writing....index=" << j << " " << k << " " << index ;
             } 
             else 
             {
@@ -2640,15 +2600,6 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
                parall->dreceive(0, 9, p_from, bsize, tmp);
             }
             dwrite(iunit, tmp, bsize);
-             std::cout << "   write tmp =  " 
-                         << tmp[0] << " "
-                         << tmp[1] << " "
-                         << tmp[2] << " "
-                         << tmp[3] << " "
-                         << tmp[4] << " "
-                         << tmp[5] << " "
-                         << tmp[6] << " "
-                         << tmp[7] << std::endl;
          }
       } 
       /**** not master node ****/
@@ -2862,16 +2813,6 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol, const int 
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
          c_transpose_ijk(5, a, tmp1, tmp2);
-
-               std::cout << "write transa        =      " 
-                         << a[0] << " "
-                         << a[1] << " "
-                         << a[2] << " "
-                         << a[3] << " "
-                         << a[4] << " "
-                         << a[5] << " "
-                         << a[6] << " "
-                         << a[7] << std::endl;
       }
       for (int k = 0; k < nz; ++k)
       for (int j = 0; j < ny; ++j)
