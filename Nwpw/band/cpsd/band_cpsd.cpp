@@ -22,7 +22,7 @@
 #include "CStrfac.hpp"
 #include "util_date.hpp"
 #include "band_inner_loop.hpp"
-//#include "nwpw_aimd_running_cdata.hpp"
+#include "nwpw_aimd_running_data.hpp"
 #include "mpi.h"
 
 //#include "gdevice.hpp"
@@ -334,7 +334,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
   if (control.loop(1) > 0) {
 
       // Initialize AIMD running data
-      //nwpw_aimd_running_cdata mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
+      nwpw_aimd_running_data mymotion_data(control,&myparallel,&mylattice,&myion,E,hml,psi1,dn);
 
       done   = 0;
       icount = 0;
@@ -348,7 +348,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          // mydfpt.start(psi1,psi_r
 
          // Update AIMD Running data
-         //if (control.geometry_optimize()) mymotion_data.update_iteration(icount);
+         if (control.geometry_optimize()) mymotion_data.update_iteration(icount);
 
 
          if (oprint)

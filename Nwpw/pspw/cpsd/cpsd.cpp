@@ -365,7 +365,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (control.loop(1) > 0) {
 
       // Initialize AIMD running data
-      nwpw_aimd_running_data mymotion_data(control,&myparallel,&mygrid,&myion,E,hml,psi1,dn);
+      nwpw_aimd_running_data mymotion_data(control,&myparallel,&mylattice,&myion,E,hml,psi1,dn);
 
       done   = 0;
       icount = 0;

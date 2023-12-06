@@ -14,7 +14,7 @@
 #include "Control2.hpp"
 #include "Ion.hpp"
 #include "Parallel.hpp"
-#include "Pneb.hpp"
+#include "Lattice.hpp"
 //#include "gdevice.hpp"
 
 namespace pwdft {
@@ -22,7 +22,8 @@ namespace pwdft {
 class nwpw_aimd_running_data {
 
   Parallel *myparall;
-  Pneb *mypneb;
+  Lattice *mylattice;
+
   Ion *myion;
   double *E, *hml, *psi, *dn;
 
@@ -71,54 +72,63 @@ public:
   double dt, dt_inner, eave, evar, have, hvar, qave, qvar, emotion_time_shift;
 
   /* constructor */
-  nwpw_aimd_running_data(Control2 &, Parallel *, Pneb *, Ion *, double *,
-                         double *, double *, double *);
+  nwpw_aimd_running_data(Control2 &, Parallel *, Lattice *, Ion *, double *, double *, double *, double *);
 
   /* destructor */
-  ~nwpw_aimd_running_data() {
-    // remove bakfiles
-    this->remove_bakfiles();
-
-    // close open files
-    if (xyz_open) {
-      xyz->close();
-      delete xyz;
-    }
-    if (ion_motion_open) {
-      ion_motion->close();
-      delete ion_motion;
-    }
-    if (emotion_open) {
-      emotion->close();
-      delete emotion;
-    }
-
-    if (fei_open) {
-      fei->close();
-      delete fei;
-    }
-    if (cif_open) {
-      cif->close();
-      delete cif;
-    }
-
-    if (dipole_motion_open) {
-      dipole_motion->close();
-      delete dipole_motion;
-    }
-
-    if (hmotion_open) {
-      hmotion->close();
-      delete hmotion;
-    }
-    if (omotion_open) {
-      omotion->close();
-      delete omotion;
-    }
-    if (eigmotion_open) {
-      eigmotion->close();
-      delete eigmotion;
-    }
+  ~nwpw_aimd_running_data() 
+  {
+     // remove bakfiles
+     this->remove_bakfiles();
+    
+     // close open files
+     if (xyz_open) 
+     {
+        xyz->close();
+        delete xyz;
+     }
+     if (ion_motion_open) 
+     {
+        ion_motion->close();
+        delete ion_motion;
+     }
+     if (emotion_open) 
+     {
+        emotion->close();
+        delete emotion;
+     }
+    
+     if (fei_open) 
+     {
+        fei->close();
+        delete fei;
+     }
+     if (cif_open) 
+     {
+        cif->close();
+        delete cif;
+     }
+    
+     if (dipole_motion_open) 
+     {
+        dipole_motion->close();
+        delete dipole_motion;
+     }
+    
+     if (hmotion_open) 
+     {
+        hmotion->close();
+        delete hmotion;
+     }
+     if (omotion_open) 
+     {
+        omotion->close();
+        delete omotion;
+     }
+     if (eigmotion_open) 
+     {
+        eigmotion->close();
+        delete eigmotion;
+     }
   }
 
   void update_iteration(const int);

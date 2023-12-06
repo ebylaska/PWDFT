@@ -494,7 +494,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
      coutput << "     -----------------------------------------------------------------------\n";
    }
  
-   nwpw_aimd_running_data mymotion_data(control, &myparallel, &mygrid, &myion, E,
+   nwpw_aimd_running_data mymotion_data(control, &myparallel, &mylattice, &myion, E,
                                         mymolecule.hml, mymolecule.psi1,
                                         mymolecule.rho1);
  

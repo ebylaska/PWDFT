@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
 #include <sys/stat.h>
@@ -74,12 +75,13 @@ namespace pwdft {
  *  nwpw_aimd_running_data::nwpw_aimd_running_data  *
  *                                                  *
  ****************************************************/
-nwpw_aimd_running_data::nwpw_aimd_running_data(Control2 &control, Parallel *inparall, Pneb *inpneb, Ion *inion, 
+nwpw_aimd_running_data::nwpw_aimd_running_data(Control2 &control, Parallel *inparall, Lattice *inlattice, Ion *inion, 
                                                double *Ein, double *hmlin, double *psiin, double *dnin) 
 {
-   myparall = inparall;
-   myion = inion;
-   mypneb = inpneb;
+   myparall  = inparall;
+   mylattice = inlattice;
+   myion     = inion;
+
    E = Ein;
    hml = hmlin;
    psi = psiin;
@@ -282,15 +284,15 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
    {
       double AACONV = 0.529177;
       
-      double a1x = mypneb->lattice->unita(0,0)*AACONV;
-      double a1y = mypneb->lattice->unita(1,0)*AACONV;
-      double a1z = mypneb->lattice->unita(2,0)*AACONV;
-      double a2x = mypneb->lattice->unita(0,1)*AACONV;
-      double a2y = mypneb->lattice->unita(1,1)*AACONV;
-      double a2z = mypneb->lattice->unita(2,1)*AACONV;
-      double a3x = mypneb->lattice->unita(0,2)*AACONV;
-      double a3y = mypneb->lattice->unita(1,2)*AACONV;
-      double a3z = mypneb->lattice->unita(2,2)*AACONV;
+      double a1x = mylattice->unita(0,0)*AACONV;
+      double a1y = mylattice->unita(1,0)*AACONV;
+      double a1z = mylattice->unita(2,0)*AACONV;
+      double a2x = mylattice->unita(0,1)*AACONV;
+      double a2y = mylattice->unita(1,1)*AACONV;
+      double a2z = mylattice->unita(2,1)*AACONV;
+      double a3x = mylattice->unita(0,2)*AACONV;
+      double a3y = mylattice->unita(1,2)*AACONV;
+      double a3z = mylattice->unita(2,2)*AACONV;
       
       *xyz << myion->nion << std::endl
            << hxyzstream(a1x, a1y, a1z, a2x, a2y, a2z, a3x, a3y, a3z)
@@ -312,16 +314,16 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
    {
       double current_time = dt_inner * (icount + ion_motion_ishift);
      
-      double omega = mypneb->lattice->omega();
-      double a1x = mypneb->lattice->unita(0,0);
-      double a1y = mypneb->lattice->unita(1,0);
-      double a1z = mypneb->lattice->unita(2,0);
-      double a2x = mypneb->lattice->unita(0,1);
-      double a2y = mypneb->lattice->unita(1,1);
-      double a2z = mypneb->lattice->unita(2,1);
-      double a3x = mypneb->lattice->unita(0,2);
-      double a3y = mypneb->lattice->unita(1,2);
-      double a3z = mypneb->lattice->unita(2,2);
+      double omega = mylattice->omega();
+      double a1x = mylattice->unita(0,0);
+      double a1y = mylattice->unita(1,0);
+      double a1z = mylattice->unita(2,0);
+      double a2x = mylattice->unita(0,1);
+      double a2y = mylattice->unita(1,1);
+      double a2z = mylattice->unita(2,1);
+      double a3x = mylattice->unita(0,2);
+      double a3y = mylattice->unita(1,2);
+      double a3z = mylattice->unita(2,2);
      
       *ion_motion << hionstream(current_time,myion->nion,omega,
                                 a1x,a1y,a1z,a2x,a2y,a2z,a3x,a3y,a3z)
@@ -372,15 +374,15 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
    // Running fei
    if (fei_open) 
    {
-      double a1x = mypneb->lattice->unita(0,0);
-      double a1y = mypneb->lattice->unita(1,0);
-      double a1z = mypneb->lattice->unita(2,0);
-      double a2x = mypneb->lattice->unita(0,1);
-      double a2y = mypneb->lattice->unita(1,1);
-      double a2z = mypneb->lattice->unita(2,1);
-      double a3x = mypneb->lattice->unita(0,2);
-      double a3y = mypneb->lattice->unita(1,2);
-      double a3z = mypneb->lattice->unita(2,2);
+      double a1x = mylattice->unita(0,0);
+      double a1y = mylattice->unita(1,0);
+      double a1z = mylattice->unita(2,0);
+      double a2x = mylattice->unita(0,1);
+      double a2y = mylattice->unita(1,1);
+      double a2z = mylattice->unita(2,1);
+      double a3x = mylattice->unita(0,2);
+      double a3y = mylattice->unita(1,2);
+      double a3z = mylattice->unita(2,2);
       *fei << myion->nion << std::endl
            << F206 << E[1] << std::endl
            << F105 << a1x << F105 << a1y << F105 << a1z << std::endl
@@ -401,16 +403,16 @@ void nwpw_aimd_running_data::update_iteration(const int icount)
       double shift = 0.0;
       if (cif_shift_cell) shift = 0.5;
 
-      double omega = mypneb->lattice->omega();
-      double a1x = mypneb->lattice->unita(0,0);
-      double a1y = mypneb->lattice->unita(1,0);
-      double a1z = mypneb->lattice->unita(2,0);
-      double a2x = mypneb->lattice->unita(0,1);
-      double a2y = mypneb->lattice->unita(1,1);
-      double a2z = mypneb->lattice->unita(2,1);
-      double a3x = mypneb->lattice->unita(0,2);
-      double a3y = mypneb->lattice->unita(1,2);
-      double a3z = mypneb->lattice->unita(2,2);
+      double omega = mylattice->omega();
+      double a1x = mylattice->unita(0,0);
+      double a1y = mylattice->unita(1,0);
+      double a1z = mylattice->unita(2,0);
+      double a2x = mylattice->unita(0,1);
+      double a2y = mylattice->unita(1,1);
+      double a2z = mylattice->unita(2,1);
+      double a3x = mylattice->unita(0,2);
+      double a3y = mylattice->unita(1,2);
+      double a3z = mylattice->unita(2,2);
 
       double bx1 = (a2y*a3z - a2z*a3y)/omega;
       double by1 = (a2z*a3x - a2x*a3z)/omega;
