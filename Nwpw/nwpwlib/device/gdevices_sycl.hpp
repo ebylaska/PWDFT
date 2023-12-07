@@ -1084,35 +1084,36 @@ public:
  
      //ndev_mem = 0;
    }
- 
- 
-   void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
-   {
+
+
+  
+   void batch_rfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
+   {                                 
       int nxh2 = nx + 2;
       if (forward)
       {
          int indx = 0;
-         for (auto q = 0; q < nq; ++q)
-         {
-            drfftf_(&nx, a + indx, tmpx);
+         for (auto q = 0; q < nq; ++q)                                         
+         {                                                                     
+            drfftf_(&nx, a + indx, tmpx);                                      
             indx += nxh2;
          }
          indx = 1;
          for (auto j = 0; j < (nq); ++j)
          {
-            for (auto i = nx; i >= 2; --i)
+            for (auto i = nx; i >= 2; --i)                                     
             {
-               a[indx + i - 1] = a[indx + i - 2];
+               a[indx + i - 1] = a[indx + i - 2];                              
             }
             a[indx + 1 - 1] = 0.0;
             a[indx + nx + 1 - 1] = 0.0;
             indx += nxh2;
-         }
-      }
+         }                                                                     
+      }                                                                        
       else
       {
          int indx = 1;
-         for (auto j = 0; j < nq; ++j)
+         for (auto j = 0; j < nq; ++j)                                         
          {
             for (auto i = 2; i <= nx; ++i)
                a[indx + i - 2] = a[indx + i - 1];
@@ -1126,10 +1127,29 @@ public:
          }
       }
    }
- 
- 
- 
- 
+
+
+   void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
+   {
+      if (forward)
+      {
+         int indx = 0;
+         for (auto q = 0; q < nq; ++q)
+         {
+            dcfftf_(&nx, a + indx, tmpx);
+            indx += (2*nx);
+         }
+      }
+      else
+      {
+         indx = 0;
+         for (auto q = 0; q < nq; ++q)
+         {
+            dcfftb_(&nx, a + indx, tmpx);
+            indx += (2*nx);
+         }
+      }
+   }
  
    void batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy)
    {

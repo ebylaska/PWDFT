@@ -152,8 +152,8 @@ class Gdevices {
 
   int fftcount = 0;
   int nxfft[2], nyfft[2], nzfft[2];
-  rocfft_plan forward_plan_x[2], forward_plan_y[2], forward_plan_z[2];
-  rocfft_plan backward_plan_x[2], backward_plan_y[2], backward_plan_z[2];
+  rocfft_plan forward_plan_x[2],  forward_plan_y[2],  forward_plan_z[2], forward_plan_rx[2];
+  rocfft_plan backward_plan_x[2], backward_plan_y[2], backward_plan_z[2], backward_plan_rx[2];;
   int ifft_dev[15];
   int ifft_n;
 
@@ -892,13 +892,22 @@ public:
     size_t length_nz = (size_t)nz;
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &forward_plan_x[fftcount], rocfft_placement_inplace,
+        &forward_plan_rx[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_real_forward, rocfft_precision_double, (size_t)1,
         &length_nx, (size_t)nq1, nullptr));
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
-        &backward_plan_x[fftcount], rocfft_placement_inplace,
+        &backward_plan_rx[fftcount], rocfft_placement_inplace,
         rocfft_transform_type_real_inverse, rocfft_precision_double, (size_t)1,
         &length_nx, (size_t)nq1, nullptr));
+
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &forward_plan_x[fftcount], rocfft_placement_inplace,
+        rocfft_transform_type_complex_forward, rocfft_precision_double,
+        (size_t)1, &length_nx, (size_t)nq1, nullptr));
+    NWPW_ROCFFT_ERROR(rocfft_plan_create(
+        &backward_plan_x[fftcount], rocfft_placement_inplace,
+        rocfft_transform_type_complex_inverse, rocfft_precision_double,
+        (size_t)1, &length_nx, (size_t)nq1, nullptr));
 
     NWPW_ROCFFT_ERROR(rocfft_plan_create(
         &forward_plan_y[fftcount], rocfft_placement_inplace,
@@ -955,55 +964,106 @@ public:
     ndev_mem = 0;
   }
 
-  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d,
-                   double *a) {
-    int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
-    NWPW_HIP_ERROR(hipMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                             hipMemcpyHostToDevice));
-
-    if (forward) {
-      NWPW_ROCFFT_ERROR(rocfft_execute(
-          forward_plan_x[fft_indx],
-          reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
-    } else {
-      NWPW_ROCFFT_ERROR(rocfft_execute(
-          backward_plan_x[fft_indx],
-          reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
-    }
-
-    NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-                             hipMemcpyDeviceToHost));
-
-    inuse[ia_dev] = false;
+  void batch_rfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) 
+  {
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     NWPW_HIP_ERROR(hipMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double), hipMemcpyHostToDevice));
+    
+     if (forward) {
+       NWPW_ROCFFT_ERROR(rocfft_execute(
+           forward_plan_rx[fft_indx],
+           reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+     } else {
+       NWPW_ROCFFT_ERROR(rocfft_execute(
+           backward_plan_rx[fft_indx],
+           reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+     }
+    
+     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double), hipMemcpyDeviceToHost));
+    
+     inuse[ia_dev] = false;
   }
 
+  void batch_rfftx_stages(const int stage, const int fft_indx, bool forward,
+                          int nx, int nq, int n2ft3d, double *a, int da) 
+  {
+     // int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
+     int ia_dev = ifft_dev[da];
+    
+     if (stage == 0) {
+       inuse[ia_dev] = true;
+       NWPW_HIP_ERROR(hipMemcpyAsync(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
+                                     hipMemcpyHostToDevice, stream[da]));
+     } else if (stage == 1) {
+       // NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
+       if (forward) {
+         NWPW_ROCFFT_ERROR(rocfft_execute(
+             forward_plan_rx[fft_indx],
+             reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+       } else {
+         NWPW_ROCFFT_ERROR(rocfft_execute(
+             backward_plan_rx[fft_indx],
+             reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+       }
+       NWPW_HIP_ERROR(hipMemcpyAsync(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
+                                     hipMemcpyDeviceToHost, stream[da]));
+     } else if (stage == 2) {
+       NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
+       inuse[ia_dev] = false;
+     }
+  }
+
+
+  void batch_cfftx(const int fft_indx, bool forward, int nx, int nq, int n2ft3d, double *a) 
+  {
+     int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
+     NWPW_HIP_ERROR(hipMemcpy(dev_mem[ia_dev], a, n2ft3d * sizeof(double), hipMemcpyHostToDevice));
+   
+     if (forward) {
+       NWPW_ROCFFT_ERROR(rocfft_execute(
+           forward_plan_x[fft_indx],
+           reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+     } else {
+       NWPW_ROCFFT_ERROR(rocfft_execute(
+           backward_plan_x[fft_indx],
+           reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+     }
+   
+     NWPW_HIP_ERROR(hipMemcpy(a, dev_mem[ia_dev], n2ft3d * sizeof(double), hipMemcpyDeviceToHost));
+   
+     inuse[ia_dev] = false;
+  } 
+      
   void batch_cfftx_stages(const int stage, const int fft_indx, bool forward,
-                          int nx, int nq, int n2ft3d, double *a, int da) {
-    // int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
-    int ia_dev = ifft_dev[da];
-
-    if (stage == 0) {
-      inuse[ia_dev] = true;
-      NWPW_HIP_ERROR(hipMemcpyAsync(dev_mem[ia_dev], a, n2ft3d * sizeof(double),
-                                    hipMemcpyHostToDevice, stream[da]));
-    } else if (stage == 1) {
-      // NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
-      if (forward) {
-        NWPW_ROCFFT_ERROR(rocfft_execute(
-            forward_plan_x[fft_indx],
-            reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
-      } else {
-        NWPW_ROCFFT_ERROR(rocfft_execute(
-            backward_plan_x[fft_indx],
-            reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
-      }
-      NWPW_HIP_ERROR(hipMemcpyAsync(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
-                                    hipMemcpyDeviceToHost, stream[da]));
-    } else if (stage == 2) {
-      NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
-      inuse[ia_dev] = false;
-    }
+                          int nx, int nq, int n2ft3d, double *a, int da) 
+  {
+     // int ia_dev = fetch_dev_mem_indx(((size_t) n2ft3d));
+     int ia_dev = ifft_dev[da];
+     
+     if (stage == 0) {
+       inuse[ia_dev] = true;
+       NWPW_HIP_ERROR(hipMemcpyAsync(dev_mem[ia_dev], a, n2ft3d * sizeof(double), hipMemcpyHostToDevice, stream[da]));
+     } else if (stage == 1) {
+       // NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
+       if (forward) {
+         NWPW_ROCFFT_ERROR(rocfft_execute(
+             forward_plan_x[fft_indx],
+             reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+       } else {
+         NWPW_ROCFFT_ERROR(rocfft_execute(
+             backward_plan_x[fft_indx],
+             reinterpret_cast<void **>(&(dev_mem[ia_dev])), nullptr, nullptr));
+       }
+       NWPW_HIP_ERROR(hipMemcpyAsync(a, dev_mem[ia_dev], n2ft3d * sizeof(double),
+                                     hipMemcpyDeviceToHost, stream[da]));
+     } else if (stage == 2) {
+       NWPW_HIP_ERROR(hipStreamSynchronize(stream[da]));
+       inuse[ia_dev] = false;
+     }
   }
+
+
+
 
   void batch_cffty(const int fft_indx, bool forward, int ny, int nq, int n2ft3d,
                    double *a) {

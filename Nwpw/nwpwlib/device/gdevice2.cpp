@@ -143,6 +143,27 @@ void gdevice2::batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) 
 }
 
 
+                                   
+void gdevice2::batch_rfftx_tmpx(const int tag,bool forward, int nx, int nq, int n2ft3d,
+                              double *a, double *tmpx) {
+#if defined(NWPW_CUDA) || defined(NWPW_HIP)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_rfftx(tag,forward, nx, nq, n2ft3d, a);
+#else
+   mygdevice2->batch_rfftx_tmpx(forward, nx, nq, n2ft3d, a, tmpx);
+#endif
+}
+ 
+void gdevice2::batch_rfftx_stages_tmpx(const int stage, const int tag,bool forward, int nx, int nq, int n2ft3d,
+                              double *a, double *tmpx, int da) { 
+#if defined(NWPW_CUDA) || defined(NWPW_HIP)
+   if (mygdevice2->hasgpu)
+      mygdevice2->batch_rfftx_stages(stage,tag,forward, nx, nq, n2ft3d, a,da);
+#endif
+}
+
+
+
 void gdevice2::batch_cfftx_tmpx(const int tag,bool forward, int nx, int nq, int n2ft3d,
                               double *a, double *tmpx) {
 #if defined(NWPW_CUDA) || defined(NWPW_HIP)

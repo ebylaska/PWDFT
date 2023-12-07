@@ -47,10 +47,12 @@ public:
 
    void batch_fft_pipeline_mem_init(const int,const int);
 
+   void batch_rfftx_tmpx(const int, bool, int, int, int, double *, double *);
    void batch_cfftx_tmpx(const int, bool, int, int, int, double *, double *);
    void batch_cffty_tmpy(const int, bool, int, int, int, double *, double *);
    void batch_cfftz_tmpz(const int, bool, int, int, int, double *, double *);
 
+   void batch_rfftx_stages_tmpx(const int,const int, bool, int, int, int, double *, double *,int);
    void batch_cfftx_stages_tmpx(const int,const int, bool, int, int, int, double *, double *,int);
    void batch_cffty_stages_tmpy(const int,const int, bool, int, int, int, double *, double *,int);
    void batch_cfftz_stages_tmpz(const int,const int, bool, int, int, int, double *, double *,int);
