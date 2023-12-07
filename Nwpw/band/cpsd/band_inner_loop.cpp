@@ -68,6 +68,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    vc = mygrid->c_pack_allocate(0);
    vcall = mygrid->c_pack_allocate(0);
  
+    std::cout << "HERA" << std::endl;
    vpsi = x;
  
    //fion = new double[3 * (myion->nion)]();
@@ -75,6 +76,8 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
    /* generate local psp*/
    mypsp->v_local(vl,false,dng,fion);
+
+    std::cout << "HERb" << std::endl;
  
    // myewald->phafac();
  
@@ -84,6 +87,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
+    std::cout << "HERc" << std::endl;
      
       if (move)
       {
@@ -94,7 +98,9 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       }
      
       /* convert psi(G) to psi(r) - Expensive */
+    std::cout << "HERd" << std::endl;
       mygrid->gh_fftb(psi1,psi_r);
+    std::cout << "HERe" << std::endl;
      
       /* generate dn */
       mygrid->hr_aSumSqr(scal2,psi_r,dn);

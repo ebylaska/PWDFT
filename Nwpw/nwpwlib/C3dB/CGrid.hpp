@@ -40,11 +40,11 @@ class CGrid : public k1db, public c3db {
  
    /* pfft_queue data */
    int aqmax, aqsize, alast_index;
-   int *aqindx, *aqstatus;
+   int *aqindx, *aqstatus, *aqnbb;
    double *atmp;
  
    int bqmax, bqsize, blast_index;
-   int *bqindx, *bqstatus;
+   int *bqindx, *bqstatus, *bqnbb;
    double *btmp;
  
    /* zplane data */
@@ -104,9 +104,11 @@ public:
       delete [] atmp;
       delete [] aqindx;
       delete [] aqstatus;
+      delete [] aqnbb;
       delete [] btmp;
       delete [] bqindx;
       delete [] bqstatus;
+      delete [] bqnbb;
      
       // deallocate async buffer data
       for (auto q=0; q<aqmax; ++q)

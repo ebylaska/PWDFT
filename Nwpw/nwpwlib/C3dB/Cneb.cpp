@@ -774,7 +774,7 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
    int indx1, indx1n, shift1;
    int indx2, indx2n, shift2;
  
-   n = neq[0] + neq[1];
+   n = (neq[0] + neq[1])*nbrillq;
    shift1 = 2 * CGrid::npack1_max();
    shift2 = n2ft3d;
    indx1 = indx1n = 0;
@@ -782,15 +782,22 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
    done = 0;
    while (!done) 
    {
+       std::cout << "gh indx1=" << indx1  << " indx2=" << indx2 << " neq=" << neq[0]+neq[1]<< std::endl;
       if (indx1 < n) 
       {
-         cr_pfft3b_queuein(1, psi + indx1n);
+          std::cout << "queuein" << std::endl;
+         int nbq1 = (indx1/(neq[0]+neq[1])) + 1;
+          std::cout << "queuein  In nbq1="<< nbq1 << std::endl;
+         cr_pfft3b_queuein(nbq1, psi + indx1n);
          indx1n += shift1;
          ++indx1;
       }
       if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
       {
-         cr_pfft3b_queueout(1, psi_r + indx2n);
+         int nbq2 = (indx2/(neq[0]+neq[1])) + 1;
+          std::cout << "queueout In nbq2="<< nbq2 << std::endl;
+         cr_pfft3b_queueout(nbq2, psi_r + indx2n);
+          std::cout << "queueout Out" << std::endl;
          indx2n += shift2;
          ++indx2;
       }

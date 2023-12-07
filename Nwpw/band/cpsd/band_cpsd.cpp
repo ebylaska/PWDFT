@@ -341,9 +341,9 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       while (!done)
       {
          ++icount;
-      //   band_inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb, &myxc, &mypsp,
-      //                   &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
-      //                   &deltae, &deltac, &deltar);
+         band_inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb, &myxc, &mypsp,
+                         &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
+                         &deltae, &deltac, &deltar);
 
          // mydfpt.start(psi1,psi_r
 
