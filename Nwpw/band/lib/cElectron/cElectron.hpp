@@ -26,7 +26,7 @@ class cElectron_Operators {
  
    double omega, scal2, scal1, dv;
  
-   int ispin, neall, n2ft3d, shift1, shift2, npack1;
+   int ispin, neall, nfft3d, shift1, shift2, npack1;
    bool periodic = true;
  
 public:

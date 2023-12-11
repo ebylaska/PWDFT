@@ -103,7 +103,6 @@ public:
    void rr_sqr(const double *, double *);
    void rr_addsqr(const double *, double *);
    void r_sqrt(double *);
-   void rc_Mul(const double *, double *);
  
    void rrr_Sum2Add(const double *, const double *, double *);
    void rrrr_Sum(const double *, const double *, const double *, double *);
@@ -124,6 +123,12 @@ public:
  
    void rrrrr_SumMulAdd(const double *, const double *, const double *,
                         const double *, double *);
+
+   void rc_Mul(const double *, double *);
+   void rrc_Sum(const double *, const double *, double *);
+   void c_SMul(const double, double *);
+   void cc_SMul(const double, const double *, double *);
+   void cc_Mul(const double *, double *);
 
    void t_read(const int, double *, const int, const int);
    void t_write(const int, double *, const int, const int);

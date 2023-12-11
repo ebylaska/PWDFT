@@ -974,6 +974,13 @@ double *c3db::c_nalloc(const int nn)
    return ptr;
 }
 
+/********************************
+ *                              *
+ *         c3db::c_dealloc      *
+ *                              *
+ ********************************/
+void c3db::c_dealloc(double *ptr) { delete[] ptr; }
+ 
 
 
 
@@ -992,7 +999,7 @@ double *c3db::c_nalloc(const int nn)
  */
 double *c3db::r_alloc() 
 {
-   double *ptr = new (std::nothrow) double[n2ft3d]();
+   double *ptr = new (std::nothrow) double[nfft3d]();
    return ptr;
 }
 
@@ -1012,7 +1019,7 @@ double *c3db::r_alloc()
  */
 double *c3db::r_nalloc(const int nn) 
 {
-   double *ptr = new (std::nothrow) double[n2ft3d * nn]();
+   double *ptr = new (std::nothrow) double[nfft3d * nn]();
    return ptr;
 }
 
@@ -1044,7 +1051,7 @@ void c3db::r_dealloc(double *ptr) { delete[] ptr; }
  */
 void c3db::r_zero(double *ptr) 
 {
-   std::memset(ptr, 0, n2ft3d * sizeof(double));
+   std::memset(ptr, 0, nfft3d * sizeof(double));
 }
 
 /********************************
@@ -1066,7 +1073,7 @@ void c3db::r_zero(double *ptr)
  */
 void c3db::r_nzero(int n, double *ptr) 
 {
-   std::memset(ptr, 0, n * n2ft3d * sizeof(double));
+   std::memset(ptr, 0, n * nfft3d * sizeof(double));
 }
 
 
@@ -1091,7 +1098,7 @@ void c3db::r_nzero(int n, double *ptr)
  */
 void c3db::rr_copy(const double *ptr1, double *ptr2) 
 {
-   std::memcpy(ptr2, ptr1, n2ft3d * sizeof(double));
+   std::memcpy(ptr2, ptr1, nfft3d * sizeof(double));
 }
 
 
@@ -1119,14 +1126,13 @@ void c3db::rr_copy(const double *ptr1, double *ptr2)
  */
 void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr2[i] = da * ptr1[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr2[i]   = da * ptr1[i];
       ptr2[i+1] = da * ptr1[i+1];
@@ -1136,6 +1142,27 @@ void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
    }
    return;
 }
+
+void c3db::cc_SMul(const double da, const double *ptr1, double *ptr2)
+{
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr2[i] = da*ptr1[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (auto i=m; i<n2ft3d_map; i += 5)
+   {
+      ptr2[i]   = da * ptr1[i];
+      ptr2[i+1] = da * ptr1[i+1];
+      ptr2[i+2] = da * ptr1[i+2];
+      ptr2[i+3] = da * ptr1[i+3];
+      ptr2[i+4] = da * ptr1[i+4];
+   }
+   return;
+}
+
+
 
 /********************************
  *                              *
@@ -1165,13 +1192,13 @@ void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
 void c3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
                        double *ptr3) {
   int i;
-  int m = n2ft3d_map % 5;
+  int m = nfft3d_map % 5;
   if (m > 0)
     for (i = 0; i < m; ++i)
       ptr3[i] = da * ptr1[i] + ptr2[i];
-  if (n2ft3d_map < 5)
+  if (nfft3d_map < 5)
     return;
-  for (i = m; i < n2ft3d_map; i += 5) {
+  for (i = m; i < nfft3d_map; i += 5) {
     ptr3[i] = da * ptr1[i] + ptr2[i];
     ptr3[i + 1] = da * ptr1[i + 1] + ptr2[i + 1];
     ptr3[i + 2] = da * ptr1[i + 2] + ptr2[i + 2];
@@ -1213,22 +1240,23 @@ void c3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
  */
 void c3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
                            const double *ptr3, const double *ptr4,
-                           double *ptr5) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr5[i] = (ptr1[i] + ptr2[i]) * ptr3[i] + ptr4[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr5[i] = (ptr1[i] + ptr2[i]) * ptr3[i] + ptr4[i];
-    ptr5[i + 1] = (ptr1[i + 1] + ptr2[i + 1]) * ptr3[i + 1] + ptr4[i + 1];
-    ptr5[i + 2] = (ptr1[i + 2] + ptr2[i + 2]) * ptr3[i + 2] + ptr4[i + 2];
-    ptr5[i + 3] = (ptr1[i + 3] + ptr2[i + 3]) * ptr3[i + 3] + ptr4[i + 3];
-    ptr5[i + 4] = (ptr1[i + 4] + ptr2[i + 4]) * ptr3[i + 4] + ptr4[i + 4];
-  }
-  return;
+                           double *ptr5)
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr5[i] = (ptr1[i]+ptr2[i])*ptr3[i] + ptr4[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
+      ptr5[i] = (ptr1[i]+ptr2[i])*ptr3[i] + ptr4[i];
+      ptr5[i+1] = (ptr1[i+1]+ptr2[i+1])*ptr3[i+1] + ptr4[i+1];
+      ptr5[i+2] = (ptr1[i+2]+ptr2[i+2])*ptr3[i+2] + ptr4[i+2];
+      ptr5[i+3] = (ptr1[i+3]+ptr2[i+3])*ptr3[i+3] + ptr4[i+3];
+      ptr5[i+4] = (ptr1[i+4]+ptr2[i+4])*ptr3[i+4] + ptr4[i+4];
+   }
+   return;
 }
 
 /********************************
@@ -1238,43 +1266,70 @@ void c3db::rrrrr_SumMulAdd(const double *ptr1, const double *ptr2,
  ********************************/
 void c3db::r_SMul(const double da, double *ptr2)
 {
-   int i;
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr2[i] *= da;
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i+=5)
+   {
+      ptr2[i]   *= da;
+      ptr2[i+1] *= da;
+      ptr2[i+2] *= da;
+      ptr2[i+3] *= da;
+      ptr2[i+4] *= da;
+   }
+}
+
+
+/********************************
+ *                              *
+ *          c3db::c_SMul        *
+ *                              *
+ ********************************/
+void c3db::c_SMul(const double da, double *ptr2)
+{
    int m = n2ft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr2[i] *= da;
    if (n2ft3d_map < 5)
       return;
-   for (i=m; i<n2ft3d_map; i+=5)
+   for (auto i=m; i<n2ft3d_map; i+=5)
    {
-      ptr2[i] *= da;
-      ptr2[i + 1] *= da;
-      ptr2[i + 2] *= da;
-      ptr2[i + 3] *= da;
-      ptr2[i + 4] *= da;
+      ptr2[i]   *= da;
+      ptr2[i+1] *= da;
+      ptr2[i+2] *= da;
+      ptr2[i+3] *= da;
+      ptr2[i+4] *= da;
    }
 }
+
+
+
 
 /********************************
  *                              *
  *          c3db::r_abs         *
  *                              *
  ********************************/
-void c3db::r_abs(double *ptr2) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::r_abs(double *ptr2) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr2[i] = std::abs(ptr2[i]);
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr2[i] = std::abs(ptr2[i]);
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr2[i] = std::abs(ptr2[i]);
-    ptr2[i + 1] = std::abs(ptr2[i + 1]);
-    ptr2[i + 2] = std::abs(ptr2[i + 2]);
-    ptr2[i + 3] = std::abs(ptr2[i + 3]);
-    ptr2[i + 4] = std::abs(ptr2[i + 4]);
-  }
+      ptr2[i+1] = std::abs(ptr2[i+1]);
+      ptr2[i+2] = std::abs(ptr2[i+2]);
+      ptr2[i+3] = std::abs(ptr2[i+3]);
+      ptr2[i+4] = std::abs(ptr2[i+4]);
+   }
 }
 
 /********************************
@@ -1282,21 +1337,23 @@ void c3db::r_abs(double *ptr2) {
  *          c3db::r_sqr         *
  *                              *
  ********************************/
-void c3db::r_sqr(double *ptr2) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::r_sqr(double *ptr2) 
+{
+   int i;
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr2[i] *= ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr2[i] *= ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr2[i] *= ptr2[i];
-    ptr2[i + 1] *= ptr2[i + 1];
-    ptr2[i + 2] *= ptr2[i + 2];
-    ptr2[i + 3] *= ptr2[i + 3];
-    ptr2[i + 4] *= ptr2[i + 4];
-  }
+      ptr2[i+1] *= ptr2[i+1];
+      ptr2[i+2] *= ptr2[i+2];
+      ptr2[i+3] *= ptr2[i+3];
+      ptr2[i+4] *= ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1304,21 +1361,22 @@ void c3db::r_sqr(double *ptr2) {
  *          c3db::rr_sqr        *
  *                              *
  ********************************/
-void c3db::rr_sqr(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] = ptr2[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = ptr2[i] * ptr2[i];
-    ptr3[i + 1] = ptr2[i + 1] * ptr2[i + 1];
-    ptr3[i + 2] = ptr2[i + 2] * ptr2[i + 2];
-    ptr3[i + 3] = ptr2[i + 3] * ptr2[i + 3];
-    ptr3[i + 4] = ptr2[i + 4] * ptr2[i + 4];
-  }
+void c3db::rr_sqr(const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] = ptr2[i]*ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
+      ptr3[i] = ptr2[i]*ptr2[i];
+      ptr3[i+1] = ptr2[i+1]*ptr2[i+1];
+      ptr3[i+2] = ptr2[i+2]*ptr2[i+2];
+      ptr3[i+3] = ptr2[i+3]*ptr2[i+3];
+      ptr3[i+4] = ptr2[i+4]*ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1326,21 +1384,22 @@ void c3db::rr_sqr(const double *ptr2, double *ptr3) {
  *        c3db::rr_addsqr       *
  *                              *
  ********************************/
-void c3db::rr_addsqr(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] += ptr2[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += ptr2[i] * ptr2[i];
-    ptr3[i + 1] += ptr2[i + 1] * ptr2[i + 1];
-    ptr3[i + 2] += ptr2[i + 2] * ptr2[i + 2];
-    ptr3[i + 3] += ptr2[i + 3] * ptr2[i + 3];
-    ptr3[i + 4] += ptr2[i + 4] * ptr2[i + 4];
-  }
+void c3db::rr_addsqr(const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] += ptr2[i]*ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
+      ptr3[i] += ptr2[i]*ptr2[i];
+      ptr3[i+1] += ptr2[i+1]*ptr2[i+1];
+      ptr3[i+2] += ptr2[i+2]*ptr2[i+2];
+      ptr3[i+3] += ptr2[i+3]*ptr2[i+3];
+      ptr3[i+4] += ptr2[i+4]*ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1348,21 +1407,22 @@ void c3db::rr_addsqr(const double *ptr2, double *ptr3) {
  *          c3db::r_sqrt        *
  *                              *
  ********************************/
-void c3db::r_sqrt(double *ptr2) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::r_sqrt(double *ptr2) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr2[i] = sqrt(ptr2[i]);
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr2[i] = sqrt(ptr2[i]);
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr2[i] = sqrt(ptr2[i]);
-    ptr2[i + 1] = sqrt(ptr2[i + 1]);
-    ptr2[i + 2] = sqrt(ptr2[i + 2]);
-    ptr2[i + 3] = sqrt(ptr2[i + 3]);
-    ptr2[i + 4] = sqrt(ptr2[i + 4]);
-  }
+      ptr2[i+1] = sqrt(ptr2[i+1]);
+      ptr2[i+2] = sqrt(ptr2[i+2]);
+      ptr2[i+3] = sqrt(ptr2[i+3]);
+      ptr2[i+4] = sqrt(ptr2[i+4]);
+   }
 }
 
 /********************************
@@ -1372,15 +1432,14 @@ void c3db::r_sqrt(double *ptr2) {
  ********************************/
 double c3db::r_dsum(const double *ptr) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    double sum = 0.0;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          sum += ptr[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return sum;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       sum += ptr[i] + ptr[i+1] + ptr[i+2] + ptr[i+3] + ptr[i+4];
    }
@@ -1392,21 +1451,22 @@ double c3db::r_dsum(const double *ptr)
  *         c3db::rrr_Sum2Add    *
  *                              *
  ********************************/
-void c3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] += ptr1[i] + ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr3[i] += ptr1[i] + ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += ptr1[i] + ptr2[i];
-    ptr3[i + 1] += ptr1[i + 1] + ptr2[i + 1];
-    ptr3[i + 2] += ptr1[i + 2] + ptr2[i + 2];
-    ptr3[i + 3] += ptr1[i + 3] + ptr2[i + 3];
-    ptr3[i + 4] += ptr1[i + 4] + ptr2[i + 4];
-  }
+      ptr3[i+1] += ptr1[i+1] + ptr2[i+1];
+      ptr3[i+2] += ptr1[i+2] + ptr2[i+2];
+      ptr3[i+3] += ptr1[i+3] + ptr2[i+3];
+      ptr3[i+4] += ptr1[i+4] + ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1416,16 +1476,15 @@ void c3db::rrr_Sum2Add(const double *ptr1, const double *ptr2, double *ptr3) {
  ********************************/
 void c3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, double *ptr4)
 {
-   int i;
-   int m = n2ft3d_map%5;
+   int m = nfft3d_map%5;
    if (m>0)
    {
-      for (i=0; i<m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr4[i] = ptr1[i] + ptr2[i] + ptr3[i];
    }
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i=m; i<n2ft3d_map; i+=5)
+   for (auto i=m; i<nfft3d_map; i+=5)
    {
       ptr4[i]   = ptr1[i]   + ptr2[i]   + ptr3[i];
       ptr4[i+1] = ptr1[i+1] + ptr2[i+1] + ptr3[i+1];
@@ -1442,14 +1501,13 @@ void c3db::rrrr_Sum(const double *ptr1, const double *ptr2, const double *ptr3, 
  ********************************/
 void c3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
 {
-   int i;
-   int m = n2ft3d_map%5;
+   int m = nfft3d_map%5;
    if (m > 0)
-      for (i = 0; i<m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr3[i] = ptr1[i] + ptr2[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i=m; i<n2ft3d_map; i+=5)
+   for (auto i=m; i<nfft3d_map; i+=5)
    {
       ptr3[i] = ptr1[i] + ptr2[i];
       ptr3[i+1] = ptr1[i+1] + ptr2[i+1];
@@ -1459,26 +1517,55 @@ void c3db::rrr_Sum(const double *ptr1, const double *ptr2, double *ptr3)
    }
 }
 
+
+/********************************
+ *                              *
+ *         c3db::rrc_Sum        *
+ *                              *
+ ********************************/
+void c3db::rrc_Sum(const double *ptr1, const double *ptr2, double *ptr3)
+{     
+   int m = nfft3d_map%5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {
+         ptr3[2*i]   = ptr1[i] + ptr2[i];    ptr3[2*i+1] = 0.0;
+      }
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i+=5)
+   {  
+      ptr3[2*i]     = ptr1[i] + ptr2[i];     ptr3[2*i+1]     = 0.0;
+      ptr3[2*(i+1)] = ptr1[i+1] + ptr2[i+1]; ptr3[2*(i+1)+1] = 0.0;
+      ptr3[2*(i+2)] = ptr1[i+2] + ptr2[i+2]; ptr3[2*(i+2)+1] = 0.0;
+      ptr3[2*(i+3)] = ptr1[i+3] + ptr2[i+3]; ptr3[2*(i+3)+1] = 0.0;
+      ptr3[2*(i+4)] = ptr1[i+4] + ptr2[i+4]; ptr3[2*(i+4)+1] = 0.0;
+   }  
+}    
+
+
+
 /********************************
  *                              *
  *         c3db::rr_Sum         *
  *                              *
  ********************************/
-void c3db::rr_Sum(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::rr_Sum(const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] += ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr3[i] += ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += ptr2[i];
-    ptr3[i + 1] += ptr2[i + 1];
-    ptr3[i + 2] += ptr2[i + 2];
-    ptr3[i + 3] += ptr2[i + 3];
-    ptr3[i + 4] += ptr2[i + 4];
-  }
+      ptr3[i+1] += ptr2[i+1];
+      ptr3[i+2] += ptr2[i+2];
+      ptr3[i+3] += ptr2[i+3];
+      ptr3[i+4] += ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1486,21 +1573,22 @@ void c3db::rr_Sum(const double *ptr2, double *ptr3) {
  *         c3db::rrr_Minus      *
  *                              *
  ********************************/
-void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+        ptr3[i] = ptr1[i] - ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
       ptr3[i] = ptr1[i] - ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = ptr1[i] - ptr2[i];
-    ptr3[i + 1] = ptr1[i + 1] - ptr2[i + 1];
-    ptr3[i + 2] = ptr1[i + 2] - ptr2[i + 2];
-    ptr3[i + 3] = ptr1[i + 3] - ptr2[i + 3];
-    ptr3[i + 4] = ptr1[i + 4] - ptr2[i + 4];
-  }
+      ptr3[i+1] = ptr1[i+1] - ptr2[i+1];
+      ptr3[i+2] = ptr1[i+2] - ptr2[i+2];
+      ptr3[i+3] = ptr1[i+3] - ptr2[i+3];
+      ptr3[i+4] = ptr1[i+4] - ptr2[i+4];
+   }
 }
 
 /********************************
@@ -1508,22 +1596,22 @@ void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3) {
  *         c3db::arrr_Minus     *
  *                              *
  ********************************/
-void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2,
-                      double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] = a * (ptr1[i] - ptr2[i]);
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] = a * (ptr1[i] - ptr2[i]);
-    ptr3[i + 1] = a * (ptr1[i + 1] - ptr2[i + 1]);
-    ptr3[i + 2] = a * (ptr1[i + 2] - ptr2[i + 2]);
-    ptr3[i + 3] = a * (ptr1[i + 3] - ptr2[i + 3]);
-    ptr3[i + 4] = a * (ptr1[i + 4] - ptr2[i + 4]);
-  }
+void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2, double *ptr3)
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] = a*(ptr1[i] - ptr2[i]);
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5) 
+   {
+      ptr3[i] = a*(ptr1[i] - ptr2[i]);
+      ptr3[i+1] = a*(ptr1[i+1] - ptr2[i+1]);
+      ptr3[i+2] = a*(ptr1[i+2] - ptr2[i+2]);
+      ptr3[i+3] = a*(ptr1[i+3] - ptr2[i+3]);
+      ptr3[i+4] = a*(ptr1[i+4] - ptr2[i+4]);
+   }
 }
 
 /********************************
@@ -1552,20 +1640,19 @@ void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2,
  */
 void c3db::rr_Minus(const double *ptr2, double *ptr3) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr3[i] -= ptr2[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr3[i] -= ptr2[i];
-      ptr3[i + 1] -= ptr2[i + 1];
-      ptr3[i + 2] -= ptr2[i + 2];
-      ptr3[i + 3] -= ptr2[i + 3];
-      ptr3[i + 4] -= ptr2[i + 4];
+      ptr3[i+1] -= ptr2[i+1];
+      ptr3[i+2] -= ptr2[i+2];
+      ptr3[i+3] -= ptr2[i+3];
+      ptr3[i+4] -= ptr2[i+4];
    }
 }
 
@@ -1596,20 +1683,19 @@ void c3db::rr_Minus(const double *ptr2, double *ptr3)
  */
 void c3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
-         ptr3[i] = ptr1[i] * ptr2[i];
-   if (n2ft3d_map < 5)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] = ptr1[i]*ptr2[i];
+   if (nfft3d_map<5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
-      ptr3[i] = ptr1[i] * ptr2[i];
-      ptr3[i + 1] = ptr1[i + 1] * ptr2[i + 1];
-      ptr3[i + 2] = ptr1[i + 2] * ptr2[i + 2];
-      ptr3[i + 3] = ptr1[i + 3] * ptr2[i + 3];
-      ptr3[i + 4] = ptr1[i + 4] * ptr2[i + 4];
+      ptr3[i] = ptr1[i]*ptr2[i];
+      ptr3[i+1] = ptr1[i+1]*ptr2[i+1];
+      ptr3[i+2] = ptr1[i+2]*ptr2[i+2];
+      ptr3[i+3] = ptr1[i+3]*ptr2[i+3];
+      ptr3[i+4] = ptr1[i+4]*ptr2[i+4];
    }
    return;
 }
@@ -1639,23 +1725,69 @@ void c3db::rrr_Mul(const double *ptr1, const double *ptr2, double *ptr3)
  */
 void c3db::rr_Mul(const double *ptr1, double *ptr3) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr3[i] *= ptr1[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr3[i] *= ptr1[i];
-      ptr3[i + 1] *= ptr1[i + 1];
-      ptr3[i + 2] *= ptr1[i + 2];
-      ptr3[i + 3] *= ptr1[i + 3];
-      ptr3[i + 4] *= ptr1[i + 4];
+      ptr3[i+1] *= ptr1[i+1];
+      ptr3[i+2] *= ptr1[i+2];
+      ptr3[i+3] *= ptr1[i+3];
+      ptr3[i+4] *= ptr1[i+4];
    }
    return;
 }
+
+
+/********************************
+ *                              *
+ *         c3db::cc_Mul         *
+ *                              *
+ ********************************/
+void c3db::cc_Mul(const double *ptr1, double *ptr3)
+{      
+   int m = nfft3d_map % 5; 
+   if (m > 0)
+      for (auto i=0; i<m; ++i) 
+      {
+         int i0r = 2*i;  int i0i = 2*i+1;
+         ptr3[i0r] = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+         ptr3[i0i] = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+      }
+   if (nfft3d_map < 5) 
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {
+      int i1=i+1; int i2=i+2; int i3=i+3; int i4=i+4;
+      int i0r = 2*i;  int i0i = 2*i+1;
+      int i1r = 2*i1; int i1i = 2*i1+1;
+      int i2r = 2*i2; int i2i = 2*i2+1;
+      int i3r = 2*i3; int i3i = 2*i3+1;
+      int i4r = 2*i4; int i4i = 2*i4+1;
+
+      ptr3[i0r] = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+      ptr3[i0i] = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+
+      ptr3[i1r] = ptr3[i1r]*ptr1[i1r] - ptr3[i1i]*ptr1[i1i];
+      ptr3[i1i] = ptr3[i1r]*ptr1[i1i] + ptr3[i1i]*ptr1[i1r];
+
+      ptr3[i2r] = ptr3[i2r]*ptr1[i2r] - ptr3[i2i]*ptr1[i2i];
+      ptr3[i2i] = ptr3[i2r]*ptr1[i2i] + ptr3[i2i]*ptr1[i2r];
+
+      ptr3[i3r] = ptr3[i3r]*ptr1[i3r] - ptr3[i3i]*ptr1[i3i];
+      ptr3[i3i] = ptr3[i3r]*ptr1[i3i] + ptr3[i3i]*ptr1[i3r];
+
+      ptr3[i4r] = ptr3[i4r]*ptr1[i4r] - ptr3[i4i]*ptr1[i4i];
+      ptr3[i4i] = ptr3[i4r]*ptr1[i4i] + ptr3[i4i]*ptr1[i4r];
+   }
+   return;
+}  
+
+
 
 /********************************
  *                              *
@@ -1683,14 +1815,13 @@ void c3db::rr_Mul(const double *ptr1, double *ptr3)
  */
 void c3db::rrr_SqrMulAdd(const double *ptr1, const double *ptr2, double *ptr3) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr3[i] += ptr1[i]*ptr1[i]*ptr2[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr3[i]   += (ptr1[i]*ptr1[i])*ptr2[i];
       ptr3[i+1] += (ptr1[i+1]*ptr1[i+1])*ptr2[i+1];
@@ -1736,14 +1867,13 @@ void c3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
                                    const double *ptr5, const double *ptr6,
                                    double *ptr7) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])*ptr4[i] + ptr5[i]*ptr6[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr7[i] = (ptr1[i]*ptr1[i] + ptr2[i]*ptr2[i] + ptr3[i]*ptr3[i])* ptr4[i] + ptr5[i]*ptr6[i];
       ptr7[i+1] = (ptr1[i+1]*ptr1[i+1] + ptr2[i+1]*ptr2[i+1] + ptr3[i+1]*ptr3[i+1])*ptr4[i+1] + ptr5[i+1]*ptr6[i+1];
@@ -1779,32 +1909,31 @@ void c3db::rrrrrrr_Sqr3MulPlusMul2(const double *ptr1, const double *ptr2,
  */
 void c3db::rc_Mul(const double *ptr1, double *ptr3) 
 {
-   int i;
    int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i) 
+      for (auto i=0; i<m; ++i) 
       {
-         ptr3[2 * i] *= ptr1[i];
-         ptr3[2 * i + 1] *= ptr1[i];
+         ptr3[2*i]   *= ptr1[i];
+         ptr3[2*i+1] *= ptr1[i];
       }
    if (nfft3d_map < 5)
       return;
-   for (i = m; i < nfft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
-      ptr3[2 * (i)] *= ptr1[i];
-      ptr3[2 * (i) + 1] *= ptr1[i];
+      ptr3[2*(i)]   *= ptr1[i];
+      ptr3[2*(i)+1] *= ptr1[i];
      
-      ptr3[2 * (i + 1)] *= ptr1[i + 1];
-      ptr3[2 * (i + 1) + 1] *= ptr1[i + 1];
+      ptr3[2*(i+1)]   *= ptr1[i+1];
+      ptr3[2*(i+1)+1] *= ptr1[i+1];
      
-      ptr3[2 * (i + 2)] *= ptr1[i + 2];
-      ptr3[2 * (i + 2) + 1] *= ptr1[i + 2];
+      ptr3[2*(i+2)]   *= ptr1[i+2];
+      ptr3[2*(i+2)+1] *= ptr1[i+2];
      
-      ptr3[2 * (i + 3)] *= ptr1[i + 3];
-      ptr3[2 * (i + 3) + 1] *= ptr1[i + 3];
+      ptr3[2*(i+3)]   *= ptr1[i+3];
+      ptr3[2*(i+3)+1] *= ptr1[i+3];
      
-      ptr3[2 * (i + 4)] *= ptr1[i + 4];
-      ptr3[2 * (i + 4) + 1] *= ptr1[i + 4];
+      ptr3[2*(i+4)]   *= ptr1[i+4];
+      ptr3[2*(i+4)+1] *= ptr1[i+4];
    }
    return;
 }
@@ -1832,22 +1961,23 @@ void c3db::rc_Mul(const double *ptr1, double *ptr3)
  *       applied for efficiency in processing arrays with a size greater than or equal
  *       to 5 elements.
  */
-void c3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] += ptr1[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += ptr1[i] * ptr2[i];
-    ptr3[i + 1] += ptr1[i + 1] * ptr2[i + 1];
-    ptr3[i + 2] += ptr1[i + 2] * ptr2[i + 2];
-    ptr3[i + 3] += ptr1[i + 3] * ptr2[i + 3];
-    ptr3[i + 4] += ptr1[i + 4] * ptr2[i + 4];
-  }
-  return;
+void c3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] += ptr1[i] * ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i < nfft3d_map; i += 5) 
+   {
+      ptr3[i] += ptr1[i]*ptr2[i];
+      ptr3[i+1] += ptr1[i+1]*ptr2[i+1];
+      ptr3[i+2] += ptr1[i+2]*ptr2[i+2];
+      ptr3[i+3] += ptr1[i+3]*ptr2[i+3];
+      ptr3[i+4] += ptr1[i+4]*ptr2[i+4];
+   }
+   return;
 }
 
 /********************************
@@ -1878,14 +2008,13 @@ void c3db::rrr_Mul2Add(const double *ptr1, const double *ptr2, double *ptr3) {
 #define ETA_DIV 1.0e-9
 void c3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-     for (i = 0; i < m; ++i)
-       ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i]/ptr2[i]) : (0.0);
-   if (n2ft3d_map < 5)
-     return;
-   for (i = m; i < n2ft3d_map; i += 5)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] = (std::abs(ptr2[i])>ETA_DIV) ? (ptr1[i]/ptr2[i]) : (0.0);
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr1[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr1[i+1]/ptr2[i+1]) : (0.0);
@@ -1921,14 +2050,13 @@ void c3db::rrr_Divide(const double *ptr1, const double *ptr2, double *ptr3)
  */
 void c3db::rr_Divide(const double *ptr2, double *ptr3)
 {
-   int i;
-   int m = n2ft3d_map%5;
+   int m = nfft3d_map%5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i = 0; i < m; ++i)
          ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i]/ptr2[i]) : (0.0);
-   if (n2ft3d_map<5)
+   if (nfft3d_map<5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5)
+   for (auto i = m; i < nfft3d_map; i += 5)
    {
       ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (ptr3[i] / ptr2[i]) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (ptr3[i+1]/ptr2[i+1]) : (0.0);
@@ -1964,14 +2092,13 @@ void c3db::rr_Divide(const double *ptr2, double *ptr3)
  */
 void c3db::rr_screen0(const double *ptr2, double *ptr3)
 {
-   int i;
-   int m = n2ft3d_map%5;
+   int m = nfft3d_map%5;
    if (m>0)
-      for (i=0; i<m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr3[i] = (std::abs(ptr2[i]) > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
-   if (n2ft3d_map<5)
+   if (nfft3d_map<5)
       return;
-   for (i=m; i<n2ft3d_map; i+=5)
+   for (auto i=m; i<nfft3d_map; i+=5)
    {
       ptr3[i]   = (std::abs(ptr2[i])   > ETA_DIV) ? (1.0/ptr2[i]-1.0) : (0.0);
       ptr3[i+1] = (std::abs(ptr2[i+1]) > ETA_DIV) ? (1.0/ptr2[i+1]-1.0) : (0.0);
@@ -2004,14 +2131,13 @@ void c3db::rr_screen0(const double *ptr2, double *ptr3)
  */
 void c3db::rr_daxpy(const double alpha, const double *ptr1, double *ptr2) 
 {
-   int i;
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          ptr2[i] += alpha * ptr1[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       ptr2[i]   += alpha*ptr1[i];
       ptr2[i+1] += alpha*ptr1[i+1];
@@ -2041,16 +2167,15 @@ void c3db::rr_daxpy(const double alpha, const double *ptr1, double *ptr2)
  */
 double c3db::rr_dot(const double *ptr1, const double *ptr2) 
 {
-   int i;
    double sum = 0.0;
  
-   int m = n2ft3d_map % 5;
+   int m = nfft3d_map % 5;
    if (m > 0)
-      for (i = 0; i < m; ++i)
+      for (auto i=0; i<m; ++i)
          sum += ptr1[i]*ptr2[i];
-   if (n2ft3d_map < 5)
+   if (nfft3d_map < 5)
       return sum;
-   for (i = m; i < n2ft3d_map; i += 5) 
+   for (auto i=m; i<nfft3d_map; i += 5) 
    {
       sum += ptr1[i]*ptr2[i] 
            + ptr1[i+1]*ptr2[i+1] 
@@ -2067,26 +2192,27 @@ double c3db::rr_dot(const double *ptr1, const double *ptr2)
  *         c3db::nrr_vdot       *
  *                              *
  ********************************/
-void c3db::nrr_vdot(const int n, const double *ptr1, const double *ptr2,
-                    double *v) {
-  int m = n2ft3d_map % 5;
-  for (auto k = 0; k < n; ++k)
-    v[k] = 0.0;
-  if (m > 0)
-    for (auto i = 0; i < m; ++i)
-      for (auto k = 0; k < n; ++k)
-        v[k] += ptr1[n * i + k] * ptr2[i];
-  if (n2ft3d_map >= 5) {
-    for (auto i = m; i < n2ft3d_map; i += 5)
-      for (auto k = 0; k < n; ++k) {
-        v[k] += ptr1[n * i + k] * ptr2[i] +
-                ptr1[n * (i + 1) + k] * ptr2[i + 1] +
-                ptr1[n * (i + 2) + k] * ptr2[i + 2] +
-                ptr1[n * (i + 3) + k] * ptr2[i + 3] +
-                ptr1[n * (i + 4) + k] * ptr2[i + 4];
-      }
-    parall->Vector_SumAll(1, n, v);
-  }
+void c3db::nrr_vdot(const int n, const double *ptr1, const double *ptr2, double *v) 
+{
+   int m = nfft3d_map % 5;
+   for (auto k = 0; k < n; ++k)
+      v[k] = 0.0;
+   if (m > 0)
+      for (auto i = 0; i < m; ++i)
+         for (auto k = 0; k < n; ++k)
+            v[k] += ptr1[n*i + k] * ptr2[i];
+   if (nfft3d_map >= 5) {
+      for (auto i=m; i < nfft3d_map; i += 5)
+         for (auto k=0; k<n; ++k) 
+         {
+            v[k] += ptr1[n*i + k] * ptr2[i] +
+                    ptr1[n*(i+1) + k]*ptr2[i+1] +
+                    ptr1[n*(i+2) + k]*ptr2[i+2] +
+                    ptr1[n*(i+3) + k]*ptr2[i+3] +
+                    ptr1[n*(i+4) + k]*ptr2[i+4];
+         }
+     parall->Vector_SumAll(1, n, v);
+   }
 }
 
 /********************************
@@ -2132,7 +2258,7 @@ double c3db::cc_dot(const double *ptr1, const double *ptr2)
       //***** kx!=0 plane, so double count *****
       for (auto index=0; index<nfft3d; ++index)
       {
-         sum += (ptr1[2*index]  *ptr2[2*index] + ptr1[2*index+1]*ptr2[2*index+1]);
+         sum += (ptr1[2*index]*ptr2[2*index] + ptr1[2*index+1]*ptr2[2*index+1]);
       }
       sum *= 2.0;
 

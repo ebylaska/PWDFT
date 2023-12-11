@@ -159,9 +159,9 @@ public:
       double *ptr;
       int nsize;
       if (mb == -1)
-        nsize = 2 * (ne[0] * ne[0] + ne[1] * ne[1]);
+        nsize = 4 * (ne[0] * ne[0] + ne[1] * ne[1]);
       else
-        nsize = 2 * ne[mb] * ne[mb];
+        nsize = 4 * ne[mb] * ne[mb];
      
       ptr = new (std::nothrow) double[nblock * nsize]();
       return ptr;
@@ -172,25 +172,13 @@ public:
    double *w_allocate_nbrillq_all() {
       double *ptr;
       int nsize;
-      nsize = 2*(ne[0]*ne[0] + ne[1]*ne[1]);
+      nsize = 4*(ne[0]*ne[0] + ne[1]*ne[1]);
       
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       return ptr;
    }
 
  
-   double *m4_allocate(const int mb, const int nblock) {
-     double *ptr;
-     int nsize;
-     if (mb == -1)
-       nsize = 4 * (ne[0] * ne[0] + ne[1] * ne[1]);
-     else
-       nsize = 4 * ne[mb] * ne[mb];
- 
-     ptr = new (std::nothrow) double[nblock * nsize]();
-     return ptr;
-   }
-   void m4_deallocate(double *ptr) { delete[] ptr; }
  
    double gg_traceall(double *, double *);
    void gg_copy(double *, double *);
@@ -203,6 +191,11 @@ public:
    void ffm_sym_Multiply(const int, double *, double *, double *);
    void ffm_Multiply(const int, double *, double *, double *);
    void ggm_SVD(double *, double *, double *, double *);
+
+   void ggw_sym_Multiply(double *, double *, double *);
+   void ggw_Multiply(double *, double *, double *);
+
+
  
    void ffm4_sym_Multiply(const int, double *, double *, double *, double *,
                           double *, double *);
@@ -215,12 +208,6 @@ public:
    void fmf_Multiply(const int, double *, double *, double, double *, double);
  
    void fm_QR(const int, double *, double *);
- 
-   void mmm4_AR_to_T4(const int, const double *, const double *, double *);
-   void m4_FactorSkew(const int, double *, double *, double *, double *S);
-   void m4_RotationSkew(const int, const double, double *, double *, double *,
-                        double *, double *, double *);
-   void m4_R4_to_MN(const int, const double *, double *, double *);
  
    void mm_SCtimesVtrans(const int, const double, double *, double *, double *,
                          double *, double *, double *);

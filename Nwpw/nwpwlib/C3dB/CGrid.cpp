@@ -1245,23 +1245,53 @@ void CGrid::rc_pfft3f(const int nb, double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
+      std::cout << "fftA = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
+
       c3db::mygdevice.batch_cfftx_tmpx(c3db::fft_tag,true, nx, nq1, 2*nfft3d, a, c3db::tmpx);
+
+      std::cout << "fftB = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
       
       c3db::c_ptranspose_ijk(nb, 0, a, tmp2, tmp3);
+
+      std::cout << "fftC = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
      
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
       c3db::mygdevice.batch_cffty_tmpy_zero(c3db::fft_tag,true,ny,nq2,2*nfft3d,a,c3db::tmpy,zero_row2[nb]);
+
+      std::cout << "fftD = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
      
       c3db::c_ptranspose_ijk(nb, 1, a, tmp2, tmp3);
+
+      std::cout << "fftE = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
      
       /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftz_tmpz_zero(c3db::fft_tag,true, nz, nq3, 2*nfft3d, a, c3db::tmpz, zero_row3[nb]);
+
+      std::cout << "fftF = ";
+      for (auto k=0; k<20; ++k)
+         std::cout << a[k] << " ";
+      std::cout << std::endl << std::endl;
    }
  
 }
@@ -1509,7 +1539,6 @@ void CGrid::pfftby(const int nb, double *tmp1, double *tmp2, int request_indx)
 void CGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx) 
 {
  
- std::cout << "pfftbx maptype=" << maptype << std::endl;
    /**********************
     **** slab mapping ****
     **********************/
@@ -1527,16 +1556,13 @@ void CGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
     *************************/
    else 
    {
-       std::cout << "startptranspose 3" << std::endl;
       c3db::c_ptranspose_ijk_end(nb, 3, tmp1, tmp2, request_indx);
      
-       std::cout << "intto fftx" << std::endl;
       /************************************************
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
       c3db::mygdevice.batch_cfftx_tmpx(c3db::fft_tag,false, nx, nq1, 2*nfft3d, tmp1, c3db::tmpx);
-       std::cout << "out fftx" << std::endl;
       if (2*nfft3d_map < 2*nfft3d)
          std::memset(tmp1 + 2*nfft3d_map, 0, (2*nfft3d - 2*nfft3d_map) * sizeof(double));
    }
@@ -1550,7 +1576,6 @@ void CGrid::pfftbx(const int nb, double *tmp1, double *tmp2, int request_indx)
 void CGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1,
                        double *tmp2, const int request_indx) 
 {
-     std::cout << "into pfftb_step step=" << step << " nb=" << nb << std::endl;
    if (step == 0) {
      // c3db::parall->astart(request_indx,parall->np_i());
  
@@ -1572,7 +1597,6 @@ void CGrid::pfftb_step(const int step, const int nb, double *a, double *tmp1,
      pfftby(nb, tmp1, tmp2, request_indx);
    } else if (step == 5) {
      // pfftbx mem->dev->dev->mem
-     std::cout << "into pfftbx nb=" << nb << std::endl;
      pfftbx(nb, tmp1, tmp2, request_indx);
      // c3db::parall->aend(request_indx);
    }
@@ -2147,38 +2171,40 @@ void CGrid::pfftb_step12(const int step, const int nb, double *a, double *tmp1,
  *    CGrid:cr_pfft3b_queuein   *
  *                              *
  ********************************/
-void CGrid::cr_pfft3b_queuein(const int nb, double *a) {
-  int shift1, shift2;
-  int np = c3db::parall->np_i();
-
-  for (auto q=0; q<aqsize; ++q) {
-    int indx = aqindx[q];
-    int status = aqstatus[indx] + 1;
-    shift1 = 2*nfft3d*(2*indx);
-    shift2 = 2*nfft3d*(2*indx + 1);
-    if (staged_gpu_fft_pipeline)
-       pfftb_step12(status, aqnbb[indx], a, atmp+shift1, atmp+shift2, indx+4,indx);
-    else
-       pfftb_step(status, aqnbb[indx], a, atmp+shift1, atmp+shift2, indx+4);
-    ++aqstatus[indx];
-  }
-
-  ++alast_index;
-  if (alast_index >= aqmax)
-    alast_index = 0;
-  ++aqsize;
-  aqindx[aqsize - 1] = alast_index;
-  aqstatus[alast_index] = 0;
-  aqnbb[alast_index] = nb;
-
-  // status = 0;
-  shift1 = 2*nfft3d*(2*alast_index);
-  shift2 = 2*nfft3d*(2*alast_index+1);
-
-  if (staged_gpu_fft_pipeline)
-     pfftb_step12(0,nb,a,atmp+shift1,atmp+shift2, alast_index+4,alast_index);
-  else
-     pfftb_step(0, nb, a, atmp+shift1, atmp+shift2, alast_index+4);
+void CGrid::cr_pfft3b_queuein(const int nb, double *a) 
+{
+   int shift1, shift2;
+   int np = c3db::parall->np_i();
+ 
+   for (auto q=0; q<aqsize; ++q) 
+   {
+      int indx = aqindx[q];
+      int status = aqstatus[indx] + 1;
+      shift1 = 2*nfft3d*(2*indx);
+      shift2 = 2*nfft3d*(2*indx + 1);
+      if (staged_gpu_fft_pipeline)
+         pfftb_step12(status, aqnbb[indx], a, atmp+shift1, atmp+shift2, indx+4,indx);
+      else
+         pfftb_step(status, aqnbb[indx], a, atmp+shift1, atmp+shift2, indx+4);
+      ++aqstatus[indx];
+   }
+ 
+   ++alast_index;
+   if (alast_index >= aqmax)
+      alast_index = 0;
+   ++aqsize;
+   aqindx[aqsize - 1] = alast_index;
+   aqstatus[alast_index] = 0;
+   aqnbb[alast_index] = nb;
+ 
+   // status = 0;
+   shift1 = 2*nfft3d*(2*alast_index);
+   shift2 = 2*nfft3d*(2*alast_index+1);
+ 
+   if (staged_gpu_fft_pipeline)
+      pfftb_step12(0,nb,a,atmp+shift1,atmp+shift2, alast_index+4,alast_index);
+   else
+      pfftb_step(0, nb, a, atmp+shift1, atmp+shift2, alast_index+4);
 }
 
 /********************************
@@ -2199,7 +2225,6 @@ void CGrid::cr_pfft3b_queueout(const int nb, double *a)
          int status = aqstatus[indx] + 1;
          shift1 = 2*nfft3d * (2*indx);
          shift2 = 2*nfft3d * (2*indx+1);
-          std::cout << "queueout q=" << q << " status=" << status << " gpu_staged=" << staged_gpu_fft_pipeline << std::endl;
          if (staged_gpu_fft_pipeline)
             pfftb_step12(status,aqnbb[indx],a,atmp+shift1,atmp+shift2,indx+4,indx);
          else
@@ -3329,7 +3354,7 @@ void CGrid::c_pack_zero(const int nb, double *b)
 {
    int ng = 2*(nidb[nb]);
 
-   for (auto i = 0; i < ng; ++i)
+   for (auto i=0; i<ng; ++i)
       b[i] = 0.0;
 }
 
@@ -3473,9 +3498,9 @@ void CGrid::regenerate_r_grid()
    double a[9];
    for (auto i = 0; i < 3; ++i) 
    {
-      a[i] = lattice->unita1d(0 + i) / ((double)nx);
-      a[3 + i] = lattice->unita1d(3 + i) / ((double)ny);
-      a[6 + i] = lattice->unita1d(6 + i) / ((double)nz);
+      a[i]   = lattice->unita1d(0+i) / ((double)nx);
+      a[3+i] = lattice->unita1d(3+i) / ((double)ny);
+      a[6+i] = lattice->unita1d(6+i) / ((double)nz);
    }
  
    r_nzero(3, r_grid);

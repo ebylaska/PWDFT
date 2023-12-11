@@ -52,9 +52,9 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    double scal2 = 1.0 / omega;
  
    /* allocate temporary memory */
-   double *vall = mygrid->r_alloc();
-   double *vpsi = mygrid->r_alloc();
-   double *tmp  = mygrid->r_alloc();
+   double *vall = mygrid->c_alloc();
+   double *vpsi = mygrid->c_alloc();
+   double *tmp  = mygrid->c_alloc();
  
    /* apply k-space operators */
    myke->ke(psi, Hpsi);

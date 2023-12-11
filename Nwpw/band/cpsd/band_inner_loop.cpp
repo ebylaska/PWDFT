@@ -29,10 +29,10 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
                      double *psi_r, double *dn, double *hml, double *lmbda,
                      double E[], double *deltae, double *deltac, double *deltar) 
 {
-   int it, it_in, i, n2ft3d, neall, ispin, k, ms;
-   int shift1, shift2, indx1, indx2;
+   int it, it_in, i, k, ms;
+   int indx1, indx2;
    int one = 1;
-   double scal1, scal2, dv, dc;
+   double dc;
    double eorbit, eion, econstraint, exc, ehartr, pxc;
    double eke, elocal, enlocal, dt, dte, Eold;
    double *vl,*vc,*xcp,*xce,*dnall,*x,*dng,*rho,*tmp,*vcall,*vpsi,*sumi;
@@ -40,35 +40,35 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    bool move = control.geometry_optimize();
    double omega = mygrid->lattice->omega();
  
-   ispin = mygrid->ispin;
-   neall = mygrid->neq[0] + mygrid->neq[1];
-   shift1 = 2*(mygrid->npack(1));
-   shift2 = (mygrid->n2ft3d);
-   n2ft3d = (mygrid->n2ft3d);
-   scal1 = 1.0/((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
-   // scal2 = 1.0/lattice_omega();
-   // dv = lattice_omega()*scal1;
-   scal2 = 1.0/omega;
-   dv = omega*scal1;
+   int ispin = mygrid->ispin;
+   int neall = mygrid->neq[0] + mygrid->neq[1];
+   int shift1 = 2*(mygrid->npack(1));
+   int shift2 = (mygrid->n2ft3d);
+   int nfft3d = (mygrid->nfft3d);
+   int n2ft3d = (mygrid->n2ft3d);
+
+   double scal1 = 1.0/((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+   double scal2 = 1.0/omega;
+   double dv = omega*scal1;
  
    dt = control.time_step();
    dte = dt/sqrt(control.fake_mass());
    it_in = control.loop(0);
  
    /* allocate temporary memory */
-   rho = mygrid->r_alloc();
-   tmp = mygrid->r_alloc();
+   rho = mygrid->c_alloc();
+   tmp = mygrid->c_alloc();
+
    xcp = mygrid->r_nalloc(ispin);
    xce = mygrid->r_nalloc(ispin);
    dnall = mygrid->r_nalloc(ispin);
-   x = mygrid->r_alloc();
-   dng = mygrid->c_pack_allocate(0);
-   vl = mygrid->c_pack_allocate(0);
+   x     = mygrid->r_alloc();
 
-   vc = mygrid->c_pack_allocate(0);
+   dng   = mygrid->c_pack_allocate(0);
+   vl    = mygrid->c_pack_allocate(0);
+   vc    = mygrid->c_pack_allocate(0);
    vcall = mygrid->c_pack_allocate(0);
  
-    std::cout << "HERA" << std::endl;
    vpsi = x;
  
    //fion = new double[3 * (myion->nion)]();
@@ -77,7 +77,6 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    /* generate local psp*/
    mypsp->v_local(vl,false,dng,fion);
 
-    std::cout << "HERb" << std::endl;
  
    // myewald->phafac();
  
@@ -87,7 +86,6 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
-    std::cout << "HERc" << std::endl;
      
       if (move)
       {
@@ -98,20 +96,43 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       }
      
       /* convert psi(G) to psi(r) - Expensive */
-    std::cout << "HERd" << std::endl;
       mygrid->gh_fftb(psi1,psi_r);
-    std::cout << "HERe" << std::endl;
      
       /* generate dn */
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
+     std::cout << "PSI_r= " ;
+     for (auto kk=0; kk<20; ++kk)
+        std::cout << psi_r[kk] << " ";
+     std::cout << std::endl;
+
+     std::cout << std::endl;
+     std::cout << "dn= " ;
+     for (auto kk=0; kk<20; ++kk)
+        std::cout << dn[kk] << " ";
+     std::cout << std::endl;
+     std::cout << std::endl;
      
       /* generate dng */
-      mygrid->rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
-      mygrid->rr_SMul(scal1, rho, tmp);
-      mygrid->rc_pfft3f(0,tmp);
-      //mygrid->rc_fft3d(tmp);
+      mygrid->rrc_Sum(dn,dn+(ispin-1)*nfft3d,rho);
+      mygrid->rc_pfft3f(0,rho);
+
+     std::cout << "tmp= " ;
+     for (auto kk=0; kk<20; ++kk)
+        std::cout << rho[kk] << " ";
+     std::cout << std::endl;
+     std::cout << std::endl;
+
+      mygrid->cc_SMul(scal1, rho, tmp);
+
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
+      //mygrid->c_pack_SMul(0,scal1, dng);
+
+     std::cout << "dng= " ;
+     for (auto kk=0; kk<20; ++kk)
+        std::cout << dng[kk] << " ";
+     std::cout << std::endl;
+     std::cout << std::endl;
 
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore()) 
@@ -119,12 +140,12 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          if ((move) || (it == 0))
             mypsp->semicore_density_update();
          for (ms=0; ms<ispin; ++ms)
-            mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,dn+ms*n2ft3d,dnall+ms*n2ft3d);
+            mygrid->rrr_SMulAdd(0.5,mypsp->semicore_density,dn+ms*nfft3d,dnall+ms*nfft3d);
       } 
       else 
       {
          for (ms=0; ms<ispin; ++ms)
-            mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
+            mygrid->rr_copy(dn+ms*nfft3d, dnall+ms*nfft3d);
       }
      
       /* generate local potentials */
@@ -273,16 +294,26 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
    //delete[] fion;
  
-   mygrid->r_dealloc(tmp);
+   std::cout << "A dealloc" << std::endl;
+   mygrid->c_dealloc(tmp);
+   std::cout << "b dealloc" << std::endl;
    mygrid->r_dealloc(xcp);
+   std::cout << "c dealloc" << std::endl;
    mygrid->r_dealloc(xce);
+   std::cout << "d dealloc" << std::endl;
    mygrid->r_dealloc(dnall);
+   std::cout << "e dealloc" << std::endl;
    mygrid->r_dealloc(x);
-   mygrid->r_dealloc(rho);
+   std::cout << "f dealloc" << std::endl;
+   mygrid->c_dealloc(rho);
+   std::cout << "g dealloc" << std::endl;
    mygrid->c_pack_deallocate(dng);
+   std::cout << "h dealloc" << std::endl;
    mygrid->c_pack_deallocate(vl);
 
+   std::cout << "i dealloc" << std::endl;
    mygrid->c_pack_deallocate(vc);
+   std::cout << "j dealloc" << std::endl;
    mygrid->c_pack_deallocate(vcall);
 
 }

@@ -42,7 +42,7 @@ namespace pwdft {
  *******************************************/
 cCoulomb_Operator::cCoulomb_Operator(Cneb *mygrid, Control2 &control) 
 {
-   int k, pzero, zero, taskid;
+   int pzero, zero, taskid;
    double gg;
    double *Gx = mygrid->Gxyz(0);
    double *Gy = mygrid->Gxyz(1);
@@ -58,16 +58,26 @@ cCoulomb_Operator::cCoulomb_Operator(Cneb *mygrid, Control2 &control)
    pzero = mycneb->cijktop(0, 0, 0);
    zero = mycneb->cijktoindex(0, 0, 0);
  
-   for (k = 0; k < (mycneb->nfft3d); ++k) 
+   for (auto k=0; k<(mycneb->nfft3d); ++k) 
    {
       gg = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
       if ((pzero == taskid) && (k == zero))
          tmp[k] = 0.0;
       else
-         tmp[k] = fourpi / gg;
+         tmp[k] = fourpi/gg;
    }
    mycneb->t_pack(0, tmp);
    mycneb->tt_pack_copy(0, tmp, vg);
+   std::cout << "vg=" << vg[0] << " " 
+                      << vg[1] << " " 
+                      << vg[2] << " " 
+                      << vg[3] << " " 
+                      << vg[4] << " " 
+                      << vg[5] << " " 
+                      << vg[6] << " " 
+                      << vg[7] << " " 
+                      << vg[8] << " " 
+                      << vg[9] << std::endl;
  
    delete[] tmp;
 }
@@ -100,11 +110,14 @@ double cCoulomb_Operator::ecoulomb(const double *dng)
    double ave = 0.0;
 
    int k1 = 0;
+   std::cout << "ecoul= ";
    for (auto k=0; k<npack0; ++k) 
    {
       ave += vg[k] * (dng[k1]*dng[k1] + dng[k1+1]*dng[k1+1]);
       k1  += 2;
+      std::cout << vg[k] << " " << dng[k1] << " " << dng[k1+1] << " | ";
    }
+   std::cout << std::endl;
    ave = mycneb->c3db::parall->SumAll(1,ave);
    ave *= 0.5*(mycneb->lattice->omega());
  

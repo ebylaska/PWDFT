@@ -40,9 +40,9 @@ cElectron_Operators::cElectron_Operators(Cneb *mygrid0, cKinetic_Operator *myke0
    xcp = mygrid->r_nalloc(ispin);
    xce = mygrid->r_nalloc(ispin);
  
-   x = mygrid->r_alloc();
-   rho = mygrid->r_alloc();
-   vall = mygrid->r_alloc();
+   x = mygrid->c_alloc();
+   rho = mygrid->c_alloc();
+   vall = mygrid->c_alloc();
    vl = mygrid->c_pack_allocate(0);
 
    vc = mygrid->c_pack_allocate(0);
@@ -55,8 +55,8 @@ cElectron_Operators::cElectron_Operators(Cneb *mygrid0, cKinetic_Operator *myke0
    scal2 = 1.0/omega;
    dv = omega*scal1;
  
-   n2ft3d = (mygrid->n2ft3d);
-   shift1 = 2 * (mygrid->npack(1));
+   nfft3d = (mygrid->nfft3d);
+   shift1 = 2*(mygrid->npack1_max());
    npack1 = shift1;
    shift2 = (mygrid->n2ft3d);
 }
@@ -95,8 +95,8 @@ void cElectron_Operators::gen_densities(double *dn, double *dng, double *dnall)
  
    /* generate rho and dng */
    double *tmp = x;
-   mygrid->rrr_Sum(dn, dn+(ispin-1)*n2ft3d, rho);
-   mygrid->rr_SMul(scal1, rho, tmp);
+   mygrid->rrc_Sum(dn, dn+(ispin-1)*nfft3d, rho);
+   mygrid->cc_SMul(scal1, rho, tmp);
    // mygrid->rc_fft3d(tmp);
    mygrid->rc_pfft3f(0, tmp);
    mygrid->c_pack(0, tmp);
@@ -106,12 +106,12 @@ void cElectron_Operators::gen_densities(double *dn, double *dng, double *dnall)
    if (mypsp->has_semicore()) 
    {
       for (int ms = 0; ms < ispin; ++ms)
-         mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, dn+ms*n2ft3d, dnall+ms*n2ft3d);
+         mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, dn+ms*nfft3d, dnall+ms*nfft3d);
    } 
    else 
    {
       for (int ms = 0; ms < ispin; ++ms)
-         mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
+         mygrid->rr_copy(dn+ms*nfft3d, dnall+ms*nfft3d);
    }
 }
 
@@ -327,7 +327,7 @@ double cElectron_Operators::exc(double *dnall)
    } 
    else 
    {
-      excsum += mygrid->rr_dot(&dnall[n2ft3d], xce);
+      excsum += mygrid->rr_dot(dnall+nfft3d, xce);
    }
    excsum *= dv;
  
@@ -349,7 +349,7 @@ double cElectron_Operators::pxc(double *dn)
    } 
    else 
    {
-      pxcsum += mygrid->rr_dot(&dn[n2ft3d], &xcp[n2ft3d]);
+      pxcsum += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    pxcsum *= dv;
  
@@ -391,8 +391,8 @@ double cElectron_Operators::energy(double *psi, double *dn, double *dng, double 
    } 
    else 
    {
-      exc0 += mygrid->rr_dot(&dnall[n2ft3d], xce);
-      pxc0 += mygrid->rr_dot(&dn[n2ft3d], &xcp[n2ft3d]);
+      exc0 += mygrid->rr_dot(dnall+nfft3d, xce);
+      pxc0 += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    exc0 *= dv;
    pxc0 *= dv;
@@ -429,8 +429,8 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    } 
    else 
    {
-      exc0 += mygrid->rr_dot(&dnall[n2ft3d], xce);
-      pxc0 += mygrid->rr_dot(&dn[n2ft3d], &xcp[n2ft3d]);
+      exc0 += mygrid->rr_dot(dnall+nfft3d, xce);
+      pxc0 += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    exc0 *= dv;
    pxc0 *= dv;
@@ -452,7 +452,7 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
  
    en[0] = dv * mygrid->r_dsum(dn);
    en[1] = en[0];
-   if (ispin>1) en[1] = dv*mygrid->r_dsum(&dn[n2ft3d]);
+   if (ispin>1) en[1] = dv*mygrid->r_dsum(dn+nfft3d);
 }
 
 /********************************************

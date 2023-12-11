@@ -34,8 +34,8 @@ nwpw
      loop 1 1
   end
   #monkhorst-pack 3 3 3
-  vectors input jjj.movecs output jjj.movecs
-  #vectors output jjj.movecs
+  #vectors input jjj.movecs output jjj.movecs
+  vectors output jjj.movecs
 
 end
 

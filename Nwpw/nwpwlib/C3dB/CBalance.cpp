@@ -100,7 +100,7 @@ static void balance_init_a(Parallel *parall, const int nwavein, const int np,
 
    /* get the average */
    ave = 0;
-   for (i = 0; i < np; ++i)
+   for (i=0; i<np; ++i)
       ave += nwave2[i];
    ave = ave / np;
 
@@ -314,24 +314,24 @@ void CBalance::c_unbalance_start(const int nb, double *a, const int request_indx
    int j, pto, pfrom, msglen, indx;
  
    if (sender_list[nb])
-     for (j = 0; j < npacket_list[nb]; ++j) 
-     {
-        pfrom = proc_to_list[nb][j];
-        msglen = 2 * packet_size_list[nb][j];
-        indx = 2 * indx_start_list[nb][j];
-        if (msglen > 0)
-           parall->adreceive(request_indx, msgtype, pfrom, msglen, a + indx);
-     }
+      for (j = 0; j < npacket_list[nb]; ++j) 
+      {
+         pfrom = proc_to_list[nb][j];
+         msglen = 2*packet_size_list[nb][j];
+         indx = 2*indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->adreceive(request_indx, msgtype, pfrom, msglen, a + indx);
+      }
  
    if (receiver_list[nb])
-     for (j = 0; j < npacket_list[nb]; ++j) 
-     {
-        pto = proc_from_list[nb][j];
-        msglen = 2 * packet_size_list[nb][j];
-        indx = 2 * indx_start_list[nb][j];
-        if (msglen > 0)
-           parall->adsend(request_indx, msgtype, pto, msglen, a + indx);
-     }
+      for (j = 0; j < npacket_list[nb]; ++j) 
+      {
+         pto = proc_from_list[nb][j];
+         msglen = 2*packet_size_list[nb][j];
+         indx = 2*indx_start_list[nb][j];
+         if (msglen > 0)
+            parall->adsend(request_indx, msgtype, pto, msglen, a + indx);
+      }
 }
 
 

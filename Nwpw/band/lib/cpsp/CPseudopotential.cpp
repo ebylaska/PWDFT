@@ -849,7 +849,7 @@ static double semicore_check(CGrid *mygrid, bool semicore, double rcore,
     // double dv    = lattice_omega()*scal1;
     double scal2 = 1.0 / omega;
     double dv = omega * scal1;
-    double *tmp = mygrid->r_alloc();
+    double *tmp = mygrid->c_alloc();
 
     /* put sqrt(core-density) at atom position */
     mygrid->tc_pack_copy(0, ncore, tmp);
@@ -865,7 +865,7 @@ static double semicore_check(CGrid *mygrid, bool semicore, double rcore,
     /* integrate it */
     sum = mygrid->r_dsum(tmp) * dv;
 
-    mygrid->r_dealloc(tmp);
+    mygrid->c_dealloc(tmp);
   }
   return sum;
 }
@@ -1126,7 +1126,7 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
 
 
       /* allocate vnl generate formated grids */
-      *vnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack(1))]();
+      *vnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack1_max())]();
 
       for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
          psp1d.cpp_generate_nonlocal_spline(mygrid, mygrid->pbrill_kvector(nbq), nray, G_ray, vnl_ray, *vnl + nbq*(psp1d.nprj)*(mygrid->npack(1)));
@@ -2294,11 +2294,11 @@ double CPseudopotential::e_nonlocal(double *psi)
 void CPseudopotential::v_local(double *vout, const bool move, double *dng, double *fion) 
 {
    nwpw_timing_function ftimer(5);
-   int ii, ia, nshift, npack0;
-   double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
+
  
-   npack0 = mypneb->npack(0);
-   xtmp = new (std::nothrow) double[npack0]();
+   int npack0 = mypneb->npack(0);
+   double *xtmp = new (std::nothrow) double[npack0]();
+   double  *Gx, *Gy, *Gz;
    if (move) 
    {
       // xtmp = new (std::nothrow) double[npack0]();
@@ -2318,28 +2318,25 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
       Gz = mypneb->Gpackxyz(0, 2);
    }
  
-   mypneb->c_pack_zero(0, vout);
-   nshift = 2 * npack0;
-   exi = new (std::nothrow) double[nshift]();
-   vtmp = new (std::nothrow) double[nshift]();
-   for (ii = 0; ii < (myion->nion); ++ii) 
+   mypneb->c_pack_zero(0,vout);
+   int nshift = 2*npack0;
+   double *exi = new (std::nothrow) double[nshift]();
+   double *vtmp = new (std::nothrow) double[nshift]();
+   for (auto ii=0; ii<(myion->nion); ++ii) 
    {
-      ia = myion->katm[ii];
-      mystrfac->strfac_pack(0, ii, exi);
+      int ia = myion->katm[ii];
+      mystrfac->strfac_pack(0,ii,exi);
       // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
       mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
       mypneb->cc_pack_Sum2(0, vtmp, vout);
      
-      if (move) {
-        // double xx =  mypneb->cc_pack_dot(0,dng,dng);
-        // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
-     
-        mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
-        // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
-     
-        fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
-        fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
-        fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
+      if (move) 
+      {
+         mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
+        
+         fion[3*ii]   = mypneb->tt_pack_dot(0, Gx, xtmp);
+         fion[3*ii+1] = mypneb->tt_pack_dot(0, Gy, xtmp);
+         fion[3*ii+2] = mypneb->tt_pack_dot(0, Gz, xtmp);
       }
    }
    delete[] exi;
@@ -2422,235 +2419,6 @@ void CPseudopotential::f_local(double *dng, double *fion)
 }
 
 
-/*******************************************
- *                                         *
- *     CPseudopotential::v_lr_local        *
- *                                         *
- *******************************************/
-/*
-      This routine calculates the long-range part of the
-      local pseudopotential (used by version4)
-*/
-/**
- * @brief Calculate the long-range part of the local pseudopotential.
- *
- * This function calculates the long-range part of the local pseudopotential used in a specific
- * version of the pseudopotential calculation (version4). The long-range part is computed based on
- * the positions of ions and their charges.
- *
- * @param vlr_out Pointer to the array to store the long-range part of the local pseudopotential.
- *
- * @note This function uses error function calculations for efficiency when available.
- */
-void CPseudopotential::v_lr_local(double *vlr_out) 
-{
-   nwpw_timing_function ftimer(5);
- 
-   int n2ft3d = mypneb->n2ft3d;
-   int nion = myion->nion;
-   double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
- 
-   std::memset(vlr_out, 0, n2ft3d * sizeof(double));
- 
-   if (mypneb->lattice->fast_erf()) 
-   {
-      // Error function parameters
-      double xerf, yerf;
-      double c1 = 0.07052307840;
-      double c2 = 0.04228201230;
-      double c3 = 0.00927052720;
-      double c4 = 0.00015201430;
-      double c5 = 0.00027656720;
-      double c6 = 0.00004306380;
-     
-      for (auto ii = 0; ii < nion; ++ii) {
-        int ia = myion->katm[ii];
-        auto c = 1.0 / rlocal[ia];
-        auto q = -zv[ia];
-        auto xii = myion->rion(0, ii);
-        auto yii = myion->rion(1, ii);
-        auto zii = myion->rion(2, ii);
-     
-        for (auto i = 0; i < n2ft3d; ++i) {
-          auto dx = mypneb->CGrid::r_grid[3 * i] - xii;
-          auto dy = mypneb->CGrid::r_grid[3 * i + 1] - yii;
-          auto dz = mypneb->CGrid::r_grid[3 * i + 2] - zii;
-          auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
-          if (r > 1.0 - 15) {
-            xerf = r * c;
-            auto yerf1 =
-                (1.0 +
-                 xerf *
-                     (c1 +
-                      xerf *
-                          (c2 +
-                           xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
-            auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
-            auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
-            yerf = (1.0 - 1.0 / yerf16);
-            vlr_out[i] += (q / r) * yerf;
-          } else
-            vlr_out[i] += (2.0 * q * c / sqrt_pi);
-        }
-      }
-   } 
-   else 
-   {
-      for (auto ii = 0; ii < nion; ++ii) 
-      {
-         int ia = myion->katm[ii];
-         auto c = 1.0 / rlocal[ia];
-         auto q = -zv[ia];
-         auto xii = myion->rion(0, ii);
-         auto yii = myion->rion(1, ii);
-         auto zii = myion->rion(2, ii);
-        
-         for (auto i = 0; i < n2ft3d; ++i) 
-         {
-            auto dx = mypneb->CGrid::r_grid[3 * i] - xii;
-            auto dy = mypneb->CGrid::r_grid[3 * i + 1] - yii;
-            auto dz = mypneb->CGrid::r_grid[3 * i + 2] - zii;
-            auto r = std::sqrt(dx * dx + dy * dy + dz * dz);
-            vlr_out[i] += (r > 1.0e-15) ? ((q / r) * std::erf(r * c))
-                                        : (2.0 * q * c / sqrt_pi);
-         }
-      }
-   }
-}
-
-
-/*******************************************
- *                                         *
- *   CPseudopotential::grad_v_lr_local     *
- *                                         *
- *******************************************/
-/*
-    This routine calculates the gradient of the long-range part of the
-    local pseudopotential (used by version 4)
-*/
-/**
- * @brief Calculate the gradient of the long-range part of the local pseudopotential.
- *
- * This function computes the gradient of the long-range part of the local pseudopotential used
- * in a specific version of the pseudopotential calculation (version4). The gradient is calculated
- * based on the electron density `rho` and ion positions and charges.
- *
- * @param rho    Pointer to the electron density array.
- * @param fion   Pointer to the array to store the gradient of the long-range part of the
- *               pseudopotential.
- *
- * @note This function uses error function calculations for efficiency when available.
- */
-void CPseudopotential::grad_v_lr_local(const double *rho, double *fion) 
-{
-   nwpw_timing_function ftimer(5);
- 
-   int n2ft3d = mypneb->n2ft3d;
-   int nion = myion->nion;
-   int nion3 = 3 * nion;
-   int one = 1;
-   double rone = 1.0;
-   double sqrt_pi = std::sqrt(4.0 * std::atan(1.0));
-   double omega = mypneb->lattice->omega();
-   double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
-   double dv = omega * scal1;
- 
-   double ftmp[nion3];
- 
-   if (mypneb->lattice->fast_erf()) {
-     // Error function parameters
-     double xerf, yerf;
-     double c1 = 0.07052307840;
-     double c2 = 0.04228201230;
-     double c3 = 0.00927052720;
-     double c4 = 0.00015201430;
-     double c5 = 0.00027656720;
-     double c6 = 0.00004306380;
- 
-     for (auto ii = 0; ii < nion; ++ii) {
-       int ia = myion->katm[ii];
-       auto c = 1.0 / rlocal[ia];
-       auto q = -zv[ia];
-       auto xii = myion->rion(0, ii);
-       auto yii = myion->rion(1, ii);
-       auto zii = myion->rion(2, ii);
- 
-       auto fx = 0.0;
-       auto fy = 0.0;
-       auto fz = 0.0;
-       for (auto i = 0; i < n2ft3d; ++i) {
-         auto rx = xii - mypneb->CGrid::r_grid[3 * i];
-         auto ry = yii - mypneb->CGrid::r_grid[3 * i + 1];
-         auto rz = zii - mypneb->CGrid::r_grid[3 * i + 2];
-         auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
-         double v;
-         if (r > 1.0e-8) {
-           xerf = r * c;
-           auto yerf1 =
-               (1.0 +
-                xerf *
-                    (c1 +
-                     xerf *
-                         (c2 +
-                          xerf * (c3 + xerf * (c4 + xerf * (c5 + xerf * c6))))));
-           auto yerf4 = yerf1 * yerf1 * yerf1 * yerf1;
-           auto yerf16 = yerf4 * yerf4 * yerf4 * yerf4;
-           yerf = (1.0 - 1.0 / yerf16);
-           v = (q *
-                ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
-                 yerf) /
-                (r * r * r));
-         } else
-           v = 0.0;
- 
-         fx += rho[i] * rx * v;
-         fy += rho[i] * ry * v;
-         fz += rho[i] * rz * v;
-       }
-       ftmp[3 * ii] = -fx * dv;
-       ftmp[3 * ii + 1] = -fy * dv;
-       ftmp[3 * ii + 2] = -fz * dv;
-     }
-   } 
-   else 
-   {
-     for (auto ii = 0; ii < nion; ++ii) {
-       int ia = myion->katm[ii];
-       auto c = 1.0 / rlocal[ia];
-       auto q = -zv[ia];
-       auto xii = myion->rion(0, ii);
-       auto yii = myion->rion(1, ii);
-       auto zii = myion->rion(2, ii);
- 
-       auto fx = 0.0;
-       auto fy = 0.0;
-       auto fz = 0.0;
-       for (auto i = 0; i < n2ft3d; ++i) {
-         auto rx = xii - mypneb->CGrid::r_grid[3 * i];
-         auto ry = yii - mypneb->CGrid::r_grid[3 * i + 1];
-         auto rz = zii - mypneb->CGrid::r_grid[3 * i + 2];
-         auto r = std::sqrt(rx * rx + ry * ry + rz * rz);
-         auto v =
-             (r > 1.0e-8)
-                 ? (q *
-                    ((2.0 / sqrt_pi) * (r * c) * std::exp(-(r * c) * (r * c)) -
-                     std::erf(r * c)) /
-                    (r * r * r))
-                 : 0.0;
- 
-         fx += rho[i] * rx * v;
-         fy += rho[i] * ry * v;
-         fz += rho[i] * rz * v;
-       }
-       ftmp[3 * ii] = -fx * dv;
-       ftmp[3 * ii + 1] = -fy * dv;
-       ftmp[3 * ii + 2] = -fz * dv;
-     }
-   }
-   mypneb->c3db::parall->Vector_SumAll(1, 3 * nion, ftmp);
-   DAXPY_PWDFT(nion3, rone, ftmp, one, fion, one);
-}
-
 
 /*********************************************
  *                                           *
@@ -2675,7 +2443,7 @@ void CPseudopotential::semicore_density_update()
    // double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
    // double dv    = omega*scal1;
    double *exi = mypneb->c_pack_allocate(0);
-   double *tmp = mypneb->r_alloc();
+   double *tmp = mypneb->c_alloc();
  
    mypneb->r_zero(semicore_density);
    for (ii = 0; ii < (myion->nion); ++ii) {
@@ -2695,7 +2463,7 @@ void CPseudopotential::semicore_density_update()
    }
    mypneb->r_SMul(scal2 * scal2, semicore_density);
  
-   mypneb->r_dealloc(tmp);
+   mypneb->c_dealloc(tmp);
    mypneb->c_pack_deallocate(exi);
 }
 
@@ -2723,17 +2491,17 @@ void CPseudopotential::semicore_xc_fion(double *vxc, double *fion)
 {
    int ia;
    int ispin = mypneb->ispin;
-   int n2ft3d = mypneb->n2ft3d;
+   int nfft3d = mypneb->nfft3d;
    double omega = mypneb->lattice->omega();
    double scal2 = 1.0 / omega;
    double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
  
    double *exi = mypneb->c_pack_allocate(0);
-   double *tmp = mypneb->r_alloc();
-   double *tmpx = mypneb->r_alloc();
-   double *tmpy = mypneb->r_alloc();
-   double *tmpz = mypneb->r_alloc();
-   double *vxcG = mypneb->r_alloc();
+   double *tmp = mypneb->c_alloc();
+   double *tmpx = mypneb->c_alloc();
+   double *tmpy = mypneb->c_alloc();
+   double *tmpz = mypneb->c_alloc();
+   double *vxcG = mypneb->c_alloc();
  
    // double *Gx = new (std::nothrow) double [mypneb->nfft3d]();
    // double *Gy = new (std::nothrow) double [mypneb->nfft3d]();
@@ -2748,43 +2516,45 @@ void CPseudopotential::semicore_xc_fion(double *vxc, double *fion)
    double *Gy = mypneb->Gpackxyz(0, 1);
    double *Gz = mypneb->Gpackxyz(0, 2);
  
-   mypneb->rrr_Sum(vxc, vxc + (ispin-1)*n2ft3d, vxcG);
+   mypneb->rrc_Sum(vxc, vxc + (ispin-1)*nfft3d, vxcG);
  
-   for (int ii = 0; ii < (myion->nion); ++ii) {
-     ia = myion->katm[ii];
-     if (semicore[ia]) {
-       /* put sqrt(core-density) at atom position */
-       mystrfac->strfac_pack(0, ii, exi);
-       mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
-       mypneb->tcc_pack_iMul(0, Gx, tmp, tmpx);
-       mypneb->tcc_pack_iMul(0, Gy, tmp, tmpy);
-       mypneb->tcc_pack_iMul(0, Gz, tmp, tmpz);
- 
-       /* Put put tmp,tmpx,tmpy,tmpz into real space */
-       mypneb->c_unpack(0, tmp);
-       mypneb->c_unpack(0, tmpx);
-       mypneb->c_unpack(0, tmpy);
-       mypneb->c_unpack(0, tmpz);
-       mypneb->cr_fft3d(tmp);
-       mypneb->cr_fft3d(tmpx);
-       mypneb->cr_fft3d(tmpy);
-       mypneb->cr_fft3d(tmpz);
- 
-       mypneb->rr_Mul(tmp, tmpx);
-       mypneb->rr_Mul(tmp, tmpy);
-       mypneb->rr_Mul(tmp, tmpz);
- 
-       fion[3 * ii] += scal1 * scal2 * mypneb->rr_dot(tmpx, vxcG);
-       fion[3 * ii + 1] += scal1 * scal2 * mypneb->rr_dot(tmpy, vxcG);
-       fion[3 * ii + 2] += scal1 * scal2 * mypneb->rr_dot(tmpz, vxcG);
-     }
+   for (int ii = 0; ii < (myion->nion); ++ii) 
+   {
+      ia = myion->katm[ii];
+      if (semicore[ia]) 
+      {
+         /* put sqrt(core-density) at atom position */
+         mystrfac->strfac_pack(0, ii, exi);
+         mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
+         mypneb->tcc_pack_iMul(0, Gx, tmp, tmpx);
+         mypneb->tcc_pack_iMul(0, Gy, tmp, tmpy);
+         mypneb->tcc_pack_iMul(0, Gz, tmp, tmpz);
+        
+         /* Put put tmp,tmpx,tmpy,tmpz into real space */
+         mypneb->c_unpack(0, tmp);
+         mypneb->c_unpack(0, tmpx);
+         mypneb->c_unpack(0, tmpy);
+         mypneb->c_unpack(0, tmpz);
+         mypneb->cr_fft3d(tmp);
+         mypneb->cr_fft3d(tmpx);
+         mypneb->cr_fft3d(tmpy);
+         mypneb->cr_fft3d(tmpz);
+        
+         mypneb->cc_Mul(tmp, tmpx);
+         mypneb->cc_Mul(tmp, tmpy);
+         mypneb->cc_Mul(tmp, tmpz);
+        
+         fion[3*ii]   += scal1 * scal2 * mypneb->cc_dot(tmpx, vxcG);
+         fion[3*ii+1] += scal1 * scal2 * mypneb->cc_dot(tmpy, vxcG);
+         fion[3*ii+2] += scal1 * scal2 * mypneb->cc_dot(tmpz, vxcG);
+      }
    }
  
-   mypneb->r_dealloc(tmp);
-   mypneb->r_dealloc(tmpx);
-   mypneb->r_dealloc(tmpy);
-   mypneb->r_dealloc(tmpz);
-   mypneb->r_dealloc(vxcG);
+   mypneb->c_dealloc(tmp);
+   mypneb->c_dealloc(tmpx);
+   mypneb->c_dealloc(tmpy);
+   mypneb->c_dealloc(tmpz);
+   mypneb->c_dealloc(vxcG);
    mypneb->c_pack_deallocate(exi);
    // delete [] Gx;
    // delete [] Gy;

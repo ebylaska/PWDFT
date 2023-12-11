@@ -775,19 +775,16 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
    int indx2, indx2n, shift2;
  
    n = (neq[0] + neq[1])*nbrillq;
-   shift1 = 2 * CGrid::npack1_max();
+   shift1 = 2*CGrid::npack1_max();
    shift2 = n2ft3d;
    indx1 = indx1n = 0;
    indx2 = indx2n = 0;
    done = 0;
    while (!done) 
    {
-       std::cout << "gh indx1=" << indx1  << " indx2=" << indx2 << " neq=" << neq[0]+neq[1]<< std::endl;
       if (indx1 < n) 
       {
-          std::cout << "queuein" << std::endl;
          int nbq1 = (indx1/(neq[0]+neq[1])) + 1;
-          std::cout << "queuein  In nbq1="<< nbq1 << std::endl;
          cr_pfft3b_queuein(nbq1, psi + indx1n);
          indx1n += shift1;
          ++indx1;
@@ -795,9 +792,7 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
       if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
       {
          int nbq2 = (indx2/(neq[0]+neq[1])) + 1;
-          std::cout << "queueout In nbq2="<< nbq2 << std::endl;
          cr_pfft3b_queueout(nbq2, psi_r + indx2n);
-          std::cout << "queueout Out" << std::endl;
          indx2n += shift2;
          ++indx2;
       }
@@ -823,28 +818,32 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
  */
 void Cneb::hr_aSumSqr(const double alpha, double *psir, double *dn) 
 {
-   int n,ms,k,indx0,indx1;
-   int one = 1;
-   int zero = 0;
-   int nsize = n2ft3d * ispin;
-   double rzero = 0.0;
- 
-   // dcopy_(&nsize,&rzero,&zero,dn,&one);
+   int nsize = nfft3d*ispin;
    std::memset(dn,0,nsize*sizeof(double));
- 
-   indx0 = 0;
-   indx1 = 0;
-   for (ms=0; ms<ispin; ++ms) 
+
+   int indx1 = 0;
+   for (auto nbq=0; nbq<nbrillq; ++ nbq)
    {
-      for (n=0; n<(neq[ms]); ++n) 
+      int indx0 = 0;
+      double weight = alpha*pbrill_weight(nbq);
+      for (auto ms=0; ms<ispin; ++ms) 
       {
-         for (k=0; k<n2ft3d; ++k)
-            dn[indx0+k] += alpha*psir[indx1+k]*psir[indx1+k];
-         indx1 += n2ft3d;
+         for (auto n=0; n<(neq[ms]); ++n) 
+         {
+            int k2 = 0;
+            for (auto k=0; k<nfft3d; ++k)
+            {
+               double ar = psir[indx1+k2];
+               double ai = psir[indx1+k2+1];
+               dn[indx0+k] += weight*(ar*ar + ai*ai);
+               k2 += 2;
+            }
+            indx1 += n2ft3d;
+         }
+         indx0 += nfft3d;
       }
-      indx0 += n2ft3d;
    }
-   c3db::parall->Vector_SumAll(2, ispin*n2ft3d, dn);
+   c3db::parall->Vector_SumAll(1, ispin*nfft3d, dn);
 }
 
 /*************************************
@@ -884,28 +883,34 @@ void Cneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
 void Cneb::hhr_aSumMul(const double alpha, const double *psir0,
                        const double *psir1, double *dn12) 
 {
-   int n, ms, k, indx0, indx1;
-   int one = 1;
-   int zero = 0;
-   int nsize = n2ft3d * ispin;
-   double rzero = 0.0;
- 
+   int nsize = nfft3d * ispin;
    std::memset(dn12, 0, nsize * sizeof(double));
  
-   indx0 = 0;
-   indx1 = 0;
-   for (ms = 0; ms < ispin; ++ms) 
+   int indx1 = 0;
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
-      for (n = 0; n < (neq[ms]); ++n) 
+      int indx0 = 0;
+      double weight = alpha*pbrill_weight(nbq);
+      for (auto ms=0; ms<ispin; ++ms) 
       {
-         for (k=0; k<n2ft3d; ++k)
-            dn12[indx0+k] += alpha*( psir0[indx1+k]*psir1[indx1+k] 
-                                   + psir1[indx1+k]*psir0[indx1+k]);
-         indx1 += n2ft3d;
+         for (auto n=0; n<(neq[ms]); ++n) 
+         {
+            int k2 = 0;
+            for (auto k=0; k<nfft3d; ++k)
+            {
+               double a0r = psir0[indx1+k2];
+               double a0i = psir0[indx1+k2+1];
+               double a1r = psir1[indx1+k2];
+               double a1i = psir1[indx1+k2+1];
+               dn12[indx0+k] += weight*(a0r*a1r + a0i*a0i);
+               k2 += 2;
+            }
+            indx1 += n2ft3d;
+         }
+         indx0 += nfft3d;
       }
-      indx0 += n2ft3d;
    }
-   c3db::parall->Vector_SumAll(2, ispin * n2ft3d, dn12);
+   c3db::parall->Vector_SumAll(1, ispin*nfft3d, dn12);
 }
 
 /*************************************
@@ -976,7 +981,7 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
       for (auto ms=0; ms<ispin; ++ms) 
       {
          auto n = ne[ms];
-         c3db::mygdevice.TN1_dgemm(npack1,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+         c3db::mygdevice.CN1_zgemm(npack1,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
         
          for (auto k=0; k<n; ++k)
             for (auto j=k+1; j<n; ++j)
@@ -997,10 +1002,98 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
                 */
 }
 
+/*************************************
+ *                                   *
+ *      Cneb::ggw_sym_Multiply       *
+ *                                   *
+ *************************************/
+/**   
+ * @brief Multiply two sets of wave functions with symmetry considerations.
+ *    
+ * This function multiplies two sets of wave functions `psi1` and `psi2` and stores the result in the `hml` matrix while considering symmetry properties. The function is parallelized for performance improvements.
+      
+ * @param psi1 A pointer to the first set of wave functions.
+ * @param psi2 A pointer to the second set of wave functions.
+ * @param hml A pointer to the resulting matrix.
+ *       
+ * @note This function performs matrix multiplication of `psi1` and `psi2` with symmetry considerations. The result is stored in the `hml` matrix, which should be pre-allocated with sufficient memory. Symmetry is taken into account to optimize the calculation.
+ */            
+void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
+{  
+   nwpw_timing_function ftimer(15);
+   
+   int npack1 = 2*CGrid::npack1_max();
+   //int ng0    = 2*CGrid::nzero(1);
+      
+   int one = 1;
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+            
+   if (parallelized) 
+   {    
+      auto taskid_i = c1db::parall->taskid_i();
+      auto taskid_j = c1db::parall->taskid_j();
+      auto ishift2 = mcq[0]*ncq[0];
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+          if (ne[ms]>0)
+          {
+             auto shift0 = ms*neq[0]*npack1;
+             auto shift2 = ms*ishift2;
+             c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+                           ne[ms],ne[ms],npack1_all,128,
+                           psi1+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                           work1,work2);
+          }
+      }
+      std::memset(hml,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,hml);
+      c1db::parall->Vector_SumAll(0,mall[0],hml);
+
+      // Symmetrize hml
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         int n = ne[ms];
+         int mshift0 = ms*ne[0]*ne[0];
+         for (auto k=0; k<n; ++k)
+            for (auto j=k+1; j<n; ++j)
+               hml[mshift0+j+k*n] = hml[mshift0+k+j*n];
+      }
+   }
+   else 
+   {
+      auto shift0  = 0;
+      auto mshift0 = 0;
+      for (auto nbq=0; nbq<nbrillq; ++nbq)
+      {
+         for (auto ms=0; ms<ispin; ++ms)
+         {
+            auto n = ne[ms];
+            c3db::mygdevice.CN1_zgemm(npack1,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+           
+            for (auto k=0; k<n; ++k)
+            for (auto j=k+1; j<n; ++j)
+            {
+               hml[mshift0+(2*j)  +(2*k)*n]   = hml[mshift0+(2*k)+(2*j)*n];
+               hml[mshift0+(2*j+1)+(2*k+1)*n] = -hml[mshift0+(2*k+1)+(2*j+1)*n];
+            }
+      
+            shift0  += npack1*ne[ms];
+            mshift0 += 2*ne[ms]*ne[ms];
+         }
+      }
+      c3db::parall->Vector_SumAll(1,nbrillq*2*(ne[0]*ne[0]+ne[1]*ne[1]),hml);
+   }
+}
+
+
 
 /*************************************
  *                                   *
- *        Cneb::ggm_Multiply         *
+ *        Cneb::ggw_Multiply         *
  *                                   *
  *************************************/
 /**
@@ -1014,7 +1107,7 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
  *
  * @note This function performs matrix multiplication of `psi1` and `psi2` without taking symmetry into account. The result is stored in the `hml` matrix, which should be pre-allocated with sufficient memory. Parallelization is applied for improved performance.
  */
-void Cneb::ggm_Multiply(double *psi1, double *psi2, double *hml) 
+void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml) 
 {
    nwpw_timing_function ftimer(15);
    int n, shift0, mshift0;
@@ -1062,7 +1155,7 @@ void Cneb::ggm_Multiply(double *psi1, double *psi2, double *hml)
       for (auto ms = 0; ms < ispin; ++ms) 
       {
          n = ne[ms];
-         c3db::mygdevice.TN1_dgemm(npack1,n,rtwo,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+         c3db::mygdevice.CN1_zgemm(npack1,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
         
         
          shift0 += npack1 * ne[0];
@@ -1836,7 +1929,7 @@ void Cneb::ggm_SVD(double *A, double *U, double *S, double *V)
  */
 void Cneb::m_scal(double alpha, double *hml) {
   int one = 1;
-  int nsize = ne[0] * ne[0] + ne[1] * ne[1];
+  int nsize = 4*(ne[0]*ne[0] + ne[1]*ne[1]);
 
   DSCAL_PWDFT(nsize, alpha, hml, one);
 }
@@ -2680,249 +2773,5 @@ void Cneb::fm_QR(const int mb, double *Q, double *R) {
   }
 }
 
-/********************************
- *                              *
- *     Cneb::mmm4_AR_to_T4      *
- *                              *
- ********************************/
-void Cneb::mmm4_AR_to_T4(const int mb, const double *A, const double *R, double *T4) 
-{
-   int ms1, ms2, ishift1, ishift2;
-   if (mb == -1) 
-   {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift1 = ne[0] * ne[0];
-      ishift2 = 4 * ne[0] * ne[0];
-      std::memset(T4, 0, (4 * ne[0] * ne[0] + ne[1] * ne[1]) * sizeof(double));
-   } 
-   else 
-   {
-      ms1 = mb;
-      ms2 = mb;
-      ishift1 = 0;
-      ishift2 = 0;
-      std::memset(T4, 0, (4 * ne[mb] * ne[mb]) * sizeof(double));
-   }
-
-   for (auto ms = ms1; ms < ms2; ++ms) 
-   {
-      const int n = ne[ms];
-      const double *Asub = A + ms * ishift1;
-      const double *Rsub = R + ms * ishift1;
-      double *Tsub = T4 + ms * ishift2;
-     
-      //**** copy A to upper-left of T ****
-      for (auto j = 0; j < n; ++j)
-         for (auto i = 0; i < n; ++i)
-            Tsub[i + j * (2 * n)] = Asub[i + j * n];
-     
-      //**** copy R to lower-left of T ****
-      for (auto j = 0; j < n; ++j)
-         for (auto i = 0; i < n; ++i)
-            Tsub[(i + n) + j * (2 * n)] = Rsub[i + j * n];
-     
-      //**** copy -R^t to upper-right of T ****
-      for (auto j = 0; j < n; ++j)
-         for (auto i = 0; i < n; ++i)
-            Tsub[i + (j + n) * (2 * n)] = -Rsub[j + i * n];
-   }
-}
-
-/********************************
- *                              *
- *     Cneb::m4_FactorSkew      *
- *                              *
- ********************************/
-void Cneb::m4_FactorSkew(const int mb, double *K4, double *V4, double *W4,
-                         double *Sigma) {
-  int ms1, ms2, ishift1, ishift2;
-  if (mb == -1) {
-    ms1 = 0;
-    ms2 = ispin;
-    ishift1 = 2 * ne[0];
-    ishift2 = 4 * ne[0] * ne[0];
-  } else {
-    ms1 = mb;
-    ms2 = mb;
-    ishift1 = 0;
-    ishift2 = 0;
-  }
-
-  for (auto ms = ms1; ms < ms2; ++ms) {
-    int n = 2 * ne[ms];
-    int shift1 = ms * ishift1;
-    int shift2 = ms * ishift2;
-
-    FACTOR_SKEW_PWDFT(n, K4 + shift2, V4 + shift2, W4 + shift2, Sigma + shift1);
-  }
-}
-
-/********************************
- *                              *
- *    mm4_RotationSkew_sub1     *
- *                              *
- ********************************/
- /*
-  Description:
-    This function calculates the sine and cosine values of the scaled Sigma values multiplied by 't',
-    and stores the results in arrays SA and SB. The operation is performed element-wise for the given size 'n'.
-
-  Parameters:
-    - n: Size of the arrays.
-    - t: Scaling factor for the rotation angle.
-    - Sigma: Pointer to a double array containing input matrix data.
-    - SA: Pointer to a double array where the cosine results will be stored.
-    - SB: Pointer to a double array where the sine results will be stored.
-*/
-static void mm4_RotateSkew_sub1(const int n, const double t,
-                                const double *Sigma, double *SA, double *SB) 
-{
-   for (auto i = 0; i < n; ++i) 
-   {
-      SA[i] = cos(Sigma[i] * t);
-      SB[i] = sin(Sigma[i] * t);
-   }
-}
-
-/********************************
- *                              *
- *    mm4_RotationSkew_sub2     *
- *                              *
- ********************************/
- /*
-  Description:
-    This function performs a rotation and skew transformation on matrices V and W using the precalculated
-    sine and cosine values from arrays SA and SB. The resulting matrices A and B are stored accordingly.
-    The operation is performed element-wise for the given size 'n'.
-
-  Parameters:
-    - n: Size of the arrays.
-    - SA, SB: Pointers to double arrays containing precalculated sine and cosine values.
-    - V, W: Pointers to double arrays containing input matrix data.
-    - A: Pointer to a double array where the rotated matrix A will be stored.
-    - B: Pointer to a double array where the skewed matrix B will be stored.
-*/
-static void mm4_RotateSkew_sub2(const int n, const double *SA, const double *SB,
-                                const double *V, const double *W, double *A,
-                                double *B) {
-  for (auto j = 0; j < n; ++j)
-    for (auto i = 0; i < n; ++i) {
-      int indx = i + j * n;
-      A[indx] = V[indx] * SA[j] + W[indx] * SB[j];
-      B[indx] = W[indx] * SA[j] - V[indx] * SB[j];
-    }
-}
-
-/********************************
- *                              *
- *    Cneb::m4_RotationSkew     *
- *                              *
- ********************************/
- /*
-  Description:
-    This function performs a rotation and skew transformation on given matrices V4 and W4, storing the
-    results in matrices A4, B4, and R4. The transformation is based on the provided parameters and
-    matrix properties. The operation is performed within specified matrix blocks determined by 'mb' and
-    matrix sizes 'ne'.
-
-  Parameters:
-    - mb: Index specifying the block of matrices to operate on. If mb is -1, the entire matrix V4 and W4
-          are used for calculations. Otherwise, a subset of matrices is used.
-    - t: Rotation angle for the transformation.
-    - V4, W4: Pointers to double arrays containing input matrix data.
-    - Sigma: Pointer to a double array for storing intermediate transformation values.
-    - A4, B4: Pointers to double arrays where the resulting matrices A4 and B4 will be stored.
-    - R4: Pointer to a double array where the final transformed matrix R4 will be stored.
-*/
-
-void Cneb::m4_RotationSkew(const int mb, const double t, double *V4, double *W4,
-                           double *Sigma, double *A4, double *B4, double *R4) {
-  int ms1, ms2, ishift1, ishift2, nj;
-  if (mb == -1) {
-    ms1 = 0;
-    ms2 = ispin;
-    ishift1 = 2 * ne[0];
-    ishift2 = 4 * ne[0] * ne[0];
-    nj = 2 * (ne[0] + ne[1]);
-  } else {
-    ms1 = mb;
-    ms2 = mb;
-    ishift1 = 0;
-    ishift2 = 0;
-    nj = 2 * ne[mb];
-  }
-
-  double rzero = 0.0;
-  double rone = 1.0;
-  double SA[nj];
-  double SB[nj];
-
-  mm4_RotateSkew_sub1(nj, t, Sigma, SA, SB);
-
-  for (auto ms = ms1; ms < ms2; ++ms) {
-    int n = 2 * ne[ms];
-    int shift1 = ms * ishift1;
-    int shift2 = ms * ishift2;
-    mm4_RotateSkew_sub2(n, SA + shift1, SB + shift1, V4 + shift2, W4 + shift2,
-                        A4 + shift2, B4 + shift2);
-
-    DGEMM_PWDFT((char *)"N", (char *)"T", n, n, n, rone, V4 + shift2, n,
-                A4 + shift2, n, rzero, R4 + shift2, n);
-    DGEMM_PWDFT((char *)"N", (char *)"T", n, n, n, rone, W4 + shift2, n,
-                B4 + shift2, n, rone, R4 + shift2, n);
-  }
-}
-
-/********************************
- *                              *
- *     Cneb::m4_R4_to_MN        *
- *                              *
- ********************************/
-/*
-  Description:
-    This function converts a given matrix R4 to two matrices M and N. The matrices M and N are
-    extracted from specific subblocks of R4 based on the provided index 'mb' and matrix sizes 'ne'.
-    The operation is performed according to the specified parameters and matrix properties.
-    
-  Parameters:
-    - mb: Index specifying the block of matrices to operate on. If mb is -1, the entire matrix R4 is
-          used to extract M and N. Otherwise, a subset of matrices is used for calculations.
-    - R4: Pointer to a double array containing the input matrix data (R4).
-    - M: Pointer to a double array where the resulting matrix M will be stored.
-    - N: Pointer to a double array where the resulting matrix N will be stored.
-*/
-void Cneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N) 
-{
-   int ms1, ms2, ishift1, ishift2;
-   if (mb == -1) 
-   {
-      ms1 = 0;
-      ms2 = ispin;
-      ishift1 = ne[0] * ne[0];
-      ishift2 = 4 * ne[0] * ne[0];
-   } 
-   else 
-   {
-      ms1 = mb;
-      ms2 = mb;
-      ishift1 = 0;
-      ishift2 = 0;
-   }
- 
-   for (auto ms = ms1; ms < ms2; ++ms) 
-   {
-      int n = ne[ms];
-      int shift1 = ms * ishift1;
-      int shift2 = ms * ishift2;
-     
-      for (auto j = 0; j < n; ++j)
-         for (auto i = 0; i < n; ++i) 
-         {
-            M[i + j * n] = R4[i + j * (2 * n)];
-            N[i + j * n] = R4[(i + n) + j * (2 * n)];
-         }
-   }
-}
 
 } // namespace pwdft

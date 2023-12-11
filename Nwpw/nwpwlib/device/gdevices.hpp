@@ -118,6 +118,7 @@ public:
                 host_b, npack, beta, host_c, ne);
   }
 
+
   void T_free() {}
 
   void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b,
@@ -134,6 +135,8 @@ public:
                  double *host_c,int ldc) {
      DGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   }
+
+
   void TN_dgemm2(int m, int n, int k, 
                  double alpha, 
                  double *host_a, int lda, 
@@ -153,6 +156,7 @@ public:
      if (nida2>0)
         DGEMM_PWDFT((char *)"T", (char *)"N", n,m,nida2,rmone,host_a,npack2,host_b,npack2,rone,host_c,n);
   }
+
 
   void NT_dgemm3(int m, int n, int k, 
                  double alpha, 
@@ -216,6 +220,67 @@ public:
       shift2 += ne[0] * ne[0];
     }
   }
+
+
+
+  /// DOUBLE COMPLEX BLAS
+
+  void NN_zgemm(int npack, int ne, double alpha, double *host_a, double *host_b,
+                double beta, double *host_c) {
+    ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack,
+                host_b, ne, beta, host_c, npack);
+  }              
+                 
+  void NN_zgemm1(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }             
+
+  void CN1_zgemm(int npack, int ne, double alpha, double *host_a,
+                 double *host_b, double beta, double *host_c) {
+    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack,
+                host_b, npack, beta, host_c, ne);
+  }  
+
+  void CN_zgemm2(int m, int n, int k,
+                 double alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  } 
+
+  void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
+  {
+     int n, ierr;
+     int nn = ne[0] * ne[0] + 14;
+     double xmp1[nn];
+     double rmp1[nn];
+     // double *xmp1 = new (std::nothrow) double[nn]();
+    
+     int shift1 = 0;
+     int shift2 = 0;
+     for (int ms=0; ms<ispin; ++ms) 
+     {
+        n = ne[ms];
+       
+        // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
+        //  d3db::parall->Barrier();
+        ZEIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, rmp1, ierr);
+        // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
+        // EIGEN_PWDFT failed!"));
+      
+        //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+        shift1 += 2*ne[0];
+        shift2 += 4*ne[0]*ne[0];
+     } 
+  }
+
 
   void batch_rfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx) 
   {
@@ -354,11 +419,11 @@ public:
      if (forward) 
      {
         int indx = 0;
-        for (auto q = 0; q < nq; ++q) 
+        for (auto q=0; q<nq; ++q) 
         {
            if (!zero[q])
               dcfftf_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
+           indx += (2*nz);
         }
      } 
      else 
@@ -368,7 +433,7 @@ public:
         {
            if (!zero[q])
               dcfftb_(&nz, a + indx, tmpz);
-           indx += (2 * nz);
+           indx += (2*nz);
         }
      }
   }

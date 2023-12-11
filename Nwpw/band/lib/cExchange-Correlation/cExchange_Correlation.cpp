@@ -89,12 +89,12 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
    use_mgga = false;
    if (gga == 0) {
      use_lda = true;
-     xtmp = new double[mycneb->ispin * mycneb->n2ft3d];
+     xtmp = new double[mycneb->ispin * mycneb->nfft3d];
    }
    if ((gga >= 10) && (gga < 100)) {
      use_gga = true;
      if (mycneb->ispin == 1) {
-       rho = new double[mycneb->n2ft3d];
+       rho = new double[mycneb->nfft3d];
  
        grx = new double[mycneb->n2ft3d];
        gry = new double[mycneb->n2ft3d];
@@ -104,7 +104,7 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
        fn = new double[mycneb->n2ft3d];
        fdn = new double[mycneb->n2ft3d];
      } else {
-       rho = new double[2 * mycneb->n2ft3d];
+       rho = new double[2 * mycneb->nfft3d];
  
        grx = new double[3 * mycneb->n2ft3d];
        gry = new double[3 * mycneb->n2ft3d];
@@ -128,7 +128,7 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
  *******************************************/
 void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
   if (use_lda) {
-    v_exc(ispin, mycneb->n2ft3d, dn, xcp, xce, xtmp);
+    v_exc(ispin, mycneb->nfft3d, dn, xcp, xce, xtmp);
   } else if (use_gga) {
     v_cwexc(gga, mycneb, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn,
             fdn);

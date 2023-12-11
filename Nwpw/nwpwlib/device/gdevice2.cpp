@@ -77,6 +77,17 @@ void gdevice2::NN_eigensolver(int ispin, int ne[], double *a, double *w) {
    mygdevice2->NN_eigensolver(ispin, ne, a, w);
 }
 
+
+void gdevice2::CN1_zgemm(int npack, int ne, double alpha, double *a, double *b,
+                         double beta, double *c) {
+   mygdevice2->CN1_zgemm(npack, ne, alpha, a, b, beta, c);
+}
+
+
+void gdevice2::WW_eigensolver(int ispin, int ne[], double *a, double *w) {
+   mygdevice2->WW_eigensolver(ispin, ne, a, w);
+}
+
 void gdevice2::psi_alloc(int npack, int ne, int tfac0 = 1) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
@@ -236,7 +247,7 @@ void gdevice2::batch_cfftz_tmpz(const int tag, bool forward, int nz, int nq, int
 }
 
 void gdevice2::batch_cfftz_tmpz_zero(const int tag, bool forward, int nz, int nq, int n2ft3d,
-                                   double *a, double *tmpz, bool *zero) {
+                                     double *a, double *tmpz, bool *zero) {
 #if defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
       mygdevice2->batch_cfftz(tag,forward, nz, nq, n2ft3d, a);

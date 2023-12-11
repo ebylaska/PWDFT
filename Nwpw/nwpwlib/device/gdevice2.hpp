@@ -32,6 +32,13 @@ public:
    void MM6_dgemm(int, double *, double *, double *, double *, double *, double *);
   
    void NN_eigensolver(int, int *, double *, double *);
+
+
+   void CN1_zgemm(int, int, double, double *, double *, double, double *);
+   void CN_zgemm(int, int, int, double, double *, double *, double, double *);
+   void NN_zgemm(int, int, double, double *, double *, double, double *);
+   void NN_zgemm1(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void WW_eigensolver(int, int *, double *, double *);
   
    void psi_alloc(int, int, int);
    void psi_dealloc();

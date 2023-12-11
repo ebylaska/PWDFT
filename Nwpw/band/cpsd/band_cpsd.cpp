@@ -381,7 +381,24 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (myparallel.is_master()) seconds(&cpu3);
    if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
 
-     //                  |***************************|
+   /* diagonalize the hamiltonian */
+   //mygrid.m_diagonalize(hml, eig);
+
+
+   /* calculate real-space number of electrons, en */
+   {        
+      double omega = mylattice.omega();
+      double scal1 = 1.0/((double)((mygrid.nx) * (mygrid.ny) * (mygrid.nz)));
+      double dv = omega * scal1;
+
+      en[0] = dv*mygrid.r_dsum(dn);
+      en[1] = en[0];
+      if (ispin>1)                      
+         en[1] = dv*mygrid.r_dsum(dn + mygrid.nfft3d);
+   }  
+
+
+   //                  |***************************|
    // ****************** report summary of results **********************
    //                  |***************************|
    if (oprint)
@@ -493,20 +510,11 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       }
    }
 
-
-
-
-
-
    // write wavefunctions
    version = 5;
    nfft[0] = mygrid.nx;
    nfft[1] = mygrid.ny;
    nfft[2] = mygrid.nz;
-   std::cout << "version=" << version<< std::endl;
-   std::cout << "nfft=" << nfft[0] << " " << nfft[1] << " " << nfft[2] << std::endl;
-   std::cout << "ispin=" << ispin << std::endl;
-   std::cout << "ne=" << ne[0] << " " << ne[1] << std::endl;
    cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
@@ -516,12 +524,19 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
              << " taskid_j=" << myparallel.taskid_j() 
              << " taskid_k=" << myparallel.taskid_k() << std::endl;
    mygrid.g_deallocate(psi1);
+std::cout << "B dealloc" << std::endl;
    mygrid.g_deallocate(psi2);
+std::cout << "C dealloc" << std::endl;
    mygrid.g_deallocate(Hpsi);
+std::cout << "D dealloc" << std::endl;
    mygrid.h_deallocate(psi_r);
+std::cout << "E dealloc" << std::endl;
    mygrid.r_dealloc(dn);
+std::cout << "F dealloc" << std::endl;
    mygrid.w_deallocate(hml);
+std::cout << "G dealloc" << std::endl;
    mygrid.w_deallocate(lmbda);
+std::cout << "H dealloc" << std::endl;
    delete [] eig;
    //mygrid.d3db::mygdevice.psi_dealloc();
 

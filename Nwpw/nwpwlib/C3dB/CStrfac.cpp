@@ -102,7 +102,7 @@ void CStrfac::phafac()
    double cw1x, cw2x, cw3x;
    double cw1y, cw2y, cw3y;
  
-   pi = 4.00 * std::atan(1.0);
+   pi = 4.00*std::atan(1.0);
  
    nx = (mygrid->nx);
    ny = (mygrid->ny);
@@ -189,20 +189,16 @@ void CStrfac::strfac_pack(const int nb, const int ii, double *strx)
    const int *indxj = j_indx[nb];
    const int *indxk = k_indx[nb];
  
-   const double *exi = &wx1[2*ii*nx];
-   const double *exj = &wy1[2*ii*ny];
-   const double *exk = &wz1[2*ii*nz];
+   const double *exi = wx1 + 2*ii*nx;
+   const double *exj = wy1 + 2*ii*ny;
+   const double *exk = wz1 + 2*ii*nz;
  
-   double ai, aj, ak, bi, bj, bk;
-   double c, d;
-   for (int i = 0; i < npack; ++i)
+   double ai,aj,ak,bi,bj,bk,c,d;
+   for (auto i=0; i<npack; ++i)
    {
-      ai = exi[2*indxi[i]];
-      bi = exi[2*indxi[i] + 1];
-      aj = exj[2*indxj[i]];
-      bj = exj[2*indxj[i] + 1];
-      ak = exk[2*indxk[i]];
-      bk = exk[2*indxk[i] + 1];
+      ai = exi[2*indxi[i]]; bi = exi[2*indxi[i] + 1];
+      aj = exj[2*indxj[i]]; bj = exj[2*indxj[i] + 1];
+      ak = exk[2*indxk[i]]; bk = exk[2*indxk[i] + 1];
       c = aj*ak - bj*bk;
       d = aj*bk + ak*bj;
       strx[2*i]   = (ai*c - bi*d);
