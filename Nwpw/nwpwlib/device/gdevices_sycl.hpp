@@ -956,6 +956,270 @@ public:
       inuse[i_st1] = false;
       inuse[i_sa1] = false;
    }
+
+
+
+   void CN1_zgemm(int npack2, int ne, double alpha, double *host_a,
+                  double *host_b, double beta, double *host_cab)
+   {
+      int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+
+      if (std::fabs(beta) > 0.0)
+      {
+         stream[0]->memcpy(dev_mem[ic12], host_cab, ne*ne*sizeof(double)).wait();
+      }
+
+      // copy host_a,host_b --> dev_mem
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         &host_a[tile_start2[0]], npack2, dev_mem[ia_psi[0]],
+                         tile_npack2[0], stream[0]);
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         &host_b[tile_start2[0]], npack2, dev_mem[ia_hpsi[0]],
+                         tile_npack2[0], stream[0]);
+
+      double beta0 = beta;
+      for (auto tt = 0; tt < tile_fac; ++tt)
+      {
+         int ttp1 = tt + 1;
+         if (ttp1 < tile_fac)
+         {
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &host_a[tile_start2[ttp1]], npack2,
+                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &host_b[tile_start2[ttp1]], npack2,
+                               dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+         }
+         stream[tt % 2]->wait();
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matT, matN, ne, ne, tile_npack2[tt], alpha,
+             dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic12], ne);
+         beta0 = 1.0;
+      }
+
+      stream[0]->memcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double)).wait();
+
+      inuse[ic12] = false;
+   }
+
+
+
+   void CN2_zgemm(int ne, int nprj, int npack2, double alpha, double *host_a,
+                   double *host_b, double beta, double *host_c)
+   {
+      b_prj = host_b;
+      ib_prj[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
+      if (tile_fac > 1)
+         ib_prj[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
+      int ic = fetch_dev_mem_indx(((size_t)ne) * ((size_t)nprj));
+
+      syclSetMatrixAsync(ne, nprj, sizeof(double), host_c, ne, dev_mem[ic], ne,
+                         stream[0]);
+
+      if (tile_fac > 1)
+         syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                            &a_psi[tile_start2[0]], npack2, dev_mem[ia_psi[0]],
+                            tile_npack2[0], stream[0]);
+      syclSetMatrixAsync(tile_npack2[0], nprj, sizeof(double),
+                         &b_prj[tile_start2[0]], npack2, dev_mem[ib_prj[0]],
+                         tile_npack2[0], stream[0]);
+
+      double beta0 = beta;
+      for (auto tt = 0; tt < tile_fac; ++tt)
+      {
+         int ttp1 = tt + 1;
+         if (ttp1 < tile_fac)
+         {
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &a_psi[tile_start2[ttp1]], npack2,
+                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+            syclSetMatrixAsync(tile_npack2[ttp1], nprj, sizeof(double),
+                               &b_prj[tile_start2[ttp1]], npack2,
+                               dev_mem[ib_prj[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+         }
+
+         stream[tt % 2]->wait();
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], alpha,
+             dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ib_prj[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic], ne);
+         beta0 = 1.0;
+      }
+      stream[0]->memcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double)).wait();
+
+      // inuse[ia] = false;
+      // inuse[ib_prj[0]] = false;
+      // if (tile_fac>1) inuse[ib_prj[1]] = false;
+      inuse[ic] = false;
+   }
+
+
+   void NC2_zgemm(int ne, int nprj, int npack2, double alpha, double *host_a,
+                   double *host_b, double beta, double *host_c)
+   {
+      // DGEMM_PWDFT((char *) "T",(char *)
+      // "N",ne,nprj,npack2,alpha,host_a,npack2,host_b,npack2,beta,host_c,ne);
+
+      // gdevice_TN_dgemm(nn,nprj,ng,rtwo,a,b,rzero,sum);
+
+      // int ia = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) ne));
+      // int ib = fetch_dev_mem_indx(((size_t) npack2) * ((size_t) nprj));
+      b_prj = host_b;
+      ib_prj[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
+      if (tile_fac > 1)
+         ib_prj[1] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
+      int ic = fetch_dev_mem_indx(((size_t)ne) * ((size_t)nprj));
+
+      syclSetMatrixAsync(ne, nprj, sizeof(double), host_c, ne, dev_mem[ic], ne,
+                         stream[0]);
+
+      if (tile_fac > 1)
+         syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                            &a_psi[tile_start2[0]], npack2, dev_mem[ia_psi[0]],
+                            tile_npack2[0], stream[0]);
+      syclSetMatrixAsync(tile_npack2[0], nprj, sizeof(double),
+                         &b_prj[tile_start2[0]], npack2, dev_mem[ib_prj[0]],
+                         tile_npack2[0], stream[0]);
+
+      double beta0 = beta;
+      for (auto tt = 0; tt < tile_fac; ++tt)
+      {
+         int ttp1 = tt + 1;
+         if (ttp1 < tile_fac)
+         {
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &a_psi[tile_start2[ttp1]], npack2,
+                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+            syclSetMatrixAsync(tile_npack2[ttp1], nprj, sizeof(double),
+                               &b_prj[tile_start2[ttp1]], npack2,
+                               dev_mem[ib_prj[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+         }
+
+         stream[tt % 2]->wait();
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], alpha,
+             dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ib_prj[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic], ne);
+         beta0 = 1.0;
+      }
+      stream[0]->memcpy(host_c, dev_mem[ic], ne * nprj * sizeof(double)).wait();
+
+      // inuse[ia] = false;
+      // inuse[ib_prj[0]] = false;
+      // if (tile_fac>1) inuse[ib_prj[1]] = false;
+      inuse[ic] = false;
+   }
+
+
+  void NN_zgemm(int m, int n, int k,
+                double alpha,
+                double *host_a, int lda,
+                double *host_b, int ldb,
+                double beta,
+                double *host_c,int ldc)
+   {
+      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+
+      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
+      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+         matN,matN,m,n,k,
+         alpha,
+         dev_mem[ia],lda,
+         dev_mem[ib],ldb,
+         beta,
+         dev_mem[ic],ldc);
+
+      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
+
+
+  void CN_zgemm(int m, int n, int k,
+                double alpha,
+                double *host_a, int lda,
+                double *host_b, int ldb,
+                double beta,
+                double *host_c,int ldc)
+   {
+      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+
+      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
+      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+         matN,matN,m,n,k,
+         alpha,
+         dev_mem[ia],lda,
+         dev_mem[ib],ldb,
+         beta,
+         dev_mem[ic],ldc);
+
+      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
+
+
+  void NC_zgemm(int m, int n, int k,
+                double alpha,
+                double *host_a, int lda,
+                double *host_b, int ldb,
+                double beta,
+                double *host_c,int ldc)
+   {
+      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
+      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
+      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+
+      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
+      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+         matN,matN,m,n,k,
+         alpha,
+         dev_mem[ia],lda,
+         dev_mem[ib],ldb,
+         beta,
+         dev_mem[ic],ldc);
+
+      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
+
+
+
+
+
+
+
+
  
    /********************/
    /* psi_dev functions*/
