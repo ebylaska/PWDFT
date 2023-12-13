@@ -170,6 +170,8 @@ void gdevice2::batch_fft_end(const int tag) {
 #endif
 }
 
+
+
 void gdevice2::batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
 #if defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)

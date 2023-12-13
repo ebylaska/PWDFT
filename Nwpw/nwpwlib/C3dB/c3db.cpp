@@ -436,9 +436,9 @@ c3db::c3db(Parallel *inparall, const int inmaptype, const int nx, const int ny, 
 /*if (defined NWPW_SYCL) || (defined NWPW_CUDA) || (defined NWPW_HIP) */
 #if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (maptype==1) 
-     fft_tag = mygdevice.batch_c_fft_init(nx,ny,nz,ny*nq,(nx)*nq,(nx)*nq);
+     fft_tag = mygdevice.batch_fft_init(nx,ny,nz,ny*nq,(nx)*nq,(nx)*nq);
    else
-     fft_tag = mygdevice.batch_c_fft_init(nx,ny,nz,nq1,nq2,nq3);
+     fft_tag = mygdevice.batch_fft_init(nx,ny,nz,nq1,nq2,nq3);
 #endif
 }
 
@@ -454,7 +454,7 @@ c3db::~c3db()
 
 #if (defined NWPW_CUDA) || (defined NWPW_HIP)
    if (mygdevice.has_gpu())
-      mygdevice.batch_c_fft_end(fft_tag);
+      mygdevice.batch_fft_end(fft_tag);
 #endif
 
    if (maptype == 1) {
