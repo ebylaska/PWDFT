@@ -20,11 +20,8 @@
 #define EIGEN_PWDFT(n, hml, eig, xtmp, nn, ierr)                               \
   ierr = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, hml, n, eig)
 
-#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp ierr)                         \
-  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
 
 #define DDOT_PWDFT(n, a, ida, b, idb) cblas_ddot(n, a, ida, b, idb);
-#define ZDOTC_PWDFT(n, a, ida, b, idb) cblas_zdotc(n, a, ida, b, idb);
 
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
@@ -33,9 +30,18 @@
                      ierr)                                                     \
   ierr = LAPACKE_dgels(LAPACK_COL_MAJOR, 'N', m, n, nrhs, a, ida, b, idb);
 
+
+#define ZSCAL_PWDFT(n, alpha, a, ida) cblas_zscal(n, alpha, a, ida);
+#define ZDOTC_PWDFT(n, a, ida, b, idb) cblas_zdotc(n, a, ida, b, idb);
+#define ZAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
+  cblas_zaxpy(n, alpha, a, ida, b, idb)
+
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   cblas_zgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
               ida, b, idb, beta, c, idc)
+
+#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp ierr)                         \
+  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
 
 #else
 
@@ -46,7 +52,6 @@ extern "C" void dscal_(int *, double *, double *, int *);
 extern "C" void dgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);
 
-extern "C" double zdotc_(int *, double *, int *, double *, int *);
 
 // extern "C" void eigen_(int *, int *, double *, double *, double *, int *);
 
@@ -60,6 +65,9 @@ extern "C" void dgelss_(int *, int *, int *, double *, int *, double *, int *,
                         double *, double *, int *, double *, int *, int *);
 
 
+extern "C" void zscal_(int *, double *, double *, int *);
+extern "C" double zdotc_(int *, double *, int *, double *, int *);
+extern "C" void zaxpy_(int *, double *, double *, int *, double *, int *);
 extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);
 
@@ -79,11 +87,7 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
 #define EIGEN_PWDFT(n, hml, eig, xtmp, nn, ierr)                               \
   dsyev_((char *)"V", (char *)"U", &(n), hml, &(n), eig, xtmp, &(nn), &ierr)
 
-#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
-  zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
-
 #define DDOT_PWDFT(n, a, ida, b, idb) ddot_(&(n), a, &ida, b, &(idb))
-#define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
 
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   dlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))
@@ -93,10 +97,15 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
   dgelss_(&(m), &(n), &(nrhs), a, &(ida), b, &(idb), s1, &(rcond), &(rank),    \
           work, &(iwork), &(ierr))
 
+#define ZSCAL_PWDFT(n, alpha, a, ida) dscal_(&(n), &(alpha), a, &(ida))
+#define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
 
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   zgemm_(s1, s2, &(n), &(m), &(k), &(alpha), a, &(ida), b, &(idb), &(beta), c, \
          &(idc))
+
+#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
+  zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
 
 #endif
 

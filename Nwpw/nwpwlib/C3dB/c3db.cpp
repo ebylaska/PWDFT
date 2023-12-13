@@ -1162,6 +1162,42 @@ void c3db::cc_SMul(const double da, const double *ptr1, double *ptr2)
    return;
 }
 
+void c3db::c_ZMul(const double da, const double db, double *ptr2)
+{
+   int m = nfft3d_map % 8;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {
+         double c0 = ptr2[i]; double d0 = ptr2[i+1];
+         ptr2[i]   = da*c0 - db*d0;
+         ptr2[i+1] = da*d0 + db*c0;
+      }
+   if (nfft3d_map < 8)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 8)
+   {
+      double c0 = ptr2[i];   double d0 = ptr2[i+1];
+      double c1 = ptr2[i+2]; double d1 = ptr2[i+3];
+      double c2 = ptr2[i+4]; double d2 = ptr2[i+5];
+      double c3 = ptr2[i+6]; double d3 = ptr2[i+7];
+
+      ptr2[i]   = da*c0 - db*d0;
+      ptr2[i+1] = da*d0 + db*c0;
+
+      ptr2[i+2] = da*c1 - db*d1;
+      ptr2[i+3] = da*d1 + db*c1;
+
+      ptr2[i+4] = da*c2 - db*d2;
+      ptr2[i+5] = da*d2 + db*c2;
+
+      ptr2[i+6] = da*c3 - db*d3;
+      ptr2[i+7] = da*d3 + db*c3;
+   }
+   return;
+}
+
+
+
 
 
 /********************************

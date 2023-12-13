@@ -52,17 +52,17 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
    wy1 = new (std::nothrow) double[2 * (myion->nion) * (mygrid->ny)]();
    wz1 = new (std::nothrow) double[2 * (myion->nion) * (mygrid->nz)]();
  
-   for (auto nb=0; nb<maxsize; ++nb)
+   for (auto nbq=0; nbq<maxsize; ++nbq)
    {
-      i_indx[nb] = new (std::nothrow) int[mygrid->npack(0)]();
-      j_indx[nb] = new (std::nothrow) int[mygrid->npack(0)]();
-      k_indx[nb] = new (std::nothrow) int[mygrid->npack(0)]();
+      i_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
+      j_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
+      k_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
    }
    
    ii_indx = new (std::nothrow) int[mygrid->nfft3d]();
    jj_indx = new (std::nothrow) int[mygrid->nfft3d]();
    kk_indx = new (std::nothrow) int[mygrid->nfft3d]();
-   for (auto nb=0; nb<maxsize; ++nb) 
+   for (auto nbq=0; nbq<maxsize; ++nbq) 
    {
       for (auto k=0; k<nz; ++k)
       for (auto j=0; j<ny; ++j)
@@ -77,17 +77,20 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
             kk_indx[indx] = k;
          }
       }
-      mygrid->i_pack(nb, ii_indx);
-      mygrid->i_pack(nb, jj_indx);
-      mygrid->i_pack(nb, kk_indx);
-      mygrid->ii_pack_copy(nb, ii_indx, i_indx[nb]);
-      mygrid->ii_pack_copy(nb, jj_indx, j_indx[nb]);
-      mygrid->ii_pack_copy(nb, kk_indx, k_indx[nb]);
+      mygrid->i_pack(nbq, ii_indx);
+      mygrid->i_pack(nbq, jj_indx);
+      mygrid->i_pack(nbq, kk_indx);
+      mygrid->ii_pack_copy(nbq, ii_indx, i_indx[nbq]);
+      mygrid->ii_pack_copy(nbq, jj_indx, j_indx[nbq]);
+      mygrid->ii_pack_copy(nbq, kk_indx, k_indx[nbq]);
    }
  
    delete[] kk_indx;
    delete[] jj_indx;
    delete[] ii_indx;
+
+   cxreal = new (std::nothrow) double[ (myion->nion) * (mygrid->nbrillq)]();
+   cximag = new (std::nothrow) double[ (myion->nion) * (mygrid->nbrillq)]();
 }
 
 /*********************************
@@ -175,19 +178,40 @@ void CStrfac::phafac()
 
 /*********************************
  *                               *
+ *         CStrfac::phafac_k     *
+ *                               *
+ *********************************/
+void CStrfac::phafac_k()
+{
+   int nion = myion->nion;
+   double *rion1 = myion->rion1;
+
+   for (auto nbq=0; nbq<maxsize; ++nbq)
+   for (auto ii=0; ii<nion; ++ii) 
+   {
+      double pfac = mygrid->pbrill_kvector(nbq)[0]*rion1[3*ii]
+                  + mygrid->pbrill_kvector(nbq)[1]*rion1[3*ii+1]
+                  + mygrid->pbrill_kvector(nbq)[2]*rion1[3*ii+2];
+      cxreal[ii+nbq*nion] = std::cos(pfac);
+      cximag[ii+nbq*nion] = std::sin(pfac);
+   }
+}
+
+/*********************************
+ *                               *
  *      CStrfac::strfac_pack     *
  *                               *
  *********************************/
-void CStrfac::strfac_pack(const int nb, const int ii, double *strx) 
+void CStrfac::strfac_pack(const int nbq, const int ii, double *strx) 
 {
-   int npack = mygrid->npack(nb);
+   int npack = mygrid->npack(nbq);
    int nx = mygrid->nx;
    int ny = mygrid->ny;
    int nz = mygrid->nz;
  
-   const int *indxi = i_indx[nb];
-   const int *indxj = j_indx[nb];
-   const int *indxk = k_indx[nb];
+   const int *indxi = i_indx[nbq];
+   const int *indxj = j_indx[nbq];
+   const int *indxk = k_indx[nbq];
  
    const double *exi = wx1 + 2*ii*nx;
    const double *exj = wy1 + 2*ii*ny;
@@ -203,6 +227,50 @@ void CStrfac::strfac_pack(const int nb, const int ii, double *strx)
       d = aj*bk + ak*bj;
       strx[2*i]   = (ai*c - bi*d);
       strx[2*i+1] = (ai*d + bi*c);
+   }
+}
+
+/**************************************
+ *                                    *
+ *      CStrfac::strfac_pack_cxr      *
+ *                                    *
+ **************************************/
+void CStrfac::strfac_pack_cxr(const int nbq, const int ii, double *strx)
+{
+   int nion = myion->nion;
+   double cc = cxreal[ii+nbq*nion];
+   double dd = cximag[ii+nbq*nion];
+
+   int npack = mygrid->npack(nbq);
+   int nx = mygrid->nx;
+   int ny = mygrid->ny;
+   int nz = mygrid->nz;
+
+   const int *indxi = i_indx[nbq];
+   const int *indxj = j_indx[nbq];
+   const int *indxk = k_indx[nbq];
+
+   const double *exi = wx1 + 2*ii*nx;
+   const double *exj = wy1 + 2*ii*ny;
+   const double *exk = wz1 + 2*ii*nz;
+
+
+   double ai,aj,ak,bi,bj,bk,c,d,aa,bb;
+   for (auto i=0; i<npack; ++i)
+   {
+      ai = exi[2*indxi[i]]; bi = exi[2*indxi[i] + 1];
+      aj = exj[2*indxj[i]]; bj = exj[2*indxj[i] + 1];
+      ak = exk[2*indxk[i]]; bk = exk[2*indxk[i] + 1];
+      c = aj*ak - bj*bk;
+      d = aj*bk + ak*bj;
+      aa = (ai*c - bi*d);
+      bb = (ai*d + bi*c);
+
+      strx[2*i]  = cc*aa - dd*bb;
+      strx[2*i+1]= cc*bb + dd*aa;
+
+      //strx[2*i]   = (ai*c - bi*d);
+      //strx[2*i+1] = (ai*d + bi*c);
    }
 }
 

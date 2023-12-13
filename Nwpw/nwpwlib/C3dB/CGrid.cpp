@@ -652,6 +652,59 @@ std::complex<double> CGrid::cc_pack_zdot(const int nb, double *a, double *b)
 
 /********************************
  *                              *
+ *      CGrid:cc_pack_izdot     *
+ *                              *
+ ********************************/
+std::complex<double> CGrid::cc_pack_izdot(const int nb, double *a, double *b) 
+{
+   int one = 1;
+   // int ng  = 2*(nidb[nb]);
+   int ng  = (nidb[nb]);
+ 
+   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+
+   return tsum;
+}
+
+
+/********************************
+ *                              *
+ *      CGrid:cc_pack_inzdot    *
+ *                              *
+ ********************************/
+void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, double *sum)
+{  
+   int one = 1;
+   int ng  = (nidb[nb]);
+
+   for (int i=0; i<nn; ++i) 
+   {
+      std::complex<double> tsum = ZDOTC_PWDFT(ng, a+i*2*ng,one,b,one);
+      sum[2*i]   = tsum.real();
+      sum[2*i+1] = tsum.imag();
+   }
+}
+
+
+/********************************
+ *                              * 
+ *   CGrid:cc_pack_inprjzdot    *
+ *                              *
+ ********************************/
+void CGrid::cc_pack_inprjzdot(const int nb, int nn, int nprj, double *a,
+                              double *b, double *sum) 
+{  
+   int ng = (nidb[nb]);
+   double rone = 1.0;
+   double rzero = 0.0; 
+   
+   c3db::mygdevice.CN2_zgemm(nn, nprj, ng, rone, a, b, rzero, sum);
+}  
+
+
+
+/********************************
+ *                              *
  *       CGrid:rr_pack_copy     *
  *                              *
  ********************************/
@@ -1245,53 +1298,21 @@ void CGrid::rc_pfft3f(const int nb, double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-      std::cout << "fftA = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
-
       c3db::mygdevice.batch_cfftx_tmpx(c3db::fft_tag,true, nx, nq1, 2*nfft3d, a, c3db::tmpx);
-
-      std::cout << "fftB = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
-      
       c3db::c_ptranspose_ijk(nb, 0, a, tmp2, tmp3);
-
-      std::cout << "fftC = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
      
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
       c3db::mygdevice.batch_cffty_tmpy_zero(c3db::fft_tag,true,ny,nq2,2*nfft3d,a,c3db::tmpy,zero_row2[nb]);
-
-      std::cout << "fftD = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
-     
       c3db::c_ptranspose_ijk(nb, 1, a, tmp2, tmp3);
 
-      std::cout << "fftE = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
-     
       /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftz_tmpz_zero(c3db::fft_tag,true, nz, nq3, 2*nfft3d, a, c3db::tmpz, zero_row3[nb]);
-
-      std::cout << "fftF = ";
-      for (auto k=0; k<20; ++k)
-         std::cout << a[k] << " ";
-      std::cout << std::endl << std::endl;
    }
  
 }
@@ -3482,6 +3503,23 @@ void CGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
 {
    for (auto i=0; i<(nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
+}
+
+/********************************
+ *                              *
+ *   CGrid:zccr_pack_iconjgMul  *
+ *                              *
+ ********************************/
+/*
+ C(i) = Imag (alpha*A(i)*dconjg(B(i)))
+
+
+*/
+void CGrid::zccr_pack_iconjgMul(const int nb, const double *alpha, const double *a, const double *b, double *c)
+{
+   for (auto i=0; i<nidb[nb]; ++i)
+      c[i] = alpha[0]*(a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1]) 
+           + alpha[1]*(a[2*i]*b[2*i] + a[2*i+1]*b[2*i+1]);
 }
 
 

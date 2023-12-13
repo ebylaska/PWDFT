@@ -34,10 +34,15 @@ public:
    void NN_eigensolver(int, int *, double *, double *);
 
 
+   void NN1_zgemm(int, int, double, double *, double *, double, double *, int *);
    void CN1_zgemm(int, int, double, double *, double *, double, double *);
-   void CN_zgemm(int, int, int, double, double *, double *, double, double *);
-   void NN_zgemm(int, int, double, double *, double *, double, double *);
-   void NN_zgemm1(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void CN2_zgemm(int, int, int, double, double *, double *, double, double *);
+   void NC2_zgemm(int, int, int, double, double *, double *, double, double *);
+
+   void NN_zgemm(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void CN_zgemm(int, int, int, double, double *, int, double *, int, double, double *,int);
+   void NC_zgemm(int, int, int, double, double *, int, double *, int, double, double *,int);
+   
    void WW_eigensolver(int, int *, double *, double *);
   
    void psi_alloc(int, int, int);

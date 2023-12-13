@@ -13,6 +13,7 @@ class CStrfac {
   int maxsize;
   int **i_indx, **j_indx, **k_indx;
   double *wx1, *wy1, *wz1;
+  double *cxreal,*cximag;
   double unita[9], unitg[9];
 
   CGrid *mygrid;
@@ -37,10 +38,15 @@ public:
       delete[] wx1;
       delete[] wy1;
       delete[] wz1;
+
+      delete[] cxreal;
+      delete[] cximag;
    }
  
    void phafac();
    void strfac_pack(const int, const int, double *);
+   void phafac_k();
+   void strfac_pack_cxr(const int, const int, double *);
 };
 } // namespace pwdft
 

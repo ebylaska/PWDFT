@@ -162,15 +162,20 @@ public:
    void c_unpack(const int, double *);
    void c_pack(const int, double *);
    void cc_pack_copy(const int, const double *, double *);
+
    double cc_pack_dot(const int, double *, double *);
    double cc_pack_idot(const int, double *, double *);
    void cc_pack_indot(const int, const int, double *, double *, double *);
    double rr_pack_dot(const int, double *, double *);
    double rr_pack_idot(const int, double *, double *);
 
-   std::complex<double> cc_pack_zdot(const int, double *, double *);
- 
    void cc_pack_inprjdot(const int, int, int, double *, double *, double *);
+
+   std::complex<double> cc_pack_zdot(const int, double *, double *);
+   std::complex<double> cc_pack_izdot(const int, double *, double *);
+   void cc_pack_inzdot(const int, const int, double *, double *, double *);
+   void cc_pack_inprjzdot(const int, int, int, double *, double *, double *);
+
  
    void r_unpack(const int, double *);
    void r_pack(const int, double *);
@@ -212,6 +217,8 @@ public:
    void cc_pack_daxpy(const int, const double, const double *, double *);
    void ccr_pack_iconjgMul(const int, const double *, const double *, double *);
    void ccr_pack_iconjgMulb(const int, const double *, const double *, double *);
+
+   void zccr_pack_iconjgMul(const int, const double *, const double *, const double *, double *);
 
    void cc_pack_zaxpy(const int, const std::complex<double>, const double *, double *);
  

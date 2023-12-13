@@ -54,8 +54,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    dt = control.time_step();
    dte = dt/sqrt(control.fake_mass());
    it_in = control.loop(0);
- 
-   /* allocate temporary memory */
+   //allocate temporary memory 
    rho = mygrid->c_alloc();
    tmp = mygrid->c_alloc();
 
@@ -74,7 +73,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    //fion = new double[3 * (myion->nion)]();
    fion = myion->fion1;
  
-   /* generate local psp*/
+   // generate local psp
    mypsp->v_local(vl,false,dng,fion);
 
  
@@ -95,10 +94,10 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          // for (int ii=0; ii<(3*myion->nion); ++ii) fion[ii] = 0.0;
       }
      
-      /* convert psi(G) to psi(r) - Expensive */
+      // convert psi(G) to psi(r) - Expensive 
       mygrid->gh_fftb(psi1,psi_r);
      
-      /* generate dn */
+      // generate dn
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
      std::cout << "PSI_r= " ;
      for (auto kk=0; kk<20; ++kk)
@@ -112,7 +111,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
      std::cout << std::endl;
      std::cout << std::endl;
      
-      /* generate dng */
+      // generate dng 
       mygrid->rrc_Sum(dn,dn+(ispin-1)*nfft3d,rho);
       mygrid->rc_pfft3f(0,rho);
 
@@ -134,7 +133,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
      std::cout << std::endl;
      std::cout << std::endl;
 
-      /* generate dnall - used for semicore corrections */
+      // generate dnall - used for semicore corrections
       if (mypsp->has_semicore()) 
       {
          if ((move) || (it == 0))
@@ -148,91 +147,91 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
             mygrid->rr_copy(dn+ms*nfft3d, dnall+ms*nfft3d);
       }
      
-      /* generate local potentials */
+      // generate local potentials
       if (move) 
       {
          mypsp->v_local(vl,move,dng,fion);
       }
      
-      /* apply k-space operators */
+      // apply k-space operators
       // myke->ke(psi1,Hpsi);
      
-      /* apply non-local PSP  - Expensive */
+      // apply non-local PSP  - Expensive
       // mypsp->v_nonlocal_fion(psi1,Hpsi,move,fion);
      
-      /* generate coulomb potential */
+      // generate coulomb potential 
       mycoulomb->vcoulomb(dng,vc);
       mygrid->cc_pack_copy(0,vc,vcall);
       
-      /* generate exchange-correlation potential */
-      std::memset(xcp,0,ispin*n2ft3d*sizeof(double));
-      std::memset(xce,0,ispin*n2ft3d*sizeof(double));
+      // generate exchange-correlation potential 
+      std::memset(xcp,0,ispin*nfft3d*sizeof(double));
+      std::memset(xce,0,ispin*nfft3d*sizeof(double));
       myxc->v_exc_all(ispin,dnall,xcp,xce);
      
-      /* get Hpsi */
+      // get Hpsi
       cpsi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
      
-      /* do a steepest descent step */
+      // do a steepest descent step
       mygrid->gg_SMul(dte,Hpsi,psi2);
       mygrid->gg_Sum2(psi1,psi2);
      
       if (move)
       {
-         /* get the ion-ion force */
+         // get the ion-ion force 
          myewald->force(fion);
         
-         /* get the semicore force - needs to be checked */
+         // get the semicore force - needs to be checked 
          if (mypsp->has_semicore())
             mypsp->semicore_xc_fion(xcp, fion);
         
         
-         /* steepest descent step */
+         // steepest descent step 
          myion->add_contraint_force(fion);
 
-         /* steepest descent step */
+         // steepest descent step 
          myion->optimize_step(fion);
       }
      
-      /* lagrange multiplier - Expensive */
+      // lagrange multiplier - Expensive 
       mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
    }
 
  
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
  
-   /* total energy calculation */
+   // total energy calculation 
    mygrid->ggm_sym_Multiply(psi1, Hpsi, hml);
    mygrid->m_scal(-1.0, hml);
    eorbit = mygrid->m_trace(hml);
    if (ispin == 1)
      eorbit = eorbit + eorbit;
  
-   /* hartree energy and ion-ion energy */
+   // hartree energy and ion-ion energy 
    ehartr = mycoulomb->ecoulomb(dng);
    eion = myewald->energy();
    
  
-   /* xc energy */
+   // xc energy
    exc = mygrid->rr_dot(dnall, xce);
    pxc = mygrid->rr_dot(dn, xcp);
    if (ispin == 1) {
       exc = exc + exc;
       pxc = pxc + pxc;
    } else {
-      exc += mygrid->rr_dot(dnall+n2ft3d, xce);
-      pxc += mygrid->rr_dot(dn+n2ft3d, xcp+n2ft3d);
+      exc += mygrid->rr_dot(dnall+nfft3d, xce);
+      pxc += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    exc *= dv;
    pxc *= dv;
  
-   /* average Kohn-Sham kineticl energy */
+   // average Kohn-Sham kineticl energy 
    eke = myke->ke_ave(psi1);
  
-   /* average Kohn-Sham local psp energy */
+   // average Kohn-Sham local psp energy
    elocal = mygrid->cc_pack_dot(0, dng, vl);
  
  
-   /* average Kohn-Sham v_nonlocal energy */
+   // average Kohn-Sham v_nonlocal energy 
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1, Hpsi);
    enlocal = -mygrid->gg_traceall(psi1, Hpsi);
@@ -249,7 +248,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    E[8] = 2 * ehartr;
    E[9] = pxc;
 
-   /* get contraints energies */
+   // get contraints energies
    if (myion->has_ion_bond_constraints()) 
    {
       E[70] = myion->energy_ion_bond_constraints();
@@ -262,10 +261,10 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    }
 
  
-   /* set convergence variables */
+   // set convergence variables
    *deltae = (E[0] - Eold) / (dt * control.loop(0));
  
-   /* deltac */
+   // deltac 
    sumi = new double[neall]();
    mygrid->ggg_Minus(psi2, psi1, Hpsi);
    for (i=0; i<neall; ++i)
@@ -279,14 +278,14 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    *deltac = dc / dte;
    delete[] sumi;
  
-   /* deltar */
+   // deltar 
    *deltar = 0.0;
    if (move) {
      double sum;
      for (auto ii = 0; ii < (myion->nion); ++ii) {
-       sum = sqrt(fion[3 * ii] * fion[3 * ii] +
-                  fion[3 * ii + 1] * fion[3 * ii + 1] +
-                  fion[3 * ii + 2] * fion[3 * ii + 2]);
+       sum = sqrt(fion[3*ii]  *fion[3*ii] +
+                  fion[3*ii+1]*fion[3*ii+1] +
+                  fion[3*ii+2]*fion[3*ii+2]);
        if (sum > (*deltar))
          *deltar = sum;
      }
@@ -294,26 +293,16 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
    //delete[] fion;
  
-   std::cout << "A dealloc" << std::endl;
    mygrid->c_dealloc(tmp);
-   std::cout << "b dealloc" << std::endl;
    mygrid->r_dealloc(xcp);
-   std::cout << "c dealloc" << std::endl;
    mygrid->r_dealloc(xce);
-   std::cout << "d dealloc" << std::endl;
    mygrid->r_dealloc(dnall);
-   std::cout << "e dealloc" << std::endl;
    mygrid->r_dealloc(x);
-   std::cout << "f dealloc" << std::endl;
    mygrid->c_dealloc(rho);
-   std::cout << "g dealloc" << std::endl;
    mygrid->c_pack_deallocate(dng);
-   std::cout << "h dealloc" << std::endl;
    mygrid->c_pack_deallocate(vl);
 
-   std::cout << "i dealloc" << std::endl;
    mygrid->c_pack_deallocate(vc);
-   std::cout << "j dealloc" << std::endl;
    mygrid->c_pack_deallocate(vcall);
 
 }

@@ -110,14 +110,11 @@ double cCoulomb_Operator::ecoulomb(const double *dng)
    double ave = 0.0;
 
    int k1 = 0;
-   std::cout << "ecoul= ";
    for (auto k=0; k<npack0; ++k) 
    {
       ave += vg[k] * (dng[k1]*dng[k1] + dng[k1+1]*dng[k1+1]);
       k1  += 2;
-      std::cout << vg[k] << " " << dng[k1] << " " << dng[k1+1] << " | ";
    }
-   std::cout << std::endl;
    ave = mycneb->c3db::parall->SumAll(1,ave);
    ave *= 0.5*(mycneb->lattice->omega());
  

@@ -130,6 +130,9 @@ public:
    void cc_SMul(const double, const double *, double *);
    void cc_Mul(const double *, double *);
 
+   void c_ZMul(const double, const double, double *);
+
+
    void t_read(const int, double *, const int, const int);
    void t_write(const int, double *, const int, const int);
    void t_write_buffer(const int, double *, const int, const int);

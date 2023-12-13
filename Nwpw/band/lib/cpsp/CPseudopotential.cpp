@@ -173,7 +173,7 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
 
 /*******************************************
  *                                         *
- *           Multiply_Gijl_sw1             *
+ *           Multiply_Gijl_zw1             *
  *                                         *
  *******************************************/
 /**
@@ -194,31 +194,32 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
  * @param sw1 Array containing sw1 values.
  * @param sw2 Array to store the result (sw2 = Gijl * sw1).
  */
-static void Multiply_Gijl_sw1(int nn, const int nprj, const int nmax,
-                              const int lmax, int *n_prj, int *l_prj,
-                              int *m_prj, double *G, double *sw1, double *sw2) {
-  int a, b, na, nb;
-  int one = 1;
-  int zero = 0;
-  double rzero = 0.0;
-  int nmax2 = nmax * nmax;
-  int nnn = nn * nprj;
-  int nna = nn;
-
-  // DCOPY_PWDFT(nnn,&rzero,zero,sw2,one);
-  std::memset(sw2, 0, nnn * sizeof(double));
-
-  for (b = 0; b < nprj; ++b)
-    for (a = 0; a < nprj; ++a)
-      if ((l_prj[a] == l_prj[b]) && (m_prj[a] == m_prj[b])) {
-        na = n_prj[a] - 1;
-        nb = n_prj[b] - 1;
-        // na = n_prj[a];
-        // nb = n_prj[b];
-
-        DAXPY_PWDFT(nna, (G[nb + na * nmax + nmax2 * l_prj[a]]), &(sw1[a * nn]),
-                    one, &(sw2[b * nn]), one);
-      }
+static void Multiply_Gijl_zsw1(int nn, const int nprj, const int nmax,
+                               const int lmax, int *n_prj, int *l_prj,
+                               int *m_prj, double *G, double *zsw1, double *zsw2) 
+{
+   int one = 1;
+   int zero = 0;
+   double rzero = 0.0;
+   int nmax2 = nmax * nmax;
+   int nnn = nn * nprj;
+   int nna = 2*nn;
+ 
+   // DCOPY_PWDFT(nnn,&rzero,zero,sw2,one);
+   std::memset(zsw2, 0, 2*nnn * sizeof(double));
+ 
+   for (auto b=0; b<nprj; ++b)
+      for (auto a=0; a<nprj; ++a)
+         if ((l_prj[a] == l_prj[b]) && (m_prj[a] == m_prj[b])) 
+         {
+            int na = n_prj[a] - 1;
+            int nb = n_prj[b] - 1;
+            // na = n_prj[a];
+            // nb = n_prj[b];
+          
+            DAXPY_PWDFT(nna, (G[nb + na * nmax + nmax2 * l_prj[a]]), 
+                        zsw1+2*a*nn, one, zsw2+2*b*nn,one);
+         }
 }
 
 /*******************************************
@@ -1580,8 +1581,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
    bool done;
    int ii, ia, l, nshift0, sd_function, i;
    int jj, ll, jstart, jend, nprjall;
-   double *exi;
-   double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
+   double *prj, *vnlprj;
    Parallel *parall;
    double omega = mypneb->lattice->omega();
    // double scal = 1.0/lattice_omega();
@@ -1592,131 +1592,137 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
    double rmone = -1.0;
  
    nn = mypneb->neq[0] + mypneb->neq[1];
-   nshift0 = mypneb->npack(1);
-   nshift = 2 * mypneb->npack(1);
-   exi = new (std::nothrow) double[nshift]();
-   prjtmp = new (std::nothrow) double[nprj_max * nshift]();
-   sw1 = new (std::nothrow) double[nn * nprj_max]();
-   sw2 = new (std::nothrow) double[nn * nprj_max]();
+   nshift0 = mypneb->npack1_max();
+   nshift = 2*mypneb->npack1_max();
+   double *exi = new (std::nothrow) double[nshift]();
+   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   double *zsw1 = new (std::nothrow) double[2*nn * nprj_max]();
+   double *zsw2 = new (std::nothrow) double[2*nn * nprj_max]();
  
    parall = mypneb->c3db::parall;
 
 #if 1
 
-   // Copy psi to device
-   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
-   mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
- 
-   ii = 0;
-   while (ii < (myion->nion)) {
-     ia = myion->katm[ii];
-     nprjall = 0;
-     jstart = ii;
-     done = false;
-     while (!done) 
-     {
-        // generate projectors
-        if (nprj[ia] > 0) 
-        {
-           mystrfac->strfac_pack(1, ii, exi);
-           for (l = 0; l < nprj[ia]; ++l) 
-           {
-              sd_function = !(l_projector[ia][l] & 1);
-              prj = prjtmp + ((l+nprjall)*nshift);
-              vnlprj = vnl[ia] + (l*nshift0);
-              if (sd_function)
-                 mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-              else
-                 mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
+   {
+      // Copy psi to device
+      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+  
+      int ii = 0;
+      while (ii < (myion->nion)) 
+      {
+         ia = myion->katm[ii];
+         nprjall = 0;
+         jstart = ii;
+         done = false;
+         while (!done) 
+         {
+            // generate projectors
+            if (nprj[ia] > 0) 
+            {
+               mystrfac->strfac_pack_cxr(nbq, ii, exi);
+               for (auto l=0; l<nprj[ia]; ++l) 
+               {
+                  sd_function = !(l_projector[ia][l] & 1);
+                  prj = prjtmp + ((l+nprjall)*nshift);
+                  vnlprj = vnl[ia] + (l*nshift0);
+                  if (sd_function)
+                     mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+                  else
+                     mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+               }
+               nprjall += nprj[ia];
+            }
+            ++ii;
+            if (ii < (myion->nion)) 
+            {
+               ia = myion->katm[ii];
+               done = ((nprjall + nprj[ia]) > nprj_max);
+            } 
+            else 
+            {
+               done = true;
+            }
+         }
+         jend = ii;
+         mypneb->cc_pack_inprjzdot(nbq, 2*nn, nprjall, psi, prjtmp, zsw1);
+         parall->Vector_SumAll(nbq, 2*nn*nprjall, zsw1);
+        
+         /* sw2 = Gijl*sw1 */
+         ll = 0;
+         for (jj = jstart; jj < jend; ++jj) {
+           ia = myion->katm[jj];
+           if (nprj[ia] > 0) {
+             Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                                l_projector[ia], m_projector[ia], Gijl[ia],
+                                zsw1+(ll*2*nn), zsw2+(ll*2*nn));
+             ll += nprj[ia];
            }
-           nprjall += nprj[ia];
-        }
-        ++ii;
-        if (ii < (myion->nion)) 
-        {
-           ia = myion->katm[ii];
-           done = ((nprjall + nprj[ia]) > nprj_max);
-        } 
-        else 
-        {
-           done = true;
-        }
-     }
-     jend = ii;
-     mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-     parall->Vector_SumAll(1, nn*nprjall, sw1);
- 
-     /* sw2 = Gijl*sw1 */
-     ll = 0;
-     for (jj = jstart; jj < jend; ++jj) {
-       ia = myion->katm[jj];
-       if (nprj[ia] > 0) {
-         Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                           l_projector[ia], m_projector[ia], Gijl[ia],
-                           sw1+(ll*nn), sw2+(ll*nn));
-         ll += nprj[ia];
-       }
-     }
- 
-     ntmp = nn * nprjall;
-     DSCAL_PWDFT(ntmp, scal, sw2, one);
- 
-     // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
-     //                rmone,
-     //                prjtmp,nshift,
-     //                sw2,   nn,
-     //                rone,
-     //                Hpsi,nshift);
-     mypneb->c3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
-   }
-   mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
+         }
+        
+         ntmp = 2*nn*nprjall;
+         DSCAL_PWDFT(ntmp, scal, zsw2, one);
+        
+         // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
+         //                rmone,
+         //                prjtmp,nshift,
+         //                sw2,   nn,
+         //                rone,
+         //                Hpsi,nshift);
+         mypneb->c3db::mygdevice.NC2_zgemm(nshift, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
+      }
+      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
 #else
 
-  for (ii = 0; ii < (myion->nion); ++ii) {
-    ia = myion->katm[ii];
-    if (nprj[ia] > 0) {
-      /* structure factor */
-      mystrfac->strfac_pack(1, ii, exi);
-
-      /* generate sw1's and projectors */
-      for (l = 0; l < nprj[ia]; ++l) {
-        sd_function = !(l_projector[ia][l] & 1);
-        prj = &(prjtmp[l * nshift]);
-        vnlprj = &(vnl[ia][l * nshift0]);
-        if (sd_function)
-          mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-        else
-          mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-        // mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
-      }
-      ntmp = nprj[ia];
-      mypneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn * nprj[ia], sw1);
-
-      /* sw2 = Gijl*sw1 */
-      Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                        l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
-
-      /* do Kleinman-Bylander Multiplication */
-      ntmp = nn * nprj[ia];
-      DSCAL_PWDFT(ntmp, scal, sw2, one);
-
-      ntmp = nprj[ia];
-
-      // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
-      //       rmone,
-      //       prjtmp,nshift,
-      //       sw2,   nn,
-      //       rone,
-      //       Hpsi,nshift);
-      mypneb->c3db::mygdevice.NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
-
-    } /*if nprj>0*/
-  }   /*ii*/
+      for (ii = 0; ii < (myion->nion); ++ii) 
+      {
+         ia = myion->katm[ii];
+         if (nprj[ia] > 0) 
+         {
+           /* structure factor */
+           mystrfac->strfac_pack(1, ii, exi);
+        
+           /* generate sw1's and projectors */
+           for (l = 0; l < nprj[ia]; ++l) {
+             sd_function = !(l_projector[ia][l] & 1);
+             prj = &(prjtmp[l * nshift]);
+             vnlprj = &(vnl[ia][l * nshift0]);
+             if (sd_function)
+               mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+             else
+               mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+             // mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
+           }
+           ntmp = nprj[ia];
+           mypneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, sw1);
+           parall->Vector_SumAll(1, nn * nprj[ia], sw1);
+        
+           /* sw2 = Gijl*sw1 */
+           Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                             l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
+        
+           /* do Kleinman-Bylander Multiplication */
+           ntmp = nn * nprj[ia];
+           DSCAL_PWDFT(ntmp, scal, sw2, one);
+        
+           ntmp = nprj[ia];
+        
+           // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,ntmp,
+           //       rmone,
+           //       prjtmp,nshift,
+           //       sw2,   nn,
+           //       rone,
+           //       Hpsi,nshift);
+           mypneb->c3db::mygdevice.NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
+        
+         } /*if nprj>0*/
+      }   /*ii*/
 #endif
+   }
 
-   delete[] sw2;
-   delete[] sw1;
+   delete[] zsw2;
+   delete[] zsw1;
    delete[] prjtmp;
    delete[] exi;
 }
@@ -1746,11 +1752,9 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
 {
    nwpw_timing_function ftimer(6);
    bool done;
-   int ii, ia, l, nshift0, sd_function, i, n;
-   int jj, ll, jstart, jend, nprjall;
+   int ia, i;
+   int jstart, jend, nprjall;
  
-   double *exi;
-   double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
    double *Gx, *Gy, *Gz, *xtmp, *sum;
    double ff[3];
    Parallel *parall;
@@ -1759,222 +1763,217 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    double scal = 1.0 / omega;
    int one = 1;
    int three = 3;
-   int ntmp, nshift, nn, ispin;
+   int ntmp;
  
    double rone = 1.0;
    double rmone = -1.0;
  
-   nn = mypneb->neq[0] + mypneb->neq[1];
-   ispin = mypneb->ispin;
-   nshift0 = mypneb->npack(1);
-   nshift = 2 * mypneb->npack(1);
-   exi = new (std::nothrow) double[nshift]();
-   prjtmp = new (std::nothrow) double[nprj_max*nshift]();
-   sw1 = new (std::nothrow) double[nn*nprj_max]();
-   sw2 = new (std::nothrow) double[nn*nprj_max]();
- 
-   // Copy psi to device
-   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
-   mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+   int nn = mypneb->neq[0] + mypneb->neq[1];
+   int ispin = mypneb->ispin;
+   int nshift0 = mypneb->npack1_max();
+   int nshift = 2 * mypneb->npack1_max();
+
+   double *exi = new (std::nothrow) double[nshift]();
+   double *prjtmp = new (std::nothrow) double[nprj_max*nshift]();
+   double *zsw1 = new (std::nothrow) double[2*nn*nprj_max]();
+   double *zsw2 = new (std::nothrow) double[2*nn*nprj_max]();
  
    if (move) 
    {
       xtmp = new (std::nothrow) double[nshift0]();
       sum = new (std::nothrow) double[3*nn*nprj_max]();
-      // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-      // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-      // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-      // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-      // mypneb->t_pack(1,Gx);
-      // mypneb->t_pack(1,Gy);
-      // mypneb->t_pack(1,Gz);
-     
-      Gx = mypneb->Gpackxyz(1, 0);
-      Gy = mypneb->Gpackxyz(1, 1);
-      Gz = mypneb->Gpackxyz(1, 2);
    }
- 
-   parall = mypneb->c3db::parall;
 
-#if 1
-
-   ii = 0;
-   while (ii < (myion->nion)) 
+   for (auto nbq=0; nbq<mypneb->nbrillq; ++nbq)
    {
-      ia = myion->katm[ii];
-      nprjall = 0;
-      jstart = ii;
-      done = false;
-      while (!done) 
-      {
-         // generate projectors
-         if (nprj[ia] > 0) 
-         {
-            mystrfac->strfac_pack(1, ii, exi);
-            for (l=0; l<nprj[ia]; ++l) 
-            {
-               sd_function = !(l_projector[ia][l] & 1);
-               prj = &(prjtmp[(l + nprjall) * nshift]);
-               vnlprj = &(vnl[ia][l * nshift0]);
-               if (sd_function)
-                  mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-               else
-                  mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-              
-               if (move) 
-               {
-                  for (n = 0; n < nn; ++n) 
-                  {
-                     mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall)]     = mypneb->tt_pack_idot(1, Gx, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall) + 1] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall) + 2] = mypneb->tt_pack_idot(1, Gz, xtmp);
-                  }
-               }
-            }
-            nprjall += nprj[ia];
-         }
-         ++ii;
-         if (ii < (myion->nion)) 
-         {
-            ia = myion->katm[ii];
-            done = ((nprjall + nprj[ia]) > nprj_max);
-         } 
-         else 
-         {
-            done = true;
-         }
-      }
-      jend = ii;
-     
-      mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn*nprjall, sw1);
-      if (move)
-         parall->Vector_SumAll(1, 3*nn*nprjall, sum);
-     
-      /* sw2 = Gijl*sw1 */
-      ll = 0;
-      for (jj=jstart; jj<jend; ++jj) 
-      {
-         ia = myion->katm[jj];
-         if (nprj[ia] > 0) 
-         {
-            Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                              l_projector[ia], m_projector[ia], Gijl[ia],
-                              sw1 + ll*nn, sw2 + ll*nn);
-            ll += nprj[ia];
-         }
-      }
-     
-      ntmp = nn*nprjall;
-      DSCAL_PWDFT(ntmp, scal, sw2, one);
-     
-      // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
-      //                rmone,
-      //                prjtmp,nshift,
-      //                sw2,   nn,
-      //                rone,
-      //                Hpsi,nshift);
-      mypneb->c3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
-     
+      // Copy psi to device
+      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi);
+  
       if (move) 
       {
-         // for (ll=0; ll<nprjall; ++ll)
-         ll = 0;
-         for (jj = jstart; jj < jend; ++jj) 
-         {
-            ia = myion->katm[jj];
-            for (l=0; l<nprj[ia]; ++l) 
-            {
-               //fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
-               //fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
-               //fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
-               ff[0] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
-               ff[1] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
-               ff[2] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
-               parall->Vector_SumAll(2,3,ff);
+         Gx = mypneb->Gpackxyz(nbq, 0);
+         Gy = mypneb->Gpackxyz(nbq, 1);
+         Gz = mypneb->Gpackxyz(nbq, 2);
+      }
+  
+      parall = mypneb->c3db::parall;
 
-               fion[3*jj]   += (3-ispin)*ff[0];
-               fion[3*jj+1] += (3-ispin)*ff[1];
-               fion[3*jj+2] += (3-ispin)*ff[2];
-               ++ll;
+#if 1
+      int ii = 0;
+      while (ii < (myion->nion)) 
+      {
+         ia = myion->katm[ii];
+         nprjall = 0;
+         jstart = ii;
+         done = false;
+         while (!done) 
+         {
+            // generate projectors
+            if (nprj[ia] > 0) 
+            {
+               mystrfac->strfac_pack_cxr(nbq, ii, exi);
+               for (auto l=0; l<nprj[ia]; ++l) 
+               {
+                  bool sd_function = !(l_projector[ia][l] & 1);
+                  double *prj = prjtmp + (l+nprjall)*nshift;
+                  double *vnlprj = vnl[ia] + l*nshift0;
+                  if (sd_function)
+                     mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+                  else
+                     mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+                 
+                  if (move) 
+                  {
+                     for (auto n=0; n<nn; ++n) 
+                     {
+                        mypneb->zccr_pack_iconjgMul(nbq, zsw2+2*(l*nn+n), prj, psi+n*nshift, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall)]     = mypneb->tt_pack_idot(1, Gx, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall) + 1] = mypneb->tt_pack_idot(1, Gy, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall) + 2] = mypneb->tt_pack_idot(1, Gz, xtmp);
+                     }
+                  }
+               }
+               nprjall += nprj[ia];
+            }
+            ++ii;
+            if (ii < (myion->nion)) 
+            {
+               ia = myion->katm[ii];
+               done = ((nprjall + nprj[ia]) > nprj_max);
+            } 
+            else 
+            {
+               done = true;
             }
          }
-      }
-   }
- 
-   mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
-
-#else
-
-   for (ii = 0; ii < (myion->nion); ++ii) 
-   {
-      ia = myion->katm[ii];
-      if (nprj[ia] > 0) 
-      {
-         /* structure factor */
-         mystrfac->strfac_pack(1, ii, exi);
+         jend = ii;
         
-         /* generate sw1's and projectors */
-         for (l = 0; l < nprj[ia]; ++l) {
-           sd_function = !(l_projector[ia][l] & 1);
-           prj = &prjtmp[l * nshift];
-           vnlprj = &vnl[ia][l * nshift0];
-           if (sd_function)
-             mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-           else
-             mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-           mypneb->cc_pack_indot(1, nn, psi, prj, &sw1[l * nn]);
-         }
-         parall->Vector_SumAll(1, nn * nprj[ia], sw1);
+         mypneb->cc_pack_inprjzdot(nbq, nn, nprjall, psi, prjtmp, zsw1);
+         parall->Vector_SumAll(nbq, nn*nprjall, zsw1);
+         if (move)
+            parall->Vector_SumAll(1, 3*nn*nprjall, sum);
         
          /* sw2 = Gijl*sw1 */
-         Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                           l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
+         int ll = 0;
+         for (auto jj=jstart; jj<jend; ++jj) 
+         {
+            ia = myion->katm[jj];
+            if (nprj[ia] > 0) 
+            {
+               Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                                  l_projector[ia], m_projector[ia], Gijl[ia],
+                                  zsw1 + ll*nn, zsw2 + ll*nn);
+               ll += nprj[ia];
+            }
+         }
         
-         /* do Kleinman-Bylander Multiplication */
-         ntmp = nn * nprj[ia];
-         DSCAL_PWDFT(ntmp, scal, sw2, one);
+         ntmp = 2*nn*nprjall;
+         DSCAL_PWDFT(ntmp, scal, zsw2, one);
         
-         ntmp = nprj[ia];
-         DGEMM_PWDFT((char *)"N", (char *)"T", nshift, nn, ntmp, rmone, prjtmp,
-                     nshift, sw2, nn, rone, Hpsi, nshift);
+         // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
+         //                rmone,
+         //                prjtmp,nshift,
+         //                sw2,   nn,
+         //                rone,
+         //                Hpsi,nshift);
+         mypneb->c3db::mygdevice.NC2_zgemm(nshift, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
         
          if (move) 
          {
-            for (l=0; l<nprj[ia]; ++l) 
+            // for (ll=0; ll<nprjall; ++ll)
+            ll = 0;
+            for (auto jj=jstart; jj<jend; ++jj) 
             {
-               prj = prjtmp + l*nshift;
-               for (n=0; n<nn; ++n) 
+               ia = myion->katm[jj];
+               for (auto l=0; l<nprj[ia]; ++l) 
                {
-                  mypneb->cct_pack_iconjgMul(1, prj, &psi[n * nshift], xtmp);
-                  sum[3*n]   = mypneb->tt_pack_idot(1, Gx, xtmp);
-                  sum[3*n+1] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                  sum[3*n+2] = mypneb->tt_pack_idot(1, Gz, xtmp);
+                  //fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
+                  //fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
+                  //fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
+                  ff[0] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll,     three);
+                  ff[1] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
+                  ff[2] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
+                  parall->Vector_SumAll(2,3,ff);
+ 
+                  fion[3*jj]   += (3-ispin)*ff[0];
+                  fion[3*jj+1] += (3-ispin)*ff[1];
+                  fion[3*jj+2] += (3-ispin)*ff[2];
+                  ++ll;
                }
-               parall->Vector_SumAll(1, 3 * nn, sum);
-              
-               fion[3*ii]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, sum, three);
-               fion[3*ii+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[1], three);
-               fion[3*ii+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[2], three);
             }
          }
-      } /*if nprj>0*/
-   }   /*ii*/
+      }
+  
+      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
+
+#else
+
+      for (ii = 0; ii < (myion->nion); ++ii) 
+      {
+         ia = myion->katm[ii];
+         if (nprj[ia] > 0) 
+         {
+            /* structure factor */
+            mystrfac->strfac_pack(1, ii, exi);
+           
+            /* generate sw1's and projectors */
+            for (l = 0; l < nprj[ia]; ++l) {
+              sd_function = !(l_projector[ia][l] & 1);
+              prj = &prjtmp[l * nshift];
+              vnlprj = &vnl[ia][l * nshift0];
+              if (sd_function)
+                mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+              else
+                mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+              mypneb->cc_pack_indot(1, nn, psi, prj, &sw1[l * nn]);
+            }
+            parall->Vector_SumAll(1, nn * nprj[ia], sw1);
+           
+            /* sw2 = Gijl*zsw1 */
+            Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                              l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
+           
+            /* do Kleinman-Bylander Multiplication */
+            ntmp = nn * nprj[ia];
+            DSCAL_PWDFT(ntmp, scal, sw2, one);
+           
+            ntmp = nprj[ia];
+            DGEMM_PWDFT((char *)"N", (char *)"T", nshift, nn, ntmp, rmone, prjtmp,
+                        nshift, sw2, nn, rone, Hpsi, nshift);
+           
+            if (move) 
+            {
+               for (l=0; l<nprj[ia]; ++l) 
+               {
+                  prj = prjtmp + l*nshift;
+                  for (n=0; n<nn; ++n) 
+                  {
+                     mypneb->cct_pack_iconjgMul(1, prj, &psi[n * nshift], xtmp);
+                     sum[3*n]   = mypneb->tt_pack_idot(1, Gx, xtmp);
+                     sum[3*n+1] = mypneb->tt_pack_idot(1, Gy, xtmp);
+                     sum[3*n+2] = mypneb->tt_pack_idot(1, Gz, xtmp);
+                  }
+                  parall->Vector_SumAll(1, 3 * nn, sum);
+                 
+                  fion[3*ii]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, sum, three);
+                  fion[3*ii+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[1], three);
+                  fion[3*ii+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[2], three);
+               }
+            }
+         } /*if nprj>0*/
+      }   /*ii*/
 #endif
+
+   }
 
    if (move) 
    {
       delete[] xtmp;
       delete[] sum;
-      // delete [] Gx;
-      // delete [] Gy;
-      // delete [] Gz;
    }
-   delete[] sw2;
-   delete[] sw1;
+   delete[] zsw2;
+   delete[] zsw1;
    delete[] prjtmp;
    delete[] exi;
 }
@@ -2001,11 +2000,11 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
 {
    nwpw_timing_function ftimer(6);
    bool done;
-   int ii, ia, l, nshift0, sd_function, i, n;
-   int jj, ll, jstart, jend, nprjall;
+   int ia, nshift0, sd_function, i, n;
+   int jstart, jend, nprjall;
  
    double *exi;
-   double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
+   double *prjtmp, *zsw1, *zsw2, *prj, *vnlprj;
    double *Gx, *Gy, *Gz, *xtmp, *sum;
    double ff[3];
    Parallel *parall;
@@ -2021,135 +2020,124 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
  
    nn = mypneb->neq[0] + mypneb->neq[1];
    ispin = mypneb->ispin;
-   nshift0 = mypneb->npack(1);
-   nshift = 2 * mypneb->npack(1);
+   nshift0 = mypneb->npack1_max();
+   nshift = 2 * mypneb->npack1_max();
    exi = new (std::nothrow) double[nshift]();
    prjtmp = new (std::nothrow) double[nprj_max * nshift]();
-   sw1 = new (std::nothrow) double[nn * nprj_max]();
-   sw2 = new (std::nothrow) double[nn * nprj_max]();
- 
-   // Copy psi to device
-   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
-   // mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
- 
+   zsw1 = new (std::nothrow) double[nn * nprj_max]();
+   zsw2 = new (std::nothrow) double[nn * nprj_max]();
+
    xtmp = new (std::nothrow) double[nshift0]();
    sum  = new (std::nothrow) double[3*nn*nprj_max]();
-   // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-   // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-   // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-   // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-   // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-   // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-   // mypneb->t_pack(1,Gx);
-   // mypneb->t_pack(1,Gy);
-   // mypneb->t_pack(1,Gz);
-   Gx = mypneb->Gpackxyz(1, 0);
-   Gy = mypneb->Gpackxyz(1, 1);
-   Gz = mypneb->Gpackxyz(1, 2);
- 
-   parall = mypneb->c3db::parall;
- 
-   ii = 0;
-   while (ii < (myion->nion)) 
+
+   for (auto nbq=0; nbq<mypneb->nbrillq; ++nbq)
    {
-      ia = myion->katm[ii];
-      nprjall = 0;
-      jstart = ii;
-      done = false;
-      while (!done) 
+      // Copy psi to device
+      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
+      // mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+  
+      Gx = mypneb->Gpackxyz(nbq, 0);
+      Gy = mypneb->Gpackxyz(nbq, 1);
+      Gz = mypneb->Gpackxyz(nbq, 2);
+  
+      parall = mypneb->c3db::parall;
+  
+      auto ii = 0;
+      while (ii < (myion->nion)) 
       {
-         // generate projectors
-         if (nprj[ia] > 0) 
+         ia = myion->katm[ii];
+         nprjall = 0;
+         jstart = ii;
+         done = false;
+         while (!done) 
          {
-            mystrfac->strfac_pack(1, ii, exi);
-            for (l = 0; l < nprj[ia]; ++l) 
+            // generate projectors
+            if (nprj[ia] > 0) 
             {
-               sd_function = !(l_projector[ia][l] & 1);
-               prj = prjtmp + ((l+nprjall)*nshift);
-               vnlprj = vnl[ia] + (l*nshift0);
-               if (sd_function)
-                  mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-               else
-                  mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-              
-               for (n = 0; n < nn; ++n) 
+               mystrfac->strfac_pack(1, ii, exi);
+               for (auto l=0; l<nprj[ia]; ++l) 
                {
-                  mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
-                  sum[3*n +     3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1, Gx, xtmp);
-                  sum[3*n + 1 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                  sum[3*n + 2 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1, Gz, xtmp);
+                  sd_function = !(l_projector[ia][l] & 1);
+                  prj = prjtmp + ((l+nprjall)*nshift);
+                  vnlprj = vnl[ia] + (l*nshift0);
+                  if (sd_function)
+                     mypneb->tcc_pack_Mul(nbq, vnlprj, exi, prj);
+                  else
+                     mypneb->tcc_pack_iMul(nbq, vnlprj, exi, prj);
+                 
+                  for (n = 0; n < nn; ++n) 
+                  {
+                     mypneb->cct_pack_iconjgMul(nbq, prj, psi + n*nshift, xtmp);
+                     sum[3*n +     3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq, Gx, xtmp);
+                     sum[3*n + 1 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq, Gy, xtmp);
+                     sum[3*n + 2 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq, Gz, xtmp);
+                  }
                }
+               nprjall += nprj[ia];
             }
-            nprjall += nprj[ia];
+            ++ii;
+            if (ii < (myion->nion)) 
+            {
+               ia = myion->katm[ii];
+               done = ((nprjall + nprj[ia]) > nprj_max);
+            } 
+            else 
+            {
+               done = true;
+            }
          }
-         ++ii;
-         if (ii < (myion->nion)) 
+         jend = ii;
+         mypneb->cc_pack_inprjzdot(nbq, nn, nprjall, psi, prjtmp, zsw1);
+         parall->Vector_SumAll(nbq, 2*nn*nprjall, zsw1);
+         parall->Vector_SumAll(nbq, 3*nn*nprjall, sum);
+        
+         /* sw2 = Gijl*sw1 */
+         auto ll = 0;
+         for (auto jj=jstart; jj<jend; ++jj) 
          {
-            ia = myion->katm[ii];
-            done = ((nprjall + nprj[ia]) > nprj_max);
-         } 
-         else 
-         {
-            done = true;
+            ia = myion->katm[jj];
+            if (nprj[ia] > 0) 
+            {
+               Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                                 l_projector[ia], m_projector[ia], Gijl[ia],
+                                 zsw1+(ll*nn),zsw2+(ll*nn));
+               ll += nprj[ia];
+            }
          }
-      }
-      jend = ii;
-      mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn*nprjall, sw1);
-      parall->Vector_SumAll(1, 3*nn*nprjall, sum);
-     
-      /* sw2 = Gijl*sw1 */
-      ll = 0;
-      for (jj = jstart; jj < jend; ++jj) 
-      {
-         ia = myion->katm[jj];
-         if (nprj[ia] > 0) 
+        
+         ntmp = 2*nn * nprjall;
+         DSCAL_PWDFT(ntmp, scal, zsw2, one);
+        
+         mypneb->c3db::mygdevice.T_free();
+        
+         // for (ll=0; ll<nprjall; ++ll)
+         ll = 0;
+         for (auto jj=jstart; jj<jend; ++jj) 
          {
-            Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                              l_projector[ia], m_projector[ia], Gijl[ia],
-                              sw1+(ll*nn),sw2+(ll*nn));
-            ll += nprj[ia];
-         }
-      }
-     
-      ntmp = nn * nprjall;
-      DSCAL_PWDFT(ntmp, scal, sw2, one);
-     
-      mypneb->c3db::mygdevice.T_free();
-     
-      // for (ll=0; ll<nprjall; ++ll)
-      ll = 0;
-      for (jj = jstart; jj < jend; ++jj) 
-      {
-         ia = myion->katm[jj];
-         for (l = 0; l < nprj[ia]; ++l) 
-         {
-            //fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+ll*nn, one, sum+(3*nn*ll),   three);
-            //fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+ll*nn, one, sum+(3*nn*ll+1), three);
-            //fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+ll*nn, one, sum+(3*nn*ll+2), three);
-            ff[0] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
-            ff[1] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
-            ff[2] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
-            parall->Vector_SumAll(2,3,ff);
-
-            fion[3*jj]   += (3-ispin)*ff[0];
-            fion[3*jj+1] += (3-ispin)*ff[1];
-            fion[3*jj+2] += (3-ispin)*ff[2];
-
-            ++ll;
+            ia = myion->katm[jj];
+            for (auto l=0; l<nprj[ia]; ++l) 
+            {
+               ff[0] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll,     three);
+               ff[1] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
+               ff[2] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
+               parall->Vector_SumAll(2,3,ff);
+ 
+               fion[3*jj]   += (3-ispin)*ff[0];
+               fion[3*jj+1] += (3-ispin)*ff[1];
+               fion[3*jj+2] += (3-ispin)*ff[2];
+ 
+               ++ll;
+            }
          }
       }
+      // mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0,nn,Hpsi);
    }
-   // mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0,nn,Hpsi);
  
    delete[] xtmp;
    delete[] sum;
-   // delete [] Gx;
-   // delete [] Gy;
-   // delete [] Gz;
  
-   delete[] sw2;
-   delete[] sw1;
+   delete[] zsw2;
+   delete[] zsw1;
    delete[] prjtmp;
    delete[] exi;
 }
@@ -2185,87 +2173,90 @@ double CPseudopotential::e_nonlocal(double *psi)
    double esum = 0.0;
  
    int nn = mypneb->neq[0] + mypneb->neq[1];
-   int nshift0 = mypneb->npack(1);
-   int nshift = 2 * mypneb->npack(1);
+   int nshift0 = mypneb->npack1_max();
+   int nshift = 2*mypneb->npack1_max();
    double *exi    = new (std::nothrow) double[nshift]();
    double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
-   double *sw1    = new (std::nothrow) double[nn * nprj_max]();
-   double *sw2    = new (std::nothrow) double[nn * nprj_max]();
+   double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
+   double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
  
-   // Copy psi to device
-   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi);
- 
-   auto ii = 0;
-   while (ii<(myion->nion)) 
+   for (auto nbq=0; nbq<mypneb->nbrillq; ++ nbq)
    {
-      auto ia = myion->katm[ii];
-      auto nprjall = 0;
-      auto jstart = ii;
-      auto done = false;
-      while (!done) 
+      // Copy psi to device
+      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
+  
+      auto ii = 0;
+      while (ii<(myion->nion)) 
       {
-         // generate projectors
-         if (nprj[ia] > 0) 
+         auto ia = myion->katm[ii];
+         auto nprjall = 0;
+         auto jstart = ii;
+         auto done = false;
+         while (!done) 
          {
-            mystrfac->strfac_pack(1, ii, exi);
-            for (auto l=0; l<nprj[ia]; ++l) 
+            // generate projectors
+            if (nprj[ia] > 0) 
             {
-               auto sd_function = !(l_projector[ia][l] & 1);
-               auto prj    = prjtmp+(l+nprjall)*nshift;
-               auto vnlprj = vnl[ia]+l*nshift0;
-               if (sd_function)
-                  mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-               else
-                  mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+               mystrfac->strfac_pack_cxr(nbq, ii, exi);
+               for (auto l=0; l<nprj[ia]; ++l) 
+               {
+                  auto sd_function = !(l_projector[ia][l] & 1);
+                  auto prj    = prjtmp+(l+nprjall)*nshift;
+                  auto vnlprj = vnl[ia]+l*nshift0;
+                  if (sd_function)
+                     mypneb->tcc_pack_Mul(nbq, vnlprj, exi, prj);
+                  else
+                     mypneb->tcc_pack_iMul(nbq, vnlprj, exi, prj);
+               }
+               nprjall += nprj[ia];
             }
-            nprjall += nprj[ia];
+            ++ii;
+            if (ii<(myion->nion)) 
+            {
+               ia = myion->katm[ii];
+               done = ((nprjall + nprj[ia]) > nprj_max);
+            } 
+            else 
+            {
+               done = true;
+            }
          }
-         ++ii;
-         if (ii<(myion->nion)) 
+         auto jend = ii;
+         mypneb->cc_pack_inprjzdot(nbq, nn, nprjall, psi, prjtmp, zsw1);
+         parall->Vector_SumAll(nbq, 2*nn*nprjall, zsw1);
+ 
+         /* sw2 = Gijl*sw1 */
+         auto ll = 0;
+         for (auto jj=jstart; jj<jend; ++jj) 
          {
-            ia = myion->katm[ii];
-            done = ((nprjall + nprj[ia]) > nprj_max);
-         } 
-         else 
-         {
-            done = true;
+            ia = myion->katm[jj];
+            if (nprj[ia] > 0) 
+            {
+               Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                                 l_projector[ia], m_projector[ia], Gijl[ia],
+                                 zsw1+ll*nn, zsw2+ll*nn);
+               ll += nprj[ia];
+            }
          }
+        
+         auto ntmp = 2*nn*nprjall;
+         DSCAL_PWDFT(ntmp, scal, zsw2, one);
+        
+         esum += DDOT_PWDFT(ntmp, zsw1, one, zsw2, one);
+         mypneb->c3db::mygdevice.T_free();
       }
-      auto jend = ii;
-      mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn * nprjall, sw1);
-
-      /* sw2 = Gijl*sw1 */
-      auto ll = 0;
-      for (auto jj=jstart; jj<jend; ++jj) 
-      {
-         ia = myion->katm[jj];
-         if (nprj[ia] > 0) 
-         {
-            Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                              l_projector[ia], m_projector[ia], Gijl[ia],
-                              sw1+ll*nn, sw2+ll*nn);
-            ll += nprj[ia];
-         }
-      }
-     
-      auto ntmp = nn*nprjall;
-      DSCAL_PWDFT(ntmp, scal, sw2, one);
-     
-      esum += DDOT_PWDFT(ntmp, sw1, one, sw2, one);
-      mypneb->c3db::mygdevice.T_free();
    }
-
+ 
 
    esum = parall->SumAll(2,esum);
 
-   if (mypneb->ispin == 1)
+   if (mypneb->ispin==1)
       esum *= 2.0;
  
    delete[] exi;
    delete[] prjtmp;
-   delete[] sw1;
-   delete[] sw2;
+   delete[] zsw1;
+   delete[] zsw2;
  
    return esum;
 }

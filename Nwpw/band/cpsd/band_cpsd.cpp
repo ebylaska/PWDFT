@@ -382,7 +382,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
 
    /* diagonalize the hamiltonian */
-   //mygrid.m_diagonalize(hml, eig);
+   mygrid.m_diagonalize(hml, eig);
 
 
    /* calculate real-space number of electrons, en */
@@ -519,24 +519,13 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
 
    /* deallocate memory */
-   std::cout << "deallocate memory, taskid=" << myparallel.taskid() 
-             << " taskid_i=" << myparallel.taskid_i() 
-             << " taskid_j=" << myparallel.taskid_j() 
-             << " taskid_k=" << myparallel.taskid_k() << std::endl;
    mygrid.g_deallocate(psi1);
-std::cout << "B dealloc" << std::endl;
    mygrid.g_deallocate(psi2);
-std::cout << "C dealloc" << std::endl;
    mygrid.g_deallocate(Hpsi);
-std::cout << "D dealloc" << std::endl;
    mygrid.h_deallocate(psi_r);
-std::cout << "E dealloc" << std::endl;
    mygrid.r_dealloc(dn);
-std::cout << "F dealloc" << std::endl;
    mygrid.w_deallocate(hml);
-std::cout << "G dealloc" << std::endl;
    mygrid.w_deallocate(lmbda);
-std::cout << "H dealloc" << std::endl;
    delete [] eig;
    //mygrid.d3db::mygdevice.psi_dealloc();
 
