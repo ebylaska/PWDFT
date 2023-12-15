@@ -46,7 +46,7 @@ public:
    void phafac();
    void strfac_pack(const int, const int, double *);
    void phafac_k();
-   void strfac_pack_cxr(const int, const int, double *);
+   void strfac_pack_cxr(const int, const int, const int, double *);
 };
 } // namespace pwdft
 

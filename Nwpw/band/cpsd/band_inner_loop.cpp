@@ -90,6 +90,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       {
          myion->shift();
          mystrfac->phafac();
+         mystrfac->phafac_k();
          myewald->phafac();
          // for (int ii=0; ii<(3*myion->nion); ++ii) fion[ii] = 0.0;
       }
@@ -235,6 +236,9 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1, Hpsi);
    enlocal = -mygrid->gg_traceall(psi1, Hpsi);
+   std::cout << "ESUMA = " << enlocal << std::endl;
+   enlocal = mypsp->e_nonlocal(psi1);
+   std::cout << "ESUMB = " << enlocal << std::endl;
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;

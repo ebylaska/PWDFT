@@ -89,8 +89,8 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
    delete[] jj_indx;
    delete[] ii_indx;
 
-   cxreal = new (std::nothrow) double[ (myion->nion) * (mygrid->nbrillq)]();
-   cximag = new (std::nothrow) double[ (myion->nion) * (mygrid->nbrillq)]();
+   cxreal = new (std::nothrow) double[ (myion->nion) * (maxsize)]();
+   cximag = new (std::nothrow) double[ (myion->nion) * (maxsize)]();
 }
 
 /*********************************
@@ -186,14 +186,22 @@ void CStrfac::phafac_k()
    int nion = myion->nion;
    double *rion1 = myion->rion1;
 
-   for (auto nbq=0; nbq<maxsize; ++nbq)
+   for (auto nbq=0; nbq<(maxsize); ++nbq)
    for (auto ii=0; ii<nion; ++ii) 
    {
-      double pfac = mygrid->pbrill_kvector(nbq)[0]*rion1[3*ii]
-                  + mygrid->pbrill_kvector(nbq)[1]*rion1[3*ii+1]
-                  + mygrid->pbrill_kvector(nbq)[2]*rion1[3*ii+2];
-      cxreal[ii+nbq*nion] = std::cos(pfac);
-      cximag[ii+nbq*nion] = std::sin(pfac);
+     double pfac = mygrid->pbrill_kvector(nbq)[0]*rion1[3*ii]
+                 + mygrid->pbrill_kvector(nbq)[1]*rion1[3*ii+1]
+                 + mygrid->pbrill_kvector(nbq)[2]*rion1[3*ii+2];
+
+      cxreal[ii+nion*nbq] = std::cos(pfac);
+      cximag[ii+nion*nbq] = std::sin(pfac);
+
+   auto nb = mygrid->k1db::ktoptok(nbq);
+      std::cout << "phafac_k: nbq=" << nbq << " ii=" << ii <<  " pfac=" << pfac 
+                << " k: " << mygrid->pbrill_kvector(nbq)[0] <<  " " 
+                         << mygrid->pbrill_kvector(nbq)[1] <<  " " 
+                         << mygrid->pbrill_kvector(nbq)[2] 
+                         << " nb=" << nb << std::endl;
    }
 }
 
@@ -235,20 +243,22 @@ void CStrfac::strfac_pack(const int nbq, const int ii, double *strx)
  *      CStrfac::strfac_pack_cxr      *
  *                                    *
  **************************************/
-void CStrfac::strfac_pack_cxr(const int nbq, const int ii, double *strx)
+void CStrfac::strfac_pack_cxr(const int nbq1, const int nbq, const int ii, double *strx)
 {
-   int nion = myion->nion;
+   int nion = (myion->nion);
    double cc = cxreal[ii+nbq*nion];
    double dd = cximag[ii+nbq*nion];
 
-   int npack = mygrid->npack(nbq);
+   std::cout << "CXR=" << cc << " " << dd << std::endl;
+
+   int npack = mygrid->npack(nbq1);
    int nx = mygrid->nx;
    int ny = mygrid->ny;
    int nz = mygrid->nz;
 
-   const int *indxi = i_indx[nbq];
-   const int *indxj = j_indx[nbq];
-   const int *indxk = k_indx[nbq];
+   const int *indxi = i_indx[nbq1];
+   const int *indxj = j_indx[nbq1];
+   const int *indxk = k_indx[nbq1];
 
    const double *exi = wx1 + 2*ii*nx;
    const double *exj = wy1 + 2*ii*ny;

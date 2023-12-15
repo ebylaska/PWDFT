@@ -135,6 +135,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* setup structure factor */
    CStrfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
+   mystrfac.phafac_k();
 
    /* initialize operators */
    cKinetic_Operator mykin(&mygrid);
