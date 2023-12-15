@@ -225,56 +225,55 @@ public:
 
   /// DOUBLE COMPLEX BLAS
 
-  void NN1_zgemm(int npack, int ne, double alpha, double *host_a, double *host_b,
-                double beta, double *host_c) {
+  void NN1_zgemm(int npack, int ne, double *alpha, double *host_a, double *host_b,
+                double *beta, double *host_c) {
     ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack,
                 host_b, ne, beta, host_c, npack);
   }              
 
-  void CN1_zgemm(int npack, int ne, double alpha, double *host_a,
-                 double *host_b, double beta, double *host_c) {
+  void CN1_zgemm(int npack, int ne, double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_c) {
     ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack,
                 host_b, npack, beta, host_c, ne);
   }  
 
-  void CN2_zgemm(int ne, int nprj, int npack, double alpha, double *host_a,
-                 double *host_b, double beta, double *host_c) {
+  void CN2_zgemm(int ne, int nprj, int npack, double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_c) {
     ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack,
                 host_b, npack, beta, host_c, ne);
   }
 
-  void NC2_zgemm(int ne, int nprj, int npack, double alpha, double *host_a,
-                 double *host_b, double beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"C", ne, nprj, npack, alpha, host_a, npack,
-                host_b, npack, beta, host_c, ne);
+  void NC2_zgemm(int npack, int ne, int nprj,  double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_c) {
+    ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj,alpha, host_a, npack,
+                host_b, ne, beta, host_c, npack);
   }
+
                  
   void NN_zgemm(int m, int n, int k,
-                 double alpha,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
+                 double *beta,
                  double *host_c,int ldc) {
      ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   }             
 
   void CN_zgemm(int m, int n, int k,
-                 double alpha,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
+                 double *beta,
                  double *host_c,int ldc) {
      ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   } 
 
 
-
-
   void NC_zgemm(int m, int n, int k,
-                 double alpha,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
+                 double *beta,
                  double *host_c,int ldc) {
      ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   }

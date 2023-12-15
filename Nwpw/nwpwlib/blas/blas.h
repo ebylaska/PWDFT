@@ -101,7 +101,7 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
 #define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
 
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
-  zgemm_(s1, s2, &(n), &(m), &(k), &(alpha), a, &(ida), b, &(idb), &(beta), c, \
+  zgemm_(s1, s2, &(n), &(m), &(k), alpha, a, &(ida), b, &(idb), beta, c, \
          &(idc))
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \

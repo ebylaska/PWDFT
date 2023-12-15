@@ -937,10 +937,10 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
    //int ng0    = 2*CGrid::nzero(1);
  
    int one = 1;
-   double rzero = 0.0;
-   double rtwo = 2.0;
-   double rone = 1.0;
-   double rmone = -1.0;
+   double rzero[2] = {0.0,0.0};
+   double rtwo[2] = {2.0,0.0};
+   double rone[2] = {1.0,0.0};
+   double rmone[2] = {-1.0,0.0};
  
    if (parallelized) 
    {
@@ -1026,10 +1026,10 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
    //int ng0    = 2*CGrid::nzero(1);
       
    int one = 1;
-   double rzero = 0.0;
-   double rtwo = 2.0;
-   double rone = 1.0;
-   double rmone = -1.0;
+   double rzero[2] = {0.0,0.0};
+   double rtwo[2] = {2.0,0.0};
+   double rone[2] = {1.0,0.0};
+   double rmone[2] = {-1.0,0.0};
             
    if (parallelized) 
    {    
@@ -1116,10 +1116,10 @@ void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml)
    int npack1 = 2 * CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
-   double rzero = 0.0;
-   double rtwo = 2.0;
-   double rone = 1.0;
-   double rmone = -1.0;
+   double rzero[2] = {0.0,0.0};
+   double rtwo[2] = {2.0,0.0};
+   double rone[2] = {1.0,0.0};
+   double rmone[2] = {-1.0,0.0};
  
    if (parallelized) 
    {

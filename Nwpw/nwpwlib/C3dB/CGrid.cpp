@@ -695,8 +695,8 @@ void CGrid::cc_pack_inprjzdot(const int nb, int nn, int nprj, double *a,
                               double *b, double *sum) 
 {  
    int ng = (nidb[nb]);
-   double rone = 1.0;
-   double rzero = 0.0; 
+   double rone[2] = {1.0,0.0};
+   double rzero[2] = {0.0,0.0}; 
    
    c3db::mygdevice.CN2_zgemm(nn, nprj, ng, rone, a, b, rzero, sum);
 }  

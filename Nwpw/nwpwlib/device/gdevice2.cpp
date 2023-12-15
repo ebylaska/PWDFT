@@ -78,31 +78,31 @@ void gdevice2::NN_eigensolver(int ispin, int ne[], double *a, double *w) {
 }
 
 
-void gdevice2::CN1_zgemm(int npack, int ne, double alpha, double *a, double *b,
-                         double beta, double *c) {
+void gdevice2::CN1_zgemm(int npack, int ne, double *alpha, double *a, double *b,
+                         double *beta, double *c) {
    mygdevice2->CN1_zgemm(npack, ne, alpha, a, b, beta, c);
 }
 
-void gdevice2::CN2_zgemm(int npack, int ne, int nprj, double alpha, double *a, double *b,
-                         double beta, double *c) {
+void gdevice2::CN2_zgemm(int npack, int ne, int nprj, double *alpha, double *a, double *b,
+                         double *beta, double *c) {
    mygdevice2->CN2_zgemm(npack, ne, nprj, alpha, a, b, beta, c);
 }
 
-void gdevice2::NC2_zgemm(int npack, int ne, int nprj, double alpha, double *a, double *b,
-                         double beta, double *c) {
+void gdevice2::NC2_zgemm(int npack, int ne, int nprj, double *alpha, double *a, double *b,
+                         double *beta, double *c) {
    mygdevice2->NC2_zgemm(npack, ne, nprj, alpha, a, b, beta, c);
 }
 
 
-void gdevice2::NN_zgemm(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+void gdevice2::NN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, double *b, int ldb, double *beta, double *c, int ldc) {
    mygdevice2->NN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
-void gdevice2::NC_zgemm(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+void gdevice2::NC_zgemm(int n, int m, int k, double *alpha, double *a, int lda, double *b, int ldb, double *beta, double *c, int ldc) {
    mygdevice2->NC_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
-void gdevice2::CN_zgemm(int n, int m, int k, double alpha, double *a, int lda, double *b, int ldb, double beta, double *c, int ldc) {
+void gdevice2::CN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, double *b, int ldb, double *beta, double *c, int ldc) {
    mygdevice2->CN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
