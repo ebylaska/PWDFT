@@ -1648,7 +1648,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
             }
          }
          jend = ii;
-         mypneb->cc_pack_inprjzdot(nbq1, 2*nn, nprjall, psi, prjtmp, zsw1);
+         mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
 
