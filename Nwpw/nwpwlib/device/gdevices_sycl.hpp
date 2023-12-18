@@ -1406,7 +1406,7 @@ public:
       }
       else
       {
-         indx = 0;
+         int indx = 0;
          for (auto q = 0; q < nq; ++q)
          {
             dcfftb_(&nx, a + indx, tmpx);
