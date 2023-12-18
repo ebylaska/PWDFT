@@ -40,7 +40,7 @@
   cblas_zgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
               ida, b, idb, beta, c, idc)
 
-#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp ierr)                         \
+#define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
   ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
 
 #else
