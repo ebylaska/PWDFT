@@ -959,12 +959,12 @@ public:
 
 
 
-   void CN1_zgemm(int npack2, int ne, double alpha, double *host_a,
-                  double *host_b, double beta, double *host_cab)
+   void CN1_zgemm(int npack2, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_cab)
    {
       int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
 
-      if (std::fabs(beta) > 0.0)
+      if (std::fabs(*beta) > 0.0)
       {
          stream[0]->memcpy(dev_mem[ic12], host_cab, ne*ne*sizeof(double)).wait();
       }
@@ -977,7 +977,7 @@ public:
                          &host_b[tile_start2[0]], npack2, dev_mem[ia_hpsi[0]],
                          tile_npack2[0], stream[0]);
 
-      double beta0 = beta;
+      double beta0 = *beta;
       for (auto tt = 0; tt < tile_fac; ++tt)
       {
          int ttp1 = tt + 1;
@@ -994,7 +994,7 @@ public:
          }
          stream[tt % 2]->wait();
          oneapi::mkl::blas::column_major::gemm(
-             *stream[0], matT, matN, ne, ne, tile_npack2[tt], alpha,
+             *stream[0], matT, matN, ne, ne, tile_npack2[tt], *alpha,
              dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
              tile_npack2[tt], beta0, dev_mem[ic12], ne);
          beta0 = 1.0;
@@ -1007,8 +1007,8 @@ public:
 
 
 
-   void CN2_zgemm(int ne, int nprj, int npack2, double alpha, double *host_a,
-                   double *host_b, double beta, double *host_c)
+   void CN2_zgemm(int ne, int nprj, int npack2, double *alpha, double *host_a,
+                   double *host_b, double *beta, double *host_c)
    {
       b_prj = host_b;
       ib_prj[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)nprj));
@@ -1027,7 +1027,7 @@ public:
                          &b_prj[tile_start2[0]], npack2, dev_mem[ib_prj[0]],
                          tile_npack2[0], stream[0]);
 
-      double beta0 = beta;
+      double beta0 = *beta;
       for (auto tt = 0; tt < tile_fac; ++tt)
       {
          int ttp1 = tt + 1;
@@ -1045,7 +1045,7 @@ public:
 
          stream[tt % 2]->wait();
          oneapi::mkl::blas::column_major::gemm(
-             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], alpha,
+             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], *alpha,
              dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ib_prj[tt % 2]],
              tile_npack2[tt], beta0, dev_mem[ic], ne);
          beta0 = 1.0;
@@ -1059,8 +1059,8 @@ public:
    }
 
 
-   void NC2_zgemm(int ne, int nprj, int npack2, double alpha, double *host_a,
-                   double *host_b, double beta, double *host_c)
+   void NC2_zgemm(int ne, int nprj, int npack2, double *alpha, double *host_a,
+                   double *host_b, double *beta, double *host_c)
    {
       // DGEMM_PWDFT((char *) "T",(char *)
       // "N",ne,nprj,npack2,alpha,host_a,npack2,host_b,npack2,beta,host_c,ne);
@@ -1086,7 +1086,7 @@ public:
                          &b_prj[tile_start2[0]], npack2, dev_mem[ib_prj[0]],
                          tile_npack2[0], stream[0]);
 
-      double beta0 = beta;
+      double beta0 = *beta;
       for (auto tt = 0; tt < tile_fac; ++tt)
       {
          int ttp1 = tt + 1;
@@ -1104,7 +1104,7 @@ public:
 
          stream[tt % 2]->wait();
          oneapi::mkl::blas::column_major::gemm(
-             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], alpha,
+             *stream[0], matT, matN, ne, nprj, tile_npack2[tt], *alpha,
              dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ib_prj[tt % 2]],
              tile_npack2[tt], beta0, dev_mem[ic], ne);
          beta0 = 1.0;
@@ -1119,10 +1119,10 @@ public:
 
 
   void NN_zgemm(int m, int n, int k,
-                double alpha,
+                double *alpha,
                 double *host_a, int lda,
                 double *host_b, int ldb,
-                double beta,
+                double *beta,
                 double *host_c,int ldc)
    {
       int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
@@ -1135,10 +1135,10 @@ public:
       stream[0]->wait();
       oneapi::mkl::blas::column_major::gemm(*stream[0],
          matN,matN,m,n,k,
-         alpha,
+         *alpha,
          dev_mem[ia],lda,
          dev_mem[ib],ldb,
-         beta,
+         *beta,
          dev_mem[ic],ldc);
 
       syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
@@ -1151,10 +1151,10 @@ public:
 
 
   void CN_zgemm(int m, int n, int k,
-                double alpha,
+                double *alpha,
                 double *host_a, int lda,
                 double *host_b, int ldb,
-                double beta,
+                double *beta,
                 double *host_c,int ldc)
    {
       int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
@@ -1167,10 +1167,10 @@ public:
       stream[0]->wait();
       oneapi::mkl::blas::column_major::gemm(*stream[0],
          matN,matN,m,n,k,
-         alpha,
+         *alpha,
          dev_mem[ia],lda,
          dev_mem[ib],ldb,
-         beta,
+         *beta,
          dev_mem[ic],ldc);
 
       syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
@@ -1183,10 +1183,10 @@ public:
 
 
   void NC_zgemm(int m, int n, int k,
-                double alpha,
+                double *alpha,
                 double *host_a, int lda,
                 double *host_b, int ldb,
-                double beta,
+                double *beta,
                 double *host_c,int ldc)
    {
       int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
@@ -1199,10 +1199,10 @@ public:
       stream[0]->wait();
       oneapi::mkl::blas::column_major::gemm(*stream[0],
          matN,matN,m,n,k,
-         alpha,
+         *alpha,
          dev_mem[ia],lda,
          dev_mem[ib],ldb,
-         beta,
+         *beta,
          dev_mem[ic],ldc);
 
       syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
@@ -1592,7 +1592,10 @@ public:
         
          // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
          //  d3db::parall->Barrier();
-         ZEIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, rmp1, ierr);
+         MKL_Complex16* hml = reinterpret_cast<MKL_Complex16*>(host_hml+shift2);
+         ZEIGEN_PWDFT(n, hml, host_eig + shift1, xmp1, nn, rmp1, ierr);
+
+         //ZEIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, rmp1, ierr);
          // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
          // EIGEN_PWDFT failed!"));
        

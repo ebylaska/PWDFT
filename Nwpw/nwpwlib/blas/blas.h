@@ -3,6 +3,7 @@
 
 #if defined(NWPW_INTEL_MKL)
 #include "mkl.h"
+#include "mkl_lapacke.h"
 
 #define DSCAL_PWDFT(n, alpha, a, ida) cblas_dscal(n, alpha, a, ida);
 #define DCOPY_PWDFT(n, a, ida, b, idb) cblas_dcopy(n, a, ida, b, idb)
@@ -32,7 +33,20 @@
 
 
 #define ZSCAL_PWDFT(n, alpha, a, ida) cblas_zscal(n, alpha, a, ida);
-#define ZDOTC_PWDFT(n, a, ida, b, idb) cblas_zdotc(n, a, ida, b, idb);
+
+#define ZDOTC_PWDFT(n, a, ida, b, idb) ([](int _n, const double* _a, int _ida, const double* _b, int _idb) -> std::complex<double> { \
+    std::vector<std::complex<double>> temp_a(_n), temp_b(_n); \
+    for (int i = 0; i < _n; ++i) { \
+        temp_a[i] = std::complex<double>(_a[2*i], _a[2*i + 1]); \
+        temp_b[i] = std::complex<double>(_b[2*i], _b[2*i + 1]); \
+    } \
+    MKL_Complex16 result; \
+    cblas_zdotc_sub(_n, reinterpret_cast<const MKL_Complex16*>(temp_a.data()), _ida, reinterpret_cast<const MKL_Complex16*>(temp_b.data()), _idb, &result); \
+    return std::complex<double>(result.real, result.imag); \
+}((n), (a), (ida), (b), (idb)))
+
+
+
 #define ZAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
   cblas_zaxpy(n, alpha, a, ida, b, idb)
 
