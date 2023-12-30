@@ -105,7 +105,7 @@ static void CMatrix_start_rot(Parallel *parall,
  *       should be called in coordination with similar functions for other matrix
  *       dimensions.
  *
- * @see CMatrix_start_rot, CMatrix_dgemm1, CMatrix_dgemm2, CMatrix_dgemm3
+ * @see CMatrix_start_rot, CMatrix_zgemm1, CMatrix_zgemm2, CMatrix_zgemm3
  */
 static void CMatrix_end_rot(Parallel *parall, const int request_indx)
 {
@@ -152,7 +152,7 @@ c1db::c1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne
 
 /***********************************
  *                                 *
- *      c1db::CMatrix_dgemm1       *
+ *      c1db::CMatrix_zgemm1       *
  *                                 *
  ***********************************/
 
@@ -182,13 +182,13 @@ c1db::c1db(Parallel *inparall, const int inmaptype, const int inispin, int *inne
     - work1: Temporary workspace array.
     - work2: Temporary workspace array.
 */
-void c1db::CMatrix_dgemm1(Parallel *parall, 
+void c1db::CMatrix_zgemm1(Parallel *parall, 
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
-                          double alpha,
+                          double *alpha,
                           double *A, int lda, int *ma, int *na,
                           double *B, int ldb, int *mb, int *nb,
-                          double beta,
+                          double *beta,
                           double *C, int ldc, int *mc, int *nc,
                           double  *work1, double *work2)
 {
@@ -199,7 +199,7 @@ void c1db::CMatrix_dgemm1(Parallel *parall,
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
-   DSCAL_PWDFT(nn,beta,C,one);
+   ZSCAL_PWDFT(nn,beta,C,one);
 
    int iwrk,shift,ierr;
    int ii=0;
@@ -207,7 +207,7 @@ void c1db::CMatrix_dgemm1(Parallel *parall,
    int kk=0;
    int icur=0;
    int jcur=0;
-   double rone=1.0;
+   double rone[2]={1.0,0.0};
 
    /* loop over all row pannels of C */
    while (kk<k)
@@ -217,33 +217,33 @@ void c1db::CMatrix_dgemm1(Parallel *parall,
 
       /* pack current iwrk columns of A into work1 */
       if (taskid_j==jcur)
-         DLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
-                      A+jj*lda,lda,
+         ZLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
+                      A+2*jj*lda,lda,
                       work1, ma[taskid_i]);
 
       /* pack current iwrk rows of B into work2 */
       if (taskid_i==icur)
-         DLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
-                      B+ii,ldb,
+         ZLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
+                      B+2*ii,ldb,
                       work2, iwrk);
 
 
       /* broadcast work1  within my row */
       //ierr = MPI_Bcast(work1,iwrk*ma[taskid_i],MPI_DOUBLE_PRECISION,jcur,comm_j);
-      parall->Brdcst_Values(2,jcur,iwrk*ma[taskid_i],work1);
+      parall->Brdcst_Values(2,jcur,2*iwrk*ma[taskid_i],work1);
 
 
       /* broadcast work2  within my column */
       //ierr = MPI_Bcast(work2,iwrk*nb[taskid_j],MPI_DOUBLE_PRECISION,icur,comm_i);
-      parall->Brdcst_Values(1,icur,iwrk*ma[taskid_j],work2);
+      parall->Brdcst_Values(1,icur,2*iwrk*ma[taskid_j],work2);
 
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
-         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                              alpha,
-                              work1,ma[taskid_i],
-                              work2,iwrk,
-                              rone,
-                              C,ldc);
+         mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                             alpha,
+                             work1,ma[taskid_i],
+                             work2,iwrk,
+                             rone,
+                             C,ldc);
          /* DGEMM_PWDFT((char *) "N",(char *) "N",mc[taskid_i],nc[taskid_j],iwrk,
                    alpha,
                    work1,ma[taskid_i],
@@ -273,7 +273,7 @@ void c1db::CMatrix_dgemm1(Parallel *parall,
 
 /***********************************
  *                                 *
- *         CMatrix_dgemm2          *
+ *         CMatrix_zgemm2          *
  *                                 *
  ***********************************/
  /*
@@ -301,13 +301,13 @@ void c1db::CMatrix_dgemm1(Parallel *parall,
     - work1: Temporary workspace array.
     - work2: Temporary workspace array.
 */
-void c1db::CMatrix_dgemm2(Parallel *parall,
+void c1db::CMatrix_zgemm2(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
-                          double alpha,
+                          double *alpha,
                           double *A, int lda, int *ma, int *na,
                           double *B, int ldb, int *mb, int *nb,
-                          double beta,
+                          double *beta,
                           double *C, int ldc, int *mc, int *nc,
                           double  *work1, double *work2)
 {
@@ -318,7 +318,7 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
-   DSCAL_PWDFT(nn,beta,C,one);
+   ZSCAL_PWDFT(nn,beta,C,one);
 
    int iwrk,shift,ierr;
    int ii=0;
@@ -326,8 +326,8 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
    int kk=0;
    int icur=0;
    int jcur=0;
-   double rone=1.0;
-   double rzero=0.0;
+   double rone[2]={1.0,0.0};
+   double rzero[2]={0.0,0.0};
 
    /* loop over all row pannels of C */
    while (kk<m)
@@ -341,22 +341,22 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
          /* pack current iwrk columns of A into work1 */
          if (taskid_j==jcur)
          {
-            DLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
-                         A+jj*lda,lda,
+            ZLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
+                         A+2*jj*lda,lda,
                          work1, ma[taskid_i]);
          }
 
          /* broadcast work1  within my row */
          //ierr = MPI_Bcast(work1,iwrk*ma[taskid_i],MPI_DOUBLE_PRECISION,jcur,comm_j);
-         parall->Brdcst_Values(2,jcur,iwrk*ma[taskid_i],work1);
+         parall->Brdcst_Values(2,jcur,2*iwrk*ma[taskid_i],work1);
 
          if ((iwrk>0) && (nb[taskid_j]>0))
-            mygdevice->TN_dgemm2(iwrk,nb[taskid_j],ma[taskid_i],
-                                 alpha,
-                                 work1,ma[taskid_i],
-                                 B,ldb,
-                                 rzero,
-                                 work2,iwrk);
+            mygdevice->CN_zgemm(iwrk,nb[taskid_j],ma[taskid_i],
+                                alpha,
+                                work1,ma[taskid_i],
+                                B,ldb,
+                                rzero,
+                                work2,iwrk);
 /*
             DGEMM_PWDFT((char *) "T",(char *) "N",iwrk,nb[taskid_j],ma[taskid_i],
                    alpha,
@@ -369,11 +369,11 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
 
       /* iwrk*nc(taskid_j+1) submatrix ==0 */
       else
-         std::memset(work2,0,nc[taskid_j]*iwrk*sizeof(double));
+         std::memset(work2,0,2*nc[taskid_j]*iwrk*sizeof(double));
 
       /* summ to node that holds current rows of C */
       //ierr = MPI_Reduce(work2,work1,nc[taskid_j]*iwrk,MPI_DOUBLE_PRECISION,MPI_SUM,icur,comm_i);
-      parall->Reduce_Values(1,icur,nc[taskid_j]*iwrk,work2,work1);
+      parall->Reduce_Values(1,icur,2*nc[taskid_j]*iwrk,work2,work1);
 
       /* add to current rows of C */
       if (taskid_i==icur)
@@ -381,7 +381,7 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
          shift = 0;
          for (auto i=ii; i<(ii+iwrk); ++ i)
          {
-            DAXPY_PWDFT(nc[taskid_j],rone,work1+shift,iwrk,C+i,mc[taskid_i]);
+            ZAXPY_PWDFT(nc[taskid_j],rone,work1+shift,iwrk,C+i,mc[taskid_i]);
             ++shift;
          }
       }
@@ -406,7 +406,7 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
 
 /***********************************
  *                                 *
- *         CMatrix_dgemm3          *
+ *         CMatrix_zgemm3          *
  *                                 *
  ***********************************/
 /*
@@ -435,13 +435,13 @@ void c1db::CMatrix_dgemm2(Parallel *parall,
     - work1: Temporary workspace array.
     - work2: Temporary workspace array.
 */
-void c1db::CMatrix_dgemm3(Parallel *parall,
+void c1db::CMatrix_zgemm3(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
-                          double alpha,
+                          double *alpha,
                           double *A, int lda, int *ma, int *na,
                           double *B, int ldb, int *mb, int *nb,
-                          double beta,
+                          double *beta,
                           double *C, int ldc, int *mc, int *nc,
                           double *work1, double *work2)
 {
@@ -452,7 +452,7 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
-   DSCAL_PWDFT(nn,beta,C,one);
+   ZSCAL_PWDFT(nn,beta,C,one);
 
    int iwrk,shift,ierr;
    int ii=0;
@@ -460,8 +460,8 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
    int kk=0;
    int icur=0;
    int jcur=0;
-   double rone=1.0;
-   double rzero=0.0;
+   double rone[2]={1.0,0.0};
+   double rzero[2]={0.0,0.0};
 
    /* loop over all row pannels of C */
    while (kk<n)
@@ -471,21 +471,21 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
 
       /* pack current iwrk rows of B into work2 */
       if (taskid_i==icur)
-         DLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
-                      B+ii,ldb,
+         ZLACPY_PWDFT((char*) "G",iwrk,nb[taskid_j],
+                      B+2*ii,ldb,
                       work2, iwrk);
 
       /* broadcast work2  within my column */
       //ierr = MPI_Bcast(work2,iwrk*nb[taskid_j],MPI_DOUBLE_PRECISION,icur,comm_i);
-      parall->Brdcst_Values(1,icur,iwrk*nb[taskid_j],work2);
+      parall->Brdcst_Values(1,icur,2*iwrk*nb[taskid_j],work2);
 
       if ((iwrk>0) && (na[taskid_i]>0) &&  (mc[taskid_j]>0))
-         mygdevice->NT_dgemm3(mc[taskid_i],iwrk,na[taskid_j],
-                                 alpha,
-                                 A,lda,
-                                 work2,iwrk,
-                                 rzero,
-                                 work1,mc[taskid_i]);
+         mygdevice->NC_zgemm(mc[taskid_i],iwrk,na[taskid_j],
+                                alpha,
+                                A,lda,
+                                work2,iwrk,
+                                rzero,
+                                work1,mc[taskid_i]);
          /*
          DGEMM_PWDFT((char *) "N",(char *) "T",mc[taskid_i],iwrk,na[taskid_j],
                    alpha,
@@ -497,14 +497,14 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
 
       /* reduce work1 within my row */
       //ierr = MPI_Reduce(work1,work2,mc[taskid_i]*iwrk*,MPI_DOUBLE_PRECISION,jcur,comm_j);
-      parall->Reduce_Values(2,jcur,mc[taskid_j]*iwrk,work1,work2);
+      parall->Reduce_Values(2,jcur,2*mc[taskid_j]*iwrk,work1,work2);
 
       if (taskid_j==jcur)
       {
          shift = 0;
          for (auto j=jj; j<(jj+iwrk); ++j)
          {
-            DAXPY_PWDFT(mc[taskid_i],rone,work2+shift,one,C+j*ldc,one);
+            ZAXPY_PWDFT(mc[taskid_i],rone,work2+2*shift,one,C+2*j*ldc,one);
             shift += mc[taskid_i];
          }
       }
@@ -530,7 +530,7 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
 
 /***********************************
  *                                 *
- *         CMatrix_dgemm2c         *
+ *         CMatrix_zgemm2c         *
  *                                 *
  ***********************************/
 /**
@@ -564,7 +564,7 @@ void c1db::CMatrix_dgemm3(Parallel *parall,
  *       and involves complex data distribution and computation operations.
  *       It uses parallel device (mygdevice) for optimized computation.
  */
-void c1db::CMatrix_dgemm2c(Parallel *parall,
+void c1db::CMatrix_zgemm2c(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
                           double *A, double *B, int lda, int *ma, int *ma1, int *na,
@@ -582,7 +582,7 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
-   std::memset(C,0,nn*sizeof(double));
+   std::memset(C,0,2*nn*sizeof(double));
 
    int iwrk,shift;
    int ii=0;
@@ -590,8 +590,8 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
    int kk=0;
    int icur=0;
    int jcur=0;
-   double rone=1.0;
-   double rzero=0.0;
+   double rone[2]={1.0,0.0};
+   double rzero[2]={0.0,0.0};
 
    while (kk<m)
    {
@@ -599,7 +599,7 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
       iwrk = MIN(iwrk,   na[jcur]-jj);
 
       nn=(nc[taskid_j]*iwrk);
-      std::memset(work2,0,nn*sizeof(double));
+      std::memset(work2,0,2*nn*sizeof(double));
 
       /* iwrk*nc(taskid_j) submatrix !=0 */
       if (ma[taskid_i]>0)
@@ -607,22 +607,22 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
          /* pack current iwrk columns of A into work1 */
          if (taskid_j==jcur)
          {
-            DLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
-                         A+jj*lda,lda,
+            ZLACPY_PWDFT((char*) "G",ma[taskid_i],iwrk,
+                         A+2*jj*lda,lda,
                          work1, ma[taskid_i]);
          }
 
          /* broadcast work1  within my row */
          //ierr = MPI_Bcast(work1,iwrk*ma[taskid_i],MPI_DOUBLE_PRECISION,jcur,comm_j);
-         parall->Brdcst_Values(2,jcur,iwrk*ma[taskid_i],work1);
+         parall->Brdcst_Values(2,jcur,2*iwrk*ma[taskid_i],work1);
 
          if ((iwrk>0) && (na[taskid_j]>0))
-            mygdevice->TN_dgemm2c(iwrk,n2,npack2,nida2,work1,B,work2);
+            mygdevice->CN_zgemm(iwrk,n2,npack2,rone,work1,npack2,B,npack2,rzero,work2,iwrk);
       }
 
       /* summ to node that holds current rows of C */
       //ierr = MPI_Reduce(work2,work1,nc[taskid_j]*iwrk,MPI_DOUBLE_PRECISION,MPI_SUM,icur,comm_i);
-      parall->Reduce_Values(1,icur,nc[taskid_j]*iwrk,work2,work1);
+      parall->Reduce_Values(1,icur,2*nc[taskid_j]*iwrk,work2,work1);
 
       /* add to current rows of C */
       if (taskid_i==icur)
@@ -630,7 +630,7 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
          shift = 0;
          for (auto i=ii; i<(ii+iwrk); ++i)
          {
-            DAXPY_PWDFT(nc[taskid_j],rone,work1+shift,iwrk,C+i,mc[taskid_i]);
+            ZAXPY_PWDFT(nc[taskid_j],rone,work1+2*shift,iwrk,C+2*i,mc[taskid_i]);
             ++shift;
          }
       }
@@ -653,7 +653,7 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
 
 /***********************************
  *                                 *
- *         CMatrix_dgemm1_rot2     *
+ *         CMatrix_zgemm1_rot2     *
  *                                 *
  ***********************************/
 /**
@@ -693,19 +693,16 @@ void c1db::CMatrix_dgemm2c(Parallel *parall,
  *       and involves complex data distribution and rotation operations.
  *       It uses parallel device (mygdevice) for optimized computation.
  */
-void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
+void c1db::CMatrix_zgemm1_rot2(Parallel *parall,
                           gdevice2 *mygdevice,
                           int m, int n, int k, int nblock,
-                          double alpha,
+                          double *alpha,
                           double *A, int lda, int *ma, int *na,
                           double *B, int ldb, int *mb, int *nb,
-                          double beta,
+                          double *beta,
                           double *C, int ldc, int *mc, int *nc,
                           double *Bcol, double *Bwork, double  *work1, double *work2)
 {
-
-
-
    int taskid = parall->taskid();
    int taskid_i = parall->taskid_i();
    int taskid_j = parall->taskid_j();
@@ -713,8 +710,8 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
    int np_j = parall->np_j();
 
    int jcur=0;
-   double rone=1.0;
-   double rzero=0.0;
+   double rone[2]={1.0,0.0};
+   double rzero[2]={0.0,0.0};
 
    int iwrk;
    int ii = 0;
@@ -755,19 +752,20 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
       for (auto j=0; j<iwrk2; ++j)
       for (auto i=0; i<iwrk;  ++i)
       {
-         Bwork[bshift+i+j*iwrk] = B[ii+i+(j+j1)*ne0];
+         Bwork[2*(bshift+i+j*iwrk)]   = B[2*(ii+i+(j+j1)*ne0)];
+         Bwork[2*(bshift+i+j*iwrk)+1] = B[2*(ii+i+(j+j1)*ne0)+1];
       }
       bshift += iwrk*iwrk2;
       ii     += iwrk;
    }
 
    //C = beta*C
-   double tmphml[16];
-   std::memset(tmphml,0,16*sizeof(double));
+   double tmphml[2*16];
+   std::memset(tmphml,0,2*16*sizeof(double));
 
    int one=1;
    int nn=(nc[taskid_j]*mc[taskid_i]);
-   DSCAL_PWDFT(nn,beta,C,one);
+   ZSCAL_PWDFT(nn,beta,C,one);
 
 
 /*
@@ -779,7 +777,7 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
                            C2,ldc);
               */
 
-   std::memset(work1,0,lda*na[taskid_j]*sizeof(double));
+   std::memset(work1,0,2*lda*na[taskid_j]*sizeof(double));
    CMatrix_start_rot(parall,1,A,work1,lda,na,request1_indx);
 
    jcur = taskid_j;
@@ -788,12 +786,12 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
    if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
    {
       
-      mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                           alpha,
-                           A,lda,
-                           Bwork+bshift2[jcur],iwrk,
-                           rone,
-                           C,ldc);
+      mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                          alpha,
+                          A,lda,
+                          Bwork+2*bshift2[jcur],iwrk,
+                          rone,
+                          C,ldc);
      
 
      /*
@@ -805,7 +803,8 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
                            C,ldc);
       */
 
-      tmphml[4*taskid_j] =  Bwork[bshift2[jcur]];
+      tmphml[2*4*taskid_j]   =  Bwork[2*bshift2[jcur]];
+      tmphml[2*4*taskid_j+1] =  Bwork[2*bshift2[jcur]+1];
    }
 
    bool jeven = true;
@@ -817,17 +816,17 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
           jcur = (jcur-1+np_j) % np_j;
           iwrk = na[jcur];
           CMatrix_end_rot(parall,request1_indx);
-          std::memset(work2,0,lda*na[taskid_j]*sizeof(double));
+          std::memset(work2,0,2*lda*na[taskid_j]*sizeof(double));
           CMatrix_start_rot(parall,j,A,work2,lda,na,request2_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
           
-             mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                                  alpha,
-                                  work1,lda,
-                                  Bwork+bshift2[jcur],iwrk,
-                                  rone,
-                                  C,ldc);
+             mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                                 alpha,
+                                 work1,lda,
+                                 Bwork+2*bshift2[jcur],iwrk,
+                                 rone,
+                                 C,ldc);
              /*
               mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,
@@ -837,7 +836,8 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
                            C,ldc);
               */
 
-              tmphml[4*taskid_j+1] =  Bwork[bshift2[jcur]];
+              tmphml[2*(4*taskid_j+1)]   = Bwork[2*bshift2[jcur]];
+              tmphml[2*(4*taskid_j+1)+1] = Bwork[2*bshift2[jcur]+1];
           }
        }
        else
@@ -846,17 +846,17 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
           jcur = (jcur-1+np_j) % np_j;
           iwrk = na[jcur];
           CMatrix_end_rot(parall,request2_indx);
-          std::memset(work1,0,lda*na[taskid_j]*sizeof(double));
+          std::memset(work1,0,2*lda*na[taskid_j]*sizeof(double));
           CMatrix_start_rot(parall,j,A,work1,lda,na,request1_indx);
           if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
           {
            
-             mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                                  alpha,
-                                  work2,lda,
-                                  Bwork+bshift2[jcur],iwrk,
-                                  rone,
-                                  C,ldc);
+             mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                                 alpha,
+                                 work2,lda,
+                                 Bwork+2*bshift2[jcur],iwrk,
+                                 rone,
+                                 C,ldc);
             /*
               mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,
@@ -866,7 +866,8 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
                            C,ldc);
               */
 
-              tmphml[4*taskid_j+2] =  Bwork[bshift2[jcur]];
+              tmphml[2*(4*taskid_j+2)]   = Bwork[2*bshift2[jcur]];
+              tmphml[2*(4*taskid_j+2)+1] = Bwork[2*bshift2[jcur]+1];
           }
        }
    }
@@ -879,12 +880,12 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
           
-         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                              alpha,
-                              work1,lda,
-                              Bwork+bshift2[jcur],iwrk,
-                              rone,
-                              C,ldc);
+         mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                             alpha,
+                             work1,lda,
+                             Bwork+2*bshift2[jcur],iwrk,
+                             rone,
+                             C,ldc);
          /*
           mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,
@@ -894,7 +895,8 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
                            C,ldc);
           */
 
-          tmphml[4*taskid_j+3] =  Bwork[bshift2[jcur]];
+          tmphml[2*(4*taskid_j+3)]   = Bwork[2*bshift2[jcur]];
+          tmphml[2*(4*taskid_j+3)+1] = Bwork[2*bshift2[jcur]+1];
       }
    }
    else
@@ -905,12 +907,12 @@ void c1db::CMatrix_dgemm1_rot2(Parallel *parall,
       if ((iwrk>0) && (mc[taskid_i]>0) &&  (nc[taskid_j]>0))
       {
     
-         mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
-                              alpha,
-                              work2,lda,
-                              Bwork+bshift2[jcur],iwrk,
-                              rone,
-                              C,ldc);
+         mygdevice->NN_zgemm(mc[taskid_i],nc[taskid_j],iwrk,
+                             alpha,
+                             work2,lda,
+                             Bwork+2*bshift2[jcur],iwrk,
+                             rone,
+                             C,ldc);
         /*
          mygdevice->NN_dgemm1(mc[taskid_i],nc[taskid_j],iwrk,
                            alpha,

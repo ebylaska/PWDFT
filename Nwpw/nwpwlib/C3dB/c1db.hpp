@@ -42,39 +42,39 @@ public:
    }
 
   /* SUMMA matrix mutiplications */
-  void CMatrix_dgemm1(Parallel *parall, gdevice2 *,
+  void CMatrix_zgemm1(Parallel *parall, gdevice2 *,
                       int, int, int, int,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                               double *, int, int *, int *,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                       double *, double *);
 
-  void CMatrix_dgemm2(Parallel *parall, gdevice2 *,
+  void CMatrix_zgemm2(Parallel *parall, gdevice2 *,
                       int, int, int, int,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                               double *, int, int *, int *,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                       double *, double *);
 
-  void CMatrix_dgemm3(Parallel *parall, gdevice2 *,
+  void CMatrix_zgemm3(Parallel *parall, gdevice2 *,
                       int, int, int, int,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                               double *, int, int *, int *,
-                      double, double *, int, int *, int *,
+                      double *, double *, int, int *, int *,
                       double *, double *);
 
-  void CMatrix_dgemm2c(Parallel *, gdevice2 *,
+  void CMatrix_zgemm2c(Parallel *, gdevice2 *,
                           int, int, int, int,
                           double *, double *, int, int *, int *, int *,
                           double *, int, int *, int *,
                           double  *, double *);
 
-  void CMatrix_dgemm1_rot2(Parallel *, gdevice2 *,
+  void CMatrix_zgemm1_rot2(Parallel *, gdevice2 *,
                            int, int, int, int,
-                           double,
+                           double *,
                            double *, int, int *, int *,
                            double *, int, int *, int *,
-                           double,
+                           double *,
                            double *, int, int *, int *,
                            double *, double *, double *, double *);
 

@@ -39,9 +39,11 @@ public:
    void CN2_zgemm(int, int, int, double *, double *, double *, double *, double *);
    void NC2_zgemm(int, int, int, double *, double *, double *, double *, double *);
 
+
    void NN_zgemm(int, int, int, double *, double *, int, double *, int, double *, double *,int);
    void CN_zgemm(int, int, int, double *, double *, int, double *, int, double *, double *,int);
    void NC_zgemm(int, int, int, double *, double *, int, double *, int, double *, double *,int);
+
 
    void WW6_zgemm(int, double *, double *, double *, double *, double *, double *);
    

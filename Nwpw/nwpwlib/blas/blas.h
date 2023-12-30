@@ -59,6 +59,9 @@
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
   ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
 
+#define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
+  auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
+
 #else
 
 extern "C" void dcopy_(int *, double *, int *, double *, int *);
@@ -92,6 +95,8 @@ extern "C" int izamax_(int *, double *, int *);
 extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
                        double *, int *, double *, int *);
 
+extern "C" void zlacpy_(char *, int *, int *, double *, int *, double *, int *);
+
 #define DSCAL_PWDFT(n, alpha, a, ida) dscal_(&(n), &(alpha), a, &(ida))
 #define DCOPY_PWDFT(n, a, ida, b, idb) dcopy_(&(n), a, &(ida), b, &(idb))
 #define DAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
@@ -118,7 +123,7 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
 
 
 
-#define ZSCAL_PWDFT(n, alpha, a, ida) dscal_(&(n), &(alpha), a, &(ida))
+#define ZSCAL_PWDFT(n, alpha, a, ida) zscal_(&(n), alpha, a, &(ida))
 #define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
 
 #define ZAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
@@ -132,6 +137,9 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
   zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
+
+#define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
+  zlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))
 
 #endif
 

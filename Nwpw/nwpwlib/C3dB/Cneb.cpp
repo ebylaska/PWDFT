@@ -844,6 +844,7 @@ void Cneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
       }
    }
    c3db::parall->Vector_SumAll(2, ispin*nfft3d, dn);
+   c3db::parall->Vector_SumAll(3, ispin*nfft3d, dn);
 }
 
 /*************************************
@@ -953,7 +954,7 @@ void Cneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
           {
              auto shift0 = ms*neq[0]*npack1;
              auto shift2 = ms*ishift2;
-             c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+             c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                            ne[ms],ne[ms],npack1_all,128,
                            psi1+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                            mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1042,7 +1043,7 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
           {
              auto shift0 = ms*neq[0]*npack1;
              auto shift2 = ms*ishift2;
-             c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+             c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                            ne[ms],ne[ms],npack1_all,128,
                            psi1+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                            mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1136,7 +1137,7 @@ void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml)
           { 
              auto shift0 = ms*neq[0]*npack1;
              auto shift2 = ms*ishift2;
-             c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+             c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                            ne[ms],ne[ms],npack1_all,128,
                            psi1+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                            mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1214,7 +1215,7 @@ void Cneb::ffm_sym_Multiply(const int mb, double *psi1, double *psi2, double *hm
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1324,7 +1325,7 @@ void Cneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1440,7 +1441,7 @@ void Cneb::ffw3_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1458,7 +1459,7 @@ void Cneb::ffw3_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi2+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1476,7 +1477,7 @@ void Cneb::ffw3_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi2+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1615,7 +1616,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1633,7 +1634,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi2+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1651,7 +1652,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi1+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1669,7 +1670,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift2 = ms*ishift2;
-            c1db::CMatrix_dgemm2c(c1db::parall, &mygdevice,
+            c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                           ne[ms],ne[ms],npack1_all,128,
                           psi2+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
                           mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
@@ -1842,7 +1843,7 @@ void Cneb::fwf_Multiply(const int mb, double *psi1, double *hml, double *alpha,
       for (ms=ms1; ms<ms2; ++ms) 
       {
          n = ne[ms];
-         c3db::mygdevice.NN_zgemm(n,n,npack1,alpha, psi1+2*shift1, npack1, hml+2*mshift1, n, beta, psi2+2*shift1,npack1);
+         c3db::mygdevice.NN_zgemm(npack1,n,n,alpha, psi1+2*shift1, npack1, hml+2*mshift1, n, beta, psi2+2*shift1,npack1);
 
          shift1 += ne[0]*npack1;
          mshift1 += ishift2;
