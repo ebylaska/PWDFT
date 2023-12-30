@@ -199,13 +199,13 @@ public:
  
    void ffm4_sym_Multiply(const int, double *, double *, double *, double *,
                           double *, double *);
-   void ffm3_sym_Multiply(const int, double *, double *, double *, double *,
+   void ffw3_sym_Multiply(const int, double *, double *, double *, double *,
                           double *);
-   void m_scale_s22_s21_s12_s11(const int, const double, double *s22,
+   void w_scale_s22_s21_s12_s11(const int, const double, double *s22,
                                 double *s21, double *s12, double *s11);
-   void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21,
+   void w_scale_s22_s21_s11(const int, const double, double *s22, double *s21,
                             double *s11);
-   void fmf_Multiply(const int, double *, double *, double, double *, double);
+   void fwf_Multiply(const int, double *, double *, double *, double *, double *);
  
    void fm_QR(const int, double *, double *);
  
@@ -217,7 +217,8 @@ public:
                           double *, double *, double *);
  
    void m_scal(const double, double *);
-   double m_trace(double *);
+   double w_trace(double *);
+   void w_diagonalize(double *, double *);
    void m_diagonalize(double *, double *);
    void mmm_Multiply(const int, double *, double *, double, double *, double);
    void mmm_Multiply2(const int, double *, double *, double, double *, double);
@@ -225,7 +226,7 @@ public:
    void mm_Kiril_Btransform(const int, double *, double *);
  
    void gh_fftb(double *, double *);
-   void ggm_lambda(double, double *, double *, double *);
+   void ggw_lambda(double, double *, double *, double *);
    // void ggm_lambda2(double, double *, double *, double *);
    void ggm_lambda_sic(double, double *, double *, double *);
    void g_ortho(double *);

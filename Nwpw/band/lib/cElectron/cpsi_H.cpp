@@ -58,9 +58,19 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
  
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
+
+   std::cout << "ke_psi = " ;
+   for (auto i=0; i<20; ++i)
+      std::cout << Hpsi[i] << " ";
+   std::cout << std::endl << std::endl;
  
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
+
+   std::cout << "vnl_psi = " ;
+   for (auto i=0; i<20; ++i)
+      std::cout << Hpsi[i] << " ";
+   std::cout << std::endl << std::endl;
  
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0, scal2, vl, vall);

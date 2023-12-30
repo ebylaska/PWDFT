@@ -195,13 +195,6 @@ void CStrfac::phafac_k()
 
       cxreal[ii+nion*nbq] = std::cos(pfac);
       cximag[ii+nion*nbq] = std::sin(pfac);
-
-   auto nb = mygrid->k1db::ktoptok(nbq);
-      std::cout << "phafac_k: nbq=" << nbq << " ii=" << ii <<  " pfac=" << pfac 
-                << " k: " << mygrid->pbrill_kvector(nbq)[0] <<  " " 
-                         << mygrid->pbrill_kvector(nbq)[1] <<  " " 
-                         << mygrid->pbrill_kvector(nbq)[2] 
-                         << " nb=" << nb << std::endl;
    }
 }
 
@@ -249,7 +242,6 @@ void CStrfac::strfac_pack_cxr(const int nbq1, const int nbq, const int ii, doubl
    double cc = cxreal[ii+nbq*nion];
    double dd = cximag[ii+nbq*nion];
 
-   std::cout << "CXR=" << cc << " " << dd << std::endl;
 
    int npack = mygrid->npack(nbq1);
    int nx = mygrid->nx;

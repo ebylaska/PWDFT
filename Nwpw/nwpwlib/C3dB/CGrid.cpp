@@ -1294,19 +1294,47 @@ void CGrid::rc_pfft3f(const int nb, double *a)
     *************************/
    else 
    {
+
+    std::cout << "fftA = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
+
       /********************************************
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftx_tmpx(c3db::fft_tag,true, nx, nq1, 2*nfft3d, a, c3db::tmpx);
+
+    std::cout << "fftB = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
+
       c3db::c_ptranspose_ijk(nb, 0, a, tmp2, tmp3);
+
+    std::cout << "fftC = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
      
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
       c3db::mygdevice.batch_cffty_tmpy_zero(c3db::fft_tag,true,ny,nq2,2*nfft3d,a,c3db::tmpy,zero_row2[nb]);
+
+    std::cout << "fftD = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
+
       c3db::c_ptranspose_ijk(nb, 1, a, tmp2, tmp3);
+
+    std::cout << "fftE = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
 
       /********************************************
        ***     do fft along nz dimension        ***

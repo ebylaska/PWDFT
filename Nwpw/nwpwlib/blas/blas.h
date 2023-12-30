@@ -54,6 +54,8 @@
   cblas_zgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
               ida, b, idb, beta, c, idc)
 
+#define IZAMAX_PWDFT(nn, hml, one) cblas_izamax(nn, hml, one)
+
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
   ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
 
@@ -85,6 +87,8 @@ extern "C" void zaxpy_(int *, double *, double *, int *, double *, int *);
 extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);
 
+extern "C" int izamax_(int *, double *, int *);
+
 extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
                        double *, int *, double *, int *);
 
@@ -97,6 +101,7 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
          &(idc))
 
 #define IDAMAX_PWDFT(nn, hml, one) idamax_(&(nn), hml, &(one))
+
 
 #define EIGEN_PWDFT(n, hml, eig, xtmp, nn, ierr)                               \
   dsyev_((char *)"V", (char *)"U", &(n), hml, &(n), eig, xtmp, &(nn), &ierr)
@@ -111,12 +116,19 @@ extern "C" void zheev_(char *, char *, int *, double *, int *, double *,
   dgelss_(&(m), &(n), &(nrhs), a, &(ida), b, &(idb), s1, &(rcond), &(rank),    \
           work, &(iwork), &(ierr))
 
+
+
 #define ZSCAL_PWDFT(n, alpha, a, ida) dscal_(&(n), &(alpha), a, &(ida))
 #define ZDOTC_PWDFT(n, a, ida, b, idb) zdotc_(&(n), a, &ida, b, &(idb))
+
+#define ZAXPY_PWDFT(n, alpha, a, ida, b, idb)                                  \
+  zaxpy_(&(n), alpha, a, &(ida), b, &(idb))
 
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   zgemm_(s1, s2, &(n), &(m), &(k), alpha, a, &(ida), b, &(idb), beta, c, \
          &(idc))
+
+#define IZAMAX_PWDFT(nn, hml, one) izamax_(&(nn), hml, &(one))
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
   zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)

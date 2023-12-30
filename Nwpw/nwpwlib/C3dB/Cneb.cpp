@@ -52,13 +52,13 @@ Cneb::Cneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
 
    parallelized = (np_j > 1);
  
-   s22 = new (std::nothrow) double[7 * ne[0] * ne[0]]();
-   s21 = &s22[1 * ne[0] * ne[0]];
-   s12 = &s22[2 * ne[0] * ne[0]];
-   s11 = &s22[3 * ne[0] * ne[0]];
-   sa1 = &s22[4 * ne[0] * ne[0]];
-   sa0 = &s22[5 * ne[0] * ne[0]];
-   st1 = &s22[6 * ne[0] * ne[0]];
+   s22 = new (std::nothrow) double[7 * 2*ne[0]*ne[0]]();
+   s21 = &s22[1 * 2*ne[0]*ne[0]];
+   s12 = &s22[2 * 2*ne[0]*ne[0]];
+   s11 = &s22[3 * 2*ne[0]*ne[0]];
+   sa1 = &s22[4 * 2*ne[0]*ne[0]];
+   sa0 = &s22[5 * 2*ne[0]*ne[0]];
+   st1 = &s22[6 * 2*ne[0]*ne[0]];
  
    if (parallelized) 
    {
@@ -843,7 +843,7 @@ void Cneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
          indx0 += nfft3d;
       }
    }
-   c3db::parall->Vector_SumAll(1, ispin*nfft3d, dn);
+   c3db::parall->Vector_SumAll(2, ispin*nfft3d, dn);
 }
 
 /*************************************
@@ -910,7 +910,7 @@ void Cneb::hhr_aSumMul(const double alpha, const double *psir0,
          indx0 += nfft3d;
       }
    }
-   c3db::parall->Vector_SumAll(1, ispin*nfft3d, dn12);
+   c3db::parall->Vector_SumAll(2, ispin*nfft3d, dn12);
 }
 
 /*************************************
@@ -1370,7 +1370,7 @@ void Cneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
 
 /*************************************
  *                                   *
- *      Cneb::ffm3_sym_Multiply      *
+ *      Cneb::ffw3_sym_Multiply      *
  *                                   *
  *************************************/
 
@@ -1394,7 +1394,7 @@ void Cneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
                   the results will be stored.     
 */
 
-void Cneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
+void Cneb::ffw3_sym_Multiply(const int mb, double *psi1, double *psi2,
                              double *s11, double *s21, double *s22) 
 {
    nwpw_timing_function ftimer(15);
@@ -1411,7 +1411,7 @@ void Cneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
    if (parallelized) 
    {
       //std::ostringstream msg;
-      //msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
+      //msg << "NWPW Error: ffw3_sym_Multiply() parallelized is NOT supported\n"
       //    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
       //throw(std::runtime_error(msg.str()));
       if (mb==-1)
@@ -1745,7 +1745,7 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
 
 /*************************************
  *                                   *
- *        Cneb::fmf_Multiply         *
+ *        Cneb::fwf_Multiply         *
  *                                   *
  *************************************/
 /**
@@ -1762,8 +1762,8 @@ void Cneb::ffm4_sym_Multiply(const int mb, double *psi1, double *psi2,
  *
  * @note This function performs the multiplication of `psi1` with the Hermitian matrix `hml`, scales the result by `alpha`, and then adds it to `psi2` scaled by `beta`. The matrices and vectors should be pre-allocated with sufficient memory. Parallelization is applied for improved performance.
  */
-void Cneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
-                        double *psi2, double beta) 
+void Cneb::fwf_Multiply(const int mb, double *psi1, double *hml, double *alpha,
+                        double *psi2, double *beta) 
 {
    nwpw_timing_function ftimer(16);
    int ms, ms1, ms2, n, nn,shift1, mshift1, ishift2,ishift3;
@@ -1808,6 +1808,7 @@ void Cneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
          {
             auto shift0 = ms*neq[0]*npack1;
             auto shift3 = ms*ishift3;
+/*
             c1db::CMatrix_dgemm1_rot2(c1db::parall, &mygdevice,
                           npack1_all,ne[ms],ne[ms],128,
                           alpha,
@@ -1816,6 +1817,7 @@ void Cneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
                           beta,
                           psi2+shift0,ma[ms][taskid_i],ma[ms],na[ms],
                           bcolwork,bwork2,rwork1,rwork2);
+*/
          }
       }
    } 
@@ -1840,8 +1842,8 @@ void Cneb::fmf_Multiply(const int mb, double *psi1, double *hml, double alpha,
       for (ms=ms1; ms<ms2; ++ms) 
       {
          n = ne[ms];
-        
-         c3db::mygdevice.NN_dgemm(npack1, n, alpha, psi1+shift1, hml+mshift1, beta, psi2+shift1);
+         c3db::mygdevice.NN_zgemm(n,n,npack1,alpha, psi1+2*shift1, npack1, hml+2*mshift1, n, beta, psi2+2*shift1,npack1);
+
          shift1 += ne[0]*npack1;
          mshift1 += ishift2;
       }
@@ -1869,16 +1871,18 @@ void Cneb::ggm_SVD(double *A, double *U, double *S, double *V)
 {
    int n, indx;
    double *tmp2 = new (std::nothrow) double[neq[0] + neq[1]]();
+   double rzero[2] = {0.0,0.0};
+   double rone[2]  = {1.0,0.0};
  
    /* generate V and Sigma^2 */
    //if (c3db::parall->is_master()) std::cout << "generate V and Sigma2:" << std::endl;
-   ggm_sym_Multiply(A, A, V);
-   m_diagonalize(V, S);
+   ggw_sym_Multiply(A, A, V);
+   w_diagonalize(V, S);
    //if (c3db::parall->is_master()) 
    //    std::cout << "Sigma=" << Efmt(15,10)  << S[0] << " " << S[1] << " " << S[2] << " " << S[3] << std::endl << std::endl;
  
    /* generate U*Sigma */
-   fmf_Multiply(-1, A, V, 1.0, U, 0.0);
+   fwf_Multiply(-1, A, V, rone, U, rzero);
  
    //if (c3db::parall->is_master()) 
    //    std::cout << "AFTER FMF_Multiply" << std::endl;
@@ -1937,7 +1941,7 @@ void Cneb::m_scal(double alpha, double *hml) {
 
 /*************************************
  *                                   *
- *            Cneb::m_trace          *
+ *            Cneb::w_trace          *
  *                                   *
  *************************************/
 /**
@@ -1948,16 +1952,15 @@ void Cneb::m_scal(double alpha, double *hml) {
  * @param[in] hml The input matrix for which the trace is to be calculated.
  * @return The trace of the matrix.
  */
-double Cneb::m_trace(double *hml) 
+double Cneb::w_trace(double *hml) 
 {
-   int ms, i;
    int mshift = 0;
    double sum = 0.0;
-   for (ms = 0; ms < ispin; ++ms) 
+   for (auto ms=0; ms<ispin; ++ms) 
    {
-      for (i = 0; i < ne[ms]; ++i)
-         sum += hml[i + i * ne[ms] + mshift];
-      mshift += ne[0] * ne[0];
+      for (auto i=0; i<ne[ms]; ++i)
+         sum += hml[2*i + 2*i*2*ne[ms] + mshift];
+      mshift += 4*ne[0]*ne[0];
    }
    return sum;
 }
@@ -2002,7 +2005,47 @@ void Cneb::m_diagonalize(double *hml, double *eig)
 
 /*************************************
  *                                   *
- *     Cneb::m_scale_s22_s21_s11     *
+ *        Cneb::w_diagonalize        *
+ *                                   *
+ *************************************/
+/**
+ * @brief Diagonalize a matrix and compute its eigenvalues.
+ *
+ * This function diagonalizes the input matrix 'hml' and computes its eigenvalues, which are stored in the 'eig' array.
+ *
+ * @param[in,out] hml The input matrix to be diagonalized.
+ * @param[out] eig An array to store the computed eigenvalues.
+ */
+void Cneb::w_diagonalize(double *hml, double *eig)
+{
+   nwpw_timing_function ftimer(17);
+
+   if (mparallelized)
+   {
+      std::ostringstream msg;
+      msg << "NWPW Error: m_diagonalize() mparallelized is NOT supported\n"
+          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      throw(std::runtime_error(msg.str()));
+   }
+   else
+   {
+      int n = ne[0] + ne[1];
+      int nn = 4*ne[0]*ne[0] + 4*ne[1]*ne[1];
+
+      if (c1db::parall->is_master())
+         c3db::mygdevice.WW_eigensolver(ispin, ne, hml, eig);
+      c1db::parall->Brdcst_Values(0, 0, nn, hml);
+      c1db::parall->Brdcst_Values(0, 0, n, eig);
+   }
+}
+
+
+
+
+
+/*************************************
+ *                                   *
+ *     Cneb::w_scale_s22_s21_s11     *
  *                                   *
  *************************************/
 /**
@@ -2017,49 +2060,65 @@ void Cneb::m_diagonalize(double *hml, double *eig)
  * @param[in,out] s21 The S21 matrix to be scaled.
  * @param[in,out] s11 The S11 matrix to be scaled.
  */
-void Cneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, double *s21, double *s11) 
+void Cneb::w_scale_s22_s21_s11(const int mb, const double dte, double *s22, double *s21, double *s11) 
 {
-   int j, k, ms, ms1, ms2, ishift2, indx0, indx, indxt;
+   int ms1, ms2, ishift2;
  
    if (mb == -1) {
      ms1 = 0;
      ms2 = ispin;
-     ishift2 = ne[0] * ne[0];
+     ishift2 = ne[0]*ne[0];
    } else {
      ms1 = mb;
      ms2 = mb + 1;
      ishift2 = 0;
    }
  
-   for (ms = ms1; ms < ms2; ++ms) {
-     indx0 = ms * ishift2;
-     for (k = 0; k < ne[ms]; ++k) {
-       s22[indx0] = (1.0 - s22[indx0]) * (0.5 / dte);
-       s21[indx0] = (1.0 - s21[indx0]) * (0.5);
-       s11[indx0] *= -0.5 * dte;
- 
-       indx = indx0 + 1;
-       indxt = indx0 + ne[ms];
-       for (j = (k + 1); j < ne[ms]; ++j) {
-         s22[indx] *= (-0.5 / dte);
-         s22[indxt] *= (-0.5 / dte);
-         s21[indx] *= -0.5;
-         s21[indxt] *= -0.5;
-         s11[indx] *= -0.5 * dte;
-         s11[indxt] *= -0.5 * dte;
- 
-         indx += 1;
-         indxt += ne[ms];
-       }
-       indx0 += (ne[ms] + 1);
-     }
+   for (auto ms=ms1; ms<ms2; ++ms) 
+   {
+      int indx0 = ms*ishift2;
+      for (auto k=0; k<ne[ms]; ++k) 
+      {
+         s22[2*indx0]   = (1.0 - s22[2*indx0])   * (0.5 / dte);
+         s22[2*indx0+1] = (1.0 - s22[2*indx0+1]) * (0.5 / dte);
+
+         s21[2*indx0]   = (1.0 - s21[2*indx0])   * (0.5);
+         s21[2*indx0+1] = (1.0 - s21[2*indx0+1]) * (0.5);
+
+         s11[2*indx0]   *= -0.5 * dte;
+         s11[2*indx0+1] *= -0.5 * dte;
+        
+         int indx  = indx0 + 1;
+         int indxt = indx0 + ne[ms];
+         for (auto j=(k+1); j<ne[ms]; ++j) 
+         {
+            s22[2*indx]    *= (-0.5 / dte);
+            s22[2*indx+1]  *= (-0.5 / dte);
+            s22[2*indxt]   *= (-0.5 / dte);
+            s22[2*indxt+1] *= (-0.5 / dte);
+
+            s21[2*indx]    *= -0.5;
+            s21[2*indx+1]  *= -0.5;
+            s21[2*indxt]   *= -0.5;
+            s21[2*indxt+1] *= -0.5;
+
+            s11[2*indx]    *= -0.5 * dte;
+            s11[2*indx+1]  *= -0.5 * dte;
+            s11[2*indxt]   *= -0.5 * dte;
+            s11[2*indxt+1] *= -0.5 * dte;
+           
+            indx  += 1;
+            indxt += ne[ms];
+         }
+         indx0 += (ne[ms] + 1);
+      }
    }
 }
 
 
 /*************************************
  *                                   *
- *   Cneb::m_scale_s22_s21_s12_s11   *
+ *   Cneb::w_scale_s22_s21_s12_s11   *
  *                                   *
  *************************************/
 /**
@@ -2075,16 +2134,15 @@ void Cneb::m_scale_s22_s21_s11(const int mb, const double dte, double *s22, doub
  * @param[in,out] s12 The S12 matrix to be scaled.
  * @param[in,out] s11 The S11 matrix to be scaled.
  */
-void Cneb::m_scale_s22_s21_s12_s11(const int mb, const double dte, double *s22,
+void Cneb::w_scale_s22_s21_s12_s11(const int mb, const double dte, double *s22,
                                    double *s21, double *s12, double *s11) 
 {
-   int j, k, ms, ms1, ms2, ishift2, indx0, indx, indxt;
- 
-   if (mb == -1) 
+   int ms1, ms2, ishift2;
+   if (mb==-1) 
    {
       ms1 = 0;
       ms2 = ispin;
-      ishift2 = ne[0] * ne[0];
+      ishift2 = ne[0]*ne[0];
    } 
    else 
    {
@@ -2093,28 +2151,46 @@ void Cneb::m_scale_s22_s21_s12_s11(const int mb, const double dte, double *s22,
       ishift2 = 0;
    }
  
-   for (ms = ms1; ms < ms2; ++ms) 
+   for (auto ms=ms1; ms<ms2; ++ms) 
    {
-      indx0 = ms * ishift2;
-      for (k = 0; k < ne[ms]; ++k) 
+      int indx0 = ms*ishift2;
+      for (auto k=0; k<ne[ms]; ++k) 
       {
-         s22[indx0] = (1.0 - s22[indx0]) * (0.5 / dte);
-         s21[indx0] = (1.0 - s21[indx0]) * (0.5);
-         s12[indx0] = (1.0 - s12[indx0]) * (0.5);
-         s11[indx0] *= -0.5 * dte;
+         s22[2*indx0]   = (1.0 - s22[2*indx0])   * (0.5 / dte);
+         s22[2*indx0+1] = (1.0 - s22[2*indx0+1]) * (0.5 / dte);
+
+         s21[2*indx0]   = (1.0 - s21[2*indx0])   * (0.5);
+         s21[2*indx0+1] = (1.0 - s21[2*indx0+1]) * (0.5);
+
+         s12[2*indx0]   = (1.0 - s12[2*indx0])   * (0.5);
+         s12[2*indx0+1] = (1.0 - s12[2*indx0+1]) * (0.5);
+
+         s11[2*indx0]   *= -0.5 * dte;
+         s11[2*indx0+1] *= -0.5 * dte;
         
-         indx = indx0 + 1;
-         indxt = indx0 + ne[ms];
-         for (j = (k + 1); j < ne[ms]; ++j) 
+         int indx = indx0 + 1;
+         int indxt = indx0 + ne[ms];
+         for (auto j=(k+1); j<ne[ms]; ++j) 
          {
-            s22[indx] *= (-0.5 / dte);
-            s22[indxt] *= (-0.5 / dte);
-            s21[indx] *= -0.5;
-            s21[indxt] *= -0.5;
-            s12[indx] *= -0.5;
-            s12[indxt] *= -0.5;
-            s11[indx] *= -0.5 * dte;
-            s11[indxt] *= -0.5 * dte;
+            s22[2*indx]    *= (-0.5 / dte);
+            s22[2*indx+1]  *= (-0.5 / dte);
+            s22[2*indxt]   *= (-0.5 / dte);
+            s22[2*indxt+1] *= (-0.5 / dte);
+
+            s21[2*indx]    *= -0.5;
+            s21[2*indx+1]  *= -0.5;
+            s21[2*indxt]   *= -0.5;
+            s21[2*indxt+1] *= -0.5;
+
+            s12[2*indx]    *= -0.5;
+            s12[2*indx+1]  *= -0.5;
+            s12[2*indxt]   *= -0.5;
+            s12[2*indxt+1] *= -0.5;
+
+            s11[2*indx]    *= -0.5 * dte;
+            s11[2*indx+1]  *= -0.5 * dte;
+            s11[2*indxt]   *= -0.5 * dte;
+            s11[2*indxt+1] *= -0.5 * dte;
            
             indx += 1;
             indxt += ne[ms];
@@ -2446,7 +2522,7 @@ void Cneb::mm_Kiril_Btransform(const int mb, double *a, double *b) {
 
 /********************************
  *                              *
- *     Cneb::ggm_lambda         *
+ *     Cneb::ggw_lambda         *
  *                              *
  ********************************/
 
@@ -2455,20 +2531,22 @@ void Cneb::mm_Kiril_Btransform(const int mb, double *a, double *b) {
 #define CONVGLMD2 1e-12
 
 // Lagrange multiplier (expensive method)
-void Cneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda) 
+void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda) 
 {
    nwpw_timing_function ftimer(3);
  
    int one = 1;
-   double rmone = -1.0;
+   double rone[2] = {1.0,0.0};
+   double rmone[2] = {-1.0,0.0};
+   double rdte[2] = {dte,0.0};
    double adiff = 0.0;
  
    for (int ms = 0; ms < ispin; ++ms) {
  
      int nn = m_size(ms);
  
-     ffm3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
-     m_scale_s22_s21_s11(ms, dte, s22, s21, s11);
+     ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
+     w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
  
      int jj;
      int ii = 0;
@@ -2476,31 +2554,32 @@ void Cneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
  
      // DCOPY_PWDFT(nn, s21, one, s12, one);
      // DCOPY_PWDFT(nn, s22, one, sa0, one);
-     std::memcpy(s12, s21, nn * sizeof(double));
-     std::memcpy(sa0, s22, nn * sizeof(double));
+     std::memcpy(s12, s21, 2*nn*sizeof(double));
+     std::memcpy(sa0, s22, 2*nn*sizeof(double));
  
      while ((!done) && ((ii++) < ITERLMD)) {
        // DCOPY_PWDFT(nn, s22, one, sa1, one);
-       std::memcpy(sa1, s22, nn * sizeof(double));
+       std::memcpy(sa1, s22, 2*nn * sizeof(double));
  
        // mmm_Multiply(ms, s21, sa0, 1.0, sa1, 1.0);
        // mmm_Multiply(ms, sa0, s12, 1.0, sa1, 1.0);
        // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
        // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
-       c3db::mygdevice.MM6_dgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
+       c3db::mygdevice.WW6_zgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
  
        // DCOPY_PWDFT(nn, sa1, one, st1, one);
-       std::memcpy(st1, sa1, nn * sizeof(double));
-       DAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
-       jj = IDAMAX_PWDFT(nn, st1, one);
-       adiff = fabs(st1[IDAMAX_PWDFT(nn, st1, one) - 1]);
- 
+       std::memcpy(st1, sa1, 2*nn*sizeof(double));
+       ZAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
+
+       //adiff = fabs(st1[IZAMAX_PWDFT(nn, st1, one) - 1]);
+       jj = IZAMAX_PWDFT(nn, st1, one) - 1;
+       adiff = st1[2*jj]  *st1[2*jj] 
+             + st1[2*jj+1]*st1[2*jj+1];
+
        if (adiff < CONVGLMD)
          done = 1;
        else
-         std::memcpy(sa0, sa1,
-                     nn *
-                         sizeof(double)); // DCOPY_PWDFT(nn, sa1, one, sa0, one);
+         std::memcpy(sa0, sa1, 2*nn*sizeof(double)); // ZCOPY_PWDFT(nn, sa1, one, sa0, one);
      }
      // printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d
      // done=%d\n",nn,jj,adiff,ii,done);
@@ -2511,13 +2590,13 @@ void Cneb::ggm_lambda(double dte, double *psi1, double *psi2, double *lmbda)
      }
  
      // DCOPY_PWDFT(nn, sa1, one, &lmbda[ms*ne[0]*ne[0]], one);
-     std::memcpy(&lmbda[ms*ne[0]*ne[0]],sa1,nn*sizeof(double));
+     std::memcpy(lmbda + ms*2*ne[0]*ne[0], sa1, 2*nn*sizeof(double));
      // std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
  
    } // for loop - ms
  
    /* correction due to contraint */
-   fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
+   fwf_Multiply(-1, psi1, lmbda, rdte, psi2, rone);
 }
 
 /********************************
@@ -2533,6 +2612,8 @@ void Cneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
   int one = 1;
   double rmone = -1.0;
   double adiff = 0.0;
+  double rone[2] = {1.0,0.0};
+  double rdte[2] = {dte,0.0};
 
   for (int ms = 0; ms < ispin; ++ms) {
 
@@ -2541,7 +2622,7 @@ void Cneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
     ffm4_sym_Multiply(ms, psi1, psi2, s11, s21, s12, s22);
     mm_Kiril_Btransform(ms, s12, s21);
 
-    m_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
+    w_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
 
     int jj;
     int ii = 0;
@@ -2590,7 +2671,7 @@ void Cneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
   } // for loop - ms
 
   /* correction due to contraint */
-  fmf_Multiply(-1, psi1, lmbda, dte, psi2, 1.0);
+  fwf_Multiply(-1, psi1, lmbda, rdte, psi2, rone);
 }
 
 /********************************

@@ -185,7 +185,7 @@ void cElectron_Operators::gen_Hpsi_k(double *psi)
  ********************************************/
 void cElectron_Operators::gen_hml(double *psi, double *hml) 
 {
-   mygrid->ggm_sym_Multiply(psi,Hpsi,hml);
+   mygrid->ggw_sym_Multiply(psi,Hpsi,hml);
 }
 
 /********************************************
@@ -195,7 +195,7 @@ void cElectron_Operators::gen_hml(double *psi, double *hml)
  ********************************************/
 void cElectron_Operators::gen_hmlt(double *psi, double *hmlt) 
 {
-   mygrid->ggm_Multiply(psi, Hpsi, hmlt);
+   mygrid->ggw_Multiply(psi, Hpsi, hmlt);
 }
 
 /********************************************
@@ -205,7 +205,9 @@ void cElectron_Operators::gen_hmlt(double *psi, double *hmlt)
  ********************************************/
 void cElectron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi) 
 {
-   mygrid->fmf_Multiply(-1,psi,hml,1.0,THpsi,0.0);
+  double rone[2]  = {1.0,0.0};
+  double rzero[2] = {0.0,0.0};
+   mygrid->fwf_Multiply(-1,psi,hml,rone,THpsi,rzero);
    mygrid->gg_Minus2(Hpsi,THpsi);
    // mygrid->g_Scale(-1.0,THpsi);
 }
@@ -218,7 +220,9 @@ void cElectron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi)
  ********************************************/
 void cElectron_Operators::gen_Tangent(double *psi, double *hml, double *THpsi) 
 {
-   mygrid->fmf_Multiply(-1,psi,hml,1.0,THpsi,-1.0);
+  double rone[2]  = {1.0,0.0};
+  double rmone[2]  = {-1.0,0.0};
+   mygrid->fwf_Multiply(-1,psi,hml,rone,THpsi,rmone);
 }
 
 
@@ -289,13 +293,13 @@ double cElectron_Operators::eorbit(double *psi)
    //if (mygrid->d3db::parall->is_master())
    //   std::cout << "Eorbit into ggm_sym_Multiply" << std::endl;
 
-   mygrid->ggm_sym_Multiply(psi,Hpsi,hmltmp);
+   mygrid->ggw_sym_Multiply(psi,Hpsi,hmltmp);
 
    //if (mygrid->d3db::parall->is_master())
    //   std::cout << "OUT Eorbit into ggm_sym_Multiply" << std::endl;
 
    // mygrid->m_scal(-1.0,hmltmp);
-   double eorbit0 = mygrid->m_trace(hmltmp);
+   double eorbit0 = mygrid->w_trace(hmltmp);
    if (ispin==1)
       eorbit0 = eorbit0 + eorbit0;
 
@@ -375,7 +379,7 @@ double cElectron_Operators::energy(double *psi, double *dn, double *dng, double 
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->m_trace(hmltmp);
+   eorbit0 = mygrid->w_trace(hmltmp);
    if (ispin == 1)
       eorbit0 = eorbit0 + eorbit0;
  
@@ -413,9 +417,9 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
  
    /* total energy calculation */
-   mygrid->ggm_sym_Multiply(psi, Hpsi, hmltmp);
+   mygrid->ggw_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->m_trace(hmltmp);
+   eorbit0 = mygrid->w_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0 + eorbit0;
  
    ehartr0 = mycoulomb->ecoulomb(dng);

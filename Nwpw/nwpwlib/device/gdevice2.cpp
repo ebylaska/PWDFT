@@ -98,12 +98,20 @@ void gdevice2::NN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, 
    mygdevice2->NN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
+
+
 void gdevice2::NC_zgemm(int n, int m, int k, double *alpha, double *a, int lda, double *b, int ldb, double *beta, double *c, int ldc) {
    mygdevice2->NC_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
 void gdevice2::CN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, double *b, int ldb, double *beta, double *c, int ldc) {
    mygdevice2->CN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
+}
+
+
+void gdevice2::WW6_zgemm(int ne, double *s21, double *s12, double *s11,
+                       double *sa0, double *sa1, double *st1) {
+   mygdevice2->WW6_zgemm(ne, s21, s12, s11, sa0, sa1, st1);
 }
 
 

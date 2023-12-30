@@ -29,7 +29,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
                      double *psi_r, double *dn, double *hml, double *lmbda,
                      double E[], double *deltae, double *deltac, double *deltar) 
 {
-   int it, it_in, i, k, ms;
+   int it, it_in, k, ms;
    int indx1, indx2;
    int one = 1;
    double dc;
@@ -97,30 +97,32 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
      
       // convert psi(G) to psi(r) - Expensive 
       mygrid->gh_fftb(psi1,psi_r);
+
+      std::cout << "psi_r = ";
+      for (auto i=0; i<20; ++i)
+         std::cout << psi_r[i] << " ";
+      std::cout << std::endl << std::endl;
+
      
       // generate dn
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
-     std::cout << "PSI_r= " ;
-     for (auto kk=0; kk<20; ++kk)
-        std::cout << psi_r[kk] << " ";
-     std::cout << std::endl;
 
-     std::cout << std::endl;
-     std::cout << "dn= " ;
-     for (auto kk=0; kk<20; ++kk)
-        std::cout << dn[kk] << " ";
-     std::cout << std::endl;
-     std::cout << std::endl;
+      std::cout << "dn= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << dn[i] << " ";
+      std::cout << std::endl << std::endl;
+      
+
      
       // generate dng 
       mygrid->rrc_Sum(dn,dn+(ispin-1)*nfft3d,rho);
-      mygrid->rc_pfft3f(0,rho);
 
-     std::cout << "tmp= " ;
-     for (auto kk=0; kk<20; ++kk)
-        std::cout << rho[kk] << " ";
-     std::cout << std::endl;
-     std::cout << std::endl;
+      std::cout << "tmp= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << rho[i] << " ";
+      std::cout << std::endl << std::endl;
+
+      mygrid->rc_pfft3f(0,rho);
 
       mygrid->cc_SMul(scal1, rho, tmp);
 
@@ -128,11 +130,12 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mygrid->cc_pack_copy(0,tmp,dng);
       //mygrid->c_pack_SMul(0,scal1, dng);
 
-     std::cout << "dng= " ;
-     for (auto kk=0; kk<20; ++kk)
-        std::cout << dng[kk] << " ";
-     std::cout << std::endl;
-     std::cout << std::endl;
+      std::cout << "dng= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << dng[i] << " ";
+      std::cout << std::endl << std::endl;
+      
+
 
       // generate dnall - used for semicore corrections
       if (mypsp->has_semicore()) 
@@ -163,6 +166,11 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       // generate coulomb potential 
       mycoulomb->vcoulomb(dng,vc);
       mygrid->cc_pack_copy(0,vc,vcall);
+
+      std::cout << "VCOUL= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << vcall[i] << " ";
+      std::cout << std::endl << std::endl;
       
       // generate exchange-correlation potential 
       std::memset(xcp,0,ispin*nfft3d*sizeof(double));
@@ -194,16 +202,16 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       }
      
       // lagrange multiplier - Expensive 
-      mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
+      mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
    }
 
  
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
  
    // total energy calculation 
-   mygrid->ggm_sym_Multiply(psi1, Hpsi, hml);
+   mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
    mygrid->m_scal(-1.0, hml);
-   eorbit = mygrid->m_trace(hml);
+   eorbit = mygrid->w_trace(hml);
    if (ispin == 1)
      eorbit = eorbit + eorbit;
  
@@ -271,11 +279,11 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    // deltac 
    sumi = new double[neall]();
    mygrid->ggg_Minus(psi2, psi1, Hpsi);
-   for (i=0; i<neall; ++i)
+   for (auto i=0; i<neall; ++i)
       sumi[i] = mygrid->cc_pack_idot(1, Hpsi+i*shift1, Hpsi+i*shift1 );
    mygrid->c3db::parall->Vector_SumAll(1, neall, sumi);
    dc = 0.0;
-   for (i = 0; i < neall; ++i)
+   for (auto i = 0; i < neall; ++i)
      if (sumi[i] > dc)
        dc = sumi[i];
    dc = mygrid->c3db::parall->MaxAll(2, dc);

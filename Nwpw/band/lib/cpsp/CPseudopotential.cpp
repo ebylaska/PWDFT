@@ -1652,12 +1652,6 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
 
-         std::cout << "VNONLOCAL nprjall=" << nprjall << " zsw1= ";
-         for (auto kk=0; kk<20; ++kk)
-            std::cout << zsw1[kk] << " ";
-         std::cout << std::endl;
-         std::cout << std::endl;
-        
          /* sw2 = Gijl*sw1 */
          ll = 0;
          for (jj = jstart; jj < jend; ++jj) {
@@ -1670,11 +1664,6 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
            }
          }
 
-         std::cout << "VNONLOCAL nprjall=" << nprjall << " zsw2= ";
-         for (auto kk=0; kk<20; ++kk)
-            std::cout << zsw2[kk] << " ";
-         std::cout << std::endl;
-         std::cout << std::endl;
         
          ntmp = 2*nn*nprjall;
          DSCAL_PWDFT(ntmp, scal, zsw2, one);
@@ -1685,13 +1674,10 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
          //                zsw2,   nn,
          //                rone,
          //                Hpsi,nshift);
-         mypneb->c3db::mygdevice.NC2_zgemm(nshift, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
+         mypneb->c3db::mygdevice.NC2_zgemm(nshift0, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
       }
       mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
-      std::cout << "HPSI =";
-      for (auto kk=0; kk<20; ++kk)
-         std::cout << Hpsi[kk] << " ";
-      std::cout << std::endl << std::endl;
+
 #else
 
       for (ii = 0; ii < (myion->nion); ++ii) 
@@ -1790,7 +1776,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    int nn = mypneb->neq[0] + mypneb->neq[1];
    int ispin = mypneb->ispin;
    int nshift0 = mypneb->npack1_max();
-   int nshift = 2 * mypneb->npack1_max();
+   int nshift = 2*mypneb->npack1_max();
 
    double *exi = new (std::nothrow) double[nshift]();
    double *prjtmp = new (std::nothrow) double[nprj_max*nshift]();
@@ -1803,7 +1789,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       sum = new (std::nothrow) double[3*nn*nprj_max]();
    }
 
-   for (auto nbq=0; nbq<mypneb->nbrillq; ++nbq)
+   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
    {
       int nbq1 = nbq + 1;
 
@@ -1871,7 +1857,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
          jend = ii;
         
          mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
-         parall->Vector_SumAll(1, nn*nprjall, zsw1);
+         parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
          if (move)
             parall->Vector_SumAll(1, 3*nn*nprjall, sum);
         
@@ -1884,7 +1870,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             {
                Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
                                   l_projector[ia], m_projector[ia], Gijl[ia],
-                                  zsw1 + ll*nn, zsw2 + ll*nn);
+                                  zsw1 + ll*2*nn, zsw2 + ll*2*nn);
                ll += nprj[ia];
             }
          }
@@ -1898,7 +1884,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
          //                sw2,   nn,
          //                rone,
          //                Hpsi,nshift);
-         mypneb->c3db::mygdevice.NC2_zgemm(nshift, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
+         mypneb->c3db::mygdevice.NC2_zgemm(nshift0, nn, nprjall, rmone, prjtmp, zsw2, rone, Hpsi);
         
          if (move) 
          {
@@ -2123,7 +2109,7 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
             {
                Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
                                  l_projector[ia], m_projector[ia], Gijl[ia],
-                                 zsw1+(ll*nn),zsw2+(ll*nn));
+                                 zsw1+(ll*2*nn),zsw2+(ll*2*nn));
                ll += nprj[ia];
             }
          }
@@ -2250,11 +2236,6 @@ double CPseudopotential::e_nonlocal(double *psi)
          mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
-         std::cout << "nprjall=" << nprjall << " zsw1= ";
-         for (auto kk=0; kk<20; ++kk)
-            std::cout << zsw1[kk] << " ";
-         std::cout << std::endl;
- 
          /* sw2 = Gijl*sw1 */
          auto ll = 0;
          for (auto jj=jstart; jj<jend; ++jj) 
@@ -2268,12 +2249,7 @@ double CPseudopotential::e_nonlocal(double *psi)
                ll += nprj[ia];
             }
          }
-         std::cout << "nprjall=" << nprjall << " zsw2= ";
-         for (auto kk=0; kk<20; ++kk)
-            std::cout << zsw2[kk] << " ";
-         std::cout << std::endl;
-         std::cout << std::endl;
-        
+         
          auto ntmp = 2*nn*nprjall;
          DSCAL_PWDFT(ntmp, scal, zsw2, one);
         
@@ -2329,21 +2305,9 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
    double  *Gx, *Gy, *Gz;
    if (move) 
    {
-      // xtmp = new (std::nothrow) double[npack0]();
-     
-      // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-      // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-      // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-      // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-      // mypneb->t_pack(0,Gx);
-      // mypneb->t_pack(0,Gy);
-      // mypneb->t_pack(0,Gz);
-     
-      Gx = mypneb->Gpackxyz(0, 0);
-      Gy = mypneb->Gpackxyz(0, 1);
-      Gz = mypneb->Gpackxyz(0, 2);
+      Gx = mypneb->Gpackxyz(0,0);
+      Gy = mypneb->Gpackxyz(0,1);
+      Gz = mypneb->Gpackxyz(0,2);
    }
  
    mypneb->c_pack_zero(0,vout);
@@ -2374,6 +2338,11 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
    //{
    // delete [] xtmp;
    //}
+
+   std::cout << "VL=";
+   for (auto i=0; i<20; ++i)
+      std::cout << vout[i] << " ";
+   std::cout << std::endl << std::endl;
 }
 
 
