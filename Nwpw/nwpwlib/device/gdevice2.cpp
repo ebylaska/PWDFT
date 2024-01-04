@@ -108,6 +108,17 @@ void gdevice2::CN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, 
    mygdevice2->CN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
+void gdevice2::CN4_zgemm(int npack, int ne, double *alpha, double *a, double *b,
+                       double *beta, double *caa, double *cab, double *cba,
+                       double *cbb) {
+   mygdevice2->CN4_zgemm(npack, ne, alpha, a, b, beta, caa, cab, cba, cbb);
+}
+
+void gdevice2::CN3_zgemm(int npack, int ne, double *alpha, double *a, double *b,
+                         double *beta, double *caa, double *cab, double *cbb) {
+   mygdevice2->CN3_zgemm(npack, ne, alpha, a, b, beta, caa, cab, cbb);
+}
+
 
 void gdevice2::WW6_zgemm(int ne, double *s21, double *s12, double *s11,
                        double *sa0, double *sa1, double *st1) {

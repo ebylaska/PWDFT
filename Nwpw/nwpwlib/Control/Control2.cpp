@@ -536,8 +536,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    // pecut=9000.0;
    // pwcut=9000.0;
    // pecut= 60.0; pwcut=30.0;
-   pecut = 100.0;
-   pwcut = 50.0;
+   pecut = 6000.0;
+   pwcut = 3000.0;
    if (rtdbjson["nwpw"]["cutoff"][0].is_number_float())
       pwcut = rtdbjson["nwpw"]["cutoff"][0];
    if (rtdbjson["nwpw"]["cutoff"][1].is_number_float())

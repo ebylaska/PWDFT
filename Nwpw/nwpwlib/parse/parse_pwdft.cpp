@@ -2241,8 +2241,8 @@ std::string parse_input_wavefunction_filename(std::string rtdbstring) {
 std::vector<std::string> parse_gen_lowlevel_rtdbstrs(std::string rtdbstring) {
   auto rtdbjson = json::parse(rtdbstring);
 
-  double ecut0 = 100.0;
-  double wcut0 = 50.0;
+  double ecut0 = 6000.0;
+  double wcut0 = 3000.0;
   if (rtdbjson["nwpw"]["cutoff"][0].is_number_float())
     wcut0 = rtdbjson["nwpw"]["cutoff"][0];
   if (rtdbjson["nwpw"]["cutoff"][1].is_number_float())

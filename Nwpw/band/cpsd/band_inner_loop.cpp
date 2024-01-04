@@ -122,7 +122,8 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          std::cout << rho[i] << " ";
       std::cout << std::endl << std::endl;
 
-      mygrid->rc_pfft3f(0,rho);
+      //mygrid->rc_pfft3f(0,rho);
+      mygrid->rc_fft3d(rho);
 
       mygrid->cc_SMul(scal1, rho, tmp);
 
@@ -179,10 +180,20 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
      
       // get Hpsi
       cpsi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
+
+      std::cout << "HPsiA= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << Hpsi[i] << " ";
+      std::cout << std::endl << std::endl;
      
       // do a steepest descent step
       mygrid->gg_SMul(dte,Hpsi,psi2);
       mygrid->gg_Sum2(psi1,psi2);
+
+      std::cout << "HPsiB= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << Hpsi[i] << " ";
+      std::cout << std::endl << std::endl;
      
       if (move)
       {
@@ -200,16 +211,46 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          // steepest descent step 
          myion->optimize_step(fion);
       }
+
+      std::cout << "HPsiC= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << Hpsi[i] << " ";
+      std::cout << std::endl << std::endl;
      
       // lagrange multiplier - Expensive 
       mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
+
+      std::cout << "HPsiD= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << Hpsi[i] << " ";
+      std::cout << std::endl << std::endl;
    }
 
  
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
+
+      std::cout << "Psi1= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << psi1[i] << " ";
+      std::cout << std::endl << std::endl;
+
+      std::cout << "HPsi= ";
+      for (auto i=0; i<20; ++i)
+         std::cout << Hpsi[i] << " ";
+      std::cout << std::endl << std::endl;
  
    // total energy calculation 
    mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
+
+
+     std::cout << "hml=";
+     for (auto i=0; i<8; ++i)   std::cout << hml[i] << " "; std::cout << std::endl << "   ";
+     for (auto i=8; i<16; ++i)  std::cout << hml[i] << " "; std::cout << std::endl << "   ";
+     for (auto i=16; i<24; ++i) std::cout << hml[i] << " "; std::cout << std::endl << "   ";
+     for (auto i=24; i<32; ++i) std::cout << hml[i] << " ";
+     std::cout << std::endl << std::endl;
+
+
    mygrid->m_scal(-1.0, hml);
    eorbit = mygrid->w_trace(hml);
    if (ispin == 1)

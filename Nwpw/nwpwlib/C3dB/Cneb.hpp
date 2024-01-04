@@ -136,9 +136,9 @@ public:
    {
       int nsize;
       if (mb == -1)
-        nsize = ne[0] * ne[0] + ne[1] * ne[1];
+        nsize = ne[0]*ne[0] + ne[1]*ne[1];
       else
-        nsize = ne[mb] * ne[mb];
+        nsize = ne[mb]*ne[mb];
       return nsize;
    }
  
@@ -146,9 +146,9 @@ public:
      double *ptr;
      int nsize;
      if (mb == -1)
-       nsize = ne[0] * ne[0] + ne[1] * ne[1];
+       nsize = ne[0]*ne[0] + ne[1]*ne[1];
      else
-       nsize = ne[mb] * ne[mb];
+       nsize = ne[mb]*ne[mb];
  
      ptr = new (std::nothrow) double[nblock * nsize]();
      return ptr;
@@ -159,9 +159,9 @@ public:
       double *ptr;
       int nsize;
       if (mb == -1)
-        nsize = 4 * (ne[0] * ne[0] + ne[1] * ne[1]);
+        nsize = 2 * (ne[0]*ne[0] + ne[1]*ne[1]);
       else
-        nsize = 4 * ne[mb] * ne[mb];
+        nsize = 2*ne[mb]*ne[mb];
      
       ptr = new (std::nothrow) double[nblock * nsize]();
       return ptr;
@@ -172,7 +172,7 @@ public:
    double *w_allocate_nbrillq_all() {
       double *ptr;
       int nsize;
-      nsize = 4*(ne[0]*ne[0] + ne[1]*ne[1]);
+      nsize = 2*(ne[0]*ne[0] + ne[1]*ne[1]);
       
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       return ptr;
@@ -186,18 +186,16 @@ public:
    void hr_aSumSqr(const double, double *, double *);
    void hhr_aSumMul(const double, const double *, const double *, double *);
  
-   void ggm_sym_Multiply(double *, double *, double *);
-   void ggm_Multiply(double *, double *, double *);
-   void ffm_sym_Multiply(const int, double *, double *, double *);
-   void ffm_Multiply(const int, double *, double *, double *);
-   void ggm_SVD(double *, double *, double *, double *);
+   void ffw_sym_Multiply(const int, double *, double *, double *);
+   void ffw_Multiply(const int, double *, double *, double *);
+   void ggw_SVD(double *, double *, double *, double *);
 
    void ggw_sym_Multiply(double *, double *, double *);
    void ggw_Multiply(double *, double *, double *);
 
 
  
-   void ffm4_sym_Multiply(const int, double *, double *, double *, double *,
+   void ffw4_sym_Multiply(const int, double *, double *, double *, double *,
                           double *, double *);
    void ffw3_sym_Multiply(const int, double *, double *, double *, double *,
                           double *);
@@ -209,11 +207,11 @@ public:
  
    void fm_QR(const int, double *, double *);
  
-   void mm_SCtimesVtrans(const int, const double, double *, double *, double *,
+   void ww_SCtimesVtrans(const int, const double, double *, double *, double *,
                          double *, double *, double *);
-   void mm_SCtimesVtrans2(const int, const double, double *, double *, double *,
+   void ww_SCtimesVtrans2(const int, const double, double *, double *, double *,
                           double *, double *, double *);
-   void mm_SCtimesVtrans3(const int, const double, double *, double *, double *,
+   void ww_SCtimesVtrans3(const int, const double, double *, double *, double *,
                           double *, double *, double *);
  
    void m_scal(const double, double *);
@@ -228,7 +226,7 @@ public:
    void gh_fftb(double *, double *);
    void ggw_lambda(double, double *, double *, double *);
    // void ggm_lambda2(double, double *, double *, double *);
-   void ggm_lambda_sic(double, double *, double *, double *);
+   void ggw_lambda_sic(double, double *, double *, double *);
    void g_ortho(double *);
  
    void gg_SMul(double, double *, double *);

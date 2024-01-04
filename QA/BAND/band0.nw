@@ -4,8 +4,8 @@ echo
 start test
 memory 1900 mb
 
-permanent_dir ./perm
-scratch_dir   ./perm
+permanent_dir ./perm0
+scratch_dir   ./perm0
 
 geometry units angstroms print xyz noautosym noautoz nocenter
 C          0.85931        0.43132        0.46733
@@ -23,16 +23,18 @@ nwpw
   2d-hcurve
   simulation_cell
     fcc 38.0 
-    #ngrid 4 4 4
+    ngrid 8 8 8
   end
-  cutoff 10.0
-  xc pbe
+  cutoff 30.0
+  xc lda
   lmbfgs
-  monkhorst-pack 3 3 3
+  #np_dimensions -1 -1 2
   steepest_descent
-     loop 10 1000
+     #geometry_optimize
+     loop 1 1
   end
-
+  #vectors input jjj.movecs output jjj.movecs
+  vectors output jjj.movecs
 
 end
 

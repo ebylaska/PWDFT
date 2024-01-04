@@ -291,12 +291,12 @@ double cElectron_Operators::vnl_ave(double *psi)
 double cElectron_Operators::eorbit(double *psi) 
 {
    //if (mygrid->d3db::parall->is_master())
-   //   std::cout << "Eorbit into ggm_sym_Multiply" << std::endl;
+   //   std::cout << "Eorbit into ggw_sym_Multiply" << std::endl;
 
    mygrid->ggw_sym_Multiply(psi,Hpsi,hmltmp);
 
    //if (mygrid->d3db::parall->is_master())
-   //   std::cout << "OUT Eorbit into ggm_sym_Multiply" << std::endl;
+   //   std::cout << "OUT Eorbit into ggw_sym_Multiply" << std::endl;
 
    // mygrid->m_scal(-1.0,hmltmp);
    double eorbit0 = mygrid->w_trace(hmltmp);
@@ -377,7 +377,7 @@ double cElectron_Operators::energy(double *psi, double *dn, double *dng, double 
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
  
    /* total energy calculation */
-   mygrid->ggm_sym_Multiply(psi, Hpsi, hmltmp);
+   mygrid->ggw_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
    eorbit0 = mygrid->w_trace(hmltmp);
    if (ispin == 1)

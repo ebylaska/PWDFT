@@ -1606,6 +1606,38 @@ void c3db::rr_Sum(const double *ptr2, double *ptr3)
 
 /********************************
  *                              *
+ *         c3db::rcc_Sum        *
+ *                              *
+ ********************************/
+void c3db::rcc_Sum(const double *ptr1, const double *ptr2, double *ptr3)
+{     
+   int m = nfft3d_map%5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {
+         ptr3[2*i]   = ptr1[i] + ptr2[2*i];  
+         ptr3[2*i+1] = ptr2[2*i+1];  
+      }
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i+=5)
+   {  
+      ptr3[2*i]       = ptr1[i]   + ptr2[2*i];   
+      ptr3[2*i+1]     =             ptr2[2*i+1];   
+      ptr3[2*(i+1)]   = ptr1[i+1] + ptr2[2*(i+1)]; 
+      ptr3[2*(i+1)+1] =             ptr2[2*(i+1)+1]; 
+      ptr3[2*(i+2)]   = ptr1[i+2] + ptr2[2*(i+2)]; 
+      ptr3[2*(i+2)+1] =             ptr2[2*(i+2)+1]; 
+      ptr3[2*(i+3)]   = ptr1[i+3] + ptr2[2*(i+3)]; 
+      ptr3[2*(i+3)+1] =             ptr2[2*(i+3)+1]; 
+      ptr3[2*(i+4)]   = ptr1[i+4] + ptr2[2*(i+4)]; 
+      ptr3[2*(i+4)+1] =             ptr2[2*(i+4)+1]; 
+   }
+}     
+
+
+/********************************
+ *                              *
  *         c3db::rrr_Minus      *
  *                              *
  ********************************/
@@ -1822,6 +1854,52 @@ void c3db::cc_Mul(const double *ptr1, double *ptr3)
    }
    return;
 }  
+
+/********************************
+ *                              *
+ *         c3db::bb_Mul         *
+ *                              *
+ ********************************/
+//ptr3 = conjg(ptr3)*ptr1
+void c3db::bb_Mul(const double *ptr1, double *ptr3)
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {
+         int i0r = 2*i;  int i0i = 2*i+1;
+         ptr3[i0r] = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
+         ptr3[i0i] = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
+      }
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {
+      int i1=i+1; int i2=i+2; int i3=i+3; int i4=i+4;
+      int i0r = 2*i;  int i0i = 2*i+1;
+      int i1r = 2*i1; int i1i = 2*i1+1;
+      int i2r = 2*i2; int i2i = 2*i2+1;
+      int i3r = 2*i3; int i3i = 2*i3+1;
+      int i4r = 2*i4; int i4i = 2*i4+1;
+
+      ptr3[i0r] = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
+      ptr3[i0i] = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
+
+      ptr3[i1r] = ptr3[i1r]*ptr1[i1r] + ptr3[i1i]*ptr1[i1i];
+      ptr3[i1i] = ptr3[i1r]*ptr1[i1i] - ptr3[i1i]*ptr1[i1r];
+
+      ptr3[i2r] = ptr3[i2r]*ptr1[i2r] + ptr3[i2i]*ptr1[i2i];
+      ptr3[i2i] = ptr3[i2r]*ptr1[i2i] - ptr3[i2i]*ptr1[i2r];
+
+      ptr3[i3r] = ptr3[i3r]*ptr1[i3r] + ptr3[i3i]*ptr1[i3i];
+      ptr3[i3i] = ptr3[i3r]*ptr1[i3i] - ptr3[i3i]*ptr1[i3r];
+
+      ptr3[i4r] = ptr3[i4r]*ptr1[i4r] + ptr3[i4i]*ptr1[i4i];
+      ptr3[i4i] = ptr3[i4r]*ptr1[i4i] - ptr3[i4i]*ptr1[i4r];
+   }
+   return;
+} 
+
 
 
 

@@ -397,7 +397,7 @@ void Parallel::Vector_SumAll(const int d, const int n, double *sum) {
      sumout = new double[n];
      // comm_i[d].Allreduce(sum,sumout,n,MPI_DOUBLE_PRECISION,MPI_SUM);
      MPI_Allreduce(sum, sumout, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
-     for (int i = 0; i < n; ++i)
+     for (int i=0; i<n; ++i)
         sum[i] = sumout[i];
      delete[] sumout;
   }

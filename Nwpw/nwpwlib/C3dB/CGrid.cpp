@@ -67,9 +67,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    for (auto k2=(-nyh+1); k2<=nyh; ++k2)
    for (auto k1=(-nxh+1); k1<=nxh; ++k1)
    {
-      auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0, 2);
-      auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1, 2);
-      auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2, 2);
+      auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+      auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+      auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
       auto gg = gx*gx + gy*gy + gz*gz;
       if (gg > ggmax)
         ggmax = gg;
@@ -1341,6 +1341,11 @@ void CGrid::rc_pfft3f(const int nb, double *a)
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftz_tmpz_zero(c3db::fft_tag,true, nz, nq3, 2*nfft3d, a, c3db::tmpz, zero_row3[nb]);
+
+    std::cout << "fftF = ";
+    for (auto i=0; i<20; ++i)
+       std::cout << a[i] << " ";
+    std::cout << std::endl << std::endl;
    }
  
 }

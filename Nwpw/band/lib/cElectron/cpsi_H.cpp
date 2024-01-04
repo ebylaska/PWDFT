@@ -38,12 +38,13 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    int indx1n = 0;
    int indx2n = 0;
    int ispin = mygrid->ispin;
-   int shift1 = 2 * (mygrid->npack(1));
+   int shift1 = 2*(mygrid->npack1_max());
    int shift2 = (mygrid->n2ft3d);
    int n2ft3d = (mygrid->n2ft3d);
-   int ms = 0;
+   int nfft3d = (mygrid->nfft3d);
    int n1 = mygrid->neq[0];
    int n2 = mygrid->neq[0] + mygrid->neq[1];
+   int nn = n2*mygrid->nbrillq;
  
    bool done = false;
  
@@ -77,72 +78,80 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mygrid->cc_pack_Sum2(0,vc,vall);
    mygrid->c_unpack(0,vall);
    mygrid->cr_fft3d(vall);
+
+   std::cout << "VALL = " ;
+   for (auto i=0; i<20; ++i)
+      std::cout << vall[i] << " ";
+   std::cout << std::endl << std::endl;
  
-   /* add v_field to vall */
-   //if (mypsp->myefield->efield_on)
-   //   mygrid->rr_Sum(mypsp->myefield->v_field,vall);
- 
-   
-   /*
-    std::cout << "INTO psiH rc_fftd  -------------------" << std::endl;
- 
-     //OLD - stable?
-     for (ms=0; ms<ispin; ++ms)
-     {
-        mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-        for (int i=0; i<(mygrid->neq[ms]); ++i)
-        {
-            std::cout << "psiH i=" << i << " -------------------" << std::endl;
-           mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
-           mygrid->rc_fft3d(vpsi);
-           mygrid->c_pack(1,vpsi);
-           mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
- 
-           indx1 += shift1;
-           indx2 += shift2;
-        }
-     }
-    std::cout << "OUT psiH rc_fftd  -------------------" << std::endl;
-    */
-  
-  
+    
    { nwpw_timing_function ftimer(1);
  
-     mygrid->rrr_Sum(vall,xcp,tmp);
+
+     std::cout << "TMP = " ;
+     for (auto i=0; i<20; ++i)
+        std::cout << tmp[i] << " ";
+     std::cout << std::endl << std::endl;
+     int ms = 0;
+
      while (!done) 
      {
-        if (indx1<n2) 
+        if (indx1<nn) 
         {
-           if (indx1>=n1) 
-           {
+           int nbq1 = (indx1/n2) + 1;
+
+           if ((indx1 - (nbq1-1)*n2) < n1)
+              ms = 0;
+           else 
               ms = 1;
-              mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-           }
-           
-           mygrid->rrr_Mul(tmp,psi_r+indx1n,vpsi);
-           
-           mygrid->rc_pfft3f_queuein(1,vpsi);
+
+           mygrid->rcc_Sum(xcp+ms*nfft3d,vall,tmp);
+           std::memcpy(vpsi,tmp,n2ft3d*sizeof(double));
+           mygrid->bb_Mul(psi_r+indx1n,vpsi);
+
+     std::cout << "VPSI= " ;
+     for (auto i=0; i<20; ++i)
+        std::cout << vpsi[i] << " ";
+     std::cout << std::endl << std::endl;
+
+           mygrid->rc_pfft3f_queuein(nbq1,vpsi);
            indx1n += shift2;
            ++indx1;
         }
         
-        if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2)) 
+        if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= nn)) 
         {
-           mygrid->rc_pfft3f_queueout(1,vpsi);
-           mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx2n);
+           int nbq2 = (indx2/n2) + 1;
+           mygrid->rc_pfft3f_queueout(nbq2,vpsi);
+
+     std::cout << "nbq2 =" << nbq2 << " scal1=" << scal1 << " VPSI2= " ;
+     for (auto i=0; i<20; ++i)
+        std::cout << vpsi[i] << " ";
+     std::cout << std::endl << std::endl;
+     std::cout << "indx2n=" << indx2n << " shift1=" << shift1 << std::endl;
+
+           mygrid->cc_pack_daxpy(nbq2,(-scal1),vpsi,Hpsi+indx2n);
+
+     std::cout <<  "HPSI2= " ;
+     for (auto i=0; i<20; ++i) std::cout << Hpsi[i+indx2n] << " ";
+     std::cout << std::endl << std::endl;
+
            indx2n += shift1;
            ++indx2;
         }
-        done = ((indx1 >= n2) && (indx2 >= n2));
+        done = ((indx1 >= nn) && (indx2 >= nn));
      }
    }
-   
    
  
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
    mygrid->r_dealloc(vall);
+
+     std::cout <<  "HPSI0= " ;
+     for (auto i=0; i<20; ++i) std::cout << Hpsi[i] << " ";
+     std::cout << std::endl << std::endl;
 }
 
 

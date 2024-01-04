@@ -130,6 +130,9 @@ public:
    void cc_SMul(const double, const double *, double *);
    void cc_Mul(const double *, double *);
 
+   void rcc_Sum(const double *, const double *, double *);
+   void bb_Mul(const double *, double *);
+
    void c_ZMul(const double, const double, double *);
 
 

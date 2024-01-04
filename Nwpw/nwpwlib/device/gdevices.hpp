@@ -278,27 +278,71 @@ public:
      ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
   }
 
+ 
+  void CN3_zgemm(int npack, int ne, double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_caa,
+                 double *host_cab, double *host_cbb) {
+    int one = 1;
+    int shift1 = 0;
+    int mshift1 = 0;
+      
+    for (auto k = 1; k <= ne; ++k) 
+    {
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_a + shift1, npack, beta, host_caa + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_b + shift1, npack, beta, host_cab + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_b, npack,
+                   host_b + shift1, npack, beta, host_cbb + mshift1, k);
+       shift1 += 2*npack; 
+       mshift1 += 2*ne;
+    }
+  }
+
+  void CN4_zgemm(int npack, int ne, double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_caa,
+                 double *host_cab, double *host_cba, double *host_cbb) {
+    int one = 1;
+    int shift1 = 0;
+    int mshift1 = 0;
+        
+    for (auto k = 1; k <= ne; ++k) 
+    {
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_a + shift1, npack, beta, host_caa + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_b + shift1, npack, beta, host_cab + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_b, npack,
+                   host_a + shift1, npack, beta, host_cba + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack, alpha, host_b, npack,
+                   host_b + shift1, npack, beta, host_cbb + mshift1, k);
+       shift1 += 2*npack;
+       mshift1 += 2*ne;
+    }
+
+  }
+
 
   void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
                  double *host_sa0, double *host_sa1, double *host_st1) {
-    double rzero[2] = {0.0,0.0};
-    double rone[2] = {1.0,0.0};
-  
-    // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
-    ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
-                host_sa0, ne, rone, host_sa1, ne);
-                 
-    // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                host_s12, ne, rone, host_sa1, ne);
-
-    // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
-    ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
-                host_sa0, ne, rzero, host_st1, ne);
-                 
-    // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
-    ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                host_st1, ne, rone, host_sa1, ne);
+     double rone[2]  = {1.0,0.0};
+     double rzero[2] = {0.0,0.0};
+   
+     // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
+     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
+                 host_sa0, ne, rone, host_sa1, ne);
+                  
+     // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
+     ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+                 host_s12, ne, rone, host_sa1, ne);
+    
+     // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
+     ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
+                 host_sa0, ne, rzero, host_st1, ne);
+                  
+     // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
+     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+                 host_st1, ne, rone, host_sa1, ne);
   }  
 
 
@@ -324,8 +368,8 @@ public:
         // EIGEN_PWDFT failed!"));
       
         //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
-        shift1 += 2*ne[0];
-        shift2 += 4*ne[0]*ne[0];
+        shift1 += ne[0];
+        shift2 += 2*ne[0]*ne[0];
      } 
   }
 
