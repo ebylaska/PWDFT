@@ -68,17 +68,7 @@ cCoulomb_Operator::cCoulomb_Operator(Cneb *mygrid, Control2 &control)
    }
    mycneb->t_pack(0, tmp);
    mycneb->tt_pack_copy(0, tmp, vg);
-   std::cout << "vg=" << vg[0] << " " 
-                      << vg[1] << " " 
-                      << vg[2] << " " 
-                      << vg[3] << " " 
-                      << vg[4] << " " 
-                      << vg[5] << " " 
-                      << vg[6] << " " 
-                      << vg[7] << " " 
-                      << vg[8] << " " 
-                      << vg[9] << std::endl;
- 
+
    delete[] tmp;
 }
 

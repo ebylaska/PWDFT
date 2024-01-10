@@ -375,15 +375,15 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          for (auto q=0; q < nx*ny; ++q)
             zero_arow3[q] = true;
 
-         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
-         for (auto k1 = (-nxh + 1); k1 < nxh; ++k1)
+         for (auto k2 = (-nyh+1); k2<nyh; ++k2)
+         for (auto k1 = (-nxh+1); k1<nxh; ++k1)
          {
             auto i = k1;
             auto j = k2;
             if (i < 0) i += nx;
             if (j < 0) j += ny;
             zrow = true;
-            for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
+            for (auto k3=(-nzh+1); k3<nzh; ++k3) 
             {
                auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2) + kv[0];
                auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2) + kv[1];
@@ -393,6 +393,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                if (gg < (-eps))
                   zrow = false;
             }
+
             if (!zrow) 
             {
               // zero_arow3[i-1+(nxh+1)*(j-1)] = 0;
@@ -405,7 +406,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
               }
             }
          }
-        
+
          /* find zero_slab23 - (i,*,*) slabs that are zero */
          for (auto i=0; i<nx; ++i)
             zero_slab23[nb][i] = true;
@@ -1294,58 +1295,27 @@ void CGrid::rc_pfft3f(const int nb, double *a)
     *************************/
    else 
    {
-
-    std::cout << "fftA = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
-
       /********************************************
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftx_tmpx(c3db::fft_tag,true, nx, nq1, 2*nfft3d, a, c3db::tmpx);
 
-    std::cout << "fftB = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
-
       c3db::c_ptranspose_ijk(nb, 0, a, tmp2, tmp3);
 
-    std::cout << "fftC = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
-     
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
       c3db::mygdevice.batch_cffty_tmpy_zero(c3db::fft_tag,true,ny,nq2,2*nfft3d,a,c3db::tmpy,zero_row2[nb]);
 
-    std::cout << "fftD = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
-
       c3db::c_ptranspose_ijk(nb, 1, a, tmp2, tmp3);
-
-    std::cout << "fftE = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
 
       /********************************************
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
       c3db::mygdevice.batch_cfftz_tmpz_zero(c3db::fft_tag,true, nz, nq3, 2*nfft3d, a, c3db::tmpz, zero_row3[nb]);
-
-    std::cout << "fftF = ";
-    for (auto i=0; i<20; ++i)
-       std::cout << a[i] << " ";
-    std::cout << std::endl << std::endl;
    }
  
 }

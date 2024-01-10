@@ -60,38 +60,17 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
 
-   std::cout << "ke_psi = " ;
-   for (auto i=0; i<20; ++i)
-      std::cout << Hpsi[i] << " ";
-   std::cout << std::endl << std::endl;
- 
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
 
-   std::cout << "vnl_psi = " ;
-   for (auto i=0; i<20; ++i)
-      std::cout << Hpsi[i] << " ";
-   std::cout << std::endl << std::endl;
- 
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0, scal2, vl, vall);
    mygrid->cc_pack_Sum2(0,vc,vall);
    mygrid->c_unpack(0,vall);
    mygrid->cr_fft3d(vall);
 
-   std::cout << "VALL = " ;
-   for (auto i=0; i<20; ++i)
-      std::cout << vall[i] << " ";
-   std::cout << std::endl << std::endl;
- 
-    
    { nwpw_timing_function ftimer(1);
  
-
-     std::cout << "TMP = " ;
-     for (auto i=0; i<20; ++i)
-        std::cout << tmp[i] << " ";
-     std::cout << std::endl << std::endl;
      int ms = 0;
 
      while (!done) 
@@ -109,11 +88,6 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
            std::memcpy(vpsi,tmp,n2ft3d*sizeof(double));
            mygrid->bb_Mul(psi_r+indx1n,vpsi);
 
-     std::cout << "VPSI= " ;
-     for (auto i=0; i<20; ++i)
-        std::cout << vpsi[i] << " ";
-     std::cout << std::endl << std::endl;
-
            mygrid->rc_pfft3f_queuein(nbq1,vpsi);
            indx1n += shift2;
            ++indx1;
@@ -124,17 +98,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
            int nbq2 = (indx2/n2) + 1;
            mygrid->rc_pfft3f_queueout(nbq2,vpsi);
 
-     std::cout << "nbq2 =" << nbq2 << " scal1=" << scal1 << " VPSI2= " ;
-     for (auto i=0; i<20; ++i)
-        std::cout << vpsi[i] << " ";
-     std::cout << std::endl << std::endl;
-     std::cout << "indx2n=" << indx2n << " shift1=" << shift1 << std::endl;
-
            mygrid->cc_pack_daxpy(nbq2,(-scal1),vpsi,Hpsi+indx2n);
-
-     std::cout <<  "HPSI2= " ;
-     for (auto i=0; i<20; ++i) std::cout << Hpsi[i+indx2n] << " ";
-     std::cout << std::endl << std::endl;
 
            indx2n += shift1;
            ++indx2;
@@ -148,10 +112,6 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
    mygrid->r_dealloc(vall);
-
-     std::cout <<  "HPSI0= " ;
-     for (auto i=0; i<20; ++i) std::cout << Hpsi[i] << " ";
-     std::cout << std::endl << std::endl;
 }
 
 

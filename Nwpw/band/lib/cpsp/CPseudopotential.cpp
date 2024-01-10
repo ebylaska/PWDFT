@@ -2264,8 +2264,6 @@ double CPseudopotential::e_nonlocal(double *psi)
    if (mypneb->ispin==1)
       esum *= 2.0;
 
-   std::cout << "ESUM=" << esum << std::endl;
- 
    delete[] exi;
    delete[] prjtmp;
    delete[] zsw1;
@@ -2338,11 +2336,6 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
    //{
    // delete [] xtmp;
    //}
-
-   std::cout << "VL=";
-   for (auto i=0; i<20; ++i)
-      std::cout << vout[i] << " ";
-   std::cout << std::endl << std::endl;
 }
 
 

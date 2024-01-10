@@ -29,7 +29,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
                      double *psi_r, double *dn, double *hml, double *lmbda,
                      double E[], double *deltae, double *deltac, double *deltar) 
 {
-   int it, it_in, k, ms;
+   int it_in, k, ms;
    int indx1, indx2;
    int one = 1;
    double dc;
@@ -81,7 +81,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
    //|-\____|\/-----\/\/->    Start Parallel Section    <-\/\/-----\/|____/-|
  
-   for (it = 0; it < it_in; ++it) 
+   for (auto it=0; it<it_in; ++it) 
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
@@ -98,45 +98,20 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       // convert psi(G) to psi(r) - Expensive 
       mygrid->gh_fftb(psi1,psi_r);
 
-      std::cout << "psi_r = ";
-      for (auto i=0; i<20; ++i)
-         std::cout << psi_r[i] << " ";
-      std::cout << std::endl << std::endl;
-
-     
       // generate dn
       mygrid->hr_aSumSqr(scal2,psi_r,dn);
 
-      std::cout << "dn= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << dn[i] << " ";
-      std::cout << std::endl << std::endl;
-      
-
-     
       // generate dng 
       mygrid->rrc_Sum(dn,dn+(ispin-1)*nfft3d,rho);
 
-      std::cout << "tmp= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << rho[i] << " ";
-      std::cout << std::endl << std::endl;
-
-      //mygrid->rc_pfft3f(0,rho);
-      mygrid->rc_fft3d(rho);
+      mygrid->rc_pfft3f(0,rho);
+      //mygrid->rc_fft3d(rho);
 
       mygrid->cc_SMul(scal1, rho, tmp);
 
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
       //mygrid->c_pack_SMul(0,scal1, dng);
-
-      std::cout << "dng= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << dng[i] << " ";
-      std::cout << std::endl << std::endl;
-      
-
 
       // generate dnall - used for semicore corrections
       if (mypsp->has_semicore()) 
@@ -168,11 +143,6 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mycoulomb->vcoulomb(dng,vc);
       mygrid->cc_pack_copy(0,vc,vcall);
 
-      std::cout << "VCOUL= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << vcall[i] << " ";
-      std::cout << std::endl << std::endl;
-      
       // generate exchange-correlation potential 
       std::memset(xcp,0,ispin*nfft3d*sizeof(double));
       std::memset(xce,0,ispin*nfft3d*sizeof(double));
@@ -181,20 +151,10 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       // get Hpsi
       cpsi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
 
-      std::cout << "HPsiA= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << Hpsi[i] << " ";
-      std::cout << std::endl << std::endl;
-     
       // do a steepest descent step
       mygrid->gg_SMul(dte,Hpsi,psi2);
       mygrid->gg_Sum2(psi1,psi2);
 
-      std::cout << "HPsiB= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << Hpsi[i] << " ";
-      std::cout << std::endl << std::endl;
-     
       if (move)
       {
          // get the ion-ion force 
@@ -212,44 +172,15 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          myion->optimize_step(fion);
       }
 
-      std::cout << "HPsiC= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << Hpsi[i] << " ";
-      std::cout << std::endl << std::endl;
-     
       // lagrange multiplier - Expensive 
       mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
-
-      std::cout << "HPsiD= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << Hpsi[i] << " ";
-      std::cout << std::endl << std::endl;
    }
 
  
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 
-      std::cout << "Psi1= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << psi1[i] << " ";
-      std::cout << std::endl << std::endl;
-
-      std::cout << "HPsi= ";
-      for (auto i=0; i<20; ++i)
-         std::cout << Hpsi[i] << " ";
-      std::cout << std::endl << std::endl;
- 
    // total energy calculation 
    mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
-
-
-     std::cout << "hml=";
-     for (auto i=0; i<8; ++i)   std::cout << hml[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i)  std::cout << hml[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << hml[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << hml[i] << " ";
-     std::cout << std::endl << std::endl;
-
 
    mygrid->m_scal(-1.0, hml);
    eorbit = mygrid->w_trace(hml);
@@ -282,12 +213,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
  
    // average Kohn-Sham v_nonlocal energy 
-   mygrid->g_zero(Hpsi);
-   mypsp->v_nonlocal(psi1, Hpsi);
-   enlocal = -mygrid->gg_traceall(psi1, Hpsi);
-   std::cout << "ESUMA = " << enlocal << std::endl;
    enlocal = mypsp->e_nonlocal(psi1);
-   std::cout << "ESUMB = " << enlocal << std::endl;
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;

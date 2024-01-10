@@ -659,9 +659,9 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
      p_i2_start[nb][0][it] = index2;
      for (auto k = 0; k < nz; ++k)
        for (auto j = 0; j < ny; ++j)
-         for (auto i = 0; i < (nx); ++i) 
+         for (auto i = 0; i < nx; ++i) 
          {
-            iszero = (zero_arow2[i + k * (nx / 2 + 1)]);
+            iszero = (zero_arow2[i + k*nx]);
            
             // phere = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))
             // pto   = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
@@ -714,9 +714,9 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       p_i2_start[nb][1][it] = index2;
       for (auto k = 0; k < nz; ++k)
         for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx); ++i) 
+          for (auto i = 0; i < nx; ++i) 
           {
-             iszero = (zero_arow3[i + j * (nx)]);
+             iszero = (zero_arow3[i + j*nx]);
             
              // phere = int_mb(p_map2(1,id)+(k-1)+(i-1)*nz(id))
              // pto   = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
@@ -764,9 +764,9 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       p_i2_start[nb][2][it] = index2;
       for (auto k = 0; k < nz; ++k)
         for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx); ++i) 
+          for (auto i = 0; i < nx; ++i) 
           {
-             iszero = (zero_arow3[i + j * (nx)]);
+             iszero = (zero_arow3[i + j*nx]);
             
              phere = cijktop(i, j, k);
              pto = cijktop1(i, j, k);
@@ -814,9 +814,9 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       p_i2_start[nb][3][it] = index2;
       for (auto k = 0; k < nz; ++k)
         for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx); ++i) 
+          for (auto i = 0; i < nx; ++i) 
           {
-             iszero = (zero_arow2[i + k * (nx)]);
+             iszero = (zero_arow2[i + k*nx]);
             
             
              phere = cijktop1(i, j, k);
@@ -866,7 +866,7 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       p_i2_start[nb][4][it] = index2;
       for (auto k = 0; k < nz; ++k)
         for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx); ++i) 
+          for (auto i = 0; i < nx; ++i) 
           {
             
              phere = cijktop2(i, j, k);
@@ -905,7 +905,7 @@ void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow
       p_i2_start[nb][5][it] = index2;
       for (auto k = 0; k < nz; ++k)
         for (auto j = 0; j < ny; ++j)
-          for (auto i = 0; i < (nx); ++i) 
+          for (auto i = 0; i < nx; ++i) 
           {
              // phere = int_mb(p_map3(1,id)+(i-1)+(j-1)*(nx(id)/2+1))
              // pto   = int_mb(p_map1(1,id)+(j-1)+(k-1)*ny(id))

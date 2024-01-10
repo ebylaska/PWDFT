@@ -1707,15 +1707,6 @@ void Cneb::fwf_Multiply(const int mb, double *psi1, double *hml, double *alpha,
    int npack  =   CGrid::npack1_max();
    int npack1 = 2*CGrid::npack1_max();
 
-/*
-   if (c1db::parall->is_master())
-      std::cout << "into HML= [" << Efmt(15,10)
-                            << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12]  << std::endl
-                << "      " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13]  << std::endl
-                << "      " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14]  << std::endl
-                << "      " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15]  << "]"<< std::endl << std::endl;
-                */
-
    if (parallelized) 
    {
       if (mb==-1)
@@ -1813,18 +1804,12 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
    double rone[2]  = {1.0,0.0};
  
    /* generate V and Sigma^2 */
-   //if (c3db::parall->is_master()) std::cout << "generate V and Sigma2:" << std::endl;
    ggw_sym_Multiply(A, A, V);
    w_diagonalize(V, S);
-   //if (c3db::parall->is_master()) 
-   //    std::cout << "Sigma=" << Efmt(15,10)  << S[0] << " " << S[1] << " " << S[2] << " " << S[3] << std::endl << std::endl;
  
    /* generate U*Sigma */
    fwf_Multiply(-1, A, V, rone, U, rzero);
  
-   //if (c3db::parall->is_master()) 
-   //    std::cout << "AFTER FMF_Multiply" << std::endl;
-
    /* normalize U*sigma */
    indx = 0;
    for (n = 0; n < (neq[0] + neq[1]); ++n) 
@@ -2490,29 +2475,6 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
      int nn = m_size(ms);
  
      ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
-
-     std::cout << "s11=";
-     for (auto i=0; i<8; ++i) std::cout << s11[i] << " ";   std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i) std::cout << s11[i] << " ";  std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << s11[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << s11[i] << " ";
-     std::cout << std::endl << std::endl;
-
-     std::cout << "s21=";
-     for (auto i=0; i<8; ++i) std::cout << s21[i] << " ";   std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i) std::cout << s21[i] << " ";  std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << s21[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << s21[i] << " ";
-     std::cout << std::endl << std::endl;
-
-     std::cout << "s22=";
-     for (auto i=0; i<8; ++i) std::cout << s22[i] << " ";   std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i) std::cout << s22[i] << " ";  std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << s22[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << s22[i] << " ";
-     std::cout << std::endl << std::endl;
-
-
      w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
  
      int jj;
@@ -2538,18 +2500,10 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
        std::memcpy(st1, sa1, 2*nn*sizeof(double));
        ZAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
 
-     std::cout << "st1=";
-     for (auto i=0; i<8; ++i)   std::cout << st1[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i)  std::cout << st1[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << st1[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << st1[i] << " ";
-     std::cout << std::endl << std::endl;
-
        //adiff = fabs(st1[IZAMAX_PWDFT(nn, st1, one) - 1]);
        jj = IZAMAX_PWDFT(nn, st1, one) - 1;
        adiff = st1[2*jj]  *st1[2*jj] 
              + st1[2*jj+1]*st1[2*jj+1];
-       std::cout << "ii=" << ii << " jj=" << jj << " adiff=" << adiff << " nn=" << nn << std::endl;
 
        if (adiff < CONVGLMD)
          done = 1;
@@ -2570,13 +2524,6 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
  
    } // for loop - ms
  
-     std::cout << "dte*lmbda=";
-     for (auto i=0; i<8; ++i)   std::cout << dte*lmbda[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=8; i<16; ++i)  std::cout << dte*lmbda[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=16; i<24; ++i) std::cout << dte*lmbda[i] << " "; std::cout << std::endl << "   ";
-     for (auto i=24; i<32; ++i) std::cout << dte*lmbda[i] << " ";
-     std::cout << std::endl << std::endl;
-
    /* correction due to contraint */
    fwf_Multiply(-1, psi1, lmbda, rdte, psi2, rone);
 }
@@ -2761,8 +2708,9 @@ void Cneb::g_ortho(double *psi)
             {
                int indxk = npack2*k + ishift + ishiftk;
                double w = CGrid::cc_pack_dot(nbq1, psi+indxk, psi+indxk);
-               std::complex<double> wwc =  CGrid::cc_pack_zdot(nbq1, psi+indxk, psi+indxk);
-               std::cout << "w=" << w << " wwc=" << wwc << std::endl;
+               //std::complex<double> wwc =  CGrid::cc_pack_zdot(nbq1, psi+indxk, psi+indxk);
+
+               //std::cout << "w=" << w << " wwc=" << wwc << std::endl;
                w = 1.0/std::sqrt(w);
                CGrid::c_pack_SMul(nbq1, w, psi+indxk);
               
@@ -2770,7 +2718,7 @@ void Cneb::g_ortho(double *psi)
                {
                   int indxj = npack2*j + ishift + ishiftk;
                   std::complex<double> wc = -CGrid::cc_pack_zdot(nbq1, psi+indxk, psi+indxj);
-                  std::cout << "wc=" << wc << std::endl;
+                  //std::cout << "wc=" << wc << std::endl;
                   CGrid::cc_pack_zaxpy(nbq1, wc, psi+indxk, psi+indxj);
                }
             }
