@@ -64,10 +64,11 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
 
    /* apply r-space operators  - Expensive*/
-   mygrid->cc_pack_SMul(0, scal2, vl, vall);
+   mygrid->cc_pack_SMul(0,scal2,vl,vall);
    mygrid->cc_pack_Sum2(0,vc,vall);
+
    mygrid->c_unpack(0,vall);
-   mygrid->cr_fft3d(vall);
+   mygrid->cr_pfft3b(0,vall);
 
    { nwpw_timing_function ftimer(1);
  
@@ -86,6 +87,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
 
            mygrid->rcc_Sum(xcp+ms*nfft3d,vall,tmp);
            std::memcpy(vpsi,tmp,n2ft3d*sizeof(double));
+
            mygrid->bb_Mul(psi_r+indx1n,vpsi);
 
            mygrid->rc_pfft3f_queuein(nbq1,vpsi);
@@ -107,7 +109,6 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
      }
    }
    
- 
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);

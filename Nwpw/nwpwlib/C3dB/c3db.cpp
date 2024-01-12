@@ -1823,8 +1823,10 @@ void c3db::cc_Mul(const double *ptr1, double *ptr3)
       for (auto i=0; i<m; ++i) 
       {
          int i0r = 2*i;  int i0i = 2*i+1;
-         ptr3[i0r] = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
-         ptr3[i0i] = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+         double x0 = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+         double y0 = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+         ptr3[i0r] = x0;
+         ptr3[i0i] = y0;
       }
    if (nfft3d_map < 5) 
       return;
@@ -1837,20 +1839,35 @@ void c3db::cc_Mul(const double *ptr1, double *ptr3)
       int i3r = 2*i3; int i3i = 2*i3+1;
       int i4r = 2*i4; int i4i = 2*i4+1;
 
-      ptr3[i0r] = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
-      ptr3[i0i] = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+      double x0 = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+      double y0 = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
 
-      ptr3[i1r] = ptr3[i1r]*ptr1[i1r] - ptr3[i1i]*ptr1[i1i];
-      ptr3[i1i] = ptr3[i1r]*ptr1[i1i] + ptr3[i1i]*ptr1[i1r];
+      double x1 = ptr3[i1r]*ptr1[i1r] - ptr3[i1i]*ptr1[i1i];
+      double y1 = ptr3[i1r]*ptr1[i1i] + ptr3[i1i]*ptr1[i1r];
 
-      ptr3[i2r] = ptr3[i2r]*ptr1[i2r] - ptr3[i2i]*ptr1[i2i];
-      ptr3[i2i] = ptr3[i2r]*ptr1[i2i] + ptr3[i2i]*ptr1[i2r];
+      double x2 = ptr3[i2r]*ptr1[i2r] - ptr3[i2i]*ptr1[i2i];
+      double y2 = ptr3[i2r]*ptr1[i2i] + ptr3[i2i]*ptr1[i2r];
 
-      ptr3[i3r] = ptr3[i3r]*ptr1[i3r] - ptr3[i3i]*ptr1[i3i];
-      ptr3[i3i] = ptr3[i3r]*ptr1[i3i] + ptr3[i3i]*ptr1[i3r];
+      double x3 = ptr3[i3r]*ptr1[i3r] - ptr3[i3i]*ptr1[i3i];
+      double y3 = ptr3[i3r]*ptr1[i3i] + ptr3[i3i]*ptr1[i3r];
 
-      ptr3[i4r] = ptr3[i4r]*ptr1[i4r] - ptr3[i4i]*ptr1[i4i];
-      ptr3[i4i] = ptr3[i4r]*ptr1[i4i] + ptr3[i4i]*ptr1[i4r];
+      double x4 = ptr3[i4r]*ptr1[i4r] - ptr3[i4i]*ptr1[i4i];
+      double y4 = ptr3[i4r]*ptr1[i4i] + ptr3[i4i]*ptr1[i4r];
+
+      ptr3[i0r] = x0;
+      ptr3[i0i] = y0;
+
+      ptr3[i1r] = x1;
+      ptr3[i1i] = y1;
+
+      ptr3[i2r] = x2;
+      ptr3[i2i] = y2;
+
+      ptr3[i3r] = x3;
+      ptr3[i3i] = y3;
+
+      ptr3[i4r] = x4;
+      ptr3[i4i] = y4;
    }
    return;
 }  
@@ -1868,8 +1885,10 @@ void c3db::bb_Mul(const double *ptr1, double *ptr3)
       for (auto i=0; i<m; ++i)
       {
          int i0r = 2*i;  int i0i = 2*i+1;
-         ptr3[i0r] = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
-         ptr3[i0i] = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
+         double x0  = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
+         double y0  = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
+         ptr3[i0r] = x0;
+         ptr3[i0i] = y0;
       }
    if (nfft3d_map < 5)
       return;
@@ -1882,20 +1901,35 @@ void c3db::bb_Mul(const double *ptr1, double *ptr3)
       int i3r = 2*i3; int i3i = 2*i3+1;
       int i4r = 2*i4; int i4i = 2*i4+1;
 
-      ptr3[i0r] = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
-      ptr3[i0i] = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
+      double x0 = ptr3[i0r]*ptr1[i0r] + ptr3[i0i]*ptr1[i0i];
+      double y0 = ptr3[i0r]*ptr1[i0i] - ptr3[i0i]*ptr1[i0r];
 
-      ptr3[i1r] = ptr3[i1r]*ptr1[i1r] + ptr3[i1i]*ptr1[i1i];
-      ptr3[i1i] = ptr3[i1r]*ptr1[i1i] - ptr3[i1i]*ptr1[i1r];
+      double x1 = ptr3[i1r]*ptr1[i1r] + ptr3[i1i]*ptr1[i1i];
+      double y1 = ptr3[i1r]*ptr1[i1i] - ptr3[i1i]*ptr1[i1r];
 
-      ptr3[i2r] = ptr3[i2r]*ptr1[i2r] + ptr3[i2i]*ptr1[i2i];
-      ptr3[i2i] = ptr3[i2r]*ptr1[i2i] - ptr3[i2i]*ptr1[i2r];
+      double x2 = ptr3[i2r]*ptr1[i2r] + ptr3[i2i]*ptr1[i2i];
+      double y2 = ptr3[i2r]*ptr1[i2i] - ptr3[i2i]*ptr1[i2r];
 
-      ptr3[i3r] = ptr3[i3r]*ptr1[i3r] + ptr3[i3i]*ptr1[i3i];
-      ptr3[i3i] = ptr3[i3r]*ptr1[i3i] - ptr3[i3i]*ptr1[i3r];
+      double x3 = ptr3[i3r]*ptr1[i3r] + ptr3[i3i]*ptr1[i3i];
+      double y3 = ptr3[i3r]*ptr1[i3i] - ptr3[i3i]*ptr1[i3r];
 
-      ptr3[i4r] = ptr3[i4r]*ptr1[i4r] + ptr3[i4i]*ptr1[i4i];
-      ptr3[i4i] = ptr3[i4r]*ptr1[i4i] - ptr3[i4i]*ptr1[i4r];
+      double x4 = ptr3[i4r]*ptr1[i4r] + ptr3[i4i]*ptr1[i4i];
+      double y4 = ptr3[i4r]*ptr1[i4i] - ptr3[i4i]*ptr1[i4r];
+
+      ptr3[i0r] = x0;
+      ptr3[i0i] = y0;
+
+      ptr3[i1r] = x1;
+      ptr3[i1i] = y1;
+
+      ptr3[i2r] = x2;
+      ptr3[i2i] = y2;
+
+      ptr3[i3r] = x3;
+      ptr3[i3i] = y3;
+
+      ptr3[i4r] = x4;
+      ptr3[i4i] = y4;
    }
    return;
 } 
@@ -3896,7 +3930,6 @@ void c3db::cr_fft3d(double *a)
     *************************/
    else 
    {
- 
       /************************************************
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
@@ -3919,9 +3952,6 @@ void c3db::cr_fft3d(double *a)
        ************************************************/
       mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, 2*nfft3d, a, tmpx);
      
-      zeroend_fftb(nx, nq1, 1, 1, a);
-      if (nfft3d_map < nfft3d)
-         std::memset(a + n2ft3d_map, 0, 2*(nfft3d - nfft3d_map) * sizeof(double));
    }
  
    delete[] tmp3;

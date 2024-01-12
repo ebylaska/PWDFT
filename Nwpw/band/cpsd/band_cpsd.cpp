@@ -383,7 +383,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
 
    /* diagonalize the hamiltonian */
-   mygrid.m_diagonalize(hml, eig);
+   mygrid.w_diagonalize(hml, eig);
 
 
    /* calculate real-space number of electrons, en */
@@ -492,14 +492,14 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       ev = 27.2116;
       for (i=0; i<nn; ++i)
       {
-         std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV)" << std::endl;
+         std::cout << Efmt(18,7) << eig[ne[0]-1-i] << " (" << Ffmt(8,3) << eig[ne[0]-1-i] * ev << "eV)" << std::endl;
       }
       for (i=0; i<ne[1]; ++i)
       {
-         std::cout << Efmt(18,7) << eig[i+nn] << " ("
-                   << Ffmt(8,3)  << eig[i + nn] * ev << "eV) "
-                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " ("
-                   << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
+         std::cout << Efmt(18,7) << eig[ne[0]-1-i-nn] << " ("
+                   << Ffmt(8,3)  << eig[ne[0]-1-i-nn] * ev << "eV) "
+                   << Efmt(18,7) << eig[ne[1]-1-i] << " ("
+                   << Ffmt(8,3)  << eig[ne[1]-1-i]*ev << "eV)" << std::endl;
       }
       std::cout << std::endl;
 
