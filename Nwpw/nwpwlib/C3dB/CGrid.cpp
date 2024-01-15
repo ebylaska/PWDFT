@@ -626,7 +626,7 @@ double CGrid::cc_pack_dot(const int nb, double *a, double *b)
 double CGrid::cc_pack_idot(const int nb, double *a, double *b) 
 {
    int one = 1;
-   int ng = 2 * (nidb[nb]);
+   int ng = 2*(nidb[nb]);
    double tsum = 0.0;
  
    tsum = DDOT_PWDFT(ng, a, one, b, one);

@@ -1225,23 +1225,23 @@ void c3db::c_ZMul(const double da, const double db, double *ptr2)
  *       the arrays. Loop unrolling is applied for efficiency when processing arrays with a size greater
  *       than or equal to 5 elements.
  */
-void c3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2,
-                       double *ptr3) {
-  int i;
-  int m = nfft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
-      ptr3[i] = da * ptr1[i] + ptr2[i];
-  if (nfft3d_map < 5)
-    return;
-  for (i = m; i < nfft3d_map; i += 5) {
-    ptr3[i] = da * ptr1[i] + ptr2[i];
-    ptr3[i + 1] = da * ptr1[i + 1] + ptr2[i + 1];
-    ptr3[i + 2] = da * ptr1[i + 2] + ptr2[i + 2];
-    ptr3[i + 3] = da * ptr1[i + 3] + ptr2[i + 3];
-    ptr3[i + 4] = da * ptr1[i + 4] + ptr2[i + 4];
-  }
-  return;
+void c3db::rrr_SMulAdd(const double da, const double *ptr1, const double *ptr2, double *ptr3) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+         ptr3[i] = da*ptr1[i] + ptr2[i];
+   if (nfft3d_map < 5)
+      return;
+   for (auto i = m; i<nfft3d_map; i+=5) 
+   {
+      ptr3[i]   = da * ptr1[i]   + ptr2[i];
+      ptr3[i+1] = da * ptr1[i+1] + ptr2[i+1];
+      ptr3[i+2] = da * ptr1[i+2] + ptr2[i+2];
+      ptr3[i+3] = da * ptr1[i+3] + ptr2[i+3];
+      ptr3[i+4] = da * ptr1[i+4] + ptr2[i+4];
+   }
+   return;
 }
 
 /********************************

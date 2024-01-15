@@ -35,7 +35,7 @@ public:
 
 
    void NN1_zgemm(int, int, double *, double *, double *, double *, double *, int *);
-   void CN1_zgemm(int, int, double *, double *, double *, double *, double *);
+   void CN1_zgemm(int, int, int, double *, double *, double *, double *, double *);
    void CN2_zgemm(int, int, int, double *, double *, double *, double *, double *);
    void NC2_zgemm(int, int, int, double *, double *, double *, double *, double *);
 
@@ -44,8 +44,8 @@ public:
    void CN_zgemm(int, int, int, double *, double *, int, double *, int, double *, double *,int);
    void NC_zgemm(int, int, int, double *, double *, int, double *, int, double *, double *,int);
 
-   void CN4_zgemm(int, int, double *, double *, double *, double *, double *, double *, double *, double *);
-   void CN3_zgemm(int, int, double *, double *, double *, double *, double *, double *, double *);
+   void CN4_zgemm(int, int, int, double *, double *, double *, double *, double *, double *, double *, double *);
+   void CN3_zgemm(int, int, int, double *, double *, double *, double *, double *, double *, double *);
 
 
    void WW6_zgemm(int, double *, double *, double *, double *, double *, double *);

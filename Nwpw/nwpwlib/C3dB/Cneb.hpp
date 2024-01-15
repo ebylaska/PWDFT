@@ -159,7 +159,7 @@ public:
       double *ptr;
       int nsize;
       if (mb == -1)
-        nsize = 2 * (ne[0]*ne[0] + ne[1]*ne[1]);
+        nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       else
         nsize = 2*ne[mb]*ne[mb];
      
@@ -172,7 +172,7 @@ public:
    double *w_allocate_nbrillq_all() {
       double *ptr;
       int nsize;
-      nsize = 2*(ne[0]*ne[0] + ne[1]*ne[1]);
+      nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       return ptr;
@@ -195,10 +195,8 @@ public:
 
 
  
-   void ffw4_sym_Multiply(const int, double *, double *, double *, double *,
-                          double *, double *);
-   void ffw3_sym_Multiply(const int, double *, double *, double *, double *,
-                          double *);
+   void ffw4_sym_Multiply(const int, const int, double *, double *, double *, double *, double *, double *);
+   void ffw3_sym_Multiply(const int, const int, double *, double *, double *, double *, double *);
    void w_scale_s22_s21_s12_s11(const int, const double, double *s22,
                                 double *s21, double *s12, double *s11);
    void w_scale_s22_s21_s11(const int, const double, double *s22, double *s21,
@@ -215,6 +213,7 @@ public:
                           double *, double *, double *);
  
    void m_scal(const double, double *);
+   void w_scal(const double, double *);
    double w_trace(double *);
    void w_diagonalize(double *, double *);
    void m_diagonalize(double *, double *);

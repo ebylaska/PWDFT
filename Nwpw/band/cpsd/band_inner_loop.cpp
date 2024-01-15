@@ -42,7 +42,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
  
    int ispin = mygrid->ispin;
    int neall = mygrid->neq[0] + mygrid->neq[1];
-   int shift1 = 2*(mygrid->npack(1));
+   int shift1 = 2*mygrid->npack1_max(); 
    int shift2 = (mygrid->n2ft3d);
    int nfft3d = (mygrid->nfft3d);
    int n2ft3d = (mygrid->n2ft3d);
@@ -155,6 +155,14 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mygrid->gg_SMul(dte,Hpsi,psi2);
       mygrid->gg_Sum2(psi1,psi2);
 
+      for (auto i=0; i<4; ++i)
+      {
+         std::cout << "i=" << i << " PSI2=";
+         for (auto ii=0; ii<20; ++ii)
+            std::cout << psi2[ii+i*shift1] << " ";
+         std::cout << std::endl << std::endl;
+      }
+
       if (move)
       {
          // get the ion-ion force 
@@ -174,6 +182,15 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
 
       // lagrange multiplier - Expensive 
       mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
+
+      for (auto i=0; i<4; ++i)
+      {
+         std::cout << "i=" << i << " LPSI2=";
+         for (auto ii=0; ii<20; ++ii)
+            std::cout << psi2[ii+i*shift1] << " ";
+         std::cout << std::endl << std::endl;
+      }
+
    }
 
  
@@ -182,7 +199,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    // total energy calculation 
    mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
 
-   mygrid->m_scal(-1.0, hml);
+   mygrid->w_scal(-1.0, hml);
    eorbit = mygrid->w_trace(hml);
    if (ispin == 1)
      eorbit = eorbit + eorbit;
@@ -244,18 +261,46 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    *deltae = (E[0] - Eold) / (dt * control.loop(0));
  
    // deltac 
-   sumi = new double[neall]();
-   mygrid->ggg_Minus(psi2, psi1, Hpsi);
-   for (auto i=0; i<neall; ++i)
-      sumi[i] = mygrid->cc_pack_idot(1, Hpsi+i*shift1, Hpsi+i*shift1 );
-   mygrid->c3db::parall->Vector_SumAll(1, neall, sumi);
    dc = 0.0;
-   for (auto i = 0; i < neall; ++i)
-     if (sumi[i] > dc)
-       dc = sumi[i];
-   dc = mygrid->c3db::parall->MaxAll(2, dc);
+   mygrid->ggg_Minus(psi2, psi1, Hpsi);
+   for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+   {
+      int nbq1 = nbq+1;
+      sumi = new double[neall]();
+      for (auto i=0; i<neall; ++i)
+      {
+         sumi[i] = mygrid->cc_pack_idot(nbq1, 
+                                        Hpsi+(i+nbq*neall)*shift1, 
+                                        Hpsi+(i+nbq*neall)*shift1);
+         std::cout << "i=" << i << " psi1=";
+         for (auto ii=0; ii<20; ++ii)
+            std::cout << psi1[ii+(i+nbq*neall)*shift1] << " ";
+         std::cout << std::endl << std::endl;
+
+         std::cout << "i=" << i << " psi2=";
+         for (auto ii=0; ii<20; ++ii)
+            std::cout << psi2[ii+(i+nbq*neall)*shift1] << " ";
+         std::cout << std::endl << std::endl;
+
+         std::cout << "i=" << i << " hpsi=";
+         for (auto ii=0; ii<20; ++ii)
+            std::cout << Hpsi[ii+(i+nbq*neall)*shift1] << " ";
+         std::cout << std::endl << std::endl;
+      }
+      mygrid->c3db::parall->Vector_SumAll(1, neall, sumi);
+      std::cout<< "sumi=" << sumi[0] << " " 
+                          << sumi[1] << " " 
+                          << sumi[2] << " " 
+                          << sumi[3] << std::endl;
+      for (auto i = 0; i < neall; ++i)
+         if (sumi[i] > dc)
+            dc = sumi[i];
+      delete[] sumi;
+   }
+   std::cout << "dc=" << dc << std::endl;
+   dc = mygrid->c3db::parall->MaxAll(3, dc);
+   std::cout << "dc1=" << dc << std::endl;
    *deltac = dc / dte;
-   delete[] sumi;
  
    // deltar 
    *deltar = 0.0;
