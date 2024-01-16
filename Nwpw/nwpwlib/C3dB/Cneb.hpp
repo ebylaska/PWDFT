@@ -193,7 +193,6 @@ public:
    void ggw_sym_Multiply(double *, double *, double *);
    void ggw_Multiply(double *, double *, double *);
 
-
  
    void ffw4_sym_Multiply(const int, const int, double *, double *, double *, double *, double *, double *);
    void ffw3_sym_Multiply(const int, const int, double *, double *, double *, double *, double *);

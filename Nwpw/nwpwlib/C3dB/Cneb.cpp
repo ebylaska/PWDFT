@@ -2115,13 +2115,13 @@ void Cneb::w_scale_s22_s21_s12_s11(const int mb, const double dte, double *s22,
       for (auto k=0; k<ne[ms]; ++k) 
       {
          s22[2*indx0]   = (1.0 - s22[2*indx0])   * (0.5 / dte);
-         s22[2*indx0+1] = (1.0 - s22[2*indx0+1]) * (0.5 / dte);
+         s22[2*indx0+1] = (-s22[2*indx0+1]) * (0.5 / dte);
 
          s21[2*indx0]   = (1.0 - s21[2*indx0])   * (0.5);
-         s21[2*indx0+1] = (1.0 - s21[2*indx0+1]) * (0.5);
+         s21[2*indx0+1] = (-s21[2*indx0+1]) * (0.5);
 
          s12[2*indx0]   = (1.0 - s12[2*indx0])   * (0.5);
-         s12[2*indx0+1] = (1.0 - s12[2*indx0+1]) * (0.5);
+         s12[2*indx0+1] = (-s12[2*indx0+1]) * (0.5);
 
          s11[2*indx0]   *= -0.5 * dte;
          s11[2*indx0+1] *= -0.5 * dte;
@@ -2515,65 +2515,9 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
          //ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
          ffw4_sym_Multiply(nbq1, ms, psi1, psi2, s11, s12, s21, s22);
  
-         std::cout << "s11=";
-         for (auto i=0; i<8; ++i) std::cout   << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s11[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "s12=";
-         for (auto i=0; i<8; ++i) std::cout   << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s12[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "s21=";
-         for (auto i=0; i<8; ++i) std::cout   << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s21[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "s22=";
-         for (auto i=0; i<8; ++i) std::cout   << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s22[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
- 
          //w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
          w_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
  
-         std::cout << "S11=";
-         for (auto i=0; i<8; ++i) std::cout   << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s11[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s11[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "S12=";
-         for (auto i=0; i<8; ++i) std::cout   << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s12[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s12[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "S21=";   
-         for (auto i=0; i<8; ++i) std::cout   << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s21[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s21[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
- 
-         std::cout << "S22=";
-         for (auto i=0; i<8; ++i) std::cout   << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=8; i<16; ++i) std::cout  << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=15; i<24; ++i) std::cout << s22[i] << " "; std::cout << std::endl << "   ";
-         for (auto i=23; i<32; ++i) std::cout << s22[i] << " "; std::cout << std::endl;
-         std::cout << std::endl << std::endl;
         
          int jj;
          int ii = 0;
