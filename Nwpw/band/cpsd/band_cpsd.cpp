@@ -264,22 +264,6 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                    << Ffmt(8,3) << gamma1 << std::endl;
       }
 
-      
-      std::cout << "      density cutoff ="
-                << Ffmt(7,3) << mylattice.ecut()
-                << " fft =" << Ifmt(4) << mygrid.nx << " x "
-                            << Ifmt(4) << mygrid.ny << " x "
-                            << Ifmt(4) << mygrid.nz
-                << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves "
-                         << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
-      std::cout << "      wavefnc cutoff ="
-                << Ffmt(7,3) << mylattice.wcut()
-                << " fft =" << Ifmt(4) << mygrid.nx << " x "
-                            << Ifmt(4) << mygrid.ny << " x "
-                            << Ifmt(4) << mygrid.nz
-                << "  (" << Ifmt(8) << mygrid.npack_all(1) << " waves "
-                         << Ifmt(8) << mygrid.npack(1) << " per task)" << std::endl;
-    
       std::cout << "\n";
       std::cout << " Ewald parameters:\n";
       std::cout << "      energy cutoff = "
@@ -300,7 +284,27 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
       std::cout << " brillouin zone:" << std::endl;
       std::cout << mybrillouin.print_zone();
+
+       /* print nbrillouin */
       std::cout << std::endl;
+      std::cout << " computational grids:" << std::endl;
+      std::cout << "      density     cutoff ="
+                << Ffmt(7,3) << mylattice.ecut()
+                << " fft =" << Ifmt(4) << mygrid.nx << " x "
+                            << Ifmt(4) << mygrid.ny << " x "
+                            << Ifmt(4) << mygrid.nz
+                << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves "
+                         << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
+      for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+         std::cout << "      wavefnc"  
+                   << Ifmt(4) << nb+1
+                   << " cutoff ="
+                   << Ffmt(7,3) << mylattice.wcut()
+                   << " fft =" << Ifmt(4) << mygrid.nx << " x "
+                               << Ifmt(4) << mygrid.ny << " x "
+                               << Ifmt(4) << mygrid.nz
+                   << "  (" << Ifmt(8) << mygrid.npack_all_print(nb) << " waves "
+                            << Ifmt(8) << mygrid.npack_print(nb) << " per task)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " technical parameters:\n";

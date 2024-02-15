@@ -1572,7 +1572,7 @@ void Psp1d_pawppv1::cpp_generate_ray(Parallel *myparall, int nray,
  *   Psp1d_pawppv1::cpp_generate_spline    *
  *                                         *
  *******************************************/
-void Psp1d_pawppv1::cpp_generate_spline(CGrid *mygrid, int nray, double *G_ray,
+void Psp1d_pawppv1::cpp_generate_spline(CGrid *mygrid,int nbq, double *kvec, int nray, double *G_ray,
                                         double *vl_ray, double *vlpaw_ray,
                                         double *vnl_ray, double *vl,
                                         double *vlpaw, double *vnl) 
@@ -1607,15 +1607,15 @@ void Psp1d_pawppv1::cpp_generate_spline(CGrid *mygrid, int nray, double *G_ray,
    double q, qx, qy, qz, xx;
    double *gx, *gy, *gz;
    int npack0 = mygrid->npack(0);
-   int npack1 = mygrid->npack(1);
+   int npack1_max = mygrid->npack1_max();
    int nx, lcount;
    mygrid->t_pack_nzero(0, 1, vl);
-   mygrid->t_pack_nzero(1, nbasis, vnl);
+   mygrid->t_pack_max_nzero(nbasis, vnl);
  
    // **** generate vl and vlpaw ****
-   gx = mygrid->Gpackxyz(0, 0);
-   gy = mygrid->Gpackxyz(0, 1);
-   gz = mygrid->Gpackxyz(0, 2);
+   gx = mygrid->Gpackxyz(0,0);
+   gy = mygrid->Gpackxyz(0,1);
+   gz = mygrid->Gpackxyz(0,2);
    for (auto k = 0; k < npack0; ++k) {
      qx = gx[k];
      qy = gy[k];
@@ -1638,91 +1638,101 @@ void Psp1d_pawppv1::cpp_generate_spline(CGrid *mygrid, int nray, double *G_ray,
    }
  
    /* generate vnl */
-   gx = mygrid->Gpackxyz(1, 0);
-   gy = mygrid->Gpackxyz(1, 1);
-   gz = mygrid->Gpackxyz(1, 2);
+   gx = mygrid->Gpackxyz(nbq,0);
+   gy = mygrid->Gpackxyz(nbq,1);
+   gz = mygrid->Gpackxyz(nbq,2);
+   int npack1 = mygrid->npack(nbq+1);
  
-   for (auto k = 0; k < npack1; ++k) {
-     qx = gx[k];
-     qy = gy[k];
-     qz = gz[k];
-     q = sqrt(qx * qx + qy * qy + qz * qz);
-     nx = (int)floor(q / dG);
- 
-     if (q > 1.0e-9) {
-       qx /= q;
-       qy /= q;
-       qz /= q;
-       lcount = 0;
-       for (auto i = 0; i < nbasis; ++i) {
-         int la = lps[i];
- 
-         // **** f projectors ****
-         if (la == 3) {
-           xx = util_splint(G_ray, &(vnl_ray[i * nray]),
-                            &(vnl_splineray[i * nray]), nray, nx, q);
-           vnl[k + lcount * npack1] =
-               xx * qy * (3.00 * (1.00 - qz * qz) - 4.00 * qy * qy) /
-               sqrt(24.00);
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qx * qy * qz;
-           ++lcount;
-           vnl[k + lcount * npack1] =
-               xx * qy * (5.00 * qz * qz - 1.00) / sqrt(40.00);
-           ++lcount;
-           vnl[k + lcount * npack1] =
-               xx * qz * (5.00 * qz * qz - 3.00) / sqrt(60.00);
-           ++lcount;
-           vnl[k + lcount * npack1] =
-               xx * qx * (5.00 * qz * qz - 1.00) / sqrt(40.00);
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qz * (qx * qx - qy * qy) / 2.00;
-           ++lcount;
-           vnl[k + lcount * npack1] =
-               xx * qx * (4.00 * qx * qx - 3.00 * (1.00 - qz * qz)) /
-               sqrt(24.00);
-           ++lcount;
+   for (auto k=0; k<npack1; ++k) 
+   {
+      qx = gx[k] + kvec[0];
+      qy = gy[k] + kvec[1];
+      qz = gz[k] + kvec[2];
+      q = sqrt(qx*qx + qy*qy + qz*qz);
+      nx = (int)floor(q / dG);
+     
+      if (q > 1.0e-9) 
+      {
+         qx /= q;
+         qy /= q;
+         qz /= q;
+         lcount = 0;
+         for (auto i=0; i<nbasis; ++i) 
+         {
+            int la = lps[i];
+           
+            // **** f projectors ****
+            if (la == 3) 
+            {
+               xx = util_splint(G_ray, &(vnl_ray[i*nray]),
+                                       &(vnl_splineray[i*nray]), nray, nx, q);
+               vnl[k + lcount*npack1_max] = xx*qy* (3.00*(1.00 - qz*qz) - 4.00*qy*qy) / sqrt(24.00);
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qx*qy*qz;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qy*(5.00*qz*qz - 1.00) / sqrt(40.00);
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qz*(5.00*qz*qz - 3.00) / sqrt(60.00);
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qx*(5.00*qz*qz - 1.00) / sqrt(40.00);
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qz*(qx*qx - qy*qy) / 2.00;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qx*(4.00*qx*qx - 3.00*(1.00 - qz*qz)) / sqrt(24.00);
+               ++lcount;
+            }
+           
+            // **** d projectors ****
+            if (la == 2) 
+            {
+               xx = util_splint(G_ray, &(vnl_ray[i*nray]),
+                                       &(vnl_splineray[i*nray]), nray, nx, q);
+               vnl[k + lcount*npack1_max] = xx*qx*qy;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qy*qz;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*(3.00*qz*qz - 1.00) / (2.00*sqrt(3.00));
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qz*qx;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*(qx*qx - qy*qy) / (2.00);
+               ++lcount;
+            }
+           
+            // **** p projectors ****
+            if (la == 1) 
+            {
+               xx = util_splint(G_ray, &(vnl_ray[i*nray]),
+                                       &(vnl_splineray[i*nray]), nray, nx, q);
+              /*
+              vnl[k + lcount * npack1_max] = xx * qy;
+              ++lcount;
+              vnl[k + lcount * npack1_max] = xx * qz;
+              ++lcount;
+              vnl[k + lcount * npack1_max] = xx * qx;
+              ++lcount;
+              */
+           
+               vnl[k + lcount*npack1_max] = xx*qx;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qy;
+               ++lcount;
+               vnl[k + lcount*npack1_max] = xx*qz;
+               ++lcount;
+            }
+           
+            /* s projectors */
+            if (la == 0) 
+            {
+               xx = util_splint(G_ray, &(vnl_ray[i*nray]),
+                                       &(vnl_splineray[i*nray]), nray, nx, q);
+               vnl[k + lcount*npack1_max] = xx;
+               ++lcount;
+            }
          }
- 
-         // **** d projectors ****
-         if (la == 2) {
-           xx = util_splint(G_ray, &(vnl_ray[i * nray]),
-                            &(vnl_splineray[i * nray]), nray, nx, q);
-           vnl[k + lcount * npack1] = xx * qx * qy;
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qy * qz;
-           ++lcount;
-           vnl[k + lcount * npack1] =
-               xx * (3.00 * qz * qz - 1.00) / (2.00 * sqrt(3.00));
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qz * qx;
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * (qx * qx - qy * qy) / (2.00);
-           ++lcount;
-         }
- 
-         // **** p projectors ****
-         if (la == 1) {
-           xx = util_splint(G_ray, &(vnl_ray[i * nray]),
-                            &(vnl_splineray[i * nray]), nray, nx, q);
-           vnl[k + lcount * npack1] = xx * qy;
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qz;
-           ++lcount;
-           vnl[k + lcount * npack1] = xx * qx;
-           ++lcount;
-         }
- 
-         /* s projectors */
-         if (la == 0) {
-           xx = util_splint(G_ray, &(vnl_ray[i * nray]),
-                            &(vnl_splineray[i * nray]), nray, nx, q);
-           vnl[k + lcount * npack1] = xx;
-           ++lcount;
-         }
-       }
-     }
+      }
    }
+   
  
    delete[] tmp_splineray;
    delete[] vnl_splineray;

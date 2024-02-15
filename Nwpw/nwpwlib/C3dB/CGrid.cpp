@@ -91,6 +91,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
 
+   // for printing grid values
+   nidb_print      = new (std::nothrow) int[nbrillouin]();
+   nwave_all_print = new (std::nothrow) int[nbrillouin]();
  
    // aligned Memory
    nidb         = new (std::nothrow) int[nbrillq+1]();
@@ -501,6 +504,19 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          }
       }
    }
+
+   /* initialize print_grid */
+   std::memset(nidb_print,0,nbrillouin*sizeof(int));
+   std::memset(nwave_all_print,0,nbrillouin*sizeof(int));
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      auto nb = k1db::ktoptok(nbq);
+      nidb_print[nb]      = nidb[1+nbq];
+      nwave_all_print[nb] = nwave_all[1+nbq];
+   }
+   c3db::parall->Vector_ISumAll(3,nbrillouin,nidb_print);
+   c3db::parall->Vector_ISumAll(3,nbrillouin,nwave_all_print);
+
  
    /* initialize pfft3 queues */
    staged_gpu_fft_pipeline = staged_gpu_fft_pipeline0 && c3db::mygdevice.has_gpu();
@@ -695,11 +711,12 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
 void CGrid::cc_pack_inprjzdot(const int nb, int nn, int nprj, double *a,
                               double *b, double *sum) 
 {  
+   int npack1 = (nidb1_max);
    int ng = (nidb[nb]);
    double rone[2] = {1.0,0.0};
    double rzero[2] = {0.0,0.0}; 
    
-   c3db::mygdevice.CN2_zgemm(nn, nprj, ng, rone, a, b, rzero, sum);
+   c3db::mygdevice.CN2_zgemm(nn, nprj, npack1, ng, rone, a, b, rzero, sum);
 }  
 
 
@@ -905,6 +922,17 @@ void CGrid::t_pack_nzero(const int nb, const int n, double *a)
 {
    int ng = n * (nidb[nb]);
    std::memset(a, 0, ng * sizeof(double));
+}
+
+/********************************
+ *                              *
+ *     CGrid:t_pack_max_nzero   *
+ *                              *
+ ********************************/
+void CGrid::t_pack_max_nzero(const int n, double *a)
+{
+   int ng = n*(nidb1_max);
+   std::memset(a, 0, ng*sizeof(double));
 }
 
 

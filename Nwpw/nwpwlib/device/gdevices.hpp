@@ -225,10 +225,10 @@ public:
 
   /// DOUBLE COMPLEX BLAS
 
-  void NN1_zgemm(int npack, int ne, double *alpha, double *host_a, double *host_b,
+  void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
                 double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack,
-                host_b, ne, beta, host_c, npack);
+    ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1,
+                host_b, ne, beta, host_c, npack1);
   }              
 
   void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
@@ -237,16 +237,16 @@ public:
                 host_b, npack1, beta, host_c, ne);
   }  
 
-  void CN2_zgemm(int ne, int nprj, int npack, double *alpha, double *host_a,
+  void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
                  double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack,
-                host_b, npack, beta, host_c, ne);
+    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
+                host_b, npack1, beta, host_c, ne);
   }
 
-  void NC2_zgemm(int npack, int ne, int nprj,  double *alpha, double *host_a,
+  void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
                  double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack,
-                host_b, ne, beta, host_c, npack);
+    ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
+                host_b, ne, beta, host_c, npack1);
   }
 
                  

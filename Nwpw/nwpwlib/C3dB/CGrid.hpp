@@ -32,6 +32,7 @@ class CGrid : public k1db, public c3db {
    double Gmax, Gmin;
    int **masker, **packarray;
    int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2, nidb1_max;
+   int *nwave_all_print, *nidb_print;
 
    double *p_kvector, *p_weight;
  
@@ -77,6 +78,9 @@ public:
       delete [] nwave_all;
       delete [] nidb;
       delete [] nidb2;
+      delete [] nwave_all_print;
+      delete [] nidb_print;
+
       for (auto nb=0; nb<=nbrillq; ++nb)
       {
          delete [] Gpack[nb];
@@ -141,8 +145,10 @@ public:
    double pbrill_weight(const int i)   { return p_weight[i]; }
  
    int npack1_max() { return (nidb1_max); }
-   int npack(const int nb) { return (nidb[nb]); }
-   int npack_all(const int nb) { return nwave_all[nb]; }
+   int npack(const int nbq) { return (nidb[nbq]); }
+   int npack_all(const int nbq) { return nwave_all[nbq]; }
+   int npack_print(const int nb) { return (nidb_print[nb]); }
+   int npack_all_print(const int nb) { return nwave_all_print[nb]; }
    int isbalanced() { return balanced; }
  
    double *c_pack_allocate(const int nb) {
@@ -188,6 +194,7 @@ public:
    void t_pack(const int, double *);
    void tt_pack_copy(const int, const double *, double *);
    void t_pack_nzero(const int, const int, double *);
+   void t_pack_max_nzero(const int, double *);
 
    void tcc_pack_Mul(const int, const double *, const double *, double *);
    void tcc_pack_iMul(const int, const double *, const double *, double *);

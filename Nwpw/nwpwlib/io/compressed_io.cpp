@@ -161,19 +161,26 @@ void cread(int unit, char *c, const int n)
 
 }
 
-void iread(const int unit, int *i, const int n) 
+int iread(const int unit, int *i, const int n) 
 {
    // Int64 *itmp = (Int64 *) malloc((n+1)*sizeof(Int64));
    Int64 *itmp;
    itmp = new Int64[n];
 
    //BUFFERED_READ(unit, itmp, sizeof(Int64), n);
-   (void)fread(itmp, sizeof(Int64), n, fd[unit]);
+   //(void)fread(itmp, sizeof(Int64), n, fd[unit]);
+
+   if (fread(itmp, sizeof(Int64), n, fd[unit]) != static_cast<size_t>(n))
+   {
+      delete[] itmp;
+      return 0; // Return 0 to indicate failure
+   }
 
    for (int j = 0; j < n; ++j)
-     i[j] = (int)itmp[j];
-   // free(itmp);
+      i[j] = static_cast<int>(itmp[j]);
+  
    delete[] itmp;
+   return 1; // Return 1 to indicate success
 }
 
 void dread(const int unit, double *d, const int n) 

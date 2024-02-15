@@ -176,7 +176,6 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
    }
 
- 
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 
    // total energy calculation 

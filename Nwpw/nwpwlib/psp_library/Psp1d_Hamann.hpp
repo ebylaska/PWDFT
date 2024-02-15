@@ -62,7 +62,7 @@ public:
 
   void cpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
   void cpp_generate_local_spline(CGrid *, int, double *, double *, double *, double *, double *);
-  void cpp_generate_nonlocal_spline(CGrid *, double *, int,  double *, double *, double *);
+  void cpp_generate_nonlocal_spline(CGrid *, int, double *, int,  double *, double *, double *);
 
 };
 

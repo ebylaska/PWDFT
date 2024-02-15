@@ -30,6 +30,9 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
    int tnp = mygrid->c3db::parall->np();
    int tid = mygrid->c3db::parall->taskid();
    Lattice *lattice = mygrid->lattice;
+   int npack_max = mygrid->npack1_max();
+   int npack0 = mygrid->npack(0);
+   npack_max = (npack_max>npack0 ? npack_max : npack0);
  
    int nx = mygrid->nx;
    int ny = mygrid->ny;
@@ -54,9 +57,9 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
  
    for (auto nbq=0; nbq<maxsize; ++nbq)
    {
-      i_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
-      j_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
-      k_indx[nbq] = new (std::nothrow) int[mygrid->npack(0)]();
+      i_indx[nbq] = new (std::nothrow) int[npack_max]();
+      j_indx[nbq] = new (std::nothrow) int[npack_max]();
+      k_indx[nbq] = new (std::nothrow) int[npack_max]();
    }
    
    ii_indx = new (std::nothrow) int[mygrid->nfft3d]();
@@ -241,12 +244,14 @@ void CStrfac::strfac_pack_cxr(const int nbq1, const int nbq, const int ii, doubl
    int nion = (myion->nion);
    double cc = cxreal[ii+nbq*nion];
    double dd = cximag[ii+nbq*nion];
+   //std::cout << "   :: ii=" << ii << " cc=" << cc << " dd=" << dd << std::endl;
 
 
    int npack = mygrid->npack(nbq1);
    int nx = mygrid->nx;
    int ny = mygrid->ny;
    int nz = mygrid->nz;
+   //std::cout << "   :: ii=" << ii << " nx=" << nx << " ny=" << ny << " nz=" << nz << " npack=" << npack << std::endl;
 
    const int *indxi = i_indx[nbq1];
    const int *indxj = j_indx[nbq1];
@@ -260,6 +265,11 @@ void CStrfac::strfac_pack_cxr(const int nbq1, const int nbq, const int ii, doubl
    double ai,aj,ak,bi,bj,bk,c,d,aa,bb;
    for (auto i=0; i<npack; ++i)
    {
+    //  std::cout << "   :: ii=" << ii << " i=" << i 
+    //            << " indxi=" << indxi[i] 
+    //            << " indxj=" << indxj[i] 
+    //            << " indxk=" << indxk[i] << std::endl;
+
       ai = exi[2*indxi[i]]; bi = exi[2*indxi[i] + 1];
       aj = exj[2*indxj[i]]; bj = exj[2*indxj[i] + 1];
       ak = exk[2*indxk[i]]; bk = exk[2*indxk[i] + 1];
@@ -270,6 +280,9 @@ void CStrfac::strfac_pack_cxr(const int nbq1, const int nbq, const int ii, doubl
 
       strx[2*i]  = cc*aa - dd*bb;
       strx[2*i+1]= cc*bb + dd*aa;
+     // std::cout << "   :: ii=" << ii << " i=" << i 
+     //           << " strx_real=" << strx[2*i]
+     //           << " strx_imag=" << strx[2*i+1] << std::endl;
 
       //strx[2*i]   = (ai*c - bi*d);
       //strx[2*i+1] = (ai*d + bi*c);

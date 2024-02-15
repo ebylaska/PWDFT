@@ -935,8 +935,8 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
 {  
    nwpw_timing_function ftimer(15);
    
-   int npack1 = CGrid::npack1_max();
-   int npack2 = 2*CGrid::npack1_max();
+   int npack1_max = CGrid::npack1_max();
+   int npack2_max = 2*CGrid::npack1_max();
    //int ng0    = 2*CGrid::nzero(1);
       
    int one = 1;
@@ -952,7 +952,7 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
       {
           if (ne[ms]>0)
           {
-             auto shift0 = ms*neq[0]*npack2;
+             auto shift0 = ms*neq[0]*npack2_max;
              auto shift2 = ms*ishift2;
              c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                            ne[ms],ne[ms],npack1_all,128,
@@ -985,11 +985,11 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
       for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
          int nbq1 = nbq+1;
-         int npack = CGrid::npack(nbq1);
+         int npack1 = CGrid::npack(nbq1);
          for (auto ms=0; ms<ispin; ++ms)
          {
             auto n = ne[ms];
-            c3db::mygdevice.CN1_zgemm(npack1,npack,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+            c3db::mygdevice.CN1_zgemm(npack1_max,npack1,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
            
             for (auto k=0; k<n; ++k)
             for (auto j=k+1; j<n; ++j)
@@ -1000,7 +1000,7 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
             for (auto k=0; k<n; ++k)
                hml[mshift0+2*(k+k*n)+1] = 0.0;
       
-            shift0  += ne[ms]*npack2;
+            shift0  += ne[ms]*npack2_max;
             mshift0 += 2*ne[ms]*ne[ms];
          }
       }
@@ -1031,8 +1031,8 @@ void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml)
    nwpw_timing_function ftimer(15);
  
    int one = 1;
-   int npack1 = CGrid::npack1_max();
-   int npack2 = 2*CGrid::npack1_max();
+   int npack1_max = CGrid::npack1_max();
+   int npack2_max = 2*CGrid::npack1_max();
    //int ng0 = 2 * CGrid::nzero(1);
  
    double rzero[2] = {0.0,0.0};
@@ -1053,7 +1053,7 @@ void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml)
       {  
           if (ne[ms]>0) 
           { 
-             auto shift0 = ms*neq[0]*npack1;
+             auto shift0 = ms*neq[0]*npack1_max;
              auto shift2 = ms*ishift2;
              c1db::CMatrix_zgemm2c(c1db::parall, &mygdevice,
                            ne[ms],ne[ms],npack1_all,128,
@@ -1072,17 +1072,17 @@ void Cneb::ggw_Multiply(double *psi1, double *psi2, double *hml)
       for (auto nbq=0; nbq<nbrillq; ++nbq)
       {
          int nbq1 = nbq+1;
-         int npack = CGrid::npack(nbq1);
+         int npack1 = CGrid::npack(nbq1);
 
-         int shift0  = nbq*(neq[0]+neq[1])*npack2;
+         int shift0  = nbq*(neq[0]+neq[1])*npack2_max;
          int mshift0 = nbq*2*(ne[0]*ne[0]+ne[1]*ne[1]);
          for (auto ms=0; ms<ispin; ++ms) 
          {
             int n = ne[ms];
-            c3db::mygdevice.CN1_zgemm(npack1,npack,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
+            c3db::mygdevice.CN1_zgemm(npack1_max,npack1,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
            
            
-            shift0 += npack2*neq[0];
+            shift0 += npack2_max*neq[0];
             mshift0 += 2*ne[0]*ne[0];
          }
       }

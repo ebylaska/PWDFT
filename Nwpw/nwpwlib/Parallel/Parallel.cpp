@@ -510,11 +510,11 @@ void Parallel::Brdcst_Values(const int d, const int root, const int n,
  * - On the root process, this function sends the values. On non-root processes, it receives the values.
  * - After the function call, all processes in the communicator will have the same values in the `sum` array.
  */
-void Parallel::Brdcst_iValues(const int d, const int root, const int n,
-                              int *sum) {
-  // if (npi[d]>1) comm_i[d].Bcast(sum,n,MPI_INTEGER,root);
-  if (npi[d] > 1)
-    MPI_Bcast(sum, n, MPI_INTEGER, root, comm_i[d]);
+void Parallel::Brdcst_iValues(const int d, const int root, const int n, int *sum) 
+{
+   // if (npi[d]>1) comm_i[d].Bcast(sum,n,MPI_INTEGER,root);
+   if (npi[d] > 1)
+      MPI_Bcast(sum, n, MPI_INTEGER, root, comm_i[d]);
 }
 
 

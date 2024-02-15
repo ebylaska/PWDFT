@@ -30,13 +30,14 @@ cKinetic_Operator::cKinetic_Operator(Cneb *mygrid)
    int npack1_max = mycneb->npack1_max();
    tg = new double[nbrillq*npack1_max];
    //double *tmp = new double[mygrid->nfft3d];
+   std::memset(tg,0.0,nbrillq*npack1_max);
  
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
       int npack1     = mycneb->npack(1+nbq);
-      double *Gpackx = mycneb->Gpackxyz(nbq,0);
-      double *Gpacky = mycneb->Gpackxyz(nbq,1);
-      double *Gpackz = mycneb->Gpackxyz(nbq,2);
+      double *Gpackx = mycneb->Gpackxyz(1+nbq,0);
+      double *Gpacky = mycneb->Gpackxyz(1+nbq,1);
+      double *Gpackz = mycneb->Gpackxyz(1+nbq,2);
 
       double *kv = mycneb->pbrill_kvector(nbq);
       double *tmp_tg = tg + nbq*npack1_max;
@@ -65,21 +66,28 @@ void cKinetic_Operator::ke(const double *psi, double *tpsi)
    int nbqsize    = mycneb->nbrillq;
    int nsize      = mycneb->neq[0] + mycneb->neq[1];
    int npack1_max = mycneb->npack1_max();
+   int shift1 = 2*npack1_max;
+   int indx1n = 0;
 
-   int k1 = 0;
-   int k2 = 1;
    for (auto nbq=0; nbq<nbqsize; ++nbq)
    {
       int npack1  = mycneb->npack(1+nbq);
       double *tmp_tg = tg + nbq*npack1_max;
 
       for (auto n=0; n<nsize; ++n)
-      for (auto k=0; k<npack1; ++k) 
       {
-        tpsi[k1] += tmp_tg[k] * psi[k1];
-        tpsi[k2] += tmp_tg[k] * psi[k2];
-        k1 += 2;
-        k2 += 2;
+         const double *tmp_psi  = psi  + indx1n;
+         double       *tmp_tpsi = tpsi + indx1n;
+         int k1 = 0;
+         int k2 = 1;
+         for (auto k=0; k<npack1; ++k) 
+         {
+           tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
+           tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
+           k1 += 2;
+           k2 += 2;
+         }
+         indx1n += shift1;
       }
    }
 }
@@ -96,10 +104,10 @@ double cKinetic_Operator::ke_ave(const double *psi)
    int nbqsize    = mycneb->nbrillq;
    int nsize      = mycneb->neq[0] + mycneb->neq[1];
    int npack1_max = mycneb->npack1_max();
+   int shift1 = 2*npack1_max;
+   int indx1n = 0;
  
    double ave = 0.0;
-   int k1 = 0;
-   int k2 = 1;
    for (auto nbq=0; nbq<nbqsize; ++nbq)
    {
       int npack1     = mycneb->npack(1+nbq);
@@ -107,11 +115,17 @@ double cKinetic_Operator::ke_ave(const double *psi)
       double *tmp_tg = tg + nbq*npack1_max;
 
       for (auto n=0; n<nsize; ++n) 
-      for (auto k=0; k<npack1; ++k) 
       {
-         ave += weight*tmp_tg[k] * (psi[k1] * psi[k1] + psi[k2] * psi[k2]);
-         k1 += 2;
-         k2 += 2;
+         const double *tmp_psi = psi + indx1n;
+         int k1 = 0; 
+         int k2 = 1;
+         for (auto k=0; k<npack1; ++k) 
+         {
+            ave += weight*tmp_tg[k]*(tmp_psi[k1]*tmp_psi[k1] + tmp_psi[k2]*tmp_psi[k2]);
+            k1 += 2;
+            k2 += 2;
+         }
+         indx1n += shift1;
       }
    }
 
