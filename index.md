@@ -2,6 +2,7 @@
 
 Based on [NWPW](https://nwchemgit.github.io/Plane-Wave-Density-Functional-Theory.html) module in [NWChem](https://nwchemgit.github.io/index.html)
 
+https://pubs.acs.org/doi/10.1021/acs.chemrev.0c00998
 
 We would like thank the DOE ECC program and the DOE OS OBER EMSL project for providing support that helped with the initial development of PWDFT.
 
