@@ -1,6 +1,6 @@
-# TinyArrows (A Tiny Version of EMSL Arrows) - Evolution of Chemical and Materials Computation
+# PWDFT - PW-DFT development for NWChemEx
 
-We would like thank the DOD SERDP program and the DOE OS OBER EMSL project for providing support that helped with the initial development of EMSL Arrows.
+We would like thank the DOE ECC program and the DOE OS OBER EMSL project for providing support that helped with the initial development of PWDFT.
 
 [*' EMSL Arrows API*'](https://arrows.emsl.pnnl.gov/api)
 <iframe width="560" height="315" src="//www.youtube.com/embed/6cIwx63qiQM" frameborder="0" allowfullscreen></iframe>
