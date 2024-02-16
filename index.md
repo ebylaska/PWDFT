@@ -1,5 +1,7 @@
 # PWDFT - PW-DFT development for [NWChemEx](https://www.exascaleproject.org/research-project/nwchemex/)
 
+Based on [NWPW](https://nwchemgit.github.io/Plane-Wave-Density-Functional-Theory.html) module in [NWChem](https://nwchemgit.github.io/index.html)
+
 
 We would like thank the DOE ECC program and the DOE OS OBER EMSL project for providing support that helped with the initial development of PWDFT.
 
