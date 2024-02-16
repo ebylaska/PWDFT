@@ -1836,33 +1836,5 @@ public:
       }
    }
 
-  void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
-  {
-     int n, ierr;
-     int nn = ne[0] * ne[0] + 14;
-     double xmp1[nn];
-     double rmp1[nn];
-     // double *xmp1 = new (std::nothrow) double[nn]();
-    
-     int shift1 = 0;
-     int shift2 = 0;
-     for (int ms=0; ms<ispin; ++ms) 
-     {
-        n = ne[ms];
-       
-        // eigen_(&n,&n,&hml[shift2],&eig[shift1],xmp1,&ierr);
-        //  d3db::parall->Barrier();
-        ZEIGEN_PWDFT(n, host_hml + shift2, host_eig + shift1, xmp1, nn, rmp1, ierr);
-        // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
-        // EIGEN_PWDFT failed!"));
-      
-        //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
-        shift1 += 2*ne[0];
-        shift2 += 4*ne[0]*ne[0];
-     } 
-  }
-
-
-
 
 };
