@@ -28,8 +28,10 @@ nwpw
   cutoff 30.0
   xc lda
   lmbfgs
-  #np_dimensions -1 -1 2
+  np_dimensions 1 1 2
+  #monkhorst-pack 2 2 2
   steepest_descent
+     tolerances 1.0e-12 1.0e-12
      #geometry_optimize
      loop 1 1
   end
