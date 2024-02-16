@@ -1,5 +1,4 @@
-# PWDFT - PW-DFT development for NWChemEx [*' NWChemEx*'](https://www.exascaleproject.org/research-project/nwchemex/)
-
+# PWDFT - PW-DFT development for [NWChemEx](https://www.exascaleproject.org/research-project/nwchemex/)
 
 
 We would like thank the DOE ECC program and the DOE OS OBER EMSL project for providing support that helped with the initial development of PWDFT.
