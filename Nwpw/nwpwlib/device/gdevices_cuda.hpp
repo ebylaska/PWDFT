@@ -911,110 +911,67 @@ public:
                 host_b, ne, beta, host_c, npack1);
   }   
       
-
-
-   /**************************************
-    *                                    *
-    *              NN_zgemm              *
-    *                                    *
-    **************************************/
-   void NN_zgemm(int m, int n, int k,
-                 double alpha,
+                 
+  void NN_zgemm(int m, int n, int k,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
-                 double *host_c,int ldc)
-   {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
-    
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda, k, sizeof(double), host_a, lda, dev_mem[ia], lda, stream[0]));
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb, n, sizeof(double), host_b, ldb, dev_mem[ib], ldb, stream[0]));
-    
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle,matN,matN,m,n,k,
-                                    &alpha,
-                                    dev_mem[ia],lda,
-                                    dev_mem[ib],ldb,
-                                    &beta,
-                                    dev_mem[ic],ldc));
-      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-    
-      inuse[ia] = false;
-      inuse[ib] = false;
-      inuse[ic] = false;
-   }
+                 double *beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }    
 
-
-   /**************************************
-    *                                    *
-    *              CN_zgemm              *
-    *                                    *
-    **************************************/
-   void CN_zgemm(int m, int n, int k,
-                 double alpha,
+  void CN_zgemm(int m, int n, int k,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
-                 double *host_c,int ldc)
-   {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
-   
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda, k, sizeof(double), host_a, lda, dev_mem[ia], lda, stream[0]));
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb, n, sizeof(double), host_b, ldb, dev_mem[ib], ldb, stream[0]));
-   
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle,matN,matN,m,n,k,
-                                    &alpha,
-                                    dev_mem[ia],lda,
-                                    dev_mem[ib],ldb,
-                                    &beta,
-                                    dev_mem[ic],ldc));
-      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-   
-      inuse[ia] = false;
-      inuse[ib] = false;
-      inuse[ic] = false;
-   }
+                 double *beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }
 
-   /**************************************
-    *                                    *
-    *              NC_zgemm              *
-    *                                    *
-    **************************************/
-   void NC_zgemm(int m, int n, int k,
-                 double alpha,
+  void NC_zgemm(int m, int n, int k,
+                 double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
-                 double beta,
-                 double *host_c,int ldc)
-   {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
-   
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(lda, k, sizeof(double), host_a, lda, dev_mem[ia], lda, stream[0]));
-      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(ldb, n, sizeof(double), host_b, ldb, dev_mem[ib], ldb, stream[0]));
-   
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-      NWPW_CUBLAS_ERROR(cublasDgemm(master_handle,matN,matN,m,n,k,
-                                    &alpha,
-                                    dev_mem[ia],lda,
-                                    dev_mem[ib],ldb,
-                                    &beta,
-                                    dev_mem[ic],ldc));
-      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]));
-      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-   
-      inuse[ia] = false;
-      inuse[ib] = false;
-      inuse[ic] = false;
-   }
+                 double *beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }
+
+
+  void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                 double *host_b, double *beta, double *host_caa,
+                 double *host_cab, double *host_cbb) {
+    int one = 1;
+    int shift1 = 0;
+    int mshift1 = 0;
+
+    for (auto k = 1; k <= ne; ++k)
+    {
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                   alpha,
+                   host_a, npack1,
+                   host_a + shift1, npack1,
+                   beta,
+                   host_caa + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                   alpha,
+                   host_a, npack1,
+                   host_b + shift1, npack1,
+                   beta,
+                   host_cab + mshift1, k);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                   alpha,
+                   host_b, npack1,
+                   host_b + shift1, npack1,
+                   beta,
+                   host_cbb + mshift1, k);
+       shift1 += 2*npack;
+       mshift1 += 2*ne;
+    }
+  }
+
 
   void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                  double *host_b, double *beta, double *host_caa,
