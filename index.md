@@ -2,19 +2,9 @@
 
 We would like thank the DOE ECC program and the DOE OS OBER EMSL project for providing support that helped with the initial development of PWDFT.
 
-[*' EMSL Arrows API*'](https://arrows.emsl.pnnl.gov/api)
-<iframe width="560" height="315" src="//www.youtube.com/embed/6cIwx63qiQM" frameborder="0" allowfullscreen></iframe>
-
-Tutorial on YouTube (mobile devices)
-
-> Click here to try out Arrows by sending it an email
-
 Are you just learning NWChem and would like to have an easy way to generate input decks, check your output decks against a large database of calculations, perform simple thermochemistry calculations, calculate the NMR and IR spectra of modest size molecule, or just try out NWChem before installing it? EMSL Arrows scientific service can help. A Web API to EMSL Arrows is now available for Alpha testing. Click on this link.
 
 For more information contact Eric Bylaska (eric.bylaska@pnnl.gov)
-
-[*' EMSL Arrows API*'](https://arrows.emsl.pnnl.gov/api)
-The difficulty of simulating the thermodynamic and kinetic properties of new materials is convoluted by the sensitivity of the processes at the macroscopic scale to the atomic scale; the unusual and unexpected bonding behaviors of the materials; the complex extreme temperature and pressure environments likely to be encountered; and the requirements that simulations be as parameter free as possible and extremely reliable. The tools of quantum chemistry and statistical mechanics combined with advanced parallel packages such as NWChem have proved to be very effective and productive. Not surprisingly, programs that implement these types of tools make up a large fraction of DOE OS supercomputer cycles. Despite these hugely successful theoretical developments, reliable calculations of this type require considerable computational effort and often the use of codes with difficult input decks.
 
 The NWChem molecular modeling software implements a robust and diverse set of molecular theories that can estimate the thermodynamics and kinetics of molecules and materials. It arguably has the most capabilities of any molecular modeling code today. The problem with NWChem and other molecular modeling codes is that:
 
