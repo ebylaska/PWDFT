@@ -350,7 +350,6 @@ public:
 
   }
 
-
   void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
                  double *host_sa0, double *host_sa1, double *host_st1) {
      double rone[2]  = {1.0,0.0};
@@ -372,7 +371,6 @@ public:
      ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
                  host_st1, ne, rone, host_sa1, ne);
   }  
-
 
 
   void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
