@@ -33,6 +33,7 @@ public:
    /* functions */
  
    std::string print_zone();
+   std::string print_zone_point(const int);
 
 
 };

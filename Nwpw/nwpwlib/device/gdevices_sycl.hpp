@@ -1016,7 +1016,7 @@ public:
                    host_b + shift1, npack1,
                    beta,
                    host_cbb + mshift1, k);
-       shift1 += 2*npack;
+       shift1 += 2*npack1;
        mshift1 += 2*ne;
     }
 
@@ -1050,7 +1050,7 @@ public:
                    host_b + shift1, npack1,
                    beta,
                    host_cbb + mshift1, k);
-       shift1 += 2*npack;
+       shift1 += 2*npack1;
        mshift1 += 2*ne;
     }
   }

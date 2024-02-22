@@ -100,6 +100,31 @@ std::string Brillouin::print_zone()
    return stream.str();
 }
 
+/*******************************************
+ *                                         *
+ *        Brillouin::print_zone_point      *
+ *                                         *
+ *******************************************/
+std::string Brillouin::print_zone_point(const int nb)
+{
+   std::stringstream stream;
+
+   std::ios init(NULL);
+   init.copyfmt(stream);
+
+   stream << " Brillouin zone point: " << Ifmt(3) << nb+1 << std::endl;
+   stream << "   weight = " << Ffmt(8,3) << weight[nb] << std::endl
+          << "   k = <" << Ffmt(8,3) << ksvector[3*nb]   << " "
+                       << Ffmt(8,3) << ksvector[3*nb+1] << " "
+                       << Ffmt(8,3) << ksvector[3*nb+2] << "> . <b1,b2,b3>" << std::endl 
+          << "     = <" << Ffmt(8,3) << kvector[3*nb]   << " "
+                      << Ffmt(8,3) << kvector[3*nb+1] << " "
+                      << Ffmt(8,3) << kvector[3*nb+2] << "> " << std::endl;
+   return stream.str();
+}
+
+
+
 
 
 } // namespace pwdft

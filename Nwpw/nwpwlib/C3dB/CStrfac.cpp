@@ -190,14 +190,16 @@ void CStrfac::phafac_k()
    double *rion1 = myion->rion1;
 
    for (auto nbq=0; nbq<(maxsize); ++nbq)
-   for (auto ii=0; ii<nion; ++ii) 
    {
-     double pfac = mygrid->pbrill_kvector(nbq)[0]*rion1[3*ii]
-                 + mygrid->pbrill_kvector(nbq)[1]*rion1[3*ii+1]
-                 + mygrid->pbrill_kvector(nbq)[2]*rion1[3*ii+2];
-
-      cxreal[ii+nion*nbq] = std::cos(pfac);
-      cximag[ii+nion*nbq] = std::sin(pfac);
+      double kx = mygrid->pbrill_kvector(nbq)[0];
+      double ky = mygrid->pbrill_kvector(nbq)[1];
+      double kz = mygrid->pbrill_kvector(nbq)[2];
+      for (auto ii=0; ii<nion; ++ii) 
+      {
+         double pfac = kx*rion1[3*ii] + ky*rion1[3*ii+1] + kz*rion1[3*ii+2];
+         cxreal[ii+nion*nbq] = std::cos(pfac);
+         cximag[ii+nion*nbq] = std::sin(pfac);
+      }
    }
 }
 

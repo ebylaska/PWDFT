@@ -62,6 +62,7 @@ public:
    void init3d(const int, const int, const int);
  
    int is_master() { return (taskidi[0] == MASTER); }
+   int is_master_d(const int d) { return (taskidi[d] == MASTER); }
  
    int threadid() { return thrid; }
    int nthreads() { return nthr; }

@@ -155,7 +155,8 @@ public:
    }
    void m_deallocate(double *ptr) { delete[] ptr; }
  
-   double *w_allocate(const int mb, const int nblock) {
+   double *w_allocate(const int mb, const int nblock) 
+   {
       double *ptr;
       int nsize;
       if (mb == -1)
@@ -166,10 +167,12 @@ public:
       ptr = new (std::nothrow) double[nblock * nsize]();
       return ptr;
    }
+
    void w_deallocate(double *ptr) { delete[] ptr; }
 
 
-   double *w_allocate_nbrillq_all() {
+   double *w_allocate_nbrillq_all() 
+   {
       double *ptr;
       int nsize;
       nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);

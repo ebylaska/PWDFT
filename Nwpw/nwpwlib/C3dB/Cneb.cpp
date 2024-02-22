@@ -1653,6 +1653,7 @@ void Cneb::ffw4_sym_Multiply(const int nb, const int mb, double *psi1, double *p
       {
          n = ne[ms];
         
+
          c3db::mygdevice.CN4_zgemm(npack1,npack,n,rone,psi1+shift0,psi2+shift0,rzero,
                                    s11+mshift0,s12+mshift0,s21+mshift0,s22+mshift0);
         
@@ -1778,18 +1779,13 @@ void Cneb::fwf_Multiply(const int mb, double *psi1, double *hml, double *alpha,
          mshift1 = 0;
       }
 
-      for (auto nbq=0; nbq<nbrillq; ++nbq)
+      for (auto ms=ms1; ms<ms2; ++ms) 
       {
-         int shift1a  = shift1  + nbq*(neq[0]+neq[1])*npack2;
-         int mshift1a = mshift1 + nbq*2*(ne[0]*ne[0]+ne[1]*ne[1]);
-         for (auto ms=ms1; ms<ms2; ++ms) 
-         {
-            int n = ne[ms];
-            c3db::mygdevice.NN_zgemm(npack1,n,n,alpha,psi1+shift1a,npack1,hml+mshift1a,n,beta,psi2+shift1a,npack1);
+         int n = ne[ms];
+         c3db::mygdevice.NN_zgemm(npack1,n,n,alpha,psi1+shift1,npack1,hml+mshift1,n,beta,psi2+shift1,npack1);
       
-            shift1a  += neq[0]*npack2;
-            mshift1a += ishift2;
-         }
+         shift1  += neq[0]*npack2;
+         mshift1 += ishift2;
       }
    }
 }
@@ -1989,11 +1985,15 @@ void Cneb::w_diagonalize(double *hml, double *eig)
    {
       int n = ne[0] + ne[1];
       int nn = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
-
-      if (c1db::parall->is_master())
-         c3db::mygdevice.WW_eigensolver(ispin, ne, hml, eig);
-      c1db::parall->Brdcst_Values(0, 0, nn, hml);
-      c1db::parall->Brdcst_Values(0, 0, n, eig);
+      for (auto nbq=0; nbq<nbrillq; ++nbq)
+      {
+         double *hmlb = hml + nbq*nn;
+         double *eigb = eig + nbq*n;
+         if (c1db::parall->is_master_d(1))
+            c3db::mygdevice.WW_eigensolver(ispin,ne,hmlb,eigb);
+         c1db::parall->Brdcst_Values(1, 0, nn, hmlb);
+         c1db::parall->Brdcst_Values(1, 0, n, eigb);
+      }
    }
 }
 
@@ -2504,6 +2504,9 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
    double rmone[2] = {-1.0,0.0};
    double rdte[2] = {dte,0.0};
    double adiff = 0.0;
+   int npack1 =   CGrid::npack1_max();
+   int npack2 = 2*CGrid::npack1_max();
+   int shift2 = (neq[0]+neq[1])*npack2;
  
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
@@ -2513,11 +2516,10 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
          int nn = m_size(ms);
         
          //ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
-         ffw4_sym_Multiply(nbq1, ms, psi1, psi2, s11, s12, s21, s22);
+         ffw4_sym_Multiply(nbq1, ms, psi1 + nbq*shift2, psi2 + nbq*shift2, s11, s12, s21, s22);
  
          //w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
          w_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
- 
         
          int jj;
          int ii = 0;
@@ -2527,7 +2529,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
          // DCOPY_PWDFT(nn, s22, one, sa0, one);
          //std::memcpy(s12, s21, 2*nn*sizeof(double));
          std::memcpy(sa0, s22, 2*nn*sizeof(double));
-        
+
          while ((!done) && ((ii++) < ITERLMD)) {
            // DCOPY_PWDFT(nn, s22, one, sa1, one);
            std::memcpy(sa1, s22, 2*nn * sizeof(double));
@@ -2537,7 +2539,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
            // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
            // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
            c3db::mygdevice.WW6_zgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
-        
+
            // DCOPY_PWDFT(nn, sa1, one, st1, one);
            std::memcpy(st1, sa1, 2*nn*sizeof(double));
            ZAXPY_PWDFT(nn, rmone, sa0, one, st1, one);
@@ -2548,9 +2550,9 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
                  + st1[2*jj+1]*st1[2*jj+1];
         
            if (adiff < CONVGLMD)
-             done = 1;
+              done = 1;
            else
-             std::memcpy(sa0, sa1, 2*nn*sizeof(double)); // ZCOPY_PWDFT(nn, sa1, one, sa0, one);
+              std::memcpy(sa0, sa1, 2*nn*sizeof(double)); // ZCOPY_PWDFT(nn, sa1, one, sa0, one);
          }
          // printf("ierr=10 check nn=%d jj=%d adiff=%le ii=%d
          // done=%d\n",nn,jj,adiff,ii,done);
@@ -2565,10 +2567,11 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
          // std::memcpy(lmbda+ms*ne[0]*ne[0],sa1,nn*sizeof(double));
   
       } // for loop - ms
+
+      /* correction due to contraint */
+      fwf_Multiply(-1, psi1+nbq*shift2, lmbda + nbq*2*(ne[0]*ne[0]+ne[1]*ne[1]), rdte, psi2+nbq*shift2, rone);
    }
  
-   /* correction due to contraint */
-   fwf_Multiply(-1, psi1, lmbda, rdte, psi2, rone);
 }
 
 /********************************

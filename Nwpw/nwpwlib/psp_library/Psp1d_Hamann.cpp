@@ -1263,9 +1263,9 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
 
    for (auto k=0; k<npack1; ++k) 
    {
-      qx = gx[k]+kvec[0];
-      qy = gy[k]+kvec[1];
-      qz = gz[k]+kvec[2];
+      qx = gx[k] + kvec[0];
+      qy = gy[k] + kvec[1];
+      qz = gz[k] + kvec[2];
       q = sqrt(qx*qx + qy*qy + qz*qz);
       nx = (int)floor(q / dG);
      
@@ -1282,7 +1282,7 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
             for (auto n=0; n<n_expansion[3]; ++n) 
             {
                xx = util_splint(G_ray, &(vnl_ray[indx[n + 3*5]*nray]),
-                                &(vnl_splineray[indx[n + 3*5]*nray]), nray, nx, q);
+                                       &(vnl_splineray[indx[n + 3*5]*nray]), nray, nx, q);
                --lcount;
                vnl[k + lcount*npack1_max] = xx*qy*(3.00*(1.00 - qz*qz) - 4.00*qy*qy) / sqrt(24.00);
                --lcount;
@@ -1304,7 +1304,7 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
             for (auto n=0; n<n_expansion[2]; ++n) 
             {
                xx = util_splint(G_ray, &(vnl_ray[indx[n + 2*5]*nray]),
-                                &(vnl_splineray[indx[n + 2*5]*nray]), nray, nx, q);
+                                       &(vnl_splineray[indx[n + 2*5]*nray]), nray, nx, q);
                --lcount;
                vnl[k + lcount*npack1_max] = xx*qx*qy;
                --lcount;
@@ -1322,7 +1322,7 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
            for (auto n = 0; n < n_expansion[1]; ++n) 
            {
               xx = util_splint(G_ray, &(vnl_ray[indx[n + 1*5]*nray]),
-                               &(vnl_splineray[indx[n + 1*5]*nray]), nray, nx, q);
+                                      &(vnl_splineray[indx[n + 1*5]*nray]), nray, nx, q);
               --lcount;
               vnl[k + lcount*npack1_max] = xx*qx;
               --lcount;
@@ -1335,8 +1335,8 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
          if (locp != 0)
             for (auto n=0; n<n_expansion[0]; ++n) 
             {
-               xx = util_splint(G_ray, &(vnl_ray[indx[n + 0 * 5] * nray]),
-                                &(vnl_splineray[indx[n + 0 * 5] * nray]), nray, nx, q);
+               xx = util_splint(G_ray, &(vnl_ray[indx[n + 0*5]*nray]),
+                                       &(vnl_splineray[indx[n + 0*5]*nray]), nray, nx, q);
                --lcount;
                vnl[k + lcount * npack1_max] = xx;
             }

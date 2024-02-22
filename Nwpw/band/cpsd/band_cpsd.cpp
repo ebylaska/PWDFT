@@ -490,23 +490,45 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
             std::cout << " spring bondings     : " << Efmt(19,10) << E[71] << " ("
                                                    << Efmt(15,5)  << E[71]/myion.nion << " /ion)" << std::endl;
       }
+   }
 
-      std::cout << "\n orbital energies:\n";
-      nn = ne[0] - ne[1];
-      ev = 27.2116;
-      for (i=0; i<nn; ++i)
-      {
-         std::cout << Efmt(18,7) << eig[ne[0]-1-i] << " (" << Ffmt(8,3) << eig[ne[0]-1-i] * ev << "eV)" << std::endl;
-      }
-      for (i=0; i<ne[1]; ++i)
-      {
-         std::cout << Efmt(18,7) << eig[ne[0]-1-i-nn] << " ("
-                   << Ffmt(8,3)  << eig[ne[0]-1-i-nn] * ev << "eV) "
-                   << Efmt(18,7) << eig[ne[1]-1-i] << " ("
-                   << Ffmt(8,3)  << eig[ne[1]-1-i]*ev << "eV)" << std::endl;
-      }
-      std::cout << std::endl;
+   for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+   {
 
+      int nbq = mygrid.ktoindex(nb);
+      int pk = mygrid.ktop(nb);
+      int n = ne[0] + ne[1];
+      double tmpeig[n];
+      std:memset(tmpeig,0,n*sizeof(double));
+
+      if (pk==myparallel.taskid_k()) 
+         std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
+      myparallel.Vector_SumAll(3,n,tmpeig);
+
+      if (oprint)
+      {
+         std::cout << std::endl;
+         std::cout << mybrillouin.print_zone_point(nb);
+
+         std::cout << "\n orbital energies:\n";
+         nn = ne[0] - ne[1];
+         ev = 27.2116;
+         for (i=0; i<nn; ++i)
+         {
+            std::cout << Efmt(18,7) << tmpeig[ne[0]-1-i] << " (" << Ffmt(8,3) << tmpeig[ne[0]-1-i] * ev << "eV)" << std::endl;
+         }
+         for (i=0; i<ne[1]; ++i)
+         {
+            std::cout << Efmt(18,7) << tmpeig[ne[0]-1-i-nn] << " ("
+                      << Ffmt(8,3)  << tmpeig[ne[0]-1-i-nn] * ev << "eV) "
+                      << Efmt(18,7) << tmpeig[ne[1]-1-i] << " ("
+                      << Ffmt(8,3)  << tmpeig[ne[1]-1-i]*ev << "eV)" << std::endl;
+         }
+         std::cout << std::endl;
+      }
+   }
+   if (oprint)
+   {
       // write geometry and constraints analysis
       if (control.geometry_optimize())
       {
