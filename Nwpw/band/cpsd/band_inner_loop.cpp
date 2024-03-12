@@ -183,9 +183,10 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
 
    mygrid->w_scal(-1.0, hml);
    eorbit = mygrid->w_trace(hml);
-   if (ispin == 1)
-     eorbit = eorbit + eorbit;
- 
+   if (ispin==1) eorbit = eorbit + eorbit;
+
+   eorbit = mygrid->c3db::parall->SumAll(3,eorbit);
+
    // hartree energy and ion-ion energy 
    ehartr = mycoulomb->ecoulomb(dng);
    eion = myewald->energy();

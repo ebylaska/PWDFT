@@ -53,7 +53,8 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    eps = 1.0e-12;
 
    // aligned Memory
-   std::size_t aligned_size3d = (3 * nfft3d * sizeof(double) + Alignment - 1) & ~(Alignment - 1);
+   //std::size_t aligned_size3d = (3 * nfft3d * sizeof(double) + Alignment - 1) & ~(Alignment - 1);
+   std::size_t aligned_size3d = (3 * nfft3d);
    Garray = new (std::nothrow) double[aligned_size3d]();
    G1 = Garray;
    G2 = Garray + nfft3d;
@@ -113,7 +114,8 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       p_kvector[3*nbq+2] = mybrillouin->kvector[3*nb+2];
    }
 
-   std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
+   //std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
+   std::size_t aligned_size = (nfft3d);
    masker    = new (std::nothrow) int*[nbrillq+1]();
    packarray = new (std::nothrow) int*[nbrillq+1]();
    for (auto nbq=0; nbq<=nbrillq; ++nbq)
@@ -240,12 +242,15 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       // Calculate aligned memory size
       for (auto nbq=0; nbq<=nbrillq; ++nbq)
       {
-         zero_row3[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
-         zero_row2[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
+         //zero_row3[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
+         //zero_row2[nbq] = new (std::nothrow) bool[(nx * nq + Alignment - 1) & ~(Alignment - 1)];
+         zero_row3[nbq] = new (std::nothrow) bool[(nx * nq)];
+         zero_row2[nbq] = new (std::nothrow) bool[(nx * nq)];
          zero_slab23[nbq] = new (std::nothrow) bool[nx];
       }
      
-      zero_arow3 = new bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)];
+      //zero_arow3 = new bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)];
+      zero_arow3 = new bool[(nx*ny)];
       for (auto nb=0; nb<=nbrillq; ++nb) 
       {
          if (nb == 0)
@@ -346,13 +351,17 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    {
       for (auto nbq=0; nbq<=nbrillq; ++nbq)
       {
-         zero_row3[nbq]   = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
-         zero_row2[nbq]   = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
+         //zero_row3[nbq]   = new (std::nothrow) bool[(nq3 + Alignment - 1) & ~(Alignment - 1)]();
+         //zero_row2[nbq]   = new (std::nothrow) bool[(nq2 + Alignment - 1) & ~(Alignment - 1)]();
+         zero_row3[nbq]   = new (std::nothrow) bool[(nq3)]();
+         zero_row2[nbq]   = new (std::nothrow) bool[(nq2)]();
          zero_slab23[nbq] = new (std::nothrow) bool[nx]();
       }
      
-      zero_arow2 = new (std::nothrow) bool[(nx*nz + Alignment - 1) & ~(Alignment - 1)]();
-      zero_arow3 = new (std::nothrow) bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)]();
+      //zero_arow2 = new (std::nothrow) bool[(nx*nz + Alignment - 1) & ~(Alignment - 1)]();
+      //zero_arow3 = new (std::nothrow) bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)]();
+      zero_arow2 = new (std::nothrow) bool[(nx*nz)]();
+      zero_arow3 = new (std::nothrow) bool[(nx*ny)]();
      
       for (auto nb=0; nb<=nbrillq; ++nb) 
       {
@@ -450,8 +459,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       delete[] zero_arow2;
    }
 
+      //Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]) + Alignment - 1) & ~(Alignment - 1)]();
    for (auto nbq=0; nbq<=nbrillq; ++nbq)
-      Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]) + Alignment - 1) & ~(Alignment - 1)]();
+      Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]))]();
  
    double *Gtmp = new (std::nothrow) double[nfft3d]();
    int one = 1;
@@ -468,8 +478,10 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
  
    delete [] Gtmp;
  
-   zplane_tmp1 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
-   zplane_tmp2 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
+   //zplane_tmp1 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
+   //zplane_tmp2 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
+   zplane_tmp1 = new (std::nothrow) double[ (2*zplane_size+8)];
+   zplane_tmp2 = new (std::nothrow) double[ (2*zplane_size+8)];
  
    /* initialize r_grid */
    has_r_grid = (lattice->aperiodic());
@@ -3183,11 +3195,10 @@ void CGrid::rcc_pack_Mul(const int nb, const double *a, const double *b, double 
  ********************************/
 void CGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
 {
-   int i, ii;
    int ng = nidb[nb];
 
-   ii = 0;
-   for (i=0; i<ng; ++i)
+   int ii = 0;
+   for (auto i=0; i<ng; ++i)
    {
       c[ii]   = b[ii]*  a[i];
       c[ii+1] = b[ii+1]*a[i];

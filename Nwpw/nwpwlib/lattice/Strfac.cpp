@@ -29,8 +29,8 @@ Strfac::Strfac(Ion *inion, PGrid *ingrid) {
 
   mygrid = ingrid;
   myion = inion;
-  tnp = mygrid->np;
-  tid = mygrid->taskid;
+  tnp = mygrid->parall->np_i();
+  tid = mygrid->parall->taskid_i();
   Lattice *lattice = mygrid->lattice;
 
   nx = mygrid->nx;

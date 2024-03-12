@@ -28,7 +28,7 @@ CStrfac::CStrfac(Ion *inion, CGrid *ingrid)
    mygrid = ingrid;
    myion = inion;
    int tnp = mygrid->c3db::parall->np();
-   int tid = mygrid->c3db::parall->taskid();
+   int tid = mygrid->c3db::parall->taskid_i();
    Lattice *lattice = mygrid->lattice;
    int npack_max = mygrid->npack1_max();
    int npack0 = mygrid->npack(0);
@@ -117,7 +117,7 @@ void CStrfac::phafac()
    nyh = ny / 2;
    nzh = nz / 2;
  
-   for (i = 0; i < (myion->nion); ++i) 
+   for (i=0; i<(myion->nion); ++i) 
    {
       sw1 = unitg[0]*myion->rion1[0+3*i] +
             unitg[1]*myion->rion1[1+3*i] +
@@ -189,16 +189,25 @@ void CStrfac::phafac_k()
    int nion = myion->nion;
    double *rion1 = myion->rion1;
 
-   for (auto nbq=0; nbq<(maxsize); ++nbq)
+   // <kx,ky,kz> = =0
+   for (auto ii=0; ii<nion; ++ii) 
    {
+      //double pfac = kx*rion1[3*ii] + ky*rion1[3*ii+1] + kz*rion1[3*ii+2];
+      cxreal[ii] = 1.0;
+      cximag[ii] = 0.0;
+   }
+
+   for (auto nbq=0; nbq<(maxsize-1); ++nbq)
+   {
+      int nbq1 = nbq+1;
       double kx = mygrid->pbrill_kvector(nbq)[0];
       double ky = mygrid->pbrill_kvector(nbq)[1];
       double kz = mygrid->pbrill_kvector(nbq)[2];
       for (auto ii=0; ii<nion; ++ii) 
       {
          double pfac = kx*rion1[3*ii] + ky*rion1[3*ii+1] + kz*rion1[3*ii+2];
-         cxreal[ii+nion*nbq] = std::cos(pfac);
-         cximag[ii+nion*nbq] = std::sin(pfac);
+         cxreal[ii+nion*nbq1] = std::cos(pfac);
+         cximag[ii+nion*nbq1] = std::sin(pfac);
       }
    }
 }

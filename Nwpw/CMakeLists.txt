@@ -30,6 +30,18 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+
+#### DEBUG memory leaks ####
+# Add Address Sanitizer flags for C and C++
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+
+# Optionally, add other flags based on your requirements
+# For example, debug flags
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+#### DEBUG memory leaks ####
+
+
 check_fortran_compiler_flag("-fallow-argument-mismatch" FC_HAS_MISMATCH_FLAG)
 if(NOT FC_HAS_MISMATCH_FLAG)
    set(CMAKE_Fortran_FLAGS "-O3")

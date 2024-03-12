@@ -559,6 +559,7 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
       {
          int nbq = mygrid->ktoindex(nb);
          int pk  = mygrid->ktop(nb);
+         int nbq1 = nbq + 1;
 
          prj = *vnl + nbq*(*nprj)*mygrid->npack1_max();
 
@@ -567,8 +568,8 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
             mygrid->r_read(5, tmp2, -1, pk, true);
             if (pk==taskid_k)
             {
-               mygrid->r_pack(nbq, tmp2);
-               mygrid->rr_pack_copy(nbq, tmp2, prj + (i*mygrid->npack1_max()) );
+               mygrid->r_pack(nbq1, tmp2);
+               mygrid->rr_pack_copy(nbq1, tmp2, prj + (i*mygrid->npack1_max()) );
             }
          }
       }
@@ -2339,6 +2340,7 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
    for (auto ii=0; ii<(myion->nion); ++ii) 
    {
       int ia = myion->katm[ii];
+
       mystrfac->strfac_pack(0,ii,exi);
       // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
       mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);

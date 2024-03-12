@@ -1908,13 +1908,20 @@ void Cneb::w_scal(double alpha, double *hml) {
  */
 double Cneb::w_trace(double *hml) 
 {
-   int mshift = 0;
+   int mshift0 = 0;
    double sum = 0.0;
-   for (auto ms=0; ms<ispin; ++ms) 
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
-      for (auto i=0; i<ne[ms]; ++i)
-         sum += hml[2*(i+i*ne[ms]) + mshift];
-      mshift += 2*ne[0]*ne[0];
+      int mshift = 0;
+      double weight = pbrill_weight(nbq);
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+         for (auto i=0; i<ne[ms]; ++i)
+            sum += hml[2*(i+i*ne[ms]) + mshift + mshift0]*weight;
+         mshift += 2*ne[0]*ne[0];
+      }
+      mshift0 += 2*(ne[0]*ne[0] + ne[1]*ne[1]);
    }
    return sum;
 }
@@ -1993,6 +2000,7 @@ void Cneb::w_diagonalize(double *hml, double *eig)
             c3db::mygdevice.WW_eigensolver(ispin,ne,hmlb,eigb);
          c1db::parall->Brdcst_Values(1, 0, nn, hmlb);
          c1db::parall->Brdcst_Values(1, 0, n, eigb);
+
       }
    }
 }

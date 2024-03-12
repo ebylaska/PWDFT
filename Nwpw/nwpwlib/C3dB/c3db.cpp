@@ -2717,7 +2717,7 @@ void c3db::r_read(const int iunit, double *a, const int jcol, const int kcol, co
             for (int jj = jstart; jj <= jend; ++jj)
             {
                int p_to = parall->convert_taskid_ijk(ii, jj, kk);
-               if (p_to == MASTER)
+               if (p_to==MASTER)
                   std::memcpy(a+index,tmp,bsize*sizeof(double));
                else
                   parall->dsend(0, 9, p_to, bsize, tmp);
@@ -2733,7 +2733,7 @@ void c3db::r_read(const int iunit, double *a, const int jcol, const int kcol, co
             int index = cijktoindex2(0, j, k);
             int ii = cijktop2(0, j, k);
             int p_here = parall->convert_taskid_ijk(ii, taskid_j, taskid_k);
-            if (p_here == taskid)
+            if (p_here==taskid)
             {
                parall->dreceive(0, 9, MASTER, bsize, tmp);
                std::memcpy(a+index,tmp,bsize*sizeof(double));
