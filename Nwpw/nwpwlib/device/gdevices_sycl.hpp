@@ -15,6 +15,7 @@
 #include <set>
 #include <sstream>
 #include <sycl/sycl.hpp>
+#include <complex>
 
 #include "fft.h"
 #include "blas.h"
@@ -218,6 +219,7 @@ class Gdevices {
 
    oneapi::mkl::transpose matT = oneapi::mkl::transpose::trans;
    oneapi::mkl::transpose matN = oneapi::mkl::transpose::nontrans;
+   oneapi::mkl::transpose matC = oneapi::mkl::transpose::conjtrans;
  
    /* device, host pool memory */
    std::map<size_t, std::set<double *>> free_list_gpu, free_list_host;
@@ -957,233 +959,285 @@ public:
       inuse[i_sa1] = false;
    }
 
+
+
       
-  void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
-                double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1,
-                host_b, ne, beta, host_c, npack1);
-  }                
-       
-  void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1,
-                host_b, npack1, beta, host_c, ne);
-  }                
-       
-  void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
-                host_b, npack1, beta, host_c, ne);
-  }
-                 
-  void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
-                host_b, ne, beta, host_c, npack1);
-  }
+   void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
+                 double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1,
+                  host_b, ne, beta, host_c, npack1);
+   }                
+        
+   void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1,
+                  host_b, npack1, beta, host_c, ne);
+   }                
+        
+   void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
+                  host_b, npack1, beta, host_c, ne);
+   }
+                  
+   void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
+                  host_b, ne, beta, host_c, npack1);
+   }
 
      
-  void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_caa,
-                 double *host_cab, double *host_cba, double *host_cbb) {
-    int one = 1;
-    int shift1 = 0;
-    int mshift1 = 0;
-   
-    for (auto k = 1; k <= ne; ++k) 
-    {
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_a + shift1, npack1, 
-                   beta, 
-                   host_caa + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cab + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_a + shift1, npack1,
-                   beta,
-                   host_cba + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cbb + mshift1, k);
-       shift1 += 2*npack1;
-       mshift1 += 2*ne;
-    }
+   void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_caa,
+                  double *host_cab, double *host_cba, double *host_cbb) 
+   {
+      int one = 1;
+      int shift1 = 0;
+      int mshift1 = 0;
+     
+      for (auto k = 1; k <= ne; ++k) 
+      {
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_a + shift1, npack1, 
+                     beta, 
+                     host_caa + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cab + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_a + shift1, npack1,
+                     beta,
+                     host_cba + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cbb + mshift1, k);
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+   }
 
-  }
 
-
- void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_caa,
-                 double *host_cab, double *host_cbb) {
-    int one = 1;   
-    int shift1 = 0;
-    int mshift1 = 0;
-                   
-    for (auto k = 1; k <= ne; ++k)  
-    {              
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha, 
-                   host_a, npack1,
-                   host_a + shift1, npack1,
-                   beta,  
-                   host_caa + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cab + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cbb + mshift1, k);
-       shift1 += 2*npack1;
-       mshift1 += 2*ne;
-    }
-  }
+   void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_caa,
+                  double *host_cab, double *host_cbb) 
+   {
+      int one = 1;   
+      int shift1 = 0;
+      int mshift1 = 0;
+                     
+      for (auto k = 1; k <= ne; ++k)  
+      {              
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha, 
+                     host_a, npack1,
+                     host_a + shift1, npack1,
+                     beta,  
+                     host_caa + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cab + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cbb + mshift1, k);
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+   }
 
 
 
                
-  void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
-                 double *host_sa0, double *host_sa1, double *host_st1) {
-     double rone[2]  = {1.0,0.0};
-     double rzero[2] = {0.0,0.0};
+   void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
+                  double *host_sa0, double *host_sa1, double *host_st1) 
+   {
+       double rone[2]  = {1.0,0.0};
+       double rzero[2] = {0.0,0.0};
+      
+       // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
+       ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
+                   host_sa0, ne, rone, host_sa1, ne);
+                    
+       // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
+       ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+                   host_s12, ne, rone, host_sa1, ne);
+     
+       // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
+       ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
+                   host_sa0, ne, rzero, host_st1, ne);
+                    
+       // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
+       ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+                   host_st1, ne, rone, host_sa1, ne);
+   } 
+
+
+   void NN_zgemm(int m, int n, int k,
+                 std::complex<double> *alpha,
+                 std::complex<double> *host_a, int lda,
+                 std::complex<double> *host_b, int ldb,
+                 std::complex<double> *beta,
+                 std::complex<double> *host_c, int ldc)
+   {
+      // Calculate indices for device memory
+      int ia = fetch_dev_mem_indx(static_cast<size_t>(2*lda) * static_cast<size_t>(k));
+      int ib = fetch_dev_mem_indx(static_cast<size_t>(2*ldb) * static_cast<size_t>(n));
+      int ic = fetch_dev_mem_indx(static_cast<size_t>(2*ldc) * static_cast<size_t>(n));
+ 
+      // Cast complex pointers to oneMKL complex data type
+      auto complex_A = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_a);
+      auto complex_B = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_b);
+      auto complex_C = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_c);
+ 
+      // Perform asynchronous memory transfer to device
+      syclSetMatrixAsync(lda, k, sizeof(std::complex<double>), host_a, lda, dev_mem[ia], lda, stream[0]);
+      syclSetMatrixAsync(ldb, n, sizeof(std::complex<double>), host_b, ldb, dev_mem[ib], ldb, stream[0]);
+ 
+      // Wait for the memory transfer to complete
+      stream[0]->wait();
+ 
+      // Perform complex matrix multiplication
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+                                            matN, matN,
+                                            m, n, k,
+                                            alpha,
+                                            complex_A, lda,
+                                            complex_B, ldb,
+                                            beta,
+                                            complex_C, ldc);
+ 
+      // Perform asynchronous memory transfer back to host
+      syclGetMatrixAsync(ldc, n, sizeof(std::complex<double>), dev_mem[ic], ldc, host_c, ldc, stream[0]);
+ 
+      // Wait for the memory transfer to complete
+      stream[0]->wait();
+ 
+      // Mark memory as unused
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
+   /*void NN_zgemm(int m, int n, int k,
+                 double *alpha, 
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double *beta,
+                 double *host_c,int ldc) 
+   {
+      ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+   }   
+   */
+
+   void CN_zgemm(int m, int n, int k,
+                 std::complex<double> *alpha,
+                 std::complex<double> *host_a, int lda,
+                 std::complex<double> *host_b, int ldb,
+                 std::complex<double> *beta,
+                 std::complex<double> *host_c, int ldc)
+   {
+      // Calculate indices for device memory
+      int ia = fetch_dev_mem_indx(static_cast<size_t>(2 * lda) * static_cast<size_t>(k));
+      int ib = fetch_dev_mem_indx(static_cast<size_t>(2 * ldb) * static_cast<size_t>(n));
+      int ic = fetch_dev_mem_indx(static_cast<size_t>(2 * ldc) * static_cast<size_t>(n));
+ 
+      // Cast complex pointers to oneMKL complex data type
+      auto complex_A = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_a);
+      auto complex_B = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_b);
+      auto complex_C = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_c);
+ 
+      // Asynchronously set matrices A and B on the device
+      syclSetMatrixAsync(lda, k, sizeof(std::complex<double>), host_a, lda, dev_mem[ia], lda, stream[0]);
+      syclSetMatrixAsync(ldb, n, sizeof(std::complex<double>), host_b, ldb, dev_mem[ib], ldb, stream[0]);
+ 
+      // Wait for the asynchronous operations to complete
+      stream[0]->wait();
+ 
+      // Perform complex matrix multiplication on the device with conjugate transpose of A
+      oneapi::mkl::blas::column_major::gemm(*stream[0],
+                                            matC, matN,
+                                            m, n, k,
+                                            alpha,
+                                            complex_A, lda,
+                                            complex_B, ldb,
+                                            beta,
+                                            complex_C, ldc);
+     
+      // Asynchronously retrieve matrix C from the device
+      syclGetMatrixAsync(ldc, n, sizeof(std::complex<double>), dev_mem[ic], ldc, host_c, ldc, stream[0]);
     
-     // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
-                 host_sa0, ne, rone, host_sa1, ne);
+      // Wait for the asynchronous operation to complete
+      stream[0]->wait();
                   
-     // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                 host_s12, ne, rone, host_sa1, ne);
-   
-     // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
-                 host_sa0, ne, rzero, host_st1, ne);
-                  
-     // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                 host_st1, ne, rone, host_sa1, ne);
-  } 
-
-
-
-
-  void NN_zgemm(int m, int n, int k,
-                double *alpha,
-                double *host_a, int lda,
-                double *host_b, int ldb,
-                double *beta,
-                double *host_c,int ldc)
-   {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
-
-      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
-      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
-
-      stream[0]->wait();
-      oneapi::mkl::blas::column_major::gemm(*stream[0],
-         matN,matN,m,n,k,
-         *alpha,
-         dev_mem[ia],lda,
-         dev_mem[ib],ldb,
-         *beta,
-         dev_mem[ic],ldc);
-
-      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
-      stream[0]->wait();
-
+      // Mark device memory as unused
       inuse[ia] = false;
       inuse[ib] = false;
       inuse[ic] = false;
    }
 
-
-  void CN_zgemm(int m, int n, int k,
-                double *alpha,
-                double *host_a, int lda,
-                double *host_b, int ldb,
-                double *beta,
-                double *host_c,int ldc)
+   void NC_zgemm(int m, int n, int k,
+                 std::complex<double> *alpha,
+                 std::complex<double> *host_a, int lda,
+                 std::complex<double> *host_b, int ldb,
+                 std::complex<double> *beta,
+                 std::complex<double> *host_c, int ldc)
    {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
+       // Calculate indices for device memory
+       int ia = fetch_dev_mem_indx(static_cast<size_t>(2*lda) * static_cast<size_t>(k));
+       int ib = fetch_dev_mem_indx(static_cast<size_t>(2*ldb) * static_cast<size_t>(n));
+       int ic = fetch_dev_mem_indx(static_cast<size_t>(2*ldc) * static_cast<size_t>(n));
+ 
+       // Cast complex pointers to oneMKL complex data type
+       auto complex_A = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_a);
+       auto complex_B = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_b);
+       auto complex_C = reinterpret_cast<oneapi::mkl::blas::complex_double *>(host_c);
+ 
+       // Asynchronously set matrices A and B on the device
+       syclSetMatrixAsync(lda, k, sizeof(std::complex<double>), host_a, lda, dev_mem[ia], lda, stream[0]);
+       syclSetMatrixAsync(ldb, n, sizeof(std::complex<double>), host_b, ldb, dev_mem[ib], ldb, stream[0]);
+ 
+       // Wait for the asynchronous operations to complete
+       stream[0]->wait();
+ 
+       // Perform complex matrix multiplication on the device
+       oneapi::mkl::blas::column_major::gemm(*stream[0],
+                                             matN, matC,
+                                             m, n, k,
+                                             alpha,
+                                             complex_A, lda,
+                                             complex_B, ldb,
+                                             beta,
+                                             complex_C, ldc);
 
-      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
-      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
-
-      stream[0]->wait();
-      oneapi::mkl::blas::column_major::gemm(*stream[0],
-         matN,matN,m,n,k,
-         *alpha,
-         dev_mem[ia],lda,
-         dev_mem[ib],ldb,
-         *beta,
-         dev_mem[ic],ldc);
-
-      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
-      stream[0]->wait();
-
-      inuse[ia] = false;
-      inuse[ib] = false;
-      inuse[ic] = false;
+       // Asynchronously retrieve matrix C from the device
+       syclGetMatrixAsync(ldc, n, sizeof(std::complex<double>), dev_mem[ic], ldc, host_c, ldc, stream[0]);
+ 
+       // Wait for the asynchronous operation to complete
+       stream[0]->wait();
+                   
+       // Mark device memory as unused
+       inuse[ia] = false;
+       inuse[ib] = false;
+       inuse[ic] = false;
    }
-
-
-  void NC_zgemm(int m, int n, int k,
-                double *alpha,
-                double *host_a, int lda,
-                double *host_b, int ldb,
-                double *beta,
-                double *host_c,int ldc)
-   {
-      int ia = fetch_dev_mem_indx(((size_t)lda) * ((size_t)k));
-      int ib = fetch_dev_mem_indx(((size_t)ldb) * ((size_t)n));
-      int ic = fetch_dev_mem_indx(((size_t)ldc) * ((size_t)n));
-
-      syclSetMatrixAsync(lda,k,sizeof(double),host_a,lda,dev_mem[ia],lda,stream[0]);
-      syclSetMatrixAsync(ldb,n,sizeof(double),host_b,ldb,dev_mem[ib],ldb,stream[0]);
-
-      stream[0]->wait();
-      oneapi::mkl::blas::column_major::gemm(*stream[0],
-         matN,matN,m,n,k,
-         *alpha,
-         dev_mem[ia],lda,
-         dev_mem[ib],ldb,
-         *beta,
-         dev_mem[ic],ldc);
-
-      syclGetMatrixAsync(ldc,n,sizeof(double),dev_mem[ic],ldc,host_c,ldc,stream[0]);
-      stream[0]->wait();
-
-      inuse[ia] = false;
-      inuse[ib] = false;
-      inuse[ic] = false;
-   }
-
-
-
-
-
-
-
 
  
    /********************/
