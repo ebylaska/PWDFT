@@ -230,7 +230,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       else
          std::cout << " parallel mapping         : not balanced" << std::endl;
       if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged gpu fft" << "\n";
-      if (control.tile_factor() > 1)
+      if (control.tile_factor() > 0)
          std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
      
       std::cout << "\n options:" << std::endl;

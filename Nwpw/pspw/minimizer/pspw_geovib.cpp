@@ -202,7 +202,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       else
          coutput << " parallel mapping         : not balanced" << std::endl;
       if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged gpu fft" << std::endl;
-      if (control.tile_factor() > 1)
+      if (control.tile_factor() > 0)
          coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
      
       coutput << "\n options:\n";
