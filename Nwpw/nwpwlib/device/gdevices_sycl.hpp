@@ -1091,7 +1091,7 @@ public:
    } 
 
 
-   void NN_zgemm(int m, int n, int k,
+/*   void NN_zgemm(int m, int n, int k,
                  std::complex<double> *alpha,
                  std::complex<double> *host_a, int lda,
                  std::complex<double> *host_b, int ldb,
@@ -1135,8 +1135,8 @@ public:
       inuse[ia] = false;
       inuse[ib] = false;
       inuse[ic] = false;
-   }
-   /*void NN_zgemm(int m, int n, int k,
+   } */
+   void NN_zgemm(int m, int n, int k,
                  double *alpha, 
                  double *host_a, int lda,
                  double *host_b, int ldb,
@@ -1145,8 +1145,10 @@ public:
    {
       ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
    }   
-   */
+   
 
+
+   /*
    void CN_zgemm(int m, int n, int k,
                  std::complex<double> *alpha,
                  std::complex<double> *host_a, int lda,
@@ -1191,8 +1193,18 @@ public:
       inuse[ia] = false;
       inuse[ib] = false;
       inuse[ic] = false;
-   }
+   } */
 
+  void CN_zgemm(int m, int n, int k,
+                 double *alpha, 
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double *beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  }     
+      
+   /*
    void NC_zgemm(int m, int n, int k,
                  std::complex<double> *alpha,
                  std::complex<double> *host_a, int lda,
@@ -1238,6 +1250,15 @@ public:
        inuse[ib] = false;
        inuse[ic] = false;
    }
+*/
+  void NC_zgemm(int m, int n, int k,
+                 double *alpha,
+                 double *host_a, int lda,
+                 double *host_b, int ldb,
+                 double *beta,
+                 double *host_c,int ldc) {
+     ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+  } 
 
  
    /********************/
