@@ -201,9 +201,17 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          coutput << " parallel mapping         : balanced" << std::endl;
       else
          coutput << " parallel mapping         : not balanced" << std::endl;
-      if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged gpu fft" << std::endl;
-      if (control.tile_factor() > 0)
-         coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
+
+      if (mygrid.d3db::mygdevice.has_gpu())
+      {
+         coutput << " parallel mapping         : has GPU" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==1) coutput << " parallel mapping         : CUDA" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==2) coutput << " parallel mapping         : SYCL" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==3) coutput << " parallel mapping         : HIP SYCL" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==4) coutput << " parallel mapping         : OpenCL" << std::endl;
+         if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged GPU FFT" << std::endl;
+         if (control.tile_factor() > 0)      coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
+      }
      
       coutput << "\n options:\n";
       coutput << "   boundary conditions  = ";

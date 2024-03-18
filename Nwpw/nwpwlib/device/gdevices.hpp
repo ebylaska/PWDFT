@@ -52,6 +52,7 @@ static void eigsrt_device(double *D, double *V, int n) {
 class Gdevices {
 
 public:
+  int  typegpu = 0;
   bool hasgpu = false;
   void TN4_dgemm(int npack, int ne, double alpha, double *host_a,
                  double *host_b, double beta, double *host_caa,

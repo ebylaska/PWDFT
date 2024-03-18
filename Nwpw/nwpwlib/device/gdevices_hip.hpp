@@ -164,6 +164,7 @@ class Gdevices {
   hipStream_t stream[12];
 
 public:
+  int  typegpu = 3;
   bool hasgpu = true;
 
   /* device memory */

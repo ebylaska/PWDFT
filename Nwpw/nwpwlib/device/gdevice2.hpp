@@ -82,7 +82,8 @@ public:
    void batch_cffty_stages_tmpy_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
    void batch_cfftz_stages_tmpz_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
 
-   bool has_gpu() { return mygdevice2->hasgpu; }
+   bool has_gpu()  { return mygdevice2->hasgpu; }
+   int  type_gpu() { return mygdevice2->typegpu; }
 };
 
 } // namespace pwdft

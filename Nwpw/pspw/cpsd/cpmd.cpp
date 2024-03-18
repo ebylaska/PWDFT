@@ -229,9 +229,17 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << " parallel mapping         : balanced" << std::endl;
       else
          std::cout << " parallel mapping         : not balanced" << std::endl;
-      if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged gpu fft" << "\n";
-      if (control.tile_factor() > 0)
-         std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
+
+      if (mygrid.d3db::mygdevice.has_gpu())
+      {
+         std::cout << " parallel mapping         : has GPU" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==1) std::cout << " parallel mapping         : CUDA" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==2) std::cout << " parallel mapping         : SYCL" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==3) std::cout << " parallel mapping         : HIP SYCL" << std::endl;
+         if (mygrid.d3db::mygdevice.type_gpu()==4) std::cout << " parallel mapping         : OpenCL" << std::endl;
+         if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged GPU FFT" << "\n";
+         if (control.tile_factor() > 0)      std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
+      }
      
       std::cout << "\n options:" << std::endl;
       std::cout << "   ion motion           = ";

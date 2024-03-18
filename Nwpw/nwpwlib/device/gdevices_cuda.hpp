@@ -194,6 +194,7 @@ class Gdevices {
    cudaStream_t stream[12];
 
 public:
+   int  typegpu= 1;
    bool hasgpu = true;
  
    /* device memory */

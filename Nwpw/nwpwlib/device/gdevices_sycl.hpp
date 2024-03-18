@@ -232,6 +232,7 @@ class Gdevices {
    sycl::event h2d_event, fftevent, d2h_event;
 
 public:
+   int typegpu = 2;
    bool hasgpu = true;
  
    std::vector<sycl::queue *> stream;

@@ -177,6 +177,7 @@ class Gdevices {
   int indxi_dev, indxj_dev, indxk_dev, exi_dev, exj_dev, exk_dev;
 
 public:
+  int  typegpu = 4;
   bool hasgpu = true;
 
   Gdevices() {
