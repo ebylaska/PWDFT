@@ -82,6 +82,12 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 ## Build instructions on Sunspot
 
 ### Required Modules
+```
+module purge
+module load spack cmake
+module load oneapi/eng-compiler/.2023.12.15.002
+```
+#### old
 
 ```
 module purge
@@ -93,7 +99,7 @@ module load cray-pals/1.3.3
 module load cray-libpals/1.3.3
 ```
 
-### old 
+#### older 
 ```
 module purge
 module restore
