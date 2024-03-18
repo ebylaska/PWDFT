@@ -169,11 +169,11 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
       if (mygrid.c3db::mygdevice.has_gpu())
       {
-         std::cout << " parallel mapping         : has GPU" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==1) std::cout << " parallel mapping         : CUDA" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==2) std::cout << " parallel mapping         : SYCL" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==3) std::cout << " parallel mapping         : HIP SYCL" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==4) std::cout << " parallel mapping         : OpenCL" << std::endl;
+         //std::cout << " parallel mapping         : has GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==1) std::cout << " parallel mapping         : CUDA GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==2) std::cout << " parallel mapping         : SYCL GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==3) std::cout << " parallel mapping         : HIP SYCL GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==4) std::cout << " parallel mapping         : OpenCL GPUs" << std::endl;
          if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged GPU FFT" << std::endl;
          if (control.tile_factor() > 0)      std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
       }

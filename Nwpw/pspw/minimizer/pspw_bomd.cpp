@@ -223,11 +223,11 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
 
      if (mygrid.d3db::mygdevice.has_gpu())
      {
-        coutput << " parallel mapping         : has GPU" << std::endl;
-        if (mygrid.d3db::mygdevice.type_gpu()==1) coutput << " parallel mapping         : CUDA" << std::endl;
-        if (mygrid.d3db::mygdevice.type_gpu()==2) coutput << " parallel mapping         : SYCL" << std::endl;
-        if (mygrid.d3db::mygdevice.type_gpu()==3) coutput << " parallel mapping         : HIP SYCL" << std::endl;
-        if (mygrid.d3db::mygdevice.type_gpu()==4) coutput << " parallel mapping         : OpenCL" << std::endl;
+        //coutput << " parallel mapping         : has GPU" << std::endl;
+        if (mygrid.d3db::mygdevice.type_gpu()==1) coutput << " parallel mapping         : CUDA GPUs" << std::endl;
+        if (mygrid.d3db::mygdevice.type_gpu()==2) coutput << " parallel mapping         : SYCL GPUs" << std::endl;
+        if (mygrid.d3db::mygdevice.type_gpu()==3) coutput << " parallel mapping         : HIP SYCL GPUs" << std::endl;
+        if (mygrid.d3db::mygdevice.type_gpu()==4) coutput << " parallel mapping         : OpenCL GPUs" << std::endl;
         if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged GPU FFT" << std::endl;
         if (control.tile_factor() > 1)      coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
       }
