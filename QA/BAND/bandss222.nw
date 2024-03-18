@@ -4,8 +4,8 @@ echo
 start test
 memory 1900 mb
 
-permanent_dir ./perm222
-scratch_dir   ./perm222
+permanent_dir ./perm222b
+scratch_dir   ./perm222b
 
 geometry units angstroms print xyz noautosym noautoz nocenter
 C          0.85931        0.43132        0.46733
@@ -32,9 +32,9 @@ nwpw
   #np_dimensions 1 1 4
   monkhorst-pack 2 2 2
   steepest_descent
-     tolerances 1.0e-12 1.0e-12
+     #tolerances 1.0e-12 1.0e-12
      #geometry_optimize
-     loop 10 1000
+     loop 10 10
   end
   #vectors input jjj.movecs output jjj.movecs
   #vectors output jjj.movecs
