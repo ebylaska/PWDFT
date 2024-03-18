@@ -1,0 +1,45 @@
+title "hello"
+echo
+
+start test
+memory 1900 mb
+
+permanent_dir ./perm222
+scratch_dir   ./perm222
+
+geometry units angstroms print xyz noautosym noautoz nocenter
+C          0.85931        0.43132        0.46733
+H          0.47301        0.60453       -0.55591
+H          0.46882       -0.54190        0.84657
+H          1.96121        0.40261        0.45051
+H          1.74300       -1.79661       -1.42196
+end
+
+#charge +1 
+
+set nwpw:kbpp_ray    .true.
+#set nwpw:kbpp_filter .true.
+nwpw
+  2d-hcurve
+  simulation_cell
+    fcc 38.0 
+    #ngrid 8 8 8
+  end
+  cutoff 30.0
+  xc lda
+  lmbfgs
+
+  np_dimensions 1 1 4
+  monkhorst-pack 2 2 2
+  steepest_descent
+     tolerances 1.0e-12 1.0e-12
+     #geometry_optimize
+     loop 10 1000
+  end
+  #vectors input jjj.movecs output jjj.movecs
+  vectors output jjj.movecs
+
+end
+
+task band steepest_descent
+
