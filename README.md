@@ -84,8 +84,8 @@ These timings suggest that parallel FFTs should be implemented using hybrid MPI-
 ### Required Modules
 ```
 module purge
-module load spack cmake 
-module load oneapi/eng-compiler/2023.10.15.002 
+module load spack cmake
+module load oneapi/eng-compiler/.2023.12.15.002
 ```
 #### old
 
