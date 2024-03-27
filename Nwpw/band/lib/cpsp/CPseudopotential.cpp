@@ -1621,8 +1621,8 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
       int npack1 = mypneb->npack(nbq1);
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi+nbq*nshift*nn);
-      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift, nn, Hpsi+nbq*nshift*nn);
+      //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi+nbq*nshift*nn);
+      //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift, nn, Hpsi+nbq*nshift*nn);
   
       int ii = 0;
       while (ii < (myion->nion)) 
@@ -1690,7 +1690,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
          //                Hpsi,nshift);
          mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nshift*nn);
       }
-      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
+      //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
 
 #else
 
@@ -1809,8 +1809,8 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       int npack1 = mypneb->npack(nbq1);
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi+nbq*nn*nshift);
-      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift, nn, Hpsi+nbq*nn*nshift);
+      //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi+nbq*nn*nshift);
+      //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift, nn, Hpsi+nbq*nn*nshift);
   
       if (move) 
       {
@@ -1930,7 +1930,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             }
          }
       }
-      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift, nn, Hpsi+nbq*nn*nshift);
+      //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift, nn, Hpsi+nbq*nn*nshift);
 
 #else
 
@@ -2052,7 +2052,7 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
    zsw2 = new (std::nothrow) double[nn * nprj_max]();
 
    // Copy psi to device
-   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
+   //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
 
    xtmp = new (std::nothrow) double[nshift0]();
    sum  = new (std::nothrow) double[3*nn*nprj_max]();
@@ -2062,7 +2062,7 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
       int nbq1 = nbq + 1;
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi+nbq*nshift*nn);
+      //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi+nbq*nshift*nn);
       //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
   
       Gx = mypneb->Gpackxyz(nbq1, 0);
@@ -2214,7 +2214,7 @@ double CPseudopotential::e_nonlocal(double *psi)
       int nbq1 = nbq + 1;
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi + nbq*nn*nshift);
+      //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi + nbq*nn*nshift);
   
       auto ii = 0;
       while (ii<(myion->nion)) 
