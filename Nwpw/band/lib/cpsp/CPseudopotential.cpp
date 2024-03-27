@@ -2051,6 +2051,9 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
    zsw1 = new (std::nothrow) double[nn * nprj_max]();
    zsw2 = new (std::nothrow) double[nn * nprj_max]();
 
+   // Copy psi to device
+   mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
+
    xtmp = new (std::nothrow) double[nshift0]();
    sum  = new (std::nothrow) double[3*nn*nprj_max]();
 
@@ -2060,7 +2063,7 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
 
       // Copy psi to device
       mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi+nbq*nshift*nn);
-      // mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+      //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
   
       Gx = mypneb->Gpackxyz(nbq1, 0);
       Gy = mypneb->Gpackxyz(nbq1, 1);

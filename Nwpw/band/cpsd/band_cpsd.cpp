@@ -126,6 +126,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    lmbda = mygrid.w_allocate_nbrillq_all();
    eig   = new double[nbrillq*(ne[0]+ne[1])];
 
+   mygrid.c3db::mygdevice.psi_alloc(2*mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+
 
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,nbrill,psi2,control.input_movecs_filename());
    bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),psi2,std::cout);
@@ -562,7 +564,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.w_deallocate(hml);
    mygrid.w_deallocate(lmbda);
    delete [] eig;
-   //mygrid.d3db::mygdevice.psi_dealloc();
+   mygrid.c3db::mygdevice.psi_dealloc();
 
 
   // write results to the json
