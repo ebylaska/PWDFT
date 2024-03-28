@@ -992,21 +992,22 @@ public:
    }
 
      
+
    void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                  double *host_b, double *beta, double *host_caa,
-                  double *host_cab, double *host_cba, double *host_cbb) 
+                 double *host_b, double *beta, double *host_caa,
+                 double *host_cab, double *host_cba, double *host_cbb) 
    {
       int one = 1;
       int shift1 = 0;
       int mshift1 = 0;
-     
-      for (auto k = 1; k <= ne; ++k) 
+
+      for (auto k = 1; k <= ne; ++k)
       {
          ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
                      alpha,
                      host_a, npack1,
-                     host_a + shift1, npack1, 
-                     beta, 
+                     host_a + shift1, npack1,
+                     beta,
                      host_caa + mshift1, k);
          ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
                      alpha,
@@ -1026,10 +1027,11 @@ public:
                      host_b + shift1, npack1,
                      beta,
                      host_cbb + mshift1, k);
-         shift1 += 2*npack1;
+         shift1  += 2*npack1;
          mshift1 += 2*ne;
       }
    }
+
 
 
    void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
