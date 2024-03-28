@@ -30,7 +30,7 @@ nwpw
   lmbfgs
 
   np_dimensions 1 1 4
-  monkhorst-pack 2 2 2
+  monkhorst-pack 1 1 1
   steepest_descent
      tolerances 1.0e-12 1.0e-12
      #geometry_optimize

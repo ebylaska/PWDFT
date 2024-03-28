@@ -2525,6 +2525,30 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
         
          //ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
          ffw4_sym_Multiply(nbq1, ms, psi1 + nbq*shift2, psi2 + nbq*shift2, s11, s12, s21, s22);
+
+         std::cout << "s11= (" << s11[0] << "," << s11[1] << "), ("
+                               << s11[2] << " " << s11[3] << "), ("
+                               << s11[4] << " " << s11[5] << "), ("
+                               << s11[6] << " " << s11[7] << "), ("
+                               << s11[8] << " " << s11[9] << ") nbq=" << nbq <<  std::endl;
+
+         std::cout << "s12= (" << s12[0] << "," << s12[1] << "), ("
+                               << s12[2] << " " << s12[3] << "), ("
+                               << s12[4] << " " << s12[5] << "), ("
+                               << s12[6] << " " << s12[7] << "), ("
+                               << s12[8] << " " << s12[9] << ")" << std::endl;
+
+         std::cout << "s21= (" << s21[0] << "," << s21[1] << "), ("
+                               << s21[2] << " " << s21[3] << "), ("
+                               << s21[4] << " " << s21[5] << "), ("
+                               << s21[6] << " " << s21[7] << "), ("
+                               << s21[8] << " " << s21[9] << ")" << std::endl;
+
+         std::cout << "s22= (" << s22[0] << "," << s22[1] << "), ("
+                               << s22[2] << " " << s22[3] << "), ("
+                               << s22[4] << " " << s22[5] << "), ("
+                               << s22[6] << " " << s22[7] << "), ("
+                               << s22[8] << " " << s22[9] << ")" << std::endl << std::endl;
  
          //w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
          w_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
@@ -2547,6 +2571,18 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
            // mmm_Multiply(ms, s11, sa0, 1.0, st1, 0.0);
            // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
            c3db::mygdevice.WW6_zgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
+
+         std::cout << "sa1= (" << sa1[0] << "," << sa1[1] << "), ("
+                               << sa1[2] << " " << sa1[3] << "), ("
+                               << sa1[4] << " " << sa1[5] << "), ("
+                               << sa1[6] << " " << sa1[7] << "), ("
+                               << sa1[8] << " " << sa1[9] << ") ii=" << ii << " nbq=" << nbq << std::endl;
+
+         std::cout << "st1= (" << st1[0] << "," << st1[1] << "), ("
+                               << st1[2] << " " << st1[3] << "), ("
+                               << st1[4] << " " << st1[5] << "), ("
+                               << st1[6] << " " << st1[7] << "), ("
+                               << st1[8] << " " << st1[9] << ")" << std::endl << std::endl;
 
            // DCOPY_PWDFT(nn, sa1, one, st1, one);
            std::memcpy(st1, sa1, 2*nn*sizeof(double));
