@@ -101,8 +101,6 @@ public:
       if (balanced)
         delete mybalance;
 
-      delete [] zplane_tmp1;
-      delete [] zplane_tmp2;
       if (has_r_grid)
         delete [] r_grid;
       delete [] atmp;

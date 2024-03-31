@@ -50,6 +50,7 @@ Cneb::Cneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
    int taskid_j = c1db::parall->taskid_j();
    int taskid_k = c1db::parall->taskid_k();
 
+
    parallelized = (np_j > 1);
  
    s22 = new (std::nothrow) double[7 * 2*ne[0]*ne[0]]();
@@ -2526,6 +2527,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
          //ffw3_sym_Multiply(ms, psi1, psi2, s11, s21, s22);
          ffw4_sym_Multiply(nbq1, ms, psi1 + nbq*shift2, psi2 + nbq*shift2, s11, s12, s21, s22);
 
+/*
          std::cout << "s11= (" << s11[0] << "," << s11[1] << "), ("
                                << s11[2] << " " << s11[3] << "), ("
                                << s11[4] << " " << s11[5] << "), ("
@@ -2549,6 +2551,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
                                << s22[4] << " " << s22[5] << "), ("
                                << s22[6] << " " << s22[7] << "), ("
                                << s22[8] << " " << s22[9] << ")" << std::endl << std::endl;
+*/
  
          //w_scale_s22_s21_s11(ms, dte, s22, s21, s11);
          w_scale_s22_s21_s12_s11(ms, dte, s22, s21, s12, s11);
@@ -2572,6 +2575,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
            // mmm_Multiply(ms, sa0, st1, 1.0, sa1, 1.0);
            c3db::mygdevice.WW6_zgemm(ne[ms], s12, s12, s11, sa0, sa1, st1);
 
+/*
          std::cout << "sa1= (" << sa1[0] << "," << sa1[1] << "), ("
                                << sa1[2] << " " << sa1[3] << "), ("
                                << sa1[4] << " " << sa1[5] << "), ("
@@ -2583,6 +2587,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
                                << st1[4] << " " << st1[5] << "), ("
                                << st1[6] << " " << st1[7] << "), ("
                                << st1[8] << " " << st1[9] << ")" << std::endl << std::endl;
+*/
 
            // DCOPY_PWDFT(nn, sa1, one, st1, one);
            std::memcpy(st1, sa1, 2*nn*sizeof(double));

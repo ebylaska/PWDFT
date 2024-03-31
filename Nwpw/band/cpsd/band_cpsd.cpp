@@ -152,7 +152,6 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    myewald.phafac();
 
 
-
    if (oprint)
    {
       std::cout << std::endl;

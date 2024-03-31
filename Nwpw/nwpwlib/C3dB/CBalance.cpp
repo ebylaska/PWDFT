@@ -393,7 +393,7 @@ void CBalance::c_unbalance(const int nb, double *a) {
 
 /********************************
  *                              *
- *    CBalance::c_balance        *
+ *     CBalance::c_balance      *
  *                              *
  ********************************/
 /**

@@ -45,6 +45,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    bool *zero_arow3, *zero_arow2;
    bool yzslab, zrow;
 
+
    int nwave_in[nbrillq+1], nwave_out[nbrillq+1];
  
    lattice = inlattice;
@@ -464,10 +465,11 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]))]();
  
    double *Gtmp = new (std::nothrow) double[nfft3d]();
+
    int one = 1;
    for (auto nb=0; nb<=nbrillq; ++nb) 
    {
-      for (auto i = 0; i < 3; ++i) 
+      for (auto i=0; i<3; ++i) 
       {
          std::memcpy(Gtmp,Garray+i*nfft3d,nfft3d*sizeof(double));
         
@@ -477,11 +479,6 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
  
    delete [] Gtmp;
- 
-   //zplane_tmp1 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
-   //zplane_tmp2 = new (std::nothrow) double[ (2*zplane_size+8 + Alignment - 1) & ~(Alignment - 1)];
-   zplane_tmp1 = new (std::nothrow) double[ (2*zplane_size+8)];
-   zplane_tmp2 = new (std::nothrow) double[ (2*zplane_size+8)];
  
    /* initialize r_grid */
    has_r_grid = (lattice->aperiodic());
