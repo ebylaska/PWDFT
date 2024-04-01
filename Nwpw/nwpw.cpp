@@ -989,7 +989,8 @@ int main(int argc, char *argv[]) {
      /* band steepest descent task */
      if (task == 15) 
      {
-        std::cout << "Running band Steepest Descent " << std::endl;
+        if (oprint)
+           std::cout << "Running band Steepest Descent " << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
      }

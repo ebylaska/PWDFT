@@ -64,6 +64,7 @@ Mapping1::Mapping1(const int mapin, const int npin, const int taskidin,
     kmap[ms] = new (std::nothrow) int[ne[ms]];
     nqarray[ms] = new (std::nothrow) int[np];
 
+
     /* cyclic mapping */
     if (maptype1 == 0) {
 

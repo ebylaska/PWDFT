@@ -2785,6 +2785,7 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
    int np_k = parall->np_k();
    int idum[1] = {1};
 
+
    /**********************
     **** slab mapping ****
     **********************/
@@ -2838,6 +2839,8 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
    *************************/
    else 
    {
+
+
       if ((taskid_j==jcol) && (taskid_k==kcol))
       {
          // double *tmp1 = new (std::nothrow) double[2*nfft3d];
@@ -2861,8 +2864,10 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
          for (auto k=0; k<nz; ++k)
          for (auto j=0; j<ny; ++j) 
          {
+
             int ii = cijktop2(0, j, k);
             int p_from = parall->convert_taskid_ijk(ii, jcol, kcol);
+     
             if (p_from==MASTER) 
             {
                int index = 2*cijktoindex2(0, j, k);
@@ -2873,6 +2878,7 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
                parall->isend(0, 7, p_from, 1, idum);
                parall->dreceive(0, 9, p_from, bsize, tmp);
             }
+
             dwrite(iunit, tmp, bsize);
          }
       } 

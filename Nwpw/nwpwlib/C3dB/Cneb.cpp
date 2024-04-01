@@ -449,29 +449,34 @@ void Cneb::g_write(const int iunit, double *psi)
    int ibshiftk = ibshiftj*(neq[0]+neq[1]);
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   int taskid_k = c1db::parall->taskid_j();
+   int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
 
    for (auto nb=0; nb<nbrillouin; ++nb)
    {
       int qk = ktoindex(nb);
       int pk = ktop(nb);
+
       int nbq1 = qk+1;
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<ne[ms]; ++n) 
       {
          int qj = msntoindex(ms, n);
          int pj = msntop(ms, n);
+
          if ((pj==taskid_j) && (pk==taskid_k))
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
             CGrid::c_unpack(nbq1, tmp2);
+
+            //c_write(iunit,tmp2,pj,pk);
          }
          //if (io_buffer)
          //   c_write_buffer(iunit,tmp2,pj,pk);
          //else
-            c_write(iunit,tmp2,pj,pk);
+
+         c_write(iunit,tmp2,pj,pk);
       }
    }
 

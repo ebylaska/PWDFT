@@ -398,7 +398,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    mycneb->g_write(6, psi);
 
    if (occupation>0)
-       std::cout << "Erite the occupations here!" << std::endl;
+       std::cout << "Write the occupations here!" << std::endl;
  
    if (myparall->is_master())
       closefile(6);
