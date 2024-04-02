@@ -182,6 +182,7 @@ class Gdevices {
    int ifft_n;
  
    cublasHandle_t master_handle = 0;
+   cublasOperation_t matC = CUBLAS_OP_C;
    cublasOperation_t matT = CUBLAS_OP_T;
    cublasOperation_t matN = CUBLAS_OP_N;
  
@@ -888,175 +889,510 @@ public:
    }
 
 
-  void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
-                double *beta, double *host_c) { 
+   bool isCmplxZero(const double *beta) 
+   {
+      const double EPSILON = 1e-9; // Threshold for comparison
+      return std::abs(beta[0]) < EPSILON && std::abs(beta[1]) < EPSILON;
+   }
 
-     // ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1,
-     // host_b, ne, beta, host_c, npack1);
 
-     int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
-     int ib = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) ne));
-     int ic = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+   void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
+                 double *beta, double *host_c) { 
+      // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
+      // dev_mem, stream, and inuse are properly defined and initialized elsewhere.
+      // ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1,
+      // host_b, ne, beta, host_c, npack1);
 
-     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
-     NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne,     ne, sizeof(double), host_b, 2*ne,     dev_mem[ib], 2*ne, stream[0]));
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) ne));
+      int ic = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+     
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne,     ne, sizeof(double), host_b, 2*ne,     dev_mem[ib], 2*ne, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_c, 2*npack1, dev_mem[ic], 2*npack1, stream[0]));
+      
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,npack,ne,ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),npack1));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*npack1,ne,sizeof(double),dev_mem[ic],2*npack1,host_c,2*npack1,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+     
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
 
-     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
-     NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,npack,ne,ne,
-                                   alpha,
-                                   dev_mem[ia],npack1,
-                                   dev_mem[ib],ne,
-                                   beta,
-                                   dev_mem[ic],npack1));
-     NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*npack1,ne,sizeof(double),dev_mem[ic],2*npack1,host_c,2*npack1,stream[0]));
-     NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+   void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) {
+       // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
+       // dev_mem, stream, and inuse are properly defined and initialized elsewhere.
+       // ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1,
+       //             host_b, npack1, beta, host_c, ne);
+     
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) ne));
+     
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_b, 2*npack1, dev_mem[ib], 2*npack1, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_c, 2*ne, dev_mem[ic], 2*ne, stream[0]));
+     
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,ne,ne,npack,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),ne));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[ic],2*ne,host_c,2*ne,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+     
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
 
-     inuse[ia] = false;
-     inuse[ib] = false;
-     inuse[ic] = false;
-  }
 
-  void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1,
-                host_b, npack1, beta, host_c, ne);
-  }
+   void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) {
+      // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
+      // dev_mem, stream, and inuse are properly defined and initialized elsewhere.
+      //  ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
+      //              host_b, npack1, beta, host_c, ne);
 
-  void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
-                host_b, npack1, beta, host_c, ne);
-  }     
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) nprj));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) nprj));
+     
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne,   sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, nprj, sizeof(double), host_b, 2*npack1, dev_mem[ib], 2*npack1, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, nprj, sizeof(double), host_c, 2*ne, dev_mem[ic], 2*ne, stream[0]));
+     
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,ne,nprj,npack,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),ne));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,nprj,sizeof(double),dev_mem[ic],2*ne,host_c,2*ne,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+     
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
 
-  void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_c) {
-    ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
-                host_b, ne, beta, host_c, npack1);
-  }   
+
+   void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) {
+      // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
+      // dev_mem, stream, and inuse are properly defined and initialized elsewhere.
+      // ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
+      //             host_b, ne, beta, host_c, npack1);
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) nprj));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) nprj));
+      int ic = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, nprj, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne,     nprj, sizeof(double), host_b, 2*ne,     dev_mem[ib], 2*ne,     stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_c, 2*npack1, dev_mem[ic], 2*npack1, stream[0]));
+                
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matC,npack,ne,nprj,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),npack1));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*npack1,ne,sizeof(double),dev_mem[ic],2*npack1,host_c,2*npack1,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }   
       
                  
-  void NN_zgemm(int m, int n, int k,
+   void NN_zgemm(int m, int n, int k,
                  double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
                  double *beta,
                  double *host_c,int ldc) {
-     ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
-  }    
+      // ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
 
-  void CN_zgemm(int m, int n, int k,
+      int ia = fetch_dev_mem_indx(((size_t) 2*lda) * ((size_t) k));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ldb) * ((size_t) n));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ldc) * ((size_t) n));
+
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*lda, k, sizeof(double), host_a, 2*lda, dev_mem[ia], 2*lda, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldb, n, sizeof(double), host_b, 2*ldb, dev_mem[ib], 2*ldb, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldc, n, sizeof(double), host_c, 2*ldc, dev_mem[ic], 2*ldc, stream[0]));
+
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,m,n,k,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),lda,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),ldb,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),ldc));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ldc,n,sizeof(double),dev_mem[ic],2*ldc,host_c,2*ldc,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }    
+
+
+   void CN_zgemm(int m, int n, int k,
                  double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
                  double *beta,
                  double *host_c,int ldc) {
-     ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
-  }
+      // ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+     
+      int ia = fetch_dev_mem_indx(((size_t) 2*lda) * ((size_t) m));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ldb) * ((size_t) n));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ldc) * ((size_t) n));
+      
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*lda, m, sizeof(double), host_a, 2*lda, dev_mem[ia], 2*lda, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldb, n, sizeof(double), host_b, 2*ldb, dev_mem[ib], 2*ldb, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldc, n, sizeof(double), host_c, 2*ldc, dev_mem[ic], 2*ldc, stream[0]));
+      
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,m,n,k,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),lda,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),ldb,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),ldc));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ldc,n,sizeof(double),dev_mem[ic],2*ldc,host_c,2*ldc,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
 
-  void NC_zgemm(int m, int n, int k,
+
+   void NC_zgemm(int m, int n, int k,
                  double *alpha,
                  double *host_a, int lda,
                  double *host_b, int ldb,
                  double *beta,
                  double *host_c,int ldc) {
-     ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
-  }
+      // ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+     
+      int ia = fetch_dev_mem_indx(((size_t) 2*lda) * ((size_t) k));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ldb) * ((size_t) n));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ldc) * ((size_t) n));
+      
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*lda, k, sizeof(double), host_a, 2*lda, dev_mem[ia], 2*lda, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldb, n, sizeof(double), host_b, 2*ldb, dev_mem[ib], 2*ldb, stream[0]));
+      if (!isCmplxZero(beta))
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ldc, n, sizeof(double), host_c, 2*ldc, dev_mem[ic], 2*ldc, stream[0]));
+      
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matC,m,n,k,
+                                    reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),lda,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),ldb,
+                                    reinterpret_cast<const cuDoubleComplex*>(beta),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ic]),ldc));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ldc,n,sizeof(double),dev_mem[ic],2*ldc,host_c,2*ldc,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
+   }
 
 
-  void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+
+   void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                  double *host_b, double *beta, double *host_caa,
                  double *host_cab, double *host_cbb) {
-    int one = 1;
-    int shift1 = 0;
-    int mshift1 = 0;
+      int one = 1;
+      int shift1 = 0;
+      int mshift1 = 0;
 
-    for (auto k = 1; k <= ne; ++k)
-    {
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_a + shift1, npack1,
-                   beta,
-                   host_caa + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cab + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cbb + mshift1, k);
-       shift1 += 2*npack1;
-       mshift1 += 2*ne;
-    }
-  }
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int icaa = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icab = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icbb = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
 
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_b, 2*npack1, dev_mem[ib], 2*npack1, stream[1]));
+      if (!isCmplxZero(beta))
+      {
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_caa, 2*ne, dev_mem[icaa], 2*ne, stream[0]));
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_cab, 2*ne, dev_mem[icab], 2*ne, stream[1]));
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_cbb, 2*ne, dev_mem[icbb], 2*ne, stream[1]));
+      }
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
 
-  void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
-                 double *host_b, double *beta, double *host_caa,
-                 double *host_cab, double *host_cba, double *host_cbb) {
-    int one = 1;
-    int shift1 = 0;
-    int mshift1 = 0;
-
-    for (auto k = 1; k <= ne; ++k)
-    {
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_a + shift1, npack1,
-                   beta,
-                   host_caa + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_a, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cab + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_a + shift1, npack1,
-                   beta,
-                   host_cba + mshift1, k);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
-                   alpha,
-                   host_b, npack1,
-                   host_b + shift1, npack1,
-                   beta,
-                   host_cbb + mshift1, k);
-       shift1 += 2*npack1;
-       mshift1 += 2*ne;
-    }
-
-  }
+      for (auto k=1; k<=ne; ++k)
+      {
+         /*
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_a + shift1, npack1,
+                     beta,
+                     host_caa + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cab + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cbb + mshift1, k);
+         */
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icaa]+mshift1),k));
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icaa],2*ne,host_caa,2*ne,stream[0]));
 
 
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
+      for (auto k=1; k<=ne; ++k)
+      {
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icab]+mshift1),k));
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icbb]+mshift1),k));
 
-  void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icab],2*ne,host_cab,2*ne,stream[1]));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icbb],2*ne,host_cbb,2*ne,stream[1]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[icaa] = false;
+      inuse[icab] = false;
+      inuse[icbb] = false;
+   }
+
+
+   void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_caa,
+                  double *host_cab, double *host_cba, double *host_cbb) {
+      int one = 1;
+      int shift1 = 0;
+      int mshift1 = 0;
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1) * ((size_t) ne));
+      int icaa = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icab = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icba = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icbb = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_a, 2*npack1, dev_mem[ia], 2*npack1, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*npack1, ne, sizeof(double), host_b, 2*npack1, dev_mem[ib], 2*npack1, stream[1]));
+      if (!isCmplxZero(beta))
+      {
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_caa, 2*ne, dev_mem[icaa], 2*ne, stream[0]));
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_cab, 2*ne, dev_mem[icab], 2*ne, stream[1]));
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_cba, 2*ne, dev_mem[icba], 2*ne, stream[1]));
+         NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_cbb, 2*ne, dev_mem[icbb], 2*ne, stream[1]));
+      }
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      for (auto k=1; k<=ne; ++k)
+      {
+         /*
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_a + shift1, npack1,
+                     beta,
+                     host_caa + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_a, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cab + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_a + shift1, npack1,
+                     beta,
+                     host_cba + mshift1, k);
+         ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
+                     alpha,
+                     host_b, npack1,
+                     host_b + shift1, npack1,
+                     beta,
+                     host_cbb + mshift1, k);
+         */
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icaa]+mshift1),k));
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icaa],2*ne,host_caa,2*ne,stream[0]));
+
+      shift1 = 0;
+      mshift1 = 0;
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
+      for (auto k=1; k<=ne; ++k)
+      {
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icab]+mshift1),k));
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ia]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icba]+mshift1),k));
+         NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matC,matN,k,one,npack,
+                                       reinterpret_cast<const cuDoubleComplex*>(alpha),
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(dev_mem[ib]+shift1),npack1,
+                                       reinterpret_cast<const cuDoubleComplex*>(beta),
+                                       reinterpret_cast<cuDoubleComplex*>(dev_mem[icbb]+mshift1),k));
+         shift1 += 2*npack1;
+         mshift1 += 2*ne;
+      }
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icab],2*ne,host_cab,2*ne,stream[1]));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icba],2*ne,host_cba,2*ne,stream[1]));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[icbb],2*ne,host_cbb,2*ne,stream[1]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
+      
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[icaa] = false;
+      inuse[icab] = false;
+      inuse[icba] = false;
+      inuse[icbb] = false;
+   }
+
+
+
+   void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
                  double *host_sa0, double *host_sa1, double *host_st1) {
-     double rone[2]  = {1.0,0.0};
-     double rzero[2] = {0.0,0.0};
+      double rone[2]  = {1.0,0.0};
+      double rzero[2] = {0.0,0.0};
 
-     // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
-                 host_sa0, ne, rone, host_sa1, ne);
+      int is11 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int is12 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int is21 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int isa0 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int isa1 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int ist1 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
 
-     // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                 host_s12, ne, rone, host_sa1, ne);
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_s21, 2*ne, dev_mem[is21], 2*ne, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_sa0, 2*ne, dev_mem[isa0], 2*ne, stream[0]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_sa1, 2*ne, dev_mem[isa1], 2*ne, stream[0]));
 
-     // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
-                 host_sa0, ne, rzero, host_st1, ne);
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_s12, 2*ne, dev_mem[is12], 2*ne, stream[1]));
+      NWPW_CUBLAS_ERROR(cublasSetMatrixAsync(2*ne, ne, sizeof(double), host_s11, 2*ne, dev_mem[is11], 2*ne, stream[2]));
 
-     // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
-     ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                 host_st1, ne, rone, host_sa1, ne);
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
+      //            host_sa0, ne, rone, host_sa1, ne);
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,ne,ne,ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[is21]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[isa0]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[isa1]),ne));
+
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[1]));
+      // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+      //            host_s12, ne, rone, host_sa1, ne);
+      
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,ne,ne,ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[isa0]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[is12]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[isa1]),ne));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[2]));
+
+      // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
+      //            host_sa0, ne, rzero, host_st1, ne);
+      
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,ne,ne,ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[is11]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[isa0]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rzero),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[ist1]),ne));
+
+      // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+      //            host_st1, ne, rone, host_sa1, ne);
+      NWPW_CUBLAS_ERROR(cublasZgemm(master_handle,matN,matN,ne,ne,ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[isa0]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(dev_mem[ist1]),ne,
+                                    reinterpret_cast<const cuDoubleComplex*>(rone),
+                                    reinterpret_cast<cuDoubleComplex*>(dev_mem[isa1]),ne));
+
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[ist1],2*ne,host_st1,2*ne,stream[0]));
+      NWPW_CUBLAS_ERROR(cublasGetMatrixAsync(2*ne,ne,sizeof(double),dev_mem[isa1],2*ne,host_sa1,2*ne,stream[0]));
+      NWPW_CUDA_ERROR(cudaStreamSynchronize(stream[0]));
+
+      inuse[is11] = false;
+      inuse[is12] = false;
+      inuse[is21] = false;
+      inuse[isa0] = false;
+      inuse[isa1] = false;
+      inuse[ist1] = false;
   }     
 
         
