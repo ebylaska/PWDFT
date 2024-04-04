@@ -122,41 +122,41 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
   size_t size_slice = size.get(1) * size.get(0);
   switch (direction) {
   case host_to_device: {
-    host_buffer buf(detail::get_copy_range(size, to_slice, to_range.get(0)), q,
-                    event_list);
-    std::vector<sycl::event> host_events;
-    if (to_slice == size_slice) {
-      // Copy host data to a temp host buffer with the shape of target.
-      host_events = detail::dpct_memcpy(
-          q, buf.get_ptr(), from_surface, to_range, from_range,
-          sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
-          dep_events);
-    } else {
-      // Copy host data to a temp host buffer with the shape of target.
-      host_events = detail::dpct_memcpy(
-          q, buf.get_ptr(), from_surface, to_range, from_range,
-          sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
-          // If has padding data, not sure whether it is useless. So fill temp
-          // buffer with it.
-          std::vector<sycl::event>{
-              q.memcpy(buf.get_ptr(), to_surface, buf.get_size(), dep_events)});
-    }
-    // Copy from temp host buffer to device with only one submit.
-    event_list.push_back(
-        q.memcpy(to_surface, buf.get_ptr(), buf.get_size(), host_events));
-    break;
+     host_buffer buf(detail::get_copy_range(size, to_slice, to_range.get(0)), q,
+                     event_list);
+     std::vector<sycl::event> host_events;
+     if (to_slice == size_slice) {
+       // Copy host data to a temp host buffer with the shape of target.
+       host_events = detail::dpct_memcpy(
+           q, buf.get_ptr(), from_surface, to_range, from_range,
+           sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
+           dep_events);
+     } else {
+       // Copy host data to a temp host buffer with the shape of target.
+       host_events = detail::dpct_memcpy(
+           q, buf.get_ptr(), from_surface, to_range, from_range,
+           sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
+           // If has padding data, not sure whether it is useless. So fill temp
+           // buffer with it.
+           std::vector<sycl::event>{
+               q.memcpy(buf.get_ptr(), to_surface, buf.get_size(), dep_events)});
+     }
+     // Copy from temp host buffer to device with only one submit.
+     event_list.push_back(
+         q.memcpy(to_surface, buf.get_ptr(), buf.get_size(), host_events));
+     break;
   }
   case device_to_host: {
-    host_buffer buf(detail::get_copy_range(size, from_slice, from_range.get(0)),
-                    q, event_list);
-    // Copy from host temp buffer to host target with reshaping.
-    event_list = detail::dpct_memcpy(
-        q, to_surface, buf.get_ptr(), to_range, from_range,
-        sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
-        // Copy from device to temp host buffer with only one submit.
-        std::vector<sycl::event>{
-            q.memcpy(buf.get_ptr(), from_surface, buf.get_size(), dep_events)});
-    break;
+     host_buffer buf(detail::get_copy_range(size, from_slice, from_range.get(0)),
+                     q, event_list);
+     // Copy from host temp buffer to host target with reshaping.
+     event_list = detail::dpct_memcpy(
+         q, to_surface, buf.get_ptr(), to_range, from_range,
+         sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
+         // Copy from device to temp host buffer with only one submit.
+         std::vector<sycl::event>{
+             q.memcpy(buf.get_ptr(), from_surface, buf.get_size(), dep_events)});
+     break;
   }
   default:
     throw std::runtime_error("dpct_memcpy: invalid direction value");
@@ -179,37 +179,36 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t to_pitch,
 inline void syclSetMatrixAsync(int rows, int cols, size_t elem_size,
                                const void *from_ptr, int from_ld, void *to_ptr,
                                int to_ld, sycl::queue *que) {
-  if (to_ptr == from_ptr && to_ld == from_ld) {
-    return;
-  }
-
-  if (to_ld == from_ld) {
-    size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
-    que->memcpy(to_ptr, from_ptr, cpoy_size);
-  } else {
-    detail::dpct_memcpy(*que, to_ptr, from_ptr, elem_size * to_ld,
-                        elem_size * from_ld, elem_size * rows, cols,
-                        detail::host_to_device);
-  }
+   if (to_ptr == from_ptr && to_ld == from_ld) {
+     return;
+   }
+ 
+   if (to_ld == from_ld) {
+     size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
+     que->memcpy(to_ptr, from_ptr, cpoy_size);
+   } else {
+     detail::dpct_memcpy(*que, to_ptr, from_ptr, elem_size * to_ld,
+                         elem_size * from_ld, elem_size * rows, cols,
+                         detail::host_to_device);
+   }
 }
 
 inline void syclGetMatrixAsync(int rows, int cols, size_t elem_size,
                                const void *from_ptr, int from_ld, void *to_ptr,
                                int to_ld, sycl::queue *que) {
-  if (to_ptr == from_ptr && to_ld == from_ld) {
-    return;
-  }
-
-  if (to_ld == from_ld) {
-    size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
-    que->memcpy(to_ptr, from_ptr, cpoy_size);
-  } else {
-    detail::dpct_memcpy(*que, to_ptr, from_ptr, elem_size * to_ld,
-                        elem_size * from_ld, elem_size * rows, cols,
-                        detail::device_to_host);
-  }
+   if (to_ptr == from_ptr && to_ld == from_ld) {
+      return;
+   }
+ 
+   if (to_ld == from_ld) {
+      size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
+      que->memcpy(to_ptr, from_ptr, cpoy_size);
+   } else {
+      detail::dpct_memcpy(*que, to_ptr, from_ptr, elem_size * to_ld,
+                          elem_size * from_ld, elem_size * rows, cols,
+                          detail::device_to_host);
+   }
 }
-
 
 
 
@@ -252,45 +251,60 @@ public:
    int ifft_n;
  
    /* constructor */
-   Gdevices() {
-     if (DEBUG_IO) std::cout << "calling gdevices constructor" << std::endl;
-     ndev_mem = 0;
- 
-     auto asyncHandler = [&](sycl::exception_list eL) {
-       for (auto &e : eL) {
-         try {
-           std::rethrow_exception(e);
-         } catch (sycl::exception &e) {
-           std::cout << e.what() << std::endl;
-           std::cout << "fail" << std::endl;
-           std::terminate();
-         }
-       }
-     };
- 
-     // allocate SYCL streams
- 
-     for (auto i=0; i<12; ++i) {
-       stream.push_back(new sycl::queue(
-           sycl::gpu_selector_v, asyncHandler,
-           sycl::property_list{sycl::property::queue::in_order{}}));
-     }
- 
+   /**************************************
+    *                                    *
+    *             Gdevices               *
+    *                                    *
+    **************************************/
+   Gdevices() 
+   {
+      if (DEBUG_IO) std::cout << "calling gdevices constructor" << std::endl;
+      ndev_mem = 0;
+     
+      auto asyncHandler = [&](sycl::exception_list eL) {
+        for (auto &e : eL) {
+          try {
+            std::rethrow_exception(e);
+          } catch (sycl::exception &e) {
+            std::cout << e.what() << std::endl;
+            std::cout << "fail" << std::endl;
+            std::terminate();
+          }
+        }
+      };
+     
+      // allocate SYCL streams
+     
+      for (auto i=0; i<12; ++i) {
+        stream.push_back(new sycl::queue(
+            sycl::gpu_selector_v, asyncHandler,
+            sycl::property_list{sycl::property::queue::in_order{}}));
+      }
    }
  
    /* deconstructor */
-   ~Gdevices() {
- 
-     // free dev_mem
-     for (auto i=0; i<ndev_mem; ++i)
-       sycl::free(dev_mem[i], *stream[0]);
-     ndev_mem = 0;
- 
-     // free cuda streams
-     for (auto i=0; i<12; ++i)
-       delete stream[i];
+   /**************************************
+    *                                    *
+    *            ~Gdevices               *
+    *                                    *
+    **************************************/
+   ~Gdevices() 
+   {
+      // free dev_mem
+      for (auto i=0; i<ndev_mem; ++i)
+         sycl::free(dev_mem[i], *stream[0]);
+      ndev_mem = 0;
+    
+      // free cuda streams
+      for (auto i=0; i<12; ++i)
+         delete stream[i];
    }
  
+   /**************************************
+    *                                    *
+    *            fetch_dev_mem_indx      *
+    *                                    *
+    **************************************/
    int fetch_dev_mem_indx(const size_t ndsize) 
    {
       int ii = 0;
@@ -848,6 +862,11 @@ public:
       inuse[ic] = false;
    }
  
+   /**************************************
+    *                                    *
+    *              T_free                *
+    *                                    *
+    **************************************/
    void T_free() 
    {
       inuse[ib_prj[0]] = false;
@@ -855,6 +874,11 @@ public:
          inuse[ib_prj[1]] = false;
    }
  
+   /**************************************
+    *                                    *
+    *              NT_dgemm              *
+    *                                    *
+    **************************************/
    void NT_dgemm(int npack2, int ne, int nprj, double alpha, double *host_a,
                  double *host_b, double beta, double *host_c) 
    {
@@ -963,6 +987,11 @@ public:
 
 
       
+   /**************************************
+    *                                    *
+    *              NN1_zgemm             *
+    *                                    *
+    **************************************/
    void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
                  double *beta, double *host_c) 
    {
@@ -970,6 +999,11 @@ public:
                   host_b, ne, beta, host_c, npack1);
    }                
         
+   /**************************************
+    *                                    *
+    *              CN1_zgemm             *
+    *                                    *
+    **************************************/
    void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
@@ -977,13 +1011,35 @@ public:
                   host_b, npack1, beta, host_c, ne);
    }                
         
+   /**************************************
+    *                                    *
+    *              CN2_zgemm             *
+    *                                    *
+    **************************************/
    void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
       ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
                   host_b, npack1, beta, host_c, ne);
    }
-                  
+
+   /**************************************
+    *                                    *
+    *           CN2_stride_zgemm         *
+    *                                    *
+    **************************************/
+   void CN2_stride_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1,
+                  host_b, npack1, beta, host_c, ne);
+   }
+
+   /**************************************
+    *                                    *
+    *              NC2_zgemm             *
+    *                                    *
+    **************************************/
    void NC2_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
@@ -991,8 +1047,23 @@ public:
                   host_b, ne, beta, host_c, npack1);
    }
 
-     
+   /**************************************
+    *                                    *
+    *           NC2_stride_zgemm         *
+    *                                    *
+    **************************************/
+   void NC2_stride_zgemm(int npack1, int npack, int ne, int nprj,  double *alpha, double *host_a,
+                  double *host_b, double *beta, double *host_c) 
+   {
+      ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1,
+                  host_b, ne, beta, host_c, npack1);
+   }
 
+   /**************************************
+    *                                    *
+    *            CN4__zgemm              *
+    *                                    *
+    **************************************/
    void CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                  double *host_b, double *beta, double *host_caa,
                  double *host_cab, double *host_cba, double *host_cbb) 
@@ -1032,8 +1103,11 @@ public:
       }
    }
 
-
-
+   /**************************************
+    *                                    *
+    *            CN3__zgemm              *
+    *                                    *
+    **************************************/
    void CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_caa,
                   double *host_cab, double *host_cbb) 
@@ -1069,7 +1143,11 @@ public:
 
 
 
-               
+   /**************************************
+    *                                    *
+    *             WW6_zgemm              *
+    *                                    *
+    **************************************/
    void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
                   double *host_sa0, double *host_sa1, double *host_st1) 
    {
@@ -1139,6 +1217,12 @@ public:
       inuse[ib] = false;
       inuse[ic] = false;
    } */
+
+   /**************************************
+    *                                    *
+    *              NN_zgemm              *
+    *                                    *
+    **************************************/
    void NN_zgemm(int m, int n, int k,
                  double *alpha, 
                  double *host_a, int lda,
@@ -1198,14 +1282,19 @@ public:
       inuse[ic] = false;
    } */
 
-  void CN_zgemm(int m, int n, int k,
-                 double *alpha, 
-                 double *host_a, int lda,
-                 double *host_b, int ldb,
-                 double *beta,
-                 double *host_c,int ldc) {
-     ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
-  }     
+   /**************************************
+    *                                    *
+    *              CN_zgemm              *
+    *                                    *
+    **************************************/
+   void CN_zgemm(int m, int n, int k,
+                  double *alpha, 
+                  double *host_a, int lda,
+                  double *host_b, int ldb,
+                  double *beta,
+                  double *host_c,int ldc) {
+      ZGEMM_PWDFT((char *)"C", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+   }     
       
    /*
    void NC_zgemm(int m, int n, int k,
@@ -1254,19 +1343,31 @@ public:
        inuse[ic] = false;
    }
 */
-  void NC_zgemm(int m, int n, int k,
-                 double *alpha,
-                 double *host_a, int lda,
-                 double *host_b, int ldb,
-                 double *beta,
-                 double *host_c,int ldc) {
-     ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
-  } 
+   /**************************************
+    *                                    *
+    *              NC_zgemm              *
+    *                                    *
+    **************************************/
+   void NC_zgemm(int m, int n, int k,
+                  double *alpha,
+                  double *host_a, int lda,
+                  double *host_b, int ldb,
+                  double *beta,
+                  double *host_c,int ldc) 
+   {
+      ZGEMM_PWDFT((char *)"N", (char *)"C", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
+   } 
 
  
    /********************/
    /* psi_dev functions*/
    /********************/
+
+   /**************************************
+    *                                    *
+    *             psi_alloc              *
+    *                                    *
+    **************************************/
    void psi_alloc(int npack1, int ne, int tile_fac0 = 1) 
    {
       tile_fac = tile_fac0;
@@ -1296,6 +1397,11 @@ public:
       if (DEBUG_IO) std::cout << "Into psi_alloc, tile_factor = " << tile_fac << " ndev_mem=" << ndev_mem << std::endl;
    }
 
+   /**************************************
+    *                                    *
+    *             psi_dealloc            *
+    *                                    *
+    **************************************/
    void psi_dealloc() 
    {
       inuse[ia_psi[0]] = false;
@@ -1307,6 +1413,11 @@ public:
       }
    }
 
+   /**************************************
+    *                                    *
+    *          psi_copy_host2gpu         *
+    *                                    *
+    **************************************/
    void psi_copy_host2gpu(int npack1, int ne, double *psi) 
    {
       a_psi = psi;
@@ -1314,6 +1425,11 @@ public:
                          dev_mem[ia_psi[0]], tile_npack2[0], stream[0]);
    }
 
+   /**************************************
+    *                                    *
+    *          hpsi_copy_host2gpu        *
+    *                                    *
+    **************************************/
    void hpsi_copy_host2gpu(int npack1, int ne, double *hpsi) 
    {
       int tt = tile_fac - 1;
@@ -1323,6 +1439,11 @@ public:
           dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], stream[tt % 2]);
    }
 
+   /**************************************
+    *                                    *
+    *          psi_copy_gpu2host         *
+    *                                    *
+    **************************************/
    void psi_copy_gpu2host(int npack1, int ne, double *psi) 
    {
       if (tile_fac == 1) 
@@ -1333,6 +1454,11 @@ public:
       }
    }
 
+   /**************************************
+    *                                    *
+    *         hpsi_copy_gpu2host         *
+    *                                    *
+    **************************************/
    void hpsi_copy_gpu2host(int npack1, int ne, double *hpsi) 
    {
       stream[0]->wait();
@@ -1340,6 +1466,12 @@ public:
 
  
    /* fft functions*/
+
+   /**************************************
+    *                                    *
+    *         batch_fft_init             *
+    *                                    *
+    **************************************/
    int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) 
    {
        /*
@@ -1372,7 +1504,11 @@ public:
       */
    }
  
- 
+   /**************************************
+    *                                    *
+    *       batch_fft_pipeline_init      *
+    *                                    *
+    **************************************/
    void batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
     //  ifft_n = nstages;
  
@@ -1381,8 +1517,11 @@ public:
    //      ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
    }
  
- 
- 
+   /**************************************
+    *                                    *
+    *            batch_fft_end           *
+    *                                    *
+    **************************************/
    void batch_fft_end(const int tag) {
     // delete desc_x[tag];
     // delete desc_y[tag];
@@ -1393,7 +1532,11 @@ public:
    }
 
 
-  
+   /**************************************
+    *                                    *
+    *            batch_rfft_tmpx         *
+    *                                    *
+    **************************************/
    void batch_rfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
    {                                 
       int nxh2 = nx + 2;
@@ -1436,6 +1579,11 @@ public:
    }
 
 
+   /**************************************
+    *                                    *
+    *            batch_cfftx_tmpx        *
+    *                                    *
+    **************************************/
    void batch_cfftx_tmpx(bool forward, int nx, int nq, int n2ft3d, double *a, double *tmpx)
    {
       if (forward)
@@ -1457,7 +1605,12 @@ public:
          }
       }
    }
- 
+
+   /**************************************
+    *                                    *
+    *            batch_cffty_tmpy        *
+    *                                    *
+    **************************************/
    void batch_cffty_tmpy(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy)
    {
       if (forward)
@@ -1481,6 +1634,11 @@ public:
    }
  
  
+   /**************************************
+    *                                    *
+    *       batch_cffty_tmpy_zero        *
+    *                                    *
+    **************************************/
    void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy, bool *zero)
    {
       if (forward)
@@ -1507,7 +1665,11 @@ public:
  
  
  
- 
+   /**************************************
+    *                                    *
+    *          batch_cfftz_tmpz          *
+    *                                    *
+    **************************************/
    void batch_cfftz_tmpz(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz) 
    {
       if (forward) 
@@ -1531,6 +1693,11 @@ public:
    }
  
  
+   /**************************************
+    *                                    *
+    *        batch_cfftz_tmpz_zero       *
+    *                                    *
+    **************************************/
    void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz, bool *zero)
    {
       if (forward)
@@ -1562,6 +1729,11 @@ public:
  
    // routines below need to be made into sycl or removed
  
+   /**************************************
+    *                                    *
+    *            eigsrt_device           *
+    *                                    *
+    **************************************/
    static void eigsrt_device(double *D, double *V, int n) 
    {
       int i, j, k;
@@ -1593,6 +1765,11 @@ public:
    }
 
  
+   /**************************************
+    *                                    *
+    *           NN_eigensolver           *
+    *                                    *
+    **************************************/
    void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
    {
       int n, ierr;
@@ -1618,7 +1795,11 @@ public:
       }
    }
 
-
+   /**************************************
+    *                                    *
+    *           WW_eigensolver           *
+    *                                    *
+    **************************************/
    void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
    {
       int n, ierr;
@@ -1647,11 +1828,6 @@ public:
          shift2 += 4*ne[0]*ne[0];
       } 
    }
-
-
-
-
-
 
 }; // class Gdevices
 
