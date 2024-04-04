@@ -216,6 +216,11 @@ public:
    double *d_work;
  
    /* constructor */
+   /**************************************
+    *                                    *
+    *              Gdevices              *
+    *                                    *
+    **************************************/
    Gdevices() {
      ndev_mem = 0;
  
@@ -238,6 +243,11 @@ public:
    }
  
    /* deconstructor */
+   /**************************************
+    *                                    *
+    *              ~Gdevices             *
+    *                                    *
+    **************************************/
    ~Gdevices() noexcept(false) {
       // free dev_mem
       for (auto i=0; i<ndev_mem; ++i)
@@ -269,6 +279,12 @@ public:
       // cufftDestroy(backward_plan_x);
    }
  
+
+   /**************************************
+    *                                    *
+    *           fetch_dev_mem_indx       *
+    *                                    *
+    **************************************/
    int fetch_dev_mem_indx(const size_t ndsize) 
    {
       int ii = 0;
@@ -891,6 +907,11 @@ public:
    }
 
 
+   /**************************************
+    *                                    *
+    *             isCmplxZero            *
+    *                                    *
+    **************************************/
    bool isCmplxZero(const double *beta) 
    {
       const double EPSILON = 1e-9; // Threshold for comparison
@@ -898,6 +919,11 @@ public:
    }
 
 
+   /**************************************
+    *                                    *
+    *             NN1_zgemm              *
+    *                                    *
+    **************************************/
    void NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a, double *host_b,
                  double *beta, double *host_c) { 
       // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
@@ -929,6 +955,13 @@ public:
       inuse[ic] = false;
    }
 
+
+
+   /**************************************
+    *                                    *
+    *              CN1_zgemm             *
+    *                                    *
+    **************************************/
    void CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) {
        // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
@@ -961,6 +994,11 @@ public:
    }
 
 
+   /**************************************
+    *                                    *
+    *              CN2_zgemm             *
+    *                                    *
+    **************************************/
    void CN2_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) {
       // Assuming fetch_dev_mem_indx, NWPW_CUBLAS_ERROR, NWPW_CUDA_ERROR, master_handle, matN,
@@ -992,6 +1030,11 @@ public:
       inuse[ic] = false;
    }
 
+   /**************************************
+    *                                    *
+    *            CN2_stride_zgemm        *
+    *                                    *
+    **************************************/
    void CN2_stride_zgemm(int ne, int nprj, int npack1, int npack, double *alpha, double *host_a,
                         double *host_b, double *beta, double *host_c) {
 
