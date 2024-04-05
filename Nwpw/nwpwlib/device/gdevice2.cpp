@@ -77,14 +77,14 @@ void gdevice2::NN_eigensolver(int ispin, int ne[], double *a, double *w) {
    mygdevice2->NN_eigensolver(ispin, ne, a, w);
 }
 
-void gdevice2::NN1_zgemm(int npack1, int npack, int ne, double *alpha, double *a, double *b,
+void gdevice2::NN1_zgemm(int npack1_max, int npack, int ne, double *alpha, double *a, double *b,
                          double *beta, double *c) {
-   mygdevice2->NN1_zgemm(npack1, npack, ne, alpha, a, b, beta, c);
+   mygdevice2->NN1_zgemm(npack1_max, npack, ne, alpha, a, b, beta, c);
 }
 
-void gdevice2::CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *a, double *b,
+void gdevice2::CN1_zgemm(int npack1_max, int npack, int ne, double *alpha, double *a, double *b,
                          double *beta, double *c) {
-   mygdevice2->CN1_zgemm(npack1, npack, ne, alpha, a, b, beta, c);
+   mygdevice2->CN1_zgemm(npack1_max, npack, ne, alpha, a, b, beta, c);
 }
 
 void gdevice2::CN2_zgemm(int ne, int nprj, int npack, int npack1_max, double *alpha, double *a, double *b,
@@ -98,14 +98,14 @@ void gdevice2::CN2_zgemm(int ne, int nprj, int npack, int npack1_max, double *al
       mygdevice2->CN2_zgemm(ne, nprj, npack, npack1_max, alpha, a, b, beta, c);
 }
 
-void gdevice2::NC2_zgemm(int npack1, int npack, int ne, int nprj, double *alpha, double *a, double *b,
+void gdevice2::NC2_zgemm(int npack1_max, int npack, int ne, int nprj, double *alpha, double *a, double *b,
                          double *beta, double *c) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
-      mygdevice2->NC2_stride_zgemm(npack1, npack, ne, nprj, alpha, a, b, beta, c);
+      mygdevice2->NC2_stride_zgemm(npack1_max, npack, ne, nprj, alpha, a, b, beta, c);
    else
 #endif
-      mygdevice2->NC2_zgemm(npack1, npack, ne, nprj, alpha, a, b, beta, c);
+      mygdevice2->NC2_zgemm(npack1_max, npack, ne, nprj, alpha, a, b, beta, c);
 }
 
 
@@ -123,15 +123,15 @@ void gdevice2::CN_zgemm(int n, int m, int k, double *alpha, double *a, int lda, 
    mygdevice2->CN_zgemm(n,m,k,alpha,a,lda,b,ldb,beta,c,ldc);
 }
 
-void gdevice2::CN4_zgemm(int npack1, int npack, int ne, double *alpha, double *a, double *b,
+void gdevice2::CN4_zgemm(int npack1_max, int npack, int ne, double *alpha, double *a, double *b,
                          double *beta, double *caa, double *cab, double *cba,
                          double *cbb) {
-   mygdevice2->CN4_zgemm(npack1, npack, ne, alpha, a, b, beta, caa, cab, cba, cbb);
+   mygdevice2->CN4_zgemm(npack1_max, npack, ne, alpha, a, b, beta, caa, cab, cba, cbb);
 }
 
-void gdevice2::CN3_zgemm(int npack1, int npack, int ne, double *alpha, double *a, double *b,
+void gdevice2::CN3_zgemm(int npack1_max, int npack, int ne, double *alpha, double *a, double *b,
                          double *beta, double *caa, double *cab, double *cbb) {
-   mygdevice2->CN3_zgemm(npack1, npack, ne, alpha, a, b, beta, caa, cab, cbb);
+   mygdevice2->CN3_zgemm(npack1_max, npack, ne, alpha, a, b, beta, caa, cab, cbb);
 }
 
 
