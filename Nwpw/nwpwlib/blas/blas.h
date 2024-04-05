@@ -12,6 +12,8 @@
 
 //#define TRANSCONV(a)    ( (std::strcmp(a, "N")) ?  CblasNoTrans : CblasTrans )
 #define TRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasTrans)
+#define CTRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasConjTrans)
+
 #define DGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   cblas_dgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
               ida, b, idb, beta, c, idc)
@@ -51,7 +53,7 @@
   cblas_zaxpy(n, alpha, a, ida, b, idb)
 
 #define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
-  cblas_zgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
+  cblas_zgemm(CblasColMajor, CTRANSCONV(s1), CTRANSCONV(s2), n, m, k, alpha, a,  \
               ida, b, idb, beta, c, idc)
 
 #define IZAMAX_PWDFT(nn, hml, one) cblas_izamax(nn, hml, one)

@@ -720,12 +720,12 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
 void CGrid::cc_pack_inprjzdot(const int nb, int nn, int nprj, double *a,
                               double *b, double *sum) 
 {  
-   int npack1 = (nidb1_max);
+   int npack1_max = (nidb1_max);
    int ng = (nidb[nb]);
    double rone[2] = {1.0,0.0};
    double rzero[2] = {0.0,0.0}; 
    
-   c3db::mygdevice.CN2_zgemm(nn, nprj, npack1, ng, rone, a, b, rzero, sum);
+   c3db::mygdevice.CN2_zgemm(nn, nprj, ng, npack1_max, rone, a, b, rzero, sum);
    //c3db::mygdevice.CN2_stride_zgemm(nn, nprj, npack1, ng, rone, a, b, rzero, sum);
 }  
 

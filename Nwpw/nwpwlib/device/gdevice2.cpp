@@ -87,15 +87,15 @@ void gdevice2::CN1_zgemm(int npack1, int npack, int ne, double *alpha, double *a
    mygdevice2->CN1_zgemm(npack1, npack, ne, alpha, a, b, beta, c);
 }
 
-void gdevice2::CN2_zgemm(int npack1, int npack, int ne, int nprj, double *alpha, double *a, double *b,
+void gdevice2::CN2_zgemm(int ne, int nprj, int npack, int npack1_max, double *alpha, double *a, double *b,
                          double *beta, double *c) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
-      mygdevice2->CN2_stride_zgemm(npack1, npack, ne, nprj, alpha, a, b, beta, c);
+      mygdevice2->CN2_stride_zgemm(ne,nprj,npack,npack1_max, alpha, a, b, beta, c);
 
    else
 #endif
-      mygdevice2->CN2_zgemm(npack1, npack, ne, nprj, alpha, a, b, beta, c);
+      mygdevice2->CN2_zgemm(ne, nprj, npack, npack1_max, alpha, a, b, beta, c);
 }
 
 void gdevice2::NC2_zgemm(int npack1, int npack, int ne, int nprj, double *alpha, double *a, double *b,
