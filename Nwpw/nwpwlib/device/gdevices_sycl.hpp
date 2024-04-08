@@ -244,6 +244,7 @@ public:
    int tile_fac = 1;
    int tile_npack2_max;
    int tile_npack2[19], tile_start2[19];
+   int tile_npack1[19], tile_start1[19];
    double *a_psi, *a_hpsi, *b_prj;
    int ia_psi[2], ia_hpsi[2], ib_prj[2];
  
@@ -986,6 +987,17 @@ public:
 
 
 
+
+   /**************************************
+    *                                    *
+    *             isCmplxZero            *
+    *                                    *
+    **************************************/
+   bool isCmplxZero(const double *beta)
+   {
+      const double EPSILON = 1e-9; // Threshold for comparison
+      return std::abs(beta[0]) < EPSILON && std::abs(beta[1]) < EPSILON;
+   }
       
    /**************************************
     *                                    *
@@ -995,9 +1007,53 @@ public:
    void NN1_zgemm(int npack1_max, int npack, int ne, double *alpha, double *host_a, double *host_b,
                  double *beta, double *host_c) 
    {
-      ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1_max,
-                  host_b, ne, beta, host_c, npack1_max);
-   }                
+      //ZGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack1_max,
+      //            host_b, ne, beta, host_c, npack1_max);
+      //
+
+      int ib = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t)ne));
+
+      syclSetMatrixAsync(ne, ne, sizeof(double), host_b, 2*ne, dev_mem[ib], 2*ne, stream[0]);
+
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         host_a + tile_start2[0], 2*npack1_max, dev_mem[ia_psi[0]], tile_npack2[0], stream[0]);
+
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         host_c + tile_start2[0], 2*npack1_max, dev_mem[ia_hpsi[0]], tile_npack2[0], stream[0]);
+
+       // double beta0 = beta;
+      for (auto tt = 0; tt < tile_fac; ++tt)
+      {
+         int ttp1 = tt + 1;
+         if (ttp1 < tile_fac)
+         {
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &host_a[tile_start2[ttp1]], 2*npack1_max,
+                               dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+            syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                               &host_c[tile_start2[ttp1]], 2*npack1_max,
+                               dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
+                               stream[ttp1 % 2]);
+         }
+         stream[tt % 2]->wait();
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matN, tile_npack1[tt], ne, ne, 
+	     reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia_psi[tt % 2]]), tile_npack1[tt], 
+	     reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), ne, 
+	     reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[ia_hpsi[tt % 2]]), tile_npack1[tt]);
+         syclGetMatrixAsync(tile_npack2[tt], ne, sizeof(double),
+                            dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt],
+                            &host_c[tile_start2[tt]], 2*npack1_max, stream[tt % 2]);
+      }
+
+      stream[(tile_fac - 1) % 2]->wait();
+
+      inuse[ib] = false;
+   }
+
         
    /**************************************
     *                                    *
@@ -1007,8 +1063,33 @@ public:
    void CN1_zgemm(int npack1_max, int npack, int ne, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
-      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1_max,
-                  host_b, npack1_max, beta, host_c, ne);
+      //ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1_max,
+      //            host_b, npack1_max, beta, host_c, ne);
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ne)         * ((size_t) ne));
+
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_a, 2*npack1_max, dev_mem[ia], 2*npack1_max, stream[0]);
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_b, 2*npack1_max, dev_mem[ib], 2*npack1_max, stream[0]);
+      if (!isCmplxZero(beta))
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_c, 2*ne, dev_mem[ic], 2*ne, stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, ne, ne, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[ic]), ne);
+
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[ic], 2*ne, host_c, 2*ne, stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
    }                
         
    /**************************************
@@ -1019,8 +1100,33 @@ public:
    void CN2_zgemm(int ne, int nprj, int npack, int npack1_max, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
-      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1_max,
-                  host_b, npack1_max, beta, host_c, ne);
+      //ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1_max,
+      //            host_b, npack1_max, beta, host_c, ne);
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) nprj));
+      int ic = fetch_dev_mem_indx(((size_t) 2*ne)     * ((size_t) nprj));
+
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_a, 2*npack1_max, dev_mem[ia], 2*npack1_max, stream[0]);
+      syclSetMatrixAsync(2*npack1_max, nprj, sizeof(double), host_b, 2*npack1_max, dev_mem[ib], 2*npack1_max, stream[0]);
+      if (!isCmplxZero(beta))
+         syclSetMatrixAsync(2*ne, nprj, sizeof(double), host_c, 2*ne, dev_mem[ic], 2*ne, stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, ne, nprj, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[ic]), ne);
+
+      syclGetMatrixAsync(2*ne, nprj, sizeof(double), dev_mem[ic], 2*ne, host_c, 2*ne, stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
    }
 
    /**************************************
@@ -1033,6 +1139,7 @@ public:
    {
       ZGEMM_PWDFT((char *)"C", (char *)"N", ne, nprj, npack, alpha, host_a, npack1_max,
                   host_b, npack1_max, beta, host_c, ne);
+      
    }
 
    /**************************************
@@ -1043,9 +1150,35 @@ public:
    void NC2_zgemm(int npack1_max, int npack, int ne, int nprj,  double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) 
    {
-      ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1_max,
-                  host_b, ne, beta, host_c, npack1_max);
+      //ZGEMM_PWDFT((char *)"N", (char *)"C", npack,ne,nprj, alpha, host_a, npack1_max,
+      //            host_b, ne, beta, host_c, npack1_max);
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) nprj));
+      int ib = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) nprj));
+      int ic = fetch_dev_mem_indx(((size_t) 2*npack1_max)     * ((size_t) ne));
+
+      syclSetMatrixAsync(2*npack1_max, nprj, sizeof(double), host_a, 2*npack1_max, dev_mem[ia], 2*npack1_max, stream[0]);
+      syclSetMatrixAsync(2*ne, nprj, sizeof(double), host_b, 2*ne, dev_mem[ib], 2*ne, stream[0]);
+      if (!isCmplxZero(beta))
+         syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_c, 2*npack1_max, dev_mem[ic], 2*npack1_max, stream[0]);
+
+      stream[0]->wait();
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matC, npack, ne, nprj, 
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), ne,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[ic]), npack1_max);
+
+      syclGetMatrixAsync(2*npack1_max, ne, sizeof(double), dev_mem[ic], 2*npack1_max, host_c, 2*npack1_max, stream[0]);
+      stream[0]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[ic] = false;
    }
+
 
    /**************************************
     *                                    *
@@ -1061,7 +1194,7 @@ public:
 
    /**************************************
     *                                    *
-    *            CN4__zgemm              *
+    *            CN4_zgemm               *
     *                                    *
     **************************************/
    void CN4_zgemm(int npack1_max, int npack, int ne, double *alpha, double *host_a,
@@ -1072,8 +1205,28 @@ public:
       int shift1 = 0;
       int mshift1 = 0;
 
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int icaa = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icab = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icba = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icbb = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_a, 2*npack1_max, dev_mem[ia], 2*npack1_max, stream[0]);
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_b, 2*npack1_max, dev_mem[ib], 2*npack1_max, stream[1]);
+
+      if (!isCmplxZero(beta))
+      {
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_caa, 2*ne, dev_mem[icaa], 2*ne, stream[0]);
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_cab, 2*ne, dev_mem[icab], 2*ne, stream[1]);
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_cba, 2*ne, dev_mem[icba], 2*ne, stream[1]);
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_cbb, 2*ne, dev_mem[icbb], 2*ne, stream[1]);
+      }
+
+      stream[0]->wait();
       for (auto k = 1; k <= ne; ++k)
       {
+	 /*
          ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
                      alpha,
                      host_a, npack1_max,
@@ -1098,9 +1251,62 @@ public:
                      host_b + shift1, npack1_max,
                      beta,
                      host_cbb + mshift1, k);
+	 */
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icaa]+mshift1), k);
+
          shift1  += 2*npack1_max;
          mshift1 += 2*ne;
       }
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icaa], 2*ne, host_caa, 2*ne, stream[0]);
+
+      shift1 = 0;
+      mshift1 = 0;
+      stream[1]->wait();
+      for (auto k = 1; k <= ne; ++k)
+      {
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icab]+mshift1), k);
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icba]+mshift1), k);
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icbb]+mshift1), k);
+
+         shift1  += 2*npack1_max;
+         mshift1 += 2*ne;
+      }
+      stream[0]->wait();
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icab], 2*ne, host_cab, 2*ne, stream[1]);
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icba], 2*ne, host_cba, 2*ne, stream[1]);
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icbb], 2*ne, host_cbb, 2*ne, stream[1]);
+      stream[1]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[icaa] = false;
+      inuse[icab] = false;
+      inuse[icba] = false;
+      inuse[icbb] = false;
    }
 
    /**************************************
@@ -1115,9 +1321,28 @@ public:
       int one = 1;   
       int shift1 = 0;
       int mshift1 = 0;
+
+      int ia = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int ib = fetch_dev_mem_indx(((size_t) 2*npack1_max) * ((size_t) ne));
+      int icaa = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icab = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+      int icbb = fetch_dev_mem_indx(((size_t) 2*ne)   * ((size_t) ne));
+
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_a, 2*npack1_max, dev_mem[ia], 2*npack1_max, stream[0]);
+      syclSetMatrixAsync(2*npack1_max, ne, sizeof(double), host_b, 2*npack1_max, dev_mem[ib], 2*npack1_max, stream[1]);
+
+      if (!isCmplxZero(beta))
+      {
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_caa, 2*ne, dev_mem[icaa], 2*ne, stream[0]);
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_cab, 2*ne, dev_mem[icab], 2*ne, stream[1]);
+         syclSetMatrixAsync(2*ne, ne, sizeof(double), host_cbb, 2*ne, dev_mem[icbb], 2*ne, stream[1]);
+      }
+
                      
+      stream[0]->wait();
       for (auto k = 1; k <= ne; ++k)  
       {              
+         /*
          ZGEMM_PWDFT((char *)"C", (char *)"N", k, one, npack,
                      alpha, 
                      host_a, npack1_max,
@@ -1136,9 +1361,53 @@ public:
                      host_b + shift1, npack1_max,
                      beta,
                      host_cbb + mshift1, k);
+         */
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icaa]+mshift1), k);
+
          shift1 += 2*npack1_max;
          mshift1 += 2*ne;
       }
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icaa], 2*ne, host_caa, 2*ne, stream[0]);
+
+      shift1 = 0;
+      mshift1 = 0;
+      stream[1]->wait();
+      for (auto k = 1; k <= ne; ++k)  
+      {              
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ia]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icab]+mshift1), k);
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matC, matN, k, one, npack,
+             reinterpret_cast<const std::complex<double> *>(alpha),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ib]+shift1), npack1_max,
+             reinterpret_cast<const std::complex<double> *>(beta),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[icbb]+mshift1), k);
+
+         shift1 += 2*npack1_max;
+         mshift1 += 2*ne;
+      }
+      stream[0]->wait();
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icab], 2*ne, host_cab, 2*ne, stream[1]);
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[icbb], 2*ne, host_cbb, 2*ne, stream[1]);
+      stream[1]->wait();
+
+      inuse[ia] = false;
+      inuse[ib] = false;
+      inuse[icaa] = false;
+      inuse[icab] = false;
+      inuse[icbb] = false;
    }
 
 
@@ -1151,25 +1420,85 @@ public:
    void WW6_zgemm(int ne, double *host_s21, double *host_s12, double *host_s11,
                   double *host_sa0, double *host_sa1, double *host_st1) 
    {
-       double rone[2]  = {1.0,0.0};
-       double rzero[2] = {0.0,0.0};
+      double rone[2]  = {1.0,0.0};
+      double rzero[2] = {0.0,0.0};
+
+      int is11 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int is12 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int is21 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int isa0 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int isa1 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+      int ist1 = fetch_dev_mem_indx(((size_t) 2*ne) * ((size_t) ne));
+
+      syclSetMatrixAsync(2*ne, ne, sizeof(double), host_s21, 2*ne, dev_mem[is21], 2*ne, stream[0]);
+      syclSetMatrixAsync(2*ne, ne, sizeof(double), host_sa0, 2*ne, dev_mem[isa0], 2*ne, stream[0]);
+      syclSetMatrixAsync(2*ne, ne, sizeof(double), host_sa1, 2*ne, dev_mem[isa1], 2*ne, stream[0]);
+
+      syclSetMatrixAsync(2*ne, ne, sizeof(double), host_s12, 2*ne, dev_mem[is12], 2*ne, stream[1]);
+      syclSetMatrixAsync(2*ne, ne, sizeof(double), host_s11, 2*ne, dev_mem[is11], 2*ne, stream[2]);
+
+      stream[0]->wait();
       
-       // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
-       ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
-                   host_sa0, ne, rone, host_sa1, ne);
-                    
-       // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
-       ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                   host_s12, ne, rone, host_sa1, ne);
+      // www_Multiply1(ms, s21, sa0, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_s21, ne,
+      //            host_sa0, ne, rone, host_sa1, ne);
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matN, ne, ne, ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[is21]), ne,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[isa0]), ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[isa1]), ne);
      
-       // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
-       ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
-                   host_sa0, ne, rzero, host_st1, ne);
+      stream[1]->wait();
+
+      // www_Multiply2(ms, sa0, s12, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+      //            host_s12, ne, rone, host_sa1, ne);
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matN, ne, ne, ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[isa0]), ne,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[is12]), ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[isa1]), ne);
+
+      stream[2]->wait();
+
+      // www_Multiply3(ms, s11, sa0, 1.0, st1, 0.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"C", ne, ne, ne, rone, host_s11, ne,
+      //             host_sa0, ne, rzero, host_st1, ne);
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matN, ne, ne, ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[is11]), ne,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[isa0]), ne,
+             reinterpret_cast<const std::complex<double> *>(rzero),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[ist1]), ne);
                     
-       // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
-       ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
-                   host_st1, ne, rone, host_sa1, ne);
+      // www_Multiply1(ms, sa0, st1, 1.0, sa1, 1.0);
+      //ZGEMM_PWDFT((char *)"N", (char *)"N", ne, ne, ne, rone, host_sa0, ne,
+      //             host_st1, ne, rone, host_sa1, ne);
+      oneapi::mkl::blas::column_major::gemm(
+             *stream[0], matN, matN, ne, ne, ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<const std::complex<double> *>(dev_mem[isa0]), ne,
+             reinterpret_cast<const std::complex<double> *>(dev_mem[ist1]), ne,
+             reinterpret_cast<const std::complex<double> *>(rone),
+             reinterpret_cast<      std::complex<double> *>(dev_mem[isa1]), ne);
+
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[ist1], 2*ne, host_st1, 2*ne, stream[0]);
+      syclGetMatrixAsync(2*ne, ne, sizeof(double), dev_mem[isa1], 2*ne, host_sa1, 2*ne, stream[0]);
+      stream[0]->wait();
+
+      inuse[is11] = false;
+      inuse[is12] = false;
+      inuse[is21] = false;
+      inuse[isa0] = false;
+      inuse[isa1] = false;
+      inuse[ist1] = false;
    } 
+
 
 
 /*   void NN_zgemm(int m, int n, int k,
@@ -1377,14 +1706,24 @@ public:
                             : (2 * npack1) / tile_fac + 1;
       // for (auto i=0; i<tile_fac; ++i) tile_npack2[i] =
       // (i<((2*npack1)%tile_fac)) ? (2*npack1)/tile_fac+1 : (2*npack1)/tile_fac;
+      //
+      for (auto i = 0; i < tile_fac; ++i)
+         tile_npack1[i] = (npack1) / tile_fac;
+      for (auto i = 0; i < ((npack1) % tile_fac); ++i)
+         tile_npack1[i] += 1;
+
       for (auto i = 0; i < tile_fac; ++i)
          tile_npack2[i] = (2 * npack1) / tile_fac;
       for (auto i = 0; i < ((2 * npack1) % tile_fac); ++i)
          tile_npack2[i] += 1;
      
+      tile_start1[0] = 0;
       tile_start2[0] = 0;
       for (auto i = 1; i < tile_fac; ++i)
+      {
+         tile_start1[i] = tile_start1[i - 1] + tile_npack1[i - 1];
          tile_start2[i] = tile_start2[i - 1] + tile_npack2[i - 1];
+      }
      
       ia_psi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
       ia_hpsi[0] = fetch_dev_mem_indx(((size_t)tile_npack2_max) * ((size_t)ne));
@@ -1832,3 +2171,4 @@ public:
 }; // class Gdevices
 
 } // namespace pwdft
+
