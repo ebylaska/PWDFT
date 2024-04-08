@@ -158,7 +158,7 @@ qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
 ```
 ```
-mpiexec -n 6 --ppn 6  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft band.nw
+mpiexec -n 4 --ppn 4  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft bandss222b.nw
 ```
 
 ```
