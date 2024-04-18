@@ -20,17 +20,20 @@
  *       used for intermediate FFT results.
  */
 
+#define		Nbig 136
+#define		N 136
+
 #include 	<cmath>
 #include 	<iostream>
 #include 	<complex>
 #include 	<stdexcept>  // Required for std::runtime_error
 #include	<initializer_list> 
 
+typedef std::complex<double> complex_t;
+
 // Define a constants for the radix values
 constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 
-
-typedef std::complex<double> complex_t;
 
 
 /*****************************************
@@ -308,33 +311,6 @@ void set_fft_twiddle(const int isgn, const int n, complex_t *twiddle)
 }
 
 
-//#define		N 136
-//#define	N 11
-
-
-//#define	N 8
-//#define	N 11
-//#define	N 9
-
-//#define		N 81
-//#define		N 17
-//#define		N 729
-//#define		N 121
-//#define		N 49
-//#define		N 343
-
-//#define		N 2
-//#define		N 17
-
-//#define 	Nbig	94248
-//#define		N 94248
-
-#define		Nbig 75
-#define		N 75
-
-//#define		N 4913
-//#define		N 289
-
 int main()
 {
    complex_t x[Nbig];
@@ -353,7 +329,9 @@ int main()
    std::cout << "nsize=" << nsize << std::endl;
 
    complex_t forward_twiddle[nsize];
+   complex_t backward_twiddle[nsize];
    set_fft_twiddle(-1,Nbig,forward_twiddle);
+   set_fft_twiddle(1,Nbig,backward_twiddle);
 
    // forward fft
    //fft(-1,Nbig,x);
@@ -365,5 +343,11 @@ int main()
    for (int i=0; i<Nbig; ++i)
       std::cout << x[i] << " ";
    std::cout << std::endl;
+   std::cout << std::endl;
 
+   fft_twiddle(Nbig,backward_twiddle,x);
+   std::cout << "x2 =" ;
+   for (int i=0; i<Nbig; ++i)
+      std::cout << x[i]/((double) Nbig) << " ";
+   std::cout << std::endl;
 }
