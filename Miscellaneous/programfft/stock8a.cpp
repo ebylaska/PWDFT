@@ -20,8 +20,8 @@
  *       used for intermediate FFT results.
  */
 
-#define		Nbig 136
-#define		N 136
+#define		Nbig 256
+#define		N 256
 
 #include 	<cmath>
 #include 	<iostream>
@@ -32,7 +32,7 @@
 typedef std::complex<double> complex_t;
 
 // Define a constants for the radix values
-constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+constexpr int radix_values[] = {32, 17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 
 
 
