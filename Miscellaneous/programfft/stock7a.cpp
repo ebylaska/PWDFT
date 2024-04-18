@@ -3,6 +3,11 @@
 #include 	<iostream>
 #include 	<complex>
 #include 	<stdexcept>  // Required for std::runtime_error
+#include	<initializer_list> 
+
+// Define a constants for the radix values
+constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+
 
 typedef std::complex<double> complex_t;
 
@@ -909,184 +914,148 @@ printf("\n")
  *                                       *
  *****************************************/
 /**
- * @brief Performs a single radix-based FFT transformation step.
+ * @brief Performs a Radix-based Fast Fourier Transform (FFT) on complex input data.
  *
- * This function computes one stage of a Fast Fourier Transform using a specified radix. It supports
- * flexible radix sizes, making it suitable for various FFT schemes (e.g., mixed radix FFT).
- * The function efficiently handles complex input and output data arrays and uses precomputed
- * twiddle factors to perform the FFT calculations.
+ * This function computes the FFT using a radix-based approach, where the input data
+ * is decomposed into smaller chunks using the specified radix. The transformation
+ * is applied recursively until base cases are reached. The function also handles
+ * the twiddle factor multiplications specific to FFT computations.
  *
- * The transformation can be applied forward (FFT) or inverse (IFFT), depending on the sign
- * of the `isgn` parameter. This function is designed to be called multiple times to complete
- * an entire FFT computation, once for each stage of the transform.
+ * @param n The total number of elements in the input array `x`. Must be a power of `radix`.
+ * @param s The stride between successive elements to be transformed, allowing in-place transformation
+ *          of subarrays within a larger dataset.
+ * @param eo A boolean flag indicating whether the transformation is even or odd, which can
+ *          influence certain optimization paths or conditional transformations.
+ * @param radix The radix to be used for the FFT computation, typically a small power of 2 (e.g., 2, 4, 8).
+ *              This parameter dictates the size of the decomposition at each recursive step.
+ * @param twiddle Pointer to an array containing precomputed twiddle factors used in the FFT computations.
+ * @param x Pointer to the input array of complex numbers to be transformed. The array size should be at least `n * s`.
+ * @param y Pointer to the output array where the transformed data will be stored. Must have the same size as `x`.
  *
- * @param isgn The sign of the exponent in the FFT formula. Use -1 for forward FFT and +1 for inverse FFT.
- * @param n The total number of complex samples in the input array `x`. Should be divisible by `radix`.
- * @param s The stride between successive samples in the input data, allowing processing of subarrays.
- * @param eo A boolean flag indicating the output buffer:
- *           true (`eo = 1`) means `y` is the output buffer,
- *           false (`eo = 0`) means `x` is the output buffer and `y` is used as a temporary buffer.
- * @param radix The radix to be used for this stage of the FFT, determining the size of the FFT "butterflies."
- * @param twiddle A pointer to an array containing the precomputed twiddle factors necessary for
- *                the FFT calculations. The array should contain all necessary factors for the computations
- *                and post-multiplications specific to the given `radix`.
- * @param x A pointer to the input array of complex samples. This array contains `n` complex numbers.
- * @param y A pointer to the output or workspace array of complex samples. Should be at least as large as `x`.
- *
- * @note The function assumes that the size of `x` and `y` is sufficient to hold all data required for the
- *       computations, including any necessary stride or alignment considerations.
+ * @note The function modifies the array `y` directly, and it is the caller's responsibility to ensure
+ *       that `x` and `y` are appropriately sized and allocated before calling this function.
  */
-
 void fft_radix(const int n, const int s, bool eo, const int radix, complex_t* twiddle, complex_t* x, complex_t *y)
 {
    if (n == 1) { if (eo) for (int q = 0; q < s; q++) y[q] = x[q]; }
    else 
    {
       const int m = n/radix;
+      complex_t Atwiddle[radix*radix];
+
+      // Precompute twiddle factors for matrix multiplication
+      for (int r2=0; r2<radix; ++r2)
+      for (int r1=0; r1<radix; ++r1)
+         Atwiddle[r1+r2*radix] = twiddle[(r1*r2)%radix];
 
       for (int p=0; p<m; ++p) 
       {
          for (int q=0; q<s; ++q) 
-            for (int r1=0; r1<radix; ++r1)
-            {
-               y[q + s*(radix*p+r1)] = 0.0;
-               for (int r2=0; r2<radix; ++r2)
-                  y[q + s*(radix*p+r1)] += x[q + s*(p+r2*m)] * twiddle[(r1*r2)%radix];
+         {
+            complex_t* x1 = x+q+s*p;
+            complex_t* y1 = y+q+s*radix*p;
 
-               complex_t fac = complex_t(1.0,0.0);
-               for (int ps=0; ps<p; ++ ps) 
-                  fac *= twiddle[radix+r1];
-               y[q + s*(radix*p+r1)] *= fac;
+            // Initialize the output y1 vector
+            for (int r1 = 0; r1 < radix; ++r1) 
+               y1[s * r1] = 0.0;
+
+            // Matrix-vector multiplication
+            for (int r2 = 0; r2 < radix; ++r2)
+            for (int r1 = 0; r1 < radix; ++r1) 
+                    y1[s*r1] += x1[s*m*r2] * Atwiddle[r1 + r2 * radix];
+
+            // Apply phase factor to each result
+            for (int r1 = 0; r1 < radix; ++r1) 
+            {
+               complex_t fac = complex_t(1.0, 0.0);
+               for (int ps = 0; ps < p; ++ps)
+                  fac *= twiddle[radix + r1];
+
+               y1[s * r1] *= fac;
             }
+         }
       }
    }
 }
 
 
-
+/*****************************************
+ *                                       *
+ *            fft_twiddle                *
+ *                                       *
+ *****************************************/
+/**
+ * @brief Performs a mixed-radix Fast Fourier Transform (FFT) on a complex array.
+ *
+ * This function implements an FFT using a mixed-radix algorithm, which supports multiple
+ * radix values (2, 3, 4, ..., 17). It utilizes the `fft_radix` function to handle each 
+ * specific radix. The function decomposes the input size recursively based on available 
+ * radix factors until all elements are processed. The FFT processes the array in-place 
+ * with the help of a secondary buffer `y` for intermediate results.
+ *
+ * @param n The total number of elements in the input array `x`. It should ideally be
+ *          a composite number that can be factored into the radix values supported by
+ *          this function (2 through 17).
+ * @param twiddle Pointer to an array containing precomputed twiddle factors specific to
+ *                each radix operation. This array should be sized appropriately to 
+ *                accommodate all necessary twiddle factors for the given `n`.
+ * @param x Pointer to the input/output array of complex numbers. The array is modified
+ *          in-place to contain the Fourier coefficients after transformation. The array
+ *          size must be at least `n`.
+ *
+ * @note The function dynamically allocates memory for the secondary buffer `y`, which is
+ *       used during the computation and freed before exiting. Users should ensure that
+ *       the input array `x` and the twiddle factor array `twiddle` are allocated and
+ *       populated before calling this function. Post-processing (like normalizing the
+ *       FFT output) is not performed inside this function and should be handled externally
+ *       if required.
+ */
 void fft_twiddle(int n, complex_t* twiddle, complex_t* x) // Fourier transform
 {
-    complex_t* y = new complex_t[n];
-    int eo = 0;
-    int s  = 1;
-    int nn = n;
-    int nsize = 0;
-    while (s<=n) {
-       std::cout << "nn=" << nn << " s=" << s << " eo=" << eo  << std::endl;
-          
-       if ((nn%17)==0)
-       {  
-          std::cout << " - radix-17 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 17, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 17, twiddle+nsize, x, y);
-          nsize += (2*17);
-          nn /= 17; s *= 17; eo = !eo; 
-          
-          std::cout << " - final nn=" << nn << " s=" << s << std::endl;
-       }
+   complex_t* y = new complex_t[n];
+   int eo = 0;
+   int s  = 1;
+   int nn = n;
+   int nsize = 0;
+   while (s<=n) 
+   {
+      std::cout << "nn=" << nn << " s=" << s << " eo=" << eo  << std::endl;
 
-       else if ((nn%11)==0)
-       {
-          std::cout << " - radix-11 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 11, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 11, twiddle+nsize, x, y);
-          nsize += (2*11);
-          nn /= 11; s *= 11; eo = !eo;
-       }
-       else if ((nn%9)==0)
-       {
-          std::cout << " - radix-9 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 9, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 9, twiddle+nsize, x, y);
-          nsize += (2*9);
-          nn /= 9; s *= 9; eo = !eo;
-       }
-       else if ((nn%8)==0)
-       {
-          std::cout << " - radix-8 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 8, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 8, twiddle+nsize, x, y);
-          nsize += (2*8);
-          nn /= 8; s *= 8; eo = !eo;
-       }
-       else if ((nn%7)==0)
-       {
-          std::cout << " - radix-7 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 7, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 7, twiddle+nsize, x, y);
-          nsize += (2*7);
-          nn /= 7; s *= 7; eo = !eo;
-       }
-       else if ((nn%6)==0)
-       {
-          std::cout << " - radix-6 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 6, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 6, twiddle+nsize, x, y);
-          nsize += (2*6);
-          nn /= 6; s *= 6; eo = !eo;
-       }
-       else if ((nn%5)==0)
-       {
-          std::cout << " - radix-5 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 5, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 5, twiddle+nsize, x, y);
-          nsize += (2*5);
-          nn /= 5; s *= 5; eo = !eo;
-       }
-       else if ((nn%4)==0)
-       {
-          std::cout << " - radix-4 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 4, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 4, twiddle+nsize, x, y);
-          nsize += (2*4);
-          nn /= 4; s *= 4; eo = !eo;
-       }
-       else if ((nn%3)==0)
-       {
-          std::cout << " - radix-3 " << std::endl;
-          if (eo)
-             fft_radix(nn, s, eo, 3, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 3, twiddle+nsize, x, y);
-          nsize += (2*3);
-          nn /= 3; s *= 3; eo = !eo;
-       }
-       else 
-       {
-          std::cout << " - radix-2 " << std::endl;
-          if (nn==1) nsize = 0;
-          if (eo)
-             fft_radix(nn, s, eo, 2, twiddle+nsize, y, x);
-          else
-             fft_radix(nn, s, eo, 2, twiddle+nsize, x, y);
-          nsize += (2*2);
-          nn /= 2; s *= 2; eo = !eo;
-       }
-    }
+      // Identify the largest radix applicable for current nn
+      int radix = 2;  // Default to radix-2
+      for (int r : radix_values) {
+         if (nn % r == 0) {
+            radix = r;
+            break;
+         }
+      }
 
-    delete[] y;
-    //for (int k = 0; k < n; k++) x[k] /= n;
+      std::cout << " - radix-" << radix << std::endl;
 
+      // Perform FFT with the determined radix
+      if (eo)
+         fft_radix(nn, s, eo, radix, twiddle + nsize, y, x);
+      else
+         fft_radix(nn, s, eo, radix, twiddle + nsize, x, y);
+
+      nsize += 2*radix;
+      nn /= radix;
+      s *= radix;
+      eo = !eo;  // Toggle the 'even-odd' flag
+
+      std::cout << " - final nn=" << nn << " s=" << s << std::endl;
+   }
+   delete[] y;
+   //for (int k = 0; k < n; k++) x[k] /= n;
 }
 
 
 
+/*****************************************
+ *                                       *
+ *                  fft                  *
+ *                                       *
+ *****************************************/
 void fft(int isgn, int n, complex_t* x) // Fourier transform
 // isgn: -1 forward fft, 1 inverse fft
 // n : sequence length
@@ -1234,7 +1203,6 @@ void fft(int isgn, int n, complex_t* x) // Fourier transform
  */
 void set_sub_fft_twiddle(const int isgn, const int n, const int radix, complex_t *twiddle)
 {
-   const int m = n/radix;
    const double theta0 = 2*M_PI/((double) n);
    const double theta_radix = 2*M_PI/((double) radix);
 
@@ -1255,34 +1223,52 @@ void set_sub_fft_twiddle(const int isgn, const int n, const int radix, complex_t
  *                                       *
  *****************************************/
 /**
- * @brief Calculates the required storage size for FFT twiddle factors based on factorization.
+ * @brief Calculate the total storage size required for FFT twiddle factors.
  *
- * This function iterates through potential radix values and calculates the cumulative
- * storage size required for FFT twiddle factors, considering each level of the factorization
- * process. The function throws an exception if the FFT size cannot be factorized by the given radices.
+ * This function iterates through the provided radix values to decompose the FFT size (n)
+ * into its factors. For each factor found, it accumulates the storage size required for 
+ * the twiddle factors of the FFT, considering both real and imaginary parts. The function 
+ * ensures that the entire FFT size can be factorized using the given radices and throws an 
+ * exception if any part of the size remains unfactorized.
  *
- * @param n The total size of the FFT.
- * @return int The total storage size required for all twiddle factors.
- * @throws std::runtime_error If the FFT size cannot be completely factorized by the defined radices.
+ * @param n The total size of the FFT for which twiddle factors are required.
+ * @param radix_values A vector of integers representing the radix values that can be used 
+ *        to factorize the FFT size.
+ * @return int The total storage size required for the twiddle factors, accounting for 
+ *         all levels of factorization.
+ * @throws std::runtime_error If the FFT size cannot be completely factorized by the provided 
+ *         radices.
  */
-int size_fft_twiddle(const int n)
+int size_fft_twiddle(const int n) 
 {
    int nsize = 0;
-   int s  = 1;
+   int s = 1;
    int nn = n;
-   while (s<=n) {
-      if ((nn%17)==0)      { nsize += (2*17); nn /= 17; s *= 17; }
-      else if ((nn%11)==0) { nsize += (2*11); nn /= 11; s *= 11; }
-      else if ((nn%9)==0)  { nsize += (2*9);  nn /= 9;  s *= 9; }
-      else if ((nn%8)==0)  { nsize += (2*8);  nn /= 8;  s *= 8; }
-      else if ((nn%7)==0)  { nsize += (2*7);  nn /= 7;  s *= 7; }
-      else if ((nn%6)==0)  { nsize += (2*6);  nn /= 6;  s *= 6; }
-      else if ((nn%5)==0)  { nsize += (2*5);  nn /= 5;  s *= 5; }
-      else if ((nn%4)==0)  { nsize += (2*4);  nn /= 4;  s *= 4; }
-      else if ((nn%3)==0)  { nsize += (2*3);  nn /= 3;  s *= 3; }
-      else if ((nn%2)==0)  { nsize += (2*2);  nn /= 2;  s *= 2; }
-      else                 {                  nn /= 2;  s *= 2; }
+
+   while (s <= n) 
+   {
+      bool found = false;
+      // Loop through possible radix values to find the largest factor of nn
+      for (int radix : radix_values) 
+      {
+         if (nn % radix == 0) 
+         {
+            nsize += 2 * radix;
+            nn /= radix;
+            s *= radix;
+            found = true;
+            break;
+         }
+      }
+      if (!found) 
+      {
+         // Handle the case where no factors are found
+         // This should not normally happen if n is decomposable by the radices listed
+         std::cerr << "Warning: nn is not decomposable by known radices, nn=" << nn << std::endl;
+         break;  // To avoid potentially infinite loops, terminate the iteration
+      }
    }
+
    return nsize;
 }
 
@@ -1292,25 +1278,46 @@ int size_fft_twiddle(const int n)
  *            set_fft_twiddle            *
  *                                       *
  *****************************************/
-void set_fft_twiddle(const int isgn, const int n, complex_t *twiddle)
+/**
+ * Initializes the FFT twiddle factors for different radix levels based on the input size.
+ * 
+ * @param isgn The sign indicator for the FFT (usually +1 or -1).
+ * @param n The size of the input to the FFT. Must be decomposable by the radices used within.
+ * @param twiddle Pointer to the array where the twiddle factors are to be stored.
+ */
+void set_fft_twiddle(const int isgn, const int n, complex_t *twiddle) 
 {
    int nsize = 0;
-   int s  = 1;
+   int s = 1;
    int nn = n;
-   while (s<=n) {
-      if ((nn%17)==0)      { set_sub_fft_twiddle(isgn,nn,17,twiddle+nsize); nsize += (2*17); nn /= 17; s *= 17; }
-      else if ((nn%11)==0) { set_sub_fft_twiddle(isgn,nn,11,twiddle+nsize); nsize += (2*11); nn /= 11; s *= 11; }
-      else if ((nn%9)==0)  { set_sub_fft_twiddle(isgn,nn,9, twiddle+nsize); nsize += (2*9);  nn /= 9;  s *= 9; }
-      else if ((nn%8)==0)  { set_sub_fft_twiddle(isgn,nn,8, twiddle+nsize); nsize += (2*8);  nn /= 8;  s *= 8; }
-      else if ((nn%7)==0)  { set_sub_fft_twiddle(isgn,nn,7, twiddle+nsize); nsize += (2*7);  nn /= 7;  s *= 7; }
-      else if ((nn%6)==0)  { set_sub_fft_twiddle(isgn,nn,6, twiddle+nsize); nsize += (2*6);  nn /= 6;  s *= 6; }
-      else if ((nn%5)==0)  { set_sub_fft_twiddle(isgn,nn,5, twiddle+nsize); nsize += (2*5);  nn /= 5;  s *= 5; }
-      else if ((nn%4)==0)  { set_sub_fft_twiddle(isgn,nn,4, twiddle+nsize); nsize += (2*4);  nn /= 4;  s *= 4; }
-      else if ((nn%3)==0)  { set_sub_fft_twiddle(isgn,nn,3, twiddle+nsize); nsize += (2*3);  nn /= 3;  s *= 3; }
-      else if ((nn%2)==0)  { set_sub_fft_twiddle(isgn,nn,2, twiddle+nsize); nsize += (2*2);  nn /= 2;  s *= 2; }
-      else                 {                                                                 nn /= 2;  s *= 2; }
+
+   while (s <= n) 
+   {
+      bool found = false;
+      // Loop through possible radix values to find the largest factor of nn
+      for (int radix : radix_values) 
+      {
+         if (nn % radix == 0) 
+         {
+            set_sub_fft_twiddle(isgn, nn, radix, twiddle + nsize);
+            nsize += 2 * radix;
+            nn /= radix;
+            s *= radix;
+            found = true;
+            break;
+         }
+      }
+      if (!found) 
+      {
+         // Handle the case where no factors are found
+         // This should not normally happen if n is decomposable by the radices listed
+         std::cerr << "Warning: nn is not decomposable by known radices, nn=" << nn << std::endl;
+         nn /= 2;  // This fallback is arbitrary and might not be correct
+         s *= 2;
+      }
    }
 }
+
 
 
 
