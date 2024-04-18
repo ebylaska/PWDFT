@@ -1,3 +1,24 @@
+/**
+ * @brief Performs a mixed-radix Fast Fourier Transform (FFT) using a radix-based decomposition.
+ *
+ * The `fft_twiddle` function orchestrates the execution of FFT computations by dynamically 
+ * selecting the appropriate radix for each level of decomposition. It leverages a buffer for 
+ * intermediate results and toggles between input and output buffers to apply radix-based FFT
+ * transformations in a ping-pong fashion. This function requires precomputed twiddle factors 
+ * and handles the FFT computation entirely in-place on the input data array.
+ *
+ * @param n The total number of elements in the input array `x`. The value should be decomposable 
+ *          by the radices supported by the function (from the set {2, 3, 4, ..., 17}).
+ * @param twiddle A pointer to an array of precomputed twiddle factors, which must be appropriately 
+ *                sized and initialized before calling this function. These factors are crucial 
+ *                for the radix-specific transformations within the FFT computation.
+ * @param x Pointer to the complex number array representing the input data. This array is modified 
+ *          in-place to contain the output Fourier coefficients upon completion of the FFT.
+ *
+ * @note The function assumes that memory management (allocation and deallocation) for `x` and `twiddle`
+ *       is handled externally. It internally allocates and deallocates the secondary buffer `y`, 
+ *       used for intermediate FFT results.
+ */
 
 #include 	<cmath>
 #include 	<iostream>
@@ -241,13 +262,7 @@ int size_fft_twiddle(const int n)
             break;
          }
       }
-      if (!found) 
-      {
-         // Handle the case where no factors are found
-         // This should not normally happen if n is decomposable by the radices listed
-         std::cerr << "Warning: nn is not decomposable by known radices, nn=" << nn << std::endl;
-         break;  // To avoid potentially infinite loops, terminate the iteration
-      }
+      if (!found) break;
    }
 
    return nsize;
@@ -288,14 +303,7 @@ void set_fft_twiddle(const int isgn, const int n, complex_t *twiddle)
             break;
          }
       }
-      if (!found) 
-      {
-         // Handle the case where no factors are found
-         // This should not normally happen if n is decomposable by the radices listed
-         std::cerr << "Warning: nn is not decomposable by known radices, nn=" << nn << std::endl;
-         nn /= 2;  // This fallback is arbitrary and might not be correct
-         s *= 2;
-      }
+      if (!found) break;
    }
 }
 
