@@ -54,6 +54,8 @@ public:
    /* fft tabulations of of trigonometry functions */
    int fft_tag=-1;
    double *tmpx, *tmpy, *tmpz;
+   double *forward_x,  *forward_y,  *forward_z;
+   double *backward_x, *backward_y, *backward_z;
  
    Parallel *parall;
    int zplane_size;

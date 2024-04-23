@@ -82,6 +82,11 @@ public:
    void batch_cffty_stages_tmpy_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
    void batch_cfftz_stages_tmpz_zero(const int, const int, bool, int, int, int, double *, double *, bool *,int);
 
+   void set_fft_twiddle(const int, const int, double *);
+   int  size_fft_twiddle(const int);
+   void batch_cfft(const int, const bool, const int, const int, const int, double *, const double *, const double *, const int);
+   void batch_cfft_zero(const int, const bool, const int, const int, const int, double *, const double *, const double *, const bool *, const int);
+
    bool has_gpu()  { return mygdevice2->hasgpu; }
    int  type_gpu() { return mygdevice2->typegpu; }
 };

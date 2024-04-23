@@ -20,8 +20,8 @@
  *       used for intermediate FFT results.
  */
 
-#define		Nbig 256
-#define		N 256
+#define		Nbig 80
+#define		N 80
 
 #include 	<cmath>
 #include 	<iostream>
@@ -32,7 +32,7 @@
 typedef std::complex<double> complex_t;
 
 // Define a constants for the radix values
-constexpr int radix_values[] = {32, 17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 
 
 
@@ -325,6 +325,10 @@ int main()
    }
    std::cout << std::endl;
 
+   for (int i=0; i<Nbig; ++i)
+      std::cout << (i+1)*1.0*sin(0.01*i) << " ";
+   std::cout << std::endl;
+
    int nsize = size_fft_twiddle(Nbig);
    std::cout << "nsize=" << nsize << std::endl;
 
@@ -332,6 +336,12 @@ int main()
    complex_t backward_twiddle[nsize];
    set_fft_twiddle(-1,Nbig,forward_twiddle);
    set_fft_twiddle(1,Nbig,backward_twiddle);
+
+   std::cout << "twiddle=";
+   for (int i=0; i<nsize; ++i)
+      std::cout << forward_twiddle[i] << " ";
+  std::cout << std::endl << std::endl;
+
 
    // forward fft
    //fft(-1,Nbig,x);

@@ -2223,5 +2223,248 @@ public:
       }
    }
 
+   ////////////////////////// special complex-complex fft ////////////////////////////
+
+typedef std::complex<double> complex_t;
+         
+   // Define a constants for the radix values
+static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+            
+   /**************************************
+    *                                    *
+    *             fft_radix              *
+    *                                    *
+    **************************************/
+   inline static void fft_radix(const int n, const int s, bool eo, const int radix, const complex_t* twiddle, complex_t* x, complex_t *y)
+   {
+      if (n == 1) 
+      { 
+         // Use std::copy to efficiently copy elements from x to y
+         if (eo) std::copy(x, x + s, y); 
+         //if (eo) std::memcpy(y, x, s * sizeof(double));
+         return;
+      }
+
+      const int m = n/radix;
+      complex_t Atwiddle[radix*radix];
+ 
+      // Precompute twiddle factors for matrix multiplication
+      for (int r2=0; r2<radix; ++r2)
+      for (int r1=0; r1<radix; ++r1)
+         Atwiddle[r1+r2*radix] = twiddle[(r1*r2)%radix];
+ 
+      for (int p=0; p<m; ++p) 
+      {
+         for (int q=0; q<s; ++q) 
+         {
+            complex_t* x1 = x+q+s*p;
+            complex_t* y1 = y+q+s*radix*p;
+ 
+            // Initialize the output y1 vector
+            for (int r1=0; r1<radix; ++r1) 
+               y1[s * r1] = 0.0;
+ 
+            // Matrix-vector multiplication
+            for (int r2 = 0; r2 < radix; ++r2)
+            for (int r1 = 0; r1 < radix; ++r1)
+               y1[s*r1] += x1[s*m*r2] * Atwiddle[r1 + r2*radix];
+               //y1[s*r1] += x1[s*m*r2] * twiddle[(r1*r2)%radix];
+ 
+            // Apply phase factor to each result
+            for (int r1 = 0; r1 < radix; ++r1)
+            {
+               //complex_t fac = std::pow(twiddle[radix + r1], p);
+               complex_t fac = complex_t(1.0, 0.0);
+               for (int ps = 0; ps < p; ++ps)
+                  fac *= twiddle[radix + r1];
+ 
+               y1[s * r1] *= fac;
+            }
+         }
+      }
+   }
+
+   /**************************************
+    *                                    *
+    *            fft_twiddle             *
+    *                                    *
+    **************************************/
+   inline static void fft_twiddle(const int n, const complex_t* twiddle, complex_t* x) // Fourier transform
+   {
+      //complex_t* y = new complex_t[n];
+      complex_t y[n];
+      int eo = 0;
+      int s  = 1;
+      int nn = n;
+      int nsize = 0;
+      while (s<=n) 
+      {
+         // Identify the largest radix applicable for current nn
+         int radix = 2;  // Default to radix-2
+         for (int r : radix_values) {
+            if (nn % r == 0) {
+               radix = r;
+               break;
+            }
+         }
+ 
+         // Perform FFT with the determined radix
+         if (eo)
+            fft_radix(nn, s, eo, radix, twiddle + nsize, y, x);
+         else
+            fft_radix(nn, s, eo, radix, twiddle + nsize, x, y);
+
+         nsize += 2*radix;
+         nn /= radix;
+         s *= radix;
+         eo = !eo;  // Toggle the 'even-odd' flag
+      }
+   }
+
+
+   /**************************************
+    *                                    *
+    *         set_sub_fft_twiddle        *
+    *                                    *
+    **************************************/
+   static void set_sub_fft_twiddle(const int isgn, const int n, const int radix, complex_t *twiddle)
+   {
+      const double theta0 = 2*M_PI/((double) n);
+      const double theta_radix = 2*M_PI/((double) radix);
+ 
+      // Calculate radix-specific twiddle factors
+      for (int r=0; r<radix; ++r)
+         twiddle[r] = complex_t(cos(r*theta_radix), isgn*sin(r*theta_radix));
+ 
+      // Calculate the main twiddle factors for the FFT
+      for (int r=0; r<radix; ++r)
+         twiddle[radix+r] = complex_t(cos(r*theta0), isgn*sin(r*theta0));
+   }
+
+
+
+   /**************************************
+    *                                    *
+    *            set_fft_twiddle         *
+    *                                    *
+    **************************************/
+   void set_fft_twiddle(const int isgn, const int n, double *twiddle) 
+   {
+      complex_t* complex_twiddle = reinterpret_cast<complex_t*>(twiddle);
+      int nsize = 0;
+      int s = 1;
+      int nn = n;
+ 
+      while (s <= n) 
+      {
+         bool found = false;
+         // Loop through possible radix values to find the largest factor of nn
+         for (int radix : radix_values) 
+         {
+            if (nn % radix == 0) 
+            {
+               set_sub_fft_twiddle(isgn, nn, radix, complex_twiddle + nsize);
+               nsize += 2*radix;
+               nn /= radix;
+               s *= radix;
+               found = true;
+               break;
+            }
+         }
+         if (!found) break;
+      }
+   }
+
+   /**************************************
+    *                                    *
+    *            size_fft_twiddle        *
+    *                                    *
+    **************************************/
+   int size_fft_twiddle(const int n) 
+   {
+      int nsize = 0;
+      int s = 1;
+      int nn = n;
+ 
+      while (s <= n) 
+      {
+         bool found = false;
+         // Loop through possible radix values to find the largest factor of nn
+         for (int radix : radix_values) 
+         {
+            if (nn % radix == 0) 
+            {
+               nsize += 2 * radix;
+               nn /= radix;
+               s *= radix;
+               found = true;
+               break;
+            }
+         }
+         if (!found) break;
+      }
+ 
+      return nsize;
+   }
+
+   /**************************************
+    *                                    *
+    *              batch_cfft            *
+    *                                    *
+    **************************************/
+   void batch_cfft(const bool forward, const int nz, const int nq, const int nfft3d, double *a, const double *twiddle, const double *tmpz)
+   {
+      // Ensure the function processes the right type of data
+      // If twiddle is indeed of type complex_t, this cast is necessary
+      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+
+      //int shift = nfft3d;
+      int shift = 2*nfft3d;
+      int indx = 0;
+
+      // Process each FFT batch
+      for (auto q=0; q<nq; ++q)
+      {
+         (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
+         //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+
+         indx += (shift);
+      }
+   }
+
+   /**************************************
+    *                                    *
+    *          batch_cfft_zero           *
+    *                                    *
+    **************************************/
+   void batch_cfft_zero(const bool forward, int nz, int nq, int nfft3d, double *a, const double *twiddle, const double *tmpz, const bool *zero) 
+   {
+      // Ensure the function processes the right type of data
+      // If twiddle is indeed of type complex_t, this cast is necessary
+      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+
+      //int shift = nfft3d;
+      int shift = 2*nfft3d;
+      int indx = 0;
+
+      // Process each FFT batch
+      for (auto q=0; q<nq; ++q)
+      {
+         if (!zero[q])
+            (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
+            //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+
+         indx += (shift);
+      }
+   }
+
+
+   ////////////////////////// special complex-complex fft ////////////////////////////
+
+
 
 };
