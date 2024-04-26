@@ -2423,8 +2423,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
       const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
-      //int shift = nfft3d;
-      int shift = 2*nfft3d;
+      int shift = nfft3d;
+      //int shift = 2*nfft3d;
       int indx = 0;
 
       // Process each FFT batch
@@ -2449,8 +2449,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
       const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
-      //int shift = nfft3d;
-      int shift = 2*nfft3d;
+      int shift = nfft3d;
+      //int shift = 2*nfft3d;
       int indx = 0;
 
       // Process each FFT batch

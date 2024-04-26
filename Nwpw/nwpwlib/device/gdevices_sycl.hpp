@@ -225,8 +225,8 @@ class Gdevices {
    std::map<double *, size_t> live_ptrs_gpu, live_ptrs_host;
  
    int fftcount = 0;
-   desc_real_t *desc_x[2];
-   desc_cmplx_t *desc_y[2], *desc_z[2];
+   desc_real_t *desc_r_x[2];
+   desc_cmplx_t *desc_x[2], *desc_y[2], *desc_z[2];
  
    sycl::event h2d_event, fftevent, d2h_event;
 
@@ -1813,16 +1813,20 @@ public:
     **************************************/
    int batch_fft_init(int nx, int ny, int nz, int nq1, int nq2, int nq3) 
    {
-       /*
-      desc_x[fftcount] = new desc_real_t(nx);
-      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
+      
+      desc_r_x[fftcount] = new desc_real_t(nx);
+      desc_r_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                         nq1);
-      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx + 2);
-      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx/2 + 1);
-     
+      desc_r_x[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx + 2);
+      desc_r_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx/2 + 1);
+
+      desc_x[fftcount] = new desc_cmplx_t(nx);
+      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
+      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, nx);
+      desc_x[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, nx);
+
       desc_y[fftcount] = new desc_cmplx_t(ny);
-      desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
-                        nq2);
+      desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS, nq2);
       desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, ny);
       desc_y[fftcount]->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, ny);
      
@@ -1840,7 +1844,6 @@ public:
       ++fftcount;
      
       return tag;
-      */
    }
  
    /**************************************
@@ -1849,11 +1852,11 @@ public:
     *                                    *
     **************************************/
    void batch_fft_pipeline_mem_init(const int nstages, const int n2ft3d) {
-    //  ifft_n = nstages;
+      ifft_n = nstages;
  
-   //   // allocate memory and cuda streams
-   //   for (auto i=0; i<ifft_n; ++i)
-   //      ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
+      // allocate memory and cuda streams
+      for (auto i=0; i<ifft_n; ++i)
+         ifft_dev[i] = fetch_dev_mem_indx(((size_t)n2ft3d));
    }
  
    /**************************************
@@ -1861,13 +1864,15 @@ public:
     *            batch_fft_end           *
     *                                    *
     **************************************/
-   void batch_fft_end(const int tag) {
-    // delete desc_x[tag];
-    // delete desc_y[tag];
-    // delete desc_z[tag];
-    // --fftcount;
+   void batch_fft_end(const int tag) 
+   {
+     delete desc_r_x[tag];
+     delete desc_x[tag];
+     delete desc_y[tag];
+     delete desc_z[tag];
+     --fftcount;
  
-     //ndev_mem = 0;
+     ndev_mem = 0;
    }
 
 
@@ -2364,18 +2369,18 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
-      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
-      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+      complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
-      //int shift = nfft3d;
-      int shift = 2*nfft3d;
+      int shift = nfft3d;
+      //int shift = 2*nfft3d;
       int indx = 0;
 
       // Process each FFT batch
       for (auto q=0; q<nq; ++q)
       {
-         (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
-         //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+         fft_twiddle(nz, complex_twiddle, complex_a+indx);
+         //(forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
 
          indx += (shift);
       }
@@ -2390,19 +2395,19 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
-      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
-      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+      complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
-      //int shift = nfft3d;
-      int shift = 2*nfft3d;
+      int shift = nfft3d;
+      //int shift = 2*nfft3d;
       int indx = 0;
 
       // Process each FFT batch
       for (auto q=0; q<nq; ++q)
       {
          if (!zero[q])
-            (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
-            //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+            fft_twiddle(nz, complex_twiddle, complex_a+indx);
+            //(forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
 
          indx += (shift);
       }
