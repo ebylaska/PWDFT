@@ -33,6 +33,8 @@
 #include <cusolverDn.h>
 #include <library_types.h>
 
+#include <complex>
+
 //
 #ifndef cusolver_int_t
 #define cusolver_int_t int
