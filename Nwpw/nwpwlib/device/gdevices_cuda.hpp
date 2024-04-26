@@ -2418,8 +2418,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
-      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
-      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+      complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
       //int shift = nfft3d;
       int shift = 2*nfft3d;
@@ -2428,8 +2428,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       // Process each FFT batch
       for (auto q=0; q<nq; ++q)
       {
-         (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
-         //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+         fft_twiddle(nz, complex_twiddle, complex_a+indx);
+         //(forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
 
          indx += (shift);
       }
@@ -2444,8 +2444,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
-      //complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
-      //const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
+      complex_t*       complex_a       = reinterpret_cast<complex_t*>(a);
+      const complex_t* complex_twiddle = reinterpret_cast<const complex_t*>(twiddle);
 
       //int shift = nfft3d;
       int shift = 2*nfft3d;
@@ -2455,8 +2455,8 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       for (auto q=0; q<nq; ++q)
       {
          if (!zero[q])
-            (forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
-            //fft_twiddle(nz, complex_twiddle, complex_a+indx);
+            fft_twiddle(nz, complex_twiddle, complex_a+indx);
+            //(forward ? dcfftf_(&nz, a + indx, tmpz) : dcfftb_(&nz, a + indx, tmpz));
 
          indx += (shift);
       }
