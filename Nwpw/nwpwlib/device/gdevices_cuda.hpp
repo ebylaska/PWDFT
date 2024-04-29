@@ -5,6 +5,7 @@
 #include "blas.h"
 
 #define NDEV_MAX 100
+#define NDEV_MAX_LARGE 10
 #define DEBUG_IO  false
 
 //#include        "gdevice.hpp"
@@ -209,9 +210,9 @@ public:
    double *dev_mem[NDEV_MAX];
 
    int ndev_mem_large = 0;
-   bool inuse_large[NDEV_MAX] = {false};
-   size_t ndsize_mem_large[NDEV_MAX];
-   double *dev_mem_large[NDEV_MAX];
+   bool inuse_large[NDEV_MAX_LARGE] = {false};
+   size_t ndsize_mem_large[NDEV_MAX_LARGE];
+   double *dev_mem_large[NDEV_MAX_LARGE];
 
 
    int tile_fac = 1;
@@ -260,6 +261,7 @@ public:
     *                                    *
     **************************************/
    ~Gdevices() noexcept(false) {
+
       // free dev_mem
       for (auto i=0; i<ndev_mem; ++i)
       {
@@ -267,6 +269,14 @@ public:
          NWPW_CUDA_ERROR(cudaFree(dev_mem[i]));
       }
       ndev_mem = 0;
+
+      // free dev_mem_large
+      for (auto i=0; i<ndev_mem_large; ++i)
+      {
+         inuse_large[i] = false;
+         NWPW_CUDA_ERROR(cudaFree(dev_mem_large[i]));
+      }
+      ndev_mem_large = 0;
      
       // free cuda streams
       for (auto i=0; i<12; ++i)
@@ -344,7 +354,7 @@ public:
          ndsize_mem_large[ii] = ndsize;
          NWPW_CUDA_ERROR(cudaMalloc((void **)&(dev_mem_large[ii]), ndsize * sizeof(double)));
          ndev_mem_large += 1;
-         if (ndev_mem>NDEV_MAX) std::cout << "ERROR: ndev_mem > NDEV_MAX" << std::endl;
+         if (ndev_mem>NDEV_MAX_LARGE) std::cout << "ERROR: ndev_mem > NDEV_MAX_LARGE" << std::endl;
       }
     
       NWPW_CUDA_ERROR(cudaMemset(dev_mem_large[ii], 0, ndsize * sizeof(double)));
