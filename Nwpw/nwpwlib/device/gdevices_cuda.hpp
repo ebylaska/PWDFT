@@ -210,13 +210,13 @@ public:
 
    // Global variables for managing memory
    std::vector<double*> dev_mem_large(NDEV_MAX);
-   std::vector<double*> dev_mem_regular(NDEV_MAX);
+   std::vector<double*> dev_mem(NDEV_MAX);
    std::vector<size_t> ndsize_mem_large(NDEV_MAX, 0);
-   std::vector<size_t> ndsize_mem_regular(NDEV_MAX, 0);
+   std::vector<size_t> ndsize_mem(NDEV_MAX, 0);
    std::vector<bool> inuse_large(NDEV_MAX, false);
-   std::vector<bool> inuse_regular(NDEV_MAX, false);
+   std::vector<bool> inuse(NDEV_MAX, false);
    int ndev_mem_large = 0;
-   int ndev_mem_regular = 0;
+   int ndev_mem = 0;
 
    int tile_fac = 1;
    int tile_npack2_max; // ,tile_npack1_max;
@@ -301,40 +301,40 @@ public:
     *                                    *
     **************************************/
    int fetch_dev_mem_indx(const size_t requested_size, bool is_large = false) {
-       std::vector<double*>& dev_mem = is_large ? dev_mem_large : dev_mem_regular;
-       std::vector<size_t>& ndsize_mem = is_large ? ndsize_mem_large : ndsize_mem_regular;
-       std::vector<bool>& inuse = is_large ? inuse_large : inuse_regular;
-       int& ndev_mem = is_large ? ndev_mem_large : ndev_mem_regular;
+       std::vector<double*>& dev_mem_regular = is_large ? dev_mem_large : dev_mem;
+       std::vector<size_t>& ndsize_mem_regular = is_large ? ndsize_mem_large : ndsize_mem;
+       std::vector<bool>& inuse_regular = is_large ? inuse_large : inuse;
+       int& ndev_mem_regular = is_large ? ndev_mem_large : ndev_mem;
    
        int best_fit_index = -1;
        size_t smallest_fit_size = std::numeric_limits<size_t>::max();
    
        // Search for the smallest unused block that is large enough
-       for (int i = 0; i < ndev_mem; ++i) {
-           if (!inuse[i] && ndsize_mem[i] >= requested_size && ndsize_mem[i] < smallest_fit_size) {
+       for (int i = 0; i < ndev_mem_regular; ++i) {
+           if (!inuse_regular[i] && ndsize_mem_regular[i] >= requested_size && ndsize_mem_regular[i] < smallest_fit_size) {
                best_fit_index = i;
-               smallest_fit_size = ndsize_mem[i];
+               smallest_fit_size = ndsize_mem_regular[i];
            }
        }
    
        if (best_fit_index != -1) {
            // Suitable block found, mark it as in use
-           inuse[best_fit_index] = true;
+           inuse_regular[best_fit_index] = true;
            return best_fit_index;
        } else {
            // No suitable block found, need to allocate a new one
-           if (ndev_mem >= NDEV_MAX) {
+           if (ndev_mem_regular >= NDEV_MAX) {
                std::cerr << "ERROR: Maximum number of device memory blocks exceeded." << std::endl;
                return -1;
            }
-           cudaError_t err = cudaMalloc((void**)&dev_mem[ndev_mem], requested_size * sizeof(double));
+           cudaError_t err = cudaMalloc((void**)&dev_mem[ndev_mem_regular], requested_size * sizeof(double));
            if (err != cudaSuccess) {
                std::cerr << "ERROR: cudaMalloc failed - " << cudaGetErrorString(err) << std::endl;
                return -1;
            }
-           ndsize_mem[ndev_mem] = requested_size;
-           inuse[ndev_mem] = true;
-           return ndev_mem++;
+           ndsize_mem_regular[ndev_mem_regular] = requested_size;
+           inuse_regular[ndev_mem_regular] = true;
+           return ndev_mem_regular++;
        }
    }
 
@@ -344,11 +344,11 @@ public:
     *                                    *
     **************************************/
    void free_dev_mem_indx(int index, bool is_large = false) {
-       std::vector<bool>& inuse = is_large ? inuse_large : inuse_regular;
-       int& ndev_mem = is_large ? ndev_mem_large : ndev_mem_regular;
+       std::vector<bool>& inuse_regular = is_large ? inuse_large : inuse;
+       int& ndev_mem_regular = is_large ? ndev_mem_large : ndev_mem;
    
        if (index >= 0 && index < ndev_mem && inuse[index]) {
-           inuse[index] = false; // Mark the block as not in use
+           inuse_regular[index] = false; // Mark the block as not in use
        }
    }
 
