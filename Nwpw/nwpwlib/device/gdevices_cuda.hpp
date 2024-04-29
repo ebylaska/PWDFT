@@ -4,7 +4,7 @@
 
 #include "blas.h"
 
-#define NDEV_MAX  39
+#define NDEV_MAX0 100
 #define DEBUG_IO  false
 
 //#include        "gdevice.hpp"
@@ -209,6 +209,7 @@ public:
    //double *dev_mem[NDEV_MAX];
 
    // Global variables for managing memory
+   const int NDEV_MAX = NDEV_MAX0;
    std::vector<double*> dev_mem_large(NDEV_MAX);
    std::vector<double*> dev_mem(NDEV_MAX);
    std::vector<size_t> ndsize_mem_large(NDEV_MAX, 0);
