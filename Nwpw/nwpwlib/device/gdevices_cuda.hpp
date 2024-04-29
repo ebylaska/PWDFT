@@ -338,7 +338,7 @@ public:
     **************************************/
    int fetch_dev_mem_indx_large(const size_t ndsize0, const int size_t ndsize1)
    { 
-      const size_t ndsize = (ndsize0>ndsize1) ? ndsize0 : ndsize1;
+      size_t ndsize = (ndsize0>ndsize1) ? ndsize0 : ndsize1;
 
       int ii = 0;
       while ((((ndsize != ndsize_mem_large[ii]) || inuse_large[ii])) && (ii < ndev_mem_large))
