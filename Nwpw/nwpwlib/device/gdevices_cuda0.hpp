@@ -34,8 +34,6 @@
 #include <library_types.h>
 
 #include <complex>
-#include <vector>
-#include <limits>
 
 //
 #ifndef cusolver_int_t
@@ -203,25 +201,14 @@ public:
    bool hasgpu = true;
  
    /* device memory */
-   //int ndev_mem = 0;
-   //bool inuse[NDEV_MAX] = {false};
-   //size_t ndsize_mem[NDEV_MAX];
-   //double *dev_mem[NDEV_MAX];
-
-   // Global variables for managing memory
-   std::vector<double*> dev_mem_large(NDEV_MAX);
-   std::vector<double*> dev_mem_regular(NDEV_MAX);
-   std::vector<size_t> ndsize_mem_large(NDEV_MAX, 0);
-   std::vector<size_t> ndsize_mem_regular(NDEV_MAX, 0);
-   std::vector<bool> inuse_large(NDEV_MAX, false);
-   std::vector<bool> inuse_regular(NDEV_MAX, false);
-   int ndev_mem_large = 0;
-   int ndev_mem_regular = 0;
-
+   int ndev_mem = 0;
+   bool inuse[NDEV_MAX] = {false};
+   size_t ndsize_mem[NDEV_MAX];
+   double *dev_mem[NDEV_MAX];
    int tile_fac = 1;
    int tile_npack2_max; // ,tile_npack1_max;
-   int tile_npack2[NDEV_MAX], tile_start2[NDEV_MAX];
-   int tile_npack1[NDEV_MAX], tile_start1[NDEV_MAX];
+   int tile_npack2[19], tile_start2[19];
+   int tile_npack1[19], tile_start1[19];
 
    double *a_psi, *a_hpsi, *b_prj;
    int ia_psi[2], ia_hpsi[2], ib_prj[2];
@@ -293,65 +280,37 @@ public:
       // cufftDestroy(plan_z);
       // cufftDestroy(backward_plan_x);
    }
-
+ 
 
    /**************************************
     *                                    *
     *           fetch_dev_mem_indx       *
     *                                    *
     **************************************/
-   int fetch_dev_mem_indx(const size_t requested_size, bool is_large = false) {
-       std::vector<double*>& dev_mem = is_large ? dev_mem_large : dev_mem_regular;
-       std::vector<size_t>& ndsize_mem = is_large ? ndsize_mem_large : ndsize_mem_regular;
-       std::vector<bool>& inuse = is_large ? inuse_large : inuse_regular;
-       int& ndev_mem = is_large ? ndev_mem_large : ndev_mem_regular;
-   
-       int best_fit_index = -1;
-       size_t smallest_fit_size = std::numeric_limits<size_t>::max();
-   
-       // Search for the smallest unused block that is large enough
-       for (int i = 0; i < ndev_mem; ++i) {
-           if (!inuse[i] && ndsize_mem[i] >= requested_size && ndsize_mem[i] < smallest_fit_size) {
-               best_fit_index = i;
-               smallest_fit_size = ndsize_mem[i];
-           }
-       }
-   
-       if (best_fit_index != -1) {
-           // Suitable block found, mark it as in use
-           inuse[best_fit_index] = true;
-           return best_fit_index;
-       } else {
-           // No suitable block found, need to allocate a new one
-           if (ndev_mem >= NDEV_MAX) {
-               std::cerr << "ERROR: Maximum number of device memory blocks exceeded." << std::endl;
-               return -1;
-           }
-           cudaError_t err = cudaMalloc((void**)&dev_mem[ndev_mem], requested_size * sizeof(double));
-           if (err != cudaSuccess) {
-               std::cerr << "ERROR: cudaMalloc failed - " << cudaGetErrorString(err) << std::endl;
-               return -1;
-           }
-           ndsize_mem[ndev_mem] = requested_size;
-           inuse[ndev_mem] = true;
-           return ndev_mem++;
-       }
+   int fetch_dev_mem_indx(const size_t ndsize) 
+   {
+      int ii = 0;
+      while ((((ndsize != ndsize_mem[ii]) || inuse[ii])) && (ii < ndev_mem))
+         ++ii;
+     
+      if (ii < ndev_mem) 
+      {
+         inuse[ii] = true;
+      } 
+      else 
+      {
+         ii = ndev_mem;
+         inuse[ii] = true;
+         ndsize_mem[ii] = ndsize;
+         NWPW_CUDA_ERROR(cudaMalloc((void **)&(dev_mem[ii]), ndsize * sizeof(double)));
+         ndev_mem += 1;
+         if (ndev_mem>NDEV_MAX) std::cout << "ERROR: ndev_mem > NDEV_MAX" << std::endl;
+      }
+     
+      NWPW_CUDA_ERROR(cudaMemset(dev_mem[ii], 0, ndsize * sizeof(double)));
+      return ii;
    }
-
-   /**************************************
-    *                                    *
-    *           free_dev_mem_indx        *
-    *                                    *
-    **************************************/
-   void free_dev_mem_indx(int index, bool is_large = false) {
-       std::vector<bool>& inuse = is_large ? inuse_large : inuse_regular;
-       int& ndev_mem = is_large ? ndev_mem_large : ndev_mem_regular;
-   
-       if (index >= 0 && index < ndev_mem && inuse[index]) {
-           inuse[index] = false; // Mark the block as not in use
-       }
-   }
-
+ 
    /**************************************
     *                                    *
     *              TN4_dgemm             *
