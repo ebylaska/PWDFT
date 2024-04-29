@@ -203,21 +203,16 @@ public:
    bool hasgpu = true;
  
    /* device memory */
-   //int ndev_mem = 0;
-   //bool inuse[NDEV_MAX] = {false};
-   //size_t ndsize_mem[NDEV_MAX];
-   //double *dev_mem[NDEV_MAX];
-
-   // Global variables for managing memory
-   //const int NDEV_MAX = 100;
-   std::vector<double*> dev_mem_large(NDEV_MAX);
-   std::vector<double*> dev_mem(NDEV_MAX);
-   std::vector<size_t> ndsize_mem_large(NDEV_MAX, 0);
-   std::vector<size_t> ndsize_mem(NDEV_MAX, 0);
-   std::vector<bool> inuse_large(NDEV_MAX, false);
-   std::vector<bool> inuse(NDEV_MAX, false);
-   int ndev_mem_large = 0;
    int ndev_mem = 0;
+   bool inuse[NDEV_MAX] = {false};
+   size_t ndsize_mem[NDEV_MAX];
+   double *dev_mem[NDEV_MAX];
+
+   int ndev_mem_large = 0;
+   bool inuse_large[NDEV_MAX] = {false};
+   size_t ndsize_mem_large[NDEV_MAX];
+   double *dev_mem_large[NDEV_MAX];
+
 
    int tile_fac = 1;
    int tile_npack2_max; // ,tile_npack1_max;
@@ -302,9 +297,9 @@ public:
     *                                    *
     **************************************/
    int fetch_dev_mem_indx(const size_t requested_size, bool is_large = false) {
-       std::vector<double*>& dev_mem_regular = is_large ? dev_mem_large : dev_mem;
-       std::vector<size_t>& ndsize_mem_regular = is_large ? ndsize_mem_large : ndsize_mem;
-       std::vector<bool>& inuse_regular = is_large ? inuse_large : inuse;
+       double ** dev_mem_regular = is_large ? dev_mem_large : dev_mem;
+       size_t * ndsize_mem_regular = is_large ? ndsize_mem_large : ndsize_mem;
+       bool * inuse_regular = is_large ? inuse_large : inuse;
        int& ndev_mem_regular = is_large ? ndev_mem_large : ndev_mem;
    
        int best_fit_index = -1;
@@ -339,19 +334,6 @@ public:
        }
    }
 
-   /**************************************
-    *                                    *
-    *           free_dev_mem_indx        *
-    *                                    *
-    **************************************/
-   void free_dev_mem_indx(int index, bool is_large = false) {
-       std::vector<bool>& inuse_regular = is_large ? inuse_large : inuse;
-       int& ndev_mem_regular = is_large ? ndev_mem_large : ndev_mem;
-   
-       if (index >= 0 && index < ndev_mem && inuse[index]) {
-           inuse_regular[index] = false; // Mark the block as not in use
-       }
-   }
 
    /**************************************
     *                                    *
