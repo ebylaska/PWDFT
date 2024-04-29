@@ -290,49 +290,67 @@ public:
       // cufftDestroy(backward_plan_x);
    }
 
-
    /**************************************
     *                                    *
     *           fetch_dev_mem_indx       *
     *                                    *
     **************************************/
-   int fetch_dev_mem_indx(const size_t requested_size, bool is_large = false) {
-       double ** dev_mem_regular = is_large ? dev_mem_large : dev_mem;
-       size_t * ndsize_mem_regular = is_large ? ndsize_mem_large : ndsize_mem;
-       bool * inuse_regular = is_large ? inuse_large : inuse;
-       int& ndev_mem_regular = is_large ? ndev_mem_large : ndev_mem;
-   
-       int best_fit_index = -1;
-       size_t smallest_fit_size = std::numeric_limits<size_t>::max();
-   
-       // Search for the smallest unused block that is large enough
-       for (int i = 0; i < ndev_mem_regular; ++i) {
-           if (!inuse_regular[i] && ndsize_mem_regular[i] >= requested_size && ndsize_mem_regular[i] < smallest_fit_size) {
-               best_fit_index = i;
-               smallest_fit_size = ndsize_mem_regular[i];
-           }
-       }
-   
-       if (best_fit_index != -1) {
-           // Suitable block found, mark it as in use
-           inuse_regular[best_fit_index] = true;
-           return best_fit_index;
-       } else {
-           // No suitable block found, need to allocate a new one
-           if (ndev_mem_regular >= NDEV_MAX) {
-               std::cerr << "ERROR: Maximum number of device memory blocks exceeded." << std::endl;
-               return -1;
-           }
-           cudaError_t err = cudaMalloc((void**)&dev_mem[ndev_mem_regular], requested_size * sizeof(double));
-           if (err != cudaSuccess) {
-               std::cerr << "ERROR: cudaMalloc failed - " << cudaGetErrorString(err) << std::endl;
-               return -1;
-           }
-           ndsize_mem_regular[ndev_mem_regular] = requested_size;
-           inuse_regular[ndev_mem_regular] = true;
-           return ndev_mem_regular++;
-       }
+   int fetch_dev_mem_indx(const size_t ndsize)
+   {
+
+      int ii = 0;
+      while ((((ndsize != ndsize_mem[ii]) || inuse[ii])) && (ii < ndev_mem))
+         ++ii;
+     
+      if (ii < ndev_mem)
+      {
+         inuse[ii] = true;
+      } 
+      else
+      {
+         ii = ndev_mem;
+         inuse[ii] = true;
+         ndsize_mem[ii] = ndsize;
+         NWPW_CUDA_ERROR(cudaMalloc((void **)&(dev_mem[ii]), ndsize * sizeof(double)));
+         ndev_mem += 1;
+         if (ndev_mem>NDEV_MAX) std::cout << "ERROR: ndev_mem > NDEV_MAX" << std::endl;
+      }
+     
+      NWPW_CUDA_ERROR(cudaMemset(dev_mem[ii], 0, ndsize * sizeof(double)));
+      return ii;
    }
+
+
+   /**************************************
+    *                                    *
+    *        fetch_dev_mem_indx_large    *
+    *                                    *
+    **************************************/
+   int fetch_dev_mem_indx_large(const size_t ndsize)
+   { 
+
+      int ii = 0;
+      while ((((ndsize != ndsize_mem_large[ii]) || inuse_large[ii])) && (ii < ndev_mem_large))
+         ++ii;
+     
+      if (ii < ndev_mem_large)
+      {
+         inuse_large[ii] = true;
+      } 
+      else
+      {
+         ii = ndev_mem_large;
+         inuse_large[ii] = true;
+         ndsize_mem_large[ii] = ndsize;
+         NWPW_CUDA_ERROR(cudaMalloc((void **)&(dev_mem_large[ii]), ndsize * sizeof(double)));
+         ndev_mem_large += 1;
+         if (ndev_mem>NDEV_MAX) std::cout << "ERROR: ndev_mem > NDEV_MAX" << std::endl;
+      }
+    
+      NWPW_CUDA_ERROR(cudaMemset(dev_mem_large[ii], 0, ndsize * sizeof(double)));
+      return ii;
+   }
+
 
 
    /**************************************
