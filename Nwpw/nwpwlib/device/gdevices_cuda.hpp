@@ -209,7 +209,7 @@ public:
    //double *dev_mem[NDEV_MAX];
 
    // Global variables for managing memory
-   const int NDEV_MAX = NDEV_MAX0;
+   const int NDEV_MAX = 100;
    std::vector<double*> dev_mem_large(NDEV_MAX);
    std::vector<double*> dev_mem(NDEV_MAX);
    std::vector<size_t> ndsize_mem_large(NDEV_MAX, 0);
