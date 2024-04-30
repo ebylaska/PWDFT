@@ -1733,6 +1733,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
               
                if (move) 
                {
+                  nwpw_timing_function f2timer(70);
                   for (n = 0; n < nn; ++n) 
                   {
                      mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
@@ -1789,6 +1790,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
      
       if (move) 
       {
+         nwpw_timing_function f2timer(71);
          // for (ll=0; ll<nprjall; ++ll)
          ll = 0;
          for (jj = jstart; jj < jend; ++jj) 
