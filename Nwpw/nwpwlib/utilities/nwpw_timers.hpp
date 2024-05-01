@@ -67,8 +67,12 @@
 *   54 - HFX DM Cholesky
 *   55 - re-gridding
 *
-*   70 - timer0
-*   71 - timer1
+
+*   60 - non-local force1
+*   61 - non-local force2
+
+*   70 - projector generate 
+*   71 - <P|psi> overlap/mpi
 *   72 - timer2
 *   73 - timer3
 *
@@ -136,7 +140,11 @@ public:
     print_timer("lagrange multipliers ", times[3], counter, times[0], coutput);
     print_timer("exchange correlation ", times[4], counter, times[0], coutput);
     print_timer("local potentials     ", times[5], counter, times[0], coutput);
-    print_timer("non-local potentials ", times[6], counter, times[0], coutput);
+
+    print_timer("non-local potentials ", times[6],  counter, times[0], coutput);
+    print_timer("non-local force1     ", times[60], counter, times[0], coutput);
+    print_timer("non-local force2     ", times[61], counter, times[0], coutput);
+
     print_timer("hartree potentials   ", times[7], counter, times[0], coutput);
     print_timer("structure factors    ", times[8], counter, times[0], coutput);
     print_timer("masking and packing  ", times[9], counter, times[0], coutput);

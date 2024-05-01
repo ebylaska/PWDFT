@@ -1733,7 +1733,8 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
               
                if (move) 
                {
-                  nwpw_timing_function f2timer(70);
+                  nwpw_timing_function f2timer(60);
+                  //mypneb->ch3t_pack_i3ndot(1,prj,nn,psi,Gx,Gy,Gz,sum+3*nn(l+nprjall));
                   for (n = 0; n < nn; ++n) 
                   {
                      mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
@@ -1761,7 +1762,11 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
       parall->Vector_SumAll(1, nn*nprjall, sw1);
       if (move)
+      {
+         nwpw_timing_function f2timer(61);
+        //mypneb->ch3t_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum)
          parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+      }
      
       /* sw2 = Gijl*sw1 */
       ll = 0;
@@ -1790,7 +1795,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
      
       if (move) 
       {
-         nwpw_timing_function f2timer(71);
+         nwpw_timing_function f2timer(61);
          // for (ll=0; ll<nprjall; ++ll)
          ll = 0;
          for (jj = jstart; jj < jend; ++jj) 
@@ -1982,6 +1987,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
                else
                   mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
               
+               //mypneb->ch3t_pack_i3ndot(1,prj,nn,psi,Gx,Gy,Gz,sum+3*nn(l+nprjall));
                for (n = 0; n < nn; ++n) 
                {
                   mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);

@@ -638,6 +638,34 @@ void PGrid::cc_pack_copy(const int nb, const double *a, double *b)
  *       PGrid:cc_pack_dot      *
  *                              *
  ********************************/
+ /**
+ * @brief Computes a modified dot product for complex number arrays in a parallel computation environment.
+ *
+ * This function calculates a specialized dot product by taking into account the full span of complex number entries
+ * (real and imaginary parts) from two input vectors 'a' and 'b'. The computation doubles the dot product of the
+ * complete range and then subtracts the dot product of a subset (only the first half of the range), effectively
+ * performing an operation that might be part of a larger numerical or analytical method involving complex numbers.
+ *
+ * The formula for the operation is:
+ * \f[
+ * \text{tsum} = 2.0 \cdot \text{DDOT_PWDFT}(ng, a, 1, b, 1) - \text{DDOT_PWDFT}(ng0, a, 1, b, 1)
+ * \f]
+ * where `ng` is the total number of real and imaginary parts combined from both `nida` and `nidb`, and `ng0` is the count
+ * from `nida` alone, each doubled to account for complex numbers (real and imaginary parts).
+ *
+ * @param nb An index used to access specific dimensions or counts from the `nida` and `nidb` arrays, which define the range
+ *           of elements involved in the dot product operations.
+ * @param a Pointer to the first element of the vector 'a', expected to hold complex numbers represented in interleaved format
+ *          (real followed by imaginary).
+ * @param b Pointer to the first element of the vector 'b', structured identically to 'a'.
+ *
+ * @return The global sum of the computed dot product across all parallel processes, ensuring that all parts of the distributed
+ *         system contribute to the final result.
+ *
+ * @note The function uses `DDOT_PWDFT` for dot product calculations, which should be capable of handling distributed arrays
+ *       safely in a parallel computation context. The final result is summed across all participating nodes or processes using
+ *       `d3db::parall->SumAll`, integral to reducing results in parallel applications.
+ */
 double PGrid::cc_pack_dot(const int nb, double *a, double *b) 
 {
    int one = 1;
@@ -656,6 +684,32 @@ double PGrid::cc_pack_dot(const int nb, double *a, double *b)
  *       PGrid:tt_pack_dot      *
  *                              *
  ********************************/
+ /**
+ * @brief Computes a modified dot product of two vectors suitable for parallel execution environments, specifically designed for handling distributed data arrays.
+ *
+ * This function performs a specialized dot product operation by initially doubling the result of a dot product over a combined range
+ * of elements from two indices arrays (nida and nidb), then subtracting the dot product of a subset of this range. The function is likely
+ * used in contexts where adjustments to standard dot product calculations are necessary due to the nature of the data distribution or
+ * computational methodology in use (e.g., partial Fourier space representations in electronic structure calculations).
+ *
+ * The operation is as follows:
+ * \f[
+ * \text{tsum} = 2 \cdot \text{DDOT_PWDFT}(ng, a, one, b, one) - \text{DDOT_PWDFT}(ng0, a, one, b, one)
+ * \f]
+ * where `ng` is the sum of elements defined by `nida[nb]` and `nidb[nb]`, and `ng0` is the count of elements defined by `nida[nb]` alone.
+ *
+ * @param nb An index used to select the particular size settings from the `nida` and `nidb` arrays, which dictate the range of elements
+ *           involved in the computation.
+ * @param a Pointer to the first element of the vector 'a'.
+ * @param b Pointer to the first element of the vector 'b'.
+ *
+ * @return The global sum of the computed dot product across all parallel processes, ensuring that all parts of the distributed system
+ *         contribute to the final result.
+ *
+ * @note The function relies on `DDOT_PWDFT` for performing the dot product calculation, which is assumed to be a parallel-safe version
+ *       typically used in distributed computational frameworks. The function also uses `d3db::parall->SumAll` for summing up the result
+ *       across different processors or nodes, which is a part of a parallel reduction operation.
+ */
 double PGrid::tt_pack_dot(const int nb, double *a, double *b) 
 {
    int one = 1;
@@ -752,6 +806,41 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
                 rone, sum, nn);
   }
 }
+
+
+/********************************
+ *                              *
+ *   PGrid:ch3t_pack_i3ndot     *
+ *                              *
+ ********************************/
+ //mypneb->ch3t_pack_i3ndot(1,nn,nprj,psi,prj,Gx,Gy,Gz,sum+3*nn(l+nprjall));
+
+/*
+void PGrid::ch3t_pack_i3ndot(const int nb, const int nn, const int nprj, 
+                             const double *psi,
+                             const double *prj,
+                             const double Gx, const double Gy, const double Gz,
+                             double *sum3)
+{
+   int ng = 2 * (nida[nb] + nidb[nb]);
+   int ng0 = 2 * nida[nb];
+   int one = 1;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+
+  d3db::mygdevice.TN_dgemm3(nn,nprj,ng,rtwo,psi,prj,Gx,Gy,Gz,rzero,sum3);
+
+  if (ng0 > 0) 
+  {
+     DGEMM3_PWDFT((char *)"T", (char *)"N",nn,nprj,ng0,rmone,psi,ng,prj,ng,Gx,Gy,Gz,
+                  rone,sum3,nn);
+  }
+}
+*/
+
+
+
 
 /********************************
  *                              *
@@ -3296,6 +3385,26 @@ void PGrid::cc_pack_SMul(const int nb, const double alpha, const double *a, doub
  *      PGrid:cc_pack_daxpy     *
  *                              *
  ********************************/
+/**
+ * @brief Performs the DAXPY operation on complex number arrays, optimized for parallel computation.
+ *
+ * This function scales the complex number vector 'a' by a scalar 'alpha' and adds the result to the complex number vector 'b'.
+ * It operates on interleaved complex numbers, where each complex number is represented by two consecutive double values (the real part followed by the imaginary part).
+ * The operation is vectorized across the total number of real and imaginary parts indicated by 'nida' and 'nidb' for the given index 'nb'.
+ *
+ * The mathematical operation performed is:
+ * \f[
+ * b[i] := b[i] + \alpha \times a[i]
+ * \f]
+ * for each element \( i \) in the vector, where \( i \) ranges from 0 to \( 2 \times (\text{nida}[nb] + \text{nidb}[nb]) - 1 \), covering all parts of the complex numbers in 'a' and 'b'.
+ *
+ * @param nb An index used to determine the number of complex elements in 'a' and 'b', with the count retrieved from the arrays `nida` and `nidb`.
+ * @param alpha A double precision scalar by which each element in the vector 'a' is scaled.
+ * @param a Pointer to the first element of the input vector 'a', where complex numbers are stored in an interleaved format.
+ * @param b Pointer to the first element of the output vector 'b', structured identically to 'a', to which the scaled elements of 'a' are added.
+ *
+ * @note Assumes that arrays 'a' and 'b' are pre-allocated with sufficient size to hold all necessary elements, which should include space for both the real and imaginary parts of the complex numbers.
+ */
 void PGrid::cc_pack_daxpy(const int nb, const double alpha, const double *a, double *b) 
 {
    int ng = 2 * (nida[nb] + nidb[nb]);
@@ -3309,6 +3418,22 @@ void PGrid::cc_pack_daxpy(const int nb, const double alpha, const double *a, dou
  *   PGrid:cct_pack_iconjgMul   *
  *                              *
  ********************************/
+ /**
+ * @brief Performs element-wise multiplication of complex numbers from array 'a' with the conjugates of complex numbers from array 'b', storing the imaginary part of each product in array 'c'.
+ *
+ * This function iterates over pairs of complex numbers taken from the arrays 'a' and 'b'. For each pair, it computes the imaginary part of the product of the complex number from 'a' and the conjugate of the complex number from 'b'. The result of this operation for each pair is stored in 'c'. The operation performed is:
+ * \f[
+ * C[i] = A[i] \times \overline{B[i]} = (a_{re} + i \times a_{im}) \times (b_{re} - i \times b_{im}) = (a_{re} \times b_{re} + a_{im} \times b_{im}) + i \times (a_{im} \times b_{re} - a_{re} \times b_{im})
+ * \f]
+ * Here, only the imaginary part \f$ (a_{im} \times b_{re} - a_{re} \times b_{im}) \f$ is stored in array 'c'.
+ *
+ * @param nb An index used to determine the number of complex pairs to process, based on the sum of entries from arrays `nida` and `nidb`.
+ * @param a Pointer to the first element of the input array 'a', where each complex number is represented by consecutive elements (first the real part, then the imaginary part).
+ * @param b Pointer to the first element of the input array 'b', structured identically to 'a'.
+ * @param c Pointer to the first element of the output array where the results (imaginary parts of the products) are stored.
+ *
+ * @note Assumes that arrays 'a', 'b', and 'c' are allocated with sufficient size to hold the necessary number of elements, and that 'nida[nb]' and 'nidb[nb]' correctly reflect the counts of complex elements to be processed. This function calculates only the imaginary parts of the complex products and stores them in 'c'.
+ */
 void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<(nida[nb]+nidb[nb]); ++i)
@@ -3320,6 +3445,22 @@ void PGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, d
  *  PGrid:cct_pack_iconjgMulb   *
  *                              *
  ********************************/
+/**
+ * @brief Performs element-wise multiplication of complex numbers from array 'a' with the conjugates of complex numbers from array 'b', specifically calculating a component typically associated with the imaginary part of the resultant complex product.
+ *
+ * This function iterates through pairs of complex numbers taken from the arrays 'a' and 'b'. For each pair, it computes:
+ * \f[
+ * C[i] = a_{im} \times b_{re} - a_{re} \times b_{im}
+ * \f]
+ * which is the negative of the imaginary component of the complex product if the second complex number were conjugated. The computed values are stored in the output array 'c'. This component is crucial in many applications involving complex arithmetic where only specific components of the product are required.
+ *
+ * @param nb An index used to determine the number of complex pairs to process, based on the sum of entries from arrays `nida` and `nidb`.
+ * @param a Pointer to the first element of the input array 'a', where each complex number is represented by consecutive elements (first the real part, then the imaginary part).
+ * @param b Pointer to the first element of the input array 'b', structured identically to 'a'.
+ * @param c Pointer to the first element of the output array where the results are stored.
+ *
+ * @note Assumes that arrays 'a', 'b', and 'c' are pre-allocated with sufficient size to hold the necessary number of elements, and that 'nida[nb]' and 'nidb[nb]' correctly reflect the counts of complex elements to be processed. This function is optimized for scenarios where only a specific component of the complex product is needed, enhancing computational efficiency in such cases.
+ */
 void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<(nida[nb]+nidb[nb]); ++i)

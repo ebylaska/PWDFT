@@ -3526,6 +3526,38 @@ void CGrid::cc_pack_zaxpy(const int nb, const std::complex<double> alpha, const 
  *   CGrid:ccr_pack_iconjgMul   *
  *                              *
  ********************************/
+ /**
+ * @brief Computes the real part of the product of the imaginary unit i and the product
+ *        of a complex number A and the conjugate of another complex number B.
+ *
+ * This function performs a complex operation where it computes the expression:
+ *
+ * Re(i*A*conjg(B)) = Re(i*(a + ib)*(c - id)) = Re(i*(ac + bd) + (bc - ad)i) = bc - ad.
+ *
+ * Specifically, the function calculates C = Re(A) × Im(B) − Im(A) × Re(B) for each
+ * pair of complex numbers in the provided arrays 'a' and 'b', storing the result in 'c'.
+ *
+ * @param nb An integer index used to determine the number of complex elements to process.
+ *           The actual number of elements processed is derived from the 'nidb' array of the CGrid class.
+ * @param a Pointer to the first element of the input array, representing complex numbers
+ *          in interleaved format, where each complex number consists of a real part followed by an imaginary part.
+ * @param b Pointer to the first element of the input array, representing complex numbers
+ *          in interleaved format, structured similarly to 'a'.
+ * @param c Pointer to the first element of the output array where the results are stored.
+ *
+ * @note This function assumes that 'a', 'b', and 'c' are arrays of double representing complex numbers,
+ *       where each complex number is stored as consecutive real and imaginary parts. This operation is
+ *       part of complex conjugate multiplication but focuses on computing one specific component of the full result.
+ *
+ * Usage Example:
+ *   double a[] = {1.0, 2.0, 3.0, 4.0};  // Two complex numbers: 1+2i, 3+4i
+ *   double b[] = {5.0, 6.0, 7.0, 8.0};  // Two complex numbers: 5+6i, 7+8i
+ *   double c[2];                        // Result array
+ *   int nb = 0;                         // Assuming nidb[0] is set appropriately
+ *   CGrid grid;
+ *   grid.cct_pack_iconjgMul(nb, a, b, c);
+ *   // Now c contains the results: [12 - 16 for each complex number pair]
+ */
 void CGrid::ccr_pack_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<nidb[nb]; ++i)
@@ -3538,6 +3570,9 @@ void CGrid::ccr_pack_iconjgMul(const int nb, const double *a, const double *b, d
  *   CGrid:cct_pack_iconjgMul   *
  *                              *
  ********************************/
+/**
+ same as above
+ */
 void CGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<nidb[nb]; ++i)
@@ -3551,34 +3586,87 @@ void CGrid::cct_pack_iconjgMul(const int nb, const double *a, const double *b, d
  *  CGrid:ccr_pack_iconjgMulb   *
  *                              *
  ********************************/
+ /**
+ * @brief Performs a specific complex arithmetic operation by computing the expression
+ * derived from the multiplication of a complex number with the conjugate of another,
+ * followed by multiplying the result by the imaginary unit and extracting the negative
+ * of the real part.
+ *
+ * The expression computed is:
+ * \f[
+ * -\text{Re}(i \cdot A \cdot \text{conjg}(B)) = -\text{Re}(i \cdot (a + i \cdot b) \cdot (c - i \cdot d))
+ * = -\text{Re}((-b + i \cdot a) \cdot (c - i \cdot d)) = -\text{Re}((-b \cdot c + a \cdot d) + i \cdot (a \cdot c + b \cdot d))
+ * = b \cdot c - a \cdot d
+ * \f]
+ * This computes \f$ b \cdot c - a \cdot d \f$ for each pair of complex elements from the arrays.
+ *
+ * @param nb An integer index used to access the number of elements to process in the 'nidb' array,
+ *           which dictates the loop's iteration limit.
+ * @param a Pointer to the first element of the input array 'a', where each complex number is represented
+ *          by consecutive elements (real part followed by imaginary part).
+ * @param b Pointer to the first element of the input array 'b', structured identically to 'a'.
+ * @param c Pointer to the first element of the output array 'c', where the results are stored.
+ *
+ * @note The arrays 'a', 'b', and 'c' must be pre-allocated with sufficient size to hold the necessary
+ *       number of elements, with 'a' and 'b' containing at least 2*nidb[nb] elements, and 'c' having
+ *       at least nidb[nb] elements. The function assumes that 'nidb[nb]' is correctly set to reflect
+ *       the number of complex elements to be processed. This function performs a reduction from two
+ *       multiplications and one subtraction per element pair.
+ */
 void CGrid::ccr_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<(nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
-
 /********************************
  *                              *
  *  CGrid:cct_pack_iconjgMulb   *
  *                              *
  ********************************/
+/**
+ same as above
+ */
 void CGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<(nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
+
 /********************************
  *                              *
  *   CGrid:zccr_pack_iconjgMul  *
  *                              *
  ********************************/
-/*
- C(i) = Imag (alpha*A(i)*dconjg(B(i)))
+/**
 
+    C(i) = Imag (alpha*A(i)*dconjg(B(i)))
 
-*/
+ * @brief Computes a scaled complex number multiplication with the conjugate of another complex number,
+ * extracting specific components from the resulting complex product.
+ *
+ * This function calculates the component C(i) as:
+ * \f[
+ * C(i) = \text{Imag}(\alpha \cdot A(i) \cdot \text{dconjg}(B(i))) =
+ * \alpha[0] \cdot (a[2i+1] \cdot b[2i] - a[2i] \cdot b[2i+1]) +
+ * \alpha[1] \cdot (a[2i] \cdot b[2i] + a[2i+1] \cdot b[2i+1])
+ * \f]
+ * Here, \f$\alpha\f$ is a complex scalar, and \f$A(i)\f$ and \f$B(i)\f$ are the i-th complex numbers from arrays 'a' and 'b'.
+ * The function performs this computation for each complex element indexed by 'i', dictated by the size stored in 'nidb[nb]'.
+ *
+ * @param nb An integer index used to access the number of elements to process in the 'nidb' array.
+ * @param alpha Pointer to a two-element array representing the real and imaginary parts of the complex scalar alpha.
+ * @param a Pointer to the first element of the input array 'a', where each complex number is represented by consecutive
+ *          elements (real part followed by an imaginary part).
+ * @param b Pointer to the first element of the input array 'b', structured identically to 'a'.
+ * @param c Pointer to the first element of the output array where the computed results are stored.
+ *
+ * @note The arrays 'a', 'b', and 'c' must be pre-allocated with sufficient size to hold the necessary number of elements,
+ *       with 'a' and 'b' containing at least 2*nidb[nb] elements, and 'c' having at least nidb[nb] elements.
+ *       Ensure that 'nidb[nb]' is correctly set to reflect the number of complex elements to be processed.
+ *       The function assumes each complex number involves two double elements (one for the real part and one for the imaginary part).
+ */
 void CGrid::zccr_pack_iconjgMul(const int nb, const double *alpha, const double *a, const double *b, double *c)
 {
    for (auto i=0; i<nidb[nb]; ++i)

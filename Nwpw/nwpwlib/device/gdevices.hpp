@@ -153,7 +153,6 @@ public:
                  host_b, npack, beta, host_c, ne);
    }
 
-
    /**************************************
     *                                    *
     *              T_free                *
