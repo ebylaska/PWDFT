@@ -176,6 +176,9 @@ public:
   void cct_pack_iconjgMul(const int, const double *, const double *, double *);
   void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
 
+  void n2ccttt_pack_i3ndot(const int, const int, const int, const double *, const double *, double *, double *, double *, double *);
+
+
   void i_pack(const int, int *);
   void ii_pack_copy(const int, int *, int *);
 

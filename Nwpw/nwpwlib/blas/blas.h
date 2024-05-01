@@ -113,7 +113,7 @@ extern "C" void zlacpy_(char *, int *, int *, double *, int *, double *, int *);
 #define EIGEN_PWDFT(n, hml, eig, xtmp, nn, ierr)                               \
   dsyev_((char *)"V", (char *)"U", &(n), hml, &(n), eig, xtmp, &(nn), &ierr)
 
-#define DDOT_PWDFT(n, a, ida, b, idb) ddot_(&(n), a, &ida, b, &(idb))
+#define DDOT_PWDFT(n, a, ida, b, idb) ddot_(&(n), (a), &ida, (b), &(idb))
 
 #define DLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   dlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))

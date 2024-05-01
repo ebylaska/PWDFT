@@ -499,6 +499,46 @@ public:
 
    /**************************************
     *                                    *
+    *         computeTrans3_Mult         *
+    *                                    *
+    **************************************/
+    //d3db::mygdevice.computeTrans3_Mul(nn,nprj,ng,ng0,psi,prj,Gx,Gy,Gz,sum3)
+   void computeTrans3_Mult(const int ne, const int nprj, 
+                           const double *psi, const double *prj,
+                           int ng, int ng0,
+                           double *Gx, double *Gy, double *Gz, double *xtmp1,
+                           double *sum3)
+   {
+      int one = 1;
+      int count3 = 0;
+      int nshift = 2*ng;
+
+      for (auto l=0; l<nprj; ++l)
+      for (auto n=0; n<ne; ++n)
+      {
+         // Perform cct_pack_iconjgMul
+         const double *a = prj + l*nshift;
+         const double *b = psi + n*nshift;
+         for (int i=0; i<ng; ++i)
+            xtmp1[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
+      
+         double tsumx = 2.0*DDOT_PWDFT(ng,Gx,one,xtmp1,one);
+         double tsumy = 2.0*DDOT_PWDFT(ng,Gy,one,xtmp1,one);
+         double tsumz = 2.0*DDOT_PWDFT(ng,Gz,one,xtmp1,one);
+         tsumx -= DDOT_PWDFT(ng0,Gx,one,xtmp1,one);
+         tsumy -= DDOT_PWDFT(ng0,Gy,one,xtmp1,one);
+         tsumz -= DDOT_PWDFT(ng0,Gz,one,xtmp1,one);
+      
+         sum3[count3]   = tsumx;
+         sum3[count3+1] = tsumy;
+         sum3[count3+2] = tsumz;
+         count3 += 3;
+      }
+   }
+
+
+   /**************************************
+    *                                    *
     *              WW6_zgemm             *
     *                                    *
     **************************************/

@@ -810,34 +810,76 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
 
 /********************************
  *                              *
- *   PGrid:ch3t_pack_i3ndot     *
+ *   PGrid:n2ccttt_pack_i3ndot  *
  *                              *
  ********************************/
- //mypneb->ch3t_pack_i3ndot(1,nn,nprj,psi,prj,Gx,Gy,Gz,sum+3*nn(l+nprjall));
-
-/*
-void PGrid::ch3t_pack_i3ndot(const int nb, const int nn, const int nprj, 
-                             const double *psi,
-                             const double *prj,
-                             const double Gx, const double Gy, const double Gz,
-                             double *sum3)
+ /**
+ * @brief Computes a series of dot products between transformed vectors with parallelization.
+ *
+ * This function performs a set of dot product calculations on complex numbers stored in the
+ * arrays `psi` and `prj`, with results stored in `sum3`. The input arrays `Gx`, `Gy`, and `Gz`
+ * represent the data against which the transformed vectors are compared. The function is optimized
+ * for parallel execution, allowing the workload to be distributed across multiple cores.
+ *
+ * @param nb An integer index used to determine the range of elements from the global arrays, influencing the size of the operations.
+ * @param nn The number of unique psi arrays to be processed.
+ * @param nprj The number of projection matrices or elements to be considered.
+ * @param psi Pointer to the first element of the psi array, which stores data for multiplication.
+ * @param prj Pointer to the first element of the prj array, which contains projection matrices or data.
+ * @param Gx Pointer to the first element of the Gx array, representing transformation data.
+ * @param Gy Pointer to the first element of the Gy array, representing transformation data.
+ * @param Gz Pointer to the first element of the Gz array, representing transformation data.
+ * @param sum3 Pointer to the first element of the output array where the results are accumulated.
+ *
+ * @note This function can be optimized for AVX2 instruction sets, ARM NEON intrinsics, OpenMP, and GPUs for more efficient computation.
+ */
+void PGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj, 
+                                const double *psi,
+                                const double *prj,
+                                double *Gx, double *Gy, double *Gz,
+                                double *sum3)
 {
-   int ng = 2 * (nida[nb] + nidb[nb]);
-   int ng0 = 2 * nida[nb];
+   double *xtmp1 = d3db::d3db_tmp1;
+
    int one = 1;
-   double rtwo = 2.0;
-   double rone = 1.0;
-   double rmone = -1.0;
+   int ng = (nida[nb] + nidb[nb]);
+   int ng0 = nida[nb];
+   int nshift = 2*ng;
+   int count3 = 0;
 
-  d3db::mygdevice.TN_dgemm3(nn,nprj,ng,rtwo,psi,prj,Gx,Gy,Gz,rzero,sum3);
 
-  if (ng0 > 0) 
-  {
-     DGEMM3_PWDFT((char *)"T", (char *)"N",nn,nprj,ng0,rmone,psi,ng,prj,ng,Gx,Gy,Gz,
-                  rone,sum3,nn);
-  }
+   //d3db::mygdevice.computeTrans3_Mult(ne,nprj,psi,prj,ng,ng0,Gx,Gy,Gz,xtmp1,sum3)
+
+   for (auto l=0; l<nprj; ++l)
+   for (auto n=0; n<nn; ++n)
+   {
+      //cct_pack_iconjgMul(1, prj+l*ng, psi + n*ng, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l]     = tt_pack_idot(1,Gx, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 1] = tt_pack_idot(1,Gy, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 2] = tt_pack_idot(1,Gz, xtmp1);
+
+      // Perform cct_pack_iconjgMul
+      const double *a = prj + l*nshift;
+      const double *b = psi + n*nshift;
+      for (int i = 0; i < ng; ++i) 
+         xtmp1[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
+      
+      double tsumx = 2.0*DDOT_PWDFT(ng,Gx,one,xtmp1,one);
+      double tsumy = 2.0*DDOT_PWDFT(ng,Gy,one,xtmp1,one);
+      double tsumz = 2.0*DDOT_PWDFT(ng,Gz,one,xtmp1,one);
+      tsumx -= DDOT_PWDFT(ng0,Gx,one,xtmp1,one);
+      tsumy -= DDOT_PWDFT(ng0,Gy,one,xtmp1,one);
+      tsumz -= DDOT_PWDFT(ng0,Gz,one,xtmp1,one);
+
+      sum3[count3]   = tsumx;
+      sum3[count3+1] = tsumy;
+      sum3[count3+2] = tsumz;
+      count3 += 3;
+   }
+
+   parall->Vector_SumAll(1, 3*nn*nprj, sum3);
 }
-*/
+
 
 
 

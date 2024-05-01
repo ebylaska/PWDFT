@@ -48,6 +48,9 @@ public:
    void CN3_zgemm(int, int, int, double *, double *, double *, double *, double *, double *, double *);
 
 
+   void computeTrans3_Mult(const int, const int, const double *, const double *,
+                           int, int, double *, double *, double *, double *, double *);
+
    void WW6_zgemm(int, double *, double *, double *, double *, double *, double *);
    
    void WW_eigensolver(int, int *, double *, double *);

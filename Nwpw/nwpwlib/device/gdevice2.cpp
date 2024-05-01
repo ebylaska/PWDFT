@@ -134,6 +134,15 @@ void gdevice2::CN3_zgemm(int npack1_max, int npack, int ne, double *alpha, doubl
    mygdevice2->CN3_zgemm(npack1_max, npack, ne, alpha, a, b, beta, caa, cab, cbb);
 }
 
+void gdevice2::computeTrans3_Mult(const int ne, const int nprj, 
+                                  const double *psi, const double *prj, int ng, int ng0,
+                                  double *Gx, double *Gy, double *Gz, double *xtmp1,
+                                  double *sum3) {
+   if (!mygdevice2->hasgpu)
+      mygdevice2->computeTrans3_Mult(ne,nprj,psi,prj,ng,ng0,Gx,Gy,Gz,xtmp1,sum3);
+}
+
+
 
 void gdevice2::WW6_zgemm(int ne, double *s21, double *s12, double *s11,
                        double *sa0, double *sa1, double *st1) {
@@ -145,6 +154,10 @@ void gdevice2::WW6_zgemm(int ne, double *s21, double *s12, double *s11,
 void gdevice2::WW_eigensolver(int ispin, int ne[], double *a, double *w) {
    mygdevice2->WW_eigensolver(ispin, ne, a, w);
 }
+
+
+
+
 
 void gdevice2::psi_alloc(int npack, int ne, int tfac0 = 1) {
 #if defined(NWPW_SYCL) || defined(NWPW_CUDA) || defined(NWPW_HIP)
