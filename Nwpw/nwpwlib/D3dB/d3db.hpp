@@ -135,8 +135,8 @@ public:
  
    void t_timereverse(double *, double *, double *);
    void c_timereverse(double *, double *, double *);
-   void c_timereverse_start(double *, double *, double *, const int, const int);
-   void c_timereverse_end(double *, double *, double *, const int);
+   void c_timereverse_start(const int, double *, double *, double *, const int, const int);
+   void c_timereverse_end(const int, double *, double *, double *, const int);
    int timereverse_size();
  
    void c_setpw(const int *, const double *, double *);
@@ -163,16 +163,12 @@ public:
    void c_ptranspose2_jk(const int, double *, double *, double *);
    void c_ptranspose_ijk(const int, const int, double *, double *, double *);
  
-   void c_ptranspose1_jk_start(const int, double *, double *, double *,
-                               const int, const int);
-   void c_ptranspose2_jk_start(const int, double *, double *, double *,
-                               const int, const int);
-   void c_ptranspose_ijk_start(const int, const int, double *, double *,
-                               double *, const int, const int);
-   void c_ptranspose1_jk_end(const int, double *, double *, const int);
-   void c_ptranspose2_jk_end(const int, double *, double *, const int);
-   void c_ptranspose_ijk_end(const int, const int, double *, double *,
-                             const int);
+   void c_ptranspose1_jk_start(const int, const int, double *, double *, double *, const int, const int);
+   void c_ptranspose2_jk_start(const int, const int, double *, double *, double *, const int, const int);
+   void c_ptranspose_ijk_start(const int, const int, const int, double *, double *, double *, const int, const int);
+   void c_ptranspose1_jk_end(const int, const int, double *, double *, const int);
+   void c_ptranspose2_jk_end(const int, const int, double *, double *, const int);
+   void c_ptranspose_ijk_end(const int, const int, const int, double *, double *, const int);
  
    /* gcube io */
    std::string r_formatwrite_reverse(double *);

@@ -1731,6 +1731,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                else
                   mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
               
+               /*
                if (move) 
                {
                   nwpw_timing_function f2timer(60);
@@ -1743,6 +1744,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                      sum[3*n + 3*nn*(l+nprjall) + 2] = mypneb->tt_pack_idot(1, Gz, xtmp);
                   }
                }
+               */
             }
             nprjall += nprj[ia];
          }
@@ -1764,8 +1766,8 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       if (move)
       {
          nwpw_timing_function f2timer(61);
-        //mypneb->ch3t_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum)
-         parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+         mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+         //parall->Vector_SumAll(1,3*nn*nprjall,sum);
       }
      
       /* sw2 = Gijl*sw1 */
@@ -1988,6 +1990,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
                   mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
               
                //mypneb->ch3t_pack_i3ndot(1,prj,nn,psi,Gx,Gy,Gz,sum+3*nn(l+nprjall));
+               /*
                for (n = 0; n < nn; ++n) 
                {
                   mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
@@ -1995,6 +1998,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
                   sum[3*n + 1 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1, Gy, xtmp);
                   sum[3*n + 2 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(1, Gz, xtmp);
                }
+               */
             }
             nprjall += nprj[ia];
          }
@@ -2012,7 +2016,9 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
       jend = ii;
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
       parall->Vector_SumAll(1, nn*nprjall, sw1);
-      parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+
+      mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+      //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
      
       /* sw2 = Gijl*sw1 */
       ll = 0;

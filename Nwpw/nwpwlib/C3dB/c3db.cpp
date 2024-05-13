@@ -4174,7 +4174,7 @@ void c3db::rc_fft3d(double *a)
  *    c3db::c_ptranspose1_jk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1,
+void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
                                   const int msgtype) 
 {
@@ -4212,7 +4212,7 @@ void c3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1,
  *    c3db::c_ptranspose1_jk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int request_indx) 
+void c3db::c_ptranspose1_jk_end(const int nffts, const int nb, double *a, double *tmp2, const int request_indx) 
 {
    parall->awaitall(request_indx);
 
@@ -4226,7 +4226,7 @@ void c3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int
  *    c3db::c_ptranspose2_jk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose2_jk_start(const int nb, double *a, double *tmp1,
+void c3db::c_ptranspose2_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
                                   const int msgtype) 
 {
@@ -4263,7 +4263,7 @@ void c3db::c_ptranspose2_jk_start(const int nb, double *a, double *tmp1,
  *    c3db::c_ptranspose2_jk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2,
+void c3db::c_ptranspose2_jk_end(const int nffts, const int nb, double *a, double *tmp2,
                                 const int request_indx) 
 {
    parall->awaitall(request_indx);
@@ -4278,7 +4278,7 @@ void c3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2,
  *    c3db::c_ptranspose_ijk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose_ijk_start(const int nb, const int op, double *a,
+void c3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, double *a,
                                   double *tmp1, double *tmp2,
                                   const int request_indx, const int msgtype) 
 {
@@ -4322,7 +4322,7 @@ void c3db::c_ptranspose_ijk_start(const int nb, const int op, double *a,
  *    c3db::c_ptranspose_ijk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose_ijk_end(const int nb, const int op, double *a,
+void c3db::c_ptranspose_ijk_end(const int nffts, const int nb, const int op, double *a,
                                 double *tmp2, const int request_indx) 
 {
    int n2 = p_i2_start[nb][op][np];
@@ -4332,8 +4332,11 @@ void c3db::c_ptranspose_ijk_end(const int nb, const int op, double *a,
    parall->awaitall(request_indx);
 
    /* unpack a array */
-   c_bindexcopy(n2, p_iq_to_i2[nb][op], tmp2, a);
-   c_bindexzero(n3, p_iz_to_i2[nb][op], a);
+   for (auto i=0; i<nffts; ++i)
+   {
+      c_bindexcopy(n2, p_iq_to_i2[nb][op], tmp2 + i*n2ft3d, a + i*n2ft3d);
+      c_bindexzero(n3, p_iz_to_i2[nb][op], a + i*n2ft3d);
+   }
 }
 
 /********************************

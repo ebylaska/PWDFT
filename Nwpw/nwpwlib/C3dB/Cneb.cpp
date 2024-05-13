@@ -792,14 +792,14 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
       if (indx1 < n) 
       {
          int nbq1 = (indx1/(neq[0]+neq[1])) + 1;
-         cr_pfft3b_queuein(nbq1, psi + indx1n);
+         cr_pfft3b_queuein(nbq1, 1, psi + indx1n);
          indx1n += shift1;
          ++indx1;
       }
       if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
       {
          int nbq2 = (indx2/(neq[0]+neq[1])) + 1;
-         cr_pfft3b_queueout(nbq2, psi_r + indx2n);
+         cr_pfft3b_queueout(nbq2, 1, psi_r + indx2n);
          indx2n += shift2;
          ++indx2;
       }

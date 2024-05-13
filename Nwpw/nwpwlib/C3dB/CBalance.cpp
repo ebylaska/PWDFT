@@ -309,7 +309,7 @@ CBalance::~CBalance()
  * @param request_indx The index of the communication request to track.
  * @param msgtype The message type for communication.
  */
-void CBalance::c_unbalance_start(const int nb, double *a, const int request_indx, const int msgtype) 
+void CBalance::c_unbalance_start(const int nffts, const int nb, double *a, const int request_indx, const int msgtype) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -337,7 +337,7 @@ void CBalance::c_unbalance_start(const int nb, double *a, const int request_indx
 
 /***********************************
  *                                 *
- *    CBalance::c_unbalance_end     *
+ *    CBalance::c_unbalance_end    *
  *                                 *
  ***********************************/
 /**
@@ -350,7 +350,7 @@ void CBalance::c_unbalance_start(const int nb, double *a, const int request_indx
  * @param a An array of double precision data used for unbalancing.
  * @param request_indx The index of the communication request to wait for.
  */
-void CBalance::c_unbalance_end(const int nb, double *a, const int request_indx) {
+void CBalance::c_unbalance_end(const int nffts, const int nb, double *a, const int request_indx) {
   parall->awaitall(request_indx);
 }
 
@@ -447,7 +447,7 @@ void CBalance::c_balance(const int nb, double *a)
  * @param request_indx The index of the communication request to track the progress.
  * @param msgtype The message type for communication.
  */
-void CBalance::c_balance_start(const int nb, double *a, const int request_indx, const int msgtype) 
+void CBalance::c_balance_start(const int nffts, const int nb, double *a, const int request_indx, const int msgtype) 
 {
    int j, pto, pfrom, msglen, indx;
  
@@ -489,7 +489,7 @@ void CBalance::c_balance_start(const int nb, double *a, const int request_indx, 
  * @param a An array of double precision data to be balanced.
  * @param request_indx The index of the communication request to await.
  */
-void CBalance::c_balance_end(const int nb, double *a, const int request_indx) 
+void CBalance::c_balance_end(const int nffts, const int nb, double *a, const int request_indx) 
 {
   parall->awaitall(request_indx);
 }
