@@ -26,6 +26,29 @@ void c_aindexcopy(const int n, const int *indx, double *A, double *B) {
 }
 */
 
+/******************************************
+ *                                        *
+ *              c_aindexcopy              *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Copies selected complex numbers from one array to another based on specified indices.
+ *
+ * This function reads complex numbers from the source array `A` at positions specified by the `indx` array
+ * and places them sequentially into the destination array `B`. It is used to extract and reorder complex
+ * numbers from one data structure to another, facilitating operations that require specific data alignments
+ * or subsets.
+ *
+ * @param n The number of complex numbers to copy, as specified by the length of the `indx` array.
+ * @param indx Array of indices indicating the positions in the source array `A` from which complex numbers
+ *             should be extracted.
+ * @param A Source array containing complex numbers. Each complex number is composed of two consecutive doubles
+ *          (real and imaginary parts).
+ * @param B Destination array where the complex numbers are to be stored sequentially.
+ *
+ * @note The function assumes that `B` is large enough to accommodate `n` complex numbers. It does not perform
+ *       bounds checking on array accesses, and it assumes that `indx` contains valid indices into `A`.
+ */
 void c_aindexcopy(const int n, const int *indx, double *A, double *B) 
 {
    int ii = 0;
@@ -38,6 +61,63 @@ void c_aindexcopy(const int n, const int *indx, double *A, double *B)
    }
 }
 
+
+/******************************************
+ *                                        *
+ *         c_aindexcopy_stride            *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Copies selected complex numbers from one array to another with a specified stride in the destination array.
+ *
+ * This function copies complex numbers from the source array `A` to the destination array `B` based on specified indices.
+ * Each complex number is taken from `A` at positions indexed by `indx` and placed in `B` at intervals defined by `stride`.
+ * This allows complex numbers to be spaced out or reorganized in `B`, facilitating different data layouts or alignments.
+ *
+ * @param stride The gap between successive complex numbers in `B`, measured in terms of the number of real values (each complex number has 2 real values).
+ * @param n The number of complex numbers to copy.
+ * @param indx Array of indices where each entry specifies the position of a complex number in `A` to be copied to `B`.
+ * @param A Source array containing complex numbers, with each complex number composed of two consecutive doubles (real and imaginary parts).
+ * @param B Destination array where the complex numbers are to be stored according to the stride.
+ *
+ * @note It is assumed that `B` is sufficiently large to accommodate the final element being copied into it, considering the `stride`.
+ *       The function does not perform bounds checking on array accesses.
+ */
+void c_aindexcopy_stride(const int stride, const int n, const int *indx, double *A, double *B) 
+{
+   int ii = 0;
+   for (auto i=0; i<n; ++i) 
+   {
+      auto jj = 2*indx[i];
+      B[ii]   = A[jj];
+      B[ii+1] = A[jj+1];
+      ii += 2*stride;
+   }
+}
+
+
+/******************************************
+ *                                        *
+ *             c_bindexcopy               *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Copies complex numbers from one array to specified positions in another array based on given indices.
+ *
+ * This function reads complex numbers sequentially from the source array `A` and places them into the destination
+ * array `B` at positions specified by the `indx` array. Each index in `indx` corresponds to the position in `B` where
+ * a complex number from `A` should be placed, making it suitable for reorganizing or redistributing data.
+ *
+ * @param n The number of complex numbers to copy.
+ * @param indx Array of indices indicating the target positions in `B` for the complex numbers. The indices are
+ *             expected to be in the range that is valid within the bounds of `B`.
+ * @param A Source array containing complex numbers. Each complex number consists of two consecutive doubles
+ *          (real and imaginary parts).
+ * @param B Destination array where the complex numbers are placed according to the indices in `indx`.
+ *
+ * @note The function assumes that `B` is sufficiently large to accommodate the indices provided in `indx`. It does not perform
+ *       bounds checking on array accesses, and it assumes that `indx` contains valid indices into `B`.
+ */
 void c_bindexcopy(const int n, const int *indx, double *A, double *B) 
 {
    int ii = 0;
@@ -50,6 +130,61 @@ void c_bindexcopy(const int n, const int *indx, double *A, double *B)
    }
 }
 
+/******************************************
+ *                                        *
+ *         c_bindexcopy_stride            *
+ *                                        *
+ ******************************************/
+ /**
+ * @brief Copies complex numbers from one array to specified indexed positions in another array with a source stride.
+ *
+ * This function reads complex numbers from the source array `A` and places them into the destination array `B` at positions
+ * specified by the `indx` array. The copying from `A` is controlled by a stride, allowing for skipping elements in `A`.
+ *
+ * @param stride The gap between successive reads in the source array `A`, measured in terms of the number of real values (each complex number has 2 real values).
+ * @param n The number of complex numbers to copy.
+ * @param indx Array of indices where each entry specifies the position in `B` to store a complex number from `A`.
+ * @param A Source array containing complex numbers, with each complex number composed of two consecutive doubles (real and imaginary parts).
+ * @param B Destination array where the complex numbers are to be stored according to the indices in `indx`.
+ *
+ * @note It is assumed that `B` is sufficiently large to accommodate the highest index accessed based on `indx` and the number of elements `n`.
+ *       The function does not perform bounds checking on array accesses.
+ */
+void c_bindexcopy_stride(const int stride, const int n, const int *indx, double *A, double *B)
+{
+   int ii = 0;
+   for (auto i=0; i<n; ++i)
+   {
+      auto jj = 2*indx[i];
+      B[jj]   = A[ii];
+      B[jj+1] = A[ii+1];
+      ii += 2*stride;
+   }
+}
+
+
+/******************************************
+ *                                        *
+ *           c_bindexcopy_conjg           *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Copies and conjugates complex numbers from one array to specified positions in another array.
+ *
+ * This function reads complex numbers sequentially from the source array `A`, conjugates them (negates the imaginary part),
+ * and places them into the destination array `B` at positions specified by the `indx` array. This operation is useful for
+ * mathematical computations that require the complex conjugate of a set of numbers.
+ *
+ * @param n The number of complex numbers to process.
+ * @param indx Array of indices indicating the target positions in `B` for the conjugated complex numbers. The indices are
+ *             assumed to be valid within the bounds of `B`.
+ * @param A Source array containing complex numbers. Each complex number consists of two consecutive doubles
+ *          (real and imaginary parts).
+ * @param B Destination array where the conjugated complex numbers are placed according to the indices in `indx`.
+ *
+ * @note It is assumed that `B` is sufficiently large to accommodate the highest index provided in `indx`. The function does
+ *       not perform bounds checking on array accesses, and it assumes that `indx` contains valid indices into `B`.
+ */
 void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B) 
 {
    int ii, jj;
@@ -63,6 +198,63 @@ void c_bindexcopy_conjg(const int n, const int *indx, double *A, double *B)
    }
 }
 
+/******************************************
+ *                                        *
+ *       c_bindexcopy_conjg_stride        *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Copies and conjugates complex numbers from one array to indexed positions in another array using a specified stride.
+ *
+ * This function reads complex numbers from the source array `A`, conjugates them, and places them into the destination
+ * array `B` at positions specified by the `indx` array. The stride parameter controls the reading interval in `A`, allowing
+ * for skipping elements between reads.
+ *
+ * @param stride The gap between successive reads in the source array `A`, measured in terms of the number of real values 
+ *               (each complex number is composed of two real values).
+ * @param n The number of complex numbers to process.
+ * @param indx Array of indices where each entry specifies the position in `B` to store the conjugated complex number from `A`.
+ * @param A Source array containing complex numbers.
+ * @param B Destination array where the conjugated complex numbers are to be stored.
+ *
+ * @note It is assumed that `B` is sufficiently large to accommodate the highest index accessed based on `indx` and `n`.
+ *       The function does not perform bounds checking on array accesses. Ensure that `A` has at least `stride * (n-1) + 1`
+ *       complex numbers to avoid reading beyond the end of the array.
+ */
+void c_bindexcopy_conjg_stride(const int stride, const int n, const int *indx, double *A, double *B)
+{
+   int ii, jj;
+   ii = 0;
+   for (auto i = 0; i < n; ++i)
+   {
+      jj = 2 * indx[i];
+      B[jj] = A[ii];
+      B[jj + 1] = -A[ii + 1];
+      ii += 2*stride;
+   }
+}
+
+
+/******************************************
+ *                                        *
+ *             c_bindexzero               *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Sets specified complex numbers in an array to zero.
+ *
+ * This function zeroes complex numbers in the array `B` at positions specified by the `indx` array. Each index in `indx`
+ * corresponds to a complex number in `B` that will be set to zero. This is typically used to selectively reset elements 
+ * in an array, useful in various numerical and signal processing applications.
+ *
+ * @param n The number of complex numbers to zero out, as specified by the length of the `indx` array.
+ * @param indx Array of indices indicating the positions of the complex numbers in `B` that should be zeroed.
+ * @param B Array containing complex numbers where specified elements will be set to zero. Each complex number is composed
+ *          of two consecutive doubles (real and imaginary parts).
+ *
+ * @note The function assumes that `B` is large enough to contain all indices specified in `indx`. It does not perform
+ *       bounds checking on array accesses, and it assumes that `indx` contains valid indices into `B`.
+ */
 void c_bindexzero(const int n, const int *indx, double *B) 
 {
    int jj;
@@ -74,110 +266,153 @@ void c_bindexzero(const int n, const int *indx, double *B)
    }
 }
 
+/******************************************
+ *                                        *
+ *             t_aindexcopy               *
+ *                                        *
+ ******************************************/
 void t_aindexcopy(const int n, const int *indx, double *A, double *B) 
 {
    for (auto i = 0; i < n; ++i)
       B[i] = A[indx[i]];
 }
 
+/******************************************
+ *                                        *
+ *             t_bindexcopy               *
+ *                                        *
+ ******************************************/
 void t_bindexcopy(const int n, const int *indx, double *A, double *B) 
 {
    for (auto i = 0; i < n; ++i)
       B[indx[i]] = A[i];
 }
 
+/******************************************
+ *                                        *
+ *             i_aindexcopy               *
+ *                                        *
+ ******************************************/
 void i_aindexcopy(const int n, const int *indx, int *A, int *B) 
 {
    for (auto i = 0; i < n; ++i)
       B[i] = A[indx[i]];
 }
 
+
 /**************************************
  *                                    *
  *            eigsrt                  *
  *                                    *
  **************************************/
-
-void eigsrt(double *D, double *V, int n) {
-  int i, j, k;
-  double p;
-
-  for (i = 0; i < (n - 1); ++i) {
-    k = i;
-    p = D[i];
-    for (j = i + 1; j < n; ++j)
-      if (D[j] >= p) {
-        k = j;
-        p = D[j];
+/**
+ * @brief Sorts eigenvalues in descending order and reorders corresponding eigenvectors.
+ *
+ * This function sorts the eigenvalues contained in array `D` in descending order. It also reorders the
+ * corresponding eigenvectors in matrix `V` to match the sorted eigenvalues. Matrix `V` should be stored
+ * in column-major format, where each column corresponds to an eigenvector.
+ *
+ * @param D Array containing the eigenvalues to be sorted.
+ * @param V Matrix where each column represents an eigenvector corresponding to the eigenvalue in `D`.
+ * @param n The number of eigenvalues and eigenvectors, also the dimension of the square matrix `V`.
+ *
+ * @note This function modifies both `D` and `V` in-place. Ensure that `D` and `V` are properly initialized
+ *       and that `V` has enough space allocated to accommodate the matrix of size `n` by `n`.
+ */
+void eigsrt(double *D, double *V, int n) 
+{
+   int i, j, k;
+   double p;
+ 
+   for (i = 0; i < (n - 1); ++i) 
+   {
+      k = i;
+      p = D[i];
+      for (j = i + 1; j < n; ++j)
+         if (D[j] >= p) 
+         {
+            k = j;
+            p = D[j];
+         }
+     
+      if (k != i) 
+      {
+         D[k] = D[i];
+         D[i] = p;
+         for (j = 0; j < n; ++j) 
+         {
+            p = V[j + i * n];
+            V[j + i * n] = V[j + k * n];
+            V[j + k * n] = p;
+         }
       }
-
-    if (k != i) {
-      D[k] = D[i];
-      D[i] = p;
-      for (j = 0; j < n; ++j) {
-        p = V[j + i * n];
-        V[j + i * n] = V[j + k * n];
-        V[j + k * n] = p;
-      }
-    }
-  }
+   }
 }
+
 
 /**************************************
  *                                    *
  *         util_getfilling            *
  *                                    *
  **************************************/
-void util_getfilling(int f, int nfft[], int *filling, double zvalue[]) {
-  int h = (f % 2);
-  int f2 = (f - h) / 2;
-  int k = 0;
-  while ((k + 1) * (k + 2) * (k + 3) <= (6 * f2))
-    ++k;
-
-  f2 -= k * (k + 1) * (k + 2) / 6;
-  int j = 0;
-  while ((j + 1) * (j + 2) <= (2 * f2))
-    ++j;
-
-  int i = f2 - j * (j + 1) / 2;
-
-  filling[0] = i;
-  if (i == 0) {
-    filling[1] = j;
-    filling[2] = k;
-  } else {
-
-    if (((j + 1) % 2) == 0)
-      filling[1] = (j + 1) / 2;
-    else
-      filling[1] = -(j + 1) / 2;
-
-    if (((k + 1) % 2) == 0)
-      filling[2] = (k + 1) / 2;
-    else
-      filling[2] = -(k + 1) / 2;
-  }
-
-  if ((i == 0) && (j == 0) && (k == 0)) {
-    filling[3] = 0;
-    zvalue[0] = 1.0;
-    zvalue[1] = 0.0;
-  } else if (h == 0) {
-    filling[3] = 2;
-    zvalue[0] = 1.0 / sqrt(2.0);
-    zvalue[1] = 0.0;
-  } else {
-    filling[3] = -2;
-    zvalue[0] = 0.0;
-    zvalue[1] = 1.0 / sqrt(2.0);
-  }
-
-  /* modularize the filling */
-  int inc2c = (nfft[0] / 2 + 1);
-  filling[0] = (filling[0] + inc2c) % inc2c;
-  filling[1] = (filling[1] + nfft[1]) % nfft[1];
-  filling[2] = (filling[2] + nfft[2]) % nfft[2];
+void util_getfilling(int f, int nfft[], int *filling, double zvalue[]) 
+{
+   int h = (f % 2);
+   int f2 = (f - h) / 2;
+   int k = 0;
+   while ((k + 1) * (k + 2) * (k + 3) <= (6 * f2))
+      ++k;
+ 
+   f2 -= k * (k + 1) * (k + 2) / 6;
+   int j = 0;
+   while ((j + 1) * (j + 2) <= (2 * f2))
+      ++j;
+ 
+   int i = f2 - j * (j + 1) / 2;
+ 
+   filling[0] = i;
+   if (i == 0) 
+   {
+      filling[1] = j;
+      filling[2] = k;
+   } 
+   else 
+   {
+      if (((j + 1) % 2) == 0)
+         filling[1] = (j + 1) / 2;
+      else
+         filling[1] = -(j + 1) / 2;
+     
+      if (((k + 1) % 2) == 0)
+         filling[2] = (k + 1) / 2;
+      else
+         filling[2] = -(k + 1) / 2;
+   }
+ 
+   if ((i == 0) && (j == 0) && (k == 0)) 
+   {
+      filling[3] = 0;
+      zvalue[0] = 1.0;
+      zvalue[1] = 0.0;
+   } 
+   else if (h == 0) 
+   {
+      filling[3] = 2;
+      zvalue[0] = 1.0 / sqrt(2.0);
+      zvalue[1] = 0.0;
+   } 
+   else 
+   {
+      filling[3] = -2;
+      zvalue[0] = 0.0;
+      zvalue[1] = 1.0 / sqrt(2.0);
+   }
+ 
+   /* modularize the filling */
+   int inc2c = (nfft[0] / 2 + 1);
+   filling[0] = (filling[0] + inc2c) % inc2c;
+   filling[1] = (filling[1] + nfft[1]) % nfft[1];
+   filling[2] = (filling[2] + nfft[2]) % nfft[2];
 }
 
 /**************************************
@@ -192,10 +427,11 @@ void util_getfilling(int f, int nfft[], int *filling, double zvalue[]) {
    Exit - returns a random number between 0 and 1
    Uses - rand and srand stdlib functions
 */
-double util_random(const int seed) {
-  if (seed > 0)
-    std::srand(((double)seed));
-  return ((double)std::rand() / RAND_MAX);
+double util_random(const int seed) 
+{
+   if (seed > 0)
+      std::srand(((double)seed));
+   return ((double)std::rand() / RAND_MAX);
 }
 
 /**************************************
@@ -205,14 +441,14 @@ double util_random(const int seed) {
  **************************************/
 bool util_filefind(Parallel *myparall, char *fname) 
 {
-  int ifound;
-
-  if (myparall->is_master())
-     ifound = cfileexists(fname);
-
-  myparall->Brdcst_iValue(0, 0, &ifound);
-
-  return (ifound > 0);
+   int ifound;
+ 
+   if (myparall->is_master())
+      ifound = cfileexists(fname);
+ 
+   myparall->Brdcst_iValue(0, 0, &ifound);
+ 
+   return (ifound > 0);
 }
 
 /**************************************
@@ -221,40 +457,47 @@ bool util_filefind(Parallel *myparall, char *fname)
  *                                    *
  **************************************/
 void util_spline(const double *x, const double *y, const int n,
-                 const double yp1, const double ypn, double *y2, double *utmp) {
-  double sig, p, qn, un;
-
-  if (yp1 > 0.99e30) {
-    y2[0] = 0.0;
-    utmp[0] = 0.0;
-  } else {
-    y2[0] = -0.5;
-    utmp[0] = 3.0 / (x[1] - x[0]) * ((y[1] - y[0]) / (x[1] - x[0]) - yp1);
-  }
-  for (auto i = 1; i < (n - 1); ++i) {
-    sig = (x[i] - x[i - 1]) / (x[i + 1] - x[i - 1]);
-    p = sig * y2[i - 1] + 2.00;
-    y2[i] = (sig - 1.00) / p;
-    utmp[i] = (6.00 *
-                   ((y[i + 1] - y[i]) / (x[i + 1] - x[i]) -
-                    (y[i] - y[i - 1]) / (x[i] - x[i - 1])) /
-                   (x[i + 1] - x[i - 1]) -
-               sig * utmp[i - 1]) /
-              p;
-  }
-
-  if (ypn > 0.99e30) {
-    qn = 0.0;
-    un = 0.0;
-  } else {
-    qn = 0.5;
-    un = 3.00 / (x[n - 1] - x[n - 2]) *
-         (ypn - (y[n - 1] - y[n - 2]) / (x[n - 1] - x[n - 2]));
-  }
-
-  y2[n - 1] = (un - qn * utmp[n - 2]) / (qn * y2[n - 2] + 1.00);
-  for (auto k = n - 2; k >= 0; --k)
-    y2[k] = y2[k] * y2[k + 1] + utmp[k];
+                 const double yp1, const double ypn, double *y2, double *utmp) 
+{
+   double sig, p, qn, un;
+ 
+   if (yp1 > 0.99e30) 
+   {
+      y2[0] = 0.0;
+      utmp[0] = 0.0;
+   } 
+   else 
+   {
+      y2[0] = -0.5;
+      utmp[0] = 3.0 / (x[1] - x[0]) * ((y[1] - y[0]) / (x[1] - x[0]) - yp1);
+   }
+   for (auto i = 1; i < (n - 1); ++i) 
+   {
+      sig = (x[i] - x[i - 1]) / (x[i + 1] - x[i - 1]);
+      p = sig * y2[i - 1] + 2.00;
+      y2[i] = (sig - 1.00) / p;
+      utmp[i] = (6.00 *
+                     ((y[i + 1] - y[i]) / (x[i + 1] - x[i]) -
+                      (y[i] - y[i - 1]) / (x[i] - x[i - 1])) /
+                     (x[i + 1] - x[i - 1]) -
+                 sig * utmp[i - 1]) / p;
+   }
+ 
+   if (ypn > 0.99e30) 
+   {
+      qn = 0.0;
+      un = 0.0;
+   } 
+   else 
+   {
+      qn = 0.5;
+      un = 3.00 / (x[n - 1] - x[n - 2]) *
+           (ypn - (y[n - 1] - y[n - 2]) / (x[n - 1] - x[n - 2]));
+   }
+ 
+   y2[n - 1] = (un - qn * utmp[n - 2]) / (qn * y2[n - 2] + 1.00);
+   for (auto k = n - 2; k >= 0; --k)
+      y2[k] = y2[k] * y2[k + 1] + utmp[k];
 }
 
 /**************************************
@@ -263,28 +506,31 @@ void util_spline(const double *x, const double *y, const int n,
  *                                    *
  **************************************/
 double util_splint(const double *xa, const double *ya, const double *y2a,
-                   const int n, const int nx, const double x) {
-  int khi = nx;
-  int klo = nx - 1;
-
-  while ((xa[klo] > x) || (xa[khi] < x)) {
-    if (xa[klo] > x) {
-      klo = klo - 1;
-      khi = khi - 1;
-    }
-    if (xa[khi] < x) {
-      klo = klo + 1;
-      khi = khi + 1;
-    }
-  }
-
-  double h = xa[khi] - xa[klo];
-  double a = (xa[khi] - x) / h;
-  double b = (x - xa[klo]) / h;
-
-  return (a * ya[klo] + b * ya[khi] +
-          ((a * a * a - a) * y2a[klo] + (b * b * b - b) * y2a[khi]) * h * h /
-              6.0);
+                   const int n, const int nx, const double x) 
+{
+   int khi = nx;
+   int klo = nx - 1;
+ 
+   while ((xa[klo] > x) || (xa[khi] < x)) 
+   {
+      if (xa[klo] > x) 
+      {
+         klo = klo - 1;
+         khi = khi - 1;
+      }
+      if (xa[khi] < x) 
+      {
+         klo = klo + 1;
+         khi = khi + 1;
+      }
+   }
+ 
+   double h = xa[khi] - xa[klo];
+   double a = (xa[khi] - x) / h;
+   double b = (x - xa[klo]) / h;
+ 
+   return (a * ya[klo] + b * ya[khi] +
+           ((a * a * a - a) * y2a[klo] + (b * b * b - b) * y2a[khi]) * h * h / 6.0);
 }
 
 /**************************************
