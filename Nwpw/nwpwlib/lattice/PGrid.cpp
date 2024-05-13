@@ -783,28 +783,66 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
  *    PGrid:cc_pack_inprjdot    *
  *                              *
  ********************************/
-void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
-                             double *b, double *sum) {
-  int ng = 2 * (nida[nb] + nidb[nb]);
-  int ng0 = 2 * nida[nb];
-  int one = 1;
-  double rtwo = 2.0;
-  double rone = 1.0;
-  double rmone = -1.0;
-  double rzero = 0.0;
+/**
+ * @brief Packs and computes the dot product of projections using computeTrans_Mult.
+ *
+ * This function utilizes the `computeTrans_Mult` function to perform transformations
+ * on projection data. It calculates the dot product of projections (`a`, `b`) and 
+ * stores the results in `sum`. After the initial transformation, it aggregates the
+ * results across all processes using the `Vector_SumAll` function. This function is used 
+ * by non-local pseudopotential routines.
+ *
+ * @param nb   Index of the data partition.
+ * @param nn   Number of functions (e.g., `psi` functions) to process.
+ * @param nprj Number of projections to process.
+ * @param a    Pointer to the first projection data array.
+ * @param b    Pointer to the second projection data array.
+ * @param sum  Array to store the computed dot product results.
+ *
+ * Temporary Variables:
+ * - `ng`: Total grid size, calculated as the sum of `nida[nb]` and `nidb[nb]`.
+ * - `ng0`: Size of the first sub-grid, based on `nida[nb]`.
+ * - `rtwo`: Scalar value set to 2.0, used as a scaling factor in matrix multiplication.
+ * - `rone`: Scalar value set to 1.0, typically used to preserve computed results.
+ * - `rmone`: Scalar value set to -1.0, used to negate values during matrix operations.
+ * - `rzero`: Scalar value set to 0.0, used to initialize or reset matrices or results.
+ *
+ */
+void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *b, double *sum) 
+{
+   //int ng = 2 * (nida[nb] + nidb[nb]);
+   //int ng0 = 2 * nida[nb];
+   //int one = 1;
+   //double rtwo = 2.0;
+   //double rone = 1.0;
+   //double rmone = -1.0;
+   //double rzero = 0.0;
+   //DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
+   //	       rtwo,
+   //	       a,ng,
+   //	       b,ng,
+   //	       rzero,
+   //	       sum,nn);
+   //d3db::mygdevice.TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
+   //if (ng0 > 0) {
+   //  DGEMM_PWDFT((char *)"T", (char *)"N", nn, nprj, ng0, rmone, a, ng, b, ng, rone, sum, nn);
+   //}
 
-  // DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
-  // 	       rtwo,
-  // 	       a,ng,
-  // 	       b,ng,
-  // 	       rzero,
-  // 	       sum,nn);
-  d3db::mygdevice.TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
+   // Main and reduced cmplex grid sizes
+   int ng = (nida[nb] + nidb[nb]);
+   int ng0 = nida[nb];
 
-  if (ng0 > 0) {
-    DGEMM_PWDFT((char *)"T", (char *)"N", nn, nprj, ng0, rmone, a, ng, b, ng,
-                rone, sum, nn);
-  }
+   // Scalar values used in the transformation calculations
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+   double rzero = 0.0;
+
+   // Compute the transformation matrix
+   d3db::mygdevice.computeTrans_Mult(nn,nprj,rtwo,rmone,ng,ng0,a,b,rzero,rone,sum);
+
+   // Aggregate the results across all processes
+   parall->Vector_SumAll(1, nn*nprj, sum);
 }
 
 
@@ -877,7 +915,7 @@ void PGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
       count3 += 3;
    }
 
-   parall->Vector_SumAll(1, 3*nn*nprj, sum3);
+   parall->Vector_SumAll(1,3*nn*nprj,sum3);
 }
 
 

@@ -1552,7 +1552,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
      }
      jend = ii;
      mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-     parall->Vector_SumAll(1, nn*nprjall, sw1);
+     //parall->Vector_SumAll(1, nn*nprjall, sw1);
  
      /* sw2 = Gijl*sw1 */
      ll = 0;
@@ -1760,7 +1760,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       jend = ii;
      
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn*nprjall, sw1);
+      //parall->Vector_SumAll(1, nn*nprjall, sw1);
       if (move)
       {
          nwpw_timing_function f2timer(61);
@@ -2011,7 +2011,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
       }
       jend = ii;
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn*nprjall, sw1);
+      //parall->Vector_SumAll(1, nn*nprjall, sw1);
       parall->Vector_SumAll(1, 3*nn*nprjall, sum);
      
       /* sw2 = Gijl*sw1 */
@@ -2149,7 +2149,7 @@ double Pseudopotential::e_nonlocal(double *psi)
       }
       auto jend = ii;
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-      parall->Vector_SumAll(1, nn * nprjall, sw1);
+      //parall->Vector_SumAll(1, nn * nprjall, sw1);
 
       /* sw2 = Gijl*sw1 */
       auto ll = 0;
