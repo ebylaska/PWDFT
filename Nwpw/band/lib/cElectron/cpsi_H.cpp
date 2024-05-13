@@ -90,7 +90,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
 
            mygrid->bb_Mul(psi_r+indx1n,vpsi);
 
-           mygrid->rc_pfft3f_queuein(nbq1,vpsi);
+           mygrid->rc_pfft3f_queuein(nbq1,1,vpsi);
            indx1n += shift2;
            ++indx1;
         }
@@ -98,7 +98,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
         if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= nn)) 
         {
            int nbq2 = (indx2/n2) + 1;
-           mygrid->rc_pfft3f_queueout(nbq2,vpsi);
+           mygrid->rc_pfft3f_queueout(nbq2,1,vpsi);
 
            mygrid->cc_pack_daxpy(nbq2,(-scal1),vpsi,Hpsi+indx2n);
 

@@ -33,12 +33,13 @@ class PGrid : public d3db {
   bool *zero_row2[2], *zero_row3[2], *zero_slab23[2];
 
   /* pfft_queue data */
+  int nffts_max = 1;
   int aqmax, aqsize, alast_index;
-  int *aqindx, *aqstatus;
+  int *aqindx, *aqstatus, *aqnffts;
   double *atmp;
 
   int bqmax, bqsize, blast_index;
-  int *bqindx, *bqstatus;
+  int *bqindx, *bqstatus, *bqnffts;
   double *btmp;
 
   /* zplane data */
@@ -84,9 +85,11 @@ public:
      delete [] atmp;
      delete [] aqindx;
      delete [] aqstatus;
+     delete [] aqnffts;
      delete [] btmp;
      delete [] bqindx;
      delete [] bqstatus;
+     delete [] bqnffts;
     
      // deallocate async buffer data
      for (auto q=0; q<aqmax; ++q)
@@ -182,57 +185,57 @@ public:
   void i_pack(const int, int *);
   void ii_pack_copy(const int, int *, int *);
 
-  void cr_pfft3b_queuein(const int, double *);
-  void cr_pfft3b_queueout(const int, double *);
+  void cr_pfft3b_queuein(const int, const int, double *);
+  void cr_pfft3b_queueout(const int, const int, double *);
   int cr_pfft3b_queuefilled();
   void cr_pfft3b(const int, double *);
-  void pfftb_step(const int, const int, double *, double *, double *, const int);
-  void pfftb_step12(const int, const int, double *, double *, double *, const int,const int);
+  void pfftb_step(const int, const int, const int, double *, double *, double *, const int);
+  void pfftb_step12(const int, const int, const int, double *, double *, double *, const int,const int);
 
-  void c_unpack_start(const int, double *, double *, const int, const int);
-  void c_unpack_mid(const int, double *, double *, const int, const int);
-  void c_unpack_end(const int, double *, double *, const int);
-  void pfftbz(const int, double *, double *, int);
-  void pfftby(const int, double *, double *, int);
-  void pfftbx(const int, double *, double *, int);
+  void c_unpack_start(const int, const int, double *, double *, const int, const int);
+  void c_unpack_mid(const int, const int, double *, double *, const int, const int);
+  void c_unpack_end(const int, const int, double *, double *, const int);
+  void pfftbz(const int, const int, double *, double *, int);
+  void pfftby(const int, const int, double *, double *, int);
+  void pfftbx(const int, const int, double *, double *, int);
 
-  void rc_pfft3f_queuein(const int, double *);
-  void rc_pfft3f_queueout(const int, double *);
+  void rc_pfft3f_queuein(const int, const int, double *);
+  void rc_pfft3f_queueout(const int, const int, double *);
   int rc_pfft3f_queuefilled();
   void rc_pfft3f(const int, double *);
-  void pfftf_step(const int, const int, double *, double *, double *, int);
-  void pfftf_step10(const int, const int, double *, double *, double *, int,int);
-  void c_pack_start(const int, double *, double *, const int, const int);
-  void c_pack_end(const int, double *, const int);
-  void pfftfx(const int, double *, double *, double *, int);
-  void pfftfy(const int, double *, double *, int);
-  void pfftfz(const int, double *, double *, int);
+  void pfftf_step(const int, const int, const int, double *, double *, double *, int);
+  void pfftf_step10(const int, const int, const int, double *, double *, double *, int,int);
+  void c_pack_start(const int, const int, double *, double *, const int, const int);
+  void c_pack_end(const int, const int, double *, const int);
+  void pfftfx(const int, const int, double *, double *, double *, int);
+  void pfftfy(const int, const int, double *, double *, int);
+  void pfftfz(const int, const int, double *, double *, int);
   void pfftf_final(const int, double *, double *, int);
 
-  void pfftfx_start(const int, double *, double *, double *, int,int);
-  void pfftfx_compute(const int, double *, double *, double *, int,int);
-  void pfftfx_end(const int, double *, double *, double *, int,int);
+  void pfftfx_start(const int, const int, double *, double *, double *, int,int);
+  void pfftfx_compute(const int, const int, double *, double *, double *, int,int);
+  void pfftfx_end(const int, const int, double *, double *, double *, int,int);
 
-  void pfftfy_start(const int, double *, double *, int,int);
-  void pfftfy_compute(const int, double *, double *, int,int);
-  void pfftfy_end(const int, double *, double *, int,int);
+  void pfftfy_start(const int, const int, double *, double *, int,int);
+  void pfftfy_compute(const int, const int, double *, double *, int,int);
+  void pfftfy_end(const int, const int, double *, double *, int,int);
 
-  void pfftfz_start(const int, double *, double *, int,int);
-  void pfftfz_compute(const int, double *, double *, int,int);
-  void pfftfz_end(const int, double *, double *, int,int);
+  void pfftfz_start(const int, const int, double *, double *, int,int);
+  void pfftfz_compute(const int, const int, double *, double *, int,int);
+  void pfftfz_end(const int, const int, double *, double *, int,int);
 
 
-  void pfftbx_start(const int, double *, double *, int,int);
-  void pfftbx_compute(const int, double *, double *, int,int);
-  void pfftbx_end(const int, double *, double *, int,int);
+  void pfftbx_start(const int, const int, double *, double *, int,int);
+  void pfftbx_compute(const int, const int, double *, double *, int,int);
+  void pfftbx_end(const int, const int, double *, double *, int,int);
 
-  void pfftby_start(const int, double *, double *, int, int);
-  void pfftby_compute(const int, double *, double *, int, int);
-  void pfftby_end(const int, double *, double *, int, int);
+  void pfftby_start(const int, const int, double *, double *, int, int);
+  void pfftby_compute(const int, const int, double *, double *, int, int);
+  void pfftby_end(const int, const int, double *, double *, int, int);
 
-  void pfftbz_start(const int, double *, double *, int, int);
-  void pfftbz_compute(const int, double *, double *, int, int);
-  void pfftbz_end(const int, double *, double *, int, int);
+  void pfftbz_start(const int, const int, double *, double *, int, int);
+  void pfftbz_compute(const int, const int, double *, double *, int, int);
+  void pfftbz_end(const int, const int, double *, double *, int, int);
 
   void tcr_pack_iMul_unpack_fft(const int, const double *, const double *,
                                 double *);

@@ -163,6 +163,20 @@ static void born_dVdq0(const int nion, const double rion[],
   // double Gsolv = 0.0;
   double screen = (1.0 - 1.0 / dielec);
 
+  // Damping function that reduces the potential for short distances
+  auto dampingFunction = [](double distance, double dampingThreshold) {
+     if (distance < dampingThreshold) {
+        return 0.0; // Adjust the factor as needed (e.g., 0.5 halves the potential)
+     }
+     return 1.0; // No damping for larger distances
+  };
+  //auto dampingFunction = [](double distance, double dampingThreshold, double steepness = 20.0) {
+  //  // The steepness controls the smoothness of the transition
+  //  return 1.0 / (1.0 + std::exp(steepness * (distance - dampingThreshold)));
+  //};
+
+  double dampingThreshold = 3.200; // Example threshold (units depending on your simulation)
+
   std::memset(u, 0, nion * sizeof(double));
 
   for (auto ii = 0; ii < nion; ++ii)
@@ -171,13 +185,21 @@ static void born_dVdq0(const int nion, const double rion[],
       double dy = rion[3 * ii + 1] - rion[3 * jj + 1];
       double dz = rion[3 * ii + 2] - rion[3 * jj + 2];
       double dist2 = dx * dx + dy * dy + dz * dz;
+      double distance = std::sqrt(dist2);
 
-      double gg = std::erf(std::sqrt(dist2) / rcut);
+      double gg = std::erf(distance / rcut);
       double C = std::exp(-0.25 * dist2 / (bradii[ii] * bradii[jj]));
       double f = std::sqrt(dist2 + bradii[ii] * bradii[jj] * C);
 
-      u[ii] += 0.5 * screen * q[jj] * gg / f;
-      u[jj] += 0.5 * screen * q[ii] * gg / f;
+      // Apply the distance-based damping function
+      double dampingFactor = dampingFunction(distance, dampingThreshold);
+      double dampedPotential = gg / f * dampingFactor;
+
+      u[ii] += 0.5 * screen * q[jj] * dampedPotential;
+      u[jj] += 0.5 * screen * q[ii] * dampedPotential;
+
+      //u[ii] += 0.5 * screen * q[jj] * gg / f;
+      //u[jj] += 0.5 * screen * q[ii] * gg / f;
       // Gsolv -=  0.5*screen*q[ii]*q[jj]/f;
     }
 }

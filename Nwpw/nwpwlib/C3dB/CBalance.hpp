@@ -57,11 +57,11 @@ public:
   void t_balance(const int, double *);
   void i_balance(const int, int *);
 
-  void c_unbalance_start(const int, double *, const int, const int);
-  void c_unbalance_end(const int, double *, const int);
+  void c_unbalance_start(const int, const int, double *, const int, const int);
+  void c_unbalance_end(const int, const int, double *, const int);
 
-  void c_balance_start(const int, double *, const int, const int);
-  void c_balance_end(const int, double *, const int);
+  void c_balance_start(const int, const int, double *, const int, const int);
+  void c_balance_end(const int, const int, double *, const int);
 };
 
 } // namespace pwdft

@@ -675,13 +675,13 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    {
       if (indx1 < n) 
       {
-         cr_pfft3b_queuein(1, psi + indx1n);
+         cr_pfft3b_queuein(1, 1, psi + indx1n);
          indx1n += shift1;
          ++indx1;
       }
       if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
       {
-         cr_pfft3b_queueout(1, psi_r + indx2n);
+         cr_pfft3b_queueout(1, 1, psi_r + indx2n);
          indx2n += shift2;
          ++indx2;
       }

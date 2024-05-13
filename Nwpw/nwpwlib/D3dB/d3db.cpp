@@ -3765,41 +3765,44 @@ void d3db::t_write_buffer(const int iunit, double *a, const int jcol)
  *    d3db::c_ptranspose1_jk_start    *
  *                                    *
  **************************************/
-void d3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1,
+void d3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
-                                  const int msgtype) {
-  int it, proc_from, proc_to;
-  int msglen;
-
-  int n1 = p_i1_start[nb][0][np];
-
-  c_aindexcopy(n1, p_iq_to_i1[nb][0], a, tmp1);
-
-  /* it = 0, transpose data on same thread */
-  msglen = 2 * (p_i2_start[nb][0][1] - p_i2_start[nb][0][0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][0][0]]),one,&(tmp2[2*p_i2_start[nb][0][0]]),one);
-  std::memcpy(tmp2 + 2 * p_i2_start[nb][0][0], tmp1 + 2 * p_i1_start[nb][0][0],
-              msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* synchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = 2 * (p_i2_start[nb][0][it + 1] - p_i2_start[nb][0][it]);
-    if (msglen > 0)
-      parall->adreceive(request_indx, msgtype, proc_from, msglen,
-                        tmp2 + 2 * p_i2_start[nb][0][it]);
-    // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = 2 * (p_i1_start[nb][0][it + 1] - p_i1_start[nb][0][it]);
-    if (msglen > 0)
-      parall->adsend(request_indx, msgtype, proc_to, msglen,
-                     tmp1 + 2 * p_i1_start[nb][0][it]);
-    // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
-  }
+                                  const int msgtype) 
+{
+   int it, proc_from, proc_to;
+   int msglen;
+ 
+   int n1 = p_i1_start[nb][0][np];
+ 
+   c_aindexcopy(n1, p_iq_to_i1[nb][0], a, tmp1);
+ 
+   /* it = 0, transpose data on same thread */
+   msglen = 2 * (p_i2_start[nb][0][1] - p_i2_start[nb][0][0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][0][0]]),one,&(tmp2[2*p_i2_start[nb][0][0]]),one);
+   std::memcpy(tmp2 + 2 * p_i2_start[nb][0][0], tmp1 + 2 * p_i1_start[nb][0][0],
+               msglen * sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) 
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid - it + np) % np;
+      msglen = 2 * (p_i2_start[nb][0][it + 1] - p_i2_start[nb][0][it]);
+      if (msglen > 0)
+        parall->adreceive(request_indx, msgtype, proc_from, msglen,
+                          tmp2 + 2 * p_i2_start[nb][0][it]);
+      // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
+   }
+   for (it = 1; it < np; ++it) 
+   {
+      proc_to = (taskid + it) % np;
+      msglen = 2 * (p_i1_start[nb][0][it + 1] - p_i1_start[nb][0][it]);
+      if (msglen > 0)
+        parall->adsend(request_indx, msgtype, proc_to, msglen,
+                       tmp1 + 2 * p_i1_start[nb][0][it]);
+      // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
+   }
 }
 
 /**************************************
@@ -3807,7 +3810,7 @@ void d3db::c_ptranspose1_jk_start(const int nb, double *a, double *tmp1,
  *    d3db::c_ptranspose1_jk_end      *
  *                                    *
  **************************************/
-void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int request_indx) 
+void d3db::c_ptranspose1_jk_end(const int nffts, const int nb, double *a, double *tmp2, const int request_indx) 
 {
    parall->awaitall(request_indx);
 
@@ -3821,7 +3824,7 @@ void d3db::c_ptranspose1_jk_end(const int nb, double *a, double *tmp2, const int
  *    d3db::c_ptranspose2_jk_start    *
  *                                    *
  **************************************/
-void d3db::c_ptranspose2_jk_start(const int nb, double *a, double *tmp1,
+void d3db::c_ptranspose2_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
                                   const int msgtype) {
   int it, proc_from, proc_to;
@@ -3861,7 +3864,7 @@ void d3db::c_ptranspose2_jk_start(const int nb, double *a, double *tmp1,
  *    d3db::c_ptranspose2_jk_end      *
  *                                    *
  **************************************/
-void d3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2,
+void d3db::c_ptranspose2_jk_end(const int nffts, const int nb, double *a, double *tmp2,
                                 const int request_indx) {
   parall->awaitall(request_indx);
 
@@ -3875,43 +3878,46 @@ void d3db::c_ptranspose2_jk_end(const int nb, double *a, double *tmp2,
  *    d3db::c_ptranspose_ijk_start    *
  *                                    *
  **************************************/
-void d3db::c_ptranspose_ijk_start(const int nb, const int op, double *a,
+void d3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, double *a,
                                   double *tmp1, double *tmp2,
-                                  const int request_indx, const int msgtype) {
-  int nnfft3d, it, proc_from, proc_to;
-  int msglen;
-
-  int n1 = p_i1_start[nb][op][np];
-
-  /* pack a array - tmp1->tmp2 */
-  c_aindexcopy(n1, p_iq_to_i1[nb][op], a, tmp1);
-
-  /* it = 0, transpose data on same thread  - tmp2->tmp1*/
-  msglen = 2 * (p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
-  // int one=1;
-  // DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][op][0]]),one,&(tmp2[2*p_i2_start[nb][op][0]]),one);
-  // std::memcpy(&(tmp2[2*p_i2_start[nb][op][0]]),&(tmp1[2*p_i1_start[nb][op][0]]),msglen*sizeof(double));
-  std::memcpy(tmp2 + 2 * p_i2_start[nb][op][0],
-              tmp1 + 2 * p_i1_start[nb][op][0], msglen * sizeof(double));
-
-  /* receive packed array data */
-  for (it = 1; it < np; ++it) {
-    /* synchronous receive of tmp */
-    proc_from = (taskid - it + np) % np;
-    msglen = 2 * (p_i2_start[nb][op][it + 1] - p_i2_start[nb][op][it]);
-    if (msglen > 0)
-      parall->adreceive(request_indx, msgtype, proc_from, msglen,
-                        tmp2 + 2 * p_i2_start[nb][op][it]);
-    // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
-  }
-  for (it = 1; it < np; ++it) {
-    proc_to = (taskid + it) % np;
-    msglen = 2 * (p_i1_start[nb][op][it + 1] - p_i1_start[nb][op][it]);
-    if (msglen > 0)
-      parall->adsend(request_indx, msgtype, proc_to, msglen,
-                     tmp1 + 2 * p_i1_start[nb][op][it]);
-    // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
-  }
+                                  const int request_indx, const int msgtype) 
+{
+   int nnfft3d, it, proc_from, proc_to;
+   int msglen;
+ 
+   int n1 = p_i1_start[nb][op][np];
+ 
+   /* pack a array - tmp1->tmp2 */
+   c_aindexcopy(n1, p_iq_to_i1[nb][op], a, tmp1);
+ 
+   /* it = 0, transpose data on same thread  - tmp2->tmp1*/
+   msglen = 2 * (p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
+   // int one=1;
+   // DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][op][0]]),one,&(tmp2[2*p_i2_start[nb][op][0]]),one);
+   // std::memcpy(&(tmp2[2*p_i2_start[nb][op][0]]),&(tmp1[2*p_i1_start[nb][op][0]]),msglen*sizeof(double));
+   std::memcpy(tmp2 + 2 * p_i2_start[nb][op][0],
+               tmp1 + 2 * p_i1_start[nb][op][0], msglen * sizeof(double));
+ 
+   /* receive packed array data */
+   for (it = 1; it < np; ++it) 
+   {
+      /* synchronous receive of tmp */
+      proc_from = (taskid - it + np) % np;
+      msglen = 2 * (p_i2_start[nb][op][it + 1] - p_i2_start[nb][op][it]);
+      if (msglen > 0)
+        parall->adreceive(request_indx, msgtype, proc_from, msglen,
+                          tmp2 + 2 * p_i2_start[nb][op][it]);
+      // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
+   }
+   for (it = 1; it < np; ++it) 
+   {
+      proc_to = (taskid + it) % np;
+      msglen = 2 * (p_i1_start[nb][op][it + 1] - p_i1_start[nb][op][it]);
+      if (msglen > 0)
+        parall->adsend(request_indx, msgtype, proc_to, msglen,
+                       tmp1 + 2 * p_i1_start[nb][op][it]);
+      // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
+   }
 }
 
 /**************************************
@@ -3919,17 +3925,18 @@ void d3db::c_ptranspose_ijk_start(const int nb, const int op, double *a,
  *    d3db::c_ptranspose_ijk_end      *
  *                                    *
  **************************************/
-void d3db::c_ptranspose_ijk_end(const int nb, const int op, double *a,
-                                double *tmp2, const int request_indx) {
-  int n2 = p_i2_start[nb][op][np];
-  int n3 = p_iz_to_i2_count[nb][op];
-
-  /* wait for completion of mp_send, also do a sync */
-  parall->awaitall(request_indx);
-
-  /* unpack a array */
-  c_bindexcopy(n2, p_iq_to_i2[nb][op], tmp2, a);
-  c_bindexzero(n3, p_iz_to_i2[nb][op], a);
+void d3db::c_ptranspose_ijk_end(const int nffts, const int nb, const int op, double *a,
+                                double *tmp2, const int request_indx) 
+{
+   int n2 = p_i2_start[nb][op][np];
+   int n3 = p_iz_to_i2_count[nb][op];
+ 
+   /* wait for completion of mp_send, also do a sync */
+   parall->awaitall(request_indx);
+ 
+   /* unpack a array */
+   c_bindexcopy(n2, p_iq_to_i2[nb][op], tmp2, a);
+   c_bindexzero(n3, p_iz_to_i2[nb][op], a);
 }
 
 /********************************
@@ -4492,7 +4499,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  *
  * @note The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
  */
-void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2,
+void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double *tmp2,
                                const int request_indx, const int msgtype) 
 {
    int nnfft3d, indx, it, proc_from, proc_to;
@@ -4553,7 +4560,7 @@ void d3db::c_timereverse_start(double *a, double *tmp1, double *tmp2,
  * - The size of the operation is determined by 'nnfft3d', which represents the number of elements to be processed.
  *
  */
-void d3db::c_timereverse_end(double *a, double *tmp1, double *tmp2, const int request_indx) 
+void d3db::c_timereverse_end(const int nffts, double *a, double *tmp1, double *tmp2, const int request_indx) 
 {
    int indx = t_i2_start[0];
    int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
