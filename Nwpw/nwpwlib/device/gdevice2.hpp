@@ -50,6 +50,7 @@ public:
 
    void computeTrans3_Mult(const int, const int, const double *, const double *,
                            int, int, double *, double *, double *, double *, double *);
+   void computeTrans_Mult(int, int, double, double, int, int, double *, double *, double, double, double *);
 
    void WW6_zgemm(int, double *, double *, double *, double *, double *, double *);
    

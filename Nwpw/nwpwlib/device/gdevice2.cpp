@@ -142,6 +142,13 @@ void gdevice2::computeTrans3_Mult(const int ne, const int nprj,
       mygdevice2->computeTrans3_Mult(ne,nprj,psi,prj,ng,ng0,Gx,Gy,Gz,xtmp1,sum3);
 }
 
+void gdevice2::computeTrans_Mult(int ne, int nprj, double alpha, double alpha1, int ng, int ng0, 
+                                 double *psi, double *prj, double beta, double beta1, double *sum1) 
+{
+   if (!mygdevice2->hasgpu)
+      mygdevice2->computeTrans_Mult(ne,nprj,alpha,alpha1,ng,ng0,psi,prj,beta,beta1,sum1);
+}
+
 
 
 void gdevice2::WW6_zgemm(int ne, double *s21, double *s12, double *s11,
