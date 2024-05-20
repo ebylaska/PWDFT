@@ -1647,8 +1647,8 @@ public:
       double rone  = 1.0;
       double rmone = -1.0;
       
-      TN_dgemm(ne,nprj,npack2,alpha,psi,prj,beta,sum1);
-      //DGEMM_PWDFT((char *)"T", (char *)"N",ne,nprj,npack2,alpha,psi,npack2,prj,npack2,beta,sum1,ne);
+      //TN_dgemm(ne,nprj,npack2,alpha,psi,prj,beta,sum1);
+      DGEMM_PWDFT((char *)"T", (char *)"N",ne,nprj,npack2,alpha,psi,npack2,prj,npack2,beta,sum1,ne);
       if (npack0 > 0)
       {  
          DGEMM_PWDFT((char *)"T", (char *)"N",ne,nprj,npack0,alpha1,psi,npack2,prj,npack2,beta1,sum1,ne);
