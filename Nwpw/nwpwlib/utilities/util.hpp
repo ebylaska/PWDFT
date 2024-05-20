@@ -15,8 +15,14 @@
 namespace pwdft {
 
 extern void c_aindexcopy(const int, const int *, double *, double *);
+extern void c_aindexcopy_stride(const int, const int, const int *, double *, double *);
+
 extern void c_bindexcopy(const int, const int *, double *, double *);
+extern void c_bindexcopy_stride(const int, const int, const int *, double *, double *);
+
 extern void c_bindexcopy_conjg(const int, const int *, double *, double *);
+extern void c_bindexcopy_conjg_stride(const int, const int, const int *, double *, double *);
+
 extern void c_bindexzero(const int, const int *, double *);
 
 extern void t_aindexcopy(const int, const int *, double *, double *);

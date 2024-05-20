@@ -4181,10 +4181,11 @@ void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, doub
    int msglen;
    int n1 = p_i1_start[nb][0][np];
  
-   c_aindexcopy(n1, p_iq_to_i1[nb][0], a, tmp1);
+   for (auto s=0; s<nffts; ++s)
+      c_aindexcopy_stride(nffts,n1, p_iq_to_i1[nb][0], a + s*n2ft3d, tmp1 + 2*s);
  
    /* it = 0, transpose data on same thread */
-   msglen = 2*(p_i2_start[nb][0][1] - p_i2_start[nb][0][0]);
+   msglen = nffts*2*(p_i2_start[nb][0][1] - p_i2_start[nb][0][0]);
    std::memcpy(tmp2 + 2*p_i2_start[nb][0][0], tmp1 + 2*p_i1_start[nb][0][0], msglen*sizeof(double));
  
    /* receive packed array data */
@@ -4192,7 +4193,7 @@ void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, doub
    {
       /* synchronous receive of tmp */
       int proc_from = (taskid - it + np) % np;
-      msglen = 2*(p_i2_start[nb][0][it+1] - p_i2_start[nb][0][it]);
+      msglen = nffts*2*(p_i2_start[nb][0][it+1] - p_i2_start[nb][0][it]);
       if (msglen > 0)
          parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2 + 2*p_i2_start[nb][0][it]);
      // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][0][it]]);
@@ -4200,7 +4201,7 @@ void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, doub
    for (auto it=1; it<np; ++it) 
    {
       int proc_to = (taskid + it) % np;
-      msglen = 2*(p_i1_start[nb][0][it+1] - p_i1_start[nb][0][it]);
+      msglen = nffts*2*(p_i1_start[nb][0][it+1] - p_i1_start[nb][0][it]);
       if (msglen > 0)
          parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1 + 2*p_i1_start[nb][0][it]);
      // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][0][it]]);
@@ -4217,8 +4218,11 @@ void c3db::c_ptranspose1_jk_end(const int nffts, const int nb, double *a, double
    parall->awaitall(request_indx);
 
    int n2 = p_i2_start[nb][0][np];
-   c_bindexcopy(n2, p_iq_to_i2[nb][0], tmp2, a);
-   c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a);
+   for (auto s=0; s<nffts; ++s)
+   {
+      c_bindexcopy_stride(nffts,n2, p_iq_to_i2[nb][0], tmp2 + 2*s, a + s*n2ft3d);
+      c_bindexzero(nfft3d - n2, p_iz_to_i2[nb][0], a + s*n2ft3d);
+   }
 }
 
 /**************************************
@@ -4233,26 +4237,26 @@ void c3db::c_ptranspose2_jk_start(const int nffts, const int nb, double *a, doub
    int msglen;
    int n1 = p_j1_start[nb][0][np];
  
-   c_aindexcopy(n1, p_jq_to_i1[nb][0], a, tmp1);
+   for (auto s=0; s<nffts; ++s)
+      c_aindexcopy_stride(nffts,n1, p_jq_to_i1[nb][0], a+s*n2ft3d, tmp1+2*s);
  
    /* it = 0, transpose data on same thread */
-   msglen = 2*(p_j2_start[nb][0][1] - p_j2_start[nb][0][0]);
-   std::memcpy(tmp2 + 2 * p_j2_start[nb][0][0], tmp1 + 2 * p_j1_start[nb][0][0],
-               msglen * sizeof(double));
+   msglen = nffts*2*(p_j2_start[nb][0][1] - p_j2_start[nb][0][0]);
+   std::memcpy(tmp2 + 2*p_j2_start[nb][0][0], tmp1 + 2*p_j1_start[nb][0][0], msglen*sizeof(double));
  
    /* receive packed array data */
    for (auto it=1; it<np; ++it) 
    {
       /* synchronous receive of tmp */
       int proc_from = (taskid - it + np) % np;
-      msglen = 2 * (p_j2_start[nb][0][it+1] - p_j2_start[nb][0][it]);
+      msglen = nffts*2*(p_j2_start[nb][0][it+1] - p_j2_start[nb][0][it]);
       if (msglen > 0)
          parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2 + 2*p_j2_start[nb][0][it]);
    }
    for (auto it = 1; it < np; ++it) 
    {
       int proc_to = (taskid + it) % np;
-      msglen = 2 * (p_j1_start[nb][0][it + 1] - p_j1_start[nb][0][it]);
+      msglen = nffts*2*(p_j1_start[nb][0][it + 1] - p_j1_start[nb][0][it]);
       if (msglen > 0)
          parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1 + 2*p_j1_start[nb][0][it]);
    }
@@ -4269,8 +4273,11 @@ void c3db::c_ptranspose2_jk_end(const int nffts, const int nb, double *a, double
    parall->awaitall(request_indx);
 
    int n2 = p_j2_start[nb][0][np];
-   c_bindexcopy(n2, p_jq_to_i2[nb][0], tmp2, a);
-   c_bindexzero(nfft3d - n2, p_jz_to_i2[nb][0], a);
+   for (auto s=0; s<nffts; ++s)
+   {
+      c_bindexcopy_stride(nffts,n2, p_jq_to_i2[nb][0], tmp2+2*s, a+s*n2ft3d);
+      c_bindexzero(nfft3d - n2, p_jz_to_i2[nb][0], a + s*n2ft3d);
+   }
 }
 
 /**************************************
@@ -4287,31 +4294,32 @@ void c3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, d
    int n1 = p_i1_start[nb][op][np];
  
    /* pack a array - tmp1->tmp2 */
-   c_aindexcopy(n1, p_iq_to_i1[nb][op], a, tmp1);
+   for (auto s=0; s<nffts; ++s)
+      c_aindexcopy_stride(nffts,n1, p_iq_to_i1[nb][op], a + s*n2ft3d, tmp1 + 2*s);
  
    /* it = 0, transpose data on same thread  - tmp2->tmp1*/
-   msglen = 2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
-   std::memcpy(tmp2 + 2 * p_i2_start[nb][op][0],
-               tmp1 + 2 * p_i1_start[nb][op][0], msglen * sizeof(double));
+   msglen = nffts*2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
+   std::memcpy(tmp2 + 2*p_i2_start[nb][op][0],
+               tmp1 + 2*p_i1_start[nb][op][0], msglen*sizeof(double));
  
    /* receive packed array data */
    for (auto it=1; it<np; ++it) 
    {
       /* synchronous receive of tmp */
       int proc_from = (taskid - it + np) % np;
-      msglen = 2*(p_i2_start[nb][op][it+1] - p_i2_start[nb][op][it]);
+      msglen = nffts*2*(p_i2_start[nb][op][it+1] - p_i2_start[nb][op][it]);
       if (msglen > 0)
-        parall->adreceive(request_indx, msgtype, proc_from, msglen,
-                          tmp2 + 2 * p_i2_start[nb][op][it]);
+         parall->adreceive(request_indx, msgtype, proc_from, msglen,
+                           tmp2 + 2*p_i2_start[nb][op][it]);
       // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
    }
    for (auto it=1; it<np; ++it) 
    {
       int proc_to = (taskid + it) % np;
-      msglen = 2*(p_i1_start[nb][op][it+1] - p_i1_start[nb][op][it]);
+      msglen = nffts*2*(p_i1_start[nb][op][it+1] - p_i1_start[nb][op][it]);
       if (msglen > 0)
-        parall->adsend(request_indx, msgtype, proc_to, msglen,
-                       tmp1 + 2 * p_i1_start[nb][op][it]);
+         parall->adsend(request_indx, msgtype, proc_to, msglen,
+                        tmp1 + 2*p_i1_start[nb][op][it]);
       // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
    }
 }
@@ -4332,10 +4340,10 @@ void c3db::c_ptranspose_ijk_end(const int nffts, const int nb, const int op, dou
    parall->awaitall(request_indx);
 
    /* unpack a array */
-   for (auto i=0; i<nffts; ++i)
+   for (auto s=0; s<nffts; ++s)
    {
-      c_bindexcopy(n2, p_iq_to_i2[nb][op], tmp2 + i*n2ft3d, a + i*n2ft3d);
-      c_bindexzero(n3, p_iz_to_i2[nb][op], a + i*n2ft3d);
+      c_bindexcopy_stride(nffts,n2, p_iq_to_i2[nb][op], tmp2 + 2*s, a + s*n2ft3d);
+      c_bindexzero(n3, p_iz_to_i2[nb][op], a + s*n2ft3d);
    }
 }
 
