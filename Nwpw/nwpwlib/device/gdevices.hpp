@@ -525,6 +525,7 @@ public:
     * @note This function can be optimized using SIMD instructions, OpenMP for parallelization,
     *       and GPU acceleration to enhance performance.
     */
+/*
    void computeTrans3_Mult(const int ne, const int nprj, 
                            const double *psi, const double *prj,
                            int ng, int ng0,
@@ -557,6 +558,7 @@ public:
          count3 += 3;
       }
    }
+   */
 
    /**************************************
     *                                    *
@@ -583,6 +585,7 @@ public:
     * @param ng0   Reduced grid size for the secondary computation (number of complex numbers).
     * @param sum1  Array to store the computed matrix multiplication results.
     */
+/*
    void computeTrans_Mult(int ne, int nprj, double alpha, double alpha1, int ng, int ng0,
                           double *psi, double *prj, double beta, double beta1, double *sum1) 
    {
@@ -599,6 +602,7 @@ public:
          DGEMM_PWDFT((char *)"T", (char *)"N",ne,nprj,npack0,alpha1,psi,npack2,prj,npack2,beta1,sum1,ne);
       }
    }
+*/
 
 
    /**************************************
