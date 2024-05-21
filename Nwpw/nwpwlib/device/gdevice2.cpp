@@ -134,6 +134,7 @@ void gdevice2::CN3_zgemm(int npack1_max, int npack, int ne, double *alpha, doubl
    mygdevice2->CN3_zgemm(npack1_max, npack, ne, alpha, a, b, beta, caa, cab, cbb);
 }
 
+/*
 void gdevice2::computeTrans3_Mult(const int ne, const int nprj, 
                                   const double *psi, const double *prj, int ng, int ng0,
                                   double *Gx, double *Gy, double *Gz, double *xtmp1,
@@ -141,13 +142,16 @@ void gdevice2::computeTrans3_Mult(const int ne, const int nprj,
    if (!mygdevice2->hasgpu)
       mygdevice2->computeTrans3_Mult(ne,nprj,psi,prj,ng,ng0,Gx,Gy,Gz,xtmp1,sum3);
 }
+*/
 
+/*
 void gdevice2::computeTrans_Mult(int ne, int nprj, double alpha, double alpha1, int ng, int ng0, 
                                  double *psi, double *prj, double beta, double beta1, double *sum1) 
 {
    if (!mygdevice2->hasgpu)
       mygdevice2->computeTrans_Mult(ne,nprj,alpha,alpha1,ng,ng0,psi,prj,beta,beta1,sum1);
 }
+*/
 
 
 
