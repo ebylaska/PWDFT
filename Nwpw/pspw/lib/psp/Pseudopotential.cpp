@@ -1762,7 +1762,11 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       }
       jend = ii;
      
+      //std::cout << "GERb inprjdot ii=" << ii << " nn=" << nn << " nprjall=" << nprjall <<  std::endl;
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
+     //std::cout << "GERb inprjdot sw1=";
+     //for (auto k=0; k<(nn*nprjall); ++k) std::cout << sw1[k] << " "; std::cout << std::endl;
+
       //parall->Vector_SumAll(1, nn*nprjall, sw1);
       if (move)
       {
