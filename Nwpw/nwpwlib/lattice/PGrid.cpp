@@ -857,38 +857,27 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
  * - `rzero`: Scalar value set to 0.0, used to initialize or reset matrices or results.
  *
  */
+/********************************
+ *                              *
+ *    PGrid:cc_pack_inprjdot    *
+ *                              *
+ ********************************/
 void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *b, double *sum) 
 {
-   //int ng = 2 * (nida[nb] + nidb[nb]);
-   //int ng0 = 2 * nida[nb];
-   //int one = 1;
-   //double rtwo = 2.0;
-   //double rone = 1.0;
-   //double rmone = -1.0;
-   //double rzero = 0.0;
-   //DGEMM_PWDFT((char *) "T",(char *) "N",nn,nprj,ng,
-   //	       rtwo,
-   //	       a,ng,
-   //	       b,ng,
-   //	       rzero,
-   //	       sum,nn);
-   //d3db::mygdevice.TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
-   //if (ng0 > 0) {
-   //  DGEMM_PWDFT((char *)"T", (char *)"N", nn, nprj, ng0, rmone, a, ng, b, ng, rone, sum, nn);
-   //}
-
-   // Main and reduced cmplex grid sizes
-   int ng = (nida[nb] + nidb[nb]);
-   int ng0 = nida[nb];
-
-   // Scalar values used in the transformation calculations
+   int ng = 2 * (nida[nb] + nidb[nb]);
+   int ng0 = 2 * nida[nb];
+ 
+   int one = 1;
    double rtwo = 2.0;
    double rone = 1.0;
    double rmone = -1.0;
    double rzero = 0.0;
-
-   // Compute the transformation matrix
-   d3db::mygdevice.computeTrans_Mult(nn,nprj,rtwo,rmone,ng,ng0,a,b,rzero,rone,sum);
+ 
+   d3db::mygdevice.TN_dgemm(nn, nprj, ng, rtwo, a, b, rzero, sum);
+   if (ng0 > 0) 
+   {
+      DGEMM_PWDFT((char *)"T", (char *)"N", nn, nprj, ng0, rmone, a, ng, b, ng, rone, sum, nn);
+   }
 
    // Aggregate the results across all processes
    parall->Vector_SumAll(1, nn*nprj, sum);
@@ -966,9 +955,6 @@ void PGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
 
    parall->Vector_SumAll(1,3*nn*nprj,sum3);
 }
-
-
-
 
 
 /********************************
