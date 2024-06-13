@@ -554,7 +554,11 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    aqnffts  = new (std::nothrow) int[aqmax]();
    //atmp = new (std::nothrow) double[2*aqmax*n2ft3d]();
    atmp = new (std::nothrow) double[2*aqmax*n2ft3d*nffts_max]();
- 
+   //std::vector<double> atmp_vector(2*aqmax*n2ft3d*nffts_max);
+   //atmp = atmp_vector.data();
+
+
+
    bqmax = pfft3_qsize0;
    if (staged_gpu_fft_pipeline) bqmax += 6;
    
@@ -566,6 +570,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    bqnffts  = new (std::nothrow) int[bqmax]();
    //btmp = new (std::nothrow) double[2*bqmax*n2ft3d]();
    btmp = new (std::nothrow) double[2*bqmax*n2ft3d*nffts_max]();
+   //std::vector<double> btmp_vector(2*bqmax*n2ft3d*nffts_max);
+   //btmp = btmp_vector.data();
+
  
    /* initialize async buffer data for pfft */
    for (auto q=0; q<aqmax; ++q)
@@ -1259,6 +1266,7 @@ void PGrid::cr_pfft3b(const int nb, double *a)
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
       d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,false, nz, nq3, n2ft3d, a, d3db::tmpz, zero_row3[nb]);
+      //d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,false, nz, nq3, n2ft3d, a, d3db::tmpz );
      
       d3db::c_ptranspose_ijk(nb, 2, a, tmp2, tmp3);
       
@@ -1485,6 +1493,7 @@ void PGrid::rc_pfft3f(const int nb, double *a)
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
       d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,true, nz, nq3, n2ft3d, a, d3db::tmpz, zero_row3[nb]);
+      //d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,true, nz, nq3, n2ft3d, a, d3db::tmpz );
    }
  
    //delete[] tmp3;
@@ -1532,17 +1541,17 @@ void PGrid::c_unpack_mid(const int nffts, const int nb, double *tmp1, double *tm
          print_tmp(tmp1+s*n2ft3d);
       }
  
-   //d3db::c_timereverse_start(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
-   for (auto s=0; s<nffts; ++s)
-   {
-      d3db::c_timereverse_start(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
-      d3db::c_timereverse_end(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx);
-   }
+   d3db::c_timereverse_start(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
+   //for (auto s=0; s<nffts; ++s)
+  // {
+  //    d3db::c_timereverse_start(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
+  //    d3db::c_timereverse_end(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx);
+  // }
       std::cout << "pfftb timestep0: " << std::endl;
       for (auto s=0; s<nffts; ++s)
       {
          std::cout << "timestep0 zplane s=" << s << " " ;
-         print_tmp(zplane_tmp1+s*n2ft3d);
+         print_tmp(zplane_tmp1);
       }
 }
 
@@ -1554,7 +1563,7 @@ void PGrid::c_unpack_mid(const int nffts, const int nb, double *tmp1, double *tm
 void PGrid::c_unpack_end(const int nffts, const int nb, double *tmp1, double *tmp2,
                          const int request_indx) 
 {
-   //d3db::c_timereverse_end(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx);
+   d3db::c_timereverse_end(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx);
 
       std::cout << "pfftb timestep1: " << std::endl;
       for (auto s=0; s<nffts; ++s)
@@ -1672,7 +1681,9 @@ void PGrid::pfftbz(const int nffts, const int nb, double *tmp1, double *tmp2, in
       }
 
 
-      d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,false, nz, nffts*nq3, n2ft3d, tmp1, d3db::tmpz, zero_row3[nb]);
+         std::cout << " good step3A a=" << tmp1 << std::endl;
+      //d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,false, nz, nffts*nq3, n2ft3d, tmp1, d3db::tmpz, zero_row3[nb]);
+      d3db::mygdevice.batch_cfftz_tmpz(d3db::fft_tag,false, nz, nffts*nq3, n2ft3d, tmp1, d3db::tmpz);
 
       std::cout << std::endl;
       std::cout << "      cfftz step3 B: " << std::endl;
@@ -1798,7 +1809,8 @@ void PGrid::pfftby(const int nffts, const int nb, double *tmp1, double *tmp2, in
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-      d3db::mygdevice.batch_cffty_tmpy_zero(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy,zero_row2[nb]);
+      //d3db::mygdevice.batch_cffty_tmpy_zero(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy,zero_row2[nb]);
+      d3db::mygdevice.batch_cffty_tmpy(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy);
 
       std::cout << std::endl;
       std::cout << "      cffty step4 B: " << std::endl;
@@ -1901,6 +1913,8 @@ void PGrid::pfftb_step(const int step, const int nffts, const int nb, double *a,
       std::cout << "pfftb step0, nffts=" << nffts <<  std::endl;
       for (auto s=0; s<nffts; ++s)
          std::memcpy(tmp1 + s*n2ft3d, a + s*2*(nida[nb]+nidb[nb]), 2*(nida[nb]+nidb[nb])*sizeof(double));
+
+      std::cout << "done memcopy" << std::endl;
       this->c_unpack_start(nffts, nb, tmp1, tmp2, request_indx, 47);
 
       std::cout << "pfftb step0: " << std::endl;
@@ -2627,7 +2641,7 @@ void PGrid::cr_pfft3b_queuein(const int nb, const int nffts_in, double *a)
    //std::cout << "       aqsize=" << aqsize << " nffts_max=" << nffts_max << std::endl;
    //std::cout << "       alast_index=" << alast_index << std::endl;
    //std::cout << "src ptr:" << a << std::endl;
- 
+
    for (auto q=0; q<aqsize; ++q) 
    {
       int indx   = aqindx[q];
@@ -2670,7 +2684,7 @@ void PGrid::cr_pfft3b_queueout(const int nb, const int nffts_out, double *a)
 {
    int shift1, shift2;
    int indx1 = aqindx[0];
- 
+
    //while (aqstatus[indx1] < 5) {
    while (aqstatus[indx1] < aqmax) 
    {

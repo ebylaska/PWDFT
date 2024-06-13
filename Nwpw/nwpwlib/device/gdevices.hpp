@@ -844,7 +844,7 @@ public:
          int indx = 0;
          for (auto q = 0; q < nq; ++q) 
          {
-            if (!zero[q])
+           if (!zero[q])
                dcfftb_(&nz, a + indx, tmpz);
             indx += (2*nz);
          }
