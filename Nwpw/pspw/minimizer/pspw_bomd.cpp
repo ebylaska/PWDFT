@@ -230,9 +230,9 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
         if (mygrid.d3db::mygdevice.type_gpu()==4) coutput << " parallel mapping         : OpenCL GPUs" << std::endl;
         if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged GPU FFT" << std::endl;
         if (control.tile_factor() > 1)      coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
-      }
+     }
+     coutput << " fft container size       : " << control.fft_container_size() << std::endl;
 
- 
      coutput << "\n options:\n";
      coutput << "   boundary conditions  = ";
      if (control.version == 3)

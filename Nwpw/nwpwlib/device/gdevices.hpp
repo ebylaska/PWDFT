@@ -703,7 +703,7 @@ public:
             indx += nxh2;
          }
          indx = 0;
-         for (auto q = 0; q < nq; ++q) 
+         for (auto q=0; q<nq; ++q) 
          {
             drfftb_(&nx, a + indx, tmpx);
             indx += nxh2;

@@ -213,6 +213,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged GPU FFT" << std::endl;
          if (control.tile_factor() > 0)      std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
       }
+      std::cout << " fft container size       : " << control.fft_container_size() << std::endl;
       
       std::cout << "\n options:\n";
       std::cout << "   ion motion           = ";

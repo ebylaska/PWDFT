@@ -112,6 +112,7 @@ class Control2 {
    bool pmulliken_on;
 
    bool pstaged_gpu_fft = true;
+   int pfft_container_size = 1;
 
    // vdw variables - resetable
    std::string poptions_disp;
@@ -230,6 +231,7 @@ public:
    bool out_of_time() { return false; } // needs to be implemented
 
    bool staged_gpu_fft() { return pstaged_gpu_fft; }
+   int  fft_container_size() { return pfft_container_size; }
  
    int print_level(std::string plevel) {
      int doprt = 0;

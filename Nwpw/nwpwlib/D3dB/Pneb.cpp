@@ -664,6 +664,8 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    int n, done;
    int indx1, indx1n, shift1;
    int indx2, indx2n, shift2;
+   int nffts_pipeline = PGrid::nffts_max;
+   //std::cout << "gh_fftb: nffts=" << nffts_pipeline << std::endl;
  
    n = neq[0] + neq[1];
    shift1 = 2 * PGrid::npack(1);
@@ -675,15 +677,24 @@ void Pneb::gh_fftb(double *psi, double *psi_r)
    {
       if (indx1 < n) 
       {
-         cr_pfft3b_queuein(1, 1, psi + indx1n);
-         indx1n += shift1;
-         ++indx1;
+         // Assuming n, indx1, and nffts_pipeline are defined
+         int idum = std::min(n - indx1, nffts_pipeline);
+
+         cr_pfft3b_queuein(1, idum, psi + indx1n);
+
+         indx1n += idum*shift1;
+         indx1  += idum;
       }
       if (cr_pfft3b_queuefilled() || (indx1 >= n)) 
       {
-         cr_pfft3b_queueout(1, 1, psi_r + indx2n);
-         indx2n += shift2;
-         ++indx2;
+         // Assuming n, indx2, and nffts_pipeline are defined
+         int jdum = std::min(n - indx2, nffts_pipeline);
+
+         cr_pfft3b_queueout(1, jdum, psi_r + indx2n);
+
+         indx2n += jdum*shift2;
+         indx2  += jdum;;
+         //++indx2;
       }
       done = ((indx1 >= n) && (indx2 >= n));
    }

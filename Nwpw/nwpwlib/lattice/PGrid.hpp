@@ -33,7 +33,6 @@ class PGrid : public d3db {
   bool *zero_row2[2], *zero_row3[2], *zero_slab23[2];
 
   /* pfft_queue data */
-  int nffts_max = 1;
   int aqmax, aqsize, alast_index;
   int *aqindx, *aqstatus, *aqnffts;
   double *atmp;
@@ -48,6 +47,7 @@ class PGrid : public d3db {
 
 
 public:
+  int  nffts_max = 1;
   bool staged_gpu_fft_pipeline;
 
   /* lattice pointer */
@@ -58,7 +58,7 @@ public:
   double *r_grid;
 
   /* constructor */
-  PGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool);
+  PGrid(Parallel *, Lattice *, int, int, int, int, int, int, bool, int);
   PGrid(Parallel *, Lattice *, Control2 &);
 
   /* destructor */

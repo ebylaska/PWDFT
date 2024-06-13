@@ -780,6 +780,12 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       auto gstaged = rtdbjson["nwpw"]["staged_gpu_fft"];
       if (gstaged["on"].is_boolean()) pstaged_gpu_fft = gstaged["on"];
    }
+
+   // fft_container_size
+   if (rtdbjson["nwpw"]["fft_container_size"].is_number_integer()) 
+      pfft_container_size = rtdbjson["nwpw"]["fft_container_size"];
+
+
  
    // Nose data
    pnose_on = false;

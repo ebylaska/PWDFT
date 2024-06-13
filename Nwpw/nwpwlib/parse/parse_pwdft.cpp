@@ -1711,6 +1711,18 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(check, "on"))    nwpwjson["staged_gpu_fft"]["on"] = true;
        if (mystring_contains(check, "yes"))   nwpwjson["staged_gpu_fft"]["on"] = true;
        if (mystring_contains(check, "true"))  nwpwjson["staged_gpu_fft"]["on"] = true;
+
+    } else if (mystring_contains(line, "fft_container_size")) {
+       int nffts_size = 0;
+       try {
+          nffts_size = std::stoi(mystring_split0(mystring_trim(mystring_split(line, "fft_container_size")[1]))[0]);
+       } catch (const std::invalid_argument& e) {
+          std::cerr << "Invalid argument: " << e.what() << std::endl;
+       } catch (const std::out_of_range& e) {
+           std::cerr << "Out of range: " << e.what() << std::endl;
+       }
+       if ((nffts_size<100) || (nffts_size>0)) 
+          nwpwjson["fft_container_size"] = nffts_size;
     }
 
 

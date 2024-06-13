@@ -212,6 +212,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged GPU FFT" << std::endl;
          if (control.tile_factor() > 0)      coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
       }
+      coutput << " fft container size       : " << control.fft_container_size() << std::endl;
      
       coutput << "\n options:\n";
       coutput << "   boundary conditions  = ";

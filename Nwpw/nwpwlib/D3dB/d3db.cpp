@@ -4434,14 +4434,14 @@ void d3db::t_timereverse(double *a, double *tmp1, double *tmp2)
  * distributed data.
  *
  * @param a      Complex input/output array to be time-reversed.
- * @param tmp1   Temporary complex array used for intermediate calculations.
- * @param tmp2   Temporary complex array used for intermediate calculations.
+ * @param tmp1_plane   Temporary complex array used for intermediate calculations.
+ * @param tmp2_plane   Temporary complex array used for intermediate calculations.
  *
  * The function operates on complex numbers represented as pairs of double values
  * (real and imaginary parts). The input array `a` is modified in place to store the
  * time-reversed data.
  */
-void d3db::c_timereverse(double *a, double *tmp1, double *tmp2) 
+void d3db::c_timereverse(double *a, double *tmp1_plane, double *tmp2_plane) 
 {
    int nnfft3d, indx, it, proc_from, proc_to;
    int msglen;
@@ -4450,13 +4450,13 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  
    indx = t_i1_start[0];
    nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
-   c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1 + indx);
+   c_aindexcopy(nnfft3d, t_iq_to_i1 + indx, a, tmp1_plane + indx);
  
    /* it = 0, transpose data on same thread */
    msglen = 2 * (t_i2_start[1] - t_i2_start[0]);
    // int one=1;
    // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-   std::memcpy(tmp2 + 2 * t_i2_start[0], tmp1 + 2 * t_i1_start[0],
+   std::memcpy(tmp2_plane + 2 * t_i2_start[0], tmp1_plane + 2 * t_i1_start[0],
                msglen * sizeof(double));
  
    /* receive packed array data */
@@ -4466,20 +4466,20 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
       proc_from = (taskid - it + np) % np;
       msglen = 2 * (t_i2_start[it + 1] - t_i2_start[it]);
       if (msglen > 0)
-         parall->adreceive(1, 1, proc_from, msglen, &tmp2[2 * t_i2_start[it]]);
+         parall->adreceive(1, 1, proc_from, msglen, &tmp2_plane[2 * t_i2_start[it]]);
    }
    for (it = 1; it < np; ++it) 
    {
       proc_to = (taskid + it) % np;
       msglen = 2 * (t_i1_start[it + 1] - t_i1_start[it]);
       if (msglen > 0)
-         parall->dsend(1, 1, proc_to, msglen, &tmp1[2 * t_i1_start[it]]);
+         parall->dsend(1, 1, proc_to, msglen, &tmp1_plane[2 * t_i1_start[it]]);
    }
    parall->aend(1);
  
    indx = t_i2_start[0];
    nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
-   c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2 + indx, a);
+   c_bindexcopy_conjg(nnfft3d, t_iq_to_i2 + indx, tmp2_plane + indx, a);
 }
 
 /**************************************
@@ -4493,8 +4493,8 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  * This function initiates the process of time reversal for the complex array 'a' using temporary arrays 'tmp1' and 'tmp2'.
  *
  * @param a             The input complex array to be reversed.
- * @param tmp1          Temporary complex array for data manipulation.
- * @param tmp2          Temporary complex array for data manipulation.
+ * @param tmp1_plane          Temporary complex array for data manipulation.
+ * @param tmp2_plane          Temporary complex array for data manipulation.
  * @param request_indx  An integer representing the request index.
  * @param msgtype       An integer representing the message type.
  *
@@ -4512,7 +4512,7 @@ void d3db::c_timereverse(double *a, double *tmp1, double *tmp2)
  *
  * @note The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
  */
-void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double *tmp2,
+void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1_plane, double *tmp2_plane,
                                const int request_indx, const int msgtype) 
 {
    int nnfft3d, indx, it, proc_from, proc_to;
@@ -4521,13 +4521,13 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double 
    indx = t_i1_start[0];
    nnfft3d = (t_i1_start[np] - t_i1_start[0] + 0);
    for (auto s=0; s<nffts; ++s)
-      c_aindexcopy_stride(nffts,nnfft3d,t_iq_to_i1+indx, a + s*n2ft3d, tmp1 + indx + 2*s);
+      c_aindexcopy_stride(nffts,nnfft3d,t_iq_to_i1+indx, a + s*n2ft3d, tmp1_plane + indx + 2*s);
  
    /* it = 0, transpose data on same thread */
    msglen = nffts*2*(t_i2_start[1] - t_i2_start[0]);
    // int one=1;
    // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-   std::memcpy(tmp2 + 2*t_i2_start[0], tmp1 + 2*t_i1_start[0], msglen*sizeof(double));
+   std::memcpy(tmp2_plane + 2*t_i2_start[0], tmp1_plane + 2*t_i1_start[0], msglen*sizeof(double));
  
    /* receive packed array data */
    for (it = 1; it < np; ++it) 
@@ -4536,14 +4536,14 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double 
       proc_from = (taskid - it + np) % np;
       msglen = nffts*2*(t_i2_start[it + 1] - t_i2_start[it]);
       if (msglen > 0)
-         parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2 + 2*t_i2_start[it]);
+         parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2_plane + 2*t_i2_start[it]);
    }
    for (it = 1; it < np; ++it) 
    {
       proc_to = (taskid + it) % np;
       msglen = nffts*2*(t_i1_start[it + 1] - t_i1_start[it]);
       if (msglen > 0)
-         parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1 + 2*t_i1_start[it]);
+         parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1_plane + 2*t_i1_start[it]);
    }
 }
 
@@ -4559,8 +4559,8 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double 
  * array 'tmp2' and copies them back to the original array 'a' using index mappings.
  *
  * @param a             The original complex array to which the time reversal is applied.
- * @param tmp1          A temporary complex array used in the time reversal process.
- * @param tmp2          A temporary complex array with conjugated values.
+ * @param tmp1_plane          A temporary complex array used in the time reversal process.
+ * @param tmp2_plane          A temporary complex array with conjugated values.
  * @param request_indx  An integer indicating the request index used for synchronization.
  *
  * @note The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
@@ -4573,14 +4573,14 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1, double 
  * - The size of the operation is determined by 'nnfft3d', which represents the number of elements to be processed.
  *
  */
-void d3db::c_timereverse_end(const int nffts, double *a, double *tmp1, double *tmp2, const int request_indx) 
+void d3db::c_timereverse_end(const int nffts, double *a, double *tmp1_plane, double *tmp2_plane, const int request_indx) 
 {
    int indx = t_i2_start[0];
    int nnfft3d = (t_i2_start[np] - t_i2_start[0] + 0);
 
    parall->awaitall(request_indx);
    for (auto s=0; s<nffts; ++s)
-      c_bindexcopy_conjg_stride(nffts, nnfft3d, t_iq_to_i2+indx, tmp2 + indx + 2*s, a + s*n2ft3d);
+      c_bindexcopy_conjg_stride(nffts, nnfft3d, t_iq_to_i2+indx, tmp2_plane + indx + 2*s, a + s*n2ft3d);
 }
 
 
