@@ -771,26 +771,32 @@ public:
     *          batch_cffty_tmpy_zero     *
     *                                    *
     **************************************/
-   void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy, bool *zero) 
+   void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int nffts, int n2ft3d, double *a, double *tmpy, bool *zero) 
    {
       if (forward) 
       {
-         int indx = 0;
-         for (auto q = 0; q < nq; ++q) 
+         for (auto i = 0; i<nffts; ++i) 
          {
-            if (!zero[q])
-               dcfftf_(&ny, a + indx, tmpy);
-            indx += (2 * ny);
+            int indx = i*n2ft3d;
+            for (auto q = 0; q<nq; ++q) 
+            {
+               if (!zero[q])
+                  dcfftf_(&ny, a + indx, tmpy);
+               indx += (2 * ny);
+            }
          }
       } 
       else 
       {
-         int indx = 0;
-         for (auto q = 0; q < nq; ++q) 
+         for (auto i = 0; i<nffts; ++i) 
          {
-            if (!zero[q])
-               dcfftb_(&ny, a + indx, tmpy);
-            indx += (2 * ny);
+            int indx = i*n2ft3d;
+            for (auto q = 0; q<nq; ++q) 
+            {
+               if (!zero[q])
+                  dcfftb_(&ny, a + indx, tmpy);
+               indx += (2 * ny);
+            }
          }
       }
    }
@@ -827,26 +833,32 @@ public:
     *          batch_cfftz_tmpz_zero     *
     *                                    *
     **************************************/
-   void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz, bool *zero) 
+   void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int nffts, int n2ft3d, double *a, double *tmpz, bool *zero) 
    {
       if (forward) 
-      {
-         int indx = 0;
-         for (auto q=0; q<nq; ++q) 
+      {  
+         for (auto i = 0; i<nffts; ++i)    
          {
-            if (!zero[q])
-               dcfftf_(&nz, a + indx, tmpz);
-            indx += (2*nz);
+            int indx = i*n2ft3d;
+            for (auto q=0; q<nq; ++q) 
+            {
+               if (!zero[q])
+                  dcfftf_(&nz, a + indx, tmpz);
+               indx += (2*nz);
+            }
          }
       } 
       else 
       {
-         int indx = 0;
-         for (auto q = 0; q < nq; ++q) 
+         for (auto i = 0; i<nffts; ++i)    
          {
-           if (!zero[q])
-               dcfftb_(&nz, a + indx, tmpz);
-            indx += (2*nz);
+            int indx = i*n2ft3d;
+            for (auto q = 0; q < nq; ++q) 
+            {
+              if (!zero[q])
+                  dcfftb_(&nz, a + indx, tmpz);
+               indx += (2*nz);
+            }
          }
       }
    }
