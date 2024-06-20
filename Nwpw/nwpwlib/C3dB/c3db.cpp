@@ -515,7 +515,7 @@ c3db::~c3db()
    } 
    else 
    {
-      this->r_transpose_ijk_end();
+      this->r_ctranspose_ijk_end();
      
       for (i = 0; i < 6; ++i) {
          delete[] iq_to_i1[i];
@@ -576,10 +576,10 @@ c3db::~c3db()
 
 /******************************************
  *                                        *
- *      c3db::c_ptranspose_jk_init        *
+ *      c3db::c_pctranspose_jk_init        *
  *                                        *
  ******************************************/
-void c3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3) 
+void c3db::c_pctranspose_jk_init(const int nb, bool *zero_arow3) 
 {
    int index1, index2, index3;
    int jndex1, jndex2, jndex3;
@@ -667,7 +667,7 @@ void c3db::c_ptranspose_jk_init(const int nb, bool *zero_arow3)
  *      c3db::c_ptranspose_ijk_init       *
  *                                        *
  ******************************************/
-void c3db::c_ptranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow3) 
+void c3db::c_pctranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_arow3) 
 {
    int index1, index2, index3, proc_to, proc_from, phere, pto;
    bool iszero;
@@ -2612,7 +2612,7 @@ void c3db::c_read(const int iunit, double *a, const int jcol, const int kcol)
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(4, a, tmp1, tmp2);
+         c_ctranspose_ijk(4, a, tmp1, tmp2);
       }
    }
 }
@@ -2773,7 +2773,7 @@ void c3db::r_read(const int iunit, double *a, const int jcol, const int kcol, co
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         r_transpose_ijk(4, a, tmp1, tmp2);
+         r_ctranspose_ijk(4, a, tmp1, tmp2);
       }
    }
 }
@@ -2877,7 +2877,7 @@ void c3db::c_write(const int iunit, double *a, const int jcol, const int kcol)
          //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(5, a, tmp1, tmp2);
+         c_ctranspose_ijk(5, a, tmp1, tmp2);
      
          // delete [] tmp2;
          // delete [] tmp1;
@@ -3024,7 +3024,7 @@ void c3db::r_write(const int iunit, double *a, const int jcol, const int kcol, c
          //double *tmp2 = new (std::nothrow) double[2 * nfft3d]();
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         r_transpose_ijk(5, a, tmp1, tmp2);
+         r_ctranspose_ijk(5, a, tmp1, tmp2);
 
          // delete [] tmp2;
          // delete [] tmp1;
@@ -3120,7 +3120,7 @@ void c3db::c_write_buffer(const int iunit, double *a, const int jcol, const int 
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(5, a, tmp1, tmp2);
+         c_ctranspose_ijk(5, a, tmp1, tmp2);
       }
       for (int k = 0; k < nz; ++k)
       for (int j = 0; j < ny; ++j)
@@ -3299,7 +3299,7 @@ void c3db::t_read(const int iunit, double *a, const int jcol, const int kcol)
      
       double *tmp1 = c3db::c3db_tmp1;
       double *tmp2 = c3db::c3db_tmp2;
-      r_transpose_ijk(4, a, tmp1, tmp2);
+      r_ctranspose_ijk(4, a, tmp1, tmp2);
    }
 }
 
@@ -3392,7 +3392,7 @@ void c3db::t_write(const int iunit, double *a, const int jcol, const int kcol)
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         r_transpose_ijk(5, a, tmp1, tmp2);
+         r_ctranspose_ijk(5, a, tmp1, tmp2);
       }
      
       int bsize = nx;
@@ -3482,7 +3482,7 @@ void c3db::t_write_buffer(const int iunit, double *a, const int jcol, const int 
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         r_transpose_ijk(5, a, tmp1, tmp2);
+         r_ctranspose_ijk(5, a, tmp1, tmp2);
       }
       for (auto k=0; k<nz; ++k)
       for (auto j=0; j<ny; ++j)
@@ -3597,7 +3597,7 @@ void c3db::c_write_buffer_max(const int iunit, double *a, const int jcol, const 
       {
          double *tmp1 = c3db::c3db_tmp1;
          double *tmp2 = c3db::c3db_tmp2;
-         c_transpose_ijk(5, a, tmp1, tmp2);
+         c_ctranspose_ijk(5, a, tmp1, tmp2);
       }
 
       int bsize = 2*nx;
@@ -3907,7 +3907,7 @@ void c3db::cr_fft3d(double *a)
        ***         Do a transpose of A             ***
        ***       A(kx,ky,nz) <- A(kx,nz,ky)        ***
        ************************************************/
-      c_transpose_jk(a, tmp2, tmp3);
+      c_ctranspose_jk(a, tmp2, tmp3);
 
       /*************************************************
        ***        do fft along ky dimension          ***
@@ -3974,7 +3974,7 @@ void c3db::cr_fft3d(double *a)
       //mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, 2*nfft3d, a, tmpz);
       mygdevice.batch_cfft(fft_tag,false,nz,nq3,nz,a,backward_z,tmpz,2);
       
-      c_transpose_ijk(2, a, tmp2, tmp3);
+      c_ctranspose_ijk(2, a, tmp2, tmp3);
      
       /************************************************
        ***     do fft along ky dimension            ***
@@ -3983,7 +3983,7 @@ void c3db::cr_fft3d(double *a)
       //mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, 2*nfft3d, a, tmpy);
       mygdevice.batch_cfft(fft_tag,false,ny,nq2,ny,a,backward_y,tmpy,1);
      
-      c_transpose_ijk(3, a, tmp2, tmp3);
+      c_ctranspose_ijk(3, a, tmp2, tmp3);
      
       /************************************************
        ***     do fft along kx dimension            ***
@@ -4080,7 +4080,7 @@ void c3db::rc_fft3d(double *a)
        ***         Do a transpose of A          ***
        ***      A(ky,nz,ky) <- A(kx,ky,nz)      ***
        ********************************************/
-      c_transpose_jk(a, tmp2, tmp3);
+      c_ctranspose_jk(a, tmp2, tmp3);
      
       /********************************************
        ***     do fft along nz dimension        ***
@@ -4145,7 +4145,7 @@ void c3db::rc_fft3d(double *a)
       //mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, 2*nfft3d, a, tmpx);
       mygdevice.batch_cfft(fft_tag,true,nx,nq1,nx,a,forward_x,tmpx,0);
       
-      c_transpose_ijk(0, a, tmp2, tmp3);
+      c_ctranspose_ijk(0, a, tmp2, tmp3);
      
       /********************************************
        ***     do fft along ny dimension        ***
@@ -4154,7 +4154,7 @@ void c3db::rc_fft3d(double *a)
       //mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, 2*nfft3d, a, tmpy);
       mygdevice.batch_cfft(fft_tag,true,ny,nq2,ny,a,forward_y,tmpy,1);
      
-      c_transpose_ijk(1, a, tmp2, tmp3);
+      c_ctranspose_ijk(1, a, tmp2, tmp3);
      
       /********************************************
        ***     do fft along nz dimension        ***
@@ -4171,10 +4171,10 @@ void c3db::rc_fft3d(double *a)
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose1_jk_start    *
+ *    c3db::c_pctranspose1_jk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, double *tmp1,
+void c3db::c_pctranspose1_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
                                   const int msgtype) 
 {
@@ -4210,10 +4210,10 @@ void c3db::c_ptranspose1_jk_start(const int nffts, const int nb, double *a, doub
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose1_jk_end      *
+ *    c3db::c_pctranspose1_jk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose1_jk_end(const int nffts, const int nb, double *a, double *tmp2, const int request_indx) 
+void c3db::c_pctranspose1_jk_end(const int nffts, const int nb, double *a, double *tmp2, const int request_indx) 
 {
    parall->awaitall(request_indx);
 
@@ -4227,10 +4227,10 @@ void c3db::c_ptranspose1_jk_end(const int nffts, const int nb, double *a, double
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose2_jk_start    *
+ *    c3db::c_pctranspose2_jk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose2_jk_start(const int nffts, const int nb, double *a, double *tmp1,
+void c3db::c_pctranspose2_jk_start(const int nffts, const int nb, double *a, double *tmp1,
                                   double *tmp2, const int request_indx,
                                   const int msgtype) 
 {
@@ -4264,10 +4264,10 @@ void c3db::c_ptranspose2_jk_start(const int nffts, const int nb, double *a, doub
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose2_jk_end      *
+ *    c3db::c_pctranspose2_jk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose2_jk_end(const int nffts, const int nb, double *a, double *tmp2,
+void c3db::c_pctranspose2_jk_end(const int nffts, const int nb, double *a, double *tmp2,
                                 const int request_indx) 
 {
    parall->awaitall(request_indx);
@@ -4282,10 +4282,10 @@ void c3db::c_ptranspose2_jk_end(const int nffts, const int nb, double *a, double
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose_ijk_start    *
+ *    c3db::c_pctranspose_ijk_start    *
  *                                    *
  **************************************/
-void c3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, double *a,
+void c3db::c_pctranspose_ijk_start(const int nffts, const int nb, const int op, double *a,
                                   double *tmp1, double *tmp2,
                                   const int request_indx, const int msgtype) 
 {
@@ -4327,10 +4327,10 @@ void c3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, d
 
 /**************************************
  *                                    *
- *    c3db::c_ptranspose_ijk_end      *
+ *    c3db::c_pctranspose_ijk_end      *
  *                                    *
  **************************************/
-void c3db::c_ptranspose_ijk_end(const int nffts, const int nb, const int op, double *a,
+void c3db::c_pctranspose_ijk_end(const int nffts, const int nb, const int op, double *a,
                                 double *tmp2, const int request_indx) 
 {
    int n2 = p_i2_start[nb][op][np];
@@ -4340,19 +4340,21 @@ void c3db::c_ptranspose_ijk_end(const int nffts, const int nb, const int op, dou
    parall->awaitall(request_indx);
 
    /* unpack a array */
+   //c_bindexcopy_stride(nffts,n2, p_iq_to_i2[nb][op], tmp2, a );
+
    for (auto s=0; s<nffts; ++s)
    {
-      c_bindexcopy_stride(nffts,n2, p_iq_to_i2[nb][op], tmp2 + 2*s, a + s*n2ft3d);
+      c_bindexcopy_stride(nffts,n2, p_iq_to_i2[nb][op], tmp2+2*s, a+s*n2ft3d );
       c_bindexzero(n3, p_iz_to_i2[nb][op], a + s*n2ft3d);
    }
 }
 
 /********************************
  *                              *
- *    c3db::c_ptranspose1_jk    *
+ *    c3db::c_pctranspose1_jk    *
  *                              *
  ********************************/
-void c3db::c_ptranspose1_jk(const int nb, double *a, double *tmp1, double *tmp2) 
+void c3db::c_pctranspose1_jk(const int nb, double *a, double *tmp1, double *tmp2) 
 {
    int msglen;
  
@@ -4394,10 +4396,10 @@ void c3db::c_ptranspose1_jk(const int nb, double *a, double *tmp1, double *tmp2)
 
 /********************************
  *                              *
- *    c3db::c_ptranspose2_jk    *
+ *    c3db::c_pctranspose2_jk    *
  *                              *
  ********************************/
-void c3db::c_ptranspose2_jk(const int nb, double *a, double *tmp1, double *tmp2) 
+void c3db::c_pctranspose2_jk(const int nb, double *a, double *tmp1, double *tmp2) 
 {
    int msglen;
  
@@ -4438,10 +4440,10 @@ void c3db::c_ptranspose2_jk(const int nb, double *a, double *tmp1, double *tmp2)
 
 /********************************
  *                              *
- *    c3db::c_transpose_jk      *
+ *    c3db::c_ctranspose_jk      *
  *                              *
  ********************************/
-void c3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
+void c3db::c_ctranspose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
 
@@ -4478,10 +4480,10 @@ void c3db::c_transpose_jk(double *a, double *tmp1, double *tmp2)
 
 /********************************
  *                              *
- *    c3db::c_ptranspose_ijk    *
+ *    c3db::c_pctranspose_ijk    *
  *                              *
  ********************************/
-void c3db::c_ptranspose_ijk(const int nb, const int op, double *a, double *tmp1, double *tmp2) 
+void c3db::c_pctranspose_ijk(const int nb, const int op, double *a, double *tmp1, double *tmp2) 
 {
    int nnfft3d, msglen;
  
@@ -4525,10 +4527,10 @@ void c3db::c_ptranspose_ijk(const int nb, const int op, double *a, double *tmp1,
 
 /********************************
  *                              *
- *    c3db::c_transpose_ijk     *
+ *    c3db::c_ctranspose_ijk     *
  *                              *
  ********************************/
-void c3db::c_transpose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
+void c3db::c_ctranspose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
 {
    int nnfft3d,msglen;
  
@@ -4822,14 +4824,14 @@ void c3db::r2hr_contract(const double *a, double *ah)
 }
 
 /************************************************
- *           r_tranpose routines block          *
+ *           r_ctranpose routines block          *
  ************************************************/
 /******************************************
  *                                        *
- *      c3db::r_transpose_ijk_init        *
+ *      c3db::r_ctranspose_ijk_init        *
  *                                        *
  ******************************************/
-void c3db::r_transpose_ijk_init() {
+void c3db::r_ctranspose_ijk_init() {
   if ((maptype != 1) && (!initialized_r_transpose)) {
     initialized_r_transpose = true;
 
@@ -5075,10 +5077,10 @@ void c3db::r_transpose_ijk_init() {
 
 /******************************************
  *                                        *
- *      c3db::r_transpose_ijk_end         *
+ *      c3db::r_ctranspose_ijk_end         *
  *                                        *
  ******************************************/
-void c3db::r_transpose_ijk_end() {
+void c3db::r_ctranspose_ijk_end() {
   if (initialized_r_transpose) {
     initialized_r_transpose = false;
     {
@@ -5098,7 +5100,7 @@ void c3db::r_transpose_ijk_end() {
 
 /********************************
  *                              *
- *    c3db::r_transpose_jk      *
+ *    c3db::r_ctranspose_jk      *
  *                              *
  ********************************/
 /**
@@ -5123,7 +5125,7 @@ void c3db::r_transpose_ijk_end() {
  * @author [Your Name]
  * @date [Date]
  */
-void c3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
+void c3db::r_ctranspose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
 
@@ -5157,7 +5159,7 @@ void c3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
 
 /********************************
  *                              *
- *    c3db::r_transpose_ijk     *
+ *    c3db::r_ctranspose_ijk     *
  *                              *
  ********************************/
 /**
@@ -5188,10 +5190,10 @@ void c3db::r_transpose_jk(double *a, double *tmp1, double *tmp2)
  * - The function assumes that memory for 'a', 'tmp1', and 'tmp2' has been allocated appropriately by the caller.
  *
  */
-void c3db::r_transpose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
+void c3db::r_ctranspose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
 {
    if (!initialized_r_transpose)
-      this->r_transpose_ijk_init();
+      this->r_ctranspose_ijk_init();
  
    int nnfft3d, it, proc_from, proc_to;
    int msglen;
@@ -5252,7 +5254,7 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
       double *tmp2 = c3db::c3db_tmp1;
       double *tmp3 = c3db::c3db_tmp2;
       std::memcpy(a,rho,n2ft3d*sizeof(double));
-      this->r_transpose_jk(a,tmp2,tmp3);
+      this->r_ctranspose_jk(a,tmp2,tmp3);
 
       // drho1 gradient
       for (auto q=0; q<nq; ++q)
@@ -5296,7 +5298,7 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
                                          -  9.0*f[i+jp2*nx] +  1.0*f[i+jp3*nx]);
          }
       }
-      r_transpose_jk(drho2,tmp2,tmp3);
+      r_ctranspose_jk(drho2,tmp2,tmp3);
 
       // drho3 gradient
       for (auto q = 0; q < nq; ++q)
@@ -5347,7 +5349,7 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
 
       // drho2 gradient
       std::memcpy(a,rho,nrft3d*sizeof(double));
-      this->r_transpose_ijk(0,a,tmp2,tmp3); //#(i,j,k) --> (j,k,i)
+      this->r_ctranspose_ijk(0,a,tmp2,tmp3); //#(i,j,k) --> (j,k,i)
 
       for (auto q=0; q<nqr2; ++q)
       {
@@ -5366,11 +5368,11 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
                                  + 45.0*f[jp1] - 9.0*f[jp2] +  1.0*f[jp3]);
          }
       }
-      this->r_transpose_ijk(3,drho2,tmp2,tmp3); //#(j,k,i) --> (i,j,k)
+      this->r_ctranspose_ijk(3,drho2,tmp2,tmp3); //#(j,k,i) --> (i,j,k)
 
       // drho3 gradient
       std::memcpy(a,rho,nrft3d*sizeof(double));
-      this->r_transpose_ijk(4,a,tmp2, tmp3);
+      this->r_ctranspose_ijk(4,a,tmp2, tmp3);
       for (auto q=0; q<nqr3; ++q)
       {
          int km3,km2,km1,kp1,kp2,kp3;
@@ -5388,7 +5390,7 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
                                  + 45.0*f[kp1] - 9.0*f[kp2] +  1.0*f[kp3]);
          }
       }
-      this->r_transpose_ijk(5,drho3,tmp2,tmp3);
+      this->r_ctranspose_ijk(5,drho3,tmp2,tmp3);
 
       delete[] tmp3;
       delete[] tmp2;
@@ -5413,7 +5415,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
      double *tmp2 = c3db::c3db_tmp1;
      double *tmp3 = c3db::c3db_tmp2;
      std::memcpy(a, rho, n2ft3d * sizeof(double));
-     this->r_transpose_jk(a, tmp2, tmp3);
+     this->r_ctranspose_jk(a, tmp2, tmp3);
     
      // xx gradient
      for (auto q = 0; q < nq; ++q) {
@@ -5453,7 +5455,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
                                            270.0 * f[i + jp1 * nx] - 27.0 * f[i + jp2 * nx] + 2.0 * f[i + jp3 * nx]);
        }
      }
-     this->r_transpose_jk(gryy, tmp2, tmp3);
+     this->r_ctranspose_jk(gryy, tmp2, tmp3);
     
      // zz gradient
      for (auto q = 0; q < nq; ++q) {
@@ -5503,7 +5505,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
 
     // yy gradient
     std::memcpy(a, rho, nrft3d * sizeof(double));
-    this->r_transpose_ijk(0, a, tmp2, tmp3); //#(i,j,k) --> (j,k,i)
+    this->r_ctranspose_ijk(0, a, tmp2, tmp3); //#(i,j,k) --> (j,k,i)
     for (auto q = 0; q < nqr2; ++q) {
       int im3, im2, im1, ip1, ip2, ip3;
       const double *f = a + q * (ny);
@@ -5520,11 +5522,11 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
                   270.0 * f[ip1] - 27.0 * f[ip2] + 2.0 * f[ip3]);
       }
     }
-    this->r_transpose_ijk(3, gryy, tmp2, tmp3); //#(j,k,i) --> (i,j,k)
+    this->r_ctranspose_ijk(3, gryy, tmp2, tmp3); //#(j,k,i) --> (i,j,k)
 
     // zz gradient
     std::memcpy(a, rho, nrft3d * sizeof(double));
-    this->r_transpose_ijk(4, a, tmp2, tmp3);
+    this->r_ctranspose_ijk(4, a, tmp2, tmp3);
     for (auto q = 0; q < nqr3; ++q) {
       int im3, im2, im1, ip1, ip2, ip3;
       const double *f = a + q * (nz);
@@ -5541,7 +5543,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
                   270.0 * f[ip1] - 27.0 * f[ip2] + 2.0 * f[ip3]);
       }
     }
-    this->r_transpose_ijk(5, grzz, tmp2, tmp3);
+    this->r_ctranspose_ijk(5, grzz, tmp2, tmp3);
 
     delete[] tmp3;
     delete[] tmp2;
@@ -5550,7 +5552,7 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
 }
 
 /************************************************
- *           r_tranpose routines block          *
+ *           r_ctranpose routines block          *
  ************************************************/
 
 
@@ -5676,7 +5678,7 @@ void c3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
       }
 
       // transpose y and z
-      this->c_transpose_jk(c,tmp2,tmp3);
+      this->c_ctranspose_jk(c,tmp2,tmp3);
 
       // Apply the filter along the z axis
       for (auto q=0; q<nq; ++q)
@@ -5687,7 +5689,7 @@ void c3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
       }
 
       // transpose z and y
-      this->c_transpose_jk(b,tmp2,tmp3);
+      this->c_ctranspose_jk(b,tmp2,tmp3);
 
       this->r_dealloc(tmp3);
       this->r_dealloc(tmp2);
@@ -5712,7 +5714,7 @@ void c3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
 
       // tranpose operation #0  (j,k,i) <-- (i,j,k)
       // rotate b(ny,nz,nx) <-- b(nx,ny,nz)
-      this->r_transpose_ijk(0,b,tmp2,tmp3);
+      this->r_ctranspose_ijk(0,b,tmp2,tmp3);
 
       // Apply the filter along the y axis
       for (auto q=0; q<nqr2; ++q)
@@ -5724,7 +5726,7 @@ void c3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
 
       // tranpose operation #1 (k,i,j) <-- (j,k,i)
       // rotate c(nz,nx,ny) <-- c(ny,nz,nx)
-      this->r_transpose_ijk(1,c,tmp2,tmp3);
+      this->r_ctranspose_ijk(1,c,tmp2,tmp3);
 
       // Apply the filter along the z axis
       for (auto q=0; q<nqr3; ++q)
@@ -5736,7 +5738,7 @@ void c3db::rr_periodic_gaussian_filter(const double sigma, const double *a, doub
 
       // tranpose operation #5 (i,j,k) <-- (k,i,j)
       // rotate b(nx,ny,nz) <-- b(nz,nx,ny)
-      this->r_transpose_ijk(5,b,tmp2,tmp3);
+      this->r_ctranspose_ijk(5,b,tmp2,tmp3);
 
       //delete [] tmp3;
       //delete [] tmp2;

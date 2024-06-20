@@ -25,10 +25,12 @@ constexpr std::size_t Alignment = 64;  // Example alignment value
 
 namespace pwdft {
 
-void print_tmp(double *tmp1)
+void print_tmp(int taskid, double *tmp1)
 {     
-   std::cout << "TMP=";
-   for (auto k=0; k<10; ++k)
+   
+   std::cout << "taskid = " << taskid;
+   std::cout << " TMP=";
+   for (auto k=0; k<32; ++k)
       std::cout << tmp1[k] << " " ;
    std::cout << std::endl;
 }  
@@ -1534,12 +1536,6 @@ void PGrid::c_unpack_mid(const int nffts, const int nb, double *tmp1, double *tm
       c_bindexcopy((nida[nb]+nidb2[nb]),packarray[nb], tmp2 + s*n2ft3d, tmp1 + s*n2ft3d);
    // c_bindexcopy(nida[nb]+nidb[nb],packarray[nb],tmp2,tmp1);
    
-      std::cout << "pfftb timestep0: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "timestep0 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
  
    d3db::c_timereverse_start(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
    //for (auto s=0; s<nffts; ++s)
@@ -1547,12 +1543,6 @@ void PGrid::c_unpack_mid(const int nffts, const int nb, double *tmp1, double *tm
   //    d3db::c_timereverse_start(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx, msgtype);
   //    d3db::c_timereverse_end(1, tmp1+s*n2ft3d, zplane_tmp1, zplane_tmp2, request_indx);
   // }
-      std::cout << "pfftb timestep0: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "timestep0 zplane s=" << s << " " ;
-         print_tmp(zplane_tmp1);
-      }
 }
 
 /********************************
@@ -1565,12 +1555,6 @@ void PGrid::c_unpack_end(const int nffts, const int nb, double *tmp1, double *tm
 {
    d3db::c_timereverse_end(nffts, tmp1, zplane_tmp1, zplane_tmp2, request_indx);
 
-      std::cout << "pfftb timestep1: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "timestep1 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
 }
 
 /********************************
@@ -1671,28 +1655,9 @@ void PGrid::pfftbz(const int nffts, const int nb, double *tmp1, double *tmp2, in
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
-
-      std::cout << std::endl;
-      std::cout << "      cfftz step3 A: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << " good step3A s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
-
-
-         std::cout << " good step3A a=" << tmp1 << std::endl;
       d3db::mygdevice.batch_cfftz_tmpz_zero(d3db::fft_tag,false, nz, nq3,nffts, n2ft3d, tmp1, d3db::tmpz, zero_row3[nb]);
       //d3db::mygdevice.batch_cfftz_tmpz(d3db::fft_tag, false, nz, nffts*nq3, n2ft3d, tmp1, d3db::tmpz);
 
-      std::cout << std::endl;
-      std::cout << "      cfftz step3 B: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "      step3B s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
-     
       // GOOD
       d3db::c_ptranspose_ijk_start(nffts, nb, 2, tmp1, tmp2, tmp1, request_indx, 45);
       // BAD 
@@ -1795,33 +1760,18 @@ void PGrid::pfftby(const int nffts, const int nb, double *tmp1, double *tmp2, in
    else 
    {
       d3db::c_ptranspose_ijk_end(nffts, nb, 2, tmp2, tmp1, request_indx);
-
-      std::cout << std::endl;
-      std::cout << "      cffty step4 A: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "      step4A s=" << s << " " ;
-         print_tmp(tmp2+s*n2ft3d);
-      }
-
      
       /********************************************
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-      //d3db::mygdevice.batch_cffty_tmpy_zero(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy,zero_row2[nb]);
-      d3db::mygdevice.batch_cffty_tmpy(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy);
+      d3db::mygdevice.batch_cffty_tmpy_zero(d3db::fft_tag,false,ny,nq2,nffts,n2ft3d,tmp2,d3db::tmpy,zero_row2[nb]);
+      //d3db::mygdevice.batch_cffty_tmpy(d3db::fft_tag,false,ny,nffts*nq2,n2ft3d,tmp2,d3db::tmpy);
 
-      std::cout << std::endl;
-      std::cout << "      cffty step4 B: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "      step4B s=" << s << " " ;
-         print_tmp(tmp2+s*n2ft3d);
-      }
      
       d3db::c_ptranspose_ijk_start(nffts, nb, 3, tmp2, tmp1, tmp2, request_indx, 46);
-      // d3db::c_ptranspose_ijk(nb,3,tmp2,tmp1,tmp2);
+      //for (s=0; s<nffts; ++s)
+      //   d3db::c_ptranspose_ijk(nb,3,tmp2+s*n2ft3d,tmp1+s*n2ft3d,tmp2+s*n2ft3d);
    }
 }
 
@@ -1854,41 +1804,18 @@ void PGrid::pfftbx(const int nffts, const int nb, double *tmp1, double *tmp2, in
    {
       d3db::c_ptranspose_ijk_end(nffts,nb, 3, tmp1, tmp2, request_indx);
 
-      std::cout << std::endl;
-      std::cout <<    "          pfftb step5A: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "   step5a s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
-
      
       /************************************************
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
-      //d3db::mygdevice.batch_rfftx_tmpx(d3db::fft_tag,false, nx, nffts*nq1, n2ft3d, tmp1, d3db::tmpx);
-      for (auto s=0; s<nffts; ++s)
-         d3db::mygdevice.batch_rfftx_tmpx(d3db::fft_tag,false, nx, nq1, n2ft3d, tmp1+s*n2ft3d, d3db::tmpx);
+      d3db::mygdevice.batch_rfftx_tmpx(d3db::fft_tag,false, nx, nffts*nq1, n2ft3d, tmp1, d3db::tmpx);
+      //for (auto s=0; s<nffts; ++s)
+      //   d3db::mygdevice.batch_rfftx_tmpx(d3db::fft_tag,false, nx, nq1, n2ft3d, tmp1+s*n2ft3d, d3db::tmpx);
 
-      std::cout << std::endl;
-      std::cout <<    "          pfftb step5B: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "   step5B s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
 
       for (auto s=0; s<nffts; ++s)
       d3db::zeroend_fftb(nx, nq1, 1, 1, tmp1+s*n2ft3d);
-
-      std::cout << std::endl;
-      std::cout <<    "          pfftb step5C: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "   step5C s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
 
       if (n2ft3d_map < n2ft3d)
          for (auto s=0; s<nffts; ++s)
@@ -1907,74 +1834,35 @@ void PGrid::pfftb_step(const int step, const int nffts, const int nb, double *a,
    if (step == 0) 
    {
       // parall->astart(request_indx,parall->np_i());
+      std::memset(tmp1,0,nffts*n2ft3d*sizeof(double));
       // unpack start, tmp1-->tmp1
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "pfftb step0, nffts=" << nffts <<  std::endl;
       for (auto s=0; s<nffts; ++s)
          std::memcpy(tmp1 + s*n2ft3d, a + s*2*(nida[nb]+nidb[nb]), 2*(nida[nb]+nidb[nb])*sizeof(double));
 
-      std::cout << "done memcopy" << std::endl;
       this->c_unpack_start(nffts, nb, tmp1, tmp2, request_indx, 47);
 
-      std::cout << "pfftb step0: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "step0 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
    } 
    else if (step == 1) 
    {
       // unpack mid
       this->c_unpack_mid(nffts, nb, tmp1, tmp2, request_indx, 48);
 
-      std::cout << std::endl;
-      std::cout << " pfftb step1: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << " step1 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
    } 
    else if (step == 2) 
    {
       // unpack end; mem-->dev,  out=tmp1
       this->c_unpack_end(nffts, nb, tmp1, tmp2, request_indx);
-
-      std::cout << std::endl;
-      std::cout << "    pfftb step2: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "    step2 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
    } 
    else if (step == 3) 
    {
       // pfftbz dev-->dev->mem,  tmp1->tmp1
       this->pfftbz(nffts, nb, tmp1, tmp2, request_indx);
-      std::cout << std::endl;
-      std::cout << " bad  pfftb step3: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "  bad step3 s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
    } 
    else if (step == 4) 
    {
       // pfftby mem->dev-->dev->mem
       // in=tmp1, tmp2->tmp1, tmp1=in , tmp2=tmp
       pfftby(nffts, nb, tmp1, tmp2, request_indx);
-
-      std::cout << std::endl;
-      std::cout <<    "        pfftb step4: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "        step4 s=" << s << " " ;
-         print_tmp(tmp2+s*n2ft3d);
-      }
    } 
    else if (step == 5) 
    {
@@ -1982,13 +1870,6 @@ void PGrid::pfftb_step(const int step, const int nffts, const int nb, double *a,
       pfftbx(nffts, nb, tmp1, tmp2, request_indx);
       // parall->aend(request_indx);
 
-      std::cout << std::endl;
-      std::cout <<    "          pfftb step5: " << std::endl;
-      for (auto s=0; s<nffts; ++s)
-      {
-         std::cout << "          s=" << s << " " ;
-         print_tmp(tmp1+s*n2ft3d);
-      }
    }
 }
 

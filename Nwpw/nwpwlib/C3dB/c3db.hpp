@@ -161,8 +161,8 @@ public:
    void cshift_fftf(const int, const int, const int, const int, double *);
    void zeroend_fftb(const int, const int, const int, const int, double *);
  
-   void c_transpose_jk(double *, double *, double *);
-   void c_transpose_ijk(const int, double *, double *, double *);
+   void c_ctranspose_jk(double *, double *, double *);
+   void c_ctranspose_ijk(const int, double *, double *, double *);
  
  
    void c_setpw(const int *, const double *, double *);
@@ -177,28 +177,28 @@ public:
  
  
    /* ptranspose operators */
-   void c_ptranspose_jk_init(const int, bool *);
-   void c_ptranspose_ijk_init(const int, bool *, bool *);
-   void c_ptranspose1_jk(const int, double *, double *, double *);
-   void c_ptranspose2_jk(const int, double *, double *, double *);
-   void c_ptranspose_ijk(const int, const int, double *, double *, double *);
+   void c_pctranspose_jk_init(const int, bool *);
+   void c_pctranspose_ijk_init(const int, bool *, bool *);
+   void c_pctranspose1_jk(const int, double *, double *, double *);
+   void c_pctranspose2_jk(const int, double *, double *, double *);
+   void c_pctranspose_ijk(const int, const int, double *, double *, double *);
  
-   void c_ptranspose1_jk_start(const int, const int, double *, double *, double *, const int, const int);
-   void c_ptranspose2_jk_start(const int, const int, double *, double *, double *, const int, const int);
-   void c_ptranspose_ijk_start(const int, const int, const int, double *, double *, double *, const int, const int);
-   void c_ptranspose1_jk_end(const int, const int, double *, double *, const int);
-   void c_ptranspose2_jk_end(const int, const int, double *, double *, const int);
-   void c_ptranspose_ijk_end(const int, const int, const int, double *, double *, const int);
+   void c_pctranspose1_jk_start(const int, const int, double *, double *, double *, const int, const int);
+   void c_pctranspose2_jk_start(const int, const int, double *, double *, double *, const int, const int);
+   void c_pctranspose_ijk_start(const int, const int, const int, double *, double *, double *, const int, const int);
+   void c_pctranspose1_jk_end(const int, const int, double *, double *, const int);
+   void c_pctranspose2_jk_end(const int, const int, double *, double *, const int);
+   void c_pctranspose_ijk_end(const int, const int, const int, double *, double *, const int);
  
    /* gcube io */
    std::string r_formatwrite_reverse(double *);
    std::string r_formatwrite(double *);
  
    /* real-space transposes and gradients */
-   void r_transpose_ijk_init();
-   void r_transpose_ijk_end();
-   void r_transpose_jk(double *, double *, double *);
-   void r_transpose_ijk(const int, double *, double *, double *);
+   void r_ctranspose_ijk_init();
+   void r_ctranspose_ijk_end();
+   void r_ctranspose_jk(double *, double *, double *);
+   void r_ctranspose_ijk(const int, double *, double *, double *);
    void rrrr_periodic_gradient(const double *, double *, double *, double *);
    void rrrr_periodic_laplacian(const double *, double *, double *, double *);
  
