@@ -129,6 +129,16 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
 void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
   if (use_lda) {
     v_exc(ispin, mycneb->nfft3d, dn, xcp, xce, xtmp);
+    //std::cout << "dn=" << dn[0] << " " << dn[1] << std::endl;
+    //std::cout << "xcp=" << xcp[0] << " " << xcp[1] << std::endl;
+    //double sumall = 0.0;
+    //for (auto i=0; i<mycneb->nfft3d; ++i)
+   // {
+   //    std::cout << "i=" << i << " dnall=" << dn[i] << " xcp=" << xcp[i] << std::endl;
+   //    sumall += dn[i];
+   // }
+   // std::cout << "sumall=" << sumall << std::endl;
+
   } else if (use_gga) {
     v_cwexc(gga, mycneb, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn,
             fdn);

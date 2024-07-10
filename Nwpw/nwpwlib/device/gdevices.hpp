@@ -324,8 +324,12 @@ public:
     **************************************/
    void CN1_zgemm(int npack1_max, int npack, int ne, double *alpha, double *host_a,
                   double *host_b, double *beta, double *host_c) {
+     //std::cout << "CN1_zgemm: ne=" << ne << " npack=" << npack << " npack1_max=" << npack1_max << " alpha=" << alpha[0] << " " << alpha[1]  << " beta=" << beta[0] << " " << beta[1] << std::endl;
      ZGEMM_PWDFT((char *)"C", (char *)"N", ne, ne, npack, alpha, host_a, npack1_max,
                  host_b, npack1_max, beta, host_c, ne);
+     //std::cout << "hosta=" << host_a[0] << " " << host_a[1] << std::endl;
+     //std::cout << "hostb=" << host_b[0] << " " << host_b[1] << std::endl;
+     //std::cout << "hostc=" << host_c[0] << " " << host_c[1] << std::endl;
    }  
 
    /**************************************
@@ -1056,7 +1060,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
     *              batch_cfft            *
     *                                    *
     **************************************/
-   void batch_cfft(const bool forward, const int nz, const int nq, const int nfft3d, double *a, const double *twiddle, const double *tmpz)
+   void batch_cfft(const bool forward, const int nz, const int nq, const int nffts, const int nfft3d, double *a, const double *twiddle, const double *tmpz)
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
@@ -1082,7 +1086,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
     *          batch_cfft_zero           *
     *                                    *
     **************************************/
-   void batch_cfft_zero(const bool forward, int nz, int nq, int nfft3d, double *a, const double *twiddle, const double *tmpz, const bool *zero) 
+   void batch_cfft_zero(const bool forward, int nz, int nq, int nffts, int nfft3d, double *a, const double *twiddle, const double *tmpz, const bool *zero) 
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary

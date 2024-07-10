@@ -2518,6 +2518,7 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
  */
 void d3db::c_write(const int iunit, double *a, const int jcol) 
 {
+ parall->Barrier();
    int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
@@ -2649,6 +2650,7 @@ void d3db::c_write(const int iunit, double *a, const int jcol)
  ********************************/
 void d3db::c_write_buffer(const int iunit, double *a, const int jcol)
 {
+ parall->Barrier();
    int index, ii, jj, p_from, p_here;
    int taskid = parall->taskid();
    int taskid_j = parall->taskid_j();
@@ -3891,8 +3893,7 @@ void d3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, d
                                   double *tmp1, double *tmp2,
                                   const int request_indx, const int msgtype) 
 {
-   int nnfft3d, it, proc_from, proc_to;
-   int msglen;
+   int nnfft3d ;
  
    int n1 = p_i1_start[nb][op][np];
  
@@ -3903,35 +3904,42 @@ void d3db::c_ptranspose_ijk_start(const int nffts, const int nb, const int op, d
       c_aindexcopy_stride(nffts,n1, p_iq_to_i1[nb][op], a + s*n2ft3d, tmp1 + 2*s);
    }
 
+   parall->Barrier();
+   
+   parall->Barrier();
+
 
    /* it = 0, transpose data on same thread  - tmp2->tmp1*/
-   msglen = nffts*2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
+   int msglen0 = nffts*2*(p_i2_start[nb][op][1] - p_i2_start[nb][op][0]);
    // int one=1;
    // DCOPY_PWDFT(msglen,&(tmp1[2*p_i1_start[nb][op][0]]),one,&(tmp2[2*p_i2_start[nb][op][0]]),one);
    // std::memcpy(&(tmp2[2*p_i2_start[nb][op][0]]),&(tmp1[2*p_i1_start[nb][op][0]]),msglen*sizeof(double));
    std::memcpy(tmp2 + 2*nffts*p_i2_start[nb][op][0],
-               tmp1 + 2*nffts*p_i1_start[nb][op][0], msglen*sizeof(double));
+               tmp1 + 2*nffts*p_i1_start[nb][op][0], msglen0*sizeof(double));
+
+   parall->Barrier();
  
    /* receive packed array data */
-   for (it=1; it<np; ++it) 
+   for (int it=1; it<np; ++it) 
    {
       /* synchronous receive of tmp */
-      proc_from = (taskid - it + np) % np;
-      msglen = nffts*2*(p_i2_start[nb][op][it + 1] - p_i2_start[nb][op][it]);
+      int proc_from = (taskid - it + np) % np;
+      int msglen = nffts*2*(p_i2_start[nb][op][it + 1] - p_i2_start[nb][op][it]);
+      int indx = nffts*2*(p_i2_start[nb][op][it]);
       if (msglen > 0)
-         parall->adreceive(request_indx, msgtype, proc_from, msglen,
-                           tmp2 + 2 * nffts * p_i2_start[nb][op][it]);
+         parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2 + indx);
       // parall->adreceive(request_indx,msgtype,proc_from,msglen,&tmp2[2*p_i2_start[nb][op][it]]);
    }
-   for (it=1; it<np; ++it) 
+   for (int it=1; it<np; ++it) 
    {
-      proc_to = (taskid + it) % np;
-      msglen = nffts*2*(p_i1_start[nb][op][it + 1] - p_i1_start[nb][op][it]);
+      int proc_to = (taskid + it) % np;
+      int msglen = nffts*2*(p_i1_start[nb][op][it + 1] - p_i1_start[nb][op][it]);
+      int indx = nffts*2*(p_i1_start[nb][op][it]);
       if (msglen > 0)
-         parall->adsend(request_indx, msgtype, proc_to, msglen,
-                        tmp1 + 2 * nffts * p_i1_start[nb][op][it]);
+         parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1 + indx);
       // parall->adsend(request_indx,msgtype,proc_to,msglen,&tmp1[2*p_i1_start[nb][op][it]]);
    }
+   parall->Barrier();
 }
 
 /**************************************
@@ -4533,7 +4541,7 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1_plane, d
    msglen = nffts*2*(t_i2_start[1] - t_i2_start[0]);
    // int one=1;
    // DCOPY_PWDFT(msglen,&(tmp1[2*t_i1_start[0]]),one,&(tmp2[2*t_i2_start[0]]),one);
-   std::memcpy(tmp2_plane + 2*t_i2_start[0], tmp1_plane + 2*t_i1_start[0], msglen*sizeof(double));
+   std::memcpy(tmp2_plane + 2*nffts*t_i2_start[0], tmp1_plane + 2*nffts*t_i1_start[0], msglen*sizeof(double));
  
    /* receive packed array data */
    for (it = 1; it < np; ++it) 
@@ -4542,14 +4550,14 @@ void d3db::c_timereverse_start(const int nffts, double *a, double *tmp1_plane, d
       proc_from = (taskid - it + np) % np;
       msglen = nffts*2*(t_i2_start[it + 1] - t_i2_start[it]);
       if (msglen > 0)
-         parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2_plane + 2 * nffts * t_i2_start[it]);
+         parall->adreceive(request_indx, msgtype, proc_from, msglen, tmp2_plane + 2 * nffts*t_i2_start[it]);
    }
    for (it = 1; it < np; ++it) 
    {
       proc_to = (taskid + it) % np;
       msglen = nffts*2*(t_i1_start[it + 1] - t_i1_start[it]);
       if (msglen > 0)
-         parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1_plane + 2 * nffts * t_i1_start[it]);
+         parall->adsend(request_indx, msgtype, proc_to, msglen, tmp1_plane + 2 * nffts*t_i1_start[it]);
    }
 }
 

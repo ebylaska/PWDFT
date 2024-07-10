@@ -1513,7 +1513,7 @@ void PGrid::c_unpack_start(const int nffts, const int nb, double *tmp1, double *
    if (balanced)
    {
       for (auto s=0; s<nffts; ++s)
-         mybalance->c_unbalance_start(nffts, nb, tmp1+s*n2ft3d, request_indx, msgtype);
+         mybalance->c_unbalance_start(1, 1, tmp1+s*n2ft3d, request_indx, msgtype);
    }
 }
 
@@ -1839,33 +1839,39 @@ void PGrid::pfftb_step(const int step, const int nffts, const int nb, double *a,
       for (auto s=0; s<nffts; ++s)
          std::memcpy(tmp1 + s*n2ft3d, a + s*2*(nida[nb]+nidb[nb]), 2*(nida[nb]+nidb[nb])*sizeof(double));
 
+      d3db:parall->comm_Barrier(1);
       this->c_unpack_start(nffts, nb, tmp1, tmp2, request_indx, 47);
 
    } 
    else if (step == 1) 
    {
+      parall->comm_Barrier(1);
       // unpack mid
       this->c_unpack_mid(nffts, nb, tmp1, tmp2, request_indx, 48);
 
    } 
    else if (step == 2) 
    {
+      parall->comm_Barrier(1);
       // unpack end; mem-->dev,  out=tmp1
       this->c_unpack_end(nffts, nb, tmp1, tmp2, request_indx);
    } 
    else if (step == 3) 
    {
+      parall->comm_Barrier(1);
       // pfftbz dev-->dev->mem,  tmp1->tmp1
       this->pfftbz(nffts, nb, tmp1, tmp2, request_indx);
    } 
    else if (step == 4) 
    {
+      parall->comm_Barrier(1);
       // pfftby mem->dev-->dev->mem
       // in=tmp1, tmp2->tmp1, tmp1=in , tmp2=tmp
       pfftby(nffts, nb, tmp1, tmp2, request_indx);
    } 
    else if (step == 5) 
    {
+      parall->comm_Barrier(1);
       // pfftbx mem->dev->dev->mem
       pfftbx(nffts, nb, tmp1, tmp2, request_indx);
       // parall->aend(request_indx);
@@ -2907,22 +2913,26 @@ void PGrid::pfftf_step(const int step, const int nffts,  const int nb, double *a
 {
    if (step==0)
    {
+      parall->comm_Barrier(1);
       // pfftfx mem-->device, in=a out=tmp2
       pfftfx(nffts, nb, a, tmp1, tmp2, request_indx);
    }
    else if (step==1)
    {
+      parall->comm_Barrier(1);
       // pfftfy device, in=tmp1
       pfftfy(nffts, nb, tmp1, tmp2, request_indx);
    }
    else if (step==2)
    {
+      parall->comm_Barrier(1);
       // pfftfz device-->mem
       pfftfz(nffts, nb, tmp1, tmp2, request_indx);
       this->c_pack_start(nffts, nb, tmp2, tmp1, request_indx, 47);
    }
    else if (step==3)
    {
+      parall->comm_Barrier(1);
       // pfftf final
       this->c_pack_end(nffts, nb, tmp2, request_indx);
    }
@@ -3567,7 +3577,7 @@ void PGrid::c_pack_start(const int nffts, const int nb, double *a, double *tmp1,
  
    if (balanced)
       for (auto s=0; s<nffts; ++s)
-         mybalance->c_balance_start(nffts, nb, a+s*n2ft3d, request_indx, msgtype);
+         mybalance->c_balance_start(1, nb, a+s*n2ft3d, request_indx, msgtype);
  
    return;
 }
@@ -3581,7 +3591,7 @@ void PGrid::c_pack_end(const int nffts, const int nb, double *tmp1, const int re
 {
    if (balanced)
       for (auto s=0; s<nffts; ++s)
-         mybalance->c_balance_end(nffts, nb, tmp1+s*n2ft3d, request_indx);
+         mybalance->c_balance_end(1, nb, tmp1+s*n2ft3d, request_indx);
 
    return;
 }
@@ -4265,9 +4275,6 @@ void PGrid::rrr_solve_Helmholtz(const int nb, const double *k2, const double *b,
     // alpha = -1.0e-6;
     alpha0 = delta / rr_dot(R, HR);
     alpha = 1.0e-5 * alpha0;
-
-    std::cout << "it=" << it << " delta=" << delta << " alpha0=" << alpha0
-              << " alpha=" << alpha << std::endl;
 
     rr_daxpy(alpha, R, w);
     ++it;

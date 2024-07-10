@@ -180,6 +180,8 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
 
    // total energy calculation 
    mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
+   //for (auto i=0; i<22*22; ++i)
+   //std::cout << "hml=" << i << " "<< hml[2*i]<< " " << hml[2*i+1] <<  std::endl;
 
    mygrid->w_scal(-1.0, hml);
    eorbit = mygrid->w_trace(hml);

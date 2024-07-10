@@ -476,7 +476,7 @@ void Cneb::g_write(const int iunit, double *psi)
          //   c_write_buffer(iunit,tmp2,pj,pk);
          //else
 
-         c_write(iunit,tmp2,pj,pk);
+         c3db::c_write(iunit,tmp2,pj,pk);
       }
    }
 
@@ -995,6 +995,9 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
          for (auto ms=0; ms<ispin; ++ms)
          {
             auto n = ne[ms];
+            //std::cout << "into CN1_zgemm" << std::endl;
+            //std::cout << "psi1="<< psi1[0] << " " << psi1[1] << std::endl;
+            //std::cout << "psi2="<< psi2[0] << " " << psi2[1] << std::endl;
             c3db::mygdevice.CN1_zgemm(npack1_max,npack1,n,rone,psi1+shift0,psi2+shift0,rzero,hml+mshift0);
            
             for (auto k=0; k<n; ++k)
@@ -1011,6 +1014,7 @@ void Cneb::ggw_sym_Multiply(double *psi1, double *psi2, double *hml)
          }
       }
       c3db::parall->Vector_SumAll(1,nbrillq*2*(ne[0]*ne[0]+ne[1]*ne[1]),hml);
+            //std::cout << "hml="<< hml[0] << " " << hml[1] << std::endl;
    }
 }
 

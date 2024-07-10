@@ -847,7 +847,7 @@ static int convert_psp_type(char *test) {
  */
 static int vpp_get_psp_type(Parallel *myparall, char *pspname) {
    int psp_type;
-   char atom[2];
+   char atom[3];
  
    if (myparall->is_master()) 
    {

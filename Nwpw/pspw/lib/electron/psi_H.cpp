@@ -50,6 +50,7 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    int ms = 0;
    int n1 = mygrid->neq[0];
    int n2 = mygrid->neq[0] + mygrid->neq[1];
+   int nffts_pipeline = mygrid->PGrid::nffts_max;
  
    bool done = false;
  
@@ -59,7 +60,7 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
  
    /* allocate temporary memory */
    double *vall = mygrid->r_alloc();
-   double *vpsi = mygrid->r_alloc();
+   double *vpsi = mygrid->r_nalloc(nffts_pipeline);
    double *tmp = mygrid->r_alloc();
  
    /* apply k-space operators */
@@ -114,20 +115,36 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
               ms = 1;
               mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
            }
+
+           // Assuming n2, indx1, and nffts_pipeline are defined
+           //int idum = std::min(n2 - indx1, nffts_pipeline);
+           int idum = 1;
            
-           mygrid->rrr_Mul(tmp,psi_r+indx1n,vpsi);
+           for (auto i=0; i<idum; ++i)
+              mygrid->rrr_Mul(tmp,psi_r+indx1n+i*shift2,vpsi+i*shift2);
+
            
-           mygrid->rc_pfft3f_queuein(1,1,vpsi);
-           indx1n += shift2;
-           ++indx1;
+           mygrid->rc_pfft3f_queuein(1,idum,vpsi);
+           //indx1n += shift2;
+           indx1n += idum*shift2;
+           indx1  += idum;
         }
         
         if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2)) 
         {
-           mygrid->rc_pfft3f_queueout(1,1,vpsi);
-           mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx2n);
-           indx2n += shift1;
-           ++indx2;
+           // Assuming n2, indx2, and nffts_pipeline are defined
+           //int jdum = std::min(n2 - indx2, nffts_pipeline);
+           int jdum = 1;
+
+           mygrid->rc_pfft3f_queueout(1,jdum,vpsi);
+
+           for (auto j=0; j<jdum; ++j)
+              mygrid->cc_pack_daxpy(1,(-scal1),vpsi+j*shift1,Hpsi+indx2n+j*shift1);
+
+           //indx2n += shift1;
+           //++indx2;
+           indx2n  += jdum*shift1;
+           indx2 += jdum;
         }
         done = ((indx1 >= n2) && (indx2 >= n2));
      }

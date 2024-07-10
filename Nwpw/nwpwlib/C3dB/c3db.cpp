@@ -1398,6 +1398,39 @@ void c3db::r_abs(double *ptr2)
 
 /********************************
  *                              *
+ *          c3db::cr_sqr        *
+ *                              *
+ ********************************/
+void c3db::cr_sqr(const double *ptr1, double *ptr2)
+{
+   int i;
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+       {
+         int i0r = 2*i;  int i0i = 2*i+1;
+         ptr2[i] = ptr1[i0r]*ptr1[i0r] + ptr1[i0i]*ptr1[i0i];
+      }
+   if (nfft3d_map < 5)
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {
+      int i0r  = 2*i;     int i0i = 2*i+1;
+      int i0r1 = 2*(i+1); int i0i1 = 2*(i+1)+1;
+      int i0r2 = 2*(i+2); int i0i2 = 2*(i+2)+1;
+      int i0r3 = 2*(i+3); int i0i3 = 2*(i+3)+1;
+      int i0r4 = 2*(i+4); int i0i4 = 2*(i+4)+1;
+      ptr2[i]   = ptr1[i0r]*ptr1[i0r]   + ptr1[i0i] *ptr1[i0i];
+      ptr2[i+1] = ptr1[i0r1]*ptr1[i0r1] + ptr1[i0i1]*ptr1[i0i1];
+      ptr2[i+2] = ptr1[i0r2]*ptr1[i0r2] + ptr1[i0i2]*ptr1[i0i2];
+      ptr2[i+3] = ptr1[i0r3]*ptr1[i0r3] + ptr1[i0i3]*ptr1[i0i3];
+      ptr2[i+4] = ptr1[i0r4]*ptr1[i0r4] + ptr1[i0i4]*ptr1[i0i4];
+
+   }
+}
+
+/********************************
+ *                              *
  *          c3db::r_sqr         *
  *                              *
  ********************************/
@@ -3879,8 +3912,8 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxz;
       }
      
-      //mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nn, 2*nfft3d, tmp2, tmpz);
-      mygdevice.batch_cfft(fft_tag,false,nz,nn,nz,tmp2,backward_z,tmpz,2);
+      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nn, 2*nfft3d, tmp2, tmpz);
+      //mygdevice.batch_cfft(fft_tag,false,nz,nn,nz,tmp2,backward_z,tmpz,2);
      
       indx0 = 0;
       nn = 0;
@@ -3934,8 +3967,8 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxy;
       }
      
-      //mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nn, 2*nfft3d, tmp2, tmpy);
-      mygdevice.batch_cfft(fft_tag,false,ny,nn,ny,tmp2,backward_y,tmpy,1);
+      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nn, 2*nfft3d, tmp2, tmpy);
+     // mygdevice.batch_cfft(fft_tag,false,ny,nn,ny,tmp2,backward_y,tmpy,1);
      
       indx0 = 0;
       nn = 0;
@@ -3958,8 +3991,8 @@ void c3db::cr_fft3d(double *a)
          indx0 += nxy;
       }
 
-      //mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, ny * nq, 2*nfft3d, a, tmpx);
-      mygdevice.batch_cfft(fft_tag,false,nx,ny*nq,nx,a,backward_z,tmpx,0);
+      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, ny * nq, 2*nfft3d, a, tmpx);
+      //mygdevice.batch_cfft(fft_tag,false,nx,ny*nq,nx,a,backward_z,tmpx,0);
    }
 
    /*************************
@@ -3971,8 +4004,8 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along kz dimension            ***
        ***   A(nz,kx,ky) <- fft1d^(-1)[A(kz,kx,ky)] ***
        ************************************************/
-      //mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, 2*nfft3d, a, tmpz);
-      mygdevice.batch_cfft(fft_tag,false,nz,nq3,nz,a,backward_z,tmpz,2);
+      mygdevice.batch_cfftz_tmpz(fft_tag,false, nz, nq3, 2*nfft3d, a, tmpz);
+      //mygdevice.batch_cfft(fft_tag,false,nz,nq3,nz,a,backward_z,tmpz,2);
       
       c_ctranspose_ijk(2, a, tmp2, tmp3);
      
@@ -3980,8 +4013,8 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along ky dimension            ***
        ***   A(ny,nz,kx) <- fft1d^(-1)[A(ky,nz,kx)] ***
        ************************************************/
-      //mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, 2*nfft3d, a, tmpy);
-      mygdevice.batch_cfft(fft_tag,false,ny,nq2,ny,a,backward_y,tmpy,1);
+      mygdevice.batch_cffty_tmpy(fft_tag,false, ny, nq2, 2*nfft3d, a, tmpy);
+      //mygdevice.batch_cfft(fft_tag,false,ny,nq2,ny,a,backward_y,tmpy,1);
      
       c_ctranspose_ijk(3, a, tmp2, tmp3);
      
@@ -3989,8 +4022,8 @@ void c3db::cr_fft3d(double *a)
        ***     do fft along kx dimension            ***
        ***   A(nx,ny,nz) <- fft1d^(-1)[A(kx,ny,nz)] ***
        ************************************************/
-      //mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, 2*nfft3d, a, tmpx);
-      mygdevice.batch_cfft(fft_tag,false,nx,nq1,nx,a,backward_x,tmpx,0);
+      mygdevice.batch_cfftx_tmpx(fft_tag,false, nx, nq1, 2*nfft3d, a, tmpx);
+      //mygdevice.batch_cfft(fft_tag,false,nx,nq1,nx,a,backward_x,tmpx,0);
      
    }
  
@@ -4023,8 +4056,8 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-      //mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, ny*nq, 2*nfft3d, a, tmpx);
-      mygdevice.batch_cfft(fft_tag,true,nx,ny*nq,nx,a,forward_x,tmpx,0);
+      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, ny*nq, 2*nfft3d, a, tmpx);
+      //mygdevice.batch_cfft(fft_tag,true,nx,ny*nq,nx,a,forward_x,tmpx,0);
 
       /********************************************
        ***     do fft along ny dimension        ***
@@ -4051,8 +4084,8 @@ void c3db::rc_fft3d(double *a)
          indx0 += nxy;
       }
      
-      //mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nn, 2*nfft3d, tmp2, tmpy);
-      mygdevice.batch_cfft(fft_tag,true,ny,nn,ny,tmp2,forward_y,tmpy,1);
+      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nn, 2*nfft3d, tmp2, tmpy);
+      //mygdevice.batch_cfft(fft_tag,true,ny,nn,ny,tmp2,forward_y,tmpy,1);
      
       indx0 = 0;
       nn = 0;
@@ -4107,8 +4140,8 @@ void c3db::rc_fft3d(double *a)
          indx0 += nxz;
       }
      
-      //mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nn, 2*n2ft3d, tmp2, tmpz);
-      mygdevice.batch_cfft(fft_tag,true,nz,nn,nz,tmp2,forward_z,tmpz,2);
+      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nn, 2*n2ft3d, tmp2, tmpz);
+      //mygdevice.batch_cfft(fft_tag,true,nz,nn,nz,tmp2,forward_z,tmpz,2);
      
       indx0 = 0;
       nn = 0;
@@ -4142,8 +4175,8 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nx dimension        ***
        ***   A(kx,ny,nz) <- fft1d[A(nx,ny,nz)]  ***
        ********************************************/
-      //mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, 2*nfft3d, a, tmpx);
-      mygdevice.batch_cfft(fft_tag,true,nx,nq1,nx,a,forward_x,tmpx,0);
+      mygdevice.batch_cfftx_tmpx(fft_tag,true, nx, nq1, 2*nfft3d, a, tmpx);
+      //mygdevice.batch_cfft(fft_tag,true,nx,nq1,nx,a,forward_x,tmpx,0);
       
       c_ctranspose_ijk(0, a, tmp2, tmp3);
      
@@ -4151,8 +4184,8 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along ny dimension        ***
        ***   A(ky,nz,kx) <- fft1d[A(ny,nz,kx)]  ***
        ********************************************/
-      //mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, 2*nfft3d, a, tmpy);
-      mygdevice.batch_cfft(fft_tag,true,ny,nq2,ny,a,forward_y,tmpy,1);
+      mygdevice.batch_cffty_tmpy(fft_tag,true, ny, nq2, 2*nfft3d, a, tmpy);
+      //mygdevice.batch_cfft(fft_tag,true,ny,nq2,ny,a,forward_y,tmpy,1);
      
       c_ctranspose_ijk(1, a, tmp2, tmp3);
      
@@ -4160,8 +4193,8 @@ void c3db::rc_fft3d(double *a)
        ***     do fft along nz dimension        ***
        ***   A(kz,kx,ky) <- fft1d[A(nz,kx,ky)]  ***
        ********************************************/
-      //mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nq3, 2*n2ft3d, a, tmpz);
-      mygdevice.batch_cfft(fft_tag,true,nz,nq3,nz,a,forward_z,tmpz,2);
+      mygdevice.batch_cfftz_tmpz(fft_tag,true, nz, nq3, 2*n2ft3d, a, tmpz);
+      //mygdevice.batch_cfft(fft_tag,true,nz,nq3,nz,a,forward_z,tmpz,2);
    }
  
    delete[] tmp3;
@@ -4527,7 +4560,7 @@ void c3db::c_pctranspose_ijk(const int nb, const int op, double *a, double *tmp1
 
 /********************************
  *                              *
- *    c3db::c_ctranspose_ijk     *
+ *    c3db::c_ctranspose_ijk    *
  *                              *
  ********************************/
 void c3db::c_ctranspose_ijk(const int op, double *a, double *tmp1, double *tmp2) 

@@ -190,6 +190,10 @@ public:
  
    /* real-space Gaussian filters */
    void rr_periodic_gaussian_filter(const double, const double *, double *);
+   void transpose_check()  { 
+   std::cout << "ijk_start check" << std::endl;
+   std::cout << "i2_start=" << p_i2_start[1][2][0] << std::endl;
+   }
 
 };
 } // namespace pwdft

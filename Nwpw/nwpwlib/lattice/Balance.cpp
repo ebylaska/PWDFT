@@ -248,7 +248,8 @@ Balance::Balance(Parallel *inparall, const int maxsize0, const int *nidb, int *n
                      &receiver_list[nb], &sender_list[nb], proc_to_list[nb],
                      proc_from_list[nb], packet_size_list[nb],
                      indx_start_list[nb]);
-      nidb_out[nb] = nidb[nb] + (nwave_out - nwave);
+      //nidb_out[nb] = nidb[nb] + (nwave_out - nwave);
+      nidb_out[nb] = nwave_out;
    }
 }
 

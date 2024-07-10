@@ -101,6 +101,7 @@ public:
    void r_zero_mends(double *);
    void r_abs(double *);
  
+   void cr_sqr(const double *, double *);
    void r_sqr(double *);
    void rr_sqr(const double *, double *);
    void rr_addsqr(const double *, double *);

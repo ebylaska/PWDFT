@@ -28,6 +28,37 @@ void c_aindexcopy(const int n, const int *indx, double *A, double *B) {
 
 /******************************************
  *                                        *
+ *            transpose2DArray            *
+ *                                        *
+ ******************************************/
+/**
+ * @brief Converts a 2D array A(n2ft3d, nffts) to B(nffts, n2ft3d) assuming Fortran ordering.
+ *
+ * This function transposes the 2D array A from a shape of (n2ft3d, nffts) 
+ * to a shape of (nffts, n2ft3d) and stores the result in array B, both 
+ * assuming Fortran (column-major) ordering.
+ *
+ * @param n2ft3d The number of rows in the input array A.
+ * @param nffts The number of columns in the input array A.
+ * @param A Pointer to the input array.
+ * @param B Pointer to the output array.
+ */
+void transpose2DArray(const int n2ft3d, const int nffts, double *A, double *B)
+{
+    for (int i = 0; i < n2ft3d; ++i)
+    {
+        for (int j = 0; j < nffts; ++j)
+        {
+            B[i * nffts + j] = A[j * n2ft3d + i];
+        }
+    }
+}
+
+
+
+
+/******************************************
+ *                                        *
  *              c_aindexcopy              *
  *                                        *
  ******************************************/

@@ -14,6 +14,8 @@
 
 namespace pwdft {
 
+extern void transpose2DArray(const int, const int, double *, double *);
+
 extern void c_aindexcopy(const int, const int *, double *, double *);
 extern void c_aindexcopy_stride(const int, const int, const int *, double *, double *);
 

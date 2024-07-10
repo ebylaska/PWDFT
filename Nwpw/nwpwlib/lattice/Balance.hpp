@@ -12,6 +12,7 @@
 namespace pwdft {
 
 #define MAXSIZE_MAX 2
+#define MAXSIZE_NP 200
 
 /**
  * @class Balance
@@ -37,6 +38,10 @@ class Balance {
   int *proc_from_list[MAXSIZE_MAX];
   int *packet_size_list[MAXSIZE_MAX];
   int *indx_start_list[MAXSIZE_MAX];
+  //int proc_to_list[MAXSIZE_MAX][MAXSIZE_NP];
+  //int proc_from_list[MAXSIZE_MAX][MAXSIZE_NP];
+  //int packet_size_list[MAXSIZE_MAX][MAXSIZE_NP];
+  //int indx_start_list[MAXSIZE_MAX][MAXSIZE_NP];
 
   int npacket_list[MAXSIZE_MAX];
   int receiver_list[MAXSIZE_MAX];

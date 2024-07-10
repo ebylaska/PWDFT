@@ -403,6 +403,7 @@ void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi)
  */
 void Pneb::g_write(const int iunit, double *psi) 
 {
+   d3db::parall->Barrier();
    int ms, n, indx, i, pj, qj, taskid_j;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 

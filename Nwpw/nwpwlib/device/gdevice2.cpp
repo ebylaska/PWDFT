@@ -371,7 +371,7 @@ void gdevice2::set_fft_twiddle(const int isgn, const int n, double *twiddle) {
 
 
 
-void gdevice2::batch_cfft(const int tag, const bool forward, const int nz, const int nq, const int n2ft3d, double *a, 
+void gdevice2::batch_cfft(const int tag, const bool forward, const int nz, const int nq, const int nffts, const int n2ft3d, double *a, 
                           const double *twiddle, const double *tmpz, const int xyz_gpu) {
 #if defined(NWPW_CUDA) || defined(NWPW_HIP)
    if (mygdevice2->hasgpu)
@@ -381,7 +381,7 @@ void gdevice2::batch_cfft(const int tag, const bool forward, const int nz, const
       if (xyz_gpu==2) mygdevice2->batch_cfftz(tag, forward, nz, nq, n2ft3d, a);
    }
 #else
-   mygdevice2->batch_cfft(forward, nz, nq, n2ft3d, a, twiddle, tmpz);
+   mygdevice2->batch_cfft(forward, nz, nq, nffts, n2ft3d, a, twiddle, tmpz);
 #endif
 }
 
@@ -395,7 +395,7 @@ void gdevice2::batch_cfft_zero(const int tag, const bool forward, const int nz, 
       if (xyz_gpu==2) mygdevice2->batch_cfftz(tag,forward,nz,nq,n2ft3d,a);
    }
 #else
-   mygdevice2->batch_cfft_zero(forward,nz,nq,n2ft3d,a,twiddle,tmpz,zero);
+   mygdevice2->batch_cfft_zero(forward,nz,nq,nffts,n2ft3d,a,twiddle,tmpz,zero);
 #endif
 }
 

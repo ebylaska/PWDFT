@@ -21,7 +21,7 @@
 
 
 #include "CBalance.hpp"
-#include <iostream>
+#include	<iostream>
 
 namespace pwdft {
 
@@ -316,8 +316,8 @@ void CBalance::c_unbalance_start(const int nffts, const int nb, double *a, const
       for (auto j=0; j<npacket_list[nb]; ++j) 
       {
          int pfrom  = proc_to_list[nb][j];
-         int msglen = 2*packet_size_list[nb][j];
-         int indx   = 2*indx_start_list[nb][j];
+         int msglen = 2*nffts*packet_size_list[nb][j];
+         int indx   = 2*nffts*indx_start_list[nb][j];
          if (msglen > 0)
             parall->adreceive(request_indx, msgtype, pfrom, msglen, a + indx);
       }
@@ -326,8 +326,8 @@ void CBalance::c_unbalance_start(const int nffts, const int nb, double *a, const
       for (auto j=0; j<npacket_list[nb]; ++j) 
       {
          int pto    = proc_from_list[nb][j];
-         int msglen = 2*packet_size_list[nb][j];
-         int indx   = 2*indx_start_list[nb][j];
+         int msglen = 2*nffts*packet_size_list[nb][j];
+         int indx   = 2*nffts*indx_start_list[nb][j];
          if (msglen > 0)
             parall->adsend(request_indx, msgtype, pto, msglen, a + indx);
       }
@@ -454,8 +454,8 @@ void CBalance::c_balance_start(const int nffts, const int nb, double *a, const i
       for (j = 0; j < npacket_list[nb]; ++j) 
       {
          pto = proc_to_list[nb][j];
-         msglen = 2 * packet_size_list[nb][j];
-         indx = 2 * indx_start_list[nb][j];
+         msglen = 2 * nffts * packet_size_list[nb][j];
+         indx = 2 * nffts * indx_start_list[nb][j];
          if (msglen > 0)
             parall->adsend(request_indx, msgtype, pto, msglen, a + indx);
       }
@@ -464,8 +464,8 @@ void CBalance::c_balance_start(const int nffts, const int nb, double *a, const i
       for (j = 0; j < npacket_list[nb]; ++j) 
       {
          pfrom = proc_from_list[nb][j];
-         msglen = 2 * packet_size_list[nb][j];
-         indx = 2 * indx_start_list[nb][j];
+         msglen = 2 * nffts *  packet_size_list[nb][j];
+         indx = 2 *  nffts * indx_start_list[nb][j];
          if (msglen > 0)
             parall->adreceive(request_indx, msgtype, pfrom, msglen, a + indx);
       }

@@ -17,7 +17,8 @@
 */
 
 #include "Mapping1k.hpp"
-#include <iostream>
+#include        <iostream>
+
 
 namespace pwdft {
 

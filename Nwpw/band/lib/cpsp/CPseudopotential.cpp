@@ -59,6 +59,8 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
                             std::vector<double> &kvectors) 
 {
    int i, ifound;
+   int nbrillouin;
+   double rcore;
  
    ifound = cfileexists(fname);
  
@@ -97,17 +99,16 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
          ifound &= iread(5, n_projector, nprj);
          ifound &= iread(5, l_projector, nprj);
          ifound &= iread(5, m_projector, nprj);
-         ifound &= iread(5, b_projector, nprj);
+         //ifound &= iread(5, b_projector, nprj);
          if (ifound) dread(5, Gijl, rsize);
       }
 
       if (ifound)
       {
-         double rcore;
          dread(5, &rcore, 1);
 
-         int nbrillouin;
          ifound &= iread(5, &nbrillouin, 1);
+
          if ((nbrillouin>0) && (nbrillouin<100000))
          {
             kvectors.resize(3*nbrillouin);
@@ -143,7 +144,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
  */
 static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_version)
 {
-   char comment[80], atom[2];
+   char comment[80], atom[3];
    int psp_type, version, nfft[3];
    double unita[9], amass, zv;
    std::vector<double> kvectors;
@@ -174,6 +175,7 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
      }
    }
    mygrid->c3db::parall->Brdcst_iValue(0, 0, &ireformat);
+
  
    return (ireformat == 1);
 }
@@ -381,12 +383,12 @@ static void cpp_read(CGrid *mygrid, char *fname, char *comment, int *psp_type, i
          iread(5, *n_projector, *nprj);
          iread(5, *l_projector, *nprj);
          iread(5, *m_projector, *nprj);
-         iread(5, *b_projector, *nprj);
+         //iread(5, *b_projector, *nprj);
       }
       parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
       parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
       parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
-      parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
+      //parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
      
       nn = (*nmax) * (*nmax) * (*lmax + 1);
       if (*psp_type == 4)
@@ -725,7 +727,7 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
          iwrite(6, n_projector, nprj);
          iwrite(6, l_projector, nprj);
          iwrite(6, m_projector, nprj);
-         iwrite(6, b_projector, nprj);
+         //iwrite(6, b_projector, nprj);
       }
       nn = nmax*nmax*(lmax + 1);
       dwrite(6, Gijl, nn);
@@ -788,17 +790,20 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
    /* write out vnl 3d block */
    if (nprj > 0) 
    {
-      prj = vnl;
+      //prj = vnl;
       for (auto nb=0; nb<nbrillouin; ++nb) 
       {
+
          int nbq = mygrid->ktoindex(nb);
          int pk  = mygrid->ktop(nb);
+
+         prj = vnl + nbq*(nprj)*mygrid->npack1_max();
          for (auto i=0; i<(nprj); ++i) 
          {
             if (pk==taskid_k)
             {
-               mygrid->tt_pack_copy(nbq, prj+i*mygrid->npack1_max(), tmp2);
-               mygrid->t_unpack(nbq, tmp2);
+               mygrid->tt_pack_copy(nbq+1, prj+i*mygrid->npack1_max(), tmp2);
+               mygrid->t_unpack(nbq+1, tmp2);
             }
             mygrid->t_write_buffer(6, tmp2,0,pk);
          }
@@ -862,7 +867,8 @@ static double semicore_check(CGrid *mygrid, bool semicore, double rcore,
     // double dv    = lattice_omega()*scal1;
     double scal2 = 1.0 / omega;
     double dv = omega * scal1;
-    double *tmp = mygrid->c_alloc();
+    double *tmp  = mygrid->c_alloc();
+    double *tmpr = mygrid->r_alloc();
 
     /* put sqrt(core-density) at atom position */
     mygrid->tc_pack_copy(0, ncore, tmp);
@@ -873,11 +879,12 @@ static double semicore_check(CGrid *mygrid, bool semicore, double rcore,
     mygrid->cr_fft3d(tmp);
 
     /*  square it  */
-    mygrid->r_sqr(tmp);
+    mygrid->cr_sqr(tmp,tmpr);
 
     /* integrate it */
-    sum = mygrid->r_dsum(tmp) * dv;
+    sum = mygrid->r_dsum(tmpr) * dv;
 
+    mygrid->c_dealloc(tmpr);
     mygrid->c_dealloc(tmp);
   }
   return sum;
@@ -945,7 +952,7 @@ static int convert_psp_type(char *test) {
  */
 static int cpp_get_psp_type(Parallel *myparall, char *pspname) {
    int psp_type;
-   char atom[2];
+   char atom[3];
  
    if (myparall->is_master()) 
    {
@@ -956,6 +963,7 @@ static int cpp_get_psp_type(Parallel *myparall, char *pspname) {
       fclose(fp);
    }
    myparall->Brdcst_iValue(0, 0, &psp_type);
+
  
    return psp_type;
 }
@@ -1064,6 +1072,7 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
      
       atom[0] = psp1d.atom[0];
       atom[1] = psp1d.atom[1];
+     
       *amass = psp1d.amass;
       *zv = psp1d.zv;
       for (auto i = 0; i < 80; ++i)
@@ -1151,9 +1160,7 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
       delete[] vl_ray;
       delete[] G_ray;
  
-   } 
-   else if (*psp_type == 1) 
-   {
+   } else if (*psp_type == 1) {
       if (myparall->base_stdio_print)
          coutput << "in cpp_generate Not finished, hghppv1 psp_type = " << *psp_type << std::endl;
    } 
@@ -1474,6 +1481,20 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                    core_ae_ptr, core_ps_ptr, core_ae_prime_ptr, core_ps_prime_ptr,
                    rgrid_ptr, core_kin[ia], core_ion[ia], hartree_matrix_ptr,
                    comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
+
+/*
+         cpp_read(mypneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
+                  aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
+                  &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
+                  &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia], &ncore_ptr,
+                  vl[ia], &vnl_ptr, &log_amesh[ia], &r1[ia], &rmax[ia], &sigma[ia],
+                  &zion[ia], &n1dgrid[ia], &n1dbasis[ia], &nae_ptr, &nps_ptr,
+                  &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr, &dphi_ae_ptr,
+                  &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
+                  &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr,
+                  &core_kin[ia], &core_ion[ia], &hartree_matrix_ptr,
+                  &comp_charge_matrix_ptr, &comp_pot_matrix_ptr, coutput);
+*/
       } 
       else 
       {
@@ -2463,6 +2484,7 @@ void CPseudopotential::semicore_density_update()
    // double dv    = omega*scal1;
    double *exi = mypneb->c_pack_allocate(0);
    double *tmp = mypneb->c_alloc();
+   double *tmpr = mypneb->r_alloc();
  
    mypneb->r_zero(semicore_density);
    for (ii = 0; ii < (myion->nion); ++ii) {
@@ -2476,8 +2498,8 @@ void CPseudopotential::semicore_density_update()
        mypneb->cr_fft3d(tmp);
  
        /*  square it  */
-       mypneb->r_sqr(tmp);
-       mypneb->rr_Sum(tmp, semicore_density);
+       mypneb->cr_sqr(tmp,tmpr);
+       mypneb->rr_Sum(tmpr, semicore_density);
      }
    }
    mypneb->r_SMul(scal2 * scal2, semicore_density);
