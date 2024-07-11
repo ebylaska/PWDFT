@@ -135,16 +135,17 @@ end
 nwpw
   ### pseudopotential block begin ###
   ### pseudopotential block end   ###
-  cutoff 10.0
+  cutoff 8.0
   mult 1
   xc pbe96
   lmbfgs grassman 
-  loop 1 1
+  loop 2 10
   steepest_descent
-     loop 10 2
+     loop 2 20
   end
 
   2d-hcurve
 end
 
+task pspw energy
 task pspw steepest_descent

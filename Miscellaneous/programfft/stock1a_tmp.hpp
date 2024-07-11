@@ -417,6 +417,28 @@ printf("\n")
 }
 
 
+static int size_sub_twiddle(int n, int radix) 
+{ 
+   int m = n/radix;
+   return (radix-1)*m+1);
+}
+
+static void set_sub_twiddle(int isgn, int n, int radix,  complex_t* twiddle)
+{
+   int m=n/radix;
+   //twiddle = double[(radix-1)*(m+1)];
+
+   const double theta0 = M_PI/((double) n);
+   const double theta_radix = 2*M_PI/((double) radix);
+   for (auto r=0; r<(radix-1); ++r)
+   {
+      for (auto p=0; p<m; ++p)
+         twiddle[r+p*(radix-1)] = complex_t(cos((r+1)*p*theta0), isgn*sin((r+1)*p*theta0);
+
+      twiddle[r+m*(radix-1)] = complex_t(cos((r+1)*theta_radix), isgn*sin((r+1)*theta_radix));
+   }
+
+}
 
 
 static void batch_fft0_fac17(int nfft, int nbatch,  int isgn, int n, int s, bool eo, complex_t* x, complex_t* y)
@@ -435,13 +457,15 @@ printf(" + a%02d*u%02d" , i,uu);
 printf("_17")
 endfor
 printf("\n")
+
+ p = 0...n/17-1
 */
 {  
    const int m = n/17;
    const double theta0 = 2*M_PI/n;
-   const complex_t u01_17 = complex_t(cos( 2*M_PI/17.0), isgn*sin( 2*M_PI/17.0));
-   const complex_t u02_17 = complex_t(cos( 4*M_PI/17.0), isgn*sin( 4*M_PI/17.0));
-   const complex_t u03_17 = complex_t(cos( 6*M_PI/17.0), isgn*sin( 6*M_PI/17.0));
+   const complex_t u01_17 = complex_t(cos( 2*M_PI/17.0), isgn*sin( 2*M_PI/17.0)); // twiddle[1]
+   const complex_t u02_17 = complex_t(cos( 4*M_PI/17.0), isgn*sin( 4*M_PI/17.0)); // twiddle[2]
+   const complex_t u03_17 = complex_t(cos( 6*M_PI/17.0), isgn*sin( 6*M_PI/17.0)); // twiddle[3]
    const complex_t u04_17 = complex_t(cos( 8*M_PI/17.0), isgn*sin( 8*M_PI/17.0));
    const complex_t u05_17 = complex_t(cos(10*M_PI/17.0), isgn*sin(10*M_PI/17.0));
    const complex_t u06_17 = complex_t(cos(12*M_PI/17.0), isgn*sin(12*M_PI/17.0));
@@ -454,7 +478,7 @@ printf("\n")
    const complex_t u13_17 = complex_t(cos(26*M_PI/17.0), isgn*sin(26*M_PI/17.0));
    const complex_t u14_17 = complex_t(cos(28*M_PI/17.0), isgn*sin(28*M_PI/17.0));
    const complex_t u15_17 = complex_t(cos(30*M_PI/17.0), isgn*sin(30*M_PI/17.0));
-   const complex_t u16_17 = complex_t(cos(32*M_PI/17.0), isgn*sin(32*M_PI/17.0));
+   const complex_t u16_17 = complex_t(cos(32*M_PI/17.0), isgn*sin(32*M_PI/17.0)); // twiddle[16]
 
    if (n == 1) 
        if (eo) 
@@ -465,7 +489,7 @@ printf("\n")
    {
       for (int p = 0; p < m; p++) 
       {
-         const complex_t wp01 = complex_t(cos(   p*theta0), isgn*sin(   p*theta0));
+         const complex_t wp01 = complex_t(cos(   p*theta0), isgn*sin(   p*theta0)); // twiddle = p*2*M_PI/n
          const complex_t wp02 = complex_t(cos( 2*p*theta0), isgn*sin( 2*p*theta0));
          const complex_t wp03 = complex_t(cos( 3*p*theta0), isgn*sin( 3*p*theta0));
          const complex_t wp04 = complex_t(cos( 4*p*theta0), isgn*sin( 4*p*theta0));
@@ -481,6 +505,8 @@ printf("\n")
          const complex_t wp14 = complex_t(cos(14*p*theta0), isgn*sin(14*p*theta0));
          const complex_t wp15 = complex_t(cos(15*p*theta0), isgn*sin(15*p*theta0));
          const complex_t wp16 = complex_t(cos(16*p*theta0), isgn*sin(16*p*theta0));
+
+      exp(i* 16* p * 2*M_PI/n )
 
          for (int b=0; b<nbatch; ++b)
             for (int q=0; q<s; ++q) 

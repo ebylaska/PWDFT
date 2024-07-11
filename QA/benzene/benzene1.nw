@@ -1,7 +1,7 @@
 Title "Benzene test"
 
 memory 1900 mb
-start benzene1-pspw
+start benzene-pspw
 echo
 
 
@@ -34,7 +34,13 @@ nwpw
    
    xc pbe
    cutoff 30.0
+   vectors output jjj.elc
+   loop 1 1
+   steepest_descent
+      time_step 0.1
+      loop 1 1
+   end
 end
 
-task pspw energy
+task pspw steepest_descent
 

@@ -568,6 +568,8 @@ printf("\n")
 
 
 
+
+
 void fft(int isgn, int n, complex_t* x) // Fourier transform
 // isgn: -1 forward fft, 1 inverse fft
 // n : sequence length
@@ -713,8 +715,8 @@ void fft(int isgn, int n, complex_t* x) // Fourier transform
 //#define		N 2
 //#define		N 17
 
-#define 	Nbig	94248
-#define		N 94248
+#define 	Nbig 136
+#define		N 136
 
 //#define		N 136
 

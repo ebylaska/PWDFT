@@ -6,7 +6,7 @@ echo
 
 
 
-geometry angstroms noautosym noautoz
+geometry 
 C   0.116672 1.386739 0.0
 C   -1.142654 0.794419 0.0
 C   -1.259277 -0.592319 0.0
@@ -22,10 +22,10 @@ H   0.207341 2.464567  0.0
 end
 
 nwpw
-   pseudopotentials
-   H library pspw_default
-   C library pspw_default
-   end
+   #pseudopotentials
+   #H library pspw_default
+   #C library pspw_default
+   #end
 
    simulation_cell
      SC 26.0

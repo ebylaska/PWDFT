@@ -21,7 +21,8 @@ nwpw
    end
    cutoff 5.0
    steepest_descent
-      loop 1 1
+      loop 1 100
+      tolerances 1.0e-12 1.0e-12
    end
    fft_container_size 2
    vectors output jjj.elc
