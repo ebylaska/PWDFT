@@ -1,4 +1,6 @@
+![PWDFT Logo](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/PWDFT-LOGO.png)
 # PWDFT - PW-DFT development for [NWChemEx](https://www.exascaleproject.org/research-project/nwchemex/)
+
 
 Based on [NWPW](https://nwchemgit.github.io/Plane-Wave-Density-Functional-Theory.html) module in [NWChem](https://nwchemgit.github.io/index.html)
 
