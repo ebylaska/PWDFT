@@ -5,7 +5,7 @@ Web location:
 https://ebylaska.github.io/PWDFT/
 
 
-![QR Code](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png)
+![PWDFT-QR Code](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png)
 
 
 
