@@ -4,7 +4,9 @@ PW-DFT development for NWChemEx
 Web location:
 https://ebylaska.github.io/PWDFT/
 
-https://github.com/ebylaska/PWDFT/blob/master/qr-code%20(1).png
+
+![QR Code](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png)
+
 
 
 # CMAKE - Generate a Project Buildsystem
