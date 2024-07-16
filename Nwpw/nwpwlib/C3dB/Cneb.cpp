@@ -2627,7 +2627,7 @@ void Cneb::ggw_lambda(double dte, double *psi1, double *psi2, double *lmbda)
       } // for loop - ms
 
       /* correction due to contraint */
-      fwf_Multiply(-1, psi1+nbq*shift2, lmbda + nbq*2*(ne[0]*ne[0]+ne[1]*ne[1]), rdte, psi2+nbq*shift2, rone);
+      Cneb::fwf_Multiply(-1, psi1+nbq*shift2, lmbda + nbq*2*(ne[0]*ne[0]+ne[1]*ne[1]), rdte, psi2+nbq*shift2, rone);
    }
  
 }

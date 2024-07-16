@@ -1257,9 +1257,9 @@ void Psp1d_Hamann::cpp_generate_nonlocal_spline(CGrid *mygrid, int nbq, double *
    /* generate vnl */
    //mygrid->t_pack_nzero(nbq,nprj,vnl);
    mygrid->t_pack_max_nzero(nprj,vnl);
-   gx = mygrid->Gpackxyz(nbq,0);
-   gy = mygrid->Gpackxyz(nbq,1);
-   gz = mygrid->Gpackxyz(nbq,2);
+   gx = mygrid->Gpackxyz(1+nbq,0);
+   gy = mygrid->Gpackxyz(1+nbq,1);
+   gz = mygrid->Gpackxyz(1+nbq,2);
 
    for (auto k=0; k<npack1; ++k) 
    {

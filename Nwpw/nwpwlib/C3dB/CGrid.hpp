@@ -18,6 +18,7 @@
 #include "k1db.hpp"
 #include <cmath>
 #include <complex>
+#include <vector>
 
 namespace pwdft {
 
@@ -28,16 +29,25 @@ class CGrid : public k1db, public c3db {
  
  
    /* G grid data */
-   double *Garray, **Gpack;
+
+   //double *Garray, **Gpack;
+   double *Garray;
+   std::vector<std::vector<double>> Gpack; 
    double Gmax, Gmin;
-   int **masker, **packarray;
-   int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2, nidb1_max;
-   int *nwave_all_print, *nidb_print;
+
+   //int **masker, **packarray;
+   //int *nwave, *nwave_entire, *nwave_all,  *nidb, *nidb2, nidb1_max;
+   //int *nwave_all_print, *nidb_print;
+   std::vector<std::vector<int>> masker,packarray;
+   std::vector<int> nwave_all_print,nidb_print;
+   std::vector<int> nwave,nwave_entire,nwave_all,nidb,nidb2;
+   int nidb1_max;
 
    double *p_kvector, *p_weight;
  
    /* pfft data */
    bool **zero_row2, **zero_row3, **zero_slab23;
+   //std::vector<std::vector<bool>> zero_row2,zero_row3,zero_slab23;
  
    /* pfft_queue data */
    int nffts_max = 1;
@@ -74,27 +84,26 @@ public:
       delete [] p_weight;
       delete [] p_kvector;
       delete [] Garray;
-      delete [] nwave;
-      delete [] nwave_entire;
-      delete [] nwave_all;
-      delete [] nidb;
-      delete [] nidb2;
-      delete [] nwave_all_print;
-      delete [] nidb_print;
+      //delete [] nwave;
+      //delete [] nwave_entire;
+      //delete [] nwave_all;
+      //delete [] nidb;
+      //delete [] nidb2;
+      //delete [] nwave_all_print;
+      //delete [] nidb_print;
 
       for (auto nb=0; nb<=nbrillq; ++nb)
       {
-         delete [] Gpack[nb];
-         delete [] masker[nb];
-         delete [] packarray[nb];
+         //delete [] Gpack[nb];
+         //delete [] masker[nb];
+         //delete [] packarray[nb];
          delete [] zero_row3[nb];
          delete [] zero_row2[nb];
          delete [] zero_slab23[nb];
       }
       
-      delete [] Gpack;
-      delete [] masker;
-      delete [] packarray;
+      //delete [] masker;
+      //delete [] packarray;
       delete [] zero_row3;
       delete [] zero_row2;
       delete [] zero_slab23;
@@ -121,7 +130,7 @@ public:
    }
  
    double *Gxyz(const int i) { return Garray + i*nfft3d; }
-   double *Gpackxyz(const int nb, const int i) { return  Gpack[nb] + i*(nidb[nb]); }
+   double *Gpackxyz(const int nb, const int i) { return  Gpack[nb].data() + i*(nidb[nb]); }
    double Gmax_ray() { return Gmax; }
    double Gmin_ray() { return Gmin; }
    double dGmin_ray() { return 0.01 * Gmin; }

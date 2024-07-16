@@ -94,15 +94,32 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    Gmin = sqrt(ggmin);
 
    // for printing grid values
-   nidb_print      = new (std::nothrow) int[nbrillouin]();
-   nwave_all_print = new (std::nothrow) int[nbrillouin]();
+   //nidb_print      = new (std::nothrow) int[nbrillouin]();
+   //nwave_all_print = new (std::nothrow) int[nbrillouin]();
+   //nidb_print.resize(nbrillouin,0);
+   //nwave_all_print.resize(nbrillouin,0);
  
    // aligned Memory
-   nidb         = new (std::nothrow) int[nbrillq+1]();
-   nidb2        = new (std::nothrow) int[nbrillq+1]();
-   nwave        = new (std::nothrow) int[nbrillq+1]();
-   nwave_all    = new (std::nothrow) int[nbrillq+1]();
-   nwave_entire = new (std::nothrow) int[nbrillq+1]();
+   //nidb         = new (std::nothrow) int[nbrillq+1]();
+   //nidb2        = new (std::nothrow) int[nbrillq+1]();
+   //nwave        = new (std::nothrow) int[nbrillq+1]();
+   //nwave_all    = new (std::nothrow) int[nbrillq+1]();
+   //nwave_entire = new (std::nothrow) int[nbrillq+1]();
+
+ 
+   // aligned Memory
+   //nidb         = new (std::nothrow) int[nbrillq+1]();
+   //nidb2        = new (std::nothrow) int[nbrillq+1]();
+   //nwave        = new (std::nothrow) int[nbrillq+1]();
+   //nwave_all    = new (std::nothrow) int[nbrillq+1]();
+   //nwave_entire = new (std::nothrow) int[nbrillq+1]();
+
+   nidb.resize(nbrillq + 1);
+   nidb2.resize(nbrillq + 1);
+   nwave.resize(nbrillq + 1);
+   nwave_all.resize(nbrillq + 1);
+   nwave_entire.resize(nbrillq + 1);
+   Gpack.resize(nbrillq + 1);
 
    p_weight  = new (std::nothrow) double[nbrillq];
    p_kvector = new (std::nothrow) double[3*nbrillq];
@@ -117,12 +134,16 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
 
    //std::size_t aligned_size = (nfft3d * sizeof(int) + Alignment - 1) & ~(Alignment - 1);
    std::size_t aligned_size = (nfft3d);
-   masker    = new (std::nothrow) int*[nbrillq+1]();
-   packarray = new (std::nothrow) int*[nbrillq+1]();
+   //masker    = new (std::nothrow) int*[nbrillq+1]();
+   //packarray = new (std::nothrow) int*[nbrillq+1]();
+   masker.resize(nbrillq+1);
+   packarray.resize(nbrillq+1);
    for (auto nbq=0; nbq<=nbrillq; ++nbq)
    {
-      masker[nbq]    = new (std::nothrow) int[aligned_size]();
-      packarray[nbq] = new (std::nothrow) int[aligned_size]();
+      //masker[nbq]    = new (std::nothrow) int[aligned_size]();
+      //packarray[nbq] = new (std::nothrow) int[aligned_size]();
+      masker[nbq].resize(aligned_size, 0.0);
+      packarray[nbq].resize(aligned_size, 0.0);
       for (auto k=0; k<(nfft3d); ++k) 
       {
          masker[nbq][k] = 1;
@@ -226,7 +247,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       nidb[nbq] = nidb2[nbq] + (nwave_out[nbq] - nwave_in[nbq]);
       nwave_all[nbq] = nidb2[nbq];
    }
-   c3db::parall->Vector_ISumAll(1, nbrillq+1, nwave_all);
+   c3db::parall->Vector_ISumAll(1, nbrillq+1, nwave_all.data());
 
    nidb1_max = 0; 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
@@ -236,7 +257,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    zero_row3 = new (std::nothrow) bool*[nbrillq+1];
    zero_row2 = new (std::nothrow) bool*[nbrillq+1];
    zero_slab23 = new (std::nothrow) bool*[nbrillq+1];
-   Gpack       = new (std::nothrow) double*[nbrillq+1];
+   //zero_row3.resize(nbrillq+1);
+   //zero_row2.resize(nbrillq+1);
+   //zero_slab23.resize(nbrillq+1);
 
    if (maptype == 1) 
    {
@@ -248,6 +271,29 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          zero_row3[nbq] = new (std::nothrow) bool[(nx * nq)];
          zero_row2[nbq] = new (std::nothrow) bool[(nx * nq)];
          zero_slab23[nbq] = new (std::nothrow) bool[nx];
+         //zero_row3[nbq].resize(nx*nq,false);
+         //zero_row2[nbq].resize(nx*nq,false);
+         //zero_slab23[nbq].resize(nx,false);
+      }
+     
+      //zero_arow3 = new bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)];
+      zero_arow3 = new bool[(nx*ny)];
+      for (auto nb=0; nb<=nbrillq; ++nb) 
+      {
+         if (nb == 0)
+         {
+            ggcut = lattice->eggcut();
+            kv[0] = 0.0;
+            kv[1] = 0.0;
+            kv[2] = 0.0;
+         }
+         else
+         {
+            ggcut = lattice->wggcut();
+            kv[0] = p_kvector[3*(nb-1)];
+            kv[1] = p_kvector[3*(nb-1)+1];
+            kv[2] = p_kvector[3*(nb-1)+2];
+         }
       }
      
       //zero_arow3 = new bool[(nx*ny + Alignment - 1) & ~(Alignment - 1)];
@@ -357,6 +403,9 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          zero_row3[nbq]   = new (std::nothrow) bool[(nq3)]();
          zero_row2[nbq]   = new (std::nothrow) bool[(nq2)]();
          zero_slab23[nbq] = new (std::nothrow) bool[nx]();
+         //zero_row3[nbq].resize(nq3,false);
+         //zero_row2[nbq].resize(nq2,false);
+         //zero_slab23[nbq].resize(nx,false);
       }
      
       //zero_arow2 = new (std::nothrow) bool[(nx*nz + Alignment - 1) & ~(Alignment - 1)]();
@@ -461,9 +510,11 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
 
       //Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]) + Alignment - 1) & ~(Alignment - 1)]();
+      //Gpack[nbq] = (std::nothrow) double[(3*(nidb[nbq]))]();
+      //Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]))]();
    for (auto nbq=0; nbq<=nbrillq; ++nbq)
-      Gpack[nbq] = new (std::nothrow) double[(3*(nidb[nbq]))]();
- 
+      Gpack[nbq].resize(3*nidb[nbq], 0.0);
+
    double *Gtmp = new (std::nothrow) double[nfft3d]();
 
    int one = 1;
@@ -474,7 +525,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
          std::memcpy(Gtmp,Garray+i*nfft3d,nfft3d*sizeof(double));
         
          this->r_pack(nb,Gtmp);
-         this->rr_pack_copy(nb,Gtmp,Gpack[nb]+i*(nidb[nb]));
+         this->rr_pack_copy(nb,Gtmp,Gpack[nb].data()+i*(nidb[nb]));
       }
    }
  
@@ -515,16 +566,18 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    }
 
    /* initialize print_grid */
-   std::memset(nidb_print,0,nbrillouin*sizeof(int));
-   std::memset(nwave_all_print,0,nbrillouin*sizeof(int));
+   //std::memset(nidb_print.data(),0,nbrillouin*sizeof(int));
+   //std::memset(nwave_all_print.data(),0,nbrillouin*sizeof(int));
+   nidb_print.resize(nbrillouin,0);
+   nwave_all_print.resize(nbrillouin,0);
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
       auto nb = k1db::ktoptok(nbq);
       nidb_print[nb]      = nidb[1+nbq];
       nwave_all_print[nb] = nwave_all[1+nbq];
    }
-   c3db::parall->Vector_ISumAll(3,nbrillouin,nidb_print);
-   c3db::parall->Vector_ISumAll(3,nbrillouin,nwave_all_print);
+   c3db::parall->Vector_ISumAll(3,nbrillouin,nidb_print.data());
+   c3db::parall->Vector_ISumAll(3,nbrillouin,nwave_all_print.data());
 
  
    /* initialize pfft3 queues */
@@ -590,7 +643,7 @@ void CGrid::c_unpack(const int nb, double *a)
  
    std::memcpy(c3db::c3db_tmp1,a,nn*sizeof(double));
    std::memset(a, 0, 2*nfft3d*sizeof(double));
-   c_bindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   c_bindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
  
 }
 
@@ -605,7 +658,7 @@ void CGrid::c_pack(const int nb, double *a)
    std::memcpy(c3db::c3db_tmp1,a,2*nfft3d*sizeof(double));
    std::memset(a,  0,2*nfft3d*sizeof(double));
 
-   c_aindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   c_aindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
 
    if (balanced)
       mybalance->c_balance(nb, a);
@@ -773,7 +826,7 @@ void CGrid::tt_pack_copy(const int nb, const double *a, double *b)
  ********************************/
 void CGrid::tt_pack_copy(const int nb, const double *a, double *b) {
     // Ensure nb is within bounds
-    if (nb < 0 || nb >= 4) {
+    if (nb < 0 ) {
         std::cerr << "Error: 'nb' index out of bounds in tt_pack_copy" << std::endl;
         return;
     }
@@ -897,7 +950,7 @@ void CGrid::r_unpack(const int nb, double *a)
    std::memcpy(c3db::c3db_tmp1, a, nn * sizeof(double));
    std::memset(a, 0, nfft3d*sizeof(double));
  
-   t_bindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   t_bindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
 }
 
 /********************************
@@ -914,7 +967,7 @@ void CGrid::t_unpack(const int nb, double *a)
    std::memcpy(c3db::c3db_tmp1, a, nn * sizeof(double));
    std::memset(a, 0, nfft3d*sizeof(double));
 
-   t_bindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   t_bindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
 }
 
 
@@ -929,7 +982,7 @@ void CGrid::r_pack(const int nb, double *a)
    std::memcpy(c3db::c3db_tmp1,a,nfft3d*sizeof(double));
    std::memset(a,0,nfft3d*sizeof(double));
 
-   t_aindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   t_aindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
 
    if (balanced)
       mybalance->r_balance(nb, a);
@@ -945,7 +998,7 @@ void CGrid::t_pack(const int nb, double *a)
    std::memcpy(c3db::c3db_tmp1,a,nfft3d*sizeof(double));
    std::memset(a,0,nfft3d*sizeof(double));
 
-   t_aindexcopy(nidb2[nb],packarray[nb],c3db::c3db_tmp1,a);
+   t_aindexcopy(nidb2[nb],packarray[nb].data(),c3db::c3db_tmp1,a);
 
    if (balanced)
       mybalance->t_balance(nb, a);
@@ -1001,7 +1054,7 @@ void CGrid::i_pack(const int nb, int *a)
    for (auto i=0; i<nfft3d; ++i) tmp[i] = a[i];
    for (auto i=0; i<nfft3d; ++i) a[i] = 0;
  
-   i_aindexcopy(nidb2[nb], packarray[nb], tmp, a);
+   i_aindexcopy(nidb2[nb], packarray[nb].data(), tmp, a);
  
    if (balanced)
       mybalance->i_balance(nb, a);
@@ -1440,7 +1493,7 @@ void CGrid::c_unpack_mid(const int nffts, const int nb, double *tmp1, double *tm
    std::memset(tmp1, 0, nffts*2*nfft3d*sizeof(double));
  
    for (auto s=0; s<nffts; ++s)
-      c_bindexcopy((nidb2[nb]), packarray[nb], tmp2+s*2*nfft3d, tmp1+s*2*nfft3d);
+      c_bindexcopy((nidb2[nb]), packarray[nb].data(), tmp2+s*2*nfft3d, tmp1+s*2*nfft3d);
 }
 
 /********************************
@@ -3208,7 +3261,7 @@ void CGrid::c_pack_start(const int nffts, const int nb, double *a, double *tmp1,
   std::memset(a, 0, nffts*2*nfft3d * sizeof(double));
 
   for (auto s=0; s<nffts; ++s)
-     c_aindexcopy(nidb2[nb], packarray[nb], tmp1 + s*n2ft3d, a + s*n2ft3d);
+     c_aindexcopy(nidb2[nb], packarray[nb].data(), tmp1 + s*n2ft3d, a + s*n2ft3d);
 
   if (balanced)
      mybalance->c_balance_start(nffts, nb, a, request_indx, msgtype);

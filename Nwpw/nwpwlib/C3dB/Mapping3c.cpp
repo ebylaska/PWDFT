@@ -238,8 +238,6 @@ Mapping3c::Mapping3c(const int mapin, const int npin, const int taskidin,
         /* makes expand and contract routines trivial parallel */
       } 
 
-      std::cout << "nx=" << nx << " ny=" << ny << " nz=" << nz << std::endl;
-      std::cout << "nq1=" << nq1 << " nq2=" << nq2 << " nq3=" << nq3 << std::endl;
       
       nfft3d = nx * nq1;
       if ((ny * nq2) > nfft3d)
@@ -249,7 +247,6 @@ Mapping3c::Mapping3c(const int mapin, const int npin, const int taskidin,
       n2ft3d = 2*nfft3d;
       nfft3d_map = nz * nq3;
       n2ft3d_map = 2*nx * nq1;
-      std::cout << "nfft3d=" << nfft3d << " nfft3d_map=" << nfft3d_map <<  std::endl;
      
       nrft3d = nx * nqr1;
       if ((ny * nqr2) > nfft3d)

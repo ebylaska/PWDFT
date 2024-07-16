@@ -2232,6 +2232,7 @@ double CPseudopotential::e_nonlocal(double *psi)
  
    for (auto nbq=0; nbq<(mypneb->nbrillq); ++ nbq)
    {
+      double weight  = mypneb->pbrill_weight(nbq);
       int nbq1 = nbq + 1;
 
       // Copy psi to device
@@ -2302,9 +2303,10 @@ double CPseudopotential::e_nonlocal(double *psi)
         
          std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
          
-         esum += ztmp.real();
+         esum += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();
       }
+      
    }
  
    esum = parall->SumAll(2,esum);
