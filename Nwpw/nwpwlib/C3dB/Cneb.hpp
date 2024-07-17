@@ -178,6 +178,7 @@ public:
       nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       
       ptr = new (std::nothrow) double[nbrillq*nsize]();
+      std::memset(ptr,0,nbrillq*nsize*sizeof(double));
       return ptr;
    }
 

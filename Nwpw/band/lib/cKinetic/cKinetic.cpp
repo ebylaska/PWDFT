@@ -82,8 +82,10 @@ void cKinetic_Operator::ke(const double *psi, double *tpsi)
          int k2 = 1;
          for (auto k=0; k<npack1; ++k) 
          {
-           tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
-           tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
+           //tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
+           //tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
+           tmp_tpsi[k1] = tmp_tg[k]*tmp_psi[k1];
+           tmp_tpsi[k2] = tmp_tg[k]*tmp_psi[k2];
            k1 += 2;
            k2 += 2;
          }

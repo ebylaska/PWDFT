@@ -290,13 +290,9 @@ double cElectron_Operators::vnl_ave(double *psi)
  ********************************************/
 double cElectron_Operators::eorbit(double *psi) 
 {
-   //if (mygrid->d3db::parall->is_master())
-   //   std::cout << "Eorbit into ggw_sym_Multiply" << std::endl;
 
    mygrid->ggw_sym_Multiply(psi,Hpsi,hmltmp);
 
-   //if (mygrid->d3db::parall->is_master())
-   //   std::cout << "OUT Eorbit into ggw_sym_Multiply" << std::endl;
 
    // mygrid->m_scal(-1.0,hmltmp);
    double eorbit0 = mygrid->w_trace(hmltmp);

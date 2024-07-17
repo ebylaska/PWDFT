@@ -56,6 +56,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    double *vall = mygrid->c_alloc();
    double *vpsi = mygrid->c_alloc();
    double *tmp  = mygrid->c_alloc();
+
  
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
@@ -70,6 +71,27 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mygrid->c_unpack(0,vall);
    mygrid->cr_pfft3b(0,vall);
 
+
+   for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+   {
+     for (auto ms=0; ms<ispin; ++ms)
+     {
+        mygrid->rcc_Sum(xcp+ms*nfft3d,vall,tmp);
+        for (int i=0; i<(mygrid->neq[ms]); ++i)
+        {
+           std::memcpy(vpsi,tmp,n2ft3d*sizeof(double));
+           mygrid->bb_Mul(psi_r+indx1n,vpsi);
+           mygrid->rc_fft3d(vpsi);
+           mygrid->c_pack(1+nbq,vpsi);
+           mygrid->cc_pack_daxpy(1+nbq,(-scal1),vpsi,Hpsi+indx1);
+ 
+           indx1n += shift2;
+           indx1  += shift1;
+        }
+     }
+   }
+
+/*
    { nwpw_timing_function ftimer(1);
  
      int ms = 0;
@@ -108,6 +130,15 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
         done = ((indx1 >= nn) && (indx2 >= nn));
      }
    }
+   */
+   /*{
+      double hml[4*22*22*4];
+      mygrid->ggw_sym_Multiply(psi, Hpsi, hml);
+      std::cout << "C hml=" << hml[0]  << " " << hml[1] << " " 
+                            << hml[46] << " " << hml[47] << " " 
+                            << hml[92] << " " << hml[93] <<  std::endl;
+   }
+   */
    
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
