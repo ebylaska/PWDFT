@@ -1,0 +1,45 @@
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start band-pbe-Cu4-mylabel
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+memory 1900 mb
+
+charge 0
+
+geometry noautoz nocenter noautosym
+system crystal
+   lattice_vectors
+     3.600000 0.000000 0.000000
+     0.000000 3.600000 0.000000
+     0.000000 0.000000 3.600000
+end
+
+Cu 0.000000 0.000000 0.000000
+Cu 0.000000 0.500000 0.500000
+Cu 0.500000 0.000000 0.500000
+Cu 0.500000 0.500000 0.000000
+end
+
+
+nwpw
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 30.0
+  mult 1
+  xc lda
+
+  steepest_descent
+    loop 100 100
+    tolerances 1.0e-9 1.0e-9
+  end
+
+  monkhorst-pack  2 2 2
+end
+task band steepest_descent
+
