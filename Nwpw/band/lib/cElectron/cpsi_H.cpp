@@ -72,6 +72,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mygrid->cr_pfft3b(0,vall);
 
 
+/*
    for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
    {
      for (auto ms=0; ms<ispin; ++ms)
@@ -90,8 +91,8 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
         }
      }
    }
+*/
 
-/*
    { nwpw_timing_function ftimer(1);
  
      int ms = 0;
@@ -130,7 +131,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
         done = ((indx1 >= nn) && (indx2 >= nn));
      }
    }
-   */
+   
    /*{
       double hml[4*22*22*4];
       mygrid->ggw_sym_Multiply(psi, Hpsi, hml);

@@ -94,25 +94,25 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
    if ((gga >= 10) && (gga < 100)) {
      use_gga = true;
      if (mycneb->ispin == 1) {
-       rho = new double[mycneb->nfft3d];
+       rho = new double[mycneb->nfft3d]; // real
  
-       grx = new double[mycneb->n2ft3d];
-       gry = new double[mycneb->n2ft3d];
-       grz = new double[mycneb->n2ft3d];
+       grx = new double[mycneb->n2ft3d]; // complex
+       gry = new double[mycneb->n2ft3d]; // complex
+       grz = new double[mycneb->n2ft3d]; // complex
  
-       agr = new double[mycneb->n2ft3d];
-       fn = new double[mycneb->n2ft3d];
-       fdn = new double[mycneb->n2ft3d];
+       agr = new double[mycneb->n2ft3d]; // real|complex
+       fn  = new double[mycneb->n2ft3d]; // real|complex
+       fdn = new double[mycneb->n2ft3d]; // real|complex
      } else {
-       rho = new double[2 * mycneb->nfft3d];
+       rho = new double[2 * mycneb->nfft3d]; // real
  
-       grx = new double[3 * mycneb->n2ft3d];
-       gry = new double[3 * mycneb->n2ft3d];
-       grz = new double[3 * mycneb->n2ft3d];
+       grx = new double[3 * mycneb->n2ft3d]; // complex
+       gry = new double[3 * mycneb->n2ft3d]; // complex
+       grz = new double[3 * mycneb->n2ft3d]; // complex
  
-       agr = new double[3 * mycneb->n2ft3d];
-       fn = new double[2 * mycneb->n2ft3d];
-       fdn = new double[3 * mycneb->n2ft3d];
+       agr = new double[3 * mycneb->n2ft3d]; // real|complex
+       fn  = new double[2 * mycneb->n2ft3d]; // real|complex
+       fdn = new double[3 * mycneb->n2ft3d]; // real|complex
      }
    }
    if ((gga >= 300))

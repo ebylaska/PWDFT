@@ -3510,10 +3510,11 @@ void CGrid::rcc_pack_iMul(const int nb, const double *a, const double *b, double
   int ng = nidb[nb];
 
   ii = 0;
-  for (i = 0; i < ng; ++i) {
-    c[ii] = -b[ii + 1] * a[i];
-    c[ii + 1] = b[ii] * a[i];
-    ii += 2;
+  for (i = 0; i < ng; ++i) 
+  {
+     c[ii]   = -b[ii+1]*a[i];
+     c[ii+1] =  b[ii]  *a[i];
+     ii += 2;
   }
 }
 
@@ -3531,8 +3532,8 @@ void CGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double
    ii = 0;
    for (i=0; i<ng; ++i) 
    {
-      c[ii] = -b[ii + 1] * a[i];
-      c[ii + 1] = b[ii] * a[i];
+      c[ii]   = -b[ii+1]*a[i];
+      c[ii+1] = b[ii]   *a[i];
       ii += 2;
    }
 }

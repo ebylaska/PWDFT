@@ -91,6 +91,7 @@ public:
    void r_nzero(int, double *);
    void rr_copy(const double *, double *);
    void rr_SMul(const double, const double *, double *);
+   void rc_SMul(const double, const double *, double *);
    void r_SMul(const double, double *);
    void rrr_SMulAdd(const double, const double *, const double *, double *);
    double r_dsum(const double *);
@@ -102,6 +103,7 @@ public:
    void r_abs(double *);
  
    void cr_sqr(const double *, double *);
+   void cr_addsqr(const double *, double *);
    void r_sqr(double *);
    void rr_sqr(const double *, double *);
    void rr_addsqr(const double *, double *);
@@ -110,15 +112,21 @@ public:
    void rrr_Sum2Add(const double *, const double *, double *);
    void rrrr_Sum(const double *, const double *, const double *, double *);
    void rrr_Sum(const double *, const double *, double *);
+   void ccc_Sum(const double *, const double *, double *);
    void rr_Sum(const double *, double *);
+   void cc_Sum(const double *, double *);
    void rrr_Mul(const double *, const double *, double *);
    void rrr_Mul2Add(const double *, const double *, double *);
    void rr_Mul(const double *, double *);
    void arrr_Minus(const double, const double *, const double *, double *);
    void rrr_Minus(const double *, const double *, double *);
+   void crr_Minus(const double *, const double *, double *);
+   void rcr_Minus(const double *, const double *, double *);
+   void ccr_Minus(const double *, const double *, double *);
    void rr_Minus(const double *, double *);
  
    void rr_Divide(const double *, double *);
+   void rc_Divide(const double *, double *);
    void rrr_Divide(const double *, const double *, double *);
    void rr_screen0(const double *, double *);
  
