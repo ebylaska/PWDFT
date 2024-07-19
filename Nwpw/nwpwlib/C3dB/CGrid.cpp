@@ -3312,7 +3312,7 @@ void CGrid::rc_pfft3f_queuein(const int nb, const int nffts_in, double *b)
    ++bqsize;
    bqindx[bqsize - 1] = blast_index;
    bqstatus[blast_index] = 0;
-   bqnffts[alast_index]  = nffts_in;
+   bqnffts[blast_index]  = nffts_in;
    bqnbb[blast_index] = nb;
  
    // status = 0;
