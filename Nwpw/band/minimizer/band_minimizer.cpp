@@ -158,7 +158,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    cXC_Operator myxc(&mygrid, control);
 
    /* initialize psps */
-   CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,std::cout);
+   CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
@@ -183,138 +183,133 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
    if (oprint)
    {
-      std::cout << std::endl;
-      std::cout << "     ===================  summary of input  =======================" << std::endl;
-      std::cout << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
-      std::cout << std::endl;
-      std::cout << " number of processors used: " << myparallel.np() << std::endl;
-      std::cout << " processor grid           : " << myparallel.np_i() << " x " << myparallel.np_j() <<  " x " << myparallel.np_k() << std::endl;
-      if (mygrid.maptype == 1) std::cout << " parallel mapping         : 1d-slab" << std::endl;
-      if (mygrid.maptype == 2) std::cout << " parallel mapping         : 2d-hilbert" << std::endl;
-      if (mygrid.maptype == 3) std::cout << " parallel mapping         : 2d-hcurve" << std::endl;
+      coutput << std::endl;
+      coutput << "     ===================  summary of input  =======================" << std::endl;
+      coutput << "\n input psi filename: " << control.input_movecs_filename() << std::endl;
+      coutput << std::endl;
+      coutput << " number of processors used: " << myparallel.np() << std::endl;
+      coutput << " processor grid           : " << myparallel.np_i() << " x " << myparallel.np_j() <<  " x " << myparallel.np_k() << std::endl;
+      if (mygrid.maptype == 1) coutput << " parallel mapping         : 1d-slab" << std::endl;
+      if (mygrid.maptype == 2) coutput << " parallel mapping         : 2d-hilbert" << std::endl;
+      if (mygrid.maptype == 3) coutput << " parallel mapping         : 2d-hcurve" << std::endl;
       if (mygrid.isbalanced())
-         std::cout << " parallel mapping         : balanced" << std::endl;
+         coutput << " parallel mapping         : balanced" << std::endl;
       else
-         std::cout << " parallel mapping         : not balanced" << std::endl;
+         coutput << " parallel mapping         : not balanced" << std::endl;
 
       if (mygrid.c3db::mygdevice.has_gpu())
       {
-         //std::cout << " parallel mapping         : has GPUs" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==1) std::cout << " parallel mapping         : CUDA GPUs" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==2) std::cout << " parallel mapping         : SYCL GPUs" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==3) std::cout << " parallel mapping         : HIP SYCL GPUs" << std::endl;
-         if (mygrid.c3db::mygdevice.type_gpu()==4) std::cout << " parallel mapping         : OpenCL GPUs" << std::endl;
-         if (mygrid.staged_gpu_fft_pipeline) std::cout << " parallel mapping         : staged GPU FFT" << std::endl;
-         if (control.tile_factor() > 0)      std::cout << " GPU tile factor          : " << control.tile_factor() << std::endl;
+         //coutput << " parallel mapping         : has GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==1) coutput << " parallel mapping         : CUDA GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==2) coutput << " parallel mapping         : SYCL GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==3) coutput << " parallel mapping         : HIP SYCL GPUs" << std::endl;
+         if (mygrid.c3db::mygdevice.type_gpu()==4) coutput << " parallel mapping         : OpenCL GPUs" << std::endl;
+         if (mygrid.staged_gpu_fft_pipeline) coutput << " parallel mapping         : staged GPU FFT" << std::endl;
+         if (control.tile_factor() > 0)      coutput << " GPU tile factor          : " << control.tile_factor() << std::endl;
       }
 
-      std::cout << std::endl;
-      std::cout << " options:" << std::endl;
-      std::cout << "   ion motion           = ";
-      if (control.geometry_optimize())
-         std::cout << "yes" << std::endl;
-      else
-         std::cout << "no" << std::endl;
-      std::cout << "   boundary conditions  = periodic" << std::endl;
-      std::cout << "   electron spin        = ";
+      coutput << std::endl;
+      coutput << " options:" << std::endl;
+      coutput << "   boundary conditions  = periodic" << std::endl;
+      coutput << "   electron spin        = ";
       if (ispin == 1)
-         std::cout << "restricted" << std::endl;
+         coutput << "restricted" << std::endl;
       else
-         std::cout << "unrestricted" << std::endl;
-      std::cout << myxc;
+         coutput << "unrestricted" << std::endl;
+      coutput << myxc;
 
-      std::cout << mypsp.print_pspall();
+      coutput << mypsp.print_pspall();
 
-      std::cout << std::endl;
-      std::cout << " atom composition:" << std::endl;
+      coutput << std::endl;
+      coutput << " atom composition:" << std::endl;
       for (ia = 0; ia < myion.nkatm; ++ia)
-         std::cout << "   " << myion.atom(ia) << " : " << myion.natm[ia];
-      std::cout << std::endl << std::endl;
-      std::cout << " initial ion positions (au):" << std::endl;
+         coutput << "   " << myion.atom(ia) << " : " << myion.natm[ia];
+      coutput << std::endl << std::endl;
+      coutput << " initial ion positions (au):" << std::endl;
       for (ii = 0; ii < myion.nion; ++ii)
-         std::cout << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+         coutput << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
                    << Ffmt(10,5) << myion.rion1[3*ii] << " "
                    << Ffmt(10,5) << myion.rion1[3*ii+1] << " "
                    << Ffmt(10,5) << myion.rion1[3*ii+2] << " ) - atomic mass = "
                    << Ffmt(6,3) << myion.amu(ii) << std::endl;
-      std::cout << "   G.C.\t( "
+      coutput << "   G.C.\t( "
                 << Ffmt(10,5) << myion.gc(0) << " "
                 << Ffmt(10,5) << myion.gc(1) << " "
                 << Ffmt(10,5) << myion.gc(2) << " )" << std::endl;
-      std::cout << " C.O.M.\t( "
+      coutput << " C.O.M.\t( "
                 << Ffmt(10,5) << myion.com(0) << " "
                 << Ffmt(10,5) << myion.com(1) << " "
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
 
-      std::cout << std::endl;
-      std::cout << myion.print_symmetry_group();
+      coutput << std::endl;
+      coutput << myion.print_symmetry_group();
 
       if (control.geometry_optimize())
-         std::cout << std::endl << myion.print_constraints(0);
+         coutput << std::endl << myion.print_constraints(0);
 
-      std::cout << std::endl;
-      std::cout << " number of electrons: spin up ="
+      coutput << std::endl;
+      coutput << " number of electrons: spin up ="
                 << Ifmt(6) << mygrid.ne[0] << " ("
                 << Ifmt(4) << mygrid.neq[0] << " per task) down ="
                 << Ifmt(6) << mygrid.ne[ispin-1] << " ("
                 << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
-      std::cout << std::endl;
-      std::cout << " supercell:" << std::endl;
-      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega()
+      coutput << std::endl;
+      coutput << " supercell:" << std::endl;
+      coutput << "      volume = " << Ffmt(10,2) << mylattice.omega()
                 << std::endl;
-      std::cout << "      lattice:    a1 = < "
+      coutput << "      lattice:    a1 = < "
                 << Ffmt(8,3) << mylattice.unita(0,0) << " "
                 << Ffmt(8,3) << mylattice.unita(1,0) << " "
                 << Ffmt(8,3) << mylattice.unita(2,0) << " >\n";
-      std::cout << "                  a2 = < "
+      coutput << "                  a2 = < "
                 << Ffmt(8,3) << mylattice.unita(0,1) << " "
                 << Ffmt(8,3) << mylattice.unita(1,1) << " "
                 << Ffmt(8,3) << mylattice.unita(2,1) << " >\n";
-      std::cout << "                  a3 = < "
+      coutput << "                  a3 = < "
                 << Ffmt(8,3) << mylattice.unita(0,2) << " "
                 << Ffmt(8,3) << mylattice.unita(1, 2) << " "
                 << Ffmt(8,3) << mylattice.unita(2, 2) << " >\n";
-      std::cout << "      reciprocal: b1 = < "
+      coutput << "      reciprocal: b1 = < "
                 << Ffmt(8,3) << mylattice.unitg(0, 0) << " "
                 << Ffmt(8,3) << mylattice.unitg(1, 0) << " "
                 << Ffmt(8,3) << mylattice.unitg(2,0) << " >\n";
-      std::cout << "                  b2 = < "
+      coutput << "                  b2 = < "
                 << Ffmt(8,3) << mylattice.unitg(0,1) << " "
                 << Ffmt(8,3) << mylattice.unitg(1,1) << " "
                 << Ffmt(8,3) << mylattice.unitg(2,1) << " >\n";
-      std::cout << "                  b3 = < "
+      coutput << "                  b3 = < "
                 << Ffmt(8,3) << mylattice.unitg(0,2) << " "
                 << Ffmt(8,3) << mylattice.unitg(1,2) << " "
                 << Ffmt(8,3) << mylattice.unitg(2,2) << " >\n";
 
 
-      std::cout << "\n";
-      std::cout << " Ewald parameters:\n";
-      std::cout << "      energy cutoff = "
+      coutput << "\n";
+      coutput << " Ewald parameters:\n";
+      coutput << "      energy cutoff = "
                 << Ffmt(7,3) << myewald.ecut()
                 << " fft= " << Ifmt(4) << myewald.nx() << " x "
                             << Ifmt(4) << myewald.ny() << " x "
                             << Ifmt(4) << myewald.nz()
                 << "  (" << Ifmt(8) << myewald.npack_all() << " waves "
                          << Ifmt(8) << myewald.npack() << " per task)" << std::endl;
-      std::cout << "      Ewald summation: cut radius = "
+      coutput << "      Ewald summation: cut radius = "
                 << Ffmt(7,3) << myewald.rcut() << " and " << Ifmt(3) << myewald.ncut() << std::endl;
-      std::cout << "                       Mandelung Wigner-Seitz ="
+      coutput << "                       Mandelung Wigner-Seitz ="
                 << Ffmt(12,8) << myewald.mandelung()
                 << " (alpha =" << Ffmt(12,8) << myewald.rsalpha()
                 << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
 
        /* print nbrillouin */
-      std::cout << std::endl;
-      std::cout << " brillouin zone:" << std::endl;
-      std::cout << mybrillouin.print_zone();
+      coutput << std::endl;
+      coutput << " brillouin zone:" << std::endl;
+      coutput << mybrillouin.print_zone();
 
        /* print nbrillouin */
-      std::cout << std::endl;
-      std::cout << " computational grids:" << std::endl;
-      std::cout << "      density     cutoff ="
+      coutput << std::endl;
+      coutput << " computational grids:" << std::endl;
+      coutput << "      density     cutoff ="
                 << Ffmt(7,3) << mylattice.ecut()
                 << " fft =" << Ifmt(4) << mygrid.nx << " x "
                             << Ifmt(4) << mygrid.ny << " x "
@@ -322,7 +317,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                 << "  (" << Ifmt(8) << mygrid.npack_all(0) << " waves "
                          << Ifmt(8) << mygrid.npack(0) << " per task)" << std::endl;
       for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
-         std::cout << "      wavefnc"
+         coutput << "      wavefnc"
                    << Ifmt(4) << nb+1
                    << " cutoff ="
                    << Ffmt(7,3) << mylattice.wcut()
@@ -331,19 +326,54 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                                << Ifmt(4) << mygrid.nz
                    << "  (" << Ifmt(8) << mygrid.npack_all_print(nb) << " waves "
                             << Ifmt(8) << mygrid.npack_print(nb) << " per task)" << std::endl;
-      std::cout << std::endl;
-      std::cout << " technical parameters:\n";
-      if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
-      std::cout << "      fixed step: time step =" << Ffmt(12,2) << control.time_step()
-                << "  ficticious mass =" << Ffmt(12,2) << control.fake_mass() << std::endl;
-      std::cout << "      tolerance =" << Efmt(12,3) << control.tolerances(0)
-                << " (energy) " << Efmt(12,3) << control.tolerances(1)
-                << " (density) " << Efmt(12,3) << control.tolerances(2)
-                << " (ion)\n";
-      std::cout << "      max iterations = " << Ifmt(10) << control.loop(0)*control.loop(1)
-                << " (" << Ifmt(5) << control.loop(0) << " inner "
-                        << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
-      if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
+      coutput << std::endl;
+
+
+
+      if (flag > 0)
+      {
+         coutput << std::endl;
+         coutput << " technical parameters:\n";
+        if (control.io_buffer()) coutput << "      using io buffer " << std::endl;
+         coutput << "      fixed step: time step =" << Ffmt(12, 2)
+                 << control.time_step() << "  ficticious mass =" << Ffmt(12, 2)
+                 << control.fake_mass() << std::endl;
+         coutput << "      tolerance =" << Efmt(12, 3) << control.tolerances(0)
+                 << " (energy) " << Efmt(12, 3) << control.tolerances(1)
+                 << " (density) " << Efmt(12, 3) << control.tolerances(2)
+                 << " (ion)\n";
+         coutput << "      max iterations = " << Ifmt(10)
+                 << control.loop(0) * control.loop(1) << " (" << Ifmt(5)
+                 << control.loop(0) << " inner " << Ifmt(5) << control.loop(1)
+                 << " outer)\n";
+         if (control.minimizer()==1) coutput << "      minimizer = Grassmann conjugate gradient\n";
+         if (control.minimizer()==2) coutput << "      minimizer = Grassmann lmbfgs\n";
+         if (control.minimizer()==4) coutput << "      minimizer = Stiefel conjugate gradient\n";
+         if (control.minimizer()==5) coutput << "      minimizer = scf (potential)\n";
+         if (control.minimizer()==7) coutput << "      minimizer = Stiefel lmbfgs\n";
+         if (control.minimizer()==8) coutput << "      minimizer = scf (density)\n";
+         if ((control.minimizer()==5) || (control.minimizer()==8))
+         {
+            coutput << std::endl;
+            coutput << " Kohn-Sham scf parameters:\n";
+            coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            coutput << "     SCF algorithm        = simple mixing\n";
+            coutput << "     SCF mixing parameter =    x.xxxx\n";
+            coutput << "     Kohn-Sham iterations = xxxx\n";
+            if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+            coutput << "     Kerker damping       =    x.xxxx\n";
+         }
+      }
+      else
+      {
+         coutput << std::endl;
+         coutput << " technical parameters:\n";
+         coutput << "      optimization of psi and densities turned off" << std::endl;
+      }
+      coutput << std::endl << std::endl << std::endl;
+
+
    }
 
    MPI_Barrier(comm_world0);
@@ -385,22 +415,22 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       double t3 = cpu4 - cpu3;
       double t4 = cpu4 - cpu1;
       double av = t2 / ((double)control.loop(0) * icount);
-      // std::cout.setf(ios::scientific);
-      std::cout << std::scientific;
-      std::cout << std::endl;
-      std::cout << " -----------------" << std::endl;
-      std::cout << " cputime in seconds" << std::endl;
-      std::cout << " prologue    : " << t1 << std::endl;
-      std::cout << " main loop   : " << t2 << std::endl;
-      std::cout << " epilogue    : " << t3 << std::endl;
-      std::cout << " total       : " << t4 << std::endl;
-      std::cout << " cputime/step: " << av << std::endl;
-      std::cout << std::endl;
+      // coutput.setf(ios::scientific);
+      coutput << std::scientific;
+      coutput << std::endl;
+      coutput << " -----------------" << std::endl;
+      coutput << " cputime in seconds" << std::endl;
+      coutput << " prologue    : " << t1 << std::endl;
+      coutput << " main loop   : " << t2 << std::endl;
+      coutput << " epilogue    : " << t3 << std::endl;
+      coutput << " total       : " << t4 << std::endl;
+      coutput << " cputime/step: " << av << std::endl;
+      coutput << std::endl;
 
-      nwpw_timing_print_final(control.loop(0) * icount, std::cout);
+      nwpw_timing_print_final(control.loop(0) * icount, coutput);
 
-      std::cout << std::endl;
-      std::cout << " >>> job completed at     " << util_date() << " <<<" << std::endl;
+      coutput << std::endl;
+      coutput << " >>> job completed at     " << util_date() << " <<<" << std::endl;
    }
 
 
