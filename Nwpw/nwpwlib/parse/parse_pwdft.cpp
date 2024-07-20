@@ -2178,7 +2178,13 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
      }
+     // Look for band jobs
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 11;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 12;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 13;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 14;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
      }
      // Look for file jobs

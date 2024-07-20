@@ -985,6 +985,40 @@ int main(int argc, char *argv[]) {
            ierr += pwdft::file_generate(rtdbstr);
         }
      }
+
+     /* Energy or Gradient task */
+     if ((task == 10) || (task ==11))
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running energy calculation - rtdbstr = " << rtdbstr
+                     << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::band_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+
+     /* Optimize task */
+     if (task == 13)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running geometry optimization calculation - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        //ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+
+     /* Frequency task */
+     if (task == 14)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running frequency calculation - rtdbstr = " << rtdbstr
+                     << std::endl
+                     << std::endl;
+     }
     
      /* band steepest descent task */
      if (task == 15) 

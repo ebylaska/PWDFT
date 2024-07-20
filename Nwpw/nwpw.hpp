@@ -9,6 +9,7 @@
 namespace pwdft {
 
 extern int band_cpsd(MPI_Comm, std::string &);
+extern int band_minimizer(MPI_Comm, std::string &, std::ostream &);
 
 extern int cpsd(MPI_Comm, std::string &);
 extern int cpmd(MPI_Comm, std::string &);
@@ -27,6 +28,7 @@ extern int ctask_cpmd_run(MPI_Comm, double *, double *, double *, double *,
 extern int ctask_cpmd_stop(MPI_Comm, std::ostream &);
 
 extern int cpsd_debug(MPI_Comm, std::string &);
+
 } // namespace pwdft
 
 #endif
