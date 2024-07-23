@@ -1849,39 +1849,53 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
    double *tmp2 = new (std::nothrow) double[neq[0] + neq[1]]();
    double rzero[2] = {0.0,0.0};
    double rone[2]  = {1.0,0.0};
+   int npack1 =   CGrid::npack1_max(); 
+   int npack2 = 2*CGrid::npack1_max();
+   int shift2 = (neq[0]+neq[1])*npack2;
+   int shift1 = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
+   int neall  = (ne[0]+ne[1]);
+
  
    /* generate V and Sigma^2 */
    ggw_sym_Multiply(A, A, V);
    w_diagonalize(V, S);
  
-   /* generate U*Sigma */
-   fwf_Multiply(-1, A, V, rone, U, rzero);
- 
-   /* normalize U*sigma */
-   indx = 0;
-   for (n = 0; n < (neq[0] + neq[1]); ++n) 
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
-      tmp2[n] = CGrid::cc_pack_idot(1, U+indx, U+indx);
-      indx += 2*CGrid::npack1_max();
-   }
-   c3db::parall->Vector_SumAll(1, neq[0] + neq[1], tmp2);
- 
-   for (n = 0; n < (neq[0] + neq[1]); ++n)
-      tmp2[n] = 1.0 / std::sqrt(tmp2[n]);
- 
-   indx = 0;
-   for (n = 0; n < (neq[0] + neq[1]); ++n) 
-   {
-      CGrid::c_pack_SMul(1, tmp2[n], U+indx);
-      indx += 2 * CGrid::npack1_max();
-   }
- 
-   /* calculated sqrt(S^2) */
-   for (n = 0; n < (neq[0] + neq[1]); ++n) 
-   {
-      if (S[n] < 0.0)
-         S[n] = std::fabs(S[n]);
-      S[n] = std::sqrt(S[n]);
+      double *Ak = A + nbq*shift2;
+      double *Uk = U + nbq*shift2;
+      double *Vk = V + nbq*shift1;
+      double *Sk = S + nbq*neall;
+
+      /* generate U*Sigma */
+      fwf_Multiply(-1, Ak, Vk, rone, Uk, rzero);
+  
+      /* normalize U*sigma */
+      indx = 0;
+      for (auto n=0; n<(neq[0]+neq[1]); ++n) 
+      {
+         tmp2[n] = CGrid::cc_pack_idot(1+nbq, Uk+indx, Uk+indx);
+         indx += 2*CGrid::npack1_max();
+      }
+      c3db::parall->Vector_SumAll(1, neq[0]+neq[1], tmp2);
+  
+      for (auto n=0; n<(neq[0]+neq[1]); ++n)
+         tmp2[n] = 1.0 / std::sqrt(tmp2[n]);
+  
+      indx = 0;
+      for (auto n=0; n<(neq[0]+neq[1]); ++n) 
+      {
+         CGrid::c_pack_SMul(1+nbq, tmp2[n], Uk+indx);
+         indx += 2*CGrid::npack1_max();
+      }
+  
+      /* calculated sqrt(S^2) */
+      for (auto n=0; n<neall; ++n) 
+      {
+         if (Sk[n] < 0.0)
+            Sk[n] = std::fabs(S[n]);
+         Sk[n] = std::sqrt(Sk[n]);
+      }
    }
  
    delete[] tmp2;
@@ -2471,6 +2485,39 @@ void Cneb::mmm_Multiply2(const int mb, double *a, double *b, double alpha,
   }
 }
 
+   
+/*************************************
+ *                                   *
+ *         Cneb::www_Multiply2       *
+ *                                   *
+ *************************************/
+void Cneb::www_Multiply2(const int mb, double *a, double *b, double *alpha,
+                         double *c, double *beta) {
+  nwpw_timing_function ftimer(18);
+  int ms, n, ms1, ms2, ishift2, shift2;
+  if (mb == -1) {
+    ms1 = 0;
+    ms2 = ispin;
+    ishift2 = 2*ne[0]*ne[0];
+  } else {
+    ms1 = mb;
+    ms2 = mb + 1;
+    ishift2 = 0;
+  }   
+  for (ms = ms1; ms < ms2; ++ms) {
+    n = ne[ms];
+    if (n > 0) {
+      shift2 = ms * ishift2;
+      
+      ZGEMM_PWDFT((char *)"C", (char *)"N", n, n, n, alpha, a + shift2, n,
+                  b + shift2, n, beta, c + shift2, n);
+    } 
+  }   
+}     
+
+
+
+
 void Cneb::mm_transpose(const int mb, double *a, double *b) 
 {
    int i, j, indx, indxt;
@@ -2496,6 +2543,36 @@ void Cneb::mm_transpose(const int mb, double *a, double *b)
            indx  = i + j * ne[ms] + shift2;
            indxt = j + i * ne[ms] + shift2;
            b[indx] = a[indxt];
+        }
+   }
+}
+
+void Cneb::ww_transpose(const int mb, double *a, double *b) 
+{
+   int i, j, indx, indxt;
+   int  n, ms1, ms2, ishift2, shift2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift2 = 2*ne[0]*ne[0];
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+      ishift2 = 0;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      shift2 = ms*ishift2;
+      for (auto j=0; j<ne[ms]; ++j)
+      for (auto i=0; i<ne[ms]; ++i)
+        {
+           indx  = i + j*ne[ms] + shift2;
+           indxt = j + i*ne[ms] + shift2;
+           b[2*indx]   = a[2*indxt];
+           b[2*indx+1] = a[2*indxt+1];
         }
    }
 }

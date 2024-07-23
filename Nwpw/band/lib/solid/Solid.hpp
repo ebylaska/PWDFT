@@ -55,7 +55,7 @@ class Solid {
 
   double omega, scal2, scal1, dv;
 
-  int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, shift1, shift2;
+  int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, nfft3d, shift1, shift2;
   int nfft[3];
   int version = 3;
 
@@ -254,22 +254,17 @@ public:
    }
  
    /* calculates the difference squared  error between rho1 and rho2 */
-   double rho_error() {
+   double rho_error() 
+   {
       double x;
       double sumxx = 0.0;
-      // mygrid->r_zero_ends(rho2);
-      // mygrid->r_zero_ends(rho1);
-      // if (ispin==2)
-      //{
-      //    mygrid->r_zero_ends(&rho1[n2ft3d]);
-      //    mygrid->r_zero_ends(&rho2[n2ft3d]);
-      // }
-      for (int i = 0; i < n2ft3d; ++i) {
-        x = (rho2[i] - rho1[i]);
-        x += (rho2[i + (ispin - 1) * n2ft3d] - rho1[i + (ispin - 1) * n2ft3d]);
-        sumxx += x * x;
+      for (int i=0; i<nfft3d; ++i) 
+      {
+         x = (rho2[i] - rho1[i]);
+         x += (rho2[i+(ispin-1)*nfft3d] - rho1[i+(ispin-1)*nfft3d]);
+         sumxx += x * x;
       }
-      return mygrid->c3db::parall->SumAll(1, sumxx) * dv;
+      return mygrid->c3db::parall->SumAll(1,sumxx) * dv;
    }
  
    std::vector<double> eig_vector() {

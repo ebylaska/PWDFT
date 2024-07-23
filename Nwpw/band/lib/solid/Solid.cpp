@@ -63,6 +63,7 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
   dv = omega * scal1;
 
   n2ft3d = (mygrid->n2ft3d);
+  nfft3d = (mygrid->nfft3d);
   //shift1 = 2 * (mygrid->npack(1));
   shift1 = 2 * (mygrid->npack1_max());
   shift2 = (mygrid->n2ft3d);
