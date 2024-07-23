@@ -807,6 +807,32 @@ void Cneb::gh_fftb(double *psi, double *psi_r)
    }
 }
 
+
+/*************************************
+ *                                   *
+ *         Cneb::gh_fftb0            *
+ *                                   *
+ *************************************/
+void Cneb::gh_fftb0(double *psi, double *psi_r) 
+{
+
+   int shift1 = 2*CGrid::npack1_max();
+   int shift2 = n2ft3d;
+   int indx1n = 0;
+   int indx2n = 0;
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   for (auto k=0; k<(neq[0]+neq[1]); ++k)
+   {
+      CGrid::cc_pack_copy(1+nbq, psi+indx1n, psi_r+indx2n);
+      CGrid::c_unpack(1+nbq, psi_r+indx2n);
+      CGrid::cr_fft3d(psi_r+indx2n);
+      indx2n += shift2;
+      indx1n += shift1;
+   }
+}
+
+
+
 /*************************************
  *                                   *
  *         Cneb::hr_aSumSqr          *

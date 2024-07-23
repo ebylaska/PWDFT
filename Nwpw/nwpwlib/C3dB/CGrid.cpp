@@ -604,7 +604,7 @@ CGrid::CGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    aqnffts  = new (std::nothrow) int[aqmax]();
    aqnbb    = new (std::nothrow) int[aqmax]();
    atmp = new (std::nothrow) double[2*aqmax*2*nfft3d*nffts_max]();
- 
+
    bqmax = pfft3_qsize0;
    if (staged_gpu_fft_pipeline) bqmax += 6;
    

@@ -35,8 +35,8 @@ cElectron_Operators::cElectron_Operators(Cneb *mygrid0, cKinetic_Operator *myke0
    neall = mygrid->neq[0] + mygrid->neq[1];
  
    /* allocate memory */
-   Hpsi = mygrid->g_allocate(1);
-   psi_r = mygrid->h_allocate();
+   Hpsi  = mygrid->g_allocate_nbrillq_all();
+   psi_r = mygrid->h_allocate_nbrillq_all();
    xcp = mygrid->r_nalloc(ispin);
    xce = mygrid->r_nalloc(ispin);
  
@@ -48,7 +48,7 @@ cElectron_Operators::cElectron_Operators(Cneb *mygrid0, cKinetic_Operator *myke0
    vc = mygrid->c_pack_allocate(0);
    vcall = mygrid->c_pack_allocate(0);
 
-   hmltmp = mygrid->m_allocate(-1, 1);
+   hmltmp =  mygrid->w_allocate_nbrillq_all();
  
    omega = mygrid->lattice->omega();
    scal1 = 1.0/((double)((mygrid->nx)*(mygrid->ny)*(mygrid->nz)));

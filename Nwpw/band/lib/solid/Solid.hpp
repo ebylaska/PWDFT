@@ -55,7 +55,7 @@ class Solid {
 
   double omega, scal2, scal1, dv;
 
-  int ispin, ne[2], neall, n2ft3d, shift1, shift2;
+  int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, shift1, shift2;
   int nfft[3];
   int version = 3;
 
@@ -95,13 +95,13 @@ public:
       delete[] eig;
    }
  
-   /* write psi molecule */
+   /* write psi solid */
    void writepsi(char *output_filename, std::ostream &coutput) {
       //psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
       //          psi1,output_filename,coutput);
    }
  
-   /* molecule energy */
+   /* solid energy */
    double energy() {
       myelectron->run(psi1, rho1, dng1, rho1_all);
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
@@ -114,20 +114,22 @@ public:
       return E[0];
    }
  
-   /* molecule energy and eigenvalues */
+   /* solid energy and eigenvalues */
    double energy_eigenvalues() {
       myelectron->run(psi1, rho1, dng1, rho1_all);
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
       
       /* generate eigenvalues */
       myelectron->gen_hml(psi1, hml);
-      mygrid->m_diagonalize(hml, eig);
+      //mygrid->m_diagonalize(hml, eig);
+      mygrid->w_diagonalize(hml, eig);
       
       return E[0];
    }
  
-   /* molecule energy and eigenvalues and other energies and en */
-   double gen_all_energies() {
+   /* solid energy and eigenvalues and other energies and en */
+   double gen_all_energies() 
+   {
       myelectron->run(psi1, rho1, dng1, rho1_all);
       myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en);
       
@@ -148,7 +150,8 @@ public:
       
       /* generate eigenvalues */
       myelectron->gen_hml(psi1, hml);
-      mygrid->m_diagonalize(hml, eig);
+      //mygrid->m_diagonalize(hml, eig);
+      mygrid->w_diagonalize(hml, eig);
       
       /* generate dipole */
       //mypsp->mydipole->gen_dipole(rho1);
@@ -171,13 +174,13 @@ public:
      return ee;
    }
  
-   /* molecule - generate current hamiltonian */
+   /* solid - generate current hamiltonian */
    void gen_hml() { myelectron->gen_hml(psi1, hml); }
  
-   /* molecule - diagonalize the current hamiltonian */
-   void diagonalize() { mygrid->m_diagonalize(hml, eig); }
+   /* solid - diagonalize the current hamiltonian */
+   void diagonalize() { mygrid->w_diagonalize(hml, eig); }
  
-   /* molecule - call phafacs and gen_vl_potential and semicore */
+   /* solid - call phafacs and gen_vl_potential and semicore */
    void phafacs_vl_potential_semicore() {
       mystrfac->phafac();
       myewald->phafac();
@@ -298,7 +301,7 @@ public:
       std::ios init(NULL);
       init.copyfmt(os);
       std::string eoln = "\n";
-      os << "     =============  energy results (Molecule object)  =============" << eoln;
+      os << "     =============  energy results (Solid object)  =============" << eoln;
       os << eoln << eoln;
      
       os << std::fixed << " number of electrons: spin up= " << std::setw(11)
@@ -338,19 +341,35 @@ public:
             os << " spring bondings     : " << Efmt(19,10) << mysolid.E[71] << " ("
                                             << Efmt(15,5)  << mysolid.E[71]/mysolid.myion->nion << " /ion)" << std::endl;
       }
-      os << eoln;
-      os << eoln;
-      os << " orbital energy:" << eoln;
-      int nn = mysolid.ne[0] - mysolid.ne[1];
-      double ev = 27.2116;
-      for (int i=0; i<nn; ++i)
-         os << eig1stream(mysolid.eig[i], mysolid.eig[i] * ev);
-      for (int i=0; i<mysolid.ne[1]; ++i)
-         os << eig2stream(mysolid.eig[i+nn], 
-                          mysolid.eig[i+nn]*ev,
-                          mysolid.eig[i+(mysolid.ispin-1)*mysolid.ne[0]],
-                          mysolid.eig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev);
-      os << eoln;
+      for (auto nb=0; nb<mysolid.nbrillouin; ++nb)
+      {
+         int nbq = mysolid.mygrid->ktoindex(nb);
+         int pk = mysolid.mygrid->ktop(nb);
+       
+         int n = mysolid.ne[0] + mysolid.ne[1];
+         double tmpeig[n];
+         std:memset(tmpeig,0,n*sizeof(double));
+         if (pk==mysolid.mygrid->c3db::parall->taskid_k())
+            std::memcpy(tmpeig,mysolid.eig+nbq*n,n*sizeof(double));
+         mysolid.mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
+         //std::memcpy(tmpeig,mysolid.eig+nbq*n,n*sizeof(double));
+
+         os << eoln;
+         os << eoln;
+         os << mysolid.mygrid->mybrillouin->print_zone_point(nb);
+         os << eoln;
+         os << " orbital energies:" << eoln;
+         int nn = mysolid.ne[0] - mysolid.ne[1];
+         double ev = 27.2116;
+         for (int i=0; i<nn; ++i)
+            os << eig1stream(tmpeig[mysolid.ne[0]-1-i], tmpeig[mysolid.ne[0]-1-i] * ev);
+         for (int i=0; i<mysolid.ne[1]; ++i)
+            os << eig2stream(tmpeig[i+nn], 
+                             tmpeig[i+nn]*ev,
+                             tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]],
+                             tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev);
+         os << eoln;
+      }
      
       // write dipoles
       //os << mysolid.mypsp->mydipole->shortprint_dipole();

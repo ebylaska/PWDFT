@@ -22,6 +22,8 @@
 #include "CPseudopotential.hpp"
 #include "cpsi.hpp"
 #include "CStrfac.hpp"
+#include "Solid.hpp"
+#include "cElectron.hpp"
 
 #include "util_date.hpp"
 //#include	"rtdb.hpp"
@@ -32,7 +34,7 @@
 #include "psp_file_check.hpp"
 #include "psp_library.hpp"
 
-//#include "cgsd_energy.hpp"
+#include "band_cgsd_energy.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -82,7 +84,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *                                                   *\n";
       coutput << "          *               PWDFT BAND Calculation              *\n";
       coutput << "          *                                                   *\n";
-      coutput << "          *  [ (Grassmann/Stiefel manifold implementation) ]  *\n";
+      coutput << "          *  [      (bundled Grassmann/Stiefel manifold)   ]  *\n";
       coutput << "          *  [              C++ implementation             ]  *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *              version #7.00   07/19/24             *\n";
@@ -146,6 +148,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
   
    // initialize gdevice memory
    mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+
+
   
    // setup structure factor
    CStrfac mystrfac(&myion,&mygrid);
@@ -160,6 +164,10 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    /* initialize psps */
    CPseudopotential mypsp(&myion,&mygrid,&mystrfac,control,coutput);
 
+   // initialize electron operators
+   cElectron_Operators myelectron(&mygrid,&mykin,&mycoulomb,&myxc,&mypsp);
+  
+
    /* setup ewald */
    Ewald myewald(&myparallel,&myion,&mylattice,control,mypsp.zv);
    myewald.phafac();
@@ -168,9 +176,9 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
   
    // initialize solid
-//   Molecule mymolecule(control.input_movecs_filename(),
-//                       control.input_movecs_initialize(),&mygrid,&myion,
-//                       &mystrfac,&myewald,&myelectron,&mypsp,coutput);
+   Solid mysolid(control.input_movecs_filename(),
+                 control.input_movecs_initialize(),&mygrid,&myion,
+                 &mystrfac,&myewald,&myelectron,&mypsp,coutput);
   
    /* intialize the linesearch */
    util_linesearch_init();
@@ -388,11 +396,11 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
   
    if (flag < 0) 
    {
-      //EV = cgsd_noit_energy(mymolecule, true, coutput);
+      EV = band_cgsd_noit_energy(mysolid, true, coutput);
    }
    else 
    {
-     // EV = cgsd_energy(control, mymolecule, true, coutput);
+      EV = band_cgsd_energy(control, mysolid, true, coutput);
    }
    if (myparallel.is_master()) seconds(&cpu3);
   

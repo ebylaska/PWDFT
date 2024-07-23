@@ -226,6 +226,8 @@ public:
    void mm_Kiril_Btransform(const int, double *, double *);
  
    void gh_fftb(double *, double *);
+   void gh_fftb0(double *, double *);
+
    void ggw_lambda(double, double *, double *, double *);
    // void ggm_lambda2(double, double *, double *, double *);
    void ggw_lambda_sic(double, double *, double *, double *);
