@@ -94,25 +94,25 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control)
    if ((gga >= 10) && (gga < 100)) {
      use_gga = true;
      if (mypneb->ispin == 1) {
-       rho = new double[mypneb->nfft3d];
+       rho = new double[mypneb->n2ft3d];
  
        grx = new double[mypneb->n2ft3d];
        gry = new double[mypneb->n2ft3d];
        grz = new double[mypneb->n2ft3d];
  
-       agr = new double[mypneb->nfft3d];
+       agr = new double[mypneb->n2ft3d];
        fn  = new double[mypneb->n2ft3d];
-       fdn = new double[mypneb->nfft3d];
+       fdn = new double[mypneb->n2ft3d];
      } else {
-       rho = new double[2 * mypneb->nfft3d];
+       rho = new double[2 * mypneb->n2ft3d];
  
        grx = new double[3 * mypneb->n2ft3d];
        gry = new double[3 * mypneb->n2ft3d];
        grz = new double[3 * mypneb->n2ft3d];
  
-       agr = new double[3 * mypneb->nfft3d];
+       agr = new double[3 * mypneb->n2ft3d];
        fn  = new double[2 * mypneb->n2ft3d];
-       fdn = new double[3 * mypneb->nfft3d];
+       fdn = new double[3 * mypneb->n2ft3d];
      }
    }
    if ((gga >= 300))

@@ -137,6 +137,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    ptotal_ion_charge = 0;
    pne[0] = 0;
    pne[1] = 0;
+   pnexcited[0] = 0;
+   pnexcited[1] = 0;
  
    pfei_on = false;
    pcif_on = false;
@@ -455,6 +457,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (ptask == 6)
      if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())
        ptime_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
+
+   if (rtdbjson["nwpw"]["virtual"][0].is_number_integer())
+      pnexcited[0] = rtdbjson["nwpw"]["virtual"][0];
+   if (rtdbjson["nwpw"]["virtual"][1].is_number_integer())
+      pnexcited[1] = rtdbjson["nwpw"]["virtual"][1];
  
    ploop[0] = 10;
    ploop[1] = 100;

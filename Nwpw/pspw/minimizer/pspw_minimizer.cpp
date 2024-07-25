@@ -35,6 +35,7 @@
 #include "psp_library.hpp"
 
 #include "cgsd_energy.hpp"
+#include "cgsd_excited.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -379,7 +380,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       EV = cgsd_energy(control, mymolecule, true, coutput);
    }
    if (myparallel.is_master()) seconds(&cpu3);
-  
+
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"] = EV;
@@ -408,6 +409,13 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
      
       // delete [] fion;
    }
+
+   // calculate excited state orbitals 
+   cgsd_excited(control, mymolecule, true, coutput);
+
+   // calculate oep orbitals 
+
+   // calculate the spin contamination
   
    // APC analysis
    if (mypsp.myapc->apc_on) 

@@ -35,7 +35,7 @@ class Control2 {
   
    int pnp_dimensions[3], pewald_grid[3];
    int pcode, ptask;
-   int pispin, pmultiplicity, pne[2], ptotal_ion_charge, plmax_multipole;
+   int pispin, pmultiplicity, pne[2], pnexcited[2], ptotal_ion_charge, plmax_multipole;
    int pmove, pfrac_coord, pgram_schmidt;
    int protation, ptranslation, pbalance, pspin_orbit;
    int pmaxit_orb, pmaxit_orbs, pscf_algorithm, pks_algorithm;
@@ -192,6 +192,7 @@ public:
    int multiplicity() { return pmultiplicity; }
    int ispin() { return pispin; }
    int ne(const int i) { return pne[i]; }
+   int nexcited(const int i) { return pnexcited[i]; }
    int total_ion_charge() { return ptotal_ion_charge; }
    int lmax_multipole() { return plmax_multipole; }
    std::string xc_name() { return xcstring; }
