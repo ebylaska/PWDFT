@@ -1868,7 +1868,7 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
       double *Sk = S + nbq*neall;
 
       /* generate U*Sigma */
-      fwf_Multiply(-1, Ak, Vk, rone, Uk, rzero);
+      Cneb::fwf_Multiply(-1, Ak, Vk, rone, Uk, rzero);
   
       /* normalize U*sigma */
       indx = 0;
@@ -2547,6 +2547,11 @@ void Cneb::mm_transpose(const int mb, double *a, double *b)
    }
 }
 
+/********************************
+ *                              *
+ *       Cneb::ww_transpose     *
+ *                              *
+ ********************************/
 void Cneb::ww_transpose(const int mb, double *a, double *b) 
 {
    int i, j, indx, indxt;
@@ -2563,17 +2568,18 @@ void Cneb::ww_transpose(const int mb, double *a, double *b)
       ms2 = mb + 1;
       ishift2 = 0;
    }
+
    for (auto ms=ms1; ms<ms2; ++ms)
    {
       shift2 = ms*ishift2;
       for (auto j=0; j<ne[ms]; ++j)
       for (auto i=0; i<ne[ms]; ++i)
-        {
-           indx  = i + j*ne[ms] + shift2;
-           indxt = j + i*ne[ms] + shift2;
-           b[2*indx]   = a[2*indxt];
-           b[2*indx+1] = a[2*indxt+1];
-        }
+      {
+         indx  = i + j*ne[ms] + shift2;
+         indxt = j + i*ne[ms] + shift2;
+         b[2*indx]   = a[2*indxt];
+         b[2*indx+1] = a[2*indxt+1];
+      }
    }
 }
 

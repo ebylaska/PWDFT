@@ -32,10 +32,10 @@ public:
     minimizer = minimizer0;
     myelectron = mysolid->myelectron;
     mygrid = mysolid->mygrid;
-    U = mygrid->g_allocate(1);
+    U = mygrid->g_allocate_nbrillq_all();
     //Vt = mygrid->w_allocate(-1, 1);
     Vt = mygrid->w_allocate_nbrillq_all();
-    S = new double[mygrid->ne[0] + mygrid->ne[1]];
+    S = new double[mygrid->nbrillq*(mygrid->ne[0] + mygrid->ne[1])];
 
     // tmp space
     tmp1 = mygrid->w_allocate_nbrillq_all();
@@ -62,17 +62,20 @@ public:
       double *V = mygrid->w_allocate_nbrillq_all();
       mygrid->ggw_SVD(A, U, S, V);
 
-      int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+      int npack1 = mygrid->CGrid::npack1_max(); 
+      int npack2 = 2*mygrid->CGrid::npack1_max();
+      int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+      int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0] + mygrid->ne[1]*mygrid->ne[1]);
       int neall = mygrid->ne[0] + mygrid->ne[1];
+
     
       for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
       {
          double mmsig = 9.99e9;
          double msig = 0.0;
 
-         double *Sk = S+nbq*neall;
-         double *Vk  = Vk  + nbq*shift1;
-         double *Vtk = Vtk + nbq*shift1;
+         double *Vk  = V  + nbq*shift1;
+         double *Vtk = Vt + nbq*shift1;
 
          for (int i=0; i<neall; ++i) 
          {
@@ -85,7 +88,7 @@ public:
          *min_sigma = mmsig;
        
          /* calculate Vt */
-         mygrid->ww_transpose(-1, Vk, Vtk);
+         mygrid->Cneb::ww_transpose(-1, Vk, Vtk);
        
          // double *tmp1 = mygrid->m_allocate(-1,1);
          // mygrid->mmm_Multiply(-1,Vt,V,1.0,tmp1,0.0);
@@ -105,18 +108,30 @@ public:
 
    void get(double t, double *Yold, double *Ynew) 
    {
+      int npack1 =   mygrid->CGrid::npack1_max(); 
+      int npack2 = 2*mygrid->CGrid::npack1_max();
+      int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+      int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+      int neall = mygrid->ne[0] + mygrid->ne[1];
+
       double rone[2]  = {1.0,0.0};
       double rmone[2]  = {-1.0,0.0};
       double rzero[2] = {0.0,0.0};
 
       for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
       {
-         mygrid->ww_SCtimesVtrans(-1, t, S, Vt, tmp1, tmp3, tmpC, tmpS);
+         double *Sk = S+nbq*neall;
+         double *Vtk  = Vt  + nbq*shift1;
+         double *Uk   = U  + nbq*shift2;
+         double *Yoldk = Yold  + nbq*shift2;
+         double *Ynewk = Ynew  + nbq*shift2;
+
+         mygrid->ww_SCtimesVtrans(-1, t, Sk, Vtk, tmp1, tmp3, tmpC, tmpS);
        
          /* Ynew = Yold*V*cos(Sigma*t)*Vt + U*sin(Sigma*t)*Vt */
-         mygrid->www_Multiply2(-1, Vt, tmp1, rone, tmp2, rzero);
-         mygrid->fwf_Multiply(-1, Yold, tmp2, rone, Ynew, rzero);
-         mygrid->fwf_Multiply(-1, U, tmp3, rone, Ynew, rone);
+         mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);
+         mygrid->fwf_Multiply(-1, Yoldk, tmp2, rone, Ynewk, rzero);
+         mygrid->fwf_Multiply(-1, Uk, tmp3, rone, Ynewk, rone);
        
          /* ortho check  - need to figure out what causes this to happen */
          double sum2 = mygrid->gg_traceall(Ynew, Ynew);
@@ -141,12 +156,27 @@ public:
       double rmone[2]  = {-1.0,0.0};
       double rzero[2] = {0.0,0.0};
 
-      mygrid->ww_SCtimesVtrans2(-1, t, S, Vt, tmp1, tmp3, tmpC, tmpS);
+      int npack1 =   mygrid->CGrid::npack1_max(); 
+      int npack2 = 2*mygrid->CGrid::npack1_max();
+      int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+      int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+      int neall = mygrid->ne[0] + mygrid->ne[1];
+
+      for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+      {
+         double *Sk = S+nbq*neall;
+         double *Vtk  = Vt  + nbq*shift1;
+         double *Uk   = U  + nbq*shift2;
+         double *Yoldk = Yold  + nbq*shift2;
+         double *Ynewk = Ynew  + nbq*shift2;
+
+         mygrid->ww_SCtimesVtrans2(-1, t, S, Vt, tmp1, tmp3, tmpC, tmpS);
      
-      /* tHnew = (-Yold*V*sin(Sigma*t) + U*cos(Sigma*t))*Sigma*Vt */
-      mygrid->www_Multiply2(-1, Vt, tmp1, rone, tmp2, rzero);
-      mygrid->fwf_Multiply(-1, Yold, tmp2, rmone, Ynew, rzero);
-      mygrid->fwf_Multiply(-1, U, tmp3, rone, Ynew, rone);
+         /* tHnew = (-Yold*V*sin(Sigma*t) + U*cos(Sigma*t))*Sigma*Vt */
+         mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);
+         mygrid->fwf_Multiply(-1, Yoldk, tmp2, rmone, Ynewk, rzero);
+         mygrid->fwf_Multiply(-1, Uk, tmp3, rone, Ynewk, rone);
+      }
    }
 
    void psi_1transport(double t, double *H0) 
@@ -160,13 +190,28 @@ public:
       double rmone[2]  = {-1.0,0.0};
       double rzero[2] = {0.0,0.0};
 
-      mygrid->ffw_sym_Multiply(-1,U,tG,tmp2);
-      mygrid->ffw_Multiply(-1, U, tG, tmp2);
-      mygrid->ww_SCtimesVtrans3(-1, t, S, tmp2, tmp1, tmp3, tmpC, tmpS);
-      mygrid->www_Multiply2(-1, Vt, tmp1, rone, tmp2, rzero);
-     
-      mygrid->fwf_Multiply(-1, Yold, tmp2, rmone, tG, rone);
-      mygrid->fwf_Multiply(-1, U, tmp3, rmone, tG, rone);
+      int npack1 =   mygrid->CGrid::npack1_max(); 
+      int npack2 = 2*mygrid->CGrid::npack1_max();
+      int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+      int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+      int neall = mygrid->ne[0] + mygrid->ne[1];
+
+      for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+      {
+         double *Sk = S+nbq*neall;
+         double *Vtk  = Vt  + nbq*shift1;
+         double *Uk  = U  + nbq*shift2;
+         double *tGk = tG + nbq*shift2;
+         double *Yoldk = Yold  + nbq*shift2;
+
+         mygrid->ffw_sym_Multiply(-1,Uk,tGk,tmp2);
+         mygrid->ffw_Multiply(-1, Uk, tGk, tmp2);
+         mygrid->ww_SCtimesVtrans3(-1, t, Sk, tmp2, tmp1, tmp3, tmpC, tmpS);
+         mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);
+        
+         mygrid->fwf_Multiply(-1, Yoldk, tmp2, rmone, tGk, rone);
+         mygrid->fwf_Multiply(-1, Uk, tmp3, rmone, tGk, rone);
+      }
    }
 
    void psi_1Gtransport(double t, double *H0) 

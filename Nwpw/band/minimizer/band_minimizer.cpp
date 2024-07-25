@@ -422,7 +422,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       double t2 = cpu3 - cpu2;
       double t3 = cpu4 - cpu3;
       double t4 = cpu4 - cpu1;
-      double av = t2 / ((double)control.loop(0) * icount);
+      //double av = t2 / ((double)control.loop(0) * icount);
+      double av = t2 / ((double)myelectron.counter);
       // coutput.setf(ios::scientific);
       coutput << std::scientific;
       coutput << std::endl;
@@ -435,7 +436,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << " cputime/step: " << av << std::endl;
       coutput << std::endl;
 
-      nwpw_timing_print_final(control.loop(0) * icount, coutput);
+      nwpw_timing_print_final(myelectron.counter, coutput);
 
       coutput << std::endl;
       coutput << " >>> job completed at     " << util_date() << " <<<" << std::endl;

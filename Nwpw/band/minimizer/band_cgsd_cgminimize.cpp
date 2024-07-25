@@ -63,7 +63,6 @@ double band_cgsd_cgminimize(Solid &mysolid, band_Geodesic *mygeodesic, double *E
   while ((!done) && ((it++) < it_in)) {
     /* initialize the geoedesic line data structure */
     dEold = mygeodesic->start(H0, &max_sigma, &min_sigma);
-    std::cout << "dEold=" << dEold << std::endl;
 
     /* line search */
     if (tmin > deltat_min)
@@ -74,18 +73,12 @@ double band_cgsd_cgminimize(Solid &mysolid, band_Geodesic *mygeodesic, double *E
     tmin0 = tmin;
     deltae0 = *deltae;
 
-    std::cout << "deltat=" << deltat << std::endl;
-    std::cout << "deltae=" << *deltae << std::endl;
-    std::cout << "Ebefore=" << Enew << std::endl;
     Eold = Enew;
     Enew = util_linesearch(0.0, Eold, dEold, deltat, &dummy_energy,
                            &dummy_denergy, 0.50, &tmin0, &deltae0, 2);
-    std::cout << "Enew" << Enew << std::endl;
-    std::cout << "Eold" << Eold << std::endl;
     tmin = tmin0;
     *deltae = deltae0;
     *deltac = mysolid.rho_error();
-    std::cout << "outo rho_error=" << *deltac << std::endl;
     mygeodesic->psi_final(tmin);
 
     /* exit loop early */
