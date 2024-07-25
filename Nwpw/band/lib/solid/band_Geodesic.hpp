@@ -27,22 +27,23 @@ public:
   Cneb *mygrid;
 
   /* Constructors */
-  band_Geodesic(int minimizer0, Solid *mysolid0) {
-    mysolid = mysolid0;
-    minimizer = minimizer0;
-    myelectron = mysolid->myelectron;
-    mygrid = mysolid->mygrid;
-    U = mygrid->g_allocate_nbrillq_all();
-    //Vt = mygrid->w_allocate(-1, 1);
-    Vt = mygrid->w_allocate_nbrillq_all();
-    S = new double[mygrid->nbrillq*(mygrid->ne[0] + mygrid->ne[1])];
-
-    // tmp space
-    tmp1 = mygrid->w_allocate_nbrillq_all();
-    tmp2 = mygrid->w_allocate_nbrillq_all();
-    tmp3 = mygrid->w_allocate_nbrillq_all();
-    tmpC = new double[mygrid->ne[0] + mygrid->ne[1]];
-    tmpS = new double[mygrid->ne[0] + mygrid->ne[1]];
+  band_Geodesic(int minimizer0, Solid *mysolid0) 
+  {
+     mysolid = mysolid0;
+     minimizer = minimizer0;
+     myelectron = mysolid->myelectron;
+     mygrid = mysolid->mygrid;
+     U = mygrid->g_allocate_nbrillq_all();
+     //Vt = mygrid->w_allocate(-1, 1);
+     Vt = mygrid->w_allocate_nbrillq_all();
+     S = new double[mygrid->nbrillq*(mygrid->ne[0] + mygrid->ne[1])];
+    
+     // tmp space
+     tmp1 = mygrid->w_allocate_nbrillq_all();
+     tmp2 = mygrid->w_allocate_nbrillq_all();
+     tmp3 = mygrid->w_allocate_nbrillq_all();
+     tmpC = new double[mygrid->ne[0] + mygrid->ne[1]];
+     tmpS = new double[mygrid->ne[0] + mygrid->ne[1]];
   }
 
   /* destructor */

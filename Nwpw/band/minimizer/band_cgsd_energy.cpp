@@ -48,7 +48,7 @@ double band_cgsd_noit_energy(Solid &mysolid, bool doprint, std::ostream &coutput
 
 /******************************************
  *                                        *
- *              band_cgsd_energy          *
+ *           band_cgsd_energy             *
  *                                        *
  ******************************************/
 double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::ostream &coutput) 
@@ -81,8 +81,8 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
  
    if (oprint) 
    {
-      if (minimizer == 1) coutput << "     =========== Grassmann conjugate gradient iteration ===========" << std::endl;
-      if (minimizer == 2) coutput << "     ================= Grassmann lmbfgs iteration =================" << std::endl;
+      if (minimizer == 1) coutput << "     ======= bundled Grassmann conjugate gradient iteration =======" << std::endl;
+      if (minimizer == 2) coutput << "     =========+=== bundled Grassmann lmbfgs iteration =============" << std::endl;
       if (minimizer == 4) coutput << "     ============ Stiefel conjugate gradient iteration ============" << std::endl;
       if (minimizer == 5) coutput << "     ============ Kohn-Sham scf iteration (potential) =============" << std::endl;
       if (minimizer == 7) coutput << "     ================== Stiefel lmbfgs iteration ==================" << std::endl;
@@ -162,8 +162,8 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             bfgscount = 0;
          }
          deltae_old = deltae;
-         //total_energy = band_cgsd_bfgsminimize(mysolid, mygeodesic12.mygeodesic1, psi_lmbfgs, E,
-         //                      &deltae, &deltac, bfgscount, it_in, tole, tolc);
+         total_energy = band_cgsd_bfgsminimize(mysolid, mygeodesic12.mygeodesic1, psi_lmbfgs, E,
+                                               &deltae, &deltac, bfgscount, it_in, tole, tolc);
          ++bfgscount;
          if (oprint)
             coutput << Ifmt(10) << icount * it_in 
