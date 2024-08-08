@@ -1,0 +1,47 @@
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start band-pbe-B2-mylabel
+
+permanent_dir ./permt
+scratch_dir   ./permt
+
+memory 1900 mb
+
+charge 0
+
+geometry noautoz nocenter noautosym
+system crystal cartesian
+   lattice_vectors
+     10.00000 0.000000 0.000000
+     0.000000 10.00000 0.000000
+     0.000000 0.000000 10.00000
+end
+
+B 0.000000 0.000000 0.000000
+B 0.000000 0.00000 2.500000
+end
+
+nwpw
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 30.0
+  mult 1
+  xc lda
+
+  steepest_descent
+    loop 100 10
+    tolerances 1.0e-9 1.0e-9
+  end
+  loop 10 1000
+  tolerances 1.0e-8 1.0e-8
+  #vectors input  band-pbe-B2-mylabel.movecs output junk.elc
+  vectors input  junk.elc output junk.elc
+ 
+  monkhorst-pack 2 2 1
+
+end
+task band energy
+
