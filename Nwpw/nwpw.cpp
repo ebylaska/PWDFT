@@ -863,7 +863,8 @@ int main(int argc, char *argv[]) {
      std::cout << "First task=" << task << std::endl << std::endl;
 
   // Initialize wavefunction
-  if ((task<10) && (parse_initialize_wvfnc(rtdbstr, true))) 
+  //if ((task<10) && (parse_initialize_wvfnc(rtdbstr, true))) 
+  if (parse_initialize_wvfnc(rtdbstr, true)) 
   {
      bool wvfnc_initialize = parse_initialize_wvfnc(rtdbstr, false);
      if (wvfnc_initialize)
@@ -891,12 +892,24 @@ int main(int argc, char *argv[]) {
               dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr, true);
               wvfnc_initialize = false;
            }
-           if (oprint)
-              std::cout << std::endl
-                  << "Running staged energy optimization - lowlevel_rtdbstr = "
-                  << dum_rtdbstr << std::endl
-                  << std::endl;
-           ierr += pspw_minimizer(MPI_COMM_WORLD, dum_rtdbstr, std::cout);
+           if (task<10)
+           {
+              if (oprint)
+                 std::cout << std::endl
+                           << "Running staged pspw energy optimization - lowlevel_rtdbstr = "
+                           << dum_rtdbstr << std::endl
+                           << std::endl;
+              ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD, dum_rtdbstr, std::cout);
+           }
+           else
+           {
+              if (oprint)
+                 std::cout << std::endl
+                           << "Running staged band energy optimization - lowlevel_rtdbstr = "
+                           << dum_rtdbstr << std::endl
+                           << std::endl;
+              ierr += pwdft::band_minimizer(MPI_COMM_WORLD, dum_rtdbstr, std::cout);
+           }
         }
      }
   }
