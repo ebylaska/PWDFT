@@ -36,7 +36,7 @@ nwpw
     tolerances 1.0e-9 1.0e-9
   end
   loop 10 1000
-  tolerances 1.0e-8 1.0e-8
+  #tolerances 1.0e-8 1.0e-8
   #vectors input  band-pbe-B2-mylabel.movecs output junk.elc
   vectors input  junk.elc output junk.elc
  
