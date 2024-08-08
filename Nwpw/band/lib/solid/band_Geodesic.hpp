@@ -39,9 +39,9 @@ public:
      S = new double[mygrid->nbrillq*(mygrid->ne[0] + mygrid->ne[1])];
     
      // tmp space
-     tmp1 = mygrid->w_allocate_nbrillq_all();
-     tmp2 = mygrid->w_allocate_nbrillq_all();
-     tmp3 = mygrid->w_allocate_nbrillq_all();
+     tmp1 = mygrid->w_allocate(0,1);
+     tmp2 = mygrid->w_allocate(0,1);
+     tmp3 = mygrid->w_allocate(0,1);
      tmpC = new double[mygrid->ne[0] + mygrid->ne[1]];
      tmpS = new double[mygrid->ne[0] + mygrid->ne[1]];
   }
@@ -89,7 +89,7 @@ public:
          *min_sigma = mmsig;
        
          /* calculate Vt */
-         mygrid->Cneb::ww_transpose(-1, Vk, Vtk);
+         mygrid->Cneb::ww_hermit_transpose(-1, Vk, Vtk);
        
          // double *tmp1 = mygrid->m_allocate(-1,1);
          // mygrid->mmm_Multiply(-1,Vt,V,1.0,tmp1,0.0);
@@ -119,18 +119,20 @@ public:
       double rmone[2]  = {-1.0,0.0};
       double rzero[2] = {0.0,0.0};
 
-      for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+      for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
       {
          double *Sk = S+nbq*neall;
-         double *Vtk  = Vt  + nbq*shift1;
+         double *Vtk  = Vt + nbq*shift1;
          double *Uk   = U  + nbq*shift2;
          double *Yoldk = Yold  + nbq*shift2;
          double *Ynewk = Ynew  + nbq*shift2;
 
          mygrid->ww_SCtimesVtrans(-1, t, Sk, Vtk, tmp1, tmp3, tmpC, tmpS);
+
        
          /* Ynew = Yold*V*cos(Sigma*t)*Vt + U*sin(Sigma*t)*Vt */
          mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);
+
          mygrid->fwf_Multiply(-1, Yoldk, tmp2, rone, Ynewk, rzero);
          mygrid->fwf_Multiply(-1, Uk, tmp3, rone, Ynewk, rone);
        
@@ -171,7 +173,7 @@ public:
          double *Yoldk = Yold  + nbq*shift2;
          double *Ynewk = Ynew  + nbq*shift2;
 
-         mygrid->ww_SCtimesVtrans2(-1, t, S, Vt, tmp1, tmp3, tmpC, tmpS);
+         mygrid->ww_SCtimesVtrans2(-1, t, Sk, Vtk, tmp1, tmp3, tmpC, tmpS);
      
          /* tHnew = (-Yold*V*sin(Sigma*t) + U*cos(Sigma*t))*Sigma*Vt */
          mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);

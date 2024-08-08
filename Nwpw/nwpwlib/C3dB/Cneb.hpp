@@ -225,6 +225,8 @@ public:
    void www_Multiply2(const int, double *, double *, double *, double *, double *);
    void mm_transpose(const int, double *, double *);
    void ww_transpose(const int, double *, double *);
+   void ww_hermit_copy(const int, double *, double *);
+   void ww_hermit_transpose(const int, double *, double *);
    void mm_Kiril_Btransform(const int, double *, double *);
  
    void gh_fftb(double *, double *);

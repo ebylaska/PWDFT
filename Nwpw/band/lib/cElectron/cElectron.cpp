@@ -205,11 +205,23 @@ void cElectron_Operators::gen_hmlt(double *psi, double *hmlt)
  ********************************************/
 void cElectron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi) 
 {
-  double rone[2]  = {1.0,0.0};
-  double rzero[2] = {0.0,0.0};
-   mygrid->fwf_Multiply(-1,psi,hml,rone,THpsi,rzero);
-   mygrid->gg_Minus2(Hpsi,THpsi);
+   double rone[2]  = {1.0,0.0};
+   double rzero[2] = {0.0,0.0};
+   int npack1 =   mygrid->CGrid::npack1_max();
+   int npack2 = 2*mygrid->CGrid::npack1_max();
+   int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+   int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+
+  for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
+  {
+      double *psik = psi + nbq*shift2;
+      double *THpsik = THpsi + nbq*shift2;
+      double *hmlk = hml + nbq*shift1;
+      mygrid->fwf_Multiply(-1,psik,hmlk,rone,THpsik,rzero);
+      //mygrid->fwf_Multiply(-1,psi,hml,rone,THpsi,rzero);
    // mygrid->g_Scale(-1.0,THpsi);
+   }
+   mygrid->gg_Minus2(Hpsi,THpsi);
 }
 
 
@@ -220,9 +232,20 @@ void cElectron_Operators::get_Tgradient(double *psi, double *hml, double *THpsi)
  ********************************************/
 void cElectron_Operators::gen_Tangent(double *psi, double *hml, double *THpsi) 
 {
-  double rone[2]  = {1.0,0.0};
-  double rmone[2]  = {-1.0,0.0};
-   mygrid->fwf_Multiply(-1,psi,hml,rone,THpsi,rmone);
+   double rone[2]  = {1.0,0.0};
+   double rmone[2]  = {-1.0,0.0};
+   int npack1 =   mygrid->CGrid::npack1_max();
+   int npack2 = 2*mygrid->CGrid::npack1_max();
+   int shift2 = (mygrid->neq[0]+mygrid->neq[1])*npack2;
+   int shift1 = 2*(mygrid->ne[0]*mygrid->ne[0]+mygrid->ne[1]*mygrid->ne[1]);
+
+   for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
+   {
+      double *psik = psi + nbq*shift2;
+      double *THpsik = THpsi + nbq*shift2;
+      double *hmlk = hml + nbq*shift1;
+      mygrid->fwf_Multiply(-1,psik,hmlk,rone,THpsik,rmone);
+   }
 }
 
 

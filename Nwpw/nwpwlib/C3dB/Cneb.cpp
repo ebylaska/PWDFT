@@ -1858,6 +1858,7 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
  
    /* generate V and Sigma^2 */
    ggw_sym_Multiply(A, A, V);
+   //ggw_hermit_sym_Multiply(A, A, V);
    w_diagonalize(V, S);
  
    for (auto nbq=0; nbq<nbrillq; ++nbq)
@@ -1875,7 +1876,8 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
       for (auto n=0; n<(neq[0]+neq[1]); ++n) 
       {
          tmp2[n] = CGrid::cc_pack_idot(1+nbq, Uk+indx, Uk+indx);
-         indx += 2*CGrid::npack1_max();
+         //indx += 2*CGrid::npack1_max();
+         indx += npack2;
       }
       c3db::parall->Vector_SumAll(1, neq[0]+neq[1], tmp2);
   
@@ -1886,14 +1888,15 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
       for (auto n=0; n<(neq[0]+neq[1]); ++n) 
       {
          CGrid::c_pack_SMul(1+nbq, tmp2[n], Uk+indx);
-         indx += 2*CGrid::npack1_max();
+         //indx += 2*CGrid::npack1_max();
+         indx += npack2;
       }
   
       /* calculated sqrt(S^2) */
       for (auto n=0; n<neall; ++n) 
       {
          if (Sk[n] < 0.0)
-            Sk[n] = std::fabs(S[n]);
+            Sk[n] = std::fabs(Sk[n]);
          Sk[n] = std::sqrt(Sk[n]);
       }
    }
@@ -2582,6 +2585,41 @@ void Cneb::ww_transpose(const int mb, double *a, double *b)
       }
    }
 }
+
+void Cneb::ww_hermit_transpose(const int mb, double *a, double *b)
+{
+   int i, j, indx, indxt;
+   int  n, ms1, ms2, ishift2, shift2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift2 = 2*ne[0]*ne[0];
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+      ishift2 = 0;
+   }
+
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      shift2 = ms*ishift2;
+      for (auto j=0; j<ne[ms]; ++j)
+      for (auto i=0; i<ne[ms]; ++i)
+      {
+         indx  = i + j*ne[ms] + shift2;
+         indxt = j + i*ne[ms] + shift2;
+         b[2*indx]   =  a[2*indxt];
+         b[2*indx+1] = -a[2*indxt+1];
+      }
+   }
+}
+
+
+
+
 
 /********************************
  *                              *

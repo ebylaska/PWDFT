@@ -97,8 +97,7 @@ public:
  
    /* write psi solid */
    void writepsi(char *output_filename, std::ostream &coutput) {
-      //psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
-      //          psi1,output_filename,coutput);
+      cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1,output_filename,coutput);
    }
  
    /* solid energy */
@@ -198,7 +197,7 @@ public:
       myelectron->add_dteHpsi((dte), psi1, psi2);
       
       /* lagrange multiplier - Expensive */
-      //mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
+      mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
       
       /* pointer swap of psi2 and psi1 */
       double *t2 = psi2;
@@ -227,8 +226,7 @@ public:
    double psi_1get_Tgradient(double *G1) {
       double total_energy;
       myelectron->run(psi1, rho1, dng1, rho1_all);
-      total_energy =
-          myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
+      total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
       myelectron->gen_hml(psi1, hml);
       myelectron->get_Tgradient(psi1, hml, G1);
      
@@ -238,8 +236,7 @@ public:
    double psi_1get_TSgradient(double *G1) {
       double total_energy;
       myelectron->run(psi1, rho1, dng1, rho1_all);
-      total_energy =
-          myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
+      total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
       myelectron->gen_hmlt(psi1, hml);
       myelectron->get_Tgradient(psi1, hml, G1);
       

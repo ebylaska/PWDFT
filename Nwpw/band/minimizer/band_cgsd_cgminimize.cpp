@@ -64,6 +64,7 @@ double band_cgsd_cgminimize(Solid &mysolid, band_Geodesic *mygeodesic, double *E
     /* initialize the geoedesic line data structure */
     dEold = mygeodesic->start(H0, &max_sigma, &min_sigma);
 
+
     /* line search */
     if (tmin > deltat_min)
       deltat = tmin;
@@ -74,6 +75,7 @@ double band_cgsd_cgminimize(Solid &mysolid, band_Geodesic *mygeodesic, double *E
     deltae0 = *deltae;
 
     Eold = Enew;
+
     Enew = util_linesearch(0.0, Eold, dEold, deltat, &dummy_energy,
                            &dummy_denergy, 0.50, &tmin0, &deltae0, 2);
     tmin = tmin0;

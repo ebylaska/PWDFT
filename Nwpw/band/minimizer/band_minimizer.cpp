@@ -409,6 +409,12 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    rtdbjson["band"]["energy"] = 0.0; //EV;
    rtdbjson["band"]["energies"] = 0.0; //mymolecule.E;
    rtdbjson["band"]["eigenvalues"] = 0.0; //mymolecule.eig_vector();
+
+   // write psi
+   // write psi
+   if (flag > 0)
+      mysolid.writepsi(control.output_movecs_filename(), coutput);
+   MPI_Barrier(comm_world0);
   
    rtdbstring = rtdbjson.dump();
    myion.writejsonstr(rtdbstring);

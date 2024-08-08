@@ -5,8 +5,8 @@ echo
 
 start band-pbe-Cu4-mylabel
 
-permanent_dir ./perm
-scratch_dir   ./perm
+permanent_dir ./permt
+scratch_dir   ./permt
 
 memory 1900 mb
 
@@ -35,7 +35,7 @@ nwpw
   xc lda
 
   steepest_descent
-    loop 100 100
+    loop 100 10
     tolerances 1.0e-9 1.0e-9
   end
 
