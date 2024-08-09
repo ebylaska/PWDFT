@@ -151,6 +151,9 @@ git clone https://github.com/ebylaska/PWDFT.git
 
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=dpcpp ./Nwpw
+or
+cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=icpx -DCMAKE_CXX_FLAGS="-fsycl" ./Nwpw
+
 cd build_sycl
 make
 ```
