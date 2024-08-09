@@ -59,7 +59,7 @@
 #define IZAMAX_PWDFT(nn, hml, one) cblas_izamax(nn, hml, one)
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
-  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
+  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, reinterpret_cast<MKL_Complex16*> (hml), n, eig)
 
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
