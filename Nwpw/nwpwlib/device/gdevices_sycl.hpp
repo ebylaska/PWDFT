@@ -1983,7 +1983,7 @@ public:
     *       batch_cffty_tmpy_zero        *
     *                                    *
     **************************************/
-   void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int n2ft3d, double *a, double *tmpy, bool *zero)
+   void batch_cffty_tmpy_zero(bool forward, int ny, int nq, int nffts, int n2ft3d, double *a, double *tmpy, bool *zero)
    {
       if (forward)
       {
@@ -2042,7 +2042,7 @@ public:
     *        batch_cfftz_tmpz_zero       *
     *                                    *
     **************************************/
-   void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int n2ft3d, double *a, double *tmpz, bool *zero)
+   void batch_cfftz_tmpz_zero(bool forward, int nz, int nq, int nffts, int n2ft3d, double *a, double *tmpz, bool *zero)
    {
       if (forward)
       {
@@ -2391,7 +2391,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
     *          batch_cfft_zero           *
     *                                    *
     **************************************/
-   void batch_cfft_zero(const bool forward, int nz, int nq, int nfft3d, double *a, const double *twiddle, const double *tmpz, const bool *zero) 
+   void batch_cfft_zero(const bool forward, int nz, int nq, int nffts, int nfft3d, double *a, const double *twiddle, const double *tmpz, const bool *zero) 
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary

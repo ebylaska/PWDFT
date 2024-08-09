@@ -296,6 +296,7 @@ void gdevice2::batch_cffty_tmpy_zero(const int tag, bool forward, int ny, int nq
       mygdevice2->batch_cffty(tag,forward,ny,nq,n2ft3d,a);
 #else
    mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, nffts, n2ft3d, a, tmpy, zero);
+   //mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, n2ft3d, a, tmpy, zero);
 #endif
 }
 
@@ -336,6 +337,7 @@ void gdevice2::batch_cfftz_tmpz_zero(const int tag, bool forward, int nz, int nq
       mygdevice2->batch_cfftz(tag,forward,nz,nq,n2ft3d,a);
 #else
    mygdevice2->batch_cfftz_tmpz_zero(forward,nz,nq,nffts,n2ft3d,a,tmpz,zero);
+   //mygdevice2->batch_cfftz_tmpz_zero(forward,nz,nq,n2ft3d,a,tmpz,zero);
 #endif
 }
 
@@ -396,6 +398,8 @@ void gdevice2::batch_cfft_zero(const int tag, const bool forward, const int nz, 
    }
 #else
    mygdevice2->batch_cfft_zero(forward,nz,nq,nffts,n2ft3d,a,twiddle,tmpz,zero);
+   //mygdevice2->batch_cffty_tmpy_zero(forward, ny, nq, n2ft3d, a, tmpy, zero);
+
 #endif
 }
 
