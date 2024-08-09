@@ -2365,7 +2365,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
     *              batch_cfft            *
     *                                    *
     **************************************/
-   void batch_cfft(const bool forward, const int nz, const int nq, const int nfft3d, double *a, const double *twiddle, const double *tmpz)
+   void batch_cfft(const bool forward, const int nz, const int nq, const int nffts, const int nfft3d, double *a, const double *twiddle, const double *tmpz)
    {
       // Ensure the function processes the right type of data
       // If twiddle is indeed of type complex_t, this cast is necessary
