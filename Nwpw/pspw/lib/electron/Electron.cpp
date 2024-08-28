@@ -45,7 +45,7 @@ Electron_Operators::Electron_Operators(Pneb *mygrid0, Kinetic_Operator *myke0,
  
    x = mygrid->r_alloc();
    rho = mygrid->r_alloc();
-   vall = mygrid->r_alloc();
+   vall = mygrid->r_nalloc(ispin);
    vl = mygrid->c_pack_allocate(0);
    if (periodic)
    {
@@ -210,6 +210,125 @@ void Electron_Operators::gen_vl_potential() {
    /* generate long range local psp */
    if (aperiodic)
       mypsp->v_lr_local(vlr_l);
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::gen_vall        *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Generates the potential `vall` by combining various potential components.
+ *
+ * This function calculates the potential `vall` for the electron operators, depending
+ * on whether the system is periodic or aperiodic. The function handles the summation
+ * of k-space potentials, performs Fourier transforms, and optionally adds contributions
+ * from an external electric field. If the system has spin (`ispin == 2`), additional
+ * exchange-correlation potentials are added.
+ *
+ * @details
+ * - **Periodic Case**:
+ *   - Adds k-space potentials (`vall = scal2 * vl + vc`).
+ *   - Performs a Fourier transform on `vall`.
+ *   - Adds external electric field (`v_field`) if `efield_on` is true.
+ * - **Aperiodic Case**:
+ *   - Adds k-space potentials (`vall = scal2 * vsr_l`).
+ *   - Performs a Fourier transform on `vall`.
+ *   - Adds long-range and core potentials (`vlr_l + vc`) to `vall`.
+ *   - Adds external electric field (`v_field`) if `efield_on` is true.
+ * - Adds exchange-correlation potential `xcp` to `vall` and handles spin case if applicable.
+ *
+ * @note The function assumes that the grid operations and potentials are properly initialized
+ *       before calling this function.
+ *
+ * @param None
+ * @return void
+ */
+void Electron_Operators::gen_vall() 
+{
+
+   // periodic
+   if (periodic)
+   {
+      // add up k-space potentials, vall = scal2*vl + vc  ****
+      mygrid->cc_pack_SMul(0, scal2, vl, vall);
+      mygrid->cc_pack_Sum2(0,vc,vall);
+
+      // fourier transform k-space potentials ****
+      mygrid->c_unpack(0,vall);
+      mygrid->cr_fft3d(vall);
+
+      // add v_field to vall */
+      if (mypsp->myefield->efield_on)
+         mygrid->rr_Sum(mypsp->myefield->v_field,vall);
+   }
+   // aperiodic
+   else
+   {
+      /* add up k-space potentials, vall = scal2*v_l */
+      mygrid->cc_pack_SMul(0, scal2, vl, vall);
+      mygrid->c_unpack(0, vall);
+      mygrid->cr_fft3d(vall);
+
+      /* add vall += vlr_l + vc */
+      mygrid->rrr_Sum2Add(vlr_l, vc, vall);
+
+      /* add v_field to vall */
+      if (mypsp->myefield->efield_on)
+         mygrid->rr_Sum(mypsp->myefield->v_field, vall);
+   }
+
+   // add xcp to vall 
+   if (ispin==2) mygrid->rrr_Sum(vall,xcp+n2ft3d,vall+n2ft3d);
+   mygrid->rr_Sum(xcp,vall);
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::get_vall        *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Copies the calculated potential `vall` to the output array.
+ *
+ * This function retrieves the potential `vall` and copies it to the provided
+ * output array `vall_out`. If the system has spin (`ispin == 2`), it also copies
+ * the spin-dependent part of the potential to the corresponding location in
+ * the output array.
+ *
+ * @param vall_out A pointer to an array where the potential `vall` will be copied.
+ *                 The array must be appropriately sized to hold the potential data.
+ * 
+ * @return void
+ */
+void Electron_Operators::get_vall(double *vall_out) 
+{
+   mygrid->rr_copy(vall,vall_out);
+   if (ispin==2) mygrid->rr_copy(vall+n2ft3d,vall_out+n2ft3d);
+}
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::set_vall        *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Sets the potential `vall` from the input array.
+ *
+ * This function sets the potential `vall` by copying data from the provided
+ * input array `vall_in`. If the system has spin (`ispin == 2`), it also copies
+ * the spin-dependent part of the potential from the corresponding location in
+ * the input array to the internal `vall` array.
+ *
+ * @param vall_in A pointer to an array containing the potential data to be set.
+ *                The array must be appropriately sized to hold the potential data.
+ * 
+ * @return void
+ */
+void Electron_Operators::set_vall(const double *vall_in) 
+{
+   mygrid->rr_copy(vall_in,vall);
+   if (ispin==2) mygrid->rr_copy(vall_in+n2ft3d,vall+n2ft3d);
 }
 
 /***********************************************

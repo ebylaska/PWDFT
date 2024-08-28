@@ -286,19 +286,45 @@ void Pneb::g_generate2_random(double *psi)
       }
 }
 
+
+/*************************************
+ *                                   *
+ *  Pneb::g_generate_excited_random  *
+ *                                   *
+ *************************************/
+void Pneb::g_generate_excited_random(const int nex[], double *psi_excited) 
+{
+   int taskid = d1db::parall->taskid();
+   util_random(taskid + 91);
+   double tmp2[n2ft3d];
+
+   int taskid_j = d1db::parall->taskid_j();
+   for (auto ms = 0; ms < ispin; ++ms)
+   for (auto n = 0; n < nex[ms]; ++n) 
+   {
+      d3db::r_setrandom(tmp2);
+      d3db::r_zero_ends(tmp2);
+      d3db::rc_fft3d(tmp2);
+   
+      PGrid::c_pack(1, tmp2);
+      int indx = 2 * PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi_excited + indx);
+   }
+}
+
 /*************************************
  *                                   *
  *      Pneb::g_generate_random      *
  *                                   *
  *************************************/
 void Pneb::g_generate_random(double *psi) {
-  int taskid = d1db::parall->taskid();
-  util_random(taskid + 91);
-
-  if (g_rnd_algorithm == 1)
-    this->g_generate1_random(psi);
-  else
-    this->g_generate2_random(psi);
+   int taskid = d1db::parall->taskid();
+   util_random(taskid + 91);
+ 
+   if (g_rnd_algorithm == 1)
+     this->g_generate1_random(psi);
+   else
+     this->g_generate2_random(psi);
 }
 
 /*************************************
@@ -352,11 +378,12 @@ void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi)
 {
    int ms, n, indx, i, pj, qj, taskid_j;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
  
    taskid_j = d1db::parall->taskid_j();
  
    for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne[ms]; ++n) 
+      for (n=0; n<ne0[ms]; ++n) 
       {
          qj = msntoindex(ms, n);
          pj = msntop(ms, n);
@@ -426,6 +453,57 @@ void Pneb::g_write(const int iunit, double *psi)
    }
 
    delete[] tmp2;
+}
+
+/*************************************
+ *                                   *
+ *      Pneb::g_write_excited        *
+ *                                   *
+ *************************************/
+void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
+{
+   d3db::parall->Barrier();
+   int taskid_j = d1db::parall->taskid_j();
+
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto ms = 0; ms < ispin; ++ms)
+   for (auto n = 0; n < nex[ms]; ++n)
+   {
+      int indx = 2 * PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, psi + indx, tmp2);
+      PGrid::c_unpack(1, tmp2);
+
+      if (io_buffer)
+         c_write_buffer(iunit,tmp2,taskid_j);
+      else
+         c_write(iunit,tmp2,taskid_j);
+   }
+
+   delete[] tmp2;
+}
+
+
+/*************************************
+ *                                   *
+ *     Pneb::gg_traceall_excited     *
+ *                                   *
+ *************************************/
+double Pneb::gg_traceall_excited(const int nex[], double *psi1, double *psi2) 
+{
+   int n, indx;
+   double sum = 0.0;
+ 
+   indx = 0;
+   for (n = 0; n < (nex[0] + nex[1]); ++n) 
+   {
+      sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
+      indx += 2 * PGrid::npack(1);
+   }
+   //if (ispin == 1)
+   //   sum *= 2.0;
+ 
+   return d3db::parall->SumAll(0, sum);
 }
 
 /*************************************
@@ -2585,6 +2663,155 @@ void Pneb::g_ortho(double *psi)
    //if (d1db::parall->is_master())
    //   std::cout << std::endl;
 }
+
+/********************************
+ *                              *
+ *    Pneb::g_ortho_excited     *
+ *                              *
+ ********************************/
+/*
+   Performs a Gram-Schmidt orthogonalization on psi
+*/
+void Pneb::g_ortho_excited(double *psi, const int nex[], double *psi_excited)
+{
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      // project out filled and virtual spaces
+      int kshift = ms*nex[0]*2*PGrid::npack(1);
+      for (auto k=0; k<nex[ms]; ++k)
+      {
+         int indxk = 2*PGrid::npack(1)*k + kshift;
+
+         // project out filled space
+         Pneb::g_project_out_filled(psi, ms, psi_excited + indxk);
+
+         // project out lower virtual space
+         Pneb::g_project_out_virtual(ms, nex, k, psi_excited, psi_excited+indxk);
+
+         // normalize 
+         Pneb::g_norm(psi_excited + indxk);
+      }
+   }
+
+   // project out virtual space
+}
+
+/********************************
+ *                              *
+ *  Pneb::g_project_out_filled  *
+ *                              *
+ ********************************/
+/**
+ * @brief Projects out the filled (occupied) component of a wavefunction from an excited state.
+ *
+ * This function iteratively projects out the filled (occupied) components from the `psi_excited`
+ * wavefunction using the provided `psi` vector. The projection is performed for each value 
+ * of `n` from `0` to `ne[ms] - 1`. The function modifies the `psi_excited` wavefunction in place.
+ *
+ * @param psi           Pointer to the array containing the filled (occupied) components of the wavefunctions.
+ * @param ms            The multiplicity of the state, which is used to calculate the shift in the index.
+ * @param psi_excited   Pointer to the array containing the excited state wavefunction to be modified.
+ *
+ * @note This function assumes that the input arrays are stored in a format compatible 
+ *       with the `PGrid` utility functions `cc_pack_dot` and `cc_pack_daxpy`.
+ *       The `PGrid::npack(1)` function is used to determine the packing size.
+ *
+ * @warning The function prints the values of `n` and `w` to `std::cout` for each iteration, 
+ *          which may result in a significant amount of output if `ne[ms]` is large.
+ */
+void Pneb::g_project_out_filled(double *psi, const int ms, double *psi_excited) 
+{
+   int ishift = ms*ne[0]*2*PGrid::npack(1);
+   for (auto n=0; n<ne[ms]; ++n)
+   {
+     int indx = 2*PGrid::npack(1)*n + ishift;
+     double w = -PGrid::cc_pack_dot(1, psi+indx, psi_excited);
+     //std::cout << "   n=" << n << " w=" << w << std::endl;
+     PGrid::cc_pack_daxpy(1, w, psi+indx, psi_excited);
+   }
+}
+
+/*********************************
+ *                               *
+ *  Pneb::g_project_out_virtual  *
+ *                               *
+ *********************************/
+/**
+ * @brief Projects out the virtual component of a wavefunction from an excited state.
+ *
+ * This function iteratively projects out the virtual components from the `psi_excited`
+ * wavefunction using the provided `psiv` vector. The projection is performed for 
+ * each value of `km` from `k-1` down to `0`. The function modifies the `psi_excited`
+ * wavefunction in place.
+ *
+ * @param ms       The multiplicity of the state, which is used to calculate the shift in the index.
+ * @param nex      An array representing the number of excitations or related quantum states.
+ * @param k        The current state index.
+ * @param psiv     Pointer to the array containing the virtual components of the wavefunctions.
+ * @param psi_excited Pointer to the array containing the excited state wavefunction to be modified.
+ *
+ * @note This function assumes that the input arrays are stored in a format compatible 
+ *       with the `PGrid` utility functions `cc_pack_dot` and `cc_pack_daxpy`.
+ *       The `PGrid::npack(1)` function is used to determine the packing size.
+ *
+ * @warning The function prints the values of `km`, `k`, and `wkm` to `std::cout` 
+ *          for each iteration, which may result in a significant amount of output 
+ *          if `k` is large.
+ */
+void Pneb::g_project_out_virtual(const int ms, const int nex[], const int k,  double *psiv,  double *psi_excited) 
+{
+   int kshift = ms*nex[0]*2*PGrid::npack(1);
+   for (auto km=k-1; km>=0; --km)
+   {
+      int indxkm = 2*PGrid::npack(1)*km + kshift;
+      double wkm = -PGrid::cc_pack_dot(1, psiv+indxkm, psi_excited);
+      PGrid::cc_pack_daxpy(1, wkm, psiv+indxkm, psi_excited);
+      //std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
+   }
+}
+
+
+/*********************************
+ *                               *
+ *         Pneb::g_norm          *
+ *                               *
+ *********************************/
+/**
+ * @brief Normalizes the given vector `psi_to_norm` in place.
+ *
+ * This function calculates the L2 norm of the input vector `psi_to_norm`
+ * and scales the vector so that it has a unit norm. If the norm is found
+ * to be effectively zero (below a small threshold), the function will issue
+ * a warning and skip the normalization to avoid division by zero.
+ *
+ * @param psi_to_norm Pointer to the vector that needs to be normalized.
+ *
+ * @note The function assumes that the input vector is stored in a format
+ *       compatible with the `PGrid` utility functions `cc_pack_dot` and `c_pack_SMul`.
+ *       These utility functions handle operations on vectors across a distributed grid.
+ *
+ * @warning If the norm of the vector is less than or equal to `1.0e-12`, 
+ *          the normalization will be skipped and a warning will be printed to `std::cerr`.
+ */
+void Pneb::g_norm(double *psi_to_norm)
+{  
+   // Compute the dot product of psi_to_norm with itself, resulting in the squared norm
+   double squared_norm = PGrid::cc_pack_dot(1, psi_to_norm, psi_to_norm);
+
+   // Check if the norm is effectively zero (within a small threshold)
+   if (squared_norm <= 1.0e-12)
+   {
+        std::cerr << "Warning: Norm is too small to normalize the vector. Skipping normalization." << std::endl;
+        return;  // Exit the function early if the vector is too small to normalize
+   }
+    
+   // Compute the inverse of the square root of the squared norm (1/norm)
+   double norm_inverse = 1.0 / std::sqrt(squared_norm);
+    
+   // Scale psi_to_norm by the computed norm_inverse to normalize it
+   PGrid::c_pack_SMul(1, norm_inverse, psi_to_norm);
+}
+
 
 /********************************
  *                              *

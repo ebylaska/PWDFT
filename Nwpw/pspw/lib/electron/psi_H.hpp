@@ -17,5 +17,7 @@ extern void psi_Hv4(Pneb *, Kinetic_Operator *, Pseudopotential *, double *,
                     double *, double *, double *, double *, double *, double *,
                     bool, double *);
 
+extern void psi_H_orb(Pneb *, Kinetic_Operator *, Pseudopotential *, double *, double *, double *, double *);
+
 } // namespace pwdft
 #endif

@@ -15,8 +15,8 @@ namespace pwdft {
 class Electron_Operators {
 
    Pneb *mygrid;
- 
    Kinetic_Operator *myke;
+ 
    Coulomb12_Operator *mycoulomb12;
    XC_Operator *myxc;
    Pseudopotential *mypsp;
@@ -32,6 +32,7 @@ class Electron_Operators {
    bool periodic = false;
  
 public:
+
    int counter = 0;
  
    /* Constructors */
@@ -71,6 +72,9 @@ public:
    void gen_scf_potentials(double *, double *, double *);
    void gen_vl_potential();
    void semicore_density_update();
+   void gen_vall();
+   void get_vall(double *);
+   void set_vall(const double *);
  
    double vl_ave(double *);
    double vlr_ave(double *);
@@ -102,6 +106,8 @@ public:
 
    bool is_aperiodic() { return aperiodic; }
    bool is_periodic() { return periodic; }
+
+   Kinetic_Operator *get_myke() {return myke;}
 };
 
 } // namespace pwdft

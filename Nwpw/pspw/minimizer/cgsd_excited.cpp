@@ -40,6 +40,8 @@ void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::os
    int it_out  = control.loop(1);
    double tole = control.tolerances(0);
    double tolc = control.tolerances(1);
+   double Ep = control.Eprecondition();
+   double Sp = control.Sprecondition();
  
    double dt = control.time_step();
    double dte = dt/sqrt(control.fake_mass());
@@ -58,9 +60,45 @@ void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::os
 
    if (neall > 0) 
    {
+
+      double *vall = mygrid->r_nalloc(ispin);
+      // calculating regular virtual orbitals 
       coutput << std::endl;
       coutput << " == Virtual Orbital Calculation ==" << std::endl << std::endl;
-      coutput << " nex=" << nex[0] << " " << nex[1] << std::endl;
+      //coutput << " nex=" << nex[0] << " " << nex[1] << std::endl;
+
+      mymolecule.epsi_initialize(control.input_e_movecs_filename(),
+                                 control.input_movecs_initialize(),nex,coutput);
+
+      mymolecule.gen_vall();
+      mymolecule.get_vall(vall);
+      mymolecule.epsi_minimize(vall,coutput);
+
+      coutput << mymolecule.print_virtual();
+
+      //std::cout << "start the exicited minimizer" << std::endl;
+
+    //  std::cout << "check the virtual ortho" << std::endl;
+    //  mygrid->g_ortho_excited(mymolecule.psi1,nex, mymolecule.psi1_excited);
+
+    //  std::cout << "calculate the virtual gradient" << std::endl;
+
+    //  std::cout << "task a virtual" << std::endl;
+    //  std::cout << "recheck the virtual ortho" << std::endl;
+
+      mymolecule.epsi_finalize(control.input_e_movecs_filename(),coutput);
+
+      // read in excited wavefunctions and initialize epsi
+     //       call control_ispin_set(psi_ispin())
+     //       if (.not.control_check_number_virtuals()) then
+     //         call epsi_new()
+     //         newpsi = .true.
+     //       else
+     //         newpsi = .false.
+
+     mygrid->r_dealloc(vall);
+
+
    }
  
 }

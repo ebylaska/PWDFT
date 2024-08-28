@@ -1466,6 +1466,107 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
    }
 }
 
+ 
+
+/*******************************************
+ *                                         *
+ *     Pseudopotential::v_nonlocal_orb     *
+ *                                         *
+ *******************************************/
+void Pseudopotential::v_nonlocal_orb(double *orb, double *Horb)
+{
+   nwpw_timing_function ftimer(6);
+   bool done;
+   int ii, ia, l, nshift0, sd_function, i;
+   int jj, ll, jstart, jend, nprjall;
+   double *exi;
+   double *prjtmp, *sw1, *sw2, *prj, *vnlprj;
+   Parallel *parall;
+   double omega = mypneb->lattice->omega();
+   // double scal = 1.0/lattice_omega();
+   double scal = 1.0 / omega;
+   int one = 1;
+   int ntmp, nshift, nn;
+   double rone = 1.0;
+   double rmone = -1.0;
+
+   //nn = mypneb->neq[0] + mypneb->neq[1];
+   nn = 1;
+   nshift0 = mypneb->npack(1);
+   nshift = 2 * mypneb->npack(1);
+   exi = new (std::nothrow) double[nshift]();
+   prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   sw1 = new (std::nothrow) double[nn * nprj_max]();
+   sw2 = new (std::nothrow) double[nn * nprj_max]();
+
+   parall = mypneb->d3db::parall;
+
+   ii = 0;
+   while (ii < (myion->nion))
+   {
+      ia = myion->katm[ii];
+      nprjall = 0;
+      jstart = ii;
+      done = false;
+      while (!done)
+      {
+         // generate projectors
+         if (nprj[ia] > 0)
+         {
+            mystrfac->strfac_pack(1, ii, exi);
+            for (l = 0; l < nprj[ia]; ++l)
+            {
+               sd_function = !(l_projector[ia][l] & 1);
+               prj = prjtmp + ((l+nprjall)*nshift);
+               vnlprj = vnl[ia] + (l*nshift0);
+               if (sd_function)
+                  mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+               else
+                  mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii < (myion->nion))
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall + nprj[ia]) > nprj_max);
+         }
+         else
+         {
+            done = true;
+         }
+      }
+      jend = ii;
+      mypneb->cc_pack_inprjdot(1, nn, nprjall, orb, prjtmp, sw1);
+
+   
+      /* sw2 = Gijl*sw1 */
+      ll = 0;
+      for (jj = jstart; jj < jend; ++jj) {
+        ia = myion->katm[jj];
+        if (nprj[ia] > 0) {
+          Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                            l_projector[ia], m_projector[ia], Gijl[ia],
+                            sw1+(ll*nn), sw2+(ll*nn));
+          ll += nprj[ia];
+        }
+      }
+   
+      ntmp = nn * nprjall;
+      DSCAL_PWDFT(ntmp, scal, sw2, one);
+   
+      mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Horb);
+   }
+
+   delete[] sw2;
+   delete[] sw1;
+   delete[] prjtmp;
+   delete[] exi;
+}
+
+
+
 
 /*******************************************
  *                                         *
