@@ -67,6 +67,9 @@ public:
    void gen_scf_potentials(double *, double *, double *);
    void gen_vl_potential();
    void semicore_density_update();
+   void gen_vall();
+   void get_vall(double *);
+   void set_vall(const double *);
  
    double vl_ave(double *);
    double vnl_ave(double *);

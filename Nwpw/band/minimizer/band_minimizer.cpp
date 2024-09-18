@@ -35,6 +35,7 @@
 #include "psp_library.hpp"
 
 #include "band_cgsd_energy.hpp"
+#include "band_cgsd_excited.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -178,7 +179,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    // initialize solid
    Solid mysolid(control.input_movecs_filename(),
                  control.input_movecs_initialize(),&mygrid,&myion,
-                 &mystrfac,&myewald,&myelectron,&mypsp,coutput);
+                 &mystrfac,&myewald,&myelectron,&mypsp,control,coutput);
   
    /* intialize the linesearch */
    util_linesearch_init();
@@ -409,6 +410,35 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    rtdbjson["band"]["energy"] = 0.0; //EV;
    rtdbjson["band"]["energies"] = 0.0; //mymolecule.E;
    rtdbjson["band"]["eigenvalues"] = 0.0; //mymolecule.eig_vector();
+
+   // calculate fion
+   if (flag == 2) 
+   {
+      // double *fion = new double[3*myion.nion];
+      double fion[3*myion.nion];
+      band_cgsd_energy_gradient(mysolid, fion);
+      if (lprint) 
+      {
+         coutput << std::endl << " Ion Forces (au):" << std::endl;
+         for (ii = 0; ii < myion.nion; ++ii)
+            coutput << Ifmt(4) << ii + 1 << " " << myion.symbol(ii) << "\t( "
+                    << Ffmt(10,5) << fion[3 *ii] << " "
+                    << Ffmt(10,5) << fion[3*ii+1] << " "
+                    << Ffmt(10,5) << fion[3*ii+2] << " )\n";
+         coutput << std::endl << std::endl;
+      }
+      rtdbjson["band"]["fion"] = std::vector<double>(fion, &fion[3 * myion.nion]);
+      for (ii=0; ii<(3*myion.nion); ++ii) fion[ii] *= -1.0;
+      rtdbjson["band"]["gradient"] = std::vector<double>(fion, &fion[3 * myion.nion]);
+     
+      // delete [] fion;
+   }  
+
+
+   // calculate excited state orbitals 
+   band_cgsd_excited(control, mysolid, true, coutput);
+
+
 
    // write psi
    // write psi

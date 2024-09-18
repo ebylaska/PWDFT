@@ -2719,15 +2719,15 @@ void Pneb::g_ortho_excited(double *psi, const int nex[], double *psi_excited)
  * @warning The function prints the values of `n` and `w` to `std::cout` for each iteration, 
  *          which may result in a significant amount of output if `ne[ms]` is large.
  */
-void Pneb::g_project_out_filled(double *psi, const int ms, double *psi_excited) 
+void Pneb::g_project_out_filled(double *psi, const int ms, double *Horb) 
 {
    int ishift = ms*ne[0]*2*PGrid::npack(1);
    for (auto n=0; n<ne[ms]; ++n)
    {
      int indx = 2*PGrid::npack(1)*n + ishift;
-     double w = -PGrid::cc_pack_dot(1, psi+indx, psi_excited);
+     double w = -PGrid::cc_pack_dot(1,psi+indx,Horb);
      //std::cout << "   n=" << n << " w=" << w << std::endl;
-     PGrid::cc_pack_daxpy(1, w, psi+indx, psi_excited);
+     PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
    }
 }
 
@@ -2758,14 +2758,14 @@ void Pneb::g_project_out_filled(double *psi, const int ms, double *psi_excited)
  *          for each iteration, which may result in a significant amount of output 
  *          if `k` is large.
  */
-void Pneb::g_project_out_virtual(const int ms, const int nex[], const int k,  double *psiv,  double *psi_excited) 
+void Pneb::g_project_out_virtual(const int ms, const int nex[], const int k,  double *psiv,  double *Horb) 
 {
    int kshift = ms*nex[0]*2*PGrid::npack(1);
    for (auto km=k-1; km>=0; --km)
    {
       int indxkm = 2*PGrid::npack(1)*km + kshift;
-      double wkm = -PGrid::cc_pack_dot(1, psiv+indxkm, psi_excited);
-      PGrid::cc_pack_daxpy(1, wkm, psiv+indxkm, psi_excited);
+      double wkm = -PGrid::cc_pack_dot(1, psiv+indxkm, Horb);
+      PGrid::cc_pack_daxpy(1, wkm, psiv+indxkm, Horb);
       //std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
    }
 }

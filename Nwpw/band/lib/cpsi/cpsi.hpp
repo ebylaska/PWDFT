@@ -16,5 +16,9 @@ extern bool cpsi_read(Cneb *, char *, bool, double *, std::ostream &);
 extern void cpsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *, std::ostream &);
 extern bool cpsi_filefind(Cneb *, char *);
 
+extern bool epsi_read(Cneb *, char *, bool, const int *, double *, std::ostream &);
+extern void epsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *, std::ostream &);
+
+
 } // namespace pwdft
 #endif

@@ -115,7 +115,8 @@ void Molecule::epsi_initialize(char *infilename, bool wvfnc_initialize, const in
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
   bool  newpsi = epsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
 
-  coutput << " input epsi filename:" << infilename << std::endl;
+  bool lprint = (mygrid->d3db::parall->is_master());
+  if (lprint) coutput << " input epsi filename:" << infilename << std::endl;
   // to determing ne_excited look at wavefunction or look at control
   //mygrid->g_set_ne_excited(ne_excited);
  // psi1_excited = mygrid->g_allocate_excited(1);
@@ -196,8 +197,15 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
             {
                 if (l2 <= 1)
                 {
+                   //std::cout << "retry orthogonalization" << std::endl;
                    mygrid->c_pack_zero(1, orb);
                    mygrid->c_pack_addzero(1, 1.0, orb);
+                   int nne[2] = {1,0};
+                   //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
+                   //mygrid->g_generate_excited_random(nne,orb);
+                   mygrid->g_project_out_filled(psi1, ms, orb);
+                   mygrid->g_project_out_virtual(ms, ne_excited, k, psi1_excited, orb);
+                   mygrid->g_norm(orb);
                 }
                 else
                    continue_outer_loop = false; // Exit the outer loop
@@ -272,7 +280,7 @@ void Molecule::epsi_sort_virtual()
 //    This routine performs a KS update on orbital i
 double Molecule::epsi_KS_update_virtual(const int ms, const int k, const int maxit_orb, const double maxerror, 
                                         const double perror, double *vall, double *orb, 
-                                         double *error_out, std::ostream &coutput)
+                                        double *error_out, std::ostream &coutput)
 {
 
    double *t0 = mygrid->c_pack_allocate(1);
@@ -335,12 +343,12 @@ double Molecule::epsi_KS_update_virtual(const int ms, const int k, const int max
         mygrid->cc_pack_copy(1,t,t0);
 
          //normalize search direction, t ****
+         // project out lower virtual space
          //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
          // project out filled space
          mygrid->g_project_out_filled(psi1, ms, t);
        
-         // project out lower virtual space
-         mygrid->g_project_out_virtual(ms, ne_excited, k, psi1_excited, t);
+         mygrid->g_project_out_virtual(ms, ne_excited, k+1, psi1_excited, t);
 
          de0 = mygrid->cc_pack_dot(1,t,t);
          de0 = 1.0/std::sqrt(de0);
@@ -372,7 +380,8 @@ double Molecule::epsi_KS_update_virtual(const int ms, const int k, const int max
    *error_out = std::abs(e0-eold);
    e0         = -e0;
 
-   coutput << std::setw(12) << "orbital" << std::setw(4) << k 
+   bool lprint = (mygrid->d3db::parall->is_master());
+   if (lprint) coutput << std::setw(12) << "orbital" << std::setw(4) << k+1 
            << " current e=" << std::setw(10) << std::scientific << std::setprecision(3) << e0
            << " (error=" << std::setw(9) << std::scientific << std::setprecision(3) << (*error_out) << ")"
            << " iterations" << std::setw(4) << it << "(" << std::setw(4) << pit 
@@ -423,13 +432,17 @@ void Molecule::epsi_linesearch_update(double e0, double de0, double *theta, doub
    e1 = -e1;
 
    x = (e0 - e1 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
+   //x = (e1 - e0 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
    double theta1 = 0.5*std::atan(0.50*de0/x);
 
    // orb2 = orb*cos(theta) + t*sin(theta) ****
    x = std::cos(theta1);
    y = std::sin(theta1);
+
+   double sum = mygrid->cc_pack_dot(1,torb,t);
    mygrid->cc_pack_SMul(1,x,torb,orb);
    mygrid->cc_pack_daxpy(1,y,t,orb);
+   //std::cout << "theta,x,y=" << std::setprecision(6) << theta1 << " " << x << " " << y <<  " " << e0 << " " << e1 << " " << sum << std::endl;
 
    mygrid->c_pack_deallocate(torb);
    mygrid->c_pack_deallocate(g);

@@ -1,3 +1,4 @@
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -5,33 +6,29 @@
 #include <string>
 
 #include "Control2.hpp"
-#include "Geodesic12.hpp"
+#include "band_Geodesic.hpp"
 #include "Ion.hpp"
-#include "Molecule.hpp"
+#include "Solid.hpp"
 #include "Parallel.hpp"
 #include "Cneb.hpp"
-#include "iofmt.hpp"
-//#include "band_lmbfgs.hpp"
-//#include "band_lmbfgs2.hpp"
 #include "util_date.hpp"
-
-#include "cgsd_excited.hpp"
-
-#include "iofmt.hpp"
+#include "util_linesearch.hpp"
 
 namespace pwdft {
 
+/* create dummy function call to Geodesic class functions */
 
 /******************************************
  *                                        *
- *              cgsd_excited              *
+ *            band_cgsd_excited           *
  *                                        *
  ******************************************/
-void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::ostream &coutput) 
+void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ostream &coutput) 
 {
-   Parallel *parall = mymolecule.mygrid->d3db::parall;
-   Pneb *mygrid = mymolecule.mygrid;
-   Ion *myion = mymolecule.myion;
+
+   Parallel *parall = mysolid.mygrid->c3db::parall;
+   Cneb *mygrid = mysolid.mygrid;
+   Ion *myion = mysolid.myion;
  
    bool stalled = false;
    double E[70],total_energy,deltae,deltae_old,deltac;
@@ -53,28 +50,28 @@ void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::os
    bool oprint = (parall->is_master() && control.print_level("medium") && doprint);
    bool lprint = (parall->is_master() && control.print_level("low") && doprint);
 
-   int ispin = mymolecule.mygrid->ispin;
+   int ispin = mysolid.mygrid->ispin;
    int nex[2] = {control.nexcited(0), control.nexcited(1)};
    int neall  = (nex[0] + nex[1]);
 
 
+
    if (neall > 0) 
    {
-
       double *vall = mygrid->r_nalloc(ispin);
       // calculating regular virtual orbitals 
       if (lprint) coutput << std::endl;
       if (lprint) coutput << " == Virtual Orbital Calculation ==" << std::endl << std::endl;
       //coutput << " nex=" << nex[0] << " " << nex[1] << std::endl;
 
-      mymolecule.epsi_initialize(control.input_e_movecs_filename(),
-                                 control.input_movecs_initialize(),nex,coutput);
+      mysolid.epsi_initialize(control.input_e_movecs_filename(),
+                              control.input_movecs_initialize(),nex,coutput);
 
-      mymolecule.gen_vall();
-      mymolecule.get_vall(vall);
-      mymolecule.epsi_minimize(vall,coutput);
+      mysolid.gen_vall();
+      mysolid.get_vall(vall);
+      mysolid.epsi_minimize(vall,coutput);
 
-      if (lprint) coutput << mymolecule.print_virtual();
+      if (lprint) coutput << mysolid.print_virtual();
 
       //std::cout << "start the exicited minimizer" << std::endl;
 
@@ -86,7 +83,7 @@ void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::os
     //  std::cout << "task a virtual" << std::endl;
     //  std::cout << "recheck the virtual ortho" << std::endl;
 
-      mymolecule.epsi_finalize(control.input_e_movecs_filename(),coutput);
+      mysolid.epsi_finalize(control.input_e_movecs_filename(),coutput);
 
       // read in excited wavefunctions and initialize epsi
      //       call control_ispin_set(psi_ispin())
@@ -102,6 +99,5 @@ void cgsd_excited(Control2 &control, Molecule &mymolecule, bool doprint, std::os
    }
  
 }
-
 
 } // namespace pwdft
