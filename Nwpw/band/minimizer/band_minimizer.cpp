@@ -407,9 +407,9 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
   
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
-   rtdbjson["band"]["energy"] = 0.0; //EV;
-   rtdbjson["band"]["energies"] = 0.0; //mymolecule.E;
-   rtdbjson["band"]["eigenvalues"] = 0.0; //mymolecule.eig_vector();
+   rtdbjson["band"]["energy"] = EV;
+   rtdbjson["band"]["energies"] = mysolid.E;
+   rtdbjson["band"]["eigenvalues"] = mysolid.eig_vector();
 
    // calculate fion
    if (flag == 2) 
