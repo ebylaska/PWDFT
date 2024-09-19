@@ -3092,6 +3092,97 @@ void Cneb::g_ortho(double *psi)
 
 /********************************
  *                              *
+ *     Cneb::g_ortho_excited    *
+ *                              *
+ ********************************/
+void Cneb::g_ortho_excited(const int nbq1, double *psi, const int nex[], double *psi_excited)
+{
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      // project out filled and virtual spaces
+      int kshift = ms*nex[0]*2*CGrid::npack1_max();
+      for (auto k=0; k<nex[ms]; ++k)
+      {
+         int indxk = 2*CGrid::npack1_max()*k + kshift;
+
+         // project out filled space
+         Cneb::g_project_out_filled(nbq1,psi, ms, psi_excited + indxk);
+
+         // project out lower virtual space
+         Cneb::g_project_out_virtual(nbq1,ms, nex, k, psi_excited, psi_excited+indxk);
+
+         // normalize 
+         Cneb::g_norm(nbq1,psi_excited + indxk);
+      }
+   }
+
+   // project out virtual space
+}
+
+/********************************
+ *                              *
+ *  Cneb::g_project_out_filled  *
+ *                              *
+ ********************************/
+void Cneb::g_project_out_filled(const int nbq1, double *psi, const int ms, double *Horb) 
+{
+   int ishift = ms*ne[0]*2*CGrid::npack1_max();
+   for (auto n=0; n<ne[ms]; ++n)
+   {
+      int indx = 2*CGrid::npack1_max()*n + ishift;
+      double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+      //std::cout << "   n=" << n << " w=" << w << std::endl;
+      CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
+   }
+}
+
+/********************************
+ *                              *
+ *  Cneb::g_project_out_virtual *
+ *                              *
+ ********************************/
+void Cneb::g_project_out_virtual(const int nbq1, const int ms, const int nex[], const int k,  double *psiv,  double *Horb) 
+{
+   int kshift = ms*nex[0]*2*CGrid::npack1_max();
+   for (auto km=k-1; km>=0; --km)
+   {
+      int indxkm = 2*CGrid::npack1_max()*km + kshift;
+      double wkm = -CGrid::cc_pack_dot(nbq1, psiv+indxkm, Horb);
+      CGrid::cc_pack_daxpy(nbq1, wkm, psiv+indxkm, Horb);
+      //std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
+   }
+}
+
+/********************************
+ *                              *
+ *         Cneb::g_norm         *
+ *                              *
+ ********************************/
+void Cneb::g_norm(const int nbq1, double *psi_to_norm)
+{  
+   // Compute the dot product of psi_to_norm with itself, resulting in the squared norm
+   double squared_norm = CGrid::cc_pack_dot(nbq1, psi_to_norm, psi_to_norm);
+
+   // Check if the norm is effectively zero (within a small threshold)
+   if (squared_norm <= 1.0e-12)
+   {
+        std::cerr << "Warning: Norm is too small to normalize the vector. Skipping normalization." << std::endl;
+        return;  // Exit the function early if the vector is too small to normalize
+   }
+    
+   // Compute the inverse of the square root of the squared norm (1/norm)
+   double norm_inverse = 1.0 / std::sqrt(squared_norm);
+    
+   // Scale psi_to_norm by the computed norm_inverse to normalize it
+   CGrid::c_pack_SMul(nbq1, norm_inverse, psi_to_norm);
+}
+
+
+
+
+
+/********************************
+ *                              *
  *        Cneb::fm_QR           *
  *                              *
  ********************************/

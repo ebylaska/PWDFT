@@ -144,6 +144,15 @@ void Solid::epsi_finalize(char *outfilename, std::ostream &coutput)
  ********************************************/
 void Solid::epsi_minimize(double *vall, std::ostream &coutput)
 { 
+   int nshift0= 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
+   int nshift1= 2*(ne_excited[0]+ ne_excited[1])*mygrid->CGrid::npack1_max();
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      auto nbq1 = nbq+1;
+      mygrid->g_ortho_excited(nbq1,psi1+nbq*nshift0, ne_excited, psi1_excited+nbq*nshift1);
+      double error_out,eorb0;
+   }
 /*
    mygrid->g_ortho_excited(psi1, ne_excited, psi1_excited);
    double error_out,eorb0;

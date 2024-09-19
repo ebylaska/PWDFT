@@ -255,6 +255,11 @@ public:
    // void ggm_lambda2(double, double *, double *, double *);
    void ggw_lambda_sic(double, double *, double *, double *);
    void g_ortho(double *);
+   void g_ortho_excited(const int, double *, const int *, double *);
+   void g_project_out_filled(const int, double *, const int, double *);
+   void g_project_out_virtual(const int, const int, const int *, const int,  double *,  double *);
+
+   void g_norm(const int, double *);
  
    void gg_SMul(double, double *, double *);
    // void g_SMul1(double, double *);
