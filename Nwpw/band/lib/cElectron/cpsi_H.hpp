@@ -13,6 +13,8 @@ extern void cpsi_H(Cneb *, cKinetic_Operator *, CPseudopotential *, double *,
                   double *, double *, double *, double *, double *, bool,
                   double *);
 
+void cpsi_H_orb(const int, Cneb *, cKinetic_Operator *, CPseudopotential *,
+                double *, double *, double *, double *);
 
 } // namespace pwdft
 #endif

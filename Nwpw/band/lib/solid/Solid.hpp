@@ -103,11 +103,11 @@ public:
    void epsi_initialize(char *,bool, const int *, std::ostream &);
    void epsi_finalize(char *, std::ostream &);
    void epsi_minimize(double *, std::ostream &);
-   void epsi_get_gradient(double *, double *, double *);
-   double epsi_KS_update_virtual(const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+   void epsi_get_gradient(const int, double *, double *, double *);
+   double epsi_KS_update_virtual(const int, const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
 
-   void epsi_linesearch_update(double, double, double *, double *, double *, double *);
-   void epsi_sort_virtual();
+   void epsi_linesearch_update(const int, double, double, double *, double *, double *, double *);
+   void epsi_sort_virtual(const int, double *, double *);
 
  
    /* write psi solid */

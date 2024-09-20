@@ -2193,6 +2193,115 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
    delete[] exi;
 }
 
+/*******************************************
+ *                                         *
+ *    cPseudopotential::v_nonlocal_orb     *
+ *                                         *
+ *******************************************/
+void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
+{   
+   nwpw_timing_function ftimer(6);
+   bool done;
+   int  ia, l, nshift0, sd_function, i;
+   int jj, ll, jstart, jend, nprjall;
+   double *prj, *vnlprj;
+   Parallel *parall;
+   double omega = mypneb->lattice->omega();
+   // double scal = 1.0/lattice_omega();
+   double scal = 1.0 / omega;
+   int one = 1;
+   int ntmp, nshift, nn;
+   double rone[2] = {1.0,0.0};
+   double rmone[2] = {-1.0,0.0};
+
+   nn = mypneb->neq[0] + mypneb->neq[1];
+   nshift0 = mypneb->npack1_max();
+   nshift = 2*mypneb->npack1_max();
+   double *exi = new (std::nothrow) double[nshift]();
+   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   double *zsw1 = new (std::nothrow) double[2*nn * nprj_max]();
+   double *zsw2 = new (std::nothrow) double[2*nn * nprj_max]();
+
+   parall = mypneb->c3db::parall;
+
+   int nbq = nbq1-1;
+   int npack1 = mypneb->npack(nbq1);
+
+   // Copy psi to device
+   //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nshift*nn);
+   //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nshift*nn);
+  
+   int ii = 0;
+   while (ii < (myion->nion)) 
+   {
+      ia = myion->katm[ii];
+      nprjall = 0;
+      jstart = ii;
+      done = false;
+      while (!done) 
+      {
+         // generate projectors
+         if (nprj[ia] > 0) 
+         {
+            mystrfac->strfac_pack_cxr(nbq1,nbq, ii, exi);
+            for (auto l=0; l<nprj[ia]; ++l) 
+            {
+               sd_function = !(l_projector[ia][l] & 1);
+               prj = prjtmp + ((l+nprjall)*nshift);
+               vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
+               if (sd_function)
+                  mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+               else
+                  mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+            }
+            nprjall += nprj[ia];
+         }
+         ++ii;
+         if (ii < (myion->nion)) 
+         {
+            ia = myion->katm[ii];
+            done = ((nprjall + nprj[ia]) > nprj_max);
+         } 
+         else 
+         {
+            done = true;
+         }
+         done = true;
+      }
+      jend = ii;
+      mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
+      parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
+
+      /* sw2 = Gijl*sw1 */
+      ll = 0;
+      for (jj = jstart; jj < jend; ++jj) {
+        ia = myion->katm[jj];
+        if (nprj[ia] > 0) {
+          Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                             l_projector[ia], m_projector[ia], Gijl[ia],
+                             zsw1+(ll*2*nn), zsw2+(ll*2*nn));
+          ll += nprj[ia];
+        }
+      }
+
+        
+      ntmp = 2*nn*nprjall;
+      DSCAL_PWDFT(ntmp, scal, zsw2, one);
+       
+      mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nshift*nn);
+   }
+   //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
+
+
+   delete[] zsw2;
+   delete[] zsw1;
+   delete[] prjtmp;
+   delete[] exi;
+}
+
+
+
+
 
 /*******************************************
  *                                         *

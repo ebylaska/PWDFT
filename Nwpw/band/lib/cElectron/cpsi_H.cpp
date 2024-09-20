@@ -147,5 +147,41 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    mygrid->r_dealloc(vall);
 }
 
+/*************************************
+ *                                   *
+ *             cpsi_H_orb            *
+ *                                   *
+ *************************************/
+/**
+ * @brief Computes the Hamiltonian action on an orbital in k-space and r-space.
+ *
+ */
+void cpsi_H_orb(const int nbq1, 
+                Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
+                double *orb, double *orb_r, double *vall_r, double *Horb)
+{
+   double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+
+   /* allocate temporary memory */
+   double *vpsi = mygrid->r_alloc();
+ 
+   /* apply k-space operators */
+   myke->ke_orb(nbq1,orb,Horb);
+ 
+   /* apply non-local PSP  - Expensive */
+   mypsp->v_nonlocal_orb(nbq1,orb, Horb);
+
+   /* apply r-space operators  - Expensive*/
+   mygrid->rrr_Mul(vall_r,orb_r,vpsi);
+   mygrid->rc_fft3d(vpsi);
+   mygrid->c_pack(nbq1,vpsi);
+   mygrid->cc_pack_daxpy(nbq1,(-scal1),vpsi,Horb);
+
+   /* deallocate temporary memory */
+   mygrid->r_dealloc(vpsi);
+}
+
+
+
 
 } // namespace pwdft

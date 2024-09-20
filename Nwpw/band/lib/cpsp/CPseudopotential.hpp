@@ -188,6 +188,8 @@ public:
   void v_nonlocal_fion(double *, double *, const bool, double *);
   void f_nonlocal_fion(double *, double *);
 
+  void v_nonlocal_orb(const int, double *, double *);
+
   void v_local(double *, const bool, double *, double *);
   void f_local(double *, double *);
 

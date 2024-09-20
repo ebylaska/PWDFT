@@ -92,6 +92,8 @@ public:
    void semicore_force(double *);
  
    bool is_periodic() { return periodic; }
+
+   cKinetic_Operator *get_myke() {return myke;}
 };
 
 } // namespace pwdft

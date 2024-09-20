@@ -140,4 +140,75 @@ double cKinetic_Operator::ke_ave(const double *psi)
    return ave;
 }
 
+/*******************************************
+ *                                         *
+ *         cKinetic_Operator::ke_orb       *
+ *                                         *
+ *******************************************/
+void cKinetic_Operator::ke_orb(const int nbq1, const double *psi, double *tpsi) 
+{
+   int nsize      = mycneb->neq[0] + mycneb->neq[1];
+   int npack1_max = mycneb->npack1_max();
+   int shift1 = 2*npack1_max;
+   int indx1n = 0;
+
+   int npack1  = mycneb->npack(nbq1);
+   double *tmp_tg = tg + (nbq1-1)*npack1_max;
+
+   for (auto n=0; n<nsize; ++n)
+   {
+      const double *tmp_psi  = psi  + indx1n;
+      double       *tmp_tpsi = tpsi + indx1n;
+      int k1 = 0;
+      int k2 = 1;
+      for (auto k=0; k<npack1; ++k)
+      {
+        //tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
+        //tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
+        tmp_tpsi[k1] = tmp_tg[k]*tmp_psi[k1];
+        tmp_tpsi[k2] = tmp_tg[k]*tmp_psi[k2];
+        k1 += 2;
+        k2 += 2;
+      }
+      indx1n += shift1;
+   }
+}
+
+
+/***********************************************
+ *                                             *
+ *       cKinetic_Operator::ke_precondition     *
+ *                                             *
+ ***********************************************/
+// **** My preconditioner ****
+void cKinetic_Operator::ke_precondition(const int nbq1, const double Ep, const int neall, double *psi, double *tpsi) 
+{
+   int npack1  = (mycneb->npack(nbq1));
+   int npack2  = 2*npack1;
+   int npack1_max = mycneb->npack1_max();
+   double *tmp    = new double[npack2];
+   double *tg1    = tg + (nbq1-1);
+   int k1 = 0;
+   int k2 = 1;
+   for (auto n=0; n<neall; ++n)
+   {
+      double *worb = psi + n*npack2;
+      mycneb->tcc_pack_Mul(nbq1,tg1,worb,tmp);
+      double sum = mycneb->cc_pack_dot(nbq1,tmp,worb);
+      for (auto k=0; k<npack1; ++k) 
+      {
+         double x = tg1[k];
+         x =  x*(worb[k1]*worb[k1] + worb[k2]*worb[k2])/sum;
+         double cm = 27.00+(18.00+(12.00+8.00*x)*x)*x;
+         double dm = (cm + 16.00* x*x*x*x);
+         cm = cm/dm;
+         tpsi[k1] *= cm;
+         tpsi[k2] *= cm;
+         k1 += 2;
+         k2 += 2;
+      }
+   }
+   delete [] tmp;
+}
+
 } // namespace pwdft

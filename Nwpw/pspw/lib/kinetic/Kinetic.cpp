@@ -156,6 +156,7 @@ void Kinetic_Operator::ke_precondition(const double Ep, const int neall, double 
          k2 += 2;
       }
    }
+   delete [] tmp;
 }
 
 
