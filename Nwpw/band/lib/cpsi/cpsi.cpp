@@ -284,11 +284,11 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, nbrillouin);
 
    myparall->Brdcst_iValue(0, 0, &occupation);
+
  
    /* reads in c format and automatically packs the result to g format */
    //mycneb->g_read(4,ispin,psi);
    mycneb->g_read_ne(4,ne,*nbrillouin,psi);
-   
  
    if (myparall->is_master())
      closefile(4);

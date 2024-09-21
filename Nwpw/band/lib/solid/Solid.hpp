@@ -318,33 +318,28 @@ public:
       init.copyfmt(stream);
       std::string eoln = "\n";
 
-      stream << eoln;
-      stream << eoln;
-      stream << " virtual orbital energies:" << eoln;
-      int nn = ne_excited[0] - ne_excited[1];
-      double ev = 27.2116;
-
-      // Print the first set of excited states in reverse order without symmetry considerations
-      for (int i = ne_excited[0]-1; i>=ne_excited[1]; --i) 
-         stream << eig1stream(eig_excited[i], eig_excited[i]*ev);
-
-      // Print the second set of excited states in reverse order without symmetry considerations
-      for (int i = ne_excited[1]-1; i>=0; --i) 
+      for (auto nbq=0; nbq<nbrillouin; ++nbq)
       {
-         stream << eig2stream(
-                     eig_excited[i + nn], eig_excited[i + nn]*ev,
-                     eig_excited[i + (ispin - 1) * ne_excited[0]],
-                     eig_excited[i + (ispin - 1) * ne_excited[0]]*ev);
+         stream << eoln;
+         stream << " Brillouin zone point: " << nbq + 1 << eoln << eoln;
+         stream << " virtual orbital energies:" <<  eoln;
+         int nn = ne_excited[0] - ne_excited[1];
+         double ev = 27.2116;
+      
+         // Print the first set of excited states in reverse order without symmetry considerations
+         for (int i = ne_excited[0]-1; i>=ne_excited[1]; --i) 
+            stream << eig1stream(eig_excited[i + nbq*neall], eig_excited[i + nbq*neall]*ev);
+      
+         // Print the second set of excited states in reverse order without symmetry considerations
+         for (int i = ne_excited[1]-1; i>=0; --i) 
+         {
+            stream << eig2stream(
+                        eig_excited[i + nn + nbq*neall], eig_excited[i + nn + nbq*neall]*ev,
+                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*neall],
+                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*neall]*ev);
+         }
+         stream << eoln;
       }
-      //for (int i=0; i<nn; ++i)
-      //   stream << eig1stream(eig_excited[i], eig_excited[i] * ev);
-      //for (int i=0; i<ne_excited[1]; ++i)
-      //   stream << eig2stream(eig_excited[i+nn], 
-      //                        eig_excited[i+nn]*ev,
-      //                        eig_excited[i+(ispin-1)*ne_excited[0]],
-      //                        eig_excited[i+(ispin-1)*ne_excited[0]]*ev);
-
-      stream << eoln;
 
       return stream.str();
    }

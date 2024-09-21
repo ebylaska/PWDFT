@@ -147,30 +147,21 @@ double cKinetic_Operator::ke_ave(const double *psi)
  *******************************************/
 void cKinetic_Operator::ke_orb(const int nbq1, const double *psi, double *tpsi) 
 {
-   int nsize      = mycneb->neq[0] + mycneb->neq[1];
    int npack1_max = mycneb->npack1_max();
-   int shift1 = 2*npack1_max;
-   int indx1n = 0;
-
-   int npack1  = mycneb->npack(nbq1);
    double *tmp_tg = tg + (nbq1-1)*npack1_max;
 
-   for (auto n=0; n<nsize; ++n)
+   int npack1  = mycneb->npack(nbq1);
+
+   int k1 = 0;
+   int k2 = 1;
+   for (auto k=0; k<npack1; ++k)
    {
-      const double *tmp_psi  = psi  + indx1n;
-      double       *tmp_tpsi = tpsi + indx1n;
-      int k1 = 0;
-      int k2 = 1;
-      for (auto k=0; k<npack1; ++k)
-      {
-        //tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
-        //tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
-        tmp_tpsi[k1] = tmp_tg[k]*tmp_psi[k1];
-        tmp_tpsi[k2] = tmp_tg[k]*tmp_psi[k2];
-        k1 += 2;
-        k2 += 2;
-      }
-      indx1n += shift1;
+     //tmp_tpsi[k1] += tmp_tg[k]*tmp_psi[k1];
+     //tmp_tpsi[k2] += tmp_tg[k]*tmp_psi[k2];
+     tpsi[k1] = tmp_tg[k]*psi[k1];
+     tpsi[k2] = tmp_tg[k]*psi[k2];
+     k1 += 2;
+     k2 += 2;
    }
 }
 

@@ -163,7 +163,7 @@ void cpsi_H_orb(const int nbq1,
    double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
 
    /* allocate temporary memory */
-   double *vpsi = mygrid->r_alloc();
+   double *vpsi = mygrid->c_alloc();
  
    /* apply k-space operators */
    myke->ke_orb(nbq1,orb,Horb);
@@ -178,7 +178,7 @@ void cpsi_H_orb(const int nbq1,
    mygrid->cc_pack_daxpy(nbq1,(-scal1),vpsi,Horb);
 
    /* deallocate temporary memory */
-   mygrid->r_dealloc(vpsi);
+   mygrid->c_dealloc(vpsi);
 }
 
 

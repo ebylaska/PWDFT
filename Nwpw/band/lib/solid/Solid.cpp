@@ -7,6 +7,7 @@
 #include "CPseudopotential.hpp"
 #include "CStrfac.hpp"
 #include "cpsi.hpp"
+#include "cpsi_H.hpp"
 
 #include "Solid.hpp"
 
@@ -145,12 +146,18 @@ void Solid::epsi_finalize(char *outfilename, std::ostream &coutput)
  ********************************************/
 void Solid::epsi_minimize(double *vall, std::ostream &coutput)
 { 
+
    int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
    int nshift1 = 2*(ne_excited[0]+ ne_excited[1])*mygrid->CGrid::npack1_max();
    int nshift2 = (ne_excited[0]+ ne_excited[1]);
+   bool lprint = (mygrid->c3db::parall->is_master());
 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
+
+      if (lprint) coutput << std::endl << std::setw(12) << " Brillouin zone point:" << std::setw(4) << nbq+1 
+                                                        << " of " << nbrillq <<  std::endl;
+
       double error_out,eorb0;
 
       auto nbq1 = nbq+1;
@@ -169,6 +176,9 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
             int indxk = 2*mygrid->CGrid::npack1_max()*k + kshift;
             double *orb = psi_v + indxk;
 
+            //double tum = mygrid->cc_pack_dot(nbq1,orb,orb);
+            //std::cout << "k=" << k << " tum=" << tum << std::endl;
+
             bool continue_outer_loop = true;
             for (int l2=1; continue_outer_loop && l2<=2; ++l2)
             {
@@ -178,6 +188,18 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
 
                // normalize 
                mygrid->g_norm(nbq1,orb);
+
+
+              //for (auto kk=k; kk<ne_excited[ms]; ++kk)
+             // {
+              //   int indxkk = 2*mygrid->CGrid::npack1_max()*kk + kshift;
+               //  double *orbkk = psi_v + indxkk;
+                // double sum = mygrid->cc_pack_dot(nbq1,orbkk,orb);
+              //   std::cout << "k=" << k << " kk=" << kk << " ms=" << ms << " sum=" << sum << std::endl;
+
+               //  double rum = mygrid->rr_dot(vall,vall);;
+                // std::cout << "rum=" << rum << std::endl;
+             // }
 
                // minimize orbital 
                bool continue_inner_loop = true;
@@ -365,7 +387,7 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
    e0         = -e0;
 
    bool lprint = (mygrid->c3db::parall->is_master());
-   if (lprint) coutput << std::setw(12) << "orbital" << std::setw(4) << k+1
+   if (lprint) coutput << std::setw(18) << "virtual orbital" << std::setw(4) << k+1
            << " current e=" << std::setw(10) << std::scientific << std::setprecision(3) << e0
            << " (error=" << std::setw(9) << std::scientific << std::setprecision(3) << (*error_out) << ")"
            << " iterations" << std::setw(4) << it << "(" << std::setw(4) << pit
@@ -428,7 +450,7 @@ void Solid::epsi_linesearch_update(const int nbq1,
  ********************************************/
 void Solid::epsi_get_gradient(const int nbq1, double *orb, double *vall, double *Horb)
 {
-   double *orb_r = mygrid->r_alloc();
+   double *orb_r = mygrid->c_alloc();
 
    // fourier transform orb_r
    mygrid->r_zero(orb_r);
@@ -437,10 +459,10 @@ void Solid::epsi_get_gradient(const int nbq1, double *orb, double *vall, double 
    mygrid->cr_fft3d(orb_r);
 
    mygrid->c_pack_zero(nbq1,Horb);
-   //cpsi_H_orb(nbq1,mygrid,myelectron->get_myke(),mypsp,orb,orb_r,vall,Horb);
+   cpsi_H_orb(nbq1,mygrid,myelectron->get_myke(),mypsp,orb,orb_r,vall,Horb);
    mygrid->c_pack_SMul(nbq1,-1.0,Horb);
 
-   mygrid->r_dealloc(orb_r);
+   mygrid->c_dealloc(orb_r);
 }
 
 

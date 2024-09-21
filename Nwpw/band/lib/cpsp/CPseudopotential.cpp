@@ -2207,14 +2207,13 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
    double *prj, *vnlprj;
    Parallel *parall;
    double omega = mypneb->lattice->omega();
-   // double scal = 1.0/lattice_omega();
-   double scal = 1.0 / omega;
+   double scal  = 1.0/omega;
    int one = 1;
    int ntmp, nshift, nn;
    double rone[2] = {1.0,0.0};
    double rmone[2] = {-1.0,0.0};
 
-   nn = mypneb->neq[0] + mypneb->neq[1];
+   nn = 1;
    nshift0 = mypneb->npack1_max();
    nshift = 2*mypneb->npack1_max();
    double *exi = new (std::nothrow) double[nshift]();
@@ -2288,7 +2287,7 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
       ntmp = 2*nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, zsw2, one);
        
-      mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nshift*nn);
+      mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi);
    }
    //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
 

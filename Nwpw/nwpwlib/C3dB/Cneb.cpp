@@ -417,7 +417,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
 {
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
    int ibshiftj = 2*CGrid::npack1_max();
-   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   int ibshiftk = ibshiftj*(ne0[0]+ne0[1]);
  
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
@@ -431,7 +431,7 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
          int nbq1 = qk+1;
      
          for (auto ms=0; ms<ispin; ++ms)
-         for (auto n=0; n<ne[ms]; ++n) 
+         for (auto n=0; n<ne0[ms]; ++n) 
          {
             int qj = msntoindex(ms, n);
             int pj = msntop(ms, n);

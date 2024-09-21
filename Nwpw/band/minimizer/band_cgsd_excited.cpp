@@ -55,7 +55,6 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
    int neall  = (nex[0] + nex[1]);
 
 
-
    if (neall > 0) 
    {
       double *vall = mygrid->r_nalloc(ispin);
