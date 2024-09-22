@@ -1129,6 +1129,16 @@ void c3db::rr_copy(const double *ptr1, double *ptr2)
    std::memcpy(ptr2, ptr1, nfft3d * sizeof(double));
 }
 
+/********************************
+ *                              *
+ *        c3db::cc_copy         *
+ *                              *
+ ********************************/
+void c3db::cc_copy(const double *ptr1, double *ptr2) 
+{
+   std::memcpy(ptr2, ptr1, 2*nfft3d * sizeof(double));
+}
+
 
 /********************************
  *                              *
@@ -2206,6 +2216,69 @@ void c3db::bb_Mul(const double *ptr1, double *ptr3)
    }
    return;
 } 
+
+  
+/********************************
+ *                              *
+ *         c3db::ccc_Mul        *
+ *                              *
+ ********************************/
+void c3db::ccc_Mul(const double *ptr1, const double *ptr3, double *ptr4)
+{      
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i) 
+      {  
+         int i0r = 2*i;  int i0i = 2*i+1;
+         double x0 = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+         double y0 = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+         ptr4[i0r] = x0;
+         ptr4[i0i] = y0;
+      }
+   if (nfft3d_map < 5)  
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {
+      int i1=i+1; int i2=i+2; int i3=i+3; int i4=i+4;
+      int i0r = 2*i;  int i0i = 2*i+1;
+      int i1r = 2*i1; int i1i = 2*i1+1;
+      int i2r = 2*i2; int i2i = 2*i2+1;
+      int i3r = 2*i3; int i3i = 2*i3+1;
+      int i4r = 2*i4; int i4i = 2*i4+1;
+
+      double x0 = ptr3[i0r]*ptr1[i0r] - ptr3[i0i]*ptr1[i0i];
+      double y0 = ptr3[i0r]*ptr1[i0i] + ptr3[i0i]*ptr1[i0r];
+
+      double x1 = ptr3[i1r]*ptr1[i1r] - ptr3[i1i]*ptr1[i1i];
+      double y1 = ptr3[i1r]*ptr1[i1i] + ptr3[i1i]*ptr1[i1r];
+
+      double x2 = ptr3[i2r]*ptr1[i2r] - ptr3[i2i]*ptr1[i2i];
+      double y2 = ptr3[i2r]*ptr1[i2i] + ptr3[i2i]*ptr1[i2r];
+
+      double x3 = ptr3[i3r]*ptr1[i3r] - ptr3[i3i]*ptr1[i3i];
+      double y3 = ptr3[i3r]*ptr1[i3i] + ptr3[i3i]*ptr1[i3r];
+
+      double x4 = ptr3[i4r]*ptr1[i4r] - ptr3[i4i]*ptr1[i4i];
+      double y4 = ptr3[i4r]*ptr1[i4i] + ptr3[i4i]*ptr1[i4r];
+
+      ptr4[i0r] = x0;
+      ptr4[i0i] = y0;
+
+      ptr4[i1r] = x1;
+      ptr4[i1i] = y1;
+
+      ptr4[i2r] = x2;
+      ptr4[i2i] = y2;
+
+      ptr4[i3r] = x3;
+      ptr4[i3i] = y3;
+
+      ptr4[i4r] = x4;
+      ptr4[i4i] = y4;
+   }
+   return;
+} 
+
 
 
 

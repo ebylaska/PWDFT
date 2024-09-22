@@ -57,7 +57,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
 
    if (neall > 0) 
    {
-      double *vall = mygrid->r_nalloc(ispin);
+      double *vall = mygrid->c_nalloc(ispin);
       // calculating regular virtual orbitals 
       if (lprint) coutput << std::endl;
       if (lprint) coutput << " == Virtual Orbital Calculation ==" << std::endl << std::endl;

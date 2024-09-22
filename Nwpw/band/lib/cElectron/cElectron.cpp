@@ -162,8 +162,8 @@ void cElectron_Operators::gen_vall()
       mygrid->cr_fft3d(vall);
 
    // add xcp to vall 
-   if (ispin==2) mygrid->rrr_Sum(vall,xcp+2*nfft3d,vall+2*nfft3d);
-   mygrid->rr_Sum(xcp,vall);
+   if (ispin==2) mygrid->rcc_Sum(xcp+2*nfft3d,vall, vall+2*nfft3d);
+   mygrid->rcc_Sum(xcp,vall,vall);
 
 
 }
@@ -175,8 +175,8 @@ void cElectron_Operators::gen_vall()
  ********************************************/
 void cElectron_Operators::get_vall(double *vall_out)
 {
-   mygrid->rr_copy(vall,vall_out);
-   if (ispin==2) mygrid->rr_copy(vall+2*nfft3d,vall_out+2*nfft3d);
+   mygrid->cc_copy(vall,vall_out);
+   if (ispin==2) mygrid->cc_copy(vall+2*nfft3d,vall_out+2*nfft3d);
 }
 
 /********************************************
@@ -186,8 +186,8 @@ void cElectron_Operators::get_vall(double *vall_out)
  ********************************************/
 void cElectron_Operators::set_vall(const double *vall_in)
 {
-   mygrid->rr_copy(vall_in,vall);
-   if (ispin==2) mygrid->rr_copy(vall_in+2*nfft3d,vall+2*nfft3d);
+   mygrid->cc_copy(vall_in,vall);
+   if (ispin==2) mygrid->cc_copy(vall_in+2*nfft3d,vall+2*nfft3d);
 }
 
 

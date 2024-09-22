@@ -172,7 +172,7 @@ void cpsi_H_orb(const int nbq1,
    mypsp->v_nonlocal_orb(nbq1,orb, Horb);
 
    /* apply r-space operators  - Expensive*/
-   mygrid->rrr_Mul(vall_r,orb_r,vpsi);
+   mygrid->ccc_Mul(vall_r,orb_r,vpsi);
    mygrid->rc_fft3d(vpsi);
    mygrid->c_pack(nbq1,vpsi);
    mygrid->cc_pack_daxpy(nbq1,(-scal1),vpsi,Horb);
