@@ -104,7 +104,7 @@ git clone https://github.com/ebylaska/PWDFT.git
 
 cd PWDFT
 cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_COMPILER=icx -DCMAKE_Fortran_COMPILER=ifx ./Nwpw
-
+```
 ### Running
 ```
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
