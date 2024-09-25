@@ -109,6 +109,11 @@ cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_COMPIL
 ```
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q debug -I
 ```
+
+```
+qsub -l select=4 -l walltime=30:00 -A catalysis_aesp_CNDA -q workq -I
+```
+
 ```
 mpiexec -n 4 --ppn 4  --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft bandss222b.nw
 ```
