@@ -68,8 +68,24 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
 
       mysolid.gen_vall();
       mysolid.get_vall(vall);
-      mysolid.epsi_minimize(vall,coutput);
 
+      double *g = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
+      int nbq1 = 1;
+      for (auto k=0; k<(mygrid->ne[0]+mygrid->ne[1]); ++k)
+      {
+         int shift = 2*mygrid->CGrid::npack1_max()*k;
+         double *orb = mysolid.psi1 + shift;
+         mysolid.epsi_get_gradient(nbq1,orb,vall,g);
+         double e0 = mygrid->cc_pack_dot(nbq1,orb,g);
+         double n0 = mygrid->cc_pack_dot(nbq1,orb,orb);
+         std::cout << "k,e0=" << k << " " << e0 << " eig=" << mysolid.eig[k] << std::endl;
+         std::cout << "k,n0=" << k << " " << n0 << std::endl;
+         std::cout << "k,hml0=" << k << " " << mysolid.hml[2*k] << " " 
+                                            << mysolid.hml[2*k+1] << std::endl;
+      }
+      mygrid->c_pack_deallocate(g);
+
+      mysolid.epsi_minimize(vall,coutput);
       if (lprint) coutput << mysolid.print_virtual();
 
       //std::cout << "start the exicited minimizer" << std::endl;

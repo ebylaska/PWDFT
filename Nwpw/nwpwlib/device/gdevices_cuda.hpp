@@ -2154,7 +2154,7 @@ public:
     *          batch_cffty_stages        *
     *                                    *
     **************************************/
-   void batch_cffty_stages(const int stage, const int fft_indx, bool forward, int ny, int nq, int n2ft3d, double *a, int da)
+   void batch_cffty_stages(const int stage, const int fft_indx, bool forward, int ny, int nq, int nffts, int n2ft3d, double *a, int da)
    {
       //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
       int ia_dev = ifft_dev[da];
@@ -2220,7 +2220,7 @@ public:
     *          batch_cfftz_stages        *
     *                                    *
     **************************************/
-   void batch_cfftz_stages(const int stage,const int fft_indx,bool forward,int nz,int nq,int n2ft3d,double *a,int da)
+   void batch_cfftz_stages(const int stage,const int fft_indx,bool forward,int nz,int nq,int nffts,int n2ft3d,double *a,int da)
    {
       //int ia_dev = fetch_dev_mem_indx(((size_t)n2ft3d));
       int ia_dev = ifft_dev[da];
