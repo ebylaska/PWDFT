@@ -189,7 +189,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
    // initialize Molecule
    Molecule mymolecule(control.input_movecs_filename(),
                        control.input_movecs_initialize(), &mygrid, &myion,
-                       &mystrfac, &myewald, &myelectron, &mypsp, coutput);
+                       &mystrfac, &myewald, &myelectron, &mypsp, control, coutput);
  
    MPI_Barrier(comm_world0);
  

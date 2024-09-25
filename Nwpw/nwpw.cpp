@@ -913,6 +913,7 @@ int main(int argc, char *argv[]) {
         }
      }
   }
+  std::cout << "TASK=" << task << std::endl;
 
 
   // Tasks
@@ -1000,11 +1001,11 @@ int main(int argc, char *argv[]) {
      }
 
      /* Energy or Gradient task */
-     if ((task == 10) || (task ==11))
+     if ((task == 11) || (task ==12))
      {
         if (oprint)
            std::cout << std::endl
-                     << "Running energy calculation - rtdbstr = " << rtdbstr
+                     << "Running band energy calculation - rtdbstr = " << rtdbstr
                      << std::endl
                      << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
@@ -1016,7 +1017,7 @@ int main(int argc, char *argv[]) {
      {
         if (oprint)
            std::cout << std::endl
-                     << "Running geometry optimization calculation - rtdbstr = "
+                     << "Running band geometry optimization calculation - rtdbstr = "
                      << rtdbstr << std::endl
                      << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
@@ -1028,7 +1029,7 @@ int main(int argc, char *argv[]) {
      {
         if (oprint)
            std::cout << std::endl
-                     << "Running frequency calculation - rtdbstr = " << rtdbstr
+                     << "Running band frequency calculation - rtdbstr = " << rtdbstr
                      << std::endl
                      << std::endl;
      }

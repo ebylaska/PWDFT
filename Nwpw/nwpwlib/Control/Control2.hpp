@@ -22,6 +22,7 @@ class Control2 {
    double ptime_step, pfake_mass, pks_alpha, pecut, pwcut, prcut;
    double pbo_time_step;
    double ptotal_charge;
+   double peprecondition, psprecondition;
  
    bool puse_grid_cmp = false;
    
@@ -64,6 +65,8 @@ class Control2 {
    char poutput_movecs_filename[80];
    char pinput_v_movecs_filename[80];
    char poutput_v_movecs_filename[80];
+   char pinput_e_movecs_filename[80];
+   char poutput_e_movecs_filename[80];
 
    bool pefield_on;
    int pefield_type;
@@ -172,6 +175,8 @@ public:
    double wcut() { return pwcut; }
    double ewald_rcut() { return prcut; }
    double total_charge() { return ptotal_charge; }
+   double Eprecondition() { return peprecondition;}
+   double Sprecondition() { return psprecondition;}
  
    int minimizer() { return pminimizer; }
    int lmbfgs_size() { return plmbfgs_size; }
@@ -223,6 +228,8 @@ public:
    char *output_movecs_filename() { return poutput_movecs_filename; }
    char *input_v_movecs_filename() { return pinput_v_movecs_filename; }
    char *output_v_movecs_filename() { return poutput_v_movecs_filename; }
+   char *input_e_movecs_filename() { return pinput_e_movecs_filename; }
+   char *output_e_movecs_filename() { return poutput_e_movecs_filename; }
    char *permanent_dir() { return ppermanent_dir; }
    char *scratch_dir() { return pscratch_dir; }
  

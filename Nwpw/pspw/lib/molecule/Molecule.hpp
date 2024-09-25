@@ -15,6 +15,7 @@
 #include "Pseudopotential.hpp"
 #include "Strfac.hpp"
 #include "psi.hpp"
+#include "psi_H.hpp"
 
 namespace pwdft {
 
@@ -56,6 +57,7 @@ class Molecule {
   double omega, scal2, scal1, dv;
 
   int ispin, ne[2], neall, n2ft3d, shift1, shift2;
+  int ne_excited[2] = {0,0};
   int nfft[3];
   int version = 3;
 
@@ -70,13 +72,18 @@ public:
    double *psi1,*rho1,*rho1_all,*dng1;
    double *psi2,*rho2,*rho2_all,*dng2;
    double *lmbda,*hml,*eig;
+
+   double *psi1_excited,*psi2_excited;
+   double *hml_excited,*eig_excited;
+
+
  
-   double E[80],en[2];
+   double E[80],en[2],ep,sp,tole;
  
    bool newpsi;
  
    /* Constructors */
-   Molecule(char *,bool,Pneb *,Ion *,Strfac *,Ewald *,Electron_Operators *,Pseudopotential *,std::ostream &);
+   Molecule(char *,bool,Pneb *,Ion *,Strfac *,Ewald *,Electron_Operators *,Pseudopotential *, Control2 &, std::ostream &);
  
    /* destructor */
    ~Molecule() {
@@ -93,13 +100,37 @@ public:
       delete[] lmbda;
       delete[] hml;
       delete[] eig;
+ 
+      if ((ne_excited[0] + ne_excited[1])>0)
+      {
+         delete[] psi1_excited;
+         delete[] psi2_excited;
+         delete[] hml_excited;
+         delete[] eig_excited;
+      }
    }
+
+   void epsi_initialize(char *,bool, const int *, std::ostream &);
+   void epsi_finalize(char *, std::ostream &);
+   void epsi_minimize(double *, std::ostream &);
+   void epsi_get_gradient(double *, double *, double *);
+   double epsi_KS_update_virtual(const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+
+   void epsi_linesearch_update(double, double, double *, double *, double *, double *);
+   void epsi_sort_virtual();
+
  
    /* write psi molecule */
    void writepsi(char *output_filename, std::ostream &coutput) {
       psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
                 psi1,output_filename,coutput);
    }
+
+   void writepsi_excited(char *output_filename, std::ostream &coutput) {
+      psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
+                psi1_excited,output_filename,coutput);
+   }
+
  
    /* molecule energy */
    double energy() {
@@ -181,6 +212,10 @@ public:
  
    /* molecule - generate current hamiltonian */
    void gen_hml() { myelectron->gen_hml(psi1, hml); }
+
+   void gen_vall() { myelectron->gen_vall(); }
+   void get_vall(double *vall_out) { myelectron->get_vall(vall_out); }
+   void set_vall(const double *vall_in) { myelectron->set_vall(vall_in); }
  
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml, eig); }
@@ -312,6 +347,45 @@ public:
    {
       myelectron->dielectric_force(grad_ion);
    }
+
+   std::string print_virtual() 
+   {
+      std::stringstream stream;
+ 
+      std::ios init(NULL);
+      init.copyfmt(stream);
+      std::string eoln = "\n";
+
+      stream << eoln;
+      stream << eoln;
+      stream << " virtual orbital energies:" << eoln;
+      int nn = ne_excited[0] - ne_excited[1];
+      double ev = 27.2116;
+
+      // Print the first set of excited states in reverse order without symmetry considerations
+      for (int i = ne_excited[0]-1; i>=ne_excited[1]; --i) 
+         stream << eig1stream(eig_excited[i], eig_excited[i]*ev);
+
+      // Print the second set of excited states in reverse order without symmetry considerations
+      for (int i = ne_excited[1]-1; i>=0; --i) 
+      {
+         stream << eig2stream(
+                     eig_excited[i + nn], eig_excited[i + nn]*ev,
+                     eig_excited[i + (ispin - 1) * ne_excited[0]],
+                     eig_excited[i + (ispin - 1) * ne_excited[0]]*ev);
+      }
+      //for (int i=0; i<nn; ++i)
+      //   stream << eig1stream(eig_excited[i], eig_excited[i] * ev);
+      //for (int i=0; i<ne_excited[1]; ++i)
+      //   stream << eig2stream(eig_excited[i+nn], 
+      //                        eig_excited[i+nn]*ev,
+      //                        eig_excited[i+(ispin-1)*ne_excited[0]],
+      //                        eig_excited[i+(ispin-1)*ne_excited[0]]*ev);
+
+      stream << eoln;
+
+      return stream.str();
+   }
  
    friend std::ostream &operator<<(std::ostream &os, const Molecule &mymolecule) {
       /* using old style c++ formatting */
@@ -374,7 +448,7 @@ public:
       }
       os << eoln;
       os << eoln;
-      os << " orbital energy:" << eoln;
+      os << " orbital energies:" << eoln;
       int nn = mymolecule.ne[0] - mymolecule.ne[1];
       double ev = 27.2116;
       for (int i=0; i<nn; ++i)
@@ -393,6 +467,7 @@ public:
      
       return os;
    }
+
 };
 
 } // namespace pwdft

@@ -306,12 +306,16 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    std::string output_movecs = "eric.movecs";
    std::string input_v_movecs = "eric.vmovecs";
    std::string output_v_movecs = "eric.vmovecs";
+   std::string input_e_movecs = "eric.emovecs";
+   std::string output_e_movecs = "eric.emovecs";
    if (rtdbjson["dbname"].is_string()) {
       std::string dbname = rtdbjson["dbname"];
       input_movecs = dbname + ".movecs";
       output_movecs = dbname + ".movecs";
       input_v_movecs = dbname + ".vmovecs";
       output_v_movecs = dbname + ".vmovecs";
+      input_e_movecs = dbname + ".emovecs";
+      output_e_movecs = dbname + ".emovecs";
    }
  
    // read from nwpw block
@@ -323,6 +327,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       input_v_movecs = rtdbjson["nwpw"]["input_v_wavefunction_filename"];
    if (rtdbjson["nwpw"]["output_v_wavefunction_filename"].is_string())
       output_v_movecs = rtdbjson["nwpw"]["output_v_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["input_e_wavefunction_filename"].is_string())
+      input_e_movecs = rtdbjson["nwpw"]["input_e_wavefunction_filename"];
+   if (rtdbjson["nwpw"]["output_e_wavefunction_filename"].is_string())
+      output_e_movecs = rtdbjson["nwpw"]["output_e_wavefunction_filename"];
  
    // from car-parrinello block
    if (ptask == 6)
@@ -424,12 +432,17 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       if (output_movecs[0] != '/')   output_movecs   = permanent_dir_str + "/" + output_movecs;
       if (input_v_movecs[0] != '/')  input_v_movecs  = permanent_dir_str + "/" + input_v_movecs;
       if (output_v_movecs[0] != '/') output_v_movecs = permanent_dir_str + "/" + output_v_movecs;
+      if (input_e_movecs[0] != '/')  input_e_movecs  = permanent_dir_str + "/" + input_e_movecs;
+      if (output_e_movecs[0] != '/') output_e_movecs = permanent_dir_str + "/" + output_e_movecs;
    }
  
    strcpy(pinput_movecs_filename,const_cast<char *>(input_movecs.data()));
    strcpy(poutput_movecs_filename,const_cast<char *>(output_movecs.data()));
    strcpy(pinput_v_movecs_filename,const_cast<char *>(input_v_movecs.data()));
    strcpy(poutput_v_movecs_filename,const_cast<char *>(output_v_movecs.data()));
+   strcpy(pinput_e_movecs_filename,const_cast<char *>(input_e_movecs.data()));
+   strcpy(poutput_e_movecs_filename,const_cast<char *>(output_e_movecs.data()));
+
    strcpy(ppermanent_dir,const_cast<char *>(permanent_dir_str.data()));
    strcpy(pscratch_dir,const_cast<char *>(scratch_dir_str.data()));
    // strcpy(ppsp_library_dir,const_cast<char*>(psp_library_dir_str.data()));
@@ -553,6 +566,13 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       pwcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];
    if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float())
       pecut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1];
+
+   peprecondition = 20.0;
+   psprecondition = 200.0;
+   if (rtdbjson["nwpw"]["eprecondition"].is_number_float())
+      peprecondition = rtdbjson["nwpw"]["eprecondition"];
+   if (rtdbjson["nwpw"]["sprecondition"].is_number_float())
+      psprecondition = rtdbjson["nwpw"]["sprecondition"];
  
    prcut = 0.0;
    if (rtdbjson["nwpw"]["ewald_rcut"].is_number_float())

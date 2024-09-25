@@ -940,6 +940,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
    inline static void fft_twiddle(const int n, const complex_t* twiddle, complex_t* x) // Fourier transform
    {
       //complex_t* y = new complex_t[n];
+      constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       complex_t y[n];
       int eo = 0;
       int s  = 1;
@@ -1002,6 +1003,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       int nsize = 0;
       int s = 1;
       int nn = n;
+      constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
  
       while (s <= n) 
       {
@@ -1030,6 +1032,7 @@ static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
     **************************************/
    int size_fft_twiddle(const int n) 
    {
+      constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
       int nsize = 0;
       int s = 1;
       int nn = n;

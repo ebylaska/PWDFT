@@ -18,7 +18,10 @@ public:
   ~Kinetic_Operator() { delete[] tg; }
 
   void ke(double *, double *);
+  void ke_orb(double *, double *);
   double ke_ave(double *);
+ 
+  void ke_precondition(const double, const int, double *, double*);
 };
 
 } // namespace pwdft

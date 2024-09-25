@@ -4,6 +4,7 @@
 #if defined(NWPW_INTEL_MKL)
 #include "mkl.h"
 #include "mkl_lapacke.h"
+#include <cstring> // Required for strcmp
 
 #define DSCAL_PWDFT(n, alpha, a, ida) cblas_dscal(n, alpha, a, ida);
 #define DCOPY_PWDFT(n, a, ida, b, idb) cblas_dcopy(n, a, ida, b, idb)
@@ -11,8 +12,12 @@
   cblas_daxpy(n, alpha, a, ida, b, idb)
 
 //#define TRANSCONV(a)    ( (std::strcmp(a, "N")) ?  CblasNoTrans : CblasTrans )
-#define TRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasTrans)
-#define CTRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasConjTrans)
+//#define TRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasTrans)
+//#define CTRANSCONV(a) ((a == "N") ? CblasNoTrans : CblasConjTrans)
+
+#define TRANSCONV(a) ((strcmp(a, "N") == 0) ? CblasNoTrans : CblasTrans)
+#define CTRANSCONV(a) ((strcmp(a, "N") == 0) ? CblasNoTrans : CblasConjTrans)
+
 
 #define DGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc)      \
   cblas_dgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), n, m, k, alpha, a,  \
@@ -59,7 +64,7 @@
 #define IZAMAX_PWDFT(nn, hml, one) cblas_izamax(nn, hml, one)
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
-  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, hml, n, eig)
+  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, reinterpret_cast<MKL_Complex16*> (hml), n, eig)
 
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)

@@ -1487,6 +1487,13 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["mult"] = mult;
           if (mult > 1) nwpwjson["ispin"] = 2;
        }
+    } else if (mystring_contains(line, "eprecondition")) {
+       if (ss.size() == 2)
+          nwpwjson["eprecondition"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "sprecondition")) {
+       if (ss.size() == 2)
+          nwpwjson["sprecondition"] = std::stod(ss[1]);
+
     } else if (mystring_contains(line, "tolerances")) {
        ss = mystring_split0(line);
        if (ss.size() == 2)

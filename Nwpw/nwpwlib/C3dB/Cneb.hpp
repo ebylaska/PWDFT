@@ -87,15 +87,16 @@ public:
    void g_generate_random(double *);
    void g_generate1_random(double *);
    void g_generate2_random(double *);
+   void g_generate_excited_random(const int *, double *);
+
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, const int, double *);
    void g_write(const int, double *);
+   void g_write_excited(const int, const int *, double *);
 
    void h_read(const int, const int, double *);
    void h_write(const int, const int, const double *);
 
-
- 
    double *g_allocate(const int nb) {
      double *ptr;
      ptr = new (std::nothrow) double[2*(neq[0]+neq[1]) * CGrid::npack(nb)]();
@@ -113,6 +114,12 @@ public:
      double *ptr;
      ptr = new (std::nothrow) double[nbrillq*2*(neq[0]+neq[1]) * CGrid::npack1_max()]();
      return ptr;
+   }
+
+   double *g_allocate_excited_nbrillq_all(const int nex[]) {
+      double *ptr;
+      ptr = new (std::nothrow) double[nbrillq*2*(nex[0]+nex[1]) * CGrid::npack1_max()]();
+      return ptr;
    }
  
    double *h_allocate() 
@@ -182,8 +189,20 @@ public:
       return ptr;
    }
 
+   double *w_nex_allocate_nbrillq_all(const int nex[0])
+   {
+      double *ptr;
+      int nsize;
+      nsize = 2*(nex[0]*nex[0]+nex[1]*nex[1]);
+      
+      ptr = new (std::nothrow) double[nbrillq*nsize]();
+      std::memset(ptr,0,nbrillq*nsize*sizeof(double));
+      return ptr;
+   }
+
  
  
+   double gg_traceall_excited(const int *, double *, double *);
    double gg_traceall(double *, double *);
    void gg_copy(double *, double *);
    void g_zero(double *);
@@ -236,6 +255,11 @@ public:
    // void ggm_lambda2(double, double *, double *, double *);
    void ggw_lambda_sic(double, double *, double *, double *);
    void g_ortho(double *);
+   void g_ortho_excited(const int, double *, const int *, double *);
+   void g_project_out_filled(const int, double *, const int, double *);
+   void g_project_out_virtual(const int, const int, const int *, const int,  double *,  double *);
+
+   void g_norm(const int, double *);
  
    void gg_SMul(double, double *, double *);
    // void g_SMul1(double, double *);

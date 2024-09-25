@@ -448,4 +448,42 @@ void gen_vall_v4_DFPT(Pneb *mygrid, Pseudopotential *mypsp, double *vsr_l,
    mygrid->r_dealloc(tmp);
 }
 
+
+
+
+
+/*************************************
+ *                                   *
+ *             psi_H_orb             *
+ *                                   *
+ *************************************/
+/**
+ * @brief Computes the Hamiltonian action on an orbital in k-space and r-space.
+ *
+ */
+void psi_H_orb(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
+               double *orb, double *orb_r, double *vall_r, double *Horb)
+{
+   double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+
+   /* allocate temporary memory */
+   double *vpsi = mygrid->r_alloc();
+ 
+   /* apply k-space operators */
+   myke->ke_orb(orb,Horb);
+ 
+   /* apply non-local PSP  - Expensive */
+   mypsp->v_nonlocal_orb(orb, Horb);
+
+   /* apply r-space operators  - Expensive*/
+   mygrid->rrr_Mul(vall_r,orb_r,vpsi);
+   mygrid->rc_fft3d(vpsi);
+   mygrid->c_pack(1,vpsi);
+   mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Horb);
+
+   /* deallocate temporary memory */
+   mygrid->r_dealloc(vpsi);
+}
+
+
 } // namespace pwdft

@@ -51,6 +51,7 @@ class Pneb : public PGrid, public d1db {
    int io_norbs_max = 10;
    bool io_buffer = true;
 
+
 public:
    /* constructors */
    Pneb(Parallel *, Lattice *, Control2 &, int, int *);
@@ -85,9 +86,12 @@ public:
    void g_generate_random(double *);
    void g_generate1_random(double *);
    void g_generate2_random(double *);
+   void g_generate_excited_random(const int *, double *);
+
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, double *);
    void g_write(const int, double *);
+   void g_write_excited(const int, const int *, double *);
  
    double *g_allocate(const int nb) {
      double *ptr;
@@ -101,6 +105,27 @@ public:
      ptr = new (std::nothrow) double[nblock * 2 * (neq[0] + neq[1]) *
                                      PGrid::npack(nb)]();
      return ptr;
+   }
+
+   
+   double *g_allocate_excited(const int ne_excited[], const int nb) 
+   {
+      double *ptr;
+      ptr = new (std::nothrow) double[2 * (ne_excited[0] + ne_excited[1]) * PGrid::npack(nb)]();
+      return ptr;
+   }
+
+   double *m_nex_allocate(const int mb, const int ne_excited[]) 
+   {
+      double *ptr;
+      int nsize;
+      if (mb == -1)
+        nsize = ne_excited[0]*ne_excited[0] + ne_excited[1]*ne_excited[1];
+      else
+        nsize = ne_excited[mb]*ne_excited[mb];
+     
+      ptr = new (std::nothrow) double[nsize]();
+      return ptr;
    }
  
    double *h_allocate() 
@@ -161,6 +186,7 @@ public:
    }
    void m4_deallocate(double *ptr) { delete[] ptr; }
  
+   double gg_traceall_excited(const int *, double *, double *);
    double gg_traceall(double *, double *);
    void gg_copy(double *, double *);
    void g_zero(double *);
@@ -211,6 +237,12 @@ public:
    // void ggm_lambda2(double, double *, double *, double *);
    void ggm_lambda_sic(double, double *, double *, double *);
    void g_ortho(double *);
+
+   void g_ortho_excited(double *, const int *, double *);
+   void g_project_out_filled(double *, const int, double *);
+   void g_project_out_virtual(const int, const int *, const int, double *,  double *);
+
+   void g_norm(double *);
  
    void gg_SMul(double, double *, double *);
    // void g_SMul1(double, double *);

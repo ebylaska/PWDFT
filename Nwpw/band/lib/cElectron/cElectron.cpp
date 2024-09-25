@@ -146,6 +146,51 @@ void cElectron_Operators::gen_vl_potential()
    mypsp->v_local(vl, 0, dng0, fion0);
 }
 
+/********************************************
+ *                                          *
+ *    cElectron_Operators::gen_vall         *
+ *                                          *
+ ********************************************/
+void cElectron_Operators::gen_vall()
+{
+      // add up k-space potentials, vall = scal2*vl + vc  ****
+      mygrid->cc_pack_SMul(0, scal2, vl, vall);
+      mygrid->cc_pack_Sum2(0,vc,vall);
+
+      // fourier transform k-space potentials ****
+      mygrid->c_unpack(0,vall);
+      mygrid->cr_fft3d(vall);
+
+   // add xcp to vall 
+   if (ispin==2) mygrid->rcc_Sum(xcp+2*nfft3d,vall, vall+2*nfft3d);
+   mygrid->rcc_Sum(xcp,vall,vall);
+
+
+}
+
+/********************************************
+ *                                          *
+ *      cElectron_Operators::get_vall       *
+ *                                          *
+ ********************************************/
+void cElectron_Operators::get_vall(double *vall_out)
+{
+   mygrid->cc_copy(vall,vall_out);
+   if (ispin==2) mygrid->cc_copy(vall+2*nfft3d,vall_out+2*nfft3d);
+}
+
+/********************************************
+ *                                          *
+ *      cElectron_Operators::set_vall       *
+ *                                          *
+ ********************************************/
+void cElectron_Operators::set_vall(const double *vall_in)
+{
+   mygrid->cc_copy(vall_in,vall);
+   if (ispin==2) mygrid->cc_copy(vall_in+2*nfft3d,vall+2*nfft3d);
+}
+
+
 
 /************************************************
  *                                              *

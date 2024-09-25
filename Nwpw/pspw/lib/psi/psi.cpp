@@ -392,6 +392,107 @@ void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
 
 /*****************************************************
  *                                                   *
+ *                epsi_read                          *
+ *                                                   *
+ *****************************************************/
+/*
+   Reads psi and checks the header and check for orthonormalization.
+   Entry - mypneb: Pneb grid structure
+           filename: input filename
+           wvfnc_initialize: force initialize wavefuntion
+   Exit - psi2: complex wavefunction
+
+   Uses - psi_filefind, psi_read0,
+          mypneb->g_generate_random,
+          mypneb->gg_traceall,
+          mypneb->g_ortho
+*/
+bool epsi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, const int nex[], double *psi2, std::ostream &coutput) 
+{
+   nwpw_timing_function ftimer(50);
+   int version, ispin, nfft[3], ne[2];
+   double unita[9];
+   Parallel *myparall = mypneb->d3db::parall;
+   bool newpsi = true;
+
+   /* read psi from file if psi_exist and not forcing wavefunction initialization */
+   if (psi_filefind(mypneb,filename) && (!wvfnc_initialize))
+   {
+      newpsi = psi_check_convert(mypneb,filename,coutput);
+
+      if (myparall->base_stdio_print)
+         coutput << " reading from file " << std::endl << std::endl;
+
+      psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+   }
+
+   /* generate new psi */
+   else
+   {
+      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl << std::endl;
+      mypneb->g_generate_excited_random(nex, psi2);
+   }
+
+   newpsi = newpsi || (ispin != mypneb->ispin)
+                   || (ne[0] != nex[0])
+                   || (ne[1] != nex[1])
+                   || (std::abs(unita[0] - mypneb->lattice->unita1d(0)) > 1.0e-4)
+                   || (std::abs(unita[1] - mypneb->lattice->unita1d(1)) > 1.0e-4)
+                   || (std::abs(unita[2] - mypneb->lattice->unita1d(2)) > 1.0e-4)
+                   || (std::abs(unita[3] - mypneb->lattice->unita1d(3)) > 1.0e-4)
+                   || (std::abs(unita[4] - mypneb->lattice->unita1d(4)) > 1.0e-4)
+                   || (std::abs(unita[5] - mypneb->lattice->unita1d(5)) > 1.0e-4)
+                   || (std::abs(unita[6] - mypneb->lattice->unita1d(6)) > 1.0e-4)
+                   || (std::abs(unita[7] - mypneb->lattice->unita1d(7)) > 1.0e-4)
+                   || (std::abs(unita[8] - mypneb->lattice->unita1d(8)) > 1.0e-4);
+
+   /* ortho check */
+   double sum2 = mypneb->gg_traceall_excited(nex, psi2, psi2);
+   double sum1 = nex[0] + nex[1];
+   //std::cout << "excited ortho check sum1= " << sum1 << " sum2=" << sum2 << std::endl;
+   newpsi = newpsi && (std::abs(sum2-sum1)> 1.0e-4);
+
+   return newpsi;
+}
+
+
+
+/*****************************************************
+ *                                                   *
+ *                epsi_write                         *
+ *                                                   *
+ *****************************************************/
+void epsi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
+               int *ispin, int ne[], double *psi, char *filename,
+               std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int occupation = -1;
+
+   Parallel *myparall = mypneb->d3db::parall;
+
+   if (myparall->base_stdio_print)
+     coutput << " output epsi to filename: " << filename << std::endl;
+
+   if (myparall->is_master()) {
+     openfile(6, filename, "w");
+     iwrite(6, version, 1);
+     iwrite(6, nfft, 3);
+     dwrite(6, unita, 9);
+     iwrite(6, ispin, 1);
+     iwrite(6, ne, 2);
+     iwrite(6, &occupation, 1);
+   }
+
+   mypneb->g_write_excited(6, ne, psi);
+
+   if (myparall->is_master())
+     closefile(6);
+}
+
+
+/*****************************************************
+ *                                                   *
  *                psi_filefind                       *
  *                                                   *
  *****************************************************/
@@ -466,5 +567,6 @@ void v_psi_write(Pneb *mypneb,int *version, int nfft[],
 }
 
 */
+
 
 } // namespace pwdft

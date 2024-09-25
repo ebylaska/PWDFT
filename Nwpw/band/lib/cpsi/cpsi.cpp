@@ -284,11 +284,11 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, nbrillouin);
 
    myparall->Brdcst_iValue(0, 0, &occupation);
+
  
    /* reads in c format and automatically packs the result to g format */
    //mycneb->g_read(4,ispin,psi);
    mycneb->g_read_ne(4,ne,*nbrillouin,psi);
-   
  
    if (myparall->is_master())
      closefile(4);
@@ -409,6 +409,95 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    if (myparall->is_master())
       closefile(6);
 }
+
+/*****************************************************
+ *                                                   *
+ *                epsi_read                          *
+ *                                                   *
+ *****************************************************/
+bool epsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int nex[], double *psi2, std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int version, ispin, nfft[3], ne[2],nbrillouin;
+   double unita[9];
+   Parallel *myparall = mycneb->c3db::parall;
+   bool newpsi = true;
+
+   /* read psi from file if psi_exist and not forcing wavefunction initialization */
+   if (cpsi_filefind(mycneb,filename) && (!wvfnc_initialize))
+   {
+      newpsi = cpsi_check_convert(mycneb,filename,coutput);
+
+      if (myparall->base_stdio_print)
+         coutput << " reading from file " << std::endl << std::endl;
+
+      cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, filename);
+   }
+
+   /* generate new psi */
+   else
+   {
+      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl << std::endl;
+      mycneb->g_generate_excited_random(nex, psi2);
+   }
+
+   newpsi = newpsi || (ispin != mycneb->ispin)
+                   || (nbrillouin != mycneb->nbrillouin)
+                   || (ne[0] != nex[0])
+                   || (ne[1] != nex[1])
+                   || (std::abs(unita[0] - mycneb->lattice->unita1d(0)) > 1.0e-4)
+                   || (std::abs(unita[1] - mycneb->lattice->unita1d(1)) > 1.0e-4)
+                   || (std::abs(unita[2] - mycneb->lattice->unita1d(2)) > 1.0e-4)
+                   || (std::abs(unita[3] - mycneb->lattice->unita1d(3)) > 1.0e-4)
+                   || (std::abs(unita[4] - mycneb->lattice->unita1d(4)) > 1.0e-4)
+                   || (std::abs(unita[5] - mycneb->lattice->unita1d(5)) > 1.0e-4)
+                   || (std::abs(unita[6] - mycneb->lattice->unita1d(6)) > 1.0e-4)
+                   || (std::abs(unita[7] - mycneb->lattice->unita1d(7)) > 1.0e-4)
+                   || (std::abs(unita[8] - mycneb->lattice->unita1d(8)) > 1.0e-4);
+
+   /* ortho check */
+   double sum2 = mycneb->gg_traceall_excited(nex, psi2, psi2);
+   double sum1 = nex[0] + nex[1];
+   //std::cout << "excited ortho check sum1= " << sum1 << " sum2=" << sum2 << std::endl;
+   newpsi = newpsi && (std::abs(sum2-sum1)> 1.0e-4);
+
+   return newpsi;
+}
+
+/*****************************************************
+ *                                                   *
+ *                epsi_write                         *
+ *                                                   *
+ *****************************************************/
+void epsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
+               int *ispin, int ne[], int *nbrillouin, double *psi, char *filename,
+               std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int occupation = -1;
+
+   Parallel *myparall = mycneb->c3db::parall;
+
+   if (myparall->base_stdio_print)
+     coutput << " output epsi to filename: " << filename << std::endl;
+
+   if (myparall->is_master()) {
+     openfile(6, filename, "w");
+     iwrite(6, version, 1);
+     iwrite(6, nfft, 3);
+     dwrite(6, unita, 9);
+     iwrite(6, ispin, 1);
+     iwrite(6, ne, 2);
+     iwrite(6, nbrillouin, 1);
+     iwrite(6, &occupation, 1);
+   }
+
+   mycneb->g_write_excited(6, ne, psi);
+
+   if (myparall->is_master())
+     closefile(6);
+}
+
 
 /*****************************************************
  *                                                   *
