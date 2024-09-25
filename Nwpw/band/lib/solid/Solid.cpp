@@ -453,7 +453,7 @@ void Solid::epsi_get_gradient(const int nbq1, double *orb, double *vall, double 
    double *orb_r = mygrid->c_alloc();
 
    // fourier transform orb_r
-   mygrid->r_zero(orb_r);
+   mygrid->c_zero(orb_r);
    mygrid->cc_pack_copy(nbq1,orb,orb_r);
    mygrid->c_unpack(nbq1,orb_r);
    mygrid->cr_fft3d(orb_r);

@@ -60,9 +60,11 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
  
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
+   std::cout <<  "ke1=" << mygrid->cc_pack_dot(1,psi,Hpsi) << std::endl;
 
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
+   std::cout <<  "ke1+vnl=" << mygrid->cc_pack_dot(1,psi,Hpsi) << std::endl;
 
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0,scal2,vl,vall);
@@ -131,6 +133,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
         done = ((indx1 >= nn) && (indx2 >= nn));
      }
    }
+   std::cout <<  "ke1+vnl+all=" << mygrid->cc_pack_dot(1,psi,Hpsi) << std::endl;
    
    /*{
       double hml[4*22*22*4];
@@ -140,7 +143,7 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
                             << hml[92] << " " << hml[93] <<  std::endl;
    }
    */
-   
+
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
@@ -160,6 +163,7 @@ void cpsi_H_orb(const int nbq1,
                 Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
                 double *orb, double *orb_r, double *vall_r, double *Horb)
 {
+   int n2ft3d = (mygrid->n2ft3d);
    double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
 
    /* allocate temporary memory */
@@ -167,18 +171,26 @@ void cpsi_H_orb(const int nbq1,
  
    /* apply k-space operators */
    myke->ke_orb(nbq1,orb,Horb);
+   std::cout <<  "ke1=" << mygrid->cc_pack_dot(nbq1,orb,Horb) << std::endl;
  
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_orb(nbq1,orb, Horb);
+   std::cout <<  "ke1+vnl=" << mygrid->cc_pack_dot(nbq1,orb,Horb) << std::endl;
 
    /* apply r-space operators  - Expensive*/
-   mygrid->ccc_Mul(vall_r,orb_r,vpsi);
+   // mygrid->ccc_Mul(vall_r,orb_r,vpsi);
+   std::memcpy(vpsi,vall_r,n2ft3d*sizeof(double));
+   mygrid->bb_Mul(orb_r,vpsi);
+
    mygrid->rc_fft3d(vpsi);
    mygrid->c_pack(nbq1,vpsi);
    mygrid->cc_pack_daxpy(nbq1,(-scal1),vpsi,Horb);
 
+   std::cout <<  "ke1+vnl+all=" << mygrid->cc_pack_dot(nbq1,orb,Horb) << std::endl;
+
    /* deallocate temporary memory */
    mygrid->c_dealloc(vpsi);
+
 }
 
 
