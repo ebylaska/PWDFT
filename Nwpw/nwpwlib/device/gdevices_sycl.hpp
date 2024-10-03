@@ -19,7 +19,8 @@
 
 #include "fft.h"
 #include "blas.h"
-#include <oneapi/mkl.hpp>
+#include <oneapi/mkl/blas.hpp>
+#include <oneapi/mkl/dfti.hpp>
 
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
                                      oneapi::mkl::dft::domain::REAL>
