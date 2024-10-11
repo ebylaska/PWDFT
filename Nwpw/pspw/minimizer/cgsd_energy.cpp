@@ -112,10 +112,16 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    if (minimizer == 1) {
       if (mymolecule.newpsi) 
       {
+         //int ispin = mymolecule.mygrid->ispin;
+         //double *vall =  mygrid->r_nalloc(ispin);
+         //mymolecule.gen_vall();
+         //mymolecule.get_vall(vall);
+         //mymolecule.psi_minimize(vall, coutput);
          int it_in0 = 15;
          for (int it=0; it<it_in0; ++it)
-            mymolecule.sd_update(dte);
-         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+            mymolecule.sd_update2(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
+         //mygrid->r_dealloc(vall);
       }
       while ((icount < it_out) && (!converged)) 
       {
@@ -149,8 +155,8 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       if (mymolecule.newpsi) {
          int it_in0 = 15;
          for (int it=0; it<it_in0; ++it)
-            mymolecule.sd_update(dte);
-         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+            mymolecule.sd_update2(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
       }
       pspw_lmbfgs psi_lmbfgs(mygeodesic12.mygeodesic1, lmbfgs_size);
       while ((icount < it_out) && (!converged)) {

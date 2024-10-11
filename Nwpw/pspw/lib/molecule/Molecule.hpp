@@ -119,6 +119,12 @@ public:
    void epsi_linesearch_update(double, double, double *, double *, double *, double *);
    void epsi_sort_virtual();
 
+   void psi_minimize(double *, std::ostream &);
+   void psi_get_gradient(double *, double *, double *);
+   double psi_KS_update(const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+
+   void psi_linesearch_update(double, double, double *, double *, double *, double *);
+   void psi_sort();
  
    /* write psi molecule */
    void writepsi(char *output_filename, std::ostream &coutput) {
@@ -239,6 +245,24 @@ public:
       
       /* lagrange multiplier - Expensive */
       mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
+      
+      /* pointer swap of psi2 and psi1 */
+      double *t2 = psi2;
+      psi2 = psi1;
+      psi1 = t2;
+   }
+
+   /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
+   void sd_update2(double dte) {
+
+      /* apply psi2 = psi1 + dte*Hpsi1 */
+      myelectron->run(psi1, rho1, dng1, rho1_all);
+      
+      // myelectron->add_dteHpsi((-dte),psi1,psi2);
+      myelectron->add_dteHpsi((dte), psi1, psi2);
+      
+      /* carry out direct ortho - Expensive */
+      mygrid->g_ortho(psi2);
       
       /* pointer swap of psi2 and psi1 */
       double *t2 = psi2;
