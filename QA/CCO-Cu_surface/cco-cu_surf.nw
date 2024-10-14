@@ -145,7 +145,8 @@ nwpw
   end
 
   2d-hcurve
+  nolagrange
 end
 
 task pspw energy
-task pspw steepest_descent
+#task pspw steepest_descent

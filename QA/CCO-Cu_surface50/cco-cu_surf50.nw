@@ -139,12 +139,14 @@ nwpw
   mult 1
   xc pbe96
   lmbfgs grassman 
-  loop 1 1
+  loop 10 10
   steepest_descent
      loop 10 2
   end
 
   2d-hcurve
+  nolagrange
 end
 
+task pspw energy
 task pspw steepest_descent

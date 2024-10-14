@@ -143,9 +143,11 @@ nwpw
   steepest_descent
      loop 5 20
   end
-  loop 1 1 
+  loop 10 10 
 
   2d-hcurve
+  nolagrange
 end
 
+task pspw energy
 task pspw steepest_descent

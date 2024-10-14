@@ -258,6 +258,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    plmax_multipole = 0;
    if (rtdbjson["nwpw"]["lmax_multipole"].is_number_integer())
       plmax_multipole = rtdbjson["nwpw"]["lmax_multipole"];
+
+   pnolagrange = false;
+   if (rtdbjson["nwpw"]["nolagrange"].is_boolean())
+      pnolagrange = rtdbjson["nwpw"]["nolagrange"];
  
    pbalance = 1;
    if (rtdbjson["nwpw"]["nobalance"].is_boolean())

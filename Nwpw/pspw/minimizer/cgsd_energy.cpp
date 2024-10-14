@@ -61,6 +61,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    int ne[2],ispin,nion;
    double E[70],total_energy,deltae,deltae_old,deltac;
  
+   bool nolagrange = control.nolagrange();
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);
    double tole = control.tolerances(0);
@@ -118,9 +119,18 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          //mymolecule.get_vall(vall);
          //mymolecule.psi_minimize(vall, coutput);
          int it_in0 = 15;
-         for (int it=0; it<it_in0; ++it)
-            mymolecule.sd_update2(dte);
-         if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
+         if (nolagrange)
+         {
+            for (int it=0; it<it_in0; ++it)
+               mymolecule.sd_update2(dte);
+            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
+         }
+         else
+         {
+            for (int it=0; it<it_in0; ++it)
+               mymolecule.sd_update(dte);
+            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+         }
          //mygrid->r_dealloc(vall);
       }
       while ((icount < it_out) && (!converged)) 
@@ -128,10 +138,21 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          ++icount;
          if (stalled) 
          {
-            for (int it=0; it<it_in; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint)
-               std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            if (nolagrange)
+            {
+               for (int it=0; it<it_in; ++it)
+                  mymolecule.sd_update2(dte);
+               if (oprint) 
+                 std::cout << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
+            }
+            else
+            {
+               for (int it=0; it<it_in; ++it)
+                  mymolecule.sd_update(dte);
+               if (oprint) 
+                 std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            }
+
             bfgscount = 0;
          }
          deltae_old = deltae;
@@ -154,17 +175,35 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    } else if (minimizer == 2) {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
-         for (int it=0; it<it_in0; ++it)
-            mymolecule.sd_update2(dte);
-         if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
+         if (nolagrange)
+         {
+            for (int it=0; it<it_in0; ++it)
+               mymolecule.sd_update2(dte);
+            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
+         }
+         else
+         {
+            for (int it=0; it<it_in0; ++it)
+               mymolecule.sd_update(dte);
+            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+         }
       }
       pspw_lmbfgs psi_lmbfgs(mygeodesic12.mygeodesic1, lmbfgs_size);
       while ((icount < it_out) && (!converged)) {
          ++icount;
          if (stalled) {
-            for (int it = 0; it < it_in; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            if (nolagrange)
+            {
+               for (int it=0; it<it_in; ++it)
+                  mymolecule.sd_update2(dte);
+               if (oprint) std::cout << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
+            }
+            else
+            {
+               for (int it = 0; it<it_in; ++it)
+                  mymolecule.sd_update(dte);
+               if (oprint) std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            }
             bfgscount = 0;
          }
          deltae_old = deltae;
