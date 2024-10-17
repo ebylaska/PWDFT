@@ -15,6 +15,9 @@
 #include <stdexcept>
 #include <string>
 
+// Define a constants for the radix values
+static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+
 class hip_exception : public std::exception {
 
   std::string file_;
@@ -1243,11 +1246,6 @@ public:
 
 typedef std::complex<double> complex_t;
          
-   // Define a constants for the radix values
-static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-            
    /**************************************
     *                                    *
     *             fft_radix              *

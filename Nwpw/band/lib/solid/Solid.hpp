@@ -400,7 +400,7 @@ public:
        
          int n = mysolid.ne[0] + mysolid.ne[1];
          double tmpeig[n];
-         std:memset(tmpeig,0,n*sizeof(double));
+         std::memset(tmpeig,0,n*sizeof(double));
          if (pk==mysolid.mygrid->c3db::parall->taskid_k())
             std::memcpy(tmpeig,mysolid.eig+nbq*n,n*sizeof(double));
          mysolid.mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);

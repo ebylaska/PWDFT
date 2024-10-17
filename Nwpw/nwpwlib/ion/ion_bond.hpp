@@ -16,7 +16,7 @@ namespace pwdft {
 class ion_bond
 {
 
-   bool bond_exists=false;;
+   bool bond_exists=false;
    bool periodic;
    int nhb;
    int    *i0,*j0;
