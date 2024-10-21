@@ -509,7 +509,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       int pk = mygrid.ktop(nb);
       int n = ne[0] + ne[1];
       double tmpeig[n];
-      std:memset(tmpeig,0,n*sizeof(double));
+      std::memset(tmpeig,0,n*sizeof(double));
 
       if (pk==myparallel.taskid_k()) 
          std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));

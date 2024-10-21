@@ -43,6 +43,9 @@
 #define cusolver_int_t int
 #endif
 
+// Define a constants for the radix values
+static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
+
 // cusolver API error checking
 #define CUSOLVER_CHECK(err)                                                    \
   do {                                                                         \
@@ -2395,11 +2398,6 @@ public:
 
 typedef std::complex<double> complex_t;
          
-   // Define a constants for the radix values
-static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-            
    /**************************************
     *                                    *
     *             fft_radix              *

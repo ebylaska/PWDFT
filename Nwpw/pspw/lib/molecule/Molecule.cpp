@@ -92,6 +92,460 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
   /*---------------------- testing Electron Operators ---------------------- */
 }
 
+/********************************************
+ *                                          *
+ *           Molecule::psi_minimize         *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Minimize the energy of orbitals.
+ *
+ * This function performs a minimization process on the excited state orbitals of a molecule.
+ * It iteratively orthogonalizes, normalizes, and minimizes each orbital, ensuring that the
+ * final orbitals are properly conditioned and their energies are minimized within a specified
+ * tolerance. The process involves projecting out contributions from filled and lower virtual
+ * spaces and adjusting the orbital based on convergence criteria.
+ *
+ * @param vall Pointer to an array of potential values used during the minimization process.
+ * @param coutput Output stream for logging or reporting the progress of the minimization.
+ *
+ * The minimization process includes the following steps:
+ * - Orthogonalization against filled and lower virtual spaces.
+ * - Normalization of the orbital.
+ * - Iterative minimization using the `psi_KS_update_virtual` function, checking for convergence.
+ * - If the minimization does not converge within the allowed number of attempts, the orbital
+ *   is reset, and the process is retried.
+ * - The final minimized energy of each orbital is stored in the `eig_excited` array.
+ */
+void Molecule::psi_minimize(double *vall, std::ostream &coutput)
+{
+   mygrid->g_ortho(psi1);
+   double error_out,eorb0;
+
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      int kshift = ms*ne[0]*2*mygrid->PGrid::npack(1);
+      for (auto k=0; k<ne[ms]; ++k)
+      {
+         int indxk = 2*mygrid->PGrid::npack(1)*k + kshift;
+         double *orb = psi1 + indxk;
+
+         bool continue_outer_loop = true;
+         for (int l2=1; continue_outer_loop && l2<=2; ++l2)
+         {
+            // Project out lower filled spaces
+            mygrid->g_project_out_filled_below(psi1,ms,k,orb);
+
+            // normalize 
+            mygrid->g_norm(orb);
+
+           // minimize orbital 
+            bool continue_inner_loop = true;
+            for (int l=0; continue_inner_loop && l<=(1+(l2-1)*3); ++l)
+            {
+               eorb0 = psi_KS_update(ms,k,2,tole,0.001,vall,orb,&error_out,coutput);
+               if (error_out <= tole)
+                  continue_inner_loop = false; // Exit the inner loop
+            }
+
+            // If error is still too large or energy is too high, retry orthogonalization
+            if (error_out > tole || eorb0 > 4.0 && false)
+            {
+                if (l2 <= 1)
+                {
+                   //std::cout << "retry orthogonalization" << std::endl;
+                   mygrid->c_pack_zero(1, orb);
+                   mygrid->c_pack_addzero(1, 1.0, orb);
+                   int nne[2] = {1,0};
+                   //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
+                   //mygrid->g_generate_excited_random(nne,orb);
+                   mygrid->g_project_out_filled_below(psi1, ms, k, orb);
+                   mygrid->g_norm(orb);
+                }
+                else
+                   continue_outer_loop = false; // Exit the outer loop
+            }
+            else
+               continue_outer_loop = false; // Exit the outer loop
+         }
+
+         // Store the minimized orbital energy
+         eig[ms*ne[0] + k] = eorb0;
+      } //k
+   } //ms
+
+  psi_sort();
+
+}
+
+/********************************************
+ *                                          *
+ *     Molecule::psi_get_gradient           *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Computes the gradient of the energy with respect to the orbital.
+ *
+ * This function calculates the gradient of the Hamiltonian acting on the orbital 
+ * (`orb`) and stores the result in `Horb`. It transforms the orbital into real 
+ * space, applies the Hamiltonian operator, and transforms the result back to 
+ * Fourier space. The gradient is scaled by `-1.0` as part of the calculation.
+ *
+ * @param orb    Pointer to the orbital array in Fourier space.
+ * @param vall   Pointer to the potential array for the current calculation.
+ * @param Horb   Pointer to the array where the resulting gradient will be stored.
+ *
+ * @details
+ * The function begins by allocating a real-space version of the orbital (`orb_r`) 
+ * and zeroing out the memory. The orbital is copied into real space, transformed 
+ * using a Fourier transform, and then the Hamiltonian is applied. The resulting 
+ * gradient is transformed back to Fourier space and stored in `Horb`. The function 
+ * ensures proper memory management by allocating and deallocating `orb_r`.
+ * 
+ * @note
+ * - The function makes use of the `mygrid` object to perform various grid operations 
+ *   such as packing, unpacking, and Fourier transforms.
+ * - The Hamiltonian operator is applied via the `psi_H_orb` function, which involves 
+ *   the kinetic energy operator and pseudopotentials.
+ *
+ * @see 
+ * - `mygrid::r_alloc()`
+ * - `mygrid::cr_fft3d()`
+ * - `mygrid::c_pack_SMul()`
+ * - `psi_H_orb()`
+ */
+void Molecule::psi_get_gradient(double *orb, double *vall, double *Horb)
+{
+   double *orb_r = mygrid->r_alloc();
+
+   // fourier transform orb_r
+   mygrid->r_zero(orb_r);
+   mygrid->cc_pack_copy(1,orb,orb_r);
+   mygrid->c_unpack(1,orb_r);
+   mygrid->cr_fft3d(orb_r);
+
+   mygrid->c_pack_zero(1,Horb);
+   psi_H_orb(mygrid,myelectron->get_myke(),mypsp,orb,orb_r,vall,Horb);
+   mygrid->c_pack_SMul(1,-1.0,Horb);
+
+   mygrid->r_dealloc(orb_r);
+}
+
+
+/********************************************
+ *                                          *
+ *         Molecule::psi_KS_update          *
+ *                                          *
+ ********************************************/
+//    This routine performs a KS update on orbital i
+/**
+ * @brief Performs a Kohn-Sham (KS) update on an orbital for a single band.
+ *
+ * This routine updates the orbital `orb` for the `ms`-th spin channel using 
+ * a gradient-based method, typically for Kohn-Sham density functional theory (DFT). 
+ * It performs an iterative update to minimize the energy of the orbital using 
+ * steepest descent and preconditioning. The update continues until the 
+ * energy error is below a specified threshold or the maximum number of iterations is reached.
+ *
+ * @param ms           Spin channel index.
+ * @param k            The orbital index or band index.
+ * @param maxit_orb    Maximum number of iterations allowed for convergence.
+ * @param maxerror     Maximum allowed error threshold for convergence.
+ * @param perror       Preconditioned error tolerance.
+ * @param vall         Pointer to the array of potential values for gradient calculation.
+ * @param orb          Pointer to the array representing the orbital data to be updated.
+ * @param error_out    Pointer to store the final error value after the update.
+ * @param coutput      Output stream for logging information (typically `std::cout`).
+ *
+ * @return double      Returns the final energy after the KS update.
+ *
+ * @details
+ * The function starts by calculating the steepest descent direction (residual)
+ * using the energy gradient, and then performs preconditioning if necessary. 
+ * It uses a conjugate direction method to minimize the orbital energy. The search
+ * direction is normalized and orthogonalized against previously filled states.
+ *
+ * - The function loops until the energy difference between iterations is smaller 
+ *   than `maxerror` or the maximum number of iterations (`maxit_orb`) is exceeded.
+ * - Preconditioning is applied to accelerate convergence using a kinetic energy preconditioner.
+ * - A projection step is included to remove contributions from lower filled orbitals.
+ * 
+ * @note
+ * - The `mygrid` object is assumed to provide methods for handling packed data operations.
+ * - The `myelectron` object provides access to kinetic energy preconditioning.
+ * - The `psi1` array represents previously filled states and is used for projection.
+ *
+ * @see 
+ * - `psi_get_gradient()`
+ * - `mygrid::g_project_out_filled_below()`
+ * - `mygrid::cc_pack_dot()`
+ * - `mygrid::cc_pack_daxpy()`
+ * - `myelectron::get_myke()->ke_precondition()`
+ */
+double Molecule::psi_KS_update(const int ms, const int k, const int maxit_orb, const double maxerror,
+                                        const double perror, double *vall, double *orb,
+                                        double *error_out, std::ostream &coutput)
+{        
+            
+   double *t0 = mygrid->c_pack_allocate(1);
+   double *r1 = mygrid->c_pack_allocate(1);
+   double *g  = mygrid->c_pack_allocate(1);
+   double *t  = mygrid->c_pack_allocate(1);
+            
+   bool precondition = true;
+   bool done = false;
+   double error0 = 0.0;
+   double e0 = 0.0;
+   double eold = 0.0;
+   double de0 = 0.0; 
+   double theta = 3.14159/600.0;
+   double    lmbda_r0 = 1.0;
+   int it = 0;
+   int pit = 0;
+   while (!done)
+   {
+      ++it;
+      eold = e0;
+
+      //calculate residual (steepest descent) direction for a single band
+      psi_get_gradient(orb, vall+ms*n2ft3d, g);
+      e0 = mygrid->cc_pack_dot(1,orb,g);
+
+      e0 = -e0;
+
+
+      double percent_error=0.0;
+      if(error0>1.0e-11) percent_error = std::abs(e0-eold)/error0;
+
+
+      precondition = (std::abs(e0-eold)>(sp*maxerror));
+
+      done = ((it > maxit_orb) || (std::abs(e0-eold)<maxerror));
+    
+      mygrid->cc_pack_copy(1,g,r1);
+      mygrid->cc_pack_daxpy(1,(e0),orb,r1);
+
+      //preconditioning 
+      if (precondition)
+      {
+         ++pit;
+         myelectron->get_myke()->ke_precondition(ep,1,orb,r1);
+      }
+
+      //determine conjuagate direction ***
+      double lmbda_r1 = mygrid->cc_pack_dot(1,r1,r1);
+
+      mygrid->cc_pack_copy(1,r1,t);
+
+
+      std::cout << "lmbda_r0=" << lmbda_r0 << std::endl;
+      if (it>1) 
+         if (!std::isnan(lmbda_r0)) 
+            mygrid->cc_pack_daxpy(1,(lmbda_r1/lmbda_r0),t0,t);
+      lmbda_r0 = lmbda_r1;
+      bool oneloop = true;
+      bool repeat_loop = true;
+      while (repeat_loop)
+      {
+        mygrid->cc_pack_copy(1,t,t0);
+
+         //normalize search direction, t ****
+         // project out lower virtual space
+         //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
+         // project out filled space
+         mygrid->g_project_out_filled_below(psi1, ms, k, t);
+
+         de0 = mygrid->cc_pack_dot(1,t,t);
+         de0 = 1.0/std::sqrt(de0);
+         if (std::isnan(de0)) de0=0.0;
+         std::cout << "de0=" << de0 << std::endl;
+      std::cout << "A theta=" << theta << std::endl;
+         mygrid->c_pack_SMul(1,de0,t);
+         de0 = mygrid->cc_pack_dot(1,t,g);
+
+         //bad direction;
+         if ((de0<0.0) && oneloop)
+         {
+             mygrid->cc_pack_copy(1,g,t);
+             oneloop = false;
+         }
+         else
+            repeat_loop = false;
+      }
+
+      de0 = -2.0*de0;
+
+      psi_linesearch_update(e0,de0,&theta,vall+ms*n2ft3d,orb,t);
+      std::cout << "B theta=" << theta << std::endl;
+
+      done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
+      //done = true;
+   }
+
+   mygrid->c_pack_deallocate(t0);
+   mygrid->c_pack_deallocate(r1);
+   mygrid->c_pack_deallocate(g);
+   mygrid->c_pack_deallocate(t);
+
+   *error_out = std::abs(e0-eold);
+   e0         = -e0;
+
+   bool lprint = (mygrid->d3db::parall->is_master());
+   if (lprint) coutput << std::setw(12) << "orbital" << std::setw(4) << k+1
+           << " current e=" << std::setw(10) << std::scientific << std::setprecision(3) << e0
+           << " (error=" << std::setw(9) << std::scientific << std::setprecision(3) << (*error_out) << ")"
+           << " iterations" << std::setw(4) << it << "(" << std::setw(4) << pit
+           << " preconditioned, Ep,Sp=" << std::fixed << std::setprecision(1) << std::setw(5) << ep
+           << "," << std::setw(7) << sp << ")" << std::endl;
+
+
+   return e0;
+}
+
+/********************************************
+ *                                          *
+ *        psi_linesearch_update             *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Performs a line search update on the wave function or state vector (orbital data).
+ *
+ * This function modifies the orbital (`orb`) by performing a line search update. It computes a new
+ * angle `theta` based on the current energy `e0`, energy derivative `de0`, and uses trigonometric
+ * operations to combine the orbital data with another vector `t`. The gradient of the energy with 
+ * respect to the orbital is used to determine the new configuration, and an optimized angle `theta`
+ * is calculated to minimize the energy.
+ *
+ * @param e0     Initial energy before the line search.
+ * @param de0    Derivative of the energy with respect to the orbital parameters.
+ * @param theta  Pointer to the angle used in the line search; this will be updated.
+ * @param vall   Pointer to the array containing values needed for gradient calculation.
+ * @param orb    Pointer to the array representing the orbital data (wave function or state vector).
+ * @param t      Pointer to a vector used in the line search (direction or step).
+ *
+ * @details 
+ * The function uses trigonometric operations to adjust the orbital data `orb` by combining it 
+ * with vector `t`. A new `theta` is computed to minimize the energy. The function also computes 
+ * the gradient and performs the final update to `orb`. Memory for temporary arrays `torb` and `g`
+ * is allocated and later deallocated via the `mygrid` object.
+ * 
+ * The key operations are:
+ * - `orb` is updated using trigonometric functions with respect to `theta`.
+ * - The energy gradient is calculated to find the optimal `theta`.
+ * - The new orbital configuration is stored back into `orb`.
+ *
+ * @note 
+ * This function assumes that `mygrid` provides the necessary methods for packed operations, including
+ * memory management (`c_pack_allocate`, `c_pack_deallocate`), copy operations (`cc_pack_copy`), and 
+ * mathematical operations (`cc_pack_SMul`, `cc_pack_daxpy`, `cc_pack_dot`).
+ */
+void Molecule::psi_linesearch_update(double e0, double de0, double *theta, double *vall, double *orb, double *t)
+{
+   double *torb = mygrid->c_pack_allocate(1);
+   double *g    = mygrid->c_pack_allocate(1);
+   double theta0 = *theta;
+
+   mygrid->cc_pack_copy(1,orb, torb);
+
+   // orb2 = orb*cos(pi/300) + t*sin(pi/300) ****
+   double x = std::cos(theta0);
+   double y = std::sin(theta0);
+   mygrid->cc_pack_SMul(1,x,torb,orb);
+   mygrid->cc_pack_daxpy(1,y,t,orb);
+
+   // determine theta ***
+   epsi_get_gradient(orb, vall, g);
+   double e1 = mygrid->cc_pack_dot(1,orb,g);
+   e1 = -e1;
+
+   
+   x = (e0 - e1 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
+   //x = (e1 - e0 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
+   double theta1 = 0.5*std::atan(0.50*de0/x);
+   if (std::isnan(theta1)) theta1 =0.0;
+
+
+   // orb2 = orb*cos(theta) + t*sin(theta) ****
+   x = std::cos(theta1);
+   y = std::sin(theta1);
+
+   double sum = mygrid->cc_pack_dot(1,torb,t);
+   mygrid->cc_pack_SMul(1,x,torb,orb);
+   mygrid->cc_pack_daxpy(1,y,t,orb);
+   //std::cout << "theta,x,y=" << std::setprecision(6) << theta1 << " " << x << " " << y <<  " " << e0 << " " << e1 << " " << sum << std::endl;
+
+   mygrid->c_pack_deallocate(torb);
+   mygrid->c_pack_deallocate(g);
+
+   *theta = theta1;
+}
+
+
+
+/********************************************
+ *                                          *
+ *          Molecule::psi_sort              *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Sorts the orbitals based on their eigenvalues.
+ *
+ * This function sorts the orbitals (`psi1`) according to the associated eigenvalues (`eig`).
+ * It uses a simple comparison-based sorting algorithm where orbitals with smaller eigenvalues 
+ * are placed before those with larger eigenvalues. The sorting is done for each spin (`ms`) 
+ * and the corresponding orbitals are swapped when necessary.
+ *
+ * @details 
+ * The function loops through all the orbitals for each spin and compares their eigenvalues.
+ * If the eigenvalue of one orbital is larger than another, the orbitals and their associated
+ * eigenvalues are swapped. The sorting is performed in-place on both the `eig` array (which
+ * holds the eigenvalues) and the `psi1` array (which holds the orbitals).
+ *
+ * @note 
+ * - This function assumes the presence of a `mygrid` object that provides methods for 
+ *   packed data operations (`cc_pack_copy`, `c_pack_allocate`, and `c_pack_deallocate`).
+ * - The arrays `psi1` and `eig` are assumed to be accessible as part of the `Molecule` class.
+ * - The function operates on spin-dependent orbitals, and each spin's orbitals are sorted separately.
+ *
+ * @param None
+ *
+ * @return None
+ */
+void Molecule::psi_sort()
+{
+   double *torb = mygrid->c_pack_allocate(1);
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      int msshift = ms*ne[0]*2*mygrid->PGrid::npack(1);
+      for (auto ii=0;    ii<ne[ms]; ++ii)
+      for (auto jj=ii+1; jj<ne[ms]; ++jj)
+      {
+         int indxii = 2*mygrid->PGrid::npack(1)*ii + msshift;
+         int indxjj = 2*mygrid->PGrid::npack(1)*jj + msshift;
+         double *orbii = psi1 + indxii;
+         double *orbjj = psi1 + indxjj;
+
+         int i = ii + ms*ne[0];
+         int j = jj + ms*ne[0];
+         double ei = eig[i];
+         double ej = eig[j];
+
+         if (ej<ei)
+         {
+            std::swap(eig[i], eig[j]);
+            mygrid->cc_pack_copy(1,orbii,torb);
+            mygrid->cc_pack_copy(1,orbjj,orbii);
+            mygrid->cc_pack_copy(1,torb,orbjj);
+         }
+      }
+   }
+   mygrid->c_pack_deallocate(torb);
+}
+
+
+
+
+
 
 /********************************************
  *                                          *

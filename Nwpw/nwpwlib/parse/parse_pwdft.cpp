@@ -1399,6 +1399,13 @@ static json parse_nwpw(json nwpwjson, int *curptr,
          nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "nobalance")) {
        nwpwjson["nobalance"] = true;
+    } else if (mystring_contains(line, "nolagrange")) {
+       nwpwjson["nolagrange"] = true;
+       if (mystring_contains(line, " off"))        nwpwjson["nolagrange"] = false;
+       else if (mystring_contains(line, " false")) nwpwjson["nolagrange"] = false;
+       else if (mystring_contains(line, " true"))  nwpwjson["nolagrange"] = true;
+       else
+           nwpwjson["nolagrange"] = true;
     } else if (mystring_contains(line, "use_grid_cmp")) {
        nwpwjson["use_grid_cmp"] = true;
     } else if (mystring_contains(line, "fast_erf")) {

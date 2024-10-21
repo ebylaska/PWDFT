@@ -24,6 +24,7 @@ class Control2 {
    double ptotal_charge;
    double peprecondition, psprecondition;
  
+   bool pnolagrange   = false;
    bool puse_grid_cmp = false;
    
    bool pfast_erf = false;
@@ -214,6 +215,8 @@ public:
    bool use_grid_cmp() { return puse_grid_cmp; }
    bool fast_erf() { return pfast_erf; }
    bool is_crystal() { return pis_crystal; }
+
+   bool nolagrange() { return pnolagrange; }
  
    int driver_maxiter() { return pdriver_maxiter; }
    int driver_lmbfgs_size() { return pdriver_lmbfgs_size; }

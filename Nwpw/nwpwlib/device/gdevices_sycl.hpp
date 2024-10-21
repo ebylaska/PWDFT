@@ -19,7 +19,8 @@
 
 #include "fft.h"
 #include "blas.h"
-#include <oneapi/mkl.hpp>
+#include <oneapi/mkl/blas.hpp>
+#include <oneapi/mkl/dfti.hpp>
 
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
                                      oneapi::mkl::dft::domain::REAL>
@@ -27,6 +28,9 @@ typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
 typedef oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
                                      oneapi::mkl::dft::domain::COMPLEX>
     desc_cmplx_t;
+
+// Define a constants for the radix values
+static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 
 namespace pwdft {
 
@@ -2178,11 +2182,6 @@ public:
 
 typedef std::complex<double> complex_t;
          
-   // Define a constants for the radix values
-static constexpr int radix_values[] = {17, 16, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-//static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
-            
    /**************************************
     *                                    *
     *             fft_radix              *

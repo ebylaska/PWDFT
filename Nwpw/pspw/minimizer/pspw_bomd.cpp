@@ -368,6 +368,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
      if (flag > 0) {
        coutput << std::endl;
        coutput << " technical parameters:\n";
+       if (control.nolagrange()) coutput << "      disabling Lagrange multiplier" << std::endl;
        if (control.io_buffer()) coutput << "      using io buffer " << std::endl;
        coutput << "      fixed step: time step =" << Ffmt(12, 2)
                << control.time_step() << "  ficticious mass =" << Ffmt(12, 2)
