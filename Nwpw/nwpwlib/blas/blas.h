@@ -89,6 +89,7 @@ extern "C" void dlacpy_(char *, int *, int *, double *, int *, double *, int *);
 
 extern "C" void dgelss_(int *, int *, int *, double *, int *, double *, int *,
                         double *, double *, int *, double *, int *, int *);
+extern "C" void dgesv_(int *, int *,  double *, int *, int *, double *, int *, int *);
 
 
 extern "C" void zscal_(int *, double *, double *, int *);
@@ -147,6 +148,9 @@ extern "C" void zlacpy_(char *, int *, int *, double *, int *, double *, int *);
 
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   zlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))
+
+#define DGESV_PWDFT(n, nrhs, a, lda, ipiv, b, ldb, ierr) \
+  dgesv_(&(n), &(nrhs), a, &(lda), ipiv, b, &(ldb), &(ierr))
 
 #endif
 

@@ -7,6 +7,7 @@
 #include "Pseudopotential.hpp"
 #include "Strfac.hpp"
 #include "psi.hpp"
+#include "nwpw_scf_mixing.hpp"
 
 #include "Molecule.hpp"
 
