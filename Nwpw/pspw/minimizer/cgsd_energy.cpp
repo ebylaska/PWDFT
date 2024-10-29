@@ -66,6 +66,9 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    int it_out  = control.loop(1);
    double tole = control.tolerances(0);
    double tolc = control.tolerances(1);
+   double scf_alpha = control.scf_alpha();
+   int diis_histories = control.diis_histories();
+   int scf_algorithm = control.scf_algorithm();
  
    double dt = control.time_step();
    double dte = dt/sqrt(control.fake_mass());
@@ -298,7 +301,9 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          }
          deltae_old = deltae;
          total_energy = cgsd_bybminimize(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
-                             &deltac, bfgscount, it_in, tole, tolc);
+                                         &deltac,bfgscount,it_in, 
+                                         scf_algorithm,scf_alpha,diis_histories,
+                                         tole,tolc);
         ++bfgscount;
         if (oprint)
           coutput << Ifmt(10) << icount*it_in

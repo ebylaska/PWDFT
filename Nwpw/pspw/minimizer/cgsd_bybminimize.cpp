@@ -29,7 +29,8 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
  ******************************************/
 double cgsd_bybminimize(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
-                        int it_in, double tole, double tolc) 
+                        int it_in, int scf_algorithm, double scf_alpha, int diis_histories, 
+                        double tole, double tolc) 
 {
    bool done = false;
    double tmin = 0.0;
@@ -80,7 +81,9 @@ double cgsd_bybminimize(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    //**** bybminimizer ****
    //**********************
 
-   nwpw_scf_mixing scfmix(mygrid->d3db::parall,1,0.10,2,mygrid->ispin,mygrid->n2ft3d,vall_out);
+   nwpw_scf_mixing scfmix(mygrid->d3db::parall,
+                         scf_algorithm,scf_alpha,diis_histories,
+                         mygrid->ispin,mygrid->n2ft3d,vall_out);
 
 
  
