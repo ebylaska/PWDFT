@@ -13,11 +13,12 @@
 #include <cmath>
 #include "blas.h"
 #include "Parallel.hpp"
-#include "Pneb.hpp"
+#include "PGrid.hpp"
+#include "nwpw_kerker.hpp"
 
 namespace pwdft {
 
-class nwpw_scf_mixing {
+class nwpw_scf_mixing : public nwpw_kerker {
 
    bool dokerker,isband;
    int algorithm,max_m,n2ft3d,nsize,ispin,ierr;
@@ -43,10 +44,10 @@ public:
     *        nwpw_scf_mixing::nwpw_scf_mixing       *
     *                                               *
     *************************************************/
-   nwpw_scf_mixing(Parallel *inparall, const int algorithm0, const double alpha0, const int max_m0, 
-                   const int ispin0, const int nsize0, double *rho_in)
+   nwpw_scf_mixing(PGrid *mygrid0, const double g0, const int algorithm0, const double alpha0, const int max_m0, 
+                   const int ispin0, const int nsize0, double *rho_in) : nwpw_kerker(mygrid0, g0)
    {
-      parall = inparall;;
+      parall = mygrid0->d3db::parall;
       algorithm = algorithm0;
       alpha = alpha0;
       max_m = max_m0;
@@ -58,9 +59,6 @@ public:
       {
          rho_list = new (std::nothrow) double[nsize*2]();
          nwpw_scf_mixing_reset(rho_in);
-
-   
-
       }
 
       /* Broyden mixing */
@@ -90,6 +88,7 @@ public:
          nwpw_scf_mixing_reset(rho_in);
       }
       std::memcpy(rho_list, rho_in, nsize*sizeof(double));
+     
 
    }
 

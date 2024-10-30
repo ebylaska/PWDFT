@@ -1525,12 +1525,16 @@ static json parse_nwpw(json nwpwjson, int *curptr,
     } else if (mystring_contains(line, "cg")) {
        if (mystring_contains(line, "stiefel"))
          nwpwjson["minimizer"] = 4;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 9;
        else
          nwpwjson["minimizer"] = 1;
 
     } else if (mystring_contains(line, "lmbfgs")) {
        if (mystring_contains(line, "stiefel"))
          nwpwjson["minimizer"] = 7;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 10;
        else
          nwpwjson["minimizer"] = 2;
  
@@ -1563,10 +1567,10 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "kerker")) 
           nwpwjson["kerker_g0"] = std::stod(mystring_trim(mystring_split(line, "kerker")[1]));
 
-       if (mystring_contains(line, "outer_iterations")) 
-          nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
        if (mystring_contains(line, " iterations")) 
           nwpwjson["ks_maxit_orb"] = std::stoi(mystring_trim(mystring_split(line, " iterations")[1]));
+       if (mystring_contains(line, "outer_iterations")) 
+          nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
        if (mystring_contains(line, "diis_histories")) 
           nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
 
@@ -1586,10 +1590,13 @@ static json parse_nwpw(json nwpwjson, int *curptr,
          if (mystring_isfloat(ss[1]))
            kT = std::stod(ss[1]);
 
+       temperature = kT/kb;
+
        nwpwjson["fractional"] = true;
        nwpwjson["fractional_orbitals"] = 4;
        nwpwjson["fractional_kT"] = kT;
        nwpwjson["fractional_temperature"] = temperature;
+       nwpwjson["fractional_smeartype"]   = 2;
 
        if (mystring_contains(line, "fixed"))              nwpwjson["fractional_smeartype"] = -1;
        if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;

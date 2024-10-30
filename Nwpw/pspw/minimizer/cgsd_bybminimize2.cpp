@@ -24,10 +24,10 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 
 /******************************************
  *                                        *
- *            cgsd_bybminimize            *
+ *            cgsd_bybminimize2           *
  *                                        *
  ******************************************/
-double cgsd_bybminimize(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
+double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
                         int it_in, int scf_algorithm, double scf_alpha, double g0, int diis_histories, 
                         double tole, double tolc) 

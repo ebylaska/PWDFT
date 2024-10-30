@@ -23,7 +23,12 @@ extern double cgsd_bfgsminimize2(Molecule &, Geodesic2 *, pspw_lmbfgs2 &,
 
 extern double cgsd_bybminimize(Molecule &, Geodesic *, double *, double *,
                               double *, int, int,
-                              int, double, int,  
+                              int, double, double, int,  
+                              double, double);
+
+extern double cgsd_bybminimize2(Molecule &, Geodesic *, double *, double *,
+                              double *, int, int,
+                              int, double, double, int,  
                               double, double);
 
 } // namespace pwdft

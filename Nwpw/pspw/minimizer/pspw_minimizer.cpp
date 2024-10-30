@@ -346,21 +346,22 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             coutput << std::endl;
             coutput << " Kohn-Sham scf parameters:\n";
             coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            coutput << "     Kohn-Sham iterations = " << control.ks_maxit_orb() 
+                                                      << " ( " << control.ks_maxit_orbs() << " outer)\n";
             if (control.scf_algorithm()==0) coutput << "     SCF algorithm        = simple mixing\n";
             if (control.scf_algorithm()==1) coutput << "     SCF algorithm        = Broyden mixing\n";
             if (control.scf_algorithm()==2) coutput << "     SCF algorithm        = Johnson-Pulay mixing"
                                                     << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
             if (control.scf_algorithm()==3) coutput << "     SCF algorithm        = Anderson mixing\n";
             if (control.scf_algorithm()==4) coutput << "     SCF algorithm        = TF mixing\n";
-            coutput << "     SCF mixing parameter = " << control.scf_alpha() << std::endl;
-            coutput << "     Kohn-Sham iterations = " << control.ks_maxit_orb() 
-                                                      << " ( " << control.ks_maxit_orbs() << " outer)\n";
             if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
             if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+            coutput << "     SCF mixing parameter = " << control.scf_alpha() << std::endl;
             coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
+            coutput << std::endl;
             if (control.fractional())
             {
-               coutput << "     fractional smearing parameter:" << std::endl;
+               coutput << " fractional smearing parameter:" << std::endl;
                if (control.fractional_smeartype()==-1) coutput << "     smearing algorithm = fixed occupation\n";
                if (control.fractional_smeartype()==0)  coutput << "     smearing algorithm = step function\n";
                if (control.fractional_smeartype()==1)  coutput << "     smearing algorithm = Fermi-Dirac\n";
@@ -368,9 +369,10 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                if (control.fractional_smeartype()==4)  coutput << "     smearing algorithm = Marzari-Vanderbilt\n";
                if (control.fractional_smeartype()>=0)  coutput << "     smearing parameter = " 
                                                                << control.fractional_kT() 
-                                                               << " (" << control.fractional_temperature() << " K)\n"
+                                                               << " (" <<  Ffmt(8,1) <<  control.fractional_temperature() << " K)\n"
                                                                << "     mixing parameter   =  " 
                                                                << control.fractional_alpha() << std::endl;
+               coutput << std::endl;
             }
          }
       } 

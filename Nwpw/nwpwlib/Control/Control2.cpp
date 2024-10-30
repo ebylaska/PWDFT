@@ -484,26 +484,38 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        pscf_algorithm = rtdbjson["nwpw"]["scf_algorithm"];
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
+
+   pks_maxit_orb = 5;
    if (rtdbjson["nwpw"]["ks_maxit_orb"].is_number_integer())
        pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orb"];
+
+   pks_maxit_orbs = 1;
    if (rtdbjson["nwpw"]["ks_maxit_orbs"].is_number_integer())
-       pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orbs"];
+       pks_maxit_orbs = rtdbjson["nwpw"]["ks_maxit_orbs"];
+
    if (rtdbjson["nwpw"]["diis_histories"].is_number_integer())
        pks_maxit_orb = rtdbjson["nwpw"]["diis_histories"];
 
+   pscf_alpha = 0.25;
    if (rtdbjson["nwpw"]["scf_alpha"].is_number_float())
       pscf_alpha = rtdbjson["nwpw"]["scf_alpha"];
+
+   pkerker_g0 = 0.0;
    if (rtdbjson["nwpw"]["kerker_g0"].is_number_float())
       pkerker_g0 = rtdbjson["nwpw"]["kerker_g0"];
+
    if (rtdbjson["nwpw"]["fractional_kT"].is_number_float())
       pfractional_kT = rtdbjson["nwpw"]["fractional_kT"];
    if (rtdbjson["nwpw"]["fractional_temperature"].is_number_float())
       pfractional_temperature = rtdbjson["nwpw"]["fractional_temperature"];
+
+   pfractional_alpha = 1.0;
    if (rtdbjson["nwpw"]["fractional_alpha"].is_number_float())
       pfractional_alpha = rtdbjson["nwpw"]["fractional_alpha"];
 
-     if (rtdbjson["nwpw"]["fractional"].is_boolean())
-       pfractional = rtdbjson["nwpw"]["fractional"];
+   pfractional = false;
+   if (rtdbjson["nwpw"]["fractional"].is_boolean())
+      pfractional = rtdbjson["nwpw"]["fractional"];
 
    ploop[0] = 10;
    ploop[1] = 100;
