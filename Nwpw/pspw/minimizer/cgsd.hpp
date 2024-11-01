@@ -9,6 +9,7 @@ namespace pwdft {
 #include "Geodesic2.hpp"
 #include "Molecule.hpp"
 #include "pspw_lmbfgs.hpp"
+#include "nwpw_scf_mixing.hpp"
 
 extern double cgsd_cgminimize(Molecule &, Geodesic *, double *, double *,
                               double *, int, int, double, double);
@@ -27,8 +28,8 @@ extern double cgsd_bybminimize(Molecule &, Geodesic *, double *, double *,
                               double, double);
 
 extern double cgsd_bybminimize2(Molecule &, Geodesic *, double *, double *,
-                              double *, int, int,
-                              int, double, double, int,  
+                              double *, int, int,int,
+                              nwpw_scf_mixing &,
                               double, double);
 
 } // namespace pwdft

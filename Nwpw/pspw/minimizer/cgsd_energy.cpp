@@ -14,6 +14,7 @@
 #include "pspw_lmbfgs.hpp"
 #include "pspw_lmbfgs2.hpp"
 #include "util_date.hpp"
+#include "nwpw_scf_mixing.hpp"
 
 #include "cgsd.hpp"
 
@@ -371,8 +372,14 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
          }
       }
+      
+      double total_energy0 = mymolecule.energy();
+      nwpw_scf_mixing scfmix(mygrid,kerker_g0,
+                             scf_algorithm,scf_alpha,diis_histories,
+                             mygrid->ispin,mygrid->n2ft3d,mymolecule.rho1);
 
-      while ((icount < it_out) && (!converged))
+
+      while ((icount < it_out*it_in) && (!converged))
       {
          ++icount;
          if (stalled)
@@ -394,14 +401,16 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
 
             bfgscount = 0;
          }
+         int ks_it_in = control.ks_maxit_orb();
+         int ks_it_out =  control.ks_maxit_orbs();
          deltae_old = deltae;
+
          total_energy = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
-                                         &deltac,bfgscount,it_in,
-                                         scf_algorithm,scf_alpha,kerker_g0,diis_histories,
-                                         tole,tolc);
+                                         &deltac,bfgscount,ks_it_in,ks_it_out,
+                                         scfmix,tole,tolc);
         ++bfgscount;
         if (oprint) 
-          coutput << Ifmt(10) << icount*it_in
+          coutput << Ifmt(10) << icount
                   << Efmt(25,12) << total_energy
                   << Efmt(16,6) << deltae 
                   << Efmt(16,6) << deltac << std::endl;

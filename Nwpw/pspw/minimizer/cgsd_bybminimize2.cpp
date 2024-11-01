@@ -29,7 +29,8 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
  ******************************************/
 double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
-                        int it_in, int scf_algorithm, double scf_alpha, double g0, int diis_histories, 
+                        int ks_it_in, int ks_it_out, 
+                        nwpw_scf_mixing &scfmix,
                         double tole, double tolc) 
 {
    bool done = false;
@@ -45,8 +46,11 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    mygeodesic_ptr = mygeodesic;
    double *vall_out;
 
-   //int sd_it = 10
-   //int cg_it = 10
+   // ion-ion energy 
+   double eion = mymolecule.eion();
+
+ //  int sd_it = 10
+ //  int cg_it = 10
  //   if (set_iterations) then
  //       it_in = iterations
  //       sd_it = 2 
@@ -81,9 +85,9 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    //**** bybminimizer ****
    //**********************
 
-   nwpw_scf_mixing scfmix(mygrid,g0,
-                          scf_algorithm,scf_alpha,diis_histories,
-                          mygrid->ispin,mygrid->n2ft3d,vall_out);
+   //nwpw_scf_mixing scfmix(mygrid,g0,
+   //                       scf_algorithm,scf_alpha,diis_histories,
+   //                       mygrid->ispin,mygrid->n2ft3d,vall_out);
 
 
  
