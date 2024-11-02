@@ -144,7 +144,7 @@ void Molecule::psi_minimize(double *vall, std::ostream &coutput)
             bool continue_inner_loop = true;
             for (int l=0; continue_inner_loop && l<=(1+(l2-1)*3); ++l)
             {
-               eorb0 = psi_KS_update(ms,k,2,tole,0.001,vall,orb,&error_out,coutput);
+               eorb0 = psi_KS_update_orb(ms,k,2,tole,0.001,vall,orb,&error_out,coutput);
                if (error_out <= tole)
                   continue_inner_loop = false; // Exit the inner loop
             }
@@ -235,7 +235,7 @@ void Molecule::psi_get_gradient(double *orb, double *vall, double *Horb)
 
 /********************************************
  *                                          *
- *         Molecule::psi_KS_update          *
+ *         Molecule::psi_KS_update_orb      *
  *                                          *
  ********************************************/
 //    This routine performs a KS update on orbital i
@@ -283,7 +283,7 @@ void Molecule::psi_get_gradient(double *orb, double *vall, double *Horb)
  * - `mygrid::cc_pack_daxpy()`
  * - `myelectron::get_myke()->ke_precondition()`
  */
-double Molecule::psi_KS_update(const int ms, const int k, const int maxit_orb, const double maxerror,
+double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_orb, const double maxerror,
                                         const double perror, double *vall, double *orb,
                                         double *error_out, std::ostream &coutput)
 {        
@@ -402,6 +402,40 @@ double Molecule::psi_KS_update(const int ms, const int k, const int maxit_orb, c
 
    return e0;
 }
+
+/********************************************
+ *                                          *
+ *         Molecule::psi_KS_update          *
+ *                                          *
+ ********************************************/
+double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
+                               const double perror, double *vall, 
+                               const int ispin, const int *neq, double *psi,
+                               double *error_out, std::ostream &coutput)
+
+{        
+
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      int ishift = ms*neq[0]*2*mygrid->PGrid::npack(1);
+      for (auto i=0; i<neq[ms]; ++i)
+      {
+         int indx = 2*mygrid->PGrid::npack(1)*i + ishift;
+         double *orb = psi + indx;
+
+         // orthogonalize to lower orbitals
+         mygrid->g_project_out_filled_below(psi1, ms, i, orb);
+
+         // normalize
+         double norm = mygrid->cc_pack_dot(1,orb,orb);
+         norm = 1.0/std::sqrt(norm);
+         mygrid->c_pack_SMul(1,norm,orb);
+
+         double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
+                                       error_out, coutput);
+      }
+   }
+}        
 
 /********************************************
  *                                          *

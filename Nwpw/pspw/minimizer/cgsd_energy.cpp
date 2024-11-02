@@ -71,7 +71,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    double kerker_g0 = control.kerker_g0();
    int diis_histories = control.diis_histories();
    int scf_algorithm = control.scf_algorithm();
- 
+
    double dt = control.time_step();
    double dte = dt/sqrt(control.fake_mass());
  
@@ -103,8 +103,8 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    }
  
    // if (minimizer > 1) pspw_Grsm_list_start()
-   if ((minimizer == 5) || (minimizer == 8))
-      it_out = 1;
+   //if ((minimizer == 5) || (minimizer == 8))
+   //   it_out = 1;
  
    Geodesic12 mygeodesic12(minimizer, &mymolecule, control);
  
@@ -378,8 +378,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
                              scf_algorithm,scf_alpha,diis_histories,
                              mygrid->ispin,mygrid->n2ft3d,mymolecule.rho1);
 
-
-      while ((icount < it_out*it_in) && (!converged))
+      while ((icount < (it_out*it_in)) && (!converged))
       {
          ++icount;
          if (stalled)
@@ -407,7 +406,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
 
          total_energy = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
                                          &deltac,bfgscount,ks_it_in,ks_it_out,
-                                         scfmix,tole,tolc);
+                                         scfmix,tole,tolc,coutput);
         ++bfgscount;
         if (oprint) 
           coutput << Ifmt(10) << icount
@@ -416,9 +415,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
                   << Efmt(16,6) << deltac << std::endl;
         if ((std::fabs(deltae) > fabs(deltae_old)) ||
             (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
-          stalled = true;
+           stalled = true;
         else
-          stalled = false;
+           stalled = false;
+
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }    
    } else if (minimizer == 9) {

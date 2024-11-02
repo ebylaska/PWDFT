@@ -31,7 +31,7 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
                         int ks_it_in, int ks_it_out, 
                         nwpw_scf_mixing &scfmix,
-                        double tole, double tolc) 
+                        double tole, double tolc, std::ostream &coutput) 
 {
    bool done = false;
    double tmin = 0.0;
@@ -40,11 +40,19 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    double sum0, sum1, scale, total_energy;
    double dE, max_sigma, min_sigma;
    double Eold, dEold, Enew;
-   double tmin0, deltae0;
+   double tmin0, deltae0, perror,error_out;
  
    Pneb *mygrid = mymolecule.mygrid;
    mygeodesic_ptr = mygeodesic;
-   double *vall_out;
+
+   double ks_deltae = tole;
+   int ispin = mygrid->ispin;
+   int *neq = mygrid->neq;
+   double *vall = mygrid->r_nalloc(ispin);
+   mymolecule.gen_vall();
+   mymolecule.get_vall(vall);
+
+
 
    // ion-ion energy 
    double eion = mymolecule.eion();
@@ -89,6 +97,9 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    //                       scf_algorithm,scf_alpha,diis_histories,
    //                       mygrid->ispin,mygrid->n2ft3d,vall_out);
 
+   double e0 = mymolecule.psi_KS_update(ks_it_in,ks_deltae,perror,vall,
+                                        ispin, neq, mymolecule.psi1,
+                                        deltae, coutput);
 
  
    /* iniitialize blocked cg */

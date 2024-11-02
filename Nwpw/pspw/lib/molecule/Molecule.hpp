@@ -121,7 +121,13 @@ public:
 
    void psi_minimize(double *, std::ostream &);
    void psi_get_gradient(double *, double *, double *);
-   double psi_KS_update(const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+   double psi_KS_update_orb(const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+
+
+   double psi_KS_update(const int, const double, const double, double *, 
+                        const int, const int *, double *,
+                        double *, std::ostream &);
+
 
    void psi_linesearch_update(double, double, double *, double *, double *, double *);
    void psi_sort();
