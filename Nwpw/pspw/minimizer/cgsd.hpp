@@ -30,7 +30,7 @@ extern double cgsd_bybminimize(Molecule &, Geodesic *, double *, double *,
 extern double cgsd_bybminimize2(Molecule &, Geodesic *, double *, double *,
                               double *, int, int,int,
                               nwpw_scf_mixing &,
-                              double, double, std::ostream &);
+                              double, double);
 
 } // namespace pwdft
 #endif

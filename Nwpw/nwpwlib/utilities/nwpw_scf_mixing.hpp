@@ -54,6 +54,7 @@ public:
       n2ft3d = nsize0;
       nsize  = nsize0*ispin0;
       ispin  = ispin0;
+      std::cout << "nwpw_scf_mixing algorithm=" << algorithm << std::endl;
       /* simple mixing */
       if (algorithm==0)
       {

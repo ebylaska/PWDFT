@@ -31,7 +31,7 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
                         int ks_it_in, int ks_it_out, 
                         nwpw_scf_mixing &scfmix,
-                        double tole, double tolc, std::ostream &coutput) 
+                        double tole, double tolc) 
 {
    bool done = false;
    double tmin = 0.0;
@@ -99,7 +99,7 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
 
    double e0 = mymolecule.psi_KS_update(ks_it_in,ks_deltae,perror,vall,
                                         ispin, neq, mymolecule.psi1,
-                                        deltae, coutput);
+                                        deltae, std::cout);
 
  
    /* iniitialize blocked cg */

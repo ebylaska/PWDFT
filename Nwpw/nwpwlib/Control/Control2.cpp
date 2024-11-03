@@ -480,8 +480,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["virtual"][1].is_number_integer())
       pnexcited[1] = rtdbjson["nwpw"]["virtual"][1];
  
+   pscf_algorithm = 0;
    if (rtdbjson["nwpw"]["scf_algorithm"].is_number_integer())
        pscf_algorithm = rtdbjson["nwpw"]["scf_algorithm"];
+
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
 
