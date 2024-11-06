@@ -69,6 +69,9 @@
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
 
+#define DGESV_PWDFT(n, nrhs, a, lda, ipiv, b, ldb, ierr)                       \
+  ierr = LAPACKE_dgesv(LAPACK_COL_MAJOR, n, nrhs, a, lda, ipiv, b, ldb)
+
 #else
 
 extern "C" void dcopy_(int *, double *, int *, double *, int *);
