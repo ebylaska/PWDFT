@@ -293,7 +293,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
    double *g  = mygrid->c_pack_allocate(1);
    double *t  = mygrid->c_pack_allocate(1);
             
-   bool precondition = true;
+   bool precondition = false;
    bool done = false;
    double error0 = 0.0;
    double e0 = 0.0;
@@ -306,6 +306,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
    while (!done)
    {
       ++it;
+      error0 = std::abs(e0-eold);
       eold = e0;
 
       //calculate residual (steepest descent) direction for a single band
@@ -313,11 +314,11 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       e0 = mygrid->cc_pack_dot(1,orb,g);
 
       e0 = -e0;
+      //std::cout << "it =" << it << " e0=" << e0 << std::endl;
 
 
-      double percent_error=0.0;
+      double percent_error = 0.0;
       if(error0>1.0e-11) percent_error = std::abs(e0-eold)/error0;
-
 
       precondition = (std::abs(e0-eold)>(sp*maxerror));
 
@@ -339,7 +340,6 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       mygrid->cc_pack_copy(1,r1,t);
 
 
-      std::cout << "lmbda_r0=" << lmbda_r0 << std::endl;
       if (it>1) 
          if (!std::isnan(lmbda_r0)) 
             mygrid->cc_pack_daxpy(1,(lmbda_r1/lmbda_r0),t0,t);
@@ -359,8 +359,6 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
          de0 = mygrid->cc_pack_dot(1,t,t);
          de0 = 1.0/std::sqrt(de0);
          if (std::isnan(de0)) de0=0.0;
-         std::cout << "de0=" << de0 << std::endl;
-      std::cout << "A theta=" << theta << std::endl;
          mygrid->c_pack_SMul(1,de0,t);
          de0 = mygrid->cc_pack_dot(1,t,g);
 
@@ -377,7 +375,6 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       de0 = -2.0*de0;
 
       psi_linesearch_update(e0,de0,&theta,vall+ms*n2ft3d,orb,t);
-      std::cout << "B theta=" << theta << std::endl;
 
       done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
       //done = true;
@@ -388,10 +385,11 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
    mygrid->c_pack_deallocate(g);
    mygrid->c_pack_deallocate(t);
 
-   *error_out = std::abs(e0-eold);
    e0         = -e0;
+   *error_out = (e0-eold);
 
    bool lprint = (mygrid->d3db::parall->is_master());
+   lprint = false;
    if (lprint) coutput << std::setw(12) << "orbital" << std::setw(4) << k+1
            << " current e=" << std::setw(10) << std::scientific << std::setprecision(3) << e0
            << " (error=" << std::setw(9) << std::scientific << std::setprecision(3) << (*error_out) << ")"
@@ -414,17 +412,19 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
                                double *error_out, std::ostream &coutput)
 
 {        
+   double esum = 0.0;
 
    for (auto ms=0; ms<ispin; ++ms)
    {
       int ishift = ms*neq[0]*2*mygrid->PGrid::npack(1);
-      for (auto i=0; i<neq[ms]; ++i)
+      for (auto i=neq[ms]-1; i>=0; --i)
       {
          int indx = 2*mygrid->PGrid::npack(1)*i + ishift;
          double *orb = psi + indx;
 
          // orthogonalize to lower orbitals
-         mygrid->g_project_out_filled_below(psi1, ms, i, orb);
+         //mygrid->g_project_out_filled_below(psi1, ms, i, orb);
+         mygrid->g_project_out_filled_above(psi1, ms, i, orb);
 
          // normalize
          double norm = mygrid->cc_pack_dot(1,orb,orb);
@@ -433,8 +433,11 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
 
          double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
                                        error_out, coutput);
+         esum += e0;
       }
    }
+
+   return esum;
 }        
 
 /********************************************

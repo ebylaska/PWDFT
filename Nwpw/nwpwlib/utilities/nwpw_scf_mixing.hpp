@@ -54,7 +54,8 @@ public:
       n2ft3d = nsize0;
       nsize  = nsize0*ispin0;
       ispin  = ispin0;
-      std::cout << "nwpw_scf_mixing algorithm=" << algorithm << std::endl;
+
+      // std::cout << "nwpw_scf_mixing algorithm=" << algorithm << std::endl;
       /* simple mixing */
       if (algorithm==0)
       {
@@ -79,7 +80,7 @@ public:
       /* Anderson mixing */
       else if (algorithm==3)
       {
-         rho_list = new (std::nothrow) double[nsize*3]();
+         rho_list = new (std::nothrow) double[nsize*4]();
          nwpw_scf_mixing_reset(rho_in);
       }
 
@@ -144,8 +145,12 @@ public:
          *scf_error0= scf_error;
  
          // kerker stuff here
-
-         std::memcpy(rr,vnew,nsize*sizeof(double));
+         for (auto ms=0; ms<ispin; ++ms)
+            kerker_G(ff + ms*n2ft3d);
+       
+         std::memcpy(vnew,rr,nsize*sizeof(double));
+         DAXPY_PWDFT(nsize,alpha,ff,one,vnew,one);  //vnew = vnew+alpha*f
+         std::memcpy(rr,vnew,nsize*sizeof(double)); //vm=vnew
       }
 
       /* Broyden mixing */
@@ -378,33 +383,84 @@ public:
       /* Anderson density mixing */
       if (algorithm==3)
       {
-         double *rr = rho_list;
-         double *ff = rho_list + nsize;
-         double *tt = rho_list + 2*nsize;
+         if ((m==2) || (m==1) || (deltae>0.0))
+         {
+            double *rr = rho_list;
+            double *ff = rho_list + nsize;
+            double *tt = rho_list + 2*nsize;
 
-         std::memcpy(tt,vout,nsize*sizeof(double));
-         std::memcpy(ff,rr,nsize*sizeof(double));
-         std::memcpy(rr,vnew,nsize*sizeof(double));
+            // ff=vout-vm
+            std::memcpy(ff,vout,nsize*sizeof(double));
+            DAXPY_PWDFT(nsize,mrone,rr,one,ff,one);
 
+            double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
+            parall->SumAll(1,scf_error);
+            scf_error = std::sqrt(scf_error);
+            *scf_error0 = scf_error;
+       
+            for (auto ms=0; ms<ispin; ++ms)
+               kerker_G(ff + ms*n2ft3d);
+       
+            std::memcpy(vnew,rr,nsize*sizeof(double));
+            DAXPY_PWDFT(nsize,alpha,ff,one,vnew,one);
+       
+            std::memcpy(tt,vout,nsize*sizeof(double));
+            std::memcpy(ff,rr,nsize*sizeof(double));
+            std::memcpy(rr,vnew,nsize*sizeof(double));
+         }
+         else
+         {
+            double *rr = rho_list;           // vm 
+            double *ss = rho_list + nsize;   // vm1
+            double *tt = rho_list + 2*nsize; // vout1
+            double *ff = rho_list + 3*nsize; //kk
 
-         // ff=vout-vm
-         std::memcpy(ff,vout,nsize*sizeof(double));
-         DAXPY_PWDFT(nsize,mrone,rr,one,ff,one);
-         double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
-         parall->SumAll(1,scf_error);
-         scf_error = std::sqrt(scf_error);
-         *scf_error0 = scf_error;
+            std::memcpy(ff,vout,nsize*sizeof(double));
 
-         //do ms=1,ispin
-         //   shift = (ms-1)*n2ft3d
-         //   call kerker_G(dbl_mb(ff_ptr+shift))
-         //end do
+            DAXPY_PWDFT(nsize,mrone,rr,one,ff,one);  // ff_ptr = vout - rr_ptr
+            DAXPY_PWDFT(nsize,mrone,ss,one,tt,one);  // tt_ptr = vout1 - vm1
 
-         std::memcpy(vnew,rr,nsize*sizeof(double));
-         DAXPY_PWDFT(nsize,alpha,ff,one,vnew,one);
-         std::memcpy(tt,vout,nsize*sizeof(double));
-         std::memcpy(ff,rr,nsize*sizeof(double));
-         std::memcpy(rr,vnew,nsize*sizeof(double));
+            double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
+            parall->SumAll(1,scf_error);
+            scf_error = std::sqrt(scf_error);
+            *scf_error0 = scf_error;
+
+            for (auto ms=0; ms<ispin; ++ms)
+            {
+               int shift = ms*n2ft3d;
+
+               kerker_G(ff + shift);
+               kerker_G(tt + shift);
+
+               // generate beta 
+               double p00 = DDOT_PWDFT(n2ft3d,ff+shift,one,ff+shift,one); // p00 = <ff_ptr|ff_ptr>
+               double p01 = DDOT_PWDFT(n2ft3d,ff+shift,one,tt+shift,one); // p01 = <ff_ptr|tt_ptr>
+               double p11 = DDOT_PWDFT(n2ft3d,tt+shift,one,tt+shift,one); // p11 = <tt_ptr|tt_ptr>
+               parall->SumAll(1,p00);
+               parall->SumAll(1,p01);
+               parall->SumAll(1,p11);
+               double r00 = p00-2.00*p01+p11;
+               beta = (p00-p01)/r00;
+
+               if ((r00<0.0) || (beta<(-1.5))) beta = 1.0e-3;
+               if (beta>1.5)  beta = 1.5;
+
+               double ombeta = 1.0-beta;
+
+               //*** vnew = (1-beta)*vm + beta*vm1 + alpha*((1-beta)*fm + beta*fm1) ***
+               std::memcpy(vnew+shift,rr+shift,n2ft3d*sizeof(double));
+
+               DSCAL_PWDFT(n2ft3d,ombeta,vnew+shift,one);
+               DAXPY_PWDFT(n2ft3d,beta,ss+shift,one,vnew+shift,one);
+               DSCAL_PWDFT(n2ft3d,ombeta,ff+shift,one);
+               DAXPY_PWDFT(n2ft3d,beta,tt+shift,one,ff+shift,one);
+               DAXPY_PWDFT(n2ft3d,alpha,ff+shift,one,vnew+shift,one);
+            }
+            std::memcpy(ss,rr,  nsize*sizeof(double));
+            std::memcpy(rr,vnew,nsize*sizeof(double));
+            std::memcpy(tt,vout,nsize*sizeof(double));
+         }
+         ++m; 
       }
 
       /* local Thomas Fermi mixing */

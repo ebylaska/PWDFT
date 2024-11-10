@@ -55,53 +55,15 @@ double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
 
 
    // ion-ion energy 
-   double eion = mymolecule.eion();
-
- //  int sd_it = 10
- //  int cg_it = 10
- //   if (set_iterations) then
- //       it_in = iterations
- //       sd_it = 2 
- //       cg_it = 1 
- //     else
- //       it_in = control_it_in()*control_it_out()
- //       sd_it = 10
- //       cg_it = 10
- //     end if
-
-//      int maxit_orbs = control_ks_maxit_orbs() 
-      //precondition = control_precondition()
-      //ispin = control_ispin()
-      double deltav_old = 10.0;
-      double deltav     = 0.0;
- 
- //     stalled       = false;
-  //    std::vector<double> deltae_history;
-   //   deltae_history.push_back(0.0);
-  //    deltae_history.push_back(0.0);
-   //   deltae_history.push_back(0.0);
-    //  deltae_history.push_back(0.0);
-      int stalled_count     = 0;
-      int sd_count          = 0;
-
- //     vall_in = 
-  //    vall_out = 
- //     vall_junk = 
- //     rho_in = 
+   //double eion = mymolecule.eion();
 
    //**********************
    //**** bybminimizer ****
    //**********************
-
-   //nwpw_scf_mixing scfmix(mygrid,g0,
-   //                       scf_algorithm,scf_alpha,diis_histories,
-   //                       mygrid->ispin,mygrid->n2ft3d,vall_out);
-
    double e0 = mymolecule.psi_KS_update(ks_it_in,ks_deltae,perror,vall,
                                         ispin, neq, mymolecule.psi1,
                                         deltae, std::cout);
 
- 
    /* iniitialize blocked cg */
  
    // Making an extra call to electron.run and energy

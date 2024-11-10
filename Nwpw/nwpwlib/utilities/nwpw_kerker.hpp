@@ -87,7 +87,9 @@ public:
       if (dokerker)
       {
          mygrid->rr_SMul(scal1,v,tmpv);
+         mygrid->r_zero_ends(tmpv);
          mygrid->rc_pfft3f(0,tmpv);
+         mygrid->c_pack(0,tmpv);
        
          int k1=0;
          int k2=0;
@@ -98,8 +100,10 @@ public:
             k1 += 2;
             k2 += 2;
          }
+         mygrid->c_unpack(0,tmpv);
          mygrid->cr_pfft3b(0,tmpv);
          mygrid->rr_copy(tmpv,v);
+         mygrid->r_zero_ends(v);
       }
    }
 };

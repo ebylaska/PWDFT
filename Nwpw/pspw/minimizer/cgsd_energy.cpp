@@ -316,9 +316,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
                   << Efmt(16,6) << deltac << std::endl;
         if ((std::fabs(deltae) > fabs(deltae_old)) ||
             (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
-          stalled = true;
+           stalled = true;
         else
-          stalled = false;
+           stalled = false;
+        stalled = false;
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
 
@@ -374,6 +375,24 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       }
       
       double total_energy0 = mymolecule.energy();
+      double x,sumxx = 0.0;
+      int n2ft3d = mygrid->n2ft3d;
+      int ispin = mygrid->ispin;
+      double omega = mygrid->lattice->omega();
+      double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+      double dv = omega * scal1;
+      for (int i=0; i < n2ft3d; ++i) 
+      {
+         x = (mymolecule.rho1[i]);
+         x += (mymolecule.rho1[i+(ispin-1)*n2ft3d]);
+         sumxx += x;
+      }
+      double sum0  = mygrid->d3db::parall->SumAll(1, sumxx) * dv;
+      //std::cout << "total energy0=" << total_energy0 << std::endl;
+      //std::cout << "total sum0=" << sum0 << std::endl;
+
+      double scf_error;
+
       nwpw_scf_mixing scfmix(mygrid,kerker_g0,
                              scf_algorithm,scf_alpha,diis_histories,
                              mygrid->ispin,mygrid->n2ft3d,mymolecule.rho1);
@@ -404,22 +423,32 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          int ks_it_out =  control.ks_maxit_orbs();
          deltae_old = deltae;
 
+         int nsize = mygrid->ispin*mygrid->n2ft3d;
+         std::memcpy(mymolecule.rho2,mymolecule.rho1,nsize*sizeof(double));
+
          total_energy = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
                                          &deltac,bfgscount,ks_it_in,ks_it_out,
                                          scfmix,tole,tolc);
-        ++bfgscount;
-        if (oprint) 
-          coutput << Ifmt(10) << icount
-                  << Efmt(25,12) << total_energy
-                  << Efmt(16,6) << deltae 
-                  << Efmt(16,6) << deltac << std::endl;
-        if ((std::fabs(deltae) > fabs(deltae_old)) ||
-            (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
-           stalled = true;
-        else
-           stalled = false;
+         double total_energy2 = mymolecule.energy();
+         scfmix.mix(mymolecule.rho1,mymolecule.rho1,deltae,&scf_error);
+         deltac = scf_error;
+         deltae = total_energy2 - total_energy0;
+         total_energy0 = total_energy2;
+
+         ++bfgscount;
+         if (oprint) 
+           coutput << Ifmt(10) << icount
+                   << Efmt(25,12) << total_energy
+                   << Efmt(16,6) << deltae 
+                   << Efmt(16,6) << deltac << std::endl;
+         if ((std::fabs(deltae) > fabs(deltae_old)) ||
+             (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
+             stalled = true;
+         else
+            stalled = false;
 
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+
       }    
    } else if (minimizer == 9) {
    } else if (minimizer == 10) {

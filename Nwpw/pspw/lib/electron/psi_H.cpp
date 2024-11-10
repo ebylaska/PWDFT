@@ -471,7 +471,7 @@ void psi_H_orb(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
  
    /* apply k-space operators */
    myke->ke_orb(orb,Horb);
- 
+
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_orb(orb, Horb);
 
