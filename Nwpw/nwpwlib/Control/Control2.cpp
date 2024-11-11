@@ -495,8 +495,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["ks_maxit_orbs"].is_number_integer())
        pks_maxit_orbs = rtdbjson["nwpw"]["ks_maxit_orbs"];
 
+   pdiis_histories = 15;
    if (rtdbjson["nwpw"]["diis_histories"].is_number_integer())
-       pks_maxit_orb = rtdbjson["nwpw"]["diis_histories"];
+       pdiis_histories = rtdbjson["nwpw"]["diis_histories"];
 
    pscf_alpha = 0.25;
    if (rtdbjson["nwpw"]["scf_alpha"].is_number_float())

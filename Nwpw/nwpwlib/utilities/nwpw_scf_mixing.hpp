@@ -18,6 +18,19 @@
 
 namespace pwdft {
 
+const int ROWS = 40;
+const int COLS = 40;
+
+static void setElement(double A[], int row, int col, double value) {
+    int index = (row - 1) * COLS + (col - 1);  // Convert 1-based (row, col) to 0-based 1D index
+    A[index] = value;
+}
+
+static double getElement(double A[], int row, int col) {
+    int index = (row - 1) * COLS + (col - 1);  // Convert 1-based (row, col) to 0-based 1D index
+    return A[index];  // Convert to 0-based index by subtracting 1
+}
+
 class nwpw_scf_mixing : public nwpw_kerker {
 
    bool dokerker,isband;
@@ -75,6 +88,7 @@ public:
       {
          rho_list = new (std::nothrow) double[nsize* (5+(2*max_m))]();
          nwpw_scf_mixing_reset(rho_in);
+         w0 = 0.01;
       }
 
       /* Anderson mixing */
@@ -179,6 +193,11 @@ public:
             std::memcpy(V1,V0,nsize*sizeof(double));
             DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
 
+            // scf_error = sqrt(<F0|F0>)
+            double scf_error = DDOT_PWDFT(nsize,F0,one,F0,one);
+            parall->SumAll(1,scf_error);
+            scf_error = sqrt(scf_error);
+            *scf_error0 = scf_error;
 
             // vnew = V1 
             std::memcpy(vnew,V1,nsize*sizeof(double));
@@ -283,8 +302,8 @@ public:
            *scf_error0 = scf_error;
 
            // dF = dF(m-1), U = U(m-1)
-           double *dF = rho_list + (5+m)*nsize;
-           double *U  = rho_list + (5+max_m+m)*nsize;
+           double *dF = rho_list + (5+m-1)*nsize;
+           double *U  = rho_list + (5+max_m+m-1)*nsize;
 
            // dF = (F1-F0) 
            std::memcpy(F1,V1,nsize*sizeof(double));
@@ -299,37 +318,37 @@ public:
            DAXPY_PWDFT(nsize,alpha,dF,one,U,one);
 
            // Define A,c and B
-           for (auto i=0; i<(m-1); ++i)
+           for (auto i=1; i<m; ++i)
            {
-              double *dFi = rho_list + (5+i+1)*nsize;
+              double *dFi = rho_list + (5+i)*nsize;
               double sum0 = DDOT_PWDFT(nsize,dFi,one,dF,one);
               double sum1 = DDOT_PWDFT(nsize,dFi,one,F1,one);
               parall->SumAll(1,sum0);
               parall->SumAll(1,sum1);
-              A[i+(m-1)*(m-1)] = sum0;
-              A[(m-1)+i*(m-1)] = A[i+(m-1)*(m-1)];
-              c[i] = sum1;
+              setElement(A,i,m-1,sum0);
+              setElement(A,m-1,1,sum0);
+              c[i-1] = sum1;
            }
 
            std::memset(B,0,max_list*max_list*sizeof(double));
 
            double small = 0.0;
-           for (auto i=0; i<(m-1); ++i)
-           for (auto j=0; j<(m-1); ++j)
+           for (auto i=1; i<m; ++i)
+           for (auto j=1; j<m; ++j)
            {
-              B[i+j*(m-1)] = A[i+j*(m-1)];
-              small += std::abs(A[i+j*(m-1)]);
+              setElement(B,i,j,getElement(A,i,j));
+              small += std::abs(getElement(A,i,j));
            }
            small /= std::pow(static_cast<double>(m - 1), 2);
 
-           for (auto i=0; i<(m-1); ++i)
-           for (auto j=0; j<(m-1); ++j)
+           for (auto i=1; i<m; ++i)
+           for (auto j=1; j<m; ++j)
            {
-              Binv[i+j*(m-1)] = 0.0;
+              setElement(Binv,i,j,0.0);
            }
-           for (auto i=0; i<(m-1); ++i)
+           for (auto i=1;i<m;++i)
            {
-              Binv[i+i*(m-1)] = 1.0*small;
+              setElement(Binv,i,i,1.0*small);
            }
 
            int mm = m-1;
@@ -337,11 +356,11 @@ public:
 
 
            // Define d 
-           for (auto i=0; i<(m-1); ++i)
+           for (auto i=1;i<m;++i)
            {
-              d[i] = 0.0;
-              for (auto j=0; j<(m-1); ++j)
-                d[i] -= (c[j]/small)*Binv[j+i*(m-1)];
+              d[i-1] = 0.0;
+              for (auto j=1; j<m; ++j)
+                d[i-1] -= (c[j-1]/small)*getElement(Binv,j,i);
            }
 
 
@@ -352,10 +371,10 @@ public:
            // V1 = V0 + alpha*F0 - Sum(i=1,m-1) d(i)*U(i)
            DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
 
-           for (auto i=0; i<m-1; ++i)
+           for (auto i=1; i<m; ++i)
            {
               //call nwpw_list_ptr(1,(5+max_m +i),U)
-              DAXPY_PWDFT(nsize,(d[i]),U,one,V1,one);
+              DAXPY_PWDFT(nsize,(d[i-1]),U,one,V1,one);
            }
            
 
