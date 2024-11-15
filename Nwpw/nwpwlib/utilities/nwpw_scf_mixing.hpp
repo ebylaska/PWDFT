@@ -188,6 +188,10 @@ public:
             DSCAL_PWDFT(nsize,mrone,F0,one);
             DAXPY_PWDFT(nsize,rone,vout,one,F0,one);
 
+            // Apply Kerker filter to F0 to smooth residuals
+            for (auto ms=0; ms<ispin; ++ms)
+               kerker_G(F0 + ms*n2ft3d);
+
             // V1 = V0 + alpha*F0
             std::memcpy(V1,V0,nsize*sizeof(double));
             DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
@@ -209,6 +213,10 @@ public:
             std::memcpy(F1,V1,nsize*sizeof(double));
             DSCAL_PWDFT(nsize,mrone,F1,one);
             DAXPY_PWDFT(nsize,rone,vout,one,F1,one);
+
+            // Apply Kerker filter to F1 to smooth residuals
+            for (auto ms=0; ms<ispin; ++ms)
+               kerker_G(F1 + ms*n2ft3d);
 
             // scf_error = sqrt(<F1|F1>)
             double scf_error = DDOT_PWDFT(nsize,F1,one,F1,one);
@@ -274,6 +282,10 @@ public:
             DSCAL_PWDFT(nsize,mrone,F0,one);
             DAXPY_PWDFT(nsize,rone,vout,one,F0,one);
 
+            // Apply Kerker filter to F0 to smooth residuals
+            for (auto ms=0; ms<ispin; ++ms)
+               kerker_G(F0 + ms*n2ft3d);
+
             // scf_error = sqrt(<F1|F1>) 
             double scf_error = DDOT_PWDFT(nsize,F0,one,F0,one);
             *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize);
@@ -292,122 +304,126 @@ public:
          }
          else //(m.gt.1) 
          {
-           // F1 = vout - V1
-           std::memcpy(F1,V1,nsize*sizeof(double));
-           DSCAL_PWDFT(nsize,mrone,F1,one);
-           DAXPY_PWDFT(nsize,rone,vout,one,F1,one);
-
-           // scf_error = sqrt(<F1|F1>) 
-           double scf_error = DDOT_PWDFT(nsize,F1,one,F1,one);
-           *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize);
-           //scf_error = std::sqrt(scf_error);
-
-           // dF = dF(m-1), U = U(m-1)
-           double *dF = rho_list + (5+m-1)*nsize;
-           double *U  = rho_list + (5+max_m+m-1)*nsize;
-
-           // dF = (F1-F0) 
-           std::memcpy(F1,V1,nsize*sizeof(double));
-           DAXPY_PWDFT(nsize,mrone,F0,one,dF,one);
-
-           // dV  = (V1-V0) 
-           std::memcpy(dV,V1,nsize*sizeof(double));
-           DAXPY_PWDFT(nsize,mrone,V0,one,dV,one);
-
-           // U  = alpha*dF + dV
-           std::memcpy(U,dV,nsize*sizeof(double));
-           DAXPY_PWDFT(nsize,alpha,dF,one,U,one);
-
-           // Define A,c and B
-           for (auto i=1; i<m; ++i)
-           {
-              //define dFi here
-              double *dFi = rho_list + indxf[i-1];
-              //double *dFi = rho_list + indxf[i](5+i-1)*nsize;
-              double sum0 = DDOT_PWDFT(nsize,dFi,one,dF,one);
-              double sum1 = DDOT_PWDFT(nsize,dFi,one,F1,one);
-              sum0 = parall->SumAll(1,sum0);
-              sum1 = parall->SumAll(1,sum1);
-              setElement(A,i,m-1,sum0);
-              setElement(A,m-1,1,sum0);
-              c[i-1] = sum1;
-           }
-
-           std::memset(B,0,max_list*max_list*sizeof(double));
-
-           double small = 0.0;
-           for (auto i=1; i<m; ++i)
-           for (auto j=1; j<m; ++j)
-           {
-              setElement(B,i,j,getElement(A,i,j));
-              small += std::abs(getElement(A,i,j));
-           }
-           small /= std::pow(static_cast<double>(m - 1), 2);
-
-           for (auto i=1; i<m; ++i)
-           for (auto j=1; j<m; ++j)
-           {
-              setElement(Binv,i,j,0.0);
-           }
-           for (auto i=1;i<m;++i)
-           {
-              setElement(Binv,i,i,1.0*small);
-           }
-
-           int mm = m-1;
-           DGESV_PWDFT(mm,mm,B,max_list,ipiv,Binv,max_list,ierr);
-
-
-           // Define d 
-           for (auto i=1;i<m;++i)
-           {
-              d[i-1] = 0.0;
-              for (auto j=1; j<m; ++j)
-                d[i-1] -= (c[j-1]/small)*getElement(Binv,j,i);
-           }
-
-
-           // F0 = F1,  V0 = V1
-           std::memcpy(F0,F1,nsize*sizeof(double));
-           std::memcpy(V0,V1,nsize*sizeof(double));
-
-           // V1 = V0 + alpha*F0 - Sum(i=1,m-1) d(i)*U(i)
-           DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
-
-           for (auto i=1; i<m; ++i)
-           {
-              //define U here
-              //call nwpw_list_ptr(1,(5+max_m +i),U)
-              double *U = rho_list + indxu[i-1];
-              DAXPY_PWDFT(nsize,(d[i-1]),U,one,V1,one);
-           }
+            // F1 = vout - V1
+            std::memcpy(F1,V1,nsize*sizeof(double));
+            DSCAL_PWDFT(nsize,mrone,F1,one);
+            DAXPY_PWDFT(nsize,rone,vout,one,F1,one);
            
-
-           if (m<max_m) 
-              ++m;
-           else
-           {
-             // Shift A matrix 
-             for (auto j=1; j<m-1; ++j)
-             for (auto i=1; i<m-1; ++i)
-               setElement(A,i,j, getElement(A,i+1,j+1));
-
-              // Shift dF and U 
-              int itmpf = indxf[0];
-              int itmpu = indxu[0];
-              for (int i=0; i<(max_m-1); ++i)
-              {
-                 indxf[i] = indxf[i+1];
-                 indxu[i] = indxu[i+1];
-              }
-              indxf[max_m-1] = itmpf;
-              indxu[max_m-1] = itmpu;
-              //call nwpw_list_shift_range(1,(5+1),(5+max_m))
-              //call nwpw_list_shift_range(1,(5+max_m+1),(5+2*max_m))
+             // Apply Kerker filter to F0 to smooth residuals
+             for (auto ms=0; ms<ispin; ++ms)
+                kerker_G(F0 + ms*n2ft3d);
            
-           }
-
-           std::memcpy(vnew,V1,nsize*sizeof(double));
+            // scf_error = sqrt(<F1|F1>) 
+            double scf_error = DDOT_PWDFT(nsize,F1,one,F1,one);
+            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize);
+            //scf_error = std::sqrt(scf_error);
+           
+            // dF = dF(m-1), U = U(m-1)
+            double *dF = rho_list + (5+m-1)*nsize;
+            double *U  = rho_list + (5+max_m+m-1)*nsize;
+           
+            // dF = (F1-F0) 
+            std::memcpy(F1,V1,nsize*sizeof(double));
+            DAXPY_PWDFT(nsize,mrone,F0,one,dF,one);
+           
+            // dV  = (V1-V0) 
+            std::memcpy(dV,V1,nsize*sizeof(double));
+            DAXPY_PWDFT(nsize,mrone,V0,one,dV,one);
+           
+            // U  = alpha*dF + dV
+            std::memcpy(U,dV,nsize*sizeof(double));
+            DAXPY_PWDFT(nsize,alpha,dF,one,U,one);
+           
+            // Define A,c and B
+            for (auto i=1; i<m; ++i)
+            {
+               //define dFi here
+               double *dFi = rho_list + indxf[i-1];
+               //double *dFi = rho_list + indxf[i](5+i-1)*nsize;
+               double sum0 = DDOT_PWDFT(nsize,dFi,one,dF,one);
+               double sum1 = DDOT_PWDFT(nsize,dFi,one,F1,one);
+               sum0 = parall->SumAll(1,sum0);
+               sum1 = parall->SumAll(1,sum1);
+               setElement(A,i,m-1,sum0);
+               setElement(A,m-1,1,sum0);
+               c[i-1] = sum1;
+            }
+           
+            std::memset(B,0,max_list*max_list*sizeof(double));
+           
+            double small = 0.0;
+            for (auto i=1; i<m; ++i)
+            for (auto j=1; j<m; ++j)
+            {
+               setElement(B,i,j,getElement(A,i,j));
+               small += std::abs(getElement(A,i,j));
+            }
+            small /= std::pow(static_cast<double>(m - 1), 2);
+           
+            for (auto i=1; i<m; ++i)
+            for (auto j=1; j<m; ++j)
+            {
+               setElement(Binv,i,j,0.0);
+            }
+            for (auto i=1;i<m;++i)
+            {
+               setElement(Binv,i,i,1.0*small);
+            }
+           
+            int mm = m-1;
+            DGESV_PWDFT(mm,mm,B,max_list,ipiv,Binv,max_list,ierr);
+           
+           
+            // Define d 
+            for (auto i=1;i<m;++i)
+            {
+               d[i-1] = 0.0;
+               for (auto j=1; j<m; ++j)
+                 d[i-1] -= (c[j-1]/small)*getElement(Binv,j,i);
+            }
+           
+           
+            // F0 = F1,  V0 = V1
+            std::memcpy(F0,F1,nsize*sizeof(double));
+            std::memcpy(V0,V1,nsize*sizeof(double));
+           
+            // V1 = V0 + alpha*F0 - Sum(i=1,m-1) d(i)*U(i)
+            DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
+           
+            for (auto i=1; i<m; ++i)
+            {
+               //define U here
+               //call nwpw_list_ptr(1,(5+max_m +i),U)
+               double *U = rho_list + indxu[i-1];
+               DAXPY_PWDFT(nsize,(d[i-1]),U,one,V1,one);
+            }
+            
+           
+            if (m<max_m) 
+               ++m;
+            else
+            {
+              // Shift A matrix 
+              for (auto j=1; j<m-1; ++j)
+              for (auto i=1; i<m-1; ++i)
+                setElement(A,i,j, getElement(A,i+1,j+1));
+           
+               // Shift dF and U 
+               int itmpf = indxf[0];
+               int itmpu = indxu[0];
+               for (int i=0; i<(max_m-1); ++i)
+               {
+                  indxf[i] = indxf[i+1];
+                  indxu[i] = indxu[i+1];
+               }
+               indxf[max_m-1] = itmpf;
+               indxu[max_m-1] = itmpu;
+               //call nwpw_list_shift_range(1,(5+1),(5+max_m))
+               //call nwpw_list_shift_range(1,(5+max_m+1),(5+2*max_m))
+            
+            }
+           
+            std::memcpy(vnew,V1,nsize*sizeof(double));
 
          }
       }
