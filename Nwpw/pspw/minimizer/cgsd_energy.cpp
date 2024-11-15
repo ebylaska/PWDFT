@@ -24,6 +24,30 @@ namespace pwdft {
 
 /******************************************
  *                                        *
+ *            cgsd_steepest_update        *
+ *                                        *
+ ******************************************/
+void static cgsd_steepest_update(Molecule &mymolecule, const bool oprint, const bool nolagrange, 
+                                 const int it_in, const double dte, std::ostream &coutput)
+{
+   if (nolagrange)
+   {
+      for (int it=0; it<it_in; ++it)
+         mymolecule.sd_update2(dte);
+      if (oprint)
+         coutput << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
+   }
+   else
+   {
+      for (int it=0; it<it_in; ++it)
+         mymolecule.sd_update(dte);
+      if (oprint) 
+         coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+   }
+}
+
+/******************************************
+ *                                        *
  *            cgsd_noit_energy            *
  *                                        *
  ******************************************/
@@ -126,39 +150,14 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          //mymolecule.get_vall(vall);
          //mymolecule.psi_minimize(vall, coutput);
          int it_in0 = 15;
-         if (nolagrange)
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
-         }
-         else
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
-         }
-         //mygrid->r_dealloc(vall);
+         cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
       }
       while ((icount < it_out) && (!converged)) 
       {
          ++icount;
          if (stalled) 
          {
-            if (nolagrange)
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update2(dte);
-               if (oprint) 
-                 coutput << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
-            }
-            else
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update(dte);
-               if (oprint) 
-                 coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
-            }
+            cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
 
             bfgscount = 0;
          }
@@ -182,35 +181,13 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    } else if (minimizer == 2) {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
-         if (nolagrange)
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
-         }
-         else
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
-         }
+         cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
       }
       pspw_lmbfgs psi_lmbfgs(mygeodesic12.mygeodesic1, lmbfgs_size);
       while ((icount < it_out) && (!converged)) {
          ++icount;
          if (stalled) {
-            if (nolagrange)
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update2(dte);
-               if (oprint) coutput << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
-            }
-            else
-            {
-               for (int it = 0; it<it_in; ++it)
-                  mymolecule.sd_update(dte);
-               if (oprint) coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
-            }
+            cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
             bfgscount = 0;
          }
          deltae_old = deltae;
@@ -268,38 +245,14 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    } else if (minimizer == 5) {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
-         if (nolagrange)
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
-         }
-         else
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
-         }
+         cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
       }
       while ((icount < it_out) && (!converged)) 
       {
          ++icount;
          if (stalled) 
          {
-            if (nolagrange)
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update2(dte);
-               if (oprint) 
-                  coutput << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
-            }
-            else
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update(dte);
-               if (oprint) 
-                  coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
-            }
+            cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
 
             bfgscount = 0;
          }
@@ -358,20 +311,16 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
    } else if (minimizer == 8) {
+
       if (mymolecule.newpsi) {
+
+         //total_energy = cgsd_bybminimize0(mymolecule,mygeodesic12.mygeodesic2,psi_lmbfgs2,
+         //                                 E,&deltae,&deltac,bfgscount,it_in,tole,tolc);
          int it_in0 = 15;
-         if (nolagrange)
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update2(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent2 iterations performed" << std::endl;
-         }
-         else
-         {
-            for (int it=0; it<it_in0; ++it)
-               mymolecule.sd_update(dte);
-            if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
-         }
+         cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
+         //double total_energy0 = mymolecule.energy();
+         //total_energy0 = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
+         //                                 &deltac,0,5,1,tole,tolc);
       }
       
       double total_energy0 = mymolecule.energy();
@@ -400,24 +349,13 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       while ((icount < (it_out*it_in)) && (!converged))
       {
          ++icount;
-         if (stalled)
+         if ((stalled) && (icount%it_in==0))
          {
-            if (nolagrange)
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update2(dte);
-               if (oprint)
-                  coutput << "        - " << it_in << " steepest descent2 iterations performed" << std::endl;
-            }
-            else
-            {
-               for (int it=0; it<it_in; ++it)
-                  mymolecule.sd_update(dte);
-               if (oprint)
-                  coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
-            }
+            cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
+            scfmix.reset_mix(mymolecule.rho1);
 
             bfgscount = 0;
+            stalled = false;
          }
          int ks_it_in = control.ks_maxit_orb();
          int ks_it_out =  control.ks_maxit_orbs();
@@ -428,26 +366,28 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
 
          total_energy = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
                                          &deltac,bfgscount,ks_it_in,ks_it_out,
-                                         scfmix,tole,tolc);
+                                         tole,tolc);
          double total_energy2 = mymolecule.energy();
          scfmix.mix(mymolecule.rho1,mymolecule.rho1,deltae,&scf_error);
          deltac = scf_error;
          deltae = total_energy2 - total_energy0;
          total_energy0 = total_energy2;
-
          ++bfgscount;
-         if (oprint) 
-           coutput << Ifmt(10) << icount
-                   << Efmt(25,12) << total_energy
-                   << Efmt(16,6) << deltae 
-                   << Efmt(16,6) << deltac << std::endl;
+
+         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+
+         if ((oprint) && ((icount%it_in==0) || converged))
+         {
+            coutput << Ifmt(10)    << icount
+                    << Efmt(25,12) << total_energy
+                    << Efmt(16,6)  << deltae 
+                    << Efmt(16,6)  << deltac << std::endl;
+         }
+
          if ((std::fabs(deltae) > fabs(deltae_old)) ||
+             ((deltac > 1.0e-3) && (std::fabs(deltae)<1.0e-10)) ||
              (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
              stalled = true;
-         else
-            stalled = false;
-
-        converged = (std::fabs(deltae) < tole) && (deltac < tolc);
 
       }    
    } else if (minimizer == 9) {

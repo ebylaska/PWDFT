@@ -440,6 +440,8 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
    return esum;
 }        
 
+
+
 /********************************************
  *                                          *
  *        psi_linesearch_update             *

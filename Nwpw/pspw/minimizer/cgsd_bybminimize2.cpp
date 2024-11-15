@@ -13,7 +13,7 @@
 #include "Pneb.hpp"
 #include "util_date.hpp"
 #include "util_linesearch.hpp"
-#include "nwpw_scf_mixing.hpp"
+//#include "nwpw_scf_mixing.hpp"
 
 namespace pwdft {
 
@@ -30,7 +30,6 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }
 double cgsd_bybminimize2(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
                         double *deltae, double *deltac, int current_iteration,
                         int ks_it_in, int ks_it_out, 
-                        nwpw_scf_mixing &scfmix,
                         double tole, double tolc) 
 {
    bool done = false;
