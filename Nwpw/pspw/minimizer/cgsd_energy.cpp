@@ -92,6 +92,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    double tole = control.tolerances(0);
    double tolc = control.tolerances(1);
    double scf_alpha = control.scf_alpha();
+   double scf_beta  = control.scf_beta();
    double kerker_g0 = control.kerker_g0();
    int diis_histories = control.diis_histories();
    int scf_algorithm = control.scf_algorithm();
@@ -343,7 +344,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       double scf_error;
 
       nwpw_scf_mixing scfmix(mygrid,kerker_g0,
-                             scf_algorithm,scf_alpha,diis_histories,
+                             scf_algorithm,scf_alpha,scf_beta,diis_histories,
                              mygrid->ispin,mygrid->n2ft3d,mymolecule.rho1);
 
       while ((icount < (it_out*it_in)) && (!converged))

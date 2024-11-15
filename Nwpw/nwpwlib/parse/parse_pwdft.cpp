@@ -1561,12 +1561,13 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "johnson-pulay")) nwpwjson["scf_algorithm"] = 2;
        if (mystring_contains(line, "diis"))          nwpwjson["scf_algorithm"] = 2;
        if (mystring_contains(line, "anderson"))      nwpwjson["scf_algorithm"] = 3;
-       if (mystring_contains(line, "TF"))            nwpwjson["scf_algorithm"] = 4;
+       if (mystring_contains(line, "thomas-fermi"))  nwpwjson["scf_algorithm"] = 4;
        if (mystring_contains(line, "alpha")) 
           nwpwjson["scf_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+       if (mystring_contains(line, "beta")) 
+          nwpwjson["scf_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
        if (mystring_contains(line, "kerker")) 
           nwpwjson["kerker_g0"] = std::stod(mystring_trim(mystring_split(line, "kerker")[1]));
-
        if (mystring_contains(line, " iterations")) 
           nwpwjson["ks_maxit_orb"] = std::stoi(mystring_trim(mystring_split(line, " iterations")[1]));
        if (mystring_contains(line, "outer_iterations")) 

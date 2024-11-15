@@ -503,6 +503,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["scf_alpha"].is_number_float())
       pscf_alpha = rtdbjson["nwpw"]["scf_alpha"];
 
+   pscf_beta = 0.25;
+   if (rtdbjson["nwpw"]["scf_beta"].is_number_float())
+      pscf_beta = rtdbjson["nwpw"]["scf_beta"];
+
    pkerker_g0 = 0.0;
    if (rtdbjson["nwpw"]["kerker_g0"].is_number_float())
       pkerker_g0 = rtdbjson["nwpw"]["kerker_g0"];

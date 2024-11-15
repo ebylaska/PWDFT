@@ -57,12 +57,13 @@ public:
     *        nwpw_scf_mixing::nwpw_scf_mixing       *
     *                                               *
     *************************************************/
-   nwpw_scf_mixing(PGrid *mygrid0, const double g0, const int algorithm0, const double alpha0, const int max_m0, 
+   nwpw_scf_mixing(PGrid *mygrid0, const double g0, const int algorithm0, const double alpha0, const double beta0, const int max_m0, 
                    const int ispin0, const int nsize0, double *rho_in) : nwpw_kerker(mygrid0, g0)
    {
       parall = mygrid0->d3db::parall;
       algorithm = algorithm0;
       alpha = alpha0;
+      beta  = beta0;
       max_m = max_m0;
       n2ft3d = nsize0;
       nsize  = nsize0*ispin0;
@@ -101,6 +102,7 @@ public:
       /* local Thomas-Fermi mixing */
       else if (algorithm==4)
       {
+         rho_list = new (std::nothrow) double[nsize*3]();
          reset_mix(rho_in);
       }
       std::memcpy(rho_list, rho_in, nsize*sizeof(double));
@@ -512,14 +514,34 @@ public:
       /* local Thomas Fermi mixing */
       if (algorithm==4)
       {
+         const double twothirds = 2.0/3.0;
          double *rr = rho_list;
-         double *ss = rho_list + nsize;
-         double *tt = rho_list + 2*nsize;
-         double *ff = rho_list + 3*nsize;
+         double *ff = rho_list+nsize;
+         double *tf = rho_list+2*nsize;
+         std::memcpy(ff,rr,nsize*sizeof(double));
 
-         std::memcpy(ss,rr,nsize*sizeof(double));
-         std::memcpy(rr,vnew,nsize*sizeof(double));
-         std::memcpy(tt,vout,nsize*sizeof(double));
+         // compute the  residual ff = vout - vold 
+         DAXPY_PWDFT(nsize,mrone,vout,one,ff,one);
+         DSCAL_PWDFT(nsize,mrone,ff,one);
+
+         // scf_error = sqrt(<ff|ff>)
+         double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
+         *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize);
+         //scf_error = std::sqrt(scf_error);
+
+         // Apply Kerker filter to smooth residual ff
+         for (auto ms=0; ms<ispin; ++ms)
+            kerker_G(ff + ms*n2ft3d);
+
+         // Apply TF mixing
+         // tf = ff/(1+alpha*rho(n-1)**(2/3))= ff/(1+alpha*rr**
+         // rho(n) = rho(n-1) + beta*tf
+         for (auto i=0; i<nsize; ++i)
+            tf[i] = ff[i]/(1.0 + alpha*std::pow(rr[i],twothirds));
+
+         std::memcpy(vnew,rr,nsize*sizeof(double)); // 
+         DAXPY_PWDFT(nsize,beta,tf,one,vnew,one);  // vnew(n) = rho(n-1) + beta*tf
+         std::memcpy(rr,vnew,nsize*sizeof(double)); //vm=vnew
       }
    }
 };

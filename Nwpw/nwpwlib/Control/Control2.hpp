@@ -19,7 +19,7 @@ class Control2 {
 
    std::string myrtdbstring, xcstring;
    double punita[9], ptolerances[3], pscaling[2];
-   double ptime_step, pfake_mass, pscf_alpha, pecut, pwcut, prcut;
+   double ptime_step, pfake_mass, pscf_alpha, pscf_beta, pecut, pwcut, prcut;
    double pkerker_g0,pfractional_kT,pfractional_temperature,pfractional_alpha;
    double pbo_time_step;
    double ptotal_charge;
@@ -186,6 +186,7 @@ public:
    double Sprecondition() { return psprecondition;}
 
    double scf_alpha() { return pscf_alpha; }
+   double scf_beta() { return pscf_beta; }
    double kerker_g0() { return pkerker_g0; }
    double fractional_kT() { return pfractional_kT; }
    double fractional_temperature() { return pfractional_temperature; }

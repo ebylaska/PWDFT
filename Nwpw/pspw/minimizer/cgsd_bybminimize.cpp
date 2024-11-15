@@ -13,7 +13,7 @@
 #include "Pneb.hpp"
 #include "util_date.hpp"
 #include "util_linesearch.hpp"
-#include "nwpw_scf_mixing.hpp"
+//#include "nwpw_scf_mixing.hpp"
 
 namespace pwdft {
 
@@ -81,12 +81,6 @@ double cgsd_bybminimize(Molecule &mymolecule, Geodesic *mygeodesic, double *E,
    //**** bybminimizer ****
    //**********************
 
-   nwpw_scf_mixing scfmix(mygrid,g0,
-                          scf_algorithm,scf_alpha,diis_histories,
-                          mygrid->ispin,mygrid->n2ft3d,vall_out);
-
-
- 
    /* iniitialize blocked cg */
  
    // Making an extra call to electron.run and energy
