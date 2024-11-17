@@ -1,0 +1,35 @@
+Title "Be2 test"
+
+memory 1900 mb
+start be2-pspw
+echo
+
+
+
+geometry 
+Be   0.0 0.0 0.0
+Be   0.0 0.0 1.7
+end
+
+nwpw
+   simulation_cell
+     SC 26.0
+   end
+   2d-hcurve
+
+   
+   xc pbe
+   cutoff 30.0
+end
+task pspw energy
+
+
+nwpw
+   scf broyden alpha 0.15 iterations 3 kerker 0.08
+   #lmbfgs
+   loop 10 10
+   cutoff 30.0
+   #vectors input be2-pspw.movecs output junk.elc
+end
+#task pspw energy
+task pspw optimize
