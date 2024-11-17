@@ -434,6 +434,8 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
          double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
                                        error_out, coutput);
          esum += e0;
+
+         //std::cout << "i=" << i << " e0="<< e0<< std::endl;
       }
    }
 

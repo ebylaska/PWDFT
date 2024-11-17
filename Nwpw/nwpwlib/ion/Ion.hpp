@@ -400,7 +400,7 @@ public:
    }
  
    std::string print_bond_angle_torsions() {
-     return ion_print_bond_angle_torsions(nion, katm, atomarray, rion1);
+      return ion_print_bond_angle_torsions(nion, katm, atomarray, rion1);
    }
  
    double com_fion(const double *fion, const int i) {
