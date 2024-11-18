@@ -1525,12 +1525,16 @@ static json parse_nwpw(json nwpwjson, int *curptr,
     } else if (mystring_contains(line, "cg")) {
        if (mystring_contains(line, "stiefel"))
          nwpwjson["minimizer"] = 4;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 9;
        else
          nwpwjson["minimizer"] = 1;
 
     } else if (mystring_contains(line, "lmbfgs")) {
        if (mystring_contains(line, "stiefel"))
          nwpwjson["minimizer"] = 7;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 10;
        else
          nwpwjson["minimizer"] = 2;
  
@@ -1546,6 +1550,76 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["minimizer"] = 5;
        else
           nwpwjson["minimizer"] = 8;
+
+       if (mystring_contains(line, "block-cg"))  nwpwjson["ks_algorithm"] = -1;
+       if (mystring_contains(line, " cg"))       nwpwjson["ks_algorithm"] = 0;
+       if (mystring_contains(line, "rmm-diis"))  nwpwjson["ks_algorithm"] = 1;
+
+       if (mystring_contains(line, "simple"))  nwpwjson["scf_algorithm"] = 0;
+       if (mystring_contains(line, "broyden")) nwpwjson["scf_algorithm"] = 1;
+       if (mystring_contains(line, "pulay"))         nwpwjson["scf_algorithm"] = 2;
+       if (mystring_contains(line, "johnson-pulay")) nwpwjson["scf_algorithm"] = 2;
+       if (mystring_contains(line, "diis"))          nwpwjson["scf_algorithm"] = 2;
+       if (mystring_contains(line, "anderson"))      nwpwjson["scf_algorithm"] = 3;
+       if (mystring_contains(line, "thomas-fermi"))  nwpwjson["scf_algorithm"] = 4;
+       if (mystring_contains(line, "alpha")) 
+          nwpwjson["scf_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+       if (mystring_contains(line, "beta")) 
+          nwpwjson["scf_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
+       if (mystring_contains(line, "kerker")) 
+          nwpwjson["kerker_g0"] = std::stod(mystring_trim(mystring_split(line, "kerker")[1]));
+       if (mystring_contains(line, " iterations")) 
+          nwpwjson["ks_maxit_orb"] = std::stoi(mystring_trim(mystring_split(line, " iterations")[1]));
+       if (mystring_contains(line, "outer_iterations")) 
+          nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
+       if (mystring_contains(line, "diis_histories")) 
+          nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
+
+
+    // smear 
+    //SMEAR <sigma default 0.001> 
+    //[TEMPERATURE <temperature>] 
+    //[FERMI || GAUSSIAN || MARZARI-VANDERBILT default FERMI] 
+    //[ORBITALS <integer orbitals default 4>] 
+    } else if (mystring_contains(line, "smear")) {
+       double kT=0.001;
+       double kb=3.16679e-6;
+       double temperature;
+
+       ss = mystring_split0(line);
+       if (ss.size()>1)
+         if (mystring_isfloat(ss[1]))
+           kT = std::stod(ss[1]);
+
+       temperature = kT/kb;
+
+       nwpwjson["fractional"] = true;
+       nwpwjson["fractional_orbitals"] = 4;
+       nwpwjson["fractional_kT"] = kT;
+       nwpwjson["fractional_temperature"] = temperature;
+       nwpwjson["fractional_smeartype"]   = 2;
+
+       if (mystring_contains(line, "fixed"))              nwpwjson["fractional_smeartype"] = -1;
+       if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;
+       if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
+       if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
+       if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
+
+       if (mystring_contains(line, "orbitals"))  
+          nwpwjson["fraction_orbitals"] = std::stoi(mystring_trim(mystring_split(line, "orbitals")[1]));
+
+       if (mystring_contains(line, "alpha")) 
+          nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+
+       if (mystring_contains(line, "temperature"))
+       {
+          temperature = std::stod(mystring_trim(mystring_split(line, "temperature")[1]));
+          kT = temperature/kb;
+          nwpwjson["fractional_kT"] = kT;
+          nwpwjson["fractional_temperature"] = temperature;
+       }
+
+
     } else if (mystring_contains(line, "vectors")) {
        if (mystring_contains(line, " input"))
          nwpwjson["input_wavefunction_filename"] = mystring_split0(

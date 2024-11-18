@@ -345,47 +345,72 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
               << Ffmt(12,8) << myewald.rsalpha() << " rs =" << Ffmt(12,8) << myewald.rs()
               << ")" << std::endl;
      
-      if (flag > 0) {
-        coutput << std::endl;
-        coutput << " technical parameters:\n";
-        if (control.nolagrange()) coutput << "      diabling Lagrange multiplier" << std::endl;
-        if (control.io_buffer()) coutput << "      using io buffer " << std::endl;
-        coutput << "      fixed step: time step =" << Ffmt(12, 2)
-                << control.time_step() << "  ficticious mass =" << Ffmt(12, 2)
-                << control.fake_mass() << std::endl;
-        coutput << "      tolerance =" << Efmt(12, 3) << control.tolerances(0)
-                << " (energy) " << Efmt(12, 3) << control.tolerances(1)
-                << " (density) " << Efmt(12, 3) << control.tolerances(2)
-                << " (ion)\n";
-        coutput << "      max iterations = " << Ifmt(10)
-                << control.loop(0) * control.loop(1) << " (" << Ifmt(5)
-                << control.loop(0) << " inner " << Ifmt(5) << control.loop(1)
-                << " outer)\n";
-        if (control.minimizer() == 1)
-          coutput << "      minimizer = Grassmann conjugate gradient\n";
-        if (control.minimizer() == 2)
-          coutput << "      minimizer = Grassmann lmbfgs\n";
-        if (control.minimizer() == 4)
-          coutput << "      minimizer = Stiefel conjugate gradient\n";
-        if (control.minimizer() == 5)
-          coutput << "      minimizer = scf (potential)\n";
-        if (control.minimizer() == 7)
-          coutput << "      minimizer = Stiefel lmbfgs\n";
-        if (control.minimizer() == 8)
-          coutput << "      minimizer = scf (density)\n";
-        if ((control.minimizer() == 5) || (control.minimizer() == 8)) {
-          coutput << std::endl;
-          coutput << " Kohn-Sham scf parameters:\n";
-          coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
-          coutput << "     SCF algorithm        = simple mixing\n";
-          coutput << "     SCF mixing parameter =    x.xxxx\n";
-          coutput << "     Kohn-Sham iterations = xxxx\n";
-          if (control.minimizer() == 5)
-            coutput << "     SCF mixing type      = potential\n";
-          if (control.minimizer() == 8)
-            coutput << "     SCF mixing type      = density\n";
-          coutput << "     Kerker damping       =    x.xxxx\n";
-        }
+      if (flag > 0) 
+      {
+         coutput << std::endl;
+         coutput << " technical parameters:\n";
+         if (control.nolagrange()) coutput << "      diabling Lagrange multiplier" << std::endl;
+         if (control.io_buffer()) coutput << "      using io buffer " << std::endl;
+         coutput << "      fixed step: time step =" << Ffmt(12, 2)
+                 << control.time_step() << "  ficticious mass =" << Ffmt(12, 2)
+                 << control.fake_mass() << std::endl;
+         coutput << "      tolerance =" << Efmt(12, 3) << control.tolerances(0)
+                 << " (energy) " << Efmt(12, 3) << control.tolerances(1)
+                 << " (density) " << Efmt(12, 3) << control.tolerances(2)
+                 << " (ion)\n";
+         coutput << "      max iterations = " << Ifmt(10)
+                 << control.loop(0) * control.loop(1) << " (" << Ifmt(5)
+                 << control.loop(0) << " inner " << Ifmt(5) << control.loop(1)
+                 << " outer)\n";
+         if (control.minimizer() == 1)
+            coutput << "      minimizer = Grassmann conjugate gradient\n";
+         if (control.minimizer() == 2)
+            coutput << "      minimizer = Grassmann lmbfgs\n";
+         if (control.minimizer() == 4)
+            coutput << "      minimizer = Stiefel conjugate gradient\n";
+         if (control.minimizer() == 5)
+            coutput << "      minimizer = scf (potential)\n";
+         if (control.minimizer() == 7)
+            coutput << "      minimizer = Stiefel lmbfgs\n";
+         if (control.minimizer() == 8)
+            coutput << "      minimizer = scf (density)\n";
+         if ((control.minimizer() == 5) || (control.minimizer() == 8)) 
+         {
+            coutput << std::endl;
+            coutput << " Kohn-Sham scf parameters:\n";
+            coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
+            coutput << "     Kohn-Sham iterations = " << control.ks_maxit_orb() 
+                                                      << " ( " << control.ks_maxit_orbs() << " outer)\n";
+            if (control.scf_algorithm()==0) coutput << "     SCF algorithm        = simple mixing\n";
+            if (control.scf_algorithm()==1) coutput << "     SCF algorithm        = Broyden mixing\n";
+            if (control.scf_algorithm()==2) coutput << "     SCF algorithm        = Johnson-Pulay mixing"
+                                                    << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
+            if (control.scf_algorithm()==3) coutput << "     SCF algorithm        = Anderson mixing\n";
+            if (control.scf_algorithm()==4) coutput << "     SCF algorithm        = Thomas-Fermi mixing\n";
+            if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+            if (control.scf_algorithm()==4)
+               coutput << "     SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
+            else
+               coutput << "     SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
+            coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
+            coutput << std::endl;
+            if (control.fractional())
+            {
+               coutput << " fractional smearing parameter:" << std::endl;
+               if (control.fractional_smeartype()==-1) coutput << "     smearing algorithm = fixed occupation\n";
+               if (control.fractional_smeartype()==0)  coutput << "     smearing algorithm = step function\n";
+               if (control.fractional_smeartype()==1)  coutput << "     smearing algorithm = Fermi-Dirac\n";
+               if (control.fractional_smeartype()==2)  coutput << "     smearing algorithm = Gaussian\n";
+               if (control.fractional_smeartype()==4)  coutput << "     smearing algorithm = Marzari-Vanderbilt\n";
+               if (control.fractional_smeartype()>=0)  coutput << "     smearing parameter = " 
+                                                               << control.fractional_kT() 
+                                                               << " (" <<  Ffmt(8,1) <<  control.fractional_temperature() << " K)\n"
+                                                               << "     mixing parameter   =  " 
+                                                               << control.fractional_alpha() << std::endl;
+               coutput << std::endl;
+            }
+         }
       } else {
         coutput << std::endl;
         coutput << " technical parameters:\n";

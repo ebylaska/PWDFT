@@ -2773,6 +2773,23 @@ void Pneb::g_project_out_filled_below(double *psi, const int ms, const int k, do
 }
 
 
+/**************************************
+ *                                    *
+ *  Pneb::g_project_out_filled_above  *
+ *                                    *
+ **************************************/
+void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, double *Horb) 
+{
+   int ishift = ms*neq[0]*2*PGrid::npack(1);
+   for (auto ka=k+1; ka<neq[ms]; ++ka)
+   {
+     int indx = 2*PGrid::npack(1)*ka + ishift;
+     double w = -PGrid::cc_pack_dot(1,psi+indx,Horb);
+     PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
+   }
+}
+
+
 /*********************************
  *                               *
  *  Pneb::g_project_out_virtual  *

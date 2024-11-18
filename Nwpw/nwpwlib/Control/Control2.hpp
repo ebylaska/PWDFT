@@ -19,7 +19,8 @@ class Control2 {
 
    std::string myrtdbstring, xcstring;
    double punita[9], ptolerances[3], pscaling[2];
-   double ptime_step, pfake_mass, pks_alpha, pecut, pwcut, prcut;
+   double ptime_step, pfake_mass, pscf_alpha, pscf_beta, pecut, pwcut, prcut;
+   double pkerker_g0,pfractional_kT,pfractional_temperature,pfractional_alpha;
    double pbo_time_step;
    double ptotal_charge;
    double peprecondition, psprecondition;
@@ -31,6 +32,11 @@ class Control2 {
  
    bool pdeltae_check = true;
    bool pis_crystal = false;
+
+   bool pfractional = false;
+   int pfractional_smeartype;
+   int pks_maxit_orb,pks_maxit_orbs;
+   int pdiis_histories;
  
    int pbo_steps[2], pbo_algorithm;
    int ploop[2], pngrid[3], pnpsp, pncut, pmapping, pmapping1d, ptile_factor;
@@ -178,9 +184,21 @@ public:
    double total_charge() { return ptotal_charge; }
    double Eprecondition() { return peprecondition;}
    double Sprecondition() { return psprecondition;}
+
+   double scf_alpha() { return pscf_alpha; }
+   double scf_beta() { return pscf_beta; }
+   double kerker_g0() { return pkerker_g0; }
+   double fractional_kT() { return pfractional_kT; }
+   double fractional_temperature() { return pfractional_temperature; }
+   double fractional_alpha() { return pfractional_alpha; }
  
    int minimizer() { return pminimizer; }
    int lmbfgs_size() { return plmbfgs_size; }
+   int scf_algorithm() { return pscf_algorithm; }
+   int fractional_smeartype() { return pfractional_smeartype; }
+   int ks_maxit_orb() { return pks_maxit_orb; }
+   int ks_maxit_orbs() { return pks_maxit_orbs; }
+   int diis_histories() { return pdiis_histories; }
    int task() { return ptask; }
    int np_orbital() { return pnp_dimensions[1]; }
    int np_dimensions(const int i) { return pnp_dimensions[i]; }
@@ -205,6 +223,7 @@ public:
    int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
+   bool fractional() { return pfractional; }
  
    int *ne_ptr() { return pne; }
 
