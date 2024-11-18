@@ -2786,6 +2786,7 @@ void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, do
      int indx = 2*PGrid::npack(1)*ka + ishift;
      double w = -PGrid::cc_pack_dot(1,psi+indx,Horb);
      PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
+     std::cout << "project_above k=" << k << " ka=" << ka << " w=" << w << std::endl;
    }
 }
 
