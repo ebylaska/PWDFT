@@ -977,14 +977,12 @@ void Pneb::ggm_sym_Multiply(double *psi1, double *psi2, double *hml)
       }
       d3db::parall->Vector_SumAll(1,ne[0]*ne[0]+ne[1]*ne[1],hml);
    }
-   /*
    if (d3db::parall->is_master())
       std::cout << "hml= [" << Efmt(15,10) 
                             << hml[0] << " " << hml[4] << " " << hml[8]  << " " << hml[12]  << std::endl 
                 << "      " << hml[1] << " " << hml[5] << " " << hml[9]  << " " << hml[13]  << std::endl
                 << "      " << hml[2] << " " << hml[6] << " " << hml[10] << " " << hml[14]  << std::endl
                 << "      " << hml[3] << " " << hml[7] << " " << hml[11] << " " << hml[15]  << "]"<< std::endl << std::endl;
-                */
 }
 
 
