@@ -314,11 +314,12 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       e0 = mygrid->cc_pack_dot(1,orb,g);
 
       e0 = -e0;
-      //std::cout << "it =" << it << " e0=" << e0 << std::endl;
+      std::cout << "   -- sub it =" << it << " e0=" << e0 << std::endl;
 
 
       double percent_error = 0.0;
       if(error0>1.0e-11) percent_error = std::abs(e0-eold)/error0;
+      std::cout << "   -- percent_error=" << percent_error << std::endl;
 
       precondition = (std::abs(e0-eold)>(sp*maxerror));
 
@@ -327,6 +328,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       mygrid->cc_pack_copy(1,g,r1);
       mygrid->cc_pack_daxpy(1,(e0),orb,r1);
 
+      std::cout << "   -- precondition=" << precondition << std::endl;
       //preconditioning 
       if (precondition)
       {
@@ -336,6 +338,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
 
       //determine conjuagate direction ***
       double lmbda_r1 = mygrid->cc_pack_dot(1,r1,r1);
+      std::cout << "   -- lmbda_r1=" << lmbda_r1 << std::endl;
 
       mygrid->cc_pack_copy(1,r1,t);
 
