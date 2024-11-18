@@ -170,9 +170,11 @@ public:
    }
  
    /* molecule energy and eigenvalues and other energies and en */
-   double gen_all_energies() {
+   double gen_all_energies() 
+   {
       myelectron->run(psi1, rho1, dng1, rho1_all);
       myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en);
+      std::cout << "A E[0] =" << E[0] << std::endl;
       
       /*  ion-ion energy */
       if (myelectron->is_periodic())
@@ -181,6 +183,7 @@ public:
         E[4] = myion->ion_ion_energy();
       
       E[0] += E[4];
+      std::cout << "B E[0] =" << E[0] << std::endl;
 
       /* get contraints energies */
       if (myion->has_ion_bond_constraints()) {
