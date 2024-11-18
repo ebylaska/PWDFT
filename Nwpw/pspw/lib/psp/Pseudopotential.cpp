@@ -773,6 +773,7 @@ static double semicore_check(PGrid *mygrid, bool semicore, double rcore,
     /* Put put tmp into real space */
     mygrid->c_unpack(0, tmp);
     mygrid->cr_fft3d(tmp);
+    mygrid->r_zero_ends(tmp);
 
     /*  square it  */
     mygrid->r_sqr(tmp);
@@ -2715,6 +2716,7 @@ void Pseudopotential::semicore_density_update()
        /* Put put tmp into real space */
        mypneb->c_unpack(0, tmp);
        mypneb->cr_fft3d(tmp);
+       mypneb->r_zero_ends(tmp);
  
        /*  square it  */
        mypneb->r_sqr(tmp);
@@ -2797,6 +2799,9 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
        mypneb->cr_fft3d(tmpx);
        mypneb->cr_fft3d(tmpy);
        mypneb->cr_fft3d(tmpz);
+       mypneb->r_zero_ends(tmpx);
+       mypneb->r_zero_ends(tmpy);
+       mypneb->r_zero_ends(tmpz);
  
        mypneb->rr_Mul(tmp, tmpx);
        mypneb->rr_Mul(tmp, tmpy);

@@ -127,6 +127,7 @@ void v_bwexc(const int gga, Pneb *mypneb, const double *dn,
       mypneb->c_unpack(0, fdn);
       mypneb->cr_fft3d(fdn);
       mypneb->rrr_Minus(fn, fdn, xcp);
+      mypneb->r_zero_ends(xcp);
    }
  
    /************************************
@@ -336,6 +337,8 @@ void v_bwexc(const int gga, Pneb *mypneb, const double *dn,
       mypneb->cr_fft3d(fdndn);
       mypneb->rrr_Minus(fnup, fdnup, xcpup);
       mypneb->rrr_Minus(fndn, fdndn, xcpdn);
+      mypneb->r_zero_ends(xcpup);
+      mypneb->r_zero_ends(xcpdn);
    }
 }
 
