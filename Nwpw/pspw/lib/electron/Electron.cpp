@@ -257,6 +257,7 @@ void Electron_Operators::gen_vall()
       // fourier transform k-space potentials ****
       mygrid->c_unpack(0,vall);
       mygrid->cr_fft3d(vall);
+      mygrid->r_zero_ends(vall);
 
       // add v_field to vall */
       if (mypsp->myefield->efield_on)
@@ -269,6 +270,7 @@ void Electron_Operators::gen_vall()
       mygrid->cc_pack_SMul(0, scal2, vl, vall);
       mygrid->c_unpack(0, vall);
       mygrid->cr_fft3d(vall);
+      mygrid->r_zero_ends(vall);
 
       /* add vall += vlr_l + vc */
       mygrid->rrr_Sum2Add(vlr_l, vc, vall);
