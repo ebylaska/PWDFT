@@ -74,6 +74,7 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    mygrid->cc_pack_Sum2(0,vc,vall);
    mygrid->c_unpack(0,vall);
    mygrid->cr_fft3d(vall);
+   mygrid->r_zero_ends(vall);
  
    /* add v_field to vall */
    if (mypsp->myefield->efield_on)
@@ -228,6 +229,7 @@ void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    mygrid->cc_pack_SMul(0, scal2, vsr_l, vall);
    mygrid->c_unpack(0, vall);
    mygrid->cr_fft3d(vall);
+   mygrid->r_zero_ends(vall);
  
    /* add vall += vlr_l + vc */
    mygrid->rrr_Sum2Add(vlr_l, vc, vall);
@@ -387,6 +389,7 @@ void gen_vall_DFPT(Pneb *mygrid, Pseudopotential *mypsp, double *vl, double *vc,
    mygrid->cc_pack_Sum2(0, vc, tmp);
    mygrid->c_unpack(0, tmp);
    mygrid->cr_fft3d(tmp);
+   mygrid->r_zero_ends(tmp);
  
    /* add v_field to tmp */
    if (mypsp->myefield->efield_on)
@@ -432,6 +435,7 @@ void gen_vall_v4_DFPT(Pneb *mygrid, Pseudopotential *mypsp, double *vsr_l,
    mygrid->cc_pack_SMul(0, scal2, vsr_l, tmp);
    mygrid->c_unpack(0, tmp);
    mygrid->cr_fft3d(tmp);
+   mygrid->r_zero_ends(tmp);
  
    /* add tmp += vlr_l + vc */
    mygrid->rrr_Sum2Add(vlr_l, vc, tmp);

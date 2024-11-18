@@ -224,6 +224,7 @@ void Molecule::psi_get_gradient(double *orb, double *vall, double *Horb)
    mygrid->cc_pack_copy(1,orb,orb_r);
    mygrid->c_unpack(1,orb_r);
    mygrid->cr_fft3d(orb_r);
+   mygrid->r_zero_ends(orb_r);
 
    mygrid->c_pack_zero(1,Horb);
    psi_H_orb(mygrid,myelectron->get_myke(),mypsp,orb,orb_r,vall,Horb);
@@ -964,6 +965,7 @@ void Molecule::epsi_get_gradient(double *orb, double *vall, double *Horb)
    mygrid->cc_pack_copy(1,orb,orb_r);
    mygrid->c_unpack(1,orb_r);
    mygrid->cr_fft3d(orb_r);
+   mygrid->r_zero_ends(orb_r);
 
    mygrid->c_pack_zero(1,Horb);
    psi_H_orb(mygrid,myelectron->get_myke(),mypsp,orb,orb_r,vall,Horb);
