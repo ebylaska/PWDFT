@@ -315,12 +315,10 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       e0 = mygrid->cc_pack_dot(1,orb,g);
 
       e0 = -e0;
-      std::cout << "   -- sub it =" << it << " e0=" << e0 << std::endl;
 
 
       double percent_error = 0.0;
       if(error0>1.0e-11) percent_error = std::abs(e0-eold)/error0;
-      std::cout << "   -- percent_error=" << percent_error << std::endl;
 
       precondition = (std::abs(e0-eold)>(sp*maxerror));
 
@@ -329,7 +327,6 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       mygrid->cc_pack_copy(1,g,r1);
       mygrid->cc_pack_daxpy(1,(e0),orb,r1);
 
-      std::cout << "   -- precondition=" << precondition << std::endl;
       //preconditioning 
       if (precondition)
       {
@@ -339,7 +336,6 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
 
       //determine conjuagate direction ***
       double lmbda_r1 = mygrid->cc_pack_dot(1,r1,r1);
-      std::cout << "   -- lmbda_r1=" << lmbda_r1 << " lmbda_r0=" << lmbda_r0 << " lmbda_r1/lmbda_r0=" << lmbda_r1/lmbda_r0 << std::endl;
 
       mygrid->cc_pack_copy(1,r1,t);
 
@@ -423,9 +419,6 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
       int ishift = ms*neq[0]*2*mygrid->PGrid::npack(1);
       for (auto i=neq[ms]-1; i>=0; --i)
       {
-         double total_energy0 = this->energy();
-         std::cout << "i0=" << i << " TOTAL ENERGY=" << total_energy0 << std::endl;
-
          int indx = 2*mygrid->PGrid::npack(1)*i + ishift;
          double *orb = psi + indx;
 
@@ -433,25 +426,14 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
          //mygrid->g_project_out_filled_below(psi1, ms, i, orb);
          mygrid->g_project_out_filled_above(psi1, ms, i, orb);
 
-         double total_energy1 = this->energy();
-         std::cout << "i1=" << i << " TOTAL ENERGY=" << total_energy1 << std::endl;
-
          // normalize
          double norm = mygrid->cc_pack_dot(1,orb,orb);
          norm = 1.0/std::sqrt(norm);
          mygrid->c_pack_SMul(1,norm,orb);
 
-         double total_energy2 = this->energy();
-         std::cout << "i2=" << i << " TOTAL ENERGY=" << total_energy2 << std::endl;
-
          double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
                                        error_out, coutput);
          esum += e0;
-
-         std::cout << "i=" << i << " e0="<< e0<< std::endl;
-
-         double total_energy3 = this->energy();
-         std::cout << "i3=" << i << " TOTAL ENERGY=" << total_energy3 << std::endl;
       }
    }
 
