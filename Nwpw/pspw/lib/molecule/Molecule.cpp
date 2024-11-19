@@ -424,7 +424,7 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
       for (auto i=neq[ms]-1; i>=0; --i)
       {
          double total_energy0 = this->energy();
-         std::cout << "TOTAL ENERGY=" << total_energy0 << std::endl;
+         std::cout << "i0=" << i << " TOTAL ENERGY=" << total_energy0 << std::endl;
 
          int indx = 2*mygrid->PGrid::npack(1)*i + ishift;
          double *orb = psi + indx;
@@ -443,6 +443,9 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
          esum += e0;
 
          std::cout << "i=" << i << " e0="<< e0<< std::endl;
+
+         double total_energy1 = this->energy();
+         std::cout << "i=" << i << " TOTAL ENERGY=" << total_energy1 << std::endl;
       }
    }
 
