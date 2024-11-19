@@ -339,14 +339,13 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
 
       //determine conjuagate direction ***
       double lmbda_r1 = mygrid->cc_pack_dot(1,r1,r1);
-      std::cout << "   -- lmbda_r1=" << lmbda_r1 << std::endl;
+      std::cout << "   -- lmbda_r1=" << lmbda_r1 << " lmbda_r0=" << lmbda_r0 << " lmbda_r1/lmbda_r0=" << lmbda_r1/lmbda_r0 << std::endl;
 
       mygrid->cc_pack_copy(1,r1,t);
 
 
       if (it>1) 
-         if (!std::isnan(lmbda_r0)) 
-            mygrid->cc_pack_daxpy(1,(lmbda_r1/lmbda_r0),t0,t);
+         mygrid->cc_pack_daxpy(1,(lmbda_r1/lmbda_r0),t0,t);
       lmbda_r0 = lmbda_r1;
       bool oneloop = true;
       bool repeat_loop = true;
@@ -358,7 +357,8 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
          // project out lower virtual space
          //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
          // project out filled space
-         mygrid->g_project_out_filled_below(psi1, ms, k, t);
+         //mygrid->g_project_out_filled_below(psi1, ms, k, t);
+         mygrid->g_project_out_filled_above(psi1, ms, k, t);
 
          de0 = mygrid->cc_pack_dot(1,t,t);
          de0 = 1.0/std::sqrt(de0);
@@ -433,10 +433,16 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
          //mygrid->g_project_out_filled_below(psi1, ms, i, orb);
          mygrid->g_project_out_filled_above(psi1, ms, i, orb);
 
+         double total_energy1 = this->energy();
+         std::cout << "i1=" << i << " TOTAL ENERGY=" << total_energy1 << std::endl;
+
          // normalize
          double norm = mygrid->cc_pack_dot(1,orb,orb);
          norm = 1.0/std::sqrt(norm);
          mygrid->c_pack_SMul(1,norm,orb);
+
+         double total_energy2 = this->energy();
+         std::cout << "i2=" << i << " TOTAL ENERGY=" << total_energy2 << std::endl;
 
          double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
                                        error_out, coutput);
@@ -444,8 +450,8 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
 
          std::cout << "i=" << i << " e0="<< e0<< std::endl;
 
-         double total_energy1 = this->energy();
-         std::cout << "i=" << i << " TOTAL ENERGY=" << total_energy1 << std::endl;
+         double total_energy3 = this->energy();
+         std::cout << "i3=" << i << " TOTAL ENERGY=" << total_energy3 << std::endl;
       }
    }
 
