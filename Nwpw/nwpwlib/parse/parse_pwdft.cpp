@@ -1574,6 +1574,16 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
        if (mystring_contains(line, "diis_histories")) 
           nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
+       if (mystring_contains(line, "extra_rotate")) 
+       {
+          nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
+       }
 
 
     // smear 
@@ -1618,15 +1628,6 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["fractional_kT"] = kT;
           nwpwjson["fractional_temperature"] = temperature;
        }
-
-    } else if (mystring_contains(line, "scf_extra_rotate")) {
-          nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
 
     } else if (mystring_contains(line, "vectors")) {
        if (mystring_contains(line, " input"))
