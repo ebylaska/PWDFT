@@ -232,6 +232,8 @@ public:
  
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml, eig); }
+   void rotate1to2() { mygrid->fmf_Multiply(-1,psi1,hml,1.0,psi2,0.0); }
+   
  
    /* molecule - call phafacs and gen_vl_potential and semicore */
    void phafacs_vl_potential_semicore() {

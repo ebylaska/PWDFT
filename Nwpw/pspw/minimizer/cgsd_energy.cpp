@@ -106,6 +106,8 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    bool hprint = (parall->is_master() && control.print_level("high") && doprint);
    bool oprint = (parall->is_master() && control.print_level("medium") && doprint);
    bool lprint = (parall->is_master() && control.print_level("low") && doprint);
+
+   bool extra_rotate = control.scf_extra_rotate();
  
    for (auto ii=0; ii<70; ++ii)
       E[ii] = 0.0;
@@ -324,7 +326,15 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          //                                 &deltac,0,5,1,tole,tolc);
       }
       
+      // rotate orbitals 
       double total_energy0 = mymolecule.energy();
+      mymolecule.gen_hml();
+      mymolecule.diagonalize();
+      mymolecule.rotate1to2();
+      mymolecule.swap_psi1_psi2();
+
+      //define fractional occupation here
+
       double x,sumxx = 0.0;
       int n2ft3d = mygrid->n2ft3d;
       int ispin = mygrid->ispin;
@@ -353,6 +363,15 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          if ((stalled) && (icount%it_in==0))
          {
             cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
+
+            // rotate orbitals
+            mymolecule.gen_hml();
+            mymolecule.diagonalize();
+            mymolecule.rotate1to2();
+            mymolecule.swap_psi1_psi2();
+
+            //define fractional occupation here
+
             scfmix.reset_mix(mymolecule.rho1);
 
             bfgscount = 0;
@@ -366,13 +385,27 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          std::memcpy(mymolecule.rho2,mymolecule.rho1,nsize*sizeof(double));
 
          total_energy = cgsd_bybminimize2(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
-                                         &deltac,bfgscount,ks_it_in,ks_it_out,
-                                         tole,tolc);
-         double total_energy2 = mymolecule.energy();
+                                          &deltac,bfgscount,ks_it_in,ks_it_out,
+                                          tole,tolc);
+         // rotate orbitals
+         if (extra_rotate) 
+         {
+            total_energy = mymolecule.energy();
+            mymolecule.gen_hml();
+            mymolecule.diagonalize();
+            mymolecule.rotate1to2();
+            mymolecule.swap_psi1_psi2();
+         }
+
+         //std::cout << "total_energy=" << total_energy << " " << total_energy2 
+         //          << " " << total_energy2 - total_energy << std::endl;
+
+         //define fractional occupation here
+
          scfmix.mix(mymolecule.rho1,mymolecule.rho1,deltae,&scf_error);
          deltac = scf_error;
-         deltae = total_energy2 - total_energy0;
-         total_energy0 = total_energy2;
+         deltae = total_energy - total_energy0;
+         total_energy0 = total_energy;
          ++bfgscount;
 
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);

@@ -1619,6 +1619,14 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["fractional_temperature"] = temperature;
        }
 
+    } else if (mystring_contains(line, "scf_extra_rotate")) {
+          nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
 
     } else if (mystring_contains(line, "vectors")) {
        if (mystring_contains(line, " input"))

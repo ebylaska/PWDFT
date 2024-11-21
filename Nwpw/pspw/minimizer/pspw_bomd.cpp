@@ -414,6 +414,7 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
            else
               coutput << "     SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
            coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
+           if (control.scf_extra_rotate()) coutput << "     SCF extra rotate\n";
            coutput << std::endl;
            if (control.fractional())
            { 

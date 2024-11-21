@@ -300,7 +300,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
    double e0 = 0.0;
    double eold = 0.0;
    double de0 = 0.0; 
-   double theta = 3.14159/600.0;
+   double theta = -3.14159/600.0;
    double    lmbda_r0 = 1.0;
    int it = 0;
    int pit = 0;
@@ -358,7 +358,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
 
          de0 = mygrid->cc_pack_dot(1,t,t);
          de0 = 1.0/std::sqrt(de0);
-         if (std::isnan(de0)) de0=0.0;
+         //if (std::isnan(de0)) de0=0.0;
          mygrid->c_pack_SMul(1,de0,t);
          de0 = mygrid->cc_pack_dot(1,t,g);
 

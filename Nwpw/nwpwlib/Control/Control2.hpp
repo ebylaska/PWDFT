@@ -144,6 +144,9 @@ class Control2 {
    // Brillouin variables 
    int pnbrillouin=0;
 
+   //scf extra scf
+   bool pscf_extra_rotate = false;
+
 
 public:
    int version = 3;
@@ -224,6 +227,8 @@ public:
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
    bool fractional() { return pfractional; }
+
+   bool scf_extra_rotate() { return pscf_extra_rotate; }
  
    int *ne_ptr() { return pne; }
 

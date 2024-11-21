@@ -487,6 +487,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
 
+
    pks_maxit_orb = 5;
    if (rtdbjson["nwpw"]["ks_maxit_orb"].is_number_integer())
        pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orb"];
@@ -523,6 +524,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pfractional = false;
    if (rtdbjson["nwpw"]["fractional"].is_boolean())
       pfractional = rtdbjson["nwpw"]["fractional"];
+
+   if (rtdbjson["nwpw"]["scf_extra_rotate"].is_boolean())
+      pscf_extra_rotate = rtdbjson["nwpw"]["pscf_extra_rotate"];
+
 
    ploop[0] = 10;
    ploop[1] = 100;
