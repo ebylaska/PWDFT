@@ -351,6 +351,8 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       //std::cout << "total energy0=" << total_energy0 << std::endl;
       //std::cout << "total sum0=" << sum0 << std::endl;
 
+      int ks_it_in  = control.ks_maxit_orb();
+      int ks_it_out = control.ks_maxit_orbs();
       double scf_error;
 
       nwpw_scf_mixing scfmix(mygrid,kerker_g0,
@@ -365,10 +367,13 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
 
             // rotate orbitals
-            mymolecule.gen_hml();
-            mymolecule.diagonalize();
-            mymolecule.rotate1to2();
-            mymolecule.swap_psi1_psi2();
+            if (extra_rotate) 
+            {
+               mymolecule.gen_hml();
+               mymolecule.diagonalize();
+               mymolecule.rotate1to2();
+               mymolecule.swap_psi1_psi2();
+            }
 
             //define fractional occupation here
 
@@ -377,9 +382,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             bfgscount = 0;
             stalled = false;
          }
-         int ks_it_in = control.ks_maxit_orb();
-         int ks_it_out =  control.ks_maxit_orbs();
-         deltae_old = deltae;
+         deltae_old    = deltae;
 
          int nsize = mygrid->ispin*mygrid->n2ft3d;
          std::memcpy(mymolecule.rho2,mymolecule.rho1,nsize*sizeof(double));

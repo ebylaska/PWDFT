@@ -539,6 +539,10 @@ public:
          for (auto i=0; i<nsize; ++i)
             tf[i] = ff[i]/(1.0 + alpha*std::pow(rr[i],twothirds));
 
+         // Apply Kerker filter to smooth residual ff
+         //for (auto ms=0; ms<ispin; ++ms)
+         //   kerker_G(tf + ms*n2ft3d);
+
          std::memcpy(vnew,rr,nsize*sizeof(double)); // 
          DAXPY_PWDFT(nsize,beta,tf,one,vnew,one);  // vnew(n) = rho(n-1) + beta*tf
          std::memcpy(rr,vnew,nsize*sizeof(double)); //vm=vnew
