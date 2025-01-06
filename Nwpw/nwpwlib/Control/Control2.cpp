@@ -139,6 +139,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pne[1] = 0;
    pnexcited[0] = 0;
    pnexcited[1] = 0;
+   pfractional_orbitals[0] = 0;
+   pfractional_orbitals[1] = 0;
  
    pfei_on = false;
    pcif_on = false;
@@ -486,6 +488,12 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
+
+
+   if (rtdbjson["nwpw"]["fractional_orbitals"][0].is_number_integer())
+      pfractional_orbitals[0] = rtdbjson["nwpw"]["fractional_orbitals"][0];
+   if (rtdbjson["nwpw"]["fractional_orbitals"][1].is_number_integer())
+      pfractional_orbitals[1] = rtdbjson["nwpw"]["fractional_orbitals"][1];
 
 
    pks_maxit_orb = 5;

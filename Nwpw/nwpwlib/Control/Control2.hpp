@@ -35,6 +35,7 @@ class Control2 {
 
    bool pfractional = false;
    int pfractional_smeartype;
+   int pfractional_orbitals[2];
    int pks_maxit_orb,pks_maxit_orbs;
    int pdiis_histories;
  
@@ -227,6 +228,7 @@ public:
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
    bool fractional() { return pfractional; }
+   int  fractional_orbitals(const int i) { return pfractional_orbitals[i]; }
 
    bool scf_extra_rotate() { return pscf_extra_rotate; }
  

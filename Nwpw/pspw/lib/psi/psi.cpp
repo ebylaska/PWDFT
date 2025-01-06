@@ -185,12 +185,20 @@ static void wvfnc_expander(Pneb *mypneb, char *filename, std::ostream &coutput)
    }
 }
 
+static bool isDescending(const double* arr, int size) {
+    for (int i = 0; i < size - 1; ++i) {
+        if (arr[i] < arr[i + 1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /*****************************************************
  *                                                   *
  *                psi_get_header                     *
  *                                                   *
  *****************************************************/
-
 void psi_get_header(Parallel *myparall, int *version, int nfft[],
                     double unita[], int *ispin, int ne[], char *filename) 
 {
@@ -210,6 +218,42 @@ void psi_get_header(Parallel *myparall, int *version, int nfft[],
    myparall->Brdcst_Values(0, 0, 9, unita);
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
+}
+
+/*****************************************************
+ *                                                   *
+ *                psi_get_header_occupation          *
+ *                                                   *
+ *****************************************************/
+/*   Reads header information from a file and broadcasts
+ *   the data across all parallel processes. The master
+ *   process performs the file reading, and the data
+ *   includes version, grid dimensions, unit cell
+ *   dimensions, spin information, electron counts,
+ *   and occupation details.
+ */
+ void psi_get_header_occupation(Parallel *myparall, int *version, int nfft[],
+                                double unita[], int *ispin, int ne[], int *occupation, 
+                                char *filename)
+{
+   if (myparall->is_master())
+   {
+      // char *fname = control_input_movecs_filename();
+      openfile(4, filename, "r");
+      iread(4, version, 1);
+      iread(4, nfft, 3);
+      dread(4, unita, 9);
+      iread(4, ispin, 1);
+      iread(4, ne, 2);
+      iread(4, occupation, 1);
+      closefile(4);
+   }
+   myparall->Brdcst_iValue(0, 0, version);
+   myparall->Brdcst_iValues(0, 0, 3, nfft);
+   myparall->Brdcst_Values(0, 0, 9, unita);
+   myparall->Brdcst_iValue(0, 0, ispin);
+   myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValue(0, 0, occupation);
 }
 
 /*****************************************************
@@ -250,12 +294,64 @@ static bool psi_check_convert(Pneb *mypneb, char *filename, std::ostream &coutpu
 
 */
 void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
-               int *ispin, int ne[], double *psi, char *filename) 
+               int *ispin, int ne[], double *psi, 
+               int *occupation, double occ[],  char *filename, bool reverse) 
 {
-   int occupation;
- 
    Parallel *myparall = mypneb->d3db::parall;
  
+   if (myparall->is_master()) {
+     openfile(4, filename, "r");
+     iread(4, version, 1);
+     iread(4, nfft, 3);
+     dread(4, unita, 9);
+     iread(4, ispin, 1);
+     iread(4, ne, 2);
+     iread(4, occupation, 1);
+   }
+   myparall->Brdcst_iValue(0, 0, version);
+   myparall->Brdcst_iValues(0, 0, 3, nfft);
+   myparall->Brdcst_Values(0, 0, 9, unita);
+   myparall->Brdcst_iValue(0, 0, ispin);
+   myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValue(0, 0, occupation);
+ 
+   /* reads in c format and automatically packs the result to g format */
+   //mypneb->g_read(4,ispin,psi);
+   if (reverse)
+      mypneb->g_read_ne_reverse(4,ne,psi);
+   else
+      mypneb->g_read_ne(4,ne,psi);
+
+   if ((*occupation) > 0)
+   {
+      if (myparall->is_master()) 
+      {
+         dread(4,occ, ne[0]+ne[1]);
+
+         if (reverse)
+         {
+            std::reverse(occ, occ + ne[0]); // Reverse the first section if descending
+        
+            // Check and reverse the second part
+            if (*ispin>1)
+               std::reverse(occ + ne[0], occ + ne[0] + ne[1]); // Reverse the second section if descending and *ispin > 1
+         }
+
+      }
+      myparall->Brdcst_Values(0, 0, ne[0]+ne[1], occ);
+   }
+   
+   if (myparall->is_master())
+     closefile(4);
+}
+
+void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
+               int *ispin, int ne[], double *psi,
+               char *filename)
+{
+   int occupation =0;
+   Parallel *myparall = mypneb->d3db::parall;
+
    if (myparall->is_master()) {
      openfile(4, filename, "r");
      iread(4, version, 1);
@@ -270,15 +366,17 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_Values(0, 0, 9, unita);
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
- 
+   //myparall->Brdcst_iValue(0, 0, occupation);
+
    /* reads in c format and automatically packs the result to g format */
    //mypneb->g_read(4,ispin,psi);
    mypneb->g_read_ne(4,ne,psi);
-   
- 
+
    if (myparall->is_master())
      closefile(4);
 }
+
+
 
 /*****************************************************
  *                                                   *
@@ -297,7 +395,9 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
           mypneb->gg_traceall,
           mypneb->g_ortho
 */
-bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2, std::ostream &coutput) 
+bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2, 
+              int *occupation, double occ2[],
+              std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
    int version, ispin, nfft[3], ne[2];
@@ -313,7 +413,14 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       if (myparall->base_stdio_print)
          coutput << " input psi exists, reading from file: " << filename << std::endl;
  
-      psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+      psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,false);
+
+      if (isDescending(occ2, ne[0]))
+      {
+         if (myparall->base_stdio_print)
+            coutput << " - reversing order of psi and occupation" << std::endl;
+         psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,true);
+      }
    }
  
    /* generate new psi */
@@ -345,7 +452,7 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
    {
       if (myparall->base_stdio_print)
          coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
-      mypneb->g_ortho(psi2);
+      mypneb->g_ortho(-1,psi2);
  
       double sum3 = mypneb->gg_traceall(psi2, psi2);
       if (myparall->base_stdio_print)
@@ -357,17 +464,77 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
    return newpsi;
 }
 
+bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2, std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int version, ispin, nfft[3], ne[2];
+   double unita[9];
+   Parallel *myparall = mypneb->d3db::parall;
+   bool newpsi = true;
+      /* read psi from file if psi_exist and not forcing wavefunction initialization */
+   if (psi_filefind(mypneb,filename) && (!wvfnc_initialize))
+   {
+      newpsi = psi_check_convert(mypneb,filename,coutput);
+
+      if (myparall->base_stdio_print)
+         coutput << " input psi exists, reading from file: " << filename << std::endl;
+
+      psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+   }
+
+   /* generate new psi */
+   else
+   {
+      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
+      mypneb->g_generate_random(psi2);
+   }
+   newpsi = newpsi || (ispin != mypneb->ispin)
+                   || (ne[0] != mypneb->ne[0])
+                   || (ne[1] != mypneb->ne[1])
+                   || (std::abs(unita[0] - mypneb->lattice->unita1d(0)) > 1.0e-4)
+                   || (std::abs(unita[1] - mypneb->lattice->unita1d(1)) > 1.0e-4)
+                   || (std::abs(unita[2] - mypneb->lattice->unita1d(2)) > 1.0e-4)
+                   || (std::abs(unita[3] - mypneb->lattice->unita1d(3)) > 1.0e-4)
+                   || (std::abs(unita[4] - mypneb->lattice->unita1d(4)) > 1.0e-4)
+                   || (std::abs(unita[5] - mypneb->lattice->unita1d(5)) > 1.0e-4)
+                   || (std::abs(unita[6] - mypneb->lattice->unita1d(6)) > 1.0e-4)
+                   || (std::abs(unita[7] - mypneb->lattice->unita1d(7)) > 1.0e-4)
+                   || (std::abs(unita[8] - mypneb->lattice->unita1d(8)) > 1.0e-4);
+
+   /* ortho check */
+   double sum2 = mypneb->gg_traceall(psi2, psi2);
+   double sum1 = mypneb->ne[0] + mypneb->ne[1];
+
+   if ((mypneb->ispin) == 1)
+      sum1 *= 2;
+   if (std::fabs(sum2 - sum1) > 1.0e-10)
+   {
+      if (myparall->base_stdio_print)
+         coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+      mypneb->g_ortho(-1,psi2);
+
+      double sum3 = mypneb->gg_traceall(psi2, psi2);
+      if (myparall->base_stdio_print)
+        coutput << "         - exact norm = " << sum1 << " norm=" << sum2
+                << " corrected norm=" << sum3
+                << " (error=" << std::abs(sum2 - sum1) << ")" << std::endl;
+   }
+
+   return newpsi;
+}
+
 /*****************************************************
  *                                                   *
  *                psi_write                          *
  *                                                   *
  *****************************************************/
 void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
-               int *ispin, int ne[], double *psi, char *filename,
+               int *ispin, int ne[], double *psi, 
+               int *occupation, double occ[], 
+               char *filename,
                std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
-   int occupation = -1;
  
    Parallel *myparall = mypneb->d3db::parall;
  
@@ -381,11 +548,50 @@ void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
      dwrite(6, unita, 9);
      iwrite(6, ispin, 1);
      iwrite(6, ne, 2);
-     iwrite(6, &occupation, 1);
+     iwrite(6, occupation, 1);
    }
  
+   // write out 3d blocs
    mypneb->g_write(6, psi);
+
+   // write out occupations
+   if (*occupation>0)
+   {
+      if (myparall->is_master())
+         dwrite(6, occ, ne[0]+ne[1]);
+   }
  
+   if (myparall->is_master())
+     closefile(6);
+}
+
+void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
+               int *ispin, int ne[], double *psi,
+               char *filename,
+               std::ostream &coutput)
+{
+   int occupation =0;
+   nwpw_timing_function ftimer(50);
+
+   Parallel *myparall = mypneb->d3db::parall;
+
+   if (myparall->base_stdio_print)
+     coutput << " output psi to filename: " << filename << std::endl;
+
+   if (myparall->is_master()) {
+     openfile(6, filename, "w");
+     iwrite(6, version, 1);
+     iwrite(6, nfft, 3);
+     dwrite(6, unita, 9);
+     iwrite(6, ispin, 1);
+     iwrite(6, ne, 2);
+     iwrite(6, &occupation, 1);
+   }
+
+   // write out 3d blocs
+   mypneb->g_write(6, psi);
+
+
    if (myparall->is_master())
      closefile(6);
 }

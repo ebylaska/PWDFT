@@ -651,6 +651,79 @@ public:
 #endif
   }
 
+
+  void TN3_FullCab_dgemm(int npack, int ne, double alpha, double *host_a,
+                 double *host_b, double beta, double *host_caa,
+                 double *host_cab, double *host_cbb) {
+    cl_int ret;
+    cl_uint nevents = 2;
+    cl_event events[5];
+    cl_event wevent;
+    int one = 1;
+    int ia = fetch_dev_mem_indx(((size_t)npack) * ((size_t)ne), 1);
+    int ib = fetch_dev_mem_indx(((size_t)npack) * ((size_t)ne), 1);
+    int icaa = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne) * ((size_t)3), 2);
+    int iccaa = fetch_tmp_mem_indx(((size_t)ne) * ((size_t)ne) * ((size_t)3));
+
+    int nn = ne * ne;
+    double *tmpc = tmp_mem[iccaa];
+
+    int ifac1 = 1;
+    for (int i = 2; i <= 16; ++i) {
+      if ((ne % i) == 0)
+        ifac1 = i;
+    }
+    ret = clEnqueueWriteBuffer(command_queue, dev_mem[ia], CL_FALSE, 0,
+                               npack * ne * sizeof(double), host_a, 0, NULL,
+                               &events[0]); // std::cout << " ret1=" << ret;
+    ret = clEnqueueWriteBuffer(command_queue, dev_mem[ib], CL_FALSE, 0,
+                               npack * ne * sizeof(double), host_b, 0, NULL,
+                               &events[1]); // std::cout << " ret2=" << ret;
+
+    const int MNK[2] = {npack, ne};
+
+    ret = clSetKernelArg(TN3matmul_kernel, 0, sizeof(int),
+                         (void *)&MNK[0]); // std::cout << " ret4=" << ret;
+    ret = clSetKernelArg(TN3matmul_kernel, 1, sizeof(int),
+                         (void *)&MNK[1]); // std::cout << " ret5=" << ret;
+    ret =
+        clSetKernelArg(TN3matmul_kernel, 2, sizeof(cl_mem),
+                       (void *)&(dev_mem[ia])); // std::cout << " ret7=" << ret;
+    ret =
+        clSetKernelArg(TN3matmul_kernel, 3, sizeof(cl_mem),
+                       (void *)&(dev_mem[ib])); // std::cout << " ret8=" << ret;
+    ret = clSetKernelArg(
+        TN3matmul_kernel, 4, sizeof(cl_mem),
+        (void *)&(dev_mem[icaa])); // std::cout << " ret9aa=" << ret;
+
+    // Execute the OpenCL kernel on the list
+    const size_t global_item_size[2] = {(size_t)ne, (size_t)ne};
+    const size_t local_item_size[2] = {(size_t)ifac1, (size_t)ifac1};
+    ret = clEnqueueNDRangeKernel(command_queue, TN3matmul_kernel, 2, NULL,
+                                 global_item_size, local_item_size, nevents,
+                                 events, NULL);
+
+    DSCAL_PWDFT(nn, beta, host_caa, one);
+    DSCAL_PWDFT(nn, beta, host_cab, one);
+    DSCAL_PWDFT(nn, beta, host_cbb, one);
+
+    ret = clEnqueueReadBuffer(command_queue, dev_mem[icaa], CL_FALSE, 0,
+                              3 * ne * ne * sizeof(double), tmp_mem[iccaa], 0,
+                              NULL, &wevent);
+    ret = clWaitForEvents(1, &wevent);
+
+    DAXPY_PWDFT(nn, alpha, tmpc, one, host_caa, one);
+    DAXPY_PWDFT(nn, alpha, &(tmpc[nn]), one, host_cab, one);
+    DAXPY_PWDFT(nn, alpha, &(tmpc[nn + nn]), one, host_cbb, one);
+
+    inuse[ia] = false;
+    inuse[ib] = false;
+    inuse[icaa] = false;
+    tmpinuse[iccaa] = false;
+#endif
+  }
+
+
   void TN_dgemm(int ne, int nprj, int npack, double alpha, double *host_a,
                 double *host_b, double beta, double *host_c) {
 #if 0

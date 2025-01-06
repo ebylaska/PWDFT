@@ -23,53 +23,77 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
                    Electron_Operators *myelectron0, Pseudopotential *mypsp0,  
                    Control2 &control, std::ostream &coutput) 
 {
-  mygrid = mygrid0;
-  myion = myion0;
-  mystrfac = mystrfac0;
-  myewald = myewald0;
-  myelectron = myelectron0;
-  mypsp = mypsp0;
+   mygrid = mygrid0;
+   myion = myion0;
+   mystrfac = mystrfac0;
+   myewald = myewald0;
+   myelectron = myelectron0;
+   mypsp = mypsp0;
+ 
+   fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+      smearcorrection = 0.0;
+      smeartype = control.fractional_smeartype();
+      smearkT   = control.fractional_kT();
 
+      occ1 = mygrid->initialize_occupations_with_allocation(nextra);
+      occ2 = mygrid->initialize_occupations_with_allocation(nextra);
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+   }
+   multiplicity = control.multiplicity();
+   total_charge = control.total_charge();
 
-  ispin = mygrid->ispin;
-  neall = mygrid->neq[0] + mygrid->neq[1];
-  ne[0] = mygrid->ne[0];
-  ne[1] = mygrid->ne[1];
-  nfft[0] = mygrid->nx;
-  nfft[1] = mygrid->ny;
-  nfft[2] = mygrid->nz;
-  for (int i = 0; i < 60; ++i)
-    E[i] = 0.0;
+   ispin = mygrid->ispin;
+   neall = mygrid->neq[0] + mygrid->neq[1];
+   ne[0] = mygrid->ne[0];
+   ne[1] = mygrid->ne[1];
+   nfft[0] = mygrid->nx;
+   nfft[1] = mygrid->ny;
+   nfft[2] = mygrid->nz;
+   for (int i = 0; i < 60; ++i)
+     E[i] = 0.0;
+ 
+   ep = control.Eprecondition();
+   sp = control.Sprecondition();
+   tole = control.tolerances(0);
+ 
+   psi1 = mygrid->g_allocate(1);
+   psi2 = mygrid->g_allocate(1);
+   rho1 = mygrid->r_nalloc(ispin);
+   rho2 = mygrid->r_nalloc(ispin);
+   rho1_all = mygrid->r_nalloc(ispin);
+   rho2_all = mygrid->r_nalloc(ispin);
+   dng1 = mygrid->c_pack_allocate(0);
+   dng2 = mygrid->c_pack_allocate(0);
+ 
+   lmbda = mygrid->m_allocate(-1, 1);
+   hml = mygrid->m_allocate(-1, 1);
+   eig = new double[mygrid->ne[0] + mygrid->ne[1]];
+ 
+   omega = mygrid->lattice->omega();
+   scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+   scal2 = 1.0 / omega;
+   dv = omega * scal1;
+ 
+   n2ft3d = (mygrid->n2ft3d);
+   shift1 = 2 * (mygrid->npack(1));
+   shift2 = (mygrid->n2ft3d);
+ 
+   newpsi = psi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);
+   if (smearoccupation>0)
+      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
 
-  ep = control.Eprecondition();
-  sp = control.Sprecondition();
-  tole = control.tolerances(0);
-
-  psi1 = mygrid->g_allocate(1);
-  psi2 = mygrid->g_allocate(1);
-  rho1 = mygrid->r_nalloc(ispin);
-  rho2 = mygrid->r_nalloc(ispin);
-  rho1_all = mygrid->r_nalloc(ispin);
-  rho2_all = mygrid->r_nalloc(ispin);
-  dng1 = mygrid->c_pack_allocate(0);
-  dng2 = mygrid->c_pack_allocate(0);
-
-  lmbda = mygrid->m_allocate(-1, 1);
-  hml = mygrid->m_allocate(-1, 1);
-  eig = new double[mygrid->ne[0] + mygrid->ne[1]];
-
-  omega = mygrid->lattice->omega();
-  scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
-  scal2 = 1.0 / omega;
-  dv = omega * scal1;
-
-  n2ft3d = (mygrid->n2ft3d);
-  shift1 = 2 * (mygrid->npack(1));
-  shift2 = (mygrid->n2ft3d);
-
-  newpsi = psi_read(mygrid, infilename, wvfnc_initialize, psi1, coutput);
-
-  myelectron->gen_vl_potential();
+   myelectron->gen_vl_potential();
 
   /*---------------------- testing Electron Operators ---------------------- */
   /*
@@ -120,7 +144,7 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
  */
 void Molecule::psi_minimize(double *vall, std::ostream &coutput)
 {
-   mygrid->g_ortho(psi1);
+   mygrid->g_ortho(-1,psi1);
    double error_out,eorb0;
 
    for (auto ms=0; ms<ispin; ++ms)
@@ -656,7 +680,7 @@ void Molecule::epsi_finalize(char *outfilename, std::ostream &coutput)
  */
 void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
 {
-   mygrid->g_ortho_excited(psi1, ne_excited, psi1_excited);
+   mygrid->g_ortho_excited(-1,psi1, ne_excited, psi1_excited);
    double error_out,eorb0;
 
    for (auto ms=0; ms<ispin; ++ms)

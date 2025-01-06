@@ -137,6 +137,38 @@ public:
 
    /**************************************
     *                                    *
+    *           TN3_FullCab_dgemm        *
+    *                                    *
+    **************************************/
+   void TN3_FullCab_dgemm(int npack, int ne, double alpha, double *host_a,
+                  double *host_b, double beta, double *host_caa,
+                  double *host_cab, double *host_cbb) {
+     int one = 1;
+     int shift1 = 0;
+     int mshift1 = 0;
+
+     for (auto k = 1; k <= ne; ++k) {
+       DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_a + shift1, npack, beta, host_caa + mshift1, k);
+       //DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_a, npack,
+       //            host_b + shift1, npack, beta, host_cab + mshift1, k);
+       DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_b, npack,
+                   host_b + shift1, npack, beta, host_cbb + mshift1, k);
+       shift1 += npack;
+       mshift1 += ne;
+     }
+
+     // DGEMM_PWDFT((char *) "T",(char *)
+     // "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
+
+      DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
+
+     // DGEMM_PWDFT((char *) "T",(char *)
+     // "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
+   }
+
+   /**************************************
+    *                                    *
     *              TN1_dgemm             *
     *                                    *
     **************************************/
@@ -282,7 +314,8 @@ public:
     *              NN_eigensolver        *
     *                                    *
     **************************************/
-   void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
+   void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
+   {
       int n, ierr;
       int nn = ne[0] * ne[0] + 14;
       double xmp1[nn];
@@ -304,6 +337,21 @@ public:
          shift1 += ne[0];
          shift2 += ne[0] * ne[0];
       }
+   }
+
+   /**************************************
+    *                                    *
+    *              NN_eigensolver0       *
+    *                                    *
+    **************************************/
+   void NN_eigensolver0(int n, double *host_hml, double *host_eig) 
+   {
+      int ierr;
+      int nn = n*n + 14;
+      double xmp1[nn];
+
+      EIGEN_PWDFT(n, host_hml, host_eig, xmp1, nn, ierr);
+      eigsrt_device(host_eig, host_hml, n);
    }
 
 

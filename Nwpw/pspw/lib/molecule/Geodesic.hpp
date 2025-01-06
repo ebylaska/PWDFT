@@ -109,7 +109,7 @@ public:
       // being performed on psi2, t="
       //           << t << " sum1=" << sum1 << " sum2=" << sum2 <<  " error=" <<
       //           fabs(sum2-sum1) << std::endl;
-      mygrid->g_ortho(Ynew);
+      mygrid->g_ortho(-1,Ynew);
     }
   }
 

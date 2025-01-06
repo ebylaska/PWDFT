@@ -47,7 +47,7 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
                std::ostream &coutput) {
   Parallel myparallel(comm_world0);
 
-  int ne[2];
+  int ne[2],nextra[2],ispin;
   char date[26];
   double *psi1, *psi_r, *dn, *rho;
 
@@ -106,12 +106,29 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
   psp_file_check(&myparallel, &myion, control, coutput);
   MPI_Barrier(comm_world0);
 
+   bool fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+   }
+   ispin = control.ispin();
+   ne[0] = control.ne(0) + nextra[0];
+   ne[1] = control.ne(1) + nextra[1];
+
+
   /* initialize parallel grid structure */
-  Pneb mygrid(&myparallel, &mylattice, control, control.ispin(),
-              control.ne_ptr());
+  Pneb mygrid(&myparallel, &mylattice, control, ispin,ne);
 
   /* initialize psi1 */
-  int ispin = control.ispin();
   int neall = mygrid.neq[0] + mygrid.neq[1];
   int shift1 = 2 * (mygrid.npack(1));
   int shift2 = (mygrid.n2ft3d);
@@ -121,8 +138,8 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
   double scal1 = 1.0 / ((double)((mygrid.nx) * (mygrid.ny) * (mygrid.nz)));
   double scal2 = 1.0 / omega;
   double dv = omega * scal1;
-  ne[0] = control.ne(0);
-  ne[1] = control.ne(1);
+  //ne[0] = control.ne(0);
+  //ne[1] = control.ne(1);
   psi1 = mygrid.g_allocate(1);
   psi_r = mygrid.h_allocate();
   dn = mygrid.r_nalloc(ispin);
@@ -174,7 +191,7 @@ int pspw_dplot(MPI_Comm comm_world0, std::string &rtdbstring,
       coutput << "aperiodic\n";
 
     coutput << std::endl;
-    coutput << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
+    coutput << " number of orbitals: spin up =" << Ifmt(6) << mygrid.ne[0]
             << " (" << Ifmt(4) << mygrid.neq[0]
             << " per task) down =" << Ifmt(6) << mygrid.ne[ispin - 1] << " ("
             << Ifmt(4) << mygrid.neq[ispin - 1] << " per task)" << std::endl;

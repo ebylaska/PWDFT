@@ -125,6 +125,42 @@ double Kinetic_Operator::ke_ave(double *psi)
    return ave;
 }
 
+double Kinetic_Operator::ke_ave(double *psi, double *occ)
+{
+   int k, k1, k2, ksize1, ksize2;
+   double ave;
+
+   ksize1 = (mypneb->nzero(1));
+   ksize2 = (mypneb->npack(1));
+
+   ave = 0.0;
+   k1 = 0;
+   k2 = 1;
+   for (auto ms=0; ms<mypneb->ispin; ++ms)
+   for (auto q=0; q<mypneb->neq[ms]; ++q) 
+   {
+     double wght = occ[mypneb->msntoindex(ms,q)];
+     for (k=0; k<ksize1; ++k) 
+     {
+        ave += tg[k] * (psi[k1] * psi[k1] + psi[k2] * psi[k2])*wght;
+        k1 += 2;
+        k2 += 2;
+     }
+     for (k=ksize1; k<ksize2; ++k) 
+     {
+        ave += 2.0 * tg[k] * (psi[k1] * psi[k1] + psi[k2] * psi[k2])*wght;
+        k1 += 2;
+        k2 += 2;
+     }
+   }
+   ave = mypneb->d3db::parall->SumAll(0, ave);
+   if (mypneb->ispin == 1)
+     ave *= 2.0;
+   ave = -ave;
+
+   return ave;
+}
+
 /***********************************************
  *                                             *
  *       Kinetic_Operator::ke_precondition     *

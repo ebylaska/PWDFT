@@ -1604,7 +1604,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        temperature = kT/kb;
 
        nwpwjson["fractional"] = true;
-       nwpwjson["fractional_orbitals"] = 4;
+       nwpwjson["fractional_orbitals"] = {4,4};
        nwpwjson["fractional_kT"] = kT;
        nwpwjson["fractional_temperature"] = temperature;
        nwpwjson["fractional_smeartype"]   = 2;
@@ -1614,9 +1614,19 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
        if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
        if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
-
        if (mystring_contains(line, "orbitals"))  
-          nwpwjson["fraction_orbitals"] = std::stoi(mystring_trim(mystring_split(line, "orbitals")[1]));
+       {
+          std::vector<int> norbs;
+          norbs.push_back(1);
+          norbs.push_back(1);
+          //ss = mystring_split0(line);
+          ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
+          if (ss.size() > 1)
+             norbs[0] = std::stoi(ss[1]);
+          if (ss.size() > 2)
+             norbs[1] = std::stoi(ss[2]);
+          nwpwjson["fractional_orbitals"] = norbs;
+       }
 
        if (mystring_contains(line, "alpha")) 
           nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));

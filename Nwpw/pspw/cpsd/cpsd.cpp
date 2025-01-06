@@ -48,15 +48,21 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    Parallel myparallel(comm_world0);
    // RTDB myrtdb(&myparallel, "eric.db", "old");
 
-   int version, nfft[3], ne[2], ispin;
+   int version, nfft[3], ne[2], nextra[2],  ispin;
    int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
    char date[26];
    double sum1, sum2, ev, zv;
    double cpu1, cpu2, cpu3, cpu4;
    double E[80], deltae, deltac, deltar, viral, unita[9], en[2];
    double *psi1, *psi2, *Hpsi, *psi_r;
+   double *occ1, *occ2;
    double *dn;
    double *hml, *lmbda, *eig;
+
+   // psi smearing block
+   bool fractional;
+   int smearoccupation, smeartype;
+   double smearfermi[2], smearcorrection, smearkT;
  
    Control2 control(myparallel.np(), rtdbstring);
 
@@ -125,10 +131,30 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       }
    */
  
+   /* fetch fractional control variables */
+   fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+      smearcorrection = 0.0;
+      smeartype = control.fractional_smeartype();
+      smearkT   = control.fractional_kT();
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+   }
+
    /* fetch ispin and ne psi information from control */
    ispin = control.ispin();
-   ne[0] = control.ne(0);
-   ne[1] = control.ne(1);
+   ne[0] = control.ne(0) + nextra[0];
+   ne[1] = control.ne(1) + nextra[1];
+
    nfft[0] = control.ngrid(0);
    nfft[1] = control.ngrid(1);
    nfft[2] = control.ngrid(2);
@@ -144,7 +170,8 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    version = 3;
  
    /* initialize parallel grid structure */
-   Pneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr());
+   //Pneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr());
+   Pneb mygrid(&myparallel,&mylattice,control,ispin,ne);
  
    /* initialize psi1 and psi2 */
    psi1 = mygrid.g_allocate(1);
@@ -155,11 +182,21 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    hml = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig = new double[ne[0] + ne[1]];
+   if (fractional)
+   {
+      occ1 = mygrid.initialize_occupations_with_allocation(nextra); 
+      occ2 = mygrid.initialize_occupations_with_allocation(nextra); 
+   }
+
    mygrid.d3db::mygdevice.psi_alloc(mygrid.npack(1),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
  
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,psi2,control.input_movecs_filename());
    bool newpsi = psi_read(&mygrid,control.input_movecs_filename(),
-                          control.input_movecs_initialize(),psi2,std::cout);
+                          control.input_movecs_initialize(),psi2,
+                          &smearoccupation,occ2,std::cout);
+   if (smearoccupation>0)
+      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+   
    MPI_Barrier(comm_world0);
  
    /* setup structure factor */
@@ -230,7 +267,11 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << "restricted\n";
       else
          std::cout << "unrestricted\n";
+
       std::cout << myxc;
+
+      if (fractional) std::cout << "   using fractional" << std::endl;
+
       std::cout << myhfx;
      
       std::cout << mypsp.print_pspall();
@@ -266,7 +307,31 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << mycoulomb12.shortprint_dielectric();
       
       std::cout << std::endl;
-      std::cout << " number of electrons: spin up ="  
+      if (fractional)
+      {
+         double oen[ispin];
+         int n=0;
+         for (auto ms=0; ms<ispin; ++ms)
+         {
+            oen[ms] = 0;
+            for (auto i=0; i<ne[ms]; ++i)
+            {
+               oen[ms] += occ1[n];
+               ++n;
+            }
+         }
+         std::cout << " number of electrons: spin up ="  
+                   << Ffmt(6,2)  << oen[0] << "  " 
+                   << Ffmt(27,2) << oen[ispin-1] << " (   fractional)" << std::endl;
+      }
+      else
+         std::cout << " number of electrons: spin up ="  
+                   << Ifmt(6) << mygrid.ne[0] << " (" 
+                   << Ifmt(4) << mygrid.neq[0] << " per task) down =" 
+                   << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+                   << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+
+      std::cout << " number of orbitals:  spin up ="  
                 << Ifmt(6) << mygrid.ne[0] << " (" 
                 << Ifmt(4) << mygrid.neq[0] << " per task) down =" 
                 << Ifmt(6) << mygrid.ne[ispin-1] << " ("
@@ -356,6 +421,29 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << " (" << Ifmt(5) << control.loop(0) << " inner " 
                         << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
       if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
+
+      if (control.fractional())
+      {
+         std::cout <<  " fractional smearing parameters:" << std::endl;
+         std::cout <<  "    smearing algorithm = " << smeartype << std::endl;
+         std::cout <<  "    smearing parameter = ";
+         if (smeartype==-1) std::cout << "fixed_occupation" << std::endl;
+         if (smeartype==0) std::cout << "step function" << std::endl;
+         if (smeartype==1) std::cout << "Fermi-Dirac" << std::endl;
+         if (smeartype==2) std::cout << "Gaussian" << std::endl;
+         if (smeartype==4) std::cout << "Marazar-Vanderbilt" << std::endl;
+         if (smeartype>=0) 
+         {
+            std::cout <<  "    smearing parameter = " << Ffmt(9,3) << smearkT 
+                                              << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+            std::cout <<  "    mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
+            if (ispin==2) 
+               std::cout <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+            else
+               std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+         }
+
+      }
    }
  
    //                 |**************************|
@@ -383,7 +471,9 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          ++icount;
          inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb12, &myxc, &mypsp,
                     &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
-                    &deltae, &deltac, &deltar);
+                    &deltae, &deltac, &deltar,
+                    fractional, occ1, occ2);
+         if (fractional) E[0] += smearcorrection;
         
          // mydfpt.start(psi1,psi_r
      
@@ -399,7 +489,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                       << Efmt(13,5) << deltar << std::endl;
         
          /* check for competion */
-         if ((deltae > 0.0) && (icount > 1) && control.deltae_check()) 
+         if ((deltae > 0.0) && (icount > 1) && control.deltae_check())
          {
             done = 1;
             if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
@@ -415,6 +505,18 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          {
             done = 1;
             if (oprint) std::cout << "          *** arrived at the Maximum iteration.    terminated ***\n";
+         }
+
+         if ((icount < control.loop(1)) && (fractional) && (smeartype>=0) && (not done))
+         {
+            mygrid.m_diagonalize(hml, eig);
+            //ZZ = myion.total_zv() - control.total_charge()
+            
+            mygrid.m_0define_occupation(-1.0, false,
+                          control.multiplicity(),
+                          myion.total_zv(), control.total_charge(),
+                          eig, hml, occ1,
+                          smeartype,smearkT,smearfermi,&smearcorrection);
          }
       }
    }
@@ -553,6 +655,18 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " Viral Coefficient   : " 
                 << Efmt(19,10) << viral << std::endl;
 
+      if (fractional)
+      {
+         std::cout << std::endl;
+         ev = 27.2116;
+         if (ispin==1)
+            std::cout << " Fermi energy        : " 
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)" << std::endl;
+         else
+            std::cout << "  Fermi energy = " 
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)"
+                      << Efmt(19,10) << smearfermi[1] << " (" << Ffmt(8,3) << smearfermi[1]*ev << " eV)" << std::endl;
+      }
       if (myion.has_ion_constraints())
       {
          std::cout << std::endl;
@@ -578,14 +692,26 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       ev = 27.2116;
       for (i=0; i<nn; ++i) 
       {
-         std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV)" << std::endl;
+         if (fractional)
+            std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV) occ=" 
+                      << Ffmt(5,3) << occ1[i] << std::endl;
+         else
+            std::cout << Efmt(18,7) << eig[i] << " (" << Ffmt(8,3) << eig[i] * ev << "eV)" << std::endl;
       }
       for (i=0; i<ne[1]; ++i)
       {
-         std::cout << Efmt(18,7) << eig[i+nn] << " (" 
-                   << Ffmt(8,3)  << eig[i + nn] * ev << "eV) " 
-                   << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" 
-                   << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
+         if (fractional) 
+            std::cout << Efmt(18,7) << eig[i+nn]    << " (" 
+                      << Ffmt(8,3)  << eig[i+nn]*ev << "eV)  occ=" 
+                      << Ffmt(5,3)  << occ1[i+nn]   << " "
+                      << Efmt(18,7) << eig[i+(ispin-1)*ne[0]]    << " (" 
+                      << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV) occ="  
+                      << Ffmt(5,3)  << occ1[i + (ispin-1)*ne[0]] << std::endl;
+         else
+            std::cout << Efmt(18,7) << eig[i+nn] << " (" 
+                      << Ffmt(8,3)  << eig[i + nn] * ev << "eV) " 
+                      << Efmt(18,7) << eig[i+(ispin-1)*ne[0]] << " (" 
+                      << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
          // printf("%18.7le",eig[i+nn]); printf(" (");
          // printf("%8.3lf",eig[i+nn]*ev); printf("eV) ");
          // printf("%18.7le",eig[i+(ispin-1)*ne[0]]); printf(" (");
@@ -609,7 +735,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
    }
 
-   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,control.output_movecs_filename(),std::cout);
+   psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,&smearoccupation,occ1,control.output_movecs_filename(),std::cout);
    MPI_Barrier(comm_world0);
 
    /* deallocate memory */
@@ -621,6 +747,11 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete[] eig;
+   if (fractional)
+   {
+      delete[] occ1;
+      delete[] occ2;
+   }
    mygrid.d3db::mygdevice.psi_dealloc();
 
    // write results to the json

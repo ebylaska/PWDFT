@@ -186,9 +186,13 @@ public:
   void semicore_density_update();
   void semicore_xc_fion(double *, double *);
 
-  void v_nonlocal(double *, double *);
-  void v_nonlocal_fion(double *, double *, const bool, double *);
-  void f_nonlocal_fion(double *, double *);
+  void v_nonlocal(double *psi, double *Hpsi);
+  
+  void v_nonlocal_fion(double *psi, double *Hpsi,
+                       const bool move, double *fion, double *occ= nullptr);
+
+  void f_nonlocal_fion(double *psi, double *fion, double *occ = nullptr);
+
 
   void v_nonlocal_orb(double *, double *);
 
@@ -198,7 +202,7 @@ public:
   void v_lr_local(double *);
   void grad_v_lr_local(const double *, double *);
 
-  double e_nonlocal(double *);
+  double e_nonlocal(double *psi, double *occ = nullptr);
 
   double sphere_radius(const int ia) { return rgrid[ia][icut[ia] - 1]; }
 

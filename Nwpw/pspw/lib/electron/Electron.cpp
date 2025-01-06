@@ -122,9 +122,24 @@ void Electron_Operators::gen_psi_r(double *psi)
  *      Electron_Operators::gen_density     *
  *                                          *
  ********************************************/
-void Electron_Operators::gen_density(double *dn) {
-  /* generate dn */
-  mygrid->hr_aSumSqr(scal2, psi_r, dn);
+//void Electron_Operators::gen_density(double *dn) 
+//{
+//   /* generate dn */
+//   mygrid->hr_aSumSqr(scal2, psi_r, dn);
+//}
+void Electron_Operators::gen_density(double *dn, double *occ) 
+{
+    // Generate dn based on whether occupation numbers are provided
+   if (occ)
+   {
+      // Compute density including occupation numbers
+      mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
+   }
+   else
+   {
+      // Compute density without occupation numbers
+      mygrid->hr_aSumSqr(scal2, psi_r, dn);
+   }
 }
 
 /********************************************
@@ -132,10 +147,15 @@ void Electron_Operators::gen_density(double *dn) {
  *      Electron_Operators::gen_densities   *
  *                                          *
  ********************************************/
-void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall) {
+void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall, double *occ) 
+{
+
    /* generate dn */
-   mygrid->hr_aSumSqr(scal2, psi_r, dn);
- 
+   if (occ)
+       mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
+   else
+      mygrid->hr_aSumSqr(scal2,psi_r,dn);
+
    /* generate rho and dng */
    double *tmp = x;
    mygrid->rrr_Sum(dn, dn+(ispin-1)*n2ft3d, rho);
@@ -144,7 +164,7 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall) {
    mygrid->rc_pfft3f(0, tmp);
    mygrid->c_pack(0, tmp);
    mygrid->cc_pack_copy(0, tmp, dng);
- 
+
    /* generate dnall - used for semicore corrections */
    if (mypsp->has_semicore()) {
       for (int ms = 0; ms < ispin; ++ms)
@@ -154,6 +174,9 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall) {
          mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
    }
 }
+
+
+
 
 /********************************************
  *                                          *
@@ -348,7 +371,8 @@ void Electron_Operators::semicore_density_update() {
  *      Electron_Operators::gen_Hpsi_k      *
  *                                          *
  ********************************************/
-void Electron_Operators::gen_Hpsi_k(double *psi) {
+void Electron_Operators::gen_Hpsi_k(double *psi, double *occ) 
+{
    bool move = false;
    double fion0[1];
  
@@ -356,9 +380,9 @@ void Electron_Operators::gen_Hpsi_k(double *psi) {
  
    /* get Hpsi */
    if (periodic)
-      psi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0);
+      psi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
    if (aperiodic)
-      psi_Hv4(mygrid,myke,mypsp,psi,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion0);
+      psi_Hv4(mygrid,myke,mypsp,psi,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion0,occ);
  
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -418,10 +442,10 @@ void Electron_Operators::get_Gradient(double *THpsi)
  *       Electron_Operators::genrho         *
  *                                          *
  ********************************************/
-void Electron_Operators::genrho(double *psi, double *dn) 
+void Electron_Operators::genrho(double *psi, double *dn, double *occ) 
 {
    this->gen_psi_r(psi);
-   this->gen_density(dn);
+   this->gen_density(dn,occ);
 }
 
 /********************************************
@@ -429,15 +453,17 @@ void Electron_Operators::genrho(double *psi, double *dn)
  *       Electron_Operators::run            *
  *                                          *
  ********************************************/
-void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall) 
+void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall, double *occ) 
 {
    ++counter;
    this->gen_psi_r(psi);
    // this->gen_density(dn);
-   this->gen_densities(dn, dng, dnall);
+   this->gen_densities(dn, dng, dnall, occ);
    this->gen_scf_potentials(dn, dng, dnall);
    this->gen_Hpsi_k(psi);
 }
+
+
 
 /********************************************
  *                                          *
@@ -464,9 +490,9 @@ double Electron_Operators::vlr_ave(double *dn)
  *       Electron_Operators::vnl_ave        *
  *                                          *
  ********************************************/
-double Electron_Operators::vnl_ave(double *psi) 
+double Electron_Operators::vnl_ave(double *psi, double *occ) 
 {
-   return mypsp->e_nonlocal(psi);
+   return mypsp->e_nonlocal(psi,occ);
 }
 
 /********************************************
@@ -474,7 +500,7 @@ double Electron_Operators::vnl_ave(double *psi)
  *       Electron_Operators::eorbit         *
  *                                          *
  ********************************************/
-double Electron_Operators::eorbit(double *psi) 
+double Electron_Operators::eorbit(double *psi, double *occ) 
 {
    //if (mygrid->d3db::parall->is_master())
    //   std::cout << "Eorbit into ggm_sym_Multiply" << std::endl;
@@ -485,7 +511,7 @@ double Electron_Operators::eorbit(double *psi)
    //   std::cout << "OUT Eorbit into ggm_sym_Multiply" << std::endl;
 
    // mygrid->m_scal(-1.0,hmltmp);
-   double eorbit0 = mygrid->m_trace(hmltmp);
+   double eorbit0 = occ ? mygrid->m_trace_occ(hmltmp,occ) : mygrid->m_trace(hmltmp);
    if (ispin==1)
       eorbit0 = eorbit0 + eorbit0;
 
@@ -554,21 +580,24 @@ double Electron_Operators::pxc(double *dn)
  *         Electron_Operators::eke          *
  *                                          *
  ********************************************/
-double Electron_Operators::eke(double *psi) { return myke->ke_ave(psi); }
+double Electron_Operators::eke(double *psi, double *occ) 
+{ 
+   return occ ? myke->ke_ave(psi,occ) :myke->ke_ave(psi); 
+}
 
 /********************************************
  *                                          *
  *        Electron_Operators::energy        *
  *                                          *
  ********************************************/
-double Electron_Operators::energy(double *psi, double *dn, double *dng, double *dnall) 
+double Electron_Operators::energy(double *psi, double *dn, double *dng, double *dnall, double *occ) 
 {
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
  
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->m_trace(hmltmp);
+   eorbit0 = occ ? mygrid->m_trace_occ(hmltmp,occ) : mygrid->m_trace(hmltmp);
    if (ispin == 1)
       eorbit0 = eorbit0 + eorbit0;
  
@@ -615,14 +644,14 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
  *                                          *
  ********************************************/
 void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
-                                         double *dnall, double *E, double *en) 
+                                         double *dnall, double *E, double *en, double *occ) 
 {
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
  
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->m_trace(hmltmp);
+   eorbit0 = occ ? mygrid->m_trace_occ(hmltmp,occ) : mygrid->m_trace(hmltmp);
    if (ispin == 1) eorbit0 = eorbit0 + eorbit0;
  
    if (periodic) ehartr0 = mycoulomb12->mycoulomb1->ecoulomb(dng);
@@ -648,12 +677,21 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    E[2] = ehartr0;
    E[3] = exc0;
    E[4] = 0.0;
+
+   //std::cout << "occ=" << occ[0] << " " 
+   //                    << occ[1] << " " 
+   //                    << occ[2] << " " 
+   //                    << occ[3] << " " 
+   //                    << occ[4] << " " 
+   //                    << occ[5] << " " 
+   //                    << occ[6] << " " 
+   //                    << occ[7] << std::endl;
  
-   E[5] = myke->ke_ave(psi);
+   E[5] = myke->ke_ave(psi,occ);
    E[6] = this->vl_ave(dng);
    if (aperiodic)
      E[6] += this->vlr_ave(dn);
-   E[7] = mypsp->e_nonlocal(psi);
+   E[7] = mypsp->e_nonlocal(psi,occ);
    E[8] = 2 * ehartr0;
    E[9] = pxc0;
  
@@ -752,7 +790,7 @@ void Electron_Operators::apc_force(double *dng, double *fion)
 
 /********************************************
  *                                          *
- *      Electron_Operators::dielectric_force       *
+ *   Electron_Operators::dielectric_force   *
  *                                          *
  ********************************************/
 void Electron_Operators::dielectric_force(double *fion)

@@ -97,26 +97,30 @@ public:
    void h_read(const int, const int, double *);
    void h_write(const int, const int, const double *);
 
-   double *g_allocate(const int nb) {
-     double *ptr;
-     ptr = new (std::nothrow) double[2*(neq[0]+neq[1]) * CGrid::npack(nb)]();
-     return ptr;
+   double *g_allocate(const int nb) 
+   {
+      double *ptr;
+      ptr = new (std::nothrow) double[2*(neq[0]+neq[1]) * CGrid::npack(nb)]();
+      return ptr;
    }
    void g_deallocate(double *ptr) { delete[] ptr; }
  
-   double *g_nallocate(const int nb, const int nblock) {
-     double *ptr;
-     ptr = new (std::nothrow) double[nblock * 2*(neq[0]+neq[1])*CGrid::npack(nb)]();
-     return ptr;
+   double *g_nallocate(const int nb, const int nblock) 
+   {
+      double *ptr;
+      ptr = new (std::nothrow) double[nblock * 2*(neq[0]+neq[1])*CGrid::npack(nb)]();
+      return ptr;
    }
 
-   double *g_allocate_nbrillq_all() {
-     double *ptr;
-     ptr = new (std::nothrow) double[nbrillq*2*(neq[0]+neq[1]) * CGrid::npack1_max()]();
-     return ptr;
+   double *g_allocate_nbrillq_all() 
+   {
+      double *ptr;
+      ptr = new (std::nothrow) double[nbrillq*2*(neq[0]+neq[1]) * CGrid::npack1_max()]();
+      return ptr;
    }
 
-   double *g_allocate_excited_nbrillq_all(const int nex[]) {
+   double *g_allocate_excited_nbrillq_all(const int nex[]) 
+   {
       double *ptr;
       ptr = new (std::nothrow) double[nbrillq*2*(nex[0]+nex[1]) * CGrid::npack1_max()]();
       return ptr;

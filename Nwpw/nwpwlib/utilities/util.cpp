@@ -958,6 +958,103 @@ double util_dswitching_function(const double s_d, const double s_rho, const doub
    return deps;
 }
 
+
+/**************************************
+ *                                    *
+ *    util_occupation_distribution    *
+ *                                    *
+ **************************************/
+/**
+ * @brief Computes the occupation probability based on the specified smearing algorithm.
+ *
+ * This function calculates the occupation distribution for a given energy `e` and
+ * smearing type `smeartype`. Different smearing algorithms are implemented to model
+ * physical systems with partial occupancies or broadened energy states. Each smearing
+ * type corresponds to a specific algorithm, with options for Fermi-Dirac, Gaussian,
+ * Hermite, Marzari-Vanderbilt, Methfessel-Paxton, Cold Smearing, and Lorentzian distributions.
+ *
+ * @param smeartype An integer specifying the smearing type:
+ *        - 1: Fermi-Dirac smearing
+ *        - 2: Gaussian smearing
+ *        - 3: Hermite smearing
+ *        - 4: Marzari-Vanderbilt smearing
+ *        - 5: Methfessel-Paxton smearing (first order)
+ *        - 6: Cold smearing
+ *        - 7: Lorentzian smearing
+ *        - Other: Step function (0 for e > 0, 1 for e <= 0)
+ * @param e The energy value for which the occupation is calculated.
+ *          - Large positive and negative values are handled explicitly in some cases
+ *            to avoid numerical overflow.
+ * @return A double representing the occupation probability based on the specified
+ *         smearing type. The result typically falls between 0.0 and 1.0, except for
+ *         cases like Lorentzian smearing, where the value may not be normalized.
+ *
+ * @details
+ * - **Fermi-Dirac (1)**: A standard statistical distribution used for electronic occupations.
+ * - **Gaussian (2)**: Uses a Gaussian function for smoothing the distribution.
+ * - **Hermite (3)**: Incorporates a third-order Hermite polynomial correction.
+ * - **Marzari-Vanderbilt (4)**: Combines exponential and complementary error functions.
+ * - **Methfessel-Paxton (5)**: Uses Hermite polynomials for higher-order corrections
+ *   to Gaussian smearing (first-order implemented here).
+ * - **Cold Smearing (6)**: Avoids the Gibbs phenomenon and improves energy convergence.
+ * - **Lorentzian (7)**: Uses a Lorentzian function, often for density of states.
+ * - **Default (Other)**: A simple step function.
+ *
+ * @note Ensure proper parameterization (e.g., smearing width for Lorentzian) if additional
+ *       customization is required for specific smearing types.
+ *
+ * Example Usage:
+ * @code
+ * double occupation = util_occupation_distribution(1, -0.5); // Fermi-Dirac
+ * std::cout << "Occupation: " << occupation << std::endl;
+ * @endcode
+ */
+double util_occupation_distribution(const int smeartype, const double e)
+{
+   double f = 0.0;
+
+   if (smeartype == 1) { // Fermi-Dirac
+      if (e > 30.0) {
+          f = 0.0;
+      } else if (e < -30.0) {
+          f = 1.0;
+      } else {
+          f = 1.0 / (1.0 + std::exp(e));
+      }
+   } else if (smeartype == 2) { // Gaussian
+      f = 0.5 * std::erfc(e);
+   } else if (smeartype == 3) { // Hermite smearing
+      double sqrt_pi = std::sqrt(M_PI); // M_PI is defined in <cmath>
+      double exp_term = std::exp(-e * e);
+      double hermite_correction = (2.0 * e * e - 1.0) * exp_term;
+      f = exp_term + hermite_correction / sqrt_pi;
+   } else if (smeartype == 4) { // Marzari-Vanderbilt
+      double sqrt_half = std::sqrt(0.5);
+      double factor = std::sqrt(0.125 / std::atan(1.0)); // atan(1.0) = pi/4
+      f = std::exp(-(e + sqrt_half) * (e + sqrt_half)) * factor + 0.5 * std::erfc(e + sqrt_half);
+   } else if (smeartype == 5) { // Methfessel-Paxton
+      double exp_term = std::exp(-e * e);
+      double hermite_poly = 1.0 - 2.0 * e * e; // First-order Methfessel-Paxton
+      f = exp_term * hermite_poly / std::sqrt(M_PI);
+   } else if (smeartype == 6) { // Cold Smearing
+      double exp_term = std::exp(-0.5 * e * e);
+      double erfc_term = 0.5 * std::erfc(-e / std::sqrt(2.0));
+      f = erfc_term - e * exp_term / std::sqrt(2.0 * M_PI);
+   } else if (smeartype == 7) { // Lorentzian Smearing
+      double sigma = 1.0; // Assume a default smearing width
+      f = (sigma / M_PI) / (e * e + sigma * sigma);
+   } else { // Default: Step function
+      if (e > 0.0) {
+          f = 0.0;
+      } else {
+          f = 1.0;
+      }
+   }
+
+   return f;
+}
+
+
 /**************************************
  *                                    *
  *    util_kiril_coulomb_transform    *
