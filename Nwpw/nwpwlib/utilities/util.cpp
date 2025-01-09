@@ -1054,6 +1054,46 @@ double util_occupation_distribution(const int smeartype, const double e)
    return f;
 }
 
+/**************************************
+ *                                    *
+ *        util_smearcorrection        *
+ *                                    *
+ **************************************/
+double util_smearcorrection(const int smeartype, const double smearkT, const double smearfermi, 
+                            const int ne, const double *occ, double *eig)
+{
+   double smearcorrection = 0.0;
+   const double sqrt_pi = sqrt(M_PI);
+   const double sqrt_half = sqrt(0.5);
+
+   //  calculate smear corrections
+   for (auto n=0; n<ne; ++n)
+   {
+      double e = eig[n];
+      double x = (e - smearfermi) / smearkT;
+      double y = occ[n];
+
+      // Calculate corrections based on smearing type
+      if (smeartype == 1) { // Fermi-Dirac correction
+          if ((y > 1.0e-6) && (1.0-y) > 1.0e-6) {
+              smearcorrection += smearkT * (y*log(y) + (1.0-y)*log(1.0-y));
+          }
+      } else if (smeartype == 2) { // Gaussian correction
+          smearcorrection -= smearkT * exp(-x*x)/(4.0*sqrt_pi);
+      } else if (smeartype == 3) { // Methfessel-Paxton correction (example for smearing type 3)
+        smearcorrection += smearkT * exp(-x*x) * (2.0*x*x-1.0)/sqrt_pi;
+      } else if (smeartype == 4) { // Marzari-Vanderbilt correction
+          smearcorrection -= smearkT * exp(-(x +sqrt(0.5))*(x+sqrt_half)) *
+                              (1.0+sqrt(2.0)*x) / (2.0*sqrt_half);
+      } else if (smeartype == 5) { // Cold smearing correction (example for smearing type 5)
+         double g = exp(-x * x);
+         smearcorrection -= smearkT * g * (1.0-x*x)/sqrt_pi;
+      }
+   }
+   return smearcorrection;
+}
+
+
 
 /**************************************
  *                                    *
