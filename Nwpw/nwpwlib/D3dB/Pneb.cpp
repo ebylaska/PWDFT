@@ -4103,6 +4103,11 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
          }
       }
 
+      if (it == 50) {
+          throw std::runtime_error("Bisection method did not converge within the iteration limit");
+      }
+
+
       smearfermi[ms] = emid;
 
       // Update occupations and calculate smear corrections

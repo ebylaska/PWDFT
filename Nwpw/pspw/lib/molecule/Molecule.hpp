@@ -474,7 +474,10 @@ public:
          os << ionstream(" APC energy          : ", mymolecule.E[51],mymolecule.E[51]/mymolecule.myion->nion);
 
       os << ionstream(" ion-ion energy      : ", mymolecule.E[4], mymolecule.E[4]/mymolecule.myion->nion);
-     
+
+      if (mymolecule.fractional)
+          os << elcstream(" smearing energy     : ", mymolecule.E[28],mymolecule.E[28]/mymolecule.neall);
+
       os << eoln;
       os << elcstream(" kinetic (planewave) : ", mymolecule.E[5],mymolecule.E[5]/mymolecule.neall);
       os << elcstream(" V_local (planewave) : ", mymolecule.E[6],mymolecule.E[6]/mymolecule.neall);

@@ -361,7 +361,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                  << " rs =" << Ffmt(12,8) << myewald.rs() << ")" << std::endl;
       }
      
-      if (flag > 0) 
+      if (flag >= -10) 
       {
          coutput << std::endl;
          coutput << " technical parameters:\n";

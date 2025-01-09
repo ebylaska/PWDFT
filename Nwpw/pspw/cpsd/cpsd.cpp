@@ -517,6 +517,8 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                           myion.total_zv(), control.total_charge(),
                           eig, hml, occ1,
                           smeartype,smearkT,smearfermi,&smearcorrection);
+             E[28] = smearcorrection;
+             E[0] += E[28];
          }
       }
    }
@@ -624,6 +626,12 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " ion-ion energy      : " 
                 << Efmt(19,10) << E[4] << " ("
                 << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
+
+
+      if (fractional)
+         std::cout << " smearing energy     : " 
+                << Efmt(19,10) << E[28] << " ("
+                << Efmt(15,5) << E[28]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " K.S. kinetic energy : " 
