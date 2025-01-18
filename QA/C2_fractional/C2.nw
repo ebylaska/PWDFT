@@ -1,0 +1,34 @@
+Title "Hellow Dolly"
+
+memory 1900 mb
+start c2-pspw
+echo
+
+#psp_library_dir /home/ericpsps
+
+geometry noautosym noautoz center
+C 0 0 0    
+C 0 0 1.3  
+end
+
+nwpw
+   pseudopotentials
+   C library pspw_default
+   end
+   simulation_cell
+     SC 20.0
+   end
+   cutoff 30.0
+   xc lda
+   smear 
+   scf anderson alpha 0.05 iterations 3
+   loop 1 1
+   steepest_descent
+      time_step 5.8
+      loop 1 10
+      tolerances 1.0e-12 1.0e-12
+   end
+end
+#task pspw noit_energy
+task pspw steepest_descent
+
