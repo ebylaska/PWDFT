@@ -4123,6 +4123,9 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
          occ[index] = (1.0 - alpha)*f0 + alpha*f;
 
          // Calculate corrections based on smearing type
+         *smearcorrection += util_smearcorrection(smeartype,smearkT,smearfermi[ms],occ[index],eig[index]);
+
+         /*
          if (smeartype == 1) { // Fermi-Dirac correction
              if (occ[index] > 1.0e-6 && (1.0 - occ[index]) > 1.0e-6) {
                  *smearcorrection += smearkT * (occ[index] * log(occ[index]) +
@@ -4134,6 +4137,7 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
              *smearcorrection -= smearkT * exp(-(x + sqrt(0.5)) * (x + sqrt(0.5))) *
                                  (1.0 + sqrt(2.0) * x) / (2.0 * sqrt(M_PI));
          }
+         */
       }
    }
 

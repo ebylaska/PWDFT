@@ -20,7 +20,7 @@ nwpw
    end
    cutoff 30.0
    xc lda
-   smear fermi-dirac
+   smear marzari-vanderbilt
    scf anderson alpha 0.05 iterations 3
    loop 1 1
    steepest_descent
