@@ -1613,9 +1613,12 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;
        if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
        if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
-       if (mystring_contains(line, "methfessel-paxton"))  nwpwjson["fractional_smeartype"] = 3;
+       if (mystring_contains(line, "hermite"))            nwpwjson["fractional_smeartype"] = 3;
        if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
-       if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 5;
+       if (mystring_contains(line, "methfessel-paxton"))  nwpwjson["fractional_smeartype"] = 5;
+       if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 6;
+       if (mystring_contains(line, "lorentzian"))         nwpwjson["fractional_smeartype"] = 7;
+       if (mystring_contains(line, "no correction"))      nwpwjson["fractional_smeartype"] = 8;
        if (mystring_contains(line, "orbitals"))  
        {
           std::vector<int> norbs;
