@@ -1028,9 +1028,22 @@ double util_occupation_distribution(const int smeartype, const double e)
    } else if (smeartype == 2) { // Gaussian
       f = 0.5 * std::erfc(e);
    } else if (smeartype == 3) { // Hermite smearing
-      double exp_term = std::exp(-e * e);
-      double hermite_correction = (2.0 * e * e - 1.0) * exp_term;
-      f = exp_term + hermite_correction / sqrt_pi;
+      double exp_term = std::exp(-e * e);     // Gaussian term
+      double hermite_correction = (2.0 * e * e - 1.0) * exp_term; // Hermite correction term
+ 
+      // Compute the original Hermite-Gaussian function
+      double f_original = exp_term + hermite_correction / sqrt_pi;
+ 
+      // Find fmax by evaluating the original function at e=0
+      double fmax = exp_term + (2.0 * 0 * 0 - 1.0) * exp_term / sqrt_pi; // f_original at e=0
+ 
+      if (e <= 0.0) {
+          // Set value to 1.0 for e <= e_max
+          f = 1.0;
+      } else {
+          // Scale the Hermite-Gaussian function for e > e_max
+          f = f_original / fmax;
+      }
    } else if (smeartype == 4) { // Marzari-Vanderbilt
       double factor = std::sqrt(0.125 / std::atan(1.0)); // atan(1.0) = pi/4
       f = std::exp(-(e + sqrt_half) * (e + sqrt_half)) * factor + 0.5 * std::erfc(e + sqrt_half);
@@ -1130,8 +1143,14 @@ double util_smearcorrection(const int smeartype, const double smearkT, const dou
        smearcorrection -= smearkT * std::exp(-x * x) / (4.0 * sqrt_pi);
    } else if (smeartype == 3) { // Hermite smearing
        double exp_term = std::exp(-x * x);
-       double hermite_poly = 2.0 * x * x - 1.0;
-       smearcorrection += smearkT * exp_term * hermite_poly / sqrt_pi;
+       double hermite_correction = (2.0 * x * x - 1.0) * exp_term;
+       double f_original = exp_term + hermite_correction / sqrt_pi;
+       double fmax = std::exp(-0.0) + (2.0 * 0.0 * 0.0 - 1.0) * std::exp(-0.0) / sqrt_pi;
+     
+       if (x >0.0) { // Smearing correction - No correction needed for x <= 0, as f(x) = 1.0
+           // Scale the correction for x > 0
+           smearcorrection -= smearkT * f_original / fmax;
+       }
    } else if (smeartype == 4) { // Marzari-Vanderbilt correction
        smearcorrection -= smearkT * exp(-(x +sqrt_half)*(x+sqrt_half))*(1.0+sqrt_two*x) / (2.0*sqrt_pi);
    } else if (smeartype == 5) { // Methfessel-Paxton

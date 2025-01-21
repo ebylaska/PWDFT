@@ -422,7 +422,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                if (mymolecule.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
                if (mymolecule.smeartype==6) coutput << "Cold smearing" << std::endl;
                if (mymolecule.smeartype==7) coutput << "Lorentzian" << std::endl;
-               if (mymolecule.smeartype==8) coutput << "No correction" << std::endl;
+               if (mymolecule.smeartype==8) coutput << "step" << std::endl;
                if (mymolecule.smeartype>=0)
                {
                   coutput <<  "    smearing parameter = " << Ffmt(9,3) << mymolecule.smearkT

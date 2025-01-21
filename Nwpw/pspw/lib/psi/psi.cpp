@@ -326,17 +326,16 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    {
       if (myparall->is_master()) 
       {
-         dread(4,occ, ne[0]+ne[1]);
-
-         if (reverse)
-         {
-            std::reverse(occ, occ + ne[0]); // Reverse the first section if descending
-        
-            // Check and reverse the second part
-            if (*ispin>1)
-               std::reverse(occ + ne[0], occ + ne[0] + ne[1]); // Reverse the second section if descending and *ispin > 1
-         }
-
+            dread(4,occ, ne[0]+ne[1]);
+ 
+            if (reverse)
+            {
+               std::reverse(occ, occ + ne[0]); // Reverse the first section if descending
+           
+               // Check and reverse the second part
+               if (*ispin>1)
+                  std::reverse(occ + ne[0], occ + ne[0] + ne[1]); // Reverse the second section if descending and *ispin > 1
+            }
       }
       myparall->Brdcst_Values(0, 0, ne[0]+ne[1], occ);
    }
@@ -415,12 +414,13 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
  
       psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,false);
 
-      if (isDescending(occ2, ne[0]))
-      {
-         if (myparall->base_stdio_print)
-            coutput << " - reversing order of psi and occupation" << std::endl;
-         psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,true);
-      }
+      if (occ2)
+         if (isDescending(occ2, ne[0]))
+         {
+            if (myparall->base_stdio_print)
+               coutput << " - reversing order of psi and occupation" << std::endl;
+            psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,true);
+         }
    }
  
    /* generate new psi */

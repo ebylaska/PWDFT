@@ -139,7 +139,7 @@ double Kinetic_Operator::ke_ave(double *psi, double *occ)
    for (auto ms=0; ms<mypneb->ispin; ++ms)
    for (auto q=0; q<mypneb->neq[ms]; ++q) 
    {
-     double wght = occ[mypneb->msntoindex(ms,q)];
+     double wght = occ ? occ[mypneb->msntoindex(ms,q)] : 1.0;
      for (k=0; k<ksize1; ++k) 
      {
         ave += tg[k] * (psi[k1] * psi[k1] + psi[k2] * psi[k2])*wght;

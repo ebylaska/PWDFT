@@ -436,7 +436,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          if (smeartype==5) std::cout << "Methfessel-Paxton" << std::endl;
          if (smeartype==6) std::cout << "Cold smearing" << std::endl;
          if (smeartype==7) std::cout << "Lorentzian" << std::endl;
-         if (smeartype==8) std::cout << "No correction" << std::endl;
+         if (smeartype==8) std::cout << "step" << std::endl;
          if (smeartype>=0) 
          {
             std::cout <<  "    smearing parameter = " << Ffmt(9,3) << smearkT 
