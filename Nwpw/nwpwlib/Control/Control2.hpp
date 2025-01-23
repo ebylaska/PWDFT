@@ -21,6 +21,7 @@ class Control2 {
    double punita[9], ptolerances[3], pscaling[2];
    double ptime_step, pfake_mass, pscf_alpha, pscf_beta, pecut, pwcut, prcut;
    double pkerker_g0,pfractional_kT,pfractional_temperature,pfractional_alpha;
+   double pfractional_gamma,pfractional_alpha_min,pfractional_alpha_max,pfractional_beta,pfractional_rmsd_threshold;
    double pbo_time_step;
    double ptotal_charge;
    double peprecondition, psprecondition;
@@ -195,6 +196,11 @@ public:
    double fractional_kT() { return pfractional_kT; }
    double fractional_temperature() { return pfractional_temperature; }
    double fractional_alpha() { return pfractional_alpha; }
+   double fractional_alpha_min() { return pfractional_alpha_min; }
+   double fractional_alpha_max() { return pfractional_alpha_max; }
+   double fractional_beta() { return pfractional_beta; }
+   double fractional_gamma() { return pfractional_gamma; }
+   double fractional_rmsd_threshold() { return pfractional_rmsd_threshold; }
  
    int minimizer() { return pminimizer; }
    int lmbfgs_size() { return plmbfgs_size; }
@@ -553,6 +559,8 @@ public:
    std::vector<int> indx_bondings(const int);
    double Kspring0_bondings(const int);
    double gamma0_bondings(const int);
+
+   // smear
 
 };
 

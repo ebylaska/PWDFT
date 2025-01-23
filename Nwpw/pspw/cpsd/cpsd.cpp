@@ -57,7 +57,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    double *psi1, *psi2, *Hpsi, *psi_r;
    double *occ1, *occ2;
    double *dn;
-   double *hml, *lmbda, *eig;
+   double *hml, *lmbda, *eig, *eig_prev;
 
    // psi smearing block
    bool fractional;
@@ -182,6 +182,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    hml = mygrid.m_allocate(-1,1);
    lmbda = mygrid.m_allocate(-1,1);
    eig = new double[ne[0] + ne[1]];
+   eig_prev = new double[ne[0] + ne[1]];
    if (fractional)
    {
       occ1 = mygrid.initialize_occupations_with_allocation(nextra); 
@@ -512,18 +513,74 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
             if (oprint) std::cout << "          *** arrived at the Maximum iteration.    terminated ***\n";
          }
 
+         // update occupations
          if ((icount < control.loop(1)) && (fractional) && (smeartype>=0) && (not done))
          {
+            double alpha = control.fractional_alpha(); // alpha must be between 0 and 1
+            double gamma = control.fractional_gamma(); // gamma must be between 0 and 1
+
+            // Adaptive alpha parameters
+            double alpha_min = control.fractional_alpha_min();
+            double alpha_max = control.fractional_alpha_max();
+            double beta = control.fractional_beta();
+            double rmsd_threshold = control.fractional_rmsd_threshold();  
+            if (alpha < alpha_min) alpha_min =  alpha;
+            if (alpha > alpha_max) alpha_max =  alpha;
+
             mygrid.m_diagonalize(hml, eig);
+
+            if (icount == 0)  // Initialize eig_prev for the first iteration
+               std::memcpy(eig_prev,eig,(ne[0]+ne[1])*sizeof(double));
+            else             // Smooth eigenvalues in subsequent iterations
+               for (size_t i=0; i<(ne[0]+ne[1]); ++i)
+                  eig_prev[i] = (1.0-gamma)*eig_prev[i] + gamma*eig[i];
+
             //ZZ = myion.total_zv() - control.total_charge()
-            
+
+            // Define occupations based on smoothed eigenvalues
             mygrid.m_0define_occupation(-1.0, false,
                           control.multiplicity(),
                           myion.total_zv(), control.total_charge(),
-                          eig, hml, occ1,
+                          eig_prev, hml, occ2,
                           smeartype,smearkT,smearfermi,&smearcorrection);
+
+            // RMSD computation
+            double rmsd = 0.0;
+            for (size_t i=0; i<(ne[0] + ne[1]); ++i)
+            {
+                double delta_occ = occ2[i] - occ1[i];
+                rmsd += delta_occ * delta_occ;
+            }
+            rmsd = std::sqrt(rmsd / (ne[0] + ne[1]));
+
+            // Adaptive alpha adjustment
+            if (rmsd < rmsd_threshold)  // Converging well
+               alpha = std::min(alpha_max, alpha * (1.0 + beta));
+            else  // Oscillations or divergence
+               alpha = std::max(alpha_min, alpha * (1.0 - beta));
+
+            // Update occupations
+            if (icount >0)
+            {
+               for (size_t i=0; i<(ne[0]+ne[1]); ++i)
+                  occ1[i] = (1.0-alpha)*occ1[i] + alpha*occ2[i];
+            }
+            else
+            {
+               std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+            }
+         
+
              E[28] = smearcorrection;
              E[0] += E[28];
+
+             // Debugging output (optional)
+             if (oprint)
+                std::cout << "Iteration: " << icount
+                          << ", RMSD: " << rmsd
+                          << ", Alpha: " << alpha
+                          << ", Smear Correction: " << smearcorrection
+                          << std::endl;
          }
       }
    }
@@ -760,6 +817,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.m_deallocate(hml);
    mygrid.m_deallocate(lmbda);
    delete[] eig;
+   delete[] eig_prev;
    if (fractional)
    {
       delete[] occ1;

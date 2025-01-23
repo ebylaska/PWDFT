@@ -4015,6 +4015,7 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
    smearfermi[0] = 0.0;
    smearfermi[1] = 0.0;
    *smearcorrection = 0.0;
+   std::cout << "define ZZ = " << ZZ << std::endl;
 
    // Early exit if charge neutrality is effectively satisfied
    if (std::abs(ZZ) < 1.0e-9) return;
@@ -4034,6 +4035,8 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
       Z[0] = 0.5 * ZZ;
       Z[1] = 0.0;
    }
+
+   std::cout << "define alpha = " << alpha << std::endl;
 
    // Loop over spin channels
    for (int ms=0; ms<ispin; ++ms) 

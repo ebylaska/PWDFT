@@ -529,6 +529,28 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["fractional_alpha"].is_number_float())
       pfractional_alpha = rtdbjson["nwpw"]["fractional_alpha"];
 
+   // Adaptive alpha parameters
+   pfractional_alpha_min = 0.1;
+   if (rtdbjson["nwpw"]["fractional_alpha_min"].is_number_float())
+      pfractional_alpha_min = rtdbjson["nwpw"]["fractional_alpha_min"];
+
+   pfractional_alpha_max = 0.5;
+   if (rtdbjson["nwpw"]["fractional_alpha_max"].is_number_float())
+      pfractional_alpha_max = rtdbjson["nwpw"]["fractional_alpha_max"];
+
+
+   pfractional_beta = 0.1;
+   if (rtdbjson["nwpw"]["fractional_beta"].is_number_float())
+      pfractional_beta = rtdbjson["nwpw"]["fractional_beta"];
+
+   pfractional_gamma = 0.2;
+   if (rtdbjson["nwpw"]["fractional_gamma"].is_number_float())
+      pfractional_gamma = rtdbjson["nwpw"]["fractional_gamma"];
+
+   pfractional_rmsd_threshold = 1.0e-3;
+   if (rtdbjson["nwpw"]["fractional_rmsd_threshold"].is_number_float())
+      pfractional_rmsd_threshold = rtdbjson["nwpw"]["fractional_rmsd_threshold"];
+
    pfractional = false;
    if (rtdbjson["nwpw"]["fractional"].is_boolean())
       pfractional = rtdbjson["nwpw"]["fractional"];

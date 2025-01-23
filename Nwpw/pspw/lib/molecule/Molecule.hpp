@@ -85,7 +85,8 @@ public:
    // psi smearing block
    bool fractional=false;
    int smearoccupation, smeartype;
-   double smearfermi[2], smearcorrection, smearkT;
+   double smearfermi[2], smearcorrection, smearkT, fractional_alpha;
+   int fractional_it=0;
 
    double E[80],en[2],ep,sp,tole;
  
@@ -213,13 +214,29 @@ public:
 
       if (fractional)
       {
-         mygrid->m_0define_occupation(0.0, false,
-                                     multiplicity,
-                                     myion->total_zv(),total_charge,
-                                     eig, hml, occ1,
-                                     smeartype,smearkT,smearfermi,&smearcorrection);
-        E[28] = smearcorrection;
-        E[0]  +=  E[28];
+         std::cout << "before occ1=" << occ1[0] << " " << occ1[1] << " " << occ1[2] << " " 
+                                     << occ1[3] << " " << occ1[4] << " " << occ1[5] << " "
+                                     << occ1[6] << " " << occ1[7] << std::endl;
+         if (fractional_it<1)
+         {
+            std::cout << "into m_0define_occupation, fractional_alpha=" << fractional_alpha << " fractional_it=" << fractional_it <<  std::endl;
+            mygrid->m_0define_occupation(fractional_alpha, false,
+                                        multiplicity,
+                                        myion->total_zv(),total_charge,
+                                        eig, hml, occ1,
+                                        smeartype,smearkT,smearfermi,&smearcorrection);
+            std::memcpy(occ2,occ1,(ne[0]+ne[1])*sizeof(double));
+         }
+         E[28] = smearcorrection;
+         E[0]  +=  E[28];
+         fractional_it++;
+         std::cout << "smearcorrection=" << smearcorrection << std::endl;
+         std::cout << "out occ1=" << occ1[0] << " " << occ1[1] << " " << occ1[2] << " " 
+                              << occ1[3] << " " << occ1[4] << " " << occ1[5] << " "
+                              << occ1[6] << " " << occ1[7] << std::endl;
+         std::cout << "out eig="  << eig[0] << " " << eig[1] << " " << eig[2] << " " 
+                              << eig[3] << " " << eig[4] << " " << eig[5] << " "
+                              << eig[6] << " " << eig[7] << std::endl;
       }
 
       

@@ -44,11 +44,13 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
 
       occ1 = mygrid->initialize_occupations_with_allocation(nextra);
       occ2 = mygrid->initialize_occupations_with_allocation(nextra);
+      fractional_alpha = control.fractional_alpha();
    }
    else
    {
       nextra[0] = 0;
       nextra[1] = 0;
+      fractional_alpha = 0.0;
    }
    multiplicity = control.multiplicity();
    total_charge = control.total_charge();
