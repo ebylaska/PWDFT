@@ -20,16 +20,17 @@ nwpw
    
    xc pbe
    cutoff 30.0
+   #tolerances 1.0e-12 1.0e-12
 end
 task pspw energy
 
 
 nwpw
-   scf broyden alpha 0.15 beta 0.25 iterations 1 kerker 0.08
+   scf broyden alpha 0.15 beta 0.25 iterations 3 kerker 0.08
    #lmbfgs
-   loop 1 1
+   loop 10 10
    cutoff 30.0
-   #vectors input be2-pspw.movecs output junk.elc
+   #vectors output junk.elc
 end
-task pspw energy
-#task pspw optimize
+#task pspw energy
+task pspw optimize

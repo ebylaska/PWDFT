@@ -88,6 +88,7 @@ public:
    void g_generate1_random(double *);
    void g_generate2_random(double *);
    void g_generate_excited_random(const int *, double *);
+   void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, double *);
@@ -286,6 +287,7 @@ public:
    void g_project_out_virtual(const int, const int *, const int, double *,  double *);
    void g_project_out_filled_below(double *, const int, const int, double *);
    void g_project_out_filled_above(double *, const int, const int, double *);
+   void g_project_out_filled_from_k_up(double *, const int, const int, double *);
 
    void g_norm(double *);
  
@@ -314,6 +316,8 @@ public:
                              const double, const double,
                              double *, double *, double *,
                              const int, const double, double *, double *);
+   double define_smearfermi(const int, const double *, const double *);
+   double add_smearcorrection(const int, const int, const double *, const double *, const double, const double);
 
    };
 } // namespace pwdft

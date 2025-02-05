@@ -21,10 +21,11 @@ class Control2 {
    double punita[9], ptolerances[3], pscaling[2];
    double ptime_step, pfake_mass, pscf_alpha, pscf_beta, pecut, pwcut, prcut;
    double pkerker_g0,pfractional_kT,pfractional_temperature,pfractional_alpha;
-   double pfractional_gamma,pfractional_alpha_min,pfractional_alpha_max,pfractional_beta,pfractional_rmsd_threshold;
+   double pfractional_gamma,pfractional_alpha_min,pfractional_alpha_max,pfractional_beta,pfractional_rmsd_threshold,pfractional_rmsd_tolerance;
    double pbo_time_step;
    double ptotal_charge;
    double peprecondition, psprecondition;
+   std::vector<double> pfractional_filling;
  
    bool pnolagrange   = false;
    bool puse_grid_cmp = false;
@@ -35,6 +36,7 @@ class Control2 {
    bool pis_crystal = false;
 
    bool pfractional = false;
+   bool pfractional_frozen = false;
    int pfractional_smeartype;
    int pfractional_orbitals[2];
    int pks_maxit_orb,pks_maxit_orbs;
@@ -201,6 +203,7 @@ public:
    double fractional_beta() { return pfractional_beta; }
    double fractional_gamma() { return pfractional_gamma; }
    double fractional_rmsd_threshold() { return pfractional_rmsd_threshold; }
+   double fractional_rmsd_tolerance() { return pfractional_rmsd_tolerance; }
  
    int minimizer() { return pminimizer; }
    int lmbfgs_size() { return plmbfgs_size; }
@@ -234,6 +237,7 @@ public:
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
    bool fractional() { return pfractional; }
+   bool fractional_frozen() { return pfractional_frozen; }
    int  fractional_orbitals(const int i) { return pfractional_orbitals[i]; }
 
    bool scf_extra_rotate() { return pscf_extra_rotate; }
@@ -561,6 +565,7 @@ public:
    double gamma0_bondings(const int);
 
    // smear
+   std::vector<double> fractional_filling() {return pfractional_filling;}
 
 };
 

@@ -235,6 +235,7 @@ void Pneb::g_generate1_random(double *psi)
    // double *tmp2 = new (std::nothrow) double[n2ft3d]();
  
    double tmp2[n2ft3d];
+   std::cout << "NE=" << ne[0] << " " << ne[1] <<std::endl;
  
    nfft[0] = nx;
    nfft[1] = ny;
@@ -312,6 +313,32 @@ void Pneb::g_generate_excited_random(const int nex[], double *psi_excited)
       PGrid::cc_pack_copy(1, tmp2, psi_excited + indx);
    }
 }
+
+
+/*************************************
+ *                                   *
+ *  Pneb::g_generate_extra_random    *
+ *                                   *
+ *************************************/
+void Pneb::g_generate_extra_random(const int nextra, double *psi_excited)
+{
+   int taskid = d1db::parall->taskid();
+   util_random(taskid + 91);
+   double tmp2[n2ft3d];
+
+   int taskid_j = d1db::parall->taskid_j();
+   for (auto n=0; n<nextra; ++n)
+   {
+      d3db::r_setrandom(tmp2);
+      d3db::r_zero_ends(tmp2);
+      d3db::rc_fft3d(tmp2);
+
+      PGrid::c_pack(1,tmp2);
+      int indx = 2*PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi_excited + indx);
+   }
+}
+
 
 /*************************************
  *                                   *
@@ -3136,9 +3163,44 @@ void Pneb::m_eye(const int mb, double *A, double alpha)
  *   Pneb::m_HmldivideDplusD    *
  *                              *
  ********************************/
+/* Purpose:
+ *   This function scales the elements of the matrix `A` by dividing 
+ *   them by the sum of corresponding elements in the array `D`. 
+ *   The denominator is computed as `D[k] + D[j]` for indices `(k, j)`. 
+ *   To ensure numerical stability, a small value `epsilon` is used 
+ *   to prevent division by zero when the denominator is too small.
+ *
+ * Parameters:
+ *   - mb (int): Specifies the spin block to process.
+ *       - If `mb == -1`, all spin blocks are processed.
+ *       - Otherwise, only the specified spin block is processed.
+ *   - A (double*): Pointer to the matrix being modified in-place.
+ *   - D (double*): Pointer to the array providing the denominator values.
+ *
+ * Algorithm:
+ *   - Determine the range of spin blocks based on the value of `mb`.
+ *   - For each spin block, iterate over indices `k` and `j`.
+ *   - Compute the denominator as `D[k] + D[j]`.
+ *   - If the denominator is smaller than `epsilon`, set it to `epsilon` 
+ *     to prevent division by zero.
+ *   - Divide the matrix element `A[j + k * n]` by the computed denominator.
+ *
+ * Assumptions:
+ *   - The `D` array contains non-negative values.
+ *   - The small constant `epsilon` (default: 1.0e-12) is used to avoid 
+ *     division by zero or numerical instability for very small denominators.
+ *
+ * Preconditions:
+ *   - The input pointers `A` and `D` must be valid and properly allocated.
+ *   - The dimensions of `A` and `D` must be consistent with `ne[ms]`.
+ *
+ * Postconditions:
+ *   - The matrix `A` is updated in-place with the scaled values.
+ */
 void Pneb::m_HmldivideDplusD(const int mb, double *A, double *D)
 {
    int ms1, ms2, ishift1, ishift2;
+   constexpr double epsilon = 1.0e-12; // Small value to avoid division by zero
    if (mb == -1)
    {
       ms1 = 0;
@@ -3160,7 +3222,15 @@ void Pneb::m_HmldivideDplusD(const int mb, double *A, double *D)
       int n = ne[ms];
       for (auto k=0; k<n; ++k)
       for (auto j=0; j<n; ++j)
-         A[shift2+j+k*n] /= (D[shift1+k] + D[shift1+j]);
+      {
+         double denominator = D[shift1 + k] + D[shift1 + j];
+         if (std::abs(denominator) < epsilon)
+         {
+            denominator = epsilon; // Prevent division by zero
+         }
+         A[shift2+j+k*n] /= denominator;
+         //A[shift2+j+k*n] /= (D[shift1+k] + D[shift1+j]);
+      }
    }
 }
 
@@ -3169,8 +3239,44 @@ void Pneb::m_HmldivideDplusD(const int mb, double *A, double *D)
  *   Pneb::m_Hmlfweightscale    *
  *                              *
  ********************************/
+/* Purpose:
+ *   This function scales the matrix `A` based on a weighted 
+ *   factor derived from the elements of the `fweight` array. 
+ *   It applies a scaling factor of `2.0 * fweight[k] / (fweight[k] + fweight[j])` 
+ *   to each element `A[j + k * n]`, provided the sum of weights 
+ *   `(fweight[k] + fweight[j])` exceeds a small threshold, `epsilon`.
+ *
+ * Parameters:
+ *   - mb (int): Specifies the spin block to process.
+ *       - If `mb == -1`, all spin blocks are processed.
+ *       - Otherwise, only the specified spin block is processed.
+ *   - A (double*): Pointer to the matrix being scaled.
+ *   - fweight (double*): Pointer to the array containing the weight factors.
+ *
+ * Algorithm:
+ *   - Determine the range of spin blocks based on the value of `mb`.
+ *   - For each spin block, loop over the indices `k` and `j`.
+ *   - Calculate the sum of the weights for the pair `(k, j)`.
+ *   - If the sum of weights exceeds `epsilon`, apply the scaling factor 
+ *     to the corresponding matrix element in `A`.
+ *
+ * Assumptions:
+ *   - All values in the `fweight` array are assumed to be positive.
+ *   - The `epsilon` value is a small positive constant (default: 1.0e-12) 
+ *     used to avoid division by zero or numerical instabilities 
+ *     when the sum of weights is very small.
+ *
+ * Preconditions:
+ *   - The input pointers `A` and `fweight` must be valid and properly allocated.
+ *   - The dimensions of `A` and `fweight` must be consistent with `ne[ms]`.
+ *
+ * Postconditions:
+ *   - The matrix `A` is updated in-place with the scaled values.
+ */
 void Pneb::m_Hmlfweightscale(const int mb, double *A, double *fweight)
 {
+
+   constexpr double epsilon = 1.0e-12; // Small value to avoid division by zero
    int ms1, ms2, ishift1, ishift2;
    if (mb == -1)
    {
@@ -3193,8 +3299,15 @@ void Pneb::m_Hmlfweightscale(const int mb, double *A, double *fweight)
       int n = ne[ms];
       for (auto k=0; k<n; ++k)
       for (auto j=0; j<n; ++j)
-         if ((fweight[shift1+j] + fweight[shift1+k]) > 1.0e-9)
-            A[shift2+j+k*n] *= (2.0*fweight[shift1+k]/(fweight[shift1+k]+fweight[shift1+j]));
+      {
+         double sum_fweights = fweight[shift1+j] + fweight[shift1+k];
+         if (sum_fweights > epsilon)
+         {
+            A[shift2+j+k*n] *= (2.0*fweight[shift1+k]/sum_fweights);
+         }
+         //if ((fweight[shift1+j] + fweight[shift1+k]) > 1.0e-9)
+         //   A[shift2+j+k*n] *= (2.0*fweight[shift1+k]/(fweight[shift1+k]+fweight[shift1+j]));
+      }
    }
 }
 
@@ -3519,6 +3632,22 @@ void Pneb::g_project_out_filled_below(double *psi, const int ms, const int k, do
  *  Pneb::g_project_out_filled_above  *
  *                                    *
  **************************************/
+/**
+ * @brief Projects out filled components of psi above index k.
+ *
+ * This function modifies the `psi` array by removing components that are 
+ * aligned with `Horb`, starting strictly from index `k+1` and above.
+ * It performs a projection operation to ensure orthogonality with `Horb`.
+ *
+ * @param psi   Pointer to the array representing the function to be projected.
+ * @param ms    Index parameter that determines the shift in memory access.
+ * @param k     Index threshold; only components above k are modified.
+ * @param Horb  Pointer to the reference vector used for projection.
+ *
+ * @note Unlike `g_project_out_filled_from_k_up`, this function starts at `k+1`, 
+ *       meaning index `k` itself is left unchanged.
+ * @warning Modifies `psi` in place.
+ */
 void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, double *Horb) 
 {
    int ishift = ms*neq[0]*2*PGrid::npack(1);
@@ -3529,6 +3658,37 @@ void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, do
      PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
    }
 }
+
+/*****************************************
+ *                                       *
+ *  Pneb::g_project_out_filled_from_k_up *
+ *                                       *
+ *****************************************/
+/**
+ * @brief Projects out filled components of psi from index k and above.
+ *
+ * This function modifies the `psi` array by removing components that are 
+ * aligned with `Horb` from index `k` onwards. It uses a projection operation
+ * where each component of `psi` at `k` and above is adjusted to ensure 
+ * orthogonality with `Horb`.
+ *
+ * @param psi   Pointer to the array representing the function to be projected.
+ * @param ms    Index parameter that determines the shift in memory access.
+ * @param k     Starting index for projection; components from k and above are modified.
+ * @param Horb  Pointer to the reference vector used for projection.
+ *
+ * @note This function modifies `psi` in place.
+ */
+void Pneb::g_project_out_filled_from_k_up(double *psi, const int ms, const int k, double *Horb)
+{
+   int ishift = ms*neq[0]*2*PGrid::npack(1);
+   for (auto ka=k; ka<neq[ms]; ++ka)
+   {     
+     int indx = 2*PGrid::npack(1)*ka + ishift;
+     double w = -PGrid::cc_pack_dot(1,psi+indx,Horb);
+     PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
+   }     
+}     
 
 
 /*********************************
@@ -3909,8 +4069,8 @@ void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N)
       for (auto j = 0; j < n; ++j)
          for (auto i = 0; i < n; ++i) 
          {
-            M[i + j * n] = R4[i + j * (2 * n)];
-            N[i + j * n] = R4[(i + n) + j * (2 * n)];
+            M[i+j*n] = R4[i + j*(2*n)];
+            N[i+j*n] = R4[(i+n) + j*(2*n)];
          }
    }
 }
@@ -4015,7 +4175,7 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
    smearfermi[0] = 0.0;
    smearfermi[1] = 0.0;
    *smearcorrection = 0.0;
-   std::cout << "define ZZ = " << ZZ << std::endl;
+   //std::cout << "define ZZ = " << ZZ << std::endl;
 
    // Early exit if charge neutrality is effectively satisfied
    if (std::abs(ZZ) < 1.0e-9) return;
@@ -4036,7 +4196,7 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
       Z[1] = 0.0;
    }
 
-   std::cout << "define alpha = " << alpha << std::endl;
+   //std::cout << "define alpha = " << alpha << std::endl;
 
    // Loop over spin channels
    for (int ms=0; ms<ispin; ++ms) 
@@ -4148,6 +4308,154 @@ void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
    if (ispin==1) 
       *smearcorrection *= 2.0;
 }
+
+
+/********************************************
+ *                                          *
+ *        Pneb::define_smearfermi           *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Determines the Fermi energy (`smearfermi`) from eigenvalues and occupations.
+ *
+ * @param nstates    Total number of eigenstates in the system.
+ * @param eig        Array of eigenvalues sorted in descending order (highest energy first).
+ * @param occ        Array of occupations corresponding to the eigenvalues.
+ *
+ * @return The calculated Fermi energy (`smearfermi`).
+ *
+ * @details
+ * This function calculates the Fermi energy based on the cumulative occupation of
+ * eigenstates. The eigenvalues and occupations are assumed to be sorted in descending 
+ * order of energy. The algorithm proceeds as follows:
+ * - Sum the occupations from the highest-energy state downward until the cumulative 
+ *   occupation equals or exceeds the target number of electrons (`nfill`).
+ * - The eigenvalue corresponding to this occupation is set as the Fermi energy.
+ * 
+ * Edge cases:
+ * - If all states are empty or fully occupied, the Fermi energy is defaulted to 
+ *   the middle eigenvalue for initialization.
+ * - If the highest occupied state is partially occupied, the Fermi energy is taken as 
+ *   the midpoint between the highest occupied and lowest unoccupied eigenvalues.
+ * 
+ * Assumptions:
+ * - Eigenvalues are sorted in descending order.
+ * - Occupations are consistent with the eigenvalues and represent a valid physical system.
+ *
+ * Example usage:
+ * @code
+ * double eig[] = {0.5, 0.3, -0.1, -0.3, -0.5}; // Eigenvalues (descending order)
+ * double occ[] = {0.0, 0.0, 0.5, 1.0, 1.0};    // Occupations
+ * int nstates = 5;                             // Total number of states
+ *
+ * double fermi_energy = define_smearfermi(nstates, eig, occ);
+ * std::cout << "Fermi Energy: " << fermi_energy << std::endl;
+ * @endcode
+ *
+ * @note The input `eig` and `occ` arrays must be sorted in descending order of energy.
+ *       If `nstates` is zero or the inputs are inconsistent, the behavior is undefined.
+ */
+double Pneb::define_smearfermi(const int nstates, const double *eig, const double *occ)
+{
+   double smearfermi = 0.0; // Initialize smearfermi
+   double nfill = 0.0;      // Total number of electrons to fill
+
+   // Determine `nfill` and the index of the highest occupied state
+   int highest_occupied = -1;
+   for (int i = 0; i < nstates; ++i)
+   {
+      nfill += occ[i];
+      if (occ[i] > 1e-6) 
+         highest_occupied = i;
+   }
+
+   // Handle edge cases: all states empty or fully occupied
+   if (highest_occupied < 0 || highest_occupied == nstates - 1) 
+   {
+      // Default smearfermi to the middle eigenvalue if no partial occupation
+      smearfermi = eig[nstates / 2];
+   }
+   else 
+   {
+      // Set smearfermi as the midpoint between the highest occupied and the lowest unoccupied state
+      smearfermi = 0.5 * (eig[highest_occupied] + eig[highest_occupied + 1]);
+   }
+
+   // Use cumulative occupation (counted from the highest-energy state down)
+   double cumulative_occ = 0.0;
+   for (int i = nstates - 1; i >= 0; --i) // Start from the highest-energy state
+   {
+      cumulative_occ += occ[i];
+
+      // Check if cumulative occupation matches the target electron count
+      if (cumulative_occ >= nfill) 
+      {
+         smearfermi = eig[i]; // Update smearfermi based on the cumulative occupation
+         return smearfermi;  // Return the calculated Fermi energy
+      }
+   }
+
+   // Return the default smearfermi if no state matches `nfill`
+   return smearfermi;
+}
+
+/**********************************************
+ *                                            *
+ *         Pneb::add_smearcorrection          *
+ *                                            *
+ **********************************************/
+/**
+ * @brief Computes the total smearing correction for a set of eigenvalues and occupations.
+ *
+ * @param smeartype   The type of smearing algorithm to use (e.g., Fermi-Dirac, Gaussian, etc.).
+ * @param nstates     Total number of eigenstates in the system.
+ * @param eig         Pointer to an array of eigenvalues (in descending order).
+ * @param occ         Pointer to an array of occupations corresponding to the eigenvalues.
+ * @param smearfermi  The Fermi energy used to calculate smearing corrections.
+ * @param smearkT     The smearing temperature parameter (related to the broadening width).
+ *
+ * @return The total smearing correction as a `double`.
+ *
+ * @details This function loops over all eigenstates, calculating and summing the 
+ *          smearing corrections for each state based on the specified smearing type. 
+ *          The corrections are computed using a utility function, `util_smearcorrection`,
+ *          which determines the correction specific to the chosen smearing algorithm.
+ *
+ *          The eigenvalues (`eig`) and occupations (`occ`) should be consistent with 
+ *          the physical system being modeled. The eigenvalues are assumed to be sorted
+ *          in descending order, and the occupations represent the fractional filling of
+ *          each eigenstate.
+ *
+ * Example Usage:
+ * @code
+ * double eig[] = {0.1, 0.2, 0.3, 0.4, 0.5};
+ * double occ[] = {1.0, 0.5, 0.0, 0.0, 0.0};
+ * int nstates = 5;
+ * double smearfermi = 0.25;
+ * double smearkT = 0.01;
+ *
+ * double correction = add_smearcorrection(1, nstates, eig, occ, smearfermi, smearkT);
+ * std::cout << "Smearing Correction: " << correction << std::endl;
+ * @endcode
+ *
+ * @note This function assumes that the input eigenvalues are in descending order.
+ */
+double Pneb::add_smearcorrection(const int smeartype, const int nstates, const double *eig, const double *occ, const double smearfermi, const double smearkT)
+{
+   double smearcorrection = 0.0;
+
+   for (auto n=0; n<nstates; ++n)
+   {
+      double e = eig[n];
+      double x = (e - smearfermi) / smearkT;
+
+      // Add corrections based on smearing type
+      smearcorrection += util_smearcorrection(smeartype,smearkT,smearfermi,occ[n],eig[n]);
+   }
+
+   return smearcorrection;
+}
+
 
 
 } // namespace pwdft

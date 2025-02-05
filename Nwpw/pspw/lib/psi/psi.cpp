@@ -298,22 +298,25 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
                int *occupation, double occ[],  char *filename, bool reverse) 
 {
    Parallel *myparall = mypneb->d3db::parall;
+   int neout[2];
  
-   if (myparall->is_master()) {
-     openfile(4, filename, "r");
-     iread(4, version, 1);
-     iread(4, nfft, 3);
-     dread(4, unita, 9);
-     iread(4, ispin, 1);
-     iread(4, ne, 2);
-     iread(4, occupation, 1);
+   if (myparall->is_master()) 
+   {
+      openfile(4, filename, "r");
+      iread(4, version, 1);
+      iread(4, nfft, 3);
+      dread(4, unita, 9);
+      iread(4, ispin, 1);
+      iread(4, neout, 2);
+      iread(4, occupation, 1);
    }
    myparall->Brdcst_iValue(0, 0, version);
    myparall->Brdcst_iValues(0, 0, 3, nfft);
    myparall->Brdcst_Values(0, 0, 9, unita);
    myparall->Brdcst_iValue(0, 0, ispin);
-   myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValues(0, 0, 2, neout);
    myparall->Brdcst_iValue(0, 0, occupation);
+
  
    /* reads in c format and automatically packs the result to g format */
    //mypneb->g_read(4,ispin,psi);
@@ -322,7 +325,8 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    else
       mypneb->g_read_ne(4,ne,psi);
 
-   if ((*occupation) > 0)
+
+   if (((*occupation) > 0) && (occ))
    {
       if (myparall->is_master()) 
       {
@@ -341,24 +345,28 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    }
    
    if (myparall->is_master())
-     closefile(4);
+      closefile(4);
+
+   ne[0] = neout[0];
+   ne[1] = neout[1];
 }
 
 void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], double *psi,
                char *filename)
 {
-   int occupation =0;
+   int occupation = 0;
    Parallel *myparall = mypneb->d3db::parall;
 
-   if (myparall->is_master()) {
-     openfile(4, filename, "r");
-     iread(4, version, 1);
-     iread(4, nfft, 3);
-     dread(4, unita, 9);
-     iread(4, ispin, 1);
-     iread(4, ne, 2);
-     iread(4, &occupation, 1);
+   if (myparall->is_master()) 
+   {
+      openfile(4, filename, "r");
+      iread(4, version, 1);
+      iread(4, nfft, 3);
+      dread(4, unita, 9);
+      iread(4, ispin, 1);
+      iread(4, ne, 2);
+      iread(4, &occupation, 1);
    }
    myparall->Brdcst_iValue(0, 0, version);
    myparall->Brdcst_iValues(0, 0, 3, nfft);
@@ -372,7 +380,7 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    mypneb->g_read_ne(4,ne,psi);
 
    if (myparall->is_master())
-     closefile(4);
+      closefile(4);
 }
 
 
@@ -395,7 +403,7 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
           mypneb->g_ortho
 */
 bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2, 
-              int *occupation, double occ2[],
+              int *occupation, double occ2[], 
               std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
@@ -410,11 +418,19 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       newpsi = psi_check_convert(mypneb,filename,coutput);
  
       if (myparall->base_stdio_print)
-         coutput << " input psi exists, reading from file: " << filename << std::endl;
+         coutput << " input psi exists, reading from file: " << filename;
  
+      ne[0] = mypneb->ne[0];
+      ne[1] = mypneb->ne[1];
       psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,false);
 
-      if (occ2)
+      if ((*occupation>0) and (myparall->base_stdio_print))
+         coutput << " ... reading occupations";
+
+      if (myparall->base_stdio_print)
+         coutput << std::endl;
+
+      if ((occ2) && (*occupation > 0))
          if (isDescending(occ2, ne[0]))
          {
             if (myparall->base_stdio_print)
@@ -426,9 +442,13 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
    /* generate new psi */
    else 
    {
+      ispin = mypneb->ispin;
+      ne[0] = mypneb->ne[0];
+      ne[1] = mypneb->ne[1];
       if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
       mypneb->g_generate_random(psi2);
    }
+
    newpsi = newpsi || (ispin != mypneb->ispin)
                    || (ne[0] != mypneb->ne[0])
                    || (ne[1] != mypneb->ne[1])
@@ -442,6 +462,20 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
                    || (std::abs(unita[7] - mypneb->lattice->unita1d(7)) > 1.0e-4) 
                    || (std::abs(unita[8] - mypneb->lattice->unita1d(8)) > 1.0e-4);
  
+   // Add extra missing orbitals to psi2
+   int nextra[2] = {(mypneb->ne[0]-ne[0]),(mypneb->ne[1]-ne[1])};
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      if (nextra[ms]>0)
+      {
+         if (myparall->base_stdio_print) 
+            coutput << " - adding " << nextra[ms] << " to ms=" << ms << " psi" << std::endl;
+         int indxa = 2*mypneb->npack(1)*(ne[ms]+ms*mypneb->ne[0]);
+         mypneb->g_generate_extra_random(nextra[ms],psi2+indxa);
+
+      }
+   }
+
    /* ortho check */
    double sum2 = mypneb->gg_traceall(psi2, psi2);
    double sum1 = mypneb->ne[0] + mypneb->ne[1];
@@ -539,7 +573,7 @@ void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
    Parallel *myparall = mypneb->d3db::parall;
  
    if (myparall->base_stdio_print)
-     coutput << " output psi to filename: " << filename << std::endl;
+     coutput << " output psi to filename: " << filename;
  
    if (myparall->is_master()) {
      openfile(6, filename, "w");
@@ -558,11 +592,16 @@ void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
    if (*occupation>0)
    {
       if (myparall->is_master())
+      {
+         coutput << " ... writing occupations";
          dwrite(6, occ, ne[0]+ne[1]);
+      }
    }
  
    if (myparall->is_master())
      closefile(6);
+
+   if (myparall->base_stdio_print) coutput << std::endl;
 }
 
 void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
