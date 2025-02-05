@@ -235,7 +235,6 @@ void Pneb::g_generate1_random(double *psi)
    // double *tmp2 = new (std::nothrow) double[n2ft3d]();
  
    double tmp2[n2ft3d];
-   std::cout << "NE=" << ne[0] << " " << ne[1] <<std::endl;
  
    nfft[0] = nx;
    nfft[1] = ny;
