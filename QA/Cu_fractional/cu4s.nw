@@ -1,0 +1,43 @@
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start pspw_pbe_Cu4
+
+memory 1900 mb
+
+charge 0
+
+geometry noautoz nocenter noautosym
+system crystal
+   lattice_vectors
+     3.620000 0.000000 0.000000
+     0.000000 3.620000 0.000000
+     0.000000 0.000000 3.620000
+end
+
+Cu 0.000000 0.000000 0.000000
+Cu 0.000000 0.500000 0.500000
+Cu 0.500000 0.000000 0.500000
+Cu 0.500000 0.500000 0.000000
+end
+
+
+
+nwpw
+  xc pbe96
+  cutoff 30.0
+  loop 10 100
+  lmbfgs stiefel
+  #smear frozen filling [0 0 0.3333333 0.3333333 0.3333334 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+  #smear fermi alpha 0.05 alpha_min 0.01 alpha_max 0.1  beta 0.01 gamma 0.1 #filling [0 0 0.3333333 0.3333333 0.3333334]
+  #smear fermi alpha_min 0.05 alpha_max 0.1
+  smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1
+  steepest_descent
+     time_step 5.8
+     loop 10 1000
+     tolerances 1.0e-12 1.0e-12
+  end
+end
+task pspw energy
