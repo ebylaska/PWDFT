@@ -108,11 +108,15 @@ cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_COMPIL
 ### Running
 ```
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q lustre_scaling -I
+qsub -l select=4 -l walltime=30:00 -l filesystems=flare -A ExaCatChem -q debug-scaling -I  
 ```
 ```
 export MPIR_CVAR_ENABLE_GPU=0
 export OMP_NUM_THREADS=1
 mpiexec -n 12 --ppn 12 --cpu-bind list:0-7:8-15:16-23:24-31:32-39:40-47:52-59:60-67:68-75:76-83:84-91:92-99 --mem-bind list:0:0:0:0:0:0:1:1:1:1:1:1 --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
+
+mpiexec -n 12 --ppn 6 --cpu-bind list:0-15:16-31:32-47:52:67:68-83:84-99 --mem-bind list:0:0:0:1:1:1 --env OMP_NUM_THREADS=1 gpu_tile_compact.sh ../../build_sycl/pwdft cco-cu_surf30.nw
+
 ```
 
 ##  Instructions for OLCF Frontier
