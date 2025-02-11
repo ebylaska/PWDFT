@@ -22,10 +22,11 @@ struct Double {
 };
 
 // FP64 Addition (Emulated with FP32)
+/*
 Double add_double(Double a, Double b) {
     Double result;
 
-    // Step 1: Compute sum of high parts
+    // Step 1: Add high parts
     float s1 = a.hi + b.hi;
     float v1 = s1 - a.hi;
     float e1 = (b.hi - v1) + (a.hi - (s1 - v1));
@@ -40,18 +41,33 @@ Double add_double(Double a, Double b) {
     float v3 = s3 - e2;
     float e3 = (a.lo - v3) + (b.lo - (s3 - v3));
 
-    // Step 4: Store results
+    // Store results in correct order
+    result.hi = s1 + s2;
+    result.mid = s2 - (result.hi - s1) + s3;
+    result.lo = s3 - (result.mid - s2);
+
+    return result;
+}
+*/
+
+Double add_double(Double a, Double b) {
+    Double result;
+    float s1 = a.hi + b.hi;
+    float s2 = a.mid + b.mid;
+    float s3 = a.lo + b.lo;
     result.hi = s1;
     result.mid = s2;
     result.lo = s3;
-
     return result;
 }
 
 
 
 
+
+
 // FP64 Multiplication (Emulated with FP32)
+/*
 Double mul_double(Double a, Double b) {
     Double result;
 
@@ -82,7 +98,39 @@ Double mul_double(Double a, Double b) {
 
     return result;
 }
+*/
 
+Double mul_double(Double a, Double b) {
+    Double result;
+
+    // Step 1: Compute high-order product
+    float p1 = a.hi * b.hi;
+
+    // Step 2: Compute mid-order product terms
+    float p2_1 = a.hi * b.mid;
+    float p2_2 = a.mid * b.hi;
+    float p2 = p2_1 + p2_2;  // Mid contribution
+
+    // Step 3: Compute low-order product terms
+    float p3_1 = a.hi * b.lo;
+    float p3_2 = a.lo * b.hi;
+    float p3_3 = a.mid * b.mid;
+    float p3 = p3_1 + p3_2 + p3_3;  // Low contribution
+
+    // Step 4: Compute lowest-order product terms
+    //float p4_1 = a.mid * b.lo;
+    //float p4_2 = a.lo * b.mid;
+    //float p4_3 = a.lo * b.lo;
+    //float p4 = p4_1 + p4_2 + p4_3;  // Very low contribution
+    //float p4 = p4_1 + p4_2;  // Very low contribution
+
+    // Step 5: Accumulate results correctly
+    result.hi  = p1;
+    result.mid = p2;
+    result.lo  = p3;
+
+    return result;
+}
 
 
 
@@ -176,12 +224,14 @@ void NN_dgemm(int M, int N, int K, double *hostA, double *hostB, double *hostC) 
        A_fp32[i].hi = (float)hostA[i];  // First 32-bit part
        A_fp32[i].mid = (float)(hostA[i] - (double)A_fp32[i].hi);  // Second 32-bit part
        A_fp32[i].lo = (float)(hostA[i] - ((double)A_fp32[i].hi + (double)A_fp32[i].mid)); // Residual part
+       //A_fp32[i].lo = 0.0;
     }
 
     for (int i = 0; i < K * N; i++) {
        B_fp32[i].hi = (float)hostB[i];  // First 32-bit part
        B_fp32[i].mid = (float)(hostB[i] - (double)B_fp32[i].hi);  // Second 32-bit part
        B_fp32[i].lo = (float)(hostB[i] - ((double)B_fp32[i].hi + (double)B_fp32[i].mid)); // Residual part
+       //B_fp32[i].lo = 0.0;
     }
 
 
@@ -216,9 +266,9 @@ void NN_dgemm(int M, int N, int K, double *hostA, double *hostB, double *hostC) 
 
     // Convert Results Back to Double
 
-printf("🔍 Before memcpy: C_fp32[0] = (%e, %e, %e)\n", C_fp32[0].hi, C_fp32[0].mid, C_fp32[0].lo);
+for (uint i=100; i<105; ++i) printf("🔍 Before memcpy: C_fp32[%d] = (%e, %e, %e)\n", i,C_fp32[i].hi, C_fp32[i].mid, C_fp32[i].lo);
     memcpy(C_fp32, [bufferC contents], M*N*sizeof(Double));
-printf("🔍 After memcpy: C_fp32[0] = (%e, %e, %e)\n", C_fp32[0].hi, C_fp32[0].mid, C_fp32[0].lo);
+for (uint i=100; i<105; ++i) printf("🔍 After memcpy: C_fp32[%d] = (%e, %e, %e)\n", i,C_fp32[i].hi, C_fp32[i].mid, C_fp32[i].lo);
 
     for (int i = 0; i < M * N; i++) {
         hostC[i] = (double)C_fp32[i].hi + (double)C_fp32[i].mid + (double)C_fp32[i].lo;
@@ -260,8 +310,13 @@ int main() {
     // ✅ Initialize Matrices A and B
     //for (int i = 0; i < M * K; i++) A[i] = (double)(rand() % 10);
     //for (int i = 0; i < K * N; i++) B[i] = (double)(rand() % 10);
-    for (int i = 0; i < M * K; i++) A[i] = ((double)(rand() % 1000))/1000.0;
-    for (int i = 0; i < K * N; i++) B[i] = ((double)(rand() % 1000))/1000.0;
+
+    //for (int i = 0; i < M * K; i++) A[i] = ((double)(rand() % 1000))/1000.0;
+    //for (int i = 0; i < K * N; i++) B[i] = ((double)(rand() % 1000))/1000.0;
+
+    for (int i = 0; i < M * K; i++) A[i] = 1.0 / (i + 1);
+    for (int i = 0; i < K * N; i++) B[i] = 1.0 / (i + 1);
+
 
     //for (int i = 0; i < M * K; i++) A[i] = drand48() * 10.0;  // Scaled to [0,10)
     //for (int i = 0; i < K * N; i++) B[i] = drand48() * 10.0;
