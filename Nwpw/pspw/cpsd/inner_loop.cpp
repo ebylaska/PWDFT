@@ -241,7 +241,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
      
       /* lagrange multiplier - Expensive */
       if (fractional)
-         mygrid->ggm_occ_lambda(dte, psi1, psi2, occ1, lmbda);
+         //mygrid->ggm_occ_lambda(dte, psi1, psi2, occ1, lmbda);
+         mygrid->g_ortho(-1,psi2);
       else
          mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
    }

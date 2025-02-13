@@ -20,17 +20,20 @@ nwpw
    end
    cutoff 30.0
    xc lda
-   smear fermi
-   #smear gaussian
+   #smear fermi
+   smear gaussian 
    #smear marzari-vanderbilt
    #smear lorentzian
    #smear 0.1 Methfessel-Paxton
-   #smear 0.01 hermite 
+   #smear hermite 
+   #smear step
+   #smear fixed
+   #smear no correction
    scf anderson alpha 0.05 iterations 3
    loop 1 1
    steepest_descent
       time_step 5.8
-      loop 10 10
+      loop 10 2
    end
 end
 task pspw noit_energy

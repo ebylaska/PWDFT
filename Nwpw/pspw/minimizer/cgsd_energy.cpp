@@ -76,6 +76,46 @@ double cgsd_noit_energy(Molecule &mymolecule, bool doprint,
  *              cgsd_energy               *
  *                                        *
  ******************************************/
+/**
+ * @brief Main driver for energy minimization.
+ *
+ * This function coordinates the energy minimization process by selecting and executing
+ * various minimization strategies (e.g., conjugate gradient, L-BFGS, steepest descent, 
+ * and band-by-band methods) to iteratively reduce the total energy of the system.
+ *
+ * The algorithm monitors convergence through the change in energy (ΔE) and density residuals (Δρ),
+ * and can automatically switch minimization strategies (for example, from a Stiefel conjugate gradient
+ * update (minimizer=4) to a band-by-band update (minimizer=8)) when stalling is detected.
+ *
+ * Depending on the control parameters, the function chooses among several minimizer modes:
+ *  - Minimizer 1, 2, 9, 10: Grassmann-based updates (with symmetrized Hamiltonian)
+ *  - Minimizer 4, 7: Stiefel-based conjugate gradient or L-BFGS updates (used when fractional 
+ *                    occupations are present, where orbital details matter)
+ *  - Minimizer 5, 8: Band-by-band (density-based) updates that can be activated if full-space 
+ *                    updates stall.
+ *
+ * The function updates the state of the provided molecule object (including orbitals, densities,
+ * and SCF-related parameters), performs orbital rotations and reorthonormalization as necessary,
+ * and returns the converged total energy.
+ *
+ * @param control    The Control2 object containing simulation parameters such as iteration limits,
+ *                   convergence tolerances, SCF mixing parameters, and minimizer selection flags.
+ * @param mymolecule The Molecule object representing the current state of the system (orbitals,
+ *                   densities, grid information, etc.). This object is updated during minimization.
+ * @param doprint    A boolean flag indicating whether detailed progress and diagnostic output
+ *                   should be printed.
+ * @param coutput    An output stream (std::ostream) used for logging progress, diagnostic information,
+ *                   and final results.
+ *
+ * @return The converged total energy of the system.
+ *
+ * @note Depending on the convergence behavior, the algorithm may switch automatically from
+ *       minimizer=4 (Stiefel conjugate gradient) to minimizer=8 (band-by-band update) to overcome
+ *       stalling.
+ *
+ * @author Eric J. Bylaska
+ * @date 2/2/3025 
+ */
 double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::ostream &coutput) 
 {
    Parallel *parall = mymolecule.mygrid->d3db::parall;
@@ -86,7 +126,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    int ne[2],ispin,nion;
    double E[70],total_energy,deltae,deltae_old,deltac;
  
-   bool nolagrange = control.nolagrange();
+   bool nolagrange = control.nolagrange() ||  control.fractional();
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);
    double tole = control.tolerances(0);
@@ -144,7 +184,8 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    int icount = 0;
    bool converged = false;
  
-   if (minimizer == 1) {
+   if (minimizer == 1) 
+   {
       if (mymolecule.newpsi) 
       {
          //int ispin = mymolecule.mygrid->ispin;
@@ -180,8 +221,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
- 
-   } else if (minimizer == 2) {
+   } 
+
+   else if (minimizer == 2) 
+   {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
          cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
@@ -209,7 +252,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
-   } else if (minimizer == 4) {
+   } 
+
+   else if (minimizer == 4) 
+   {
       if (mymolecule.newpsi) {
         int it_in0 = 15;
         for (int it = 0; it < it_in0; ++it)
@@ -245,7 +291,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
           stalled = false;
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
-   } else if (minimizer == 5) {
+   }
+
+   else if (minimizer == 5) 
+   {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
          cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
@@ -278,8 +327,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
         stalled = false;
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
+   } 
 
-   } else if (minimizer == 7) {
+   else if (minimizer == 7) 
+   {
       if (mymolecule.newpsi) {
          int it_in0 = 15;
          for (int it=0; it<it_in0; ++it)
@@ -313,8 +364,11 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
-   } else if (minimizer == 8) {
 
+   } 
+
+   else if (minimizer == 8) 
+   {
       if (mymolecule.newpsi) {
 
          //total_energy = cgsd_bybminimize0(mymolecule,mygeodesic12.mygeodesic2,psi_lmbfgs2,
@@ -421,14 +475,25 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
                     << Efmt(16,6)  << deltac << std::endl;
          }
 
-         if ((std::fabs(deltae) > fabs(deltae_old)) ||
-             ((deltac > 1.0e-3) && (std::fabs(deltae)<1.0e-10)) ||
-             (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
-             stalled = true;
+         stalled = ((std::fabs(deltae) > fabs(deltae_old)) ||
+                   ((deltac > 1.0e-3) && (std::fabs(deltae)<1.0e-10)) ||
+                   (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0));
 
+        // if ((std::fabs(deltae) > fabs(deltae_old)) ||
+         //    ((deltac > 1.0e-3) && (std::fabs(deltae)<1.0e-10)) ||
+         //    (std::fabs(deltae) > 1.0e-2) || (deltae > 0.0))
+         //    stalled = true;
       }    
-   } else if (minimizer == 9) {
-   } else if (minimizer == 10) {
+
+   } 
+
+   else if (minimizer == 9) 
+   {
+
+   } 
+
+   else if (minimizer == 10) 
+   {
    }
 
  
@@ -455,7 +520,6 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
  ******************************************/
 void cgsd_energy_gradient(Molecule &mymolecule, double *grad_ion) 
 {
-
    mymolecule.psi_1local_force(grad_ion);
    mymolecule.psi_1nonlocal_force(grad_ion);
    mymolecule.semicore_force(grad_ion);

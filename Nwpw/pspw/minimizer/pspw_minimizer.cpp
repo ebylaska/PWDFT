@@ -378,63 +378,85 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                  << control.loop(0) * control.loop(1) << " (" << Ifmt(5)
                  << control.loop(0) << " inner " << Ifmt(5) << control.loop(1)
                  << " outer)\n";
+
          if (control.minimizer()==1) coutput << "      minimizer = Grassmann conjugate gradient\n";
          if (control.minimizer()==2) coutput << "      minimizer = Grassmann lmbfgs\n";
          if (control.minimizer()==4) coutput << "      minimizer = Stiefel conjugate gradient\n";
          if (control.minimizer()==5) coutput << "      minimizer = scf (potential)\n";
          if (control.minimizer()==7) coutput << "      minimizer = Stiefel lmbfgs\n";
          if (control.minimizer()==8) coutput << "      minimizer = scf (density)\n";
-         if ((control.minimizer()==5) || (control.minimizer()==8)) 
+
+         if ((control.minimizer()==5) || (control.minimizer()==8))
          {
             coutput << std::endl;
             coutput << " Kohn-Sham scf parameters:\n";
-            coutput << "     Kohn-Sham algorithm  = conjugate gradient\n";
-            coutput << "     Kohn-Sham iterations = " << control.ks_maxit_orb() 
+            coutput << "      Kohn-Sham algorithm  = conjugate gradient\n";
+            coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
                                                       << " ( " << control.ks_maxit_orbs() << " outer)\n";
-            if (control.scf_algorithm()==0) coutput << "     SCF algorithm        = simple mixing\n";
-            if (control.scf_algorithm()==1) coutput << "     SCF algorithm        = Broyden mixing\n";
-            if (control.scf_algorithm()==2) coutput << "     SCF algorithm        = Johnson-Pulay mixing"
+            if (control.scf_algorithm()==0) coutput << "      SCF algorithm        = simple mixing\n";
+            if (control.scf_algorithm()==1) coutput << "      SCF algorithm        = Broyden mixing\n";
+            if (control.scf_algorithm()==2) coutput << "      SCF algorithm        = Johnson-Pulay mixing"
                                                     << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
-            if (control.scf_algorithm()==3) coutput << "     SCF algorithm        = Anderson mixing\n";
-            if (control.scf_algorithm()==4) coutput << "     SCF algorithm        = Thomas-Fermi mixing\n";
-            if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
-            if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+            if (control.scf_algorithm()==3) coutput << "      SCF algorithm        = Anderson mixing\n";
+            if (control.scf_algorithm()==4) coutput << "      SCF algorithm        = Thomas-Fermi mixing\n";
+            if (control.minimizer()==5) coutput << "      SCF mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "      SCF mixing type      = density\n";
             if (control.scf_extra_rotate()) coutput << "     SCF extra rotate\n";
-            if (control.scf_algorithm()==4) 
-               coutput << "     SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
+            if (control.scf_algorithm()==4)
+               coutput << "      SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
             else
-               coutput << "     SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
-            if (control.kerker_g0()>0.0) coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
+               coutput << "      SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
+            if (control.kerker_g0()>0.0) coutput << "      Kerker damping       = " << control.kerker_g0() << std::endl;
+         }
 
-            coutput << std::endl;
 
-            if (control.fractional())
+         if (control.fractional())
+         {
+            coutput <<  std::endl;
+            coutput <<  " fractional smearing parameters:" << std::endl;
+            coutput <<  "      smearing algorithm = " << mymolecule.smeartype << std::endl;
+            coutput <<  "      smearing parameter = ";
+            if (mymolecule.smeartype==-1) coutput << "fixed_occupation" << std::endl;
+            if (mymolecule.smeartype==0) coutput << "step function" << std::endl;
+            if (mymolecule.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
+            if (mymolecule.smeartype==2) coutput << "Gaussian" << std::endl;
+            if (mymolecule.smeartype==3) coutput << "Hermite" << std::endl;
+            if (mymolecule.smeartype==4) coutput << "Marazari-Vanderbilt" << std::endl;
+            if (mymolecule.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
+            if (mymolecule.smeartype==6) coutput << "Cold smearing" << std::endl;
+            if (mymolecule.smeartype==7) coutput << "Lorentzian" << std::endl;
+            if (mymolecule.smeartype==8) coutput << "step" << std::endl;
+            if (mymolecule.smeartype>=0)
             {
-               coutput <<  " fractional smearing parameters:" << std::endl;
-               coutput <<  "    smearing algorithm = " << mymolecule.smeartype << std::endl;
-               coutput <<  "    smearing parameter = ";
-               if (mymolecule.smeartype==-1) coutput << "fixed_occupation" << std::endl;
-               if (mymolecule.smeartype==0) coutput << "step function" << std::endl;
-               if (mymolecule.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
-               if (mymolecule.smeartype==2) coutput << "Gaussian" << std::endl;
-               if (mymolecule.smeartype==3) coutput << "Hermite" << std::endl;
-               if (mymolecule.smeartype==4) coutput << "Marazari-Vanderbilt" << std::endl;
-               if (mymolecule.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
-               if (mymolecule.smeartype==6) coutput << "Cold smearing" << std::endl;
-               if (mymolecule.smeartype==7) coutput << "Lorentzian" << std::endl;
-               if (mymolecule.smeartype==8) coutput << "step" << std::endl;
-               if (mymolecule.smeartype>=0)
+               coutput <<  "      smearing parameter = " << Ffmt(9,3) << mymolecule.smearkT
+                                                       << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+               coutput <<  "      mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
+               coutput <<  "      mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
+               coutput <<  "      mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
+               coutput <<  "      mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
+               coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
+               coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
+               coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+               if (ispin==2)
+                  coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+               else
+                  coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+               if (control.fractional_frozen())
+                  coutput <<  "      frozen oribtals" << std::endl;
+                
                {
-                  coutput <<  "    smearing parameter = " << Ffmt(9,3) << mymolecule.smearkT
-                                                          << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
-                  coutput <<  "    mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
-                  if (ispin==2)
-                     coutput <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
-                  else
-                     coutput <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+                  size_t total_occupations = ne[0] + ne[1];
+                  std::ostringstream oss;
+                  oss << "      initial occupations = [";
+                  for (auto i=0; i<total_occupations-1; ++i)
+                     oss << mymolecule.occ1[i] << " ";
+                  oss << mymolecule.occ1[total_occupations - 1] << "]";
+                  coutput << oss.str() << std::endl;
                }
+
             }
          }
+
       } 
       else
       {
@@ -494,7 +516,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    }
 
    // calculate excited state orbitals 
-   cgsd_excited(control, mymolecule, true, coutput);
+   if (!control.fractional()) cgsd_excited(control, mymolecule, true, coutput);
 
    // calculate oep orbitals 
 

@@ -1604,6 +1604,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        temperature = kT/kb;
 
        nwpwjson["fractional"] = true;
+       nwpwjson["fractional_frozen"] = false;
        nwpwjson["fractional_orbitals"] = {4,4};
        nwpwjson["fractional_kT"] = kT;
        nwpwjson["fractional_temperature"] = temperature;
@@ -1619,6 +1620,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 6;
        if (mystring_contains(line, "lorentzian"))         nwpwjson["fractional_smeartype"] = 7;
        if (mystring_contains(line, "no correction"))      nwpwjson["fractional_smeartype"] = 8;
+       if (mystring_contains(line, "frozen"))             nwpwjson["fractional_frozen"] = true;
        if (mystring_contains(line, "orbitals"))  
        {
           std::vector<int> norbs;
@@ -1632,9 +1634,28 @@ static json parse_nwpw(json nwpwjson, int *curptr,
              norbs[1] = std::stoi(ss[2]);
           nwpwjson["fractional_orbitals"] = norbs;
        }
+       if (mystring_contains(line, "filling"))  
+       {
+          std::string rr = " " + mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " ");
+          //std::vector<double> filling = mystring_double_list(mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " "), " ");
+          std::vector<double> filling = mystring_double_list(rr,"");
+          nwpwjson["fractional_filling"] = filling;
+       }
 
-       if (mystring_contains(line, "alpha")) 
+       if (mystring_contains(line, "alpha ")) 
           nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+
+       if (mystring_contains(line, "alpha_min ")) 
+          nwpwjson["fractional_alpha_min"] = std::stod(mystring_trim(mystring_split(line, "alpha_min")[1]));
+
+       if (mystring_contains(line, "alpha_max ")) 
+          nwpwjson["fractional_alpha_max"] = std::stod(mystring_trim(mystring_split(line, "alpha_max")[1]));
+
+       if (mystring_contains(line, "beta ")) 
+          nwpwjson["fractional_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
+
+       if (mystring_contains(line, "gamma ")) 
+          nwpwjson["fractional_gamma"] = std::stod(mystring_trim(mystring_split(line, "gamma")[1]));
 
        if (mystring_contains(line, "temperature"))
        {

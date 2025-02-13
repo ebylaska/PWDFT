@@ -257,7 +257,8 @@ public:
       return total_energy;
    }
  
-   double psi_1get_TSgradient(double *G1) {
+   double psi_1get_TSgradient(double *G1) 
+   {
       double total_energy;
       myelectron->run(psi1, rho1, dng1, rho1_all);
       total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
