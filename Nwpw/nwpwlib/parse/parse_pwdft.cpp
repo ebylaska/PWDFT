@@ -188,7 +188,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["autosym"] = autosym;
 
   bool is_crystal = false;
+  bool is_surface = false;
   bool fractional = false;
+  bool twodfractional = false;
   std::vector<double> unita = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   int endcount = 1;
@@ -212,6 +214,14 @@ static json parse_geometry(json geom, int *curptr,
         fractional = false;
       } else {
         fractional = true;
+      }
+      ++endcount;
+    } else if (mystring_contains(line, "system surface")) {
+      is_surface=true;
+      if (mystring_contains(line, "cartesian")) {
+        twodfractional = false;
+      } else {
+        twodfractional = true;
       }
       ++endcount;
     } else if (endcount > 1) {
@@ -246,6 +256,7 @@ static json parse_geometry(json geom, int *curptr,
           }
         }
         unita = parse_lat_to_unita(lat);
+
       } else if (mystring_contains(line, "lattice_vectors")) {
         ++cur;
         line = mystring_lowercase(lines[cur]);
@@ -346,6 +357,21 @@ static json parse_geometry(json geom, int *curptr,
         vx = xxx;
         vy = yyy;
         vz = zzz;
+
+      } else if (twodfractional) {
+        double xxx = unita[0] * xx + unita[3] * yy + zz*conv;
+        double yyy = unita[1] * xx + unita[4] * yy + zz*conv;
+        double zzz = unita[2] * xx + unita[5] * yy + zz*conv;
+        xx = xxx;
+        yy = yyy;
+        zz = zzz;
+
+        xxx = unita[0] * vx + unita[3] * vy + vz*conv;
+        yyy = unita[1] * vx + unita[4] * vy + vz*conv;
+        zzz = unita[2] * vx + unita[5] * vy + vz*conv;
+        vx = xxx;
+        vy = yyy;
+        vz = zzz;
       } else {
         xx *= conv;
         yy *= conv;
@@ -417,7 +443,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["charges"] = charges;
   geomjson["unita"] = unita;
   geomjson["is_crystal"] = is_crystal;
+  geomjson["is_suface"] = is_surface;
   geomjson["fractional"] = fractional;
+  geomjson["twodfractional"] = twodfractional;
 
   *curptr = cur;
 

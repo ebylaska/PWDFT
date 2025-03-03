@@ -570,6 +570,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["fractional"].is_boolean())
       pfractional = rtdbjson["nwpw"]["fractional"];
 
+   ptwodfractional = false;
+   if (rtdbjson["nwpw"]["twodfractional"].is_boolean())
+      ptwodfractional = rtdbjson["nwpw"]["twodfractional"];
+
    if (rtdbjson["nwpw"]["scf_extra_rotate"].is_boolean())
       pscf_extra_rotate = rtdbjson["nwpw"]["scf_extra_rotate"];
 
