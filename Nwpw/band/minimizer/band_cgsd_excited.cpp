@@ -67,8 +67,8 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
       if (lprint) coutput << " == Virtual Orbital Calculation ==" << std::endl << std::endl;
       //coutput << " nex=" << nex[0] << " " << nex[1] << std::endl;
 
-      mysolid.epsi_initialize(control.input_e_movecs_filename(),
-                              control.input_movecs_initialize(),nex,coutput);
+      mysolid.ecpsi_initialize(control.input_e_movecs_filename(),
+                               control.input_movecs_initialize(),nex,coutput);
 
       mysolid.gen_vall();
       mysolid.get_vall(vall);
@@ -82,7 +82,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
          {
             int shift = 2*mygrid->CGrid::npack1_max()*k;
             double *orb = mysolid.psi1 + shift + nbq*nshift0;
-            mysolid.epsi_get_gradient(nbq1,orb,vall,g);
+            mysolid.ecpsi_get_gradient(nbq1,orb,vall,g);
             double e0 = mygrid->cc_pack_dot(nbq1,orb,g);
             double n0 = mygrid->cc_pack_dot(nbq1,orb,orb);
             //std::cout << "nbq=" << nbq << " k=" << k << " e0=" << e0 << " n0="<< n0 << std::endl;
@@ -96,7 +96,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
          {
             int shift = 2*mygrid->CGrid::npack1_max()*k;
             double *orb = mysolid.psi1_excited + shift + nbq*nshift1;
-            mysolid.epsi_get_gradient(nbq1,orb,vall,g);
+            mysolid.ecpsi_get_gradient(nbq1,orb,vall,g);
             double ex0 = mygrid->cc_pack_dot(nbq1,orb,g);
             double nx0 = mygrid->cc_pack_dot(nbq1,orb,orb);
             //std::cout << "nbq=" << nbq << " k=" << k << Ffmt(10,6)<< " ex0=" << ex0 << " nx0="<< nx0 << std::endl;
@@ -106,7 +106,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
       mygrid->c_pack_deallocate(g);
       */
 
-      mysolid.epsi_minimize(vall,coutput);
+      mysolid.ecpsi_minimize(vall,coutput);
       if (lprint) coutput << mysolid.print_virtual();
 
       //std::cout << "start the exicited minimizer" << std::endl;
@@ -119,12 +119,12 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
     //  std::cout << "task a virtual" << std::endl;
     //  std::cout << "recheck the virtual ortho" << std::endl;
 
-      mysolid.epsi_finalize(control.input_e_movecs_filename(),coutput);
+      mysolid.ecpsi_finalize(control.input_e_movecs_filename(),coutput);
 
-      // read in excited wavefunctions and initialize epsi
+      // read in excited wavefunctions and initialize ecpsi
      //       call control_ispin_set(psi_ispin())
      //       if (.not.control_check_number_virtuals()) then
-     //         call epsi_new()
+     //         call ecpsi_new()
      //         newpsi = .true.
      //       else
      //         newpsi = .false.

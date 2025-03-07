@@ -527,15 +527,17 @@ void Cneb::g_write(const int iunit, double *psi)
  *        Cneb::g_write_excited      *
  *                                   *
  *************************************/
-void Cneb::g_write_excited(const int iunit, const int nex[], double *psi)
+void Cneb::g_write_excited(const int iunit, const int nex[], const int nbrillouin0, double *psi)
 {
    int npack2 = 2*CGrid::npack1_max();
    int ibshiftj = npack2;
-   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   //int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   int ibshiftk = ibshiftj*(nex[0]+nex[1]);
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
        
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
+   if (nbrillouin != nbrillouin0) std::cout << "CRAP, nbrillouin=" << nbrillouin << " nbirllouin0=" << nbrillouin0 << std::endl;
 
    for (auto nb=0; nb<nbrillouin; ++nb)
    {

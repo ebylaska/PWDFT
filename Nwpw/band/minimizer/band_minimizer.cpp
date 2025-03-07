@@ -443,7 +443,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    // write psi
    // write psi
    if (flag > 0)
-      mysolid.writepsi(control.output_movecs_filename(), coutput);
+      mysolid.writecpsi(control.output_movecs_filename(), coutput);
 
    MPI_Barrier(comm_world0);
   

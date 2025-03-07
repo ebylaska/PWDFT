@@ -101,10 +101,10 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
 
 /********************************************
  *                                          *
- *           Solid::epsi_initialize         *
+ *           Solid::ecpsi_initialize        *
  *                                          *
  ********************************************/
-void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *nex, std::ostream &coutput) 
+void Solid::ecpsi_initialize(char *infilename, bool wvfnc_initialize, const int *nex, std::ostream &coutput) 
 {
    ne_excited[0] = nex[0];
    ne_excited[1] = nex[1];
@@ -117,10 +117,10 @@ void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *
 
 
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
-  bool  newpsi = epsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
+  bool  newpsi = ecpsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
 
   bool lprint = (mygrid->c3db::parall->is_master());
-  if (lprint) coutput << " input epsi filename:" << infilename << std::endl;
+  if (lprint) coutput << " input ecpsi filename:" << infilename << std::endl;
   // to determing ne_excited look at wavefunction or look at control
   //mygrid->g_set_ne_excited(ne_excited);
   // psi1_excited = mygrid->g_allocate_excited(1);
@@ -130,21 +130,21 @@ void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *
 
 /********************************************
  *                                          *
- *           Solid::epsi_finalize           *
+ *           Solid::ecpsi_finalize          *
  *                                          *
  ********************************************/
-void Solid::epsi_finalize(char *outfilename, std::ostream &coutput)
+void Solid::ecpsi_finalize(char *outfilename, std::ostream &coutput)
 { 
-   epsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne_excited,&nbrillouin,
+   ecpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne_excited,&nbrillouin,
              psi1_excited,outfilename,coutput);
 } 
 
 /********************************************
  *                                          *
- *           Solid::epsi_minimize           *
+ *           Solid::ecpsi_minimize          *
  *                                          *
  ********************************************/
-void Solid::epsi_minimize(double *vall, std::ostream &coutput)
+void Solid::ecpsi_minimize(double *vall, std::ostream &coutput)
 { 
 
    int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
@@ -205,8 +205,8 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
                bool continue_inner_loop = true;
                for (int l=0; continue_inner_loop && l<=(1+(l2-1)*3); ++l)
                {
-                  eorb0 = epsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
-                  //eorb0 = epsi_KS_update_virtual(nbq1,ms,k,1,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
+                  eorb0 = ecpsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
+                  //eorb0 = ecpsi_KS_update_virtual(nbq1,ms,k,1,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
                   if (error_out <= tole)
                      continue_inner_loop = false; // Exit the inner loop
                }
@@ -238,17 +238,17 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
          } //k
       } //ms
 
-      epsi_sort_virtual(nbq1,eig_v,psi_v);
+      ecpsi_sort_virtual(nbq1,eig_v,psi_v);
    }
 }
 
 
 /********************************************
  *                                          *
- *           Solid::epsi_sort_virtual       *
+ *           Solid::ecpsi_sort_virtual       *
  *                                          *
  ********************************************/
-void Solid::epsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
+void Solid::ecpsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
 {
    double *torb = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
    for (auto ms=0; ms<ispin; ++ms)
@@ -282,10 +282,10 @@ void Solid::epsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
 
 /********************************************
  *                                          *
- *      Solid::epsi_KS_update_virtual       *
+ *      Solid::ecpsi_KS_update_virtual       *
  *                                          *
  ********************************************/
-double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
+double Solid::ecpsi_KS_update_virtual(const int nbq1, const int ms, const int k,
                                      const int maxit_orb, const double maxerror,
                                      const double perror, double *vall, double *orb,
                                      double *error_out, 
@@ -313,7 +313,7 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
       eold = e0;
 
       //calculate residual (steepest descent) direction for a single band
-      epsi_get_gradient(nbq1,orb, vall+ms*n2ft3d, g);
+      ecpsi_get_gradient(nbq1,orb, vall+ms*n2ft3d, g);
       e0 = mygrid->cc_pack_dot(nbq1,orb,g);
 
       e0 = -e0;
@@ -374,7 +374,7 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
       }
       de0 = -2.0*de0;
 
-      epsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*n2ft3d,orb,t);
+      ecpsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*n2ft3d,orb,t);
 
       done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
       //done = true;
@@ -402,11 +402,11 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
 
 /********************************************
  *                                          *
- *        epsi_linesearch_update            *
+ *        ecpsi_linesearch_update           *
  *                                          *
  ********************************************/
-void Solid::epsi_linesearch_update(const int nbq1, 
-                                   double e0, double de0, double *theta, double *vall, double *orb, double *t)
+void Solid::ecpsi_linesearch_update(const int nbq1, 
+                                    double e0, double de0, double *theta, double *vall, double *orb, double *t)
 {
    double *torb = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
    double *g    = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
@@ -422,7 +422,7 @@ void Solid::epsi_linesearch_update(const int nbq1,
 
 
    // determine theta ***
-   epsi_get_gradient(nbq1,orb, vall, g);
+   ecpsi_get_gradient(nbq1,orb, vall, g);
    double e1 = mygrid->cc_pack_dot(nbq1,orb,g);
    e1 = -e1;
 
@@ -447,10 +447,10 @@ void Solid::epsi_linesearch_update(const int nbq1,
 
 /********************************************
  *                                          *
- *        Solid::epsi_get_gradient          *
+ *        Solid::ecpsi_get_gradient         *
  *                                          *
  ********************************************/
-void Solid::epsi_get_gradient(const int nbq1, double *orb, double *vall, double *Horb)
+void Solid::ecpsi_get_gradient(const int nbq1, double *orb, double *vall, double *Horb)
 {
    double *orb_r = mygrid->c_alloc();
 
