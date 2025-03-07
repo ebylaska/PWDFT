@@ -58,7 +58,7 @@ class Solid {
   int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, nfft3d, shift1, shift2;
   int ne_excited[2] = {0,0};
   int nfft[3];
-  int version = 3;
+  int version = 5;
 
 public:
    Cneb *mygrid;

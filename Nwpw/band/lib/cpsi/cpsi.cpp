@@ -275,6 +275,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
       iread(4, ne, 2);
       iread(4, nbrillouin, 1);
       iread(4, &occupation, 1);
+      std::cout << "version=" << *version << " ispin="<< *ispin << " ne=" << ne[0] << " " << ne[1] << " nbillouin=" << *nbrillouin << " occupation="<< occupation << std::endl;
    }
    myparall->Brdcst_iValue(0, 0, version);
    myparall->Brdcst_iValues(0, 0, 3, nfft);
