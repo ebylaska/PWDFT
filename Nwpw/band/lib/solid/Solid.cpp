@@ -148,23 +148,23 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
 { 
 
    int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
-   int nshift1 = 2*(ne_excited[0]+ ne_excited[1])*mygrid->CGrid::npack1_max();
-   int nshift2 = (ne_excited[0]+ ne_excited[1]);
+   int nshift1 = 2*(ne_excited[0]+ne_excited[1])  *mygrid->CGrid::npack1_max();
+   int nshift2 = (ne_excited[0]+ne_excited[1]);
    bool lprint = (mygrid->c3db::parall->is_master());
 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
+      auto nbq1 = nbq+1;
 
       if (lprint) coutput << std::endl << std::setw(12) << " Brillouin zone point:" << std::setw(4) << nbq+1 
                                                         << " of " << nbrillq <<  std::endl;
 
       double error_out,eorb0;
 
-      auto nbq1 = nbq+1;
 
-      double *psi_f = psi1 + nbq*nshift0;
+      double *psi_f = psi1         + nbq*nshift0;
       double *psi_v = psi1_excited + nbq*nshift1;
-      double *eig_v = eig_excited + nbq*nshift2;
+      double *eig_v = eig_excited  + nbq*nshift2;
 
       mygrid->g_ortho_excited(nbq1,psi_f,ne_excited,psi_v);
   
@@ -205,7 +205,8 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
                bool continue_inner_loop = true;
                for (int l=0; continue_inner_loop && l<=(1+(l2-1)*3); ++l)
                {
-                  eorb0 = epsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out,coutput);
+                  eorb0 = epsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
+                  //eorb0 = epsi_KS_update_virtual(nbq1,ms,k,1,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
                   if (error_out <= tole)
                      continue_inner_loop = false; // Exit the inner loop
                }
@@ -216,8 +217,8 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
                    if (l2 <= 1)
                    {
                       //std::cout << "retry orthogonalization" << std::endl;
-                      mygrid->c_pack_zero(1, orb);
-                      mygrid->c_pack_addzero(1, 1.0, orb);
+                      mygrid->c_pack_zero(nbq1, orb);
+                      mygrid->c_pack_addzero(nbq1, 1.0, orb);
                       int nne[2] = {1,0};
                       //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                       //mygrid->g_generate_excited_random(nne,orb);
@@ -287,7 +288,8 @@ void Solid::epsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
 double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
                                      const int maxit_orb, const double maxerror,
                                      const double perror, double *vall, double *orb,
-                                     double *error_out, std::ostream &coutput)
+                                     double *error_out, 
+                                     double *psi_f, double *psi_v, std::ostream &coutput)
 
 {           
    double *t0 = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
@@ -352,9 +354,9 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
          // project out lower virtual space
          //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
          // project out filled space
-         mygrid->g_project_out_filled(nbq1, psi1, ms, t);
+         mygrid->g_project_out_filled(nbq1, psi_f, ms, t);
 
-         mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi1_excited, t);
+         mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi_v, t);
 
          de0 = mygrid->cc_pack_dot(nbq1,t,t);
          de0 = 1.0/std::sqrt(de0);

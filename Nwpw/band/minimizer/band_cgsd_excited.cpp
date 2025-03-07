@@ -52,10 +52,14 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
 
    int ispin = mysolid.mygrid->ispin;
    int nex[2] = {control.nexcited(0), control.nexcited(1)};
-   int neall  = (nex[0] + nex[1]);
+   int nexall  = (nex[0] + nex[1]);
+
+   int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
+   int nshift1 = 2*(nex[0]+nex[1])  *mygrid->CGrid::npack1_max();
 
 
-   if (neall > 0) 
+
+   if (nexall > 0) 
    {
       double *vall = mygrid->c_nalloc(ispin);
       // calculating regular virtual orbitals 
@@ -69,21 +73,38 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
       mysolid.gen_vall();
       mysolid.get_vall(vall);
 
+      /*
       double *g = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
-      int nbq1 = 1;
-      for (auto k=0; k<(mygrid->ne[0]+mygrid->ne[1]); ++k)
+      for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
       {
-         int shift = 2*mygrid->CGrid::npack1_max()*k;
-         double *orb = mysolid.psi1 + shift;
-         mysolid.epsi_get_gradient(nbq1,orb,vall,g);
-         double e0 = mygrid->cc_pack_dot(nbq1,orb,g);
-         double n0 = mygrid->cc_pack_dot(nbq1,orb,orb);
-         std::cout << "k,e0=" << k << " " << e0 << " eig=" << mysolid.eig[k] << std::endl;
-         std::cout << "k,n0=" << k << " " << n0 << std::endl;
-         std::cout << "k,hml0=" << k << " " << mysolid.hml[2*k] << " " 
-                                            << mysolid.hml[2*k+1] << std::endl;
+         int nbq1 = nbq + 1;
+         for (auto k=0; k<(mygrid->ne[0]+mygrid->ne[1]); ++k)
+         {
+            int shift = 2*mygrid->CGrid::npack1_max()*k;
+            double *orb = mysolid.psi1 + shift + nbq*nshift0;
+            mysolid.epsi_get_gradient(nbq1,orb,vall,g);
+            double e0 = mygrid->cc_pack_dot(nbq1,orb,g);
+            double n0 = mygrid->cc_pack_dot(nbq1,orb,orb);
+            //std::cout << "nbq=" << nbq << " k=" << k << " e0=" << e0 << " n0="<< n0 << std::endl;
+         }
+      }
+      //std::cout << std::endl << std::endl;
+      for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
+      {
+         int nbq1 = nbq + 1;
+         for (auto k=0; k<(nex[0]+nex[1]); ++k)
+         {
+            int shift = 2*mygrid->CGrid::npack1_max()*k;
+            double *orb = mysolid.psi1_excited + shift + nbq*nshift1;
+            mysolid.epsi_get_gradient(nbq1,orb,vall,g);
+            double ex0 = mygrid->cc_pack_dot(nbq1,orb,g);
+            double nx0 = mygrid->cc_pack_dot(nbq1,orb,orb);
+            //std::cout << "nbq=" << nbq << " k=" << k << Ffmt(10,6)<< " ex0=" << ex0 << " nx0="<< nx0 << std::endl;
+         }
+
       }
       mygrid->c_pack_deallocate(g);
+      */
 
       mysolid.epsi_minimize(vall,coutput);
       if (lprint) coutput << mysolid.print_virtual();
