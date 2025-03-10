@@ -798,9 +798,10 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
             {
                 if (l2 <= 1)
                 {
-                   std::cout << "retry orthogonalization" << std::endl;
+                   //std::cout << "retry orthogonalization" << std::endl;
                    mygrid->c_pack_zero(1, orb);
-                   mygrid->c_pack_addzero(1, 1.0, orb);
+                   mygrid->c_pack_addzeros(1, 1.0, orb);
+                   //mygrid->c_pack_addzeros(1, 1.0, orb);
                    //int nne[2] = {1,0};
                    //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                    //mygrid->g_generate_excited_random(nne,orb);

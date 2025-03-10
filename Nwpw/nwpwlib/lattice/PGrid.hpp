@@ -170,6 +170,7 @@ public:
                         double *);
 
   void c_pack_addzero(const int, const double, double *);
+  void c_pack_addzeros(const int, const double, double *);
   void c_pack_noimagzero(const int, double *);
 
   void c_pack_zero(const int, double *);
