@@ -703,8 +703,6 @@ void Molecule::epsi_initialize(char *infilename, bool wvfnc_initialize, const in
    eig_excited = new double[nex[0] + nex[1]];
  
 
-
-
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
   bool  newpsi = epsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
 
@@ -800,10 +798,10 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
             {
                 if (l2 <= 1)
                 {
-                   //std::cout << "retry orthogonalization" << std::endl;
+                   std::cout << "retry orthogonalization" << std::endl;
                    mygrid->c_pack_zero(1, orb);
                    mygrid->c_pack_addzero(1, 1.0, orb);
-                   int nne[2] = {1,0};
+                   //int nne[2] = {1,0};
                    //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                    //mygrid->g_generate_excited_random(nne,orb);
                    mygrid->g_project_out_filled(psi1, ms, orb);
@@ -815,6 +813,7 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
             }
             else
                continue_outer_loop = false; // Exit the outer loop
+
          }
 
          // Store the minimized orbital energy

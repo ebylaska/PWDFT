@@ -3157,7 +3157,6 @@ void Cneb::g_project_out_virtual(const int nbq1, const int ms, const int nex[], 
       int indxkm = 2*CGrid::npack1_max()*km + kshift;
       std::complex<double> wkm = -CGrid::cc_pack_zdot(nbq1,psiv+indxkm,Horb);
       CGrid::cc_pack_zaxpy(nbq1, wkm, psiv+indxkm, Horb);
-      std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
    }
 }
 

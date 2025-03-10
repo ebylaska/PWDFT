@@ -2443,43 +2443,51 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     **** hilbert mapping ****
     *************************/
    else {
+    
      // double *tmp = new (std::nothrow) double[nx+2]();
      double tmp[nx + 2];
      int bsize = (nx + 2);
  
      /**** master node reads from file and distributes ****/
      if (taskid == MASTER)
+     {
        for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
- 
-           dread(iunit, tmp, bsize);
- 
-           index = ijktoindex2(0, j, k);
-           ii = ijktop2(0, j, k);
-           for (int jj = jstart; jj <= jend; ++jj) {
-             p_to = parall->convert_taskid_ij(ii, jj);
- 
-             if (p_to == MASTER)
-               for (int k = 0; k < bsize; ++k)
-                 a[index + k] = tmp[k];
-             else
-               parall->dsend(0, 9, p_to, bsize, tmp);
-           }
+         for (int j = 0; j < ny; ++j) 
+         {
+            dread(iunit, tmp, bsize);
+           
+            index = ijktoindex2(0, j, k);
+            ii = ijktop2(0, j, k);
+            for (int jj = jstart; jj <= jend; ++jj) 
+            {
+               p_to = parall->convert_taskid_ij(ii, jj);
+              
+               if (p_to == MASTER)
+                  for (int k = 0; k < bsize; ++k)
+                     a[index + k] = tmp[k];
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
          }
+     }
  
      /**** not master node ****/
      else if (fillcolumn)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           index = ijktoindex2(0, j, k);
-           ii = ijktop2(0, j, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) {
-             parall->dreceive(0, 9, MASTER, bsize, tmp);
-             for (int k = 0; k < bsize; ++k)
-               a[index + k] = tmp[k];
-           }
-         }
+     {
+       for (int k=0; k<nz; ++k)
+          for (int j=0; j<ny; ++j) 
+          {
+             index = ijktoindex2(0, j, k);
+             ii = ijktop2(0, j, k);
+             p_here = parall->convert_taskid_ij(ii, taskid_j);
+             if (p_here == taskid) 
+             {
+                parall->dreceive(0, 9, MASTER, bsize, tmp);
+                for (int k = 0; k < bsize; ++k)
+                   a[index + k] = tmp[k];
+             }
+          }
+     }
  
      // double tmp1[2*nfft3d];
      // double tmp2[2*nfft3d];
