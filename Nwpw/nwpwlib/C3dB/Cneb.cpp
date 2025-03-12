@@ -527,15 +527,17 @@ void Cneb::g_write(const int iunit, double *psi)
  *        Cneb::g_write_excited      *
  *                                   *
  *************************************/
-void Cneb::g_write_excited(const int iunit, const int nex[], double *psi)
+void Cneb::g_write_excited(const int iunit, const int nex[], const int nbrillouin0, double *psi)
 {
    int npack2 = 2*CGrid::npack1_max();
    int ibshiftj = npack2;
-   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   //int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   int ibshiftk = ibshiftj*(nex[0]+nex[1]);
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
        
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
+   if (nbrillouin != nbrillouin0) std::cout << "CRAP, nbrillouin=" << nbrillouin << " nbirllouin0=" << nbrillouin0 << std::endl;
 
    for (auto nb=0; nb<nbrillouin; ++nb)
    {
@@ -3129,10 +3131,13 @@ void Cneb::g_project_out_filled(const int nbq1, double *psi, const int ms, doubl
    int ishift = ms*ne[0]*2*CGrid::npack1_max();
    for (auto n=0; n<ne[ms]; ++n)
    {
+      //int indx = 2*CGrid::npack1_max()*n + ishift;
+      //double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+      //CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
       int indx = 2*CGrid::npack1_max()*n + ishift;
-      double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+      std::complex<double> w = -CGrid::cc_pack_zdot(nbq1,psi+indx,Horb);
+      CGrid::cc_pack_zaxpy(nbq1,w,psi+indx,Horb);
       //std::cout << "   n=" << n << " w=" << w << std::endl;
-      CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
    }
 }
 
@@ -3146,10 +3151,12 @@ void Cneb::g_project_out_virtual(const int nbq1, const int ms, const int nex[], 
    int kshift = ms*nex[0]*2*CGrid::npack1_max();
    for (auto km=k-1; km>=0; --km)
    {
+      //int indxkm = 2*CGrid::npack1_max()*km + kshift;
+      //double wkm = -CGrid::cc_pack_dot(nbq1, psiv+indxkm, Horb);
+      //CGrid::cc_pack_daxpy(nbq1, wkm, psiv+indxkm, Horb);
       int indxkm = 2*CGrid::npack1_max()*km + kshift;
-      double wkm = -CGrid::cc_pack_dot(nbq1, psiv+indxkm, Horb);
-      CGrid::cc_pack_daxpy(nbq1, wkm, psiv+indxkm, Horb);
-      //std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
+      std::complex<double> wkm = -CGrid::cc_pack_zdot(nbq1,psiv+indxkm,Horb);
+      CGrid::cc_pack_zaxpy(nbq1, wkm, psiv+indxkm, Horb);
    }
 }
 

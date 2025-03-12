@@ -35,6 +35,7 @@ class Control2 {
    bool pdeltae_check = true;
    bool pis_crystal = false;
 
+   bool ptwodfractional = false;
    bool pfractional = false;
    bool pfractional_frozen = false;
    int pfractional_smeartype;
@@ -236,6 +237,7 @@ public:
    int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
+   bool twodfractional() { return ptwodfractional; }
    bool fractional() { return pfractional; }
    bool fractional_frozen() { return pfractional_frozen; }
    int  fractional_orbitals(const int i) { return pfractional_orbitals[i]; }

@@ -256,6 +256,7 @@ void NN_dgemm(int M, int N, int K, double *hostA, double *hostB, double *hostC) 
     // Dispatch Threads
     MTLSize gridSize = MTLSizeMake(M, N, 1);
     MTLSize threadGroupSize = MTLSizeMake(16, 16, 1);
+    //MTLSize threadGroupSize = MTLSizeMake(32, 32, 1);
 
     [computeEncoder dispatchThreads:gridSize threadsPerThreadgroup:threadGroupSize];
     [computeEncoder endEncoding];
@@ -314,17 +315,17 @@ int main() {
     //for (int i = 0; i < M * K; i++) A[i] = ((double)(rand() % 1000))/1000.0;
     //for (int i = 0; i < K * N; i++) B[i] = ((double)(rand() % 1000))/1000.0;
 
-    for (int i = 0; i < M * K; i++) A[i] = 1.0 / (i + 1);
-    for (int i = 0; i < K * N; i++) B[i] = 1.0 / (i + 1);
+    //for (int i = 0; i < M * K; i++) A[i] = 1.0 / (i + 1);
+    //for (int i = 0; i < K * N; i++) B[i] = 1.0 / (i + 1);
 
 
-    //for (int i = 0; i < M * K; i++) A[i] = drand48() * 10.0;  // Scaled to [0,10)
-    //for (int i = 0; i < K * N; i++) B[i] = drand48() * 10.0;
+    for (int i = 0; i < M * K; i++) A[i] = drand48() * 0.04;  // Scaled to [0,0.04)
+    for (int i = 0; i < K * N; i++) B[i] = drand48() * 0.04;
     
     // ✅ Compute C_ref using Accelerate BLAS (Reference)
     uint64_t start_ref = mach_absolute_time();
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
-                M, N, K, 1.0, A, K, B, N, 0.0, C_ref, N);
+                M, N, K, (double) 1.0, (double *) A, K, (double *) B, N, (double) 0.0, (double *) C_ref, N);
     uint64_t end_ref = mach_absolute_time();
     double elapsed_ref = (double)(end_ref - start_ref) * 1e-6;
     printf("✅ Accelerate BLAS DGEMM completed in %.3f ms\n", elapsed_ref);

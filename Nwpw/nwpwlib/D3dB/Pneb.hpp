@@ -93,6 +93,7 @@ public:
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, double *);
    void g_read_ne_reverse(const int, const int *, double *);
+   void g_read_excited(const int, const int *, double *);
    void g_write(const int, double *);
    void g_write_excited(const int, const int *, double *);
  

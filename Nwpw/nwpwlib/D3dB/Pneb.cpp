@@ -403,18 +403,20 @@ void Pneb::g_read(const int iunit, double *psi)
  *************************************/
 void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
+   int i;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
    //std::unique_ptr<double*> tmp2(new double[n2ft3d]());
 
  
-   taskid_j = d1db::parall->taskid_j();
+   int taskid_j = d1db::parall->taskid_j();
  
-   for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne0[ms]; ++n) 
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto n=0; n<ne0[ms]; ++n) 
       {
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         
          if (n<ne0[ms])
          {
             c_read(iunit, tmp2, pj);
@@ -428,11 +430,12 @@ void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          
          if (pj == taskid_j) 
          {
-            indx = 2*PGrid::npack(1)*qj;
+            int indx = 2*PGrid::npack(1)*qj;
             PGrid::c_pack(1, tmp2);
             PGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
       }
+   }
  
    delete[] tmp2;
 }
@@ -535,8 +538,8 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
 
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   for (auto ms = 0; ms < ispin; ++ms)
-   for (auto n = 0; n < nex[ms]; ++n)
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
    {
       int indx = 2 * PGrid::npack(1) * n;
       PGrid::cc_pack_copy(1, psi + indx, tmp2);
@@ -548,6 +551,34 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
          c_write(iunit,tmp2,taskid_j);
    }
 
+   delete[] tmp2;
+}
+
+
+  
+/*************************************
+ *                                   *
+ *       Pneb::g_read_excited        *
+ *                                   *
+ *************************************/
+void Pneb::g_read_excited(const int iunit, const int nex[], double *psi)
+{
+   d3db::parall->Barrier();
+   int taskid_j = d1db::parall->taskid_j();
+
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
+   {
+      c_read(iunit,tmp2,taskid_j);
+
+      PGrid::c_pack(1, tmp2);
+
+      int indx = 2 * PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi + indx);
+
+   }
    delete[] tmp2;
 }
 
@@ -568,8 +599,7 @@ double Pneb::gg_traceall_excited(const int nex[], double *psi1, double *psi2)
       sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
       indx += 2 * PGrid::npack(1);
    }
-   //if (ispin == 1)
-   //   sum *= 2.0;
+   //if (ispin == 1) sum *= 2.0;
  
    return d3db::parall->SumAll(0, sum);
 }

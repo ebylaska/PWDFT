@@ -58,7 +58,7 @@ class Solid {
   int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, nfft3d, shift1, shift2;
   int ne_excited[2] = {0,0};
   int nfft[3];
-  int version = 3;
+  int version = 5;
 
 public:
    Cneb *mygrid;
@@ -100,22 +100,22 @@ public:
    }
 
 
-   void epsi_initialize(char *,bool, const int *, std::ostream &);
-   void epsi_finalize(char *, std::ostream &);
-   void epsi_minimize(double *, std::ostream &);
-   void epsi_get_gradient(const int, double *, double *, double *);
-   double epsi_KS_update_virtual(const int, const int, const int, const int, const double, const double, double *, double *, double *, std::ostream &);
+   void ecpsi_initialize(char *,bool, const int *, std::ostream &);
+   void ecpsi_finalize(char *, std::ostream &);
+   void ecpsi_minimize(double *, std::ostream &);
+   void ecpsi_get_gradient(const int, double *, double *, double *);
+   double ecpsi_KS_update_virtual(const int, const int, const int, const int, const double, const double, double *, double *, double *, double *, double *,  std::ostream &);
 
-   void epsi_linesearch_update(const int, double, double, double *, double *, double *, double *);
-   void epsi_sort_virtual(const int, double *, double *);
+   void ecpsi_linesearch_update(const int, double, double, double *, double *, double *, double *);
+   void ecpsi_sort_virtual(const int, double *, double *);
 
  
    /* write psi solid */
-   void writepsi(char *output_filename, std::ostream &coutput) {
+   void writecpsi(char *output_filename, std::ostream &coutput) {
       cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1,output_filename,coutput);
    }
 
-   void writepsi_excited(char *output_filename, std::ostream &coutput) {
+   void writecpsi_excited(char *output_filename, std::ostream &coutput) {
       cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1_excited,output_filename,coutput);
    }
 
@@ -318,6 +318,7 @@ public:
       std::ios init(NULL);
       init.copyfmt(stream);
       std::string eoln = "\n";
+      int nexall = ne_excited[0] + ne_excited[1];
 
       for (auto nbq=0; nbq<nbrillouin; ++nbq)
       {
@@ -329,15 +330,15 @@ public:
       
          // Print the first set of excited states in reverse order without symmetry considerations
          for (int i = ne_excited[0]-1; i>=ne_excited[1]; --i) 
-            stream << eig1stream(eig_excited[i + nbq*neall], eig_excited[i + nbq*neall]*ev);
+            stream << eig1stream(eig_excited[i + nbq*nexall], eig_excited[i + nbq*nexall]*ev);
       
          // Print the second set of excited states in reverse order without symmetry considerations
          for (int i = ne_excited[1]-1; i>=0; --i) 
          {
             stream << eig2stream(
-                        eig_excited[i + nn + nbq*neall], eig_excited[i + nn + nbq*neall]*ev,
-                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*neall],
-                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*neall]*ev);
+                        eig_excited[i + nn + nbq*nexall], eig_excited[i + nn + nbq*nexall]*ev,
+                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*nexall],
+                        eig_excited[i + (ispin - 1) * ne_excited[0] + nbq*nexall]*ev);
          }
          stream << eoln;
       }
