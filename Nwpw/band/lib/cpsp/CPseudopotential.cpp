@@ -2410,7 +2410,8 @@ double CPseudopotential::e_nonlocal(double *psi)
          DSCAL_PWDFT(ntmp, scal, zsw2, one);
 
         
-         std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
+         //std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
+         std::complex<double> ztmp = util_zdotc(ntmp, zsw1, one, zsw2, one);
          
          esum += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();

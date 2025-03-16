@@ -461,6 +461,55 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
    delete[] tmp2;
 }
 
+/*************************************
+ *                                   *
+ *           Cneb::g_read_excited    *
+ *                                   *
+ *************************************/
+void Cneb::g_read_excited(const int iunit, const int nex[], const int nbrillouin0,  double *psi) 
+{
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(nex[0]+nex[1]);
+
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+
+   if (nbrillouin <= nbrillouin0)
+   {
+      for (auto nb=0; nb<nbrillouin; ++nb)
+      {
+         int qk = ktoindex(nb);
+         int pk = ktop(nb);
+         int nbq1 = qk+1;
+    
+         for (auto ms=0; ms<ispin; ++ms)
+         for (auto n=0; n<nex[ms]; ++n)
+         {
+            if ((n<nex[ms]) && (nb<nbrillouin0))
+            {
+               c3db::c_read(iunit,tmp2,taskid_j,pk);
+            }
+            else
+            {
+               c3db::r_setrandom(tmp2);
+               c3db::rc_fft3d(tmp2);
+            }
+    
+            if (pk==taskid_k)
+            {
+               int indx = ibshiftj*n + ibshiftk*qk;
+               CGrid::c_pack(nbq1, tmp2);
+               CGrid::cc_pack_copy(nbq1, tmp2, psi+indx);
+            }
+         }
+      }
+   }
+   else
+       std::cout << "nbrillouin > nbrillouin0" << std::endl;
+
+   delete[] tmp2;
+}
 
 
 /*************************************
@@ -548,12 +597,12 @@ void Cneb::g_write_excited(const int iunit, const int nex[], const int nbrilloui
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<nex[ms]; ++n)
       {
-         int qj = msntoindex(ms, n);
-         int pj = msntop(ms, n);
+         //int qj = msntoindex(ms, n);
+         //int pj = msntop(ms, n);
 
-         if ((pj==taskid_j) && (pk==taskid_k))
+         if (pk==taskid_k)
          {
-            int indx = ibshiftj*qj + ibshiftk*qk;
+            int indx = ibshiftj*n + ibshiftk*qk;
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
             CGrid::c_unpack(nbq1, tmp2);
 
@@ -563,7 +612,7 @@ void Cneb::g_write_excited(const int iunit, const int nex[], const int nbrilloui
          //   c_write_buffer(iunit,tmp2,pj,pk);
          //else
 
-         c3db::c_write(iunit,tmp2,pj,pk);
+         c3db::c_write(iunit,tmp2,taskid_j,pk);
       }
    }
 
@@ -3137,7 +3186,6 @@ void Cneb::g_project_out_filled(const int nbq1, double *psi, const int ms, doubl
       int indx = 2*CGrid::npack1_max()*n + ishift;
       std::complex<double> w = -CGrid::cc_pack_zdot(nbq1,psi+indx,Horb);
       CGrid::cc_pack_zaxpy(nbq1,w,psi+indx,Horb);
-      //std::cout << "   n=" << n << " w=" << w << std::endl;
    }
 }
 

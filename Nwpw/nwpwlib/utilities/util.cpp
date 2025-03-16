@@ -1358,4 +1358,51 @@ void util_matprint(std::string matlabel, int n, double *A) {
 }
 #endif
 
+
+
+
+/**************************************
+ *                                    *
+ *             util_zdotc             *
+ *                                    *
+ **************************************/
+/**
+ * @brief Computes the complex conjugated dot product of two vectors stored in interleaved double format.
+ *
+ * This function calculates the dot product:
+ * \f[
+ * \text{sum} = \sum_{i=0}^{n-1} \text{conj}(x_i) \cdot y_i
+ * \f]
+ * where each complex number is stored as two consecutive `double` values: 
+ * real and imaginary parts interleaved in memory (`[Re0, Im0, Re1, Im1, ...]`).
+ *
+ * @param n     Number of complex elements in the vectors.
+ * @param x     Pointer to the first input vector (complex numbers in interleaved double format).
+ * @param incx  Stride between elements in `x` (in complex units).
+ * @param y     Pointer to the second input vector (same format as `x`).
+ * @param incy  Stride between elements in `y` (in complex units).
+ * @return      The complex dot product as a `std::complex<double>`.
+ *
+ * @note This function is equivalent to the BLAS `ZDOTC` operation, but implemented in portable C++.
+ */
+std::complex<double> util_zdotc(int n,
+                                const double* x, int incx,
+                                const double* y, int incy)
+{
+    std::complex<double> sum(0.0, 0.0);
+    int ix = 0, iy = 0;
+
+    for (int i = 0; i < n; ++i) {
+        std::complex<double> cx(x[ix], x[ix + 1]);
+        std::complex<double> cy(y[iy], y[iy + 1]);
+        sum += std::conj(cx) * cy;
+        ix += 2 * incx;
+        iy += 2 * incy;
+    }
+
+    return sum;
+}
+
+
+
 } // namespace pwdft
