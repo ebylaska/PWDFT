@@ -205,6 +205,48 @@ public:
       return ptr;
    }
 
+   // initialize occupations
+   /**
+    * @brief Initializes occupation numbers for a system with spin channels and extra states.
+    *
+    * @param nextra Array specifying the number of extra (unoccupied) states for each spin channel.
+    * @param ptrb   Pointer to a pre-allocated array of size `nbrillq * (ne[0] + ne[1])`.
+    *
+    * The occupation array is filled as follows:
+    * - For each spin channel (`ispin` = 1 or 2),
+    * - Occupation is 0.0 for the first `nextra[ms]` states, and 1.0 for the rest.
+    *
+    * Example (ispin=2, ne={5,5}, nextra={2,3}):
+    *   Output: ptr = {0,0,1,1,1,  0,0,0,1,1}
+    */
+   void initialize_occupations(const int nextra[], double *ptrb)
+   {
+      for (int nb=0; nb<nbrillq; ++nb)
+      {
+         double *ptr = ptrb + nb*(ne[0]+ne[1]);
+         for (int ms = 0; ms < ispin; ++ms)
+         {
+            int offset = ms*ne[0]; // Precompute offset for indexing
+            for (int n = 0; n < ne[ms]; ++n)
+               ptr[offset + n] = (n < nextra[ms]) ? 0.0 : 1.0;
+         }
+      }
+   }
+   /**
+    * @brief Allocates and initializes the occupation array.
+    *
+    * @param nextra Array of extra unoccupied states per spin channel.
+    * @return Pointer to a newly allocated array (caller is responsible for deleting it).
+    *
+    * Internally calls `initialize_occupations` to fill values.
+    */
+   double* initialize_occupations_with_allocation(const int nextra[])
+   {  
+       double* ptr = new double[nbrillq*(ne[0] + ne[1])];
+       initialize_occupations(nextra, ptr);
+       return ptr;
+   }     
+
  
  
    double gg_traceall_excited(const int *, double *, double *);

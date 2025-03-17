@@ -342,15 +342,15 @@ void Cneb::g_generate_excited_random(const int nex[], double *psi)
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<nex[ms]; ++n)
          {
-            int qj = msntoindex(ms, n);
-            int pj = msntop(ms, n);
-            if ((pj == taskid_j) && (pk==taskid_k))
+            //int qj = msntoindex(ms, n);
+            //int pj = msntop(ms, n);
+            if (pk==taskid_k)
             {
               c3db::r_setrandom(tmp2);
               c3db::rc_fft3d(tmp2);
 
               CGrid::c_pack(nbq1, tmp2);
-              int indx = ibshiftj*qj + ibshiftk*qk;
+              int indx = ibshiftj*n + ibshiftk*qk;
               CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
             }
       }
@@ -3221,8 +3221,14 @@ void Cneb::g_norm(const int nbq1, double *psi_to_norm)
    // Check if the norm is effectively zero (within a small threshold)
    if (squared_norm <= 1.0e-12)
    {
-        std::cerr << "Warning: Norm is too small to normalize the vector. Skipping normalization." << std::endl;
-        return;  // Exit the function early if the vector is too small to normalize
+        std::cerr << "Warning: Norm is too small to normalize the vector. Fixing to 1.0." << std::endl;
+        psi_to_norm[0] = 1.0;
+        psi_to_norm[1] = 0.0001;
+        psi_to_norm[2] = -0.009;
+        psi_to_norm[11] = -0.0003;
+
+        squared_norm = CGrid::cc_pack_dot(nbq1, psi_to_norm, psi_to_norm);
+        //return;  // Exit the function early if the vector is too small to normalize
    }
     
    // Compute the inverse of the square root of the squared norm (1/norm)
