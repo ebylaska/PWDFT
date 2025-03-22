@@ -724,9 +724,12 @@ std::complex<double> CGrid::cc_pack_zdot(const int nb, double *a, double *b)
 {
    int one = 1;
    // int ng  = 2*(nidb[nb]);
+
+
    int ng  = (nidb[nb]);
  
-   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   //std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   std::complex<double> tsum  = util_zdotc(ng, a,one,b,one);
    c3db::parall->Vector_SumAll(1,2,reinterpret_cast<double*>(&tsum));
 
    return tsum;
@@ -743,7 +746,8 @@ std::complex<double> CGrid::cc_pack_izdot(const int nb, double *a, double *b)
    // int ng  = 2*(nidb[nb]);
    int ng  = (nidb[nb]);
  
-   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   //std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   std::complex<double> tsum  = util_zdotc(ng, a,one,b,one);
 
    return tsum;
 }
@@ -761,7 +765,8 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
 
    for (int i=0; i<nn; ++i) 
    {
-      std::complex<double> tsum = ZDOTC_PWDFT(ng, a+i*2*ng,one,b,one);
+      //std::complex<double> tsum = ZDOTC_PWDFT(ng, a+i*2*ng,one,b,one);
+      std::complex<double> tsum = util_zdotc(ng, a+i*2*ng,one,b,one);
       sum[2*i]   = tsum.real();
       sum[2*i+1] = tsum.imag();
    }
@@ -3736,6 +3741,36 @@ void CGrid::cc_pack_zaxpy(const int nb, const std::complex<double> alpha, const 
       i1 += 2;
       i2 += 2;
    }
+}
+
+/********************************
+ *                              *
+ *    CGrid:c_corrector_orb     *
+ *                              *
+ ********************************/
+void CGrid::c_corrector_orb(const int nb, double *orb)
+{  
+   int ng = (nidb[nb]);
+   double *tmp = new (std::nothrow) double[2*nfft3d];
+   
+   int i1 = 0; int i2 = 1;
+   for (auto k=0; k<nfft3d; ++k)
+   {
+      tmp[i1] = 0.1;
+      tmp[i2] = 0.002*sin(0.001*(k+1));
+      i1 += 2; 
+      i2 += 2; 
+   }
+   this->rc_pfft3f(nb, tmp);
+   c_pack(nb,tmp);
+   double squared_norm = cc_pack_dot(nb,tmp,tmp);
+      
+   double norm_inverse = 1.0 / std::sqrt(squared_norm);
+    
+   c_pack_SMul(nb, norm_inverse, tmp);
+   cc_pack_copy(nb,tmp,orb);
+
+   delete [] tmp;
 }
 
 

@@ -177,7 +177,7 @@ void Solid::ecpsi_minimize(double *vall, std::ostream &coutput)
             double *orb = psi_v + indxk;
 
             //double tum = mygrid->cc_pack_dot(nbq1,orb,orb);
-            //std::cout << "k=" << k << " tum=" << tum << std::endl;
+            //std::cout << "NORM k=" << k << " tum=" << tum << std::endl;
 
             bool continue_outer_loop = true;
             for (int l2=1; continue_outer_loop && l2<=2; ++l2)
@@ -216,15 +216,15 @@ void Solid::ecpsi_minimize(double *vall, std::ostream &coutput)
                {
                    if (l2 <= 1)
                    {
-                      //std::cout << "retry orthogonalization" << std::endl;
-                      mygrid->c_pack_zero(nbq1, orb);
-                      mygrid->c_pack_addzero(nbq1, 1.0, orb);
-                      int nne[2] = {1,0};
+                      //mygrid->c_pack_zero(nbq1, orb);
+                      //mygrid->c_pack_addzero(nbq1, 1.0, orb);
+                      //int nne[2] = {1,0};
                       //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                       //mygrid->g_generate_excited_random(nne,orb);
-                      mygrid->g_project_out_filled(nbq1,psi_f,ms,orb);
-                      mygrid->g_project_out_virtual(nbq1,ms,ne_excited,k,psi_v,orb);
-                      mygrid->g_norm(nbq1,orb);
+                      //mygrid->g_project_out_filled(nbq1,psi_f,ms,orb);
+                      //mygrid->g_project_out_virtual(nbq1,ms,ne_excited,k,psi_v,orb);
+                      //mygrid->g_norm(nbq1,orb);
+                      mygrid->c_corrector_orb(nbq1,orb);
                    }
                    else
                       continue_outer_loop = false; // Exit the outer loop
@@ -326,58 +326,61 @@ double Solid::ecpsi_KS_update_virtual(const int nbq1, const int ms, const int k,
 
       done = ((it > maxit_orb) || (std::abs(e0-eold)<maxerror));
 
-      mygrid->cc_pack_copy(nbq1,g,r1);
-      mygrid->cc_pack_daxpy(nbq1,(e0),orb,r1);
-
-      //preconditioning 
-      if (precondition)
+      if (!done)
       {
-         ++pit;
-         myelectron->get_myke()->ke_precondition(nbq1,ep,1,orb,r1);
-      }
-
-      //determine conjuagate direction ***
-      double lmbda_r1 = mygrid->cc_pack_dot(nbq1,r1,r1);
-
-      mygrid->cc_pack_copy(nbq1,r1,t);
-
-
-      if (it>1) mygrid->cc_pack_daxpy(nbq1,(lmbda_r1/lmbda_r0),t0,t);
-      lmbda_r0 = lmbda_r1;
-      bool oneloop = true;
-      bool repeat_loop = true;
-      while (repeat_loop)
-      {
-        mygrid->cc_pack_copy(nbq1,t,t0);
-
-         //normalize search direction, t ****
-         // project out lower virtual space
-         //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
-         // project out filled space
-         mygrid->g_project_out_filled(nbq1, psi_f, ms, t);
-
-         mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi_v, t);
-
-         de0 = mygrid->cc_pack_dot(nbq1,t,t);
-         de0 = 1.0/std::sqrt(de0);
-         mygrid->c_pack_SMul(nbq1,de0,t);
-         de0 = mygrid->cc_pack_dot(nbq1,t,g);
-
-         //bad direction;
-         if ((de0<0.0) && oneloop)
+         mygrid->cc_pack_copy(nbq1,g,r1);
+         mygrid->cc_pack_daxpy(nbq1,(e0),orb,r1);
+ 
+         //preconditioning 
+         if (precondition)
          {
-             mygrid->cc_pack_copy(nbq1,g,t);
-             oneloop = false;
+            ++pit;
+            myelectron->get_myke()->ke_precondition(nbq1,ep,1,orb,r1);
          }
-         else
-            repeat_loop = false;
+ 
+         //determine conjuagate direction ***
+         double lmbda_r1 = mygrid->cc_pack_dot(nbq1,r1,r1);
+ 
+         mygrid->cc_pack_copy(nbq1,r1,t);
+ 
+ 
+         if (it>1) mygrid->cc_pack_daxpy(nbq1,(lmbda_r1/lmbda_r0),t0,t);
+         lmbda_r0 = lmbda_r1;
+         bool oneloop = true;
+         bool repeat_loop = true;
+         while (repeat_loop)
+         {
+           mygrid->cc_pack_copy(nbq1,t,t0);
+ 
+            //normalize search direction, t ****
+            // project out lower virtual space
+            //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
+            // project out filled space
+            mygrid->g_project_out_filled(nbq1, psi_f, ms, t);
+ 
+            mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi_v, t);
+ 
+            de0 = mygrid->cc_pack_dot(nbq1,t,t);
+            de0 = 1.0/std::sqrt(de0);
+            mygrid->c_pack_SMul(nbq1,de0,t);
+            de0 = mygrid->cc_pack_dot(nbq1,t,g);
+ 
+            //bad direction;
+            if ((de0<0.0) && oneloop)
+            {
+                mygrid->cc_pack_copy(nbq1,g,t);
+                oneloop = false;
+            }
+            else
+               repeat_loop = false;
+         }
+         de0 = -2.0*de0;
+ 
+         ecpsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*n2ft3d,orb,t);
+ 
+         done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
+         //done = true;
       }
-      de0 = -2.0*de0;
-
-      ecpsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*n2ft3d,orb,t);
-
-      done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
-      //done = true;
    }
 
    mygrid->c_pack_deallocate(t);
@@ -429,6 +432,7 @@ void Solid::ecpsi_linesearch_update(const int nbq1,
    x = (e0 - e1 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
    //x = (e1 - e0 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
    double theta1 = 0.5*std::atan(0.50*de0/x);
+   
 
    // orb2 = orb*cos(theta) + t*sin(theta) ****
    x = std::cos(theta1);
@@ -437,7 +441,6 @@ void Solid::ecpsi_linesearch_update(const int nbq1,
    double sum = mygrid->cc_pack_dot(nbq1,torb,t);
    mygrid->cc_pack_SMul(nbq1,x,torb,orb);
    mygrid->cc_pack_daxpy(nbq1,y,t,orb);
-   //std::cout << "theta,x,y=" << std::setprecision(6) << theta1 << " " << x << " " << y <<  " " << e0 << " " << e1 << " " << sum << std::endl;
 
    mygrid->c_pack_deallocate(torb);
    mygrid->c_pack_deallocate(g);

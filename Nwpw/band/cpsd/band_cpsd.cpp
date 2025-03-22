@@ -44,15 +44,24 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 {
    Parallel myparallel(comm_world0);
 
-   int version, nfft[3], ne[2], ispin, nbrillq, nbrillouin;
+   int version, nfft[3], ne[2], nextra[2], ispin, nbrillq, nbrillouin;
    int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
    char date[26];
    double sum1, sum2, ev, zv;
    double cpu1, cpu2, cpu3, cpu4;
    double E[80], deltae, deltac, deltar, viral, unita[9], en[2];
    double *psi1, *psi2, *Hpsi, *psi_r;
+   double *occ1, *occ2;
    double *dn;
    double *hml, *lmbda, *eig;
+
+   // psi smearing block
+   bool fractional;
+   int smearoccupation, smeartype;
+   double smearfermi[2], smearcorrection, smearkT, smearcorrection_old;
+
+
+
  
    Control2 control(myparallel.np(), rtdbstring);
 
@@ -104,6 +113,29 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    psp_file_check(&myparallel, &myion, control, std::cout);
    MPI_Barrier(comm_world0);
 
+   /* fetch fractional control variables */
+   fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+      smearcorrection = 0.0;
+      smeartype = control.fractional_smeartype();
+      smearkT   = control.fractional_kT();
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+   }
+   ispin = control.ispin();
+   ne[0] = control.ne(0) + nextra[0];
+   ne[1] = control.ne(1) + nextra[1];
+
+
 
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
@@ -112,7 +144,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    //std::cout << "ispin=" << control.ispin() << " ne=" << control.ne_ptr()[0] << " " << control.ne_ptr()[1] 
    //          << " nbrillioun=" << mybrillouin.nbrillouin << std::endl;
    /* initialize parallel grid structure */
-   Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+   //Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+   Cneb mygrid(&myparallel, &mylattice, control, ispin,ne,&mybrillouin);
 
    /* initialize psi1 and psi2 */
    //ispin = control.ispin(); 
@@ -127,6 +160,12 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    eig   = new double[nbrillq*(ne[0]+ne[1])];
 
    mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
+
+   if (fractional)
+   {
+      occ1 = mygrid.initialize_occupations_with_allocation(nextra);
+      occ2 = mygrid.initialize_occupations_with_allocation(nextra);
+   }
 
 
 
@@ -564,6 +603,11 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.w_deallocate(hml);
    mygrid.w_deallocate(lmbda);
    delete [] eig;
+   if (fractional)
+   {
+      delete[] occ1;
+      delete[] occ2;
+   }
    mygrid.c3db::mygdevice.psi_dealloc();
 
 

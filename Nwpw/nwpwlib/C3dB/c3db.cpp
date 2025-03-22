@@ -4110,36 +4110,43 @@ std::string c3db::r_formatwrite_reverse(double *a)
     ************************************/
  
    /**** master node gathers and write to file ****/
-   if (taskid == MASTER) {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_from = cijktop2(i, j, k);
-           if (p_from == MASTER)
-             tmp[k] = a[index];
-           else
-             parall->dreceive(0, 189, p_from, 1, tmp + k);
+   if (taskid == MASTER) 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_from = cijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = a[index];
+               else
+                  parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+            for (auto k = 0; k < nz; k += 6) 
+            {
+               for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
+                  stream << Efmt(13, 5) << tmp[k1];
+               stream << std::endl;
+            }
+            // stream << std::endl;
          }
-         for (auto k = 0; k < nz; k += 6) {
-           for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
-             stream << Efmt(13, 5) << tmp[k1];
-           stream << std::endl;
-         }
-         // stream << std::endl;
-       }
    }
    /**** not master node ****/
-   else {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_here = cijktop2(i, j, k);
-           if (p_here == taskid)
-             parall->dsend(0, 189, MASTER, 1, a + index);
+   else 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_here = cijktop2(i, j, k);
+               if (p_here == taskid)
+                  parall->dsend(0, 189, MASTER, 1, a + index);
+            }
          }
-       }
    }
  
    return stream.str();

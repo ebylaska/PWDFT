@@ -3921,14 +3921,36 @@ void PGrid::cccc_pack_Sum(const int nb, const double *a, const double *b, const 
 
 /********************************
  *                              *
+ *     PGrid:c_pack_addzeros    *
+ *                              *
+ ********************************/
+void PGrid::c_pack_addzeros(const int nb, const double vzero, double *a) 
+{
+   int pzero0  = ijktop(0, 0, 0);
+   int pzero1  = ijktop(1, 0, 0);
+   int pzero2  = ijktop(0, 1, 0);
+   int pzero3  = ijktop(0, 0, 1);
+   int index0 = ijktoindex(0, 0, 0);
+   int index1 = ijktoindex(1, 0, 0);
+   int index2 = ijktoindex(0, 1, 0);
+   int index3 = ijktoindex(0, 0, 1);
+   if (pzero0 == parall->taskid_i()) a[2*index0] += 0.25*vzero;
+   if (pzero1 == parall->taskid_i()) a[2*index1] += 0.25*vzero;
+   if (pzero2 == parall->taskid_i()) a[2*index2] += 0.25*vzero;
+   if (pzero3 == parall->taskid_i()) a[2*index3] += 0.25*vzero;
+}
+
+/********************************
+ *                              *
  *     PGrid:c_pack_addzero     *
  *                              *
  ********************************/
-void PGrid::c_pack_addzero(const int nb, const double vzero, double *a) {
-  int pzero = ijktop(0, 0, 0);
-  if (pzero == parall->taskid_i())
-    a[0] += vzero;
-}
+void PGrid::c_pack_addzero(const int nb, const double vzero, double *a) 
+{ 
+   int pzero0  = ijktop(0, 0, 0);
+   int index0 = ijktoindex(0, 0, 0);
+   if (pzero0 == parall->taskid_i()) a[2*index0] += 0.25*vzero;
+}  
 
 /********************************
  *                              *

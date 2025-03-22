@@ -91,6 +91,12 @@ extern void util_print_elapsed_time(const double);
 extern void util_matprint(std::string, int, double *);
 #endif
 
+
+extern std::complex<double> util_zdotc(int n,
+                                       const double* x, int incx,
+                                       const double* y, int incy);
+
+
 } // namespace pwdft
 
 #endif
