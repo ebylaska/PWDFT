@@ -131,6 +131,11 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       nextra[0] = 0;
       nextra[1] = 0;
    }
+   ispin = control.ispin();
+   ne[0] = control.ne(0) + nextra[0];
+   ne[1] = control.ne(1) + nextra[1];
+
+
 
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
@@ -139,7 +144,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    //std::cout << "ispin=" << control.ispin() << " ne=" << control.ne_ptr()[0] << " " << control.ne_ptr()[1] 
    //          << " nbrillioun=" << mybrillouin.nbrillouin << std::endl;
    /* initialize parallel grid structure */
-   Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+   //Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),control.ne_ptr(),&mybrillouin);
+   Cneb mygrid(&myparallel, &mylattice, control, ispin,ne,&mybrillouin);
 
    /* initialize psi1 and psi2 */
    //ispin = control.ispin(); 
