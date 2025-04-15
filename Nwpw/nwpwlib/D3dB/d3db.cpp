@@ -3051,12 +3051,44 @@ void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
                   d3db::parall->dreceive(0, 189, p_from, 1, tmp + k);
             }
 
+            //for (int k = 0; k < nz; k += 6)
+           // {
+           //    for (int k1 = k; k1 < std::min(k + 6, nz); ++k1)
+           //       stream << Efmt(13, 5) << tmp[k1];
+           //    stream << '\n';
+           // }
+
+            char linebuf[128];
+
             for (int k = 0; k < nz; k += 6)
             {
-               for (int k1 = k; k1 < std::min(k + 6, nz); ++k1)
-                  stream << Efmt(13, 5) << tmp[k1];
-               stream << '\n';
+               int remain = std::min(6, nz - k);
+               int n = 0;
+          
+               switch (remain)
+               {
+                   case 6: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e%13.5e%13.5e%13.5e%13.5e%13.5e\n",
+                           tmp[k], tmp[k+1], tmp[k+2], tmp[k+3], tmp[k+4], tmp[k+5]); break;
+                   case 5: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e%13.5e%13.5e%13.5e%13.5e\n",
+                           tmp[k], tmp[k+1], tmp[k+2], tmp[k+3], tmp[k+4]); break;
+                   case 4: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e%13.5e%13.5e%13.5e\n",
+                           tmp[k], tmp[k+1], tmp[k+2], tmp[k+3]); break;
+                   case 3: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e%13.5e%13.5e\n",
+                           tmp[k], tmp[k+1], tmp[k+2]); break;
+                   case 2: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e%13.5e\n",
+                           tmp[k], tmp[k+1]); break;
+                   case 1: n = snprintf(linebuf, sizeof(linebuf),
+                           "%13.5e\n",
+                           tmp[k]); break;
+               }
+               stream.write(linebuf, n);
             }
+
          }
    }
    else
