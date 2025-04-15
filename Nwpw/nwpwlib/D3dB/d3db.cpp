@@ -3016,6 +3016,67 @@ std::string d3db::r_formatwrite_reverse(double *a)
    return stream.str();
 }
 
+
+/**********************************************
+ *                                            *
+ *      r_formatwrite_reverse_to_stream       *
+ *                                            *
+ **********************************************/
+ /**
+  * @brief Format and write a double array in reverse k-order directly to a stream.
+  *
+  * This avoids the memory pressure of buffering the entire cube file before flush.
+  * The data is gathered by the master task and streamed directly to the output.
+  *
+  * @param rho     Pointer to 3D real-space data array (size = nx * ny * nz)
+  * @param stream  An open output stream (e.g., std::ofstream) to write to
+  */
+void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   double tmp[nz];
+
+   if (taskid == MASTER)
+   {
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+         {
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_from = ijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = rho[index];
+               else
+                  d3db::parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+
+            for (int k = 0; k < nz; k += 6)
+            {
+               for (int k1 = k; k1 < std::min(k + 6, nz); ++k1)
+                  stream << Efmt(13, 5) << tmp[k1];
+               stream << '\n';
+            }
+         }
+   }
+   else
+   {
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_here = ijktop2(i, j, k);
+               if (p_here == taskid)
+                  d3db::parall->dsend(0, 189, MASTER, 1, rho + index);
+            }
+   }
+
+   d3db::parall->Barrier();
+}
+
+
+
 void d3db::cshift1_fftb(const int n1, const int n2, const int n3, const int n4,
                         double *a) {
   int i, j, indx;

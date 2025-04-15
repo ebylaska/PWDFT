@@ -307,6 +307,21 @@ double Parallel::MaxAll(const int d, const double sum) {
   return sumout;
 }
 
+/********************************
+ *                              *
+ *          MinAll              *
+ *                              *
+ ********************************/
+double Parallel::MinAll(const int d, const double sum) {
+  double sumout;
+  if (npi[d] > 1)
+    // comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_MAX);
+    MPI_Allreduce(&sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_MIN, comm_i[d]);
+  else
+    sumout = sum;
+  return sumout;
+}
+
 
 /********************************
  *                              *

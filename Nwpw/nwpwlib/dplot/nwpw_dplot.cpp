@@ -50,7 +50,10 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
    bool is_master = mypneb->d3db::parall->is_master();
  
    std::string cube_filename = permanent_dir_str + "/" + cfilename;
-   std::string cube_string = mypneb->r_formatwrite_reverse(rho);
+   //std::string cube_string = mypneb->r_formatwrite_reverse(rho);
+
+   //mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
+
  
    mypneb->d3db::parall->Barrier();
  
@@ -78,9 +81,17 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
  
    int nion2 = myion->nion;
  
+   std::ofstream cube_stream;
    if (is_master) 
    {
-      std::ofstream cube_stream(cube_filename);
+     //std::ofstream cube_stream(cube_filename);
+     cube_stream.open(cube_filename);
+
+     if (!cube_stream.is_open())
+     {
+        std::cerr << "Could not open " << cube_filename << std::endl;
+        return;
+     }
      
       // write lattice
       int orb_flag = 1;
@@ -179,8 +190,11 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
          cube_stream << 1 << " " << number << std::endl;
      
       // write orbital grid
-      cube_stream << cube_string;
+      //cube_stream << cube_string;
    }
+   mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
+   if (is_master)   cube_stream.close();
+
  
    mypneb->d3db::parall->Barrier();
 }

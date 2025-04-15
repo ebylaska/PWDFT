@@ -119,7 +119,7 @@ nwpw
   lmbfgs
   cutoff 30
   xc PBE
-  loop 10 10
+  loop 2 2
   mult 1
 end
 

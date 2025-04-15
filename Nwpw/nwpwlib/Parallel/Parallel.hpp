@@ -100,6 +100,7 @@ public:
  
    /* MaxAll */
    double MaxAll(const int, const double);
+   double MinAll(const int, const double);
  
    /* Brdcsts */
    void Brdcst_Values(const int, const int, const int, double *);
