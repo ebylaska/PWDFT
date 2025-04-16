@@ -62,6 +62,9 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
 
    //mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
 
+   // write out grid data in different partN files
+   mypneb->r_formatwrite_reverse_partN(rho,cube_filename);
+
  
    mypneb->d3db::parall->Barrier();
  
@@ -89,6 +92,8 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
  
    int nion2 = myion->nion;
  
+
+
    std::ofstream cube_stream;
    if (is_master) 
    {
@@ -199,8 +204,9 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
      
       // write orbital grid
       //cube_stream << cube_string;
+      mypneb->r_formatwrite_gather_and_write(cube_filename, cube_stream);
    }
-   mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
+   //mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
    if (is_master)   cube_stream.close();
 
  

@@ -14,6 +14,7 @@
 #include "util.hpp"
 #include <cmath>
 #include <vector>
+#include <fstream>
 
 #include "blas.h"
 
@@ -3176,6 +3177,110 @@ void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
 
    d3db::parall->Barrier();
 }
+
+
+/***********************************************
+ *                                             *
+ *        r_formatwrite_reverse_partN          *
+ *                                             *
+ ***********************************************
+ * @brief Writes each rank's local data as (i j k value)
+ * one per line for robust parallel output.
+ *
+ * This format allows gather to reconstruct global grid
+ * regardless of loop order or distribution mapping.
+ */
+
+void d3db::r_formatwrite_reverse_partN(double *rho, const std::string &basename)
+{
+   int taskid = d3db::parall->taskid();
+
+   std::ostringstream fname;
+   fname << basename << "." << std::setfill('0') << std::setw(4) << taskid;
+   std::ofstream out(fname.str());
+   if (!out.is_open()) {
+      std::cerr << "Rank " << taskid << " failed to open output file: " << fname.str() << std::endl;
+      return;
+   }
+
+   for (int i = 0; i < nx; ++i)
+      for (int j = 0; j < ny; ++j)
+         for (int k = 0; k < nz; ++k)
+         {
+            int index = ijktoindex2(i, j, k);
+            if (ijktop2(i, j, k) == taskid)
+               out << i << ' ' << j << ' ' << k << ' ' << std::scientific << std::setprecision(5) << rho[index] << '\n';
+         }
+
+   out.close();
+   d3db::parall->Barrier();
+}
+
+
+/***********************************************
+ *                                             *
+ *       r_formatwrite_gather_and_write        *
+ *                                             *
+ ***********************************************
+ * @brief Master-only gather function to read partN files
+ * containing (i j k value) and write global cube grid.
+ */
+
+void d3db::r_formatwrite_gather_and_write(const std::string &filename_prefix, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   const int total_voxels = nx * ny * nz;
+
+   if (taskid != MASTER) return;
+
+   std::vector<double> full_grid(total_voxels, 0.0);
+   std::ifstream partfile;
+
+   for (int rank = 0; rank < d3db::parall->np(); ++rank)
+   {
+      std::ostringstream partname;
+      partname << filename_prefix << "." << std::setfill('0') << std::setw(4) << rank;
+
+      partfile.open(partname.str());
+      if (!partfile.is_open()) {
+         std::cerr << "[MASTER] Failed to open part file: " << partname.str() << std::endl;
+         continue;
+      }
+
+      int i, j, k;
+      double val;
+      while (partfile >> i >> j >> k >> val)
+      {
+         //int index = ijktoindex2(i, j, k);
+         int index = k + j*nz + i*ny*nz;  // MATCH WRITER
+         full_grid[index] = val;
+      }
+      partfile.close();
+   }
+
+   char linebuf[128];
+   int count = 0;
+
+   for (int i = 0; i < nx; ++i)
+      for (int j = 0; j < ny; ++j)
+         for (int k = 0; k < nz; ++k)
+         {
+            int index = k + j*nz + i*ny*nz;  // MATCH WRITER
+            double val = full_grid[index];
+            int n = snprintf(linebuf, sizeof(linebuf), "%13.5e", val);
+            stream.write(linebuf, n);
+            ++count;
+
+            if (count % 6 == 0)
+               stream << '\n';
+         }
+
+   if (count % 6 != 0)
+      stream << '\n';
+}
+
+
+
 
 
 
