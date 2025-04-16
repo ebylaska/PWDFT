@@ -3256,6 +3256,12 @@ void d3db::r_formatwrite_gather_and_write(const std::string &filename_prefix, st
          full_grid[index] = val;
       }
       partfile.close();
+
+      // Remove the part file after successful read
+
+      if (std::remove(partname.str().c_str()) != 0) {
+         std::cerr << "[MASTER] Warning: Could not delete part file: " << partname.str() << std::endl;
+      }
    }
 
    char linebuf[128];
