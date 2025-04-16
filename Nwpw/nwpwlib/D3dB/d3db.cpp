@@ -3031,6 +3031,7 @@ std::string d3db::r_formatwrite_reverse(double *a)
   * @param rho     Pointer to 3D real-space data array (size = nx * ny * nz)
   * @param stream  An open output stream (e.g., std::ofstream) to write to
   */
+/*
 void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
 {
    const int taskid = d3db::parall->taskid();
@@ -3112,6 +3113,71 @@ void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
 
    d3db::parall->Barrier();
 }
+*/
+
+void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   double value;
+
+   // Only MASTER writes to the stream
+   if (taskid == MASTER)
+   {
+      std::string write_buffer;
+      write_buffer.reserve(65536); // buffered write
+
+      char linebuf[128];
+      int count = 0;
+
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_from = ijktop2(i, j, k);
+
+               if (p_from == MASTER)
+                  value = rho[index];
+               else
+                  d3db::parall->dreceive(0, 189, p_from, 1, &value);
+
+               int n = snprintf(linebuf, sizeof(linebuf), "%13.5e", value);
+               write_buffer.append(linebuf, n);
+               ++count;
+
+               if (count % 6 == 0)
+                  write_buffer.append("\n");
+
+               if (write_buffer.size() > 60000)
+               {
+                  stream.write(write_buffer.data(), write_buffer.size());
+                  write_buffer.clear();
+               }
+            }
+
+      if (count % 6 != 0)
+         write_buffer.append("\n");
+      if (!write_buffer.empty())
+         stream.write(write_buffer.data(), write_buffer.size());
+   }
+   else
+   {
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_here = ijktop2(i, j, k);
+
+               if (p_here == taskid)
+                  d3db::parall->dsend(0, 189, MASTER, 1, &rho[index]);
+            }
+   }
+
+   d3db::parall->Barrier();
+}
+
+
 
 
 
