@@ -49,7 +49,15 @@ void nwpw_dplot::gcube_write(std::string cfilename, const int number,
 {
    bool is_master = mypneb->d3db::parall->is_master();
  
-   std::string cube_filename = permanent_dir_str + "/" + cfilename;
+
+   //std::string cube_filename = permanent_dir_str + "/" + cfilename;
+
+   std::string cube_filename;
+   if (!cfilename.empty() && cfilename[0] == '/')
+      cube_filename = cfilename; // absolute path
+   else
+      cube_filename = permanent_dir_str + "/" + cfilename;
+
    //std::string cube_string = mypneb->r_formatwrite_reverse(rho);
 
    //mypneb->r_formatwrite_reverse_to_stream(rho, cube_stream);
