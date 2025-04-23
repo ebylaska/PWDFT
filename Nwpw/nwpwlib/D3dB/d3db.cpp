@@ -14,6 +14,7 @@
 #include "util.hpp"
 #include <cmath>
 #include <vector>
+#include <fstream>
 
 #include "blas.h"
 
@@ -2443,43 +2444,51 @@ void d3db::c_read(const int iunit, double *a, const int jcol)
     **** hilbert mapping ****
     *************************/
    else {
+    
      // double *tmp = new (std::nothrow) double[nx+2]();
      double tmp[nx + 2];
      int bsize = (nx + 2);
  
      /**** master node reads from file and distributes ****/
      if (taskid == MASTER)
+     {
        for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
- 
-           dread(iunit, tmp, bsize);
- 
-           index = ijktoindex2(0, j, k);
-           ii = ijktop2(0, j, k);
-           for (int jj = jstart; jj <= jend; ++jj) {
-             p_to = parall->convert_taskid_ij(ii, jj);
- 
-             if (p_to == MASTER)
-               for (int k = 0; k < bsize; ++k)
-                 a[index + k] = tmp[k];
-             else
-               parall->dsend(0, 9, p_to, bsize, tmp);
-           }
+         for (int j = 0; j < ny; ++j) 
+         {
+            dread(iunit, tmp, bsize);
+           
+            index = ijktoindex2(0, j, k);
+            ii = ijktop2(0, j, k);
+            for (int jj = jstart; jj <= jend; ++jj) 
+            {
+               p_to = parall->convert_taskid_ij(ii, jj);
+              
+               if (p_to == MASTER)
+                  for (int k = 0; k < bsize; ++k)
+                     a[index + k] = tmp[k];
+               else
+                  parall->dsend(0, 9, p_to, bsize, tmp);
+            }
          }
+     }
  
      /**** not master node ****/
      else if (fillcolumn)
-       for (int k = 0; k < nz; ++k)
-         for (int j = 0; j < ny; ++j) {
-           index = ijktoindex2(0, j, k);
-           ii = ijktop2(0, j, k);
-           p_here = parall->convert_taskid_ij(ii, taskid_j);
-           if (p_here == taskid) {
-             parall->dreceive(0, 9, MASTER, bsize, tmp);
-             for (int k = 0; k < bsize; ++k)
-               a[index + k] = tmp[k];
-           }
-         }
+     {
+       for (int k=0; k<nz; ++k)
+          for (int j=0; j<ny; ++j) 
+          {
+             index = ijktoindex2(0, j, k);
+             ii = ijktop2(0, j, k);
+             p_here = parall->convert_taskid_ij(ii, taskid_j);
+             if (p_here == taskid) 
+             {
+                parall->dreceive(0, 9, MASTER, bsize, tmp);
+                for (int k = 0; k < bsize; ++k)
+                   a[index + k] = tmp[k];
+             }
+          }
+     }
  
      // double tmp1[2*nfft3d];
      // double tmp2[2*nfft3d];
@@ -2966,40 +2975,322 @@ std::string d3db::r_formatwrite_reverse(double *a)
     ************************************/
  
    /**** master node gathers and write to file ****/
-   if (taskid == MASTER) {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = ijktoindex2(i, j, k);
-           int p_from = ijktop2(i, j, k);
-           if (p_from == MASTER)
-             tmp[k] = a[index];
-           else
-             parall->dreceive(0, 189, p_from, 1, tmp + k);
+   if (taskid == MASTER) 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_from = ijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = a[index];
+               else
+                  parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+            for (auto k = 0; k < nz; k += 6) 
+            {
+               for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
+                  stream << Efmt(13, 5) << tmp[k1];
+               stream << std::endl;
+            }
+            // stream << std::endl;
          }
-         for (auto k = 0; k < nz; k += 6) {
-           for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
-             stream << Efmt(13, 5) << tmp[k1];
-           stream << std::endl;
-         }
-         // stream << std::endl;
-       }
    }
    /**** not master node ****/
-   else {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = ijktoindex2(i, j, k);
-           int p_here = ijktop2(i, j, k);
-           if (p_here == taskid)
-             parall->dsend(0, 189, MASTER, 1, a + index);
+   else 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_here = ijktop2(i, j, k);
+               if (p_here == taskid)
+                  parall->dsend(0, 189, MASTER, 1, a + index);
+            }
          }
-       }
    }
  
    return stream.str();
 }
+
+
+/**********************************************
+ *                                            *
+ *      r_formatwrite_reverse_to_stream       *
+ *                                            *
+ **********************************************/
+ /**
+  * @brief Format and write a double array in reverse k-order directly to a stream.
+  *
+  * This avoids the memory pressure of buffering the entire cube file before flush.
+  * The data is gathered by the master task and streamed directly to the output.
+  *
+  * @param rho     Pointer to 3D real-space data array (size = nx * ny * nz)
+  * @param stream  An open output stream (e.g., std::ofstream) to write to
+  */
+/*
+void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   double tmp[nz];
+
+   if (taskid == MASTER)
+   {
+      std::string write_buffer;
+      write_buffer.reserve(65536); // ~64KB buffered I/O
+
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+         {
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_from = ijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = rho[index];
+               else
+                  d3db::parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+
+            char linebuf[128];
+
+            for (int k = 0; k < nz; k += 6)
+            {
+               int remain = std::min(6, nz - k);
+               int n = 0;
+
+               switch (remain)
+               {
+                   case 6: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e%13.5e%13.5e%13.5e%13.5e%13.5e\n",
+                        tmp[k], tmp[k+1], tmp[k+2], tmp[k+3], tmp[k+4], tmp[k+5]); break;
+                   case 5: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e%13.5e%13.5e%13.5e%13.5e\n",
+                        tmp[k], tmp[k+1], tmp[k+2], tmp[k+3], tmp[k+4]); break;
+                   case 4: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e%13.5e%13.5e%13.5e\n",
+                        tmp[k], tmp[k+1], tmp[k+2], tmp[k+3]); break;
+                   case 3: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e%13.5e%13.5e\n",
+                        tmp[k], tmp[k+1], tmp[k+2]); break;
+                   case 2: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e%13.5e\n",
+                        tmp[k], tmp[k+1]); break;
+                   case 1: n = snprintf(linebuf, sizeof(linebuf),
+                        "%13.5e\n",
+                        tmp[k]); break;
+               }
+
+               write_buffer.append(linebuf, n);
+
+               if (write_buffer.size() > 60000)
+               {
+                  stream.write(write_buffer.data(), write_buffer.size());
+                  write_buffer.clear();
+               }
+            }
+         }
+
+      // Final flush
+      if (!write_buffer.empty())
+         stream.write(write_buffer.data(), write_buffer.size());
+   }
+   else
+   {
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_here = ijktop2(i, j, k);
+               if (p_here == taskid)
+                  d3db::parall->dsend(0, 189, MASTER, 1, rho + index);
+            }
+   }
+
+   d3db::parall->Barrier();
+}
+*/
+
+void d3db::r_formatwrite_reverse_to_stream(double *rho, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   double value;
+
+   // Only MASTER writes to the stream
+   if (taskid == MASTER)
+   {
+      std::string write_buffer;
+      write_buffer.reserve(65536); // buffered write
+
+      char linebuf[128];
+      int count = 0;
+
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_from = ijktop2(i, j, k);
+
+               if (p_from == MASTER)
+                  value = rho[index];
+               else
+                  d3db::parall->dreceive(0, 189, p_from, 1, &value);
+
+               int n = snprintf(linebuf, sizeof(linebuf), "%13.5e", value);
+               write_buffer.append(linebuf, n);
+               ++count;
+
+               if (count % 6 == 0)
+                  write_buffer.append("\n");
+
+               if (write_buffer.size() > 60000)
+               {
+                  stream.write(write_buffer.data(), write_buffer.size());
+                  write_buffer.clear();
+               }
+            }
+
+      if (count % 6 != 0)
+         write_buffer.append("\n");
+      if (!write_buffer.empty())
+         stream.write(write_buffer.data(), write_buffer.size());
+   }
+   else
+   {
+      for (int i = 0; i < nx; ++i)
+         for (int j = 0; j < ny; ++j)
+            for (int k = 0; k < nz; ++k)
+            {
+               int index = ijktoindex2(i, j, k);
+               int p_here = ijktop2(i, j, k);
+
+               if (p_here == taskid)
+                  d3db::parall->dsend(0, 189, MASTER, 1, &rho[index]);
+            }
+   }
+
+   d3db::parall->Barrier();
+}
+
+
+/***********************************************
+ *                                             *
+ *        r_formatwrite_reverse_partN          *
+ *                                             *
+ ***********************************************
+ * @brief Writes each rank's local data as (i j k value)
+ * one per line for robust parallel output.
+ *
+ * This format allows gather to reconstruct global grid
+ * regardless of loop order or distribution mapping.
+ */
+
+void d3db::r_formatwrite_reverse_partN(double *rho, const std::string &basename)
+{
+   int taskid = d3db::parall->taskid();
+
+   std::ostringstream fname;
+   fname << basename << "." << std::setfill('0') << std::setw(4) << taskid;
+   std::ofstream out(fname.str());
+   if (!out.is_open()) {
+      std::cerr << "Rank " << taskid << " failed to open output file: " << fname.str() << std::endl;
+      return;
+   }
+
+   for (int i = 0; i < nx; ++i)
+      for (int j = 0; j < ny; ++j)
+         for (int k = 0; k < nz; ++k)
+         {
+            int index = ijktoindex2(i, j, k);
+            if (ijktop2(i, j, k) == taskid)
+               out << i << ' ' << j << ' ' << k << ' ' << std::scientific << std::setprecision(5) << rho[index] << '\n';
+         }
+
+   out.close();
+   d3db::parall->Barrier();
+}
+
+
+/***********************************************
+ *                                             *
+ *       r_formatwrite_gather_and_write        *
+ *                                             *
+ ***********************************************
+ * @brief Master-only gather function to read partN files
+ * containing (i j k value) and write global cube grid.
+ */
+
+void d3db::r_formatwrite_gather_and_write(const std::string &filename_prefix, std::ostream &stream)
+{
+   const int taskid = d3db::parall->taskid();
+   const int total_voxels = nx * ny * nz;
+
+   if (taskid != MASTER) return;
+
+   std::vector<double> full_grid(total_voxels, 0.0);
+   std::ifstream partfile;
+
+   for (int rank = 0; rank < d3db::parall->np(); ++rank)
+   {
+      std::ostringstream partname;
+      partname << filename_prefix << "." << std::setfill('0') << std::setw(4) << rank;
+
+      partfile.open(partname.str());
+      if (!partfile.is_open()) {
+         std::cerr << "[MASTER] Failed to open part file: " << partname.str() << std::endl;
+         continue;
+      }
+
+      int i, j, k;
+      double val;
+      while (partfile >> i >> j >> k >> val)
+      {
+         //int index = ijktoindex2(i, j, k);
+         int index = k + j*nz + i*ny*nz;  // MATCH WRITER
+         full_grid[index] = val;
+      }
+      partfile.close();
+
+      // Remove the part file after successful read
+
+      if (std::remove(partname.str().c_str()) != 0) {
+         std::cerr << "[MASTER] Warning: Could not delete part file: " << partname.str() << std::endl;
+      }
+   }
+
+   char linebuf[128];
+   int count = 0;
+
+   for (int i = 0; i < nx; ++i)
+      for (int j = 0; j < ny; ++j)
+         for (int k = 0; k < nz; ++k)
+         {
+            int index = k + j*nz + i*ny*nz;  // MATCH WRITER
+            double val = full_grid[index];
+            int n = snprintf(linebuf, sizeof(linebuf), "%13.5e", val);
+            stream.write(linebuf, n);
+            ++count;
+
+            if (count % 6 == 0)
+               stream << '\n';
+         }
+
+   if (count % 6 != 0)
+      stream << '\n';
+}
+
+
+
+
+
+
+
 
 void d3db::cshift1_fftb(const int n1, const int n2, const int n3, const int n4,
                         double *a) {

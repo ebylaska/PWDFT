@@ -23,53 +23,110 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
                    Electron_Operators *myelectron0, Pseudopotential *mypsp0,  
                    Control2 &control, std::ostream &coutput) 
 {
-  mygrid = mygrid0;
-  myion = myion0;
-  mystrfac = mystrfac0;
-  myewald = myewald0;
-  myelectron = myelectron0;
-  mypsp = mypsp0;
+   mygrid = mygrid0;
+   myion = myion0;
+   mystrfac = mystrfac0;
+   myewald = myewald0;
+   myelectron = myelectron0;
+   mypsp = mypsp0;
+ 
+   fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+      smearcorrection = 0.0;
+      smeartype = control.fractional_smeartype();
+      smearkT   = control.fractional_kT();
+
+      occ1 = mygrid->initialize_occupations_with_allocation(nextra);
+      occ2 = mygrid->initialize_occupations_with_allocation(nextra);
+
+      fractional_frozen = control.fractional_frozen();
+      fractional_alpha = control.fractional_alpha();
+      fractional_alpha_min = control.fractional_alpha_min();
+      fractional_alpha_max = control.fractional_alpha_max();
+      fractional_beta = control.fractional_beta();
+      fractional_gamma = control.fractional_gamma();
+      fractional_rmsd_threshold = control.fractional_rmsd_threshold();  
+      //if (fractional_alpha < fractional_alpha_min) fractional_alpha_min =  fractional_alpha;
+      //if (fractional_alpha > fractional_alpha_max) fractional_alpha_max =  fractional_alpha;
+      occupation_update = fractional && !control.fractional_frozen();
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+      fractional_frozen = false;
+      fractional_alpha = 0.0;
+      fractional_alpha_min = 0.0;
+      fractional_alpha_max = 0.0;
+      fractional_beta  = 0.0;
+      fractional_gamma = 0.0;
+      occupation_update = false;
+   }
+   multiplicity = control.multiplicity();
+   total_charge = control.total_charge();
+
+   ispin = mygrid->ispin;
+   neall = mygrid->neq[0] + mygrid->neq[1];
+   ne[0] = mygrid->ne[0];
+   ne[1] = mygrid->ne[1];
+   nfft[0] = mygrid->nx;
+   nfft[1] = mygrid->ny;
+   nfft[2] = mygrid->nz;
+   for (int i = 0; i < 60; ++i)
+     E[i] = 0.0;
+ 
+   ep = control.Eprecondition();
+   sp = control.Sprecondition();
+   tole = control.tolerances(0);
+ 
+   psi1 = mygrid->g_allocate(1);
+   psi2 = mygrid->g_allocate(1);
+   rho1 = mygrid->r_nalloc(ispin);
+   rho2 = mygrid->r_nalloc(ispin);
+   rho1_all = mygrid->r_nalloc(ispin);
+   rho2_all = mygrid->r_nalloc(ispin);
+   dng1 = mygrid->c_pack_allocate(0);
+   dng2 = mygrid->c_pack_allocate(0);
+ 
+   lmbda = mygrid->m_allocate(-1, 1);
+   hml = mygrid->m_allocate(-1, 1);
+   eig = new double[mygrid->ne[0] + mygrid->ne[1]];
+   eig_prev = new double[mygrid->ne[0] + mygrid->ne[1]];
+ 
+   omega = mygrid->lattice->omega();
+   scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+   scal2 = 1.0 / omega;
+   dv = omega * scal1;
+ 
+   n2ft3d = (mygrid->n2ft3d);
+   shift1 = 2 * (mygrid->npack(1));
+   shift2 = (mygrid->n2ft3d);
+ 
+   newpsi = psi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);
+   smearoccupation = 0;
+   if (fractional)
+   {
+      if (newpsi) replace_excited_psi1(control,coutput);
+      smearoccupation = 1;
+      std::vector<double> filling = control.fractional_filling();
+      if (filling.size() > 0)
+      {
+         int sz = filling.size();
+         if (sz > (ne[0]+ne[1])) sz = ne[0]+ne[1];
+         std::memcpy(occ2,filling.data(),sz*sizeof(double));
+      }
+   
+      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+   }
 
 
-  ispin = mygrid->ispin;
-  neall = mygrid->neq[0] + mygrid->neq[1];
-  ne[0] = mygrid->ne[0];
-  ne[1] = mygrid->ne[1];
-  nfft[0] = mygrid->nx;
-  nfft[1] = mygrid->ny;
-  nfft[2] = mygrid->nz;
-  for (int i = 0; i < 60; ++i)
-    E[i] = 0.0;
-
-  ep = control.Eprecondition();
-  sp = control.Sprecondition();
-  tole = control.tolerances(0);
-
-  psi1 = mygrid->g_allocate(1);
-  psi2 = mygrid->g_allocate(1);
-  rho1 = mygrid->r_nalloc(ispin);
-  rho2 = mygrid->r_nalloc(ispin);
-  rho1_all = mygrid->r_nalloc(ispin);
-  rho2_all = mygrid->r_nalloc(ispin);
-  dng1 = mygrid->c_pack_allocate(0);
-  dng2 = mygrid->c_pack_allocate(0);
-
-  lmbda = mygrid->m_allocate(-1, 1);
-  hml = mygrid->m_allocate(-1, 1);
-  eig = new double[mygrid->ne[0] + mygrid->ne[1]];
-
-  omega = mygrid->lattice->omega();
-  scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
-  scal2 = 1.0 / omega;
-  dv = omega * scal1;
-
-  n2ft3d = (mygrid->n2ft3d);
-  shift1 = 2 * (mygrid->npack(1));
-  shift2 = (mygrid->n2ft3d);
-
-  newpsi = psi_read(mygrid, infilename, wvfnc_initialize, psi1, coutput);
-
-  myelectron->gen_vl_potential();
+   myelectron->gen_vl_potential();
 
   /*---------------------- testing Electron Operators ---------------------- */
   /*
@@ -120,7 +177,7 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
  */
 void Molecule::psi_minimize(double *vall, std::ostream &coutput)
 {
-   mygrid->g_ortho(psi1);
+   mygrid->g_ortho(-1,psi1);
    double error_out,eorb0;
 
    for (auto ms=0; ms<ispin; ++ms)
@@ -300,7 +357,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
    double e0 = 0.0;
    double eold = 0.0;
    double de0 = 0.0; 
-   double theta = 3.14159/600.0;
+   double theta = -3.14159/600.0;
    double    lmbda_r0 = 1.0;
    int it = 0;
    int pit = 0;
@@ -354,11 +411,11 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
          //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
          // project out filled space
          //mygrid->g_project_out_filled_below(psi1, ms, k, t);
-         mygrid->g_project_out_filled_above(psi1, ms, k, t);
+         mygrid->g_project_out_filled_from_k_up(psi1, ms, k, t);
 
          de0 = mygrid->cc_pack_dot(1,t,t);
          de0 = 1.0/std::sqrt(de0);
-         if (std::isnan(de0)) de0=0.0;
+         //if (std::isnan(de0)) de0=0.0;
          mygrid->c_pack_SMul(1,de0,t);
          de0 = mygrid->cc_pack_dot(1,t,g);
 
@@ -375,6 +432,7 @@ double Molecule::psi_KS_update_orb(const int ms, const int k, const int maxit_or
       de0 = -2.0*de0;
 
       psi_linesearch_update(e0,de0,&theta,vall+ms*n2ft3d,orb,t);
+
 
       done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
       //done = true;
@@ -433,6 +491,7 @@ double Molecule::psi_KS_update(const int maxit_orb, const double maxerror,
 
          double e0 = psi_KS_update_orb(ms, i, maxit_orb, maxerror, perror, vall, orb,
                                        error_out, coutput);
+
          esum += e0;
       }
    }
@@ -583,6 +642,46 @@ void Molecule::psi_sort()
 }
 
 
+/********************************************
+ *                                          *
+ *      Molecule::replace_excited_psi1      *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Replaces excited-state wavefunctions (`psi1_excited`) at the top of `psi1`.
+ * 
+ * This function loads excited-state molecular orbitals from an external file,
+ * processes them, and replaces the top section of the existing wavefunction data (`psi1`).
+ * It performs a file check using `psi_filefind`, initializes the data with
+ * `epsi_initialize`, and copies the relevant wavefunction data.
+ * 
+ * @param control Reference to a `Control2` object containing excitation data.
+ * @param coutput Output stream for logging (e.g., `std::cout` or a file).
+ */
+void Molecule::replace_excited_psi1(Control2 &control, std::ostream &coutput)
+{
+   int nex[2] = {control.nexcited(0), control.nexcited(1)};
+
+   if (psi_filefind(mygrid,control.input_e_movecs_filename()))
+   {
+      epsi_initialize(control.input_e_movecs_filename(),false,nex,coutput);
+
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (nex[ms]>0)
+         {
+            for (auto n=0; n<nex[ms]; ++n)
+            {
+               int sz = 2*mygrid->npack(1);
+               int indxf = sz*(n + ms*ne[0]);
+               int indxe = sz*(n + ms*nex[0]);
+               std::memcpy(psi1 + indxf, psi1_excited + indxe, sz);
+            }
+         }            
+          //epsi_finalize(control.input_e_movecs_filename(),coutput);
+      }
+   }
+}
 
 
 
@@ -604,8 +703,6 @@ void Molecule::epsi_initialize(char *infilename, bool wvfnc_initialize, const in
    eig_excited = new double[nex[0] + nex[1]];
  
 
-
-
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
   bool  newpsi = epsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
 
@@ -623,10 +720,20 @@ void Molecule::epsi_initialize(char *infilename, bool wvfnc_initialize, const in
  *           Molecule::epsi_finalize        *
  *                                          *
  ********************************************/
+/**
+ * @brief Finalizes the epsilon-excited state calculations and writes output.
+ * 
+ * This function calls `epsi_write` to process and store information about
+ * excited states (`psi1_excited`). It outputs results to a specified file and
+ * an output stream.
+ * 
+ * @param outfilename The name of the output file where results are saved.
+ * @param coutput The output stream to log information (e.g., `std::cout` or a file).
+ */
 void Molecule::epsi_finalize(char *outfilename, std::ostream &coutput) 
 {
    epsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne_excited,
-             psi1_excited,outfilename,coutput);
+              psi1_excited,outfilename,coutput);
 }
 
 /********************************************
@@ -656,7 +763,7 @@ void Molecule::epsi_finalize(char *outfilename, std::ostream &coutput)
  */
 void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
 {
-   mygrid->g_ortho_excited(psi1, ne_excited, psi1_excited);
+   mygrid->g_ortho_excited(-1,psi1, ne_excited, psi1_excited);
    double error_out,eorb0;
 
    for (auto ms=0; ms<ispin; ++ms)
@@ -693,8 +800,9 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
                 {
                    //std::cout << "retry orthogonalization" << std::endl;
                    mygrid->c_pack_zero(1, orb);
-                   mygrid->c_pack_addzero(1, 1.0, orb);
-                   int nne[2] = {1,0};
+                   mygrid->c_pack_addzeros(1, 1.0, orb);
+                   //mygrid->c_pack_addzeros(1, 1.0, orb);
+                   //int nne[2] = {1,0};
                    //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                    //mygrid->g_generate_excited_random(nne,orb);
                    mygrid->g_project_out_filled(psi1, ms, orb);
@@ -706,6 +814,7 @@ void Molecule::epsi_minimize(double *vall, std::ostream &coutput)
             }
             else
                continue_outer_loop = false; // Exit the outer loop
+
          }
 
          // Store the minimized orbital energy

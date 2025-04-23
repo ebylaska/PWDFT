@@ -1671,7 +1671,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
      
       ntmp = nn * nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
-     
+
       // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
       //                rmone,
       //                prjtmp,nshift,
@@ -1753,7 +1753,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
  * It optionally computes forces and supports movement-related calculations based on the 'move' flag.
  */
 void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
-                                      const bool move, double *fion) 
+                                      const bool move, double *fion, double *occ) 
 {
    nwpw_timing_function ftimer(6);
    bool done;
@@ -1792,15 +1792,6 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    {
       xtmp = new (std::nothrow) double[nshift0]();
       sum = new (std::nothrow) double[3*nn*nprj_max]();
-      // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-      // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-      // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-      // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-      // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-      // mypneb->t_pack(1,Gx);
-      // mypneb->t_pack(1,Gy);
-      // mypneb->t_pack(1,Gz);
      
       Gx = mypneb->Gpackxyz(1, 0);
       Gy = mypneb->Gpackxyz(1, 1);
@@ -1808,8 +1799,6 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    }
  
    parall = mypneb->d3db::parall;
-
-#if 1
 
    ii = 0;
    while (ii < (myion->nion)) 
@@ -1833,21 +1822,6 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                   mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
                else
                   mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-              
-               /*
-               if (move) 
-               {
-                  nwpw_timing_function f2timer(60);
-                  //mypneb->ch3t_pack_i3ndot(1,prj,nn,psi,Gx,Gy,Gz,sum+3*nn(l+nprjall));
-                  for (n = 0; n < nn; ++n) 
-                  {
-                     mypneb->cct_pack_iconjgMul(1, prj, psi + n*nshift, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall)]     = mypneb->tt_pack_idot(1, Gx, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall) + 1] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                     sum[3*n + 3*nn*(l+nprjall) + 2] = mypneb->tt_pack_idot(1, Gz, xtmp);
-                  }
-               }
-               */
             }
             nprjall += nprj[ia];
          }
@@ -1864,17 +1838,28 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       }
       jend = ii;
      
-      //std::cout << "GERb inprjdot ii=" << ii << " nn=" << nn << " nprjall=" << nprjall <<  std::endl;
+    
       mypneb->cc_pack_inprjdot(1, nn, nprjall, psi, prjtmp, sw1);
-     //std::cout << "GERb inprjdot sw1=";
-     //for (auto k=0; k<(nn*nprjall); ++k) std::cout << sw1[k] << " "; std::cout << std::endl;
 
-      //parall->Vector_SumAll(1, nn*nprjall, sw1);
       if (move)
       {
          nwpw_timing_function f2timer(61);
          mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
-         //parall->Vector_SumAll(1,3*nn*nprjall,sum);
+         if (occ)
+         {
+            int count3 = 0;
+            for (auto l=0; l<nprjall; ++l)
+            for (auto ms=0; ms<ispin; ++ms)
+            for (auto q=0; q<mypneb->neq[ms]; ++q)
+            {
+                double wf = occ[mypneb->msntoindex(ms,q)];
+                sum[count3]   *= wf;
+                sum[count3+1] *= wf;
+                sum[count3+2] *= wf;
+                count3 += 3;
+            }
+
+         }
       }
      
       /* sw2 = Gijl*sw1 */
@@ -1893,13 +1878,8 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
      
       ntmp = nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
+
      
-      // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
-      //                rmone,
-      //                prjtmp,nshift,
-      //                sw2,   nn,
-      //                rone,
-      //                Hpsi,nshift);
       mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
      
       if (move) 
@@ -1912,9 +1892,6 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             ia = myion->katm[jj];
             for (l=0; l<nprj[ia]; ++l) 
             {
-               //fion[3*jj]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
-               //fion[3*jj+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
-               //fion[3*jj+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
                ff[0] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll,     three);
                ff[1] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
                ff[2] = 2.0*DDOT_PWDFT(nn, sw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
@@ -1931,77 +1908,21 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
  
    mypneb->d3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi);
 
-#else
-
-   for (ii = 0; ii < (myion->nion); ++ii) 
-   {
-      ia = myion->katm[ii];
-      if (nprj[ia] > 0) 
-      {
-         /* structure factor */
-         mystrfac->strfac_pack(1, ii, exi);
-        
-         /* generate sw1's and projectors */
-         for (l = 0; l < nprj[ia]; ++l) {
-           sd_function = !(l_projector[ia][l] & 1);
-           prj = &prjtmp[l * nshift];
-           vnlprj = &vnl[ia][l * nshift0];
-           if (sd_function)
-             mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
-           else
-             mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-           mypneb->cc_pack_indot(1, nn, psi, prj, &sw1[l * nn]);
-         }
-         parall->Vector_SumAll(1, nn * nprj[ia], sw1);
-        
-         /* sw2 = Gijl*sw1 */
-         Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                           l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
-        
-         /* do Kleinman-Bylander Multiplication */
-         ntmp = nn * nprj[ia];
-         DSCAL_PWDFT(ntmp, scal, sw2, one);
-        
-         ntmp = nprj[ia];
-         DGEMM_PWDFT((char *)"N", (char *)"T", nshift, nn, ntmp, rmone, prjtmp,
-                     nshift, sw2, nn, rone, Hpsi, nshift);
-        
-         if (move) 
-         {
-            for (l=0; l<nprj[ia]; ++l) 
-            {
-               prj = prjtmp + l*nshift;
-               for (n=0; n<nn; ++n) 
-               {
-                  mypneb->cct_pack_iconjgMul(1, prj, &psi[n * nshift], xtmp);
-                  sum[3*n]   = mypneb->tt_pack_idot(1, Gx, xtmp);
-                  sum[3*n+1] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                  sum[3*n+2] = mypneb->tt_pack_idot(1, Gz, xtmp);
-               }
-               parall->Vector_SumAll(1, 3 * nn, sum);
-              
-               fion[3*ii]   += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, sum, three);
-               fion[3*ii+1] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[1], three);
-               fion[3*ii+2] += (3-ispin)*2.0*DDOT_PWDFT(nn, sw2+l*nn, one, &sum[2], three);
-            }
-         }
-      } /*if nprj>0*/
-   }   /*ii*/
-#endif
 
    if (move) 
    {
       delete[] xtmp;
       delete[] sum;
-      // delete [] Gx;
-      // delete [] Gy;
-      // delete [] Gz;
    }
    delete[] sw2;
    delete[] sw1;
    delete[] prjtmp;
    delete[] exi;
 }
+
+
+
+
 
 
 /*******************************************
@@ -2021,7 +1942,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
  * @note This function calculates nonlocal forces by performing matrix multiplications and vector operations.
  * The resulting forces are stored in the 'fion' array.
  */
-void Pseudopotential::f_nonlocal_fion(double *psi, double *fion) 
+void Pseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ) 
 {
    nwpw_timing_function ftimer(6);
    bool done;
@@ -2126,6 +2047,20 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
 
       mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
       //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+      if (occ)
+      {
+         int count3 = 0;
+         for (auto l=0; l<nprjall; ++l)
+         for (auto ms=0; ms<ispin; ++ms)
+         for (auto q=0; q<mypneb->neq[ms]; ++q)
+         {
+             double wf = occ[mypneb->msntoindex(ms,q)];
+             sum[count3]   *= wf;
+             sum[count3+1] *= wf;
+             sum[count3+2] *= wf;
+             count3 += 3;
+         }
+      }
      
       /* sw2 = Gijl*sw1 */
       ll = 0;
@@ -2145,7 +2080,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
       DSCAL_PWDFT(ntmp, scal, sw2, one);
      
       mypneb->d3db::mygdevice.T_free();
-     
+
       // for (ll=0; ll<nprjall; ++ll)
       ll = 0;
       for (jj = jstart; jj < jend; ++jj) 
@@ -2201,7 +2136,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion)
  *
  * @note This function calculates the energy contribution by performing matrix multiplications and vector operations.
  */
-double Pseudopotential::e_nonlocal(double *psi) 
+double Pseudopotential::e_nonlocal(double *psi, double *occ) 
 {
    nwpw_timing_function ftimer(6);
 
@@ -2280,7 +2215,20 @@ double Pseudopotential::e_nonlocal(double *psi)
      
       auto ntmp = nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
-     
+
+      if (occ)
+      {
+         int count = 0;
+         for (auto p=0; p<nprjall; ++p)
+         {
+            for (auto ms=0; ms<mypneb->ispin; ++ms)
+            for (auto q=0; q<mypneb->neq[ms]; ++q)
+            {
+               sw1[count] *= occ[mypneb->msntoindex(ms,q)];
+               ++count;
+            }
+         }
+      }
       esum += DDOT_PWDFT(ntmp, sw1, one, sw2, one);
       mypneb->d3db::mygdevice.T_free();
    }

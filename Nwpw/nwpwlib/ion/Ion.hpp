@@ -38,6 +38,7 @@ public:
    double *mass;
    double *dti;
    double *rion0, *rion1, *rion2; // coordinates of ions
+   double *rion_incell0;
    double *vionhalf;              // temp velocities
    double *fion1;                 // forces of ions
    double time_step;
@@ -85,6 +86,7 @@ public:
      delete[] rion0;
      delete[] rion1;
      delete[] rion2;
+     delete[] rion_incell0;
      delete[] vionhalf;
      delete[] fion1;
      delete mybond;
@@ -118,6 +120,8 @@ public:
    double rion(int i, int ii) { return rion1[3*ii+i]; }
    double vion(int i, int ii) { return rion0[3*ii+i]; }
    double fion(int i, int ii) { return fion1[3*ii+i]; }
+   double rion_incell(int i, int ii) { return rion_incell0[3*ii+i]; }
+   void set_rion_incell(const int ,double *);
  
    int ndof() {
       int dof = 3*nion - 6;

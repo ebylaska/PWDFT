@@ -138,11 +138,12 @@ public:
       | N(t) |             | 0 |
        -    -               - -
    */
-  void get(double t, double *Yold, double *Ynew) {
-    this->get_MandN(t, MM, NN);
-    mygrid->fmf_Multiply(-1, Yold, MM, 1.0, Ynew, 0.0);
-    mygrid->fmf_Multiply(-1, Q, NN, 1.0, Ynew, 1.0);
-  }
+   void get(double t, double *Yold, double *Ynew) 
+   {
+      this->get_MandN(t, MM, NN);
+      mygrid->fmf_Multiply(-1, Yold, MM, 1.0, Ynew, 0.0);
+      mygrid->fmf_Multiply(-1, Q, NN, 1.0, Ynew, 1.0);
+   }
 
   /*****************************************
    *                                       *
@@ -159,17 +160,18 @@ public:
      | N(t) |             | 0 |
       -    -               - -
    */
-  void transport(double t, double *Yold, double *Hnew) {
+   void transport(double t, double *Yold, double *Hnew) 
+   {
 
-    this->get_MandN(t, MM, NN);
+      this->get_MandN(t, MM, NN);
 
-    //*** TT(t) = -R^t*NN(t) ***
-    mygrid->mmm_Multiply2(-1, R, NN, -1.0, TT, 0.0);
+      //*** TT(t) = -R^t*NN(t) ***
+      mygrid->mmm_Multiply2(-1, R, NN, -1.0, TT, 0.0);
 
-    //*** Hnew <-- Hold*M(t) + Yold*TT(t) ***
-    mygrid->fmf_Multiply(-1, Hold, MM, 1.0, Hnew, 0.0);
-    mygrid->fmf_Multiply(-1, Yold, TT, 1.0, Hnew, 1.0);
-  }
+      //*** Hnew <-- Hold*M(t) + Yold*TT(t) ***
+      mygrid->fmf_Multiply(-1, Hold, MM, 1.0, Hnew, 0.0);
+      mygrid->fmf_Multiply(-1, Yold, TT, 1.0, Hnew, 1.0);
+   }
 
   /*****************************************
    *                                       *
@@ -188,26 +190,34 @@ public:
      is a skew matrix that is decomposed into V,W,and Sigma
 
    */
-  void get_MandN(const double t, double *M, double *N) {
-    mygrid->m4_RotationSkew(-1, t, V4, W4, S, A4, B4, R4);
-    mygrid->m4_R4_to_MN(-1, R4, M, N);
-  }
+   void get_MandN(const double t, double *M, double *N) 
+   {
+      mygrid->m4_RotationSkew(-1, t, V4, W4, S, A4, B4, R4);
+      mygrid->m4_R4_to_MN(-1, R4, M, N);
+   }
 
-  void psi_1transport(double t, double *H0) {
-    this->transport(t, mymolecule->psi1, H0);
-  }
+   void psi_1transport(double t, double *H0) 
+   {
+      this->transport(t, mymolecule->psi1, H0);
+   }
 
-  double energy(double t) {
-    this->get(t, mymolecule->psi1, mymolecule->psi2);
-    return (mymolecule->psi2_energy());
-  }
+   double energy(double t) 
+   {
+      this->get(t, mymolecule->psi1, mymolecule->psi2);
+      return (mymolecule->psi2_energy());
+   }
 
-  double denergy(double t) {
-    this->transport(t, mymolecule->psi1, mymolecule->psi2);
-    return (2.0 * mymolecule->psi2_eorbit());
-  }
+   double denergy(double t) 
+   {
+      this->transport(t, mymolecule->psi1, mymolecule->psi2);
+      return (2.0 * mymolecule->psi2_eorbit());
+   }
 
-  void psi_final(double t) { this->get(t, mymolecule->psi1, mymolecule->psi2); }
+   void psi_final(double t) 
+   { 
+      this->get(t, mymolecule->psi1, mymolecule->psi2); 
+   }
+
 };
 
 } // namespace pwdft

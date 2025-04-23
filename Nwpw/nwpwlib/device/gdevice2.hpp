@@ -17,6 +17,7 @@ public:
 
    void TN4_dgemm(int, int, double, double *, double *, double, double *, double *, double *, double *);
    void TN3_dgemm(int, int, double, double *, double *, double, double *, double *, double *);
+   void TN3_FullCab_dgemm(int, int, double, double *, double *, double, double *, double *, double *);
    void TN1_dgemm(int, int, double, double *, double *, double, double *);
    void TN_dgemm(int, int, int, double, double *, double *, double, double *);
    void T_free();
@@ -32,6 +33,7 @@ public:
    void MM6_dgemm(int, double *, double *, double *, double *, double *, double *);
   
    void NN_eigensolver(int, int *, double *, double *);
+   void NN_eigensolver0(int, double *, double *);
 
 
    void NN1_zgemm(int, int, int, double *, double *, double *, double *, double *);

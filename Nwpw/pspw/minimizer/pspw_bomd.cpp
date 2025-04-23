@@ -409,11 +409,12 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
            if (control.scf_algorithm()==4) coutput << "     SCF algorithm        = Thomas-Fermi mixing\n";
            if (control.minimizer()==5) coutput << "     SCF mixing type      = potential\n";
            if (control.minimizer()==8) coutput << "     SCF mixing type      = density\n";
+           if (control.scf_extra_rotate()) coutput << "     SCF extra rotate\n";
            if (control.scf_algorithm()==4)
               coutput << "     SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
            else
               coutput << "     SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
-           coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
+           if (control.kerker_g0() > 0.0) coutput << "     Kerker damping       = " << control.kerker_g0() << std::endl;
            coutput << std::endl;
            if (control.fractional())
            { 

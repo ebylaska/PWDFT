@@ -110,6 +110,15 @@ static void cwvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], dou
    }
 }
 
+static bool isDescending(const double* arr, int size) {
+    for (int i = 0; i < size - 1; ++i) {
+        if (arr[i] < arr[i + 1]) {
+            return false;
+        } 
+    }
+    return true;
+}  
+
 /*****************************************************
  *                                                   *
  *                dwvfnc_expander                    *
@@ -258,6 +267,58 @@ static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutp
    Note - the file must exist
 
 */
+
+void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
+                int *ispin, int ne[], int *nbrillouin, double *psi, 
+                int *occupation, double occ[], char *filename, bool reverse)
+{
+   Parallel *myparall = mycneb->c3db::parall;
+
+   if (myparall->is_master())
+   {
+      openfile(4, filename, "r");
+      iread(4, version, 1);
+      iread(4, nfft, 3);
+      dread(4, unita, 9);
+      iread(4, ispin, 1);
+      iread(4, ne, 2);
+      iread(4, nbrillouin, 1);
+      iread(4, occupation, 1);
+   }
+   myparall->Brdcst_iValue(0, 0, version);
+   myparall->Brdcst_iValues(0, 0, 3, nfft);
+   myparall->Brdcst_Values(0, 0, 9, unita);
+   myparall->Brdcst_iValue(0, 0, ispin);
+   myparall->Brdcst_iValues(0, 0, 2, ne);
+   myparall->Brdcst_iValue(0, 0, nbrillouin);
+
+   myparall->Brdcst_iValue(0, 0, occupation);
+
+
+   /* reads in c format and automatically packs the result to g format */
+   //mycneb->g_read(4,ispin,psi);
+   if (reverse)
+      mycneb->g_read_ne_reverse(4,ne,*nbrillouin,psi);
+   else
+      mycneb->g_read_ne(4,ne,*nbrillouin,psi);
+
+   if ((*occupation) > 0)
+   {
+      mycneb->g_read_occ(4,psi);
+      if (reverse)
+      {
+         std::reverse(occ, occ + ne[0]); // Reverse the first section if descending
+
+         // Check and reverse the second part
+         if (*ispin>1)
+            std::reverse(occ + ne[0], occ + ne[0] + ne[1]); // Reverse the second section if descending and *ispin > 1
+      }
+   }
+
+   if (myparall->is_master())
+     closefile(4);
+}
+
 void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, char *filename) 
 {
@@ -311,6 +372,109 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
           mycneb->gg_traceall,
           mycneb->g_ortho
 */
+bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2,
+              int *occupation, double occ2[],
+              std::ostream &coutput)
+{  
+   nwpw_timing_function ftimer(50);
+   int version, ispin, nfft[3], ne[2], nbrillouin;
+   double unita[9];
+   Parallel *myparall = mycneb->c3db::parall;
+   bool newpsi = true;
+                   
+   /* read psi from file if psi_exist and not forcing wavefunction initialization */
+   if (cpsi_filefind(mycneb,filename) && (!wvfnc_initialize)) 
+   {               
+      newpsi = cpsi_check_convert(mycneb,filename,coutput);
+                   
+      if (myparall->base_stdio_print)
+         coutput << " input psi exists, reading from file: " << filename;
+   
+      ne[0] = mycneb->ne[0]; 
+      ne[1] = mycneb->ne[1];
+      cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, occupation, occ2, filename,false);
+      
+      if ((*occupation>0) and (myparall->base_stdio_print))
+         coutput << " ... reading occupations";
+
+      if (myparall->base_stdio_print)
+         coutput << std::endl;
+
+      if ((occ2) && (*occupation > 0))
+         if (isDescending(occ2, ne[0]))
+         {
+            if (myparall->base_stdio_print)
+               coutput << " - reversing order of psi and occupation" << std::endl;
+            cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, occupation, occ2, filename,true);
+         }
+   }
+
+   /* generate new psi */
+   else
+   {
+      ispin = mycneb->ispin;
+      ne[0] = mycneb->ne[0];
+      ne[1] = mycneb->ne[1];
+      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
+      mycneb->g_generate_random(psi2);
+   }
+
+   newpsi = newpsi || (ispin != mycneb->ispin)
+                   || (ne[0] != mycneb->ne[0])
+                   || (ne[1] != mycneb->ne[1])
+                   || (std::abs(unita[0] - mycneb->lattice->unita1d(0)) > 1.0e-4)
+                   || (std::abs(unita[1] - mycneb->lattice->unita1d(1)) > 1.0e-4)
+                   || (std::abs(unita[2] - mycneb->lattice->unita1d(2)) > 1.0e-4)
+                   || (std::abs(unita[3] - mycneb->lattice->unita1d(3)) > 1.0e-4)
+                   || (std::abs(unita[4] - mycneb->lattice->unita1d(4)) > 1.0e-4)
+                   || (std::abs(unita[5] - mycneb->lattice->unita1d(5)) > 1.0e-4)
+                   || (std::abs(unita[6] - mycneb->lattice->unita1d(6)) > 1.0e-4)
+                   || (std::abs(unita[7] - mycneb->lattice->unita1d(7)) > 1.0e-4)
+                   || (std::abs(unita[8] - mycneb->lattice->unita1d(8)) > 1.0e-4);
+
+   // Add extra missing orbitals to psi2
+   int nextra[2] = {(mycneb->ne[0]-ne[0]),(mycneb->ne[1]-ne[1])};
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      if (nextra[ms]>0)
+      {
+         if (myparall->base_stdio_print)
+            coutput << " - adding " << nextra[ms] << " to ms=" << ms << " psi" << std::endl;
+         int indxa = 2*mycneb->npack(1)*(ne[ms]+ms*mycneb->ne[0]);
+         mycneb->g_generate_extra_random(nextra[ms],psi2+indxa);
+
+        // need to orthopsi and  belowo
+        // project out filled psi
+        mycneb->g_project_out_filled_extra(ms,nextra,psi2);
+
+
+      }
+   }
+      
+   /* ortho check */
+   double sum2 = mycneb->gg_traceall(psi2, psi2);
+   double sum1 = mycneb->ne[0] + mycneb->ne[1];
+   
+   if ((mycneb->ispin) == 1)
+      sum1 *= 2;
+   if (std::fabs(sum2 - sum1) > 1.0e-10) 
+   {               
+      if (myparall->base_stdio_print)
+         coutput << " Warning - Gram-Schmidt being performed on psi2" << std::endl;
+      mycneb->g_ortho(psi2);
+                   
+      double sum3 = mycneb->gg_traceall(psi2, psi2);
+      if (myparall->base_stdio_print)
+        coutput << "         - exact norm = " << sum1 << " norm=" << sum2 
+                << " corrected norm=" << sum3
+                << " (error=" << std::abs(sum2 - sum1) << ")" << std::endl;
+   }
+
+   return newpsi;
+}
+
+
+
 bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2, std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
@@ -325,7 +489,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
       newpsi = cpsi_check_convert(mycneb,filename,coutput);
  
       if (myparall->base_stdio_print)
-         coutput << " input psi exists, reading from file: " << filename << std::endl;
+         coutput << " input cpsi exists, reading from file: " << filename << std::endl;
  
       cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, filename);
    }
@@ -333,7 +497,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
    /* generate new psi */
    else 
    {
-      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
+      if (myparall->base_stdio_print) coutput << " generating random cpsi from scratch" << std::endl;
       mycneb->g_generate_random(psi2);
    }
    newpsi = newpsi || (ispin != mycneb->ispin)
@@ -377,6 +541,42 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
  *                cpsi_write                         *
  *                                                   *
  *****************************************************/
+
+void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
+               int *ispin, int ne[], int *nbrillouin, double *psi, 
+               int *occupation, double occ[],
+               char *filename, std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+
+   Parallel *myparall = mycneb->c3db::parall;
+
+   if (myparall->base_stdio_print)
+     coutput << " output cpsi to filename: " << filename << std::endl;
+
+   if (myparall->is_master())
+   {
+      openfile(6, filename, "w");
+      iwrite(6, version, 1);
+      iwrite(6, nfft, 3);
+      dwrite(6, unita, 9);
+      iwrite(6, ispin, 1);
+      iwrite(6, ne, 2);
+      iwrite(6, nbrillouin, 1);
+      iwrite(6, occupation, 1);
+   }
+
+   mycneb->g_write(6, psi);
+
+   if (*occupation>0)
+      mycneb->g_write_occ(6, occ);
+       //std::cout << "Write the occupations here!" << std::endl;
+
+   if (myparall->is_master())
+      closefile(6);
+}
+
+
 void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, char *filename,
                std::ostream &coutput) 
@@ -387,7 +587,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    Parallel *myparall = mycneb->c3db::parall;
  
    if (myparall->base_stdio_print)
-     coutput << " output psi to filename: " << filename << std::endl;
+     coutput << " output cpsi to filename: " << filename << std::endl;
  
    if (myparall->is_master()) 
    {
@@ -412,16 +612,17 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
 
 /*****************************************************
  *                                                   *
- *                epsi_read                          *
+ *                ecpsi_read                         *
  *                                                   *
  *****************************************************/
-bool epsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int nex[], double *psi2, std::ostream &coutput)
+bool ecpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int nex[], double *psi2, std::ostream &coutput)
 {
    nwpw_timing_function ftimer(50);
-   int version, ispin, nfft[3], ne[2],nbrillouin;
+   int version, ispin, nfft[3], nexin[2],occupation,nbrillouin;
    double unita[9];
    Parallel *myparall = mycneb->c3db::parall;
    bool newpsi = true;
+   bool generate_newpsi = true;
 
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
    if (cpsi_filefind(mycneb,filename) && (!wvfnc_initialize))
@@ -431,20 +632,45 @@ bool epsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int ne
       if (myparall->base_stdio_print)
          coutput << " reading from file " << std::endl << std::endl;
 
-      cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, filename);
+      //cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, filename);
+      if (myparall->is_master())
+      {
+         openfile(4, filename, "r");
+         iread(4, &version, 1);
+         iread(4, nfft, 3);
+         dread(4, unita, 9);
+         iread(4, &ispin, 1);
+         iread(4, nexin, 2);
+         iread(4, &nbrillouin, 1);
+         iread(4, &occupation, 1);
+      }
+      myparall->Brdcst_iValue(0, 0, &version);
+      myparall->Brdcst_iValues(0, 0, 3, nfft);
+      myparall->Brdcst_Values(0, 0, 9, unita);
+      myparall->Brdcst_iValue(0, 0, &ispin);
+      myparall->Brdcst_iValues(0, 0, 2, nexin);
+      myparall->Brdcst_iValue(0, 0, &nbrillouin);
+      myparall->Brdcst_iValue(0, 0, &occupation);
+
+      mycneb->g_read_excited(4, nexin, nbrillouin,psi2);
+      if (myparall->is_master())
+         closefile(4);
+
+      if ((nex[0] == nexin[0]) && (nex[1]==nexin[1]) & (nbrillouin == mycneb->nbrillouin))
+         generate_newpsi = false;
    }
 
    /* generate new psi */
-   else
+   if (generate_newpsi)
    {
-      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl << std::endl;
+      if (myparall->base_stdio_print) coutput << " generating random cpsi from scratch" << std::endl << std::endl;
       mycneb->g_generate_excited_random(nex, psi2);
    }
 
    newpsi = newpsi || (ispin != mycneb->ispin)
                    || (nbrillouin != mycneb->nbrillouin)
-                   || (ne[0] != nex[0])
-                   || (ne[1] != nex[1])
+                   || (nexin[0] != nex[0])
+                   || (nexin[1] != nex[1])
                    || (std::abs(unita[0] - mycneb->lattice->unita1d(0)) > 1.0e-4)
                    || (std::abs(unita[1] - mycneb->lattice->unita1d(1)) > 1.0e-4)
                    || (std::abs(unita[2] - mycneb->lattice->unita1d(2)) > 1.0e-4)
@@ -466,10 +692,10 @@ bool epsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int ne
 
 /*****************************************************
  *                                                   *
- *                epsi_write                         *
+ *               ecpsi_write                         *
  *                                                   *
  *****************************************************/
-void epsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
+void ecpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, char *filename,
                std::ostream &coutput)
 {
@@ -479,7 +705,7 @@ void epsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    Parallel *myparall = mycneb->c3db::parall;
 
    if (myparall->base_stdio_print)
-     coutput << " output epsi to filename: " << filename << std::endl;
+     coutput << " output ecpsi to filename: " << filename << std::endl;
 
    if (myparall->is_master()) {
      openfile(6, filename, "w");
@@ -492,7 +718,7 @@ void epsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
      iwrite(6, &occupation, 1);
    }
 
-   mycneb->g_write_excited(6, ne, psi);
+   mycneb->g_write_excited(6, ne, *nbrillouin, psi);
 
    if (myparall->is_master())
      closefile(6);

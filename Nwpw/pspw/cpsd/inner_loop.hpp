@@ -18,6 +18,7 @@ extern void inner_loop(Control2 &, Pneb *, Ion *, Kinetic_Operator *,
                        Coulomb12_Operator *, XC_Operator *, Pseudopotential *,
                        Strfac *, Ewald *, double *, double *, double *,
                        double *, double *, double *, double *, double *,
-                       double *, double *, double *);
+                       double *, double *, double *,
+                       bool, double *, double *);
 }
 #endif

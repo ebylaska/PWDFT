@@ -50,14 +50,15 @@ Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
  
    parallelized = (np_j > 1);
  
-   s22 = new (std::nothrow) double[7 * ne[0] * ne[0]]();
+   s22 = new (std::nothrow) double[8 * ne[0] * ne[0]]();
    s21 = &s22[1 * ne[0] * ne[0]];
    s12 = &s22[2 * ne[0] * ne[0]];
    s11 = &s22[3 * ne[0] * ne[0]];
    sa1 = &s22[4 * ne[0] * ne[0]];
    sa0 = &s22[5 * ne[0] * ne[0]];
    st1 = &s22[6 * ne[0] * ne[0]];
- 
+   st2 = &s22[7 * ne[0] * ne[0]];
+
    if (parallelized) 
    {
       mcq[0] = mcq[1] = 0;
@@ -312,6 +313,32 @@ void Pneb::g_generate_excited_random(const int nex[], double *psi_excited)
    }
 }
 
+
+/*************************************
+ *                                   *
+ *  Pneb::g_generate_extra_random    *
+ *                                   *
+ *************************************/
+void Pneb::g_generate_extra_random(const int nextra, double *psi_excited)
+{
+   int taskid = d1db::parall->taskid();
+   util_random(taskid + 91);
+   double tmp2[n2ft3d];
+
+   int taskid_j = d1db::parall->taskid_j();
+   for (auto n=0; n<nextra; ++n)
+   {
+      d3db::r_setrandom(tmp2);
+      d3db::r_zero_ends(tmp2);
+      d3db::rc_fft3d(tmp2);
+
+      PGrid::c_pack(1,tmp2);
+      int indx = 2*PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi_excited + indx);
+   }
+}
+
+
 /*************************************
  *                                   *
  *      Pneb::g_generate_random      *
@@ -376,17 +403,20 @@ void Pneb::g_read(const int iunit, double *psi)
  *************************************/
 void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
+   int i;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   //std::unique_ptr<double*> tmp2(new double[n2ft3d]());
 
  
-   taskid_j = d1db::parall->taskid_j();
+   int taskid_j = d1db::parall->taskid_j();
  
-   for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne0[ms]; ++n) 
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto n=0; n<ne0[ms]; ++n) 
       {
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         
          if (n<ne0[ms])
          {
             c_read(iunit, tmp2, pj);
@@ -400,15 +430,56 @@ void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          
          if (pj == taskid_j) 
          {
+            int indx = 2*PGrid::npack(1)*qj;
+            PGrid::c_pack(1, tmp2);
+            PGrid::cc_pack_copy(1, tmp2, psi + indx);
+         }
+      }
+   }
+ 
+   delete[] tmp2;
+}
+
+/*************************************
+ *                                   *
+ *      Pneb::g_read_ne_reverse      *
+ *                                   *
+ *************************************/
+void Pneb::g_read_ne_reverse(const int iunit, const int *ne0, double *psi)
+{        
+   int ms, n, indx, i, pj, qj, taskid_j;
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   //std::unique_ptr<double[]> tmp2(new double[n2ft3d]());
+      
+      
+   taskid_j = d1db::parall->taskid_j();
+            
+   for (ms=0; ms<ispin; ++ms)
+      for (n=ne0[ms]-1; n>=0; --n) 
+      {     
+         qj = msntoindex(ms, n);
+         pj = msntop(ms, n);
+         if (n<ne0[ms])
+         {  
+            c_read(iunit, tmp2, pj);
+         }
+         else
+         {  
+            d3db::r_setrandom(tmp2);
+            d3db::r_zero_ends(tmp2);
+            d3db::rc_fft3d(tmp2);
+         }
+            
+         if (pj == taskid_j) 
+         {
             indx = 2*PGrid::npack(1)*qj;
             PGrid::c_pack(1, tmp2);
             PGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
       }
- 
+
    delete[] tmp2;
 }
-
 
 
 /*************************************
@@ -467,8 +538,8 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
 
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   for (auto ms = 0; ms < ispin; ++ms)
-   for (auto n = 0; n < nex[ms]; ++n)
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
    {
       int indx = 2 * PGrid::npack(1) * n;
       PGrid::cc_pack_copy(1, psi + indx, tmp2);
@@ -480,6 +551,34 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
          c_write(iunit,tmp2,taskid_j);
    }
 
+   delete[] tmp2;
+}
+
+
+  
+/*************************************
+ *                                   *
+ *       Pneb::g_read_excited        *
+ *                                   *
+ *************************************/
+void Pneb::g_read_excited(const int iunit, const int nex[], double *psi)
+{
+   d3db::parall->Barrier();
+   int taskid_j = d1db::parall->taskid_j();
+
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
+   {
+      c_read(iunit,tmp2,taskid_j);
+
+      PGrid::c_pack(1, tmp2);
+
+      int indx = 2 * PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi + indx);
+
+   }
    delete[] tmp2;
 }
 
@@ -500,8 +599,7 @@ double Pneb::gg_traceall_excited(const int nex[], double *psi1, double *psi2)
       sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
       indx += 2 * PGrid::npack(1);
    }
-   //if (ispin == 1)
-   //   sum *= 2.0;
+   //if (ispin == 1) sum *= 2.0;
  
    return d3db::parall->SumAll(0, sum);
 }
@@ -540,6 +638,26 @@ double Pneb::gg_traceall(double *psi1, double *psi2)
    return d3db::parall->SumAll(0, sum);
 }
 
+/*************************************
+ *                                   *
+ *       Pneb::gg_traceall_occ       *
+ *                                   *
+ *************************************/
+double Pneb::gg_traceall_occ(double *psi1, double *psi2, double *occ) 
+{
+   double sum = 0.0;
+ 
+   int indx = 0;
+   for (auto n=0; n<(neq[0]+neq[1]); ++n) 
+   {
+      sum += occ[n]*PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
+      indx += 2*PGrid::npack(1);
+   }
+   if (ispin == 1)
+      sum *= 2.0;
+ 
+   return d3db::parall->SumAll(0, sum);
+}
 
 /*************************************
  *                                   *
@@ -820,6 +938,38 @@ void Pneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
    }
    d3db::parall->Vector_SumAll(2, ispin*n2ft3d, dn);
 }
+
+/*************************************
+ *                                   *
+ *         Pneb::hr_aSumSqr_occ      *
+ *                                   *
+ *************************************/
+void Pneb::hr_aSumSqr_occ(const double alpha, const double *occ, double *psir, double *dn) 
+{
+   int one = 1;
+   int zero = 0;
+   int nsize = n2ft3d * ispin;
+   //double rzero = 0.0;
+
+   // dcopy_(&nsize,&rzero,&zero,dn,&one);
+   std::memset(dn,0,nsize*sizeof(double));
+
+   int indx0 = 0;
+   int indx1 = 0;
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto q=0; q<(neq[ms]); ++q)
+      {
+         double wf = occ[msntoindex(ms,q)];
+         for (auto k=0; k<n2ft3d; ++k)
+            dn[indx0+k] += alpha*psir[indx1+k]*psir[indx1+k]*wf;
+         indx1 += n2ft3d;
+      }
+      indx0 += n2ft3d;
+   }
+   d3db::parall->Vector_SumAll(2, ispin*n2ft3d, dn);
+}
+
 
 /*************************************
  *                                   *
@@ -1289,7 +1439,6 @@ void Pneb::ffm_Multiply(const int mb, double *psi1, double *psi2, double *hml)
  *      Pneb::ffm3_sym_Multiply      *
  *                                   *
  *************************************/
-
  /* 
   Description:                                    
   This function performs symmetric matrix         
@@ -1488,6 +1637,201 @@ void Pneb::ffm3_sym_Multiply(const int mb, double *psi1, double *psi2,
       d3db::parall->Vector_SumAll(1, nn, s22);
    }
 }
+
+/*************************************
+ *                                   *
+ *  Pneb::ffm3_Fulls21_sym_Multiply  *
+ *                                   *
+ *************************************/
+void Pneb::ffm3_Fulls21_sym_Multiply(const int mb, double *psi1, double *psi2,
+                             double *s11, double *s21, double *s22)
+{
+   nwpw_timing_function ftimer(15);
+   int ms1, ms2, ishift2, n, shift0, shift1, mshift0, mshift1, nn;
+   int one = 1;
+   int npack1 = 2*PGrid::npack(1);
+   int ng0    = 2*PGrid::nzero(1);
+
+   double rzero = 0.0;
+   double rtwo = 2.0;
+   double rone = 1.0;
+   double rmone = -1.0;
+
+   if (parallelized) 
+   {
+      //std::ostringstream msg;
+      //msg << "NWPW Error: ffm3_sym_Multiply() parallelized is NOT supported\n"
+      //    << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      //throw(std::runtime_error(msg.str()));
+      if (mb==-1)
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = mcq[0]*ncq[0];
+         nn = mcqmax[0]*ncqmax[0]+mcqmax[1]*ncqmax[1];
+      }
+      else
+      {
+         ms1 = mb;
+         ms2 = mb+1;
+         ishift2 = 0;
+         nn = mcqmax[mb]*ncqmax[mb];
+      }
+
+      auto taskid_i = d1db::parall->taskid_i();
+      auto taskid_j = d1db::parall->taskid_j();
+      //auto ishift2 = mcq[0]*ncq[0];
+
+      //s11
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi1+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s11,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s11);
+      d1db::parall->Vector_SumAll(0,mall[0],s11);
+
+
+      //s21
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi2+shift0,psi1+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s21,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s21);
+      d1db::parall->Vector_SumAll(0,mall[0],s21);
+
+      //s22
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (ne[ms]>0)
+         {
+            auto shift0 = ms*neq[0]*npack1;
+            auto shift2 = ms*ishift2;
+            d1db::DMatrix_dgemm2c(d1db::parall, &mygdevice,
+                          ne[ms],ne[ms],npack1_all,128,
+                          psi2+shift0,psi2+shift0, ma[ms][taskid_i],ma[ms],ma1[ms],na[ms],
+                          mat_tmp+shift2,mc[ms][taskid_i],mc[ms],nc[ms],
+                          work1,work2);
+         }
+      }
+      std::memset(s22,0,mall[0]*sizeof(double));
+      t_bindexcopy(mpack[0],mindx[0],mat_tmp,s22);
+      d1db::parall->Vector_SumAll(0,mall[0],s22);
+
+
+      // Symmetrize hml
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         mshift0 = ms*ne[0]*ne[0];
+         n = ne[ms];
+         for (auto k=0; k<n; ++k)
+            for (auto j=k+1; j<n; ++j)
+            {
+               s11[mshift0+j+k*n] = s11[mshift0+k+j*n];
+               //s21[mshift0+j+k*n] = s21[mshift0+k+j*n];
+               s22[mshift0+j+k*n] = s22[mshift0+k+j*n];
+            }
+      }
+   }
+   else
+   {
+      if (mb == -1)
+      {
+         ms1 = 0;
+         ms2 = ispin;
+         ishift2 = ne[0]*ne[0];
+         nn = ne[0]*ne[0] + ne[1]*ne[1];
+         shift0 = 0;
+         mshift0 = 0;
+      }
+      else
+      {
+         ms1 = mb;
+         ms2 = mb + 1;
+         ishift2 = 0;
+         nn = ne[mb]*ne[mb];
+         //shift0 = mb*ne[0]*ng;
+         shift0 = mb*ne[0]*npack1;
+         mshift0 = 0;
+      }
+      for (auto ms=ms1; ms<ms2; ++ms)
+      {
+         n = ne[ms];
+
+         d3db::mygdevice.TN3_FullCab_dgemm(npack1,n,rtwo,psi1+shift0,psi2+shift0,rzero,s11+mshift0,s21+mshift0,s22+mshift0);
+
+         if (ng0 > 0)
+         {
+            shift1  = shift0;
+            mshift1 = mshift0;
+            for (auto k=1; k<=n; ++k)
+            {
+               DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                           psi1+shift0,npack1,
+                           psi1+shift1,npack1,
+                           rone,
+                           s11+mshift1,k);
+               //DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+               //            psi1+shift0,npack1, 
+               //            psi2+shift1,npack1,
+               //            rone,
+               //            s21+mshift1,k);
+               DGEMM_PWDFT((char *)"T", (char *)"N", k, one, ng0, rmone,
+                           psi2+shift0,npack1,
+                           psi2+shift1,npack1,
+                           rone,
+                           s22+mshift1,k);
+               shift1  += npack1;
+               mshift1 += n;
+            }
+            DGEMM_PWDFT((char *)"T", (char *)"N", n, n, ng0, rmone,
+                        psi1+shift0,npack1, 
+                        psi2+shift0,npack1,
+                        rone,
+                        s21+mshift0,n);
+         }
+
+         for (auto k=0; k<n; ++k)
+         {
+            for (auto j=k+1; j<n; ++j)
+            {
+               s11[mshift0+j+k*n] = s11[mshift0+k+j*n];
+               //s21[mshift0+j+k*n] = s21[mshift0+k+j*n];
+               s22[mshift0+j+k*n] = s22[mshift0+k+j*n];
+            }
+         }
+
+         shift0  += npack1*ne[0];
+         mshift0 += ne[0]*ne[0];
+      }
+      d3db::parall->Vector_SumAll(1, nn, s11);
+      d3db::parall->Vector_SumAll(1, nn, s21);
+      d3db::parall->Vector_SumAll(1, nn, s22);
+   }
+}
+
+
+
+
 
 
 /*************************************
@@ -1893,6 +2237,45 @@ void Pneb::m_scal(double alpha, double *hml) {
   DSCAL_PWDFT(nsize, alpha, hml, one);
 }
 
+/*************************************
+ *                                   *
+ *        Pneb::m_diag_scal          *
+ *                                   *
+ *************************************/
+#define eta 1.0e-9
+void Pneb::m_diag_scal(const double *occ, double *hml) 
+{
+   int mshift  = 0;
+   int mshift1 = 0;
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto i=0; i<ne[ms]; ++i)
+         hml[i + i*ne[ms] + mshift] *= (occ[i+mshift1]+eta);
+
+       mshift1 += ne[0];
+       mshift  += ne[0]*ne[0];
+   }
+}
+
+/*************************************
+ *                                   *
+ *       Pneb::m_diag_scal_inv       *
+ *                                   *
+ *************************************/
+void Pneb::m_diag_scal_inv(const double *occ, double *hml) 
+{
+   int mshift  = 0;
+   int mshift1 = 0;
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto i=0; i<ne[ms]; ++i)
+         hml[i + i*ne[ms] + mshift] /= (occ[i+mshift1]+eta);
+
+       mshift1 += ne[0];
+       mshift  += ne[0]*ne[0];
+   }
+}
+
 
 /*************************************
  *                                   *
@@ -1917,6 +2300,27 @@ double Pneb::m_trace(double *hml)
       for (i = 0; i < ne[ms]; ++i)
          sum += hml[i + i * ne[ms] + mshift];
       mshift += ne[0] * ne[0];
+   }
+   return sum;
+}
+
+/*************************************
+ *                                   *
+ *            Pneb::m_trace_occ      *
+ *                                   *
+ *************************************/
+double Pneb::m_trace_occ(double *hml, double *occ) 
+{
+   int ms, i;
+   int mshift1 = 0;
+   int mshift2 = 0;
+   double sum = 0.0;
+   for (ms = 0; ms < ispin; ++ms) 
+   {
+      for (i=0; i<ne[ms]; ++i)
+         sum += hml[i + i*ne[ms] + mshift2]*occ[i+mshift1];
+      mshift1 += ne[0];
+      mshift2 += ne[0]*ne[0];
    }
    return sum;
 }
@@ -1953,6 +2357,29 @@ void Pneb::m_diagonalize(double *hml, double *eig)
  
       if (d1db::parall->is_master())
          d3db::mygdevice.NN_eigensolver(ispin, ne, hml, eig);
+      d1db::parall->Brdcst_Values(0, 0, nn, hml);
+      d1db::parall->Brdcst_Values(0, 0, n, eig);
+   }
+}
+
+
+void Pneb::m_diagonalize(const int n, double *hml, double *eig) 
+{
+   nwpw_timing_function ftimer(17);
+
+   if (mparallelized)
+   {
+      std::ostringstream msg;
+      msg << "NWPW Error: m_diagonalize() mparallelized is NOT supported\n"
+          << "\t - " << __FILE__ << " : " << __LINE__ << std::endl;
+      throw(std::runtime_error(msg.str()));
+   }
+   else
+   {
+      int nn = n*n;
+
+      if (d1db::parall->is_master())
+         d3db::mygdevice.NN_eigensolver0(n, hml, eig);
       d1db::parall->Brdcst_Values(0, 0, nn, hml);
       d1db::parall->Brdcst_Values(0, 0, n, eig);
    }
@@ -2197,7 +2624,7 @@ void Pneb::mm_SCtimesVtrans2(const int mb, const double t, double *S,
       SB[j] = S[j] * cos(S[j] * t);
    }
    for (ms = ms1; ms < ms2; ++ms) 
-   {
+   {   
       shift1 = ms * ishift1;
       shift2 = ms * ishift2;
       for (k = 0; k < ne[ms]; ++k) 
@@ -2346,7 +2773,42 @@ void Pneb::mmm_Multiply2(const int mb, double *a, double *b, double alpha,
   }
 }
 
-void Pneb::mm_transpose(const int mb, double *a, double *b) 
+/*************************************
+ *                                   *
+ *         Pneb::mmm_Multiply3       *
+ *                                   *
+ *************************************/
+void Pneb::mmm_Multiply3(const int mb, double *a, double *b, double alpha,
+                         double *c, double beta) {
+  nwpw_timing_function ftimer(18);
+  int ms, n, ms1, ms2, ishift2, shift2;
+  if (mb == -1) {
+    ms1 = 0;
+    ms2 = ispin;
+    ishift2 = ne[0] * ne[0];
+  } else {
+    ms1 = mb;
+    ms2 = mb + 1;
+    ishift2 = 0;
+  }
+  for (ms = ms1; ms < ms2; ++ms) {
+    n = ne[ms];
+    if (n > 0) {
+      shift2 = ms * ishift2;
+
+      DGEMM_PWDFT((char *)"N", (char *)"T", n, n, n, alpha, a + shift2, n,
+                  b + shift2, n, beta, c + shift2, n);
+    }
+  }
+}
+
+
+/********************************
+ *                              *
+ *       Pneb::mm_transpose     *
+ *                              *
+ ********************************/
+void Pneb::mm_transpose(const int mb, const double *a, double *b) 
 {
    int i, j, indx, indxt;
    int ms, n, ms1, ms2, ishift2, shift2;
@@ -2554,16 +3016,427 @@ void Pneb::ggm_lambda_sic(double dte, double *psi1, double *psi2,
 
 /********************************
  *                              *
+ *     Pneb::gen_Ba_Bs          *
+ *                              *
+ ********************************/
+void Pneb::gen_Ba_Bs(const int ms, double *B, double *Bs, double *Ba)
+{
+   int one = 1;
+   double rone = 1.0;
+   double rhalf = 0.5;
+   double rmone = -1.0;
+   double rmhalf = -0.5;
+   int nn = m_size(ms);
+
+   Pneb::mm_transpose(ms,B,Ba);
+
+   std::memcpy(Bs,B,nn*sizeof(double));
+   DAXPY_PWDFT(nn,rone,Ba,one,Bs,one);
+   DSCAL_PWDFT(nn,rhalf,Bs,one);
+
+   DAXPY_PWDFT(nn,rmone,B,one,Ba,one);
+   DSCAL_PWDFT(nn,rmhalf,Ba,one);
+}
+
+/********************************
+ *                              *
+ *     Pneb::gen_UD             *
+ *                              *
+ ********************************/
+void Pneb::gen_UD(const int ms, double *Bs, double *D)
+{
+    m_diagonalize(ne[ms],Bs,D);
+    //m_diagonalize(Bs,D);
+}
+
+/********************************
+ *                              *
+ *     Pneb::gen_X              *
+ *                              *
+ ********************************/
+void Pneb::gen_X(const int ms, double *X1, double *tmp, double *A, double *Ba, double *C,
+                 double *U, double *D, double *fnm, double *fweight, bool *failed)
+{
+
+   // local variables
+   int itrlmd = 120;
+   double convg = 1.0e-15;
+
+   int one = 1;
+   double rzero = 0.0;
+   double rone = 1.0;
+   double rhalf = 0.5;
+   double rmone = -1.0;
+   double rmhalf = -0.5;
+   int nn = m_size(ms);
+
+   // A = I-A 
+   DSCAL_PWDFT(nn,rmone,A,one);
+   m_eye(ms,fnm,rone);
+   DAXPY_PWDFT(nn,rone,fnm,one,A,one);
+
+   // fnm = I-A 
+   std::memcpy(fnm,A,nn*sizeof(double));
+
+   // solve U*D*Ut*X + X*U*D*Ut = fnm for X
+   fnm_to_X(ms,fnm,U,D,fweight,tmp);
+   std::memcpy(X1,fnm,nn*sizeof(double));
+
+
+   int it  = 0;
+   *failed = true;
+   while (*failed &&  (it<itrlmd))
+   {
+      ++it;
+
+      // fnm = X*C*X
+      mmm_Multiply(ms,C,X1,rone,tmp,rzero);
+      mmm_Multiply(ms,X1,tmp,rone,fnm,rzero);
+
+      // fnm = Ba*X - X*C*X 
+      mmm_Multiply(ms,Ba,X1,rone,fnm,rmone);
+
+
+      // fnm = Ba*X - X*Ba - X*C*X
+      mmm_Multiply(ms,X1,Ba,rmone,fnm,rone);
+
+      // fnm = I-A + Ba*X - X*Ba - X*C*X 
+      DAXPY_PWDFT(nn,rone,A,one,fnm,one);
+
+
+      // solve U*D*Ut*X + X*U*D*Ut = fnm for X
+      fnm_to_X(ms,fnm,U,D,fweight,tmp);
+
+      std::memcpy(tmp,X1,nn*sizeof(double));
+      DAXPY_PWDFT(nn,rmone,fnm,one,tmp,one);
+      double adiff = fabs(tmp[IDAMAX_PWDFT(nn, tmp, one) - 1]);
+      std::memcpy(X1,fnm,nn*sizeof(double));
+
+      if (adiff<convg) *failed = false;
+   }
+
+}
+
+void Pneb::printNNMatrix(const std::string& str, const int ms, double *A)
+{
+   int nn = m_size(ms);
+      
+   int n = ne[ms];
+   std::cout << str << "=" << std::endl;
+   for (int i=0; i<n; ++i) 
+   {
+      for (int j= 0; j<n; ++j) 
+         std::cout << Efmt(12,4) << A[i*n + j] << " ";
+       std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+
+/********************************
+ *                              *
+ *     Pneb::fnm_to_X           *
+ *                              *
+ ********************************/
+void Pneb::fnm_to_X(const int ms, double *fnm, double *U, double *D, double *fweight, double *tmp)
+{
+   double rzero = 0.0;
+   double rone = 1.0;
+   
+   // fnm = Ut*fnm*U
+   mmm_Multiply(ms,fnm,U,rone,tmp,rzero);
+   mmm_Multiply2(ms,U,tmp,rone,fnm,rzero);
+
+   // fnm = (Ut*fnm*U)_nm/(d_n+d_m) 
+   m_HmldivideDplusD(ms,fnm,D);
+
+
+   // fnm = X = U*{(Ut*fnm*U)_nm/(d_n+d_m)}*Ut 
+   mmm_Multiply(ms,U,fnm,rone,tmp,rzero);
+   mmm_Multiply3(ms,tmp,U,rone,fnm,rzero);
+
+   m_Hmlfweightscale(ms,fnm,fweight);
+}
+
+/********************************
+ *                              *
+ *     Pneb::m_eye              *
+ *                              *
+ ********************************/
+void Pneb::m_eye(const int mb, double *A, double alpha)
+{
+   int ms1, ms2, ishift2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift2 = ne[0]*ne[0];
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+      ishift2 = 0;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int shift2 = ms*ishift2;
+      int n = ne[ms];
+      for (auto k=0; k<n; ++k)
+         A[shift2+k+k*n] = alpha;
+   }
+}
+
+/********************************
+ *                              *
+ *   Pneb::m_HmldivideDplusD    *
+ *                              *
+ ********************************/
+/* Purpose:
+ *   This function scales the elements of the matrix `A` by dividing 
+ *   them by the sum of corresponding elements in the array `D`. 
+ *   The denominator is computed as `D[k] + D[j]` for indices `(k, j)`. 
+ *   To ensure numerical stability, a small value `epsilon` is used 
+ *   to prevent division by zero when the denominator is too small.
+ *
+ * Parameters:
+ *   - mb (int): Specifies the spin block to process.
+ *       - If `mb == -1`, all spin blocks are processed.
+ *       - Otherwise, only the specified spin block is processed.
+ *   - A (double*): Pointer to the matrix being modified in-place.
+ *   - D (double*): Pointer to the array providing the denominator values.
+ *
+ * Algorithm:
+ *   - Determine the range of spin blocks based on the value of `mb`.
+ *   - For each spin block, iterate over indices `k` and `j`.
+ *   - Compute the denominator as `D[k] + D[j]`.
+ *   - If the denominator is smaller than `epsilon`, set it to `epsilon` 
+ *     to prevent division by zero.
+ *   - Divide the matrix element `A[j + k * n]` by the computed denominator.
+ *
+ * Assumptions:
+ *   - The `D` array contains non-negative values.
+ *   - The small constant `epsilon` (default: 1.0e-12) is used to avoid 
+ *     division by zero or numerical instability for very small denominators.
+ *
+ * Preconditions:
+ *   - The input pointers `A` and `D` must be valid and properly allocated.
+ *   - The dimensions of `A` and `D` must be consistent with `ne[ms]`.
+ *
+ * Postconditions:
+ *   - The matrix `A` is updated in-place with the scaled values.
+ */
+void Pneb::m_HmldivideDplusD(const int mb, double *A, double *D)
+{
+   int ms1, ms2, ishift1, ishift2;
+   constexpr double epsilon = 1.0e-12; // Small value to avoid division by zero
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift1 = ne[0];
+      ishift2 = ne[0]*ne[0];
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+      ishift1 = 0;
+      ishift2 = 0;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int shift1 = ms*ishift1;
+      int shift2 = ms*ishift2;
+      int n = ne[ms];
+      for (auto k=0; k<n; ++k)
+      for (auto j=0; j<n; ++j)
+      {
+         double denominator = D[shift1 + k] + D[shift1 + j];
+         if (std::abs(denominator) < epsilon)
+         {
+            denominator = epsilon; // Prevent division by zero
+         }
+         A[shift2+j+k*n] /= denominator;
+         //A[shift2+j+k*n] /= (D[shift1+k] + D[shift1+j]);
+      }
+   }
+}
+
+/********************************
+ *                              *
+ *   Pneb::m_Hmlfweightscale    *
+ *                              *
+ ********************************/
+/* Purpose:
+ *   This function scales the matrix `A` based on a weighted 
+ *   factor derived from the elements of the `fweight` array. 
+ *   It applies a scaling factor of `2.0 * fweight[k] / (fweight[k] + fweight[j])` 
+ *   to each element `A[j + k * n]`, provided the sum of weights 
+ *   `(fweight[k] + fweight[j])` exceeds a small threshold, `epsilon`.
+ *
+ * Parameters:
+ *   - mb (int): Specifies the spin block to process.
+ *       - If `mb == -1`, all spin blocks are processed.
+ *       - Otherwise, only the specified spin block is processed.
+ *   - A (double*): Pointer to the matrix being scaled.
+ *   - fweight (double*): Pointer to the array containing the weight factors.
+ *
+ * Algorithm:
+ *   - Determine the range of spin blocks based on the value of `mb`.
+ *   - For each spin block, loop over the indices `k` and `j`.
+ *   - Calculate the sum of the weights for the pair `(k, j)`.
+ *   - If the sum of weights exceeds `epsilon`, apply the scaling factor 
+ *     to the corresponding matrix element in `A`.
+ *
+ * Assumptions:
+ *   - All values in the `fweight` array are assumed to be positive.
+ *   - The `epsilon` value is a small positive constant (default: 1.0e-12) 
+ *     used to avoid division by zero or numerical instabilities 
+ *     when the sum of weights is very small.
+ *
+ * Preconditions:
+ *   - The input pointers `A` and `fweight` must be valid and properly allocated.
+ *   - The dimensions of `A` and `fweight` must be consistent with `ne[ms]`.
+ *
+ * Postconditions:
+ *   - The matrix `A` is updated in-place with the scaled values.
+ */
+void Pneb::m_Hmlfweightscale(const int mb, double *A, double *fweight)
+{
+
+   constexpr double epsilon = 1.0e-12; // Small value to avoid division by zero
+   int ms1, ms2, ishift1, ishift2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+      ishift1 = ne[0];
+      ishift2 = ne[0]*ne[0];
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+      ishift1 = 0;
+      ishift2 = 0;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      int shift1 = ms*ishift1;
+      int shift2 = ms*ishift2;
+      int n = ne[ms];
+      for (auto k=0; k<n; ++k)
+      for (auto j=0; j<n; ++j)
+      {
+         double sum_fweights = fweight[shift1+j] + fweight[shift1+k];
+         if (sum_fweights > epsilon)
+         {
+            A[shift2+j+k*n] *= (2.0*fweight[shift1+k]/sum_fweights);
+         }
+         //if ((fweight[shift1+j] + fweight[shift1+k]) > 1.0e-9)
+         //   A[shift2+j+k*n] *= (2.0*fweight[shift1+k]/(fweight[shift1+k]+fweight[shift1+j]));
+      }
+   }
+}
+
+
+
+/********************************
+ *                              *
+ *     Pneb::ggm_occ_lambda     *
+ *                              *
+ ********************************/
+
+#define ITERLMD 220
+#define CONVGLMD 1e-15
+#define CONVGLMD2 1e-12
+
+// Lagrange multiplier (expensive method)
+void Pneb::ggm_occ_lambda(double dte, double *psi1, double *psi2, double *occ, double *lmbda)
+{
+   nwpw_timing_function ftimer(3);
+
+   int one = 1;
+   double rmone = -1.0;
+   double adiff = 0.0;
+   double overdte = 1.0/dte;
+
+
+
+   double *A = s22;   // 0*nn
+   double *B = s21;   // 1*nn 
+   double *C = s12;   // 2*nn
+
+   double *Ba = s11;  // 3*nn
+   double *Bs = sa1;  // 4*nn
+   double *fnm = sa0; // 5*nn
+   //st1 = st1;       // 6*nn
+   //st2 = st2        // 7*nn
+   double *D = B;     // 1*nn
+   double *U = Bs;    // 4*nn
+
+   bool failed;
+
+
+   for (int ms=0; ms<ispin; ++ms) 
+   {
+      int nn = m_size(ms);
+
+      ffm3_Fulls21_sym_Multiply(ms, psi1, psi2, C, B, A);
+
+      gen_Ba_Bs(ms,B,Bs,Ba);
+      gen_UD(ms,Bs,D);
+      gen_X(ms,st1,st2,A,Ba,C,U,D,fnm,occ,&failed);
+
+      if (failed) 
+      {
+         std::cout << "Warning: ierr=10, Lagrange Multiplier generation failed." << std::endl 
+                   << "        +Try using a smaller time step" << std::endl
+                   << "        +Gram-Schmidt being performed, spin: " << ms << std::endl;
+         g_ortho(ms,psi2);
+      }
+      else
+      {
+         fmf_Multiply(ms,psi1,st1,1.0,psi2,1.0);
+
+         DSCAL_PWDFT(nn,overdte,st1,one);
+         std::memcpy(lmbda + ms*ne[0]*ne[0], st1, nn*sizeof(double));
+         //Dneall_mm_Expand(ms,st1,lmbda)
+      }
+
+   } // for loop - ms
+
+}
+
+
+
+/********************************
+ *                              *
  *        Pneb::g_ortho         *
  *                              *
  ********************************/
 /*
    Performs a Gram-Schmidt orthogonalization on psi
 */
-void Pneb::g_ortho(double *psi) 
+void Pneb::g_ortho(const int mb, double *psi) 
 {
    int indxj, indxk, ishift;
    double w;
+
+   int ms1, ms2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }
+
+
    if (parallelized) 
    {
       //std::ostringstream msg;
@@ -2576,7 +3449,7 @@ void Pneb::g_ortho(double *psi)
       int npack1 = 2*PGrid::npack(1);
       double *tmp = new (std::nothrow) double[npack1]();
 
-      for (auto ms=0; ms<ispin; ++ms)
+      for (auto ms=ms1; ms<ms2; ++ms)
       {
          auto shift0 = ms*neq[0]*npack1;
          auto kcur = np_j-1;
@@ -2639,7 +3512,7 @@ void Pneb::g_ortho(double *psi)
    else 
    {
       // npj==1
-      for (auto ms=0; ms<ispin; ++ms) 
+      for (auto ms=ms1; ms<ms2; ++ms) 
       {
          ishift = ms*ne[0]*2*PGrid::npack(1);
          for (auto k=ne[ms]-1; k>=0; --k) 
@@ -2670,9 +3543,21 @@ void Pneb::g_ortho(double *psi)
 /*
    Performs a Gram-Schmidt orthogonalization on psi
 */
-void Pneb::g_ortho_excited(double *psi, const int nex[], double *psi_excited)
+void Pneb::g_ortho_excited(const int mb, double *psi, const int nex[], double *psi_excited)
 {
-   for (auto ms=0; ms<ispin; ++ms)
+   int ms1, ms2;
+   if (mb == -1)
+   {           
+      ms1 = 0; 
+      ms2 = ispin;
+   }              
+   else           
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }           
+
+   for (auto ms=ms1; ms<ms2; ++ms)
    {
       // project out filled and virtual spaces
       int kshift = ms*nex[0]*2*PGrid::npack(1);
@@ -2692,6 +3577,76 @@ void Pneb::g_ortho_excited(double *psi, const int nex[], double *psi_excited)
    }
 
    // project out virtual space
+}
+
+/***********************************************
+ *                                             *
+ *     Pneb::g_project_out_filled_extra        *
+ *                                             *
+ ***********************************************
+ * @brief Orthogonalizes extra orbitals to the filled (occupied) orbitals.
+ *
+ * This function is used in fractional occupation or smearing scenarios where
+ * additional orbitals (`nex[ms]`) are appended to the end of the filled
+ * orbital list (`ne[ms]`). These extra orbitals are needed to accommodate
+ * partial occupations or temperature-dependent population effects.
+ *
+ * The function projects out the component of each extra orbital along all
+ * filled orbitals below it, ensuring strict orthogonality without modifying
+ * the converged filled states. This is safer than full Gram-Schmidt
+ * orthogonalization of the entire orbital set, which may alter previously
+ * converged orbitals unintentionally.
+ *
+ * Typical use cases include:
+ *   - Initializing fractional occupation runs from converged integer orbitals
+ *   - Preserving orthogonality in no-iteration ("noit_energy") tasks
+ *   - Warm-starting excited state calculations or perturbative updates
+ *
+ * @param mb    Spin index to operate on:
+ *              -1 = all spin channels
+ *               0 = spin-up only
+ *               1 = spin-down only
+ *
+ * @param nex   Array of number of excited (extra) orbitals per spin
+ * @param psi   Pointer to full wavefunction storage (packed)
+ *
+ * Notes:
+ *   - Assumes orbitals are stored in contiguous packed format (as expected by `PGrid::npack` layout).
+ *   - Uses `g_project_out_filled_below` to perform individual projection steps.
+ *   - Only modifies the extra orbitals (the last `nex[ms]`), leaving filled orbitals untouched.
+ */
+
+void Pneb::g_project_out_filled_extra(const int mb, const int nex[], double *psi)
+{
+   int ms1, ms2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      double *psi_filled =  psi + ms*(ne[0])*2*PGrid::npack(1);
+      //double *psi_excited = psi_filled + (ne[ms]-nex[ms])*2*PGrid::npack(1);
+
+      int ishift = 2*PGrid::npack(1);
+      for (auto k=(ne[ms]-nex[ms]); k<ne[ms]; ++k)
+      {
+         double *psi_k = psi_filled + k*ishift;
+         g_project_out_filled_below(psi_filled,ms,k,psi_k);
+         //g_project_out_filled_below(psi_filled,ms,k,psi_excited+shift);
+         //++shift;
+         double norm = PGrid::cc_pack_dot(1, psi_k, psi_k);
+         double scale = 1.0 / std::sqrt(norm);
+         PGrid::c_pack_SMul(1, scale, psi_k);
+      }
+   }
+
 }
 
 /********************************
@@ -2776,6 +3731,22 @@ void Pneb::g_project_out_filled_below(double *psi, const int ms, const int k, do
  *  Pneb::g_project_out_filled_above  *
  *                                    *
  **************************************/
+/**
+ * @brief Projects out filled components of psi above index k.
+ *
+ * This function modifies the `psi` array by removing components that are 
+ * aligned with `Horb`, starting strictly from index `k+1` and above.
+ * It performs a projection operation to ensure orthogonality with `Horb`.
+ *
+ * @param psi   Pointer to the array representing the function to be projected.
+ * @param ms    Index parameter that determines the shift in memory access.
+ * @param k     Index threshold; only components above k are modified.
+ * @param Horb  Pointer to the reference vector used for projection.
+ *
+ * @note Unlike `g_project_out_filled_from_k_up`, this function starts at `k+1`, 
+ *       meaning index `k` itself is left unchanged.
+ * @warning Modifies `psi` in place.
+ */
 void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, double *Horb) 
 {
    int ishift = ms*neq[0]*2*PGrid::npack(1);
@@ -2786,6 +3757,37 @@ void Pneb::g_project_out_filled_above(double *psi, const int ms, const int k, do
      PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
    }
 }
+
+/*****************************************
+ *                                       *
+ *  Pneb::g_project_out_filled_from_k_up *
+ *                                       *
+ *****************************************/
+/**
+ * @brief Projects out filled components of psi from index k and above.
+ *
+ * This function modifies the `psi` array by removing components that are 
+ * aligned with `Horb` from index `k` onwards. It uses a projection operation
+ * where each component of `psi` at `k` and above is adjusted to ensure 
+ * orthogonality with `Horb`.
+ *
+ * @param psi   Pointer to the array representing the function to be projected.
+ * @param ms    Index parameter that determines the shift in memory access.
+ * @param k     Starting index for projection; components from k and above are modified.
+ * @param Horb  Pointer to the reference vector used for projection.
+ *
+ * @note This function modifies `psi` in place.
+ */
+void Pneb::g_project_out_filled_from_k_up(double *psi, const int ms, const int k, double *Horb)
+{
+   int ishift = ms*neq[0]*2*PGrid::npack(1);
+   for (auto ka=k; ka<neq[ms]; ++ka)
+   {     
+     int indx = 2*PGrid::npack(1)*ka + ishift;
+     double w = -PGrid::cc_pack_dot(1,psi+indx,Horb);
+     PGrid::cc_pack_daxpy(1,w,psi+indx,Horb);
+   }     
+}     
 
 
 /*********************************
@@ -3166,10 +4168,393 @@ void Pneb::m4_R4_to_MN(const int mb, const double *R4, double *M, double *N)
       for (auto j = 0; j < n; ++j)
          for (auto i = 0; i < n; ++i) 
          {
-            M[i + j * n] = R4[i + j * (2 * n)];
-            N[i + j * n] = R4[(i + n) + j * (2 * n)];
+            M[i+j*n] = R4[i + j*(2*n)];
+            N[i+j*n] = R4[(i+n) + j*(2*n)];
          }
    }
 }
+
+
+
+/********************************************
+ *                                          *
+ *        Pneb::m_0define_occupation        *
+ *                                          *
+ ********************************************
+ * Description:
+ * This function calculates and defines occupation numbers
+ * for electronic states based on eigenvalues and optional
+ * Hamiltonian matrix elements. It determines the Fermi
+ * level using a bisection method and assigns occupations
+ * using a specified smearing scheme.
+ *
+ * Input Parameters:
+ * - initial_alpha (double):
+ *     Mixing parameter for updating occupations. If negative,
+ *     a default value of 1.0 is used.
+ *     Constraint: Must be >= 0.0 if explicitly provided.
+ * - use_hml (bool):
+ *     Flag to indicate whether to update eigenvalues from the
+ *     Hamiltonian matrix (`hml`).
+ * - multiplicity (int):
+ *     Spin multiplicity of the system.
+ *     Constraint: Must be >= 1.
+ * - ion_charge (double):
+ *     Total charge of the ions in the system.
+ * - total_charge (double):
+ *     Desired total charge of the system.
+ * - eig (double*):
+ *     Array of eigenvalues, modified if `use_hml` is true.
+ *     Assumption: Must be properly allocated with size matching the
+ *     number of states (ne[0] + ne[1]).
+ * - hml (double*):
+ *     Hamiltonian matrix elements used to update eigenvalues
+ *     if `use_hml` is true. Assumption: Properly allocated for the
+ *     system's size and structure.
+ * - smeartype (int):
+ *     Type of smearing to apply. Supported types include:
+ *       1 - Fermi-Dirac
+ *       2 - Gaussian
+ *       4 - Marzari-Vanderbilt
+ *     Constraint: Must be 1, 2, or 4.
+ * - smearkT (double):
+ *     Smearing temperature (related to the broadening of the
+ *     Fermi distribution).
+ *     Constraint: Must be > 0.
+ *
+ * Output Parameters:
+ * - smearfermi (double*):
+ *     Array to store the computed Fermi levels for each spin channel.
+ *     Assumption: Must be pre-allocated with at least 2 elements.
+ * - smearcorrection (double*):
+ *     Pointer to a correction term computed based on the
+ *     selected smearing scheme.
+ *
+ * Input/Output Parameters:
+ * - occ (double*):
+ *     Array of occupation numbers, updated by the function.
+ *     Assumption: Properly allocated for all states.
+ *
+ * Behavior:
+ * - Computes the Fermi level using a robust bisection method, ensuring
+ *   charge neutrality.
+ * - Updates occupation numbers based on the smearing scheme and applies
+ *   mixing controlled by `initial_alpha`.
+ * - Handles both spin-polarized and non-spin-polarized systems (based on `ispin`).
+ * - Computes smearing corrections for entropy-like terms in the energy.
+ *
+ * Notes:
+ * - The function assumes that `eig`, `hml`, and `occ` arrays are properly
+ *   allocated and sized according to the system's states and spins.
+ * - Throws a `std::runtime_error` if the Fermi energy cannot be determined.
+ * - Smearing corrections are only applied for supported `smeartype` values.
+ * - This function is **not thread-safe** if arrays like `occ` or `eig` are
+ *   shared across threads without synchronization.
+ *
+ * Usage Example:
+ * ```
+ * double eig[100], hml[10000], occ[100], smearfermi[2], smearcorrection = 0.0;
+ * Pneb myPneb;
+ * myPneb.m_0define_occupation(
+ *     -1.0, true, 3, 10.0, 8.0,
+ *     eig, hml, occ,
+ *     1, 0.01, smearfermi, &smearcorrection
+ * );
+ * ```
+ ********************************************/
+void Pneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
+                          const int multiplicity,
+                          const double ion_charge, const double total_charge,
+                          double *eig, double *hml, double *occ,
+                          const int smeartype, const double smearkT, double *smearfermi, double *smearcorrection)
+{
+   double ZZ = ion_charge - total_charge;
+
+   // Initialize smear correction and Fermi levels
+   smearfermi[0] = 0.0;
+   smearfermi[1] = 0.0;
+   *smearcorrection = 0.0;
+   //std::cout << "define ZZ = " << ZZ << std::endl;
+
+   // Early exit if charge neutrality is effectively satisfied
+   if (std::abs(ZZ) < 1.0e-9) return;
+
+   // Determine alpha (mixing parameter)
+   double alpha = (initial_alpha < 0.0) ? 1.0 : initial_alpha;
+
+   // Spin-dependent charge values
+   double Z[2] = {0.0, 0.0};
+   if (ispin == 2) 
+   {
+      Z[0] = 0.5 * (ZZ + multiplicity - 1);
+      Z[1] = 0.5 * (ZZ - multiplicity + 1);
+   } 
+   else 
+   {
+      Z[0] = 0.5 * ZZ;
+      Z[1] = 0.0;
+   }
+
+   //std::cout << "define alpha = " << alpha << std::endl;
+
+   // Loop over spin channels
+   for (int ms=0; ms<ispin; ++ms) 
+   {
+      double elower = 1.0e12, eupper = -1.0e12;
+
+      // Update eigenvalues from HML if required
+      if (use_hml) 
+      {
+         for (int n=0; n<ne[ms]; ++n) 
+         {
+            int index = n + ms * ne[0];
+            eig[index] = hml[n + n * ne[ms] + ms * ne[0] * ne[0]];
+         }
+      }
+
+      // Find elower and eupper
+      for (int n=0; n<ne[ms]; ++n) 
+      {
+         double e = eig[n + ms * ne[0]];
+         elower = std::min(elower, e);
+         eupper = std::max(eupper, e);
+      }
+
+      // Initialize Zlower and Zupper
+      double Zlower = 0.0, Zupper = 0.0;
+      for (int n = 0; n<ne[ms]; ++n) 
+      {
+         double e = eig[n + ms * ne[0]];
+         Zlower += util_occupation_distribution(smeartype, (e-elower)/smearkT);
+         Zupper += util_occupation_distribution(smeartype, (e-eupper)/smearkT);
+      }
+
+      double flower = Zlower - Z[ms];
+      double fupper = Zupper - Z[ms];
+
+      // Check for valid Fermi level
+      if (flower * fupper >= 0.0) {
+          throw std::runtime_error("Fermi energy not found");
+      }
+
+      // Bisection method to find Fermi level
+      double emid = 0.0, Zmid = 0.0, fmid = 0.0;
+      int it = 0;
+
+      while ((std::abs(fmid) > 1.0e-11 || std::abs(eupper - elower) > 1.0e-11) && it < 50) 
+      {
+         ++it;
+         emid = 0.5 * (elower + eupper);
+         Zmid = 0.0;
+         for (auto n = 0; n < ne[ms]; ++n) 
+         {
+            double e = eig[n + ms * ne[0]];
+            Zmid += util_occupation_distribution(smeartype, (e-emid)/smearkT);
+         }
+         fmid = Zmid - Z[ms];
+
+         if (fmid < 0.0) 
+         {
+            flower = fmid;
+            elower = emid;
+         } 
+         else 
+         {
+            fupper = fmid;
+            eupper = emid;
+         }
+      }
+
+      if (it == 50) {
+          throw std::runtime_error("Bisection method did not converge within the iteration limit");
+      }
+
+
+      smearfermi[ms] = emid;
+
+      // Update occupations and calculate smear corrections
+      for (auto n=0; n<ne[ms]; ++n) 
+      {
+         int index = n + ms*ne[0];
+         double e = eig[index];
+         double x = (e - smearfermi[ms]) / smearkT;
+         double f = util_occupation_distribution(smeartype, x);
+         double f0 = occ[index];
+
+         // Update occupations with mixing
+         occ[index] = (1.0 - alpha)*f0 + alpha*f;
+
+         // Calculate corrections based on smearing type
+         *smearcorrection += util_smearcorrection(smeartype,smearkT,smearfermi[ms],occ[index],eig[index]);
+
+         /*
+         if (smeartype == 1) { // Fermi-Dirac correction
+             if (occ[index] > 1.0e-6 && (1.0 - occ[index]) > 1.0e-6) {
+                 *smearcorrection += smearkT * (occ[index] * log(occ[index]) +
+                                                (1.0 - occ[index]) * log(1.0 - occ[index]));
+             }
+         } else if (smeartype == 2) { // Gaussian correction
+             *smearcorrection -= smearkT * exp(-x * x) / (4.0 * sqrt(M_PI));
+         } else if (smeartype == 4) { // Marzari-Vanderbilt correction
+             *smearcorrection -= smearkT * exp(-(x + sqrt(0.5)) * (x + sqrt(0.5))) *
+                                 (1.0 + sqrt(2.0) * x) / (2.0 * sqrt(M_PI));
+         }
+         */
+      }
+   }
+
+   // Adjust smear correction for unpolarized systems
+   if (ispin==1) 
+      *smearcorrection *= 2.0;
+}
+
+
+/********************************************
+ *                                          *
+ *        Pneb::define_smearfermi           *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Determines the Fermi energy (`smearfermi`) from eigenvalues and occupations.
+ *
+ * @param nstates    Total number of eigenstates in the system.
+ * @param eig        Array of eigenvalues sorted in descending order (highest energy first).
+ * @param occ        Array of occupations corresponding to the eigenvalues.
+ *
+ * @return The calculated Fermi energy (`smearfermi`).
+ *
+ * @details
+ * This function calculates the Fermi energy based on the cumulative occupation of
+ * eigenstates. The eigenvalues and occupations are assumed to be sorted in descending 
+ * order of energy. The algorithm proceeds as follows:
+ * - Sum the occupations from the highest-energy state downward until the cumulative 
+ *   occupation equals or exceeds the target number of electrons (`nfill`).
+ * - The eigenvalue corresponding to this occupation is set as the Fermi energy.
+ * 
+ * Edge cases:
+ * - If all states are empty or fully occupied, the Fermi energy is defaulted to 
+ *   the middle eigenvalue for initialization.
+ * - If the highest occupied state is partially occupied, the Fermi energy is taken as 
+ *   the midpoint between the highest occupied and lowest unoccupied eigenvalues.
+ * 
+ * Assumptions:
+ * - Eigenvalues are sorted in descending order.
+ * - Occupations are consistent with the eigenvalues and represent a valid physical system.
+ *
+ * Example usage:
+ * @code
+ * double eig[] = {0.5, 0.3, -0.1, -0.3, -0.5}; // Eigenvalues (descending order)
+ * double occ[] = {0.0, 0.0, 0.5, 1.0, 1.0};    // Occupations
+ * int nstates = 5;                             // Total number of states
+ *
+ * double fermi_energy = define_smearfermi(nstates, eig, occ);
+ * std::cout << "Fermi Energy: " << fermi_energy << std::endl;
+ * @endcode
+ *
+ * @note The input `eig` and `occ` arrays must be sorted in descending order of energy.
+ *       If `nstates` is zero or the inputs are inconsistent, the behavior is undefined.
+ */
+double Pneb::define_smearfermi(const int nstates, const double *eig, const double *occ)
+{
+   double smearfermi = 0.0; // Initialize smearfermi
+   double nfill = 0.0;      // Total number of electrons to fill
+
+   // Determine `nfill` and the index of the highest occupied state
+   int highest_occupied = -1;
+   for (int i = 0; i < nstates; ++i)
+   {
+      nfill += occ[i];
+      if (occ[i] > 1e-6) 
+         highest_occupied = i;
+   }
+
+   // Handle edge cases: all states empty or fully occupied
+   if (highest_occupied < 0 || highest_occupied == nstates - 1) 
+   {
+      // Default smearfermi to the middle eigenvalue if no partial occupation
+      smearfermi = eig[nstates / 2];
+   }
+   else 
+   {
+      // Set smearfermi as the midpoint between the highest occupied and the lowest unoccupied state
+      smearfermi = 0.5 * (eig[highest_occupied] + eig[highest_occupied + 1]);
+   }
+
+   // Use cumulative occupation (counted from the highest-energy state down)
+   double cumulative_occ = 0.0;
+   for (int i = nstates - 1; i >= 0; --i) // Start from the highest-energy state
+   {
+      cumulative_occ += occ[i];
+
+      // Check if cumulative occupation matches the target electron count
+      if (cumulative_occ >= nfill) 
+      {
+         smearfermi = eig[i]; // Update smearfermi based on the cumulative occupation
+         return smearfermi;  // Return the calculated Fermi energy
+      }
+   }
+
+   // Return the default smearfermi if no state matches `nfill`
+   return smearfermi;
+}
+
+/**********************************************
+ *                                            *
+ *         Pneb::add_smearcorrection          *
+ *                                            *
+ **********************************************/
+/**
+ * @brief Computes the total smearing correction for a set of eigenvalues and occupations.
+ *
+ * @param smeartype   The type of smearing algorithm to use (e.g., Fermi-Dirac, Gaussian, etc.).
+ * @param nstates     Total number of eigenstates in the system.
+ * @param eig         Pointer to an array of eigenvalues (in descending order).
+ * @param occ         Pointer to an array of occupations corresponding to the eigenvalues.
+ * @param smearfermi  The Fermi energy used to calculate smearing corrections.
+ * @param smearkT     The smearing temperature parameter (related to the broadening width).
+ *
+ * @return The total smearing correction as a `double`.
+ *
+ * @details This function loops over all eigenstates, calculating and summing the 
+ *          smearing corrections for each state based on the specified smearing type. 
+ *          The corrections are computed using a utility function, `util_smearcorrection`,
+ *          which determines the correction specific to the chosen smearing algorithm.
+ *
+ *          The eigenvalues (`eig`) and occupations (`occ`) should be consistent with 
+ *          the physical system being modeled. The eigenvalues are assumed to be sorted
+ *          in descending order, and the occupations represent the fractional filling of
+ *          each eigenstate.
+ *
+ * Example Usage:
+ * @code
+ * double eig[] = {0.1, 0.2, 0.3, 0.4, 0.5};
+ * double occ[] = {1.0, 0.5, 0.0, 0.0, 0.0};
+ * int nstates = 5;
+ * double smearfermi = 0.25;
+ * double smearkT = 0.01;
+ *
+ * double correction = add_smearcorrection(1, nstates, eig, occ, smearfermi, smearkT);
+ * std::cout << "Smearing Correction: " << correction << std::endl;
+ * @endcode
+ *
+ * @note This function assumes that the input eigenvalues are in descending order.
+ */
+double Pneb::add_smearcorrection(const int smeartype, const int nstates, const double *eig, const double *occ, const double smearfermi, const double smearkT)
+{
+   double smearcorrection = 0.0;
+
+   for (auto n=0; n<nstates; ++n)
+   {
+      double e = eig[n];
+      double x = (e - smearfermi) / smearkT;
+
+      // Add corrections based on smearing type
+      smearcorrection += util_smearcorrection(smeartype,smearkT,smearfermi,occ[n],eig[n]);
+   }
+
+   return smearcorrection;
+}
+
+
 
 } // namespace pwdft

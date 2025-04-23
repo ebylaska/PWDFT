@@ -37,7 +37,7 @@ namespace pwdft {
  */
 void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
            double *psi, double *psi_r, double *vl, double *vc, double *xcp,
-           double *Hpsi, bool move, double *fion)
+           double *Hpsi, bool move, double *fion, double *occ)
 {
    int indx1 = 0;
    int indx2 = 0;
@@ -51,67 +51,43 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    int n1 = mygrid->neq[0];
    int n2 = mygrid->neq[0] + mygrid->neq[1];
    int nffts_pipeline = mygrid->PGrid::nffts_max;
- 
+
    bool done = false;
- 
+
    double omega = mygrid->lattice->omega();
    double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
    double scal2 = 1.0 / omega;
- 
+
    /* allocate temporary memory */
    double *vall = mygrid->r_alloc();
    double *vpsi = mygrid->r_nalloc(nffts_pipeline);
    double *tmp = mygrid->r_alloc();
- 
+
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
- 
+
    /* apply non-local PSP  - Expensive */
-   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
- 
+   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
+
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0, scal2, vl, vall);
    mygrid->cc_pack_Sum2(0,vc,vall);
    mygrid->c_unpack(0,vall);
    mygrid->cr_fft3d(vall);
    mygrid->r_zero_ends(vall);
- 
+
    /* add v_field to vall */
    if (mypsp->myefield->efield_on)
      mygrid->rr_Sum(mypsp->myefield->v_field,vall);
- 
-   
-   /*
-    std::cout << "INTO psiH rc_fftd  -------------------" << std::endl;
- 
-     //OLD - stable?
-     for (ms=0; ms<ispin; ++ms)
-     {
-        mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
-        for (int i=0; i<(mygrid->neq[ms]); ++i)
-        {
-            std::cout << "psiH i=" << i << " -------------------" << std::endl;
-           mygrid->rrr_Mul(tmp,psi_r+indx2,vpsi);
-           mygrid->rc_fft3d(vpsi);
-           mygrid->c_pack(1,vpsi);
-           mygrid->cc_pack_daxpy(1,(-scal1),vpsi,Hpsi+indx1);
- 
-           indx1 += shift1;
-           indx2 += shift2;
-        }
-     }
-    std::cout << "OUT psiH rc_fftd  -------------------" << std::endl;
-    */
-  
-  
+
    { nwpw_timing_function ftimer(1);
- 
+
      mygrid->rrr_Sum(vall,xcp,tmp);
-     while (!done) 
+     while (!done)
      {
-        if (indx1<n2) 
+        if (indx1<n2)
         {
-           if (indx1>=n1) 
+           if (indx1>=n1)
            {
               ms = 1;
               mygrid->rrr_Sum(vall,xcp+ms*n2ft3d,tmp);
@@ -120,18 +96,18 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
            // Assuming n2, indx1, and nffts_pipeline are defined
            //int idum = std::min(n2 - indx1, nffts_pipeline);
            int idum = 1;
-           
+
            for (auto i=0; i<idum; ++i)
               mygrid->rrr_Mul(tmp,psi_r+indx1n+i*shift2,vpsi+i*shift2);
 
-           
+
            mygrid->rc_pfft3f_queuein(1,idum,vpsi);
            //indx1n += shift2;
            indx1n += idum*shift2;
            indx1  += idum;
         }
-        
-        if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2)) 
+
+        if ((mygrid->rc_pfft3f_queuefilled()) || (indx1 >= n2))
         {
            // Assuming n2, indx2, and nffts_pipeline are defined
            //int jdum = std::min(n2 - indx2, nffts_pipeline);
@@ -150,14 +126,17 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
         done = ((indx1 >= n2) && (indx2 >= n2));
      }
    }
-   
-   
- 
+
+
+
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
    mygrid->r_dealloc(vall);
 }
+
+
+
 
 /*************************************
  *                                   *
@@ -193,13 +172,14 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
  */
 void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
              double *psi, double *psi_r, double *vsr_l, double *vlr_l,
-             double *vc, double *xcp, double *Hpsi, bool move, double *fion) 
+             double *vc, double *xcp, double *Hpsi, bool move, double *fion, 
+             double *occ)
 {
    int indx1 = 0;
    int indx2 = 0;
    int indx1n = 0;
    int indx2n = 0;
- 
+
    int ispin = mygrid->ispin;
    int shift1 = 2 * (mygrid->npack(1));
    int shift2 = (mygrid->n2ft3d);
@@ -213,53 +193,32 @@ void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    double omega = mygrid->lattice->omega();
    double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
    double scal2 = 1.0 / omega;
- 
+
    /* allocate temporary memory */
    double *vall = mygrid->r_alloc();
    double *vpsi = mygrid->r_alloc();
    double *tmp = mygrid->r_alloc();
- 
+
    /* apply k-space operators */
    myke->ke(psi, Hpsi);
- 
+
    /* apply non-local PSP  - Expensive */
-   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
- 
+   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
+
    /* add up k-space potentials, vall = scal2*vsr_l */
    mygrid->cc_pack_SMul(0, scal2, vsr_l, vall);
    mygrid->c_unpack(0, vall);
    mygrid->cr_fft3d(vall);
    mygrid->r_zero_ends(vall);
- 
+
    /* add vall += vlr_l + vc */
    mygrid->rrr_Sum2Add(vlr_l, vc, vall);
- 
+
    /* add v_field to vall */
    if (mypsp->myefield->efield_on)
       mygrid->rr_Sum(mypsp->myefield->v_field, vall);
- 
-   /* apply r-space operators  - Expensive*/
-   /*
-   {
-      nwpw_timing_function ftimer(1);
- 
-      for (int ms = 0; ms < ispin; ++ms) 
-      {
-         mygrid->rrr_Sum(vall, xcp + ms*n2ft3d, tmp);
-         for (int i = 0; i < (mygrid->neq[ms]); ++i) 
-         {
-            mygrid->rrr_Mul(tmp, psi_r + indx2, vpsi);
-            mygrid->rc_fft3d(vpsi);
-            mygrid->c_pack(1, vpsi);
-            mygrid->cc_pack_daxpy(1, (-scal1), vpsi, Hpsi + indx1);
-           
-            indx1 += shift1;
-            indx2 += shift2;
-         }
-      }
-      std::cout << "OUT psiH rc_fftd  -------------------" << std::endl;
-   }
-   */
+
+
 
    { nwpw_timing_function ftimer(1);
 
@@ -292,12 +251,14 @@ void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
      }
    }
 
- 
+
    /* deallocate temporary memory */
    mygrid->r_dealloc(tmp);
    mygrid->r_dealloc(vpsi);
    mygrid->r_dealloc(vall);
 }
+
+
 
 /*************************************
  *                                   *

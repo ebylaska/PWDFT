@@ -11,13 +11,18 @@ namespace pwdft {
 extern void cpsi_get_header(Parallel *, int *, int *, double *, int *, int *, int *, char *);
 
 extern void cpsi_read0(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *);
+extern void cpsi_read0(Cneb *, int *, int *, double *, int *, int *, int *, double *, int *, double *, char *, bool);
+
+
 extern bool cpsi_read(Cneb *, char *, bool, double *, std::ostream &);
+extern bool cpsi_read(Cneb *, char *, bool, double *, int *, double *, std::ostream &);
 
 extern void cpsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *, std::ostream &);
+extern void cpsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, int *, double *, char *, std::ostream &);
 extern bool cpsi_filefind(Cneb *, char *);
 
-extern bool epsi_read(Cneb *, char *, bool, const int *, double *, std::ostream &);
-extern void epsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *, std::ostream &);
+extern bool ecpsi_read(Cneb *, char *, bool, const int *, double *, std::ostream &);
+extern void ecpsi_write(Cneb *, int *, int *, double *, int *, int *, int *, double *, char *, std::ostream &);
 
 
 } // namespace pwdft

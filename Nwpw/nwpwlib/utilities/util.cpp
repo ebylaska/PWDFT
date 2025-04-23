@@ -958,6 +958,219 @@ double util_dswitching_function(const double s_d, const double s_rho, const doub
    return deps;
 }
 
+
+/**************************************
+ *                                    *
+ *    util_occupation_distribution    *
+ *                                    *
+ **************************************/
+/**
+ * @brief Computes the occupation probability based on the specified smearing algorithm.
+ *
+ * This function calculates the occupation distribution for a given energy `e` and
+ * smearing type `smeartype`. Different smearing algorithms are implemented to model
+ * physical systems with partial occupancies or broadened energy states. Each smearing
+ * type corresponds to a specific algorithm, with options for Fermi-Dirac, Gaussian,
+ * Hermite, Marzari-Vanderbilt, Methfessel-Paxton, Cold Smearing, and Lorentzian distributions.
+ *
+ * @param smeartype An integer specifying the smearing type:
+ *        - 1: Fermi-Dirac smearing
+ *        - 2: Gaussian smearing
+ *        - 3: Hermite smearing
+ *        - 4: Marzari-Vanderbilt smearing
+ *        - 5: Methfessel-Paxton smearing (first order)
+ *        - 6: Cold smearing
+ *        - 7: Lorentzian smearing
+ *        - Other: Step function (0 for e > 0, 1 for e <= 0)
+ * @param e The energy value for which the occupation is calculated.
+ *          - Large positive and negative values are handled explicitly in some cases
+ *            to avoid numerical overflow.
+ * @return A double representing the occupation probability based on the specified
+ *         smearing type. The result typically falls between 0.0 and 1.0, except for
+ *         cases like Lorentzian smearing, where the value may not be normalized.
+ *
+ * @details
+ * - **Fermi-Dirac (1)**: A standard statistical distribution used for electronic occupations.
+ * - **Gaussian (2)**: Uses a Gaussian function for smoothing the distribution.
+ * - **Hermite (3)**: Incorporates a third-order Hermite polynomial correction.
+ * - **Marzari-Vanderbilt (4)**: Combines exponential and complementary error functions.
+ * - **Methfessel-Paxton (5)**: Uses Hermite polynomials for higher-order corrections
+ *   to Gaussian smearing (first-order implemented here).
+ * - **Cold Smearing (6)**: Avoids the Gibbs phenomenon and improves energy convergence.
+ * - **Lorentzian (7)**: Uses a Lorentzian function, often for density of states.
+ * - **Default (Other)**: A simple step function.
+ *
+ * @note Ensure proper parameterization (e.g., smearing width for Lorentzian) if additional
+ *       customization is required for specific smearing types.
+ *
+ * Example Usage:
+ * @code
+ * double occupation = util_occupation_distribution(1, -0.5); // Fermi-Dirac
+ * std::cout << "Occupation: " << occupation << std::endl;
+ * @endcode
+ */
+double util_occupation_distribution(const int smeartype, const double e)
+{
+   const double sqrt_pi = std::sqrt(M_PI);
+   const double sqrt_two_pi = std::sqrt(2.0 * M_PI);
+   const double sqrt_half = std::sqrt(0.5);
+
+   double f = 0.0;
+
+   if (smeartype == 1) { // Fermi-Dirac
+      if (e > 30.0) {
+          f = 0.0;
+      } else if (e < -30.0) {
+          f = 1.0;
+      } else {
+          f = 1.0 / (1.0 + std::exp(e));
+      }
+   } else if (smeartype == 2) { // Gaussian
+      f = 0.5 * std::erfc(e);
+   } else if (smeartype == 3) { // Hermite smearing
+      double exp_term = std::exp(-e * e);     // Gaussian term
+      double hermite_correction = (2.0 * e * e - 1.0) * exp_term; // Hermite correction term
+ 
+      // Compute the original Hermite-Gaussian function
+      double f_original = exp_term + hermite_correction / sqrt_pi;
+ 
+      // Find fmax by evaluating the original function at e=0
+      double fmax = exp_term + (2.0 * 0 * 0 - 1.0) * exp_term / sqrt_pi; // f_original at e=0
+ 
+      if (e <= 0.0) {
+          // Set value to 1.0 for e <= e_max
+          f = 1.0;
+      } else {
+          // Scale the Hermite-Gaussian function for e > e_max
+          f = f_original / fmax;
+      }
+   } else if (smeartype == 4) { // Marzari-Vanderbilt
+      double factor = std::sqrt(0.125 / std::atan(1.0)); // atan(1.0) = pi/4
+      f = std::exp(-(e + sqrt_half) * (e + sqrt_half)) * factor + 0.5 * std::erfc(e + sqrt_half);
+   } else if (smeartype == 5) { // Methfessel-Paxton
+      double exp_term = std::exp(-e * e);
+      double hermite_poly = 1.0 - 2.0 * e * e; // First-order Methfessel-Paxton
+      f = exp_term * hermite_poly / std::sqrt(M_PI);
+   } else if (smeartype == 6) { // Cold Smearing
+      double exp_term = std::exp(-0.5 * e * e);
+      double erfc_term = 0.5 * std::erfc(-e / std::sqrt(2.0));
+      f = erfc_term - e * exp_term / std::sqrt(2.0 * M_PI);
+   } else if (smeartype == 7) { // Lorentzian Smearing
+      double sigma = 1.0; // Assume a default smearing width
+      f = (sigma / M_PI) / (e * e + sigma * sigma);
+   } else { // Default: Step function
+      if (e > 0.0) {
+          f = 0.0;
+      } else {
+          f = 1.0;
+      }
+   }
+
+   return f;
+}
+
+/**************************************
+ *                                    *
+ *        util_smearcorrection        *
+ *                                    *
+ **************************************/
+/**
+ * @brief Computes the correction term for smearing algorithms.
+ *
+ * This function calculates the correction term based on the specified smearing type,
+ * which accounts for the influence of energy-level broadening in physical systems.
+ * The correction is used to adjust energy contributions for improved numerical stability
+ * and convergence in simulations.
+ *
+ * @param smeartype An integer specifying the smearing type:
+ *        - 1: Fermi-Dirac smearing
+ *        - 2: Gaussian smearing
+ *        - 3: Hermite smearing
+ *        - 4: Marzari-Vanderbilt smearing
+ *        - 5: Methfessel-Paxton smearing (first order)
+ *        - 6: Cold smearing
+ *        - 7: Lorentzian smearing
+ *        - Other: Default (no correction)
+ * @param smearkT The smearing parameter, often proportional to temperature,
+ *                defining the width of the smearing function.
+ * @param smearfermi The Fermi level energy around which the correction is applied.
+ * @param occ The occupancy probability for the energy level.
+ * @param eig The eigenvalue or energy level under consideration.
+ *
+ * @return A double representing the correction term for the specified smearing type.
+ *
+ * @details
+ * - The function handles a variety of smearing algorithms, adjusting for numerical precision:
+ *   - **Fermi-Dirac (1):** Standard thermodynamic correction term for partial occupancies.
+ *   - **Gaussian (2):** Uses a Gaussian function for energy-level broadening.
+ *   - **Hermite (3):** Third-order Hermite polynomial correction for improved accuracy.
+ *   - **Marzari-Vanderbilt (4):** A hybrid exponential and error function approach.
+ *   - **Methfessel-Paxton (5):** First-order correction based on Hermite polynomials.
+ *   - **Cold Smearing (6):** Smooth correction avoiding Gibbs oscillations.
+ *   - **Lorentzian (7):** Broadening correction based on a Lorentzian function.
+ *   - **Default:** Returns zero correction for step-function smearing.
+ * - Numerical safeguards are included to handle edge cases, such as small or large energy
+ *   differences and extreme occupancy probabilities.
+ *
+ * @note Ensure that `smearkT` and `smearfermi` are appropriately set based on the
+ *       physical system under study. For Lorentzian smearing, `smearkT` serves as the
+ *       effective smearing width.
+ *
+ * Example Usage:
+ * @code
+ * double correction = util_smearcorrection(1, 0.01, 0.5, 0.8, 0.3); // Fermi-Dirac
+ * std::cout << "Correction: " << correction << std::endl;
+ * @endcode
+ */
+double util_smearcorrection(const int smeartype, const double smearkT, const double smearfermi, 
+                            const double occ, const double eig)
+{
+   double smearcorrection = 0.0;
+   const double sqrt_pi = sqrt(M_PI);
+   const double sqrt_half = sqrt(0.5);
+   const double sqrt_two  = sqrt(2.0);
+
+   // Energy difference normalized by smearing temperature
+   double x = (eig - smearfermi) / smearkT;
+   double y = occ; // Occupancy
+
+   // Calculate corrections based on smearing type
+   if (smeartype == 1) { // Fermi-Dirac correction
+       if ((y > 1.0e-6) && ((1.0-y) > 1.0e-6)) {
+           smearcorrection += smearkT * (y*log(y) + (1.0-y)*log(1.0-y));
+       }
+   } else if (smeartype == 2) { // Gaussian correction
+       smearcorrection -= smearkT * std::exp(-x * x) / (4.0 * sqrt_pi);
+   } else if (smeartype == 3) { // Hermite smearing
+       double exp_term = std::exp(-x * x);
+       double hermite_correction = (2.0 * x * x - 1.0) * exp_term;
+       double f_original = exp_term + hermite_correction / sqrt_pi;
+       double fmax = std::exp(-0.0) + (2.0 * 0.0 * 0.0 - 1.0) * std::exp(-0.0) / sqrt_pi;
+     
+       if (x >0.0) { // Smearing correction - No correction needed for x <= 0, as f(x) = 1.0
+           // Scale the correction for x > 0
+           smearcorrection -= smearkT * f_original / fmax;
+       }
+   } else if (smeartype == 4) { // Marzari-Vanderbilt correction
+       smearcorrection -= smearkT * exp(-(x +sqrt_half)*(x+sqrt_half))*(1.0+sqrt_two*x) / (2.0*sqrt_pi);
+   } else if (smeartype == 5) { // Methfessel-Paxton
+       double exp_term = std::exp(-x * x);
+       double hermite_poly = 1.0 - x * x;
+       smearcorrection -= smearkT * exp_term * hermite_poly / sqrt_pi;
+   } else if (smeartype == 6) { // Cold smearing correction (example for smearing type 5)
+       double exp_term = std::exp(-0.5 * x * x);
+       smearcorrection -= smearkT * exp_term * x / sqrt_two;
+   } else if (smeartype == 7) { // Lorentzian Smearing correction
+       double sigma = smearkT;  // Smearing width (can be parameterized further)
+       smearcorrection -= smearkT * (sigma / M_PI) / (x * x + sigma * sigma);
+   } else { // Default: Step function (no correction needed)
+      smearcorrection = 0.0;
+   }
+   return smearcorrection;
+}
+
+
+
 /**************************************
  *                                    *
  *    util_kiril_coulomb_transform    *
@@ -1144,5 +1357,52 @@ void util_matprint(std::string matlabel, int n, double *A) {
   std::cout << std::endl;
 }
 #endif
+
+
+
+
+/**************************************
+ *                                    *
+ *             util_zdotc             *
+ *                                    *
+ **************************************/
+/**
+ * @brief Computes the complex conjugated dot product of two vectors stored in interleaved double format.
+ *
+ * This function calculates the dot product:
+ * \f[
+ * \text{sum} = \sum_{i=0}^{n-1} \text{conj}(x_i) \cdot y_i
+ * \f]
+ * where each complex number is stored as two consecutive `double` values: 
+ * real and imaginary parts interleaved in memory (`[Re0, Im0, Re1, Im1, ...]`).
+ *
+ * @param n     Number of complex elements in the vectors.
+ * @param x     Pointer to the first input vector (complex numbers in interleaved double format).
+ * @param incx  Stride between elements in `x` (in complex units).
+ * @param y     Pointer to the second input vector (same format as `x`).
+ * @param incy  Stride between elements in `y` (in complex units).
+ * @return      The complex dot product as a `std::complex<double>`.
+ *
+ * @note This function is equivalent to the BLAS `ZDOTC` operation, but implemented in portable C++.
+ */
+std::complex<double> util_zdotc(int n,
+                                const double* x, int incx,
+                                const double* y, int incy)
+{
+    std::complex<double> sum(0.0, 0.0);
+    int ix = 0, iy = 0;
+
+    for (int i = 0; i < n; ++i) {
+        std::complex<double> cx(x[ix], x[ix + 1]);
+        std::complex<double> cy(y[iy], y[iy + 1]);
+        sum += std::conj(cx) * cy;
+        ix += 2 * incx;
+        iy += 2 * incy;
+    }
+
+    return sum;
+}
+
+
 
 } // namespace pwdft

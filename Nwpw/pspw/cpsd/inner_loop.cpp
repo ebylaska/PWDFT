@@ -28,7 +28,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
                 XC_Operator *myxc, Pseudopotential *mypsp, Strfac *mystrfac,
                 Ewald *myewald, double *psi1, double *psi2, double *Hpsi,
                 double *psi_r, double *dn, double *hml, double *lmbda,
-                double E[], double *deltae, double *deltac, double *deltar) 
+                double E[], double *deltae, double *deltac, double *deltar,
+                bool fractional, double *occ1, double *occ2) 
 {
    int it, it_in, i, n2ft3d, neall, ispin, k, ms;
    int shift1, shift2, indx1, indx2;
@@ -101,6 +102,9 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    {
       mygrid->g_zero(Hpsi);
       mygrid->gg_copy(psi2, psi1);
+
+      if (fractional)
+         std::memcpy(occ1,occ2,(mygrid->ne[0]+mygrid->ne[1])*sizeof(double));
      
       if (move)
       {
@@ -126,7 +130,10 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       */
      
       /* generate dn */
-      mygrid->hr_aSumSqr(scal2,psi_r,dn);
+      if (fractional)
+         mygrid->hr_aSumSqr_occ(scal2,occ1,psi_r,dn);
+      else
+         mygrid->hr_aSumSqr(scal2,psi_r,dn);
      
       /* generate dng */
       mygrid->rrr_Sum(dn,dn+(ispin-1)*n2ft3d,rho);
@@ -198,11 +205,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       /* get Hpsi */
       if (periodic)
       {
-         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
+         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion,occ1);
       }
       else if (aperiodic)
       {
-         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion);
+         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion,occ1);
       }
      
       /* do a steepest descent step */
@@ -233,7 +240,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       }
      
       /* lagrange multiplier - Expensive */
-      mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
+      if (fractional)
+         //mygrid->ggm_occ_lambda(dte, psi1, psi2, occ1, lmbda);
+         mygrid->g_ortho(-1,psi2);
+      else
+         mygrid->ggm_lambda(dte, psi1, psi2, lmbda);
    }
 
  
@@ -242,7 +253,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    /* total energy calculation */
    mygrid->ggm_sym_Multiply(psi1, Hpsi, hml);
    mygrid->m_scal(-1.0, hml);
-   eorbit = mygrid->m_trace(hml);
+   if (fractional)
+      eorbit = mygrid->m_trace_occ(hml,occ1);
+   else
+      eorbit = mygrid->m_trace(hml);
+
    if (ispin == 1)
      eorbit = eorbit + eorbit;
  
@@ -269,23 +284,23 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    pxc *= dv;
  
    /* average Kohn-Sham kineticl energy */
-   eke = myke->ke_ave(psi1);
+   eke = myke->ke_ave(psi1,occ1);
  
    /* average Kohn-Sham local psp energy */
    elocal = mygrid->cc_pack_dot(0, dng, vl);
  
    /* add in long range part here*/
    if (aperiodic)
-     elocal += dv * mygrid->rr_dot(rho, vlr_l);
+      elocal += dv * mygrid->rr_dot(rho, vlr_l);
  
    /* add in other real-space fields here*/
    if (mypsp->myefield->efield_on)
-     elocal += dv * mygrid->rr_dot(rho, mypsp->myefield->v_field);
+     elocal += dv* mygrid->rr_dot(rho, mypsp->myefield->v_field);
  
    /* average Kohn-Sham v_nonlocal energy */
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1, Hpsi);
-   enlocal = -mygrid->gg_traceall(psi1, Hpsi);
+   enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ1);
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;

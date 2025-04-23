@@ -1149,6 +1149,39 @@ void c3db::cc_copy(const double *ptr1, double *ptr2)
    std::memcpy(ptr2, ptr1, 2*nfft3d * sizeof(double));
 }
 
+/********************************
+ *                              *
+ *        c3db::cr_copy         *
+ *                              *
+ ********************************/
+void c3db::cr_copy(const double *ptr1, double *ptr2) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {  
+         int ir = 2*i;
+         ptr2[i] = ptr1[ir];
+      }     
+   if (nfft3d_map < 5) 
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {     
+      int ir0 = 2*i;    
+      int ir1 = 2*(i+1);
+      int ir2 = 2*(i+2);
+      int ir3 = 2*(i+3);
+      int ir4 = 2*(i+4);
+
+      ptr2[i] = ptr1[ir0];   
+      ptr2[i+1] = ptr1[ir1];
+      ptr2[i+2] = ptr1[ir2];
+      ptr2[i+3] = ptr1[ir3];
+      ptr2[i+4] = ptr1[ir4];
+   }
+   return;
+}
+
 
 /********************************
  *                              *
@@ -4110,36 +4143,43 @@ std::string c3db::r_formatwrite_reverse(double *a)
     ************************************/
  
    /**** master node gathers and write to file ****/
-   if (taskid == MASTER) {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_from = cijktop2(i, j, k);
-           if (p_from == MASTER)
-             tmp[k] = a[index];
-           else
-             parall->dreceive(0, 189, p_from, 1, tmp + k);
+   if (taskid == MASTER) 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_from = cijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = a[index];
+               else
+                  parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+            for (auto k = 0; k < nz; k += 6) 
+            {
+               for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
+                  stream << Efmt(13, 5) << tmp[k1];
+               stream << std::endl;
+            }
+            // stream << std::endl;
          }
-         for (auto k = 0; k < nz; k += 6) {
-           for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
-             stream << Efmt(13, 5) << tmp[k1];
-           stream << std::endl;
-         }
-         // stream << std::endl;
-       }
    }
    /**** not master node ****/
-   else {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_here = cijktop2(i, j, k);
-           if (p_here == taskid)
-             parall->dsend(0, 189, MASTER, 1, a + index);
+   else 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_here = cijktop2(i, j, k);
+               if (p_here == taskid)
+                  parall->dsend(0, 189, MASTER, 1, a + index);
+            }
          }
-       }
    }
  
    return stream.str();

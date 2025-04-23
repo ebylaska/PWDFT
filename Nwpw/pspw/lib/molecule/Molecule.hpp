@@ -57,6 +57,7 @@ class Molecule {
   double omega, scal2, scal1, dv;
 
   int ispin, ne[2], neall, n2ft3d, shift1, shift2;
+  int nextra[2];
   int ne_excited[2] = {0,0};
   int nfft[3];
   int version = 3;
@@ -71,13 +72,25 @@ public:
  
    double *psi1,*rho1,*rho1_all,*dng1;
    double *psi2,*rho2,*rho2_all,*dng2;
-   double *lmbda,*hml,*eig;
+   double *lmbda,*hml,*eig,*eig_prev;
+   double *occ1 = nullptr;
+   double *occ2 = nullptr;
 
    double *psi1_excited,*psi2_excited;
    double *hml_excited,*eig_excited;
 
+   int multiplicity;
+   double total_charge;
 
- 
+   // psi smearing block
+   bool fractional=false;
+   bool fractional_frozen=false;
+   int smearoccupation, smeartype;
+   double smearfermi[2], smearcorrection, smearkT;
+   double fractional_alpha, fractional_alpha_min, fractional_alpha_max, fractional_beta, fractional_gamma, fractional_rmsd_threshold;
+   int fractional_it=0;
+   bool occupation_update = false;;
+
    double E[80],en[2],ep,sp,tole;
  
    bool newpsi;
@@ -100,6 +113,10 @@ public:
       delete[] lmbda;
       delete[] hml;
       delete[] eig;
+      delete[] eig_prev;
+
+      delete[] occ1; occ1 = nullptr;
+      delete[] occ2; occ2 = nullptr;
  
       if ((ne_excited[0] + ne_excited[1])>0)
       {
@@ -110,6 +127,7 @@ public:
       }
    }
 
+   void replace_excited_psi1(Control2 &, std::ostream &);
    void epsi_initialize(char *,bool, const int *, std::ostream &);
    void epsi_finalize(char *, std::ostream &);
    void epsi_minimize(double *, std::ostream &);
@@ -133,12 +151,15 @@ public:
    void psi_sort();
  
    /* write psi molecule */
-   void writepsi(char *output_filename, std::ostream &coutput) {
+   void writepsi(char *output_filename, std::ostream &coutput) 
+   {
       psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
-                psi1,output_filename,coutput);
+                psi1,&smearoccupation,occ1,output_filename,coutput);
+      //psi_write(&mygrid,&version,nfft,unita,&ispin,ne,psi1,&smearoccupation,occ1,control.output_movecs_filename(),std::cout);
    }
 
-   void writepsi_excited(char *output_filename, std::ostream &coutput) {
+   void writepsi_excited(char *output_filename, std::ostream &coutput) 
+   {
       psi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,
                 psi1_excited,output_filename,coutput);
    }
@@ -146,20 +167,21 @@ public:
  
    /* molecule energy */
    double energy() {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
+         
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
       return E[0];
    }
  
    double psi2_energy() {
-      myelectron->run(psi2, rho2, dng2, rho2_all);
+      myelectron->run(psi2, rho2, dng2, rho2_all, occ2);
       E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
       return E[0];
    }
  
    /* molecule energy and eigenvalues */
    double energy_eigenvalues() {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
       
       /* generate eigenvalues */
@@ -172,8 +194,8 @@ public:
    /* molecule energy and eigenvalues and other energies and en */
    double gen_all_energies() 
    {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
-      myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
+      myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en, occ1);
       
       /*  ion-ion energy */
       if (myelectron->is_periodic())
@@ -197,6 +219,80 @@ public:
       /* generate eigenvalues */
       myelectron->gen_hml(psi1, hml);
       mygrid->m_diagonalize(hml, eig);
+
+      if ((fractional) && (!fractional_frozen))
+      {
+         //std::cout << "Define occupations, eig=" << eig[0] << " " << eig[1] << " " << eig[2] << " " << eig[3] << " " 
+         //                                        << eig[4] << " " << eig[5] << " " << eig[6] << " " << eig[7] << std::endl;
+         //std::cout << "Define occupations, fractional_it=" << fractional_it << std::endl;
+         if (fractional_it == 0)  // Initialize eig_prev for the first iteration
+            std::memcpy(eig_prev,eig,(ne[0]+ne[1])*sizeof(double));
+         else             // Smooth eigenvalues in subsequent iterations
+            for (size_t i=0; i<(ne[0]+ne[1]); ++i)
+               eig_prev[i] = (1.0-fractional_gamma)*eig_prev[i] + fractional_gamma*eig[i];
+
+         
+         if ((fractional_it>0) && (smeartype>=0) && (occupation_update))
+         {
+            // Define occupations based on smoothed eigenvalues
+            double smearcorrection_old = smearcorrection;
+            mygrid->m_0define_occupation(-1.0, false,
+                                      multiplicity,
+                                      myion->total_zv(),total_charge,
+                                      eig_prev,hml,occ2,
+                                      smeartype,smearkT,smearfermi,&smearcorrection);
+
+            // RMSD occupation computation
+            double rmsd_occupation = 0.0;
+            for (size_t i=0; i<(ne[0] + ne[1]); ++i)
+            {
+                double delta_occ = occ2[i] - occ1[i];
+                rmsd_occupation += delta_occ * delta_occ;
+            }
+            rmsd_occupation = std::sqrt(rmsd_occupation / (ne[0] + ne[1]));
+           
+            // Adaptive alpha adjustment
+            if (rmsd_occupation < fractional_rmsd_threshold)  // Converging well
+               fractional_alpha = std::min(fractional_alpha_max, fractional_alpha * (1.0 + fractional_beta));
+            else  // Oscillations or divergence
+               fractional_alpha = std::max(fractional_alpha_min, fractional_alpha * (1.0 - fractional_beta));
+           
+           
+            // Update occupations
+            for (auto i=0; i<(ne[0]+ne[1]); ++i)
+               occ1[i] = (1.0-fractional_alpha)*occ1[i] + fractional_alpha*occ2[i];
+            //std::memcpy(occ2,occ1,(ne[0]+ne[1])*sizeof(double));
+           
+            // Debugging output (optional)
+           /*  std::cout << " Iteration: " << fractional_it
+                      << ", RMSD: " << rmsd_occupation
+                      << ", Alpha: " << fractional_alpha
+                      << ", Smear Correction: " << smearcorrection
+                      << ", Delta Smear Correction: " << smearcorrection - smearcorrection_old << std::endl;;
+           */
+            
+         
+         }
+         else
+         {
+            smearfermi[0]   =  mygrid->define_smearfermi(ne[0],eig,occ1);
+            smearcorrection =  mygrid->add_smearcorrection(smeartype,ne[0],eig,occ1,smearfermi[0],smearkT);
+            if (ispin==1)
+            {
+               smearcorrection *= 2.0;
+            }
+            else
+            {
+               smearfermi[1]    =  mygrid->define_smearfermi(ne[1],eig+ne[0],occ1+ne[0]);
+               smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[1],eig+ne[0],occ1+ne[0],smearfermi[0],smearkT);
+            }
+
+         }
+         E[28] = smearcorrection;
+         //E[0]  +=  E[28];
+         fractional_it++;
+      }
+
       
       /* generate dipole */
       mypsp->mydipole->gen_dipole(rho1);
@@ -210,10 +306,10 @@ public:
    double ehartree() { return myelectron->ehartree(dng1); }
    double exc() { return myelectron->exc(rho1_all); }
    double pxc() { return myelectron->pxc(rho1); }
-   double eke() { return myelectron->eke(psi1); }
+   double eke() { return myelectron->eke(psi1,occ1); }
    double vl_ave() { return myelectron->vl_ave(dng1); }
    double vlr_ave() { return myelectron->vlr_ave(rho1); }
-   double vnl_ave() { return myelectron->vnl_ave(psi1); }
+   double vnl_ave() { return myelectron->vnl_ave(psi1,occ1); }
    double eion() {
      double ee = 0.0;
      if (myelectron->is_periodic())
@@ -232,6 +328,8 @@ public:
  
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml, eig); }
+   void rotate1to2() { mygrid->fmf_Multiply(-1,psi1,hml,1.0,psi2,0.0); }
+   
  
    /* molecule - call phafacs and gen_vl_potential and semicore */
    void phafacs_vl_potential_semicore() {
@@ -245,7 +343,7 @@ public:
    void sd_update(double dte) {
  
       /* apply psi2 = psi1 + dte*Hpsi1 */
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       
       // myelectron->add_dteHpsi((-dte),psi1,psi2);
       myelectron->add_dteHpsi((dte), psi1, psi2);
@@ -260,17 +358,18 @@ public:
    }
 
    /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
-   void sd_update2(double dte) {
-
+   void sd_update2(double dte) 
+   {
       /* apply psi2 = psi1 + dte*Hpsi1 */
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+                       
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       
       // myelectron->add_dteHpsi((-dte),psi1,psi2);
       myelectron->add_dteHpsi((dte), psi1, psi2);
       
       /* carry out direct ortho - Expensive */
-      mygrid->g_ortho(psi2);
-      
+      mygrid->g_ortho(-1,psi2);
+
       /* pointer swap of psi2 and psi1 */
       double *t2 = psi2;
       psi2 = psi1;
@@ -278,10 +377,10 @@ public:
    }
  
    /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
-   void sd_update_sic(double dte) {
- 
+   void sd_update_sic(double dte) 
+   {
       /* apply psi2 = psi1 + dte*Hpsi1 */
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       
       // myelectron->add_dteHpsi((-dte),psi1,psi2);
       myelectron->add_dteHpsi((dte), psi1, psi2);
@@ -295,20 +394,21 @@ public:
       psi1 = t2;
    }
  
-   double psi_1get_Tgradient(double *G1) {
+   double psi_1get_Tgradient(double *G1) 
+   {
       double total_energy;
-      myelectron->run(psi1, rho1, dng1, rho1_all);
-      total_energy =
-          myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
+      total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
       myelectron->gen_hml(psi1, hml);
       myelectron->get_Tgradient(psi1, hml, G1);
      
       return total_energy;
    }
  
-   double psi_1get_TSgradient(double *G1) {
+   double psi_1get_TSgradient(double *G1) 
+   {
       double total_energy;
-      myelectron->run(psi1, rho1, dng1, rho1_all);
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       total_energy =
           myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
       myelectron->gen_hmlt(psi1, hml);
@@ -387,7 +487,7 @@ public:
       init.copyfmt(stream);
       std::string eoln = "\n";
 
-      stream << eoln;
+      //stream << eoln;
       stream << eoln;
       stream << " virtual orbital energies:" << eoln;
       int nn = ne_excited[0] - ne_excited[1];
@@ -434,7 +534,10 @@ public:
       if (mymolecule.mypsp->myapc->v_apc_on)
          os << mymolecule.mypsp->myapc->shortprint_APC();
       os << eoln;
-      os << ionstream(" total     energy    : ", mymolecule.E[0],mymolecule.E[0]/mymolecule.myion->nion);
+      double E0 = mymolecule.E[0];
+      if (mymolecule.fractional) E0 += mymolecule.E[28];
+      //os << ionstream(" total     energy    : ", mymolecule.E[0],mymolecule.E[0]/mymolecule.myion->nion);
+      os << ionstream(" total     energy    : ", E0,E0/mymolecule.myion->nion);
       os << elcstream(" total orbital energy: ", mymolecule.E[1],mymolecule.E[1]/mymolecule.neall);
       os << elcstream(" hartree energy      : ", mymolecule.E[2],mymolecule.E[2]/mymolecule.neall);
       os << elcstream(" exc-corr energy     : ", mymolecule.E[3],mymolecule.E[3]/mymolecule.neall);
@@ -448,7 +551,10 @@ public:
          os << ionstream(" APC energy          : ", mymolecule.E[51],mymolecule.E[51]/mymolecule.myion->nion);
 
       os << ionstream(" ion-ion energy      : ", mymolecule.E[4], mymolecule.E[4]/mymolecule.myion->nion);
-     
+
+      if ((mymolecule.fractional) && (!mymolecule.fractional_frozen))
+          os << elcstream(" smearing energy     : ", mymolecule.E[28],mymolecule.E[28]/mymolecule.neall);
+
       os << eoln;
       os << elcstream(" kinetic (planewave) : ", mymolecule.E[5],mymolecule.E[5]/mymolecule.neall);
       os << elcstream(" V_local (planewave) : ", mymolecule.E[6],mymolecule.E[6]/mymolecule.neall);
@@ -466,6 +572,20 @@ public:
      
       os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
          << (mymolecule.E[9]+mymolecule.E[8]+mymolecule.E[7]+mymolecule.E[6])/mymolecule.E[5];
+      os << std::endl;
+
+      if ((mymolecule.fractional) && (!mymolecule.fractional_frozen))
+      {
+         os << std::endl;
+         double ev = 27.2116;
+         if (mymolecule.ispin==1)
+            os << " Fermi energy        : "
+               << Efmt(19,10) << mymolecule.smearfermi[0] << " (" << Ffmt(8,3) << mymolecule.smearfermi[0]*ev << " eV)" << std::endl;
+         else
+            os << "  Fermi energy = "
+               << Efmt(19,10) << mymolecule.smearfermi[0] << " (" << Ffmt(8,3) << mymolecule.smearfermi[0]*ev << " eV)"
+               << Efmt(19,10) << mymolecule.smearfermi[1] << " (" << Ffmt(8,3) << mymolecule.smearfermi[1]*ev << " eV)" << std::endl;
+      }
 
       if (mymolecule.myion->has_ion_constraints())
       {
@@ -483,12 +603,56 @@ public:
       int nn = mymolecule.ne[0] - mymolecule.ne[1];
       double ev = 27.2116;
       for (int i=0; i<nn; ++i)
-         os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
+      {
+         //os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
+         if (mymolecule.fractional)
+         {
+            if ((mymolecule.occ1[i] < 1.e-3) && (mymolecule.occ1[i]>1.0e-12))
+               os << Efmt(18,7) << mymolecule.eig[i] << " (" << Ffmt(8,3) << mymolecule.eig[i] * ev << "eV) occ="
+                  << Efmt(9,3) << mymolecule.occ1[i] << std::endl;
+            else
+               os << Efmt(18,7) << mymolecule.eig[i] << " (" << Ffmt(8,3) << mymolecule.eig[i] * ev << "eV) occ="
+                  << Ffmt(5,3) << mymolecule.occ1[i] << std::endl;
+         }
+         else
+            os << Efmt(18,7) << mymolecule.eig[i] << " (" << Ffmt(8,3) << mymolecule.eig[i] * ev << "eV)" << std::endl;
+      }
       for (int i=0; i<mymolecule.ne[1]; ++i)
-         os << eig2stream(mymolecule.eig[i+nn], 
-                          mymolecule.eig[i+nn]*ev,
-                          mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]],
-                          mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev);
+      {
+         //os << eig2stream(mymolecule.eig[i+nn], 
+         //                 mymolecule.eig[i+nn]*ev,
+         //                 mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]],
+         //                 mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev);
+         if (mymolecule.fractional)
+         {
+            if ((mymolecule.occ1[i+nn] < 1.e-3) && (mymolecule.occ1[i+nn]>1.0e-12))
+               os << Efmt(18,7) << mymolecule.eig[i+nn]    << " ("
+                  << Ffmt(8,3)  << mymolecule.eig[i+nn]*ev << "eV)  occ="
+                  << Efmt(9,3)  << mymolecule.occ1[i+nn]   << " ";
+            else
+               os << Efmt(18,7) << mymolecule.eig[i+nn]    << " ("
+                  << Ffmt(8,3)  << mymolecule.eig[i+nn]*ev << "eV)  occ="
+                  << Ffmt(5,3)  << mymolecule.occ1[i+nn]   << " "
+                  << Efmt(18,7) << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]    << " ("
+                  << Ffmt(8,3)  << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev << "eV) occ="
+                  << Ffmt(5,3)  << mymolecule.occ1[i+(mymolecule.ispin-1)*mymolecule.ne[0]] << std::endl;
+         
+            if ((mymolecule.occ1[i+(mymolecule.ispin-1)*mymolecule.ne[0]] < 1.e-3) && (mymolecule.occ1[i+(mymolecule.ispin-1)*mymolecule.ne[0]]>1.0e-12))
+               os << Efmt(18,7) << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]    << " ("
+                  << Ffmt(8,3)  << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev << "eV) occ="
+                  << Efmt(9,3)  << mymolecule.occ1[i + (mymolecule.ispin-1)*mymolecule.ne[0]] << std::endl;
+            else
+               os << Efmt(18,7) << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]    << " ("
+                  << Ffmt(8,3)  << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev << "eV) occ="
+                  << Ffmt(5,3)  << mymolecule.occ1[i + (mymolecule.ispin-1)*mymolecule.ne[0]] << std::endl;
+         }
+         else
+            os << Efmt(18,7) << mymolecule.eig[i+nn] << " ("
+               << Ffmt(8,3)  << mymolecule.eig[i + nn] * ev << "eV) "
+               << Efmt(18,7) << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]] << " ("
+               << Ffmt(8,3)  << mymolecule.eig[i+(mymolecule.ispin-1)*mymolecule.ne[0]]*ev << "eV)" << std::endl;
+         
+      }
       os << eoln;
      
       // write dipoles

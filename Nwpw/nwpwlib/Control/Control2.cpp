@@ -139,6 +139,8 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pne[1] = 0;
    pnexcited[0] = 0;
    pnexcited[1] = 0;
+   pfractional_orbitals[0] = 0;
+   pfractional_orbitals[1] = 0;
  
    pfei_on = false;
    pcif_on = false;
@@ -487,6 +489,13 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
 
+
+   if (rtdbjson["nwpw"]["fractional_orbitals"][0].is_number_integer())
+      pfractional_orbitals[0] = rtdbjson["nwpw"]["fractional_orbitals"][0];
+   if (rtdbjson["nwpw"]["fractional_orbitals"][1].is_number_integer())
+      pfractional_orbitals[1] = rtdbjson["nwpw"]["fractional_orbitals"][1];
+
+
    pks_maxit_orb = 5;
    if (rtdbjson["nwpw"]["ks_maxit_orb"].is_number_integer())
        pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orb"];
@@ -516,13 +525,58 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["fractional_temperature"].is_number_float())
       pfractional_temperature = rtdbjson["nwpw"]["fractional_temperature"];
 
-   pfractional_alpha = 1.0;
+   pfractional_alpha = 0.5;
    if (rtdbjson["nwpw"]["fractional_alpha"].is_number_float())
       pfractional_alpha = rtdbjson["nwpw"]["fractional_alpha"];
+
+   // Adaptive alpha parameters
+   pfractional_alpha_min = 0.1;
+   if (rtdbjson["nwpw"]["fractional_alpha_min"].is_number_float())
+      pfractional_alpha_min = rtdbjson["nwpw"]["fractional_alpha_min"];
+
+   pfractional_alpha_max = 0.5;
+   if (rtdbjson["nwpw"]["fractional_alpha_max"].is_number_float())
+      pfractional_alpha_max = rtdbjson["nwpw"]["fractional_alpha_max"];
+
+
+   pfractional_beta = 0.1;
+   if (rtdbjson["nwpw"]["fractional_beta"].is_number_float())
+      pfractional_beta = rtdbjson["nwpw"]["fractional_beta"];
+
+   pfractional_gamma = 0.2;
+   if (rtdbjson["nwpw"]["fractional_gamma"].is_number_float())
+      pfractional_gamma = rtdbjson["nwpw"]["fractional_gamma"];
+
+   pfractional_rmsd_threshold = 1.0e-3;
+   if (rtdbjson["nwpw"]["fractional_rmsd_threshold"].is_number_float())
+      pfractional_rmsd_threshold = rtdbjson["nwpw"]["fractional_rmsd_threshold"];
+
+   pfractional_rmsd_tolerance = 1.0e-3;
+   if (rtdbjson["nwpw"]["fractional_rmsd_tolerance"].is_number_float())
+      pfractional_rmsd_tolerance = rtdbjson["nwpw"]["fractional_rmsd_tolerance"];
+
+   if (rtdbjson["nwpw"]["fractional_orbitals"][0].is_number_integer())
+
+
+   pfractional_filling = {};
+   if (!rtdbjson["nwpw"]["fractional_filling"].is_null())
+      pfractional_filling = rtdbjson["nwpw"]["fractional_filling"].get<std::vector<double>>();
+
+   pfractional_frozen = false;
+   if (rtdbjson["nwpw"]["fractional_frozen"].is_boolean())
+      pfractional_frozen = rtdbjson["nwpw"]["fractional_frozen"];
 
    pfractional = false;
    if (rtdbjson["nwpw"]["fractional"].is_boolean())
       pfractional = rtdbjson["nwpw"]["fractional"];
+
+   ptwodfractional = false;
+   if (rtdbjson["nwpw"]["twodfractional"].is_boolean())
+      ptwodfractional = rtdbjson["nwpw"]["twodfractional"];
+
+   if (rtdbjson["nwpw"]["scf_extra_rotate"].is_boolean())
+      pscf_extra_rotate = rtdbjson["nwpw"]["scf_extra_rotate"];
+
 
    ploop[0] = 10;
    ploop[1] = 100;

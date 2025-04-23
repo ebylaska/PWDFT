@@ -27,6 +27,49 @@ namespace pwdft {
 //static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 //static constexpr int radix_values[] = {17, 11, 9, 8, 7, 6, 5, 4, 3, 2};
 
+/**************************************
+ *                                    *
+ *     eigsrt_device_complex          *
+ *                                    *
+ **************************************/
+static void eigsrt_device_complex(double *D, double *V, int n)
+{
+   int i, j, k;
+   double p;
+
+   for (i = 0; i < (n - 1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for (j = i + 1; j < n; ++j)
+      {
+         if (D[j] >= p)
+         {
+            k = j;
+            p = D[j];
+         }
+      }
+
+      if (k != i)
+      {
+         // Swap eigenvalues
+         std::swap(D[i], D[k]);
+
+         // Swap complex eigenvectors column i and k
+         for (j = 0; j < n; ++j)
+         {
+            int i_idx = 2 * (j + i * n);
+            int k_idx = 2 * (j + k * n);
+            // Real part
+            std::swap(V[i_idx], V[k_idx]);
+            // Imaginary part
+            std::swap(V[i_idx + 1], V[k_idx + 1]);
+         }
+      }
+   }
+}
+
+
    /**************************************
     *                                    *
     *          eigsrt_device             *
@@ -131,6 +174,38 @@ public:
      // "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
      // DGEMM_PWDFT((char *) "T",(char *)
      // "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
+     // DGEMM_PWDFT((char *) "T",(char *)
+     // "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
+   }
+
+   /**************************************
+    *                                    *
+    *           TN3_FullCab_dgemm        *
+    *                                    *
+    **************************************/
+   void TN3_FullCab_dgemm(int npack, int ne, double alpha, double *host_a,
+                  double *host_b, double beta, double *host_caa,
+                  double *host_cab, double *host_cbb) {
+     int one = 1;
+     int shift1 = 0;
+     int mshift1 = 0;
+
+     for (auto k = 1; k <= ne; ++k) {
+       DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_a, npack,
+                   host_a + shift1, npack, beta, host_caa + mshift1, k);
+       //DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_a, npack,
+       //            host_b + shift1, npack, beta, host_cab + mshift1, k);
+       DGEMM_PWDFT((char *)"T", (char *)"N", k, one, npack, alpha, host_b, npack,
+                   host_b + shift1, npack, beta, host_cbb + mshift1, k);
+       shift1 += npack;
+       mshift1 += ne;
+     }
+
+     // DGEMM_PWDFT((char *) "T",(char *)
+     // "N",ne,ne,npack,alpha,host_a,npack,host_a,npack,beta,host_caa,ne);
+
+      DGEMM_PWDFT((char *) "T",(char *) "N",ne,ne,npack,alpha,host_a,npack,host_b,npack,beta,host_cab,ne);
+
      // DGEMM_PWDFT((char *) "T",(char *)
      // "N",ne,ne,npack,alpha,host_b,npack,host_b,npack,beta,host_cbb,ne);
    }
@@ -282,7 +357,8 @@ public:
     *              NN_eigensolver        *
     *                                    *
     **************************************/
-   void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) {
+   void NN_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
+   {
       int n, ierr;
       int nn = ne[0] * ne[0] + 14;
       double xmp1[nn];
@@ -304,6 +380,21 @@ public:
          shift1 += ne[0];
          shift2 += ne[0] * ne[0];
       }
+   }
+
+   /**************************************
+    *                                    *
+    *          NN_eigensolver0           *
+    *                                    *
+    **************************************/
+   void NN_eigensolver0(int n, double *host_hml, double *host_eig) 
+   {
+      int ierr;
+      int nn = n*n + 14;
+      double xmp1[nn];
+
+      EIGEN_PWDFT(n, host_hml, host_eig, xmp1, nn, ierr);
+      eigsrt_device(host_eig, host_hml, n);
    }
 
 
@@ -666,7 +757,7 @@ public:
          // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
          // EIGEN_PWDFT failed!"));
        
-         //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+         eigsrt_device_complex(host_eig + shift1, host_hml + shift2, n);
          shift1 += ne[0];
          shift2 += 2*ne[0]*ne[0];
       } 

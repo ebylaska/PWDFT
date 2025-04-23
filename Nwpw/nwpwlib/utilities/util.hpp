@@ -80,6 +80,9 @@ extern double util_dswitching_function(const double, const double,
 extern double util_kiril_coulomb_transform(const int, const double, const double, const double);
 extern double util_kiril_coulomb_transform0(const int, const double, const double);
 
+extern double util_occupation_distribution(const int, const double);
+extern double util_smearcorrection(const int, const double, const double, const double, const double);
+
 extern void util_print_elapsed_time(const double);
 
 //#define _MATPRINT_
@@ -87,6 +90,12 @@ extern void util_print_elapsed_time(const double);
 #include <iostream>
 extern void util_matprint(std::string, int, double *);
 #endif
+
+
+extern std::complex<double> util_zdotc(int n,
+                                       const double* x, int incx,
+                                       const double* y, int incy);
+
 
 } // namespace pwdft
 

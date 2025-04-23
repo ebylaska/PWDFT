@@ -1788,7 +1788,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
  * It optionally computes forces and supports movement-related calculations based on the 'move' flag.
  */
 void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
-                                       const bool move, double *fion) 
+                                       const bool move, double *fion, double *occ) 
 {
    nwpw_timing_function ftimer(6);
    bool done;
@@ -1895,7 +1895,24 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
          mypneb->cc_pack_inprjzdot(nbq1,nn,nprjall,psi+nbq*nn*nshift,prjtmp,zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
          if (move)
+         {
             parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+            mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+            if (occ)
+            {
+               int count3 = 0;
+               for (auto l=0; l<nprjall; ++l)
+               for (auto ms=0; ms<ispin; ++ms)
+               for (auto q=0; q<mypneb->neq[ms]; ++q)
+               {
+                   double wf = occ[q+ms*mypneb->neq[0]+nbq*(mypneb->neq[0]+mypneb->neq[1])];
+                   sum[count3]   *= wf;
+                   sum[count3+1] *= wf;
+                   sum[count3+2] *= wf;
+                   count3 += 3;
+               }
+            }
+        }
 
 
          /* sw2 = Gijl*sw1 */
@@ -2041,7 +2058,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
  * @note This function calculates nonlocal forces by performing matrix multiplications and vector operations.
  * The resulting forces are stored in the 'fion' array.
  */
-void CPseudopotential::f_nonlocal_fion(double *psi, double *fion) 
+void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ) 
 {
    nwpw_timing_function ftimer(6);
    
@@ -2139,8 +2156,26 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion)
          }
          auto jend = ii;
          mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi + nbq*nshift*nn, prjtmp, zsw1);
-         parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
-         parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+         //parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
+         //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+
+         mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+         //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+         if (occ)
+         {
+            int count3 = 0;
+            for (auto l=0; l<nprjall; ++l)
+            for (auto ms=0; ms<ispin; ++ms)
+            for (auto q=0; q<mypneb->neq[ms]; ++q)
+            {
+                double wf = occ[q+ms*mypneb->neq[0]+nbq*(mypneb->neq[0]+mypneb->neq[1])];
+                sum[count3]   *= wf;
+                sum[count3+1] *= wf;
+                sum[count3+2] *= wf;
+                count3 += 3;
+            }
+         }
+
         
          /* sw2 = Gijl*sw1 */
          auto ll = 0;
@@ -2319,7 +2354,7 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
  *
  * @note This function calculates the energy contribution by performing matrix multiplications and vector operations.
  */
-double CPseudopotential::e_nonlocal(double *psi) 
+double CPseudopotential::e_nonlocal(double *psi, double *occ) 
 {
    nwpw_timing_function ftimer(6);
 
@@ -2408,9 +2443,23 @@ double CPseudopotential::e_nonlocal(double *psi)
          
          auto ntmp = 2*nn*nprjall;
          DSCAL_PWDFT(ntmp, scal, zsw2, one);
+         if (occ)
+         {
+            int count = 0;
+            for (auto p=0; p<nprjall; ++p)
+            {
+               for (auto ms=0; ms<mypneb->ispin; ++ms)
+               for (auto q=0; q<mypneb->neq[ms]; ++q)
+               {
+                  zsw1[count] *= occ[q+ms*mypneb->neq[0] + nbq*(mypneb->neq[0]+mypneb->neq[1])];
+                  ++count;
+               }
+            }
+         }
 
         
-         std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
+         //std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
+         std::complex<double> ztmp = util_zdotc(ntmp, zsw1, one, zsw2, one);
          
          esum += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();

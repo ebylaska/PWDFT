@@ -29,6 +29,49 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
    myewald = myewald0;
    myelectron = myelectron0;
    mypsp = mypsp0;
+
+   fractional = control.fractional();
+   if (fractional)
+   {
+      nextra[0] = control.fractional_orbitals(0);
+      if (control.ispin()==2)
+         nextra[1] = control.fractional_orbitals(1);
+      else
+         nextra[1] = 0;
+      smearcorrection = 0.0;
+      smeartype = control.fractional_smeartype();
+      smearkT   = control.fractional_kT();
+
+      occ1 = mygrid->initialize_occupations_with_allocation(nextra);
+      occ2 = mygrid->initialize_occupations_with_allocation(nextra);
+
+      fractional_frozen = control.fractional_frozen();
+      fractional_alpha = control.fractional_alpha();
+      fractional_alpha_min = control.fractional_alpha_min();
+      fractional_alpha_max = control.fractional_alpha_max();
+      fractional_beta = control.fractional_beta();
+      fractional_gamma = control.fractional_gamma();
+      fractional_rmsd_threshold = control.fractional_rmsd_threshold();
+      //if (fractional_alpha < fractional_alpha_min) fractional_alpha_min =  fractional_alpha;
+      //if (fractional_alpha > fractional_alpha_max) fractional_alpha_max =  fractional_alpha;
+      occupation_update = fractional && !control.fractional_frozen();
+   }
+   else
+   {
+      nextra[0] = 0;
+      nextra[1] = 0;
+      fractional_frozen = false;
+      fractional_alpha = 0.0;
+      fractional_alpha_min = 0.0;
+      fractional_alpha_max = 0.0;
+      fractional_beta  = 0.0;
+      fractional_gamma = 0.0;
+      occupation_update = false;
+   }
+   multiplicity = control.multiplicity();
+   total_charge = control.total_charge();
+
+
  
    nbrillouin = mygrid->nbrillouin;
    nbrillq = mygrid->nbrillq;
@@ -59,25 +102,51 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
  
    //lmbda = mygrid->m_allocate(-1, 1);
    //hml = mygrid->m_allocate(-1, 1);
-   hml   = mygrid->w_allocate_nbrillq_all();
+   hml  = mygrid->w_allocate_nbrillq_all();
+   eig  = new double[nbrillq*(ne[0]+ne[1])];
+   eig_prev = new double[nbrillq*(ne[0]+ne[1])];
+   //hml2  = mygrid->w_allocate_nbrillq_all();
+   //eig2  = new double[nbrillq*(ne[0]+ne[1])];
    lmbda = mygrid->w_allocate_nbrillq_all();
-   eig   = new double[nbrillq*(ne[0]+ne[1])];
  
    omega = mygrid->lattice->omega();
    scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
    scal2 = 1.0 / omega;
    dv = omega * scal1;
  
-   n2ft3d = (mygrid->n2ft3d);
-   nfft3d = (mygrid->nfft3d);
+   n2ft3d = (mygrid->CGrid::n2ft3d);
+   nfft3d = (mygrid->CGrid::nfft3d);
    //shift1 = 2 * (mygrid->npack(1));
-   shift1 = 2 * (mygrid->npack1_max());
-   shift2 = (mygrid->n2ft3d);
+   shift1 = 2 * (mygrid->CGrid::npack1_max());
+   shift2 = (mygrid->CGrid::n2ft3d);
+   mshift = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
  
-   newpsi = cpsi_read(mygrid, infilename, wvfnc_initialize, psi1, coutput);
+   newpsi = cpsi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);
+   smearoccupation = 0;
+   if (fractional)
+   {
+      if (newpsi) replace_excited_psi1(control,coutput);
+      smearoccupation = 1;
+      std::vector<double> filling = control.fractional_filling();
+      if (filling.size() > 0)
+      {
+         int sz = filling.size();
+         if (sz > (ne[0]+ne[1])) sz = ne[0]+ne[1];
+         for (auto nbq=0; nbq<nbrillq; ++nbq)
+         {
+            int ishift = nbq*(ne[0]+ne[1]);
+            std::memcpy(occ2+ishift,filling.data(),sz*sizeof(double));
+         }
+      }
+  
+      std::memcpy(occ1,occ2,nbrillq*(ne[0]+ne[1])*sizeof(double));
+      std::cout << "AERE  occ1=" << occ1 << std::endl;
+   }
+
+
  
    myelectron->gen_vl_potential();
- 
+
    /*---------------------- testing Electron Operators ---------------------- */
      /*  
       double sum1;
@@ -99,12 +168,311 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
    /*---------------------- testing Electron Operators ---------------------- */
 }
 
+
+
+
 /********************************************
  *                                          *
- *           Solid::epsi_initialize         *
+ *         Solid::replace_excited_psi1      *
  *                                          *
  ********************************************/
-void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *nex, std::ostream &coutput) 
+/**
+ * @brief Replaces excited-state wavefunctions (`psi1_excited`) at the top of `psi1`.
+ * 
+ * This function loads excited-state molecular orbitals from an external file,
+ * processes them, and replaces the top section of the existing wavefunction data (`psi1`).
+ * It performs a file check using `cpsi_filefind`, initializes the data with
+ * `epsi_initialize`, and copies the relevant wavefunction data.
+ * 
+ * @param control Reference to a `Control2` object containing excitation data.
+ * @param coutput Output stream for logging (e.g., `std::cout` or a file).
+ */
+void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
+{
+   int nex[2] = {control.nexcited(0), control.nexcited(1)};
+
+   if (cpsi_filefind(mygrid,control.input_e_movecs_filename()))
+   {
+      ecpsi_initialize(control.input_e_movecs_filename(),false,nex,coutput);
+
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         if (nex[ms]>0)
+         {
+            for (auto n=0; n<nex[ms]; ++n)
+            {
+               int sz = 2*mygrid->npack(1);
+               int indxf = sz*(n + ms*ne[0]);
+               int indxe = sz*(n + ms*nex[0]);
+               std::memcpy(psi1 + indxf, psi1_excited + indxe, sz);
+            }
+         }
+          //epsi_finalize(control.input_e_movecs_filename(),coutput);
+      }
+   }
+}
+
+
+
+
+/********************************************
+ *                                          *
+ *         Solid::cpsi_KS_update             *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Updates Kohn-Sham orbitals using iterative minimization over all Brillouin points and spins.
+ *
+ * For each Brillouin zone point and spin channel, this function:
+ *   - Projects the current orbital orthogonal to higher occupied states
+ *   - Normalizes the orbital
+ *   - Applies an iterative update via `cpsi_KS_update_orb`
+ *   - Accumulates the energy contribution weighted by Brillouin zone weight
+ *
+ * This is part of the orbital-by-orbital Kohn-Sham optimization loop.
+ *
+ * @param[in]  maxit_orb   Maximum iterations per orbital
+ * @param[in]  maxerror    Maximum orbital gradient norm allowed
+ * @param[in]  perror      Residual tolerance
+ * @param[in]  vall        Potential array (must be complex-allocated)
+ * @param[in]  ispin       Number of spin channels (1 or 2)
+ * @param[in]  neq         Array of orbital counts per spin [n_alpha, n_beta]
+ * @param[in]  nbrillq     Number of Brillouin zone points
+ * @param[in]  psi         Input/output orbitals, packed complex format
+ * @param[out] error_out   Maximum gradient norm encountered
+ * @param[in,out] coutput  Output stream for logging
+ *
+ * @return The total energy summed over all updated orbitals and k-points.
+ *
+ * @note `vall` must be allocated using `c_alloc` as it's treated as a complex array.
+ * @warning Orbitals (`psi`) must be packed consistently across spin and Brillouin index.
+ */
+double Solid::cpsi_KS_update(const int maxit_orb, const double maxerror,
+                             const double perror, double *vall,
+                             const int ispin, const int *neq, const int nbrillq, 
+                             double *psi, double *error_out, std::ostream &coutput)
+{        
+   double esum = 0.0;
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      int nbq1 = nbq+1;
+      int kshift = nbq*(neq[0]+neq[1])*2*mygrid->CGrid::npack1_max();
+      double weight =  mygrid->pbrill_weight(nbq);
+      double *psi1k = psi + kshift;
+
+
+      for (auto ms=0; ms<ispin; ++ms)
+      {    
+         int ishift = ms*neq[0]*2*mygrid->CGrid::npack1_max();
+         for (auto i=neq[ms]-1; i>=0; --i)
+         {
+            int indx = 2*mygrid->CGrid::npack1_max()*i + ishift;
+            double *orb = psi1k + indx;
+ 
+            // orthogonalize to lower orbitals
+            //mygrid->g_project_out_filled_below(psi1, ms, i, orb);
+
+            mygrid->g_project_out_filled_above(nbq1,psi1k, ms, i, orb);
+ 
+            // normalize
+            double norm = mygrid->cc_pack_dot(nbq1,orb,orb);
+            norm = 1.0/std::sqrt(norm);
+            mygrid->c_pack_SMul(nbq1,norm,orb);
+         
+            double e0 = cpsi_KS_update_orb(nbq1,ms,i,maxit_orb,maxerror,perror,vall,psi1k,orb,
+                                          error_out, coutput);
+ 
+            esum += e0*weight;
+         }
+      }
+   }
+
+   return esum;
+}
+
+
+
+/********************************************
+ *                                          *
+ *         Solid::cpsi_KS_update_orb        *
+ *                                          *
+ ********************************************/
+double Solid::cpsi_KS_update_orb(const int nbq1, const int ms, const int k, const int maxit_orb, const double maxerror,
+                                 const double perror, double *vall, double *psi1k, double *orb,
+                                 double *error_out, std::ostream &coutput)
+{
+
+   double *t0 = mygrid->c_pack1_max_allocate();
+   double *r1 = mygrid->c_pack1_max_allocate();
+   double *g  = mygrid->c_pack1_max_allocate();
+   double *t  = mygrid->c_pack1_max_allocate();
+
+
+   bool precondition = false;
+   bool done = false;
+   double error0 = 0.0;
+   double e0 = 0.0;
+   double eold = 0.0;
+   double de0 = 0.0;
+   double theta = -3.14159/600.0;
+   double    lmbda_r0 = 1.0;
+   int it = 0;
+   int pit = 0;
+   while (!done)
+   {
+      ++it;
+      error0 = std::abs(e0-eold);
+      eold = e0;
+
+      //calculate residual (steepest descent) direction for a single band
+      compute_Horb_for_cg(nbq1,orb,vall+ms*n2ft3d,g);
+      e0 = mygrid->cc_pack_dot(nbq1,orb,g);
+
+      e0 = -e0;
+     
+
+      double percent_error = 0.0;
+      if(error0>1.0e-11) percent_error = std::abs(e0-eold)/error0;
+
+      precondition = (std::abs(e0-eold)>(sp*maxerror));
+
+      done = ((it > maxit_orb) || (std::abs(e0-eold)<maxerror));
+
+      mygrid->cc_pack_copy(nbq1,g,r1);
+      mygrid->cc_pack_daxpy(nbq1,(e0),orb,r1);
+
+      //preconditioning 
+      if (precondition)
+      {
+         ++pit;
+         myelectron->get_myke()->ke_precondition(nbq1,ep,1,orb,r1);
+      }
+
+      //determine conjuagate direction ***
+      double lmbda_r1 = mygrid->cc_pack_dot(nbq1,r1,r1);
+
+      mygrid->cc_pack_copy(1,r1,t);
+
+      if (it>1)
+         mygrid->cc_pack_daxpy(nbq1,(lmbda_r1/lmbda_r0),t0,t);
+      lmbda_r0 = lmbda_r1;
+      bool oneloop = true;
+      bool repeat_loop = true;
+      while (repeat_loop)
+      {
+        mygrid->cc_pack_copy(nbq1,t,t0);
+
+         //normalize search direction, t ****
+         // project out lower virtual space
+         //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
+         // project out filled space
+         //mygrid->g_project_out_filled_below(psi1, ms, k, t);
+         mygrid->g_project_out_filled_from_k_up(nbq1,psi1k, ms, k, t);
+
+         de0 = mygrid->cc_pack_dot(nbq1,t,t);
+         de0 = 1.0/std::sqrt(de0);
+         //if (std::isnan(de0)) de0=0.0;
+         mygrid->c_pack_SMul(nbq1,de0,t);
+         de0 = mygrid->cc_pack_dot(nbq1,t,g);
+
+         //bad direction;
+         if ((de0<0.0) && oneloop)
+         {
+             mygrid->cc_pack_copy(nbq1,g,t);
+             oneloop = false;
+         }
+         else
+            repeat_loop = false;
+      }
+
+      de0 = -2.0*de0;
+
+      cpsi_linesearch_update(nbq1, e0,de0,&theta,vall+ms*nfft3d,orb,t);
+
+
+
+      done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
+      //done = true;
+   }
+
+   mygrid->c_pack_deallocate(t0);
+   mygrid->c_pack_deallocate(r1);
+   mygrid->c_pack_deallocate(g);
+   mygrid->c_pack_deallocate(t);
+
+   e0         = -e0;
+   *error_out = (e0-eold);
+
+   bool lprint = (mygrid->c3db::parall->is_master());
+   lprint = false;
+   if (lprint) coutput << std::setw(12) << "orbital" << std::setw(4) << k+1
+           << " current e=" << std::setw(10) << std::scientific << std::setprecision(3) << e0
+           << " (error=" << std::setw(9) << std::scientific << std::setprecision(3) << (*error_out) << ")"
+           << " iterations" << std::setw(4) << it << "(" << std::setw(4) << pit
+           << " preconditioned, Ep,Sp=" << std::fixed << std::setprecision(1) << std::setw(5) << ep
+           << "," << std::setw(7) << sp << ")" << std::endl;
+
+
+   return e0;
+}
+
+
+
+void Solid::cpsi_linesearch_update(const int nbq1, double e0, double de0, double *theta, double *vall, double *orb, double *t)
+{
+   //double *torb = mygrid->c_pack_allocate(nbq1);
+   //double *g    = mygrid->c_pack_allocate(nbq1);
+   double *torb = mygrid->c_pack1_max_allocate();
+   double *g    = mygrid->c_pack1_max_allocate();
+
+   double theta0 = *theta;
+
+   mygrid->cc_pack_copy(nbq1,orb, torb);
+
+   // orb2 = orb*cos(pi/300) + t*sin(pi/300) ****
+   double x = std::cos(theta0);
+   double y = std::sin(theta0);
+   mygrid->cc_pack_SMul(nbq1,x,torb,orb);
+   mygrid->cc_pack_daxpy(nbq1,y,t,orb);
+
+   // determine theta ***
+   compute_Horb_for_cg(nbq1,orb,vall,g);
+   double e1 = mygrid->cc_pack_dot(nbq1,orb,g);
+   e1 = -e1;
+
+
+   x = (e0 - e1 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
+   //x = (e1 - e0 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
+   double theta1 = 0.5*std::atan(0.50*de0/x);
+   if (std::isnan(theta1)) theta1 =0.0;
+
+
+   // orb2 = orb*cos(theta) + t*sin(theta) ****
+   x = std::cos(theta1);
+   y = std::sin(theta1);
+
+   double sum = mygrid->cc_pack_dot(nbq1,torb,t);
+   mygrid->cc_pack_SMul(nbq1,x,torb,orb);
+   mygrid->cc_pack_daxpy(nbq1,y,t,orb);
+   //std::cout << "theta,x,y=" << std::setprecision(6) << theta1 << " " << x << " " << y <<  " " << e0 << " " << e1 << " " << sum << std::endl;
+
+   mygrid->c_pack_deallocate(torb);
+   mygrid->c_pack_deallocate(g);
+
+   *theta = theta1;
+}
+
+
+
+
+
+/********************************************
+ *                                          *
+ *           Solid::ecpsi_initialize        *
+ *                                          *
+ ********************************************/
+void Solid::ecpsi_initialize(char *infilename, bool wvfnc_initialize, const int *nex, std::ostream &coutput) 
 {
    ne_excited[0] = nex[0];
    ne_excited[1] = nex[1];
@@ -117,10 +485,10 @@ void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *
 
 
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
-  bool  newpsi = epsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
+  bool  newpsi = ecpsi_read(mygrid, infilename, wvfnc_initialize, nex, psi1_excited, coutput);
 
   bool lprint = (mygrid->c3db::parall->is_master());
-  if (lprint) coutput << " input epsi filename:" << infilename << std::endl;
+  if (lprint) coutput << " input ecpsi filename:" << infilename << std::endl;
   // to determing ne_excited look at wavefunction or look at control
   //mygrid->g_set_ne_excited(ne_excited);
   // psi1_excited = mygrid->g_allocate_excited(1);
@@ -130,41 +498,41 @@ void Solid::epsi_initialize(char *infilename, bool wvfnc_initialize, const int *
 
 /********************************************
  *                                          *
- *           Solid::epsi_finalize           *
+ *           Solid::ecpsi_finalize          *
  *                                          *
  ********************************************/
-void Solid::epsi_finalize(char *outfilename, std::ostream &coutput)
+void Solid::ecpsi_finalize(char *outfilename, std::ostream &coutput)
 { 
-   epsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne_excited,&nbrillouin,
+   ecpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne_excited,&nbrillouin,
              psi1_excited,outfilename,coutput);
 } 
 
 /********************************************
  *                                          *
- *           Solid::epsi_minimize           *
+ *           Solid::ecpsi_minimize          *
  *                                          *
  ********************************************/
-void Solid::epsi_minimize(double *vall, std::ostream &coutput)
+void Solid::ecpsi_minimize(double *vall, std::ostream &coutput)
 { 
 
    int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
-   int nshift1 = 2*(ne_excited[0]+ ne_excited[1])*mygrid->CGrid::npack1_max();
-   int nshift2 = (ne_excited[0]+ ne_excited[1]);
+   int nshift1 = 2*(ne_excited[0]+ne_excited[1])  *mygrid->CGrid::npack1_max();
+   int nshift2 = (ne_excited[0]+ne_excited[1]);
    bool lprint = (mygrid->c3db::parall->is_master());
 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
+      auto nbq1 = nbq+1;
 
       if (lprint) coutput << std::endl << std::setw(12) << " Brillouin zone point:" << std::setw(4) << nbq+1 
                                                         << " of " << nbrillq <<  std::endl;
 
       double error_out,eorb0;
 
-      auto nbq1 = nbq+1;
 
-      double *psi_f = psi1 + nbq*nshift0;
+      double *psi_f = psi1         + nbq*nshift0;
       double *psi_v = psi1_excited + nbq*nshift1;
-      double *eig_v = eig_excited + nbq*nshift2;
+      double *eig_v = eig_excited  + nbq*nshift2;
 
       mygrid->g_ortho_excited(nbq1,psi_f,ne_excited,psi_v);
   
@@ -177,7 +545,7 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
             double *orb = psi_v + indxk;
 
             //double tum = mygrid->cc_pack_dot(nbq1,orb,orb);
-            //std::cout << "k=" << k << " tum=" << tum << std::endl;
+            //std::cout << "NORM k=" << k << " tum=" << tum << std::endl;
 
             bool continue_outer_loop = true;
             for (int l2=1; continue_outer_loop && l2<=2; ++l2)
@@ -205,7 +573,8 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
                bool continue_inner_loop = true;
                for (int l=0; continue_inner_loop && l<=(1+(l2-1)*3); ++l)
                {
-                  eorb0 = epsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out,coutput);
+                  eorb0 = ecpsi_KS_update_virtual(nbq1,ms,k,120,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
+                  //eorb0 = ecpsi_KS_update_virtual(nbq1,ms,k,1,tole,0.001,vall,orb,&error_out, psi_f,psi_v,coutput);
                   if (error_out <= tole)
                      continue_inner_loop = false; // Exit the inner loop
                }
@@ -215,15 +584,15 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
                {
                    if (l2 <= 1)
                    {
-                      //std::cout << "retry orthogonalization" << std::endl;
-                      mygrid->c_pack_zero(1, orb);
-                      mygrid->c_pack_addzero(1, 1.0, orb);
-                      int nne[2] = {1,0};
+                      //mygrid->c_pack_zero(nbq1, orb);
+                      //mygrid->c_pack_addzero(nbq1, 1.0, orb);
+                      //int nne[2] = {1,0};
                       //std::cout << "INTO exited_random nne=" << nne[0] << " " << nne[1] <<  std::endl;
                       //mygrid->g_generate_excited_random(nne,orb);
-                      mygrid->g_project_out_filled(nbq1,psi_f,ms,orb);
-                      mygrid->g_project_out_virtual(nbq1,ms,ne_excited,k,psi_v,orb);
-                      mygrid->g_norm(nbq1,orb);
+                      //mygrid->g_project_out_filled(nbq1,psi_f,ms,orb);
+                      //mygrid->g_project_out_virtual(nbq1,ms,ne_excited,k,psi_v,orb);
+                      //mygrid->g_norm(nbq1,orb);
+                      mygrid->c_corrector_orb(nbq1,orb);
                    }
                    else
                       continue_outer_loop = false; // Exit the outer loop
@@ -237,17 +606,17 @@ void Solid::epsi_minimize(double *vall, std::ostream &coutput)
          } //k
       } //ms
 
-      epsi_sort_virtual(nbq1,eig_v,psi_v);
+      ecpsi_sort_virtual(nbq1,eig_v,psi_v);
    }
 }
 
 
 /********************************************
  *                                          *
- *           Solid::epsi_sort_virtual       *
+ *           Solid::ecpsi_sort_virtual       *
  *                                          *
  ********************************************/
-void Solid::epsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
+void Solid::ecpsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
 {
    double *torb = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
    for (auto ms=0; ms<ispin; ++ms)
@@ -281,13 +650,14 @@ void Solid::epsi_sort_virtual(const int nbq1, double *eig_v, double *psi_v)
 
 /********************************************
  *                                          *
- *      Solid::epsi_KS_update_virtual       *
+ *      Solid::ecpsi_KS_update_virtual       *
  *                                          *
  ********************************************/
-double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
+double Solid::ecpsi_KS_update_virtual(const int nbq1, const int ms, const int k,
                                      const int maxit_orb, const double maxerror,
                                      const double perror, double *vall, double *orb,
-                                     double *error_out, std::ostream &coutput)
+                                     double *error_out, 
+                                     double *psi_f, double *psi_v, std::ostream &coutput)
 
 {           
    double *t0 = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
@@ -311,7 +681,7 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
       eold = e0;
 
       //calculate residual (steepest descent) direction for a single band
-      epsi_get_gradient(nbq1,orb, vall+ms*n2ft3d, g);
+      compute_Horb_for_cg(nbq1,orb,vall+ms*n2ft3d,g);
       e0 = mygrid->cc_pack_dot(nbq1,orb,g);
 
       e0 = -e0;
@@ -324,58 +694,61 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
 
       done = ((it > maxit_orb) || (std::abs(e0-eold)<maxerror));
 
-      mygrid->cc_pack_copy(nbq1,g,r1);
-      mygrid->cc_pack_daxpy(nbq1,(e0),orb,r1);
-
-      //preconditioning 
-      if (precondition)
+      if (!done)
       {
-         ++pit;
-         myelectron->get_myke()->ke_precondition(nbq1,ep,1,orb,r1);
-      }
-
-      //determine conjuagate direction ***
-      double lmbda_r1 = mygrid->cc_pack_dot(nbq1,r1,r1);
-
-      mygrid->cc_pack_copy(nbq1,r1,t);
-
-
-      if (it>1) mygrid->cc_pack_daxpy(nbq1,(lmbda_r1/lmbda_r0),t0,t);
-      lmbda_r0 = lmbda_r1;
-      bool oneloop = true;
-      bool repeat_loop = true;
-      while (repeat_loop)
-      {
-        mygrid->cc_pack_copy(nbq1,t,t0);
-
-         //normalize search direction, t ****
-         // project out lower virtual space
-         //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
-         // project out filled space
-         mygrid->g_project_out_filled(nbq1, psi1, ms, t);
-
-         mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi1_excited, t);
-
-         de0 = mygrid->cc_pack_dot(nbq1,t,t);
-         de0 = 1.0/std::sqrt(de0);
-         mygrid->c_pack_SMul(nbq1,de0,t);
-         de0 = mygrid->cc_pack_dot(nbq1,t,g);
-
-         //bad direction;
-         if ((de0<0.0) && oneloop)
+         mygrid->cc_pack_copy(nbq1,g,r1);
+         mygrid->cc_pack_daxpy(nbq1,(e0),orb,r1);
+ 
+         //preconditioning 
+         if (precondition)
          {
-             mygrid->cc_pack_copy(nbq1,g,t);
-             oneloop = false;
+            ++pit;
+            myelectron->get_myke()->ke_precondition(nbq1,ep,1,orb,r1);
          }
-         else
-            repeat_loop = false;
+ 
+         //determine conjuagate direction ***
+         double lmbda_r1 = mygrid->cc_pack_dot(nbq1,r1,r1);
+ 
+         mygrid->cc_pack_copy(nbq1,r1,t);
+ 
+ 
+         if (it>1) mygrid->cc_pack_daxpy(nbq1,(lmbda_r1/lmbda_r0),t0,t);
+         lmbda_r0 = lmbda_r1;
+         bool oneloop = true;
+         bool repeat_loop = true;
+         while (repeat_loop)
+         {
+           mygrid->cc_pack_copy(nbq1,t,t0);
+ 
+            //normalize search direction, t ****
+            // project out lower virtual space
+            //   call psi_project_out_virtual(ii,dcpl_mb(t(1)))
+            // project out filled space
+            mygrid->g_project_out_filled(nbq1, psi_f, ms, t);
+ 
+            mygrid->g_project_out_virtual(nbq1, ms, ne_excited, k+1, psi_v, t);
+ 
+            de0 = mygrid->cc_pack_dot(nbq1,t,t);
+            de0 = 1.0/std::sqrt(de0);
+            mygrid->c_pack_SMul(nbq1,de0,t);
+            de0 = mygrid->cc_pack_dot(nbq1,t,g);
+ 
+            //bad direction;
+            if ((de0<0.0) && oneloop)
+            {
+                mygrid->cc_pack_copy(nbq1,g,t);
+                oneloop = false;
+            }
+            else
+               repeat_loop = false;
+         }
+         de0 = -2.0*de0;
+ 
+         ecpsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*nfft3d,orb,t);
+ 
+         done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
+         //done = true;
       }
-      de0 = -2.0*de0;
-
-      epsi_linesearch_update(nbq1,e0,de0,&theta,vall+ms*n2ft3d,orb,t);
-
-      done = ((it > maxit_orb) ||  (std::abs(e0-eold) < maxerror));
-      //done = true;
    }
 
    mygrid->c_pack_deallocate(t);
@@ -400,11 +773,11 @@ double Solid::epsi_KS_update_virtual(const int nbq1, const int ms, const int k,
 
 /********************************************
  *                                          *
- *        epsi_linesearch_update            *
+ *        ecpsi_linesearch_update           *
  *                                          *
  ********************************************/
-void Solid::epsi_linesearch_update(const int nbq1, 
-                                   double e0, double de0, double *theta, double *vall, double *orb, double *t)
+void Solid::ecpsi_linesearch_update(const int nbq1, 
+                                    double e0, double de0, double *theta, double *vall, double *orb, double *t)
 {
    double *torb = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
    double *g    = new (std::nothrow) double[2*mygrid->CGrid::npack1_max()]();
@@ -420,14 +793,14 @@ void Solid::epsi_linesearch_update(const int nbq1,
 
 
    // determine theta ***
-   epsi_get_gradient(nbq1,orb, vall, g);
+   compute_Horb_for_cg(nbq1,orb, vall, g);
    double e1 = mygrid->cc_pack_dot(nbq1,orb,g);
    e1 = -e1;
 
    x = (e0 - e1 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
    //x = (e1 - e0 + 0.5*de0*std::sin(2.0*theta0))/(1.0-std::cos(2*theta0));
    double theta1 = 0.5*std::atan(0.50*de0/x);
-
+   
    // orb2 = orb*cos(theta) + t*sin(theta) ****
    x = std::cos(theta1);
    y = std::sin(theta1);
@@ -435,7 +808,6 @@ void Solid::epsi_linesearch_update(const int nbq1,
    double sum = mygrid->cc_pack_dot(nbq1,torb,t);
    mygrid->cc_pack_SMul(nbq1,x,torb,orb);
    mygrid->cc_pack_daxpy(nbq1,y,t,orb);
-   //std::cout << "theta,x,y=" << std::setprecision(6) << theta1 << " " << x << " " << y <<  " " << e0 << " " << e1 << " " << sum << std::endl;
 
    mygrid->c_pack_deallocate(torb);
    mygrid->c_pack_deallocate(g);
@@ -445,10 +817,25 @@ void Solid::epsi_linesearch_update(const int nbq1,
 
 /********************************************
  *                                          *
- *        Solid::epsi_get_gradient          *
+ *        Solid::compute_Horb_for_cg        *
  *                                          *
  ********************************************/
-void Solid::epsi_get_gradient(const int nbq1, double *orb, double *vall, double *Horb)
+/**
+ * @brief Applies the Hamiltonian to a complex orbital and computes -H * orb.
+ *
+ * This function transforms the input orbital to reciprocal space,
+ * applies the Hamiltonian operator, and stores the result in `Horb`,
+ * scaled by -1.0. It is used in conjugate gradient (CG) steps for
+ * electronic structure optimization.
+ *
+ * @param[in]  nbq1   Index of the current Brillouin zone point
+ * @param[in]  orb    Input complex orbital (packed format, complex-allocated)
+ * @param[in]  vall   Local potential (complex grid, complex-allocated)
+ * @param[out] Horb   Output buffer for -H * orb (complex-allocated)
+ *
+ * @note All grid pointers must be allocated using `mygrid->c_alloc()`.
+ */
+void Solid::compute_Horb_for_cg(const int nbq1, double *orb, double *vall, double *Horb)
 {
    double *orb_r = mygrid->c_alloc();
 

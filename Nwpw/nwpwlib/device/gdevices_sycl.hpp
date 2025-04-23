@@ -514,6 +514,73 @@ public:
       inuse[ic12] = false;
       inuse[ic22] = false;
    }
+
+   void TN3_FullCab_dgemm(int npack2, int ne, double alpha, double *host_a,
+                  double *host_b, double beta, double *host_caa,
+                  double *host_cab, double *host_cbb)
+      {
+      int ic11 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+      int ic12 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+      int ic22 = fetch_dev_mem_indx(((size_t)ne) * ((size_t)ne));
+
+      if (std::fabs(beta) > 0.0)
+      {
+         stream[0]->memcpy(dev_mem[ic11], host_caa, ne * ne * sizeof(double));
+         stream[0]->memcpy(dev_mem[ic12], host_cab, ne * ne * sizeof(double));
+         stream[0]->memcpy(dev_mem[ic22], host_cbb, ne * ne * sizeof(double));
+      }
+
+      // copy host_a,host_b --> dev_mem
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         &host_a[tile_start2[0]], npack2, dev_mem[ia_psi[0]],
+                         tile_npack2[0], stream[0]);
+      syclSetMatrixAsync(tile_npack2[0], ne, sizeof(double),
+                         &host_b[tile_start2[0]], npack2, dev_mem[ia_hpsi[0]],
+                         tile_npack2[0], stream[0]);
+
+
+      double beta0 = beta;
+      for (auto tt = 0; tt < tile_fac; ++tt)
+      {
+         int ttp1 = tt + 1;
+         if (ttp1 < tile_fac) {
+           syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                              &host_a[tile_start2[ttp1]], npack2,
+                              dev_mem[ia_psi[ttp1 % 2]], tile_npack2[ttp1],
+                              stream[ttp1 % 2]);
+           syclSetMatrixAsync(tile_npack2[ttp1], ne, sizeof(double),
+                              &host_b[tile_start2[ttp1]], npack2,
+                              dev_mem[ia_hpsi[ttp1 % 2]], tile_npack2[ttp1],
+                              stream[ttp1 % 2]);
+         }
+         stream[tt % 2]->wait();
+
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[tt % 2], matT, matN, ne, ne, tile_npack2[tt], alpha,
+             dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_psi[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic11], ne);
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[tt % 2], matT, matN, ne, ne, tile_npack2[tt], alpha,
+             dev_mem[ia_psi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic12], ne);
+         oneapi::mkl::blas::column_major::gemm(
+             *stream[tt % 2], matT, matN, ne, ne, tile_npack2[tt], alpha,
+             dev_mem[ia_hpsi[tt % 2]], tile_npack2[tt], dev_mem[ia_hpsi[tt % 2]],
+             tile_npack2[tt], beta0, dev_mem[ic22], ne);
+         beta0 = 1.0;
+      }
+
+      stream[0]->memcpy(host_caa, dev_mem[ic11], ne * ne * sizeof(double));
+      stream[0]->memcpy(host_cab, dev_mem[ic12], ne * ne * sizeof(double));
+      stream[0]->memcpy(host_cbb, dev_mem[ic22], ne * ne * sizeof(double));
+
+      stream[0]->wait();
+
+      inuse[ic11] = false;
+      inuse[ic12] = false;
+      inuse[ic22] = false;
+   }
+
  
    /**************************************
     *                                    *
@@ -2076,6 +2143,49 @@ public:
  
  
    // routines below need to be made into sycl or removed
+
+/**************************************
+ *                                    *
+ *     eigsrt_device_complex          *
+ *                                    *
+ **************************************/
+static void eigsrt_device_complex(double *D, double *V, int n)
+{
+   int i, j, k;
+   double p;
+
+   for (i = 0; i < (n - 1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for (j = i + 1; j < n; ++j)
+      {
+         if (D[j] >= p)
+         {
+            k = j;
+            p = D[j];
+         }
+      }
+
+      if (k != i)
+      {
+         // Swap eigenvalues
+         std::swap(D[i], D[k]);
+
+         // Swap complex eigenvectors column i and k
+         for (j = 0; j < n; ++j)
+         {
+            int i_idx = 2 * (j + i * n);
+            int k_idx = 2 * (j + k * n);
+            // Real part
+            std::swap(V[i_idx], V[k_idx]);
+            // Imaginary part
+            std::swap(V[i_idx + 1], V[k_idx + 1]);
+         }
+      }
+   }
+}
+
  
    /**************************************
     *                                    *
@@ -2143,6 +2253,25 @@ public:
       }
    }
 
+
+   /**************************************
+    *                                    *
+    *           NN_eigensolver0           *
+    *                                    *
+    **************************************/
+   void NN_eigensolver0(int n, double *host_hml, double *host_eig)
+   {
+      int ierr;
+      int nn = n*n + 14;
+      double xmp1[nn];
+
+      EIGEN_PWDFT(n, host_hml, host_eig, xmp1, nn, ierr);
+
+      eigsrt_device(host_eig, host_hml, n);
+   }
+
+
+
    /**************************************
     *                                    *
     *           WW_eigensolver           *
@@ -2171,7 +2300,7 @@ public:
          // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
          // EIGEN_PWDFT failed!"));
        
-         //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+         eigsrt_device_complex(host_eig + shift1, host_hml + shift2, n);
          shift1 += 2*ne[0];
          shift2 += 4*ne[0]*ne[0];
       } 

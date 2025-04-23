@@ -28,6 +28,7 @@ namespace pwdft {
  * It inherits properties and methods from several base classes such as `PGrid` and `d1db`.
  * The PNEB calculation involves complex operations related to parallelization,
  * matrix manipulations, and more.
+
  */
 
 class Pneb : public PGrid, public d1db {
@@ -35,7 +36,7 @@ class Pneb : public PGrid, public d1db {
    // int ispin,ne[2],neq[2];
    bool mparallelized=false;
    int parallelized;
-   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1;
+   double *s22, *s21, *s12, *s11, *sa1, *sa0, *st1, *st2;
    double *mat_tmp, *work1, *work2;
    double *bcolwork, *bwork2, *rwork1, *rwork2;
  
@@ -87,9 +88,12 @@ public:
    void g_generate1_random(double *);
    void g_generate2_random(double *);
    void g_generate_excited_random(const int *, double *);
+   void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
    void g_read_ne(const int, const int *, double *);
+   void g_read_ne_reverse(const int, const int *, double *);
+   void g_read_excited(const int, const int *, double *);
    void g_write(const int, double *);
    void g_write_excited(const int, const int *, double *);
  
@@ -99,6 +103,7 @@ public:
      return ptr;
    }
    void g_deallocate(double *ptr) { delete[] ptr; }
+
  
    double *g_nallocate(const int nb, const int nblock) {
      double *ptr;
@@ -185,12 +190,47 @@ public:
      return ptr;
    }
    void m4_deallocate(double *ptr) { delete[] ptr; }
+
+   // initialize occupations
+   /**
+       @brief Initializes the occupation array based on spin and electron configuration.
+      
+       @param nextra Array specifying the number of extra states for each spin channel.
+       @param ptr Pointer to a pre-allocated array for storing occupation data.
+      
+       Occupation values are set to:
+       - 0.0 for extra states.
+       - 1.0 for regular states.
+      
+       Example:
+       - For ispin = 2, ne = {5, 5}, nextra = {2, 3}, the output array would be:
+         ptr = {0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0}.
+   */
+   void initialize_occupations(const int nextra[], double *ptr)
+   {
+      for (int ms = 0; ms < ispin; ++ms) 
+      {
+         int offset = ms * ne[0]; // Precompute offset for indexing
+         for (int n = 0; n < ne[ms]; ++n) 
+            ptr[offset + n] = (n < nextra[ms]) ? 0.0 : 1.0;
+      }
+   }
+   double* initialize_occupations_with_allocation(const int nextra[]) 
+   {
+       double* ptr = new double[ne[0] + ne[1]];
+       initialize_occupations(nextra, ptr);
+       return ptr;
+   }
+
+
  
    double gg_traceall_excited(const int *, double *, double *);
    double gg_traceall(double *, double *);
+   double gg_traceall_occ(double *, double *, double *);
    void gg_copy(double *, double *);
    void g_zero(double *);
    void hr_aSumSqr(const double, double *, double *);
+   void hr_aSumSqr_occ(const double, const double *, double *, double *);
    void hhr_aSumMul(const double, const double *, const double *, double *);
  
    void ggm_sym_Multiply(double *, double *, double *);
@@ -199,10 +239,9 @@ public:
    void ffm_Multiply(const int, double *, double *, double *);
    void ggm_SVD(double *, double *, double *, double *);
  
-   void ffm4_sym_Multiply(const int, double *, double *, double *, double *,
-                          double *, double *);
-   void ffm3_sym_Multiply(const int, double *, double *, double *, double *,
-                          double *);
+   void ffm4_sym_Multiply(const int, double *, double *, double *, double *, double *, double *);
+   void ffm3_sym_Multiply(const int, double *, double *, double *, double *, double *);
+   void ffm3_Fulls21_sym_Multiply(const int, double *, double *, double *, double *, double *);
    void m_scale_s22_s21_s12_s11(const int, const double, double *s22,
                                 double *s21, double *s12, double *s11);
    void m_scale_s22_s21_s11(const int, const double, double *s22, double *s21,
@@ -225,24 +264,32 @@ public:
                           double *, double *, double *);
  
    void m_scal(const double, double *);
+   void m_diag_scal(const double *, double *);
+   void m_diag_scal_inv(const double *, double *);
    double m_trace(double *);
+   double m_trace_occ(double *, double *);
    void m_diagonalize(double *, double *);
+   void m_diagonalize(const int, double *, double *);
    void mmm_Multiply(const int, double *, double *, double, double *, double);
    void mmm_Multiply2(const int, double *, double *, double, double *, double);
-   void mm_transpose(const int, double *, double *);
+   void mmm_Multiply3(const int, double *, double *, double, double *, double);
+   void mm_transpose(const int, const double *, double *);
    void mm_Kiril_Btransform(const int, double *, double *);
  
    void gh_fftb(double *, double *);
    void ggm_lambda(double, double *, double *, double *);
+   void ggm_occ_lambda(double, double *, double *, double *, double *);
    // void ggm_lambda2(double, double *, double *, double *);
    void ggm_lambda_sic(double, double *, double *, double *);
-   void g_ortho(double *);
+   void g_ortho(const int, double *);
 
-   void g_ortho_excited(double *, const int *, double *);
+   void g_ortho_excited(const int, double *, const int *, double *);
    void g_project_out_filled(double *, const int, double *);
+   void g_project_out_filled_extra(const int, const int *, double *);
    void g_project_out_virtual(const int, const int *, const int, double *,  double *);
    void g_project_out_filled_below(double *, const int, const int, double *);
    void g_project_out_filled_above(double *, const int, const int, double *);
+   void g_project_out_filled_from_k_up(double *, const int, const int, double *);
 
    void g_norm(double *);
  
@@ -254,6 +301,26 @@ public:
    void ggg_Minus(double *, double *, double *);
  
    void gg_daxpy(double, double *, double *);
+
+   void gen_Ba_Bs(const int, double *, double *, double *);
+   void gen_UD(const int, double *, double *);
+   void gen_X(const int, const double *, double *);
+   void gen_X(const int, double *, double *, double *, double *, double *, double *, double *, double *, double *, bool *);
+
+   void fnm_to_X(const int, double *, double *, double *, double *, double *);
+   void m_eye(const int, double *, double);
+   void m_HmldivideDplusD(const int, double *, double *);
+   void m_Hmlfweightscale(const int, double *, double *);
+   void printNNMatrix(const std::string&, const int, double *);
+
+   void m_0define_occupation(const double, const bool,
+                             const int,
+                             const double, const double,
+                             double *, double *, double *,
+                             const int, const double, double *, double *);
+   double define_smearfermi(const int, const double *, const double *);
+   double add_smearcorrection(const int, const int, const double *, const double *, const double, const double);
+
    };
 } // namespace pwdft
 

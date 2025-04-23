@@ -188,7 +188,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["autosym"] = autosym;
 
   bool is_crystal = false;
+  bool is_surface = false;
   bool fractional = false;
+  bool twodfractional = false;
   std::vector<double> unita = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   int endcount = 1;
@@ -212,6 +214,14 @@ static json parse_geometry(json geom, int *curptr,
         fractional = false;
       } else {
         fractional = true;
+      }
+      ++endcount;
+    } else if (mystring_contains(line, "system surface")) {
+      is_surface=true;
+      if (mystring_contains(line, "cartesian")) {
+        twodfractional = false;
+      } else {
+        twodfractional = true;
       }
       ++endcount;
     } else if (endcount > 1) {
@@ -246,6 +256,7 @@ static json parse_geometry(json geom, int *curptr,
           }
         }
         unita = parse_lat_to_unita(lat);
+
       } else if (mystring_contains(line, "lattice_vectors")) {
         ++cur;
         line = mystring_lowercase(lines[cur]);
@@ -346,6 +357,21 @@ static json parse_geometry(json geom, int *curptr,
         vx = xxx;
         vy = yyy;
         vz = zzz;
+
+      } else if (twodfractional) {
+        double xxx = unita[0] * xx + unita[3] * yy + zz*conv;
+        double yyy = unita[1] * xx + unita[4] * yy + zz*conv;
+        double zzz = unita[2] * xx + unita[5] * yy + zz*conv;
+        xx = xxx;
+        yy = yyy;
+        zz = zzz;
+
+        xxx = unita[0] * vx + unita[3] * vy + vz*conv;
+        yyy = unita[1] * vx + unita[4] * vy + vz*conv;
+        zzz = unita[2] * vx + unita[5] * vy + vz*conv;
+        vx = xxx;
+        vy = yyy;
+        vz = zzz;
       } else {
         xx *= conv;
         yy *= conv;
@@ -417,7 +443,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["charges"] = charges;
   geomjson["unita"] = unita;
   geomjson["is_crystal"] = is_crystal;
+  geomjson["is_suface"] = is_surface;
   geomjson["fractional"] = fractional;
+  geomjson["twodfractional"] = twodfractional;
 
   *curptr = cur;
 
@@ -1574,6 +1602,16 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
        if (mystring_contains(line, "diis_histories")) 
           nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
+       if (mystring_contains(line, "extra_rotate")) 
+       {
+          nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
+          if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
+          if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
+       }
 
 
     // smear 
@@ -1594,7 +1632,8 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        temperature = kT/kb;
 
        nwpwjson["fractional"] = true;
-       nwpwjson["fractional_orbitals"] = 4;
+       nwpwjson["fractional_frozen"] = false;
+       nwpwjson["fractional_orbitals"] = {4,4};
        nwpwjson["fractional_kT"] = kT;
        nwpwjson["fractional_temperature"] = temperature;
        nwpwjson["fractional_smeartype"]   = 2;
@@ -1603,13 +1642,48 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;
        if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
        if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
+       if (mystring_contains(line, "hermite"))            nwpwjson["fractional_smeartype"] = 3;
        if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
-
+       if (mystring_contains(line, "methfessel-paxton"))  nwpwjson["fractional_smeartype"] = 5;
+       if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 6;
+       if (mystring_contains(line, "lorentzian"))         nwpwjson["fractional_smeartype"] = 7;
+       if (mystring_contains(line, "no correction"))      nwpwjson["fractional_smeartype"] = 8;
+       if (mystring_contains(line, "frozen"))             nwpwjson["fractional_frozen"] = true;
        if (mystring_contains(line, "orbitals"))  
-          nwpwjson["fraction_orbitals"] = std::stoi(mystring_trim(mystring_split(line, "orbitals")[1]));
+       {
+          std::vector<int> norbs;
+          norbs.push_back(1);
+          norbs.push_back(1);
+          //ss = mystring_split0(line);
+          ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
+          if (ss.size() > 1)
+             norbs[0] = std::stoi(ss[1]);
+          if (ss.size() > 2)
+             norbs[1] = std::stoi(ss[2]);
+          nwpwjson["fractional_orbitals"] = norbs;
+       }
+       if (mystring_contains(line, "filling"))  
+       {
+          std::string rr = " " + mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " ");
+          //std::vector<double> filling = mystring_double_list(mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " "), " ");
+          std::vector<double> filling = mystring_double_list(rr,"");
+          nwpwjson["fractional_filling"] = filling;
+       }
 
-       if (mystring_contains(line, "alpha")) 
+       if (mystring_contains(line, "alpha ")) 
           nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+
+       if (mystring_contains(line, "alpha_min ")) 
+          nwpwjson["fractional_alpha_min"] = std::stod(mystring_trim(mystring_split(line, "alpha_min")[1]));
+
+       if (mystring_contains(line, "alpha_max ")) 
+          nwpwjson["fractional_alpha_max"] = std::stod(mystring_trim(mystring_split(line, "alpha_max")[1]));
+
+       if (mystring_contains(line, "beta ")) 
+          nwpwjson["fractional_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
+
+       if (mystring_contains(line, "gamma ")) 
+          nwpwjson["fractional_gamma"] = std::stod(mystring_trim(mystring_split(line, "gamma")[1]));
 
        if (mystring_contains(line, "temperature"))
        {
@@ -1618,7 +1692,6 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["fractional_kT"] = kT;
           nwpwjson["fractional_temperature"] = temperature;
        }
-
 
     } else if (mystring_contains(line, "vectors")) {
        if (mystring_contains(line, " input"))
