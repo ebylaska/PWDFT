@@ -2664,6 +2664,7 @@ void CPseudopotential::semicore_density_update()
    }
    mypneb->r_SMul(scal2 * scal2, semicore_density);
  
+   mypneb->r_dealloc(tmpr);
    mypneb->c_dealloc(tmp);
    mypneb->c_pack_deallocate(exi);
 }
