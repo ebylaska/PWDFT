@@ -147,24 +147,40 @@ public:
    Solid(char *,bool,Cneb *,Ion *,CStrfac *,Ewald *,cElectron_Operators *,CPseudopotential *,Control2 &, std::ostream &);
  
    /* destructor */
-   ~Solid() {
-      if (psi1)     delete[] psi1;
-      if (rho1)     delete[] rho1;
-      if (rho1_all) delete[] rho1_all;
-      if (dng1)     delete[] dng1;
-     
-      if (psi2)     delete[] psi2;
-      if (rho2)     delete[] rho2;
-      if (rho2_all) delete[] rho2_all;
-      if (dng2)     delete[] dng2;
-     
-      if (hml)      delete[] hml;
+   ~Solid() 
+   {
+      // --- Deallocate wavefunction/density memory ---
+      if (psi1)     mygrid->g_deallocate(psi1);
+      if (rho1)     mygrid->r_pack_deallocate(rho1);
+      if (rho1_all) mygrid->r_pack_deallocate(rho1_all);
+      if (dng1)     mygrid->c_pack_deallocate(dng1);
+ 
+      if (psi2)     mygrid->g_deallocate(psi2);
+      if (rho2)     mygrid->r_pack_deallocate(rho2);
+      if (rho2_all) mygrid->r_pack_deallocate(rho2_all);
+      if (dng2)     mygrid->c_pack_deallocate(dng2);
+ 
+      // --- Hamiltonian and eigenvalue memory ---
+      if (hml)      mygrid->w_deallocate(hml);
       if (eig)      delete[] eig;
       if (eig_prev) delete[] eig_prev;
-      //delete[] hml2;
-      //delete[] eig2;
-
-      if (lmbda)    delete[] lmbda;
+ 
+      // --- Fractional occupation ---
+      // 🔥 THESE ARE new[] ALLOCATED, NOT GRID-ALLOCATED
+      if (occ1)     delete[] occ1;
+      if (occ2)     delete[] occ2;
+ 
+      if (lmbda)    mygrid->w_deallocate(lmbda);
+ 
+      // --- Excited state orbitals ---
+      if (psi1_excited) mygrid->g_deallocate(psi1_excited);
+      if (psi2_excited) mygrid->g_deallocate(psi2_excited);
+      if (hml_excited)  mygrid->w_deallocate(hml_excited);
+      if (eig_excited)  delete[] eig_excited;
+ 
+      // --- Optional / commented out ---
+      // if (hml2)   mygrid->w_deallocate(hml2);
+      // if (eig2)   delete[] eig2;
    }
 
 
