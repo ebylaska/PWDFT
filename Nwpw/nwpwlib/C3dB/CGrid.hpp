@@ -126,7 +126,7 @@ public:
      
       // deallocate async buffer data
       for (auto q=0; q<aqmax; ++q)
-        c3db::parall->aend(3+q);
+        c3db::parall->aend(4+q);
    }
  
    double *Gxyz(const int i) { return Garray + i*nfft3d; }
