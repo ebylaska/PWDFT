@@ -16,10 +16,12 @@ extern double band_cgsd_bfgsminimize(Solid &, band_Geodesic *, band_lmbfgs &, do
                                 double *, double *, int, int, double, double);
 
 extern double band_cgsd_cgminimize2(Solid &, band_Geodesic2 *, double *, double *,
-                               double *, int, int, double, double);
+                                    double *, int, int, double, double);
 extern double band_cgsd_bfgsminimize2(Solid &, band_Geodesic2 *, band_lmbfgs2 &,
-                                 double *, double *, double *, int, int, double,
-                                 double);
+                                   double *, double *, double *, int, int, double, double);
+
+extern double band_cgsd_bybminimize2(Solid &, band_Geodesic *, double *, double *,
+                                     double *, int, int, int, double, double);
 
 } // namespace pwdft
 #endif

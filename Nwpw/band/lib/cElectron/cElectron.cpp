@@ -77,10 +77,19 @@ void cElectron_Operators::gen_psi_r(double *psi)
  *     cElectron_Operators::gen_density     *
  *                                          *
  ********************************************/
-void cElectron_Operators::gen_density(double *dn) 
+void cElectron_Operators::gen_density(double *dn, double *occ) 
 {
    /* generate dn */
-   mygrid->hr_aSumSqr(scal2, psi_r, dn);
+   if (occ)
+   {
+      // Compute density including occupation numbers
+      mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
+   }
+   else
+   {
+     // Compute density without occupation numbers
+      mygrid->hr_aSumSqr(scal2, psi_r, dn);
+   }
 }
 
 /********************************************
@@ -88,10 +97,33 @@ void cElectron_Operators::gen_density(double *dn)
  *     cElectron_Operators::gen_densities   *
  *                                          *
  ********************************************/
-void cElectron_Operators::gen_densities(double *dn, double *dng, double *dnall) 
+/**
+ * @brief Computes all density-related quantities from the current real-space wavefunction.
+ *
+ * This function performs three key steps:
+ * 1. Computes the spin-resolved electron density `dn` from the real-space orbitals `psi_r`,
+ *    optionally applying fractional occupations `occ`.
+ * 2. Computes the total electron density `rho`, transforms it to reciprocal space, and stores
+ *    the result in packed G-space format as `dng`, which is used for solving the Coulomb potential.
+ * 3. Constructs `dnall`, the full spin-resolved real-space density used for exchange-correlation
+ *    and semicore corrections. If a semicore pseudopotential is present, its density contribution
+ *    is added accordingly.
+ *
+ * @param[out] dn     Spin-resolved real-space electron density (ρ↑, ρ↓).
+ * @param[out] dng    Packed G-space density used in the Coulomb solver.
+ * @param[out] dnall  Full spin-resolved real-space density (with semicore correction if applicable).
+ * @param[in]  occ    Optional fractional occupation vector. If null, assumes full occupancy.
+ *
+ * @note This function assumes that the real-space representation `psi_r` has already been generated.
+ */
+void cElectron_Operators::gen_densities(double *dn, double *dng, double *dnall, double *occ) 
 {
    /* generate dn */
-   mygrid->hr_aSumSqr(scal2, psi_r, dn);
+   if (occ)
+       mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
+   else
+      mygrid->hr_aSumSqr(scal2,psi_r,dn);
+     
  
    /* generate rho and dng */
    double *tmp = x;
@@ -117,9 +149,75 @@ void cElectron_Operators::gen_densities(double *dn, double *dng, double *dnall)
 
 /*********************************************
  *                                           *
+ *  cElectron_Operators::dn_to_dng_dnall     *
+ *                                           *
+ *********************************************/
+/**
+ * @brief Converts real-space spin-resolved densities into packed G-space
+ *        and spin-summed forms required for SCF potential construction.
+ *
+ * This routine performs the following:
+ * 1. Sums spin densities to create the total charge density ρ.
+ * 2. Scales and FFTs the result into G-space, storing it in `dng`.
+ * 3. Generates `dnall`, the modified real-space density used for
+ *    exchange-correlation and semicore correction logic.
+ *
+ * If semicore pseudopotentials are active, `dnall` includes a scaled
+ * addition of the semicore reference density.
+ *
+ * @param[in]  dn     Real-space spin-resolved electron densities (ρ↑, ρ↓).
+ * @param[out] dng    Packed G-space total density (for Coulomb solver).
+ * @param[out] dnall  Real-space total density (for XC and semicore corrections).
+ */
+void cElectron_Operators::dn_to_dng_dnall(double *dn, double *dng, double *dnall)
+
+{
+
+   /* generate rho and dng */
+   double *tmp = x;
+   mygrid->rrc_Sum(dn, dn+(ispin-1)*nfft3d, rho);
+   mygrid->cc_SMul(scal1, rho, tmp);
+   // mygrid->rc_fft3d(tmp);
+   mygrid->rc_pfft3f(0, tmp);
+   mygrid->c_pack(0, tmp);
+   mygrid->cc_pack_copy(0, tmp, dng);
+ 
+   /* generate dnall - used for semicore corrections */
+   if (mypsp->has_semicore()) 
+   {
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, dn+ms*nfft3d, dnall+ms*nfft3d);
+   } 
+   else 
+   {
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rr_copy(dn+ms*nfft3d, dnall+ms*nfft3d);
+   }
+}
+
+
+
+
+/*********************************************
+ *                                           *
  *  cElectron_Operators::gen_scf_potentials  *
  *                                           *
  *********************************************/
+/**
+ * @brief Computes self-consistent field (SCF) potentials from the density.
+ *
+ * Given real-space (`dn`, `dnall`) and packed G-space (`dng`) density components,
+ * this function evaluates the following SCF contributions:
+ *   - The Hartree (Coulomb) potential `vc`, stored in both `vc` and `vcall`.
+ *   - The exchange-correlation potentials `xcp` (potential) and `xce` (energy).
+ *
+ * These quantities are used to construct the total effective potential
+ * in later steps (e.g., `gen_vall()` or `gen_Hpsi_k()`).
+ *
+ * @param[in]  dn     Real-space spin-resolved density (used for p_xc).
+ * @param[in]  dng    Packed G-space density (used for Hartree).
+ * @param[in]  dnall  Spin-summed density (used for exchange-correlation).
+ */
 void cElectron_Operators::gen_scf_potentials(double *dn, double *dng, double *dnall)
 {
    /* generate coulomb potential */
@@ -131,6 +229,33 @@ void cElectron_Operators::gen_scf_potentials(double *dn, double *dng, double *dn
    myxc->v_exc_all(ispin, dnall, xcp, xce);
    // v_exc(ispin,shift2,dnall,xcp,xce,x);
  
+}
+
+/*********************************************
+ *                                           *
+ *  cElectron_Operators::scf_update_from_dn  *
+ *                                           *
+ *********************************************/
+/**
+ * @brief Updates SCF potentials given an existing density.
+ *
+ * This function is used when the electron density `dn` is already known,
+ * and you want to recompute:
+ *   - The Fourier-space (packed) density `dng` for Hartree potential.
+ *   - The full spin-summed real-space density `dnall` for XC and semicore.
+ *   - The SCF potentials (Hartree and XC) based on these densities.
+ *
+ * It avoids the need to regenerate `dn` from wavefunctions (ψ),
+ * and is useful in orbital minimization algorithms (e.g., steepest descent).
+ *
+ * @param[in]  dn     Real-space spin densities (per spin channel).
+ * @param[out] dng    Packed G-space density used for Coulomb potential.
+ * @param[out] dnall  Spin-summed real-space density (with semicore correction if needed).
+ */
+void cElectron_Operators::scf_update_from_dn(double *dn, double *dng, double *dnall)
+{
+   dn_to_dng_dnall(dn, dng, dnall);
+   gen_scf_potentials(dn, dng, dnall);
 }
 
 /********************************************
@@ -151,6 +276,23 @@ void cElectron_Operators::gen_vl_potential()
  *    cElectron_Operators::gen_vall         *
  *                                          *
  ********************************************/
+/**
+ * @brief Generates the total potential array `vall` in real space.
+ *
+ * Combines k-space contributions from the local potential (`vl`) and 
+ * Coulomb potential (`vc`), scales by `scal2`, and transforms to real space
+ * using inverse FFT. Adds exchange-correlation potential (`xcp`) in real space.
+ *
+ * The resulting `vall` array contains the real-space total effective potential,
+ * and must be preallocated with size at least 2 × nfft3d (complex doubles).
+ *
+ * @note Requires `vall` to be allocated as a complex array.
+ * 
+ * @pre `vl`, `vc`, `xcp`, and `vall` must be properly initialized and sized.
+ * 
+ * @warning Incorrect allocation of `vall` (e.g., as real instead of complex)
+ *          will result in heap-buffer-overflow errors.
+ */
 void cElectron_Operators::gen_vall()
 {
    // add up k-space potentials, vall = scal2*vl + vc  ****
@@ -208,7 +350,7 @@ void cElectron_Operators::semicore_density_update()
  *      cElectron_Operators::gen_Hpsi_k     *
  *                                          *
  ********************************************/
-void cElectron_Operators::gen_Hpsi_k(double *psi) 
+void cElectron_Operators::gen_Hpsi_k(double *psi, double *occ) 
 {
    bool move = false;
    double fion0[1];
@@ -216,7 +358,7 @@ void cElectron_Operators::gen_Hpsi_k(double *psi)
    mygrid->g_zero(Hpsi);
  
    /* get Hpsi */
-   cpsi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0);
+   cpsi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
  
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -298,6 +440,16 @@ void cElectron_Operators::gen_Tangent(double *psi, double *hml, double *THpsi)
  *     cElectron_Operators::get_Gradient    *
  *                                          *
  ********************************************/
+ /**
+  * @brief Copies the result of the Hamiltonian operator Hψ to the provided output buffer.
+  *
+  * This function retrieves the latest result of the Hamiltonian applied to ψ (stored in `Hpsi`)
+  * and copies it into the user-supplied array `THpsi`.
+  *
+  * @param[out] THpsi Destination array for the Hamiltonian-applied wavefunction (Hψ).
+  *
+  * @note This is typically used in gradient calculations where THpsi is compared to ψ for descent updates.
+  */
 void cElectron_Operators::get_Gradient(double *THpsi) 
 {
    mygrid->gg_copy(Hpsi, THpsi);
@@ -308,10 +460,24 @@ void cElectron_Operators::get_Gradient(double *THpsi)
  *      cElectron_Operators::genrho         *
  *                                          *
  ********************************************/
-void cElectron_Operators::genrho(double *psi, double *dn) 
+ /**
+  * @brief Generates the real-space electron density from a given wavefunction.
+  *
+  * This function performs two steps:
+  * 1. Converts the complex-valued ψ (in reciprocal or packed form) into a real-space representation.
+  * 2. Computes the electron density from the resulting ψ₍ᵣ₎, optionally using occupation numbers.
+  *
+  * @param[in]  psi Complex orbital wavefunction ψ.
+  * @param[out] dn  Output real-space electron density array.
+  * @param[in]  occ Optional occupation array (used for fractional occupations).
+  *
+  * @note This function is commonly called during SCF steps to update the density 
+  *       from the current orbital guess.
+  */
+void cElectron_Operators::genrho(double *psi, double *dn, double *occ) 
 {
    this->gen_psi_r(psi);
-   this->gen_density(dn);
+   this->gen_density(dn,occ);
 }
 
 /********************************************
@@ -319,12 +485,30 @@ void cElectron_Operators::genrho(double *psi, double *dn)
  *      cElectron_Operators::run            *
  *                                          *
  ********************************************/
-void cElectron_Operators::run(double *psi, double *dn, double *dng, double *dnall) 
+/**
+ * @brief Executes a full SCF operator application cycle for the current wavefunction.
+ *
+ * This routine:
+ * 1. Converts the complex ψ into real-space form.
+ * 2. Computes all relevant electron densities (ρ, ∇ρ, ρ_all).
+ * 3. Constructs the SCF potentials (Hartree, XC, pseudopotential, etc.).
+ * 4. Applies the Hamiltonian to ψ in reciprocal space (generates Hψ).
+ *
+ * @param[in]  psi     Complex orbital wavefunction ψ.
+ * @param[out] dn      Real-space electron density ρ(𝐫).
+ * @param[out] dng     Gradient-related or G-space modified density (for XC, etc.).
+ * @param[out] dnall   Optional full spin-summed total density (used for post-SCF diagnostics).
+ * @param[in]  occ     Optional occupation vector (used for fractional or smearing occupations).
+ *
+ * @note This is the primary interface used in SCF cycles to update all potentials 
+ *       and generate Hψ = H[ρ]ψ.
+ */
+void cElectron_Operators::run(double *psi, double *dn, double *dng, double *dnall, double *occ) 
 {
    ++counter;
    this->gen_psi_r(psi);
    // this->gen_density(dn);
-   this->gen_densities(dn, dng, dnall);
+   this->gen_densities(dn, dng, dnall,occ);
    this->gen_scf_potentials(dn, dng, dnall);
    this->gen_Hpsi_k(psi);
 }
@@ -334,6 +518,17 @@ void cElectron_Operators::run(double *psi, double *dn, double *dng, double *dnal
  *       cElectron_Operators::vl_ave        *
  *                                          *
  ********************************************/
+/**
+ * @brief Computes the average of the local potential over a given density.
+ *
+ * Calculates the expectation value ⟨ρ|V_local⟩ by integrating the
+ * local potential `vl` against a given electron density `dng`.
+ *
+ * @param[in] dng  Gradient-corrected or packed density array.
+ * @return         The average value ⟨ρ|V_local⟩, used for energy diagnostics.
+ *
+ * @note This is typically used in evaluating energy contributions from the local pseudopotential.
+ */
 double cElectron_Operators::vl_ave(double *dng) 
 {
    return mygrid->cc_pack_dot(0, dng, vl);
@@ -345,9 +540,22 @@ double cElectron_Operators::vl_ave(double *dng)
  *      cElectron_Operators::vnl_ave        *
  *                                          *
  ********************************************/
-double cElectron_Operators::vnl_ave(double *psi) 
+/**
+ * @brief Computes the average nonlocal pseudopotential energy.
+ *
+ * Evaluates the expectation value ⟨ψ|V_nonlocal|ψ⟩ using the current wavefunctions `psi`
+ * and (optionally) their occupations `occ`. This term represents the nonlocal contribution
+ * from the pseudopotential, which typically includes angular-momentum projectors.
+ *
+ * @param[in] psi   Pointer to the wavefunction array.
+ * @param[in] occ   (Optional) Pointer to the occupation array; if null, assumes full occupancy.
+ * @return          Nonlocal pseudopotential energy contribution ⟨ψ|V_nonlocal|ψ⟩.
+ *
+ * @note This is evaluated via projectors stored in `CPseudopotential`.
+ */
+double cElectron_Operators::vnl_ave(double *psi, double *occ) 
 {
-   return mypsp->e_nonlocal(psi);
+   return mypsp->e_nonlocal(psi,occ);
 }
 
 /********************************************
@@ -355,14 +563,15 @@ double cElectron_Operators::vnl_ave(double *psi)
  *      cElectron_Operators::eorbit         *
  *                                          *
  ********************************************/
-double cElectron_Operators::eorbit(double *psi) 
+double cElectron_Operators::eorbit(double *psi, double *occ) 
 {
 
    mygrid->ggw_sym_Multiply(psi,Hpsi,hmltmp);
 
 
    // mygrid->m_scal(-1.0,hmltmp);
-   double eorbit0 = mygrid->w_trace(hmltmp);
+   //double eorbit0 = mygrid->w_trace(hmltmp);
+   double eorbit0 = occ ? mygrid->w_trace_occ(hmltmp,occ) : mygrid->w_trace(hmltmp);
    if (ispin==1)
       eorbit0 = eorbit0 + eorbit0;
 
@@ -428,21 +637,25 @@ double cElectron_Operators::pxc(double *dn)
  *        cElectron_Operators::eke          *
  *                                          *
  ********************************************/
-double cElectron_Operators::eke(double *psi) { return myke->ke_ave(psi); }
+double cElectron_Operators::eke(double *psi, double *occ) 
+{
+   return occ ? myke->ke_ave(psi,occ) : myke->ke_ave(psi);
+}
 
 /********************************************
  *                                          *
  *        cElectron_Operators::energy       *
  *                                          *
  ********************************************/
-double cElectron_Operators::energy(double *psi, double *dn, double *dng, double *dnall) 
+double cElectron_Operators::energy(double *psi, double *dn, double *dng, double *dnall, double *occ) 
 {
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
  
    /* total energy calculation */
    mygrid->ggw_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->w_trace(hmltmp);
+   //eorbit0 = mygrid->w_trace(hmltmp);
+   eorbit0 = occ ? mygrid->w_trace_occ(hmltmp,occ) : mygrid->w_trace(hmltmp);
    if (ispin == 1)
       eorbit0 = eorbit0 + eorbit0;
  
@@ -475,14 +688,16 @@ double cElectron_Operators::energy(double *psi, double *dn, double *dng, double 
  *                                          *
  ********************************************/
 void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
-                                          double *dnall, double *E, double *en) 
+                                          double *dnall, double *E, double *en, double *occ) 
 {
    double total_energy, eorbit0, ehartr0, exc0, pxc0;
+   
  
    /* total energy calculation */
    mygrid->ggw_sym_Multiply(psi, Hpsi, hmltmp);
    // mygrid->m_scal(-1.0,hmltmp);
-   eorbit0 = mygrid->w_trace(hmltmp);
+   //eorbit0 = mygrid->w_trace(hmltmp);
+   eorbit0 = occ ? mygrid->w_trace_occ(hmltmp,occ) : mygrid->w_trace(hmltmp);
    if (ispin==1) eorbit0 = eorbit0 + eorbit0;
  
    ehartr0 = mycoulomb->ecoulomb(dng);
@@ -511,9 +726,10 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    E[3] = exc0;
    E[4] = 0.0;
  
-   E[5] = myke->ke_ave(psi);
+   std::cout <<  "?? " << occ << std::endl;
+   E[5] = occ ? myke->ke_ave(psi,occ) :  myke->ke_ave(psi);
    E[6] = this->vl_ave(dng);
-   E[7] = mypsp->e_nonlocal(psi);
+   E[7] = mypsp->e_nonlocal(psi,occ);
    E[8] = 2 * ehartr0;
    E[9] = pxc0;
  
@@ -521,6 +737,8 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    en[1] = en[0];
    if (ispin>1) en[1] = dv*mygrid->r_dsum(dn+nfft3d);
 }
+
+
 
 /********************************************
  *                                          *

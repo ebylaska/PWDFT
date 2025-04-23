@@ -28,8 +28,8 @@ end
 nwpw
   xc pbe96
   cutoff 30.0
-  loop 30 1
-  scf anderson alpha 0.03 kerker 0.18 iterations 3
-  smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1 frozen
+  #scf anderson alpha 0.03 kerker 0.18 iterations 3
+  smear frozen alpha_min 0.05 alpha_max 0.1 
+  #smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1 frozen
 end
-task pspw energy
+task band noit_energy

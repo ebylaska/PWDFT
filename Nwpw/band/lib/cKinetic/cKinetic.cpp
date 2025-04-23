@@ -140,6 +140,49 @@ double cKinetic_Operator::ke_ave(const double *psi)
    return ave;
 }
 
+
+double cKinetic_Operator::ke_ave(const double *psi, const double *occ)
+{
+
+   int nbqsize    = mycneb->nbrillq;
+   int nsize      = mycneb->neq[0] + mycneb->neq[1];
+   int npack1_max = mycneb->npack1_max();
+   int shift1 = 2*npack1_max;
+   int indx1n = 0;
+
+   double ave = 0.0;
+   for (auto nbq=0; nbq<nbqsize; ++nbq)
+   {
+      int npack1     = mycneb->npack(1+nbq);
+      double weight  = mycneb->pbrill_weight(nbq);
+      double *tmp_tg = tg + nbq*npack1_max;
+
+      for (auto n=0; n<nsize; ++n)
+      {
+         const double *tmp_psi = psi + indx1n;
+         int k1 = 0;
+         int k2 = 1;
+         std::cout << "occ=" << n <<  " "  << occ[n] <<  std::endl;
+         for (auto k=0; k<npack1; ++k)
+         {
+            ave += weight*tmp_tg[k]*(tmp_psi[k1]*tmp_psi[k1] + tmp_psi[k2]*tmp_psi[k2])*occ[n+nbq*nsize];
+            k1 += 2;
+            k2 += 2;
+         }
+         indx1n += shift1;
+      }
+   }
+
+   ave = mycneb->c3db::parall->SumAll(0, ave);
+
+   if (mycneb->ispin == 1)
+      ave *= 2.0;
+   ave = -ave;
+
+   return ave;
+}
+
+
 /*******************************************
  *                                         *
  *         cKinetic_Operator::ke_orb       *
@@ -175,8 +218,8 @@ void cKinetic_Operator::ke_orb(const int nbq1, const double *psi, double *tpsi)
 void cKinetic_Operator::ke_precondition(const int nbq1, const double Ep, const int neall, double *psi, double *tpsi) 
 {
    int npack1  = (mycneb->npack(nbq1));
-   int npack2  = 2*npack1;
    int npack1_max = mycneb->npack1_max();
+   int npack2  = 2*npack1_max;
    double *tmp    = new double[npack2];
    double *tg1    = tg + (nbq1-1);
    int k1 = 0;

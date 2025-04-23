@@ -1051,6 +1051,31 @@ void PGrid::t_pack_nzero(const int nb, const int n, double *a)
  *       PGrid:i_pack           *
  *                              *
  ********************************/
+/**
+ * @brief Pack a real-space integer array `a` into a compact, 
+ * load-balanced layout for FFT or matvec operations.
+ *
+ * This function extracts and rearranges a subset of elements from
+ * the input array `a` based on a precomputed index mapping stored 
+ * in `packarray[nb]`. The selected elements are first gathered into 
+ * a temporary buffer (`tmp`) and then packed into the correct positions 
+ * in `a` for subsequent parallel operations.
+ *
+ * If the `balanced` flag is set, the packed array is further permuted 
+ * by `mybalance->i_balance()` to ensure a load-balanced distribution 
+ * across processors or GPUs.
+ *
+ * @param[in]  nb   Index of the packing block (e.g., orbital or FFT slice).
+ * @param[in,out] a Integer array of length `nfft3d` that will be overwritten 
+ *                  with its packed and optionally balanced version.
+ *
+ * @note 
+ *  - Original data in `a` is overwritten.
+ *  - Packing layout is determined by `packarray[nb]` and potentially 
+ *    modified by the balancing map `mybalance`.
+ *  - Used in routines that expect compact, balanced G-vector layouts
+ *    (e.g., 3D FFTs, matrix-vector products, and data exchange).
+ */
 void PGrid::i_pack(const int nb, int *a) 
 {
    int *tmp = new (std::nothrow) int[nfft3d];
@@ -1071,6 +1096,25 @@ void PGrid::i_pack(const int nb, int *a)
  *       PGrid:ii_pack_copy     *
  *                              *
  ********************************/
+/**
+ * @brief Copy a packed segment of integer data from array `a` to array `b`.
+ *
+ * This routine copies `ng = nida[nb] + nidb[nb]` integers from the beginning 
+ * of the packed input array `a` into output array `b`. The packed form is 
+ * typically created by first zero-initializing a full-size array (length `nfft3d`), 
+ * then applying `PGrid::i_pack()` to retain only data relevant to the index block `nb`.
+ *
+ * @param[in]  nb   Index block ID indicating which packed segment to copy.
+ * @param[in]  a    Input array of size `nfft3d`, assumed to have been packed beforehand.
+ * @param[out] b    Output array of size `ng = nida[nb] + nidb[nb]`, receiving packed values.
+ *
+ * @note
+ * - This is a direct memory copy with no additional index mapping or balancing.
+ * - Especially useful for truncating and transferring packed integer index arrays
+ *   after sparse masking or FFT data preparation.
+ * - Enables efficient redistribution of index maps across processor grids or FFT tasks.
+ */
+
 void PGrid::ii_pack_copy(const int nb, int *a, int *b) 
 {
    int ng = nida[nb]+nidb[nb];

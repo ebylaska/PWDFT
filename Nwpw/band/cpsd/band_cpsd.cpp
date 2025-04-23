@@ -170,8 +170,22 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
 
 
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,nbrill,psi2,control.input_movecs_filename());
-   bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),psi2,std::cout);
+   bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),
+                           psi2,&smearoccupation,occ2,std::cout);
    mygrid.gg_copy(psi2,psi1);
+   if (fractional)
+   {
+      smearoccupation = 1;
+      std::vector<double> filling = control.fractional_filling();
+      if (filling.size() > 0)
+      {
+         int sz = filling.size();
+         if (sz > (ne[0]+ne[1])) sz = ne[0]+ne[1];
+         std::memcpy(occ2,filling.data(),sz*sizeof(double));
+      }
+
+      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+   }
    MPI_Barrier(comm_world0);
 
    /* setup structure factor */

@@ -469,10 +469,12 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       if (nextra[ms]>0)
       {
          if (myparall->base_stdio_print) 
-            coutput << " - adding " << nextra[ms] << " to ms=" << ms << " psi" << std::endl;
+            coutput << " - adding " << nextra[ms] << " orbitals to ms=" << ms << " psi" << std::endl;
          int indxa = 2*mypneb->npack(1)*(ne[ms]+ms*mypneb->ne[0]);
          mypneb->g_generate_extra_random(nextra[ms],psi2+indxa);
 
+         // project out filled psi
+         mypneb->g_project_out_filled_extra(ms,nextra,psi2);
       }
    }
 

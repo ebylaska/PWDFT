@@ -51,11 +51,30 @@ E[5] =
 E[6] =
 */
 
+
+//
+// Solid.hpp
+//
+// The `Solid` class defines the quantum system in a plane-wave DFT simulation.
+// It is the central data wall in the Walls and Mirrors design: it owns the evolving
+// state of the system (wavefunctions, densities, eigenvalues, occupations, Hamiltonians)
+// and supports iterative updates via SCF and orbital optimization.
+//
+// All physical transformations of the system (e.g., diagonalization, density generation,
+// steepest descent, Hamiltonian updates) occur through this class. It mirrors ψ, ρ, and
+// occupation vectors across SCF iterations and calls into operator walls like
+// `cElectron_Operators` to perform Hamiltonian applications and energy calculations.
+//
+// This class should remain the single source of truth for the system state.
+//
+
+
 class Solid {
 
   double omega, scal2, scal1, dv;
 
-  int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, nfft3d, shift1, shift2;
+  int ispin, ne[2], neall, nbrillq, nbrillouin, n2ft3d, nfft3d, shift1, shift2, mshift;
+  int nextra[2]     = {0,0};
   int ne_excited[2] = {0,0};
   int nfft[3];
   int version = 5;
@@ -67,13 +86,58 @@ public:
    Ewald *myewald;
    cElectron_Operators *myelectron;
    CPseudopotential *mypsp;
- 
-   double *psi1,*rho1,*rho1_all,*dng1;
-   double *psi2,*rho2,*rho2_all,*dng2;
-   double *lmbda,*hml,*eig;
 
-   double *psi1_excited,*psi2_excited;
-   double *hml_excited,*eig_excited;
+ 
+   // --- Primary quantum state (mirrored between ψ1 and ψ2) ---
+   double *psi1,*rho1,*rho1_all,*dng1; // Current orbitals, densities, and fftd densities
+   double *psi2,*rho2,*rho2_all,*dng2;
+
+   // --- Hamiltonian matrix and eigenvalues (mirrored with ψ) ---
+   // hml  stores the matrix ⟨ψ1|H|ψ1⟩ before diagonalization.
+   // In rotate1to2(), it is used to rotate orbitals via:
+   //     ψ₂ = hml† ψ₁   (if hml holds eigenvector matrix, V)
+   //
+   // Note: hml may be overwritten post-diagonalization.
+   //       Use hml as a temporary workspace unless separate storage is required.
+   double *hml  = nullptr;  // ⟨ψ1|H|ψ1⟩
+   double *eig  = nullptr;  // KS eigenvalues of ψ1
+
+   double *hml2 = nullptr;  // ⟨ψ2|H|ψ2⟩ if ψ2 is used in SD or CG updates
+   double *eig2 = nullptr;  // KS eigenvalues of ψ2
+
+
+   // --- Occupation vectors (mirrored for fractional SCF) ---
+   double *eig_prev = nullptr;
+   double *occ1 = nullptr;
+   double *occ2 = nullptr;
+
+   // --- Constraint and transformation matrices (not mirrored) ---
+   double *lmbda = nullptr;  // Lagrange multipliers: enforces ⟨ψ|ψ⟩ = I during SD/CG updates
+   double *rotmat = nullptr; // Rotation matrix (unitary): diagonalizes hml to rotate ψ1 → ψ2
+
+   // --- Excited (virtual) orbitals generated post-SCF (not used in minimization) ---
+   // psi1_excited holds virtual (unoccupied) orbitals generated post-SCF.
+   // These are used for diagnostics, spectroscopy, and excited-state analyses.
+   // psi2_excited is not currently used — excited states are not evolved or minimized.
+   // If excited-state optimization (e.g., TDDFT or constrained DFT) is implemented,
+   // psi2_excited can be added as a mirror of psi1_excited.
+   double *psi1_excited = nullptr;
+   double *psi2_excited = nullptr;  // Unused for now — reserved for future capability
+
+   double *hml_excited = nullptr;   // ⟨ψ_virtual|H|ψ_virtual⟩
+   double *eig_excited = nullptr;   // KS eigenvalues for virtual orbitals
+
+   int multiplicity;
+   double total_charge;
+
+   // psi smearing block
+   bool fractional=false;
+   bool fractional_frozen=false;
+   int smearoccupation, smeartype;
+   double smearfermi[2], smearcorrection, smearkT;
+   double fractional_alpha, fractional_alpha_min, fractional_alpha_max, fractional_beta, fractional_gamma, fractional_rmsd_threshold;
+   int fractional_it=0;
+   bool occupation_update = false;;
  
    double E[80],en[2],ep,sp,tole;
  
@@ -84,26 +148,30 @@ public:
  
    /* destructor */
    ~Solid() {
-      delete[] psi1;
-      delete[] rho1;
-      delete[] rho1_all;
-      delete[] dng1;
+      if (psi1)     delete[] psi1;
+      if (rho1)     delete[] rho1;
+      if (rho1_all) delete[] rho1_all;
+      if (dng1)     delete[] dng1;
      
-      delete[] psi2;
-      delete[] rho2;
-      delete[] rho2_all;
-      delete[] dng2;
+      if (psi2)     delete[] psi2;
+      if (rho2)     delete[] rho2;
+      if (rho2_all) delete[] rho2_all;
+      if (dng2)     delete[] dng2;
      
-      delete[] lmbda;
-      delete[] hml;
-      delete[] eig;
+      if (hml)      delete[] hml;
+      if (eig)      delete[] eig;
+      if (eig_prev) delete[] eig_prev;
+      //delete[] hml2;
+      //delete[] eig2;
+
+      if (lmbda)    delete[] lmbda;
    }
 
 
    void ecpsi_initialize(char *,bool, const int *, std::ostream &);
    void ecpsi_finalize(char *, std::ostream &);
    void ecpsi_minimize(double *, std::ostream &);
-   void ecpsi_get_gradient(const int, double *, double *, double *);
+   void compute_Horb_for_cg(const int, double *, double *, double *);
    double ecpsi_KS_update_virtual(const int, const int, const int, const int, const double, const double, double *, double *, double *, double *, double *,  std::ostream &);
 
    void ecpsi_linesearch_update(const int, double, double, double *, double *, double *, double *);
@@ -112,12 +180,25 @@ public:
  
    /* write psi solid */
    void writecpsi(char *output_filename, std::ostream &coutput) {
-      cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1,output_filename,coutput);
+      //cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1,output_filename,coutput);
+      cpsi_write(mygrid, &version, nfft, mygrid->lattice->unita_ptr(),
+                 &ispin, ne, &nbrillouin, psi1, &smearoccupation, occ1,
+                 output_filename, coutput);
    }
 
    void writecpsi_excited(char *output_filename, std::ostream &coutput) {
       cpsi_write(mygrid,&version,nfft,mygrid->lattice->unita_ptr(),&ispin,ne,&nbrillouin,psi1_excited,output_filename,coutput);
    }
+
+   double cpsi_KS_update(const int, const double, const double , double *, const int, const int *, const int,
+                         double *,  double *, std::ostream &);
+
+   double cpsi_KS_update_orb(const int, const int, const int, const int, const double,
+                             const double, double *, double *, double *, double *, std::ostream &);
+
+   void cpsi_linesearch_update(const int, double, double, double *, double *, double *, double *);
+
+   void replace_excited_psi1(Control2 &, std::ostream &);
 
  
    /* solid energy */
@@ -149,8 +230,9 @@ public:
    /* solid energy and eigenvalues and other energies and en */
    double gen_all_energies() 
    {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
-      myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en);
+      myelectron->run(psi1, rho1, dng1, rho1_all,occ1);
+      std::cout << "HERA" << std::endl;
+      myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en,occ1);
       
       /*  ion-ion energy */
       E[4] = myewald->energy();
@@ -172,6 +254,94 @@ public:
       //mygrid->m_diagonalize(hml, eig);
       mygrid->w_diagonalize(hml, eig);
       
+      if ((fractional) && (!fractional_frozen))
+      {
+         //std::cout << "Define occupations, eig=" << eig[0] << " " << eig[1] << " " << eig[2] << " " << eig[3] << " " 
+         //                                        << eig[4] << " " << eig[5] << " " << eig[6] << " " << eig[7] << std::endl;
+         //std::cout << "Define occupations, fractional_it=" << fractional_it << std::endl;
+         if (fractional_it == 0)  // Initialize eig_prev for the first iteration
+            std::memcpy(eig_prev,eig,nbrillq*(ne[0]+ne[1])*sizeof(double));
+         else             // Smooth eigenvalues in subsequent iterations
+            for (size_t i=0; i<nbrillq*(ne[0]+ne[1]); ++i)
+               eig_prev[i] = (1.0-fractional_gamma)*eig_prev[i] + fractional_gamma*eig[i];
+
+
+         if ((fractional_it>0) && (smeartype>=0) && (occupation_update))
+         {
+            // Define occupations based on smoothed eigenvalues
+            double smearcorrection_old = smearcorrection;
+            mygrid->m_0define_occupation(-1.0, false,
+                                      multiplicity,
+                                      myion->total_zv(),total_charge,
+                                      eig_prev,hml,occ2,
+                                      smeartype,smearkT,smearfermi,&smearcorrection);
+
+            // RMSD occupation computation
+            double rmsd_occupation = 0.0;
+            for (size_t i=0; i<nbrillq*(ne[0]+ne[1]); ++i)
+            {
+                double delta_occ = occ2[i] - occ1[i];
+                rmsd_occupation += delta_occ * delta_occ;
+            }
+            rmsd_occupation = std::sqrt(rmsd_occupation / nbrillq*(ne[0]+ne[1]));
+
+            // Adaptive alpha adjustment
+            if (rmsd_occupation < fractional_rmsd_threshold)  // Converging well
+               fractional_alpha = std::min(fractional_alpha_max, fractional_alpha * (1.0 + fractional_beta));
+            else  // Oscillations or divergence
+               fractional_alpha = std::max(fractional_alpha_min, fractional_alpha * (1.0 - fractional_beta));
+
+
+
+
+            // Update occupations
+            for (auto i=0; i<nbrillq*(ne[0]+ne[1]); ++i)
+               occ1[i] = (1.0-fractional_alpha)*occ1[i] + fractional_alpha*occ2[i];
+            //std::memcpy(occ2,occ1,(ne[0]+ne[1])*sizeof(double));
+
+            // Debugging output (optional)
+           /*  std::cout << " Iteration: " << fractional_it
+                      << ", RMSD: " << rmsd_occupation
+                      << ", Alpha: " << fractional_alpha
+                      << ", Smear Correction: " << smearcorrection
+                      << ", Delta Smear Correction: " << smearcorrection - smearcorrection_old << std::endl;;
+           */
+
+
+         }
+         else
+         {
+            smearfermi[0] = 0.0;
+            smearfermi[1] = 0.0;
+            smearcorrection = 0.0;
+            for (auto nbq=0; nbq<nbrillq; ++nbq)
+            {
+               int ishift = nbq*(ne[0]+ne[1]);
+               double *eigk  = eig + ishift;
+               double *occ1k = occ1 + ishift;
+
+               smearfermi[0]   +=  mygrid->define_smearfermi(ne[0],eigk,occ1k);
+               smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[0],eigk,occ1k,smearfermi[0],smearkT);
+               if (ispin==1)
+               {
+                  smearcorrection *= 2.0;
+               }
+               else
+               {
+                  smearfermi[1]    +=  mygrid->define_smearfermi(ne[1],eigk+ne[0],occ1k+ne[0]);
+                  smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[1],eigk+ne[0],occ1k+ne[0],smearfermi[0],smearkT);
+               }
+            }
+
+         }
+         E[28] = smearcorrection;
+         //E[0]  +=  E[28];
+         fractional_it++;
+      }
+
+
+
+
       /* generate dipole */
       //mypsp->mydipole->gen_dipole(rho1);
       
@@ -199,9 +369,32 @@ public:
    void gen_vall() { myelectron->gen_vall(); }
    void get_vall(double *vall_out) { myelectron->get_vall(vall_out); }
    void set_vall(const double *vall_in) { myelectron->set_vall(vall_in); }
+   void gen_rho1() { myelectron->genrho(psi1,rho1,occ1); }
+   void gen_densities1() { myelectron->gen_psi_r(psi1);
+                           myelectron->gen_densities(rho1,dng1,rho1_all,occ1); }
+   void gen_scf_potentials_from_rho11() { myelectron->scf_update_from_dn(rho1,dng1,rho1_all);}
+
  
    /* solid - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->w_diagonalize(hml, eig); }
+   void rotate1to2() 
+   { 
+      int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
+      int mshift0 = 2*(mygrid->ne[0]*mygrid->ne[0] + mygrid->ne[1]*mygrid->ne[1]);
+      double rone[2]  = {1.0,0.0};
+      double rzero[2] = {0.0,0.0};
+      for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
+      {
+         double *psi1k = psi1 + nbq*nshift0;
+         double *psi2k = psi2 + nbq*nshift0;
+         double *hmlk = hml   + nbq*mshift0;
+         mygrid->fwf_Multiply(-1,psi1k,hmlk,rone,psi2k,rzero);
+      }
+   }
+
+
+
+
  
    /* solid - call phafacs and gen_vl_potential and semicore */
    void phafacs_vl_potential_semicore() {
@@ -347,10 +540,110 @@ public:
    }
 
 
+   std::string print_filled(const bool oprint) 
+   {
+      std::stringstream stream;
+ 
+      std::ios init(NULL);
+      init.copyfmt(stream);
+      std::string eoln = "\n";
+
+      for (auto nb=0; nb<nbrillouin; ++nb)
+      {
+         int nbq = mygrid->ktoindex(nb);
+         int pk = mygrid->ktop(nb);
+
+         int n = ne[0] + ne[1];
+         double tmpeig[n];
+         double tmpocc[n];
+         std::memset(tmpeig,0,n*sizeof(double));
+         std::memset(tmpocc,0,n*sizeof(double));
+         if (pk==mygrid->c3db::parall->taskid_k())
+         {
+            std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
+            if (occ1) std::memcpy(tmpocc,occ1+nbq*n,n*sizeof(double));
+         }
+         //mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
+         //mygrid->c3db::parall->Vector_SumAll(3,n,tmpocc);
+         //std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
+
+         if (oprint)
+         {
+            stream << eoln;
+            stream << eoln;
+            stream << mygrid->mybrillouin->print_zone_point(nb);
+            stream << eoln;
+            stream << " orbital energies:" << eoln;
+         }
+         int nn = ne[0] - ne[1];
+         double ev = 27.2116;
+
+         //for (int i=0; i<nn; ++i)
+         //   os << eig1stream(tmpeig[mysolid.ne[0]-1-i], tmpeig[mysolid.ne[0]-1-i] * ev);
+
+         if (oprint)
+         {
+            for (int i=0; i<nn; ++i)
+            {
+               //os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
+               if (fractional)
+               {
+                  if ((tmpocc[i] < 1.e-3) && (tmpocc[i]>1.0e-12))
+                     stream << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                        << Efmt(9,3) << tmpocc[i] << std::endl;
+                  else
+                     stream << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                        << Ffmt(5,3) << tmpocc[i] << std::endl;
+               }
+               else
+                  stream << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV)" << std::endl;
+            }
+            for (int i=0; i<ne[1]; ++i)
+            {
+                if (fractional)
+                {
+                   if ((tmpocc[i+nn] < 1.e-3) && (tmpocc[i+nn]>1.0e-12))
+                      stream << Efmt(18,7) << eig[i+nn]    << " ("
+                         << Ffmt(8,3)  << eig[i+nn]*ev << "eV)  occ="
+                         << Efmt(9,3)  << occ1[i+nn]   << " ";
+                   else
+                      stream << Efmt(18,7) << eig[i+nn]    << " ("
+                         << Ffmt(8,3)  << eig[i+nn]*ev << "eV)  occ="
+                         << Ffmt(5,3)  << occ1[i+nn]   << " "
+                         << Efmt(18,7) << eig[i+(ispin-1)*ne[0]]    << " ("
+                         << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                         << Ffmt(5,3)  << occ1[i+(ispin-1)*ne[0]] << std::endl;
+      
+                   if ((tmpocc[i+(ispin-1)*ne[0]] < 1.e-3) && (tmpocc[i+(ispin-1)*ne[0]]>1.0e-12))
+                      stream << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                         << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                         << Efmt(9,3)  << tmpocc[i + (ispin-1)*ne[0]] << std::endl;
+                   else
+                      stream << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                         << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                         << Ffmt(5,3)  << tmpocc[i + (ispin-1)*ne[0]] << std::endl;
+                }
+                else
+                   stream << Efmt(18,7) << tmpeig[i+nn] << " ("
+                      << Ffmt(8,3)  << tmpeig[i + nn] * ev << "eV) "
+                      << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]] << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
+      
+            }
+            stream << eoln;
+         }
+
+      }
+      return stream.str();
+
+   }
+
+
  
 
  
-   friend std::ostream &operator<<(std::ostream &os, const Solid &mysolid) {
+   friend std::ostream &operator<<(std::ostream &os, const Solid &mysolid) 
+   {
       /* using old style c++ formatting */
       std::ios init(NULL);
       init.copyfmt(os);
@@ -378,12 +671,10 @@ public:
       os << elcstream(" V_Coul  (planewave) : ", mysolid.E[8],mysolid.E[8]/mysolid.neall);
       os << elcstream(" V_xc    (planewave) : ", mysolid.E[9],mysolid.E[9]/mysolid.neall);
 
-
       //if (mysolid.myelectron->is_v_apc_on())
       //   os << ionstream(" K.S. V_APC energy   : ",mysolid.E[52],mysolid.E[52]/mysolid.myion->nion);
-     
       os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
-         << (mysolid.E[9]+mysolid.E[8]+mysolid.E[7]+mysolid.E[6])/mysolid.E[5];
+         << (mysolid.E[9]+mysolid.E[8]+mysolid.E[7]+mysolid.E[6])/mysolid.E[5] << std::endl;
 
       if (mysolid.myion->has_ion_constraints())
       {
@@ -395,6 +686,8 @@ public:
             os << " spring bondings     : " << Efmt(19,10) << mysolid.E[71] << " ("
                                             << Efmt(15,5)  << mysolid.E[71]/mysolid.myion->nion << " /ion)" << std::endl;
       }
+
+      /*
       for (auto nb=0; nb<mysolid.nbrillouin; ++nb)
       {
          int nbq = mysolid.mygrid->ktoindex(nb);
@@ -402,10 +695,16 @@ public:
        
          int n = mysolid.ne[0] + mysolid.ne[1];
          double tmpeig[n];
+         double tmpocc[n];
          std::memset(tmpeig,0,n*sizeof(double));
+         std::memset(tmpocc,0,n*sizeof(double));
          if (pk==mysolid.mygrid->c3db::parall->taskid_k())
+         {
             std::memcpy(tmpeig,mysolid.eig+nbq*n,n*sizeof(double));
-         mysolid.mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
+            if ( mysolid.occ1) std::memcpy(tmpocc,mysolid.occ1+nbq*n,n*sizeof(double));
+         }
+         //mysolid.mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
+         //mysolid.mygrid->c3db::parall->Vector_SumAll(3,n,tmpocc);
          //std::memcpy(tmpeig,mysolid.eig+nbq*n,n*sizeof(double));
 
          os << eoln;
@@ -415,15 +714,66 @@ public:
          os << " orbital energies:" << eoln;
          int nn = mysolid.ne[0] - mysolid.ne[1];
          double ev = 27.2116;
+
+         //for (int i=0; i<nn; ++i)
+         //   os << eig1stream(tmpeig[mysolid.ne[0]-1-i], tmpeig[mysolid.ne[0]-1-i] * ev);
+
          for (int i=0; i<nn; ++i)
-            os << eig1stream(tmpeig[mysolid.ne[0]-1-i], tmpeig[mysolid.ne[0]-1-i] * ev);
+         {
+            //os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
+            if (mysolid.fractional)
+            {
+               if ((tmpocc[i] < 1.e-3) && (tmpocc[i]>1.0e-12))
+                  os << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                     << Efmt(9,3) << tmpocc[i] << std::endl;
+               else
+                  os << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                     << Ffmt(5,3) << tmpocc[i] << std::endl;
+            }
+            else
+               os << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV)" << std::endl;
+         }
          for (int i=0; i<mysolid.ne[1]; ++i)
-            os << eig2stream(tmpeig[i+nn], 
-                             tmpeig[i+nn]*ev,
-                             tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]],
-                             tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev);
+         {
+             if (mysolid.fractional)
+             {
+                if ((tmpocc[i+nn] < 1.e-3) && (tmpocc[i+nn]>1.0e-12))
+                   os << Efmt(18,7) << mysolid.eig[i+nn]    << " ("
+                      << Ffmt(8,3)  << mysolid.eig[i+nn]*ev << "eV)  occ="
+                      << Efmt(9,3)  << mysolid.occ1[i+nn]   << " ";
+                else
+                   os << Efmt(18,7) << mysolid.eig[i+nn]    << " ("
+                      << Ffmt(8,3)  << mysolid.eig[i+nn]*ev << "eV)  occ="
+                      << Ffmt(5,3)  << mysolid.occ1[i+nn]   << " "
+                      << Efmt(18,7) << mysolid.eig[i+(mysolid.ispin-1)*mysolid.ne[0]]    << " ("
+                      << Ffmt(8,3)  << mysolid.eig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev << "eV) occ="
+                      << Ffmt(5,3)  << mysolid.occ1[i+(mysolid.ispin-1)*mysolid.ne[0]] << std::endl;
+      
+                if ((tmpocc[i+(mysolid.ispin-1)*mysolid.ne[0]] < 1.e-3) && (tmpocc[i+(mysolid.ispin-1)*mysolid.ne[0]]>1.0e-12))
+                   os << Efmt(18,7) << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev << "eV) occ="
+                      << Efmt(9,3)  << tmpocc[i + (mysolid.ispin-1)*mysolid.ne[0]] << std::endl;
+                else
+                   os << Efmt(18,7) << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev << "eV) occ="
+                      << Ffmt(5,3)  << tmpocc[i + (mysolid.ispin-1)*mysolid.ne[0]] << std::endl;
+             }
+             else
+                os << Efmt(18,7) << tmpeig[i+nn] << " ("
+                   << Ffmt(8,3)  << tmpeig[i + nn] * ev << "eV) "
+                   << Efmt(18,7) << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]] << " ("
+                   << Ffmt(8,3)  << tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev << "eV)" << std::endl;
+      
+         }
          os << eoln;
+
+      //      os << eig2stream(tmpeig[i+nn], 
+      //                       tmpeig[i+nn]*ev,
+      //                       tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]],
+      //                       tmpeig[i+(mysolid.ispin-1)*mysolid.ne[0]]*ev);
+      //   os << eoln;
       }
+    */
      
       // write dipoles
       //os << mysolid.mypsp->mydipole->shortprint_dipole();

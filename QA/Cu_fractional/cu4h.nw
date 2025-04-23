@@ -29,8 +29,8 @@ nwpw
   xc pbe96
   cutoff 30.0
   loop 10 200
-  scf anderson alpha 0.050 kerker 0.08 iterations 3
-  vectors output jjj.elc
+  #scf anderson alpha 0.050 kerker 0.08 iterations 3
+  #vectors output jjj.elc
 
   steepest_descent
      time_step 5.8

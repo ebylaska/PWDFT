@@ -129,7 +129,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
      //       else
      //         newpsi = .false.
 
-     mygrid->r_dealloc(vall);
+     mygrid->c_dealloc(vall);
 
 
    }

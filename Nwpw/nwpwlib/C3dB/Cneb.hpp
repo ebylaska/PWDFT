@@ -88,12 +88,21 @@ public:
    void g_generate1_random(double *);
    void g_generate2_random(double *);
    void g_generate_excited_random(const int *, double *);
+   void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
    void g_read_excited(const int, const int *, const int,  double *);
    void g_read_ne(const int, const int *, const int, double *);
+   void g_read_ne_reverse(const int, const int *, const int, double *);
    void g_write(const int, double *);
    void g_write_excited(const int, const int *, const int, double *);
+
+   void g_read_occ(const int, double *);
+   void g_write_occ(const int, double *);
+   //void g_write_occ_old(const int, double *);
+
+   void r_read_occ(const int, double *, const int, const int);
+   void r_write_occ(const int, double *, const int, const int);
 
    void h_read(const int, const int, double *);
    void h_write(const int, const int, const double *);
@@ -254,6 +263,7 @@ public:
    void gg_copy(double *, double *);
    void g_zero(double *);
    void hr_aSumSqr(const double, double *, double *);
+   void hr_aSumSqr_occ(const double, double *, double *, double *);
    void hhr_aSumMul(const double, const double *, const double *, double *);
  
    void ffw_sym_Multiply(const int, double *, double *, double *);
@@ -284,6 +294,7 @@ public:
    void m_scal(const double, double *);
    void w_scal(const double, double *);
    double w_trace(double *);
+   double w_trace_occ(double *,double *);
    void w_diagonalize(double *, double *);
    void m_diagonalize(double *, double *);
    void mmm_Multiply(const int, double *, double *, double, double *, double);
@@ -305,6 +316,10 @@ public:
    void g_ortho_excited(const int, double *, const int *, double *);
    void g_project_out_filled(const int, double *, const int, double *);
    void g_project_out_virtual(const int, const int, const int *, const int,  double *,  double *);
+   void g_project_out_filled_below(const int, double *, const int, const int, double *);
+   void g_project_out_filled_above(const int, double *, const int, const int, double *);
+   void g_project_out_filled_from_k_up(const int, double *, const int, const int, double *);
+   void g_project_out_filled_extra(const int, const int *, double *);
 
    void g_norm(const int, double *);
  
@@ -316,6 +331,14 @@ public:
    void ggg_Minus(double *, double *, double *);
  
    void gg_daxpy(double, double *, double *);
+
+   void m_0define_occupation(const double, const bool, const int,
+                          const double, const double, double *, double *, double *,
+                          const int, const double, double *, double *);
+
+   double define_smearfermi(const int, const double *, const double *);
+   double add_smearcorrection(const int, const int, const double *, const double *, const double, const double);
+
    };
 } // namespace pwdft
 

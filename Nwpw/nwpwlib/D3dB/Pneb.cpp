@@ -3579,6 +3579,76 @@ void Pneb::g_ortho_excited(const int mb, double *psi, const int nex[], double *p
    // project out virtual space
 }
 
+/***********************************************
+ *                                             *
+ *     Pneb::g_project_out_filled_extra        *
+ *                                             *
+ ***********************************************
+ * @brief Orthogonalizes extra orbitals to the filled (occupied) orbitals.
+ *
+ * This function is used in fractional occupation or smearing scenarios where
+ * additional orbitals (`nex[ms]`) are appended to the end of the filled
+ * orbital list (`ne[ms]`). These extra orbitals are needed to accommodate
+ * partial occupations or temperature-dependent population effects.
+ *
+ * The function projects out the component of each extra orbital along all
+ * filled orbitals below it, ensuring strict orthogonality without modifying
+ * the converged filled states. This is safer than full Gram-Schmidt
+ * orthogonalization of the entire orbital set, which may alter previously
+ * converged orbitals unintentionally.
+ *
+ * Typical use cases include:
+ *   - Initializing fractional occupation runs from converged integer orbitals
+ *   - Preserving orthogonality in no-iteration ("noit_energy") tasks
+ *   - Warm-starting excited state calculations or perturbative updates
+ *
+ * @param mb    Spin index to operate on:
+ *              -1 = all spin channels
+ *               0 = spin-up only
+ *               1 = spin-down only
+ *
+ * @param nex   Array of number of excited (extra) orbitals per spin
+ * @param psi   Pointer to full wavefunction storage (packed)
+ *
+ * Notes:
+ *   - Assumes orbitals are stored in contiguous packed format (as expected by `PGrid::npack` layout).
+ *   - Uses `g_project_out_filled_below` to perform individual projection steps.
+ *   - Only modifies the extra orbitals (the last `nex[ms]`), leaving filled orbitals untouched.
+ */
+
+void Pneb::g_project_out_filled_extra(const int mb, const int nex[], double *psi)
+{
+   int ms1, ms2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      double *psi_filled =  psi + ms*(ne[0])*2*PGrid::npack(1);
+      //double *psi_excited = psi_filled + (ne[ms]-nex[ms])*2*PGrid::npack(1);
+
+      int ishift = 2*PGrid::npack(1);
+      for (auto k=(ne[ms]-nex[ms]); k<ne[ms]; ++k)
+      {
+         double *psi_k = psi_filled + k*ishift;
+         g_project_out_filled_below(psi_filled,ms,k,psi_k);
+         //g_project_out_filled_below(psi_filled,ms,k,psi_excited+shift);
+         //++shift;
+         double norm = PGrid::cc_pack_dot(1, psi_k, psi_k);
+         double scale = 1.0 / std::sqrt(norm);
+         PGrid::c_pack_SMul(1, scale, psi_k);
+      }
+   }
+
+}
+
 /********************************
  *                              *
  *  Pneb::g_project_out_filled  *

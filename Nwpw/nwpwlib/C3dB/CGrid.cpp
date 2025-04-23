@@ -943,6 +943,52 @@ void CGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
 
 /********************************
  *                              *
+ *   CGrid:n2ccttt_pack_i3ndot  *
+ *                              *
+ ********************************/
+void CGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
+                                const double *psi,
+                                const double *prj,
+                                double *Gx, double *Gy, double *Gz,
+                                double *sum3)
+{
+   double *xtmp1 = c3db::c3db_tmp1;
+
+   int one = 1;
+   int ng = (nidb[nb]);
+   int nshift = 2*ng;
+   int count3 = 0;
+   for (auto l=0; l<nprj; ++l)
+   for (auto n=0; n<nn; ++n)
+   {
+      //cct_pack_iconjgMul(1, prj+l*ng, psi + n*ng, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l]     = tt_pack_idot(1,Gx, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 1] = tt_pack_idot(1,Gy, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 2] = tt_pack_idot(1,Gz, xtmp1);
+
+      // Perform cct_pack_iconjgMul
+      const double *a = prj + l*nshift;
+      const double *b = psi + n*nshift;
+      for (int i=0; i<ng; ++i)
+         xtmp1[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
+
+      double tsumx = 1.0*DDOT_PWDFT(ng,Gx,one,xtmp1,one);
+      double tsumy = 1.0*DDOT_PWDFT(ng,Gy,one,xtmp1,one);
+      double tsumz = 1.0*DDOT_PWDFT(ng,Gz,one,xtmp1,one);
+
+      sum3[count3]   = tsumx;
+      sum3[count3+1] = tsumy;
+      sum3[count3+2] = tsumz;
+      count3 += 3;
+   }
+
+   c3db::parall->Vector_SumAll(1,3*nn*nprj,sum3);
+}
+
+
+
+/********************************
+ *                              *
  *       CGrid:r_unpack         *
  *                              *
  ********************************/

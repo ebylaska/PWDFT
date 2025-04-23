@@ -285,6 +285,7 @@ public:
 
    void g_ortho_excited(const int, double *, const int *, double *);
    void g_project_out_filled(double *, const int, double *);
+   void g_project_out_filled_extra(const int, const int *, double *);
    void g_project_out_virtual(const int, const int *, const int, double *,  double *);
    void g_project_out_filled_below(double *, const int, const int, double *);
    void g_project_out_filled_above(double *, const int, const int, double *);

@@ -30,7 +30,7 @@ namespace pwdft {
 
 void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
             double *psi, double *psi_r, double *vl, double *vc, double *xcp,
-            double *Hpsi, bool move, double *fion)
+            double *Hpsi, bool move, double *fion, double *occ)
 
 {
    int indx1 = 0;
@@ -62,7 +62,8 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    myke->ke(psi, Hpsi);
 
    /* apply non-local PSP  - Expensive */
-   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
+   //mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
+   mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
 
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0,scal2,vl,vall);
@@ -142,9 +143,9 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    */
 
    /* deallocate temporary memory */
-   mygrid->r_dealloc(tmp);
-   mygrid->r_dealloc(vpsi);
-   mygrid->r_dealloc(vall);
+   mygrid->c_dealloc(tmp);
+   mygrid->c_dealloc(vpsi);
+   mygrid->c_dealloc(vall);
 }
 
 /*************************************
@@ -153,8 +154,30 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
  *                                   *
  *************************************/
 /**
- * @brief Computes the Hamiltonian action on an orbital in k-space and r-space.
+ * @brief Applies the Hamiltonian operator H to a wavefunction orbital.
  *
+ * Computes the action of the Hamiltonian on a given orbital by combining:
+ *   - Kinetic energy in reciprocal space
+ *   - Non-local pseudopotential (NLPP) in reciprocal space
+ *   - Local potential in real space (FFT-transformed and accumulated)
+ *
+ * The orbital (`orb`) and result (`Horb`) are in packed reciprocal-space
+ * format and should be allocated using `mygrid->c_pack_allocate(nbq1)`.
+ * The real-space buffers (`orb_r`, `vall_r`, `vpsi`) are full complex
+ * grids allocated with `mygrid->c_alloc()` and must be of size `2 * nfft3d`.
+ *
+ * @param[in]  nbq1     Brillouin zone point index
+ * @param[in]  mygrid   Grid manager (FFT, memory, packing)
+ * @param[in]  myke     Kinetic energy operator
+ * @param[in]  mypsp    Pseudopotential operator (NLPP handler)
+ * @param[in]  orb      Input orbital (complex, packed reciprocal space)
+ * @param[in]  orb_r    Orbital transformed to real space (complex grid)
+ * @param[in]  vall_r   Local potential in real space (complex grid)
+ * @param[in,out] Horb  Output: H * orb (packed format, overwritten)
+ *
+ * @note `orb` and `Horb` must be allocated via `c_pack_allocate(nbq1)`.
+ * @note `orb_r`, `vall_r`, and `vpsi` must be allocated via `c_alloc()`
+ *       and have size `2 * nfft3d`.
  */
 void cpsi_H_orb(const int nbq1, 
                 Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
