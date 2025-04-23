@@ -1,0 +1,37 @@
+Method,Brief Description
+energy,Run SCF and compute total energy including Ewald.
+psi2_energy,Compute total energy using psi2.
+energy_eigenvalues,Compute SCF energy and generate eigenvalues.
+gen_all_energies,"Compute SCF energy, eigenvalues, ion constraint energies."
+eorbit,Return orbital energy of psi1.
+psi2_eorbit,Return orbital energy of psi2.
+ehartree,Return Hartree energy.
+exc,Return exchange-correlation energy.
+pxc,Return XC potential energy.
+eke,Return kinetic energy.
+vl_ave,Return ⟨ρ|V_local⟩.
+vnl_ave,Return ⟨ψ|Vnl|ψ⟩.
+eion,Return Ewald energy.
+gen_hml,Generate ⟨ψ|H|ψ⟩ matrix.
+gen_vall,Generate total potential vall.
+get_vall,Copy vall to output.
+set_vall,Set vall from input.
+gen_rho1,Generate rho1 from psi1.
+gen_densities1,"Generate rho1, dng1, rho1_all from psi1."
+gen_scf_potentials_from_rho11,Generate potentials from rho1.
+diagonalize,Diagonalize ⟨ψ|H|ψ⟩ to get eigenvalues.
+rotate1to2,Rotate psi1 using ⟨ψ|H|ψ⟩ into psi2.
+phafacs_vl_potential_semicore,"Set phafacs, local potential, semicore update."
+sd_update,Apply steepest descent update and Lagrange multiplier.
+sd_update_sic,SD update variant without SIC Lagrange.
+psi_1get_Tgradient,Run SCF and return T gradient from hml.
+psi_1get_TSgradient,Run SCF and return T gradient from hmlt.
+swap_psi1_psi2,Swap wavefunction pointers psi1 and psi2.
+rho_error,Compute squared difference between rho1 and rho2.
+eig_vector,Return eigenvalue vector.
+psi_1local_force,Local force from dng1.
+psi_1nonlocal_force,Nonlocal force from psi1.
+semicore_force,Semicore force.
+ewald_fion,Compute Ewald forces.
+ion_fion,Add constraint forces and Ewald if periodic.
+print_virtual,Return formatted string of virtual eigenstates.
