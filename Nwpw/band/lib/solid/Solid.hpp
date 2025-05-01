@@ -229,6 +229,12 @@ public:
       E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
       return E[0];
    }
+
+   double psi2_energy0() {
+      myelectron->run0(psi2);
+      E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
+      return E[0];
+   }
  
    /* solid energy and eigenvalues */
    double energy_eigenvalues() {
@@ -247,7 +253,6 @@ public:
    double gen_all_energies() 
    {
       myelectron->run(psi1, rho1, dng1, rho1_all,occ1);
-      std::cout << "HERA" << std::endl;
       myelectron->gen_energies_en(psi1, rho1, dng1, rho1_all, E, en,occ1);
       
       /*  ion-ion energy */

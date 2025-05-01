@@ -3530,7 +3530,14 @@ void Cneb::ggw_lambda_sic(double dte, double *psi1, double *psi2,
  ********************************/
 /*
    Performs a Gram-Schmidt orthogonalization on psi
+
+   g_ortho: Performs a full Gram-Schmidt orthogonalization sweep on the input psi array.
+   - Orthogonalizes all spins, all k-points, all orbitals.
+   - Normalizes each orbital individually.
+   - Supports both serial and parallel (over np_j) orthogonalization.
+   - psi assumed to be packed as (k-point)(spin)(orbital)(FFT grid).
 */
+
 void Cneb::g_ortho(double *psi) 
 {
    if (parallelized) 
@@ -3731,10 +3738,10 @@ void Cneb::g_project_out_filled_extra(const int mb, const int nex[], double *psi
       {
          double *psi_ms_block = psi + ms*ne[0]*ishift + kshift;
       
-         for (auto k=(ne[ms]-nex[ms]); k<ne[ms]; ++k)
+         for (auto k=(nex[ms]-1); k>=0; --k)
          {
             double *psi_k = psi_ms_block + k*ishift;
-            g_project_out_filled_below(nbq1,psi_ms_block,ms,k,psi_k);
+            g_project_out_filled_above(nbq1, psi_ms_block, ms, k, psi_k);
             double norm = CGrid::cc_pack_dot(nbq1, psi_k, psi_k);
             double scale = 1.0 / std::sqrt(norm);
             CGrid::c_pack_SMul(nbq1, scale, psi_k);

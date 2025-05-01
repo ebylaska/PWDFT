@@ -469,6 +469,75 @@ void Parallel::Vector_ISumAll(const int d, const int n, int *sum) {
 }
 
 
+
+/********************************
+ *                              *
+ *       Vector_GatherAll       *
+ *                              *
+ ********************************/
+/**
+ * @brief Gather fixed-size double arrays from all processes in a communicator.
+ *
+ * This function gathers a fixed-length array of `n` double values from each process
+ * in communicator `comm_i[d]` and stores the results on the root process in `recvbuf`.
+ * Each process contributes `n` values from `sendbuf`, and `recvbuf` on the root process
+ * will contain all `n * np(d)` values concatenated in rank order.
+ *
+ * @param d     Communicator index (typically 3 for Brillouin zone parallelism).
+ * @param n     Number of double values each process sends.
+ * @param sendbuf Pointer to local send buffer of size `n`.
+ * @param recvbuf Pointer to receive buffer of size `n * np(d)` (used only on root).
+ * @param root  Rank in communicator `comm_i[d]` designated as the root for gathering.
+ *
+ * @note
+ * - All processes must call this function, even if only the root receives the data.
+ * - If `np(d) == 1`, the send buffer is copied directly into `recvbuf` on the root.
+ * - This uses `MPI_Gather` under the hood.
+ */
+void Parallel::Vector_GatherAll(const int d, const int n, double *sendbuf, double *recvbuf, int root) 
+{
+   if (npi[d] > 1)
+      MPI_Gather(sendbuf, n, MPI_DOUBLE, recvbuf, n, MPI_DOUBLE, root, comm_i[d]);
+   else if (taskidi[d] == root)
+      std::memcpy(recvbuf, sendbuf, n * sizeof(double));
+}
+
+
+/********************************
+ *                              *
+ *       Vector_GathervAll      *
+ *                              *
+ ********************************/
+/**
+ * @brief Gather variable-size double arrays from all processes in a communicator.
+ *
+ * This function gathers variable-length arrays of double values from each process
+ * in communicator `comm_i[d]`, where each process contributes `sendcounts[rank]` values.
+ * The results are stored in `recvbuf` on the root process, with displacements specified
+ * by `displs`.
+ *
+ * @param d         Communicator index (typically 3 for Brillouin zone parallelism).
+ * @param sendcounts Array of length `np(d)` with number of values sent from each process.
+ * @param displs     Array of displacements in `recvbuf` for each process's data.
+ * @param sendbuf    Pointer to local send buffer.
+ * @param recvbuf    Pointer to receive buffer (used only on root).
+ * @param root       Rank in communicator `comm_i[d]` designated as the root for gathering.
+ *
+ * @note
+ * - Each process must call this with the correct local `sendcounts[taskid(d)]`.
+ * - This uses `MPI_Gatherv`, which allows for nonuniform data sizes.
+ * - The `displs` array must define where each process’s data starts in `recvbuf`.
+ */
+void Parallel::Vector_GathervAll(const int d, const int *sendcounts, const int *displs, double *sendbuf, double *recvbuf, int root) 
+{
+   if (npi[d] > 1)
+      MPI_Gatherv(sendbuf, sendcounts[taskidi[d]], MPI_DOUBLE,
+                 recvbuf, sendcounts, displs, MPI_DOUBLE,
+                 root, comm_i[d]);
+}
+
+
+
 /********************************
  *                              *
  *       Brdcst_Values          *

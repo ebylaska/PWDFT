@@ -208,6 +208,7 @@ public:
  
    int minimizer() { return pminimizer; }
    int lmbfgs_size() { return plmbfgs_size; }
+   int ks_algorithm() { return pks_algorithm; }
    int scf_algorithm() { return pscf_algorithm; }
    int fractional_smeartype() { return pfractional_smeartype; }
    int ks_maxit_orb() { return pks_maxit_orb; }

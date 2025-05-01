@@ -140,7 +140,6 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
       }
   
       std::memcpy(occ1,occ2,nbrillq*(ne[0]+ne[1])*sizeof(double));
-      std::cout << "AERE  occ1=" << occ1 << std::endl;
    }
 
 
@@ -287,6 +286,9 @@ double Solid::cpsi_KS_update(const int maxit_orb, const double maxerror,
          }
       }
    }
+
+   // --- FULL ORTHOGONALIZATION CLEANUP ---
+   mygrid->g_ortho(psi);
 
    return esum;
 }

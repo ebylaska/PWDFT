@@ -17,7 +17,6 @@ extern void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *myps
                    double *Hpsi, bool move, double *fion, double *occ = nullptr);
 
 
-
 void cpsi_H_orb(const int, Cneb *, cKinetic_Operator *, CPseudopotential *,
                 double *, double *, double *, double *);
 

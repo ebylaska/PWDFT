@@ -433,21 +433,39 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
                    || (std::abs(unita[8] - mycneb->lattice->unita1d(8)) > 1.0e-4);
 
    // Add extra missing orbitals to psi2
+   //   Current orbital structure is:
+   //      psi[0] ... psi[ne-1]      ← old orbitals
+   //      psi[ne] ... psi[ne+nextra-1] ← not set
+   //   Orbitals should be restructured to be:
+   //      psi[0] ... psi[nextra-1]  ← new orbitals set to be (high energy, low occ)
+   //      psi[nextra] ... psi[ne-1] ← old orbitals
    int nextra[2] = {(mycneb->ne[0]-ne[0]),(mycneb->ne[1]-ne[1])};
+   int orb_size = 2 * mycneb->npack1_max();  // size of a single orbital
    for (auto ms=0; ms<ispin; ++ms)
    {
       if (nextra[ms]>0)
       {
          if (myparall->base_stdio_print)
             coutput << " - adding " << nextra[ms] << " to ms=" << ms << " psi" << std::endl;
-         int indxa = 2*mycneb->npack(1)*(ne[ms]+ms*mycneb->ne[0]);
-         mycneb->g_generate_extra_random(nextra[ms],psi2+indxa);
 
-        // need to orthopsi and  belowo
-        // project out filled psi
-        mycneb->g_project_out_filled_extra(ms,nextra,psi2);
+         int nold = ne[ms];
+         int ntotal = mycneb->ne[ms];
 
+         // Shift existing psi upward to make room for new orbitals at the bottom
+         for (int n = nold - 1; n >= 0; --n)
+         {
+             int src = orb_size * (n + ms * mycneb->ne[0]);
+             int dst = orb_size * (n + nextra[ms] + ms * mycneb->ne[0]);
+             std::memmove(psi2 + dst, psi2 + src, sizeof(double) * orb_size);
+         }
 
+         // Generate new random orbitals at the start of this spin channel
+         int start = orb_size * (ms * mycneb->ne[0]);
+         mycneb->g_generate_extra_random(nextra[ms], psi2 + start);
+
+         // need to orthopsi and  belowo
+         // project out filled psi
+         mycneb->g_project_out_filled_extra(ms,nextra,psi2);
       }
    }
       

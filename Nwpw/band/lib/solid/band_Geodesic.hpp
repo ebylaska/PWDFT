@@ -228,6 +228,12 @@ public:
      return (mysolid->psi2_energy());
    }
 
+   double energy0(double t) 
+   {
+     this->get(t, mysolid->psi1, mysolid->psi2);
+     return (mysolid->psi2_energy0());
+   }
+
    double denergy(double t) 
    {
       this->transport(t, mysolid->psi1, mysolid->psi2);

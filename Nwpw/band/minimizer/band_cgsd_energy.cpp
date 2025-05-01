@@ -92,8 +92,10 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
    {
       if (minimizer == 1) coutput << "     ======= bundled Grassmann conjugate gradient iteration =======" << std::endl;
       if (minimizer == 2) coutput << "     =========+=== bundled Grassmann lmbfgs iteration =============" << std::endl;
+      if (minimizer == 3) coutput << "     ======== Kohn-Sham scf iteration (Grassmannn) iteration ===-==" << std::endl;
       if (minimizer == 4) coutput << "     ============ Stiefel conjugate gradient iteration ============" << std::endl;
       if (minimizer == 5) coutput << "     ============ Kohn-Sham scf iteration (potential) =============" << std::endl;
+      if (minimizer == 6) coutput << "     ========== Kohn-Sham scf iteration (lmbfgs) iteration ========" << std::endl;
       if (minimizer == 7) coutput << "     ================== Stiefel lmbfgs iteration ==================" << std::endl;
       if (minimizer == 8) coutput << "     ============= Kohn-Sham scf iteration (density) ==============" << std::endl;
      
@@ -186,6 +188,107 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
+   } else if (minimizer == 3) {
+      if (mysolid.newpsi)
+      {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it)
+            mysolid.sd_update(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
+
+      std::cout << "I'm in minimizer3 HERA" << std::endl;
+
+
+      // Initial SCF setup
+      // generate density and rotate orbitals 
+      // Generate initial density, potential and then orbital diagonalization
+      double total_energy0 = mysolid.energy(); // Run Hψ = Eψ and compute E[0]
+      mysolid.gen_hml();                       // Generate ⟨ψ|H|ψ⟩ (stored in hml)
+      mysolid.diagonalize();      // Diagonalize H matrix (sets eig)
+      mysolid.rotate1to2();       // Rotate ψ₁ to ψ₂ using eigenvectors
+      mysolid.swap_psi1_psi2();   // Swap ψ₂ → ψ₁ (start clean state)
+
+      // Normalize total density (diagnostic)
+      double x,sumxx = 0.0;
+      int nfft3d = mygrid->nfft3d;
+      int ispin = mygrid->ispin;
+      double omega = mygrid->lattice->omega();
+      double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+      double dv = omega * scal1;
+      for (int i=0; i < nfft3d; ++i)
+      {
+         x = (mysolid.rho1[i]);
+         x += (mysolid.rho1[i+(ispin-1)*nfft3d]);
+         sumxx += x;
+      }
+      double sum0  = mygrid->c3db::parall->SumAll(1, sumxx) * dv;
+
+      //std::cout << "total energy0=" << total_energy0 << std::endl;
+      //std::cout << "total sum0=" << sum0 << std::endl;
+
+      // Setup SCF loop
+      deltae = -1.0e-03;
+      int bfgscount = 0;
+      int icount = 0;
+      int ks_it_in  = control.ks_maxit_orb();
+      int ks_it_out = control.ks_maxit_orbs();
+      double scf_error = 0.0;
+      double *vout = mysolid.rho1;
+      double *vnew = mysolid.rho2;
+
+      nwpw_cscf_mixing scfmix(mygrid,kerker_g0,
+                             scf_algorithm,scf_alpha,scf_beta,diis_histories,
+                             mygrid->ispin,mygrid->nfft3d,vout);
+
+      std::cout << "I'm in minimizer3 HERb converged=" << converged << std::endl;
+      std::cout << "I'm in minimizer3 HERc it_out=" << it_out*it_in << std::endl;
+
+      while ((icount < (it_out*it_in)) && (!converged))
+      {
+         ++icount;
+         if (stalled) 
+         {
+            for (int it=0; it<it_in; ++it)
+               mysolid.sd_update(dte);
+            if (oprint)
+               std::cout << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+         // minimize ks orbitals it_in steps
+         //total_energy = band_cgsd_cgksminimize(mysolid,mygeodesic12.mygeodesic1,E,&deltae,
+         //                                      &deltac,bfgscount,it_in,tole,tolc);
+         ++bfgscount;
+
+         //  Generate updated density from current ψ
+         mysolid.gen_rho1(); // updatating rho1==vout
+
+         // [Insert fractional occupation update here if needed]
+         // if (mysolid.fractional) update_occupations(...);
+
+
+         //std::cout << "total_energy=" << total_energy << " " << total_energy2 
+         //          << " " << total_energy2 - total_energy << std::endl;
+
+         //define fractional occupation here
+         scfmix.mix(vout,vnew,deltae,&scf_error);
+         std::memcpy(vout,vnew,ispin*nfft3d*sizeof(double));
+
+         deltac = scf_error;
+
+         // Generate initial new densites and potential 
+
+         //deltac = mysolid.rho_error();
+         deltae = total_energy - total_energy0;
+         total_energy0 = total_energy;
+         ++bfgscount;
+
+         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+      }
+
+
+
    } else if (minimizer == 4) {
       if (mysolid.newpsi) {
         int it_in0 = 15;
@@ -222,6 +325,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
           stalled = false;
         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
+   } else if (minimizer == 6) {
    } else if (minimizer == 7) {
       if (mysolid.newpsi) {
          int it_in0 = 15;
