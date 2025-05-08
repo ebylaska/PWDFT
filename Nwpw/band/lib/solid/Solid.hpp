@@ -223,6 +223,12 @@ public:
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
       return E[0];
    }
+
+   double energy0() {
+      myelectron->run0(psi1);
+      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
+      return E[0];
+   }
  
    double psi2_energy() {
       myelectron->run(psi2, rho2, dng2, rho2_all);
@@ -393,7 +399,7 @@ public:
    void gen_rho1() { myelectron->genrho(psi1,rho1,occ1); }
    void gen_densities1() { myelectron->gen_psi_r(psi1);
                            myelectron->gen_densities(rho1,dng1,rho1_all,occ1); }
-   void gen_scf_potentials_from_rho11() { myelectron->scf_update_from_dn(rho1,dng1,rho1_all);}
+   void gen_scf_potentials_from_rho1() { myelectron->scf_update_from_dn(rho1,dng1,rho1_all);}
 
  
    /* solid - diagonalize the current hamiltonian */
@@ -460,8 +466,41 @@ public:
       psi2 = psi1;
       psi1 = t2;
    }
- 
-   double psi_1get_Tgradient(double *G1) {
+
+   /***********************************************
+    *                                             *
+    *              _psi_1_get_Tgradient           *
+    *                                             *
+    ***********************************************/
+   /**
+    * Calculates the total energy of a system and computes the gradient of the kinetic energy term
+    * with respect to the wavefunction `psi1`.
+    *
+    * This function evaluates the electronic properties of the system by executing a series of
+    * computational steps that embody both electronic energy evaluation and kinetic gradient determination:
+    * 
+    * Steps involved:
+    * 1. Executes initial electronic calculations on the wavefunction (`psi1`) using the `run` method,
+    *    which updates the charge density (`rho1`), its derivatives (`dng1`), and the all-electron
+    *    charge density (`rho1_all`).
+    *    - Note: During this step, the density and Kohn-Sham (KS) potentials are dynamically updated.
+    * 
+    * 2. Computes the total energy by summing the electronic energy obtained from the `myelectron` object 
+    *    and the Ewald energy calculated through the `myewald` object, which accounts for long-range 
+    *    electrostatic interactions.
+    * 
+    * 3. Constructs the Hamiltonian matrix (`hml`) for the system using the current wavefunction configuration, 
+    *    which encapsulates contributions from updated potentials.
+    * 
+    * 4. Determines the gradient of the kinetic energy term relative to `psi1` using the Hamiltonian matrix, 
+    *    and deposits these calculated values into the provided gradient vector `G1`.
+    *
+    * @param G1 A pointer to an array where the calculated kinetic energy gradient values will be stored.
+    * @return Returns the total energy of the system, encompassing contributions from both electronic
+    *         and Ewald energies.
+    */
+   double psi_1get_Tgradient(double *G1) 
+   {
       double total_energy;
       myelectron->run(psi1, rho1, dng1, rho1_all);
       total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
@@ -470,6 +509,49 @@ public:
      
       return total_energy;
    }
+
+   /***********************************************
+    *                                             *
+    *              _psi_1_get_Tgradient0          *
+    *                                             *
+    ***********************************************/
+   /**
+    * Calculates the total energy of a system and computes the gradient of the kinetic energy term
+    * with respect to the wavefunction psi1 using a specific initialization routine.
+    *
+    * This function is similar to psi_1get_Tgradient but utilizes a modified or preliminary setup 
+    * step found in the `myelectron->run0` method. This method performs initial computations 
+    * without updating the density and the Kohn-Sham (KS) potentials.
+    *
+    * Detailed Steps:
+    * 1. Executes initial electronic calculations on the wavefunction (`psi1`) using the `run0` method.
+    *    - Note: The density and KS potentials remain unchanged during this step.
+    * 2. Computes the total energy by summing the electronic energy (via `myelectron`) with 
+    *    the Ewald energy (`myewald`), reflecting long-range electrostatic interactions.
+    * 3. Constructs the Hamiltonian matrix (`hml`) for the system based on the current state of the 
+    *    wavefunction.
+    * 4. Calculates the gradient of the kinetic energy term relative to `psi1` and populates 
+    *    the provided gradient vector `G1` with these values.
+    *
+    * @param G1 A pointer to an array where the calculated T-gradient values will be stored.
+    * @return Returns the total energy of the system, which includes contributions from both electronic 
+    *         and Ewald energies.
+    *
+    * Note: Employing `run0` suggests a specialized context or initial conditions, requiring 
+    *       understanding of distinct application scenarios within broader computational workflows.
+    */
+   double psi_1get_Tgradient0(double *G1) 
+   {
+      double total_energy;
+      myelectron->run0(psi1);
+      total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
+      myelectron->gen_hml(psi1, hml);
+      myelectron->get_Tgradient(psi1, hml, G1);
+     
+      return total_energy;
+   }
+
+
  
    double psi_1get_TSgradient(double *G1) 
    {

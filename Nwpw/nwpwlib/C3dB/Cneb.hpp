@@ -194,10 +194,9 @@ public:
 
    double *w_allocate_nbrillq_all() 
    {
-      double *ptr;
-      int nsize;
-      nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
+      int nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       
+      double *ptr;
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       std::memset(ptr,0,nbrillq*nsize*sizeof(double));
       return ptr;

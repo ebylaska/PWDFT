@@ -29,8 +29,8 @@ static double dummy_denergy(double t) { return mygeodesic_ptr->denergy(t); }  //
 /* Only minimize the orbitals, keeping the density and ks potetnials fixed
 */
 double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double *E,
-                            double *deltae, double *deltac, int current_iteration,
-                            int it_in, double tole, double tolc) {
+                              double *deltae, double *deltac, int current_iteration,
+                              int it_in, double tole, double tolc) {
   bool done = false;
   double tmin = 0.0;
   double deltat_min = 1.0e-3;
@@ -43,15 +43,17 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
   Cneb *mygrid = mysolid.mygrid;
   mygeodesic_ptr = mygeodesic;
 
+
   /* get the initial gradient and direction */
   double *G1 = mygrid->g_allocate_nbrillq_all();
   double *H0 = mygrid->g_allocate_nbrillq_all();
 
   //|-\____|\/-----\/\/->    Start Parallel Section    <-\/\/-----\/|____/-|
 
-  total_energy = mysolid.psi_1get_Tgradient(G1); // needs to be modified
+  total_energy = mysolid.psi_1get_Tgradient0(G1); // needs to be modified
   sum1 = mygrid->gg_traceall(G1, G1);
   Enew = total_energy;
+  *deltac = sum1;
 
   mygrid->gg_copy(G1, H0);
 
@@ -82,7 +84,7 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
                            &dummy_denergy, 0.50, &tmin0, &deltae0, 2);
     tmin = tmin0;
     *deltae = deltae0;
-    *deltac = mysolid.rho_error(); // needs to be modified
+    
     mygeodesic->psi_final(tmin);
 
     /* exit loop early */
@@ -95,10 +97,11 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
     mysolid.swap_psi1_psi2();
 
     if (!done) {
-      /* get the new gradient - also updates densities */
-      total_energy = mysolid.psi_1get_Tgradient(G1); // needs to be modified
+      /* get the new gradient - but do not updates densities */
+      total_energy = mysolid.psi_1get_Tgradient0(G1); // needs to be modified
       sum0 = sum1;
       sum1 = mygrid->gg_traceall(G1, G1);
+      *deltac = sum1;
 
       /* the new direction using Fletcher-Reeves */
       if ((std::fabs(*deltae) <= (1.0e-2)) && (tmin > deltat_min)) {
@@ -119,7 +122,7 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
     }
   }
   // Making an extra call to electron.run and energy
-  total_energy = mysolid.gen_all_energies(); // needs to be modified
+  total_energy = mysolid.energy0();
 
   //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 
