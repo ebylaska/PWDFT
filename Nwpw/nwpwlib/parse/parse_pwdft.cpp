@@ -1553,7 +1553,6 @@ static json parse_nwpw(json nwpwjson, int *curptr,
 
 
     } else if (mystring_contains(line, "scf")) {
-       std::cout << "LINE=" << line << std::endl;
        if (mystring_contains(line, "ks-grassmann-cg"))
           nwpwjson["minimizer"] = 3;
        else if (mystring_contains(line, "ks-grassmann-lmbfgs"))

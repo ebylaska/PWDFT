@@ -141,7 +141,7 @@ public:
  
    double E[80],en[2],ep,sp,tole;
  
-   bool newpsi;
+   bool newpsi = false;
  
    /* Constructors */
    Solid(char *,bool,Cneb *,Ion *,CStrfac *,Ewald *,cElectron_Operators *,CPseudopotential *,Control2 &, std::ostream &);
@@ -219,14 +219,14 @@ public:
  
    /* solid energy */
    double energy() {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
-      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
+      myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
+      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
       return E[0];
    }
 
    double energy0() {
       myelectron->run0(psi1);
-      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
+      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
       return E[0];
    }
  
@@ -586,7 +586,20 @@ public:
    }
  
    std::vector<double> eig_vector() {
-      return std::vector<double>(eig, &eig[neall]);
+      int localsize = nbrillq * (ne[0] + ne[1]);
+      int globalsize = mygrid->c3db::parall->np_k() * localsize;
+      int totalsize = nbrillouin*(ne[0] + ne[1]);
+
+      std::vector<double> eig_global;
+      if (mygrid->c3db::parall->taskid_k() == MASTER)
+         eig_global.resize(globalsize);
+
+      mygrid->c3db::parall->Vector_GatherAll(3, localsize, eig, eig_global.data(), MASTER);
+
+      if (mygrid->c3db::parall->taskid_k() == MASTER)
+         return std::vector<double>(eig_global.begin(), eig_global.begin() + totalsize);
+      else
+         return {};
    }
  
    void psi_1local_force(double *grad_ion) {

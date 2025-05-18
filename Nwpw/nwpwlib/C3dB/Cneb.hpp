@@ -91,11 +91,12 @@ public:
    void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
+   void g_read_reverse(const int, double *);
    void g_read_excited(const int, const int *, const int,  double *);
-   void g_read_ne(const int, const int *, const int, double *);
-   void g_read_ne_reverse(const int, const int *, const int, double *);
    void g_write(const int, double *);
    void g_write_excited(const int, const int *, const int, double *);
+   void g_read_ne(const int, const int *, const int, double *);         // probably won't use
+   void g_read_ne_reverse(const int, const int *, const int, double *); // probably won't use
 
    void g_read_occ(const int, double *);
    void g_write_occ(const int, double *);

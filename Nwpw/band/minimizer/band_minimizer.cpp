@@ -156,19 +156,17 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    version = control.version;
 
 
-
-
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
 
    // initialize parallel grid structure
    Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),ne,&mybrillouin);
+
   
    // initialize gdevice memory
    mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
 
-  
    // setup structure factor
    CStrfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
@@ -191,8 +189,6 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    myewald.phafac();
 
 
-
-  
    // initialize solid
    Solid mysolid(control.input_movecs_filename(),
                  control.input_movecs_initialize(),&mygrid,&myion,
@@ -283,20 +279,25 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    if (control.fractional())
    {
       int n=0;
+
+      //The outer loop nbq is split over dimension 3
       for (auto nbq=0; nbq<mygrid.nbrillq; ++nbq)
       {
          double weight =  mygrid.pbrill_weight(nbq);
          for (auto ms=0; ms<ispin; ++ms)
          {
-            oen[ms] = 0;
-            for (auto i=0; i<ne[ms]; ++i)
+            //The orbital loop index i is split over dimension 2
+            for (auto i=0; i<mygrid.neq[ms]; ++i)
             {
                oen[ms] += weight*mysolid.occ1[n];
                ++n;
             }
          }
      }
-      myparallel.Vector_SumAll(3,2,oen);
+     myparallel.Vector_SumAll(2,2,oen); // Reduce over orbitals (orbital distribution)
+     myparallel.Vector_SumAll(3,2,oen); // Then reduce over BZ points (k-point distribution)
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
    }
 
    if (oprint)
@@ -427,8 +428,12 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassman conjugate gradient\n";
             if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassman Stiefel\n";
 
-            coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
-                                                      << " ( " << control.ks_maxit_orbs() << " outer)\n";
+            if ((control.ks_algorithm()==2) || (control.ks_algorithm()==3))
+               coutput << "      Kohn-Sham iterations = " << "( " << control.loop(0) << " inner)" << std::endl;
+            else
+               coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
+                                                          << " ( " << control.ks_maxit_orbs() << " outer)\n";
+
             if (control.scf_algorithm()==0) coutput << "      SCF algorithm        = simple mixing\n";
             if (control.scf_algorithm()==1) coutput << "      SCF algorithm        = Broyden mixing\n";
             if (control.scf_algorithm()==2) coutput << "      SCF algorithm        = Johnson-Pulay mixing"
@@ -478,6 +483,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       {
          coutput <<  std::endl;
          coutput <<  " fractional smearing parameters:" << std::endl;
+         
          coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
          coutput <<  "      smearing parameter = ";
          if (mysolid.smeartype==-1) coutput << "fixed_occupation" << std::endl;
@@ -490,6 +496,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
          if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;
          if (mysolid.smeartype==8) coutput << "step" << std::endl;
+        
          if (mysolid.smeartype>=0)
          {
             coutput <<  "      smearing parameter = " << Ffmt(9,3) << mysolid.smearkT
@@ -501,6 +508,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
             coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
             coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+          }
+          {
             if (ispin==2)
                 coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
             else
@@ -522,12 +531,12 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                }
             };
 
-            for (int k = 0; k < ksize; ++k)
+            for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
             {
-               coutput << "        BZ-point " << k+1 << ": [";
-               for (int i = 0; i < total_occ * nbrillq; ++i)
+               coutput << "        BZ-point " << nb+1 << ": [";
+               for (int i=0; i<total_occ; ++i)
                {
-                   int idx = k * total_occ * nbrillq + i;
+                   int idx = nb*total_occ + i;
                    coutput << format_occ(gathered_occ[idx]);
                    if (i < total_occ * nbrillq - 1)
                        coutput << " ";

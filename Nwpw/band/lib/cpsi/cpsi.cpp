@@ -232,9 +232,35 @@ void cpsi_get_header(Parallel *myparall, int *version, int nfft[],
 
 /*****************************************************
  *                                                   *
- *                cpsi_check_convert                  *
+ *                cpsi_check_convert                 *
  *                                                   *
  *****************************************************/
+/**
+ * @brief Checks and converts the psi grid data if necessary based on input file parameters.
+ *
+ * This static function validates the compatibility of psi grid data dimensions from an input file
+ * (`filename`) with the current Cneb object (`_mycneb`). It compares grid dimensions and, if 
+ * mismatched, initiates a conversion process using `cwvfnc_expander`. The function generates debug 
+ * output and supports both standard output and custom stream output through `coutput`.
+ *
+ * Operational Steps:
+ * 1. Retrieves parallel and file header information, extracting version number, grid dimensions,
+ *    unit cell vectors, spin details, electron counts, and Brillouin zone data from the file.
+ * 2. Compares file-retrieved grid dimensions (`nfft0`) with those in `_mycneb` (`nx`, `ny`, `nz`).
+ * 3. If dimensions do not match, engages `cwvfnc_expander` to convert the psi data, logging
+ *    conversion activity through the provided `coutput`.
+ *
+ * @param  mycneb Cneb object containing current simulation parameters.
+ * @param filename Character array representing the path to the input file with psi data.
+ * @param coutput Output stream for logging conversion messages and activities.
+ * @return Returns `true` if conversion is necessary and has been executed, otherwise `false`.
+ *
+ * Note:
+ * - Ensure proper MPI and parallel setup in `mycneb` to accurately invoke file header operations
+ *   with `cpsi_get_header`.
+ * - This function relies on version-specific checks for compatibility, which should be validated
+ *   according to the latest implementation or file structures.
+ */
 static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutput) 
 {
    Parallel *myparall = mycneb->c3db::parall;
@@ -252,22 +278,56 @@ static bool cpsi_check_convert(Cneb *mycneb, char *filename, std::ostream &coutp
       cwvfnc_expander(mycneb, filename, coutput);
       converted = true;
    }
+
+   // also convert if ne and nbrillouin are wrong
  
    return converted;
 }
+
 
 /*****************************************************
  *                                                   *
  *                cpsi_read0                         *
  *                                                   *
  *****************************************************/
-/*
-   Just reads psi and its header.
-
-   Note - the file must exist
-
-*/
-
+/**
+ * @brief Reads psi data and its header information from a file.
+ *
+ * This function is responsible for reading psi grid data and associated header metadata from a 
+ * specified file (`filename`). It efficiently manages file input operations, distributing the 
+ * read data across MPI tasks within the `Cneb` context. The function facilitates both standard 
+ * and reverse reading modes, leveraging grid-specific data handling operations and optional 
+ * occupation data adjustments.
+ *
+ * Operational Steps:
+ * 1. Master node opens the specified file for reading and retrieves header details, including:
+ *    - Version, grid dimensions (`nfft`), unit cell vectors (`unita`), spin configuration, electron counts (`ne`),
+ *      and Brillouin zones, as well as initial occupation data.
+ * 2. Utilizes MPI broadcast (`Brdcst_`) to distribute header information across all tasks.
+ * 3. Conditionally reads psi data:
+ *    - Uses reverse packing logic (`g_read_reverse`) if `reverse` is true.
+ *    - Otherwise applies standard reading logic (`g_read`).
+ * 4. If occupation data is present (`occupation > 0`), retrieves occupation numbers using `g_read_occ`,
+ *    optionally reversing the data ordering based on the `reverse` flag settings and spin configurations.
+ * 5. Closes the file on the master node after completing all read operations.
+ *
+ * @param mycneb Cneb object integrating simulation parameters and framework.
+ * @param version Integer representing version information as file metadata.
+ * @param nfft Array denoting grid dimensions (x, y, z) for the psi data.
+ * @param unita Array representing unit cell vectors for contextualizing data layout.
+ * @param ispin Integer specifying spin details for the psi dataset.
+ * @param ne Array containing electron counts per spin configuration.
+ * @param nbrillouin Integer specifying the number of Brillouin zones.
+ * @param psi Pointer to the psi data array for input.
+ * @param occupation Integer holding occupation state details.
+ * @param occ Array for potential occupation number reading and adjustments.
+ * @param filename Character array with the name of the file to read from.
+ * @param reverse Boolean flag indicating whether to apply reverse logic during reads.
+ *
+ * Note:
+ * - Ensure file existence and accessibility prior to invocation, as the function assumes a pre-existing file.
+ * - Verify MPI initialization and task role consistency (via `myparall`) for accurate distribution and data handling.
+ */
 void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
                 int *ispin, int ne[], int *nbrillouin, double *psi, 
                 int *occupation, double occ[], char *filename, bool reverse)
@@ -291,12 +351,10 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, ne);
    myparall->Brdcst_iValue(0, 0, nbrillouin);
-
    myparall->Brdcst_iValue(0, 0, occupation);
 
-
    /* reads in c format and automatically packs the result to g format */
-   //mycneb->g_read(4,ispin,psi);
+   // need to make sure psi is the proper size before reading
    if (reverse)
       mycneb->g_read_ne_reverse(4,ne,*nbrillouin,psi);
    else
@@ -304,7 +362,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
 
    if ((*occupation) > 0)
    {
-      mycneb->g_read_occ(4,psi);
+      mycneb->g_read_occ(4,occ);
       if (reverse)
       {
          std::reverse(occ, occ + ne[0]); // Reverse the first section if descending
@@ -319,6 +377,42 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
      closefile(4);
 }
 
+/*****************************************************
+ *                                                   *
+ *                cpsi_read0   (overloaded)          *
+ *                                                   *
+ *****************************************************/
+/**
+ * @brief Overloaded function that reads psi data and its header information from a file.
+ *
+ * This overloaded variant of `cpsi_read0` focuses on reading psi grid data and header metadata 
+ * from a specified file (`filename`). It effectively manages file input operations and distributes 
+ * the read data across MPI tasks within the `Cneb` context. Simplified compared to its counterpart, 
+ * this version does not handle reverse logic nor occupation data adjustments via an external `occ` array.
+ *
+ * Operational Steps:
+ * 1. Master node opens the specified file for reading and retrieves header details, including:
+ *    - Version, grid dimensions (`nfft`), unit cell vectors (`unita`), spin configuration, electron counts (`ne`),
+ *      and Brillouin zones, along with occupation state data.
+ * 2. Utilizes MPI broadcast (`Brdcst_`) to distribute header information across all tasks.
+ * 3. Reads psi data using the g-format packing logic of `g_read`.
+ * 4. Closes the file on the master node after completing all read operations.
+ *
+ * @param mycneb Cneb object integrating simulation parameters and framework.
+ * @param version Integer representing version information as file metadata.
+ * @param nfft Array denoting grid dimensions (x, y, z) for the psi data.
+ * @param unita Array representing unit cell vectors for contextualizing data layout.
+ * @param ispin Integer specifying spin details for the psi dataset.
+ * @param ne Array containing electron counts per spin configuration.
+ * @param nbrillouin Integer specifying the number of Brillouin zones.
+ * @param psi Pointer to the psi data array for input.
+ * @param filename Character array with the name of the file to read from.
+ *
+ * Note:
+ * - Ensure file existence and accessibility prior to function invocation, as it assumes a pre-existing file.
+ * - Verify MPI setup and consistency across tasks (via `myparall`) to accurately distribute header and data information.
+ * - This function does not apply occupation number reversal nor additional occupation array adjustments.
+ */
 void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, char *filename) 
 {
@@ -348,7 +442,7 @@ void cpsi_read0(Cneb *mycneb, int *version, int nfft[], double unita[],
 
  
    /* reads in c format and automatically packs the result to g format */
-   //mycneb->g_read(4,ispin,psi);
+   //mycneb->g_read(4,psi);
    mycneb->g_read_ne(4,ne,*nbrillouin,psi);
  
    if (myparall->is_master())
@@ -385,7 +479,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
    if (cpsi_filefind(mycneb,filename) && (!wvfnc_initialize)) 
    {               
-      newpsi = cpsi_check_convert(mycneb,filename,coutput);
+      newpsi = cpsi_check_convert(mycneb,filename,coutput); // also convert if ne and nbrillouin are wrong
                    
       if (myparall->base_stdio_print)
          coutput << " input psi exists, reading from file: " << filename;
@@ -400,13 +494,16 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
       if (myparall->base_stdio_print)
          coutput << std::endl;
 
+
       if ((occ2) && (*occupation > 0))
+      {
          if (isDescending(occ2, ne[0]))
          {
             if (myparall->base_stdio_print)
                coutput << " - reversing order of psi and occupation" << std::endl;
             cpsi_read0(mycneb, &version, nfft, unita, &ispin, ne, &nbrillouin, psi2, occupation, occ2, filename,true);
          }
+      }
    }
 
    /* generate new psi */
@@ -470,7 +567,7 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
    }
       
    /* ortho check */
-   double sum2 = mycneb->gg_traceall(psi2, psi2);
+   double sum2 = mycneb->gg_traceall(psi2,psi2);
    double sum1 = mycneb->ne[0] + mycneb->ne[1];
    
    if ((mycneb->ispin) == 1)
@@ -559,7 +656,42 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
  *                cpsi_write                         *
  *                                                   *
  *****************************************************/
-
+/**
+ * @brief Writes psi data and associated computational parameters to a file.
+ *
+ * This function handles the writing of psi grid data, occupation information, and other relevant 
+ * simulation parameters to an output file, specified by `filename`. It ensures data is recorded 
+ * correctly using collaborative MPI operations within the `Cneb` context. The master node initiates 
+ * the file-writing sequence, followed by distributed grid and occupation data writes from `mycneb`.
+ *
+ * Operational Steps:
+ * 1. Initializes function timing with `nwpw_timing_function` for performance tracking.
+ * 2. Logs the output operation, detailing the filename, to the given output stream `coutput`.
+ * 3. If current node is the master:
+ *    - Opens the specified file (`filename`).
+ *    - Writes header information including version, grid dimensions (`nfft`), unit cell vectors 
+ *      (`unita`), spin data, electron counts (`ne`), Brillouin zone data, and occupation data.
+ * 4. Delegates the writing of psi data to `mycneb->g_write`.
+ * 5. If occupation data is present, executes `mycneb->g_write_occ` to record occupation numbers.
+ * 6. Closes the file on the master node once all data writing operations are complete.
+ *
+ * @param mycneb  Cneb object containing simulation parameters and grid data.
+ * @param version Integer representing the version of the data or simulation specifications.
+ * @param nfft Array indicating grid dimensions (x, y, z) for the psi data.
+ * @param unita Array representing unit cell vectors necessary for positional context.
+ * @param ispin Integer specifying spin data configuration.
+ * @param ne Array holding electron counts per spin configuration.
+ * @param nbrillouin Integer specifying the number of Brillouin zones.
+ * @param psi Pointer to psi data array to be written.
+ * @param occupation Pointer to integer representing occupation state or configuration.
+ * @param occ Array containing occupation numbers if applicable.
+ * @param filename Character array holding the name of the file to write to.
+ * @param coutput Output stream for logging actions and file operations.
+ *
+ * Note:
+ * - Ensure consistent MPI setup and master node recognition to manage file operations and streamlining data writes.
+ * - Validate that `mycneb` contains all necessary methods (`g_write`, `g_write_occ`) for efficient distributed data handling.
+ */
 void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, 
                int *occupation, double occ[],
@@ -588,13 +720,53 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
 
    if (*occupation>0)
       mycneb->g_write_occ(6, occ);
-       //std::cout << "Write the occupations here!" << std::endl;
 
    if (myparall->is_master())
       closefile(6);
 }
 
-
+/*****************************************************
+ *                                                   *
+ *                cpsi_write  (overloaded)           *
+ *                                                   *
+ *****************************************************/
+/**
+ * @brief Overloaded function that writes psi data and associated simulation parameters to a file 
+ * without occupation data.
+ *
+ * As an overloaded version of `cpsi_write`, this function records psi grid data and associated metadata 
+ * to an output file specified by `filename`. The master node handles file operations while distributing 
+ * data writes via MPI processes within the `Cneb` context. Notably, although an occupation variable is 
+ * defined, no actual occupation data is written to the file, and its default value is set to -1.
+ *
+ * Operational Steps:
+ * 1. Initializes function timing with `nwpw_timing_function` for performance assessment.
+ * 2. Logs the intended output operation, including filename details, if applicable, to the `coutput` stream.
+ * 3. If the current node is the master node:
+ *    - Opens the specified file (`filename`) for writing.
+ *    - Writes header information including version, grid dimensions (`nfft`), unit cell vectors (`unita`),
+ *      spin configuration, electron counts (`ne`), and Brillouin zones.
+ *    - Writes occupation data with a default placeholder value (-1), without involving actual occupation data logic.
+ * 4. Delegates the writing of psi data to `mycneb->g_write`.
+ * 5. Evaluates if occupation numbers are greater than zero but does not perform the write.
+ * 6. Closes the file on the master node once all data writing operations are complete.
+ *
+ * @param mycneb Cneb object containing simulation parameters and grid data.
+ * @param version Integer representing the version of the data or simulation specifications.
+ * @param nfft Array indicating grid dimensions (x, y, z) for the psi data.
+ * @param unita Array representing unit cell vectors necessary for structural context.
+ * @param ispin Integer specifying spin configuration for the data.
+ * @param ne Array holding electron counts per spin configuration.
+ * @param nbrillouin Integer denoting the number of Brillouin zones.
+ * @param psi Pointer to psi data array to be written.
+ * @param filename Character array holding the name of the file to write to.
+ * @param coutput Output stream for logging actions and file operations.
+ *
+ * Note:
+ * - Confirm consistent MPI setup and master node recognition to effectively manage file operations and data writes.
+ * - The function, as an overloaded version, does not perform occupation data writes, utilizing a placeholder (-1) instead.
+ * - Ensure `mycneb` provides necessary methods (`g_write`) for distributed data handling.
+ */
 void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
                int *ispin, int ne[], int *nbrillouin, double *psi, char *filename,
                std::ostream &coutput) 
@@ -605,7 +777,6 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    Parallel *myparall = mycneb->c3db::parall;
  
    if (myparall->base_stdio_print)
-     coutput << " output cpsi to filename: " << filename << std::endl;
  
    if (myparall->is_master()) 
    {
@@ -622,7 +793,7 @@ void cpsi_write(Cneb *mycneb, int *version, int nfft[], double unita[],
    mycneb->g_write(6, psi);
 
    if (occupation>0)
-       std::cout << "Write the occupations here!" << std::endl;
+       coutput << "Write the occupations here!" << std::endl;
  
    if (myparall->is_master())
       closefile(6);
@@ -702,7 +873,6 @@ bool ecpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, const int n
    /* ortho check */
    double sum2 = mycneb->gg_traceall_excited(nex, psi2, psi2);
    double sum1 = nex[0] + nex[1];
-   //std::cout << "excited ortho check sum1= " << sum1 << " sum2=" << sum2 << std::endl;
    newpsi = newpsi && (std::abs(sum2-sum1)> 1.0e-4);
 
    return newpsi;

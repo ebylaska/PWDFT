@@ -188,12 +188,13 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
  */
 void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
 {
-   int nex[2] = {control.nexcited(0), control.nexcited(1)};
+   int nex[2] = { control.fractional_orbitals(0), control.fractional_orbitals(1)};
 
    if (cpsi_filefind(mygrid,control.input_e_movecs_filename()))
    {
       ecpsi_initialize(control.input_e_movecs_filename(),false,nex,coutput);
 
+      for (auto nb=0; nb<nbrillq; ++nb)
       for (auto ms=0; ms<ispin; ++ms)
       {
          if (nex[ms]>0)
@@ -201,8 +202,8 @@ void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
             for (auto n=0; n<nex[ms]; ++n)
             {
                int sz = 2*mygrid->npack(1);
-               int indxf = sz*(n + ms*ne[0]);
-               int indxe = sz*(n + ms*nex[0]);
+               int indxf = sz*(n + ms*mygrid->neq[0])  + nb*(mygrid->neq[0]+mygrid->neq[1]);
+               int indxe = sz*(n + ms*nex[0]) + nb*(nex[0]+nex[1]);;
                std::memcpy(psi1 + indxf, psi1_excited + indxe, sz);
             }
          }

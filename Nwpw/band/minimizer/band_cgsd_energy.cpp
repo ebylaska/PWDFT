@@ -100,9 +100,18 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
       if (minimizer == 8) coutput << "     ============= Kohn-Sham scf iteration (density) ==============" << std::endl;
      
       coutput << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;;
-      coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
-      coutput << "     --------------------------------------------------------------" << std::endl;
+      if (minimizer==3)
+      {
+         coutput << "     iter.                   Energy          DeltaE        DeltaRho        DeltaSCF" << std::endl;
+         coutput << "     ------------------------------------------------------------------------------" << std::endl;
+      }
+      else
+      {
+         coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
+         coutput << "     --------------------------------------------------------------" << std::endl;
+      }
       // printf("%10d%25.12le%16.6le%16.6le\n",1000,99.99, 1.33434340e-4, 2.33434211e-6);
+
    }
  
    // if (minimizer > 1) band_Grsm_list_start()
@@ -253,18 +262,22 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             bfgscount = 0;
          }
          deltae_old = deltae;
-         // minimize ks orbitals it_in steps
-         total_energy = band_cgsd_cgksminimize(mysolid,mygeodesic12.mygeodesic1,E,&deltae,
-                                               &deltac,bfgscount,it_in,tole,tolc);
-         //total_energy = -9.0;
 
+
+         // minimize ks orbitals it_in steps with fixed ks potential
+         double total_energy_fixedV = band_cgsd_cgksminimize(mysolid,mygeodesic12.mygeodesic1,E,&deltae,
+                                                             &deltac,bfgscount,it_in,tole,tolc);
+
+         // diagonalize psi wrt current ks potential
          mysolid.gen_hml();
          mysolid.diagonalize();
          mysolid.rotate1to2();
          mysolid.swap_psi1_psi2();
 
-         //  Generate updated density from current ψ
-         mysolid.gen_rho1(); // updatating rho1==vout
+         // Generate updated density from current ψ and occupations, generate ks potential 
+         // and then calculate energy, after this rho1, dng1, rho1_all, 
+         // and ks potentials and hpsi have been updated
+         total_energy = mysolid.energy();
 
          // [Insert fractional occupation update here if needed]
          // if (mysolid.fractional) update_occupations(...);
@@ -295,7 +308,8 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             coutput << Ifmt(10)    << icount
                     << Efmt(25,12) << total_energy
                     << Efmt(16,6)  << deltae
-                    << Efmt(16,6)  << deltac << std::endl;
+                    << Efmt(16,6)  << deltac 
+                    << Efmt(16,6)  << total_energy-total_energy_fixedV << std::endl;
          }
    
          // Finalize SCF step with updated potentials
