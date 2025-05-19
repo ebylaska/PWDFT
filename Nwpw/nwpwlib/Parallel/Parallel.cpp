@@ -346,10 +346,10 @@ double Parallel::SumAll(const int d, const double sum) {
   double sumout;
 
   if (npi[d] > 1)
-    // comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM);
-    MPI_Allreduce(&sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
+     // comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM);
+     MPI_Allreduce(&sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
   else
-    sumout = sum;
+     sumout = sum;
   return sumout;
 }
 

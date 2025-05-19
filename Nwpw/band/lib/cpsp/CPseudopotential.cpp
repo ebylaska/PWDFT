@@ -2374,7 +2374,7 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
    double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
    double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
  
-   for (auto nbq=0; nbq<(mypneb->nbrillq); ++ nbq)
+   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
    {
       double weight  = mypneb->pbrill_weight(nbq);
       int nbq1 = nbq + 1;

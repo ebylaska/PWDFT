@@ -2840,7 +2840,7 @@ double Cneb::w_trace(double *hml)
 double Cneb::w_trace_occ(double *hml, double *occ)
 {
    int mshift0 = 0;
-   int mshift1 = 0;
+   //int mshift1 = 0;
    double sum = 0.0;
 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
@@ -2850,13 +2850,23 @@ double Cneb::w_trace_occ(double *hml, double *occ)
       for (auto ms=0; ms<ispin; ++ms)
       {
          for (auto i=0; i<ne[ms]; ++i)
-            sum += hml[2*(i+i*ne[ms]) + mshift + mshift0]*weight*occ[i+mshift1];
-         mshift1 += ne[0];
-         mshift  += 2*ne[0]*ne[0];
+         {
+            int idx = 2 * (i + i*ne[ms]) + mshift + mshift0;
+            //int occidx = i + ms*ne[0];  // <-- replace later with msntoindex(ms, i)
+            int occidx = msntoindex(ms,i);
+
+            sum += hml[idx]*weight*occ[occidx];
+         }
+         //mshift1 += ne[0];
+         mshift  += 2*ne[ms]*ne[ms];
       }
+      //mshift0 += mshift;  // Correct per BZ block
       mshift0 += 2*(ne[0]*ne[0] + ne[1]*ne[1]);
    }
-   return sum;
+   double sum2 = c3db::parall->SumAll(2,sum);
+   double sum3 = c3db::parall->SumAll(3,sum2);
+   
+   return sum3;
 }
 
 

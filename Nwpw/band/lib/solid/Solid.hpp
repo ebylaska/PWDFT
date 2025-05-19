@@ -679,8 +679,8 @@ public:
             std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
             if (occ1) std::memcpy(tmpocc,occ1+nbq*n,n*sizeof(double));
          }
-         //mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
-         //mygrid->c3db::parall->Vector_SumAll(3,n,tmpocc);
+         mygrid->c3db::parall->Vector_SumAll(3,n,tmpeig);
+         mygrid->c3db::parall->Vector_SumAll(3,n,tmpocc);
          //std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
 
          if (oprint)
