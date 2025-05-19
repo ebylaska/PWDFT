@@ -1,6 +1,30 @@
 #ifndef _BAND_GEODESIC2_HPP_
 #define _BAND_GEODESIC2_HPP_
 
+/*
+ * band_Geodesic2.hpp
+ * 
+ * This header file defines the band_Geodesic2 class within the pwdft namespace, which represents a Stiefel manifold utilized in quantum chemical computations.
+ * The class is designed to handle various matrix operations relevant to the computations of electronic structures.
+ * 
+ * Key Features:
+ * - Manages temporary storage and matrix operations required for computing Stiefel manifold projections.
+ * - Interfaces with the Solid and cElectron_Operators classes to perform operations on electronic data.
+ * - Provides methods for starting calculations, updating matrices, and transporting state data (including specific matrix manipulations).
+ * - Implements memory allocation and deallocation to optimize computation resources, focusing on matrices and vector spaces.
+ * - Includes methods that utilize allocated memory for computations like QR-decomposition and matrix transportation.
+ * 
+ * Dependencies:
+ * - Solid.hpp: Provides the Solid class, used here to interface with materials data and electron operations.
+ * - cElectron.hpp: Provides electron operator functionalities used to perform quantum chemical calculations.
+ * - Cneb.hpp: Supports grid operations essential for the matrix calculations within the band_Geodesic2 class operations.
+ *
+ * The class encapsulates complex mathematical operations, facilitating modular and efficient handling of Stiefel manifold-related calculations 
+ * within the broader PWDFT (Plane Wave Density Functional Theory) framework.
+ * 
+ * NOTE: Ensure all allocations and corresponding deallocations are managed carefully to prevent memory leaks caused by improper resource handling.
+ */
+
 #pragma once
 
 #include "cElectron.hpp"
@@ -12,6 +36,7 @@
 
 namespace pwdft {
 
+// This is a stiefel manifold 
 class band_Geodesic2 {
 
   int minimizer;

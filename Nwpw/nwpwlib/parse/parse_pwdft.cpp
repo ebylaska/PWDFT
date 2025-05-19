@@ -188,7 +188,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["autosym"] = autosym;
 
   bool is_crystal = false;
+  bool is_surface = false;
   bool fractional = false;
+  bool twodfractional = false;
   std::vector<double> unita = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
   int endcount = 1;
@@ -212,6 +214,14 @@ static json parse_geometry(json geom, int *curptr,
         fractional = false;
       } else {
         fractional = true;
+      }
+      ++endcount;
+    } else if (mystring_contains(line, "system surface")) {
+      is_surface=true;
+      if (mystring_contains(line, "cartesian")) {
+        twodfractional = false;
+      } else {
+        twodfractional = true;
       }
       ++endcount;
     } else if (endcount > 1) {
@@ -246,6 +256,7 @@ static json parse_geometry(json geom, int *curptr,
           }
         }
         unita = parse_lat_to_unita(lat);
+
       } else if (mystring_contains(line, "lattice_vectors")) {
         ++cur;
         line = mystring_lowercase(lines[cur]);
@@ -346,6 +357,21 @@ static json parse_geometry(json geom, int *curptr,
         vx = xxx;
         vy = yyy;
         vz = zzz;
+
+      } else if (twodfractional) {
+        double xxx = unita[0] * xx + unita[3] * yy + zz*conv;
+        double yyy = unita[1] * xx + unita[4] * yy + zz*conv;
+        double zzz = unita[2] * xx + unita[5] * yy + zz*conv;
+        xx = xxx;
+        yy = yyy;
+        zz = zzz;
+
+        xxx = unita[0] * vx + unita[3] * vy + vz*conv;
+        yyy = unita[1] * vx + unita[4] * vy + vz*conv;
+        zzz = unita[2] * vx + unita[5] * vy + vz*conv;
+        vx = xxx;
+        vy = yyy;
+        vz = zzz;
       } else {
         xx *= conv;
         yy *= conv;
@@ -417,7 +443,9 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["charges"] = charges;
   geomjson["unita"] = unita;
   geomjson["is_crystal"] = is_crystal;
+  geomjson["is_suface"] = is_surface;
   geomjson["fractional"] = fractional;
+  geomjson["twodfractional"] = twodfractional;
 
   *curptr = cur;
 
@@ -1522,38 +1550,23 @@ static json parse_nwpw(json nwpwjson, int *curptr,
          nwpwjson["initial_velocities"] = {std::stod(ss[1]), std::stoi(ss[2])};
        else
          nwpwjson["initial_velocities"] = {298.15, 12345};
-    } else if (mystring_contains(line, "cg")) {
-       if (mystring_contains(line, "stiefel"))
-         nwpwjson["minimizer"] = 4;
-       else if (mystring_contains(line, "stich"))
-         nwpwjson["minimizer"] = 9;
-       else
-         nwpwjson["minimizer"] = 1;
 
-    } else if (mystring_contains(line, "lmbfgs")) {
-       if (mystring_contains(line, "stiefel"))
-         nwpwjson["minimizer"] = 7;
-       else if (mystring_contains(line, "stich"))
-         nwpwjson["minimizer"] = 10;
-       else
-         nwpwjson["minimizer"] = 2;
- 
-       int lmbfgs_size = 2;
-       ss = mystring_split0(line);
-       for (auto iis = 0; iis < ss.size(); ++iis)
-         if (mystring_isfloat(ss[iis]))
-            lmbfgs_size = std::stoi(ss[iis]);
-       if (lmbfgs_size > 2)
-          nwpwjson["lmbfgs_size"] = lmbfgs_size;
+
     } else if (mystring_contains(line, "scf")) {
-       if (mystring_contains(line, "potential"))
+       if (mystring_contains(line, "ks-grassmann-cg"))
+          nwpwjson["minimizer"] = 3;
+       else if (mystring_contains(line, "ks-grassmann-lmbfgs"))
+          nwpwjson["minimizer"] = 6;
+       else if (mystring_contains(line, "potential"))
           nwpwjson["minimizer"] = 5;
        else
           nwpwjson["minimizer"] = 8;
 
-       if (mystring_contains(line, "block-cg"))  nwpwjson["ks_algorithm"] = -1;
-       if (mystring_contains(line, " cg"))       nwpwjson["ks_algorithm"] = 0;
-       if (mystring_contains(line, "rmm-diis"))  nwpwjson["ks_algorithm"] = 1;
+       if (mystring_contains(line, "ks-block-cg"))        nwpwjson["ks_algorithm"] = -1;
+       if (mystring_contains(line, "ks-cg"))              nwpwjson["ks_algorithm"] = 0;
+       if (mystring_contains(line, "ks-rmm-diis"))        nwpwjson["ks_algorithm"] = 1;
+       if (mystring_contains(line, "ks-grassmann-cg"))     nwpwjson["ks_algorithm"] = 2;
+       if (mystring_contains(line, "ks-grassmann-lmbfgs")) nwpwjson["ks_algorithm"] = 3;
 
        if (mystring_contains(line, "simple"))  nwpwjson["scf_algorithm"] = 0;
        if (mystring_contains(line, "broyden")) nwpwjson["scf_algorithm"] = 1;
@@ -1591,6 +1604,31 @@ static json parse_nwpw(json nwpwjson, int *curptr,
     //[TEMPERATURE <temperature>] 
     //[FERMI || GAUSSIAN || MARZARI-VANDERBILT default FERMI] 
     //[ORBITALS <integer orbitals default 4>] 
+
+    } else if (mystring_contains(line, "cg")) {
+       if (mystring_contains(line, "stiefel"))
+         nwpwjson["minimizer"] = 4;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 9;
+       else
+         nwpwjson["minimizer"] = 1;
+
+    } else if (mystring_contains(line, "lmbfgs")) {
+       if (mystring_contains(line, "stiefel"))
+         nwpwjson["minimizer"] = 7;
+       else if (mystring_contains(line, "stich"))
+         nwpwjson["minimizer"] = 10;
+       else
+         nwpwjson["minimizer"] = 2;
+
+       int lmbfgs_size = 2;
+       ss = mystring_split0(line);
+       for (auto iis = 0; iis < ss.size(); ++iis)
+         if (mystring_isfloat(ss[iis]))
+            lmbfgs_size = std::stoi(ss[iis]);
+       if (lmbfgs_size > 2)
+          nwpwjson["lmbfgs_size"] = lmbfgs_size;
+
     } else if (mystring_contains(line, "smear")) {
        double kT=0.001;
        double kb=3.16679e-6;
@@ -2410,6 +2448,11 @@ std::vector<std::string> parse_gen_lowlevel_rtdbstrs(std::string rtdbstring) {
   if (rtdbjson["nwpw"]["cutoff"][1].is_number_float())
     ecut0 = rtdbjson["nwpw"]["cutoff"][1];
 
+  double tol0 = 1.0e-7;
+  double tol1 = 1.0e-7;
+  if (rtdbjson["nwpw"]["tolerances"][0].is_number_float()) tol0 = rtdbjson["nwpw"]["tolerances"][0];
+  if (rtdbjson["nwpw"]["tolerances"][1].is_number_float()) tol1 = rtdbjson["nwpw"]["tolerances"][1];
+
   int steps;
   double dx;
   if (wcut0 < 5.0) {
@@ -2433,10 +2476,22 @@ std::vector<std::string> parse_gen_lowlevel_rtdbstrs(std::string rtdbstring) {
   // setup steps
   std::vector<std::string> gen_rtdbs;
 
+  double f[3] = {1000.0,100.0,1.0};
   for (int i = 1; i < steps; ++i) {
     rtdbjson["nwpw"]["cutoff"][0] = i * dx * wcut0;
     rtdbjson["nwpw"]["cutoff"][1] = i * dx * ecut0;
     rtdbjson["current_task"] = "energy";
+
+    if (i <= 3)
+    {
+        rtdbjson["nwpw"]["tolerances"][0] = f[i-1] * tol0;
+        rtdbjson["nwpw"]["tolerances"][1] = f[i-1] * tol1;
+    }
+    else
+    {
+        rtdbjson["nwpw"]["tolerances"][0] = tol0;
+        rtdbjson["nwpw"]["tolerances"][1] = tol1;
+    }
 
     gen_rtdbs.push_back(rtdbjson.dump());
   }

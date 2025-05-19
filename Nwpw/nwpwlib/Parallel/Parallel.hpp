@@ -97,9 +97,13 @@ public:
    void Vector_SumAll_buffer(const int, const int, double *, double *);
    int ISumAll(const int, const int);
    void Vector_ISumAll(const int, const int, int *);
+   void Vector_GatherAll(const int, const int, double *, double *, int);
+   void Vector_GathervAll(const int, const int *, const int *, double *, double *, int);
+
  
    /* MaxAll */
    double MaxAll(const int, const double);
+   double MinAll(const int, const double);
  
    /* Brdcsts */
    void Brdcst_Values(const int, const int, const int, double *);

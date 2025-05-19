@@ -1,0 +1,33 @@
+Method,Brief Description
+genrho,Generates real-space electron density from wavefunction.
+run,"Performs full SCF operator cycle including density, potentials, and Hψ."
+get_Tgradient,Computes the kinetic gradient contribution THψ.
+get_Gradient,Copies current Hψ to output buffer.
+gen_Tangent,Generates the tangent vector for orbital rotations.
+gen_hml,Computes symmetric Hψ inner product matrix.
+gen_hmlt,Computes Hψ product matrix (non-symmetric form).
+gen_Hpsi_k,Applies Hamiltonian operator in reciprocal space.
+gen_psi_r,Converts ψ(G) to ψ(r).
+gen_density,Generates electron density from ψ(r).
+gen_densities,"Generates dn, dng, and dnall from ψ(r)."
+gen_scf_potentials,Generates Coulomb and XC potentials.
+gen_vl_potential,Constructs local pseudopotential.
+gen_vall,Builds total effective potential in real space.
+get_vall,Copies vall array to user buffer.
+set_vall,Sets vall from external buffer.
+vl_ave,Computes average ⟨ρ|V_local⟩.
+vnl_ave,Computes nonlocal pseudopotential energy ⟨ψ|Vnl|ψ⟩.
+eorbit,Computes total orbital energy.
+ehartree,Computes Hartree energy from dng.
+exc,Evaluates exchange-correlation energy.
+pxc,Evaluates exchange-correlation potential energy.
+eke,Computes kinetic energy.
+energy,Total SCF energy from all components.
+gen_energies_en,Fills E[] and en[] arrays with energy terms.
+add_dteHpsi,Updates ψ via steepest descent step.
+vl_force,Computes force from local potential.
+vnl_force,Computes force from nonlocal pseudopotential.
+semicore_force,Computes semicore XC force contribution.
+semicore_density_update,Updates semicore density if needed.
+is_periodic,Returns periodicity flag.
+get_myke,Returns pointer to kinetic operator.

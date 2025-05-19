@@ -118,16 +118,38 @@ public:
     *    nwpw_scf_mixing::~nwpw_scf_mixing    *
     *                                         *
     *******************************************/
+   /**
+    * @brief Destructor for the SCF mixing class.
+    *
+    * Deallocates internal working buffer `rho_list` used for density
+    * and residual storage across iterations. Resets iteration count.
+    *
+    * This is safe to call at the end of an SCF run or before reinitializing
+    * the mixing engine with new parameters.
+    */
    ~nwpw_scf_mixing() 
    {
       m = 0;
       delete[] rho_list;
    }
+
    /*******************************************
     *                                         *
     *           nwpw_scf_mixing::reset_mix    *
     *                                         *
     *******************************************/
+   /**
+    * @brief Resets the SCF mixing history.
+    *
+    * Initializes the mixing buffer with the input density `rho_in`
+    * and sets the internal iteration counter `m` to 1.
+    *
+    * This is typically called at the start of an SCF loop or after
+    * a steepest descent reinitialization (e.g., due to stalling).
+    *
+    * @param rho_in Pointer to the current electron density array
+    *               used to reinitialize the mixing buffer.
+    */
    void reset_mix(double *rho_in)
    {
       m = 1;
@@ -141,6 +163,27 @@ public:
     *           nwpw_scf_mixing::mix          *
     *                                         *
     *******************************************/
+   /**
+    * @brief Perform self-consistent field (SCF) mixing update.
+    *
+    * Applies a selected mixing algorithm (e.g., Simple, Broyden, Johnson, Anderson, or 
+    * Thomas-Fermi) to update a set of real-space fields — either electron **densities** 
+    * or **potentials** — based on residual history and mixing parameters.
+    *
+    * This method modifies the input field `vout` to produce the updated field `vnew`.
+    * The type of field (density or potential) depends on how the mixing is configured 
+    * within the broader SCF loop. Kerker filtering is used to suppress long-wavelength 
+    * modes in the residual, improving SCF stability.
+    *
+    * Mixing memory and update histories are stored internally in `rho_list` for reuse 
+    * across SCF steps. SCF residual error is returned for convergence testing.
+    *
+    * @param[in]  vout        Input residual vector: difference between current and previous
+    *                         field (can be electron density or potential).
+    * @param[out] vnew        Output field after mixing update (same type as `vout`).
+    * @param[in]  deltae      Energy change from previous SCF step (used in some algorithms).
+    * @param[out] scf_error0  Returned SCF error estimate: sqrt(residual norm²) / nsize.
+    */
    void mix(double *vout, double *vnew, const double deltae, double *scf_error0) 
    {
       /* simple mixing */

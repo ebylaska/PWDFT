@@ -3,7 +3,7 @@ title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
 
 echo
 
-start pspw_pbe_Cu4
+start pspw_pbe_Cu4_gamma
 
 memory 1900 mb
 
@@ -28,16 +28,16 @@ end
 nwpw
   xc pbe96
   cutoff 30.0
-  loop 30 1
-  scf anderson alpha 0.03 kerker 0.18 iterations 3
+  loop 10 10
+  #scf anderson alpha 0.03 kerker 0.18 iterations 3
   #smear frozen filling [0 0 0.3333333 0.3333333 0.3333334 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
   #smear fermi alpha 0.05 alpha_min 0.01 alpha_max 0.1  beta 0.01 gamma 0.1 #filling [0 0 0.3333333 0.3333333 0.3333334]
   #smear fermi alpha_min 0.05 alpha_max 0.1
-  smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1
+  #smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1
   steepest_descent
      time_step 5.8
      loop 10 1000
      tolerances 1.0e-12 1.0e-12
   end
 end
-task pspw steepest_descent
+task pspw noit_energy

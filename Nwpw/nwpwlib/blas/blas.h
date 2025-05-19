@@ -97,6 +97,9 @@ extern "C" void dgesv_(int *, int *,  double *, int *, int *, double *, int *, i
 
 extern "C" void zscal_(int *, double *, double *, int *);
 extern "C" double zdotc_(int *, double *, int *, double *, int *);
+
+
+
 extern "C" void zaxpy_(int *, double *, double *, int *, double *, int *);
 extern "C" void zgemm_(char *, char *, int *, int *, int *, double *, double *,
                        int *, double *, int *, double *, double *, int *);

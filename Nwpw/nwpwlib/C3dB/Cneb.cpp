@@ -22,9 +22,11 @@
 #include <sstream>
 #include <stdexcept> // runtime_error()
 
+
 #include "Cneb.hpp"
 
 #include "blas.h"
+#include "compressed_io.hpp"
 
 namespace pwdft {
 
@@ -224,6 +226,8 @@ Cneb::Cneb(Parallel *inparall, Lattice *inlattice, Control2 &control, int ispin,
    io_buffer    = control.io_buffer();
 }
 
+
+
 /*************************************
  *                                   *
  *      Cneb::g_generate1_random     *
@@ -342,21 +346,61 @@ void Cneb::g_generate_excited_random(const int nex[], double *psi)
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<nex[ms]; ++n)
          {
-            int qj = msntoindex(ms, n);
-            int pj = msntop(ms, n);
-            if ((pj == taskid_j) && (pk==taskid_k))
+            //int qj = msntoindex(ms, n);
+            //int pj = msntop(ms, n);
+            if (pk==taskid_k)
             {
               c3db::r_setrandom(tmp2);
               c3db::rc_fft3d(tmp2);
 
               CGrid::c_pack(nbq1, tmp2);
-              int indx = ibshiftj*qj + ibshiftk*qk;
+              int indx = ibshiftj*n + ibshiftk*qk;
               CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
             }
       }
    }
    delete[] tmp2;
 }
+
+         
+/************************************* 
+ *                                   *
+ *  Cneb::g_generate_extra_random    *
+ *                                   *
+ *************************************/
+void Cneb::g_generate_extra_random(const int nextra, double *psi_excited)
+{
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+      int nbq1 = qk+1;
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<nextra; ++n)
+         {
+            //int qj = msntoindex(ms, n);
+            //int pj = msntop(ms, n);
+            if (pk==taskid_k)
+            {
+              c3db::r_setrandom(tmp2);
+              c3db::rc_fft3d(tmp2);
+
+              CGrid::c_pack(nbq1, tmp2);
+              int indx = ibshiftj*n + ibshiftk*qk;
+              CGrid::cc_pack_copy(nbq1, tmp2, psi_excited + indx);
+            }
+      }
+   }
+   delete[] tmp2;
+
+}
+
 
 
 /*************************************
@@ -395,7 +439,8 @@ void Cneb::g_read(const int iunit, double *psi)
       {
          int qj = msntoindex(ms, n);
          int pj = msntop(ms, n);
-         c_read(iunit, tmp2, pj, -1);
+         //c_read(iunit, tmp2, pj, -1);
+         c_read(iunit, tmp2, pj, pk);
          if ((pj==taskid_j) && (pk==taskid_k))
          {
             int indx = ibshiftj*qj + ibshiftk*qk;
@@ -407,21 +452,220 @@ void Cneb::g_read(const int iunit, double *psi)
    delete[] tmp2;
 }
 
+/*************************************
+ *                                   *
+ *        Cneb::g_read_reverse       *
+ *                                   *
+ *************************************/
+/**
+ * @brief Reads data from an input unit in reverse order for spin components and places it into the psi buffer.
+ *
+ * This function employs memory allocation, index calculations, and data transformations to ensure the reverse
+ * processing logic for spin components (`n`). It coordinates access with specified tasks (`taskid_j`, `taskid_k`)
+ * and uses packing methods for efficient data handling across processor nodes.
+ *
+ * Considerations:
+ * - Memory management is crucial; ensure `tmp2` allocation is consistent with system resources.
+ * - Verify reverse iteration logic aligns with expected computational and data outcomes.
+ */
+void Cneb::g_read_reverse(const int iunit, double *psi)
+{
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   int ibshiftj = 2*CGrid::npack1_max();
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+      
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {     
+      int qk = ktoindex(nb);
+      int pk = ktop(nb); 
+      int nbq1 = qk+1;
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=ne[ms]-1; n>=0; --n) 
+      {  
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         //c_read(iunit, tmp2, pj, -1);
+         c_read(iunit, tmp2, pj, pk);
+         if ((pj==taskid_j) && (pk==taskid_k))
+         {  
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::c_pack(nbq1, tmp2);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+         }  
+      }        
+   }           
+   delete[] tmp2;
+}           
+   
+
 
 /*************************************
  *                                   *
  *           Cneb::g_read_ne         *
  *                                   *
  *************************************/
-void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, double *psi) 
+/**
+ * @brief Read Kohn-Sham orbitals from file or initialize with random values.
+ *
+ * Reads wavefunctions (Kohn-Sham orbitals) from a binary restart file into the
+ * distributed `psi` array. If an orbital or Brillouin zone point is not present
+ * in the file (as determined by `ne_file` and `nbrillouin_file`), the corresponding
+ * wavefunction is initialized using randomized real-space data and Fourier transformed
+ * to reciprocal space.
+ *
+ * Memory and file may contain different numbers of orbitals per spin and k-point:
+ * - `ne[ms]` is the number of orbitals allocated in memory for spin channel `ms`.
+ * - `ne_file[ms]` is the number of orbitals stored in the file for spin channel `ms`.
+ * - `nbrillouin` is the number of Brillouin zone points allocated in memory.
+ * - `nbrillouin_file` is the number of Brillouin zone points stored in the file.
+ *
+ * The function handles MPI-distributed storage using a 3D FFT grid layout and only
+ * assigns values to the portion of `psi` owned by the calling task.
+ *
+ * @param[in] iunit             File unit from which to read orbital data.
+ * @param[in] ne_file           Array of size 2 specifying the number of orbitals
+ *                              in the file for each spin channel (alpha, beta).
+ * @param[in] nbrillouin_file   Number of Brillouin zone points in the file.
+ * @param[out] psi              Pointer to the distributed buffer of orbital coefficients.
+ *
+ * @details
+ * - Task ownership is determined by `msntop(ms, n)` and `ktop(nb)` for orbital and k-point assignment.
+ * - Temporary buffer `tmp2` is reused across iterations for performance.
+ * - Grid packing and unpacking is handled via `CGrid::c_pack` and `CGrid::cc_pack_copy`.
+ * - Missing orbitals are initialized with `r_setrandom` and transformed using `rc_fft3d`.
+ */
+void Cneb::g_read_ne(const int iunit, const int *ne_file, const int nbrillouin_file, double *psi) 
+{
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   const int ibshiftj = 2*CGrid::npack1_max();
+   const int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+ 
+   const int taskid_k = c1db::parall->taskid_k();
+   const int taskid_j = c1db::parall->taskid_j();
+ 
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      const int qk = ktoindex(nb);
+      const int pk = ktop(nb);
+      const int nbq1 = qk+1;
+   
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
+      {
+         const int qj = msntoindex(ms, n);
+         const int pj = msntop(ms, n);
+   
+         if ((n<ne_file[ms]) && (nb<nbrillouin_file))
+         {
+            c3db::c_read(iunit, tmp2, pj,pk);
+         }
+         else
+         {
+            c3db::r_setrandom(tmp2);
+            c3db::rc_fft3d(tmp2);
+         }
+
+         // Only copy psi component if task owns this j/k block
+         if ((pj==taskid_j) && (pk==taskid_k)) 
+         {
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::c_pack(nbq1, tmp2);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+         }
+      }
+   }
+ 
+   delete[] tmp2;
+}
+
+/*************************************
+ *                                   *
+ *      Cneb::g_read_ne_reverse      *
+ *                                   *
+ *************************************/
+/**
+ * @brief Read Kohn-Sham orbitals in reverse order from a file into the psi array.
+ *
+ * This function reconstructs Kohn-Sham orbital wavefunctions by reading orbital data 
+ * from a file when available (`n < ne_file[ms]` and `nb < nbrillouin_file`), and filling
+ * any remaining slots in `psi` with randomized Fourier-space data. The orbitals are 
+ * processed in reverse order (highest to lowest index) for each spin channel.
+ *
+ * Memory and file may store a different number of orbitals per spin and k-point:
+ * - `ne[ms]` is the number of orbitals allocated in memory for spin channel `ms`.
+ * - `ne_file[ms]` is the number of orbitals stored in the file for spin channel `ms`.
+ * - `nbrillouin` is the number of Brillouin zone points allocated in memory.
+ * - `nbrillouin_file` is the number of Brillouin zone points stored in the file.
+ *
+ * Only the orbitals mapped to the current task (`taskid_j`, `taskid_k`) are packed 
+ * into the output array `psi` using `CGrid::c_pack()` and `CGrid::cc_pack_copy()`.
+ *
+ * @param[in]  iunit             Fortran file unit to read from.
+ * @param[in]  ne_file[2]        Number of orbitals per spin channel in the file.
+ * @param[in]  nbrillouin_file   Number of Brillouin zone points in the file.
+ * @param[out] psi               Output buffer for orbital data in packed format.
+ */
+void Cneb::g_read_ne_reverse(const int iunit, const int *ne_file, const int nbrillouin_file, double *psi)
+{
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+   const int ibshiftj = 2*CGrid::npack1_max();
+   const int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+
+   const int taskid_k = c1db::parall->taskid_k();
+   const int taskid_j = c1db::parall->taskid_j();
+
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {
+      const int qk = ktoindex(nb);
+      const int pk = ktop(nb);
+      const int nbq1 = qk+1;
+
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=ne[ms]-1; n>=0; --n) 
+      {
+         const int qj = msntoindex(ms, n);
+         const int pj = msntop(ms, n);
+
+         if ((n<ne_file[ms]) && (nb<nbrillouin_file))
+         {
+            c3db::c_read(iunit, tmp2, pj,pk);
+         }
+         else
+         {
+            c3db::r_setrandom(tmp2);
+            c3db::rc_fft3d(tmp2);
+         }
+
+         if ((pj==taskid_j) && (pk==taskid_k))
+         {
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            CGrid::c_pack(nbq1, tmp2);
+            CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+         }
+      }
+   }
+
+   delete[] tmp2;
+}
+
+
+/*************************************
+ *                                   *
+ *           Cneb::g_read_excited    *
+ *                                   *
+ *************************************/
+void Cneb::g_read_excited(const int iunit, const int nex[], const int nbrillouin0,  double *psi) 
 {
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
    int ibshiftj = 2*CGrid::npack1_max();
-   int ibshiftk = ibshiftj*(ne0[0]+ne0[1]);
- 
+   int ibshiftk = ibshiftj*(nex[0]+nex[1]);
+
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
- 
+
    if (nbrillouin <= nbrillouin0)
    {
       for (auto nb=0; nb<nbrillouin; ++nb)
@@ -429,38 +673,34 @@ void Cneb::g_read_ne(const int iunit, const int *ne0, const int nbrillouin0, dou
          int qk = ktoindex(nb);
          int pk = ktop(nb);
          int nbq1 = qk+1;
-     
+    
          for (auto ms=0; ms<ispin; ++ms)
-         for (auto n=0; n<ne0[ms]; ++n) 
+         for (auto n=0; n<nex[ms]; ++n)
          {
-            int qj = msntoindex(ms, n);
-            int pj = msntop(ms, n);
-     
-            if ((n<ne0[ms]) && (nb<nbrillouin0))
+            if ((n<nex[ms]) && (nb<nbrillouin0))
             {
-               c3db::c_read(iunit, tmp2, pj,pk);
+               c3db::c_read(iunit,tmp2,taskid_j,pk);
             }
             else
             {
                c3db::r_setrandom(tmp2);
                c3db::rc_fft3d(tmp2);
             }
-     
-            if ((pj==taskid_j) && (pk==taskid_k)) 
+    
+            if (pk==taskid_k)
             {
-               int indx = ibshiftj*qj + ibshiftk*qk;
+               int indx = ibshiftj*n + ibshiftk*qk;
                CGrid::c_pack(nbq1, tmp2);
-               CGrid::cc_pack_copy(nbq1, tmp2, psi + indx);
+               CGrid::cc_pack_copy(nbq1, tmp2, psi+indx);
             }
          }
       }
    }
    else
        std::cout << "nbrillouin > nbrillouin0" << std::endl;
- 
+
    delete[] tmp2;
 }
-
 
 
 /*************************************
@@ -508,6 +748,7 @@ void Cneb::g_write(const int iunit, double *psi)
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
             CGrid::c_unpack(nbq1, tmp2);
 
+
             //c_write(iunit,tmp2,pj,pk);
          }
          //if (io_buffer)
@@ -524,18 +765,308 @@ void Cneb::g_write(const int iunit, double *psi)
 
 /*************************************
  *                                   *
+ *           Cneb::g_read_occ        *
+ *                                   *
+ *************************************/
+/**
+ * @brief Reads Kohn-Sham orbital occupation numbers from a file.
+ *
+ * This function reconstructs the distributed occupation number array `occ`
+ * by reading processor-specific data from disk using `Cneb::r_read_occ`.
+ * It loops over all Brillouin zone points and spin/orbital indices, storing
+ * only the data relevant to the calling MPI task.
+ *
+ * - `neq[ms]` is the number of orbitals for spin channel `ms` in memory.
+ * - The total number of orbitals is `neq_total = neq[0] + neq[1]`.
+ * - `occ` is indexed by `(j,k)` with Brillouin index `k` packed via `ibshiftk`.
+ *
+ * @param[in] iunit  File unit identifier from which to read occupation data.
+ * @param[out] occ   Output buffer for orbital occupation numbers,
+ *                   size `neq_total * nbrillouin`, distributed across tasks.
+ *
+ * @details
+ * - Uses task ownership (`msntop`, `ktop`) to determine which part of `occ`
+ *   to write from the temporary buffer `tmp2`.
+ * - Each call to `r_read_occ` loads all occupations for the local `(taskid_j, taskid_k)` tile.
+ * - Occupation data is packed according to `qj = msntoindex(ms, n)` and `qk = ktoindex(nb)`.
+ */
+
+/*
+void Cneb::g_read_occ(const int iunit, double *occ)
+{
+   const int neq_total = neq[0] + neq[1];
+   double *tmp2 = new (std::nothrow) double[neq_total]();
+
+   const int ibshiftj = 1;
+   const int ibshiftk = ibshiftj * neq_total;
+
+   const int taskid_k = c1db::parall->taskid_k();
+   const int taskid_j = c1db::parall->taskid_j();
+
+   std::cout << "taskid_j=" << taskid_j << " taskid_k=" << taskid_k << std::endl;
+
+   for (int nb=0; nb<nbrillouin; ++nb)
+   {
+      const int qk = ktoindex(nb);
+      const int pk = ktop(nb);
+      const int nbq1 = qk + 1;
+
+      Cneb::r_read_occ(iunit, tmp2, taskid_j, taskid_k);
+
+      for (int ms=0; ms<ispin; ++ms)
+      for (int n=0; n<ne[ms]; ++n)
+      {
+         const int qj = msntoindex(ms, n);
+         const int pj = msntop(ms, n);
+
+         if ((pj==taskid_j) && (pk==taskid_k))
+         {
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            occ[indx] = tmp2[qj];
+         }
+      }
+   }
+
+   delete[] tmp2;
+}
+*/
+
+
+/*************************************
+ *                                   *
+ *           Cneb::g_read_occ        *
+ *                                   *
+ *************************************/
+/**
+ * @brief Reads occupation numbers from file and redistributes into (neq × nbrillouin) memory layout.
+ *
+ * This function reads `ne[0] + ne[1]` occupation values from a restart file (organized by spin),
+ * broadcasts them across all ranks, and maps them into the in-memory occupation array `occ`,
+ * which is distributed by `(taskid_j, taskid_k)` and replicated across `taskid_i`.
+ *
+ * Occupations are packed in the file as:
+ *   - spin-up: tmp2[0..ne[0]-1]
+ *   - spin-dn: tmp2[ne[0]..ne_total-1]
+ *
+ * The in-memory occupation layout is:
+ *   - occ[qj + neq_total * qk] for each local orbital `qj` at Brillouin point `qk`.
+ *
+ * @param[in]  iunit  File unit handle for reading.
+ * @param[out] occ    Pointer to the distributed memory buffer (length neq_total × nbrillouin).
+ */
+void Cneb::g_read_occ(const int iunit, double *occ)
+{
+   const int ne_total  = ne[0]+ne[1];     // from file
+   const int neq_total = neq[0]+neq[1];   // in memory
+
+   double *tmp2 = new (std::nothrow) double[ne_total]();
+
+   const int ibshiftj = 1;
+   const int ibshiftk = ibshiftj*neq_total;
+
+   const int taskid   = c1db::parall->taskid();    // all mpi ranks
+   const int taskid_k = c1db::parall->taskid_k();  // Brillouin zone
+   const int taskid_j = c1db::parall->taskid_j();  // orbital
+   const int taskid_i = c1db::parall->taskid_i();  // G-space
+
+   for (int nb = 0; nb < nbrillouin; ++nb)
+   {
+      const int qk = ktoindex(nb);
+      const int pk = ktop(nb);
+
+      // read from disk on the root rank only
+      if (taskid == 0)
+         dread(iunit, tmp2, ne_total);
+
+      // broadcast across all ranks (i, j, k)
+      c1db::parall->Brdcst_Values(0,0,ne_total,tmp2);
+
+      // distribute to local chunk of occ buffer
+      // Map tmp2[0..ne[ms]-1] into occ[0..neq[ms]-1]
+      for (int ms=0; ms<ispin; ++ms)
+      for (int n=0;  n<ne[ms]; ++n)
+      {
+         const int pj = msntop(ms,n);       // orbital processor index
+         const int qj = msntoindex(ms,n);   // same mapping in memory
+
+         if ((pj == taskid_j) && (pk == taskid_k))
+         {
+            int indx   = ibshiftj*qj + ibshiftk*qk;
+            int offset = (ms==0) ? n : ne[0] + n;
+            occ[indx] = tmp2[offset];
+         }
+      }
+   }
+
+   delete[] tmp2;
+}
+
+
+
+
+
+/*************************************
+ *                                   *
+ *           Cneb::g_write_occ       *
+ *                                   *
+ *************************************/
+/**
+ * @brief Writes occupation numbers to disk across distributed tasks.
+ *
+ * This function collects non-overlapping occupation entries from tasks assigned
+ * to orbital and k-point subcommunicators (j,k) on the i=0 plane. It performs a 
+ * global sum reduction using Vector_SumAll to consolidate values into a single 
+ * buffer, which is then written to disk by the root task (taskid == 0).
+ *
+ * @param[in] iunit  File unit to which occupation numbers are written.
+ * @param[in] occ    Distributed occupation number array (size neq_total * nbrillouin).
+ */
+
+void Cneb::g_write_occ(const int iunit, double *occ)
+{
+   const int ne_total  = ne[0] + ne[1];
+   const int neq_total = neq[0] + neq[1];                // Total number of orbitals over all spins
+   double *tmp2 = new (std::nothrow) double[ne_total](); // Temporary buffer for task-local orbital data
+   double *tmp2_out = new (std::nothrow) double[ne_total](); // Temporary buffer for task-local orbital data
+
+   const int ibshiftj = 1;
+   const int ibshiftk = ibshiftj * neq_total;
+
+   const int taskid_k = c1db::parall->taskid_k();
+   const int taskid_j = c1db::parall->taskid_j();
+   const int taskid_i = c1db::parall->taskid_i();
+   const int taskid   = c1db::parall->taskid();
+
+   for (int nb = 0; nb < nbrillouin; ++nb)
+   {
+      const int qk = ktoindex(nb); // task Brillouin index
+      const int pk = ktop(nb);     // task responsible for this k-point
+
+       std::memset(tmp2,0,ne_total*sizeof(double));
+
+      // Only taskid_i==0 contributes to tmp2 from occ
+      if (taskid_i==0)
+      {
+         for (int ms=0; ms<ispin; ++ms)
+         for (int n=0;  n<ne[ms]; ++n)
+         {
+            const int qj = msntoindex(ms, n); // task orbital index
+            const int pj = msntop(ms, n);     // task owning this orbital
+      
+            if ((pj==taskid_j) && (pk==taskid_k))
+            {
+               int indx = ibshiftj*qj + ibshiftk*qk;
+               int offset = (ms==0) ? n : ne[0] + n;
+               tmp2[offset] = occ[indx];
+            }
+         }
+      }
+
+      // Reduce_Values only gathers to MASTER; tmp2_out is valid only there.
+      //   - Sumall option  across taskids to get fully populated tmp2
+      //   - In principle, the reduction could be done as successive sums over (j,k),
+      //   - but Vector_SumAll(0,...) currently spans all ranks, which is safe and simple.
+      //c1db::parall->Vector_SumAll(0,ne_total,tmp2);
+      c1db::parall->Reduce_Values(0, MASTER, ne_total,tmp2,tmp2_out);
+
+      // Write to disk on the root rank only
+      if (taskid==MASTER)
+         dwrite(iunit, tmp2_out, ne_total);
+   }
+
+   delete[] tmp2;
+   delete[] tmp2_out;
+}
+
+
+
+/*************************************
+ *                                   *
+ *           Cneb::g_write_occ_old   *
+ *                                   *
+ *************************************/
+/**
+ * @brief Write occupation numbers to an output unit in parallel.
+ *
+ * This function collects and writes the electronic occupation numbers for all 
+ * spin channels, bands, and Brillouin zone k-points. The occupation data is 
+ * gathered from distributed memory (across MPI tasks) and written to the specified 
+ * output unit by the master process.
+ *
+ * @param[in] iunit The output file descriptor/unit to which the occupation data will be written.
+ * @param[in] occ   Pointer to the local occupation array, distributed across MPI tasks.
+ *
+ * The occupation array `occ` is assumed to be structured as a 3D distribution:
+ *   - npack (bands), 
+ *   - neq (per-spin occupations),
+ *   - nbrillouin (k-points).
+ *
+ * The routine uses the parallel task topology defined in `c1db::parall` to determine
+ * which task owns which portion of the occupation array and uses `Vector_SumAll` to 
+ * perform reductions across the parallel dimensions.
+ *
+ * Only the master task writes the final collected array to `iunit`.
+ */
+/*
+void Cneb::g_write_occ_old(const int iunit, double *occ)
+{
+   int nsize = nbrillouin*(ne[0]+ne[1]);
+   int ibshiftj = 1;
+   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   double *tmp2 = new (std::nothrow) double[nsize]();
+      
+   std::memset(tmp2,0,nsize*sizeof(double));
+
+   int taskid_k = c1db::parall->taskid_k();
+   int taskid_j = c1db::parall->taskid_j();
+         
+   for (auto nb=0; nb<nbrillouin; ++nb)
+   {  
+      int qk = ktoindex(nb);
+      int pk = ktop(nb);
+         
+      for (auto ms=0; ms<ispin; ++ms)
+      for (auto n=0; n<ne[ms]; ++n) 
+      {  
+         int qj = msntoindex(ms, n); 
+         int pj = msntop(ms, n);
+            
+         if ((pj==taskid_j) && (pk==taskid_k))
+         {  
+            int indx = ibshiftj*qj + ibshiftk*qk;
+            tmp2[n+nb*(ne[0]+ne[1])] = occ[indx];  // copy one element
+         }
+      }
+   }
+   c1db::parall->Vector_SumAll(2,nsize,tmp2);
+   c1db::parall->Vector_SumAll(3,nsize,tmp2);
+   if (c1db::parall->is_master())
+      dwrite(iunit, tmp2, nsize);
+
+   delete[] tmp2;
+}
+*/
+
+
+
+
+
+/*************************************
+ *                                   *
  *        Cneb::g_write_excited      *
  *                                   *
  *************************************/
-void Cneb::g_write_excited(const int iunit, const int nex[], double *psi)
+void Cneb::g_write_excited(const int iunit, const int nex[], const int nbrillouin0, double *psi)
 {
    int npack2 = 2*CGrid::npack1_max();
    int ibshiftj = npack2;
-   int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   //int ibshiftk = ibshiftj*(neq[0]+neq[1]);
+   int ibshiftk = ibshiftj*(nex[0]+nex[1]);
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
        
    int taskid_k = c1db::parall->taskid_k();
    int taskid_j = c1db::parall->taskid_j();
+   if (nbrillouin != nbrillouin0) std::cout << "CRAP, nbrillouin=" << nbrillouin << " nbirllouin0=" << nbrillouin0 << std::endl;
 
    for (auto nb=0; nb<nbrillouin; ++nb)
    {
@@ -546,12 +1077,12 @@ void Cneb::g_write_excited(const int iunit, const int nex[], double *psi)
       for (auto ms=0; ms<ispin; ++ms)
       for (auto n=0; n<nex[ms]; ++n)
       {
-         int qj = msntoindex(ms, n);
-         int pj = msntop(ms, n);
+         //int qj = msntoindex(ms, n);
+         //int pj = msntop(ms, n);
 
-         if ((pj==taskid_j) && (pk==taskid_k))
+         if (pk==taskid_k)
          {
-            int indx = ibshiftj*qj + ibshiftk*qk;
+            int indx = ibshiftj*n + ibshiftk*qk;
             CGrid::cc_pack_copy(nbq1, psi+indx, tmp2);
             CGrid::c_unpack(nbq1, tmp2);
 
@@ -561,7 +1092,7 @@ void Cneb::g_write_excited(const int iunit, const int nex[], double *psi)
          //   c_write_buffer(iunit,tmp2,pj,pk);
          //else
 
-         c3db::c_write(iunit,tmp2,pj,pk);
+         c3db::c_write(iunit,tmp2,taskid_j,pk);
       }
    }
 
@@ -626,6 +1157,167 @@ void Cneb::h_write(const int iunit, const int nproj, const double *proj)
 
 
 
+/********************************
+ *                              *
+ *         Cneb::r_read_occ     *
+ *                              *
+ ********************************/
+/**
+ * @brief Reads occupation data from a file and distributes it to appropriate MPI processes.
+ *
+ * This function reads occupation numbers for each Brillouin zone point from a file
+ * written by `r_write_occ`. The master process performs the file I/O, and data is
+ * distributed to other processes based on their task mapping using MPI.
+ *
+ * @param[in]  iunit  File unit identifier for reading.
+ * @param[out] occ    Array to store the occupation data. Must be of size (neq[0]+neq[1]) * nbrillouin.
+ * @param[in]  jcol   Column index in the parallel 2D/3D process grid (used for identifying the owning process).
+ * @param[in]  kcol   Row/slice index in the parallel 2D/3D process grid (used for identifying the owning process).
+ *
+ * @note This function assumes the use of slab or Hilbert mapping with a 2D/3D MPI domain decomposition.
+ *       It uses non-blocking communication to send and receive data between the master and worker nodes.
+ */
+void Cneb::r_read_occ(const int iunit, double *occ, const int jcol, const int kcol)
+{
+   int taskid = c3db::parall->taskid();
+   int taskid_j = c3db::parall->taskid_j();
+   int taskid_k = c3db::parall->taskid_k();
+   int idum[1] = {1};
+
+   int neq_total = neq[0] + neq[1];
+   int bsize = neq_total;
+   double *tmp = new (std::nothrow) double[bsize];
+
+   int ibshiftj = 1;
+   int ibshiftk = ibshiftj * neq_total;
+
+   if (taskid == MASTER)
+   {
+      for (int qk = 0; qk < nbrillouin; ++qk)
+      {
+         int pk = ktop(qk);
+         int p_to = c3db::parall->convert_taskid_ijk(0, jcol, kcol);
+
+         dread(iunit, tmp, bsize);
+
+         if (p_to == MASTER)
+         {
+            int offset = ibshiftk * qk;
+            std::memcpy(occ + offset, tmp, bsize * sizeof(double));
+         }
+         else
+         {
+            c3db::parall->isend(0, 7, p_to, 1, idum);
+            c3db::parall->dsend(0, 9, p_to, bsize, tmp);
+         }
+      }
+   }
+   else
+   {
+      for (int qk = 0; qk < nbrillouin; ++qk)
+      {
+         int pk = ktop(qk);
+         int p_here = c3db::parall->convert_taskid_ijk(0, jcol, kcol);
+
+         if (p_here == taskid)
+         {
+            int offset = ibshiftk * qk;
+            c3db::parall->ireceive(0, 7, MASTER, 1, idum);
+            c3db::parall->dreceive(0, 9, MASTER, bsize, tmp);
+            std::memcpy(occ + offset, tmp, bsize * sizeof(double));
+         }
+      }
+   }
+
+   delete[] tmp;
+}
+
+
+/********************************
+ *                              *
+ *         Cneb::r_write_occ    *
+ *                              *
+ ********************************/
+/**
+ * @brief Writes the occupation number array to a file using MPI coordination.
+ *
+ * This function handles output of the `occ` array of size (neq[0] + neq[1]) × nbrillouin,
+ * corresponding to occupation numbers for each wavefunction state at different q-points.
+ *
+ * It performs coordinated communication between MPI ranks to gather the required slices
+ * from the appropriate process (as identified by `jcol`, `kcol`) and writes them to file
+ * from the master rank.
+ *
+ * @param iunit File unit or descriptor to write the occupation data to.
+ * @param occ   Pointer to the occupation number data (flattened 2D array).
+ * @param jcol  Column process index owning the data slice in the j-dimension.
+ * @param kcol  Column process index owning the data slice in the k-dimension.
+ *
+ * @note
+ * - The occupation array is assumed to be laid out as `occ[qj + qk * neq_total]`.
+ * - Communication uses `isend`/`ireceive`/`dsend`/`dreceive` methods from the `parall` object.
+ * - This method supports both slab and Hilbert mapped layouts depending on `convert_taskid_ijk`.
+ */
+void Cneb::r_write_occ(const int iunit, double *occ, const int jcol, const int kcol)
+{
+   int taskid = c3db::parall->taskid();
+   int taskid_j = c3db::parall->taskid_j();
+   int taskid_k = c3db::parall->taskid_k();
+   int idum[1] = {1};
+
+   int neq_total = neq[0] + neq[1];
+   int bsize = neq_total;
+   double *tmp = new (std::nothrow) double[bsize];
+
+   int ibshiftj = 1;
+   int ibshiftk = ibshiftj * neq_total;
+
+   if (taskid == MASTER)
+   {
+      for (int qk=0; qk<nbrillouin; ++qk)
+      {
+         int pk = ktop(qk);
+         int p_from = c3db::parall->convert_taskid_ijk(0, jcol, kcol);
+
+         if (p_from == MASTER)
+         {
+            int offset = ibshiftk * qk;
+            std::memcpy(tmp, occ + offset, bsize * sizeof(double));
+         }
+         else
+         {
+            c3db::parall->isend(0, 7, p_from, 1, idum);
+            c3db::parall->dreceive(0, 9, p_from, bsize, tmp);
+         }
+
+         dwrite(iunit, tmp, bsize);
+      }
+   }
+   else
+   {
+      for (int qk=0; qk<nbrillouin; ++qk)
+      {
+         int pk = ktop(qk);
+         int p_here = c3db::parall->convert_taskid_ijk(0, jcol, kcol);
+
+         if (p_here == taskid)
+         {
+            int offset = ibshiftk * qk;
+            std::memcpy(tmp, occ + offset, bsize * sizeof(double));
+            c3db::parall->ireceive(0, 7, MASTER, 1, idum);
+            c3db::parall->dsend(0, 9, MASTER, bsize, tmp);
+         }
+      }
+   }
+
+   delete[] tmp;
+}
+
+
+
+
+
+
 /*************************************
  *                                   *
  *           Cneb::gg_traceall       *
@@ -648,12 +1340,14 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
    int npack2 = 2*CGrid::npack1_max();
    int indx = 0;
    double sum = 0.0;
+   //std::complex<double> sumc = {0.0,0.0};
 
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {
       double weight = pbrill_weight(nbq);
       for (auto n=0; n<(neq[0]+neq[1]); ++n) 
       {
+         //sumc += CGrid::cc_pack_izdot(nbq+1, psi1+indx, psi2+indx)*weight;
          sum += CGrid::cc_pack_idot(nbq+1, psi1+indx, psi2+indx)*weight;
          indx += npack2;
       }
@@ -990,6 +1684,46 @@ void Cneb::hr_aSumSqr(const double alpha, double *psir, double *dn)
    c3db::parall->Vector_SumAll(2, ispin*nfft3d, dn);
    c3db::parall->Vector_SumAll(3, ispin*nfft3d, dn);
 }
+
+/*************************************
+ *                                   *
+ *         Cneb::hr_aSumSqr_occ      *
+ *                                   *
+ *************************************/
+void Cneb::hr_aSumSqr_occ(const double alpha, double *occ, double *psir, double *dn)
+{  
+   int nsize = nfft3d*ispin;
+   std::memset(dn,0,nsize*sizeof(double));
+     
+   int indx1 = 0;
+   for (auto nbq=0; nbq<nbrillq; ++ nbq)
+   {
+      int indx0 = 0;
+      double weight = alpha*pbrill_weight(nbq);
+      for (auto ms=0; ms<ispin; ++ms) 
+      {
+         for (auto n=0; n<(neq[ms]); ++n) 
+         {
+            double wf = occ[n + ms*(neq[0]) + nbq*(neq[0]+neq[1])];
+            int k2 = 0;
+            for (auto k=0; k<nfft3d; ++k)
+            {
+               double ar = psir[indx1+k2];
+               double ai = psir[indx1+k2+1];
+               dn[indx0+k] += weight*(ar*ar + ai*ai)*wf;
+               k2 += 2;
+            }
+            indx1 += n2ft3d;
+         }
+         indx0 += nfft3d;
+      }
+   }
+   c3db::parall->Vector_SumAll(2, ispin*nfft3d, dn);
+   c3db::parall->Vector_SumAll(3, ispin*nfft3d, dn);
+}
+
+
+
 
 /*************************************
  *                                   *
@@ -2090,6 +2824,51 @@ double Cneb::w_trace(double *hml)
    return sum;
 }
 
+/*************************************
+ *                                   *
+ *            Cneb::w_trace_occ      *
+ *                                   *
+ *************************************/
+/**
+ * @brief Calculate the trace of a matrix.
+ *
+ * This function calculates the trace of the input matrix 'hml', which is the sum of the diagonal elements.
+ *
+ * @param[in] hml The input matrix for which the trace is to be calculated.
+ * @return The trace of the matrix.
+ */
+double Cneb::w_trace_occ(double *hml, double *occ)
+{
+   int mshift0 = 0;
+   //int mshift1 = 0;
+   double sum = 0.0;
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      int mshift  = 0;
+      double weight = pbrill_weight(nbq);
+      for (auto ms=0; ms<ispin; ++ms)
+      {
+         for (auto i=0; i<ne[ms]; ++i)
+         {
+            int idx = 2 * (i + i*ne[ms]) + mshift + mshift0;
+            //int occidx = i + ms*ne[0];  // <-- replace later with msntoindex(ms, i)
+            int occidx = msntoindex(ms,i);
+
+            sum += hml[idx]*weight*occ[occidx];
+         }
+         //mshift1 += ne[0];
+         mshift  += 2*ne[ms]*ne[ms];
+      }
+      //mshift0 += mshift;  // Correct per BZ block
+      mshift0 += 2*(ne[0]*ne[0] + ne[1]*ne[1]);
+   }
+   double sum2 = c3db::parall->SumAll(2,sum);
+   double sum3 = c3db::parall->SumAll(3,sum2);
+   
+   return sum3;
+}
+
 
 /*************************************
  *                                   *
@@ -2164,7 +2943,6 @@ void Cneb::w_diagonalize(double *hml, double *eig)
             c3db::mygdevice.WW_eigensolver(ispin,ne,hmlb,eigb);
          c1db::parall->Brdcst_Values(1, 0, nn, hmlb);
          c1db::parall->Brdcst_Values(1, 0, n, eigb);
-
       }
    }
 }
@@ -2973,7 +3751,14 @@ void Cneb::ggw_lambda_sic(double dte, double *psi1, double *psi2,
  ********************************/
 /*
    Performs a Gram-Schmidt orthogonalization on psi
+
+   g_ortho: Performs a full Gram-Schmidt orthogonalization sweep on the input psi array.
+   - Orthogonalizes all spins, all k-points, all orbitals.
+   - Normalizes each orbital individually.
+   - Supports both serial and parallel (over np_j) orthogonalization.
+   - psi assumed to be packed as (k-point)(spin)(orbital)(FFT grid).
 */
+
 void Cneb::g_ortho(double *psi) 
 {
    if (parallelized) 
@@ -3119,6 +3904,74 @@ void Cneb::g_ortho_excited(const int nbq1, double *psi, const int nex[], double 
    // project out virtual space
 }
 
+/**************************************
+ *                                    *
+ *  Cneb::g_project_out_filled_extra  *
+ *                                    *
+ **************************************/
+/**
+ * @brief Orthogonalize and normalize extra orbitals added beyond the filled states.
+ *
+ * This function projects out the filled orbital components from the extra orbitals 
+ * that are added (e.g., for fractional occupations or smearing) and normalizes them. 
+ * It operates over all Brillouin zone points and spin channels.
+ *
+ * @param[in]  mb      Spin block index (-1 = all spins, 0 = alpha, 1 = beta)
+ * @param[in]  nex     Array with number of extra orbitals per spin channel
+ * @param[in,out] psi  Packed array of wavefunction coefficients 
+ *                     [spin][orbital][Brillouin zone][packed grid]
+ *
+ * @details
+ *   - For each Brillouin zone point and spin channel:
+ *     - Loops over newly added orbitals
+ *     - Projects out the component along lower-index filled orbitals using 
+ *       g_project_out_filled_below()
+ *     - Normalizes the resulting orbital
+ *   - Uses CGrid::cc_pack_dot() and CGrid::c_pack_SMul() for norm evaluation 
+ *     and scaling
+ *   - Relies on consistent orbital packing: 
+ *       psi[nbq][spin][orbital][packed grid index]
+ *
+ * @note Assumes psi uses `CGrid::npack1_max()` packing for spatial coefficients.
+ *       This operation is critical for ensuring orthogonality of added states 
+ *       before diagonalization or smearing-based occupation update.
+ */
+void Cneb::g_project_out_filled_extra(const int mb, const int nex[], double *psi)
+{  
+   int ms1, ms2;
+   if (mb == -1)
+   {    
+      ms1 = 0;
+      ms2 = ispin;
+   }  
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }
+   int ishift = 2*CGrid::npack1_max();
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      int nbq1 = nbq + 1;
+      int kshift = nbq*(ne[0]+ne[1])*ishift;
+
+      for (auto ms=ms1; ms<ms2; ++ms)
+      {
+         double *psi_ms_block = psi + ms*ne[0]*ishift + kshift;
+      
+         for (auto k=(nex[ms]-1); k>=0; --k)
+         {
+            double *psi_k = psi_ms_block + k*ishift;
+            g_project_out_filled_above(nbq1, psi_ms_block, ms, k, psi_k);
+            double norm = CGrid::cc_pack_dot(nbq1, psi_k, psi_k);
+            double scale = 1.0 / std::sqrt(norm);
+            CGrid::c_pack_SMul(nbq1, scale, psi_k);
+         }
+      }
+   }
+
+}
+
 /********************************
  *                              *
  *  Cneb::g_project_out_filled  *
@@ -3129,12 +3982,64 @@ void Cneb::g_project_out_filled(const int nbq1, double *psi, const int ms, doubl
    int ishift = ms*ne[0]*2*CGrid::npack1_max();
    for (auto n=0; n<ne[ms]; ++n)
    {
+      //int indx = 2*CGrid::npack1_max()*n + ishift;
+      //double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+      //CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
       int indx = 2*CGrid::npack1_max()*n + ishift;
-      double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
-      //std::cout << "   n=" << n << " w=" << w << std::endl;
-      CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
+      std::complex<double> w = -CGrid::cc_pack_zdot(nbq1,psi+indx,Horb);
+      CGrid::cc_pack_zaxpy(nbq1,w,psi+indx,Horb);
    }
 }
+
+/**************************************
+ *                                    *
+ *  Cneb::g_project_out_filled_below  *
+ *                                    *
+ **************************************/
+void Cneb::g_project_out_filled_below(const int nbq1, double *psi, const int ms, const int k, double *Horb)
+{
+   int ishift = ms*ne[0]*2*CGrid::npack1_max();
+   for (auto km=k-1; km>=0; --km)
+   {
+     int indx = 2*CGrid::npack1_max()*km + ishift;
+     double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+     CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
+   }
+}
+
+
+/**************************************
+ *                                    *
+ *  Cneb::g_project_out_filled_above  *
+ *                                    *
+ **************************************/
+void Cneb::g_project_out_filled_above(const int nbq1, double *psi, const int ms, const int k, double *Horb)
+{
+   int ishift = ms*neq[0]*2*CGrid::npack1_max();
+   for (auto ka=k+1; ka<neq[ms]; ++ka)
+   {
+     int indx = 2*CGrid::npack1_max()*ka + ishift;
+     double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+     CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
+   }
+}
+
+/**************************************
+ *                                    *
+ *  Cneb::g_project_out_filled_up     *
+ *                                    *
+ **************************************/
+void Cneb::g_project_out_filled_from_k_up(const int nbq1, double *psi, const int ms, const int k, double *Horb)
+{  
+   int ishift = ms*neq[0]*2*CGrid::npack1_max();
+   for (auto ka=k; ka<neq[ms]; ++ka)
+   {     
+     int indx = 2*CGrid::npack1_max()*ka + ishift;
+     double w = -CGrid::cc_pack_dot(nbq1,psi+indx,Horb);
+     CGrid::cc_pack_daxpy(nbq1,w,psi+indx,Horb);
+   }     
+}     
+
 
 /********************************
  *                              *
@@ -3146,10 +4051,12 @@ void Cneb::g_project_out_virtual(const int nbq1, const int ms, const int nex[], 
    int kshift = ms*nex[0]*2*CGrid::npack1_max();
    for (auto km=k-1; km>=0; --km)
    {
+      //int indxkm = 2*CGrid::npack1_max()*km + kshift;
+      //double wkm = -CGrid::cc_pack_dot(nbq1, psiv+indxkm, Horb);
+      //CGrid::cc_pack_daxpy(nbq1, wkm, psiv+indxkm, Horb);
       int indxkm = 2*CGrid::npack1_max()*km + kshift;
-      double wkm = -CGrid::cc_pack_dot(nbq1, psiv+indxkm, Horb);
-      CGrid::cc_pack_daxpy(nbq1, wkm, psiv+indxkm, Horb);
-      //std::cout << "    - km=" << km << " k=" << k << " wkm=" << wkm <<  std::endl;
+      std::complex<double> wkm = -CGrid::cc_pack_zdot(nbq1,psiv+indxkm,Horb);
+      CGrid::cc_pack_zaxpy(nbq1, wkm, psiv+indxkm, Horb);
    }
 }
 
@@ -3166,8 +4073,14 @@ void Cneb::g_norm(const int nbq1, double *psi_to_norm)
    // Check if the norm is effectively zero (within a small threshold)
    if (squared_norm <= 1.0e-12)
    {
-        std::cerr << "Warning: Norm is too small to normalize the vector. Skipping normalization." << std::endl;
-        return;  // Exit the function early if the vector is too small to normalize
+        std::cerr << "Warning: Norm is too small to normalize the vector. Fixing to 1.0." << std::endl;
+        psi_to_norm[0] = 1.0;
+        psi_to_norm[1] = 0.0001;
+        psi_to_norm[2] = -0.009;
+        psi_to_norm[11] = -0.0003;
+
+        squared_norm = CGrid::cc_pack_dot(nbq1, psi_to_norm, psi_to_norm);
+        //return;  // Exit the function early if the vector is too small to normalize
    }
     
    // Compute the inverse of the square root of the squared norm (1/norm)
@@ -3246,6 +4159,237 @@ void Cneb::fm_QR(const int mb, double *Q, double *R)
       }
    }
 }
+
+
+/********************************************
+ *                                          *
+ *        Cneb::m_0define_occupation        *
+ *                                          *
+ ********************************************/
+void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
+                          const int multiplicity,
+                          const double ion_charge, const double total_charge,
+                          double *eig, double *hml, double *occ,
+                          const int smeartype, const double smearkT, double *smearfermi, double *smearcorrection)
+{
+   double ZZ = ion_charge - total_charge;
+
+   // Initialize smear correction and Fermi levels
+   smearfermi[0] = 0.0;
+   smearfermi[1] = 0.0;
+   *smearcorrection = 0.0;
+
+   // Early exit if charge neutrality is effectively satisfied
+   if (std::abs(ZZ) < 1.0e-9) return;
+
+   // Determine alpha (mixing parameter)
+   double alpha = (initial_alpha < 0.0) ? 1.0 : initial_alpha;
+
+   // Spin-dependent charge values
+   double Z[2] = {0.0, 0.0};
+   if (ispin == 2)
+   {
+      Z[0] = 0.5 * (ZZ + multiplicity - 1);
+      Z[1] = 0.5 * (ZZ - multiplicity + 1);
+   }
+   else
+   {
+      Z[0] = 0.5 * ZZ;
+      Z[1] = 0.0;
+   }
+
+   // Loop over spin channels
+   for (int ms=0; ms<ispin; ++ms)
+   {
+      double elower = 1.0e12, eupper = -1.0e12;
+
+      // Update eigenvalues from HML if required
+      if (use_hml)
+      {
+         for (int nb=0; nb<nbrillq; ++nb)
+         for (int n=0; n<ne[ms]; ++n)
+         {
+            int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+            eig[index] = hml[n + n*ne[ms] + ms*ne[0]*ne[0] +nb*(ne[0]*ne[0] + ne[1]*ne[1])];
+         }
+         
+      }
+
+      // Find elower and eupper
+      for (int nb=0; nb<nbrillq; ++nb)
+      for (int n=0; n<ne[ms]; ++n)
+      {
+         double e = eig[n + ms*ne[0]+nb*(ne[0]+ne[1])];
+         elower = std::min(elower, e);
+         eupper = std::max(eupper, e);
+      }
+      elower = c3db::parall->MinAll(0, elower);
+      eupper = c3db::parall->MaxAll(0, eupper);
+
+      // Initialize Zlower and Zupper
+      double Zlower = 0.0, Zupper = 0.0;
+      for (auto nb=0; nb<nbrillq; ++nb)
+      {
+         double weight = pbrill_weight(nb);
+         for (auto n=0; n<ne[ms]; ++n)
+         {
+            double e = eig[n + ms*ne[0] + nb*(ne[0]+ne[1])];
+            Zlower += weight*util_occupation_distribution(smeartype, (e-elower)/smearkT);
+            Zupper += weight*util_occupation_distribution(smeartype, (e-eupper)/smearkT);
+         }
+      }
+      Zlower = c3db::parall->SumAll(3, Zlower);
+      Zupper = c3db::parall->SumAll(3, Zupper);
+
+      double flower = Zlower - Z[ms];
+      double fupper = Zupper - Z[ms];
+
+      // Check for valid Fermi level
+      if (flower * fupper >= 0.0) {
+          throw std::runtime_error("Fermi energy not found");
+      }
+
+      // Bisection method to find Fermi level
+      double emid = 0.0, Zmid = 0.0, fmid = 0.0;
+      int it = 0;
+
+      while ((std::abs(fmid) > 1.0e-11 || std::abs(eupper - elower) > 1.0e-11) && it < 50)
+      {
+         ++it;
+         emid = 0.5 * (elower + eupper);
+         Zmid = 0.0;
+         for (auto nb=0; nb<nbrillq; ++nb)
+         {
+            double weight = pbrill_weight(nb);
+            for (auto n=0; n < ne[ms]; ++n)
+            {
+               double e = eig[n + ms*ne[0] + nb*(ne[0]+ne[1])];
+               Zmid += weight*util_occupation_distribution(smeartype, (e-emid)/smearkT);
+            }
+         }
+         Zmid = c3db::parall->SumAll(3, Zmid);
+         fmid = Zmid - Z[ms];
+
+         if (fmid < 0.0)
+         {
+            flower = fmid;
+            elower = emid;
+         }
+         else
+         {
+            fupper = fmid;
+            eupper = emid;
+         }
+
+      }
+
+      if (it == 50) {
+          throw std::runtime_error("Bisection method did not converge within the iteration limit");
+      }
+
+      smearfermi[ms] = emid;
+
+      // Update occupations and calculate smear corrections
+      for (auto nb=0; nb<nbrillq; ++nb)
+      {
+         double weight = pbrill_weight(nb);
+         for (auto n=0; n<ne[ms]; ++n)
+         {
+            int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+            double e = eig[index];
+            double x = (e - smearfermi[ms]) / smearkT;
+            double f = util_occupation_distribution(smeartype, x);
+            double f0 = occ[index];
+ 
+            // Update occupations with mixing
+            occ[index] = (1.0 - alpha)*f0 + alpha*f;
+ 
+            // Calculate corrections based on smearing type
+            *smearcorrection += weight*util_smearcorrection(smeartype,smearkT,smearfermi[ms],occ[index],eig[index]);
+         }
+      }
+   }
+
+   // Adjust smear correction for unpolarized systems
+   if (ispin==1)
+      *smearcorrection *= 2.0;
+}
+
+
+
+
+
+/********************************************
+ *                                          *
+ *        Cneb::define_smearfermi           *
+ *                                          *
+ ********************************************/
+double Cneb::define_smearfermi(const int nstates, const double *eig, const double *occ)
+{
+   double smearfermi = 0.0; // Initialize smearfermi
+   double nfill = 0.0;      // Total number of electrons to fill
+
+   // Determine `nfill` and the index of the highest occupied state
+   int highest_occupied = -1;
+   for (int i = 0; i < nstates; ++i)
+   {
+      nfill += occ[i];
+      if (occ[i] > 1e-6)
+         highest_occupied = i;
+   }
+
+   // Handle edge cases: all states empty or fully occupied
+   if (highest_occupied < 0 || highest_occupied == nstates - 1)
+   {
+      // Default smearfermi to the middle eigenvalue if no partial occupation
+      smearfermi = eig[nstates / 2];
+   }
+   else
+   {
+      // Set smearfermi as the midpoint between the highest occupied and the lowest unoccupied state
+      smearfermi = 0.5 * (eig[highest_occupied] + eig[highest_occupied + 1]);
+   }
+
+   // Use cumulative occupation (counted from the highest-energy state down)
+   double cumulative_occ = 0.0;
+   for (int i = nstates - 1; i >= 0; --i) // Start from the highest-energy state
+   {
+      cumulative_occ += occ[i];
+
+      // Check if cumulative occupation matches the target electron count
+      if (cumulative_occ >= nfill)
+      {
+         smearfermi = eig[i]; // Update smearfermi based on the cumulative occupation
+         return smearfermi;  // Return the calculated Fermi energy
+      }
+   }
+
+   // Return the default smearfermi if no state matches `nfill`
+   return smearfermi;
+}
+
+
+/**********************************************
+ *                                            *
+ *         Cneb::add_smearcorrection          *
+ *                                            *
+ **********************************************/
+double Cneb::add_smearcorrection(const int smeartype, const int nstates, const double *eig, const double *occ, const double smearfermi, const double smearkT)
+{
+   double smearcorrection = 0.0;
+
+   for (auto n=0; n<nstates; ++n)
+   {
+      double e = eig[n];
+      double x = (e - smearfermi) / smearkT;
+
+      // Add corrections based on smearing type
+      smearcorrection += util_smearcorrection(smeartype,smearkT,smearfermi,occ[n],eig[n]);
+   }
+
+   return smearcorrection;
+}
+
 
 
 } // namespace pwdft

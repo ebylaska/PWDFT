@@ -88,11 +88,22 @@ public:
    void g_generate1_random(double *);
    void g_generate2_random(double *);
    void g_generate_excited_random(const int *, double *);
+   void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
-   void g_read_ne(const int, const int *, const int, double *);
+   void g_read_reverse(const int, double *);
+   void g_read_excited(const int, const int *, const int,  double *);
    void g_write(const int, double *);
-   void g_write_excited(const int, const int *, double *);
+   void g_write_excited(const int, const int *, const int, double *);
+   void g_read_ne(const int, const int *, const int, double *);         // probably won't use
+   void g_read_ne_reverse(const int, const int *, const int, double *); // probably won't use
+
+   void g_read_occ(const int, double *);
+   void g_write_occ(const int, double *);
+   //void g_write_occ_old(const int, double *);
+
+   void r_read_occ(const int, double *, const int, const int);
+   void r_write_occ(const int, double *, const int, const int);
 
    void h_read(const int, const int, double *);
    void h_write(const int, const int, const double *);
@@ -184,10 +195,9 @@ public:
 
    double *w_allocate_nbrillq_all() 
    {
-      double *ptr;
-      int nsize;
-      nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
+      int nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       
+      double *ptr;
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       std::memset(ptr,0,nbrillq*nsize*sizeof(double));
       return ptr;
@@ -204,6 +214,48 @@ public:
       return ptr;
    }
 
+   // initialize occupations
+   /**
+    * @brief Initializes occupation numbers for a system with spin channels and extra states.
+    *
+    * @param nextra Array specifying the number of extra (unoccupied) states for each spin channel.
+    * @param ptrb   Pointer to a pre-allocated array of size `nbrillq * (ne[0] + ne[1])`.
+    *
+    * The occupation array is filled as follows:
+    * - For each spin channel (`ispin` = 1 or 2),
+    * - Occupation is 0.0 for the first `nextra[ms]` states, and 1.0 for the rest.
+    *
+    * Example (ispin=2, ne={5,5}, nextra={2,3}):
+    *   Output: ptr = {0,0,1,1,1,  0,0,0,1,1}
+    */
+   void initialize_occupations(const int nextra[], double *ptrb)
+   {
+      for (int nb=0; nb<nbrillq; ++nb)
+      {
+         double *ptr = ptrb + nb*(ne[0]+ne[1]);
+         for (int ms = 0; ms < ispin; ++ms)
+         {
+            int offset = ms*ne[0]; // Precompute offset for indexing
+            for (int n = 0; n < ne[ms]; ++n)
+               ptr[offset + n] = (n < nextra[ms]) ? 0.0 : 1.0;
+         }
+      }
+   }
+   /**
+    * @brief Allocates and initializes the occupation array.
+    *
+    * @param nextra Array of extra unoccupied states per spin channel.
+    * @return Pointer to a newly allocated array (caller is responsible for deleting it).
+    *
+    * Internally calls `initialize_occupations` to fill values.
+    */
+   double* initialize_occupations_with_allocation(const int nextra[])
+   {  
+       double* ptr = new double[nbrillq*(ne[0] + ne[1])];
+       initialize_occupations(nextra, ptr);
+       return ptr;
+   }     
+
  
  
    double gg_traceall_excited(const int *, double *, double *);
@@ -211,6 +263,7 @@ public:
    void gg_copy(double *, double *);
    void g_zero(double *);
    void hr_aSumSqr(const double, double *, double *);
+   void hr_aSumSqr_occ(const double, double *, double *, double *);
    void hhr_aSumMul(const double, const double *, const double *, double *);
  
    void ffw_sym_Multiply(const int, double *, double *, double *);
@@ -241,6 +294,7 @@ public:
    void m_scal(const double, double *);
    void w_scal(const double, double *);
    double w_trace(double *);
+   double w_trace_occ(double *,double *);
    void w_diagonalize(double *, double *);
    void m_diagonalize(double *, double *);
    void mmm_Multiply(const int, double *, double *, double, double *, double);
@@ -262,6 +316,10 @@ public:
    void g_ortho_excited(const int, double *, const int *, double *);
    void g_project_out_filled(const int, double *, const int, double *);
    void g_project_out_virtual(const int, const int, const int *, const int,  double *,  double *);
+   void g_project_out_filled_below(const int, double *, const int, const int, double *);
+   void g_project_out_filled_above(const int, double *, const int, const int, double *);
+   void g_project_out_filled_from_k_up(const int, double *, const int, const int, double *);
+   void g_project_out_filled_extra(const int, const int *, double *);
 
    void g_norm(const int, double *);
  
@@ -273,6 +331,14 @@ public:
    void ggg_Minus(double *, double *, double *);
  
    void gg_daxpy(double, double *, double *);
+
+   void m_0define_occupation(const double, const bool, const int,
+                          const double, const double, double *, double *, double *,
+                          const int, const double, double *, double *);
+
+   double define_smearfermi(const int, const double *, const double *);
+   double add_smearcorrection(const int, const int, const double *, const double *, const double, const double);
+
    };
 } // namespace pwdft
 

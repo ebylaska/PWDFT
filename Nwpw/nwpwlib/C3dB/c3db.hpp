@@ -90,6 +90,7 @@ public:
    void r_zero(double *);
    void r_nzero(int, double *);
    void rr_copy(const double *, double *);
+   void cr_copy(const double *, double *);
    void rr_SMul(const double, const double *, double *);
    void rc_SMul(const double, const double *, double *);
    void r_SMul(const double, double *);
@@ -164,6 +165,8 @@ public:
 
    void r_read(const int, double *, const int, const int, const bool);
    void r_write(const int, double *, const int, const int, const bool);
+   //void r_read_occ(const int, double *, const int, const int);
+   //void r_write_occ(const int, double *, const int, const int);
  
    void cr_fft3d(double *);
    void rc_fft3d(double *);

@@ -108,6 +108,7 @@ cmake -H. -Bbuild_sycl -DNWPW_SYCL=On -DCMAKE_CXX_COMPILER=icpx -DCMAKE_C_COMPIL
 ### Running
 ```
 qsub -l select=1 -l walltime=30:00 -A catalysis_aesp_CNDA -q lustre_scaling -I
+qsub -l select=4 -l walltime=30:00 -l filesystems=flare -A ExaCatChem -q debug-scaling -I  
 ```
 ```
 export MPIR_CVAR_ENABLE_GPU=0

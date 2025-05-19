@@ -171,8 +171,11 @@ public:
    void c_ptranspose_ijk_end(const int, const int, const int, double *, double *, const int);
  
    /* gcube io */
+   void r_formatwrite_reverse_partN(double *, const std::string &);
+   void r_formatwrite_reverse_to_stream(double *, std::ostream &);
    std::string r_formatwrite_reverse(double *);
    std::string r_formatwrite(double *);
+   void r_formatwrite_gather_and_write(const std::string &, std::ostream &);
  
    /* real-space transposes and gradients */
    void r_transpose_ijk_init();

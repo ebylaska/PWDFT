@@ -724,9 +724,12 @@ std::complex<double> CGrid::cc_pack_zdot(const int nb, double *a, double *b)
 {
    int one = 1;
    // int ng  = 2*(nidb[nb]);
+
+
    int ng  = (nidb[nb]);
  
-   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   //std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   std::complex<double> tsum  = util_zdotc(ng, a,one,b,one);
    c3db::parall->Vector_SumAll(1,2,reinterpret_cast<double*>(&tsum));
 
    return tsum;
@@ -743,7 +746,8 @@ std::complex<double> CGrid::cc_pack_izdot(const int nb, double *a, double *b)
    // int ng  = 2*(nidb[nb]);
    int ng  = (nidb[nb]);
  
-   std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   //std::complex<double> tsum  = ZDOTC_PWDFT(ng, a,one,b,one);
+   std::complex<double> tsum  = util_zdotc(ng, a,one,b,one);
 
    return tsum;
 }
@@ -761,7 +765,8 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
 
    for (int i=0; i<nn; ++i) 
    {
-      std::complex<double> tsum = ZDOTC_PWDFT(ng, a+i*2*ng,one,b,one);
+      //std::complex<double> tsum = ZDOTC_PWDFT(ng, a+i*2*ng,one,b,one);
+      std::complex<double> tsum = util_zdotc(ng, a+i*2*ng,one,b,one);
       sum[2*i]   = tsum.real();
       sum[2*i+1] = tsum.imag();
    }
@@ -935,6 +940,52 @@ void CGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
 
    c3db::mygdevice.TN_dgemm(nn, nprj, ng, rone, a, b, rzero, sum);
 }
+
+/********************************
+ *                              *
+ *   CGrid:n2ccttt_pack_i3ndot  *
+ *                              *
+ ********************************/
+void CGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
+                                const double *psi,
+                                const double *prj,
+                                double *Gx, double *Gy, double *Gz,
+                                double *sum3)
+{
+   double *xtmp1 = c3db::c3db_tmp1;
+
+   int one = 1;
+   int ng = (nidb[nb]);
+   int nshift = 2*ng;
+   int count3 = 0;
+   for (auto l=0; l<nprj; ++l)
+   for (auto n=0; n<nn; ++n)
+   {
+      //cct_pack_iconjgMul(1, prj+l*ng, psi + n*ng, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l]     = tt_pack_idot(1,Gx, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 1] = tt_pack_idot(1,Gy, xtmp1);
+      //sum3[3*n + (3*nn*nprj)*l + 2] = tt_pack_idot(1,Gz, xtmp1);
+
+      // Perform cct_pack_iconjgMul
+      const double *a = prj + l*nshift;
+      const double *b = psi + n*nshift;
+      for (int i=0; i<ng; ++i)
+         xtmp1[i] = a[2*i]*b[2*i+1] - a[2*i+1]*b[2*i];
+
+      double tsumx = 1.0*DDOT_PWDFT(ng,Gx,one,xtmp1,one);
+      double tsumy = 1.0*DDOT_PWDFT(ng,Gy,one,xtmp1,one);
+      double tsumz = 1.0*DDOT_PWDFT(ng,Gz,one,xtmp1,one);
+
+      sum3[count3]   = tsumx;
+      sum3[count3+1] = tsumy;
+      sum3[count3+2] = tsumz;
+      count3 += 3;
+   }
+
+   c3db::parall->Vector_SumAll(1,3*nn*nprj,sum3);
+}
+
+
 
 /********************************
  *                              *
@@ -3736,6 +3787,36 @@ void CGrid::cc_pack_zaxpy(const int nb, const std::complex<double> alpha, const 
       i1 += 2;
       i2 += 2;
    }
+}
+
+/********************************
+ *                              *
+ *    CGrid:c_corrector_orb     *
+ *                              *
+ ********************************/
+void CGrid::c_corrector_orb(const int nb, double *orb)
+{  
+   int ng = (nidb[nb]);
+   double *tmp = new (std::nothrow) double[2*nfft3d];
+   
+   int i1 = 0; int i2 = 1;
+   for (auto k=0; k<nfft3d; ++k)
+   {
+      tmp[i1] = 0.1;
+      tmp[i2] = 0.002*sin(0.001*(k+1));
+      i1 += 2; 
+      i2 += 2; 
+   }
+   this->rc_pfft3f(nb, tmp);
+   c_pack(nb,tmp);
+   double squared_norm = cc_pack_dot(nb,tmp,tmp);
+      
+   double norm_inverse = 1.0 / std::sqrt(squared_norm);
+    
+   c_pack_SMul(nb, norm_inverse, tmp);
+   cc_pack_copy(nb,tmp,orb);
+
+   delete [] tmp;
 }
 
 

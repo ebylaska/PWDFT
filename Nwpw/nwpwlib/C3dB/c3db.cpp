@@ -1149,6 +1149,39 @@ void c3db::cc_copy(const double *ptr1, double *ptr2)
    std::memcpy(ptr2, ptr1, 2*nfft3d * sizeof(double));
 }
 
+/********************************
+ *                              *
+ *        c3db::cr_copy         *
+ *                              *
+ ********************************/
+void c3db::cr_copy(const double *ptr1, double *ptr2) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {  
+         int ir = 2*i;
+         ptr2[i] = ptr1[ir];
+      }     
+   if (nfft3d_map < 5) 
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {     
+      int ir0 = 2*i;    
+      int ir1 = 2*(i+1);
+      int ir2 = 2*(i+2);
+      int ir3 = 2*(i+3);
+      int ir4 = 2*(i+4);
+
+      ptr2[i] = ptr1[ir0];   
+      ptr2[i+1] = ptr1[ir1];
+      ptr2[i+2] = ptr1[ir2];
+      ptr2[i+3] = ptr1[ir3];
+      ptr2[i+4] = ptr1[ir4];
+   }
+   return;
+}
+
 
 /********************************
  *                              *
@@ -4110,36 +4143,43 @@ std::string c3db::r_formatwrite_reverse(double *a)
     ************************************/
  
    /**** master node gathers and write to file ****/
-   if (taskid == MASTER) {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_from = cijktop2(i, j, k);
-           if (p_from == MASTER)
-             tmp[k] = a[index];
-           else
-             parall->dreceive(0, 189, p_from, 1, tmp + k);
+   if (taskid == MASTER) 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_from = cijktop2(i, j, k);
+               if (p_from == MASTER)
+                  tmp[k] = a[index];
+               else
+                  parall->dreceive(0, 189, p_from, 1, tmp + k);
+            }
+            for (auto k = 0; k < nz; k += 6) 
+            {
+               for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
+                  stream << Efmt(13, 5) << tmp[k1];
+               stream << std::endl;
+            }
+            // stream << std::endl;
          }
-         for (auto k = 0; k < nz; k += 6) {
-           for (auto k1 = k; k1 < std::min(k + 6, nz); ++k1)
-             stream << Efmt(13, 5) << tmp[k1];
-           stream << std::endl;
-         }
-         // stream << std::endl;
-       }
    }
    /**** not master node ****/
-   else {
-     for (auto i = 0; i < nx; ++i)
-       for (auto j = 0; j < ny; ++j) {
-         for (auto k = 0; k < nz; ++k) {
-           int index = cijktoindex2(i, j, k);
-           int p_here = cijktop2(i, j, k);
-           if (p_here == taskid)
-             parall->dsend(0, 189, MASTER, 1, a + index);
+   else 
+   {
+      for (auto i = 0; i < nx; ++i)
+         for (auto j = 0; j < ny; ++j) 
+         {
+            for (auto k = 0; k < nz; ++k) 
+            {
+               int index = cijktoindex2(i, j, k);
+               int p_here = cijktop2(i, j, k);
+               if (p_here == taskid)
+                  parall->dsend(0, 189, MASTER, 1, a + index);
+            }
          }
-       }
    }
  
    return stream.str();
@@ -4807,9 +4847,34 @@ void c3db::c_pctranspose2_jk(const int nb, double *a, double *tmp1, double *tmp2
 
 /********************************
  *                              *
- *    c3db::c_ctranspose_jk      *
+ *    c3db::c_ctranspose_jk     *
  *                              *
  ********************************/
+/**
+ * @brief Performs a transpose operation across MPI tasks on communicator 1,
+ * targeting specific dimensions between j-space and k-space.
+ *
+ * This function transposes data from the input array `a` across MPI tasks using communicator 1.
+ * It synchronizes and manages data distribution across nodes and threads effectively, focusing on
+ * packing, receiving, and sending data according to a designated task mapping. This is crucial for 
+ * computational scenarios dealing with j-space and k-space domains in large-scale simulations.
+ *
+ * Operational Steps:
+ * 1. Initializes asynchronous communication with `astart` on communicator 1.
+ * 2. Packs data from the input array `_a` using `c_bindexcopy` into the temporary buffer `tmp1`.
+ * 3. Transposes data locally within the same thread using `std::memcpy` from `tmp1` to `tmp2`.
+ * 4. Exchanges data among tasks using synchronous MPI operations (`adreceive` for receiving and `dsend` for sending).
+ * 5. Ends communication with `aend`, ensuring MPI process synchronization on communicator 1.
+ * 6. Unpacks transposed data from `tmp2` back into the original array `_a` using `c_aindexcopy`.
+ *
+ * @param  a Input array for transpose operations.
+ * @param tmp1 Temporary buffer for initial packed data.
+ * @param tmp2 Temporary buffer for transposed data.
+ *
+ * Note:
+ * - Ensure proper MPI setup for communicator 1 to facilitate robust data distribution and synchronization across j-space and k-space.
+ * - This function relies on a coherent mapping structure; verify that logical indexing aligns with task IDs and processor distributions.
+ */
 void c3db::c_ctranspose_jk(double *a, double *tmp1, double *tmp2)
 {
    int msglen;
@@ -4847,7 +4912,7 @@ void c3db::c_ctranspose_jk(double *a, double *tmp1, double *tmp2)
 
 /********************************
  *                              *
- *    c3db::c_pctranspose_ijk    *
+ *    c3db::c_pctranspose_ijk   *
  *                              *
  ********************************/
 void c3db::c_pctranspose_ijk(const int nb, const int op, double *a, double *tmp1, double *tmp2) 
@@ -4897,6 +4962,35 @@ void c3db::c_pctranspose_ijk(const int nb, const int op, double *a, double *tmp1
  *    c3db::c_ctranspose_ijk    *
  *                              *
  ********************************/
+/**
+ * @brief Performs a dimension-based transpose operation across MPI tasks on communicator 1,
+ * facilitating distribution over r-space and g-space.
+ *
+ * This function transposes data between different dimensions in a parallel computing context,
+ * utilizing MPI communicator 1 for data distribution and synchronization across r-space and g-space.
+ * Additionally, communicators 2 and 3 are engaged in distributing specific computational data: 
+ * communicator 2 handles the distribution of `ne` data to `neq`, while communicator 3 manages the 
+ * distribution of Brillouin zone data `nbrillouin` to `nbrillq`. This layered approach enhances 
+ * data handling and processing efficiency, catering to complex simulations and calculations.
+ *
+ * Operational Steps:
+ * 1. Initializes asynchronous communication with `astart` on communicator 1.
+ * 2. Selects active dimensions and packs data using `c_bindexcopy` based on the `op` code.
+ * 3. Performs local in-thread transpose using `std::memcpy`.
+ * 4. Exchanges data among tasks using synchronous MPI operations (`adreceive` and `dsend`) on communicator 1.
+ * 5. Ends communication with `aend`, ensuring MPI process synchronization on communicator 1.
+ * 6. Unpacks transposed data back into the original array with `c_aindexcopy`.
+ *
+ * @param op Integer operation code indicating which dimensions to transpose.
+ * @param a  Input array for transpose operations.
+ * @param tmp1 Temporary buffer for initial data packing.
+ * @param tmp2 Temporary buffer for final transposed data.
+ *
+ * Note:
+ * - Ensure proper MPI initialization and finalization to maintain robust communication across r-space and g-space.
+ * - Lever communicators 2 and 3 for efficient distribution and mapping of `ne` to `neq`, and `nbrillouin` to `nbrillq`.
+ * - Verify dimensional mapping aligns ideally with operational context and intended data layout for quantum computations.
+ */
 void c3db::c_ctranspose_ijk(const int op, double *a, double *tmp1, double *tmp2) 
 {
    int nnfft3d,msglen;

@@ -403,18 +403,20 @@ void Pneb::g_read(const int iunit, double *psi)
  *************************************/
 void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi) 
 {
-   int ms, n, indx, i, pj, qj, taskid_j;
+   int i;
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
    //std::unique_ptr<double*> tmp2(new double[n2ft3d]());
 
  
-   taskid_j = d1db::parall->taskid_j();
+   int taskid_j = d1db::parall->taskid_j();
  
-   for (ms=0; ms<ispin; ++ms)
-      for (n=0; n<ne0[ms]; ++n) 
+   for (auto ms=0; ms<ispin; ++ms)
+   {
+      for (auto n=0; n<ne0[ms]; ++n) 
       {
-         qj = msntoindex(ms, n);
-         pj = msntop(ms, n);
+         int qj = msntoindex(ms, n);
+         int pj = msntop(ms, n);
+         
          if (n<ne0[ms])
          {
             c_read(iunit, tmp2, pj);
@@ -428,11 +430,12 @@ void Pneb::g_read_ne(const int iunit, const int *ne0, double *psi)
          
          if (pj == taskid_j) 
          {
-            indx = 2*PGrid::npack(1)*qj;
+            int indx = 2*PGrid::npack(1)*qj;
             PGrid::c_pack(1, tmp2);
             PGrid::cc_pack_copy(1, tmp2, psi + indx);
          }
       }
+   }
  
    delete[] tmp2;
 }
@@ -535,8 +538,8 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
 
    double *tmp2 = new (std::nothrow) double[n2ft3d]();
 
-   for (auto ms = 0; ms < ispin; ++ms)
-   for (auto n = 0; n < nex[ms]; ++n)
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
    {
       int indx = 2 * PGrid::npack(1) * n;
       PGrid::cc_pack_copy(1, psi + indx, tmp2);
@@ -548,6 +551,34 @@ void Pneb::g_write_excited(const int iunit, const int nex[], double *psi)
          c_write(iunit,tmp2,taskid_j);
    }
 
+   delete[] tmp2;
+}
+
+
+  
+/*************************************
+ *                                   *
+ *       Pneb::g_read_excited        *
+ *                                   *
+ *************************************/
+void Pneb::g_read_excited(const int iunit, const int nex[], double *psi)
+{
+   d3db::parall->Barrier();
+   int taskid_j = d1db::parall->taskid_j();
+
+   double *tmp2 = new (std::nothrow) double[n2ft3d]();
+
+   for (auto ms=0; ms<ispin; ++ms)
+   for (auto n=0; n<nex[ms]; ++n)
+   {
+      c_read(iunit,tmp2,taskid_j);
+
+      PGrid::c_pack(1, tmp2);
+
+      int indx = 2 * PGrid::npack(1) * n;
+      PGrid::cc_pack_copy(1, tmp2, psi + indx);
+
+   }
    delete[] tmp2;
 }
 
@@ -568,8 +599,7 @@ double Pneb::gg_traceall_excited(const int nex[], double *psi1, double *psi2)
       sum += PGrid::cc_pack_idot(1, psi1 + indx, psi2 + indx);
       indx += 2 * PGrid::npack(1);
    }
-   //if (ispin == 1)
-   //   sum *= 2.0;
+   //if (ispin == 1) sum *= 2.0;
  
    return d3db::parall->SumAll(0, sum);
 }
@@ -3547,6 +3577,76 @@ void Pneb::g_ortho_excited(const int mb, double *psi, const int nex[], double *p
    }
 
    // project out virtual space
+}
+
+/***********************************************
+ *                                             *
+ *     Pneb::g_project_out_filled_extra        *
+ *                                             *
+ ***********************************************
+ * @brief Orthogonalizes extra orbitals to the filled (occupied) orbitals.
+ *
+ * This function is used in fractional occupation or smearing scenarios where
+ * additional orbitals (`nex[ms]`) are appended to the end of the filled
+ * orbital list (`ne[ms]`). These extra orbitals are needed to accommodate
+ * partial occupations or temperature-dependent population effects.
+ *
+ * The function projects out the component of each extra orbital along all
+ * filled orbitals below it, ensuring strict orthogonality without modifying
+ * the converged filled states. This is safer than full Gram-Schmidt
+ * orthogonalization of the entire orbital set, which may alter previously
+ * converged orbitals unintentionally.
+ *
+ * Typical use cases include:
+ *   - Initializing fractional occupation runs from converged integer orbitals
+ *   - Preserving orthogonality in no-iteration ("noit_energy") tasks
+ *   - Warm-starting excited state calculations or perturbative updates
+ *
+ * @param mb    Spin index to operate on:
+ *              -1 = all spin channels
+ *               0 = spin-up only
+ *               1 = spin-down only
+ *
+ * @param nex   Array of number of excited (extra) orbitals per spin
+ * @param psi   Pointer to full wavefunction storage (packed)
+ *
+ * Notes:
+ *   - Assumes orbitals are stored in contiguous packed format (as expected by `PGrid::npack` layout).
+ *   - Uses `g_project_out_filled_below` to perform individual projection steps.
+ *   - Only modifies the extra orbitals (the last `nex[ms]`), leaving filled orbitals untouched.
+ */
+
+void Pneb::g_project_out_filled_extra(const int mb, const int nex[], double *psi)
+{
+   int ms1, ms2;
+   if (mb == -1)
+   {
+      ms1 = 0;
+      ms2 = ispin;
+   }
+   else
+   {
+      ms1 = mb;
+      ms2 = mb + 1;
+   }
+   for (auto ms=ms1; ms<ms2; ++ms)
+   {
+      double *psi_filled =  psi + ms*(ne[0])*2*PGrid::npack(1);
+      //double *psi_excited = psi_filled + (ne[ms]-nex[ms])*2*PGrid::npack(1);
+
+      int ishift = 2*PGrid::npack(1);
+      for (auto k=(ne[ms]-nex[ms]); k<ne[ms]; ++k)
+      {
+         double *psi_k = psi_filled + k*ishift;
+         g_project_out_filled_below(psi_filled,ms,k,psi_k);
+         //g_project_out_filled_below(psi_filled,ms,k,psi_excited+shift);
+         //++shift;
+         double norm = PGrid::cc_pack_dot(1, psi_k, psi_k);
+         double scale = 1.0 / std::sqrt(norm);
+         PGrid::c_pack_SMul(1, scale, psi_k);
+      }
+   }
+
 }
 
 /********************************

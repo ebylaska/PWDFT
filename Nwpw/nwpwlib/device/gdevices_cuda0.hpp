@@ -1664,7 +1664,7 @@ public:
          // if (ierr != 0) throw std::runtime_error(std::string("NWPW Error:
          // EIGEN_PWDFT failed!"));
             
-         //eigsrt_device(host_eig + shift1, host_hml + shift2, n);
+         eigsrt_device_complex(host_eig + shift1, host_hml + shift2, n);
          shift1 += ne[0];
          shift2 += 2*ne[0]*ne[0]; 
       }
@@ -2151,6 +2151,50 @@ public:
  
  
    // routines below need to be made into sycl or removed
+
+
+/**************************************
+ *                                    *
+ *     eigsrt_device_complex          *
+ *                                    *
+ **************************************/
+static void eigsrt_device_complex(double *D, double *V, int n)
+{
+   int i, j, k;
+   double p;
+
+   for (i = 0; i < (n - 1); ++i)
+   {
+      k = i;
+      p = D[i];
+      for (j = i + 1; j < n; ++j)
+      {
+         if (D[j] >= p)
+         {
+            k = j;
+            p = D[j];
+         }
+      }
+
+      if (k != i)
+      {
+         // Swap eigenvalues
+         std::swap(D[i], D[k]);
+
+         // Swap complex eigenvectors column i and k
+         for (j = 0; j < n; ++j)
+         {
+            int i_idx = 2 * (j + i * n);
+            int k_idx = 2 * (j + k * n);
+            // Real part
+            std::swap(V[i_idx], V[k_idx]);
+            // Imaginary part
+            std::swap(V[i_idx + 1], V[k_idx + 1]);
+         }
+      }
+   }
+}
+
  
    /**************************************
     *                                    *

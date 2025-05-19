@@ -126,7 +126,7 @@ public:
      
       // deallocate async buffer data
       for (auto q=0; q<aqmax; ++q)
-        c3db::parall->aend(3+q);
+        c3db::parall->aend(4+q);
    }
  
    double *Gxyz(const int i) { return Garray + i*nfft3d; }
@@ -162,16 +162,26 @@ public:
    int isbalanced() { return balanced; }
  
    double *c_pack_allocate(const int nb) {
-     double *ptr;
-     ptr = new (std::nothrow) double[2*npack(nb)]();
-     return ptr;
+      double *ptr;
+      ptr = new (std::nothrow) double[2*npack(nb)]();
+      return ptr;
+   }
+   double *c_pack1_max_allocate() {
+      double *ptr;
+      ptr = new (std::nothrow) double[2*npack1_max()]();
+      return ptr;
    }
    void c_pack_deallocate(double *ptr) { delete[] ptr; }
  
    double *r_pack_allocate(const int nb) {
-     double *ptr;
-     ptr = new (std::nothrow) double[npack(nb)]();
-     return ptr;
+      double *ptr;
+      ptr = new (std::nothrow) double[npack(nb)]();
+      return ptr;
+   }
+   double *r_pack1_max_allocate() {
+      double *ptr;
+      ptr = new (std::nothrow) double[npack1_max()]();
+      return ptr;
    }
    void r_pack_deallocate(double *ptr) { delete[] ptr; }
  
@@ -191,6 +201,10 @@ public:
    std::complex<double> cc_pack_izdot(const int, double *, double *);
    void cc_pack_inzdot(const int, const int, double *, double *, double *);
    void cc_pack_inprjzdot(const int, int, int, double *, double *, double *);
+
+   void n2ccttt_pack_i3ndot(const int, const int, const int,
+                            const double *, const double *, double *, double *, double *,
+                            double *);
 
  
    void r_unpack(const int, double *);
@@ -227,6 +241,7 @@ public:
  
    void c_pack_addzero(const int, const double, double *);
    void c_pack_noimagzero(const int, double *);
+   void c_corrector_orb(const int, double *);
  
    void c_pack_zero(const int, double *);
    void c_pack_SMul(const int, const double, double *);

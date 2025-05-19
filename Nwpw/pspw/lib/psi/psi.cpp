@@ -469,10 +469,12 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       if (nextra[ms]>0)
       {
          if (myparall->base_stdio_print) 
-            coutput << " - adding " << nextra[ms] << " to ms=" << ms << " psi" << std::endl;
+            coutput << " - adding " << nextra[ms] << " orbitals to ms=" << ms << " psi" << std::endl;
          int indxa = 2*mypneb->npack(1)*(ne[ms]+ms*mypneb->ne[0]);
          mypneb->g_generate_extra_random(nextra[ms],psi2+indxa);
 
+         // project out filled psi
+         mypneb->g_project_out_filled_extra(ms,nextra,psi2);
       }
    }
 
@@ -655,10 +657,11 @@ void psi_write(Pneb *mypneb, int *version, int nfft[], double unita[],
 bool epsi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, const int nex[], double *psi2, std::ostream &coutput) 
 {
    nwpw_timing_function ftimer(50);
-   int version, ispin, nfft[3], ne[2];
+   int version, ispin, nfft[3], nexin[2],occupation;
    double unita[9];
    Parallel *myparall = mypneb->d3db::parall;
    bool newpsi = true;
+   bool generate_newpsi = true;
 
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
    if (psi_filefind(mypneb,filename) && (!wvfnc_initialize))
@@ -668,19 +671,43 @@ bool epsi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, const int ne
       if (myparall->base_stdio_print)
          coutput << " reading from file " << std::endl << std::endl;
 
-      psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+      if (myparall->is_master())
+      {
+         openfile(4, filename, "r");
+         iread(4, &version, 1);
+         iread(4, nfft, 3);
+         dread(4, unita, 9);
+         iread(4, &ispin, 1);
+         iread(4, nexin, 2);
+         iread(4, &occupation, 1);
+      }
+      myparall->Brdcst_iValue(0, 0, &version);
+      myparall->Brdcst_iValues(0, 0, 3, nfft);
+      myparall->Brdcst_Values(0, 0, 9, unita);
+      myparall->Brdcst_iValue(0, 0, &ispin);
+      myparall->Brdcst_iValues(0, 0, 2, nexin);
+      myparall->Brdcst_iValue(0, 0, &occupation);
+
+      mypneb->g_read_excited(4, nexin,psi2);
+      if (myparall->is_master())
+         closefile(4);
+
+      //psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, filename);
+      if ((nex[0] == nexin[0]) && (nex[1]==nexin[1]))
+         generate_newpsi = false;
    }
 
    /* generate new psi */
-   else
+   if (generate_newpsi)
    {
       if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl << std::endl;
       mypneb->g_generate_excited_random(nex, psi2);
    }
 
+
    newpsi = newpsi || (ispin != mypneb->ispin)
-                   || (ne[0] != nex[0])
-                   || (ne[1] != nex[1])
+                   || (nexin[0] != nex[0])
+                   || (nexin[1] != nex[1])
                    || (std::abs(unita[0] - mypneb->lattice->unita1d(0)) > 1.0e-4)
                    || (std::abs(unita[1] - mypneb->lattice->unita1d(1)) > 1.0e-4)
                    || (std::abs(unita[2] - mypneb->lattice->unita1d(2)) > 1.0e-4)
@@ -694,7 +721,6 @@ bool epsi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, const int ne
    /* ortho check */
    double sum2 = mypneb->gg_traceall_excited(nex, psi2, psi2);
    double sum1 = nex[0] + nex[1];
-   //std::cout << "excited ortho check sum1= " << sum1 << " sum2=" << sum2 << std::endl;
    newpsi = newpsi && (std::abs(sum2-sum1)> 1.0e-4);
 
    return newpsi;

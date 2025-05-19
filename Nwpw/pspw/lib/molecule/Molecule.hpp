@@ -487,7 +487,7 @@ public:
       init.copyfmt(stream);
       std::string eoln = "\n";
 
-      stream << eoln;
+      //stream << eoln;
       stream << eoln;
       stream << " virtual orbital energies:" << eoln;
       int nn = ne_excited[0] - ne_excited[1];

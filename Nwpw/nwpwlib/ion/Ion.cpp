@@ -32,9 +32,93 @@ namespace pwdft {
 
 /*******************************
  *                             *
+ *        incell1              *
+ *                             *
+ *******************************/
+/**
+ * @brief Wrap atomic positions into the unit cell using lattice vectors.
+ *
+ * This function adjusts Cartesian atomic positions to lie within the unit cell,
+ * by converting to fractional coordinates, wrapping them into the [-0.5, 0.5)
+ * range, and converting them back to Cartesian coordinates.
+ *
+ * @param nion Number of ions.
+ * @param a    3x3 lattice matrix in row-major order (Cartesian lattice vectors).
+ * @param r1   Array of atomic positions in Cartesian coordinates (modified in-place).
+ */
+static void incell1(const int nion, const double* unita, double* r1) 
+{
+   // Compute reciprocal lattice matrix b from lattice matrix a
+   double ub[9];
+   ub[0] = unita[4]*unita[8] - unita[5]*unita[7];
+   ub[1] = unita[5]*unita[6] - unita[3]*unita[8];
+   ub[2] = unita[3]*unita[7] - unita[4]*unita[6];
+   ub[3] = unita[7]*unita[2] - unita[8]*unita[1];
+   ub[4] = unita[8]*unita[0] - unita[6]*unita[2];
+   ub[5] = unita[6]*unita[1] - unita[7]*unita[0];
+   ub[6] = unita[1]*unita[5] - unita[2]*unita[4];
+   ub[7] = unita[2]*unita[3] - unita[0]*unita[5];
+   ub[8] = unita[0]*unita[4] - unita[1]*unita[3];
+   double volume = unita[0]*ub[0] + unita[1]*ub[1] + unita[2]*ub[2];
+   for (auto i=0; i<9; ++i)
+      ub[i] /= volume;
+
+
+   std::vector<double> sion1(3 * nion, 0.0);
+
+   // Convert to fractional coordinates
+   for (auto i=0; i<nion; ++i)
+   {
+      for (auto j=0; j<3; ++j)
+      {
+         for (auto k=0; k<3; ++k)
+            sion1[3*i+j] += r1[3*i+k]*ub[3*k+j];
+      }
+   }
+
+   // Wrap fractional coordinates to [-0.5, 0.5)
+   for (auto i=0; i<nion; ++i) 
+   {
+      for (auto j=0; j<3; ++j) 
+      {
+         while (sion1[3*i+j] > 0.5)  sion1[3*i+j] -= 1.0;
+         while (sion1[3*i+j] < -0.5) sion1[3*i+j] += 1.0;
+      }
+   }
+
+   // Convert back to Cartesian coordinates
+   for (auto i=0; i<nion; ++i)
+   {
+      for (auto j=0; j<3; ++j)
+      {
+         r1[3*i+j] = 0.0;
+         for (auto k=0; k<3; ++k)
+            r1[3*i+j] += unita[3*k+j]*sion1[3*i+k];
+      }
+   }
+}
+
+
+/*******************************
+ *                             *
  *        solve_3by3           *
  *                             *
  *******************************/
+/**
+ * @brief Solves a 3x3 linear system of equations using a custom approach.
+ *
+ * Solves the system Im * omega = L, where:
+ * - Im is a symmetric 3x3 moment of inertia tensor, given as a flat array.
+ * - L is a 3D vector representing angular momentum.
+ * - omega is the resulting angular velocity vector.
+ *
+ * This implementation assumes that Im is symmetric and uses explicit algebraic
+ * expressions to compute the components of omega, avoiding full matrix inversion.
+ *
+ * @param[in] Im   The 3x3 symmetric matrix (flattened to length 9).
+ * @param[in] L    The right-hand side vector (length 3).
+ * @param[out] omega The solution vector (length 3), containing angular velocity.
+ */
 static void solve_3by3(const double Im[], const double L[], double omega[]) {
   double a = Im[0];
   double b = Im[4];
@@ -66,6 +150,19 @@ static void solve_3by3(const double Im[], const double L[], double omega[]) {
  *        center_v_mass        *
  *                             *
  *******************************/
+/**
+ * @brief Computes the center of mass position for a system of ions.
+ *
+ * Calculates the weighted average of atomic positions based on their masses,
+ * resulting in the center of mass in the x, y, and z directions.
+ *
+ * @param[in]  nion   Number of ions (atoms).
+ * @param[in]  mass   Array of atomic masses (length nion).
+ * @param[in]  rion0  Cartesian coordinates of atoms (length 3*nion).
+ * @param[out] vx     X-coordinate of the center of mass.
+ * @param[out] vy     Y-coordinate of the center of mass.
+ * @param[out] vz     Z-coordinate of the center of mass.
+ */
 static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
                           double *vy, double *vz) {
   double tmass = 0.0;
@@ -279,6 +376,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    rion0 = new double[3 * nion];
    rion1 = new double[3 * nion];
    rion2 = new double[3 * nion];
+   rion_incell0 = new double[3 * nion];
    vionhalf = new double[3 * nion];
    fion1 = new double[3 * nion];
    katm = new int[nion];
@@ -493,6 +591,20 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       std::cout << "ATOMARRAY=" << atomarray << std::endl;
    */
 }
+
+/*******************************
+ *                             *
+ *      Ion::set_rion_incell   *
+ *                             *
+ *******************************/
+void Ion::set_rion_incell(const int n, double *unita)
+{
+   if (n==0)      std::memcpy(rion_incell0,rion0,3*nion*sizeof(double));
+   else if (n==2) std::memcpy(rion_incell0,rion2,3*nion*sizeof(double));
+   else           std::memcpy(rion_incell0,rion1,3*nion*sizeof(double));
+   incell1(nion,unita,rion_incell0);
+}
+
 
 /*******************************
  *                             *
