@@ -2465,7 +2465,7 @@ public:
     **************************************/
    void NN_eigensolver0(int n, double *host_hml, double *host_eig)
    {
-      int n, ierr;
+      int ierr;
       int nn = n*n + 14;
       double xmp1[nn];
 
