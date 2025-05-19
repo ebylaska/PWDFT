@@ -1331,8 +1331,8 @@ static void eigsrt_device_complex(double *D, double *V, int n)
     }
   }
 
-  void NN_eigensolver0(nt n, double *host_hml, double *host_eig) {
-     int n, ierr;
+  void NN_eigensolver0(int n, double *host_hml, double *host_eig) {
+     int ierr;
      int nn = n*n + 14;
      double xmp1[nn];
 
