@@ -109,6 +109,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
 
          ifound &= iread(5, &nbrillouin, 1);
 
+
          if ((nbrillouin>0) && (nbrillouin<100000))
          {
             kvectors.resize(3*nbrillouin);
@@ -116,6 +117,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
          }
          else
             ifound = 0;
+    
       }
 
       closefile(5);
@@ -164,11 +166,13 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
         reformat = reformat || (mygrid->nz != nfft[2]);
         reformat = reformat || (psp_version != version);
         reformat = reformat || (kvectors.size()/3 != mygrid->nbrillouin);
-        for (auto k=0; k<3*(mygrid->mybrillouin->nbrillouin); ++k)
-        {
-           double dk = std::abs(kvectors[k] - mygrid->mybrillouin->kvector[k]);
-           reformat = reformat || (dk > 1.0e-8);
-        }
+    
+        if (!reformat)
+           for (auto k=0; k<3*(mygrid->mybrillouin->nbrillouin); ++k)
+           {
+              double dk = std::abs(kvectors[k] - mygrid->mybrillouin->kvector[k]);
+              reformat = reformat || (dk > 1.0e-8);
+           }
 
         if (!reformat)
            ireformat = 0;
