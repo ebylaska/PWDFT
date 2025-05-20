@@ -366,7 +366,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
        /* print nbrillouin */
       coutput << std::endl;
-      coutput << " brillouin zone:" << std::endl;
+      coutput << " Brillouin zone:" << std::endl;
       coutput << mybrillouin.print_zone();
 
        /* print nbrillouin */
@@ -434,20 +434,20 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
                                                           << " ( " << control.ks_maxit_orbs() << " outer)\n";
 
-            if (control.scf_algorithm()==0) coutput << "      SCF algorithm        = simple mixing\n";
-            if (control.scf_algorithm()==1) coutput << "      SCF algorithm        = Broyden mixing\n";
-            if (control.scf_algorithm()==2) coutput << "      SCF algorithm        = Johnson-Pulay mixing"
+            if (control.scf_algorithm()==0) coutput << "      scf algorithm        = simple mixing\n";
+            if (control.scf_algorithm()==1) coutput << "      scf algorithm        = Broyden mixing\n";
+            if (control.scf_algorithm()==2) coutput << "      scf algorithm        = Johnson-Pulay mixing"
                                                     << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
-            if (control.scf_algorithm()==3) coutput << "      SCF algorithm        = Anderson mixing\n";
-            if (control.scf_algorithm()==4) coutput << "      SCF algorithm        = Thomas-Fermi mixing\n";
+            if (control.scf_algorithm()==3) coutput << "      scf algorithm        = Anderson mixing\n";
+            if (control.scf_algorithm()==4) coutput << "      scf algorithm        = Thomas-Fermi mixing\n";
 
-            if (control.minimizer()==5) coutput << "      SCF mixing type      = potential\n";
-            if (control.minimizer()==8) coutput << "      SCF mixing type      = density\n";
-            if (control.scf_extra_rotate()) coutput << "     SCF extra rotate\n";
+            if (control.minimizer()==5) coutput << "      scf mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "      scf mixing type      = density\n";
+            if (control.scf_extra_rotate()) coutput << "     scf extra rotate\n";
             if (control.scf_algorithm()==4)
-               coutput << "      SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
+               coutput << "      scf mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
             else
-               coutput << "      SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
+               coutput << "      scf mixing parameter: alpha= " << control.scf_alpha() << std::endl;
             if (control.kerker_g0()>0.0) coutput << "      Kerker damping       = " << control.kerker_g0() << std::endl;
          }
       }
@@ -486,7 +486,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          
          coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
          coutput <<  "      smearing parameter = ";
-         if (mysolid.smeartype==-1) coutput << "fixed_occupation" << std::endl;
+         if (mysolid.smeartype==-1) coutput << "fixed occupation" << std::endl;
          if (mysolid.smeartype==0) coutput << "step function" << std::endl;
          if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
          if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
@@ -533,7 +533,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
             for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
             {
-               coutput << "        BZ-point " << nb+1 << ": [";
+               coutput << "          k-point " << nb+1 << ": [";
                for (int i=0; i<total_occ; ++i)
                {
                    int idx = nb*total_occ + i;

@@ -102,12 +102,12 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
       coutput << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;;
       if (minimizer==3)
       {
-         coutput << "     iter.                   Energy          DeltaE        DeltaRho        DeltaSCF" << std::endl;
+         coutput << "     iter.                   Energy         delta E       delta rho       delta scf" << std::endl;
          coutput << "     ------------------------------------------------------------------------------" << std::endl;
       }
       else
       {
-         coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
+         coutput << "     iter.                   Energy         delta E       delta rho" << std::endl;
          coutput << "     --------------------------------------------------------------" << std::endl;
       }
       // printf("%10d%25.12le%16.6le%16.6le\n",1000,99.99, 1.33434340e-4, 2.33434211e-6);
