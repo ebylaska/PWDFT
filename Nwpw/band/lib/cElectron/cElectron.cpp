@@ -602,7 +602,21 @@ double cElectron_Operators::vl_ave(double *dng)
  */
 double cElectron_Operators::vnl_ave(double *psi, double *occ) 
 {
-   return mypsp->e_nonlocal(psi,occ);
+   double *vnltmp = mygrid->w_allocate_nbrillq_all();
+   double *vpsi   = mygrid->g_allocate_nbrillq_all();
+   mygrid->g_zero(vpsi);
+
+   mypsp->v_nonlocal(psi, vpsi);
+   mygrid->ggw_sym_Multiply(psi, vpsi, vnltmp);
+   double enl0 = occ ? -mygrid->w_trace_occ(vnltmp,occ) : -mygrid->w_trace(vnltmp);
+   if (ispin==1)
+      enl0 = enl0 + enl0;
+
+   delete [] vpsi;
+   delete [] vnltmp;
+
+
+   return enl0;
 }
 
 /********************************************
@@ -763,6 +777,7 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    }
    exc0 *= dv;
    pxc0 *= dv;
+
  
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  
@@ -775,7 +790,8 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
  
    E[5] = occ ? myke->ke_ave(psi,occ) :  myke->ke_ave(psi);
    E[6] = this->vl_ave(dng);
-   E[7] = mypsp->e_nonlocal(psi,occ);
+   E[7] = this->vnl_ave(psi,occ);
+   //E[7] = mypsp->e_nonlocal(psi,occ);
    E[8] = 2 * ehartr0;
    E[9] = pxc0;
  

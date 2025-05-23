@@ -2377,10 +2377,12 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
    double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
    double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
+   int taskid = parall->taskid();
  
    for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
    {
       double weight  = mypneb->pbrill_weight(nbq);
+      double esum0 = 0.0;
       int nbq1 = nbq + 1;
 
       // Copy psi to device
@@ -2463,13 +2465,17 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
 
         
          //std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
-         std::complex<double> ztmp = util_zdotc(ntmp, zsw1, one, zsw2, one);
+         std::complex<double> ztmp = util_zdotc(nn*nprjall, zsw1, one, zsw2, one);
          
-         esum += ztmp.real()*weight;
+         esum0 += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();
+      //std::cout << "nbq=" << nbq << " taskid=" << taskid << " ii=" << ii << " ztmp=" << Ffmt(12,9)<< ztmp.real() << " " << ztmp.imag() <<  std::endl;
       }
+      //std::cout << "nbq=" << nbq << " taskid=" << taskid << " esum0=" << Ffmt(12,9)<< esum0 <<  std::endl;
+      esum += esum0;
       
    }
+   //std::cout << "SUMALL=" << esum << std::endl;
  
    esum = parall->SumAll(2,esum);
    esum = parall->SumAll(3,esum);
