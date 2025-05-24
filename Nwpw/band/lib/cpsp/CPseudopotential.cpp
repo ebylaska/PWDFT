@@ -2372,9 +2372,9 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
  
    int nn = mypneb->neq[0] + mypneb->neq[1];
    int nshift0 = mypneb->npack1_max();
-   int nshift = 2*mypneb->npack1_max();
-   double *exi    = new (std::nothrow) double[nshift]();
-   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   int nshift  = 2*mypneb->npack1_max();
+   double *exi     = new (std::nothrow) double[nshift]();
+   double *prjtmp  = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
    double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
    int taskid = parall->taskid();
@@ -2469,13 +2469,10 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
          
          esum0 += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();
-      //std::cout << "nbq=" << nbq << " taskid=" << taskid << " ii=" << ii << " ztmp=" << Ffmt(12,9)<< ztmp.real() << " " << ztmp.imag() <<  std::endl;
       }
-      //std::cout << "nbq=" << nbq << " taskid=" << taskid << " esum0=" << Ffmt(12,9)<< esum0 <<  std::endl;
       esum += esum0;
       
    }
-   //std::cout << "SUMALL=" << esum << std::endl;
  
    esum = parall->SumAll(2,esum);
    esum = parall->SumAll(3,esum);

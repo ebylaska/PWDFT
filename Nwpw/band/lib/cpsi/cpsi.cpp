@@ -23,7 +23,6 @@ namespace pwdft {
 
 static void cwvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], double *psi2) 
 {
-   int indx, dindx, i2, j2, k2;
    int nfft3d  =  ngrid[0] *  ngrid[1] *  ngrid[2];
    int dnfft3d = dngrid[0] * dngrid[1] * dngrid[2];
    int n2ft3d  = 2*nfft3d;
@@ -46,67 +45,37 @@ static void cwvfnc_expander_convert(int ngrid[], double *psi1, int dngrid[], dou
    bool ireverse = (idiff < 0);
    bool jreverse = (jdiff < 0);
    bool kreverse = (kdiff < 0);
+   if (ireverse) idiff = -idiff;
    if (jreverse) jdiff = -jdiff;
    if (kreverse) kdiff = -kdiff;
  
    std::memset(psi2, 0, dn2ft3d*sizeof(double));
+
    for (auto k=0; k<n3; ++k)
    for (auto j=0; j<n2; ++j)
    for (auto i=0; i<n1; ++i) 
    {
-      indx  = 0;
-      dindx = 0;
- 
-      if (k < (n3/2))
-        k2 = k;
-      else
-        k2 = kdiff + k;
- 
-      if (j < (n2/2))
-        j2 = j;
-      else
-        j2 = jdiff + j;
+      int i2 = (i < n1 / 2) ? i : i + idiff;
+      int j2 = (j < n2 / 2) ? j : j + jdiff;
+      int k2 = (k < n3 / 2) ? k : k + kdiff;
 
-      if (i < (n1/2))
-        i2 = i;
-      else
-        i2 = idiff + i;
+      int indx = 0, dindx = 0;
 
-      if (ireverse) 
-      {
-         indx = indx   + i2;
-         dindx = dindx + i;
-      } 
-      else 
-      {
-         indx = indx   + i;
-         dindx = dindx + i2;
-      }
- 
-      if (jreverse) 
-      {
-         indx = indx   + j2 * inc2;
-         dindx = dindx + j  * dinc2;
-      } 
-      else 
-      {
-         indx = indx   + j  * inc2;
-         dindx = dindx + j2 * dinc2;
-      }
- 
-      if (kreverse) 
-      {
-         indx = indx   + k2 * inc3;
-         dindx = dindx + k  * dinc3;
-      } 
-      else 
-      {
-         indx = indx   + k * inc3;
-         dindx = dindx + k2 * dinc3;
-      }
- 
-      psi2[2*dindx]   = psi1[2*indx];
-      psi2[2*dindx+1] = psi1[2*indx + 1];
+      indx  += ireverse ? i2 : i;
+      dindx += ireverse ? i  : i2;
+
+      indx  += (jreverse ? j2 : j)  * inc2;
+      dindx += (jreverse ? j  : j2) * dinc2;
+
+      indx  += (kreverse ? k2 : k)  * inc3;
+      dindx += (kreverse ? k  : k2) * dinc3;
+
+      // SAFETY: Bounds check before accessing memory
+      if (indx < 0 || indx >= nfft3d || dindx < 0 || dindx >= dnfft3d)
+         continue;
+
+      psi2[2 * dindx]     = psi1[2 * indx];
+      psi2[2 * dindx + 1] = psi1[2 * indx + 1];
    }
 }
 
@@ -121,7 +90,7 @@ static bool isDescending(const double* arr, int size) {
 
 /*****************************************************
  *                                                   *
- *                dwvfnc_expander                    *
+ *                cwvfnc_expander                    *
  *                                                   *
  *****************************************************/
 static void cwvfnc_expander(Cneb *mycneb, char *filename, std::ostream &coutput)
