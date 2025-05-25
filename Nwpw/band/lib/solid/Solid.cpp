@@ -176,15 +176,27 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
  *                                          *
  ********************************************/
 /**
- * @brief Replaces excited-state wavefunctions (`psi1_excited`) at the top of `psi1`.
- * 
- * This function loads excited-state molecular orbitals from an external file,
- * processes them, and replaces the top section of the existing wavefunction data (`psi1`).
- * It performs a file check using `cpsi_filefind`, initializes the data with
- * `epsi_initialize`, and copies the relevant wavefunction data.
- * 
- * @param control Reference to a `Control2` object containing excitation data.
- * @param coutput Output stream for logging (e.g., `std::cout` or a file).
+ * @brief Inserts excited-state orbitals from file into the current psi1 array.
+ *
+ * This routine replaces the top-most (virtual) portion of the `psi1` array
+ * with excited-state orbitals read from an external file (e.g., `.emovecs`),
+ * using the layout encoded in `Control2::fractional_orbitals()`.
+ *
+ * Steps performed:
+ * 1. Check for existence of input excited-state file via `cpsi_filefind`.
+ * 2. Initialize the `psi1_excited` data using `ecpsi_initialize(...)`.
+ * 3. Copy excited orbitals into the top of `psi1` for each k-point and spin.
+ * 4. Then renames the original `.emovecs` file to `.bak` via `ecpsi_rename`.
+ *
+ * Assumptions:
+ * - The number of excited orbitals per spin is known and passed as `nex[2]`.
+ * - Destination `psi1` and source `psi1_excited` are both allocated and valid.
+ * - The memory layout uses packed real and imaginary components in interleaved
+ *   format (2× `npack`) for each wavefunction.
+ * - Indexing accounts for spin (ms), Brillouin zone index (nb), and orbital number (n).
+ *
+ * @param[in]  control   Reference to the control object containing I/O parameters.
+ * @param[out] coutput   Stream used for logging messages (e.g., std::cout).
  */
 void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
 {
@@ -208,7 +220,11 @@ void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
             }
          }
           //epsi_finalize(control.input_e_movecs_filename(),coutput);
+
       }
+
+      // rename the ecpsi_filename to *.bak 
+      ecpsi_rename(control.input_e_movecs_filename(),coutput);
    }
 }
 
@@ -498,6 +514,43 @@ void Solid::ecpsi_initialize(char *infilename, bool wvfnc_initialize, const int 
   // psi2_excited = mygrid->g_allocate_excited(1);
   //newpsi = psi_read(mygrid, infilename, wvfnc_initialize, psi1, coutput);
 }
+
+/********************************************
+ *                                          *
+ *           Solid::ecpsi_rename            *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Renames an excited-state wavefunction file to a backup file.
+ * 
+ * This function appends the `.bak` extension to the provided filename to preserve
+ * the original wavefunction file after it has been used. It only executes the rename
+ * operation on the master process to avoid concurrent access in parallel environments.
+ * 
+ * @param infilename The name of the original wavefunction file to rename.
+ * @param coutput    Output stream for logging status messages (e.g., std::cout).
+ */
+void Solid::ecpsi_rename(const char *infilename, std::ostream &coutput)
+{  
+   std::string original_filename = infilename;
+   std::string backup_filename   = original_filename + ".bak";
+   
+   // Rename the file to .bak (only master process should do this)
+   if (mygrid->c3db::parall->is_master())
+   {
+      if (std::rename(original_filename.c_str(), backup_filename.c_str()) != 0) 
+      {
+         coutput << "Warning: Unable to rename " << original_filename
+                 << " to " << backup_filename << std::endl;
+      } 
+      else 
+      {
+         coutput << "Moved " << original_filename << " to " << backup_filename << std::endl;
+      }
+   }
+}
+
+
 
 /********************************************
  *                                          *

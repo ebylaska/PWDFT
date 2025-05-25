@@ -185,6 +185,7 @@ public:
 
 
    void ecpsi_initialize(char *,bool, const int *, std::ostream &);
+   void ecpsi_rename(const char *, std::ostream &);
    void ecpsi_finalize(char *, std::ostream &);
    void ecpsi_minimize(double *, std::ostream &);
    void compute_Horb_for_cg(const int, double *, double *, double *);
