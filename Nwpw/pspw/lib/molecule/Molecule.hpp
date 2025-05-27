@@ -169,12 +169,24 @@ public:
    double energy() {
       myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
          
-      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
+      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
+      return E[0];
+   }
+
+   double energy0() {
+      myelectron->run0(psi1);
+      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
       return E[0];
    }
  
    double psi2_energy() {
       myelectron->run(psi2, rho2, dng2, rho2_all, occ2);
+      E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
+      return E[0];
+   }
+
+   double psi2_energy0() {
+      myelectron->run0(psi2);
       E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
       return E[0];
    }
@@ -325,6 +337,11 @@ public:
    void gen_vall() { myelectron->gen_vall(); }
    void get_vall(double *vall_out) { myelectron->get_vall(vall_out); }
    void set_vall(const double *vall_in) { myelectron->set_vall(vall_in); }
+   void gen_rho1() { myelectron->genrho(psi1,rho1,occ1); }
+   void gen_densities1() { myelectron->gen_psi_r(psi1);
+                           myelectron->gen_densities(rho1,dng1,rho1_all,occ1); }
+   void gen_scf_potentials_from_rho1() { myelectron->scf_update_from_dn(rho1,dng1,rho1_all);}
+ 
  
    /* molecule - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->m_diagonalize(hml, eig); }
@@ -404,6 +421,21 @@ public:
      
       return total_energy;
    }
+
+   double psi_1get_Tgradient0(double *G1)
+   {
+      double total_energy;
+      myelectron->run0(psi1);
+      total_energy = myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy();
+      myelectron->gen_hml(psi1, hml);
+      myelectron->get_Tgradient(psi1, hml, G1);
+
+      return total_energy;
+   }
+
+
+
+
  
    double psi_1get_TSgradient(double *G1) 
    {

@@ -156,8 +156,10 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    {
       if (minimizer == 1) coutput << "     =========== Grassmann conjugate gradient iteration ===========" << std::endl;
       if (minimizer == 2) coutput << "     ================= Grassmann lmbfgs iteration =================" << std::endl;
+      if (minimizer == 3) coutput << "     ======== Kohn-Sham  scf iteration (Grassman) iteration =======" << std::endl;
       if (minimizer == 4) coutput << "     ============ Stiefel conjugate gradient iteration ============" << std::endl;
       if (minimizer == 5) coutput << "     ============ Kohn-Sham scf iteration (potential) =============" << std::endl;
+      if (minimizer == 6) coutput << "     ========== Kohn-Sham scf iteration (lmbfgs) iteration ========" << std::endl;
       if (minimizer == 7) coutput << "     ================== Stiefel lmbfgs iteration ==================" << std::endl;
       if (minimizer == 8) coutput << "     ============= Kohn-Sham scf iteration (density) ==============" << std::endl;
       if (minimizer == 9) coutput << "     =========== Grassman cg (Stich linesearch) iteration =========" << std::endl;
@@ -253,6 +255,119 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
    } 
+
+   else if (minimizer == 3) 
+   {
+      if (mymolecule.newpsi) {
+         int it_in0 = 15;
+         for (int it=0; it<it_in0; ++it)
+            mymolecule.sd_update(dte);
+         if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
+      }
+
+      // Initial SCF setup
+      // generate density and rotate orbitals 
+      // Generate initial density, potential and then orbital diagonalization
+      double total_energy0 = mymolecule.energy(); // Run Hψ = Eψ and compute E[0]
+      mymolecule.gen_hml();                       // Generate ⟨ψ|H|ψ⟩ (stored in hml)
+      mymolecule.diagonalize();      // Diagonalize H matrix (sets eig)
+      mymolecule.rotate1to2();       // Rotate ψ₁ to ψ₂ using eigenvectors
+      mymolecule.swap_psi1_psi2();   // Swap ψ₂ → ψ₁ (start clean state)
+
+      // Normalize total density (diagnostic)
+      double x,sumxx = 0.0;
+      int n2ft3d = mygrid->n2ft3d;
+      int ispin = mygrid->ispin;
+      double omega = mygrid->lattice->omega();
+      double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+      double dv = omega * scal1;
+      for (int i=0; i < n2ft3d; ++i)
+      {     
+         x = (mymolecule.rho1[i]);
+         x += (mymolecule.rho1[i+(ispin-1)*n2ft3d]);
+         sumxx += x;
+      }
+      double sum0  = mygrid->d3db::parall->SumAll(1, sumxx) * dv;
+
+      // Setup SCF loop
+      deltae = -1.0e-03;
+      int bfgscount = 0;
+      int icount = 0;
+      int ks_it_in  = control.ks_maxit_orb();
+      int ks_it_out = control.ks_maxit_orbs();
+      double scf_error = 0.0;
+      double *vout = mymolecule.rho1;
+      double *vnew = mymolecule.rho2;
+
+      nwpw_scf_mixing scfmix(mygrid,kerker_g0,
+                             scf_algorithm,scf_alpha,scf_beta,diis_histories,
+                             mygrid->ispin,mygrid->n2ft3d,vout);
+
+      while ((icount < (it_out*it_in)) && (!converged))
+      {
+         ++icount;
+         if (stalled)
+         {
+            for (int it=0; it<it_in; ++it)
+               mymolecule.sd_update(dte);
+            if (oprint)
+               coutput << "        - " << it_in << " steepest descent iterations performed" << std::endl;
+            bfgscount = 0;
+         }
+         deltae_old = deltae;
+
+         // minimize ks orbitals it_in steps with fixed ks potential
+         double total_energy_fixedV = cgsd_cgksminimize(mymolecule,mygeodesic12.mygeodesic1,E,&deltae,
+                                                        &deltac,bfgscount,it_in,tole,tolc);
+
+         // diagonalize psi wrt current ks potential
+         mymolecule.gen_hml();
+         mymolecule.diagonalize();
+         mymolecule.rotate1to2();
+         mymolecule.swap_psi1_psi2();
+
+         // Generate updated density from current ψ and occupations, generate ks potential 
+         // and then calculate energy, after this rho1, dng1, rho1_all, 
+         // and ks potentials and hpsi have been updated
+         total_energy = mymolecule.energy();
+
+         // [Insert fractional occupation update here if needed]
+         // if (mysolid.fractional) update_occupations(...);
+
+
+         //std::cout << "total_energy=" << total_energy << " " << total_energy2 
+         //          << " " << total_energy2 - total_energy << std::endl;
+
+         //define fractional occupation here
+         scfmix.mix(vout,vnew,deltae,&scf_error);
+         std::memcpy(vout,vnew,ispin*n2ft3d*sizeof(double));
+
+        // density now updated, and the ks potentials have to be updated here!?
+
+         deltac = scf_error;
+
+         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+         //deltac = mysolid.rho_error();
+         deltae = total_energy - total_energy0;
+         total_energy0 = total_energy;
+         ++bfgscount;
+
+         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+
+         if ((oprint) && ((icount%it_in==0) || converged))
+         {
+            coutput << Ifmt(10)    << icount
+                    << Efmt(25,12) << total_energy
+                    << Efmt(16,6)  << deltae
+                    << Efmt(16,6)  << deltac
+                    << Efmt(16,6)  << total_energy-total_energy_fixedV << std::endl;
+         }
+
+         // Finalize SCF step with updated potentials
+         mymolecule.gen_scf_potentials_from_rho1();
+
+      }
+   }
 
    else if (minimizer == 4) 
    {
@@ -504,7 +619,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    }
  
    /* report summary of results */
-   // total_energy  = mymolecule.gen_all_energies();
+   total_energy  = mymolecule.gen_all_energies();
    if (oprint) {
       coutput << std::endl;
       coutput << mymolecule;

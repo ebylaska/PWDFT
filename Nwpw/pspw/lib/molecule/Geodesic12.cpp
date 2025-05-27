@@ -14,7 +14,7 @@ namespace pwdft {
 Geodesic12::Geodesic12(int minimizer0, Molecule *mymolecule0,
                        Control2 &control) {
   int minimizer = control.minimizer();
-  if ((minimizer == 1) || (minimizer == 2)) {
+  if ((minimizer == 1) || (minimizer == 2) || (minimizer==3)) {
     has_geodesic1 = true;
     mygeodesic1 = new (std::nothrow) Geodesic(minimizer0, mymolecule0);
   }

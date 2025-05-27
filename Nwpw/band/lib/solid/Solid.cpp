@@ -540,12 +540,12 @@ void Solid::ecpsi_rename(const char *infilename, std::ostream &coutput)
    {
       if (std::rename(original_filename.c_str(), backup_filename.c_str()) != 0) 
       {
-         coutput << "Warning: Unable to rename " << original_filename
+         coutput << " Warning: Unable to rename " << original_filename
                  << " to " << backup_filename << std::endl;
       } 
       else 
       {
-         coutput << "Moved " << original_filename << " to " << backup_filename << std::endl;
+         coutput << " Moved " << original_filename << " to " << backup_filename << std::endl;
       }
    }
 }
