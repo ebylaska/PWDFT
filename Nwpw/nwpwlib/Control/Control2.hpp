@@ -570,6 +570,10 @@ public:
    // smear
    std::vector<double> fractional_filling() {return pfractional_filling;}
 
+   // remove virtual from rtdbstring
+   //void remove_virtual(){
+  // }
+
 };
 
 } // namespace pwdft

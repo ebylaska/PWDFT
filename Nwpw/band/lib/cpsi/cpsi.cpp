@@ -532,6 +532,8 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
          // need to orthopsi and  belowo
          // project out filled psi
          mycneb->g_project_out_filled_extra(ms,nextra,psi2);
+
+         // remove nwpw":{"virtual":[4,0]}
       }
    }
       
