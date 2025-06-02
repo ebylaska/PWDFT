@@ -31,7 +31,7 @@ nwpw
   scf ks-grassmann-cg anderson alpha 0.015
    smear  fixed filling [0 0 0.3333333 0.3333333 0.3333334]
    #smear  fixed 
-   loop 10 10
+  loop 10 10
    monkhorst-pack 2 2 2 
    #tolerances 1.0e-11 1.0e-11
    #virtual 4 0
