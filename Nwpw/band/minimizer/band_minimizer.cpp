@@ -196,6 +196,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
   
    /* intialize the linesearch */
    util_linesearch_init();
+
   
    //                 |**************************|
    // *****************   summary of input data  **********************

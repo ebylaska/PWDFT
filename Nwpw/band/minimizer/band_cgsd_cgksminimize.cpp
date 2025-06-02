@@ -69,6 +69,7 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
     dEold = mygeodesic->start(H0, &max_sigma, &min_sigma);
 
 
+
     /* line search */
     if (tmin > deltat_min)
       deltat = tmin;
