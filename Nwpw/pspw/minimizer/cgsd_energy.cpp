@@ -165,9 +165,18 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
       if (minimizer == 9) coutput << "     ========== Grassmann cg (Stich linesearch) iteration =========" << std::endl;
       if (minimizer == 10) coutput<< "     =========== Grassmann lmbfgs (Stich l.s.) iteration ==========" << std::endl;
      
+
       coutput << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;;
-      coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
-      coutput << "     --------------------------------------------------------------" << std::endl;
+      if (minimizer==3)
+      {
+         coutput << "     iter.                   energy    delta energy       delta rho       delta scf" << std::endl;
+         coutput << "     ------------------------------------------------------------------------------" << std::endl;
+      }
+      else
+      {
+         coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
+         coutput << "     --------------------------------------------------------------" << std::endl;
+      }
       // printf("%10d%25.12le%16.6le%16.6le\n",1000,99.99, 1.33434340e-4, 2.33434211e-6);
    }
  
