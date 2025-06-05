@@ -156,14 +156,14 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
    {
       if (minimizer == 1) coutput << "     =========== Grassmann conjugate gradient iteration ===========" << std::endl;
       if (minimizer == 2) coutput << "     ================= Grassmann lmbfgs iteration =================" << std::endl;
-      if (minimizer == 3) coutput << "     ======== Kohn-Sham  scf iteration (Grassman) iteration =======" << std::endl;
+      if (minimizer == 3) coutput << "     ======== Kohn-Sham  scf iteration (Grassmann) iteration =======" << std::endl;
       if (minimizer == 4) coutput << "     ============ Stiefel conjugate gradient iteration ============" << std::endl;
       if (minimizer == 5) coutput << "     ============ Kohn-Sham scf iteration (potential) =============" << std::endl;
       if (minimizer == 6) coutput << "     ========== Kohn-Sham scf iteration (lmbfgs) iteration ========" << std::endl;
       if (minimizer == 7) coutput << "     ================== Stiefel lmbfgs iteration ==================" << std::endl;
       if (minimizer == 8) coutput << "     ============= Kohn-Sham scf iteration (density) ==============" << std::endl;
-      if (minimizer == 9) coutput << "     =========== Grassman cg (Stich linesearch) iteration =========" << std::endl;
-      if (minimizer == 10) coutput<< "     ============ Grassman lmbfgs (Stich l.s.) iteration ==========" << std::endl;
+      if (minimizer == 9) coutput << "     ========== Grassmann cg (Stich linesearch) iteration =========" << std::endl;
+      if (minimizer == 10) coutput<< "     =========== Grassmann lmbfgs (Stich l.s.) iteration ==========" << std::endl;
      
       coutput << "          >>> iteration started at " << util_date() << "  <<<" << std::endl;;
       coutput << "     iter.                   Energy          DeltaE        DeltaRho" << std::endl;
