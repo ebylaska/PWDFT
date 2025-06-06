@@ -1630,6 +1630,7 @@ public:
                  double *beta,
                  double *host_c,int ldc) 
    {
+      assert(host_a != nullptr && host_b != nullptr && host_c != nullptr);
       ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
    }   
    
