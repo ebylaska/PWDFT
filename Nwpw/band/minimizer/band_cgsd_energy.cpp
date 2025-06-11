@@ -137,6 +137,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             mysolid.sd_update(dte);
          if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
       }
+      double ee=mysolid.energy();
       while ((icount < it_out) && (!converged)) 
       {
          ++icount;

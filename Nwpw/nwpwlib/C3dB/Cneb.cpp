@@ -2705,6 +2705,7 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
    ggw_sym_Multiply(A, A, V);
    //ggw_hermit_sym_Multiply(A, A, V);
    w_diagonalize(V, S);
+
  
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {

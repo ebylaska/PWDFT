@@ -152,6 +152,7 @@ extern "C" void zlacpy_(char *, int *, int *, double *, int *, double *, int *);
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
   zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
 
+
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   zlacpy_(s1, &(m), &(n), a, &(ida), b, &(idb))
 

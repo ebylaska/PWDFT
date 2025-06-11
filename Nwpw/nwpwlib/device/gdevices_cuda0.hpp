@@ -1647,7 +1647,7 @@ public:
    void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig)
    {     
       int n, ierr;
-      int nn = ne[0] * ne[0] + 14; 
+      int nn = 2*(ne[0]*ne[0]) + 14; 
       double xmp1[nn];
       double rmp1[nn];
       // double *xmp1 = new (std::nothrow) double[nn]();
