@@ -93,7 +93,9 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *              version #7.00   02/27/21             *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      coutput << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
+      coutput << "          *    Abhishek Bagusetty, David H. Bross, Duo Song,  *\n";
+      coutput << "          *    Alvaro Vazquez Mayagoitia,                     *\n";
+      coutput << "          *    Raymundo Hernandez Esparza, ....               *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";

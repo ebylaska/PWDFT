@@ -93,7 +93,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *              version #7.00   07/19/24             *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      coutput << "          *                                        ...        *\n";
+      coutput << "          *    Raymundo Hernandez Esparza, Duo Song,          *\n";
+      coutput << "          *    David H. Bross, ...                            *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";
