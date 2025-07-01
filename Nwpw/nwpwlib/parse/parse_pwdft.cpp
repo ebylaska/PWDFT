@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <set>
+#include <map>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -710,6 +712,129 @@ static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& 
    ks = updated_ks;
 }
 
+// Utility: compare k-points with tolerance
+static bool kpoint_equal(const std::vector<double>& k1, const std::vector<double>& k2, double tol=1e-8) {
+    return (std::abs(k1[0]-k2[0]) < tol && std::abs(k1[1]-k2[1]) < tol && std::abs(k1[2]-k2[2]) < tol);
+}
+
+// Utility: apply a 3x3 rotation matrix to a k-point
+static std::vector<double> apply_rotation(const std::vector<double>& k, const std::vector<std::vector<double>>& R) {
+    std::vector<double> kout(3,0.0);
+    for (int i=0; i<3; ++i)
+        for (int j=0; j<3; ++j)
+            kout[i] += R[i][j]*k[j];
+    return kout;
+}
+
+// Hardcoded 48 Oh symmetry operations (rotation matrices)
+static std::vector<std::vector<std::vector<double>>> get_cubic_symmetry_ops() {
+    std::vector<std::vector<std::vector<double>>> ops;
+    // The 48 Oh symmetry operations (rotations and improper rotations)
+    // Each is a 3x3 matrix. Here we enumerate all 24 proper rotations (O) and their inverses (improper, Oh).
+    // The matrices are written explicitly for clarity and completeness.
+    // Identity
+    ops.push_back({{1,0,0},{0,1,0},{0,0,1}});
+    // 90, 180, 270 deg rotations about x, y, z
+    ops.push_back({{1,0,0},{0,0,-1},{0,1,0}});
+    ops.push_back({{1,0,0},{0,-1,0},{0,0,-1}});
+    ops.push_back({{1,0,0},{0,0,1},{0,-1,0}});
+    ops.push_back({{0,1,0},{-1,0,0},{0,0,1}});
+    ops.push_back({{-1,0,0},{0,-1,0},{0,0,1}});
+    ops.push_back({{0,-1,0},{1,0,0},{0,0,1}});
+    ops.push_back({{0,0,1},{0,1,0},{-1,0,0}});
+    ops.push_back({{0,0,-1},{0,1,0},{1,0,0}});
+    ops.push_back({{0,0,1},{0,-1,0},{1,0,0}});
+    ops.push_back({{0,0,-1},{0,-1,0},{-1,0,0}});
+    ops.push_back({{0,1,0},{0,0,1},{1,0,0}});
+    ops.push_back({{0,-1,0},{0,0,1},{-1,0,0}});
+    ops.push_back({{0,1,0},{0,0,-1},{-1,0,0}});
+    ops.push_back({{0,-1,0},{0,0,-1},{1,0,0}});
+    ops.push_back({{0,0,1},{1,0,0},{0,1,0}});
+    ops.push_back({{0,0,-1},{1,0,0},{0,-1,0}});
+    ops.push_back({{0,0,1},{-1,0,0},{0,-1,0}});
+    ops.push_back({{0,0,-1},{-1,0,0},{0,1,0}});
+    ops.push_back({{1,0,0},{0,1,0},{0,0,-1}});
+    ops.push_back({{-1,0,0},{0,1,0},{0,0,1}});
+    ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+    ops.push_back({{-1,0,0},{0,-1,0},{0,0,-1}});
+    // 180 deg rotations about face diagonals
+    ops.push_back({{0,1,0},{1,0,0},{0,0,-1}});
+    ops.push_back({{0,-1,0},{-1,0,0},{0,0,-1}});
+    ops.push_back({{0,1,0},{-1,0,0},{0,0,-1}});
+    ops.push_back({{0,-1,0},{1,0,0},{0,0,-1}});
+    ops.push_back({{0,0,1},{1,0,0},{0,-1,0}});
+    ops.push_back({{0,0,-1},{1,0,0},{0,1,0}});
+    ops.push_back({{0,0,1},{-1,0,0},{0,1,0}});
+    ops.push_back({{0,0,-1},{-1,0,0},{0,-1,0}});
+    // 120 deg rotations about body diagonals
+    ops.push_back({{0,0,1},{1,0,0},{0,1,0}});
+    ops.push_back({{0,0,1},{-1,0,0},{0,-1,0}});
+    ops.push_back({{0,0,-1},{1,0,0},{0,-1,0}});
+    ops.push_back({{0,0,-1},{-1,0,0},{0,1,0}});
+    // 180 deg rotations about axes through edge centers
+    ops.push_back({{0,1,0},{0,0,1},{1,0,0}});
+    ops.push_back({{0,-1,0},{0,0,1},{-1,0,0}});
+    ops.push_back({{0,1,0},{0,0,-1},{-1,0,0}});
+    ops.push_back({{0,-1,0},{0,0,-1},{1,0,0}});
+    // Now add the 24 improper rotations (multiply each by -1)
+    size_t n = ops.size();
+    for (size_t i=0; i<n; ++i) {
+        std::vector<std::vector<double>> Rinv(3, std::vector<double>(3));
+        for (int a=0; a<3; ++a)
+            for (int b=0; b<3; ++b)
+                Rinv[a][b] = -ops[i][a][b];
+        ops.push_back(Rinv);
+    }
+    return ops;
+}
+
+// Replace reduce_kpoints_by_cubic_symmetry with a version that only reduces to the IBZ
+static void reduce_kpoints_by_cubic_symmetry(std::vector<std::vector<double>>& ks) {
+    auto ops = get_cubic_symmetry_ops();
+    std::vector<std::vector<double>> unique_ks;
+    std::vector<double> unique_weights;
+    std::vector<bool> used(ks.size(), false);
+    double tol = 1e-8;
+    size_t nks = ks.size();
+    for (size_t i = 0; i < nks; ++i) {
+        if (used[i]) continue;
+        std::vector<double> k = {ks[i][0], ks[i][1], ks[i][2]};
+        double w = ks[i][3];
+        // Find all symmetry-equivalent k-points
+        double total_weight = w;
+        used[i] = true;
+        for (size_t j = i + 1; j < nks; ++j) {
+            if (used[j]) continue;
+            std::vector<double> k2 = {ks[j][0], ks[j][1], ks[j][2]};
+            bool equiv = false;
+            for (const auto& R : ops) {
+                std::vector<double> ksym = apply_rotation(k, R);
+                // Bring ksym into [-0.5,0.5) range
+                for (int d=0; d<3; ++d) {
+                    while (ksym[d] >= 0.5) ksym[d] -= 1.0;
+                    while (ksym[d] < -0.5) ksym[d] += 1.0;
+                }
+                if (kpoint_equal(ksym, k2, tol)) {
+                    equiv = true;
+                    break;
+                }
+            }
+            if (equiv) {
+                total_weight += ks[j][3];
+                used[j] = true;
+            }
+        }
+        // Store only one representative (the first encountered)
+        unique_ks.push_back(k);
+        unique_weights.push_back(total_weight);
+    }
+    // Rebuild ks
+    ks.clear();
+    for (size_t i=0; i<unique_ks.size(); ++i) {
+        ks.push_back({unique_ks[i][0], unique_ks[i][1], unique_ks[i][2], unique_weights[i]});
+    }
+}
+
 
 /**************************************************
  *                                                *
@@ -788,6 +913,8 @@ static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::ve
 
    if (timereverse) 
       monkhorst_pack_timereversal_prune(ks);
+   // Add symmetry reduction for cubic systems
+   reduce_kpoints_by_cubic_symmetry(ks);
 }
 
 
