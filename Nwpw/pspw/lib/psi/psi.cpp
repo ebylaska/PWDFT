@@ -12,6 +12,7 @@
 #include <cstring> //memset
 #include <iostream>
 #include <string>
+#include <limits>
 //#include	"control.hpp"
 // extern "C" {
 //#include        "compressed_io.h"
@@ -284,6 +285,14 @@ static bool psi_check_convert(Pneb *mypneb, char *filename, std::ostream &coutpu
    return converted;
 }
 
+// Helper: check for NaN/Inf in psi array
+static bool psi_has_nan_or_inf(const double* psi, int ncoeff) {
+    for (int i = 0; i < ncoeff; ++i) {
+        if (std::isnan(psi[i]) || std::isinf(psi[i])) return true;
+    }
+    return false;
+}
+
 /*****************************************************
  *                                                   *
  *                psi_read0                          *
@@ -301,6 +310,7 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
 {
    Parallel *myparall = mypneb->d3db::parall;
    int neout[2];
+   bool header_mismatch = false;
  
    if (myparall->is_master()) 
    {
@@ -311,6 +321,11 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
       iread(4, ispin, 1);
       iread(4, neout, 2);
       iread(4, occupation, 1);
+      // Header sanity check
+      if (nfft[0] != mypneb->nx || nfft[1] != mypneb->ny || nfft[2] != mypneb->nz ||
+          *ispin != mypneb->ispin || neout[0] != mypneb->ne[0] || neout[1] != mypneb->ne[1]) {
+          header_mismatch = true;
+      }
    }
    myparall->Brdcst_iValue(0, 0, version);
    myparall->Brdcst_iValues(0, 0, 3, nfft);
@@ -318,6 +333,20 @@ void psi_read0(Pneb *mypneb, int *version, int nfft[], double unita[],
    myparall->Brdcst_iValue(0, 0, ispin);
    myparall->Brdcst_iValues(0, 0, 2, neout);
    myparall->Brdcst_iValue(0, 0, occupation);
+   // Fix: Broadcast header_mismatch as int
+   int header_mismatch_int = header_mismatch ? 1 : 0;
+   myparall->Brdcst_iValue(0, 0, &header_mismatch_int);
+   header_mismatch = (header_mismatch_int != 0);
+
+   if (header_mismatch) {
+      if (myparall->base_stdio_print)
+         std::cout << "[PWDFT] Wavefunction file header does not match current run. Reinitializing psi." << std::endl;
+      // Fill psi with nonsense so caller can detect and reinit
+      for (int i = 0; i < 2 * (mypneb->ne[0] + mypneb->ne[1]) * mypneb->npack(1); ++i)
+          psi[i] = std::numeric_limits<double>::quiet_NaN();
+      if (myparall->is_master()) closefile(4);
+      return;
+   }
 
  
    /* reads in c format and automatically packs the result to g format */
@@ -413,6 +442,7 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
    double unita[9];
    Parallel *myparall = mypneb->d3db::parall;
    bool newpsi = true;
+   bool bad_restart = false;
  
    /* read psi from file if psi_exist and not forcing wavefunction initialization */
    if (psi_filefind(mypneb,filename) && (!wvfnc_initialize)) 
@@ -425,6 +455,32 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       ne[0] = mypneb->ne[0];
       ne[1] = mypneb->ne[1];
       psi_read0(mypneb, &version, nfft, unita, &ispin, ne, psi2, occupation, occ2, filename,false);
+      // Sanity check: header mismatch or NaN/Inf in psi2
+      int ncoeff = 2 * (mypneb->ne[0] + mypneb->ne[1]) * mypneb->npack(1);
+      if (psi_has_nan_or_inf(psi2, ncoeff)) {
+         if (myparall->base_stdio_print)
+            coutput << "\n[PWDFT] Wavefunction file contains NaN/Inf or header mismatch. Reinitializing psi." << std::endl;
+         bad_restart = true;
+      } else {
+         // Norm check
+         double norm = mypneb->gg_traceall(psi2, psi2);
+         if (norm < 1e-8) {
+            if (myparall->base_stdio_print)
+               coutput << "\n[PWDFT] Wavefunction norm is zero or too small. Reinitializing psi." << std::endl;
+            bad_restart = true;
+         }
+      }
+      if (bad_restart) {
+         std::string guess = get_initial_wavefunction_guess();
+         if (guess == "atomic") {
+            if (myparall->base_stdio_print) coutput << " generating atomic guess for psi" << std::endl;
+            mypneb->g_generate_atomic_guess(psi2); // To be implemented
+         } else {
+            if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
+            mypneb->g_generate_random(psi2);
+         }
+         newpsi = true;
+      }
 
       if ((*occupation>0) and (myparall->base_stdio_print))
          coutput << " ... reading occupations";

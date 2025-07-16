@@ -205,6 +205,10 @@ extern "C" void pspw_fortran_input_(MPI_Fint *fcomm_world, char *filename,
       wfile.close();
     }
     MPI_Bcast(&wfound, 1, MPI_INT, MASTER, comm_world);
+    // Fix: Broadcast wvfnc_initialize as int
+    int wvfnc_initialize_int = wvfnc_initialize ? 1 : 0;
+    MPI_Bcast(&wvfnc_initialize_int, 1, MPI_INT, MASTER, comm_world);
+    wvfnc_initialize = (wvfnc_initialize_int != 0);
 
     if ((!wfound) || (wvfnc_initialize)) {
       auto lowlevel_rtdbstrs =
@@ -469,6 +473,10 @@ extern void lammps_pspw_input(MPI_Comm comm_world, std::string &nwfilename,
       wfile.close();
     }
     MPI_Bcast(&wfound, 1, MPI_INT, MASTER, comm_world);
+    // Fix: Broadcast wvfnc_initialize as int
+    int wvfnc_initialize_int = wvfnc_initialize ? 1 : 0;
+    MPI_Bcast(&wvfnc_initialize_int, 1, MPI_INT, MASTER, comm_world);
+    wvfnc_initialize = (wvfnc_initialize_int != 0);
 
     if ((!wfound) || (wvfnc_initialize)) {
       auto lowlevel_rtdbstrs =
@@ -879,7 +887,11 @@ int main(int argc, char *argv[]) {
         wfile.close();
      }
      MPI_Bcast(&wfound, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    
+     // Fix: Broadcast wvfnc_initialize as int
+     int wvfnc_initialize_int = wvfnc_initialize ? 1 : 0;
+     MPI_Bcast(&wvfnc_initialize_int, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+     wvfnc_initialize = (wvfnc_initialize_int != 0);
+      
      if ((!wfound) || (wvfnc_initialize)) 
      {
         auto lowlevel_rtdbstrs = parse_gen_lowlevel_rtdbstrs(rtdbstr);
