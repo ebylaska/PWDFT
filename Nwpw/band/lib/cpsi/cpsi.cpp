@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstring> //memset
 #include <iostream>
+#include <string>
 //#include	"control.hpp"
 // extern "C" {
 //#include        "compressed_io.h"
@@ -481,8 +482,14 @@ bool cpsi_read(Cneb *mycneb, char *filename, bool wvfnc_initialize, double *psi2
       ispin = mycneb->ispin;
       ne[0] = mycneb->ne[0];
       ne[1] = mycneb->ne[1];
-      if (myparall->base_stdio_print) coutput << " generating random psi from scratch" << std::endl;
-      mycneb->g_generate_random(psi2);
+      std::string guess = get_initial_wavefunction_guess(mycneb);
+      if (guess == "atomic") {
+         if (myparall->base_stdio_print) coutput << " generating atomic guess for cpsi" << std::endl;
+         mycneb->g_generate_atomic_guess(psi2); // To be implemented
+      } else {
+         if (myparall->base_stdio_print) coutput << " generating random cpsi from scratch" << std::endl;
+         mycneb->g_generate_random(psi2);
+      }
    }
 
    newpsi = newpsi || (ispin != mycneb->ispin)
@@ -961,5 +968,20 @@ void v_psi_write(Cneb *mycneb,int *version, int nfft[],
 }
 
 */
+
+// Helper to parse initial_wavefunction_guess from input (stub, real parser should be in parse_pwdft.cpp)
+static std::string get_initial_wavefunction_guess(Cneb *mycneb) {
+    // TODO: Replace with real input parsing
+    // For now, just check environment variable for quick testing
+    const char* env = std::getenv("PWDFT_INITIAL_WAVEFUNCTION_GUESS");
+    if (env) return std::string(env);
+    return "random";
+}
+
+// Stub for atomic guess (to be implemented)
+void Cneb::g_generate_atomic_guess(double *psi) {
+    // TODO: Implement atomic guess projection
+    g_generate_random(psi); // fallback to random for now
+}
 
 } // namespace pwdft

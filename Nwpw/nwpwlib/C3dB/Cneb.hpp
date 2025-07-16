@@ -89,6 +89,7 @@ public:
    void g_generate2_random(double *);
    void g_generate_excited_random(const int *, double *);
    void g_generate_extra_random(const int, double *);
+   void g_generate_atomic_guess(double *);
 
    void g_read(const int, double *);
    void g_read_reverse(const int, double *);

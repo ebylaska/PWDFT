@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <cmath> // for std::isnan
 
 #include "Control2.hpp"
 #include "Geodesic12.hpp"
@@ -207,13 +208,14 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          int it_in0 = 15;
          cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in0,dte,coutput);
       }
+      int fallback_attempts = 0;
+      const int fallback_max = 2;
       while ((icount < it_out) && (!converged)) 
       {
          ++icount;
          if (stalled) 
          {
             cgsd_steepest_update(mymolecule,oprint,nolagrange,it_in,dte,coutput);
-
             bfgscount = 0;
          }
          deltae_old = deltae;
@@ -231,6 +233,24 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
          else
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+
+         // Fallback logic: check for NaN
+         if ((std::isnan(total_energy) || std::isnan(deltae) || std::isnan(deltac)) && fallback_attempts < fallback_max) {
+            if (oprint) coutput << "\n*** NaN detected in SCF. Reinitializing wavefunction (attempt " << (fallback_attempts+1) << ")...\n";
+            // Try atomic guess if requested, else random
+            std::string guess = "random";
+            const char* env = std::getenv("PWDFT_INITIAL_WAVEFUNCTION_GUESS");
+            if (env) guess = std::string(env);
+            if (guess == "atomic") {
+                mymolecule.mygrid->g_generate_atomic_guess(mymolecule.psi1);
+            } else {
+                mymolecule.mygrid->g_generate_random(mymolecule.psi1);
+            }
+            mymolecule.newpsi = true;
+            fallback_attempts++;
+            icount = 0; // restart SCF loop
+            continue;
+         }
       }
    } 
 
