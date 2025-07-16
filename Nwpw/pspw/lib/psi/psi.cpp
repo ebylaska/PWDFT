@@ -21,6 +21,7 @@
 #include "Parallel.hpp"
 #include "Pneb.hpp"
 #include "psi.hpp"
+#include "../../nwpwlib/utilities/util.hpp"
 
 namespace pwdft {
 
@@ -446,7 +447,7 @@ bool psi_read(Pneb *mypneb, char *filename, bool wvfnc_initialize, double *psi2,
       ispin = mypneb->ispin;
       ne[0] = mypneb->ne[0];
       ne[1] = mypneb->ne[1];
-      std::string guess = get_initial_wavefunction_guess(mypneb);
+      std::string guess = get_initial_wavefunction_guess();
       if (guess == "atomic") {
          if (myparall->base_stdio_print) coutput << " generating atomic guess for psi" << std::endl;
          mypneb->g_generate_atomic_guess(psi2); // To be implemented
@@ -845,15 +846,6 @@ void v_psi_write(Pneb *mypneb,int *version, int nfft[],
 }
 
 */
-
-// Helper to parse initial_wavefunction_guess from input (stub, real parser should be in parse_pwdft.cpp)
-static std::string get_initial_wavefunction_guess(Pneb *mypneb) {
-    // TODO: Replace with real input parsing
-    // For now, just check environment variable for quick testing
-    const char* env = std::getenv("PWDFT_INITIAL_WAVEFUNCTION_GUESS");
-    if (env) return std::string(env);
-    return "random";
-}
 
 // Stub for atomic guess (to be implemented)
 void Pneb::g_generate_atomic_guess(double *psi) {

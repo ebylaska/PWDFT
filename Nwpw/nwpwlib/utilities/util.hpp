@@ -10,7 +10,14 @@
 #include "util_tesseral.hpp"
 //#include	"util_wgaussian.hpp"
 #include "util_linesearch.hpp"
+#include <cstdlib>
+#include <string>
 
+inline std::string get_initial_wavefunction_guess() {
+    const char* env = std::getenv("PWDFT_INITIAL_WAVEFUNCTION_GUESS");
+    if (env) return std::string(env);
+    return "random";
+}
 
 namespace pwdft {
 
