@@ -899,6 +899,14 @@ public:
      
       return os;
    }
+
+   // Add a flag to force reinitialization of the wavefunction
+   bool force_reinit_flag = false;
+   void force_reinit_wavefunction() { force_reinit_flag = true; }
+   bool should_force_reinit_wavefunction() const { return force_reinit_flag; }
+   void clear_force_reinit_wavefunction() { force_reinit_flag = false; }
+
+   int get_total_electrons() const { return ne[0] + ne[1]; }
 };
 
 } // namespace pwdft

@@ -559,14 +559,36 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
   
    // calculate energy
    double EV = 0.0;
-  
-   if (flag < 0) 
-   {
-      EV = band_cgsd_noit_energy(mysolid, true, coutput);
+   int max_retries = 3;
+   int retry_count = 0;
+   bool success = false;
+   std::string movecs_filename = control.output_movecs_filename();
+   while (retry_count < max_retries && !success) {
+      if (flag < 0) 
+      {
+         EV = band_cgsd_noit_energy(mysolid, true, coutput);
+      }
+      else 
+      {
+         EV = band_cgsd_energy(control, mysolid, true, coutput);
+      }
+      // Check for NaN/Inf in energy or number of electrons
+      int nelec_total = mysolid.get_total_electrons();
+      if (std::isnan(EV) || std::isinf(EV) || nelec_total <= 0) {
+         if (myparallel.is_master()) {
+            coutput << "[PWDFT] Detected NaN/Inf or invalid electron count in SCF. Deleting wavefunction file and retrying with new random initialization." << std::endl;
+         }
+         // Delete the wavefunction file
+         std::remove(movecs_filename.c_str());
+         // Set the force_reinit_wavefunction flag on the Solid object
+         mysolid.force_reinit_wavefunction();
+         retry_count++;
+      } else {
+         success = true;
+      }
    }
-   else 
-   {
-      EV = band_cgsd_energy(control, mysolid, true, coutput);
+   if (!success && myparallel.is_master()) {
+      coutput << "[PWDFT] SCF failed after " << max_retries << " retries with new wavefunction initializations." << std::endl;
    }
    if (myparallel.is_master()) seconds(&cpu3);
   

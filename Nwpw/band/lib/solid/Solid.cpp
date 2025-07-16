@@ -121,7 +121,15 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
    shift2 = (mygrid->CGrid::n2ft3d);
    mshift = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
  
-   newpsi = cpsi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);
+   // Instead of always reading from file, check the force_reinit_flag
+   if (force_reinit_flag) {
+      if (mygrid->c3db::parall->base_stdio_print)
+         coutput << "[PWDFT] Forcing reinitialization of wavefunction due to previous NaN/Inf failure." << std::endl;
+      mygrid->g_generate_random(psi1);
+      clear_force_reinit_wavefunction();
+   } else {
+      newpsi = cpsi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);
+   }
    smearoccupation = 0;
    if (fractional)
    {
