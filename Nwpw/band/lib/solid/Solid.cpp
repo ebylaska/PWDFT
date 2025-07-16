@@ -125,7 +125,19 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
    if (force_reinit_flag) {
       if (mygrid->c3db::parall->base_stdio_print)
          coutput << "[PWDFT] Forcing reinitialization of wavefunction due to previous NaN/Inf failure." << std::endl;
-      mygrid->g_generate_random(psi1);
+      
+      // Check control keyword for atomic guess preference
+      std::string guess = control.initial_wavefunction_guess();
+      
+      if (guess == "atomic") {
+         if (mygrid->c3db::parall->base_stdio_print)
+            coutput << "[PWDFT] Using atomic guess for wavefunction reinitialization." << std::endl;
+         mygrid->g_generate_atomic_guess(psi1);
+      } else {
+         if (mygrid->c3db::parall->base_stdio_print)
+            coutput << "[PWDFT] Using random initialization for wavefunction reinitialization." << std::endl;
+         mygrid->g_generate_random(psi1);
+      }
       clear_force_reinit_wavefunction();
    } else {
       newpsi = cpsi_read(mygrid, infilename, wvfnc_initialize, psi1, &smearoccupation, occ2, coutput);

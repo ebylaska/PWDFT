@@ -204,6 +204,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["initial_psi_random_algorithm"].is_number_integer())
       pinitial_psi_random_algorithm = rtdbjson["nwpw"]["initial_psi_random_algorithm"];
  
+   /* set pinitial_wavefunction_guess for wavefunction initialization */
+   pinitial_wavefunction_guess = "random";
+   if (rtdbjson["nwpw"]["initial_wavefunction_guess"].is_string())
+      pinitial_wavefunction_guess = rtdbjson["nwpw"]["initial_wavefunction_guess"];
+ 
    /* qsize */
    pqsize = 5;
    if (rtdbjson["nwpw"]["pfft3_qsize"].is_number_integer())

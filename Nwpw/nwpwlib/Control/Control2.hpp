@@ -59,6 +59,7 @@ class Control2 {
    int pminimizer = 1;
    int plmbfgs_size = 2;
    int pinitial_psi_random_algorithm = 1;
+   std::string pinitial_wavefunction_guess = "random";
  
    int pdriver_maxiter = 30;
    int pdriver_lmbfgs_size = 9;
@@ -236,6 +237,7 @@ public:
    int lmax_multipole() { return plmax_multipole; }
    std::string xc_name() { return xcstring; }
    int initial_psi_random_algorithm() { return pinitial_psi_random_algorithm; }
+   std::string initial_wavefunction_guess() { return pinitial_wavefunction_guess; }
    int io_norbs_max() { return pio_norbs_max; }
    bool io_buffer() { return pio_buffer; }
    bool twodfractional() { return ptwodfractional; }
