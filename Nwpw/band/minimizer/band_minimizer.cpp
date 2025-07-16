@@ -577,6 +577,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       if (std::isnan(EV) || std::isinf(EV) || nelec_total <= 0) {
          if (myparallel.is_master()) {
             coutput << "[PWDFT] Detected NaN/Inf or invalid electron count in SCF. Deleting wavefunction file and retrying with new initialization (using " << control.initial_wavefunction_guess() << " guess)." << std::endl;
+            coutput << "[PWDFT] DEBUG: initial_wavefunction_guess = '" << control.initial_wavefunction_guess() << "'" << std::endl;
          }
          // Delete the wavefunction file
          std::remove(movecs_filename.c_str());
