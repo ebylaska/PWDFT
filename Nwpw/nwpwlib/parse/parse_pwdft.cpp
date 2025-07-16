@@ -1896,6 +1896,10 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        ss = mystring_split0(line);
        if (ss.size() > 1)
           nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
+    } else if (mystring_contains(line, "initial_wavefunction_guess")) {
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          nwpwjson["initial_wavefunction_guess"] = ss[1];
     } else if (mystring_contains(line, "tile_factor")) {
        ss = mystring_split0(line);
        if (ss.size() > 1)
