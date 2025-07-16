@@ -1898,8 +1898,18 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "initial_wavefunction_guess")) {
        ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["initial_wavefunction_guess"] = ss[1];
+       if (ss.size() > 1) {
+          std::string guess_type = ss[1];
+          // Validate the guess type
+          if (guess_type == "random" || guess_type == "atomic" || 
+              guess_type == "superposition" || guess_type == "gaussian" || 
+              guess_type == "mixed") {
+             nwpwjson["initial_wavefunction_guess"] = guess_type;
+          } else {
+             // Default to random if invalid option
+             nwpwjson["initial_wavefunction_guess"] = "random";
+          }
+       }
     } else if (mystring_contains(line, "tile_factor")) {
        ss = mystring_split0(line);
        if (ss.size() > 1)

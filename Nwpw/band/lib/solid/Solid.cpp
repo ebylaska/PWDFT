@@ -126,13 +126,28 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
       if (mygrid->c3db::parall->base_stdio_print)
          coutput << "[PWDFT] Forcing reinitialization of wavefunction due to previous NaN/Inf failure." << std::endl;
       
-      // Check control keyword for atomic guess preference
+      // Enhanced fallback strategy with multiple options
       std::string guess = control.initial_wavefunction_guess();
       
       if (guess == "atomic") {
          if (mygrid->c3db::parall->base_stdio_print)
             coutput << "[PWDFT] Using atomic guess for wavefunction reinitialization." << std::endl;
          mygrid->g_generate_atomic_guess(psi1);
+      } else if (guess == "superposition") {
+         if (mygrid->c3db::parall->base_stdio_print)
+            coutput << "[PWDFT] Using superposition of atomic orbitals for wavefunction reinitialization." << std::endl;
+         // Generate superposition of atomic orbitals
+         mygrid->g_generate_superposition_guess(psi1);
+      } else if (guess == "gaussian") {
+         if (mygrid->c3db::parall->base_stdio_print)
+            coutput << "[PWDFT] Using Gaussian basis guess for wavefunction reinitialization." << std::endl;
+         // Generate Gaussian basis functions
+         mygrid->g_generate_gaussian_guess(psi1);
+      } else if (guess == "mixed") {
+         if (mygrid->c3db::parall->base_stdio_print)
+            coutput << "[PWDFT] Using mixed strategy (atomic + random) for wavefunction reinitialization." << std::endl;
+         // Generate mixed guess: atomic for occupied, random for virtual
+         mygrid->g_generate_mixed_guess(psi1);
       } else {
          if (mygrid->c3db::parall->base_stdio_print)
             coutput << "[PWDFT] Using random initialization for wavefunction reinitialization." << std::endl;

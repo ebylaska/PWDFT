@@ -234,16 +234,28 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
 
-         // Fallback logic: check for NaN
-         if ((std::isnan(total_energy) || std::isnan(deltae) || std::isnan(deltac)) && fallback_attempts < fallback_max) {
-            if (oprint) coutput << "\n*** NaN detected in SCF. Reinitializing wavefunction (attempt " << (fallback_attempts+1) << ")...\n";
-            // Try atomic guess if requested, else random
-            std::string guess = "random";
-            const char* env = std::getenv("PWDFT_INITIAL_WAVEFUNCTION_GUESS");
-            if (env) guess = std::string(env);
+         // Enhanced fallback logic: check for NaN/Inf
+         if ((std::isnan(total_energy) || std::isnan(deltae) || std::isnan(deltac) ||
+              std::isinf(total_energy) || std::isinf(deltae) || std::isinf(deltac)) && fallback_attempts < fallback_max) {
+            if (oprint) coutput << "\n*** NaN/Inf detected in SCF. Reinitializing wavefunction (attempt " << (fallback_attempts+1) << ")...\n";
+            
+            // Enhanced fallback strategy with multiple options
+            std::string guess = control.initial_wavefunction_guess();
+            
             if (guess == "atomic") {
+                if (oprint) coutput << "[PWDFT] Using atomic guess for SCF reinitialization." << std::endl;
                 mymolecule.mygrid->g_generate_atomic_guess(mymolecule.psi1);
+            } else if (guess == "superposition") {
+                if (oprint) coutput << "[PWDFT] Using superposition guess for SCF reinitialization." << std::endl;
+                mymolecule.mygrid->g_generate_superposition_guess(mymolecule.psi1);
+            } else if (guess == "gaussian") {
+                if (oprint) coutput << "[PWDFT] Using Gaussian guess for SCF reinitialization." << std::endl;
+                mymolecule.mygrid->g_generate_gaussian_guess(mymolecule.psi1);
+            } else if (guess == "mixed") {
+                if (oprint) coutput << "[PWDFT] Using mixed guess for SCF reinitialization." << std::endl;
+                mymolecule.mygrid->g_generate_mixed_guess(mymolecule.psi1);
             } else {
+                if (oprint) coutput << "[PWDFT] Using random initialization for SCF reinitialization." << std::endl;
                 mymolecule.mygrid->g_generate_random(mymolecule.psi1);
             }
             mymolecule.newpsi = true;
