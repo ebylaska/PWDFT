@@ -254,3 +254,39 @@ if(MPI_LINK_FLAGS)
   set_target_properties(pwdft PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS} ${MKL_LINK_FLAGS}")
 endif()
+
+# Documentation targets
+option(BUILD_DOCUMENTATION "Build documentation" OFF)
+
+if(BUILD_DOCUMENTATION)
+  find_package(Doxygen)
+  find_package(Sphinx)
+  
+  if(DOXYGEN_FOUND AND SPHINX_FOUND)
+    message("-- Documentation will be built")
+    
+    # Create documentation directory
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/doc)
+    
+    # Configure Doxyfile
+    configure_file(${CMAKE_SOURCE_DIR}/doc/Doxyfile 
+                   ${CMAKE_BINARY_DIR}/doc/Doxyfile @ONLY)
+    
+    # Add custom target for documentation
+    add_custom_target(doc
+      COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_BINARY_DIR}/doc ${DOXYGEN_EXECUTABLE} Doxyfile
+      COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR}/doc ${SPHINX_EXECUTABLE} -b html . _build/html
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      COMMENT "Generating documentation"
+      VERBATIM)
+      
+    # Add install target for documentation
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/doc/_build/html/
+            DESTINATION share/doc/pwdft
+            OPTIONAL)
+  else()
+    message("-- Documentation dependencies not found. Install Doxygen and Sphinx.")
+  endif()
+else()
+  message("-- Documentation disabled. Set BUILD_DOCUMENTATION=ON to enable.")
+endif()
