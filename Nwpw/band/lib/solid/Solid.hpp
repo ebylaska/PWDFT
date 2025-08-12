@@ -721,15 +721,15 @@ public:
                 {
                    if ((tmpocc[i+nn] < 1.e-3) && (tmpocc[i+nn]>1.0e-12))
                       stream << Efmt(18,7) << eig[i+nn]    << " ("
-                         << Ffmt(8,3)  << eig[i+nn]*ev << "eV)  occ="
-                         << Efmt(9,3)  << occ1[i+nn]   << " ";
+                         << Ffmt(8,3)  << tmpeig[i+nn]*ev << "eV)  occ="
+                         << Efmt(9,3)  << tmpocc[i+nn]   << " ";
                    else
                       stream << Efmt(18,7) << eig[i+nn]    << " ("
-                         << Ffmt(8,3)  << eig[i+nn]*ev << "eV)  occ="
-                         << Ffmt(5,3)  << occ1[i+nn]   << " "
-                         << Efmt(18,7) << eig[i+(ispin-1)*ne[0]]    << " ("
-                         << Ffmt(8,3)  << eig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
-                         << Ffmt(5,3)  << occ1[i+(ispin-1)*ne[0]] << std::endl;
+                         << Ffmt(8,3)  << tmpeig[i+nn]*ev << "eV)  occ="
+                         << Ffmt(5,3)  << tmpocc[i+nn]   << " "
+                         << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                         << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                         << Ffmt(5,3)  << tmpocc[i+(ispin-1)*ne[0]] << std::endl;
       
                    if ((tmpocc[i+(ispin-1)*ne[0]] < 1.e-3) && (tmpocc[i+(ispin-1)*ne[0]]>1.0e-12))
                       stream << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
