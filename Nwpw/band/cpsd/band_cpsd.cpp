@@ -172,6 +172,11 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),
                            psi2,&smearoccupation,occ2,std::cout);
    mygrid.gg_copy(psi2,psi1);
+   std::cout << "occ2=" << occ2[0] << " " << occ2[1] << " " 
+             <<  occ2[2] << " " << occ2[3] << " " 
+             <<  occ2[4] << " " << occ2[5] << " " 
+             <<  occ2[6] << " " << occ2[7] << " " 
+             <<  occ2[8] << " " << occ2[9] << std::endl;
    if (fractional)
    {
       smearoccupation = 1;
@@ -368,6 +373,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                    << "  (" << Ifmt(8) << mygrid.npack_all_print(nb) << " waves "
                             << Ifmt(8) << mygrid.npack_print(nb) << " per task)" << std::endl;
 
+      
+
       std::cout << std::endl;
       std::cout << " technical parameters:\n";
       if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
@@ -381,6 +388,88 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << " (" << Ifmt(5) << control.loop(0) << " inner "
                         << Ifmt(5) << control.loop(1) << " outer)" << std::endl;
       if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
+   }
+
+   if (control.fractional())
+   {
+      const int total_occ = ne[0] + ne[1];
+      const int nbrillq = mygrid.nbrillq;
+      const int ksize = myparallel.np_k();  // number of k-points
+      const int kmy = myparallel.taskid_k();  // my k-point
+      const int nlocal = nbrillq * total_occ;
+                   
+      std::vector<double> local_occ(nlocal);
+      std::memcpy(local_occ.data(), occ1, nlocal * sizeof(double));
+ 
+      std::vector<double> gathered_occ;
+      if (myparallel.is_master_d(3))
+      {       
+         gathered_occ.resize(ksize * nlocal);
+      }        
+                    
+      myparallel.Vector_GatherAll(3, nlocal, local_occ.data(), gathered_occ.data(), 0);
+                   
+      if (oprint)
+      {
+         std::cout << std::endl;
+         std::cout << " fractional smearing parameters:" << std::endl;
+         std::cout << "    smearing algorithm = " << smeartype << std::endl;
+         std::cout << "    smearing parameter = ";
+         if (smeartype==-1) std::cout << "fixed_occupation" << std::endl;
+         if (smeartype==0) std::cout << "step function" << std::endl;
+         if (smeartype==1) std::cout << "Fermi-Dirac" << std::endl;
+         if (smeartype==2) std::cout << "Gaussian" << std::endl;
+         if (smeartype==3) std::cout << "Hermite" << std::endl;
+         if (smeartype==4) std::cout << "Marazari-Vanderbilt" << std::endl;
+         if (smeartype==5) std::cout << "Methfessel-Paxton" << std::endl;
+         if (smeartype==6) std::cout << "Cold smearing" << std::endl;
+         if (smeartype==7) std::cout << "Lorentzian" << std::endl;
+         if (smeartype==8) std::cout << "step" << std::endl;
+         if (smeartype>=0)
+         {
+            std::cout <<  "    smearing parameter = " << Ffmt(9,3) << smearkT
+                                              << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+            std::cout <<  "    mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
+            std::cout <<  "    mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
+            std::cout <<  "    mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
+            std::cout <<  "    mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
+            std::cout <<  "    mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
+            std::cout <<  "    rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+            if (ispin==2)
+               std::cout <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+            else
+               std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+            if (control.fractional_frozen())
+               std::cout <<  "    frozen orbitals" << std::endl;
+
+            // Print occupations by k-point
+            std::cout << "    initial occupations per Brillouin zone:" << std::endl;
+
+            auto format_occ = [](double val) -> std::string {
+               if (std::fabs(val - std::round(val)) < 1e-8)
+                  return std::to_string(static_cast<int>(std::round(val)));
+               else {
+                  std::ostringstream oss;
+                  oss << std::fixed << std::setprecision(3) << val;
+                  return oss.str();
+               }
+            };
+
+            for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+            {
+               std::cout << "        k-point " << nb+1 << ": [";
+               for (int i=0; i<total_occ; ++i)
+               {
+                   int idx = nb*total_occ + i;
+                   std::cout << format_occ(gathered_occ[idx]);
+                   if (i < total_occ * nbrillq - 1)
+                       std::cout << " ";
+               }
+               std::cout << "]" << std::endl;
+            }
+
+         }
+      }
    }
 
    MPI_Barrier(comm_world0);
@@ -623,6 +712,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " ion-ion energy      : "
                 << Efmt(19,10) << E[4] << " ("
                 << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
+      if (std::fabs(E[28])>1.0e-9)
+         std::cout << " smearing energy     : "
+                   << Efmt(19,10) << E[28] << " ("
+                   << Efmt(15,5) << E[28]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " K.S. kinetic energy : "
@@ -748,7 +841,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    nfft[0] = mygrid.nx;
    nfft[1] = mygrid.ny;
    nfft[2] = mygrid.nz;
-   cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
+   if (occ1)
+      cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,&smearoccupation,occ1,control.output_movecs_filename(),std::cout);
+   else
+      cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
    /* deallocate memory */
