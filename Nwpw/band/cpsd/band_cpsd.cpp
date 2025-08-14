@@ -184,11 +184,15 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (filling.size() > 0)
       {
          int sz = filling.size();
-         if (sz > (ne[0]+ne[1])) sz = ne[0]+ne[1];
-         std::memcpy(occ2,filling.data(),sz*sizeof(double));
+         if (sz > (ne[0]+ne[1])) sz = (ne[0]+ne[1]);
+         for (auto nbq=0; nbq<nbrillq; ++nbq)
+         {
+            int ishift = (ne[0]+ne[1]);
+            std::memcpy(occ2+ishift,filling.data(),sz*sizeof(double));
+         }
       }
 
-      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+      std::memcpy(occ1,occ2,nbrillq*(ne[0]+ne[1])*sizeof(double));
    }
    MPI_Barrier(comm_world0);
 
@@ -390,7 +394,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
    }
 
-   if (control.fractional())
+   if (fractional)
    {
       const int total_occ = ne[0] + ne[1];
       const int nbrillq = mygrid.nbrillq;
@@ -435,40 +439,41 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
             std::cout <<  "    mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
             std::cout <<  "    mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
             std::cout <<  "    rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
-            if (ispin==2)
-               std::cout <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
-            else
-               std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
-            if (control.fractional_frozen())
-               std::cout <<  "    frozen orbitals" << std::endl;
-
-            // Print occupations by k-point
-            std::cout << "    initial occupations per Brillouin zone:" << std::endl;
-
-            auto format_occ = [](double val) -> std::string {
-               if (std::fabs(val - std::round(val)) < 1e-8)
-                  return std::to_string(static_cast<int>(std::round(val)));
-               else {
-                  std::ostringstream oss;
-                  oss << std::fixed << std::setprecision(3) << val;
-                  return oss.str();
-               }
-            };
-
-            for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
-            {
-               std::cout << "        k-point " << nb+1 << ": [";
-               for (int i=0; i<total_occ; ++i)
-               {
-                   int idx = nb*total_occ + i;
-                   std::cout << format_occ(gathered_occ[idx]);
-                   if (i < total_occ * nbrillq - 1)
-                       std::cout << " ";
-               }
-               std::cout << "]" << std::endl;
-            }
-
          }
+         if (ispin==2)
+            std::cout <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+         else
+            std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+         if (control.fractional_frozen())
+            std::cout <<  "    frozen orbitals" << std::endl;
+
+         // Print occupations by k-point
+         std::cout << "    initial occupations per Brillouin zone:" << std::endl;
+
+         auto format_occ = [](double val) -> std::string {
+            if (std::fabs(val - std::round(val)) < 1e-8)
+               return std::to_string(static_cast<int>(std::round(val)));
+            else {
+               std::ostringstream oss;
+               oss << std::fixed << std::setprecision(3) << val;
+               return oss.str();
+            }
+         };
+
+         for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+         {
+            std::cout << "        k-point " << nb+1 << ": [";
+            for (int i=0; i<total_occ; ++i)
+            {
+                int idx = nb*total_occ + i;
+                std::cout << format_occ(gathered_occ[idx]);
+                if (i < total_occ * nbrillq - 1)
+                    std::cout << " ";
+            }
+            std::cout << "]" << std::endl;
+         }
+
+         
       }
    }
 
