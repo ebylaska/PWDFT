@@ -462,24 +462,22 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
             coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
             coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
-            if (ispin==2)
-               coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
-            else
-               coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
-            if (control.fractional_frozen())
-               coutput <<  "      frozen oribtals" << std::endl;
-             
-            {
-               size_t total_occupations = ne[0] + ne[1];
-               std::ostringstream oss;
-               oss << "      initial occupations = [";
-               for (auto i=0; i<total_occupations-1; ++i)
-                  oss << mymolecule.occ1[i] << " ";
-               oss << mymolecule.occ1[total_occupations - 1] << "]";
-               coutput << oss.str() << std::endl;
-            }
-
          }
+         if (ispin==2)
+            coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+         else
+            coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+         if (control.fractional_frozen())
+            coutput <<  "      frozen oribtals" << std::endl;
+             
+         size_t total_occupations = ne[0] + ne[1];
+         std::ostringstream oss;
+         oss << "      initial occupations = [";
+         for (auto i=0; i<total_occupations-1; ++i)
+            oss << mymolecule.occ1[i] << " ";
+         oss << mymolecule.occ1[total_occupations - 1] << "]";
+         coutput << oss.str() << std::endl;
+       
       }
       coutput << std::endl << std::endl << std::endl;
    }

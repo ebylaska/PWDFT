@@ -16,7 +16,7 @@ namespace pwdft {
 
 extern void band_inner_loop(Control2 &, Cneb *, Ion *, cKinetic_Operator *,
                             cCoulomb_Operator *, cXC_Operator *, CPseudopotential *,
-                            CStrfac *, Ewald *, double *, double *, double *,
+                            CStrfac *, Ewald *, double *, double *, double *, double *,
                             double *, double *, double *, double *, double *,
                             double *, double *, double *);
 }

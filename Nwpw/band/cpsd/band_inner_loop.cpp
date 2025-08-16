@@ -25,7 +25,7 @@ namespace pwdft {
 void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
                      cKinetic_Operator *myke, cCoulomb_Operator *mycoulomb,
                      cXC_Operator *myxc, CPseudopotential *mypsp, CStrfac *mystrfac,
-                     Ewald *myewald, double *psi1, double *psi2, double *Hpsi,
+                     Ewald *myewald, double *psi1, double *psi2, double *occ, double *Hpsi,
                      double *psi_r, double *dn, double *hml, double *lmbda,
                      double E[], double *deltae, double *deltac, double *deltar) 
 {
@@ -99,7 +99,11 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mygrid->gh_fftb(psi1,psi_r);
 
       // generate dn
-      mygrid->hr_aSumSqr(scal2,psi_r,dn);
+      if (occ)
+         mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
+      else
+         mygrid->hr_aSumSqr(scal2,psi_r,dn);
+
 
       // generate dng 
       mygrid->rrc_Sum(dn,dn+(ispin-1)*nfft3d,rho);
@@ -182,7 +186,8 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    mygrid->ggw_sym_Multiply(psi1, Hpsi, hml);
 
    mygrid->w_scal(-1.0, hml);
-   eorbit = mygrid->w_trace(hml);
+   //eorbit = mygrid->w_trace(hml);
+   eorbit = occ ? mygrid->w_trace_occ(hml,occ) : mygrid->w_trace(hml);
    if (ispin==1) eorbit = eorbit + eorbit;
 
    eorbit = mygrid->c3db::parall->SumAll(3,eorbit);
@@ -206,14 +211,18 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    pxc *= dv;
  
    // average Kohn-Sham kineticl energy 
-   eke = myke->ke_ave(psi1);
+   eke = myke->ke_ave(psi1,occ);
  
    // average Kohn-Sham local psp energy
    elocal = mygrid->cc_pack_dot(0, dng, vl);
  
  
    // average Kohn-Sham v_nonlocal energy 
-   enlocal = mypsp->e_nonlocal(psi1);
+   //enlocal = mypsp->e_nonlocal(psi1);
+   mygrid->g_zero(Hpsi);
+   mypsp->v_nonlocal(psi1, Hpsi);
+   //enlocal = -mygrid->w_trace_occ(psi1, Hpsi,occ);
+   enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ);
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;

@@ -51,7 +51,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    double cpu1, cpu2, cpu3, cpu4;
    double E[80], deltae, deltac, deltar, viral, unita[9], en[2];
    double *psi1, *psi2, *Hpsi, *psi_r;
-   double *occ1, *occ2;
+   double *occ1 = nullptr;
+   double *occ2 = nullptr;
    double *dn;
    double *hml, *lmbda, *eig, *eig_prev;
 
@@ -172,11 +173,6 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    bool newpsi = cpsi_read(&mygrid,control.input_movecs_filename(),control.input_movecs_initialize(),
                            psi2,&smearoccupation,occ2,std::cout);
    mygrid.gg_copy(psi2,psi1);
-   std::cout << "occ2=" << occ2[0] << " " << occ2[1] << " " 
-             <<  occ2[2] << " " << occ2[3] << " " 
-             <<  occ2[4] << " " << occ2[5] << " " 
-             <<  occ2[6] << " " << occ2[7] << " " 
-             <<  occ2[8] << " " << occ2[9] << std::endl;
    if (fractional)
    {
       smearoccupation = 1;
@@ -256,6 +252,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << "unrestricted" << std::endl;
       std::cout << myxc;
 
+      if (control.fractional()) std::cout << "   using fractional" << std::endl;
+
 
       std::cout << mypsp.print_pspall();
 
@@ -287,11 +285,50 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << std::endl << myion.print_constraints(0);
 
       std::cout << std::endl;
-      std::cout << " number of electrons: spin up ="
-                << Ifmt(6) << mygrid.ne[0] << " ("
-                << Ifmt(4) << mygrid.neq[0] << " per task) down ="
-                << Ifmt(6) << mygrid.ne[ispin-1] << " ("
-                << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+   }
+
+   double oen[2] = {0.0,0.0};
+   if (control.fractional())
+   {
+      int n=0;
+
+      //The outer loop nbq is split over dimension 3
+      for (auto nbq=0; nbq<mygrid.nbrillq; ++nbq)
+      {
+         double weight =  mygrid.pbrill_weight(nbq);
+         for (auto ms=0; ms<ispin; ++ms)
+         {
+            //The orbital loop index i is split over dimension 2
+            for (auto i=0; i<mygrid.neq[ms]; ++i)
+            {
+               oen[ms] += weight*occ1[n];
+               ++n;
+            }
+         }
+     }
+     myparallel.Vector_SumAll(2,2,oen); // Reduce over orbitals (orbital distribution)
+     myparallel.Vector_SumAll(3,2,oen); // Then reduce over BZ points (k-point distribution)
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+   }
+
+   if (oprint)
+   {
+      if (control.fractional())
+         std::cout << " number of electrons: spin up ="
+                   << Ffmt(6,2)  << oen[0] << "  "
+                   << Ffmt(27,2) << oen[ispin-1] << " (   fractional)" << std::endl;
+      else
+         std::cout << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
+                   << " (" << Ifmt(4) << mygrid.neq[0]
+                   << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+                   << Ifmt(4) << mygrid.neq[ispin - 1] << " per task)" << std::endl;
+
+      std::cout << " number of orbitals:  spin up ="
+               << Ifmt(6) << mygrid.ne[0] << " ("
+               << Ifmt(4) << mygrid.neq[0] << " per task) down ="
+               << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+               << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " supercell:" << std::endl;
@@ -506,7 +543,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       {
          ++icount;
          band_inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb, &myxc, &mypsp,
-                         &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
+                         &mystrfac, &myewald, psi1, psi2, occ1, Hpsi, psi_r, dn, hml, lmbda, E,
                          &deltae, &deltac, &deltar);
 
          // mydfpt.start(psi1,psi_r
@@ -523,7 +560,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                       << Efmt(13,5) << deltar;
 
          /* check for competion */
-         if ((deltae > 0.0) && (icount > 1) && control.deltae_check())
+         if ((!fractional) && (deltae > 0.0) && (icount > 1) && control.deltae_check())
          {
             done = 1;
             if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
@@ -741,6 +778,19 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       viral = (E[9] + E[8] + E[7] + E[6]) / E[5];
       std::cout << " Viral Coefficient   : "
                 << Efmt(19,10) << viral << std::endl;
+
+      if ((fractional) && (!control.fractional_frozen()))
+      {
+         std::cout << std::endl;
+         ev = 27.2116;
+         if (ispin==1)
+            std::cout << " Fermi energy        : "
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)" << std::endl;
+         else
+            std::cout << "  Fermi energy = "
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)"
+                      << Efmt(19,10) << smearfermi[1] << " (" << Ffmt(8,3) << smearfermi[1]*ev << " eV)" << std::endl;
+      }
 
       if (myion.has_ion_constraints())
       {
