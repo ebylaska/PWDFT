@@ -35,7 +35,7 @@ nwpw
   scf ks-grassmann-cg anderson alpha 0.015
   #smear  gaussian
    #smear  fixed 
-  loop 10 100
+  loop 10 1000
    #tolerances 1.0e-9 1.0e-9
    #vectors output jjj.movecs
    #virtual 4 0
