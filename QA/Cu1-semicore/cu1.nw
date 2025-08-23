@@ -1,0 +1,30 @@
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+ 
+memory 3010 mb
+
+start pspw_pbe_Cu1
+
+
+charge 0
+
+geometry noautoz nocenter noautosym
+Cu 0.000000 0.000000 0.000000
+end
+
+
+
+nwpw
+  simulation_cell
+   SC 20.0
+  end
+  pseudopotentials
+      Cu library development_psps
+  end
+  xc pbe96
+  cutoff 30.0 
+end
+task pspw noit_energy
+

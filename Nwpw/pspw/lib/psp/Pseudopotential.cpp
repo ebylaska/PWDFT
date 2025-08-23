@@ -954,7 +954,8 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    Parallel *myparall = mygrid->parall;
  
    *psp_type = vpp_get_psp_type(myparall,pspname);
-   std::cout << "psp_type=" << *psp_type << std::endl;
+   //std::cout << "psp_type=" << *psp_type << std::endl;
+   //if (*psp_type==2) *psp_type= 0;
  
    if ((*psp_type == 0) || (*psp_type == 9)) 
    {
