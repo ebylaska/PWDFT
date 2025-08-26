@@ -1302,6 +1302,8 @@ static json parse_dplot(json dplot, int *curptr,
   return dplot;
 }
 
+
+
 /**************************************************
  *                                                *
  *                parse_nwpw                      *
@@ -1906,6 +1908,66 @@ static json parse_nwpw(json nwpwjson, int *curptr,
          nexcited[1] = std::stoi(ss[2]);
        nwpwjson["virtual"] = nexcited;
     }
+    else if ((mystring_contains(line, "pspspin")) &&
+             (mystring_contains(line, "off") ||
+              mystring_contains(line, ".false.") ||
+              mystring_contains(line, "F"))) {
+
+       nwpwjson["pspspin"] = false;
+       nwpwjson.erase("pspspin_up");
+       nwpwjson.erase("pspspin_down");
+    }
+    else if (mystring_contains(line, "pspspin")) {
+       std::istringstream iss(line);
+       std::string keyword, spin, lstr;
+       double emax;
+       int ion;
+
+       iss >> keyword >> spin >> lstr >> emax;
+
+       if (spin == "alpha") spin = "up";
+       if (spin == "beta")  spin = "down";
+
+       std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
+
+       // L -> integer mapping
+       std::map<std::string, int> l_map = {
+           {"s", 0}, {"p", 1}, {"d", 2}, {"f", 3},
+           {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}
+       };
+
+       int lval = -1;
+       if (l_map.find(lstr) != l_map.end()) {
+          lval = l_map[lstr];
+       } else {
+          std::cerr << "[WARNING] Unrecognized l value: " << lstr << std::endl;
+       }
+
+       std::vector<int> ions;
+       while (iss >> ion)
+          ions.push_back(ion);
+
+       if (!ions.empty()) {
+          json entry;
+          entry["spin"] = spin;
+          entry["l"]    = lval;
+          entry["lstr"] = lstr;     // original string (optional but helpful)
+          entry["emax"] = emax;
+          entry["ions"] = ions;
+
+          nwpwjson["pspspin"] = true;
+
+          if (spin == "up") { 
+             if (!nwpwjson.contains("pspspin_up")) nwpwjson["pspspin_up"] = json::array();
+             nwpwjson["pspspin_up"].push_back(entry);
+          } else if (spin == "down") {
+             if (!nwpwjson.contains("pspspin_down")) nwpwjson["pspspin_down"] = json::array();
+             nwpwjson["pspspin_down"].push_back(entry);
+          }
+       }
+       else
+          std::cerr << "[WARNING] pspspin entry ignored due to missing ion indices: " << line << std::endl;
+    }
 
 
     ++cur;
@@ -1917,6 +1979,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
 
   return nwpwjson;
 }
+
 
 /**************************************************
  *                                                *
