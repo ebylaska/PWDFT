@@ -1923,7 +1923,19 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        double emax;
        int ion;
 
-       iss >> keyword >> spin >> lstr >> emax;
+       bool not_m = false;
+       //if (mystring_contains(line, "not_m"))
+       //{
+       //   line = mystring_ireplace(line, "not_m","");
+       //   not_m = true;
+       //}
+       iss >> keyword;
+       if (mystring_contains(keyword, "not_m")) {
+          not_m = true;
+          iss >> keyword >> spin >> lstr >> emax;
+       }
+       else
+          iss >> spin >> lstr >> emax;
 
        if (spin == "alpha") spin = "up";
        if (spin == "beta")  spin = "down";
@@ -1949,11 +1961,12 @@ static json parse_nwpw(json nwpwjson, int *curptr,
 
        if (!ions.empty()) {
           json entry;
-          entry["spin"] = spin;
-          entry["l"]    = lval;
-          entry["lstr"] = lstr;     // original string (optional but helpful)
-          entry["emax"] = emax;
-          entry["ions"] = ions;
+          entry["not_m"] = not_m;
+          entry["spin"]  = spin;
+          entry["l"]     = lval;
+          entry["lstr"]  = lstr;     // original string (optional but helpful)
+          entry["emax"]  = emax;
+          entry["ions"]  = ions;
 
           nwpwjson["pspspin"] = true;
 
