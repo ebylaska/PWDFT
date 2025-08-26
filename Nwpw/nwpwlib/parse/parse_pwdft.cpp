@@ -1919,23 +1919,20 @@ static json parse_nwpw(json nwpwjson, int *curptr,
     }
     else if (mystring_contains(line, "pspspin")) {
        std::istringstream iss(line);
-       std::string keyword, spin, lstr;
-       double emax;
+       std::string keyword, spin, lstr, mstr;
+       double penalty;
        int ion;
+       int m=-9;
 
        bool not_m = false;
-       //if (mystring_contains(line, "not_m"))
-       //{
-       //   line = mystring_ireplace(line, "not_m","");
-       //   not_m = true;
-       //}
-       iss >> keyword;
-       if (mystring_contains(keyword, "not_m")) {
+       iss >> keyword >> spin;
+       
+       if (mystring_contains(spin, "not_m")) {
           not_m = true;
-          iss >> keyword >> spin >> lstr >> emax;
+          iss >> m >> spin >> lstr >> penalty;
        }
        else
-          iss >> spin >> lstr >> emax;
+          iss >> lstr >> penalty;
 
        if (spin == "alpha") spin = "up";
        if (spin == "beta")  spin = "down";
@@ -1963,9 +1960,10 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           json entry;
           entry["not_m"] = not_m;
           entry["spin"]  = spin;
-          entry["l"]     = lval;
           entry["lstr"]  = lstr;     // original string (optional but helpful)
-          entry["emax"]  = emax;
+          entry["l"]     = lval;
+          if (not_m) entry["m"]     = m;
+          entry["penalty"]  = penalty;
           entry["ions"]  = ions;
 
           nwpwjson["pspspin"] = true;
