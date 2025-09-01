@@ -1390,6 +1390,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
                                                        pspspin_upl, pspspin_downl,
                                                        pspspin_upm, pspspin_downm,
                                                        pspspin_upions, pspspin_downions);
+      std::cout << "pspspin=" << pspspin << std::endl;
+      std::cout << "UPIONS =" << pspspin_upions[0] << std::endl;
+      std::cout << "DNIONS =" << pspspin_downions[0] << std::endl;
       if (mypneb->d3db::parall->is_master())
          coutput << pspspin_output << std::endl;
    }

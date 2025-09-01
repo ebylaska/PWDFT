@@ -1029,7 +1029,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    }
 
    // pspspin
-   p_pspspin = rtdbjson["nwpw"]["pspspin"];
+   if (!rtdbjson["nwpw"]["pspspin"].is_null()) {
+     p_pspspin = rtdbjson["nwpw"]["pspspin"];
+   }
    
 
 }
@@ -1388,16 +1390,35 @@ std::string Control2::set_pspspin(int nion,
       int nup = rtdbjson["nwpw"]["pspspin_up"].size();
       for (int n=0; n<nup; ++n)
       {
-         int l        =  rtdbjson["nwpw"]["pspspin_up"][n]["l"];
-         bool not_m   =  rtdbjson["nwpw"]["pspspin_up"][n]["not_m"];
-         double scale =  rtdbjson["nwpw"]["pspspin_up"][n]["penalty"];
+         json entry   = rtdbjson["nwpw"]["pspspin_up"][n];
+         int l        = entry.value("l", -99);
+         bool not_m   = entry.value("not_m", false);
+         double scale = entry.value("penalty", 1.0);
+         int m        = not_m ? entry.value("m", -999) : 0;
          if (not_m)
          {
-            int m        =  rtdbjson["nwpw"]["pspspin_up"][n]["m"];
             stream << " - pspspin: up    l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) << m << " scale =" << Ffmt(8,3) << scale << std::endl;
          }
          else
             stream << " - pspspin: up    l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
+
+         if (entry.contains("ions") && entry["ions"].is_array())
+         {
+            std::vector<int> ion_indices = entry["ions"].get<std::vector<int>>();
+            stream << " - pspspin: up    ion indexes  =";
+            for (size_t i = 0; i < ion_indices.size(); ++i) 
+            {
+               int ii = ion_indices[i] - 1;
+               upions[ii]  = true;
+               upscale[ii] = scale;
+               upl[ii] = l;
+               upm[ii] = m;
+               if (i > 0 && i % 10 == 0)
+                  stream << std::endl << "                                "; // indent to align
+               stream << std::setw(5) << ion_indices[i];
+            }
+            stream << std::endl;
+         }
       }
    }
 
@@ -1407,18 +1428,36 @@ std::string Control2::set_pspspin(int nion,
       int ndown = rtdbjson["nwpw"]["pspspin_down"].size();
       for (int n=0; n<ndown; ++n)
       {
-         int l        =  rtdbjson["nwpw"]["pspspin_down"][n]["l"];
-         bool not_m   =  rtdbjson["nwpw"]["pspspin_down"][n]["not_m"];
-         double scale =  rtdbjson["nwpw"]["pspspin_down"][n]["penalty"];
+         json entry   = rtdbjson["nwpw"]["pspspin_down"][n];
+         int l        = entry.value("l", -99);
+         bool not_m   = entry.value("not_m", false);
+         double scale = entry.value("penalty", 1.0);
+         int m        = not_m ? entry.value("m", -999) : 0;
          if (not_m)
          {
-            int m        =  rtdbjson["nwpw"]["pspspin_down"][n]["m"];
             stream << " - pspspin: down  l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) <<  m << " scale =" << Ffmt(8,3) << scale << std::endl;
          }
          else
             stream << " - pspspin: down  l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
-      }
 
+         if (entry.contains("ions") && entry["ions"].is_array())
+         {  
+            std::vector<int> ion_indices = entry["ions"].get<std::vector<int>>();
+            stream << " - pspspin: down  ion indexes  =";
+            for (size_t i = 0; i < ion_indices.size(); ++i)
+            {  
+               int ii = ion_indices[i] - 1;
+               downions[ii]  = true;
+               downscale[ii] = scale;
+               downl[ii] = l;
+               downm[ii] = m;
+               if (i > 0 && i % 10 == 0) 
+                  stream << std::endl << "                                "; // indent to align
+               stream << std::setw(5) << ion_indices[i];
+            }
+            stream << std::endl;
+         }
+      }
    }
 
    return stream.str();
