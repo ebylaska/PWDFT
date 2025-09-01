@@ -1360,6 +1360,39 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
    mydipole = new nwpw_dipole(myion,mypneb,mystrfac,control);
  
    psp_version = control.version;
+
+   // pspspin
+   pspspin = control.pspspin();
+   if (pspspin) 
+   {
+      int nion = myion->nion;
+      pspspin_upions   = new bool[nion];
+      pspspin_downions = new bool[nion];
+      pspspin_upl = new int[nion];
+      pspspin_upm = new int[nion];
+      pspspin_downl = new int[nion];
+      pspspin_downm = new int[nion];
+      pspspin_upscale   = new double[nion];
+      pspspin_downscale = new double[nion];
+      for (auto ii=0; ii<nion; ++ii)
+      { 
+         pspspin_upions[ii] = false;
+         pspspin_downions[ii] = false;
+         pspspin_upl[ii] = -999;
+         pspspin_upm[ii] = -999;
+         pspspin_downl[ii] = -999;
+         pspspin_downm[ii] = -999;
+         pspspin_upscale[ii] = 1.0;
+         pspspin_downscale[ii] = 1.0;
+      }
+      std::string pspspin_output = control.set_pspspin(nion,
+                                                       pspspin_upscale,pspspin_downscale,
+                                                       pspspin_upl, pspspin_downl,
+                                                       pspspin_upm, pspspin_downm,
+                                                       pspspin_upions, pspspin_downions);
+      if (mypneb->d3db::parall->is_master())
+         coutput << pspspin_output << std::endl;
+   }
  
    npsp = myion->nkatm;
    nprj_max = 0;
@@ -1769,6 +1802,11 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
       ntmp = nn * nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
 
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
+
+
       // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
       //                rmone,
       //                prjtmp,nshift,
@@ -1972,9 +2010,14 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             ll += nprj[ia];
          }
       }
+
      
       ntmp = nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
+
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
 
      
       mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
@@ -2178,6 +2221,12 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
      
       mypneb->d3db::mygdevice.T_free();
 
+
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
+
+
       // for (ll=0; ll<nprjall; ++ll)
       ll = 0;
       for (jj = jstart; jj < jend; ++jj) 
@@ -2343,6 +2392,75 @@ double Pseudopotential::e_nonlocal(double *psi, double *occ)
  
    return esum;
 }
+
+
+/*******************************************
+ *                                         *
+ *  Pseudopotential::apply_pspspin_scaling *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Apply spin-dependent scaling factors to pseudopotential projectors.
+ *
+ * This function modifies the `sw2` array by applying scaling factors to
+ * the pseudopotential projectors associated with specific angular momentum
+ * channels (l, m) and atomic ion indices. It supports separate scaling for 
+ * spin-up and spin-down components, as defined by the `pspspin_upscale` and 
+ * `pspspin_downscale` arrays, respectively.
+ *
+ * Matching is performed based on the orbital angular momentum and magnetic 
+ * quantum numbers (`l_projector`, `m_projector`) and ion index masks 
+ * (`pspspin_upions`, `pspspin_downions`). The optional wildcard value `999` 
+ * for `m` enables applying scaling across all m values for a given l.
+ *
+ * The function is typically used to construct antiferromagnetic or 
+ * ferrimagnetic configurations by applying user-defined spin asymmetries
+ * to pseudopotential projectors during initialization.
+ *
+ * @param sw2    Pointer to the projector array to be scaled (e.g., real- or reciprocal-space).
+ *               This array is expected to be indexed as sw2[n + (l + ll) * nn].
+ * @param nn     Leading dimension or stride between (l, m) channels (typically grid points or plane-waves).
+ * @param jstart Start index (inclusive) of local ions assigned to this process.
+ * @param jend   End index (exclusive) of local ions assigned to this process.
+ * @param ii     Index into the user-defined `pspspin_*` arrays specifying which scaling entry to apply.
+ */
+void Pseudopotential::apply_pspspin_scaling(double* sw2, int nn, int jstart, int jend, int ii)
+{
+   int nup = mypneb->neq[0];
+   int ndn = mypneb->neq[1];
+   int ll = 0;
+
+   for (int jj=jstart; jj<jend; ++jj)
+   {
+      int ia = myion->katm[jj];
+      if (nprj[ia] > 0)
+      {
+         for (int l=0; l<nprj[ia]; ++l)
+         {
+            int l_prj = l_projector[ia][l];
+            int m_prj = m_projector[ia][l];
+
+            if (pspspin_upions[ii] &&
+                (l_prj == pspspin_upl[ii]) &&
+                (m_prj == pspspin_upm[ii] || pspspin_upm[ii] > 999))
+            {
+               for (int n=0; n<nup; ++n)
+                  sw2[n + (l+ll)*nn] *= pspspin_upscale[ii];
+            }
+
+            if (pspspin_downions[ii] &&
+                (l_prj == pspspin_downl[ii]) &&
+                (m_prj == pspspin_downm[ii] || pspspin_downm[ii] > 999))
+            {
+               for (int n=0; n<ndn; ++n)
+                  sw2[n + nup + (l+ll)*nn] *= pspspin_downscale[ii];
+            }
+         }
+         ll += nprj[ia];
+      }
+   }
+}
+
 
 
 /*******************************************

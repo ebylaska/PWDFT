@@ -6,6 +6,7 @@
 
 #include "json.hpp"
 //#include	"rtdb.hpp"
+#include "iofmt.hpp"
 #include "Control2.hpp"
 #include "Parallel.hpp"
 
@@ -1026,6 +1027,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (!rtdbjson["driver"]["trust"].is_null()) {
      pdriver_trust = rtdbjson["driver"]["trust"];
    }
+
+   // pspspin
+   p_pspspin = rtdbjson["nwpw"]["pspspin"];
+   
+
 }
 
 void Control2::add_permanent_dir(char fname[]) 
@@ -1364,6 +1370,61 @@ double Control2::gamma0_bondings(const int i)
       gamma0 = rtdbjson["constraints"]["bondings"][i]["gamma0"];
    return gamma0;
 }
+
+//pspspin
+std::string Control2::set_pspspin(int nion, 
+                                  double *upscale, double *downscale,
+                                  int *upl, int *downl,
+                                  int *upm, int *downm,
+                                  bool *upions, bool *downions)
+{
+   json rtdbjson = json::parse(myrtdbstring);
+   std::stringstream stream;
+   
+   stream << "Antiferromagnetic Pentalty Function Input:" << std::endl;
+   //set up values
+   if (!rtdbjson["nwpw"]["pspspin_up"].is_null())
+   {
+      int nup = rtdbjson["nwpw"]["pspspin_up"].size();
+      for (int n=0; n<nup; ++n)
+      {
+         int l        =  rtdbjson["nwpw"]["pspspin_up"][n]["l"];
+         bool not_m   =  rtdbjson["nwpw"]["pspspin_up"][n]["not_m"];
+         double scale =  rtdbjson["nwpw"]["pspspin_up"][n]["penalty"];
+         if (not_m)
+         {
+            int m        =  rtdbjson["nwpw"]["pspspin_up"][n]["m"];
+            stream << " - pspspin: up    l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) << m << " scale =" << Ffmt(8,3) << scale << std::endl;
+         }
+         else
+            stream << " - pspspin: up    l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
+      }
+   }
+
+   //set down values
+   if (!rtdbjson["nwpw"]["pspspin_down"].is_null())
+   {
+      int ndown = rtdbjson["nwpw"]["pspspin_down"].size();
+      for (int n=0; n<ndown; ++n)
+      {
+         int l        =  rtdbjson["nwpw"]["pspspin_down"][n]["l"];
+         bool not_m   =  rtdbjson["nwpw"]["pspspin_down"][n]["not_m"];
+         double scale =  rtdbjson["nwpw"]["pspspin_down"][n]["penalty"];
+         if (not_m)
+         {
+            int m        =  rtdbjson["nwpw"]["pspspin_down"][n]["m"];
+            stream << " - pspspin: down  l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) <<  m << " scale =" << Ffmt(8,3) << scale << std::endl;
+         }
+         else
+            stream << " - pspspin: down  l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
+      }
+
+   }
+
+   return stream.str();
+}
+
+
 
 
 } // namespace pwdft

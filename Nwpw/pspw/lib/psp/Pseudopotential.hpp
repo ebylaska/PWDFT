@@ -48,6 +48,9 @@ class Pseudopotential {
   Ion *myion;
   Strfac *mystrfac;
 
+private:
+  void apply_pspspin_scaling(double *, int, int, int, int);
+
 public:
   nwpw_efield *myefield;
   nwpw_apc *myapc;
@@ -75,6 +78,12 @@ public:
 
   double *log_amesh, *r1, *rmax, *sigma, *zion, *core_kin, *core_ion;
   int *n1dgrid, *n1dbasis, **nae, **nps, **lps, *icut;
+
+  // pspspin variables
+  bool pspspin = false;
+  bool *pspspin_upions, *pspspin_downions;
+  int *pspspin_upl,*pspspin_upm, *pspspin_downl, *pspspin_downm;
+  double *pspspin_upscale, *pspspin_downscale;
 
   /* Constructors */
   Pseudopotential(Ion *, Pneb *, Strfac *, Control2 &, std::ostream &);
@@ -175,6 +184,18 @@ public:
       delete mypaw_xc;
     }
 
+    if (pspspin)
+    {
+       delete[] pspspin_upions;
+       delete[] pspspin_downions;
+       delete[] pspspin_upl;   
+       delete[] pspspin_upm;
+       delete[] pspspin_downl;   
+       delete[] pspspin_downm;
+       delete[] pspspin_upscale;
+       delete[] pspspin_downscale;
+    }
+
     delete myefield;
     delete myapc;
     delete mydipole;
@@ -195,6 +216,8 @@ public:
 
 
   void v_nonlocal_orb(double *, double *);
+
+  //void apply_pspspin_scaling(double *, int, int, int, int);
 
   void v_local(double *, const bool, double *, double *);
   void f_local(double *, double *);

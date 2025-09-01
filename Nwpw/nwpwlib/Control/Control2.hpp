@@ -152,6 +152,9 @@ class Control2 {
    //scf extra scf
    bool pscf_extra_rotate = false;
 
+   //pspspin variables
+   bool p_pspspin = false;
+   
 
 public:
    int version = 3;
@@ -242,6 +245,8 @@ public:
    bool fractional() { return pfractional; }
    bool fractional_frozen() { return pfractional_frozen; }
    int  fractional_orbitals(const int i) { return pfractional_orbitals[i]; }
+
+   int  pspspin() { return p_pspspin; }
 
    bool scf_extra_rotate() { return pscf_extra_rotate; }
  
@@ -569,6 +574,10 @@ public:
 
    // smear
    std::vector<double> fractional_filling() {return pfractional_filling;}
+
+   // pspspin
+   std::string set_pspspin(int, double *, double *, int *, int *, int *, int *, bool *, bool *);
+
 
    // remove virtual from rtdbstring
    //void remove_virtual(){
