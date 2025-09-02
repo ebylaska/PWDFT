@@ -49,7 +49,7 @@ class Pseudopotential {
   Strfac *mystrfac;
 
 private:
-  void apply_pspspin_scaling(double *, int, int, int, int);
+  void apply_pspspin_scaling(double *, int, int, int);
 
 public:
   nwpw_efield *myefield;

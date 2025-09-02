@@ -1378,10 +1378,10 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
       { 
          pspspin_upions[ii] = false;
          pspspin_downions[ii] = false;
-         pspspin_upl[ii] = -999;
-         pspspin_upm[ii] = -999;
-         pspspin_downl[ii] = -999;
-         pspspin_downm[ii] = -999;
+         pspspin_upl[ii] = -1;
+         pspspin_upm[ii] = 99999;
+         pspspin_downl[ii] = -1;
+         pspspin_downm[ii] = 99999;
          pspspin_upscale[ii] = 1.0;
          pspspin_downscale[ii] = 1.0;
       }
@@ -1804,7 +1804,7 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
 
       //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
       //pwdft input: pspspin up/down scale l ion_numbers
-      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
 
 
       // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
@@ -2017,7 +2017,7 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
 
       //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
       //pwdft input: pspspin up/down scale l ion_numbers
-      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
 
      
       mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
@@ -2224,7 +2224,7 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
 
       //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
       //pwdft input: pspspin up/down scale l ion_numbers
-      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend,ii);
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
 
 
       // for (ll=0; ll<nprjall; ++ll)
@@ -2422,17 +2422,16 @@ double Pseudopotential::e_nonlocal(double *psi, double *occ)
  * @param nn     Leading dimension or stride between (l, m) channels (typically grid points or plane-waves).
  * @param jstart Start index (inclusive) of local ions assigned to this process.
  * @param jend   End index (exclusive) of local ions assigned to this process.
- * @param ii     Index into the user-defined `pspspin_*` arrays specifying which scaling entry to apply.
  */
-void Pseudopotential::apply_pspspin_scaling(double* sw2, int nn, int jstart, int jend, int ii)
+void Pseudopotential::apply_pspspin_scaling(double* sw2, int nn, int jstart, int jend)
 {
    int nup = mypneb->neq[0];
    int ndn = mypneb->neq[1];
    int ll = 0;
 
-   for (int jj=jstart; jj<jend; ++jj)
+   for (int ii=jstart; ii<jend; ++ii)
    {
-      int ia = myion->katm[jj];
+      int ia = myion->katm[ii];
       if (nprj[ia] > 0)
       {
          for (int l=0; l<nprj[ia]; ++l)

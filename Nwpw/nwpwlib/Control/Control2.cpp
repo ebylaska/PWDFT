@@ -1391,10 +1391,10 @@ std::string Control2::set_pspspin(int nion,
       for (int n=0; n<nup; ++n)
       {
          json entry   = rtdbjson["nwpw"]["pspspin_up"][n];
-         int l        = entry.value("l", -99);
+         int l        = entry.value("l", -1);
          bool not_m   = entry.value("not_m", false);
          double scale = entry.value("penalty", 1.0);
-         int m        = not_m ? entry.value("m", -999) : 0;
+         int m        = not_m ? entry.value("m", 0) : 99999;
          if (not_m)
          {
             stream << " - pspspin: up    l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) << m << " scale =" << Ffmt(8,3) << scale << std::endl;
@@ -1432,7 +1432,7 @@ std::string Control2::set_pspspin(int nion,
          int l        = entry.value("l", -99);
          bool not_m   = entry.value("not_m", false);
          double scale = entry.value("penalty", 1.0);
-         int m        = not_m ? entry.value("m", -999) : 0;
+         int m        = not_m ? entry.value("m", 0) : 99999;
          if (not_m)
          {
             stream << " - pspspin: down  l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) <<  m << " scale =" << Ffmt(8,3) << scale << std::endl;
