@@ -1374,6 +1374,11 @@ double Control2::gamma0_bondings(const int i)
 }
 
 //pspspin
+/********************************************
+ *                                          *
+ *          Control2::set_pspspin           *
+ *                                          *
+ ********************************************/
 std::string Control2::set_pspspin(int nion, 
                                   double *upscale, double *downscale,
                                   int *upl, int *downl,
@@ -1463,6 +1468,70 @@ std::string Control2::set_pspspin(int nion,
    return stream.str();
 }
 
+/********************************************
+ *                                          *
+ *          Control2::set_psputerm          *
+ *                                          *
+ ********************************************/
+/*
+std::string Control2::set_psputerm(int nion, 
+                                   double *uscale, 
+                                   double *jscale,
+                                   int    *uterm_l,
+                                   bool   *uterm_ions)
+{
+   json rtdbjson = json::parse(myrtdbstring);
+   std::stringstream stream;
+
+   std::string geomname = "geometry";
+   if (rtdbjson["geometry"].is_string())
+     geomname = rtdbjson["geometry"];
+ 
+   json geomjson = rtdbjson["geometries"][geomname];
+ 
+   auto symbols = geomjson["symbols"];
+
+
+
+   if (!rtdbjson["nwpw"]["uterm_list"].is_null())
+   {
+      int nuterms = rtdbjson["nwpw"]["uterm_list"].size();
+      for (int n=0; n<nuterms; ++n)
+      {
+         json entry    = rtdbjson["nwpw"]["uterms_list"][n];
+         int l         = entry.value("l", -1);
+         double uscale = entry.value("uvalue", 0.0);
+         double jscale = entry.value("jvalue", 0.0);
+         stream << "Hubbard Uterm Function Input:" << std::endl;
+         stream << " - uterm: l =" << Ifmt(2) << l << " U="<<  Ffmt(8,3) << uscale  << " J=" << Ffmt(8,3) << jscale << std::endl;
+         if (entry.contains("ions") && entry["ions"].is_array())
+         {  
+            //std::vector<int> ion_tokens = entry["ions"].get<std::vector<int>>();
+            std::vector<json> ion_tokens = entry["ions"].get<std::vector<json>>();
+
+            stream << " - uterm: ion indexes  =";
+            for (size_t i = 0; i < ion_tokens.size(); ++i)
+            { 
+               json token = ion_tokens[i] ;
+               int ii = convert token -1
+               int ion_indices = convert token
+               uterm_ions[ii]  = true;
+               uterm_l[ii] = l;
+               uscale[ii]  = uscale;
+               jscale[ii]  = uscale;
+               if (i > 0 && i % 10 == 0)
+                  stream << std::endl << "                                "; // indent to align
+               stream << std::setw(5) << ion_indices;
+            }
+            stream << std::endl;
+
+         }
+      }
+   }
+
+}
+
+*/
 
 
 
