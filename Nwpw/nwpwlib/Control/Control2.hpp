@@ -154,6 +154,10 @@ class Control2 {
 
    //pspspin variables
    bool p_pspspin = false;
+
+   //psputerm variables
+   bool p_psputerm = false;
+   int  p_pspnuterms = 0;
    
 
 public:
@@ -246,7 +250,9 @@ public:
    bool fractional_frozen() { return pfractional_frozen; }
    int  fractional_orbitals(const int i) { return pfractional_orbitals[i]; }
 
-   int  pspspin() { return p_pspspin; }
+   bool pspspin()   { return p_pspspin; }
+   bool psputerm()  { return p_psputerm; }
+   int  pspnuterms() { return p_pspnuterms; }
 
    bool scf_extra_rotate() { return pscf_extra_rotate; }
  
@@ -578,6 +584,8 @@ public:
    // pspspin
    std::string set_pspspin(int, double *, double *, int *, int *, int *, int *, bool *, bool *);
 
+   // psputerm
+   std::string set_psputerm(int, int, int *, double *, double *, bool *);
 
    // remove virtual from rtdbstring
    //void remove_virtual(){
