@@ -1898,15 +1898,21 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["fft_container_size"] = nffts_size;
     }
     else if (mystring_contains(line, "virtual")) {
-       std::vector<int> nexcited;
-       nexcited.push_back(1);
-       nexcited.push_back(1);
        ss = mystring_split0(line);
-       if (ss.size() > 1)
-         nexcited[0] = std::stoi(ss[1]);
-       if (ss.size() > 2)
-         nexcited[1] = std::stoi(ss[2]);
-       nwpwjson["virtual"] = nexcited;
+       if (ss.size()>1) 
+       {
+          std::vector<int> nexcited(2,0);
+
+          try {
+             if (ss.size() > 1) nexcited[0] = std::stoi(ss[1]);
+             if (ss.size() > 2) nexcited[1] = std::stoi(ss[2]);
+          } catch (...) { /* keep defaults */ }
+        
+          if (nexcited[0] < 0) nexcited[0] = 0;
+          if (nexcited[1] < 0) nexcited[1] = 0;
+        
+          nwpwjson["virtual"] = nexcited;
+       }
     }
     else if ((mystring_contains(line, "pspspin")) &&
              (mystring_contains(line, "off") ||
