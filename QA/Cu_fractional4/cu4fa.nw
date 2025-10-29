@@ -3,7 +3,7 @@ title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
 
 echo
 
-start pspw_pbe_Cu4h
+start pspw_pbe_Cu4f
 
 memory 1900 mb
 
@@ -26,15 +26,28 @@ end
 
 
 nwpw
+  pseudopotentials
+      Cu library development_psps
+  end
   xc pbe96
-  cutoff 50.0
+  cutoff 50.0 200.0
+  #time_step 0.8
   scf ks-grassmann-cg anderson alpha 0.015
-   #smear  fixed filling [0 0 0.3333333 0.3333333 0.3333334]
+  #smear  gaussian
    #smear  fixed 
-   loop 10 10
-   #monkhorst-pack 2 2 2 
+  loop 10 1000
    #tolerances 1.0e-9 1.0e-9
    #vectors output jjj.movecs
-   virtual 4 0
+   #virtual 4 0
 end
-task band energy
+#task pspw energy
+
+nwpw
+  smear  fixed filling [0 0 0.3333333 0.3333333 0.3333334]
+end
+task pspw energy
+#
+#nwpw
+#   smear gaussian
+#end
+#task pspw steepest_descent

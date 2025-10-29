@@ -66,6 +66,18 @@ cElectron_Operators::cElectron_Operators(Cneb *mygrid0, cKinetic_Operator *myke0
  *      cElectron_Operators::gen_psi_r      *
  *                                          *
  ********************************************/
+/**
+ * @brief Transform the orbitals ψ from reciprocal space to real space.
+ *
+ * Converts the orbital ψ(G) in reciprocal space to ψ(r) in real space using
+ * a backward FFT. The result is stored in the member variable psi_r.
+ *
+ * @param psi   Input orbitals in reciprocal space (Fourier coefficients).
+ *
+ * Notes:
+ * - psi_r is typically used for evaluating real-space potentials or densities.
+ * - Assumes mygrid is properly initialized with FFT parameters.
+ */
 void cElectron_Operators::gen_psi_r(double *psi) 
 {
    /* convert psi(G) to psi(r) */
@@ -350,6 +362,24 @@ void cElectron_Operators::semicore_density_update()
  *      cElectron_Operators::gen_Hpsi_k     *
  *                                          *
  ********************************************/
+/* vl, vcall,xcp and psi_r  have been set */
+/**
+ * @brief Generate the action of the Kohn–Sham Hamiltonian on  orbitals
+ *        in reciprocal space.
+ *
+ * Computes Hψ = (T + V_eff)ψ for every Kohn–Sham orbital ψ in reciprocal
+ * space. The result is stored in the member variable Hpsi.
+ *
+ * @param psi   Input orbitals in reciprocal space (Fourier coefficients).
+ * @param occ   Occupation number (used to control Fermi-level dependent terms).
+ *
+ * Notes:
+ * - The Hamiltonian includes kinetic, local potential, and exchange-correlation terms.
+ * - Non-local pseudopotential components are handled through cpsi_H().
+ * - Hpsi is negated after construction to match minimization convention.
+ * - The 'move' and 'fion0' arguments control force terms and are typically
+ *   inactive in this context.
+ */
 void cElectron_Operators::gen_Hpsi_k(double *psi, double *occ) 
 {
    bool move = false;
@@ -515,6 +545,23 @@ void cElectron_Operators::run(double *psi, double *dn, double *dng, double *dnal
 
 /********************************************
  *                                          *
+ *      cElectron_Operators::run0           *
+ *                                          *
+ ********************************************/
+/* densities and potentials have been set */
+void cElectron_Operators::run0(double *psi)
+{
+   ++counter;
+   this->gen_psi_r(psi);
+   // this->gen_density(dn);
+   //this->gen_densities(dn, dng, dnall,occ);
+   //this->gen_scf_potentials(dn, dng, dnall);
+   this->gen_Hpsi_k(psi);
+}
+
+
+/********************************************
+ *                                          *
  *       cElectron_Operators::vl_ave        *
  *                                          *
  ********************************************/
@@ -555,7 +602,21 @@ double cElectron_Operators::vl_ave(double *dng)
  */
 double cElectron_Operators::vnl_ave(double *psi, double *occ) 
 {
-   return mypsp->e_nonlocal(psi,occ);
+   double *vnltmp = mygrid->w_allocate_nbrillq_all();
+   double *vpsi   = mygrid->g_allocate_nbrillq_all();
+   mygrid->g_zero(vpsi);
+
+   mypsp->v_nonlocal(psi, vpsi);
+   mygrid->ggw_sym_Multiply(psi, vpsi, vnltmp);
+   double enl0 = occ ? -mygrid->w_trace_occ(vnltmp,occ) : -mygrid->w_trace(vnltmp);
+   if (ispin==1)
+      enl0 = enl0 + enl0;
+
+   delete [] vpsi;
+   delete [] vnltmp;
+
+
+   return enl0;
 }
 
 /********************************************
@@ -716,6 +777,7 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    }
    exc0 *= dv;
    pxc0 *= dv;
+
  
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  
@@ -726,10 +788,10 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    E[3] = exc0;
    E[4] = 0.0;
  
-   std::cout <<  "?? " << occ << std::endl;
    E[5] = occ ? myke->ke_ave(psi,occ) :  myke->ke_ave(psi);
    E[6] = this->vl_ave(dng);
-   E[7] = mypsp->e_nonlocal(psi,occ);
+   E[7] = this->vnl_ave(psi,occ);
+   //E[7] = mypsp->e_nonlocal(psi,occ);
    E[8] = 2 * ehartr0;
    E[9] = pxc0;
  

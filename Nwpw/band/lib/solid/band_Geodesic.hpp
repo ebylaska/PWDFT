@@ -1,5 +1,26 @@
 #ifndef _BAND_GEODESIC_HPP_
 #define _BAND_GEODESIC_HPP_
+/*
+ * band_Geodesic.hpp
+ * 
+ * This header file defines the band_Geodesic class within the pwdft namespace, representing a Grassmann manifold used in quantum chemical computations, particularly in plane wave density functional theory (PWDFT) calculations.
+ * 
+ * Key Features:
+ * - The class handles computations related to Grassmann manifold projections, which are used in optimizing electronic structure calculations.
+ * - Integrates with the Solid and cElectron_Operators classes to perform operations related to electronic structure and energy calculations.
+ * - Provides memory management functionalities for temporary storage during computational operations, including matrix transforms and singular value decomposition (SVD).
+ * - Implements methods for starting, updating, transporting, and finalizing state data in quantum chemical simulations.
+ * - Utilizes specialized grid operations from the Cneb class to efficiently manage calculations involving matrices and other high-dimensional data structures.
+ * 
+ * Dependencies:
+ * - Solid.hpp: Interface with material properties and electron operations.
+ * - cElectron.hpp: Provides electron-related functionalities used in quantum chemical calculations.
+ * - Cneb.hpp: Supplies grid operations essential for matrix and vector calculations within the band_Geodesic workflow.
+ * 
+ * The band_Geodesic class facilitates efficient and modular handling of Grassmann manifold operations necessary for PWDFT calculations, supporting both memory management and numerical operations crucial to high-fidelity simulation and analysis.
+ * 
+ * NOTE: Ensure all allocated resources are carefully managed to prevent memory leaks and optimize computational efficiency.
+ */
 
 #pragma once
 
@@ -12,6 +33,7 @@
 
 namespace pwdft {
 
+//This is a Grassmann manifold
 class band_Geodesic {
 
   int minimizer;
@@ -226,6 +248,12 @@ public:
    {
      this->get(t, mysolid->psi1, mysolid->psi2);
      return (mysolid->psi2_energy());
+   }
+
+   double energy0(double t) 
+   {
+     this->get(t, mysolid->psi1, mysolid->psi2);
+     return (mysolid->psi2_energy0());
    }
 
    double denergy(double t) 

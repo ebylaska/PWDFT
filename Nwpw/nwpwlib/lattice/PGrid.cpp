@@ -3970,6 +3970,7 @@ void PGrid::cccc_pack_Sum(const int nb, const double *a, const double *b, const 
  ********************************/
 void PGrid::c_pack_addzeros(const int nb, const double vzero, double *a) 
 {
+   int nmax = npack(nb); // or whatever npack level is relevant
    int pzero0  = ijktop(0, 0, 0);
    int pzero1  = ijktop(1, 0, 0);
    int pzero2  = ijktop(0, 1, 0);
@@ -3978,10 +3979,14 @@ void PGrid::c_pack_addzeros(const int nb, const double vzero, double *a)
    int index1 = ijktoindex(1, 0, 0);
    int index2 = ijktoindex(0, 1, 0);
    int index3 = ijktoindex(0, 0, 1);
-   if (pzero0 == parall->taskid_i()) a[2*index0] += 0.25*vzero;
-   if (pzero1 == parall->taskid_i()) a[2*index1] += 0.25*vzero;
-   if (pzero2 == parall->taskid_i()) a[2*index2] += 0.25*vzero;
-   if (pzero3 == parall->taskid_i()) a[2*index3] += 0.25*vzero;
+   //if (pzero0 == parall->taskid_i()) a[2*index0] += 0.25*vzero;
+   //if (pzero1 == parall->taskid_i()) a[2*index1] += 0.25*vzero;
+   //if (pzero2 == parall->taskid_i()) a[2*index2] += 0.25*vzero;
+   //if (pzero3 == parall->taskid_i()) a[2*index3] += 0.25*vzero;
+   if (index0 < nmax && pzero0 == parall->taskid_i()) a[2*index0] += 0.25*vzero;
+   if (index1 < nmax && pzero1 == parall->taskid_i()) a[2*index1] += 0.25*vzero;
+   if (index2 < nmax && pzero2 == parall->taskid_i()) a[2*index2] += 0.25*vzero;
+   if (index3 < nmax && pzero3 == parall->taskid_i()) a[2*index3] += 0.25*vzero;
 }
 
 /********************************

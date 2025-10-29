@@ -176,6 +176,49 @@ void Electron_Operators::gen_densities(double *dn, double *dng, double *dnall, d
 }
 
 
+/********************************************
+ *                                          *
+ *   Electron_Operators::dn_to_dng_dnall    *
+ *                                          *
+ ********************************************/
+void Electron_Operators::dn_to_dng_dnall(double *dn, double *dng, double *dnall)
+{
+
+   /* generate rho and dng */
+   double *tmp = x;
+   mygrid->rrr_Sum(dn, dn+(ispin-1)*n2ft3d, rho);
+   mygrid->rr_SMul(scal1, rho, tmp);
+   // mygrid->rc_fft3d(tmp);
+   mygrid->rc_pfft3f(0, tmp);
+   mygrid->c_pack(0, tmp);
+   mygrid->cc_pack_copy(0, tmp, dng);
+   
+   /* generate dnall - used for semicore corrections */
+   if (mypsp->has_semicore())
+   {  
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rrr_SMulAdd(0.5, mypsp->semicore_density, dn+ms*n2ft3d, dnall+ms*n2ft3d);
+   }
+   else
+   {
+      for (int ms = 0; ms < ispin; ++ms)
+         mygrid->rr_copy(dn+ms*n2ft3d, dnall+ms*n2ft3d);
+   }
+}
+
+
+
+/********************************************
+ *                                          *
+ *  Electron_Operators::scf_update_from_dn  *
+ *                                          *
+ ********************************************/
+void Electron_Operators::scf_update_from_dn(double *dn, double *dng, double *dnall)
+{  
+   dn_to_dng_dnall(dn, dng, dnall);
+   gen_scf_potentials(dn, dng, dnall);
+}  
+
 
 
 /********************************************
@@ -462,6 +505,24 @@ void Electron_Operators::run(double *psi, double *dn, double *dng, double *dnall
    this->gen_scf_potentials(dn, dng, dnall);
    this->gen_Hpsi_k(psi);
 }
+
+/********************************************
+ *                                          *
+ *      Electron_Operators::run0           *
+ *                                          *
+ ********************************************/
+/* densities and potentials have been set */
+void Electron_Operators::run0(double *psi)
+{     
+   ++counter;
+   this->gen_psi_r(psi);
+   // this->gen_density(dn);
+   //this->gen_densities(dn, dng, dnall,occ);
+   //this->gen_scf_potentials(dn, dng, dnall);
+   this->gen_Hpsi_k(psi);
+}     
+      
+
 
 
 

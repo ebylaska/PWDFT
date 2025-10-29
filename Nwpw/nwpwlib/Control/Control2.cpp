@@ -3,9 +3,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <regex>
+#include <map>
+#include <set>
 
 #include "json.hpp"
 //#include	"rtdb.hpp"
+#include "iofmt.hpp"
 #include "Control2.hpp"
 #include "Parallel.hpp"
 
@@ -485,6 +489,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pscf_algorithm = 0;
    if (rtdbjson["nwpw"]["scf_algorithm"].is_number_integer())
        pscf_algorithm = rtdbjson["nwpw"]["scf_algorithm"];
+
+   pks_algorithm = 0;
+   if (rtdbjson["nwpw"]["ks_algorithm"].is_number_integer())
+       pks_algorithm = rtdbjson["nwpw"]["ks_algorithm"];
 
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
        pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
@@ -1022,6 +1030,22 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (!rtdbjson["driver"]["trust"].is_null()) {
      pdriver_trust = rtdbjson["driver"]["trust"];
    }
+
+   // pspspin
+   if (!rtdbjson["nwpw"]["pspspin"].is_null()) {
+     p_pspspin = rtdbjson["nwpw"]["pspspin"];
+   }
+
+   // uterm
+   if (!rtdbjson["nwpw"]["uterm"].is_null()) {
+      p_psputerm = rtdbjson["nwpw"]["uterm"];
+      if (!rtdbjson["nwpw"]["uterm_list"].is_null()) {
+         p_pspnuterms = rtdbjson["nwpw"]["uterm_list"].size();
+      }
+
+   }
+   
+
 }
 
 void Control2::add_permanent_dir(char fname[]) 
@@ -1359,6 +1383,408 @@ double Control2::gamma0_bondings(const int i)
    if (!rtdbjson["constraints"]["bondings"][i]["gamma0"].is_null())
       gamma0 = rtdbjson["constraints"]["bondings"][i]["gamma0"];
    return gamma0;
+}
+
+//pspspin
+/********************************************
+ *                                          *
+ *          Control2::set_pspspin           *
+ *                                          *
+ ********************************************/
+std::string Control2::set_pspspin(int nion, 
+                                  double *upscale, double *downscale,
+                                  int *upl, int *downl,
+                                  int *upm, int *downm,
+                                  bool *upions, bool *downions)
+{
+   json rtdbjson = json::parse(myrtdbstring);
+   std::stringstream stream;
+   
+   stream << "Antiferromagnetic Pentalty Function Input:" << std::endl;
+   //set up values
+   if (!rtdbjson["nwpw"]["pspspin_up"].is_null())
+   {
+      int nup = rtdbjson["nwpw"]["pspspin_up"].size();
+      for (int n=0; n<nup; ++n)
+      {
+         json entry   = rtdbjson["nwpw"]["pspspin_up"][n];
+         int l        = entry.value("l", -1);
+         bool not_m   = entry.value("not_m", false);
+         double scale = entry.value("penalty", 1.0);
+         int m        = not_m ? entry.value("m", 0) : 99999;
+         if (not_m)
+         {
+            stream << " - pspspin: up    l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) << m << " scale =" << Ffmt(8,3) << scale << std::endl;
+         }
+         else
+            stream << " - pspspin: up    l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
+
+         if (entry.contains("ions") && entry["ions"].is_array())
+         {
+            std::vector<int> ion_indices = entry["ions"].get<std::vector<int>>();
+            stream << " - pspspin: up    ion indexes  =";
+            for (size_t i = 0; i < ion_indices.size(); ++i) 
+            {
+               int ii = ion_indices[i] - 1;
+               upions[ii]  = true;
+               upscale[ii] = scale;
+               upl[ii] = l;
+               upm[ii] = m;
+               if (i > 0 && i % 10 == 0)
+                  stream << std::endl << "                                "; // indent to align
+               stream << std::setw(5) << ion_indices[i];
+            }
+            stream << std::endl;
+         }
+      }
+   }
+
+   //set down values
+   if (!rtdbjson["nwpw"]["pspspin_down"].is_null())
+   {
+      int ndown = rtdbjson["nwpw"]["pspspin_down"].size();
+      for (int n=0; n<ndown; ++n)
+      {
+         json entry   = rtdbjson["nwpw"]["pspspin_down"][n];
+         int l        = entry.value("l", -99);
+         bool not_m   = entry.value("not_m", false);
+         double scale = entry.value("penalty", 1.0);
+         int m        = not_m ? entry.value("m", 0) : 99999;
+         if (not_m)
+         {
+            stream << " - pspspin: down  l =" << Ifmt(2) << l << " not_m=" << Ifmt(3) <<  m << " scale =" << Ffmt(8,3) << scale << std::endl;
+         }
+         else
+            stream << " - pspspin: down  l =" << Ifmt(2) << l << "           scale ="<<  Ffmt(8,3) << scale << std::endl;
+
+         if (entry.contains("ions") && entry["ions"].is_array())
+         {  
+            std::vector<int> ion_indices = entry["ions"].get<std::vector<int>>();
+            stream << " - pspspin: down  ion indexes  =";
+            for (size_t i = 0; i < ion_indices.size(); ++i)
+            {  
+               int ii = ion_indices[i] - 1;
+               downions[ii]  = true;
+               downscale[ii] = scale;
+               downl[ii] = l;
+               downm[ii] = m;
+               if (i > 0 && i % 10 == 0) 
+                  stream << std::endl << "                                "; // indent to align
+               stream << std::setw(5) << ion_indices[i];
+            }
+            stream << std::endl;
+         }
+      }
+   }
+
+   return stream.str();
+}
+
+/************************************************
+ *                                              *
+ *            add_index_global_1based           *
+ *                                              *
+ ************************************************/
+/**
+ * @brief Convert a 1-based atom index to 0-based and append to an output vector.
+ *
+ * This helper ensures that indices written in 1-based form (e.g., as they
+ * might appear in input files or user specifications) are safely converted
+ * to 0-based indexing for internal use. If the converted index is outside
+ * the valid range [0, nion-1], it is ignored.
+ *
+ * @param idx1_based  Atom index using 1-based convention (valid range: 1..nion).
+ * @param nion        Total number of ions/atoms in the system.
+ * @param out         Reference to a vector where the converted 0-based index
+ *                    will be appended if valid.
+ */
+static inline void add_index_global_1based(int idx1_based, int nion, std::vector<int>& out) 
+{
+   int i = idx1_based - 1; // to 0-based
+   if (i >= 0 && i < nion) out.push_back(i);
+}
+
+static void parse_list_or_range_1based(const std::string& spec, int nmax, std::vector<int>& out) 
+{
+   // spec like "1-3,7,10-12"
+   std::stringstream ss(spec);
+   std::string token;
+   while (std::getline(ss, token, ',')) 
+   {
+      // trim
+      size_t a = token.find_first_not_of(" \t");
+      size_t b = token.find_last_not_of(" \t");
+      std::string t = (a==std::string::npos) ? std::string() : token.substr(a, b-a+1);
+      if (t.empty()) continue;
+
+      size_t dash = t.find('-');
+      if (dash != std::string::npos) 
+      {
+         int a1 = std::stoi(t.substr(0, dash));
+         int b1 = std::stoi(t.substr(dash+1));
+         if (a1 <= b1) 
+         {
+            for (int k=a1; k<=b1; ++k) out.push_back(k);
+         } 
+         else 
+         {
+            for (int k=a1; k>=b1; --k) out.push_back(k);
+         }
+      } 
+      else 
+      {
+         out.push_back(std::stoi(t));
+      }
+   }
+}
+
+/************************************************
+ *                                              *
+ *        parse_ion_tokens_extended             *
+ *                                              *
+ ************************************************/
+/**
+ * @brief Parse ion selection tokens into global atom indices.
+ *
+ * This function interprets a flexible set of JSON tokens to produce
+ * a list of 0-based global atom indices, based on either absolute
+ * indices, ranges, element symbols, or element-local selections.
+ *
+ * Supported token formats:
+ *   - Integer (e.g., 5):
+ *       Global atom index, 1-based (converted internally to 0-based).
+ *
+ *   - String global index list/range (e.g., "3-7, 10"):
+ *       Parsed as 1-based global indices or ranges.
+ *
+ *   - String element name (e.g., "Fe"):
+ *       Selects all atoms with the given element symbol.
+ *
+ *   - String element-local list (e.g., "Fe:1-3,6"):
+ *       Selects specific atoms of a given element, using
+ *       1-based local indexing within that element’s list.
+ *
+ * @param tokens   JSON array of tokens to parse.
+ * @param nion     Total number of ions in the system.
+ * @param symbols  Vector of element symbols for all atoms (size = nion).
+ *
+ * @return std::vector<int> containing unique 0-based global indices.
+ *
+ * Notes:
+ *   - Duplicates are removed while preserving the original order.
+ *   - Invalid tokens (unknown symbols, out-of-range indices) are skipped.
+ *   - Assumes helper functions:
+ *       add_index_global_1based(), parse_list_or_range_1based()
+ */
+/**
+ * tokens: JSON array where each item may be:
+ *   - integer (global 1-based index)
+ *   - string:
+ *       "3-7"                      -> global range (1-based)
+ *       "Fe"                       -> all Fe atoms
+ *       "Fe:1-3,6"                -> element-local indices of Fe (1-based within Fe’s list)
+ */
+static std::vector<int> parse_ion_tokens_extended(const std::vector<json>& tokens,
+                                                  int nion,
+                                                  const std::vector<std::string>& symbols) 
+{
+   // Build symbol -> global indices map
+   std::map<std::string, std::vector<int>> sym2idx;
+   sym2idx.clear();
+   for (int i=0; i<nion; ++i) 
+   {
+      sym2idx[symbols[i]].push_back(i); // store 0-based global index
+   }
+
+   std::vector<int> out; out.reserve(tokens.size()*2);
+
+   std::regex sym_re(R"(^\s*([A-Za-z][A-Za-z0-9]*)\s*(?::\s*(.+))?\s*$)");
+   for (const auto& tk : tokens) 
+   {
+      if (tk.is_number_integer()) 
+      {
+         add_index_global_1based(tk.get<int>(), nion, out);
+         continue;
+      }
+
+      if (!tk.is_string()) continue; // ignore unsupported types
+
+      std::string s = tk.get<std::string>();
+      // quick check: pure numeric or range -> global
+      bool looks_range_or_num = std::all_of(s.begin(), s.end(), [](char c){
+           return std::isdigit((unsigned char)c) || c=='-' || c==' ' || c=='\t' || c==','; });
+
+      if (looks_range_or_num) 
+      {
+         std::vector<int> list1b;
+         parse_list_or_range_1based(s, nion, list1b);
+         for (int one_based : list1b) add_index_global_1based(one_based, nion, out);
+         continue;
+      }
+
+      // symbol or symbol:local-list
+      std::smatch m;
+      if (std::regex_match(s, m, sym_re)) 
+      {
+         std::string sym = m[1];
+         auto it = sym2idx.find(sym);
+         if (it == sym2idx.end()) continue; // unknown symbol; skip
+
+         const auto& elem_globals = it->second; // vector of global 0-based indices for this symbol
+         if (m[2].matched) 
+         {
+            // element-local list like "1-3,6"
+            std::vector<int> local_list_1b;
+            parse_list_or_range_1based(m[2], static_cast<int>(elem_globals.size()), local_list_1b);
+            for (int local_one_based : local_list_1b) 
+            {
+               int local_zero = local_one_based - 1;
+               if (local_zero >= 0 && local_zero < (int)elem_globals.size()) 
+               {
+                  out.push_back(elem_globals[local_zero]);
+               }
+            }
+         } 
+         else 
+         {
+            // whole element
+            out.insert(out.end(), elem_globals.begin(), elem_globals.end());
+         }
+      }
+      // else: unsupported pattern, ignore
+   }
+
+   // de-duplicate while preserving order
+   std::vector<int> dedup;
+   dedup.reserve(out.size());
+   std::vector<char> seen(nion, 0);
+   for (int gi : out) if (gi>=0 && gi<nion && !seen[gi]) { seen[gi]=1; dedup.push_back(gi); }
+   return dedup;
+}
+
+
+/********************************************
+ *                                          *
+ *          Control2::set_psputerm          *
+ *                                          *
+ ********************************************/
+/**
+ * Control2::set_psputerm
+ *
+ * Purpose:
+ *   Parses Hubbard U/J term specifications from the RTDB
+ *   (JSON string `myrtdbstring`) and applies them to ions
+ *   in the current geometry. Updates per-ion arrays for U,
+ *   J, l-channel, and flags indicating whether a Hubbard
+ *   correction is applied.
+ *
+ * Parameters:
+ *   nion        - total number of ions in the system
+ *   U_per_ion   - output array of Hubbard U values, per ion
+ *   J_per_ion   - output array of Hubbard J values, per ion
+ *   l_per_ion   - output array of angular momentum channel (l)
+ *   has_uterm   - output boolean array marking ions with U terms
+ *
+ * Behavior:
+ *   - Looks for "nwpw.uterm_list" in the RTDB JSON.
+ *   - Each entry may specify:
+ *       * "l": angular momentum channel
+ *       * "uvalue" and "jvalue": Hubbard parameters
+ *       * "ions": list of target ions (global indices, ranges,
+ *                 or element-specific tokens)
+ *       * "apply_to_all": apply term to all ions if true
+ *   - Populates the provided arrays for ions that match.
+ *   - Returns a string with formatted log messages of what
+ *     terms were applied (useful for debugging/verification).
+ *
+ * Notes:
+ *   - Ion indexing in JSON is 1-based, converted to 0-based.
+ *   - If no valid ion indices are found, the entry is skipped.
+ *   - Geometry symbols are used for parsing element tokens.
+ *******************************************************/
+std::string Control2::set_psputerm(int nion, int nuterms,
+                                   int *uterm_l,
+                                   double *uterm_uscale,
+                                   double *uterm_jscale,
+                                   bool   *has_uterm)
+{
+   json rtdbjson = json::parse(myrtdbstring);
+   std::stringstream stream;
+
+   std::string geomname = "geometry";
+   if (rtdbjson.contains("geometry") && rtdbjson["geometry"].is_string())
+      geomname = rtdbjson["geometry"].get<std::string>();
+
+
+   const json& geomjson = rtdbjson["geometries"][geomname];
+   std::vector<std::string> symbols;
+   if (geomjson.contains("symbols") && geomjson["symbols"].is_array()) {
+      symbols = geomjson["symbols"].get<std::vector<std::string>>();
+   } else {
+      // Fallback: fill with "X"
+      symbols.assign(nion, "X");
+   }
+ 
+   if (!rtdbjson.contains("nwpw") ||
+       !rtdbjson["nwpw"].contains("uterm_list") ||
+       !rtdbjson["nwpw"]["uterm_list"].is_array()) 
+   {
+      stream << "No nwpw.uterm_list found; leaving Hubbard terms unchanged.\n";
+      return stream.str();
+   }
+
+   const auto& ulist = rtdbjson["nwpw"]["uterm_list"];
+   //for (const auto& entry : ulist) 
+   for (auto n=0; n<nuterms; ++n)
+   {
+      auto entry  = ulist[n];
+      int l_channel = entry.value("l", -1);
+      double U_val  = entry.value("uvalue", 0.0);
+      double J_val  = entry.value("jvalue", 0.0);
+
+      uterm_l[n] = l_channel;
+      uterm_uscale[n] =  U_val;
+      uterm_jscale[n] =  J_val;
+
+      stream << "Hubbard U term:\n"
+             << " - l = " << std::setw(2) << l_channel
+             << "  U = "  << std::setw(8) << std::fixed << std::setprecision(3) << U_val
+             << "  J = "  << std::setw(8) << std::fixed << std::setprecision(3) << J_val << "\n";
+
+      std::vector<int> ion_indices;
+
+      if (entry.contains("ions") && entry["ions"].is_array()) 
+      {
+         std::vector<json> tokens = entry["ions"].get<std::vector<json>>();
+         ion_indices = parse_ion_tokens_extended(tokens, nion, symbols);
+      } 
+      else if (entry.value("apply_to_all", false)) 
+      {
+         ion_indices.resize(nion);
+         std::iota(ion_indices.begin(), ion_indices.end(), 0);
+      }
+
+      if (ion_indices.empty()) 
+      {
+         stream << " - No valid ion indices; skipping.\n";
+         continue;
+      }
+
+      stream << " - ions (0-based):";
+      for (size_t i=0;i<ion_indices.size();++i)
+      {
+         if (i%16==0) stream << "\n   ";
+         stream << std::setw(4) << ion_indices[i];
+      }
+      stream << "\n";
+
+      for (int gi : ion_indices) 
+      {
+         has_uterm[gi+n*nion] = true;
+      }
+   }
+
+   return stream.str();
 }
 
 

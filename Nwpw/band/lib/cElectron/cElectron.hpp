@@ -68,6 +68,7 @@ public:
    void genrho(double *psi, double *dn, double *occ = nullptr);
    //void run(double *, double *, double *, double *);
    void run(double *psi, double *dn, double *dng, double *dnall, double *occ = nullptr);
+   void run0(double *psi);
 
    void get_Tgradient(double *, double *, double *);
    void get_Gradient(double *);

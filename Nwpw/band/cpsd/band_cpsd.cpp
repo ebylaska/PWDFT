@@ -51,9 +51,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    double cpu1, cpu2, cpu3, cpu4;
    double E[80], deltae, deltac, deltar, viral, unita[9], en[2];
    double *psi1, *psi2, *Hpsi, *psi_r;
-   double *occ1, *occ2;
+   double *occ1 = nullptr;
+   double *occ2 = nullptr;
    double *dn;
-   double *hml, *lmbda, *eig;
+   double *hml, *lmbda, *eig, *eig_prev;
 
    // psi smearing block
    bool fractional;
@@ -157,16 +158,15 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    dn    = mygrid.r_nalloc(ispin);
    hml   = mygrid.w_allocate_nbrillq_all();
    lmbda = mygrid.w_allocate_nbrillq_all();
-   eig   = new double[nbrillq*(ne[0]+ne[1])];
-
-   mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
-
+   eig      = new double[nbrillq*(ne[0]+ne[1])];
+   eig_prev = new double[nbrillq*(ne[0]+ne[1])];
    if (fractional)
    {
       occ1 = mygrid.initialize_occupations_with_allocation(nextra);
       occ2 = mygrid.initialize_occupations_with_allocation(nextra);
    }
 
+   mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
 
    // psi_read(&mygrid,&version,nfft,unita,&ispin,ne,nbrill,psi2,control.input_movecs_filename());
@@ -180,11 +180,15 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (filling.size() > 0)
       {
          int sz = filling.size();
-         if (sz > (ne[0]+ne[1])) sz = ne[0]+ne[1];
-         std::memcpy(occ2,filling.data(),sz*sizeof(double));
+         if (sz > (ne[0]+ne[1])) sz = (ne[0]+ne[1]);
+         for (auto nbq=0; nbq<nbrillq; ++nbq)
+         {
+            int ishift = (ne[0]+ne[1]);
+            std::memcpy(occ2+ishift,filling.data(),sz*sizeof(double));
+         }
       }
 
-      std::memcpy(occ1,occ2,(ne[0]+ne[1])*sizeof(double));
+      std::memcpy(occ1,occ2,nbrillq*(ne[0]+ne[1])*sizeof(double));
    }
    MPI_Barrier(comm_world0);
 
@@ -248,6 +252,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << "unrestricted" << std::endl;
       std::cout << myxc;
 
+      if (control.fractional()) std::cout << "   using fractional" << std::endl;
+
 
       std::cout << mypsp.print_pspall();
 
@@ -279,11 +285,50 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << std::endl << myion.print_constraints(0);
 
       std::cout << std::endl;
-      std::cout << " number of electrons: spin up ="
-                << Ifmt(6) << mygrid.ne[0] << " ("
-                << Ifmt(4) << mygrid.neq[0] << " per task) down ="
-                << Ifmt(6) << mygrid.ne[ispin-1] << " ("
-                << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
+   }
+
+   double oen[2] = {0.0,0.0};
+   if (control.fractional())
+   {
+      int n=0;
+
+      //The outer loop nbq is split over dimension 3
+      for (auto nbq=0; nbq<mygrid.nbrillq; ++nbq)
+      {
+         double weight =  mygrid.pbrill_weight(nbq);
+         for (auto ms=0; ms<ispin; ++ms)
+         {
+            //The orbital loop index i is split over dimension 2
+            for (auto i=0; i<mygrid.neq[ms]; ++i)
+            {
+               oen[ms] += weight*occ1[n];
+               ++n;
+            }
+         }
+     }
+     myparallel.Vector_SumAll(2,2,oen); // Reduce over orbitals (orbital distribution)
+     myparallel.Vector_SumAll(3,2,oen); // Then reduce over BZ points (k-point distribution)
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+   }
+
+   if (oprint)
+   {
+      if (control.fractional())
+         std::cout << " number of electrons: spin up ="
+                   << Ffmt(6,2)  << oen[0] << "  "
+                   << Ffmt(27,2) << oen[ispin-1] << " (   fractional)" << std::endl;
+      else
+         std::cout << " number of electrons: spin up =" << Ifmt(6) << mygrid.ne[0]
+                   << " (" << Ifmt(4) << mygrid.neq[0]
+                   << " per task) down =" << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+                   << Ifmt(4) << mygrid.neq[ispin - 1] << " per task)" << std::endl;
+
+      std::cout << " number of orbitals:  spin up ="
+               << Ifmt(6) << mygrid.ne[0] << " ("
+               << Ifmt(4) << mygrid.neq[0] << " per task) down ="
+               << Ifmt(6) << mygrid.ne[ispin-1] << " ("
+               << Ifmt(4) << mygrid.neq[ispin-1] << " per task)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " supercell:" << std::endl;
@@ -369,6 +414,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                    << "  (" << Ifmt(8) << mygrid.npack_all_print(nb) << " waves "
                             << Ifmt(8) << mygrid.npack_print(nb) << " per task)" << std::endl;
 
+      
+
       std::cout << std::endl;
       std::cout << " technical parameters:\n";
       if (control.io_buffer()) std::cout << "      using io buffer " << std::endl;
@@ -384,11 +431,97 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (!control.deltae_check()) std::cout << "      allow DeltaE > 0" << std::endl;
    }
 
+   if (fractional)
+   {
+      const int total_occ = ne[0] + ne[1];
+      const int nbrillq = mygrid.nbrillq;
+      const int ksize = myparallel.np_k();  // number of k-points
+      const int kmy = myparallel.taskid_k();  // my k-point
+      const int nlocal = nbrillq * total_occ;
+                   
+      std::vector<double> local_occ(nlocal);
+      std::memcpy(local_occ.data(), occ1, nlocal * sizeof(double));
+ 
+      std::vector<double> gathered_occ;
+      if (myparallel.is_master_d(3))
+      {       
+         gathered_occ.resize(ksize * nlocal);
+      }        
+                    
+      myparallel.Vector_GatherAll(3, nlocal, local_occ.data(), gathered_occ.data(), 0);
+                   
+      if (oprint)
+      {
+         std::cout << std::endl;
+         std::cout << " fractional smearing parameters:" << std::endl;
+         std::cout << "    smearing algorithm = " << smeartype << std::endl;
+         std::cout << "    smearing parameter = ";
+         if (smeartype==-1) std::cout << "fixed_occupation" << std::endl;
+         if (smeartype==0) std::cout << "step function" << std::endl;
+         if (smeartype==1) std::cout << "Fermi-Dirac" << std::endl;
+         if (smeartype==2) std::cout << "Gaussian" << std::endl;
+         if (smeartype==3) std::cout << "Hermite" << std::endl;
+         if (smeartype==4) std::cout << "Marazari-Vanderbilt" << std::endl;
+         if (smeartype==5) std::cout << "Methfessel-Paxton" << std::endl;
+         if (smeartype==6) std::cout << "Cold smearing" << std::endl;
+         if (smeartype==7) std::cout << "Lorentzian" << std::endl;
+         if (smeartype==8) std::cout << "step" << std::endl;
+         if (smeartype>=0)
+         {
+            std::cout <<  "    smearing parameter = " << Ffmt(9,3) << smearkT
+                                              << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+            std::cout <<  "    mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
+            std::cout <<  "    mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
+            std::cout <<  "    mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
+            std::cout <<  "    mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
+            std::cout <<  "    mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
+            std::cout <<  "    rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+         }
+         if (ispin==2)
+            std::cout <<  "    extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+         else
+            std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+         if (control.fractional_frozen())
+            std::cout <<  "    frozen orbitals" << std::endl;
+
+         // Print occupations by k-point
+         std::cout << "    initial occupations per Brillouin zone:" << std::endl;
+
+         auto format_occ = [](double val) -> std::string {
+            if (std::fabs(val - std::round(val)) < 1e-8)
+               return std::to_string(static_cast<int>(std::round(val)));
+            else {
+               std::ostringstream oss;
+               oss << std::fixed << std::setprecision(3) << val;
+               return oss.str();
+            }
+         };
+
+         for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+         {
+            std::cout << "        k-point " << nb+1 << ": [";
+            for (int i=0; i<total_occ; ++i)
+            {
+                int idx = nb*total_occ + i;
+                std::cout << format_occ(gathered_occ[idx]);
+                if (i < total_occ * nbrillq - 1)
+                    std::cout << " ";
+            }
+            std::cout << "]" << std::endl;
+         }
+
+         
+      }
+   }
+
    MPI_Barrier(comm_world0);
 
    //                 |**************************|
    // *****************   start iterations       **********************
    //                 |**************************|
+   double rmsd_occupation = 0.0;
+   bool occupation_update = fractional && !control.fractional_frozen();
+
    if (myparallel.is_master()) seconds(&cpu2);
    if (oprint)
    {
@@ -410,7 +543,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       {
          ++icount;
          band_inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb, &myxc, &mypsp,
-                         &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
+                         &mystrfac, &myewald, psi1, psi2, occ1, Hpsi, psi_r, dn, hml, lmbda, E,
                          &deltae, &deltac, &deltar);
 
          // mydfpt.start(psi1,psi_r
@@ -424,10 +557,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                       << Efmt(19,10) << E[0]
                       << Efmt(13,5) << deltae
                       << Efmt(13,5) << deltac
-                      << Efmt(13,5) << deltar << std::endl;
+                      << Efmt(13,5) << deltar;
 
          /* check for competion */
-         if ((deltae > 0.0) && (icount > 1) && control.deltae_check())
+         if ((!fractional) && (deltae > 0.0) && (icount > 1) && control.deltae_check())
          {
             done = 1;
             if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
@@ -444,13 +577,112 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
             done = 1;
             if (oprint) std::cout << "          *** arrived at the Maximum iteration.    terminated ***\n";
          }
-      }
+
+
+         // update occupations
+         if ((fractional) && (!control.fractional_frozen()))
+         {
+            mygrid.w_diagonalize(hml, eig);
+ 
+            if ((icount < control.loop(1)) && (smeartype>=0) && (occupation_update) && (not done))
+            {
+                double alpha = control.fractional_alpha(); // alpha must be between 0 and 1
+                double gamma = control.fractional_gamma(); // gamma must be between 0 and 1
+ 
+                // Adaptive alpha parameters
+                double alpha_min = control.fractional_alpha_min();
+                double alpha_max = control.fractional_alpha_max();
+                double beta = control.fractional_beta();
+                double rmsd_threshold = control.fractional_rmsd_threshold();
+                //if (alpha < alpha_min) alpha_min =  alpha;
+                //if (alpha > alpha_max) alpha_max =  alpha;
+ 
+                if (icount == 0)  // Initialize eig_prev for the first iteration
+                   std::memcpy(eig_prev,eig,nbrillq*(ne[0]+ne[1])*sizeof(double));
+                else             // Smooth eigenvalues in subsequent iterations
+                   for (size_t i=0; i < nbrillq*(ne[0]+ne[1]); ++i)
+                      eig_prev[i] = (1.0-gamma)*eig_prev[i] + gamma*eig[i];
+ 
+                //ZZ = myion.total_zv() - control.total_charge()
+ 
+                // Define occupations based on smoothed eigenvalues
+                smearcorrection_old = smearcorrection;
+                mygrid.m_0define_occupation(-1.0, false,
+                              control.multiplicity(),
+                              myion.total_zv(), control.total_charge(),
+                              eig_prev, hml, occ2,
+                              smeartype,smearkT,smearfermi,&smearcorrection);
+ 
+                // RMSD occupation computation
+                double rmsd_occupation = 0.0;
+                for (size_t i=0; i< nbrillq*(ne[0] + ne[1]); ++i)
+                {
+                    double delta_occ = occ2[i] - occ1[i];
+                    rmsd_occupation += delta_occ * delta_occ;
+                }
+                rmsd_occupation = std::sqrt(rmsd_occupation / (nbrillq*(ne[0] + ne[1])) );
+ 
+                // Adaptive alpha adjustment
+               //std::cout << "alpha=" << alpha << " rmsd_occupation=" << rmsd_occupation << " rmsd_threshold" << rmsd_threshold << std::endl;
+                if (rmsd_occupation < rmsd_threshold)  // Converging well
+                {
+                   alpha = std::min(alpha_max, alpha * (1.0 + beta));
+                   //std::cout << "f alpha = " << alpha << " alpha_max =" << alpha_max <<  std::endl;
+                }
+                else  // Oscillations or divergence
+                   alpha = std::max(alpha_min, alpha * (1.0 - beta));
+    
+                // Update occupations
+                if (icount>0)
+                {
+                   for (size_t i=0; i< nbrillq*(ne[0]+ne[1]); ++i)
+                      occ1[i] = (1.0-alpha)*occ1[i] + alpha*occ2[i];
+                }
+                else
+                {
+                   std::memcpy(occ1,occ2,nbrillq*(ne[0]+ne[1])*sizeof(double));
+                }
+ 
+                 E[28] = smearcorrection;
+                 //E[0] += E[28];
+ 
+                 // Debugging output (optional)
+                 if (oprint)
+                    std::cout << " Iter.: " << icount
+                              << ", RMSD: " << rmsd_occupation
+                              << ", Alpha: " << alpha
+                              << ", Smear Corr.: " << smearcorrection
+                              << ", Delta Smear: " << smearcorrection - smearcorrection_old;
+    
+                 //occupation_update  =  (rmsd_occupation > control.fractional_rmsd_tolerance());
+             }
+             else
+             {
+                smearfermi[0]   =  mygrid.define_smearfermi(ne[0],eig,occ1);
+                smearcorrection =  mygrid.add_smearcorrection(smeartype,ne[0],eig,occ1,smearfermi[0],smearkT);
+                if (ispin==1)
+                {
+                   smearcorrection *= 2.0;
+                }
+                else
+                {
+                   smearfermi[1]   =  mygrid.define_smearfermi(ne[1],eig+ne[0],occ1+ne[0]);
+                   smearcorrection +=  mygrid.add_smearcorrection(smeartype,ne[1],eig+ne[0],occ1+ne[0],smearfermi[1],smearkT);
+                }
+                E[28] = smearcorrection;
+                //E[0] += E[28];
+             }
+         }
+         if (oprint) std::cout << std::endl;
+      }  
    }
+        
    if (myparallel.is_master()) seconds(&cpu3);
    if (oprint) { std::cout << "          >>> iteration ended at   " << util_date() << "  <<<\n"; }
 
    /* diagonalize the hamiltonian */
-   mygrid.w_diagonalize(hml, eig);
+   if ((!fractional) || (control.fractional_frozen()))
+      mygrid.w_diagonalize(hml, eig);
 
 
    /* calculate real-space number of electrons, en */
@@ -522,6 +754,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " ion-ion energy      : "
                 << Efmt(19,10) << E[4] << " ("
                 << Efmt(15,5) << E[4]/myion.nion << " /ion)" << std::endl;
+      if (std::fabs(E[28])>1.0e-9)
+         std::cout << " smearing energy     : "
+                   << Efmt(19,10) << E[28] << " ("
+                   << Efmt(15,5) << E[28]/(mygrid.ne[0]+mygrid.ne[1]) << " /electron)" << std::endl;
 
       std::cout << std::endl;
       std::cout << " K.S. kinetic energy : "
@@ -543,6 +779,19 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << " Viral Coefficient   : "
                 << Efmt(19,10) << viral << std::endl;
 
+      if ((fractional) && (!control.fractional_frozen()))
+      {
+         std::cout << std::endl;
+         ev = 27.2116;
+         if (ispin==1)
+            std::cout << " Fermi energy        : "
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)" << std::endl;
+         else
+            std::cout << "  Fermi energy = "
+                      << Efmt(19,10) << smearfermi[0] << " (" << Ffmt(8,3) << smearfermi[0]*ev << " eV)"
+                      << Efmt(19,10) << smearfermi[1] << " (" << Ffmt(8,3) << smearfermi[1]*ev << " eV)" << std::endl;
+      }
+
       if (myion.has_ion_constraints())
       {
          std::cout << std::endl;
@@ -562,11 +811,17 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       int pk = mygrid.ktop(nb);
       int n = ne[0] + ne[1];
       double tmpeig[n];
+      double tmpocc[n];
       std::memset(tmpeig,0,n*sizeof(double));
+      std::memset(tmpocc,0,n*sizeof(double));
 
       if (pk==myparallel.taskid_k()) 
-         std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
+      {
+         std::memcpy(tmpeig,eig+nbq*n, n*sizeof(double));
+         std::memcpy(tmpocc,occ1+nbq*n,n*sizeof(double));
+      }
       myparallel.Vector_SumAll(3,n,tmpeig);
+      myparallel.Vector_SumAll(3,n,tmpocc);
 
       if (oprint)
       {
@@ -576,16 +831,52 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          std::cout << "\n orbital energies:\n";
          nn = ne[0] - ne[1];
          ev = 27.2116;
-         for (i=0; i<nn; ++i)
-         {
-            std::cout << Efmt(18,7) << tmpeig[ne[0]-1-i] << " (" << Ffmt(8,3) << tmpeig[ne[0]-1-i] * ev << "eV)" << std::endl;
+
+         for (int i=0; i<nn; ++i)
+         {           
+            //os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
+            if (fractional)
+            {
+               if ((tmpocc[i] < 1.e-3) && (tmpocc[i]>1.0e-12))
+                  std::cout << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                     << Efmt(9,3) << tmpocc[i] << std::endl;
+               else
+                  std::cout << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
+                     << Ffmt(5,3) << tmpocc[i] << std::endl;
+            }
+            else
+               std::cout << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV)" << std::endl;
          }
-         for (i=0; i<ne[1]; ++i)
+         for (int i=0; i<ne[1]; ++i)
          {
-            std::cout << Efmt(18,7) << tmpeig[ne[0]-1-i-nn] << " ("
-                      << Ffmt(8,3)  << tmpeig[ne[0]-1-i-nn] * ev << "eV) "
-                      << Efmt(18,7) << tmpeig[ne[1]-1-i] << " ("
-                      << Ffmt(8,3)  << tmpeig[ne[1]-1-i]*ev << "eV)" << std::endl;
+             if (fractional)
+             {
+                if ((tmpocc[i+nn] < 1.e-3) && (tmpocc[i+nn]>1.0e-12))
+                   std::cout << Efmt(18,7) << eig[i+nn]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+nn]*ev << "eV)  occ="
+                      << Efmt(9,3)  << tmpocc[i+nn]   << " ";
+                else
+                   std::cout << Efmt(18,7) << eig[i+nn]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+nn]*ev << "eV)  occ="
+                      << Ffmt(5,3)  << tmpocc[i+nn]   << " "
+                      << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                      << Ffmt(5,3)  << tmpocc[i+(ispin-1)*ne[0]] << std::endl;
+
+                if ((tmpocc[i+(ispin-1)*ne[0]] < 1.e-3) && (tmpocc[i+(ispin-1)*ne[0]]>1.0e-12))
+                   std::cout << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                      << Efmt(9,3)  << tmpocc[i + (ispin-1)*ne[0]] << std::endl;
+                else
+                   std::cout << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]]    << " ("
+                      << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV) occ="
+                      << Ffmt(5,3)  << tmpocc[i + (ispin-1)*ne[0]] << std::endl;
+             }
+             else
+                std::cout << Efmt(18,7) << tmpeig[i+nn] << " ("
+                   << Ffmt(8,3)  << tmpeig[i + nn] * ev << "eV) "
+                   << Efmt(18,7) << tmpeig[i+(ispin-1)*ne[0]] << " ("
+                   << Ffmt(8,3)  << tmpeig[i+(ispin-1)*ne[0]]*ev << "eV)" << std::endl;
          }
          std::cout << std::endl;
       }
@@ -605,7 +896,10 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    nfft[0] = mygrid.nx;
    nfft[1] = mygrid.ny;
    nfft[2] = mygrid.nz;
-   cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
+   if (occ1)
+      cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,&smearoccupation,occ1,control.output_movecs_filename(),std::cout);
+   else
+      cpsi_write(&mygrid,&version,nfft,mylattice.unita_ptr(),&mygrid.ispin,mygrid.ne,&mygrid.nbrillouin,psi1,control.output_movecs_filename(),std::cout);
 
 
    /* deallocate memory */
@@ -617,6 +911,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    mygrid.w_deallocate(hml);
    mygrid.w_deallocate(lmbda);
    delete [] eig;
+   delete [] eig_prev;
    if (fractional)
    {
       delete[] occ1;

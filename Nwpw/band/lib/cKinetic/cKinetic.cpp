@@ -162,7 +162,6 @@ double cKinetic_Operator::ke_ave(const double *psi, const double *occ)
          const double *tmp_psi = psi + indx1n;
          int k1 = 0;
          int k2 = 1;
-         std::cout << "occ=" << n <<  " "  << occ[n] <<  std::endl;
          for (auto k=0; k<npack1; ++k)
          {
             ave += weight*tmp_tg[k]*(tmp_psi[k1]*tmp_psi[k1] + tmp_psi[k2]*tmp_psi[k2])*occ[n+nbq*nsize];

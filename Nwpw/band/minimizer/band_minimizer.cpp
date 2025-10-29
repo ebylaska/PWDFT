@@ -93,7 +93,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *              version #7.00   07/19/24             *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      coutput << "          *                                        ...        *\n";
+      coutput << "          *    Raymundo Hernandez Esparza, Duo Song,          *\n";
+      coutput << "          *    David H. Bross, ...                            *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";
@@ -136,13 +137,11 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       nextra[0] = 0;
       nextra[1] = 0;
    }
-   std::cout << "nextra=" << nextra[0] << " " << nextra[1] << std::endl;
 
    // fetch ispin and ne psi information from control
    ispin = control.ispin();
    ne[0] = control.ne(0) + nextra[0];
    ne[1] = control.ne(1) + nextra[1];
-   std::cout << "ne=" << ne[0] << " " << ne[1] << std::endl;
    nfft[0] = control.ngrid(0);
    nfft[1] = control.ngrid(1);
    nfft[2] = control.ngrid(2);
@@ -158,19 +157,17 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    version = control.version;
 
 
-
-
    /* read in Brillouin zone */
    Brillouin mybrillouin(rtdbstring,&mylattice,control);
 
    // initialize parallel grid structure
    Cneb mygrid(&myparallel, &mylattice, control, control.ispin(),ne,&mybrillouin);
+
   
    // initialize gdevice memory
    mygrid.c3db::mygdevice.psi_alloc(mygrid.npack1_max(),mygrid.neq[0]+mygrid.neq[1],control.tile_factor());
 
 
-  
    // setup structure factor
    CStrfac mystrfac(&myion,&mygrid);
    mystrfac.phafac();
@@ -193,8 +190,6 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    myewald.phafac();
 
 
-
-  
    // initialize solid
    Solid mysolid(control.input_movecs_filename(),
                  control.input_movecs_initialize(),&mygrid,&myion,
@@ -285,20 +280,25 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    if (control.fractional())
    {
       int n=0;
+
+      //The outer loop nbq is split over dimension 3
       for (auto nbq=0; nbq<mygrid.nbrillq; ++nbq)
       {
          double weight =  mygrid.pbrill_weight(nbq);
          for (auto ms=0; ms<ispin; ++ms)
          {
-            oen[ms] = 0;
-            for (auto i=0; i<ne[ms]; ++i)
+            //The orbital loop index i is split over dimension 2
+            for (auto i=0; i<mygrid.neq[ms]; ++i)
             {
                oen[ms] += weight*mysolid.occ1[n];
                ++n;
             }
          }
      }
-      myparallel.Vector_SumAll(3,2,oen);
+     myparallel.Vector_SumAll(2,2,oen); // Reduce over orbitals (orbital distribution)
+     myparallel.Vector_SumAll(3,2,oen); // Then reduce over BZ points (k-point distribution)
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
+     // myparallel.Reduce_Valuese(2,0,2,oen_distribute,oen);
    }
 
    if (oprint)
@@ -367,7 +367,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
        /* print nbrillouin */
       coutput << std::endl;
-      coutput << " brillouin zone:" << std::endl;
+      coutput << " Brillouin zone:" << std::endl;
       coutput << mybrillouin.print_zone();
 
        /* print nbrillouin */
@@ -416,74 +416,40 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          if (control.minimizer()==5) coutput << "      minimizer = scf (potential)\n";
          if (control.minimizer()==7) coutput << "      minimizer = Stiefel lmbfgs\n";
          if (control.minimizer()==8) coutput << "      minimizer = scf (density)\n";
-         if ((control.minimizer()==5) || (control.minimizer()==8))
+         if ((control.minimizer()==3) || 
+             (control.minimizer()==5) || 
+             (control.minimizer()==6) || 
+             (control.minimizer()==8))
          {
             coutput << std::endl;
             coutput << " Kohn-Sham scf parameters:\n";
-            coutput << "      Kohn-Sham algorithm  = conjugate gradient\n";
-            coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
-                                                      << " ( " << control.ks_maxit_orbs() << " outer)\n";
-            if (control.scf_algorithm()==0) coutput << "      SCF algorithm        = simple mixing\n";
-            if (control.scf_algorithm()==1) coutput << "      SCF algorithm        = Broyden mixing\n";
-            if (control.scf_algorithm()==2) coutput << "      SCF algorithm        = Johnson-Pulay mixing"
-                                                    << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
-            if (control.scf_algorithm()==3) coutput << "      SCF algorithm        = Anderson mixing\n";
-            if (control.scf_algorithm()==4) coutput << "      SCF algorithm        = Thomas-Fermi mixing\n";
-            if (control.minimizer()==5) coutput << "      SCF mixing type      = potential\n";
-            if (control.minimizer()==8) coutput << "      SCF mixing type      = density\n";
-            if (control.scf_extra_rotate()) coutput << "     SCF extra rotate\n";
-            if (control.scf_algorithm()==4)
-               coutput << "      SCF mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
+            if (control.ks_algorithm()==-1) coutput << "      Kohn-Sham algorithm  = block conjugate gradient\n";
+            if (control.ks_algorithm()==0) coutput << "      Kohn-Sham algorithm  = conjugate gradient\n";
+            if (control.ks_algorithm()==1) coutput << "      Kohn-Sham algorithm  = rmm-diis\n";
+            if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassmann conjugate gradient\n";
+            if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassmann Stiefel\n";
+
+            if ((control.ks_algorithm()==2) || (control.ks_algorithm()==3))
+               coutput << "      Kohn-Sham iterations = " << "( " << control.loop(0) << " inner)" << std::endl;
             else
-               coutput << "      SCF mixing parameter: alpha= " << control.scf_alpha() << std::endl;
+               coutput << "      Kohn-Sham iterations = " << control.ks_maxit_orb()
+                                                          << " ( " << control.ks_maxit_orbs() << " outer)\n";
+
+            if (control.scf_algorithm()==0) coutput << "      scf algorithm        = simple mixing\n";
+            if (control.scf_algorithm()==1) coutput << "      scf algorithm        = Broyden mixing\n";
+            if (control.scf_algorithm()==2) coutput << "      scf algorithm        = Johnson-Pulay mixing"
+                                                    << " (" << Ifmt(3) <<  control.diis_histories() << " histories)\n";
+            if (control.scf_algorithm()==3) coutput << "      scf algorithm        = Anderson mixing\n";
+            if (control.scf_algorithm()==4) coutput << "      scf algorithm        = Thomas-Fermi mixing\n";
+
+            if (control.minimizer()==5) coutput << "      scf mixing type      = potential\n";
+            if (control.minimizer()==8) coutput << "      scf mixing type      = density\n";
+            if (control.scf_extra_rotate()) coutput << "     scf extra rotate\n";
+            if (control.scf_algorithm()==4)
+               coutput << "      scf mixing parameters: alpha=" << control.scf_alpha() << " beta=" << control.scf_beta() << std::endl;
+            else
+               coutput << "      scf mixing parameter: alpha= " << control.scf_alpha() << std::endl;
             if (control.kerker_g0()>0.0) coutput << "      Kerker damping       = " << control.kerker_g0() << std::endl;
-         }
-
-         if (control.fractional())
-         {
-            coutput <<  std::endl;
-            coutput <<  " fractional smearing parameters:" << std::endl;
-            coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
-            coutput <<  "      smearing parameter = ";
-            if (mysolid.smeartype==-1) coutput << "fixed_occupation" << std::endl;
-            if (mysolid.smeartype==0) coutput << "step function" << std::endl;
-            if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
-            if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
-            if (mysolid.smeartype==3) coutput << "Hermite" << std::endl;
-            if (mysolid.smeartype==4) coutput << "Marazari-Vanderbilt" << std::endl;
-            if (mysolid.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
-            if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
-            if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;
-            if (mysolid.smeartype==8) coutput << "step" << std::endl;
-            if (mysolid.smeartype>=0)
-            {
-               coutput <<  "      smearing parameter = " << Ffmt(9,3) << mysolid.smearkT
-                                                       << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
-               coutput <<  "      mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
-               coutput <<  "      mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
-               coutput <<  "      mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
-               coutput <<  "      mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
-               coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
-               coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
-               coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
-           //    if (ispin==2)
-           //       coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
-           //    else
-           //       coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
-           //    if (control.fractional_frozen())
-           //       coutput <<  "      frozen oribtals" << std::endl;
-//
- //              {
-  //                size_t total_occupations = ne[0] + ne[1];
-   //               std::ostringstream oss;
-    //              oss << "      initial occupations = [";
-     //             for (auto i=0; i<total_occupations-1; ++i)
-      //               oss << mysolid.occ1[i] << " ";
-       //           oss << mysolid.occ1[total_occupations - 1] << "]";
-        //          coutput << oss.str() << std::endl;
-         //      }
-
-            }
          }
       }
       else
@@ -492,10 +458,97 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          coutput << " technical parameters:\n";
          coutput << "      optimization of psi and densities turned off" << std::endl;
       }
-      coutput << std::endl << std::endl << std::endl;
-
-
    }
+
+   if (control.fractional())
+   {
+
+      const int total_occ = ne[0] + ne[1];
+      const int nbrillq = mygrid.nbrillq;
+      const int ksize = myparallel.np_k();  // number of k-points
+      const int kmy = myparallel.taskid_k();  // my k-point
+      const int nlocal = nbrillq * total_occ;
+
+      std::vector<double> local_occ(nlocal);
+      std::memcpy(local_occ.data(), mysolid.occ1, nlocal * sizeof(double));
+
+      std::vector<double> gathered_occ;
+      if (myparallel.is_master_d(3)) 
+       {
+         gathered_occ.resize(ksize * nlocal);
+      }
+
+      myparallel.Vector_GatherAll(3, nlocal, local_occ.data(), gathered_occ.data(), 0);
+
+      if (oprint) 
+      {
+         coutput <<  std::endl;
+         coutput <<  " fractional smearing parameters:" << std::endl;
+         
+         coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
+         coutput <<  "      smearing parameter = ";
+         if (mysolid.smeartype==-1) coutput << "fixed occupation" << std::endl;
+         if (mysolid.smeartype==0) coutput << "step function" << std::endl;
+         if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
+         if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
+         if (mysolid.smeartype==3) coutput << "Hermite" << std::endl;
+         if (mysolid.smeartype==4) coutput << "Marazari-Vanderbilt" << std::endl;
+         if (mysolid.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
+         if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
+         if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;
+         if (mysolid.smeartype==8) coutput << "step" << std::endl;
+        
+         if (mysolid.smeartype>=0)
+         {
+            coutput <<  "      smearing parameter = " << Ffmt(9,3) << mysolid.smearkT
+                                                    << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+            coutput <<  "      mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
+            coutput <<  "      mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
+            coutput <<  "      mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
+            coutput <<  "      mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
+            coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
+            coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
+            coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+          }
+          {
+            if (ispin==2)
+                coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+            else
+                coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+       
+            if (control.fractional_frozen()) coutput <<  "      frozen oribtals" << std::endl;
+
+
+            // Print occupations by k-point
+            coutput << "      initial occupations per Brillouin zone:" << std::endl;
+
+            auto format_occ = [](double val) -> std::string {
+               if (std::fabs(val - std::round(val)) < 1e-8)
+                  return std::to_string(static_cast<int>(std::round(val)));
+               else {
+                  std::ostringstream oss;
+                  oss << std::fixed << std::setprecision(3) << val;
+                  return oss.str();
+               }
+            };
+
+            for (auto nb=0; nb<mygrid.nbrillouin; ++nb)
+            {
+               coutput << "          k-point " << nb+1 << ": [";
+               for (int i=0; i<total_occ; ++i)
+               {
+                   int idx = nb*total_occ + i;
+                   coutput << format_occ(gathered_occ[idx]);
+                   if (i < total_occ * nbrillq - 1)
+                       coutput << " ";
+               }
+               coutput << "]" << std::endl;
+            }
+         }
+      }
+   }
+   if (oprint) coutput << std::endl << std::endl << std::endl;
+
 
    MPI_Barrier(comm_world0);
    if (myparallel.is_master()) seconds(&cpu2);

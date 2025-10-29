@@ -1630,6 +1630,7 @@ public:
                  double *beta,
                  double *host_c,int ldc) 
    {
+      assert(host_a != nullptr && host_b != nullptr && host_c != nullptr);
       ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
    }   
    
@@ -2280,7 +2281,7 @@ static void eigsrt_device_complex(double *D, double *V, int n)
    void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
    {
       int n, ierr;
-      int nn = ne[0] * ne[0] + 14;
+      int nn = 2*(ne[0]*ne[0]) + 14;
       double xmp1[nn];
       double rmp1[nn];
       // double *xmp1 = new (std::nothrow) double[nn]();

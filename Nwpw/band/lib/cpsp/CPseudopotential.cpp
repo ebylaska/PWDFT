@@ -109,6 +109,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
 
          ifound &= iread(5, &nbrillouin, 1);
 
+
          if ((nbrillouin>0) && (nbrillouin<100000))
          {
             kvectors.resize(3*nbrillouin);
@@ -116,6 +117,7 @@ static bool cpp_read_header(char *fname, char *comment, int *psp_type,
          }
          else
             ifound = 0;
+    
       }
 
       closefile(5);
@@ -164,11 +166,13 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
         reformat = reformat || (mygrid->nz != nfft[2]);
         reformat = reformat || (psp_version != version);
         reformat = reformat || (kvectors.size()/3 != mygrid->nbrillouin);
-        for (auto k=0; k<3*(mygrid->mybrillouin->nbrillouin); ++k)
-        {
-           double dk = std::abs(kvectors[k] - mygrid->mybrillouin->kvector[k]);
-           reformat = reformat || (dk > 1.0e-8);
-        }
+    
+        if (!reformat)
+           for (auto k=0; k<3*(mygrid->mybrillouin->nbrillouin); ++k)
+           {
+              double dk = std::abs(kvectors[k] - mygrid->mybrillouin->kvector[k]);
+              reformat = reformat || (dk > 1.0e-8);
+           }
 
         if (!reformat)
            ireformat = 0;
@@ -2368,15 +2372,17 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
  
    int nn = mypneb->neq[0] + mypneb->neq[1];
    int nshift0 = mypneb->npack1_max();
-   int nshift = 2*mypneb->npack1_max();
-   double *exi    = new (std::nothrow) double[nshift]();
-   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
+   int nshift  = 2*mypneb->npack1_max();
+   double *exi     = new (std::nothrow) double[nshift]();
+   double *prjtmp  = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
    double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
+   int taskid = parall->taskid();
  
-   for (auto nbq=0; nbq<(mypneb->nbrillq); ++ nbq)
+   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
    {
       double weight  = mypneb->pbrill_weight(nbq);
+      double esum0 = 0.0;
       int nbq1 = nbq + 1;
 
       // Copy psi to device
@@ -2459,11 +2465,12 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
 
         
          //std::complex<double> ztmp = ZDOTC_PWDFT(ntmp, zsw1, one, zsw2, one);
-         std::complex<double> ztmp = util_zdotc(ntmp, zsw1, one, zsw2, one);
+         std::complex<double> ztmp = util_zdotc(nn*nprjall, zsw1, one, zsw2, one);
          
-         esum += ztmp.real()*weight;
+         esum0 += ztmp.real()*weight;
          mypneb->c3db::mygdevice.T_free();
       }
+      esum += esum0;
       
    }
  

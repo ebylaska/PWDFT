@@ -91,11 +91,12 @@ public:
    void g_generate_extra_random(const int, double *);
 
    void g_read(const int, double *);
+   void g_read_reverse(const int, double *);
    void g_read_excited(const int, const int *, const int,  double *);
-   void g_read_ne(const int, const int *, const int, double *);
-   void g_read_ne_reverse(const int, const int *, const int, double *);
    void g_write(const int, double *);
    void g_write_excited(const int, const int *, const int, double *);
+   void g_read_ne(const int, const int *, const int, double *);         // probably won't use
+   void g_read_ne_reverse(const int, const int *, const int, double *); // probably won't use
 
    void g_read_occ(const int, double *);
    void g_write_occ(const int, double *);
@@ -194,10 +195,9 @@ public:
 
    double *w_allocate_nbrillq_all() 
    {
-      double *ptr;
-      int nsize;
-      nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
+      int nsize = 2*(ne[0]*ne[0]+ne[1]*ne[1]);
       
+      double *ptr;
       ptr = new (std::nothrow) double[nbrillq*nsize]();
       std::memset(ptr,0,nbrillq*nsize*sizeof(double));
       return ptr;
@@ -260,6 +260,7 @@ public:
  
    double gg_traceall_excited(const int *, double *, double *);
    double gg_traceall(double *, double *);
+   double gg_traceall_occ(double *, double *, double *);
    void gg_copy(double *, double *);
    void g_zero(double *);
    void hr_aSumSqr(const double, double *, double *);

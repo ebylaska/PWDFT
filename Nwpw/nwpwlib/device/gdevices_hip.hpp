@@ -1331,8 +1331,8 @@ static void eigsrt_device_complex(double *D, double *V, int n)
     }
   }
 
-  void NN_eigensolver0(nt n, double *host_hml, double *host_eig) {
-     int n, ierr;
+  void NN_eigensolver0(int n, double *host_hml, double *host_eig) {
+     int ierr;
      int nn = n*n + 14;
      double xmp1[nn];
 
@@ -1345,7 +1345,7 @@ static void eigsrt_device_complex(double *D, double *V, int n)
   void WW_eigensolver(int ispin, int ne[], double *host_hml, double *host_eig) 
   {
      int n, ierr;
-     int nn = ne[0] * ne[0] + 14;
+     int nn = 2*(ne[0]*ne[0]) + 14;
      double xmp1[nn];
      double rmp1[nn];
      // double *xmp1 = new (std::nothrow) double[nn]();

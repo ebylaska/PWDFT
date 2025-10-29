@@ -56,37 +56,38 @@ public:
     delete[] U;
   }
 
-  double start(double *A, double *max_sigma, double *min_sigma) {
-    double *V = mygrid->m_allocate(-1, 1);
-    mygrid->ggm_SVD(A, U, S, V);
-
-    int neall = mygrid->ne[0] + mygrid->ne[1];
-    double mmsig = 9.99e9;
-    double msig = 0.0;
-    for (int i = 0; i < neall; ++i) {
-      if (std::fabs(S[i]) > msig)
-        msig = fabs(S[i]);
-      if (std::fabs(S[i]) < mmsig)
-        mmsig = fabs(S[i]);
-    }
-    *max_sigma = msig;
-    *min_sigma = mmsig;
-
-    /* calculate Vt */
-    mygrid->mm_transpose(-1, V, Vt);
-
-    // double *tmp1 = mygrid->m_allocate(-1,1);
-    // mygrid->mmm_Multiply(-1,Vt,V,1.0,tmp1,0.0);
-    // util_matprint("Vt*V",4,tmp1);
-
-    // mygrid->ggm_sym_Multiply(U,U,tmp1);
-    // util_matprint("Ut*U",4,tmp1);
-    // delete [] tmp1;
-
-    delete[] V;
-
-    /* calculate  and return 2*<A|H|psi> */
-    return (2.0 * myelectron->eorbit(A));
+  double start(double *A, double *max_sigma, double *min_sigma) 
+  {
+     double *V = mygrid->m_allocate(-1, 1);
+     mygrid->ggm_SVD(A, U, S, V);
+    
+     int neall = mygrid->ne[0] + mygrid->ne[1];
+     double mmsig = 9.99e9;
+     double msig = 0.0;
+     for (int i = 0; i < neall; ++i) {
+       if (std::fabs(S[i]) > msig)
+         msig = fabs(S[i]);
+       if (std::fabs(S[i]) < mmsig)
+         mmsig = fabs(S[i]);
+     }
+     *max_sigma = msig;
+     *min_sigma = mmsig;
+    
+     /* calculate Vt */
+     mygrid->mm_transpose(-1, V, Vt);
+    
+     // double *tmp1 = mygrid->m_allocate(-1,1);
+     // mygrid->mmm_Multiply(-1,Vt,V,1.0,tmp1,0.0);
+     // util_matprint("Vt*V",4,tmp1);
+    
+     // mygrid->ggm_sym_Multiply(U,U,tmp1);
+     // util_matprint("Ut*U",4,tmp1);
+     // delete [] tmp1;
+    
+     delete[] V;
+    
+     /* calculate  and return 2*<A|H|psi> */
+     return (2.0 * myelectron->eorbit(A));
   }
 
 
@@ -143,6 +144,12 @@ public:
   double energy(double t) {
     this->get(t, mymolecule->psi1, mymolecule->psi2);
     return (mymolecule->psi2_energy());
+  }
+
+  double energy0(double t)
+  {
+    this->get(t, mymolecule->psi1, mymolecule->psi2);
+    return (mymolecule->psi2_energy0());
   }
 
   double denergy(double t) {

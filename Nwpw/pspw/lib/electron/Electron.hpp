@@ -62,6 +62,7 @@ public:
    //void run(double *, double *, double *, double *);
    void genrho(double *psi, double *dn, double *occ = nullptr);
    void run(double *psi, double *dn, double *dng, double *dnall, double *occ = nullptr);
+   void run0(double *psi);
 
    void get_Tgradient(double *, double *, double *);
    void get_Gradient(double *);
@@ -74,13 +75,16 @@ public:
    //void gen_densities(double *, double *, double *);
    void gen_density(double *dn, double *occ = nullptr);
    void gen_densities(double *dn, double *dng, double *dnall, double *occ = nullptr);
+   void dn_to_dng_dnall(double *, double *, double *);
 
+   void scf_update_from_dn(double *, double *, double *);
    void gen_scf_potentials(double *, double *, double *);
    void gen_vl_potential();
    void semicore_density_update();
    void gen_vall();
    void get_vall(double *);
    void set_vall(const double *);
+
  
    double vl_ave(double *);
    double vlr_ave(double *);

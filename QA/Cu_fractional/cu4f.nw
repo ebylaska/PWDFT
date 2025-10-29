@@ -28,8 +28,19 @@ end
 nwpw
   xc pbe96
   cutoff 30.0
-  #scf anderson alpha 0.03 kerker 0.18 iterations 3
-  smear frozen alpha_min 0.05 alpha_max 0.1 
+  #scf anderson alpha 0.01 kerker 0.08 iterations 3
+  #scf ks-grassmann-cg alpha 0.01 kerker 0.08 
+  scf ks-grassmann-cg anderson alpha 0.015
+  #scf anderson alpha 0.03 iterations 3
+  #scf simple alpha 0.003 kerker 0.11 iterations 3
+  #smear frozen alpha_min 0.05 alpha_max 0.1 
   #smear marzari-vanderbilt alpha_min 0.05 alpha_max 0.1 frozen
+  #smear frozen alpha_min 0.05 alpha_max 0.1 
+   smear  frozen filling [0 0 0.3333333 0.3333333 0.3333334]
+   loop 10 100
+   #cg stiefel
+   tolerances 1.0e-9 1.0e-9
+   #virtual 4 0
+   #vectors output ttt.elc
 end
-task band noit_energy
+task band energy
