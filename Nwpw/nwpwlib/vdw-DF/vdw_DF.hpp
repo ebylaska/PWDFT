@@ -42,6 +42,16 @@ int Nqs;
    double *qmesh
 
 
+ /* constructor */
+   vdw_DF(Parallel *, const int, const int, const int, const int);
+ 
+   /* destructor */
+
+    /**
+     * @brief Destructor for the vdw_DF class.
+     */
+   ~vdw_DF();
+
 
 
 
