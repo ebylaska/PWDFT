@@ -19,7 +19,7 @@
 ---
 
 <p align="center" style="margin-top:-40px;">
-  <a href="https://ebylaska.github.io/NWChemEx/NWChemEx" target="_blank">
+  <a href="https://github.com/NWChemEx/NWChemEx" target="_blank">
   <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/Graphic_LogoChemSymbolsLarge.png"
        alt="QR PWDFT Logo"
        style="width:60%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
