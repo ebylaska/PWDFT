@@ -1,12 +1,6 @@
 # PWDFT  
 **Plane-Wave Density Functional Theory development for NWChemEx**
 
-<p align="right" style="margin-top:-40px;">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png"
-       alt="QR PWDFT Logo"
-       style="width:15%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
-</p>
-
 **Web location:**  
 🔗 [https://ebylaska.github.io/PWDFT/](https://ebylaska.github.io/PWDFT/)
 
@@ -22,6 +16,18 @@
   Autonomous Plane-Wave DFT Engine for Exascale Materials Discovery
 </p>
 
+---
+
+<p align="center" style="margin-top:-40px;">
+  <a href="https://ebylaska.github.io/NWChemEx/NWChemEx" target="_blank">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/Graphic_LogoChemSymbolsLarge.png"
+       alt="QR PWDFT Logo"
+       style="width:60%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
+  </a>
+    <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png"
+       alt="QR PWDFT Logo"
+       style="width:15%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
+</p>
 
 ---
 
