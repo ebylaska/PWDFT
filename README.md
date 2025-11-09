@@ -9,8 +9,10 @@
 🔗 [https://ebylaska.github.io/PWDFT/](https://ebylaska.github.io/PWDFT/)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" style="width:60%; min-width:250px; max-width:450px;">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" style="width:70%; max-width:700px; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.3);">
 </p>
+
+<p align="center"><em>Figure: Hematite–water interface showing layered hydration and hydroxylation structure.</em></p>
 
 ---
 
