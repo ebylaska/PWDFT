@@ -1,14 +1,13 @@
-# PWDFT
-PW-DFT development for NWChemEx
+# PWDFT  
+PW-DFT development for NWChemEx  
+<img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" width="120" style="vertical-align:middle; margin-left:10px;"/>
 
-Web location:
-https://ebylaska.github.io/PWDFT/
+**Web location:**  
+🔗 https://ebylaska.github.io/PWDFT/
 
-
-<img width="1044" height="1814" alt="image" src="https://github.com/user-attachments/assets/623b3dc8-5882-4036-a824-b6ae3ac484ad" />
-
-
-# ![PWDFT-QR Code](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" width="400">
+</p>
 
 
 
