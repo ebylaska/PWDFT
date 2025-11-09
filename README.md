@@ -1,18 +1,20 @@
 # PWDFT  
-PW-DFT development for NWChemEx  
-<img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" width="120" style="vertical-align:middle; margin-left:10px;"/>
+**Plane-Wave Density Functional Theory development for NWChemEx**
+<p align="right">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" width="110" style="vertical-align:middle; margin-left:10px;"/>
+</p>
 
 **Web location:**  
 🔗 https://ebylaska.github.io/PWDFT/
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" width="400">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" width="380">
 </p>
 
+---
 
+## 🧰 CMake — Generate a Project Buildsystem
 
-# CMAKE - Generate a Project Buildsystem
-```
+```bash
 cmake -S Nwpw/ -B build
 cd build
 make
