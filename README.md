@@ -1,13 +1,15 @@
 # PWDFT  
 **Plane-Wave Density Functional Theory development for NWChemEx**
-<p align="right">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" width="110" style="vertical-align:middle; margin-left:10px;"/>
+
+<p align="right" style="margin-top:-40px;">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" style="width:15%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
 </p>
 
 **Web location:**  
-🔗 https://ebylaska.github.io/PWDFT/
+🔗 [https://ebylaska.github.io/PWDFT/](https://ebylaska.github.io/PWDFT/)
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" width="380">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" style="width:60%; min-width:250px; max-width:450px;">
 </p>
 
 ---
