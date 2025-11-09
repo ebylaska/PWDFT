@@ -2,19 +2,32 @@
 **Plane-Wave Density Functional Theory development for NWChemEx**
 
 <p align="right" style="margin-top:-40px;">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png" alt="QR PWDFT Logo" style="width:15%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/qr-code-pwdft.png"
+       alt="QR PWDFT Logo"
+       style="width:15%; min-width:80px; max-width:120px; vertical-align:middle; margin-left:10px;"/>
 </p>
 
 **Web location:**  
 🔗 [https://ebylaska.github.io/PWDFT/](https://ebylaska.github.io/PWDFT/)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" style="width:70%; max-width:700px; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+  <a href="https://ebylaska.github.io/PWDFT/" target="_blank">
+    <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png"
+         alt="PWDFT Logo"
+         style="width:30%; min-width:180px; max-width:400px; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.3); margin:10px;">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/PWDFT-LOGO.png"
+       alt="Hematite–water interface"
+       style="width:60%; min-width:250px; max-width:700px; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.3); margin:10px;">
 </p>
 
 <p align="center"><em>Figure: Hematite–water interface showing layered hydration and hydroxylation structure.</em></p>
 
 ---
+
 
 ## 🧰 CMake — Generate a Project Buildsystem
 
