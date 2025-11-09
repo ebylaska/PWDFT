@@ -4,8 +4,7 @@ PW-DFT development for NWChemEx
 Web location:
 https://ebylaska.github.io/PWDFT/
 
-![PWDFT Logo](https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png)
-
+<img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/pwdft.png" alt="PWDFT Logo" width="600">
 
 # CMAKE - Generate a Project Buildsystem
 ```
