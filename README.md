@@ -18,16 +18,12 @@
   </a>
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/PWDFT-LOGO.png"
-       alt="Hematite–water interface"
-       style="width:60%; min-width:250px; max-width:700px; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.3); margin:10px;">
+<p align="center" style="font-size:1.1em; font-weight:bold; color:#444;">
+  Autonomous Plane-Wave DFT Engine for Exascale Materials Discovery
 </p>
 
-<p align="center"><em>Figure: Hematite–water interface showing layered hydration and hydroxylation structure.</em></p>
 
 ---
-
 
 ## 🧰 CMake — Generate a Project Buildsystem
 
@@ -57,6 +53,8 @@ cmake [<options>] <path-to-existing-build>
 $ cd build
 $ cmake .
 ```
+
+---
 
 # Timings
 ## laptop timings
@@ -102,7 +100,7 @@ $ cmake .
 These timings suggest that parallel FFTs should be implemented using hybrid MPI-OpenMP code, and the large DGEMMs should use GPUs.  This is somewhat justified, since the cost of parallel FFTs is mostly due to data movement, i.e. FFTs are memory bound rather than computationlly bound.  However, we need to test the competiveness of pipelining FFT data to GPUs, and using Stockholm FFT kernels (https://github.com/ebylaska/PWDFT/tree/master/Miscellaneous/programfft), versus an MPI-only algorithm.
 
 
-
+---
 # Compiling and Running Instructions
 
 ## Build instructions on ALCF Aurora/Sunspot
@@ -398,3 +396,13 @@ a.out
 
  [2:18 PM] Bagusetty, Abhishek
  CMakeLists.txt (right after this line add_executable(pwdft nwpw.cpp))
+
+---
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ebylaska/PWDFT/gh-pages/assets/PWDFT-LOGO.png"
+       alt="Hematite–water interface"
+       style="width:30%; min-width:250px; max-width:700px; border-radius:40%; box-shadow:0 0 10px rgba(0,0,0,0.3); margin:10px;">
+</p>
+
+<p align="center"><em>Figure: Hematite–water interface showing layered hydration and hydroxylation structure.</em></p>
