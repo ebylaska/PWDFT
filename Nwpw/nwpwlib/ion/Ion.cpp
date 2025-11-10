@@ -21,7 +21,7 @@ using json = nlohmann::json;
 #include "Ion.hpp"
 
 
-//extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, double *, double *, double *);
+extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, double *, double *, double *);
 
 #define xyzstream(S, X, Y, Z, VX, VY, VZ)                                      \
   std::left << std::setw(3) << (S) << E124 << (X) << E124 << (Y) << E124       \
@@ -823,7 +823,7 @@ std::string Ion::print_symmetry_group()
  *           Ion::disp_energy              *
  *                                         *
  *******************************************/
- /*
+
 double Ion::disp_energy() 
 {
    double edisp = 0.0; 
@@ -833,12 +833,70 @@ double Ion::disp_energy()
       double g_lat[9];
       int icharge[nion];
       for (auto ii=0; ii<nion; ++ii)
-          icharge[ii] = static_cast<int>(charge[ii]);
+         icharge[ii] = static_cast<int>(charge[ii]);
       nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
    }
    return edisp;
 }
-*/
+
+
+/*******************************************
+ *                                         *
+ *           Ion::disp_force               *
+ *                                         *
+ *******************************************/
+
+void Ion::disp_force(double* fion) 
+{
+   double edisp = 0.0; 
+   if (disp_on)
+   {
+      double g[3*nion];
+      double g_lat[9];
+      int icharge[nion];
+
+      for (auto ii=0; ii<nion; ++ii)
+         icharge[ii] = static_cast<int>(charge[ii]);
+
+      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         fion[3*ii  ] -= g[3*ii];
+         fion[3*ii+1] -= g[3*ii+1];
+         fion[3*ii+2] -= g[3*ii+2];
+      }
+   }
+}
+   
+
+/*******************************************
+ *                                         *
+ *           Ion::disp_stress              *
+ *                                         *
+ *******************************************/
+
+void Ion::disp_stress(double* stress)
+{
+   double edisp = 0.0; 
+   if (disp_on)
+   {
+      double g[3*nion];
+      double g_lat[9];
+      int icharge[nion];
+
+      for (auto ii=0; ii<nion; ++ii)
+         icharge[ii] = static_cast<int>(charge[ii]);
+  
+      for (auto k=0; k<9; ++k)
+         g_lat[k] = 0.0;
+
+      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+  
+      for (auto k=0; k<9; ++k)
+         stress[k] += g_lat[k];
+   }
+} 
    
 
 
