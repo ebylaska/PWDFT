@@ -36,6 +36,21 @@
  *   gga = 304 m06-l
  *   gga = 305  m06
  *   gga = 306  m06-2x
+ *
+ *   **** control dispersion block ****
+ *   has_disp = false
+ *   is_grimme2 = false
+ *   has_vdw  = false
+ *   is_vdw2 = false
+ *   options_disp = ''
+ *  
+ *   std::string xc_name,options_disp;
+ *   int gga;
+ *   bool use_lda, use_gga, use_mgga;
+ *
+ *   bool has_disp = false;
+ *   bool has_vdw  = false;
+ *   bool is_grimme2,is_vdw2;
  */
 
 #include "cExchange_Correlation.hpp"
@@ -58,31 +73,66 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
 {
    mycneb = mygrid;
    xc_name = control.xc_name();
- 
+
+   const std::string name = mystring_lowercase(xc_name);
+
+   auto add_disp = [&](const std::string& func_flag) {
+      if (!has_disp) return;
+      // ensure exactly one -func … prefix
+      if (!func_flag.empty()) {
+         // always keep a leading space before subsequent flags
+         options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
+      }
+   };
+
+
    gga = 0;
- 
-   if (mystring_contains(mystring_lowercase(xc_name), "vosko")) gga = 0;
-   if (mystring_contains(mystring_lowercase(xc_name), "lda"))   gga = 0;
 
-   if (mystring_contains(mystring_lowercase(xc_name), "pbe"))        gga = 10;
-   if (mystring_contains(mystring_lowercase(xc_name), "pbe96"))      gga = 10;
-   if (mystring_contains(mystring_lowercase(xc_name), "blyp"))       gga = 11;
-   if (mystring_contains(mystring_lowercase(xc_name), "revpbe"))     gga = 12;
-   if (mystring_contains(mystring_lowercase(xc_name), "pbesol"))     gga = 13;
-   if (mystring_contains(mystring_lowercase(xc_name), "hser"))       gga = 14;
-   if (mystring_contains(mystring_lowercase(xc_name), "b3lypr"))     gga = 15;
-   if (mystring_contains(mystring_lowercase(xc_name), "beef"))       gga = 16;
-   if (mystring_contains(mystring_lowercase(xc_name), "xbeef-cpbe")) gga = 17;
-   
-   if (mystring_contains(mystring_lowercase(xc_name), "pbe0"))    gga = 110;
-   if (mystring_contains(mystring_lowercase(xc_name), "blyp0"))   gga = 111;
-   if (mystring_contains(mystring_lowercase(xc_name), "revpbe0")) gga = 112;
-   if (mystring_contains(mystring_lowercase(xc_name), "bnl"))     gga = 113;
-   if (mystring_contains(mystring_lowercase(xc_name), "hse"))     gga = 114;
-   if (mystring_contains(mystring_lowercase(xc_name), "b3lyp"))   gga = 115;
+   // set the grimme and vdw options
+   if      (mystring_contains(name, "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+   else if (mystring_contains(name, "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+   else if (mystring_contains(name, "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+   else if (mystring_contains(name, "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+   else if (mystring_contains(name, "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
 
-   if (mystring_contains(mystring_lowercase(xc_name), "hartree-fock")) gga = 200;
-   if (mystring_contains(mystring_lowercase(xc_name), "hf"))           gga = 200;
+   if      (mystring_contains(name, "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+   else if (mystring_contains(name, "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+
+   // set the gga options
+
+   // ---- XC family: choose longest/specific first; first match wins ----
+   // Hybrids first (specific → general)
+   if      (mystring_contains(name, "revpbe0")) {gga = 112; add_disp("revpbe0");}
+   else if (mystring_contains(name, "pbe0"))    {gga = 110; add_disp("pbe0");}
+   else if (mystring_contains(name, "hse"))     {gga = 114; add_disp("hse06");}
+   else if (mystring_contains(name, "bnl"))     {gga = 113; add_disp("hse06");}  // if that’s really what you want
+   else if (mystring_contains(name, "b3lypr"))  {gga = 115; add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
+   else if (mystring_contains(name, "blyp0"))   {gga = 111; add_disp("b3-lyp");} // if this alias is desired
+
+   // Non-hybrid GGAs (specific → general)
+   else if (mystring_contains(name, "revpbe"))     {gga = 12; add_disp("revpbe");}
+   else if (mystring_contains(name, "pbesol"))     {gga = 13; add_disp("pbesol");}
+   else if (mystring_contains(name, "pbe96"))      {gga = 10; add_disp("pbe");}
+   else if (mystring_contains(name, "xbeef-cpbe")) {gga = 17; add_disp("pbesol");} // confirm
+   else if (mystring_contains(name, "beef"))       {gga = 16; add_disp("pbesol");} // confirm
+   else if (mystring_contains(name, "blyp"))       {gga = 11; add_disp("b-lyp");}
+   else if (mystring_contains(name, "pbe"))        {gga = 10; add_disp("pbe");}
+
+   // LDA family
+   else if (mystring_contains(name, "vosko") || mystring_contains(name, "lda")) {gga = 0;}
+
+   // HF exact exchange - dispersion func flag generally not needed/used here
+   if (mystring_contains(name, "hartree-fock") || name == "hf" || name.find(" hf ") != std::string::npos) {gga = 200;}
+
+   // Meta-GGAs - future options
+   if      (mystring_contains(name, "scan"))   gga = 302;
+   else if (mystring_contains(name, "tpss03")) gga = 301;
+   else if (mystring_contains(name, "vs98"))   gga = 300;
+   else if (mystring_contains(name, "pkzb"))   gga = 303;
+   else if (mystring_contains(name, "m06-2x")) gga = 306;
+   else if (mystring_contains(name, "m06-l"))  gga = 304;
+   else if (mystring_contains(name, "m06"))    gga = 305;
+
 
    use_lda = false;
    use_gga = false;

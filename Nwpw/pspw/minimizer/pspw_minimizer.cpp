@@ -93,7 +93,9 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *              version #7.00   02/27/21             *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      coutput << "          *    Abhishek Bagusetty, David H. Bross, ...        *\n";
+      coutput << "          *    Abhishek Bagusetty, David H. Bross, Duo Song,  *\n";
+      coutput << "          *    Alvaro Vazquez Mayagoitia,                     *\n";
+      coutput << "          *    Raymundo Hernandez Esparza, ....               *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";
@@ -396,8 +398,8 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             if (control.ks_algorithm()==-1) coutput << "      Kohn-Sham algorithm  = block conjugate gradient\n";
             if (control.ks_algorithm()==0) coutput << "      Kohn-Sham algorithm  = conjugate gradient\n";
             if (control.ks_algorithm()==1) coutput << "      Kohn-Sham algorithm  = rmm-diis\n";
-            if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassman conjugate gradient\n";
-            if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassman Stiefel\n";
+            if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassmann conjugate gradient\n";
+            if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassmann Stiefel\n";
 
             if ((control.ks_algorithm()==2) || (control.ks_algorithm()==3))
                coutput << "      Kohn-Sham iterations = " << "( " << control.loop(0) << " inner)" << std::endl;
@@ -460,24 +462,22 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
             coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
             coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
-            if (ispin==2)
-               coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
-            else
-               coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
-            if (control.fractional_frozen())
-               coutput <<  "      frozen oribtals" << std::endl;
-             
-            {
-               size_t total_occupations = ne[0] + ne[1];
-               std::ostringstream oss;
-               oss << "      initial occupations = [";
-               for (auto i=0; i<total_occupations-1; ++i)
-                  oss << mymolecule.occ1[i] << " ";
-               oss << mymolecule.occ1[total_occupations - 1] << "]";
-               coutput << oss.str() << std::endl;
-            }
-
          }
+         if (ispin==2)
+            coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
+         else
+            coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
+         if (control.fractional_frozen())
+            coutput <<  "      frozen oribtals" << std::endl;
+             
+         size_t total_occupations = ne[0] + ne[1];
+         std::ostringstream oss;
+         oss << "      initial occupations = [";
+         for (auto i=0; i<total_occupations-1; ++i)
+            oss << mymolecule.occ1[i] << " ";
+         oss << mymolecule.occ1[total_occupations - 1] << "]";
+         coutput << oss.str() << std::endl;
+       
       }
       coutput << std::endl << std::endl << std::endl;
    }

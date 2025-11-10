@@ -486,7 +486,9 @@ public:
 
 
    // ion dispersion access functions
-   //double disp_energy();
+   double disp_energy();
+   void disp_force(double *);
+   void disp_stress(double *);
    
    std::string print_symmetry_group();
 

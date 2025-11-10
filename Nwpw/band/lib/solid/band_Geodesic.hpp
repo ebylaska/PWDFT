@@ -33,7 +33,7 @@
 
 namespace pwdft {
 
-//This is a Grassman manifold
+//This is a Grassmann manifold
 class band_Geodesic {
 
   int minimizer;

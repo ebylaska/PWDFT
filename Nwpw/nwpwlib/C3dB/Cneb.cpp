@@ -1357,6 +1357,28 @@ double Cneb::gg_traceall(double *psi1, double *psi2)
    return c3db::parall->SumAll(0, sum);
 }
 
+double Cneb::gg_traceall_occ(double *psi1, double *psi2, double *occ) 
+{
+   int npack2 = 2*CGrid::npack1_max();
+   int indx = 0;
+   double sum = 0.0;
+   //std::complex<double> sumc = {0.0,0.0};
+
+   for (auto nbq=0; nbq<nbrillq; ++nbq)
+   {
+      double weight = pbrill_weight(nbq);
+      for (auto n=0; n<(neq[0]+neq[1]); ++n) 
+      {
+         //sumc += CGrid::cc_pack_izdot(nbq+1, psi1+indx, psi2+indx)*weight;
+         sum += occ[n+nbq*(neq[0]+neq[1])]*CGrid::cc_pack_idot(nbq+1, psi1+indx, psi2+indx)*weight;
+         indx += npack2;
+      }
+   }
+   if (ispin == 1) sum *= 2.0;
+ 
+   return c3db::parall->SumAll(0, sum);
+}
+
 /*************************************
  *                                   *
  *     Cneb::gg_traceall_excited     *
@@ -2705,6 +2727,7 @@ void Cneb::ggw_SVD(double *A, double *U, double *S, double *V)
    ggw_sym_Multiply(A, A, V);
    //ggw_hermit_sym_Multiply(A, A, V);
    w_diagonalize(V, S);
+
  
    for (auto nbq=0; nbq<nbrillq; ++nbq)
    {

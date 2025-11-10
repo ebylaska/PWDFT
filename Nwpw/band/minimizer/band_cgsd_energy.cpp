@@ -92,7 +92,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
    {
       if (minimizer == 1) coutput << "     ======= bundled Grassmann conjugate gradient iteration =======" << std::endl;
       if (minimizer == 2) coutput << "     =========+=== bundled Grassmann lmbfgs iteration =============" << std::endl;
-      if (minimizer == 3) coutput << "     ======== Kohn-Sham scf iteration (Grassmannn) iteration ======" << std::endl;
+      if (minimizer == 3) coutput << "     ======== Kohn-Sham scf iteration (Grassmann) iteration =======" << std::endl;
       if (minimizer == 4) coutput << "     ============ Stiefel conjugate gradient iteration ============" << std::endl;
       if (minimizer == 5) coutput << "     ============ Kohn-Sham scf iteration (potential) =============" << std::endl;
       if (minimizer == 6) coutput << "     ========== Kohn-Sham scf iteration (lmbfgs) iteration ========" << std::endl;
@@ -137,6 +137,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             mysolid.sd_update(dte);
          if (oprint) coutput << "        - " << it_in0 << " steepest descent iterations performed" << std::endl;
       }
+      double ee=mysolid.energy();
       while ((icount < it_out) && (!converged)) 
       {
          ++icount;

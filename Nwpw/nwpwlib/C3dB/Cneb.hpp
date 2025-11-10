@@ -260,6 +260,7 @@ public:
  
    double gg_traceall_excited(const int *, double *, double *);
    double gg_traceall(double *, double *);
+   double gg_traceall_occ(double *, double *, double *);
    void gg_copy(double *, double *);
    void g_zero(double *);
    void hr_aSumSqr(const double, double *, double *);

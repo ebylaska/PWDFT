@@ -93,7 +93,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       coutput << "          *              version #7.00   07/19/24             *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *    This code was developed by Eric J. Bylaska,    *\n";
-      coutput << "          *                                        ...        *\n";
+      coutput << "          *    Raymundo Hernandez Esparza, Duo Song,          *\n";
+      coutput << "          *    David H. Bross, ...                            *\n";
       coutput << "          *                                                   *\n";
       coutput << "          *****************************************************\n";
       coutput << "          >>> job started at       " << util_date() << " <<<\n";
@@ -426,8 +427,8 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
             if (control.ks_algorithm()==-1) coutput << "      Kohn-Sham algorithm  = block conjugate gradient\n";
             if (control.ks_algorithm()==0) coutput << "      Kohn-Sham algorithm  = conjugate gradient\n";
             if (control.ks_algorithm()==1) coutput << "      Kohn-Sham algorithm  = rmm-diis\n";
-            if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassman conjugate gradient\n";
-            if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassman Stiefel\n";
+            if (control.ks_algorithm()==2) coutput << "      Kohn-Sham algorithm  = Grassmann conjugate gradient\n";
+            if (control.ks_algorithm()==3) coutput << "      Kohn-Sham algorithm  = Grassmann Stiefel\n";
 
             if ((control.ks_algorithm()==2) || (control.ks_algorithm()==3))
                coutput << "      Kohn-Sham iterations = " << "( " << control.loop(0) << " inner)" << std::endl;

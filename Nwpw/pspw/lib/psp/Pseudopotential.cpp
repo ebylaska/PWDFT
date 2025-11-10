@@ -954,6 +954,8 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    Parallel *myparall = mygrid->parall;
  
    *psp_type = vpp_get_psp_type(myparall,pspname);
+   //std::cout << "psp_type=" << *psp_type << std::endl;
+   //if (*psp_type==2) *psp_type= 0;
  
    if ((*psp_type == 0) || (*psp_type == 9)) 
    {
@@ -1057,6 +1059,100 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    } 
    else if (*psp_type == 2) 
    {
+      std::cout << "im here kbppv3e psp_version_in=" << psp_version_in <<  std::endl;
+      int nray = mygrid->n_ray();
+      Psp1d_Hamann psp1d(myparall,pspname,psp_version_in);
+
+      nfft[0] = mygrid->nx;
+      nfft[1] = mygrid->ny;
+      nfft[2] = mygrid->nz;
+      for (auto i = 0; i < 9; ++i)
+         unita[i] = mygrid->lattice->unita1d(i);
+
+      atom[0] = psp1d.atom[0];
+      atom[1] = psp1d.atom[1];
+      *amass = psp1d.amass;
+      *zv = psp1d.zv;
+      for (auto i = 0; i < 80; ++i)
+         comment[i] = psp1d.comment[i];
+      
+      *psp_type = psp1d.psp_type;
+      *version = psp1d.version;
+      *lmax = psp1d.lmax;
+      *locp = psp1d.locp;
+      *nmax = psp1d.nmax;
+      *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
+      
+      *nprj = psp1d.nprj;
+      *semicore = psp1d.semicore;
+      *rcore = psp1d.rcore;
+      *rlocal = psp1d.rlocal;
+      
+      *rc = new (std::nothrow) double[*lmax + 1]();
+      for (auto l = 0; l <= (*lmax); ++l)
+         (*rc)[l] = psp1d.rc[l];
+
+      /* allocate Gijl and copy from psp1d */
+      int nn = (psp1d.nmax) * (psp1d.nmax) * (psp1d.lmax + 1);
+      *Gijl = new (std::nothrow) double[nn]();
+      for (auto l = 0; l < nn; ++l)  
+      {
+         (*Gijl)[l] = psp1d.vnlnrm[l];
+      }
+
+      /* allocate n_projector, l_projector, m_projector, and b_projector and copy
+       * from psp1d */
+      if (psp1d.nprj > 0) 
+      {
+         *n_projector = new (std::nothrow) int[psp1d.nprj]();
+         *l_projector = new (std::nothrow) int[psp1d.nprj]();
+         *m_projector = new (std::nothrow) int[psp1d.nprj]();
+         *b_projector = new (std::nothrow) int[psp1d.nprj]();
+        
+         for (auto l = 0; l < psp1d.nprj; ++l)
+         {
+            (*n_projector)[l] = psp1d.n_prj[l];
+            (*l_projector)[l] = psp1d.l_prj[l];
+            (*m_projector)[l] = psp1d.m_prj[l];
+            (*b_projector)[l] = psp1d.b_prj[l];
+         }
+      }
+     
+      /*  allocate and generate ray formatted grids */
+      double *G_ray = mygrid->generate_G_ray();
+      double *vl_ray = new (std::nothrow) double[nray]();
+      double *vnl_ray = new (std::nothrow) double[(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
+      double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
+      psp1d.vpp_generate_ray(myparall, nray, G_ray, vl_ray, vnl_ray, rho_sc_k_ray);
+            
+      /* filter the ray formatted grids */
+      double ecut = mygrid->lattice->ecut();
+      double wcut = mygrid->lattice->wcut();
+      util_filter(nray, G_ray, ecut, vl_ray);
+      for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
+         util_filter(nray, G_ray, wcut, &(vnl_ray[l * nray]));
+      if (*semicore)
+      {
+         util_filter(nray, G_ray, ecut, rho_sc_k_ray);
+         util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
+      }
+      
+      /* allocate vnl and ncore  generate formated grids */
+      *vnl = new (std::nothrow) double[(psp1d.nprj) * (mygrid->npack(1))]();
+      if (*semicore)
+         *ncore = new (std::nothrow) double[5 * mygrid->npack(0)]();
+
+      /*  generate formatted grids using splines */
+      psp1d.vpp_generate_spline(mygrid, nray, G_ray, vl_ray, vnl_ray,
+                                rho_sc_k_ray, vl, *vnl, *ncore);
+
+      /* deallocate ray formatted grids */
+      delete[] rho_sc_k_ray;
+      delete[] vnl_ray;
+      delete[] vl_ray;
+      delete[] G_ray;
+
+
       if (myparall->base_stdio_print)
          coutput << "in vpp_generate Not finished, kbppv3e psp_type = " << *psp_type << std::endl;
    } 
@@ -1212,6 +1308,7 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
       if (myparall->base_stdio_print)
          coutput << "in vpp_generate Not finished, psp_type = " << *psp_type << std::endl;
    }
+   std::cout << "vpp_generate done" << std::endl;
 }
 
 
@@ -1263,6 +1360,39 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
    mydipole = new nwpw_dipole(myion,mypneb,mystrfac,control);
  
    psp_version = control.version;
+
+   // pspspin
+   pspspin = control.pspspin();
+   if (pspspin) 
+   {
+      int nion = myion->nion;
+      pspspin_upions   = new bool[nion];
+      pspspin_downions = new bool[nion];
+      pspspin_upl = new int[nion];
+      pspspin_upm = new int[nion];
+      pspspin_downl = new int[nion];
+      pspspin_downm = new int[nion];
+      pspspin_upscale   = new double[nion];
+      pspspin_downscale = new double[nion];
+      for (auto ii=0; ii<nion; ++ii)
+      { 
+         pspspin_upions[ii] = false;
+         pspspin_downions[ii] = false;
+         pspspin_upl[ii] = -1;
+         pspspin_upm[ii] = 99999;
+         pspspin_downl[ii] = -1;
+         pspspin_downm[ii] = 99999;
+         pspspin_upscale[ii] = 1.0;
+         pspspin_downscale[ii] = 1.0;
+      }
+      std::string pspspin_output = control.set_pspspin(nion,
+                                                       pspspin_upscale,pspspin_downscale,
+                                                       pspspin_upl, pspspin_downl,
+                                                       pspspin_upm, pspspin_downm,
+                                                       pspspin_upions, pspspin_downions);
+      if (mypneb->d3db::parall->is_master())
+         coutput << pspspin_output << std::endl;
+   }
  
    npsp = myion->nkatm;
    nprj_max = 0;
@@ -1672,6 +1802,11 @@ void Pseudopotential::v_nonlocal(double *psi, double *Hpsi)
       ntmp = nn * nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
 
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
+
+
       // DGEMM_PWDFT((char*) "N",(char*) "T",nshift,nn,nprjall,
       //                rmone,
       //                prjtmp,nshift,
@@ -1875,9 +2010,14 @@ void Pseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             ll += nprj[ia];
          }
       }
+
      
       ntmp = nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, sw2, one);
+
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
 
      
       mypneb->d3db::mygdevice.NT_dgemm(nshift, nn, nprjall, rmone, prjtmp, sw2, rone, Hpsi);
@@ -2081,6 +2221,12 @@ void Pseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
      
       mypneb->d3db::mygdevice.T_free();
 
+
+      //scale (sw2) psp by factor - used for generating antiferromagnetic structures 
+      //pwdft input: pspspin up/down scale l ion_numbers
+      if (pspspin) apply_pspspin_scaling(sw2,nn,jstart,jend);
+
+
       // for (ll=0; ll<nprjall; ++ll)
       ll = 0;
       for (jj = jstart; jj < jend; ++jj) 
@@ -2246,6 +2392,74 @@ double Pseudopotential::e_nonlocal(double *psi, double *occ)
  
    return esum;
 }
+
+
+/*******************************************
+ *                                         *
+ *  Pseudopotential::apply_pspspin_scaling *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Apply spin-dependent scaling factors to pseudopotential projectors.
+ *
+ * This function modifies the `sw2` array by applying scaling factors to
+ * the pseudopotential projectors associated with specific angular momentum
+ * channels (l, m) and atomic ion indices. It supports separate scaling for 
+ * spin-up and spin-down components, as defined by the `pspspin_upscale` and 
+ * `pspspin_downscale` arrays, respectively.
+ *
+ * Matching is performed based on the orbital angular momentum and magnetic 
+ * quantum numbers (`l_projector`, `m_projector`) and ion index masks 
+ * (`pspspin_upions`, `pspspin_downions`). The optional wildcard value `999` 
+ * for `m` enables applying scaling across all m values for a given l.
+ *
+ * The function is typically used to construct antiferromagnetic or 
+ * ferrimagnetic configurations by applying user-defined spin asymmetries
+ * to pseudopotential projectors during initialization.
+ *
+ * @param sw2    Pointer to the projector array to be scaled (e.g., real- or reciprocal-space).
+ *               This array is expected to be indexed as sw2[n + (l + ll) * nn].
+ * @param nn     Leading dimension or stride between (l, m) channels (typically grid points or plane-waves).
+ * @param jstart Start index (inclusive) of local ions assigned to this process.
+ * @param jend   End index (exclusive) of local ions assigned to this process.
+ */
+void Pseudopotential::apply_pspspin_scaling(double* sw2, int nn, int jstart, int jend)
+{
+   int nup = mypneb->neq[0];
+   int ndn = mypneb->neq[1];
+   int ll = 0;
+
+   for (int ii=jstart; ii<jend; ++ii)
+   {
+      int ia = myion->katm[ii];
+      if (nprj[ia] > 0)
+      {
+         for (int l=0; l<nprj[ia]; ++l)
+         {
+            int l_prj = l_projector[ia][l];
+            int m_prj = m_projector[ia][l];
+
+            if (pspspin_upions[ii] &&
+                (l_prj == pspspin_upl[ii]) &&
+                (m_prj == pspspin_upm[ii] || pspspin_upm[ii] > 999))
+            {
+               for (int n=0; n<nup; ++n)
+                  sw2[n + (l+ll)*nn] *= pspspin_upscale[ii];
+            }
+
+            if (pspspin_downions[ii] &&
+                (l_prj == pspspin_downl[ii]) &&
+                (m_prj == pspspin_downm[ii] || pspspin_downm[ii] > 999))
+            {
+               for (int n=0; n<ndn; ++n)
+                  sw2[n + nup + (l+ll)*nn] *= pspspin_downscale[ii];
+            }
+         }
+         ll += nprj[ia];
+      }
+   }
+}
+
 
 
 /*******************************************

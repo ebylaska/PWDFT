@@ -616,11 +616,11 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          
                 // Debugging output (optional)
                 if (oprint)
-                   std::cout << " Iteration: " << icount
+                   std::cout << " Iter.: " << icount
                              << ", RMSD: " << rmsd_occupation
                              << ", Alpha: " << alpha
-                             << ", Smear Correction: " << smearcorrection 
-                             << ", Delta Smear Correction: " << smearcorrection - smearcorrection_old;
+                             << ", Smear Corr.: " << smearcorrection 
+                             << ", Delta Smear: " << smearcorrection - smearcorrection_old;
          
                 //occupation_update  =  (rmsd_occupation > control.fractional_rmsd_tolerance());
             }
