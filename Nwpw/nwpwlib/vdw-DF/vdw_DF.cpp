@@ -4,6 +4,8 @@
 #include <cmath>
 
 #include "vdw_DF.hpp"
+#include "Control2.hpp"
+#include "compressed_io.hpp"
 
 #include <iostream>
 #include "iofmt.hpp"
@@ -309,111 +311,84 @@ static void vdw_DF_kernel_gen_Wab(int Na,
  * @param ny The number of grid points in the y-direction.
  * @param nz The number of grid points in the z-direction.
  */
-vdw_DF::vdw_DF()
+vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control)
 {
+   mygrid   = inmygrid;
+   myparall = mygrid->d3db::parall;
 
+   nfft3d = mygrid->nfft3d;
+   npack0 = mygrid->npack(0);
+   n2ft3d = mygrid->n2ft3d;
 
-*     **** read and allocate qmesh data ****
-      if (taskid.eq.MASTER) THEN
-         call vdw_DF_get_qmesh_filename(qmesh_data_name)
-
-         if(.not.util_io_unit(80,90,unitf))
-     >     call errquit("vdw-DF cannot get io unit",0,DISK_ERR)
-
-         open(unit=unitf,file=qmesh_data_name,status='old',
-     >     form='formatted',ERR=999)
-
-         read(unitf,*,ERR=999,END=999) Nqs
-      end if
-      call Parallel_Brdcst_ivalue(MASTER,Nqs)
-
-
-
-c     **** Langreth kernel data ****
-      integer Na
-      parameter (Na=256)
+//c     **** Langreth kernel data ****
+//      integer Na
+//      parameter (Na=256)
 
    // initialize r and k grid
    // r-grid 
-   int    nr  = 2048;
-   int    nr1 = nr+1;
-   double rmax = 100.0;
-   double dr = rmax/dble(nr)
+   //int    nr  = 2048;
+   //int    nr1 = nr+1;
+   //double rmax = 100.0;
+   //double dr = rmax/dble(nr)
 
    // kgrid - maximum g=64 and gg=4096 ... 
-   int    nk   = 1024
-   int    nk1  = nk+1
-   double kmax = 64.0
-   double dk = kmax/dble(nk)    
-
-   double *qmesh = new (std::nothrow) double[Nqs]();
-   double *g     = new (std::nothrow) double[nk1]();
-   double *phir  = new  (std::nothrow) double[nr1]();
-   double *phir0 = new  (std::nothrow) double[nr1]();
-   double *rphi  = new  (std::nothrow) double[nr1]();
-   double *sphi  = new  (std::nothrow) double[nr1]();
-   double *utmp  = new  (std::nothrow) double[nr1]();
-   double *xtmp  = new  (std::nothrow) double[nr1]();
-
-   double *phik  = new  (std::nothrow) double[nk1]();
-   double *phik0 = new  (std::nothrow) double[nk1]();
-   double *phik2 = new  (std::nothrow) double[nk1]();
-   double *a     = new  (std::nothrow) double[Na]();
-   double *a2     = new  (std::nothrow) double[Na]();
-   double *aweights = new  (std::nothrow) double[Na]();
-   double *cos_a = new  (std::nothrow) double[Na]();
-   double *sin_a = new  (std::nothrow) double[Na]();
-   double *nu = new  (std::nothrow) double[Na]();
-   double *nu1 = new  (std::nothrow) double[Na]();
-   double *Wab = new  (std::nothrow) double[Na*Na]();
+   //int    nk   = 1024
+   //int    nk1  = nk+1
+   //double kmax = 64.0
+   //double dk = kmax/dble(nk)    
 
 
+   char datafile[256];
+   strcpy(datafile, "vdw_kernels.dat");
+   control.add_permanent_dir(datafile);
 
-   // delete data
-   delete [] Wab;
-   delete [] nu1;
-   delete [] nu;
-   delete [] sin_a;
-   delete [] cos_a;
-   delete [] aweights;
-   delete [] a2;
-   delete [] a;
-   delete [] phik;
-   delete [] phik0;
-   delete [] xtmp;
-   delete [] utmp;
-   delete [] sphi;
-   delete [] rphi;
-   delete [] phir0;
-   delete [] phir;
-   delete [] g;
-   delete [] qmesh;
+   int ifound = cfileexists(datafile);
+   if (ifound == 0)
+   {
+      //vdw_DF_kernel_gen_data(datafile)
+   }
+
+   if (myparall->is_master())
+   {
+      openfile(5,datafile,"r");
+      iread(5,&Nqs,1);
+      iread(5,&nk,1);
+      dread(5,&kmax,1);
+   }
+   myparall->Brdcst_iValue(0,MASTER,&Nqs);
+   myparall->Brdcst_iValue(0,MASTER,&nk);
+   myparall->Brdcst_Values(0,MASTER,1,&kmax);
+   nk1 = nk + 1;
 
 
+   double *qmesh  = new (std::nothrow) double[Nqs]();
+   double *ya     = new (std::nothrow) double[Nqs*Nqs]();
+   double *ya2    = new (std::nothrow) double[Nqs*Nqs]();
+   double *gphi   = new (std::nothrow) double[nk1]();
+   double *phi    = new (std::nothrow) double[nk1*Nqs*(Nqs+1)]();
+   double *theta  = new (std::nothrow) double[Nqs*n2ft3d]();
+   double *ufunc  = new (std::nothrow) double[Nqs*n2ft3d]();
+   double *xcp    = new (std::nothrow) double[2*n2ft3d]();
+   double *xce    = new (std::nothrow) double[2*n2ft3d]();
+   double *xxp    = new (std::nothrow) double[2*n2ft3d]();
+   double *xxe    = new (std::nothrow) double[2*n2ft3d]();
+   double *rho    = new (std::nothrow) double[2*n2ft3d]();
+   double *Gpack  = new (std::nothrow) double[npack0]();
+   int    *nxpack = new (std::nothrow) int[npack0]();
 
-      value = BA_pop_stack(Wab(2))
-      value = value.and.BA_pop_stack(nu1(2))
-      value = value.and.BA_pop_stack(nu(2))
-      value = value.and.BA_pop_stack(sin_a(2))
-      value = value.and.BA_pop_stack(cos_a(2))
-      value = value.and.BA_pop_stack(aweights(2))
-      value = value.and.BA_pop_stack(a2(2))
-      value = value.and.BA_pop_stack(a(2))
-      value = value.and.BA_pop_stack(phik2(2))
-      value = value.and.BA_pop_stack(phik0(2))
-      value = value.and.BA_pop_stack(phik(2))
-      value = value.and.BA_pop_stack(xtmp(2))
-      value = value.and.BA_pop_stack(utmp(2))
-      value = value.and.BA_pop_stack(sphi(2))
-      value = value.and.BA_pop_stack(rphi(2))
-      value = value.and.BA_pop_stack(phir0(2))
-      value = value.and.BA_pop_stack(phir(2))
-      value = value.and.BA_pop_stack(g(2))
-      value = value.and.BA_pop_stack(qmesh(2))
-      if (.not.value) call errquit('vdw_DF_gen_data:pop stack',0,MA_ERR)
+
+   if (myparall->is_master())
+   {
+      dread(5,qmesh,Nqs);
+      dread(5,phi,nk1*Nqs*(Nqs+1));
+   }
+
+      
+
+
 }
 
-
+/*
 *     *****************************************
 *     *                                       *
 *     *         vdw_DF_get_qmesh_filename     *
@@ -536,6 +511,7 @@ c     **** Langreth kernel data ****
       end
 
 
+*/
 
 }
 
