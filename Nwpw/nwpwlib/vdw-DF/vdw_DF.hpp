@@ -27,24 +27,7 @@ class vdw_DF  {
    Parallel *myparall;
 
 
-   //initialize r and k grids
-   //r-grid 
-   //int nr  = 2048;
-   //int nr1 = nr+1;
-   //double rmax = 100.0;
-   //double dr = rmax / static_cast<double>(nr);
-
-   // kgrid - maximum g=64 and gg=4096 ... 
-   //int  nk   = 1024;
-   //int  nk1  = nk+1;
-   //double kmax = 64.0;
-   //double dk = kmax / static_cast<double>(nr);
-
-   //double *g, *phir, *phir0, *rphi, *sphi, *utmp, *xtmp;
-   //double *phik, *phik0, *phik2, *a, *a2;
-
-   //double *aweights, *cos_a, *sina, *nu, *nu1, *Wab;
-
+   bool has_vdw = false;
    int Nqs, nk, nk1;
    int nfft3d,n2ft3d,npack0;
    double kmax;
@@ -80,6 +63,9 @@ class vdw_DF  {
     }
 
 
+
+   bool exist(){return has_vdw;}
+   //void v_vdw(int, int, double *, double *, double * double *, double * double *);
 
 };
 
