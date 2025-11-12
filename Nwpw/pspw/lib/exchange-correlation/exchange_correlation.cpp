@@ -56,6 +56,7 @@
 #include "exchange_correlation.hpp"
 #include "v_bwexc.hpp"
 #include "v_exc.hpp"
+#include "vdw_DF.hpp"
 #include <algorithm>
 #include "parsestring.hpp"
 
@@ -168,6 +169,11 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control)
    }
    if ((gga >= 300))
      use_mgga = true;
+
+   if (has_vdw)
+   {
+      myvdw = new vdw_DF(mygrid,control);
+   }
  
    // std::cout << "xc_name =" << xc_name << std::endl;
 }

@@ -36,6 +36,7 @@ class vdw_DF  {
    double *qmesh, *ya, *ya2, *gphi, *phi, *theta, *ufunc;
    double *xcp, *xce, *xxp, *xxe, *rho, *Gpack, *nxpack;
 
+public:
 
    /* constructor */
    vdw_DF(PGrid *, Control2 &);

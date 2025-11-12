@@ -3,6 +3,7 @@
 
 #include "Control2.hpp"
 #include "Pneb.hpp"
+#include "vdw_DF.hpp"
 #include <iostream>
 
 namespace pwdft {
@@ -10,6 +11,7 @@ namespace pwdft {
 class XC_Operator {
 
   Pneb *mypneb;
+  vdw_DF *myvdw;
 
   double *xtmp;
   double *rho, *grx, *gry, *grz, *agr, *fn, *fdn;
@@ -42,6 +44,8 @@ public:
       delete[] fn;
       delete[] fdn;
     }
+
+    delete myvdw;
   }
 
   void v_exc_all(int, double *, double *, double *);
