@@ -839,7 +839,8 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
     std::vector<double> qmesh;
     if (myparall->is_master())
     {
-        std::cout << "reading qmesh file: " << qmesh_file << std::endl;
+        //std::cout << "Generating VDW kernel filename:" << outfile << std::endl;
+        //std::cout << "reading qmesh file: " << qmesh_file << std::endl;
         std::ifstream fin(qmesh_file);
         if (!fin) {
             throw std::runtime_error("Error opening qmesh file: " + qmesh_file);
@@ -853,7 +854,6 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
             fin >> qmesh[i];
             if (!fin) throw std::runtime_error("Error reading qmesh value");
         }
-      std::cout << "Nqs=" << Nqs << std::endl;
     }
 
    // ---- broadcast Nqs and qmesh ----
@@ -899,21 +899,17 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
 
 
     // ---- open output on rank 0, write header ----
-    std::ofstream fout;
     if (myparall->is_master())
     {
-        fout.open(out_file, std::ios::binary);
-        if (!fout) throw std::runtime_error("Error opening output file: " + out_file);
+       openfile(6, out_filename, "w");
+       iwrite(6, &Nqs, 1);
+       iwrite(6, &nk, 1);
+       dwrite(6, &kmax, 1);
+       dwrite(6, qmesh.data(), Nqs);
 
-        fout.write(reinterpret_cast<const char*>(&Nqs), sizeof(int));
-        fout.write(reinterpret_cast<const char*>(&nk),  sizeof(int));
-        fout.write(reinterpret_cast<const char*>(&kmax),  sizeof(double));
-        fout.write(reinterpret_cast<const char*>(qmesh.data()), sizeof(double) * Nqs);
-
-        // (Fortran had g write commented; we mirror that and don't write g)
-        // fout.write(reinterpret_cast<const char*>(g.data()), sizeof(double)*nkp1);
+       // (Fortran had g write commented; we mirror that and don't write g)
+       // fout.write(reinterpret_cast<const char*>(g.data()), sizeof(double)*nkp1);
     }
-
 
 
     // ---- distribute work: pairs (j=1..Nqs, i=1..j) in Fortran order ----
@@ -967,8 +963,8 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
                     util_spline(g.data(), phik0.data(), nkp1, yp1, ypn, phik2.data(), utmp.data());
 
                     // write phik0, phik2
-                    fout.write(reinterpret_cast<const char*>(phik0.data()), sizeof(double) * nkp1);
-                    fout.write(reinterpret_cast<const char*>(phik2.data()), sizeof(double) * nkp1);
+                    dwrite(6, phik0.data(), nkp1);
+                    dwrite(6, phik2.data(), nkp1);
                 }
                 else
                 {
@@ -977,8 +973,8 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
                     const double ypn = (phik[nk]  - phik[nk-1])  / dk;
                     util_spline(g.data(), phik.data(), nkp1, yp1, ypn, phik2.data(), utmp.data());
 
-                    fout.write(reinterpret_cast<const char*>(phik.data()),  sizeof(double) * nkp1);
-                    fout.write(reinterpret_cast<const char*>(phik2.data()), sizeof(double) * nkp1);
+                    dwrite(6, phik.data(), nkp1);
+                    dwrite(6, phik2.data(), nkp1);
                 }
             }
 
@@ -987,7 +983,7 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
     }
 
     // ---- finalize ----
-    if (myparall->is_master()) fout.close();
+    if (myparall->is_master()) closefile(6);
     myparall->Barrier();
 
 

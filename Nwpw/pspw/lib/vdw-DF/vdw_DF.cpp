@@ -46,6 +46,7 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control)
    npack0 = mygrid->npack(0);
    n2ft3d = mygrid->n2ft3d;
 
+   bool oprint = (myparall->is_master() && control.print_level("medium"));
 
 
    const std::string nwpw_vdw_qmesh = std::string(Nwpw_LIBRARYVDW_Default) + "/vdw_qmesh.dat";
@@ -54,11 +55,12 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control)
    char datafile[256];
    strcpy(datafile, "vdw_kernels.dat");
    control.add_permanent_dir(datafile);
-   std::cout << "nwpw_vdw = " << nwpw_vdw_qmesh << " datafile=" << datafile << std::endl;
+   //std::cout << "nwpw_vdw = " << nwpw_vdw_qmesh << " datafile=" << datafile << std::endl;
 
    int ifound = cfileexists(datafile);
    if (ifound == 0)
    {
+      if (oprint) std::cout << "Generating VDW kernel filename:" << datafile << std::endl;
       //vdw_DF_kernel_gen_data(datafile)
       vdw_DF_kernel_gen_data(myparall,datafile,nwpw_vdw_qmesh.c_str());
    }
