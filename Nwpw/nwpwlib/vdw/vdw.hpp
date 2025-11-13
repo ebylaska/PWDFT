@@ -17,7 +17,8 @@ extern double vdw_DF_Fsin(double, double, double, double, double, double, double
 
 extern void vdw_DF_kernel_gen_Wab(int, double *, double *, double *, double *, double *, double *);
 
-extern void vdw_DF_kernel_gen_data(Parallel *, const std::string &, const std::string &);
+//extern void vdw_DF_kernel_gen_data(Parallel *, const std::string &, const std::string &);
+extern void vdw_DF_kernel_gen_data(Parallel *, const char *, const char *);
 
 
 } // namespace pwdft

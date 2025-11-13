@@ -203,6 +203,8 @@ endif()
 # configure a header file to pass the version number only
 configure_file(NwpwConfig.h.in NwpwConfig.h)
 configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/psp_library/NwpwLibrarypsConfig.hpp")
+configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/pspw/lib/vdw-DF/NwpwLibraryVdwConfig.hpp")
+#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/band/lib/cvdw-DF/NwpwLibraryVdwConfig.hpp")
 
 # create the nwpwlib and pspw libraries
 add_subdirectory(nwpwlib)

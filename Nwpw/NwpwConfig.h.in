@@ -4,3 +4,4 @@
 #define Nwpw_COMPILE_TIMESTAMP  @PWDFT_BUILD_TIMESTAMP@
 #define Nwpw_TOP "@PWDFT_SOURCE_DIR@"
 #define Nwpw_LIBRARYPS_Default "@PWDFT_SOURCE_DIR@/libraryps"
+#define Nwpw_LIBRARYVDW_Default "@PWDFT_SOURCE_DIR@/libraryps/VDW"

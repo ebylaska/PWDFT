@@ -3,9 +3,13 @@
 
 #include <cmath>
 
-#include "vdw_DF.hpp"
+#include "vdw.hpp"
 #include "Control2.hpp"
 #include "compressed_io.hpp"
+
+#include "NwpwLibraryVdwConfig.hpp"
+
+#include "vdw_DF.hpp"
 
 #include <iostream>
 #include "iofmt.hpp"
@@ -43,14 +47,20 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control)
    n2ft3d = mygrid->n2ft3d;
 
 
+
+   const std::string nwpw_vdw_qmesh = std::string(Nwpw_LIBRARYVDW_Default) + "/vdw_qmesh.dat";
+   //const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default + "/VDW/vdw_qmesh.dat";
+
    char datafile[256];
    strcpy(datafile, "vdw_kernels.dat");
    control.add_permanent_dir(datafile);
+   std::cout << "nwpw_vdw = " << nwpw_vdw_qmesh << " datafile=" << datafile << std::endl;
 
    int ifound = cfileexists(datafile);
    if (ifound == 0)
    {
       //vdw_DF_kernel_gen_data(datafile)
+      vdw_DF_kernel_gen_data(myparall,datafile,nwpw_vdw_qmesh.c_str());
    }
 
    if (myparall->is_master())

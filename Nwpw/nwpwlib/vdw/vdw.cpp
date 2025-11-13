@@ -825,9 +825,11 @@ void vdw_DF_kernel_bessel(const double q, const double dq, const int nr, const d
 
 // ---- Driver ----
 void vdw_DF_kernel_gen_data(Parallel *myparall, 
-                            const std::string& out_filename,
-                            const std::string& qmesh_filename)
+                            const char *out_filename,
+                            const char *qmesh_filename)
 {
+    std::string out_file(out_filename);
+    std::string qmesh_file(qmesh_filename);
     //int rank = 0, nprocs = 1;
     //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     //MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -837,9 +839,10 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
     std::vector<double> qmesh;
     if (myparall->is_master())
     {
-        std::ifstream fin(qmesh_filename);
+        std::cout << "reading qmesh file: " << qmesh_file << std::endl;
+        std::ifstream fin(qmesh_file);
         if (!fin) {
-            throw std::runtime_error("Error opening qmesh file: " + qmesh_filename);
+            throw std::runtime_error("Error opening qmesh file: " + qmesh_file);
         }
         fin >> Nqs;
         if (!fin || Nqs <= 0) {
@@ -850,6 +853,7 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
             fin >> qmesh[i];
             if (!fin) throw std::runtime_error("Error reading qmesh value");
         }
+      std::cout << "Nqs=" << Nqs << std::endl;
     }
 
    // ---- broadcast Nqs and qmesh ----
@@ -898,8 +902,8 @@ void vdw_DF_kernel_gen_data(Parallel *myparall,
     std::ofstream fout;
     if (myparall->is_master())
     {
-        fout.open(out_filename, std::ios::binary);
-        if (!fout) throw std::runtime_error("Error opening output file: " + out_filename);
+        fout.open(out_file, std::ios::binary);
+        if (!fout) throw std::runtime_error("Error opening output file: " + out_file);
 
         fout.write(reinterpret_cast<const char*>(&Nqs), sizeof(int));
         fout.write(reinterpret_cast<const char*>(&nk),  sizeof(int));
