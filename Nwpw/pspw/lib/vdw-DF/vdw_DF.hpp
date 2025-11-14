@@ -23,6 +23,8 @@ namespace pwdft {
 
 class vdw_DF  {
 
+private: 
+
    PGrid    *mygrid;
    Parallel *myparall;
 
@@ -32,14 +34,30 @@ class vdw_DF  {
    int nfft3d,n2ft3d,npack0;
    double kmax;
 
+   double qmin, qmax, Zab;   // <<< ADD THESE
+
 
    double *qmesh, *ya, *ya2, *gphi, *phi, *theta, *ufunc;
-   double *xcp, *xce, *xxp, *xxe, *rho, *Gpack, *nxpack;
+   double *xcp, *xce, *xxp, *xxe, *rho, *Gpack;
+   int *nxpack;
+
+   // private functions
+   void init_poly();
+   void poly(int, double, double &, double &);
+   void generate_rho(const int, const int, const double *, double *);
+   void generate_theta_g(int, int, int, int, double, double, double, const double *,const double *,
+                         double *, double *, double *, double *, double *);
+   void generate_ufunc(const int, const int, const double *, const double *, const int, const int,
+                       const double *, const int *, const std::complex<double> *, std::complex<double> *);
+   void generate_potentials(int, int, int, int, double *, double *, double *, double *, 
+                            double *, double *, double *, double *, double *, double *);
+
+
 
 public:
 
    /* constructor */
-   vdw_DF(PGrid *, Control2 &);
+   vdw_DF(PGrid *, Control2 &, bool);
  
    /* destructor */
 
@@ -67,6 +85,8 @@ public:
 
    bool exist(){return has_vdw;}
    //void v_vdw(int, int, double *, double *, double * double *, double * double *);
+   void evaluate(int, const double *, const double *, double *,  double *, double *);
+
 
 };
 

@@ -487,6 +487,7 @@ bool util_filefind(Parallel *myparall, char *fname)
  *           util_spline              *
  *                                    *
  **************************************/
+/*
 void util_spline(const double *x, const double *y, const int n,
                  const double yp1, const double ypn, double *y2, double *utmp) 
 {
@@ -530,13 +531,79 @@ void util_spline(const double *x, const double *y, const int n,
    for (auto k = n - 2; k >= 0; --k)
       y2[k] = y2[k] * y2[k + 1] + utmp[k];
 }
+*/
+
+
+/**********************************************
+ *                                            *
+ *              util_spline                   *
+ *                                            *
+ **********************************************/
+void util_spline(const double *x, const double *y, int n,
+                 double yp1, double ypn,
+                 double *y2, double *utmp)
+{
+    double sig, p, qn, un;
+
+    // ----- Boundary condition at x[0] -----
+    if (yp1 > 0.99e30)
+    {
+        y2[0]   = 0.0;
+        utmp[0] = 0.0;
+    }
+    else
+    {
+        y2[0]   = -0.5;
+        utmp[0] = 3.0 / (x[1] - x[0]) *
+                  ( (y[1] - y[0]) / (x[1] - x[0]) - yp1 );
+    }
+
+    // ----- Decomposition loop -----
+    for (int i = 1; i < n - 1; ++i)
+    {
+        sig = (x[i] - x[i - 1]) / (x[i + 1] - x[i - 1]);
+        p   = sig * y2[i - 1] + 2.0;
+
+        y2[i] = (sig - 1.0) / p;
+
+        utmp[i] =
+            ( 6.0 * ( (y[i + 1] - y[i])     / (x[i + 1] - x[i])
+                    - (y[i]     - y[i - 1]) / (x[i]     - x[i - 1]) )
+              / (x[i + 1] - x[i - 1])
+              - sig * utmp[i - 1]
+            ) / p;
+    }
+
+    // ----- Boundary condition at x[n-1] -----
+    if (ypn > 0.99e30)
+    {
+        qn = 0.0;
+        un = 0.0;
+    }
+    else
+    {
+        qn = 0.5;
+        un = 3.0 / (x[n - 1] - x[n - 2]) *
+             ( ypn - (y[n - 1] - y[n - 2]) / (x[n - 1] - x[n - 2]) );
+    }
+
+    y2[n - 1] = (un - qn * utmp[n - 2]) /
+                (qn * y2[n - 2] + 1.0);
+
+    // ----- Back substitution -----
+    for (int k = n - 2; k >= 0; --k)
+    {
+        y2[k] = y2[k] * y2[k + 1] + utmp[k];
+    }
+}
+
 
 /**************************************
  *                                    *
  *           util_splint              *
  *                                    *
  **************************************/
-double util_splint(const double *xa, const double *ya, const double *y2a,
+/*double util_splint(const double *xa, const double *ya, const double *y2a,
                    const int n, const int nx, const double x) 
 {
    int khi = nx;
@@ -563,6 +630,107 @@ double util_splint(const double *xa, const double *ya, const double *y2a,
    return (a * ya[klo] + b * ya[khi] +
            ((a * a * a - a) * y2a[klo] + (b * b * b - b) * y2a[khi]) * h * h / 6.0);
 }
+*/
+
+
+/**********************************************
+ *                                            *
+ *              util_splint                   *
+ *                                            *
+ **********************************************/
+double util_splint(const double *xa, const double *ya, const double *y2a,
+                   const int n, int nx, const double x)
+{
+    // ---- Match Fortran behavior: nx must be in [1, n-1] ----
+    if (nx < 1) nx = 1;
+    if (nx > n - 1) nx = n - 1;
+
+    int klo = nx - 1;
+    int khi = nx;
+
+    // ---- Sliding-window search for correct interval ----
+    while (((klo > 0) && xa[klo] > x) || ((khi < n - 1) && xa[khi] < x))
+    {
+        if (xa[klo] > x && klo > 0)
+        {
+            klo--;
+            khi--;
+        }
+        else if (xa[khi] < x && khi < n - 1)
+        {
+            klo++;
+            khi++;
+        }
+        else break;
+    }
+
+    // ---- Out-of-range x behavior ----
+    if (x < xa[0] || x > xa[n - 1])
+        return 0.0;   // Fortran also returns 0 implicitly
+
+    double h = xa[khi] - xa[klo];
+    if (h == 0.0) return 0.0;
+
+    double a = (xa[khi] - x) / h;
+    double b = (x - xa[klo]) / h;
+
+    double y = a * ya[klo]
+             + b * ya[khi]
+             + ( (a*a*a - a) * y2a[klo]
+               + (b*b*b - b) * y2a[khi] ) * (h*h) / 6.0;
+
+    return y;
+}
+
+
+/**********************************************
+ *                                            *
+ *              util_dsplint                  *
+ *                                            *
+ **********************************************/
+double util_dsplint(const double *xa, const double *ya, const double *y2a,
+                    const int n, int nx, const double x)
+{
+    // ---- Clamp nx just like Fortran ----
+    if (nx < 1) nx = 1;
+    if (nx > n - 1) nx = n - 1;
+
+    int klo = nx - 1;
+    int khi = nx;
+
+    // ---- Sliding window search (Fortran-compatible) ----
+    while (((klo > 0) && (xa[klo] > x)) || ((khi < n - 1) && (xa[khi] < x)))
+    {
+        if (xa[klo] > x && klo > 0) { klo--; khi--; }
+        else if (xa[khi] < x && khi < n - 1) { klo++; khi++; }
+        else break;
+    }
+
+    // ---- Out-of-range behavior: return 0 like Fortran ----
+    if (x < xa[0] || x > xa[n - 1])
+        return 0.0;
+
+    const double h = xa[khi] - xa[klo];
+    if (h == 0.0) return 0.0;
+
+    // Spline coordinates
+    const double a = (xa[khi] - x) / h;
+    const double b = (x - xa[klo]) / h;
+
+    // Their derivatives
+    const double da = -1.0 / h;
+    const double db =  1.0 / h;
+
+    // ---- Derivative of spline interpolation ----
+    const double dy =
+          da * ya[klo]
+        + db * ya[khi]
+        + ( (da*(3*a*a) - da) * y2a[klo]
+          + (db*(3*b*b) - db) * y2a[khi] ) * (h*h) / 6.0;
+
+    return dy;
+}
+
 
 /**************************************
  *                                    *

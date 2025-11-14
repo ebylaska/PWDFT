@@ -172,7 +172,7 @@ XC_Operator::XC_Operator(Pneb *mygrid, Control2 &control)
 
    if (has_vdw)
    {
-      myvdw = new vdw_DF(mygrid,control);
+      myvdw = new vdw_DF(mygrid,control,is_vdw2);
    }
  
    // std::cout << "xc_name =" << xc_name << std::endl;
