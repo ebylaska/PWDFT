@@ -7,17 +7,18 @@
 #include "pbe96.hpp"
 #include "pbesol.hpp"
 #include "revpbe.hpp"
+#include "vdw_DF.hpp"
 
 namespace pwdft {
 
 #define dncut 1.0e-30
 
 /********************************
- *				                    *
+ *				*
  *            v_bwexc           *
  *                              *
  ********************************/
-void v_bwexc(const int gga, Pneb *mypneb, const double *dn,
+void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
              const double x_parameter, const double c_parameter, double *xcp,
              double *xce, double *rho, double *grx, double *gry, double *grz,
              double *agr, double *fn, double *fdn) 
@@ -97,7 +98,14 @@ void v_bwexc(const int gga, Pneb *mypneb, const double *dn,
       default:
         gen_PBE96_BW_restricted(mypneb->n2ft3d, rho, agr, x_parameter,
                                 c_parameter, xce, fn, fdn);
+
+
       }
+
+      // add vdw here
+      if (vdw->exist())
+         std::cout << "vdw HERA" << std::endl;
+
      
       /* calculate df/d|grad n| *(grad n)/|grad n| */
       mypneb->rr_Divide(agr, grx);
@@ -262,6 +270,10 @@ void v_bwexc(const int gga, Pneb *mypneb, const double *dn,
                                   c_parameter, xce, fn, fdn);
       }
      
+      // add vdw here
+      if (vdw->exist())
+         std::cout << "vdw HERB" << std::endl;
+
       /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
        **** calculate df/d|grad ndn|* (grad ndn)/|grad ndn|  ****
        **** calculate df/d|grad n|  * (grad n)/|grad n|  ****/
