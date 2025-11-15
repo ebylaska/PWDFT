@@ -3,6 +3,7 @@
 
 #include "Control2.hpp"
 #include "Pneb.hpp"
+#include "parsestring.hpp"
 #include "vdw_DF.hpp"
 #include <iostream>
 
@@ -84,6 +85,29 @@ public:
     
      if (xc.gga == 200)
        os << "Hartree-Fock\n";
+
+     if (xc.has_vdw)
+     {
+        os << "   dispersion correction= ";
+        if (xc.is_vdw2)
+           os << "vdw2 Langreth functional\n";
+        else
+           os << "vdw Langreth functional\n";
+     }
+     if (xc.has_disp)
+     {
+        os << "   dispersion correction= ";
+        if (mystring_contains(xc.options_disp,"-old"))  
+           os << "Grimme2\n";
+        else if (mystring_contains(xc.options_disp,"-zerom")) 
+           os << "Grimme5\n";
+        else if (mystring_contains(xc.options_disp,"-zero"))  
+           os << "Grimme3\n";
+        else if (mystring_contains(xc.options_disp,"-bjm"))  
+           os << "Grimme6\n";
+        else if (mystring_contains(xc.options_disp,"-bj"))  
+           os << "Grimme4\n";
+     }
     
      return os;
   }
