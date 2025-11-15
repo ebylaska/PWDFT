@@ -28,6 +28,10 @@ void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
    double *Gy = mypneb->Gpackxyz(0, 1);
    double *Gz = mypneb->Gpackxyz(0, 2);
    double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+
+   bool has_vdw = false;
+   if (vdw != nullptr)
+      has_vdw = vdw->exist();
  
    /**********************************
     ***** restricted calculation *****
@@ -103,7 +107,7 @@ void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
       }
 
       // add vdw here
-      if (vdw->exist())
+      if (has_vdw)
          std::cout << "vdw HERA" << std::endl;
 
      
@@ -271,7 +275,7 @@ void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
       }
      
       // add vdw here
-      if (vdw->exist())
+      if (has_vdw)
          std::cout << "vdw HERB" << std::endl;
 
       /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
