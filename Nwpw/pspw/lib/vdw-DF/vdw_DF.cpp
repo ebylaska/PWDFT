@@ -624,36 +624,23 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
    myparall->Brdcst_Values(0, MASTER, nk1*Nqs*(Nqs+1), phi);
 
     
-
-/*
-      call vdw_DF_init_poly(Nqs,dbl_mb(qmesh(1)),
-     >                      dbl_mb(ya(1)),
-     >                      dbl_mb(y2a(1)),
-     >                      dbl_mb(gphi(1)))
-*/
-
    init_poly();   // <<<=== Required (Fortran does it right after reading qmesh)
 
    double dk = kmax/double(nk);
    for (int k=0; k<=nk; ++k)
       gphi[k] = k*dk;
 
-   /*   
-   Gindx(1)=Pack_G_indx(0,1)
-   Gindx(2)=Pack_G_indx(0,2)
-   Gindx(3)=Pack_G_indx(0,3)
+   double *Gx = mygrid->Gpackxyz(0,0);
+   double *Gy = mygrid->Gpackxyz(0,1);
+   double *Gz = mygrid->Gpackxyz(0,2);
    for (int k=0; k<npack0; ++k)
    {
-      double   gx = dbl_mb(Gindx(1)+k-1)
-      double   gy = dbl_mb(Gindx(2)+k-1)
-      double   gz = dbl_mb(Gindx(3)+k-1)
-      double   gg = std::sqrt(gx*gx + gy*gy + gz*gz)
+      double gg = std::sqrt(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
       Gpack[k] = gg;
          
       int nx = gg/dk;
       nxpack[k] = util_splint_nx(gphi,nx,gg);
    }
-*/
 
 
 
