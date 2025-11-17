@@ -391,6 +391,9 @@ void vdw_DF::generate_theta_g(
     // ---- get parallel info ----
     //int tid     = myparall->threadid();
     //int nthr    = myparall->nthreads();
+    std::cout << "A vxctheta=" << mygrid->rr_dot(rho,vxc) << std::endl;
+    std::cout << "A vxxtheta=" << mygrid->rr_dot(rho,vxx) << std::endl;
+    std::cout << "A qmax =" << qmax << std::endl;
 
     int taskid_j = myparall->taskid_j();
     int np_j    = myparall->np_j();
@@ -418,6 +421,8 @@ void vdw_DF::generate_theta_g(
 
     // zero theta
     std::fill(theta, theta + size_t(n2ft3d)*Nqs, 0.0);
+    std::cout << "Zero theta!" << mygrid->rr_dot(rho,theta) << std::endl;
+    std::cout << "nj=" << nj << std::endl;
 
     if (nj > 0)
     {
@@ -435,6 +440,7 @@ void vdw_DF::generate_theta_g(
         for (int i=0; i<n2ft3d; ++i)
         {
            double rh = rho[i];
+           std::cout << "i,rh=" << i << " " << rh << " rh>=dncut:" << (rh>=dncut) << std::endl;
 
            double q0sat = 0.0;
 
@@ -476,11 +482,12 @@ void vdw_DF::generate_theta_g(
               double dtsum = 0.0;
               for (int k = 1; k <= 12; k++) 
               {
-                 tsum  += pow(q0/qmax, k) / double(k);
-                 dtsum += pow(q0/qmax, k-1);
+                 tsum  += std::pow(q0/qmax, k) / double(k);
+                 dtsum += std::pow(q0/qmax, k-1);
               }
-              q0sat = qmax * (1.0 - exp(-tsum));
-              double dq0satdq0 = exp(-tsum) * dtsum;
+              std::cout << "     - q0=" << q0 << " qmax=" << qmax << " tsum = " << tsum << std::endl;
+              q0sat = qmax * (1.0 - std::exp(-tsum));
+              double dq0satdq0 = std::exp(-tsum) * dtsum;
 
               exc[i] = q0sat;
               for (int ms = 0; ms < ispin; ++ms)
@@ -523,6 +530,13 @@ void vdw_DF::generate_theta_g(
 
     // ---- global reduce sum across processors ----
     myparall->Vector_SumAll(2, Nqs*n2ft3d, theta);
+
+    std::cout << "exxtheta=" << mygrid->rr_dot(rho,exx) << std::endl;
+    std::cout << "vxctheta=" << mygrid->rr_dot(rho,vxc) << std::endl;
+    std::cout << "vxxtheta=" << mygrid->rr_dot(rho,vxx) << std::endl;
+    std::cout << "Nqs=" << Nqs << std::endl;
+    for (auto qq=0; qq<Nqs; ++qq)
+       std::cout << "theta=" << mygrid->rr_dot(rho,theta+qq*n2ft3d) << std::endl;
 }
 
 
@@ -609,15 +623,49 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
    myparall->Brdcst_Values(0, MASTER, Nqs, qmesh);
    myparall->Brdcst_Values(0, MASTER, nk1*Nqs*(Nqs+1), phi);
 
+    
+
+/*
+      call vdw_DF_init_poly(Nqs,dbl_mb(qmesh(1)),
+     >                      dbl_mb(ya(1)),
+     >                      dbl_mb(y2a(1)),
+     >                      dbl_mb(gphi(1)))
+*/
+
+   init_poly();   // <<<=== Required (Fortran does it right after reading qmesh)
+
+   double dk = kmax/double(nk);
+   for (int k=0; k<=nk; ++k)
+      gphi[k] = k*dk;
+
+   /*   
+   Gindx(1)=Pack_G_indx(0,1)
+   Gindx(2)=Pack_G_indx(0,2)
+   Gindx(3)=Pack_G_indx(0,3)
+   for (int k=0; k<npack0; ++k)
+   {
+      double   gx = dbl_mb(Gindx(1)+k-1)
+      double   gy = dbl_mb(Gindx(2)+k-1)
+      double   gz = dbl_mb(Gindx(3)+k-1)
+      double   gg = std::sqrt(gx*gx + gy*gy + gz*gz)
+      Gpack[k] = gg;
+         
+      int nx = gg/dk;
+      nxpack[k] = util_splint_nx(gphi,nx,gg);
+   }
+*/
+
+
+
    if (is_vdw2)
       Zab = -1.887;
    else
       Zab = -0.8491;
-    
-   qmax = qmesh[Nqs];
-   qmin = 0.0;
 
-   init_poly();   // <<<=== Required (Fortran does it right after reading qmesh)
+   qmax = qmesh[Nqs-1];
+   qmin = 0.0;
+   std::cout << "INIT QMAX=" << qmax << std::endl;
+
       
 
 
@@ -628,24 +676,36 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 {
     // 1. LDA pieces
     v_exc(ispin, n2ft3d, const_cast<double*>(dn), xcp, xce, rho);
+    std::cout << "VXCA = " << Ffmt(13,9) << mygrid->rr_dot(dn,xce) << std::endl;
+    std::cout << "VXCAA= " << Ffmt(13,9) << mygrid->rr_dot(dn,xcp) << std::endl;
     if (ispin == 1)
         v_dirac(ispin, n2ft3d, const_cast<double*>(dn), xxp, xxe, rho);
+    std::cout << "VXCB = " << Ffmt(13,9) << mygrid->rr_dot(dn,xxp) << std::endl;
 
     // 2. build rho
     generate_rho(ispin, n2ft3d, dn, rho);
     mygrid->r_zero_ends(rho);
+    std::cout << "RHOA = " << Ffmt(13,9) << mygrid->rr_dot(rho,rho) << std::endl;
 
     // 3. theta(G)
     generate_theta_g(Nqs, nfft3d, ispin, n2ft3d, Zab, qmin, qmax, rho, agr, xcp, xce, xxp, xxe, theta);
+    std::cout << "theta xcp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xcp) << std::endl;
+    std::cout << "theta xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
+    std::cout << "theta xxp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxp) << std::endl;
+    std::cout << "theta xxe = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxe) << std::endl;
+    std::cout << "theta     = " << Ffmt(13,9) << mygrid->rr_dot(rho,theta) << std::endl;
+
 
     // 4. ufunc(G,i)
     generate_ufunc(nk1, Nqs, gphi, phi, npack0, nfft3d, Gpack, nxpack,
                    reinterpret_cast<const std::complex<double>*>(theta), 
                    reinterpret_cast<std::complex<double>*>(ufunc));
+    std::cout << "rho*ufunc = " << Ffmt(13,9) << mygrid->rr_dot(rho,ufunc) << std::endl;
 
     // 5. exc, fn, fdn
     generate_potentials(Nqs, nfft3d, ispin, n2ft3d, ufunc, xce, xcp, xxe,
                         xce+n2ft3d, xxp, rho, exc, fn, fdn);
+    std::cout << "xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
 }
 
 

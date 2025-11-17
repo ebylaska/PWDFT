@@ -8,6 +8,7 @@
 #include "pbesol.hpp"
 #include "revpbe.hpp"
 #include "vdw_DF.hpp"
+#include "iofmt.hpp"
 
 namespace pwdft {
 
@@ -108,7 +109,14 @@ void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
 
       // add vdw here
       if (has_vdw)
+      {
          std::cout << "vdw HERA" << std::endl;
+         std::cout << "RUNA=" << Ffmt(13,9) <<  mypneb->rr_dot(rho,xce) << std::endl;
+         vdw->evaluate(mypneb->ispin,dn,agr,xce,fn,fdn);
+         std::cout << "RUNB=" << Ffmt(13,9) <<  mypneb->rr_dot(rho,xce) << std::endl;
+      }
+
+
 
      
       /* calculate df/d|grad n| *(grad n)/|grad n| */
@@ -276,7 +284,11 @@ void v_bwexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
      
       // add vdw here
       if (has_vdw)
+      {
          std::cout << "vdw HERB" << std::endl;
+         vdw->evaluate(mypneb->ispin,dn,agr,xce,fn,fdn);
+      }
+
 
       /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
        **** calculate df/d|grad ndn|* (grad ndn)/|grad ndn|  ****
