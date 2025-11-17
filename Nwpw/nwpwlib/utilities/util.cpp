@@ -685,6 +685,37 @@ double util_splint(const double *xa, const double *ya, const double *y2a,
 
 /**********************************************
  *                                            *
+ *              util_splint_nx                *
+ *                                            *
+ **********************************************/
+int util_splint_nx(const double *xa, int nx, double x)
+{
+    int klo = nx;
+    int khi = nx + 1;
+
+    // Slide klo and khi until x is bracketed:
+    // xa[klo] <= x <= xa[khi]
+    while ((xa[klo] > x) || (xa[khi] < x))
+    {
+        if (xa[klo] > x)
+        {
+            klo--;
+            khi--;
+        }
+        if (xa[khi] < x)
+        {
+            klo++;
+            khi++;
+        }
+    }
+
+    return klo;   // Fortran returns klo (1-based), but C++ returns same integer
+}
+
+
+
+/**********************************************
+ *                                            *
  *              util_dsplint                  *
  *                                            *
  **********************************************/
