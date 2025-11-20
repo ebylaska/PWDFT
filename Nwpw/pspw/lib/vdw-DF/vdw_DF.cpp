@@ -176,25 +176,27 @@ void vdw_DF::generate_ufunc(const int nk1,
                 {
                     const double g = Gpack[k];
 
-                    // nxpack(k) gives an index into gphi, 1-based in Fortran
-                    const int klo = nxpack[k];      // 1..nk1-1
-                    const int khi = klo + 1;        // 2..nk1
+                    // nxpack(k) gives an index into gphi, 0-based 
+                    const int klo = nxpack[k];      // 0..nk-1
+                    const int khi = klo + 1;        // 1..nk
 
-                    const int klo0 = klo - 1;       // 0-based
-                    const int khi0 = khi - 1;
+                    //const int klo0 = klo - 1;       // 0-based
+                    //const int khi0 = khi - 1;
 
-                    const double h = gphi[khi0] - gphi[klo0];
-                    const double a = (gphi[khi0] - g) / h;
-                    const double b = (g - gphi[klo0]) / h;
+                    const double h = gphi[khi] - gphi[klo];
+                    const double a = (gphi[khi] - g) / h;
+                    const double b = (g - gphi[klo]) / h;
 
                     const double *phi1 = phi_block + 0 * nk1;  // φ(:,1,indx)
                     const double *phi2 = phi_block + 1 * nk1;  // φ(:,2,indx)
 
                     const double f =
-                        a * phi1[klo0]
-                      + b * phi1[khi0]
-                      + ((a*a*a - a) * phi2[klo0]
-                      +  (b*b*b - b) * phi2[khi0]) * h * h / 6.0;
+                        a * phi1[klo]
+                      + b * phi1[khi]
+                      + ((a*a*a - a) * phi2[klo]
+                      +  (b*b*b - b) * phi2[khi]) * h * h / 6.0;
+
+                    if ((k==0)) std::cout << "taskid_j=" << taskid_j << " k=" << k << " i=" << i << " j=" << j  << " f=" << f << " U=" << Efmt(13,6) << U(k,i) << " klo=" << klo << " khi=" << khi  << std::endl;
 
                     // Update ufunc(k,i) and ufunc(k,j), k is 0-based
                     U(k, i) += TH(k, j) * f;
@@ -215,7 +217,7 @@ void vdw_DF::generate_ufunc(const int nk1,
     // Global sum over all 2D-j tasks: D1dB_Vector_SumAll(2*Nqs*nfft3d, ufunc)
     // Treat complex array as contiguous doubles.
     const int len = 2 * Nqs * nfft3d;  // 2 for real+imag
-    myparall->Vector_SumAll(2,len, reinterpret_cast<double*>(ufunc));
+    //myparall->Vector_SumAll(2,len, reinterpret_cast<double*>(ufunc));
 }
 
 
@@ -421,8 +423,6 @@ void vdw_DF::generate_theta_g(
 
     // zero theta
     std::fill(theta, theta + size_t(n2ft3d)*Nqs, 0.0);
-    std::cout << "Zero theta!" << mygrid->rr_dot(rho,theta) << std::endl;
-    std::cout << "nj=" << nj << std::endl;
 
     if (nj > 0)
     {
@@ -440,7 +440,6 @@ void vdw_DF::generate_theta_g(
         for (int i=0; i<n2ft3d; ++i)
         {
            double rh = rho[i];
-           std::cout << "i,rh=" << i << " " << rh << " rh>=dncut:" << (rh>=dncut) << std::endl;
 
            double q0sat = 0.0;
 
@@ -485,7 +484,6 @@ void vdw_DF::generate_theta_g(
                  tsum  += std::pow(q0/qmax, k) / double(k);
                  dtsum += std::pow(q0/qmax, k-1);
               }
-              std::cout << "     - q0=" << q0 << " qmax=" << qmax << " tsum = " << tsum << std::endl;
               q0sat = qmax * (1.0 - std::exp(-tsum));
               double dq0satdq0 = std::exp(-tsum) * dtsum;
 
@@ -536,7 +534,7 @@ void vdw_DF::generate_theta_g(
     std::cout << "vxxtheta=" << mygrid->rr_dot(rho,vxx) << std::endl;
     std::cout << "Nqs=" << Nqs << std::endl;
     for (auto qq=0; qq<Nqs; ++qq)
-       std::cout << "theta=" << mygrid->rr_dot(rho,theta+qq*n2ft3d) << std::endl;
+       std::cout << "theta=" << Efmt(13,6) << mygrid->rr_dot(rho,theta+qq*n2ft3d) << std::endl;
 }
 
 
@@ -629,6 +627,7 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
    double dk = kmax/double(nk);
    for (int k=0; k<=nk; ++k)
       gphi[k] = k*dk;
+   std::cout << "nk=" << nk << " nk1=" << nk1 << std::endl;
 
    double *Gx = mygrid->Gpackxyz(0,0);
    double *Gy = mygrid->Gpackxyz(0,1);
@@ -640,6 +639,7 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
          
       int nx = gg/dk;
       nxpack[k] = util_splint_nx(gphi,nx,gg);
+      std::cout << "k=" << k << " nx=" << nx << " " << util_splint_nx(gphi,nx,gg) << std::endl;
    }
 
 
@@ -680,7 +680,6 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
     std::cout << "theta xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
     std::cout << "theta xxp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxp) << std::endl;
     std::cout << "theta xxe = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxe) << std::endl;
-    std::cout << "theta     = " << Ffmt(13,9) << mygrid->rr_dot(rho,theta) << std::endl;
 
 
     // 4. ufunc(G,i)
