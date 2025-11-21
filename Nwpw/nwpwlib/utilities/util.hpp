@@ -50,7 +50,7 @@ extern double util_splint(const double *, const double *, const double *,
                           const int, int, const double);
 extern double util_dsplint(const double *, const double *, const double *,
                            const int, int, const double);
-extern int util_splint_nx(const double *, int, double);
+extern int util_splint_nx(const double *, int, double, int);
 
 extern void util_filter(int, double *, double, double *);
 

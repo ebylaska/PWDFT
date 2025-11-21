@@ -277,6 +277,9 @@ public:
    void mm_Kiril_Btransform(const int, double *, double *);
  
    void gh_fftb(double *, double *);
+   void hg_fftf(double *, double *);
+   void nbgh_fftb(const int, double *, double *);
+   void hgnb_fftf(double *, double *, const int);
    void ggm_lambda(double, double *, double *, double *);
    void ggm_occ_lambda(double, double *, double *, double *, double *);
    // void ggm_lambda2(double, double *, double *, double *);

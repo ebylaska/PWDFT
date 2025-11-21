@@ -683,12 +683,123 @@ double util_splint(const double *xa, const double *ya, const double *y2a,
 }
 
 
-/**********************************************
- *                                            *
- *              util_splint_nx                *
- *                                            *
- **********************************************/
-int util_splint_nx(const double *xa, int nx, double x)
+/**************************************************************
+ *                                                            *
+ *                    util_splint_nx                          *
+ *                                                            *
+ **************************************************************
+ *  PURPOSE:
+ *  --------
+ *  This routine reproduces the behavior of the Fortran
+ *  function `nwpw_splint_nx` used in NWPW/NWChem for locating
+ *  the position `klo` in a tabulated radial G-grid `xa` such
+ *  that the target value `x` is bracketed:
+ *
+ *        xa[klo] <= x <= xa[klo+1]
+ *
+ *  The returned index `klo` is a **1-based Fortran-style index**,
+ *  because downstream NWPW kernels (e.g., G→phi interpolation,
+ *  projector construction, FFT mapping, etc.) assume Fortran
+ *  indexing semantics.
+ *
+ *
+ *  ARGUMENTS:
+ *  ----------
+ *    xa   : Pointer to array of ascending grid values, xa[0..N-1].
+ *            These represent |G| magnitudes for the spline knots.
+ *
+ *    nx   : Initial guess for the index location of x. This is
+ *            typically computed as `nx = x/dk` where dk is the
+ *            G-grid spacing, following the original Fortran code.
+ *
+ *    x    : The value to be bracketed.
+ *
+ *    N    : Number of elements in xa (Fortran: xa(1..N)).
+ *
+ *
+ *  RETURNS:
+ *  --------
+ *    klo  : A **1-based** index satisfying xa[klo] <= x <= xa[klo+1],
+ *           or the nearest valid bracketing interval if x is outside
+ *           the range of xa.
+ *
+ *           Guaranteed range: 1 <= klo <= N-1.
+ *
+ *
+ *  NUMERICAL BEHAVIOR:
+ *  -------------------
+ *  - The function performs the same sliding-window search used in the
+ *    Fortran version:
+ *
+ *        do while ((xa(klo) > x) .or. (xa(khi) < x))
+ *            adjust klo, khi
+ *        end do
+ *
+ *  - Boundary conditions are explicitly clamped to ensure valid
+ *    Fortran ranges:
+ *        * klo always remains in [1, N-1]
+ *        * khi always remains klo+1 in [2, N]
+ *
+ *  - Array accesses use `xa[klo-1]` and `xa[khi-1]` to translate from
+ *    1-based (Fortran) to 0-based (C++) indexing.
+ *
+ *
+ *  COMPATIBILITY:
+ *  --------------
+ *  - This function is bitwise-compatible with the original Fortran
+ *    `nwpw_splint_nx` logic when xa is monotonic increasing.
+ *  - It is safe for use in multi-threaded G-space loops provided
+ *    nxpack[] and xa[] are read-only.
+ *
+ *
+ *  USAGE:
+ *  ------
+ *     int klo = util_splint_nx(gphi, nx_guess, gg, nk1);
+ *
+ *  where gphi = xa, gg = |G|, nk1 = number of knots.
+ *
+ *
+ *  NOTES:
+ *  ------
+ *  - The Fortran version does not guard against out-of-bounds indices.
+ *    This implementation adds explicit clamping to avoid invalid
+ *    memory accesses while preserving identical spline bracketing.
+ *
+ *  - This function does *not* compute spline coefficients; it only
+ *    locates the interval index needed by the spline evaluation code.
+ *
+ **************************************************************/
+int util_splint_nx(const double *xa, int nx, double x, int N)
+{
+    // Initial Fortran indexing
+    int klo = nx;       // 1..N-1
+    int khi = nx + 1;   // 2..N
+
+    // Clamp to Fortran range
+    if (klo < 1)   { klo = 1;   khi = 2;   }
+    if (khi > N)   { khi = N;   klo = N-1; }
+
+    // Bracket x
+    while ((xa[klo-1] > x) || (xa[khi-1] < x))
+    {
+        if (xa[klo-1] > x) {
+            klo--;
+            khi--;
+            if (klo < 1) { klo = 1; khi = 2; break; }
+        }
+
+        if (xa[khi-1] < x) {
+            klo++;
+            khi++;
+            if (khi > N) { khi = N; klo = N-1; break; }
+        }
+    }
+
+    return klo;   // 1-based Fortran index
+}
+
+
+/*int util_splint_nx(const double *xa, int nx, double x)
 {
     int klo = nx;
     int khi = nx + 1;
@@ -711,6 +822,8 @@ int util_splint_nx(const double *xa, int nx, double x)
 
     return klo;   // Fortran returns klo (1-based), but C++ returns same integer
 }
+*/
+
 
 
 

@@ -172,31 +172,31 @@ void vdw_DF::generate_ufunc(const int nk1,
                 const double *phi_block = phi + static_cast<std::size_t>(indx - 1) * 2 * nk1;
 
                 // Loop over packed G indices, split amongst threads
-                for (int k = 0; k < npack0; ++k)   // Fortran k=tid+1,npack0,nthr
+                for (int k=0; k<npack0; ++k)   // Fortran k=tid+1,npack0,nthr
                 {
                     const double g = Gpack[k];
 
-                    // nxpack(k) gives an index into gphi, 0-based 
-                    const int klo = nxpack[k];      // 0..nk-1
-                    const int khi = klo + 1;        // 1..nk
+                    // nxpack(k) gives an index into gphi, 1-based  fortran indx
+                    const int klo = nxpack[k];      // 1-based, i.e. 1..nk
+                    const int khi = klo + 1;        // 1-based, i.e., 2..nk+1
 
-                    //const int klo0 = klo - 1;       // 0-based
-                    //const int khi0 = khi - 1;
+                    const int klo0 = klo - 1;       // 0-based, i.e.  0..nk-1
+                    const int khi0 = khi - 1;       // 0-based, i.e.  1..nk
 
-                    const double h = gphi[khi] - gphi[klo];
-                    const double a = (gphi[khi] - g) / h;
-                    const double b = (g - gphi[klo]) / h;
+                    const double h = gphi[khi0] - gphi[klo0];
+                    const double a = (gphi[khi0] - g) / h;
+                    const double b = (g - gphi[klo0]) / h;
 
                     const double *phi1 = phi_block + 0 * nk1;  // φ(:,1,indx)
                     const double *phi2 = phi_block + 1 * nk1;  // φ(:,2,indx)
 
                     const double f =
-                        a * phi1[klo]
-                      + b * phi1[khi]
-                      + ((a*a*a - a) * phi2[klo]
-                      +  (b*b*b - b) * phi2[khi]) * h * h / 6.0;
+                        a * phi1[klo0]
+                      + b * phi1[khi0]
+                      + ((a*a*a - a) * phi2[klo0]
+                      +  (b*b*b - b) * phi2[khi0]) * h * h / 6.0;
 
-                    if ((k==0)) std::cout << "taskid_j=" << taskid_j << " k=" << k << " i=" << i << " j=" << j  << " f=" << f << " U=" << Efmt(13,6) << U(k,i) << " klo=" << klo << " khi=" << khi  << std::endl;
+                    //if ((k==0)) std::cout << "taskid_j=" << taskid_j << " k=" << k << " i=" << i << " j=" << j  << " f=" << f << " U=" << Efmt(13,6) << U(k,i) << " klo0=" << klo0 << " khi0=" << khi0  << std::endl;
 
                     // Update ufunc(k,i) and ufunc(k,j), k is 0-based
                     U(k, i) += TH(k, j) * f;
@@ -217,7 +217,7 @@ void vdw_DF::generate_ufunc(const int nk1,
     // Global sum over all 2D-j tasks: D1dB_Vector_SumAll(2*Nqs*nfft3d, ufunc)
     // Treat complex array as contiguous doubles.
     const int len = 2 * Nqs * nfft3d;  // 2 for real+imag
-    //myparall->Vector_SumAll(2,len, reinterpret_cast<double*>(ufunc));
+    myparall->Vector_SumAll(2,len, reinterpret_cast<double*>(ufunc));
 }
 
 
@@ -235,13 +235,11 @@ void vdw_DF::generate_rho(const int ispin,
     const double dncut = 1.0e-30;
 
     // Loop i 
-    for (int i = 0; i<n2ft3d; ++i)
+    for (int i=0; i<n2ft3d; ++i)
     {
         // dn is laid out as dn(k, spin)
-        double dn1 = dn[i + 0*n2ft3d];        // dn(i,1)
-        double dn2 = (ispin == 2)
-                        ? dn[i + 1*n2ft3d]    // dn(i,2)
-                        : 0.0;
+        double dn1 = dn[i +         0*n2ft3d];    // dn(i,1)
+        double dn2 = dn[i + (ispin-1)*n2ft3d];    // dn(i,2)
 
         rho[i] = dn1 + dn2 + dncut;
     }
@@ -393,9 +391,6 @@ void vdw_DF::generate_theta_g(
     // ---- get parallel info ----
     //int tid     = myparall->threadid();
     //int nthr    = myparall->nthreads();
-    std::cout << "A vxctheta=" << mygrid->rr_dot(rho,vxc) << std::endl;
-    std::cout << "A vxxtheta=" << mygrid->rr_dot(rho,vxx) << std::endl;
-    std::cout << "A qmax =" << qmax << std::endl;
 
     int taskid_j = myparall->taskid_j();
     int np_j    = myparall->np_j();
@@ -518,8 +513,11 @@ void vdw_DF::generate_theta_g(
         {
            int jj = jstart + j;
            mygrid->r_zero_ends(theta + jj*n2ft3d);
+           std::cout << "jj=" << jj << " rho*theta_r=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << " scal1=" << scal1 <<std::endl;
            mygrid->rc_fft3d(theta + jj*n2ft3d);
            mygrid->r_SMul(scal1,theta + jj*n2ft3d);
+
+           std::cout << "jj=" << jj << " rho*theta_c=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << " scal1=" << scal1 <<std::endl;
         }
         //mygrid->fft_r2g_batch(theta + jstart*n2ft3d, nj);
         //mygrid->scale_g_batch(theta + jstart*n2ft3d, nj, scal1);
@@ -528,13 +526,6 @@ void vdw_DF::generate_theta_g(
 
     // ---- global reduce sum across processors ----
     myparall->Vector_SumAll(2, Nqs*n2ft3d, theta);
-
-    std::cout << "exxtheta=" << mygrid->rr_dot(rho,exx) << std::endl;
-    std::cout << "vxctheta=" << mygrid->rr_dot(rho,vxc) << std::endl;
-    std::cout << "vxxtheta=" << mygrid->rr_dot(rho,vxx) << std::endl;
-    std::cout << "Nqs=" << Nqs << std::endl;
-    for (auto qq=0; qq<Nqs; ++qq)
-       std::cout << "theta=" << Efmt(13,6) << mygrid->rr_dot(rho,theta+qq*n2ft3d) << std::endl;
 }
 
 
@@ -627,7 +618,6 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
    double dk = kmax/double(nk);
    for (int k=0; k<=nk; ++k)
       gphi[k] = k*dk;
-   std::cout << "nk=" << nk << " nk1=" << nk1 << std::endl;
 
    double *Gx = mygrid->Gpackxyz(0,0);
    double *Gy = mygrid->Gpackxyz(0,1);
@@ -638,8 +628,8 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
       Gpack[k] = gg;
          
       int nx = gg/dk;
-      nxpack[k] = util_splint_nx(gphi,nx,gg);
-      std::cout << "k=" << k << " nx=" << nx << " " << util_splint_nx(gphi,nx,gg) << std::endl;
+      nxpack[k] = util_splint_nx(gphi,nx,gg,nk1);
+      //std::cout << k << " " << nx << " " << gg << " " << nxpack[k] << std::endl;
    }
 
 
@@ -651,11 +641,6 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
 
    qmax = qmesh[Nqs-1];
    qmin = 0.0;
-   std::cout << "INIT QMAX=" << qmax << std::endl;
-
-      
-
-
 }
 
 void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
@@ -676,10 +661,26 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 
     // 3. theta(G)
     generate_theta_g(Nqs, nfft3d, ispin, n2ft3d, Zab, qmin, qmax, rho, agr, xcp, xce, xxp, xxe, theta);
-    std::cout << "theta xcp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xcp) << std::endl;
-    std::cout << "theta xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
-    std::cout << "theta xxp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxp) << std::endl;
-    std::cout << "theta xxe = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxe) << std::endl;
+
+  // 2. IMPORTANT: generate_theta_g modifies xcp,xce,xxp,xxe
+  //    Now compute the theta-contractions EXACTLY as Fortran does:
+  
+  double dum1 = mygrid->rr_dot(rho, xcp);
+  double dum2 = mygrid->rr_dot(rho, xce);
+  std::cout << "theta xcp = " << Ffmt(13,9) << dum1 << std::endl;
+  std::cout << "theta xce = " << Ffmt(13,9) << dum2 << std::endl;
+  
+  dum1 = mygrid->rr_dot(rho, xxp);
+  dum2 = mygrid->rr_dot(rho, xxe);
+  std::cout << "theta xxp = " << Ffmt(13,9) << dum1 << std::endl;
+  std::cout << "theta xxe = " << Ffmt(13,9) << dum2 << std::endl;
+    //std::cout << "theta xcp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xcp) << std::endl;
+    //std::cout << "theta xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
+    //std::cout << "theta xxp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxp) << std::endl;
+    //std::cout << "theta xxe = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxe) << std::endl;
+
+  dum1 = mygrid->rr_dot(rho, theta);
+  std::cout << "rho*theta = " << Ffmt(13,9) << dum1 << std::endl;
 
 
     // 4. ufunc(G,i)
