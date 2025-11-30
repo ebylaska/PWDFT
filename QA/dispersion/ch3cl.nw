@@ -31,11 +31,13 @@ nwpw
    
    xc pbe-vdw
    #xc pbe
-   cutoff 10.0
+   cutoff 30.0
+
+   tolerances 1.0e-9 1.0e-9
 
 end
 
-#task pspw energy
-task pspw noit_energy
+task pspw energy
+#task pspw noit_energy
 
 

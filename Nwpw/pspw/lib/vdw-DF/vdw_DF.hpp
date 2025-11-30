@@ -5,7 +5,8 @@
 
 */
 
-#include "PGrid.hpp"
+//#include "PGrid.hpp"
+#include "Pneb.hpp"
 #include "Parallel.hpp"
 #include "Control2.hpp"
 
@@ -25,7 +26,7 @@ class vdw_DF  {
 
 private: 
 
-   PGrid    *mygrid;
+   Pneb     *mygrid;
    Parallel *myparall;
 
 
@@ -37,7 +38,9 @@ private:
    double qmin, qmax, Zab;   // <<< ADD THESE
 
 
-   double *qmesh, *ya, *ya2, *gphi, *phi, *theta, *ufunc;
+   double *theta_c, *ufunc_c;
+   double *theta, *ufunc;
+   double *qmesh, *ya, *ya2, *gphi, *phi;
    double *xcp, *xce, *xxp, *xxe, *rho, *Gpack;
    int *nxpack;
 
@@ -45,7 +48,7 @@ private:
    void init_poly();
    void poly(int, double, double &, double &);
    void generate_rho(const int, const int, const double *, double *);
-   void generate_theta_g(int, int, int, int, double, double, double, const double *,const double *,
+   void generate_theta_g(int, int, int, int, double, double, double, const double *, const double *,
                          double *, double *, double *, double *, double *);
    void generate_ufunc(const int, const int, const double *, const double *, const int, const int,
                        const double *, const int *, const std::complex<double> *, std::complex<double> *);
@@ -57,7 +60,7 @@ private:
 public:
 
    /* constructor */
-   vdw_DF(PGrid *, Control2 &, bool);
+   vdw_DF(Pneb *, Control2 &, bool);
  
    /* destructor */
 
@@ -65,13 +68,15 @@ public:
      * @brief Destructor for the vdw_DF class.
      */
    ~vdw_DF() {
+       delete [] theta_c;
+       delete [] ufunc_c;
+       delete [] theta;
+       delete [] ufunc;
        delete [] qmesh;
        delete [] ya;
        delete [] ya2;
        delete [] gphi;
        delete [] phi;
-       delete [] theta;
-       delete [] ufunc;
        delete [] xcp;
        delete [] xce;
        delete [] xxp;

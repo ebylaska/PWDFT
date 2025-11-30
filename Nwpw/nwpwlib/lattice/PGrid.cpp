@@ -4036,7 +4036,7 @@ void PGrid::c_pack_SMul(const int nb, const double alpha, double *b)
 {
    int ng = 2 * (nida[nb] + nidb[nb]);
 
-   for (auto i = 0; i < ng; ++i)
+   for (auto i=0; i<ng; ++i)
       b[i] *= alpha;
 }
 

@@ -1091,98 +1091,102 @@ void Pneb::hg_fftf(double *psi_r, double *psi)
    }
 }
 
+
 /*************************************
  *                                   *
- *         Pneb::nbgh_fftb           *
+ *         Pneb::nbngh_fftb          *
  *                                   *
  **************************************
- *  Perform a backward FFT from **packed G-space**
- *  to real-space for nb wavefunctions.
+ *  General backward FFT:
  *
- *  This routine implements the inverse transform
- *  used throughout the NWChem/NWPW plane-wave
- *  infrastructure, matching the Fortran routine:
+ *        ψ(G, nb)  →  ψ(r)
  *
- *        Grsm_gh_fftb
+ *  for band index `nb`, operating on `n` wave
+ *  functions.  This routine is the C++ analogue of
+ *  the Fortran packed-G → real-space transform used
+ *  in:
  *
- *  The transform takes each G-space wavefunction
- *  (stored in **packed G-list** format) and returns
- *  a real-space grid function on the full n2ft3d
- *  real grid.
+ *       Grsm_nbngh_fftb
+ *
+ *  It performs the inverse 3D FFT from **packed
+ *  G-space** (size = 2 * npack(nb)) into a full
+ *  **real-space** vector (size = n2ft3d).
  *
  *  INPUT:
- *    nb      – FFT block index (1-based in Fortran).
- *               Determines packed G-space size via:
- *                   npack(nb)
+ *    nb      – band index used for G-packing
+ *    n       – number of wavefunctions to transform
  *
- *    psi     – Input wavefunctions ψ(G) in *packed*
- *              G-space.  Each block has size:
+ *    psi     – input array storing `n` packed
+ *              G-space wavefunctions in blocks of:
  *
- *                   2 * npack(nb)
+ *                  2 * npack(nb)
  *
- *              where the factor of 2 is real+imag.
+ *              psi[i] is located at:
+ *
+ *                  psi + i * (2*npack(nb))
  *
  *  OUTPUT:
- *    psi_r   – Real-space wavefunctions ψ(r),
- *              stored in blocks of size:
+ *    psi_r   – output real-space array storing `n`
+ *              wavefunctions in blocks of size:
  *
- *                   n2ft3d
+ *                  n2ft3d
  *
- *  PACKED G-SPACE FORMAT:
- *    This is the same compact list used by all NWPW
- *    kernels and matches the Fortran conventions for:
+ *              psi_r[i] is located at:
  *
- *        Grsm_hg_fftf  (forward)
- *        Grsm_gh_fftb  (backward)
+ *                  psi_r + i * n2ft3d
  *
- *    It is *not* a full 3D FFT cube.  Only the
- *    irreducible set of G-vectors is stored.
+ *  PIPELINED TRANSFORM:
  *
- *  PIPELINED PROCESSING:
- *    The FFT is executed in a pipeline of size:
+ *    The backward FFT is executed using the PFFT3b
+ *    pipeline:
  *
- *        PGrid::nffts_max
+ *         cr_pfft3b_queuein()   – queue packed-G blocks
+ *         cr_pfft3b_queueout()  – retrieve r-space results
  *
- *    Each iteration:
+ *    A maximum of:
  *
- *      (1) cr_pfft3b_queuein()
- *             - Queue idum packed G-vectors for
- *               inverse FFT.
+ *         PGrid::nffts_max
  *
- *      (2) cr_pfft3b_queueout()
- *             - Retrieve jdum transformed blocks,
- *               now in real space.
+ *    transforms are in flight.
  *
- *    Data layout is controlled by:
+ *    Variables:
+ *         idum = number of states queued in this batch
+ *         jdum = number of completed FFTs retrieved
  *
- *        shift1 = 2 * npack(nb)
- *        shift2 = n2ft3d
  *
- *    ensuring exact alignment with Fortran’s block-
- *    and stride-based memory expectations.
+ *  MEMORY STRIDES:
+ *
+ *       shift1 = 2 * npack(nb)   (input stride)
+ *       shift2 = n2ft3d          (output stride)
+ *
+ *    So wavefunction i occupies:
+ *
+ *       INPUT : psi   + i * shift1
+ *       OUTPUT: psi_r + i * shift2
+ *
  *
  *  NOTES:
- *    • This routine is the inverse of hgnb_fftf().
- *    • psi and psi_r must not overlap in memory.
- *    • The packed G-ordering must match that used by
- *      PGrid::npack(nb), Gpack(k), and nxpack(k).
- *    • This routine must remain bitwise compatible
- *      with the Fortran implementation for the
- *      VDW-DF, PWDFT, and orbital-spline machinery
- *      to produce identical energies and forces.
+ *    • psi and psi_r must not alias.
+ *    • This routine is the exact inverse of
+ *        Pneb::nbgh_fftf(nb, n, psi_r, psi)
+ *      and both must remain consistent with the
+ *      NWPW G-vector packing convention.
+ *    • If packing changes, both forward and backward
+ *      routines must be updated together.
  *
  **********************************************/
-void Pneb::nbgh_fftb(const int nb, double *psi, double *psi_r)
+void Pneb::nbngh_fftb(const int nb, const int n, double *psi)
 {
    nwpw_timing_function ftimer(1);
-   int n, done;
+   int done;
    int indx1, indx1n, shift1;
    int indx2, indx2n, shift2;
    int nffts_pipeline = PGrid::nffts_max;
    //std::cout << "gh_fftb: nffts=" << nffts_pipeline << std::endl;
  
-   n = neq[0] + neq[1];
-   shift1 = 2 * PGrid::npack(nb);
+   //n = neq[0] + neq[1];
+   //shift1 = 2 * PGrid::npack(nb);
+   shift1 = n2ft3d;
    shift2 = n2ft3d;
    indx1 = indx1n = 0;
    indx2 = indx2n = 0;
@@ -1204,7 +1208,7 @@ void Pneb::nbgh_fftb(const int nb, double *psi, double *psi_r)
          // Assuming n, indx2, and nffts_pipeline are defined
          int jdum = std::min(n - indx2, nffts_pipeline);
 
-         cr_pfft3b_queueout(nb, jdum, psi_r + indx2n);
+         cr_pfft3b_queueout(nb, jdum, psi + indx2n);
 
          indx2n += jdum*shift2;
          indx2  += jdum;;
@@ -1217,83 +1221,110 @@ void Pneb::nbgh_fftb(const int nb, double *psi, double *psi_r)
 
 
 
-/*************************************
- *                                   *
- *         Pneb::hgnb_fftf           *
- *                                   *
+/**************************************
+ *                                    *
+ *         Pneb::nbnhg_fftf           *
+ *                                    *
  **************************************
- *  Perform a forward FFT from real-space to 
- *  **packed G-space** for nb wavefunctions.
+ *  General forward FFT:
  *
- *  This routine wraps the NWChem/NWPW real→G 
- *  transform used in PSPW/VDW-DF and implements
- *  the exact packed-G layout expected by all
- *  density–functional and VDW kernels.
+ *        ψ(r)  →  ψ(G, nb)
+ *
+ *  for band index `nb`, operating on `n` independent
+ *  wavefunctions stored in real space.
+ *
+ *  This routine is the C++ analogue of the Fortran
+ *  "nbnhg_fftf" transform used in NWPW and performs a
+ *  real-space → packed-G Fourier transform using the
+ *  PFFT3f pipeline.
  *
  *  INPUT:
- *    psi_r   – Real-space wavefunctions stored
- *              consecutively in blocks of size:
- *                 n2ft3d  (the real-space grid size)
+ *    nb      – band index specifying the G-vector
+ *              packing scheme for this band.
  *
- *    nb      – FFT block index (1-based in Fortran),
- *              determines the packed G-space size via:
- *                   npack(nb)
+ *    n       – number of wavefunctions to transform.
+ *
+ *    psi_r   – input real-space array of size:
+ *
+ *                  n2ft3d per wavefunction
+ *
+ *              Wavefunction i begins at:
+ *
+ *                  psi_r + i * n2ft3d
  *
  *  OUTPUT:
- *    psi     – Packed G-space wavefunctions, stored in
- *              blocks of size:
- *                 2 * npack(nb)
- *              (real + imag parts for each packed G vector)
+ *    psi     – output array in *packed G-space* with
+ *              size:
  *
- *  PACKED G-SPACE:
- *    Unlike a full FFT cube of size nfft3d, the NWPW
- *    infrastructure stores only the irreducible list of
- *    G-vectors required for plane-wave operations:
+ *                  2 * npack(nb)
  *
- *          k = 1 … npack(nb)
+ *              per wavefunction.
  *
- *    with layout identical to Fortran Grsm_hg_fftf and
- *    Grsm_hg_fftb routines.
+ *              Wavefunction i begins at:
+ *
+ *                  psi + i * (2 * npack(nb))
+ *
  *
  *  PIPELINED EXECUTION:
- *    The transform is pipelined over a queue of size
- *    PGrid::nffts_max.  Each cycle:
  *
- *        1. rc_pfft3f_queuein()  – queue input psi_r blocks
- *        2. rc_pfft3f_queueout() – retrieve transformed blocks
+ *    The transform uses the pipelined PFFT3f API:
  *
- *    shifting over the input/output buffers using:
+ *         rc_pfft3f_queuein(nb, batch, ...)
+ *         rc_pfft3f_queueout(nb, batch, ...)
  *
- *        shift1 = n2ft3d
- *        shift2 = 2 * npack(nb)
+ *    At most:
  *
- *    ensuring perfect compatibility with Fortran layout.
+ *         PGrid::nffts_max
+ *
+ *    transforms are in flight simultaneously.
+ *
+ *    Variables:
+ *
+ *       idum = number of ψ(r) batches queued
+ *       jdum = number of ψ(G) batches retrieved
+ *
+ *
+ *  MEMORY STRIDES:
+ *
+ *       shift1 = n2ft3d               (input stride)
+ *       shift2 = 2 * npack(nb)        (output stride)
+ *
+ *    so:
+ *
+ *       INPUT : ψ_r[i]  = psi_r + i * shift1
+ *       OUTPUT: ψ_G[i]  = psi   + i * shift2
+ *
+ *
+ *  RELATION TO INVERSE TRANSFORM:
+ *
+ *     This routine is the forward counterpart to:
+ *
+ *         Pneb::nbngh_fftb(nb, n, psi, psi_r)
+ *
+ *     and both must remain consistent with the NWPW
+ *     G-packing rules for band `nb`.
+ *
  *
  *  NOTES:
- *    • psi_r and psi may alias different buffers.
- *    • The FFT operates only along the grid represented by nb.
- *    • This routine does *not* produce a full Fourier cube.
- *      It produces the compact G-list used by all PW kernels.
- *
- *  WARNING:
- *    This routine *must* remain consistent with Fortran 
- *    Grsm_hg_fftf. Any mismatch in packed ordering or block
- *    strides will lead to incorrect VDW-DF θ(G), ufunc(G),
- *    nonlocal energies, and forces.
+ *    • psi_r and psi must not alias.
+ *    • The G-packing (npack(nb)) is band-dependent.
+ *    • If the G-packing changes, this routine and the
+ *      matching backward transform must both be updated.
  *
  **********************************************/
-void Pneb::hgnb_fftf(double *psi_r, double *psi, const int nb) 
+void Pneb::nbnhg_fftf(const int nb, const int n, double *psi)
 {
    nwpw_timing_function ftimer(1);
-   int n, done;
+   int done;
    int indx1, indx1n, shift1;
    int indx2, indx2n, shift2;
    int nffts_pipeline = PGrid::nffts_max;
    //std::cout << "hg_fftf: nffts=" << nffts_pipeline << std::endl;
 
-   n = neq[0] + neq[1];
+   //n = neq[0] + neq[1];
    shift1 = n2ft3d;
-   shift2 = 2 * PGrid::npack(nb);
+   //shift2 = 2 * PGrid::npack(nb);
+   shift2 = n2ft3d;
 
    //shift1 = 2 * PGrid::npack(1);
    //shift2 = n2ft3d;
@@ -1307,7 +1338,8 @@ void Pneb::hgnb_fftf(double *psi_r, double *psi, const int nb)
          // Assuming n, indx1, and nffts_pipeline are defined
          int idum = std::min(n - indx1, nffts_pipeline);
 
-         rc_pfft3f_queuein(nb, idum, psi_r + indx1n);
+         //rc_pfft3f_queuein(nb, idum, psi_r + indx1n);
+         rc_pfft3f_queuein(nb, idum, psi + indx1n);
 
          indx1n += idum*shift1;
          indx1  += idum;
@@ -1327,6 +1359,19 @@ void Pneb::hgnb_fftf(double *psi_r, double *psi, const int nb)
    }
 }
 
+void Pneb::nbnhg_SMul(const int nb, const int n, const double alpha, double *psi)
+{
+   int shift1 = n2ft3d;
+   for (auto i=0; i<n; ++i)
+      PGrid::c_pack_SMul(nb,alpha, psi+i*n2ft3d);
+}
+
+void Pneb::nh_zero_ends(const int n, double *psi)
+{
+   int shift1 = n2ft3d;
+   for (auto i=0; i<n; ++i)
+      d3db::r_zero_ends(psi+i*n2ft3d);
+}
 
 
 

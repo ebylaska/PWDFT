@@ -303,6 +303,14 @@ void vdw_DF::generate_potentials(int Nqs,
 
     if (nj > 0)
     {
+        //mygrid->nbngh_fftb(0,nj,ufunc+jstart*n2ft3d);
+        for (int j=0; j<nj; ++j) 
+        {
+           int jj = jstart + j;
+           mygrid->c_unpack(0,ufunc+jj*n2ft3d);
+           mygrid->cr_pfft3b(0,ufunc+jj*n2ft3d);
+        }
+       
         // ---- main loops: i = real-space grid, j = q index block ----
         for (int i=0; i<n2ft3d; ++i)
         {
@@ -393,7 +401,7 @@ void vdw_DF::generate_theta_g(
     //int nthr    = myparall->nthreads();
 
     int taskid_j = myparall->taskid_j();
-    int np_j    = myparall->np_j();
+    int np_j     = myparall->np_j();
 
     int nx = mygrid->nx;
     int ny = mygrid->ny;
@@ -509,19 +517,18 @@ void vdw_DF::generate_theta_g(
 
 
         // ---- transform θ(r,j) → θ(G,j) ----
-        for (int j=0; j<nj; j++) 
-        {
-           int jj = jstart + j;
-           mygrid->r_zero_ends(theta + jj*n2ft3d);
-           std::cout << "jj=" << jj << " rho*theta_r=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << " scal1=" << scal1 <<std::endl;
-           mygrid->rc_fft3d(theta + jj*n2ft3d);
-           mygrid->r_SMul(scal1,theta + jj*n2ft3d);
-
-           std::cout << "jj=" << jj << " rho*theta_c=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << " scal1=" << scal1 <<std::endl;
-        }
-        //mygrid->fft_r2g_batch(theta + jstart*n2ft3d, nj);
-        //mygrid->scale_g_batch(theta + jstart*n2ft3d, nj, scal1);
-
+        //for (int j=0; j<nj; j++) 
+        //{
+        //   int jj = jstart + j;
+        //   mygrid->r_zero_ends(theta + jj*n2ft3d);
+           //std::cout << "jj=" << jj << " rho*theta_r=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << std::endl;
+        //   mygrid->rc_pfft3f(0,theta+jj*n2ft3d);
+        //   mygrid->c_pack(0,theta+jj*n2ft3d);
+        //   mygrid->c_pack_SMul(0,scal1,theta+jj*n2ft3d);
+        //}
+        mygrid->nh_zero_ends(nj,theta +jstart*n2ft3d);
+        mygrid->nbnhg_fftf(0,nj,theta +jstart*n2ft3d);
+        mygrid->nbnhg_SMul(0,nj,scal1,theta +jstart*n2ft3d);
     }
 
     // ---- global reduce sum across processors ----
@@ -546,7 +553,7 @@ void vdw_DF::generate_theta_g(
  * @param ny The number of grid points in the y-direction.
  * @param nz The number of grid points in the z-direction.
  */
-vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
+vdw_DF::vdw_DF(Pneb *inmygrid, Control2 &control, bool is_vdw2)
 {
    mygrid   = inmygrid;
    myparall = mygrid->d3db::parall;
@@ -588,13 +595,15 @@ vdw_DF::vdw_DF(PGrid *inmygrid, Control2 &control, bool is_vdw2)
    nk1 = nk + 1;
 
 
+   theta  = new (std::nothrow) double[Nqs*n2ft3d]();
+   ufunc  = new (std::nothrow) double[Nqs*n2ft3d]();
+
    qmesh  = new (std::nothrow) double[Nqs]();
    ya     = new (std::nothrow) double[Nqs*Nqs]();
    ya2    = new (std::nothrow) double[Nqs*Nqs]();
    gphi   = new (std::nothrow) double[nk1]();
    phi    = new (std::nothrow) double[nk1*Nqs*(Nqs+1)]();
-   theta  = new (std::nothrow) double[Nqs*n2ft3d]();
-   ufunc  = new (std::nothrow) double[Nqs*n2ft3d]();
+
    xcp    = new (std::nothrow) double[2*n2ft3d]();
    xce    = new (std::nothrow) double[2*n2ft3d]();
    xxp    = new (std::nothrow) double[2*n2ft3d]();
@@ -648,16 +657,16 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 {
     // 1. LDA pieces
     v_exc(ispin, n2ft3d, const_cast<double*>(dn), xcp, xce, rho);
-    std::cout << "VXCA = " << Ffmt(13,9) << mygrid->rr_dot(dn,xce) << std::endl;
-    std::cout << "VXCAA= " << Ffmt(13,9) << mygrid->rr_dot(dn,xcp) << std::endl;
+    //std::cout << "VXCA = " << Ffmt(13,9) << mygrid->rr_dot(dn,xce) << std::endl;
+    //std::cout << "VXCAA= " << Ffmt(13,9) << mygrid->rr_dot(dn,xcp) << std::endl;
     if (ispin == 1)
         v_dirac(ispin, n2ft3d, const_cast<double*>(dn), xxp, xxe, rho);
-    std::cout << "VXCB = " << Ffmt(13,9) << mygrid->rr_dot(dn,xxp) << std::endl;
+    //std::cout << "VXCB = " << Ffmt(13,9) << mygrid->rr_dot(dn,xxp) << std::endl;
 
     // 2. build rho
     generate_rho(ispin, n2ft3d, dn, rho);
     mygrid->r_zero_ends(rho);
-    std::cout << "RHOA = " << Ffmt(13,9) << mygrid->rr_dot(rho,rho) << std::endl;
+    //std::cout << "RHOA = " << Ffmt(13,9) << mygrid->rr_dot(rho,rho) << std::endl;
 
     // 3. theta(G)
     generate_theta_g(Nqs, nfft3d, ispin, n2ft3d, Zab, qmin, qmax, rho, agr, xcp, xce, xxp, xxe, theta);
@@ -665,34 +674,34 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
   // 2. IMPORTANT: generate_theta_g modifies xcp,xce,xxp,xxe
   //    Now compute the theta-contractions EXACTLY as Fortran does:
   
-  double dum1 = mygrid->rr_dot(rho, xcp);
-  double dum2 = mygrid->rr_dot(rho, xce);
-  std::cout << "theta xcp = " << Ffmt(13,9) << dum1 << std::endl;
-  std::cout << "theta xce = " << Ffmt(13,9) << dum2 << std::endl;
+  //double dum1 = mygrid->rr_dot(rho, xcp);
+  //double dum2 = mygrid->rr_dot(rho, xce);
+  //std::cout << "theta xcp = " << Ffmt(13,9) << dum1 << std::endl;
+  //std::cout << "theta xce = " << Ffmt(13,9) << dum2 << std::endl;
   
-  dum1 = mygrid->rr_dot(rho, xxp);
-  dum2 = mygrid->rr_dot(rho, xxe);
-  std::cout << "theta xxp = " << Ffmt(13,9) << dum1 << std::endl;
-  std::cout << "theta xxe = " << Ffmt(13,9) << dum2 << std::endl;
+  //dum1 = mygrid->rr_dot(rho, xxp);
+  //dum2 = mygrid->rr_dot(rho, xxe);
+  //std::cout << "theta xxp = " << Ffmt(13,9) << dum1 << std::endl;
+  //std::cout << "theta xxe = " << Ffmt(13,9) << dum2 << std::endl;
     //std::cout << "theta xcp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xcp) << std::endl;
     //std::cout << "theta xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
     //std::cout << "theta xxp = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxp) << std::endl;
     //std::cout << "theta xxe = " << Ffmt(13,9) << mygrid->rr_dot(rho,xxe) << std::endl;
 
-  dum1 = mygrid->rr_dot(rho, theta);
-  std::cout << "rho*theta = " << Ffmt(13,9) << dum1 << std::endl;
+  //dum1 = mygrid->cc_pack_dot(0,theta, theta);
+  //std::cout << "theta*theta = " << Efmt(13,9) << dum1 << std::endl;
 
 
     // 4. ufunc(G,i)
     generate_ufunc(nk1, Nqs, gphi, phi, npack0, nfft3d, Gpack, nxpack,
                    reinterpret_cast<const std::complex<double>*>(theta), 
                    reinterpret_cast<std::complex<double>*>(ufunc));
-    std::cout << "rho*ufunc = " << Ffmt(13,9) << mygrid->rr_dot(rho,ufunc) << std::endl;
+    //std::cout << "rho*ufunc = " << Ffmt(13,9) << mygrid->rr_dot(rho,ufunc) << std::endl;
 
     // 5. exc, fn, fdn
     generate_potentials(Nqs, nfft3d, ispin, n2ft3d, ufunc, xce, xcp, xxe,
                         xce+n2ft3d, xxp, rho, exc, fn, fdn);
-    std::cout << "xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
+    //std::cout << "xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
 }
 
 
