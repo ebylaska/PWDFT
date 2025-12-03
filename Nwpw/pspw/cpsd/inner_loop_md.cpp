@@ -203,10 +203,13 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       
       /* get the semicore force - needs to be checked */
       if (mypsp->has_semicore()) mypsp->semicore_xc_fion(xcp,fion);
-      
+
       /* get forces from external Efield */
-      if (mypsp->myefield->efield_on)
-         mypsp->myefield->efield_ion_fion(fion);
+      if (mypsp->myefield->efield_on) mypsp->myefield->efield_ion_fion(fion);
+
+      /* get dispersion force */
+      if (myion->has_ion_disp()) myion->disp_force(fion);
+
       
       /* car-parrinello Verlet step */
       if (verlet) 
@@ -387,6 +390,13 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
             E[49] = mypsp->myefield->efield_ion_energy();
             E[1] += E[49];
          }
+      }
+
+      /* grimme dispersion energy */
+      if (myion->has_ion_disp())
+      {
+         E[33] = myion->disp_energy();
+         E[1] += E[33];
       }
      
       /* Running Sums - Energy and Energy**2 sum */

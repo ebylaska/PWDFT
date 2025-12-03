@@ -830,8 +830,8 @@ double Ion::disp_energy()
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion];
-      double g_lat[9];
+      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
       int icharge[nion];
 
       for (auto ii=0; ii<nion; ++ii)
@@ -923,8 +923,8 @@ void Ion::disp_force(double* fion)
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion];
-      double g_lat[9];
+      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
       int icharge[nion];
 
       for (auto ii=0; ii<nion; ++ii)
@@ -961,8 +961,8 @@ void Ion::disp_stress(double* stress)
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion];
-      double g_lat[9];
+      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
       int icharge[nion];
 
       for (auto ii=0; ii<nion; ++ii)

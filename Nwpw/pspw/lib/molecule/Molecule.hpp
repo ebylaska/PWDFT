@@ -502,6 +502,9 @@ public:
       if (myelectron->is_aperiodic())
          myion->ion_ion_force(grad_ion);
 
+      if (myion->has_ion_disp()) 
+         myion->disp_force(grad_ion);
+
       myion->add_contraint_force(grad_ion);
    }
  

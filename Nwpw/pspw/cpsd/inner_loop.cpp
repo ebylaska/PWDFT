@@ -232,7 +232,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
          if (mypsp->myefield->efield_on)
             mypsp->myefield->efield_ion_fion(fion);
         
-         /* steepest descent step */
+         /* get dispersion force */
+         if (myion->has_ion_disp()) 
+            myion->disp_force(fion);
+
+         /* constraint force */
          myion->add_contraint_force(fion);
 
          /* steepest descent step */
@@ -359,6 +363,12 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       E[0] = E[0] + E[71];
    }
 
+   /* grimme dispersion energy */
+   if (myion->has_ion_disp())
+   {
+      E[33] = myion->disp_energy();
+      E[0] = E[0] + E[33];
+   }
  
    /* set convergence variables */
    *deltae = (E[0] - Eold) / (dt * control.loop(0));
