@@ -529,12 +529,12 @@ public:
       return gga;
    }
 
-   // vdw
+   // vdw and grimme
    std::string options_disp() { return poptions_disp; }
-   bool has_disp()           { return phas_disp; }
-   bool has_vdw()            { return phas_vdw; }
-   bool is_vdw2()            { return pis_vdw2; }
-   bool is_grimme2()         { return pis_grimme2; }
+   bool has_disp()            { return phas_disp; }
+   bool has_vdw()             { return phas_vdw; }
+   bool is_vdw2()             { return pis_vdw2; }
+   bool is_grimme2()          { return pis_grimme2; }
 
  
    // cubefiles

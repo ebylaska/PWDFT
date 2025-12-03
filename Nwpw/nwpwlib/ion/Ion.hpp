@@ -486,6 +486,7 @@ public:
 
 
    // ion dispersion access functions
+   bool has_ion_disp() {return disp_on;}
    double disp_energy();
    void disp_force(double *);
    void disp_stress(double *);

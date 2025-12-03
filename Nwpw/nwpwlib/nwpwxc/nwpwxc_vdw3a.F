@@ -25,11 +25,11 @@ C GNU General Public License for more details.
 
 C For the GNU General Public License, see <http://www.gnu.org/licenses/>
 
-
  
       subroutine  nwpwxc_vdw3_dftd3(options,n,iz,xyz,lat,eout,g,g_lat)
       implicit none
-      character*(*) options
+      character*256 options
+      !character*(*) options
 c number of atoms
       integer n
 c cardinal numbers of elements
@@ -249,6 +249,7 @@ c store it as sqrt because the geom. av. is taken
 !         r2r4(i)=sqrt(dum)                         
 !      enddo
 c init
+
       echo=.true. 
       grad=.false.
       pot =.false.
@@ -1653,13 +1654,23 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 **** #include "global.fh"
 **** #include "msgtypesf.h"
+!#include "parallel_fortran.fh"
+
+      external parallel_fortran_sumall
+      external parallel_fortran_vector_sumall
+      external parallel_fortran_vector_isumall
+      external parallel_fortran_numprocs
+      external parallel_fortran_taskid
 
       integer taskid,np,pcount
 
+      call parallel_fortran_numprocs(np)
+      call parallel_fortran_taskid(taskid)
       !np     = GA_Nnodes()
       !taskid = GA_Nodeid()
-      np     = 1
-      taskid = 0
+      !np     = 1
+      !write(*,*) "np=",np," taskid=",taskid
+      !taskid = 0
       pcount = 0
 
 
@@ -1696,6 +1707,7 @@ c           if(r2.gt.rthr) cycle
          enddo
       enddo
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,e6,1,'+')
+      if (np.gt.1) call parallel_fortran_sumall(e6)
 
 
       else
@@ -1776,7 +1788,14 @@ c store for abc damping
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,dmp,n*n,'+')
       !if (np.gt.1) call GA_IGOP(9+MSGINT,icomp,n*n,'+')
 
-      if(noabc)return
+      if (np.gt.1) call parallel_fortran_sumall(e6)
+      if (np.gt.1) call parallel_fortran_sumall(e8)
+      if (np.gt.1) call parallel_fortran_vector_sumall(cc6ab,n*n)
+      if (np.gt.1) call parallel_fortran_vector_sumall(r2ab,n*n)
+      if (np.gt.1) call parallel_fortran_vector_sumall(dmp,n*n)
+      if (np.gt.1) call parallel_fortran_vector_isumall(icomp,n*n)
+
+      if(noabc) return
 
 C compute non-additive third-order energy using averaged C6
       do iat=1,n
@@ -1813,6 +1832,7 @@ c angular terms with law of cosines
          enddo
       enddo
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,e63,1,'+')
+      if (np.gt.1) call parallel_fortran_sumall(e63)
 
       endif
 

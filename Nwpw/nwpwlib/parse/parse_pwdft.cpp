@@ -916,6 +916,28 @@ static json parse_steepest_descent(json sdjson, int *curptr, std::vector<std::st
          sdjson["loop"] = loop;
       } else if (mystring_contains(line, "xc")) {
          sdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+
+         // set the grimme and vdw options
+         std::string options_disp;
+         bool has_disp   = false;
+         bool has_vdw    = false;
+         bool is_grimme2 = false;
+         bool is_vdw2    = false;
+         if      (mystring_contains(sdjson["xc"], "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+         else if (mystring_contains(sdjson["xc"], "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+         else if (mystring_contains(sdjson["xc"], "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+         else if (mystring_contains(sdjson["xc"], "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+         else if (mystring_contains(sdjson["xc"], "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
+
+         if      (mystring_contains(sdjson["xc"], "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+         else if (mystring_contains(sdjson["xc"], "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+
+         sdjson["has_disp"]     = has_disp;
+         sdjson["is_grimme2"]   = is_grimme2;
+         sdjson["options_disp"] = options_disp;
+         sdjson["has_vdw"]      = has_vdw;
+         sdjson["is_vdw2"] =      is_vdw2;
+
       } else if (mystring_contains(line, "geometry_optimize")) {
          sdjson["geometry_optimize"] = true;
          if (mystring_contains(line, " off"))   sdjson["geometry_optimize"] = false;
@@ -993,6 +1015,28 @@ static json parse_car_parrinello(json cpmdjson, int *curptr,
       cpmdjson["loop"] = loop;
     } else if (mystring_contains(line, "xc")) {
       cpmdjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+
+      // set the grimme and vdw options
+      std::string options_disp;
+      bool has_disp   = false;
+      bool has_vdw    = false;
+      bool is_grimme2 = false;
+      bool is_vdw2    = false;
+      if      (mystring_contains(cpmdjson["xc"], "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+      else if (mystring_contains(cpmdjson["xc"], "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+      else if (mystring_contains(cpmdjson["xc"], "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+      else if (mystring_contains(cpmdjson["xc"], "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+      else if (mystring_contains(cpmdjson["xc"], "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
+
+      if      (mystring_contains(cpmdjson["xc"], "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+      else if (mystring_contains(cpmdjson["xc"], "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+
+      cpmdjson["has_disp"]     = has_disp;
+      cpmdjson["is_grimme2"]   = is_grimme2;
+      cpmdjson["options_disp"] = options_disp;
+      cpmdjson["has_vdw"]      = has_vdw;
+      cpmdjson["is_vdw2"]      = is_vdw2;
+
     } else if (mystring_contains(line, "input_wavefunction_filename")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)
@@ -1498,6 +1542,56 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["bo_algorithm"] = 0;
     } else if (mystring_contains(line, "xc")) {
         nwpwjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+        
+        // set the grimme and vdw options
+        std::string options_disp;
+        bool has_disp   = false;
+        bool has_vdw    = false;
+        bool is_grimme2 = false;
+        bool is_vdw2    = false;
+        if      (mystring_contains(nwpwjson["xc"], "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+        else if (mystring_contains(nwpwjson["xc"], "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+        else if (mystring_contains(nwpwjson["xc"], "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+        else if (mystring_contains(nwpwjson["xc"], "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+        else if (mystring_contains(nwpwjson["xc"], "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
+
+        if      (mystring_contains(nwpwjson["xc"], "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+        else if (mystring_contains(nwpwjson["xc"], "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+
+        if (has_disp)
+        {
+           auto add_disp = [&](const std::string& func_flag) {
+              if (!has_disp) return;
+              // ensure exactly one -func … prefix
+              if (!func_flag.empty()) {
+                 // always keep a leading space before subsequent flags
+                 options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
+              }
+           };
+       
+           if      (mystring_contains(nwpwjson["xc"], "revpbe0")) {add_disp("revpbe0");}
+           else if (mystring_contains(nwpwjson["xc"], "pbe0"))    {add_disp("pbe0");}
+           else if (mystring_contains(nwpwjson["xc"], "hse"))     {add_disp("hse06");}
+           else if (mystring_contains(nwpwjson["xc"], "bnl"))     {add_disp("hse06");}  // if that’s really what you want
+           else if (mystring_contains(nwpwjson["xc"], "b3lypr"))  {add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
+           else if (mystring_contains(nwpwjson["xc"], "blyp0"))   {add_disp("b3-lyp");} // if this alias is desired
+       
+           // Non-hybrid GGAs (specific → general)
+           else if (mystring_contains(nwpwjson["xc"], "revpbe"))     {add_disp("revpbe");}
+           else if (mystring_contains(nwpwjson["xc"], "pbesol"))     {add_disp("pbesol");}
+           else if (mystring_contains(nwpwjson["xc"], "pbe96"))      {add_disp("pbe");}
+           else if (mystring_contains(nwpwjson["xc"], "xbeef-cpbe")) {add_disp("pbesol");} // confirm
+           else if (mystring_contains(nwpwjson["xc"], "beef"))       {add_disp("pbesol");} // confirm
+           else if (mystring_contains(nwpwjson["xc"], "blyp"))       {add_disp("b-lyp");}
+           else if (mystring_contains(nwpwjson["xc"], "pbe"))        {add_disp("pbe");}
+        }
+
+        nwpwjson["has_disp"]     = has_disp;
+        nwpwjson["is_grimme2"]   = is_grimme2;
+        nwpwjson["options_disp"] = options_disp;
+        nwpwjson["has_vdw"] = has_vdw;
+        nwpwjson["is_vdw2"] = is_vdw2;
+
     } else if (mystring_contains(line, "cutoff")) {
        ss = mystring_split0(line);
        if (ss.size() == 2)

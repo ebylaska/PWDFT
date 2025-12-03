@@ -3,11 +3,12 @@
         this class is used for defining 3d parallel maps
 */
 
+//#include <iostream> // DEBUG
+
+
 #include "mpi.h"
 
-#define MASTER 0
-
-static MPI_Comm comm_world99;
+static MPI_Comm comm_world99 = MPI_COMM_WORLD;
 
 
 /**************************************
@@ -15,7 +16,7 @@ static MPI_Comm comm_world99;
  *      parallel_fortran_init         *
  *                                    *
  **************************************/
-void parallel_fortran_init(MPI_Comm comm_world0)
+extern "C" void parallel_fortran_init(MPI_Comm comm_world0)
 {
   comm_world99 = comm_world0;
 }
@@ -23,10 +24,10 @@ void parallel_fortran_init(MPI_Comm comm_world0)
 
 /**************************************
  *                                    *
- *      parallel_fortran_SumAll       *
+ *      parallel_fortran_sumall       *
  *                                    *
  **************************************/
-extern "C" void parallel_fortran_SumAll_(double *sum) 
+extern "C" void parallel_fortran_sumall_(double *sum) 
 {
    double sumout;
    MPI_Allreduce(sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_SUM, comm_world99);
@@ -36,10 +37,10 @@ extern "C" void parallel_fortran_SumAll_(double *sum)
 
 /************************************
  *                                  *
- *    parallel_fortran_SumAll       *
+ *    parallel_fortran_isumall_     *
  *                                  *
  ************************************/
-extern "C" void parallel_fortran_ISumAll_(int *sum) 
+extern "C" void parallel_fortran_isumall_(int *sum) 
 {
    int sumout;
    MPI_Allreduce(sum, &sumout, 1, MPI_INTEGER, MPI_SUM, comm_world99);
@@ -49,10 +50,10 @@ extern "C" void parallel_fortran_ISumAll_(int *sum)
 
 /****************************************
  *                                      *
- *    parallel_fortran_Vector_SumAll_   *
+ *    parallel_fortran_vector_sumall_   *
  *                                      *
  ****************************************/
-extern "C" void fortran_Vector_SumAll_(int *n, double *sum) 
+extern "C" void parallel_fortran_vector_sumall_(int *n, double *sum) 
 {
    double *sumout = new double[*n];
 
@@ -65,15 +66,37 @@ extern "C" void fortran_Vector_SumAll_(int *n, double *sum)
 
 /******************************************
  *                                        *
- *     parallel_fortran_Vector_ISumAll    *
+ *     parallel_fortran_vector_isumall_   *
  *                                        *
  ******************************************/
-extern "C" void fortran_Vector_ISumAll_(const int d, const int n, int *sum) 
+extern "C" void parallel_fortran_vector_isumall_(int *n, int *sum) 
 {
-   int *sumout = new int[n];
-   MPI_Allreduce(sum, sumout, n, MPI_INTEGER, MPI_SUM, comm_world99);
-   for (int i = 0; i < n; ++i)
+   int *sumout = new int[*n];
+   MPI_Allreduce(sum, sumout, *n, MPI_INTEGER, MPI_SUM, comm_world99);
+   for (int i = 0; i < (*n); ++i)
       sum[i] = sumout[i];
    delete[] sumout;
 }
+
+/******************************************
+ *                                        *
+ *     parallel_fortran_taskid_           *
+ *                                        *
+ ******************************************/
+extern "C" void parallel_fortran_taskid_(int *myid)
+{
+    MPI_Comm_rank(comm_world99, myid);
+}
+
+
+/******************************************
+ *                                        *
+ *     parallel_fortran_numprocs_         *
+ *                                        *
+ ******************************************/
+extern "C" void parallel_fortran_numprocs_(int *nprocs)
+{
+    MPI_Comm_size(comm_world99, nprocs);
+}
+
 

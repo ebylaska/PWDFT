@@ -1308,7 +1308,7 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
       if (myparall->base_stdio_print)
          coutput << "in vpp_generate Not finished, psp_type = " << *psp_type << std::endl;
    }
-   std::cout << "vpp_generate done" << std::endl;
+   //std::cout << "vpp_generate done" << std::endl;
 }
 
 

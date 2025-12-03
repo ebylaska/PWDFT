@@ -1044,7 +1044,14 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       }
 
    }
-   
+
+   // vdw variables - resetable
+   if (!rtdbjson["nwpw"]["options_disp"].is_null()) poptions_disp = rtdbjson["nwpw"]["options_disp"];
+   if (!rtdbjson["nwpw"]["has_disp"].is_null())     phas_disp     = rtdbjson["nwpw"]["has_disp"];
+   if (!rtdbjson["nwpw"]["has_vdw"].is_null())      phas_vdw      = rtdbjson["nwpw"]["has_vdw"];
+   if (!rtdbjson["nwpw"]["is_vdw2"].is_null())      pis_vdw2      = rtdbjson["nwpw"]["is_vdw2"];
+   if (!rtdbjson["nwpw"]["is_grimme2"].is_null())   pis_grimme2   = rtdbjson["nwpw"]["is_grimme2"];
+
 
 }
 

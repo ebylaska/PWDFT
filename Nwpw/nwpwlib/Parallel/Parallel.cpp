@@ -29,6 +29,8 @@
 
 #define MASTER 0
 
+extern "C" void parallel_fortran_init(MPI_Comm);
+
 namespace pwdft {
 
 /********************************
@@ -69,6 +71,8 @@ Parallel::Parallel(MPI_Comm comm_world0) {
   comm_i[0] = comm_world;
   MPI_Comm_size(comm_i[0], &npi[0]);
   MPI_Comm_rank(comm_i[0], &taskidi[0]);
+
+  parallel_fortran_init(comm_world);
 
   comm_i[1] = comm_i[0];
   comm_i[2] = comm_i[0];

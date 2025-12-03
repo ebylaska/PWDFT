@@ -18,6 +18,7 @@ using json = nlohmann::json;
 #include "Control2.hpp"
 #include "ion_bondings.hpp"
 #include "symmetry_elements.hpp"
+//include "cDispersion_D2.hpp"
 #include "Ion.hpp"
 
 
@@ -832,12 +833,83 @@ double Ion::disp_energy()
       double g[3*nion];
       double g_lat[9];
       int icharge[nion];
+
       for (auto ii=0; ii<nion; ++ii)
          icharge[ii] = static_cast<int>(charge[ii]);
-      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+
+      // Fortran-safe option buffer
+      char optbuf[256];
+      memset(optbuf, ' ', sizeof(optbuf));
+      size_t L = disp_options.size();
+      if (L > 255) L = 255;  // avoid overflow
+      memcpy(optbuf, disp_options.c_str(), L);
+
+
+      // Call the Fortran routine — all ranks do this
+      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+
    }
    return edisp;
 }
+
+
+/*
+
+double Ion::disp_energy()
+{
+    double edisp = 0.0;
+
+    if (!disp_on) return 0.0;
+
+    // Convert geometry to PWDFT atom list
+    std::vector<pwdft::Atom> atoms;
+    atoms.reserve(nion);
+
+    for (int i = 0; i < nion; ++i) {
+        pwdft::Atom a;
+        a.Z = static_cast<int>(charge[i]);
+        a.x = rion1[3*i + 0];
+        a.y = rion1[3*i + 1];
+        a.z = rion1[3*i + 2];
+        atoms.push_back(a);
+    }
+
+    // Build lattice (PWDFT stores a1,a2,a3 column-major in ua_disp)
+    pwdft::Lattice lat;
+    lat.a1[0] = ua_disp[0]; lat.a1[1] = ua_disp[1]; lat.a1[2] = ua_disp[2];
+    lat.a2[0] = ua_disp[3]; lat.a2[1] = ua_disp[4]; lat.a2[2] = ua_disp[5];
+    lat.a3[0] = ua_disp[6]; lat.a3[1] = ua_disp[7]; lat.a3[2] = ua_disp[8];
+
+    // Load D2 parameters
+    pwdft::D2ParameterTable etable;
+    pwdft::D2FunctionalParams d2p = pwdft::d2_params_pbe();
+
+    // Decide boundary type
+    pwdft::BoundaryType bc;
+
+    // If this is a molecular calculation in a big PSPW cell:
+    if (disp_options.find("APBC") != std::string::npos ||
+        disp_options.find("aperiodic") != std::string::npos ||
+        disp_options.find("molecule") != std::string::npos)
+    {
+        bc = pwdft::BoundaryType::Aperiodic;
+    }
+    // If this is crystalline PWDFT:
+    else
+    {
+        bc = pwdft::BoundaryType::Periodic;
+    }
+
+    // Real-space cutoff (bohr)
+    double rcut = 40.0;  // reasonable default; user can override
+
+    // Compute D2 energy
+    edisp = pwdft::dftd2_energy(atoms, d2p, etable, bc, &lat, rcut);
+
+    return edisp;
+}
+*/
+
 
 
 /*******************************************
@@ -858,7 +930,15 @@ void Ion::disp_force(double* fion)
       for (auto ii=0; ii<nion; ++ii)
          icharge[ii] = static_cast<int>(charge[ii]);
 
-      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+      // Fortran-safe option buffer
+      char optbuf[256];
+      memset(optbuf, ' ', sizeof(optbuf));
+      size_t L = disp_options.size();
+      if (L > 255) L = 255;  // avoid overflow
+      memcpy(optbuf, disp_options.c_str(), L);
+
+      // Call the Fortran routine — all ranks do this
+      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
 
       for (auto ii=0; ii<nion; ++ii)
       {
@@ -891,7 +971,15 @@ void Ion::disp_stress(double* stress)
       for (auto k=0; k<9; ++k)
          g_lat[k] = 0.0;
 
-      nwpwxc_vdw3_dftd3_( (char *)disp_options.c_str(), &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+      // Fortran-safe option buffer
+      char optbuf[256];
+      memset(optbuf, ' ', sizeof(optbuf));
+      size_t L = disp_options.size();
+      if (L > 255) L = 255;  // avoid overflow
+      memcpy(optbuf, disp_options.c_str(), L);
+
+      // Call the Fortran routine — all ranks do this
+      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
   
       for (auto k=0; k<9; ++k)
          stress[k] += g_lat[k];

@@ -301,10 +301,18 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
       integer taskid,np,pcount
 
+      external parallel_fortran_sumall
+      external parallel_fortran_vector_sumall
+      external parallel_fortran_vector_isumall
+      external parallel_fortran_numprocs
+      external parallel_fortran_taskid
+
       !np     = GA_Nnodes()
       !taskid = GA_Nodeid()
-      np     = 1
-      taskid = 0
+      !np     = 1
+      !taskid = 0
+      call parallel_fortran_numprocs(np)
+      call parallel_fortran_taskid(taskid)
       pcount = 0
 
 
@@ -377,6 +385,7 @@ C DFT-D2
       pcount = pcount + 1
       enddo !iat
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,e6,1,'+')
+      if (np.gt.1) call parallel_fortran_sumall(e6)
       
       
 
@@ -509,6 +518,10 @@ c stored in main as sqrt
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,e6,1,'+')
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,e8,1,'+')
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,cc6ab,n*n,'+')
+        if (np.gt.1) call parallel_fortran_sumall(e6)
+        if (np.gt.1) call parallel_fortran_sumall(e8)
+        if (np.gt.1) call parallel_fortran_vector_sumall(cc6ab,n*n)
+
 !      write(*,*)'counter(edisp): ',counter
       else if((version.eq.4).or.(version.eq.6)) then
 
@@ -612,6 +625,9 @@ c stored in main as sqrt
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,e6,1,'+')
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,e8,1,'+')
         !if (np.gt.1) call GA_DGOP(9+MSGDBL,cc6ab,n*n,'+')
+        if (np.gt.1) call parallel_fortran_sumall(e6)
+        if (np.gt.1) call parallel_fortran_sumall(e8)
+        if (np.gt.1) call parallel_fortran_vector_sumall(cc6ab,n*n)
 
 
       endif !version
@@ -659,10 +675,19 @@ C compute non-additive third-order energy using averaged C6
 
       integer taskid,np,pcount
 
+      external parallel_fortran_sumall
+      external parallel_fortran_vector_sumall
+      external parallel_fortran_vector_isumall
+      external parallel_fortran_numprocs
+      external parallel_fortran_taskid
+
+
       !np     = GA_Nnodes()
       !taskid = GA_Nodeid()
-      np     = 1
-      taskid = 0
+      !np     = 1
+      !taskid = 0
+      call parallel_fortran_numprocs(np)
+      call parallel_fortran_taskid(taskid)
       pcount = 0
 
       counter=0
@@ -979,6 +1004,7 @@ C compute non-additive third-order energy using averaged C6
       pcount = pcount + 1
       ENDDO !iat
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,eabc,1,'+')
+      if (np.gt.1) call parallel_fortran_sumall(eabc)
 
       END SUBROUTINE nwpwxc_pbcthreebody
 
@@ -1118,10 +1144,19 @@ c      real*8 dc6_rest_sum(n*(n+1)/2)
 
       integer taskid,np,pcount
 
+      external parallel_fortran_sumall
+      external parallel_fortran_vector_sumall
+      external parallel_fortran_vector_isumall
+      external parallel_fortran_numprocs
+      external parallel_fortran_taskid
+
+
       !np     = GA_Nnodes()
       !taskid = GA_Nodeid()
-      np     = 1
-      taskid = 0
+      !np     = 1
+      !taskid = 0
+      call parallel_fortran_numprocs(np)
+      call parallel_fortran_taskid(taskid)
       pcount = 0
 
 
@@ -1316,6 +1351,9 @@ c and now the self interaction, only for convenient energy in dispersion
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,disp,1,'+')
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,sigma,9,'+')
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,g,3*n,'+')
+      if (np.gt.1) call parallel_fortran_sumall(disp)
+      if (np.gt.1) call parallel_fortran_vector_sumall(sigma,9)
+      if (np.gt.1) call parallel_fortran_vector_sumall(g,3*n)
       
       call nwpwxc_inv_cell(lat,lat_1)
       do a=1,3
@@ -1742,6 +1780,10 @@ c     >             +dc6_rest
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,c6save,n*(n+1)/2,'+')
 c      if (np.gt.1) call GA_DGOP(9+MSGDBL,dc6_rest_sum,n*(n+1)/2,'+')
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,dc6ij,n*n,'+')
+      if (np.gt.1) call parallel_fortran_sumall(disp)
+      if (np.gt.1) call parallel_fortran_vector_sumall(c6save,n*(n+1)/2)
+c      if (np.gt.1) call GA_DGOP(9+MSGDBL,dc6_rest_sum,n*(n+1)/2,'+')
+      if (np.gt.1) call parallel_fortran_vector_sumall(dc6ij,n*n)
 
 
 !
@@ -2371,6 +2413,7 @@ c     .         .and. (ktauz.eq.jtauz)) cycle      !If kat and jat are the same 
       pcount = pcount + 1
       ENDDO !iat
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,eabc,1,'+')
+      if (np.gt.1) call parallel_fortran_sumall(eabc)
 
 
         !call nwpwxc_cpu_time(time2)
@@ -2391,6 +2434,8 @@ c     .         .and. (ktauz.eq.jtauz)) cycle      !If kat and jat are the same 
       !write(*,*) "DC6I=",dc6i
       !write(*,*) "dc6ij=",dc6ij
       !write(*,*) "drij=",drij
+      if (np.gt.1) call parallel_fortran_vector_sumall(dc6i,n)
+      if (np.gt.1) call parallel_fortran_vector_sumall(drij,drijsize)
 
       sigma_abc=0.0d0
       sigma=0.0d0
@@ -2444,6 +2489,7 @@ c     .         .and. (ktauz.eq.jtauz)) cycle      !If kat and jat are the same 
         enddo !jat
       enddo !iat
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,g,3*n,'+')
+      if (np.gt.1) call parallel_fortran_vector_sumall(g,3*n)
 
       do iat=1,n
       if (mod(pcount,np).eq.taskid) then
@@ -2487,6 +2533,7 @@ c     .         .and. (ktauz.eq.jtauz)) cycle      !If kat and jat are the same 
       pcount = pcount + 1
       enddo !iat
       !if (np.gt.1) call GA_DGOP(9+MSGDBL,sigma,9,'+')
+      if (np.gt.1) call parallel_fortran_vector_sumall(sigma,9)
       !write(*,*) "SIGMA=",sigma
 
 
