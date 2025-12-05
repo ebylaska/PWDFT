@@ -276,6 +276,10 @@ public:
          E[0] +=  E[71];
       }
 
+      if (myion->has_ion_disp()) {
+         E[33] = myion->disp_energy();
+      }
+
       
       /* generate eigenvalues */
       myelectron->gen_hml(psi1, hml);
@@ -618,6 +622,9 @@ public:
       if (myelectron->is_periodic())
          myewald->force(grad_ion);
 
+      if (myion->has_ion_disp())
+         myion->disp_force(grad_ion);
+
       myion->add_contraint_force(grad_ion);
    }
 
@@ -792,6 +799,13 @@ public:
       //   os << ionstream(" K.S. V_APC energy   : ",mysolid.E[52],mysolid.E[52]/mysolid.myion->nion);
       os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
          << (mysolid.E[9]+mysolid.E[8]+mysolid.E[7]+mysolid.E[6])/mysolid.E[5] << std::endl;
+
+      if (mysolid.myion->disp_on)
+      {
+         os << std::endl;
+         os << " Dispersion energy   : "
+            << Efmt(19,10) << mysolid.E[33] << std::endl;
+      }
 
       if (mysolid.myion->has_ion_constraints())
       {

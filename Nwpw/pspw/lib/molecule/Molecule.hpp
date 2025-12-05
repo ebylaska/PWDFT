@@ -613,10 +613,12 @@ public:
          << (mymolecule.E[9]+mymolecule.E[8]+mymolecule.E[7]+mymolecule.E[6])/mymolecule.E[5];
       os << std::endl;
 
-      //if (mymolecule.myion->disp_on)
-      os << std::endl;
-      os << " Dispersion energy   : " 
-         << Efmt(19,10) << mymolecule.E[33] << std::endl;
+      if (mymolecule.myion->disp_on)
+      {
+         os << std::endl;
+         os << " Dispersion energy   : " 
+            << Efmt(19,10) << mymolecule.E[33] << std::endl;
+      }
 
       if ((mymolecule.fractional) && (!mymolecule.fractional_frozen))
       {
