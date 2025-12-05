@@ -29,7 +29,31 @@ extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, dou
             << (Z) << E124 << (VX) << E124 << (VY) << E124 << (VZ)
 
 
+
 namespace pwdft {
+
+/*******************************
+ *                             *
+ *        strip (inline)       *
+ *                             *
+ *******************************/
+inline std::string strip(const std::string &s) 
+{
+    size_t b = s.find_first_not_of(" \t\r\n");
+    size_t e = s.find_last_not_of(" \t\r\n");
+    if (b == std::string::npos) return "";
+    return s.substr(b, e - b + 1);
+}
+
+inline std::string normalize_symbol(std::string s)
+{
+    s = strip(s);
+    if (s.size() == 0) return s;
+    s[0] = std::toupper(s[0]);
+    if (s.size() > 1) s[1] = std::tolower(s[1]);
+    return s;
+}
+
 
 /*******************************
  *                             *
@@ -578,6 +602,67 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       ua_disp = control.unita_ptr();
    }
 
+   // check for grimme2 and large elements 
+   is_grimme2 = control.is_grimme2();
+   if (disp_on && is_grimme2) 
+   {
+      is_grimme2 = false;
+    
+      const json atom_dict = json::parse(R"( {
+         "H": 1,   "He": 2,   "Li": 3,   "Be": 4,   "B": 5,   "C": 6,
+         "N": 7,   "O": 8,    "F": 9,    "Ne": 10,  "Na": 11, "Mg": 12,
+         "Al": 13, "Si": 14,  "P": 15,   "S": 16,   "Cl": 17, "Ar": 18,
+         "K": 19,  "Ca": 20,  "Sc": 21,  "Ti": 22,  "V": 23,  "Cr": 24,
+         "Mn": 25, "Fe": 26,  "Co": 27,  "Ni": 28,  "Cu": 29, "Zn": 30,
+         "Ga": 31, "Ge": 32,  "As": 33,  "Se": 34,  "Br": 35, "Kr": 36,
+         "Rb": 37, "Sr": 38,  "Y": 39,   "Zr": 40,  "Nb": 41, "Mo": 42,
+         "Tc": 43, "Ru": 44,  "Rh": 45,  "Pd": 46,  "Ag": 47, "Cd": 48,
+         "In": 49, "Sn": 50,  "Sb": 51,  "Te": 52,  "I": 53,  "Xe": 54,
+         "Cs": 55, "Ba": 56,  "La": 57,  "Ce": 58,  "Pr": 59, "Nd": 60,
+         "Pm": 61, "Sm": 62,  "Eu": 63,  "Gd": 64,  "Tb": 65, "Dy": 66,
+         "Ho": 67, "Er": 68,  "Tm": 69,  "Yb": 70,  "Lu": 71, "Hf": 72,
+         "Ta": 73, "W": 74,   "Re": 75,  "Os": 76,  "Ir": 77, "Pt": 78,
+         "Au": 79, "Hg": 80,  "Tl": 81,  "Pb": 82,  "Bi": 83, "Po": 84,
+         "At": 85, "Rn": 86,  "Fr": 87,  "Ra": 88,  "Ac": 89, "Th": 90,
+         "Pa": 91, "U": 92,   "Np": 93,  "Pu": 94,  "Am": 95, "Cm": 96,
+         "Bk": 97, "Cf": 98,  "Es": 99,  "Fm": 100, "Md": 101,"No": 102,
+         "Lr": 103,"Rf": 104, "Ha": 105, "Sg": 106,"Bh": 107,"Hs": 108,
+         "Mt": 109
+      })");
+
+      for (auto ia=0; ia<nkatm; ++ia)
+      {
+         // Construct a 3-char string from flat array
+         std::string sym(&atomarray[3*ia], 3);
+
+         // Strip whitespace / nulls
+         sym = normalize_symbol(sym);
+
+         int iz = atom_dict[sym];
+         if (iz>85) is_grimme2 = true;
+      }
+      if (is_grimme2)
+      {
+         indx_grimme2 = new int[nion];
+         rion_grimme2 = new double[3 * nion];
+         nion_grimme2 = 0;
+         for (auto ii=0; ii<nion; ++ii)
+         {
+            int ia= katm[ii];
+            std::string sym(&atomarray[3*ia], 3);
+            sym = normalize_symbol(sym);
+            int iz = atom_dict[sym];
+            if (iz<=85)
+            {
+                indx_grimme2[nion_grimme2] = ii;
+                ++nion_grimme2;
+            }
+         }
+      }
+   }
+
+  
+
    /*  DEBUG CHECK
       std::cout << "NION=" << nion << std::endl;
       std::cout << "NKATM=" << nkatm << std::endl;
@@ -825,17 +910,88 @@ std::string Ion::print_symmetry_group()
  *                                         *
  *******************************************/
 
+ /******************************************************************************* 
+ *
+ *   Ion::disp_energy
+ *
+ *   Computes the Grimme dispersion energy (DFT-D3 and related models) for the
+ *   current ionic configuration.  This routine constructs the working arrays
+ *   required by the D3 driver, handles optional reduced-atom evaluation for
+ *   heavy-element systems, and returns the dispersion energy contribution.
+ *
+ *   Returns:
+ *      edisp  - total dispersion energy (in Hartrees) for the configuration.
+ *
+ *   Procedure:
+ *      • Allocate temporary force buffer g[] and lattice-derivative buffer 
+ *        g_lat[] (both required by the D3 API, though only edisp is used here).
+ *
+ *      • Construct integer nuclear charge array icharge[] and coordinate array
+ *        rtmp[] to pass to the D3 routine:
+ *
+ *          - If is_grimme2 == true:
+ *                Only atoms with atomic number Z ≤ 85 participate in the D3
+ *                evaluation.  Their coordinates are packed contiguously in
+ *                rtmp[] using indx_grimme2[], and ntmp = nion_grimme2.
+ *
+ *          - Otherwise:
+ *                All atoms participate.  ntmp = nion and rtmp = rion1.
+ *
+ *      • Build a Fortran-compatible fixed-length option string (optbuf), 
+ *        embedding the user-specified dispersion options (BJ damping, ATM, etc.).
+ *
+ *      • Call the Fortran wrapper nwpwxc_vdw3_dftd3_ which computes:
+ *            edisp : dispersion energy
+ *            g[]   : atomic forces      (ignored in this routine)
+ *            g_lat : lattice derivatives (ignored in this routine)
+ *
+ *      • Return edisp.  Forces and stresses are handled separately in 
+ *        disp_force() and disp_stress().
+ *
+ *   Notes:
+ *      • The Grimme-2 mode provides numerical robustness for systems containing
+ *        very heavy atoms by restricting D3 evaluation to lighter elements.
+ *
+ *      • Full three-body Grimme (ATM) and standard D3 variants work normally 
+ *        whenever is_grimme2 == false.
+ *
+ *      • This routine does not modify ionic forces or stresses.
+ *
+ *******************************************************************************/
+
 double Ion::disp_energy() 
 {
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
-      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
-      int icharge[nion];
+      double g[3*nion];  std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];   std::fill(g_lat, g_lat + 9, 0.0);
+      int icharge[nion]; std::fill(icharge, icharge + nion, 0);
 
-      for (auto ii=0; ii<nion; ++ii)
-         icharge[ii] = static_cast<int>(charge[ii]);
+
+      double *rtmp;
+      int     ntmp;
+     
+      if (is_grimme2)
+      {
+          ntmp = nion_grimme2;
+          rtmp = rion_grimme2;
+          for (auto ii=0; ii<ntmp; ++ ii)
+          {
+              int jj = indx_grimme2[ii];
+              rtmp[3*ii]   = rion1[3*jj];
+              rtmp[3*ii+1] = rion1[3*jj+1];
+              rtmp[3*ii+2] = rion1[3*jj+2];
+              icharge[ii] = static_cast<int>(charge[jj]);
+          }
+      }
+      else
+      {
+        ntmp = nion;
+        rtmp = rion1;
+         for (auto ii=0; ii<nion; ++ii)
+            icharge[ii] = static_cast<int>(charge[ii]);
+      }
 
       // Fortran-safe option buffer
       char optbuf[256];
@@ -846,7 +1002,8 @@ double Ion::disp_energy()
 
 
       // Call the Fortran routine — all ranks do this
-      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+      //nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+      nwpwxc_vdw3_dftd3_(optbuf, &ntmp,icharge,rtmp,ua_disp,&edisp,g,g_lat);
 
    }
    return edisp;
@@ -918,17 +1075,87 @@ double Ion::disp_energy()
  *                                         *
  *******************************************/
 
+ /*******************************************************************************
+ *
+ *   Ion::disp_force
+ *
+ *   Computes the atomic force contribution from the Grimme dispersion
+ *   correction (DFT-D3 and related models).  This routine is the force
+ *   counterpart to disp_energy() and disp_stress(), and uses the same
+ *   packing logic for handling systems that include very heavy atoms.
+ *
+ *   Input:
+ *      fion[3*nion]  - accumulated ionic forces (Cartesian), updated in-place.
+ *                      Forces are subtracted (F = -∂E/∂R), consistent with
+ *                      PWDFT conventions.
+ *
+ *   Procedure:
+ *      • Allocate temporary force buffer g[] and lattice-derivative buffer
+ *        g_lat[], both zero-initialized.
+ *
+ *      • Build an integer nuclear charge array icharge[] and a working
+ *        coordinate array rtmp[] to pass to the D3 driver:
+ *
+ *          - If is_grimme2 == true:
+ *               Only atoms with atomic number Z ≤ 85 are included.
+ *               Their coordinates are packed contiguously using the
+ *               indx_grimme2[] mapping (length ntmp == nion_grimme2).
+ *
+ *          - Otherwise (full D3, D3BJ, D3ATM, etc.):
+ *               All atoms participate (ntmp == nion; rtmp == rion1).
+ *
+ *      • Call the Fortran routine nwpwxc_vdw3_dftd3_, which returns:
+ *            edisp : dispersion energy (unused here)
+ *            g[]   : atomic forces  (for the ntmp-sized system)
+ *            g_lat : lattice derivatives (ignored here)
+ *
+ *      • If is_grimme2 == true, forces from g[] are redistributed back to the
+ *        full fion[] array via the indx_grimme2[] map.  Otherwise forces map
+ *        directly (full system).
+ *
+ *   Notes:
+ *      • This routine increments fion[] and does not overwrite it.
+ *      • Stress contributions from dispersion are computed separately by
+ *        disp_stress().
+ *      • Grimme three-body (ATM) and other D3 options operate normally unless
+ *        is_grimme2 == true.
+ *      • The reduced-atom Grimme-2 path ensures numerical stability for systems
+ *        containing very heavy elements without affecting light-atom dispersion.
+ *
+ *******************************************************************************/
 void Ion::disp_force(double* fion) 
 {
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
-      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
-      int icharge[nion];
+      double g[3*nion];  std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];   std::fill(g_lat, g_lat + 9, 0.0);
+      int icharge[nion]; std::fill(icharge, icharge + nion, 0);
 
-      for (auto ii=0; ii<nion; ++ii)
-         icharge[ii] = static_cast<int>(charge[ii]);
+      double *rtmp;
+      int     ntmp;
+
+      if (is_grimme2) 
+      {
+         ntmp = nion_grimme2;
+         rtmp = rion_grimme2;
+         for (auto ii=0; ii<ntmp; ++ii)
+         {
+            int jj= indx_grimme2[ii];
+            rtmp[3*ii]   = rion1[3*jj];
+            rtmp[3*ii+1] = rion1[3*jj+1];
+            rtmp[3*ii+2] = rion1[3*jj+2];
+            icharge[ii] = static_cast<int>(charge[jj]);
+         }
+      }
+      else
+      {
+         ntmp = nion;
+         rtmp = rion1;
+
+         for (auto ii=0; ii<nion; ++ii)
+            icharge[ii] = static_cast<int>(charge[ii]);
+      }
 
       // Fortran-safe option buffer
       char optbuf[256];
@@ -938,17 +1165,30 @@ void Ion::disp_force(double* fion)
       memcpy(optbuf, disp_options.c_str(), L);
 
       // Call the Fortran routine — all ranks do this
-      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
-
-      for (auto ii=0; ii<nion; ++ii)
+      nwpwxc_vdw3_dftd3_(optbuf, &ntmp,icharge,rtmp,ua_disp,&edisp,g,g_lat);
+      if (is_grimme2)
       {
-         fion[3*ii  ] -= g[3*ii];
-         fion[3*ii+1] -= g[3*ii+1];
-         fion[3*ii+2] -= g[3*ii+2];
+         for (auto ii=0; ii<ntmp; ++ii)
+         {
+            int jj= indx_grimme2[ii];
+            fion[3*jj  ] -= g[3*ii];
+            fion[3*jj+1] -= g[3*ii+1];
+            fion[3*jj+2] -= g[3*ii+2];
+         }
+      }
+      else
+      {
+         for (auto ii=0; ii<nion; ++ii)
+         {
+            fion[3*ii  ] -= g[3*ii];
+            fion[3*ii+1] -= g[3*ii+1];
+            fion[3*ii+2] -= g[3*ii+2];
+         }
       }
    }
 }
    
+
 
 /*******************************************
  *                                         *
@@ -956,20 +1196,92 @@ void Ion::disp_force(double* fion)
  *                                         *
  *******************************************/
 
+ /***************************************************************
+ *  Ion::disp_stress
+ *
+ *  Compute the lattice contribution to the dispersion stress
+ *  using the Grimme DFT-D3 (or related) dispersion model.
+ *
+ *  This routine constructs the coordinate and nuclear-charge
+ *  arrays required by the Fortran D3 driver and retrieves the
+ *  lattice derivatives dE_disp/dh (stored in g_lat[9]).
+ *
+ *  Arguments:
+ *    stress[9]  (input/output)
+ *        Accumulated stress tensor components (row-major order).
+ *        The dispersion lattice derivatives returned by the D3
+ *        routine are added to this buffer.
+ *
+ *  Behavior:
+ *    - If disp_on == false, the routine returns immediately.
+ *    - For standard D3 / D3(BJ) / ATM models:
+ *          The full ion list (nion) is passed to the D3 routine.
+ *
+ *    - If is_grimme2 == true:
+ *          Only “light” atoms (Z <= 85) are included in the
+ *          temporary coordinate array rtmp[] and charge array
+ *          icharge[].  Heavy atoms are excluded from the D3
+ *          evaluation.  The lattice derivatives remain correct
+ *          for the chosen subset because the D3 energy is
+ *          computed only on that same subset.
+ *
+ *  Fortran call:
+ *
+ *      subroutine nwpwxc_vdw3_dftd3(optbuf, ntmp, icharge,
+ *                                   rtmp, ua_disp, edisp,
+ *                                   g, g_lat)
+ *
+ *    where:
+ *        ntmp     = number of atoms passed to the D3 model
+ *        icharge  = integer nuclear charges
+ *        rtmp     = (ntmp x 3) Cartesian coordinates
+ *        g_lat    = 9 lattice derivatives dE_disp/dh_ij
+ *
+ *  Notes:
+ *    - Atomic forces returned in g[] are ignored here; only the
+ *      lattice derivatives are used.
+ *
+ *    - The stress tensor is updated by adding g_lat[] to the
+ *      cumulative stress[] buffer; further conversion to the
+ *      conventional stress tensor (σ_ij) is performed elsewhere.
+ *
+ ***************************************************************/
 void Ion::disp_stress(double* stress)
 {
    double edisp = 0.0; 
    if (disp_on)
    {
-      double g[3*nion]; std::fill(g, g + 3*nion, 0.0);
-      double g_lat[9];  std::fill(g_lat, g_lat + 9, 0.0);
-      int icharge[nion];
+      double g[3*nion];  std::fill(g, g + 3*nion, 0.0);
+      double g_lat[9];   std::fill(g_lat, g_lat + 9, 0.0);
+      int icharge[nion]; std::fill(icharge, icharge + nion, 0);
 
-      for (auto ii=0; ii<nion; ++ii)
-         icharge[ii] = static_cast<int>(charge[ii]);
+      double *rtmp;
+      int     ntmp;
+
+      if (is_grimme2)
+      {
+         ntmp = nion_grimme2;
+         rtmp = rion_grimme2;
+         for (auto ii=0; ii<ntmp; ++ii)
+         {
+            int jj= indx_grimme2[ii];
+            rtmp[3*ii]   = rion1[3*jj];
+            rtmp[3*ii+1] = rion1[3*jj+1];
+            rtmp[3*ii+2] = rion1[3*jj+2];
+            icharge[ii] = static_cast<int>(charge[jj]);
+         }
+      }
+      else
+      {
+         ntmp = nion;
+         rtmp = rion1;
+
+         for (auto ii=0; ii<nion; ++ii)
+            icharge[ii] = static_cast<int>(charge[ii]);
+      }
   
-      for (auto k=0; k<9; ++k)
-         g_lat[k] = 0.0;
+      //for (auto k=0; k<9; ++k)
+      //   g_lat[k] = 0.0;
 
       // Fortran-safe option buffer
       char optbuf[256];
@@ -979,7 +1291,7 @@ void Ion::disp_stress(double* stress)
       memcpy(optbuf, disp_options.c_str(), L);
 
       // Call the Fortran routine — all ranks do this
-      nwpwxc_vdw3_dftd3_(optbuf, &nion,icharge,rion1,ua_disp,&edisp,g,g_lat);
+      nwpwxc_vdw3_dftd3_(optbuf, &ntmp,icharge,rtmp,ua_disp,&edisp,g,g_lat);
   
       for (auto k=0; k<9; ++k)
          stress[k] += g_lat[k];

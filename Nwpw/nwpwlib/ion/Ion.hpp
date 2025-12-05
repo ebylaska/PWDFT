@@ -43,10 +43,15 @@ public:
    double *fion1;                 // forces of ions
    double time_step;
 
-   //dispersion
+   //dispersion and grimme2
    std::string disp_options;
    bool disp_on = false;
    double *ua_disp;
+
+   bool   is_grimme2 = false;
+   int    nion_grimme2;
+   int    *indx_grimme2;
+   double *rion_grimme2;
  
    /* init_ke variables */
    int ke_count, seed, Tf;
@@ -93,6 +98,11 @@ public:
      //delete mycbond;
      //delete myangle;
      delete mybondings;
+     if (is_grimme2)
+     {
+        delete[] indx_grimme2;
+        delete[] rion_grimme2;
+     }
    }
  
    /* functions */
