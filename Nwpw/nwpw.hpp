@@ -10,6 +10,8 @@ namespace pwdft {
 
 extern int band_cpsd(MPI_Comm, std::string &);
 extern int band_minimizer(MPI_Comm, std::string &, std::ostream &);
+extern int band_geovib(MPI_Comm, std::string &, std::ostream &);
+extern int band_bomd(MPI_Comm, std::string &, std::ostream &);
 
 extern int cpsd(MPI_Comm, std::string &);
 extern int cpmd(MPI_Comm, std::string &);

@@ -1018,7 +1018,7 @@ int main(int argc, char *argv[]) {
                      << rtdbstr << std::endl
                      << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
-        //ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
+        ierr += pwdft::band_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
      /* Frequency task */
@@ -1039,6 +1039,20 @@ int main(int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
      }
+
+     /* Born-Oppenheimer task */
+     if (task == 17)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running band Born-Oppenheimer molecular dynamics - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::band_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
+     }
+
+
     
      // parse json string
      rtdbstr = parse_rtdbstring(rtdbstr);
