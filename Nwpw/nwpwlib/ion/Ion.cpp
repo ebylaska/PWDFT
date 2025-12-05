@@ -37,22 +37,28 @@ namespace pwdft {
  *        strip (inline)       *
  *                             *
  *******************************/
-inline std::string strip(const std::string &s) 
+static std::string normalize_symbol(const std::string& raw)
 {
-    size_t b = s.find_first_not_of(" \t\r\n");
-    size_t e = s.find_last_not_of(" \t\r\n");
-    if (b == std::string::npos) return "";
-    return s.substr(b, e - b + 1);
-}
+    // trim whitespace and non-alpha chars
+    std::string s;
+    for (char c : raw) {
+        if (std::isalpha(static_cast<unsigned char>(c)))
+            s.push_back(c);
+    }
 
-inline std::string normalize_symbol(std::string s)
-{
-    s = strip(s);
-    if (s.size() == 0) return s;
-    s[0] = std::toupper(s[0]);
-    if (s.size() > 1) s[1] = std::tolower(s[1]);
+    // enforce correct capitalization
+    if (s.size() >= 1)
+        s[0] = std::toupper(s[0]);
+    if (s.size() >= 2)
+        s[1] = std::tolower(s[1]);
+
+    // elements never have more than 2 letters
+    if (s.size() > 2)
+        s.resize(2);
+
     return s;
 }
+
 
 
 /*******************************
