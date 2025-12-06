@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <set>
+#include <map>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -710,6 +712,418 @@ static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& 
    ks = updated_ks;
 }
 
+// Utility: compare k-points with tolerance
+static bool kpoint_equal(const std::vector<double>& k1, const std::vector<double>& k2, double tol=1e-8) {
+    return (std::abs(k1[0]-k2[0]) < tol && std::abs(k1[1]-k2[1]) < tol && std::abs(k1[2]-k2[2]) < tol);
+}
+
+// Utility: apply a 3x3 rotation matrix to a k-point
+static std::vector<double> apply_rotation(const std::vector<double>& k, const std::vector<std::vector<double>>& R) {
+    std::vector<double> kout(3,0.0);
+    for (int i=0; i<3; ++i)
+        for (int j=0; j<3; ++j)
+            kout[i] += R[i][j]*k[j];
+    return kout;
+}
+
+// Generate symmetry operations for different point groups
+static std::vector<std::vector<std::vector<double>>> generate_symmetry_operations(const std::string& group_name) {
+    std::vector<std::vector<std::vector<double>>> ops;
+    
+    // Identity operation (always present)
+    ops.push_back({{1,0,0},{0,1,0},{0,0,1}});
+    
+    if (group_name == "Oh" || group_name == "O") {
+        // Cubic symmetry (Oh or O group)
+        // 90, 180, 270 deg rotations about x, y, z
+        ops.push_back({{1,0,0},{0,0,-1},{0,1,0}});
+        ops.push_back({{1,0,0},{0,-1,0},{0,0,-1}});
+        ops.push_back({{1,0,0},{0,0,1},{0,-1,0}});
+        ops.push_back({{0,1,0},{-1,0,0},{0,0,1}});
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,1}});
+        ops.push_back({{0,-1,0},{1,0,0},{0,0,1}});
+        ops.push_back({{0,0,1},{0,1,0},{-1,0,0}});
+        ops.push_back({{0,0,-1},{0,1,0},{1,0,0}});
+        ops.push_back({{0,0,1},{0,-1,0},{1,0,0}});
+        ops.push_back({{0,0,-1},{0,-1,0},{-1,0,0}});
+        ops.push_back({{0,1,0},{0,0,1},{1,0,0}});
+        ops.push_back({{0,-1,0},{0,0,1},{-1,0,0}});
+        ops.push_back({{0,1,0},{0,0,-1},{-1,0,0}});
+        ops.push_back({{0,-1,0},{0,0,-1},{1,0,0}});
+        ops.push_back({{0,0,1},{1,0,0},{0,1,0}});
+        ops.push_back({{0,0,-1},{1,0,0},{0,-1,0}});
+        ops.push_back({{0,0,1},{-1,0,0},{0,-1,0}});
+        ops.push_back({{0,0,-1},{-1,0,0},{0,1,0}});
+        ops.push_back({{1,0,0},{0,1,0},{0,0,-1}});
+        ops.push_back({{-1,0,0},{0,1,0},{0,0,1}});
+        ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,-1}});
+        // 180 deg rotations about face diagonals
+        ops.push_back({{0,1,0},{1,0,0},{0,0,-1}});
+        ops.push_back({{0,-1,0},{-1,0,0},{0,0,-1}});
+        ops.push_back({{0,1,0},{-1,0,0},{0,0,-1}});
+        ops.push_back({{0,-1,0},{1,0,0},{0,0,-1}});
+        ops.push_back({{0,0,1},{1,0,0},{0,-1,0}});
+        ops.push_back({{0,0,-1},{1,0,0},{0,1,0}});
+        ops.push_back({{0,0,1},{-1,0,0},{0,1,0}});
+        ops.push_back({{0,0,-1},{-1,0,0},{0,-1,0}});
+        // 120 deg rotations about body diagonals
+        ops.push_back({{0,0,1},{1,0,0},{0,1,0}});
+        ops.push_back({{0,0,1},{-1,0,0},{0,-1,0}});
+        ops.push_back({{0,0,-1},{1,0,0},{0,-1,0}});
+        ops.push_back({{0,0,-1},{-1,0,0},{0,1,0}});
+        // 180 deg rotations about axes through edge centers
+        ops.push_back({{0,1,0},{0,0,1},{1,0,0}});
+        ops.push_back({{0,-1,0},{0,0,1},{-1,0,0}});
+        ops.push_back({{0,1,0},{0,0,-1},{-1,0,0}});
+        ops.push_back({{0,-1,0},{0,0,-1},{1,0,0}});
+        
+        // For Oh group, add improper rotations (multiply each by -1)
+        if (group_name == "Oh") {
+            size_t n = ops.size();
+            for (size_t i=0; i<n; ++i) {
+                std::vector<std::vector<double>> Rinv(3, std::vector<double>(3));
+                for (int a=0; a<3; ++a)
+                    for (int b=0; b<3; ++b)
+                        Rinv[a][b] = -ops[i][a][b];
+                ops.push_back(Rinv);
+            }
+        }
+    }
+    else if (group_name == "D4h" || group_name == "D4") {
+        // Tetragonal symmetry (D4h or D4 group)
+        // 90, 180, 270 deg rotations about z-axis
+        ops.push_back({{0,1,0},{-1,0,0},{0,0,1}});
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,1}});
+        ops.push_back({{0,-1,0},{1,0,0},{0,0,1}});
+        // 180 deg rotations about x and y axes
+        ops.push_back({{1,0,0},{0,-1,0},{0,0,-1}});
+        ops.push_back({{-1,0,0},{0,1,0},{0,0,-1}});
+        // 180 deg rotations about diagonal axes
+        ops.push_back({{0,1,0},{1,0,0},{0,0,-1}});
+        ops.push_back({{0,-1,0},{-1,0,0},{0,0,-1}});
+        
+        // For D4h group, add improper rotations
+        if (group_name == "D4h") {
+            size_t n = ops.size();
+            for (size_t i=0; i<n; ++i) {
+                std::vector<std::vector<double>> Rinv(3, std::vector<double>(3));
+                for (int a=0; a<3; ++a)
+                    for (int b=0; b<3; ++b)
+                        Rinv[a][b] = -ops[i][a][b];
+                ops.push_back(Rinv);
+            }
+        }
+    }
+    else if (group_name == "C4v" || group_name == "C4") {
+        // C4v or C4 symmetry (common for surfaces)
+        // 90, 180, 270 deg rotations about z-axis
+        ops.push_back({{0,1,0},{-1,0,0},{0,0,1}});
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,1}});
+        ops.push_back({{0,-1,0},{1,0,0},{0,0,1}});
+        
+        // For C4v, add vertical mirror planes
+        if (group_name == "C4v") {
+            // Mirror planes through x and y axes
+            ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+            ops.push_back({{-1,0,0},{0,1,0},{0,0,1}});
+            // Diagonal mirror planes
+            ops.push_back({{0,1,0},{1,0,0},{0,0,1}});
+            ops.push_back({{0,-1,0},{-1,0,0},{0,0,1}});
+        }
+    }
+    else if (group_name == "C3v" || group_name == "C3") {
+        // C3v or C3 symmetry
+        // 120, 240 deg rotations about z-axis
+        ops.push_back({{-0.5,0.866025,0},{-0.866025,-0.5,0},{0,0,1}});
+        ops.push_back({{-0.5,-0.866025,0},{0.866025,-0.5,0},{0,0,1}});
+        
+        // For C3v, add vertical mirror planes
+        if (group_name == "C3v") {
+            // Mirror planes at 0, 60, 120 degrees
+            ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+            ops.push_back({{-0.5,0.866025,0},{0.866025,0.5,0},{0,0,1}});
+            ops.push_back({{-0.5,-0.866025,0},{-0.866025,0.5,0},{0,0,1}});
+        }
+    }
+    else if (group_name == "C2v" || group_name == "C2") {
+        // C2v or C2 symmetry
+        // 180 deg rotation about z-axis
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,1}});
+        
+        // For C2v, add vertical mirror planes
+        if (group_name == "C2v") {
+            // Mirror planes through x and y axes
+            ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+            ops.push_back({{-1,0,0},{0,1,0},{0,0,1}});
+        }
+    }
+    else if (group_name == "Cs") {
+        // Mirror plane symmetry only
+        // Mirror plane through x-axis (most common for surfaces)
+        ops.push_back({{1,0,0},{0,-1,0},{0,0,1}});
+    }
+    else if (group_name == "Ci") {
+        // Inversion center only
+        ops.push_back({{-1,0,0},{0,-1,0},{0,0,-1}});
+    }
+    // For C1 (no symmetry) or unknown groups, only identity is used
+    
+    return ops;
+}
+
+// Helper functions for symmetry detection
+static bool check_c4_symmetry(const std::vector<double>& coords, const std::vector<double>& masses, double tol) {
+    // Check for 4-fold rotation axis along z-direction
+    int nion = coords.size() / 3;
+    if (nion < 2) return false;
+    
+    // Count atoms that are mapped to each other under 90-degree rotation
+    int mapped_count = 0;
+    for (int i = 0; i < nion; ++i) {
+        for (int j = 0; j < nion; ++j) {
+            if (i != j && masses[i] == masses[j]) {
+                // Check if atom j is the 90-degree rotation of atom i
+                double x1 = coords[3*i], y1 = coords[3*i+1], z1 = coords[3*i+2];
+                double x2 = coords[3*j], y2 = coords[3*j+1], z2 = coords[3*j+2];
+                
+                // 90-degree rotation: (x,y) -> (-y,x)
+                if (std::abs(x2 + y1) < tol && std::abs(y2 - x1) < tol && std::abs(z2 - z1) < tol) {
+                    mapped_count++;
+                }
+            }
+        }
+    }
+    
+    return mapped_count >= nion / 4;  // At least 1/4 of atoms should be mapped
+}
+
+static bool check_c3_symmetry(const std::vector<double>& coords, const std::vector<double>& masses, double tol) {
+    // Check for 3-fold rotation axis along z-direction
+    int nion = coords.size() / 3;
+    if (nion < 3) return false;
+    
+    int mapped_count = 0;
+    for (int i = 0; i < nion; ++i) {
+        for (int j = 0; j < nion; ++j) {
+            if (i != j && masses[i] == masses[j]) {
+                double x1 = coords[3*i], y1 = coords[3*i+1], z1 = coords[3*i+2];
+                double x2 = coords[3*j], y2 = coords[3*j+1], z2 = coords[3*j+2];
+                
+                // 120-degree rotation: (x,y) -> (-0.5*x - 0.866*y, 0.866*x - 0.5*y)
+                double x_rot = -0.5*x1 - 0.866025*y1;
+                double y_rot = 0.866025*x1 - 0.5*y1;
+                
+                if (std::abs(x2 - x_rot) < tol && std::abs(y2 - y_rot) < tol && std::abs(z2 - z1) < tol) {
+                    mapped_count++;
+                }
+            }
+        }
+    }
+    
+    return mapped_count >= nion / 3;  // At least 1/3 of atoms should be mapped
+}
+
+static bool check_c2_symmetry(const std::vector<double>& coords, const std::vector<double>& masses, double tol) {
+    // Check for 2-fold rotation axis along z-direction
+    int nion = coords.size() / 3;
+    if (nion < 2) return false;
+    
+    int mapped_count = 0;
+    for (int i = 0; i < nion; ++i) {
+        for (int j = 0; j < nion; ++j) {
+            if (i != j && masses[i] == masses[j]) {
+                double x1 = coords[3*i], y1 = coords[3*i+1], z1 = coords[3*i+2];
+                double x2 = coords[3*j], y2 = coords[3*j+1], z2 = coords[3*j+2];
+                
+                // 180-degree rotation: (x,y) -> (-x,-y)
+                if (std::abs(x2 + x1) < tol && std::abs(y2 + y1) < tol && std::abs(z2 - z1) < tol) {
+                    mapped_count++;
+                }
+            }
+        }
+    }
+    
+    return mapped_count >= nion / 2;  // At least 1/2 of atoms should be mapped
+}
+
+static bool check_mirror_symmetry(const std::vector<double>& coords, const std::vector<double>& masses, double tol) {
+    // Check for mirror plane perpendicular to x-axis
+    int nion = coords.size() / 3;
+    if (nion < 2) return false;
+    
+    int mapped_count = 0;
+    for (int i = 0; i < nion; ++i) {
+        for (int j = 0; j < nion; ++j) {
+            if (i != j && masses[i] == masses[j]) {
+                double x1 = coords[3*i], y1 = coords[3*i+1], z1 = coords[3*i+2];
+                double x2 = coords[3*j], y2 = coords[3*j+1], z2 = coords[3*j+2];
+                
+                // Mirror reflection: (x,y) -> (-x,y)
+                if (std::abs(x2 + x1) < tol && std::abs(y2 - y1) < tol && std::abs(z2 - z1) < tol) {
+                    mapped_count++;
+                }
+            }
+        }
+    }
+    
+    return mapped_count >= nion / 2;  // At least 1/2 of atoms should be mapped
+}
+
+// Enhanced symmetry detection for surfaces and adsorbates
+static std::string detect_advanced_symmetry(const std::vector<double>& unita, 
+                                           const std::vector<double>& coords,
+                                           const std::vector<double>& masses,
+                                           double sym_tolerance = 1e-6) {
+    if (unita.empty() || coords.empty() || masses.empty()) {
+        return "C1";  // No symmetry if no geometry info
+    }
+    
+    // Extract lattice vectors
+    double a1[3] = {unita[0], unita[1], unita[2]};
+    double a2[3] = {unita[3], unita[4], unita[5]};
+    double a3[3] = {unita[6], unita[7], unita[8]};
+    
+    // Calculate lattice parameters
+    double a = sqrt(a1[0]*a1[0] + a1[1]*a1[1] + a1[2]*a1[2]);
+    double b = sqrt(a2[0]*a2[0] + a2[1]*a2[1] + a2[2]*a2[2]);
+    double c = sqrt(a3[0]*a3[0] + a3[1]*a3[1] + a3[2]*a3[2]);
+    
+    // Calculate angles
+    double cos_alpha = (a2[0]*a3[0] + a2[1]*a3[1] + a2[2]*a3[2]) / (b * c);
+    double cos_beta = (a1[0]*a3[0] + a1[1]*a3[1] + a1[2]*a3[2]) / (a * c);
+    double cos_gamma = (a1[0]*a2[0] + a1[1]*a2[1] + a1[2]*a2[2]) / (a * b);
+    
+    // Check for surface-like structures (a3 much larger than a1, a2)
+    if (c > 2.0 * std::max(a, b)) {
+        // This looks like a surface - analyze 2D symmetry
+        
+        // Check for square surface (C4v symmetry)
+        if (std::abs(a-b) < sym_tolerance && std::abs(cos_gamma) < sym_tolerance) {
+            // Additional check: look for 4-fold rotation axis in atomic positions
+            bool has_c4 = check_c4_symmetry(coords, masses, sym_tolerance);
+            if (has_c4) return "C4v";
+        }
+        
+        // Check for hexagonal surface (C3v symmetry)
+        if (std::abs(cos_gamma + 0.5) < sym_tolerance) {
+            // Additional check: look for 3-fold rotation axis
+            bool has_c3 = check_c3_symmetry(coords, masses, sym_tolerance);
+            if (has_c3) return "C3v";
+        }
+        
+        // Check for rectangular surface (C2v symmetry)
+        if (std::abs(cos_gamma) < sym_tolerance) {
+            bool has_c2 = check_c2_symmetry(coords, masses, sym_tolerance);
+            if (has_c2) return "C2v";
+        }
+        
+        // Check for oblique surface (Cs symmetry)
+        bool has_mirror = check_mirror_symmetry(coords, masses, sym_tolerance);
+        if (has_mirror) return "Cs";
+        
+        return "C1";  // No 2D symmetry
+    }
+    
+    // Check for bulk crystal symmetries
+    // Check for cubic symmetry
+    if (std::abs(a-b) < sym_tolerance && std::abs(b-c) < sym_tolerance &&
+        std::abs(cos_alpha) < sym_tolerance && std::abs(cos_beta) < sym_tolerance && std::abs(cos_gamma) < sym_tolerance) {
+        return "Oh";
+    }
+    
+    // Check for tetragonal symmetry
+    if (std::abs(a-b) < sym_tolerance && std::abs(cos_alpha) < sym_tolerance && 
+        std::abs(cos_beta) < sym_tolerance && std::abs(cos_gamma) < sym_tolerance) {
+        return "D4h";
+    }
+    
+    // Check for orthorhombic symmetry
+    if (std::abs(cos_alpha) < sym_tolerance && std::abs(cos_beta) < sym_tolerance && std::abs(cos_gamma) < sym_tolerance) {
+        return "D2h";
+    }
+    
+    // Default to lower symmetry
+    return "C1";
+}
+
+// Detect crystal system and symmetry from lattice vectors and atomic positions
+static std::string detect_crystal_symmetry(const std::vector<double>& unita, 
+                                          const std::vector<double>& coords,
+                                          const std::vector<double>& masses,
+                                          double sym_tolerance = 1e-6) {
+    return detect_advanced_symmetry(unita, coords, masses, sym_tolerance);
+}
+
+// General k-point reduction using detected symmetry
+static void reduce_kpoints_by_symmetry(std::vector<std::vector<double>>& ks, 
+                                      const std::vector<double>& unita = {},
+                                      const std::vector<double>& coords = {},
+                                      const std::vector<double>& masses = {}) {
+    
+    // Detect symmetry if lattice information is provided
+    std::string group_name = "C1";  // Default to no symmetry
+    if (!unita.empty() && !coords.empty() && !masses.empty()) {
+        group_name = detect_crystal_symmetry(unita, coords, masses);
+        std::cout << "   Detected symmetry: " << group_name << std::endl;
+    } else {
+        std::cout << "   No geometry information available, using C1 symmetry (no reduction)" << std::endl;
+    }
+    
+    // Generate symmetry operations for the detected group
+    auto ops = generate_symmetry_operations(group_name);
+    
+    // Perform IBZ reduction
+    std::vector<std::vector<double>> unique_ks;
+    std::vector<double> unique_weights;
+    std::vector<bool> used(ks.size(), false);
+    double tol = 1e-8;
+    size_t nks = ks.size();
+    
+    for (size_t i = 0; i < nks; ++i) {
+        if (used[i]) continue;
+        std::vector<double> k = {ks[i][0], ks[i][1], ks[i][2]};
+        double w = ks[i][3];
+        // Find all symmetry-equivalent k-points
+        double total_weight = w;
+        used[i] = true;
+        for (size_t j = i + 1; j < nks; ++j) {
+            if (used[j]) continue;
+            std::vector<double> k2 = {ks[j][0], ks[j][1], ks[j][2]};
+            bool equiv = false;
+            for (const auto& R : ops) {
+                std::vector<double> ksym = apply_rotation(k, R);
+                // Bring ksym into [-0.5,0.5) range
+                for (int d=0; d<3; ++d) {
+                    while (ksym[d] >= 0.5) ksym[d] -= 1.0;
+                    while (ksym[d] < -0.5) ksym[d] += 1.0;
+                }
+                if (kpoint_equal(ksym, k2, tol)) {
+                    equiv = true;
+                    break;
+                }
+            }
+            if (equiv) {
+                total_weight += ks[j][3];
+                used[j] = true;
+            }
+        }
+        // Store only one representative (the first encountered)
+        unique_ks.push_back(k);
+        unique_weights.push_back(total_weight);
+    }
+    
+    // Rebuild ks
+    ks.clear();
+    for (size_t i=0; i<unique_ks.size(); ++i) {
+        ks.push_back({unique_ks[i][0], unique_ks[i][1], unique_ks[i][2], unique_weights[i]});
+    }
+}
+
+// Legacy function for backward compatibility
+static void reduce_kpoints_by_cubic_symmetry(std::vector<std::vector<double>>& ks) {
+    reduce_kpoints_by_symmetry(ks);
+}
 
 /**************************************************
  *                                                *
@@ -740,7 +1154,10 @@ static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& 
  * - The generated k-vectors are based on the Monkhorst-Pack grid.
  * - The 'ks' JSON array should be initialized before calling this function.
  */
-static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::vector<std::vector<double>>& ks)
+static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::vector<std::vector<double>>& ks,
+                               const std::vector<double>& unita = {},
+                               const std::vector<double>& coords = {},
+                               const std::vector<double>& masses = {})
 {
    int nkx = nx;
    int nky = ny;
@@ -786,8 +1203,27 @@ static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::ve
       ks.push_back(kvector);
    }
 
-   if (timereverse) 
+   size_t initial_kpoints = ks.size();
+   std::cout << "   Monkhorst-Pack grid: " << nkx << "x" << nky << "x" << nkz 
+             << " = " << initial_kpoints << " k-points" << std::endl;
+
+   if (timereverse) {
+      size_t before_timereverse = ks.size();
       monkhorst_pack_timereversal_prune(ks);
+      size_t after_timereverse = ks.size();
+      std::cout << "   Time-reversal reduction: " << before_timereverse 
+                << " -> " << after_timereverse << " k-points" << std::endl;
+   }
+   
+   // Add symmetry reduction using detected symmetry
+   size_t before_symmetry = ks.size();
+   reduce_kpoints_by_symmetry(ks, unita, coords, masses);
+   size_t after_symmetry = ks.size();
+   std::cout << "   Symmetry reduction: " << before_symmetry 
+             << " -> " << after_symmetry << " k-points" << std::endl;
+   std::cout << "   Total reduction: " << initial_kpoints 
+             << " -> " << after_symmetry << " k-points (factor of " 
+             << std::fixed << std::setprecision(1) << (double)initial_kpoints/after_symmetry << "x)" << std::endl;
 }
 
 
@@ -821,7 +1257,10 @@ static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::ve
  * - This function assumes that 'lines' contains the input data to be parsed.
  * - Additional keywords and parsing logic can be added as needed for specific input formats.
  */
-static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<std::string> lines) 
+static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<std::string> lines, 
+                                 const std::vector<double>& unita = {},
+                                 const std::vector<double>& coords = {},
+                                 const std::vector<double>& masses = {}) 
 {
    int cur = *curptr;
    int endcount = 1;
@@ -865,7 +1304,8 @@ static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<st
              // Convert the JSON array to a vector of vectors of doubles
              kvectors = brillouinjson["kvectors"].get<std::vector<std::vector<double>>>();
          }
-         monkhorst_pack_set(nkx,nky,nkz,kvectors);
+         // Use geometry information passed from the parsing context
+         monkhorst_pack_set(nkx,nky,nkz,kvectors, unita, coords, masses);
          brillouinjson["kvectors"] = kvectors;
 
       } else if (mystring_contains(line, "path")) {
@@ -1412,7 +1852,10 @@ static json parse_dplot(json dplot, int *curptr,
  **************************************************/
 
 static json parse_nwpw(json nwpwjson, int *curptr,
-                       std::vector<std::string> lines) {
+                       std::vector<std::string> lines,
+                       const std::vector<double>& unita = {},
+                       const std::vector<double>& coords = {},
+                       const std::vector<double>& masses = {}) {
   // json nwpwjson;
 
   int cur = *curptr;
@@ -1446,7 +1889,7 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           nwpwjson["brillouin_zone"] = brillouin_zone;
        }
        *curptr = cur;
-       nwpwjson["brillouin_zone"] = parse_brillouin_zone(nwpwjson["brillouin_zone"], curptr, lines);
+       nwpwjson["brillouin_zone"] = parse_brillouin_zone(nwpwjson["brillouin_zone"], curptr, lines, unita, coords, masses);
        cur = *curptr;
     } 
     else if (mystring_contains(line, "monkhorst-pack")) 
@@ -1469,7 +1912,14 @@ static json parse_nwpw(json nwpwjson, int *curptr,
              // Convert the JSON array to a vector of vectors of doubles
              kvectors = nwpwjson["brillouin_zone"]["kvectors"].get<std::vector<std::vector<double>>>();
        }
-       monkhorst_pack_set(nkx,nky,nkz,kvectors);
+       // Use the geometry information passed from the calling context
+       // If not available, try to get lattice vectors from simulation_cell
+       std::vector<double> local_unita = unita;
+       if (local_unita.empty() && !nwpwjson["simulation_cell"]["unita"].is_null()) {
+           local_unita = nwpwjson["simulation_cell"]["unita"].get<std::vector<double>>();
+       }
+       
+       monkhorst_pack_set(nkx,nky,nkz,kvectors, local_unita, coords, masses);
        nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
 
 
@@ -2517,7 +2967,52 @@ json parse_rtdbjson(json rtdb) {
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "charge")) {
        rtdb["charge"] = std::stoi(mystring_trim(mystring_split(mystring_split(lines[cur], "charge")[1], "\n")[0]));
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "nwpw")) {
-       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
+       // Extract geometry information to pass to nwpw parsing
+       std::vector<double> unita, coords, masses;
+       if (!rtdb["geometries"].is_null()) {
+           // Find the active geometry (usually the first one)
+           std::string geom_key = "geometry";
+           if (rtdb["geometries"][geom_key].is_null()) {
+               // Try to find any geometry key that has coordinates
+               for (auto it = rtdb["geometries"].begin(); it != rtdb["geometries"].end(); ++it) {
+                   if (it.value().is_object() && !it.value()["coords"].is_null()) {
+                       geom_key = it.key();
+                       break;
+                   }
+               }
+           }
+           
+           // If still null, try the first non-null geometry
+           if (rtdb["geometries"][geom_key].is_null()) {
+               for (auto it = rtdb["geometries"].begin(); it != rtdb["geometries"].end(); ++it) {
+                   if (!it.value().is_null() && it.value().is_object()) {
+                       geom_key = it.key();
+                       break;
+                   }
+               }
+           }
+           
+           // Debug: print available geometry keys
+           std::cout << "Available geometry keys: ";
+           for (auto it = rtdb["geometries"].begin(); it != rtdb["geometries"].end(); ++it) {
+               std::cout << "\"" << it.key() << "\" ";
+           }
+           std::cout << std::endl;
+           
+           if (!rtdb["geometries"][geom_key]["unita"].is_null()) {
+               unita = rtdb["geometries"][geom_key]["unita"].get<std::vector<double>>();
+               std::cout << "Found unita with " << unita.size() << " elements" << std::endl;
+           }
+           if (!rtdb["geometries"][geom_key]["coords"].is_null()) {
+               coords = rtdb["geometries"][geom_key]["coords"].get<std::vector<double>>();
+               std::cout << "Found coords with " << coords.size() << " elements" << std::endl;
+           }
+           if (!rtdb["geometries"][geom_key]["masses"].is_null()) {
+               masses = rtdb["geometries"][geom_key]["masses"].get<std::vector<double>>();
+               std::cout << "Found masses with " << masses.size() << " elements" << std::endl;
+           }
+       }
+       rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines, unita, coords, masses);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
        rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
@@ -2806,6 +3301,44 @@ void parse_write(std::string rtdbstring) {
             << std::endl;
   std::ofstream ofile(pdir + "/" + dbname0 + ".json");
   ofile << std::setw(4) << rtdbjson << std::endl;
+}
+
+// Extract geometry information from parsed JSON for symmetry detection
+static void extract_geometry_info(const json& rtdb, 
+                                 std::vector<double>& unita,
+                                 std::vector<double>& coords,
+                                 std::vector<double>& masses) {
+    unita.clear();
+    coords.clear();
+    masses.clear();
+    
+    // Extract lattice vectors from simulation cell
+    if (!rtdb["nwpw"]["simulation_cell"]["unita"].is_null()) {
+        unita = rtdb["nwpw"]["simulation_cell"]["unita"].get<std::vector<double>>();
+    }
+    
+    // Extract atomic coordinates and masses from geometry
+    if (!rtdb["geometries"].is_null()) {
+        // Find the active geometry (usually the first one)
+        std::string geom_key = "geometry";
+        if (rtdb["geometries"][geom_key].is_null()) {
+            // Try to find any geometry key
+            for (auto it = rtdb["geometries"].begin(); it != rtdb["geometries"].end(); ++it) {
+                if (it.value().is_object() && !it.value()["coords"].is_null()) {
+                    geom_key = it.key();
+                    break;
+                }
+            }
+        }
+        
+        if (!rtdb["geometries"][geom_key]["coords"].is_null()) {
+            coords = rtdb["geometries"][geom_key]["coords"].get<std::vector<double>>();
+        }
+        
+        if (!rtdb["geometries"][geom_key]["masses"].is_null()) {
+            masses = rtdb["geometries"][geom_key]["masses"].get<std::vector<double>>();
+        }
+    }
 }
 
 } // namespace pwdft
