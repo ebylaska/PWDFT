@@ -7,6 +7,7 @@
 #include "pbe96.hpp"
 #include "pbesol.hpp"
 #include "revpbe.hpp"
+#include "cvdw_DF.hpp"
 
 namespace pwdft {
 
@@ -19,7 +20,7 @@ namespace pwdft {
  ********************************/
 // rho,agr,fn,fdn - real
 // grx,gry,grz - complex
-void v_cwexc(const int gga, Cneb *mycneb, const double *dn,
+void v_cwexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn,
              const double x_parameter, const double c_parameter, double *xcp,
              double *xce, double *rho, double *grx, double *gry, double *grz,
              double *agr, double *fn, double *fdn) 
@@ -29,6 +30,10 @@ void v_cwexc(const int gga, Cneb *mycneb, const double *dn,
    double *Gy = mycneb->Gpackxyz(0, 1);
    double *Gz = mycneb->Gpackxyz(0, 2);
    double scal1 = 1.0 / ((double)((mycneb->nx) * (mycneb->ny) * (mycneb->nz)));
+
+   bool has_vdw = false;
+   if (vdw != nullptr)
+      has_vdw = vdw->exist();
  
    /**********************************
     ***** restricted calculation *****
@@ -91,6 +96,14 @@ void v_cwexc(const int gga, Cneb *mycneb, const double *dn,
       default:
         gen_PBE96_BW_restricted(mycneb->nfft3d, rho, agr, x_parameter, c_parameter, xce, fn, fdn);
       }
+
+      // add vdw here
+      if (has_vdw)
+      {
+         vdw->evaluate(mycneb->ispin,dn,agr,xce,fn,fdn);
+      }
+
+
      
       /* calculate df/d|grad n| *(grad n)/|grad n| */
       mycneb->rc_Divide(agr, grx);
@@ -246,6 +259,14 @@ void v_cwexc(const int gga, Cneb *mycneb, const double *dn,
       default:
         gen_PBE96_BW_unrestricted(mycneb->nfft3d, rho, agr, x_parameter, c_parameter, xce, fn, fdn);
       }
+
+      // add vdw here
+      if (has_vdw)
+      {
+         std::cout << "vdw HERB" << std::endl;
+         vdw->evaluate(mycneb->ispin,dn,agr,xce,fn,fdn);
+      }
+
      
       /**** calculate df/d|grad nup|* (grad nup)/|grad nup|  ****
        **** calculate df/d|grad ndn|* (grad ndn)/|grad ndn|  ****

@@ -56,6 +56,7 @@
 #include "cExchange_Correlation.hpp"
 #include "v_cwexc.hpp"
 #include "v_exc.hpp"
+#include "cvdw_DF.hpp"
 #include <algorithm>
 #include "parsestring.hpp"
 
@@ -167,6 +168,13 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
    }
    if ((gga >= 300))
      use_mgga = true;
+
+   if (has_vdw)
+   {
+      myvdw = new cvdw_DF(mygrid,control,is_vdw2);
+   }
+
+
  
    // std::cout << "xc_name =" << xc_name << std::endl;
 }
@@ -190,7 +198,7 @@ void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
    // std::cout << "sumall=" << sumall << std::endl;
 
   } else if (use_gga) {
-    v_cwexc(gga, mycneb, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn,
+    v_cwexc(gga, mycneb, myvdw, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn,
             fdn);
   } else if (use_mgga) {
   }

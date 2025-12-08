@@ -4,6 +4,7 @@
 #include "Control2.hpp"
 #include "Cneb.hpp"
 #include "parsestring.hpp"
+#include "cvdw_DF.hpp"
 #include <iostream>
 
 namespace pwdft {
@@ -11,6 +12,7 @@ namespace pwdft {
 class cXC_Operator {
 
   Cneb *mycneb;
+  cvdw_DF *myvdw = nullptr;
 
   double *xtmp;
   double *rho, *grx, *gry, *grz, *agr, *fn, *fdn;

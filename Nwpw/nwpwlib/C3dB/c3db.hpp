@@ -91,6 +91,7 @@ public:
    void r_nzero(int, double *);
    void rr_copy(const double *, double *);
    void cr_copy(const double *, double *);
+   void rc_copy(double *, double *);
    void rr_SMul(const double, const double *, double *);
    void rc_SMul(const double, const double *, double *);
    void r_SMul(const double, double *);

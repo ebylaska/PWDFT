@@ -1,6 +1,4 @@
 
-
-
 #include <cmath>
 
 #include "vdw.hpp"
@@ -18,6 +16,28 @@
 #include "iofmt.hpp"
 #include <cstring>
 
+
+/*
+------------------------------------------------------------------------------
+  NOTE ON k-POINT INDEPENDENCE OF THE VDW-DF FUNCTIONAL
+
+  The nonlocal van der Waals correlation (vdW-DF) depends only on the 
+  *total* electron density rho(r) and related local response quantities
+  (e.g., grad rho and q0).  No orbital- or k-resolved terms enter the 
+  functional.  Therefore, vdW-DF is formally independent of the Bloch 
+  vector k, and the vdW energy does not depend on Brillouin-zone sampling.
+
+  Practically, the vdW kernel is evaluated using densities in real space
+  and standard FFT machinery.  Although the intermediate arrays are complex
+  (because FFTs are complex-valued in general), the physical quantities
+  entering vdW-DF are real and contain no explicit k dependence.
+
+  Consequence: vdW-DF can be evaluated identically for Gamma-only and
+  k-point runs, using the same kernel tables and the same real-space
+  density (summed over k if needed).  No special handling of k-points
+  is required inside the vdW routines.
+------------------------------------------------------------------------------
+*/
 
 
 namespace pwdft {
@@ -73,18 +93,36 @@ static void vdw_DF_init_poly(
  *            vdw_DF::init_poly       *
  *                                    *
  **************************************/
+/**
+ * @brief Initialize cubic–spline interpolation tables for the vdW kernel.
+ *
+ * Constructs the spline basis ya,y2a over the q–mesh so that subsequent
+ * polynomial evaluations poly(i,x) are O(1).  Must be called after reading
+ * qmesh from vdw_kernels.dat.  The result is independent of k–points.
+ */
 void vdw_DF::init_poly()
 {
     std::vector<double> utmp(Nqs);
     vdw_DF_init_poly(Nqs, qmesh, ya, ya2, utmp.data());
 }
 
+
 /**************************************
  *                                    *
  *            vdw_DF::poly            *
  *                                    *
  **************************************/
-
+/**
+ * @brief Evaluate the i-th polynomial p(x) and its derivative dp(x) for q0.
+ *
+ * Implements the cubic-spline evaluation of the vdW kernel “shape functions”
+ * (Román-Pérez & Soler table).  Used in both θ and u-function construction.
+ *
+ * @param i   1-based kernel index (1…Nqs)
+ * @param x   local q0 value
+ * @param p   output spline value
+ * @param dp  output derivative dp/dx
+ */
 inline void vdw_DF::poly(int i, double x, double &p, double &dp)
 {
     // i is 1-based in Fortran, so convert to 0-based in C++:
@@ -125,6 +163,15 @@ inline void vdw_DF::poly(int i, double x, double &p, double &dp)
  *       vdw_DF::generate_ufunc       *
  *                                    *
  **************************************/
+/**
+ * @brief Contract θ(G,j) with tabulated kernel φ to form u(G,i).
+ *
+ * Performs the Román-Pérez/Soler convolution in reciprocal space using the
+ * spline-interpolated kernel φ and the complex θ(G,j).  Complex arithmetic
+ * arises from FFTs only; the vdW functional itself has no explicit k-dependence.
+ *
+ * @param ufunc complex u(G,i) array, accumulated over (i,j) pairs.
+ */
 void vdw_DF::generate_ufunc(const int nk1,
                            const int Nqs,
                            const double *gphi,              // [nk1]
@@ -227,6 +274,14 @@ void vdw_DF::generate_ufunc(const int nk1,
  *     vdw_DF::generate_rho           *
  *                                    *
  **************************************/
+/**
+ * @brief Build total electron density ρ(r) from spin densities dn.
+ *
+ * Adds spin channels plus a numerical cutoff.  Required prior to θ(G,j).
+ *
+ * @param dn  input density dn(r,spin)
+ * @param rho output total density (real space)
+ */
 void vdw_DF::generate_rho(const int ispin,
                          const int n2ft3d,
                          const double* dn,   // dn[n2ft3d][ispin]
@@ -252,6 +307,16 @@ void vdw_DF::generate_rho(const int ispin,
  *     vdw_DF::generate_potentials    *
  *                                    *
  **************************************/
+/**
+ * @brief Contract u(r,i) with spline-weighted q0 response to form
+ *        nonlocal correlation energy density and potentials.
+ *
+ * Takes real-space u(r,i) (after inverse FFT), multiplies by p_j(q0) and
+ * derivatives, and accumulates nonlocal energy exc(r), potential fn(r,spin),
+ * and density-derivative fdn(r,spin).  Fully consistent with the Fortran driver.
+ *
+ * @note vdW-DF potentials depend only on ρ and gradients; no explicit k terms.
+ */
 void vdw_DF::generate_potentials(int Nqs,
                                  int nfft3d,
                                  int ispin,
@@ -380,6 +445,17 @@ void vdw_DF::generate_potentials(int Nqs,
  *     vdw_DF::generate_theta_g       *
  *                                    *
  **************************************/
+/**
+ * @brief Construct the nonlocal density combination θ(G,j).
+ *
+ * Builds q0(r) and θ(r,j) = ρ(r)*p_j(q0(r)) on real space, and FFTs to G.
+ * All exchange-correlation screening from vdW-DF is handled here.  The result
+ * depends only on total density and gradients, not on Bloch k.
+ *
+ * @param Nqs    number of kernel points
+ * @param ispin  number of spin channels (1 or 2)
+ * @param theta  complex θ(G,j) array [nfft3d*Nqs]
+ */
 void vdw_DF::generate_theta_g(
         int Nqs,
         int nfft3d,
@@ -652,6 +728,23 @@ vdw_DF::vdw_DF(Pneb *inmygrid, Control2 &control, bool is_vdw2)
    qmin = 0.0;
 }
 
+
+
+/********************************
+ *                              *
+ *       vdw_DF::evaluate       *
+ *                              *
+ ********************************/
+/**
+ * @brief Top-level vdW-DF driver: compute nonlocal correlation and potentials.
+ *
+ * Performs the full pipeline:
+ *   (1) LDA pieces, (2) total density, (3) θ(G,j), (4) u(G,i),
+ *   (5) exc, fn, and fdn.
+ *
+ * The entire vdW-DF evaluation is independent of Brillouin-zone sampling:
+ * only total real-space density (summed over k, if present) enters.
+ */
 void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
                       double *exc, double *fn, double *fdn)
 {

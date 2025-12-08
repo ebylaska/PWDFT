@@ -1144,6 +1144,21 @@ void c3db::rr_copy(const double *ptr1, double *ptr2)
  *        c3db::cc_copy         *
  *                              *
  ********************************/
+/**
+ * @brief Copy a packed complex array (real/imag interleaved).
+ *
+ * Performs a direct element-wise copy of a complex array stored in
+ * interleaved format
+ * \f$(r_0,i_0,r_1,i_1,\ldots)\f$
+ * into the destination array.  Both input and output buffers are
+ * assumed to have size \c 2*nfft3d doubles.
+ *
+ * This is a pure complex→complex ("cc") copy and preserves both the
+ * real and imaginary parts exactly.
+ *
+ * @param[in]  ptr1  Input complex array.
+ * @param[out] ptr2  Output complex array (must be allocated).
+ */
 void c3db::cc_copy(const double *ptr1, double *ptr2) 
 {
    std::memcpy(ptr2, ptr1, 2*nfft3d * sizeof(double));
@@ -1154,6 +1169,29 @@ void c3db::cc_copy(const double *ptr1, double *ptr2)
  *        c3db::cr_copy         *
  *                              *
  ********************************/
+/**
+ * @brief Copy the real components of a complex array into a real array.
+ *
+ * Extracts only the real part of each complex element
+ * \f$(\mathrm{Re}\,z_i)\f$ from an array stored in complex packed
+ * format \f$\{\,z_i = (r_i,\, i_i)\,\}\f$ (real,imag interleaved) and
+ * writes them into a real scalar array:
+ *
+ * \f[
+ *    \mathrm{ptr2}[i] \leftarrow \Re\{\mathrm{ptr1}[2\,i]\}
+ * \f]
+ *
+ * This is conceptually a complex→real ("cr") mapping, but note that
+ * the complex array is stored in interleaved real/imag format.  The
+ * imaginary components are ignored.
+ *
+ * The loop is manually unrolled (5 at a time) for improved
+ * vectorization on large grids.
+ *
+ * @param[in]  ptr1  Input complex array stored as
+ *                   \c (real,imag,real,imag,...).
+ * @param[out] ptr2  Output real array of length @c nfft3d_map.
+ */
 void c3db::cr_copy(const double *ptr1, double *ptr2) 
 {
    int m = nfft3d_map % 5;
@@ -1182,28 +1220,83 @@ void c3db::cr_copy(const double *ptr1, double *ptr2)
    return;
 }
 
+/********************************
+ *                              *
+ *        c3db::rc_copy         *
+ *                              *
+ ********************************/
+ /**
+ * @brief Copy a real array into a complex (interleaved) array with zero imaginary part.
+ *
+ * This routine copies a real-valued grid stored in @p ptr1 into a complex-valued
+ * buffer @p ptr2 following the interleaved convention
+ *
+ *   ptr2[2*i]   = ptr1[i]   (real component)
+ *   ptr2[2*i+1] = 0.0       (imag component)
+ *
+ * Only the first @c nfft3d_map real points are copied; the corresponding
+ * complex storage has length 2 * nfft3d_map.  This is used when promoting
+ * real-space data to complex form for FFTs.  (The name "rc" refers to
+ * real→complex.)
+ *
+ * @param[in]  ptr1  Real input array (size >= nfft3d_map)
+ * @param[out] ptr2  Complex output array, interleaved real/imag (size >= 2*nfft3d_map)
+ *
+ * @note Imaginary parts are explicitly set to zero.
+ */
+void c3db::rc_copy(double *ptr1, double *ptr2) 
+{
+   int m = nfft3d_map % 5;
+   if (m > 0)
+      for (auto i=0; i<m; ++i)
+      {  
+         int ir = 2*i;
+         int ic = 2*i+1;
+         ptr2[ir] = ptr1[i];
+         ptr2[ic] = 0.0;
+      }     
+   if (nfft3d_map < 5) 
+      return;
+   for (auto i=m; i<nfft3d_map; i += 5)
+   {     
+      int ir0 = 2*i;     int ic0 = 2*i + 1;    
+      int ir1 = 2*(i+1); int ic1 = 2*(i+1) + 1;
+      int ir2 = 2*(i+2); int ic2 = 2*(i+2) + 1;
+      int ir3 = 2*(i+3); int ic3 = 2*(i+3) + 1;
+      int ir4 = 2*(i+4); int ic4 = 2*(i+4) + 1;
+
+      ptr2[ir0] = ptr1[i];   ptr2[ic0] = 0.0;
+      ptr2[ir1] = ptr1[i+1]; ptr2[ic1] = 0.0;
+      ptr2[ir2] = ptr1[i+2]; ptr2[ic2] = 0.0;
+      ptr2[ir3] = ptr1[i+3]; ptr2[ic3] = 0.0;
+      ptr2[ir4] = ptr1[i+4]; ptr2[ic4] = 0.0;
+   }
+   return;
+}
+
 
 /********************************
  *                              *
  *        c3db::rr_SMul         *
  *                              *
  ********************************/
- /**
- * @brief Multiply each element of a double array by a scalar value.
+/**
+ * @brief Scale a real scalar field element-wise.
  *
- * This function multiplies each element of the source double array `ptr1` by the scalar value `da` and stores
- * the result in the destination double array `ptr2`. The size of the arrays and the scalar value `da` determine
- * the number of elements to process.
+ * This routine multiplies each entry of the real input array \p ptr1 by the
+ * constant factor \p da and writes the result to the real output array
+ * \p ptr2.  The “rr” prefix indicates a real-to-real operation (R→R), in
+ * contrast to routines such as rc_SMul which pack real data into complex
+ * layout.
  *
- * @param da The scalar value to multiply with each element of `ptr1`.
- * @param ptr1 A pointer to the source double array containing the elements to be multiplied.
- * @param ptr2 A pointer to the destination double array where the multiplied elements will be stored.
+ * A 5-element unrolled loop is used for efficiency, mirroring the style of
+ * SIMD-friendly kernels found in other parts of the NWPW code.
  *
- * @return None.
+ * No FFT or packing is performed here; this is simply a pointwise scale.
  *
- * @note The function efficiently performs element-wise multiplication of `ptr1` with the scalar `da` and stores
- *       the result in `ptr2`. The size of the operation is determined by the value of `n2ft3d_map`, which specifies
- *       the number of elements to process.
+ * @param da    Scalar factor applied to each element in \p ptr1.
+ * @param ptr1  Input real array of length nfft3d_map.
+ * @param ptr2  Output real array of length nfft3d_map.
  */
 void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2) 
 {
@@ -1229,6 +1322,30 @@ void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
  *        c3db::rc_SMul         *
  *                              *
  ********************************/
+/**
+ * @brief Scale and pack a real scalar field into a complex array (real part only).
+ *
+ * This routine multiplies a real-space scalar field \p ptr1 by a constant
+ * scaling factor \p da and stores the result in the real part of the complex
+ * output array \p ptr2, while explicitly zeroing the imaginary part.
+ *
+ * Conceptually this performs:
+ *    ptr2[i].real = da * ptr1[i];
+ *    ptr2[i].imag = 0.0;
+ *
+ * The prefix "rc" matches the general NWPW convention of real-to-complex
+ * (R→C) operations, although the data itself is treated as complex storage
+ * (interleaved real/imag).  This does **not** imply a mathematical FFT here,
+ * only a packing step into complex layout used by FFT kernels.
+ *
+ * The loop is unrolled in blocks of five elements to improve SIMD/CPU
+ * efficiency on common architectures.
+ *
+ * @param da    Scalar factor applied to each real element.
+ * @param ptr1  Input real array of length nfft3d_map.
+ * @param ptr2  Output complex array (interleaved real/imag), of length
+ *              2 * nfft3d_map (real stored at even indices, imaginary at odd).
+ */
 void c3db::rc_SMul(const double da, const double *ptr1, double *ptr2) 
 {
    int m = nfft3d_map % 5;
@@ -1257,6 +1374,29 @@ void c3db::rc_SMul(const double da, const double *ptr1, double *ptr2)
    return;
 }
 
+/********************************
+ *                              *
+ *        c3db::cc_SMul         *
+ *                              *
+ ********************************/
+/**
+ * @brief Scale a complex-array-in-complex-layout element-wise.
+ *
+ * This routine multiplies each entry of the input array \p ptr1 by the
+ * scalar \p da and stores the result in \p ptr2.  The naming convention
+ * “cc” indicates a **complex → complex** linear operation, in contrast
+ * with “rc” (real → complex packing) or “rr” (real → real).
+ *
+ * Although these arrays occupy complex storage, the multiplication here
+ * is purely a scalar multiply over the underlying double array
+ * (real+imag packed).  No FFT, packing, or unpacking is performed.
+ *
+ * The function is unrolled in blocks of 5 for efficiency on long arrays.
+ *
+ * @param da    Scalar multiplier.
+ * @param ptr1  Input complex array (double-packed), length n2ft3d_map.
+ * @param ptr2  Output complex array (double-packed), length n2ft3d_map.
+ */
 void c3db::cc_SMul(const double da, const double *ptr1, double *ptr2)
 {
    int m = n2ft3d_map % 5;
@@ -1276,6 +1416,34 @@ void c3db::cc_SMul(const double da, const double *ptr1, double *ptr2)
    return;
 }
 
+
+
+/********************************
+ *                              *
+ *        c3db::c_ZMul          *
+ *                              *
+ ********************************/
+/**
+ * @brief Multiply a complex G–space array by a complex scalar.
+ *
+ * This applies the transformation
+ * \f[
+ *    z \leftarrow (da + i\,db)\, z
+ * \f]
+ * to each complex entry stored in-place in @p ptr2.  The array is in
+ * packed complex form (real, imag interleaved) of length @c nfft3d_map.
+ *
+ * The name “c_ZMul” denotes a complex → complex multiply in G–space
+ * (matching the C-layout of the mapped FFT data).  No packing, unpacking,
+ * or FFT is performed; only the element-wise complex multiply is applied.
+ *
+ * The inner loop is unrolled in blocks of 4 complex numbers (8 doubles)
+ * for vectorization efficiency.
+ *
+ * @param da  Real part of the complex scalar.
+ * @param db  Imag part of the complex scalar.
+ * @param ptr2 In/out array of complex numbers (real/imag interleaved).
+ */
 void c3db::c_ZMul(const double da, const double db, double *ptr2)
 {
    int m = nfft3d_map % 8;
@@ -1438,6 +1606,25 @@ void c3db::r_SMul(const double da, double *ptr2)
  *          c3db::c_SMul        *
  *                              *
  ********************************/
+/**
+ * @brief Multiply a packed real array (interleaved complex layout) by a real scalar in G-space.
+ *
+ * Performs an in–place real scaling:
+ * \f[
+ *    a \leftarrow da \, a
+ * \f]
+ * where @p ptr2 is stored in complex-interleaved form (real, imag, real, imag, ...),
+ * but only the real components are actually present in this packed representation.
+ *
+ * The name “c_SMul” follows the convention that this is a
+ * complex-layout (c_) scalar multiply, operating in G-space.
+ * No FFTs, packing, or unpacking are performed.
+ *
+ * The loop is unrolled in blocks of 5 for better vectorization.
+ *
+ * @param da    Real scalar multiplier.
+ * @param ptr2  In/out array (length n2ft3d_map) stored in compact complex layout.
+ */
 void c3db::c_SMul(const double da, double *ptr2)
 {
    int m = n2ft3d_map % 5;
@@ -1464,6 +1651,23 @@ void c3db::c_SMul(const double da, double *ptr2)
  *          c3db::r_abs         *
  *                              *
  ********************************/
+/**
+ * @brief Take the absolute value of each real-space grid entry.
+ *
+ * Applies \f$ |x| \f$ element-wise to @p ptr2, overwriting the input array:
+ * \f[
+ *     x_i \leftarrow |x_i|
+ * \f]
+ *
+ * This routine operates on the real-space layout (hence the `r_` prefix) where
+ * each grid value is stored as a single real number—unlike the complex
+ * interleaved representations used in G-space.
+ *
+ * The loop is manually unrolled in blocks of 5 for improved vectorization.
+ * No packing, unpacking, FFT, or scaling is performed.
+ *
+ * @param ptr2  In/out array of length @c nfft3d_map containing real-space values.
+ */
 void c3db::r_abs(double *ptr2) 
 {
    int m = nfft3d_map % 5;
@@ -1487,6 +1691,26 @@ void c3db::r_abs(double *ptr2)
  *          c3db::cr_sqr        *
  *                              *
  ********************************/
+/**
+ * @brief Compute the squared modulus of a complex array in real-space layout.
+ *
+ * Interprets @p ptr1 as an array of complex values stored in interleaved
+ * (real,imag) order:  (Re,Im), (Re,Im), ...
+ *
+ * For each complex value \f$z = a + ib\f$ it computes
+ * \f[
+ *   |z|^2 = a^2 + b^2
+ * \f]
+ * and stores the real result into @p ptr2 at the corresponding real-grid index.
+ *
+ * This produces a real-valued field (hence the `r` in `cr_sqr`), even though
+ * the input is a complex representation (`c` prefix).
+ *
+ * The loop is manually unrolled (blocks of 5) for better vectorization.
+ *
+ * @param[in]  ptr1  Complex input (size 2*nfft3d_map), interleaved real/imag.
+ * @param[out] ptr2  Real output array (size nfft3d_map), receiving |z|² values.
+ */
 void c3db::cr_sqr(const double *ptr1, double *ptr2)
 {
    int i;
@@ -1520,6 +1744,22 @@ void c3db::cr_sqr(const double *ptr1, double *ptr2)
  *          c3db::r_sqr         *
  *                              *
  ********************************/
+/**
+ * @brief In–place real–space squaring of a scalar grid.
+ *
+ * Squares each element of a real array \f$r_i\f$, replacing it by 
+ * \f$r_i^2\f$:  
+ * \f[
+ *   r_i \leftarrow r_i^2 .
+ * \f]
+ *
+ * This operates on a real-valued grid (hence the `r` prefix) and does
+ * not interpret the data as complex.  The loop is manually unrolled (5
+ * at a time) for improved vectorization on large grids.
+ *
+ * @param[in,out] ptr2  Real array of length @c nfft3d_map whose values
+ *                      are replaced by their squares.
+ */
 void c3db::r_sqr(double *ptr2) 
 {
    int i;
@@ -1544,6 +1784,26 @@ void c3db::r_sqr(double *ptr2)
  *          c3db::rr_sqr        *
  *                              *
  ********************************/
+/**
+ * @brief Real–space squaring into a separate array.
+ *
+ * Computes the elementwise square of a real scalar grid \f$r_i\f$
+ * and stores the result in a separate output array:
+ *
+ * \f[
+ *   p_i = r_i^2 .
+ * \f]
+ *
+ * Unlike ::r_sqr(), this routine does **not** operate in–place:
+ * the input @p ptr2 is unchanged and @p ptr3 receives the result.
+ *
+ * Loop unrolling (5 elements per iteration) is used to improve memory
+ * throughput and vectorization performance for large `nfft3d_map`.
+ *
+ * @param[in]  ptr2  Real input array of length @c nfft3d_map.
+ * @param[out] ptr3  Real output array of length @c nfft3d_map
+ *                   receiving @f$r_i^2@f$.
+ */
 void c3db::rr_sqr(const double *ptr2, double *ptr3) 
 {
    int m = nfft3d_map % 5;
@@ -1567,6 +1827,28 @@ void c3db::rr_sqr(const double *ptr2, double *ptr3)
  *        c3db::rr_addsqr       *
  *                              *
  ********************************/
+/**
+ * @brief Accumulate real–space squared values into an existing array.
+ *
+ * Computes \f$r_i^2\f$ from the real input array @p ptr2 and
+ * **adds** it to the existing values of @p ptr3:
+ *
+ * \f[
+ *    p_i \leftarrow p_i + r_i^2 .
+ * \f]
+ *
+ * This routine is not in–place with respect to @p ptr2
+ * (the input is read-only), but modifies @p ptr3 in-place by accumulation.
+ *
+ * Typical usage is in building density‐derived scalar fields
+ * such as |ψ|² contributions or higher‐order real‐space contractions.
+ *
+ * Loop unrolling (5 elements per block) is used to assist vectorization
+ * on large `nfft3d_map`.
+ *
+ * @param[in]     ptr2  Real input array of length @c nfft3d_map.
+ * @param[in,out] ptr3  Real accumulation array of length @c nfft3d_map.
+ */
 void c3db::rr_addsqr(const double *ptr2, double *ptr3) 
 {
    int m = nfft3d_map % 5;
@@ -1591,6 +1873,27 @@ void c3db::rr_addsqr(const double *ptr2, double *ptr3)
  *        c3db::cr_addsqr       *
  *                              *
  ********************************/
+/**
+ * @brief Accumulate squared modulus of a complex array into a real buffer.
+ *
+ * Computes \f$|z_i|^2 = \Re(z_i)^2 + \Im(z_i)^2\f$ from the complex input
+ * array @p ptr2 (stored as interleaved real/imag pairs) and **adds**
+ * it into the real output array @p ptr3 element–wise:
+ *
+ * \f[
+ *   p_i \leftarrow p_i + \bigl(\Re(z_i)^2 + \Im(z_i)^2\bigr).
+ * \f]
+ *
+ * This is the complex–to–real analogue of @c rr_addsqr, used when
+ * a G-space field is stored as interleaved (real,imag). It is not in–place
+ * w.r.t. @p ptr2, but modifies @p ptr3 in place by accumulation.
+ *
+ * Loop unrolling (blocks of 5) supports SIMD-friendly access patterns
+ * for large @c nfft3d_map.
+ *
+ * @param[in]     ptr2  Complex input array, length @c 2*nfft3d_map (r,i,r,i…).
+ * @param[in,out] ptr3  Real output accumulation buffer of length @c nfft3d_map.
+ */
 void c3db::cr_addsqr(const double *ptr2, double *ptr3)
 {
    int m = nfft3d_map % 5;
@@ -1892,6 +2195,31 @@ void c3db::rrr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
  *         c3db::crr_Minus      *
  *                              *
  ********************************/
+/**
+ * @brief Subtract a real array from the **real part** of a complex array.
+ *
+ * Forms
+ * \f[
+ *   p_i = \Re(z_i) - r_i,
+ * \f]
+ * where the complex input @p ptr1 is stored in interleaved form
+ * `(real, imag, real, imag, …)` of length `2*nfft3d_map`, and the real
+ * input @p ptr2 and output @p ptr3 each have length `nfft3d_map`.
+ *
+ * This is a complex→real operation that discards the imaginary part
+ * of @p ptr1 and stores the element-wise difference in @p ptr3:
+ *
+ * @code
+ * ptr3[i] = ptr1[2*i] - ptr2[i];
+ * @endcode
+ *
+ * Loop unrolling (blocks of 5) is used for higher throughput and better
+ * SIMD behavior on large grids.
+ *
+ * @param[in]  ptr1  Complex input (interleaved real/imag) of size `2*nfft3d_map`.
+ * @param[in]  ptr2  Real input array of size `nfft3d_map`.
+ * @param[out] ptr3  Real output array (updated elementwise).
+ */
 void c3db::crr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
 {     
    int m = nfft3d_map % 5;
@@ -1924,6 +2252,30 @@ void c3db::crr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
  *         c3db::ccr_Minus      *
  *                              *
  ********************************/
+/**
+ * @brief Subtract the real part of one complex array from the real
+ *        part of another complex array.
+ *
+ * Computes
+ * \f[
+ *   p_i = \Re(z^{(1)}_i) - \Re(z^{(2)}_i),
+ * \f]
+ * where both @p ptr1 and @p ptr2 are **complex arrays in interleaved
+ * (real,imag,real,imag,...) format** of length `2*nfft3d_map`.  Only the
+ * real components are used; the imaginary parts are ignored.  The result
+ * is written to the real output array @p ptr3 (length `nfft3d_map`):
+ *
+ * @code
+ * ptr3[i] = ptr1[2*i] - ptr2[2*i];
+ * @endcode
+ *
+ * Loop unrolling in blocks of 5 is used to improve vectorization and
+ * memory throughput on large FFT grids.
+ *
+ * @param[in]  ptr1  Complex input array (interleaved), size `2*nfft3d_map`.
+ * @param[in]  ptr2  Complex input array (interleaved), size `2*nfft3d_map`.
+ * @param[out] ptr3  Real output array, size `nfft3d_map`.
+ */
 void c3db::ccr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
 {     
    int m = nfft3d_map % 5;
@@ -1956,6 +2308,30 @@ void c3db::ccr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
  *         c3db::rcr_Minus      *
  *                              *
  ********************************/
+/**
+ * @brief Subtract the real part of a complex array from a real array.
+ *
+ * Computes
+ * \f[
+ *    p_i = r^{(1)}_i - \Re(z^{(2)}_i),
+ * \f]
+ * where @p ptr1 is a **real** array of length `nfft3d_map` and @p ptr2
+ * is a **complex** array in interleaved `(real, imag, real, imag, ...)`
+ * format of length `2*nfft3d_map`.  Only the real component of @p ptr2
+ * is used.
+ *
+ * In code:
+ * @code
+ * ptr3[i] = ptr1[i] - ptr2[2*i];
+ * @endcode
+ *
+ * Loop unrolling in chunks of 5 is used for performance on large FFT
+ * grids.  Imaginary components of @p ptr2 are ignored.
+ *
+ * @param[in]  ptr1  Real input array  (size nfft3d_map).
+ * @param[in]  ptr2  Complex input array, interleaved (size 2*nfft3d_map).
+ * @param[out] ptr3  Real output array (size nfft3d_map).
+ */
 void c3db::rcr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
 {     
    int m = nfft3d_map % 5;
@@ -1990,6 +2366,25 @@ void c3db::rcr_Minus(const double *ptr1, const double *ptr2, double *ptr3)
  *         c3db::arrr_Minus     *
  *                              *
  ********************************/
+ /**
+ * @brief Scaled real–real subtraction.
+ *
+ * Computes the element–wise operation
+ * \f[
+ *   p_i = a \, ( r^{(1)}_i - r^{(2)}_i )
+ * \f]
+ * where the inputs @p ptr1 and @p ptr2 are real arrays of length
+ * `nfft3d_map`, and the result is written to @p ptr3.
+ *
+ * This is a pure real-space BLAS-like kernel (no complex packing).
+ * Loop unrolling in chunks of 5 is used for improved performance on
+ * large FFT grids.
+ *
+ * @param[in]  a     Scalar multiplier.
+ * @param[in]  ptr1  Real input array  (size nfft3d_map).
+ * @param[in]  ptr2  Real input array  (size nfft3d_map).
+ * @param[out] ptr3  Real output array (size nfft3d_map).
+ */
 void c3db::arrr_Minus(const double a, const double *ptr1, const double *ptr2, double *ptr3)
 {
    int m = nfft3d_map % 5;
@@ -4243,6 +4638,49 @@ void c3db::zeroend_fftb(const int n1, const int n2, const int n3, const int n4, 
  *         c3db::cr_fft3d       *
  *                              *
  ********************************/
+
+/// NOTE:
+/// Historically "r" and "c" refer to real-space vs reciprocal-space
+/// rather than data type.  Both transforms are complex→complex.
+
+ /**
+ * @brief Perform a 3D **inverse** complex FFT on the distributed grid data.
+ *
+ * This routine applies a **complex-to-complex (C2C)** **inverse** 3-dimensional FFT
+ * to the array @p a.  The name `cr_fft3d` historically uses the letter **`r`**
+ * to denote a **reverse/inverse** FFT (in the NWChem/NWPW convention), **not**
+ * to imply a real-valued transform.  The transform always operates on complex
+ * interleaved values.
+ *
+ * The input array @p a contains interleaved complex values (Re,Im,Re,Im,…).
+ *
+ * Internally the inverse transform is applied dimension-by-dimension (z, y, x)
+ * and the exact ordering depends on the domain decomposition:
+ *
+ *  - **Slab mapping** (`maptype == 1`)
+ *      - inverse FFT along k_z
+ *      - transpose
+ *      - inverse FFT along k_y
+ *      - inverse FFT along k_x
+ *
+ *  - **Hilbert mapping** (`maptype != 1`)
+ *      - inverse FFT along k_z
+ *      - transpose (i-j-k reordering)
+ *      - inverse FFT along k_y
+ *      - transpose (i-j-k)
+ *      - inverse FFT along k_x
+ *
+ * Temporary complex buffers are allocated and freed in this routine.
+ * GPU FFT kernels are executed through the current device (`mygdevice`).
+ *
+ * @param[in,out] a
+ *   Complex data (interleaved doubles).  Input is frequency-space data;
+ *   output is inverse-FFT (real-space) grid values.
+ *
+ * @note
+ *   The **matching forward transform** is implemented by `rc_fft3d`.
+ */
+
 void c3db::cr_fft3d(double *a) 
 {
 
@@ -4410,6 +4848,48 @@ void c3db::cr_fft3d(double *a)
  *         c3db::rc_fft3d       *
  *                              *
  ********************************/
+
+/// NOTE:
+/// Historically "r" and "c" refer to real-space vs reciprocal-space
+/// rather than data type.  Both transforms are complex→complex.
+
+ /**
+ * @brief Perform a 3D **forward** complex FFT on the distributed grid data.
+ *
+ * This routine applies a **complex-to-complex (C2C)** **forward**
+ * 3-dimensional FFT to the array @p a.  In the NWPW/NWChem naming convention,
+ * the leading letter `r` in `rc_fft3d` denotes a **real-space → reciprocal-space**
+ * transform (i.e. the **forward** FFT), and **not** a transform of real data.
+ *
+ * Data in @p a are always stored as interleaved complex values:
+ *    Re,Im,Re,Im, …
+ *
+ * Internally, the forward FFT is performed dimension-by-dimension
+ * (x, then y, then z) with intermediate transpositions to match the
+ * underlying domain decomposition.  The precise ordering depends on
+ * whether the grid uses:
+ *
+ *  - **Slab mapping** (`maptype == 1`)
+ *      - FFT along x
+ *      - FFT along y      (after transpose)
+ *      - FFT along z      (after transpose)
+ *
+ *  - **Hilbert mapping** (`maptype != 1`)
+ *      - FFT along x
+ *      - transpose
+ *      - FFT along y
+ *      - transpose
+ *      - FFT along z
+ *
+ * GPU FFT kernels are executed via the current device (`mygdevice`).
+ * Temporary complex buffers are allocated and released in this routine.
+ *
+ * @param[in,out] a
+ *   Complex data stored as interleaved doubles.  On input: real-space grid;
+ *   on output: reciprocal-space grid after forward FFT.
+ *
+ * @note The matching **inverse** transform is implemented in `cr_fft3d()`.
+ */
 void c3db::rc_fft3d(double *a) 
 {
 
@@ -5292,6 +5772,39 @@ void c3db::r2hr_contract(const double *a, double *ah)
  *      c3db::r_ctranspose_ijk_init        *
  *                                        *
  ******************************************/
+/**
+ * @brief Initialize distributed transpose index tables for real-space grids.
+ *
+ * This method precomputes the integer index maps used to perform
+ * distributed 3D real-valued transpose operations between Hilbert /
+ * block–cyclic MPI layouts.  These transpose operations are required
+ * when switching between different axis major orderings during
+ * distributed FFTs (e.g. i→j→k permutations) in the Hilbert mapping
+ * case (`maptype != 1`).
+ *
+ * The routine builds 6 sets of index tables corresponding to all
+ * required permutations:
+ *
+ *   0: (j,k,i) ← (i,j,k)
+ *   1: (k,i,j) ← (j,k,i)
+ *   2: (j,k,i) ← (k,i,j)
+ *   3: (i,j,k) ← (j,k,i)
+ *   4: (k,i,j) ← (i,j,k)
+ *   5: (i,j,k) ← (k,i,j)
+ *
+ * For each permutation, we generate "packing" (iq_to_ir1) and
+ * "unpacking" (iq_to_ir2) index arrays along with per-processor segment
+ * offsets (ir1_start, ir2_start).  These tables allow subsequent
+ * transpose calls to perform local gather/scatter without re-evaluating
+ * coordinate ownership (cijkrtop*, etc).
+ *
+ * Only executed once (lazy initialization) and only for Hilbert
+ * decompositions (maptype != 1).  No action is taken for slab
+ * mappings, which do not require these multi-axis transposes.
+ *
+ * @note All allocated tables are persistent members and must be freed
+ *       in the destructor.
+ */
 void c3db::r_ctranspose_ijk_init() {
   if ((maptype != 1) && (!initialized_r_transpose)) {
     initialized_r_transpose = true;
@@ -5541,6 +6054,25 @@ void c3db::r_ctranspose_ijk_init() {
  *      c3db::r_ctranspose_ijk_end         *
  *                                        *
  ******************************************/
+/**
+ * @brief Finalize and free distributed transpose index tables.
+ *
+ * This routine destroys all tables allocated by
+ * r_ctranspose_ijk_init(), including the packing / unpacking index
+ * arrays (iq_to_ir1, iq_to_ir2) and the per–processor segment start
+ * offsets (ir1_start, ir2_start).  It is only executed if a previous
+ * initialization was performed.
+ *
+ * After this call, all transpose-related pointers are null and the
+ * r-space distributed transpose functionality is disabled until the
+ * next call to r_ctranspose_ijk_init().
+ *
+ * @note This must be invoked before destruction of the c3db object or
+ *       before changing grid dimensions / topology.  Safe to call multiple
+ *       times; only the first call will perform deallocation.
+ *
+ * @see r_ctranspose_ijk_init()
+ */
 void c3db::r_ctranspose_ijk_end() {
   if (initialized_r_transpose) {
     initialized_r_transpose = false;
@@ -5705,6 +6237,43 @@ void c3db::r_ctranspose_ijk(const int op, double *a, double *tmp1, double *tmp2)
  *                                    *
  **************************************/
 // computes the periodic gradient on a (n1,n2,n3) grid.
+/**
+ * @brief Compute periodic first derivatives of a real scalar field on
+ *        a 3D uniform grid using a 6th-order central finite-difference stencil.
+ *
+ * This routine evaluates the Cartesian components of the gradient of
+ * a real scalar field \rho(x), i.e.,
+ *
+ *   drho1 = ∂ρ/∂x,   drho2 = ∂ρ/∂y,   drho3 = ∂ρ/∂z
+ *
+ * on a logically–Cartesian (nx,ny,nz) grid, employing the
+ * 6th-order symmetric finite-difference operator
+ *
+ *   f'(i) = ( -f(i-3) + 9 f(i-2) - 45 f(i-1)
+ *             +45 f(i+1) - 9 f(i+2) + 1 f(i+3) ) / 60
+ *
+ * Periodic boundary conditions are assumed in all three dimensions.
+ *
+ * For distributed grids, the calculation is performed in the real-space
+ * decomposition native to c3db.  Required (i,j,k) → (j,k,i) style data
+ * transposes are performed internally via the r_ctranspose_* utilities.
+ *
+ * @param[in]  rho    Real scalar field stored in the c3db real layout.
+ * @param[out] drho1  ∂ρ/∂x written in-place in the same layout and
+ *                    distributed shape as `rho`.
+ * @param[out] drho2  ∂ρ/∂y, same conventions.
+ * @param[out] drho3  ∂ρ/∂z, same conventions.
+ *
+ * @note Uses the conventional "r" naming for real-space buffers even
+ *       though data may be distributed across MPI ranks.  No FFTs are
+ *       involved—this is a pure real-space 6th-order stencil with
+ *       periodic wrapping.
+ *
+ * @note The implementation distinguishes slab vs. Hilbert
+ *       decompositions and performs only the necessary transpose paths
+ *       for each mapping type.
+ */
+
 #define one_over_60 1.66666666666667e-2
 void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho2, double *drho3)
 {
@@ -5866,6 +6435,40 @@ void c3db::rrrr_periodic_gradient(const double *rho, double *drho1, double *drho
  *                                    *
  **************************************/
 // computes the periodic gradient on a (nx,ny,nz) grid.
+/**
+ * @brief Compute the diagonal components of the periodic Laplacian of a real
+ *        scalar field on a uniform (nx,ny,nz) grid using a 6th-order
+ *        central finite-difference stencil.
+ *
+ * Given a real scalar field ρ(x), this routine evaluates
+ *
+ *    grxx = ∂²ρ/∂x²,   gryy = ∂²ρ/∂y²,   grzz = ∂²ρ/∂z²
+ *
+ * using the 6-point 6th-order symmetric finite-difference approximation
+ *
+ *   f''(i) =
+ *     (  2 f(i-3) − 27 f(i-2) + 270 f(i-1)
+ *      −490 f(i)
+ *      +270 f(i+1) − 27 f(i+2) +  2 f(i+3) ) / 180
+ *
+ * with full periodic boundary conditions in all three Cartesian directions.
+ *
+ * The calculation is performed in real space and in the domain-decomposed
+ * data layout native to c3db.  When needed, (i,j,k) → (j,k,i) style
+ * transposes are executed internally via r_ctranspose_* utilities
+ * depending on the mapping type (slab vs. hilbert).
+ *
+ * @param[in]  rho   Real scalar field in the c3db real layout.
+ * @param[out] grxx  ∂²ρ/∂x² in the same distribution and shape as `rho`.
+ * @param[out] gryy  ∂²ρ/∂y².
+ * @param[out] grzz  ∂²ρ/∂z².
+ *
+ * @note The name `rrrr` indicates real-space input and output.  No FFTs
+ *       are involved; this is a pure finite-difference operator.
+ *
+ * @note The operator returned here is the diagonal part of the Laplacian;
+ *       assembling ∇²ρ requires summing grxx + gryy + grzz.
+ */
 #define one_over_180 5.55555555555556e-3
 void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
                                    double *gryy, double *grzz) {
@@ -6021,6 +6624,23 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
  *       Gaussian filters routines block        *
  ************************************************/
 
+/**
+ * @brief Apply a 1-D centered Gaussian filter with periodic boundary
+ *        conditions.
+ *
+ * This performs the convolution (or correlation) of a real array `a`
+ * with a symmetric filter kernel `coeff[r]`, and stores the result
+ * in `b`.  Out-of-bounds indices are wrapped periodically in the
+ * range 0…nx-1.
+ *
+ * Centering: the filter is centered at r = (nfilter − 1) / 2.
+ *
+ * @param nx       Number of points in the 1-D array.
+ * @param nfilter  Length of the Gaussian kernel coeff[0…nfilter-1].
+ * @param coeff    Pointer to filter coefficients.
+ * @param a        Input array (size nx).
+ * @param b        Output array (size nx).
+ */
  #define C_PERIODIC_GAUSSIAN_FILTER(nx, nfilter, coeff, a, b) \
     do { \
         for (auto i=0; i<(nx); ++i) { \
@@ -6035,6 +6655,16 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
         } \
     } while (0)
 
+
+/**
+ * @brief Apply a 1-D centered Gaussian filter with zero outside
+ *        (non-periodic) boundary handling.
+ *
+ * Similar to C_PERIODIC_GAUSSIAN_FILTER, but values outside the
+ * domain [0, nx-1] are treated as zero (i.e., Dirichlet clipping).
+ *
+ * @note Useful where periodic wrap is not desired.
+ */
 #define C_GAUSSIAN_FILTER(nx, nfilter, coeff, a, b) \
     do { \
         for (auto i=0; i<(nx); ++i) { \
@@ -6049,6 +6679,17 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
     } while (0)
 
 
+/**
+ * @brief Apply a 1-D periodic Gaussian filter to each row of a
+ *        (nx×ny) field stored in row-major order.
+ *
+ * For each fixed j, perform a periodic convolution along i.  The
+ * center of the filter is (nfilter − 1) / 2.  Out-of-range i are
+ * wrapped in [0, nx-1].
+ *
+ * @param a  Input field a[i + j*nx]
+ * @param b  Output field b[i + j*nx]
+ */
 #define C_SMOOTH_PERIODIC_2D(nx, ny, nfilter, coeff, a, b) \
     do { \
         for (auto j=0; j<(ny); ++j) \
@@ -6066,6 +6707,17 @@ void c3db::rrrr_periodic_laplacian(const double *rho, double *grxx,
         } \
     } while(0)
 
+/**
+ * @brief Apply a 1-D periodic Gaussian filter along the second
+ *        (y) index of a (nx×ny) field (transpose of previous form).
+ *
+ * For each fixed i, performs convolution along j with periodic wrap
+ * in the 0…ny-1 direction.  This is effectively the column-wise
+ * counterpart of C_SMOOTH_PERIODIC_2D.
+ *
+ * @note Useful to construct separable 2-D smoothing by successive
+ *       calls to row- and column-wise operators.
+ */
 #define C_SMOOTH_PERIODIC_2D_TRANS(nx, ny, nfilter, coeff, a, b) \
     do { \
         for (auto i=0; i<(nx); ++i) \

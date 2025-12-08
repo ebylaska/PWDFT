@@ -6,7 +6,7 @@
 */
 
 //#include "PGrid.hpp"
-#include "Pneb.hpp"
+#include "Cneb.hpp"
 #include "Parallel.hpp"
 #include "Control2.hpp"
 
@@ -26,7 +26,7 @@ class cvdw_DF  {
 
 private: 
 
-   Pneb     *mygrid;
+   Cneb     *mygrid;
    Parallel *myparall;
 
 
@@ -38,7 +38,6 @@ private:
    double qmin, qmax, Zab;   // <<< ADD THESE
 
 
-   double *theta_c, *ufunc_c;
    double *theta, *ufunc;
    double *qmesh, *ya, *ya2, *gphi, *phi;
    double *xcp, *xce, *xxp, *xxe, *rho, *Gpack;
@@ -60,7 +59,7 @@ private:
 public:
 
    /* constructor */
-   cvdw_DF(Pneb *, Control2 &, bool);
+   cvdw_DF(Cneb *, Control2 &, bool);
  
    /* destructor */
 
@@ -68,8 +67,6 @@ public:
      * @brief Destructor for the vdw_DF class.
      */
    ~cvdw_DF() {
-       delete [] theta_c;
-       delete [] ufunc_c;
        delete [] theta;
        delete [] ufunc;
        delete [] qmesh;

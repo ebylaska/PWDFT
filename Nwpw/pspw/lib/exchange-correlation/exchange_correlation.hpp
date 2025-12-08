@@ -12,7 +12,7 @@ namespace pwdft {
 class XC_Operator {
 
   Pneb *mypneb;
-  vdw_DF *myvdw = nullptr;;
+  vdw_DF *myvdw = nullptr;
 
   double *xtmp;
   double *rho, *grx, *gry, *grz, *agr, *fn, *fdn;
