@@ -37,6 +37,8 @@
 #include "band_cgsd_energy.hpp"
 #include "band_cgsd_excited.hpp"
 
+#include "nwpw_lmbfgs.hpp"
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -54,10 +56,10 @@ int band_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    // RTDB myrtdb(&myparallel, "eric.db", "old");
  
    int version, nfft[3], ne[2], nextra[2], ispin;
-   int i, ii, ia, nn, ngrid[3], matype, nelem, icount, done;
+   int i, ii, ia, nn, ngrid[3], matype, nelem, icount;
    char date[26];
    double sum1, sum2, ev, zv;
-   double cpu1, cpu2, cpu3, cpu4;
+   double cpu1, cpu2, cpu3, cpu4, cpustep;
    double E[70], deltae, deltac, deltar, viral, unita[9];
 
    bool fractional;
@@ -198,12 +200,21 @@ int band_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    /* intialize the linesearch */
    util_linesearch_init();
 
+   MPI_Barrier(comm_world0);
   
+
+   // driver parameters
+   int maxit = control.driver_maxiter();
+   double tol_Gmax = control.driver_gmax();
+   double tol_Grms = control.driver_grms();
+   double tol_Xrms = control.driver_xrms();
+   double tol_Xmax = control.driver_xmax();
+   double trust = control.driver_trust();
+   int lmbfgs_size = control.driver_lmbfgs_size();
+
    //                 |**************************|
    // *****************   summary of input data  **********************
    //                 |**************************|
-  
-   MPI_Barrier(comm_world0);
 
    if (oprint)
    {
@@ -548,8 +559,38 @@ int band_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          }
       }
    }
-   if (oprint) coutput << std::endl << std::endl << std::endl;
 
+   if (oprint)
+   {
+     coutput << std::endl << std::endl << std::endl;
+
+      coutput << " --------------------------------------------------------------"
+                 "---------------------\n";
+      coutput << " ----------------------------- Geometry Optimization "
+                 "-------------------------------\n";
+      coutput << " --------------------------------------------------------------"
+                 "---------------------\n\n";
+      coutput << " Optimization parameters:  " << Ifmt(5) << maxit
+              << " (maxiter) " << Efmt(12, 3) << tol_Gmax << " (gmax) "
+              << Efmt(12, 3) << tol_Grms << " (grms) " << Efmt(12, 3) << tol_Xrms
+              << " (xrms) " << Efmt(12, 3) << tol_Xmax << " (xmax)\n";
+
+      coutput << "    maximum number of steps       (maxiter) = " << Ifmt(4)
+              << maxit << std::endl;
+      coutput << "    maximum gradient threshold       (Gmax) = " << Efmt(12, 6)
+              << tol_Gmax << std::endl;
+      coutput << "    rms gradient threshold           (Grms) = " << Efmt(12, 6)
+              << tol_Grms << std::endl;
+      coutput << "    rms cartesian step threshold     (Xrms) = " << Efmt(12, 6)
+              << tol_Xrms << std::endl;
+      coutput << "    maximum cartesian step threshold (Xmax) = " << Efmt(12, 6)
+              << tol_Xmax << std::endl;
+      coutput << std::endl;
+      coutput << "    fixed trust radius              (Trust) = " << Efmt(12, 6)
+              << trust << std::endl;
+      coutput << "    number lmbfgs histories   (lmbfgs_size) = " << Ifmt(4)
+              << lmbfgs_size << std::endl;
+   }
 
    MPI_Barrier(comm_world0);
    if (myparallel.is_master()) seconds(&cpu2);
@@ -557,19 +598,345 @@ int band_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    //*                |***************************|
    //******************     call CG minimizer     **********************
    //*                |***************************|
-  
-   // calculate energy
+
+   /*  calculate energy and gradient */
+   double g, gg, Gmax, Grms, Xrms, Xmax;
+   double Eold = 0.0;
    double EV = 0.0;
-  
-   if (flag < 0) 
-   {
-      EV = band_cgsd_noit_energy(mysolid, true, coutput);
+
+   int nfsize = 3 * myion.nion;
+   int one = 1;
+   double mrone = -1.0;
+
+   // allocate temporary memory from stack
+   double fion[3 * myion.nion];
+   double sion[3 * myion.nion];
+
+
+   bool done = false;
+   int it = 0;
+
+   /*  calculate energy */
+   if (oprint) {
+     coutput << "\n\n";
+     coutput << " --------------------------------------------------------------"
+                "---------------------\n";
+     coutput << " -----------------------------    Initial Geometry     "
+                "-----------------------------\n";
+     coutput << " --------------------------------------------------------------"
+                "---------------------\n\n";
+     coutput << " ---------------------------------\n";
+     coutput << "         Initial Geometry         \n";
+     coutput << " ---------------------------------\n";
+     coutput << mysolid.myion->print_bond_angle_torsions();
+     coutput << "\n\n\n";
+     coutput << " ---------------------------------\n";
+     coutput << "     Calculate Initial Energy     \n";
+     coutput << " ---------------------------------\n\n";
    }
-   else 
+   EV = band_cgsd_energy(control, mysolid, true, coutput);
+
+   /*  calculate the gradient */
+   if (oprint) {
+     coutput << "\n";
+     coutput << " ---------------------------------\n";
+     coutput << "    Calculate Initial Gradient    \n";
+     coutput << " ---------------------------------\n\n";
+   }
+   band_cgsd_energy_gradient(mysolid, fion);
+   if (oprint)
    {
+      coutput << " ion forces (au):" << std::endl;
+      for (auto ii = 0; ii < mysolid.myion->nion; ++ii)
+         coutput << Ifmt(5) << ii+1 << " "
+                 << Lfmt(2) << mysolid.myion->symbol(ii) << "  ( "
+                 << Ffmt(10,5) << fion[3*ii]   << " "
+                 << Ffmt(10,5) << fion[3*ii+1] << " "
+                 << Ffmt(10,5) << fion[3*ii+2] << " )" << std::endl;
+      coutput << "  C.O.M.  ( "
+              << Ffmt(10,5) << mysolid.myion->com_fion(fion,0) << " "
+              << Ffmt(10,5) << mysolid.myion->com_fion(fion,1) << " "
+              << Ffmt(10,5) << mysolid.myion->com_fion(fion,2) << " )" << std::endl;;
+      coutput << "|F|/nion  = " << std::setprecision(5) << std::fixed
+              << std::setw(10) << mysolid.myion->rms_fion(fion) << std::endl
+              << "max|Fatom|= " << std::setprecision(5) << std::fixed
+              << std::setw(10) << mysolid.myion->max_fion(fion) << "  ("
+              << std::setprecision(3) << std::fixed << std::setw(8)
+              << mysolid.myion->max_fion(fion)*(27.2116/0.529177)
+              << " eV/Angstrom)" << std::endl
+              << std::endl;
+   }
+   DSCAL_PWDFT(nfsize, mrone, fion, one);
+
+
+   /* initialize lmbfgs */
+   nwpw_lmbfgs geom_lmbfgs(3*myion.nion, lmbfgs_size, myion.rion1, fion);
+
+   /* update coords in mysolid */
+   mysolid.myion->fixed_step(-trust, fion);
+   mysolid.myion->shift();
+
+   Xmax = mysolid.myion->xmax();
+   Xrms = mysolid.myion->xrms();
+   Gmax = 0.0;
+   Grms = 0.0;
+   for (ii = 0; ii < (myion.nion); ++ii) {
+      gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+      Grms += gg;
+      g = sqrt(gg);
+      if (g > Gmax)
+         Gmax = g;
+   }
+   Grms = sqrt(Grms) / ((double)myion.nion);
+   if ((Gmax <= tol_Gmax) && (Grms <= tol_Grms) && (Xrms <= tol_Xrms) && (Xmax <= tol_Xmax))
+      done = true;
+
+
+   if (oprint)
+   {
+      if (done) {
+        coutput << "      ----------------------\n"
+                << "      Optimization converged\n"
+                << "      ----------------------\n";
+      }
+      if (it == 0) {
+         coutput << std::endl << std::endl;
+         coutput << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+         coutput << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+      } else {
+         coutput << std::endl << std::endl;
+         coutput << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+         coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+      }
+      seconds(&cpustep);
+      coutput << "@ " << Ifmt(4) << it << " "
+              << Ffmt(18,9) << EV << " "
+              << Efmt(11,3) << EV - Eold << " "
+              << Ffmt(8,5) << Gmax << " "
+              << Ffmt(8,5) << Grms << " "
+              << Ffmt(8,5) << Xrms << " "
+              << Ffmt(8,5) << Xmax << " "
+              << Ffmt(10,1) << cpustep - cpu1 << " "
+              << Ifmt(9) << myelectron.counter << std::endl;
+      // printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf
+      // %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+
+      if ((Gmax<=tol_Gmax) && (Grms<=tol_Grms) && (Xrms<=tol_Xrms) && (Xmax<=tol_Xmax))
+      {
+         coutput << "                                            ok       ok       ok       ok\n";
+      }
+      else if ((Gmax <= tol_Gmax) || (Grms <= tol_Grms) || (Xrms <= tol_Xrms) || (Xmax <= tol_Xmax))
+      {
+         std::string oktag("");
+         coutput << "                                     ";
+         oktag = "  ";
+         if (Gmax <= tol_Gmax)
+           oktag = "ok";
+         coutput << "       " << oktag;
+         oktag = "  ";
+         if (Grms <= tol_Grms)
+           oktag = "ok";
+         coutput << "       " << oktag;
+         oktag = "  ";
+         if (Xrms <= tol_Xrms)
+           oktag = "ok";
+         coutput << "       " << oktag;
+         oktag = "  ";
+         if (Xmax <= tol_Xmax)
+           oktag = "ok";
+         coutput << "       " << oktag << "\n";
+      }
+   }
+
+
+   ++it;
+
+   while ((!done) && (it <= maxit))
+   {
+      if (oprint)
+      {
+         coutput << "\n\n";
+         coutput << " -----------------------------------------------------------------------------------\n";
+         coutput << " ----------------------------- Optimization Step "
+                 << std::setw(5) << it << " -----------------------------\n";
+         coutput << " -----------------------------------------------------------------------------------\n\n";
+      }
+
+      /* print out the current geometry */
+      if (oprint)
+      {
+         coutput << " ---------------------------------\n";
+         coutput << "  Geometry for Step " << it << "\n";
+         coutput << " ---------------------------------\n";
+         coutput << mysolid.myion->print_bond_angle_torsions();
+         coutput << std::endl << myion.print_constraints(1);
+      }
+
+      /*  calculate energy */
+      if (oprint)
+      {
+         coutput << "\n\n\n";
+         coutput << " ---------------------------------\n";
+         coutput << "  Calculate Energy for Step " << it << "\n";
+         coutput << " ---------------------------------\n\n";
+      }
+      Eold = EV;
       EV = band_cgsd_energy(control, mysolid, true, coutput);
+
+      /* calculate the gradient */
+      if (oprint)
+      {
+         coutput << "\n";
+         coutput << " ---------------------------------\n";
+         coutput << "  Calculate Gradient for Step " << it << "\n";
+         coutput << " ---------------------------------\n\n";
+      }
+      band_cgsd_energy_gradient(mysolid, fion);
+
+      if (oprint)
+      {
+         coutput << " ion forces (au):"
+                 << "\n";
+         for (auto ii=0; ii<mysolid.myion->nion; ++ii)
+            coutput << Ifmt(5) << ii+1 << " "
+                    << Lfmt(2) << mysolid.myion->symbol(ii) << "  ( "
+                    << Ffmt(10,5) << fion[3*ii] << " "
+                    << Ffmt(10,5) << fion[3*ii+1] << " "
+                    << Ffmt(10,5) << fion[3*ii+2] << " )" << std::endl;
+         coutput << "  C.O.M.  ( "
+                 << Ffmt(10,5) << mysolid.myion->com_fion(fion,0) << " "
+                 << Ffmt(10,5) << mysolid.myion->com_fion(fion,1) << " "
+                 << Ffmt(10,5) << mysolid.myion->com_fion(fion,2) << " )\n";
+         coutput << "|F|/nion  = " << Ffmt(10,5) << mysolid.myion->rms_fion(fion) << std::endl
+                 << "max|Fatom|= " << Ffmt(10,5) << mysolid.myion->max_fion(fion) << "  ("
+                 << Ffmt(8,3) << mysolid.myion->max_fion(fion)*(27.2116/0.529177)
+                 << " eV/Angstrom)" << std::endl << std::endl;
+
+         //coutput << std::endl << myion.print_constraints(1);
+      }
+      DSCAL_PWDFT(nfsize, mrone, fion, one);
+
+      /* lmbfgs gradient */
+      geom_lmbfgs.lmbfgs(myion.rion1, fion, sion);
+
+      /* update coords in mysolid */
+      mysolid.myion->fixed_step(-trust, sion);
+      mysolid.myion->shift();
+
+      Xmax = mysolid.myion->xmax();
+      Xrms = mysolid.myion->xrms();
+      Gmax = 0.0;
+      Grms = 0.0;
+      for (ii=0; ii<(myion.nion); ++ii) {
+         gg = fion[3*ii]*fion[3*ii] + fion[3*ii+1]*fion[3*ii+1] + fion[3*ii+2]*fion[3*ii+2];
+         Grms += gg;
+         g = sqrt(gg);
+         if (g > Gmax)
+            Gmax = g;
+      }
+      Grms = sqrt(Grms) / ((double)myion.nion);
+      if ((Gmax<=tol_Gmax) && (Grms<=tol_Grms) && (Xrms<=tol_Xrms) && (Xmax<=tol_Xmax))
+         done = true;
+
+
+      /* print out the current energy */
+      if (oprint)
+      {
+         if (done)
+         {
+            coutput << "      ----------------------\n"
+                    << "      Optimization converged\n"
+                    << "      ----------------------\n";
+         }
+
+         if (it == 0)
+         {
+            coutput << std::endl << std::endl;
+            coutput << "@ Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            coutput << "@ ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+         }
+         else
+         {
+            coutput << std::endl << std::endl;
+            coutput << "  Step             Energy     Delta E     Gmax     Grms     Xrms     Xmax   Walltime\n";
+            coutput << "  ---- ------------------ ----------- -------- -------- -------- -------- ----------\n";
+         }
+         seconds(&cpustep);
+         coutput << "@ " << Ifmt(4) << it << " "
+                 << Ffmt(18,9) << EV << " "
+                 << Efmt(11,3) << EV - Eold << " "
+                 << Ffmt(8,5) << Gmax << " "
+                 << Ffmt(8,5) << Grms << " "
+                 << Ffmt(8,5) << Xrms << " "
+                 << Ffmt(8,5) << Xmax << " "
+                 << Ffmt(10,1) << cpustep - cpu1
+                 << " " << Ifmt(9) << myelectron.counter << std::endl;
+          // printf("@ %4d %18.9lf %11.3le %8.5lf %8.5lf %8.5lf %8.5lf %10.1lf
+          // %9d\n",it,EV,(EV-Eold),Gmax,Grms,Xrms,Xmax,cpustep-cpu1,myelectron.counter);
+
+         if ((Gmax <= tol_Gmax) && (Grms <= tol_Grms) && (Xrms <= tol_Xrms) && (Xmax <= tol_Xmax))
+         {
+            coutput << "                                            ok       ok       ok       ok\n";
+         }
+         else if ((Gmax <= tol_Gmax) || (Grms <= tol_Grms) || (Xrms <= tol_Xrms) || (Xmax <= tol_Xmax))
+         {
+            std::string oktag = "";
+            coutput << "                                     ";
+            oktag = "  ";
+            if (Gmax <= tol_Gmax)
+              oktag = "ok";
+            coutput << "       " << oktag;
+            oktag = "  ";
+            if (Grms <= tol_Grms)
+              oktag = "ok";
+            coutput << "       " << oktag;
+            oktag = "  ";
+            if (Xrms <= tol_Xrms)
+              oktag = "ok";
+            coutput << "       " << oktag;
+            oktag = "  ";
+            if (Xmax <= tol_Xmax)
+              oktag = "ok";
+            coutput << "       " << oktag << "\n";
+         }
+      }
+
+      ++it;
+   }
+
+   if (oprint)
+   {
+      coutput << "\n\n";
+      coutput << " ---------------------------------\n";
+      coutput << "  Final Geometry \n";
+      coutput << " ---------------------------------\n";
+      coutput << mysolid.myion->print_bond_angle_torsions();
+      coutput << std::endl << myion.print_constraints(1);
+      coutput << "\n\n";
    }
    if (myparallel.is_master()) seconds(&cpu3);
+
+
+   // **************************************************************************
+   //
+   //             Vibrational analysis (finite-difference Hessian)
+   //
+   // --------- NOTE -----------------------------------------------------------
+   // BAND vibrational modes reuse the same force code as geometry optimization.
+   // No k-dependent perturbation is needed.  The only requirement is force 
+   // consistency.
+   //
+   // **************************************************************************
+   /*if(control.geovib()) {
+       compute_band_hessian(..);
+       compute_vib_modes(..);
+   }
+   */
+
+
+
+   //*******************************************************************
+
   
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
