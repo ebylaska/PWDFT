@@ -1169,31 +1169,34 @@ void c3db::cc_copy(const double *ptr1, double *ptr2)
  *        c3db::cr_copy         *
  *                              *
  ********************************/
-/**
- * @brief Copy the real components of a complex array into a real array.
+/*
+ * cr_copy: copy real‐space data from packed complex array
  *
- * Extracts only the real part of each complex element
- * \f$(\mathrm{Re}\,z_i)\f$ from an array stored in complex packed
- * format \f$\{\,z_i = (r_i,\, i_i)\,\}\f$ (real,imag interleaved) and
- * writes them into a real scalar array:
+ * Converts a packed complex array [r0,i0,r1,i1,...] into a real array
+ * [r0,r1,r2,...].  If ptr1 == ptr2, the routine performs the extraction
+ * in–place by sweeping backward to avoid overwriting unread values.
  *
- * \f[
- *    \mathrm{ptr2}[i] \leftarrow \Re\{\mathrm{ptr1}[2\,i]\}
- * \f]
+ * In-Place Safety:
+ *   ptr2[i] = ptr1[2*i] is safe when running backwards since 2*i >= i.
  *
- * This is conceptually a complex→real ("cr") mapping, but note that
- * the complex array is stored in interleaved real/imag format.  The
- * imaginary components are ignored.
- *
- * The loop is manually unrolled (5 at a time) for improved
- * vectorization on large grids.
- *
- * @param[in]  ptr1  Input complex array stored as
- *                   \c (real,imag,real,imag,...).
- * @param[out] ptr2  Output real array of length @c nfft3d_map.
+ * Use cases:
+ *   - After inverse FFT, extracting real density or potential
+ *   - Unpacking packed-g format after transform
  */
+
 void c3db::cr_copy(const double *ptr1, double *ptr2) 
 {
+
+   // If doing in-place extract (ptr1 == ptr2), we must go backward
+   if (ptr1 == ptr2)
+   {
+      for(int i = nfft3d_map - 1; i >= 0; --i)
+      {
+         ptr2[i] = ptr1[2*i];   // safe because 2*i >= i for all i
+      }
+      return;
+   }
+
    int m = nfft3d_map % 5;
    if (m > 0)
       for (auto i=0; i<m; ++i)
@@ -1219,6 +1222,7 @@ void c3db::cr_copy(const double *ptr1, double *ptr2)
    }
    return;
 }
+
 
 /********************************
  *                              *
@@ -1246,6 +1250,19 @@ void c3db::cr_copy(const double *ptr1, double *ptr2)
  */
 void c3db::rc_copy(double *ptr1, double *ptr2) 
 {
+   // NOTE: ptr2 must point to an array of size >= 2*nfft3d_map
+   if (ptr1 == ptr2) 
+   {
+      // Safe in-place expand: work backwards
+      for (int i = nfft3d_map - 1; i >= 0; --i) 
+      {
+         int ir = 2*i;
+         ptr2[ir]     = ptr1[i];
+         ptr2[ir + 1] = 0.0;
+      }
+      return;
+   }
+
    int m = nfft3d_map % 5;
    if (m > 0)
       for (auto i=0; i<m; ++i)
@@ -1348,6 +1365,19 @@ void c3db::rr_SMul(const double da, const double *ptr1, double *ptr2)
  */
 void c3db::rc_SMul(const double da, const double *ptr1, double *ptr2) 
 {
+    // ---- handle in-place case ----
+   if (ptr1 == ptr2)
+   {
+      // expand safely backwards
+      for (int i = nfft3d_map-1; i >= 0; --i)
+      {
+         int ir = 2*i;
+         ptr2[ir]     = da * ptr1[i];
+         ptr2[ir + 1] = 0.0;
+      }
+      return;
+   }
+
    int m = nfft3d_map % 5;
    if (m > 0)
       for (auto i=0; i<m; ++i)
