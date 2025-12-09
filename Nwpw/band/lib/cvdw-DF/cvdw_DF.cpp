@@ -708,6 +708,7 @@ void cvdw_DF::generate_theta_g(
     //int tid     = myparall->threadid();
     //int nthr    = myparall->nthreads();
 
+    //std::cout << "qmin=" << qmin << " qmax=" << qmax << std::endl;
     int taskid_j = myparall->taskid_j();
     int np_j     = myparall->np_j();
 
@@ -820,6 +821,7 @@ void cvdw_DF::generate_theta_g(
               double pj, dpj;
               poly(jj+1, q0sat, pj, dpj);
               theta[i + jj*n2ft3d] = rho[i] * pj;
+            //std::cout << "i=" << i << " j=" << j << " pj=" << pj << std::endl;
            }
         }
 
@@ -828,7 +830,7 @@ void cvdw_DF::generate_theta_g(
         for (int j=0; j<nj; j++) 
         {
            int jj = jstart + j;
-        //   mygrid->r_zero_ends(theta + jj*n2ft3d);
+           //mygrid->r_zero_ends(theta + jj*n2ft3d);
            //std::cout << "jj=" << jj << " rho*theta_r=" << Efmt(13,8) << mygrid->rr_dot(rho,theta+jj*n2ft3d) << std::endl;
 
            mygrid->rc_copy(theta+jj*n2ft3d,theta+jj*n2ft3d);
@@ -1065,6 +1067,11 @@ void cvdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 
   //dum1 = mygrid->cc_pack_dot(0,theta, theta);
   //std::cout << "theta*theta = " << Efmt(13,9) << dum1 << std::endl;
+  //for (auto jj=0; jj<Nqs; ++jj)
+  //{
+   //  dum1 = mygrid->cc_pack_dot(0,theta+jj*n2ft3d, theta+jj*n2ft3d);
+    // std::cout << "jj=" << jj << " theta*theta = " << Efmt(13,9) << dum1 << std::endl;
+  //}
 
 
     // 4. ufunc(G,i)
@@ -1072,6 +1079,9 @@ void cvdw_DF::evaluate(int ispin, const double *dn, const double *agr,
                    reinterpret_cast<const std::complex<double>*>(theta), 
                    reinterpret_cast<std::complex<double>*>(ufunc));
     //std::cout << "rho*ufunc = " << Ffmt(13,9) << mygrid->rr_dot(rho,ufunc) << std::endl;
+
+
+   // std::cout << "pre xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
 
     // 5. exc, fn, fdn
     generate_potentials(Nqs, ispin, nfft3d, n2ft3d, ufunc, xce, xcp, xxe,

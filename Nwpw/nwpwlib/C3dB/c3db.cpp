@@ -1187,13 +1187,13 @@ void c3db::cc_copy(const double *ptr1, double *ptr2)
 void c3db::cr_copy(const double *ptr1, double *ptr2) 
 {
 
-   // If doing in-place extract (ptr1 == ptr2), we must go backward
    if (ptr1 == ptr2)
    {
-      for(int i = nfft3d_map - 1; i >= 0; --i)
-      {
-         ptr2[i] = ptr1[2*i];   // safe because 2*i >= i for all i
-      }
+      std::vector<double> tmp(nfft3d_map);
+      for (int i=0; i<nfft3d_map; ++i)
+         tmp[i] = ptr1[2*i];
+
+      std::memcpy(ptr2, tmp.data(), sizeof(double)*nfft3d_map);
       return;
    }
 

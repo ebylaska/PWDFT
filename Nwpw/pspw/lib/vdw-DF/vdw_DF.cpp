@@ -783,6 +783,12 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 
   //dum1 = mygrid->cc_pack_dot(0,theta, theta);
   //std::cout << "theta*theta = " << Efmt(13,9) << dum1 << std::endl;
+  //for (auto jj=0; jj<Nqs; ++jj)
+ // {
+  //   dum1 = mygrid->cc_pack_dot(0,theta+jj*n2ft3d, theta+jj*n2ft3d);
+   //  std::cout << "jj=" << jj << " theta*theta = " << Efmt(13,9) << dum1 << std::endl;
+ // }
+
 
 
     // 4. ufunc(G,i)
@@ -790,6 +796,8 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
                    reinterpret_cast<const std::complex<double>*>(theta), 
                    reinterpret_cast<std::complex<double>*>(ufunc));
     //std::cout << "rho*ufunc = " << Ffmt(13,9) << mygrid->rr_dot(rho,ufunc) << std::endl;
+
+    //std::cout << "pre xce = " << Ffmt(13,9) << mygrid->rr_dot(rho,xce) << std::endl;
 
     // 5. exc, fn, fdn
     generate_potentials(Nqs, nfft3d, ispin, n2ft3d, ufunc, xce, xcp, xxe,
