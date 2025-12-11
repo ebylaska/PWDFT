@@ -41,9 +41,12 @@ class CPseudopotential {
   double *amass;
 
   // char **atomsym;
-  Cneb *mypneb;
+  Cneb *mycneb;
   Ion *myion;
   CStrfac *mystrfac;
+
+private:
+  void apply_pspspin_scaling(double *, int, int, int);
 
 public:
   //Paw_compcharge *mypaw_compcharge;
@@ -69,6 +72,14 @@ public:
 
   double *log_amesh, *r1, *rmax, *sigma, *zion, *core_kin, *core_ion;
   int *n1dgrid, *n1dbasis, **nae, **nps, **lps, *icut;
+
+  
+  // pspspin variables
+  bool pspspin = false;
+  bool *pspspin_upions, *pspspin_downions;
+  int *pspspin_upl,*pspspin_upm, *pspspin_downl, *pspspin_downm;
+  double *pspspin_upscale, *pspspin_downscale;
+
 
   /* Constructors */
   CPseudopotential(Ion *, Cneb *, CStrfac *, Control2 &, std::ostream &);
@@ -176,7 +187,7 @@ public:
      //delete myefield;
      //delete myapc;
      //delete mydipole;
-     mypneb->r_dealloc(semicore_density);
+     mycneb->r_dealloc(semicore_density);
   }
 
   bool has_semicore() { return semicore[npsp]; }
@@ -190,6 +201,7 @@ public:
 
   void v_nonlocal_fion(double *psi, double *Hpsi,
                        const bool move, double *fion, double *occ= nullptr);
+  void f1_nonlocal_fion(double *psi, double *fion, double *occ = nullptr);
   void f_nonlocal_fion(double *psi, double *fion, double *occ = nullptr);
 
   void v_nonlocal_orb(const int, double *, double *);

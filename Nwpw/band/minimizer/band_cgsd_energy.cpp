@@ -563,12 +563,58 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
  ******************************************/
 void band_cgsd_energy_gradient(Solid &mysolid, double *grad_ion) 
 {
+   Parallel *parall = mysolid.mygrid->c3db::parall;
+   bool oprint = parall->base_stdio_print;
+   oprint = false;
 
    mysolid.psi_1local_force(grad_ion);
+
+   if (oprint)
+   {
+      std::cout << std::endl << " local Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mysolid.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mysolid.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
+
    mysolid.psi_1nonlocal_force(grad_ion);
+
+   if (oprint)
+   {
+      std::cout << std::endl << " nonlocal Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mysolid.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mysolid.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
    mysolid.semicore_force(grad_ion);
+   if (oprint)
+   {
+      std::cout << std::endl << " semicore Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mysolid.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mysolid.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
  
    mysolid.ion_fion(grad_ion);
+   if (oprint)
+   {
+      std::cout << std::endl << " ion-ion Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mysolid.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mysolid.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
 }
 
 } // namespace pwdft

@@ -191,23 +191,50 @@ static bool cpp_formatter_check(CGrid *mygrid, char *fname, const int psp_versio
  *                                         *
  *******************************************/
 /**
- * @brief Multiply Gijl matrix with sw1 to obtain sw2.
+ * @brief Multiply projector–projector coupling Gijl into complex z-sw arrays.
  *
- * This function multiplies the Gijl matrix with sw1 to obtain sw2. It loops over the
- * projectors and calculates the product for matching l and m values. The result is stored
- * in sw2.
+ * This routine accumulates
  *
- * @param nn Number of grid points.
- * @param nprj Number of projectors.
- * @param nmax Maximum value for n.
- * @param lmax Maximum value for l.
- * @param n_prj Array of n values for projectors.
- * @param l_prj Array of l values for projectors.
- * @param m_prj Array of m values for projectors.
- * @param G Matrix containing Gijl elements.
- * @param sw1 Array containing sw1 values.
- * @param sw2 Array to store the result (sw2 = Gijl * sw1).
+ *    zsw2_b(r) += G_{ab,lm} * zsw1_a(r)
+ *
+ * over all projector pairs (a,b) that have the *same* angular momentum
+ * quantum numbers (l,m).  Only matching (l,m) channels are coupled,
+ * consistent with the projector–projector selection rules.
+ *
+ * ### Complex storage: interleaved real/imag
+ *
+ * The arrays @p zsw1 and @p zsw2 contain complex data stored as
+ * interleaved doubles:
+ *
+ *     zsw[k] = { Re(z0), Im(z0), Re(z1), Im(z1), ... }
+ *
+ * i.e. physical length = 2 * nn per projector.  The BLAS operation
+ * uses a real DAXPY (@c DAXPY_PWDFT) over these 2*nn real elements,
+ * so the multiplication by @p G is applied independently to the real
+ * and imaginary parts.  This is correct because @p G is real-valued.
+ *
+ * ### Assumptions
+ *
+ * - @p G contains real scalar projector couplings.
+ * - zsw1 and zsw2 are complex wavefunction data in interleaved layout.
+ * - n_prj, l_prj, m_prj index projectors using 0-based C++ convention.
+ *
+ * @param[in]  nn       Number of real-space grid points per projector.
+ * @param[in]  nprj     Total number of projectors.
+ * @param[in]  nmax     Maximum radial projector index.
+ * @param[in]  lmax     Maximum angular momentum index.
+ * @param[in]  n_prj    Array of radial projector indices (0-based).
+ * @param[in]  l_prj    Array of angular momentum indices.
+ * @param[in]  m_prj    Array of magnetic quantum numbers.
+ * @param[in]  G        Real projector coupling tensor Gijl.
+ * @param[in]  zsw1     Input complex projector data  (interleaved).
+ * @param[in,out] zsw2  Output complex projector data (interleaved).
+ *
+ * @note This performs a real scalar multiply of complex-valued data and
+ *       does NOT perform complex–complex multiplication.  If @p G were
+ *       complex, this routine would need a full complex BLAS operation.
  */
+
 static void Multiply_Gijl_zsw1(int nn, const int nprj, const int nmax,
                                const int lmax, int *n_prj, int *l_prj,
                                int *m_prj, double *G, double *zsw1, double *zsw2) 
@@ -1342,14 +1369,14 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
  * for electronic structure calculations.
  *
  * @param myionin Pointer to the Ion object.
- * @param mypnebin Pointer to the Cneb object.
+ * @param mycnebin Pointer to the Cneb object.
  * @param mystrfacin Pointer to the CStrfac object.
  * @param control Reference to the Control2 object.
  * @param coutput Reference to the output stream.
  *
  * @note This constructor performs initialization, data reading, and setup for pseudopotentials and PAW pseudopotentials, if applicable.
  */
-CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
+CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mycnebin,
                                    CStrfac *mystrfacin, Control2 &control,
                                    std::ostream &coutput) 
 {
@@ -1368,12 +1395,48 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
    char fname2[256];
  
    myion = myionin;
-   mypneb = mypnebin;
+   mycneb = mycnebin;
    mystrfac = mystrfacin;
  
-   //myefield = new nwpw_efield(myion,mypneb,mystrfac,control,coutput);
-   //myapc    = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
-   //mydipole = new nwpw_dipole(myion,mypneb,mystrfac,control);
+   //myefield = new nwpw_efield(myion,mycneb,mystrfac,control,coutput);
+   //myapc    = new nwpw_apc(myion,mycneb,mystrfac,control,coutput);
+   //mydipole = new nwpw_dipole(myion,mycneb,mystrfac,control);
+
+
+   // pspspin
+   pspspin = control.pspspin();
+   if (pspspin)
+   {
+      int nion = myion->nion;
+      pspspin_upions   = new bool[nion];
+      pspspin_downions = new bool[nion];
+      pspspin_upl = new int[nion];
+      pspspin_upm = new int[nion];
+      pspspin_downl = new int[nion];
+      pspspin_downm = new int[nion];
+      pspspin_upscale   = new double[nion];
+      pspspin_downscale = new double[nion];
+      for (auto ii=0; ii<nion; ++ii)
+      {
+         pspspin_upions[ii] = false;
+         pspspin_downions[ii] = false;
+         pspspin_upl[ii] = -1;
+         pspspin_upm[ii] = 99999;
+         pspspin_downl[ii] = -1;
+         pspspin_downm[ii] = 99999;
+         pspspin_upscale[ii] = 1.0;
+         pspspin_downscale[ii] = 1.0;
+      }
+      std::string pspspin_output = control.set_pspspin(nion,
+                                                       pspspin_upscale,pspspin_downscale,
+                                                       pspspin_upl, pspspin_downl,
+                                                       pspspin_upm, pspspin_downm,
+                                                       pspspin_upions, pspspin_downions);
+      if (mycneb->c3db::parall->is_master())
+         coutput << pspspin_output << std::endl;
+   }
+
+
  
    psp_version = control.version;
  
@@ -1402,12 +1465,12 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
  
    vl = new (std::nothrow) double *[npsp]();
    for (auto ia=0; ia<npsp; ++ia)
-      vl[ia] = new (std::nothrow) double[mypneb->npack(0)]();
+      vl[ia] = new (std::nothrow) double[mycneb->npack(0)]();
  
    Gijl       = new (std::nothrow) double *[npsp]();
    vnl        = new (std::nothrow) double *[npsp]();
    ncore_atom = new (std::nothrow) double *[npsp]();
-   semicore_density = mypneb->r_alloc();
+   semicore_density = mycneb->r_alloc();
  
    comment = new char *[npsp]();
    for (auto ia=0; ia<npsp; ++ia)
@@ -1419,7 +1482,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
    pawexist = false;
    vlpaw = new (std::nothrow) double *[npsp]();
    for (auto ia=0; ia<npsp; ++ia)
-      vlpaw[ia] = new (std::nothrow) double[mypneb->npack(0)]();
+      vlpaw[ia] = new (std::nothrow) double[mycneb->npack(0)]();
  
    hartree_matrix     = new (std::nothrow) double *[npsp]();
    comp_charge_matrix = new (std::nothrow) double *[npsp]();
@@ -1457,12 +1520,12 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
       strcat(fname, ".cpp");
       control.add_permanent_dir(fname);
      
-      if (cpp_formatter_check(mypneb, fname, psp_version)) 
+      if (cpp_formatter_check(mycneb, fname, psp_version)) 
       {
          strcpy(pspname, myion->atom(ia));
          strcat(pspname, ".psp");
          control.add_permanent_dir(pspname);
-         cpp_generate(mypneb, pspname, fname, comment[ia], &psp_type[ia], psp_version,
+         cpp_generate(mycneb, pspname, fname, comment[ia], &psp_type[ia], psp_version,
                       &version, nfft, unita, aname, &amass[ia], &zv[ia], &lmmax[ia],
                       &lmax[ia], &locp[ia], &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr,
                       &m_ptr, &b_ptr, &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia],
@@ -1475,7 +1538,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                       &comp_pot_matrix_ptr, coutput);
         
          // writing .cpp file to fname
-         cpp_write(mypneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
+         cpp_write(mycneb, fname, comment[ia], psp_type[ia], version, nfft, unita,
                    aname, amass[ia], zv[ia], lmmax[ia], lmax[ia], locp[ia],
                    nmax[ia], rc_ptr, nprj[ia], n_ptr, l_ptr, m_ptr, b_ptr, G_ptr,
                    rlocal[ia], semicore[ia], rcore[ia], ncore_ptr, vl[ia], vnl_ptr,
@@ -1487,7 +1550,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
                    comp_charge_matrix_ptr, comp_pot_matrix_ptr, coutput);
 
 /*
-         cpp_read(mypneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
+         cpp_read(mycneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
                   aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
                   &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
                   &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia], &ncore_ptr,
@@ -1502,7 +1565,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
       } 
       else 
       {
-         cpp_read(mypneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
+         cpp_read(mycneb, fname, comment[ia], &psp_type[ia], &version, nfft, unita,
                   aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
                   &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
                   &G_ptr, &rlocal[ia], &semicore[ia], &rcore[ia], &ncore_ptr,
@@ -1528,7 +1591,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
       if (semicore[ia]) 
       {
          ncore_atom[ia] = ncore_ptr;
-         ncore_sum[ia]  = semicore_check(mypneb,semicore[ia],rcore[ia],ncore_atom[ia]);
+         ncore_sum[ia]  = semicore_check(mycneb,semicore[ia],rcore[ia],ncore_atom[ia]);
          semicore[npsp] = true;
       }
      
@@ -1563,10 +1626,10 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
    {
       // call psp_paw_init()
       /*
-      mypaw_compcharge = new Paw_compcharge(myion,mypneb,control,nprj,n1dbasis,psp_type,
+      mypaw_compcharge = new Paw_compcharge(myion,mycneb,control,nprj,n1dbasis,psp_type,
                                            lmax,sigma,nprj_max,l_projector,m_projector,
                                             b_projector,comp_charge_matrix,hartree_matrix);
-      mypaw_xc = new Paw_xc(myion,mypneb,control,nprj,n1dbasis,n1dgrid,psp_type,
+      mypaw_xc = new Paw_xc(myion,mycneb,control,nprj,n1dbasis,n1dgrid,psp_type,
                             lmax,l_projector,m_projector,b_projector);
       */
      
@@ -1596,6 +1659,51 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mypnebin,
    }
 }
 
+void CPseudopotential::apply_pspspin_scaling(double* zsw2, int nn, int jstart, int jend)
+{
+   int nup = mycneb->neq[0];
+   int ndn = mycneb->neq[1];
+   int ll = 0;
+
+   for (int ii=jstart; ii<jend; ++ii)
+   {
+      int ia = myion->katm[ii];
+      if (nprj[ia] > 0)
+      {
+         for (int l=0; l<nprj[ia]; ++l)
+         {
+            int l_prj = l_projector[ia][l];
+            int m_prj = m_projector[ia][l];
+
+            if (pspspin_upions[ii] &&
+                (l_prj == pspspin_upl[ii]) &&
+                (m_prj == pspspin_upm[ii] || pspspin_upm[ii] > 999))
+            {
+               for (int n=0; n<nup; ++n)
+               {
+                  zsw2[2*n   + (l+ll)*nn] *= pspspin_upscale[ii];
+                  zsw2[2*n+1 + (l+ll)*nn] *= pspspin_upscale[ii];
+               }
+            }
+
+            if (pspspin_downions[ii] &&
+                (l_prj == pspspin_downl[ii]) &&
+                (m_prj == pspspin_downm[ii] || pspspin_downm[ii] > 999))
+            {
+               for (int n=0; n<ndn; ++n)
+               {
+                  zsw2[2*n   + nup + (l+ll)*nn] *= pspspin_downscale[ii];
+                  zsw2[2*n+1 + nup + (l+ll)*nn] *= pspspin_downscale[ii];
+               }
+            }
+         }
+         ll += nprj[ia];
+      }
+   }
+}
+
+
+
 
 /*******************************************
  *                                         *
@@ -1620,7 +1728,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
    int jj, ll, jstart, jend, nprjall;
    double *prj, *vnlprj;
    Parallel *parall;
-   double omega = mypneb->lattice->omega();
+   double omega = mycneb->lattice->omega();
    // double scal = 1.0/lattice_omega();
    double scal = 1.0 / omega;
    int one = 1;
@@ -1628,26 +1736,26 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
    double rone[2] = {1.0,0.0};
    double rmone[2] = {-1.0,0.0};
  
-   nn = mypneb->neq[0] + mypneb->neq[1];
-   nshift0 = mypneb->npack1_max();
-   nshift = 2*mypneb->npack1_max();
+   nn = mycneb->neq[0] + mycneb->neq[1];
+   nshift0 = mycneb->npack1_max();
+   nshift = 2*mycneb->npack1_max();
    double *exi = new (std::nothrow) double[nshift]();
    double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1 = new (std::nothrow) double[2*nn * nprj_max]();
    double *zsw2 = new (std::nothrow) double[2*nn * nprj_max]();
  
-   parall = mypneb->c3db::parall;
+   parall = mycneb->c3db::parall;
 
 #if 1
 
-   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
+   for (auto nbq=0; nbq<(mycneb->nbrillq); ++nbq)
    {
       int nbq1 = nbq+1;
-      int npack1 = mypneb->npack(nbq1);
+      int npack1 = mycneb->npack(nbq1);
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nshift*nn);
-      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nshift*nn);
+      mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nshift*nn);
+      mycneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nshift*nn);
   
       int ii = 0;
       while (ii < (myion->nion)) 
@@ -1668,9 +1776,9 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
                   prj = prjtmp + ((l+nprjall)*nshift);
                   vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
                   if (sd_function)
-                     mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
                   else
-                     mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
                }
                nprjall += nprj[ia];
             }
@@ -1687,7 +1795,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
             done = true;
          }
          jend = ii;
-         mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi+nbq*nshift*nn, prjtmp, zsw1);
+         mycneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi+nbq*nshift*nn, prjtmp, zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
 
@@ -1713,9 +1821,9 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
          //                zsw2,   nn,
          //                rone,
          //                Hpsi,nshift);
-         mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nshift*nn);
+         mycneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nshift*nn);
       }
-      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
+      mycneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
 
 #else
 
@@ -1733,13 +1841,13 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
              prj = &(prjtmp[l * nshift]);
              vnlprj = &(vnl[ia][l * nshift0]);
              if (sd_function)
-               mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+               mycneb->tcc_pack_Mul(1, vnlprj, exi, prj);
              else
-               mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-             // mypneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
+               mycneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+             // mycneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
            }
            ntmp = nprj[ia];
-           mypneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, sw1);
+           mycneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, sw1);
            parall->Vector_SumAll(1, nn * nprj[ia], sw1);
         
            /* sw2 = Gijl*sw1 */
@@ -1758,7 +1866,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
            //       sw2,   nn,
            //       rone,
            //       Hpsi,nshift);
-           mypneb->c3db::mygdevice.NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
+           mycneb->c3db::mygdevice.NT_dgemm(nshift, nn, ntmp, rmone, prjtmp, sw2, rone, Hpsi);
         
          } /*if nprj>0*/
       }   /*ii*/
@@ -1802,7 +1910,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    double *Gx, *Gy, *Gz, *xtmp, *sum;
    double ff[3];
    Parallel *parall;
-   double omega = mypneb->lattice->omega();
+   double omega = mycneb->lattice->omega();
    // double scal = 1.0/lattice_omega();
    double scal = 1.0 / omega;
    int one = 1;
@@ -1812,10 +1920,10 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
    double rone[2] = {1.0,0.0};
    double rmone[2] = {-1.0,0.0};
  
-   int nn = mypneb->neq[0] + mypneb->neq[1];
-   int ispin = mypneb->ispin;
-   int nshift0 = mypneb->npack1_max();
-   int nshift = 2*mypneb->npack1_max();
+   int nn = mycneb->neq[0] + mycneb->neq[1];
+   int ispin = mycneb->ispin;
+   int nshift0 = mycneb->npack1_max();
+   int nshift = 2*mycneb->npack1_max();
 
    double *exi = new (std::nothrow) double[nshift]();
    double *prjtmp = new (std::nothrow) double[nprj_max*nshift]();
@@ -1828,23 +1936,23 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
       sum = new (std::nothrow) double[3*nn*nprj_max]();
    }
 
-   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
+   for (auto nbq=0; nbq<(mycneb->nbrillq); ++nbq)
    {
       int nbq1 = nbq + 1;
-      int npack1 = mypneb->npack(nbq1);
+      int npack1 = mycneb->npack(nbq1);
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nn*nshift);
-      mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nn*nshift);
+      mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nn*nshift);
+      mycneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nn*nshift);
   
       if (move) 
       {
-         Gx = mypneb->Gpackxyz(nbq1, 0);
-         Gy = mypneb->Gpackxyz(nbq1, 1);
-         Gz = mypneb->Gpackxyz(nbq1, 2);
+         Gx = mycneb->Gpackxyz(nbq1, 0);
+         Gy = mycneb->Gpackxyz(nbq1, 1);
+         Gz = mycneb->Gpackxyz(nbq1, 2);
       }
   
-      parall = mypneb->c3db::parall;
+      parall = mycneb->c3db::parall;
 
 #if 1
       int ii = 0;
@@ -1866,18 +1974,18 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                   double *prj = prjtmp + (l+nprjall)*nshift;
                   double *vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
                   if (sd_function)
-                     mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
                   else
-                     mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
                  
                   if (move) 
                   {
                      for (auto n=0; n<nn; ++n) 
                      {
-                        mypneb->zccr_pack_iconjgMul(nbq1, zsw2+2*(l*nn+n), prj, psi+n*nshift+nbq*nn*nshift, xtmp);
-                        sum[3*n + 3*nn*(l+nprjall)]     = mypneb->tt_pack_idot(nbq1, Gx, xtmp);
-                        sum[3*n + 3*nn*(l+nprjall) + 1] = mypneb->tt_pack_idot(nbq1, Gy, xtmp);
-                        sum[3*n + 3*nn*(l+nprjall) + 2] = mypneb->tt_pack_idot(nbq1, Gz, xtmp);
+                        mycneb->zccr_pack_iconjgMul(nbq1, zsw2+2*(l*nn+n), prj, psi+n*nshift+nbq*nn*nshift, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall)]     = mycneb->tt_pack_idot(nbq1, Gx, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall) + 1] = mycneb->tt_pack_idot(nbq1, Gy, xtmp);
+                        sum[3*n + 3*nn*(l+nprjall) + 2] = mycneb->tt_pack_idot(nbq1, Gz, xtmp);
                      }
                   }
                }
@@ -1896,20 +2004,20 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
          }
          jend = ii;
         
-         mypneb->cc_pack_inprjzdot(nbq1,nn,nprjall,psi+nbq*nn*nshift,prjtmp,zsw1);
+         mycneb->cc_pack_inprjzdot(nbq1,nn,nprjall,psi+nbq*nn*nshift,prjtmp,zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
          if (move)
          {
             parall->Vector_SumAll(1, 3*nn*nprjall, sum);
-            mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+            mycneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
             if (occ)
             {
                int count3 = 0;
                for (auto l=0; l<nprjall; ++l)
                for (auto ms=0; ms<ispin; ++ms)
-               for (auto q=0; q<mypneb->neq[ms]; ++q)
+               for (auto q=0; q<mycneb->neq[ms]; ++q)
                {
-                   double wf = occ[q+ms*mypneb->neq[0]+nbq*(mypneb->neq[0]+mypneb->neq[1])];
+                   double wf = occ[q+ms*mycneb->neq[0]+nbq*(mycneb->neq[0]+mycneb->neq[1])];
                    sum[count3]   *= wf;
                    sum[count3+1] *= wf;
                    sum[count3+2] *= wf;
@@ -1945,7 +2053,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                      Hpsi+nbq*nshift,nshift0);
 */
 
-         mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nn*nshift);
+         mycneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi+nbq*nn*nshift);
 
          if (move) 
          {
@@ -1972,7 +2080,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
             }
          }
       }
-      mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi+nbq*nn*nshift);
+      mycneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0, nn, Hpsi+nbq*nn*nshift);
 
 #else
 
@@ -1990,10 +2098,10 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
               prj = &prjtmp[l * nshift];
               vnlprj = vnl[ia]+l*nshift0;
               if (sd_function)
-                mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+                mycneb->tcc_pack_Mul(1, vnlprj, exi, prj);
               else
-                mypneb->tcc_pack_iMul(1, vnlprj, exi, prj);
-              mypneb->cc_pack_indot(1, nn, psi, prj, &sw1[l * nn]);
+                mycneb->tcc_pack_iMul(1, vnlprj, exi, prj);
+              mcpneb->cc_pack_indot(1, nn, psi, prj, &sw1[l * nn]);
             }
             parall->Vector_SumAll(1, nn * nprj[ia], sw1);
            
@@ -2016,10 +2124,10 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
                   prj = prjtmp + l*nshift;
                   for (n=0; n<nn; ++n) 
                   {
-                     mypneb->cct_pack_iconjgMul(1, prj, &psi[n * nshift], xtmp);
-                     sum[3*n]   = mypneb->tt_pack_idot(1, Gx, xtmp);
-                     sum[3*n+1] = mypneb->tt_pack_idot(1, Gy, xtmp);
-                     sum[3*n+2] = mypneb->tt_pack_idot(1, Gz, xtmp);
+                     mycneb->cct_pack_iconjgMul(1, prj, &psi[n * nshift], xtmp);
+                     sum[3*n]   = mycneb->tt_pack_idot(1, Gx, xtmp);
+                     sum[3*n+1] = mycneb->tt_pack_idot(1, Gy, xtmp);
+                     sum[3*n+2] = mycneb->tt_pack_idot(1, Gz, xtmp);
                   }
                   parall->Vector_SumAll(1, 3 * nn, sum);
                  
@@ -2062,7 +2170,7 @@ void CPseudopotential::v_nonlocal_fion(double *psi, double *Hpsi,
  * @note This function calculates nonlocal forces by performing matrix multiplications and vector operations.
  * The resulting forces are stored in the 'fion' array.
  */
-void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ) 
+void CPseudopotential::f1_nonlocal_fion(double *psi, double *fion, double *occ) 
 {
    nwpw_timing_function ftimer(6);
    
@@ -2073,7 +2181,9 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
    double ff[3];
    Parallel *parall;
 
-   double omega = mypneb->lattice->omega();
+   parall = mycneb->c3db::parall;
+
+   double omega = mycneb->lattice->omega();
    double scal = 1.0 / omega;
    int one = 1;
    int three = 3;
@@ -2081,10 +2191,10 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
    double rone[2] = {1.0,0.0};
    double rmone[2] = {-1.0,0.0};
  
-   auto nn      = mypneb->neq[0] + mypneb->neq[1];
-   auto ispin   = mypneb->ispin;
-   auto nshift0 = mypneb->npack1_max();
-   auto nshift  = 2*mypneb->npack1_max();
+   auto nn      = mycneb->neq[0] + mycneb->neq[1];
+   auto ispin   = mycneb->ispin;
+   auto nshift0 = mycneb->npack1_max();
+   auto nshift  = 2*mycneb->npack1_max();
 
    exi    = new (std::nothrow) double[nshift]();
    prjtmp = new (std::nothrow) double[nprj_max*nshift]();
@@ -2092,25 +2202,25 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
    zsw2   = new (std::nothrow) double[2*nn*nprj_max]();
 
    // Copy psi to device
-   //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
+   //mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift, nn, psi);
 
    xtmp = new (std::nothrow) double[nshift0]();
    sum  = new (std::nothrow) double[3*nn*nprj_max]();
 
-   for (auto nbq=0; nbq<mypneb->nbrillq; ++nbq)
+   for (auto nbq=0; nbq<mycneb->nbrillq; ++nbq)
    {
       auto nbq1 = nbq + 1;
-      auto npack1 = mypneb->npack(nbq1);
+      auto npack1 = mycneb->npack(nbq1);
+      double weight  = mycneb->pbrill_weight(nbq);
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi+nbq*nshift*nn);
-      //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
+      mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi+nbq*nshift*nn);
+      //mycneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0,nn,Hpsi);
   
-      Gx = mypneb->Gpackxyz(nbq1, 0);
-      Gy = mypneb->Gpackxyz(nbq1, 1);
-      Gz = mypneb->Gpackxyz(nbq1, 2);
+      Gx = mycneb->Gpackxyz(nbq1, 0);
+      Gy = mycneb->Gpackxyz(nbq1, 1);
+      Gz = mycneb->Gpackxyz(nbq1, 2);
   
-      parall = mypneb->c3db::parall;
   
       auto ii = 0;
       while (ii < (myion->nion)) 
@@ -2132,18 +2242,18 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
                   double *prj = prjtmp + (l+nprjall)*nshift;
                   double *vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
                   if (sd_function)
-                     mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
                   else
-                     mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
                  
-                  for (auto n=0; n<nn; ++n) 
-                  {
-                     //mypneb->cct_pack_iconjgMul(nbq1, prj, psi + n*nshift + nbq*nshift*nn, xtmp);
-                     mypneb->zccr_pack_iconjgMul(nbq1, zsw2+2*(l*nn+n), prj, psi+n*nshift+nbq*nn*nshift, xtmp);
-                     sum[3*n +     3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq1, Gx, xtmp);
-                     sum[3*n + 1 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq1, Gy, xtmp);
-                     sum[3*n + 2 + 3*nn*(l+nprjall)] = mypneb->tt_pack_idot(nbq1, Gz, xtmp);
-                  }
+                  //for (auto n=0; n<nn; ++n) 
+                  //{
+                  //   //mycneb->cct_pack_iconjgMul(nbq1, prj, psi + n*nshift + nbq*nshift*nn, xtmp);
+                  //   mycneb->zccr_pack_iconjgMul(nbq1, zsw2+2*(l*nn+n), prj, psi+n*nshift+nbq*nn*nshift, xtmp);
+                  //   sum[3*n +     3*nn*(l+nprjall)] = mycneb->tt_pack_idot(nbq1, Gx, xtmp);
+                  //   sum[3*n + 1 + 3*nn*(l+nprjall)] = mycneb->tt_pack_idot(nbq1, Gy, xtmp);
+                  //   sum[3*n + 2 + 3*nn*(l+nprjall)] = mycneb->tt_pack_idot(nbq1, Gz, xtmp);
+                 // }
                }
                nprjall += nprj[ia];
             }
@@ -2159,29 +2269,14 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
             }
          }
          auto jend = ii;
-         mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi + nbq*nshift*nn, prjtmp, zsw1);
+         mycneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi + nbq*nshift*nn, prjtmp, zsw1);
          //parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
          //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
 
-         mypneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
-         //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
-         if (occ)
-         {
-            int count3 = 0;
-            for (auto l=0; l<nprjall; ++l)
-            for (auto ms=0; ms<ispin; ++ms)
-            for (auto q=0; q<mypneb->neq[ms]; ++q)
-            {
-                double wf = occ[q+ms*mypneb->neq[0]+nbq*(mypneb->neq[0]+mypneb->neq[1])];
-                sum[count3]   *= wf;
-                sum[count3+1] *= wf;
-                sum[count3+2] *= wf;
-                count3 += 3;
-            }
-         }
+
 
         
-         /* sw2 = Gijl*sw1 */
+         /* zsw2 = Gijl*zsw1 */
          auto ll = 0;
          for (auto jj=jstart; jj<jend; ++jj) 
          {
@@ -2198,30 +2293,67 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
          auto ntmp = 2*nn*nprjall;
          DSCAL_PWDFT(ntmp, scal, zsw2, one);
         
-         mypneb->c3db::mygdevice.T_free();
-        
-         // for (ll=0; ll<nprjall; ++ll)
-         ll = 0;
-         for (auto jj=jstart; jj<jend; ++jj) 
+          // ------------- sum(l,n,G) = G·Imag(α ψ conj(prj)) -------------
+         std::fill(sum, sum + 3 * nn * nprjall, 0.0);
+
+         //mycneb->n2ccttt_pack_i3ndot(1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+         //parall->Vector_SumAll(1, 3*nn*nprjall, sum);
+         mycneb->n2cccttt_pack_i3ndot(nbq1,nn,nprjall,psi,prjtmp,zsw2,Gx,Gy,Gz,sum);
+         //mycneb->n2ccttt_pack_i3ndot(nbq1,nn,nprjall,psi,prjtmp,Gx,Gy,Gz,sum);
+
+
+         if (occ)
          {
-            ia = myion->katm[jj];
-            for (auto l=0; l<nprj[ia]; ++l) 
+            int count3 = 0;
+            for (auto l=0; l<nprjall; ++l)
+            for (auto ms=0; ms<ispin; ++ms)
+            for (auto q=0; q<mycneb->neq[ms]; ++q)
             {
-               ff[0] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll,     three);
-               ff[1] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 1, three);
-               ff[2] = 2.0*DDOT_PWDFT(nn, zsw2 + ll*nn, one, sum + 3*nn*ll + 2, three);
-               parall->Vector_SumAll(2,3,ff);
- 
-               fion[3*jj]   += (3-ispin)*ff[0];
-               fion[3*jj+1] += (3-ispin)*ff[1];
-               fion[3*jj+2] += (3-ispin)*ff[2];
- 
-               ++ll;
+                double wf = occ[q+ms*mycneb->neq[0]+nbq*(mycneb->neq[0]+mycneb->neq[1])];
+                sum[count3]   *= wf;
+                sum[count3+1] *= wf;
+                sum[count3+2] *= wf;
+                count3 += 3;
             }
          }
-      }
-      //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift0,nn,Hpsi);
-   }
+
+         // ------------- accumulate forces onto fion -------------
+         // sum layout: [l_global][n][xyz]
+         int lglobal = 0;
+         for (int jj = jstart; jj < jend; ++jj)
+         {
+            ia = myion->katm[jj];
+
+            for (int l = 0; l < nprj[ia]; ++l, ++lglobal)
+            {
+               double floc[3] = {0.0, 0.0, 0.0};
+
+               for (int n = 0; n < nn; ++n)
+               {
+                  const int idx3 = 3 * (lglobal * nn + n);
+                  floc[0] += sum[idx3    ];
+                  floc[1] += sum[idx3 + 1];
+                  floc[2] += sum[idx3 + 2];
+               }
+
+               // Sum over whatever communicator owns the orbital blocks
+               parall->Vector_SumAll(1, 3, floc);
+
+               // Factor 2.0 (as in Fortran) and k-point weight
+               const double fac = 2.0 * weight;
+
+               fion[3 * jj    ] += fac * floc[0];
+               fion[3 * jj + 1] += fac * floc[1];
+               fion[3 * jj + 2] += fac * floc[2];
+            }
+         }
+
+         // Optionally free any per-batch GPU temporaries
+         mycneb->c3db::mygdevice.T_free();
+
+      } // while (ii < nion)
+   } // nbq
+
  
    delete[] xtmp;
    delete[] sum;
@@ -2231,6 +2363,232 @@ void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
    delete[] prjtmp;
    delete[] exi;
 }
+
+
+
+void CPseudopotential::f_nonlocal_fion(double *psi, double *fion, double *occ)
+{
+   nwpw_timing_function ftimer(6);
+
+   Parallel *parall = mycneb->c3db::parall;
+
+   const double omega = mycneb->lattice->omega();
+   double scal  = 1.0 / omega;
+   double rtwo  = 2.0;
+   int    one   = 1;
+
+   const int nn      = mycneb->neq[0] + mycneb->neq[1];
+   const int ispin   = mycneb->ispin;
+   const int nshift0 = mycneb->npack1_max();      // real grid size per band
+   const int nshift  = 2 * mycneb->npack1_max();  // complex-packed stride
+
+   // Temporary buffers
+   double *exi    = new (std::nothrow) double[nshift]();                 // structure factors (complex packed)
+   double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();      // batched projectors
+   double *zsw1   = new (std::nothrow) double[2 * nn * nprj_max]();      // <psi|prj>
+   double *zsw2   = new (std::nothrow) double[2 * nn * nprj_max]();      // Gijl * zsw1
+
+   double *xtmp   = new (std::nothrow) double[nshift0]();                // scratch for G-space (not heavily used here anymore)
+   double *sum    = new (std::nothrow) double[3 * nn * nprj_max]();      // [l][n][xyz]
+
+   // Loop over k-points
+   for (int nbq = 0; nbq < mycneb->nbrillq; ++nbq)
+   {
+      const int nbq1   = nbq + 1;                 // 1-based index for CGrid
+      const int npack1 = mycneb->npack(nbq1);
+
+      // Brillouin-zone weight (assumes you have something like this;
+      // if the accessor is named differently, change here).
+      //const double weight = mycneb->brillouin_weight(nbq1);
+      double weight  = mycneb->pbrill_weight(nbq);
+
+      // Copy ψ(k) to device if needed
+      mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn,
+                                                psi + nbq * nshift * nn);
+
+      // Packed G-vectors (real, already in packed representation)
+      double *Gx = mycneb->Gpackxyz(nbq1, 0);
+      double *Gy = mycneb->Gpackxyz(nbq1, 1);
+      double *Gz = mycneb->Gpackxyz(nbq1, 2);
+
+      int ii = 0;
+      while (ii < myion->nion)
+      {
+         int ia      = myion->katm[ii];   // atom type index
+         int nprjall = 0;                 // total projectors in this batch
+         int jstart  = ii;
+         bool done   = false;
+
+         // -------- batch ions so that sum of projectors <= nprj_max --------
+         while (!done)
+         {
+            if (nprj[ia] > 0)
+            {
+               // Structure factor exi for this ion at this k-point
+               // (complex packed, length 2*npack1 <= nshift)
+               mystrfac->strfac_pack_cxr(nbq1, nbq, ii, exi);
+
+               // Build projectors prjtmp for all projectors on this ion
+               for (int l = 0; l < nprj[ia]; ++l)
+               {
+                  const bool sd_function = !(l_projector[ia][l] & 1);
+                  double *prj   = prjtmp + (l + nprjall) * nshift;
+                  double *vnlprj =
+                      vnl[ia] + (l + nbq * nprj[ia]) * nshift0;
+
+                  if (sd_function)
+                     mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                  else
+                     mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+               }
+
+               nprjall += nprj[ia];
+            }
+
+            ++ii;
+            if (ii < myion->nion)
+            {
+               ia   = myion->katm[ii];
+               done = ((nprjall + nprj[ia]) > nprj_max);
+            }
+            else
+            {
+               done = true;
+            }
+         }
+         int jend = ii;
+
+         if (nprjall == 0)
+            continue;  // no projectors in this batch
+
+         // ------------- zsw1 = <psi | prj> (nn x nprjall) -------------
+         // psi:   base pointer at this k-point
+         // prjtmp: batched [l][G]
+         // zsw1:  [l][n] complex (2*nn*nprjall)
+         mycneb->cc_pack_inprjzdot(nbq1,
+                                   nn,
+                                   nprjall,
+                                   psi + nbq * nshift * nn,
+                                   prjtmp,
+                                   zsw1);
+
+         // MPI sum over replicated ψ/prj distributions if needed
+         parall->Vector_SumAll(1, 2 * nn * nprjall, zsw1);
+
+         // ------------- zsw2 = Gijl * zsw1 -------------
+         // We walk ions again in this batch to apply Gijl for each ion's
+         // projector block, respecting the local projector offset (ll).
+         int ll = 0;
+         for (int jj = jstart; jj < jend; ++jj)
+         {
+            ia = myion->katm[jj];
+            if (nprj[ia] > 0)
+            {
+               Multiply_Gijl_zsw1(nn,
+                                  nprj[ia],
+                                  nmax[ia],
+                                  lmax[ia],
+                                  n_projector[ia],
+                                  l_projector[ia],
+                                  m_projector[ia],
+                                  Gijl[ia],
+                                  zsw1 + 2 * ll * nn,
+                                  zsw2 + 2 * ll * nn);
+               ll += nprj[ia];
+            }
+         }
+
+         // scale by 1/Ω and spin degeneracy (ispin==1 → factor 2)
+         auto ntmp = 2 * nn * nprjall;
+         DSCAL_PWDFT(ntmp, scal, zsw2, one);
+         if (ispin == 1)
+            DSCAL_PWDFT(ntmp, rtwo, zsw2, one);
+
+         // ------------- sum(l,n,G) = G·Imag(α ψ conj(prj)) -------------
+         std::fill(sum, sum + 3 * nn * nprjall, 0.0);
+
+         mycneb->n2cccttt_pack_i3ndot(nbq1,
+                                     nn,
+                                     nprjall,
+                                     psi + nbq * nshift * nn,
+                                     prjtmp,
+                                     zsw2,
+                                     Gx,
+                                     Gy,
+                                     Gz,
+                                     sum);
+
+         // Optional: include orbital occupations (wfrac)
+         if (occ)
+         {
+            int count3 = 0;
+            for (int l = 0; l < nprjall; ++l)
+            {
+               for (int ms = 0; ms < ispin; ++ms)
+               {
+                  const int neq_ms = mycneb->neq[ms];
+                  for (int q = 0; q < neq_ms; ++q)
+                  {
+                     // Occ index: [spin-block][orbital][k-point]
+                     const int occ_idx =
+                         q + ms * mycneb->neq[0] +
+                         nbq * (mycneb->neq[0] + mycneb->neq[1]);
+
+                     const double wf = occ[occ_idx];
+
+                     sum[count3    ] *= wf;
+                     sum[count3 + 1] *= wf;
+                     sum[count3 + 2] *= wf;
+                     count3 += 3;
+                  }
+               }
+            }
+         }
+
+         // ------------- accumulate forces onto fion -------------
+         // sum layout: [l_global][n][xyz]
+         int lglobal = 0;
+         for (int jj = jstart; jj < jend; ++jj)
+         {
+            ia = myion->katm[jj];
+
+            for (int l = 0; l < nprj[ia]; ++l, ++lglobal)
+            {
+               double floc[3] = {0.0, 0.0, 0.0};
+
+               for (int n = 0; n < nn; ++n)
+               {
+                  const int idx3 = 3 * (lglobal * nn + n);
+                  floc[0] += sum[idx3    ];
+                  floc[1] += sum[idx3 + 1];
+                  floc[2] += sum[idx3 + 2];
+               }
+
+               // Sum over whatever communicator owns the orbital blocks
+               //parall->Vector_SumAll(1, 3, floc);
+
+               // Factor 2.0 (as in Fortran) and k-point weight
+               const double fac = 2.0 * weight;
+
+               fion[3 * jj    ] += fac * floc[0];
+               fion[3 * jj + 1] += fac * floc[1];
+               fion[3 * jj + 2] += fac * floc[2];
+            }
+         }
+
+         // Optionally free any per-batch GPU temporaries
+         mycneb->c3db::mygdevice.T_free();
+      } // while (ii < nion)
+   } // nbq
+
+   delete[] sum;
+   delete[] xtmp;
+   delete[] zsw2;
+   delete[] zsw1;
+   delete[] prjtmp;
+   delete[] exi;
+}
+
 
 /*******************************************
  *                                         *
@@ -2245,7 +2603,7 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
    int jj, ll, jstart, jend, nprjall;
    double *prj, *vnlprj;
    Parallel *parall;
-   double omega = mypneb->lattice->omega();
+   double omega = mycneb->lattice->omega();
    double scal  = 1.0/omega;
    int one = 1;
    int ntmp, nshift, nn;
@@ -2253,21 +2611,21 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
    double rmone[2] = {-1.0,0.0};
 
    nn = 1;
-   nshift0 = mypneb->npack1_max();
-   nshift = 2*mypneb->npack1_max();
+   nshift0 = mycneb->npack1_max();
+   nshift = 2*mycneb->npack1_max();
    double *exi = new (std::nothrow) double[nshift]();
    double *prjtmp = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1 = new (std::nothrow) double[2*nn * nprj_max]();
    double *zsw2 = new (std::nothrow) double[2*nn * nprj_max]();
 
-   parall = mypneb->c3db::parall;
+   parall = mycneb->c3db::parall;
 
    int nbq = nbq1-1;
-   int npack1 = mypneb->npack(nbq1);
+   int npack1 = mycneb->npack(nbq1);
 
    // Copy psi to device
-   //mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nshift*nn);
-   //mypneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nshift*nn);
+   //mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0,  nn, psi +nbq*nshift*nn);
+   //mycneb->c3db::mygdevice.hpsi_copy_host2gpu(nshift0, nn, Hpsi+nbq*nshift*nn);
   
    int ii = 0;
    while (ii < (myion->nion)) 
@@ -2288,9 +2646,9 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
                prj = prjtmp + ((l+nprjall)*nshift);
                vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
                if (sd_function)
-                  mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                  mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
                else
-                  mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+                  mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
             }
             nprjall += nprj[ia];
          }
@@ -2307,7 +2665,7 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
          done = true;
       }
       jend = ii;
-      mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
+      mycneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi, prjtmp, zsw1);
       parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
       /* sw2 = Gijl*sw1 */
@@ -2326,9 +2684,9 @@ void CPseudopotential::v_nonlocal_orb(const int nbq1, double *psi, double *Hpsi)
       ntmp = 2*nn*nprjall;
       DSCAL_PWDFT(ntmp, scal, zsw2, one);
        
-      mypneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi);
+      mycneb->c3db::mygdevice.NC2_zgemm(nshift0,npack1,nn,nprjall,rmone,prjtmp,zsw2,rone,Hpsi);
    }
-   //mypneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
+   //mycneb->c3db::mygdevice.hpsi_copy_gpu2host(nshift,nn,Hpsi+nbq*nshift*nn);
 
 
    delete[] zsw2;
@@ -2362,31 +2720,31 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
 {
    nwpw_timing_function ftimer(6);
 
-   Parallel *parall = mypneb->c3db::parall;
-   double omega = mypneb->lattice->omega();
+   Parallel *parall = mycneb->c3db::parall;
+   double omega = mycneb->lattice->omega();
    double scal = 1.0 / omega;
    int one = 1;
    double rone = 1.0;
    double rmone = -1.0;
    double esum = 0.0;
  
-   int nn = mypneb->neq[0] + mypneb->neq[1];
-   int nshift0 = mypneb->npack1_max();
-   int nshift  = 2*mypneb->npack1_max();
+   int nn = mycneb->neq[0] + mycneb->neq[1];
+   int nshift0 = mycneb->npack1_max();
+   int nshift  = 2*mycneb->npack1_max();
    double *exi     = new (std::nothrow) double[nshift]();
    double *prjtmp  = new (std::nothrow) double[nprj_max * nshift]();
    double *zsw1    = new (std::nothrow) double[2*nn*nprj_max]();
    double *zsw2    = new (std::nothrow) double[2*nn*nprj_max]();
    int taskid = parall->taskid();
  
-   for (auto nbq=0; nbq<(mypneb->nbrillq); ++nbq)
+   for (auto nbq=0; nbq<(mycneb->nbrillq); ++nbq)
    {
-      double weight  = mypneb->pbrill_weight(nbq);
+      double weight  = mycneb->pbrill_weight(nbq);
       double esum0 = 0.0;
       int nbq1 = nbq + 1;
 
       // Copy psi to device
-      mypneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi + nbq*nn*nshift);
+      mycneb->c3db::mygdevice.psi_copy_host2gpu(nshift0, nn, psi + nbq*nn*nshift);
   
       auto ii = 0;
       while (ii<(myion->nion)) 
@@ -2408,9 +2766,9 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
                   auto prj    = prjtmp+(l+nprjall)*nshift;
                   auto vnlprj = vnl[ia] + (l + nbq*nprj[ia])*nshift0;
                   if (sd_function)
-                     mypneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
                   else
-                     mypneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+                     mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
                }
                nprjall += nprj[ia];
             }
@@ -2429,7 +2787,7 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
             done = true;
          }
          auto jend = ii;
-         mypneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi + nbq*nn*nshift, prjtmp, zsw1);
+         mycneb->cc_pack_inprjzdot(nbq1, nn, nprjall, psi + nbq*nn*nshift, prjtmp, zsw1);
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
          /* sw2 = Gijl*sw1 */
@@ -2454,10 +2812,10 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
             int count = 0;
             for (auto p=0; p<nprjall; ++p)
             {
-               for (auto ms=0; ms<mypneb->ispin; ++ms)
-               for (auto q=0; q<mypneb->neq[ms]; ++q)
+               for (auto ms=0; ms<mycneb->ispin; ++ms)
+               for (auto q=0; q<mycneb->neq[ms]; ++q)
                {
-                  zsw1[count] *= occ[q+ms*mypneb->neq[0] + nbq*(mypneb->neq[0]+mypneb->neq[1])];
+                  zsw1[count] *= occ[q+ms*mycneb->neq[0] + nbq*(mycneb->neq[0]+mycneb->neq[1])];
                   ++count;
                }
             }
@@ -2468,7 +2826,7 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
          std::complex<double> ztmp = util_zdotc(nn*nprjall, zsw1, one, zsw2, one);
          
          esum0 += ztmp.real()*weight;
-         mypneb->c3db::mygdevice.T_free();
+         mycneb->c3db::mygdevice.T_free();
       }
       esum += esum0;
       
@@ -2477,7 +2835,7 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
    esum = parall->SumAll(2,esum);
    esum = parall->SumAll(3,esum);
 
-   if (mypneb->ispin==1)
+   if (mycneb->ispin==1)
       esum *= 2.0;
 
    delete[] exi;
@@ -2514,17 +2872,17 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
    nwpw_timing_function ftimer(5);
 
  
-   int npack0 = mypneb->npack(0);
+   int npack0 = mycneb->npack(0);
    double *xtmp = new (std::nothrow) double[npack0]();
    double  *Gx, *Gy, *Gz;
    if (move) 
    {
-      Gx = mypneb->Gpackxyz(0,0);
-      Gy = mypneb->Gpackxyz(0,1);
-      Gz = mypneb->Gpackxyz(0,2);
+      Gx = mycneb->Gpackxyz(0,0);
+      Gy = mycneb->Gpackxyz(0,1);
+      Gz = mycneb->Gpackxyz(0,2);
    }
  
-   mypneb->c_pack_zero(0,vout);
+   mycneb->c_pack_zero(0,vout);
    int nshift = 2*npack0;
    double *exi = new (std::nothrow) double[nshift]();
    double *vtmp = new (std::nothrow) double[nshift]();
@@ -2533,17 +2891,17 @@ void CPseudopotential::v_local(double *vout, const bool move, double *dng, doubl
       int ia = myion->katm[ii];
 
       mystrfac->strfac_pack(0,ii,exi);
-      // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
-      mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
-      mypneb->cc_pack_Sum2(0, vtmp, vout);
+      // mycneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+      mycneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
+      mycneb->cc_pack_Sum2(0, vtmp, vout);
      
       if (move) 
       {
-         mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
+         mycneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
         
-         fion[3*ii]   = mypneb->tt_pack_dot(0, Gx, xtmp);
-         fion[3*ii+1] = mypneb->tt_pack_dot(0, Gy, xtmp);
-         fion[3*ii+2] = mypneb->tt_pack_dot(0, Gz, xtmp);
+         fion[3*ii]   = mycneb->tt_pack_dot(0, Gx, xtmp);
+         fion[3*ii+1] = mycneb->tt_pack_dot(0, Gy, xtmp);
+         fion[3*ii+2] = mycneb->tt_pack_dot(0, Gz, xtmp);
       }
    }
    delete[] exi;
@@ -2579,22 +2937,22 @@ void CPseudopotential::f_local(double *dng, double *fion)
    int ii, ia, nshift, npack0;
    double *exi, *vtmp, *xtmp, *Gx, *Gy, *Gz;
  
-   npack0 = mypneb->npack(0);
+   npack0 = mycneb->npack(0);
  
    xtmp = new (std::nothrow) double[npack0]();
-   // Gx = new (std::nothrow) double [mypneb->nfft3d]();
-   // Gy = new (std::nothrow) double [mypneb->nfft3d]();
-   // Gz = new (std::nothrow) double [mypneb->nfft3d]();
-   // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-   // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-   // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-   // mypneb->t_pack(0,Gx);
-   // mypneb->t_pack(0,Gy);
-   // mypneb->t_pack(0,Gz);
+   // Gx = new (std::nothrow) double [mycneb->nfft3d]();
+   // Gy = new (std::nothrow) double [mycneb->nfft3d]();
+   // Gz = new (std::nothrow) double [mycneb->nfft3d]();
+   // mycneb->tt_copy(mycneb->Gxyz(0),Gx);
+   // mycneb->tt_copy(mycneb->Gxyz(1),Gy);
+   // mycneb->tt_copy(mycneb->Gxyz(2),Gz);
+   // mycneb->t_pack(0,Gx);
+   // mycneb->t_pack(0,Gy);
+   // mycneb->t_pack(0,Gz);
  
-   Gx = mypneb->Gpackxyz(0, 0);
-   Gy = mypneb->Gpackxyz(0, 1);
-   Gz = mypneb->Gpackxyz(0, 2);
+   Gx = mycneb->Gpackxyz(0, 0);
+   Gy = mycneb->Gpackxyz(0, 1);
+   Gz = mycneb->Gpackxyz(0, 2);
  
    nshift = 2 * npack0;
    exi = new (std::nothrow) double[nshift]();
@@ -2603,18 +2961,18 @@ void CPseudopotential::f_local(double *dng, double *fion)
    {
       ia = myion->katm[ii];
       mystrfac->strfac_pack(0, ii, exi);
-      // mypneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
-      mypneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
+      // mycneb->tcc_pack_MulSum2(0,vl[ia],exi,vout);
+      mycneb->tcc_pack_Mul(0, vl[ia], exi, vtmp);
      
-      // double xx =  mypneb->cc_pack_dot(0,dng,dng);
-      // double yy =  mypneb->cc_pack_dot(0,vtmp,vtmp);
+      // double xx =  mycneb->cc_pack_dot(0,dng,dng);
+      // double yy =  mycneb->cc_pack_dot(0,vtmp,vtmp);
      
-      mypneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
-      // double zz =  mypneb->tt_pack_dot(0,xtmp,xtmp);
+      mycneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
+      // double zz =  mycneb->tt_pack_dot(0,xtmp,xtmp);
      
-      fion[3 * ii] = mypneb->tt_pack_dot(0, Gx, xtmp);
-      fion[3 * ii + 1] = mypneb->tt_pack_dot(0, Gy, xtmp);
-      fion[3 * ii + 2] = mypneb->tt_pack_dot(0, Gz, xtmp);
+      fion[3 * ii]     = mycneb->tt_pack_dot(0, Gx, xtmp);
+      fion[3 * ii + 1] = mycneb->tt_pack_dot(0, Gy, xtmp);
+      fion[3 * ii + 2] = mycneb->tt_pack_dot(0, Gz, xtmp);
    }
    delete[] exi;
    delete[] vtmp;
@@ -2645,35 +3003,35 @@ void CPseudopotential::f_local(double *dng, double *fion)
 void CPseudopotential::semicore_density_update() 
 {
    int ii, ia;
-   double omega = mypneb->lattice->omega();
+   double omega = mycneb->lattice->omega();
    double scal2 = 1.0 / omega;
-   // double scal1 = 1.0/((double) ((mypneb->nx)*(mypneb->ny)*(mypneb->nz)));
+   // double scal1 = 1.0/((double) ((mycneb->nx)*(mycneb->ny)*(mycneb->nz)));
    // double dv    = omega*scal1;
-   double *exi = mypneb->c_pack_allocate(0);
-   double *tmp = mypneb->c_alloc();
-   double *tmpr = mypneb->r_alloc();
+   double *exi = mycneb->c_pack_allocate(0);
+   double *tmp = mycneb->c_alloc();
+   double *tmpr = mycneb->r_alloc();
  
-   mypneb->r_zero(semicore_density);
+   mycneb->r_zero(semicore_density);
    for (ii = 0; ii < (myion->nion); ++ii) {
      ia = myion->katm[ii];
      if (semicore[ia]) {
        mystrfac->strfac_pack(0, ii, exi);
-       mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
+       mycneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
  
        /* Put put tmp into real space */
-       mypneb->c_unpack(0, tmp);
-       mypneb->cr_fft3d(tmp);
+       mycneb->c_unpack(0, tmp);
+       mycneb->cr_fft3d(tmp);
  
        /*  square it  */
-       mypneb->cr_sqr(tmp,tmpr);
-       mypneb->rr_Sum(tmpr, semicore_density);
+       mycneb->cr_sqr(tmp,tmpr);
+       mycneb->rr_Sum(tmpr, semicore_density);
      }
    }
-   mypneb->r_SMul(scal2 * scal2, semicore_density);
+   mycneb->r_SMul(scal2 * scal2, semicore_density);
  
-   mypneb->r_dealloc(tmpr);
-   mypneb->c_dealloc(tmp);
-   mypneb->c_pack_deallocate(exi);
+   mycneb->r_dealloc(tmpr);
+   mycneb->c_dealloc(tmp);
+   mycneb->c_pack_deallocate(exi);
 }
 
 
@@ -2699,33 +3057,33 @@ void CPseudopotential::semicore_density_update()
 void CPseudopotential::semicore_xc_fion(double *vxc, double *fion) 
 {
    int ia;
-   int ispin = mypneb->ispin;
-   int nfft3d = mypneb->nfft3d;
-   double omega = mypneb->lattice->omega();
+   int ispin = mycneb->ispin;
+   int nfft3d = mycneb->nfft3d;
+   double omega = mycneb->lattice->omega();
    double scal2 = 1.0 / omega;
-   double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+   double scal1 = 1.0 / ((double)((mycneb->nx) * (mycneb->ny) * (mycneb->nz)));
  
-   double *exi = mypneb->c_pack_allocate(0);
-   double *tmp = mypneb->c_alloc();
-   double *tmpx = mypneb->c_alloc();
-   double *tmpy = mypneb->c_alloc();
-   double *tmpz = mypneb->c_alloc();
-   double *vxcG = mypneb->c_alloc();
+   double *exi = mycneb->c_pack_allocate(0);
+   double *tmp = mycneb->c_alloc();
+   double *tmpx = mycneb->c_alloc();
+   double *tmpy = mycneb->c_alloc();
+   double *tmpz = mycneb->c_alloc();
+   double *vxcG = mycneb->c_alloc();
  
-   // double *Gx = new (std::nothrow) double [mypneb->nfft3d]();
-   // double *Gy = new (std::nothrow) double [mypneb->nfft3d]();
-   // double *Gz = new (std::nothrow) double [mypneb->nfft3d]();
-   // mypneb->tt_copy(mypneb->Gxyz(0),Gx);
-   // mypneb->tt_copy(mypneb->Gxyz(1),Gy);
-   // mypneb->tt_copy(mypneb->Gxyz(2),Gz);
-   // mypneb->t_pack(1,Gx);
-   // mypneb->t_pack(1,Gy);
-   // mypneb->t_pack(1,Gz);
-   double *Gx = mypneb->Gpackxyz(0, 0);
-   double *Gy = mypneb->Gpackxyz(0, 1);
-   double *Gz = mypneb->Gpackxyz(0, 2);
+   // double *Gx = new (std::nothrow) double [mycneb->nfft3d]();
+   // double *Gy = new (std::nothrow) double [mycneb->nfft3d]();
+   // double *Gz = new (std::nothrow) double [mycneb->nfft3d]();
+   // mycneb->tt_copy(mycneb->Gxyz(0),Gx);
+   // mycneb->tt_copy(mycneb->Gxyz(1),Gy);
+   // mycneb->tt_copy(mycneb->Gxyz(2),Gz);
+   // mycneb->t_pack(1,Gx);
+   // mycneb->t_pack(1,Gy);
+   // mycneb->t_pack(1,Gz);
+   double *Gx = mycneb->Gpackxyz(0, 0);
+   double *Gy = mycneb->Gpackxyz(0, 1);
+   double *Gz = mycneb->Gpackxyz(0, 2);
  
-   mypneb->rrc_Sum(vxc, vxc + (ispin-1)*nfft3d, vxcG);
+   mycneb->rrc_Sum(vxc, vxc + (ispin-1)*nfft3d, vxcG);
  
    for (int ii = 0; ii < (myion->nion); ++ii) 
    {
@@ -2734,37 +3092,37 @@ void CPseudopotential::semicore_xc_fion(double *vxc, double *fion)
       {
          /* put sqrt(core-density) at atom position */
          mystrfac->strfac_pack(0, ii, exi);
-         mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
-         mypneb->tcc_pack_iMul(0, Gx, tmp, tmpx);
-         mypneb->tcc_pack_iMul(0, Gy, tmp, tmpy);
-         mypneb->tcc_pack_iMul(0, Gz, tmp, tmpz);
+         mycneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
+         mycneb->tcc_pack_iMul(0, Gx, tmp, tmpx);
+         mycneb->tcc_pack_iMul(0, Gy, tmp, tmpy);
+         mycneb->tcc_pack_iMul(0, Gz, tmp, tmpz);
         
          /* Put put tmp,tmpx,tmpy,tmpz into real space */
-         mypneb->c_unpack(0, tmp);
-         mypneb->c_unpack(0, tmpx);
-         mypneb->c_unpack(0, tmpy);
-         mypneb->c_unpack(0, tmpz);
-         mypneb->cr_fft3d(tmp);
-         mypneb->cr_fft3d(tmpx);
-         mypneb->cr_fft3d(tmpy);
-         mypneb->cr_fft3d(tmpz);
+         mycneb->c_unpack(0, tmp);
+         mycneb->c_unpack(0, tmpx);
+         mycneb->c_unpack(0, tmpy);
+         mycneb->c_unpack(0, tmpz);
+         mycneb->cr_fft3d(tmp);
+         mycneb->cr_fft3d(tmpx);
+         mycneb->cr_fft3d(tmpy);
+         mycneb->cr_fft3d(tmpz);
         
-         mypneb->cc_Mul(tmp, tmpx);
-         mypneb->cc_Mul(tmp, tmpy);
-         mypneb->cc_Mul(tmp, tmpz);
+         mycneb->cc_Mul(tmp, tmpx);
+         mycneb->cc_Mul(tmp, tmpy);
+         mycneb->cc_Mul(tmp, tmpz);
         
-         fion[3*ii]   += scal1 * scal2 * mypneb->cc_dot(tmpx, vxcG);
-         fion[3*ii+1] += scal1 * scal2 * mypneb->cc_dot(tmpy, vxcG);
-         fion[3*ii+2] += scal1 * scal2 * mypneb->cc_dot(tmpz, vxcG);
+         fion[3*ii]   += scal1 * scal2 * mycneb->cc_dot(tmpx, vxcG);
+         fion[3*ii+1] += scal1 * scal2 * mycneb->cc_dot(tmpy, vxcG);
+         fion[3*ii+2] += scal1 * scal2 * mycneb->cc_dot(tmpz, vxcG);
       }
    }
  
-   mypneb->c_dealloc(tmp);
-   mypneb->c_dealloc(tmpx);
-   mypneb->c_dealloc(tmpy);
-   mypneb->c_dealloc(tmpz);
-   mypneb->c_dealloc(vxcG);
-   mypneb->c_pack_deallocate(exi);
+   mycneb->c_dealloc(tmp);
+   mycneb->c_dealloc(tmpx);
+   mycneb->c_dealloc(tmpy);
+   mycneb->c_dealloc(tmpz);
+   mycneb->c_dealloc(vxcG);
+   mycneb->c_pack_deallocate(exi);
    // delete [] Gx;
    // delete [] Gy;
    // delete [] Gz;

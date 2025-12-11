@@ -205,6 +205,9 @@ public:
    void n2ccttt_pack_i3ndot(const int, const int, const int,
                             const double *, const double *, double *, double *, double *,
                             double *);
+   void n2cccttt_pack_i3ndot(const int, const int, const int,
+                            const double *, const double *, const double *, double *, double *, double *,
+                            double *);
 
  
    void r_unpack(const int, double *);
@@ -314,6 +317,10 @@ public:
  
    void rcr_pack_iMul_unpack_fft(const int, const double *, const double *,
                                  double *);
+
+   void zccr_pack_iMul(const int, const double *, const double *, const double *, double *);
+
+
  
    void regenerate_r_grid();
    void initialize_r_grid() {

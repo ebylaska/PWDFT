@@ -778,6 +778,37 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
  *   CGrid:cc_pack_inprjzdot    *
  *                              *
  ********************************/
+/********************************
+ *   CGrid::cc_pack_inprjzdot
+ ********************************/
+/**
+ * @brief Complex inner-product between projector-packed grids.
+ *
+ * Computes
+ *
+ *    sum = conj(a) * b
+ *
+ * over the packed complex grid data, using a GPU-optimized zgemm-like
+ * routine (CN2_zgemm).  All arrays are complex-valued and stored in
+ * interleaved real/imag format:
+ *
+ *    {..., Re(z_k), Im(z_k), ...}
+ *
+ * The operation multiplies a (nn × nprj) block with a (nprj × ng)
+ * block producing a (nn × ng) result.  Complex conjugation rules follow
+ * the backend zgemm convention (CN2_zgemm), i.e. the first argument is
+ * treated as conjugated.
+ *
+ * @param[in] nb     band/grid index selecting number of G-vectors.
+ * @param[in] nn     number of real-space points per projector.
+ * @param[in] nprj   number of projectors.
+ * @param[in] a      complex packed projector array (interleaved).
+ * @param[in] b      complex packed projector array (interleaved).
+ * @param[out] sum   complex result array (interleaved).
+ *
+ * @note All arrays contain interleaved complex doubles (2*nn layout).
+ * @note Performs complex matrix multiplication on the device backend.
+ */
 void CGrid::cc_pack_inprjzdot(const int nb, int nn, int nprj, double *a,
                               double *b, double *sum) 
 {  
@@ -930,6 +961,38 @@ void CGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
  *    CGrid:cc_pack_inprjdot    *
  *                              *
  ********************************/
+/**
+ * @brief Compute projector–wavefunction inner products in the cc_pack
+ *        representation by a dense (real) GEMM.
+ *
+ * Detailed:
+ *   Given packed complex arrays a and b (interleaved real–imag components
+ *   along the fastest index) this routine computes the set of overlaps
+ *
+ *       sum(n,l) = Σ_i  conj( a_{n}(i) ) · b_{l}(i)
+ *
+ *   but with the conjugation already encoded in the cc_pack convention
+ *   used by the caller (i.e., this routine performs a real dgemm on the
+ *   2×ng real array representing the packed complex values).
+ *
+ * Arguments:
+ *   nb   : block index selecting which packed region (parallel slice)
+ *   nn   : number of wavefunctions / rows
+ *   nprj : number of projectors / columns
+ *   a    : pointer to packed complex array a (size = nn × 2*ng)
+ *   b    : pointer to packed complex array b (size = nprj × 2*ng)
+ *   sum  : output array (size nn × nprj) receiving inner products
+ *
+ * Notes:
+ *   - The “cc_pack” storage means a and b are laid out as
+ *         [Re(i), Im(i), Re(i+1), Im(i+1), ...]
+ *     for each wavefunction/projector row.
+ *   - TN_dgemm performs a real GEMM with A^T * B, implementing the dot
+ *     products along the packed dimension of size 2*ng.
+ *   - No explicit complex arithmetic appears here; the packing encodes
+ *     the necessary conjugation convention used by the caller.
+ */
+
 void CGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
                              double *b, double *sum) 
 {
@@ -941,11 +1004,47 @@ void CGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a,
    c3db::mygdevice.TN_dgemm(nn, nprj, ng, rone, a, b, rzero, sum);
 }
 
+
 /********************************
  *                              *
- *   CGrid:n2ccttt_pack_i3ndot  *
+ *   CGrid::n2ccttt_pack_i3ndot *
  *                              *
  ********************************/
+/**
+ * @brief Computes ∑_i  ( conj(prj_l(i)) * psi_n(i) )  dotted with the
+ *        packed gradient directions Gx,Gy,Gz, for each projector l
+ *        and each orbital index n.
+ *
+ * Detailed description:
+ *   For each projector index l = 0...(nprj-1) and each wavefunction
+ *   index n = 0...(nn-1), this routine forms the (packed) complex
+ *   inner product:
+ *
+ *        xtmp1(i) = conj(prj_l(i)) * psi_n(i)
+ *
+ *   (where prj and psi are in C-re,Im interleaved form).
+ *
+ *   Then for each spatial direction α ∈ {x,y,z} we compute the real
+ *
+ *        sum_α = Σ_i  Gα(i) * xtmp1(i)
+ *
+ *   and store the triplet (sum_x, sum_y, sum_z) into sum3 for that
+ *   (l,n) pair.
+ *
+ * Input conventions:
+ *   prj, psi are complex-packed arrays:  [Re0,Im0, Re1,Im1, ...]
+ *   Gx,Gy,Gz are real arrays on the packed index (non-zero part).
+ *
+ * Parallel behavior:
+ *   A global parallel sum (Vector_SumAll) is performed on the final
+ *   accumulated sum3 array over all MPI ranks.
+ *
+ * Notes:
+ *   - This routine effectively computes direction-resolved projector
+ *     overlaps used in non-local operator construction.
+ *   - xtmp1 is a temporary local array (c3db_tmp1).
+ *   - No conjugation of Gα is applied (they are real).
+ */
 void CGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
                                 const double *psi,
                                 const double *prj,
@@ -984,6 +1083,85 @@ void CGrid::n2ccttt_pack_i3ndot(const int nb, const int nn, const int nprj,
 
    c3db::parall->Vector_SumAll(1,3*nn*nprj,sum3);
 }
+
+
+/********************************
+ *                              *
+ *   CGrid:n2cccttt_pack_i3ndot  *
+ *                              *
+ ********************************/
+/**
+ * @brief Compute force projections for nonlocal PSP:
+ *
+ *  For each projector l and orbital n, we form
+ *
+ *     xtmp(G) = Imag( alpha_ln * psi_n(G) * conj(prj_l(G)) )
+ *
+ * using zccr_pack_iMul, and then accumulate
+ *
+ *     sum3[ (l*nn + n)*3 + 0] = ∑_G Gx(G) * xtmp(G)
+ *     sum3[ (l*nn + n)*3 + 1] = ∑_G Gy(G) * xtmp(G)
+ *     sum3[ (l*nn + n)*3 + 2] = ∑_G Gz(G) * xtmp(G)
+ *
+ * After this call, sum3 has size 3*nn*nprj and is reduced
+ * across the 3D grid communicator via Vector_SumAll.
+ *
+ * Layout:
+ *  - psi:   [n][G] packed complex, stride 2*ng (n = 0..nn-1)
+ *  - prj:   [l][G] packed complex, stride 2*ng (l = 0..nprj-1)
+ *  - zsw2:  [l][n] packed complex, stride 2*nn   (l = 0..nprj-1, n = 0..nn-1)
+ */
+void CGrid::n2cccttt_pack_i3ndot(const int nb,
+                                 const int nn,
+                                 const int nprj,
+                                 const double *psi,
+                                 const double *prj,
+                                 const double *zsw2,
+                                 double *Gx,
+                                 double *Gy,
+                                 double *Gz,
+                                 double *sum3)
+{
+   // Temporary real workspace on G-grid
+   double *xtmp1 = c3db::c3db_tmp1;
+
+   int ng     = nidb[nb];      // number of complex grid points
+   int nshift = 2*ng;       // stride for one packed complex G-array
+   int one    = 1;
+
+   int count3 = 0;
+
+   for (int l = 0; l < nprj; ++l)
+   {
+      const double *prj_l = prj + l*nshift;
+
+      for (int n = 0; n < nn; ++n)
+      {
+         const double *alpha_ln = zsw2 + 2 * (l*nn + n); // [Re,Im] for this (l,n)
+         const double *psi_n    = psi  + n * nshift;
+
+         // xtmp1[i] = Imag( alpha_ln * psi_n(i) * conj(prj_l(i)) )
+         // implemented in zccr_pack_iMul:
+         //   c[i] = Im( alpha * A(i) * conj(B(i)) )
+         // with A = psi_n, B = prj_l
+         zccr_pack_iMul(nb, alpha_ln, psi_n, prj_l, xtmp1);
+
+         double tsumx = DDOT_PWDFT(ng, Gx, one, xtmp1, one);
+         double tsumy = DDOT_PWDFT(ng, Gy, one, xtmp1, one);
+         double tsumz = DDOT_PWDFT(ng, Gz, one, xtmp1, one);
+
+         sum3[count3++] = tsumx;
+         sum3[count3++] = tsumy;
+         sum3[count3++] = tsumz;
+      }
+   }
+
+   // Sum over the 3D G-grid communicator
+   c3db::parall->Vector_SumAll(1, 3*nn*nprj, sum3);
+}
+
+
+
 
 
 
@@ -3461,9 +3639,41 @@ void CGrid::tc_pack_copy(const int nb, double *a, double *b)
 
 /********************************
  *                              *
- *      CGrid:rcc_pack_Mul      *
+ *   CGrid::rcc_pack_Mul        *
  *                              *
  ********************************/
+/**
+ * @brief Multiply a real array with a packed complex array (element-wise).
+ *
+ * Given:
+ *   a(i)          real               i = 0...(ng-1)
+ *   b(2*i,2*i+1)  complex interleaved (Re,Im)
+ *
+ * this routine computes the scaled complex array
+ *
+ *      c(i) = a(i) * b(i)
+ *
+ * laid out in the same packed complex format:
+ *
+ *      c[2*i]   = a[i] * b[2*i]     // real part
+ *      c[2*i+1] = a[i] * b[2*i+1]   // imag part
+ *
+ * No conjugation is applied.
+ *
+ * Arrays b and c must have length 2*ng, where ng = nidb[nb].
+ * Typically used when scaling complex projector data by a real radial factor.
+ *
+ * @param nb  Index specifying ng = nidb[nb]
+ * @param a   Real input coefficients of length ng
+ * @param b   Packed complex input array (2*ng entries, interleaved)
+ * @param c   Packed complex result array (2*ng entries, interleaved)
+ *
+ * NOTE:
+ *   This implementation is functionally identical to CGrid::tcc_pack_Mul.
+ *   It is maintained for symmetry of naming or call-site conventions.
+ *
+ * No conjugation is performed.
+ */
 void CGrid::rcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
 {
    int i, ii;
@@ -3483,6 +3693,38 @@ void CGrid::rcc_pack_Mul(const int nb, const double *a, const double *b, double 
  *      CGrid:tcc_pack_Mul      *
  *                              *
  ********************************/
+/**
+ * @brief Multiply a real coefficient array with a packed complex array.
+ *
+ * Given
+ *    a(i)       : real,    i = 0...(ng-1)
+ *    b(ii,ii+1) : complex, interleaved (Re,Im), ii = 2*i
+ *
+ * this routine computes
+ *
+ *      c(i) = a(i) * b(i)
+ *
+ * in packed complex form:
+ *
+ *      c[2*i]   = a[i] * b[2*i]        (real part)
+ *      c[2*i+1] = a[i] * b[2*i+1]      (imag part)
+ *
+ * No conjugation is applied and the result overwrites @p c.
+ *
+ * All arrays b and c must have length 2*ng, where ng is determined
+ * from nidb[nb].
+ *
+ * @param nb  index selecting ng = nidb[nb]
+ * @param a   real coefficients (length ng)
+ * @param b   packed complex input (length 2*ng, interleaved)
+ * @param c   packed complex output (length 2*ng, interleaved)
+ *
+ * NOTE:
+ *   This implementation is functionally identical to CGrid::rcc_pack_Mul.
+ *   It is maintained for symmetry of naming or call-site conventions.
+ *
+ * No conjugation is performed.
+ */
 void CGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double *c)
 {
    int ng = nidb[nb];
@@ -3588,6 +3830,99 @@ void CGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double
       ii += 2;
    }
 }
+
+
+//*   This routine used by cpsp force routines  computes
+//*     C(i) = Imag (alpha*A(i)*dconjg(B(i)))
+/*void CGrid::zccr_pack_iMul(const int nb, const double *alpha, const double *a, const double *b, double *c) 
+{
+   int ng = nidb[nb];
+
+   int ii = 0;
+   for (auto i=0; i<ng; ++i)
+   {
+      double xr = a[ii]  *b[ii] + a[ii+1]*b[ii+1];
+      double xi = a[ii+1]*b[ii] - a[ii]  *b[ii+1];
+
+      c[i] = alpha[0]*xi + alpha[1] * xr;
+      ii += 2;
+   }
+    
+}
+*/
+
+/********************************
+ *                              *
+ *      CGrid:zccr_pack_iMul    *
+ *                              *
+ ********************************/
+/**
+ * @brief Compute C(i) = Imag( alpha * A(i) * conj(B(i)) ) for packed complex arrays.
+ *
+ * This routine is used in the CPSP force evaluation. The arrays @p a and @p b
+ * contain packed complex values in the order:
+ *
+ *      a[2*i] = Re(A_i),   a[2*i+1] = Im(A_i)
+ *      b[2*i] = Re(B_i),   b[2*i+1] = Im(B_i)
+ *
+ * The scalar @p alpha is also given in packed form:
+ *
+ *      alpha[0] = Re(alpha)
+ *      alpha[1] = Im(alpha)
+ *
+ * For each grid point i, this computes:
+ *
+ *      C(i) = Imag( alpha * A(i) * conj(B(i)) )
+ *
+ * which expands to:
+ *
+ *      let  xr = Re(A)*Re(B) + Im(A)*Im(B)
+ *      let  xi = Im(A)*Re(B) - Re(A)*Im(B)
+ *
+ *      C(i) = alpha_r * xi + alpha_i * xr
+ *
+ * @param nb   Band or block index used to obtain the packed-grid size.
+ * @param alpha Packed real[2] containing complex scalar alpha = alpha_r + i alpha_i
+ * @param a     Packed complex array A, size 2*nidb[nb]
+ * @param b     Packed complex array B, size 2*nidb[nb]
+ * @param c     Output real array of size nidb[nb]; receives C(i)
+ */
+void CGrid::zccr_pack_iMul(const int nb,
+                           const double *alpha,
+                           const double *a,
+                           const double *b,
+                           double *c)
+{
+    const int ng = nidb[nb];   // number of complex grid points
+    double ar = alpha[0];      // Re(alpha)
+    double ai = alpha[1];      // Im(alpha)
+
+    int ii = 0;
+    for (int i = 0; i < ng; ++i)
+    {
+        // A = a_r + i a_i
+        // B = b_r + i b_i   (but conj(B) = b_r - i b_i)
+
+        double ar_i = a[ii];      // a_r
+        double ai_i = a[ii + 1];  // a_i
+        double br_i = b[ii];      // b_r
+        double bi_i = b[ii + 1];  // b_i
+
+        // Multiply A * conj(B):
+        //   xr = a_r*b_r + a_i*b_i
+        //   xi = a_i*b_r - a_r*b_i
+        double xr = ar_i * br_i + ai_i * bi_i;
+        double xi = ai_i * br_i - ar_i * bi_i;
+
+        // Imag( alpha * (xr + i xi) ) = alpha_r*xi + alpha_i*xr
+        c[i] = ar * xi + ai * xr;
+
+        ii += 2;
+    }
+}
+
+
+
 
 
 /*******************************************

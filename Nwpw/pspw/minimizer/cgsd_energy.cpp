@@ -644,11 +644,59 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
  ******************************************/
 void cgsd_energy_gradient(Molecule &mymolecule, double *grad_ion) 
 {
+   Parallel *parall = mymolecule.mygrid->d3db::parall;
+   bool oprint = parall->base_stdio_print;
+   oprint = false;
+
    mymolecule.psi_1local_force(grad_ion);
+
+   if (oprint)
+   {
+      std::cout << std::endl << " local Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mymolecule.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mymolecule.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
+
    mymolecule.psi_1nonlocal_force(grad_ion);
+   if (oprint)
+   {
+      std::cout << std::endl << " nonlocal Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mymolecule.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mymolecule.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
+
    mymolecule.semicore_force(grad_ion);
+   if (oprint)
+   {
+      std::cout << std::endl << " semicore Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mymolecule.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mymolecule.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
  
    mymolecule.ion_fion(grad_ion);
+   if (oprint)
+   {
+      std::cout << std::endl << " ion-ion Ion Forces (au):" << std::endl;
+      for (auto ii=0; ii< mymolecule.myion->nion; ++ii)
+         std::cout << Ifmt(4) << ii + 1 << " " << mymolecule.myion->symbol(ii) << "\t( "
+                   << Ffmt(10,5) << grad_ion[3 *ii] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+1] << " "
+                   << Ffmt(10,5) << grad_ion[3*ii+2] << " )\n";
+      std::cout << std::endl << std::endl;
+   }
+
    mymolecule.psi_1apc_force(grad_ion);
    mymolecule.psi_1apc_force(grad_ion);
 }
