@@ -892,7 +892,7 @@ cvdw_DF::cvdw_DF(Cneb *inmygrid, Control2 &control, bool is_vdw2)
    int ifound = cfileexists(datafile);
    if (ifound == 0)
    {
-      if (oprint) std::cout << "Generating VDW kernel filename:" << datafile << std::endl;
+      if (oprint) std::cout << " Generating VDW kernel filename:" << datafile << std::endl;
       //vdw_DF_kernel_gen_data(datafile)
       vdw_DF_kernel_gen_data(myparall,datafile,nwpw_vdw_qmesh.c_str());
    }
