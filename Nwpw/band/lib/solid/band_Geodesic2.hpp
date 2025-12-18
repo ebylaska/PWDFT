@@ -64,7 +64,8 @@ public:
     mygrid = mysolid->mygrid;
 
     nemax = mygrid->neq[0] + mygrid->neq[1];
-    npack1 = mygrid->CGrid::npack(1);
+    //npack1 = mygrid->CGrid::npack(1);
+    npack1 = mygrid->CGrid::npack1_max();
 
     Hold = mygrid->g_allocate(1);
     Q = mygrid->g_allocate(1);

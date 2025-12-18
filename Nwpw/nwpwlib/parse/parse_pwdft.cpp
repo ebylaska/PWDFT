@@ -1814,15 +1814,22 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        if (mystring_contains(line, "frozen"))             nwpwjson["fractional_frozen"] = true;
        if (mystring_contains(line, "orbitals"))  
        {
+          //std::cout << "line=" << line << std::endl;
           std::vector<int> norbs;
           norbs.push_back(1);
           norbs.push_back(1);
           //ss = mystring_split0(line);
           ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
           if (ss.size() > 1)
+          {
              norbs[0] = std::stoi(ss[1]);
+             //std::cout << "ss1=" << ss[1] << std::endl;
+          }
           if (ss.size() > 2)
+          {
              norbs[1] = std::stoi(ss[2]);
+             //std::cout << "ss2=" << ss[2] << std::endl;
+          }
           nwpwjson["fractional_orbitals"] = norbs;
        }
        if (mystring_contains(line, "filling"))  

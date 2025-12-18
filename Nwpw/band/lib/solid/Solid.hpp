@@ -797,7 +797,7 @@ public:
 
       //if (mysolid.myelectron->is_v_apc_on())
       //   os << ionstream(" K.S. V_APC energy   : ",mysolid.E[52],mysolid.E[52]/mysolid.myion->nion);
-      os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
+      os << " Virial Coefficient  : " << std::setw(19) << std::setprecision(10)
          << (mysolid.E[9]+mysolid.E[8]+mysolid.E[7]+mysolid.E[6])/mysolid.E[5] << std::endl;
 
       if (mysolid.myion->disp_on)
@@ -806,6 +806,20 @@ public:
          os << " Dispersion energy   : "
             << Efmt(19,10) << mysolid.E[33] << std::endl;
       }
+
+      if ((mysolid.fractional) && (!mysolid.fractional_frozen))
+      {        
+         os << std::endl;
+         double ev = 27.2116;
+         if (mysolid.ispin==1)
+            os << " Fermi energy        : "
+               << Efmt(19,10) << mysolid.smearfermi[0] << " (" << Ffmt(8,3) << mysolid.smearfermi[0]*ev << " eV)" << std::endl;
+         else     
+            os << "  Fermi energy = "
+               << Efmt(19,10) << mysolid.smearfermi[0] << " (" << Ffmt(8,3) << mysolid.smearfermi[0]*ev << " eV)"
+               << Efmt(19,10) << mysolid.smearfermi[1] << " (" << Ffmt(8,3) << mysolid.smearfermi[1]*ev << " eV)" << std::endl;
+      }  
+
 
       if (mysolid.myion->has_ion_constraints())
       {

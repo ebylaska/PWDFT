@@ -23,7 +23,8 @@ public:
 
     mygeodesic = mygeodesic0;
     max_m = max_m0;
-    npack1 = mygeodesic->mygrid->npack(1);
+    //npack1 = mygeodesic->mygrid->npack(1);
+    npack1 = mygeodesic->mygrid->CGrid::npack1_max();
     neall = mygeodesic->mygrid->neq[0] + mygeodesic->mygrid->neq[1];
     nsize = 2 * neall * npack1;
     size_list = 2 * max_m;

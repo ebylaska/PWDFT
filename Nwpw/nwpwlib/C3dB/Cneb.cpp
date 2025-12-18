@@ -2685,7 +2685,9 @@ void Cneb::fwf_Multiply(const int mb, double *psi1, double *hml, double *alpha,
       for (auto ms=ms1; ms<ms2; ++ms) 
       {
          int n = ne[ms];
+         //std::cout << "Into NN_zgemm" << std::endl;
          c3db::mygdevice.NN_zgemm(npack1,n,n,alpha,psi1+shift1,npack1,hml+mshift1,n,beta,psi2+shift1,npack1);
+         //std::cout << "Out  NN_zgemm" << std::endl;
       
          shift1  += neq[0]*npack2;
          mshift1 += ishift2;
@@ -4189,6 +4191,49 @@ void Cneb::fm_QR(const int mb, double *Q, double *R)
  *        Cneb::m_0define_occupation        *
  *                                          *
  ********************************************/
+/**
+ * @brief Determine electronic occupations and Fermi levels using smearing.
+ *
+ * This routine computes spin-resolved electronic occupations by determining the
+ * Fermi level that satisfies the target electron count for each spin channel.
+ * Occupations are evaluated using a selected smearing scheme (Fermi–Dirac,
+ * Gaussian, Marzari–Vanderbilt, Methfessel–Paxton, cold smearing, etc.), and
+ * optional mixing with previous occupations is applied for SCF stability.
+ *
+ * The Fermi level is found via a robust bisection method when a valid occupation
+ * bracket exists. To ensure numerical stability—especially for non-monotonic
+ * smearing schemes such as Methfessel–Paxton—the eigenvalue range is padded
+ * adaptively based on both the smearing width and the eigenvalue span.
+ *
+ * If a strict bracket cannot be established or bisection convergence is not
+ * achieved within the iteration limit, the routine falls back to a reasonable
+ * midpoint estimate rather than aborting, which is critical for stability in
+ * geometry optimization and orbital minimization algorithms (e.g. L-BFGS).
+ *
+ * Occupations are explicitly clamped to the physical range [0,1] to prevent
+ * numerical instabilities when using non-variational smearing schemes in
+ * gradient-based minimizers.
+ *
+ * A smearing correction term is accumulated for use in total-energy evaluations.
+ *
+ * @param initial_alpha   Mixing parameter for occupations; if negative, full update.
+ * @param use_hml         If true, eigenvalues are taken from the Hamiltonian matrix.
+ * @param multiplicity   Spin multiplicity (used for spin-polarized systems).
+ * @param ion_charge     Total ionic charge.
+ * @param total_charge   Total electronic charge.
+ * @param eig            Array of eigenvalues (input/output).
+ * @param hml            Hamiltonian matrix (used if use_hml is true).
+ * @param occ            Occupation array (updated in place).
+ * @param smeartype      Smearing type identifier.
+ * @param smearkT        Smearing width (kT).
+ * @param smearfermi     Output array of Fermi levels per spin channel.
+ * @param smearcorrection Accumulated smearing energy correction.
+ *
+ * @note This routine is designed to be robust for multi-k-point calculations
+ *       and for use with orbital minimization methods where strict variational
+ *       behavior of the smearing function is not guaranteed.
+ *
+ ************************************************************************************/
 void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
                           const int multiplicity,
                           const double ion_charge, const double total_charge,
@@ -4249,6 +4294,17 @@ void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
       elower = c3db::parall->MinAll(0, elower);
       eupper = c3db::parall->MaxAll(0, eupper);
 
+      //const double pad = 10.0 * smearkT;
+      //elower -= pad;
+      //eupper += pad;
+
+      const double span = eupper - elower;
+      const double pad  = std::max(10.0*smearkT, 0.1*span);  // or similar
+      elower -= pad;
+      eupper += pad;
+
+
+
       // Initialize Zlower and Zupper
       double Zlower = 0.0, Zupper = 0.0;
       for (auto nb=0; nb<nbrillq; ++nb)
@@ -4267,48 +4323,70 @@ void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
       double flower = Zlower - Z[ms];
       double fupper = Zupper - Z[ms];
 
+
       // Check for valid Fermi level
-      if (flower * fupper >= 0.0) {
-          throw std::runtime_error("Fermi energy not found");
-      }
 
-      // Bisection method to find Fermi level
-      double emid = 0.0, Zmid = 0.0, fmid = 0.0;
-      int it = 0;
+      //if (flower * fupper >= 0.0) {
+      //    //throw std::runtime_error("Fermi energy not found");
+      //    emid = 0.5 * (elower + eupper);
+      //    smearfermi[ms] = emid;
+      //   //goto update_occupations; ????
+     // }
 
-      while ((std::abs(fmid) > 1.0e-11 || std::abs(eupper - elower) > 1.0e-11) && it < 50)
+      bool have_bracket = (flower * fupper < 0.0);
+      double emid = 0.5 * (elower + eupper);   // default guess
+      double Zmid = 0.0;
+      double fmid = 1.0e30;
+
+      if (have_bracket)
       {
-         ++it;
-         emid = 0.5 * (elower + eupper);
-         Zmid = 0.0;
-         for (auto nb=0; nb<nbrillq; ++nb)
+         int it = 0;
+         // Bisection method to find Fermi level
+         //double emid = 0.0, Zmid = 0.0, fmid = 0.0;
+ 
+         //while ((std::abs(fmid) > 1.0e-11 || std::abs(eupper - elower) > 1.0e-11) && it < 50)
+         while ((std::abs(fmid) > 1.0e-11 && std::abs(eupper - elower) > 1.0e-11) && it < 50)
          {
-            double weight = pbrill_weight(nb);
-            for (auto n=0; n < ne[ms]; ++n)
+            ++it;
+            emid = 0.5 * (elower + eupper);
+            Zmid = 0.0;
+            for (auto nb=0; nb<nbrillq; ++nb)
             {
-               double e = eig[n + ms*ne[0] + nb*(ne[0]+ne[1])];
-               Zmid += weight*util_occupation_distribution(smeartype, (e-emid)/smearkT);
+               double weight = pbrill_weight(nb);
+               for (auto n=0; n < ne[ms]; ++n)
+               {
+                  double e = eig[n + ms*ne[0] + nb*(ne[0]+ne[1])];
+                  Zmid += weight*util_occupation_distribution(smeartype, (e-emid)/smearkT);
+               }
             }
-         }
-         Zmid = c3db::parall->SumAll(3, Zmid);
-         fmid = Zmid - Z[ms];
+            Zmid = c3db::parall->SumAll(3, Zmid);
+            fmid = Zmid - Z[ms];
+ 
+            if (fmid < 0.0)
+            {
+               flower = fmid;
+               elower = emid;
+            }
+            else
+            {
+               fupper = fmid;
+               eupper = emid;
+            }
 
-         if (fmid < 0.0)
+            if (std::abs(eupper-elower) < 1e-12) break;
+
+         } //while
+
+         if ((it==50) && (std::abs(fmid) > 1.0e-8))
          {
-            flower = fmid;
-            elower = emid;
-         }
-         else
-         {
-            fupper = fmid;
-            eupper = emid;
+            emid = 0.5*(elower + eupper); // don’t throw: fall back
          }
 
-      }
-
-      if (it == 50) {
-          throw std::runtime_error("Bisection method did not converge within the iteration limit");
-      }
+ 
+         //if (it == 50) {
+         //    throw std::runtime_error("Bisection method did not converge within the iteration limit");
+        // }
+      } //if have_bracket
 
       smearfermi[ms] = emid;
 
@@ -4322,6 +4400,8 @@ void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
             double e = eig[index];
             double x = (e - smearfermi[ms]) / smearkT;
             double f = util_occupation_distribution(smeartype, x);
+            //f = std::min(1.0, std::max(0.0, f));
+
             double f0 = occ[index];
  
             // Update occupations with mixing

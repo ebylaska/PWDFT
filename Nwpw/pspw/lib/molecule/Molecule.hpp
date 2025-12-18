@@ -609,7 +609,7 @@ public:
       if (mymolecule.myelectron->is_v_apc_on())
          os << ionstream(" K.S. V_APC energy   : ",mymolecule.E[52],mymolecule.E[52]/mymolecule.myion->nion);
      
-      os << " Viral Coefficient   : " << std::setw(19) << std::setprecision(10)
+      os << " Virial Coefficient  : " << std::setw(19) << std::setprecision(10)
          << (mymolecule.E[9]+mymolecule.E[8]+mymolecule.E[7]+mymolecule.E[6])/mymolecule.E[5];
       os << std::endl;
 

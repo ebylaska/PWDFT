@@ -23,7 +23,8 @@ public:
 
     mygeodesic = mygeodesic0;
     max_m = max_m0;
-    npack1 = mygeodesic->mygrid->npack(1);
+    //npack1 = mygeodesic->mygrid->npack(1);
+    npack1 = mygeodesic->mygrid->CGrid::npack1_max();
     neall = mygeodesic->mygrid->neq[0] + mygeodesic->mygrid->neq[1];
     nsize = 2 * neall * npack1;
     size_list = 2 * max_m;
@@ -60,7 +61,10 @@ public:
     ss = &lm_list[indx[2 * m + 1] * nsize];
 
     mygeodesic->psi_1Gtransport(tmin, yy);
+    //std::cout << "In 1transport" << std::endl;
     mygeodesic->psi_1transport(tmin, ss);
+    //std::cout << "Out 1transport" << std::endl;
+
 
     mygeodesic->mygrid->gg_daxpy(-1.0, g, yy);
     mygeodesic->mygrid->g_Scale(-1.0, yy);

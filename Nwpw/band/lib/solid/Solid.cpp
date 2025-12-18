@@ -213,7 +213,8 @@ void Solid::replace_excited_psi1(Control2 &control, std::ostream &coutput)
          {
             for (auto n=0; n<nex[ms]; ++n)
             {
-               int sz = 2*mygrid->npack(1);
+               //int sz = 2*mygrid->npack(1);
+               int sz = 2*mygrid->CGrid::npack1_max();
                int indxf = sz*(n + ms*mygrid->neq[0])  + nb*(mygrid->neq[0]+mygrid->neq[1]);
                int indxe = sz*(n + ms*nex[0]) + nb*(nex[0]+nex[1]);;
                std::memcpy(psi1 + indxf, psi1_excited + indxe, sz);

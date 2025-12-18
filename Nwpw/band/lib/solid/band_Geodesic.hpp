@@ -189,18 +189,30 @@ public:
 
       for (auto nbq=0; nbq<mygrid->nbrillq; ++nbq)
       {
+          //std::cout << "transport nbq=" << nbq << std::endl;
+
          double *Sk = S+nbq*neall;
          double *Vtk  = Vt  + nbq*shift1;
          double *Uk   = U  + nbq*shift2;
          double *Yoldk = Yold  + nbq*shift2;
          double *Ynewk = Ynew  + nbq*shift2;
 
+         //std::cout << "transport2 nbq=" << nbq << std::endl;
          mygrid->ww_SCtimesVtrans2(-1, t, Sk, Vtk, tmp1, tmp3, tmpC, tmpS);
      
          /* tHnew = (-Yold*V*sin(Sigma*t) + U*cos(Sigma*t))*Sigma*Vt */
+         //std::cout << "transport3 nbq=" << nbq << std::endl;
          mygrid->www_Multiply2(-1, Vtk, tmp1, rone, tmp2, rzero);
+         //std::cout << "transport4 nbq=" << nbq << std::endl;
+         //std::cout << "tmp2=" ;
+         //for (auto k=0; k<(2*mygrid->ne[0]*2*mygrid->ne[0]); ++k)
+         //    std::cout << tmp2[k] << " " ;
+         //std::cout << std::endl;
+
          mygrid->fwf_Multiply(-1, Yoldk, tmp2, rmone, Ynewk, rzero);
+         //std::cout << "transport5 nbq=" << nbq << std::endl;
          mygrid->fwf_Multiply(-1, Uk, tmp3, rone, Ynewk, rone);
+         //std::cout << "transport6 nbq=" << nbq << std::endl;
       }
    }
 

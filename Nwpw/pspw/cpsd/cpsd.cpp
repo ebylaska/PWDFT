@@ -785,7 +785,7 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                    << Efmt(15,5) << E[52]/myion.nion << " /ion)" << std::endl;
 
       viral = (E[9] + E[8] + E[7] + E[6]) / E[5];
-      std::cout << " Viral Coefficient   : " 
+      std::cout << " Virial Coefficient  : " 
                 << Efmt(19,10) << viral << std::endl;
 
       if ((fractional) && (!control.fractional_frozen()))

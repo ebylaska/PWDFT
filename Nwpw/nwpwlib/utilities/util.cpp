@@ -1312,6 +1312,9 @@ double util_dswitching_function(const double s_d, const double s_rho, const doub
  * - **Lorentzian (7)**: Uses a Lorentzian function, often for density of states.
  * - **Default (Other)**: A simple step function.
  *
+ * @note For Methfessel–Paxton smearing, a monotone Gaussian occupation is used.
+ *       The Methfessel–Paxton scheme contributes only through the energy correction term.
+ *
  * @note Ensure proper parameterization (e.g., smearing width for Lorentzian) if additional
  *       customization is required for specific smearing types.
  *
@@ -1359,10 +1362,15 @@ double util_occupation_distribution(const int smeartype, const double e)
    } else if (smeartype == 4) { // Marzari-Vanderbilt
       double factor = std::sqrt(0.125 / std::atan(1.0)); // atan(1.0) = pi/4
       f = std::exp(-(e + sqrt_half) * (e + sqrt_half)) * factor + 0.5 * std::erfc(e + sqrt_half);
+
    } else if (smeartype == 5) { // Methfessel-Paxton
-      double exp_term = std::exp(-e * e);
-      double hermite_poly = 1.0 - 2.0 * e * e; // First-order Methfessel-Paxton
-      f = exp_term * hermite_poly / std::sqrt(M_PI);
+
+      //double exp_term = std::exp(-e * e);
+      //double hermite_poly = 1.0 - 2.0 * e * e; // First-order Methfessel-Paxton
+      //f = exp_term * hermite_poly / std::sqrt(M_PI);
+      // Use Gaussian occupation; MP applies only to energy correction
+       f = 0.5 * std::erfc(e);
+
    } else if (smeartype == 6) { // Cold Smearing
       double exp_term = std::exp(-0.5 * e * e);
       double erfc_term = 0.5 * std::erfc(-e / std::sqrt(2.0));

@@ -14,6 +14,7 @@
 #endif
 
 
+//#include <cassert>
 #include <complex>
 #include <cstring>   //memset()
 #include <stdexcept> // runtime_error()
@@ -246,6 +247,8 @@ public:
     **************************************/
    void NN_dgemm(int npack, int ne, double alpha, double *host_a, double *host_b,
                  double beta, double *host_c) {
+
+    
      DGEMM_PWDFT((char *)"N", (char *)"N", npack, ne, ne, alpha, host_a, npack,
                  host_b, ne, beta, host_c, npack);
    }
@@ -471,6 +474,7 @@ public:
                   host_b, ne, beta, host_c, npack1_max);
    }
 
+
                  
    /**************************************
     *                                    *
@@ -483,6 +487,14 @@ public:
                   double *host_b, int ldb,
                   double *beta,
                   double *host_c,int ldc) {
+
+      //assert(host_a != nullptr);
+      //assert(host_b != nullptr);
+      //assert(host_c != nullptr);
+      //assert(lda >= m);
+      //assert(ldb >= k);
+      //assert(ldc >= m);
+
       ZGEMM_PWDFT((char *)"N", (char *)"N", m, n, k, alpha, host_a, lda, host_b, ldb, beta, host_c, ldc);
    }             
 
