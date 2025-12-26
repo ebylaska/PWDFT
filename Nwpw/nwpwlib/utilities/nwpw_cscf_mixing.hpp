@@ -10,7 +10,11 @@
 
 */
 
+#include <iostream>
+
+#include <cstring>
 #include <cmath>
+#include <algorithm>
 #include "blas.h"
 #include "Parallel.hpp"
 #include "CGrid.hpp"
@@ -20,6 +24,7 @@ namespace pwdft {
 
 const int ROWS = 40;
 const int COLS = 40;
+
 
 static void setElement(double A[], int row, int col, double value) {
     int index = (row - 1) * COLS + (col - 1);  // Convert 1-based (row, col) to 0-based 1D index
@@ -31,11 +36,22 @@ static double getElement(double A[], int row, int col) {
     return A[index];  // Convert to 0-based index by subtracting 1
 }
 
+
+/*
+static void setElement(double A[], int row, int col, double value) {
+    A[(col - 1) * COLS + (row - 1)] = value;   // column-major
+}
+static double getElement(double A[], int row, int col) {
+    return A[(col - 1) * COLS + (row - 1)];
+}
+*/
+
+
 class nwpw_cscf_mixing : public nwpw_ckerker {
 
    bool dokerker,isband;
    int algorithm,max_m,n2ft3d,nsize,ispin,ierr;
-   double alpha,beta,convergence_threshold;
+   double alpha_max,alpha,beta,convergence_threshold;
    double *rho_list = nullptr;
    Parallel *parall;
 
@@ -44,11 +60,18 @@ class nwpw_cscf_mixing : public nwpw_ckerker {
    double  c[40],d[40],B[40*40];
    double  A[40*40],w[40],w0;
    double  Binv[40*40];
+   double scf_error_prev = 0.0;
+   int    scf_it = 0;
+   int    scf_it_max = 0;
+   //int indxf[max_m],indxu[max_m];
+   int *indxf = nullptr;
+   int *indxu = nullptr;;
 
     int m;
     int  one = 1;
     double rone=1.0;
     double mrone=-1.0;
+
 
 public:
    /* constructors */
@@ -62,7 +85,7 @@ public:
    {
       parall = mygrid0->c3db::parall;
       algorithm = algorithm0;
-      alpha = alpha0;
+      alpha = alpha_max = alpha0;
       beta  = beta0;
       max_m = max_m0;
       n2ft3d = nsize0;
@@ -88,6 +111,9 @@ public:
       else if (algorithm==2)
       {
          rho_list = new (std::nothrow) double[nsize* (5+(2*max_m))]();
+         indxf = new (std::nothrow) int[max_m]();
+         indxu = new (std::nothrow) int[max_m]();
+
          reset_mix(rho_in);
          w0 = 0.01;
       }
@@ -121,7 +147,9 @@ public:
    ~nwpw_cscf_mixing() 
    {
       m = 0;
-      if (rho_list) delete[] rho_list;
+      if (rho_list) delete [] rho_list;
+      if (indxf)    delete [] indxf;
+      if (indxu)    delete [] indxu;
    }
    /*******************************************
     *                                         *
@@ -132,6 +160,14 @@ public:
    {
       m = 1;
       std::memcpy(rho_list,rho_in,nsize*sizeof(double));
+      if (indxf && indxu) 
+      {
+         for (int i=0; i<max_m; ++i)
+         {
+            indxf[i] = (5+i)*nsize;
+            indxu[i] = (5+max_m+i)*nsize;
+         }
+      }
    }
 
 
@@ -161,7 +197,37 @@ public:
          double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
 
          // Sum dot products across all ranks
-         *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+         *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
+         if (!std::isfinite(*scf_error0))
+         {
+            alpha *= 0.25;
+            reset_mix(rr);
+            return;
+         }
+
+         scf_it += 1;
+         if (scf_it>=2)
+         {
+            if (*scf_error0 > scf_error_prev * 1.2) 
+            {
+               alpha *= 0.5;
+               scf_it_max = 0;
+            }
+            else if (*scf_error0 < scf_error_prev * 0.8) 
+            {
+               scf_it_max += 1;
+               if (scf_it_max > 5)
+                  alpha = std::min(alpha_max, alpha * 1.1);
+            }
+            else
+            {
+               scf_it_max = 0;
+            }
+         }
+         scf_error_prev = *scf_error0;
+         alpha = std::clamp(alpha, 1e-4, alpha_max);
+         
  
          // kerker stuff here
          for (auto ms=0; ms<ispin; ++ms)
@@ -205,7 +271,9 @@ public:
             // scf_error = sqrt(<F0|F0>)
             double scf_error = DDOT_PWDFT(nsize,F0,one,F0,one);
             //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error));
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
             //scf_error = sqrt(scf_error);
 
             // vnew = V1 
@@ -227,7 +295,9 @@ public:
 
             // scf_error = sqrt(<F1|F1>)
             double scf_error = DDOT_PWDFT(nsize,F1,one,F1,one);
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
             //scf_error = sqrt(scf_error);
            
             // Beta = <F1|F1-F0>/<F1-F0/F1-F0> 
@@ -237,7 +307,12 @@ public:
             double sum1 = DDOT_PWDFT(nsize,Vbar1,one,Vbar1,one);
             sum0 = parall->SumAll(1,sum0);
             sum1 = parall->SumAll(1,sum1);
-            beta = sum0/sum1;
+            if (sum1 < 1e-10) 
+                beta = 0.0;
+            else
+               beta = sum0/sum1;
+            beta = std::clamp(beta, -1.0, 1.0);
+
 
             // Vbar1 = (1-Beta)*Vout1 + Beta*Vout0
             std::memcpy(Vbar1,Vout0,nsize*sizeof(double));
@@ -267,6 +342,8 @@ public:
          ++m;
       }
 
+
+      /* Johnson mixing */
       /* Johnson mixing */
       if (algorithm==2)
       {
@@ -275,16 +352,10 @@ public:
          double *F0 = rho_list + 2*nsize;
          double *F1 = rho_list + 3*nsize;
          double *dV = rho_list + 4*nsize;
-         int indxf[max_m],indxu[max_m];
-         for (int i=0; i<max_m; ++i)
-         {
-            indxf[i] = (5+i)*nsize;
-            indxu[i] = (5+max_m+i)*nsize;
-         }
 
-         if (m==1) 
+         if (m==1)
          {
-            // F0 = vout - V0 
+            // F0 = vout - V0
             std::memcpy(F0,V0,nsize*sizeof(double));
             DSCAL_PWDFT(nsize,mrone,F0,one);
             DAXPY_PWDFT(nsize,rone,vout,one,F0,one);
@@ -293,55 +364,86 @@ public:
             for (auto ms=0; ms<ispin; ++ms)
                kerker_G(F0 + ms*n2ft3d);
 
-            // scf_error = sqrt(<F1|F1>) 
+            // scf_error = sqrt(<F1|F1>)
             double scf_error = DDOT_PWDFT(nsize,F0,one,F0,one);
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
             //scf_error = sqrt(scf_error);
-          
+
             // V1 = V0 + alpha*F0
             std::memcpy(V1,V0,nsize*sizeof(double));
-            DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);  
+            DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
 
             // vnew = V1
             std::memcpy(vnew,V1,nsize*sizeof(double));
 
             std::memset(A,0,max_list*max_list*sizeof(double));
 
+            //double sumer1 =  DDOT_PWDFT(nsize,V1,one,V1,one);
+            //sumer1 = parall->SumAll(1,sumer1);
+            //if (parall->is_master()) {
+            //   std::cout << "m=" << m << " <F1|F1> = " << sumer1 << std::endl;
+            //}
+
             ++m;
          }
-         else //(m.gt.1) 
+         else //(m.gt.1)
          {
             // F1 = vout - V1
             std::memcpy(F1,V1,nsize*sizeof(double));
+            //std::memcpy(F1,vnew,nsize*sizeof(double));
             DSCAL_PWDFT(nsize,mrone,F1,one);
             DAXPY_PWDFT(nsize,rone,vout,one,F1,one);
-           
+
              // Apply Kerker filter to F0 to smooth residuals
              for (auto ms=0; ms<ispin; ++ms)
-                kerker_G(F0 + ms*n2ft3d);
-           
-            // scf_error = sqrt(<F1|F1>) 
+                kerker_G(F1 + ms*n2ft3d);
+             //double sumer0 =  DDOT_PWDFT(nsize,F0,one,F0,one);
+             //double sumer1 =  DDOT_PWDFT(nsize,F1,one,F1,one);
+             //double sumer2 =  DDOT_PWDFT(nsize,vout,one,vout,one);
+             //sumer0 = parall->SumAll(1,sumer0);
+             //sumer1 = parall->SumAll(1,sumer1);
+             //sumer2 = parall->SumAll(1,sumer2);
+             //if (parall->is_master()) {
+             //  std::cout << "<F0|F0> = " << sumer0 << std::endl;
+             //  std::cout << "<F1|F1> = " << sumer1 << std::endl;
+             //  std::cout << "<vout|vout> = " << sumer2 << std::endl;
+             //}
+
+            // scf_error = sqrt(<F1|F1>)
             double scf_error = DDOT_PWDFT(nsize,F1,one,F1,one);
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
             //scf_error = std::sqrt(scf_error);
-           
-            // dF = dF(m-1), U = U(m-1)
+
+            //dF = dF(m-1), U = U(m-1)
+            //int ih = m - 2;
+            //double *dF = rho_list + indxf[ih];
+            //double *U  = rho_list + indxu[ih];
             double *dF = rho_list + (5+m-1)*nsize;
             double *U  = rho_list + (5+max_m+m-1)*nsize;
-           
-            // dF = (F1-F0) 
-            std::memcpy(F1,V1,nsize*sizeof(double));
+
+            // dF = (F1-F0)
+            std::memcpy(dF,F1,nsize*sizeof(double));
             DAXPY_PWDFT(nsize,mrone,F0,one,dF,one);
-           
-            // dV  = (V1-V0) 
+
+            //sumer0 =  DDOT_PWDFT(nsize,dF,one,dF,one);
+            //sumer0 = parall->SumAll(1,sumer0);
+            //if (parall->is_master()) {
+            //   std::cout << "<dF|dF> = " << sumer0 << std::endl;
+            //}
+
+            // dV  = (V1-V0)
             std::memcpy(dV,V1,nsize*sizeof(double));
             DAXPY_PWDFT(nsize,mrone,V0,one,dV,one);
-           
+
             // U  = alpha*dF + dV
             std::memcpy(U,dV,nsize*sizeof(double));
             DAXPY_PWDFT(nsize,alpha,dF,one,U,one);
-           
+
             // Define A,c and B
+            int mm = m-1;
             for (auto i=1; i<m; ++i)
             {
                //define dFi here
@@ -352,21 +454,79 @@ public:
                sum0 = parall->SumAll(1,sum0);
                sum1 = parall->SumAll(1,sum1);
                setElement(A,i,m-1,sum0);
-               setElement(A,m-1,1,sum0);
+               setElement(A,m-1,i,sum0);
                c[i-1] = sum1;
             }
-           
+
             std::memset(B,0,max_list*max_list*sizeof(double));
-           
-            double small = 0.0;
-            for (auto i=1; i<m; ++i)
-            for (auto j=1; j<m; ++j)
+
+           // double small = 0.0;
+            for (auto i=1; i<=mm; ++i)
             {
-               setElement(B,i,j,getElement(A,i,j));
-               small += std::abs(getElement(A,i,j));
+               for (auto j=1; j<=mm; ++j)
+               {
+                  setElement(B,i,j,getElement(A,i,j));
+               //   small += std::abs(getElement(A,i,j));
+               }
             }
-            small /= std::pow(static_cast<double>(m - 1), 2);
-           
+            //small /= (double)(mm*mm);
+            //small = std::max(small, 1e-12);
+
+            bool bad_diag = false;
+            double small = 0.0;
+            for (auto i=1; i<=mm; ++i)
+            {
+                double Aii = getElement(A,i,i);
+                small += std::abs(Aii);
+
+                double row_sum = 0.0;
+                for (auto j=1; j<=mm; ++j)
+                {
+                   if (j != i) row_sum += std::abs(getElement(A,i,j));
+                }
+
+                
+                //if (((Aii < 0.0) || (Aii < row_sum)) )  bad_diag = true;
+                if (Aii < 0.0)  bad_diag = true;
+            
+
+            //if (parall->is_master()) {
+            //    std::cout << "i=" << i << " Aii="<< Aii << " row_sum=" << row_sum << std::endl;
+            //}
+
+            }
+            small /= mm;
+            small = std::max(small, 1e-12);
+
+
+
+            //if (parall->is_master()) {
+            //   std::cout << "Johnson m=" << m
+            //             << " mm=" << mm
+            //             << " small=" << small << std::endl;
+            //}
+            //if (parall->is_master()) {
+            //   std::cout << "A matrix:" << std::endl;
+            //   for (int i=1; i<=mm; ++i) {
+            //      for (int j=1; j<=mm; ++j)
+            //         std::cout << std::setw(14) << getElement(A,i,j);
+            //      std::cout << std::endl;
+            //   }
+            //}
+
+
+            if (bad_diag)
+            {
+               // linear fallback
+               //std::memcpy(V1, V0, nsize*sizeof(double));
+               DAXPY_PWDFT(nsize, alpha, F1, one, V1, one);
+               std::memcpy(vnew, V1, nsize*sizeof(double));
+
+               reset_mix(V1);
+               return;
+            }
+
+
             for (auto i=1; i<m; ++i)
             for (auto j=1; j<m; ++j)
             {
@@ -376,27 +536,27 @@ public:
             {
                setElement(Binv,i,i,1.0*small);
             }
-           
-            int mm = m-1;
+
+            //int mm = m-1;
+            ierr = 0;
             DGESV_PWDFT(mm,mm,B,max_list,ipiv,Binv,max_list,ierr);
-           
-           
-            // Define d 
+
+
+            // Define d
             for (auto i=1;i<m;++i)
             {
                d[i-1] = 0.0;
                for (auto j=1; j<m; ++j)
                  d[i-1] -= (c[j-1]/small)*getElement(Binv,j,i);
             }
-           
-           
+
             // F0 = F1,  V0 = V1
             std::memcpy(F0,F1,nsize*sizeof(double));
             std::memcpy(V0,V1,nsize*sizeof(double));
-           
+
             // V1 = V0 + alpha*F0 - Sum(i=1,m-1) d(i)*U(i)
             DAXPY_PWDFT(nsize,alpha,F0,one,V1,one);
-           
+
             for (auto i=1; i<m; ++i)
             {
                //define U here
@@ -404,18 +564,18 @@ public:
                double *U = rho_list + indxu[i-1];
                DAXPY_PWDFT(nsize,(d[i-1]),U,one,V1,one);
             }
-            
-           
-            if (m<max_m) 
+
+
+            if (m<max_m)
                ++m;
             else
             {
-              // Shift A matrix 
+              // Shift A matrix
               for (auto j=1; j<m-1; ++j)
               for (auto i=1; i<m-1; ++i)
                 setElement(A,i,j, getElement(A,i+1,j+1));
-           
-               // Shift dF and U 
+
+               // Shift dF and U
                int itmpf = indxf[0];
                int itmpu = indxu[0];
                for (int i=0; i<(max_m-1); ++i)
@@ -427,13 +587,15 @@ public:
                indxu[max_m-1] = itmpu;
                //call nwpw_list_shift_range(1,(5+1),(5+max_m))
                //call nwpw_list_shift_range(1,(5+max_m+1),(5+2*max_m))
-            
+
             }
-           
+
             std::memcpy(vnew,V1,nsize*sizeof(double));
 
          }
       }
+
+
 
       /* Anderson density mixing */
       if (algorithm==3)
@@ -449,7 +611,9 @@ public:
             DAXPY_PWDFT(nsize,mrone,rr,one,ff,one);
 
             double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
             //scf_error = std::sqrt(scf_error);
        
             for (auto ms=0; ms<ispin; ++ms)
@@ -475,7 +639,9 @@ public:
             DAXPY_PWDFT(nsize,mrone,ss,one,tt,one);  // tt_ptr = vout1 - vm1
 
             double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
-            *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+            *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
             //scf_error = std::sqrt(scf_error);
 
             for (auto ms=0; ms<ispin; ++ms)
@@ -531,7 +697,9 @@ public:
 
          // scf_error = sqrt(<ff|ff>)
          double scf_error = DDOT_PWDFT(nsize,ff,one,ff,one);
-         *scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+         //*scf_error0 = std::sqrt(parall->SumAll(1,scf_error))/((double) nsize_global);
+         *scf_error0 = std::sqrt(parall->SumAll(1, scf_error) / (double)nsize_global);
+
          //scf_error = std::sqrt(scf_error);
 
          // Apply Kerker filter to smooth residual ff
@@ -541,8 +709,14 @@ public:
          // Apply TF mixing
          // tf = ff/(1+alpha*rho(n-1)**(2/3))= ff/(1+alpha*rr**
          // rho(n) = rho(n-1) + beta*tf
+         //for (auto i=0; i<nsize; ++i)
+         //   tf[i] = ff[i]/(1.0 + alpha*std::pow(rr[i],twothirds));
          for (auto i=0; i<nsize; ++i)
-            tf[i] = ff[i]/(1.0 + alpha*std::pow(rr[i],twothirds));
+         {
+            double rhoi = std::max(rr[i], 1e-12);
+            tf[i] = ff[i] / (1.0 + alpha * std::pow(rhoi, 2.0/3.0));
+         }
+
 
          // Apply Kerker filter to smooth residual ff
          //for (auto ms=0; ms<ispin; ++ms)

@@ -461,7 +461,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          if (smeartype==1) std::cout << "Fermi-Dirac" << std::endl;
          if (smeartype==2) std::cout << "Gaussian" << std::endl;
          if (smeartype==3) std::cout << "Hermite" << std::endl;
-         if (smeartype==4) std::cout << "Marazari-Vanderbilt" << std::endl;
+         if (smeartype==4) std::cout << "Marzari-Vanderbilt" << std::endl;
          if (smeartype==5) std::cout << "Methfessel-Paxton" << std::endl;
          if (smeartype==6) std::cout << "Cold smearing" << std::endl;
          if (smeartype==7) std::cout << "Lorentzian" << std::endl;

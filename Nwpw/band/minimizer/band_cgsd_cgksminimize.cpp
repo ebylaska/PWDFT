@@ -124,6 +124,7 @@ double band_cgsd_cgksminimize(Solid &mysolid, band_Geodesic *mygeodesic, double 
   }
   // Making an extra call to electron.run and energy
   total_energy = mysolid.energy0();
+  //total_energy = mysolid.gen_all_energies();
 
   //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
 

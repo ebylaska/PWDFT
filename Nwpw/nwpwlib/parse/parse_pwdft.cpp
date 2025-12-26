@@ -74,7 +74,7 @@ json periodic_table_Z = json::parse(
  **************************************************/
 
 static std::vector<double> parse_lat_to_unita(std::vector<double> lat) {
-  double conv = 0.017453292519943; // conv=pi/80.0
+  double conv = 0.017453292519943; // conv=pi/180.0
   std::vector<double> cang = {lat[3] * conv, lat[4] * conv, lat[5] * conv};
   std::vector<double> gmat = {lat[0] * lat[0],
                               lat[1] * lat[0] * cos(cang[2]),
@@ -443,7 +443,7 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["charges"] = charges;
   geomjson["unita"] = unita;
   geomjson["is_crystal"] = is_crystal;
-  geomjson["is_suface"] = is_surface;
+  geomjson["is_surface"] = is_surface;
   geomjson["fractional"] = fractional;
   geomjson["twodfractional"] = twodfractional;
 
@@ -681,6 +681,7 @@ static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& 
                 double tmp3 = ks[i][3] + ks[j][3];
                 ks[i][3] = tmp3;
                 ks[j][3] = 0.0;
+                break;
             }
          }
       }
@@ -698,17 +699,35 @@ static void monkhorst_pack_timereversal_prune(std::vector<std::vector<double>>& 
 
    for (size_t i = 0; i < nks2; ++i)
    {
-      double norm = updated_ks[i][0] + updated_ks[i][1] + updated_ks[i][2];
-      if (norm < 0.0) {
-        updated_ks[i][0] = -updated_ks[i][0];
-        updated_ks[i][1] = -updated_ks[i][1];
-        updated_ks[i][2] = -updated_ks[i][2];
+      //double norm = updated_ks[i][0] + updated_ks[i][1] + updated_ks[i][2];
+      //if (norm < 0.0) {
+      //  updated_ks[i][0] = -updated_ks[i][0];
+      //  updated_ks[i][1] = -updated_ks[i][1];
+      //  updated_ks[i][2] = -updated_ks[i][2];
+      //}
+
+      double norm2 = updated_ks[i][0]*updated_ks[i][0]
+                   + updated_ks[i][1]*updated_ks[i][1]
+                   + updated_ks[i][2]*updated_ks[i][2];
+
+      if (norm2 > 0.0) 
+      {
+         if (updated_ks[i][2] < 0.0 ||
+            (updated_ks[i][2] == 0.0 && updated_ks[i][1] < 0.0) ||
+            (updated_ks[i][2] == 0.0 && updated_ks[i][1] == 0.0 && updated_ks[i][0] < 0.0))
+         {
+            updated_ks[i][0] = -updated_ks[i][0];
+            updated_ks[i][1] = -updated_ks[i][1];
+            updated_ks[i][2] = -updated_ks[i][2];
+         }
       }
    }
 
    // Replace the original brillouin_zone with the updated data
    ks = updated_ks;
 }
+
+
 
 
 /**************************************************
@@ -788,6 +807,8 @@ static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::ve
 
    if (timereverse) 
       monkhorst_pack_timereversal_prune(ks);
+   //if (timereverse)
+   //   timereversal_merge_and_canonicalize(ks);
 }
 
 
@@ -1357,12 +1378,11 @@ static json parse_dplot(json dplot, int *curptr,
     } else if (mystring_contains(lines[cur], "ncell")) {
       ss = mystring_split0(lines[cur]);
       if (ss.size() == 4)
-        dplot["ncell"] = {std::stoi(ss[1]), std::stoi(ss[3]), std::stoi(ss[3])};
+        dplot["ncell"] = {std::stoi(ss[1]), std::stoi(ss[2]), std::stoi(ss[3])};
     } else if (mystring_contains(lines[cur], "origin")) {
       ss = mystring_split0(lines[cur]);
       if (ss.size() == 4)
-        dplot["origin"] = {std::stod(ss[1]), std::stod(ss[3]),
-                           std::stod(ss[3])};
+        dplot["origin"] = {std::stod(ss[1]), std::stod(ss[2]), std::stod(ss[3])};
     } else if (mystring_contains(lines[cur], "position_tolerance")) {
       ss = mystring_split0(lines[cur]);
       if (ss.size() > 1)
@@ -1715,19 +1735,23 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        else
           nwpwjson["minimizer"] = 8;
 
-       if (mystring_contains(line, "ks-block-cg"))        nwpwjson["ks_algorithm"] = -1;
-       if (mystring_contains(line, "ks-cg"))              nwpwjson["ks_algorithm"] = 0;
-       if (mystring_contains(line, "ks-rmm-diis"))        nwpwjson["ks_algorithm"] = 1;
-       if (mystring_contains(line, "ks-grassmann-cg"))     nwpwjson["ks_algorithm"] = 2;
        if (mystring_contains(line, "ks-grassmann-lmbfgs")) nwpwjson["ks_algorithm"] = 3;
+       if (mystring_contains(line, "ks-grassmann-cg"))     nwpwjson["ks_algorithm"] = 2;
+       if (mystring_contains(line, "ks-rmm-diis"))         nwpwjson["ks_algorithm"] = 1;
+       if (mystring_contains(line, "ks-cg"))               nwpwjson["ks_algorithm"] = 0;
+       if (mystring_contains(line, "ks-block-cg"))         nwpwjson["ks_algorithm"] = -1;
 
-       if (mystring_contains(line, "simple"))  nwpwjson["scf_algorithm"] = 0;
-       if (mystring_contains(line, "broyden")) nwpwjson["scf_algorithm"] = 1;
-       if (mystring_contains(line, "pulay"))         nwpwjson["scf_algorithm"] = 2;
+       // scf_algorithm = 2
+       // Pulay / DIIS / Johnson–Pulay (difference-based Pulay with regularization)
        if (mystring_contains(line, "johnson-pulay")) nwpwjson["scf_algorithm"] = 2;
        if (mystring_contains(line, "diis"))          nwpwjson["scf_algorithm"] = 2;
+       if (mystring_contains(line, "pulay"))         nwpwjson["scf_algorithm"] = 2;
+
        if (mystring_contains(line, "anderson"))      nwpwjson["scf_algorithm"] = 3;
+       if (mystring_contains(line, "broyden"))       nwpwjson["scf_algorithm"] = 1;
        if (mystring_contains(line, "thomas-fermi"))  nwpwjson["scf_algorithm"] = 4;
+       if (mystring_contains(line, "simple"))        nwpwjson["scf_algorithm"] = 0;
+
        if (mystring_contains(line, "alpha")) 
           nwpwjson["scf_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
        if (mystring_contains(line, "beta")) 
@@ -1820,14 +1844,14 @@ static json parse_nwpw(json nwpwjson, int *curptr,
           norbs.push_back(1);
           //ss = mystring_split0(line);
           ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
-          if (ss.size() > 1)
+          if (ss.size() > 0)
           {
-             norbs[0] = std::stoi(ss[1]);
+             norbs[0] = std::stoi(ss[0]);
              //std::cout << "ss1=" << ss[1] << std::endl;
           }
-          if (ss.size() > 2)
+          if (ss.size() > 1)
           {
-             norbs[1] = std::stoi(ss[2]);
+             norbs[1] = std::stoi(ss[1]);
              //std::cout << "ss2=" << ss[2] << std::endl;
           }
           nwpwjson["fractional_orbitals"] = norbs;

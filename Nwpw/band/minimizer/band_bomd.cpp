@@ -493,7 +493,7 @@ int band_bomd(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &coutp
          if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
          if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
          if (mysolid.smeartype==3) coutput << "Hermite" << std::endl;
-         if (mysolid.smeartype==4) coutput << "Marazari-Vanderbilt" << std::endl;
+         if (mysolid.smeartype==4) coutput << "Marzari-Vanderbilt" << std::endl;
          if (mysolid.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
          if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
          if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;

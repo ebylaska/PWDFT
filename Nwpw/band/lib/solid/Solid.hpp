@@ -360,14 +360,14 @@ public:
                }
                else
                {
-                  smearfermi[1]    +=  mygrid->define_smearfermi(ne[1],eigk+ne[0],occ1k+ne[0]);
+                  smearfermi[1]   +=  mygrid->define_smearfermi(ne[1],eigk+ne[0],occ1k+ne[0]);
                   smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[1],eigk+ne[0],occ1k+ne[0],smearfermi[0],smearkT);
                }
             }
 
          }
          E[28] = smearcorrection;
-         //E[0]  +=  E[28];
+         E[0]  +=  E[28];
          fractional_it++;
       }
 
@@ -672,6 +672,16 @@ public:
       init.copyfmt(stream);
       std::string eoln = "\n";
 
+      int max_ef_crossings = 0;
+      int tot0_ef_crossings = 0;
+      int tot1_ef_crossings = 0;
+      int tot2_ef_crossings = 0;
+      int tot3_ef_crossings = 0;
+      int tot4_ef_crossings = 0;
+      double wgt_ef_crossings = 0.0;
+      double wgt_ef_sum       = 0.0;
+
+
       for (auto nb=0; nb<nbrillouin; ++nb)
       {
          int nbq = mygrid->ktoindex(nb);
@@ -691,16 +701,38 @@ public:
          mygrid->c3db::parall->Vector_SumAll(3,n,tmpocc);
          //std::memcpy(tmpeig,eig+nbq*n,n*sizeof(double));
 
+         int ef_crossings = 0;
+         double occ_tol = 1.0e-3;
+         double wgt = mygrid->mybrillouin->weight[nb];
+
+         for (int i = 0; i < n; ++i) 
+         {
+             if (tmpocc[i] > occ_tol && tmpocc[i] < 1.0 - occ_tol)
+             ef_crossings++;
+         }
+         max_ef_crossings = std::max(max_ef_crossings, ef_crossings);
+         wgt_ef_crossings += ef_crossings*wgt;
+         wgt_ef_sum       += wgt;
+         if (ef_crossings==0) ++tot0_ef_crossings;
+         if (ef_crossings==1) ++tot1_ef_crossings;
+         if (ef_crossings==2) ++tot2_ef_crossings;
+         if (ef_crossings==3) ++tot3_ef_crossings;
+         if (ef_crossings>3)  ++tot4_ef_crossings;
+
          if (oprint)
          {
             stream << eoln;
             stream << eoln;
             stream << mygrid->mybrillouin->print_zone_point(nb);
             stream << eoln;
+            stream << " EF_crossings (this k-point): " << ef_crossings << std::endl;
+            stream << eoln;
             stream << " orbital energies:" << eoln;
          }
          int nn = ne[0] - ne[1];
          double ev = 27.2116;
+         bool not_printed_efup_line = !fractional_frozen;
+         bool not_printed_efdn_line = !fractional_frozen;
 
          //for (int i=0; i<nn; ++i)
          //   os << eig1stream(tmpeig[mysolid.ne[0]-1-i], tmpeig[mysolid.ne[0]-1-i] * ev);
@@ -710,8 +742,13 @@ public:
             for (int i=0; i<nn; ++i)
             {
                //os << eig1stream(mymolecule.eig[i], mymolecule.eig[i] * ev);
-               if (fractional)
+               if (fractional) 
                {
+                  if ((not_printed_efup_line) && (tmpeig[i] < smearfermi[0]))
+                  {
+                     stream << "     ----- EF = " << Efmt(10,3) << smearfermi[0] << " (" << Ffmt(7,3) << smearfermi[0] * ev << " eV) -----" << std::endl;
+                     not_printed_efup_line = false;
+                  }
                   if ((tmpocc[i] < 1.e-3) && (tmpocc[i]>1.0e-12))
                      stream << Efmt(18,7) << tmpeig[i] << " (" << Ffmt(8,3) << tmpeig[i] * ev << "eV) occ="
                         << Efmt(9,3) << tmpocc[i] << std::endl;
@@ -758,6 +795,70 @@ public:
          }
 
       }
+      if ((oprint) && (fractional) && (!fractional_frozen))
+      {
+         stream << " Fractional occupation summary:" << std::endl;
+         const int bar_width = 16;   // visually compact
+         auto print_bar = [&](int count, int max_count)
+         {
+            int nbar = (max_count > 0)
+                       ? (count * bar_width) / max_count
+                       : 0;
+            for (int i = 0; i < nbar; ++i) stream << "#";
+            for (int i = nbar; i < bar_width; ++i) stream << " ";
+         };
+         int max_count = std::max({tot0_ef_crossings,
+                          tot1_ef_crossings,
+                          tot2_ef_crossings,
+                          tot3_ef_crossings,
+                          tot4_ef_crossings}); 
+         stream << "    EF crossings histogram (per k-point):" << std::endl;
+
+         stream << "     0 | ";
+         print_bar(tot0_ef_crossings, max_count);
+         stream << " (" << tot0_ef_crossings << ")" << std::endl;
+
+         stream << "     1 | ";
+         print_bar(tot1_ef_crossings, max_count);
+         stream << " (" << tot1_ef_crossings << ")" << std::endl;
+
+         stream << "     2 | ";
+         print_bar(tot2_ef_crossings, max_count);
+         stream << " (" << tot2_ef_crossings << ")" << std::endl;
+
+         stream << "     3 | ";
+         print_bar(tot3_ef_crossings, max_count);
+         stream << " (" << tot3_ef_crossings << ")" << std::endl;
+
+         if (tot4_ef_crossings > 0)
+         {
+            stream << "    4+ | ";
+            print_bar(tot4_ef_crossings, max_count);
+            stream << " (" << tot4_ef_crossings << ")" << std::endl;
+         }
+         //stream << "       number k-points with 0 crossings: "<< tot0_ef_crossings << std::endl;
+         //stream << "       number k-points with 1 crossings: "<< tot1_ef_crossings << std::endl;
+         //stream << "       number k-points with 2 crossings: "<< tot2_ef_crossings << std::endl;
+         //stream << "       number k-points with 3 crossings: "<< tot3_ef_crossings << std::endl;
+         //if (tot4_ef_crossings>0)
+         //   stream << "       number k-points with 4 or more crossings: "<< tot4_ef_crossings << std::endl;
+
+         stream << eoln;
+         stream << "    EF crossing summary  "<< std::endl;
+         stream << "       max EF crossings at any k-point = "<< max_ef_crossings;
+         if (max_ef_crossings==0) stream << " (Insulator / large-gap semiconductor)";
+         if (max_ef_crossings==1) stream << " (simple metal)";
+         if ((max_ef_crossings==2) || (max_ef_crossings==3))  stream << " (multiple bands near EF / degeneracy / smearing / complex FS)";
+         if (max_ef_crossings>3) stream << " (large smearing / EF bracket too wide)";
+         stream << std::endl;
+         if (wgt_ef_sum > 0.0)
+            stream << "       average EF crossings (k-weighted) = "
+                   << wgt_ef_crossings / wgt_ef_sum << std::endl;
+         else
+            stream << "       average EF crossings           = undefined" << std::endl;
+         stream << eoln;
+      }
+
       return stream.str();
 
    }
@@ -781,7 +882,20 @@ public:
          << mysolid.en[mysolid.ispin - 1] << " (real space)";
       os << eoln << eoln;
       os << eoln;
-      os << ionstream(" total     energy    : ", mysolid.E[0],mysolid.E[0]/mysolid.myion->nion);
+      if ((mysolid.fractional) && (!mysolid.fractional_frozen))
+      {
+         //double free_energy = mysolid.E[0]+mysolid.E[28];
+         double free_energy = mysolid.E[0];
+         double total_e = mysolid.E[0]-mysolid.E[28];
+         os << ionstream(" free energy         : ", free_energy,free_energy/mysolid.myion->nion);
+         os << ionstream(" smearing energy     : ", mysolid.E[28],mysolid.E[28]/mysolid.myion->nion);
+         os << eoln;
+         os << ionstream(" total     energy    : ", total_e,total_e/mysolid.myion->nion);
+      }
+      else
+      {
+         os << ionstream(" total     energy    : ", mysolid.E[0],mysolid.E[0]/mysolid.myion->nion);
+      }
       os << elcstream(" total orbital energy: ", mysolid.E[1],mysolid.E[1]/mysolid.neall);
       os << elcstream(" hartree energy      : ", mysolid.E[2],mysolid.E[2]/mysolid.neall);
       os << elcstream(" exc-corr energy     : ", mysolid.E[3],mysolid.E[3]/mysolid.neall);
@@ -794,6 +908,7 @@ public:
       os << elcstream(" V_nl    (planewave) : ", mysolid.E[7],mysolid.E[7]/mysolid.neall);
       os << elcstream(" V_Coul  (planewave) : ", mysolid.E[8],mysolid.E[8]/mysolid.neall);
       os << elcstream(" V_xc    (planewave) : ", mysolid.E[9],mysolid.E[9]/mysolid.neall);
+
 
       //if (mysolid.myelectron->is_v_apc_on())
       //   os << ionstream(" K.S. V_APC energy   : ",mysolid.E[52],mysolid.E[52]/mysolid.myion->nion);

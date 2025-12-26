@@ -978,7 +978,9 @@ void c3db::c_pctranspose_ijk_init(const int nb, bool *zero_arow2, bool *zero_aro
  */
 double *c3db::c_alloc()
 {
-   double *ptr = new (std::nothrow) double[2*nfft3d]();
+   //double *ptr = new (std::nothrow) double[2*nfft3d]();
+   double *ptr = new double[2*nfft3d]();
+   std::memset(ptr, 0, 2*nfft3d * sizeof(double));
    return ptr;
 }
 
@@ -998,7 +1000,9 @@ double *c3db::c_alloc()
  */
 double *c3db::c_nalloc(const int nn)
 {
-   double *ptr = new (std::nothrow) double[2*nfft3d * nn]();
+   //double *ptr = new (std::nothrow) double[2*nfft3d * nn]();
+   double *ptr = new double[2*nfft3d * nn]();
+   std::memset(ptr, 0, 2*nfft3d*nn * sizeof(double));
    return ptr;
 }
 
@@ -1027,7 +1031,9 @@ void c3db::c_dealloc(double *ptr) { delete[] ptr; }
  */
 double *c3db::r_alloc() 
 {
-   double *ptr = new (std::nothrow) double[nfft3d]();
+   //double *ptr = new (std::nothrow) double[nfft3d]();
+   double *ptr = new double[nfft3d]();
+   std::memset(ptr, 0, nfft3d * sizeof(double));
    return ptr;
 }
 
@@ -1047,7 +1053,9 @@ double *c3db::r_alloc()
  */
 double *c3db::r_nalloc(const int nn) 
 {
-   double *ptr = new (std::nothrow) double[nfft3d * nn]();
+   //double *ptr = new (std::nothrow) double[nfft3d * nn]();
+   double *ptr = new  double[nfft3d * nn]();
+   std::memset(ptr, 0, nn*nfft3d * sizeof(double));
    return ptr;
 }
 

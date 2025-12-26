@@ -90,15 +90,21 @@ public:
          mygrid->rc_pfft3f(0,tmpv);
          mygrid->c_pack(0,tmpv);
        
-         int k1=0;
-         int k2=0;
-         for (auto k=0; k<npack0; ++k)
-         {
-            tmpv[k1] = tmpv[k1]*tg[k];
-            tmpv[k2] = tmpv[k2]*tg[k];
-            k1 += 2;
-            k2 += 2;
+         //int k1=0;
+         //int k2=0;
+         //for (auto k=0; k<npack0; ++k)
+        // {
+        //    tmpv[k1] = tmpv[k1]*tg[k];
+        //    tmpv[k2] = tmpv[k2]*tg[k];
+        //    k1 += 2;
+        //    k2 += 2;
+        // }
+         for (int k = 0; k < npack0; ++k) {
+            const int i = 2*k;
+            tmpv[i    ] *= tg[k];   // Re
+            tmpv[i + 1] *= tg[k];   // Im
          }
+
          mygrid->c_unpack(0,tmpv);
          mygrid->cr_pfft3b(0,tmpv);
          mygrid->cr_copy(tmpv,v);
