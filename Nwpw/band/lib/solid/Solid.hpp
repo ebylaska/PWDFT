@@ -78,6 +78,7 @@ class Solid {
   int ne_excited[2] = {0,0};
   int nfft[3];
   int version = 5;
+  bool single_mu = false;
 
 public:
    Cneb *mygrid;
@@ -301,12 +302,22 @@ public:
          if ((fractional_it>0) && (smeartype>=0) && (occupation_update))
          {
             // Define occupations based on smoothed eigenvalues
+
             double smearcorrection_old = smearcorrection;
-            mygrid->m_0define_occupation(-1.0, false,
-                                      multiplicity,
-                                      myion->total_zv(),total_charge,
-                                      eig_prev,hml,occ2,
-                                      smeartype,smearkT,smearfermi,&smearcorrection);
+
+            //spin_ensemble == FIXED_MULTIPLICITY; default
+            if (!single_mu)
+               mygrid->m_0define_occupation(-1.0, false,
+                                             multiplicity,
+                                             myion->total_zv(),total_charge,
+                                             eig_prev,hml,occ2,
+                                             smeartype,smearkT,smearfermi,&smearcorrection);
+            else
+               mygrid->m_0define_occupation_single_mu(-1.0, false,
+                                                     myion->total_zv(),total_charge,
+                                                     eig_prev,hml,occ2,
+                                                     smeartype,smearkT,smearfermi,&smearcorrection);
+
 
             // RMSD occupation computation
             double rmsd_occupation = 0.0;

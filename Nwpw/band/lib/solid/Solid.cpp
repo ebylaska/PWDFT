@@ -41,6 +41,7 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
       smearcorrection = 0.0;
       smeartype = control.fractional_smeartype();
       smearkT   = control.fractional_kT();
+      single_mu = control.single_mu();
 
       occ1 = mygrid->initialize_occupations_with_allocation(nextra);
       occ2 = mygrid->initialize_occupations_with_allocation(nextra);

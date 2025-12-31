@@ -104,13 +104,13 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
       {
          if (minimizer==3)
          {
-            coutput << "     iter.              free energy                   energy   smear energy  delta energy       delta rho       delta scf" << std::endl;
-            coutput << "     --------------------------------------------------------------------------------------------------------------------" << std::endl;
+            coutput << "     iter.              free energy                   energy    smear energy           EF_up    delta free_E    delta energy   delta smear_E       delta rho" << std::endl;
+            coutput << "     -------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
          }
          else
          {
-            coutput << "     iter.              free energy                   energy    smear energy    delta free_E    delta energy   delta smear_E       delta rho" << std::endl;
-            coutput << "     ---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+            coutput << "     iter.              free energy                   energy    smear energy           EF_up    delta free_E    delta energy   delta smear_E       delta rho" << std::endl;
+            coutput << "     -------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
          }
       }
       else
@@ -256,7 +256,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
       //std::cout << "total sum0=" << sum0 << std::endl;
 
       // Setup SCF loop
-      deltae = -1.0e-03;
+      //deltae = -1.0e-03;
       int bfgscount = 0;
       icount = 0;
       int ks_it_in  = control.ks_maxit_orb();
@@ -283,9 +283,12 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             bfgscount = 0;
          }
          deltae_old = deltae;
+         deltasmear_old = deltasmear;
 
 
          // minimize ks orbitals it_in steps with fixed ks potential
+         double smear0 = mysolid.E[28];
+
          double total_energy_fixedV = band_cgsd_cgksminimize(mysolid,mygeodesic12.mygeodesic1,E,&deltae,
                                                              &deltac,bfgscount,it_in,tole,tolc);
 
@@ -299,8 +302,8 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          // and then calculate energy, after this rho1, dng1, rho1_all, 
          // and ks potentials and hpsi have been updated
          //total_energy = mysolid.energy();
-         if (icount == (it_out*it_in))
-            mysolid.occupation_update = false;
+         //if (icount == (it_out*it_in))
+         //   mysolid.occupation_update = false;
            
          total_energy = mysolid.gen_all_energies();
 
@@ -320,9 +323,9 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          deltac = scf_error;
 
 
-         converged = (std::fabs(deltae) < tole) && (deltac < tolc);
          //deltac = mysolid.rho_error();
          deltae = total_energy - total_energy0;
+         deltasmear = mysolid.E[28] - smear0;
          total_energy0 = total_energy;
          ++bfgscount;
 
@@ -330,11 +333,22 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
 
          if ((oprint) && ((icount%it_in==0) || converged))
          {
-            coutput << Ifmt(10)    << icount
-                    << Efmt(25,12) << total_energy
-                    << Efmt(16,6)  << deltae
-                    << Efmt(16,6)  << deltac 
-                    << Efmt(16,6)  << total_energy-total_energy_fixedV << std::endl;
+            if ((mysolid.fractional) &&  (!mysolid.fractional_frozen))
+               coutput << Ifmt(10)    << icount
+                       << Efmt(25,12) << total_energy
+                       << Efmt(25,12)  << total_energy - mysolid.E[28]
+                       << Efmt(16,6)  << mysolid.E[28]
+                       << Efmt(16,6)  << mysolid.smearfermi[0]
+                       << Efmt(16,6)  << deltae
+                       << Efmt(16,6)  << deltae-deltasmear
+                       << Efmt(16,6)  << deltasmear 
+                       << Efmt(16,6)  << deltac << std::endl;
+            else
+               coutput << Ifmt(10)    << icount
+                       << Efmt(25,12) << total_energy
+                       << Efmt(16,6)  << deltae
+                       << Efmt(16,6)  << deltac 
+                       << Efmt(16,6)  << total_energy-total_energy_fixedV << std::endl;
          }
    
          // Finalize SCF step with updated potentials
@@ -502,13 +516,14 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
 
          // Minimize energy wrt orbitals
          double smear0 = mysolid.E[28];
-         if (icount == (it_out*it_in))
-            mysolid.occupation_update = false;
+         //if (icount == (it_out*it_in))
+         //   mysolid.occupation_update = false;
 
          total_energy = band_cgsd_bybminimize2(mysolid,mygeodesic12.mygeodesic1,E,&deltae,
                                           &deltac,bfgscount,ks_it_in,ks_it_out,
                                           tole,tolc);
 
+         //double mu = mysolid.smearfermi[0];
          // Optional orbital rotation post-minimization
          if (extra_rotate)
          {
@@ -550,6 +565,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
                        << Efmt(25,12) << total_energy
                        << Efmt(25,12)  << total_energy - mysolid.E[28]
                        << Efmt(16,6)  << mysolid.E[28]
+                       << Efmt(16,6)  << mysolid.smearfermi[0]
                        << Efmt(16,6)  << deltae
                        << Efmt(16,6)  << deltae-deltasmear
                        << Efmt(16,6)  << deltasmear 

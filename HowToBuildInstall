@@ -1,0 +1,14 @@
+#from build directory
+
+cmake -S ../Nwpw -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/pwdft
+
+make
+or 
+cmake --build . -j
+
+
+make install
+or
+cmake --install .
+
+

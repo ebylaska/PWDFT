@@ -5,7 +5,10 @@ extern "C" {
 #include "pseudopotential.h"
 }
 
-#include "NwpwLibrarypsConfig.hpp"
+//#include "NwpwLibrarypsConfig.hpp"
+//#include "NwpwConfig.h"
+#include "util_paths.hpp"
+
 #include "psp_library.hpp"
 
 namespace pwdft {
@@ -80,44 +83,75 @@ static bool psp_read_header(char *fname, double *zv) {
  *      psp_library::psp_library           *
  *                                         *
  *******************************************/
-psp_library::psp_library(const std::string dirname) {
-  /* set  the pseudopotential library directory */
-  if (dirname.size() > 0) {
-    nwpw_libraryps_dir = dirname;
-  }
-  /* Fetch  the pseudopotential library directory */
-  else {
-    nwpw_libraryps_dir = Nwpw_LIBRARYPS_Default;
-    if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
-      nwpw_libraryps_dir = libraryps0;
-    else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
-      nwpw_libraryps_dir = libraryps0;
-  }
+//psp_library::psp_library(const std::string dirname) {
+//  /* set  the pseudopotential library directory */
+//  if (dirname.size() > 0) {
+//    nwpw_libraryps_dir = dirname;
+//  }
+//  /* Fetch  the pseudopotential library directory */
+//  else {
+//    nwpw_libraryps_dir = Nwpw_LIBRARYPS_Default;
+//    if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
+//      nwpw_libraryps_dir = libraryps0;
+//    else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
+//      nwpw_libraryps_dir = libraryps0;
+//  }
 
-  default_library = "pspw_default";
-  nwpw_permanent_dir = "";
+//  default_library = "pspw_default";
+//  nwpw_permanent_dir = "";
+//}
+
+psp_library::psp_library(const std::string& dirname)
+{
+    if (!dirname.empty()) {
+        nwpw_libraryps_dir = dirname;
+    } else {
+        nwpw_libraryps_dir = pwdft::resolve_libraryps();
+    }
+
+    default_library = "pspw_default";
+    nwpw_permanent_dir.clear();
 }
 
-psp_library::psp_library(Control2 &control) {
-  std::string dirname = control.psp_library_dir;
 
-  if (dirname.size() > 0) {
-    nwpw_libraryps_dir = dirname;
-  }
-  /* Fetch  the pseudopotential library directory */
-  else {
-    nwpw_libraryps_dir = Nwpw_LIBRARYPS_Default;
-    if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
-      nwpw_libraryps_dir = libraryps0;
-    else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
-      nwpw_libraryps_dir = libraryps0;
-  }
-  default_library = "pspw_default";
-  nwpw_permanent_dir = std::string(control.permanent_dir());
+//psp_library::psp_library(Control2 &control) {
+//  std::string dirname = control.psp_library_dir;
+//
+//  if (dirname.size() > 0) {
+//    nwpw_libraryps_dir = dirname;
+//  }
+//  /* Fetch  the pseudopotential library directory */
+//  else {
+//    nwpw_libraryps_dir = Nwpw_LIBRARYPS_Default;
+//    if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
+//      nwpw_libraryps_dir = libraryps0;
+//    else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
+//      nwpw_libraryps_dir = libraryps0;
+//  }
+//  default_library = "pspw_default";
+//  nwpw_permanent_dir = std::string(control.permanent_dir());
+//
+//  for (auto const &x : control.psp_libraries)
+//    libraries[x.first] = x.second;
+//}
 
-  for (auto const &x : control.psp_libraries)
-    libraries[x.first] = x.second;
+psp_library::psp_library(Control2& control)
+{
+    if (!control.psp_library_dir.empty()) {
+        nwpw_libraryps_dir = control.psp_library_dir;
+    } else {
+        nwpw_libraryps_dir = pwdft::resolve_libraryps();
+    }
+
+    default_library = "pspw_default";
+    nwpw_permanent_dir = control.permanent_dir();
+
+    for (const auto& x : control.psp_libraries)
+        libraries[x.first] = x.second;
 }
+
+
+
 
 /*******************************************
  *                                         *

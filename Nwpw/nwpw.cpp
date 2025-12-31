@@ -41,12 +41,14 @@
 #include <unistd.h>
 
 #include "NwpwConfig.h"
+#include "util_paths.hpp"
 #include "mpi.h"
 
 #include "ion_ion.hpp"
 #include "parse_pwdft.hpp"
 #include "psp_library.hpp"
 #include "util_date.hpp"
+#include "util_paths.hpp"
 
 #include "nwpw.hpp"
 
@@ -751,103 +753,154 @@ int main(int argc, char *argv[]) {
 
   bool oprint = (taskid == MASTER);
 
+  auto arg_is = [&](const char* s) -> bool { return (argc > 1) && (std::string(argv[1]) == s); };
+  const bool flag_version = arg_is("--version") || arg_is("-v");
+  const bool flag_help    = arg_is("--help")    || arg_is("-h");
+
+  if (flag_help || flag_version) 
+  {
+     if (oprint) {
+       std::cout << argv[0] << " (NWChemEx) - Version "
+                 << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << "\n";
+    
+       // If you want the full banner, keep it here.
+       // Otherwise keep it short for --version.
+       if (flag_help) {
+         std::cout << "Usage:\n"
+                   << "  pwdft <input.nw>\n"
+                   << "  pwdft --version\n"
+                   << "  pwdft --help\n";
+       }
+     }
+    
+     MPI_Barrier(MPI_COMM_WORLD);
+     MPI_Finalize();
+     return 0;
+  }
+
+
   /* Fetch  the pseudopotential library directory */
-  const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default;
+  //const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default;
+  //const char *nwpw_vdw       = Nwpw_LIBRARYVDW_Default;
+
+  std::string nwpw_libraryps = pwdft::resolve_libraryps();
+  std::string nwpw_vdw       = pwdft::resolve_vdw();
+  std::string nwpw_symmetry  = pwdft::resolve_symmetry();
+
+/*  std::string nwpw_libraryps = Nwpw_LIBRARYPS_Default;
+  std::string nwpw_vdw       = Nwpw_LIBRARYVDW_Default;
+  std::string nwpw_symmetry  = Nwpw_SYMMETRY_Default;
+
   if (const char *libraryps0 = std::getenv("NWPW_LIBRARY"))
-    nwpw_libraryps = libraryps0;
+  {
+     nwpw_libraryps = libraryps0;
+     nwpw_vdw       = nwpw_libraryps + "/VDW";
+     nwpw_symmetry  = nwpw_libraryps + "/SYMMETRY";
+  }
   else if (const char *libraryps0 = std::getenv("NWCHEM_NWPW_LIBRARY"))
-    nwpw_libraryps = libraryps0;
+  {
+     nwpw_libraryps = libraryps0;
+     nwpw_vdw       = nwpw_libraryps + "/VDW";
+     nwpw_symmetry  = nwpw_libraryps + "/SYMMETRY";
+  }
+  */
+     
 
-  if (oprint) {
-    std::cout << argv[0] << " (NWChemEx) - Version " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
-    if (argc > 1) 
-    {
-       nwfilename = argv[1];
-       nwinput = "";
-       std::ifstream nwfile(argv[1]);
-       if (nwfile.good()) {
-          while (getline(nwfile, line))
-          {
-            nwinput  += line + "\n";
-            //nwinput  += mystring_split(line,"#")[0] + "\n";
-          }
-       }
-       nwfile.close();
-    } 
-    else 
-    {
-       nwfilename = "stdin";
-       nwinput = "";
-       while (getline(std::cin, line))
-       {
-          nwinput  += line + "\n";
-          //nwinput  += mystring_split(line,"#")[0] + "\n";
-       }
-    }
-    std::cout << std::endl;
-    std::cout << "============================== echo of input deck "
-                 "==============================\n";
-    std::cout << nwinput;
-    std::cout << "============================================================="
-                 "===================\n\n";
-    std::cout
-        << "              NorthwestEx Computational Chemistry Package 1.0.0\n";
-    std::cout << "           "
-                 "--------------------------------------------------------\n\n";
-    std::cout << "                  Pacific Northwest National Laboratory\n";
-    std::cout << "                           Richland, WA 99354\n\n";
-    std::cout << "                         Copyright (c) 2020\n";
-    std::cout << "                  Pacific Northwest National Laboratory\n";
-    std::cout << "                       Battelle Memorial Institute\n\n";
-
-    std::cout << "        NWChemEx is an open-source computational chemistry "
-                 "package\n";
-    std::cout << "                   distributed under the terms of the\n";
-    std::cout << "                 Educational Community License (ECL) 2.0\n";
-    std::cout
-        << "        A copy of the license is included with this distribution\n";
-    std::cout << "                         in the LICENSE.TXT file\n\n";
-    std::cout << "                             ACKNOWLEDGMENT\n";
-    std::cout << "                             --------------\n\n";
-    std::cout
-        << "       This software and its documentation were developed at the\n";
-    std::cout
-        << "       Pacific Northwest National Laboratory, a multiprogram\n";
-    std::cout << "       national laboratory, operated for the U.S. Department "
-                 "of Energy\n";
-    std::cout << "       by Battelle under Contract Number DE-AC05-76RL01830. "
-                 "Support\n";
-    std::cout
-        << "       for this work was provided by the Department of Energy \n";
-    std::cout << "       Office of Advanced Scientific Computing and the "
-                 "Office of Basic\n";
-    std::cout << "       Energy Sciences.\n\n";
-    std::cout << "       Job information\n";
-    std::cout << "       ---------------\n";
-    std::cout << "       program               = pwdft (NWChemEx)\n";
-    std::cout << "       build configured      = " << Nwpw_COMPILE_TIMESTAMP
-              << std::endl;
-    std::cout << "       source                = " << Nwpw_TOP << std::endl;
-    std::cout << "       version               = " << Nwpw_VERSION_MAJOR << "."
-              << Nwpw_VERSION_MINOR << std::endl;
-    std::cout << "       default psp libraries = "
-              << psp_library("").nwpw_libraryps_dir << std::endl;
-    std::cout << "       VWD library           = " << nwpw_libraryps << "/VDW" <<  std::endl << std::endl;
-    std::cout << "       date                  = " << util_date() << std::endl;
-    std::cout << "       nproc                 = " << np << std::endl;
-    std::cout << "       input                 = " << nwfilename << std::endl
-              << std::endl;
-    std::cout << std::endl << std::endl;
+  if (oprint) 
+  {
+     std::cout << argv[0] << " (NWChemEx) - Version " << Nwpw_VERSION_MAJOR << "." << Nwpw_VERSION_MINOR << std::endl;
+    
+     auto looks_like_flag = [](const std::string& s) { return !s.empty() && s[0] == '-'; };
+     if ((argc > 1) && !looks_like_flag(argv[1])) 
+     {
+        nwfilename = argv[1];
+        nwinput = "";
+        std::ifstream nwfile(argv[1]);
+        if (nwfile.good()) {
+           while (getline(nwfile, line))
+           {
+             nwinput  += line + "\n";
+             //nwinput  += mystring_split(line,"#")[0] + "\n";
+           }
+        }
+        nwfile.close();
+     } 
+     else 
+     {
+        nwfilename = "stdin";
+        nwinput = "";
+        while (getline(std::cin, line))
+        {
+           nwinput  += line + "\n";
+           //nwinput  += mystring_split(line,"#")[0] + "\n";
+        }
+     }
+     std::cout << std::endl;
+     std::cout << "============================== echo of input deck "
+                  "==============================\n";
+     std::cout << nwinput;
+     std::cout << "============================================================="
+                  "===================\n\n";
+     std::cout
+         << "              NorthwestEx Computational Chemistry Package 1.0.0\n";
+     std::cout << "           "
+                  "--------------------------------------------------------\n\n";
+     std::cout << "                  Pacific Northwest National Laboratory\n";
+     std::cout << "                           Richland, WA 99354\n\n";
+     std::cout << "                         Copyright (c) 2020\n";
+     std::cout << "                  Pacific Northwest National Laboratory\n";
+     std::cout << "                       Battelle Memorial Institute\n\n";
+    
+     std::cout << "        NWChemEx is an open-source computational chemistry "
+                  "package\n";
+     std::cout << "                   distributed under the terms of the\n";
+     std::cout << "                 Educational Community License (ECL) 2.0\n";
+     std::cout
+         << "        A copy of the license is included with this distribution\n";
+     std::cout << "                         in the LICENSE.TXT file\n\n";
+     std::cout << "                             ACKNOWLEDGMENT\n";
+     std::cout << "                             --------------\n\n";
+     std::cout
+         << "       This software and its documentation were developed at the\n";
+     std::cout
+         << "       Pacific Northwest National Laboratory, a multiprogram\n";
+     std::cout << "       national laboratory, operated for the U.S. Department "
+                  "of Energy\n";
+     std::cout << "       by Battelle under Contract Number DE-AC05-76RL01830. "
+                  "Support\n";
+     std::cout
+         << "       for this work was provided by the Department of Energy \n";
+     std::cout << "       Office of Advanced Scientific Computing and the "
+                  "Office of Basic\n";
+     std::cout << "       Energy Sciences.\n\n";
+     std::cout << "       Job information\n";
+     std::cout << "       ---------------\n";
+     std::cout << "       program               = pwdft (NWChemEx)\n";
+     std::cout << "       build configured      = " << Nwpw_COMPILE_TIMESTAMP
+               << std::endl;
+     std::cout << "       source                = " << Nwpw_TOP << std::endl;
+     std::cout << "       version               = " << Nwpw_VERSION_MAJOR << "."
+               << Nwpw_VERSION_MINOR << std::endl;
+     //std::cout << "       default psp libraries = " << psp_library("").nwpw_libraryps_dir << std::endl;
+     //std::cout << "       VWD library           = " << nwpw_libraryps << "/VDW" <<  std::endl << std::endl;
+     std::cout << "       default_psp libraries = " << nwpw_libraryps << std::endl;
+     std::cout << "       VWD library           = " << nwpw_vdw << std::endl;
+     std::cout << "       SYMMETRY library      = " << nwpw_symmetry << std::endl << std::endl;
+     std::cout << "       date                  = " << util_date() << std::endl;
+     std::cout << "       nproc                 = " << np << std::endl;
+     std::cout << "       input                 = " << nwfilename << std::endl
+               << std::endl;
+     std::cout << std::endl << std::endl;
   }
 
   // Broadcast nwinput across MPI tasks
-  if (np > 1) {
-    int nwinput_size = nwinput.size();
-    MPI_Bcast(&nwinput_size, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    if (taskid != MASTER)
-      nwinput.resize(nwinput_size);
-    MPI_Bcast(const_cast<char *>(nwinput.data()), nwinput_size, MPI_CHAR,
-              MASTER, MPI_COMM_WORLD);
+  if (np > 1) 
+  {
+     int nwinput_size = nwinput.size();
+     MPI_Bcast(&nwinput_size, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+     if (taskid != MASTER)
+        nwinput.resize(nwinput_size);
+     MPI_Bcast(const_cast<char *>(nwinput.data()), nwinput_size, MPI_CHAR, MASTER, MPI_COMM_WORLD);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);

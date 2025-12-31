@@ -4090,6 +4090,34 @@ void Cneb::g_project_out_virtual(const int nbq1, const int ms, const int nex[], 
  *         Cneb::g_norm         *
  *                              *
  ********************************/
+/**
+ * @brief Normalize a packed complex vector in place.
+ *
+ * This routine computes the Euclidean norm of a packed complex vector and
+ * rescales the vector so that its norm is unity. The dot product and scaling
+ * operations are performed using CGrid packed-vector utilities.
+ *
+ * If the computed norm is below a small threshold, indicating a near-zero or
+ * numerically collapsed vector, the routine applies a minimal hard-coded
+ * perturbation to the vector before normalizing. This fallback behavior is
+ * intended to prevent numerical failures in downstream algorithms (e.g.
+ * orthonormalization, minimization steps) when a vector becomes ill-defined.
+ *
+ * IMPORTANT:
+ *  - This routine modifies the input vector in place.
+ *  - The fallback initialization is non-physical and intended solely for
+ *    numerical robustness.
+ *  - No parallel reduction is performed inside this routine; any required
+ *    global consistency must be handled by the caller.
+ *
+ * This routine is typically used in wavefunction normalization steps within
+ * subspace construction, orthonormalization, or direct minimization workflows.
+ *
+ * @param nbq1         Length of the packed complex vector.
+ * @param psi_to_norm  Pointer to the packed complex vector to be normalized
+ *                     (modified in place).
+ *
+ ********************************************************************************/
 void Cneb::g_norm(const int nbq1, double *psi_to_norm)
 {  
    // Compute the dot product of psi_to_norm with itself, resulting in the squared norm
@@ -4127,6 +4155,41 @@ void Cneb::g_norm(const int nbq1, double *psi_to_norm)
 /*
    Performs a modified Gram-Schmidt QR.
 */
+/**
+ * @brief Perform an in-place QR orthonormalization of wavefunction columns.
+ *
+ * This routine applies a classical Gram–Schmidt QR factorization to the
+ * wavefunction matrix Q, orthonormalizing its columns and accumulating the
+ * upper-triangular R factor. The operation is performed independently for
+ * each spin channel or for a specified single spin channel.
+ *
+ * The input matrix Q is overwritten in place with its orthonormalized form.
+ * The matrix R contains the overlap coefficients generated during the
+ * orthonormalization process and is stored in column-major form consistent
+ * with PWDFT/NWPW conventions.
+ *
+ * IMPORTANT:
+ *  - This routine assumes serial execution (npj == 1). Parallel execution
+ *    is explicitly not supported and will raise a runtime error.
+ *  - No pivoting is performed; numerical stability relies on the quality of
+ *    the input subspace.
+ *  - This routine does not check for linear dependence.
+ *
+ * Usage modes:
+ *  - mb == -1 : Orthonormalize all spin channels.
+ *  - mb >=  0 : Orthonormalize only the specified spin channel.
+ *
+ * This routine is typically used in subspace construction, direct minimization
+ * methods, and orbital rotation algorithms where explicit control over the
+ * orthonormal basis is required.
+ *
+ * @param mb   Spin selector:
+ *               -1  → operate on all spin channels
+ *               >=0 → operate on the specified spin channel only
+ * @param Q    Pointer to the wavefunction matrix (modified in place).
+ * @param R    Pointer to the upper-triangular R matrix (output).
+ *
+ ********************************************************************************/
 void Cneb::fm_QR(const int mb, double *Q, double *R) 
 {
    int n, ms1, ms2, ishift2, shift2;
@@ -4232,6 +4295,10 @@ void Cneb::fm_QR(const int mb, double *Q, double *R)
  * @note This routine is designed to be robust for multi-k-point calculations
  *       and for use with orbital minimization methods where strict variational
  *       behavior of the smearing function is not guaranteed.
+ *
+ * @note  This routine enforces electron counts per spin channel.
+ *        smearfermi[ms] are spin-channel Fermi levels.  
+ *        A single global chemical  potential exists only in the restricted case (ispin == 1).
  *
  ************************************************************************************/
 void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
@@ -4420,6 +4487,174 @@ void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
 
 
 
+/********************************************************************************
+ *                                                                              *
+ *      Cneb::m_0define_occupation_single_mu                                    *
+ *                                                                              *
+ ********************************************************************************/
+/**
+ * @brief Determine electronic occupations using a single global Fermi level.
+ *
+ * This routine enforces the total electron count using a single chemical
+ * potential (μ) shared across all spin channels. Spin populations are not
+ * constrained and are allowed to relax self-consistently.
+ *
+ * This corresponds to a grand-canonical spin ensemble (free magnetization),
+ * appropriate for bulk materials and itinerant magnetism.
+ *
+ ********************************************************************************/
+void Cneb::m_0define_occupation_single_mu(
+        const double initial_alpha,
+        const bool   use_hml,
+        const double ion_charge,
+        const double total_charge,
+        double *eig,
+        double *hml,
+        double *occ,
+        const int smeartype,
+        const double smearkT,
+        double *smearfermi,
+        double *smearcorrection)
+{
+    const double Ztot = ion_charge - total_charge;
+
+    smearfermi[0] = 0.0;
+    smearfermi[1] = 0.0;
+    *smearcorrection = 0.0;
+
+    if (std::abs(Ztot) < 1.0e-9) return;
+
+    const double alpha = (initial_alpha < 0.0) ? 1.0 : initial_alpha;
+
+    /* ------------------------------------------------------------
+     * Update eigenvalues from HML if requested
+     * ------------------------------------------------------------ */
+    if (use_hml)
+    {
+        for (int ms = 0; ms < ispin; ++ms)
+        for (int nb = 0; nb < nbrillq; ++nb)
+        for (int n  = 0; n  < ne[ms]; ++n)
+        {
+            int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+            eig[index] =
+                hml[n + n*ne[ms]
+                    + ms*ne[0]*ne[0]
+                    + nb*(ne[0]*ne[0] + ne[1]*ne[1])];
+        }
+    }
+
+    /* ------------------------------------------------------------
+     * Determine global eigenvalue bounds
+     * ------------------------------------------------------------ */
+    double elower =  1.0e12;
+    double eupper = -1.0e12;
+
+    for (int ms = 0; ms < ispin; ++ms)
+    for (int nb = 0; nb < nbrillq; ++nb)
+    for (int n  = 0; n  < ne[ms]; ++n)
+    {
+        int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+        double e  = eig[index];
+        elower = std::min(elower, e);
+        eupper = std::max(eupper, e);
+    }
+
+    elower = c3db::parall->MinAll(0, elower);
+    eupper = c3db::parall->MaxAll(0, eupper);
+
+    const double span = eupper - elower;
+    const double pad  = std::max(10.0 * smearkT, 0.1 * span);
+    elower -= pad;
+    eupper += pad;
+
+    /* ------------------------------------------------------------
+     * Electron count as function of μ
+     * ------------------------------------------------------------ */
+    auto electron_count = [&](double mu)
+    {
+        double Z = 0.0;
+
+        for (int ms = 0; ms < ispin; ++ms)
+        for (int nb = 0; nb < nbrillq; ++nb)
+        {
+            double weight = pbrill_weight(nb);
+            for (int n = 0; n < ne[ms]; ++n)
+            {
+                int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+                double e  = eig[index];
+                Z += weight *
+                     util_occupation_distribution(
+                         smeartype, (e - mu) / smearkT);
+            }
+        }
+
+        return c3db::parall->SumAll(3, Z);
+    };
+
+    /* ------------------------------------------------------------
+     * Bisection for global μ
+     * ------------------------------------------------------------ */
+    double Zlower = electron_count(elower);
+    double Zupper = electron_count(eupper);
+
+    double flower = Zlower - Ztot;
+    double fupper = Zupper - Ztot;
+
+    double mu = 0.5 * (elower + eupper);
+
+    if (flower * fupper < 0.0)
+    {
+        int it = 0;
+        double fmid = 1.0e30;
+
+        while ((std::abs(fmid) > 1.0e-11 &&
+                std::abs(eupper - elower) > 1.0e-11) &&
+               it < 50)
+        {
+            ++it;
+            mu = 0.5 * (elower + eupper);
+            double Zmid = electron_count(mu);
+            fmid = Zmid - Ztot;
+
+            if (fmid < 0.0)
+                elower = mu;
+            else
+                eupper = mu;
+        }
+    }
+
+    smearfermi[0] = mu;
+    smearfermi[1] = mu;
+
+    /* ------------------------------------------------------------
+     * Update occupations and smear correction
+     * ------------------------------------------------------------ */
+    for (int ms = 0; ms < ispin; ++ms)
+    for (int nb = 0; nb < nbrillq; ++nb)
+    {
+        double weight = pbrill_weight(nb);
+        for (int n = 0; n < ne[ms]; ++n)
+        {
+            int index = n + ms*ne[0] + nb*(ne[0]+ne[1]);
+            double e  = eig[index];
+
+            double f = util_occupation_distribution(
+                           smeartype, (e - mu) / smearkT);
+
+            occ[index] = (1.0 - alpha) * occ[index] + alpha * f;
+
+            *smearcorrection +=
+                weight * util_smearcorrection(
+                    smeartype, smearkT, mu, occ[index], e);
+        }
+    }
+
+    if (ispin == 1)
+        *smearcorrection *= 2.0;
+}
+
+
+
 
 
 /********************************************
@@ -4427,6 +4662,38 @@ void Cneb::m_0define_occupation(const double initial_alpha, const bool use_hml,
  *        Cneb::define_smearfermi           *
  *                                          *
  ********************************************/
+/**
+ * @brief Infer a per-spin Fermi reference energy from existing occupations.
+ *
+ * This routine computes an approximate Fermi reference energy for a *single
+ * spin channel* based on the current eigenvalue spectrum and occupation
+ * numbers. The inferred value is derived post hoc from the occupation pattern
+ * and is intended for diagnostic, reporting, or post-processing purposes
+ * (e.g. DOS alignment, band plots).
+ *
+ * IMPORTANT:
+ *  - This routine does NOT compute the chemical potential (μ).
+ *  - It does NOT enforce an electron-number constraint.
+ *  - It does NOT participate in smearing, SCF stability, or convergence tests.
+ *
+ * The returned value is inferred from already-mixed occupations and may change
+ * non-smoothly as occupations reshuffle. It should therefore never be used as
+ * a convergence metric (e.g. delta_mu) or as a replacement for the Fermi level
+ * obtained via bisection in occupation-filling routines.
+ *
+ * In contrast, the true chemical potential (the Lagrange multiplier enforcing
+ * the electron count) is computed elsewhere (e.g. in m_0define_occupation)
+ * and must be used for SCF diagnostics and stability measures.
+ *
+ * This function is designed to be called independently for each spin channel.
+ *
+ * @param nstates  Number of states in the spin channel.
+ * @param eig      Eigenvalues for the spin channel (assumed ordered).
+ * @param occ      Occupation numbers for the spin channel.
+ *
+ * @return An inferred Fermi reference energy for this spin channel.
+ *
+ ********************************************************************************/
 double Cneb::define_smearfermi(const int nstates, const double *eig, const double *occ)
 {
    double smearfermi = 0.0; // Initialize smearfermi
@@ -4477,6 +4744,41 @@ double Cneb::define_smearfermi(const int nstates, const double *eig, const doubl
  *         Cneb::add_smearcorrection          *
  *                                            *
  **********************************************/
+/**
+ * @brief Accumulate the smearing energy correction for a single spin channel.
+ *
+ * This routine computes the energy correction associated with the chosen
+ * smearing scheme for a *single spin channel*, using the current eigenvalues,
+ * occupations, smearing width, and the corresponding spin-channel Fermi level.
+ *
+ * The correction accounts for the difference between the smeared occupation
+ * functional and the zero-temperature reference, and is required for consistent
+ * total-energy and free-energy evaluation when finite-temperature or
+ * non-variational smearing schemes are employed (e.g. Fermi–Dirac, Gaussian,
+ * Methfessel–Paxton, cold smearing).
+ *
+ * IMPORTANT:
+ *  - This routine does NOT determine occupations.
+ *  - It does NOT compute the chemical potential (μ).
+ *  - It assumes that occupations and the spin-channel Fermi level have already
+ *    been defined elsewhere (e.g. via bisection-based filling).
+ *
+ * The returned value represents the smearing correction contribution for this
+ * spin channel only. For unpolarized (restricted) calculations, the caller is
+ * responsible for applying the appropriate spin degeneracy factor.
+ *
+ * This routine is intended to be called independently for each spin channel.
+ *
+ * @param smeartype    Identifier of the smearing scheme.
+ * @param nstates      Number of states in the spin channel.
+ * @param eig          Eigenvalues for the spin channel.
+ * @param occ          Occupation numbers for the spin channel.
+ * @param smearfermi   Spin-channel Fermi level used for smearing.
+ * @param smearkT      Smearing width (kT).
+ *
+ * @return Smearing energy correction for this spin channel.
+ *
+ ********************************************************************************/
 double Cneb::add_smearcorrection(const int smeartype, const int nstates, const double *eig, const double *occ, const double smearfermi, const double smearkT)
 {
    double smearcorrection = 0.0;

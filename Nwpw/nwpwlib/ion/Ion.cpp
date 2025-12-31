@@ -910,6 +910,7 @@ std::string Ion::print_symmetry_group()
 
 
 
+
 /*******************************************
  *                                         *
  *           Ion::disp_energy              *

@@ -31,6 +31,8 @@ file(GLOB_RECURSE src_parse     parse/*.hpp parse/*.cpp)
 file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
 
+
+
 # create the nwpwlib library
 if(MKL_FOUND)
 add_library(nwpwlib ${src_D3dB} ${src_C3dB} ${src_ion} ${src_symmetry} ${src_brillouin} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis}  ${src_thermostats} ${src_xcfunctions}  ${src_vdw} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc} ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
@@ -38,6 +40,13 @@ else()
    message("-- including interal blas routines contained in project")
 add_library(nwpwlib ${src_D3dB} ${src_C3dB} ${src_ion} ${src_symmetry} ${src_brillouin} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis} ${src_thermostats} ${src_xcfunctions} ${src_vdw} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 endif()
+
+target_include_directories(nwpwlib
+    PUBLIC
+        ${PROJECT_BINARY_DIR}    # <-- gives access to NwpwConfig.h
+        ${PROJECT_SOURCE_DIR}
+)
+
 
 # adding target_include_directories to nwpwlib
 add_subdirectory(parse)

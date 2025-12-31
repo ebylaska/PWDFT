@@ -74,6 +74,8 @@ public:
    std::string group_name;
    int group_rank;
 
+   //Molecular and space  group symmetry
+
  
    /* Constructors */
    // Ion(RTDB&, Control2&);
@@ -500,6 +502,14 @@ public:
    double disp_energy();
    void disp_force(double *);
    void disp_stress(double *);
+
+   //symmetry operations
+   int symmetry_number_ops() { return group_rank; };
+   //void sym_get_cart_op(const int opnum, double *matrix)
+   //ion_sym_get_op(const int opnum, double *matrix)
+   //void symmetry_apply_op(const int opnum, const double *ks, double *ks1)
+   std::string symmetry_group_name() { return group_name; }
+
    
    std::string print_symmetry_group();
 

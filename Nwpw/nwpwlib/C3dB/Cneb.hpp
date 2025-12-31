@@ -334,8 +334,11 @@ public:
    void gg_daxpy(double, double *, double *);
 
    void m_0define_occupation(const double, const bool, const int,
-                          const double, const double, double *, double *, double *,
-                          const int, const double, double *, double *);
+                             const double, const double, double *, double *, double *,
+                             const int, const double, double *, double *);
+   void m_0define_occupation_single_mu(const double, const bool, 
+                                       const double, const double, double *, double *, double *, 
+                                       const int, const double, double *, double *);
 
    double define_smearfermi(const int, const double *, const double *);
    double add_smearcorrection(const int, const int, const double *, const double *, const double, const double);

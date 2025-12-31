@@ -1,7 +1,18 @@
-// the configured options and settings for Tutorial
+// NWPW / PWDFT build configuration
+
 #define Nwpw_VERSION_MAJOR @PWDFT_VERSION_MAJOR@
 #define Nwpw_VERSION_MINOR @PWDFT_VERSION_MINOR@
-#define Nwpw_COMPILE_TIMESTAMP  @PWDFT_BUILD_TIMESTAMP@
+#define Nwpw_COMPILE_TIMESTAMP @PWDFT_BUILD_TIMESTAMP@
+
+// Source tree (developer / build-time reference)
+#define Nwpw_SOURCE_DIR "@PWDFT_SOURCE_DIR@"
 #define Nwpw_TOP "@PWDFT_SOURCE_DIR@"
+
+// Installed shared data directory (runtime reference)
+#define Nwpw_DATADIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/nwpw"
+
+// Source-tree fallback locations (developer mode)
 #define Nwpw_LIBRARYPS_Default "@PWDFT_SOURCE_DIR@/libraryps"
 #define Nwpw_LIBRARYVDW_Default "@PWDFT_SOURCE_DIR@/libraryps/VDW"
+#define Nwpw_SYMMETRY_Default "@PWDFT_SOURCE_DIR@/nwpwlib/symmetry"
+

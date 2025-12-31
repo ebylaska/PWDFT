@@ -30,8 +30,11 @@ public:
   std::map<std::string, std::string> libraries;
 
   /* Constructors */
-  psp_library(const std::string);
-  psp_library(Control2 &);
+  //psp_library(const std::string);
+  //psp_library(Control2 &);
+  explicit psp_library(const std::string& dirname);
+  psp_library(Control2& control);
+
 
   /* other */
   void psp_check(const char *, Control2 &, double *, std::ostream &);

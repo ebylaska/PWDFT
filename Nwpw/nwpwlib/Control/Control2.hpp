@@ -159,6 +159,7 @@ class Control2 {
    bool p_psputerm = false;
    int  p_pspnuterms = 0;
    
+   bool psingle_mu = false;
 
 public:
    int version = 3;
@@ -255,6 +256,7 @@ public:
    int  pspnuterms() { return p_pspnuterms; }
 
    bool scf_extra_rotate() { return pscf_extra_rotate; }
+   bool single_mu() { return psingle_mu; }
  
    int *ne_ptr() { return pne; }
 

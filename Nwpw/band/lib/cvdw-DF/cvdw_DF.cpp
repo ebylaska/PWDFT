@@ -8,7 +8,9 @@
 #include "compressed_io.hpp"
 #include "util.hpp"
 
-#include "NwpwLibraryCVdwConfig.hpp"
+//#include "NwpwLibraryCVdwConfig.hpp"
+//#include "NwpwConfig.h"
+#include "util_paths.hpp"
 
 #include "v_exc.hpp"
 #include "v_dirac.hpp"
@@ -881,8 +883,9 @@ cvdw_DF::cvdw_DF(Cneb *inmygrid, Control2 &control, bool is_vdw2)
    bool oprint = (myparall->is_master() && control.print_level("medium"));
 
 
-   const std::string nwpw_vdw_qmesh = std::string(Nwpw_LIBRARYVDW_Default) + "/vdw_qmesh.dat";
+   //const std::string nwpw_vdw_qmesh = std::string(Nwpw_LIBRARYVDW_Default) + "/vdw_qmesh.dat";
    //const char *nwpw_libraryps = Nwpw_LIBRARYPS_Default + "/VDW/vdw_qmesh.dat";
+   const std::string nwpw_vdw_qmesh = pwdft::resolve_vdw() + "/vdw_qmesh.dat";
 
    char datafile[256];
    strcpy(datafile, "vdw_kernels.dat");

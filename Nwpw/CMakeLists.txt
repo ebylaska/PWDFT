@@ -22,6 +22,8 @@ include(CheckFortranCompilerFlag)
 #set default CMAKE_BUILD_TYPE
 set(CMAKE_BUILD_TYPE release)
 
+
+
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_DEBUG "-O3")
@@ -201,11 +203,19 @@ endif()
 
 
 # configure a header file to pass the version number only
-configure_file(NwpwConfig.h.in NwpwConfig.h)
-configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/psp_library/NwpwLibrarypsConfig.hpp")
-configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/pspw/lib/vdw-DF/NwpwLibraryVdwConfig.hpp")
-configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/band/lib/cvdw-DF/NwpwLibraryCVdwConfig.hpp")
-#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/band/lib/cvdw-DF/NwpwLibraryVdwConfig.hpp")
+include(GNUInstallDirs)
+
+configure_file(
+  ${PROJECT_SOURCE_DIR}/NwpwConfig.h.in
+  ${PROJECT_BINARY_DIR}/NwpwConfig.h
+  @ONLY
+)
+#configure_file(NwpwConfig.h.in NwpwConfig.h)
+#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/psp_library/NwpwLibrarypsConfig.hpp")
+#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/pspw/lib/vdw-DF/NwpwLibraryVdwConfig.hpp")
+#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/band/lib/cvdw-DF/NwpwLibraryCVdwConfig.hpp")
+#configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/nwpwlib/utilities/NwpwUtilConfig.hpp")
+##configure_file("${PROJECT_SOURCE_DIR}/NwpwConfig.h.in" "${PROJECT_SOURCE_DIR}/band/lib/cvdw-DF/NwpwLibraryVdwConfig.hpp")
 
 # create the nwpwlib and pspw libraries
 add_subdirectory(nwpwlib)
@@ -257,3 +267,30 @@ if(MPI_LINK_FLAGS)
   set_target_properties(pwdft PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS} ${MKL_LINK_FLAGS}")
 endif()
+
+
+# install pwdft and pwdft libraries
+
+install(
+  FILES ${PROJECT_SOURCE_DIR}/nwpwlib/symmetry/spacegroups.dat
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/nwpw/symmetry
+)
+
+install(
+  DIRECTORY ${PROJECT_SOURCE_DIR}/libraryps/
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/nwpw/libraryps
+)
+
+install(
+  DIRECTORY ${PROJECT_SOURCE_DIR}/libraryps/VDW/
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/nwpw/vdw
+)
+
+install(
+  TARGETS pwdft
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+
+
+
