@@ -4,19 +4,46 @@
 #include <stdexcept>
 
 #include "SpaceGroupDB.hpp"
+#include "util_paths.hpp"
 
 namespace pwdft {
+
 
 /*******************************************
  *                                         *
  *           spacegroup_db                 *
  *                                         *
  *******************************************/
+ /**
+ * @brief Global accessor for the crystallographic space-group database.
+ *
+ * Returns a reference to a lazily initialized, immutable `SpaceGroupDB`
+ * containing all crystallographic space groups defined in
+ * `spacegroups.dat`.
+ *
+ * The database is initialized on first use via a function-local static
+ * object. This guarantees:
+ *
+ *  - Thread-safe initialization (per C++11 static initialization rules)
+ *  - Exactly-once loading of the space-group database
+ *  - No static initialization order dependencies across translation units
+ *
+ * The location of `spacegroups.dat` is resolved at runtime using
+ * `resolve_spacegroups_dat()`, allowing seamless operation in both
+ * installed and developer (source-tree) configurations.
+ *
+ * This accessor should be used wherever symmetry information is required
+ * (e.g., lattice construction, symmetry reduction, k-point generation),
+ * rather than instantiating `SpaceGroupDB` directly.
+ *
+ * @return Const reference to the global `SpaceGroupDB` instance.
+ */
 const SpaceGroupDB& spacegroup_db()
 {
-    static SpaceGroupDB db("spacegroups.dat");
-    return db;
+   static SpaceGroupDB db(resolve_spacegroups_dat());
+   return db;
 }
+
 
 
 /*******************************************

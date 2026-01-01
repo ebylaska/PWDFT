@@ -1,6 +1,7 @@
 #ifndef _SPACEGROUPDB_HPP_
 #define _SPACEGROUPDB_HPP_
 
+#pragma once
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -8,9 +9,6 @@
 #include <mutex>
 
 namespace pwdft {
-
-
-
 
 /**
  * @brief Single symmetry operation (R | t)
@@ -43,11 +41,10 @@ struct SpaceGroup {
  */
 class SpaceGroupDB {
 public:
-    SpaceGroupDB() = default;
+    //SpaceGroupDB() = default;
+    SpaceGroupDB() = delete;
     explicit SpaceGroupDB(const std::string& filename);
 
-    /** Load database from file (thread-safe, exactly-once). */
-    void load(const std::string& filename);
 
     /** Access space group by index. */
     const SpaceGroup& at(size_t idx) const;
@@ -58,7 +55,12 @@ public:
     /** Number of loaded space groups. */
     size_t size() const;
 
+    /* destructor */
+
 private:
+    /** Load database from file (thread-safe, exactly-once). */
+    void load(const std::string& filename);
+
     void load_impl(const std::string& filename);
 
     std::once_flag load_flag_;
@@ -67,7 +69,6 @@ private:
     std::vector<SpaceGroup> groups_;
     std::unordered_map<int, std::vector<const SpaceGroup*>> number_index_;
 };
-
 
 /**
  * @brief Access the global SpaceGroup database.
