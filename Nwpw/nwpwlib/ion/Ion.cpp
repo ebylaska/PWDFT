@@ -417,7 +417,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
  
    for (auto ia = 0; ia < nkatm; ++ia) 
    {
-      natm[ia] = 0.0;
+      natm[ia] = 0;
       strcpy(&atomarray[3*ia], const_cast<char *>(tmpsymbols[ia].data()));
    }
    for (auto i=0; i<nion; ++i) 
@@ -907,6 +907,77 @@ std::string Ion::print_symmetry_group()
    return stream.str();
 }
 
+
+/*******************************************
+ *                                         *
+ *        Ion::print_symmetry_group        *
+ *                                         *
+ *******************************************/
+std::string Ion::print_symmetry_group(std::string rtdbstring)
+{
+   auto rtdb = json::parse(rtdbstring);
+
+   if (!rtdb.contains("effective_symmetry"))
+   {
+      std::stringstream stream;
+      stream << " symmetry information:\n";
+      stream << "   effective symmetry source : none\n";
+      stream << "   symmetry type             : none\n";
+      stream << "   group name                : identity  (order = 1)\n";
+      stream << "   tolerance                 : " << Efmt(10,3) << 0.0 << "\n";
+      return stream.str();
+   }
+
+   const auto& es = rtdb["effective_symmetry"];
+
+   std::stringstream stream;
+
+   stream << " symmetry information:" << std::endl;
+   stream << "   effective symmetry source : "
+          << es.value("source","unknown") << std::endl;
+
+   stream << "   symmetry type             : "
+          << es.value("type","unknown") << std::endl;
+
+   stream << "   group name                : "
+          << es.value("name","identity")
+          << "  (order = " << es.value("order",1) << ")" << std::endl;
+
+   if (es.value("type","") == "space_group")
+   {
+      stream << "   centering                 : "
+             << es.value("num_centering",1) << std::endl;
+
+      stream << "   primitive lattice         : "
+             << (es.value("primitive",false) ? "yes" : "no") << std::endl;
+
+      stream << "   translation type          : "
+             << es.value("translation_type","unknown") << std::endl;
+   }
+
+   stream << "   tolerance                 : "
+          << Efmt(10,3) << es.value("tolerance",0.0) << std::endl;
+
+   // Only print inertia info for point groups
+   if (es.value("type","") == "point_group")
+   {
+      stream << "   inertia axes :" << std::endl;
+      stream << "     e1 = <" << Ffmt(8,3) << inertia_axes[0] << " "
+                             << Ffmt(8,3) << inertia_axes[1] << " "
+                             << Ffmt(8,3) << inertia_axes[2] << " > "
+                             << "moment = " << Efmt(14,7) << inertia_moments[0] << std::endl;
+      stream << "     e2 = <" << Ffmt(8,3) << inertia_axes[3] << " "
+                             << Ffmt(8,3) << inertia_axes[4] << " "
+                             << Ffmt(8,3) << inertia_axes[5] << " > "
+                             << "moment = " << Efmt(14,7) << inertia_moments[1] << std::endl;
+      stream << "     e3 = <" << Ffmt(8,3) << inertia_axes[6] << " "
+                             << Ffmt(8,3) << inertia_axes[7] << " "
+                             << Ffmt(8,3) << inertia_axes[8] << " > "
+                             << "moment = " << Efmt(14,7) << inertia_moments[2] << std::endl;
+   }
+
+   return stream.str();
+}
 
 
 

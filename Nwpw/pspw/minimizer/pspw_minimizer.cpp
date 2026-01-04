@@ -269,7 +269,8 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
       coutput << std::endl;
-      coutput << myion.print_symmetry_group();
+      //coutput << myion.print_symmetry_group();
+      coutput << myion.print_symmetry_group(rtdbstring);
       coutput << mypsp.myefield->shortprint_efield();
       coutput << mycoulomb12.shortprint_dielectric();
      

@@ -269,7 +269,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
 
       coutput << std::endl;
-      coutput << myion.print_symmetry_group();
+      coutput << myion.print_symmetry_group(rtdbstring);
 
       if (control.geometry_optimize())
          coutput << std::endl << myion.print_constraints(0);

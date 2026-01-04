@@ -46,6 +46,7 @@
 
 #include "ion_ion.hpp"
 #include "parse_pwdft.hpp"
+#include "resolve_symmetry_and_cell.hpp"
 #include "psp_library.hpp"
 #include "util_date.hpp"
 #include "util_paths.hpp"
@@ -905,6 +906,9 @@ int main(int argc, char *argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   std::string rtdbstr = parse_nwinput(nwinput);
+
+  rtdbstr = resolve_symmetry_and_cell(rtdbstr);
+
   int task = parse_task(rtdbstr);
   MPI_Barrier(MPI_COMM_WORLD);
 

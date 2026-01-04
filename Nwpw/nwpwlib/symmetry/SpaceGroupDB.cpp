@@ -2,6 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <array>
+#include <cmath>
+
 
 #include "SpaceGroupDB.hpp"
 #include "util_paths.hpp"
@@ -42,6 +45,59 @@ const SpaceGroupDB& spacegroup_db()
 {
    static SpaceGroupDB db(resolve_spacegroups_dat());
    return db;
+}
+
+/*******************************************
+ *                                         *
+ *       compute_centering_points          *
+ *                                         *
+ *******************************************/
+static int compute_centering_points(const std::vector<pwdft::SymOp>& ops)
+{
+    const double tol = 1e-12;
+
+    auto is_identity = [&](const pwdft::SymOp& op) {
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (std::abs(op.R[i][j] - (i==j)) > tol)
+                    return false;
+        return true;
+    };
+
+    auto wrap = [&](double x) {
+        x -= std::floor(x);
+        if (std::abs(x-1.0) < tol) x = 0.0;
+        return x;
+    };
+
+    auto same = [&](const std::array<double,3>& a,
+                    const std::array<double,3>& b) {
+        for (int i=0;i<3;i++)
+            if (std::abs(a[i]-b[i]) > tol) return false;
+        return true;
+    };
+
+    std::vector<std::array<double,3>> translations;
+    translations.push_back({0.0,0.0,0.0});
+
+    for (const auto& op : ops) {
+        if (!is_identity(op)) continue;
+
+        std::array<double,3> t {
+            wrap(op.t[0]),
+            wrap(op.t[1]),
+            wrap(op.t[2])
+        };
+
+        bool found = false;
+        for (const auto& u : translations)
+            if (same(u,t)) { found = true; break; }
+
+        if (!found)
+            translations.push_back(t);
+    }
+
+    return static_cast<int>(translations.size());
 }
 
 
@@ -94,41 +150,49 @@ void SpaceGroupDB::load(const std::string& filename)
 
 void SpaceGroupDB::load_impl(const std::string& filename)
 {
-    std::ifstream in(filename);
-    if (!in)
-        throw std::runtime_error("Failed to open spacegroups.dat");
+   std::ifstream in(filename);
+   if (!in)
+       throw std::runtime_error("Failed to open spacegroups.dat");
 
-    groups_.clear();
-    number_index_.clear();
+   groups_.clear();
+   number_index_.clear();
 
-    while (true) {
-        SpaceGroup sg;
+   while (true) 
+   {
+      SpaceGroup sg;
 
-        if (!(in >> sg.name))
-            break; // EOF
+      if (!(in >> sg.name))
+         break; // EOF
 
-        in >> sg.number;
-        in >> sg.num_ops;
+      in >> sg.number;
+      in >> sg.num_ops;
 
-        sg.ops.resize(sg.num_ops);
+      sg.ops.resize(sg.num_ops);
 
-        for (int op = 0; op < sg.num_ops; ++op) {
-            for (int row = 0; row < 3; ++row) {
-                in >> sg.ops[op].R[row][0]
-                   >> sg.ops[op].R[row][1]
-                   >> sg.ops[op].R[row][2]
-                   >> sg.ops[op].t[row];
-            }
-        }
+      for (int op = 0; op < sg.num_ops; ++op) 
+      {
+         for (int row = 0; row < 3; ++row) 
+         {
+             in >> sg.ops[op].R[row][0]
+                >> sg.ops[op].R[row][1]
+                >> sg.ops[op].R[row][2]
+                >> sg.ops[op].t[row];
+         }
+      }
 
-        groups_.push_back(std::move(sg));
-    }
+      sg.num_centering = compute_centering_points(sg.ops);
+      sg.num_ops_primitive = sg.num_ops * sg.num_centering;
 
-    for (const auto& sg : groups_) {
-        number_index_[sg.number].push_back(&sg);
-    }
+      groups_.push_back(std::move(sg));
+   }
 
-    loaded_ = true;
+   for (const auto& sg : groups_) 
+   {
+      number_index_[sg.number].push_back(&sg);
+      name_index_[sg.name].push_back(&sg);
+   }
+
+   loaded_ = true;
 }
 
 
@@ -184,6 +248,37 @@ const std::vector<const SpaceGroup*>& SpaceGroupDB::by_number(int number) const
     auto it = number_index_.find(number);
     return (it != number_index_.end()) ? it->second : empty;
 }
+
+/*******************************************
+ *                                         *
+ *         SpaceGroupDB::by_name           *
+ *                                         *
+ *******************************************/
+ /**
+ * @brief Retrieve space groups by Hermann–Mauguin symbol.
+ *
+ * Returns all space-group entries whose Hermann–Mauguin name exactly
+ * matches the provided string. Multiple entries may be returned for a
+ * given name due to different settings or origin conventions (e.g.,
+ * "R3:H" and "R3:R").
+ *
+ * The lookup is an exact string match and does not perform any
+ * normalization or alias resolution. If no matching space group is
+ * found, an empty vector is returned.
+ *
+ * @param name Hermann–Mauguin space-group symbol.
+ *
+ * @return Vector of pointers to matching SpaceGroup objects.
+ *         The returned pointers remain valid for the lifetime of the
+ *         database. If no matches are found, an empty vector is returned.
+ */
+const std::vector<const SpaceGroup*>& SpaceGroupDB::by_name(const std::string& name) const
+{
+    static const std::vector<const SpaceGroup*> empty;
+    auto it = name_index_.find(name);
+    return (it != name_index_.end()) ? it->second : empty;
+}
+
 
 
 /*******************************************

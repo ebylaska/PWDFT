@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "Symmetry.hpp"
 
 namespace pwdft {
 
@@ -161,6 +162,21 @@ class Control2 {
    
    bool psingle_mu = false;
 
+   // symmetry stuff
+
+   // --- symmetry state ---
+   bool psymmetry_valid = false;
+
+   // NEW: metadata-only symmetry from RTDB
+   nlohmann::json psymmetry_meta;
+
+   // NEW: whether full symmetry operators are materialized
+   bool psymmetry_full = false;
+
+   // Existing
+   pwdft::Symmetry psymmetry;
+
+
 public:
    int version = 3;
 
@@ -177,6 +193,9 @@ public:
    std::string permanent_dir_str,scratch_dir_str;
  
    // Access functions
+   const pwdft::Symmetry& symmetry() const { return psymmetry; }
+   bool has_symmetry() const { return psymmetry_valid; }
+   
    double * unita_ptr() { return punita; }
    double unita(const int i, const int j) { return punita[i + j * 3]; }
    double unita1d(const int ii) { return punita[ii]; }

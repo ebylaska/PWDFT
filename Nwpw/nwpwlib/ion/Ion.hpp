@@ -512,6 +512,7 @@ public:
 
    
    std::string print_symmetry_group();
+   std::string print_symmetry_group(std::string);
 
 
 };

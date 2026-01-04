@@ -295,7 +295,8 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
       std::cout << std::endl;
 
       std::cout << std::endl;
-      std::cout << myion.print_symmetry_group();
+      //std::cout << myion.print_symmetry_group();
+      std::cout << myion.print_symmetry_group(rtdbstring);
 
       std::cout << mypsp.myefield->shortprint_efield();
       std::cout << mycoulomb12.shortprint_dielectric();

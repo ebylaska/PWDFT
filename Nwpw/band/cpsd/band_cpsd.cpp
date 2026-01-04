@@ -279,7 +279,8 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
                 << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
       std::cout << std::endl;
-      std::cout << myion.print_symmetry_group();
+      //std::cout << myion.print_symmetry_group();
+      std::cout << myion.print_symmetry_group(rtdbstring);
 
       if (control.geometry_optimize())
          std::cout << std::endl << myion.print_constraints(0);

@@ -291,7 +291,8 @@ int pspw_bomd(MPI_Comm comm_world0,std::string &rtdbstring,std::ostream &coutput
              << " )" << std::endl;
 
      coutput << std::endl;
-     coutput << myion.print_symmetry_group();
+     //coutput << myion.print_symmetry_group();
+     coutput << myion.print_symmetry_group(rtdbstring);
      coutput << mypsp.myefield->shortprint_efield();
      coutput << mycoulomb12.shortprint_dielectric();
  

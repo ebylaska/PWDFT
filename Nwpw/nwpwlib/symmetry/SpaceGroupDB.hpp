@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <mutex>
 
+
 namespace pwdft {
 
 /**
@@ -28,6 +29,8 @@ struct SpaceGroup {
     std::string name;          ///< Hermann–Mauguin symbol
     int number;                ///< ITA space-group number
     int num_ops;               ///< Number of symmetry operations
+    int num_centering;         ///< Number of centering lattice points
+    int num_ops_primitive;     ///< Expected primitive-cell operator count
     std::vector<SymOp> ops;    ///< Symmetry operators
 };
 
@@ -52,6 +55,9 @@ public:
     /** Retrieve space groups by ITA number. */
     const std::vector<const SpaceGroup*>& by_number(int number) const;
 
+    /** Retrieve space groups by Hermann–Mauguin name. */
+    const std::vector<const SpaceGroup*>& by_name(const std::string& name) const;
+
     /** Number of loaded space groups. */
     size_t size() const;
 
@@ -68,6 +74,8 @@ private:
 
     std::vector<SpaceGroup> groups_;
     std::unordered_map<int, std::vector<const SpaceGroup*>> number_index_;
+    std::unordered_map<std::string, std::vector<const SpaceGroup*>> name_index_;
+
 };
 
 /**

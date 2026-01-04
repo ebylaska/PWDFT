@@ -1724,5 +1724,30 @@ std::complex<double> util_zdotc(int n,
 }
 
 
+/**************************************
+ *                                    *
+ *             util_is_integer        *
+ *                                    *
+ **************************************/
+bool util_is_integer(const std::string& s)
+{
+    if (s.empty()) return false;
+
+    size_t i = 0;
+    if (s[0] == '+' || s[0] == '-')
+        i = 1;
+
+    if (i == s.size()) return false; // string was only "+" or "-"
+
+    for (; i < s.size(); ++i) {
+        if (!std::isdigit(static_cast<unsigned char>(s[i])))
+            return false;
+    }
+
+    return true;
+}
+
+
+
 
 } // namespace pwdft

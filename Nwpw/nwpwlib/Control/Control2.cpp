@@ -134,6 +134,43 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 {
    myrtdbstring = rtdbstring;
    json rtdbjson = json::parse(rtdbstring);
+
+
+   // =====================================================
+   // Load resolved symmetry (authoritative, metadata-first)
+   // =====================================================
+   psymmetry_valid = false;
+
+   if (rtdbjson.contains("effective_symmetry"))
+   {
+       const auto& es = rtdbjson["effective_symmetry"];
+ 
+       // Always load metadata
+       psymmetry_meta = es;   // json member or lightweight struct
+       psymmetry_valid = true;
+ 
+       // Only construct Symmetry if operators are stored or required
+       bool have_ops = es.value("store_ops", false) && es.contains("ops");
+ 
+       if (have_ops)
+       {
+           try
+           {
+              psymmetry = pwdft::Symmetry::from_json(es);
+              psymmetry_full = true;
+           }
+           catch (const std::exception& e)
+           {
+              throw std::runtime_error( std::string("Control2: failed to load symmetry ops: ") + e.what());
+           }
+       }
+       else
+       {
+           psymmetry_full = false;
+       }
+   }
+
+
  
    int np = np0;
    bool is_cpmd;

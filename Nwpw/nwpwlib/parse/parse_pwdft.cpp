@@ -4,6 +4,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cctype>
+#include <optional>
+#include <cstdlib>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -66,6 +69,19 @@ json periodic_table_Z = json::parse(
     "\"Am\" : 95, \"Cm\" : 96, \"Bk\" : 97, \"Cf\" : 98, \"Es\" : 99, \"Fm\" : "
     "100, \"Md\" : 101, \"No\" : 102, \"Lr\" : 103, \"Rf\" : 104, \"Ha\" : "
     "105, \"Sg\" : 106, \"Bh\" : 107, \"Hs\" : 108, \"Mt\" : 109 }");
+
+
+
+
+static bool is_integer(const std::string& s)
+{
+    if (s.empty()) return false;
+    char* end = nullptr;
+    std::strtol(s.c_str(), &end, 10);
+    return (*end == '\0');
+}
+
+
 
 /**************************************************
  *                                                *
@@ -201,6 +217,14 @@ static json parse_geometry(json geom, int *curptr,
   std::vector<double> charges;
   ++cur;
 
+  bool symmetry_specified = false;
+  bool symmetry_primitive = false;
+  int symmetry_group_number = -1;
+  int symmetry_group_setting = 0;
+  double symmetry_tolerance = 1e-2;;
+  std::optional<std::string> symmetry_group_name;
+
+
   int nion = 0;
   double mm;
   std::string line;
@@ -304,8 +328,33 @@ static json parse_geometry(json geom, int *curptr,
 
     }
 
+    // read the symmetry  [SYMMETRY [group] <string group_name> [print] [tol <real tol default 1d-2>]]
+    //[SYMMETRY [group] <string group_name>|<integer group number>  [setting <integer setting>] [print] [tol <real tol default 1d-2>]] [primitive|conventional]
+    //symmetry Ci
+    else if (mystring_contains(mystring_lowercase(line), "symmetry")) {
+       symmetry_specified = true;
+       ss = mystring_split0(line);
+
+       // symmetry Ci
+       if (ss.size() >= 2) { symmetry_group_name = ss[1]; }
+
+       // symmetry 225
+       if (ss.size() >= 2 && is_integer(ss[1])) { symmetry_group_number = std::stoi(ss[1]); }
+
+       // optional: setting
+       if (mystring_contains(line, "setting")) { symmetry_group_setting = std::stoi(mystring_split0(mystring_split(line, "setting")[1])[0]); }
+
+       // optional: tolerance
+       if (mystring_contains(line, "tol")) { symmetry_tolerance = std::stod(mystring_split0(mystring_split(line, "tol")[1])[0]); }
+
+       if (mystring_contains(line, "primitive"))    { symmetry_primitive = true; }
+       if (mystring_contains(line, "conventional")) { symmetry_primitive = false; }
+    }
+
+
     // read the geometry
-    else if (mystring_trim(line).size() > 1) {
+    else if (mystring_trim(line).size() > 1) 
+    {
 
       ss = mystring_split0(lines[cur]);
       symbols.push_back(mystring_capitalize(ss[0]));
@@ -402,11 +451,13 @@ static json parse_geometry(json geom, int *curptr,
       ++nion;
     }
 
+
     ++cur;
-    if (mystring_contains(mystring_lowercase(lines[cur]), "end")) {
-      --endcount;
-      if (endcount > 0)
-        ++cur;
+    if (mystring_contains(mystring_lowercase(lines[cur]), "end")) 
+    {
+       --endcount;
+       if (endcount > 0)
+          ++cur;
     }
   }
 
@@ -446,6 +497,24 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["is_surface"] = is_surface;
   geomjson["fractional"] = fractional;
   geomjson["twodfractional"] = twodfractional;
+
+  if (symmetry_specified) 
+  {
+     geomjson["symmetry"]["specified"] = true;
+     if (symmetry_group_name.has_value())
+       geomjson["symmetry"]["group_name"] = *symmetry_group_name;
+     if (symmetry_group_number > 0)
+       geomjson["symmetry"]["group_number"] = symmetry_group_number;
+
+     geomjson["symmetry"]["setting"] = symmetry_group_setting;
+     geomjson["symmetry"]["tolerance"] = symmetry_tolerance;
+     geomjson["symmetry"]["primitive"] = symmetry_primitive;
+  } 
+  else 
+  {
+     geomjson["symmetry"]["specified"] = false;
+  }
+
 
   *curptr = cur;
 
