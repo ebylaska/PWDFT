@@ -15,7 +15,7 @@ class Brillouin {
 
 
 public:
-   int nbrillouin;
+   int nbrillouin, nbrillouin0;
    double *weight;
    double *kvector, *ksvector;
 

@@ -42,10 +42,40 @@ using json = nlohmann::json;
 
 #include "Symmetry.hpp"
 
+#include "apply_kpoint_symmetry_pruning.hpp"
 
 namespace pwdft {
 
 
+/**************************************************
+ *                                                *
+ *                 invert_3x3                     *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Invert a 3×3 matrix.
+ *
+ * Computes the inverse of a 3×3 matrix using the analytic adjugate /
+ * determinant formula. The matrix is assumed to be stored in
+ * row-major order:
+ *
+ *     M = | a b c |
+ *         | d e f |
+ *         | g h i |
+ *
+ * This routine is primarily intended for lattice and reciprocal-lattice
+ * transformations, where numerical stability and determinism are required.
+ *
+ * @param M     Input 3×3 matrix (row-major).
+ * @param Minv  Output 3×3 inverse matrix (row-major).
+ *
+ * @throws std::runtime_error if the matrix is singular or nearly singular
+ *         (|det| < 1e-14).
+ *
+ * @note This function performs no pivoting and assumes a well-conditioned
+ *       lattice matrix. Callers should ensure that `M` represents a valid
+ *       simulation cell or metric tensor.
+ */
 static void invert_3x3(const double M[9], double Minv[9])
 {
     const double a = M[0], b = M[1], c = M[2];
@@ -76,7 +106,54 @@ static void invert_3x3(const double M[9], double Minv[9])
 }
 
 
-
+/**************************************************
+ *                                                *
+ *              make_primtive_cell                *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Convert a centered conventional cell into a primitive cell.
+ *
+ * Constructs a primitive lattice and corresponding atomic coordinates
+ * from a centered space-group description. This routine is only applied
+ * when a space group with centering (I, F, etc.) is detected and the user
+ * has explicitly requested a primitive cell.
+ *
+ * The procedure:
+ *  1. Identifies centering translations from identity-rotation symmetry
+ *     operators.
+ *  2. Constructs primitive lattice vectors using standard International
+ *     Tables conventions (currently I- and F-centering).
+ *  3. Rewrites the lattice vectors in-place.
+ *  4. Transforms Cartesian coordinates into the primitive basis and
+ *     wraps them into the unit cell.
+ *
+ * This transformation is *structural*, not merely cosmetic: it reduces
+ * the simulation cell volume and implicitly changes the Brillouin zone.
+ * Downstream k-point generation and symmetry pruning must therefore be
+ * performed **after** this routine is applied.
+ *
+ * @param sym        Effective space-group symmetry.
+ * @param unita      On input: 3×3 lattice matrix of the conventional cell
+ *                   (row-major).
+ *                   On output: 3×3 lattice matrix of the primitive cell.
+ * @param coords_xyz Atomic coordinates (Cartesian, flat 3N array).
+ *                   On output, coordinates are expressed in the primitive
+ *                   lattice basis and wrapped into [0,1).
+ *
+ * @note
+ *  - This routine currently supports I- and F-centered lattices.
+ *    Other centerings (A, B, C, R) may be added later.
+ *  - If the symmetry has no centering (P-lattice) or is not a space group,
+ *    the function returns without modification.
+ *  - No attempt is made to re-identify symmetry after reduction; the
+ *    resulting primitive cell is assumed consistent with the original
+ *    space-group intent.
+ *
+ * @warning
+ *  Primitive-cell construction changes reciprocal-space topology.
+ *  Any cached k-points or Brillouin-zone data must be regenerated.
+ */
 static void make_primitive_cell(const Symmetry& sym, double unita[9], std::vector<double>& coords_xyz)
 {
     // Only meaningful for space groups with centering
@@ -193,6 +270,46 @@ static void make_primitive_cell(const Symmetry& sym, double unita[9], std::vecto
 
 
 
+/**************************************************
+ *                                                *
+ *              symmetry_fingerprint              *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Construct a deterministic fingerprint for an effective symmetry state.
+ *
+ * Builds a compact, deterministic string representation capturing the
+ * *structural identity* of the resolved symmetry as seen by downstream physics.
+ * The fingerprint is intended for:
+ *
+ *   - Restart consistency checks
+ *   - Cache validation
+ *   - Debugging and provenance tracking
+ *
+ * The fingerprint encodes:
+ *   - Symmetry name (e.g. space-group symbol or "identity")
+ *   - Group order
+ *   - Whether a primitive cell was requested
+ *   - Translation interpretation (e.g. "fractional")
+ *   - The effective lattice matrix (`unita`)
+ *
+ * No symmetry operators are serialized; the fingerprint assumes that
+ * symmetry operators are deterministically reconstructible from the
+ * symmetry name and settings.
+ *
+ * @param sym                  Resolved symmetry object.
+ * @param unita                Effective 3×3 lattice matrix (row-major).
+ * @param primitive_requested  Whether primitive-cell reduction was requested.
+ * @param translation_type     Interpretation of symmetry translations
+ *                             (e.g. "fractional" or "cartesian").
+ *
+ * @return A deterministic string fingerprint uniquely identifying the
+ *         effective symmetry + lattice state.
+ *
+ * @note This function is intentionally inexpensive and human-readable.
+ *       Callers may hash the returned string if a compact identifier is needed.
+ *       This is not intended to be a cryptographic hash.
+ */
 static std::string symmetry_fingerprint(const pwdft::Symmetry& sym,
                                         const double unita[9],
                                         bool primitive_requested,
@@ -231,9 +348,29 @@ static std::string get_geomname(const json& rtdbjson)
  *               read_unita_3x3                   *
  *                                                *
  **************************************************/
-// ------------------------------
-// helper: read 3x3 unita
-// ------------------------------
+/**
+ * @brief Read a 3×3 lattice matrix from a flat JSON array.
+ *
+ * Deserializes a 3×3 lattice matrix (`unita`) from a JSON array of at least
+ * nine numeric elements stored in row-major order:
+ *
+ *   [ a11, a12, a13,
+ *     a21, a22, a23,
+ *     a31, a32, a33 ]
+ *
+ * This function performs only structural validation and numeric conversion.
+ * No assumptions are made about units, orthogonality, centering, or symmetry.
+ *
+ * @param[in]  j      JSON array containing the lattice matrix.
+ * @param[out] unita  Output 3×3 lattice matrix (row-major).
+ *
+ * @return `true` if the JSON array contained at least nine numeric values
+ *         and the matrix was successfully read; `false` otherwise.
+ *
+ * @note This helper is intentionally low-level and side-effect free.
+ *       Higher-level logic (primitive conversion, symmetry resolution,
+ *       restart policy) must be handled by the caller.
+ */
 static bool read_unita_3x3(const json& j, double unita[9])
 {
    if (!j.is_array() || j.size() < 9) return false;
@@ -250,6 +387,25 @@ static bool read_unita_3x3(const json& j, double unita[9])
  *              write_unita_3x3                   *
  *                                                *
  **************************************************/
+/**
+ * @brief Write a 3×3 lattice matrix into JSON as a flat 9-element array.
+ *
+ * Serializes a 3×3 lattice matrix (unita) into a JSON array of length 9
+ * using row-major ordering:
+ *
+ *   [ a11, a12, a13,
+ *     a21, a22, a23,
+ *     a31, a32, a33 ]
+ *
+ * This format is used consistently in the RTDB for simulation cells,
+ * effective symmetry metadata, and restart consistency.
+ *
+ * @param[out] j     JSON array to receive the lattice matrix (overwritten)
+ * @param[in]  unita Pointer to 9 doubles storing the lattice matrix
+ *
+ * @note No validation or unit conversion is performed.
+ * @note Interpretation (Cartesian vs fractional basis) is handled elsewhere.
+ */
 static void write_unita_3x3(json& j, const double unita[9])
 {
    j = json::array();
@@ -261,9 +417,28 @@ static void write_unita_3x3(json& j, const double unita[9])
  *            read_symbols_coords                 *
  *                                                *
  **************************************************/
-// --------------------------------------
-// helper: read coords (Nx3) and symbols
-// --------------------------------------
+/**
+ * @brief Read atomic symbols and Cartesian coordinates from a geometry JSON block.
+ *
+ * Extracts atomic symbols and Cartesian coordinates from a geometry object.
+ * Coordinates may be stored either as a flat 3N array or as an Nx3 array.
+ *
+ * Supported coordinate formats:
+ *   - Flat array: [x1,y1,z1,x2,y2,z2,...]
+ *   - Matrix form: [[x1,y1,z1],[x2,y2,z2],...]
+ *
+ * Symbols are optional; if absent, only coordinates are read.
+ * If coordinates are missing or malformed, coords_xyz will be empty.
+ *
+ * @param[in]  geomjson   Geometry JSON object
+ * @param[out] symbols    Atomic symbols (cleared and refilled)
+ * @param[out] coords_xyz Flat Cartesian coordinate array (3N)
+ *
+ * @throws std::runtime_error if flat coordinate array length is not divisible by 3
+ *
+ * @note No unit conversion is performed.
+ * @note Fractional vs Cartesian interpretation is handled elsewhere.
+ */
 static void read_symbols_and_coords(const json& geomjson,
                                     std::vector<std::string>& symbols,
                                     std::vector<double>& coords_xyz)
@@ -312,9 +487,21 @@ static void read_symbols_and_coords(const json& geomjson,
  *              write_coords_xyz                  *
  *                                                *
  **************************************************/
-// --------------------------------------
-// helper: write coords (Nx3) flat 3N
-// --------------------------------------
+/**
+ * @brief Write Cartesian coordinates into RTDB JSON as an Nx3 array.
+ *
+ * Converts a flat 3N vector of Cartesian coordinates into a JSON array
+ * of N rows, each containing three values `[x, y, z]`.
+ *
+ * This helper is used when recording a snapshot of the coordinates that
+ * were used during symmetry resolution. The stored coordinates are
+ * informational only (for restart consistency and debugging) and are
+ * not interpreted as the active runtime geometry.
+ *
+ * @param[out] out_coords   JSON array to receive the Nx3 coordinates.
+ * @param[in]  coords_xyz  Flat vector of length 3N containing Cartesian
+ *                          coordinates ordered as (x₀,y₀,z₀,x₁,y₁,z₁,...).
+ */
 static void write_coords_xyz(json& out_coords, const std::vector<double>& coords_xyz)
 {
    out_coords = json::array();
@@ -329,15 +516,6 @@ static void write_coords_xyz(json& out_coords, const std::vector<double>& coords
    }
 }
 
-// ======================================================
-// PLACEHOLDER hooks (you implement / wire to Symmetry)
-// ======================================================
-
-
-
-
-
-
 
 // ======================================================
 // Main function
@@ -347,7 +525,41 @@ static void write_coords_xyz(json& out_coords, const std::vector<double>& coords
  *          resolve_symmetry_and_cell             *
  *                                                *
  **************************************************/
-//void resolve_symmetry_and_cell(json& rtdbjson)
+/**
+ * @brief Resolve symmetry intent and simulation cell into an authoritative
+ *        effective symmetry description.
+ *
+ * This routine is the single entry point for converting user intent
+ * (geometry symmetry directives, autosym flags, primitive requests)
+ * into an immutable, self-consistent symmetry description stored in
+ * `rtdb["effective_symmetry"]`.
+ *
+ * Responsibilities:
+ *  - Determine the authoritative lattice (`unita`) with clear precedence:
+ *      1. nwpw.simulation_cell.unita
+ *      2. geometry.unita
+ *  - Interpret symmetry intent from the geometry block (specified vs autosym).
+ *  - Construct a concrete Symmetry object (identity, point group, or space group).
+ *  - Optionally convert the lattice and coordinates to a primitive cell.
+ *  - Freeze the resolved symmetry into `effective_symmetry` for downstream use.
+ *  - Ensure the simulation cell seen by physics matches the effective symmetry.
+ *  - Apply symmetry-based pruning of Monkhorst–Pack k-points.
+ *
+ * Design principles:
+ *  - Symmetry is resolved exactly once and never re-interpreted downstream.
+ *  - Restart safety: previously resolved symmetry may be reused if intent
+ *    has not changed.
+ *  - Operators are not stored in RTDB; symmetry is reconstructed deterministically
+ *    from identifiers (name / number / fingerprint).
+ *  - Downstream physics must treat `effective_symmetry` as authoritative.
+ *
+ * @param rtdbstring  Serialized RTDB JSON string.
+ * @return Updated RTDB JSON string with resolved effective symmetry and
+ *         symmetry-pruned Brillouin zone.
+ *
+ * @throws std::runtime_error if required geometry or lattice information
+ *         is missing or inconsistent.
+ */
 std::string resolve_symmetry_and_cell(std::string rtdbstring)
 {
    auto rtdbjson = json::parse(rtdbstring);
@@ -570,7 +782,19 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
 
 
-   return rtdbjson.dump();
+   // Symmetry pruning of kpoints
+   bool prune_kpoints = true; // future option?
+
+   // NOTE:
+   // K-point symmetry pruning is applied after effective symmetry and
+   // simulation_cell are finalized. Downstream physics must not re-interpret symmetry.
+
+   if (prune_kpoints)
+      return apply_kpoint_symmetry_pruning(rtdbjson.dump());
+   else
+      return rtdbjson.dump();
+
+   //return rtdbjson.dump();
 }
 
 

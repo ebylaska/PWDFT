@@ -42,6 +42,82 @@ using json = nlohmann::json;
 
 namespace pwdft {
 
+
+/**
+ * @brief Plane-wave DFT band-structure calculation using a Grassmann/Stiefel
+ *        manifold minimization with fractional occupations.
+ *
+ * @details
+ * This module implements a periodic plane-wave DFT band calculation using
+ * a bundled Grassmann/Stiefel manifold formulation for Kohn–Sham orbital
+ * optimization. The implementation is written in C++ and is designed to
+ * generalize and extend the original NWChem NWPW band infrastructure.
+ *
+ * Key features of this implementation include:
+ *
+ * - Explicit Grassmann/Stiefel manifold optimization of Kohn–Sham orbitals,
+ *   avoiding repeated full diagonalizations.
+ * - Support for fractional occupations and finite-temperature smearing
+ *   (Fermi–Dirac or Gaussian), treated consistently at each Brillouin-zone
+ *   k-point.
+ * - Symmetry-reduced Monkhorst–Pack Brillouin-zone sampling with proper
+ *   weight handling.
+ * - Decoupling of orbital minimization from occupation updates, allowing
+ *   controlled SCF behavior for metallic and near-metallic systems.
+ *
+ * ### Relationship to NWChem
+ *
+ * This code is **not a claim that NWChem is “incorrect.”**
+ * Rather:
+ *
+ * - Legacy NWChem band calculations were developed under different algorithmic
+ *   assumptions (primarily diagonalization-based SCF workflows).
+ * - Fractional occupations, finite-temperature ensembles, and manifold-based
+ *   orbital minimization were historically treated in a more limited or
+ *   task-specific manner.
+ * - This PWDFT implementation makes the ensemble interpretation explicit and
+ *   central to the algorithm, which is essential for metals and systems with
+ *   dense band crossings.
+ *
+ * As a result, numerical behavior (e.g., Fermi level evolution, convergence
+ * pathways, and free-energy minimization) may differ from legacy NWChem runs
+ * even when using the same pseudopotentials, exchange–correlation functional,
+ * and k-point meshes.
+ *
+ * ### Physical interpretation
+ *
+ * - Reported energies correspond to the **Kohn–Sham free energy** when
+ *   smearing is enabled.
+ * - Orbital eigenvalues are reported per k-point after convergence of the
+ *   Grassmann minimization at fixed occupations.
+ * - Occupations are initialized from prior wavefunction files and may be
+ *   updated only through explicit smearing logic.
+ *
+ * ### Intended use
+ *
+ * This implementation is intended for:
+ * - Metallic and semi-metallic systems
+ * - High-symmetry periodic solids
+ * - Band-structure analysis where diagonalization-free methods are preferred
+ * - Methodological development beyond traditional SCF formulations
+ *
+ * ### Authors
+ * Eric J. Bylaska
+ * Raymundo Hernández Esparza
+ * Duo Song
+ * David H. Bross
+ * et al.
+ *
+ * ### Version
+ * 7.00 (07/19/2024)
+ *
+ * @note
+ * This code is part of the ongoing PWDFT/NWChemEx evolution and is designed
+ * to coexist with, not replace, legacy NWChem workflows.
+ */
+
+
+
 /******************************************
  *                                        *
  *            band_minimizer              *

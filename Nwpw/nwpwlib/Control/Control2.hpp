@@ -149,6 +149,7 @@ class Control2 {
 
    // Brillouin variables 
    int pnbrillouin=0;
+   int pnbrillouin0=0;
 
    //scf extra scf
    bool pscf_extra_rotate = false;

@@ -34,11 +34,32 @@ Brillouin::Brillouin(std::string rtdbstring,  Lattice *mylattice, Control2& cont
    bool nobrillread = false;
    if (brillouinjson["kvectors"].is_null())
    {
-       nbrillouin = 1;
-       nobrillread = true;
+      nbrillouin  = 1;
+      nbrillouin0 = 1;
+      nobrillread = true;
    }
    else
-      nbrillouin = brillouinjson["kvectors"].size();
+   {
+      // Effective list we actually use
+      nbrillouin  = static_cast<int>(brillouinjson["kvectors"].size());
+ 
+      // Default: no reduction info known
+      nbrillouin0 = nbrillouin;
+ 
+      // Optional metadata (preferred)
+      if (brillouinjson.contains("num_kpoints_original") &&
+          !brillouinjson["num_kpoints_original"].is_null())
+          nbrillouin0 = brillouinjson["num_kpoints_original"].get<int>();
+ 
+      if (brillouinjson.contains("num_kpoints_effective") &&
+          !brillouinjson["num_kpoints_effective"].is_null())
+      {
+          int neff = brillouinjson["num_kpoints_effective"].get<int>();
+          // sanity: if it disagrees with kvectors.size(), kvectors wins
+          // (but keep the check for debugging)
+          // if (neff != nbrillouin) ... optional warning
+      }
+   }
 
    weight   = new double[nbrillouin];
    kvector  = new double[3*nbrillouin];
@@ -46,10 +67,10 @@ Brillouin::Brillouin(std::string rtdbstring,  Lattice *mylattice, Control2& cont
 
    if (nobrillread)
    {
-       kvector[0] = ksvector[0] = 0.0;
-       kvector[1] = ksvector[1] = 0.0;
-       kvector[2] = ksvector[2] = 0.0;
-       weight[0]  = 1.0;
+      kvector[0] = ksvector[0] = 0.0;
+      kvector[1] = ksvector[1] = 0.0;
+      kvector[2] = ksvector[2] = 0.0;
+      weight[0]  = 1.0;
    }
    else
       for (auto nb=0; nb<nbrillouin; ++nb) 
@@ -85,7 +106,17 @@ std::string Brillouin::print_zone()
    std::ios init(NULL);
    init.copyfmt(stream);
 
-   stream << "      number of zone points = " << Ifmt(3) << nbrillouin << std::endl;
+   //stream << "      number of zone points = " << Ifmt(3) << nbrillouin << std::endl;
+   //stream << "      number of zone points = " << Ifmt(3) << nbrillouin << " (reduced from " << nbrillouin0 << " zone points without symmetry)" << std::endl;
+
+   if (nbrillouin0 != nbrillouin)
+      stream << "      number of zone points = " << Ifmt(3) << nbrillouin
+             << " (reduced from " << nbrillouin0 << " zone points without symmetry)\n";
+   else
+      stream << "      number of zone points = " << Ifmt(3) << nbrillouin
+             << " (no symmetry reduction)\n";
+
+
    for (auto nb=0; nb<nbrillouin; ++nb)
    {
       stream << "      weight = " << Ffmt(8,3) << weight[nb]
