@@ -73,7 +73,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
  
-   for (ii = 0; ii < 70; ++ii)
+   for (ii = 0; ii < 80; ++ii)
       E[ii] = 0.0;
  
    if (myparallel.is_master())

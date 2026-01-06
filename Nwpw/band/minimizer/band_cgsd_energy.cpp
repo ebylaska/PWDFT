@@ -61,7 +61,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
  
    bool stalled = false;
    int ne[2],ispin,nion;
-   double E[70],total_energy,deltae,deltae_old,deltac,deltasmear,deltasmear_old;
+   double E[80],total_energy,deltae,deltae_old,deltac,deltasmear,deltasmear_old;
  
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);
@@ -85,7 +85,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
 
    bool extra_rotate = control.scf_extra_rotate(); 
  
-   for (auto ii=0; ii<70; ++ii)
+   for (auto ii=0; ii<80; ++ii)
       E[ii] = 0.0;
  
    if (oprint) 

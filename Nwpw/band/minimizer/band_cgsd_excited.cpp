@@ -31,7 +31,7 @@ void band_cgsd_excited(Control2 &control, Solid &mysolid, bool doprint, std::ost
    Ion *myion = mysolid.myion;
  
    bool stalled = false;
-   double E[70],total_energy,deltae,deltae_old,deltac;
+   double E[80],total_energy,deltae,deltae_old,deltac;
  
    int it_in   = control.loop(0);
    int it_out  = control.loop(1);

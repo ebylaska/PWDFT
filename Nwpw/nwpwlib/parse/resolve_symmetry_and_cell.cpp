@@ -49,6 +49,46 @@ namespace pwdft {
 
 /**************************************************
  *                                                *
+ *                 read_bool_flag                 *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Read a boolean flag from JSON.
+ *
+ * Accepts:
+ *  - boolean values (true / false)
+ *  - integer values (0 = false, nonzero = true)
+ *
+ * If the key does not exist or has an unsupported type,
+ * the default value is returned.
+ *
+ * @param j        JSON object
+ * @param key      Key to read
+ * @param defval   Default value if key is missing or invalid
+ * @return         Parsed boolean value
+ */
+static bool read_bool_flag(const json& j,
+                           const std::string& key,
+                           bool defval = false)
+{
+    if (!j.contains(key))
+        return defval;
+
+    const auto& v = j.at(key);
+
+    if (v.is_boolean())
+        return v.get<bool>();
+
+    if (v.is_number_integer())
+        return (v.get<int>() != 0);
+
+    return defval;
+}
+
+
+
+/**************************************************
+ *                                                *
  *                 invert_3x3                     *
  *                                                *
  **************************************************/
@@ -632,9 +672,11 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    }
 
    // ---- autosym flag (you said you already store geomjson["autosym"])
-   bool autosym = false;
-   if (geomjson.contains("autosym") && geomjson["autosym"].is_boolean())
-      autosym = geomjson["autosym"].get<bool>();
+   bool autosym   = read_bool_flag(geomjson, "autosym");
+   bool autospace = read_bool_flag(geomjson, "autospace");
+   if (autospace && !have_coords)
+     autospace = false;  // degrade safely
+
 
    // ---- restart policy knobs (keep simple; you can refine)
    const bool have_effective = (rtdbjson.contains("effective_symmetry") && rtdbjson["effective_symmetry"].is_object());
@@ -686,16 +728,24 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
         sym = pwdft::Symmetry(); // C1
        }
    }
+   else if (autospace && have_coords)
+   {
+      // NOT IMPLEMENTED YET — placeholder
+      // later: sym = detect_symmetry(...)
+      sym = pwdft::Symmetry();
+      sym_source = "autospace_failed";
+   }
    else if (autosym && have_coords)
    {
-       // NOT IMPLEMENTED YET — placeholder
-       // later: sym = detect_symmetry(...)
-       sym = pwdft::Symmetry();
-       sym_source = "autosym";
+      // NOT IMPLEMENTED YET — placeholder
+      // later: sym = detect_symmetry(...)
+      sym = pwdft::Symmetry();
+      sym_source = "autosym_failed";
    }
    else
    {
-       sym = pwdft::Symmetry(); // identity
+      sym = pwdft::Symmetry(); // identity
+      sym_source = "identity";
    }
 
 

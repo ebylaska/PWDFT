@@ -136,6 +136,7 @@ static json parse_geometry(json geom, int *curptr,
   int center = 1;
   int autoz = 0;
   int autosym = 0;
+  int autospace = 0;
   // double angs_to_au = 1.0/0.52917715;
   double angs_to_au = 1.88972598858;
   double conv = angs_to_au;
@@ -154,6 +155,7 @@ static json parse_geometry(json geom, int *curptr,
                      mystring_contains(mystring_lowercase(ss[1]), "units") ||
                      mystring_contains(mystring_lowercase(ss[1]), "center") ||
                      mystring_contains(mystring_lowercase(ss[1]), "autoz") ||
+                     mystring_contains(mystring_lowercase(ss[1]), "autospace") ||
                      mystring_contains(mystring_lowercase(ss[1]), "autosym");
     if (!nogeomname)
       geometry = ss[1];
@@ -191,6 +193,11 @@ static json parse_geometry(json geom, int *curptr,
   else if (mystring_contains(mystring_lowercase(lines[cur]), "autosym"))
      autosym = 1;
 
+  if (mystring_contains(mystring_lowercase(lines[cur]), "noautospace"))
+     autospace = 0;
+  else if (mystring_contains(mystring_lowercase(lines[cur]), "autospace"))
+     autospace = 1;
+
   if (mystring_contains(mystring_lowercase(lines[cur]),"symmetry_tolerance"))
      geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"symmetry_tolerance")[1]);
 
@@ -202,6 +209,7 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["center"] = center;
   geomjson["autoz"] = autoz;
   geomjson["autosym"] = autosym;
+  geomjson["autospace"] = autospace;
 
   bool is_crystal = false;
   bool is_surface = false;
