@@ -41,6 +41,7 @@
 using json = nlohmann::json;
 
 #include "Symmetry.hpp"
+#include "autospace.hpp"
 
 #include "apply_kpoint_symmetry_pruning.hpp"
 
@@ -648,6 +649,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    int symmetry_group_setting = 0;
    double symmetry_tolerance = 1.0e-6;
    bool symmetry_primitive_requested = false;
+   bool primitive_suggested = false;
 
    if (geomjson.contains("symmetry") && geomjson["symmetry"].is_object())
    {
@@ -730,10 +732,33 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    }
    else if (autospace && have_coords)
    {
-      // NOT IMPLEMENTED YET — placeholder
-      // later: sym = detect_symmetry(...)
-      sym = pwdft::Symmetry();
-      sym_source = "autospace_failed";
+      AutoSpaceResult as = detect_space_group(unita_in, symbols, coords_xyz, symmetry_tolerance);
+ 
+      if (as.success)
+      {
+          if (as.group_number > 0)
+          {
+              sym = pwdft::Symmetry(as.group_number);
+              sym_source = "autospace";
+          }
+          else if (!as.group_name.empty())
+          {
+              sym = pwdft::Symmetry(as.group_name);
+              sym_source = "autospace";
+          }
+          else
+          {
+              sym = pwdft::Symmetry(); // fallback safety
+              sym_source = "autospace_failed";
+          }
+ 
+          // Primitive suggestion is advisory only
+          if (as.primitive_suggested && !symmetry_primitive_requested)
+          {
+              // record suggestion, do NOT apply
+              rtdbjson["effective_symmetry"]["primitive_suggested"] = true;
+          }
+      }
    }
    else if (autosym && have_coords)
    {

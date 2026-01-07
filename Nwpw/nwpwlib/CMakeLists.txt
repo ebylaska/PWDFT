@@ -30,7 +30,10 @@ file(GLOB_RECURSE src_psplib    psp_library/*.hpp  psp_library/*.cpp)
 file(GLOB_RECURSE src_parse     parse/*.hpp parse/*.cpp)
 file(GLOB_RECURSE src_device    device/*.hpp device/*.cpp)
 
+# spglib (space-group detection)
+#file(GLOB src_spglib external/spglib/src/*.c)
 
+#add_compile_options(-Wno-maybe-uninitialized)
 
 
 # create the nwpwlib library
@@ -41,11 +44,20 @@ else()
 add_library(nwpwlib ${src_D3dB} ${src_C3dB} ${src_ion} ${src_symmetry} ${src_brillouin} ${src_efield} ${src_apc} ${src_dipole} ${src_dplot} ${src_aimd_analysis} ${src_thermostats} ${src_xcfunctions} ${src_vdw} ${src_lattice} ${src_Control} ${src_io} ${src_paw_utilities} ${src_utilities} ${src_Parallel} ${src_lapack} ${src_blas} ${src_fftpack} ${src_fextra} ${src_nwpwxc}  ${src_pspgen} ${src_psplib} ${src_parse} ${src_device})
 endif()
 
+
 target_include_directories(nwpwlib
     PUBLIC
         ${PROJECT_BINARY_DIR}    # <-- gives access to NwpwConfig.h
         ${PROJECT_SOURCE_DIR}
 )
+
+#target_compile_options(nwpwlib PRIVATE -Wno-maybe-uninitialized)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wno-maybe-uninitialized)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-uninitialized)
+endif()
+
 
 
 # adding target_include_directories to nwpwlib
@@ -81,4 +93,10 @@ add_subdirectory(ion)
 add_subdirectory(C3dB)
 add_subdirectory(D3dB)
 add_subdirectory(device)
+
+add_subdirectory(external/spglib)
+target_link_libraries(nwpwlib PUBLIC spglib)
+
+
+
 
