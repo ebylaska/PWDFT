@@ -1,0 +1,62 @@
+specfile_path: .distro/spglib.spec
+
+files_to_sync:
+  - src: .distro/
+    dest: ./
+    delete: true
+    filters:
+      - "protect .git*"
+      - "protect sources"
+      - "protect changelog"
+      - "protect gating.yaml"
+      # Temporary fix for
+      - "- *.spec"
+  - .packit.yaml
+
+upstream_package_name: spglib
+downstream_package_name: spglib
+upstream_tag_template: v{version}
+
+targets:
+  - fedora-development-x86_64
+  - fedora-development-aarch64
+  - epel-10-x86_64
+  - epel-10-aarch64
+
+_:
+  - &build_in_packit
+    job: copr_build
+  - &build_in_lecris
+    <<: *build_in_packit
+    owner: lecris
+  - &tests
+    job: tests
+    fmf_path: .distro
+
+jobs:
+  - <<: *build_in_packit
+    trigger: pull_request
+  - <<: *tests
+    trigger: pull_request
+  - <<: *build_in_lecris
+    project: nightly
+    trigger: commit
+    branch: develop
+  - <<: *tests
+    trigger: commit
+    branch: develop
+  - <<: *build_in_lecris
+    project: release
+    trigger: release
+  - job: propose_downstream
+    trigger: release
+    dist_git_branches:
+      - fedora-rawhide
+  - job: koji_build
+    trigger: commit
+    dist_git_branches:
+      - fedora-all
+  - job: bodhi_update
+    trigger: commit
+    dist_git_branches:
+      - fedora-branched

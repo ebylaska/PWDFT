@@ -1,0 +1,146 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      mask-experimental:
+        type: boolean
+        default: true
+        description: Always report experimental test as successful
+
+permissions:
+  contents: read
+
+jobs:
+  toolchain-tests:
+    name: >
+      🖥️ ${{ matrix.os || 'Fedora' }}
+      ${{ !matrix.os && format('+ 🛠️ {0}', matrix.toolchain) || '' }}
+      ${{ matrix.experimental && ' [🧪 Experimental]' || '' }}
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    container: ${{ !matrix.os && 'ghcr.io/lecrisut/dev-env:main' || '' }}
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ gcc, llvm, intel ]
+        include:
+          - os: macos-latest
+            toolchain: macos
+          - os: windows-latest
+            toolchain: windows
+          - os: windows-11-arm
+            toolchain: windows
+    steps:
+      - name: Enable msvc toolchain on windows
+        uses: ilammy/msvc-dev-cmd@v1
+        if: contains(matrix.os, 'windows')
+      # Should be handled by defaults.shell: bash -l {0} and env.TOOLCHAIN: ${{ matrix.toolchain }}
+      # But that approach does not seem to work with run-cmake :/
+      - name: Activate Intel compilers
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          printenv >> $GITHUB_ENV
+          echo $PATH >> $GITHUB_PATH
+        if: matrix.toolchain == 'intel'
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: lukka/get-cmake@latest
+      - name: Run CMake configuration for ${{ matrix.toolchain }} toolchain
+        uses: lukka/run-cmake@v10
+        with:
+          workflowPreset: "${{ matrix.toolchain }}-ci"
+        # Remove VCPKG_ROOT because we do not have it setup, but the action does not fail-safe
+        # https://github.com/lukka/run-cmake/issues/142
+        env:
+          VCPKG_ROOT: ""
+        continue-on-error: ${{ matrix.experimental && inputs.mask-experimental}}
+
+  python-tests:
+    name: >
+      🐍 ${{ matrix.python-version }}
+      ${{ matrix.numpy-runtime && format('+ numpy️{0} +', matrix.numpy-runtime) || '' }}
+      ${{ matrix.experimental && ' [🧪 Experimental]' || '' }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.9", "3.10", "3.x", "3.14t" ]
+        numpy-runtime: [ "" ]
+        pre: [ "" ]
+        include:
+          # Check latest pre-release packages
+          - python-version: "3.x"
+            experimental: true
+            pre: true
+          # Check 1.x numpy. Note 2.x should still be used at build-time
+          - python-version: "3.9"
+            numpy-runtime: "<2.0"
+          - python-version: "3.12"
+            numpy-runtime: "<2.0"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Setup python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.pre || false }}
+      - uses: lukka/get-cmake@latest
+      - name: Install spglib and dependencies
+        run: |
+          pip install -e .[test] ${{ matrix.pre && '--pre' }}
+          # If numpy-runtime (${{ matrix.numpy-runtime }}) is undefined, the following has no effect
+          pip install "numpy${{ matrix.numpy-runtime }}"
+      - name: Test spglib
+        run: pytest
+
+  cmake-version:
+    name: >
+      🔨 CMake ${{ matrix.cmake }}
+      ${{ matrix.experimental && ' [🧪 Experimental]' || '' }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cmake: [ "3.25", "latest", "latestrc" ]
+        include:
+          - cmake: latestrc
+            experimental: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: ${{ matrix.cmake }}
+      - name: Run CMake workflow
+        uses: lukka/run-cmake@v10
+        with:
+          workflowPreset: gcc-ci
+        continue-on-error: ${{ matrix.experimental && inputs.mask-experimental}}
+  sanitizer:
+    name: >
+      🧹 ${{ matrix.sanitizer }} +
+      🛠️ ${{ matrix.toolchain }}
+    runs-on: ubuntu-latest
+    container: ghcr.io/lecrisut/dev-env:main
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ gcc, llvm ]
+        sanitizer: [ address ]
+    env:
+      SPGLIB_SANITIZER: ${{ matrix.sanitizer }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: lukka/get-cmake@latest
+      - name: Run CMake configuration for ${{ matrix.toolchain }} toolchain
+        uses: lukka/run-cmake@v10
+        with:
+          workflowPreset: "${{ matrix.toolchain }}-ci-sanitizer"

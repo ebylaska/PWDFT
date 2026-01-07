@@ -1,0 +1,48 @@
+name: 📘 test-docs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  doc-test:
+    name: Sphinx-${{ matrix.builder }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        builder: [ linkcheck, doctest, html ]
+        include:
+          # Run default html builder with warnings as error
+          - builder: html
+            args: -W
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+      - name: Install the project and docs dependencies
+        run: pip install -e .[docs]
+        # https://bitbucket.org/pybtex-devs/pybtex/issues/169/replace-pkg_resources-with
+      - name: Temporary workaround for pybtex
+        run: pip install setuptools
+      - name: Run sphinx builder ${{ matrix.builder }}
+        run: sphinx-build -b ${{ matrix.builder }} ${{ matrix.args }} ./docs ./docs/_build
+
+  sphinx-apidoc:
+    name: Sphinx-apidoc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+      - name: Run sphinx-apidoc and check for diffs
+        run: |
+          pipx run ./docs/generate-apidoc.py
+          git diff --exit-code

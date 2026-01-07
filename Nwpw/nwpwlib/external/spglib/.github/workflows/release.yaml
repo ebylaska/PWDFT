@@ -1,0 +1,52 @@
+name: 🚀 release
+run-name: Release ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+
+jobs:
+  tests:
+    name: tests
+    uses: ./.github/workflows/step_test.yaml
+  build-wheel:
+    name: build-wheel
+    needs: [ tests ]
+    uses: ./.github/workflows/step_build-wheel.yaml
+  upload_pypi:
+    name: Upload to PyPI repository
+    needs: [ tests, build-wheel ]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/spglib/
+    permissions:
+      id-token: write
+    steps:
+      - name: Get sdist
+        uses: actions/download-artifact@v6
+        with:
+          name: Packages
+          path: dist
+      - name: Get wheels
+        uses: actions/download-artifact@v6
+        with:
+          pattern: cibw-wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+  release:
+    needs: [ upload_pypi ]
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Spglib ${{ github.ref_name }}
+          draft: true
+          prerelease: ${{ contains(github.ref, 'rc') }}
+          generate_release_notes: true

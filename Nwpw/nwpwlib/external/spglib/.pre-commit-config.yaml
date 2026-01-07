@@ -1,0 +1,67 @@
+# Work around for some misconfigured virtualenv
+# https://github.com/pre-commit/pre-commit/issues/1375
+default_language_version:
+  python: python3
+exclude: src\/msg_database.c
+
+fail_fast: false
+repos:
+  - repo: https://github.com/Takishima/cmake-pre-commit-hooks
+    rev: v1.9.6
+    hooks:
+      - id: clang-format
+        additional_dependencies: [ clang-format >= 20 ]
+        args:
+          - '-i'
+      - id: clang-tidy
+        stages: [ manual ]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: check-yaml
+      - id: check-added-large-files
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker
+    rev: v3.6.0
+    hooks:
+      - id: editorconfig-checker
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.7
+    hooks:
+      - id: ruff
+        args: [ "--fix", "--show-fixes" ]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.0
+    hooks:
+    - id: mypy
+      pass_filenames: false
+      additional_dependencies:
+        - types-PyYAML
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-myst
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.35.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-readthedocs
+  - repo: https://github.com/fortran-lang/fprettify
+    rev: v0.3.7
+    hooks:
+      - id: fprettify
+        args: [ '-i', '4' ]
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.4.1"
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli

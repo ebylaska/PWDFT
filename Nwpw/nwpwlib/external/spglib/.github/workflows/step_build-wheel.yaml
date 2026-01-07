@@ -1,0 +1,66 @@
+name: build-wheel
+
+permissions:
+  contents: read
+
+on:
+  # Make it able to be used in other workflows
+  workflow_call:
+    inputs:
+      cibw_build:
+        required: false
+        type: string
+        description: Overwrite build targets
+
+jobs:
+  build_wheels:
+    name: 🖥️ ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest ]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3
+        env:
+          CIBW_BUILD: ${{ inputs.cibw_build }}
+      - uses: actions/upload-artifact@v5
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: 🐍 sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: hynek/build-and-inspect-python-package@v2
+        with:
+          skip-wheel: true
+
+  check:
+    name: 🔍 check
+    needs: [ build_wheels, build_sdist ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get sdist
+        # Technically sdist check is already done in `build_sdist`,
+        # but doing it here again for redundancy
+        uses: actions/download-artifact@v6
+        with:
+          name: Packages
+          path: dist
+      - name: Get wheels
+        uses: actions/download-artifact@v6
+        with:
+          pattern: cibw-wheels-*
+          path: dist
+          merge-multiple: true
+      - run: pipx run twine check --strict dist/*

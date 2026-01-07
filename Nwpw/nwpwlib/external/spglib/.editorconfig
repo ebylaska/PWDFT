@@ -1,0 +1,35 @@
+root = true
+
+[*]
+# TODO: This fails in too many files, needs more investigation
+# indent_size = 4
+indent_size = unset
+indent_style = space
+
+[*.{c,cpp,h}]
+# TODO: Clashes with the current clang-format
+indent_size = unset
+max_line_length = 80
+
+[*.F90]
+indent_size = unset
+
+[*.py]
+# This is inconsistent with ruff format
+# max_line_length = 88
+
+[*.{yaml,fmf,json}]
+indent_size = 2
+
+[*.{md,bib}]
+indent_size = unset
+
+# Do not lint bitrotting files
+[{database/**,ruby/**}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+max_line_length = unset
