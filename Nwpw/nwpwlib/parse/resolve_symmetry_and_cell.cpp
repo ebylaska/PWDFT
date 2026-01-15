@@ -36,6 +36,7 @@
 #include <sstream>
 #include <array>
 #include <iomanip>
+#include <iostream>
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -712,6 +713,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    pwdft::Symmetry sym;
 
    std::string sym_source = "identity";
+   std::string sym_backend = "";
 
    if (symmetry_specified)
    {
@@ -740,11 +742,13 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
           {
               sym = pwdft::Symmetry(as.group_number);
               sym_source = "autospace";
+              sym_backend = "spglib";
           }
           else if (!as.group_name.empty())
           {
               sym = pwdft::Symmetry(as.group_name);
               sym_source = "autospace";
+              sym_backend = "spglib";
           }
           else
           {
@@ -766,6 +770,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
       // later: sym = detect_symmetry(...)
       sym = pwdft::Symmetry();
       sym_source = "autosym_failed";
+      //sym_backend = "internal";
    }
    else
    {
@@ -793,6 +798,9 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["coords_type"] = symmetry_primitive_requested ? "fractional" : "cartesian";
    es["translation_type"] = "fractional";    // how SymOp.t must be interpreted
    es["primitive_lattice_only"] = symmetry_primitive_requested;
+   if (!sym_backend.empty()) 
+      es["backend"] = sym_backend;
+
 
    //es["type"] = sym.is_space_group() ? "space_group" : "point_group";
    //es["type"] = sym.is_trivial() ? "trivial" : (sym.is_space_group() ? "space_group" : "point_group");

@@ -162,6 +162,11 @@ class Control2 {
    int  p_pspnuterms = 0;
    
    bool psingle_mu = false;
+  
+   // stress options
+   bool pcompute_stress = false;
+   bool pcell_optimize  = false;
+   bool pparrinello_rahman = false;
 
    // symmetry stuff
 
@@ -282,6 +287,10 @@ public:
 
    int nbrillouin() { return pnbrillouin; }
  
+   bool compute_stress()    {return pcompute_stress; }
+   bool cell_optimize()     {return pcell_optimize; }
+   bool parrinello_rahman() {return pparrinello_rahman; }
+
    bool deltae_check() { return pdeltae_check; } 
    bool geometry_optimize() { return pgeometry_optimize; }
    bool use_grid_cmp() { return puse_grid_cmp; }

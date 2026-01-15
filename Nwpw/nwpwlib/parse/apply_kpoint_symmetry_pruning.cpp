@@ -145,7 +145,7 @@ static inline double dist2_torus(const std::array<double,3>& a,
  */
 static void monkhorst_pack_pointgroup_prune(std::vector<std::vector<double>>& ks, const pwdft::Symmetry& sym)
 {
-    constexpr double tol  = 1.0e-9;
+    constexpr double tol  = 1.0e-7;
     constexpr double tol2 = tol * tol;
 
     // Identity (P1 / C1): nothing to do
@@ -283,7 +283,8 @@ static void monkhorst_pack_pointgroup_prune(std::vector<std::vector<double>>& ks
             }
 
             if (equivalent)
-                break;
+                continue;
+                //break;
         }
     }
 

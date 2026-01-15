@@ -7,6 +7,7 @@
 #include <cctype>
 #include <optional>
 #include <cstdlib>
+#include <set>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -129,7 +130,8 @@ static std::vector<double> parse_lat_to_unita(std::vector<double> lat) {
  **************************************************/
 
 static json parse_geometry(json geom, int *curptr,
-                           std::vector<std::string> lines) {
+                           std::vector<std::string> lines) 
+{
   json geomjson;
 
   int cur = *curptr;
@@ -137,72 +139,61 @@ static json parse_geometry(json geom, int *curptr,
   int autoz = 0;
   int autosym = 0;
   int autospace = 0;
+  int primitive_requested = 0;
   // double angs_to_au = 1.0/0.52917715;
   double angs_to_au = 1.88972598858;
   double conv = angs_to_au;
   std::vector<std::string> ss;
   std::string geometry = "geometry";
 
+
+  static const std::set<std::string> reserved = {
+     "au","a.u.","bo","an","nm","na","pm","pi",
+     "units","center","nocenter",
+     "autoz","noautoz",
+     "autosym","noautosym",
+     "autospace","noautospace",
+     "primitive","noprimitive"
+  };
+
   ss = mystring_split0(lines[cur]);
-  if (ss.size() > 1) {
-    int nogeomname = mystring_contains(mystring_lowercase(ss[1]), "au") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "a.u.") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "an") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "nm") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "na") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "pm") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "pi") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "units") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "center") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "autoz") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "autospace") ||
-                     mystring_contains(mystring_lowercase(ss[1]), "autosym");
-    if (!nogeomname)
-      geometry = ss[1];
+  if (ss.size() > 1) 
+  {
+     std::string candidate = mystring_lowercase(ss[1]);
+     if (!reserved.count(candidate))
+        geometry = ss[1];
   }
 
-  if (mystring_contains(mystring_lowercase(lines[cur]), " au"))
-    conv = 1.0;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " a.u."))
-    conv = 1.0;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " bo"))
-    conv = 1.0;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " an"))
-    conv = angs_to_au;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " nm"))
-    conv = 10.0 * angs_to_au;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " na"))
-    conv = 10.0 * angs_to_au;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " pm"))
-    conv = 0.01 * angs_to_au;
-  if (mystring_contains(mystring_lowercase(lines[cur]), " pi"))
-    conv = 0.01 * angs_to_au;
 
-  if (mystring_contains(mystring_lowercase(lines[cur]), "nocenter"))
-     center = 0;
-  else if (mystring_contains(mystring_lowercase(lines[cur]), "center"))
-     center = 1;
+  //auto tokens = mystring_split0(mystring_lowercase(lines[cur]));
+  const std::string line_lc = mystring_lowercase(lines[cur]);
+  auto tokens = mystring_split0(line_lc);
 
-  if (mystring_contains(mystring_lowercase(lines[cur]), "noautoz"))
-     autoz = 0;
-  else if (mystring_contains(mystring_lowercase(lines[cur]), "autoz"))
-     autoz = 1;
+  for (const auto& t : tokens) 
+  {
+    // units
+    if      (t == "au" || t == "a.u." || t == "bo") conv = 1.0;
+    else if (t == "an" || t == "angstrom" || t == "angstroms") conv = angs_to_au;
+    else if (t == "nm" || t == "na") conv = 10.0 * angs_to_au;
+    else if (t == "pm" || t == "pi") conv = 0.01 * angs_to_au;
 
-  if (mystring_contains(mystring_lowercase(lines[cur]), "noautosym"))
-     autosym = 0;
-  else if (mystring_contains(mystring_lowercase(lines[cur]), "autosym"))
-     autosym = 1;
+    // flags
+    else if (t == "nocenter") center = 0;
+    else if (t == "center") center = 1;
+    else if (t == "noautoz") autoz = 0;
+    else if (t == "autoz") autoz = 1;
+    else if (t == "noautosym") autosym = 0;
+    else if (t == "autosym") autosym = 1;
+    else if (t == "noautospace") autospace = 0;
+    else if (t == "autospace") autospace = 1;
+    else if (t == "noprimitive") primitive_requested = 0;
+    else if (t == "primitive")   primitive_requested = 1;
+  }
+  if (mystring_contains(line_lc,"symmetry_tolerance"))
+     geomjson["symmetry_tolerance"] = std::stod(mystring_split(line_lc,"symmetry_tolerance")[1]);
 
-  if (mystring_contains(mystring_lowercase(lines[cur]), "noautospace"))
-     autospace = 0;
-  else if (mystring_contains(mystring_lowercase(lines[cur]), "autospace"))
-     autospace = 1;
-
-  if (mystring_contains(mystring_lowercase(lines[cur]),"symmetry_tolerance"))
-     geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"symmetry_tolerance")[1]);
-
-  if (mystring_contains(mystring_lowercase(lines[cur]),"sym_tolerance"))
-     geomjson["symmetry_tolerance"] = std::stod(mystring_split(mystring_lowercase(lines[cur]),"sym_tolerance")[1]);
+  if (mystring_contains(line_lc,"sym_tolerance"))
+     geomjson["symmetry_tolerance"] = std::stod(mystring_split(line_lc,"sym_tolerance")[1]);
 
 
   geomjson["conv"] = conv;
@@ -210,6 +201,7 @@ static json parse_geometry(json geom, int *curptr,
   geomjson["autoz"] = autoz;
   geomjson["autosym"] = autosym;
   geomjson["autospace"] = autospace;
+  geomjson["primitive"] = primitive_requested;
 
   bool is_crystal = false;
   bool is_surface = false;
@@ -516,7 +508,8 @@ static json parse_geometry(json geom, int *curptr,
 
      geomjson["symmetry"]["setting"] = symmetry_group_setting;
      geomjson["symmetry"]["tolerance"] = symmetry_tolerance;
-     geomjson["symmetry"]["primitive"] = symmetry_primitive;
+
+     geomjson["symmetry"]["primitive"] = primitive_requested || symmetry_primitive;
   } 
   else 
   {
@@ -530,6 +523,8 @@ static json parse_geometry(json geom, int *curptr,
 
   return geom;
 }
+
+
 /**************************************************
  *                                                *
  *              parse_pseudopotentials            *

@@ -88,13 +88,13 @@ static bool vpp_read_header(char *fname, char *comment, int *psp_type,
 /**
  * @brief Checks if a VPP (Variational Pseudopotential) file requires reformatting for compatibility.
  *
- * This function checks if a VPP file needs reformatting to be compatible with the current code. It reads the header
+ * This function checks if a VPP or VPP2 file needs reformatting to be compatible with the current code. It reads the header
  * information from the VPP file and compares it to the parameters of the provided PGrid, including lattice vectors,
  * FFT dimensions, and PSP version. If any of these parameters differ or the file doesn't exist, it signals
  * that reformatting is needed.
  *
  * @param mygrid Pointer to the PGrid object associated with the grid.
- * @param fname The filename of the VPP file to check.
+ * @param fname The filename of the VPP or VPP2 file to check.
  * @param psp_version The expected PSP (Pseudopotential) version for compatibility.
  * @return `true` if reformatting is needed, `false` otherwise.
  */
@@ -1311,6 +1311,549 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    //std::cout << "vpp_generate done" << std::endl;
 }
 
+/*******************************************
+ *                                         *
+ *                vpp2_read                *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Read a formatted pseudopotential stress file (.vpp2).
+ *
+ * This routine reads a formatted pseudopotential *stress* file (vpp2),
+ * which contains the reciprocal-space building blocks required to
+ * assemble the pseudopotential contribution to the stress tensor.
+ *
+ * The vpp2 file stores precomputed, grid-formatted stress kernels derived
+ * from analytic Fourier–Bessel transforms of the radial pseudopotential,
+ * allowing stress evaluation without regenerating projector integrals
+ * at runtime.
+ *
+ * --------------------------------------------------------------------------
+ * File contents and layout
+ * --------------------------------------------------------------------------
+ *
+ * The vpp2 file contains:
+ *
+ *   - Descriptive metadata:
+ *       * comment string
+ *       * pseudopotential type and version
+ *       * FFT grid dimensions and lattice vectors
+ *       * atomic symbol, mass, and valence charge
+ *       * angular-momentum and projector metadata
+ *
+ *   - Radial projector normalization matrix Gijl
+ *
+ *   - Semicore information:
+ *       * rcore value
+ *       * optional semicore density stress kernel
+ *
+ *   - Grid-formatted stress kernels:
+ *
+ *       1) Local pseudopotential stress kernel:
+ *            dvl(G)
+ *          Stored as a single packed 3D grid (pack type 0).
+ *
+ *       2) Nonlocal (Kleinman–Bylander) stress kernels:
+ *            dvnl(G, i, p),  i = 0..2
+ *          Three packed 3D grids per projector p (pack type 1),
+ *          corresponding to the independent metric derivatives used
+ *          in nonlocal stress evaluation.
+ *
+ *       3) Optional semicore stress kernel:
+ *            ncore(G)
+ *          Stored as a single packed 3D grid (pack type 0).
+ *
+ * All grid data are stored in plane-wave–compatible packed format
+ * and broadcast to all MPI ranks after being read by the master task.
+ *
+ * --------------------------------------------------------------------------
+ * Parallel behavior
+ * --------------------------------------------------------------------------
+ *
+ *   - File I/O is performed on the master MPI rank.
+ *   - Metadata and grid data are broadcast to all ranks.
+ *   - Grid reads use the PGrid packing/unpacking interface to ensure
+ *     consistency with the FFT decomposition.
+ *
+ * --------------------------------------------------------------------------
+ * Usage notes
+ * --------------------------------------------------------------------------
+ *
+ *   - This routine does not compute stress; it only reconstructs the
+ *     stress kernels.
+ *   - The returned arrays are ready for contraction with metric
+ *     derivatives during stress tensor assembly.
+ *   - The vpp2 format is intended for variable-cell (Parrinello–Rahman)
+ *     calculations and avoids recomputation of expensive projector
+ *     derivatives.
+ *
+ * @param mygrid   Plane-wave grid and parallel layout descriptor.
+ * @param fname    Name of the vpp2 file to read.
+ * @param comment  Output comment string describing the pseudopotential.
+ * @param psp_type Output pseudopotential type identifier.
+ * @param version  Output pseudopotential version.
+ * @param nfft     Output FFT grid dimensions.
+ * @param unita    Output lattice vectors (Bohr).
+ * @param atom     Output atomic symbol.
+ * @param amass    Output atomic mass.
+ * @param zv       Output valence charge.
+ * @param lmmax    Output number of nonlocal angular components.
+ * @param lmax     Output maximum angular momentum.
+ * @param locp     Output local channel index.
+ * @param nmax     Output maximum projector expansion index.
+ * @param rc       Output radial cutoff array.
+ * @param nprj     Output number of nonlocal projectors.
+ * @param n_projector, l_projector, m_projector, b_projector
+ *                Output projector metadata arrays.
+ * @param Gijl     Output projector normalization matrix.
+ * @param semicore Output flag indicating presence of semicore density.
+ * @param rcore    Output semicore cutoff radius.
+ * @param ncore    Output semicore stress kernel (if present).
+ * @param dvl      Output local stress kernel (packed grid).
+ * @param dvnl     Output nonlocal stress kernels (3 packed grids per projector).
+ * @param coutput  Diagnostic output stream.
+ */
+ static void vpp2_read(PGrid *mygrid, char *fname2, char *comment, int *psp_type, int *version,
+                     int *nfft, double *unita, char *atom, double *amass, double *zv,
+                     int *lmmax, int *lmax, int *locp, int *nmax, double **rc, int *nprj,
+                     int **n_projector, int **l_projector, int **m_projector,
+                     int **b_projector, double **Gijl, bool *semicore,
+                     double *rcore, double **ncore, double *dvl, double **dvnl,
+
+                     //double *log_amesh, double *r1, double *rmax, double *sigma,
+                     //double *zion, int *n1dgrid, int *n1dbasis, int **nae, int **nps,
+                     //int **lps, int *icut, double **eig, double **phi_ae, double **dphi_ae,
+                     //double **phi_ps, double **dphi_ps, double **core_ae, double **core_ps,
+                     //double **core_ae_prime, double **core_ps_prime, double **rgrid,
+                     //double *core_kin_energy, double *core_ion_energy,
+                     //double **hartree_matrix, double **comp_charge_matrix,
+                     //double **comp_pot_matrix, 
+                     std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int nn;
+   double *tmp2, *prj;
+   Parallel *parall = mygrid->parall;
+
+   //*rlocal = 0.0;
+
+   if (parall->base_stdio_print)
+     coutput << std::endl
+             << " reading formatted stress psp filename: " << fname2 << std::endl;
+
+   if (parall->is_master()) 
+   {
+      openfile(5, fname2, "r");
+      cread(5, comment, 80);
+      comment[79] = '\0';
+      int i = 78;
+      while (comment[i] == ' ')
+        comment[i--] = '\0';
+     
+      iread(5, psp_type, 1);
+      iread(5, version, 1);
+      iread(5, nfft, 3);
+      dread(5, unita, 9);
+      cread(5, atom, 2);
+      dread(5, amass, 1);
+      dread(5, zv, 1);
+      iread(5, lmax, 1);
+      iread(5, locp, 1);
+      iread(5, nmax, 1);
+   }
+   parall->Brdcst_cValues(0, 0, 80, comment);
+   parall->Brdcst_iValue(0, 0, psp_type);
+   parall->Brdcst_iValue(0, 0, version);
+   parall->Brdcst_iValues(0, 0, 3, nfft);
+   parall->Brdcst_Values(0, 0, 9, unita);
+   parall->Brdcst_cValues(0, 0, 2, atom);
+   parall->Brdcst_Values(0, 0, 1, amass);
+   parall->Brdcst_Values(0, 0, 1, zv);
+   parall->Brdcst_iValue(0, 0, lmax);
+   parall->Brdcst_iValue(0, 0, locp);
+   parall->Brdcst_iValue(0, 0, nmax);
+   *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
+
+   //if (*psp_type == 4)
+   //  *n1dbasis = *locp;
+   //else
+   //  *n1dbasis = *lmax + 1;
+
+   *rc = new (std::nothrow) double[*lmax + 1]();
+   if (parall->is_master()) {
+     dread(5, *rc, *lmax + 1);
+     iread(5, nprj, 1);
+   }
+   parall->Brdcst_Values(0, 0, *lmax + 1, *rc);
+   parall->Brdcst_iValue(0, 0, nprj);
+   if (*nprj > 0) {
+     *n_projector = new int[*nprj]();
+     *l_projector = new int[*nprj]();
+     *m_projector = new int[*nprj]();
+     *b_projector = new int[*nprj]();
+     if (parall->is_master()) {
+       iread(5, *n_projector, *nprj);
+       iread(5, *l_projector, *nprj);
+       iread(5, *m_projector, *nprj);
+       iread(5, *b_projector, *nprj);
+     }
+     parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
+     parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
+     parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
+     parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
+
+     nn = (*nmax) * (*nmax) * (*lmax + 1);
+     //if (*psp_type == 4)
+     //  nn *= 5;
+     *Gijl = new (std::nothrow) double[nn]();
+     if (parall->is_master()) {
+       dread(5, *Gijl, nn);
+     }
+     parall->Brdcst_Values(0, 0, nn, *Gijl);
+   }
+
+   if (parall->is_master()) 
+   {
+      //if (*version == 4)
+      //  dread(5, rlocal, 1);
+      dread(5, rcore, 1);
+   }
+   //parall->Brdcst_Values(0, 0, 1, rlocal);
+   parall->Brdcst_Values(0, 0, 1, rcore);
+   if (*rcore > 0.0)
+     *semicore = true;
+   else
+     *semicore = false;
+
+   /* read in miscellaneous paw energies and 1d wavefunctions */
+
+   /* readin dvl 3d block */
+   tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
+   mygrid->t_read(5, tmp2, -1);
+   mygrid->t_pack(0, tmp2);
+   mygrid->tt_pack_copy(0, tmp2, dvl);
+
+   /* reading dvnl 3d blocks */
+   if (*nprj > 0)
+   {
+      *dvnl = new (std::nothrow) double[(*nprj) * 3*(mygrid->npack(1))]();
+      prj = *dvnl;
+      for (auto l = 0; l < (*nprj); ++l) 
+      for (auto i = 0; i<3; ++i) 
+      {
+         mygrid->t_read(5, tmp2, -1);
+         mygrid->t_pack(1, tmp2);
+         mygrid->tt_pack_copy(1, tmp2, &prj[(i+3*l) * mygrid->npack(1)]);
+      }
+   }
+   if (*semicore) 
+   {
+      nn = 1 * mygrid->npack(0);
+      *ncore = new (std::nothrow) double[nn]();
+      prj = *ncore;
+     
+      mygrid->t_read(5, tmp2, -1);
+      mygrid->t_pack(0, tmp2);
+      mygrid->tt_pack_copy(0, tmp2, prj);
+   }
+
+   delete[] tmp2;
+
+   if (parall->is_master())
+     closefile(5);
+}
+
+
+
+/*******************************************
+ *                                         *
+ *                vpp2_write               *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Write a formatted pseudopotential stress file (.vpp2).
+ *
+ * This routine writes a formatted pseudopotential stress file (vpp2),
+ * containing all reciprocal-space kernels required to assemble the
+ * pseudopotential contribution to the stress tensor in plane-wave DFT.
+ *
+ * The vpp2 format stores fully grid-formatted stress components so that
+ * subsequent calculations can evaluate stress without recomputing
+ * Fourier–Bessel integrals or projector derivatives.
+ *
+ * --------------------------------------------------------------------------
+ * Data written to file
+ * --------------------------------------------------------------------------
+ *
+ * The file contains:
+ *
+ *   - Metadata and structural descriptors:
+ *       * comment string
+ *       * pseudopotential type and version
+ *       * FFT grid dimensions and lattice vectors
+ *       * atomic symbol, mass, and valence charge
+ *       * angular momentum and projector descriptors
+ *
+ *   - Projector normalization matrix Gijl
+ *
+ *   - Semicore metadata:
+ *       * rcore value
+ *
+ *   - Grid-formatted stress kernels:
+ *
+ *       1) Local stress kernel:
+ *            dvl(G)
+ *          Written as a single packed 3D grid (pack type 0).
+ *
+ *       2) Nonlocal (Kleinman–Bylander) stress kernels:
+ *            dvnl(G, i, p),  i = 0..2
+ *          Three packed 3D grids per projector p (pack type 1),
+ *          encoding the independent metric derivatives needed for
+ *          nonlocal stress evaluation.
+ *
+ *       3) Optional semicore stress kernel:
+ *            ncore(G)
+ *          Written as a single packed 3D grid (pack type 0).
+ *
+ * All grid data are written in plane-wave–compatible packed format
+ * using the PGrid packing interface.
+ *
+ * --------------------------------------------------------------------------
+ * Parallel behavior
+ * --------------------------------------------------------------------------
+ *
+ *   - File I/O is performed by the master MPI rank.
+ *   - Grid packing is collective and consistent with the FFT layout.
+ *   - No synchronization beyond grid packing is required.
+ *
+ * --------------------------------------------------------------------------
+ * Usage notes
+ * --------------------------------------------------------------------------
+ *
+ *   - This routine writes *stress kernels only*; it does not write
+ *     total energies or forces.
+ *   - The resulting vpp2 file can be reused across calculations
+ *     with identical FFT grids and lattice definitions.
+ *   - The format is designed to support exact variable-cell
+ *     (Parrinello–Rahman) stress calculations.
+ *
+ * @param mygrid   Plane-wave grid and parallel layout descriptor.
+ * @param fname    Name of the vpp2 file to write.
+ * @param comment  Comment string describing the pseudopotential.
+ * @param psp_type Pseudopotential type identifier.
+ * @param version  Pseudopotential version.
+ * @param nfft     FFT grid dimensions.
+ * @param unita    Lattice vectors (Bohr).
+ * @param atom     Atomic symbol.
+ * @param amass    Atomic mass.
+ * @param zv       Valence charge.
+ * @param lmmax    Number of nonlocal angular components.
+ * @param lmax     Maximum angular momentum.
+ * @param locp     Local channel index.
+ * @param nmax     Maximum projector expansion index.
+ * @param rc       Radial cutoff array.
+ * @param nprj     Number of nonlocal projectors.
+ * @param n_projector, l_projector, m_projector, b_projector
+ *                Projector metadata arrays.
+ * @param Gijl     Projector normalization matrix.
+ * @param semicore Flag indicating presence of semicore density.
+ * @param rcore    Semicore cutoff radius.
+ * @param ncore    Semicore stress kernel (if present).
+ * @param dvl      Local stress kernel (packed grid).
+ * @param dvnl     Nonlocal stress kernels (3 packed grids per projector).
+ * @param coutput  Diagnostic output stream.
+ */
+static void vpp2_write(PGrid *mygrid, char *fname2, char *comment, int psp_type, int version,
+                       int *nfft, double *unita, char *atom, double amass, double zv, int lmmax,
+                       int lmax, int locp, int nmax, double *rc, int nprj, int *n_projector,
+                       int *l_projector, int *m_projector, int *b_projector, double *Gijl,
+                       bool semicore, double rcore, double *ncore, double *dvl, double *dvnl, 
+                      //double log_amesh, double r1, double rmax, double sigma, double zion, 
+                      //int n1dgrid, int n1dbasis, int *nae, int *nps, int *lps,
+                      //int icut, double *eig, double *phi_ae, double *dphi_ae, double *phi_ps,
+                      //double *dphi_ps, double *core_ae, double *core_ps, double *core_ae_prime,
+                      //double *core_ps_prime, double *rgrid, double core_kin_energy,
+                      //double core_ion_energy, double *hartree_matrix, double *comp_charge_matrix,
+                      //double *comp_pot_matrix, 
+                      std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int nn;
+   double *prj;
+   Parallel *parall = mygrid->parall;
+
+   // double tmp2[mygrid->nfft3d];
+   double *tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
+
+   if (parall->base_stdio_print)
+      coutput << std::endl
+              << " writing formatted stress psp filename: " << fname2 << std::endl;
+
+   if (parall->is_master())
+   {
+      openfile(6, fname2, "w");
+      comment[79] = '\0';
+      cwrite(6, comment, 80);
+
+      iwrite(6, &psp_type, 1);
+      iwrite(6, &version, 1);
+      iwrite(6, nfft, 3);
+      dwrite(6, unita, 9);
+      cwrite(6, atom, 2);
+      dwrite(6, &amass, 1);
+      dwrite(6, &zv, 1);
+      iwrite(6, &lmax, 1);
+      //if (psp_type == 4)
+      //   iwrite(6, &n1dbasis, 1);
+      //else
+         iwrite(6, &locp, 1);
+      iwrite(6, &nmax, 1);
+
+      dwrite(6, rc, lmax + 1);
+      iwrite(6, &nprj, 1);
+
+      if (nprj > 0)
+      {
+         iwrite(6, n_projector, nprj);
+         iwrite(6, l_projector, nprj);
+         iwrite(6, m_projector, nprj);
+         iwrite(6, b_projector, nprj);
+      }
+      nn = (nmax) * (nmax) * (lmax + 1);
+      //if (psp_type == 4)
+      //   nn *= 5;
+      dwrite(6, Gijl, nn);
+      //if (version == 4)
+      //   dwrite(6, &rlocal, 1);
+      dwrite(6, &rcore, 1);
+      // double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
+
+      // ***** Miscellaneous paw energies and 1d wavefunctions ****
+   }
+
+   /* write out  vl 3d block */
+   mygrid->tt_pack_copy(0, dvl, tmp2);
+   mygrid->t_unpack(0, tmp2);
+   mygrid->t_write_buffer(6, tmp2, 0);
+
+   /* write out vnl 3d blocks */
+   if (nprj > 0)
+   {
+      prj = dvnl;
+      for (auto l = 0; l<(nprj); ++l)
+         for (auto i=0; i<3; ++i)
+         {
+             mygrid->tt_pack_copy(1, &prj[(i + 3*l)*mygrid->npack(1)], tmp2);
+             mygrid->t_unpack(1, tmp2);
+             mygrid->t_write_buffer(6, tmp2, 0);
+          }
+   }
+
+   /* write out semicore 3d block */
+   if (semicore)
+   {
+      prj = ncore;
+
+      mygrid->tt_pack_copy(0, prj, tmp2);
+      mygrid->t_unpack(0, tmp2);
+      mygrid->t_write_buffer(6, tmp2, 0);
+   }
+
+   delete[] tmp2;
+
+   if (parall->is_master())
+      closefile(6);
+}
+
+
+
+
+/*******************************************
+ *                                         *
+ *              vpp2_generate              *
+ *                                         *
+ *******************************************/
+static void vpp2_generate(// input
+                          PGrid* mygrid,
+                          char* pspname,
+                          char* fname2,     // <-- *.vpp2
+                          int psp_type,
+                          int version,
+                          int nfft[3],
+                          double* unita,
+                          bool semicore,
+                          int nprj,
+                          // output
+                          double *dvl,
+                          double **dvnl,
+                          double *dncore,
+                          std::ostream& coutput)
+{
+   int i, nn;
+   double *tmp2, *prj;
+   Parallel *myparall = mygrid->parall;
+
+   if ((psp_type == 0) || (psp_type == 9))
+   {
+      int nray = mygrid->n_ray();
+      Psp1d_Hamann psp1d(myparall,pspname,version);
+
+      //atom[0] = psp1d.atom[0];
+      //atom[1] = psp1d.atom[1];
+      double amass = psp1d.amass;
+      double zv = psp1d.zv;
+      //for (auto i = 0; i < 80; ++i)
+      //   comment[i] = psp1d.comment[i];
+
+      //psp_type = psp1d.psp_type;
+      //version = psp1d.version;
+
+      int lmax = psp1d.lmax;
+      int locp = psp1d.locp;
+      int nmax = psp1d.nmax;
+      int lmmax = ((lmax) + 1) * ((lmax) + 1) - (2 * (locp) + 1);
+
+
+      int nprj      = psp1d.nprj;
+      double rcore  = psp1d.rcore;
+      double rlocal = psp1d.rlocal;
+
+      /*  allocate and generate ray formatted grids */
+      double *G_ray = mygrid->generate_G_ray();
+      double *dvl_ray = new (std::nothrow) double[nray]();
+      double *dvnl_ray = new (std::nothrow) double[2*(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
+      double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
+      psp1d.vpp_generate_ray(myparall, nray, G_ray, dvl_ray, dvnl_ray, rho_sc_k_ray);
+     
+      /* filter the ray formatted grids */
+      double ecut = mygrid->lattice->ecut();
+      double wcut = mygrid->lattice->wcut();
+      util_filter(nray, G_ray, ecut, dvl_ray);
+      for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
+      {
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[l * nray]));
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[nray+ l*nray]));
+      }
+      if (semicore) 
+      {
+         util_filter(nray, G_ray, ecut, rho_sc_k_ray);
+         util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
+      }
+     
+
+      /* deallocate ray formatted grids */
+      delete[] rho_sc_k_ray;
+      delete[] dvnl_ray;
+      delete[] dvl_ray;
+      delete[] G_ray;
+
+   }
+
+
+
+}
+
+
 
 /* Constructors */
 
@@ -1393,6 +1936,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
       if (mypneb->d3db::parall->is_master())
          coutput << pspspin_output << std::endl;
    }
+
  
    npsp = myion->nkatm;
    nprj_max = 0;
@@ -1594,6 +2138,44 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
       //                 int_mb(l_projector(1)),
       //                 int_mb(m_projector(1)),
       //                 int_mb(b_projector(1)))
+
+   }
+
+   // stressexist
+   bool need_stress = control.compute_stress() || control.cell_optimize() || control.parrinello_rahman();
+   if (need_stress)
+   {
+      double *dvnl_ptr;
+      dvl = new (std::nothrow) double *[npsp]();
+      vnl = new (std::nothrow) double *[npsp]();
+      for (ia = 0; ia < npsp; ++ia) 
+      {
+         strcpy(fname2, myion->atom(ia));
+         strcat(fname2, ".vpp2");
+         control.add_permanent_dir(fname2);
+
+         if (vpp_formatter_check(mypneb, fname2, psp_version)) 
+         {
+
+         }
+         else 
+         {
+             /*
+            vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version, nfft, unita,
+                     aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
+                     &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
+                     &G_ptr, &rlocal[ia], semicore[ia], &rcore[ia], &ncore_ptr,
+                     dvl[ia], &dvnl_ptr, &log_amesh[ia], &r1[ia], &rmax[ia], &sigma[ia],
+                     &zion[ia], &n1dgrid[ia], &n1dbasis[ia], &nae_ptr, &nps_ptr,
+                     &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr, &dphi_ae_ptr,
+                     &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
+                     &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr,
+                     &core_kin[ia], &core_ion[ia], &hartree_matrix_ptr,
+                     &comp_charge_matrix_ptr, &comp_pot_matrix_ptr, coutput);
+            */
+         }
+         dvnl[ia] = dvnl_ptr;
+      }
    }
 }
 

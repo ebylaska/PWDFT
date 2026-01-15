@@ -936,6 +936,10 @@ std::string Ion::print_symmetry_group(std::string rtdbstring)
    stream << "   effective symmetry source : "
           << es.value("source","unknown") << std::endl;
 
+   if (es.contains("backend"))
+      stream << "   symmetry backend          : "
+             << es.value("backend","unknown") << std::endl;
+
    stream << "   symmetry type             : "
           << es.value("type","unknown") << std::endl;
 
