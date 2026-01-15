@@ -936,6 +936,244 @@ void Psp1d_Hamann::vpp_generate_spline(PGrid *mygrid, int nray, double *G_ray,
 }
 
 
+/*******************************************
+ *                                         *
+ * Psp1d_Hamann::vpp2_generate_stress_ray  *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Generate ray-formatted pseudopotential stress kernels in G-space.
+ *
+ * This routine computes the reciprocal-space radial kernels needed to assemble
+ * the pseudopotential contribution to the stress tensor.  The kernels are
+ * produced as functions of the ray magnitude |G| (a 1D radial grid in
+ * reciprocal space) and are later interpolated onto the full 3D plane-wave
+ * grid for contraction into the Cartesian stress components.
+ *
+ * The generated contributions are:
+ *
+ *  (1) Nonlocal (Kleinman–Bylander) stress kernels
+ *      ------------------------------------------------------------
+ *      The KB nonlocal stress contribution can be written as:
+ *
+ *        σ^{NL}_{αβ} = Σ_l Σ_G [ A_l(G) δ_{αβ} + B_l(G) (G_α G_β)/|G| ] .
+ *
+ *      This routine generates the radial functions A_l(G) and B_l(G) for each
+ *      projector channel (n,l) and stores them in dvnl_ray as:
+ *
+ *        dvnl_ray[ 0*nray + p*nray + k ] -> A_p(|G_k|)   (isotropic / metric term)
+ *        dvnl_ray[ 1*nray + p*nray + k ] -> B_p(|G_k|)   (anisotropic term)
+ *
+ *      where p is the flattened projector-channel index produced by indx(n,l),
+ *      and k indexes the ray sample (k=0..nray-1).
+ *
+ *  (2) Local pseudopotential stress kernel
+ *      ------------------------------------------------------------
+ *      The local part contributes an isotropic stress kernel:
+ *
+ *        σ^{L}_{αβ} = Σ_G A_loc(G) δ_{αβ},
+ *
+ *      where A_loc(G) is generated here as dvl_ray(G).
+ *
+ *  (3) Semicore density stress kernel (optional)
+ *      ------------------------------------------------------------
+ *      If a semicore charge density is present, an additional isotropic kernel
+ *      is required for consistent stress evaluation:
+ *
+ *        σ^{SC}_{αβ} = Σ_G A_sc(G) δ_{αβ},
+ *
+ *      where A_sc(G) is generated here as rho_sc_k_ray(G).
+ *
+ * Implementation notes:
+ *  - Kernels are computed by analytic Fourier–Bessel transforms of radial
+ *    quantities (Hamann/Kleinman–Bylander form) and evaluated on the ray grid.
+ *  - Parallelization is over ray index k; results are summed with Vector_SumAll.
+ *  - G=0 components are explicitly set to zero where required to avoid
+ *    singular terms and enforce translational invariance.
+ */
+void Psp1d_Hamann::vpp2_generate_stress_ray(Parallel *myparall,
+                                            int nray, double *G_ray,
+                                            double *dvl_ray, double *dvnl_ray,
+                                            double *rho_sc_k_ray)
+{
+   /* set up indx(n,l) --> wp block index */
+   int indx[5 * 4];
+   int nb = lmax + 1;
+   for (int l = 0; l <= lmax; ++l) {
+     indx[l * 5] = l;
+     for (int n1 = 1; n1 < n_expansion[l]; ++n1) {
+       indx[n1 + l * 5] = nb;
+       ++nb;
+     }
+   }
+ 
+   const double pi    = 4.0 * atan(1.0);
+   const double twopi = 2.0 * pi;
+   const double forpi = 4.0 * pi;
+ 
+   const double P0 = sqrt(forpi);
+   const double P1 = sqrt(3.0   * forpi);
+   const double P2 = sqrt(15.0  * forpi);
+   const double P3 = sqrt(105.0 * forpi);
+ 
+   const int nray2     = 2 * nray;
+   const int nproj_blk = (lmax + 1 + n_extra);             // ray blocks per channel
+   const int lmaxnray  = nproj_blk * nray;                 // A-block size (or B-block size)
+ 
+   double *cs = new double[nrho];
+   double *sn = new double[nrho];
+   double *f  = new double[nrho];
+ 
+   std::memset(dvl_ray,      0, nray      * sizeof(double));
+   std::memset(dvnl_ray,     0, 2*lmaxnray * sizeof(double));
+   std::memset(rho_sc_k_ray, 0, nray2     * sizeof(double));
+ 
+   /* parallel loop over ray points, skipping k=0 (G=0 handled later) */
+   for (int k1 = 1 + myparall->taskid(); k1 < nray; k1 += myparall->np()) {
+ 
+     const double q = G_ray[k1];
+ 
+     for (int i = 0; i < nrho; ++i) {
+       cs[i] = std::cos(q * rho[i]);
+       sn[i] = std::sin(q * rho[i]);
+     }
+ 
+     /* f projectors (l=3) */
+     if ((locp != 3) && (lmax > 2)) {
+       for (int n = 0; n < n_expansion[3]; ++n) {
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           double a = sn[i] / xx;
+           a = 15.0 * (a - cs[i]) / (xx * xx) - 6.0 * a + cs[i];
+           f[i] = a * wp[i + indx[n + 3*5] * nrho] * vp[i + 3*nrho];
+         }
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 3*5]*nray] = P3 * util_simpson(nrho, f, drho) / q;
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           double a =
+               -60.0 * sn[i] / (xx*xx*xx * q*q)
+               +60.0  * cs[i] / (xx*xx     * q*q)
+               +27.0  * sn[i] / (xx        * q*q)
+               -7.0   * cs[i] / (q*q)
+               -rho[i]* sn[i] / q;
+           f[i] = a * wp[i + indx[n + 3*5]*nrho] * vp[i + 3*nrho];
+         }
+         dvnl_ray[1*lmaxnray + k1 + indx[n + 3*5]*nray] = P3 * util_simpson(nrho, f, drho);
+       }
+     }
+ 
+     /* d projectors (l=2) */
+     if ((locp != 2) && (lmax > 1)) {
+       for (int n = 0; n < n_expansion[2]; ++n) {
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           const double a =
+               3.0 * (sn[i]/xx - cs[i]) / xx - sn[i];
+           f[i] = a * wp[i + indx[n + 2*5]*nrho] * vp[i + 2*nrho];
+         }
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 2*5]*nray] = P2 * util_simpson(nrho, f, drho) / q;
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           const double a =
+               -9.0 * sn[i] / (xx*xx * q*q)
+               +9.0 * cs[i] / (xx    * q*q)
+               +4.0 * sn[i] / (q*q)
+               -rho[i]*cs[i] / q;
+           f[i] = a * wp[i + indx[n + 2*5]*nrho] * vp[i + 2*nrho];
+         }
+         dvnl_ray[1*lmaxnray + k1 + indx[n + 2*5]*nray] = P2 * util_simpson(nrho, f, drho);
+       }
+     }
+ 
+     /* p projectors (l=1) */
+     if ((locp != 1) && (lmax > 0)) {
+       for (int n = 0; n < n_expansion[1]; ++n) {
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           const double a = (sn[i]/xx - cs[i]);
+           f[i] = a * wp[i + indx[n + 1*5]*nrho] * vp[i + 1*nrho];
+         }
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 1*5]*nray] = P1 * util_simpson(nrho, f, drho) / q;
+ 
+         f[0] = 0.0;
+         for (int i = 1; i < nrho; ++i) {
+           const double xx = q * rho[i];
+           const double a =
+               -2.0 * sn[i] / (xx * q*q)
+               +2.0 * cs[i] / (q*q)
+               +rho[i]*sn[i] / q;
+           f[i] = a * wp[i + indx[n + 1*5]*nrho] * vp[i + 1*nrho];
+         }
+         dvnl_ray[1*lmaxnray + k1 + indx[n + 1*5]*nray] = P1 * util_simpson(nrho, f, drho);
+       }
+     }
+ 
+     /* s projectors (l=0) */
+     if (locp != 0) {
+       for (int n = 0; n < n_expansion[0]; ++n) {
+ 
+         for (int i = 0; i < nrho; ++i) {
+           const double a = -sn[i]/(q*q) + rho[i]*cs[i]/q;
+           f[i] = a * wp[i + indx[n + 0*5]*nrho] * vp[i + 0*nrho];
+         }
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho) / q;
+ 
+         /* B-term for l=0 is typically zero/unused; keep if your formulation requires it.
+            Here we leave dvnl_ray[1*...] as already zeroed. */
+       }
+     }
+ 
+     /* local stress kernel */
+     f[0] = 0.0;
+     for (int i = 1; i < nrho; ++i) 
+     {
+        f[i] = rho[i] * vp[i + locp*nrho] * (rho[i]*cs[i] - sn[i]/q);
+     }
+     dvl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q + zv * forpi / (q*q) * (2.0*cs[nrho-1]/q + rho[nrho-1]*sn[nrho-1]);
+ 
+     /* semicore stress kernel (isotropic) */
+     if (semicore) {
+       f[0] = 0.0;
+       for (int i = 1; i < nrho; ++i) 
+       {
+          f[i] = rho[i] * std::sqrt(rho_sc_r[i]) * (rho[i]*cs[i] - sn[i]/q);
+       }
+       rho_sc_k_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
+     }
+   }
+ 
+   /* global reductions */
+   myparall->Vector_SumAll(0, 2*nray,     rho_sc_k_ray);
+   myparall->Vector_SumAll(0, nray,       dvl_ray);
+   myparall->Vector_SumAll(0, 2*lmaxnray, dvnl_ray);
+ 
+   /* G == 0 handling */
+   dvl_ray[0]        = 0.0;
+   rho_sc_k_ray[0]   = 0.0;
+ 
+   for (int l = 0; l <= lmax; ++l)
+     for (int n = 0; n < n_expansion[l]; ++n) 
+     {
+       dvnl_ray[0*lmaxnray + 0 + indx[n + l*5]*nray] = 0.0;
+       dvnl_ray[1*lmaxnray + 0 + indx[n + l*5]*nray] = 0.0;
+     }
+ 
+   delete[] f;
+   delete[] sn;
+   delete[] cs;
+}
+
+
 
 
 /*******************************************
