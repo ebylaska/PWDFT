@@ -560,170 +560,170 @@ Psp1d_Hamann::Psp1d_Hamann(Parallel *myparall, const char *psp_name,
  *******************************************/
 void Psp1d_Hamann::vpp_generate_ray(Parallel *myparall, int nray, double *G_ray,
                                     double *vl_ray, double *vnl_ray,
-                                    double *rho_sc_k_ray) {
-
-  /* set up indx(n,l) --> to wp */
-  int indx[5 * 4];
-  int nb = lmax + 1;
-  for (auto l = 0; l <= lmax; ++l) {
-    indx[l * 5] = l;
-    for (auto n1 = 1; n1 < n_expansion[l]; ++n1) {
-      indx[n1 + l * 5] = nb;
-      ++nb;
-    }
-  }
-
-  double pi = 4.00 * atan(1.0);
-  double twopi = 2.0 * pi;
-  double forpi = 4.0 * pi;
-
-  double P0 = sqrt(forpi);
-  double P1 = sqrt(3.0 * forpi);
-  double P2 = sqrt(15.0 * forpi);
-  double P3 = sqrt(105.0 * forpi);
-
-  double zero = 0.0;
-  int izero = 0;
-  int ione = 1;
-  int nray2 = 2 * nray;
-  int lmaxnray = (lmax + 1 + n_extra) * nray;
-
-  double q;
-  double *cs = new double[nrho];
-  double *sn = new double[nrho];
-  double *f = new double[nrho];
-  double a, xx;
-
-  memset(vl_ray, 0, nray * sizeof(double));
-  memset(vnl_ray, 0, lmaxnray * sizeof(double));
-  memset(rho_sc_k_ray, 0, nray2 * sizeof(double));
-
-  for (auto k1 = (1 + myparall->taskid()); k1 < nray; k1 += myparall->np()) {
-    q = G_ray[k1];
-    for (auto i = 0; i < nrho; ++i) {
-      cs[i] = cos(q * rho[i]);
-      sn[i] = sin(q * rho[i]);
-    }
-
-    /* h projectors */
-    /* h projectors */
-    /* f projectors */
-    if ((locp != 3) && (lmax > 2)) {
-      for (auto n = 0; n < n_expansion[3]; ++n) {
-        f[0] = 0.0;
-        for (auto i = 1; i < nrho; ++i) {
-          xx = q * rho[i];
-          a = sn[i] / xx;
-          a = 15.0 * (a - cs[i]) / (xx * xx) - 6 * a + cs[i];
-          f[i] = a * wp[i + indx[n + 3 * 5] * nrho] * vp[i + 3 * nrho];
-        }
-        vnl_ray[k1 + indx[n + 3 * 5] * nray] =
-            P3 * util_simpson(nrho, f, drho) / q;
-      }
-    }
-
-    /* d projectors */
-    if ((locp != 2) && (lmax > 1)) {
-      for (auto n = 0; n < n_expansion[2]; ++n) {
-        f[0] = 0.0;
-        for (auto i = 1; i < nrho; ++i) {
-          a = 3.0 * (sn[i] / (q * rho[i]) - cs[i]) / (q * rho[i]) - sn[i];
-          f[i] = a * wp[i + indx[n + 2 * 5] * nrho] * vp[i + 2 * nrho];
-        }
-        vnl_ray[k1 + indx[n + 2 * 5] * nray] =
-            P2 * util_simpson(nrho, f, drho) / q;
-      }
-    }
-
-    /* p projectors */
-    if ((locp != 1) && (lmax > 0)) {
-      for (auto n = 0; n < n_expansion[1]; ++n) {
-        f[0] = 0.0;
-        for (auto i = 1; i < nrho; ++i) {
-          a = (sn[i] / (q * rho[i]) - cs[i]);
-          f[i] = a * wp[i + indx[n + 1 * 5] * nrho] * vp[i + 1 * nrho];
-        }
-        vnl_ray[k1 + indx[n + 1 * 5] * nray] =
-            P1 * util_simpson(nrho, f, drho) / q;
-      }
-    }
-
-    /* s projectors */
-    if (locp != 0) {
-      for (auto n = 0; n < n_expansion[0]; ++n) {
-        for (auto i = 0; i < nrho; ++i)
-          f[i] = sn[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
-        vnl_ray[k1 + indx[n + 0 * 5] * nray] =
-            P0 * util_simpson(nrho, f, drho) / q;
-      }
-    }
-
-    /* local */
-    if (version == 3) {
-      for (auto i = 0; i < nrho; ++i)
-        f[i] = rho[i] * vp[i + locp * nrho] * sn[i];
-      vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q -
-                   zv * forpi * cs[nrho - 1] / (q * q);
-    } else if (version == 4) {
-      for (auto i = 0; i < nrho; ++i)
-        f[i] = (rho[i] * vp[i + locp * nrho] + zv * std::erf(rho[i] / rlocal)) *
-               sn[i];
-      vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
-    }
-
-    /* semicore density */
-    if (semicore) {
-      for (auto i = 0; i < nrho; ++i)
-        f[i] = rho[i] * sqrt(rho_sc_r[i]) * sn[i];
-      rho_sc_k_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
-
-      for (auto i = 0; i < nrho; ++i)
-        f[i] = (sn[i] / (q * rho[i]) - cs[i]) * rho_sc_r[i + nrho] * rho[i];
-      rho_sc_k_ray[k1 + nray] = util_simpson(nrho, f, drho) * forpi / q;
-    }
-  }
-  myparall->Vector_SumAll(0, 2 * nray, rho_sc_k_ray);
-  myparall->Vector_SumAll(0, nray, vl_ray);
-  myparall->Vector_SumAll(0, lmaxnray, vnl_ray);
-
-  /* G==0 local */
-  if (version == 3) {
-    for (auto i = 0; i < nrho; ++i) {
-      f[i] = vp[i + locp * nrho] * rho[i] * rho[i];
-    }
-    vl_ray[0] = forpi * util_simpson(nrho, f, drho) +
-                twopi * zv * rho[nrho - 1] * rho[nrho - 1];
-  } else if (version == 4) {
-    for (auto i = 0; i < nrho; ++i)
-      f[i] = (vp[i + locp * nrho] * rho[i] + zv * std::erf(rho[i] / rlocal)) *
-             rho[i];
-    vl_ray[0] = forpi * util_simpson(nrho, f, drho);
-  }
-
-  /* G==0 semicore */
-  if (semicore) {
-    for (auto i = 0; i < nrho; ++i)
-      f[i] = sqrt(rho_sc_r[i]) * rho[i] * rho[i];
-    rho_sc_k_ray[0] = forpi * util_simpson(nrho, f, drho);
-    rho_sc_k_ray[0 + nray] = 0.0;
-  }
-
-  /* G==0 vnl */
-  for (auto l = 0; l <= lmax; ++l)
-    for (auto n = 0; n < n_expansion[l]; ++n)
-      vnl_ray[0 + indx[n + l * 5] * nray] = 0.0;
-
-  /* only j0 is non-zero at zero */
-  if (locp != 0)
-    for (auto n = 0; n < n_expansion[0]; ++n) {
-      for (auto i = 0; i < nrho; ++i)
-        f[i] = rho[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
-      vnl_ray[0 + indx[n + 0 * 5] * nray] = P0 * util_simpson(nrho, f, drho);
-    }
-
-  delete[] f;
-  delete[] sn;
-  delete[] cs;
+                                    double *rho_sc_k_ray) 
+{
+   /* set up indx(n,l) --> to wp */
+   int indx[5 * 4];
+   int nb = lmax + 1;
+   for (auto l = 0; l <= lmax; ++l) {
+     indx[l * 5] = l;
+     for (auto n1 = 1; n1 < n_expansion[l]; ++n1) {
+       indx[n1 + l * 5] = nb;
+       ++nb;
+     }
+   }
+ 
+   double pi = 4.00 * atan(1.0);
+   double twopi = 2.0 * pi;
+   double forpi = 4.0 * pi;
+ 
+   double P0 = sqrt(forpi);
+   double P1 = sqrt(3.0 * forpi);
+   double P2 = sqrt(15.0 * forpi);
+   double P3 = sqrt(105.0 * forpi);
+ 
+   double zero = 0.0;
+   int izero = 0;
+   int ione = 1;
+   int nray2 = 2 * nray;
+   int lmaxnray = (lmax + 1 + n_extra) * nray;
+ 
+   double q;
+   double *cs = new double[nrho];
+   double *sn = new double[nrho];
+   double *f = new double[nrho];
+   double a, xx;
+ 
+   memset(vl_ray, 0, nray * sizeof(double));
+   memset(vnl_ray, 0, lmaxnray * sizeof(double));
+   memset(rho_sc_k_ray, 0, nray2 * sizeof(double));
+ 
+   for (auto k1 = (1 + myparall->taskid()); k1 < nray; k1 += myparall->np()) {
+     q = G_ray[k1];
+     for (auto i = 0; i < nrho; ++i) {
+       cs[i] = cos(q * rho[i]);
+       sn[i] = sin(q * rho[i]);
+     }
+ 
+     /* h projectors */
+     /* h projectors */
+     /* f projectors */
+     if ((locp != 3) && (lmax > 2)) {
+       for (auto n = 0; n < n_expansion[3]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           xx = q * rho[i];
+           a = sn[i] / xx;
+           a = 15.0 * (a - cs[i]) / (xx * xx) - 6 * a + cs[i];
+           f[i] = a * wp[i + indx[n + 3 * 5] * nrho] * vp[i + 3 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 3 * 5] * nray] =
+             P3 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* d projectors */
+     if ((locp != 2) && (lmax > 1)) {
+       for (auto n = 0; n < n_expansion[2]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           a = 3.0 * (sn[i] / (q * rho[i]) - cs[i]) / (q * rho[i]) - sn[i];
+           f[i] = a * wp[i + indx[n + 2 * 5] * nrho] * vp[i + 2 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 2 * 5] * nray] =
+             P2 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* p projectors */
+     if ((locp != 1) && (lmax > 0)) {
+       for (auto n = 0; n < n_expansion[1]; ++n) {
+         f[0] = 0.0;
+         for (auto i = 1; i < nrho; ++i) {
+           a = (sn[i] / (q * rho[i]) - cs[i]);
+           f[i] = a * wp[i + indx[n + 1 * 5] * nrho] * vp[i + 1 * nrho];
+         }
+         vnl_ray[k1 + indx[n + 1 * 5] * nray] =
+             P1 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* s projectors */
+     if (locp != 0) {
+       for (auto n = 0; n < n_expansion[0]; ++n) {
+         for (auto i = 0; i < nrho; ++i)
+           f[i] = sn[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
+         vnl_ray[k1 + indx[n + 0 * 5] * nray] =
+             P0 * util_simpson(nrho, f, drho) / q;
+       }
+     }
+ 
+     /* local */
+     if (version == 3) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * vp[i + locp * nrho] * sn[i];
+       vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q -
+                    zv * forpi * cs[nrho - 1] / (q * q);
+     } else if (version == 4) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = (rho[i] * vp[i + locp * nrho] + zv * std::erf(rho[i] / rlocal)) *
+                sn[i];
+       vl_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
+     }
+ 
+     /* semicore density */
+     if (semicore) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * sqrt(rho_sc_r[i]) * sn[i];
+       rho_sc_k_ray[k1] = util_simpson(nrho, f, drho) * forpi / q;
+ 
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = (sn[i] / (q * rho[i]) - cs[i]) * rho_sc_r[i + nrho] * rho[i];
+       rho_sc_k_ray[k1 + nray] = util_simpson(nrho, f, drho) * forpi / q;
+     }
+   }
+   myparall->Vector_SumAll(0, 2 * nray, rho_sc_k_ray);
+   myparall->Vector_SumAll(0, nray, vl_ray);
+   myparall->Vector_SumAll(0, lmaxnray, vnl_ray);
+ 
+   /* G==0 local */
+   if (version == 3) {
+     for (auto i = 0; i < nrho; ++i) {
+       f[i] = vp[i + locp * nrho] * rho[i] * rho[i];
+     }
+     vl_ray[0] = forpi * util_simpson(nrho, f, drho) +
+                 twopi * zv * rho[nrho - 1] * rho[nrho - 1];
+   } else if (version == 4) {
+     for (auto i = 0; i < nrho; ++i)
+       f[i] = (vp[i + locp * nrho] * rho[i] + zv * std::erf(rho[i] / rlocal)) *
+              rho[i];
+     vl_ray[0] = forpi * util_simpson(nrho, f, drho);
+   }
+ 
+   /* G==0 semicore */
+   if (semicore) {
+     for (auto i = 0; i < nrho; ++i)
+       f[i] = sqrt(rho_sc_r[i]) * rho[i] * rho[i];
+     rho_sc_k_ray[0] = forpi * util_simpson(nrho, f, drho);
+     rho_sc_k_ray[0 + nray] = 0.0;
+   }
+ 
+   /* G==0 vnl */
+   for (auto l = 0; l <= lmax; ++l)
+     for (auto n = 0; n < n_expansion[l]; ++n)
+       vnl_ray[0 + indx[n + l * 5] * nray] = 0.0;
+ 
+   /* only j0 is non-zero at zero */
+   if (locp != 0)
+     for (auto n = 0; n < n_expansion[0]; ++n) {
+       for (auto i = 0; i < nrho; ++i)
+         f[i] = rho[i] * wp[i + indx[n + 0 * 5] * nrho] * vp[i + 0 * nrho];
+       vnl_ray[0 + indx[n + 0 * 5] * nray] = P0 * util_simpson(nrho, f, drho);
+     }
+ 
+   delete[] f;
+   delete[] sn;
+   delete[] cs;
 }
 
 /*******************************************
