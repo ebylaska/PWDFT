@@ -60,7 +60,7 @@ public:
   void vpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
   void vpp_generate_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
   void vpp2_generate_stress_ray(Parallel *, int, double *, double *, double *, double *);
-  //void vpp2_generate_stress_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
+  void vpp2_generate_stress_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
 
   void cpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
   void cpp_generate_local_spline(CGrid *, int, double *, double *, double *, double *, double *);
