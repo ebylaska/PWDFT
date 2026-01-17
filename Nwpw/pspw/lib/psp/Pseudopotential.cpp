@@ -1786,7 +1786,7 @@ static void vpp2_generate(// input
                           // output
                           double *dvl,
                           double **dvnl,
-                          double *dncore,
+                          double **dncore,
                           std::ostream& coutput)
 {
    int i, nn;
@@ -1831,14 +1831,24 @@ static void vpp2_generate(// input
       util_filter(nray, G_ray, ecut, dvl_ray);
       for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
       {
-         util_filter(nray, G_ray, wcut, &(dvnl_ray[l * nray]));
-         util_filter(nray, G_ray, wcut, &(dvnl_ray[nray+ l*nray]));
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[l*nray]));
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[nray + l*nray]));
       }
       if (semicore) 
       {
          util_filter(nray, G_ray, ecut, rho_sc_k_ray);
          util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
-      }
+      } 
+
+      /* allocate vnl and ncore generate formated grids */
+      *dvnl = new (std::nothrow) double[3*(psp1d.nprj) * (mygrid->npack(1))]();
+      if (semicore)
+         *dncore = new (std::nothrow) double[4 * mygrid->npack(0)]();
+
+
+      /*  generate formatted grids using splines */
+      psp1d.vpp2_generate_stress_spline(mygrid, nray, G_ray, dvl_ray, dvnl_ray,
+                                        rho_sc_k_ray, dvl, *dvnl, *dncore);
      
 
       /* deallocate ray formatted grids */
@@ -2145,9 +2155,16 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
    bool need_stress = control.compute_stress() || control.cell_optimize() || control.parrinello_rahman();
    if (need_stress)
    {
-      double *dvnl_ptr;
-      dvl = new (std::nothrow) double *[npsp]();
-      vnl = new (std::nothrow) double *[npsp]();
+
+
+      double *dvnl_ptr, *dncore_ptr;;
+
+      dvl  = new (std::nothrow) double *[npsp]();
+      for (ia=0; ia<npsp; ++ia)
+         dvl[ia]  = new (std::nothrow) double[mypneb->npack(0)]();
+
+      dvnl        = new (std::nothrow) double *[npsp]();
+      dncore_atom = new (std::nothrow) double *[npsp]();
       for (ia = 0; ia < npsp; ++ia) 
       {
          strcpy(fname2, myion->atom(ia));
@@ -2160,19 +2177,11 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
          }
          else 
          {
-             /*
-            vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version, nfft, unita,
-                     aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
-                     &nmax[ia], &rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
-                     &G_ptr, &rlocal[ia], semicore[ia], &rcore[ia], &ncore_ptr,
-                     dvl[ia], &dvnl_ptr, &log_amesh[ia], &r1[ia], &rmax[ia], &sigma[ia],
-                     &zion[ia], &n1dgrid[ia], &n1dbasis[ia], &nae_ptr, &nps_ptr,
-                     &lps_ptr, &icut[ia], &eig_ptr, &phi_ae_ptr, &dphi_ae_ptr,
-                     &phi_ps_ptr, &dphi_ps_ptr, &core_ae_ptr, &core_ps_ptr,
-                     &core_ae_prime_ptr, &core_ps_prime_ptr, &rgrid_ptr,
-                     &core_kin[ia], &core_ion[ia], &hartree_matrix_ptr,
-                     &comp_charge_matrix_ptr, &comp_pot_matrix_ptr, coutput);
-            */
+            vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version, nfft, unita, 
+                      aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia], 
+                      &nmax[ia],&rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr, 
+                      &G_ptr, &semicore[ia], &rcore[ia], &dncore_ptr, 
+                      dvl[ia], &dvnl_ptr, coutput);
          }
          dvnl[ia] = dvnl_ptr;
       }
