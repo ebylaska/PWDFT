@@ -1823,16 +1823,19 @@ static void vpp2_generate(// input
       double *dvl_ray = new (std::nothrow) double[nray]();
       double *dvnl_ray = new (std::nothrow) double[2*(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
       double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
-      psp1d.vpp_generate_ray(myparall, nray, G_ray, dvl_ray, dvnl_ray, rho_sc_k_ray);
+      psp1d.vpp2_generate_stress_ray(myparall, nray, G_ray, dvl_ray, dvnl_ray, rho_sc_k_ray);
      
       /* filter the ray formatted grids */
       double ecut = mygrid->lattice->ecut();
       double wcut = mygrid->lattice->wcut();
       util_filter(nray, G_ray, ecut, dvl_ray);
-      for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
+      //for (auto l = 0; l < (psp1d.lmax + 1 + psp1d.n_extra); ++l)
+      int nchan = (psp1d.lmax + 1 + psp1d.n_extra);
+      for (int l=0; l<nchan; ++l)
       {
          util_filter(nray, G_ray, wcut, &(dvnl_ray[l*nray]));
-         util_filter(nray, G_ray, wcut, &(dvnl_ray[nray + l*nray]));
+         //util_filter(nray, G_ray, wcut, &(dvnl_ray[nray + l*nray]));
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[1*nchan*nray + l*nray]));
       }
       if (semicore) 
       {
@@ -2173,17 +2176,33 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
          if (vpp_formatter_check(mypneb, fname2, psp_version)) 
          {
+            strcpy(pspname, myion->atom(ia));
+            strcat(pspname, ".psp");
+            control.add_permanent_dir(pspname);
 
+            vpp2_generate(mypneb, pspname, fname2,
+                          psp_type[ia], psp_version,
+                          nfft, unita, semicore[ia], nprj[ia],
+                          dvl[ia], &dvnl_ptr, &dncore_ptr, coutput);
+
+            vpp2_write(mypneb, fname2, comment[ia], psp_type[ia], psp_version,
+                       nfft, unita, aname, amass[ia], zv[ia], lmmax[ia],
+                       lmax[ia], locp[ia], nmax[ia], rc[ia], nprj[ia],
+                       n_projector[ia], l_projector[ia], m_projector[ia], b_projector[ia],
+                       Gijl[ia], semicore[ia], rcore[ia], dncore_ptr,
+                       dvl[ia], dvnl_ptr, coutput);
          }
          else 
          {
-            vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version, nfft, unita, 
+            int version_local = 0;
+            vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita, 
                       aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia], 
                       &nmax[ia],&rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr, 
                       &G_ptr, &semicore[ia], &rcore[ia], &dncore_ptr, 
                       dvl[ia], &dvnl_ptr, coutput);
          }
          dvnl[ia] = dvnl_ptr;
+         dncore_atom[ia] = dncore_ptr;
       }
    }
 }
