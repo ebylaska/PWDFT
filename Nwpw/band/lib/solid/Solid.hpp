@@ -131,6 +131,9 @@ public:
    int multiplicity;
    double total_charge;
 
+   double rmsd_occupation = 0.0;
+   double rmsd_occupation_prev = 0.0;
+
    // psi smearing block
    bool fractional=false;
    bool fractional_frozen=false;
@@ -320,13 +323,16 @@ public:
 
 
             // RMSD occupation computation
-            double rmsd_occupation = 0.0;
+            rmsd_occupation_prev = rmsd_occupation;
+            rmsd_occupation = 0.0;
             for (size_t i=0; i<nbrillq*(ne[0]+ne[1]); ++i)
             {
                 double delta_occ = occ2[i] - occ1[i];
                 rmsd_occupation += delta_occ * delta_occ;
             }
-            rmsd_occupation = std::sqrt(rmsd_occupation / nbrillq*(ne[0]+ne[1]));
+            //rmsd_occupation = std::sqrt(rmsd_occupation / nbrillq*(ne[0]+ne[1]));
+            rmsd_occupation = std::sqrt(rmsd_occupation / (nbrillq * (ne[0] + ne[1])));
+
 
             // Adaptive alpha adjustment
             if (rmsd_occupation < fractional_rmsd_threshold)  // Converging well

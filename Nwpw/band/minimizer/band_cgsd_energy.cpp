@@ -84,6 +84,9 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
    bool lprint = (parall->is_master() && control.print_level("low") && doprint);
 
    bool extra_rotate = control.scf_extra_rotate(); 
+
+   const double occ_rmsd_abs_thresh   = 1.0e-4;
+   const double occ_rmsd_delta_thresh = 5.0e-5;
  
    for (auto ii=0; ii<80; ++ii)
       E[ii] = 0.0;
@@ -215,6 +218,8 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
             stalled = false;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
       }
+
+
    } else if (minimizer == 3) {
       if (mysolid.newpsi)
       {
@@ -305,16 +310,34 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          //if (icount == (it_out*it_in))
          //   mysolid.occupation_update = false;
            
+         // fractional occupation are updated in gen_all_energies
          total_energy = mysolid.gen_all_energies();
 
-         // [Insert fractional occupation update here if needed]
-         // if (mysolid.fractional) update_occupations(...);
+         // adaptive SCF damping based on occupation stability 
+         double alpha_use = scfmix.get_alpha();
 
+         double occ_rmsd  = mysolid.rmsd_occupation;
+         double docc_rmsd = std::abs(mysolid.rmsd_occupation -
+                                     mysolid.rmsd_occupation_prev);
 
-         //std::cout << "total_energy=" << total_energy << " " << total_energy2 
-         //          << " " << total_energy2 - total_energy << std::endl;
+         // If occupations are unstable, damp density mixing
+         //if (mysolid.rmsd_occupation > 1.0e-4)
+         if ( (occ_rmsd  > occ_rmsd_abs_thresh) ||
+              (docc_rmsd > occ_rmsd_delta_thresh) )
+         {
+            // occupations unstable → damp density mixing
+            alpha_use = std::min(alpha_use, 0.02);
+         }
+         else
+         {
+            // occupations stable → restore nominal SCF alpha
+            alpha_use = scf_alpha;
+         }
 
-         //define fractional occupation here
+         scfmix.set_alpha(alpha_use);
+
+         // define new KS potential here
+         //Perform SCF mixing
          scfmix.mix(vout,vnew,deltae,&scf_error);
          std::memcpy(vout,vnew,ispin*nfft3d*sizeof(double));
          
@@ -334,6 +357,7 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          if ((oprint) && ((icount%it_in==0) || converged))
          {
             if ((mysolid.fractional) &&  (!mysolid.fractional_frozen))
+            {
                coutput << Ifmt(10)    << icount
                        << Efmt(25,12) << total_energy
                        << Efmt(25,12)  << total_energy - mysolid.E[28]
@@ -343,6 +367,13 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
                        << Efmt(16,6)  << deltae-deltasmear
                        << Efmt(16,6)  << deltasmear 
                        << Efmt(16,6)  << deltac << std::endl;
+               coutput << "                 "
+                       << "occ_rmsd=" << Efmt(10,3) << mysolid.rmsd_occupation
+                       << "   Δocc_rmsd="
+                       << Efmt(10,3)
+                       << (mysolid.rmsd_occupation - mysolid.rmsd_occupation_prev)
+                       << std::endl;
+            }
             else
                coutput << Ifmt(10)    << icount
                        << Efmt(25,12) << total_energy

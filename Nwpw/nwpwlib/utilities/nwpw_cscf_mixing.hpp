@@ -170,6 +170,19 @@ public:
       }
    }
 
+   /*******************************************
+    *                                         *
+    *        nwpw_cscf_mixing::set_alpha      *
+    *                                         *
+    *******************************************/
+   void set_alpha(double a) { alpha = a; }
+
+   /*******************************************
+    *                                         *
+    *        nwpw_cscf_mixing::get_alpha      *
+    *                                         *
+    *******************************************/
+   double get_alpha() const { return alpha; }
 
 
    /*******************************************
@@ -418,11 +431,11 @@ public:
             //scf_error = std::sqrt(scf_error);
 
             //dF = dF(m-1), U = U(m-1)
-            //int ih = m - 2;
-            //double *dF = rho_list + indxf[ih];
-            //double *U  = rho_list + indxu[ih];
-            double *dF = rho_list + (5+m-1)*nsize;
-            double *U  = rho_list + (5+max_m+m-1)*nsize;
+            int ih = m - 2;
+            double *dF = rho_list + indxf[ih];
+            double *U  = rho_list + indxu[ih];
+            //double *dF = rho_list + (5+m-1)*nsize;
+            //double *U  = rho_list + (5+max_m+m-1)*nsize;
 
             // dF = (F1-F0)
             std::memcpy(dF,F1,nsize*sizeof(double));

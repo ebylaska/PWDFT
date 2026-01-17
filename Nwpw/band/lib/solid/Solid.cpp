@@ -83,8 +83,10 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
    nfft[0] = mygrid->nx;
    nfft[1] = mygrid->ny;
    nfft[2] = mygrid->nz;
-   for (int i=0; i<60; ++i)
-     E[i] = 0.0;
+   std::fill(std::begin(E), std::end(E), 0.0);
+   //for (int i=0; i<80; ++i)
+   //   E[i] = 0.0;
+
  
    ep = control.Eprecondition();
    sp = control.Sprecondition();
