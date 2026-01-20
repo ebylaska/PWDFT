@@ -69,6 +69,7 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
       fractional_gamma = 0.0;
       occupation_update = false;
    }
+   initial_occupation_update = occupation_update;
    multiplicity = control.multiplicity();
    total_charge = control.total_charge();
 

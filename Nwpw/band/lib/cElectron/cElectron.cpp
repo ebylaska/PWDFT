@@ -549,6 +549,42 @@ void cElectron_Operators::run(double *psi, double *dn, double *dng, double *dnal
  *                                          *
  ********************************************/
 /* densities and potentials have been set */
+/**
+ * @brief Apply the current Kohn–Sham Hamiltonian to a trial orbital set,
+ *        generating internal real-space orbitals and Hψ, without rebuilding
+ *        densities or potentials.
+ *
+ * This routine applies the existing Kohn–Sham Hamiltonian to the supplied
+ * orbitals `psi`. It assumes that all electronic densities and effective
+ * potentials have already been constructed and remain fixed.
+ *
+ * The function:
+ *  - Generates the real-space representation of the orbitals (`psi_r`)
+ *  - Applies the current Kohn–Sham Hamiltonian to compute `Hpsi`
+ *
+ * This routine deliberately does **not**:
+ *  - Build or update charge or auxiliary densities
+ *  - Update SCF or effective potentials
+ *  - Diagonalize the Hamiltonian or compute eigenvalues
+ *  - Use or update orbital occupations
+ *  - Perform smearing or free-energy minimization
+ *
+ * As a result, this operation is inexpensive and intended for use inside
+ * inner-loop orbital optimization methods (e.g., steepest descent,
+ * conjugate-gradient, or geodesic updates) where the Kohn–Sham potential
+ * is held fixed.
+ *
+ * @param psi Pointer to the orbital coefficients to which the Hamiltonian
+ *            is applied.
+ *
+ * @note On return, the class-internal arrays holding the real-space orbitals
+ *       (`psi_r`) and Hamiltonian-applied orbitals (`Hpsi`) are updated and
+ *       available for subsequent use.
+ *
+ * @note Correct usage requires that densities and Kohn–Sham potentials have
+ *       been generated beforehand (e.g., via `run()` or an explicit density
+ *       and potential update).
+ */
 void cElectron_Operators::run0(double *psi)
 {
    ++counter;

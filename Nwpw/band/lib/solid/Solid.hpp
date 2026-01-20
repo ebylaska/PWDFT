@@ -142,6 +142,7 @@ public:
    double fractional_alpha, fractional_alpha_min, fractional_alpha_max, fractional_beta, fractional_gamma, fractional_rmsd_threshold;
    int fractional_it=0;
    bool occupation_update = false;;
+   bool initial_occupation_update = false;;
  
    double E[80],en[2],ep,sp,tole;
  
@@ -223,44 +224,327 @@ public:
 
  
    /* solid energy */
-   double energy() {
+   /***********************************************
+    *                                             *
+    *                 energy                      *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Evaluate the total Kohn–Sham energy with a rebuilt SCF potential.
+    *
+    * This routine computes the total Kohn–Sham energy for the current orbitals
+    * `psi1` by performing a **full SCF operator application** using the current
+    * occupations `occ1`.
+    *
+    * Specifically, it:
+    *  - Converts `psi1` to real-space form
+    *  - Builds charge and auxiliary densities (`rho1`, `dng1`, `rho1_all`)
+    *  - Constructs SCF potentials (Hartree, XC, pseudopotential, etc.)
+    *  - Applies the Hamiltonian to the orbitals
+    *  - Evaluates the electronic energy and adds the ion–ion (Ewald) contribution
+    *
+    * In addition to updating the passed density arrays, this routine also updates
+    * shared operator state within `cElectron_Operators`, including:
+    *  - Real-space orbitals (`psi_r`)
+    *  - Hamiltonian-applied orbitals (`Hpsi`)
+    *
+    * No eigenvalue diagonalization, orbital rotation, or occupation update is
+    * performed. Occupations are treated as fixed input data.
+    *
+    * Intended usage:
+    *  - Outer SCF iterations where densities and potentials must be rebuilt
+    *  - Energy evaluations consistent with the current self-consistent Hamiltonian
+    *  - Situations where updated `Hpsi` is required for subsequent operations
+    *
+    * @note This routine differs from `energy0()` in that it rebuilds densities
+    *       and SCF potentials rather than reusing a fixed Hamiltonian.
+    *
+    * @note Smearing, free-energy minimization, and occupation relaxation are not
+    *       performed here, even if fractional occupations are present.
+    *
+    * @return Total Kohn–Sham energy evaluated after rebuilding the SCF potential.
+    */
+   double energy() 
+   {
       myelectron->run(psi1, rho1, dng1, rho1_all, occ1);
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
       return E[0];
    }
 
-   double energy0() {
-      myelectron->run0(psi1);
+
+   /***********************************************
+    *                                             *
+    *                 energy0                     *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Evaluate the total Kohn–Sham energy using a fixed SCF potential.
+    *
+    * This routine computes the total Kohn–Sham energy for the current orbitals
+    * `psi1` **without rebuilding densities or SCF potentials**.
+    *
+    * Specifically, it:
+    *  - Applies the Hamiltonian corresponding to the *current* SCF potential
+    *    to the orbitals via `cElectron_Operators::run0()`
+    *  - Evaluates the electronic energy using the existing densities
+    *    (`rho1`, `dng1`, `rho1_all`) and occupations (`occ1`)
+    *  - Adds the ion–ion (Ewald) contribution
+    *
+    * No density update, SCF potential construction, diagonalization, or
+    * occupation update is performed.
+    *
+    * Intended usage:
+    *  - Fixed-potential energy evaluation during inner orbital minimization
+    *    (e.g. Grassmann or Stiefel manifold optimization)
+    *  - Line searches, trial steps, or diagnostics where rebuilding the
+    *    SCF potential would be incorrect or too expensive
+    *
+    * @note This routine assumes that `rho1`, `dng1`, `rho1_all`, and the SCF
+    *       potentials are already consistent with the current outer SCF state.
+    *
+    * @note Occupations (`occ1`) are treated as fixed input data. No smearing,
+    *       free-energy minimization, or occupation relaxation occurs here.
+    *
+    * @note This routine updates shared operator state within `cElectron_Operators`,
+    *       including the real-space orbitals (`psi_r`) and Hamiltonian-applied
+    *       orbitals (`Hpsi`) corresponding to `psi1`.
+    *
+    * @return Total Kohn–Sham energy evaluated at fixed density, potential,
+    *         and occupations.
+    */
+   double energy0() 
+   {
+      myelectron->run0(psi1); // updates psi_r and Hpsi only
       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all, occ1) + myewald->energy());
       return E[0];
    }
  
-   double psi2_energy() {
+   /***********************************************
+    *                                             *
+    *                 psi2_energy                 *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Evaluate the Kohn–Sham total energy for trial orbitals `psi2`,
+    *        rebuilding electronic densities but without diagonalization
+    *        or occupation updates.
+    *
+    * This routine computes the Kohn–Sham total energy associated with the
+    * trial orbital set `psi2` by explicitly rebuilding the electronic
+    * densities from `psi2`.
+    *
+    * The function:
+    *  - Applies the electronic Hamiltonian to `psi2`
+    *  - Builds charge and auxiliary densities (`rho2`, `dng2`, `rho2_all`)
+    *  - Evaluates the electronic energy functional using these densities
+    *  - Adds the ion–ion (Ewald) energy contribution
+    *
+    * This routine deliberately does **not**:
+    *  - Diagonalize the Kohn–Sham Hamiltonian
+    *  - Compute eigenvalues
+    *  - Use or update orbital occupations
+    *  - Perform smearing or free-energy (Mermin) minimization
+    *  - Perform SCF density mixing
+    *
+    * The returned energy corresponds to a fixed-occupation, zero-temperature
+    * Kohn–Sham total energy evaluated self-consistently with respect to the
+    * density generated from `psi2`.
+    *
+    * Typical use cases include:
+    *  - Energy evaluation during orbital optimization steps
+    *  - Line searches where density relaxation is required but spectral
+    *    information is unnecessary
+    *  - Intermediate energy checks between full SCF synchronization points
+    *
+    * @note This routine updates `rho2`, `dng2`, and `rho2_all` as side effects.
+    *
+    * @note In addition to updating `rho2`, `dng2`, and `rho2_all`, this routine
+    *       also updates shared operator state within `cElectron_Operators`,
+    *       including the real-space orbitals (`psi_r`) and Hamiltonian-applied
+    *       orbitals (`Hpsi`) corresponding to `psi2`.
+    *
+    * @return Kohn–Sham total energy (electronic + ion–ion) for `psi2`.
+    */
+   double psi2_energy() 
+   {
       myelectron->run(psi2, rho2, dng2, rho2_all);
       E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
       return E[0];
    }
 
-   double psi2_energy0() {
-      myelectron->run0(psi2);
+   /***********************************************
+    *                                             *
+    *                 psi2_energy0                *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Evaluate the Kohn–Sham total energy for trial orbitals `psi2`
+    *        using pre-existing densities.
+    *
+    * This routine evaluates the Kohn–Sham total energy associated with the
+    * trial orbital set `psi2` **without rebuilding electronic densities**.
+    *
+    * The function:
+    *  - Applies the electronic Hamiltonian to `psi2` via `run0`
+    *  - Evaluates the electronic energy functional using the current
+    *    densities (`rho2`, `dng2`, `rho2_all`)
+    *  - Adds the ion–ion (Ewald) energy contribution
+    *
+    * This routine deliberately does **not**:
+    *  - Build or update charge or auxiliary densities
+    *  - Diagonalize the Kohn–Sham Hamiltonian
+    *  - Use or update orbital occupations
+    *  - Perform smearing or free-energy (Mermin) minimization
+    *  - Perform SCF density mixing
+    *
+    * The returned energy corresponds to a fixed-density, zero-temperature
+    * Kohn–Sham total energy evaluated at the trial orbitals `psi2`.
+    *
+    * Typical use cases include:
+    *  - Line searches in orbital minimization
+    *  - Trial-step energy evaluation in Grassmann or Stiefel optimizers
+    *  - Energy-only checks where density updates would be inconsistent
+    *
+    * @note This routine assumes that `rho2`, `dng2`, and `rho2_all` are already
+    *       consistent with the intended evaluation context.
+    *
+    * @note In addition to returning an energy, this routine updates shared
+    *       operator state within `cElectron_Operators`, including the real-space
+    *       orbitals (`psi_r`) and Hamiltonian-applied orbitals (`Hpsi`)
+    *       corresponding to `psi2`.
+    *
+    * @return Kohn–Sham total energy (electronic + ion–ion) for `psi2`.
+    */
+   double psi2_energy0() 
+   {
+      myelectron->run0(psi2); // updates psi_r and Hpsi only
       E[0] = (myelectron->energy(psi2, rho2, dng2, rho2_all) + myewald->energy());
       return E[0];
    }
  
    /* solid energy and eigenvalues */
-   double energy_eigenvalues() {
-      myelectron->run(psi1, rho1, dng1, rho1_all);
-      E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
+   /***********************************************
+    *                                             *
+    *           energy_eigenvalues                *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Compute Kohn–Sham total energy and eigenvalues without occupation logic.
+    *
+    * This routine performs a minimal energy evaluation for the current Kohn–Sham
+    * orbitals (`psi1`) and density (`rho1`). It intentionally excludes all
+    * occupation-dependent physics.
+    *
+    * The function:
+    *  - Builds charge and auxiliary densities from the current orbitals
+    *  - Computes the electronic Kohn–Sham energy
+    *  - Adds the ion–ion (Ewald) energy
+    *  - Constructs and diagonalizes the Kohn–Sham Hamiltonian to obtain eigenvalues
+    *
+    * Notably, this routine does **not**:
+    *  - Use or update orbital occupations
+    *  - Perform smearing or free-energy (Mermin) minimization
+    *  - Compute entropy, Fermi levels, or smearing corrections
+    *  - Modify orbitals, densities, or SCF history
+    *
+    * This routine is typically used for:
+    *  - Band-structure and eigenvalue diagnostics
+    *  - Fixed-orbital energy evaluation
+    *  - Algorithms where occupation physics is handled externally or is irrelevant
+    *
+    * @note This function does **not** perform SCF density mixing, orbital
+    *       optimization, or occupation updates.
+    *
+    * @return Kohn–Sham total energy (electronic + ion–ion), evaluated without
+    *         reference to orbital occupations.
+    */
+   double energy_eigenvalues() 
+   {
+       myelectron->run(psi1, rho1, dng1, rho1_all);
+       E[0] = (myelectron->energy(psi1, rho1, dng1, rho1_all) + myewald->energy());
       
-      /* generate eigenvalues */
-      myelectron->gen_hml(psi1, hml);
+       /* generate eigenvalues */
+       myelectron->gen_hml(psi1, hml);
       //mygrid->m_diagonalize(hml, eig);
-      mygrid->w_diagonalize(hml, eig);
+       mygrid->w_diagonalize(hml, eig);
       
-      return E[0];
+       return E[0];
    }
- 
-   /* solid energy and eigenvalues and other energies and en */
+
+
+   /***********************************************
+    *                                             *
+    *              gen_all_energies               *
+    *                                             *
+    ***********************************************/
+    /**
+      * KEYWORDS: fractional, fractional_frozen, occupation_update
+      * ...
+      */
+   /**
+    * @brief Evaluate Kohn–Sham energies, eigenvalues, and (optionally) occupations
+    *        for the current electronic state.
+    *
+    * Control flags (key invariants):
+    *  - `fractional`          : selects orbital manifold
+    *                            (Grassmann if false, Stiefel if true)
+    *  - `fractional_frozen`   : controls smearing / free-energy minimization
+    *                            (frozen == true ⇒ no smearing, fixed occupations)
+    *  - `occupation_update`  : iteration-level control of occupation relaxation
+    *                            (consulted only when smearing is active)
+    *
+    * @invariant Smearing, free-energy minimization, and occupation relaxation
+    *            are never active unless (`fractional == true && !fractional_frozen`).
+    *
+    * This routine performs a complete energy evaluation assuming the Kohn–Sham
+    * orbitals (`psi1`) and density (`rho1`) are already consistent with the
+    * current Kohn–Sham potential.
+    *
+    * The function:
+    *  - Builds charge and auxiliary densities from the current orbitals and occupations
+    *  - Computes all electronic energy contributions (kinetic, Hartree, XC, local and
+    *    nonlocal pseudopotential terms)
+    *  - Adds ion–ion (Ewald), dispersion, and optional ionic constraint energies
+    *  - Constructs and diagonalizes the Kohn–Sham Hamiltonian to obtain eigenvalues
+    *
+    * Orbital manifold:
+    *  - `fractional == false`:
+    *      Orbitals represent a Grassmann subspace; orbital rotations and geodesic
+    *      minimization are permitted elsewhere.
+    *  - `fractional == true`:
+    *      Orbitals are distinct eigenstates with individual occupations and therefore
+    *      reside on the Stiefel manifold; orbital rotations are not allowed and
+    *      diagonalization is required.
+    *
+    * Fractional occupations and smearing:
+    *  - Smearing and free-energy minimization are active **iff**
+    *        (`fractional == true && fractional_frozen == false`).
+    *  - When smearing is active, occupations may be updated from eigenvalues if
+    *        `occupation_update == true`.
+    *  - When `fractional_frozen == true`, occupations are held fixed:
+    *        no smearing, no entropy term, and no free-energy minimization.
+    *
+    * In smearing mode, the returned value is the finite-temperature (Mermin)
+    * free energy including the smearing correction stored in `E[28]`.
+    * Otherwise, the returned value is the fixed-occupation Kohn–Sham total energy.
+    *
+    * Side effects:
+    *  - assumes ψ is the current state; rebuilds ρ and auxiliary densities from ψ and current occupations; evaluates energies and eigenvalues.
+    *  - Updates total energy array `E[]` and auxiliary energy array `en[]`
+    *  - Updates eigenvalues `eig`
+    *  - Optionally updates occupations `occ1`
+    *  - Advances the internal fractional-occupation iteration counter
+    *
+    * @note This function does **not** perform SCF density mixing or orbital
+    *       optimization. Those are handled externally.
+    *
+    * @note Correct SCF behavior requires external coordination of density mixing
+    *       and occupation updates; these nonlinear updates should not be aggressive
+    *       in the same SCF phase.
+    *
+    * @return Total energy (Kohn–Sham energy or free energy, depending on mode).
+    */
+
    double gen_all_energies() 
    {
       myelectron->run(psi1, rho1, dng1, rho1_all,occ1);
@@ -335,28 +619,19 @@ public:
 
 
             // Adaptive alpha adjustment
-            if (rmsd_occupation < fractional_rmsd_threshold)  // Converging well
-               fractional_alpha = std::min(fractional_alpha_max, fractional_alpha * (1.0 + fractional_beta));
-            else  // Oscillations or divergence
-               fractional_alpha = std::max(fractional_alpha_min, fractional_alpha * (1.0 - fractional_beta));
-
-
+            if (fractional_it >= 2) 
+            {
+               if (rmsd_occupation < fractional_rmsd_threshold)  // Converging well
+                  fractional_alpha = std::min(fractional_alpha_max, fractional_alpha * (1.0 + fractional_beta));
+               else  // Oscillations or divergence
+                  fractional_alpha = std::max(fractional_alpha_min, fractional_alpha * (1.0 - fractional_beta));
+            }
 
 
             // Update occupations
             for (auto i=0; i<nbrillq*(ne[0]+ne[1]); ++i)
                occ1[i] = (1.0-fractional_alpha)*occ1[i] + fractional_alpha*occ2[i];
             //std::memcpy(occ2,occ1,(ne[0]+ne[1])*sizeof(double));
-
-            // Debugging output (optional)
-           /*  std::cout << " Iteration: " << fractional_it
-                      << ", RMSD: " << rmsd_occupation
-                      << ", Alpha: " << fractional_alpha
-                      << ", Smear Correction: " << smearcorrection
-                      << ", Delta Smear Correction: " << smearcorrection - smearcorrection_old << std::endl;;
-           */
-
-
          }
          else
          {
@@ -369,17 +644,24 @@ public:
                double *eigk  = eig + ishift;
                double *occ1k = occ1 + ishift;
 
-               smearfermi[0]   +=  mygrid->define_smearfermi(ne[0],eigk,occ1k);
-               smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[0],eigk,occ1k,smearfermi[0],smearkT);
+               // spin-up
+               smearfermi[0] +=  mygrid->define_smearfermi(ne[0],eigk,occ1k);
+               //smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[0],eigk,occ1k,smearfermi[0],smearkT);
+               double sc_k    = mygrid->add_smearcorrection(smeartype,ne[0],eigk,occ1k,smearfermi[0],smearkT);
                if (ispin==1)
                {
-                  smearcorrection *= 2.0;
+                  //smearcorrection *= 2.0;
+                  // restricted → double the *k-point contribution*
+                  sc_k *= 2.0;
                }
                else
                {
+                  // spin-down
                   smearfermi[1]   +=  mygrid->define_smearfermi(ne[1],eigk+ne[0],occ1k+ne[0]);
-                  smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[1],eigk+ne[0],occ1k+ne[0],smearfermi[0],smearkT);
+                  //smearcorrection +=  mygrid->add_smearcorrection(smeartype,ne[1],eigk+ne[0],occ1k+ne[0],smearfermi[0],smearkT);
+                  sc_k += mygrid->add_smearcorrection(smeartype,ne[1],eigk+ne[0],occ1k+ne[0],smearfermi[0],smearkT);
                }
+               smearcorrection += sc_k;
             }
 
          }

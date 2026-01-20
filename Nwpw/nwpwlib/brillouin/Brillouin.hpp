@@ -7,7 +7,7 @@
 
 #include "Control2.hpp"
 #include "Lattice.hpp"
-#include "Brillouin.hpp"
+//#include "Brillouin.hpp"
 
 namespace pwdft {
 
@@ -18,6 +18,8 @@ public:
    int nbrillouin, nbrillouin0;
    double *weight;
    double *kvector, *ksvector;
+   int nkx=0,nky=0,nkz=0;
+   double skx=0.0,sky=0.0,skz=0.0;
 
    /* Constructors */
    // Ion(RTDB&, Control2&);

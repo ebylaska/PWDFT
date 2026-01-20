@@ -80,6 +80,71 @@ public:
     *        nwpw_cscf_mixing::nwpw_scf_mixing       *
     *                                               *
     *************************************************/
+   /**
+    * @brief Construct an SCF density mixer with Kerker preconditioning.
+    *
+    * This constructor initializes the charge-density mixing engine used
+    * in Kohn–Sham SCF iterations. It supports multiple mixing algorithms
+    * (simple, Broyden, Johnson/Pulay, Anderson, and local Thomas–Fermi)
+    * and allocates the required history buffers based on the selected method.
+    *
+    * The mixer operates on real-space density (or potential) arrays and
+    * applies Kerker filtering to suppress long-wavelength charge sloshing
+    * in periodic systems.
+    *
+    * On construction, the internal mixing history is initialized using
+    * the supplied input density, but no SCF iteration is performed.
+    *
+    * @param[in] mygrid0
+    *   Pointer to the real-space grid object. Provides grid dimensions,
+    *   spin multiplicity, and MPI communicator access.
+    *
+    * @param[in] g0
+    *   Kerker screening parameter (|G| cutoff) used to damp long-wavelength
+    *   density fluctuations.
+    *
+    * @param[in] algorithm0
+    *   Mixing algorithm selector:
+    *     - 0 : Simple linear mixing
+    *     - 1 : Broyden mixing
+    *     - 2 : Johnson (Pulay multisecant) mixing
+    *     - 3 : Anderson mixing
+    *     - 4 : Local Thomas–Fermi mixing
+    *
+    * @param[in] alpha0
+    *   Initial (and maximum) mixing parameter controlling the step size
+    *   applied to the residual density.
+    *
+    * @param[in] beta0
+    *   Secondary mixing parameter used by some algorithms
+    *   (e.g., Broyden, Anderson, Thomas–Fermi).
+    *
+    * @param[in] max_m0
+    *   Maximum number of history vectors retained for multisecant
+    *   (Johnson/Pulay) mixing.
+    *
+    * @param[in] ispin0
+    *   Number of spin channels (1 for non-spin-polarized, 2 for collinear spin).
+    *
+    * @param[in] nsize0
+    *   Number of real-space grid points per spin channel.
+    *
+    * @param[in] rho_in
+    *   Pointer to the initial density (or potential) array used to seed
+    *   the mixing history. Must be of size `nsize0 * ispin0`.
+    *
+    * @note
+    *   The constructor allocates internal buffers based on the chosen
+    *   mixing algorithm and initializes the mixing history via `reset_mix()`.
+    *   No ownership is taken of `rho_in`.
+    *
+    * @warning
+    *   Memory allocation failures are not fatal but may result in undefined
+    *   behavior if allocation returns `nullptr`. Callers should ensure
+    *   sufficient memory is available.
+    */
+
+
    nwpw_cscf_mixing(CGrid *mygrid0, const double g0, const int algorithm0, const double alpha0, const double beta0, const int max_m0, 
                    const int ispin0, const int nsize0, double *rho_in) : nwpw_ckerker(mygrid0, g0)
    {
@@ -151,11 +216,39 @@ public:
       if (indxf)    delete [] indxf;
       if (indxu)    delete [] indxu;
    }
+
    /*******************************************
     *                                         *
     *           nwpw_cscf_mixing::reset_mix    *
     *                                         *
     *******************************************/
+   /**
+    * @brief Reset the SCF mixing history using a supplied reference density.
+    *
+    * This routine reinitializes the internal mixing state and history buffers
+    * using the provided density/potential array. It is typically called:
+    *   - at the beginning of an SCF cycle,
+    *   - after detecting numerical instability,
+    *   - or when a hard reset of Pulay/Johnson history is required.
+    *
+    * The function:
+    *   - Resets the mixing iteration counter `m` to 1
+    *   - Copies the input array into the primary history slot
+    *   - Reinitializes index mappings for Johnson/Pulay multisecant storage
+    *
+    * No Kerker filtering or SCF error evaluation is performed here.
+    *
+    * @param[in] rho_in
+    *   Pointer to the density or potential array used to initialize the
+    *   mixing history. The array must be of size `nsize = ngrid * ispin`
+    *   and consistent with the current grid and spin configuration.
+    *
+    * @note
+    *   This function performs a *soft reset* of the mixer state. It does not
+    *   modify mixing parameters such as `alpha`, `beta`, or algorithm selection.
+    *   For a full reset including iteration counters and Johnson matrices,
+    *   use `reset_history()`.
+    */
    void reset_mix(double *rho_in)
    {
       m = 1;
@@ -169,6 +262,108 @@ public:
          }
       }
    }
+
+
+   /*******************************************
+    *                                         *
+    *   nwpw_cscf_mixing::reset_history        *
+    *                                         *
+    *******************************************/
+    /*
+     * Purpose
+     * -------
+     * Fully resets the SCF mixing history and internal
+     * convergence state to a clean, linear-mixing-like
+     * configuration using the current density.
+     *
+     * This routine is intended to be called when the
+     * SCF procedure becomes unstable or unproductive,
+     * most commonly due to:
+     *
+     *   - Strong metallic occupation fluctuations
+     *   - Oscillatory Pulay / Johnson behavior
+     *   - Non-physical residual growth (NaNs, blow-up)
+     *   - Sudden changes in Fermi level or band ordering
+     *
+     * In particular, this function is used as a
+     * *controlled recovery mechanism* for fractional-
+     * occupation metallic systems, allowing the SCF
+     * loop to regain stability without restarting the
+     * entire calculation.
+     *
+     *
+     * What This Function Does
+     * -----------------------
+     * 1. Discards all accumulated mixing history
+     *    (Pulay / Broyden / Johnson / Anderson vectors).
+     *
+     * 2. Reinitializes the mixing state using the
+     *    provided current density as the new reference.
+     *
+     * 3. Resets internal SCF convergence tracking:
+     *      - SCF iteration counters
+     *      - Previous SCF error norms
+     *      - Adaptive alpha growth/shrink state
+     *
+     * 4. For Johnson mixing specifically:
+     *      - Clears the A-matrix used in the linear
+     *        least-squares solve
+     *      - Resets the Johnson iteration counter (m)
+     *
+     *
+     * What This Function Does NOT Do
+     * ------------------------------
+     * - Does NOT modify the Kohn–Sham orbitals
+     * - Does NOT recompute the density
+     * - Does NOT change the chosen mixing algorithm
+     * - Does NOT alter Kerker parameters
+     *
+     * The caller is responsible for ensuring that
+     * `rho_current` corresponds to a physically
+     * meaningful density (typically `rho1`).
+     *
+     *
+     * Typical Usage
+     * -------------
+     * Called when adaptive SCF logic detects:
+     *
+     *   - Large absolute occupation RMSD
+     *   - Persistent Δocc oscillations
+     *   - Divergent SCF residuals
+     *
+     * Example:
+     *
+     *   scfmix.set_alpha(reduced_alpha);
+     *   scfmix.reset_history(mysolid.rho1);
+     *
+     *
+     * Parameters
+     * ----------
+     * rho_current :
+     *   Pointer to the current real-space density
+     *   array (spin-packed), used to reinitialize
+     *   the mixing reference state.
+     *
+     */
+   void reset_history(double *rho_current)
+   {
+      // Reset Pulay / Johnson history
+      reset_mix(rho_current);
+ 
+      // Reset SCF iteration tracking
+      scf_it = 0;
+      scf_it_max = 0;
+      scf_error_prev = 0.0;
+ 
+      // Johnson-specific: clear A matrix
+      if (algorithm == 2)
+      {
+          std::memset(A, 0, max_list * max_list * sizeof(double));
+          m = 1;
+      }
+   }
+
+
 
    /*******************************************
     *                                         *
@@ -190,6 +385,67 @@ public:
     *          nwpw_cscf_mixing::mix          *
     *                                         *
     *******************************************/
+   /**
+    * @brief Perform one SCF mixing step for the Kohn–Sham potential or density.
+    *
+    * This routine applies the selected self-consistent-field (SCF) mixing
+    * algorithm to update the trial potential/density based on the current
+    * residual and mixing history. It supports multiple mixing schemes,
+    * optional Kerker preconditioning, adaptive damping, and parallel
+    * reduction of convergence metrics.
+    *
+    * The specific behavior is controlled by the `algorithm` selected at
+    * construction time:
+    *
+    *   - algorithm = 0 : Simple linear mixing with adaptive alpha control
+    *   - algorithm = 1 : Broyden mixing (Pulay-type secant update)
+    *   - algorithm = 2 : Johnson mixing (multisecant least-squares scheme)
+    *   - algorithm = 3 : Anderson mixing
+    *   - algorithm = 4 : Local Thomas–Fermi preconditioned mixing
+    *
+    * For all algorithms:
+    *   - The residual F = vout − v_old is formed.
+    *   - Kerker filtering is applied to suppress long-wavelength charge sloshing.
+    *   - The SCF error is computed as the RMS norm of the filtered residual,
+    *     with proper MPI reduction across all ranks.
+    *
+    * For selected algorithms, additional logic is applied:
+    *   - Adaptive alpha damping/growth based on SCF error history
+    *   - Secant or multisecant updates using stored residuals
+    *   - Safe fallbacks to linear mixing when the update becomes ill-conditioned
+    *
+    * This routine updates the internal mixing history (`rho_list`) and
+    * advances the internal iteration counter `m`.
+    *
+    * @param[in]  vout
+    *   Pointer to the current output potential/density (unmixed), typically
+    *   generated from the latest Kohn–Sham solve.
+    *
+    * @param[out] vnew
+    *   Pointer to the newly mixed potential/density to be used in the next
+    *   SCF iteration.
+    *
+    * @param[in]  deltae
+    *   Change in total energy since the previous SCF iteration. Used by some
+    *   mixing schemes (e.g., Anderson) to detect instability and trigger
+    *   fallback behavior.
+    *
+    * @param[out] scf_error0
+    *   Returned SCF convergence metric: the RMS norm of the (filtered) residual,
+    *   normalized by the global grid size.
+    *
+    * @note
+    *   - This function does not recompute densities or Kohn–Sham orbitals.
+    *   - The caller is responsible for constructing `vout` consistently
+    *     with the current electronic state.
+    *   - In the presence of severe instability (NaNs, negative curvature,
+    *     ill-conditioned Johnson matrices), the routine may internally reset
+    *     the mixing history and revert to linear mixing.
+    *
+    * @warning
+    *   This routine assumes that `vout`, `vnew`, and the internal `rho_list`
+    *   arrays are correctly sized for `nsize = ngrid * ispin`.
+    */
    void mix(double *vout, double *vnew, const double deltae, double *scf_error0) 
    {
       int nsize_global = parall->ISumAll(1, nsize);

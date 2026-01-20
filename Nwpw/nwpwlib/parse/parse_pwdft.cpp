@@ -947,9 +947,13 @@ static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<st
       } else if (mystring_contains(line, "monkhorst-pack")) {
          ss = mystring_split0(line);
          int nkx=1,nky=1,nkz=1;
+         double skx=0.0,sky=0.0,skz=0.0;
          if (ss.size() > 1) nkx = std::stoi(ss[1]);
          if (ss.size() > 2) nky = std::stoi(ss[2]);
          if (ss.size() > 3) nkz = std::stoi(ss[3]);
+         if (ss.size() > 4) skx = std::stod(ss[4]);
+         if (ss.size() > 5) sky = std::stod(ss[5]);
+         if (ss.size() > 6) skz = std::stod(ss[6]);
 
          std::vector<std::vector<double>> kvectors;
          // Check if "kvectors" key exists in the JSON object
@@ -958,7 +962,25 @@ static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<st
              // Convert the JSON array to a vector of vectors of doubles
              kvectors = brillouinjson["kvectors"].get<std::vector<std::vector<double>>>();
          }
+
          monkhorst_pack_set(nkx,nky,nkz,kvectors);
+
+         // define mk shift
+         auto fold = [](double x) {
+            if (x >=  0.5) x -= 1.0;
+            if (x <  -0.5) x += 1.0;
+            return x;
+         };
+         for (auto& k : kvectors) 
+         {
+            k[0] = fold(k[0] + skx/nkx);
+            k[1] = fold(k[1] + sky/nky);
+            k[2] = fold(k[2] + skz/nkz);
+         }
+
+         brillouinjson["monkhorst-pack"] = { nkx, nky, nkz };
+         brillouinjson["monkhorst-pack-shift"] = { skx, sky, skz };
+
          brillouinjson["kvectors"] = kvectors;
 
       } else if (mystring_contains(line, "path")) {
@@ -1551,9 +1573,13 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        }
        ss = mystring_split0(line);
        int nkx=1,nky=1,nkz=1;
+       double skx=0.0,sky=0.0,skz=0.0;
        if (ss.size() > 1) nkx = std::stoi(ss[1]);
        if (ss.size() > 2) nky = std::stoi(ss[2]);
        if (ss.size() > 3) nkz = std::stoi(ss[3]);
+       if (ss.size() > 4) skx = std::stod(ss[4]);
+       if (ss.size() > 5) sky = std::stod(ss[5]);
+       if (ss.size() > 6) skz = std::stod(ss[6]);
 
        std::vector<std::vector<double>> kvectors;
        if (!nwpwjson["brillouin_zone"]["kvectors"].is_null() && nwpwjson["brillouin_zone"]["kvectors"].is_array()) 
@@ -1562,8 +1588,24 @@ static json parse_nwpw(json nwpwjson, int *curptr,
              kvectors = nwpwjson["brillouin_zone"]["kvectors"].get<std::vector<std::vector<double>>>();
        }
        monkhorst_pack_set(nkx,nky,nkz,kvectors);
-       nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
 
+       // define mk shift
+       auto fold = [](double x) {
+          if (x >=  0.5) x -= 1.0;
+          if (x <  -0.5) x += 1.0;
+          return x;
+       };
+       for (auto& k : kvectors) 
+       {
+          k[0] = fold(k[0] + skx/nkx);
+          k[1] = fold(k[1] + sky/nky);
+          k[2] = fold(k[2] + skz/nkz);
+       }
+
+       nwpwjson["brillouin_zone"]["monkhorst-pack"] = { nkx, nky, nkz };
+       nwpwjson["brillouin_zone"]["monkhorst-pack-shift"] = { skx, sky, skz };
+
+       nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
 
     } 
     else if (mystring_contains(line, "pseudopotentials")) 

@@ -30,6 +30,22 @@ Brillouin::Brillouin(std::string rtdbstring,  Lattice *mylattice, Control2& cont
  
  
    json brillouinjson = rtdbjson["nwpw"]["brillouin_zone"];
+
+   // Optional Monkhorst-Pack provenance (nice for printing / reproducibility)
+   if (brillouinjson.contains("monkhorst-pack") && brillouinjson["monkhorst-pack"].is_array())
+   {
+      auto mp = brillouinjson["monkhorst-pack"];
+      if (mp.size() > 0) nkx = mp[0].get<int>();
+      if (mp.size() > 1) nky = mp[1].get<int>();
+      if (mp.size() > 2) nkz = mp[2].get<int>();
+   }
+   if (brillouinjson.contains("monkhorst-pack-shift") && brillouinjson["monkhorst-pack-shift"].is_array())
+   {
+      auto sh = brillouinjson["monkhorst-pack-shift"];
+      if (sh.size() > 0) skx = sh[0].get<double>();
+      if (sh.size() > 1) sky = sh[1].get<double>();
+      if (sh.size() > 2) skz = sh[2].get<double>();
+   }
  
    bool nobrillread = false;
    if (brillouinjson["kvectors"].is_null())
@@ -108,6 +124,17 @@ std::string Brillouin::print_zone()
 
    //stream << "      number of zone points = " << Ifmt(3) << nbrillouin << std::endl;
    //stream << "      number of zone points = " << Ifmt(3) << nbrillouin << " (reduced from " << nbrillouin0 << " zone points without symmetry)" << std::endl;
+   if (nkx > 0 && nky > 0 && nkz > 0)
+   {
+      stream << "      monkhorst-pack grid = "
+             << nkx << " " << nky << " " << nkz;
+ 
+      // Only print shift if it’s non-trivial (or always, your choice)
+      if (std::fabs(skx) > 0.0 || std::fabs(sky) > 0.0 || std::fabs(skz) > 0.0)
+         stream << "   shift = " << skx << " " << sky << " " << skz;
+ 
+      stream << "\n";
+   }
 
    if (nbrillouin0 != nbrillouin)
       stream << "      number of zone points = " << Ifmt(3) << nbrillouin
@@ -115,7 +142,6 @@ std::string Brillouin::print_zone()
    else
       stream << "      number of zone points = " << Ifmt(3) << nbrillouin
              << " (no symmetry reduction)\n";
-
 
    for (auto nb=0; nb<nbrillouin; ++nb)
    {

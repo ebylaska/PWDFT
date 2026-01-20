@@ -85,8 +85,17 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
 
    bool extra_rotate = control.scf_extra_rotate(); 
 
-   const double occ_rmsd_abs_thresh   = 1.0e-4;
+   const double occ_rmsd_abs_thresh   = 1.0e-3;
    const double occ_rmsd_delta_thresh = 5.0e-5;
+
+   const double occ_rmsd_thresh   = 1.0e-3;   // already implicit
+   const double occ_delta_thresh  = 5.0e-4;   // oscillation detector
+
+   const int    occ_update_stride   = 5;     // update occupations every 5 outer steps
+   const double drho_for_occ_update = 5e-3;  // or when density change is already small
+
+
+
  
    for (auto ii=0; ii<80; ++ii)
       E[ii] = 0.0;
@@ -313,37 +322,71 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          // fractional occupation are updated in gen_all_energies
          total_energy = mysolid.gen_all_energies();
 
+         // compute deltas BEFORE mixing
+         //deltae     = total_energy - total_energy0;
+         //deltasmear = mysolid.E[28] - smear0;
+
+         double alpha_current = scfmix.get_alpha();
+
          // adaptive SCF damping based on occupation stability 
-         double alpha_use = scfmix.get_alpha();
-
-         double occ_rmsd  = mysolid.rmsd_occupation;
-         double docc_rmsd = std::abs(mysolid.rmsd_occupation -
-                                     mysolid.rmsd_occupation_prev);
-
-         // If occupations are unstable, damp density mixing
-         //if (mysolid.rmsd_occupation > 1.0e-4)
-         if ( (occ_rmsd  > occ_rmsd_abs_thresh) ||
-              (docc_rmsd > occ_rmsd_delta_thresh) )
+         if ((mysolid.fractional) &&  (!mysolid.fractional_frozen))
          {
-            // occupations unstable → damp density mixing
-            alpha_use = std::min(alpha_use, 0.02);
-         }
-         else
-         {
-            // occupations stable → restore nominal SCF alpha
-            alpha_use = scf_alpha;
-         }
+          
+            //double occ_rmsd  = mysolid.rmsd_occupation;
+            //double docc_rmsd = std::abs(mysolid.rmsd_occupation -
+            //                            mysolid.rmsd_occupation_prev);
+          
+            bool occ_unstable = (mysolid.rmsd_occupation > occ_rmsd_thresh);
+            bool occ_oscillating = (std::abs(mysolid.rmsd_occupation - mysolid.rmsd_occupation_prev) > occ_delta_thresh);
 
-         scfmix.set_alpha(alpha_use);
+            // If occupations are unstable, damp density mixing
+            //if (mysolid.rmsd_occupation > 1.0e-4)
+            //if ( (occ_rmsd  > occ_rmsd_abs_thresh) ||
+            //     (docc_rmsd > occ_rmsd_delta_thresh) )
+            if (occ_unstable)
+            {
+               // hard reset
+               alpha_current = std::max(0.005, 0.5 * alpha_current);
+               scfmix.set_alpha(alpha_current);
+               //scfmix.reset_history(mysolid.rho1);
+               //scfmix.reset_history(mysolid.rho1);
+            }
+            else if (occ_oscillating)
+            {
+               // soft response: damp, but keep history
+               alpha_current = std::max(0.01, 0.8 * alpha_current);
+               scfmix.set_alpha(alpha_current);
+            }
+            else
+            {
+               // occupations stable → restore nominal SCF alpha
+               //alpha_use = scf_alpha;
+               alpha_current = std::min(scf_alpha, alpha_current * 1.2);
+               scfmix.set_alpha(alpha_current);
+            }
+
+         }
 
          // define new KS potential here
          //Perform SCF mixing
          scfmix.mix(vout,vnew,deltae,&scf_error);
+
+         // after scfmix.mix(vout,vnew,...)
+         double dr2_local = 0.0;
+         for (int i=0; i<ispin*nfft3d; ++i) 
+         {
+            double d = vnew[i] - vout[i];
+            dr2_local += d*d;
+         }
+         double dr2 = mygrid->c3db::parall->SumAll(1, dr2_local);
+         double drho = std::sqrt(dr2 / (double)(ispin*nfft3d));
+
          std::memcpy(vout,vnew,ispin*nfft3d*sizeof(double));
          
         // density now updated, and the ks potentials have to be updated here!?
 
-         deltac = scf_error;
+         //deltac = scf_error;
+         deltac = drho;
 
 
          //deltac = mysolid.rho_error();
@@ -352,7 +395,18 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
          total_energy0 = total_energy;
          ++bfgscount;
 
+         bool occ_stable = (mysolid.rmsd_occupation < occ_rmsd_thresh);
+         bool occ_reasonable = true;
          converged = (std::fabs(deltae) < tole) && (deltac < tolc);
+
+         if (mysolid.fractional && !mysolid.fractional_frozen)
+         {
+            //occ_reasonable = (mysolid.rmsd_occupation < 5 * occ_rmsd_abs_thresh);
+            occ_reasonable = (mysolid.rmsd_occupation < 5 * occ_rmsd_thresh);
+            converged &= occ_stable;
+         }
+
+
 
          if ((oprint) && ((icount%it_in==0) || converged))
          {
@@ -366,13 +420,15 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
                        << Efmt(16,6)  << deltae
                        << Efmt(16,6)  << deltae-deltasmear
                        << Efmt(16,6)  << deltasmear 
-                       << Efmt(16,6)  << deltac << std::endl;
+                       << Efmt(16,6)  << deltac <<  std::endl;
                coutput << "                 "
-                       << "occ_rmsd=" << Efmt(10,3) << mysolid.rmsd_occupation
-                       << "   Δocc_rmsd="
-                       << Efmt(10,3)
-                       << (mysolid.rmsd_occupation - mysolid.rmsd_occupation_prev)
-                       << std::endl;
+                       << "SCF α=" << Efmt(8,3) << alpha_current
+                       << "  SCF error=" << Efmt(8,3) << scf_error
+                       << "  occ_rmsd="  << Efmt(10,3) << mysolid.rmsd_occupation
+                       << "  Δocc_rmsd=" << Efmt(10,3) << (mysolid.rmsd_occupation - mysolid.rmsd_occupation_prev);
+               if (!occ_reasonable && !converged)
+                  coutput << "  warning: occupations still fluctuating";
+               coutput << std::endl;
             }
             else
                coutput << Ifmt(10)    << icount
@@ -381,6 +437,17 @@ double band_cgsd_energy(Control2 &control, Solid &mysolid, bool doprint, std::os
                        << Efmt(16,6)  << deltac 
                        << Efmt(16,6)  << total_energy-total_energy_fixedV << std::endl;
          }
+
+         bool tolerance_occupation_update =  drho < drho_for_occ_update;
+         bool periodic_occupation_update = (bfgscount % occ_update_stride == 0);
+
+         const bool occ_update_allowed = mysolid.initial_occupation_update;
+         const bool occ_update_due     = periodic_occupation_update;
+         const bool occ_update_safe    = tolerance_occupation_update;
+
+         //mysolid.occupation_update = occ_update_allowed && occ_stable &&  (occ_update_safe || occ_update_due);
+         mysolid.occupation_update = occ_update_allowed &&  (occ_update_safe || occ_update_due);
+
    
          // Finalize SCF step with updated potentials
          mysolid.gen_scf_potentials_from_rho1();
