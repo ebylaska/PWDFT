@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <array>
 #include <cmath>
+#include <algorithm>
 
 #include "spglib.h"
 

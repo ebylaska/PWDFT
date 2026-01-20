@@ -130,7 +130,8 @@ std::string Brillouin::print_zone()
              << nkx << " " << nky << " " << nkz;
  
       // Only print shift if it’s non-trivial (or always, your choice)
-      if (std::fabs(skx) > 0.0 || std::fabs(sky) > 0.0 || std::fabs(skz) > 0.0)
+      const double eps = 1.0e-12;
+      if (std::fabs(skx) > eps || std::fabs(sky) > eps || std::fabs(skz) > eps)
          stream << "   shift = " << skx << " " << sky << " " << skz  << " (in 1/N units)";
  
       stream << "\n";
