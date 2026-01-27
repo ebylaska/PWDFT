@@ -1,0 +1,55 @@
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start pspw_pbe_Cu4
+
+memory 1900 mb
+
+permanent_dir ./perm16x16x16
+scratch_dir   ./perm16x16x16
+
+charge 0
+
+geometry noautoz nocenter noautosym autospace
+system crystal
+   lattice_vectors
+     3.620000 0.000000 0.000000
+     0.000000 3.620000 0.000000
+     0.000000 0.000000 3.620000
+end
+
+Cu 0.000000 0.000000 0.000000
+Cu 0.000000 0.500000 0.500000
+Cu 0.500000 0.000000 0.500000
+Cu 0.500000 0.500000 0.000000
+#symmetry Fm-3m 
+end
+
+
+
+nwpw
+   xc pbe-vdw
+   cutoff 30.0
+   monkhorst-pack 16 16 16
+   smear frozen orbitals 8 8
+   cg
+   loop 10 10
+end
+task band energy
+
+nwpw
+   smear 0.005 fermi orbitals 8 8
+   #smear frozen orbitals 8 8
+   #scf pulay diis_histories 3 alpha 0.001 kerker 0.25  iterations 5 ks-grassmann-cg
+   scf pulay diis_histories 4 alpha 0.0005 kerker 0.25 ks-grassmann-cg
+
+  loop 10 100
+  #tolerances 1.0e-11 1.0e-11
+end
+task band energy
+task band energy
+task band energy
+task band energy
+task band energy

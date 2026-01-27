@@ -1,0 +1,1549 @@
+pwdft (NWChemEx) - Version 1.0
+
+============================== echo of input deck ==============================
+title "swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"
+#machinejob:expert
+
+echo
+
+start pspw_pbe_Cu4
+
+memory 1900 mb
+
+permanent_dir ./perm1x1x1
+scratch_dir   ./perm1x1x1
+
+charge 0
+
+geometry noautoz nocenter noautosym autospace
+system crystal
+   lattice_vectors
+     3.620000 0.000000 0.000000
+     0.000000 3.620000 0.000000
+     0.000000 0.000000 3.620000
+end
+
+Cu 0.000000 0.000000 0.000000
+Cu 0.000000 0.500000 0.500000
+Cu 0.500000 0.000000 0.500000
+Cu 0.500000 0.500000 0.000000
+#symmetry Fm-3m 
+end
+
+
+
+nwpw
+   xc pbe-vdw
+   cutoff 30.0
+   monkhorst-pack 1 1 1
+   smear frozen orbitals 8 8
+   cg
+   loop 10 10
+end
+task band energy
+
+nwpw
+   smear 0.005 fermi orbitals 8 8
+   #smear frozen orbitals 8 8
+   #scf pulay diis_histories 3 alpha 0.001 kerker 0.25  iterations 5 ks-grassmann-cg
+   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg
+
+  loop 10 100
+  #tolerances 1.0e-11 1.0e-11
+end
+task band energy
+#task band energy
+#task band energy
+================================================================================
+
+              NorthwestEx Computational Chemistry Package 1.0.0
+           --------------------------------------------------------
+
+                  Pacific Northwest National Laboratory
+                           Richland, WA 99354
+
+                         Copyright (c) 2020
+                  Pacific Northwest National Laboratory
+                       Battelle Memorial Institute
+
+        NWChemEx is an open-source computational chemistry package
+                   distributed under the terms of the
+                 Educational Community License (ECL) 2.0
+        A copy of the license is included with this distribution
+                         in the LICENSE.TXT file
+
+                             ACKNOWLEDGMENT
+                             --------------
+
+       This software and its documentation were developed at the
+       Pacific Northwest National Laboratory, a multiprogram
+       national laboratory, operated for the U.S. Department of Energy
+       by Battelle under Contract Number DE-AC05-76RL01830. Support
+       for this work was provided by the Department of Energy 
+       Office of Advanced Scientific Computing and the Office of Basic
+       Energy Sciences.
+
+       Job information
+       ---------------
+       program               = pwdft (NWChemEx)
+       build configured      = Wed Jan 07 16:04:06 2026
+       source                = /Users/bylaska/Codes/PWDFT/Nwpw
+       version               = 1.0
+       default_psp libraries = /Users/bylaska/pwdft/share/nwpw/libraryps
+       VWD library           = /Users/bylaska/pwdft/share/nwpw/vdw
+       SYMMETRY library      = /Users/bylaska/pwdft/share/nwpw/symmetry
+
+       date                  = Tue Jan 20 14:46:55 2026
+       nproc                 = 8
+       input                 = cu4-1x1x1.nw
+
+
+
+First rtdbstr={"charge":0,"constraints":null,"current_task":"task band energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":40,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"fractional":true,"fractional_frozen":true,"fractional_kT":0.001,"fractional_orbitals":[8,8],"fractional_smeartype":2,"fractional_temperature":315.77717499423704,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"loop":[10,10],"minimizer":1,"options_disp":"","simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+First task=11
+
+
+Running staged band energy optimization - lowlevel_rtdbstr = {"charge":0,"constraints":null,"current_task":"energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":40,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[10.0,20.0],"fractional":true,"fractional_frozen":true,"fractional_kT":0.001,"fractional_orbitals":[8,8],"fractional_smeartype":2,"fractional_temperature":315.77717499423704,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"loop":[10,10],"minimizer":1,"options_disp":"","simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"tolerances":[9.999999999999999e-05,9.999999999999999e-05],"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT BAND Calculation              *
+          *                                                   *
+          *  [      (bundled Grassmann/Stiefel manifold)   ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   07/19/24             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Raymundo Hernandez Esparza, Duo Song,          *
+          *    David H. Bross, ...                            *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Tue Jan 20 14:46:55 2026 <<<
+
+ psp_library: /Users/bylaska/pwdft/share/nwpw/libraryps
+
+
+ generating 1d pseudopotential file: ./perm1x1x1/Cu.psp
+ Generating VDW kernel filename:./perm1x1x1/vdw_kernels.dat
+
+ writing formatted psp filename: ./perm1x1x1/Cu.cpp
+ generating random psi from scratch
+ Warning - Gram-Schmidt being performed on psi2
+         - exact norm = 60 norm=50.7375 corrected norm=60 (error=9.26248)
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x 1 x 1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+   dispersion correction= vdw Langreth functional
+   using fractional
+
+ elements involved in the cluster:
+      1: Cu  valence charge = 11.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  0
+             number of non-local projections =  8
+             semicore corrections inlcuded   =  0.480 (radius) 9.110 (charge)
+             cutoff =    2.055   2.299   2.055
+
+ atom composition:
+   Cu : 4
+
+ initial ion positions (au):
+   1 Cu	(    0.00000    0.00000    0.00000 ) - atomic mass = 62.930
+   2 Cu	(    0.00000    3.42040    3.42040 ) - atomic mass = 62.930
+   3 Cu	(    3.42040    0.00000    3.42040 ) - atomic mass = 62.930
+   4 Cu	(    3.42040    3.42040    0.00000 ) - atomic mass = 62.930
+   G.C.	(    1.71020    1.71020    1.71020 )
+ C.O.M.	(    1.71020    1.71020    1.71020 )
+
+ symmetry information:
+   effective symmetry source : autospace
+   symmetry backend          : spglib
+   symmetry type             : space_group
+   group name                : Fm-3m  (order = 192)
+   centering                 : 4
+   primitive lattice         : no
+   translation type          : fractional
+   tolerance                 :  1.000e-06
+
+ number of electrons: spin up = 22.00                        22.00 (   fractional)
+ number of orbitals:  spin up =    30 (  30 per task) down =    30 (  30 per task)
+
+ supercell:
+      volume =     320.13
+      lattice:    a1 = <    6.841    0.000    0.000 >
+                  a2 = <    0.000    6.841    0.000 >
+                  a3 = <    0.000    0.000    6.841 >
+      reciprocal: b1 = <    0.918    0.000    0.000 >
+                  b2 = <    0.000    0.918    0.000 >
+                  b3 = <    0.000    0.000    0.918 >
+
+ Ewald parameters:
+      energy cutoff =  20.000 fft=   16 x   16 x   16  (     679 waves       85 per task)
+      Ewald summation: cut radius =   2.177 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs =  4.24369865)
+
+ Brillouin zone:
+      monkhorst-pack grid = 1 1 1
+      number of zone points =   1 (no symmetry reduction)
+      weight =    1.000 ks = <   0.000    0.000    0.000>  k = <   0.000    0.000    0.000> 
+
+ computational grids:
+      density     cutoff = 20.000 fft =  16 x   16 x   16  (    1357 waves      169 per task)
+      wavefnc   1 cutoff = 10.000 fft =  16 x   16 x   16  (     461 waves       57 per task)
+
+
+ technical parameters:
+      using io buffer 
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-04 (energy)    1.000e-04 (density)    1.000e-04 (ion)
+      max iterations =        100 (   10 inner    10 outer)
+      minimizer = Grassmann conjugate gradient
+
+ fractional smearing parameters:
+      smearing algorithm = 2
+      smearing parameter = Gaussian
+      smearing parameter =     0.001 (  315.8 K)
+      mixing parameter   =     0.5
+      mixing parameter(alpha)   =    0.50
+      mixing parameter(alpha_min)   =    0.10
+      mixing parameter(alpha_max)   =    0.50
+      mixing parameter(beta)   =    0.10
+      mixing parameter(gamma)   =    0.20
+      rmsd occupation tolerance   =    1.000e-03
+      extra orbitals     =       8
+      frozen oribtals
+      initial occupations per Brillouin zone:
+          k-point 1: [0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+
+
+     ======= bundled Grassmann conjugate gradient iteration =======
+          >>> iteration started at Tue Jan 20 14:47:04 2026  <<<
+     iter.                   energy    delta energy       delta rho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -1.601417927778e+02   -1.772523e+00    4.469122e-03
+        - 10 steepest descent iterations performed
+        20      -1.644589726341e+02   -2.045048e-01    8.740665e-04
+        - 10 steepest descent iterations performed
+        30      -1.654926922834e+02   -7.690342e-02    5.485699e-04
+        - 10 steepest descent iterations performed
+        40      -1.658403318767e+02   -1.580770e-02    3.487131e-04
+        - 10 steepest descent iterations performed
+        50      -1.659482526983e+02   -8.375069e-03    1.591869e-03
+        60      -1.659705009693e+02   -2.007732e-03    2.418674e-04
+        70      -1.659698370929e+02   -3.417402e-04    5.147925e-05
+        80      -1.659677928952e+02   -1.732287e-04    3.275826e-05
+        90      -1.659667550791e+02   -8.502904e-05    3.858660e-06
+     *** tolerance ok. iteration terminated
+          >>> iteration ended at   Tue Jan 20 14:47:05 2026  <<<
+     =============  energy results (Solid object)  =============
+
+
+ number of electrons: spin up=    22.00000  down=    22.00000 (real space)
+
+
+ total     energy    :   -1.6596675508e+02 (   -4.14917e+01 /ion)
+ total orbital energy:    3.6028448748e+01 (    1.20095e+00 /electron)
+ hartree energy      :    7.8509539825e+00 (    2.61698e-01 /electron)
+ exc-corr energy     :   -6.3325557010e+01 (   -2.11085e+00 /electron)
+ ion-ion energy      :   -1.6219379482e+02 (   -4.05484e+01 /ion)
+
+ kinetic (planewave) :    8.6667463473e+01 (    2.88892e+00 /electron)
+ V_local (planewave) :    1.5105268711e+01 (    5.03509e-01 /electron)
+ V_nl    (planewave) :   -5.0071089412e+01 (   -1.66904e+00 /electron)
+ V_Coul  (planewave) :    1.5701907965e+01 (    5.23397e-01 /electron)
+ V_xc    (planewave) :   -3.1375101989e+01 (   -1.04584e+00 /electron)
+ Virial Coefficient  :   -5.8429095182e-01
+
+
+
+ Brillouin zone point:   1
+   weight =    1.000
+   k = <   0.000    0.000    0.000> . <b1,b2,b3>
+     = <   0.000    0.000    0.000> 
+
+ EF_crossings (this k-point): 0
+
+ orbital energies:
+     1.0743335e+00 (  29.234eV) occ=0.000
+     1.0467035e+00 (  28.482eV) occ=0.000
+     1.0417382e+00 (  28.347eV) occ=0.000
+     1.0297136e+00 (  28.020eV) occ=0.000
+     1.0240290e+00 (  27.865eV) occ=0.000
+     9.9907318e-01 (  27.186eV) occ=0.000
+     9.5010186e-01 (  25.854eV) occ=0.000
+     9.4610726e-01 (  25.745eV) occ=0.000
+     9.4554660e-01 (  25.730eV) occ=1.000
+     9.4134087e-01 (  25.615eV) occ=1.000
+     9.3766494e-01 (  25.515eV) occ=1.000
+     9.2217951e-01 (  25.094eV) occ=1.000
+     9.0774073e-01 (  24.701eV) occ=1.000
+     9.0433109e-01 (  24.608eV) occ=1.000
+     8.6095112e-01 (  23.428eV) occ=1.000
+     8.3968892e-01 (  22.849eV) occ=1.000
+     8.2897071e-01 (  22.558eV) occ=1.000
+     7.9373206e-01 (  21.599eV) occ=1.000
+     7.7359784e-01 (  21.051eV) occ=1.000
+     7.5432301e-01 (  20.526eV) occ=1.000
+     5.8714177e-01 (  15.977eV) occ=1.000
+     5.8439439e-01 (  15.902eV) occ=1.000
+     5.6874667e-01 (  15.477eV) occ=1.000
+     5.3224533e-01 (  14.483eV) occ=1.000
+     5.1600140e-01 (  14.041eV) occ=1.000
+     5.1077394e-01 (  13.899eV) occ=1.000
+     4.7196208e-01 (  12.843eV) occ=1.000
+     4.6131588e-01 (  12.553eV) occ=1.000
+     4.1676588e-01 (  11.341eV) occ=1.000
+     1.1643799e-01 (   3.168eV) occ=1.000
+
+ output cpsi to filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 8.957807e+00
+ main loop   : 1.109658e+00
+ epilogue    : 6.810000e-03
+ total       : 1.007428e+01
+ cputime/step: 3.188672e-03
+
+ Time spent doing      total        step             percent
+ total time            1.037374e+01 2.980961e-02     100.00%
+ total i/o time        9.305332e-03 2.673946e-05       0.09%
+ total FFT time        5.499813e-01 1.580406e-03       5.30%
+ lagrange multipliers  3.298579e-02 9.478675e-05       0.32%
+ exchange correlation  3.741920e-03 1.075264e-05       0.04%
+ local potentials      6.875000e-06 1.975575e-08       0.00%
+ non-local potentials  5.907959e-02 1.697689e-04       0.57%
+ ffm_dgemm             9.865897e-02 2.835028e-04       0.95%
+ fmf_dgemm             4.851785e-02 1.394191e-04       0.47%
+ m_diagonalize         8.591084e-03 2.468702e-05       0.08%
+ mmm_multiply          1.679216e-02 4.825333e-05       0.16%
+ SCVtrans              7.430550e-04 2.135216e-06       0.01%
+
+ >>> job completed at     Tue Jan 20 14:47:05 2026 <<<
+
+Running staged band energy optimization - lowlevel_rtdbstr = {"charge":0,"constraints":null,"current_task":"energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":40,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[20.0,40.0],"fractional":true,"fractional_frozen":true,"fractional_kT":0.001,"fractional_orbitals":[8,8],"fractional_smeartype":2,"fractional_temperature":315.77717499423704,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"loop":[10,10],"minimizer":1,"options_disp":"","simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"tolerances":[9.999999999999999e-06,9.999999999999999e-06],"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT BAND Calculation              *
+          *                                                   *
+          *  [      (bundled Grassmann/Stiefel manifold)   ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   07/19/24             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Raymundo Hernandez Esparza, Duo Song,          *
+          *    David H. Bross, ...                            *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Tue Jan 20 14:47:05 2026 <<<
+
+ psp_library: /Users/bylaska/pwdft/share/nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./perm1x1x1/Cu.cpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... cpsi: nb=1 n=1 spin=1
+ converting .... cpsi: nb=1 n=2 spin=1
+ converting .... cpsi: nb=1 n=3 spin=1
+ converting .... cpsi: nb=1 n=4 spin=1
+ converting .... cpsi: nb=1 n=5 spin=1
+ converting .... cpsi: nb=1 n=6 spin=1
+ converting .... cpsi: nb=1 n=7 spin=1
+ converting .... cpsi: nb=1 n=8 spin=1
+ converting .... cpsi: nb=1 n=9 spin=1
+ converting .... cpsi: nb=1 n=10 spin=1
+ converting .... cpsi: nb=1 n=11 spin=1
+ converting .... cpsi: nb=1 n=12 spin=1
+ converting .... cpsi: nb=1 n=13 spin=1
+ converting .... cpsi: nb=1 n=14 spin=1
+ converting .... cpsi: nb=1 n=15 spin=1
+ converting .... cpsi: nb=1 n=16 spin=1
+ converting .... cpsi: nb=1 n=17 spin=1
+ converting .... cpsi: nb=1 n=18 spin=1
+ converting .... cpsi: nb=1 n=19 spin=1
+ converting .... cpsi: nb=1 n=20 spin=1
+ converting .... cpsi: nb=1 n=21 spin=1
+ converting .... cpsi: nb=1 n=22 spin=1
+ converting .... cpsi: nb=1 n=23 spin=1
+ converting .... cpsi: nb=1 n=24 spin=1
+ converting .... cpsi: nb=1 n=25 spin=1
+ converting .... cpsi: nb=1 n=26 spin=1
+ converting .... cpsi: nb=1 n=27 spin=1
+ converting .... cpsi: nb=1 n=28 spin=1
+ converting .... cpsi: nb=1 n=29 spin=1
+ converting .... cpsi: nb=1 n=30 spin=1
+
+ input psi exists, reading from file: ./perm1x1x1/pspw_pbe_Cu4.movecs ... reading occupations
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x 1 x 1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+   dispersion correction= vdw Langreth functional
+   using fractional
+
+ elements involved in the cluster:
+      1: Cu  valence charge = 11.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  0
+             number of non-local projections =  8
+             semicore corrections inlcuded   =  0.480 (radius) 9.114 (charge)
+             cutoff =    2.055   2.299   2.055
+
+ atom composition:
+   Cu : 4
+
+ initial ion positions (au):
+   1 Cu	(    0.00000    0.00000    0.00000 ) - atomic mass = 62.930
+   2 Cu	(    0.00000    3.42040    3.42040 ) - atomic mass = 62.930
+   3 Cu	(    3.42040    0.00000    3.42040 ) - atomic mass = 62.930
+   4 Cu	(    3.42040    3.42040    0.00000 ) - atomic mass = 62.930
+   G.C.	(    1.71020    1.71020    1.71020 )
+ C.O.M.	(    1.71020    1.71020    1.71020 )
+
+ symmetry information:
+   effective symmetry source : autospace
+   symmetry backend          : spglib
+   symmetry type             : space_group
+   group name                : Fm-3m  (order = 192)
+   centering                 : 4
+   primitive lattice         : no
+   translation type          : fractional
+   tolerance                 :  1.000e-06
+
+ number of electrons: spin up = 22.00                        22.00 (   fractional)
+ number of orbitals:  spin up =    30 (  30 per task) down =    30 (  30 per task)
+
+ supercell:
+      volume =     320.13
+      lattice:    a1 = <    6.841    0.000    0.000 >
+                  a2 = <    0.000    6.841    0.000 >
+                  a3 = <    0.000    0.000    6.841 >
+      reciprocal: b1 = <    0.918    0.000    0.000 >
+                  b2 = <    0.000    0.918    0.000 >
+                  b3 = <    0.000    0.000    0.918 >
+
+ Ewald parameters:
+      energy cutoff =  40.000 fft=   20 x   20 x   20  (    1944 waves      243 per task)
+      Ewald summation: cut radius =   2.177 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs =  4.24369865)
+
+ Brillouin zone:
+      monkhorst-pack grid = 1 1 1
+      number of zone points =   1 (no symmetry reduction)
+      weight =    1.000 ks = <   0.000    0.000    0.000>  k = <   0.000    0.000    0.000> 
+
+ computational grids:
+      density     cutoff = 40.000 fft =  20 x   20 x   20  (    3887 waves      485 per task)
+      wavefnc   1 cutoff = 20.000 fft =  20 x   20 x   20  (    1357 waves      169 per task)
+
+
+ technical parameters:
+      using io buffer 
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-05 (energy)    1.000e-05 (density)    1.000e-04 (ion)
+      max iterations =        100 (   10 inner    10 outer)
+      minimizer = Grassmann conjugate gradient
+
+ fractional smearing parameters:
+      smearing algorithm = 2
+      smearing parameter = Gaussian
+      smearing parameter =     0.001 (  315.8 K)
+      mixing parameter   =     0.5
+      mixing parameter(alpha)   =    0.50
+      mixing parameter(alpha_min)   =    0.10
+      mixing parameter(alpha_max)   =    0.50
+      mixing parameter(beta)   =    0.10
+      mixing parameter(gamma)   =    0.20
+      rmsd occupation tolerance   =    1.000e-03
+      extra orbitals     =       8
+      frozen oribtals
+      initial occupations per Brillouin zone:
+          k-point 1: [0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+
+
+     ======= bundled Grassmann conjugate gradient iteration =======
+          >>> iteration started at Tue Jan 20 14:47:06 2026  <<<
+     iter.                   energy    delta energy       delta rho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -2.017594100119e+02   -2.354576e-01    3.633732e-03
+        - 10 steepest descent iterations performed
+        20      -2.029268289858e+02   -2.736542e-02    5.246349e-04
+        - 10 steepest descent iterations performed
+        30      -2.030678440787e+02   -2.090072e-02    5.591665e-05
+        - 10 steepest descent iterations performed
+        40      -2.031547652330e+02   -1.555250e-02    1.701560e-04
+        - 10 steepest descent iterations performed
+        50      -2.032233255030e+02   -7.720247e-03    1.299993e-05
+        60      -2.032244102350e+02   -1.473318e-04    4.812402e-09
+        70      -2.032254980849e+02   -1.477108e-04    4.825007e-09
+        - 10 steepest descent iterations performed
+        80      -2.032167005557e+02   -1.445880e-04    4.721084e-09
+        90      -2.032177649177e+02   -1.449718e-04    4.733661e-09
+        - 10 steepest descent iterations performed
+       100      -2.032091598087e+02   -1.418467e-04    4.633028e-09
+     *** arrived at the Maximum iteration.  terminated
+          >>> iteration ended at   Tue Jan 20 14:47:09 2026  <<<
+     =============  energy results (Solid object)  =============
+
+
+ number of electrons: spin up=    22.00000  down=    22.00000 (real space)
+
+
+ total     energy    :   -2.0320915981e+02 (   -5.08023e+01 /ion)
+ total orbital energy:    1.3852345620e+01 (    4.61745e-01 /electron)
+ hartree energy      :    2.2997155369e+01 (    7.66572e-01 /electron)
+ exc-corr energy     :   -7.0825903122e+01 (   -2.36086e+00 /electron)
+ ion-ion energy      :   -1.6219379482e+02 (   -4.05484e+01 /ion)
+
+ kinetic (planewave) :    1.6131817608e+02 (    5.37727e+00 /electron)
+ V_local (planewave) :    1.5692449301e+01 (    5.23082e-01 /electron)
+ V_nl    (planewave) :   -1.7019724262e+02 (   -5.67324e+00 /electron)
+ V_Coul  (planewave) :    4.5994310737e+01 (    1.53314e+00 /electron)
+ V_xc    (planewave) :   -3.8955347886e+01 (   -1.29851e+00 /electron)
+ Virial Coefficient  :   -9.1413028614e-01
+
+
+
+ Brillouin zone point:   1
+   weight =    1.000
+   k = <   0.000    0.000    0.000> . <b1,b2,b3>
+     = <   0.000    0.000    0.000> 
+
+ EF_crossings (this k-point): 0
+
+ orbital energies:
+     9.9173455e-01 (  26.987eV) occ=0.000
+     9.7771969e-01 (  26.605eV) occ=0.000
+     9.7557491e-01 (  26.547eV) occ=0.000
+     9.6907194e-01 (  26.370eV) occ=0.000
+     9.6536953e-01 (  26.269eV) occ=0.000
+     9.5629575e-01 (  26.022eV) occ=0.000
+     6.8932288e-01 (  18.758eV) occ=0.000
+     6.5187682e-01 (  17.739eV) occ=0.000
+     5.7339403e-01 (  15.603eV) occ=1.000
+     5.5981543e-01 (  15.233eV) occ=1.000
+     5.5726737e-01 (  15.164eV) occ=1.000
+     4.6435887e-01 (  12.636eV) occ=1.000
+     1.6484984e-01 (   4.486eV) occ=1.000
+     1.5914603e-01 (   4.331eV) occ=1.000
+     1.5294349e-01 (   4.162eV) occ=1.000
+     1.3717591e-01 (   3.733eV) occ=1.000
+     1.2710963e-01 (   3.459eV) occ=1.000
+     1.0354889e-01 (   2.818eV) occ=1.000
+     9.8158944e-02 (   2.671eV) occ=1.000
+     9.0952296e-02 (   2.475eV) occ=1.000
+     6.6138148e-02 (   1.800eV) occ=1.000
+     4.6983255e-02 (   1.278eV) occ=1.000
+    -2.6742454e-03 (  -0.073eV) occ=1.000
+    -2.8628705e-02 (  -0.779eV) occ=1.000
+    -3.7332529e-02 (  -1.016eV) occ=1.000
+    -4.4109109e-02 (  -1.200eV) occ=1.000
+    -5.5760299e-02 (  -1.517eV) occ=1.000
+    -6.0996128e-02 (  -1.660eV) occ=1.000
+    -7.5570801e-02 (  -2.056eV) occ=1.000
+    -9.9086742e-02 (  -2.696eV) occ=1.000
+
+ output cpsi to filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.270100e-02
+ main loop   : 3.425842e+00
+ epilogue    : 1.202100e-02
+ total       : 3.470564e+00
+ cputime/step: 6.476072e-03
+
+ Time spent doing      total        step             percent
+ total time            1.386739e+01 2.621434e-02     100.00%
+ total i/o time        3.627704e-02 6.857664e-05       0.26%
+ total FFT time        2.049286e+00 3.873886e-03      14.78%
+ lagrange multipliers  1.221200e-01 2.308506e-04       0.88%
+ exchange correlation  1.534853e-02 2.901424e-05       0.11%
+ local potentials      2.087500e-05 3.946125e-08       0.00%
+ non-local potentials  3.540480e-01 6.692778e-04       2.55%
+ ffm_dgemm             5.626301e-01 1.063573e-03       4.06%
+ fmf_dgemm             2.526314e-01 4.775641e-04       1.82%
+ m_diagonalize         1.861867e-02 3.519598e-05       0.13%
+ mmm_multiply          4.157049e-02 7.858317e-05       0.30%
+ SCVtrans              2.173095e-03 4.107930e-06       0.02%
+
+ >>> job completed at     Tue Jan 20 14:47:09 2026 <<<
+
+Running staged band energy optimization - lowlevel_rtdbstr = {"charge":0,"constraints":null,"current_task":"energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":40,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"fractional":true,"fractional_frozen":true,"fractional_kT":0.001,"fractional_orbitals":[8,8],"fractional_smeartype":2,"fractional_temperature":315.77717499423704,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"loop":[10,10],"minimizer":1,"options_disp":"","simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"tolerances":[1e-07,1e-07],"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT BAND Calculation              *
+          *                                                   *
+          *  [      (bundled Grassmann/Stiefel manifold)   ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   07/19/24             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Raymundo Hernandez Esparza, Duo Song,          *
+          *    David H. Bross, ...                            *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Tue Jan 20 14:47:09 2026 <<<
+
+ psp_library: /Users/bylaska/pwdft/share/nwpw/libraryps
+
+
+
+ writing formatted psp filename: ./perm1x1x1/Cu.cpp
+ psi grids are being converted: 
+ -----------------------------: 
+ converting .... cpsi: nb=1 n=1 spin=1
+ converting .... cpsi: nb=1 n=2 spin=1
+ converting .... cpsi: nb=1 n=3 spin=1
+ converting .... cpsi: nb=1 n=4 spin=1
+ converting .... cpsi: nb=1 n=5 spin=1
+ converting .... cpsi: nb=1 n=6 spin=1
+ converting .... cpsi: nb=1 n=7 spin=1
+ converting .... cpsi: nb=1 n=8 spin=1
+ converting .... cpsi: nb=1 n=9 spin=1
+ converting .... cpsi: nb=1 n=10 spin=1
+ converting .... cpsi: nb=1 n=11 spin=1
+ converting .... cpsi: nb=1 n=12 spin=1
+ converting .... cpsi: nb=1 n=13 spin=1
+ converting .... cpsi: nb=1 n=14 spin=1
+ converting .... cpsi: nb=1 n=15 spin=1
+ converting .... cpsi: nb=1 n=16 spin=1
+ converting .... cpsi: nb=1 n=17 spin=1
+ converting .... cpsi: nb=1 n=18 spin=1
+ converting .... cpsi: nb=1 n=19 spin=1
+ converting .... cpsi: nb=1 n=20 spin=1
+ converting .... cpsi: nb=1 n=21 spin=1
+ converting .... cpsi: nb=1 n=22 spin=1
+ converting .... cpsi: nb=1 n=23 spin=1
+ converting .... cpsi: nb=1 n=24 spin=1
+ converting .... cpsi: nb=1 n=25 spin=1
+ converting .... cpsi: nb=1 n=26 spin=1
+ converting .... cpsi: nb=1 n=27 spin=1
+ converting .... cpsi: nb=1 n=28 spin=1
+ converting .... cpsi: nb=1 n=29 spin=1
+ converting .... cpsi: nb=1 n=30 spin=1
+
+ input psi exists, reading from file: ./perm1x1x1/pspw_pbe_Cu4.movecs ... reading occupations
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x 1 x 1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+   dispersion correction= vdw Langreth functional
+   using fractional
+
+ elements involved in the cluster:
+      1: Cu  valence charge = 11.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  0
+             number of non-local projections =  8
+             semicore corrections inlcuded   =  0.480 (radius) 9.114 (charge)
+             cutoff =    2.055   2.299   2.055
+
+ atom composition:
+   Cu : 4
+
+ initial ion positions (au):
+   1 Cu	(    0.00000    0.00000    0.00000 ) - atomic mass = 62.930
+   2 Cu	(    0.00000    3.42040    3.42040 ) - atomic mass = 62.930
+   3 Cu	(    3.42040    0.00000    3.42040 ) - atomic mass = 62.930
+   4 Cu	(    3.42040    3.42040    0.00000 ) - atomic mass = 62.930
+   G.C.	(    1.71020    1.71020    1.71020 )
+ C.O.M.	(    1.71020    1.71020    1.71020 )
+
+ symmetry information:
+   effective symmetry source : autospace
+   symmetry backend          : spglib
+   symmetry type             : space_group
+   group name                : Fm-3m  (order = 192)
+   centering                 : 4
+   primitive lattice         : no
+   translation type          : fractional
+   tolerance                 :  1.000e-06
+
+ number of electrons: spin up = 22.00                        22.00 (   fractional)
+ number of orbitals:  spin up =    30 (  30 per task) down =    30 (  30 per task)
+
+ supercell:
+      volume =     320.13
+      lattice:    a1 = <    6.841    0.000    0.000 >
+                  a2 = <    0.000    6.841    0.000 >
+                  a3 = <    0.000    0.000    6.841 >
+      reciprocal: b1 = <    0.918    0.000    0.000 >
+                  b2 = <    0.000    0.918    0.000 >
+                  b3 = <    0.000    0.000    0.918 >
+
+ Ewald parameters:
+      energy cutoff =  60.000 fft=   28 x   28 x   28  (    3562 waves      446 per task)
+      Ewald summation: cut radius =   2.177 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs =  4.24369865)
+
+ Brillouin zone:
+      monkhorst-pack grid = 1 1 1
+      number of zone points =   1 (no symmetry reduction)
+      weight =    1.000 ks = <   0.000    0.000    0.000>  k = <   0.000    0.000    0.000> 
+
+ computational grids:
+      density     cutoff = 60.000 fft =  28 x   28 x   28  (    7123 waves      890 per task)
+      wavefnc   1 cutoff = 30.000 fft =  28 x   28 x   28  (    2517 waves      314 per task)
+
+
+ technical parameters:
+      using io buffer 
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =        100 (   10 inner    10 outer)
+      minimizer = Grassmann conjugate gradient
+
+ fractional smearing parameters:
+      smearing algorithm = 2
+      smearing parameter = Gaussian
+      smearing parameter =     0.001 (  315.8 K)
+      mixing parameter   =     0.5
+      mixing parameter(alpha)   =    0.50
+      mixing parameter(alpha_min)   =    0.10
+      mixing parameter(alpha_max)   =    0.50
+      mixing parameter(beta)   =    0.10
+      mixing parameter(gamma)   =    0.20
+      rmsd occupation tolerance   =    1.000e-03
+      extra orbitals     =       8
+      frozen oribtals
+      initial occupations per Brillouin zone:
+          k-point 1: [0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+
+
+     ======= bundled Grassmann conjugate gradient iteration =======
+          >>> iteration started at Tue Jan 20 14:47:09 2026  <<<
+     iter.                   energy    delta energy       delta rho
+     --------------------------------------------------------------
+        - 15 steepest descent iterations performed
+        10      -2.084336488190e+02   -2.458646e-02    4.482758e-04
+        - 10 steepest descent iterations performed
+        20      -2.087249971994e+02   -2.296915e-02    3.209294e-04
+        - 10 steepest descent iterations performed
+        30      -2.092121709715e+02   -2.096965e-02    1.493681e-04
+        - 10 steepest descent iterations performed
+        40      -2.097944766396e+02   -1.533530e-02    5.739672e-05
+        - 10 steepest descent iterations performed
+        50      -2.100926764653e+02   -1.494393e-02    7.946300e-05
+        - 10 steepest descent iterations performed
+        60      -2.103123790489e+02   -1.441359e-02    8.456863e-04
+        - 10 steepest descent iterations performed
+        70      -2.106206170329e+02   -1.778356e-02    4.073352e-04
+        - 10 steepest descent iterations performed
+        80      -2.107784894736e+02   -2.814748e-02    9.042892e-04
+        - 10 steepest descent iterations performed
+        90      -2.109638454210e+02   -8.456943e-03    5.572796e-05
+       100      -2.110271674897e+02   -2.155395e-03    4.879245e-05
+     *** arrived at the Maximum iteration.  terminated
+          >>> iteration ended at   Tue Jan 20 14:47:17 2026  <<<
+     =============  energy results (Solid object)  =============
+
+
+ number of electrons: spin up=    22.00000  down=    22.00000 (real space)
+
+
+ total     energy    :   -2.1102716749e+02 (   -5.27568e+01 /ion)
+ total orbital energy:    1.0453083125e+01 (    3.48436e-01 /electron)
+ hartree energy      :    2.7287169061e+01 (    9.09572e-01 /electron)
+ exc-corr energy     :   -7.2403650186e+01 (   -2.41346e+00 /electron)
+ ion-ion energy      :   -1.6219379482e+02 (   -4.05484e+01 /ion)
+
+ kinetic (planewave) :    1.7280505757e+02 (    5.76017e+00 /electron)
+ V_local (planewave) :    1.5061627270e+01 (    5.02054e-01 /electron)
+ V_nl    (planewave) :   -1.9158357638e+02 (   -6.38612e+00 /electron)
+ V_Coul  (planewave) :    5.4574338121e+01 (    1.81914e+00 /electron)
+ V_xc    (planewave) :   -4.0404363456e+01 (   -1.34681e+00 /electron)
+ Virial Coefficient  :   -9.3950939127e-01
+
+
+
+ Brillouin zone point:   1
+   weight =    1.000
+   k = <   0.000    0.000    0.000> . <b1,b2,b3>
+     = <   0.000    0.000    0.000> 
+
+ EF_crossings (this k-point): 0
+
+ orbital energies:
+     9.9673617e-01 (  27.123eV) occ=0.000
+     9.8351163e-01 (  26.763eV) occ=0.000
+     9.6975456e-01 (  26.389eV) occ=0.000
+     7.2341759e-01 (  19.685eV) occ=0.000
+     7.0937869e-01 (  19.303eV) occ=0.000
+     6.9550778e-01 (  18.926eV) occ=0.000
+     5.6687723e-01 (  15.426eV) occ=0.000
+     5.6266295e-01 (  15.311eV) occ=0.000
+     5.5486939e-01 (  15.099eV) occ=1.000
+     2.5352452e-01 (   6.899eV) occ=1.000
+     2.5132850e-01 (   6.839eV) occ=1.000
+     2.4770949e-01 (   6.741eV) occ=1.000
+     2.4484430e-01 (   6.663eV) occ=1.000
+     2.4095325e-01 (   6.557eV) occ=1.000
+     1.6021104e-01 (   4.360eV) occ=1.000
+     2.3689926e-02 (   0.645eV) occ=1.000
+     1.6873695e-02 (   0.459eV) occ=1.000
+     1.2426549e-02 (   0.338eV) occ=1.000
+     5.2933677e-03 (   0.144eV) occ=1.000
+    -1.4374259e-03 (  -0.039eV) occ=1.000
+    -3.2310168e-03 (  -0.088eV) occ=1.000
+    -1.5747739e-02 (  -0.429eV) occ=1.000
+    -1.7855079e-02 (  -0.486eV) occ=1.000
+    -2.5482000e-02 (  -0.693eV) occ=1.000
+    -3.1867921e-02 (  -0.867eV) occ=1.000
+    -1.0795636e-01 (  -2.938eV) occ=1.000
+    -1.1727051e-01 (  -3.191eV) occ=1.000
+    -1.3352302e-01 (  -3.633eV) occ=1.000
+    -1.4071905e-01 (  -3.829eV) occ=1.000
+    -1.5287858e-01 (  -4.160eV) occ=1.000
+
+ output cpsi to filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 5.060300e-02
+ main loop   : 7.643356e+00
+ epilogue    : 2.382100e-02
+ total       : 7.717780e+00
+ cputime/step: 1.550376e-02
+
+ Time spent doing      total        step             percent
+ total time            2.163668e+01 4.388779e-02     100.00%
+ total i/o time        8.566470e-02 1.737621e-04       0.40%
+ total FFT time        5.735831e+00 1.163454e-02      26.51%
+ lagrange multipliers  3.187381e-01 6.465276e-04       1.47%
+ exchange correlation  4.305371e-02 8.733003e-05       0.20%
+ local potentials      5.416700e-05 1.098722e-07       0.00%
+ non-local potentials  8.741229e-01 1.773069e-03       4.04%
+ ffm_dgemm             1.462917e+00 2.967377e-03       6.76%
+ fmf_dgemm             6.186608e-01 1.254890e-03       2.86%
+ m_diagonalize         2.943784e-02 5.971164e-05       0.14%
+ mmm_multiply          6.469598e-02 1.312292e-04       0.30%
+ SCVtrans              3.732256e-03 7.570499e-06       0.02%
+
+ >>> job completed at     Tue Jan 20 14:47:17 2026 <<<
+
+Running band energy calculation - rtdbstr = {"charge":0,"constraints":null,"current_task":"task band energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"nwinput_cur":40,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"fractional":true,"fractional_frozen":true,"fractional_kT":0.001,"fractional_orbitals":[8,8],"fractional_smeartype":2,"fractional_temperature":315.77717499423704,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"loop":[10,10],"minimizer":1,"options_disp":"","simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT BAND Calculation              *
+          *                                                   *
+          *  [      (bundled Grassmann/Stiefel manifold)   ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   07/19/24             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Raymundo Hernandez Esparza, Duo Song,          *
+          *    David H. Bross, ...                            *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Tue Jan 20 14:47:17 2026 <<<
+
+ psp_library: /Users/bylaska/pwdft/share/nwpw/libraryps
+
+
+
+ reading formatted psp filename: ./perm1x1x1/Cu.cpp
+ input psi exists, reading from file: ./perm1x1x1/pspw_pbe_Cu4.movecs ... reading occupations
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x 1 x 1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+   dispersion correction= vdw Langreth functional
+   using fractional
+
+ elements involved in the cluster:
+      1: Cu  valence charge = 11.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  0
+             number of non-local projections =  8
+             semicore corrections inlcuded   =  0.480 (radius) 9.114 (charge)
+             cutoff =    2.055   2.299   2.055
+
+ atom composition:
+   Cu : 4
+
+ initial ion positions (au):
+   1 Cu	(    0.00000    0.00000    0.00000 ) - atomic mass = 62.930
+   2 Cu	(    0.00000    3.42040    3.42040 ) - atomic mass = 62.930
+   3 Cu	(    3.42040    0.00000    3.42040 ) - atomic mass = 62.930
+   4 Cu	(    3.42040    3.42040    0.00000 ) - atomic mass = 62.930
+   G.C.	(    1.71020    1.71020    1.71020 )
+ C.O.M.	(    1.71020    1.71020    1.71020 )
+
+ symmetry information:
+   effective symmetry source : autospace
+   symmetry backend          : spglib
+   symmetry type             : space_group
+   group name                : Fm-3m  (order = 192)
+   centering                 : 4
+   primitive lattice         : no
+   translation type          : fractional
+   tolerance                 :  1.000e-06
+
+ number of electrons: spin up = 22.00                        22.00 (   fractional)
+ number of orbitals:  spin up =    30 (  30 per task) down =    30 (  30 per task)
+
+ supercell:
+      volume =     320.13
+      lattice:    a1 = <    6.841    0.000    0.000 >
+                  a2 = <    0.000    6.841    0.000 >
+                  a3 = <    0.000    0.000    6.841 >
+      reciprocal: b1 = <    0.918    0.000    0.000 >
+                  b2 = <    0.000    0.918    0.000 >
+                  b3 = <    0.000    0.000    0.918 >
+
+ Ewald parameters:
+      energy cutoff =  60.000 fft=   28 x   28 x   28  (    3562 waves      446 per task)
+      Ewald summation: cut radius =   2.177 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs =  4.24369865)
+
+ Brillouin zone:
+      monkhorst-pack grid = 1 1 1
+      number of zone points =   1 (no symmetry reduction)
+      weight =    1.000 ks = <   0.000    0.000    0.000>  k = <   0.000    0.000    0.000> 
+
+ computational grids:
+      density     cutoff = 60.000 fft =  28 x   28 x   28  (    7123 waves      890 per task)
+      wavefnc   1 cutoff = 30.000 fft =  28 x   28 x   28  (    2517 waves      314 per task)
+
+
+ technical parameters:
+      using io buffer 
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =        100 (   10 inner    10 outer)
+      minimizer = Grassmann conjugate gradient
+
+ fractional smearing parameters:
+      smearing algorithm = 2
+      smearing parameter = Gaussian
+      smearing parameter =     0.001 (  315.8 K)
+      mixing parameter   =     0.5
+      mixing parameter(alpha)   =    0.50
+      mixing parameter(alpha_min)   =    0.10
+      mixing parameter(alpha_max)   =    0.50
+      mixing parameter(beta)   =    0.10
+      mixing parameter(gamma)   =    0.20
+      rmsd occupation tolerance   =    1.000e-03
+      extra orbitals     =       8
+      frozen oribtals
+      initial occupations per Brillouin zone:
+          k-point 1: [0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+
+
+     ======= bundled Grassmann conjugate gradient iteration =======
+          >>> iteration started at Tue Jan 20 14:47:17 2026  <<<
+     iter.                   energy    delta energy       delta rho
+     --------------------------------------------------------------
+        10      -2.110318283662e+02   -5.358879e-05    1.368987e-06
+        20      -2.110285153935e+02   -1.755244e-04    6.372753e-06
+        - 10 steepest descent iterations performed
+        30      -2.110352062770e+02   -7.408186e-05    9.946092e-07
+        40      -2.110301243080e+02   -1.392758e-04    7.302338e-06
+        - 10 steepest descent iterations performed
+        50      -2.110332916479e+02   -4.153489e-05    7.848498e-07
+        60      -2.110310455093e+02   -1.503728e-04    1.282507e-05
+        - 10 steepest descent iterations performed
+        70      -2.110329293827e+02   -1.757214e-05    2.604062e-07
+        80      -2.110315659133e+02   -9.076611e-05    8.839448e-06
+        - 10 steepest descent iterations performed
+        90      -2.110325833750e+02   -6.794843e-06    7.535863e-08
+       100      -2.110331418051e+02   -6.143553e-05    8.409186e-06
+     *** arrived at the Maximum iteration.  terminated
+          >>> iteration ended at   Tue Jan 20 14:47:22 2026  <<<
+     =============  energy results (Solid object)  =============
+
+
+ number of electrons: spin up=    22.00000  down=    22.00000 (real space)
+
+
+ total     energy    :   -2.1103314181e+02 (   -5.27583e+01 /ion)
+ total orbital energy:    1.0441479739e+01 (    3.48049e-01 /electron)
+ hartree energy      :    2.7281193657e+01 (    9.09373e-01 /electron)
+ exc-corr energy     :   -7.2400388060e+01 (   -2.41335e+00 /electron)
+ ion-ion energy      :   -1.6219379482e+02 (   -4.05484e+01 /ion)
+
+ kinetic (planewave) :    1.7278324580e+02 (    5.75944e+00 /electron)
+ V_local (planewave) :    1.5059210203e+01 (    5.01974e-01 /electron)
+ V_nl    (planewave) :   -1.9156260859e+02 (   -6.38542e+00 /electron)
+ V_Coul  (planewave) :    5.4562387313e+01 (    1.81875e+00 /electron)
+ V_xc    (planewave) :   -4.0400754996e+01 (   -1.34669e+00 /electron)
+ Virial Coefficient  :   -9.3956891080e-01
+
+
+
+ Brillouin zone point:   1
+   weight =    1.000
+   k = <   0.000    0.000    0.000> . <b1,b2,b3>
+     = <   0.000    0.000    0.000> 
+
+ EF_crossings (this k-point): 0
+
+ orbital energies:
+     9.9755547e-01 (  27.145eV) occ=0.000
+     9.8353136e-01 (  26.763eV) occ=0.000
+     9.6795020e-01 (  26.339eV) occ=0.000
+     7.2291319e-01 (  19.672eV) occ=0.000
+     7.0613167e-01 (  19.215eV) occ=0.000
+     6.9495037e-01 (  18.911eV) occ=0.000
+     5.6947486e-01 (  15.496eV) occ=0.000
+     5.5997127e-01 (  15.238eV) occ=0.000
+     5.5577912e-01 (  15.124eV) occ=1.000
+     2.5546587e-01 (   6.952eV) occ=1.000
+     2.5312369e-01 (   6.888eV) occ=1.000
+     2.5115827e-01 (   6.834eV) occ=1.000
+     2.4770928e-01 (   6.741eV) occ=1.000
+     2.4222482e-01 (   6.591eV) occ=1.000
+     1.5993810e-01 (   4.352eV) occ=1.000
+     1.8960027e-02 (   0.516eV) occ=1.000
+     1.2409112e-02 (   0.338eV) occ=1.000
+     6.0856403e-03 (   0.166eV) occ=1.000
+     5.6395270e-04 (   0.015eV) occ=1.000
+    -7.0252349e-03 (  -0.191eV) occ=1.000
+    -9.6616556e-03 (  -0.263eV) occ=1.000
+    -2.1128458e-02 (  -0.575eV) occ=1.000
+    -2.3811234e-02 (  -0.648eV) occ=1.000
+    -3.1240235e-02 (  -0.850eV) occ=1.000
+    -3.7776574e-02 (  -1.028eV) occ=1.000
+    -9.9278777e-02 (  -2.702eV) occ=1.000
+    -1.0875961e-01 (  -2.960eV) occ=1.000
+    -1.2580256e-01 (  -3.423eV) occ=1.000
+    -1.3263634e-01 (  -3.609eV) occ=1.000
+    -1.4488001e-01 (  -3.942eV) occ=1.000
+
+ output cpsi to filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.870900e-02
+ main loop   : 5.568002e+00
+ epilogue    : 2.505000e-02
+ total       : 5.631761e+00
+ cputime/step: 1.577338e-02
+
+ Time spent doing      total        step             percent
+ total time            2.732056e+01 7.739536e-02     100.00%
+ total i/o time        1.357145e-01 3.844603e-04       0.50%
+ total FFT time        8.356559e+00 2.367297e-02      30.59%
+ lagrange multipliers  4.016240e-01 1.137745e-03       1.47%
+ exchange correlation  6.335555e-02 1.794775e-04       0.23%
+ local potentials      8.662500e-05 2.453966e-07       0.00%
+ non-local potentials  1.258540e+00 3.565269e-03       4.61%
+ ffm_dgemm             2.155007e+00 6.104836e-03       7.89%
+ fmf_dgemm             9.069069e-01 2.569141e-03       3.32%
+ m_diagonalize         4.065283e-02 1.151638e-04       0.15%
+ mmm_multiply          8.280226e-02 2.345673e-04       0.30%
+ SCVtrans              5.088394e-03 1.441471e-05       0.02%
+
+ >>> job completed at     Tue Jan 20 14:47:22 2026 <<<
+
+Next rtdbstr={"band":{"eigenvalues":[0.9975554674878732,0.9835313581834135,0.9679502009829641,0.7229131928747959,0.7061316684363366,0.694950366048479,0.5694748634063361,0.559971274102674,0.5557791170503533,0.25546586672758725,0.2531236933638971,0.25115826983086575,0.24770928234497647,0.24222482299534565,0.15993810106089107,0.018960026822183243,0.012409111523720392,0.0060856402513652635,0.0005639526960120382,-0.0070252349027193,-0.009661655567881554,-0.021128457913431375,-0.02381123388053329,-0.031240234559486327,-0.03777657400707162,-0.09927877665560667,-0.10875960799054303,-0.12580255828362286,-0.13263633549238668,-0.144880008452818],"energies":[-211.0331418050878,10.441479739163643,27.28119365666197,-72.40038806006332,-162.19379482385386,172.78324580376517,15.059210203469442,-191.56260858506715,54.56238731332394,-40.400754996327706,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-211.0331418050878},"charge":0,"constraints":null,"current_task":"task band energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":51,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"diis_histories":6,"fractional":true,"fractional_frozen":false,"fractional_kT":0.005,"fractional_orbitals":[8,8],"fractional_smeartype":1,"fractional_temperature":1578.8858749711853,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"kerker_g0":0.25,"ks_algorithm":2,"loop":[10,100],"minimizer":3,"options_disp":"","scf_algorithm":2,"scf_alpha":0.001,"simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+Next task =11
+
+
+Running band energy calculation - rtdbstr = {"band":{"eigenvalues":[0.9975554674878732,0.9835313581834135,0.9679502009829641,0.7229131928747959,0.7061316684363366,0.694950366048479,0.5694748634063361,0.559971274102674,0.5557791170503533,0.25546586672758725,0.2531236933638971,0.25115826983086575,0.24770928234497647,0.24222482299534565,0.15993810106089107,0.018960026822183243,0.012409111523720392,0.0060856402513652635,0.0005639526960120382,-0.0070252349027193,-0.009661655567881554,-0.021128457913431375,-0.02381123388053329,-0.031240234559486327,-0.03777657400707162,-0.09927877665560667,-0.10875960799054303,-0.12580255828362286,-0.13263633549238668,-0.144880008452818],"energies":[-211.0331418050878,10.441479739163643,27.28119365666197,-72.40038806006332,-162.19379482385386,172.78324580376517,15.059210203469442,-191.56260858506715,54.56238731332394,-40.400754996327706,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-211.0331418050878},"charge":0,"constraints":null,"current_task":"task band energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":true,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":51,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"diis_histories":6,"fractional":true,"fractional_frozen":false,"fractional_kT":0.005,"fractional_orbitals":[8,8],"fractional_smeartype":1,"fractional_temperature":1578.8858749711853,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"kerker_g0":0.25,"ks_algorithm":2,"loop":[10,100],"minimizer":3,"options_disp":"","scf_algorithm":2,"scf_alpha":0.001,"simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+
+          *****************************************************
+          *                                                   *
+          *               PWDFT BAND Calculation              *
+          *                                                   *
+          *  [      (bundled Grassmann/Stiefel manifold)   ]  *
+          *  [              C++ implementation             ]  *
+          *                                                   *
+          *              version #7.00   07/19/24             *
+          *                                                   *
+          *    This code was developed by Eric J. Bylaska,    *
+          *    Raymundo Hernandez Esparza, Duo Song,          *
+          *    David H. Bross, ...                            *
+          *                                                   *
+          *****************************************************
+          >>> job started at       Tue Jan 20 14:47:22 2026 <<<
+
+ psp_library: /Users/bylaska/pwdft/share/nwpw/libraryps
+
+
+
+ reading formatted psp filename: ./perm1x1x1/Cu.cpp
+ input psi exists, reading from file: ./perm1x1x1/pspw_pbe_Cu4.movecs ... reading occupations
+
+     ===================  summary of input  =======================
+
+ input psi filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ number of processors used: 8
+ processor grid           : 8 x 1 x 1
+ parallel mapping         : 2d-hcurve
+ parallel mapping         : balanced
+
+ options:
+   boundary conditions  = periodic
+   electron spin        = restricted
+   exchange-correlation = PBE96 (White and Bird) parameterization
+   dispersion correction= vdw Langreth functional
+   using fractional
+
+ elements involved in the cluster:
+      1: Cu  valence charge = 11.0  lmax =2
+             comment = Troullier-Martins pseudopotential
+             pseudopotential type            =  0
+             highest angular component       =  2
+             local potential used            =  0
+             number of non-local projections =  8
+             semicore corrections inlcuded   =  0.480 (radius) 9.114 (charge)
+             cutoff =    2.055   2.299   2.055
+
+ atom composition:
+   Cu : 4
+
+ initial ion positions (au):
+   1 Cu	(    0.00000    0.00000    0.00000 ) - atomic mass = 62.930
+   2 Cu	(    0.00000    3.42040    3.42040 ) - atomic mass = 62.930
+   3 Cu	(    3.42040    0.00000    3.42040 ) - atomic mass = 62.930
+   4 Cu	(    3.42040    3.42040    0.00000 ) - atomic mass = 62.930
+   G.C.	(    1.71020    1.71020    1.71020 )
+ C.O.M.	(    1.71020    1.71020    1.71020 )
+
+ symmetry information:
+   effective symmetry source : autospace
+   symmetry backend          : spglib
+   symmetry type             : space_group
+   group name                : Fm-3m  (order = 192)
+   centering                 : 4
+   primitive lattice         : no
+   translation type          : fractional
+   tolerance                 :  1.000e-06
+
+ number of electrons: spin up = 22.00                        22.00 (   fractional)
+ number of orbitals:  spin up =    30 (  30 per task) down =    30 (  30 per task)
+
+ supercell:
+      volume =     320.13
+      lattice:    a1 = <    6.841    0.000    0.000 >
+                  a2 = <    0.000    6.841    0.000 >
+                  a3 = <    0.000    0.000    6.841 >
+      reciprocal: b1 = <    0.918    0.000    0.000 >
+                  b2 = <    0.000    0.918    0.000 >
+                  b3 = <    0.000    0.000    0.918 >
+
+ Ewald parameters:
+      energy cutoff =  60.000 fft=   28 x   28 x   28  (    3562 waves      446 per task)
+      Ewald summation: cut radius =   2.177 and   1
+                       Mandelung Wigner-Seitz =  1.76011888 (alpha =  2.83729748 rs =  4.24369865)
+
+ Brillouin zone:
+      monkhorst-pack grid = 1 1 1
+      number of zone points =   1 (no symmetry reduction)
+      weight =    1.000 ks = <   0.000    0.000    0.000>  k = <   0.000    0.000    0.000> 
+
+ computational grids:
+      density     cutoff = 60.000 fft =  28 x   28 x   28  (    7123 waves      890 per task)
+      wavefnc   1 cutoff = 30.000 fft =  28 x   28 x   28  (    2517 waves      314 per task)
+
+
+ technical parameters:
+      using io buffer 
+      fixed step: time step =        5.80  ficticious mass =   400000.00
+      tolerance =   1.000e-07 (energy)    1.000e-07 (density)    1.000e-04 (ion)
+      max iterations =       1000 (   10 inner   100 outer)
+
+ Kohn-Sham scf parameters:
+      Kohn-Sham algorithm  = Grassmann conjugate gradient
+      Kohn-Sham iterations = ( 10 inner)
+      scf algorithm        = Johnson-Pulay mixing (  6 histories)
+      scf mixing parameter: alpha= 1.000e-03
+      Kerker damping       = 2.500e-01
+
+ fractional smearing parameters:
+      smearing algorithm = 1
+      smearing parameter = Fermi-Dirac
+      smearing parameter =     0.005 ( 1578.9 K)
+      mixing parameter   =     0.5
+      mixing parameter(alpha)   =    0.50
+      mixing parameter(alpha_min)   =    0.10
+      mixing parameter(alpha_max)   =    0.50
+      mixing parameter(beta)   =    0.10
+      mixing parameter(gamma)   =    0.20
+      rmsd occupation tolerance   =    1.000e-03
+      extra orbitals     =       8
+      initial occupations per Brillouin zone:
+          k-point 1: [0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+
+
+     ======== Kohn-Sham scf iteration (Grassmann) iteration =======
+          >>> iteration started at Tue Jan 20 14:47:22 2026  <<<
+     iter.              free energy                   energy    smear energy           EF_up    delta free_E    delta energy   delta smear_E       delta rho
+     -------------------------------------------------------------------------------------------------------------------------------------------------------
+        10      -2.156999281423e+02      -2.156856763782e+02   -1.425176e-02    6.329464e-01   -4.666786e+00   -4.652535e+00   -1.425176e-02    1.469770e-01
+                 SCF α=5.000e-03  SCF error=5.142e-02  occ_rmsd= 7.545e-02  Δocc_rmsd= 7.545e-02  warning: occupations still fluctuating
+        20      -2.150068087174e+02      -2.149972280202e+02   -9.580697e-03    1.053826e+00    6.931194e-01    6.884484e-01    4.671067e-03    1.678056e-01
+                 SCF α=5.000e-03  SCF error=5.545e-02  occ_rmsd= 7.545e-02  Δocc_rmsd= 7.545e-02  warning: occupations still fluctuating
+        30      -2.147797875206e+02      -2.147702068234e+02   -9.580697e-03    1.075194e+00    2.270212e-01    2.270212e-01    0.000000e+00    5.972577e-02
+                 SCF α=5.000e-03  SCF error=5.956e-02  occ_rmsd= 7.545e-02  Δocc_rmsd= 7.545e-02  warning: occupations still fluctuating
+        40      -2.157385495168e+02      -2.157289688195e+02   -9.580697e-03    8.220369e-01   -9.587620e-01   -9.587620e-01    0.000000e+00    8.060954e-02
+                 SCF α=5.000e-03  SCF error=2.988e-02  occ_rmsd= 7.545e-02  Δocc_rmsd= 7.545e-02  warning: occupations still fluctuating
+        50      -2.172003998371e+02      -2.171908191398e+02   -9.580697e-03    7.991249e-01   -1.461850e+00   -1.461850e+00    0.000000e+00    2.962803e-02
+                 SCF α=5.000e-03  SCF error=1.103e-02  occ_rmsd= 7.545e-02  Δocc_rmsd= 7.545e-02  warning: occupations still fluctuating
+        60      -2.172545091593e+02      -2.172440992177e+02   -1.040994e-02    6.936830e-01   -5.410932e-02   -5.328008e-02   -8.292443e-04    2.617134e-02
+                 SCF α=5.000e-03  SCF error=9.352e-03  occ_rmsd= 1.339e-02  Δocc_rmsd=-6.206e-02  warning: occupations still fluctuating
+        70      -2.172546064219e+02      -2.172445833269e+02   -1.002310e-02    8.135866e-01   -9.726269e-05   -4.841091e-04    3.868464e-04    2.551433e-02
+                 SCF α=5.000e-03  SCF error=8.972e-03  occ_rmsd= 1.339e-02  Δocc_rmsd=-6.206e-02  warning: occupations still fluctuating
+        80      -2.172591431817e+02      -2.172491200866e+02   -1.002310e-02    8.093247e-01   -4.536760e-03   -4.536760e-03    0.000000e+00    2.610493e-02
+                 SCF α=5.000e-03  SCF error=8.817e-03  occ_rmsd= 1.339e-02  Δocc_rmsd=-6.206e-02  warning: occupations still fluctuating
+        90      -2.172065566108e+02      -2.171965335157e+02   -1.002310e-02    8.337012e-01    5.258657e-02    5.258657e-02    0.000000e+00    2.759033e-02
+                 SCF α=5.000e-03  SCF error=1.055e-02  occ_rmsd= 1.339e-02  Δocc_rmsd=-6.206e-02  warning: occupations still fluctuating
+       100      -2.171488142145e+02      -2.171387911194e+02   -1.002310e-02    8.461775e-01    5.774240e-02    5.774240e-02    0.000000e+00    3.058803e-02
+                 SCF α=5.000e-03  SCF error=1.167e-02  occ_rmsd= 1.339e-02  Δocc_rmsd=-6.206e-02  warning: occupations still fluctuating
+       110      -2.172012560734e+02      -2.171890685289e+02   -1.218754e-02    6.229216e-01   -5.244186e-02   -5.027741e-02   -2.164449e-03    2.296445e-02
+                 SCF α=5.000e-03  SCF error=9.399e-03  occ_rmsd= 2.177e-02  Δocc_rmsd= 8.372e-03  warning: occupations still fluctuating
+       120      -2.172439777081e+02      -2.172329712665e+02   -1.100644e-02    8.191698e-01   -4.272163e-02   -4.390274e-02    1.181103e-03    1.969444e-02
+                 SCF α=5.000e-03  SCF error=6.718e-03  occ_rmsd= 2.177e-02  Δocc_rmsd= 8.372e-03  warning: occupations still fluctuating
+       130      -2.172254234817e+02      -2.172144170401e+02   -1.100644e-02    8.263857e-01    1.855423e-02    1.855423e-02    0.000000e+00    2.439312e-02
+                 SCF α=5.000e-03  SCF error=7.437e-03  occ_rmsd= 2.177e-02  Δocc_rmsd= 8.372e-03  warning: occupations still fluctuating
+       140      -2.171943368923e+02      -2.171833304507e+02   -1.100644e-02    8.361583e-01    3.108659e-02    3.108659e-02    0.000000e+00    2.235724e-02
+                 SCF α=5.000e-03  SCF error=9.429e-03  occ_rmsd= 2.177e-02  Δocc_rmsd= 8.372e-03  warning: occupations still fluctuating
+       150      -2.172391165235e+02      -2.172281100819e+02   -1.100644e-02    8.232490e-01   -4.477963e-02   -4.477963e-02    0.000000e+00    1.408863e-02
+                 SCF α=5.000e-03  SCF error=6.334e-03  occ_rmsd= 2.177e-02  Δocc_rmsd= 8.372e-03  warning: occupations still fluctuating
+       160      -2.172649256510e+02      -2.172507011277e+02   -1.422452e-02    5.898498e-01   -2.580913e-02   -2.259105e-02   -3.218082e-03    1.197260e-02
+                 SCF α=5.000e-03  SCF error=3.986e-03  occ_rmsd= 2.439e-02  Δocc_rmsd= 2.622e-03  warning: occupations still fluctuating
+       170      -2.172584519717e+02      -2.172460948843e+02   -1.235709e-02    5.203105e-01    6.473679e-03    4.606243e-03    1.867436e-03    1.138065e-02
+                 SCF α=5.000e-03  SCF error=4.635e-03  occ_rmsd= 2.439e-02  Δocc_rmsd= 2.622e-03  warning: occupations still fluctuating
+       180      -2.172695302482e+02      -2.172571731608e+02   -1.235709e-02    4.950120e-01   -1.107828e-02   -1.107828e-02    0.000000e+00    9.798702e-03
+                 SCF α=5.000e-03  SCF error=3.345e-03  occ_rmsd= 2.439e-02  Δocc_rmsd= 2.622e-03  warning: occupations still fluctuating
+       190      -2.172700254820e+02      -2.172576683946e+02   -1.235709e-02    4.885209e-01   -4.952338e-04   -4.952338e-04    0.000000e+00    9.658889e-03
+                 SCF α=5.000e-03  SCF error=3.268e-03  occ_rmsd= 2.439e-02  Δocc_rmsd= 2.622e-03  warning: occupations still fluctuating
+       200      -2.172689677152e+02      -2.172566106279e+02   -1.235709e-02    5.003633e-01    1.057767e-03    1.057767e-03    0.000000e+00    6.944873e-03
+                 SCF α=5.000e-03  SCF error=3.364e-03  occ_rmsd= 2.439e-02  Δocc_rmsd= 2.622e-03  warning: occupations still fluctuating
+       210      -2.172649632817e+02      -2.172549094676e+02   -1.005381e-02    5.668232e-01    4.004434e-03    1.701160e-03    2.303273e-03    7.659330e-03
+                 SCF α=5.000e-03  SCF error=3.443e-03  occ_rmsd= 1.253e-02  Δocc_rmsd=-1.185e-02  warning: occupations still fluctuating
+       220      -2.172690215702e+02      -2.172573568090e+02   -1.166476e-02    8.043904e-01   -4.058288e-03   -2.447341e-03   -1.610947e-03    8.823723e-03
+                 SCF α=5.000e-03  SCF error=3.198e-03  occ_rmsd= 1.253e-02  Δocc_rmsd=-1.185e-02  warning: occupations still fluctuating
+       230      -2.172708526389e+02      -2.172591878777e+02   -1.166476e-02    8.051396e-01   -1.831069e-03   -1.831069e-03    0.000000e+00    7.505982e-03
+                 SCF α=5.000e-03  SCF error=2.852e-03  occ_rmsd= 1.253e-02  Δocc_rmsd=-1.185e-02  warning: occupations still fluctuating
+       240      -2.172695706800e+02      -2.172579059188e+02   -1.166476e-02    8.005453e-01    1.281959e-03    1.281959e-03    0.000000e+00    8.944662e-03
+                 SCF α=5.000e-03  SCF error=2.835e-03  occ_rmsd= 1.253e-02  Δocc_rmsd=-1.185e-02  warning: occupations still fluctuating
+       250      -2.172682917716e+02      -2.172566270104e+02   -1.166476e-02    8.009111e-01    1.278908e-03    1.278908e-03    0.000000e+00    8.855762e-03
+                 SCF α=5.000e-03  SCF error=3.049e-03  occ_rmsd= 1.253e-02  Δocc_rmsd=-1.185e-02  warning: occupations still fluctuating
+       260      -2.172681524733e+02      -2.172578127901e+02   -1.033968e-02    5.583297e-01    1.392983e-04   -1.185780e-03    1.325078e-03    8.600060e-03
+                 SCF α=5.000e-03  SCF error=2.893e-03  occ_rmsd= 4.232e-03  Δocc_rmsd=-8.302e-03
+       270      -2.172689810230e+02      -2.172576704024e+02   -1.131062e-02    8.032706e-01   -8.285497e-04    1.423877e-04   -9.709374e-04    8.865723e-03
+                 SCF α=5.000e-03  SCF error=2.879e-03  occ_rmsd= 4.232e-03  Δocc_rmsd=-8.302e-03
+       280      -2.172685435240e+02      -2.172572329033e+02   -1.131062e-02    8.025217e-01    4.374991e-04    4.374991e-04    0.000000e+00    8.732847e-03
+                 SCF α=5.000e-03  SCF error=2.965e-03  occ_rmsd= 4.232e-03  Δocc_rmsd=-8.302e-03
+       290      -2.172690908089e+02      -2.172577801883e+02   -1.131062e-02    8.031567e-01   -5.472849e-04   -5.472849e-04    0.000000e+00    8.247183e-03
+                 SCF α=5.000e-03  SCF error=2.876e-03  occ_rmsd= 4.232e-03  Δocc_rmsd=-8.302e-03
+       300      -2.172704275632e+02      -2.172591169425e+02   -1.131062e-02    8.026850e-01   -1.336754e-03   -1.336754e-03    0.000000e+00    8.284463e-03
+                 SCF α=5.000e-03  SCF error=2.736e-03  occ_rmsd= 4.232e-03  Δocc_rmsd=-8.302e-03
+       310      -2.172674960045e+02      -2.172566375032e+02   -1.085850e-02    5.554074e-01    2.931559e-03    2.479439e-03    4.521194e-04    8.180972e-03
+                 SCF α=5.000e-03  SCF error=2.881e-03  occ_rmsd= 3.986e-03  Δocc_rmsd=-2.465e-04
+       320      -2.172680995580e+02      -2.172568836489e+02   -1.121591e-02    4.878942e-01   -6.035535e-04   -2.461457e-04   -3.574078e-04    7.710676e-03
+                 SCF α=5.000e-03  SCF error=2.927e-03  occ_rmsd= 3.986e-03  Δocc_rmsd=-2.465e-04
+       330      -2.172698284468e+02      -2.172586125377e+02   -1.121591e-02    4.865795e-01   -1.728889e-03   -1.728889e-03    0.000000e+00    8.020948e-03
+                 SCF α=5.000e-03  SCF error=2.768e-03  occ_rmsd= 3.986e-03  Δocc_rmsd=-2.465e-04
+       340      -2.172713998196e+02      -2.172601839105e+02   -1.121591e-02    4.854969e-01   -1.571373e-03   -1.571373e-03    0.000000e+00    7.482178e-03
+                 SCF α=5.000e-03  SCF error=2.604e-03  occ_rmsd= 3.986e-03  Δocc_rmsd=-2.465e-04
+       350      -2.172693985369e+02      -2.172581826278e+02   -1.121591e-02    4.867858e-01    2.001283e-03    2.001283e-03    0.000000e+00    8.146708e-03
+                 SCF α=5.000e-03  SCF error=2.799e-03  occ_rmsd= 3.986e-03  Δocc_rmsd=-2.465e-04
+       360      -2.172701928542e+02      -2.172589936157e+02   -1.119924e-02    5.544490e-01   -7.943173e-04   -8.109880e-04    1.667061e-05    8.293603e-03
+                 SCF α=5.000e-03  SCF error=2.664e-03  occ_rmsd= 6.760e-03  Δocc_rmsd= 2.774e-03  warning: occupations still fluctuating
+       370      -2.172699610785e+02      -2.172587259137e+02   -1.123516e-02    8.023890e-01    2.317757e-04    2.677021e-04   -3.592633e-05    8.342609e-03
+                 SCF α=5.000e-03  SCF error=2.749e-03  occ_rmsd= 6.760e-03  Δocc_rmsd= 2.774e-03  warning: occupations still fluctuating
+       380      -2.172702624552e+02      -2.172590272904e+02   -1.123516e-02    8.019955e-01   -3.013767e-04   -3.013767e-04    0.000000e+00    8.616261e-03
+                 SCF α=5.000e-03  SCF error=2.738e-03  occ_rmsd= 6.760e-03  Δocc_rmsd= 2.774e-03  warning: occupations still fluctuating
+       390      -2.172690605473e+02      -2.172578253825e+02   -1.123516e-02    8.036661e-01    1.201908e-03    1.201908e-03    0.000000e+00    7.934165e-03
+                 SCF α=5.000e-03  SCF error=2.925e-03  occ_rmsd= 6.760e-03  Δocc_rmsd= 2.774e-03  warning: occupations still fluctuating
+       400      -2.172768221141e+02      -2.172655869493e+02   -1.123516e-02    7.998973e-01   -7.761567e-03   -7.761567e-03    0.000000e+00    6.952832e-03
+                 SCF α=5.000e-03  SCF error=2.365e-03  occ_rmsd= 6.760e-03  Δocc_rmsd= 2.774e-03  warning: occupations still fluctuating
+       410      -2.172703019801e+02      -2.172600159748e+02   -1.028601e-02    5.550107e-01    6.520134e-03    5.570975e-03    9.491595e-04    7.440053e-03
+                 SCF α=5.000e-03  SCF error=2.601e-03  occ_rmsd= 4.934e-03  Δocc_rmsd=-1.826e-03
+       420      -2.172704377405e+02      -2.172593940438e+02   -1.104370e-02    4.800196e-01   -1.357604e-04    6.219310e-04   -7.576914e-04    8.207420e-03
+                 SCF α=5.000e-03  SCF error=2.925e-03  occ_rmsd= 4.934e-03  Δocc_rmsd=-1.826e-03
+       430      -2.172727560972e+02      -2.172617124005e+02   -1.104370e-02    4.830282e-01   -2.318357e-03   -2.318357e-03    0.000000e+00    7.251172e-03
+                 SCF α=5.000e-03  SCF error=2.598e-03  occ_rmsd= 4.934e-03  Δocc_rmsd=-1.826e-03
+       440      -2.172699244887e+02      -2.172588807920e+02   -1.104370e-02    4.858012e-01    2.831608e-03    2.831608e-03    0.000000e+00    8.387501e-03
+                 SCF α=5.000e-03  SCF error=2.675e-03  occ_rmsd= 4.934e-03  Δocc_rmsd=-1.826e-03
+       450      -2.172690925336e+02      -2.172580488369e+02   -1.104370e-02    4.898761e-01    8.319551e-04    8.319551e-04    0.000000e+00    8.179918e-03
+                 SCF α=5.000e-03  SCF error=2.819e-03  occ_rmsd= 4.934e-03  Δocc_rmsd=-1.826e-03
+       460      -2.172696364931e+02      -2.172588957796e+02   -1.074071e-02    5.545352e-01   -5.439595e-04   -8.469427e-04    3.029832e-04    8.381238e-03
+                 SCF α=5.000e-03  SCF error=2.670e-03  occ_rmsd= 1.339e-03  Δocc_rmsd=-3.595e-03
+       470      -2.172693622281e+02      -2.172583699672e+02   -1.099226e-02    4.871416e-01    2.742649e-04    5.258124e-04   -2.515475e-04    8.743164e-03
+                 SCF α=5.000e-03  SCF error=2.796e-03  occ_rmsd= 1.339e-03  Δocc_rmsd=-3.595e-03
+       480      -2.172680757801e+02      -2.172570835192e+02   -1.099226e-02    4.888221e-01    1.286448e-03    1.286448e-03    0.000000e+00    8.509829e-03
+                 SCF α=5.000e-03  SCF error=2.960e-03  occ_rmsd= 1.339e-03  Δocc_rmsd=-3.595e-03
+       490      -2.172696842635e+02      -2.172586920026e+02   -1.099226e-02    4.892133e-01   -1.608483e-03   -1.608483e-03    0.000000e+00    5.869567e-03
+                 SCF α=5.000e-03  SCF error=2.742e-03  occ_rmsd= 1.339e-03  Δocc_rmsd=-3.595e-03
+       500      -2.172635416021e+02      -2.172525493411e+02   -1.099226e-02    4.910173e-01    6.142661e-03    6.142661e-03    0.000000e+00    9.068541e-03
+                 SCF α=5.000e-03  SCF error=3.911e-03  occ_rmsd= 1.339e-03  Δocc_rmsd=-3.595e-03
+       510      -2.172707646003e+02      -2.172604200347e+02   -1.034457e-02    5.543919e-01   -7.222998e-03   -7.870694e-03    6.476953e-04    7.353571e-03
+                 SCF α=5.000e-03  SCF error=2.651e-03  occ_rmsd= 3.361e-03  Δocc_rmsd= 2.022e-03
+       520      -2.172701070657e+02      -2.172592215892e+02   -1.088548e-02    8.025052e-01    6.575346e-04    1.198445e-03   -5.409109e-04    8.292459e-03
+                 SCF α=5.000e-03  SCF error=2.602e-03  occ_rmsd= 3.361e-03  Δocc_rmsd= 2.022e-03
+       530      -2.172690679639e+02      -2.172581824874e+02   -1.088548e-02    8.019613e-01    1.039102e-03    1.039102e-03    0.000000e+00    8.393547e-03
+                 SCF α=5.000e-03  SCF error=2.792e-03  occ_rmsd= 3.361e-03  Δocc_rmsd= 2.022e-03
+       540      -2.172695457683e+02      -2.172586602918e+02   -1.088548e-02    8.025912e-01   -4.778044e-04   -4.778044e-04    0.000000e+00    8.672978e-03
+                 SCF α=5.000e-03  SCF error=2.750e-03  occ_rmsd= 3.361e-03  Δocc_rmsd= 2.022e-03
+       550      -2.172683223650e+02      -2.172574368886e+02   -1.088548e-02    8.021767e-01    1.223403e-03    1.223403e-03    0.000000e+00    8.778432e-03
+                 SCF α=5.000e-03  SCF error=2.932e-03  occ_rmsd= 3.361e-03  Δocc_rmsd= 2.022e-03
+       560      -2.172697238621e+02      -2.172582861408e+02   -1.143772e-02    5.538181e-01   -1.401497e-03   -8.492522e-04   -5.522449e-04    8.945809e-03
+                 SCF α=5.000e-03  SCF error=2.870e-03  occ_rmsd= 9.363e-03  Δocc_rmsd= 6.001e-03  warning: occupations still fluctuating
+       570      -2.172682379507e+02      -2.172572520052e+02   -1.098595e-02    4.868468e-01    1.485911e-03    1.034136e-03    4.517759e-04    5.872491e-03
+                 SCF α=5.000e-03  SCF error=3.011e-03  occ_rmsd= 9.363e-03  Δocc_rmsd= 6.001e-03  warning: occupations still fluctuating
+       580      -2.172666504377e+02      -2.172556644922e+02   -1.098595e-02    4.837975e-01    1.587513e-03    1.587513e-03    0.000000e+00    7.267655e-03
+                 SCF α=5.000e-03  SCF error=3.839e-03  occ_rmsd= 9.363e-03  Δocc_rmsd= 6.001e-03  warning: occupations still fluctuating
+       590      -2.172692835982e+02      -2.172582976526e+02   -1.098595e-02    4.879956e-01   -2.633160e-03   -2.633160e-03    0.000000e+00    8.447093e-03
+                 SCF α=5.000e-03  SCF error=2.866e-03  occ_rmsd= 9.363e-03  Δocc_rmsd= 6.001e-03  warning: occupations still fluctuating
+       600      -2.172697962870e+02      -2.172588103415e+02   -1.098595e-02    4.898512e-01   -5.126889e-04   -5.126889e-04    0.000000e+00    5.664920e-03
+                 SCF α=5.000e-03  SCF error=2.771e-03  occ_rmsd= 9.363e-03  Δocc_rmsd= 6.001e-03  warning: occupations still fluctuating
+       610      -2.172688570185e+02      -2.172584433164e+02   -1.041370e-02    5.541469e-01    9.392685e-04    3.670251e-04    5.722434e-04    7.819800e-03
+                 SCF α=5.000e-03  SCF error=3.254e-03  occ_rmsd= 3.350e-03  Δocc_rmsd=-6.013e-03
+       620      -2.172713350413e+02      -2.172604258724e+02   -1.090917e-02    8.029674e-01   -2.478023e-03   -1.982556e-03   -4.954668e-04    7.811936e-03
+                 SCF α=5.000e-03  SCF error=2.577e-03  occ_rmsd= 3.350e-03  Δocc_rmsd=-6.013e-03
+       630      -2.172717865599e+02      -2.172608773910e+02   -1.090917e-02    8.028000e-01   -4.515186e-04   -4.515186e-04    0.000000e+00    7.808159e-03
+                 SCF α=5.000e-03  SCF error=2.549e-03  occ_rmsd= 3.350e-03  Δocc_rmsd=-6.013e-03
+       640      -2.172720312829e+02      -2.172611221140e+02   -1.090917e-02    8.026952e-01   -2.447230e-04   -2.447230e-04    0.000000e+00    7.763018e-03
+                 SCF α=5.000e-03  SCF error=2.556e-03  occ_rmsd= 3.350e-03  Δocc_rmsd=-6.013e-03
+       650      -2.172723430325e+02      -2.172614338635e+02   -1.090917e-02    8.025924e-01   -3.117496e-04   -3.117496e-04    0.000000e+00    7.818529e-03
+                 SCF α=5.000e-03  SCF error=2.538e-03  occ_rmsd= 3.350e-03  Δocc_rmsd=-6.013e-03
+       660      -2.172713761207e+02      -2.172619616157e+02   -9.414505e-03    5.550626e-01    9.669118e-04   -5.277521e-04    1.494664e-03    7.817290e-03
+                 SCF α=5.000e-03  SCF error=2.555e-03  occ_rmsd= 1.220e-02  Δocc_rmsd= 8.850e-03  warning: occupations still fluctuating
+       670      -2.172708662318e+02      -2.172601302353e+02   -1.073600e-02    8.024531e-01    5.098889e-04    1.831380e-03   -1.321491e-03    7.154131e-03
+                 SCF α=5.000e-03  SCF error=2.663e-03  occ_rmsd= 1.220e-02  Δocc_rmsd= 8.850e-03  warning: occupations still fluctuating
+       680      -2.172669936689e+02      -2.172562576724e+02   -1.073600e-02    8.022919e-01    3.872563e-03    3.872563e-03    0.000000e+00    7.885084e-03
+                 SCF α=5.000e-03  SCF error=3.150e-03  occ_rmsd= 1.220e-02  Δocc_rmsd= 8.850e-03  warning: occupations still fluctuating
+       690      -2.172711189991e+02      -2.172603830025e+02   -1.073600e-02    8.032093e-01   -4.125330e-03   -4.125330e-03    0.000000e+00    7.876732e-03
+                 SCF α=5.000e-03  SCF error=2.544e-03  occ_rmsd= 1.220e-02  Δocc_rmsd= 8.850e-03  warning: occupations still fluctuating
+       700      -2.172717129011e+02      -2.172609769046e+02   -1.073600e-02    8.029883e-01   -5.939020e-04   -5.939020e-04    0.000000e+00    7.815190e-03
+                 SCF α=5.000e-03  SCF error=2.619e-03  occ_rmsd= 1.220e-02  Δocc_rmsd= 8.850e-03  warning: occupations still fluctuating
+       710      -2.172702337848e+02      -2.172607105492e+02   -9.523236e-03    5.549275e-01    1.479116e-03    2.663554e-04    1.212761e-03    8.021043e-03
+                 SCF α=5.000e-03  SCF error=2.580e-03  occ_rmsd= 9.695e-03  Δocc_rmsd=-2.505e-03  warning: occupations still fluctuating
+       720      -2.172698471530e+02      -2.172592399022e+02   -1.060725e-02    8.026274e-01    3.866318e-04    1.470647e-03   -1.084015e-03    8.239366e-03
+                 SCF α=5.000e-03  SCF error=2.719e-03  occ_rmsd= 9.695e-03  Δocc_rmsd=-2.505e-03  warning: occupations still fluctuating
+       730      -2.172705788626e+02      -2.172599716118e+02   -1.060725e-02    8.027772e-01   -7.317096e-04   -7.317096e-04    0.000000e+00    7.692639e-03
+                 SCF α=5.000e-03  SCF error=2.685e-03  occ_rmsd= 9.695e-03  Δocc_rmsd=-2.505e-03  warning: occupations still fluctuating
+       740      -2.172698455950e+02      -2.172592383443e+02   -1.060725e-02    8.026133e-01    7.332676e-04    7.332676e-04    0.000000e+00    7.876899e-03
+                 SCF α=5.000e-03  SCF error=2.599e-03  occ_rmsd= 9.695e-03  Δocc_rmsd=-2.505e-03  warning: occupations still fluctuating
+       750      -2.172693731259e+02      -2.172587658751e+02   -1.060725e-02    8.020799e-01    4.724692e-04    4.724692e-04    0.000000e+00    8.200777e-03
+                 SCF α=5.000e-03  SCF error=2.676e-03  occ_rmsd= 9.695e-03  Δocc_rmsd=-2.505e-03  warning: occupations still fluctuating
+       760      -2.172689183892e+02      -2.172583586830e+02   -1.055971e-02    5.543132e-01    4.547367e-04    4.071921e-04    4.754460e-05    8.026662e-03
+                 SCF α=5.000e-03  SCF error=2.731e-03  occ_rmsd= 1.283e-03  Δocc_rmsd=-8.413e-03
+       770      -2.172710306732e+02      -2.172604269786e+02   -1.060369e-02    4.876069e-01   -2.112284e-03   -2.068296e-03   -4.398846e-05    8.019526e-03
+                 SCF α=5.000e-03  SCF error=2.636e-03  occ_rmsd= 1.283e-03  Δocc_rmsd=-8.413e-03
+       780      -2.172697032392e+02      -2.172590995445e+02   -1.060369e-02    4.863782e-01    1.327434e-03    1.327434e-03    0.000000e+00    8.143694e-03
+                 SCF α=5.000e-03  SCF error=2.704e-03  occ_rmsd= 1.283e-03  Δocc_rmsd=-8.413e-03
+       790      -2.172701414286e+02      -2.172595377339e+02   -1.060369e-02    4.876892e-01   -4.381895e-04   -4.381895e-04    0.000000e+00    8.198387e-03
+                 SCF α=5.000e-03  SCF error=2.668e-03  occ_rmsd= 1.283e-03  Δocc_rmsd=-8.413e-03
+       800      -2.172692206231e+02      -2.172586169285e+02   -1.060369e-02    4.861217e-01    9.208055e-04    9.208055e-04    0.000000e+00    8.401973e-03
+                 SCF α=5.000e-03  SCF error=2.746e-03  occ_rmsd= 1.283e-03  Δocc_rmsd=-8.413e-03
+       810      -2.172702858452e+02      -2.172602798945e+02   -1.000595e-02    5.545188e-01   -1.065222e-03   -1.662966e-03    5.977440e-04    7.924527e-03
+                 SCF α=5.000e-03  SCF error=2.735e-03  occ_rmsd= 4.296e-03  Δocc_rmsd= 3.014e-03
+       820      -2.172708660439e+02      -2.172603196860e+02   -1.054636e-02    8.021813e-01   -5.801987e-04   -3.979154e-05   -5.404072e-04    7.715716e-03
+                 SCF α=5.000e-03  SCF error=2.691e-03  occ_rmsd= 4.296e-03  Δocc_rmsd= 3.014e-03
+       830      -2.172698839982e+02      -2.172593376403e+02   -1.054636e-02    8.017728e-01    9.820457e-04    9.820457e-04    0.000000e+00    7.947724e-03
+                 SCF α=5.000e-03  SCF error=2.659e-03  occ_rmsd= 4.296e-03  Δocc_rmsd= 3.014e-03
+       840      -2.172689239851e+02      -2.172583776272e+02   -1.054636e-02    8.012816e-01    9.600131e-04    9.600131e-04    0.000000e+00    7.835362e-03
+                 SCF α=5.000e-03  SCF error=2.665e-03  occ_rmsd= 4.296e-03  Δocc_rmsd= 3.014e-03
+       850      -2.172718277100e+02      -2.172612813521e+02   -1.054636e-02    8.017040e-01   -2.903725e-03   -2.903725e-03    0.000000e+00    7.942016e-03
+                 SCF α=5.000e-03  SCF error=2.584e-03  occ_rmsd= 4.296e-03  Δocc_rmsd= 3.014e-03
+       860      -2.172693530155e+02      -2.172600911488e+02   -9.261867e-03    5.548856e-01    2.474694e-03    1.190203e-03    1.284491e-03    8.126198e-03
+                 SCF α=5.000e-03  SCF error=2.688e-03  occ_rmsd= 1.041e-02  Δocc_rmsd= 6.114e-03  warning: occupations still fluctuating
+       870      -2.172706572031e+02      -2.172602293593e+02   -1.042784e-02    8.020046e-01   -1.304188e-03   -1.382104e-04   -1.165977e-03    7.910915e-03
+                 SCF α=5.000e-03  SCF error=2.687e-03  occ_rmsd= 1.041e-02  Δocc_rmsd= 6.114e-03  warning: occupations still fluctuating
+       880      -2.172706697083e+02      -2.172602418645e+02   -1.042784e-02    8.018371e-01   -1.250520e-05   -1.250520e-05    0.000000e+00    7.801905e-03
+                 SCF α=5.000e-03  SCF error=2.613e-03  occ_rmsd= 1.041e-02  Δocc_rmsd= 6.114e-03  warning: occupations still fluctuating
+       890      -2.172689168690e+02      -2.172584890252e+02   -1.042784e-02    8.010071e-01    1.752839e-03    1.752839e-03    0.000000e+00    8.069581e-03
+                 SCF α=5.000e-03  SCF error=2.674e-03  occ_rmsd= 1.041e-02  Δocc_rmsd= 6.114e-03  warning: occupations still fluctuating
+       900      -2.172720560011e+02      -2.172616281573e+02   -1.042784e-02    8.009502e-01   -3.139132e-03   -3.139132e-03    0.000000e+00    6.713169e-03
+                 SCF α=5.000e-03  SCF error=2.571e-03  occ_rmsd= 1.041e-02  Δocc_rmsd= 6.114e-03  warning: occupations still fluctuating
+       910      -2.172688369122e+02      -2.172604417328e+02   -8.395179e-03    5.553254e-01    3.219089e-03    1.186424e-03    2.032664e-03    8.019882e-03
+                 SCF α=5.000e-03  SCF error=2.744e-03  occ_rmsd= 1.622e-02  Δocc_rmsd= 5.806e-03  warning: occupations still fluctuating
+       920      -2.172708046138e+02      -2.172605559117e+02   -1.024870e-02    8.031072e-01   -1.967702e-03   -1.141789e-04   -1.853523e-03    8.096646e-03
+                 SCF α=5.000e-03  SCF error=2.662e-03  occ_rmsd= 1.622e-02  Δocc_rmsd= 5.806e-03  warning: occupations still fluctuating
+       930      -2.172710689996e+02      -2.172608202975e+02   -1.024870e-02    8.038956e-01   -2.643858e-04   -2.643858e-04    0.000000e+00    8.096419e-03
+                 SCF α=5.000e-03  SCF error=2.659e-03  occ_rmsd= 1.622e-02  Δocc_rmsd= 5.806e-03  warning: occupations still fluctuating
+       940      -2.172710057619e+02      -2.172607570598e+02   -1.024870e-02    8.033740e-01    6.323774e-05    6.323774e-05    0.000000e+00    8.097364e-03
+                 SCF α=5.000e-03  SCF error=2.668e-03  occ_rmsd= 1.622e-02  Δocc_rmsd= 5.806e-03  warning: occupations still fluctuating
+       950      -2.172709126364e+02      -2.172606639343e+02   -1.024870e-02    8.037541e-01    9.312548e-05    9.312548e-05    0.000000e+00    7.823843e-03
+                 SCF α=5.000e-03  SCF error=2.677e-03  occ_rmsd= 1.622e-02  Δocc_rmsd= 5.806e-03  warning: occupations still fluctuating
+       960      -2.172673122401e+02      -2.172593702234e+02   -7.942017e-03    5.555599e-01    3.600396e-03    1.293711e-03    2.306685e-03    7.767688e-03
+                 SCF α=5.000e-03  SCF error=2.706e-03  occ_rmsd= 1.788e-02  Δocc_rmsd= 1.665e-03  warning: occupations still fluctuating
+       970      -2.172679154196e+02      -2.172578671243e+02   -1.004830e-02    8.029402e-01   -6.031795e-04    1.503099e-03   -2.106279e-03    8.041753e-03
+                 SCF α=5.000e-03  SCF error=2.640e-03  occ_rmsd= 1.788e-02  Δocc_rmsd= 1.665e-03  warning: occupations still fluctuating
+       980      -2.172670222693e+02      -2.172569739740e+02   -1.004830e-02    8.051614e-01    8.931503e-04    8.931503e-04    0.000000e+00    8.366244e-03
+                 SCF α=5.000e-03  SCF error=2.971e-03  occ_rmsd= 1.788e-02  Δocc_rmsd= 1.665e-03  warning: occupations still fluctuating
+       990      -2.172676941814e+02      -2.172576458861e+02   -1.004830e-02    8.030651e-01   -6.719121e-04   -6.719121e-04    0.000000e+00    7.941119e-03
+                 SCF α=5.000e-03  SCF error=2.704e-03  occ_rmsd= 1.788e-02  Δocc_rmsd= 1.665e-03  warning: occupations still fluctuating
+      1000      -2.172740053312e+02      -2.172639570359e+02   -1.004830e-02    8.016879e-01   -6.311150e-03   -6.311150e-03    0.000000e+00    6.999106e-03
+                 SCF α=5.000e-03  SCF error=2.378e-03  occ_rmsd= 1.788e-02  Δocc_rmsd= 1.665e-03  warning: occupations still fluctuating
+     *** arrived at the Maximum iteration.  terminated
+          >>> iteration ended at   Tue Jan 20 14:47:56 2026  <<<
+     =============  energy results (Solid object)  =============
+
+
+ number of electrons: spin up=    22.00000  down=    22.00000 (real space)
+
+
+ free energy         :   -2.1727318994e+02 (   -5.43183e+01 /ion)
+ smearing energy     :   -9.2329038959e-03 (   -2.30823e-03 /ion)
+
+ total     energy    :   -2.1726395704e+02 (   -5.43160e+01 /ion)
+ total orbital energy:    1.9334227801e+01 (    6.44474e-01 /electron)
+ hartree energy      :    4.2775440517e+01 (    1.42585e+00 /electron)
+ exc-corr energy     :   -7.6979486677e+01 (   -2.56598e+00 /electron)
+ ion-ion energy      :   -1.6219379482e+02 (   -4.05484e+01 /ion)
+
+ kinetic (planewave) :    2.0421014620e+02 (    6.80700e+00 /electron)
+ V_local (planewave) :    1.1020608250e+01 (    3.67354e-01 /electron)
+ V_nl    (planewave) :   -2.3609687051e+02 (   -7.86990e+00 /electron)
+ V_Coul  (planewave) :    8.5550881035e+01 (    2.85170e+00 /electron)
+ V_xc    (planewave) :   -4.5350537182e+01 (   -1.51168e+00 /electron)
+ Virial Coefficient  :   -9.0532190412e-01
+
+ Fermi energy        :    5.5536793833e-01 (  15.112 eV)
+
+
+
+ Brillouin zone point:   1
+   weight =    1.000
+   k = <   0.000    0.000    0.000> . <b1,b2,b3>
+     = <   0.000    0.000    0.000> 
+
+ EF_crossings (this k-point): 3
+
+ orbital energies:
+     1.0061858e+00 (  27.380eV) occ=0.000
+     9.9674618e-01 (  27.123eV) occ=0.000
+     9.8843280e-01 (  26.897eV) occ=0.000
+     8.0401050e-01 (  21.878eV) occ=0.000
+     8.0168788e-01 (  21.815eV) occ=0.000
+     8.0136951e-01 (  21.807eV) occ=0.000
+     5.8495835e-01 (  15.918eV) occ=0.002
+     5.6505055e-01 (  15.376eV) occ=0.191
+     ----- EF =  5.554e-01 ( 15.112 eV) -----
+     5.4824774e-01 (  14.919eV) occ=0.807
+     5.0738086e-01 (  13.807eV) occ=1.000
+     5.0293751e-01 (  13.686eV) occ=1.000
+     5.0217507e-01 (  13.665eV) occ=1.000
+     4.9920754e-01 (  13.584eV) occ=1.000
+     4.9734918e-01 (  13.534eV) occ=1.000
+     4.9048787e-01 (  13.347eV) occ=1.000
+     4.8879405e-01 (  13.301eV) occ=1.000
+     4.8596486e-01 (  13.224eV) occ=1.000
+     4.8500683e-01 (  13.198eV) occ=1.000
+     4.7042601e-01 (  12.801eV) occ=1.000
+     4.6549385e-01 (  12.667eV) occ=1.000
+     4.3943313e-01 (  11.958eV) occ=1.000
+     4.3861358e-01 (  11.935eV) occ=1.000
+     4.3606463e-01 (  11.866eV) occ=1.000
+     3.9099739e-01 (  10.640eV) occ=1.000
+     3.8243086e-01 (  10.407eV) occ=1.000
+     3.7275415e-01 (  10.143eV) occ=1.000
+     3.5796167e-01 (   9.741eV) occ=1.000
+     3.5591744e-01 (   9.685eV) occ=1.000
+     3.5274921e-01 (   9.599eV) occ=1.000
+     1.6495441e-01 (   4.489eV) occ=1.000
+
+ Fractional occupation summary:
+    EF crossings histogram (per k-point):
+     0 |                  (0)
+     1 |                  (0)
+     2 |                  (0)
+     3 | ################ (1)
+
+    EF crossing summary  
+       max EF crossings at any k-point = 3 (multiple bands near EF / degeneracy / smearing / complex FS)
+       average EF crossings (k-weighted) = 3.000
+
+ output cpsi to filename: ./perm1x1x1/pspw_pbe_Cu4.movecs
+
+ -----------------
+ cputime in seconds
+ prologue    : 3.722e-02
+ main loop   : 3.305e+01
+ epilogue    : 2.457e-02
+ total       : 3.311e+01
+ cputime/step: 8.021e-03
+
+ Time spent doing      total        step             percent
+ total time            6.066097e+01 1.472354e-02     100.00%
+ total i/o time        1.819445e-01 4.416128e-05       0.30%
+ total FFT time        2.399913e+01 5.825032e-03      39.56%
+ lagrange multipliers  4.016240e-01 9.748155e-05       0.66%
+ exchange correlation  7.473526e-02 1.813963e-05       0.12%
+ local potentials      1.340840e-04 3.254466e-08       0.00%
+ non-local potentials  5.626956e+00 1.365766e-03       9.28%
+ ffm_dgemm             9.899545e+00 2.402802e-03      16.32%
+ fmf_dgemm             4.361585e+00 1.058637e-03       7.19%
+ m_diagonalize         1.605638e-01 3.897178e-05       0.26%
+ mmm_multiply          3.213410e-01 7.799538e-05       0.53%
+ SCVtrans              1.899262e-02 4.609860e-06       0.03%
+
+ >>> job completed at     Tue Jan 20 14:47:56 2026 <<<
+
+Next rtdbstr={"band":{"eigenvalues":[1.0061857559134977,0.9967461844407969,0.9884328041511344,0.8040105017242081,0.8016878806064975,0.8013695122661345,0.5849583473523089,0.5650505454426673,0.5482477361201602,0.5073808608804525,0.5029375147240621,0.5021750650704837,0.4992075442186567,0.49734917830812375,0.4904878743524581,0.4887940475559087,0.4859648575684134,0.48500682879833984,0.47042600925358996,0.46549384552870704,0.43943312833553816,0.43861357749143665,0.4360646258272301,0.3909973920664254,0.3824308604693816,0.37275414846320876,0.3579616655789944,0.3559174412873574,0.35274921198830306,0.16495440630731814],"energies":[-217.27318993977576,19.33422780091513,42.775440517448594,-76.97948667712653,-162.19379482385386,204.21014620336183,11.020608249611556,-236.09687050532136,85.55088103489719,-45.350537181634024,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.009232903895935785,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"energy":-217.27318993977576},"charge":0,"constraints":null,"current_task":"task band energy","dbname":"pspw_pbe_Cu4","driver":null,"effective_symmetry":{"backend":"spglib","coords_type":"cartesian","coords_xyz":[[0.0,0.0,0.0],[0.0,3.4204040393298,3.4204040393298],[3.4204040393298,0.0,3.4204040393298],[3.4204040393298,3.4204040393298,0.0]],"name":"Fm-3m","num_centering":4,"order":192,"primitive":false,"primitive_lattice_only":false,"source":"autospace","store_ops":false,"sym_fingerprint":"Fm-3m|192|prim=0|tt=fractional|unita=6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,0.000000000000,0.000000000000,0.000000000000,6.840808078660,","tolerance":1e-06,"translation_type":"fractional","type":"space_group","unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"foundtask":false,"geometries":{"geometry":{"autospace":1,"autosym":0,"autoz":0,"center":0,"charges":[29.0,29.0,29.0,29.0],"conv":1.88972598858,"coords":[0.0,0.0,0.0,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0,3.4204040393298,3.4204040393298,3.4204040393298,0.0],"fractional":true,"is_crystal":true,"is_surface":false,"masses":[62.9298,62.9298,62.9298,62.9298],"nion":4,"primitive":0,"symbols":["Cu","Cu","Cu","Cu"],"symmetry":{"specified":false},"twodfractional":false,"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596],"velocities":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}},"geometry":null,"nwinput_cur":54,"nwinput_lines":["title \"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1\"","","","echo","","start pspw_pbe_Cu4","","memory 1900 mb","","permanent_dir ./perm1x1x1","scratch_dir   ./perm1x1x1","","charge 0","","geometry noautoz nocenter noautosym autospace","system crystal","   lattice_vectors","     3.620000 0.000000 0.000000","     0.000000 3.620000 0.000000","     0.000000 0.000000 3.620000","end","","Cu 0.000000 0.000000 0.000000","Cu 0.000000 0.500000 0.500000","Cu 0.500000 0.000000 0.500000","Cu 0.500000 0.500000 0.000000","","end","","","","nwpw","   xc pbe-vdw","   cutoff 30.0","   monkhorst-pack 1 1 1","   smear frozen orbitals 8 8","   cg","   loop 10 10","end","task band energy","","nwpw","   smear 0.005 fermi orbitals 8 8","   ","   ","   scf pulay diis_histories 6 alpha 0.001 kerker 0.25 ks-grassmann-cg","","  loop 10 100","  ","end","task band energy","","",""],"nwinput_nlines":54,"nwpw":{"brillouin_zone":{"kvectors":[[0.0,0.0,0.0,1.0]],"monkhorst-pack":[1,1,1],"monkhorst-pack-shift":[0.0,0.0,0.0],"num_kpoints_effective":1,"num_kpoints_original":1},"cutoff":[30.0,60.0],"diis_histories":6,"fractional":true,"fractional_frozen":false,"fractional_kT":0.005,"fractional_orbitals":[8,8],"fractional_smeartype":1,"fractional_temperature":1578.8858749711853,"has_disp":false,"has_vdw":true,"is_grimme2":false,"is_vdw2":false,"kerker_g0":0.25,"ks_algorithm":2,"loop":[10,100],"minimizer":3,"options_disp":"","scf_algorithm":2,"scf_alpha":0.001,"simulation_cell":{"unita":[6.8408080786596,0.0,0.0,0.0,6.8408080786596,0.0,0.0,0.0,6.8408080786596]},"xc":"pbe-vdw"},"permanent_dir":"./perm1x1x1","psp_library_dir":"","scratch_dir":"./perm1x1x1","title":"swnc: e theory=band xc=pbe formula=Cu4 charge=0 mult=1"}
+Next task =0
+
+writing rtdbjson = ./perm1x1x1/pspw_pbe_Cu4.json
