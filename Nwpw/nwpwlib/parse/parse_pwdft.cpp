@@ -8,6 +8,8 @@
 #include <optional>
 #include <cstdlib>
 #include <set>
+#include <chrono>
+#include <ctime>
 
 #include "json.hpp"
 #include "parsestring.hpp"
@@ -71,6 +73,16 @@ json periodic_table_Z = json::parse(
     "100, \"Md\" : 101, \"No\" : 102, \"Lr\" : 103, \"Rf\" : 104, \"Ha\" : "
     "105, \"Sg\" : 106, \"Bh\" : 107, \"Hs\" : 108, \"Mt\" : 109 }");
 
+
+
+static std::string iso8601_utc_now()
+{
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::gmtime(&t);
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &tm);
+    return std::string(buf);
+}
 
 
 
@@ -2690,6 +2702,61 @@ json parse_rtdbjson(json rtdb) {
  *               parse_nwinput                    *
  *                                                *
  **************************************************/
+/**
+ * @brief Parse an NWChem-style input deck and construct the initial RTDB state.
+ *
+ * This function parses an input deck written in NWChem syntax and produces
+ * a JSON-encoded RTDB (runtime database) string that represents the initial
+ * state for PWDFT execution.
+ *
+ * ### Restart semantics
+ * - If a `restart <name>` directive is present (and not commented out),
+ *   the RTDB is loaded from:
+ *
+ *     `<permanent_dir>/<name>.json`
+ *
+ *   This RTDB becomes the authoritative initial state.
+ *
+ * - If no restart is requested, a new, empty RTDB structure is initialized.
+ *
+ * - The `restart` directive has higher priority than `start`:
+ *   - `restart <name>` → dbname = `<name>`
+ *   - `start <name>`   → dbname = `<name>` (only if restart is absent)
+ *   - otherwise        → dbname = `"nwchemex"`
+ *
+ * ### Execution model
+ * - Restart is a pure data operation:
+ *   - Previously executed tasks are NOT replayed.
+ *   - No implicit wavefunction initialization is performed.
+ *   - Continuation depends solely on RTDB content and referenced files.
+ *
+ * ### Directory semantics
+ * - `permanent_dir` specifies the location of durable state
+ *   (RTDB JSON, wavefunctions, etc.).
+ * - `scratch_dir` is treated as temporary workspace only and is never
+ *   relied upon for restart correctness.
+ *
+ * ### Error handling
+ * - If a restart is requested but the RTDB JSON file does not exist,
+ *   this function throws a runtime error.
+ *
+ * ### Compatibility
+ * - The original input deck is preserved line-by-line in the RTDB
+ *   (`nwinput_lines`) for downstream parsing.
+ * - Existing `.nw` input files continue to work unchanged.
+ *
+ * @param nwinput Full contents of the NWChem input deck as a string.
+ * @return A JSON string representing the initialized RTDB state.
+ *
+ * @throws std::runtime_error
+ *         If a restart is requested and the corresponding RTDB file
+ *         cannot be found.
+ *
+ * @note RTDB provenance fields:
+ * - `created` is set only when a new RTDB is initialized and is preserved
+ *   across restarts.
+ * - `last_modified` is updated each time the RTDB is parsed or extended.
+ */
 
 std::string parse_nwinput(std::string nwinput) 
 {
@@ -2723,11 +2790,39 @@ std::string parse_nwinput(std::string nwinput)
    if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
        (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
    {
+       dbname = mystring_trim(mystring_split(mystring_split(nwinput, "restart")[1], "\n")[0]);
       
       // read a JSON file
       std::string dbname0 = permanent_dir + "/" + dbname + ".json";
       std::ifstream ifile(dbname0);
+      if (!ifile.good()) 
+      {
+         throw std::runtime_error("Restart requested but RTDB file not found: " + dbname0); 
+      }
       ifile >> rtdb;
+
+      if (!rtdb.contains("provenance")) 
+      {
+         // provenance is metadata only — never consulted for execution logic
+         // backward compatibility
+         rtdb["provenance"]["origin"] = {
+             {"creator", "unknown"},
+             {"created_at", rtdb.value("created", "unknown")}
+         };
+         rtdb["provenance"]["events"] = json::array();
+      }
+
+      json ev;
+      ev["type"]   = "restart";
+      ev["source"] = dbname0;
+      ev["at"]     = iso8601_utc_now();
+
+      rtdb["provenance"]["events"].push_back(ev);
+
+      if (!rtdb.contains("created")) {
+          rtdb["created"] = "pwdft:unknown";
+      }
+
    } 
    // intialize the rtdb structure
    else 
@@ -2737,10 +2832,28 @@ std::string parse_nwinput(std::string nwinput)
       rtdb["geometries"] = geometries;
       rtdb["driver"] = driver;
       rtdb["constraints"] = constraints;
+
+      std::string now = iso8601_utc_now();
+
+      rtdb["created"] = "pwdft:"+now;
+      if (!rtdb.contains("provenance")) 
+      {
+         // provenance is metadata only — never consulted for execution logic
+         json origin;
+         origin["creator"]    = "pwdft";
+         origin["created_at"] = now;
+         //origin["host"]       = get_hostname();   // optional
+         //origin["user"]       = get_username();   // optional
+ 
+         rtdb["provenance"]["origin"] = origin;
+         rtdb["provenance"]["events"] = json::array();
+      }
    }
  
    // set the dbname
    rtdb["dbname"] = dbname;
+
+   rtdb["last_modified"] = iso8601_utc_now();
  
    // set the permanent_dir and scratch_dir
    rtdb["permanent_dir"] = permanent_dir;

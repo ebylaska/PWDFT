@@ -51,12 +51,12 @@ int cpsd_debug(MPI_Comm comm_world0, string &rtdbstring) {
   char date[26];
   double sum1, sum2, ev, zv;
   double cpu1, cpu2, cpu3, cpu4;
-  double E[50], deltae, deltac, deltar, viral, unita[9];
+  double E[80], deltae, deltac, deltar, viral, unita[9];
   double *psi1, *psi2, *Hpsi, *psi_r;
   double *dn;
   double *hml, *lmbda, *eig;
 
-  for (ii = 0; ii < 50; ++ii)
+  for (ii = 0; ii < 80; ++ii)
     E[ii] = 0.0;
 
   if (myparallel.is_master()) {

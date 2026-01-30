@@ -58,7 +58,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    char date[26];
    double sum1, sum2, ev, zv;
    double cpu1, cpu2, cpu3, cpu4;
-   double E[70], deltae, deltac, deltar, viral, unita[9];
+   double E[80], deltae, deltac, deltar, viral, unita[9];
 
    bool fractional;
  
@@ -66,7 +66,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    // double *dn;
    // double *hml,*lmbda,*eig;
  
-   for (ii=0; ii<70; ++ii)
+   for (ii=0; ii<80; ++ii)
       E[ii] = 0.0;
  
    Control2 control(myparallel.np(), rtdbstring);

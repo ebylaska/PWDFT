@@ -86,7 +86,7 @@ int ctask_cpmd_start(MPI_Comm comm_world0, std::string &rtdbstring,
   double Te_init, Tr_init, Te_new, Tr_new;
   double kb = 3.16679e-6;
 
-  E = new double[60];
+  E = new double[80];
 
   control = new Control2(myparallel->np(), rtdbstring);
 
@@ -97,7 +97,7 @@ int ctask_cpmd_start(MPI_Comm comm_world0, std::string &rtdbstring,
   /* reset Parallel base_stdio_print = lprint */
   myparallel->base_stdio_print = lprint;
 
-  for (ii = 0; ii < 60; ++ii)
+  for (ii=0; ii<80; ++ii)
     E[ii] = 0.0;
 
   if (myparallel->is_master())

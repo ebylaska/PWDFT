@@ -78,7 +78,7 @@ Molecule::Molecule(char *infilename, bool wvfnc_initialize, Pneb *mygrid0,
    nfft[0] = mygrid->nx;
    nfft[1] = mygrid->ny;
    nfft[2] = mygrid->nz;
-   for (int i = 0; i < 60; ++i)
+   for (int i = 0; i < 80; ++i)
      E[i] = 0.0;
  
    ep = control.Eprecondition();

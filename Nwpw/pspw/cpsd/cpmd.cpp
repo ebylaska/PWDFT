@@ -50,7 +50,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    char date[26];
    double sum1, sum2;
    double cpu1, cpu2, cpu3, cpu4;
-   double E[70], viral, unita[9];
+   double E[80], viral, unita[9];
    double eave, evar, have, hvar, qave, qvar, eke;
    double *psi0, *psi1, *psi2, *Hpsi, *psi_r;
    double *dn;
@@ -67,7 +67,7 @@ int cpmd(MPI_Comm comm_world0, std::string &rtdbstring)
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
  
-   for (auto ii=0; ii<70; ++ii)
+   for (auto ii=0; ii<80; ++ii)
       E[ii] = 0.0;
  
    if (myparallel.is_master()) seconds(&cpu1);

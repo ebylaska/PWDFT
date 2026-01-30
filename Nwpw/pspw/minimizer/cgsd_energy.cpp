@@ -124,7 +124,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
  
    bool stalled = false;
    int ne[2],ispin,nion;
-   double E[70],total_energy,deltae,deltae_old,deltac;
+   double E[80],total_energy,deltae,deltae_old,deltac;
  
    bool nolagrange = control.nolagrange() ||  control.fractional();
    int it_in   = control.loop(0);
@@ -149,7 +149,7 @@ double cgsd_energy(Control2 &control, Molecule &mymolecule, bool doprint, std::o
 
    bool extra_rotate = control.scf_extra_rotate();
  
-   for (auto ii=0; ii<70; ++ii)
+   for (auto ii=0; ii<80; ++ii)
       E[ii] = 0.0;
  
    if (oprint) 

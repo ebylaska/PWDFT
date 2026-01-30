@@ -76,7 +76,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    // double *dn;
    // double *hml,*lmbda,*eig;
  
-   for (ii=0; ii<70; ++ii)
+   for (ii=0; ii<80; ++ii)
      E[ii]=0.0;
  
    if (myparallel.is_master())
