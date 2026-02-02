@@ -46,8 +46,8 @@ nwpw
    #scf pulay diis_histories 3 alpha 0.001 kerker 0.25  iterations 5 ks-grassmann-cg
    scf pulay diis_histories 4 alpha 0.0005 kerker 0.25 ks-grassmann-cg
 
-  loop 10 100
-  #tolerances 1.0e-11 1.0e-11
+   loop 10 100
+   #tolerances 1.0e-11 1.0e-11
 end
 task band energy
 task band energy
