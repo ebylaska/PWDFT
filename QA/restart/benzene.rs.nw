@@ -1,0 +1,13 @@
+Title "Benzene test"
+echo
+
+memory 1900 mb
+
+restart benzene-pspw
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+
+task pspw optimize
+

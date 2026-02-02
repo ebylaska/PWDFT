@@ -1,0 +1,25 @@
+#benzene.rs.nwx
+
+Title "Benzene test"
+echo
+
+
+memory 1900 mb
+
+restart benzene-pspw
+
+permanent_dir ./perm
+scratch_dir   ./perm
+
+
+#this is a regular pwdft operation
+task pspw energy
+
+#these are auxiliary operations ( that are implemented with python outside of pwdft)
+task pspw aux_optimize
+task pspw aux_freq
+
+
+#this is a regular pwdft operation
+task pspw optimize
+
