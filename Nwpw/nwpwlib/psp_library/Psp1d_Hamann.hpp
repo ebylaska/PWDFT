@@ -27,6 +27,9 @@ public:
   double *up;
   double *r3_matrix;
 
+// semicore_small_cell mirrors control_psp_semicore_small() in legacy NWPW
+  bool semicore_small_cell = false;
+
   bool semicore;
   int isemicore;
   double rcore;
@@ -65,6 +68,10 @@ public:
   void cpp_generate_ray(Parallel *, int, double *, double *, double *, double *);
   void cpp_generate_local_spline(CGrid *, int, double *, double *, double *, double *, double *);
   void cpp_generate_nonlocal_spline(CGrid *, int, double *, int,  double *, double *, double *);
+
+  void cpp2_generate_stress_ray(Parallel *, int, double *, double *, double *, double *);
+  void cpp2_generate_stress_spline(PGrid *, int, double *, double *, double *, double *, double *, double *, double *);
+
 
 };
 
