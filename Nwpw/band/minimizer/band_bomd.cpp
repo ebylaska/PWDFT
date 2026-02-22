@@ -518,7 +518,7 @@ int band_bomd(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &coutp
             else
                 coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
        
-            if (control.fractional_frozen()) coutput <<  "      frozen oribtals" << std::endl;
+            if (control.fractional_frozen()) coutput <<  "      frozen fractional occupations (fixed f_i during SCF)" << std::endl;
 
 
             // Print occupations by k-point

@@ -12,6 +12,46 @@
 
 namespace pwdft {
 
+/******************************************************
+ *                                                    *
+ *                    Geodesic2                       *
+ *                                                    *
+ ******************************************************/
+/**
+ * @brief Stiefel-manifold geodesic generator for orbital updates and
+ *        parallel transport of search directions.
+ *
+ * This class implements geodesic motion on the Stiefel manifold
+ *   St(n,p) = { Y ∈ R^{n×p} | Yᵀ Y = I }
+ * which is the natural constraint set for orthonormal Kohn–Sham orbitals.
+ *
+ * Given a current orbital block Y and a tangent/search direction H,
+ * start() constructs the Stiefel geodesic parameterization
+ *
+ *   Y(t) = Y * M(t) + Q * N(t)
+ *
+ * where Q and R come from the QR factorization of the projected direction
+ *   (I - Y Yᵀ) H = Q R,
+ * and M(t), N(t) are derived from exp(t*T) for a skew-symmetric generator T
+ * assembled from the Lagrange multiplier term A = Yᵀ H and R.
+ *
+ * In addition, this class provides parallel transport of tangent vectors
+ * along the geodesic, enabling conjugate-gradient methods on the manifold.
+ *
+ * Typical use:
+ *   1) dE0 = start(Y, H, ...)
+ *   2) line search using energy(t) and denergy(t)
+ *   3) psi_final(t*) to commit the step
+ *   4) psi_1transport(t*, H) to transport the direction for CG
+ *
+ * Notes:
+ *  - The energy and directional derivative returned here are orbital-space
+ *    quantities (via Electron_Operators / Molecule hooks).
+ *  - This is a Stiefel formulation (explicit orthonormal orbitals), not a
+ *    Grassmann quotient representation.
+ */
+
+
 class Geodesic2 {
 
   int minimizer;
@@ -62,6 +102,7 @@ public:
   }
 
   /* destructor */
+  /*
   ~Geodesic2() {
     delete[] Hold;
     delete[] Q;
@@ -80,6 +121,28 @@ public:
 
     delete[] S;
   }
+  */
+  ~Geodesic2() {
+     mygrid->g_deallocate(Hold);
+     mygrid->g_deallocate(Q);
+  
+     mygrid->m_deallocate(R);
+     mygrid->m_deallocate(A);
+     mygrid->m_deallocate(MM);
+     mygrid->m_deallocate(NN);
+     mygrid->m_deallocate(TT);
+  
+     mygrid->m4_deallocate(T4);
+     mygrid->m4_deallocate(V4);
+     mygrid->m4_deallocate(W4);
+     mygrid->m4_deallocate(A4);
+     mygrid->m4_deallocate(B4);
+     mygrid->m4_deallocate(R4);
+  
+     delete[] S;
+  }
+
+
 
   /*****************************************
    *                                       *

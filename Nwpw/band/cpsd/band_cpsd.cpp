@@ -483,7 +483,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          else
             std::cout <<  "    extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
          if (control.fractional_frozen())
-            std::cout <<  "    frozen orbitals" << std::endl;
+            std::cout <<  "    frozen fractional occupations (fixed f_i during SCF)" << std::endl;
 
          // Print occupations by k-point
          std::cout << "    initial occupations per Brillouin zone:" << std::endl;

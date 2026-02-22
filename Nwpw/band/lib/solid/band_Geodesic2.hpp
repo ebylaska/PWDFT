@@ -3,26 +3,27 @@
 
 /*
  * band_Geodesic2.hpp
- * 
- * This header file defines the band_Geodesic2 class within the pwdft namespace, which represents a Stiefel manifold utilized in quantum chemical computations.
- * The class is designed to handle various matrix operations relevant to the computations of electronic structures.
- * 
- * Key Features:
- * - Manages temporary storage and matrix operations required for computing Stiefel manifold projections.
- * - Interfaces with the Solid and cElectron_Operators classes to perform operations on electronic data.
- * - Provides methods for starting calculations, updating matrices, and transporting state data (including specific matrix manipulations).
- * - Implements memory allocation and deallocation to optimize computation resources, focusing on matrices and vector spaces.
- * - Includes methods that utilize allocated memory for computations like QR-decomposition and matrix transportation.
- * 
- * Dependencies:
- * - Solid.hpp: Provides the Solid class, used here to interface with materials data and electron operations.
- * - cElectron.hpp: Provides electron operator functionalities used to perform quantum chemical calculations.
- * - Cneb.hpp: Supports grid operations essential for the matrix calculations within the band_Geodesic2 class operations.
  *
- * The class encapsulates complex mathematical operations, facilitating modular and efficient handling of Stiefel manifold-related calculations 
- * within the broader PWDFT (Plane Wave Density Functional Theory) framework.
- * 
- * NOTE: Ensure all allocations and corresponding deallocations are managed carefully to prevent memory leaks caused by improper resource handling.
+ * Stiefel-manifold geodesic/transport helper for periodic (band) orbital
+ * optimization in PWDFT.
+ *
+ * This class is intended to mirror the molecular Geodesic2 implementation:
+ *   - Build the projected tangent direction (I - Y Y^T) H
+ *   - QR factorization to obtain Q,R
+ *   - Construct the skew generator T from A = Y^T H and R
+ *   - Form M(t), N(t) from exp(tT) and update:
+ *         Y(t) = Y M(t) + Q N(t)
+ *   - Provide parallel transport of tangent vectors for CG on Stiefel.
+ *
+ * NOTE:
+ *   Portions of the full Stiefel machinery (A/T4 factorization, M/N formation,
+ *   and transport kernels) may be temporarily disabled/commented out in this
+ *   band version. Keep the implementation and this header in sync.
+ *
+ * IMPORTANT:
+ *   Memory allocated via mygrid->{g,m,m4}_allocate must be released with the
+ *   corresponding mygrid deallocator (not delete[]), and pointers must be
+ *   initialized to nullptr if conditionally allocated.
  */
 
 #pragma once
@@ -44,13 +45,14 @@ class band_Geodesic2 {
   cElectron_Operators *myelectron;
 
   // tmp space of m matrices
-  double *R, *A, *MM, *NN, *TT;
+  double *R=nullptr, *A=nullptr, *MM=nullptr, *NN=nullptr, *TT=nullptr;
 
   // tmp space of m4 matrices
-  double *T4, *V4, *W4, *A4, *B4, *R4;
+  double *T4=nullptr, *V4=nullptr, *W4=nullptr, *A4=nullptr, *B4=nullptr, *R4=nullptr;
 
   // tmp space for ffm multiplies
-  double *Q, *Hold, *S;
+  double *Q=nullptr, *Hold=nullptr, *S=nullptr;
+
   int nemax, npack1;
 
 public:
@@ -125,8 +127,10 @@ public:
     int one = 1;
     double mrone = 1.0;
 
+
     //**** Hold <-- H ****
     std::memcpy(Hold, H, 2 * nemax * npack1 * sizeof(double));
+    std::memcpy(Q, H, 2*nemax*npack1*sizeof(double));
 
     //**** calculate A=<Y|H> ****
     //mygrid->ffm_Multiply(-1, Y, H, A);

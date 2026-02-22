@@ -539,6 +539,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
    if (control.fractional())
    {
+      const bool frozen = control.fractional_frozen();
 
       const int total_occ = ne[0] + ne[1];
       const int nbrillq = mygrid.nbrillq;
@@ -559,41 +560,48 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
       if (oprint) 
       {
+
          coutput <<  std::endl;
          coutput <<  " fractional smearing parameters:" << std::endl;
          
-         coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
-         coutput <<  "      smearing parameter = ";
-         if (mysolid.smeartype==-1) coutput << "fixed occupation" << std::endl;
-         if (mysolid.smeartype==0) coutput << "step function" << std::endl;
-         if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
-         if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
-         if (mysolid.smeartype==3) coutput << "Hermite" << std::endl;
-         if (mysolid.smeartype==4) coutput << "Marzari-Vanderbilt" << std::endl;
-         if (mysolid.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
-         if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
-         if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;
-         if (mysolid.smeartype==8) coutput << "step" << std::endl;
-        
-         if (mysolid.smeartype>=0)
+
+         if (!frozen)
          {
-            coutput <<  "      smearing parameter = " << Ffmt(9,3) << mysolid.smearkT
-                                                    << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
-            coutput <<  "      mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
-            coutput <<  "      mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
-            coutput <<  "      mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
-            coutput <<  "      mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
-            coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
-            coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
-            coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
-          }
-          {
+            coutput <<  "      smearing algorithm = " << mysolid.smeartype << std::endl;
+            coutput <<  "      smearing parameter = ";
+            if (mysolid.smeartype==-1) coutput << "fixed occupation" << std::endl;
+            if (mysolid.smeartype==0) coutput << "step function" << std::endl;
+            if (mysolid.smeartype==1) coutput << "Fermi-Dirac" << std::endl;
+            if (mysolid.smeartype==2) coutput << "Gaussian" << std::endl;
+            if (mysolid.smeartype==3) coutput << "Hermite" << std::endl;
+            if (mysolid.smeartype==4) coutput << "Marzari-Vanderbilt" << std::endl;
+            if (mysolid.smeartype==5) coutput << "Methfessel-Paxton" << std::endl;
+            if (mysolid.smeartype==6) coutput << "Cold smearing" << std::endl;
+            if (mysolid.smeartype==7) coutput << "Lorentzian" << std::endl;
+            if (mysolid.smeartype==8) coutput << "step" << std::endl;
+            
+            if (mysolid.smeartype>=0)
+            {
+                coutput <<  "      smearing parameter = " << Ffmt(9,3) << mysolid.smearkT
+                                                        << " (" << Ffmt(7,1) << control.fractional_temperature() << " K)" <<  std::endl;
+                coutput <<  "      mixing parameter   = " << Ffmt(7,1) << control.fractional_alpha() << std::endl;
+                coutput <<  "      mixing parameter(alpha)   = " << Ffmt(7,2) << control.fractional_alpha() << std::endl;
+                coutput <<  "      mixing parameter(alpha_min)   = " << Ffmt(7,2) << control.fractional_alpha_min() << std::endl;
+                coutput <<  "      mixing parameter(alpha_max)   = " << Ffmt(7,2) << control.fractional_alpha_max() << std::endl;
+                coutput <<  "      mixing parameter(beta)   = " << Ffmt(7,2) << control.fractional_beta() << std::endl;
+                coutput <<  "      mixing parameter(gamma)   = " << Ffmt(7,2) << control.fractional_gamma() << std::endl;
+                coutput <<  "      rmsd occupation tolerance   = " << Efmt(12,3) << control.fractional_rmsd_tolerance() << std::endl;
+            }
+         }
+          
+         {
             if (ispin==2)
                 coutput <<  "      extra orbitals     : up=" << nextra[0] << " down= " << nextra[1] << std::endl;
             else
                 coutput <<  "      extra orbitals     = " << Ifmt(7) << nextra[0] << std::endl;
        
-            if (control.fractional_frozen()) coutput <<  "      frozen oribtals" << std::endl;
+            //if (control.fractional_frozen()) coutput <<  "      frozen fractional occupations (fixed f_i during SCF)" << std::endl;
+            if (frozen) coutput <<  "      frozen fractional occupations (fixed f_i during SCF)" << std::endl;
 
 
             // Print occupations by k-point

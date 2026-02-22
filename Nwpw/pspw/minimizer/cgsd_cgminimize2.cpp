@@ -21,11 +21,56 @@ static Geodesic2 *mygeodesic2_ptr;
 static double dummy_energy(double t) { return mygeodesic2_ptr->energy(t); }
 static double dummy_denergy(double t) { return mygeodesic2_ptr->denergy(t); }
 
-/******************************************
- *                                        *
- *            cgsd_cgminimize2            *
- *                                        *
- ******************************************/
+/******************************************************
+ *                                                    *
+ *              cgsd_cgminimize2                      *
+ *                                                    *
+ ******************************************************/
+/**
+ * @brief Conjugate-gradient minimization of Kohn–Sham
+ *        orbitals using geodesic line searches.
+ *
+ * This routine performs an inner-loop orbital
+ * minimization on an orthonormal manifold using a
+ * conjugate-gradient algorithm with geodesic line
+ * searches provided by the Geodesic2 class.
+ *
+ * Key characteristics:
+ *  - Optimization is performed on the Stiefel manifold
+ *    (explicit orthonormal orbitals).
+ *  - Line searches follow geodesic paths generated
+ *    by Geodesic2.
+ *  - Gradients are evaluated via
+ *    Molecule::psi_1get_TSgradient(), which also
+ *    updates the electronic density on the fly.
+ *  - Search directions are updated using a
+ *    Fletcher–Reeves conjugate-gradient scheme,
+ *    with fallback to steepest descent when needed.
+ *  - Previous search directions are parallel
+ *    transported along the geodesic after each step.
+ *
+ * Convergence is controlled by both:
+ *  - Energy change tolerance (tole)
+ *  - Density residual tolerance (tolc)
+ *
+ * This routine is typically used as an inner orbital
+ * optimizer within larger SCF or ensemble-DFT loops,
+ * where occupations are held fixed.
+ *
+ * @param mymolecule          Molecule object containing
+ *                            orbitals, density, and grid
+ * @param mygeodesic2         Geodesic line-search handler
+ * @param E                   Energy array (updated externally)
+ * @param deltae              Energy change on exit
+ * @param deltac              Density residual on exit
+ * @param current_iteration   Global iteration index
+ * @param it_in               Maximum CG iterations
+ * @param tole                Energy convergence tolerance
+ * @param tolc                Density convergence tolerance
+ *
+ * @return Total electronic energy after minimization
+ */
+
 double cgsd_cgminimize2(Molecule &mymolecule, Geodesic2 *mygeodesic2, double *E,
                         double *deltae, double *deltac, int current_iteration,
                         int it_in, double tole, double tolc) 
