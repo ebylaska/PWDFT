@@ -986,11 +986,11 @@ int main(int argc, char *argv[]) {
      }
     
      /* Optimize task */
-     if (task == 3) 
+     if ((task == 3) || (task == 4))
      {
         if (oprint)
            std::cout << std::endl
-                     << "Running geometry optimization calculation - rtdbstr = "
+                     << "Running geovib optimization calculation - rtdbstr = "
                      << rtdbstr << std::endl
                      << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
@@ -998,14 +998,17 @@ int main(int argc, char *argv[]) {
      }
     
      /* Frequency task */
-     if (task == 4) 
+     /*if (task == 4) 
      {
         if (oprint)
            std::cout << std::endl
                      << "Running frequency calculation - rtdbstr = " << rtdbstr
                      << std::endl
                      << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
+     */
     
      /* Steepest descent task */
      if (task == 5) 

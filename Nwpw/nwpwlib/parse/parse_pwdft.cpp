@@ -2905,7 +2905,8 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "geovib"))           task = 4;
+        //if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 5;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 6;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;

@@ -1,0 +1,16 @@
+title "hello"
+echo
+
+restart test3
+memory 1900 mb
+
+permanent_dir ./perm3
+scratch_dir   ./perm3
+
+
+#task pspw energy
+driver 
+maxiter 2
+end
+task pspw geovib
+

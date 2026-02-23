@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 //
+#include "blas.h"
 #include "Parallel.hpp"
 #include "iofmt.hpp"
 #include "util_linesearch.hpp"
@@ -26,6 +27,7 @@
 #include "inner_loop.hpp"
 #include "psi.hpp"
 #include "util_date.hpp"
+#include "eckart_projector.hpp"
 //#include "nwpw_aimd_running_data.hpp"
 //#include	"rtdb.hpp"
 #include "mpi.h"
@@ -43,6 +45,12 @@
 using json = nlohmann::json;
 
 namespace pwdft {
+
+void compute_fd_frequencies(Control2 &control,
+                            Molecule &mymolecule,
+                            bool ismaster,
+                            bool oprint,
+                            std::ostream &coutput);
 
 /******************************************
  *                                        *
@@ -800,6 +808,12 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
      rtdbjson["nwpw"]["initialize_wavefunction"] = false;
  
    MPI_Barrier(comm_world0);
+
+   // call freq here
+   coutput << "FLAG=" << flag << std::endl;
+   //if (flag==4)
+   compute_fd_frequencies(control, mymolecule, myparallel.is_master(), oprint, coutput);
+
  
    /* write psi */
    if (flag > 0)
@@ -851,5 +865,150 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
  
    return 0;
 }
+
+
+/******************************************
+ *                                        *
+ *          compute_fd_frequencies        *
+ *                                        *
+ ******************************************/
+void compute_fd_frequencies(Control2 &control,
+                            Molecule &mymolecule,
+                            bool ismaster, bool oprint,
+                            std::ostream &coutput)
+{
+
+    Ion *ion = mymolecule.myion;
+    int N = ion->nion;
+    int ndof = 3*N;
+
+    //double h = 0.005;   // bohr (hardcode for v1)
+    double h = 0.010;   // bohr (hardcode for v1)
+
+    std::vector<double> H(ndof*ndof, 0.0);
+    std::vector<double> fplus(ndof);
+    std::vector<double> fminus(ndof);
+    std::vector<double> x0(3*N);
+
+    for(int i=0;i<3*N;++i)
+        x0[i] = ion->rion1[i];
+
+    for(int j=0;j<ndof;++j)
+    {
+        if (ismaster && oprint) coutput << " FD displacement " << j+1 << " / " << ndof << "\n";
+
+        // +h
+        ion->rion1[j] = x0[j] + h;
+        cgsd_energy(control, mymolecule, false, coutput);
+        cgsd_energy_gradient(mymolecule, fplus.data());
+
+        // -h
+        ion->rion1[j] = x0[j] - h;
+        cgsd_energy(control, mymolecule, false, coutput);
+        cgsd_energy_gradient(mymolecule, fminus.data());
+
+        // restore coordinate
+        ion->rion1[j] = x0[j];
+
+        for(int i=0;i<ndof;++i)
+            H[i + j*ndof] = -(fplus[i] - fminus[i])/(2.0*h);
+    }
+
+    // restore geometry
+    for(int i=0;i<3*N;++i)
+        ion->rion1[i] = x0[i];
+
+    // ===============================
+    // Symmetrize
+    // ===============================
+    for(int i=0;i<ndof;++i)
+        for(int j=i+1;j<ndof;++j)
+        {
+            double avg = 0.5*(H[i+j*ndof] + H[j+i*ndof]);
+            H[i+j*ndof] = avg;
+            H[j+i*ndof] = avg;
+        }
+
+    // ===============================
+    // Mass weighting
+    // ===============================
+    for(int i=0;i<ndof;++i)
+    {
+        int ai = i/3;
+        double mi = ion->amu(ai) * 1822.888486209;
+
+        for(int j=0;j<ndof;++j)
+        {
+            int aj = j/3;
+            double mj = ion->amu(aj) * 1822.888486209;
+            H[i+j*ndof] /= sqrt(mi*mj);
+        }
+    }
+
+
+    // ===============================
+    // Eckart projection (molecule)
+    // ===============================
+
+    std::vector<double> coords(3*N);
+    std::vector<double> masses(N);
+
+    for (int a=0; a<N; ++a)
+    {
+        coords[3*a+0] = x0[3*a+0];
+        coords[3*a+1] = x0[3*a+1];
+        coords[3*a+2] = x0[3*a+2];
+        masses[a]     = ion->amu(a) * 1822.888486209;
+    }
+
+    std::vector<double> V;
+    int m_eckart = 0;
+
+    build_molecular_constraints(N, coords, masses, V, m_eckart);
+
+    apply_projector(ndof, m_eckart, V, H);
+
+
+    // ===============================
+    // Diagonalize
+    // ===============================
+    std::vector<double> eig;
+    if (ismaster)
+    {
+        eig.resize(ndof);
+
+       int lwork = 3*ndof;
+       std::vector<double> work(lwork);
+       int info = 0;
+
+       EIGEN_PWDFT(ndof, H.data(), eig.data(), work.data(), lwork, info);
+
+       if (info != 0) {
+          if (oprint)
+             coutput << "Error: dsyev failed with info = " << info << "\n";
+       }
+ 
+       if (oprint)
+       {
+          coutput << "\n Vibrational frequencies (cm^-1):\n";
+  
+          for(int i=0;i<ndof;++i)
+          {
+              double lambda = eig[i];
+              if(lambda < 0.0)
+              {
+                  double freq = sqrt(-lambda)*2.194746e5;
+                  coutput << "  " << i+1 << "  i" << freq << "\n";
+              }
+              else
+              {
+                  double freq = sqrt(lambda)*2.194746e5;
+                  coutput << "  " << i+1 << "  " << freq << "\n";
+              }
+          }
+       }
+    }
+}
+
 
 } // namespace pwdft

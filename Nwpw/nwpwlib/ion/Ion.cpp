@@ -462,6 +462,8 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                            ? (double) geomjson["symmetry_tolerance"] 
                            : 0.001;
 
+   std::cout << "SYM="<< sym_tolerance << std::endl;
+
    if (control.is_crystal())
    {
       is_crystal = true;

@@ -2491,6 +2491,8 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes, 
                            double *rion2)
 {
+    std::cout << "SYM_tollerance=" << sym_tolerance << std::endl;
+
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
 
