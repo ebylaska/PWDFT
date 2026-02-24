@@ -479,6 +479,8 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                             inertia_tensor,inertia_moments,inertia_axes,
                             rion_sym);
    }
+      std::cout << "OUT GROUP_NAME=" << group_name << std::endl;
+
 
     std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
  

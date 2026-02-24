@@ -9,6 +9,7 @@
 #include <map>
 #include <array>
 #include "blas.h"
+#include "iofmt.hpp"
 
 
 #define mindex(i,j) (3*i+j)
@@ -2291,6 +2292,7 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
        //   group_name = "T_d, T";
        
    }
+   std::cout << "group_name=" << group_name << std::endl;
 }
 
 /*******************************************
@@ -2504,6 +2506,12 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    rotation_type="unknown";
 
    generate_principle_axes(rion2,ion_mass,nion,inertia_tensor,inertia_moments,inertia_axes);
+    std::cout << "principle_tensor=" << inertia_tensor << std::endl;
+    std::cout << "principle_moments=" << inertia_moments[0] << " " << inertia_moments[1] << " " << inertia_moments[2]  << std::endl;
+    std::cout << "principle_axes=" << inertia_axes << std::endl;
+    std::cout <<  " check = " <<  ( inertia_moments[0]*inertia_moments[0] 
+                                  + inertia_moments[1]*inertia_moments[1] 
+                                  + inertia_moments[2]*inertia_moments[2]) / (m_total*m_total) << " " << Efmt(6,3) << (sym_tolerance*sym_tolerance) << std::endl;
 
    if ( ( ( inertia_moments[0]*inertia_moments[0] 
           + inertia_moments[1]*inertia_moments[1] 
@@ -2511,6 +2519,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
         /(m_total*m_total))
        < (sym_tolerance*sym_tolerance))
    {
+       std::cout << "SERA" << std::endl;
       rotation_type = "point";
       group_name = "SO(3)";
       group_rank = -1;
@@ -2520,6 +2529,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[2]*inertia_moments[2])/(m_total*m_total)) < (sym_tolerance*sym_tolerance))
    {
+       std::cout << "SERB" << std::endl;
       rotation_type = "linear";
 
       // align the molecular axes along the inertia_axes
@@ -2534,6 +2544,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if ((((inertia_moments[0]-inertia_moments[2])/m_total) < sym_tolerance) && (nion>3))
    {
+       std::cout << "SERC" << std::endl;
       rotation_type = "spherical";
 
       // align the molecular axes along the inertia_axes
@@ -2546,6 +2557,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[0]-inertia_moments[1])/m_total) < sym_tolerance)
    {
+       std::cout << "SERD" << std::endl;
       rotation_type = "prolate top";
 
       // align the molecular axes along the inertia_axes
@@ -2558,6 +2570,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[1]-inertia_moments[2])/m_total) < sym_tolerance)
    {
+       std::cout << "SERE" << std::endl;
       rotation_type = "oblate top";
 
       //rotate inertia_moments and inertia_axes
@@ -2591,6 +2604,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else
    {
+       std::cout << "SERF" << std::endl;
       rotation_type = "asymmetric";
 
       //rotate inertia_moments and inertia_axes
@@ -2623,6 +2637,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
                                  group_name,group_rank,rotation_type,
                                  inertia_tensor,inertia_moments,inertia_axes);
    }
+   std::cout << "GROUP_NAME=" << group_name << std::endl;
 
 
    return;
