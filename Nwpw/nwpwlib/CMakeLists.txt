@@ -97,6 +97,15 @@ add_subdirectory(device)
 add_subdirectory(external/spglib)
 target_link_libraries(nwpwlib PUBLIC spglib)
 
+# ---- stb header-only library ----
+add_library(stb INTERFACE)
+
+target_include_directories(stb
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+)
+
+target_link_libraries(nwpwlib PUBLIC stb)
 
 
 
