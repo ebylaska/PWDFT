@@ -200,17 +200,23 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
                            "optimize"))
        ptask = 3;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "freq"))
+
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "geovib"))
        ptask = 4;
+
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "freq"))
+       ptask = 5;
+
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
                            "steepest_descent"))
-       ptask = 5;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "car-parrinello"))
        ptask = 6;
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "born-oppenheimer"))
+                           "car-parrinello"))
        ptask = 7;
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
+                           "born-oppenheimer"))
+       ptask = 8;
+
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
                            "noit_"))
        ptask *= -1;

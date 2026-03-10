@@ -985,8 +985,8 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
     
-     /* Optimize task */
-     if ((task == 3) || (task == 4))
+     /* Optimize, geovib, or freq  task */
+     if ((task == 3) || (task == 4) || (task == 5))
      {
         if (oprint)
            std::cout << std::endl
@@ -997,35 +997,23 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
     
-     /* Frequency task */
-     /*if (task == 4) 
-     {
-        if (oprint)
-           std::cout << std::endl
-                     << "Running frequency calculation - rtdbstr = " << rtdbstr
-                     << std::endl
-                     << std::endl;
-        MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
-     }
-     */
     
      /* Steepest descent task */
-     if (task == 5) 
+     if (task == 6) 
      {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
      }
     
      /* Car-Parrinello task */
-     if (task == 6) 
+     if (task == 7) 
      {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::cpmd(MPI_COMM_WORLD, rtdbstr); /* Car-Parrinello task */
      }
     
      /* Born-Oppenheimer task */
-     if (task == 7) 
+     if (task == 8) 
      {
         if (oprint)
            std::cout << std::endl
@@ -1037,7 +1025,7 @@ int main(int argc, char *argv[]) {
      }
     
      /* dplot task */
-     if (task == 8) 
+     if (task == 9) 
      {
         if (oprint)
            std::cout << std::endl
@@ -1048,7 +1036,7 @@ int main(int argc, char *argv[]) {
      }
     
      /* file generate task */
-     if (task == 9) {
+     if (task == 30) {
         if (oprint)
         {
            std::cout << std::endl

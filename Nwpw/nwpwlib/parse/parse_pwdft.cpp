@@ -2906,11 +2906,11 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "geovib"))           task = 4;
-        //if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 4;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 5;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 6;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 7;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 8;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 5;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 6;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 8;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
      }
      // Look for band jobs
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
@@ -2919,10 +2919,9 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 13;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 14;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
      }
      // Look for file jobs
-     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=9; }
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=30; }
   }
 
   return task;

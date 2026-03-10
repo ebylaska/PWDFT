@@ -12,5 +12,6 @@ scratch_dir   ./perm3
 driver 
 maxiter 2
 end
-task pspw geovib
+#task pspw geovib
+task pspw freq
 

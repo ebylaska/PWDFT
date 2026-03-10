@@ -40,6 +40,7 @@
 #include "nwpw_lmbfgs.hpp"
 
 #include "cgsd_energy.hpp"
+#include "util_thermo.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -71,6 +72,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    double E[80],deltae,deltac,deltar,viral,unita[9];
  
    Control2 control(myparallel.np(),rtdbstring);
+
    int flag = control.task();
  
    bool hprint = (myparallel.is_master() && control.print_level("high"));
@@ -531,6 +533,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
               << std::endl;
    }
    DSCAL_PWDFT(nfsize, mrone, fion, one);
+
+   if ((flag==3) || (flag==4)) 
+   {
  
    /* initialize lmbfgs */
    nwpw_lmbfgs geom_lmbfgs(3 * myion.nion, lmbfgs_size, myion.rion1, fion);
@@ -776,6 +781,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << std::endl << myion.print_constraints(1);
       coutput << "\n\n";
    }
+   }
    if (myparallel.is_master())
       seconds(&cpu3);
  
@@ -810,11 +816,12 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    MPI_Barrier(comm_world0);
 
    // call freq here
-   coutput << "FLAG=" << flag << std::endl;
-   //if (flag==4)
-   compute_fd_frequencies(control, mymolecule, myparallel.is_master(), oprint, coutput);
+   if ((flag==4) || (flag==5))
+      compute_fd_frequencies(control, mymolecule, myparallel.is_master(), oprint, coutput);
 
  
+   if (oprint) coutput << std::endl<< std::endl;
+
    /* write psi */
    if (flag > 0)
      mymolecule.writepsi(control.output_movecs_filename(), coutput);
@@ -872,6 +879,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
  *          compute_fd_frequencies        *
  *                                        *
  ******************************************/
+
 void compute_fd_frequencies(Control2 &control,
                             Molecule &mymolecule,
                             bool ismaster, bool oprint,
@@ -884,6 +892,26 @@ void compute_fd_frequencies(Control2 &control,
 
     //double h = 0.005;   // bohr (hardcode for v1)
     double h = 0.010;   // bohr (hardcode for v1)
+
+    if (ismaster && oprint)
+    {
+       coutput << "\n\n";
+       coutput << " --------------------------------------------------------------"
+                  "---------------------\n";
+       coutput << " -----------------------  Vibrational Frequency "
+                  "Analysis  --------------------------\n";
+       coutput << " --------------------------------------------------------------"
+                  "---------------------\n\n";
+ 
+       coutput << " Finite Difference Hessian\n";
+       coutput << " -------------------------\n";
+       coutput << " number of atoms            = " << N << "\n";
+       coutput << " degrees of freedom         = " << ndof << "\n";
+       coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
+       coutput << " finite difference step     = " << h << " bohr\n";
+       coutput << " displacements required     = " << 2*ndof << "\n";
+       coutput << "\n";
+    }
 
     std::vector<double> H(ndof*ndof, 0.0);
     std::vector<double> fplus(ndof);
@@ -990,7 +1018,7 @@ void compute_fd_frequencies(Control2 &control,
  
        if (oprint)
        {
-          coutput << "\n Vibrational frequencies (cm^-1):\n";
+          coutput << "\n Vibration   Frequencies (cm^-1):\n";
   
           for(int i=0;i<ndof;++i)
           {
@@ -998,16 +1026,40 @@ void compute_fd_frequencies(Control2 &control,
               if(lambda < 0.0)
               {
                   double freq = sqrt(-lambda)*2.194746e5;
-                  coutput << "  " << i+1 << "  i" << freq << "\n";
+                  //coutput << "  " << i+1 << "  i" << freq << "\n";
+                  coutput << std::setw(4) << i+1 << std::setw(13) << "i"<< freq << "\n";
               }
               else
               {
                   double freq = sqrt(lambda)*2.194746e5;
-                  coutput << "  " << i+1 << "  " << freq << "\n";
+                  //coutput << "  " << i+1 << "  " << freq << "\n";
+                  coutput << std::setw(4) << i+1 <<  std::setw(18) << freq << "\n";
               }
           }
        }
+
+
+       double molecule_mass = 0.0;
+       for (int a = 0; a < N; ++a)
+           molecule_mass += ion->amu(a);
+
+       std::vector<double> freq;
+       freq.reserve(ndof);
+       for (int i = 0; i < ndof; ++i)
+       {
+           double lambda = eig[i];
+           double nu = 0.0;
+           if (lambda < 0.0)
+               nu = -std::sqrt(-lambda) * 2.194746e5;   // imaginary as negative
+           else
+               nu =  std::sqrt( lambda) * 2.194746e5;
+           freq.push_back(nu);
+       }
+
+       util_molecular_thermochemistry(freq, 298.15, molecule_mass, coutput);
+
     }
+
 }
 
 
