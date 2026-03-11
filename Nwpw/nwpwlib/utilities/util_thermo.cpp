@@ -2,6 +2,12 @@
 #include <cmath>
 #include <iomanip>
 
+/************************************************
+ *                                              *
+ *          util_molecular_thermochemistry      *
+ *                                              *
+ ************************************************/
+
 void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
                                     double temperature,
                                     double mol_mass,
