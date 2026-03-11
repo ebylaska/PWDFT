@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 //#include        "iofmt.hpp"
 //#include	"rtdb.hpp"
@@ -13,6 +14,7 @@
 //#include "ion_angle.hpp"
 #include "ion_bondings.hpp"
 #include "ion_rcovalent.hpp"
+#include "Symmetry.hpp"
 
 namespace pwdft {
 
@@ -27,6 +29,9 @@ class Ion {
   //ion_cbond    *mycbond;
   //ion_angle    *myangle;
   ion_bondings *mybondings;
+  Symmetry mysymmetry;
+
+  std::vector<std::vector<int>> equivalent_atoms;
 
 
 public:
@@ -42,6 +47,9 @@ public:
    double *vionhalf;              // temp velocities
    double *fion1;                 // forces of ions
    double time_step;
+
+   double *rion_sym;
+
 
    //dispersion and grimme2
    std::string disp_options;
@@ -96,6 +104,7 @@ public:
      delete[] rion_incell0;
      delete[] vionhalf;
      delete[] fion1;
+     delete[] rion_sym;
      delete mybond;
      //delete mycbond;
      //delete myangle;
@@ -134,6 +143,11 @@ public:
    double fion(int i, int ii) { return fion1[3*ii+i]; }
    double rion_incell(int i, int ii) { return rion_incell0[3*ii+i]; }
    void set_rion_incell(const int ,double *);
+   void get_position(int i, double *r) {
+      r[0] = rion1[3*i];
+      r[1] = rion1[3*i+1];
+      r[2] = rion1[3*i+2];
+   }
  
    int ndof() {
       int dof = 3*nion - 6;
@@ -504,15 +518,31 @@ public:
    void disp_stress(double *);
 
    //symmetry operations
-   int symmetry_number_ops() { return group_rank; };
+   int symmetry_number_ops0() { return group_rank; };
    //void sym_get_cart_op(const int opnum, double *matrix)
    //ion_sym_get_op(const int opnum, double *matrix)
    //void symmetry_apply_op(const int opnum, const double *ks, double *ks1)
    std::string symmetry_group_name() { return group_name; }
 
-   
+   // access symmetry object
+   Symmetry& symmetry() { return mysymmetry; }
+   const Symmetry& symmetry() const { return mysymmetry; }
+
+
+   // number of symmetry operations
+   int symmetry_nops() const { return mysymmetry.order(); }
+
+   const std::vector<SymOp>& symmetry_ops() const { return mysymmetry.operators(); }
+
+   const SymOp& symmetry_op(int i) const { return mysymmetry.operators()[i]; }
+
+   void build_equivalent_atoms(double tol=1e-5);
+   const std::vector<std::vector<int>>& get_equivalent_atoms() const;
+
+
    std::string print_symmetry_group();
    std::string print_symmetry_group(std::string);
+   void print_symmetry_ops(std::ostream &out);
 
 
 };

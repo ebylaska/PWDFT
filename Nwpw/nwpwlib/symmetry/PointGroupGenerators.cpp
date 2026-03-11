@@ -846,24 +846,71 @@ std::vector<SymOp> PointGroupGenerators::Td()
 {
     std::vector<SymOp> ops;
 
-    // Start with all proper tetrahedral rotations
-    std::vector<SymOp> T_ops = T();
+    /* 1. Proper tetrahedral rotations (12) */
+    auto T_ops = T();
     ops.insert(ops.end(), T_ops.begin(), T_ops.end());
 
-    // Add 6 diagonal mirror planes (σ_d)
-    const double inv = 1.0 / std::sqrt(2.0);
-    const double normals[6][3] = {
-        {  inv,  inv,  0.0},
-        {  inv, -inv,  0.0},
-        {  inv,  0.0,  inv},
-        {  inv,  0.0, -inv},
-        {  0.0,  inv,  inv},
-        {  0.0,  inv, -inv}
+    /* 2. S4 operations (6) */
+
+    const double x_axis[3] = {1,0,0};
+    const double y_axis[3] = {0,1,0};
+    const double z_axis[3] = {0,0,1};
+
+    const double axes[3][3] = {
+        {1,0,0},
+        {0,1,0},
+        {0,0,1}
     };
 
-    for (const auto& n : normals) {
-        ops.push_back(mirror(n));
+    const double z_normal[3] = {0,0,1};
+    const double x_normal[3] = {1,0,0};
+    const double y_normal[3] = {0,1,0};
+
+    const double normals[3][3] = {
+        {1,0,0},
+        {0,1,0},
+        {0,0,1}
+    };
+
+    for(int a=0;a<3;a++)
+    {
+        SymOp c4  = rotation_about_axis(axes[a],  M_PI/2);
+        SymOp c4i = rotation_about_axis(axes[a], -M_PI/2);
+
+        SymOp sigma = mirror(normals[a]);
+
+        for(auto &c : {c4,c4i})
+        {
+            SymOp op{};
+
+            for(int i=0;i<3;i++)
+                for(int j=0;j<3;j++)
+                {
+                    op.R[i][j] = 0.0;
+                    for(int k=0;k<3;k++)
+                        op.R[i][j] += sigma.R[i][k] * c.R[k][j];
+                }
+
+            op.t[0]=op.t[1]=op.t[2]=0.0;
+
+            ops.push_back(op);
+        }
     }
+
+    /* 3. σd reflections (6) */
+
+    const double inv = 1.0/std::sqrt(2.0);
+    const double diag[6][3] = {
+        { inv, inv,0},
+        { inv,-inv,0},
+        { inv,0, inv},
+        { inv,0,-inv},
+        {0, inv, inv},
+        {0, inv,-inv}
+    };
+
+    for(const auto& n : diag)
+        ops.push_back(mirror(n));
 
     return ops;
 }

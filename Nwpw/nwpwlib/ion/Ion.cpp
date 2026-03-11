@@ -344,6 +344,7 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 //    rion0     = new double[3*nion];
 //    rion1     = new double[3*nion];
 //    rion2     = new double[3*nion];
+//    rion_sym  = new double[3*nion];
 //    vionhalf  = new double[3*nion];
 //    fion1     = new double[3*nion];
 //    katm      = new int[nion];
@@ -408,6 +409,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    rion1 = new double[3 * nion];
    rion2 = new double[3 * nion];
    rion_incell0 = new double[3 * nion];
+   rion_sym = new double[3*nion];
    vionhalf = new double[3 * nion];
    fion1 = new double[3 * nion];
    katm = new int[nion];
@@ -457,12 +459,11 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    }
 
    //Check for Point group here????
-   double *rion_sym = fion1; //temporary
+   //double *rion_sym = fion1; //temporary
    sym_tolerance = (geomjson["symmetry_tolerance"].is_number_float())
                            ? (double) geomjson["symmetry_tolerance"] 
                            : 0.001;
 
-   std::cout << "SYM="<< sym_tolerance << std::endl;
 
    if (control.is_crystal())
    {
@@ -470,6 +471,8 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       rotation_type = "crystal";
       group_name = "P1";
       group_rank = 1;
+
+      mysymmetry = Symmetry("P1");
    }
    else
    {
@@ -478,8 +481,15 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                             group_name,group_rank,rotation_type,
                             inertia_tensor,inertia_moments,inertia_axes,
                             rion_sym);
+
+      // normalize Schoenflies symbol
+      group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
+
+      mysymmetry = Symmetry::from_point_group(group_name);
    }
-      std::cout << "OUT GROUP_NAME=" << group_name << std::endl;
+   //print_symmetry_ops(std::cout);
+   build_equivalent_atoms(sym_tolerance);
+
 
 
     std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
@@ -1383,6 +1393,138 @@ void Ion::disp_stress(double* stress)
          stress[k] += g_lat[k];
    }
 } 
+
+
+
+/*******************************************
+ *                                         *
+ *        Ion::build_equivalent_atoms      *
+ *                                         *
+ *******************************************/
+
+void Ion::build_equivalent_atoms(double tol)
+{
+//double dtol = 1.0e-2;
+//std::cout << "tol=" << tol << " dtol=" << dtol << std::endl;
+
+    std::vector<int> eq(nion, -1);
+    int cls = 0;
+
+    auto same_fingerprint = [&](int i, int j) -> bool
+    {
+        if(katm[i] != katm[j]) return false;
+
+        std::vector<double> di, dj;
+
+        for(int k = 0; k < nion; ++k)
+        {
+            if(k == i) continue;
+
+            double dx = rion_sym[3*i+0] - rion_sym[3*k+0];
+            double dy = rion_sym[3*i+1] - rion_sym[3*k+1];
+            double dz = rion_sym[3*i+2] - rion_sym[3*k+2];
+
+            di.push_back(std::sqrt(dx*dx + dy*dy + dz*dz));
+        }
+
+        for(int k = 0; k < nion; ++k)
+        {
+            if(k == j) continue;
+
+            double dx = rion_sym[3*j+0] - rion_sym[3*k+0];
+            double dy = rion_sym[3*j+1] - rion_sym[3*k+1];
+            double dz = rion_sym[3*j+2] - rion_sym[3*k+2];
+
+            dj.push_back(std::sqrt(dx*dx + dy*dy + dz*dz));
+        }
+
+        std::sort(di.begin(), di.end());
+        std::sort(dj.begin(), dj.end());
+
+        for(size_t m = 0; m < di.size(); ++m)
+            if(std::fabs(di[m] - dj[m]) > tol)
+                return false;
+
+        return true;
+    };
+
+    for(int i = 0; i < nion; ++i)
+    {
+        if(eq[i] != -1) continue;
+
+        eq[i] = cls;
+
+        for(int j = i + 1; j < nion; ++j)
+        {
+            if(same_fingerprint(i, j))
+                eq[j] = cls;
+        }
+
+        cls++;
+    }
+
+    equivalent_atoms.clear();
+    equivalent_atoms.resize(cls);
+
+    for(int i = 0; i < nion; ++i)
+        equivalent_atoms[eq[i]].push_back(i);
+
+//    for(size_t g=0; g<equivalent_atoms.size(); g++)
+//    {
+//        std::cout << "class " << g << " : ";
+//        for(auto a : equivalent_atoms[g])
+//            std::cout << a << " ";
+//        std::cout << std::endl;
+//    }
+}
+
+
+
+/*******************************************
+ *                                         *
+ *        Ion::get_equivalent_atoms s      *
+ *                                         *
+ *******************************************/
+const std::vector<std::vector<int>>& Ion::get_equivalent_atoms() const
+{
+    return equivalent_atoms;
+}
+
+/*******************************************
+ *                                         *
+ *         Ion::print_symmetry_ops         *
+ *                                         *
+ *******************************************/
+void Ion::print_symmetry_ops(std::ostream &out)
+{
+    const auto &ops = mysymmetry.operators();
+
+    out << "\nSymmetry Operators\n";
+    out << "------------------\n";
+    out << "Number of operators = " << ops.size() << "\n\n";
+
+    for(size_t k=0; k<ops.size(); ++k)
+    {
+        const auto &op = ops[k];
+
+        out << "Operator " << k+1 << "\n";
+
+        for(int i=0;i<3;i++)
+        {
+            out << "   "
+                << std::setw(10) << op.R[i][0]
+                << std::setw(10) << op.R[i][1]
+                << std::setw(10) << op.R[i][2]
+                << "\n";
+        }
+
+        out << "   t = "
+            << op.t[0] << " "
+            << op.t[1] << " "
+            << op.t[2] << "\n\n";
+    }
+}
+
    
 
 

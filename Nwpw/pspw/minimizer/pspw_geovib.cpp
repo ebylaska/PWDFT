@@ -280,8 +280,8 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
       coutput << std::endl;
-      //coutput << myion.print_symmetry_group();
-      coutput << myion.print_symmetry_group(rtdbstring);
+      coutput << myion.print_symmetry_group();
+      //coutput << myion.print_symmetry_group(rtdbstring);
       coutput << std::endl << myion.print_constraints(0);
       coutput << mypsp.myefield->shortprint_efield();
       coutput << mycoulomb12.shortprint_dielectric();
@@ -874,6 +874,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
 }
 
 
+
 /******************************************
  *                                        *
  *          compute_fd_frequencies        *
@@ -885,10 +886,231 @@ void compute_fd_frequencies(Control2 &control,
                             bool ismaster, bool oprint,
                             std::ostream &coutput)
 {
+    Ion *ion = mymolecule.myion;
+    int N    = ion->nion;
+    int ndof = 3 * N;
+
+    const auto &eq = ion->get_equivalent_atoms();
+    int unique_atoms = static_cast<int>(eq.size());
+    int reduced_dof  = 3 * unique_atoms;
+
+    double h = 0.010;   // bohr
+
+    if (ismaster && oprint)
+    {
+        coutput << "\n\n";
+        coutput << " --------------------------------------------------------------"
+                   "---------------------\n";
+        coutput << " -----------------------  Vibrational Frequency "
+                   "Analysis  --------------------------\n";
+        coutput << " --------------------------------------------------------------"
+                   "---------------------\n\n";
+
+        coutput << " Finite Difference Hessian\n";
+        coutput << " -------------------------\n";
+        coutput << " number of atoms            = " << N << "\n";
+        coutput << " degrees of freedom         = " << ndof << "\n";
+        coutput << " expected vibrational modes = " << (3 * N - 6) << "\n";
+        coutput << " finite difference step     = " << h << " bohr\n";
+
+        coutput << "\n Symmetry information\n";
+        coutput << " unique atoms               = " << unique_atoms << "\n";
+        coutput << " symmetry reduced DOF       = " << reduced_dof << "\n";
+
+        coutput << "\n FD workload\n";
+        coutput << " full displacements         = " << 2 * ndof << "\n";
+        coutput << " symmetry displacements     = " << 2 * reduced_dof << "\n";
+        coutput << "\n";
+    }
+
+    std::vector<double> H(ndof * ndof, 0.0);
+    std::vector<double> fplus(ndof, 0.0);
+    std::vector<double> fminus(ndof, 0.0);
+    std::vector<double> x0(ndof, 0.0);
+
+    for (int i = 0; i < ndof; ++i)
+        x0[i] = ion->rion1[i];
+
+    // -------------------------------------------------------
+    // Compute Hessian columns explicitly.
+    // We loop by equivalence class, but still displace every
+    // atom in the class. This is correct and safe.
+    // -------------------------------------------------------
+    int disp_count = 0;
+
+    for (size_t g = 0; g < eq.size(); ++g)
+    {
+        for (int d = 0; d < 3; ++d)
+        {
+            for (size_t k = 0; k < eq[g].size(); ++k)
+            {
+                int atom = eq[g][k];
+                int j = 3 * atom + d;
+
+                ++disp_count;
+                if (ismaster && oprint)
+                    coutput << " FD displacement " << disp_count
+                            << " / " << 2*ndof << "\n";
+
+                // +h
+                ion->rion1[j] = x0[j] + h;
+                cgsd_energy(control, mymolecule, false, coutput);
+                cgsd_energy_gradient(mymolecule, fplus.data());
+
+                ++disp_count;
+                if (ismaster && oprint)
+                    coutput << " FD displacement " << disp_count
+                            << " / " << 2*ndof << "\n";
+
+                // -h
+                ion->rion1[j] = x0[j] - h;
+                cgsd_energy(control, mymolecule, false, coutput);
+                cgsd_energy_gradient(mymolecule, fminus.data());
+
+                // restore
+                ion->rion1[j] = x0[j];
+
+                // column j
+                for (int i = 0; i < ndof; ++i)
+                    H[i + j * ndof] = -(fplus[i] - fminus[i]) / (2.0 * h);
+            }
+        }
+    }
+
+    // restore full geometry
+    for (int i = 0; i < ndof; ++i)
+        ion->rion1[i] = x0[i];
+
+    // ===============================
+    // Symmetrize
+    // ===============================
+    for (int i = 0; i < ndof; ++i)
+    {
+        for (int j = i + 1; j < ndof; ++j)
+        {
+            double avg = 0.5 * (H[i + j * ndof] + H[j + i * ndof]);
+            H[i + j * ndof] = avg;
+            H[j + i * ndof] = avg;
+        }
+    }
+
+    // ===============================
+    // Mass weighting
+    // ===============================
+    for (int i = 0; i < ndof; ++i)
+    {
+        int ai = i / 3;
+        double mi = ion->amu(ai) * 1822.888486209;
+
+        for (int j = 0; j < ndof; ++j)
+        {
+            int aj = j / 3;
+            double mj = ion->amu(aj) * 1822.888486209;
+            H[i + j * ndof] /= std::sqrt(mi * mj);
+        }
+    }
+
+    // ===============================
+    // Eckart projection
+    // ===============================
+    std::vector<double> coords(3 * N, 0.0);
+    std::vector<double> masses(N, 0.0);
+
+    for (int a = 0; a < N; ++a)
+    {
+        coords[3 * a + 0] = x0[3 * a + 0];
+        coords[3 * a + 1] = x0[3 * a + 1];
+        coords[3 * a + 2] = x0[3 * a + 2];
+        masses[a]         = ion->amu(a) * 1822.888486209;
+    }
+
+    std::vector<double> V;
+    int m_eckart = 0;
+
+    build_molecular_constraints(N, coords, masses, V, m_eckart);
+    apply_projector(ndof, m_eckart, V, H);
+
+    // ===============================
+    // Diagonalize
+    // ===============================
+    std::vector<double> eig;
+    if (ismaster)
+    {
+        eig.resize(ndof);
+
+        int lwork = 3 * ndof;
+        std::vector<double> work(lwork);
+        int info = 0;
+
+        EIGEN_PWDFT(ndof, H.data(), eig.data(), work.data(), lwork, info);
+
+        if (info != 0)
+        {
+            if (oprint)
+                coutput << "Error: dsyev failed with info = " << info << "\n";
+        }
+
+        if (oprint)
+        {
+            coutput << "\n Vibration   Frequencies (cm^-1):\n";
+
+            for (int i = 0; i < ndof; ++i)
+            {
+                double lambda = eig[i];
+                if (lambda < 0.0)
+                {
+                    double freq = std::sqrt(-lambda) * 2.194746e5;
+                    coutput << std::setw(4) << i + 1
+                            << std::setw(13) << "i" << freq << "\n";
+                }
+                else
+                {
+                    double freq = std::sqrt(lambda) * 2.194746e5;
+                    coutput << std::setw(4) << i + 1
+                            << std::setw(18) << freq << "\n";
+                }
+            }
+        }
+
+        double molecule_mass = 0.0;
+        for (int a = 0; a < N; ++a)
+            molecule_mass += ion->amu(a);
+
+        std::vector<double> freq;
+        freq.reserve(ndof);
+
+        for (int i = 0; i < ndof; ++i)
+        {
+            double lambda = eig[i];
+            double nu = 0.0;
+
+            if (lambda < 0.0)
+                nu = -std::sqrt(-lambda) * 2.194746e5;
+            else
+                nu =  std::sqrt( lambda) * 2.194746e5;
+
+            freq.push_back(nu);
+        }
+
+        util_molecular_thermochemistry(freq, 298.15, molecule_mass, coutput);
+    }
+}
+
+
+void compute_fd_frequenciesxxxx(Control2 &control,
+                            Molecule &mymolecule,
+                            bool ismaster, bool oprint,
+                            std::ostream &coutput)
+{
 
     Ion *ion = mymolecule.myion;
     int N = ion->nion;
     int ndof = 3*N;
+
+    const auto &eq = ion->get_equivalent_atoms();
+    int unique_atoms = eq.size();
+    int reduced_dof = 3 * unique_atoms;
+
 
     //double h = 0.005;   // bohr (hardcode for v1)
     double h = 0.010;   // bohr (hardcode for v1)
@@ -902,14 +1124,21 @@ void compute_fd_frequencies(Control2 &control,
                   "Analysis  --------------------------\n";
        coutput << " --------------------------------------------------------------"
                   "---------------------\n\n";
- 
+
        coutput << " Finite Difference Hessian\n";
        coutput << " -------------------------\n";
        coutput << " number of atoms            = " << N << "\n";
        coutput << " degrees of freedom         = " << ndof << "\n";
        coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
        coutput << " finite difference step     = " << h << " bohr\n";
-       coutput << " displacements required     = " << 2*ndof << "\n";
+  
+       coutput << "\n Symmetry information\n";
+       coutput << " unique atoms               = " << unique_atoms << "\n";
+       coutput << " symmetry reduced DOF       = " << reduced_dof << "\n";
+  
+       coutput << "\n FD workload\n";
+       coutput << " full displacements         = " << 2*ndof << "\n";
+       coutput << " symmetry displacements     = " << 2*reduced_dof << "\n";
        coutput << "\n";
     }
 
@@ -923,24 +1152,30 @@ void compute_fd_frequencies(Control2 &control,
 
     for(int j=0;j<ndof;++j)
     {
-        if (ismaster && oprint) coutput << " FD displacement " << j+1 << " / " << ndof << "\n";
+           if (ismaster && oprint) coutput << " FD displacement " << j+1 << " / " << ndof << "\n";
+ 
+           // +h
+           ion->rion1[j] = x0[j] + h;
+           //mymolecule.update_structure();
+           cgsd_energy(control, mymolecule, false, coutput);
+           cgsd_energy_gradient(mymolecule, fplus.data());
+ 
+           // -h
+           ion->rion1[j] = x0[j] - h;
+           //mymolecule.update_structure();
+           cgsd_energy(control, mymolecule, false, coutput);
+           cgsd_energy_gradient(mymolecule, fminus.data());
+ 
+           // restore coordinate
+           ion->rion1[j] = x0[j];
+           //mymolecule.update_structure();
+ 
+           for(int i=0;i<ndof;++i)
+               H[i + j*ndof] = -(fplus[i] - fminus[i])/(2.0*h);
 
-        // +h
-        ion->rion1[j] = x0[j] + h;
-        cgsd_energy(control, mymolecule, false, coutput);
-        cgsd_energy_gradient(mymolecule, fplus.data());
-
-        // -h
-        ion->rion1[j] = x0[j] - h;
-        cgsd_energy(control, mymolecule, false, coutput);
-        cgsd_energy_gradient(mymolecule, fminus.data());
-
-        // restore coordinate
-        ion->rion1[j] = x0[j];
-
-        for(int i=0;i<ndof;++i)
-            H[i + j*ndof] = -(fplus[i] - fminus[i])/(2.0*h);
     }
+
+
 
     // restore geometry
     for(int i=0;i<3*N;++i)
