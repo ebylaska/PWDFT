@@ -2,12 +2,79 @@
 #include <cmath>
 #include <iomanip>
 
+
 /************************************************
  *                                              *
  *          util_molecular_thermochemistry      *
  *                                              *
  ************************************************/
-
+/**
+ * @brief Compute molecular thermochemistry from vibrational frequencies.
+ *
+ * This routine evaluates standard thermochemical quantities for a molecule
+ * using the harmonic oscillator approximation applied to a set of vibrational
+ * frequencies. The input frequencies are assumed to be obtained from a finite
+ * difference (FD) Hessian analysis with translational and rotational modes
+ * removed via the Eckart projection.
+ *
+ * The function computes:
+ *  - Zero-point energy (ZPE)
+ *  - Thermal correction to internal energy
+ *  - Thermal correction to enthalpy
+ *  - Vibrational entropy
+ *  - Constant-volume heat capacity (Cv)
+ *
+ * Vibrational contributions are evaluated using the standard quantum
+ * harmonic oscillator partition function. Translational and rotational
+ * contributions are added using classical ideal-gas expressions.
+ *
+ * The resulting thermochemical quantities are reported in:
+ *  - kcal/mol and Hartree (au) for energies
+ *  - cal/mol-K for entropy and heat capacity
+ *
+ * Frequencies smaller than ~1 cm⁻¹ are ignored to avoid numerical issues
+ * associated with residual rotational or translational modes.
+ *
+ * @param freq_cm
+ *        Vector of vibrational frequencies in cm⁻¹. These should exclude
+ *        the projected translational and rotational modes.
+ *
+ * @param temperature
+ *        Temperature in Kelvin at which thermochemical properties
+ *        are evaluated (typically 298.15 K).
+ *
+ * @param mol_mass
+ *        Molecular mass in atomic mass units (amu). Currently included
+ *        for completeness and possible future extensions of translational
+ *        entropy calculations.
+ *
+ * @param out
+ *        Output stream used to print formatted thermochemistry results.
+ *
+ * @note
+ * The vibrational thermochemistry is based on the standard relations:
+ *
+ * \f[
+ * E_{vib} = \sum_i \left(\frac{1}{2}h\nu_i +
+ * \frac{h\nu_i}{e^{h\nu_i/kT}-1}\right)
+ * \f]
+ *
+ * \f[
+ * S_{vib} = R \sum_i \left(
+ * \frac{x_i}{e^{x_i}-1} - \ln(1-e^{-x_i})
+ * \right)
+ * \f]
+ *
+ * where \f$x_i = h\nu_i/(kT)\f$.
+ *
+ * @author
+ * Eric J. Bylaska
+ *
+ * @date
+ * 2026
+ *
+ * @ingroup thermochemistry
+ */
 void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
                                     double temperature,
                                     double mol_mass,
