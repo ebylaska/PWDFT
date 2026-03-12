@@ -482,6 +482,16 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                             inertia_tensor,inertia_moments,inertia_axes,
                             rion_sym);
 
+std::cout << "\nrion_sym coordinates\n";
+
+for(int a=0;a<nion;a++)
+{
+   std::cout << a+1 << "  "
+            << rion_sym[3*a+0] << " "
+            << rion_sym[3*a+1] << " "
+            << rion_sym[3*a+2] << "\n";
+}
+
       // normalize Schoenflies symbol
       group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
 
@@ -492,7 +502,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
 
 
 
-    std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
+    //std::fill(rion_sym,rion_sym+3*nion,0.0); //re-zero the array
  
    // generate random initial velocities  (temperature, seed) - only set with
    // random velocities if seed > 0
@@ -681,6 +691,15 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       }
    }
 
+std::cout << "\nINIT F rion_sym coordinates\n";
+
+for(int a=0;a<nion;a++)
+{
+   std::cout << a+1 << "  "
+            << rion_sym[3*a+0] << " "
+            << rion_sym[3*a+1] << " "
+            << rion_sym[3*a+2] << "\n";
+}
   
 
    /*  DEBUG CHECK
