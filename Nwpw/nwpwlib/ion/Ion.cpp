@@ -482,23 +482,77 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                             inertia_tensor,inertia_moments,inertia_axes,
                             rion_sym);
 
-std::cout << "\nrion_sym coordinates\n";
 
-for(int a=0;a<nion;a++)
-{
-   std::cout << a+1 << "  "
-            << rion_sym[3*a+0] << " "
-            << rion_sym[3*a+1] << " "
-            << rion_sym[3*a+2] << "\n";
-}
 
       // normalize Schoenflies symbol
       group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
 
       mysymmetry = Symmetry::from_point_group(group_name);
+
+    /* rotate coordinates into symmetry frame */
+    for(int a=0;a<nion;a++)
+    {
+    double x = rion_sym[3*a+0];
+    double y = rion_sym[3*a+1];
+    double z = rion_sym[3*a+2];
+
+    rion_sym[3*a+0] =
+    inertia_axes[0]*x +
+    inertia_axes[1]*y +
+    inertia_axes[2]*z;
+
+    rion_sym[3*a+1] =
+    inertia_axes[3]*x +
+    inertia_axes[4]*y +
+    inertia_axes[5]*z;
+
+    rion_sym[3*a+2] =
+    inertia_axes[6]*x +
+    inertia_axes[7]*y +
+    inertia_axes[8]*z;
+
+    }
+
+    const auto &ops = mysymmetry.operators();
+
+    std::cout << "------------------------\n";
+    for(size_t k=0; k<ops.size(); ++k)
+    {
+    double worst = 0.0;
+    for(int a=0; a<nion; ++a)
+    {
+        double x = rion_sym[3*a+0];
+        double y = rion_sym[3*a+1];
+        double z = rion_sym[3*a+2];
+
+        const auto &op = ops[k];
+        const double* R = &op.R[0][0];
+
+        double xr = R[0]*x + R[1]*y + R[2]*z + op.t[0];
+        double yr = R[3]*x + R[4]*y + R[5]*z + op.t[1];
+        double zr = R[6]*x + R[7]*y + R[8]*z + op.t[2];
+
+        double best = 1e100;
+        for(int b=0; b<nion; ++b)
+        {
+            double dx = xr - rion_sym[3*b+0];
+            double dy = yr - rion_sym[3*b+1];
+            double dz = zr - rion_sym[3*b+2];
+            double d = std::sqrt(dx*dx + dy*dy + dz*dz);
+            if(d < best) best = d;
+        }
+        if(best > worst) worst = best;
+    }
+    std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
+    }
+
+
    }
-   //print_symmetry_ops(std::cout);
    build_equivalent_atoms(sym_tolerance);
+
+
+   print_symmetry_ops(std::cout);
+   print_symmetry_check(std::cout);
 
 
 
@@ -690,17 +744,6 @@ for(int a=0;a<nion;a++)
          }
       }
    }
-
-std::cout << "\nINIT F rion_sym coordinates\n";
-
-for(int a=0;a<nion;a++)
-{
-   std::cout << a+1 << "  "
-            << rion_sym[3*a+0] << " "
-            << rion_sym[3*a+1] << " "
-            << rion_sym[3*a+2] << "\n";
-}
-  
 
    /*  DEBUG CHECK
       std::cout << "NION=" << nion << std::endl;
@@ -1544,7 +1587,73 @@ void Ion::print_symmetry_ops(std::ostream &out)
     }
 }
 
-   
+
+
+
+
+/*******************************************
+ *                                         *
+ *         Ion::print_symmetry_check       *
+ *                                         *
+ *******************************************/
+void Ion::print_symmetry_check(std::ostream &out)
+{
+    const auto &ops = mysymmetry.operators();
+
+    out << "\nSymmetry Mapping Check\n";
+    out << "----------------------\n";
+
+    const double* ref = rion_sym;
+
+    for(size_t k=0;k<ops.size();++k)
+    {
+        const auto &op = ops[k];
+        const double* R = &op.R[0][0];
+
+        out << "\nOperator " << k+1 << "\n";
+
+        for(int a=0;a<nion;a++)
+        {
+            double x = ref[3*a+0];
+            double y = ref[3*a+1];
+            double z = ref[3*a+2];
+
+            double xr = R[0]*x + R[1]*y + R[2]*z;
+            double yr = R[3]*x + R[4]*y + R[5]*z;
+            double zr = R[6]*x + R[7]*y + R[8]*z;
+
+            out << " atom " << a+1
+                << " -> (" << xr << ", "
+                << yr << ", "
+                << zr << ")";
+
+            double best = 1e100;
+            int best_atom = -1;
+
+            for(int b=0;b<nion;b++)
+            {
+                double dx = xr - ref[3*b+0];
+                double dy = yr - ref[3*b+1];
+                double dz = zr - ref[3*b+2];
+
+                double r2 = dx*dx + dy*dy + dz*dz;
+
+                if(r2 < best)
+                {
+                    best = r2;
+                    best_atom = b;
+                }
+            }
+
+            out << "  closest atom "
+                << best_atom+1
+                << "  dist=" << std::sqrt(best)
+                << "\n";
+        }
+    }
+}
+
+
 
 
 } // namespace pwdft

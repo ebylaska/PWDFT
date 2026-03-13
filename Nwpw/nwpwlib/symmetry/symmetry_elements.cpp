@@ -24,7 +24,48 @@ enum MirrorPlaneType {
     SIGMA_D   // Diagonal mirror plane
 };
 
-// Function to calculate the GCD of two integers using Euclidean algorithm
+
+/*******************************************
+ *                                         *
+ *                 gcd                     *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Computes the greatest common divisor (GCD) of two integers.
+ * Function to calculate the GCD of two integers using Euclidean algorithm
+ *
+ * This routine calculates the greatest common divisor of two integers
+ * using the classical Euclidean algorithm. The algorithm repeatedly
+ * replaces the larger integer with the remainder of the division
+ * until the remainder becomes zero. The last non-zero value is the GCD.
+ *
+ * Mathematically:
+ *
+ *      gcd(a,b) = gcd(b, a mod b)
+ *
+ * until b = 0.
+ *
+ * The Euclidean algorithm is efficient and runs in O(log(min(a,b)))
+ * time, making it suitable for integer reduction operations used
+ * throughout numerical and symmetry-related routines.
+ *
+ * @param a   First integer.
+ * @param b   Second integer.
+ *
+ * @return
+ *   The greatest common divisor of a and b.
+ *
+ * Notes:
+ *   - The result is always non-negative for non-negative inputs.
+ *   - If one argument is zero, the function returns the absolute
+ *     value of the other argument.
+ *
+ * Example:
+ *
+ *      gcd(12, 18) = 6
+ *
+ */
+
 int gcd(int a, int b) {
     while (b != 0) {
         int temp = b;
@@ -33,6 +74,158 @@ int gcd(int a, int b) {
     }
     return a;
 }
+
+
+/*******************************************
+ *                                         *
+ *              autoz_frame                *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Constructs a robust canonical molecular orientation frame.
+ *
+ * This routine generates a deterministic orthonormal coordinate frame
+ * for a molecular geometry using an AutoZ-style algorithm. The frame
+ * is derived directly from the atomic positions and avoids reliance
+ * on inertia tensor eigenvectors, which may become degenerate for
+ * spherical-top or near-spherical molecules (e.g., CH4).
+ *
+ * The algorithm proceeds as follows:
+ *
+ *   1. Identify the pair of atoms separated by the largest distance.
+ *      This vector defines the first axis (e1).
+ *
+ *   2. Select a third atom that maximizes the triangle area formed
+ *      with the first pair. This ensures that the second direction
+ *      is not nearly collinear with the first axis.
+ *
+ *   3. Construct a right-handed orthonormal frame:
+ *
+ *          e3 = normalize( e1 × v2 )
+ *          e2 = e3 × e1
+ *
+ *      where v2 is the vector from atom i0 to the selected third atom.
+ *
+ * The resulting frame is stable for:
+ *
+ *   - spherical-top molecules (Td, Oh, Ih)
+ *   - planar molecules
+ *   - near-linear geometries
+ *   - slightly distorted structures from optimization or AIMD
+ *
+ * This orientation is particularly useful for symmetry detection
+ * routines, since it avoids the ambiguity associated with degenerate
+ * principal moments of inertia.
+ *
+ * @param r   Pointer to atomic coordinates (size 3*n).
+ *            Layout: [x1,y1,z1,x2,y2,z2,...].
+ *
+ * @param n   Number of atoms.
+ *
+ * @param U   Output 3×3 rotation matrix defining the canonical frame.
+ *            The rows of U correspond to the orthonormal axes (e1,e2,e3).
+ *
+ * Preconditions:
+ *   - r must contain at least 3*n elements.
+ *   - n ≥ 3 for a well-defined plane.
+ *
+ * Postconditions:
+ *   - U contains a right-handed orthonormal frame derived from the
+ *     molecular geometry.
+ *   - Coordinates can be rotated into the canonical frame via
+ *
+ *         r_sym = U · r
+ *
+ *     for subsequent symmetry analysis.
+ */
+static void autoz_frame(const double* r, int n, double* U)
+{
+    auto norm = [](double v[3])
+    {
+        double s = std::sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+        if(s>0) for(int i=0;i<3;i++) v[i]/=s;
+    };
+
+    auto cross = [](const double a[3], const double b[3], double c[3])
+    {
+        c[0]=a[1]*b[2]-a[2]*b[1];
+        c[1]=a[2]*b[0]-a[0]*b[2];
+        c[2]=a[0]*b[1]-a[1]*b[0];
+    };
+
+    /* ---- find farthest atom pair ---- */
+
+    int i0=0,i1=1;
+    double best=-1;
+
+    for(int i=0;i<n;i++)
+    for(int j=i+1;j<n;j++)
+    {
+        double dx=r[3*i]-r[3*j];
+        double dy=r[3*i+1]-r[3*j+1];
+        double dz=r[3*i+2]-r[3*j+2];
+
+        double d=dx*dx+dy*dy+dz*dz;
+        if(d>best){ best=d; i0=i; i1=j; }
+    }
+
+    double e1[3] =
+    {
+        r[3*i1]-r[3*i0],
+        r[3*i1+1]-r[3*i0+1],
+        r[3*i1+2]-r[3*i0+2]
+    };
+
+    norm(e1);
+
+    /* ---- choose atom giving largest triangle area ---- */
+
+    int i2=-1;
+    best=-1;
+
+    for(int i=0;i<n;i++)
+    {
+        if(i==i0 || i==i1) continue;
+
+        double v[3] =
+        {
+            r[3*i]-r[3*i0],
+            r[3*i+1]-r[3*i0+1],
+            r[3*i+2]-r[3*i0+2]
+        };
+
+        double c[3];
+        cross(e1,v,c);
+
+        double area = c[0]*c[0]+c[1]*c[1]+c[2]*c[2];
+
+        if(area>best){ best=area; i2=i; }
+    }
+
+    double v2[3] =
+    {
+        r[3*i2]-r[3*i0],
+        r[3*i2+1]-r[3*i0+1],
+        r[3*i2+2]-r[3*i0+2]
+    };
+
+    double e3[3];
+    cross(e1,v2,e3);
+    norm(e3);
+
+    double e2[3];
+    cross(e3,e1,e2);
+
+    /* ---- store rotation matrix ---- */
+
+    for(int j=0;j<3;j++)
+    {
+        U[0*3+j]=e1[j];
+        U[1*3+j]=e2[j];
+        U[2*3+j]=e3[j];
+    }
+}
+
 
 
 /*******************************************
@@ -1320,8 +1513,6 @@ static void generate_inertia_tensor(const double* rion, const double* ion_mass, 
       - eig:    [Input] The moments of inertia
       - axis:   [In/Output] The axes
 */
-
-
 static void canonicalize_axes(const double thresh, double *eig, double *axis)
 {
    int nodes[3] = {0}; // Initialize nodes array with zeros
@@ -1361,13 +1552,72 @@ static void canonicalize_axes(const double thresh, double *eig, double *axis)
 
 
 
-
-
 /*******************************************
  *                                         *
  *         generate_principle_axes         *
  *                                         *
  *******************************************/
+/**
+ * @brief Computes the principal moments of inertia and principal axes
+ *        of a molecular geometry.
+ *
+ * This routine constructs the mass-weighted inertia tensor of a set of
+ * atomic coordinates and diagonalizes it to obtain the principal moments
+ * of inertia and the associated orthonormal principal axes.
+ *
+ * The inertia tensor is defined as
+ *
+ *      I_ij = Σ_k m_k ( r_k^2 δ_ij − r_{k,i} r_{k,j} )
+ *
+ * where m_k is the mass of atom k and r_k is the position vector relative
+ * to the center of mass.
+ *
+ * The procedure is:
+ *
+ *   1. Construct the inertia tensor from the atomic coordinates and masses.
+ *   2. Diagonalize the symmetric 3×3 tensor using the PWDFT eigenvalue solver
+ *      (EIGEN_PWDFT).
+ *   3. Sort the eigenvalues and eigenvectors from highest to lowest moment
+ *      of inertia.
+ *   4. Ensure that the resulting eigenvector matrix forms a right-handed
+ *      orthonormal coordinate system.
+ *   5. If degeneracies in the principal moments are detected (within a
+ *      specified tolerance), swap axes to maintain a consistent orientation.
+ *
+ * The resulting principal axes are useful for:
+ *
+ *   - canonical molecular orientation
+ *   - symmetry detection
+ *   - rotational constant calculations
+ *   - vibrational analysis
+ *
+ * @param rion
+ *      Atomic coordinates (size 3*nion) relative to the center of mass.
+ *
+ * @param ion_mass
+ *      Atomic masses (size nion).
+ *
+ * @param nion
+ *      Number of atoms.
+ *
+ * @param inertia_tensor
+ *      Output 3×3 inertia tensor.
+ *
+ * @param principle_values
+ *      Output principal moments of inertia (size 3).
+ *
+ * @param principle_axes
+ *      Output eigenvectors of the inertia tensor stored as a 3×3 matrix
+ *      whose columns correspond to the principal axes.
+ *
+ * Notes:
+ *   - Degeneracies in the principal moments can occur for symmetric
+ *     molecules (e.g., spherical tops such as CH4). In such cases the
+ *     orientation of the axes is not unique and additional canonicalization
+ *     steps may be required for symmetry detection.
+ *   - The routine ensures the final axes form a right-handed coordinate
+ *     system.
+ */
 static void generate_principle_axes(const double *rion, const double *ion_mass, const int nion,
                                     double *inertia_tensor, double *principle_values, double *principle_axes)
 {
@@ -1398,7 +1648,6 @@ static void generate_principle_axes(const double *rion, const double *ion_mass, 
    //canonicalize_axes(tolerance, principle_values, principle_axes);
 
    //Check for right handedness, correct if not 
-   /*
    double test = principle_axes[mindex(0,2)]*(principle_axes[mindex(1,0)]*principle_axes[mindex(2,1)]-principle_axes[mindex(2,0)]*principle_axes[mindex(1,1)]) 
                + principle_axes[mindex(1,2)]*(principle_axes[mindex(2,0)]*principle_axes[mindex(0,1)]-principle_axes[mindex(0,0)]*principle_axes[mindex(2,1)])
                + principle_axes[mindex(2,2)]*(principle_axes[mindex(0,0)]*principle_axes[mindex(1,1)]-principle_axes[mindex(1,0)]*principle_axes[mindex(0,1)]);
@@ -1419,7 +1668,6 @@ static void generate_principle_axes(const double *rion, const double *ion_mass, 
    }
    for (auto i=0; i<3; ++i)
       principle_axes[mindex(i,2)] = -principle_axes[mindex(i,2)];
-      */
 
 
    return;
@@ -2493,7 +2741,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes, 
                            double *rion2)
 {
-    //std::cout << "SYM_tollerance=" << sym_tolerance << std::endl;
+    std::cout << "SYM_tollerance=" << sym_tolerance << std::endl;
 
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
@@ -2507,12 +2755,23 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
    generate_principle_axes(rion2,ion_mass,nion,inertia_tensor,inertia_moments,inertia_axes);
 
-    //std::cout << "principle_tensor=" << inertia_tensor << std::endl;
-    //std::cout << "principle_moments=" << inertia_moments[0] << " " << inertia_moments[1] << " " << inertia_moments[2]  << std::endl;
-    //std::cout << "principle_axes=" << inertia_axes << std::endl;
-    //std::cout <<  " check = " <<  ( inertia_moments[0]*inertia_moments[0] 
-    //                              + inertia_moments[1]*inertia_moments[1] 
-    //                              + inertia_moments[2]*inertia_moments[2]) / (m_total*m_total) << " " << Efmt(6,3) << (sym_tolerance*sym_tolerance) << std::endl;
+    std::cout << "transformed coordinates rion2=" << std::endl;
+    for (int a=0; a<nion; ++a)
+    {
+       std::cout << a << " mass=" << ion_mass[a] << " rion2=" << rion2[3*a] << " " << rion2[3*a+1] << " " << rion2[3*a+2] << std::endl;
+    }
+    
+
+    std::cout << "principle_tensor=" << inertia_tensor[0] << " " << inertia_tensor[3] << " " << inertia_tensor[6] << std::endl;
+    std::cout << "                 " << inertia_tensor[1] << " " << inertia_tensor[4] << " " << inertia_tensor[7] << std::endl;
+    std::cout << "                 " << inertia_tensor[2] << " " << inertia_tensor[5] << " " << inertia_tensor[8] << std::endl;
+    std::cout << "principle_moments=" << inertia_moments[0] << " " << inertia_moments[1] << " " << inertia_moments[2]  << std::endl;
+    std::cout << "principle_axes=" << inertia_axes[0] << " " << inertia_axes[3] << " " << inertia_axes[6]  << std::endl;
+    std::cout << "               " << inertia_axes[1] << " " << inertia_axes[4] << " " << inertia_axes[7]  << std::endl;
+    std::cout << "               " << inertia_axes[2] << " " << inertia_axes[5] << " " << inertia_axes[8]  << std::endl;
+    std::cout <<  " check = " <<  ( inertia_moments[0]*inertia_moments[0] 
+                                  + inertia_moments[1]*inertia_moments[1] 
+                                  + inertia_moments[2]*inertia_moments[2]) / (m_total*m_total) << " " << Efmt(6,3) << (sym_tolerance*sym_tolerance) << std::endl;
 
    if ( ( ( inertia_moments[0]*inertia_moments[0] 
           + inertia_moments[1]*inertia_moments[1] 
@@ -2551,6 +2810,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       // align the molecular axes along the inertia_axes
       align_to_axes(rion2,nion,inertia_axes);
 
+      //T_d here
       determine_spherical_group(rion2,ion_mass,nion,
                                 sym_tolerance,
                                 group_name,group_rank,rotation_type,

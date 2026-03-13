@@ -543,6 +543,7 @@ public:
    std::string print_symmetry_group();
    std::string print_symmetry_group(std::string);
    void print_symmetry_ops(std::ostream &out);
+   void print_symmetry_check(std::ostream &out);
 
 
 };
