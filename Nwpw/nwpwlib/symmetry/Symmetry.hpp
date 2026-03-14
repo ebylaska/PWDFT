@@ -61,6 +61,8 @@ public:
     /** Number of centering lattice points (space groups only). */
     int num_centering() const;
 
+    void rotate_operators(const double *);
+
     /** Apply conventional → primitive transformation. */
     //void convert_to_primitive(Lattice& lattice);
 

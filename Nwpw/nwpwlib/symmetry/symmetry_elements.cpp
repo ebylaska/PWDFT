@@ -24,6 +24,24 @@ enum MirrorPlaneType {
     SIGMA_D   // Diagonal mirror plane
 };
 
+/*******************************************
+ *                                         *
+ *              rotate_coords              *
+ *                                         *
+ *******************************************/
+static void rotate_coords(double* r, int n, const double* U)
+{
+    for(int a=0;a<n;a++)
+    {
+        double x=r[3*a+0];
+        double y=r[3*a+1];
+        double z=r[3*a+2];
+
+        r[3*a+0]=U[0]*x+U[3]*y+U[6]*z;
+        r[3*a+1]=U[1]*x+U[4]*y+U[7]*z;
+        r[3*a+2]=U[2]*x+U[5]*y+U[8]*z;
+    }
+}
 
 /*******************************************
  *                                         *
@@ -140,6 +158,15 @@ int gcd(int a, int b) {
  */
 static void autoz_frame(const double* r, int n, double* U)
 {
+    if (n < 3)
+    {
+        /* fallback to identity frame */
+        U[0]=1; U[1]=0; U[2]=0;
+        U[3]=0; U[4]=1; U[5]=0;
+        U[6]=0; U[7]=0; U[8]=1;
+        return;
+    }
+
     auto norm = [](double v[3])
     {
         double s = std::sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
@@ -202,28 +229,75 @@ static void autoz_frame(const double* r, int n, double* U)
         if(area>best){ best=area; i2=i; }
     }
 
-    double v2[3] =
+    double v2[3];
+
+    if (i2 >= 0)
     {
-        r[3*i2]-r[3*i0],
-        r[3*i2+1]-r[3*i0+1],
-        r[3*i2+2]-r[3*i0+2]
-    };
+        v2[0] = r[3*i2]   - r[3*i0];
+        v2[1] = r[3*i2+1] - r[3*i0+1];
+        v2[2] = r[3*i2+2] - r[3*i0+2];
+    }
+    else
+    {
+        /* linear molecule fallback */
+        v2[0]=0; v2[1]=0; v2[2]=1;
+    }
 
     double e3[3];
     cross(e1,v2,e3);
     norm(e3);
 
+    double n3 = e3[0]*e3[0] + e3[1]*e3[1] + e3[2]*e3[2];
+    if (n3 < 1e-12)
+    {
+        e3[0]=0; e3[1]=0; e3[2]=1;
+    }
+
     double e2[3];
     cross(e3,e1,e2);
+    norm(e2);
 
     /* ---- store rotation matrix ---- */
 
-    for(int j=0;j<3;j++)
+    for(int j=0; j<3; ++j)
     {
         U[0*3+j]=e1[j];
         U[1*3+j]=e2[j];
         U[2*3+j]=e3[j];
     }
+
+}
+
+/*******************************************
+ *                                         *
+ *        check_rotation_matrix            *
+ *                                         *
+ *******************************************/
+static void check_rotation_matrix(const double* U)
+{
+    std::cout << "\nRotation matrix U\n";
+    for(int i=0;i<3;i++)
+        std::cout << U[3*i] << " " << U[3*i+1] << " " << U[3*i+2] << "\n";
+
+    std::cout << "\nU * U^T\n";
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            double s=0.0;
+            for(int k=0;k<3;k++)
+                s += U[3*i+k]*U[3*j+k];
+            std::cout << s << " ";
+        }
+        std::cout << "\n";
+    }
+
+    double det =
+          U[0]*(U[4]*U[8]-U[5]*U[7])
+        - U[1]*(U[3]*U[8]-U[5]*U[6])
+        + U[2]*(U[3]*U[7]-U[4]*U[6]);
+
+    std::cout << "\ndet(U) = " << det << "\n";
 }
 
 
@@ -2739,12 +2813,16 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
                            const double sym_tolerance,
                            std::string&  group_name, int &group_rank, std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes, 
-                           double *rion2)
+                           double *rion2, double *U)
 {
     std::cout << "SYM_tollerance=" << sym_tolerance << std::endl;
 
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
+
+   autoz_frame(rion2, nion,U);
+   check_rotation_matrix(U);
+   rotate_coords(rion2,nion,U);
 
    double m_total = 0.0;
    for (auto ii=0; ii<nion; ++ii) 
@@ -2793,7 +2871,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "linear";
 
       // align the molecular axes along the inertia_axes
-      align_to_axes(rion2,nion, inertia_axes);
+      //align_to_axes(rion2,nion, inertia_axes);
 
       bool has_inversion = has_inversion_center(rion2,ion_mass,nion,sym_tolerance);
       if (has_inversion)
@@ -2808,7 +2886,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "spherical";
 
       // align the molecular axes along the inertia_axes
-      align_to_axes(rion2,nion,inertia_axes);
+      //align_to_axes(rion2,nion,inertia_axes);
 
       //T_d here
       determine_spherical_group(rion2,ion_mass,nion,
@@ -2822,7 +2900,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "prolate top";
 
       // align the molecular axes along the inertia_axes
-      align_to_axes(rion2,nion,inertia_axes);
+      //align_to_axes(rion2,nion,inertia_axes);
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
@@ -2856,7 +2934,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       inertia_axes[5] = c2;
 
       //align the molecular axes along the inertia_axes
-      align_to_axes(rion2,nion,inertia_axes);
+      //align_to_axes(rion2,nion,inertia_axes);
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
@@ -2891,17 +2969,17 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       
 
       // align the molecular axes along the inertia_axes
-      align_to_axes(rion2,nion,inertia_axes);
+      //align_to_axes(rion2,nion,inertia_axes);
 
       determine_asymmetric_group(rion2,ion_mass,nion,
                                  sym_tolerance,
                                  group_name,group_rank,rotation_type,
                                  inertia_tensor,inertia_moments,inertia_axes);
    }
-   //std::cout << "GROUP_NAME=" << group_name << std::endl;
 
 
    return;
+
 }
 
 

@@ -32,6 +32,32 @@ extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, dou
 
 namespace pwdft {
 
+static void apply3(const double* R, const double in[3], double out[3])
+{
+    out[0] = R[0]*in[0] + R[3]*in[1] + R[6]*in[2];
+    out[1] = R[1]*in[0] + R[4]*in[1] + R[7]*in[2];
+    out[2] = R[2]*in[0] + R[5]*in[1] + R[8]*in[2];
+}
+
+static void transpose3(const double* A, double* AT)
+{
+    for(int i=0; i<3; ++i)
+    for(int j=0; j<3; ++j)
+        AT[i + 3*j] = A[j + 3*i];
+}
+
+static void matmul3(const double* A, const double* B, double* C)
+{
+    for(int j=0; j<3; ++j)
+    for(int i=0; i<3; ++i)
+    {
+        C[i + 3*j] = 0.0;
+        for(int k=0; k<3; ++k)
+            C[i + 3*j] += A[i + 3*k] * B[k + 3*j];
+    }
+}
+
+
 /*******************************
  *                             *
  *        strip (inline)       *
@@ -476,80 +502,58 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    }
    else
    {
+      double U[9];
       determine_point_group(rion1,mass,nion,
                             sym_tolerance,
                             group_name,group_rank,rotation_type,
                             inertia_tensor,inertia_moments,inertia_axes,
-                            rion_sym);
-
-
+                            rion_sym,U);
 
       // normalize Schoenflies symbol
       group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
 
       mysymmetry = Symmetry::from_point_group(group_name);
+      //mysymmetry.rotate_operators(U);
 
-    /* rotate coordinates into symmetry frame */
-    for(int a=0;a<nion;a++)
-    {
-    double x = rion_sym[3*a+0];
-    double y = rion_sym[3*a+1];
-    double z = rion_sym[3*a+2];
+      const auto &ops = mysymmetry.operators();
 
-    rion_sym[3*a+0] =
-    inertia_axes[0]*x +
-    inertia_axes[1]*y +
-    inertia_axes[2]*z;
-
-    rion_sym[3*a+1] =
-    inertia_axes[3]*x +
-    inertia_axes[4]*y +
-    inertia_axes[5]*z;
-
-    rion_sym[3*a+2] =
-    inertia_axes[6]*x +
-    inertia_axes[7]*y +
-    inertia_axes[8]*z;
-
-    }
-
-    const auto &ops = mysymmetry.operators();
 
     std::cout << "------------------------\n";
     for(size_t k=0; k<ops.size(); ++k)
     {
-    double worst = 0.0;
-    for(int a=0; a<nion; ++a)
-    {
-        double x = rion_sym[3*a+0];
-        double y = rion_sym[3*a+1];
-        double z = rion_sym[3*a+2];
-
-        const auto &op = ops[k];
-        const double* R = &op.R[0][0];
-
-        double xr = R[0]*x + R[1]*y + R[2]*z + op.t[0];
-        double yr = R[3]*x + R[4]*y + R[5]*z + op.t[1];
-        double zr = R[6]*x + R[7]*y + R[8]*z + op.t[2];
-
-        double best = 1e100;
-        for(int b=0; b<nion; ++b)
-        {
-            double dx = xr - rion_sym[3*b+0];
-            double dy = yr - rion_sym[3*b+1];
-            double dz = zr - rion_sym[3*b+2];
-            double d = std::sqrt(dx*dx + dy*dy + dz*dz);
-            if(d < best) best = d;
-        }
-        if(best > worst) worst = best;
-    }
-    std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
+       double worst = 0.0;
+       for(int a=0; a<nion; ++a)
+       {
+           double x = rion_sym[3*a+0];
+           double y = rion_sym[3*a+1];
+           double z = rion_sym[3*a+2];
+ 
+           const auto &op = ops[k];
+           const double* R = &op.R[0][0];
+ 
+           double xr = R[0]*x + R[3]*y + R[6]*z + op.t[0];
+           double yr = R[1]*x + R[4]*y + R[7]*z + op.t[1];
+           double zr = R[2]*x + R[5]*y + R[8]*z + op.t[2];
+ 
+           double best = 1e100;
+           for(int b=0; b<nion; ++b)
+           {
+               double dx = xr - rion_sym[3*b+0];
+               double dy = yr - rion_sym[3*b+1];
+               double dz = zr - rion_sym[3*b+2];
+               double d = std::sqrt(dx*dx + dy*dy + dz*dz);
+               if(d < best) best = d;
+           }
+           if(best > worst) worst = best;
+       }
+       std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
     }
 
 
    }
    build_equivalent_atoms(sym_tolerance);
 
+   print_rion_sym(std::cout);
 
    print_symmetry_ops(std::cout);
    print_symmetry_check(std::cout);
@@ -1541,6 +1545,26 @@ void Ion::build_equivalent_atoms(double tol)
 }
 
 
+/*******************************************
+ *                                         *
+ *         Ion::print_ions                 *
+ *                                         *
+ *******************************************/
+void Ion::print_rion_sym(std::ostream &out)
+{
+    out << "\nSymmetry-frame coordinates (rion_sym)\n";
+    out << "-------------------------------------\n";
+
+    out << "\n\n rion_syml ion positions (au):" << "\n";
+    for (int ii = 0; ii < nion; ++ii)
+       out << Ifmt(4) << ii+1 << " " << symbol(ii) << "\t( "
+           << Ffmt(10,5) << rion_sym[3*ii] << " " 
+           << Ffmt(10,5) << rion_sym[3*ii+1] << " " 
+           << Ffmt(10,5) << rion_sym[3*ii+2] << " ) - atomic mass = " 
+           << Ffmt(6,3)  << amu(ii) << std::endl;
+
+    out << "\n";
+}
 
 /*******************************************
  *                                         *
@@ -1618,9 +1642,9 @@ void Ion::print_symmetry_check(std::ostream &out)
             double y = ref[3*a+1];
             double z = ref[3*a+2];
 
-            double xr = R[0]*x + R[1]*y + R[2]*z;
-            double yr = R[3]*x + R[4]*y + R[5]*z;
-            double zr = R[6]*x + R[7]*y + R[8]*z;
+            double xr = R[0]*x + R[3]*y + R[6]*z;
+            double yr = R[1]*x + R[4]*y + R[7]*z;
+            double zr = R[2]*x + R[5]*y + R[8]*z;
 
             out << " atom " << a+1
                 << " -> (" << xr << ", "

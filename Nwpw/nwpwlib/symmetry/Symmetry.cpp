@@ -263,5 +263,53 @@ int Symmetry::num_centering() const
 }
 
 
+/*******************************************
+ *                                         *
+ *         Symmetry::rotate_operators      *
+ *                                         *
+ *******************************************/
+void Symmetry::rotate_operators(const double *U)
+{
+    double UT[9];
+
+    // transpose U
+    for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++)
+            UT[3*i+j] = U[3*j+i];
+
+    for(auto &op : ops_)
+    {
+        double R0[9], tmp[9], R1[9];
+
+        // copy operator matrix
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++)
+                R0[3*i+j] = op.R[i][j];
+
+        // tmp = U * R0
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++)
+            {
+                tmp[3*i+j] = 0.0;
+                for(int k=0;k<3;k++)
+                    tmp[3*i+j] += U[3*i+k] * R0[3*k+j];
+            }
+
+        // R1 = tmp * U^T
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++)
+            {
+                R1[3*i+j] = 0.0;
+                for(int k=0;k<3;k++)
+                    R1[3*i+j] += tmp[3*i+k] * UT[3*k+j];
+            }
+
+        // overwrite operator
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++)
+                op.R[i][j] = R1[3*i+j];
+    }
+}
+
 
 } //namespace pwdft
