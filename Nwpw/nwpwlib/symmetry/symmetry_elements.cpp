@@ -4,6 +4,7 @@
 #include <cmath>
 #include <complex>
 #include <vector>
+#include <array>
 #include <algorithm>
 #include <cstring> 
 #include <map>
@@ -24,6 +25,7 @@ enum MirrorPlaneType {
     SIGMA_D   // Diagonal mirror plane
 };
 
+ 
 /*******************************************
  *                                         *
  *              rotate_coords              *
@@ -42,6 +44,618 @@ static void rotate_coords(double* r, int n, const double* U)
         r[3*a+2]=U[2]*x+U[5]*y+U[8]*z;
     }
 }
+
+
+/*******************************************
+ *                                         *
+ *           canonicalize_Td               *
+ *                                         *
+ *******************************************
+ *
+ * Canonicalizes the orientation of a tetrahedral (T_d) molecular
+ * geometry so that symmetry operations can be applied in a
+ * consistent reference frame.
+ *
+ * The procedure assumes that the geometry has already been:
+ *
+ *   1. Shifted so that the center of mass is at the origin.
+ *   2. Roughly aligned using principal inertia axes.
+ *   3. Identified as belonging to a spherical top point group.
+ *
+ * Algorithm:
+ *
+ *   1. Identify the central atom as the atom closest to the origin.
+ *
+ *   2. Construct normalized ligand vectors from the central atom
+ *      to all other atoms.
+ *
+ *   3. Select two approximately independent ligand directions and
+ *      construct an orthonormal frame:
+ *
+ *           v0  = first ligand direction
+ *           v1  = second ligand direction
+ *           v2  = normalize( v0 × v1 )
+ *
+ *      The frame is orthogonalized to ensure numerical stability.
+ *
+ *   4. Construct the canonical tetrahedral reference frame using
+ *      the standard T_d template directions:
+ *
+ *           ( 1,  1,  1)
+ *           ( 1, -1, -1)
+ *           (-1,  1, -1)
+ *           (-1, -1,  1)
+ *
+ *   5. Compute the rotation matrix
+ *
+ *           U = T * Vᵀ
+ *
+ *      where
+ *
+ *           V = frame derived from ligand vectors
+ *           T = canonical tetrahedral frame
+ *
+ *   6. Rotate all atomic coordinates using U so the molecule
+ *      aligns with the canonical T_d orientation.
+ *
+ * Inputs
+ * ------
+ * rion[3*nion]   Cartesian coordinates (modified in place)
+ * nion           Number of atoms
+ *
+ * Outputs
+ * -------
+ * rion           Rotated coordinates in canonical T_d frame
+ * U[9]           Rotation matrix applied to the coordinates
+ *
+ * Returns
+ * -------
+ * true           Canonicalization succeeded
+ * false          Geometry does not appear tetrahedral
+ *
+ * Notes
+ * -----
+ * - The routine assumes exactly four ligand directions around
+ *   a central atom (e.g., CH4, CCl4).
+ *
+ * - Numerical tolerances are intentionally loose because the
+ *   geometry may be slightly distorted prior to symmetry
+ *   refinement.
+ *
+ * - This routine is used only for spherical tops after the
+ *   point group has been identified as T_d.
+ *
+ * Notes
+ * -----
+ * - The geometry is expected to be only approximately symmetric.
+ *   Small numerical distortions are tolerated.
+ *
+ * - The center of mass is assumed to have been shifted near the
+ *   origin, but it will not be exactly zero due to numerical noise.
+ *
+ * - The central atom is therefore identified as the atom with the
+ *   smallest distance from the origin rather than by exact symmetry.
+ *
+ * - This routine constructs a stable orientation by matching ligand
+ *   directions to the canonical tetrahedral template.
+ *
+ *******************************************/
+static bool canonicalize_Td(double* rion, int nion, double* U)
+{
+    std::cout << "running canonicalize_Td" << std::endl;
+
+    auto normalize = [](double v[3])
+    {
+        double s = std::sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+        if(s>1e-14)
+        {
+            v[0]/=s;
+            v[1]/=s;
+            v[2]/=s;
+        }
+    };
+
+    auto cross = [](const double a[3], const double b[3], double c[3])
+    {
+        c[0]=a[1]*b[2]-a[2]*b[1];
+        c[1]=a[2]*b[0]-a[0]*b[2];
+        c[2]=a[0]*b[1]-a[1]*b[0];
+    };
+
+    auto dot = [](const double a[3], const double b[3])
+    {
+        return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+    };
+
+    auto fij = [](int i,int j){ return i + 3*j; };  // Fortran index
+
+    if(nion<5) return false;
+
+    /* --- find central atom --- */
+
+    int center=-1;
+    double best=1e30;
+
+    for(int i=0;i<nion;i++)
+    {
+        double x=rion[3*i];
+        double y=rion[3*i+1];
+        double z=rion[3*i+2];
+        double r2=x*x+y*y+z*z;
+
+        if(r2<best)
+        {
+            best=r2;
+            center=i;
+        }
+    }
+
+    if(center<0) return false;
+
+    /* --- build ligand directions --- */
+
+    std::vector<std::array<double,3>> lig;
+
+    for(int i=0;i<nion;i++)
+    {
+        if(i==center) continue;
+
+        std::array<double,3> v={
+            rion[3*i]-rion[3*center],
+            rion[3*i+1]-rion[3*center+1],
+            rion[3*i+2]-rion[3*center+2]
+        };
+
+        double tmp[3]={v[0],v[1],v[2]};
+        normalize(tmp);
+
+        v[0]=tmp[0];
+        v[1]=tmp[1];
+        v[2]=tmp[2];
+
+        lig.push_back(v);
+    }
+
+    if(lig.size()<4) return false;
+
+    /* --- deterministic ordering --- */
+
+    std::sort(lig.begin(),lig.end(),
+              [](const std::array<double,3>& a,
+                 const std::array<double,3>& b)
+    {
+        if(a[0]!=b[0]) return a[0]<b[0];
+        if(a[1]!=b[1]) return a[1]<b[1];
+        return a[2]<b[2];
+    });
+
+    /* --- construct source frame --- */
+
+    double v0[3]={lig[0][0],lig[0][1],lig[0][2]};
+
+    int jbest=1;
+    double bestdot=1e30;
+
+    for(int j=1;j<lig.size();j++)
+    {
+        double vj[3]={lig[j][0],lig[j][1],lig[j][2]};
+        double d=std::abs(dot(v0,vj));
+
+        if(d<bestdot)
+        {
+            bestdot=d;
+            jbest=j;
+        }
+    }
+
+    double v1[3]={lig[jbest][0],lig[jbest][1],lig[jbest][2]};
+    double v2[3];
+
+    cross(v0,v1,v2);
+    normalize(v2);
+
+    cross(v2,v0,v1);
+    normalize(v1);
+
+    double V[9];
+    V[fij(0,0)]=v0[0]; V[fij(1,0)]=v0[1]; V[fij(2,0)]=v0[2];
+    V[fij(0,1)]=v1[0]; V[fij(1,1)]=v1[1]; V[fij(2,1)]=v1[2];
+    V[fij(0,2)]=v2[0]; V[fij(1,2)]=v2[1]; V[fij(2,2)]=v2[2];
+
+    /* --- canonical Td frame --- */
+
+    double t0[3]={1,1,1};
+    double t1[3]={1,-1,-1};
+    double t2[3];
+
+    normalize(t0);
+    normalize(t1);
+
+    cross(t0,t1,t2);
+    normalize(t2);
+
+    cross(t2,t0,t1);
+    normalize(t1);
+
+    double T[9];
+    T[fij(0,0)]=t0[0]; T[fij(1,0)]=t0[1]; T[fij(2,0)]=t0[2];
+    T[fij(0,1)]=t1[0]; T[fij(1,1)]=t1[1]; T[fij(2,1)]=t1[2];
+    T[fij(0,2)]=t2[0]; T[fij(1,2)]=t2[1]; T[fij(2,2)]=t2[2];
+
+    /* --- compute rotation U = T * V^T --- */
+
+    for(int i=0;i<3;i++)
+    for(int j=0;j<3;j++)
+    {
+        U[fij(i,j)]=0.0;
+        for(int k=0;k<3;k++)
+            U[fij(i,j)] += T[fij(i,k)]*V[fij(j,k)];
+    }
+
+    /* --- rotate coordinates --- */
+
+    rotate_coords(rion,nion,U);
+
+    return true;
+}
+
+
+/*******************************************
+ *                                         *
+ *           canonicalize_Oh               *
+ *                                         *
+ *  Aligns an octahedral molecule so that *
+ *  ligand directions lie along the       *
+ *  Cartesian axes (±x, ±y, ±z).          *
+ *                                         *
+ *******************************************/
+/*******************************************
+ *                                         *
+ *           canonicalize_Oh               *
+ *                                         *
+ *******************************************/
+static bool canonicalize_Oh(double* rion, int nion, double* U)
+{
+    auto normalize = [](double v[3])
+    {
+        double s = std::sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+        if(s>1e-14)
+        {
+            v[0]/=s;
+            v[1]/=s;
+            v[2]/=s;
+        }
+    };
+
+    auto dot = [](const double a[3], const double b[3])
+    {
+        return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+    };
+
+    auto cross = [](const double a[3], const double b[3], double c[3])
+    {
+        c[0]=a[1]*b[2]-a[2]*b[1];
+        c[1]=a[2]*b[0]-a[0]*b[2];
+        c[2]=a[0]*b[1]-a[1]*b[0];
+    };
+
+    auto fij=[&](int i,int j){ return i+3*j; };   // Fortran index
+
+    if(nion<7) return false;
+
+    /* ---- find central atom ---- */
+
+    int center=-1;
+    double best=1e30;
+
+    for(int i=0;i<nion;i++)
+    {
+        double x=rion[3*i];
+        double y=rion[3*i+1];
+        double z=rion[3*i+2];
+
+        double r2=x*x+y*y+z*z;
+
+        if(r2<best)
+        {
+            best=r2;
+            center=i;
+        }
+    }
+
+    if(center<0) return false;
+
+    /* ---- build ligand directions ---- */
+
+    std::vector<std::array<double,3>> lig;
+
+    for(int i=0;i<nion;i++)
+    {
+        if(i==center) continue;
+
+        std::array<double,3> v={
+            rion[3*i]-rion[3*center],
+            rion[3*i+1]-rion[3*center+1],
+            rion[3*i+2]-rion[3*center+2]
+        };
+
+        double tmp[3]={v[0],v[1],v[2]};
+        normalize(tmp);
+
+        v[0]=tmp[0];
+        v[1]=tmp[1];
+        v[2]=tmp[2];
+
+        lig.push_back(v);
+    }
+
+    if(lig.size()<6) return false;
+
+    /* ---- find three orthogonal axes ---- */
+
+    double v0[3]={lig[0][0],lig[0][1],lig[0][2]};
+
+    int jbest=-1;
+    double bestdot=1.0;
+
+    for(int j=1;j<lig.size();j++)
+    {
+        double vj[3]={lig[j][0],lig[j][1],lig[j][2]};
+
+        double d=std::abs(dot(v0,vj));
+
+        if(d<bestdot)
+        {
+            bestdot=d;
+            jbest=j;
+        }
+    }
+
+    if(jbest<0) return false;
+
+    double v1[3]={lig[jbest][0],lig[jbest][1],lig[jbest][2]};
+
+    double v2[3];
+    cross(v0,v1,v2);
+
+    normalize(v0);
+    normalize(v1);
+    normalize(v2);
+
+    /* ---- source frame (column major) ---- */
+
+    double V[9];
+
+    V[fij(0,0)]=v0[0];
+    V[fij(1,0)]=v0[1];
+    V[fij(2,0)]=v0[2];
+
+    V[fij(0,1)]=v1[0];
+    V[fij(1,1)]=v1[1];
+    V[fij(2,1)]=v1[2];
+
+    V[fij(0,2)]=v2[0];
+    V[fij(1,2)]=v2[1];
+    V[fij(2,2)]=v2[2];
+
+    /* ---- rotation U = V^T ---- */
+
+    for(int i=0;i<3;i++)
+    for(int j=0;j<3;j++)
+        U[fij(i,j)] = V[fij(j,i)];
+
+    /* ---- rotate coordinates ---- */
+
+    rotate_coords(rion,nion,U);
+
+    return true;
+}
+
+
+
+/*******************************************
+ *                                         *
+ *           canonicalize_Ih               *
+ *                                         *
+ *******************************************/
+static bool canonicalize_Ih(double* rion, int nion, double* U)
+{
+    auto normalize = [](double v[3])
+    {
+        double s = std::sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+        if (s > 1.0e-14)
+        {
+            v[0] /= s;
+            v[1] /= s;
+            v[2] /= s;
+        }
+    };
+
+    auto cross = [](const double a[3], const double b[3], double c[3])
+    {
+        c[0] = a[1]*b[2] - a[2]*b[1];
+        c[1] = a[2]*b[0] - a[0]*b[2];
+        c[2] = a[0]*b[1] - a[1]*b[0];
+    };
+
+    auto dot = [](const double a[3], const double b[3]) -> double
+    {
+        return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+    };
+
+    auto fij = [](int i, int j) { return i + 3*j; };  // Fortran index
+
+    if (nion < 12) return false;
+
+    /* ---- find central atom ---- */
+
+    int center = -1;
+    double best = 1.0e30;
+
+    for (int i = 0; i < nion; ++i)
+    {
+        double x = rion[3*i];
+        double y = rion[3*i+1];
+        double z = rion[3*i+2];
+        double r2 = x*x + y*y + z*z;
+
+        if (r2 < best)
+        {
+            best = r2;
+            center = i;
+        }
+    }
+
+    if (center < 0) return false;
+
+    /* ---- build ligand directions ---- */
+
+    std::vector<std::array<double,3>> lig;
+
+    for (int i = 0; i < nion; ++i)
+    {
+        if (i == center) continue;
+
+        std::array<double,3> v = {
+            rion[3*i]   - rion[3*center],
+            rion[3*i+1] - rion[3*center+1],
+            rion[3*i+2] - rion[3*center+2]
+        };
+
+        double tmp[3] = {v[0], v[1], v[2]};
+        normalize(tmp);
+
+        v[0] = tmp[0];
+        v[1] = tmp[1];
+        v[2] = tmp[2];
+
+        lig.push_back(v);
+    }
+
+    if (lig.size() < 12) return false;
+
+    /* ---- deterministic ordering ---- */
+
+    std::sort(lig.begin(), lig.end(),
+              [](const std::array<double,3>& a,
+                 const std::array<double,3>& b)
+    {
+        if (a[0] != b[0]) return a[0] < b[0];
+        if (a[1] != b[1]) return a[1] < b[1];
+        return a[2] < b[2];
+    });
+
+    /* ---- construct source frame ---- */
+
+    double v0[3] = {lig[0][0], lig[0][1], lig[0][2]};
+
+    int jbest = -1;
+    double bestdot = 1.0e30;
+
+    for (int j = 1; j < (int)lig.size(); ++j)
+    {
+        double vj[3] = {lig[j][0], lig[j][1], lig[j][2]};
+        double d = std::abs(dot(v0, vj));
+
+        if (d < bestdot)
+        {
+            bestdot = d;
+            jbest = j;
+        }
+    }
+
+    if (jbest < 0) return false;
+
+    double v1[3] = {lig[jbest][0], lig[jbest][1], lig[jbest][2]};
+    double v2[3];
+
+    cross(v0, v1, v2);
+
+    double n = std::sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]);
+    if (n < 1.0e-12) return false;
+
+    normalize(v2);
+
+    /* re-orthogonalize v1 */
+    cross(v2, v0, v1);
+    normalize(v1);
+
+    /* ---- source frame V, columns are basis vectors ---- */
+
+    double V[9];
+    V[fij(0,0)] = v0[0];  V[fij(1,0)] = v0[1];  V[fij(2,0)] = v0[2];
+    V[fij(0,1)] = v1[0];  V[fij(1,1)] = v1[1];  V[fij(2,1)] = v1[2];
+    V[fij(0,2)] = v2[0];  V[fij(1,2)] = v2[1];  V[fij(2,2)] = v2[2];
+
+    /* ---- canonical Ih template frame ---- */
+
+    const double phi = 0.5*(1.0 + std::sqrt(5.0));
+
+    double t0[3] = {0.0, 1.0, phi};
+    double t1[3] = {1.0, phi, 0.0};
+    double t2[3];
+
+    normalize(t0);
+    normalize(t1);
+
+    cross(t0, t1, t2);
+    normalize(t2);
+
+    /* re-orthogonalize t1 */
+    cross(t2, t0, t1);
+    normalize(t1);
+
+    double T[9];
+    T[fij(0,0)] = t0[0];  T[fij(1,0)] = t0[1];  T[fij(2,0)] = t0[2];
+    T[fij(0,1)] = t1[0];  T[fij(1,1)] = t1[1];  T[fij(2,1)] = t1[2];
+    T[fij(0,2)] = t2[0];  T[fij(1,2)] = t2[1];  T[fij(2,2)] = t2[2];
+
+    /* ---- compute rotation U = T * V^T ---- */
+
+    for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+    {
+        U[fij(i,j)] = 0.0;
+        for (int k = 0; k < 3; ++k)
+            U[fij(i,j)] += T[fij(i,k)] * V[fij(j,k)];
+    }
+
+    /* ---- rotate coordinates ---- */
+
+    rotate_coords(rion, nion, U);
+
+    return true;
+}
+
+
+
+
+
+/*******************************************
+ *                                         *
+ *      canonicalize_spherical_frame       *
+ *                                         *
+ *******************************************/
+static bool canonicalize_spherical_frame(const std::string& group, double* rion, int nion, double* U)
+{
+    /* default transform = identity */
+    for(int i=0;i<9;i++) U[i]=0.0;
+    U[0]=U[4]=U[8]=1.0;
+
+    if(group == "Td")
+        return canonicalize_Td(rion,nion,U);
+
+    else if(group == "Oh")
+        return canonicalize_Oh(rion,nion,U);
+
+    else if(group == "Ih")
+        return canonicalize_Ih(rion,nion,U);
+
+    else
+       return false;
+}
+
+
 
 /*******************************************
  *                                         *
@@ -2820,9 +3434,9 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
 
-   autoz_frame(rion2, nion,U);
-   check_rotation_matrix(U);
-   rotate_coords(rion2,nion,U);
+   //autoz_frame(rion2, nion,U);
+   //check_rotation_matrix(U);
+   //rotate_coords(rion2,nion,U);
 
    double m_total = 0.0;
    for (auto ii=0; ii<nion; ++ii) 
@@ -2871,7 +3485,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "linear";
 
       // align the molecular axes along the inertia_axes
-      //align_to_axes(rion2,nion, inertia_axes);
+      align_to_axes(rion2,nion, inertia_axes);
 
       bool has_inversion = has_inversion_center(rion2,ion_mass,nion,sym_tolerance);
       if (has_inversion)
@@ -2886,13 +3500,35 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "spherical";
 
       // align the molecular axes along the inertia_axes
-      //align_to_axes(rion2,nion,inertia_axes);
+      align_to_axes(rion2,nion,inertia_axes);
 
       //T_d here
       determine_spherical_group(rion2,ion_mass,nion,
                                 sym_tolerance,
                                 group_name,group_rank,rotation_type,
                                 inertia_tensor,inertia_moments,inertia_axes);
+
+      std::string g = group_name;
+      if(g == "T_d") g = "Td";
+      if(g == "O_h") g = "Oh";
+      if(g == "I_h") g = "Ih";
+
+      if (g == "Td" || g == "Oh" || g == "Ih")
+      {
+          std::cout << "Running canonicalize_spherical_frame" << std::endl;
+          bool check =  canonicalize_spherical_frame(g, rion2, nion, U);
+      
+          if(check)
+          {
+              generate_principle_axes(rion2,ion_mass,nion,inertia_tensor,inertia_moments,inertia_axes);
+      
+              determine_spherical_group(rion2,ion_mass,nion,
+                                        sym_tolerance,
+                                        group_name,group_rank,rotation_type,
+                                        inertia_tensor,inertia_moments,inertia_axes);
+          }
+      }
+
    }
    else if (((inertia_moments[0]-inertia_moments[1])/m_total) < sym_tolerance)
    {
@@ -2900,7 +3536,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       rotation_type = "prolate top";
 
       // align the molecular axes along the inertia_axes
-      //align_to_axes(rion2,nion,inertia_axes);
+      align_to_axes(rion2,nion,inertia_axes);
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
@@ -2934,7 +3570,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       inertia_axes[5] = c2;
 
       //align the molecular axes along the inertia_axes
-      //align_to_axes(rion2,nion,inertia_axes);
+      align_to_axes(rion2,nion,inertia_axes);
       
       determine_symmetric_group(rion2,ion_mass,nion,
                                 sym_tolerance,
@@ -2969,7 +3605,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
       
 
       // align the molecular axes along the inertia_axes
-      //align_to_axes(rion2,nion,inertia_axes);
+      align_to_axes(rion2,nion,inertia_axes);
 
       determine_asymmetric_group(rion2,ion_mass,nion,
                                  sym_tolerance,

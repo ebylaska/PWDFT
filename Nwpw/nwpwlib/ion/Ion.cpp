@@ -515,6 +515,8 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       mysymmetry = Symmetry::from_point_group(group_name);
       //mysymmetry.rotate_operators(U);
 
+      print_rion_sym(std::cout);
+
       const auto &ops = mysymmetry.operators();
 
 
