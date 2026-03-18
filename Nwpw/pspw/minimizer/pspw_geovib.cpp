@@ -466,18 +466,6 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
               << trust << std::endl;
       coutput << "    number lmbfgs histories   (lmbfgs_size) = " << Ifmt(4)
               << lmbfgs_size << std::endl;
-
-
-coutput << "\n BEGIN rion_sym coordinates\n";
-
-for(int a=0;a<mymolecule.myion->nion;a++)
-{
-    coutput << a+1 << "  "
-            << mymolecule.myion->rion_sym[3*a+0] << " "
-            << mymolecule.myion->rion_sym[3*a+1] << " "
-            << mymolecule.myion->rion_sym[3*a+2] << "\n";
-}
-   
    }
    if (myparallel.is_master())
      seconds(&cpu2);
@@ -810,16 +798,6 @@ for(int a=0;a<mymolecule.myion->nion;a++)
  
    //*******************************************************************
 
-coutput << "\n FINAL rion_sym coordinates\n";
-
-for(int a=0;a<mymolecule.myion->nion;a++)
-{
-    coutput << a+1 << "  "
-            << mymolecule.myion->rion_sym[3*a+0] << " "
-            << mymolecule.myion->rion_sym[3*a+1] << " "
-            << mymolecule.myion->rion_sym[3*a+2] << "\n";
-}
- 
    // write energy results to the json
    auto rtdbjson = json::parse(rtdbstring);
    rtdbjson["pspw"]["energy"] = EV;
@@ -851,17 +829,6 @@ for(int a=0;a<mymolecule.myion->nion;a++)
    // call freq here
    if ((flag==4) || (flag==5))
    {
-coutput << "\nBEFORE rion_sym coordinates\n";
-
-for(int a=0;a<mymolecule.myion->nion;a++)
-{
-    coutput << a+1 << "  "
-            << mymolecule.myion->rion_sym[3*a+0] << " "
-            << mymolecule.myion->rion_sym[3*a+1] << " "
-            << mymolecule.myion->rion_sym[3*a+2] << "\n";
-}
-
-
       compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
       compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
    }
@@ -924,6 +891,7 @@ for(int a=0;a<mymolecule.myion->nion;a++)
 
 
 
+/* 
 static void print_hessian(std::ostream& out,
                           const char* name,
                           const double* H,
@@ -939,6 +907,42 @@ static void print_hessian(std::ostream& out,
                 << H[i + j*n] << " ";
         }
         out << "\n";
+    }
+}
+*/
+
+static void print_hessian(std::ostream& out,
+                          const char* name,
+                          const double* H,
+                          int n)
+{
+    const int block = 9;
+
+    out << "\n----- " << name << " -----\n";
+
+    for(int j0 = 0; j0 < n; j0 += block)
+    {
+        int jmax = std::min(j0 + block, n);
+
+        // Column header
+        out << "\n        ";
+        for(int j = j0; j < jmax; ++j)
+            out << std::setw(12) << j+1;
+        out << "\n";
+
+        // Rows
+        for(int i = 0; i < n; ++i)
+        {
+            out << std::setw(6) << i+1 << " ";
+
+            for(int j = j0; j < jmax; ++j)
+            {
+                out << std::setw(12)
+                    << std::fixed << std::setprecision(6)
+                    << H[i + j*n];
+            }
+            out << "\n";
+        }
     }
 }
 
@@ -1424,10 +1428,10 @@ void compute_fd_frequencies(Control2 &control,
    if (ismaster && oprint)
       for (size_t g = 0; g < eq.size(); ++g)
       {
-         std::cout << "symmetry class " << g << " : ";
+         coutput << "symmetry class " << g << " : ";
          for (auto a : eq[g])
-            std::cout << a << " ";
-         std::cout << std::endl;
+            coutput << a << " ";
+         coutput << std::endl;
       }
 
     static const char* axis[3] = {"x","y","z"};
