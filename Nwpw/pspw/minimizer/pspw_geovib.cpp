@@ -924,8 +924,9 @@ static void print_hessian(std::ostream& out,
     {
         int jmax = std::min(j0 + block, n);
 
-        // Column header
-        out << "\n        ";
+        // Header (match NWChem alignment)
+        out << "\n";
+        out << std::setw(8) << " ";
         for(int j = j0; j < jmax; ++j)
             out << std::setw(12) << j+1;
         out << "\n";
@@ -933,7 +934,7 @@ static void print_hessian(std::ostream& out,
         // Rows
         for(int i = 0; i < n; ++i)
         {
-            out << std::setw(6) << i+1 << " ";
+            out << std::setw(6) << i+1;
 
             for(int j = j0; j < jmax; ++j)
             {
@@ -945,6 +946,7 @@ static void print_hessian(std::ostream& out,
         }
     }
 }
+
 
 /******************************************
  *                                        *
