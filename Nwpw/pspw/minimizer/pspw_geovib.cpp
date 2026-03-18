@@ -926,7 +926,7 @@ static void print_hessian(std::ostream& out,
 
         // Header (match NWChem alignment)
         out << "\n";
-        out << std::setw(8) << " ";
+        out << std::setw(6) << " ";
         for(int j = j0; j < jmax; ++j)
             out << std::setw(12) << j+1;
         out << "\n";
