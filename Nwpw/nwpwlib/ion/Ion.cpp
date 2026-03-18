@@ -520,38 +520,39 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       const auto &ops = mysymmetry.operators();
 
 
-    std::cout << "------------------------\n";
-    for(size_t k=0; k<ops.size(); ++k)
-    {
-       double worst = 0.0;
-       for(int a=0; a<nion; ++a)
-       {
-           double x = rion_sym[3*a+0];
-           double y = rion_sym[3*a+1];
-           double z = rion_sym[3*a+2];
+      std::cout << "------------------------\n";
+      for(size_t k=0; k<ops.size(); ++k)
+      {
+         double worst = 0.0;
+         for(int a=0; a<nion; ++a)
+         {
+             double x = rion_sym[3*a+0];
+             double y = rion_sym[3*a+1];
+             double z = rion_sym[3*a+2];
  
-           const auto &op = ops[k];
-           const double* R = &op.R[0][0];
+             const auto &op = ops[k];
+             const double* R = &op.R[0][0];
  
-           double xr = R[0]*x + R[3]*y + R[6]*z + op.t[0];
-           double yr = R[1]*x + R[4]*y + R[7]*z + op.t[1];
-           double zr = R[2]*x + R[5]*y + R[8]*z + op.t[2];
+             double xr = R[0]*x + R[3]*y + R[6]*z + op.t[0];
+             double yr = R[1]*x + R[4]*y + R[7]*z + op.t[1];
+             double zr = R[2]*x + R[5]*y + R[8]*z + op.t[2];
  
-           double best = 1e100;
-           for(int b=0; b<nion; ++b)
-           {
-               double dx = xr - rion_sym[3*b+0];
-               double dy = yr - rion_sym[3*b+1];
-               double dz = zr - rion_sym[3*b+2];
-               double d = std::sqrt(dx*dx + dy*dy + dz*dz);
-               if(d < best) best = d;
-           }
-           if(best > worst) worst = best;
-       }
-       std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
-    }
+             double best = 1e100;
+             for(int b=0; b<nion; ++b)
+             {
+                 double dx = xr - rion_sym[3*b+0];
+                 double dy = yr - rion_sym[3*b+1];
+                 double dz = zr - rion_sym[3*b+2];
+                 double d = std::sqrt(dx*dx + dy*dy + dz*dz);
+                 if(d < best) best = d;
+             }
+             if(best > worst) worst = best;
+         }
+         std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
+      }
 
-
+      // copy rion_sym1 to rion1 and backup rion1
+      shiftsym1();
    }
    build_equivalent_atoms(sym_tolerance);
 
@@ -1549,7 +1550,7 @@ void Ion::build_equivalent_atoms(double tol)
 
 /*******************************************
  *                                         *
- *         Ion::print_ions                 *
+ *         Ion::print_ions_sym             *
  *                                         *
  *******************************************/
 void Ion::print_rion_sym(std::ostream &out)

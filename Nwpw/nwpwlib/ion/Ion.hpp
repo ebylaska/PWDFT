@@ -33,6 +33,9 @@ class Ion {
 
   std::vector<std::vector<int>> equivalent_atoms;
 
+  double *rion1_orig = nullptr;
+  bool has_backup = false;
+
 
 public:
    int ion_total_charge;
@@ -48,7 +51,7 @@ public:
    double *fion1;                 // forces of ions
    double time_step;
 
-   double *rion_sym;
+   double *rion_sym; 
 
 
    //dispersion and grimme2
@@ -105,6 +108,7 @@ public:
      delete[] vionhalf;
      delete[] fion1;
      delete[] rion_sym;
+     if (rion1_orig) delete[] rion1_orig;
      delete mybond;
      //delete mycbond;
      //delete myangle;
@@ -131,6 +135,23 @@ public:
    void vshift() {
       for (auto i = 0; i < (3 * nion); ++i)
          rion0[i] = vionhalf[i];
+   }
+
+   void shiftsym1() {
+      if (!has_backup)
+      {
+         if (!rion1_orig) rion1_orig = new double[3*nion];
+         std::memcpy(rion1_orig, rion1, 3*nion*sizeof(double));
+         std::memcpy(rion1, rion_sym, 3*nion*sizeof(double));
+         has_backup = true;
+      }
+   }
+   void restore_rion1() {
+      if (has_backup)
+      {
+         std::memcpy(rion1, rion1_orig, 3*nion*sizeof(double));
+         has_backup = false;
+      }
    }
  
    char *symbol(const int i) { return &atomarray[3*katm[i]]; }
