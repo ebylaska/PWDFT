@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <memory>
 
 //#include        "iofmt.hpp"
 //#include	"rtdb.hpp"
@@ -15,6 +16,7 @@
 #include "ion_bondings.hpp"
 #include "ion_rcovalent.hpp"
 #include "Symmetry.hpp"
+#include "PointGroupCharacterTables.hpp"
 
 namespace pwdft {
 
@@ -84,6 +86,8 @@ public:
    std::string rotation_type;
    std::string group_name;
    int group_rank;
+
+   std::unique_ptr<PointGroupCharacterTable> character_table;
 
    //Molecular and space  group symmetry
 
@@ -557,7 +561,7 @@ public:
 
    const SymOp& symmetry_op(int i) const { return mysymmetry.operators()[i]; }
 
-   void build_equivalent_atoms(double tol=1e-5);
+   void build_equivalent_atoms(double tol=1e-3);
    const std::vector<std::vector<int>>& get_equivalent_atoms() const;
 
 
@@ -566,6 +570,9 @@ public:
    void print_symmetry_ops(std::ostream &out);
    void print_symmetry_check(std::ostream &out);
    void print_rion_sym(std::ostream &out);
+
+   const PointGroupCharacterTable* get_character_table();
+   void set_group_name(const std::string& );
 
 
 };

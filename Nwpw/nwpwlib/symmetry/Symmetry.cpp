@@ -32,6 +32,59 @@ static bool has_identity(const std::vector<SymOp>& ops)
 }
 
 
+static double det3(const SymOp& op)
+{
+    const auto& R = op.R;
+    return R[0][0]*(R[1][1]*R[2][2]-R[1][2]*R[2][1])
+         - R[0][1]*(R[1][0]*R[2][2]-R[1][2]*R[2][0])
+         + R[0][2]*(R[1][0]*R[2][1]-R[1][1]*R[2][0]);
+}
+
+static void mul3(const double A[3][3], const double B[3][3], double C[3][3])
+{
+    for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++) {
+            C[i][j]=0.0;
+            for(int k=0;k<3;k++) C[i][j]+=A[i][k]*B[k][j];
+        }
+}
+
+static bool is_I3(const double R[3][3], double eps)
+{
+    for(int i=0;i<3;i++)
+        for(int j=0;j<3;j++) {
+            double target = (i==j)?1.0:0.0;
+            if (std::fabs(R[i][j]-target) > eps) return false;
+        }
+    return true;
+}
+
+// Td class index order must match your table: {"E","8C3","3C2","6S4","6sd"}
+static int td_class_index(const SymOp& op)
+{
+    const double eps = 1e-6;
+    const double (&R)[3][3] = op.R;
+
+    if (is_I3(R, eps)) return 0;
+
+    const double d  = det3(op);
+    const double tr = R[0][0] + R[1][1] + R[2][2];
+
+    if (d > 0.0) {
+        if (std::fabs(tr - 0.0) < 1e-4) return 1; // C3
+        if (std::fabs(tr + 1.0) < 1e-4) return 2; // C2
+    } else {
+        double R2[3][3];
+        mul3(R, R, R2);
+        if (is_I3(R2, 1e-5)) return 4; // reflection σd
+        return 3;                      // S4
+    }
+
+    return -1;
+}
+
+
+
 /*******************************************
  *                                         *
  *           Symmetry::Symmetry            *
@@ -145,6 +198,8 @@ Symmetry Symmetry::from_point_group(const std::string& pg_symbol)
     s.name_ = pg_symbol;
     s.ops_ = PointGroupGenerators::generate(pg_symbol);
     s.num_centering_ = 1;
+
+    // Build class labels consistent with the character table
     return s;
 }
 
@@ -252,15 +307,16 @@ bool Symmetry::is_point_group() const
     return type_ == Type::PointGroup;
 }
 
-/*******************************************
- *                                         *
- *         Symmetry::num_centering         *
- *                                         *
- *******************************************/
-int Symmetry::num_centering() const
-{
-    return num_centering_;
-}
+
+  /*******************************************
+   *                                         *
+   *         Symmetry::num_centering         *
+   *                                         *
+   *******************************************/
+   int Symmetry::num_centering() const
+   {
+      return num_centering_;
+   }
 
 
 /*******************************************
@@ -310,6 +366,7 @@ void Symmetry::rotate_operators(const double *U)
                 op.R[i][j] = R1[3*i+j];
     }
 }
+
 
 
 } //namespace pwdft

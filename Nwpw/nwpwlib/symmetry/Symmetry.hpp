@@ -84,6 +84,7 @@ private:
     int num_centering_ = 1;
 
     std::vector<SymOp> ops_;
+
 };
 
 

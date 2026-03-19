@@ -20,6 +20,7 @@ namespace pwdft {
 struct SymOp {
     double R[3][3];   ///< Rotation matrix
     double t[3];      ///< Translation vector
+    int pg_class = -1; // valid only for point-group ops; -1 otherwise
 };
 
 /**

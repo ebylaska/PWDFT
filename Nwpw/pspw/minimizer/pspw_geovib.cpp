@@ -31,6 +31,7 @@
 #include "psi.hpp"
 #include "util_date.hpp"
 #include "eckart_projector.hpp"
+#include "PointGroupCharacterTables.hpp"
 //#include "nwpw_aimd_running_data.hpp"
 //#include	"rtdb.hpp"
 #include "mpi.h"
@@ -947,6 +948,234 @@ static void print_hessian(std::ostream& out,
     }
 }
 
+void print_frequencies(std::ostream& out,
+                       const std::vector<double>& eig,
+                       int ndof,
+                       double conv = 2.194746e5)
+{
+    out << "\n Vibration   Frequencies (cm^-1):\n";
+
+    for (int i = 0; i < ndof; ++i)
+    {
+        double lambda = eig[i];
+        double freq   = std::sqrt(std::abs(lambda)) * conv;
+
+        //out << std::setw(5) << i + 1 << "  ";
+
+        std::ostringstream val;
+        // Choose format
+        val << std::fixed << std::setprecision(3);
+        //if (freq < 1e-2)
+        //    val << std::scientific << std::setprecision(3);
+        //else
+        //    val << std::fixed << std::setprecision(3);
+
+        // Print value
+        if (lambda < 0.0)
+            val << "i " << freq;
+        else
+            val << freq;
+
+
+        // Print: index + aligned value column
+        out << std::setw(5) << i + 1
+            << std::setw(16) << val.str()
+            << "\n";
+
+        //out << std::setw(16) << val.str() << std::endl;
+    }
+
+    // reset stream (VERY important)
+    out << std::defaultfloat;
+}
+
+
+void print_character_table(std::ostream& out,
+                           const PointGroupCharacterTable& table)
+{
+    out << "\n Character table (" << table.group() << ")\n";
+
+    // header
+    out << " " << std::setw(8) << " ";
+
+    for (const auto& cname : table.classes())
+        out << std::setw(8) << cname;
+
+    out << "\n";
+
+    // separator
+    out << " " << std::string(8 + 8 * table.classes().size(), '-') << "\n";
+
+    // rows
+    for (const auto& ir : table.irreps())
+    {
+        out << std::setw(8) << ir.name;
+
+        for (double chi : ir.chi)
+            out << std::setw(8) << chi;
+
+        out << "\n";
+    }
+
+    out << "\n";
+}
+
+
+
+static std::string assign_irrep(
+    const std::vector<double>& mode,
+    const Symmetry& sym,
+    const PointGroupCharacterTable& table,
+    const std::vector<std::vector<int>>& atom_map)
+{
+    const auto& ops = sym.operators();
+    const int n = mode.size();
+    const int nat = n / 3;
+
+    std::vector<double> chars(ops.size(), 0.0);
+
+    // --- compute characters ---
+    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    {
+        const auto& op = ops[op_idx];
+
+        std::vector<double> transformed(n, 0.0);
+
+        for (int i = 0; i < nat; ++i)
+        {
+            int j = atom_map[op_idx][i];  // ✅ your mapping
+
+            const double (*R)[3] = op.R;
+
+            double x = mode[3*i+0];
+            double y = mode[3*i+1];
+            double z = mode[3*i+2];
+
+            double xr = R[0][0]*x + R[0][1]*y + R[0][2]*z;
+            double yr = R[1][0]*x + R[1][1]*y + R[1][2]*z;
+            double zr = R[2][0]*x + R[2][1]*y + R[2][2]*z;
+
+            transformed[3*j+0] = xr;
+            transformed[3*j+1] = yr;
+            transformed[3*j+2] = zr;
+        }
+
+        double chi = 0.0;
+        for (int k = 0; k < n; ++k)
+            chi += mode[k] * transformed[k];
+
+        chars[op_idx] = chi;
+    }
+
+    // --- class averaging ---
+    const auto& class_sizes = table.class_sizes();
+    const int nclass = class_sizes.size();
+
+    std::vector<double> chi_class(nclass, 0.0);
+    std::vector<int> count(nclass, 0);
+
+    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    {
+        int c = ops[op_idx].pg_class;
+        chi_class[c] += chars[op_idx];
+        count[c]++;
+    }
+
+    for (int c = 0; c < nclass; ++c)
+        if (count[c] > 0)
+            chi_class[c] /= count[c];
+
+    // --- projection ---
+    const int G = table.order();
+
+    double best_val = -1.0;
+    std::string best_irrep = "???";
+
+    for (const auto& ir : table.irreps())
+    {
+        double val = 0.0;
+
+        for (int c = 0; c < nclass; ++c)
+            val += class_sizes[c] * chi_class[c] * ir.chi[c];
+
+        val /= G;
+
+        if (val > best_val)
+        {
+            best_val = val;
+            best_irrep = ir.name;
+        }
+    }
+
+    return best_irrep;
+}
+
+
+static std::vector<double> compute_mode_characters(
+    const std::vector<double>& mode,
+    const Symmetry& sym,
+    const PointGroupCharacterTable& table,
+    const std::vector<std::vector<int>>& atom_map)
+{
+    const auto& ops = sym.operators();
+    const int n = mode.size();
+    const int nat = n / 3;
+
+    std::vector<double> chars(ops.size(), 0.0);
+
+    // --- compute characters per operator ---
+    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    {
+        const auto& op = ops[op_idx];
+
+        std::vector<double> transformed(n, 0.0);
+
+        for (int i = 0; i < nat; ++i)
+        {
+            int j = atom_map[op_idx][i];
+
+            const double (*R)[3] = op.R;
+
+            double x = mode[3*i+0];
+            double y = mode[3*i+1];
+            double z = mode[3*i+2];
+
+            double xr = R[0][0]*x + R[0][1]*y + R[0][2]*z;
+            double yr = R[1][0]*x + R[1][1]*y + R[1][2]*z;
+            double zr = R[2][0]*x + R[2][1]*y + R[2][2]*z;
+
+            transformed[3*j+0] = xr;
+            transformed[3*j+1] = yr;
+            transformed[3*j+2] = zr;
+        }
+
+        double chi = 0.0;
+        for (int k = 0; k < n; ++k)
+            chi += mode[k] * transformed[k];
+
+        chars[op_idx] = chi;
+    }
+
+    // --- average over classes ---
+    const int nclass = table.class_sizes().size();
+    std::vector<double> chi_class(nclass, 0.0);
+    std::vector<int> count(nclass, 0);
+
+    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    {
+        int c = ops[op_idx].pg_class;
+        chi_class[c] += chars[op_idx];
+        count[c]++;
+    }
+
+    for (int c = 0; c < nclass; ++c)
+        if (count[c] > 0)
+            chi_class[c] /= count[c];
+
+    return chi_class;
+}
+
+
 
 /******************************************
  *                                        *
@@ -1013,67 +1242,66 @@ void compute_fd_frequencies_molecule(Control2 &control,
     double h = 0.010;   // bohr
 
 
+    //auto table = PointGroupCharacterTable::from_symbol("Td");
+    //auto table = PointGroupCharacterTable::from_symbol(ion->group_name);
 
 
 
-const int nops = ion->symmetry_nops();
-//double tol = 1e-4;
-double tol = 1e-2;   // debugging
+   const int nops = ion->symmetry_nops();
+   //double tol = 1e-4;
+   double tol = 1e-2;   // debugging
 
-std::vector<std::vector<int>> atom_map(nops, std::vector<int>(ion->nion,-1));
+   std::vector<std::vector<int>> atom_map(nops, std::vector<int>(ion->nion,-1));
 
-for(int op=0; op<nops; op++)
-{
-    const auto& sym = ion->symmetry_op(op);
-    const auto& R = sym.R;
-
-    for(int a=0; a<ion->nion; a++)
+    for(int op=0; op<nops; op++)
     {
-        double xr = ion->rion1[3*a+0];
-        double yr = ion->rion1[3*a+1];
-        double zr = ion->rion1[3*a+2];
-
-        double x = R[0][0]*xr + R[0][1]*yr + R[0][2]*zr;
-        double y = R[1][0]*xr + R[1][1]*yr + R[1][2]*zr;
-        double z = R[2][0]*xr + R[2][1]*yr + R[2][2]*zr;
-//if(ismaster && oprint)
-//{
-//    coutput << "atom " << a+1
-//            << " -> rotated "
-//            << x << " "
-//            << y << " "
-//            << z << "\n";
-//
-//    for(int b=0;b<ion->nion;b++)
-//    {
-//        double dx = x - ion->rion1[3*b+0];
-//        double dy = y - ion->rion1[3*b+1];
-//        double dz = z - ion->rion1[3*b+2];
-//
-//        double dist = sqrt(dx*dx + dy*dy + dz*dz);
-//
-//        coutput << "   vs atom " << b+1
-//                << "  dist = " << dist << "\n";
-//    }
-//}
-
-        for(int b=0; b<ion->nion; b++)
+        const auto& sym = ion->symmetry_op(op);
+        const auto& R = sym.R;
+ 
+        for(int a=0; a<ion->nion; a++)
         {
-            double dx = x - ion->rion1[3*b+0];
-            double dy = y - ion->rion1[3*b+1];
-            double dz = z - ion->rion1[3*b+2];
+            double xr = ion->rion1[3*a+0];
+            double yr = ion->rion1[3*a+1];
+            double zr = ion->rion1[3*a+2];
+ 
+            double x = R[0][0]*xr + R[0][1]*yr + R[0][2]*zr;
+            double y = R[1][0]*xr + R[1][1]*yr + R[1][2]*zr;
+            double z = R[2][0]*xr + R[2][1]*yr + R[2][2]*zr;
+    //if(ismaster && oprint)
+    //{
+    //    coutput << "atom " << a+1
+    //            << " -> rotated "
+    //            << x << " "
+    //            << y << " "
+    //            << z << "\n";
+    //
+    //    for(int b=0;b<ion->nion;b++)
+    //    {
+    //        double dx = x - ion->rion1[3*b+0];
+    //        double dy = y - ion->rion1[3*b+1];
+    //        double dz = z - ion->rion1[3*b+2];
+    //
+    //        double dist = sqrt(dx*dx + dy*dy + dz*dz);
+    //
+    //        coutput << "   vs atom " << b+1
+    //                << "  dist = " << dist << "\n";
+    //    }
+    //}
 
-            if(dx*dx + dy*dy + dz*dz < tol*tol)
+            for(int b=0; b<ion->nion; b++)
             {
-                atom_map[op][a] = b;
-                break;
+                double dx = x - ion->rion1[3*b+0];
+                double dy = y - ion->rion1[3*b+1];
+                double dz = z - ion->rion1[3*b+2];
+ 
+                if(dx*dx + dy*dy + dz*dz < tol*tol)
+                {
+                    atom_map[op][a] = b;
+                    break;
+                }
             }
         }
     }
-}
-
-
-
 
     if (ismaster && oprint)
     {
@@ -1085,6 +1313,31 @@ for(int op=0; op<nops; op++)
         coutput << " --------------------------------------------------------------"
                    "---------------------\n\n";
 
+        //print_character_table(coutput, table);
+        if (auto* table = ion->get_character_table()) {
+            print_character_table(coutput, *table);
+
+            std::vector<int> counts(table->class_sizes().size(), 0);
+
+               for (const auto& op : ion->symmetry().operators())
+               {
+                   if (op.pg_class >= 0)
+                       counts[op.pg_class]++;
+               }
+
+               coutput << "Class counts:\n";
+               for (int c = 0; c < counts.size(); ++c)
+               {
+                   coutput << "class " << c
+                           << " count = " << counts[c]
+                           << " expected = " << table->class_sizes()[c]
+                           << "\n";
+               }
+
+        } else {
+            coutput << " Character table not available\n";
+        }
+
         coutput << " Finite Difference Hessian\n";
         coutput << " -------------------------\n";
         coutput << " number of atoms            = " << N << "\n";
@@ -1093,6 +1346,7 @@ for(int op=0; op<nops; op++)
         coutput << " finite difference step     = " << h << " bohr\n";
 
         coutput << "\n Symmetry information\n";
+        coutput << " group name                 = " << ion->group_name << "\n";
         coutput << " unique atoms               = " << unique_atoms << "\n";
         coutput << " symmetry reduced DOF       = " << reduced_dof << "\n";
 
@@ -1170,72 +1424,66 @@ for(int op=0; op<nops; op++)
     }
 
     // expansion loop
-std::fill(Hfull.begin(), Hfull.end(), 0.0);
+    std::fill(Hfull.begin(), Hfull.end(), 0.0);
 
-for (size_t g = 0; g < eq.size(); ++g)
-{
-    int rep = eq[g][0];
-
-    for (int aj : eq[g])
+    for (size_t g = 0; g < eq.size(); ++g)
     {
-        int op_found = -1;
-        for (int op = 0; op < nops; ++op)
+        int rep = eq[g][0];
+ 
+        for (int aj : eq[g])
         {
-            if (atom_map[op][rep] == aj)
+            int op_found = -1;
+            for (int op = 0; op < nops; ++op)
             {
-                op_found = op;
-                break;
-            }
-        }
-        if (op_found < 0) continue;
-
-        const auto& R = ion->symmetry_op(op_found).R;
-
-        // For each displaced Cartesian direction on the target atom aj
-        for (int beta = 0; beta < 3; ++beta)
-        {
-            int j = 3*aj + beta;
-
-            // Build this full column from the representative columns
-            for (int a0 = 0; a0 < N; ++a0)
-            {
-                int b = atom_map[op_found][a0];   // row atom gets permuted
-                if (b < 0) continue;
-
-                for (int alpha = 0; alpha < 3; ++alpha)
+                if (atom_map[op][rep] == aj)
                 {
-                    int i = 3*b + alpha;
-                    double val = 0.0;
-
-                    for (int mu = 0; mu < 3; ++mu)
-                    for (int nu = 0; nu < 3; ++nu)
+                    op_found = op;
+                    break;
+                }
+            }
+            if (op_found < 0) continue;
+ 
+            const auto& R = ion->symmetry_op(op_found).R;
+ 
+            // For each displaced Cartesian direction on the target atom aj
+            for (int beta = 0; beta < 3; ++beta)
+            {
+                int j = 3*aj + beta;
+ 
+                // Build this full column from the representative columns
+                for (int a0 = 0; a0 < N; ++a0)
+                {
+                    int b = atom_map[op_found][a0];   // row atom gets permuted
+                    if (b < 0) continue;
+ 
+                    for (int alpha = 0; alpha < 3; ++alpha)
                     {
-                        int i0   = 3*a0 + mu;
-                        int jrep = 3*g  + nu;   // representative column index
-
-                        val += R[alpha][mu]
-                             * Hred[i0 + jrep*ndof]
-                             * R[beta][nu];
+                        int i = 3*b + alpha;
+                        double val = 0.0;
+ 
+                        for (int mu = 0; mu < 3; ++mu)
+                        for (int nu = 0; nu < 3; ++nu)
+                        {
+                            int i0   = 3*a0 + mu;
+                            int jrep = 3*g  + nu;   // representative column index
+ 
+                            val += R[alpha][mu]
+                                 * Hred[i0 + jrep*ndof]
+                                 * R[beta][nu];
+                        }
+ 
+                        Hfull[i + j*ndof] = val;
+                        //std::cout << "filling i=" << i << " j=" << j << " ||   aj=" <<  aj << std::endl;
                     }
-
-                    Hfull[i + j*ndof] = val;
-                    //std::cout << "filling i=" << i << " j=" << j << " ||   aj=" <<  aj << std::endl;
                 }
             }
         }
     }
-}
 
-
-
-
-
-
-
-if (ismaster && oprint)
-{
-    print_hessian(coutput, "SYMMETRY HESSIAN", Hfull.data(), ndof);
-}
+    if (ismaster && oprint)
+    {
+        print_hessian(coutput, "SYMMETRY HESSIAN", Hfull.data(), ndof);
+    }
 
     // restore full geometry
     for (int i = 0; i < ndof; ++i)
@@ -1304,38 +1552,74 @@ if (ismaster && oprint)
         int info = 0;
 
         EIGEN_PWDFT(ndof, Hfull.data(), eig.data(), work.data(), lwork, info);
-
         if (info != 0)
         {
             if (oprint)
                 coutput << "Error: dsyev failed with info = " << info << "\n";
         }
 
-        if (oprint)
-        {
-            coutput << "\n Vibration   Frequencies (cm^-1):\n";
 
-            for (int i = 0; i < ndof; ++i)
+        // eigenvectors are now in Hfull (column-major)
+        const auto* table = ion->get_character_table();
+
+        if (table)
+        {
+            for (int m = 0; m < ndof; ++m)
             {
-                double lambda = eig[i];
-                if (lambda < 0.0)
+                std::vector<double> mode(ndof);
+
+                // extract m-th eigenvector (column m)
+                for (int i = 0; i < ndof; ++i)
+                    mode[i] = Hfull[i + m*ndof];
+
+                 auto chi = compute_mode_characters(mode, ion->symmetry(), *table, atom_map);
+
+                 coutput << "Mode characters: ";
+                 for (double x : chi)
+                     coutput << std::setw(10) << std::fixed << std::setprecision(3) << x;
+                 coutput << "\n";
+
+                std::string irrep = assign_irrep(
+                    mode,
+                    ion->symmetry(),
+                    *table,
+                    atom_map
+                );
+
+                if (oprint)
                 {
-                    double freq = std::sqrt(-lambda) * 2.194746e5;
-                    //coutput << std::setw(4) << i + 1
-                    //        << std::setw(13) << "i" << freq << "\n";
-                    std::ostringstream s;
-                    s << "i" << freq;
-                    coutput << std::setw(4) << i + 1
-                            << std::setw(18) << s.str() << "\n";
-                }
-                else
-                {
-                    double freq = std::sqrt(lambda) * 2.194746e5;
-                    coutput << std::setw(4) << i + 1
-                            << std::setw(18) << freq << "\n";
+                    double lambda = eig[m];
+                    double conv = 2.194746e5;
+                    coutput << std::setw(4) << m+1 << std::setw(12) << std::sqrt(std::abs(lambda))*conv << std::setw(6) << irrep << "\n";
                 }
             }
         }
+
+
+
+        auto vDv = [&](int op, const double* vcol)->double {
+            const auto& R = ion->symmetry_op(op).R;
+            double s = 0.0;
+            for (int a=0; a<N; ++a) {
+                int b = atom_map[op][a];
+                if (b < 0) continue;
+
+                double vax = vcol[3*a+0], vay = vcol[3*a+1], vaz = vcol[3*a+2];
+                double wx = R[0][0]*vax + R[0][1]*vay + R[0][2]*vaz;
+                double wy = R[1][0]*vax + R[1][1]*vay + R[1][2]*vaz;
+                double wz = R[2][0]*vax + R[2][1]*vay + R[2][2]*vaz;
+
+                s += vcol[3*b+0]*wx + vcol[3*b+1]*wy + vcol[3*b+2]*wz;
+            }
+            return s;
+        };
+
+        //printing frequencies
+        if (oprint)
+        {
+            print_frequencies(coutput, eig, ndof);
+        }
+
 
         double molecule_mass = 0.0;
         for (int a = 0; a < N; ++a)
@@ -1370,6 +1654,7 @@ if (ismaster && oprint)
  *                                        *
  ******************************************/
 
+/*
 void compute_fd_frequencies(Control2 &control,
                             Molecule &mymolecule,
                             bool ismaster, bool oprint,
@@ -1597,6 +1882,7 @@ void compute_fd_frequencies(Control2 &control,
         util_molecular_thermochemistry(freq, 298.15, molecule_mass, coutput);
     }
 }
+*/
 
 
 /******************************************
@@ -1761,29 +2047,13 @@ if (ismaster && oprint)
           if (oprint)
              coutput << "Error: dsyev failed with info = " << info << "\n";
        }
- 
+
+
+       //printing frequencies
        if (oprint)
        {
-          coutput << "\n Vibration   Frequencies (cm^-1):\n";
-  
-          for(int i=0;i<ndof;++i)
-          {
-              double lambda = eig[i];
-              if(lambda < 0.0)
-              {
-                  double freq = sqrt(-lambda)*2.194746e5;
-                  //coutput << "  " << i+1 << "  i" << freq << "\n";
-                  coutput << std::setw(4) << i+1 << std::setw(13) << "i"<< freq << "\n";
-              }
-              else
-              {
-                  double freq = sqrt(lambda)*2.194746e5;
-                  //coutput << "  " << i+1 << "  " << freq << "\n";
-                  coutput << std::setw(4) << i+1 <<  std::setw(18) << freq << "\n";
-              }
-          }
+           print_frequencies(coutput, eig, ndof);
        }
-
 
        double molecule_mass = 0.0;
        for (int a = 0; a < N; ++a)

@@ -142,7 +142,6 @@ static void rotate_coords(double* r, int n, const double* U)
  *******************************************/
 static bool canonicalize_Td(double* rion, int nion, double* U)
 {
-    std::cout << "running canonicalize_Td" << std::endl;
 
     auto normalize = [](double v[3])
     {
@@ -889,7 +888,6 @@ static void autoz_frame(const double* r, int n, double* U)
  *******************************************/
 static void check_rotation_matrix(const double* U)
 {
-    std::cout << "\nRotation matrix U\n";
     for(int i=0;i<3;i++)
         std::cout << U[3*i] << " " << U[3*i+1] << " " << U[3*i+2] << "\n";
 
@@ -1113,18 +1111,6 @@ static bool is_square(std::vector<std::array<double, 3>> &points, const double t
            ++large_count;
        }
    }
-
-   /*std::cout << " ---- small_dist=" << small_dist 
-             << "  small_count=" << small_count
-             << "  large_dist="  << large_dist
-             << "  large_count=" << large_count;
-   std::cout << " distances=" << distances[0] << " " 
-             << distances[1] << " " 
-             << distances[2] << " " 
-             << distances[3] << " " 
-             << distances[4] << " " 
-             << distances[5] << std::endl;
-             */
 
    return small_count == 4 && large_count == 2;
 }
@@ -2761,7 +2747,6 @@ static bool has_proper_rotation_C4(const double* rion, const double* ion_mass, c
    //Count the number of unique points
    c4_uniqueCount = c4_axes.size();
 
-   //std::cout << "There are " << c4_uniqueCount << " unique C4 axes!" << std::endl;
    //found = (c4_uniqueCount == 6);
    found = (c4_uniqueCount > 0);
 
@@ -2789,7 +2774,6 @@ static bool has_proper_rotation_C4(const double* rion, const double* ion_mass, c
    //Count the number of unique points
    s8_uniqueCount = s8_axes.size();
 
-   //std::cout << "There are " << s8_uniqueCount << " unique S8 axes!" << std::endl;
 
    return found;
 }
@@ -2895,7 +2879,6 @@ static bool has_proper_rotation_C5(const double* rion, const double* ion_mass, c
    //Count the number of unique points
    int c5_uniqueCount = c5_axes.size();
 
-   //std::cout << "There are " << c5_uniqueCount << " unique C5 axes!" << std::endl;
    found = (c5_uniqueCount == 12);
 
 
@@ -2922,7 +2905,6 @@ static bool has_proper_rotation_C5(const double* rion, const double* ion_mass, c
    //Count the number of unique points
    int s10_uniqueCount = s10_axes.size();
 
-   //std::cout << "There are " << s10_uniqueCount << " unique S10 axes!" << std::endl;
 
    return found;
 }
@@ -2985,8 +2967,6 @@ static bool has_inversion_center(const double* rion, const double* ion_mass, con
       }
    }
 
-   //for (int ii = 0; ii<nion; ++ii)
-   //    std::cout << "ion ii=" << ii << " checked=" << ion_checked[ii] << std::endl;
 
    bool all_ions_checked = std::all_of(ion_checked.begin(), ion_checked.end(), [](bool val) { return val; });
 
@@ -3146,7 +3126,6 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
                        + std::abs(Ozzx) + std::abs(Ozzy) + std::abs(Ozzz);
 
    bool has_c5 = has_proper_rotation_C5(rion,ion_mass,nion,sym_tolerance);
-   //std::cout << "has_c5=" << has_c5 << std::endl;
 
    //bool is_spherical = (diagonal_sum < sym_tolerance) && (abssum > sym_tolerance);
    bool is_spherical = has_c5;
@@ -3198,7 +3177,6 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
           {
              if (abs_octapole<sym_tolerance)
              {
-                 std::cout << "FOUND HERE?" << std::endl;
                 group_name = "O_h";
                 group_rank = 48;
              }
@@ -3228,7 +3206,6 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
        //   group_name = "T_d, T";
        
    }
-   //std::cout << "group_name=" << group_name << std::endl;
 }
 
 /*******************************************
@@ -3429,7 +3406,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes, 
                            double *rion2, double *U)
 {
-    std::cout << "SYM_tollerance=" << sym_tolerance << std::endl;
 
    //rion2 is rion shift to have a center of mass==0, it will be used thruout
    shift_to_center_mass(rion,ion_mass,nion,rion2);
@@ -3447,6 +3423,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
    generate_principle_axes(rion2,ion_mass,nion,inertia_tensor,inertia_moments,inertia_axes);
 
+   /*
     std::cout << "transformed coordinates rion2=" << std::endl;
     for (int a=0; a<nion; ++a)
     {
@@ -3464,6 +3441,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
     std::cout <<  " check = " <<  ( inertia_moments[0]*inertia_moments[0] 
                                   + inertia_moments[1]*inertia_moments[1] 
                                   + inertia_moments[2]*inertia_moments[2]) / (m_total*m_total) << " " << Efmt(6,3) << (sym_tolerance*sym_tolerance) << std::endl;
+    */
 
    if ( ( ( inertia_moments[0]*inertia_moments[0] 
           + inertia_moments[1]*inertia_moments[1] 
@@ -3471,7 +3449,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
         /(m_total*m_total))
        < (sym_tolerance*sym_tolerance))
    {
-      //std::cout << "SERA" << std::endl;
       rotation_type = "point";
       group_name = "SO(3)";
       group_rank = -1;
@@ -3481,7 +3458,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[2]*inertia_moments[2])/(m_total*m_total)) < (sym_tolerance*sym_tolerance))
    {
-       //std::cout << "SERB" << std::endl;
       rotation_type = "linear";
 
       // align the molecular axes along the inertia_axes
@@ -3496,7 +3472,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if ((((inertia_moments[0]-inertia_moments[2])/m_total) < sym_tolerance) && (nion>3))
    {
-       //std::cout << "SERC" << std::endl;
       rotation_type = "spherical";
 
       // align the molecular axes along the inertia_axes
@@ -3515,7 +3490,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
       if (g == "Td" || g == "Oh" || g == "Ih")
       {
-          std::cout << "Running canonicalize_spherical_frame" << std::endl;
           bool check =  canonicalize_spherical_frame(g, rion2, nion, U);
       
           if(check)
@@ -3532,7 +3506,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[0]-inertia_moments[1])/m_total) < sym_tolerance)
    {
-       //std::cout << "SERD" << std::endl;
       rotation_type = "prolate top";
 
       // align the molecular axes along the inertia_axes
@@ -3545,7 +3518,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if (((inertia_moments[1]-inertia_moments[2])/m_total) < sym_tolerance)
    {
-       //std::cout << "SERE" << std::endl;
       rotation_type = "oblate top";
 
       //rotate inertia_moments and inertia_axes
@@ -3579,7 +3551,6 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else
    {
-       //std::cout << "SERF" << std::endl;
       rotation_type = "asymmetric";
 
       //rotate inertia_moments and inertia_axes

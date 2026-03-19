@@ -515,11 +515,11 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       mysymmetry = Symmetry::from_point_group(group_name);
       //mysymmetry.rotate_operators(U);
 
-      print_rion_sym(std::cout);
-
       const auto &ops = mysymmetry.operators();
 
+      set_group_name(group_name);
 
+      /*
       std::cout << "------------------------\n";
       for(size_t k=0; k<ops.size(); ++k)
       {
@@ -550,16 +550,17 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
          }
          std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
       }
+      */
 
       // copy rion_sym1 to rion1 and backup rion1
       shiftsym1();
    }
    build_equivalent_atoms(sym_tolerance);
 
-   print_rion_sym(std::cout);
+   //print_rion_sym(std::cout);
 
-   print_symmetry_ops(std::cout);
-   print_symmetry_check(std::cout);
+   //print_symmetry_ops(std::cout);
+   //print_symmetry_check(std::cout);
 
 
 
@@ -955,6 +956,8 @@ std::string Ion::print_constraints(const int opt)
 }
 
 
+
+ 
 
 /*******************************************
  *                                         *
@@ -1470,7 +1473,28 @@ void Ion::disp_stress(double* stress)
  *        Ion::build_equivalent_atoms      *
  *                                         *
  *******************************************/
-
+/**
+ * @brief Build equivalence classes of ions based on a distance fingerprint.
+ *
+ * Two ions i and j are considered equivalent if:
+ *   1) they are the same atomic type (katm[i] == katm[j]), and
+ *   2) the sorted list of distances from i to all other ions matches the sorted
+ *      list of distances from j to all other ions within a tolerance @p tol.
+ *
+ * The routine assigns each ion to an equivalence class and populates
+ * Ion::equivalent_atoms, where equivalent_atoms[c] contains the indices of all
+ * ions in class c.
+ *
+ * @param tol Maximum allowed absolute difference (in distance units) between
+ *            corresponding entries of the two sorted distance lists.
+ *
+ * @note This method compares raw Euclidean distances using rion_sym and does not
+ *       apply periodic minimum-image conventions; correctness under PBC requires
+ *       rion_sym to already be in a suitable representation.
+ *
+ * @note Computational cost is approximately O(nion^3 log nion) due to pairwise
+ *       comparisons and per-comparison sorting.
+ */
 void Ion::build_equivalent_atoms(double tol)
 {
 //double dtol = 1.0e-2;
@@ -1538,13 +1562,6 @@ void Ion::build_equivalent_atoms(double tol)
     for(int i = 0; i < nion; ++i)
         equivalent_atoms[eq[i]].push_back(i);
 
-//    for(size_t g=0; g<equivalent_atoms.size(); g++)
-//    {
-//        std::cout << "class " << g << " : ";
-//        for(auto a : equivalent_atoms[g])
-//            std::cout << a << " ";
-//        std::cout << std::endl;
-//    }
 }
 
 
@@ -1680,6 +1697,25 @@ void Ion::print_symmetry_check(std::ostream &out)
     }
 }
 
+const PointGroupCharacterTable* Ion::get_character_table()
+{
+    if (!character_table) {
+        try {
+            character_table = std::make_unique<PointGroupCharacterTable>(
+                PointGroupCharacterTable::from_symbol(group_name)
+            );
+        } catch (...) {
+            return nullptr;
+        }
+    }
+    return character_table.get();
+}
+
+void Ion::set_group_name(const std::string& name)
+{
+    group_name = name;
+    character_table.reset(); // force rebuild
+}
 
 
 
