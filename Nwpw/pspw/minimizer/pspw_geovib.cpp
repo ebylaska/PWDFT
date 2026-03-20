@@ -948,6 +948,7 @@ static void print_hessian(std::ostream& out,
     }
 }
 
+/*
 void print_frequencies(std::ostream& out,
                        const std::vector<double>& eig,
                        int ndof,
@@ -987,6 +988,52 @@ void print_frequencies(std::ostream& out,
 
     // reset stream (VERY important)
     out << std::defaultfloat;
+}
+*/
+
+void print_frequencies(std::ostream& out,
+                       const std::vector<double>& eig,
+                       int ndof,
+                       double conv = 2.194746e5,
+                       const std::vector<std::string>* mode_irreps = nullptr)
+{
+    out << "\n Vibration   Frequencies (cm^-1):\n";
+
+    for (int i = 0; i < ndof; ++i)
+    {
+        double lambda = eig[i];
+        double freq   = std::sqrt(std::abs(lambda)) * conv;
+
+        std::ostringstream val;
+        val << std::fixed << std::setprecision(3);
+
+        if (lambda < 0.0)
+            val << "i " << freq;
+        else
+            val << freq;
+
+        // --- print index + frequency ---
+        out << std::setw(5) << i + 1
+            << std::setw(16) << val.str();
+
+        // --- optional irrep ---
+        if (mode_irreps && i < static_cast<int>(mode_irreps->size()))
+        {
+            out << "   " << std::setw(4) << (*mode_irreps)[i];
+        }
+
+        out << "\n";
+    }
+
+    out << std::defaultfloat;
+}
+
+void print_frequencies(std::ostream& out,
+                       const std::vector<double>& eig,
+                       int ndof,
+                       const std::vector<std::string>& mode_irreps)
+{
+    print_frequencies(out, eig, ndof, 2.194746e5, &mode_irreps);
 }
 
 
@@ -1750,7 +1797,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
                coutput << "\n";
            }
  
-           print_frequencies(coutput, eig, ndof);
+           print_frequencies(coutput, eig, ndof, mode_irrep);
         }
 
 
