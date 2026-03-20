@@ -61,6 +61,11 @@ public:
     /** Number of centering lattice points (space groups only). */
     int num_centering() const;
 
+    //rotational symmetry
+    int sigma() const;
+    int num_proper_ops() const;
+    int num_improper_ops() const;
+
     void rotate_operators(const double *);
 
     /** Apply conventional → primitive transformation. */

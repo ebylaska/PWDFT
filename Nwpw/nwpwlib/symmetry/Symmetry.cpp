@@ -308,6 +308,148 @@ bool Symmetry::is_point_group() const
 }
 
 
+/*******************************************
+ *                                         *
+ *         Symmetry::sigma                 *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Compute the rotational symmetry number (σ).
+ *
+ * Returns the rotational symmetry number σ associated with the symmetry
+ * object.  For point groups, σ is defined as the number of proper
+ * rotational symmetry operations (i.e., operations with det(R) = +1),
+ * including the identity.  Improper operations such as reflections,
+ * inversion, and rotoinversions (det(R) = -1) are excluded.
+ *
+ * The symmetry number is used in statistical mechanics, specifically in
+ * the rotational partition function, to correct for overcounting of
+ * indistinguishable molecular orientations:
+ *
+ *     q_rot ∝ 1 / σ
+ *
+ * For non-point-group symmetries (i.e., space groups), σ is defined to be 1,
+ * since rotational partition functions are only meaningful for finite
+ * systems (molecules).
+ *
+ * This implementation computes σ directly from the stored symmetry
+ * operators and does not rely on lookup tables or point-group labels,
+ * ensuring consistency with the underlying symmetry representation.
+ *
+ * It is assumed that the identity operation is included in @c ops_.
+ *
+ * @return
+ *     Rotational symmetry number σ (σ ≥ 1).
+ */
+   int Symmetry::sigma() const
+   {
+      if (!is_point_group())
+         return 1;
+ 
+      constexpr double tol = 1e-8;
+ 
+      int sigma = 0;
+ 
+      for (const auto& op : ops_)
+      {
+         const auto& R = op.R;
+ 
+         double det = R[0][0]*(R[1][1]*R[2][2] - R[1][2]*R[2][1]) -
+                      R[0][1]*(R[1][0]*R[2][2] - R[1][2]*R[2][0]) +
+                      R[0][2]*(R[1][0]*R[2][1] - R[1][1]*R[2][0]);
+ 
+         if (std::abs(det - 1.0) < tol)
+            sigma++;
+      }
+ 
+      // Safety: ensure σ ≥ 1 even if something upstream fails
+      return (sigma > 0) ? sigma : 1;
+   }
+
+/*******************************************
+ *                                         *
+ *     Symmetry::num_proper_ops            *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Count proper symmetry operations.
+ *
+ * Returns the number of proper symmetry operations in the symmetry group.
+ * Proper operations are those with determinant det(R) = +1, corresponding
+ * to pure rotations (including the identity).
+ *
+ * For point groups, this includes all rotational symmetries.  For space
+ * groups, this counts the rotational part of the symmetry operations and
+ * ignores translations.
+ *
+ * @return
+ *     Number of proper symmetry operations (≥ 1 if identity is present).
+ */
+int Symmetry::num_proper_ops() const
+{
+    constexpr double tol = 1e-8;
+
+    int count = 0;
+
+    for (const auto& op : ops_)
+    {
+        const auto& R = op.R;
+
+        double det =
+            R[0][0]*(R[1][1]*R[2][2] - R[1][2]*R[2][1]) -
+            R[0][1]*(R[1][0]*R[2][2] - R[1][2]*R[2][0]) +
+            R[0][2]*(R[1][0]*R[2][1] - R[1][1]*R[2][0]);
+
+        if (std::abs(det - 1.0) < tol)
+            count++;
+    }
+
+    return count;
+}
+
+
+/*******************************************
+ *                                         *
+ *    Symmetry::num_improper_ops           *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Count improper symmetry operations.
+ *
+ * Returns the number of improper symmetry operations in the symmetry group.
+ * Improper operations are those with determinant det(R) = -1, corresponding
+ * to reflections, inversion, and rotoinversions.
+ *
+ * These operations are essential for symmetry constraints in tensor
+ * quantities such as the Hessian, but do not contribute to the rotational
+ * symmetry number used in thermodynamics.
+ *
+ * @return
+ *     Number of improper symmetry operations (≥ 0).
+ */
+int Symmetry::num_improper_ops() const
+{
+    constexpr double tol = 1e-8;
+
+    int count = 0;
+
+    for (const auto& op : ops_)
+    {
+        const auto& R = op.R;
+
+        double det =
+            R[0][0]*(R[1][1]*R[2][2] - R[1][2]*R[2][1]) -
+            R[0][1]*(R[1][0]*R[2][2] - R[1][2]*R[2][0]) +
+            R[0][2]*(R[1][0]*R[2][1] - R[1][1]*R[2][0]);
+
+        if (std::abs(det + 1.0) < tol)
+            count++;
+    }
+
+    return count;
+}
+
+
   /*******************************************
    *                                         *
    *         Symmetry::num_centering         *
