@@ -13,14 +13,6 @@
 
 namespace pwdft {
 
-enum PGClass {
-    PG_E = 0,     // identity
-    PG_Cn,        // proper rotation
-    PG_sigma,     // mirror
-    PG_i,         // inversion
-    PG_Sn         // improper rotation
-};
-
 
 static void snap_matrix(SymOp& op)
 {
@@ -36,58 +28,6 @@ static void snap_matrix(SymOp& op)
             op.R[i][j] = snap(op.R[i][j]);
 }
 
-static void classify_op(SymOp& op)
-{
-    snap_matrix(op);
-    double det =
-        op.R[0][0]*(op.R[1][1]*op.R[2][2] - op.R[1][2]*op.R[2][1]) -
-        op.R[0][1]*(op.R[1][0]*op.R[2][2] - op.R[1][2]*op.R[2][0]) +
-        op.R[0][2]*(op.R[1][0]*op.R[2][1] - op.R[1][1]*op.R[2][0]);
-
-    auto is_identity = [&](double tol=1e-10) {
-        for(int i=0;i<3;i++)
-            for(int j=0;j<3;j++) {
-                double expected = (i==j ? 1.0 : 0.0);
-                if (std::abs(op.R[i][j] - expected) > tol)
-                    return false;
-            }
-        return true;
-    };
-
-    auto is_inversion = [&](double tol=1e-10) {
-        for(int i=0;i<3;i++)
-            for(int j=0;j<3;j++) {
-                double expected = (i==j ? -1.0 : 0.0);
-                if (std::abs(op.R[i][j] - expected) > tol)
-                    return false;
-            }
-        return true;
-    };
-
-    double tol = 1.0e-10;
-
-    if (is_identity()) {
-        op.pg_class = PG_E;
-    }
-    else if (det > tol) {
-        op.pg_class = PG_Cn;
-    }
-    else if (det < -tol) {
-        if (is_inversion())
-            op.pg_class = PG_i;
-        else {
-            double trace = op.R[0][0] + op.R[1][1] + op.R[2][2];
-            if (std::abs(trace - 1.0) < 1e-8)
-                op.pg_class = PG_sigma;
-            else
-                op.pg_class = PG_Sn;
-        }
-    }
-    else {
-        // near-singular → should never happen
-        throw std::runtime_error("classify_op: determinant ~ 0");
-    }
-}
 
 
 /*******************************************
@@ -408,7 +348,6 @@ std::vector<SymOp> PointGroupGenerators::Cnh(int n)
         // point group → zero translation
         op.t[0] = op.t[1] = op.t[2] = 0.0;
 
-        classify_op(op);
         ops.push_back(op);
     }
 
@@ -554,7 +493,6 @@ std::vector<SymOp> PointGroupGenerators::Dnh(int n)
         op.t[1] = 0.0;
         op.t[2] = 0.0;
 
-        classify_op(op);
         ops.push_back(op);
     }
 
@@ -641,7 +579,6 @@ std::vector<SymOp> PointGroupGenerators::Dnd(int n)
             op.t[1] = 0.0;
             op.t[2] = 0.0;
 
-            classify_op(op);
             ops.push_back(op);
         }
     }
@@ -730,7 +667,7 @@ std::vector<SymOp> PointGroupGenerators::S2n(int n)
             }
 
         op.t[0] = op.t[1] = op.t[2] = 0.0;
-        classify_op(op);
+        
         ops.push_back(op);
     }
 
@@ -900,18 +837,7 @@ std::vector<SymOp> PointGroupGenerators::T()
     // 1. Identity
     ops.push_back(identity());
 
-    // 2. C2 rotations (3) — axes through opposite edges
-    const double inv2 = 1.0 / std::sqrt(2.0);
-    const double c2_axes[3][3] = {
-        {0.0,  inv2,  inv2},
-        { inv2, 0.0,  inv2},
-        { inv2,  inv2, 0.0}
-    };
-
-    for (const auto& a : c2_axes)
-        ops.push_back(rotation_about_axis(a, M_PI));
-
-    // 3. C3 rotations (8) — axes through vertices (body diagonals)
+    // 2. C3 rotations (8) — axes through vertices (body diagonals)
     const double inv3 = 1.0 / std::sqrt(3.0);
     const double c3_axes[4][3] = {
         {  inv3,  inv3,  inv3},
@@ -924,6 +850,28 @@ std::vector<SymOp> PointGroupGenerators::T()
         ops.push_back(rotation_about_axis(a,  2.0 * M_PI / 3.0));
         ops.push_back(rotation_about_axis(a, -2.0 * M_PI / 3.0));
     }
+
+    // 3. C2 rotations (3) — axes through opposite edges
+    //const double inv2 = 1.0 / std::sqrt(2.0);
+    //const double c2_axes[3][3] = {
+    //    {0.0,  inv2,  inv2},
+    //    { inv2, 0.0,  inv2},
+    //    { inv2,  inv2, 0.0}
+    //};
+
+    //for (const auto& a : c2_axes)
+    //    ops.push_back(rotation_about_axis(a, M_PI));
+
+
+    // 3. C2 rotations SECOND (3) -- x,y,z for this embedding
+    const double c2_axes[3][3] = {
+        {1.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0},
+        {0.0, 0.0, 1.0}
+    };
+
+    for (const auto& a : c2_axes)
+        ops.push_back(rotation_about_axis(a, M_PI));
 
     return ops;
 }
@@ -1012,7 +960,6 @@ std::vector<SymOp> PointGroupGenerators::Td()
 
             op.t[0]=op.t[1]=op.t[2]=0.0;
 
-            classify_op(op);
             ops.push_back(op);
         }
     }
@@ -1032,7 +979,7 @@ std::vector<SymOp> PointGroupGenerators::Td()
     for(const auto& n : diag)
     {
         SymOp m = mirror(n);
-        classify_op(m);
+        
         ops.push_back(m);
         //ops.push_back(mirror(n));
     }
@@ -1075,7 +1022,7 @@ std::vector<SymOp> PointGroupGenerators::Td()
                 }
 
             op.t[0] = op.t[1] = op.t[2] = 0.0;
-            classify_op(op);
+            
             ops.push_back(op);
         }
     }
@@ -1094,7 +1041,7 @@ std::vector<SymOp> PointGroupGenerators::Td()
     for (const auto& n : diag)
     {
         SymOp m = mirror(n);
-        classify_op(m);
+        
         ops.push_back(m);
     }
 
@@ -1158,7 +1105,7 @@ std::vector<SymOp> PointGroupGenerators::Th()
         for (int i = 0; i < 3; ++i)
             composed.t[i] = 0.0;
 
-        classify_op(composed);
+        
         ops.push_back(composed);
     }
 
@@ -1306,7 +1253,7 @@ std::vector<SymOp> PointGroupGenerators::Oh()
         for (int i = 0; i < 3; ++i)
             composed.t[i] = 0.0;
 
-        classify_op(composed);
+        
         ops.push_back(composed);
     }
 
@@ -1472,7 +1419,7 @@ std::vector<SymOp> PointGroupGenerators::Ih()
         for (int i = 0; i < 3; ++i)
             composed.t[i] = 0.0;
 
-        classify_op(composed);
+        
         ops.push_back(composed);
     }
 
@@ -1561,7 +1508,6 @@ SymOp PointGroupGenerators::rotation_about_axis(const double axis[3], double ang
     op.t[1] = 0.0;
     op.t[2] = 0.0;
 
-    classify_op(op);
 
     return op;
 }
@@ -1597,7 +1543,6 @@ SymOp PointGroupGenerators::identity()
             op.R[i][j] = (i == j ? 1.0 : 0.0);
         op.t[i] = 0.0;
     }
-    classify_op(op);
 
     return op;
 }
@@ -1642,7 +1587,6 @@ SymOp PointGroupGenerators::inversion()
     op.t[1] = 0.0;
     op.t[2] = 0.0;
 
-    classify_op(op);
 
     return op;
 }
@@ -1720,7 +1664,6 @@ SymOp PointGroupGenerators::mirror(const double normal[3])
    op.t[1] = 0.0;
    op.t[2] = 0.0;
 
-   classify_op(op);
 
    return op;
 }

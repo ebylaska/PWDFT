@@ -1009,7 +1009,7 @@ void print_character_table(std::ostream& out,
     // rows
     for (const auto& ir : table.irreps())
     {
-        out << std::setw(8) << ir.name;
+        out << " " << std::setw(8) << ir.name;
 
         for (double chi : ir.chi)
             out << std::setw(8) << chi;
@@ -1019,7 +1019,6 @@ void print_character_table(std::ostream& out,
 
     out << "\n";
 }
-
 
 
 static std::string assign_irrep(
@@ -1034,7 +1033,7 @@ static std::string assign_irrep(
 
     std::vector<double> chars(ops.size(), 0.0);
 
-    // --- compute characters ---
+    // --- compute characters for each operation ---
     for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
     {
         const auto& op = ops[op_idx];
@@ -1043,7 +1042,7 @@ static std::string assign_irrep(
 
         for (int i = 0; i < nat; ++i)
         {
-            int j = atom_map[op_idx][i];  // ✅ your mapping
+            int j = atom_map[op_idx][i];
 
             const double (*R)[3] = op.R;
 
@@ -1060,6 +1059,7 @@ static std::string assign_irrep(
             transformed[3*j+2] = zr;
         }
 
+        // dot product ⟨mode | transformed⟩
         double chi = 0.0;
         for (int k = 0; k < n; ++k)
             chi += mode[k] * transformed[k];
@@ -1067,25 +1067,36 @@ static std::string assign_irrep(
         chars[op_idx] = chi;
     }
 
-    // --- class averaging ---
+    // --- class averaging (by ordering) ---
     const auto& class_sizes = table.class_sizes();
     const int nclass = class_sizes.size();
 
     std::vector<double> chi_class(nclass, 0.0);
-    std::vector<int> count(nclass, 0);
 
-    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    int offset = 0;
+    for (int c = 0; c < nclass; ++c)
     {
-        int c = ops[op_idx].pg_class;
-        chi_class[c] += chars[op_idx];
-        count[c]++;
+        double sum = 0.0;
+
+        for (int k = 0; k < class_sizes[c]; ++k)
+        {
+            int op_idx = offset + k;
+            sum += chars[op_idx];
+        }
+
+        chi_class[c] = sum / class_sizes[c];
+        offset += class_sizes[c];
     }
 
+    // --- optional debug ---
+    /*
+    std::cout << "Mode characters: ";
     for (int c = 0; c < nclass; ++c)
-        if (count[c] > 0)
-            chi_class[c] /= count[c];
+        std::cout << std::setw(10) << chi_class[c];
+    std::cout << "\n";
+    */
 
-    // --- projection ---
+    // --- projection onto irreps ---
     const int G = table.order();
 
     double best_val = -1.0;
@@ -1109,6 +1120,7 @@ static std::string assign_irrep(
 
     return best_irrep;
 }
+
 
 
 static std::vector<double> compute_mode_characters(
@@ -1149,6 +1161,7 @@ static std::vector<double> compute_mode_characters(
             transformed[3*j+2] = zr;
         }
 
+        // ⟨mode | transformed⟩
         double chi = 0.0;
         for (int k = 0; k < n; ++k)
             chi += mode[k] * transformed[k];
@@ -1156,23 +1169,95 @@ static std::vector<double> compute_mode_characters(
         chars[op_idx] = chi;
     }
 
-    // --- average over classes ---
-    const int nclass = table.class_sizes().size();
-    std::vector<double> chi_class(nclass, 0.0);
-    std::vector<int> count(nclass, 0);
+    // --- class averaging via ordering ---
+    const auto& class_sizes = table.class_sizes();
+    const int nclass = class_sizes.size();
 
-    for (size_t op_idx = 0; op_idx < ops.size(); ++op_idx)
+    std::vector<double> chi_class(nclass, 0.0);
+
+    int offset = 0;
+    for (int c = 0; c < nclass; ++c)
     {
-        int c = ops[op_idx].pg_class;
-        chi_class[c] += chars[op_idx];
-        count[c]++;
+        double sum = 0.0;
+
+        for (int k = 0; k < class_sizes[c]; ++k)
+        {
+            sum += chars[offset + k];
+        }
+
+        chi_class[c] = sum / class_sizes[c];
+        offset += class_sizes[c];
     }
 
-    for (int c = 0; c < nclass; ++c)
-        if (count[c] > 0)
-            chi_class[c] /= count[c];
-
     return chi_class;
+}
+
+
+/*
+static std::pair<std::string,double> assign_irrep_from_table(const std::vector<double>& chi_mode, const pwdft::PointGroupCharacterTable& table)
+{
+    const int nclass = chi_mode.size();
+    const auto& class_sizes = table.class_sizes();
+    const auto& irreps = table.irreps();
+    const double order = static_cast<double>(table.order());
+
+    double best_val = -1e100;
+    std::string best_name = "?";
+
+    for (const auto& ir : irreps)
+    {
+        double sum = 0.0;
+
+        for (int c = 0; c < nclass; ++c)
+        {
+            double gc   = class_sizes[c];
+            double chiG = ir.chi[c];
+
+            sum += gc * chi_mode[c] * chiG;
+        }
+
+        double weight = sum / order;
+
+        if (weight > best_val)
+        {
+            best_val  = weight;
+            best_name = ir.name;
+        }
+    }
+
+    return {best_name, best_val};
+}
+*/
+
+static std::pair<std::string,double> assign_irrep_from_table(const std::vector<double>& chi_mode, const pwdft::PointGroupCharacterTable& table)
+{
+    const int nclass = chi_mode.size();
+    const auto& class_sizes = table.class_sizes();
+    const auto& irreps = table.irreps();
+    const double order = static_cast<double>(table.order());
+
+    double best_val = -1e100;
+    std::string best_name = "?";
+
+    for (const auto& ir : irreps)
+    {
+        double sum = 0.0;
+
+        for (int c = 0; c < nclass; ++c)
+        {
+            sum += class_sizes[c] * chi_mode[c] * ir.chi[c];
+        }
+
+        double weight = (ir.dim * sum) / order;   // <-- better
+
+        if (weight > best_val)
+        {
+            best_val  = weight;
+            best_name = ir.name;
+        }
+    }
+
+    return {best_name, best_val};
 }
 
 
@@ -1303,6 +1388,19 @@ void compute_fd_frequencies_molecule(Control2 &control,
         }
     }
 
+    for(int op=0; op<nops; op++)
+    {
+        const auto& sym = ion->symmetry_op(op);
+        const auto& R = sym.R;
+        double det = R[0][0] * (R[1][1]*R[2][2] - R[1][2]*R[2][1])
+                   - R[0][1] * (R[1][0]*R[2][2] - R[1][2]*R[2][0])
+                   + R[0][2] * (R[1][0]*R[2][1] - R[1][1]*R[2][0]);
+        double trace = R[0][0] + R[1][1] + R[2][2];
+        double orth = R[0][0]*R[0][0] + R[0][1]*R[0][1] + R[0][2]*R[0][2];
+
+        std::cout << op << " det=" << det << " trace=" << trace << " row0_norm=" << orth << "\n";
+    }
+
     if (ismaster && oprint)
     {
         coutput << "\n\n";
@@ -1313,26 +1411,23 @@ void compute_fd_frequencies_molecule(Control2 &control,
         coutput << " --------------------------------------------------------------"
                    "---------------------\n\n";
 
-        //print_character_table(coutput, table);
+
         if (auto* table = ion->get_character_table()) {
             print_character_table(coutput, *table);
 
-            std::vector<int> counts(table->class_sizes().size(), 0);
+            const auto& class_sizes = table->class_sizes();
+            int nclass = class_sizes.size();
 
-               for (const auto& op : ion->symmetry().operators())
-               {
-                   if (op.pg_class >= 0)
-                       counts[op.pg_class]++;
-               }
+            coutput << "Class counts:\n";
 
-               coutput << "Class counts:\n";
-               for (int c = 0; c < counts.size(); ++c)
-               {
-                   coutput << "class " << c
-                           << " count = " << counts[c]
-                           << " expected = " << table->class_sizes()[c]
-                           << "\n";
-               }
+            int offset = 0;
+            for (int c = 0; c < nclass; ++c)
+            {
+                int count = class_sizes[c];  // because ordering is guaranteed
+
+                coutput << "class " << c << " count = " << count << " expected = " << class_sizes[c] << "\n";
+                offset += count;
+            }
 
         } else {
             coutput << " Character table not available\n";
@@ -1560,8 +1655,9 @@ void compute_fd_frequencies_molecule(Control2 &control,
 
 
         // eigenvectors are now in Hfull (column-major)
-        const auto* table = ion->get_character_table();
+        //const auto* table = ion->get_character_table();
 
+        /*
         if (table)
         {
             for (int m = 0; m < ndof; ++m)
@@ -1613,11 +1709,48 @@ void compute_fd_frequencies_molecule(Control2 &control,
             }
             return s;
         };
+        */
 
         //printing frequencies
-        if (oprint)
+
+        // printing frequencies + characters
+        const auto* table = ion->get_character_table();
+
+        if (oprint && table)
         {
-            print_frequencies(coutput, eig, ndof);
+           std::vector<std::string> mode_irrep(ndof);
+
+           for (int m = 0; m < ndof; ++m)
+           {
+               std::vector<double> mode(ndof);
+  
+               // extract m-th eigenvector (column m)
+               for (int k = 0; k < ndof; ++k)
+                   mode[k] = Hfull[k + m*ndof];
+  
+               // --- normalize ---
+               double norm = 0.0;
+               for (double v : mode) norm += v*v;
+               norm = std::sqrt(norm);
+  
+               if (norm > 1e-12)
+               {
+                   for (double& v : mode)
+                       v /= norm;
+               }
+  
+               auto chi = compute_mode_characters(mode, ion->symmetry(), *table, atom_map);
+               auto [label, weight] = assign_irrep_from_table(chi, *table);
+               mode_irrep[m] = label;
+  
+               coutput << "Mode " << std::setw(3) << m << " chars:";
+               for (double x : chi)
+                   coutput << std::setw(10) << std::fixed << std::setprecision(3) << x;
+               coutput << " " << label << " " << weight;
+               coutput << "\n";
+           }
+ 
+           print_frequencies(coutput, eig, ndof);
         }
 
 
