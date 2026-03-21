@@ -830,8 +830,10 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    // call freq here
    if ((flag==4) || (flag==5))
    {
-      compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
-      compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
+      if (myion.is_crystal)   
+         compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
+      else 
+         compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
    }
  
 
@@ -898,7 +900,9 @@ static void print_hessian(std::ostream& out,
                           const double* H,
                           int n)
 {
-    out << "\n----- " << name << " -----\n";
+    out << " ---------------------------------\n"
+    out << "        " << name << "\n"
+    out << " ---------------------------------\n"
 
     for(int i=0;i<n;i++)
     {
@@ -912,6 +916,11 @@ static void print_hessian(std::ostream& out,
 }
 */
 
+/******************************************
+ *                                        *
+ *            print_hessian               *
+ *                                        *
+ ******************************************/
 static void print_hessian(std::ostream& out,
                           const char* name,
                           const double* H,
@@ -919,7 +928,9 @@ static void print_hessian(std::ostream& out,
 {
     const int block = 9;
 
-    out << "\n----- " << name << " -----\n";
+    out << "\n ---------------------------------\n";
+    out << "     " << name << "\n";
+    out << " ---------------------------------\n";
 
     for(int j0 = 0; j0 < n; j0 += block)
     {
@@ -948,55 +959,21 @@ static void print_hessian(std::ostream& out,
     }
 }
 
-/*
-void print_frequencies(std::ostream& out,
-                       const std::vector<double>& eig,
-                       int ndof,
-                       double conv = 2.194746e5)
-{
-    out << "\n Vibration   Frequencies (cm^-1):\n";
-
-    for (int i = 0; i < ndof; ++i)
-    {
-        double lambda = eig[i];
-        double freq   = std::sqrt(std::abs(lambda)) * conv;
-
-        //out << std::setw(5) << i + 1 << "  ";
-
-        std::ostringstream val;
-        // Choose format
-        val << std::fixed << std::setprecision(3);
-        //if (freq < 1e-2)
-        //    val << std::scientific << std::setprecision(3);
-        //else
-        //    val << std::fixed << std::setprecision(3);
-
-        // Print value
-        if (lambda < 0.0)
-            val << "i " << freq;
-        else
-            val << freq;
-
-
-        // Print: index + aligned value column
-        out << std::setw(5) << i + 1
-            << std::setw(16) << val.str()
-            << "\n";
-
-        //out << std::setw(16) << val.str() << std::endl;
-    }
-
-    // reset stream (VERY important)
-    out << std::defaultfloat;
-}
-*/
-
+/******************************************
+ *                                        *
+ *            print_frequencies           *
+ *                                        *
+ ******************************************/
 void print_frequencies(std::ostream& out,
                        const std::vector<double>& eig,
                        int ndof,
                        double conv = 2.194746e5,
                        const std::vector<std::string>* mode_irreps = nullptr)
 {
+    out << "\n Vibrational analysis via the FX method\n";
+    out << " --- with translations and rotations projected out ---\n";
+    out << " --- via the Eckart algorithm                      ---\n";
+
     out << "\n Vibration   Frequencies (cm^-1):\n";
 
     for (int i = 0; i < ndof; ++i)
@@ -1037,6 +1014,11 @@ void print_frequencies(std::ostream& out,
 }
 
 
+/******************************************
+ *                                        *
+ *            print_character_table       *
+ *                                        *
+ ******************************************/
 void print_character_table(std::ostream& out,
                            const PointGroupCharacterTable& table)
 {
@@ -1067,12 +1049,15 @@ void print_character_table(std::ostream& out,
     out << "\n";
 }
 
-
-static std::string assign_irrep(
-    const std::vector<double>& mode,
-    const Symmetry& sym,
-    const PointGroupCharacterTable& table,
-    const std::vector<std::vector<int>>& atom_map)
+/******************************************
+ *                                        *
+ *              assign_irrep              *
+ *                                        *
+ ******************************************/
+static std::string assign_irrep(const std::vector<double>& mode,
+                                const Symmetry& sym,
+                                const PointGroupCharacterTable& table,
+                                const std::vector<std::vector<int>>& atom_map)
 {
     const auto& ops = sym.operators();
     const int n = mode.size();
@@ -1170,11 +1155,15 @@ static std::string assign_irrep(
 
 
 
-static std::vector<double> compute_mode_characters(
-    const std::vector<double>& mode,
-    const Symmetry& sym,
-    const PointGroupCharacterTable& table,
-    const std::vector<std::vector<int>>& atom_map)
+/******************************************
+ *                                        *
+ *          compute_mode_characters       *
+ *                                        *
+ ******************************************/
+static std::vector<double> compute_mode_characters(const std::vector<double>& mode,
+                                                   const Symmetry& sym,
+                                                   const PointGroupCharacterTable& table,
+                                                   const std::vector<std::vector<int>>& atom_map)
 {
     const auto& ops = sym.operators();
     const int n = mode.size();
@@ -1240,42 +1229,12 @@ static std::vector<double> compute_mode_characters(
 }
 
 
-/*
-static std::pair<std::string,double> assign_irrep_from_table(const std::vector<double>& chi_mode, const pwdft::PointGroupCharacterTable& table)
-{
-    const int nclass = chi_mode.size();
-    const auto& class_sizes = table.class_sizes();
-    const auto& irreps = table.irreps();
-    const double order = static_cast<double>(table.order());
 
-    double best_val = -1e100;
-    std::string best_name = "?";
-
-    for (const auto& ir : irreps)
-    {
-        double sum = 0.0;
-
-        for (int c = 0; c < nclass; ++c)
-        {
-            double gc   = class_sizes[c];
-            double chiG = ir.chi[c];
-
-            sum += gc * chi_mode[c] * chiG;
-        }
-
-        double weight = sum / order;
-
-        if (weight > best_val)
-        {
-            best_val  = weight;
-            best_name = ir.name;
-        }
-    }
-
-    return {best_name, best_val};
-}
-*/
-
+/******************************************
+ *                                        *
+ *       assign_irrep_from_table          *
+ *                                        *
+ ******************************************/
 static std::pair<std::string,double> assign_irrep_from_table(const std::vector<double>& chi_mode, const pwdft::PointGroupCharacterTable& table)
 {
     const int nclass = chi_mode.size();
@@ -1435,6 +1394,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
         }
     }
 
+    /*
     for(int op=0; op<nops; op++)
     {
         const auto& sym = ion->symmetry_op(op);
@@ -1447,6 +1407,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
 
         std::cout << op << " det=" << det << " trace=" << trace << " row0_norm=" << orth << "\n";
     }
+    */
 
     if (ismaster && oprint)
     {
@@ -1458,7 +1419,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
         coutput << " --------------------------------------------------------------"
                    "---------------------\n\n";
 
-
+        /* 
         if (auto* table = ion->get_character_table()) {
             print_character_table(coutput, *table);
 
@@ -1479,9 +1440,12 @@ void compute_fd_frequencies_molecule(Control2 &control,
         } else {
             coutput << " Character table not available\n";
         }
+        */
 
-        coutput << " Finite Difference Hessian\n";
-        coutput << " -------------------------\n";
+
+        coutput << " ---------------------------------\n";
+        coutput << "     Finite Difference Hessian    \n";
+        coutput << " ---------------------------------\n";
         coutput << " number of atoms            = " << N << "\n";
         coutput << " degrees of freedom         = " << ndof << "\n";
         coutput << " expected vibrational modes = " << (3 * N - 6) << "\n";
@@ -1624,7 +1588,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
 
     if (ismaster && oprint)
     {
-        print_hessian(coutput, "SYMMETRY HESSIAN", Hfull.data(), ndof);
+        print_hessian(coutput, "    Symmetry Hessian", Hfull.data(), ndof);
     }
 
     // restore full geometry
@@ -1701,64 +1665,6 @@ void compute_fd_frequencies_molecule(Control2 &control,
         }
 
 
-        // eigenvectors are now in Hfull (column-major)
-        //const auto* table = ion->get_character_table();
-
-        /*
-        if (table)
-        {
-            for (int m = 0; m < ndof; ++m)
-            {
-                std::vector<double> mode(ndof);
-
-                // extract m-th eigenvector (column m)
-                for (int i = 0; i < ndof; ++i)
-                    mode[i] = Hfull[i + m*ndof];
-
-                 auto chi = compute_mode_characters(mode, ion->symmetry(), *table, atom_map);
-
-                 coutput << "Mode characters: ";
-                 for (double x : chi)
-                     coutput << std::setw(10) << std::fixed << std::setprecision(3) << x;
-                 coutput << "\n";
-
-                std::string irrep = assign_irrep(
-                    mode,
-                    ion->symmetry(),
-                    *table,
-                    atom_map
-                );
-
-                if (oprint)
-                {
-                    double lambda = eig[m];
-                    double conv = 2.194746e5;
-                    coutput << std::setw(4) << m+1 << std::setw(12) << std::sqrt(std::abs(lambda))*conv << std::setw(6) << irrep << "\n";
-                }
-            }
-        }
-
-
-
-        auto vDv = [&](int op, const double* vcol)->double {
-            const auto& R = ion->symmetry_op(op).R;
-            double s = 0.0;
-            for (int a=0; a<N; ++a) {
-                int b = atom_map[op][a];
-                if (b < 0) continue;
-
-                double vax = vcol[3*a+0], vay = vcol[3*a+1], vaz = vcol[3*a+2];
-                double wx = R[0][0]*vax + R[0][1]*vay + R[0][2]*vaz;
-                double wy = R[1][0]*vax + R[1][1]*vay + R[1][2]*vaz;
-                double wz = R[2][0]*vax + R[2][1]*vay + R[2][2]*vaz;
-
-                s += vcol[3*b+0]*wx + vcol[3*b+1]*wy + vcol[3*b+2]*wz;
-            }
-            return s;
-        };
-        */
-
-        //printing frequencies
 
         // printing frequencies + characters
         const auto* table = ion->get_character_table();
@@ -1790,11 +1696,11 @@ void compute_fd_frequencies_molecule(Control2 &control,
                auto [label, weight] = assign_irrep_from_table(chi, *table);
                mode_irrep[m] = label;
   
-               coutput << "Mode " << std::setw(3) << m << " chars:";
-               for (double x : chi)
-                   coutput << std::setw(10) << std::fixed << std::setprecision(3) << x;
-               coutput << " " << label << " " << weight;
-               coutput << "\n";
+               //coutput << "Mode " << std::setw(3) << m << " chars:";
+               //for (double x : chi)
+               //    coutput << std::setw(10) << std::fixed << std::setprecision(3) << x;
+               //coutput << " " << label << " " << weight;
+               //coutput << "\n";
            }
  
            print_frequencies(coutput, eig, ndof, mode_irrep);
@@ -1821,7 +1727,10 @@ void compute_fd_frequencies_molecule(Control2 &control,
             freq.push_back(nu);
         }
 
-        util_molecular_thermochemistry(freq, 298.15, molecule_mass, coutput);
+        //Compute and output thermo
+        double pressure = 101325.0;  // Pa
+        double temperature = 298.15;
+        ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
     }
 }
 
@@ -1860,8 +1769,9 @@ void compute_fd_frequencies(Control2 &control,
         coutput << " --------------------------------------------------------------"
                    "---------------------\n\n";
 
-        coutput << " Finite Difference Hessian\n";
-        coutput << " -------------------------\n";
+        coutput << " ---------------------------------\n";
+        coutput << "     Finite Difference Hessian    \n";
+        coutput << " ---------------------------------\n";
         coutput << " number of atoms            = " << N << "\n";
         coutput << " degrees of freedom         = " << ndof << "\n";
         coutput << " expected vibrational modes = " << (3 * N - 6) << "\n";
@@ -2098,8 +2008,9 @@ void compute_fd_frequencies_full(Control2 &control,
        coutput << " --------------------------------------------------------------"
                   "---------------------\n\n";
 
-       coutput << " Finite Difference Hessian\n";
-       coutput << " -------------------------\n";
+       coutput << " ---------------------------------\n";
+       coutput << "     Finite Difference Hessian    \n";
+       coutput << " ---------------------------------\n";
        coutput << " number of atoms            = " << N << "\n";
        coutput << " degrees of freedom         = " << ndof << "\n";
        coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
@@ -2150,7 +2061,7 @@ void compute_fd_frequencies_full(Control2 &control,
 
 if (ismaster && oprint)
 {
-    print_hessian(coutput, "FULL FD HESSIAN", H.data(), ndof);
+    print_hessian(coutput, "     Full FD Hessian", H.data(), ndof);
 }
 
 
@@ -2252,8 +2163,10 @@ if (ismaster && oprint)
            freq.push_back(nu);
        }
 
-       util_molecular_thermochemistry(freq, 298.15, molecule_mass, coutput);
-
+        //Compute and output thermo
+        double pressure = 101325.0;  // Pa
+        double temperature = 298.15;
+        ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
     }
 
 }

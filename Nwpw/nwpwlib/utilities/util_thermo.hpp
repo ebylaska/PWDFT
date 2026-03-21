@@ -6,6 +6,8 @@
 #include <vector>
 #include <iostream>
 
-void util_molecular_thermochemistry(const std::vector<double>&, double, double, std::ostream&);
+//void util_molecular_thermochemistry(const std::vector<double>&, double, double, std::ostream&);
+
+void util_molecular_thermochemistry(const std::vector<double>&, double, double, double, int, int, const double *, std::ostream&);
 
 #endif

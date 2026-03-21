@@ -574,6 +574,9 @@ public:
    const PointGroupCharacterTable* get_character_table();
    void set_group_name(const std::string& );
 
+   void compute_molecular_thermo(const std::vector<double>&, double, double, std::ostream&);
+
+
 
 };
 } // namespace pwdft

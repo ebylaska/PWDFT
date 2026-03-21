@@ -19,6 +19,7 @@ using json = nlohmann::json;
 #include "ion_bondings.hpp"
 #include "symmetry_elements.hpp"
 //include "cDispersion_D2.hpp"
+#include "util_thermo.hpp"
 #include "Ion.hpp"
 
 
@@ -968,9 +969,10 @@ std::string Ion::print_symmetry_group()
 {
    std::stringstream stream;
 
-   std::ios init(NULL);
+   std::ios init(nullptr);
    init.copyfmt(stream);
 
+   const auto* table = this->get_character_table();
    stream << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << this->sym_tolerance << ")" <<  std::endl;
    stream << "      group name   : " << this->group_name
                                      << "  (group rank = "  << this->group_rank
@@ -989,7 +991,40 @@ std::string Ion::print_symmetry_group()
                                               << Ffmt(8,3) << this->inertia_axes[7] << " "
                                               << Ffmt(8,3) << this->inertia_axes[8] << " > - "
                                               << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
+
+       // --- Clean formatting for table ---
+      stream << std::defaultfloat << std::setprecision(3);
+
+      stream << "\n      character table (" << table->group() << ")\n";
+               
+      // header  
+      stream << "      " << std::setw(8) << " ";
+           
+      for (const auto& cname : table->classes())
+         stream << std::setw(8) << cname; 
+        
+      stream << "\n";
+    
+      // separator
+      stream << "      " << std::string(8 + 8 * table->classes().size(), '-') << "\n";
+            
+      // rows
+      for (const auto& ir : table->irreps())
+      {   
+         stream << "      " << std::setw(8) << ir.name;
+        
+         for (double chi : ir.chi)
+            stream << std::setw(8) << chi;
+            
+         stream << "\n";
+      }
+
+      stream << "\n";
+
    }
+   // --- Restore state ---
+   stream.copyfmt(init);
+
    return stream.str();
 }
 
@@ -1697,6 +1732,11 @@ void Ion::print_symmetry_check(std::ostream &out)
     }
 }
 
+/*******************************************
+ *                                         *
+ *      Ion::get_character_table           *
+ *                                         *
+ *******************************************/
 const PointGroupCharacterTable* Ion::get_character_table()
 {
     if (!character_table) {
@@ -1711,10 +1751,99 @@ const PointGroupCharacterTable* Ion::get_character_table()
     return character_table.get();
 }
 
+/*******************************************
+ *                                         *
+ *      Ion::set_group_name                *
+ *                                         *
+ *******************************************/
 void Ion::set_group_name(const std::string& name)
 {
     group_name = name;
     character_table.reset(); // force rebuild
+}
+
+
+/*******************************************
+ *                                         *
+ *      Ion::compute_molecular_thermo      *
+ *                                         *
+ *******************************************/
+/**
+ * @brief High-level wrapper for molecular thermochemistry.
+ *
+ * This routine extracts all required molecular properties from the Ion object,
+ * performs unit conversions, determines rotor type, and calls the core
+ * thermochemistry routine.
+ *
+ * Responsibilities:
+ *  - Determine molecular mass
+ *  - Extract symmetry number (sigma)
+ *  - Classify rotor type (atom / linear / nonlinear)
+ *  - Convert inertia tensor to amu*Å^2
+ *  - Call util_molecular_thermochemistry()
+ */
+void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
+                                   double temperature,
+                                   double pressure,
+                                   std::ostream& out)
+{
+    // ----------------------------
+    // Molecular mass (amu)
+    // ----------------------------
+    double mol_mass = this->total_mass();
+
+    // ----------------------------
+    // Symmetry number
+    // ----------------------------
+    int sigma = this->symmetry().sigma();
+    if (sigma < 1) sigma = 1;
+
+    // ----------------------------
+    // Inertia (convert to amu*A^2)
+    // ----------------------------
+    double inertia_amuA2[3];
+    for (int i = 0; i < 3; ++i)
+        inertia_amuA2[i] = this->inertia_moments[i] * 1.0 / 1822.888486209;  
+        // assuming internal units = me * bohr^2 → convert to amu*Å^2
+        // adjust if your internal units differ
+
+    // ----------------------------
+    // Rotor classification
+    // ----------------------------
+    int nat = this->nion;
+
+    int rotor_type = 2; // default nonlinear
+
+    if (nat == 1)
+    {
+        rotor_type = 0; // atom
+    }
+    else
+    {
+        // detect linear: one very small moment
+        double Imin = std::min({inertia_amuA2[0],
+                                inertia_amuA2[1],
+                                inertia_amuA2[2]});
+
+        double Imax = std::max({inertia_amuA2[0],
+                                inertia_amuA2[1],
+                                inertia_amuA2[2]});
+
+        if (Imin < 1e-3 * Imax)
+            rotor_type = 1; // linear
+    }
+
+    // ----------------------------
+    // Call core routine
+    // ----------------------------
+    util_molecular_thermochemistry(freq_cm,
+                                   temperature,
+                                   mol_mass,
+                                   pressure,
+                                   sigma,
+                                   rotor_type,
+                                   inertia_amuA2,
+                                   out);
 }
 
 
