@@ -3,6 +3,9 @@
 #include <iomanip>
 #include <array>
 #include <algorithm>
+#include "units.hpp"
+
+using namespace pwdft::units;
 
 /************************************************
  *                                              *
@@ -81,25 +84,26 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
                                     std::ostream& out)
 {
     // Thermodynamic constants
-    const double R = 8.31446261815324e-3;   // kJ/mol-K
-    const double hc_over_k = 1.438776877;   // cm*K
+    //const double R = 8.31446261815324e-3;   // kJ/mol-K
+    //const double hc_over_k = 1.438776877;   // cm*K
 
     // SI constants
-    const double kB = 1.380649e-23;         // J/K
-    const double h  = 6.62607015e-34;       // J*s
-    const double pi = 3.14159265358979323846;
+    //const double kB = 1.380649e-23;         // J/K
+    //const double h  = 6.62607015e-34;       // J*s
+    //const double pi = 3.14159265358979323846;
 
     // Unit conversions
-    const double me_to_amu   = 1.0 / 1822.888486209;
-    const double amu_to_kg   = 1.66053906660e-27;
-    const double ang2_to_m2  = 1.0e-20;
-    const double kcal_per_kJ = 0.239005736;
-    const double cal_per_kJ  = 239.005736;
-    const double au_per_kcal = 1.0 / 627.509474;
+    //const double me_to_amu   = 1.0 / 1822.888486209;
+    //const double amu_to_kg   = 1.66053906660e-27;
+    //const double ang2_to_m2  = 1.0e-20;
+    //const double kcal_per_kJ = 0.239005736;
+    //const double cal_per_kJ  = 239.005736;
+    //const double au_per_kcal = 1.0 / 627.509474;
 
     // Safety guards
     if (sigma < 1) sigma = 1;
-    if (pressure <= 0.0) pressure = 101325.0;
+    //if (pressure <= 0.0) pressure = 101325.0;
+    if (pressure <= 0.0) pressure = ATM_TO_PA;
     if (rotor_type < 0 || rotor_type > 2) rotor_type = 2;
 
     // Copy/sort principal moments for stable handling
@@ -119,9 +123,11 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     // ----------------------------
     for (double freq : freq_cm)
     {
-        if (freq < 1.0) continue;
+        //if (freq < 1.0) continue;
+        if (freq < 1e-3) continue;
 
-        double theta = freq * hc_over_k;   // vibrational temperature (K)
+        //double theta = freq * hc_over_k;   // vibrational temperature (K)
+        double theta = freq * HC_OVER_K;
         double x = theta / temperature;
 
         if (x > 50.0)
@@ -150,12 +156,11 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     // ----------------------------
     // Translational contributions
     // ----------------------------
-    double mass_amu = total_mass_au * me_to_amu;
-    double mass_kg  = mass_amu * amu_to_kg;
-    //double mass_kg = mol_mass * amu_to_kg;
+    double mass_amu = total_mass_au * ME_TO_AMU;
+    double mass_kg  = mass_amu * AMU_TO_KG;
 
-
-    double qtrans_arg = std::pow(2.0 * pi * mass_kg * kB * temperature / (h * h), 1.5) * (kB * temperature / pressure);
+    //double qtrans_arg = std::pow(2.0 * pi * mass_kg * kB * temperature / (h * h), 1.5) * (kB * temperature / pressure);
+    double qtrans_arg = std::pow(2.0 * PI * mass_kg * KB * temperature / (H * H), 1.5) * (KB * temperature / pressure);
 
     double Strans   = R * (std::log(qtrans_arg) + 2.5);
     double Etrans   = 1.5 * R * temperature;
@@ -181,8 +186,9 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
 
         if (Ilin > 1.0e-16)
         {
-            double I_SI = Ilin * amu_to_kg * ang2_to_m2;
-            double theta_rot = h * h / (8.0 * pi * pi * I_SI * kB);
+            double I_SI = Ilin * AMU_TO_KG * ANG2_TO_M2;
+            //double theta_rot = h * h / (8.0 * pi * pi * I_SI * kB);
+            double theta_rot = H * H / (8.0 * PI * PI * I_SI * KB);
 
             Srot   = R * (std::log(temperature / (sigma * theta_rot)) + 1.0);
             Erot   = R * temperature;
@@ -193,18 +199,21 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     {
 
         // Nonlinear molecule
-        double IA = I[0] * amu_to_kg * ang2_to_m2;
-        double IB = I[1] * amu_to_kg * ang2_to_m2;
-        double IC = I[2] * amu_to_kg * ang2_to_m2;
+        double IA = I[0] * AMU_TO_KG * ANG2_TO_M2;
+        double IB = I[1] * AMU_TO_KG * ANG2_TO_M2;
+        double IC = I[2] * AMU_TO_KG * ANG2_TO_M2;
 
-        //if (IA > 1.0e-40 && IB > 1.0e-40 && IC > 1.0e-40)
-        if (IA > 0.0 && IB > 0.0 && IC > 0.0)
+        const double I_tol = 1e-40;
+
+        //if (IA > 0.0 && IB > 0.0 && IC > 0.0)
+        if (IA > I_tol && IB > I_tol && IC > I_tol)
         {
-            double thetaA = h * h / (8.0 * pi * pi * IA * kB);
-            double thetaB = h * h / (8.0 * pi * pi * IB * kB);
-            double thetaC = h * h / (8.0 * pi * pi * IC * kB);
+            double thetaA = H * H / (8.0 * PI * PI * IA * KB);
+            double thetaB = H * H / (8.0 * PI * PI * IB * KB);
+            double thetaC = H * H / (8.0 * PI * PI * IC * KB);
 
-            double qrot_arg = std::sqrt(pi) * std::pow(temperature, 1.5) / (sigma * std::sqrt(thetaA * thetaB * thetaC));
+            //double qrot_arg = std::sqrt(pi) * std::pow(temperature, 1.5) / (sigma * std::sqrt(thetaA * thetaB * thetaC));
+            double qrot_arg = std::sqrt(PI) * std::pow(temperature, 1.5) / (sigma * std::sqrt(thetaA * thetaB * thetaC));
 
             Srot   = R * (std::log(qrot_arg) + 1.5);
             Erot   = 1.5 * R * temperature;
@@ -230,23 +239,23 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         << "   Canonical Thermochemistry (Ideal Gas)   \n"
         << " -----------------------------------------\n";
 
-    double Ezpe_kcal     = Ezpe     * kcal_per_kJ;
-    double Ethermal_kcal = Ethermal * kcal_per_kJ;
-    double Hthermal_kcal = Hthermal * kcal_per_kJ;
+    double Ezpe_kcal     = Ezpe     * KCAL_PER_KJ;
+    double Ethermal_kcal = Ethermal * KCAL_PER_KJ;
+    double Hthermal_kcal = Hthermal * KCAL_PER_KJ;
 
-    double Ezpe_au     = Ezpe_kcal     * au_per_kcal;
-    double Ethermal_au = Ethermal_kcal * au_per_kcal;
-    double Hthermal_au = Hthermal_kcal * au_per_kcal;
+    double Ezpe_au     = Ezpe_kcal     * AU_PER_KCAL;
+    double Ethermal_au = Ethermal_kcal * AU_PER_KCAL;
+    double Hthermal_au = Hthermal_kcal * AU_PER_KCAL;
 
-    double Strans_cal = Strans * cal_per_kJ;
-    double Srot_cal   = Srot   * cal_per_kJ;
-    double Svib_cal   = Svib   * cal_per_kJ;
-    double Stotal_cal = Stotal * cal_per_kJ;
+    double Strans_cal = Strans * CAL_PER_KJ;
+    double Srot_cal   = Srot   * CAL_PER_KJ;
+    double Svib_cal   = Svib   * CAL_PER_KJ;
+    double Stotal_cal = Stotal * CAL_PER_KJ;
 
-    double Cv_trans_cal = Cv_trans * cal_per_kJ;
-    double Cv_rot_cal   = Cv_rot   * cal_per_kJ;
-    double Cv_vib_cal   = Cv_vib   * cal_per_kJ;
-    double Cv_total_cal = Cv_total * cal_per_kJ;
+    double Cv_trans_cal = Cv_trans * CAL_PER_KJ;
+    double Cv_rot_cal   = Cv_rot   * CAL_PER_KJ;
+    double Cv_vib_cal   = Cv_vib   * CAL_PER_KJ;
+    double Cv_total_cal = Cv_total * CAL_PER_KJ;
 
     out << "\n";
     out << " Temperature                        = "
@@ -268,6 +277,14 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         out << "linear\n";
     else
         out << "nonlinear\n";
+
+    out << " Molecular mass                     = "
+        << std::fixed << std::setprecision(3)
+        << mass_amu << " amu\n";
+
+    out << " Molecular mass (au, me)            = "
+        << std::fixed << std::setprecision(3)
+        << total_mass_au << "\n";
 
     out << std::fixed << std::setprecision(4);
     out << " frequency scaling parameter        =   1.0000\n\n";

@@ -967,27 +967,40 @@ static void print_hessian(std::ostream& out,
 void print_frequencies(std::ostream& out,
                        const std::vector<double>& eig,
                        int ndof,
+                       int m_eckart,
                        double conv = 2.194746e5,
                        const std::vector<std::string>* mode_irreps = nullptr)
 {
+
     out << "\n Vibrational analysis via the FX method\n";
     out << " --- with translations and rotations projected out ---\n";
     out << " --- via the Eckart algorithm                      ---\n";
 
     out << "\n Vibration   Frequencies (cm^-1):\n";
 
+    const double tol_zero = 1e-6;
+    const double tol_imag = -1e-6;
     for (int i = 0; i < ndof; ++i)
     {
         double lambda = eig[i];
         double freq   = std::sqrt(std::abs(lambda)) * conv;
 
+        bool is_zero = (std::abs(lambda) < tol_zero);
+        //bool is_imag = (lambda < tol_imag);
+        bool is_imag = (lambda < 0.0);
+        bool is_expected_zero = (i < m_eckart);
+        //bool is_numeric_zero  = (std::abs(lambda) < tol_zero);
+
         std::ostringstream val;
         val << std::fixed << std::setprecision(3);
 
-        if (lambda < 0.0)
-            val << "i " << freq;
+        //if (is_zero)
+        //    val << "0.000";
+        //else 
+        if (is_imag)
+           val << "i "  << freq;
         else
-            val << freq;
+           val << freq;
 
         // --- print index + frequency ---
         out << std::setw(5) << i + 1
@@ -998,19 +1011,21 @@ void print_frequencies(std::ostream& out,
         {
             out << "   " << std::setw(4) << (*mode_irreps)[i];
         }
-
+        if ((is_zero) && (is_expected_zero)) out << " - zero mode (Eckart)";
+        if (is_expected_zero && !is_zero) out << " <-- warning: zero mode not zero";
+        if (is_imag) out << " <---  imaginary mode";
         out << "\n";
     }
-
     out << std::defaultfloat;
 }
 
 void print_frequencies(std::ostream& out,
                        const std::vector<double>& eig,
                        int ndof,
+                       int m_eckart,
                        const std::vector<std::string>& mode_irreps)
 {
-    print_frequencies(out, eig, ndof, 2.194746e5, &mode_irreps);
+    print_frequencies(out, eig, ndof, m_eckart, 2.194746e5, &mode_irreps);
 }
 
 
@@ -1703,7 +1718,8 @@ void compute_fd_frequencies_molecule(Control2 &control,
                //coutput << "\n";
            }
  
-           print_frequencies(coutput, eig, ndof, mode_irrep);
+           //coutput << "m_eckart=" << m_eckart << "\n";
+           print_frequencies(coutput, eig, ndof, m_eckart, mode_irrep);
         }
 
 
@@ -2143,7 +2159,7 @@ if (ismaster && oprint)
        //printing frequencies
        if (oprint)
        {
-           print_frequencies(coutput, eig, ndof);
+           print_frequencies(coutput, eig, ndof, m_eckart);
        }
 
        double molecule_mass = 0.0;

@@ -405,7 +405,7 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 
 Ion::Ion(std::string rtdbstring, Control2 &control) 
 {
-   double amu_to_mass = 1822.89;
+   double amu_to_mass = 1822.888486209;
  
    auto rtdbjson = json::parse(rtdbstring);
  
