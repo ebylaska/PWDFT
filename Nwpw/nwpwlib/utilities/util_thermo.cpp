@@ -203,10 +203,10 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         double IB = I[1] * AMU_TO_KG * ANG2_TO_M2;
         double IC = I[2] * AMU_TO_KG * ANG2_TO_M2;
 
-        const double I_tol = 1e-40;
+        //const double I_tol = 1e-40;
 
-        //if (IA > 0.0 && IB > 0.0 && IC > 0.0)
-        if (IA > I_tol && IB > I_tol && IC > I_tol)
+        //if (IA > I_tol && IB > I_tol && IC > I_tol)
+        if (IA > 0.0 && IB > 0.0 && IC > 0.0)
         {
             double thetaA = H * H / (8.0 * PI * PI * IA * KB);
             double thetaB = H * H / (8.0 * PI * PI * IB * KB);

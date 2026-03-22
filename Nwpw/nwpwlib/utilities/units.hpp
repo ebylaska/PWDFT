@@ -31,11 +31,17 @@ static constexpr double AU_FREQ_TO_CM = 219474.6313705;
 static constexpr double AMU_TO_ME = 1822.888486209;
 static constexpr double ME_TO_AMU = 1.0 / AMU_TO_ME;
 static constexpr double AMU_TO_KG = 1.66053906660e-27;
+static constexpr double ME_TO_KG = 9.1093837015e-31;
+
 
 // ----------------------------
 // Length conversions
 // ----------------------------
 static constexpr double ANG2_TO_M2 = 1.0e-20;
+static constexpr double BOHR_TO_M = 5.29177210903e-11;
+static constexpr double BOHR_TO_ANG = 0.529177210903;
+static constexpr double BOHR2_TO_M2 = BOHR_TO_M * BOHR_TO_M;
+static constexpr double BOHR2_TO_ANG2 = BOHR_TO_ANG * BOHR_TO_ANG;
 
 // ----------------------------
 // Energy conversions
