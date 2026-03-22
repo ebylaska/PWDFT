@@ -110,6 +110,7 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     std::array<double,3> I = { inertia[0], inertia[1], inertia[2] };
     std::sort(I.begin(), I.end());
 
+    std::string rotor_class;
     const bool is_atom   = (rotor_type == 0);
     const bool is_linear = (rotor_type == 1);
 
@@ -166,6 +167,114 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     double Etrans   = 1.5 * R * temperature;
     double Cv_trans = 1.5 * R;
 
+// ----------------------------------------------
+// Rotational contributions (stable formulation)
+// ----------------------------------------------
+double Srot   = 0.0;
+double Erot   = 0.0;
+double Cv_rot = 0.0;
+
+const double C_inertia = AMU_TO_KG * ANG2_TO_M2;
+
+const double I_tol = 1e-12; // in amu·Å² space
+const double rot_cm_prefactor = H / (8.0 * PI * PI * C_CM * C_inertia);   // C must be cm/s
+const double rot_K_prefactor  = H * H / (8.0 * PI * PI * KB * C_inertia);
+
+double IA = I[0] * C_inertia;
+double IB = I[1] * C_inertia;
+double IC = I[2] * C_inertia;
+
+double A_cm = -99.9;
+double B_cm = -99.9;
+double C_cm = -99.9;
+double A_K  = -99.9;
+double B_K  = -99.9;
+double C_K  = -99.9;
+if (I[0] > I_tol) 
+{
+   A_cm = rot_cm_prefactor / I[0];
+   A_K  = rot_K_prefactor  / I[0];
+}
+if (I[1] > I_tol)  
+{
+   B_cm = rot_cm_prefactor / I[1];
+   B_K  = rot_K_prefactor  / I[1];
+}
+if (I[2] > I_tol)  
+{
+   C_cm = rot_cm_prefactor / I[2];
+   C_K  = rot_K_prefactor  / I[2];
+}
+
+if (is_atom)
+{
+    Srot   = 0.0;
+    Erot   = 0.0;
+    Cv_rot = 0.0;
+    rotor_class = "atom";
+}
+else if (is_linear)
+{
+    // largest principal moment for a linear rotor
+    //double Ilin = I[2];
+    double Ilin = std::max({I[0], I[1], I[2]});
+
+    if (Ilin > I_tol)
+    {
+        const double log_rot_prefactor_linear = std::log(8.0 * PI * PI * KB / (H * H)) + std::log(C_inertia);
+        //double I_SI = Ilin * C_inertia;
+
+        // qrot = T / (sigma * theta_rot)
+        //      = (8*pi^2*kB*T*I)/(sigma*h^2)
+        //double log_qrot =
+        //      std::log(temperature)
+        //    - std::log((double)sigma)
+        //    + std::log(8.0 * PI * PI * KB / (H * H))
+        //    + std::log(I_SI);
+
+        double log_qrot = log_rot_prefactor_linear
+                        - std::log((double)sigma)
+                        + std::log(temperature)
+                        + std::log(Ilin);
+
+        Srot   = R * (log_qrot + 1.0);
+        Erot   = R * temperature;
+        Cv_rot = R;
+        rotor_class = "linear rotor";
+    }
+}
+else
+{
+    // Nonlinear molecule
+    //double IA = I[0] * C_inertia;
+    //double IB = I[1] * C_inertia;
+    //double IC = I[2] * C_inertia;
+
+    if (I[0] > I_tol && I[1] > I_tol && I[2] > I_tol)
+    {
+        // qrot = sqrt(pi)/sigma * (8*pi^2*kB*T/h^2)^(3/2) * sqrt(IA*IB*IC)
+        //double log_qrot =
+        //      0.5 * std::log(PI)
+        //    - std::log((double)sigma)
+        //    + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
+        //    + 1.5 * std::log(temperature)
+        //    + 0.5 * std::log(IA * IB * IC);
+
+        double log_qrot = 0.5 * std::log(PI)
+                        - std::log((double)sigma)
+                        + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
+                        + 1.5 * std::log(temperature)
+                        + 0.5 * (std::log(I[0]) + std::log(I[1]) + std::log(I[2]))
+                        + 1.5 * std::log(C_inertia);
+
+        Srot   = R * (log_qrot + 1.5);
+        Erot   = 1.5 * R * temperature;
+        Cv_rot = 1.5 * R;
+        rotor_class = "spherical top";
+    }
+}
+
+/*
     // ----------------------------
     // Rotational contributions
     // ----------------------------
@@ -204,6 +313,8 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         double IC = I[2] * AMU_TO_KG * ANG2_TO_M2;
 
         //const double I_tol = 1e-40;
+        out << "IA=" << IA << " IB=" << IB << " IC=" << IC << std::endl;
+        out << "I0=" << I[0] << " I1=" << I[1] << " I2=" << I[2] << std::endl;
 
         //if (IA > I_tol && IB > I_tol && IC > I_tol)
         if (IA > 0.0 && IB > 0.0 && IC > 0.0)
@@ -220,6 +331,7 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
             Cv_rot = 1.5 * R;
         }
     }
+    */
 
     // ----------------------------
     // Totals
@@ -272,11 +384,25 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
 
     out << " Molecule type                      = ";
     if (is_atom)
+    {
         out << "atom\n";
+        out << " (atom: no rotational constants)\n";
+    }
     else if (is_linear)
         out << "linear\n";
     else
         out << "nonlinear\n";
+
+    out << " Rotor class                        = " << rotor_class << "\n";
+    out << " Rotational Constants\n";
+    out << std::fixed << std::setprecision(6);
+
+    if ((A_cm>0.0) && (A_K>0.0))
+       out << "   - A = " << std::setw(10) << A_cm << " cm-1  (" << std::setw(10) << A_K << " K)\n";
+    if ((B_cm>0.0) && (B_K>0.0))
+       out << "   - B = " << std::setw(10) << B_cm << " cm-1  (" << std::setw(10) << B_K << " K)\n";
+    if ((C_cm>0.0) && (C_K>0.0))
+       out << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
 
     out << " Molecular mass                     = "
         << std::fixed << std::setprecision(3)

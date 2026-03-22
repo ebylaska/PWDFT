@@ -12,7 +12,9 @@ namespace pwdft::units {
 static constexpr double KB = 1.380649e-23;          // J/K
 static constexpr double H  = 6.62607015e-34;        // J·s
 static constexpr double PI = 3.14159265358979323846;
-static constexpr double C  = 2.99792458e10;         // cm/s
+static constexpr double C    = 2.99792458e10;       // cm/s
+static constexpr double C_SI = 2.99792458e8;        // m/s
+static constexpr double C_CM = 2.99792458e10;       // cm/s
 
 // ----------------------------
 // Thermodynamic constants
