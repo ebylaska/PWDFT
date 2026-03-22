@@ -405,7 +405,8 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 
 Ion::Ion(std::string rtdbstring, Control2 &control) 
 {
-   double amu_to_mass = 1822.888486209;
+   //double amu_to_mass = 1822.888486209;
+   double amu_to_mass = pwdft::units::AMU_TO_ME;
  
    auto rtdbjson = json::parse(rtdbstring);
  
@@ -1803,7 +1804,8 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
     // ----------------------------
     double inertia_amuA2[3];
     for (int i = 0; i < 3; ++i)
-        inertia_amuA2[i] = this->inertia_moments[i] * 1.0 / 1822.888486209;  
+        inertia_amuA2[i] = this->inertia_moments[i] * pwdft::units::ME_TO_AMU;
+        //inertia_amuA2[i] = this->inertia_moments[i] * 1.0 / 1822.888486209;  
         // assuming internal units = me * bohr^2 → convert to amu*Å^2
         // adjust if your internal units differ
 

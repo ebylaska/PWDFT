@@ -17,8 +17,10 @@
 #include "ion_rcovalent.hpp"
 #include "Symmetry.hpp"
 #include "PointGroupCharacterTables.hpp"
+#include "units.hpp"
 
 namespace pwdft {
+
 
 class Ion {
 
@@ -160,7 +162,7 @@ public:
  
    char *symbol(const int i) { return &atomarray[3*katm[i]]; }
    char *atom(const int ia) { return &atomarray[3*ia]; }
-   double amu(const int i) { return mass[i]/1822.888486209; }
+   double amu(const int i) { return mass[i]*pwdft::units::ME_TO_AMU; }
    void writefilename(std::string &);
    void writejsonstr(std::string &);
    double rion(int i, int ii) { return rion1[3*ii+i]; }
