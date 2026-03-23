@@ -177,6 +177,7 @@ double Cv_rot = 0.0;
 const double C_inertia = AMU_TO_KG * ANG2_TO_M2;
 
 const double I_tol = 1e-12; // in amu·Å² space
+const double tol_rel = 1e-3;
 const double rot_cm_prefactor = H / (8.0 * PI * PI * C_CM * C_inertia);   // C must be cm/s
 const double rot_K_prefactor  = H * H / (8.0 * PI * PI * KB * C_inertia);
 
@@ -205,6 +206,12 @@ if (I[2] > I_tol)
    C_cm = rot_cm_prefactor / I[2];
    C_K  = rot_K_prefactor  / I[2];
 }
+
+
+auto approx_equal = [&](double a, double b) {
+    return std::fabs(a - b) < tol_rel * std::max({1.0, std::fabs(a), std::fabs(b)});
+};
+
 
 if (is_atom)
 {
@@ -250,6 +257,23 @@ else
     //double IB = I[1] * C_inertia;
     //double IC = I[2] * C_inertia;
 
+    if (approx_equal(I[0], I[1]) && approx_equal(I[1], I[2]))
+    {
+         double spread = std::fabs(I[2] - I[0]) / I[2];
+
+         //if (spread < 1e-5)
+         if (spread < 1e-3)
+            rotor_class = "spherical top";
+         else
+            rotor_class = "near-spherical top";
+    }
+    else if (approx_equal(I[0], I[1]))
+       rotor_class = "oblate symmetric top";
+    else if (approx_equal(I[1], I[2]))
+       rotor_class = "prolate symmetric top";
+    else
+       rotor_class = "asymmetric top";
+
     if (I[0] > I_tol && I[1] > I_tol && I[2] > I_tol)
     {
         // qrot = sqrt(pi)/sigma * (8*pi^2*kB*T/h^2)^(3/2) * sqrt(IA*IB*IC)
@@ -270,7 +294,6 @@ else
         Srot   = R * (log_qrot + 1.5);
         Erot   = 1.5 * R * temperature;
         Cv_rot = 1.5 * R;
-        rotor_class = "spherical top";
     }
 }
 
