@@ -1831,8 +1831,35 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
                                 inertia_amuA2[1],
                                 inertia_amuA2[2]});
 
+        // deted linear
         if (Imin < 1e-3 * Imax)
-            rotor_type = 1; // linear
+           rotor_type = 1; // linear
+
+        //detect rest 
+        else
+        {
+           std::array<double,3> I = { inertia_amuA2[0], inertia_amuA2[1], inertia_amuA2[2] };
+           std::sort(I.begin(), I.end());
+           const double tol_rel = 1e-3;
+           auto approx_equal = [&](double a, double b) { return std::fabs(a - b) < tol_rel * std::max({1.0, std::fabs(a), std::fabs(b)}); };
+
+           if (approx_equal(I[0], I[1]) && approx_equal(I[1], I[2]))
+           {
+              double spread = std::fabs(I[2] - I[0]) / I[2];
+
+              //if (spread < 1e-5)
+              if (spread < 1e-3)
+                 rotor_type = 2; // rotor_class = "spherical top";
+              else
+                 rotor_type = 3; //rotor_class = "near-spherical top";
+           }
+           else if (approx_equal(I[0], I[1]))
+              rotor_type = 4; //rotor_class = "oblate symmetric top";
+           else if (approx_equal(I[1], I[2]))
+              rotor_type = 5; //rotor_class = "prolate symmetric top";
+           else
+              rotor_type = 6; //rotor_class = "asymmetric top";
+       }
     }
 
     // ----------------------------

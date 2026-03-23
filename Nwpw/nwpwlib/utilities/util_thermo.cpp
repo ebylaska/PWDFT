@@ -62,12 +62,35 @@ using namespace pwdft::units;
  *        Rotor classification:
  *          0 = atom
  *          1 = linear molecule
- *          2 = nonlinear molecule
+ *          2 = spherical top
+ *          3 = near-spherical top
+ *          4 = oblate symmetric top
+ *          5 = prolate symmetric top
+ *          6 = asymmetric top
+ *
+ *        Notes:
+ *          - Types ≥ 2 are all treated as nonlinear rotors in the
+ *            thermodynamic expressions.
+ *          - The finer classification (2–6) is used for reporting
+ *            and potential symmetry-based validation.
  *
  * @param inertia
  *        Principal moments of inertia in amu*Angstrom^2.
  *        For linear molecules, one moment is near zero and the two largest
  *        principal moments are approximately equal.
+ *
+ *        Principal moments of inertia (I_A, I_B, I_C) in amu·Å²,
+ *        corresponding to the principal axes obtained from the
+ *        inertia tensor diagonalization.
+ *
+ *        The ordering is preserved as provided (no sorting is applied),
+ *        so the associated rotational constants (A, B, C) reflect the
+ *        geometry-defined principal axes.
+ *
+ *        Interpretation:
+ *        - Atom: all moments ≈ 0
+ *        - Linear: one moment ≈ 0, two large moments
+ *        - Nonlinear: all moments > 0
  *
  * @param out
  *        Output stream used to print formatted thermochemistry results.
@@ -83,36 +106,29 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
                                     const double inertia[3],
                                     std::ostream& out)
 {
-    // Thermodynamic constants
-    //const double R = 8.31446261815324e-3;   // kJ/mol-K
-    //const double hc_over_k = 1.438776877;   // cm*K
-
-    // SI constants
-    //const double kB = 1.380649e-23;         // J/K
-    //const double h  = 6.62607015e-34;       // J*s
-    //const double pi = 3.14159265358979323846;
-
-    // Unit conversions
-    //const double me_to_amu   = 1.0 / 1822.888486209;
-    //const double amu_to_kg   = 1.66053906660e-27;
-    //const double ang2_to_m2  = 1.0e-20;
-    //const double kcal_per_kJ = 0.239005736;
-    //const double cal_per_kJ  = 239.005736;
-    //const double au_per_kcal = 1.0 / 627.509474;
 
     // Safety guards
     if (sigma < 1) sigma = 1;
     //if (pressure <= 0.0) pressure = 101325.0;
     if (pressure <= 0.0) pressure = ATM_TO_PA;
-    if (rotor_type < 0 || rotor_type > 2) rotor_type = 2;
+    //if (rotor_type < 0 || rotor_type > 2) rotor_type = 2;
 
     // Copy/sort principal moments for stable handling
     std::array<double,3> I = { inertia[0], inertia[1], inertia[2] };
-    std::sort(I.begin(), I.end());
+    //std::sort(I.begin(), I.end());
 
-    std::string rotor_class;
     const bool is_atom   = (rotor_type == 0);
     const bool is_linear = (rotor_type == 1);
+
+    std::string rotor_class;
+    if (rotor_type==0) rotor_class = "atom";
+    if (rotor_type==1) rotor_class = "linear rotor";
+    if (rotor_type==2) rotor_class = "spherical top";
+    if (rotor_type==3) rotor_class = "near-spherical top";
+    if (rotor_type==4) rotor_class = "oblate symmetric top";
+    if (rotor_type==5) rotor_class = "prolate symmetric top";
+    if (rotor_type==6) rotor_class = "asymmetric top";
+
 
     double Ezpe   = 0.0;
     double Evib   = 0.0;   // NWChem-style: includes ZPE
@@ -167,194 +183,109 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     double Etrans   = 1.5 * R * temperature;
     double Cv_trans = 1.5 * R;
 
-// ----------------------------------------------
-// Rotational contributions (stable formulation)
-// ----------------------------------------------
-double Srot   = 0.0;
-double Erot   = 0.0;
-double Cv_rot = 0.0;
-
-const double C_inertia = AMU_TO_KG * ANG2_TO_M2;
-
-const double I_tol = 1e-12; // in amu·Å² space
-const double tol_rel = 1e-3;
-const double rot_cm_prefactor = H / (8.0 * PI * PI * C_CM * C_inertia);   // C must be cm/s
-const double rot_K_prefactor  = H * H / (8.0 * PI * PI * KB * C_inertia);
-
-double IA = I[0] * C_inertia;
-double IB = I[1] * C_inertia;
-double IC = I[2] * C_inertia;
-
-double A_cm = -99.9;
-double B_cm = -99.9;
-double C_cm = -99.9;
-double A_K  = -99.9;
-double B_K  = -99.9;
-double C_K  = -99.9;
-if (I[0] > I_tol) 
-{
-   A_cm = rot_cm_prefactor / I[0];
-   A_K  = rot_K_prefactor  / I[0];
-}
-if (I[1] > I_tol)  
-{
-   B_cm = rot_cm_prefactor / I[1];
-   B_K  = rot_K_prefactor  / I[1];
-}
-if (I[2] > I_tol)  
-{
-   C_cm = rot_cm_prefactor / I[2];
-   C_K  = rot_K_prefactor  / I[2];
-}
-
-
-auto approx_equal = [&](double a, double b) {
-    return std::fabs(a - b) < tol_rel * std::max({1.0, std::fabs(a), std::fabs(b)});
-};
-
-
-if (is_atom)
-{
-    Srot   = 0.0;
-    Erot   = 0.0;
-    Cv_rot = 0.0;
-    rotor_class = "atom";
-}
-else if (is_linear)
-{
-    // largest principal moment for a linear rotor
-    //double Ilin = I[2];
-    double Ilin = std::max({I[0], I[1], I[2]});
-
-    if (Ilin > I_tol)
-    {
-        const double log_rot_prefactor_linear = std::log(8.0 * PI * PI * KB / (H * H)) + std::log(C_inertia);
-        //double I_SI = Ilin * C_inertia;
-
-        // qrot = T / (sigma * theta_rot)
-        //      = (8*pi^2*kB*T*I)/(sigma*h^2)
-        //double log_qrot =
-        //      std::log(temperature)
-        //    - std::log((double)sigma)
-        //    + std::log(8.0 * PI * PI * KB / (H * H))
-        //    + std::log(I_SI);
-
-        double log_qrot = log_rot_prefactor_linear
-                        - std::log((double)sigma)
-                        + std::log(temperature)
-                        + std::log(Ilin);
-
-        Srot   = R * (log_qrot + 1.0);
-        Erot   = R * temperature;
-        Cv_rot = R;
-        rotor_class = "linear rotor";
-    }
-}
-else
-{
-    // Nonlinear molecule
-    //double IA = I[0] * C_inertia;
-    //double IB = I[1] * C_inertia;
-    //double IC = I[2] * C_inertia;
-
-    if (approx_equal(I[0], I[1]) && approx_equal(I[1], I[2]))
-    {
-         double spread = std::fabs(I[2] - I[0]) / I[2];
-
-         //if (spread < 1e-5)
-         if (spread < 1e-3)
-            rotor_class = "spherical top";
-         else
-            rotor_class = "near-spherical top";
-    }
-    else if (approx_equal(I[0], I[1]))
-       rotor_class = "oblate symmetric top";
-    else if (approx_equal(I[1], I[2]))
-       rotor_class = "prolate symmetric top";
-    else
-       rotor_class = "asymmetric top";
-
-    if (I[0] > I_tol && I[1] > I_tol && I[2] > I_tol)
-    {
-        // qrot = sqrt(pi)/sigma * (8*pi^2*kB*T/h^2)^(3/2) * sqrt(IA*IB*IC)
-        //double log_qrot =
-        //      0.5 * std::log(PI)
-        //    - std::log((double)sigma)
-        //    + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
-        //    + 1.5 * std::log(temperature)
-        //    + 0.5 * std::log(IA * IB * IC);
-
-        double log_qrot = 0.5 * std::log(PI)
-                        - std::log((double)sigma)
-                        + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
-                        + 1.5 * std::log(temperature)
-                        + 0.5 * (std::log(I[0]) + std::log(I[1]) + std::log(I[2]))
-                        + 1.5 * std::log(C_inertia);
-
-        Srot   = R * (log_qrot + 1.5);
-        Erot   = 1.5 * R * temperature;
-        Cv_rot = 1.5 * R;
-    }
-}
-
-/*
-    // ----------------------------
-    // Rotational contributions
-    // ----------------------------
+    // ----------------------------------------------
+    // Rotational contributions (stable formulation)
+    // ----------------------------------------------
     double Srot   = 0.0;
     double Erot   = 0.0;
     double Cv_rot = 0.0;
 
+    const double C_inertia = AMU_TO_KG * ANG2_TO_M2;
+
+    const double I_tol = 1e-12; // in amu·Å² space
+    const double rot_cm_prefactor = H / (8.0 * PI * PI * C_CM * C_inertia);   // C must be cm/s
+    const double rot_K_prefactor  = H * H / (8.0 * PI * PI * KB * C_inertia);
+
+    //double IA = I[0] * C_inertia;
+    //double IB = I[1] * C_inertia;
+    //double IC = I[2] * C_inertia;
+
+    double A_cm = -99.9;
+    double B_cm = -99.9;
+    double C_cm = -99.9;
+    double A_K  = -99.9;
+    double B_K  = -99.9;
+    double C_K  = -99.9;
+    if (I[0] > I_tol) 
+    {
+       A_cm = rot_cm_prefactor / I[0];
+       A_K  = rot_K_prefactor  / I[0];
+    }
+    if (I[1] > I_tol)  
+    {
+       B_cm = rot_cm_prefactor / I[1];
+       B_K  = rot_K_prefactor  / I[1];
+    }
+    if (I[2] > I_tol)  
+    {
+       C_cm = rot_cm_prefactor / I[2];
+       C_K  = rot_K_prefactor  / I[2];
+    }
+
+
+
     if (is_atom)
     {
-        Srot   = 0.0;
-        Erot   = 0.0;
-        Cv_rot = 0.0;
+       Srot   = 0.0;
+       Erot   = 0.0;
+       Cv_rot = 0.0;
     }
     else if (is_linear)
     {
-        // largest moment after sorting
-        double Ilin = I[2];
+       // largest principal moment for a linear rotor
+       //double Ilin = I[2];
+       double Ilin = std::max({I[0], I[1], I[2]});
 
-        if (Ilin > 1.0e-16)
-        {
-            double I_SI = Ilin * AMU_TO_KG * ANG2_TO_M2;
-            //double theta_rot = h * h / (8.0 * pi * pi * I_SI * kB);
-            double theta_rot = H * H / (8.0 * PI * PI * I_SI * KB);
-
-            Srot   = R * (std::log(temperature / (sigma * theta_rot)) + 1.0);
-            Erot   = R * temperature;
-            Cv_rot = R;
-        }
+       if (Ilin > I_tol)
+       {
+           const double log_rot_prefactor_linear = std::log(8.0 * PI * PI * KB / (H * H)) + std::log(C_inertia);
+           //double I_SI = Ilin * C_inertia;
+ 
+           // qrot = T / (sigma * theta_rot)
+           //      = (8*pi^2*kB*T*I)/(sigma*h^2)
+           //double log_qrot =
+           //      std::log(temperature)
+           //    - std::log((double)sigma)
+           //    + std::log(8.0 * PI * PI * KB / (H * H))
+           //    + std::log(I_SI);
+ 
+           double log_qrot = log_rot_prefactor_linear
+                           - std::log((double)sigma)
+                           + std::log(temperature)
+                           + std::log(Ilin);
+ 
+           Srot   = R * (log_qrot + 1.0);
+           Erot   = R * temperature;
+           Cv_rot = R;
+       }
     }
+
+    // Nonlinear molecule
     else
     {
-
-        // Nonlinear molecule
-        double IA = I[0] * AMU_TO_KG * ANG2_TO_M2;
-        double IB = I[1] * AMU_TO_KG * ANG2_TO_M2;
-        double IC = I[2] * AMU_TO_KG * ANG2_TO_M2;
-
-        //const double I_tol = 1e-40;
-        out << "IA=" << IA << " IB=" << IB << " IC=" << IC << std::endl;
-        out << "I0=" << I[0] << " I1=" << I[1] << " I2=" << I[2] << std::endl;
-
-        //if (IA > I_tol && IB > I_tol && IC > I_tol)
-        if (IA > 0.0 && IB > 0.0 && IC > 0.0)
-        {
-            double thetaA = H * H / (8.0 * PI * PI * IA * KB);
-            double thetaB = H * H / (8.0 * PI * PI * IB * KB);
-            double thetaC = H * H / (8.0 * PI * PI * IC * KB);
-
-            //double qrot_arg = std::sqrt(pi) * std::pow(temperature, 1.5) / (sigma * std::sqrt(thetaA * thetaB * thetaC));
-            double qrot_arg = std::sqrt(PI) * std::pow(temperature, 1.5) / (sigma * std::sqrt(thetaA * thetaB * thetaC));
-
-            Srot   = R * (std::log(qrot_arg) + 1.5);
-            Erot   = 1.5 * R * temperature;
-            Cv_rot = 1.5 * R;
-        }
+       if (I[0] > I_tol && I[1] > I_tol && I[2] > I_tol)
+       {
+           // qrot = sqrt(pi)/sigma * (8*pi^2*kB*T/h^2)^(3/2) * sqrt(IA*IB*IC)
+           //double log_qrot =
+           //      0.5 * std::log(PI)
+           //    - std::log((double)sigma)
+           //    + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
+           //    + 1.5 * std::log(temperature)
+           //    + 0.5 * std::log(IA * IB * IC);
+ 
+           double log_qrot = 0.5 * std::log(PI)
+                           - std::log((double)sigma)
+                           + 1.5 * std::log(8.0 * PI * PI * KB / (H * H))
+                           + 1.5 * std::log(temperature)
+                           + 0.5 * (std::log(I[0]) + std::log(I[1]) + std::log(I[2]))
+                           + 1.5 * std::log(C_inertia);
+ 
+           Srot   = R * (log_qrot + 1.5);
+           Erot   = 1.5 * R * temperature;
+           Cv_rot = 1.5 * R;
+       }
     }
-    */
+
 
     // ----------------------------
     // Totals
@@ -401,6 +332,14 @@ else
         << std::fixed << std::setprecision(2)
         << pressure << " Pa\n";
 
+    out << " Molecular mass                     = "
+        << std::fixed << std::setprecision(3)
+        << mass_amu << " amu\n";
+
+    out << " Molecular mass (au, me)            = "
+        << std::fixed << std::setprecision(3)
+        << total_mass_au << "\n";
+
     out << " Rotational symmetry number         = "
         << std::fixed << std::setprecision(0)
         << sigma << "\n";
@@ -426,14 +365,6 @@ else
        out << "   - B = " << std::setw(10) << B_cm << " cm-1  (" << std::setw(10) << B_K << " K)\n";
     if ((C_cm>0.0) && (C_K>0.0))
        out << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
-
-    out << " Molecular mass                     = "
-        << std::fixed << std::setprecision(3)
-        << mass_amu << " amu\n";
-
-    out << " Molecular mass (au, me)            = "
-        << std::fixed << std::setprecision(3)
-        << total_mass_au << "\n";
 
     out << std::fixed << std::setprecision(4);
     out << " frequency scaling parameter        =   1.0000\n\n";
