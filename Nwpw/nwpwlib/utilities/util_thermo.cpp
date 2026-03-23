@@ -344,7 +344,7 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         << std::fixed << std::setprecision(0)
         << sigma << "\n";
 
-    out << " Molecule type                      = ";
+    out << " Rotor type                         = ";
     if (is_atom)
     {
         out << "atom\n";
@@ -367,7 +367,7 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
        out << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
 
     out << std::fixed << std::setprecision(4);
-    out << " frequency scaling parameter        =   1.0000\n\n";
+    out << " Frequency scaling parameter        =   1.0000\n\n";
 
     out << std::setprecision(3);
     out << " Zero-Point correction to Energy    = "
