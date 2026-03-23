@@ -1074,6 +1074,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      pdriver_trust = rtdbjson["driver"]["trust"];
    }
 
+   // Hessian print
+   phessian_print = rtdbjson.value("driver", nlohmann::json{}).value("hessian_print", phessian_print);
+
+
    // pspspin
    if (!rtdbjson["nwpw"]["pspspin"].is_null()) {
      p_pspspin = rtdbjson["nwpw"]["pspspin"];
@@ -1089,12 +1093,16 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    }
 
    // vdw variables - resetable
-   if (!rtdbjson["nwpw"]["options_disp"].is_null()) poptions_disp = rtdbjson["nwpw"]["options_disp"];
-   if (!rtdbjson["nwpw"]["has_disp"].is_null())     phas_disp     = rtdbjson["nwpw"]["has_disp"];
-   if (!rtdbjson["nwpw"]["has_vdw"].is_null())      phas_vdw      = rtdbjson["nwpw"]["has_vdw"];
-   if (!rtdbjson["nwpw"]["is_vdw2"].is_null())      pis_vdw2      = rtdbjson["nwpw"]["is_vdw2"];
-   if (!rtdbjson["nwpw"]["is_grimme2"].is_null())   pis_grimme2   = rtdbjson["nwpw"]["is_grimme2"];
-
+   //if (!rtdbjson["nwpw"]["options_disp"].is_null()) poptions_disp = rtdbjson["nwpw"]["options_disp"];
+   //if (!rtdbjson["nwpw"]["has_disp"].is_null())     phas_disp     = rtdbjson["nwpw"]["has_disp"];
+   //if (!rtdbjson["nwpw"]["has_vdw"].is_null())      phas_vdw      = rtdbjson["nwpw"]["has_vdw"];
+   //if (!rtdbjson["nwpw"]["is_vdw2"].is_null())      pis_vdw2      = rtdbjson["nwpw"]["is_vdw2"];
+   //if (!rtdbjson["nwpw"]["is_grimme2"].is_null())   pis_grimme2   = rtdbjson["nwpw"]["is_grimme2"];
+   poptions_disp = rtdbjson.value("nwpw", nlohmann::json{}).value("options_disp", poptions_disp);
+   phas_disp     = rtdbjson.value("nwpw", nlohmann::json{}).value("has_disp",     phas_disp);
+   phas_vdw      = rtdbjson.value("nwpw", nlohmann::json{}).value("has_vdw",      phas_vdw);
+   pis_vdw2      = rtdbjson.value("nwpw", nlohmann::json{}).value("is_vdw2",      pis_vdw2);
+   pis_grimme2   = rtdbjson.value("nwpw", nlohmann::json{}).value("is_grimme2",   pis_grimme2);
 
 }
 

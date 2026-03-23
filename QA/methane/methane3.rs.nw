@@ -11,6 +11,7 @@ scratch_dir   ./perm3
 #task pspw energy
 driver 
 maxiter 2
+hessian
 end
 #task pspw geovib
 task pspw freq

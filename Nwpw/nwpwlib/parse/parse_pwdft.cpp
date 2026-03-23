@@ -2467,6 +2467,16 @@ static json parse_driver(json driverjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() > 1)
         driverjson["inhess"] = std::stoi(ss[1]);
+    } else if (mystring_contains(line, "hessian")) {
+        bool flag = true;
+        ss = mystring_split0(line);
+        if (ss.size() > 1) {
+           std::string val = ss[1];
+           std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+           if (val == "0" || val == "false" || val == "no" || val == "off" || val == "noprint")
+              flag = false;
+        }
+        driverjson["hessian_print"] = flag;
     } else if (mystring_contains(line, "moddir")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)
@@ -2504,6 +2514,7 @@ static json parse_driver(json driverjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() > 1)
         driverjson["lmbfgs_size"] = std::stoi(ss[1]);
+
     }
 
     ++cur;

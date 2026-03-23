@@ -168,6 +168,8 @@ class Control2 {
    bool pcell_optimize  = false;
    bool pparrinello_rahman = false;
 
+   bool phessian_print = false;
+
    // symmetry stuff
 
    // --- symmetry state ---
@@ -621,6 +623,8 @@ public:
    // remove virtual from rtdbstring
    //void remove_virtual(){
   // }
+
+  bool print_hessian() { return phessian_print; }
 
 };
 

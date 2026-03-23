@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <cstring>
@@ -1601,10 +1602,28 @@ void compute_fd_frequencies_molecule(Control2 &control,
         }
     }
 
-    if (ismaster && oprint)
+    //if (ismaster && oprint && control.print_hessian())
+    //{
+    //    print_hessian(coutput, "    Symmetry Hessian", Hfull.data(), ndof);
+    //}
+
+    if (ismaster && oprint && control.print_hessian())
     {
-        print_hessian(coutput, "    Symmetry Hessian", Hfull.data(), ndof);
+       std::string filename = std::string(control.permanent_dir()) + "/symmetry_hessian.dat";
+ 
+       std::ofstream hess_file(filename);
+ 
+       if (!hess_file)
+       {
+           std::cerr << "Error: could not open " << filename << std::endl;
+       }
+       else
+       {
+           coutput << "\n output hessian to filename: " << filename << std::endl;
+           print_hessian(hess_file, "    Symmetry Hessian", Hfull.data(), ndof);
+       }
     }
+
 
     // restore full geometry
     for (int i = 0; i < ndof; ++i)
@@ -2075,11 +2094,22 @@ void compute_fd_frequencies_full(Control2 &control,
 
     }
 
-if (ismaster && oprint)
-{
-    print_hessian(coutput, "     Full FD Hessian", H.data(), ndof);
-}
+    if (ismaster && oprint && control.print_hessian())
+    {
+       std::string filename = std::string(control.permanent_dir()) + "/symmetry_hessian.dat";
 
+       std::ofstream hess_file(filename);
+
+       if (!hess_file)
+       {
+           std::cerr << "Error: could not open " << filename << std::endl;
+       }
+       else
+       {
+           coutput << "\n output hessian to filename: " << filename << std::endl;
+           print_hessian(hess_file, "    Full FD Hessian", H.data(), ndof);
+       }
+    }
 
     // restore geometry
     for(int i=0;i<3*N;++i)
