@@ -1058,21 +1058,31 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      psa_decay[1] = rtdbjson["nwpw"]["car-parrinello"]["SA_decay"][1];
    }
  
-   //driver options
-   const auto& driver = (rtdbjson.contains("driver") && rtdbjson["driver"].is_object())
-                      ? rtdbjson["driver"]
-                      : nlohmann::json::object();
+   
 
-   if (driver.contains("symmetry_lock") && driver["symmetry_lock"].is_boolean()) symmetry_lock_ = driver["symmetry_lock"];
+   // driver options
+   const auto& driver_json = (rtdbjson.contains("driver") && !rtdbjson["driver"].is_null())
+                           ? rtdbjson["driver"]
+                           : nlohmann::json::object();
 
-   if (driver.contains("maxiter")) pdriver_maxiter = driver["maxiter"];
-   if (driver.contains("lmbfgs_size")) pdriver_lmbfgs_size = driver["lmbfgs_size"];
-   if (driver.contains("gmax")) pdriver_gmax = driver["gmax"];
-   if (driver.contains("grms")) pdriver_grms = driver["grms"];
-   if (driver.contains("xmax")) pdriver_xmax = driver["xmax"];
-   if (driver.contains("xrms")) pdriver_xrms = driver["xrms"];
-   if (driver.contains("trust")) pdriver_trust = driver["trust"];
-   if (driver.contains("hessian_print")) phessian_print = driver["hessian_print"];
+   auto get = [&](const char* key, auto& var) {
+       if (driver_json.contains(key) && !driver_json[key].is_null()) {
+           var = driver_json[key].get<std::decay_t<decltype(var)>>();
+       }
+   };
+
+   get("symmetry_lock", symmetry_lock_);
+   get("maxiter", pdriver_maxiter);
+   get("lmbfgs_size", pdriver_lmbfgs_size);
+   get("gmax", pdriver_gmax);
+   get("grms", pdriver_grms);
+   get("xmax", pdriver_xmax);
+   get("xrms", pdriver_xrms);
+   get("trust", pdriver_trust);
+
+   phessian_print = driver_json.value("hessian_print", phessian_print);
+
+
 
    /*
    if (rtdbjson["driver"].contains("symmetry_lock") && rtdbjson["driver"]["symmetry_lock"].is_boolean())
