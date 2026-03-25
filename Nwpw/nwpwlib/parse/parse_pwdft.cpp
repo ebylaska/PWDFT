@@ -2698,10 +2698,45 @@ json parse_rtdbjson(json rtdb) {
        std::vector<std::string> ss = mystring_split0(lines[cur]);
        if (ss.size() > 1)
           auto count_erase = rtdb.erase(ss[1]);
+    //} else if (mystring_contains(mystring_lowercase(lines[cur]), "set ")) {
+    //   std::vector<std::string> ss = mystring_split0(lines[cur]);
+    //   if (ss.size() > 2)
+    //      rtdb[ss[1]] = ss[2];
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "set ")) {
-       std::vector<std::string> ss = mystring_split0(lines[cur]);
-       if (ss.size() > 2)
-          rtdb[ss[1]] = ss[2];
+
+        std::vector<std::string> ss = mystring_split0(lines[cur]);
+ 
+        if (ss.size() > 2) {
+ 
+            std::string key = ss[1];
+            std::string val = ss[2];
+ 
+            // ---- type conversion ----
+            json jval;
+            if (val == "false" || val == ".false.") jval = false;
+            else if (val == "true" || val == ".true.") jval = true;
+            else {
+                try { jval = std::stod(val); }
+                catch (...) { jval = val; }
+            }
+ 
+            // ---- hierarchical insert ----
+            std::vector<std::string> parts = mystring_split(key, ":");
+ 
+            json* ptr = &rtdb;
+ 
+            for (size_t i = 0; i < parts.size() - 1; ++i) {
+ 
+                if (!(*ptr)[parts[i]].is_object()) {
+                    (*ptr)[parts[i]] = json::object();
+                }
+ 
+                ptr = &((*ptr)[parts[i]]);
+            }
+ 
+            (*ptr)[parts.back()] = jval;
+        }
+
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "start")) {
        rtdb["dbname"] = mystring_trim( mystring_split(mystring_split(lines[cur], "start")[1], "\n")[0]);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "geometry")) {

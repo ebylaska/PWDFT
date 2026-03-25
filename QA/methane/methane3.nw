@@ -15,6 +15,8 @@ H         1.03495325     0.12472155     0.14913463
 H         0.37173239    -1.03469587    -1.02278872
 end
 
+
+
 nwpw
   cutoff 30.0
   simulation_cell
@@ -23,7 +25,10 @@ nwpw
   xc pbe
   lmbfgs
 end
+set nwpw:use_symmetry true
 
 task pspw energy
+
+set driver:symmetry_lock false
 task pspw optimize
 

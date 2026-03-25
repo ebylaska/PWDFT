@@ -36,6 +36,7 @@ class Ion {
   Symmetry mysymmetry;
 
   std::vector<std::vector<int>> equivalent_atoms;
+  std::vector<std::vector<int>> symmetry_atom_map;
 
   double *rion1_orig = nullptr;
   bool has_backup = false;
@@ -566,12 +567,23 @@ public:
    void build_equivalent_atoms(double tol=1e-3);
    const std::vector<std::vector<int>>& get_equivalent_atoms() const;
 
+   bool has_symmetry() const { return symmetry_nops() > 1; }
+
+   void build_symmetry_atom_map(double tol = -1.0);
+   const std::vector<std::vector<int>>& get_symmetry_atom_map() const { return symmetry_atom_map; }
+
+   void project_cartesian_vector(double *v) const;
+   void symmetrize_rion1();
+   void symmetrize_rion2();
+
+   void print_symmetry_atom_map(std::ostream &out) const;
 
    std::string print_symmetry_group();
    std::string print_symmetry_group(std::string);
    void print_symmetry_ops(std::ostream &out);
    void print_symmetry_check(std::ostream &out);
    void print_rion_sym(std::ostream &out);
+
 
    const PointGroupCharacterTable* get_character_table();
    void set_group_name(const std::string& );

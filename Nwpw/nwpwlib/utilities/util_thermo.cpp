@@ -324,27 +324,27 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     double Cv_total_cal = Cv_total * CAL_PER_KJ;
 
     out << "\n";
-    out << " Temperature                        = "
+    out << " temperature                        = "
         << std::fixed << std::setprecision(2)
         << temperature << " K\n";
 
-    out << " Pressure                           = "
+    out << " pressure                           = "
         << std::fixed << std::setprecision(2)
         << pressure << " Pa\n";
 
-    out << " Molecular mass                     = "
+    out << " molecular mass                     = "
         << std::fixed << std::setprecision(3)
         << mass_amu << " amu\n";
 
-    out << " Molecular mass (au, me)            = "
+    out << " molecular mass (au, me)            = "
         << std::fixed << std::setprecision(3)
         << total_mass_au << "\n";
 
-    out << " Rotational symmetry number         = "
+    out << " rotational symmetry number         = "
         << std::fixed << std::setprecision(0)
         << sigma << "\n";
 
-    out << " Rotor type                         = ";
+    out << " rotor type                         = ";
     if (is_atom)
     {
         out << "atom\n";
@@ -355,7 +355,7 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     else
         out << "nonlinear\n";
 
-    out << " Rotor class                        = " << rotor_class << "\n";
+    out << " rotor class                        = " << rotor_class << "\n";
     out << " Rotational Constants\n";
     out << std::fixed << std::setprecision(6);
 
@@ -367,24 +367,24 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
        out << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
 
     out << std::fixed << std::setprecision(4);
-    out << " Frequency scaling parameter        =   1.0000\n\n";
+    out << " frequency scaling parameter        =   1.0000\n\n";
 
     out << std::setprecision(3);
-    out << " Zero-Point correction to Energy    = "
+    out << " zero-point correction to energy    = "
         << std::setw(10) << Ezpe_kcal
         << " kcal/mol  ("
         << std::setw(10) << std::setprecision(6) << Ezpe_au
         << " au)\n";
 
     out << std::setprecision(3);
-    out << " Thermal correction to Energy       = "
+    out << " thermal correction to energy       = "
         << std::setw(10) << Ethermal_kcal
         << " kcal/mol  ("
         << std::setw(10) << std::setprecision(6) << Ethermal_au
         << " au)\n";
 
     out << std::setprecision(3);
-    out << " Thermal correction to Enthalpy     = "
+    out << " thermal correction to enthalpy     = "
         << std::setw(10) << Hthermal_kcal
         << " kcal/mol  ("
         << std::setw(10) << std::setprecision(6) << Hthermal_au
@@ -393,19 +393,19 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     out << "\n";
 
     out << std::setprecision(3);
-    out << " Total Entropy                      = "
+    out << " total entropy                      = "
         << std::setw(10) << Stotal_cal
         << " cal/mol-K\n";
 
-    out << "   - Translational                  = "
+    out << "   - translational                  = "
         << std::setw(10) << Strans_cal
         << " cal/mol-K\n";
 
-    out << "   - Rotational                     = "
+    out << "   - rotational                     = "
         << std::setw(10) << Srot_cal
         << " cal/mol-K\n";
 
-    out << "   - Vibrational                    = "
+    out << "   - vibrational                    = "
         << std::setw(10) << Svib_cal
         << " cal/mol-K\n";
 
@@ -415,15 +415,15 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         << std::setw(10) << Cv_total_cal
         << " cal/mol-K\n";
 
-    out << "   - Translational                  = "
+    out << "   - translational                  = "
         << std::setw(10) << Cv_trans_cal
         << " cal/mol-K\n";
 
-    out << "   - Rotational                     = "
+    out << "   - rotational                     = "
         << std::setw(10) << Cv_rot_cal
         << " cal/mol-K\n";
 
-    out << "   - Vibrational                    = "
+    out << "   - vibrational                    = "
         << std::setw(10) << Cv_vib_cal
         << " cal/mol-K\n";
 }

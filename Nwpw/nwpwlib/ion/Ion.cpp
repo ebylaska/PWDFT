@@ -558,11 +558,13 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
       shiftsym1();
    }
    build_equivalent_atoms(sym_tolerance);
+   build_symmetry_atom_map(sym_tolerance);
 
    //print_rion_sym(std::cout);
 
    //print_symmetry_ops(std::cout);
    //print_symmetry_check(std::cout);
+   print_symmetry_atom_map(std::cout);
 
 
 
@@ -1764,6 +1766,207 @@ void Ion::set_group_name(const std::string& name)
 }
 
 
+
+/*******************************************
+ *                                         *
+ *      Ion::build_symmetry_atom_map       *
+ *                                         *
+ *******************************************/
+void Ion::build_symmetry_atom_map(double tol)
+{
+    if (tol <= 0.0) tol = sym_tolerance;
+
+    int nops = symmetry_nops();
+    symmetry_atom_map.assign(nops, std::vector<int>(nion, -1));
+
+    bool ok = true;
+
+    for (int op = 0; op < nops; ++op)
+    {
+        const auto& R = symmetry_op(op).R;
+
+        for (int a = 0; a < nion; ++a)
+        {
+            double xa = rion1[3*a+0];
+            double ya = rion1[3*a+1];
+            double za = rion1[3*a+2];
+
+            // rotate atom a
+            double x = R[0][0]*xa + R[0][1]*ya + R[0][2]*za;
+            double y = R[1][0]*xa + R[1][1]*ya + R[1][2]*za;
+            double z = R[2][0]*xa + R[2][1]*ya + R[2][2]*za;
+
+            int found = -1;
+
+            for (int b = 0; b < nion; ++b)
+            {
+                // 🔴 MUST match element
+                if (katm[a] != katm[b]) continue;
+
+                double dx = x - rion1[3*b+0];
+                double dy = y - rion1[3*b+1];
+                double dz = z - rion1[3*b+2];
+
+                if (dx*dx + dy*dy + dz*dz < tol*tol)
+                {
+                    found = b;
+                    break;
+                }
+            }
+
+            if (found < 0)
+            {
+                ok = false;
+                std::cerr << "Symmetry map failed: op=" << op
+                          << " atom=" << a << std::endl;
+            }
+
+            symmetry_atom_map[op][a] = found;
+        }
+    }
+
+    if (!ok)
+    {
+        std::cerr << "WARNING: symmetry_atom_map incomplete — disabling symmetry\n";
+        symmetry_atom_map.clear();
+    }
+}
+
+
+/*******************************************
+ *                                         *
+ *      Ion::project_cartesian_vector      *
+ *                                         *
+ *******************************************/
+void Ion::project_cartesian_vector(double *v) const
+{
+    if (symmetry_atom_map.empty()) return;
+
+    int nops = symmetry_nops();
+    if (nops <= 1) return;
+
+    std::vector<double> vsum(3*nion, 0.0);
+
+    for (int op = 0; op < nops; ++op)
+    {
+        const auto& R = symmetry_op(op).R;
+
+        for (int a = 0; a < nion; ++a)
+        {
+            int b = symmetry_atom_map[op][a];
+            if (b < 0) continue;
+
+            double x = v[3*a+0];
+            double y = v[3*a+1];
+            double z = v[3*a+2];
+
+            double xr = R[0][0]*x + R[0][1]*y + R[0][2]*z;
+            double yr = R[1][0]*x + R[1][1]*y + R[1][2]*z;
+            double zr = R[2][0]*x + R[2][1]*y + R[2][2]*z;
+
+            vsum[3*b+0] += xr;
+            vsum[3*b+1] += yr;
+            vsum[3*b+2] += zr;
+        }
+    }
+
+    double inv = 1.0 / ((double)nops);
+    for (int i = 0; i < 3*nion; ++i)
+        v[i] = vsum[i] * inv;
+}
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_rion1              *
+ *                                         *
+ *******************************************/
+void Ion::symmetrize_rion1()
+{
+    if (symmetry_atom_map.empty()) return;
+
+    // save COM
+    double cx = com(0);
+    double cy = com(1);
+    double cz = com(2);
+
+    // shift to origin
+    for (int a = 0; a < nion; ++a)
+    {
+        rion1[3*a+0] -= cx;
+        rion1[3*a+1] -= cy;
+        rion1[3*a+2] -= cz;
+    }
+
+    // project
+    project_cartesian_vector(rion1);
+
+    // restore COM
+    for (int a = 0; a < nion; ++a)
+    {
+        rion1[3*a+0] += cx;
+        rion1[3*a+1] += cy;
+        rion1[3*a+2] += cz;
+    }
+}
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_rion2              *
+ *                                         *
+ *******************************************/
+void Ion::symmetrize_rion2()
+{
+    if (symmetry_atom_map.empty()) return;
+
+    double cx = 0.0, cy = 0.0, cz = 0.0;
+
+    for (int a = 0; a < nion; ++a)
+    {
+        cx += rion2[3*a+0];
+        cy += rion2[3*a+1];
+        cz += rion2[3*a+2];
+    }
+    cx /= nion;
+    cy /= nion;
+    cz /= nion;
+
+    for (int a = 0; a < nion; ++a)
+    {
+        rion2[3*a+0] -= cx;
+        rion2[3*a+1] -= cy;
+        rion2[3*a+2] -= cz;
+    }
+
+    project_cartesian_vector(rion2);
+
+    for (int a = 0; a < nion; ++a)
+    {
+        rion2[3*a+0] += cx;
+        rion2[3*a+1] += cy;
+        rion2[3*a+2] += cz;
+    }
+}
+
+/*******************************************
+ *                                         *
+ *      Ion::print_symmetry_atom_map       *
+ *                                         *
+ *******************************************/
+void Ion::print_symmetry_atom_map(std::ostream &out) const
+{
+    int nops = symmetry_atom_map.size();
+
+    out << "Symmetry atom map:\n";
+    for (int op = 0; op < nops; ++op)
+    {
+        out << "op " << op << ": ";
+        for (int a = 0; a < nion; ++a)
+            out << symmetry_atom_map[op][a] << " ";
+        out << "\n";
+    }
+}
+
+
 /*******************************************
  *                                         *
  *      Ion::compute_molecular_thermo      *
@@ -1874,6 +2077,9 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
                                    inertia_amuA2,
                                    out);
 }
+
+
+
 
 
 

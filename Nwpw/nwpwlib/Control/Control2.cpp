@@ -372,6 +372,12 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    }
  
    // read from nwpw block
+   if (rtdbjson["nwpw"].contains("use_symmetry") && rtdbjson["nwpw"]["use_symmetry"].is_boolean()) 
+      puse_symmetry = rtdbjson["nwpw"]["use_symmetry"];
+
+   if (rtdbjson["nwpw"].contains("symmetry_lock") && rtdbjson["nwpw"]["symmetry_lock"].is_boolean()) 
+      symmetry_lock_ = rtdbjson["nwpw"]["symmetry_lock"];
+
    if (rtdbjson["nwpw"]["input_wavefunction_filename"].is_string())
       input_movecs = rtdbjson["nwpw"]["input_wavefunction_filename"];
    if (rtdbjson["nwpw"]["output_wavefunction_filename"].is_string())
@@ -1052,6 +1058,26 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      psa_decay[1] = rtdbjson["nwpw"]["car-parrinello"]["SA_decay"][1];
    }
  
+   //driver options
+   const auto& driver = (rtdbjson.contains("driver") && rtdbjson["driver"].is_object())
+                      ? rtdbjson["driver"]
+                      : nlohmann::json::object();
+
+   if (driver.contains("symmetry_lock") && driver["symmetry_lock"].is_boolean()) symmetry_lock_ = driver["symmetry_lock"];
+
+   if (driver.contains("maxiter")) pdriver_maxiter = driver["maxiter"];
+   if (driver.contains("lmbfgs_size")) pdriver_lmbfgs_size = driver["lmbfgs_size"];
+   if (driver.contains("gmax")) pdriver_gmax = driver["gmax"];
+   if (driver.contains("grms")) pdriver_grms = driver["grms"];
+   if (driver.contains("xmax")) pdriver_xmax = driver["xmax"];
+   if (driver.contains("xrms")) pdriver_xrms = driver["xrms"];
+   if (driver.contains("trust")) pdriver_trust = driver["trust"];
+   if (driver.contains("hessian_print")) phessian_print = driver["hessian_print"];
+
+   /*
+   if (rtdbjson["driver"].contains("symmetry_lock") && rtdbjson["driver"]["symmetry_lock"].is_boolean())
+      symmetry_lock_ = rtdbjson["driver"]["symmetry_lock"]; 
+
    if (!rtdbjson["driver"]["maxiter"].is_null()) {
      pdriver_maxiter = rtdbjson["driver"]["maxiter"];
    }
@@ -1076,6 +1102,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 
    // Hessian print
    phessian_print = rtdbjson.value("driver", nlohmann::json{}).value("hessian_print", phessian_print);
+   */
 
 
    // pspspin

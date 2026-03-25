@@ -7,6 +7,8 @@ memory 1900 mb
 permanent_dir ./perm3
 scratch_dir   ./perm3
 
+set nwpw:use_symmetry true
+#set nwpw:symmetry_lock false
 
 #task pspw energy
 driver 

@@ -185,6 +185,10 @@ class Control2 {
    pwdft::Symmetry psymmetry;
 
 
+   //Symmetry lock - false normal optimization; true symmetry-constrained optimization
+   bool symmetry_lock_ = false;
+   bool puse_symmetry = true;
+
 public:
    int version = 3;
 
@@ -625,6 +629,8 @@ public:
   // }
 
   bool print_hessian() { return phessian_print; }
+  bool symmetry_lock() const { return symmetry_lock_; }
+  bool use_symmetry() const { return puse_symmetry; }
 
 };
 
