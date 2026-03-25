@@ -602,6 +602,120 @@ static void write_coords_xyz(json& out_coords, const std::vector<double>& coords
  * @throws std::runtime_error if required geometry or lattice information
  *         is missing or inconsistent.
  */
+/**************************************************
+ *                                                *
+ *          resolve_symmetry_and_cell             *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Resolve user symmetry intent into an authoritative effective
+ *        symmetry description for downstream physics.
+ *
+ * This routine converts user-provided geometry, lattice, and symmetry
+ * directives (explicit symmetry, autosym, autospace, primitive flags)
+ * into a single, consistent representation stored in:
+ *
+ *     rtdb["effective_symmetry"]
+ *
+ * This object defines the geometry, lattice, and symmetry that ALL
+ * downstream physics routines must use. No further symmetry detection
+ * should occur after this stage.
+ *
+ * --------------------------------------------------------------------
+ * Effective Symmetry (ES) Data Contract
+ * --------------------------------------------------------------------
+ *
+ * The `effective_symmetry` JSON object is a serialized representation
+ * of the resolved symmetry state and must contain sufficient information
+ * to reconstruct a Symmetry class deterministically.
+ *
+ * Required fields:
+ *
+ *   - name            : string
+ *       Point group or space group identifier (e.g., "Td", "Oh", "P1")
+ *
+ *   - coords_xyz      : array[Nion][3]
+ *       Canonicalized atomic coordinates consistent with symmetry
+ *
+ *   - coords_type     : string
+ *       Coordinate representation ("cartesian", etc.)
+ *
+ *   - unita           : 3x3 matrix
+ *       Effective simulation cell lattice vectors
+ *
+ *   - order           : int
+ *       Total number of symmetry operations
+ *
+ *   - source          : string
+ *       How symmetry was determined:
+ *         "autosym", "autospace", "specified", or "identity"
+ *
+ * Optional fields:
+ *
+ *   - primitive       : bool
+ *       Whether a primitive cell reduction was applied
+ *
+ *   - rotation_type   : string
+ *       Classification of symmetry operators (proper/improper)
+ *
+ *   - group_rank      : int
+ *       Internal classification or ranking of the group
+ *
+ *   - sym_fingerprint : string
+ *       Hash used for restart consistency and validation
+ *
+ * --------------------------------------------------------------------
+ * Responsibilities
+ * --------------------------------------------------------------------
+ *
+ *  - Determine authoritative lattice (`unita`) using precedence:
+ *      1. nwpw.simulation_cell.unita
+ *      2. geometry.unita
+ *
+ *  - Interpret symmetry intent (explicit, autosym, autospace, fallback)
+ *
+ *  - Construct a resolved symmetry state (point group or space group)
+ *
+ *  - Canonicalize coordinates so symmetry operators act consistently
+ *
+ *  - Optionally reduce to a primitive cell (space-group workflows only)
+ *
+ *  - Store the resolved state in `rtdb["effective_symmetry"]`
+ *
+ *  - Apply symmetry-based k-point reduction
+ *
+ * --------------------------------------------------------------------
+ * Design Principles
+ * --------------------------------------------------------------------
+ *
+ *  - Symmetry is resolved exactly once and treated as immutable
+ *    downstream.
+ *
+ *  - The original user geometry (`geometries[...]`) is preserved as
+ *    input intent and is not modified.
+ *
+ *  - All physics routines must reconstruct symmetry from
+ *    `effective_symmetry` and must not perform symmetry detection.
+ *
+ *  - Symmetry operators are not stored; they are reconstructed
+ *    deterministically from the ES fields.
+ *
+ *  - Point-group workflows do NOT redefine the simulation lattice.
+ *
+ *  - Space-group workflows MAY redefine lattice and coordinates.
+ *
+ * --------------------------------------------------------------------
+ *
+ * @param rtdbstring Serialized RTDB JSON string.
+ *
+ * @return Updated RTDB JSON string containing:
+ *         - rtdb["effective_symmetry"]
+ *         - symmetry-consistent simulation cell
+ *         - symmetry-pruned k-point data
+ *
+ * @throws std::runtime_error if required geometry or lattice data
+ *         is missing or inconsistent.
+ */
 std::string resolve_symmetry_and_cell(std::string rtdbstring)
 {
    auto rtdbjson = json::parse(rtdbstring);
@@ -795,8 +909,12 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["name"]      = sym.name();
    es["order"]     = sym.order();
    es["tolerance"] = symmetry_tolerance;
-   es["coords_type"] = symmetry_primitive_requested ? "fractional" : "cartesian";
-   es["translation_type"] = "fractional";    // how SymOp.t must be interpreted
+
+   //es["coords_type"] = symmetry_primitive_requested ? "fractional" : "cartesian";
+   es["coords_type"] = (symmetry_primitive_requested && sym.is_space_group())
+                     ? "fractional"
+                     : "cartesian";
+
    es["primitive_lattice_only"] = symmetry_primitive_requested;
    if (!sym_backend.empty()) 
       es["backend"] = sym_backend;
@@ -815,6 +933,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
    if (sym.is_space_group())
    {
+      es["translation_type"] = "fractional";    // how SymOp.t must be interpreted
       es["num_centering"] = sym.num_centering();
 
       if (symmetry_primitive_requested)
@@ -853,6 +972,9 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    // Snapshot of coordinates used to resolve symmetry (NOT runtime geometry)
    // These are cartesian coordinates taken from geometries[geomname] at symmetry resolution time.
    // They are stored ONLY for restart consistency and debugging.
+      // Canonical coordinates defining the effective symmetry state.
+      // These coordinates MUST be used by downstream physics routines
+      // when reconstructing the Symmetry object and applying symmetry operations.
    es["coords_xyz"] = json::array();
    write_coords_xyz(es["coords_xyz"], coords_xyz);
 
