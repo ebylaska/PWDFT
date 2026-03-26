@@ -149,6 +149,14 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        // Always load metadata
        psymmetry_meta = es;   // json member or lightweight struct
        psymmetry_valid = true;
+
+       //ppooint_group_name = es["point_group_name"];
+       //ppoint_group_rotation_type = es["point_group_rotation_type"];
+       //ppoint_group_rank          = es["point_group_rank"];
+       //ppoint_group_U             = es["point_group_U"];
+       //ppoint_group_inertia_tensor  = es["point_group_inertia_tensor"];
+       //ppoint_group_inertia_moments = es["point_group_inertia_moments"];
+       //ppoint_group_inertia_axes   = es["point_group_inertia_axes"];
  
        // Only construct Symmetry if operators are stored or required
        bool have_ops = es.value("store_ops", false) && es.contains("ops");

@@ -891,6 +891,14 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    bool symmetry_primitive_requested = false;
    bool primitive_suggested = false;
 
+   std::string point_group_name,point_group_rotation_type;
+   int point_group_rank = 0;
+
+   std::vector<double> point_group_U(9);
+   std::vector<double> point_group_inertia_tensor(9);
+   std::vector<double> point_group_inertia_axes(9);
+   std::vector<double> point_group_inertia_moments(3);
+
    if (geomjson.contains("symmetry") && geomjson["symmetry"].is_object())
    {
       const json& sj = geomjson["symmetry"];
@@ -1013,36 +1021,31 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    }
    else if (autosym && have_coords)
    {
-      //int nion = coords_xyz.size() / 3;
-      //std::vector<double> rion_sym(3 * nion);
 
+      // define masses from rtdb
       std::vector<double> mass(nion);
       for (auto i=0; i<nion; ++i)
          mass[i] = ((double)geomjson["masses"][i]) * pwdft::units::AMU_TO_ME;
 
-      std::string group_name;
-      int group_rank = 0;
-      std::string rotation_type;
-
-      double U[9];
-      double inertia_tensor[9];
-      double inertia_moments[3];
-      double inertia_axes[9];
 
       // NOT IMPLEMENTED YET — placeholder
-      // later: sym = detect_symmetry(...)
       determine_point_group(coords_xyz.data(),mass.data(),nion,
-                                   symmetry_tolerance,
-                                   group_name,group_rank,rotation_type,
-                                   inertia_tensor,inertia_moments,inertia_axes,
-                                   rion_sym.data(),U);
+                            symmetry_tolerance,
+                            point_group_name,
+                            point_group_rank,
+                            point_group_rotation_type,
+                            point_group_inertia_tensor.data(),
+                            point_group_inertia_moments.data(),
+                            point_group_inertia_axes.data(),
+                            rion_sym.data(),
+                            point_group_U.data());
 
       // normalize Schoenflies symbol
-      group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
-      if (!group_name.empty())
+      point_group_name.erase(std::remove(point_group_name.begin(), point_group_name.end(), '_'), point_group_name.end());
+      if (!point_group_name.empty())
       {
 
-         sym = pwdft::Symmetry::from_point_group(group_name);
+         sym = pwdft::Symmetry::from_point_group(point_group_name);
 
          sym_source = "autosym";
          sym_backend = "internal";
@@ -1086,7 +1089,17 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
    // store symmetry-aligned geometry
    if (sym_source == "autosym")
+   {
       es["coords_xyz_sym"] = rion_sym;
+      es["point_group_name"]          = point_group_name;
+      es["point_group_rotation_type"] = point_group_rotation_type;
+      es["point_group_rank"]          = point_group_rank;
+      es["point_group_U"]             = point_group_U;
+      es["point_group_inertia_tensor"]  = point_group_inertia_tensor;
+      es["point_group_inertia_moments"] = point_group_inertia_moments;
+      es["point_group_inertia_axes"]    = point_group_inertia_axes;
+
+   }
 
    //es["coords_type"] = symmetry_primitive_requested ? "fractional" : "cartesian";
    es["coords_type"] = (symmetry_primitive_requested && sym.is_space_group())
