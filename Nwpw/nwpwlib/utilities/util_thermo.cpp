@@ -330,7 +330,8 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
 
     out << " pressure                           = "
         << std::fixed << std::setprecision(2)
-        << pressure << " Pa\n";
+        << pressure << " Pa (" 
+        << pressure/ATM_TO_PA << " atm)\n";
 
     out << " molecular mass                     = "
         << std::fixed << std::setprecision(3)
