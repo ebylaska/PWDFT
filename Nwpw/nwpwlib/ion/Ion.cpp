@@ -1993,10 +1993,11 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
     // ----------------------------
     double inertia_amuA2[3];
     for (int i = 0; i < 3; ++i)
-        inertia_amuA2[i] = this->inertia_moments[i] * pwdft::units::ME_TO_AMU;
+        inertia_amuA2[i] = this->inertia_moments[i] * pwdft::units::ME_TO_AMU * pwdft::units::BOHR2_TO_ANG2;
         //inertia_amuA2[i] = this->inertia_moments[i] * 1.0 / 1822.888486209;  
         // assuming internal units = me * bohr^2 → convert to amu*Å^2
         // adjust if your internal units differ
+
 
     // ----------------------------
     // Rotor classification
