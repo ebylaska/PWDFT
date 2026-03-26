@@ -41,8 +41,10 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+#include "units.hpp"
 #include "Symmetry.hpp"
 #include "autospace.hpp"
+#include "symmetry_elements.hpp"
 
 #include "apply_kpoint_symmetry_pruning.hpp"
 
@@ -522,6 +524,125 @@ static void read_symbols_and_coords(const json& geomjson,
    }
 }
 
+/**************************************************
+ *                                                *
+ *          write_symbols_and_coords              *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Write atomic symbols and Cartesian coordinates into a geometry JSON block.
+ *
+ * Writes:
+ *   - symbols: ["O","H","H",...]
+ *   - coords:  [[x1,y1,z1],[x2,y2,z2],...]
+ *
+ * Coordinates are written in Nx3 format for clarity and consistency.
+ *
+ * @param[out] geomjson   Geometry JSON object to populate
+ * @param[in]  symbols    Atomic symbols (size N)
+ * @param[in]  coords_xyz Flat Cartesian coordinates (size 3N)
+ *
+ * @throws std::runtime_error if coords size is not divisible by 3
+ *                            or symbols size does not match N
+ */
+static void write_symbols_and_coords(json& geomjson,
+                                     const std::vector<std::string>& symbols,
+                                     const std::vector<double>& coords_xyz)
+{
+   if (coords_xyz.size() % 3 != 0)
+      throw std::runtime_error("coords_xyz size not divisible by 3");
+
+   const size_t n = coords_xyz.size() / 3;
+
+   if (!symbols.empty() && symbols.size() != n)
+      throw std::runtime_error("symbols and coords size mismatch");
+
+   // Write symbols
+   if (!symbols.empty())
+   {
+      geomjson["symbols"] = json::array();
+      for (const auto& s : symbols)
+         geomjson["symbols"].push_back(s);
+   }
+
+   // Write coords (Nx3 format)
+   geomjson["coords"] = json::array();
+   for (size_t i = 0; i < n; ++i)
+   {
+      json row = json::array();
+      row.push_back(coords_xyz[3*i+0]);
+      row.push_back(coords_xyz[3*i+1]);
+      row.push_back(coords_xyz[3*i+2]);
+      geomjson["coords"].push_back(row);
+   }
+}
+
+/**************************************************
+ *                                                *
+ *     write_symbols_and_coords_flat              *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Write Cartesian coordinates (and optionally symbols) into a geometry JSON block
+ *        using the canonical flat (3N) coordinate format.
+ *
+ * This routine enforces the PWDFT/NWPW geometry contract:
+ *
+ *   coords = [x1, y1, z1, x2, y2, z2, ..., xN, yN, zN]
+ *
+ * rather than an Nx3 nested array. Many downstream components (e.g., Ion,
+ * symmetry handling, and SCF routines) assume this flat layout and will fail
+ * if given nested coordinate arrays.
+ *
+ * Behavior:
+ *   - "coords" is always overwritten with the provided flat array.
+ *   - "symbols" is updated only if a non-empty symbols vector is provided.
+ *     If symbols is empty, the existing "symbols" field (if any) is left unchanged.
+ *
+ * This allows the function to be used for coordinate-only updates (e.g.,
+ * geometry optimization, symmetry adjustment) without modifying atom identity.
+ *
+ * Notes:
+ *   - Input coordinates are assumed to already be in Cartesian units
+ *     consistent with the current geometry.
+ *   - No unit conversion, reordering, or symmetry processing is performed here.
+ *   - Reader routines may accept multiple coordinate formats (flat or Nx3),
+ *     but this writer always emits the canonical flat format for consistency
+ *     and restart safety.
+ *
+ * @param[in,out] geomjson   Geometry JSON object to update
+ * @param[in]     symbols    Atomic symbols (size N) or empty to preserve existing symbols
+ * @param[in]     coords_xyz Flat Cartesian coordinates (size 3N)
+ *
+ * @throws std::runtime_error if:
+ *   - coords_xyz.size() is not divisible by 3
+ *   - symbols is non-empty and its size does not match number of atoms
+ */
+static void write_symbols_and_coords_flat(json& geomjson,
+                                          const std::vector<std::string>& symbols,
+                                          const std::vector<double>& coords_xyz)
+{
+   if (coords_xyz.size() % 3 != 0)
+      throw std::runtime_error("coords_xyz size not divisible by 3");
+
+   const size_t n = coords_xyz.size() / 3;
+
+   if (!symbols.empty() && symbols.size() != n)
+      throw std::runtime_error("symbols and coords size mismatch");
+
+   // symbols
+   if (!symbols.empty())
+      geomjson["symbols"] = symbols;
+
+   // 🔑 FLAT WRITE
+   //geomjson["coords"] = json::array();
+   //for (double v : coords_xyz)
+   //   geomjson["coords"].push_back(v);
+
+   // coords (always overwrite, canonical flat format)
+   geomjson["coords"] = coords_xyz;
+}
+
 
 
 /**************************************************
@@ -752,6 +873,10 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    std::vector<double> coords_xyz;
    read_symbols_and_coords(geomjson, symbols, coords_xyz);
 
+   int nion = coords_xyz.size() / 3;
+   std::vector<double> rion_sym(3 * nion);
+   //write_symbols_and_coords_flat(geomjson, symbols, coords_xyz);
+
    // If coords missing, you may want to treat as error for crystals
    // (or allow empty for cell-only operations).
    // Here we allow empty but symmetry will likely degrade to identity.
@@ -794,6 +919,12 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    if (autospace && !have_coords)
      autospace = false;  // degrade safely
 
+   if (geomjson.contains("symmetry_tolerance") &&
+       (geomjson["symmetry_tolerance"].is_number_float() ||
+        geomjson["symmetry_tolerance"].is_number_integer()))
+   {
+    symmetry_tolerance = geomjson["symmetry_tolerance"].get<double>();
+   }
 
    // ---- restart policy knobs (keep simple; you can refine)
    const bool have_effective = (rtdbjson.contains("effective_symmetry") && rtdbjson["effective_symmetry"].is_object());
@@ -809,6 +940,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    // ---- if reusing, still ensure nwpw.simulation_cell.unita is consistent with effective
    if (reuse_effective)
    {
+      /*
       json& es = rtdbjson["effective_symmetry"];
 
       if (es.contains("unita") && es["unita"].is_array())
@@ -817,6 +949,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
          rtdbjson["nwpw"]["simulation_cell"]["unita"] = es["unita"];
       }
       // NOTE: if you also store effective coords, you can push them into a working geometry here.
+      */
 
       return rtdbjson.dump();
    }
@@ -880,11 +1013,49 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    }
    else if (autosym && have_coords)
    {
+      //int nion = coords_xyz.size() / 3;
+      //std::vector<double> rion_sym(3 * nion);
+
+      std::vector<double> mass(nion);
+      for (auto i=0; i<nion; ++i)
+         mass[i] = ((double)geomjson["masses"][i]) * pwdft::units::AMU_TO_ME;
+
+      std::string group_name;
+      int group_rank = 0;
+      std::string rotation_type;
+
+      double U[9];
+      double inertia_tensor[9];
+      double inertia_moments[3];
+      double inertia_axes[9];
+
       // NOT IMPLEMENTED YET — placeholder
       // later: sym = detect_symmetry(...)
-      sym = pwdft::Symmetry();
-      sym_source = "autosym_failed";
-      //sym_backend = "internal";
+      determine_point_group(coords_xyz.data(),mass.data(),nion,
+                                   symmetry_tolerance,
+                                   group_name,group_rank,rotation_type,
+                                   inertia_tensor,inertia_moments,inertia_axes,
+                                   rion_sym.data(),U);
+
+      // normalize Schoenflies symbol
+      group_name.erase(std::remove(group_name.begin(), group_name.end(), '_'), group_name.end());
+      if (!group_name.empty())
+      {
+
+         sym = pwdft::Symmetry::from_point_group(group_name);
+
+         sym_source = "autosym";
+         sym_backend = "internal";
+
+
+         // update geometry
+        // write_symbols_and_coords_flat(geomjson, symbols, rion_sym);
+      }
+      else
+      {
+          sym = pwdft::Symmetry();
+          sym_source = "autosym_failed";
+      }
    }
    else
    {
@@ -909,6 +1080,13 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["name"]      = sym.name();
    es["order"]     = sym.order();
    es["tolerance"] = symmetry_tolerance;
+
+   // store original geometry BEFORE modification
+   es["coords_xyz_input"] = coords_xyz;
+
+   // store symmetry-aligned geometry
+   if (sym_source == "autosym")
+      es["coords_xyz_sym"] = rion_sym;
 
    //es["coords_type"] = symmetry_primitive_requested ? "fractional" : "cartesian";
    es["coords_type"] = (symmetry_primitive_requested && sym.is_space_group())
@@ -975,16 +1153,24 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
       // Canonical coordinates defining the effective symmetry state.
       // These coordinates MUST be used by downstream physics routines
       // when reconstructing the Symmetry object and applying symmetry operations.
-   es["coords_xyz"] = json::array();
-   write_coords_xyz(es["coords_xyz"], coords_xyz);
+   //es["coords_xyz"] = json::array();
+   //write_coords_xyz(es["coords_xyz"], coords_xyz);
+
+   //es["geom"] = json::array();
 
 
    // Commit effective symmetry
    rtdbjson["effective_symmetry"] = es;
 
-   // Physics must see the effective lattice
-   write_unita_3x3( rtdbjson["nwpw"]["simulation_cell"]["unita"], unita_in);
-
+   // Physics must see the effective lattice and converted geometry
+   if (symmetry_primitive_requested && sym.is_space_group())
+   {
+      write_unita_3x3( rtdbjson["nwpw"]["simulation_cell"]["unita"], unita_in);
+      //write_symbols_and_coords_flat(geomjson, symbols, rion_sym);
+   }
+   
+   if (sym_source == "autosym")
+      write_symbols_and_coords_flat(geomjson, symbols, rion_sym);
 
 
    // Symmetry pruning of kpoints

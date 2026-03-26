@@ -20,6 +20,7 @@ using json = nlohmann::json;
 #include "symmetry_elements.hpp"
 //include "cDispersion_D2.hpp"
 #include "util_thermo.hpp"
+#include "units.hpp"
 #include "Ion.hpp"
 
 
@@ -356,7 +357,7 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 //    int matype,nelem,ii,i,j,found;
 //    char *symtmp,*symb;
 //    char date[50];
-//    double amu_to_mass = 1822.89;
+//    double amu_to_mass = pwdft::units::AMU_TO_ME;
 //
 //    /* get parallel mappings */
 //    if (!myrtdb.get("geometry:geometry:ncenter",rtdb_int,1,&nion)) nion = 1;
@@ -493,6 +494,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
                            : 0.001;
 
 
+   /*
    if (control.is_crystal())
    {
       is_crystal = true;
@@ -521,42 +523,24 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
 
       set_group_name(group_name);
 
-      /*
-      std::cout << "------------------------\n";
-      for(size_t k=0; k<ops.size(); ++k)
-      {
-         double worst = 0.0;
-         for(int a=0; a<nion; ++a)
-         {
-             double x = rion_sym[3*a+0];
-             double y = rion_sym[3*a+1];
-             double z = rion_sym[3*a+2];
- 
-             const auto &op = ops[k];
-             const double* R = &op.R[0][0];
- 
-             double xr = R[0]*x + R[3]*y + R[6]*z + op.t[0];
-             double yr = R[1]*x + R[4]*y + R[7]*z + op.t[1];
-             double zr = R[2]*x + R[5]*y + R[8]*z + op.t[2];
- 
-             double best = 1e100;
-             for(int b=0; b<nion; ++b)
-             {
-                 double dx = xr - rion_sym[3*b+0];
-                 double dy = yr - rion_sym[3*b+1];
-                 double dz = zr - rion_sym[3*b+2];
-                 double d = std::sqrt(dx*dx + dy*dy + dz*dz);
-                 if(d < best) best = d;
-             }
-             if(best > worst) worst = best;
-         }
-         std::cout << "op " << k+1 << "   worst match = " << worst << "\n";
-      }
-      */
 
       // copy rion_sym1 to rion1 and backup rion1
       shiftsym1();
    }
+   */
+
+
+   //mysymmetry = Symmetry::from_point_group(group_name);
+   mysymmetry = control.symmetry();
+   group_name = mysymmetry.name();
+   group_rank = mysymmetry.order();
+   //rotation_type = ???
+   //interia_tensor = ????
+   //intertia_moments = ???
+   //intertia_axis    = ???
+   std::cout << "GROUP_NAME=" << group_name << std::endl;
+   set_group_name(group_name);
+
    build_equivalent_atoms(sym_tolerance);
    build_symmetry_atom_map(sym_tolerance);
 
@@ -982,18 +966,18 @@ std::string Ion::print_symmetry_group()
                                      << " rotation type : " << this->rotation_type <<")" <<  std::endl;
    if (!is_crystal)
    {
-      stream << "      inertia axes : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[1] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[2] << " > - "
-                                              << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
-      stream << "                     e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[4] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[5] << " > - "
-                                              << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
-      stream << "                     e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[7] << " "
-                                              << Ffmt(8,3) << this->inertia_axes[8] << " > - "
-                                              << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
+      stream << "      principle-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[1] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[2] << " > - "
+                                                      << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
+      stream << "                             e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[4] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[5] << " > - "
+                                                      << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
+      stream << "                             e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[7] << " "
+                                                      << Ffmt(8,3) << this->inertia_axes[8] << " > - "
+                                                      << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
 
        // --- Clean formatting for table ---
       stream << std::defaultfloat << std::setprecision(3);

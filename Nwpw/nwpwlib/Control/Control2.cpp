@@ -144,6 +144,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson.contains("effective_symmetry"))
    {
        const auto& es = rtdbjson["effective_symmetry"];
+       std::cout << "HAS ES!" << std::endl;
  
        // Always load metadata
        psymmetry_meta = es;   // json member or lightweight struct
@@ -151,24 +152,29 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
        // Only construct Symmetry if operators are stored or required
        bool have_ops = es.value("store_ops", false) && es.contains("ops");
- 
-       if (have_ops)
-       {
-           try
-           {
-              psymmetry = pwdft::Symmetry::from_json(es);
-              psymmetry_full = true;
-           }
-           catch (const std::exception& e)
-           {
-              throw std::runtime_error( std::string("Control2: failed to load symmetry ops: ") + e.what());
-           }
-       }
+
+try
+{
+    psymmetry = pwdft::Symmetry::from_json(es);
+
+    // full only if explicit operators exist
+    psymmetry_full = have_ops;
+
+    std::cout << "Control2 loaded symmetry: "
+              << psymmetry.name()
+              << " order=" << psymmetry.order()
+              << " sigma=" << psymmetry.sigma() << "\n";
+}
+catch (const std::exception& e)
+{
+    throw std::runtime_error(
+        std::string("Control2: failed to load symmetry: ") + e.what());
+}
+   }
        else
        {
            psymmetry_full = false;
        }
-   }
 
 
  
@@ -767,9 +773,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    punita[7] = 0.0;
    punita[8] = 20.0;
  
+
    std::string geomname = "geometry";
-   if (rtdbjson["geometry"].is_string())
-     geomname = rtdbjson["geometry"];
+   if (rtdbjson.contains("geometry") && rtdbjson["geometry"].is_string())
+    geomname = rtdbjson["geometry"];
  
    if (rtdbjson["geometries"][geomname]["is_crystal"].is_boolean())
      pis_crystal = rtdbjson["geometries"][geomname]["is_crystal"];

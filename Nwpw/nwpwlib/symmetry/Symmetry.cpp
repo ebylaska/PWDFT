@@ -231,6 +231,12 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
         return Symmetry(j["group_name"].get<std::string>());
     }
 
+   // Handle point groups explicitly
+   if (j.value("type","") == "point_group" && j.contains("name"))
+   {
+      return Symmetry::from_point_group(j["name"].get<std::string>());
+   }
+
     // Otherwise build directly from operators
     s.type_ = Type::SpaceGroup;
     s.name_ = j.value("name", "custom");
