@@ -3472,7 +3472,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else if ((((inertia_moments[0]-inertia_moments[2])/m_total) < sym_tolerance) && (nion>3))
    {
-      rotation_type = "spherical";
+      rotation_type = "spherical top";
 
       // align the molecular axes along the inertia_axes
       align_to_axes(rion2,nion,inertia_axes);
@@ -3551,7 +3551,7 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
    }
    else
    {
-      rotation_type = "asymmetric";
+      rotation_type = "asymmetric top";
 
       //rotate inertia_moments and inertia_axes
       double m2 = inertia_moments[2];

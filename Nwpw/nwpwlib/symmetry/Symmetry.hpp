@@ -73,6 +73,11 @@ public:
 
     bool is_trivial() const { return ops_.size() == 1; }
 
+    //aux rotation data
+    std::string rotation_type;
+    std::vector<double> rotation_moments = std::vector<double>(3);
+    std::vector<double> rotation_axes    = std::vector<double>(9);
+    std::vector<double> rotation_inertia = std::vector<double>(9);
 
 private:
     enum class Type {

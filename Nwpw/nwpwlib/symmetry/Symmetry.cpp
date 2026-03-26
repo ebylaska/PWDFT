@@ -127,6 +127,7 @@ Symmetry::Symmetry(const std::string& sg_name)
     const SpaceGroup& sg = *matches.front();
 
     type_ = Type::SpaceGroup;
+    rotation_type = "crystal";
     name_ = sg.name;
     ita_number_ = sg.number;
     num_centering_ = sg.num_centering;
@@ -164,6 +165,7 @@ Symmetry::Symmetry(const std::string& sg_name)
     const SpaceGroup& sg = *matches.front();
 
     type_ = Type::SpaceGroup;
+    rotation_type = "crystal";
     name_ = sg.name;
     ita_number_ = sg.number;
     num_centering_ = sg.num_centering;

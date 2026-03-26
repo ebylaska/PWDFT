@@ -144,40 +144,35 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson.contains("effective_symmetry"))
    {
        const auto& es = rtdbjson["effective_symmetry"];
-       std::cout << "HAS ES!" << std::endl;
  
        // Always load metadata
        psymmetry_meta = es;   // json member or lightweight struct
        psymmetry_valid = true;
 
-       //ppooint_group_name = es["point_group_name"];
-       //ppoint_group_rotation_type = es["point_group_rotation_type"];
-       //ppoint_group_rank          = es["point_group_rank"];
-       //ppoint_group_U             = es["point_group_U"];
-       //ppoint_group_inertia_tensor  = es["point_group_inertia_tensor"];
-       //ppoint_group_inertia_moments = es["point_group_inertia_moments"];
-       //ppoint_group_inertia_axes   = es["point_group_inertia_axes"];
- 
        // Only construct Symmetry if operators are stored or required
        bool have_ops = es.value("store_ops", false) && es.contains("ops");
 
-try
-{
-    psymmetry = pwdft::Symmetry::from_json(es);
-
-    // full only if explicit operators exist
-    psymmetry_full = have_ops;
-
-    std::cout << "Control2 loaded symmetry: "
-              << psymmetry.name()
-              << " order=" << psymmetry.order()
-              << " sigma=" << psymmetry.sigma() << "\n";
-}
-catch (const std::exception& e)
-{
-    throw std::runtime_error(
-        std::string("Control2: failed to load symmetry: ") + e.what());
-}
+   try
+   {
+      psymmetry = pwdft::Symmetry::from_json(es);
+ 
+      //set aux rotation data
+      protation_type = es["point_group_rotation_type"].get<std::string>();
+      std::vector<double> tmp_axes    = es["point_group_inertia_axes"].get<std::vector<double>>();
+      std::vector<double> tmp_tensor  = es["point_group_inertia_tensor"].get<std::vector<double>>();
+      std::vector<double> tmp_moments = es["point_group_inertia_moments"].get<std::vector<double>>();
+      std::copy_n(tmp_axes.begin(), 9, protation_axes);
+      std::copy_n(tmp_tensor.begin(), 9, protation_inertia);
+      std::copy_n(tmp_moments.begin(), 3, protation_moments);
+ 
+ 
+      // full only if explicit operators exist
+      psymmetry_full = have_ops;
+   }
+   catch (const std::exception& e)
+   {
+      throw std::runtime_error( std::string("Control2: failed to load symmetry: ") + e.what());
+   }
    }
        else
        {

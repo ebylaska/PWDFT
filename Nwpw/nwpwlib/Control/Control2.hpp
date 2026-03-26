@@ -189,6 +189,14 @@ class Control2 {
    bool symmetry_lock_ = false;
    bool puse_symmetry = true;
 
+   // rotation stuff
+   std::string  protation_type;
+   double protation_axes[9];
+   double protation_moments[3];
+   double protation_inertia[9];
+
+
+
 public:
    int version = 3;
 
@@ -628,9 +636,15 @@ public:
    //void remove_virtual(){
   // }
 
-  bool print_hessian() { return phessian_print; }
-  bool symmetry_lock() const { return symmetry_lock_; }
-  bool use_symmetry() const { return puse_symmetry; }
+   bool print_hessian() { return phessian_print; }
+   bool symmetry_lock() const { return symmetry_lock_; }
+   bool use_symmetry() const { return puse_symmetry; }
+
+   // rotation stuff
+   const std::string& rotation_type() const { return protation_type; }
+   const double* rotation_axes() const { return protation_axes; }
+   const double* rotation_moments() const { return protation_moments; }
+   const double* rotation_inertia() const { return protation_inertia; }
 
 };
 

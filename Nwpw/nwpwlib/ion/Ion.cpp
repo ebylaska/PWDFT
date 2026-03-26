@@ -534,11 +534,13 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    mysymmetry = control.symmetry();
    group_name = mysymmetry.name();
    group_rank = mysymmetry.order();
-   //rotation_type = ???
+
+   rotation_type = control.rotation_type();
+   std::copy_n(control.rotation_moments(), 3, inertia_moments);
+   std::copy_n(control.rotation_axes(),    9, inertia_axes);
+   std::copy_n(control.rotation_inertia(), 9, inertia_tensor);
    //interia_tensor = ????
-   //intertia_moments = ???
-   //intertia_axis    = ???
-   std::cout << "GROUP_NAME=" << group_name << std::endl;
+
    set_group_name(group_name);
 
    build_equivalent_atoms(sym_tolerance);
@@ -548,7 +550,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
 
    //print_symmetry_ops(std::cout);
    //print_symmetry_check(std::cout);
-   print_symmetry_atom_map(std::cout);
+   //print_symmetry_atom_map(std::cout);
 
 
 
@@ -966,7 +968,7 @@ std::string Ion::print_symmetry_group()
                                      << " rotation type : " << this->rotation_type <<")" <<  std::endl;
    if (!is_crystal)
    {
-      stream << "      principle-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
+      stream << "      principal-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[1] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[2] << " > - "
                                                       << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
