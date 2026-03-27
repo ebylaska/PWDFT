@@ -26,10 +26,12 @@ nwpw
   lmbfgs
 end
 set nwpw:use_symmetry true
-
-task pspw energy
-
 set driver:symmetry_lock false
-task pspw optimize
+
+thermo
+   temperature 72.0 F
+end
+
+task pspw geovib
 
 

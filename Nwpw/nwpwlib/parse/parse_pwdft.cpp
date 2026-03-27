@@ -2393,6 +2393,67 @@ static json parse_nwpw(json nwpwjson, int *curptr,
   return nwpwjson;
 }
 
+/************************************************** 
+ *                                                * 
+ *                parse_thermo                    *
+ *                                                * 
+ **************************************************/
+static json parse_thermo(json thermojson, int *curptr,
+                         std::vector<std::string> lines) {
+
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+ 
+   while (endcount > 0) {
+      line = mystring_lowercase(lines[cur]);
+
+      if (mystring_contains(line, "temperature")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1) {
+            double val = std::stod(ss[1]);
+  
+            if (ss.size() > 2) {
+               std::string unit = ss[2];
+  
+               if (unit == "c")
+                  val += 273.15;
+               else if (unit == "f")
+                  val = (val - 32.0) * (5.0/9.0) + 273.15;
+            }
+            // default: Kelvin
+  
+            thermojson["temperature"] = val;
+         }
+      } else if (mystring_contains(line, "pressure")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1) {
+            double val = std::stod(ss[1]);
+     
+            if (mystring_contains(line, "pa"))
+               val /= 101325.0;  // convert Pa → atm
+     
+            thermojson["pressure"] = val;
+        }
+      } else if (mystring_contains(line, "freq_scale")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1)
+            thermojson["freq_scale"] = std::stod(ss[1]);
+      }
+     
+      ++cur;
+      if (mystring_contains(lines[cur], "end"))
+         --endcount;
+   }
+ 
+   *curptr = cur;
+ 
+   return thermojson;
+}
+      
+
 
 /**************************************************
  *                                                *
@@ -2749,6 +2810,8 @@ json parse_rtdbjson(json rtdb) {
        rtdb["nwpw"] = parse_nwpw(rtdb["nwpw"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "driver")) {
        rtdb["driver"] = parse_driver(rtdb["driver"], &cur, lines);
+    } else if (mystring_contains(mystring_lowercase(lines[cur]), "thermo")) {
+       rtdb["thermo_param"] = parse_thermo(rtdb["thermo_param"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "constraints")) {
        rtdb["constraints"] = parse_constraints(rtdb["constraints"], &cur, lines);
     } else if (mystring_contains(mystring_lowercase(lines[cur]), "task")) {
