@@ -2411,72 +2411,70 @@ static json parse_thermo(json thermojson, int *curptr,
       line = mystring_lowercase(lines[cur]);
 
       if (mystring_contains(line, "temperature")) {
-         ss = mystring_split0(line);
-         if (ss.size() > 1) {
-            double val = std::stod(ss[1]);
-  
-            if (ss.size() > 2) {
-               std::string unit = ss[2];
-  
-               if (unit == "c")
-                  val += 273.15;
-               else if (unit == "f")
-                  val = (val - 32.0) * (5.0/9.0) + 273.15;
-            }
-            // default: Kelvin
-  
-            thermojson["temperature"] = val;
-         }
+          ss = mystring_split0(line);
+
+          if (ss.size() > 1) {
+              double val = std::stod(ss[1]);
+
+              if (ss.size() > 2) {
+                  std::string unit = ss[2];
+
+                  if (unit == "c")
+                      val += 273.15;
+                  else if (unit == "f")
+                      val = (val - 32.0) * (5.0/9.0) + 273.15;
+              }
+
+              thermojson["temperature"] = val;
+          }
 
       } else if (mystring_contains(line, "pressure")) {
-         ss = mystring_split0(line);
-         if (ss.size() > 1) {
-            double val = std::stod(ss[1]);
-  
-            if (mystring_contains(line, "gpa")) {
-               val *= 1.0e9 / 101325.0;   // GPa → atm
-            }
-            else if (mystring_contains(line, "pa")) {
-               val /= 101325.0;           // Pa → atm
-            }
-            // else assume atm
-  
-            thermojson["pressure"] = val;
-         }
+          ss = mystring_split0(line);
 
-      } else if (ss.size() > 0 && ss[0] == "pressure") {
-         if (ss.size() > 1) {
-            double val = std::stod(ss[1]);
-  
-            if (ss.size() > 2) {
-               std::string unit = ss[2];
-  
-               if (unit == "gpa")
-                  val *= 1.0e9 / 101325.0;
-               else if (unit == "kbar")
-                  val *= 986.923;
-               else if (unit == "bar")
-                  val *= 0.986923;
-               else if (unit == "pa")
-                  val /= 101325.0;
-               // else assume atm
-            }
-            thermojson["pressure"] = val;
-         }
-      } else if (mystring_contains(line, "pressure")) {
-         ss = mystring_split0(line);
-         if (ss.size() > 1) {
-            double val = std::stod(ss[1]);
-     
-            if (mystring_contains(line, "pa"))
-               val /= 101325.0;  // convert Pa → atm
-     
-            thermojson["pressure"] = val;
-        }
+          if (ss.size() > 1) {
+              double val = std::stod(ss[1]); // default is Pa
+
+              if (ss.size() > 2) {
+                  std::string unit = ss[2];
+
+                  if (unit == "gpa")
+                      val *= 1.0e9;
+                  else if (unit == "kpa")
+                      val *= 1.0e3;          // 1,000 Pa
+                  else if (unit == "mpa")
+                      val *= 1.0e6;          // 1,000,000 Pa
+
+                  // --- imperial ---
+                  else if (unit == "psi")
+                      val *= 6894.757;       // Pounds per square inch
+
+                  // --- mercury ---
+                  else if (unit == "torr")
+                      val *= 133.322368;     // 1/760 of an atmosphere
+                  else if (unit == "mmhg")
+                      val *= 133.322387;     // Very close to Torr, often used interchangeably
+                  else if (unit == "inhg")
+                      val *= 3386.389;       // Inches of Mercury (at 32°F / 0°C)
+
+                  // --- bar family ---
+                  else if (unit == "kbar")
+                      val *= 1.0e8;
+                  else if (unit == "bar")
+                      val *= 1.0e5;
+
+                  // --- atmosphere ---
+                  else if (unit == "atm")
+                      val *= 101325.0;
+              }
+
+              thermojson["pressure"] = val;
+          }
+
       } else if (mystring_contains(line, "freq_scale")) {
-         ss = mystring_split0(line);
-         if (ss.size() > 1)
-            thermojson["freq_scale"] = std::stod(ss[1]);
+           ss = mystring_split0(line);
+
+           if (ss.size() > 1)
+               thermojson["freq_scale"] = std::stod(ss[1]);
       }
      
       ++cur;

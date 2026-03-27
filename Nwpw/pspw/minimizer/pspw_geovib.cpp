@@ -92,7 +92,7 @@ inline json thermo_to_json(const ThermoResults& t)
         {"entropy", "cal/mol-K"},
         {"heat_capacity", "cal/mol-K"},
         {"temperature", "K"},
-        {"pressure", "atm"}
+        {"pressure", "Pa"}
     };
 
     // thermodynamic corrections (NOT total energies)
@@ -1064,7 +1064,17 @@ void print_frequencies(std::ostream& out,
     out << " --- with translations and rotations projected out ---\n";
     out << " --- via the Eckart algorithm                      ---\n";
 
-    out << "\n Vibration   Frequencies (cm^-1):\n";
+    // Header
+    out << "\n";
+    out << std::setw(6)  << "Mode"
+        << std::setw(18) << "Frequency (cm^-1)";
+
+    if (mode_irreps)
+        out << std::setw(10) << "Irrep";
+
+    out << "   Notes\n";
+    out << std::string(80, '-') << "\n";
+
 
     const double tol_zero = 1e-6;
     const double tol_imag = -1e-6;
@@ -1074,35 +1084,66 @@ void print_frequencies(std::ostream& out,
         double freq   = std::sqrt(std::abs(lambda)) * conv;
 
         bool is_zero = (std::abs(lambda) < tol_zero);
-        //bool is_imag = (lambda < tol_imag);
         bool is_imag = (lambda < 0.0);
         bool is_expected_zero = (i < m_eckart);
-        //bool is_numeric_zero  = (std::abs(lambda) < tol_zero);
+        bool is_zero_imag = (lambda < 0.0 && is_zero);
 
         std::ostringstream val;
         val << std::fixed << std::setprecision(3);
 
-        //if (is_zero)
-        //    val << "0.000";
-        //else 
-        if (is_imag)
+        if (is_imag && !is_zero)
            val << "i "  << freq;
         else
            val << freq;
 
         // --- print index + frequency ---
-        out << std::setw(5) << i + 1
-            << std::setw(16) << val.str();
+        out << std::setw(6) << i + 1
+            << std::setw(18) << val.str();
 
         // --- optional irrep ---
         if (mode_irreps && i < static_cast<int>(mode_irreps->size()))
         {
-            out << "   " << std::setw(4) << (*mode_irreps)[i];
+            out << "   " << std::setw(7) << (*mode_irreps)[i];
         }
-        if ((is_zero) && (is_expected_zero)) out << " - zero mode (Eckart)";
-        if (is_expected_zero && !is_zero) out << " <-- warning: zero mode not zero";
-        if (is_imag) out << " <---  imaginary mode";
-        out << "\n";
+
+        std::string note;
+
+        if (is_expected_zero) {
+            if (is_zero)
+                note = "   zero mode (Eckart)";
+            else
+                note = "   WARNING: zero mode not zero";
+        }
+        else if (is_imag) {
+            note = "   imaginary mode";
+        }
+
+        // add numerical info (separately!)
+        //if (is_zero_imag)
+        if (is_zero)
+        {
+           std::ostringstream oss;
+           if (is_zero_imag)
+              oss << "λ=";
+           else
+              oss << "λ=+";
+           oss <<  std::scientific << std::setprecision(2) << lambda << " (numerical)";
+           note += (note.empty() ? "" : ", ") + oss.str();
+        }
+
+        out << note << "\n";
+
+        /*
+        if (is_expected_zero)
+        {
+           if (is_zero)  out << "   - zero mode (Eckart)";
+           if (!is_zero) out << "   <-- warning: zero mode not zero";
+        }
+        else if (is_imag) 
+           out << "   <---  imaginary mode";
+        */
+
+     
     }
     out << std::defaultfloat;
 }
@@ -1554,7 +1595,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
         coutput << " number of atoms            = " << N << "\n";
         coutput << " degrees of freedom         = " << ndof << "\n";
         coutput << " expected vibrational modes = " << (3 * N - 6) << "\n";
-        coutput << " finite difference step     = " << h << " bohr\n";
+        coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
 
         coutput << "\n Symmetry information\n";
         coutput << " group name                 = " << ion->group_name << "\n";
@@ -1899,7 +1940,8 @@ void compute_fd_frequencies(Control2 &control,
         coutput << " number of atoms            = " << N << "\n";
         coutput << " degrees of freedom         = " << ndof << "\n";
         coutput << " expected vibrational modes = " << (3 * N - 6) << "\n";
-        coutput << " finite difference step     = " << h << " bohr\n";
+        coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
+
 
         coutput << "\n Symmetry information\n";
         coutput << " unique atoms               = " << unique_atoms << "\n";
@@ -2140,7 +2182,8 @@ void compute_fd_frequencies_full(Control2 &control,
        coutput << " number of atoms            = " << N << "\n";
        coutput << " degrees of freedom         = " << ndof << "\n";
        coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
-       coutput << " finite difference step     = " << h << " bohr\n";
+       coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
+
   
        coutput << "\n Symmetry information\n";
        coutput << " unique atoms               = " << unique_atoms << "\n";
