@@ -17,7 +17,9 @@
 #include "ion_rcovalent.hpp"
 #include "Symmetry.hpp"
 #include "PointGroupCharacterTables.hpp"
+#include "util_thermo.hpp"
 #include "units.hpp"
+
 
 namespace pwdft {
 
@@ -33,6 +35,7 @@ class Ion {
   //ion_cbond    *mycbond;
   //ion_angle    *myangle;
   ion_bondings *mybondings;
+  ThermoResults thermo;
   Symmetry mysymmetry;
 
   std::vector<std::vector<int>> equivalent_atoms;
@@ -588,8 +591,9 @@ public:
    const PointGroupCharacterTable* get_character_table();
    void set_group_name(const std::string& );
 
-   void compute_molecular_thermo(const std::vector<double>&, double, double, std::ostream&);
+   void compute_molecular_thermo(const std::vector<double>&, double, double, double, std::ostream&);
 
+   const ThermoResults& fetch_thermo() const { return thermo; }
 
 
 };

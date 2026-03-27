@@ -64,6 +64,83 @@ void compute_fd_frequencies_full(Control2 &control,
                             bool oprint,
                             std::ostream &coutput);
 
+
+static void print_thermo(std::ostream& out,
+                         const double E0,
+                         const ThermoResults& thermo)
+{
+   double H = E0 + thermo.Hthermal_au;
+   double G = E0 + thermo.Gthermal_au;
+   out << "\n";
+
+   //out << " ---------------- Thermodynamic totals ----------------\n";
+   out << " ----------- Thermodynamic totals (au) ----------\n";
+   out << std::fixed << std::setprecision(6);
+
+   out << " Electronic (SCF) energy       = " << std::setw(16) << E0 << "\n";
+   out << " Enthalpy (E + Hcorr)          = " << std::setw(16) << H << "\n";
+   out << " Gibbs free energy (E + Gcorr) = " << std::setw(16) << G << "\n";
+}
+
+inline json thermo_to_json(const ThermoResults& t)
+{
+    json j;
+
+    // units
+    j["units"] = {
+        {"energy", "hartree"},
+        {"entropy", "cal/mol-K"},
+        {"heat_capacity", "cal/mol-K"},
+        {"temperature", "K"},
+        {"pressure", "atm"}
+    };
+
+    // thermodynamic corrections (NOT total energies)
+    j["corrections"] = {
+        {"zpe_au", t.Ezpe_au},
+        {"thermal_au", t.Ethermal_au},
+        {"enthalpy_au", t.Hthermal_au},
+        {"gibbs_au", t.Gthermal_au}
+    };
+
+    // entropy
+    j["entropy"] = {
+        {"total", t.S_total},
+        {"trans", t.S_trans},
+        {"rot", t.S_rot},
+        {"vib", t.S_vib}
+    };
+
+    // heat capacity
+    j["cv"] = {
+        {"total", t.Cv_total},
+        {"trans", t.Cv_trans},
+        {"rot", t.Cv_rot},
+        {"vib", t.Cv_vib}
+    };
+
+    // rotational constants
+    j["rotational_constants_cm"] = {
+        {"A", t.A_cm},
+        {"B", t.B_cm},
+        {"C", t.C_cm}
+    };
+
+    // calculation conditions
+    j["conditions"] = {
+        {"temperature", t.temperature},
+        {"pressure", t.pressure}
+    };
+
+    // metadata
+    j["meta"] = {
+        {"sigma", t.sigma},
+        {"rotor_type", t.rotor_type}
+    };
+
+    return j;
+}
+
 /******************************************
  *                                        *
  *            pspw_geovib                 *
@@ -831,10 +908,20 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    // call freq here
    if ((flag==4) || (flag==5))
    {
+      // note these functions modify energies in mymolecule
       if (myion.is_crystal)   
          compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
       else 
          compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
+
+      // fetch thermo from myion
+      auto thermo = mymolecule.myion->fetch_thermo();
+      if (oprint)
+      {
+         print_thermo(coutput,EV,thermo);
+      }
+      rtdbjson["pspw"]["thermo"] = thermo_to_json(thermo);
+         
    }
  
 
@@ -1337,7 +1424,9 @@ void compute_fd_frequencies_molecule(Control2 &control,
                             Molecule &mymolecule,
                             bool ismaster, bool oprint,
                             std::ostream &coutput)
-{
+{ 
+    double E0 = mymolecule.E[0];
+
     Ion *ion = mymolecule.myion;
     int N    = ion->nion;
     int ndof = 3 * N;
@@ -1765,7 +1854,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
         //Compute and output thermo
         double pressure = 101325.0;  // Pa
         double temperature = 298.15;
-        ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
+        ion->compute_molecular_thermo(freq,temperature,pressure,E0,coutput);
     }
 }
 
@@ -2021,6 +2110,8 @@ void compute_fd_frequencies_full(Control2 &control,
                             std::ostream &coutput)
 {
 
+    double E0 = mymolecule.E[0];
+
     Ion *ion = mymolecule.myion;
     int N = ion->nion;
     int ndof = 3*N;
@@ -2212,7 +2303,8 @@ void compute_fd_frequencies_full(Control2 &control,
         //Compute and output thermo
         double pressure = 101325.0;  // Pa
         double temperature = 298.15;
-        ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
+        //ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
+        ion->compute_molecular_thermo(freq,temperature,pressure,E0,coutput);
     }
 
 }

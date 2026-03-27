@@ -97,14 +97,14 @@ using namespace pwdft::units;
  *
  * @ingroup thermochemistry
  */
-void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
-                                    double temperature,
-                                    double total_mass_au,
-                                    double pressure,
-                                    int sigma,
-                                    int rotor_type,
-                                    const double inertia[3],
-                                    std::ostream& out)
+ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm,
+                                             double temperature,
+                                             double total_mass_au,
+                                             double pressure,
+                                             int sigma,
+                                             int rotor_type,
+                                             const double inertia[3],
+                                             std::ostream* out)
 {
 
     // Safety guards
@@ -296,22 +296,17 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     double Stotal   = Svib + Strans + Srot;
     double Cv_total = Cv_vib + Cv_trans + Cv_rot;
 
-    // ----------------------------
-    // Output formatting
-    // ----------------------------
-
-    out << "\n"
-        << " -----------------------------------------\n"
-        << "   Canonical Thermochemistry (Ideal Gas)   \n"
-        << " -----------------------------------------\n";
+    double Gthermal = Hthermal - temperature * Stotal;
 
     double Ezpe_kcal     = Ezpe     * KCAL_PER_KJ;
     double Ethermal_kcal = Ethermal * KCAL_PER_KJ;
     double Hthermal_kcal = Hthermal * KCAL_PER_KJ;
+    double Gthermal_kcal = Gthermal * KCAL_PER_KJ;
 
     double Ezpe_au     = Ezpe_kcal     * AU_PER_KCAL;
     double Ethermal_au = Ethermal_kcal * AU_PER_KCAL;
     double Hthermal_au = Hthermal_kcal * AU_PER_KCAL;
+    double Gthermal_au = Gthermal_kcal * AU_PER_KCAL;
 
     double Strans_cal = Strans * CAL_PER_KJ;
     double Srot_cal   = Srot   * CAL_PER_KJ;
@@ -323,108 +318,164 @@ void util_molecular_thermochemistry(const std::vector<double>& freq_cm,
     double Cv_vib_cal   = Cv_vib   * CAL_PER_KJ;
     double Cv_total_cal = Cv_total * CAL_PER_KJ;
 
-    out << "\n";
-    out << " temperature                        = "
-        << std::fixed << std::setprecision(2)
-        << temperature << " K\n";
-
-    out << " pressure                           = "
-        << std::fixed << std::setprecision(2)
-        << pressure << " Pa (" 
-        << pressure/ATM_TO_PA << " atm)\n";
-
-    out << " molecular mass                     = "
-        << std::fixed << std::setprecision(3)
-        << mass_amu << " amu\n";
-
-    out << " molecular mass (au, me)            = "
-        << std::fixed << std::setprecision(3)
-        << total_mass_au << "\n";
-
-    out << " rotational symmetry number         = "
-        << std::fixed << std::setprecision(0)
-        << sigma << "\n";
-
-    out << " rotor type                         = ";
-    if (is_atom)
+    // ----------------------------
+    // Output formatting
+    // ----------------------------
+    if (out)
     {
-        out << "atom\n";
-        out << " (atom: no rotational constants)\n";
+       auto& myout = *out;
+
+        myout << "\n"
+              << " -----------------------------------------\n"
+              << "   Canonical Thermochemistry (Ideal Gas)   \n"
+              << " -----------------------------------------\n";
+ 
+ 
+        myout << "\n";
+        myout << " temperature                        = "
+              << std::fixed << std::setprecision(2)
+              << temperature << " K\n";
+ 
+        myout << " pressure                           = "
+              << std::fixed << std::setprecision(2)
+              << pressure << " Pa (" 
+              << pressure/ATM_TO_PA << " atm)\n";
+ 
+        myout << " molecular mass                     = "
+              << std::fixed << std::setprecision(3)
+              << mass_amu << " amu\n";
+ 
+        myout << " molecular mass (au, me)            = "
+              << std::fixed << std::setprecision(3)
+              << total_mass_au << "\n";
+ 
+        myout << " rotational symmetry number         = "
+              << std::fixed << std::setprecision(0)
+              << sigma << "\n";
+ 
+        myout << " rotor type                         = ";
+        if (is_atom)
+        {
+            myout << "atom\n";
+            myout << " (atom: no rotational constants)\n";
+        }
+        else if (is_linear)
+            myout << "linear\n";
+        else
+            myout << "nonlinear\n";
+ 
+        myout << " rotor class                        = " << rotor_class << "\n";
+        myout << " Rotational Constants\n";
+        myout << std::fixed << std::setprecision(6);
+ 
+        if ((A_cm>0.0) && (A_K>0.0))
+           myout << "   - A = " << std::setw(10) << A_cm << " cm-1  (" << std::setw(10) << A_K << " K)\n";
+        if ((B_cm>0.0) && (B_K>0.0))
+           myout << "   - B = " << std::setw(10) << B_cm << " cm-1  (" << std::setw(10) << B_K << " K)\n";
+        if ((C_cm>0.0) && (C_K>0.0))
+           myout << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
+ 
+        myout << std::fixed << std::setprecision(4);
+        myout << " frequency scaling parameter        =   1.0000\n\n";
+ 
+        myout << std::setprecision(3);
+        myout << " zero-point correction to energy         = "
+              << std::setw(10) << Ezpe_kcal
+              << " kcal/mol  ("
+              << std::setw(10) << std::setprecision(6) << Ezpe_au
+              << " au)\n";
+ 
+        myout << std::setprecision(3);
+        myout << " thermal correction to energy            = "
+              << std::setw(10) << Ethermal_kcal
+              << " kcal/mol  ("
+              << std::setw(10) << std::setprecision(6) << Ethermal_au
+              << " au)\n";
+ 
+        myout << std::setprecision(3);
+        myout << " thermal correction to enthalpy          = "
+              << std::setw(10) << Hthermal_kcal
+              << " kcal/mol  ("
+              << std::setw(10) << std::setprecision(6) << Hthermal_au
+              << " au)\n";
+ 
+        myout << std::setprecision(3);
+        myout << " thermal correction to Gibbs free energy = "
+              << std::setw(10) << Gthermal_kcal
+              << " kcal/mol  ("
+              << std::setw(10) << std::setprecision(6) << Gthermal_au
+              << " au)\n";
+ 
+ 
+        myout << "\n";
+ 
+        myout << std::setprecision(3);
+        myout << " total entropy                           = "
+              << std::setw(10) << Stotal_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - translational                       = "
+              << std::setw(10) << Strans_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - rotational                          = "
+              << std::setw(10) << Srot_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - vibrational                         = "
+              << std::setw(10) << Svib_cal
+              << " cal/mol-K\n";
+ 
+        myout << "\n";
+ 
+        myout << " Cv (constant volume heat capacity)      = "
+              << std::setw(10) << Cv_total_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - translational                       = "
+              << std::setw(10) << Cv_trans_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - rotational                          = "
+              << std::setw(10) << Cv_rot_cal
+              << " cal/mol-K\n";
+ 
+        myout << "   - vibrational                         = "
+              << std::setw(10) << Cv_vib_cal
+              << " cal/mol-K\n";
     }
-    else if (is_linear)
-        out << "linear\n";
-    else
-        out << "nonlinear\n";
 
-    out << " rotor class                        = " << rotor_class << "\n";
-    out << " Rotational Constants\n";
-    out << std::fixed << std::setprecision(6);
+    ThermoResults result{};
 
-    if ((A_cm>0.0) && (A_K>0.0))
-       out << "   - A = " << std::setw(10) << A_cm << " cm-1  (" << std::setw(10) << A_K << " K)\n";
-    if ((B_cm>0.0) && (B_K>0.0))
-       out << "   - B = " << std::setw(10) << B_cm << " cm-1  (" << std::setw(10) << B_K << " K)\n";
-    if ((C_cm>0.0) && (C_K>0.0))
-       out << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
+    result.Ezpe_au      = Ezpe_au;
+    result.Ethermal_au  = Ethermal_au;
+    result.Hthermal_au  = Hthermal_au;
+    result.Gthermal_au  = Gthermal_au;
 
-    out << std::fixed << std::setprecision(4);
-    out << " frequency scaling parameter        =   1.0000\n\n";
+    result.Ezpe_kcal     = Ezpe_kcal;
+    result.Ethermal_kcal = Ethermal_kcal;
+    result.Hthermal_kcal = Hthermal_kcal;
+    result.Gthermal_kcal = Gthermal_kcal;
 
-    out << std::setprecision(3);
-    out << " zero-point correction to energy    = "
-        << std::setw(10) << Ezpe_kcal
-        << " kcal/mol  ("
-        << std::setw(10) << std::setprecision(6) << Ezpe_au
-        << " au)\n";
+    result.S_total = Stotal_cal;
+    result.S_trans = Strans_cal;
+    result.S_rot   = Srot_cal;
+    result.S_vib   = Svib_cal;
 
-    out << std::setprecision(3);
-    out << " thermal correction to energy       = "
-        << std::setw(10) << Ethermal_kcal
-        << " kcal/mol  ("
-        << std::setw(10) << std::setprecision(6) << Ethermal_au
-        << " au)\n";
+    result.Cv_total = Cv_total_cal;
+    result.Cv_trans = Cv_trans_cal;
+    result.Cv_rot   = Cv_rot_cal;
+    result.Cv_vib   = Cv_vib_cal;
 
-    out << std::setprecision(3);
-    out << " thermal correction to enthalpy     = "
-        << std::setw(10) << Hthermal_kcal
-        << " kcal/mol  ("
-        << std::setw(10) << std::setprecision(6) << Hthermal_au
-        << " au)\n";
+    result.A_cm = A_cm;
+    result.B_cm = B_cm;
+    result.C_cm = C_cm;
 
-    out << "\n";
+    result.sigma      = sigma;
+    result.rotor_type = rotor_type;
 
-    out << std::setprecision(3);
-    out << " total entropy                      = "
-        << std::setw(10) << Stotal_cal
-        << " cal/mol-K\n";
+    result.temperature = temperature;
+    result.pressure    = pressure;
 
-    out << "   - translational                  = "
-        << std::setw(10) << Strans_cal
-        << " cal/mol-K\n";
-
-    out << "   - rotational                     = "
-        << std::setw(10) << Srot_cal
-        << " cal/mol-K\n";
-
-    out << "   - vibrational                    = "
-        << std::setw(10) << Svib_cal
-        << " cal/mol-K\n";
-
-    out << "\n";
-
-    out << " Cv (constant volume heat capacity) = "
-        << std::setw(10) << Cv_total_cal
-        << " cal/mol-K\n";
-
-    out << "   - translational                  = "
-        << std::setw(10) << Cv_trans_cal
-        << " cal/mol-K\n";
-
-    out << "   - rotational                     = "
-        << std::setw(10) << Cv_rot_cal
-        << " cal/mol-K\n";
-
-    out << "   - vibrational                    = "
-        << std::setw(10) << Cv_vib_cal
-        << " cal/mol-K\n";
+    return result;
 }

@@ -1975,6 +1975,7 @@ void Ion::print_symmetry_atom_map(std::ostream &out) const
 void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
                                    double temperature,
                                    double pressure,
+                                   double total_energy,
                                    std::ostream& out)
 {
     // ----------------------------
@@ -2055,14 +2056,15 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
     // ----------------------------
     // Call core routine
     // ----------------------------
-    util_molecular_thermochemistry(freq_cm,
+    thermo = util_molecular_thermochemistry(freq_cm,
                                    temperature,
                                    mol_mass,
                                    pressure,
                                    sigma,
                                    rotor_type,
                                    inertia_amuA2,
-                                   out);
+                                   &out);
+
 }
 
 

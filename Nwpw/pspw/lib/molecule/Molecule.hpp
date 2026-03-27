@@ -92,6 +92,7 @@ public:
    bool occupation_update = false;;
 
    double E[80],en[2],ep,sp,tole;
+   double Total_Enthalpy = 0.0;
  
    bool newpsi;
  
@@ -556,6 +557,7 @@ public:
 
       return stream.str();
    }
+
  
    friend std::ostream &operator<<(std::ostream &os, const Molecule &mymolecule) {
       /* using old style c++ formatting */
