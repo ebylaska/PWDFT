@@ -2427,6 +2427,42 @@ static json parse_thermo(json thermojson, int *curptr,
   
             thermojson["temperature"] = val;
          }
+
+      } else if (mystring_contains(line, "pressure")) {
+         ss = mystring_split0(line);
+         if (ss.size() > 1) {
+            double val = std::stod(ss[1]);
+  
+            if (mystring_contains(line, "gpa")) {
+               val *= 1.0e9 / 101325.0;   // GPa → atm
+            }
+            else if (mystring_contains(line, "pa")) {
+               val /= 101325.0;           // Pa → atm
+            }
+            // else assume atm
+  
+            thermojson["pressure"] = val;
+         }
+
+      } else if (ss.size() > 0 && ss[0] == "pressure") {
+         if (ss.size() > 1) {
+            double val = std::stod(ss[1]);
+  
+            if (ss.size() > 2) {
+               std::string unit = ss[2];
+  
+               if (unit == "gpa")
+                  val *= 1.0e9 / 101325.0;
+               else if (unit == "kbar")
+                  val *= 986.923;
+               else if (unit == "bar")
+                  val *= 0.986923;
+               else if (unit == "pa")
+                  val /= 101325.0;
+               // else assume atm
+            }
+            thermojson["pressure"] = val;
+         }
       } else if (mystring_contains(line, "pressure")) {
          ss = mystring_split0(line);
          if (ss.size() > 1) {
