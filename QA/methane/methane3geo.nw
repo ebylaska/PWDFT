@@ -26,10 +26,13 @@ nwpw
   lmbfgs
 end
 set nwpw:use_symmetry true
-set driver:symmetry_lock false
+#set nwpw:use_symmetry false
+set driver:symmetry_lock true
 
 thermo
    temperature 72.0 F
+   pressure 5.0 kbar
+   freq_scale 0.95
 end
 
 task pspw geovib
