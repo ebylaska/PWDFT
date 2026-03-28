@@ -1093,6 +1093,23 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    phessian_print = driver_json.value("hessian_print", phessian_print);
 
 
+   // thermo options
+   const auto& thermo_json = (rtdbjson.contains("thermo_param") && !rtdbjson["thermo_param"].is_null())
+                           ? rtdbjson["thermo_param"]
+                           : nlohmann::json::object();
+
+   auto getthermo = [&](const char* key, auto& var) {
+       if (thermo_json.contains(key) && !thermo_json[key].is_null()) {
+           var = thermo_json[key].get<std::decay_t<decltype(var)>>();
+       }
+   };
+
+   getthermo("pressure", ppressure);
+   getthermo("temperature", ptemperature);
+   getthermo("freq_scale", pfreq_scale);
+
+
+
 
    /*
    if (rtdbjson["driver"].contains("symmetry_lock") && rtdbjson["driver"]["symmetry_lock"].is_boolean())

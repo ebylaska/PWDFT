@@ -187,6 +187,7 @@ public:
       if (dof < 1)         dof = 1;
       return dof;
    }
+   void remove_absolute_com_translation();
    void remove_com_translation();
    void remove_rotation();
  
@@ -591,7 +592,7 @@ public:
    const PointGroupCharacterTable* get_character_table();
    void set_group_name(const std::string& );
 
-   void compute_molecular_thermo(const std::vector<double>&, double, double, double, std::ostream&);
+   void compute_molecular_thermo(const std::vector<double>&, double, double, double, double, std::ostream&);
 
    const ThermoResults& fetch_thermo() const { return thermo; }
 

@@ -49,6 +49,7 @@ struct ThermoResults
 //void util_molecular_thermochemistry(const std::vector<double>&, double, double, double, int, int, const double *, std::ostream&);
 
 ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm, 
+                                             double freq_scale,
                                              double temperature, 
                                              double mol_mass, 
                                              double pressure, 

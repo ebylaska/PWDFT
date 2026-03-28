@@ -195,6 +195,10 @@ class Control2 {
    double protation_moments[3];
    double protation_inertia[9];
 
+   // thermo
+   double ppressure = 101325.0;  // Pa
+   double ptemperature = 298.15; // K
+   double pfreq_scale = 1.0;
 
 
 public:
@@ -645,6 +649,11 @@ public:
    const double* rotation_axes() const { return protation_axes; }
    const double* rotation_moments() const { return protation_moments; }
    const double* rotation_inertia() const { return protation_inertia; }
+
+   // thermo parameters
+   double thermo_pressure() { return ppressure; }
+   double thermo_temperature() { return ptemperature; }
+   double thermo_freq_scale() { return pfreq_scale; }
 
 };
 

@@ -598,6 +598,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
      coutput << " ---------------------------------\n\n";
    }
    cgsd_energy_gradient(mymolecule, fion);
+
+   // enforce symmetry on forces (if locked)
+   if (control.use_symmetry() && control.symmetry_lock())
+      mymolecule.myion->project_cartesian_vector(fion);
+
    if (oprint) 
    {
       coutput << " ion forces (au):" << std::endl;
@@ -630,6 +635,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
  
    /* update coords in mymolecule */
    mymolecule.myion->fixed_step(-trust, fion);
+
+   // project geometry if enforcing symmetry
+   if (control.use_symmetry() && control.symmetry_lock())
+      mymolecule.myion->symmetrize_rion2();
+
    mymolecule.myion->shift();
  
    Xmax = mymolecule.myion->xmax();
@@ -747,6 +757,10 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       }
  
       cgsd_energy_gradient(mymolecule, fion);
+
+      // enforce symmetry on forces (if locked)
+      if (control.use_symmetry() && control.symmetry_lock())
+         mymolecule.myion->project_cartesian_vector(fion);
  
       if (oprint)
       {
@@ -777,6 +791,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
  
       /* update coords in mymolecule */
       mymolecule.myion->fixed_step(-trust, sion);
+
+      // project geometry if enforcing symmetry
+      if (control.use_symmetry() && control.symmetry_lock())
+         mymolecule.myion->symmetrize_rion2();
+
       mymolecule.myion->shift();
  
       Xmax = mymolecule.myion->xmax();
@@ -912,7 +931,19 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       if (myion.is_crystal)   
          compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
       else 
-         compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
+      {
+         if (control.use_symmetry())
+         {
+            // 🔥 ADD THIS BLOCK
+            mymolecule.myion->symmetrize_rion1();
+            mymolecule.myion->remove_absolute_com_translation();
+            mymolecule.myion->symmetrize_rion1();
+
+            compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
+         }
+         else
+            compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
+      }
 
       // fetch thermo from myion
       auto thermo = mymolecule.myion->fetch_thermo();
@@ -1073,7 +1104,11 @@ void print_frequencies(std::ostream& out,
         out << std::setw(10) << "Irrep";
 
     out << "   Notes\n";
-    out << std::string(80, '-') << "\n";
+
+    if (mode_irreps)
+       out << std::string(80, '-') << "\n";
+    else
+       out << std::string(70, '-') << "\n";
 
 
     const double tol_zero = 1e-6;
@@ -1606,6 +1641,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
         coutput << " full displacements         = " << 2 * ndof << "\n";
         coutput << " symmetry displacements     = " << 2 * reduced_dof << "\n";
         coutput << "\n";
+        coutput << " Full Hessian generation (FD, symmetry-reduced)\n";
     }
 
 
@@ -1893,9 +1929,10 @@ void compute_fd_frequencies_molecule(Control2 &control,
         }
 
         //Compute and output thermo
-        double pressure = 101325.0;  // Pa
-        double temperature = 298.15;
-        ion->compute_molecular_thermo(freq,temperature,pressure,E0,coutput);
+        double pressure    = control.thermo_pressure();
+        double temperature = control.thermo_temperature();
+        double freq_scale  = control.thermo_freq_scale();
+        ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
     }
 }
 
@@ -2193,6 +2230,7 @@ void compute_fd_frequencies_full(Control2 &control,
        coutput << " full displacements         = " << 2*ndof << "\n";
        coutput << " symmetry displacements     = " << 2*reduced_dof << "\n";
        coutput << "\n";
+       coutput << " Full Hessian generation (finite difference)\n";
     }
 
     std::vector<double> H(ndof*ndof, 0.0);
@@ -2344,10 +2382,11 @@ void compute_fd_frequencies_full(Control2 &control,
        }
 
         //Compute and output thermo
-        double pressure = 101325.0;  // Pa
-        double temperature = 298.15;
+        double pressure    = control.thermo_pressure();
+        double temperature = control.thermo_temperature();
+        double freq_scale  = control.thermo_freq_scale();
         //ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
-        ion->compute_molecular_thermo(freq,temperature,pressure,E0,coutput);
+        ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
     }
 
 }

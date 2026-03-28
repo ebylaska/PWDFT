@@ -828,6 +828,41 @@ void Ion::writejsonstr(std::string &rtdbstring) {
   rtdbstring = rtdbjson.dump();
 }
 
+
+/****************************************
+ *                                      *
+ * Ion::remove_absolute_com_translation *
+ *                                      *
+ ****************************************/
+void Ion::remove_absolute_com_translation() {
+   double am0 = 0.0;
+   double gx = 0.0, gy = 0.0, gz = 0.0;
+ 
+   // compute COM of rion1
+   for (int ii = 0; ii < nion; ++ii) {
+      am0 += mass[ii];
+      gx += mass[ii] * rion1[3*ii + 0];
+      gy += mass[ii] * rion1[3*ii + 1];
+      gz += mass[ii] * rion1[3*ii + 2];
+   }
+ 
+   gx /= am0;
+   gy /= am0;
+   gz /= am0;
+ 
+   // shift BOTH rion1 and rion2 to COM = 0
+   for (int ii = 0; ii < nion; ++ii) {
+      rion1[3*ii + 0] -= gx;
+      rion1[3*ii + 1] -= gy;
+      rion1[3*ii + 2] -= gz;
+     
+      rion2[3*ii + 0] -= gx;
+      rion2[3*ii + 1] -= gy;
+      rion2[3*ii + 2] -= gz;
+   }
+}
+
+
 /*******************************
  *                             *
  * Ion::remove_com_translation *
@@ -1973,6 +2008,7 @@ void Ion::print_symmetry_atom_map(std::ostream &out) const
  *  - Call util_molecular_thermochemistry()
  */
 void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
+                                   double freq_scale,
                                    double temperature,
                                    double pressure,
                                    double total_energy,
@@ -2057,6 +2093,7 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
     // Call core routine
     // ----------------------------
     thermo = util_molecular_thermochemistry(freq_cm,
+                                   freq_scale,
                                    temperature,
                                    mol_mass,
                                    pressure,

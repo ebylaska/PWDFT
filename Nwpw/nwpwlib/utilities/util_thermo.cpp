@@ -98,6 +98,7 @@ using namespace pwdft::units;
  * @ingroup thermochemistry
  */
 ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm,
+                                             double freq_scale,
                                              double temperature,
                                              double total_mass_au,
                                              double pressure,
@@ -143,8 +144,8 @@ ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm,
         //if (freq < 1.0) continue;
         if (freq < 1e-3) continue;
 
-        //double theta = freq * hc_over_k;   // vibrational temperature (K)
-        double theta = freq * HC_OVER_K;
+        //double theta = freq_scale*freq * hc_over_k;   // vibrational temperature (K)
+        double theta = freq_scale*freq * HC_OVER_K;
         double x = theta / temperature;
 
         if (x > 50.0)
@@ -154,8 +155,10 @@ ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm,
             continue;
         }
 
-        double ex = std::exp(x);
+        //double ex = std::exp(x);
+        //double exp_neg_x = std::exp(-x);
         double exp_neg_x = std::exp(-x);
+        double ex = 1.0 / exp_neg_x;
 
         Ezpe += 0.5 * theta;
         Evib += theta * (0.5 + 1.0 / (ex - 1.0));
@@ -376,7 +379,7 @@ ThermoResults util_molecular_thermochemistry(const std::vector<double>& freq_cm,
            myout << "   - C = " << std::setw(10) << C_cm << " cm-1  (" << std::setw(10) << C_K << " K)\n";
  
         myout << std::fixed << std::setprecision(4);
-        myout << " frequency scaling parameter        =   1.0000\n\n";
+        myout << " frequency scaling parameter        =   " << freq_scale << "\n\n";
  
         myout << std::setprecision(3);
         myout << " zero-point correction to energy         = "
