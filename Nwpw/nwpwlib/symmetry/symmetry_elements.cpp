@@ -191,6 +191,11 @@ static bool canonicalize_Td(double* rion, int nion, double* U)
 
     if(center<0) return false;
 
+    /* --- put center at <0,0,0>   --- */
+    rion[3*center] = 0.0;
+    rion[3*center+1] = 0.0;
+    rion[3*center+2] = 0.0;
+
     /* --- build ligand directions --- */
 
     std::vector<std::array<double,3>> lig;
@@ -2223,6 +2228,18 @@ static void canonicalize_axes(const double thresh, double *eig, double *axis)
 }
 
 
+static void canonicalize_axis_sign(double a[3])
+{
+    const double eps = 1.0e-14;
+    if (a[2] < -eps ||
+       (std::abs(a[2]) < eps && a[1] < -eps) ||
+       (std::abs(a[2]) < eps && std::abs(a[1]) < eps && a[0] < -eps))
+    {
+        a[0] = -a[0];
+        a[1] = -a[1];
+        a[2] = -a[2];
+    }
+}
 
 
 
@@ -2779,6 +2796,59 @@ static bool has_proper_rotation_C4(const double* rion, const double* ion_mass, c
 }
 
 
+static bool has_proper_rotation_C5(const double* rion,
+                                   const double* ion_mass,
+                                   const int nion,
+                                   const double sym_tolerance)
+{
+    if (nion < 13) return false;
+
+    // 1. find center atom = smallest radius from origin
+    int icenter = -1;
+    double r2min = 1.0e100;
+    for (int i = 0; i < nion; ++i)
+    {
+        double x = rion[3*i+0];
+        double y = rion[3*i+1];
+        double z = rion[3*i+2];
+        double r2 = x*x + y*y + z*z;
+        if (r2 < r2min)
+        {
+            r2min = r2;
+            icenter = i;
+        }
+    }
+
+    if (icenter < 0) return false;
+
+    const double theta5 = 2.0 * M_PI / 5.0;
+
+    // 2. test every center->outer-atom direction as a candidate C5 axis
+    for (int i = 0; i < nion; ++i)
+    {
+        if (i == icenter) continue;
+
+        double axis[3] = {
+            rion[3*i+0] - rion[3*icenter+0],
+            rion[3*i+1] - rion[3*icenter+1],
+            rion[3*i+2] - rion[3*icenter+2]
+        };
+
+        double nrm = std::sqrt(axis[0]*axis[0] +
+                               axis[1]*axis[1] +
+                               axis[2]*axis[2]);
+        if (nrm < 1.0e-12) continue;
+
+        axis[0] /= nrm;
+        axis[1] /= nrm;
+        axis[2] /= nrm;
+
+        if (has_rotation_axis(rion, ion_mass, nion, axis, theta5, sym_tolerance))
+            return true;
+    }
+
+    return false;
+}
 
 
 
@@ -2789,6 +2859,7 @@ static bool has_proper_rotation_C4(const double* rion, const double* ion_mass, c
  *         has_proper_rotation_C5          *
  *                                         *
  *******************************************/
+ /*
 static bool has_proper_rotation_C5(const double* rion, const double* ion_mass, const int nion, const double sym_tolerance)
 {
    int count=0;
@@ -2842,6 +2913,7 @@ static bool has_proper_rotation_C5(const double* rion, const double* ion_mass, c
 
          //Generate the rotation axis
          normalized_cross_product(r2,r1,try_axis);
+         canonicalize_axis_sign(try_axis);
          bool has_c5_rotation  = has_rotation_axis(rion,ion_mass,nion,try_axis,theta5,sym_tolerance);
          bool has_s10_rotation = has_improper_rotation_axis(rion,ion_mass,nion,try_axis,theta10,sym_tolerance);
 
@@ -2908,6 +2980,7 @@ static bool has_proper_rotation_C5(const double* rion, const double* ion_mass, c
 
    return found;
 }
+*/
 
 
 /*******************************************
@@ -3091,7 +3164,20 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
                            std::string&  group_name, int& group_rank, std::string& rotation_type,
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes)
 {
-    //There are enough atoms to compute a multipole2
+
+   bool has_inversioni = has_inversion_center(rion, ion_mass, nion, sym_tolerance);
+   bool has_c5i        = has_proper_rotation_C5(rion, ion_mass, nion, sym_tolerance);
+   std::cout << "has_inversioni=" << has_inversioni << std::endl;
+   std::cout << "has_c5i =" << has_c5i << std::endl;
+
+   if (has_c5i)
+   {
+       group_name = has_inversioni ? "I_h" : "I";
+       group_rank = has_inversioni ? 120   : 60;
+       return;
+   }
+
+   //There are enough atoms to compute a multipole2
    double eccentricity, asphericity;
 
    eccentricity_and_asphericity(rion,ion_mass,nion,eccentricity,asphericity);

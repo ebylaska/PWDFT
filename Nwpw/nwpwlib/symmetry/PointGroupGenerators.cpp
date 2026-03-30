@@ -2,6 +2,8 @@
 */
 
 
+
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -78,6 +80,7 @@ static void snap_matrix(SymOp& op)
  */
 std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
 {
+    std::cout << "GENERATE = " << symbol << std::endl;
     // Trivial groups
     if (symbol == "C1")
         return { identity() };
@@ -104,7 +107,10 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
     if (symbol == "I")
         return I();
     if (symbol == "Ih")
+    {
+        std::cout << "Into Ih" << std::endl;
         return Ih();
+    }
 
     // Axial groups: parse prefix + integer
     auto parse_n = [&](size_t pos) -> int {

@@ -1,0 +1,36 @@
+title "hello"
+echo
+
+start test3
+memory 1900 mb
+
+permanent_dir ./perm3
+scratch_dir   ./perm3
+
+geometry autosym symmetry_tolerance 0.01
+S   0.000000   0.000000   0.000000
+F   1.560000   0.000000   0.000000
+F  -1.560000   0.000000   0.000000
+F   0.000000   1.560000   0.000000
+F   0.000000  -1.560000   0.000000
+F   0.000000   0.000000   1.560000
+F   0.000000   0.000000  -1.560000
+end
+
+
+
+nwpw
+  cutoff 30.0
+  simulation_cell
+    fcc 38.0 
+  end
+  xc pbe
+  lmbfgs
+end
+set nwpw:use_symmetry true
+set driver:symmetry_lock true
+#set nwpw:use_symmetry false
+
+task pspw geovib
+
+
