@@ -251,7 +251,7 @@ static void center_v_mass(int nion, double *mass, double *rion0, double *vx,
 //    char date[50];
 //
 //    if (!myrtdb.get_info("geometry:geometry:tags",&matype,&nelem,date))
-//    { printf("rtdb.get_info error: geometry:geometry:tags not found\n");
+//    { printf("rtdb.giet_info error: geometry:geometry:tags not found\n");
 //    exit(99);}
 //
 //    else
@@ -1001,6 +1001,7 @@ std::string Ion::print_symmetry_group()
    stream << "      group name   : " << this->group_name
                                      << "  (group rank = "  << this->group_rank
                                      << " rotation type : " << this->rotation_type <<")" <<  std::endl;
+
    if (!is_crystal)
    {
       stream << "      principal-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
@@ -1020,6 +1021,7 @@ std::string Ion::print_symmetry_group()
       stream << std::defaultfloat << std::setprecision(3);
 
       stream << "\n      character table (" << table->group() << ")\n";
+
                
       // header  
       stream << "      " << std::setw(8) << " ";
@@ -1765,9 +1767,7 @@ const PointGroupCharacterTable* Ion::get_character_table()
 {
     if (!character_table) {
         try {
-            character_table = std::make_unique<PointGroupCharacterTable>(
-                PointGroupCharacterTable::from_symbol(group_name)
-            );
+            character_table = std::make_unique<PointGroupCharacterTable>( PointGroupCharacterTable::from_symbol(group_name) );
         } catch (...) {
             return nullptr;
         }

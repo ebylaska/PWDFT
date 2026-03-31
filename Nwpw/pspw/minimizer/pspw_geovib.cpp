@@ -1159,11 +1159,11 @@ void print_frequencies(std::ostream& out,
         {
            std::ostringstream oss;
            if (is_zero_imag)
-              oss << "λ=";
+              oss << " λ=";
            else
-              oss << "λ=+";
+              oss << " λ=+";
            oss <<  std::scientific << std::setprecision(2) << lambda << " (numerical)";
-           note += (note.empty() ? "" : ", ") + oss.str();
+           note += (note.empty() ? "" : ",") + oss.str();
         }
 
         out << note << "\n";

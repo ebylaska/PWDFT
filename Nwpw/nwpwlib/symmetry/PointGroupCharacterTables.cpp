@@ -1,5 +1,6 @@
 #include "PointGroupCharacterTables.hpp"
 #include <utility> // std::move
+#include <iostream>
 
 namespace pwdft {
 
@@ -103,6 +104,34 @@ static PointGroupCharacterTable make_D2h()
     );
 }
 
+static PointGroupCharacterTable make_D6h()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    return PointGroupCharacterTable::build(
+        "D6h", 24,
+        // Classes
+        {"E","2C6","2C3","C2","3C2'","3C2''","i","2S3","2S6","sh","3sv","3sd"},
+        {  1,   2,    2,   1,    3,      3,    1,   2,    2,    1,    3,    3 },
+
+        {
+          Ir{"A1g",1,{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}},
+          Ir{"A2g",1,{ 1, 1, 1, 1,-1,-1, 1, 1, 1, 1,-1,-1}},
+          Ir{"B1g",1,{ 1,-1, 1,-1, 1,-1, 1,-1, 1, 1, 1,-1}},
+          Ir{"B2g",1,{ 1,-1, 1,-1,-1, 1, 1,-1, 1, 1,-1, 1}},
+          Ir{"E1g",2,{ 2, 1,-1,-2, 0, 0, 2, 1,-1, 2, 0, 0}},
+          Ir{"E2g",2,{ 2,-1,-1, 2, 0, 0, 2,-1,-1, 2, 0, 0}},
+
+          Ir{"A1u",1,{ 1, 1, 1, 1, 1, 1,-1,-1,-1,-1,-1,-1}},
+          Ir{"A2u",1,{ 1, 1, 1, 1,-1,-1,-1,-1,-1,-1, 1, 1}},
+          Ir{"B1u",1,{ 1,-1, 1,-1, 1,-1,-1, 1,-1,-1,-1, 1}},
+          Ir{"B2u",1,{ 1,-1, 1,-1,-1, 1,-1, 1,-1,-1, 1,-1}},
+          Ir{"E1u",2,{ 2, 1,-1,-2, 0, 0,-2,-1, 1,-2, 0, 0}},
+          Ir{"E2u",2,{ 2,-1,-1, 2, 0, 0,-2, 1, 1,-2, 0, 0}}
+        }
+    );
+}
+
 static PointGroupCharacterTable make_C3v()
 {
     using Ir = PointGroupCharacterTable::Irrep;
@@ -169,6 +198,55 @@ static PointGroupCharacterTable make_Oh()
     );
 }
 
+static PointGroupCharacterTable make_Th()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+    return PointGroupCharacterTable::build(
+        "Th", 24,
+        {"E","8C3","3C2","i","8S6","3sh"},
+        { 1,   8,    3,   1,   8,    3 },
+        {
+          Ir{"Ag",1,{ 1, 1, 1, 1, 1, 1}},
+          Ir{"Au",1,{ 1, 1, 1,-1,-1,-1}},
+          Ir{"Eg",2,{ 2,-1, 2, 2,-1, 2}},
+          Ir{"Eu",2,{ 2,-1, 2,-2, 1,-2}},
+          Ir{"Tg",3,{ 3, 0,-1, 3, 0,-1}},
+          Ir{"Tu",3,{ 3, 0,-1,-3, 0, 1}}
+        }
+    );
+}
+
+static PointGroupCharacterTable make_Ih()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    const double phi  = (1.0 + std::sqrt(5.0)) / 2.0;
+    const double phi2 = (1.0 - std::sqrt(5.0)) / 2.0;
+
+    return PointGroupCharacterTable::build(
+        "Ih", 120,
+        {"E","12C5","12C5^2","20C3","15C2","i","12S10","12S10^3","20S6","15sh"},
+        { 1,   12,     12,     20,    15,   1,   12,      12,      20,    15 },
+
+        {
+          Ir{"Ag",1,{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}},
+          Ir{"Au",1,{ 1, 1, 1, 1, 1,-1,-1,-1,-1,-1}},
+
+          Ir{"T1g",3,{ 3, phi, phi2, 0,-1, 3, phi, phi2, 0,-1}},
+          Ir{"T1u",3,{ 3, phi, phi2, 0,-1,-3,-phi,-phi2, 0, 1}},
+
+          Ir{"T2g",3,{ 3, phi2, phi, 0,-1, 3, phi2, phi, 0,-1}},
+          Ir{"T2u",3,{ 3, phi2, phi, 0,-1,-3,-phi2,-phi, 0, 1}},
+
+          Ir{"Gg",4,{ 4,-1,-1, 1, 0, 4,-1,-1, 1, 0}},
+          Ir{"Gu",4,{ 4,-1,-1, 1, 0,-4, 1, 1,-1, 0}},
+
+          Ir{"Hg",5,{ 5, 0, 0,-1, 1, 5, 0, 0,-1, 1}},
+          Ir{"Hu",5,{ 5, 0, 0,-1, 1,-5, 0, 0, 1,-1}}
+        }
+    );
+}
+
 PointGroupCharacterTable PointGroupCharacterTable::from_symbol(const std::string& symbol)
 {
     if (symbol == "C1")  return make_C1();
@@ -177,10 +255,17 @@ PointGroupCharacterTable PointGroupCharacterTable::from_symbol(const std::string
     if (symbol == "C2")  return make_C2();
     if (symbol == "C2v") return make_C2v();
     if (symbol == "D2h") return make_D2h();
+    if (symbol == "D6h") return make_D6h();
     if (symbol == "C3v") return make_C3v();
     if (symbol == "D3h") return make_D3h();
     if (symbol == "Td")  return make_Td();
     if (symbol == "Oh")  return make_Oh();
+    if (symbol == "Th")  return make_Th();
+    if (symbol == "Ih")  return make_Ih();
+
+    std::cerr << "Warning: unsupported point group '" << symbol 
+          << "' — falling back to C1\n";
+    return make_C1();
 
     throw std::runtime_error("PointGroupCharacterTable: unsupported group: " + symbol);
 }

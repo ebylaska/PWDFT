@@ -3165,6 +3165,7 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
                            double *inertia_tensor,  double *inertia_moments,  double *inertia_axes)
 {
 
+   /*
    bool has_inversioni = has_inversion_center(rion, ion_mass, nion, sym_tolerance);
    bool has_c5i        = has_proper_rotation_C5(rion, ion_mass, nion, sym_tolerance);
    std::cout << "has_inversioni=" << has_inversioni << std::endl;
@@ -3176,6 +3177,7 @@ static void determine_spherical_group(const double *rion, const double *ion_mass
        group_rank = has_inversioni ? 120   : 60;
        return;
    }
+   */
 
    //There are enough atoms to compute a multipole2
    double eccentricity, asphericity;

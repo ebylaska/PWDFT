@@ -80,7 +80,8 @@ static void snap_matrix(SymOp& op)
  */
 std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
 {
-    std::cout << "GENERATE = " << symbol << std::endl;
+    std::cout << "SYMBOL=" << symbol << std::endl;
+
     // Trivial groups
     if (symbol == "C1")
         return { identity() };
@@ -107,10 +108,7 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
     if (symbol == "I")
         return I();
     if (symbol == "Ih")
-    {
-        std::cout << "Into Ih" << std::endl;
         return Ih();
-    }
 
     // Axial groups: parse prefix + integer
     auto parse_n = [&](size_t pos) -> int {
@@ -137,9 +135,16 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
         if (symbol.back() == 'h')
             return Cnh(n);
     }
+    std::cout << "symbol0=" << symbol[0] << std::endl;
 
     // Dn, Dnh, Dnd
     if (symbol[0] == 'D') {
+
+     std::cout << "symbol='" << symbol << "' len=" << symbol.size() << std::endl;
+
+     for (size_t i = 0; i < symbol.size(); ++i) {
+     std::cout << "  [" << i << "] = '" << symbol[i] << "' (" << int(symbol[i]) << ")\n"; 
+     }
         int n = parse_n(1);
         if (n <= 0)
             throw std::runtime_error("Invalid Dn group: " + symbol);
@@ -147,11 +152,12 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
         if (symbol.size() == 1 + std::to_string(n).size())
             return Dn(n);
 
-        if (symbol.substr(symbol.size()-2) == "nh")
+        if (symbol.back() == 'h')
             return Dnh(n);
 
-        if (symbol.substr(symbol.size()-2) == "nd")
+        if (symbol.back() == 'd')
             return Dnd(n);
+
     }
 
     // Improper rotation groups S2n
