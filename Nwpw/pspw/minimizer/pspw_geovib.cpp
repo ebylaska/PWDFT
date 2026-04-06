@@ -932,7 +932,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
          compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
       else 
       {
-         if (control.use_symmetry())
+         if ((control.use_symmetry()) and (mymolecule.myion->has_symmetry()))
          {
             // 🔥 ADD THIS BLOCK
             mymolecule.myion->symmetrize_rion1();
@@ -2195,9 +2195,9 @@ void compute_fd_frequencies_full(Control2 &control,
     int N = ion->nion;
     int ndof = 3*N;
 
-    const auto &eq = ion->get_equivalent_atoms();
-    int unique_atoms = eq.size();
-    int reduced_dof = 3 * unique_atoms;
+    //const auto &eq = ion->get_equivalent_atoms();
+    //int unique_atoms = eq.size();
+    //int reduced_dof = 3 * unique_atoms;
 
 
     //double h = 0.005;   // bohr (hardcode for v1)
@@ -2222,13 +2222,13 @@ void compute_fd_frequencies_full(Control2 &control,
        coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
 
   
-       coutput << "\n Symmetry information\n";
-       coutput << " unique atoms               = " << unique_atoms << "\n";
-       coutput << " symmetry reduced DOF       = " << reduced_dof << "\n";
+       //coutput << "\n Symmetry information\n";
+       //coutput << " unique atoms               = " << unique_atoms << "\n";
+       //coutput << " symmetry reduced DOF       = " << reduced_dof << "\n";
   
        coutput << "\n FD workload\n";
        coutput << " full displacements         = " << 2*ndof << "\n";
-       coutput << " symmetry displacements     = " << 2*reduced_dof << "\n";
+       //coutput << " symmetry displacements     = " << 2*reduced_dof << "\n";
        coutput << "\n";
        coutput << " Full Hessian generation (finite difference)\n";
     }
@@ -2243,7 +2243,13 @@ void compute_fd_frequencies_full(Control2 &control,
 
     for(int j=0;j < ndof;++j)
     {
-           if (ismaster && oprint) coutput << " FD displacement " << j/3+1 << " / " << N <<  "\n";
+           //if (ismaster && oprint) coutput << " FD displacement " << j/3+1 << " / " << N <<  "\n";
+           if (ismaster && oprint && (j%3==0)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (x)\n";
+           if (ismaster && oprint && (j%3==1)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (y)\n";
+           if (ismaster && oprint && (j%3==2)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (z)\n";
+
+           //if (ismaster && oprint && (j%3==1)) coutput << " - Y FD displacements " << j/3+1 << " / " << N <<  "\n";
+           //if (ismaster && oprint && (j%3==2)) coutput << " - Z FD displacements " << j/3+1 << " / " << N <<  "\n";
  
            // +h
            ion->rion1[j] = x0[j] + h;

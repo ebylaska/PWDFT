@@ -928,15 +928,15 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
      autospace = false;  // degrade safely
 
    if (geomjson.contains("symmetry_tolerance") &&
-       (geomjson["symmetry_tolerance"].is_number_float() ||
-        geomjson["symmetry_tolerance"].is_number_integer()))
+      (geomjson["symmetry_tolerance"].is_number_float() || geomjson["symmetry_tolerance"].is_number_integer()))
    {
-    symmetry_tolerance = geomjson["symmetry_tolerance"].get<double>();
+      symmetry_tolerance = geomjson["symmetry_tolerance"].get<double>();
    }
 
    // ---- restart policy knobs (keep simple; you can refine)
    const bool have_effective = (rtdbjson.contains("effective_symmetry") && rtdbjson["effective_symmetry"].is_object());
    bool reuse_effective = false;
+
 
    // If you have a formal restart flag, wire it here.
    // For now: reuse only if effective exists AND user did not explicitly specify symmetry this run.
@@ -969,6 +969,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
    std::string sym_source = "identity";
    std::string sym_backend = "";
+
 
    if (symmetry_specified)
    {
@@ -1056,14 +1057,16 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
       }
       else
       {
-          sym = pwdft::Symmetry();
-          sym_source = "autosym_failed";
+          //sym = pwdft::Symmetry();
+          //sym_source = "autosym_failed";
+          return rtdbjson.dump();
       }
    }
    else
    {
-      sym = pwdft::Symmetry(); // identity
-      sym_source = "identity";
+      //sym = pwdft::Symmetry(); // identity
+      //sym_source = "identity";
+      return rtdbjson.dump();
    }
 
 

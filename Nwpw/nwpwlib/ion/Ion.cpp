@@ -996,6 +996,9 @@ std::string Ion::print_symmetry_group()
    std::ios init(nullptr);
    init.copyfmt(stream);
 
+   if (!(this->has_symmetry()))
+      return "";
+
    const auto* table = this->get_character_table();
    stream << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << this->sym_tolerance << ")" <<  std::endl;
    stream << "      group name   : " << this->group_name
