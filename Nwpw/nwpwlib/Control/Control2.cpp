@@ -152,6 +152,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        // Only construct Symmetry if operators are stored or required
        bool symmetry_enabled = es.value("enabled", true);
        bool have_ops = es.value("store_ops", false) && es.contains("ops");
+       std::cout << es << std::endl;
 
 
        if (symmetry_enabled && have_ops)

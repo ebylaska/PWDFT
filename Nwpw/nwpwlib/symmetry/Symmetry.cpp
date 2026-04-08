@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <array>
 #include <cmath>
+#include <iostream>
 
 
 #include "SpaceGroupDB.hpp"
@@ -216,6 +217,8 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
 
     // Source tells us intent
     const std::string source = j.value("source", "identity");
+    const std::string type   = j.value("type", "");
+    std::cout << "source=" << source << std::endl;
 
     if (source == "identity")
     {
@@ -238,6 +241,26 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
    {
       return Symmetry::from_point_group(j["name"].get<std::string>());
    }
+
+   // Handle trivial symmetry explicitly
+   if (type == "trivial")
+   {
+    bool is_crystal = j.value("is_crystal", false);
+
+    if (is_crystal)
+    {
+        std::cout << "TRIVIAL → P1" << std::endl;
+        return Symmetry(1);  // space group P1
+    }
+    else
+    {
+        std::string name = j.value("point_group_name", "C1");
+        std::cout << "TRIVIAL → " << name << std::endl;
+        return Symmetry::from_point_group(name);
+    }
+   }
+
+   std::cout << "OUR HERD" << std::endl;
 
     // Otherwise build directly from operators
     s.type_ = Type::SpaceGroup;
