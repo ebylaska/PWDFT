@@ -150,34 +150,50 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        psymmetry_valid = true;
 
        // Only construct Symmetry if operators are stored or required
+       bool symmetry_enabled = es.value("enabled", true);
        bool have_ops = es.value("store_ops", false) && es.contains("ops");
 
-   try
-   {
-      psymmetry = pwdft::Symmetry::from_json(es);
- 
-      //set aux rotation data
-      protation_type = es["point_group_rotation_type"].get<std::string>();
-      std::vector<double> tmp_axes    = es["point_group_inertia_axes"].get<std::vector<double>>();
-      std::vector<double> tmp_tensor  = es["point_group_inertia_tensor"].get<std::vector<double>>();
-      std::vector<double> tmp_moments = es["point_group_inertia_moments"].get<std::vector<double>>();
-      std::copy_n(tmp_axes.begin(), 9, protation_axes);
-      std::copy_n(tmp_tensor.begin(), 9, protation_inertia);
-      std::copy_n(tmp_moments.begin(), 3, protation_moments);
- 
- 
-      // full only if explicit operators exist
-      psymmetry_full = have_ops;
-   }
-   catch (const std::exception& e)
-   {
-      throw std::runtime_error( std::string("Control2: failed to load symmetry: ") + e.what());
-   }
-   }
+
+       if (symmetry_enabled && have_ops)
+       {
+           try
+           {
+              psymmetry = pwdft::Symmetry::from_json(es);
+       
+              //set aux rotation data
+              protation_type = es["point_group_rotation_type"].get<std::string>();
+              std::vector<double> tmp_axes    = es["point_group_inertia_axes"].get<std::vector<double>>();
+              std::vector<double> tmp_tensor  = es["point_group_inertia_tensor"].get<std::vector<double>>();
+              std::vector<double> tmp_moments = es["point_group_inertia_moments"].get<std::vector<double>>();
+              std::copy_n(tmp_axes.begin(), 9, protation_axes);
+              std::copy_n(tmp_tensor.begin(), 9, protation_inertia);
+              std::copy_n(tmp_moments.begin(), 3, protation_moments);
+       
+       
+              // full only if explicit operators exist
+              psymmetry_full = have_ops;
+           }
+           catch (const std::exception& e)
+           {
+              throw std::runtime_error( std::string("Control2: failed to load symmetry: ") + e.what());
+           }
+       }
        else
        {
-           psymmetry_full = false;
+          // symmetry disabled → identity behavior
+          psymmetry_valid = false;
+          psymmetry_full = false;
+          protation_type = "none";
+
+          std::fill(protation_axes, protation_axes + 9, 0.0);
+          std::fill(protation_inertia, protation_inertia + 9, 0.0);
+          std::fill(protation_moments, protation_moments + 3, 0.0);
        }
+   }
+   else
+   {
+      psymmetry_full = false;
+   }
 
 
  

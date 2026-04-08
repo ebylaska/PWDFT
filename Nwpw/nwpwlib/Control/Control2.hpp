@@ -187,7 +187,7 @@ class Control2 {
 
    //Symmetry lock - false normal optimization; true symmetry-constrained optimization
    bool symmetry_lock_ = false;
-   bool puse_symmetry = true;
+   bool puse_symmetry = false;
 
    // rotation stuff
    std::string  protation_type;

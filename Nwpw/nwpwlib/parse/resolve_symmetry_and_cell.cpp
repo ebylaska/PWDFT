@@ -1083,6 +1083,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["name"]      = sym.name();
    es["order"]     = sym.order();
    es["tolerance"] = symmetry_tolerance;
+   es["enabled"] = (symmetry_specified || autosym || autospace);
 
    // store original geometry BEFORE modification
    es["coords_xyz_input"] = coords_xyz;
@@ -1173,7 +1174,8 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
 
    // Commit effective symmetry
-   rtdbjson["effective_symmetry"] = es;
+   if ( es["type"] != "trivial")
+      rtdbjson["effective_symmetry"] = es;
 
    // Physics must see the effective lattice and converted geometry
    if (symmetry_primitive_requested && sym.is_space_group())
@@ -1188,12 +1190,13 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 
    // Symmetry pruning of kpoints
    bool prune_kpoints = true; // future option?
+   bool symmetry_enabled = es.value("enabled", true);
 
    // NOTE:
    // K-point symmetry pruning is applied after effective symmetry and
    // simulation_cell are finalized. Downstream physics must not re-interpret symmetry.
 
-   if (prune_kpoints)
+   if (prune_kpoints && symmetry_enabled)
       return apply_kpoint_symmetry_pruning(rtdbjson.dump());
    else
       return rtdbjson.dump();

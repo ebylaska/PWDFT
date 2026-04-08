@@ -135,16 +135,10 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
         if (symbol.back() == 'h')
             return Cnh(n);
     }
-    std::cout << "symbol0=" << symbol[0] << std::endl;
 
     // Dn, Dnh, Dnd
     if (symbol[0] == 'D') {
 
-     std::cout << "symbol='" << symbol << "' len=" << symbol.size() << std::endl;
-
-     for (size_t i = 0; i < symbol.size(); ++i) {
-     std::cout << "  [" << i << "] = '" << symbol[i] << "' (" << int(symbol[i]) << ")\n"; 
-     }
         int n = parse_n(1);
         if (n <= 0)
             throw std::runtime_error("Invalid Dn group: " + symbol);
