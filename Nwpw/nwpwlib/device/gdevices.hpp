@@ -3,14 +3,19 @@
 
 #ifdef NWPW_SYCL
 #include "gdevices_sycl.hpp"
+
 #elif defined NWPW_CUDA
 #include "gdevices_cuda.hpp"
+
 #elif defined NWPW_OPENCL
 #include "gdevices_opencl.hpp"
+
 #elif defined NWPW_HIP
 #include "gdevices_hip.hpp"
+
 #else
 #include "blas.h"
+
 #endif
 
 

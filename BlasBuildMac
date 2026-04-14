@@ -1,0 +1,154 @@
+
+⚙️  Build with openblas
+
+cd build
+cmake ../Nwpw \
+  -DBLA_VENDOR=OpenBLAS \
+  -DCMAKE_PREFIX_PATH=$(brew --prefix openblas)
+make 
+otool -L pwdft | grep openblas
+export OPENBLAS_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+
+
+⚙️  Build with Apple Accelerate
+cd build
+cmake ../Nwpw \
+  -DBLA_VENDOR=Apple \
+  -DCMAKE_C_FLAGS="-DACCELERATE_NEW_LAPACK" \
+  -DCMAKE_CXX_FLAGS="-DACCELERATE_NEW_LAPACK"
+make 
+otool -L pwdft | grep -i accelerate
+export VECLIB_MAXIMUM_THREADS=1
+export OMP_NUM_THREADS=1
+
+
+
+
+
+🧭 BLAS Build Notes (macOS, CMake)
+🔑 General rules
+Always build out-of-source (use build/)
+Always clear cache when switching BLAS
+Verify linkage after build (otool -L)
+Use:
+CBLAS for BLAS
+Fortran LAPACK (dsyev_) for eigensolvers
+⚙️ 1. Build with OpenBLAS (recommended for performance)
+✅ Step 1 — Clean
+cd build
+rm -rf CMakeCache.txt CMakeFiles
+✅ Step 2 — Configure
+cmake ../Nwpw \
+  -DBLA_VENDOR=OpenBLAS \
+  -DCMAKE_PREFIX_PATH=$(brew --prefix openblas)
+✅ Step 3 — Build
+make -j
+✅ Step 4 — Verify
+otool -L pwdft | grep openblas
+
+Expected:
+
+libopenblas.dylib
+⚡ Runtime (IMPORTANT for MPI)
+export OPENBLAS_NUM_THREADS=1
+
+👉 Prevents oversubscription with MPI
+
+🧠 Notes
+Best performance for your workload (~20% faster)
+Handles DGEMM-heavy workloads well
+Good default choice
+⚙️ 2. Build with Apple Accelerate
+✅ Step 1 — Clean
+cd build
+rm -rf CMakeCache.txt CMakeFiles
+✅ Step 2 — Configure
+cmake ../Nwpw \
+  -DBLA_VENDOR=Apple \
+  -DCMAKE_C_FLAGS="-DACCELERATE_NEW_LAPACK" \
+  -DCMAKE_CXX_FLAGS="-DACCELERATE_NEW_LAPACK"
+✅ Step 3 — Build
+make -j
+✅ Step 4 — Verify
+otool -L pwdft | grep -i accelerate
+
+Expected:
+
+Accelerate.framework
+⚡ Runtime (MPI-safe)
+export VECLIB_MAXIMUM_THREADS=1
+🧠 Notes
+Native macOS BLAS/LAPACK
+Easy setup (no external deps)
+Slower than OpenBLAS in your case
+-DACCELERATE_NEW_LAPACK removes deprecation warnings
+🔁 Switching between backends
+
+Always do:
+
+rm -rf CMakeCache.txt CMakeFiles
+
+Then reconfigure with the desired backend.
+
+🔬 Sanity checks (important)
+1. Confirm external BLAS is used
+nm pwdft | egrep "dgemm_|ddot_|dsyev_"
+
+Expected:
+
+U _dgemm_
+U _ddot_
+U _dsyev_
+
+👉 U = linked externally (good)
+
+2. Confirm NOT using internal BLAS
+
+You should NOT see:
+
+internal BLAS symbols compiled into binary
+fallback blas.h implementations
+⚠️ Common pitfalls
+❌ Wrong line continuation
+cmake ../Nwpw \\n ...
+
+👉 WRONG — \\n is literal text
+
+❌ Forgetting cache clean
+
+Leads to:
+
+wrong BLAS backend
+inconsistent performance
+❌ Mixing MPI + threaded BLAS
+
+Always limit threads:
+
+OPENBLAS_NUM_THREADS=1
+VECLIB_MAXIMUM_THREADS=1
+🚀 Recommended default
+
+For your workload:
+
+Use OpenBLAS + MPI + 1 thread per rank
+📌 Quick reference
+OpenBLAS
+cmake ../Nwpw \
+  -DBLA_VENDOR=OpenBLAS \
+  -DCMAKE_PREFIX_PATH=$(brew --prefix openblas)
+make -j
+Accelerate
+cmake ../Nwpw \
+  -DBLA_VENDOR=Apple \
+  -DCMAKE_CXX_FLAGS="-DACCELERATE_NEW_LAPACK"
+make -j
+✅ Final takeaway
+OpenBLAS → performance
+Accelerate → convenience
+Your results confirm OpenBLAS is better for PWDFT
+
+If you want, next I can help you:
+
+lock BLAS selection in CMake (no guessing ever again)
+or tune OpenBLAS further (core type, affinity, etc.)

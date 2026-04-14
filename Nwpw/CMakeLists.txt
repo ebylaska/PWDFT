@@ -192,14 +192,47 @@ find_package(MPI REQUIRED C CXX)
 include_directories(${MPI_INCLUDE_PATH})
 
 
+# ---- BLAS / LAPACK selection ----
+find_package(BLAS)
+find_package(LAPACK)
+
 if(MKL_FOUND)
-   if(NWPW_SYCL)
-      message("-- Using oneMKL libs")
-      include_directories(${MKL_INCLUDE_DIRS})
-   endif(NWPW_SYCL)
+
+    message("-- Using MKL")
+    include_directories(${MKL_INCLUDE_DIRS})
+
+
+elseif(BLA_VENDOR STREQUAL "Apple")
+
+    message("-- Using Apple Accelerate")
+
+    set(EXTRA_BLAS_LIBS "-framework Accelerate")
+
+    add_definitions(-DUSE_ACCELERATE)
+
+elseif(BLAS_FOUND AND LAPACK_FOUND)
+
+    message("-- Using external BLAS: ${BLAS_LIBRARIES}")
+    #set(EXTRA_BLAS_LIBS ${BLAS_LIBRARIES})
+    set(EXTRA_BLAS_LIBS ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+
 else()
-   message("-- Using internal blas and lapack libs")
+
+    message("-- Using internal BLAS/LAPACK")
+    set(EXTRA_BLAS_LIBS "")
+
 endif()
+
+
+
+#if(MKL_FOUND)
+#   if(NWPW_SYCL)
+#      message("-- Using oneMKL libs")
+#      include_directories(${MKL_INCLUDE_DIRS})
+#   endif(NWPW_SYCL)
+#else()
+#   message("-- Using internal blas and lapack libs")
+#endif()
 
 
 # configure a header file to pass the version number only
@@ -254,7 +287,8 @@ elseif(NWPW_SYCL)
    target_include_directories(pwdft PUBLIC ${MKL_INCLUDE_DIRS})
    target_link_libraries(pwdft band pspw file nwpwlib ${MPI_LIBRARIES} MKL::MKL_SYCL)
 else()
-   target_link_libraries(pwdft band pspw file nwpwlib ${MPI_LIBRARIES})
+   #target_link_libraries(pwdft band pspw file nwpwlib ${MPI_LIBRARIES})
+   target_link_libraries(pwdft band pspw file nwpwlib ${MPI_LIBRARIES} ${EXTRA_BLAS_LIBS})
 endif()
 
 

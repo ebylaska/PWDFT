@@ -1,6 +1,7 @@
 #include "PointGroupCharacterTables.hpp"
 #include <utility> // std::move
 #include <iostream>
+#include <cmath>
 
 namespace pwdft {
 

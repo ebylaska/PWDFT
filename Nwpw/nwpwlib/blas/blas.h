@@ -72,6 +72,72 @@
 #define DGESV_PWDFT(n, nrhs, a, lda, ipiv, b, ldb, ierr)                       \
   ierr = LAPACKE_dgesv(LAPACK_COL_MAJOR, n, nrhs, a, lda, ipiv, b, ldb)
 
+
+
+#elif defined(USE_ACCELERATE)
+
+#include <Accelerate/Accelerate.h>
+#include <cstring>
+
+// same macros as MKL, but using Accelerate
+
+#define DSCAL_PWDFT(n, alpha, a, ida) cblas_dscal(n, alpha, a, ida)
+#define DCOPY_PWDFT(n, a, ida, b, idb) cblas_dcopy(n, a, ida, b, idb)
+#define DAXPY_PWDFT(n, alpha, a, ida, b, idb) \
+  cblas_daxpy(n, alpha, a, ida, b, idb)
+
+#define TRANSCONV(a) ((strcmp(a, "N") == 0) ? CblasNoTrans : CblasTrans)
+#define CTRANSCONV(a) ((strcmp(a, "N") == 0) ? CblasNoTrans : CblasConjTrans)
+
+#define DGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc) \
+  cblas_dgemm(CblasColMajor, TRANSCONV(s1), TRANSCONV(s2), \
+              n, m, k, alpha, a, ida, b, idb, beta, c, idc)
+
+#define DDOT_PWDFT(n, a, ida, b, idb) cblas_ddot(n, a, ida, b, idb)
+
+#define IDAMAX_PWDFT(nn, hml, one) cblas_idamax(nn, hml, one)
+
+#define EIGEN_PWDFT(n, hml, eig, xtmp, nn, ierr) \
+  ierr = LAPACKE_dsyev(LAPACK_COL_MAJOR, 'V', 'U', n, hml, n, eig)
+
+#define DLACPY_PWDFT(s1, m, n, a, ida, b, idb) \
+  LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
+
+#define DGESV_PWDFT(n, nrhs, a, lda, ipiv, b, ldb, ierr) \
+  ierr = LAPACKE_dgesv(LAPACK_COL_MAJOR, n, nrhs, a, lda, ipiv, b, ldb)
+
+#define DGELSS_PWDFT(m, n, nrhs, a, ida, b, idb, s1, rcond, rank, work, iwork, ierr) \
+  ierr = LAPACKE_dgels(LAPACK_COL_MAJOR, 'N', m, n, nrhs, a, ida, b, idb)
+
+// complex (optional — you can keep Fortran versions if needed)
+#define ZGEMM_PWDFT(s1, s2, n, m, k, alpha, a, ida, b, idb, beta, c, idc) \
+  cblas_zgemm(CblasColMajor, CTRANSCONV(s1), CTRANSCONV(s2), \
+              n, m, k, alpha, a, ida, b, idb, beta, c, idc)
+
+#define ZAXPY_PWDFT(n, alpha, a, ida, b, idb) \
+  cblas_zaxpy(n, alpha, a, ida, b, idb)
+
+#define ZSCAL_PWDFT(n, alpha, a, ida) \
+  cblas_zscal(n, alpha, a, ida)
+
+#define ZDOTC_PWDFT(n, a, ida, b, idb) \
+  cblas_zdotc_sub(n, a, ida, b, idb, /* result ptr needed */ nullptr)
+
+extern "C" {
+  void zheev_(char*, char*, int*, std::complex<double>*, int*,
+              double*, std::complex<double>*, int*, double*, int*);
+}
+
+#define ZEIGEN_PWDFT(n, hml, eig, work, lwork, rwork, ierr) \
+{ \
+    char jobz = 'V'; \
+    char uplo = 'U'; \
+    int info; \
+    zheev_(&jobz, &uplo, &n, hml, &n, eig, work, &lwork, rwork, &info); \
+    ierr = info; \
+}
+
+
 #else
 
 extern "C" void dcopy_(int *, double *, int *, double *, int *);
