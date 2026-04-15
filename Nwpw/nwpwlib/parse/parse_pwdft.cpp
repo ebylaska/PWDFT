@@ -3077,7 +3077,7 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "geovib"))           task = 4;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 5;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 6;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 8;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 7;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
      }

@@ -418,22 +418,22 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       output_e_movecs = rtdbjson["nwpw"]["output_e_wavefunction_filename"];
  
    // from car-parrinello block
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"]
              .is_string())
        input_movecs =
            rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"]
              .is_string())
        output_movecs =
            rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"]
              .is_string())
        input_v_movecs =
            rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"]
              .is_string())
        output_v_movecs =
@@ -452,60 +452,60 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      eigmotion_filename = dbname + ".eigmotion";
      dipole_motion_filename = dbname + ".dipole_motion";
    }
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"].is_string())
        xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())
        ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["ion_motion_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string())
        emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
  
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string())
        omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string())
        hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string())
        eigmotion_filename =
            rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["fei_filename"].is_string())
        fei_filename = rtdbjson["nwpw"]["car-parrinello"]["fei_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["cif_filename"].is_string())
        cif_filename = rtdbjson["nwpw"]["car-parrinello"]["cif_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"]
              .is_string())
        dipole_motion_filename =
            rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["fei_on"].is_boolean())
        pfei_on = rtdbjson["nwpw"]["car-parrinello"]["fei_on"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["cif_on"].is_boolean())
        pcif_on = rtdbjson["nwpw"]["car-parrinello"]["cif_on"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"].is_boolean())
        pcif_shift_cell = rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"];
 
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["dipole_on"].is_boolean())
        pdipole_on = rtdbjson["nwpw"]["car-parrinello"]["dipole_on"];
-   // if (ptask==6) if (rtdbjson["nwpw"]["mulliken"].is_boolean()) pmulliken_on =
+   // if (ptask==7) if (rtdbjson["nwpw"]["mulliken"].is_boolean()) pmulliken_on =
    // rtdbjson["nwpw"]["mulliken_on"];
  
    // from steepest_descent block
-   if (ptask == 5)
+   if (ptask == 6)
      if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"]
              .is_string())
        input_movecs =
            rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
-   if (ptask == 5)
+   if (ptask == 6)
      if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"]
              .is_string())
        output_movecs =
@@ -539,20 +539,20 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pfake_mass = 400000.0;
    if (rtdbjson["nwpw"]["fake_mass"].is_number_float())
       pfake_mass = rtdbjson["nwpw"]["fake_mass"];
-   if (ptask == 5)
+   if (ptask == 6)
       if (rtdbjson["nwpw"]["steepest_descent"]["fake_mass"].is_number_float())
          pfake_mass = rtdbjson["nwpw"]["steepest_descent"]["fake_mass"];
-   if (ptask == 6)
+   if (ptask == 7)
       if (rtdbjson["nwpw"]["car-parrinello"]["fake_mass"].is_number_float())
          pfake_mass = rtdbjson["nwpw"]["car-parrinello"]["fake_mass"];
  
    ptime_step = 5.8;
    if (rtdbjson["nwpw"]["time_step"].is_number_float())
      ptime_step = rtdbjson["nwpw"]["time_step"];
-   if (ptask == 5)
+   if (ptask == 6)
      if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float())
        ptime_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
-   if (ptask == 6)
+   if (ptask == 7)
      if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())
        ptime_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
 
@@ -683,30 +683,30 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["bo_algorithm"].is_number_integer())
      pbo_algorithm = rtdbjson["nwpw"]["bo_algorithm"];
  
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][0].is_number_integer())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][0].is_number_integer())
       ploop[0] = rtdbjson["nwpw"]["steepest_descent"]["loop"][0];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["loop"][1].is_number_integer())
       ploop[1] = rtdbjson["nwpw"]["steepest_descent"]["loop"][1];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][0].is_number_integer())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][0].is_number_integer())
       ploop[0] = rtdbjson["nwpw"]["car-parrinello"]["loop"][0];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][1].is_number_integer())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["loop"][1].is_number_integer())
       ploop[1] = rtdbjson["nwpw"]["car-parrinello"]["loop"][1];
  
    pscaling[0] = 1.0;
    pscaling[1] = 1.0;
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_float())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_float())
       pscaling[0] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][0];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_integer())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][0].is_number_integer())
       pscaling[0] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][0];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_float())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_float())
       pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
-   if (ptask==6) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_integer())
+   if (ptask==7) if (rtdbjson["nwpw"]["car-parrinello"]["scaling"][1].is_number_integer())
       pscaling[1] = rtdbjson["nwpw"]["car-parrinello"]["scaling"][1];
  
-   if (ptask==7)
+   if (ptask==8)
       if (rtdbjson["nwpw"]["bo_scaling"][0].is_number_float())
          pscaling[0] = rtdbjson["nwpw"]["bo_scaling"][0];
-   if (ptask==7)
+   if (ptask==8)
       if (rtdbjson["nwpw"]["bo_scaling"][0].is_number_integer())
          pscaling[0] = rtdbjson["nwpw"]["bo_scaling"][0];
  
@@ -723,19 +723,19 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["deltae_check"].is_boolean())
       pdeltae_check = rtdbjson["nwpw"]["deltae_check"];
  
-   if (ptask==5) 
+   if (ptask==6) 
    {
       ptolerances[0] = 1.0e-7;
       ptolerances[1] = 1.0e-7;
       ptolerances[2] = 1.0e-4;
    }
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0].is_number_float())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0].is_number_float())
       ptolerances[0] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][0];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1].is_number_float())
       ptolerances[1] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][1];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2].is_number_float())
       ptolerances[2] = rtdbjson["nwpw"]["steepest_descent"]["tolerances"][2];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["deltae_check"].is_boolean())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["deltae_check"].is_boolean())
       pdeltae_check = rtdbjson["nwpw"]["steepest_descent"]["deltae_check"];
  
    // pecut=9000.0;
@@ -747,9 +747,9 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       pwcut = rtdbjson["nwpw"]["cutoff"][0];
    if (rtdbjson["nwpw"]["cutoff"][1].is_number_float())
       pecut = rtdbjson["nwpw"]["cutoff"][1];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0].is_number_float())
       pwcut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][0];
-   if (ptask==5) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float())
+   if (ptask==6) if (rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1].is_number_float())
       pecut = rtdbjson["nwpw"]["steepest_descent"]["cutoff"][1];
 
    peprecondition = 20.0;
