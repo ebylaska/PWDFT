@@ -1105,27 +1105,21 @@ int main(int argc, char *argv[]) {
      // parse json string
      rtdbstr = parse_rtdbstring(rtdbstr);
      MPI_Barrier(MPI_COMM_WORLD);
+
+     // Write results after each task
+     if (taskid == MASTER)
+        parse_write(rtdbstr);
     
      // Find next task
      task = parse_task(rtdbstr);
      if (oprint) std::cout << std::endl << "Next rtdbstr=" << rtdbstr << std::endl;
      if (oprint) std::cout << "Next task =" << task << std::endl << std::endl;
      MPI_Barrier(MPI_COMM_WORLD);
+
   }
 
-  // int ijk = cpsd(argc,argv);
-
-  // DEBUG
-  // MPI_Barrier(MPI_COMM_WORLD);
-  // ierr += cpsd_debug(MPI_COMM_WORLD,rtdbstr);
-  // MPI_Barrier(MPI_COMM_WORLD);
-
-  if (taskid == MASTER)
-    parse_write(rtdbstr);
-  MPI_Barrier(MPI_COMM_WORLD);
 
   // Finalize MPI
   ierr = MPI_Finalize();
-
   return ierr;
 }

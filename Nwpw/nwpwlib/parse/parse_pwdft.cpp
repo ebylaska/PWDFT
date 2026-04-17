@@ -2933,33 +2933,81 @@ std::string parse_nwinput(std::string nwinput)
    std::string permanent_dir = ".";
    std::string scratch_dir = ".";
    std::string psp_library_dir = "";
-   if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
-     if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[0], "\n") .back()), "#"))
-       permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
-   }
-   if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
-     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n") .back()), "#"))
-       scratch_dir = mystring_rtrim_slash(mystring_trim(
-           mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
-   }
-   if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
-     if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
-        psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
-   }
+   //if (mystring_contains(mystring_lowercase(nwinput), "permanent_dir")) {
+   //  if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[0], "\n") .back()), "#"))
+   //    permanent_dir = mystring_rtrim_slash(mystring_trim(mystring_split( mystring_split(nwinput, "permanent_dir")[1], "\n")[0]));
+   //}
+   //if (mystring_contains(mystring_lowercase(nwinput), "scratch_dir")) {
+   //  if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "scratch_dir")[0], "\n") .back()), "#"))
+   //    scratch_dir = mystring_rtrim_slash(mystring_trim(
+   //        mystring_split(mystring_split(nwinput, "scratch_dir")[1], "\n")[0]));
+   //}
+   //if (mystring_contains(mystring_lowercase(nwinput), "psp_library_dir")) {
+   //  if (!mystring_contains( mystring_trim( mystring_split(mystring_split(nwinput, "psp_library_dir")[0], "\n") .back()), "#"))
+   //     psp_library_dir = mystring_rtrim_slash(mystring_trim(mystring_split(mystring_split(nwinput, "psp_library_dir")[1], "\n")[0]));
+   //}
  
    // fetch the dbname
    std::string dbname = "nwchemex";
-   if (mystring_contains(mystring_lowercase(nwinput), "start")) {
-      if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "start")[0], "\n") .back()), "#"))
-         dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
-   }
+   //if (mystring_contains(mystring_lowercase(nwinput), "start")) {
+   //   if (!mystring_contains( mystring_trim(mystring_split( mystring_split(nwinput, "start")[0], "\n") .back()), "#"))
+   //      dbname = mystring_trim(mystring_split(mystring_split(nwinput, "start")[1], "\n")[0]);
+   //}
  
    json rtdb;
+
    // read a JSON file
-   if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
-       (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+   // split nwinput into lines
+   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+ 
+   // Remove comments
+   for (auto i=lines.begin(); i!=lines.end(); ++i)
+      *i = mystring_split(*i, "#")[0];
+
+   bool found_restart = false;
+
+   for (const auto& raw_line : lines)
    {
-       dbname = mystring_trim(mystring_split(mystring_split(nwinput, "restart")[1], "\n")[0]);
+      std::string line = mystring_rtrim(mystring_ltrim(raw_line));
+ 
+      line = mystring_split(line, "#")[0];
+      line = mystring_rtrim(mystring_ltrim(line));
+      if (line.empty()) continue;
+ 
+      auto tokens = mystring_split0(line);
+      if (tokens.empty()) continue;
+ 
+      const std::string key = mystring_lowercase(tokens[0]);
+ 
+      if (key == "permanent_dir") {
+          if (tokens.size() > 1)
+              permanent_dir = mystring_rtrim_slash(tokens[1]);
+      }
+      else if (key == "scratch_dir") {
+          if (tokens.size() > 1)
+              scratch_dir = mystring_rtrim_slash(tokens[1]);
+      }
+      else if (key == "psp_library_dir") {
+          if (tokens.size() > 1)
+              psp_library_dir = mystring_rtrim_slash(tokens[1]);
+      }
+      else if (key == "start") {
+          if (tokens.size() > 1)
+              dbname = tokens[1];
+      }
+      else if (key == "restart") {
+          dbname = (tokens.size() > 1) ? tokens[1] : dbname;
+          found_restart = true;
+          break;
+      }
+   }
+
+
+   //if ((mystring_contains(mystring_lowercase(nwinput), "restart")) &&
+   //    (!mystring_contains(mystring_trim(mystring_split(mystring_split(nwinput,"restart")[0],"\n").back()),"#"))) 
+   if (found_restart)
+   {
+       //dbname = mystring_trim(mystring_split(mystring_split(nwinput, "restart")[1], "\n")[0]);
       
       // read a JSON file
       std::string dbname0 = permanent_dir + "/" + dbname + ".json";
@@ -3030,11 +3078,11 @@ std::string parse_nwinput(std::string nwinput)
    rtdb["psp_library_dir"] = psp_library_dir;
  
    // split nwinput into lines
-   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+   //std::vector<std::string> lines = mystring_split(nwinput, "\n");
  
    // Remove comments
-   for (auto i=lines.begin(); i!=lines.end(); ++i)
-      *i = mystring_split(*i, "#")[0];
+   //for (auto i=lines.begin(); i!=lines.end(); ++i)
+   //   *i = mystring_split(*i, "#")[0];
  
    rtdb["nwinput_lines"] = lines;
    rtdb["nwinput_nlines"] = lines.size();
