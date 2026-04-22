@@ -1091,9 +1091,19 @@ void print_frequencies(std::ostream& out,
                        const std::vector<std::string>* mode_irreps = nullptr)
 {
 
+    bool translation_projected  = (m_eckart==3);
+
     out << "\n Vibrational analysis via the FX method\n";
-    out << " --- with translations and rotations projected out ---\n";
-    out << " --- via the Eckart algorithm                      ---\n";
+    if (translation_projected)
+    {
+       out << " --- with translations projected out ---\n";
+       out << " --- via translation-only projector   ---\n";
+    }
+    else
+    {
+       out << " --- with translations and rotations projected out ---\n";
+       out << " --- via the Eckart algorithm                      ---\n";
+    }
 
     // Header
     out << "\n";
@@ -1111,14 +1121,16 @@ void print_frequencies(std::ostream& out,
        out << std::string(70, '-') << "\n";
 
 
-    const double tol_zero = 1e-6;
+    //const double tol_zero = 1e-6;
+    const double tol_zero = 1e-10;
     const double tol_imag = -1e-6;
     for (int i = 0; i < ndof; ++i)
     {
         double lambda = eig[i];
         double freq   = std::sqrt(std::abs(lambda)) * conv;
 
-        bool is_zero = (std::abs(lambda) < tol_zero);
+        //bool is_zero = (std::abs(lambda) < tol_zero);
+        bool is_zero = (freq < 5.0);   // or 1.0 cm^-1, or 10.0 depending on taste
         bool is_imag = (lambda < 0.0);
         bool is_expected_zero = (i < m_eckart);
         bool is_zero_imag = (lambda < 0.0 && is_zero);
@@ -1143,13 +1155,22 @@ void print_frequencies(std::ostream& out,
 
         std::string note;
 
-        if (is_expected_zero) {
+        if (is_expected_zero) 
+        {
             if (is_zero)
-                note = "   zero mode (Eckart)";
+            {
+                if (translation_projected)
+                   note = "   acoustic zero mode (translation)";
+                else
+                   note = "   zero mode (Eckart)";
+            } 
             else
+            {
                 note = "   WARNING: zero mode not zero";
+            }
         }
-        else if (is_imag) {
+        else if (is_imag) 
+        {
             note = "   imaginary mode";
         }
 
@@ -2194,6 +2215,8 @@ void compute_fd_frequencies_full(Control2 &control,
     Ion *ion = mymolecule.myion;
     int N = ion->nion;
     int ndof = 3*N;
+    bool is_crystal =  ion->is_crystal;
+    is_crystal = true;
 
     //const auto &eq = ion->get_equivalent_atoms();
     //int unique_atoms = eq.size();
@@ -2218,7 +2241,10 @@ void compute_fd_frequencies_full(Control2 &control,
        coutput << " ---------------------------------\n";
        coutput << " number of atoms            = " << N << "\n";
        coutput << " degrees of freedom         = " << ndof << "\n";
-       coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
+       if (is_crystal)
+          coutput << " expected vibrational modes = " << (3*N - 3) << "\n";
+       else
+          coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
        coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
 
   
@@ -2321,9 +2347,9 @@ void compute_fd_frequencies_full(Control2 &control,
     }
 
 
-    // ===============================
-    // Eckart projection (molecule)
-    // ===============================
+    // ====================================
+    // Eckart projection (sold or molecule)
+    // ====================================
 
     std::vector<double> coords(3*N);
     std::vector<double> masses(N);
@@ -2339,7 +2365,13 @@ void compute_fd_frequencies_full(Control2 &control,
     std::vector<double> V;
     int m_eckart = 0;
 
-    build_molecular_constraints(N, coords, masses, V, m_eckart);
+    if (is_crystal)
+    {
+       build_translation_constraints(N, masses, V);
+       m_eckart = 3;
+    }
+    else
+       build_molecular_constraints(N, coords, masses, V, m_eckart);
 
     apply_projector(ndof, m_eckart, V, H);
 
@@ -2350,7 +2382,7 @@ void compute_fd_frequencies_full(Control2 &control,
     std::vector<double> eig;
     if (ismaster)
     {
-        eig.resize(ndof);
+       eig.resize(ndof);
 
        int lwork = 3*ndof;
        std::vector<double> work(lwork);
