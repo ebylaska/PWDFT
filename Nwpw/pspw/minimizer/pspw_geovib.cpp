@@ -368,6 +368,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
       coutput << std::endl;
+      coutput << " is crystal = " << myion.is_crystal << std::endl;
       coutput << myion.print_symmetry_group();
       //coutput << myion.print_symmetry_group(rtdbstring);
       coutput << std::endl << myion.print_constraints(0);
@@ -385,6 +386,10 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       coutput << " supercell:\n";
       coutput << "      volume = " << Ffmt(10, 2) << mylattice.omega()
               << std::endl;
+      if (myion.is_crystal)
+         coutput << "      periodic condensed system" << std::endl;
+      else
+         coutput << "      molecular system" << std::endl;
       coutput << "      lattice:    a1 = < " 
               << Ffmt(8,3) << mylattice.unita(0,0) << " "
               << Ffmt(8,3) << mylattice.unita(1,0) << " " 
@@ -1212,6 +1217,87 @@ void print_frequencies(std::ostream& out,
 {
     print_frequencies(out, eig, ndof, m_eckart, 2.194746e5, &mode_irreps);
 }
+
+
+
+
+/******************************************
+ *                                        *
+ *     compute_fd_molecule_frequencies    *
+ *                                        *
+ ******************************************/
+void compute_fd_molecule_frequencies(Control2 &control,
+                                     Molecule &mymolecule,
+                                     double E0,
+                                     int m_eckart, int ndof, std::vector<double> &H,
+                                     bool ismaster, bool oprint,
+                                     std::ostream &coutput)
+{
+   Ion* ion = mymolecule.myion;
+   int N = ion->nion;
+   std::vector<double> eig;
+
+   if (ismaster)
+   {
+      eig.resize(ndof);
+
+      int lwork = 3*ndof;
+      std::vector<double> work(lwork);
+      int info = 0;
+
+      EIGEN_PWDFT(ndof, H.data(), eig.data(), work.data(), lwork, info);
+
+      if (info != 0) {
+         if (oprint)
+            coutput << "Error: dsyev failed with info = " << info << "\n";
+      }
+
+
+      //printing frequencies
+      if (oprint)
+      {
+          print_frequencies(coutput, eig, ndof, m_eckart);
+      }
+
+      double molecule_mass = 0.0;
+      for (int a = 0; a < N; ++a)
+          molecule_mass += ion->amu(a);
+
+      std::vector<double> freq;
+      freq.reserve(ndof);
+      for (int i = 0; i < ndof; ++i)
+      {
+          double lambda = eig[i];
+          double nu = 0.0;
+          if (lambda < 0.0)
+              nu = -std::sqrt(-lambda) * 2.194746e5;   // imaginary as negative
+          else
+              nu =  std::sqrt( lambda) * 2.194746e5;
+          freq.push_back(nu);
+      }
+
+      //Compute and output thermo
+      double pressure    = control.thermo_pressure();
+      double temperature = control.thermo_temperature();
+      double freq_scale  = control.thermo_freq_scale();
+      ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
+   }
+
+}
+
+
+void compute_fd_crystal_phonons(Control2 &control,
+                                Molecule &mymolecule,
+                                double E0,
+                                int m_eckart,int ndof, std::vector<double> &H,
+                                bool ismaster, bool oprint,
+                                std::ostream &coutput)
+{
+    Ion* ion = mymolecule.myion;
+    int N = ion->nion;
+}
+
+
 
 
 /******************************************
@@ -2347,9 +2433,9 @@ void compute_fd_frequencies_full(Control2 &control,
     }
 
 
-    // ====================================
-    // Eckart projection (sold or molecule)
-    // ====================================
+    // =====================================================================
+    // Eckart projection (molecule) or Translation projection (solid/liquid)
+    // =====================================================================
 
     std::vector<double> coords(3*N);
     std::vector<double> masses(N);
@@ -2379,6 +2465,22 @@ void compute_fd_frequencies_full(Control2 &control,
     // ===============================
     // Diagonalize
     // ===============================
+    compute_fd_molecule_frequencies(control,mymolecule,E0,m_eckart,ndof,H, 
+                                    ismaster,oprint,coutput);
+    /*
+    if (is_crystal)
+       compute_fd_crystal_phonons(control,mymolecule,E0,m_eckart,ndof,H,
+                                  ismaster,oprint,coutput);
+    else
+       compute_fd_molecule_frequencies(control,mymolecule,E0,m_eckart,ndof,H, 
+                                       ismaster,oprint,coutput);
+     */
+
+
+    // ===============================
+    // Diagonalize
+    // ===============================
+    /*
     std::vector<double> eig;
     if (ismaster)
     {
@@ -2426,8 +2528,15 @@ void compute_fd_frequencies_full(Control2 &control,
         //ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
         ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
     }
+    */
 
 }
+
+
+
+
+
+
 
 
 } // namespace pwdft

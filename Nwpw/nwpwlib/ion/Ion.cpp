@@ -486,6 +486,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
         natm[ia] += 1;
       }
    }
+   is_crystal = control.is_crystal();
 
    //Check for Point group here????
    //double *rion_sym = fion1; //temporary
