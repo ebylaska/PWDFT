@@ -352,12 +352,11 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       
       std::cout << std::endl;
       std::cout << " supercell:" << std::endl;
-      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega()
-                << std::endl;
       if (myion.is_crystal)
-         std::cout << "      periodic condensed system" << std::endl;
+         std::cout << "      using periodic condensed-phase treatment" << std::endl;
       else
-         std::cout << "      molecular system" << std::endl;
+         std::cout << "      using molecular treatment" << std::endl;
+      std::cout << "      volume = " << Ffmt(10,2) << mylattice.omega() << std::endl;
       std::cout << "      lattice:    a1 = < " 
                 << Ffmt(8,3) << mylattice.unita(0,0) << " " 
                 << Ffmt(8,3) << mylattice.unita(1,0) << " " 

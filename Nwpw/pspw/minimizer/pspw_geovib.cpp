@@ -384,12 +384,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
      
       coutput << "\n";
       coutput << " supercell:\n";
-      coutput << "      volume = " << Ffmt(10, 2) << mylattice.omega()
-              << std::endl;
       if (myion.is_crystal)
-         coutput << "      periodic condensed system" << std::endl;
+         coutput << "      using periodic condensed-phase treatment" << std::endl;
       else
-         coutput << "      molecular system" << std::endl;
+         coutput << "      using molecular treatment" << std::endl;
+      coutput << "      volume = " << Ffmt(10, 2) << mylattice.omega() << std::endl;
       coutput << "      lattice:    a1 = < " 
               << Ffmt(8,3) << mylattice.unita(0,0) << " "
               << Ffmt(8,3) << mylattice.unita(1,0) << " " 
