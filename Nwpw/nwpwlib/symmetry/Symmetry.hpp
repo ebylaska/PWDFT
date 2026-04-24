@@ -79,6 +79,40 @@ public:
     std::vector<double> rotation_axes    = std::vector<double>(9);
     std::vector<double> rotation_inertia = std::vector<double>(9);
 
+    json to_json() const {
+        auto clean = [](double x) {
+           if (std::abs(x) < 1e-12) return 0.0;
+           if (std::abs(x - 1.0) < 1e-12) return 1.0;
+           if (std::abs(x + 1.0) < 1e-12) return -1.0;
+           return x;
+        };
+  
+        json j;
+        j["name"] = name();
+        j["order"] = order();
+        j["is_space_group"] = is_space_group();
+        j["is_point_group"] = is_point_group();
+        j["num_centering"] = num_centering();
+        j["sigma"] = sigma();
+        j["num_proper_ops"] = num_proper_ops();
+        j["num_improper_ops"] = num_improper_ops();
+  
+        j["operators"] = json::array();
+        for (const auto& op : operators()) {
+           json jo;
+           jo["R"] = {
+              { clean(op.R[0][0]), clean(op.R[0][1]), clean(op.R[0][2]) },
+              { clean(op.R[1][0]), clean(op.R[1][1]), clean(op.R[1][2]) },
+              { clean(op.R[2][0]), clean(op.R[2][1]), clean(op.R[2][2]) }
+           };
+           jo["t"] = { clean(op.t[0]), clean(op.t[1]), clean(op.t[2]) };
+           j["operators"].push_back(jo);
+        }
+  
+        return j;
+    }
+
+
 private:
     enum class Type {
         Trivial,

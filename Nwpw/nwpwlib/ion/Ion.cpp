@@ -21,6 +21,7 @@ using json = nlohmann::json;
 //include "cDispersion_D2.hpp"
 #include "util_thermo.hpp"
 #include "units.hpp"
+#include "phase_classify_minimal.hpp"
 #include "Ion.hpp"
 
 
@@ -488,7 +489,12 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    }
 
    // is crytal and periodic bc
-   is_crystal = control.is_crystal() and (control.version==3);
+   const char* phase = classify_minimal(nion, rion1, control.unita_ptr());
+   bool is_molecule  = (std::strcmp(phase, "molecule_in_box") == 0);
+
+   is_crystal = (control.version == 3) && (control.is_crystal() || !is_molecule);
+
+
 
    //Check for Point group here????
    //double *rion_sym = fion1; //temporary

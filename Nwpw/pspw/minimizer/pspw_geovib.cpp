@@ -933,7 +933,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    {
       // note these functions modify energies in mymolecule
       if (myion.is_crystal)   
+      {
          compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
+      }
       else 
       {
          if ((control.use_symmetry()) and (mymolecule.myion->has_symmetry()))
@@ -946,7 +948,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
             compute_fd_frequencies_molecule(control, mymolecule, myparallel.is_master(), oprint, coutput);
          }
          else
+         {
             compute_fd_frequencies_full(control, mymolecule, myparallel.is_master(), oprint, coutput);
+         }
       }
 
       // fetch thermo from myion
@@ -2301,7 +2305,6 @@ void compute_fd_frequencies_full(Control2 &control,
     int N = ion->nion;
     int ndof = 3*N;
     bool is_crystal =  ion->is_crystal;
-    is_crystal = true;
 
     //const auto &eq = ion->get_equivalent_atoms();
     //int unique_atoms = eq.size();
