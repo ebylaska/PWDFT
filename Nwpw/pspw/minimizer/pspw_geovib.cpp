@@ -1288,16 +1288,171 @@ void compute_fd_molecule_frequencies(Control2 &control,
 
 }
 
+static void vib_adjustfordynamic(const double* unita,
+                          int nion,
+                          const double* rion,
+                          int nion3,
+                          const double* mass,
+                          double* vc,
+                          double* w1,
+                          double* w2,
+                          double* hess,
+                          double* hessout)
+{
+}
 
+/*
+static void vib_gendynamicmatrix(const double* unita,kq,nion,rion,
+                             nion3,hessadjust.data(),
+                             dmat.data(),wp.data(),
+                             work.data(),lwork.data(),rwork.data());
+*/
+
+/******************************************
+ *                                        *
+ *     compute_fd_crystal_phonons         *
+ *                                        *
+ ******************************************/
 void compute_fd_crystal_phonons(Control2 &control,
                                 Molecule &mymolecule,
                                 double E0,
-                                int m_eckart,int ndof, std::vector<double> &H,
+                                int m_eckart,int ndof, double *hess,
                                 bool ismaster, bool oprint,
                                 std::ostream &coutput)
 {
     Ion* ion = mymolecule.myion;
-    int N = ion->nion;
+    int nion  = ion->nion;
+    int nion3 = 3*nion;
+    double* mass = ion->mass;
+    double*  rion = ion->rion1;
+    Lattice* mylattice = mymolecule.mygrid->lattice;
+    double*  unita = mylattice->unita_ptr();
+
+    int dos_grid[3] = {control.phonon_dos_grid(0), control.phonon_dos_grid(1), control.phonon_dos_grid(2)};
+    
+    // get unita, unitg, omega
+    if (oprint) 
+    {
+        coutput << std::endl;
+        coutput << " number of atoms = " << nion << std::endl;
+        coutput << " number of bands = " << nion3 << std::endl;
+        coutput << std::endl;
+        coutput << " supercell:" << std::endl;
+        coutput << "      volume = " << Ffmt(10, 2) << mylattice->omega() << std::endl;
+        coutput << "      lattice:    a1 = < "
+                << Ffmt(8,3) << mylattice->unita(0,0) << " "
+                << Ffmt(8,3) << mylattice->unita(1,0) << " "
+                << Ffmt(8,3) << mylattice->unita(2,0) << " >\n";
+        coutput << "                  a2 = < "
+                << Ffmt(8,3) << mylattice->unita(0,1) << " "
+                << Ffmt(8,3) << mylattice->unita(1,1) << " "
+                << Ffmt(8,3) << mylattice->unita(2,1) << " >\n";
+        coutput << "                  a3 = < "
+                << Ffmt(8,3) << mylattice->unita(0,2) << " "
+                << Ffmt(8,3) << mylattice->unita(1,2) << " "
+                << Ffmt(8,3) << mylattice->unita(2,2) << " >\n";
+        coutput << "      reciprocal: b1 = < "
+                << Ffmt(8,3) << mylattice->unitg(0,0) << " " 
+                << Ffmt(8,3) << mylattice->unitg(1,0) << " "
+                << Ffmt(8,3) << mylattice->unitg(2,0) << " >\n";
+        coutput << "                  b2 = < " 
+                << Ffmt(8,3) << mylattice->unitg(0,1) << " "
+                << Ffmt(8,3) << mylattice->unitg(1,1) << " "
+                << Ffmt(8,3) << mylattice->unitg(2,1) << " >\n";
+        coutput << "                  b3 = < "
+                << Ffmt(8,3) << mylattice->unitg(0,2) << " "
+                << Ffmt(8,3) << mylattice->unitg(1,2) << " "
+                << Ffmt(8,3) << mylattice->unitg(2,2) << " >\n";
+         
+        {
+            double aa1, bb1, cc1, alpha1, beta1, gamma1;
+            mylattice->abc_abg(&aa1, &bb1, &cc1, &alpha1, &beta1, &gamma1);
+            coutput << "      lattice:    a =    " << Ffmt(8, 3) << aa1
+                    << " b =   " << Ffmt(8, 3) << bb1 << " c =    " << Ffmt(8, 3)
+                    << cc1 << std::endl;
+            coutput << "                  alpha =" << Ffmt(8, 3) << alpha1
+                    << " beta =" << Ffmt(8, 3) << beta1 << " gamma =" << Ffmt(8, 3)
+                    << gamma1 << std::endl;
+        }
+ 
+        coutput << std::endl;
+        coutput << "  Calculating Vibrational Density of States" << std::endl;
+        coutput << "  -----------------------------------------" << std::endl;
+        coutput << "    dos-grid: "  << dos_grid[0] << " " << dos_grid[1] << " " << dos_grid[2] << std::endl; 
+
+ 
+        std::cout << "not working yet!" << std::endl;
+    }
+
+
+    // temporary data use by phonon calculations
+    int lwork = nion3 * nion3;
+    if (lwork < (3 * nion3)) lwork = 3 * nion3;
+    int isize = dos_grid[0] * dos_grid[1] * dos_grid[2];
+
+    std::vector<double> eigs_dos(isize*isize);
+    std::vector<double> dmat(2*nion3*nion3);
+    std::vector<double> hessadjust(nion3*nion3);
+    std::vector<double> wp(nion3);
+    std::vector<double> rwork(3*nion3);
+
+    std::vector<double> work(2*lwork);
+    std::vector<double> w2(nion3*nion3);
+
+    vib_adjustfordynamic(unita,nion,rion,
+                         nion3,mass,rwork.data(),
+                         work.data(),w2.data(),
+                         hess,hessadjust.data());
+
+    //************************************************************
+    //******************* Density of States **********************
+    //************************************************************
+    /*
+    int isize = dos_grid[0]*dos_grid[1]*dos_grid[2];
+    double eig_dos[isize*isize];
+
+    double dmat[2*nion3*nion3];
+    double hessadjust[nion3*nion3];
+    double wp[nion3];
+    double rwork[3*nion3];
+
+    int lwork = nion3*nion3;
+    if (lwork<(3*nion3)) lwork = 3*nion3;
+    double work[2*lwork], w2[nion3*nion3];;
+    */
+
+    int icount = 0;
+    double  xxx = 1.0/(1.0*dos_grid[0]);
+    double  yyy = 1.0/(1.0*dos_grid[1]);
+    double  zzz = 1.0/(1.0*dos_grid[2]);
+    for (auto i2=0; i2<dos_grid[2]; ++i2)
+    for (auto i1=0; i1<dos_grid[1]; ++i1)
+    for (auto i0=0; i0<dos_grid[0]; ++i0)
+    {
+        double ks[3] = {i0*xxx, i1*yyy, i2*zzz};
+        double kq[3] = {mylattice->unitg(0,0) + mylattice->unitg(0,1) + mylattice->unitg(0,2),
+                        mylattice->unitg(1,0) + mylattice->unitg(1,1) + mylattice->unitg(1,2),
+                        mylattice->unitg(2,0) + mylattice->unitg(2,1) + mylattice->unitg(2,2)};
+      
+        //vib_gendynamicmatrix(unita,kq,nion,rion,
+        //                     nion3,hessadjust.data(),
+        //                     dmat.data(),wp.data(),
+        //                     work.data(),lwork.data(),rwork.data());
+      
+        for (auto i=0; i<nion3; ++i)
+            eigs_dos[icount + i*isize] = std::sqrt(std::abs(wp[i]));
+      
+        ++icount;
+    }
+
+
+    //************************************************************
+    //********************   Dispersion **************************
+    //************************************************************
+
+
+
+
 }
 
 
@@ -1709,6 +1864,7 @@ void compute_fd_frequencies_molecule(Control2 &control,
                    "Analysis  --------------------------\n";
         coutput << " --------------------------------------------------------------"
                    "---------------------\n\n";
+
 
         /* 
         if (auto* table = ion->get_character_table()) {
@@ -2316,22 +2472,34 @@ void compute_fd_frequencies_full(Control2 &control,
 
     if (ismaster && oprint)
     {
-       coutput << "\n\n";
-       coutput << " --------------------------------------------------------------"
-                  "---------------------\n";
-       coutput << " -----------------------  Vibrational Frequency "
-                  "Analysis  --------------------------\n";
-       coutput << " --------------------------------------------------------------"
-                  "---------------------\n\n";
+       if (is_crystal)
+       {
+           coutput << "\n\n";
+           coutput << " --------------------------------------------------------------"
+                      "---------------------\n";
+           coutput << " -------------------------  Phonon Vibrational "
+                      "Analysis  ----------------------------\n";
+           coutput << " --------------------------------------------------------------"
+                      "---------------------\n\n";
+       }
+       else
+       {
+           coutput << "\n\n";
+           coutput << " --------------------------------------------------------------"
+                      "---------------------\n";
+           coutput << " -----------------------  Vibrational Frequency "
+                      "Analysis  --------------------------\n";
+           coutput << " --------------------------------------------------------------"
+                      "---------------------\n\n";
+       }
+
 
        coutput << " ---------------------------------\n";
        coutput << "     Finite Difference Hessian    \n";
        coutput << " ---------------------------------\n";
        coutput << " number of atoms            = " << N << "\n";
        coutput << " degrees of freedom         = " << ndof << "\n";
-       if (is_crystal)
-          coutput << " expected vibrational modes = " << (3*N - 3) << "\n";
-       else
+       if (!is_crystal)
           coutput << " expected vibrational modes = " << (3*N - 6) << "\n";
        coutput << " finite difference step     = " << std::fixed << std::setprecision(3) << h << " bohr\n";
 
@@ -2418,120 +2586,104 @@ void compute_fd_frequencies_full(Control2 &control,
             H[j+i*ndof] = avg;
         }
 
-    // ===============================
-    // Mass weighting
-    // ===============================
-    for(int i=0;i<ndof;++i)
+    if (is_crystal)
     {
-        int ai = i/3;
-        double mi = ion->amu(ai) * 1822.888486209;
-
-        for(int j=0;j<ndof;++j)
+        int m_trans = 3;
+        compute_fd_crystal_phonons(control,mymolecule,E0,m_trans,ndof,H.data(),
+                                   ismaster,oprint,coutput);
+    }
+    // molecular stuff below
+    else
+    {
+        // ===============================
+        // Mass weighting
+        // ===============================
+        for(int i=0;i<ndof;++i)
         {
-            int aj = j/3;
-            double mj = ion->amu(aj) * 1822.888486209;
-            H[i+j*ndof] /= sqrt(mi*mj);
+            int ai = i/3;
+            double mi = ion->amu(ai) * 1822.888486209;
+ 
+            for(int j=0;j<ndof;++j)
+            {
+                int aj = j/3;
+                double mj = ion->amu(aj) * 1822.888486209;
+                H[i+j*ndof] /= sqrt(mi*mj);
+            }
         }
+ 
+ 
+        // =====================================================================
+        // Eckart projection (molecule) or Translation projection (solid/liquid)
+        // =====================================================================
+ 
+        std::vector<double> coords(3*N);
+        std::vector<double> masses(N);
+ 
+        for (int a=0; a<N; ++a)
+        {
+            coords[3*a+0] = x0[3*a+0];
+            coords[3*a+1] = x0[3*a+1];
+            coords[3*a+2] = x0[3*a+2];
+            masses[a]     = ion->amu(a) * 1822.888486209;
+        }
+ 
+        std::vector<double> V;
+        int m_eckart = 0;
+        build_molecular_constraints(N, coords, masses, V, m_eckart);
+        apply_projector(ndof, m_eckart, V, H);
+ 
+        // ===============================
+        // Diagonalize
+        // ===============================
+        std::vector<double> eig;
+        if (ismaster)
+        {
+           eig.resize(ndof);
+ 
+           int lwork = 3*ndof;
+           std::vector<double> work(lwork);
+           int info = 0;
+ 
+           EIGEN_PWDFT(ndof, H.data(), eig.data(), work.data(), lwork, info);
+ 
+           if (info != 0) {
+              if (oprint)
+                 coutput << "Error: dsyev failed with info = " << info << "\n";
+           }
+ 
+ 
+           //printing frequencies
+           if (oprint)
+           {
+               print_frequencies(coutput, eig, ndof, m_eckart);
+           }
+ 
+           double molecule_mass = 0.0;
+           for (int a = 0; a < N; ++a)
+               molecule_mass += ion->amu(a);
+ 
+           std::vector<double> freq;
+           freq.reserve(ndof);
+           for (int i = 0; i < ndof; ++i)
+           {
+               double lambda = eig[i];
+               double nu = 0.0;
+               if (lambda < 0.0)
+                   nu = -std::sqrt(-lambda) * 2.194746e5;   // imaginary as negative
+               else
+                   nu =  std::sqrt( lambda) * 2.194746e5;
+               freq.push_back(nu);
+           }
+ 
+            //Compute and output thermo
+            double pressure    = control.thermo_pressure();
+            double temperature = control.thermo_temperature();
+            double freq_scale  = control.thermo_freq_scale();
+            //ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
+            ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
+        }
+
     }
-
-
-    // =====================================================================
-    // Eckart projection (molecule) or Translation projection (solid/liquid)
-    // =====================================================================
-
-    std::vector<double> coords(3*N);
-    std::vector<double> masses(N);
-
-    for (int a=0; a<N; ++a)
-    {
-        coords[3*a+0] = x0[3*a+0];
-        coords[3*a+1] = x0[3*a+1];
-        coords[3*a+2] = x0[3*a+2];
-        masses[a]     = ion->amu(a) * 1822.888486209;
-    }
-
-    std::vector<double> V;
-    int m_eckart = 0;
-
-    if (is_crystal)
-    {
-       build_translation_constraints(N, masses, V);
-       m_eckart = 3;
-    }
-    else
-       build_molecular_constraints(N, coords, masses, V, m_eckart);
-
-    apply_projector(ndof, m_eckart, V, H);
-
-
-    // ===============================
-    // Diagonalize
-    // ===============================
-    compute_fd_molecule_frequencies(control,mymolecule,E0,m_eckart,ndof,H, 
-                                    ismaster,oprint,coutput);
-    /*
-    if (is_crystal)
-       compute_fd_crystal_phonons(control,mymolecule,E0,m_eckart,ndof,H,
-                                  ismaster,oprint,coutput);
-    else
-       compute_fd_molecule_frequencies(control,mymolecule,E0,m_eckart,ndof,H, 
-                                       ismaster,oprint,coutput);
-     */
-
-
-    // ===============================
-    // Diagonalize
-    // ===============================
-    /*
-    std::vector<double> eig;
-    if (ismaster)
-    {
-       eig.resize(ndof);
-
-       int lwork = 3*ndof;
-       std::vector<double> work(lwork);
-       int info = 0;
-
-       EIGEN_PWDFT(ndof, H.data(), eig.data(), work.data(), lwork, info);
-
-       if (info != 0) {
-          if (oprint)
-             coutput << "Error: dsyev failed with info = " << info << "\n";
-       }
-
-
-       //printing frequencies
-       if (oprint)
-       {
-           print_frequencies(coutput, eig, ndof, m_eckart);
-       }
-
-       double molecule_mass = 0.0;
-       for (int a = 0; a < N; ++a)
-           molecule_mass += ion->amu(a);
-
-       std::vector<double> freq;
-       freq.reserve(ndof);
-       for (int i = 0; i < ndof; ++i)
-       {
-           double lambda = eig[i];
-           double nu = 0.0;
-           if (lambda < 0.0)
-               nu = -std::sqrt(-lambda) * 2.194746e5;   // imaginary as negative
-           else
-               nu =  std::sqrt( lambda) * 2.194746e5;
-           freq.push_back(nu);
-       }
-
-        //Compute and output thermo
-        double pressure    = control.thermo_pressure();
-        double temperature = control.thermo_temperature();
-        double freq_scale  = control.thermo_freq_scale();
-        //ion->compute_molecular_thermo(freq,temperature,pressure,coutput);
-        ion->compute_molecular_thermo(freq,freq_scale,temperature,pressure,E0,coutput);
-    }
-    */
-
 }
 
 

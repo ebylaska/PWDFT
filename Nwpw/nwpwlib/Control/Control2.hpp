@@ -195,6 +195,9 @@ class Control2 {
    double protation_moments[3];
    double protation_inertia[9];
 
+   // phonon
+   int pdos_grid[3] = {11,11,11};
+
    // thermo
    double ppressure = 101325.0;  // Pa
    double ptemperature = 298.15; // K
@@ -649,6 +652,9 @@ public:
    const double* rotation_axes() const { return protation_axes; }
    const double* rotation_moments() const { return protation_moments; }
    const double* rotation_inertia() const { return protation_inertia; }
+
+   // phonon 
+   int phonon_dos_grid(const int i) const  { return pdos_grid[i]; } 
 
    // thermo parameters
    double thermo_pressure() { return ppressure; }
