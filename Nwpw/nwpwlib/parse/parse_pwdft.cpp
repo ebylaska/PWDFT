@@ -2612,9 +2612,11 @@ static json parse_driver(json driverjson, int *curptr,
 
     }
 
+
     ++cur;
     if (mystring_contains(lines[cur], "end"))
       --endcount;
+
   }
 
   *curptr = cur;
@@ -2957,12 +2959,30 @@ std::string parse_nwinput(std::string nwinput)
    json rtdb;
 
    // read a JSON file
-   // split nwinput into lines
-   std::vector<std::string> lines = mystring_split(nwinput, "\n");
+   // split nwinput into lines, splitting on eoln and ;
+   //std::string out = nwinput;
+   //std::replace(out.begin(), out.end(), ';', '\n');
+   //std::vector<std::string> lines = mystring_split(out, "\n");
+   
+   // split nwinput into lines, splitting on eoln and ;
+   std::string out = nwinput;
+   constexpr char SENTINEL = '\x1F';
+   bool in_comment = false;
+   for (size_t i=0; i<out.length(); ++i)
+   {
+       char c= out[i];
+       if (c=='#')  in_comment = true;
+       if (c=='\n') in_comment = false;
+       if ((c==';') && (in_comment)) out[i]=SENTINEL;
+   }
+   std::replace(out.begin(), out.end(), ';', '\n');
+   std::replace(out.begin(), out.end(), SENTINEL, ';');
+   std::vector<std::string> lines = mystring_split(out, "\n");
  
    // Remove comments
    for (auto i=lines.begin(); i!=lines.end(); ++i)
       *i = mystring_split(*i, "#")[0];
+
 
    bool found_restart = false;
 
