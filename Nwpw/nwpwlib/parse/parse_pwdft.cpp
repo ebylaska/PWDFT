@@ -2959,12 +2959,35 @@ std::string parse_nwinput(std::string nwinput)
    json rtdb;
 
    // read a JSON file
-   // split nwinput into lines, splitting on eoln and ;
    //std::string out = nwinput;
    //std::replace(out.begin(), out.end(), ';', '\n');
    //std::vector<std::string> lines = mystring_split(out, "\n");
+
+
+   // split nwinput into lines, splitting on eoln and ;
+   std::vector<std::string> lines;
+   std::string current_line;
+   bool in_comment = false;
+
+   for (char c : nwinput) {
+       if (c == '#') in_comment = true;
+
+       if (c == '\n') {
+           lines.push_back(current_line);
+           current_line.clear();
+           in_comment = false;
+       } else if (c == ';' && !in_comment) {
+           lines.push_back(current_line);
+           current_line.clear();
+       } else if (!in_comment) {
+           current_line.push_back(c);
+       }
+   }
+   if (!current_line.empty()) lines.push_back(current_line);
+
    
    // split nwinput into lines, splitting on eoln and ;
+   /*
    std::string out = nwinput;
    constexpr char SENTINEL = '\x1F';
    bool in_comment = false;
@@ -2982,6 +3005,7 @@ std::string parse_nwinput(std::string nwinput)
    // Remove comments
    for (auto i=lines.begin(); i!=lines.end(); ++i)
       *i = mystring_split(*i, "#")[0];
+      */
 
 
    bool found_restart = false;
