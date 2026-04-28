@@ -45,6 +45,9 @@
 #include "nwpw_lmbfgs.hpp"
 
 #include "cgsd_energy.hpp"
+#include "util_vdos_generate.hpp"
+#include "util_vdos_thermo.hpp"
+//#include "util_ascii_plot.hpp"
 #include "util_thermo.hpp"
 
 #include "json.hpp"
@@ -1294,6 +1297,28 @@ void compute_fd_molecule_frequencies(Control2 &control,
  *           vib_adjustfordynamic         *
  *                                        *
  ******************************************/
+/*
+ * Build the mass-weighted dynamical matrix from the real-space Hessian.
+ *
+ * This routine:
+ *   1. Copies on-site 3x3 Hessian blocks directly.
+ *   2. Scales off-site pair blocks by the number of equivalent
+ *      minimum-image lattice connections in the periodic supercell.
+ *   3. Projects out the three rigid translational modes.
+ *   4. Mass-weights the resulting matrix.
+ *
+ * Important:
+ *   - 'mass' is expected in electron-mass atomic units, not amu.
+ *   - Therefore the final mass-weighting uses only
+ *
+ *         1 / sqrt(mass(i) * mass(j))
+ *
+ *     with no additional amu-to-electron-mass conversion factor.
+ *
+ * Storage/layout:
+ *   - All matrices are stored in Fortran/column-major order.
+ *   - nion3 should be 3*nion.
+ */
 static void vib_adjustfordynamic(const double* unita,
                                  int nion,
                                  const double* rion,
@@ -1429,7 +1454,7 @@ static void vib_adjustfordynamic(const double* unita,
     for (jj = 0; jj < nion; ++jj) {
         for (ii = 0; ii < nion; ++ii) {
             fac = 1.0 / sqrt(mass[ii] * mass[jj]);
-            fac /= 1822.89;
+            //fac /= 1822.89;
             for (xyz = 0; xyz < 3; ++xyz) {
                 for (rst = 0; rst < 3; ++rst) {
                     i = 3 * ii + xyz;
@@ -1463,8 +1488,48 @@ static void vib_adjustfordynamic(const double* unita,
  * - hessadjust is real symmetric input matrix.
  *
  * LAPACK zheev_ prototype using raw double storage for complex arrays.
+ *
+ ***
+ *
+ * Construct the q-dependent phonon dynamical matrix from the adjusted
+ * real-space Hessian and compute its eigenvalues.
+ *
+ * For each atom pair, the routine finds the minimum-image lattice vector
+ * connecting the two atoms, forms the phase factor
+ *
+ *     exp(i kq · r)
+ *
+ * and uses it to build the complex Hermitian dynamical matrix dmat.
+ * The phonon eigenvalues are then obtained by diagonalizing dmat.
+ *
+ * Inputs:
+ *   unita      - real-space lattice vectors, stored column-major
+ *   kq         - Cartesian q-vector in reciprocal space
+ *   nion       - number of ions
+ *   rion       - ion positions, stored as 3 x nion in column-major layout
+ *   nion3      - total Cartesian degrees of freedom, normally 3*nion
+ *   hessadjust - real, mass-weighted, translation-projected Hessian
+ *
+ * Outputs:
+ *   dmat       - complex Hermitian dynamical matrix, stored as interleaved
+ *                doubles in Fortran/column-major order:
+ *                  dmat[2*(row + nion3*col) + 0] = real part
+ *                  dmat[2*(row + nion3*col) + 1] = imaginary part
+ *   wp         - eigenvalues of the dynamical matrix
+ *
+ * Workspace:
+ *   work, lwork, rwork - diagonalization workspace; retained here for
+ *                        compatibility with the original Fortran-style
+ *                        interface, although LAPACKE-based builds may
+ *                        manage workspace internally.
+ *
+ * Notes:
+ *   - All arrays follow Fortran/column-major storage conventions.
+ *   - The matrix is built from hessadjust, so any translation projection
+ *     and mass weighting must already have been applied before calling
+ *     this routine.
+ *   - dmat is overwritten during diagonalization.
  */
-
 static void vib_gendynamicmatrix(const double* unita,
                                  const double* kq,
                                  const int nion,
@@ -1570,6 +1635,26 @@ static void vib_gendynamicmatrix(const double* unita,
 }
 
 
+/******************************************
+ *                                        *
+ *              hessian_print             *
+ *                                        *
+ ******************************************/
+/*
+ * Print a real Hessian-like matrix to the selected output stream.
+ *
+ * Inputs:
+ *   name    - label printed with the matrix
+ *   nion3   - matrix dimension
+ *   hessian - real matrix stored in Fortran/column-major order
+ *   coutput - output stream
+ *
+ * Notes:
+ *   - The matrix is printed as a full nion3 x nion3 array.
+ *   - Elements are accessed as hessian[i + nion3*j], consistent with
+ *     the Fortran-style storage used throughout the vibrational code.
+ *   - Output uses scientific notation with 6 digits after the decimal.
+ */
 static void hessian_print(const std::string& name,
                           const int nion3,
                           const double* hessian,
@@ -1594,11 +1679,49 @@ static void hessian_print(const std::string& name,
     coutput << std::defaultfloat << std::endl;
 }
 
+
+
 /******************************************
  *                                        *
  *     compute_fd_crystal_phonons         *
  *                                        *
  ******************************************/
+/*
+ * Compute finite-difference crystal phonon data from the real-space Hessian.
+ *
+ * This routine prepares the mass-weighted, translation-projected dynamical
+ * matrix, evaluates phonon frequencies on a reciprocal-space grid, and
+ * accumulates data needed for the vibrational density of states and
+ * dispersion analysis.
+ *
+ * Main steps:
+ *   1. Read lattice, ion positions, and masses from the current molecule.
+ *   2. Convert the input Hessian into an adjusted dynamical form by
+ *      handling periodic minimum-image couplings, removing rigid
+ *      translations, and applying mass weighting.
+ *   3. Loop over the phonon DOS q-point grid.
+ *   4. At each q-point, build the complex dynamical matrix and solve for
+ *      its eigenvalues.
+ *   5. Store the resulting phonon frequencies for later DOS/dispersion use.
+ *
+ * Inputs:
+ *   control    - runtime control parameters, including phonon grid settings
+ *   mymolecule - molecular/crystal system containing ions, lattice, and grid
+ *   E0         - reference total energy (currently informational/contextual)
+ *   m_eckart   - Eckart/constraint mode selector
+ *   ndof       - number of degrees of freedom associated with the Hessian
+ *   hess       - real-space Hessian matrix, stored in Fortran/column-major order
+ *   ismaster   - true if this rank/process is the master task
+ *   oprint     - enable formatted diagnostic output
+ *   coutput    - output stream for printed information
+ *
+ * Notes:
+ *   - The code assumes periodic crystal boundary conditions.
+ *   - Matrix storage follows Fortran/column-major layout throughout.
+ *   - Ion masses are assumed to be in electron-mass atomic units.
+ *   - The current implementation primarily covers phonon DOS generation;
+ *     dispersion-path handling may be added separately.
+ */
 void compute_fd_crystal_phonons(Control2 &control,
                                 Molecule &mymolecule,
                                 double E0,
@@ -1609,8 +1732,8 @@ void compute_fd_crystal_phonons(Control2 &control,
     Ion* ion = mymolecule.myion;
     int nion  = ion->nion;
     int nion3 = 3*nion;
-    //double* mass = ion->mass;
-    std::vector<double> amass = ion->amus();
+    double* mass = ion->mass;
+    //std::vector<double> amass = ion->amus();
     double*  rion = ion->rion1;
     Lattice* mylattice = mymolecule.mygrid->lattice;
     double*  unita = mylattice->unita_ptr();
@@ -1689,7 +1812,7 @@ void compute_fd_crystal_phonons(Control2 &control,
     if (oprint) hessian_print("hessian", nion3,hess, coutput);
 
     vib_adjustfordynamic(unita,nion,rion,
-                         nion3,amass.data(),rwork.data(),
+                         nion3,mass,rwork.data(),
                          work.data(),w2.data(),
                          hess,hessadjust.data());
 
@@ -1766,10 +1889,45 @@ void compute_fd_crystal_phonons(Control2 &control,
     //********************   Dispersion **************************
     //************************************************************
 
-
-
+    if (oprint)
+    {
+        //************************************************************
+        //******************** DOS plotting **************************
+        //************************************************************
+        int npoints = 1001;
+        std::vector<double> efn_dos(3*npoints);
+        double emin = 0.0;
+        double emax = *std::max_element(eigs_dos.begin(), eigs_dos.end());
+        emax += 1.0e-3;
+ 
+        pwdft::util_vdos_generate(dos_grid[0], dos_grid[1], dos_grid[2],
+                                  eigs_dos.data(),
+                                  nion3,
+                                  npoints,
+                                  emin,
+                                  emax,
+                                  mylattice->unitg_ptr(),
+                                  efn_dos.data());
+ 
+ 
+        //************************************************************
+        //************************* THERMO ***************************
+        //************************************************************
+        double scalefreq = 1.0;
+        double threshfreq_cm = 100.0;
+        std::vector<double> temperatures = {298.15};
+ 
+        pwdft::util_vdos_thermo(nion,
+                                npoints,
+                                efn_dos.data(),
+                                scalefreq,
+                                threshfreq_cm,
+                                temperatures,
+                                coutput);
+    }
 
 }
+
 
 
 
@@ -2397,12 +2555,14 @@ void compute_fd_frequencies_molecule(Control2 &control,
     for (int i = 0; i < ndof; ++i)
     {
         int ai = i / 3;
-        double mi = ion->amu(ai) * 1822.888486209;
+        //double mi = ion->amu(ai) * 1822.888486209;
+        double mi = ion->mass[ai];
 
         for (int j = 0; j < ndof; ++j)
         {
             int aj = j / 3;
-            double mj = ion->amu(aj) * 1822.888486209;
+            //double mj = ion->amu(aj) * 1822.888486209;
+            double mj = ion->mass[aj];
             Hfull[i + j * ndof] /= std::sqrt(mi * mj);
         }
     }
@@ -2418,7 +2578,8 @@ void compute_fd_frequencies_molecule(Control2 &control,
         coords[3 * a + 0] = x0[3 * a + 0];
         coords[3 * a + 1] = x0[3 * a + 1];
         coords[3 * a + 2] = x0[3 * a + 2];
-        masses[a]         = ion->amu(a) * 1822.888486209;
+        //masses[a]         = ion->amu(a) * 1822.888486209;
+        masses[a]         = ion->mass[a];
     }
 
     std::vector<double> V;
@@ -2662,12 +2823,14 @@ void compute_fd_frequencies(Control2 &control,
     for (int i = 0; i < ndof; ++i)
     {
         int ai = i / 3;
-        double mi = ion->amu(ai) * 1822.888486209;
+        //double mi = ion->amu(ai) * 1822.888486209;
+        double mi = ion->mass[ai];
 
         for (int j = 0; j < ndof; ++j)
         {
             int aj = j / 3;
-            double mj = ion->amu(aj) * 1822.888486209;
+            //double mj = ion->amu(aj) * 1822.888486209;
+            double mj = ion->mass[aj];
             H[i + j * ndof] /= std::sqrt(mi * mj);
         }
     }
@@ -2683,7 +2846,8 @@ void compute_fd_frequencies(Control2 &control,
         coords[3 * a + 0] = x0[3 * a + 0];
         coords[3 * a + 1] = x0[3 * a + 1];
         coords[3 * a + 2] = x0[3 * a + 2];
-        masses[a]         = ion->amu(a) * 1822.888486209;
+        //masses[a]         = ion->amu(a) * 1822.888486209;
+        masses[a]         = ion->mass[a];
     }
 
     std::vector<double> V;
@@ -2917,12 +3081,14 @@ void compute_fd_frequencies_full(Control2 &control,
         for(int i=0;i<ndof;++i)
         {
             int ai = i/3;
-            double mi = ion->amu(ai) * 1822.888486209;
+            //double mi = ion->amu(ai) * 1822.888486209;
+            double mi = ion->mass[ai];
  
             for(int j=0;j<ndof;++j)
             {
                 int aj = j/3;
-                double mj = ion->amu(aj) * 1822.888486209;
+                //double mj = ion->amu(aj) * 1822.888486209;
+                double mj = ion->mass[aj];
                 H[i+j*ndof] /= sqrt(mi*mj);
             }
         }
@@ -2940,7 +3106,8 @@ void compute_fd_frequencies_full(Control2 &control,
             coords[3*a+0] = x0[3*a+0];
             coords[3*a+1] = x0[3*a+1];
             coords[3*a+2] = x0[3*a+2];
-            masses[a]     = ion->amu(a) * 1822.888486209;
+            //masses[a]     = ion->amu(a) * 1822.888486209;
+            masses[a]     = ion->mass[a];
         }
  
         std::vector<double> V;
