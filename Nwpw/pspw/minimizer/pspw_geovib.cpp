@@ -744,9 +744,9 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       if (oprint) 
       {
          coutput << "\n\n\n";
-         coutput << " ---------------------------------\n";
-         coutput << "  Calculate Energy for Step " << it << "\n";
-         coutput << " ---------------------------------\n\n";
+         coutput << " ----------------------------------------------\n";
+         coutput << "  Calculate Energy for Optimization Step " << std::setw(5) << it << "\n";
+         coutput << " ----------------------------------------------\n\n";
       }
       Eold = EV;
       EV = cgsd_energy(control, mymolecule, true, coutput);
@@ -1288,25 +1288,311 @@ void compute_fd_molecule_frequencies(Control2 &control,
 
 }
 
+
+/******************************************
+ *                                        *
+ *           vib_adjustfordynamic         *
+ *                                        *
+ ******************************************/
 static void vib_adjustfordynamic(const double* unita,
-                          int nion,
-                          const double* rion,
-                          int nion3,
-                          const double* mass,
-                          double* vc,
-                          double* w1,
-                          double* w2,
-                          double* hess,
-                          double* hessout)
+                                 int nion,
+                                 const double* rion,
+                                 int nion3,
+                                 const double* mass,
+                                 double* vc,
+                                 double* w1,
+                                 double* w2,
+                                 double* hess,
+                                 double* hessout)
 {
+    int ii, jj, i, j, xyz, rst;
+    int i1, i2, i3, dcount;
+    double dx, dy, dz, x, y, z, d2, d2min, fac;
+
+    /* column-major indexing helpers matching Fortran layout */
+    #define MAT(a, nr, r, c) ((a)[(r) + (nr) * (c)])
+    #define RION(c, ion)     ((rion)[(c) + 3 * (ion)])
+    #define UNITA(r, c)      ((unita)[(r) + 3 * (c)])
+
+    /* initialize hessout to zero to avoid untouched entries */
+    memset(hessout, 0, (size_t)nion3 * (size_t)nion3 * sizeof(double));
+
+    for (jj = 0; jj < nion; ++jj) {
+
+        /* diagonal 3x3 block */
+        for (xyz = 0; xyz < 3; ++xyz) {
+            for (rst = 0; rst < 3; ++rst) {
+                i = 3 * jj + xyz;
+                j = 3 * jj + rst;
+                MAT(hessout, nion3, i, j) = MAT(hess, nion3, i, j);
+            }
+        }
+
+        for (ii = jj + 1; ii < nion; ++ii) {
+            dx = RION(0, jj) - RION(0, ii);
+            dy = RION(1, jj) - RION(1, ii);
+            dz = RION(2, jj) - RION(2, ii);
+
+            d2min = 9.99e12;
+            for (i3 = -1; i3 <= 1; ++i3) {
+                for (i2 = -1; i2 <= 1; ++i2) {
+                    for (i1 = -1; i1 <= 1; ++i1) {
+                        x = dx + UNITA(0,0)*i1 + UNITA(0,1)*i2 + UNITA(0,2)*i3;
+                        y = dy + UNITA(1,0)*i1 + UNITA(1,1)*i2 + UNITA(1,2)*i3;
+                        z = dz + UNITA(2,0)*i1 + UNITA(2,1)*i2 + UNITA(2,2)*i3;
+                        d2 = x*x + y*y + z*z;
+                        if (d2 < d2min) d2min = d2;
+                    }
+                }
+            }
+
+            dcount = 0;
+            for (i3 = -1; i3 <= 1; ++i3) {
+                for (i2 = -1; i2 <= 1; ++i2) {
+                    for (i1 = -1; i1 <= 1; ++i1) {
+                        x = dx + UNITA(0,0)*i1 + UNITA(0,1)*i2 + UNITA(0,2)*i3;
+                        y = dy + UNITA(1,0)*i1 + UNITA(1,1)*i2 + UNITA(1,2)*i3;
+                        z = dz + UNITA(2,0)*i1 + UNITA(2,1)*i2 + UNITA(2,2)*i3;
+                        d2 = x*x + y*y + z*z;
+                        if (fabs(d2 - d2min) < 1.0e-4) dcount++;
+                    }
+                }
+            }
+
+            fac = 1.0 / (double)dcount;
+            for (xyz = 0; xyz < 3; ++xyz) {
+                for (rst = 0; rst < 3; ++rst) {
+                    i = 3 * ii + xyz;
+                    j = 3 * jj + rst;
+                    MAT(hessout, nion3, i, j) = fac * MAT(hess, nion3, i, j);
+                    MAT(hessout, nion3, j, i) = fac * MAT(hess, nion3, j, i);
+                }
+            }
+        }
+    }
+
+    /* remove translations: hessout = (I-vc*vc^T)*hessout*(I-vc*vc^T) */
+
+    /* vc(nion3,3) = 0 */
+    memset(vc, 0, (size_t)nion3 * 3 * sizeof(double));
+
+    x = 1.0 / sqrt((double)nion);
+    for (i = 0; i < 3; ++i) {
+        for (ii = 0; ii < nion; ++ii) {
+            MAT(vc, nion3, 3 * ii + i, i) = x;
+        }
+    }
+
+    /* w1 = I */
+    memset(w1, 0, (size_t)nion3 * (size_t)nion3 * sizeof(double));
+    for (i = 0; i < nion3; ++i) {
+        MAT(w1, nion3, i, i) = 1.0;
+    }
+
+    /* w1 = I - vc*vc^T */
+    for (i = 0; i < nion3; ++i) {
+        for (j = 0; j < nion3; ++j) {
+            double sum = 0.0;
+            int k;
+            for (k = 0; k < 3; ++k) {
+                sum += MAT(vc, nion3, i, k) * MAT(vc, nion3, j, k);
+            }
+            MAT(w1, nion3, i, j) -= sum;
+        }
+    }
+
+    /* w2 = w1 * hessout */
+    for (i = 0; i < nion3; ++i) {
+        for (j = 0; j < nion3; ++j) {
+            double sum = 0.0;
+            int k;
+            for (k = 0; k < nion3; ++k) {
+                sum += MAT(w1, nion3, i, k) * MAT(hessout, nion3, k, j);
+            }
+            MAT(w2, nion3, i, j) = sum;
+        }
+    }
+
+    /* hessout = w2 * w1 */
+    for (i = 0; i < nion3; ++i) {
+        for (j = 0; j < nion3; ++j) {
+            double sum = 0.0;
+            int k;
+            for (k = 0; k < nion3; ++k) {
+                sum += MAT(w2, nion3, i, k) * MAT(w1, nion3, k, j);
+            }
+            MAT(hessout, nion3, i, j) = sum;
+        }
+    }
+
+    /* divide by sqrt of masses */
+    for (jj = 0; jj < nion; ++jj) {
+        for (ii = 0; ii < nion; ++ii) {
+            fac = 1.0 / sqrt(mass[ii] * mass[jj]);
+            fac /= 1822.89;
+            for (xyz = 0; xyz < 3; ++xyz) {
+                for (rst = 0; rst < 3; ++rst) {
+                    i = 3 * ii + xyz;
+                    j = 3 * jj + rst;
+                    MAT(hessout, nion3, i, j) *= fac;
+                }
+            }
+        }
+    }
+
+    #undef MAT
+    #undef RION
+    #undef UNITA
 }
 
+
+
+
+/******************************************
+ *                                        *
+ *           vib_gendynamicsmatrix        *
+ *                                        *
+ ******************************************/
 /*
-static void vib_gendynamicmatrix(const double* unita,kq,nion,rion,
-                             nion3,hessadjust.data(),
-                             dmat.data(),wp.data(),
-                             work.data(),lwork.data(),rwork.data());
-*/
+ * Assumptions:
+ * - Arrays use Fortran/column-major storage.
+ * - dmat stores complex*16 as interleaved doubles:
+ *     dmat[2*(row + nion3*col) + 0] = real
+ *     dmat[2*(row + nion3*col) + 1] = imag
+ * - work is LAPACK complex workspace, also passed as double* interleaved.
+ * - hessadjust is real symmetric input matrix.
+ *
+ * LAPACK zheev_ prototype using raw double storage for complex arrays.
+ */
+
+static void vib_gendynamicmatrix(const double* unita,
+                                 const double* kq,
+                                 const int nion,
+                                 const double* rion,
+                                 int nion3,
+                                 double* hessadjust,
+                                 double* dmat,
+                                 double* wp,
+                                 double* work,
+                                 int lwork,
+                                 double* rwork)
+{
+    int ii, jj, i, j, xyz, rst, ierr;
+    int i1, i2, i3;
+    double dx, dy, dz, x, y, z, d2, d2min, qrmin;
+    double cre, cim;
+
+    #define RMAT(a, nr, r, c) ((a)[(r) + (nr) * (c)])
+    #define RION(c, ion)      ((rion)[(c) + 3 * (ion)])
+    #define UNITA(r, c)       ((unita)[(r) + 3 * (c)])
+    #define CMAT_RE(a, nr, r, c) ((a)[2 * ((r) + (nr) * (c)) + 0])
+    #define CMAT_IM(a, nr, r, c) ((a)[2 * ((r) + (nr) * (c)) + 1])
+
+    memset(dmat, 0, (size_t)2 * (size_t)nion3 * (size_t)nion3 * sizeof(double));
+
+    for (jj = 0; jj < nion; ++jj) {
+        /* diagonal term */
+        for (xyz = 0; xyz < 3; ++xyz) {
+            for (rst = 0; rst < 3; ++rst) {
+                i = 3 * jj + xyz;
+                j = 3 * jj + rst;
+                CMAT_RE(dmat, nion3, i, j) = RMAT(hessadjust, nion3, i, j);
+                CMAT_IM(dmat, nion3, i, j) = 0.0;
+            }
+        }
+
+        for (ii = jj + 1; ii < nion; ++ii) {
+            dx = RION(0, jj) - RION(0, ii);
+            dy = RION(1, jj) - RION(1, ii);
+            dz = RION(2, jj) - RION(2, ii);
+
+            d2min = 9.99e12;
+            qrmin = 0.0;
+
+            for (i3 = -1; i3 <= 1; ++i3) {
+                for (i2 = -1; i2 <= 1; ++i2) {
+                    for (i1 = -1; i1 <= 1; ++i1) {
+                        x = dx + UNITA(0,0) * i1 + UNITA(0,1) * i2 + UNITA(0,2) * i3;
+                        y = dy + UNITA(1,0) * i1 + UNITA(1,1) * i2 + UNITA(1,2) * i3;
+                        z = dz + UNITA(2,0) * i1 + UNITA(2,1) * i2 + UNITA(2,2) * i3;
+                        d2 = x * x + y * y + z * z;
+                        if (d2 < d2min) {
+                            d2min = d2;
+                            qrmin = kq[0] * x + kq[1] * y + kq[2] * z;
+                        }
+                    }
+                }
+            }
+
+            cre = cos(qrmin);
+            cim = sin(qrmin);
+
+            for (xyz = 0; xyz < 3; ++xyz) {
+                for (rst = 0; rst < 3; ++rst) {
+                    double hij, hji;
+                    i = 3 * ii + xyz;
+                    j = 3 * jj + rst;
+
+                    hij = RMAT(hessadjust, nion3, i, j);
+                    hji = RMAT(hessadjust, nion3, j, i);
+
+                    CMAT_RE(dmat, nion3, i, j) = cre * hij;
+                    CMAT_IM(dmat, nion3, i, j) = cim * hij;
+
+                    CMAT_RE(dmat, nion3, j, i) = cre * hji;
+                    CMAT_IM(dmat, nion3, j, i) = -cim * hji;
+                }
+            }
+        }
+    }
+
+    /* same as Fortran: call dscal(2*nion3*nion3,1.0d6,dmat,1) */
+    {
+        size_t ntot = (size_t)2 * (size_t)nion3 * (size_t)nion3;
+        size_t p;
+        for (p = 0; p < ntot; ++p) {
+            dmat[p] *= 1.0e6;
+        }
+    }
+
+    ZEIGEN_PWDFT(nion3, dmat, wp, work, lwork, rwork, ierr);
+
+    /* same as Fortran: call dscal(nion3,1.0d-6,wp,1) */
+    for (i = 0; i < nion3; ++i) {
+        wp[i] *= 1.0e-6;
+    }
+
+    #undef RMAT
+    #undef RION
+    #undef UNITA
+    #undef CMAT_RE
+    #undef CMAT_IM
+}
+
+
+static void hessian_print(const std::string& name,
+                          const int nion3,
+                          const double* hessian,
+                          std::ostream &coutput)
+{
+    coutput << "\n Hessian matrix (" << name << ", " 
+                                     <<   nion3 << " x " << nion3 << ")\n";
+    coutput << " ----------------------------------------\n";
+
+    for (int i = 0; i < nion3; ++i)
+    {
+        for (int j = 0; j < nion3; ++j)
+        {
+            coutput << std::setw(14)
+                    << std::scientific
+                    << std::setprecision(6)
+                    << hessian[i + nion3 * j];
+        }
+        coutput << '\n';
+    }
+
+    coutput << std::defaultfloat << std::endl;
+}
 
 /******************************************
  *                                        *
@@ -1323,7 +1609,8 @@ void compute_fd_crystal_phonons(Control2 &control,
     Ion* ion = mymolecule.myion;
     int nion  = ion->nion;
     int nion3 = 3*nion;
-    double* mass = ion->mass;
+    //double* mass = ion->mass;
+    std::vector<double> amass = ion->amus();
     double*  rion = ion->rion1;
     Lattice* mylattice = mymolecule.mygrid->lattice;
     double*  unita = mylattice->unita_ptr();
@@ -1390,7 +1677,7 @@ void compute_fd_crystal_phonons(Control2 &control,
     if (lwork < (3 * nion3)) lwork = 3 * nion3;
     int isize = dos_grid[0] * dos_grid[1] * dos_grid[2];
 
-    std::vector<double> eigs_dos(isize*isize);
+    std::vector<double> eigs_dos(nion3*isize);
     std::vector<double> dmat(2*nion3*nion3);
     std::vector<double> hessadjust(nion3*nion3);
     std::vector<double> wp(nion3);
@@ -1399,10 +1686,14 @@ void compute_fd_crystal_phonons(Control2 &control,
     std::vector<double> work(2*lwork);
     std::vector<double> w2(nion3*nion3);
 
+    if (oprint) hessian_print("hessian", nion3,hess, coutput);
+
     vib_adjustfordynamic(unita,nion,rion,
-                         nion3,mass,rwork.data(),
+                         nion3,amass.data(),rwork.data(),
                          work.data(),w2.data(),
                          hess,hessadjust.data());
+
+    if (oprint) hessian_print("adjusted", nion3,hessadjust.data(), coutput);
 
     //************************************************************
     //******************* Density of States **********************
@@ -1430,18 +1721,43 @@ void compute_fd_crystal_phonons(Control2 &control,
     for (auto i0=0; i0<dos_grid[0]; ++i0)
     {
         double ks[3] = {i0*xxx, i1*yyy, i2*zzz};
-        double kq[3] = {mylattice->unitg(0,0) + mylattice->unitg(0,1) + mylattice->unitg(0,2),
-                        mylattice->unitg(1,0) + mylattice->unitg(1,1) + mylattice->unitg(1,2),
-                        mylattice->unitg(2,0) + mylattice->unitg(2,1) + mylattice->unitg(2,2)};
+        double kq[3] = {ks[0]*mylattice->unitg(0,0) + ks[1]*mylattice->unitg(0,1) + ks[2]*mylattice->unitg(0,2),
+                        ks[0]*mylattice->unitg(1,0) + ks[1]*mylattice->unitg(1,1) + ks[2]*mylattice->unitg(1,2),
+                        ks[0]*mylattice->unitg(2,0) + ks[1]*mylattice->unitg(2,1) + ks[2]*mylattice->unitg(2,2)};
       
-        //vib_gendynamicmatrix(unita,kq,nion,rion,
-        //                     nion3,hessadjust.data(),
-        //                     dmat.data(),wp.data(),
-        //                     work.data(),lwork.data(),rwork.data());
+        vib_gendynamicmatrix(unita,kq,nion,rion,
+                             nion3,hessadjust.data(),
+                             dmat.data(),wp.data(),
+                             work.data(),lwork,rwork.data());
       
         for (auto i=0; i<nion3; ++i)
             eigs_dos[icount + i*isize] = std::sqrt(std::abs(wp[i]));
       
+        if ((oprint) && (false))
+        {
+            constexpr double autocm = 219474.6313705;
+            coutput << '\n';
+            coutput << icount << " out of "
+                    << dos_grid[0] * dos_grid[1] * dos_grid[2] << '\n';
+
+            coutput << "kvec= "
+                    << kq[0] << " " << kq[1] << " " << kq[2] << '\n';
+
+            coutput << "ksvec= "
+                    << ks[0] << " " << ks[1] << " " << ks[2] << '\n';
+
+            for (int i = 0; i < nion3; ++i)
+            {
+                double freq = std::sqrt(std::abs(wp[i]));
+                coutput << "     wp(" << std::setw(4) << (i + 1) << ")= "
+                        << std::scientific << std::setprecision(3) << std::setw(10) << freq
+                        << std::fixed      << std::setprecision(3) << std::setw(10) << freq * autocm
+                        << '\n';
+            }
+
+            coutput << std::defaultfloat;
+        }
+
         ++icount;
     }
 
@@ -2478,7 +2794,7 @@ void compute_fd_frequencies_full(Control2 &control,
            coutput << " --------------------------------------------------------------"
                       "---------------------\n";
            coutput << " -------------------------  Phonon Vibrational "
-                      "Analysis  ----------------------------\n";
+                      "Analysis  ---------------------------\n";
            coutput << " --------------------------------------------------------------"
                       "---------------------\n\n";
        }

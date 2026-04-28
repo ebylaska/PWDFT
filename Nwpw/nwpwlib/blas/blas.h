@@ -66,6 +66,10 @@
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp,ierr)                         \
   ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'V', 'L', n, reinterpret_cast<MKL_Complex16*> (hml), n, eig)
 
+#define ZEIGENVAL_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr) \
+  ierr = LAPACKE_zheev(LAPACK_COL_MAJOR, 'N', 'U', n, reinterpret_cast<MKL_Complex16*> (hml), n, eig)
+
+
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \
   auto ierr0 = LAPACKE_dlacpy(LAPACK_COL_MAJOR, (s1)[0], m, n, a, ida, b, idb)
 
@@ -217,6 +221,10 @@ extern "C" void zlacpy_(char *, int *, int *, double *, int *, double *, int *);
 
 #define ZEIGEN_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr)                               \
   zheev_((char *)"V", (char *)"L", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
+
+
+#define ZEIGENVAL_PWDFT(n, hml, eig, xtmp, nn, rtmp, ierr) \
+  zheev_("N", "U", &(n), hml, &(n), eig, xtmp, &(nn), rtmp, &ierr)
 
 
 #define ZLACPY_PWDFT(s1, m, n, a, ida, b, idb)                                 \

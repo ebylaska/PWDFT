@@ -166,7 +166,14 @@ public:
  
    char *symbol(const int i) { return &atomarray[3*katm[i]]; }
    char *atom(const int ia) { return &atomarray[3*ia]; }
-   double amu(const int i) { return mass[i]*pwdft::units::ME_TO_AMU; }
+   double amu(const int i) const { return mass[i]*pwdft::units::ME_TO_AMU; }
+   std::vector<double> amus() const
+   {
+      std::vector<double> amass(nion);
+      for (int i = 0; i < nion; ++i)
+          amass[i] = amu(i);
+      return amass;
+   }
    void writefilename(std::string &);
    void writejsonstr(std::string &);
    double rion(int i, int ii) { return rion1[3*ii+i]; }
