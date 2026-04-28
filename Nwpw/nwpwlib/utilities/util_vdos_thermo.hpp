@@ -7,8 +7,9 @@
 #include <ostream>
 #include <string>
 #include <vector>
-
 #include "util_ascii_plot.hpp"
+#include "util_thermo.hpp"
+
 
 namespace pwdft {
 
@@ -36,14 +37,15 @@ namespace pwdft {
  *   - efn is temporarily rescaled for plotting and then restored.
  *   - Frequencies are assumed to be in atomic units on input.
  */
-inline void util_vdos_thermo(int nion,
-                             int npoints,
-                             double* efn,
-                             double scalefreq,
-                             double threshfreq_cm,
-                             const std::vector<double>& temperatures,
-                             std::ostream& coutput)
+inline std::vector<ThermoResults> util_vdos_thermo(int nion,
+                                                   int npoints,
+                                                   double* efn,
+                                                   double scalefreq,
+                                                   double threshfreq_cm,
+                                                   const std::vector<double>& temperatures,
+                                                   std::ostream& coutput)
 {
+
     (void)nion;
 
     constexpr double AUKCAL = 627.5093314;
@@ -55,6 +57,9 @@ inline void util_vdos_thermo(int nion,
     auto E = [efn](int k) -> double& { return efn[3 * k + 0]; };
     auto G = [efn](int k) -> double& { return efn[3 * k + 1]; };
     auto N = [efn](int k) -> double& { return efn[3 * k + 2]; };
+
+    std::vector<ThermoResults> results;
+    results.reserve(temperatures.size());
 
     /************************************************************
      *************** ascii plot of the density of states ********
@@ -243,6 +248,39 @@ inline void util_vdos_thermo(int nion,
         Cv_vib1 = Rgas * Cv_vib1 * de;
         Cv_vib2 = Rgas * Cv_vib2 * de;
 
+        ThermoResults res{};
+
+        res.Ezpe_au      = ezero;
+        res.Ethermal_au  = ethermal;
+        res.Hthermal_au  = ethermal;
+        res.Gthermal_au  = fhelmholtz;
+
+        res.Ezpe_kcal      = ezero * AUKCAL;
+        res.Ethermal_kcal  = ethermal * AUKCAL;
+        res.Hthermal_kcal  = ethermal * AUKCAL;
+        res.Gthermal_kcal  = fhelmholtz * AUKCAL;
+
+        res.S_vib   = Svib * AUKCAL * 1000.0;
+        res.S_total = res.S_vib;
+        res.S_trans = 0.0;
+        res.S_rot   = 0.0;
+
+        res.Cv_vib   = Cv_vib * AUKCAL * 1000.0;
+        res.Cv_total = res.Cv_vib;
+        res.Cv_trans = 0.0;
+        res.Cv_rot   = 0.0;
+
+        res.A_cm = 0.0;
+        res.B_cm = 0.0;
+        res.C_cm = 0.0;
+
+        res.sigma = 0;
+        res.rotor_type = 0;
+
+        res.temperature = temp;
+        res.pressure = 0.0;
+        results.push_back(res);
+
         coutput << "\n      Temperature                      = "
                 << std::fixed << std::setprecision(2) << temp
                 << "K (RT=" << std::scientific << std::setprecision(6)
@@ -323,6 +361,8 @@ inline void util_vdos_thermo(int nion,
     }
 
     coutput << std::defaultfloat;
+ 
+    return results;
 }
 
 } // namespace pwdft

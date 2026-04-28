@@ -601,7 +601,24 @@ public:
 
    void compute_molecular_thermo(const std::vector<double>&, double, double, double, double, std::ostream&);
 
+   /*
+   void compute_solid_thermo(const int npoints, const std::vector<double>&, double, double, double, double, std::ostream&);
+        double scalefreq = 1.0;
+        double threshfreq_cm = 100.0;
+        std::vector<double> temperatures = {298.15};
+    
+        auto thermo = pwdft::util_vdos_thermo(nion,
+                                npoints,
+                                efn_dos.data(),
+                                scalefreq,
+                                threshfreq_cm,
+                                temperatures,
+                                coutput);
+   }
+   */
+
    const ThermoResults& fetch_thermo() const { return thermo; }
+
 
 
 };

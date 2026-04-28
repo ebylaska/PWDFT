@@ -1917,7 +1917,7 @@ void compute_fd_crystal_phonons(Control2 &control,
         double threshfreq_cm = 100.0;
         std::vector<double> temperatures = {298.15};
  
-        pwdft::util_vdos_thermo(nion,
+        auto thermo = pwdft::util_vdos_thermo(nion,
                                 npoints,
                                 efn_dos.data(),
                                 scalefreq,
