@@ -46,9 +46,9 @@
 
 #include "cgsd_energy.hpp"
 #include "util_vdos_generate.hpp"
-#include "util_vdos_thermo.hpp"
+//#include "util_vdos_thermo.hpp"
 //#include "util_ascii_plot.hpp"
-#include "util_thermo.hpp"
+//#include "util_thermo.hpp"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -1024,27 +1024,6 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
 
 
 
-/* 
-static void print_hessian(std::ostream& out,
-                          const char* name,
-                          const double* H,
-                          int n)
-{
-    out << " ---------------------------------\n"
-    out << "        " << name << "\n"
-    out << " ---------------------------------\n"
-
-    for(int i=0;i<n;i++)
-    {
-        for(int j=0;j<n;j++)
-        {
-            out << std::setw(12) << std::setprecision(6)
-                << H[i + j*n] << " ";
-        }
-        out << "\n";
-    }
-}
-*/
 
 /******************************************
  *                                        *
@@ -1791,7 +1770,6 @@ void compute_fd_crystal_phonons(Control2 &control,
         coutput << "    dos-grid: "  << dos_grid[0] << " " << dos_grid[1] << " " << dos_grid[2] << std::endl; 
 
  
-        std::cout << "not working yet!" << std::endl;
     }
 
 
@@ -1809,14 +1787,14 @@ void compute_fd_crystal_phonons(Control2 &control,
     std::vector<double> work(2*lwork);
     std::vector<double> w2(nion3*nion3);
 
-    if (oprint) hessian_print("hessian", nion3,hess, coutput);
+    //if (oprint) hessian_print("hessian", nion3,hess, coutput);
 
     vib_adjustfordynamic(unita,nion,rion,
                          nion3,mass,rwork.data(),
                          work.data(),w2.data(),
                          hess,hessadjust.data());
 
-    if (oprint) hessian_print("adjusted", nion3,hessadjust.data(), coutput);
+    //if (oprint) hessian_print("adjusted", nion3,hessadjust.data(), coutput);
 
     //************************************************************
     //******************* Density of States **********************
@@ -1917,13 +1895,15 @@ void compute_fd_crystal_phonons(Control2 &control,
         double threshfreq_cm = 100.0;
         std::vector<double> temperatures = {298.15};
  
-        auto thermo = pwdft::util_vdos_thermo(nion,
-                                npoints,
-                                efn_dos.data(),
-                                scalefreq,
-                                threshfreq_cm,
-                                temperatures,
-                                coutput);
+        //auto thermo = pwdft::util_vdos_thermo(nion,
+        //                        npoints,
+        //                        efn_dos.data(),
+        //                        scalefreq,
+        //                        threshfreq_cm,
+        //                        temperatures,
+        //                        coutput);
+
+        ion->compute_solid_thermo(npoints,efn_dos.data(),scalefreq,threshfreq_cm,temperatures,coutput);
     }
 
 }
