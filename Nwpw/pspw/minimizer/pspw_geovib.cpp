@@ -2986,9 +2986,9 @@ void compute_fd_frequencies_full(Control2 &control,
     for(int j=0;j < ndof;++j)
     {
            //if (ismaster && oprint) coutput << " FD displacement " << j/3+1 << " / " << N <<  "\n";
-           if (ismaster && oprint && (j%3==0)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (x)\n";
-           if (ismaster && oprint && (j%3==1)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (y)\n";
-           if (ismaster && oprint && (j%3==2)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << j/3+1 <<  " (z)\n";
+           if (ismaster && oprint && (j%3==0)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << " (x)\n";
+           if (ismaster && oprint && (j%3==1)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << " (y)\n";
+           if (ismaster && oprint && (j%3==2)) coutput << " FD displacements " << j/3+1 << " / " << N <<  " atom " << " (z)\n";
 
            //if (ismaster && oprint && (j%3==1)) coutput << " - Y FD displacements " << j/3+1 << " / " << N <<  "\n";
            //if (ismaster && oprint && (j%3==2)) coutput << " - Z FD displacements " << j/3+1 << " / " << N <<  "\n";
