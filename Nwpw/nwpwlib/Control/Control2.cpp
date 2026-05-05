@@ -161,15 +161,19 @@ Control2::Control2(const int np0, const std::string rtdbstring)
            try
            {
               psymmetry = pwdft::Symmetry::from_json(es);
+              auto type = es.value("type", "");
        
               //set aux rotation data
-              protation_type = es["point_group_rotation_type"].get<std::string>();
-              std::vector<double> tmp_axes    = es["point_group_inertia_axes"].get<std::vector<double>>();
-              std::vector<double> tmp_tensor  = es["point_group_inertia_tensor"].get<std::vector<double>>();
-              std::vector<double> tmp_moments = es["point_group_inertia_moments"].get<std::vector<double>>();
-              std::copy_n(tmp_axes.begin(), 9, protation_axes);
-              std::copy_n(tmp_tensor.begin(), 9, protation_inertia);
-              std::copy_n(tmp_moments.begin(), 3, protation_moments);
+              if (type == "point_group") 
+              {
+                 protation_type = es["point_group_rotation_type"].get<std::string>();
+                 std::vector<double> tmp_axes    = es["point_group_inertia_axes"].get<std::vector<double>>();
+                 std::vector<double> tmp_tensor  = es["point_group_inertia_tensor"].get<std::vector<double>>();
+                 std::vector<double> tmp_moments = es["point_group_inertia_moments"].get<std::vector<double>>();
+                 std::copy_n(tmp_axes.begin(), 9, protation_axes);
+                 std::copy_n(tmp_tensor.begin(), 9, protation_inertia);
+                 std::copy_n(tmp_moments.begin(), 3, protation_moments);
+              }
        
        
               // full only if explicit operators exist

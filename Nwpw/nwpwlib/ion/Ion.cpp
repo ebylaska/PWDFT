@@ -544,6 +544,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    group_name = mysymmetry.name();
    group_rank = mysymmetry.order();
 
+
    rotation_type = control.rotation_type();
    std::copy_n(control.rotation_moments(), 3, inertia_moments);
    std::copy_n(control.rotation_axes(),    9, inertia_axes);
@@ -1008,14 +1009,17 @@ std::string Ion::print_symmetry_group()
    if (!(this->has_symmetry()))
       return "";
 
-   const auto* table = this->get_character_table();
    stream << " symmetry information: (symmetry_tolerance = " << Efmt(8,2) << this->sym_tolerance << ")" <<  std::endl;
-   stream << "      group name   : " << this->group_name
-                                     << "  (group rank = "  << this->group_rank
-                                     << " rotation type : " << this->rotation_type <<")" <<  std::endl;
-
-   if (!is_crystal)
+   if (is_crystal)
+      stream << "      space group name   : " << this->group_name
+                                        << "  (group rank = "  << this->group_rank << ")" << std::endl;
+   else 
    {
+      const auto* table = this->get_character_table();
+      stream << "      point group name   : " << this->group_name
+                                        << "  (group rank = "  << this->group_rank
+                                        << " rotation type : " << this->rotation_type <<")" <<  std::endl;
+
       stream << "      principal-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[1] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[2] << " > - "

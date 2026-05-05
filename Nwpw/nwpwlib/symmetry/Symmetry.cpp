@@ -218,7 +218,6 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
     // Source tells us intent
     const std::string source = j.value("source", "identity");
     const std::string type   = j.value("type", "");
-    std::cout << "source=" << source << std::endl;
 
     if (source == "identity")
     {
@@ -260,7 +259,13 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
     }
    }
 
-   std::cout << "OUR HERD" << std::endl;
+   //if (!j.contains("ops") || j["ops"].is_null() || !j["ops"].is_array())  {
+   //   auto name = j["name"].get<std::string>();
+   //   std::cout << " 2 NAME=" << name << std::endl;
+   //  
+   //   return Symmetry(2);
+   //}
+
 
     // Otherwise build directly from operators
     s.type_ = Type::SpaceGroup;

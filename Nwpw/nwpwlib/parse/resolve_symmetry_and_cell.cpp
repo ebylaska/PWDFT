@@ -1138,26 +1138,26 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    write_unita_3x3(es["unita"], unita_in);
 
    // write symmetry operators
-   //es["ops"] = json::array();
-   //for (const auto& op : sym.operators())
-   //{
-   //    json jop;
-   //    jop["R"] = json::array();
-   //    for (int i = 0; i < 3; ++i)
-   //    {
-   //       json row = json::array();
-   //       for (int j = 0; j < 3; ++j)
-   //          row.push_back(op.R[i][j]);
-   //       jop["R"].push_back(row);
-   //    }
-//
-   //    jop["t"] = { op.t[0], op.t[1], op.t[2] };
-//
-   //    es["ops"].push_back(jop);
-   //}
+   es["ops"] = json::array();
+   for (const auto& op : sym.operators())
+   {
+       json jop;
+       jop["R"] = json::array();
+       for (int i = 0; i < 3; ++i)
+       {
+          json row = json::array();
+          for (int j = 0; j < 3; ++j)
+             row.push_back(op.R[i][j]);
+          jop["R"].push_back(row);
+       }
+
+       jop["t"] = { op.t[0], op.t[1], op.t[2] };
+
+       es["ops"].push_back(jop);
+   }
    // Do NOT store full ops list in RTDB.
    // We can reconstruct from (name/group_number/setting) deterministically.
-   es["store_ops"] = false;
+   es["store_ops"] = true;
    es["sym_fingerprint"] = symmetry_fingerprint(sym, unita_in, symmetry_primitive_requested, "fractional");
 
 
