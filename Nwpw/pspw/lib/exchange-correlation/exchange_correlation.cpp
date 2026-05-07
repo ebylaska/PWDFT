@@ -239,4 +239,67 @@ void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
   }
 }
 
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::gga_gen_tau         *
+ *                                         *
+ *******************************************/
+void XC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *psi)
+{
+    // 1. Check if Meta-GGA is active (mapped from use_mgga)
+    if (!this->use_mgga) {
+        return;
+    }
+
+    // 2. Setup orbital ranges
+    // Fortran: n1(1)=1, n2(1)=neq(1)... (Adjusted for 0-based C++)
+    int n1[2], n2[2];
+    n1[0] = 0;
+    n2[0] = neq[0];
+    n1[1] = neq[0];
+    n2[1] = neq[0] + neq[1];
+
+    // 3. Scaling factor
+    // lattice_omega() must be a member of XC_Operator or Pneb
+    double scal2 = 0.5 / this->mypneb->lattice->omega();
+
+    // 4. Prepare temporary buffer for dpsi
+    // We use std::vector for the temporary FFT buffer to ensure RAII (auto-cleanup)
+    // The size is 2 * nfft3d to account for the complex nature (real/imag)
+    //size_t nfft3d = this->mypneb->nfft3d;
+    size_t npack2 = 2*this->mypneb->PGrid::npack(1);
+    size_t n2ft3d = this->mypneb->n2ft3d;
+    std::vector<double> dpsi_tmp(n2ft3d, 0.0);
+    double *dpsi = dpsi_tmp.data();
+
+    this->mypneb->r_nzero(ispin,tau);
+
+    // 5. Main Computation Loop
+    for (int ms = 0; ms < ispin; ++ms) 
+    {
+        // Offset for the tau array for the current spin
+        size_t tau_offset = ms*n2ft3d;
+
+        for (int n=n1[ms]; n<n2[ms]; ++n) 
+        {
+            for (int xyz=0; xyz<3; ++xyz) 
+            {
+                // STEP A: Compute Gradient in Reciprocal Space
+                double *gxyz = this->mypneb->Gpackxyz(1,xyz);
+                this->mypneb->tcr_pack_iMul_unpack_fft(1, gxyz, psi + n*npack2, dpsi);
+
+                // STEP B: sqr and add
+                this->mypneb->rr_addsqr(dpsi,this->tau + tau_offset);
+            }
+        }
+
+        this->mypneb->r_SMul(scal2,tau+tau_offset);
+        this->mypneb->r_zero_ends(tau+tau_offset);
+    }
+
+    // 7. Final Step: Sum tau across all spins into a single array
+    this->mypneb->d3db::parall->Vector_SumAll(2, ispin*n2ft3d,tau);
+}
+
 } // namespace pwdft

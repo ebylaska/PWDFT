@@ -75,6 +75,8 @@ public:
 
   void v_exc_all(int, double *, double *, double *);
 
+  void gga_gen_tau(const int, const int[2], const double *); 
+
   friend std::ostream &operator<<(std::ostream &os, const XC_Operator &xc) 
   {
      os << "   exchange-correlation = ";

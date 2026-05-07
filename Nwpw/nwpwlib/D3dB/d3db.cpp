@@ -1505,21 +1505,37 @@ void d3db::rr_sqr(const double *ptr2, double *ptr3) {
  *        d3db::rr_addsqr       *
  *                              *
  ********************************/
-void d3db::rr_addsqr(const double *ptr2, double *ptr3) {
-  int i;
-  int m = n2ft3d_map % 5;
-  if (m > 0)
-    for (i = 0; i < m; ++i)
+/**
+ * @brief Accumulates the squares of elements from one array into another.
+ * 
+ * This function implements the operation: ptr3[i] = ptr3[i] + (ptr2[i]^2).
+ * It is highly optimized using manual loop unrolling (factor of 5) to 
+ * maximize throughput and leverage Instruction-Level Parallelism (ILP).
+ *
+ * @param ptr2 Pointer to the source array (the values to be squared).
+ * @param ptr3 Pointer to the destination/accumulator array.
+ * 
+ * @note The function handles non-multiple-of-5 array sizes by processing 
+ *       the remainder (n % 5) before entering the unrolled loop.
+ * @pre The arrays must be large enough to accommodate n2ft3d_map elements.
+ */
+void d3db::rr_addsqr(const double *ptr2, double *ptr3) 
+{
+   int i;
+   int m = n2ft3d_map % 5;
+   if (m > 0)
+      for (i = 0; i < m; ++i)
+         ptr3[i] += ptr2[i] * ptr2[i];
+   if (n2ft3d_map < 5)
+      return;
+   for (i = m; i < n2ft3d_map; i += 5) 
+   {
       ptr3[i] += ptr2[i] * ptr2[i];
-  if (n2ft3d_map < 5)
-    return;
-  for (i = m; i < n2ft3d_map; i += 5) {
-    ptr3[i] += ptr2[i] * ptr2[i];
-    ptr3[i + 1] += ptr2[i + 1] * ptr2[i + 1];
-    ptr3[i + 2] += ptr2[i + 2] * ptr2[i + 2];
-    ptr3[i + 3] += ptr2[i + 3] * ptr2[i + 3];
-    ptr3[i + 4] += ptr2[i + 4] * ptr2[i + 4];
-  }
+      ptr3[i + 1] += ptr2[i + 1] * ptr2[i + 1];
+      ptr3[i + 2] += ptr2[i + 2] * ptr2[i + 2];
+      ptr3[i + 3] += ptr2[i + 3] * ptr2[i + 3];
+      ptr3[i + 4] += ptr2[i + 4] * ptr2[i + 4];
+   }
 }
 
 /********************************

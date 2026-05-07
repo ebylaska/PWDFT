@@ -3882,6 +3882,24 @@ void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b,
  *     PGrid:tcr_pack_iMul_unpack_fft      *
  *                                         *
  *******************************************/
+/**
+ * @brief Computes the gradient of a scalar field in real space via Reciprocal Space multiplication.
+ * 
+ * This optimized kernel implements a high-performance pipeline to transform wavefunctions 
+ * (or other scalar fields) from G-space to R-space while calculating the gradient. 
+ * It minimizes memory bandwidth bottlenecks by chaining operations.
+ *
+ * The mathematical pipeline is:
+ * 1. Multiply: $\psi(G) \times i\mathbf{G}$ (using coefficients in 'a' and vectors in 'b').
+ * 2. Unpack: Reorganize interleaved complex data for FFT compatibility.
+ * 3. Transform: Perform a 3D FFT (Complex-to-Real) to return to real space.
+ * 4. Mask: Zero out the grid boundaries to prevent periodic artifacts.
+ *
+ * @param nb  Index of the grid/box (used to retrieve dimensions from nida/nidb).
+ * @param a   Pointer to input coefficients in reciprocal space (e.g., $\psi$ coefficients).
+ * @param b   Pointer to the vector components in reciprocal space (e.g., $G_x, G_y, G_z$).
+ * @param c   Pointer to the output buffer containing the gradient in real space.
+ */
 void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c)
 {
    int i, ii;
