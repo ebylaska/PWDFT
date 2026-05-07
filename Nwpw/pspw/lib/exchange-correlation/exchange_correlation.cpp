@@ -302,4 +302,62 @@ void XC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *p
     this->mypneb->d3db::parall->Vector_SumAll(2, ispin*n2ft3d,tau);
 }
 
+
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::meta_gga_Hpsik      *
+ *                                         *
+ *******************************************/
+void XC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const double *psi, double *hpsi)
+{
+    // 1. Check if Meta-GGA is active (mapped from use_mgga) 
+    if (!this->use_mgga) {
+        return;
+    }
+
+    // 2. Setup orbital ranges             
+    // Fortran: n1(1)=1, n2(1)=neq(1)... (Adjusted for 0-based C++)
+    int n1[2], n2[2];                      
+    n1[0] = 0;
+    n2[0] = neq[0];
+    n1[1] = neq[0];
+    n2[1] = neq[0] + neq[1];
+
+    double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+    double scal2 = 1.0 / this->mypneb->lattice->omega();
+    double scal = 0.5*scal1;
+
+    size_t npack2 = 2*this->mypneb->PGrid::npack(1);
+    size_t n2ft3d = this->mypneb->n2ft3d;
+    std::vector<double> dpsi_tmp(n2ft3d, 0.0);
+    double *dpsi = dpsi_tmp.data();
+
+    for (int ms=0; ms<ispin; ++ms) 
+    {
+        size_t tau_offset = ms*n2ft3d;
+        for (int n=n1[ms]; n<n2[ms]; ++n) 
+        {
+            for (int xyz=0; xyz<3; ++xyz) 
+            {
+                double *gxyz = this->mypneb->Gpackxyz(1, xyz);
+                this->mypneb->tcr_pack_iMul_unpack_fft(1, gxyz, psi + n*npack2, dpsi);
+
+                this->mypneb->rr_Mul(dfdtau+tau_offset, dpsi);
+
+                this->mypneb->r_zero_ends(dpsi);
+                this->mypneb->rc_pfft3f(1, dpsi);
+                this->mypneb->c_pack(1,dpsi);
+                this->mypneb->c_pack_SMul(1, scal, dpsi);
+
+                this->mypneb->tc_pack_iMul(1, gxyz, dpsi);
+                this->mypneb->cc_pack_Sum2(1, dpsi, hpsi+n*npack2);
+            }
+
+        }
+    }
+
+}
+
+
 } // namespace pwdft

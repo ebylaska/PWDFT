@@ -358,20 +358,20 @@ Mapping3::Mapping3(const int mapin, const int npin, const int taskidin,
  *
  * This destructor releases the dynamically allocated memory for various member variables.
  */
-Mapping3::~Mapping3() {
-  for (int i = 0; i < 6; ++i) {
-    if (qmap[i])
-      delete[] pmap[i];
-    if (pmap[i])
-      delete[] qmap[i];
-  }
-  if (kmap)
-    delete[] kmap;
-
-  if ((maptype == 2) || (maptype == 3)) {
-    // int *h_iq_to_i1[6],*h_iq_to_i2[6];
-    // int *h_i1_start[6],*h_i2_start[6];
-  }
+Mapping3::~Mapping3() 
+{
+    for (int i = 0; i < 6; ++i) 
+    {
+        if (qmap[i]) { delete [] qmap[i]; qmap[i] = nullptr;}
+        if (pmap[i]) { delete [] pmap[i]; pmap[i] = nullptr;}
+    }
+    if (kmap) { delete[] kmap; kmap = nullptr; }
+  
+    if ((maptype == 2) || (maptype == 3))
+    {
+      // int *h_iq_to_i1[6],*h_iq_to_i2[6];
+      // int *h_i1_start[6],*h_i2_start[6];
+    }
 }
 
 
