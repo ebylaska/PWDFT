@@ -69,6 +69,18 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
 
+
+   /* add DFT+U correction  */
+   /* Metadyanmics potential */
+   /* TAMD potential */
+
+   /* apply extra Meta GGA terms  */
+
+
+   /* apply SIC corrections  */
+   /* apply HF exchange  */
+
+
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0, scal2, vl, vall);
    mygrid->cc_pack_Sum2(0,vc,vall);

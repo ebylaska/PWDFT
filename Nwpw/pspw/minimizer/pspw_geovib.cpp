@@ -2764,7 +2764,7 @@ void compute_fd_frequencies_full(Control2 &control,
 
     if (ismaster && oprint && control.print_hessian())
     {
-       std::string filename = std::string(control.permanent_dir()) + "/symmetry_hessian.dat";
+       std::string filename = std::string(control.permanent_dir()) + "/full_hessian.dat";
 
        std::ofstream hess_file(filename);
 
@@ -2912,6 +2912,7 @@ void compute_fd_frequencies_solid(Control2 &control,
     double E0 = mymolecule.E[0];
 
     Ion *ion = mymolecule.myion;
+    Lattice *lattice = mymolecule.mygrid->lattice;
     int N = ion->nion;
     int ndof = 3*N;
     bool is_crystal =  ion->is_crystal;
@@ -2926,10 +2927,67 @@ void compute_fd_frequencies_solid(Control2 &control,
 
              
            
-   const int nops = ion->symmetry_nops();
-   //double tol = 1e-4; 
-   double tol = 1e-2;   // debugging
-           
+    const int nops = ion->symmetry_nops();
+    //double tol = 1e-4; 
+    double tol = 1e-2;   // debugging
+
+
+
+    std::vector<std::vector<int>> atom_map(nops, std::vector<int>(ion->nion, -1));
+
+    for (int op = 0; op < nops; ++op)
+    {
+        const auto& sym = ion->symmetry_op(op);
+        const auto& R = sym.R;
+        const auto& t = sym.t;   // translation vector [5]
+
+        // If t is fractional (your run reports translation_type:"fractional") [3],
+        // convert it to Cartesian using the lattice matrix.
+        double tcart[3] = {
+            lattice->unita(0,0)*t[0] + lattice->unita(0,1)*t[1] + lattice->unita(0,2)*t[2],
+            lattice->unita(1,0)*t[0] + lattice->unita(1,1)*t[1] + lattice->unita(1,2)*t[2],
+            lattice->unita(2,0)*t[0] + lattice->unita(2,1)*t[1] + lattice->unita(2,2)*t[2]
+        };
+
+ 
+        for (int a = 0; a < ion->nion; ++a)
+        {
+            const double xr = ion->rion1[3*a+0];
+            const double yr = ion->rion1[3*a+1];
+            const double zr = ion->rion1[3*a+2];
+ 
+            // Apply symmetry op. NOTE: t is defined as part of the affine op r' = R r + t [5].
+            // If your t is fractional (as in your run output), you should convert it to Cartesian
+            // before adding; otherwise this will be off. (See note below.)
+            double x = R[0][0]*xr + R[0][1]*yr + R[0][2]*zr + tcart[0];
+            double y = R[1][0]*xr + R[1][1]*yr + R[1][2]*zr + tcart[1];
+            double z = R[2][0]*xr + R[2][1]*yr + R[2][2]*zr + tcart[2];
+ 
+            int best_b = -1;
+            double best_d2 = 1e300;
+ 
+            for (int b = 0; b < ion->nion; ++b)
+            {
+                double dx = x - ion->rion1[3*b+0];
+                double dy = y - ion->rion1[3*b+1];
+                double dz = z - ion->rion1[3*b+2];
+ 
+                // Minimum-image displacement in-place [8]
+                lattice->min_diff_xyz(&dx, &dy, &dz);
+ 
+                const double d2 = dx*dx + dy*dy + dz*dz;
+                if (d2 < best_d2) { best_d2 = d2; best_b = b; }
+            }
+ 
+            if (best_d2 < tol*tol) atom_map[op][a] = best_b;
+            else {
+                throw std::runtime_error("atom_map failed under symmetry op " + std::to_string(op));
+            }
+        }
+    }
+
+
+/*
    std::vector<std::vector<int>> atom_map(nops, std::vector<int>(ion->nion,-1));
        
     for(int op=0; op<nops; op++)
@@ -2961,6 +3019,7 @@ void compute_fd_frequencies_solid(Control2 &control,
             }
         }
     }
+*/
 
 
     if (ismaster && oprint)
@@ -3128,7 +3187,7 @@ void compute_fd_frequencies_solid(Control2 &control,
 
     if (ismaster && oprint && control.print_hessian())
     {
-       std::string filename = std::string(control.permanent_dir()) + "/symmetry_hessian.dat";
+       std::string filename = std::string(control.permanent_dir()) + "/space_hessian.dat";
  
        std::ofstream hess_file(filename);
  
@@ -3161,11 +3220,9 @@ void compute_fd_frequencies_solid(Control2 &control,
         }
     }
 
-
-
-     int m_trans = 3;
-     compute_fd_crystal_phonons(control,mymolecule,E0,m_trans,ndof,Hfull.data(),
-                                ismaster,oprint,coutput);
+    int m_trans = 3;
+    compute_fd_crystal_phonons(control,mymolecule,E0,m_trans,ndof,Hfull.data(),
+                               ismaster,oprint,coutput);
 }
 
 

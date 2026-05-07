@@ -65,6 +65,16 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    //mypsp->v_nonlocal_fion(psi, Hpsi, move, fion);
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
 
+   /* add DFT+U correction  */
+   /* Metadyanmics potential */
+   /* TAMD potential */
+
+   /* apply extra Meta GGA terms  */
+
+
+   /* apply SIC corrections  */
+   /* apply HF exchange  */
+
    /* apply r-space operators  - Expensive*/
    mygrid->cc_pack_SMul(0,scal2,vl,vall);
    mygrid->cc_pack_Sum2(0,vc,vall);
@@ -194,6 +204,13 @@ void cpsi_H_orb(const int nbq1,
  
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_orb(nbq1,orb, Horb);
+   
+
+   /* add DFT+U correction  */
+
+   /* apply extra Meta GGA terms  */
+
+
 
    /* apply r-space operators  - Expensive*/
    // mygrid->ccc_Mul(vall_r,orb_r,vpsi);
