@@ -360,4 +360,44 @@ void XC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const double
 }
 
 
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::meta_gga_pxc        *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Computes the energy contribution from the meta-GGA functional.
+ * 
+ * This function calculates the integral of the product of the functional 
+ * derivative (df/dtau) and the kinetic energy density (tau) over the 
+ * 3D volume, weighted by the volume of a single voxel (dV).
+ *
+ * @param ispin The number of spin components (1 for restricted, 2 for polarized).
+ * @arg ne      Array containing the number of electrons for each spin.
+ * @arg psi     Pointer to the wavefunction data.
+ * @return The calculated energy contribution.
+ */
+double  XC_Operator::meta_gga_pxc(const int ispin, const int ne[2], const double *psi) 
+{
+    size_t n2ft3d = this->mypneb->n2ft3d;
+
+    //Calculate the volume element (dV)
+    double total_voxels = static_cast<double>(this->mypneb->nx * this->mypneb->ny * this->mypneb->nz);
+    double dV = this->mypneb->lattice->omega() / total_voxels;
+
+
+    //Sum the energy contribution across all active spins
+    double pmeta = 0.0;
+    for (int ms=0; ms<ispin; ++ms) 
+    {
+        size_t tau_offset = ms*n2ft3d;
+        pmeta += dV*this->mypneb->rr_dot(dfdtau + tau_offset, tau + tau_offset);
+    }
+    if (ispin==1) pmeta = pmeta + pmeta;
+
+    return pmeta;
+}
+
+
 } // namespace pwdft
