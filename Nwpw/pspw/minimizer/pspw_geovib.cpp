@@ -3123,7 +3123,60 @@ void compute_fd_frequencies_solid(Control2 &control,
         }
     }
 
+
+// expansion loop
+std::fill(Hfull.begin(), Hfull.end(), 0.0);
+
+for (size_t g = 0; g < eq.size(); ++g)
+{
+    const int rep = eq[g][0];
+
+    for (int aj : eq[g])
+    {
+        int op_found = -1;
+        for (int op = 0; op < nops; ++op)
+        {
+            if (atom_map[op][rep] == aj) { op_found = op; break; }
+        }
+        if (op_found < 0)
+            throw std::runtime_error("No symmetry op maps rep -> aj");
+
+        const auto& R = ion->symmetry_op(op_found).R;
+
+        for (int beta = 0; beta < 3; ++beta)
+        {
+            const int j = 3*aj + beta;
+
+            for (int a0 = 0; a0 < N; ++a0)
+            {
+                const int b = atom_map[op_found][a0]; // row atom after permutation
+                if (b < 0) continue;
+
+                for (int alpha = 0; alpha < 3; ++alpha)
+                {
+                    const int i = 3*b + alpha;
+
+                    double val = 0.0;
+                    for (int mu = 0; mu < 3; ++mu)
+                    {
+                        const int i0 = 3*a0 + mu; // full-space row dof index
+
+                        for (int nu = 0; nu < 3; ++nu)
+                        {
+                            const int jclass = 3*int(g) + nu; // reduced-space column
+                            val += R[alpha][mu] * Hred[i0 + jclass*ndof] * R[beta][nu];
+                        }
+                    }
+
+                    Hfull[i + j*ndof] = val;
+                }
+            }
+        }
+    }
+}
+
     // expansion loop
+/*
     std::fill(Hfull.begin(), Hfull.end(), 0.0);
 
     for (size_t g = 0; g < eq.size(); ++g)
@@ -3179,6 +3232,7 @@ void compute_fd_frequencies_solid(Control2 &control,
             }
         }
     }
+*/
 
     //if (ismaster && oprint && control.print_hessian())
     //{
