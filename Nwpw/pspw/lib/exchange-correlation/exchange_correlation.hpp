@@ -34,13 +34,11 @@ public:
   /* destructor */
   ~XC_Operator() 
   {
-     // std::cout << "finishec XC_Operator" << std::endl;
      if (use_lda)
      {
         delete[] xtmp;
      }
 
-     std::cout << "IM HERA use_gga=" << use_gga << std::endl;
      if (use_gga) 
      {
         delete[] rho;
@@ -54,7 +52,6 @@ public:
         delete[] fdn;
      }
 
-     std::cout << "IM HERA use_mgga=" << use_mgga << std::endl;
      if (use_mgga) 
      {
         delete[] rho;

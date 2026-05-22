@@ -87,7 +87,7 @@ public:
 
    bool is_crystal = false;
 
-   //Molecular point group symmetry
+   //Molecular point group and Space group symmetry
    double sym_tolerance = 0.001;
    double inertia_tensor[9], inertia_axes[9], inertia_moments[3];
    std::string rotation_type;
@@ -96,7 +96,8 @@ public:
 
    std::unique_ptr<PointGroupCharacterTable> character_table;
 
-   //Molecular and space  group symmetry
+   //Space group symmetry unita
+   double *sym_unita = nullptr;
 
  
    /* Constructors */
@@ -585,6 +586,8 @@ public:
    const std::vector<std::vector<int>>& get_symmetry_atom_map() const { return symmetry_atom_map; }
 
    void project_cartesian_vector(double *v) const;
+   void symmetrize_positions(double *rion) const;
+   void symmetrize_ion_array(double* r_array);
    void symmetrize_rion1();
    void symmetrize_rion2();
 

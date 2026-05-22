@@ -35,6 +35,15 @@ extern "C" void nwpwxc_vdw3_dftd3_(char *, int *, int *, double *, double *, dou
 
 namespace pwdft {
 
+/**
+ * @brief Performs matrix-vector multiplication for a 3x3 matrix and a 3-element vector.
+ * 
+ * @note This function assumes Column-Major storage for the matrix (index 0,1,2 is Col 1).
+ * 
+ * @param R [in]  Pointer to the 3x3 matrix (Column-Major).
+ * @param v [in]  Pointer to the 3-element input vector.
+ * @param res [out] Pointer to the 3-element output vector where the result is stored.
+ */
 static void apply3(const double* R, const double in[3], double out[3])
 {
     out[0] = R[0]*in[0] + R[3]*in[1] + R[6]*in[2];
@@ -42,6 +51,13 @@ static void apply3(const double* R, const double in[3], double out[3])
     out[2] = R[2]*in[0] + R[5]*in[1] + R[8]*in[2];
 }
 
+
+/**
+ * @brief Computes the transpose of a 3x3 matrix.
+ * 
+ * @param A [in]  Pointer to the 3x3 input matrix.
+ * @param res [out] Pointer to the 3x3 matrix where the transposed result is stored.
+ */
 static void transpose3(const double* A, double* AT)
 {
     for(int i=0; i<3; ++i)
@@ -49,6 +65,16 @@ static void transpose3(const double* A, double* AT)
         AT[i + 3*j] = A[j + 3*i];
 }
 
+
+/**
+ * @brief Performs matrix-matrix multiplication for two 3x3 matrices.
+ * 
+ * @param A [in]  Pointer to the left 3x3 matrix.
+ * @param B [in]  Pointer to the right 3x3 matrix.
+ * @param res [out] Pointer to the 3x3 matrix where the product (A * B) is stored.
+ * 
+ * @note Result is calculated using standard Matrix Multiplication rules.
+ */
 static void matmul3(const double* A, const double* B, double* C)
 {
     for(int j=0; j<3; ++j)
@@ -66,6 +92,16 @@ static void matmul3(const double* A, const double* B, double* C)
  *        strip (inline)       *
  *                             *
  *******************************/
+/**
+ * @brief Normalizes a raw string into a standard chemical element symbol.
+ * 
+ * This function sanitizes input by removing all non-alphabetic characters 
+ * and enforcing standard IUPAC casing (e.g., 'he', 'HE', or ' He ' -> 'He').
+ * It truncates strings longer than 2 characters to 2 characters.
+ * 
+ * @param raw The input string (e.g., from a file or user input).
+ * @return A sanitized 1-to-2 character string representing the element.
+ */
 static std::string normalize_symbol(const std::string& raw)
 {
     // trim whitespace and non-alpha chars
@@ -495,7 +531,6 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    is_crystal = (control.version == 3) && (control.is_crystal() || !is_molecule);
 
 
-
    //Check for Point group here????
    //double *rion_sym = fion1; //temporary
    sym_tolerance = (geomjson["symmetry_tolerance"].is_number_float())
@@ -543,7 +578,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    mysymmetry = control.symmetry();
    group_name = mysymmetry.name();
    group_rank = mysymmetry.order();
-
+   sym_unita  = control.unita_ptr();
 
    rotation_type = control.rotation_type();
    std::copy_n(control.rotation_moments(), 3, inertia_moments);
@@ -684,6 +719,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    mybondings = new (std::nothrow) ion_bondings(rion1,control); has_bondings_constraints = mybondings->has_bondings();
    has_constraints = has_bond_constraints || has_bondings_constraints;
 
+
    // dispersion stuff
    disp_on = control.has_disp();
    if (disp_on)
@@ -693,6 +729,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
          disp_options += " -pbc";
       ua_disp = control.unita_ptr();
    }
+
 
    // check for grimme2 and large elements 
    is_grimme2 = control.is_grimme2();
@@ -768,11 +805,29 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    */
 }
 
+
 /*******************************
  *                             *
  *      Ion::set_rion_incell   *
  *                             *
  *******************************/
+/**
+ * @brief Synchronizes the fractional coordinates (unit cell space) with the Cartesian coordinates.
+ * 
+ * This function takes a set of Cartesian coordinates (from rion0, rion1, or rion2) 
+ * and transforms them into the fractional unit-cell space using the provided 
+ * lattice vectors. This is essential for tasks like applying periodic boundary 
+ * conditions or checking symmetry within the unit cell.
+ * 
+ * @param n The source array identifier:
+ *          - 0: Uses rion0 (Initial/Reference coordinates)
+ *          - 1: Uses rion1 (Primary simulation coordinates)
+ *          - 2: Uses rion2 (Secondary/Target simulation coordinates)
+ * @param unita Pointer to the 3x3 lattice matrix (unit cell vectors).
+ * 
+ * @note The resulting fractional coordinates are stored in `rion_incell0`.
+ * @pre The `unita` pointer must point to a valid 3x3 matrix.
+ */
 void Ion::set_rion_incell(const int n, double *unita)
 {
    if (n==0)      std::memcpy(rion_incell0,rion0,3*nion*sizeof(double));
@@ -809,7 +864,31 @@ void Ion::writefilename(std::string &filename)
  *      Ion::writejsonstr      *
  *                             *
  *******************************/
-
+/**
+ * @brief Updates the JSON runtime database (RTDB) with the current simulation state.
+ * 
+ * This function parses an existing JSON string, injects the current 
+ * structural and dynamical state of the system (coordinates, velocities, 
+ * and kinetic energy metrics), and serializes the updated data back 
+ * into a JSON string.
+ * 
+ * @param[in,out] rtdbstring A reference to the JSON string containing the 
+ *                           simulation database. The string is modified in-place.
+ * 
+ * @details 
+ * The function performs the following updates:
+ *  1. **Geometry Update**: Overwrites the 'coords' array for the specified 
+ *     geometry name with the current `rion1` positions.
+ *  2. **Dynamics Update**: If kinetic energy data is available (`ke_count > 0`), 
+ *     it injects the `rion0` velocity array and updates the `nwpw` 
+ *     (Number of Weighting Points) block with:
+ *     - `ke_count`: Number of snapshots processed.
+ *     - `ke_total`: Cumulative kinetic energy.
+ *     - `kg_total`: Cumulative kinetic energy (likely a typo/redundancy in code).
+ * 
+ * @note This function assumes the input string is a valid, parseable JSON object.
+ * @complexity O(N), where N is the number of atoms.
+ */
 void Ion::writejsonstr(std::string &rtdbstring) {
   auto rtdbjson = json::parse(rtdbstring);
 
@@ -844,6 +923,20 @@ void Ion::writejsonstr(std::string &rtdbstring) {
  * Ion::remove_absolute_com_translation *
  *                                      *
  ****************************************/
+/** 
+ * @brief Translates both rion1 and rion2 systems so that their center-of-mass is at the origin. 
+ * 
+ * This function calculates the mass-weighted center-of-mass (COM) of the rion1 system 
+ * and applies the negative of this displacement to both the rion1 and rion2 
+ * coordinate arrays. This ensures that both coordinate sets are zero-centered 
+ * relative to the system's mass distribution. 
+ * 
+ * @note This is a "global" shift. It does not just align rion2 to rion1 (like 
+ * remove_com_translation does), but rather resets both systems to a 
+ * common, zero-centered coordinate frame. 
+ *  
+ * @complexity O(N), where N is the number of atoms (nion). 
+ */
 void Ion::remove_absolute_com_translation() {
    double am0 = 0.0;
    double gx = 0.0, gy = 0.0, gz = 0.0;
@@ -878,35 +971,62 @@ void Ion::remove_absolute_com_translation() {
  * Ion::remove_com_translation *
  *                             *
  *******************************/
-void Ion::remove_com_translation() {
-  double am0 = 0.0;
-  double hx = 0.0;
-  double gx = 0.0;
-  double hy = 0.0;
-  double gy = 0.0;
-  double hz = 0.0;
-  double gz = 0.0;
-  for (auto ii = 0; ii < nion; ++ii) {
-    am0 += mass[ii];
-    gx += mass[ii] * rion1[3 * ii];
-    gy += mass[ii] * rion1[3 * ii + 1];
-    gz += mass[ii] * rion1[3 * ii + 2];
-    hx += mass[ii] * rion2[3 * ii];
-    hy += mass[ii] * rion2[3 * ii + 1];
-    hz += mass[ii] * rion2[3 * ii + 2];
-  }
-  hx /= am0;
-  hy /= am0;
-  hz /= am0;
-  gx /= am0;
-  gy /= am0;
-  gz /= am0;
-
-  for (auto ii = 0; ii < nion; ++ii) {
-    rion2[3 * ii] += gx - hx;
-    rion2[3 * ii + 1] += gy - hy;
-    rion2[3 * ii + 2] += gz - hz;
-  }
+/**
+ * @brief Aligns the center-of-mass (COM) of the rion2 system to match the rion1 system.
+ * 
+ * This function calculates the mass-weighted center-of-mass for two different 
+ * coordinate sets (rion1 and rion2) and then applies a translation 
+ * to the rion2 system so that its COM is identical to that of the rion1 system.
+ * 
+ * This is critical when performing symmetry transformations that must 
+ * preserve the global origin or when synchronizing two different 
+ * coordinate frames (e.g., laboratory frame vs. symmetry-aligned frame).
+ * 
+ * @details
+ * 1. Computes total mass (am0) of the system.
+ * 
+ * 2. Computes the COM of rion1 (gx, gy, gz) using mass-weighted coordinates.
+ * 
+ * 3. Computes the COM of rion2 (hx, hy, hz) using mass-weighted coordinates.
+ * 
+ * 4. Calculates the displacement vector: displacement = COM_rion1 - COM_rion2.
+ * 
+ * 5. Shifts all atoms in rion2 by this displacement.
+ * 
+ * @complexity O(N), where N is the number of atoms (nion).
+ */
+void Ion::remove_com_translation() 
+{
+    double am0 = 0.0;
+    double hx = 0.0;
+    double gx = 0.0;
+    double hy = 0.0;
+    double gy = 0.0;
+    double hz = 0.0;
+    double gz = 0.0;
+    for (auto ii = 0; ii < nion; ++ii) 
+    {
+        am0 += mass[ii];
+        gx += mass[ii] * rion1[3 * ii];
+        gy += mass[ii] * rion1[3 * ii + 1];
+        gz += mass[ii] * rion1[3 * ii + 2];
+        hx += mass[ii] * rion2[3 * ii];
+        hy += mass[ii] * rion2[3 * ii + 1];
+        hz += mass[ii] * rion2[3 * ii + 2];
+    }
+    hx /= am0;
+    hy /= am0;
+    hz /= am0;
+    gx /= am0;
+    gy /= am0;
+    gz /= am0;
+ 
+    for (auto ii = 0; ii < nion; ++ii) 
+    {
+       rion2[3 * ii] += gx - hx;
+       rion2[3 * ii + 1] += gy - hy;
+       rion2[3 * ii + 2] += gz - hz;
+    }
 }
 
 /*******************************
@@ -914,61 +1034,87 @@ void Ion::remove_com_translation() {
  *    Ion::remove_rotation     *
  *                             *
  *******************************/
-void Ion::remove_rotation() {
-  double h = 1.0 / (2.0 * time_step);
-
-  // center of mass
-  double tmass = 0.0;
-  double cm[3] = {0.0, 0.0, 0.0};
-  for (auto ii = 0; ii < nion; ++ii) {
-    tmass += mass[ii];
-    cm[0] += mass[ii] * rion1[3 * ii];
-    cm[1] += mass[ii] * rion1[3 * ii + 1];
-    cm[2] += mass[ii] * rion1[3 * ii + 2];
-  }
-  cm[0] /= tmass;
-  cm[1] /= tmass;
-  cm[2] /= tmass;
-
-  // total angular momentum and inertia
-  double L[3] = {0.0, 0.0, 0.0};
-  double Im[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  for (auto ii = 0; ii < nion; ++ii) {
-    double temp[3] = {rion1[3 * ii] - cm[0], rion1[3 * ii + 1] - cm[1],
-                      rion1[3 * ii + 2] - cm[2]};
-    double v[3] = {h * (rion2[3 * ii] - rion0[3 * ii]),
-                   h * (rion2[3 * ii + 1] - rion0[3 * ii + 1]),
-                   h * (rion2[3 * ii + 2] - rion0[3 * ii + 2])};
-    L[0] += mass[ii] * (temp[1] * v[2] - temp[2] * v[1]);
-    L[1] += mass[ii] * (temp[2] * v[0] - temp[0] * v[2]);
-    L[2] += mass[ii] * (temp[0] * v[1] - temp[1] * v[0]);
-    for (auto j = 0; j < 3; ++j)
-      for (auto i = 0; i < 3; ++i)
-        Im[i + 3 * j] -= mass[ii] * temp[i] * temp[j];
-  }
-
-  tmass = Im[0] + Im[4] + Im[8];
-  Im[0] -= tmass;
-  Im[4] -= tmass;
-  Im[8] -= tmass;
-  double L2 = L[0] * L[0] + L[1] * L[1] + L[2] * L[2];
-
-  if (L2 > 1.0e-12) {
-    double omega[9];
-    solve_3by3(Im, L, omega);
-    double hinv = 1.0 / h;
-
-    for (auto ii = 0; ii < nion; ++ii) {
-      double temp[3] = {rion1[3 * ii] - cm[0], rion1[3 * ii + 1] - cm[1],
-                        rion1[3 * ii + 2] - cm[2]};
-      double v[3] = {(omega[1] * temp[2] - omega[2] * temp[1]),
-                     (omega[2] * temp[0] - omega[0] * temp[2]),
-                     (omega[0] * temp[1] - omega[1] * temp[0])};
-      rion2[3 * ii] -= v[0] * hinv;
-      rion2[3 * ii + 1] -= v[1] * hinv;
-      rion2[3 * ii + 2] -= v[2] * hinv;
+/**
+ * @brief Removes the rotational component of the velocity from the system.
+ * 
+ * This function calculates the angular momentum (L) and the rotational inertia 
+ * tensor (I) of the system relative to the center of mass. It then determines 
+ * the angular velocity (omega) required to produce the observed rotation 
+ * between the current and previous time steps. Finally, it subtractly 
+ * applies this rotational velocity component from the `rion2` coordinates.
+ * 
+ * @details 
+ * 1. Computes the Center of Mass (COM) for the `rion1` configuration.
+ * 2. Calculates the total angular momentum (L) and the inertia tensor (I) 
+ *    using mass-weighted cross products of position and velocity.
+ * 3. Solves the system $\mathbf{I}\boldsymbol{\omega} = \mathbf{L}$ to find the angular velocity.
+ * 4. Subtracts the rotational displacement (velocity * time_step) from 
+ *    the `rion2` coordinates.
+ * 
+ * @note This function is vital for "de-rotating" a system to view 
+ *       it in a non-rotating reference frame.
+ * @complexity O(N), where N is the number of atoms (nion).
+ */
+void Ion::remove_rotation() 
+{
+    double h = 1.0 / (2.0 * time_step);
+ 
+    // center of mass
+    double tmass = 0.0;
+    double cm[3] = {0.0, 0.0, 0.0};
+    for (auto ii = 0; ii < nion; ++ii) 
+    {
+        tmass += mass[ii];
+        cm[0] += mass[ii] * rion1[3 * ii];
+        cm[1] += mass[ii] * rion1[3 * ii + 1];
+        cm[2] += mass[ii] * rion1[3 * ii + 2];
     }
-  }
+    cm[0] /= tmass;
+    cm[1] /= tmass;
+    cm[2] /= tmass;
+ 
+    // total angular momentum and inertia
+    double L[3] = {0.0, 0.0, 0.0};
+    double Im[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    for (auto ii = 0; ii < nion; ++ii) 
+    {
+        double temp[3] = {rion1[3 * ii] - cm[0], rion1[3 * ii + 1] - cm[1],
+                          rion1[3 * ii + 2] - cm[2]};
+        double v[3] = {h * (rion2[3 * ii] - rion0[3 * ii]),
+                       h * (rion2[3 * ii + 1] - rion0[3 * ii + 1]),
+                       h * (rion2[3 * ii + 2] - rion0[3 * ii + 2])};
+        L[0] += mass[ii] * (temp[1] * v[2] - temp[2] * v[1]);
+        L[1] += mass[ii] * (temp[2] * v[0] - temp[0] * v[2]);
+        L[2] += mass[ii] * (temp[0] * v[1] - temp[1] * v[0]);
+        for (auto j = 0; j < 3; ++j)
+          for (auto i = 0; i < 3; ++i)
+            Im[i + 3 * j] -= mass[ii] * temp[i] * temp[j];
+    }
+ 
+    tmass = Im[0] + Im[4] + Im[8];
+    Im[0] -= tmass;
+    Im[4] -= tmass;
+    Im[8] -= tmass;
+    double L2 = L[0] * L[0] + L[1] * L[1] + L[2] * L[2];
+ 
+    if (L2 > 1.0e-12) 
+    {
+        double omega[9];
+        solve_3by3(Im, L, omega);
+        double hinv = 1.0 / h;
+       
+        for (auto ii = 0; ii < nion; ++ii) 
+        {
+            double temp[3] = {rion1[3 * ii] - cm[0], rion1[3 * ii + 1] - cm[1],
+                              rion1[3 * ii + 2] - cm[2]};
+            double v[3] = {(omega[1] * temp[2] - omega[2] * temp[1]),
+                           (omega[2] * temp[0] - omega[0] * temp[2]),
+                           (omega[0] * temp[1] - omega[1] * temp[0])};
+            rion2[3*ii]     -= v[0] * hinv;
+            rion2[3*ii + 1] -= v[1] * hinv;
+            rion2[3*ii + 2] -= v[2] * hinv;
+        }
+    }
 }
 
 
@@ -977,6 +1123,21 @@ void Ion::remove_rotation() {
  *         Ion::print_constraints          *
  *                                         *
  *******************************************/
+/**
+ * @brief Generates a formatted string summarizing all active system constraints.
+ * 
+ * This function retrieves the current constraint configurations (both bond 
+ * and bond-angle constraints) and aggregates them into a single report.
+ * 
+ * @param opt An integer flag used to control the verbosity or header style 
+ *            of the output (e.g., 0 for a simple summary, 1 for a detailed header).
+ * 
+ * @return A std::string containing the concatenated constraint details. 
+ *         Returns an empty string if no constraints are active in the system.
+ * 
+ * @note The output format depends on the underlying print methods of the 
+ *       `mybond` and `mybondings` objects.
+ */
 std::string Ion::print_constraints(const int opt) 
 {
     std::string tmp = "";
@@ -1076,6 +1237,21 @@ std::string Ion::print_symmetry_group()
  *        Ion::print_symmetry_group        *
  *                                         *
  *******************************************/
+/**
+ * @brief Parses symmetry metadata from a JSON string and returns a formatted report.
+ * 
+ * This function extracts the 'effective_symmetry' key from a JSON string and 
+ * generates a human-readable summary of the symmetry properties. It is designed 
+ * to handle two distinct symmetry models:
+ *   1. Space Group: Extracts lattice-centric properties (centering, etc.).
+ *   2. Point Group: Extracts inertia-centric properties (axis/tensor data).
+ * 
+ * @param json_metadata A std::string containing the JSON-formatted symmetry data.
+ * @return A std::string containing a structured, human-readable summary of the 
+ *         symmetry group, its order, and its specific group parameters.
+ * @note If the 'effective_symmetry' key is not found, returns a "none" default report.
+ */
+
 std::string Ion::print_symmetry_group(std::string rtdbstring)
 {
    auto rtdb = json::parse(rtdbstring);
@@ -1647,6 +1823,16 @@ void Ion::build_equivalent_atoms(double tol)
  *         Ion::print_ions_sym             *
  *                                         *
  *******************************************/
+/**
+ * @brief Prints the atom list with their indices, element symbols, 
+ *        and 3D coordinates in the symmetry-aligned (R-frame) system.
+ * 
+ * This function iterates through the atoms in the system and outputs 
+ * their metadata and position to the provided stream, formatted for 
+ * readability in structural chemistry analysis.
+ *
+ * @param out The output stream (e.g., std::cout or a file stream) to write the data to.
+ */
 void Ion::print_rion_sym(std::ostream &out)
 {
     out << "\nSymmetry-frame coordinates (rion_sym)\n";
@@ -1668,16 +1854,48 @@ void Ion::print_rion_sym(std::ostream &out)
  *        Ion::get_equivalent_atoms s      *
  *                                         *
  *******************************************/
+/**
+ * @brief Provides access to the sets of symmetry-equivalent atoms.
+ * 
+ * This function returns the collection of all "equivalence classes" (orbits)
+ * found in the system. Each element in the outer vector represents a unique 
+ * symmetry set, and the inner vector contains the indices of atoms belonging 
+ * to that specific set.
+ *
+_param None
+ * @return const std::vector<std::vector<int>>& A reference to the 2D vector 
+ *         containing the atom indices partitioned by symmetry.
+ * 
+ * @note The returned reference is read-only to preserve the integrity of 
+ *       the symmetry partitions.
+ */
 const std::vector<std::vector<int>>& Ion::get_equivalent_atoms() const
 {
     return equivalent_atoms;
 }
+
+
 
 /*******************************************
  *                                         *
  *         Ion::print_symmetry_ops         *
  *                                         *
  *******************************************/
+/**
+ * @brief Prints a detailed list of all loaded symmetry operators to the output stream.
+ * 
+ * This function iterates through the symmetry group and prints each operator 
+ * in a structured format, showing the 3x3 rotation matrix (R) and the 
+ * translation vector (t). This is primarily used for debugging the 
+ * symmetry group properties and verifying the transformation parameters.
+ * 
+ * @param out The output stream (e.g., std::cout or std::ofstream) to which 
+ *            the operator details will be written.
+ * 
+ * @note The rotation matrix is printed in a 3x3 grid format using 
+ *       fixed-width columns for alignment.
+ * @complexity O(N_ops), where N_ops is the number of symmetry operators.
+ */
 void Ion::print_symmetry_ops(std::ostream &out)
 {
     const auto &ops = mysymmetry.operators();
@@ -1717,8 +1935,43 @@ void Ion::print_symmetry_ops(std::ostream &out)
  *         Ion::print_symmetry_check       *
  *                                         *
  *******************************************/
+/**
+ * @brief Validates the spatial integrity of the symmetry group operations.
+ * 
+ * This diagnostic function performs a rigorous check of the symmetry mapping. 
+ * For every symmetry operator in the group, it transforms the coordinates of 
+ * all atoms and searches for the nearest atom in the system to verify the 
+ * transformation was successful.
+ * 
+ * @param out The output stream (std::cout or std::ofstream) used to report 
+ *            the mapping results and error distances.
+ * 
+ * @details The verification process accounts for:
+ *          1. Rotation (R) and Translation (t) application.
+ *          2. Periodic boundary conditions via the Minimum Image Convention (MIC).
+ *          3. The matching of transformed coordinates to the nearest existing atom.
+ * 
+ * @note A "distance" near zero indicates a successful symmetry mapping. 
+ *       A non-zero distance indicates a failure in the symmetry definition 
+ *       or the lattice transformation logic.
+ */
 void Ion::print_symmetry_check(std::ostream &out)
 {
+    // Define the inversion lambda
+    auto comp_3x3_inv = [](const double* u, double* b) {
+        b[0]=u[4]*u[8]-u[5]*u[7]; b[1]=u[5]*u[6]-u[3]*u[8]; b[2]=u[3]*u[7]-u[4]*u[6];
+        b[3]=u[7]*u[2]-u[8]*u[1]; b[4]=u[8]*u[0]-u[6]*u[2]; b[5]=u[6]*u[1]-u[7]*u[0];
+        b[6]=u[1]*u[5]-u[2]*u[4]; b[7]=u[2]*u[3]-u[0]*u[5]; b[8]=u[0]*u[4]-u[1]*u[3];
+        double v = u[0]*b[0] + u[1]*b[1] + u[2]*b[2];
+        if (std::abs(v) > 1e-15) {
+            for (int i=0; i<9; ++i) b[i] /= v;
+        } else {
+            for (int i=0; i<9; ++i) b[i] = 0.0; 
+        }
+    };
+    double inv_sym_unita[9];
+    comp_3x3_inv(sym_unita,inv_sym_unita);
+
     const auto &ops = mysymmetry.operators();
 
     out << "\nSymmetry Mapping Check\n";
@@ -1728,20 +1981,35 @@ void Ion::print_symmetry_check(std::ostream &out)
 
     for(size_t k=0;k<ops.size();++k)
     {
-        const auto &op = ops[k];
+        const auto &op  = ops[k];
         const double* R = &op.R[0][0];
+
+        // Start with the provided translation (assuming it's Cartesian for molecules)
+        double tx_c = op.t[0];
+        double ty_c = op.t[1];
+        double tz_c = op.t[2];
+
+        if (is_crystal)
+        {
+            // If crystal, convert the fractional op.t to Cartesian
+            tx_c = sym_unita[0]*op.t[0] + sym_unita[3]*op.t[1] + sym_unita[6]*op.t[2];
+            ty_c = sym_unita[1]*op.t[0] + sym_unita[4]*op.t[1] + sym_unita[7]*op.t[2];
+            tz_c = sym_unita[2]*op.t[0] + sym_unita[5]*op.t[1] + sym_unita[8]*op.t[2];
+        }
 
         out << "\nOperator " << k+1 << "\n";
 
-        for(int a=0;a<nion;a++)
+        for(int a=0; a<nion; ++a)
         {
             double x = ref[3*a+0];
             double y = ref[3*a+1];
             double z = ref[3*a+2];
 
-            double xr = R[0]*x + R[3]*y + R[6]*z;
-            double yr = R[1]*x + R[4]*y + R[7]*z;
-            double zr = R[2]*x + R[5]*y + R[8]*z;
+            double xr = R[0]*x + R[3]*y + R[6]*z + tx_c;
+            double yr = R[1]*x + R[4]*y + R[7]*z + ty_c;
+            double zr = R[2]*x + R[5]*y + R[8]*z + tz_c;
+            
+            
 
             out << " atom " << a+1
                 << " -> (" << xr << ", "
@@ -1751,11 +2019,27 @@ void Ion::print_symmetry_check(std::ostream &out)
             double best = 1e100;
             int best_atom = -1;
 
-            for(int b=0;b<nion;b++)
+            for(int b=0; b<nion; ++b)
             {
                 double dx = xr - ref[3*b+0];
                 double dy = yr - ref[3*b+1];
                 double dz = zr - ref[3*b+2];
+
+                //Apply Minimum Image Convention (MIC)
+                if (is_crystal)
+                {
+                    double dfx = inv_sym_unita[0]*dx + inv_sym_unita[3]*dy + inv_sym_unita[6]*dz;
+                    double dfy = inv_sym_unita[1]*dx + inv_sym_unita[4]*dy + inv_sym_unita[7]*dz;
+                    double dfz = inv_sym_unita[2]*dx + inv_sym_unita[5]*dy + inv_sym_unita[8]*dz;
+
+                    dfx -= std::round(dfx);
+                    dfy -= std::round(dfy);
+                    dfz -= std::round(dfz);
+
+                    dx = sym_unita[0]*dfx + sym_unita[3]*dfy + sym_unita[6]*dfz;
+                    dy = sym_unita[1]*dfx + sym_unita[4]*dfy + sym_unita[7]*dfz;
+                    dz = sym_unita[2]*dfx + sym_unita[5]*dfy + sym_unita[8]*dfz;
+                }
 
                 double r2 = dx*dx + dy*dy + dz*dz;
 
@@ -1774,11 +2058,28 @@ void Ion::print_symmetry_check(std::ostream &out)
     }
 }
 
+
 /*******************************************
  *                                         *
  *      Ion::get_character_table           *
  *                                         *
  *******************************************/
+/**
+ * @brief Retrieves the Point Group Character Table for the current system.
+ * 
+ * This function uses the "Lazy Loading" pattern to instantiate the 
+ * PointGroupCharacterTable only when it is first requested. This minimizes 
+ * the memory footprint and startup time for simulations using simple 
+ * symmetry groups.
+ * 
+ * @return A pointer to the PointGroupCharacterTable if successfully loaded;
+ *         returns nullptr if the group symbol is invalid or loading fails.
+ * 
+ * @throws Note: The function internally catches all exceptions during 
+ *         instantiation to prevent simulation crashes, returning nullptr instead.
+ * 
+ * @pre The 'group_name' (e.g., "C2v", "Oh") must be a valid symmetry symbol.
+ */
 const PointGroupCharacterTable* Ion::get_character_table()
 {
     if (!character_table) {
@@ -1796,6 +2097,19 @@ const PointGroupCharacterTable* Ion::get_character_table()
  *      Ion::set_group_name                *
  *                                         *
  *******************************************/
+/**
+ * @brief Updates the symmetry group name and invalidates the existing character table.
+ * 
+ * This function changes the identifier for the point group (e.g., from "C2v" to "Oh"). 
+ * Because the character table is uniquely tied to the group name, this function 
+ * calls reset() on the unique_ptr, forcing the system to re-instantiate 
+ * and reload the correct table the next time it is requested.
+ * 
+ * @param name A string representing the group symbol (e.g., "C2", "D3h", "O_h").
+ * 
+ * @note This follows the "Lazy Loading" pattern: the heavy character table 
+ *       is only reloaded if it is actually accessed after this call.
+ */
 void Ion::set_group_name(const std::string& name)
 {
     group_name = name;
@@ -1809,8 +2123,41 @@ void Ion::set_group_name(const std::string& name)
  *      Ion::build_symmetry_atom_map       *
  *                                         *
  *******************************************/
+/**
+ * @brief Constructs the symmetry mapping table for the system.
+ * 
+ * This function computes the permutation/mapping of atoms under the 
+ * defined symmetry group. For each symmetry operation (Rotation + Translation), 
+ * it transforms all atoms and performs a spatial search to verify if a 
+ * corresponding atom exists in the set.
+ * 
+ * @param tol The distance tolerance for atom matching.
+ * @details 
+ * - Supports both molecular (non-periodic) and crystal (periodic) systems.
+ * - Complexity: O(N_ops * N_atoms^2).
+ * - If an atom's transformed position does not match an existing atom, 
+ *   the function identifies a symmetry mismatch, indicating the 
+ *   configuration does not respect the defined group.
+ */
 void Ion::build_symmetry_atom_map(double tol)
 {
+    // Define the inversion lambda
+    auto comp_3x3_inv = [](const double* u, double* b) {
+        b[0]=u[4]*u[8]-u[5]*u[7]; b[1]=u[5]*u[6]-u[3]*u[8]; b[2]=u[3]*u[7]-u[4]*u[6];
+        b[3]=u[7]*u[2]-u[8]*u[1]; b[4]=u[8]*u[0]-u[6]*u[2]; b[5]=u[6]*u[1]-u[7]*u[0];
+        b[6]=u[1]*u[5]-u[2]*u[4]; b[7]=u[2]*u[3]-u[0]*u[5]; b[8]=u[0]*u[4]-u[1]*u[3];
+        double v = u[0]*b[0] + u[1]*b[1] + u[2]*b[2];
+        if (std::abs(v) > 1e-15) {
+            for (int i=0; i<9; ++i) b[i] /= v;
+        } else {
+            for (int i=0; i<9; ++i) b[i] = 0.0;
+        }
+    };
+
+    // Prepare the inverse lattice matrix for MIC
+    double inv_sym_unita[9];
+    comp_3x3_inv(sym_unita,inv_sym_unita);
+
     if (tol <= 0.0) tol = sym_tolerance;
 
     int nops = symmetry_nops();
@@ -1818,9 +2165,24 @@ void Ion::build_symmetry_atom_map(double tol)
 
     bool ok = true;
 
-    for (int op = 0; op < nops; ++op)
+    for (int op_indx=0; op_indx<nops; ++op_indx)
     {
-        const auto& R = symmetry_op(op).R;
+        const auto&   op = symmetry_op(op_indx);
+        const double* R  = &op.R[0][0];
+
+        // Start with the provided translation (assuming it's Cartesian for molecules)
+        double tx_c = op.t[0];
+        double ty_c = op.t[1];
+        double tz_c = op.t[2];
+
+        if (is_crystal)
+        {
+            // If crystal, convert the fractional op.t to Cartesian
+            tx_c = sym_unita[0]*op.t[0] + sym_unita[3]*op.t[1] + sym_unita[6]*op.t[2];
+            ty_c = sym_unita[1]*op.t[0] + sym_unita[4]*op.t[1] + sym_unita[7]*op.t[2];
+            tz_c = sym_unita[2]*op.t[0] + sym_unita[5]*op.t[1] + sym_unita[8]*op.t[2];
+        }
+
 
         for (int a = 0; a < nion; ++a)
         {
@@ -1828,22 +2190,48 @@ void Ion::build_symmetry_atom_map(double tol)
             double ya = rion1[3*a+1];
             double za = rion1[3*a+2];
 
-            // rotate atom a
-            double x = R[0][0]*xa + R[0][1]*ya + R[0][2]*za;
-            double y = R[1][0]*xa + R[1][1]*ya + R[1][2]*za;
-            double z = R[2][0]*xa + R[2][1]*ya + R[2][2]*za;
+            // Apply Transformation: x' = R*x + t
+            // Using R[row][col] indexing
+            //double x = R[0][0]*xa + R[0][1]*ya + R[0][2]*za + tx_c;
+            //double y = R[1][0]*xa + R[1][1]*ya + R[1][2]*za + ty_c;
+            //double z = R[2][0]*xa + R[2][1]*ya + R[2][2]*za + tz_c;
+            double x = R[0]*xa + R[3]*ya + R[6]*za + tx_c;
+            double y = R[1]*xa + R[4]*ya + R[7]*za + ty_c;
+            double z = R[2]*xa + R[5]*ya + R[8]*za + tz_c;
 
             int found = -1;
 
             for (int b = 0; b < nion; ++b)
             {
                 // 🔴 MUST match element
+                // Element check (Critical!)
                 if (katm[a] != katm[b]) continue;
 
                 double dx = x - rion1[3*b+0];
                 double dy = y - rion1[3*b+1];
                 double dz = z - rion1[3*b+2];
 
+                // Apply Minimum Image Convention (MIC)
+                if (is_crystal)
+                {
+                    // Transform displacement to fractional space
+                    double dfx = inv_sym_unita[0]*dx + inv_sym_unita[3]*dy + inv_sym_unita[6]*dz;
+                    double dfy = inv_sym_unita[1]*dx + inv_sym_unita[4]*dy + inv_sym_unita[7]*dz;
+                    double dfz = inv_sym_unita[2]*dx + inv_sym_unita[5]*dy + inv_sym_unita[8]*dz;
+
+                    // Wrap to nearest periodic image
+                    dfx -= std::round(dfx);
+                    dfy -= std::round(dfy);
+                    dfz -= std::round(dfz);
+
+                    // Transform displacement back to Cartesian space
+                    dx = sym_unita[0]*dfx + sym_unita[3]*dfy + sym_unita[6]*dfz;
+                    dy = sym_unita[1]*dfx + sym_unita[4]*dfy + sym_unita[7]*dfz;
+                    dz = sym_unita[2]*dfx + sym_unita[5]*dfy + sym_unita[8]*dfz;
+                }
+
+
+                // Tolerance check (squared distance for speed)
                 if (dx*dx + dy*dy + dz*dz < tol*tol)
                 {
                     found = b;
@@ -1854,11 +2242,11 @@ void Ion::build_symmetry_atom_map(double tol)
             if (found < 0)
             {
                 ok = false;
-                std::cerr << "Symmetry map failed: op=" << op
+                std::cerr << "Symmetry map failed: op_indx=" << op_indx
                           << " atom=" << a << std::endl;
             }
 
-            symmetry_atom_map[op][a] = found;
+            symmetry_atom_map[op_indx][a] = found;
         }
     }
 
@@ -1875,6 +2263,21 @@ void Ion::build_symmetry_atom_map(double tol)
  *      Ion::project_cartesian_vector      *
  *                                         *
  *******************************************/
+/**
+ * @brief Projects vector fields into the symmetry-adapted basis.
+ * 
+ * This function takes a vector field (e.g., forces, velocities, or E-fields) 
+ * and averages the components across all symmetry-equivalent sites. 
+ * 
+ * @param v Pointer to the array of vector components (format: x1, y1, z1, x2, y_2, z_2...)
+ * 
+ * @note Unlike position projection, this function only applies the rotational 
+ *       component of the symmetry operations. The translational component (t) 
+ *       is intentionally omitted because vectors are invariant under translation.
+ *       This makes it the standard method for processing force/stress tensors.
+ * 
+ * @complexity O(N_ops * N_atoms)
+ */
 void Ion::project_cartesian_vector(double *v) const
 {
     if (symmetry_atom_map.empty()) return;
@@ -1884,22 +2287,23 @@ void Ion::project_cartesian_vector(double *v) const
 
     std::vector<double> vsum(3*nion, 0.0);
 
-    for (int op = 0; op < nops; ++op)
+    for (int op_indx=0; op_indx< nops; ++op_indx)
     {
-        const auto& R = symmetry_op(op).R;
+        const auto&  op = symmetry_op(op_indx);
+        const double* R = &op.R[0][0];
 
-        for (int a = 0; a < nion; ++a)
+        for (int a=0; a<nion; ++a)
         {
-            int b = symmetry_atom_map[op][a];
+            int b = symmetry_atom_map[op_indx][a];
             if (b < 0) continue;
 
             double x = v[3*a+0];
             double y = v[3*a+1];
             double z = v[3*a+2];
 
-            double xr = R[0][0]*x + R[0][1]*y + R[0][2]*z;
-            double yr = R[1][0]*x + R[1][1]*y + R[1][2]*z;
-            double zr = R[2][0]*x + R[2][1]*y + R[2][2]*z;
+            double xr = R[0]*x + R[3]*y + R[6]*z;
+            double yr = R[1]*x + R[4]*y + R[7]*z;
+            double zr = R[2]*x + R[5]*y + R[8]*z;
 
             vsum[3*b+0] += xr;
             vsum[3*b+1] += yr;
@@ -1912,38 +2316,218 @@ void Ion::project_cartesian_vector(double *v) const
         v[i] = vsum[i] * inv;
 }
 
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_positions          *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Symmetrizes atom positions to strictly satisfy the system's symmetry group.
+ * 
+ * This function performs a group-averaging of the atomic coordinates. For every 
+ * atom in the system, it calculates all symmetry-equivalent positions by applying 
+ * the rotation and translation components of the space group operators.
+ * 
+ * Mathematical approach:
+ * 1. Applies the transformation: x' = R*x + t.
+ * 2. For crystal systems, applies the Minimum Image Convention (MIC) using the 
+ *    inverse lattice matrix to ensure atoms transformed into neighboring unit 
+ *    cells are wrapped back into the primary simulation box.
+ * 3. Computes the centroid (average) of all symmetry-equivalent sites to 
+ *    produce the final symmetric position.
+ *
+ * @param rion Pointer to a 1D array of size (3 * nion) containing the [x, y, z] 
+ *             coordinates of the atoms. The array is modified in-place.
+ * 
+ * @note This function assumes that the symmetry_atom_map is already correctly 
+ *       populated and that the lattice vectors (sym_unita) are properly defined.
+ * 
+ * @complexity O(N_ops * N_atoms), where N_ops is the number of symmetry operators.
+ */
+void Ion::symmetrize_positions(double *rion) const
+{
+    if (symmetry_atom_map.empty()) return;
+
+    int nops = symmetry_nops();
+    if (nops <= 1) return;
+
+    // Define the inversion lambda
+    auto comp_3x3_inv = [](const double* u, double* b) {
+        b[0]=u[4]*u[8]-u[5]*u[7]; b[1]=u[5]*u[6]-u[3]*u[8]; b[2]=u[3]*u[7]-u[4]*u[6];
+        b[3]=u[7]*u[2]-u[8]*u[1]; b[4]=u[8]*u[0]-u[6]*u[2]; b[5]=u[6]*u[1]-u[7]*u[0];
+        b[6]=u[1]*u[5]-u[2]*u[4]; b[7]=u[2]*u[3]-u[0]*u[5]; b[8]=u[0]*u[4]-u[1]*u[3];
+        double v = u[0]*b[0] + u[1]*b[1] + u[2]*b[2];
+        if (std::abs(v) > 1e-15) {
+            for (int i=0; i<9; ++i) b[i] /= v;
+        } else {
+            for (int i=0; i<9; ++i) b[i] = 0.0;
+        }
+    };
+
+    // Prepare the inverse lattice matrix for MIC
+    double inv_sym_unita[9];
+    comp_3x3_inv(sym_unita,inv_sym_unita);
+
+
+    auto wrap_half = [](double s) {
+        // wrap to [-0.5, 0.5)
+        s -= std::floor(s + 0.5);
+        return s;
+    };
+
+
+    std::vector<double> rion_sum(3*nion, 0.0);
+    std::vector<int>    counts(nion, 0);
+
+    for (int op_indx=0; op_indx< nops; ++op_indx)
+    {
+        const auto&  op = symmetry_op(op_indx);
+        const double* R = &op.R[0][0];
+
+        // Start with the provided translation (assuming it's Cartesian for molecules)
+        double tx_c = op.t[0];
+        double ty_c = op.t[1];
+        double tz_c = op.t[2];
+
+        if (is_crystal)
+        {
+            // If crystal, convert the fractional op.t to Cartesian
+            tx_c = sym_unita[0]*op.t[0] + sym_unita[3]*op.t[1] + sym_unita[6]*op.t[2];
+            ty_c = sym_unita[1]*op.t[0] + sym_unita[4]*op.t[1] + sym_unita[7]*op.t[2];
+            tz_c = sym_unita[2]*op.t[0] + sym_unita[5]*op.t[1] + sym_unita[8]*op.t[2];
+        }
+
+        for (int a=0; a<nion; ++a)
+        {
+            int b = symmetry_atom_map[op_indx][a];
+            if (b < 0) continue;
+
+            double x = rion[3*a+0];
+            double y = rion[3*a+1];
+            double z = rion[3*a+2];
+
+            double xr = R[0]*x + R[3]*y + R[6]*z + tx_c;
+            double yr = R[1]*x + R[4]*y + R[7]*z + ty_c;
+            double zr = R[2]*x + R[5]*y + R[8]*z + tz_c;
+
+            double nx = xr; // ... (apply R and T)
+            double ny = yr; // ... (apply R and T)
+            double nz = zr; // ... (apply R and T)
+
+            // Apply Minimum Image Convention (MIC)
+
+            // MIC: shift (xr,yr,zr) by lattice vectors so it is closest to reference rion[b]
+            if (is_crystal)
+            {
+                const double xref = rion[3*b+0];
+                const double yref = rion[3*b+1];
+                const double zref = rion[3*b+2];
+
+                // displacement in Cartesian
+                double dx = xr - xref;
+                double dy = yr - yref;
+                double dz = zr - zref;
+
+                // displacement in fractional: df = invA * d
+                double dfx = inv_sym_unita[0]*dx + inv_sym_unita[3]*dy + inv_sym_unita[6]*dz;
+                double dfy = inv_sym_unita[1]*dx + inv_sym_unita[4]*dy + inv_sym_unita[7]*dz;
+                double dfz = inv_sym_unita[2]*dx + inv_sym_unita[5]*dy + inv_sym_unita[8]*dz;
+
+                // wrap to nearest image
+                dfx = wrap_half(dfx);
+                dfy = wrap_half(dfy);
+                dfz = wrap_half(dfz);
+
+                // back to Cartesian: d = A * df
+                dx = sym_unita[0]*dfx + sym_unita[3]*dfy + sym_unita[6]*dfz;
+                dy = sym_unita[1]*dfx + sym_unita[4]*dfy + sym_unita[7]*dfz;
+                dz = sym_unita[2]*dfx + sym_unita[5]*dfy + sym_unita[8]*dfz;
+
+                // corrected candidate near reference
+                xr = xref + dx;
+                yr = yref + dy;
+                zr = zref + dz;
+            }
+
+
+            rion_sum[3*b+0] += xr;
+            rion_sum[3*b+1] += yr;
+            rion_sum[3*b+2] += zr;             
+            counts[b] += 1;
+        }
+    }
+
+    // normalize per-atom by actual contribution count
+    for (int b = 0; b < nion; ++b)
+    {
+        const int c = counts[b];
+        if (c <= 0) continue; // or keep as-is / error
+
+        const double invc = 1.0 / double(c);
+        rion[3*b+0] = rion_sum[3*b+0] * invc;
+        rion[3*b+1] = rion_sum[3*b+1] * invc;
+        rion[3*b+2] = rion_sum[3*b+2] * invc;
+    }
+
+}
+
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_ion_array          *
+ *                                         *
+ *******************************************/
+/**
+ * @brief A private helper to symmetrize any coordinate array.
+ * This encapsulates the "Shift $\rightarrow$ Symmetrize $\rightarrow$ Unshift" workflow.
+ * 
+ * @param r_array Pointer to the array of coordinates (rion1, rion2, etc.)
+ */
+void Ion::symmetrize_ion_array(double* r_array) 
+{
+    if (!r_array) return;
+
+    // 1. Calculate the COM for this specific array
+    double cx = 0, cy = 0, cz = 0;
+    for (int i = 0; i < nion; ++i) {
+        cx += r_array[i * 3 + 0];
+        cy += r_array[i * 3 + 1];
+        cz += r_array[i * 3 + 2];
+    }
+    cx /= nion;
+    cy /= nion;
+    cz /= nion;
+
+    // 2. Shift all atoms so the COM is at the origin
+    for (int i = 0; i < nion; ++i) {
+        r_array[i * 3 + 0] -= cx;
+        r_array[i * 3 + 1] -= cy;
+        r_array[i * 3 + 2] -= cz;
+    }
+
+    // 3. Perform the symmetry operation (your existing logic)
+    // Note: This assumes symmetrize_array handles the spatial transformation
+    symmetrize_positions(r_array); 
+
+    // 4. Shift atoms back to the original COM position
+    for (int i = 0; i < nion; ++i) {
+        r_array[i * 3 + 0] += cx;
+        r_array[i * 3 + 1] += cy;
+        r_array[i * 3 + 2] += cz;
+    }
+}
+
+// Your public API calls now become incredibly clean:
 /*******************************************
  *                                         *
  *      Ion::symmetrize_rion1              *
  *                                         *
  *******************************************/
-void Ion::symmetrize_rion1()
-{
+void Ion::symmetrize_rion1()  
+{ 
     if (symmetry_atom_map.empty()) return;
-
-    // save COM
-    double cx = com(0);
-    double cy = com(1);
-    double cz = com(2);
-
-    // shift to origin
-    for (int a = 0; a < nion; ++a)
-    {
-        rion1[3*a+0] -= cx;
-        rion1[3*a+1] -= cy;
-        rion1[3*a+2] -= cz;
-    }
-
-    // project
-    project_cartesian_vector(rion1);
-
-    // restore COM
-    for (int a = 0; a < nion; ++a)
-    {
-        rion1[3*a+0] += cx;
-        rion1[3*a+1] += cy;
-        rion1[3*a+2] += cz;
-    }
+    symmetrize_ion_array(rion1);
 }
 
 /*******************************************
@@ -1951,6 +2535,20 @@ void Ion::symmetrize_rion1()
  *      Ion::symmetrize_rion2              *
  *                                         *
  *******************************************/
+void Ion::symmetrize_rion2()  
+{ 
+    if (symmetry_atom_map.empty()) return;
+    symmetrize_ion_array(rion2);
+}
+
+
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_rion2              *
+ *                                         *
+ *******************************************/
+/*
 void Ion::symmetrize_rion2()
 {
     if (symmetry_atom_map.empty()) return;
@@ -1974,7 +2572,7 @@ void Ion::symmetrize_rion2()
         rion2[3*a+2] -= cz;
     }
 
-    project_cartesian_vector(rion2);
+    symmetrize_positions(rion2);
 
     for (int a = 0; a < nion; ++a)
     {
@@ -1983,12 +2581,25 @@ void Ion::symmetrize_rion2()
         rion2[3*a+2] += cz;
     }
 }
+*/
 
 /*******************************************
  *                                         *
  *      Ion::print_symmetry_atom_map       *
  *                                         *
  *******************************************/
+/**
+ * @brief Prints the atom-to-atom symmetry mapping matrix to the standard output.
+ * 
+ * This function iterates through the symmetry group operations and prints 
+ * the permutation indices. Each row represents a symmetry operation, 
+ * and each column represents the destination atom index after the 
+ * operation is applied to the source atom.
+ * 
+ * @note Complexity: O(N_ops * N_atoms), where N_ops is the number of 
+ *       symmetry operations and N_atoms is the number of atoms in the system.
+ * @usage Primarily used for debugging the application of the point group.
+ */
 void Ion::print_symmetry_atom_map(std::ostream &out) const
 {
     int nops = symmetry_atom_map.size();
