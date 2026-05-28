@@ -31,6 +31,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
                 double E[], double *deltae, double *deltac, double *deltar,
                 bool fractional, double *occ1, double *occ2) 
 {
+
    int it, it_in, i, n2ft3d, neall, ispin, k, ms;
    int shift1, shift2, indx1, indx2;
    int one = 1;
@@ -116,6 +117,8 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
      
       /* convert psi(G) to psi(r) - Expensive */
       mygrid->gh_fftb(psi1,psi_r);
+
+
       /*
       indx1 = 0;
       indx2 = 0;
@@ -128,6 +131,10 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
          indx2 += shift2;
       }
       */
+
+      // generate tau
+      if (myxc->meta_gga_on())
+         myxc->gga_gen_tau(ispin, mygrid->neq, psi1);
      
       /* generate dn */
       if (fractional)
@@ -142,6 +149,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       //mygrid->rc_fft3d(tmp);
       mygrid->c_pack(0,tmp);
       mygrid->cc_pack_copy(0,tmp,dng);
+
 
       /* generate dnall - used for semicore corrections */
       if (mypsp->has_semicore()) 
@@ -286,9 +294,16 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    }
    exc *= dv;
    pxc *= dv;
+
+   if (myxc->meta_gga_on())
+      myxc->meta_gga_pxc(ispin, mygrid->neq, psi1);
+
  
    /* average Kohn-Sham kineticl energy */
-   eke = myke->ke_ave(psi1,occ1);
+   if (fractional)
+      eke = myke->ke_ave(psi1,occ1);
+   else
+      eke = myke->ke_ave(psi1);
  
    /* average Kohn-Sham local psp energy */
    elocal = mygrid->cc_pack_dot(0, dng, vl);
@@ -296,15 +311,20 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    /* add in long range part here*/
    if (aperiodic)
       elocal += dv * mygrid->rr_dot(rho, vlr_l);
+
  
    /* add in other real-space fields here*/
    if (mypsp->myefield->efield_on)
      elocal += dv* mygrid->rr_dot(rho, mypsp->myefield->v_field);
  
+
    /* average Kohn-Sham v_nonlocal energy */
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1, Hpsi);
-   enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ1);
+   if (fractional)
+      enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ1);
+   else
+      enlocal = -mygrid->gg_traceall(psi1, Hpsi);
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;

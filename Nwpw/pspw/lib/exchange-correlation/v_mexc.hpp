@@ -6,9 +6,13 @@
 
 namespace pwdft {
 
+//extern void v_mexc(const int, Pneb *, vdw_DF *, const double *, double *,
+//                   const double, const double, double *, double *, double *, 
+//                   double *, double *, double *, double *, double *, double *);
 extern void v_mexc(const int, Pneb *, vdw_DF *, const double *, double *,
-                   const double, double *, double *, double *, double *,
-                   double *, double *, double *, double *, double *);
+                   const double, const double, double *, double *, double *, 
+                   double *, double *, double *, double *, 
+                   double *, double *, double *);
 
 }
 #endif

@@ -130,6 +130,7 @@ double Kinetic_Operator::ke_ave(double *psi, double *occ)
    int k, k1, k2, ksize1, ksize2;
    double ave;
 
+
    ksize1 = (mypneb->nzero(1));
    ksize2 = (mypneb->npack(1));
 
@@ -139,6 +140,7 @@ double Kinetic_Operator::ke_ave(double *psi, double *occ)
    for (auto ms=0; ms<mypneb->ispin; ++ms)
    for (auto q=0; q<mypneb->neq[ms]; ++q) 
    {
+
      double wght = occ ? occ[mypneb->msntoindex(ms,q)] : 1.0;
      for (k=0; k<ksize1; ++k) 
      {

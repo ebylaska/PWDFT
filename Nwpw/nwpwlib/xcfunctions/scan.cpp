@@ -795,9 +795,9 @@ void gen_SCAN_unrestricted(const int n2ft3d, double *rho_in, double *agr_in, dou
 
 // You must implement/provide this (Fortran: call gen_PW91_c_rz(tol,rs,zeta,...))
 
-void gen_SCAN_restricted(int n2ft3d,
-                         const double* rho_in, const double* agr_in, const double* tau_in,
-                         double x_parameter, double c_parameter,
+void gen_SCAN_restricted(const int n2ft3d,
+                         double *rho_in, double *agr_in, double *tau_in,
+                         const double x_parameter, const double c_parameter,
                          double* xce, double* fn, double* fdn, double* fdtau)
 {
     // constants

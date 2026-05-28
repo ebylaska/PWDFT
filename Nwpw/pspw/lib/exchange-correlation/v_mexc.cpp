@@ -22,9 +22,10 @@ namespace pwdft {
  *                              *
  ********************************/
 void v_mexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn, double *tau,
-             const double x_parameter, const double c_parameter, double *xcp,
-             double *xce, double *rho, double *grx, double *gry, double *grz,
-             double *agr, double *fn, double *fdn, double *dfdtau) 
+             const double x_parameter, const double c_parameter, 
+             double *xcp, double *xce, double *rho, 
+             double *grx, double *gry, double *grz, double *agr, 
+             double *fn, double *fdn, double *dfdtau) 
 {
    double *rhog = fn;
    double *Gx = mypneb->Gpackxyz(0, 0);

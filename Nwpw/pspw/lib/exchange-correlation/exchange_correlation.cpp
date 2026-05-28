@@ -235,7 +235,13 @@ void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
   } 
   else if (use_mgga) 
   {
-     //v_mexc(gga, mypneb, myvdw, dn, tau, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn, fdn, dfdtau);
+     v_mexc(gga, mypneb, myvdw, dn, tau, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn, fdn, dfdtau);
+   //v_mexc(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn, double *tau,
+   //        const double x_parameter, const double c_parameter, 
+   //        double *xcp, double *xce, double *rho, 
+   //        double *grx, double *gry, double *grz, double *agr,
+   //        double *fn, double *fdn, double *dfdtau)
+
   }
 }
 

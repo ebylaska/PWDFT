@@ -1,0 +1,39 @@
+title "hello"
+echo
+
+start test-scan
+memory 1900 mb
+
+permanent_dir ./perm_scan
+scratch_dir   ./perm_scan
+
+geometry autosym symmetry_tolerance 0.01
+C         0.12103884    -0.30556019    -0.25506423
+H        -0.49031320     0.48277293    -0.68929663
+H        -0.43301128    -0.79556343     0.54295995
+H         1.03495325     0.12472155     0.14913463
+H         0.37173239    -1.03469587    -1.02278872
+end
+
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set nwpw:use_symmetry true
+nwpw
+  2d-hcurve
+  cutoff 30.0
+  xc scan
+  #xc pbe
+  lmbfgs
+  simulation_cell
+    FCC 38.0
+    boundary_conditions aperiodic
+  end
+  steepest_descent
+     time_step 1.0
+     loop 1 1
+  end
+end
+
+task pspw steepest_descent
+

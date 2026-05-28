@@ -80,7 +80,7 @@ static void snap_matrix(SymOp& op)
  */
 std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
 {
-    std::cout << "SYMBOL=" << symbol << std::endl;
+    //std::cout << "SYMBOL=" << symbol << std::endl;
 
     // Trivial groups
     if (symbol == "C1")

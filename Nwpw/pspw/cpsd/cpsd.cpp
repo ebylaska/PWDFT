@@ -511,10 +511,12 @@ int cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       while (!done) 
       {
          ++icount;
+
          inner_loop(control, &mygrid, &myion, &mykin, &mycoulomb12, &myxc, &mypsp,
                     &mystrfac, &myewald, psi1, psi2, Hpsi, psi_r, dn, hml, lmbda, E,
                     &deltae, &deltac, &deltar,
                     fractional, occ1, occ2);
+
          //if (fractional) E[0] += smearcorrection;
         
          // mydfpt.start(psi1,psi_r
