@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Kinetic.hpp"
+#include "exchange_correlation.hpp"
 #include "Pneb.hpp"
 #include "Pseudopotential.hpp"
 
@@ -17,11 +18,11 @@ namespace pwdft {
 //                  double *, double *, double *, double *, double *, bool,
 //                  double *, bool, double *);
 
-extern void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
+extern void psi_H(Pneb *mygrid, Kinetic_Operator *myke,  XC_Operator *myxc, Pseudopotential *mypsp,
                   double *psi, double *psi_r, double *vl, double *vc, double *xcp,
                   double *Hpsi, bool move, double *fion, double *occ = nullptr);
 
-extern void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
+extern void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke,  XC_Operator *myxc, Pseudopotential *mypsp,
                     double *psi, double *psi_r, double *vsr_l, double *vlr_l,
                     double *vc, double *xcp, double *Hpsi, bool move, double *fion,
                     double *occ = nullptr);

@@ -1,11 +1,11 @@
 title "hello"
 echo
 
-start test-scan
+start test-scan1
 memory 1900 mb
 
-permanent_dir ./perm_scan
-scratch_dir   ./perm_scan
+permanent_dir ./perm_scan1
+scratch_dir   ./perm_scan1
 
 geometry autosym symmetry_tolerance 0.01
 C         0.12103884    -0.30556019    -0.25506423
@@ -29,12 +29,9 @@ nwpw
     FCC 38.0
     boundary_conditions aperiodic
   end
-  steepest_descent
-     tolerances 1.0e-13 1.0e-13
-     time_step 1.0
-     loop 10 1000
-  end
+  loop 10 10
+  tolerances 1.0e-12 1.0e-12
 end
 
-task pspw steepest_descent
+task pspw energy
 

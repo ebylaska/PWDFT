@@ -54,8 +54,9 @@
  */
 
 #include "cExchange_Correlation.hpp"
-#include "v_cwexc.hpp"
 #include "v_exc.hpp"
+#include "v_cwexc.hpp"
+#include "v_cmexc.hpp"
 #include "cvdw_DF.hpp"
 #include <algorithm>
 #include "parsestring.hpp"
@@ -72,111 +73,126 @@ namespace pwdft {
 
 cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control) 
 {
-   mycneb = mygrid;
-   xc_name = control.xc_name();
-
-   const std::string name = mystring_lowercase(xc_name);
-
-   auto add_disp = [&](const std::string& func_flag) {
-      if (!has_disp) return;
-      // ensure exactly one -func … prefix
-      if (!func_flag.empty()) {
-         // always keep a leading space before subsequent flags
-         options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
-      }
-   };
-
-
-   gga = 0;
-
-   // set the grimme and vdw options
-   if      (mystring_contains(name, "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
-   else if (mystring_contains(name, "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
-   else if (mystring_contains(name, "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
-   else if (mystring_contains(name, "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
-   else if (mystring_contains(name, "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
-
-   if      (mystring_contains(name, "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
-   else if (mystring_contains(name, "-vdw"))     {has_vdw = true; is_vdw2 = false; }
-
-   // set the gga options
-
-   // ---- XC family: choose longest/specific first; first match wins ----
-   // Hybrids first (specific → general)
-   if      (mystring_contains(name, "revpbe0")) {gga = 112; add_disp("revpbe0");}
-   else if (mystring_contains(name, "pbe0"))    {gga = 110; add_disp("pbe0");}
-   else if (mystring_contains(name, "hse"))     {gga = 114; add_disp("hse06");}
-   else if (mystring_contains(name, "bnl"))     {gga = 113; add_disp("hse06");}  // if that’s really what you want
-   else if (mystring_contains(name, "b3lypr"))  {gga = 115; add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
-   else if (mystring_contains(name, "blyp0"))   {gga = 111; add_disp("b3-lyp");} // if this alias is desired
-
-   // Non-hybrid GGAs (specific → general)
-   else if (mystring_contains(name, "revpbe"))     {gga = 12; add_disp("revpbe");}
-   else if (mystring_contains(name, "pbesol"))     {gga = 13; add_disp("pbesol");}
-   else if (mystring_contains(name, "pbe96"))      {gga = 10; add_disp("pbe");}
-   else if (mystring_contains(name, "xbeef-cpbe")) {gga = 17; add_disp("pbesol");} // confirm
-   else if (mystring_contains(name, "beef"))       {gga = 16; add_disp("pbesol");} // confirm
-   else if (mystring_contains(name, "blyp"))       {gga = 11; add_disp("b-lyp");}
-   else if (mystring_contains(name, "pbe"))        {gga = 10; add_disp("pbe");}
-
-   // LDA family
-   else if (mystring_contains(name, "vosko") || mystring_contains(name, "lda")) {gga = 0;}
-
-   // HF exact exchange - dispersion func flag generally not needed/used here
-   if (mystring_contains(name, "hartree-fock") || name == "hf" || name.find(" hf ") != std::string::npos) {gga = 200;}
-
-   // Meta-GGAs - future options
-   if      (mystring_contains(name, "scan"))   gga = 302;
-   else if (mystring_contains(name, "tpss03")) gga = 301;
-   else if (mystring_contains(name, "vs98"))   gga = 300;
-   else if (mystring_contains(name, "pkzb"))   gga = 303;
-   else if (mystring_contains(name, "m06-2x")) gga = 306;
-   else if (mystring_contains(name, "m06-l"))  gga = 304;
-   else if (mystring_contains(name, "m06"))    gga = 305;
-
-
-   use_lda = false;
-   use_gga = false;
-   use_mgga = false;
-   if (gga == 0) {
-     use_lda = true;
-     xtmp = new double[mycneb->ispin * mycneb->nfft3d];
-   }
-   if ((gga >= 10) && (gga < 100)) {
-     use_gga = true;
-     if (mycneb->ispin == 1) {
-       rho = new double[mycneb->n2ft3d]; // real
+    mycneb = mygrid;
+    xc_name = control.xc_name();
  
-       grx = new double[mycneb->n2ft3d]; // complex
-       gry = new double[mycneb->n2ft3d]; // complex
-       grz = new double[mycneb->n2ft3d]; // complex
+    const std::string name = mystring_lowercase(xc_name);
  
-       agr = new double[mycneb->n2ft3d]; // real|complex
-       fn  = new double[mycneb->n2ft3d]; // real|complex
-       fdn = new double[mycneb->n2ft3d]; // real|complex
-     } else {
-       rho = new double[2 * mycneb->n2ft3d]; // real
+    auto add_disp = [&](const std::string& func_flag) {
+       if (!has_disp) return;
+       // ensure exactly one -func … prefix
+       if (!func_flag.empty()) {
+          // always keep a leading space before subsequent flags
+          options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
+       }
+    };
  
-       grx = new double[3 * mycneb->n2ft3d]; // complex
-       gry = new double[3 * mycneb->n2ft3d]; // complex
-       grz = new double[3 * mycneb->n2ft3d]; // complex
  
-       agr = new double[3 * mycneb->n2ft3d]; // real|complex
-       fn  = new double[2 * mycneb->n2ft3d]; // real|complex
-       fdn = new double[3 * mycneb->n2ft3d]; // real|complex
-     }
-   }
-   if ((gga >= 300))
-     use_mgga = true;
-
-   if (has_vdw)
-   {
-      myvdw = new cvdw_DF(mygrid,control,is_vdw2);
-   }
-
-
+    gga = 0;
  
-   // std::cout << "xc_name =" << xc_name << std::endl;
+    // set the grimme and vdw options
+    if      (mystring_contains(name, "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+    else if (mystring_contains(name, "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+    else if (mystring_contains(name, "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+    else if (mystring_contains(name, "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+    else if (mystring_contains(name, "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
+ 
+    if      (mystring_contains(name, "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+    else if (mystring_contains(name, "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+ 
+    // set the gga options
+ 
+    // ---- XC family: choose longest/specific first; first match wins ----
+    // Hybrids first (specific → general)
+    if      (mystring_contains(name, "revpbe0")) {gga = 112; add_disp("revpbe0");}
+    else if (mystring_contains(name, "pbe0"))    {gga = 110; add_disp("pbe0");}
+    else if (mystring_contains(name, "hse"))     {gga = 114; add_disp("hse06");}
+    else if (mystring_contains(name, "bnl"))     {gga = 113; add_disp("hse06");}  // if that’s really what you want
+    else if (mystring_contains(name, "b3lypr"))  {gga = 115; add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
+    else if (mystring_contains(name, "blyp0"))   {gga = 111; add_disp("b3-lyp");} // if this alias is desired
+ 
+    // Non-hybrid GGAs (specific → general)
+    else if (mystring_contains(name, "revpbe"))     {gga = 12; add_disp("revpbe");}
+    else if (mystring_contains(name, "pbesol"))     {gga = 13; add_disp("pbesol");}
+    else if (mystring_contains(name, "pbe96"))      {gga = 10; add_disp("pbe");}
+    else if (mystring_contains(name, "xbeef-cpbe")) {gga = 17; add_disp("pbesol");} // confirm
+    else if (mystring_contains(name, "beef"))       {gga = 16; add_disp("pbesol");} // confirm
+    else if (mystring_contains(name, "blyp"))       {gga = 11; add_disp("b-lyp");}
+    else if (mystring_contains(name, "pbe"))        {gga = 10; add_disp("pbe");}
+ 
+    // LDA family
+    else if (mystring_contains(name, "vosko") || mystring_contains(name, "lda")) {gga = 0;}
+ 
+    // HF exact exchange - dispersion func flag generally not needed/used here
+    if (mystring_contains(name, "hartree-fock") || name == "hf" || name.find(" hf ") != std::string::npos) {gga = 200;}
+ 
+    // Meta-GGAs - future options
+    if      (mystring_contains(name, "scan"))   gga = 302;
+    else if (mystring_contains(name, "tpss03")) gga = 301;
+    else if (mystring_contains(name, "vs98"))   gga = 300;
+    else if (mystring_contains(name, "pkzb"))   gga = 303;
+    else if (mystring_contains(name, "m06-2x")) gga = 306;
+    else if (mystring_contains(name, "m06-l"))  gga = 304;
+    else if (mystring_contains(name, "m06"))    gga = 305;
+ 
+    // HF exact exchange - dispersion func flag generally not needed/used here
+    if (mystring_contains(name, "hartree-fock") || name == "hf" || name.find(" hf ") != std::string::npos) {gga = 200;}
+ 
+    // Meta-GGAs - future options
+    if      (mystring_contains(name, "scan"))   gga = 302;
+    else if (mystring_contains(name, "tpss03")) gga = 301;
+    else if (mystring_contains(name, "vs98"))   gga = 300;
+    else if (mystring_contains(name, "pkzb"))   gga = 303;
+    else if (mystring_contains(name, "m06-2x")) gga = 306;
+    else if (mystring_contains(name, "m06-l"))  gga = 304;
+    else if (mystring_contains(name, "m06"))    gga = 305;
+ 
+    use_lda = false;
+    use_gga = false;
+    use_mgga = false;
+    if (gga == 0) 
+    {
+       use_lda = true;
+       xtmp = new double[mycneb->ispin * mycneb->nfft3d];
+    }
+    if ((gga >= 10) && (gga < 100)) 
+    {
+       use_gga = true;
+       if (mycneb->ispin == 1) 
+       {
+          rho = new double[mycneb->n2ft3d]; // real
+         
+          grx = new double[mycneb->n2ft3d]; // complex
+          gry = new double[mycneb->n2ft3d]; // complex
+          grz = new double[mycneb->n2ft3d]; // complex
+         
+          agr = new double[mycneb->n2ft3d]; // real|complex
+          fn  = new double[mycneb->n2ft3d]; // real|complex
+          fdn = new double[mycneb->n2ft3d]; // real|complex
+       } 
+       else 
+       {
+          rho = new double[2 * mycneb->n2ft3d]; // real
+         
+          grx = new double[3 * mycneb->n2ft3d]; // complex
+          gry = new double[3 * mycneb->n2ft3d]; // complex
+          grz = new double[3 * mycneb->n2ft3d]; // complex
+         
+          agr = new double[3 * mycneb->n2ft3d]; // real|complex
+          fn  = new double[2 * mycneb->n2ft3d]; // real|complex
+          fdn = new double[3 * mycneb->n2ft3d]; // real|complex
+       }
+    }
+    if ((gga >= 300))
+       use_mgga = true;
+ 
+    if (has_vdw)
+    {
+       myvdw = new cvdw_DF(mygrid,control,is_vdw2);
+    }
+ 
+  
+    // std::cout << "xc_name =" << xc_name << std::endl;
 }
 
 /*******************************************
@@ -184,24 +200,98 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
  *        cXC_Operator::v_exc_all           *
  *                                         *
  *******************************************/
-void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) {
-  if (use_lda) {
-    v_exc(ispin, mycneb->nfft3d, dn, xcp, xce, xtmp);
-    //std::cout << "dn=" << dn[0] << " " << dn[1] << std::endl;
-    //std::cout << "xcp=" << xcp[0] << " " << xcp[1] << std::endl;
-    //double sumall = 0.0;
-    //for (auto i=0; i<mycneb->nfft3d; ++i)
-   // {
-   //    std::cout << "i=" << i << " dnall=" << dn[i] << " xcp=" << xcp[i] << std::endl;
-   //    sumall += dn[i];
-   // }
-   // std::cout << "sumall=" << sumall << std::endl;
+void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce) 
+{
+   if (use_lda) 
+   {
+      v_exc(ispin, mycneb->nfft3d, dn, xcp, xce, xtmp);
 
-  } else if (use_gga) {
-    v_cwexc(gga, mycneb, myvdw, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn,
-            fdn);
-  } else if (use_mgga) {
-  }
+      //std::cout << "dn=" << dn[0] << " " << dn[1] << std::endl;
+      //std::cout << "xcp=" << xcp[0] << " " << xcp[1] << std::endl;
+      //double sumall = 0.0;
+      //for (auto i=0; i<mycneb->nfft3d; ++i)
+      // {
+      //    std::cout << "i=" << i << " dnall=" << dn[i] << " xcp=" << xcp[i] << std::endl;
+      //    sumall += dn[i];
+      // }
+      // std::cout << "sumall=" << sumall << std::endl;
+   } 
+   else if (use_gga) 
+   {
+       v_cwexc(gga, mycneb, myvdw, dn, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn, fdn);
+   } 
+   else if (use_mgga) 
+   {
+       v_cmexc(gga, mycneb, myvdw, dn, tau, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn, fdn, dfdtau);
+   }
 }
+
+
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::gga_gen_tau         *
+ *                                         *
+ *******************************************/
+void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *psi)
+{
+    // 1. Check if Meta-GGA is active (mapped from use_mgga)
+    if (!this->use_mgga) {
+        return;
+    }
+
+    // 2. Setup orbital ranges
+    // Fortran: n1(1)=1, n2(1)=neq(1)... (Adjusted for 0-based C++)
+    int n1[2], n2[2];
+    n1[0] = 0;
+    n2[0] = neq[0];
+    n1[1] = neq[0];
+    n2[1] = neq[0] + neq[1];
+
+    // 3. Scaling factor
+    // lattice_omega() must be a member of XC_Operator or Pneb
+    double scal2 = 0.5 / this->mycneb->lattice->omega();
+
+    // 4. Prepare temporary buffer for dpsi
+    // We use std::vector for the temporary FFT buffer to ensure RAII (auto-cleanup)
+    // The size is 2 * nfft3d to account for the complex nature (real/imag)
+    //size_t nfft3d = this->mycneb->nfft3d;
+    size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
+    size_t n2ft3d = this->mycneb->n2ft3d;
+    std::vector<double> dpsi_tmp(n2ft3d, 0.0);
+    double *dpsi = dpsi_tmp.data();
+
+    this->mycneb->r_nzero(ispin,tau);
+
+    // 5. Main Computation Loop
+    for (int ms=0; ms<ispin; ++ms)
+    {
+        // Offset for the tau array for the current spin
+        size_t tau_offset = ms*n2ft3d;
+
+        for (int n=n1[ms]; n<n2[ms]; ++n)
+        {
+            for (int xyz=0; xyz<3; ++xyz)
+            {
+                // STEP A: Compute Gradient in Reciprocal Space
+                //double *gxyz = this->mycneb->Gpackxyz(1,xyz);
+                //this->mycneb->tcr_pack_iMul_unpack_fft(1, gxyz, psi + n*npack2, dpsi);
+
+                // STEP B: sqr and add
+                this->mycneb->rr_addsqr(dpsi,this->tau + tau_offset);
+            }
+        }
+
+        this->mycneb->r_SMul(scal2,tau+tau_offset);
+        //this->mycneb->r_zero_ends(tau+tau_offset);
+    }
+
+    // 7. Final Step: Sum tau across all spins into a single array
+    this->mycneb->c3db::parall->Vector_SumAll(2, ispin*n2ft3d,tau);
+}
+
+
+
+
 
 } // namespace pwdft

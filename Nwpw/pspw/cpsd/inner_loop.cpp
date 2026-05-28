@@ -213,11 +213,11 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
       /* get Hpsi */
       if (periodic)
       {
-         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion,occ1);
+         psi_H(mygrid,myke,myxc,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion,occ1);
       }
       else if (aperiodic)
       {
-         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion,occ1);
+         psi_Hv4(mygrid,myke,myxc,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion,occ1);
       }
      
       /* do a steepest descent step */
@@ -296,7 +296,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    pxc *= dv;
 
    if (myxc->meta_gga_on())
-      myxc->meta_gga_pxc(ispin, mygrid->neq, psi1);
+      pxc += myxc->meta_gga_pxc(ispin, mygrid->neq, psi1);
 
  
    /* average Kohn-Sham kineticl energy */

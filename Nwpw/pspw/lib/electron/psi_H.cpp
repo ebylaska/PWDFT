@@ -1,6 +1,7 @@
 
 
 #include "Kinetic.hpp"
+#include "exchange_correlation.hpp"
 #include "PGrid.hpp"
 #include "Pseudopotential.hpp"
 
@@ -35,7 +36,7 @@ namespace pwdft {
  * @note This routine performs several Fourier transformations and potential calculations, making it computationally intensive.
  * It should be optimized and tested for performance in a parallel computing environment to ensure efficiency.
  */
-void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
+void psi_H(Pneb *mygrid, Kinetic_Operator *myke,  XC_Operator *myxc, Pseudopotential *mypsp,
            double *psi, double *psi_r, double *vl, double *vc, double *xcp,
            double *Hpsi, bool move, double *fion, double *occ)
 {
@@ -75,6 +76,9 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
    /* TAMD potential */
 
    /* apply extra Meta GGA terms  */
+   if (myxc->meta_gga_on()) 
+       myxc->meta_gga_Hpsik(ispin,mygrid->neq,psi,Hpsi);
+
 
 
    /* apply SIC corrections  */
@@ -182,7 +186,7 @@ void psi_H(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
  *       potential evaluations in both real and reciprocal spaces. It is designed to be part of a larger
  *       simulation loop, managing both wavefunction transformations and energy calculations.
  */
-void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
+void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, XC_Operator *myxc, Pseudopotential *mypsp,
              double *psi, double *psi_r, double *vsr_l, double *vlr_l,
              double *vc, double *xcp, double *Hpsi, bool move, double *fion, 
              double *occ)
@@ -216,6 +220,12 @@ void psi_Hv4(Pneb *mygrid, Kinetic_Operator *myke, Pseudopotential *mypsp,
 
    /* apply non-local PSP  - Expensive */
    mypsp->v_nonlocal_fion(psi, Hpsi, move, fion, occ);
+
+
+   /* apply extra Meta GGA terms  */
+   if (myxc->meta_gga_on())
+       myxc->meta_gga_Hpsik(ispin,mygrid->neq,psi,Hpsi);
+
 
    /* add up k-space potentials, vall = scal2*vsr_l */
    mygrid->cc_pack_SMul(0, scal2, vsr_l, vall);

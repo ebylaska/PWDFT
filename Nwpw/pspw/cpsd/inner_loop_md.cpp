@@ -118,6 +118,10 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       
       mystrfac->phafac();
       myewald->phafac();
+
+      // generate tau
+      if (myxc->meta_gga_on())
+         myxc->gga_gen_tau(ispin, mygrid->neq, psi1);
       
       indx1 = 0;
       indx2 = 0;
@@ -190,9 +194,9 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       
       /* get Hpsi */
       if (periodic)
-         psi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
+         psi_H(mygrid,myke,myxc,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
       else if (aperiodic)
-         psi_Hv4(mygrid,myke,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion);
+         psi_Hv4(mygrid,myke,myxc,mypsp,psi1,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion);
       
       
       /* get the ion-ion force */
@@ -323,6 +327,9 @@ void inner_loop_md(const bool verlet, double *sa_alpha, Control2 &control,
       }
       exc *= dv;
       pxc *= dv;
+
+      if (myxc->meta_gga_on())
+         pxc += myxc->meta_gga_pxc(ispin, mygrid->neq, psi1);
      
       elocal = mygrid->cc_pack_dot(0, dng, vl);
      

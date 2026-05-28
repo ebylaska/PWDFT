@@ -115,6 +115,13 @@ void Electron_Operators::gen_psi_r(double *psi)
        indx2 += shift2;
     }
     */
+
+    // generate tau functions 
+    if (myxc->meta_gga_on())
+       myxc->gga_gen_tau(ispin, mygrid->neq, psi);
+
+
+
 }
 
 /********************************************
@@ -423,9 +430,9 @@ void Electron_Operators::gen_Hpsi_k(double *psi, double *occ)
  
    /* get Hpsi */
    if (periodic)
-      psi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
+      psi_H(mygrid,myke,myxc,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
    if (aperiodic)
-      psi_Hv4(mygrid,myke,mypsp,psi,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion0,occ);
+      psi_Hv4(mygrid,myke,myxc,mypsp,psi,psi_r,vl,vlr_l,vcall,xcp,Hpsi,move,fion0,occ);
  
    mygrid->g_Scale(-1.0,Hpsi);
 }
@@ -623,7 +630,7 @@ double Electron_Operators::exc(double *dnall)
  *          Electron_Operators::pxc         *
  *                                          *
  ********************************************/
-double Electron_Operators::pxc(double *dn) 
+double Electron_Operators::pxc(double *dn, double *psi) 
 {
    double pxcsum = mygrid->rr_dot(dn, xcp);
    if (ispin==1) {
@@ -632,6 +639,11 @@ double Electron_Operators::pxc(double *dn)
       pxcsum += mygrid->rr_dot(&dn[n2ft3d], &xcp[n2ft3d]);
    }
    pxcsum *= dv;
+
+   // meta_GGA energy 
+   if (myxc->meta_gga_on())
+      pxcsum += myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
+
  
    return pxcsum;
 }
@@ -678,7 +690,12 @@ double Electron_Operators::energy(double *psi, double *dn, double *dng, double *
    }
    exc0 *= dv;
    pxc0 *= dv;
- 
+
+
+   // meta_GGA energy 
+   if (myxc->meta_gga_on())
+      pxc0 += myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
+         
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  
    if (mypsp->myapc->v_apc_on) {
@@ -729,6 +746,11 @@ void Electron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    }
    exc0 *= dv;
    pxc0 *= dv;
+
+   // meta_GGA energy 
+   if (myxc->meta_gga_on())
+      pxc0 += myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
+
  
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  

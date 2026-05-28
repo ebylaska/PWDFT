@@ -322,7 +322,7 @@ public:
    double psi2_eorbit() { return myelectron->eorbit(psi2); }
    double ehartree() { return myelectron->ehartree(dng1); }
    double exc() { return myelectron->exc(rho1_all); }
-   double pxc() { return myelectron->pxc(rho1); }
+   double pxc() { return myelectron->pxc(rho1,psi1); }
    double eke() { return myelectron->eke(psi1,occ1); }
    double vl_ave() { return myelectron->vl_ave(dng1); }
    double vlr_ave() { return myelectron->vlr_ave(rho1); }
