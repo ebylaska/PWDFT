@@ -56,6 +56,7 @@ void inner_loop(Control2 &control, Pneb *mygrid, Ion *myion,
    // dv = lattice_omega()*scal1;
    scal2 = 1.0/omega;
    dv = omega*scal1;
+
  
    dt = control.time_step();
    dte = dt/sqrt(control.fake_mass());

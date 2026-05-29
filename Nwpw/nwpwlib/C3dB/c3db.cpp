@@ -1109,6 +1109,7 @@ void c3db::r_zero(double *ptr)
  */
 void c3db::r_nzero(int n, double *ptr) 
 {
+   std::cout << "nfft3d=" << nfft3d << " n=" << n << std::endl;
    std::memset(ptr, 0, n * nfft3d * sizeof(double));
 }
 

@@ -98,6 +98,14 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       // convert psi(G) to psi(r) - Expensive 
       mygrid->gh_fftb(psi1,psi_r);
 
+
+      std::cout << "HERA" << std::endl;
+      // generate tau
+      if (myxc->meta_gga_on())
+         myxc->gga_gen_tau(ispin, mygrid->neq, psi1);
+
+      std::cout << "HERB" << std::endl;
+
       // generate dn
       if (occ)
          mygrid->hr_aSumSqr_occ(scal2,occ,psi_r,dn);
@@ -147,17 +155,23 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
       mycoulomb->vcoulomb(dng,vc);
       mygrid->cc_pack_copy(0,vc,vcall);
 
+      std::cout << "HERC, nfft3d=" << nfft3d << " ispin=" << ispin <<  std::endl;
       // generate exchange-correlation potential 
       std::memset(xcp,0,ispin*nfft3d*sizeof(double));
       std::memset(xce,0,ispin*nfft3d*sizeof(double));
+      std::cout << "HERC2" << std::endl;
       myxc->v_exc_all(ispin,dnall,xcp,xce);
+      std::cout << "HERD" << std::endl;
      
       // get Hpsi
       cpsi_H(mygrid,myke,mypsp,psi1,psi_r,vl,vcall,xcp,Hpsi,move,fion);
 
+      std::cout << "HERE" << std::endl;
+
       // do a steepest descent step
       mygrid->gg_SMul(dte,Hpsi,psi2);
       mygrid->gg_Sum2(psi1,psi2);
+      std::cout << "HERF" << std::endl;
 
       if (move)
       {
@@ -178,6 +192,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
 
       // lagrange multiplier - Expensive 
       mygrid->ggw_lambda(dte, psi1, psi2, lmbda);
+      std::cout << "HERg" << std::endl;
    }
 
    //|-\____|\/-----\/\/->    End Parallel Section    <-\/\/-----\/|____/-|
@@ -209,9 +224,15 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    }
    exc *= dv;
    pxc *= dv;
+      std::cout << "HERH" << std::endl;
  
-   // average Kohn-Sham kineticl energy 
-   eke = myke->ke_ave(psi1,occ);
+   // average Kohn-Sham kinetic energy 
+   if (occ)
+      eke = myke->ke_ave(psi1,occ);
+   else
+      eke = myke->ke_ave(psi1);
+
+   std::cout << "HERG" << std::endl;
  
    // average Kohn-Sham local psp energy
    elocal = mygrid->cc_pack_dot(0, dng, vl);
@@ -222,7 +243,13 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    mygrid->g_zero(Hpsi);
    mypsp->v_nonlocal(psi1, Hpsi);
    //enlocal = -mygrid->w_trace_occ(psi1, Hpsi,occ);
-   enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ);
+
+   std::cout << "HERG2" << std::endl;
+   if (occ)
+      enlocal = -mygrid->gg_traceall_occ(psi1, Hpsi,occ);
+   else
+      enlocal = -mygrid->gg_traceall(psi1, Hpsi);
+   std::cout << "HERG3" << std::endl;
  
    Eold = E[0];
    E[0] = eorbit + eion + exc - ehartr - pxc;
@@ -287,6 +314,7 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
          *deltar = sum;
      }
    }
+      std::cout << "HERY" << std::endl;
  
    //delete[] fion;
  
@@ -301,6 +329,8 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
 
    mygrid->c_pack_deallocate(vc);
    mygrid->c_pack_deallocate(vcall);
+
+      std::cout << "HERZ" << std::endl;
 
 }
 } // namespace pwdft

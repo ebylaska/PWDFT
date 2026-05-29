@@ -29,6 +29,7 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
              double *grx, double *gry, double *grz, double *agr, 
              double *fn, double *fdn, double *dfdtau) 
 {
+   std::cout << "MERA" << std::endl;
    double *rhog = fn; // complex
    double *Gx = mycneb->Gpackxyz(0, 0);
    double *Gy = mycneb->Gpackxyz(0, 1);
@@ -42,10 +43,12 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
    /**********************************
     ***** restricted calculation *****
     **********************************/
+   std::cout << "MERB" << std::endl;
    if (mycneb->ispin == 1) 
    {
       // mycneb->r_nzero(2,agr);
       mycneb->r_zero(agr);
+   std::cout << "MERC" << std::endl;
      
       /* calculate rho tmp1=rho(g) */
       mycneb->rr_copy(dn,rho);
@@ -53,6 +56,8 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
       mycneb->rc_SMul(scal1,rho,rhog);
       mycneb->rc_fft3d(rhog);
       mycneb->c_pack(0,rhog);
+
+   std::cout << "MERD" << std::endl;
      
       /* calculate gr = grad n - all complex*/
       mycneb->tcc_pack_iMul(0, Gx, rhog, grx);
@@ -64,57 +69,62 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
       mycneb->cr_fft3d(grx);
       mycneb->cr_fft3d(gry);
       mycneb->cr_fft3d(grz);
+
+   std::cout << "MERE" << std::endl;
      
       /* calculate agr = |grad n| -- agr needs to be real */
       mycneb->cr_sqr(grx, agr);
       mycneb->cr_addsqr(gry, agr);
       mycneb->cr_addsqr(grz, agr);
       mycneb->r_sqrt(agr);
+
+   std::cout << "MERF" << std::endl;
      
       switch (gga) {
       case 300:
-        gen_VS98_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_VS98_restricted(mycneb->nfft3d, rho, agr, tau, 
                             x_parameter, c_parameter, 
                             xce, fn, fdn, dfdtau);
         break;
       case 301:
-        gen_TPSS03_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_TPSS03_restricted(mycneb->nfft3d, rho, agr, tau, 
                               x_parameter, c_parameter,
                               xce, fn, fdn, dfdtau);
         break;
       case 302:
-        gen_SCAN_restricted(mycneb->n2ft3d, rho, agr, tau, 
+   std::cout << "MERG" << std::endl;
+        gen_SCAN_restricted(mycneb->nfft3d, rho, agr, tau, 
                             x_parameter, c_parameter, 
                             xce, fn, fdn, dfdtau);
         break;
       case 303:
-        gen_PKZB_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_PKZB_restricted(mycneb->nfft3d, rho, agr, tau, 
                             x_parameter, c_parameter, 
                             xce, fn, fdn, dfdtau);
         break;
       case 304:
-        gen_M06L_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_M06L_restricted(mycneb->nfft3d, rho, agr, tau, 
                             x_parameter, c_parameter,
                             xce, fn, fdn, dfdtau);
         break;
       case 305:
-        gen_M06_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_M06_restricted(mycneb->nfft3d, rho, agr, tau, 
                            0.73, c_parameter, 
                            xce, fn, fdn, dfdtau);
         break;
       case 306:
-        gen_M06_2x_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_M06_2x_restricted(mycneb->nfft3d, rho, agr, tau, 
                               0.48, c_parameter,
                               xce, fn, fdn, dfdtau);
         break;
       case 307:
-        gen_r2SCAN_restricted(mycneb->n2ft3d, rho, agr, tau, 
+        gen_r2SCAN_restricted(mycneb->nfft3d, rho, agr, tau, 
                               x_parameter, c_parameter,
                               xce, fn, fdn, dfdtau);
         break;
      
       default:
-        gen_PBE96_BW_restricted(mycneb->n2ft3d, rho, agr, 
+        gen_PBE96_BW_restricted(mycneb->nfft3d, rho, agr, 
                                 x_parameter, c_parameter, 
                                 xce, fn, fdn);
       }
@@ -254,48 +264,48 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
      
       switch (gga) {
          case 300:
-           gen_VS98_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_VS98_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                  x_parameter, c_parameter,
                                  xce, fn, fdn, dfdtau);
            break;
          case 301:
-           gen_TPSS03_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_TPSS03_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                    x_parameter, c_parameter,
                                    xce, fn, fdn, dfdtau);
            break;
          case 302:
-           gen_SCAN_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_SCAN_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                  x_parameter, c_parameter,
                                  xce, fn, fdn, dfdtau);
            break;
          case 303:
-           gen_PKZB_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_PKZB_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                   x_parameter, c_parameter,
                                   xce, fn, fdn, dfdtau);
            break;
          case 304:
-           gen_M06L_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_M06L_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                  x_parameter, c_parameter,
                                  xce, fn, fdn, dfdtau);
            break;
          case 305:
-           gen_M06_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_M06_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                 0.73, c_parameter,
                                 xce, fn, fdn, dfdtau);
            break;
          case 306:
-           gen_M06_2x_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_M06_2x_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                    0.46, c_parameter,
                                    xce, fn, fdn, dfdtau);
            break;
          case 307:
-           gen_r2SCAN_unrestricted(mycneb->n2ft3d, rho, agr, tau,
+           gen_r2SCAN_unrestricted(mycneb->nfft3d, rho, agr, tau,
                                    x_parameter, c_parameter,
                                    xce, fn, fdn, dfdtau);
            break;
  
          default:
-           gen_PBE96_BW_unrestricted(mycneb->n2ft3d, rho, agr,
+           gen_PBE96_BW_unrestricted(mycneb->nfft3d, rho, agr,
                                      x_parameter, c_parameter,
                                      xce, fn, fdn);
       }
