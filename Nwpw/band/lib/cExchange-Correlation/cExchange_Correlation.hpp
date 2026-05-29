@@ -73,8 +73,8 @@ public:
  
     // meta gga routines
     void   gga_gen_tau(const int, const int[2], const double *);
-    //void   meta_gga_Hpsik(const int, const int[2], const double *, double *);
-    //double meta_gga_pxc(const int, const int[2], const double *);
+    void   meta_gga_Hpsik(const int, const int[2], const double *, double *);
+    double meta_gga_pxc(const int, const int[2], const double *);
     bool   meta_gga_on() { return use_mgga; }
  
     //output routine

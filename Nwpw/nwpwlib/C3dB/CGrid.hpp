@@ -225,6 +225,7 @@ public:
 
    void tcc_pack_Mul(const int, const double *, const double *, double *);
    void tcc_pack_iMul(const int, const double *, const double *, double *);
+   void tc_pack_iMul(const int, const double *, double *);
  
    void rc_pack_copy(const int, double *, double *);
    void tc_pack_copy(const int, double *, double *);
@@ -319,6 +320,8 @@ public:
                                  double *);
 
    void zccr_pack_iMul(const int, const double *, const double *, const double *, double *);
+
+   void tcr_pack_iMul_unpack_fft(const int, const double *, const double *, double *);
 
 
  

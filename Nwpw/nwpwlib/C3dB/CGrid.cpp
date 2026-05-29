@@ -3738,6 +3738,29 @@ void CGrid::tcc_pack_Mul(const int nb, const double *a, const double *b, double 
    }
 }
 
+
+/********************************
+ *                              *
+ *     CGrid:tc_pack_iMul       *
+ *                              *
+ ********************************/
+void CGrid::tc_pack_iMul(const int nb, const double *a, double *c)
+{
+   double x, y;
+   int ng = nidb[nb];
+   int ii = 0;
+   for (auto i=0; i<ng; ++i)
+   {
+      x = c[ii];
+      y = c[ii+1];
+
+      c[ii]   = -y*a[i];
+      c[ii+1] =  x*a[i];
+      ii += 2;
+   }
+}
+
+
 /********************************
  *                              *
  *      CGrid:rcc_pack_aMul     *
@@ -4307,6 +4330,45 @@ void CGrid::zccr_pack_iconjgMul(const int nb, const double *alpha, const double 
       c[i] = alpha[0]*(a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1]) 
            + alpha[1]*(a[2*i]*b[2*i] + a[2*i+1]*b[2*i+1]);
 }
+
+
+/*******************************************
+ *                                         *
+ *     CGrid:tcr_pack_iMul_unpack_fft      *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Computes the gradient of a scalar field in real space via Reciprocal Space multiplication.
+ *    
+ * This optimized kernel implements a high-performance pipeline to transform wavefunctions
+ * (or other scalar fields) from G-space to R-space while calculating the gradient.
+ * It minimizes memory bandwidth bottlenecks by chaining operations.
+ *
+ * The mathematical pipeline is:
+ * 1. Multiply: $\psi(G) \times i\mathbf{G}$ (using coefficients in 'a' and vectors in 'b').
+ * 2. Unpack: Reorganize interleaved complex data for FFT compatibility.
+ * 3. Transform: Perform a 3D FFT (Complex-to-Real) to return to real space.
+ * 4. Mask: Zero out the grid boundaries to prevent periodic artifacts.
+ * 
+ * @param nb  Index of the grid/box (used to retrieve dimensions from nida/nidb).
+ * @param a   Pointer to input coefficients in reciprocal space (e.g., $\psi$ coefficients).
+ * @param b   Pointer to the vector components in reciprocal space (e.g., $G_x, G_y, G_z$).
+ * @param c   Pointer to the output buffer containing the gradient in real space.
+ */ 
+void CGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double *b, double *c)
+{  
+   int ii = 0;
+   for (int i=0; i<nidb[nb]; ++i)
+   {
+      c[ii]   = -b[ii+1]* a[i];
+      c[ii+1] = b[ii]   * a[i];
+      ii += 2;
+   }
+   this->c_unpack(nb,c);
+   this->cr_pfft3b(nb,c);
+   //this->d3db::r_zero_ends(c);
+}
+
 
 
 /**********************************

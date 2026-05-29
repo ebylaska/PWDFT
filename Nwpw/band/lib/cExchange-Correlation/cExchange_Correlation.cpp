@@ -258,36 +258,150 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
     //size_t nfft3d = this->mycneb->nfft3d;
     size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
     size_t n2ft3d = this->mycneb->n2ft3d;
+    size_t nbrillq = this->mycneb->nbrillq;
     std::vector<double> dpsi_tmp(n2ft3d, 0.0);
     double *dpsi = dpsi_tmp.data();
+
+    int ishift = (neq[0]+neq[1])*npack2;
 
     this->mycneb->r_nzero(ispin,tau);
 
     // 5. Main Computation Loop
-    for (int ms=0; ms<ispin; ++ms)
+    for (int nbq=0; nbq<nbrillq; ++nbq)
     {
-        // Offset for the tau array for the current spin
-        size_t tau_offset = ms*n2ft3d;
-
-        for (int n=n1[ms]; n<n2[ms]; ++n)
+        double weight =  this->mycneb->pbrill_weight(nbq);
+        int nbq1 = nbq+1;
+        for (int ms=0; ms<ispin; ++ms)
         {
-            for (int xyz=0; xyz<3; ++xyz)
+            // Offset for the tau array for the current spin
+            size_t tau_offset = ms*n2ft3d;
+
+            for (int n=n1[ms]; n<n2[ms]; ++n)
             {
-                // STEP A: Compute Gradient in Reciprocal Space
-                //double *gxyz = this->mycneb->Gpackxyz(1,xyz);
-                //this->mycneb->tcr_pack_iMul_unpack_fft(1, gxyz, psi + n*npack2, dpsi);
-
-                // STEP B: sqr and add
-                this->mycneb->rr_addsqr(dpsi,this->tau + tau_offset);
+                for (int xyz=0; xyz<3; ++xyz)
+                {
+                    //STEP A: Compute Gradient in Reciprocal Space
+                    double *gxyz = this->mycneb->Gpackxyz(nbq1,xyz);
+                    this->mycneb->tcr_pack_iMul_unpack_fft(nbq1, gxyz, psi + n*npack2 + nbq*ishift, dpsi);
+                
+                
+                    // STEP B: sqr and add
+                    this->mycneb->rr_addsqr(dpsi, this->tau + tau_offset);
+                }
             }
-        }
 
-        this->mycneb->r_SMul(scal2,tau+tau_offset);
-        //this->mycneb->r_zero_ends(tau+tau_offset);
+            this->mycneb->r_SMul(weight*scal2,tau+tau_offset);
+            //this->mycneb->r_zero_ends(tau+tau_offset);
+        }
     }
 
     // 7. Final Step: Sum tau across all spins into a single array
-    this->mycneb->c3db::parall->Vector_SumAll(2, ispin*n2ft3d,tau);
+    this->mycneb->c3db::parall->Vector_SumAll(2, nbrillq*ispin*n2ft3d,tau);
+}
+
+
+
+/*******************************************
+ *                                         *
+ *        cXC_Operator::meta_gga_Hpsik      *
+ *                                         *
+ *******************************************/
+void cXC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const double *psi, double *hpsi)
+{
+    // 1. Check if Meta-GGA is active (mapped from use_mgga) 
+    if (!this->use_mgga) {
+        return;
+    }
+
+    // 2. Setup orbital ranges             
+    // Fortran: n1(1)=1, n2(1)=neq(1)... (Adjusted for 0-based C++)
+    int n1[2], n2[2];                      
+    n1[0] = 0;
+    n2[0] = neq[0];
+    n1[1] = neq[0];
+    n2[1] = neq[0] + neq[1];
+
+    double scal1 = 1.0 / ((double)((mycneb->nx) * (mycneb->ny) * (mycneb->nz)));
+    double scal2 = 1.0 / this->mycneb->lattice->omega();
+    double scal = 0.5*scal1;
+
+    size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
+    size_t n2ft3d = this->mycneb->n2ft3d;
+    size_t nbrillq = this->mycneb->nbrillq;
+    std::vector<double> dpsi_tmp(n2ft3d, 0.0);
+    double *dpsi = dpsi_tmp.data();
+
+    int ishift = (neq[0]+neq[1])*npack2;
+
+    for (int nbq=0; nbq<nbrillq; ++nbq)
+    {
+        double weight =  this->mycneb->pbrill_weight(nbq);
+        int nbq1 = nbq+1;
+
+        for (int ms=0; ms<ispin; ++ms) 
+        {
+            size_t tau_offset = ms*n2ft3d;
+            for (int n=n1[ms]; n<n2[ms]; ++n) 
+            {
+                for (int xyz=0; xyz<3; ++xyz) 
+                {
+                    double *gxyz = this->mycneb->Gpackxyz(nbq1, xyz);
+                    this->mycneb->tcr_pack_iMul_unpack_fft(nbq1, gxyz, psi + n*npack2 + nbq*ishift, dpsi);
+ 
+                    this->mycneb->rr_Mul(dfdtau+tau_offset, dpsi);
+ 
+                    this->mycneb->rc_pfft3f(nbq1, dpsi);
+                    this->mycneb->c_pack(nbq1,dpsi);
+                    this->mycneb->c_pack_SMul(nbq1, scal, dpsi);
+ 
+                    this->mycneb->tc_pack_iMul(nbq1, gxyz, dpsi);
+                    this->mycneb->cc_pack_Sum2(nbq1, dpsi, hpsi+n*npack2 + nbq+ishift);
+                }
+ 
+            }
+        }
+    }
+
+}
+
+
+
+/*******************************************
+ *                                         *
+ *        XC_Operator::meta_gga_pxc        *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Computes the energy contribution from the meta-GGA functional.
+ * 
+ * This function calculates the integral of the product of the functional 
+ * derivative (df/dtau) and the kinetic energy density (tau) over the 
+ * 3D volume, weighted by the volume of a single voxel (dV).
+ *
+ * @param ispin The number of spin components (1 for restricted, 2 for polarized).
+ * @arg ne      Array containing the number of electrons for each spin.
+ * @arg psi     Pointer to the wavefunction data.
+ * @return The calculated energy contribution.
+ */
+double  cXC_Operator::meta_gga_pxc(const int ispin, const int ne[2], const double *psi) 
+{
+    size_t n2ft3d = this->mycneb->n2ft3d;
+
+    //Calculate the volume element (dV)
+    double total_voxels = static_cast<double>(this->mycneb->nx * this->mycneb->ny * this->mycneb->nz);
+    double dV = this->mycneb->lattice->omega() / total_voxels;
+
+
+    //Sum the energy contribution across all active spins
+    double pmeta = 0.0;
+    for (int ms=0; ms<ispin; ++ms) 
+    {
+        size_t tau_offset = ms*n2ft3d;
+        pmeta += dV*this->mycneb->rr_dot(dfdtau + tau_offset, tau + tau_offset);
+    }
+    if (ispin==1) pmeta = pmeta + pmeta;
+
+    return pmeta;
 }
 
 

@@ -238,8 +238,7 @@ public:
   void pfftbz_compute(const int, const int, double *, double *, int, int);
   void pfftbz_end(const int, const int, double *, double *, int, int);
 
-  void tcr_pack_iMul_unpack_fft(const int, const double *, const double *,
-                                double *);
+  void tcr_pack_iMul_unpack_fft(const int, const double *, const double *, double *);
 
   void regenerate_r_grid();
   void initialize_r_grid() {
