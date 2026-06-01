@@ -564,19 +564,19 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
          if ((!fractional) && (deltae > 0.0) && (icount > 1) && control.deltae_check())
          {
             done = 1;
-            if (oprint) std::cout << "         *** Energy going up. iteration terminated\n";
+            if (oprint) std::cout << std::endl << "         *** Energy going up. iteration terminated\n";
          }
          else if ((std::fabs(deltae) < control.tolerances(0)) &&
                   (deltac < control.tolerances(1)) &&
                   (deltar < control.tolerances(2)))
          {
             done = 1;
-            if (oprint) std::cout << "         *** tolerance ok.    iteration terminated\n";
+            if (oprint) std::cout << std::endl << "         *** tolerance ok.    iteration terminated\n";
          }
          else if (icount >= control.loop(1))
          {
             done = 1;
-            if (oprint) std::cout << "          *** arrived at the Maximum iteration.    terminated ***\n";
+            if (oprint) std::cout << std::endl << "          *** arrived at the Maximum iteration.    terminated ***\n";
          }
 
 
@@ -819,7 +819,7 @@ int band_cpsd(MPI_Comm comm_world0, std::string &rtdbstring)
       if (pk==myparallel.taskid_k()) 
       {
          std::memcpy(tmpeig,eig+nbq*n, n*sizeof(double));
-         std::memcpy(tmpocc,occ1+nbq*n,n*sizeof(double));
+         if (occ1) std::memcpy(tmpocc,occ1+nbq*n,n*sizeof(double));
       }
       myparallel.Vector_SumAll(3,n,tmpeig);
       myparallel.Vector_SumAll(3,n,tmpocc);

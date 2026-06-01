@@ -1,6 +1,7 @@
 
 
 #include "cKinetic.hpp"
+#include "cExchange_Correlation.hpp"
 #include "CGrid.hpp"
 #include "CPseudopotential.hpp"
 
@@ -28,7 +29,7 @@ namespace pwdft {
            fion   - ionic forces
 */
 
-void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
+void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, cXC_Operator *myxc, CPseudopotential *mypsp,
             double *psi, double *psi_r, double *vl, double *vc, double *xcp,
             double *Hpsi, bool move, double *fion, double *occ)
 
@@ -70,6 +71,10 @@ void cpsi_H(Cneb *mygrid, cKinetic_Operator *myke, CPseudopotential *mypsp,
    /* TAMD potential */
 
    /* apply extra Meta GGA terms  */
+   if (myxc->meta_gga_on()) 
+       myxc->meta_gga_Hpsik(ispin,mygrid->neq,psi,Hpsi);
+
+
 
 
    /* apply SIC corrections  */

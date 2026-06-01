@@ -388,7 +388,7 @@ void cElectron_Operators::gen_Hpsi_k(double *psi, double *occ)
    mygrid->g_zero(Hpsi);
  
    /* get Hpsi */
-   cpsi_H(mygrid,myke,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
+   cpsi_H(mygrid,myke,myxc,mypsp,psi,psi_r,vl,vcall,xcp,Hpsi,move,fion0,occ);
  
    mygrid->g_Scale(-1.0,Hpsi);
 }

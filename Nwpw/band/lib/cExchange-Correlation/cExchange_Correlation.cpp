@@ -255,9 +255,7 @@ void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
    } 
    else if (use_mgga) 
    {
-       std::cout << "v_cmexc into" << std::endl;
        v_cmexc(gga, mycneb, myvdw, dn, tau, 1.0, 1.0, xcp, xce, rho, grx, gry, grz, agr, fn, fdn, dfdtau);
-       std::cout << "v_cmexc OUT " << std::endl;
    }
 }
 
@@ -270,7 +268,6 @@ void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
  *******************************************/
 void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *psi)
 {
-    std::cout << "GERA" << std::endl;
 
     // 1. Check if Meta-GGA is active (mapped from use_mgga)
     if (!this->use_mgga) {
@@ -289,33 +286,25 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
     // lattice_omega() must be a member of XC_Operator or Pneb
     double scal2 = 0.5 / this->mycneb->lattice->omega();
 
-    std::cout << "GERB" << std::endl;
 
     // 4. Prepare temporary buffer for dpsi
     // We use std::vector for the temporary FFT buffer to ensure RAII (auto-cleanup)
     // The size is 2 * nfft3d to account for the complex nature (real/imag)
     //size_t nfft3d = this->mycneb->nfft3d;
     size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
-    std::cout << "GERC" << std::endl;
     size_t n2ft3d = this->mycneb->n2ft3d;
     int    nbrillq = this->mycneb->nbrillq;
-    std::cout << "GERD" << std::endl;
     std::vector<double> dpsi_tmp(n2ft3d, 0.0);
-    std::cout << "GERE" << std::endl;
     double *dpsi = dpsi_tmp.data();
 
-    std::cout << "GERF, nbrillq=" << nbrillq <<  std::endl;
     int ishift = (neq[0]+neq[1])*npack2;
 
-    std::cout << "GERF, ispin=" << ispin << " n2ft3d="<< n2ft3d <<   std::endl;
     this->mycneb->r_nzero(ispin,tau);
 
     // 5. Main Computation Loop
     for (int nbq=0; nbq<nbrillq; ++nbq)
     {
-    std::cout << "GERG, nbq=" << nbq << std::endl;
         double weight =  this->mycneb->pbrill_weight(nbq);
-    std::cout << "GERG, nbq=" << nbq << " weight=" << weight <<   std::endl;
         int nbq1 = nbq+1;
         for (int ms=0; ms<ispin; ++ms)
         {
@@ -401,7 +390,7 @@ void cXC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const doubl
                     this->mycneb->c_pack_SMul(nbq1, scal, dpsi);
  
                     this->mycneb->tc_pack_iMul(nbq1, gxyz, dpsi);
-                    this->mycneb->cc_pack_Sum2(nbq1, dpsi, hpsi+n*npack2 + nbq+ishift);
+                    this->mycneb->cc_pack_Sum2(nbq1, dpsi, hpsi+n*npack2 + nbq*ishift);
                 }
  
             }

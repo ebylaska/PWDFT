@@ -263,7 +263,6 @@ void v_cwexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn,
       // add vdw here
       if (has_vdw)
       {
-         std::cout << "vdw HERB" << std::endl;
          vdw->evaluate(mycneb->ispin,dn,agr,xce,fn,fdn);
       }
 

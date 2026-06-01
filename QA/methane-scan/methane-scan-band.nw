@@ -30,7 +30,7 @@ nwpw
   end
   steepest_descent
      time_step 1.0
-     loop 1 1 
+     loop 10 500
   end
 end
 

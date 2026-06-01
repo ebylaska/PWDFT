@@ -29,7 +29,6 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
              double *grx, double *gry, double *grz, double *agr, 
              double *fn, double *fdn, double *dfdtau) 
 {
-   std::cout << "MERA" << std::endl;
    double *rhog = fn; // complex
    double *Gx = mycneb->Gpackxyz(0, 0);
    double *Gy = mycneb->Gpackxyz(0, 1);
@@ -43,12 +42,10 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
    /**********************************
     ***** restricted calculation *****
     **********************************/
-   std::cout << "MERB" << std::endl;
    if (mycneb->ispin == 1) 
    {
       // mycneb->r_nzero(2,agr);
       mycneb->r_zero(agr);
-   std::cout << "MERC" << std::endl;
      
       /* calculate rho tmp1=rho(g) */
       mycneb->rr_copy(dn,rho);
@@ -57,7 +54,6 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
       mycneb->rc_fft3d(rhog);
       mycneb->c_pack(0,rhog);
 
-   std::cout << "MERD" << std::endl;
      
       /* calculate gr = grad n - all complex*/
       mycneb->tcc_pack_iMul(0, Gx, rhog, grx);
@@ -70,7 +66,6 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
       mycneb->cr_fft3d(gry);
       mycneb->cr_fft3d(grz);
 
-   std::cout << "MERE" << std::endl;
      
       /* calculate agr = |grad n| -- agr needs to be real */
       mycneb->cr_sqr(grx, agr);
@@ -78,7 +73,6 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
       mycneb->cr_addsqr(grz, agr);
       mycneb->r_sqrt(agr);
 
-   std::cout << "MERF" << std::endl;
      
       switch (gga) {
       case 300:
@@ -92,7 +86,6 @@ void v_cmexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn, doubl
                               xce, fn, fdn, dfdtau);
         break;
       case 302:
-   std::cout << "MERG" << std::endl;
         gen_SCAN_restricted(mycneb->nfft3d, rho, agr, tau, 
                             x_parameter, c_parameter, 
                             xce, fn, fdn, dfdtau);
