@@ -216,6 +216,11 @@ void band_inner_loop(Control2 &control, Cneb *mygrid, Ion *myion,
    }
    exc *= dv;
    pxc *= dv;
+                
+   if (myxc->meta_gga_on()) 
+      pxc += myxc->meta_gga_pxc(ispin, mygrid->neq, psi1);
+
+
  
    // average Kohn-Sham kinetic energy 
    if (occ)

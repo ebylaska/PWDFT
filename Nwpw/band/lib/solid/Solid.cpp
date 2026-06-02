@@ -162,7 +162,7 @@ Solid::Solid(char *infilename, bool wvfnc_initialize, Cneb *mygrid0,
       std::cout << "electron eorbit = " << myelectron->eorbit(psi1) << std::endl;
       std::cout << "electron ehartr = " << myelectron->ehartree(dng1) <<
       std::endl; std::cout << "electron exc    = " << myelectron->exc(rho1_all)
-      <<  std::endl; std::cout << "electron pxc    = " << myelectron->pxc(rho1)
+      <<  std::endl; std::cout << "electron pxc    = " << myelectron->pxc(rho1,psi1)
       <<  std::endl; 
       std::cout << "B electron ehartr = " << myelectron->ehartree(dng1) <<  std::endl; 
       std::cout << "electron vl_ave  = " << myelectron->vl_ave(dng1) <<  std::endl; 

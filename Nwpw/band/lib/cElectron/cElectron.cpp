@@ -82,6 +82,14 @@ void cElectron_Operators::gen_psi_r(double *psi)
 {
    /* convert psi(G) to psi(r) */
    mygrid->gh_fftb(psi,psi_r);
+ 
+   // generate tau functions
+   if (myxc->meta_gga_on())
+   {
+      std::cout << "INTO TAU" << std::endl;
+      myxc->gga_gen_tau(ispin, mygrid->neq, psi);
+   }
+
 }
 
 /********************************************
@@ -713,8 +721,9 @@ double cElectron_Operators::exc(double *dnall)
  *         cElectron_Operators::pxc         *
  *                                          *
  ********************************************/
-double cElectron_Operators::pxc(double *dn) 
+double cElectron_Operators::pxc(double *dn, double *psi) 
 {
+   std::cout << "FERA" << std::endl;
    double pxcsum = mygrid->rr_dot(dn, xcp);
    if (ispin==1) 
    {
@@ -725,6 +734,16 @@ double cElectron_Operators::pxc(double *dn)
       pxcsum += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    pxcsum *= dv;
+
+   // meta_GGA energy
+   if (myxc->meta_gga_on())
+   {
+      double lj = myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
+      std::cout << " pxc=" << lj << std::endl;
+      pxcsum += lj;
+   }
+
+
  
    return pxcsum;
 }

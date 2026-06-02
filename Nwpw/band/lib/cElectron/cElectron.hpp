@@ -104,7 +104,7 @@ public:
    double ehartree(double *);
    double ehartree2(double *);
    double exc(double *);
-   double pxc(double *);
+   double pxc(double *, double *);
    double eke(double *psi, double *occ = nullptr);
  
    void gen_energies_en(double *psi, double *dn, double *dng,

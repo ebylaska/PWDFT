@@ -22,18 +22,21 @@ set nwpw:use_symmetry true
 nwpw
   2d-hcurve
   cutoff 30.0
-  #xc scan
-  xc pbe
+  xc scan
+  #xc pbe
   lmbfgs
   simulation_cell
     FCC 38.0
   end
   steepest_descent
      time_step 1.0
-     loop 10 500
+     loop 1 1
   end
+  tolerances 1.0e-11 1.0e-11
 end
 
-task band steepest_descent
+#task band steepest_descent
+task band noit_energy
+#task band energy
 
 
