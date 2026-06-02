@@ -188,33 +188,33 @@ cXC_Operator::cXC_Operator(Cneb *mygrid, Control2 &control)
         use_mgga = true;
         if (mycneb->ispin == 1) 
         {
-            rho = new double[mycneb->n2ft3d];
+            rho = new double[mycneb->n2ft3d]; // real?
             
-            grx = new double[mycneb->n2ft3d];
-            gry = new double[mycneb->n2ft3d];
-            grz = new double[mycneb->n2ft3d];
+            grx = new double[mycneb->n2ft3d]; // complex
+            gry = new double[mycneb->n2ft3d]; // complex
+            grz = new double[mycneb->n2ft3d]; // complex
             
-            agr = new double[mycneb->n2ft3d];
-            fn  = new double[mycneb->n2ft3d];
-            fdn = new double[mycneb->n2ft3d];
+            agr = new double[mycneb->n2ft3d]; // real|complex
+            fn  = new double[mycneb->n2ft3d]; // real|complex
+            fdn = new double[mycneb->n2ft3d]; // real|complex
           
-            tau    = new double[mycneb->n2ft3d];
-            dfdtau = new double[mycneb->n2ft3d];
+            tau    = new double[mycneb->nfft3d];
+            dfdtau = new double[mycneb->nfft3d];
         }  
         else
         {
-            rho = new double[2 * mycneb->n2ft3d];
+            rho = new double[2 * mycneb->n2ft3d]; // real?
             
-            grx = new double[3 * mycneb->n2ft3d];
-            gry = new double[3 * mycneb->n2ft3d];
-            grz = new double[3 * mycneb->n2ft3d];
+            grx = new double[3 * mycneb->n2ft3d]; // complex
+            gry = new double[3 * mycneb->n2ft3d]; // complex
+            grz = new double[3 * mycneb->n2ft3d]; // complex
             
-            agr = new double[3 * mycneb->n2ft3d];
-            fn  = new double[2 * mycneb->n2ft3d];
-            fdn = new double[3 * mycneb->n2ft3d];
+            agr = new double[3 * mycneb->n2ft3d]; // real|complex
+            fn  = new double[2 * mycneb->n2ft3d]; // real|complex
+            fdn = new double[3 * mycneb->n2ft3d]; // real|complex
           
-            tau    = new double[2 * mycneb->n2ft3d];
-            dfdtau = new double[2 * mycneb->n2ft3d];
+            tau    = new double[2 * mycneb->nfft3d];
+            dfdtau = new double[2 * mycneb->nfft3d];
         }
     }
 
@@ -292,6 +292,7 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
     // The size is 2 * nfft3d to account for the complex nature (real/imag)
     //size_t nfft3d = this->mycneb->nfft3d;
     size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
+    size_t nfft3d = this->mycneb->nfft3d;
     size_t n2ft3d = this->mycneb->n2ft3d;
     int    nbrillq = this->mycneb->nbrillq;
     std::vector<double> dpsi_tmp(n2ft3d, 0.0);
@@ -309,7 +310,7 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
         for (int ms=0; ms<ispin; ++ms)
         {
             // Offset for the tau array for the current spin
-            size_t tau_offset = ms*n2ft3d;
+            size_t tau_offset = ms*nfft3d;
 
             for (int n=n1[ms]; n<n2[ms]; ++n)
             {
@@ -318,10 +319,12 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
                     //STEP A: Compute Gradient in Reciprocal Space
                     double *gxyz = this->mycneb->Gpackxyz(nbq1,xyz);
                     this->mycneb->tcr_pack_iMul_unpack_fft(nbq1, gxyz, psi + n*npack2 + nbq*ishift, dpsi);
+                    //dpsi is n2ft3d
                 
                 
-                    // STEP B: sqr and add
-                    this->mycneb->rr_addsqr(dpsi, this->tau + tau_offset);
+                    // STEP B: sqr and add tau is nfft3d
+                    //this->mycneb->rr_addsqr(dpsi, this->tau + tau_offset);
+                    this->mycneb->cr_addsqr(dpsi, this->tau + tau_offset);
                 }
             }
 
@@ -331,7 +334,7 @@ void cXC_Operator::gga_gen_tau(const int ispin, const int neq[2], const double *
     }
 
     // 7. Final Step: Sum tau across all spins into a single array
-    this->mycneb->c3db::parall->Vector_SumAll(2, nbrillq*ispin*n2ft3d,tau);
+    this->mycneb->c3db::parall->Vector_SumAll(2, nbrillq*ispin*nfft3d,tau);
 }
 
 
@@ -361,6 +364,7 @@ void cXC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const doubl
     double scal = 0.5*scal1;
 
     size_t npack2 = 2*this->mycneb->CGrid::npack1_max();
+    size_t nfft3d = this->mycneb->nfft3d;
     size_t n2ft3d = this->mycneb->n2ft3d;
     size_t nbrillq = this->mycneb->nbrillq;
     std::vector<double> dpsi_tmp(n2ft3d, 0.0);
@@ -375,7 +379,7 @@ void cXC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const doubl
 
         for (int ms=0; ms<ispin; ++ms) 
         {
-            size_t tau_offset = ms*n2ft3d;
+            size_t tau_offset = ms*nfft3d;
             for (int n=n1[ms]; n<n2[ms]; ++n) 
             {
                 for (int xyz=0; xyz<3; ++xyz) 
@@ -383,7 +387,8 @@ void cXC_Operator::meta_gga_Hpsik(const int ispin, const int neq[2], const doubl
                     double *gxyz = this->mycneb->Gpackxyz(nbq1, xyz);
                     this->mycneb->tcr_pack_iMul_unpack_fft(nbq1, gxyz, psi + n*npack2 + nbq*ishift, dpsi);
  
-                    this->mycneb->rr_Mul(dfdtau+tau_offset, dpsi);
+                    //this->mycneb->rr_Mul(dfdtau+tau_offset, dpsi);
+                    this->mycneb->rc_Mul(dfdtau+tau_offset, dpsi);
  
                     this->mycneb->rc_pfft3f(nbq1, dpsi);
                     this->mycneb->c_pack(nbq1,dpsi);
