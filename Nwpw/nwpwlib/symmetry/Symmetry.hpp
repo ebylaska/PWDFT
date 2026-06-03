@@ -122,6 +122,7 @@ private:
 
     Type type_ = Type::Trivial;
 
+    std::string true_name_;
     std::string name_;
     int ita_number_ = 0;
 

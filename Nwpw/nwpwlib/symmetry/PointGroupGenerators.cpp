@@ -119,6 +119,35 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
         }
         return n;
     };
+     //Updated parse_n: Handles digits AND the infinity sentinel
+    //auto parse_n = [&](size_t pos) -> int {
+    //    // 1. Check for the "Infinity" sentinel first
+    //    // We check if the substring starting at 'pos' contains "inf" 
+    //    // or the UTF-8 encoding for the ∞ symbol.
+    //    std::string sub = symbol.substr(pos, 5); // Look ahead a few characters
+    //    
+    //    if (sub.find("inf") != std::string::npos || 
+    //        (pos + 2 < symbol.size() && 
+    //         (unsigned char)symbol[pos] == 0xE2 && // Start of UTF-8 ∞ sequence
+    //         (unsigned char)symbol[pos+1] == 0x88 && 
+    //         (unsigned char)symbol[pos+2] == 0x9E)) {
+    //        return -1; // Return -1 as a sentinel value for D_infinity
+    //    }
+// 
+ //       // 2. Standard Digit Parsing (Your original logic)
+  //      int n = 0;
+   //     bool found_digit = false;
+    //    for (; pos < symbol.size(); ++pos) {
+     //       if (!std::isdigit(static_cast<unsigned char>(symbol[pos]))) break;
+     //       n = 10 * n + (symbol[pos] - '0');
+     //       found_digit = true;
+     //   }
+// 
+ //       // If no digits were found and it wasn't the 'inf' sentinel, 
+  //      // this is an error or a non-numeric group.
+   //     return found_digit ? n : -1; 
+    //};
+
 
     // Cn, Cnv, Cnh
     if (symbol[0] == 'C') {
@@ -141,13 +170,18 @@ std::vector<SymOp> PointGroupGenerators::generate(const std::string& symbol)
 
         int n = parse_n(1);
         if (n <= 0)
-            throw std::runtime_error("Invalid Dn group: " + symbol);
+        {
+            n = 40;
+         //   throw std::runtime_error("Invalid Dn group: " + symbol);
+         }
 
         if (symbol.size() == 1 + std::to_string(n).size())
             return Dn(n);
 
         if (symbol.back() == 'h')
+        {
             return Dnh(n);
+        }
 
         if (symbol.back() == 'd')
             return Dnd(n);

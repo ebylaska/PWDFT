@@ -14,6 +14,36 @@ using json = nlohmann::json;
 
 namespace pwdft {
 
+/**
+ * @brief Specifically searches for the "D∞h" pattern (or "Dinfh") 
+ *        and transforms it into a computational D40h representation.
+ */
+static std::string transform_symmetry(const std::string& input, int n_comp) 
+{
+    // 1. Define the target pattern. 
+    // IMPORTANT: Your source file MUST be saved in UTF-8 encoding 
+    // for the compiler to recognize the '∞' symbol correctly.
+    std::string target_infinity = "D∞h";
+    std::string target_ascii_inf = "Dinfh";
+    
+    // 1. Construct the output string (e.g., "D40h")
+    std::string replacement = "D" + std::to_string(n_comp) + "h";
+
+    // 2. Check for the presence of the true mathematical symbol
+    if (input.find(target_infinity) != std::string::npos) {
+        return replacement;
+    }
+
+    // 3. Check for the ASCII 'inf' fallback (for users typing in terminals)
+    if (input.find(target_ascii_inf) != std::string::npos) {
+        return replacement;
+    }
+
+    // 4. If no infinity pattern is found, return the original string (e.g., "D4h")
+    return input;
+}
+
+
 static bool has_identity(const std::vector<SymOp>& ops)
 {
     const double tol = 1e-12;
@@ -198,8 +228,9 @@ Symmetry Symmetry::from_point_group(const std::string& pg_symbol)
 {
     Symmetry s;
     s.type_ = Type::PointGroup;
-    s.name_ = pg_symbol;
-    s.ops_ = PointGroupGenerators::generate(pg_symbol);
+    s.true_name_ = pg_symbol;
+    s.name_ = transform_symmetry(pg_symbol, 40);
+    s.ops_ = PointGroupGenerators::generate(s.name_);
     s.num_centering_ = 1;
 
     // Build class labels consistent with the character table
