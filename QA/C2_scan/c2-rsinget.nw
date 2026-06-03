@@ -1,0 +1,36 @@
+title "hello"
+echo
+
+start test-scan1
+memory 1900 mb
+
+permanent_dir ./perm_scan_rdft
+scratch_dir   ./perm_scan_rdft
+
+geometry 
+C         0.0  0.0 0.0
+C         1.24 0.0 0.0
+end
+
+
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set nwpw:use_symmetry true
+nwpw
+  2d-hcurve
+  cutoff 50.0
+  xc scan
+  #xc pbe
+  lmbfgs
+  simulation_cell
+    FCC 38.0
+  end
+end
+
+driver
+   maxiter 50
+end
+
+task pspw optimize
+
+
