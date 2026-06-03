@@ -119,7 +119,6 @@ void Electron_Operators::gen_psi_r(double *psi)
     // generate tau functions 
     if (myxc->meta_gga_on())
     {
-       std::cout << "INTO TAU" << std::endl;
        myxc->gga_gen_tau(ispin, mygrid->neq, psi);
     }
 

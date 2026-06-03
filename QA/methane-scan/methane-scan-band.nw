@@ -32,11 +32,11 @@ nwpw
      time_step 1.0
      loop 1 1
   end
-  tolerances 1.0e-11 1.0e-11
+  #tolerances 1.0e-11 1.0e-11
 end
 
 #task band steepest_descent
-task band noit_energy
-#task band energy
+#task band noit_energy
+task band energy
 
 

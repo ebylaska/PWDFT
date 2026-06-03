@@ -86,7 +86,6 @@ void cElectron_Operators::gen_psi_r(double *psi)
    // generate tau functions
    if (myxc->meta_gga_on())
    {
-      std::cout << "INTO TAU" << std::endl;
       myxc->gga_gen_tau(ispin, mygrid->neq, psi);
    }
 
@@ -738,9 +737,7 @@ double cElectron_Operators::pxc(double *dn, double *psi)
    // meta_GGA energy
    if (myxc->meta_gga_on())
    {
-      double lj = myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
-      std::cout << " pxc=" << lj << std::endl;
-      pxcsum += lj;
+      pxcsum +=  myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
    }
 
 
@@ -792,6 +789,10 @@ double cElectron_Operators::energy(double *psi, double *dn, double *dng, double 
    }
    exc0 *= dv;
    pxc0 *= dv;
+
+   // meta_GGA energy
+   if (myxc->meta_gga_on())
+      pxc0 += myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
  
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  
@@ -833,6 +834,9 @@ void cElectron_Operators::gen_energies_en(double *psi, double *dn, double *dng,
    exc0 *= dv;
    pxc0 *= dv;
 
+   // meta_GGA energy
+   if (myxc->meta_gga_on())
+      pxc0 += myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
  
    total_energy = eorbit0 + exc0 - ehartr0 - pxc0;
  
