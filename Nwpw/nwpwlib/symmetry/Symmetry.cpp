@@ -233,6 +233,8 @@ Symmetry Symmetry::from_point_group(const std::string& pg_symbol)
     s.ops_ = PointGroupGenerators::generate(s.name_);
     s.num_centering_ = 1;
 
+    std::cout << "True_name =" << s.true_name_ << std::endl;
+
     // Build class labels consistent with the character table
     return s;
 }
@@ -352,6 +354,16 @@ const std::vector<SymOp>& Symmetry::operators() const
 const std::string& Symmetry::name() const
 {
     return name_;
+}
+
+/*******************************************
+ *                                         *
+ *            Symmetry::true_name          *
+ *                                         *
+ *******************************************/
+const std::string& Symmetry::true_name() const
+{
+    return true_name_;
 }
 
 /*******************************************

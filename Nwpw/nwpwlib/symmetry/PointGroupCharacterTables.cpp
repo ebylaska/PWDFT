@@ -766,6 +766,530 @@ static PointGroupCharacterTable make_C3v()
           Ir{"E",  2, { 2, -1,  0}} }
     );
 }
+static PointGroupCharacterTable make_C4v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C4v: order = 8
+    // Standard classes:
+    //   E (1)
+    //   2C4 (2)
+    //   C2 (1)
+    //   2σv (2)
+    //   2σd (2)
+    std::vector<std::string> classNames = {"E","2C4","C2","2sv","2sd"};
+    std::vector<int> classSizes = {  1,   2,    1,   2,    2 };
+
+    std::vector<Ir> irreps = {
+        Ir{"A1",1,{ 1, 1, 1, 1, 1}},
+        Ir{"A2",1,{ 1, 1, 1,-1,-1}},
+        Ir{"B1",1,{ 1,-1, 1, 1,-1}},
+        Ir{"B2",1,{ 1,-1, 1,-1, 1}},
+        Ir{"E", 2,{ 2, 0,-2, 0, 0}},
+    };
+
+    return PointGroupCharacterTable::build(
+        "C4v",
+        8,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+
+static PointGroupCharacterTable make_C5v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C5v: order = 2n = 10
+    // Classes:
+    //   E (1)
+    //   2C5 (2)        : C5, C5^4
+    //   2C5^2 (2)      : C5^2, C5^3
+    //   5σv (5)
+    std::vector<std::string> classNames = {"E","2C5","2C5^2","5sv"};
+    std::vector<int> classSizes        = {  1,   2,    2,    5 };
+
+    // Irreps: A1, A2, E1, E2
+    // For E_k (k=1,2): χ(C5^m) = 2cos(2π k m / 5), χ(σv)=0
+    constexpr double c72  = 0.30901699437494745;  // cos(72°)
+    constexpr double c144 = -0.8090169943749473;  // cos(144°)
+
+    std::vector<Ir> irreps = {
+        Ir{"A1",1,{ 1, 1, 1,  1}},
+        Ir{"A2",1,{ 1, 1, 1, -1}},
+        Ir{"E1",2,{ 2, 2*c72,  2*c144, 0}},   // {2, 0.6180339, -1.6180339, 0}
+        Ir{"E2",2,{ 2, 2*c144, 2*c72,  0}},   // {2, -1.6180339, 0.6180339, 0}
+    };
+
+    return PointGroupCharacterTable::build(
+        "C5v",
+        10,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+static PointGroupCharacterTable make_C6v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C6v: order = 2n = 12
+    // Standard classes (n even, not divisible by 4):
+    //   E (1)
+    //   2C6 (2)          (C6, C6^5)
+    //   2C6^2 (2)        (C3, C3^2)
+    //   C6^3 (1)         (C2)
+    //   3σv (3)
+    //   3σd (3)
+    constexpr int n = 6;
+    constexpr int order = 2 * n; // 12
+    constexpr double pi = 3.14159265358979323846;
+
+    std::vector<std::string> classNames = {
+        "E","2C6","2C6^2","C6^3","3sv","3sd"
+    };
+    std::vector<int> classSizes = {
+        1,  2,    2,     1,    3,    3
+    };
+
+    // 1D irreps: A1, A2, B1, B2
+    // Let r=C6 with r->+1 for A, r->-1 for B; and mirror signs distinguish v/d:
+    // In C6v the standard convention matches the usual table:
+    //   A1: all +1
+    //   A2: sv +1, sd -1
+    //   B1: C2' like +1 pattern -> sv -1, sd +1 with C6->-1
+    //   B2: sv -1, sd -1 with C6->-1 but differs on C6^2
+    //
+    // Easiest is to hardcode the standard C6v table for this class order:
+    //  A1:  1  1  1  1  1  1
+    //  A2:  1  1  1  1 -1 -1
+    //  B1:  1 -1  1 -1  1 -1
+    //  B2:  1 -1  1 -1 -1  1
+    //  E1:  2  1 -1 -2  0  0
+    //  E2:  2 -1 -1  2  0  0
+    //
+    // (E1 and E2 are the two 2D irreps.)
+
+    std::vector<Ir> irreps = {
+        Ir{"A1", 1, {1,  1,  1,  1,  1,  1}},
+        Ir{"A2", 1, {1,  1,  1,  1, -1, -1}},
+        Ir{"B1", 1, {1, -1,  1, -1,  1, -1}},
+        Ir{"B2", 1, {1, -1,  1, -1, -1,  1}},
+        Ir{"E1", 2, {2,  1, -1, -2,  0,  0}},
+        Ir{"E2", 2, {2, -1, -1,  2,  0,  0}},
+    };
+
+    return PointGroupCharacterTable::build(
+        "C6v",
+        order,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+static PointGroupCharacterTable make_C8v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C8v: order = 2n = 16
+    // For n divisible by 4, use split mirror classes:
+    //   E
+    //   2C8, 2C8^3
+    //   C8^2, C8^4
+    //   4σv, 4σd
+    // Total classes = 1 + 1 + 1 + 1 + 1 + 1 + 1 = 7 classes? (sizes sum to 16)
+    //
+    // More explicitly (7 classes):
+    //   E (1)
+    //   2C8 (2)        [k=1]
+    //   2C8^2 (2)      [k=2]
+    //   2C8^3 (2)      [k=3]
+    //   C8^4 (1)       [k=4]
+    //   4sv (4)
+    //   4sd (4)
+    constexpr int n = 8;
+    constexpr int order = 2 * n; // 16
+    constexpr double pi = 3.14159265358979323846;
+
+    std::vector<std::string> classNames = {
+        "E","2C8","2C8^2","2C8^3","C8^4","4sv","4sd"
+    };
+    std::vector<int> classSizes = {
+        1,  2,    2,     2,     1,   4,    4
+    };
+
+    // 1D irreps for Cnv with n divisible by 4: A1, A2, B1, B2
+    // Use r = C8, and for mirrors distinguish σv vs σd.
+    //
+    // In 1D reps:
+    //   r -> +1 (A) or -1 (B)
+    //   σv -> +1 ("1") or -1 ("2")
+    //   σd -> (r)^(n/4) * σv; for n=8, n/4=2 and (r)^2 is always +1 in 1D (even if r=-1),
+    //         so σv and σd have the same character in these 1D reps.
+    // (As with D8h, the σv/σd distinction shows up in 2D reps depending on convention/basis.)
+    auto make1D = [&](std::string name, int rSign, int svSign) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(7);
+
+        auto rpow = [&](int k)->double {
+            if (rSign == 1) return 1.0;
+            return (k % 2) ? -1.0 : 1.0; // (-1)^k
+        };
+
+        chi.push_back(1.0);      // E
+        chi.push_back(rpow(1));  // 2C8
+        chi.push_back(rpow(2));  // 2C8^2
+        chi.push_back(rpow(3));  // 2C8^3
+        chi.push_back(rpow(4));  // C8^4
+
+        chi.push_back(double(svSign)); // 4sv
+        chi.push_back(double(svSign)); // 4sd (same in these 1D reps)
+
+        return Ir{name, 1, chi};
+    };
+
+    // 2D irreps: E_l, l=1..(n/2-1)=3
+    // χ(C8^k)=2cos(2π l k / 8), χ(C8^4)=2(-1)^l
+    // For reflections in Cnv 2D irreps: χ(σ) = 0.
+    auto make2D = [&](std::string name, int l) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(7);
+
+        auto rot = [&](int k)->double {
+            return 2.0 * std::cos(2.0 * pi * double(l) * double(k) / double(n));
+        };
+
+        chi.push_back(2.0);     // E
+        chi.push_back(rot(1));  // 2C8
+        chi.push_back(rot(2));  // 2C8^2
+        chi.push_back(rot(3));  // 2C8^3
+        double c4 = 2.0 * ((l % 2) ? -1.0 : 1.0); // 2(-1)^l
+        chi.push_back(c4);      // C8^4
+
+        chi.push_back(0.0);     // 4sv
+        chi.push_back(0.0);     // 4sd
+
+        return Ir{name, 2, chi};
+    };
+
+    std::vector<Ir> irreps;
+    irreps.reserve(4 + 3); // 7 irreps total
+
+    irreps.push_back(make1D("A1", +1, +1));
+    irreps.push_back(make1D("A2", +1, -1));
+    irreps.push_back(make1D("B1", -1, +1));
+    irreps.push_back(make1D("B2", -1, -1));
+
+    for (int l = 1; l <= 3; ++l)
+        irreps.push_back(make2D("E" + std::to_string(l), l));
+
+    return PointGroupCharacterTable::build(
+        "C8v",
+        order,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+static PointGroupCharacterTable make_C10v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C10v: order = 2n = 20
+    // Even n class structure:
+    //   E
+    //   2C10^k, k=1..(n/2-1)=4
+    //   C10^5
+    //   10σv
+    // Total classes = 1 + 4 + 1 + 1 = 7
+    constexpr int n = 10;
+    constexpr int order = 2 * n;     // 20
+    constexpr int m = n / 2;         // 5
+    constexpr double pi = 3.14159265358979323846;
+
+    std::vector<std::string> classNames;
+    std::vector<int> classSizes;
+
+    classNames.push_back("E");
+    classSizes.push_back(1);
+
+    for (int k = 1; k <= m - 1; ++k) { // k=1..4
+        classNames.push_back("2C10^" + std::to_string(k));
+        classSizes.push_back(2);
+    }
+
+    classNames.push_back("C10^5");
+    classSizes.push_back(1);
+
+    classNames.push_back("10sv");
+    classSizes.push_back(n);
+
+    // 1D irreps (n even): A1, A2, B1, B2
+    // Take r = C10 and s = σv. Then:
+    //   r -> +1 (A) or -1 (B)
+    //   s -> +1 ("1") or -1 ("2")
+    auto make1D = [&](std::string name, int rSign, int sSign) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(7);
+
+        auto rpow = [&](int k)->double {
+            if (rSign == 1) return 1.0;
+            return (k % 2) ? -1.0 : 1.0; // (-1)^k
+        };
+
+        chi.push_back(1.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rpow(k)); // 2C10^k
+
+        chi.push_back(rpow(5));          // C10^5 ( = -1 if r=-1 and k odd; here k=5 odd)
+        chi.push_back(double(sSign));    // 10sv
+
+        return Ir{name, 1, chi};
+    };
+
+    // 2D irreps: E_l, l=1..(m-1)=4
+    // χ(C10^k)=2cos(2π l k / 10), χ(C10^5)=2(-1)^l, χ(σv)=0
+    auto make2D = [&](std::string name, int l) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(7);
+
+        auto rot = [&](int k)->double {
+            return 2.0 * std::cos(2.0 * pi * double(l) * double(k) / double(n));
+        };
+
+        chi.push_back(2.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rot(k)); // 2C10^k
+
+        double c5 = 2.0 * ((l % 2) ? -1.0 : 1.0); // 2(-1)^l
+        chi.push_back(c5);
+
+        chi.push_back(0.0); // 10sv
+
+        return Ir{name, 2, chi};
+    };
+
+    std::vector<Ir> irreps;
+    irreps.reserve(4 + (m - 1)); // 4 one-dimensional + 4 two-dimensional = 8 irreps
+
+    irreps.push_back(make1D("A1", +1, +1));
+    irreps.push_back(make1D("A2", +1, -1));
+    irreps.push_back(make1D("B1", -1, +1));
+    irreps.push_back(make1D("B2", -1, -1));
+
+    for (int l = 1; l <= m - 1; ++l)
+        irreps.push_back(make2D("E" + std::to_string(l), l));
+
+    return PointGroupCharacterTable::build(
+        "C10v",
+        order,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+static PointGroupCharacterTable make_C20v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C20v: order = 2n = 40
+    // Even n class structure:
+    //   E
+    //   2C20^k, k=1..(n/2-1)=9
+    //   C20^10
+    //   20σv
+    // Total classes = 1 + 9 + 1 + 1 = 12
+    constexpr int n = 20;
+    constexpr int order = 2 * n;     // 40
+    constexpr int m = n / 2;         // 10
+    constexpr double pi = 3.14159265358979323846;
+
+    std::vector<std::string> classNames;
+    std::vector<int> classSizes;
+
+    classNames.push_back("E");
+    classSizes.push_back(1);
+
+    for (int k = 1; k <= m - 1; ++k) { // k=1..9
+        classNames.push_back("2C20^" + std::to_string(k));
+        classSizes.push_back(2);
+    }
+
+    classNames.push_back("C20^10");
+    classSizes.push_back(1);
+
+    classNames.push_back("20sv");
+    classSizes.push_back(n);
+
+    // 1D irreps (n even): A1, A2, B1, B2
+    // Take r = C20 and s = σv. Then for 1D reps:
+    //   r -> +1 (A) or -1 (B)
+    //   s -> +1 ("1") or -1 ("2")
+    auto make1D = [&](std::string name, int rSign, int sSign) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(12);
+
+        auto rpow = [&](int k)->double {
+            if (rSign == 1) return 1.0;
+            return (k % 2) ? -1.0 : 1.0; // (-1)^k
+        };
+
+        chi.push_back(1.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rpow(k)); // 2C20^k
+
+        chi.push_back(rpow(10));         // C20^10 (always +1 even if r=-1)
+        chi.push_back(double(sSign));    // 20sv
+
+        return Ir{name, 1, chi};
+    };
+
+    // 2D irreps: E_l, l=1..(m-1)=9
+    // χ(C20^k) = 2cos(2π l k / 20), χ(C20^10)=2(-1)^l, χ(σv)=0
+    auto make2D = [&](std::string name, int l) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(12);
+
+        auto rot = [&](int k)->double {
+            return 2.0 * std::cos(2.0 * pi * double(l) * double(k) / double(n));
+        };
+
+        chi.push_back(2.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rot(k)); // 2C20^k
+
+        double c10 = 2.0 * ((l % 2) ? -1.0 : 1.0); // 2(-1)^l
+        chi.push_back(c10);
+
+        chi.push_back(0.0); // 20sv
+
+        return Ir{name, 2, chi};
+    };
+
+    std::vector<Ir> irreps;
+    irreps.reserve(4 + (m - 1)); // 4 one-dimensional + 9 two-dimensional = 13 irreps
+
+    irreps.push_back(make1D("A1", +1, +1));
+    irreps.push_back(make1D("A2", +1, -1));
+    irreps.push_back(make1D("B1", -1, +1));
+    irreps.push_back(make1D("B2", -1, -1));
+
+    for (int l = 1; l <= m - 1; ++l)
+        irreps.push_back(make2D("E" + std::to_string(l), l));
+
+    return PointGroupCharacterTable::build(
+        "C20v",
+        order,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
+
+static PointGroupCharacterTable make_C40v()
+{
+    using Ir = PointGroupCharacterTable::Irrep;
+
+    // C40v: order = 2n = 80
+    // For even n, standard class structure:
+    //   E
+    //   2C40^k, k=1..(n/2-1)=19
+    //   C40^20
+    //   40σv
+    // Total classes = 1 + 19 + 1 + 1 = 22
+    constexpr int n = 40;
+    constexpr int order = 2 * n;     // 80
+    constexpr int m = n / 2;         // 20
+    constexpr double pi = 3.14159265358979323846;
+
+    std::vector<std::string> classNames;
+    std::vector<int> classSizes;
+
+    classNames.push_back("E");
+    classSizes.push_back(1);
+
+    for (int k = 1; k <= m - 1; ++k) { // k=1..19
+        classNames.push_back("2C40^" + std::to_string(k));
+        classSizes.push_back(2);
+    }
+
+    classNames.push_back("C40^20");
+    classSizes.push_back(1);
+
+    classNames.push_back("40sv");
+    classSizes.push_back(n);
+
+    // 1D reps: A1, A2, B1, B2 (since n even)
+    // Use r = C40, s = σv. For 1D reps:
+    //   r -> +1 (A) or -1 (B)
+    //   s -> +1 ("1") or -1 ("2")
+    // Then χ(C40^k)=(r)^k, χ(σv)=s
+    auto make1D = [&](std::string name, int rSign, int sSign) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(22);
+
+        auto rpow = [&](int k)->double {
+            if (rSign == 1) return 1.0;
+            return (k % 2) ? -1.0 : 1.0; // (-1)^k
+        };
+
+        chi.push_back(1.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rpow(k)); // 2C40^k
+
+        chi.push_back(rpow(20));          // C40^20 (always +1 even if r=-1)
+        chi.push_back(double(sSign));     // 40sv
+
+        return Ir{name, 1, chi};
+    };
+
+    // 2D reps: E_l, l=1..(m-1)=19
+    // χ(C40^k)=2cos(2π l k / 40), χ(C40^20)=2(-1)^l, χ(σv)=0
+    auto make2D = [&](std::string name, int l) -> Ir {
+        std::vector<double> chi;
+        chi.reserve(22);
+
+        auto rot = [&](int k)->double {
+            return 2.0 * std::cos(2.0 * pi * double(l) * double(k) / double(n));
+        };
+
+        chi.push_back(2.0); // E
+
+        for (int k = 1; k <= m - 1; ++k) chi.push_back(rot(k)); // 2C40^k
+
+        double c20 = 2.0 * ((l % 2) ? -1.0 : 1.0); // 2(-1)^l
+        chi.push_back(c20);
+
+        chi.push_back(0.0); // 40sv
+
+        return Ir{name, 2, chi};
+    };
+
+    std::vector<Ir> irreps;
+    irreps.reserve(4 + (m - 1)); // 4 one-dimensional + 19 two-dimensional = 23 irreps
+
+    irreps.push_back(make1D("A1", +1, +1));
+    irreps.push_back(make1D("A2", +1, -1));
+    irreps.push_back(make1D("B1", -1, +1));
+    irreps.push_back(make1D("B2", -1, -1));
+
+    for (int l = 1; l <= m - 1; ++l)
+        irreps.push_back(make2D("E" + std::to_string(l), l));
+
+    return PointGroupCharacterTable::build(
+        "C40v",
+        order,
+        classNames,
+        classSizes,
+        irreps
+    );
+}
 
 static PointGroupCharacterTable make_D3h()
 {
@@ -884,6 +1408,13 @@ PointGroupCharacterTable PointGroupCharacterTable::from_symbol(const std::string
     if (symbol == "D20h") return make_D20h();
     if (symbol == "D40h") return make_D40h();
     if (symbol == "C3v") return make_C3v();
+    if (symbol == "C4v") return make_C4v();
+    if (symbol == "C5v") return make_C5v();
+    if (symbol == "C6v") return make_C6v();
+    if (symbol == "C8v") return make_C8v();
+    if (symbol == "C10v") return make_C10v();
+    if (symbol == "C20v") return make_C20v();
+    if (symbol == "C40v") return make_C40v();
     if (symbol == "D3h") return make_D3h();
     if (symbol == "Td")  return make_Td();
     if (symbol == "Oh")  return make_Oh();

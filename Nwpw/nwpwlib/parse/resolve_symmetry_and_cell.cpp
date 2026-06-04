@@ -1051,6 +1051,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
          sym_source = "autosym";
          sym_backend = "internal";
 
+        std::cout << "point_group_name=" << point_group_name << std::endl;
 
          // update geometry
         // write_symbols_and_coords_flat(geomjson, symbols, rion_sym);
@@ -1084,6 +1085,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["source"]    = sym_source;
    es["primitive"] = symmetry_primitive_requested;
    es["name"]      = sym.name();
+   es["true_name"] = sym.true_name();
    es["order"]     = sym.order();
    es["tolerance"] = symmetry_tolerance;
    es["enabled"] = (symmetry_specified || autosym || autospace);

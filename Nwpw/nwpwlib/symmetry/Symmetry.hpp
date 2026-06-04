@@ -51,6 +51,7 @@ public:
 
     /** Return symmetry name (HM or Schoenflies). */
     const std::string& name() const;
+    const std::string& true_name() const;
 
     /** True if this is a space group. */
     bool is_space_group() const;

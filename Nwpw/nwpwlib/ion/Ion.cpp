@@ -577,6 +577,7 @@ Ion::Ion(std::string rtdbstring, Control2 &control)
    //mysymmetry = Symmetry::from_point_group(group_name);
    mysymmetry = control.symmetry();
    group_name = mysymmetry.name();
+   true_name = mysymmetry.true_name();
    group_rank = mysymmetry.order();
    sym_unita  = control.unita_ptr();
 
@@ -1177,6 +1178,8 @@ std::string Ion::print_symmetry_group()
    else 
    {
       const auto* table = this->get_character_table();
+      if (this->group_name != this->true_name) stream << "      exact point group name   : " << this->true_name << std::endl;
+
       stream << "      point group name   : " << this->group_name
                                         << "  (group rank = "  << this->group_rank
                                         << " rotation type : " << this->rotation_type <<")" <<  std::endl;

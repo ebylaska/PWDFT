@@ -91,7 +91,7 @@ public:
    double sym_tolerance = 0.001;
    double inertia_tensor[9], inertia_axes[9], inertia_moments[3];
    std::string rotation_type;
-   std::string group_name;
+   std::string group_name,true_name;
    int group_rank;
 
    std::unique_ptr<PointGroupCharacterTable> character_table;
