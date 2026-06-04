@@ -233,7 +233,6 @@ Symmetry Symmetry::from_point_group(const std::string& pg_symbol)
     s.ops_ = PointGroupGenerators::generate(s.name_);
     s.num_centering_ = 1;
 
-    std::cout << "True_name =" << s.true_name_ << std::endl;
 
     // Build class labels consistent with the character table
     return s;
@@ -271,7 +270,16 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
    // Handle point groups explicitly
    if (j.value("type","") == "point_group" && j.contains("name"))
    {
-      return Symmetry::from_point_group(j["name"].get<std::string>());
+      //return Symmetry::from_point_group(j["name"].get<std::string>());
+      auto tsym = Symmetry::from_point_group(j["name"].get<std::string>());
+      if (j.contains("point_group_name"))
+          tsym.true_name_ = j["point_group_name"];
+      else if (j.contains("true_name"))
+          tsym.true_name_ = j["true_name"];
+      else
+          tsym.true_name_ = j["name"];
+      
+      return tsym;
    }
 
    // Handle trivial symmetry explicitly
@@ -287,7 +295,8 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
     else
     {
         std::string name = j.value("point_group_name", "C1");
-        std::cout << "TRIVIAL → " << name << std::endl;
+        //std::cout << "TRIVIAL → " << name << std::endl;
+        //std::cout << "POINTROUP DEV" << std::endl;
         return Symmetry::from_point_group(name);
     }
    }

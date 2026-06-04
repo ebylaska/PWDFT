@@ -1178,21 +1178,21 @@ std::string Ion::print_symmetry_group()
    else 
    {
       const auto* table = this->get_character_table();
-      if (this->group_name != this->true_name) stream << "      exact point group name   : " << this->true_name << std::endl;
+      if (this->group_name != this->true_name) stream << "      exact point group name : " << this->true_name << std::endl;
 
-      stream << "      point group name   : " << this->group_name
+      stream << "      point group name       : " << this->group_name
                                         << "  (group rank = "  << this->group_rank
                                         << " rotation type : " << this->rotation_type <<")" <<  std::endl;
 
-      stream << "      principal-axis frame : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
+      stream << "      principal-axis frame   : e1 = <" << Ffmt(8,3) << this->inertia_axes[0] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[1] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[2] << " > - "
                                                       << "moment =" << Efmt(14,7) << this->inertia_moments[0] << std::endl;
-      stream << "                             e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
+      stream << "                               e2 = <" << Ffmt(8,3) << this->inertia_axes[3] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[4] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[5] << " > - "
                                                       << "moment =" << Efmt(14,7) << this->inertia_moments[1] << std::endl;
-      stream << "                             e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
+      stream << "                               e3 = <" << Ffmt(8,3) << this->inertia_axes[6] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[7] << " "
                                                       << Ffmt(8,3) << this->inertia_axes[8] << " > - "
                                                       << "moment =" << Efmt(14,7) << this->inertia_moments[2] << std::endl;
@@ -1201,8 +1201,10 @@ std::string Ion::print_symmetry_group()
       stream << std::defaultfloat << std::setprecision(3);
 
       stream << "\n      character table (" << table->group() << ")\n";
-
-               
+      if (this->group_rank > 25)
+         stream << "      too large";
+      else
+      {
       // header  
       stream << "      " << std::setw(8) << " ";
            
@@ -1223,6 +1225,7 @@ std::string Ion::print_symmetry_group()
             stream << std::setw(8) << chi;
             
          stream << "\n";
+      }
       }
 
       stream << "\n";

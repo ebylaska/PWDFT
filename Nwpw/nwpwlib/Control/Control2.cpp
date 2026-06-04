@@ -160,6 +160,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        {
            try
            {
+              //std::cout << "into from json, es=" << es <<  std::endl;
               psymmetry = pwdft::Symmetry::from_json(es);
               auto type = es.value("type", "");
        

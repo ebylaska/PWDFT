@@ -382,7 +382,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
                                << Ffmt(10,5) << myion.com(2) << " )" << std::endl;
 
       coutput << std::endl;
-      coutput << " is crystal = " << myion.is_crystal << std::endl;
+      //coutput << " is crystal = " << myion.is_crystal << std::endl;
       coutput << myion.print_symmetry_group();
       //coutput << myion.print_symmetry_group(rtdbstring);
       coutput << std::endl << myion.print_constraints(0);
