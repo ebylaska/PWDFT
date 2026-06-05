@@ -1051,7 +1051,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
          sym_source = "autosym";
          sym_backend = "internal";
 
-        std::cout << "point_group_name=" << point_group_name << std::endl;
+        //std::cout << "point_group_name=" << point_group_name << std::endl;
 
          // update geometry
         // write_symbols_and_coords_flat(geomjson, symbols, rion_sym);

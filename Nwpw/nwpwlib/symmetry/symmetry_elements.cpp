@@ -45,6 +45,63 @@ static void rotate_coords(double* r, int n, const double* U)
     }
 }
 
+// Assumes rion2 is COM-centered already.
+static void align_linear_to_z(double* rion2, int nion)
+{
+    auto R = [&](int i)->double* { return &rion2[3*i]; };
+
+    // find farthest pair (a,b)
+    int a = 0, b = 1;
+    double d2max = -1.0;
+    for (int i = 0; i < nion; ++i)
+    for (int j = i+1; j < nion; ++j) {
+        double dx = R(i)[0]-R(j)[0], dy = R(i)[1]-R(j)[1], dz = R(i)[2]-R(j)[2];
+        double d2 = dx*dx + dy*dy + dz*dz;
+        if (d2 > d2max) { d2max = d2; a=i; b=j; }
+    }
+
+    // unit direction u along the molecular axis
+    double ux = R(b)[0]-R(a)[0], uy = R(b)[1]-R(a)[1], uz = R(b)[2]-R(a)[2];
+    double un = std::sqrt(ux*ux + uy*uy + uz*uz);
+    if (un == 0.0) return;
+    ux/=un; uy/=un; uz/=un;
+
+    // Rotate u -> ez using axis-angle (Rodrigues)
+    // axis = u x ez = (uy, -ux, 0)
+    double ax = uy, ay = -ux, az = 0.0;
+    double s = std::sqrt(ax*ax + ay*ay + az*az);   // |u x ez|
+    double c = uz;                                 // u · ez
+
+    // If already parallel to z (s ~ 0)
+    if (s < 1e-14) {
+        // If anti-parallel, rotate 180° about x (or any perpendicular axis)
+        if (c < 0.0) {
+            for (int i=0;i<nion;++i) { R(i)[1] = -R(i)[1]; R(i)[2] = -R(i)[2]; }
+        }
+        return;
+    }
+
+    ax/=s; ay/=s; az/=s;
+
+    auto rot = [&](double x, double y, double z){
+        // Rodrigues: v' = v c + (a x v) s + a(a·v)(1-c)
+        double dot = ax*x + ay*y + az*z;
+        double cx  = ay*z - az*y;
+        double cy  = az*x - ax*z;
+        double cz  = ax*y - ay*x;
+
+        double xp = x*c + cx*s + ax*dot*(1.0-c);
+        double yp = y*c + cy*s + ay*dot*(1.0-c);
+        double zp = z*c + cz*s + az*dot*(1.0-c);
+        return std::array<double,3>{xp,yp,zp};
+    };
+
+    for (int i = 0; i < nion; ++i) {
+        auto v = rot(R(i)[0], R(i)[1], R(i)[2]);
+        R(i)[0]=v[0]; R(i)[1]=v[1]; R(i)[2]=v[2];
+    }
+}
+
 
 /*******************************************
  *                                         *
@@ -3550,6 +3607,9 @@ void determine_point_group(const double *rion, const double *ion_mass, const int
 
       // align the molecular axes along the inertia_axes
       align_to_axes(rion2,nion, inertia_axes);
+
+      align_linear_to_z(rion2, nion); 
+      generate_principle_axes(rion2,ion_mass,nion,inertia_tensor,inertia_moments,inertia_axes);
 
       bool has_inversion = has_inversion_center(rion2,ion_mass,nion,sym_tolerance);
       if (has_inversion)
