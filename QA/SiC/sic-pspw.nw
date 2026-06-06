@@ -1,0 +1,54 @@
+echo
+title "SiC 8 atom cubic cell"
+
+start SiC
+
+permanent_dir ./perm2
+scratch_dir ./perm2
+
+#**** Enter the geometry using fractional coordinates ****
+geometry units au center noautosym noautoz print 
+  system crystal 
+    lat_a 8.277
+    lat_b 8.277
+    lat_c 8.277
+    alpha 90.0
+    beta  90.0
+    gamma 90.0
+  end
+Si    -0.500000  -0.500000  -0.500000
+Si     0.000000   0.000000  -0.500000
+Si     0.000000  -0.500000   0.000000
+Si    -0.500000   0.000000   0.000000
+C     -0.250000  -0.250000  -0.250000
+C      0.250000   0.250000  -0.250000
+C      0.250000  -0.250000   0.250000
+C     -0.250000   0.250000   0.250000
+end
+
+#***** setup the nwpw gamma point code ****
+nwpw
+   cutoff 30.0
+   ewald_ncut 8
+   mulliken
+end
+
+task pspw energy
+
+nwpw
+  includestress true
+  stress_numerical false
+  tolerances 1.0d-9 1.0d-9 
+end
+task pspw stress
+
+## stupid input ##
+#
+#driver
+#   clear
+#end
+#task pspw optimize
+#
+#set nwpw:stress_numerical .true.
+#set includestress .true.          # tell driver to optimize unit cell using numerical stress
+#task pspw optimize
