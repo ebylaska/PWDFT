@@ -973,8 +973,8 @@ int main(int argc, char *argv[]) {
   // Tasks
   while (task > 0) 
   {
-     /* Energy or Gradient task */
-     if ((task == 1) || (task == 2)) 
+     /* Energy or Gradient or Stress task*/
+     if ((task == 1) || (task == 2) || (task==10)) 
      {
         if (oprint)
            std::cout << std::endl
@@ -1034,6 +1034,7 @@ int main(int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
+
     
      /* file generate task */
      if (task == 30) {

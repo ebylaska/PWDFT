@@ -223,14 +223,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    ptask = 0;
    if (!rtdbjson["current_task"].is_null()) {
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "energy"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "energy"))
        ptask = 1;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "gradient"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "gradient"))
        ptask = 2;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "optimize"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "optimize"))
        ptask = 3;
 
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "geovib"))
@@ -239,18 +236,17 @@ Control2::Control2(const int np0, const std::string rtdbstring)
      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "freq"))
        ptask = 5;
 
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "steepest_descent"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "steepest_descent"))
        ptask = 6;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "car-parrinello"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "car-parrinello"))
        ptask = 7;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "born-oppenheimer"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "born-oppenheimer"))
        ptask = 8;
 
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]),
-                           "noit_"))
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "stress"))
+       ptask = 10;
+
+     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "noit_"))
        ptask *= -1;
    }
  
@@ -353,6 +349,15 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"].is_boolean())
      pgeometry_optimize =
          rtdbjson["nwpw"]["steepest_descent"]["geometry_optimize"];
+
+   pcompute_stress = false;
+   if (rtdbjson["nwpw"]["includestress"].is_boolean())
+      pcompute_stress = rtdbjson["nwpw"]["includestress"];
+
+   pstress_numerical = false;
+   if (rtdbjson["nwpw"]["stress_numerical"].is_boolean())
+      pstress_numerical = rtdbjson["nwpw"]["stress_numerical"];
+
  
    psp_library_dir = "";
    if (rtdbjson["psp_library_dir"].is_string())

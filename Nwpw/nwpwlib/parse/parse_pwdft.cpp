@@ -2381,6 +2381,31 @@ static json parse_nwpw(json nwpwjson, int *curptr,
        }
 
     }
+    else if (mystring_contains(mystring_lowercase(line), "includestress")) {
+
+       if (mystring_contains(line, " off"))        nwpwjson["includestress"] = false;
+       else if (mystring_contains(line, " no"))    nwpwjson["includestress"] = false;
+       else if (mystring_contains(line, " false")) nwpwjson["includestress"] = false;
+
+       else if (mystring_contains(line, " yes"))   nwpwjson["includestress"] = true; 
+       else if (mystring_contains(line, " true"))  nwpwjson["includestress"] = true; 
+       else if (mystring_contains(line, " on"))    nwpwjson["includestress"] = true; 
+       else
+          nwpwjson["includestress"] = true;
+
+    }
+    else if (mystring_contains(mystring_lowercase(line), "stress_numerical")) {
+
+       if (mystring_contains(line, " off"))        nwpwjson["stress_numerical"] = false;
+       else if (mystring_contains(line, " no"))    nwpwjson["stress_numerical"] = false;
+       else if (mystring_contains(line, " false")) nwpwjson["stress_numerical"] = false;
+
+       else if (mystring_contains(line, " yes"))   nwpwjson["stress_numerical"] = true; 
+       else if (mystring_contains(line, " true"))  nwpwjson["stress_numerical"] = true; 
+       else if (mystring_contains(line, " on"))    nwpwjson["stress_numerical"] = true; 
+       else
+          nwpwjson["stress_numerical"] = true;
+    }
 
 
     ++cur;
@@ -3172,6 +3197,7 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 7;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 10;
      }
      // Look for band jobs
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
@@ -3180,6 +3206,7 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 13;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 14;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 16;
      }
      // Look for file jobs
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=30; }

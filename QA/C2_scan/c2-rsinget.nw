@@ -9,7 +9,7 @@ scratch_dir   ./perm_scan_rdft
 
 geometry  autosym
 C         0.0 0.0 0.0
-C         0.0 0.0 1.24 
+C         1.24 0.0 0.0
 end
 
 

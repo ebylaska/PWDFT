@@ -165,6 +165,7 @@ class Control2 {
   
    // stress options
    bool pcompute_stress = false;
+   bool pstress_numerical = false;
    bool pcell_optimize  = false;
    bool pparrinello_rahman = false;
 
@@ -309,6 +310,7 @@ public:
    int nbrillouin() { return pnbrillouin; }
  
    bool compute_stress()    {return pcompute_stress; }
+   bool stress_numerical()  {return pstress_numerical; }
    bool cell_optimize()     {return pcell_optimize; }
    bool parrinello_rahman() {return pparrinello_rahman; }
 
