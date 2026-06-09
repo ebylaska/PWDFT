@@ -162,6 +162,8 @@ public:
   void tcc_pack_iMul(const int, const double *, const double *, double *);
   void tc_pack_iMul(const int, const double *, double *);
 
+  void ttt_pack_Mul(const int, const double *, const double *, double *);
+
   void tcc_pack_MulSum2(const int, const double *, const double *, double *);
   void cc_pack_Sum2(const int, const double *, double *);
   void cccc_pack_Sum(const int, const double *, const double *, const double *,

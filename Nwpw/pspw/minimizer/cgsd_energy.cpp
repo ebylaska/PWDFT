@@ -701,4 +701,71 @@ void cgsd_energy_gradient(Molecule &mymolecule, double *grad_ion)
    mymolecule.psi_1apc_force(grad_ion);
 }
 
+
+
+/******************************************
+ *                                        *
+ *           cgsd_energy_stress           *
+ *                                        *
+ ******************************************/
+void cgsd_energy_stress(Molecule &mymolecule, double *stress) 
+{
+   // Initialize master array to zero
+   std::memset(stress,0,9*sizeof(double));
+
+   // Helper lambda/function to add a temporary array to the master array
+   auto accumulate = [&](double* temp) {
+      for (int i = 0; i < 9; ++i) stress[i] += temp[i];
+   };
+ 
+   double tstress[9];
+
+
+   //**** Kinetic energy component : dE_kin/dhuv ****
+   mymolecule.psi_1ke_stress(tstress);
+   accumulate(tstress);
+
+   //**** Coulomb energy component : dE_Coul/dhuv ****
+   //mymolecule.psi_1coulomb_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Local pseudo energy component : dE_local/dhuv ****
+   //mymolecule.dng_1local_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
+   //mymolecule.psi_1nonlocal_stress(tstress);
+   //accumulate(tstress);
+   
+   //**** xc energy component : dE_xc/dhuv ****
+   //mymolecule.rho_1xc_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Core-correction Coulomb energy component : dE_core/dhuv ****
+   //mymolecule.rho_1semicore_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Ewald energy component : dE_ewald/dhuv ****
+   //mymolecule.ewald_stress(tstress);
+   //accumulate(tstress);
+
+   //**** SIC energy component : dE_SIC/dhuv ****
+   //mymolecule.electron_SIC_stress(tstress);
+   //accumulate(tstress);
+
+   //**** HFX energy component : dE_HFX/dhuv ****
+   //mymolecule.electron_HFX_stress(tstress);
+   //accumulate(tstress);
+
+
+   //**** DFT+U energy component : dE_dftu/dhuv ****
+   //mymolecule.psi_1dftu_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Dispersion energy component : dE_disp/dhuv ****
+   //mymolecule.ion_disp_stress(tstress);
+   //accumulate(tstress);
+   
+}
+
 } // namespace pwdft

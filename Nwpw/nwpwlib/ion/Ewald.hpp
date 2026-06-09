@@ -62,6 +62,7 @@ public:
    double mandelung() { return alpha; }
    double energy();
    void force(double *);
+   void stress(double *);
  
    double rs() {
      return pow(3.0 * ewaldlattice->omega() / (16 * atan(1.0)), 1.0 / 3.0);

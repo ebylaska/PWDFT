@@ -621,72 +621,109 @@ double ewald_f_ddot_sub(const int n, const double a[], const double b[]) {
  *          Ewald::force         *
  *                               *
  *********************************/
-void Ewald::force(double *fion) {
-  int i, j, k, l, nion, tnp, tid, dutask;
-  double x, y, z, dx, dy, dz, zz, r, w, zi, f;
-  double scal2, sw1, sw2, sw3;
-  double cerfc = 1.128379167;
-
-  scal2 = 1.0 / ewaldlattice->omega();
-  tnp = ewaldparall->np();
-  tid = ewaldparall->taskid();
-  nion = ewaldion->nion;
-
-  for (k = 0; k < (2 * enpack); ++k)
-    ss[k] = 0.0;
-  for (i = 0; i < nion; ++i) {
-    ewald_strfac_add_sub(enpack, i_indx, j_indx, k_indx, &ewx1[2 * i * enx],
-                         &ewy1[2 * i * eny], &ewz1[2 * i * enz],
-                         zv[ewaldion->katm[i]], ss);
-  }
-  for (i = 0; i < nion; ++i) {
-    zi = zv[ewaldion->katm[i]];
-    ewald_strfac_sub(enpack, i_indx, j_indx, k_indx, &ewx1[2 * i * enx],
-                     &ewy1[2 * i * eny], &ewz1[2 * i * enz], exi);
-    ewald_f_tmp3_sub(enpack, exi, ss, vg, tmp3);
-
-    ftmp[3 * i] = 2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, eG, tmp3);
-    ftmp[3 * i + 1] =
-        2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, &eG[enpack], tmp3);
-    ftmp[3 * i + 2] =
-        2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, &eG[2 * enpack], tmp3);
-  }
-
-  dutask = 0;
-  for (i = 0; i < (nion - 1); ++i)
-    for (j = i + 1; j < nion; ++j) {
-      if (dutask == tid) {
-        dx = ewaldion->rion1[3 * i] - ewaldion->rion1[3 * j];
-        dy = ewaldion->rion1[3 * i + 1] - ewaldion->rion1[3 * j + 1];
-        dz = ewaldion->rion1[3 * i + 2] - ewaldion->rion1[3 * j + 2];
-        zz = zv[ewaldion->katm[i]] * zv[ewaldion->katm[j]];
-        sw1 = 0.0;
-        sw2 = 0.0;
-        sw3 = 0.0;
-        for (l = 0; l < enshl3d; ++l) {
-          x = rcell[l] + dx;
-          y = rcell[l + enshl3d] + dy;
-          z = rcell[l + 2 * enshl3d] + dz;
-          r = sqrt(x * x + y * y + z * z);
-          w = r / ercut;
-          f = zz * (erfc(w) + cerfc * w * exp(-w * w)) / (r * r * r);
-          sw1 += x * f;
-          sw2 += y * f;
-          sw3 += z * f;
-        }
-        ftmp[3 * i] += sw1;
-        ftmp[3 * i + 1] += sw2;
-        ftmp[3 * i + 2] += sw3;
-        ftmp[3 * j] -= sw1;
-        ftmp[3 * j + 1] -= sw2;
-        ftmp[3 * j + 2] -= sw3;
+void Ewald::force(double *fion) 
+{
+   int i, j, k, l, nion, tnp, tid, dutask;
+   double x, y, z, dx, dy, dz, zz, r, w, zi, f;
+   double scal2, sw1, sw2, sw3;
+   double cerfc = 1.128379167;
+ 
+   scal2 = 1.0 / ewaldlattice->omega();
+   tnp = ewaldparall->np();
+   tid = ewaldparall->taskid();
+   nion = ewaldion->nion;
+ 
+   for (k=0; k<(2*enpack); ++k)
+      ss[k] = 0.0;
+   for (i=0; i<nion; ++i) 
+   {
+      ewald_strfac_add_sub(enpack, i_indx, j_indx, k_indx, &ewx1[2 * i * enx],
+                           &ewy1[2 * i * eny], &ewz1[2 * i * enz],
+                           zv[ewaldion->katm[i]], ss);
+   }
+   for (i=0; i<nion; ++i) 
+   {
+      zi = zv[ewaldion->katm[i]];
+      ewald_strfac_sub(enpack, i_indx, j_indx, k_indx, &ewx1[2 * i * enx],
+                       &ewy1[2 * i * eny], &ewz1[2 * i * enz], exi);
+      ewald_f_tmp3_sub(enpack, exi, ss, vg, tmp3);
+  
+      ftmp[3 * i]     = 2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, eG, tmp3);
+      ftmp[3 * i + 1] = 2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, &eG[enpack], tmp3);
+      ftmp[3 * i + 2] = 2.0 * scal2 * zi * ewald_f_ddot_sub(enpack, &eG[2 * enpack], tmp3);
+   }
+ 
+   dutask = 0;
+   for (i=0; i<(nion-1); ++i)
+      for (j=i+1; j<nion; ++j) 
+      {
+         if (dutask == tid) 
+         {
+            dx = ewaldion->rion1[3 * i] - ewaldion->rion1[3 * j];
+            dy = ewaldion->rion1[3 * i + 1] - ewaldion->rion1[3 * j + 1];
+            dz = ewaldion->rion1[3 * i + 2] - ewaldion->rion1[3 * j + 2];
+            zz = zv[ewaldion->katm[i]] * zv[ewaldion->katm[j]];
+            sw1 = 0.0;
+            sw2 = 0.0;
+            sw3 = 0.0;
+            for (l = 0; l < enshl3d; ++l) 
+            {
+               x = rcell[l] + dx;
+               y = rcell[l + enshl3d] + dy;
+               z = rcell[l + 2 * enshl3d] + dz;
+               r = sqrt(x * x + y * y + z * z);
+               w = r / ercut;
+               f = zz * (erfc(w) + cerfc * w * exp(-w * w)) / (r * r * r);
+               sw1 += x * f;
+               sw2 += y * f;
+               sw3 += z * f;
+            }
+            ftmp[3 * i] += sw1;
+            ftmp[3 * i + 1] += sw2;
+            ftmp[3 * i + 2] += sw3;
+            ftmp[3 * j] -= sw1;
+            ftmp[3 * j + 1] -= sw2;
+            ftmp[3 * j + 2] -= sw3;
+         }
+         dutask = (dutask + 1) % tnp;
       }
-      dutask = (dutask + 1) % tnp;
-    }
-  if (tnp > 1)
-    ewaldparall->Vector_SumAll(0, 3 * nion, ftmp);
-  for (i = 0; i < 3 * nion; ++i)
-    fion[i] += ftmp[i];
+   if (tnp > 1) ewaldparall->Vector_SumAll(0, 3 * nion, ftmp);
+   for (i=0; i < 3 * nion; ++i)
+      fion[i] += ftmp[i];
+}
+
+void Ewald::stress(double *stress) 
+{
+   double pi     = 4.00*std::atan(1.0);
+   double fourpi = 4.00*pi;
+   double scal   = 1.00/(2.00*pi);
+   double scal2  = 1.0 / ewaldlattice->omega();
+   int nion = ewaldion->nion;
+   double hm[9];
+
+   double zz = 0.0;
+   double z  = 0.0;
+   for (auto i=0; i<nion; ++i)
+   {
+      double zi = zv[ewaldion->katm[i]];
+      zz += zi*zi;
+      z += zi;
+   }
+
+   // Miscellaneous contributions - stress from cewald term
+   for (size_t v=0; v<3; ++v)
+   for (size_t u=0; u<3; ++u)
+   {
+      stress[u+3*v] =  0.5*z*z*pi*ercut*ercut * hm[u+3*v]*scal2;
+   }
+
+
+
+   //double scal2 = 1.0 / ewaldlattice->omega();
+   //int tnp = ewaldparall->np();
+   //int tid = ewaldparall->taskid();
+
+
 }
 
 } // namespace pwdft

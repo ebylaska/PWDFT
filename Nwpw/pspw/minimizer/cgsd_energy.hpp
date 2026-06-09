@@ -10,6 +10,7 @@ namespace pwdft {
 extern double cgsd_noit_energy(Molecule &, bool, std::ostream &);
 extern double cgsd_energy(Control2 &, Molecule &, bool, std::ostream &);
 extern void cgsd_energy_gradient(Molecule &, double *);
+extern void cgsd_energy_stress(Molecule &, double *);
 
 } // namespace pwdft
 #endif

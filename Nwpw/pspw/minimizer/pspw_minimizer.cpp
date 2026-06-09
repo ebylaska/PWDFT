@@ -534,6 +534,64 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       // delete [] fion;
    }
 
+
+   // calculate stress
+   if (flag == 10) 
+   {
+      double stress[9]={0.0};
+
+      cgsd_energy_stress(mymolecule, stress);
+
+      if (lprint) 
+      {
+         // Calculate Frobenius Norm |S| = sqrt(sum of all squares)
+         double sum_sq = 0;
+         for (int i = 0; i < 9; ++i) {
+             sum_sq += stress[i] * stress[i];
+         }
+         double normS = std::sqrt(sum_sq);
+
+         // Calculate Pressure (P = Trace / 3)
+         // Trace is the sum of diagonal elements: s[0] + s[4] + s[8]
+         double trace = stress[0] + stress[4] + stress[8];
+         double pressure_au = trace / 3.0;
+
+         // Define conversion factors (based on your example values)
+         // Based on your output: 0.0205 au -> 60.3 GPa
+         double au_to_gpa = 2941.46; // Derived from 6030 / 0.02048
+         double gpa_to_mbar = 0.01;  // 1 Mbar = 100 GPa
+         double gpa_to_atm = 9869.23; // 1 GPa = 9869 atm
+
+         // --- PRINTING BLOCK ---
+         coutput << std::endl << " == Lattice Stress ==" << std::endl << std::endl;
+        
+         // Set precision to match your output: Scientific notation, width 8, 5 decimal places
+         coutput << std::scientific << std::setprecision(5);
+ 
+         // Print Matrix Rows
+         coutput << "     =========== total stress (au) ===========" << std::endl;
+         for (int i=0; i<3; ++i) {
+             coutput << (i==0 ? " S =  ( " : "      ( ");
+
+             for (int j=0; j<3; ++j) {
+                 // Indexing: Row 0: 0,1,2 | Row 1: 3,4,5 | Row 2: 6,7,8
+                 coutput << std::setw(10) << stress[i * 3 + j] << " ";
+             }
+             coutput << ")" << std::endl;
+         }
+         coutput << "     =========================================" << std::endl;
+
+         // Print Magnitude, Pressure and Conversions
+         coutput << "     |S|      = " << normS << std::endl;
+         coutput << "     pressure = " << pressure_au << " au" << std::endl;
+         coutput << "              = " << (pressure_au * au_to_gpa * gpa_to_mbar) << " Mbar" << std::endl;
+         coutput << "              = " << (pressure_au * au_to_gpa) << " GPa" << std::endl;
+         coutput << "              = " << (pressure_au * au_to_gpa * gpa_to_atm) << " atm" << std::endl;
+         coutput << std::endl;
+      }
+   }
+
+
    // calculate excited state orbitals 
    if (!control.fractional()) cgsd_excited(control, mymolecule, true, coutput);
 

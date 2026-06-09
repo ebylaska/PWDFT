@@ -519,6 +519,17 @@ public:
       myelectron->dielectric_force(grad_ion);
    }
 
+   void psi_1ke_stress(double *tstress)
+   {
+      auto myke = myelectron->get_myke();
+      myke->ke_euv(psi1,tstress,occ1);
+   }
+
+   void ewald_stress(double *tstress)
+   {
+       //myewald->stress(tstress);
+   }
+
    std::string print_virtual() 
    {
       std::stringstream stream;

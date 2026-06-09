@@ -3764,6 +3764,18 @@ void PGrid::tc_pack_copy(const int nb, double *a, double *b)
 
 /********************************
  *                              *
+ *      PGrid:ttt_pack_Mul      *
+ *                              *
+ ********************************/
+void PGrid::ttt_pack_Mul(const int nb, const double *a, const double *b, double *c)
+{
+   int ng = nida[nb]+nidb[nb];
+   for (auto i=0; i<ng; ++i)
+      c[i] = a[i]*b[i];
+}
+
+/********************************
+ *                              *
  *      PGrid:tcc_pack_Mul      *
  *                              *
  ********************************/
