@@ -121,6 +121,28 @@ double Coulomb_Operator::ecoulomb(const double *dng)
  *        Coulomb_Operator::euv            *
  *                                         *
  *******************************************/
+/**
+ * @brief Computates the electrostatic (Coulomb) contribution to the stress tensor.
+ * 
+ * This function calculates the derivative of the Coulomb energy with respect to the 
+ * strain tensor. It utilizes the reciprocal lattice vectors and the Poisson kernel 
+ * in G-space to construct the symmetric part of the stress tensor.
+ *
+ * Physics Implementation:
+ *   The stress tensor contribution is derived from the derivative of the 
+ *   Coulomb energy (E_c) with respect to the lattice strain. 
+ *   Specifically, it implements the summation:
+ *     stress_{uv} = -E_c * hm_{uv} + \sum_{G} [ (omega/4pi) * (4pi/G^2)^2 * n(G)^2 * (G_u G_s) * hm_{sv} ]
+ *   where 'hm' represents the scaled reciprocal lattice vectors.
+ *
+ * @param[in]  dng     Pointer to the array of density coefficients (n(G)) in reciprocal space.
+ * @param[out] stress  Pointer to a 9-element array representing the 3x3 stress tensor 
+ *                     (stored in column-major order: index = u + 3*v).
+ * 
+ * @note The calculation involves computing the G-space kernel (4*pi/G^2) and 
+ *       summing the contributions of the reciprocal lattice vectors.
+ * @complexity O(N_G), where N_G is the number of G-vectors in the expansion.
+ */
 void Coulomb_Operator::euv(const double *dng, double *stress) 
 {
    std::fill(stress, stress + 9, 0.0);
@@ -129,6 +151,14 @@ void Coulomb_Operator::euv(const double *dng, double *stress)
    constexpr double fourpi = 4.0*pi;
    constexpr double scal   = 1.0/(2.0*pi);
 
+   int ksize    = mypneb->npack(0);
+   double omega = mypneb->lattice->omega();
+   double ss    = omega/fourpi;
+
+   // tmp space
+   std::vector<double> tmp2(ksize);
+
+   // define hm
    double hm[9];
    for (size_t i=0; i<3; ++i)
    for (size_t j=0; j<3; ++j)
@@ -136,11 +166,42 @@ void Coulomb_Operator::euv(const double *dng, double *stress)
 
 
    // tmp2(G) = (n(G)**2) * (4*pi/G**2)**2  
-   //mypneb->ctt_pack_SqrMul2(0,dng,vg,tmp2);
+   mypneb->ctt_pack_SqrMul2(0,dng,vg,tmp2.data());
+
 
    // Bus = Sum(G) (omega/4*pi)*tmp2(G)*Gu*Gs 
 
+   std::array<double, 9> Bus = {0.0}; // Fixed size symmetric tensor
 
+   // An array of pointers to represent the 3 segments of G.
+   // This is compatible with C++11/14/17 and avoids std::span errors.
+   const double* g_segments[3];
+
+   g_segments[0] = mypneb->Gpackxyz(0,0);                  // Start of segment 1 - Gx
+   g_segments[1] = mypneb->Gpackxyz(0,1);                  // Start of segment 2 - Gy
+   g_segments[2] = mypneb->Gpackxyz(0,2);                  // Start of segment 3 - Gz
+
+
+   for (size_t u=0; u<3; ++u)
+   for (size_t s=u; s<3; ++s)
+   {
+      // sum = Sum_k gu[k]*gs[k]*tmp2[k]
+      double sum = mypneb->ttt_pack_MulDot(0,g_segments[u],g_segments[s],tmp2.data());
+      Bus[u+3*s] = ss*sum;
+   }
+   for (size_t u=0;   u<3; ++u)
+   for (size_t s=u+1; s<3; ++s)
+      Bus[s+3*u] = Bus[u+3*s];
+
+   double ecoul = this->ecoulomb(dng);
+   for (size_t v=0; v<3; ++v)
+   for (size_t u=0; u<3; ++u)
+   {
+      stress[u+3*v] = -ecoul*hm[u+3*v];
+      for (size_t s=0; s<3; ++s)
+         stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
+   }
+   
 }
 
 } // namespace pwdft

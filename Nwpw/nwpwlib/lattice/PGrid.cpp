@@ -3969,6 +3969,23 @@ void PGrid::tcc_pack_MulSum2(const int nb, const double *a, const double *b, dou
 
 /********************************
  *                              *
+ *    PGrid:ttt_pack_MulDot     *
+ *                              *
+ ********************************/
+double PGrid::ttt_pack_MulDot(const int nb, const double *a, const double *b, const double *c) 
+{
+   size_t ng = nida[nb] + nidb[nb];
+
+   double tsum = 0.0;
+   for (size_t k=0; k<ng; ++k)
+      tsum += a[k]*b[k]*c[k];
+
+   return d3db::parall->SumAll(1,tsum);
+}
+
+
+/********************************
+ *                              *
  *      PGrid:cc_pack_Sum2      *
  *                              *
  ********************************/

@@ -184,6 +184,7 @@ public:
   void n2ccttt_pack_i3ndot(const int, const int, const int, const double *, const double *, double *, double *, double *, double *);
 
   void ctt_pack_SqrMul2(const int, const double *, const double *, double *);
+  double ttt_pack_MulDot(const int, const double *, const double *, const double *);
 
 
   void i_pack(const int, int *);
