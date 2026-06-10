@@ -30,6 +30,7 @@
 #include        <stdio.h>
 #include	<string>
 */
+#include "units.hpp"
 #include "Coulomb.hpp"
 #include <cmath>
 
@@ -113,6 +114,33 @@ double Coulomb_Operator::ecoulomb(const double *dng)
    ave *= 0.5*(mypneb->lattice->omega());
  
    return ave;
+}
+
+/*******************************************
+ *                                         *
+ *        Coulomb_Operator::euv            *
+ *                                         *
+ *******************************************/
+void Coulomb_Operator::euv(const double *dng, double *stress) 
+{
+   std::fill(stress, stress + 9, 0.0);
+
+   constexpr double pi     = units::PI;
+   constexpr double fourpi = 4.0*pi;
+   constexpr double scal   = 1.0/(2.0*pi);
+
+   double hm[9];
+   for (size_t i=0; i<3; ++i)
+   for (size_t j=0; j<3; ++j)
+      hm[i+3*j] = scal*mypneb->lattice->unitg(i,j);
+
+
+   // tmp2(G) = (n(G)**2) * (4*pi/G**2)**2  
+   //mypneb->ctt_pack_SqrMul2(0,dng,vg,tmp2);
+
+   // Bus = Sum(G) (omega/4*pi)*tmp2(G)*Gu*Gs 
+
+
 }
 
 } // namespace pwdft

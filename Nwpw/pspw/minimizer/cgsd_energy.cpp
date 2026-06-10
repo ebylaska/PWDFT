@@ -746,8 +746,8 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress)
    //accumulate(tstress);
 
    //**** Ewald energy component : dE_ewald/dhuv ****
-   //mymolecule.ewald_stress(tstress);
-   //accumulate(tstress);
+   mymolecule.ewald_stress(tstress);
+   accumulate(tstress);
 
    //**** SIC energy component : dE_SIC/dhuv ****
    //mymolecule.electron_SIC_stress(tstress);

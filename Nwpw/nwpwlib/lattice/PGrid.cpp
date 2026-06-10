@@ -4170,6 +4170,43 @@ void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
 
+
+
+/********************************
+ *                              *
+ *  PGrid:ctt_pack_SqrMul2      *
+ *                              *
+ ********************************/
+/**
+ * @brief Computes scaled sum of squares for paired elements.
+ *
+ * For each index i < (nida[nb] + nidb[nb]), calculates:
+ * c[i] = (a[2*i]^2 + a[2*i+1]^2) * b[i]^2
+ *
+ * @param nb  Index used to retrieve dimensions from class members nida and nidb.
+ * @param a   Input array containing paired coefficients [a1, a2, a3, a4, ...].
+ *            Must contain at least 2 * (nida[nb] + nidb[nb]) elements.
+ * @param b   Input array containing scaling factors [v1, v2, ...].
+ *            Must contain at least (nida[nb] + nidb[nb]) elements.
+ * @param c   Output array where the results are stored.
+ *
+ * @note Complexity: O(N), where N = nida[nb] + nidb[nb].
+ */
+void PGrid::ctt_pack_SqrMul2(const int nb, const double *a, const double *b, double *c)
+{
+   size_t k_size = nida[nb]+nidb[nb];
+
+   for (size_t i=0; i<k_size; ++i)
+   {
+      double a1 = a[2*i];
+      double a2 = a[2*i+1];
+      double v  = b[i];
+      c[i] = (a1*a1 + a2*a2)*v*v;
+   }
+}
+
+
+
 /**********************************
  *                                *
  *    PGrid::regenerate_r_grid    *

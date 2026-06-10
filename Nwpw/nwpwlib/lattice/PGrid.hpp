@@ -168,8 +168,7 @@ public:
   void cc_pack_Sum2(const int, const double *, double *);
   void cccc_pack_Sum(const int, const double *, const double *, const double *,
                      double *);
-  void tcc_pack_aMulAdd(const int, const double, const double *, const double *,
-                        double *);
+  void tcc_pack_aMulAdd(const int, const double, const double *, const double *, double *);
 
   void c_pack_addzero(const int, const double, double *);
   void c_pack_addzeros(const int, const double, double *);
@@ -183,6 +182,8 @@ public:
   void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
 
   void n2ccttt_pack_i3ndot(const int, const int, const int, const double *, const double *, double *, double *, double *, double *);
+
+  void ctt_pack_SqrMul2(const int, const double *, const double *, double *);
 
 
   void i_pack(const int, int *);
