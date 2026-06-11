@@ -118,6 +118,8 @@ public:
    bool is_periodic() { return periodic; }
 
    Kinetic_Operator *get_myke() {return myke;}
+   Coulomb12_Operator *get_mycoulomb12() {return  mycoulomb12;}
+
 };
 
 } // namespace pwdft

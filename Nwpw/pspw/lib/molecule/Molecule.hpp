@@ -525,6 +525,12 @@ public:
       myke->ke_euv(psi1,tstress,occ1);
    }
 
+   void dng_1coulomb_stress(double *tstress)
+   {
+      auto mycoul12 = myelectron->get_mycoulomb12();
+      mycoul12->mycoulomb1->euv(dng1,tstress);
+   }
+
    void ewald_stress(double *tstress)
    {
        //myewald->stress(tstress);

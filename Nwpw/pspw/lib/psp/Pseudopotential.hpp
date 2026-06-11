@@ -241,7 +241,7 @@ public:
 
   //void apply_pspspin_scaling(double *, int, int, int, int);
 
-  void v_local(double *, const bool, double *, double *);
+  void v_local(double *, const bool, const double *, double *);
   void f_local(double *, double *);
 
   void v_lr_local(double *);
@@ -251,6 +251,8 @@ public:
 
 
   bool has_stress() const { return stressexist; }
+
+  void v_local_euv(const double *, const double *,  double *);
 
 
   double sphere_radius(const int ia) { return rgrid[ia][icut[ia] - 1]; }

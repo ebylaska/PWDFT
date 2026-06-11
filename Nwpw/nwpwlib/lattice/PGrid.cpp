@@ -4102,6 +4102,30 @@ void PGrid::cc_pack_SMul(const int nb, const double alpha, const double *a, doub
 
 /********************************
  *                              *
+ *     PGrid:tt_pack_SMul       *
+ *                              *
+ ********************************/
+/**
+ * @brief Performs element-wise scalar multiplication: b = x * a.
+ * 
+ * This function scales every element of array 'a' by the scalar 'x'
+ * and stores the result in array 'b'.
+ *   
+ * @param[in]  nb    Block index used to determine loop bounds via (nida[nb] + nidb[nb]).
+ * @param[in]  alpha The scalar multiplier.
+ * @param[in]  a     Pointer to the input vector array.
+ * @param[out] b     Pointer to the output vector array where results are stored.
+ */ 
+void PGrid::tt_pack_SMul(const int nb, const double alpha, const double *a, double *b) 
+{
+   int ng = (nida[nb] + nidb[nb]);
+ 
+   for (auto i=0; i<ng; ++i)
+     b[i] = alpha*a[i];
+}
+
+/********************************
+ *                              *
  *      PGrid:cc_pack_daxpy     *
  *                              *
  ********************************/
@@ -4186,6 +4210,85 @@ void PGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
    for (auto i=0; i<(nida[nb]+nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
+
+
+/********************************
+ *                              *
+ *  PGrid:cct_pack_conjgMul     *
+ *                              *
+ ********************************/
+/**
+ * @brief Computes the real part of the product between conjugate(a) and b.
+ * 
+ * This function performs an element-wise operation on complex arrays stored in 
+ * interleaved format [Re, Im, Re, Im...]. It calculates:
+ *      c[i] = Real( conj(a[i]) * b[i] )
+ * 
+ * Mathematically, if a = (ar + i*ai) and b = (br + i*bi), then:
+ *      c[i] = ar*br + ai*bi
+ *
+ * @param[in]  nb    Index used to determine the loop limit from internal size arrays (nida/nidb).
+ * @param[in]  a     Pointer to the first complex array (interleaved Re/Im).
+ * @param[in]  b     Pointer to the second complex array (interleaved Re/im).
+ * @param[out] c     Pointer to the output real-valued array.
+ * 
+ * @note The number of iterations is determined by the sum of nida[nb] and nidb[nb].
+ *       The arrays 'a' and 'b' must be large enough to hold at least 2 * (nida[nb] + nidb[nb]) doubles.
+ */
+void PGrid::cct_pack_conjgMul(const int nb, const double *a, const double *b, double *c) 
+{
+   // c = Real[(ar-i*ai)*(br+i*bi)] = Real[ar*br + ai*bi + i*(ar*bi-ai*br)]
+   for (auto i=0; i<(nida[nb]+nidb[nb]); ++i)
+      c[i] =  a[2*i]*b[2*i] + a[2*i+1]*b[2*i+1];
+
+}
+
+
+
+
+/********************************
+ *                              *
+ *     PGrid:t_pack_Sqrt1       *
+ *                              *
+ ********************************/
+/**
+ * @brief Computes the element-wise square root: a = sqrt(a).
+ * 
+ * This function performs an in-place square root operation on every 
+ * element of array 'a'.
+ *
+ * @param[in]  nb    Block index used to determine loop bounds via (nida[nb] + nidb[nb]).
+ * @param[in,out] a  Pointer to the vector array to be transformed in-place.
+ */
+void PGrid::t_pack_Sqrt1(const int nb, double *a) 
+{
+   for (auto k=0; k<(nida[nb]+nidb[nb]); ++k)
+      a[k] = std::sqrt(a[k]);
+}
+
+
+/********************************
+ *                              *
+ *     PGrid:tt_pack_Mul2       *
+ *                              *
+ ********************************/
+/**
+ * @brief Performs element-wise vector multiplication (scaling): b = b * a.
+ * 
+ * This function scales the existing values in array 'b' by the 
+ * corresponding elements in array 'a'. Note that 'b' is modified in-place.
+ *
+ * @param[in]  nb    Block index used to determine loop bounds via (nida[nb] + nidb[nb]).
+ * @param[in]  a     Pointer to the scaling factor vector array.
+ * @param[in,out] b  Pointer to the target vector array to be scaled in-place.
+ */
+void PGrid::tt_pack_Mul2(const int nb, const double *a, double *b)
+{
+   for (auto k=0; k<(nida[nb]+nidb[nb]); ++k)
+       b[k] *= a[k];
+} 
+
+
 
 
 

@@ -181,6 +181,12 @@ public:
   void cct_pack_iconjgMul(const int, const double *, const double *, double *);
   void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
 
+  void cct_pack_conjgMul(const int, const double *, const double *, double *);
+
+  void tt_pack_SMul(const int, const double, const double *, double *);
+  void t_pack_Sqrt1(const int, double *);
+  void tt_pack_Mul2(const int, const double *, double *);
+
   void n2ccttt_pack_i3ndot(const int, const int, const int, const double *, const double *, double *, double *, double *, double *);
 
   void ctt_pack_SqrMul2(const int, const double *, const double *, double *);

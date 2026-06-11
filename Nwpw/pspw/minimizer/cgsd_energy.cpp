@@ -726,8 +726,8 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress)
    accumulate(tstress);
 
    //**** Coulomb energy component : dE_Coul/dhuv ****
-   //mymolecule.psi_1coulomb_stress(tstress);
-   //accumulate(tstress);
+   mymolecule.dng_1coulomb_stress(tstress);
+   accumulate(tstress);
 
    //**** Local pseudo energy component : dE_local/dhuv ****
    //mymolecule.dng_1local_stress(tstress);

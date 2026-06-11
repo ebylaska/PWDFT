@@ -3092,7 +3092,7 @@ void Pseudopotential::apply_pspspin_scaling(double* sw2, int nn, int jstart, int
  * @note This function performs matrix multiplications and vector operations to calculate the energy
  * and forces.
  */
-void Pseudopotential::v_local(double *vout, const bool move, double *dng, double *fion) 
+void Pseudopotential::v_local(double *vout, const bool move, const double *dng, double *fion) 
 {
    nwpw_timing_function ftimer(5);
    int ii, ia, nshift, npack0;
@@ -3594,6 +3594,122 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
    // delete [] Gx;
    // delete [] Gy;
    // delete [] Gz;
+}
+
+
+/*******************************************
+ *                                         *
+ *      Pseudopotential::v_local_euv       *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Computally evaluates the local pseudopotential contribution to the stress tensor.
+ * 
+ * This function calculates the derivative of the local potential energy with respect 
+ * to the lattice strain. It computes the scalar energy term (E_local) and accumulates 
+ * the anisotropic part of the stress tensor via the structural factor of each ion.
+ *
+ * @param[in]  dng    Pointer to the density coefficients n(G) in reciprocal space.
+ * @param[in]  vc     Pointer to a vector containing pre-computed scaling constants (part of the 1/|G| kernel).
+ * @param[out] stress Pointer to a 9-element array representing the 3x3 stress tensor 
+ *                     (stored in column-major order: index = u + 3*v).
+ * 
+ * @note **Optimization:** This function utilizes "Buffer Recycling." The pointers `vl` and 
+ *       `exi` both point to the same memory block (`tmpc_vec`). The energy scalar is 
+ *       calculated from `vl` before the structure factor is written into the same space as `exi`.
+ * 
+ * @complexity O(N_{ions} * N_G), where N_G is the number of G-vectors.
+ */
+void Pseudopotential::v_local_euv(const double *dng, const double *vc, double *stress)
+{
+   std::fill(stress, stress + 9, 0.0);
+
+   constexpr double pi     = units::PI;
+   constexpr double fourpi = 4.0*pi;
+   constexpr double scal   = 1.0/(2.0*pi);
+
+   int nion     = myion->nion;
+   int npack0   = mypneb->npack(0);
+   double omega = mypneb->lattice->omega();
+   double ss    = 1.0/fourpi;
+
+  // tmp space
+   double fion[3];
+   std::vector<double> tmpc_vec(2*npack0);
+   std::vector<double> tmp1_vec(npack0);
+   std::vector<double> tmp2_vec(npack0);
+   double *vl  = tmpc_vec.data();
+   double *exi = tmpc_vec.data();
+   double *tmp1 = tmp1_vec.data();
+   double *tmp2 = tmp2_vec.data();
+
+   std::array<double, 9> Bus = {0.0}; // Fixed size symmetric tensor
+
+   // define hm
+   double hm[9];
+   for (size_t i=0; i<3; ++i)
+   for (size_t j=0; j<3; ++j)
+      hm[i+3*j] = scal*mypneb->lattice->unitg(i,j);
+
+
+   // average Kohn-Sham v_local energy
+   this->v_local(vl,false,dng,fion);
+   double elocal = mypneb->cc_pack_dot(0,const_cast<double*>(dng),vl); // cast is done because this function is using a fortran blas
+
+
+   // An array of pointers to represent the 3 segments of G.
+   // This is compatible with C++11/14/17 and avoids std::span errors.
+   const double* g_segments[3];
+
+   g_segments[0] = mypneb->Gpackxyz(0,0);                  // Start of segment 1 - Gx
+   g_segments[1] = mypneb->Gpackxyz(0,1);                  // Start of segment 2 - Gy
+   g_segments[2] = mypneb->Gpackxyz(0,2);                  // Start of segment 3 - Gz
+
+
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      // **** structure factor and local pseudopotential ****
+      int ia = myion->katm[ii];
+      mystrfac->strfac_pack(0,ii,exi);
+
+
+      // **** tmp2(G) = Real[ dconjg(dng(G))*exi(G) ] ****
+      mypneb->cct_pack_conjgMul(0,dng,exi,tmp2);
+
+
+      // **** tmp2(G) = tmp2(G)*(dvl(G)) ****
+      mypneb->tt_pack_Mul2(0,dvl[ia],tmp2);
+
+
+      // **** tmp2(G) = tmp2(G)/G ****
+      mypneb->tt_pack_SMul(0,ss,vc,tmp1); // tmp1(G) = 1/4pi * 4pi/G2 = 1/G2
+      mypneb->t_pack_Sqrt1(0,tmp1);       // tmp1(G) = sqrt(1/G2)
+      mypneb->tt_pack_Mul2(0,tmp1,tmp2);  // tmp2(G) = 1/G * Real[conjg(dng(G))*exi(G)]*dvl[ia](G)
+
+
+      // **** Bus = Bus - Sum(G) tmp2(G)*Gu*Gs ****
+      for (size_t u=0; u<3; ++u)
+      for (size_t s=u; s<3; ++s)
+      {
+         Bus[u+3*s] -= mypneb->ttt_pack_MulDot(0,g_segments[u],g_segments[s],tmp2);
+      }
+  
+   }
+
+
+   for (size_t u=0;   u<3; ++u)
+   for (size_t s=u+1; s<3; ++s)
+      Bus[s+3*u] = Bus[u+3*s];
+
+
+   for (size_t v=0; v<3; ++v)
+   for (size_t u=0; u<3; ++u)
+   {
+      stress[u+3*v] = -elocal*hm[u+3*v];
+      for (size_t s=0; s<3; ++s)
+         stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
+   }
+
 }
 
 
