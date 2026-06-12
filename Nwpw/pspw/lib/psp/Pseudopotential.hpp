@@ -253,6 +253,8 @@ public:
   bool has_stress() const { return stressexist; }
 
   void v_local_euv(const double *, const double *,  double *);
+  void v_nonlocal_euv(const double *psi, double *stress, double *occ = nullptr);
+ 
 
 
   double sphere_radius(const int ia) { return rgrid[ia][icut[ia] - 1]; }

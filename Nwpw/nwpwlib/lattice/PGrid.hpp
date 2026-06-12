@@ -143,6 +143,7 @@ public:
   void cc_pack_copy(const int, const double *, double *);
   double cc_pack_dot(const int, double *, double *);
   double cc_pack_idot(const int, double *, double *);
+  void cc_pack_ndot(const int, const int, double *, double *, double *);
   void cc_pack_indot(const int, const int, double *, double *, double *);
   double tt_pack_dot(const int, double *, double *);
   double tt_pack_idot(const int, double *, double *);

@@ -3712,6 +3712,167 @@ void Pseudopotential::v_local_euv(const double *dng, const double *vc, double *s
 
 }
 
+/*******************************************
+ *                                         *
+ *    Pseudopotential::v_nonlocal_euv      *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Calculates the contribution of the non-local pseudopotential to the stress tensor.
+ * 
+ * This function computes the derivative of the non-local part of the pseudopotential 
+ * energy with respect to the lattice strain. It iterates through all ions, applies 
+ * the projectors and structure factors in reciprocal space, and accumulates the 
+ * resulting stress components into the provided array.
+ * 
+ * @param[in]  psi    Pointer to the array of wavefunctions (orbitals).
+ * @param[out] stress Pointer to a 9-element array representing the 3x1/3x3 stress tensor.
+ *                    The output is initialized and updated with the calculated components.
+ * @param[in,out] occ Pointer to the occupation numbers (used for scaling or interfacing).
+ * 
+ * @note The calculation utilizes the reciprocal lattice metric (hm) and structure 
+ *       factors (G) to transform the derivative of the non-local potential into 
+ *       the real-space stress tensor.
+ */
+void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *occ)
+{
+   //Initialize the master stress array to zero safely
+   std::fill(stress, stress + 9, 0.0);
+
+   constexpr double pi     = units::PI;
+   constexpr double fourpi = 4.0*pi;
+   constexpr double scal   = 1.0/(2.0*pi);
+
+   size_t nn     = mypneb->neq[0] + mypneb->neq[1];
+   size_t npack1 = mypneb->npack(1);
+   size_t npack2 = 2*npack1;
+   size_t nzero  = mypneb->nzero(1);
+   int nion     = myion->nion;
+   int ispin    = mypneb->ispin;
+   const double omega = mypneb->lattice->omega();
+   const double ss    = 1.0/fourpi;
+   const double scal2 = 1.0/omega;
+
+   // Calculate the constant scaling factor once outside all loops
+   const double scale_factor = (2.0 / omega) * (3 - ispin);
+
+   // tmp space
+   std::vector<double> exi_vec(npack2);
+   std::vector<double> prjtmp_vec(nprj_max*npack2); // note defined above, nprj_max = 10*nprj_max 
+   std::vector<double> tmp2_vec(npack1);
+
+   std::vector<double> sw1_vec(nn*nprj_max);
+   std::vector<double> sw2_vec(nn*nprj_max);
+   std::vector<double> sw3_vec(9*nn);
+   double *exi = exi_vec.data();
+   double *prjtmp = prjtmp_vec.data();
+   double *tmp2 = tmp2_vec.data();
+   double *sw1 = sw1_vec.data();
+   double *sw2 = sw2_vec.data();
+   double *sw3 = sw3_vec.data();
+
+
+   std::array<double, 9> Bus = {0.0}; // Fixed size symmetric tensor
+
+   // define hm
+   double hm[9];
+   for (size_t i=0; i<3; ++i)
+   for (size_t j=0; j<3; ++j)
+      hm[i+3*j] = scal*mypneb->lattice->unitg(i,j);
+
+
+   // An array of pointers to represent the 3 segments of G.
+   // This is compatible with C++11/14/17 and avoids std::span errors.
+   const double* g_segments[3];
+
+   g_segments[0] = mypneb->Gpackxyz(1,0);                  // Start of segment 1 - Gx
+   g_segments[1] = mypneb->Gpackxyz(1,1);                  // Start of segment 2 - Gy
+   g_segments[2] = mypneb->Gpackxyz(1,2);                  // Start of segment 3 - Gz
+
+
+   // Calculate Bus 
+   for (auto ii=0; ii<nion; ++ii)
+   {
+      // **** structure factor and local pseudopotential ****
+      int ia = myion->katm[ii];
+
+      // generate projectors
+      if (nprj[ia] > 0)
+      {
+         mystrfac->strfac_pack(1,ii,exi);
+
+         //**** Calculate F^(lm)_I = <psi|vnl(nlm)> ****
+         for (auto l=0; l < nprj[ia]; ++l)
+         {
+            bool sd_function = !(l_projector[ia][l] & 1);
+            auto prj = prjtmp + (l*npack2);
+            auto vnlprj = vnl[ia] + (l*npack1);
+            if (sd_function)
+               mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
+            else
+               mypneb->tcc_pack_iMul(1, vnlprj, exi_vec.data(), prj);
+         }
+         mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
+
+         // sw2 = Gijl*sw1 
+         Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
+                            l_projector[ia], m_projector[ia], Gijl[ia],
+                            sw1, sw2);
+
+         //**** calculate dF^(lm)_I/dhus ****
+         for (auto l=0; l < nprj[ia]; ++l)
+         {
+            bool sd_function = !(l_projector[ia][l] & 1);
+
+            for (size_t s=0; s<3; ++s)
+            for (size_t u=0; u<3; ++u)
+            {
+               auto dvnlprj = dvnl[ia] + s*npack1 + l*3*npack1;
+               auto prj = prjtmp + (l*npack2) + u*nprj[ia]*npack2 + s*3*nprj[ia]*npack2;
+
+               mypneb->ttt_pack_Mul(1, dvnlprj, g_segments[u], tmp2);
+
+               if (sd_function)
+                  mypneb->tcc_pack_Mul(1, tmp2, exi, prj);
+               else
+                  mypneb->tcc_pack_iMul(1, tmp2, exi, prj);
+
+               //mypneb->cc_pack_ndot(1,nn psi,prj, sw3+u*nn+s*3*nn);
+            }
+         }
+         mypneb->cc_pack_inprjdot(1, nn, 9*nprj[ia], const_cast<double*>(psi), prjtmp, sw3);
+
+
+         for (auto l=0; l<nprj[ia]; ++l)
+         {
+            for (size_t i=0; i<nn; ++i)
+            {
+               // Pre-calculate the part that only depends on band and l
+               const double weight = scale_factor * occ[i] * sw2[i + l*nn];
+
+               for (size_t s=0; s<3; ++s)
+               for (size_t u=0; u<3; ++u)
+               {
+                  Bus[u+3*s] -= weight * sw3[i + u*nn + s*3*nn];
+               }
+            }
+         }
+
+
+      }
+   }
+
+   //*** calculate stress(u,v) = Sum(s) hm(s,v)*Bus(u,s)
+   for (size_t v=0; v<3; ++v)
+   for (size_t u=0; u<3; ++u)
+   {
+      stress[u+3*v] = 0.0;
+      for (size_t s=0; s<3; ++s)
+         stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
+   }
+
+}
+
 
 /*******************************************
  *                                         *

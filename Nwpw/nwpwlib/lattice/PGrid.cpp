@@ -845,6 +845,27 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
    }
 }
 
+
+/********************************
+ *                              *
+ *       PGrid:cc_pack_ndot     *
+ *                              *
+ ********************************/
+void PGrid::cc_pack_ndot(const int nb, const int nn, double *a, double *b, double *sum)
+{
+   int one = 1;
+   // int ng  = 2*(nida[nb]+nidb[nb]);
+   int ng = 2 * (nida[nb] + nidb[nb]);
+   int ng0 = 2 * nida[nb];
+
+   for (int i = 0; i < nn; ++i) {
+     sum[i] = 2.0 * DDOT_PWDFT(ng, &(a[i * ng]), one, b, one);
+     sum[i] -= DDOT_PWDFT(ng0, &(a[i * ng]), one, b, one);
+   }
+
+   parall->Vector_SumAll(1, nn, sum);
+}
+
 /********************************
  *                              *
  *    PGrid:cc_pack_inprjdot    *
