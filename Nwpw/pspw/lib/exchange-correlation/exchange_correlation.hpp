@@ -73,6 +73,7 @@ public:
 
 
   void v_exc_all(int, double *, double *, double *);
+  void v_exc_euv(int, const double *, double *);
 
 
   // meta gga routines

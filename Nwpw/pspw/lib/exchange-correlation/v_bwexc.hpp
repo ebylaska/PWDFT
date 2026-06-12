@@ -9,5 +9,8 @@ namespace pwdft {
 extern void v_bwexc(const int, Pneb *, vdw_DF *, const double *, const double,
                     const double, double *, double *, double *, double *,
                     double *, double *, double *, double *, double *);
+
+void v_bwexc_euv(const int, Pneb *, vdw_DF *,  const double *,
+             const double, const double, double *);
 }
 #endif

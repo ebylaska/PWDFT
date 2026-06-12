@@ -734,8 +734,8 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress)
    accumulate(tstress);
 
    //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
-   //mymolecule.psi_1nonlocal_stress(tstress);
-   //accumulate(tstress);
+   mymolecule.psi_1nonlocal_stress(tstress);
+   accumulate(tstress);
    
    //**** xc energy component : dE_xc/dhuv ****
    //mymolecule.rho_1xc_stress(tstress);

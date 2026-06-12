@@ -532,6 +532,11 @@ public:
      mypsp->v_local_euv(dng1,vc,tstress);
    }
 
+   void psi_1nonlocal_stress(double *tstress)
+   {
+      mypsp->v_nonlocal_euv(psi1,tstress,occ1);
+   }
+
    void dng_1coulomb_stress(double *tstress)
    {
       auto mycoul12 = myelectron->get_mycoulomb12();
@@ -540,7 +545,7 @@ public:
 
    void ewald_stress(double *tstress)
    {
-       //myewald->stress(tstress);
+       myewald->stress(tstress);
    }
 
    std::string print_virtual() 

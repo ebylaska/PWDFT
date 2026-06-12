@@ -3796,6 +3796,7 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
       // **** structure factor and local pseudopotential ****
       int ia = myion->katm[ii];
 
+
       // generate projectors
       if (nprj[ia] > 0)
       {
@@ -3814,10 +3815,12 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
          }
          mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
 
+
          // sw2 = Gijl*sw1 
          Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
                             l_projector[ia], m_projector[ia], Gijl[ia],
                             sw1, sw2);
+
 
          //**** calculate dF^(lm)_I/dhus ****
          for (auto l=0; l < nprj[ia]; ++l)
@@ -3848,7 +3851,7 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
             for (size_t i=0; i<nn; ++i)
             {
                // Pre-calculate the part that only depends on band and l
-               const double weight = scale_factor * occ[i] * sw2[i + l*nn];
+               const double weight = (occ != nullptr) ? occ[i] * scale_factor * sw2[i + l*nn] : scale_factor * sw2[i + l*nn] ;
 
                for (size_t s=0; s<3; ++s)
                for (size_t u=0; u<3; ++u)
@@ -3861,6 +3864,7 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
 
       }
    }
+   std::cout << "HERX" << std::endl;
 
    //*** calculate stress(u,v) = Sum(s) hm(s,v)*Bus(u,s)
    for (size_t v=0; v<3; ++v)
