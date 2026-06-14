@@ -19,7 +19,7 @@ Even the most basic input for molecular modeling software requires the use of ot
 Because of this complexity people unnaturally identify with codes and molecular theories, and they are hesitant to learn new codes and new molecular simulation techniques.
 TinyArrows is a software package that combines NWChem, SQL and NOSQL databases, and web applications that simplifies molecular and materials modeling and makes these modeling capabilities easier to use and more accessible to many scientists and engineers and students. TinyArrows is very simple to use. The user just enters chemical reactions into one, of serveral available web applications, and then results are posted back with thermodynamic, reaction pathway (kinetic), spectroscopy, and other results.
 
-[PWDFT Documentation](https://ebylaska.github.io/PWDFT/Nwpw/Plane-Wave-Density-Functional-Theory.md)
+[PWDFT Documentation](https://ebylaska.github.io/PWDFT/Nwpw/Plane-Wave-Density-Functional-Theory.html)
 
 
 Overview
