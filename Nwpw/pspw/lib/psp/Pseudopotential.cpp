@@ -3864,7 +3864,6 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
 
       }
    }
-   std::cout << "HERX" << std::endl;
 
    //*** calculate stress(u,v) = Sum(s) hm(s,v)*Bus(u,s)
    for (size_t v=0; v<3; ++v)

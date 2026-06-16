@@ -56,8 +56,11 @@ driver
    clear
 end
 set includestress .true.          # tell driver to optimize unit cell
-task pspw optimize
+print high
+#task pspw gradient
+task pspw stress
+#task pspw optimize
 
 set nwpw:stress_numerical .true.
 set includestress .true.          # tell driver to optimize unit cell using numerical stress
-task pspw optimize
+#task pspw optimize

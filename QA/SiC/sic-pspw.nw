@@ -7,7 +7,8 @@ permanent_dir ./perm2
 scratch_dir ./perm2
 
 #**** Enter the geometry using fractional coordinates ****
-geometry units au center noautosym noautoz print 
+#geometry units au center noautosym noautoz print 
+geometry units au 
   system crystal 
     lat_a 8.277
     lat_b 8.277
@@ -28,9 +29,9 @@ end
 
 #***** setup the nwpw gamma point code ****
 nwpw
-   cutoff 30.0
+   cutoff 50.0
    ewald_ncut 8
-   mulliken
+   xc lda
 end
 
 task pspw energy
@@ -38,7 +39,7 @@ task pspw energy
 nwpw
   includestress true
   stress_numerical false
-  tolerances 1.0d-9 1.0d-9 
+  tolerances 1.0e-9 1.0e-9 
 end
 task pspw stress
 

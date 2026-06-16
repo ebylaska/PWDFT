@@ -13,6 +13,7 @@
 #include	<string>
 */
 
+#include "units.hpp"
 #include "Kinetic.hpp"
 #include "PGrid.hpp"
 
@@ -231,7 +232,7 @@ void Kinetic_Operator::ke_euv(double *psi, double *stress, double *occ)
 
    double Aus[9] = {0.0};
 
-   double pi = 4.00 * atan(1.00);
+   constexpr double pi     = units::PI;
    double scal = 1.0/(2.0*pi);
    double hm[9];
    for (size_t i=0; i<3; ++i)

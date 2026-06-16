@@ -16,6 +16,7 @@
 #include "Strfac.hpp"
 #include "psi.hpp"
 #include "psi_H.hpp"
+#include "units.hpp"
 
 namespace pwdft {
 
@@ -541,6 +542,32 @@ public:
    {
       auto mycoul12 = myelectron->get_mycoulomb12();
       mycoul12->mycoulomb1->euv(dng1,tstress);
+   }
+
+   void rho_1xc_stress(double *tstress)
+   {
+      double exc0 = exc();
+      double pxc0 = pxc();
+
+      std::cout << "exc=" << exc0 << std::endl;
+      std::cout << "pxc=" << pxc0 << std::endl;
+
+      constexpr double pi     = units::PI;
+      double scal = 1.0/(2.0*pi);
+      double hm[9];
+      for (size_t i=0; i<3; ++i)
+      for (size_t j=0; j<3; ++j)
+         hm[i+3*j] = scal*mygrid->lattice->unitg(i,j);
+
+      
+      for (size_t v=0; v<3; ++v)
+      for (size_t u=0; u<3; ++u)
+      {
+         tstress[u+3*v] = (exc0-pxc0)*hm[u+3*v];
+      }
+
+      auto myxc = myelectron->get_myxc();
+      myxc->v_exc_euv(ispin,rho1_all,tstress);
    }
 
    void ewald_stress(double *tstress)

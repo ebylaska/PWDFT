@@ -813,6 +813,10 @@ void v_bwexc_euv(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
 
    }
 
+   for (size_t v=0; v<3; ++v)
+   for (size_t u=0; u<3; ++u)
+     stress[u+3*v] += W[u+3*v];
+
 }
 
 } // namespace pwdft

@@ -540,7 +540,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    {
       double stress[9]={0.0};
 
-      cgsd_energy_stress(mymolecule, stress);
+      cgsd_energy_stress(mymolecule, stress, true, coutput);
 
       if (lprint) 
       {

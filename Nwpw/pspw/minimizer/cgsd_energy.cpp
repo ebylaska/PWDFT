@@ -708,10 +708,46 @@ void cgsd_energy_gradient(Molecule &mymolecule, double *grad_ion)
  *           cgsd_energy_stress           *
  *                                        *
  ******************************************/
-void cgsd_energy_stress(Molecule &mymolecule, double *stress) 
+void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std::ostream &coutput) 
 {
+   Parallel *parall = mymolecule.mygrid->d3db::parall;
+
+   bool oprint = (parall->is_master() && doprint);
+
    // Initialize master array to zero
    std::memset(stress,0,9*sizeof(double));
+
+   // The Lambda Definitions
+   auto print_stress_array = [&](std::string_view name, const double* data) {
+       // 1. Configuration
+       const int total_width = 23;
+       const int dim = 3; // Assuming 3x3 for this specific implementation
+ 
+       // 2. Centering Logic (Corrected Math)
+       int l = static_cast<int>(name.size());
+       int pad_left = (total_width - l) / 2;
+       int pad_right = total_width - l - pad_left;
+ 
+       // 3. Construct the header decoration
+       std::string decoration = "     ========== "; 
+       decoration += std::string(pad_left, ' ') + std::string(name);
+       // Note: We adjust padding to ensure we stay within a reasonable visual width
+       
+       coutput << "\n" << decoration << " ===========" << std::endl;
+ 
+       // 4. Print the Matrix Rows
+       for (int i = 0; i < dim; ++i) {
+           // Prefix logic: First row is different from others
+           coutput << (i == 0 ? " S =  ( " : "      ( ");
+ 
+           for (int j = 0; j < dim; ++j) {
+               // Indexing the pointer using the provided data address
+               coutput <<  Ffmt(10,5) << data[i * dim + j] << " ";
+           }
+           coutput << ")" << std::endl;
+       }
+       coutput << "     ============================================" << std::endl << std::endl;
+   };
 
    // Helper lambda/function to add a temporary array to the master array
    auto accumulate = [&](double* temp) {
@@ -723,23 +759,28 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress)
 
    //**** Kinetic energy component : dE_kin/dhuv ****
    mymolecule.psi_1ke_stress(tstress);
+   if (oprint) print_stress_array("kinetic stress (au)", tstress);
    accumulate(tstress);
 
    //**** Coulomb energy component : dE_Coul/dhuv ****
    mymolecule.dng_1coulomb_stress(tstress);
+   if (oprint) print_stress_array("coulomb stress (au)", tstress);
    accumulate(tstress);
 
    //**** Local pseudo energy component : dE_local/dhuv ****
    mymolecule.dng_1local_stress(tstress);
+   if (oprint) print_stress_array("local psp stress (au)", tstress);
    accumulate(tstress);
 
    //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
    mymolecule.psi_1nonlocal_stress(tstress);
+   if (oprint) print_stress_array("nonlocal psp stress (au)", tstress);
    accumulate(tstress);
    
    //**** xc energy component : dE_xc/dhuv ****
-   //mymolecule.rho_1xc_stress(tstress);
-   //accumulate(tstress);
+   mymolecule.rho_1xc_stress(tstress);
+   if (oprint) print_stress_array("xc stress (au)", tstress);
+   accumulate(tstress);
 
    //**** Core-correction Coulomb energy component : dE_core/dhuv ****
    //mymolecule.rho_1semicore_stress(tstress);
@@ -747,6 +788,7 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress)
 
    //**** Ewald energy component : dE_ewald/dhuv ****
    mymolecule.ewald_stress(tstress);
+   if (oprint) print_stress_array("ewald stress (au)", tstress);
    accumulate(tstress);
 
    //**** SIC energy component : dE_SIC/dhuv ****

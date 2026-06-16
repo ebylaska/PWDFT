@@ -119,6 +119,7 @@ public:
 
    Kinetic_Operator *get_myke() {return myke;}
    Coulomb12_Operator *get_mycoulomb12() {return  mycoulomb12;}
+   XC_Operator *get_myxc() {return  myxc;}
 
 };
 

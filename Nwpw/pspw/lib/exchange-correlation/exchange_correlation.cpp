@@ -252,6 +252,7 @@ void XC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
  *******************************************/
 void XC_Operator::v_exc_euv(const int ispin, const double *dn, double *tstress) 
 {
+   v_bwexc_euv(gga,mypneb,myvdw,dn, 1.0,1.0,tstress);
 }
 
 
