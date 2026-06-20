@@ -164,10 +164,8 @@ void Coulomb_Operator::euv(const double *dng, double *stress)
    for (size_t j=0; j<3; ++j)
       hm[i+3*j] = scal*mypneb->lattice->unitg(i,j);
 
-
    // tmp2(G) = (n(G)**2) * (4*pi/G**2)**2  
    mypneb->ctt_pack_SqrMul2(0,dng,vg,tmp2.data());
-
 
    // Bus = Sum(G) (omega/4*pi)*tmp2(G)*Gu*Gs 
 
@@ -180,7 +178,6 @@ void Coulomb_Operator::euv(const double *dng, double *stress)
    g_segments[0] = mypneb->Gpackxyz(0,0);                  // Start of segment 1 - Gx
    g_segments[1] = mypneb->Gpackxyz(0,1);                  // Start of segment 2 - Gy
    g_segments[2] = mypneb->Gpackxyz(0,2);                  // Start of segment 3 - Gz
-
 
    for (size_t u=0; u<3; ++u)
    for (size_t s=u; s<3; ++s)

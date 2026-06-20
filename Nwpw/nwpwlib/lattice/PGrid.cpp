@@ -770,8 +770,9 @@ double PGrid::tt_pack_dot(const int nb, double *a, double *b)
    int one = 1;
    int ng = (nida[nb] + nidb[nb]);
    int ng0 = nida[nb];
+   double tsum = 0.0;
  
-   double tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
+   tsum = 2.0*DDOT_PWDFT(ng,a,one,b,one);
    tsum -= DDOT_PWDFT(ng0,a,one,b,one);
  
    return d3db::parall->SumAll(1,tsum);
@@ -839,7 +840,7 @@ void PGrid::cc_pack_indot(const int nb, const int nn, double *a, double *b, doub
    int ng = 2 * (nida[nb] + nidb[nb]);
    int ng0 = 2 * nida[nb];
  
-   for (int i = 0; i < nn; ++i) {
+   for (int i=0; i<nn; ++i) {
      sum[i] = 2.0 * DDOT_PWDFT(ng, &(a[i * ng]), one, b, one);
      sum[i] -= DDOT_PWDFT(ng0, &(a[i * ng]), one, b, one);
    }
@@ -919,7 +920,7 @@ void PGrid::cc_pack_inprjdot(const int nb, int nn, int nprj, double *a, double *
    }
 
    // Aggregate the results across all processes
-   parall->Vector_SumAll(1, nn*nprj, sum);
+   parall->Vector_SumAll(1, nprj*nn, sum);
 }
 
 
@@ -3993,13 +3994,37 @@ void PGrid::tcc_pack_MulSum2(const int nb, const double *a, const double *b, dou
  *    PGrid:ttt_pack_MulDot     *
  *                              *
  ********************************/
+/**
+ * @brief Computes the weighted triple product sum across a split grid.
+ * 
+ * This function calculates a specific weighted sum of the element-wise products 
+ * of three arrays (a, b, and c). The summation is performed in two stages:
+ * 1. A base weight of 2.0 is applied to the entire range [0, ng).
+ * 2. A correction weight of -1.0 is applied to the sub-range [0, ng0), 
+ *    resulting in an effective weight of 1.0 for the first segment and 2.0 for the second.
+ * 
+ * The final result is reduced globally across all parallel processes using SumAll.
+ *
+ * @param nb The index of the band/neighboring block being processed.
+ * @param a  Pointer to the first input array (real/double).
+ * @param b  Pointer to the second input array (real/double).
+ * @param c  Pointer to the third input array (real/double).
+ * 
+ * @return The global parallel sum of the weighted triple products.
+ */
 double PGrid::ttt_pack_MulDot(const int nb, const double *a, const double *b, const double *c) 
 {
+   size_t ng0= nida[nb];
    size_t ng = nida[nb] + nidb[nb];
 
    double tsum = 0.0;
+
    for (size_t k=0; k<ng; ++k)
-      tsum += a[k]*b[k]*c[k];
+      tsum += 2*a[k]*b[k]*c[k];
+
+   for (size_t k=0; k<ng0; ++k)
+      tsum -= a[k]*b[k]*c[k];
+
 
    return d3db::parall->SumAll(1,tsum);
 }

@@ -3796,11 +3796,16 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
       // **** structure factor and local pseudopotential ****
       int ia = myion->katm[ii];
 
+       std::cout << std::endl;
 
       // generate projectors
       if (nprj[ia] > 0)
       {
          mystrfac->strfac_pack(1,ii,exi);
+         std::cout << "ii=" << ii << " exi=" << exi[0] << "," << exi[1] << " ";
+         std::cout <<  exi[2] << "," << exi[3] << " ";
+         std::cout <<  exi[4] << "," << exi[5] << " ";
+         std::cout <<  exi[6] << "," << exi[7] << std::endl;
 
          //**** Calculate F^(lm)_I = <psi|vnl(nlm)> ****
          for (auto l=0; l < nprj[ia]; ++l)
@@ -3808,12 +3813,35 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
             bool sd_function = !(l_projector[ia][l] & 1);
             auto prj = prjtmp + (l*npack2);
             auto vnlprj = vnl[ia] + (l*npack1);
+            double sum =  mypneb->tt_pack_dot(1, vnlprj, vnlprj);
+            std::cout << "l=" << l << " sum=" << sum << std::endl;
+
             if (sd_function)
                mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
             else
                mypneb->tcc_pack_iMul(1, vnlprj, exi_vec.data(), prj);
+
+            std::cout << "l=" << l << " sum5=";
+            for (auto k=0; k<nn; ++k)
+            {
+               double sum5 = mypneb->cc_pack_dot(1, const_cast<double*>(psi)+k*npack2, prj);
+               std::cout << sum5 << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "l=" << l << " sum4=";
+            for (auto k=0; k<nn; ++k)
+            {
+               double sum4 = mypneb->cc_pack_dot(1, const_cast<double*>(psi)+k*npack2, exi);
+               std::cout << sum4 << " ";
+            }
+            std::cout << std::endl;
+
          }
          mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
+         std::cout << "ii=" << ii << " sw1= ";
+         for (auto k = 0; k<nn*nprj[ia]; ++k)
+            std::cout << sw1[k] << " " ;
+         std::cout << std::endl;
 
 
          // sw2 = Gijl*sw1 
@@ -3853,10 +3881,11 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
                // Pre-calculate the part that only depends on band and l
                const double weight = (occ != nullptr) ? occ[i] * scale_factor * sw2[i + l*nn] : scale_factor * sw2[i + l*nn] ;
 
-               for (size_t s=0; s<3; ++s)
                for (size_t u=0; u<3; ++u)
+               for (size_t s=0; s<3; ++s)
                {
-                  Bus[u+3*s] -= weight * sw3[i + u*nn + s*3*nn];
+                  //Bus[u+3*s] -= weight * sw3[i + u*nn + s*3*nn];
+                  Bus[s+3*u] -= weight * sw3[i + u*nn + s*3*nn];
                }
             }
          }

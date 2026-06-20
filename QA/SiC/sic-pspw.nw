@@ -3,13 +3,13 @@ title "SiC 8 atom cubic cell"
 
 start SiC
 
-permanent_dir ./perm2
-scratch_dir ./perm2
+permanent_dir ./perm0
+scratch_dir ./perm0
 
 #**** Enter the geometry using fractional coordinates ****
 #geometry units au center noautosym noautoz print 
-geometry units au 
-  system crystal 
+geometry units au nocenter
+  system crystal cartesian
     lat_a 8.277
     lat_b 8.277
     lat_c 8.277
@@ -17,14 +17,22 @@ geometry units au
     beta  90.0
     gamma 90.0
   end
-Si    -0.500000  -0.500000  -0.500000
-Si     0.000000   0.000000  -0.500000
-Si     0.000000  -0.500000   0.000000
-Si    -0.500000   0.000000   0.000000
-C     -0.250000  -0.250000  -0.250000
-C      0.250000   0.250000  -0.250000
-C      0.250000  -0.250000   0.250000
-C     -0.250000   0.250000   0.250000
+#Si    -0.500000  -0.500000  -0.500000
+#Si     0.000000   0.000000  -0.500000
+#Si     0.000000  -0.500000   0.000000
+#Si    -0.500000   0.000000   0.000000
+#C     -0.250000  -0.250000  -0.250000
+#C      0.250000   0.250000  -0.250000
+#C      0.250000  -0.250000   0.250000
+#C     -0.250000   0.250000   0.250000
+Si    4.138500    4.138500   -4.138500 
+Si   -0.000000   -0.000000   -4.138500 
+Si    0.000000   -4.138500    0.000000 
+Si   -4.138500   -0.000000    0.000000 
+C  -2.069250   -2.069250   -2.069250 
+C   2.069250    2.069250   -2.069250 
+C   2.069250   -2.069250    2.069250 
+C  -2.069250    2.069250    2.069250 
 end
 
 #***** setup the nwpw gamma point code ****

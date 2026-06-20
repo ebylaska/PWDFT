@@ -346,15 +346,16 @@ double Parallel::MinAll(const int d, const double sum) {
  * - This function performs an MPI_Allreduce operation to obtain the sum of values
  *   across all processes in the communicator.
  */
-double Parallel::SumAll(const int d, const double sum) {
-  double sumout;
-
-  if (npi[d] > 1)
-     // comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM);
-     MPI_Allreduce(&sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
-  else
-     sumout = sum;
-  return sumout;
+double Parallel::SumAll(const int d, const double sum) 
+{
+   double sumout = 0.0;
+ 
+   if (npi[d] > 1)
+      // comm_i[d].Allreduce(&sum,&sumout,1,MPI_DOUBLE_PRECISION,MPI_SUM);
+      MPI_Allreduce(&sum, &sumout, 1, MPI_DOUBLE_PRECISION, MPI_SUM, comm_i[d]);
+   else
+      sumout = sum;
+   return sumout;
 }
 
 
