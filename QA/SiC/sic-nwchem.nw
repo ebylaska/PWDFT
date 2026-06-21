@@ -8,11 +8,11 @@ scratch_dir ./perm0
 
 #**** Enter the geometry using fractional coordinates ****
 #geometry units au center noautosym noautoz print 
-geometry units au nocenter noautosym
+geometry units au nocenter noautosym noautoz
   system crystal cartesian
-    lat_a 8.277d0
-    lat_b 8.277d0
-    lat_c 8.277d0
+    lat_a 8.278d0
+    lat_b 8.278d0
+    lat_c 8.278d0
     alpha 90.0d0
     beta  90.0d0
     gamma 90.0d0

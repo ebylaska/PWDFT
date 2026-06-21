@@ -10,9 +10,9 @@ scratch_dir ./perm0
 #geometry units au center noautosym noautoz print 
 geometry units au nocenter
   system crystal cartesian
-    lat_a 8.277
-    lat_b 8.277
-    lat_c 8.277
+    lat_a 8.278
+    lat_b 8.278
+    lat_c 8.278
     alpha 90.0
     beta  90.0
     gamma 90.0
