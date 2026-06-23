@@ -856,12 +856,13 @@ void PGrid::cc_pack_ndot(const int nb, const int nn, double *a, double *b, doubl
 {
    int one = 1;
    // int ng  = 2*(nida[nb]+nidb[nb]);
-   int ng = 2 * (nida[nb] + nidb[nb]);
-   int ng0 = 2 * nida[nb];
+   int ng  = 2*(nida[nb] + nidb[nb]);
+   int ng0 = 2*nida[nb];
 
-   for (int i = 0; i < nn; ++i) {
-     sum[i] = 2.0 * DDOT_PWDFT(ng, &(a[i * ng]), one, b, one);
-     sum[i] -= DDOT_PWDFT(ng0, &(a[i * ng]), one, b, one);
+   for (size_t i=0; i<nn; ++i) 
+   {
+      sum[i] = 2.0*DDOT_PWDFT(ng, &(a[i * ng]), one, b, one);
+      sum[i] -= DDOT_PWDFT(ng0, &(a[i * ng]), one, b, one);
    }
 
    parall->Vector_SumAll(1, nn, sum);
@@ -3879,17 +3880,36 @@ void PGrid::tc_pack_Mul(const int nb, const double *a, double *c) {
  *    PGrid:tcc_pack_aMulAdd    *
  *                              *
  ********************************/
-void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, const double *b, double *c)
+/**
+ * @brief Performs an interleaved multiply-accumulate: c = c + (alpha * a[i] * b[2i:2i+1])
+ *
+ * This function scales the components of the interleaved array 'b' by the scalar 
+ * value 'a[i]' and the global constant 'alpha', adding the result to 'c'.
+ *
+ * @param nb    The index of the band/neighboring block.
+ * @param alpha A global scaling factor.
+ * @param a     Pointer to input real scalars (Size: N).
+ * @param b     Pointer to interleaved input [Re, Im, Re, Im...] (Size: 2N).
+ * @param c     Pointer to output array for accumulation (Size: 2N).
+ *
+ * @note Use of __restrict__ allows the compiler to use SIMD vectorization.
+ */
+void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, 
+                            const double *__restrict__ a, 
+                            const double *__restrict__ b, 
+                            double *__restrict__ c)
 {
-   int i, ii;
-   int ng = nida[nb] + nidb[nb];
+   const size_t ng = nida[nb] + nidb[nb];
 
-   ii=0;
-   for (i=0; i<ng; ++i)
+   for (size_t i = 0; i < ng; ++i)
    {
-      c[ii]   += alpha*b[ii] * a[i];
-      c[ii+1] += alpha*b[ii+1]*a[i];
-      ii += 2;
+      // Calculate the effective weight once per scalar element
+      const double weight = alpha * a[i];
+      const size_t idx = 2 * i;
+
+      // Perform the accumulation
+      c[idx]     += weight * b[idx];
+      c[idx + 1] += weight * b[idx + 1];
    }
 }
 
@@ -3898,18 +3918,38 @@ void PGrid::tcc_pack_aMulAdd(const int nb, const double alpha, const double *a, 
  *      PGrid:tcc_pack_iMul     *
  *                              *
  ********************************/
-void PGrid::tcc_pack_iMul(const int nb, const double *a, const double *b,
-                          double *c) {
-  int i, ii;
-  int ng = nida[nb] + nidb[nb];
+/**
+ * @brief Performs an interleaved real-to-complex expansion and multiplication.
+ *
+ *  Calculates: i * a[i] * (b_re[i] + i * b_im[i]) 
+ *            = (-a[i] * b_im[i]) + i * (a[i] * b_re[i])
+ *
+ * @param nb The index of the band/neighboring block.
+ * @param a  Pointer to input real scalars (Size: N).
+ * @param b  Pointer to interleaved input [Re, Im, Re, Im...] (Size: 2N).
+ * @param c  Pointer to output expanded components (Size: 2N).
+ *
+ * @note The arrays 'b' and 'c' must be of size at least 2*(nida[nb]+nidb[nb]).
+ */
+void PGrid::tcc_pack_iMul(const int nb, const double *__restrict__ a, const double *__restrict__ b, double *__restrict__ c) 
+{ 
+   const size_t ng = nida[nb] + nidb[nb];
 
-  ii = 0;
-  for (i = 0; i < ng; ++i) {
-    c[ii] = -b[ii + 1] * a[i];
-    c[ii + 1] = b[ii] * a[i];
-    ii += 2;
-  }
+   // Using __restrict__ (if using GCC/Clang/MSVC) tells the compiler 
+   // that the pointers do not overlap, enabling much better SIMD optimization.
+
+   for (size_t i = 0; i < ng; ++i)
+   {
+      const double scalar = a[i];
+      const size_t base_idx = 2 * i;
+      
+      // Real part of result: -a * Im(b)
+      c[base_idx]     = -scalar * b[base_idx + 1];
+      // Imaginary part of result: a * Re(b)
+      c[base_idx + 1] =  scalar * b[base_idx];
+   }
 }
+
 
 /*******************************************
  *                                         *
@@ -3956,19 +3996,37 @@ void PGrid::tcr_pack_iMul_unpack_fft(const int nb, const double *a, const double
  *     PGrid:tc_pack_iMul       *
  *                              *
  ********************************/
-void PGrid::tc_pack_iMul(const int nb, const double *a, double *c) 
+/**
+ * @brief Performs an in-place interleaved complex rotation and scaling.
+ * 
+ * Computes: c[2i : 2i+1] = c[2i : 2i+1] * (i * a[i])
+ * Which expands to:
+ *    c[2i]   = -a[i] * Im(c_old)
+ *    c[2i+1] =  a[i] * Re(c_old)
+ *
+ * @param nb The index of the band/neighboring block.
+ * @param a  Pointer to input real scalars (Size: N).
+ * @param c  Pointer to interleaved complex array to be modified in-place (Size: 2N).
+ * 
+ * @note Use of __restrict__ is critical here to allow the compiler to 
+ *       vectorize despite 'a' and 'c' being different pointers.
+ */
+void PGrid::tc_pack_iMul(const int nb, const double *__restrict__ a, double *__restrict__ c)
 {
-   double x, y;
-   int ng = nida[nb] + nidb[nb];
-   int ii = 0;
-   for (auto i=0; i<ng; ++i) 
+   const size_t ng = nida[nb] + nidb[nb];
+
+   for (size_t i = 0; i < ng; ++i)
    {
-      x = c[ii];
-      y = c[ii+1];
-     
-      c[ii]   = -y*a[i];
-      c[ii+1] =  x*a[i];
-      ii += 2;
+      const size_t idx = 2 * i;
+      const double scale = a[i];
+
+      // We must capture the original values before overwriting c[idx]
+      // This is essentially what your x and y did, but more explicit.
+      const double re = c[idx];
+      const double im = c[idx + 1];
+
+      c[idx]     = -scale * im;
+      c[idx + 1] =  scale * re;
    }
 }
 
@@ -3977,6 +4035,19 @@ void PGrid::tc_pack_iMul(const int nb, const double *a, double *c)
  *    PGrid:ttc_pack_MulSum2    *
  *                              *
  ********************************/
+/**
+ * @brief Performs weighted accumulation into interleaved array: c = c + (b * a[i])
+ * 
+ * For each index i from 0 to ng-1:
+ *    c[2i]   += b[2i]   * a[i]
+ *    c[2i+1] += b[2i+1] * a[i]
+ *
+ * @param nb The index of the band/neighboring block.
+ * @param a  Pointer to input real scalars (Size: N).
+ * @param b  Pointer to interleaved input array (Size: 2N).
+ * @param c  Pointer to output array for accumulation (Size: Must be at least 2N).
+ * 
+ */
 void PGrid::tcc_pack_MulSum2(const int nb, const double *a, const double *b, double *c) 
 {
    int ng = nida[nb] + nidb[nb];
@@ -4035,26 +4106,64 @@ double PGrid::ttt_pack_MulDot(const int nb, const double *a, const double *b, co
  *      PGrid:cc_pack_Sum2      *
  *                              *
  ********************************/
-void PGrid::cc_pack_Sum2(const int nb, const double *a, double *b) 
+/**
+ * @brief Performs vector addition in-place: b = b + a.
+ * 
+ * This function adds elements of array 'a' to array 'b'.
+ * 
+ * @param nb The index of the band/neighboring block.
+ * @param a  Pointer to input array (Size: ng).
+ * @param b  Pointer to output array (Size: ng) - modified in-place.
+ * 
+ * @note Using __restrict__ is critical here to enable SIMD vectorization.
+ */
+void PGrid::cc_pack_Sum2(const int nb, const double *__restrict__ a, double *__restrict__ b)
 {
-   int ng = 2*(nida[nb] + nidb[nb]);
+   // Use size_t to prevent overflow on large datasets
+   const size_t ng = 2 * (static_cast<size_t>(nida[nb]) + static_cast<size_t>(nidb[nb]));
 
-   for (auto i=0; i<ng; ++i)
+   // The compiler can now use AVX/SSE instructions to add 4-8 doubles at a time
+   for (size_t i = 0; i < ng; ++i)
+   {
       b[i] += a[i];
+   }
 }
+
 
 /********************************
  *                              *
  *     PGrid:cccc_pack_Sum      *
  *                              *
  ********************************/
-void PGrid::cccc_pack_Sum(const int nb, const double *a, const double *b, const double *c, double *d) 
+/**
+ * @brief Performs element-wise sum of three arrays into a fourth: d = a + b + c.
+ * 
+ * This function is a high-throughput streaming operation.
+ *
+ * @param nb The index of the band/neighboring block.
+ * @param a Pointer to input array 1 (Size: ng).
+ * @param b Pointer to input array 2 (Size: ng).
+ * @param c Pointer to input array 3 (Size: ng).
+ * @param d Pointer to output array (Size: ng) - modified in-place.
+ * 
+ * @note Using __restrict__ is critical here to allow the compiler to use SIMD.
+ */
+void PGrid::cccc_pack_Sum(const int nb, 
+                          const double *__restrict__ a, 
+                          const double *__restrict__ b, 
+                          const double *__restrict__ c, 
+                          double *__restrict__ d)
 {
-   int ng = 2*(nida[nb] + nidb[nb]);
+   // Use size_t to prevent overflow on very large grids
+   const size_t ng = 2 * (static_cast<size_t>(nida[nb]) + static_cast<size_t>(nidb[nb]));
 
-   for (auto i=0; i<ng; ++i)
-      d[i] = (a[i] + b[i] + c[i]);
+   // The compiler can now use AVX instructions to process multiple elements per cycle
+   for (size_t i = 0; i < ng; ++i)
+   {
+      d[i] = a[i] + b[i] + c[i];
+   }
 }
+
 
 /********************************
  *                              *

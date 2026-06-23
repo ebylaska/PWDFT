@@ -1488,7 +1488,8 @@ void Psp1d_Hamann::vpp2_generate_stress_ray(Parallel *myparall,
            const double a = -sn[i]/(q*q) + rho[i]*cs[i]/q;
            f[i] = a * wp[i + indx[n + 0*5]*nrho] * vp[i + 0*nrho];
          }
-         dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho) / q;
+         //dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho) / q;
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho);
  
          /* B-term for l=0 is typically zero/unused; keep if your formulation requires it.
             Here we leave dvnl_ray[1*...] as already zeroed. */
@@ -1892,6 +1893,11 @@ void Psp1d_Hamann::vpp2_generate_stress_spline(PGrid *mygrid, int nray, double *
             const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
            
             emit(D, DD, 1.0, 0.0, 0.0, 0.0);
+
+            //--lcount;
+            //dvnl[k + (0 + 3*lcount)*npack1] = D*ux;
+            //dvnl[k + (1 + 3*lcount)*npack1] = D*uy;
+            //dvnl[k + (2 + 3*lcount)*npack1] = D*uz;
          }
     }
   }
