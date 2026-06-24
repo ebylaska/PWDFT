@@ -1530,7 +1530,7 @@ void Psp1d_Hamann::vpp2_generate_stress_ray(Parallel *myparall,
        dvnl_ray[0*lmaxnray + 0 + indx[n + l*5]*nray] = 0.0;
        dvnl_ray[1*lmaxnray + 0 + indx[n + l*5]*nray] = 0.0;
      }
- 
+
    delete[] f;
    delete[] sn;
    delete[] cs;
@@ -1682,225 +1682,230 @@ void Psp1d_Hamann::vpp2_generate_stress_spline(PGrid *mygrid, int nray, double *
     double *gy = mygrid->Gpackxyz(1, 1);
     double *gz = mygrid->Gpackxyz(1, 2);
 
-    for (auto k = 0; k < npack1; ++k) {
-
-      double Gx = gx[k];
-      double Gy = gy[k];
-      double Gz = gz[k];
-      const double q = std::sqrt(Gx*Gx + Gy*Gy + Gz*Gz);
-      const int nx   = (int)std::floor(q / dG);
-
-      if (q <= 1.0e-9) {
-        for (auto p = 0; p < nprj; ++p) {
-          dvnl[k + (0 + 3*p)*npack1] = 0.0;
-          dvnl[k + (1 + 3*p)*npack1] = 0.0;
-          dvnl[k + (2 + 3*p)*npack1] = 0.0;
-        }
-        continue;
-      }
-
-      /* unit vector u = G/|G| */
-      double ux = Gx / q;
-      double uy = Gy / q;
-      double uz = Gz / q;
-
-      /* du_i / dG_j (matches Fortran) */
-      const double duxdGx = 1.0/q - ux*ux/q;
-      const double duxdGy = -ux*uy/q;
-      const double duxdGz = -ux*uz/q;
-
-      const double duydGx = -uy*ux/q;
-      const double duydGy = 1.0/q - uy*uy/q;
-      const double duydGz = -uy*uz/q;
-
-      const double duzdGx = -uz*ux/q;
-      const double duzdGy = -uz*uy/q;
-      const double duzdGz = 1.0/q - uz*uz/q;
-
-      int lcount = nprj;
-
-      auto emit = [&](double D, double DD, double T, double dTdux, double dTduy, double dTduz) {
-        const double sumx = dTdux*duxdGx + dTduy*duydGx + dTduz*duzdGx;
-        const double sumy = dTdux*duxdGy + dTduy*duydGy + dTduz*duzdGy;
-        const double sumz = dTdux*duxdGz + dTduy*duydGz + dTduz*duzdGz;
-
-        --lcount;
-        dvnl[k + (0 + 3*lcount)*npack1] = DD*T*ux + D*sumx;
-        dvnl[k + (1 + 3*lcount)*npack1] = DD*T*uy + D*sumy;
-        dvnl[k + (2 + 3*lcount)*npack1] = DD*T*uz + D*sumz;
-      };
-
-      /* f projectors (l=3): 7 components */
-      if ((locp != 3) && (lmax > 2))
-         for (auto n = 0; n < n_expansion[3]; ++n) 
-         {
-            const int ch = indx[n + 3*5];
-           
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
-            //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
-            //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
-           
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
-           
-            const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray [ch*nray]), nray, nx, q);
-            const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
-           
-            /* Copying exactly the Fortran T and dT/du blocks */
-            {
-              double T = uy*(3.0*(1.0-uz*uz) - 4.0*uy*uy)/std::sqrt(24.0);
-              double dTdux = 0.0;
-              double dTduy = (3.0*(1.0-uz*uz) - 12.0*uy*uy)/std::sqrt(24.0);
-              double dTduz = -6.0*uy*uz/std::sqrt(24.0);
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = ux*uy*uz;
-              double dTdux = uy*uz;
-              double dTduy = ux*uz;
-              double dTduz = ux*uy;
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = uy*(5.0*uz*uz - 1.0)/std::sqrt(40.0);
-              double dTdux = 0.0;
-              double dTduy = (5.0*uz*uz - 1.0)/std::sqrt(40.0);
-              double dTduz = 10.0*uy*uz/std::sqrt(40.0);
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = uz*(5.0*uz*uz - 3.0)/std::sqrt(60.0);
-              double dTdux = 0.0;
-              double dTduy = 0.0;
-              double dTduz = (15.0*uz*uz - 3.0)/std::sqrt(60.0);
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = ux*(5.0*uz*uz - 1.0)/std::sqrt(40.0);
-              double dTdux = (5.0*uz*uz - 1.0)/std::sqrt(40.0);
-              double dTduy = 0.0;
-              double dTduz = 10.0*ux*uz/std::sqrt(40.0);
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = uz*(ux*ux - uy*uy)/2.0;
-              double dTdux = ux*uz;
-              double dTduy = -uy*uz;
-              double dTduz = (ux*ux - uy*uy)/2.0;
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
-            {
-              double T = ux*(4.0*ux*ux - 3.0*(1.0-uz*uz))/std::sqrt(24.0);
-              double dTdux = (12.0*ux*ux - 3.0*(1.0-uz*uz))/std::sqrt(24.0);
-              double dTduy = 0.0;
-              double dTduz = 6.0*ux*uz/std::sqrt(24.0);
-              emit(D, DD, T, dTdux, dTduy, dTduz);
-            }
+    for (auto k = 0; k < npack1; ++k) 
+    {
+       double Gx = gx[k];
+       double Gy = gy[k];
+       double Gz = gz[k];
+       const double q = std::sqrt(Gx*Gx + Gy*Gy + Gz*Gz);
+       const int nx   = (int)std::floor(q / dG);
+      
+       if (q <= 1.0e-9) {
+         for (auto p = 0; p < nprj; ++p) {
+           dvnl[k + (0 + 3*p)*npack1] = 0.0;
+           dvnl[k + (1 + 3*p)*npack1] = 0.0;
+           dvnl[k + (2 + 3*p)*npack1] = 0.0;
          }
-
-      /* d projectors (l=2): 5 components */
-      if ((locp != 2) && (lmax > 1))
-         for (auto n = 0; n < n_expansion[2]; ++n) 
-         {
-            const int ch = indx[n + 2*5];
-           
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
-            //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
-            //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
-            const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
-            const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
-           
-            {
-              double T = ux*uy;
-              emit(D, DD, T, uy, ux, 0.0);
-            }
-            {
-              double T = uy*uz;
-              emit(D, DD, T, 0.0, uz, uy);
-            }
-            {
-              double T = (3.0*uz*uz - 1.0)/(2.0*std::sqrt(3.0));
-              emit(D, DD, T, 0.0, 0.0, 6.0*uz/(2.0*std::sqrt(3.0)));
-            }
-            {
-              double T = uz*ux;
-              emit(D, DD, T, uz, 0.0, ux);
-            }
-            {
-              double T = (ux*ux - uy*uy)/2.0;
-              emit(D, DD, T, ux, -uy, 0.0);
-            }
-         }
-
-      /* p projectors (l=1): 3 components */
-      if ((locp != 1) && (lmax > 0))
-         for (auto n = 0; n < n_expansion[1]; ++n) 
-         {
-            const int ch = indx[n + 1*5];
-           
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
-            //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
-            //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]), &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]), &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
-           
-            const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
-            const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
-           
-            {
-              double T = uy;
-              emit(D, DD, T, 0.0, 1.0, 0.0);
-            }
-            {
-              double T = uz;
-              emit(D, DD, T, 0.0, 0.0, 1.0);
-            }
-            {
-              double T = ux;
-              emit(D, DD, T, 1.0, 0.0, 0.0);
-            }
-         }
-
-      /* s projectors (l=0): 1 component */
-      if (locp != 0)
-         for (auto n = 0; n < n_expansion[0]; ++n) 
-         {
-            const int ch = indx[n + 0*5];
-           
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
-            //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
-            //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
-            //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
-            //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
-            /* For s: DD isn’t used in Fortran (pure direction), but keep the same formula:
-               T=1, dT/du = 0 -> dvnl = DD*u */
-            //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
-            //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
-           
-            /* For s: DD isn’t used in Fortran (pure direction), but keep the same formula:
-               T=1, dT/du = 0 -> dvnl = DD*u */
-            const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
-            const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
-           
-            emit(D, DD, 1.0, 0.0, 0.0, 0.0);
-
-            //--lcount;
-            //dvnl[k + (0 + 3*lcount)*npack1] = D*ux;
-            //dvnl[k + (1 + 3*lcount)*npack1] = D*uy;
-            //dvnl[k + (2 + 3*lcount)*npack1] = D*uz;
-         }
+         continue;
+       }
+      
+       /* unit vector u = G/|G| */
+       double ux = Gx / q;
+       double uy = Gy / q;
+       double uz = Gz / q;
+      
+       /* du_i / dG_j (matches Fortran) */
+       const double duxdGx = 1.0/q - ux*ux/q;
+       const double duxdGy = -ux*uy/q;
+       const double duxdGz = -ux*uz/q;
+      
+       const double duydGx = -uy*ux/q;
+       const double duydGy = 1.0/q - uy*uy/q;
+       const double duydGz = -uy*uz/q;
+      
+       const double duzdGx = -uz*ux/q;
+       const double duzdGy = -uz*uy/q;
+       const double duzdGz = 1.0/q - uz*uz/q;
+      
+       int lcount = nprj;
+      
+       auto emit = [&](double D, double DD, double T, double dTdux, double dTduy, double dTduz) {
+         const double sumx = dTdux*duxdGx + dTduy*duydGx + dTduz*duzdGx;
+         const double sumy = dTdux*duxdGy + dTduy*duydGy + dTduz*duzdGy;
+         const double sumz = dTdux*duxdGz + dTduy*duydGz + dTduz*duzdGz;
+      
+         --lcount;
+         dvnl[k + (0 + 3*lcount)*npack1] = DD*T*ux + D*sumx;
+         dvnl[k + (1 + 3*lcount)*npack1] = DD*T*uy + D*sumy;
+         dvnl[k + (2 + 3*lcount)*npack1] = DD*T*uz + D*sumz;
+       };
+      
+       /* f projectors (l=3): 7 components */
+       if ((locp != 3) && (lmax > 2))
+          for (auto n = 0; n < n_expansion[3]; ++n) 
+          {
+             const int ch = indx[n + 3*5];
+            
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
+             //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
+             //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
+            
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
+            
+             const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray [ch*nray]), nray, nx, q);
+             const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
+            
+             /* Copying exactly the Fortran T and dT/du blocks */
+             {
+               double T = uy*(3.0*(1.0-uz*uz) - 4.0*uy*uy)/std::sqrt(24.0);
+               double dTdux = 0.0;
+               double dTduy = (3.0*(1.0-uz*uz) - 12.0*uy*uy)/std::sqrt(24.0);
+               double dTduz = -6.0*uy*uz/std::sqrt(24.0);
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = ux*uy*uz;
+               double dTdux = uy*uz;
+               double dTduy = ux*uz;
+               double dTduz = ux*uy;
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = uy*(5.0*uz*uz - 1.0)/std::sqrt(40.0);
+               double dTdux = 0.0;
+               double dTduy = (5.0*uz*uz - 1.0)/std::sqrt(40.0);
+               double dTduz = 10.0*uy*uz/std::sqrt(40.0);
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = uz*(5.0*uz*uz - 3.0)/std::sqrt(60.0);
+               double dTdux = 0.0;
+               double dTduy = 0.0;
+               double dTduz = (15.0*uz*uz - 3.0)/std::sqrt(60.0);
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = ux*(5.0*uz*uz - 1.0)/std::sqrt(40.0);
+               double dTdux = (5.0*uz*uz - 1.0)/std::sqrt(40.0);
+               double dTduy = 0.0;
+               double dTduz = 10.0*ux*uz/std::sqrt(40.0);
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = uz*(ux*ux - uy*uy)/2.0;
+               double dTdux = ux*uz;
+               double dTduy = -uy*uz;
+               double dTduz = (ux*ux - uy*uy)/2.0;
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+             {
+               double T = ux*(4.0*ux*ux - 3.0*(1.0-uz*uz))/std::sqrt(24.0);
+               double dTdux = (12.0*ux*ux - 3.0*(1.0-uz*uz))/std::sqrt(24.0);
+               double dTduy = 0.0;
+               double dTduz = 6.0*ux*uz/std::sqrt(24.0);
+               emit(D, DD, T, dTdux, dTduy, dTduz);
+             }
+          }
+      
+       /* d projectors (l=2): 5 components */
+       if ((locp != 2) && (lmax > 1))
+          for (auto n = 0; n < n_expansion[2]; ++n) 
+          {
+             const int ch = indx[n + 2*5];
+            
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
+             //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
+             //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
+             const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
+             const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
+            
+             {
+               double T = ux*uy;
+               emit(D, DD, T, uy, ux, 0.0);
+             }
+             {
+               double T = uy*uz;
+               emit(D, DD, T, 0.0, uz, uy);
+             }
+             {
+               double T = (3.0*uz*uz - 1.0)/(2.0*std::sqrt(3.0));
+               emit(D, DD, T, 0.0, 0.0, 6.0*uz/(2.0*std::sqrt(3.0)));
+             }
+             {
+               double T = uz*ux;
+               emit(D, DD, T, uz, 0.0, ux);
+             }
+             {
+               double T = (ux*ux - uy*uy)/2.0;
+               emit(D, DD, T, ux, -uy, 0.0);
+             }
+          }
+      
+       /* p projectors (l=1): 3 components */
+       if ((locp != 1) && (lmax > 0))
+          for (auto n = 0; n < n_expansion[1]; ++n) 
+          {
+             const int ch = indx[n + 1*5];
+            
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
+             //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
+             //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]), &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]), &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
+            
+             const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
+             const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
+            
+             {
+               double T = uy;
+               emit(D, DD, T, 0.0, 1.0, 0.0);
+             }
+             {
+               double T = uz;
+               emit(D, DD, T, 0.0, 0.0, 1.0);
+             }
+             {
+               double T = ux;
+               emit(D, DD, T, 1.0, 0.0, 0.0);
+             }
+          }
+      
+       /* s projectors (l=0): 1 component */
+       if (locp != 0)
+          for (auto n = 0; n < n_expansion[0]; ++n) 
+          {
+             const int ch = indx[n + 0*5];
+            
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0    + ch*nray]),
+             //                              &(dvnl_splineray[0    + ch*nray]), nray, nx, q);
+             //const double D  = util_splint(G_ray, &(dvnl_ray[0*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[0*lmaxnray + ch*nray]), nray, nx, q);
+             //const double DD = util_splint(G_ray, &(dvnl_ray[1*lmaxnray + ch*nray]),
+             //                              &(dvnl_splineray[1*lmaxnray + ch*nray]), nray, nx, q);
+             /* For s: DD isn’t used in Fortran (pure direction), but keep the same formula:
+                T=1, dT/du = 0 -> dvnl = DD*u */
+             //const double DD = util_splint(G_ray, &(dvnl_ray[nray + ch*nray]),
+             //                              &(dvnl_splineray[nray + ch*nray]), nray, nx, q);
+            
+             /* For s: DD isn’t used in Fortran (pure direction), but keep the same formula:
+                T=1, dT/du = 0 -> dvnl = DD*u */
+             //const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
+             const double D  = 0.0;
+             //const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
+             const double DD = util_splint(G_ray, &(dvnlD[ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
+      
+            
+             const double T = 1.0;
+             emit(D, DD, T, 0.0, 0.0, 0.0);
+      
+             //--lcount;
+             //dvnl[k + (0 + 3*lcount)*npack1] = DD*T*ux;
+             //dvnl[k + (1 + 3*lcount)*npack1] = DD*T*uy;
+             //dvnl[k + (2 + 3*lcount)*npack1] = DD*T*uz;
+          }
     }
   }
+
 
   /* cleanup */
   delete[] tmp_splineray;
@@ -2665,7 +2670,8 @@ void Psp1d_Hamann::cpp2_generate_stress_ray(Parallel *myparall,
            const double a = -sn[i]/(q*q) + rho[i]*cs[i]/q;
            f[i] = a * wp[i + indx[n + 0*5]*nrho] * vp[i + 0*nrho];
          }
-         dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho) / q;
+         //dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho) / q;
+         dvnl_ray[0*lmaxnray + k1 + indx[n + 0*5]*nray] = P0 * util_simpson(nrho, f, drho);
 
          /* B-term for l=0 is typically zero/unused; keep if your formulation requires it.
             Here we leave dvnl_ray[1*...] as already zeroed. */
@@ -3180,7 +3186,7 @@ void Psp1d_Hamann::cpp2_generate_stress_nonlocal_spline(CGrid *mygrid,
         
                /* For s: DD isn’t used in Fortran (pure direction), but keep the same formula:
                   T=1, dT/du = 0 -> dvnl = DD*u */
-               const double D  = util_splint(G_ray, &(dvnlD [ch*nray]), &(dvnlD_splineray[ch*nray]), nray, nx, q);
+               const double D  = 0.0;
                const double DD = util_splint(G_ray, &(dvnlDD[ch*nray]), &(dvnlDD_splineray[ch*nray]), nray, nx, q);
         
                emit(D, DD, 1.0, 0.0, 0.0, 0.0);

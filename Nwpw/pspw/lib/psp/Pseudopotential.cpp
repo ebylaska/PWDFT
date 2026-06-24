@@ -1545,8 +1545,8 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
          mygrid->t_pack(1, tmp2);
          mygrid->tt_pack_copy(1, tmp2, &prj[(i+3*l) * mygrid->npack(1)]);
 
-         double sum = mygrid->tt_pack_dot(1, tmp2,tmp2);
-         std::cout << "read dvnl, i=" << i << " l=" << l << " dvnl|dvnl=" << sum << std::endl;
+         //double sum = mygrid->tt_pack_dot(1, tmp2,tmp2);
+         //std::cout << "read dvnl, i=" << i << " l=" << l << " dvnl|dvnl=" << std::fixed << std::setprecision(6) <<  sum << std::endl;
       }
    }
    if (*semicore) 
@@ -1747,10 +1747,6 @@ static void vpp2_write(PGrid *mygrid, char *fname2, char *comment, int psp_type,
          for (auto i=0; i<3; ++i)
          {
              mygrid->tt_pack_copy(1, &prj[(i + 3*l)*mygrid->npack(1)], tmp2);
-
-         double sum = mygrid->tt_pack_dot(1, tmp2,tmp2);
-         std::cout << "write dvnl, i=" << i << " l=" << l << " dvnl|dvnl=" << sum << std::endl;
-
              mygrid->t_unpack(1, tmp2);
              mygrid->t_write_buffer(6, tmp2, 0);
           }
@@ -1859,15 +1855,6 @@ static void vpp2_generate(// input
       /*  generate formatted grids using splines */
       psp1d.vpp2_generate_stress_spline(mygrid, nray, G_ray, dvl_ray, dvnl_ray,
                                         rho_sc_k_ray, dvl, *dvnl, *dncore);
-     
-         double sum = mygrid->tt_pack_dot(1, *dvnl,*dvnl);
-         std::cout << "generate dvnl, l=" << 0 << " dvnl|dvnl=" << sum << std::endl;
-         double sum1 = mygrid->tt_pack_dot(1, *dvnl+(mygrid->npack(1)),*dvnl+(mygrid->npack(1)) );
-         std::cout << "generate dvnl, l=" << 1 << " dvnl|dvnl=" << sum1 << std::endl;
-         double sum2 = mygrid->tt_pack_dot(1, *dvnl+2*(mygrid->npack(1)),*dvnl+2*(mygrid->npack(1)) );
-         std::cout << "generate dvnl, l=" << 2 << " dvnl|dvnl=" << sum2 << std::endl;
-         double sum3 = mygrid->tt_pack_dot(1, *dvnl+3*(mygrid->npack(1)),*dvnl+3*(mygrid->npack(1)) );
-         std::cout << "generate dvnl, l=" << 3 << " dvnl|dvnl=" << sum3 << std::endl;
 
       /* deallocate ray formatted grids */
       delete[] rho_sc_k_ray;
@@ -3811,16 +3798,11 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
       // **** structure factor and local pseudopotential ****
       int ia = myion->katm[ii];
 
-       std::cout << std::endl;
 
       // generate projectors
       if (nprj[ia] > 0)
       {
          mystrfac->strfac_pack(1,ii,exi);
-         std::cout << "ii=" << ii << " exi=" << exi[0] << "," << exi[1] << " ";
-         std::cout <<  exi[2] << "," << exi[3] << " ";
-         std::cout <<  exi[4] << "," << exi[5] << " ";
-         std::cout <<  exi[6] << "," << exi[7] << std::endl;
 
          //**** Calculate F^(lm)_I = <psi|vnl(nlm)> ****
          for (auto l=0; l < nprj[ia]; ++l)
@@ -3828,35 +3810,14 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
             bool sd_function = !(l_projector[ia][l] & 1);
             auto prj = prjtmp + (l*npack2);
             auto vnlprj = vnl[ia] + (l*npack1);
-            double sum =  mypneb->tt_pack_dot(1, vnlprj, vnlprj);
-            std::cout << "l=" << l << " sum=" << sum << std::endl;
 
             if (sd_function)
                mypneb->tcc_pack_Mul(1, vnlprj, exi, prj);
             else
                mypneb->tcc_pack_iMul(1, vnlprj, exi_vec.data(), prj);
 
-            std::cout << "l=" << l << " sum5=";
-            for (auto k=0; k<nn; ++k)
-            {
-               double sum5 = mypneb->cc_pack_dot(1, const_cast<double*>(psi)+k*npack2, prj);
-               std::cout << sum5 << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "l=" << l << " sum4=";
-            for (auto k=0; k<nn; ++k)
-            {
-               double sum4 = mypneb->cc_pack_dot(1, const_cast<double*>(psi)+k*npack2, exi);
-               std::cout << sum4 << " ";
-            }
-            std::cout << std::endl;
-
          }
          mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
-         std::cout << "ii=" << ii << " sw1= ";
-         for (auto k = 0; k<nn*nprj[ia]; ++k)
-            std::cout << sw1[k] << " " ;
-         std::cout << std::endl;
 
 
          // sw2 = Gijl*sw1 
@@ -3876,13 +3837,7 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
                auto dvnlprj = dvnl[ia] + s*npack1 + l*3*npack1;
                auto prj = prjtmp + (l*npack2) + u*nprj[ia]*npack2 + s*3*nprj[ia]*npack2;
 
-            double sum =  mypneb->tt_pack_dot(1, dvnlprj, dvnlprj);
-            std::cout << "ii=" << ii << " s=" << s << " l=" << l << " sum=" << sum << std::endl;
-
                mypneb->ttt_pack_Mul(1, dvnlprj, g_segments[u], tmp2);
-
-            double sum2=  mypneb->tt_pack_dot(1, tmp2, tmp2);
-            std::cout << "ii=" << ii << " s=" << s << " u=" << u << " l=" << l << " sum2=" << sum2 << std::endl;
 
                if (sd_function)
                   mypneb->tcc_pack_Mul(1, tmp2, exi, prj);
@@ -3891,17 +3846,6 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
 
                mypneb->cc_pack_ndot(1,nn,const_cast<double*>(psi),prj, sw3+u*nn+s*3*nn);
             }
-
-         std::cout << "ii=" << ii << " sw2= ";
-         for (auto k = 0; k<nn*nprj[ia]; ++k)
-            std::cout << sw2[k] << " " ;
-         std::cout << std::endl;
-
-            std::cout << "ii=" << ii << " l=" << l << "  sw3= ";
-            for (auto k = 0; k<9*nn; ++k)
-               std::cout << sw3[k] << " " ;
-            std::cout << std::endl;
-
 
             for (size_t i=0; i<nn; ++i)
             {
@@ -3913,14 +3857,14 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
                {
                   //Bus[u+3*s] -= weight * sw3[i + u*nn + s*3*nn];
                   Bus[s+3*u] -= weight * sw3[i + u*nn + s*3*nn];
-                  std::cout << "i=" << i << "u=" << u << "s=" <<  s << " weight=" << weight << " sw3=" << sw3[i+u*nn+s*3*nn] << " bb=" << Bus[s+3*u] << std::endl;
+                  //std::cout << "i=" << i << "u=" << u << "s=" <<  s << " weight=" << weight << " sw3=" << sw3[i+u*nn+s*3*nn] << " bb=" << Bus[s+3*u] << std::endl;
                }
             }
 
-            std::cout << "ii=" << ii << " l=" << l << "  Bus= ";
-            for (auto k = 0; k<9; ++k)
-               std::cout << Bus[k] << " " ;
-            std::cout << std::endl;
+            //std::cout << "ii=" << ii << " l=" << l << "  Bus= ";
+            //for (auto k = 0; k<9; ++k)
+            //   std::cout << Bus[k] << " " ;
+            //std::cout << std::endl;
          }
 
 

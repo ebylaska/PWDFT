@@ -47,7 +47,7 @@ task pspw energy
 nwpw
   includestress true
   stress_numerical false
-  tolerances 1.0e-9 1.0e-9 
+  #tolerances 1.0e-12 1.0e-12 
 end
 task pspw stress
 
