@@ -569,17 +569,17 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          coutput << std::scientific << std::setprecision(5);
  
          // Print Matrix Rows
-         coutput << "     =========== total stress (au) ===========" << std::endl;
+         coutput << "     =====     total stress (au)      =====" << std::endl;
          for (int i=0; i<3; ++i) {
              coutput << (i==0 ? " S =  ( " : "      ( ");
 
              for (int j=0; j<3; ++j) {
                  // Indexing: Row 0: 0,1,2 | Row 1: 3,4,5 | Row 2: 6,7,8
-                 coutput << std::setw(10) << stress[i * 3 + j] << " ";
+                 coutput <<  Ffmt(10,5) << stress[i * 3 + j] << " ";
              }
              coutput << ")" << std::endl;
          }
-         coutput << "     =========================================" << std::endl;
+         coutput << "     ======================================" << std::endl;
 
          // Print Magnitude, Pressure and Conversions
          coutput << "     |S|      = " << normS << std::endl;

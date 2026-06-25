@@ -729,11 +729,11 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
        int pad_right = total_width - l - pad_left;
  
        // 3. Construct the header decoration
-       std::string decoration = "     ========== "; 
+       std::string decoration = "     ===== "; 
        decoration += std::string(pad_left, ' ') + std::string(name);
        // Note: We adjust padding to ensure we stay within a reasonable visual width
        
-       coutput << "\n" << decoration << " ===========" << std::endl;
+       coutput << "\n" << decoration << "   =====" << std::endl;
  
        // 4. Print the Matrix Rows
        for (int i = 0; i < dim; ++i) {
@@ -746,7 +746,7 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
            }
            coutput << ")" << std::endl;
        }
-       coutput << "     ============================================" << std::endl << std::endl;
+       coutput << "     ======================================" << std::endl << std::endl;
    };
 
    // Helper lambda/function to add a temporary array to the master array
@@ -756,20 +756,19 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
  
    double tstress[9];
 
-
    //**** Kinetic energy component : dE_kin/dhuv ****
    mymolecule.psi_1ke_stress(tstress);
-   if (oprint) print_stress_array("kinetic stress (au)", tstress);
+   if (oprint) print_stress_array("  kinetic stress (au)   ", tstress);
    accumulate(tstress);
 
    //**** Coulomb energy component : dE_Coul/dhuv ****
    mymolecule.dng_1coulomb_stress(tstress);
-   if (oprint) print_stress_array("coulomb stress (au)", tstress);
+   if (oprint) print_stress_array("  coulomb stress (au)   ", tstress);
    accumulate(tstress);
 
    //**** Local pseudo energy component : dE_local/dhuv ****
    mymolecule.dng_1local_stress(tstress);
-   if (oprint) print_stress_array("local psp stress (au)", tstress);
+   if (oprint) print_stress_array(" local psp stress (au)  ", tstress);
    accumulate(tstress);
 
    //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
@@ -779,7 +778,7 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
    
    //**** xc energy component : dE_xc/dhuv ****
    mymolecule.rho_1xc_stress(tstress);
-   if (oprint) print_stress_array("xc stress (au)", tstress);
+   if (oprint) print_stress_array("    xc stress (au)      ", tstress);
    accumulate(tstress);
 
    //**** Core-correction Coulomb energy component : dE_core/dhuv ****
@@ -788,7 +787,7 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
 
    //**** Ewald energy component : dE_ewald/dhuv ****
    mymolecule.ewald_stress(tstress);
-   if (oprint) print_stress_array("ewald stress (au)", tstress);
+   if (oprint) print_stress_array("   ewald stress (au)    ", tstress);
    accumulate(tstress);
 
    //**** SIC energy component : dE_SIC/dhuv ****

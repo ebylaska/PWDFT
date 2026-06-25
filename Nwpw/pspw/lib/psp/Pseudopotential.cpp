@@ -3819,7 +3819,6 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
          }
          mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
 
-
          // sw2 = Gijl*sw1 
          Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
                             l_projector[ia], m_projector[ia], Gijl[ia],
@@ -3847,6 +3846,7 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
                mypneb->cc_pack_ndot(1,nn,const_cast<double*>(psi),prj, sw3+u*nn+s*3*nn);
             }
 
+
             for (size_t i=0; i<nn; ++i)
             {
                // Pre-calculate the part that only depends on band and l
@@ -3855,29 +3855,40 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
                for (size_t u=0; u<3; ++u)
                for (size_t s=0; s<3; ++s)
                {
-                  //Bus[u+3*s] -= weight * sw3[i + u*nn + s*3*nn];
                   Bus[s+3*u] -= weight * sw3[i + u*nn + s*3*nn];
-                  //std::cout << "i=" << i << "u=" << u << "s=" <<  s << " weight=" << weight << " sw3=" << sw3[i+u*nn+s*3*nn] << " bb=" << Bus[s+3*u] << std::endl;
                }
             }
 
-            //std::cout << "ii=" << ii << " l=" << l << "  Bus= ";
-            //for (auto k = 0; k<9; ++k)
-            //   std::cout << Bus[k] << " " ;
-            //std::cout << std::endl;
          }
 
 
       }
    }
 
+
+/*     *** calculate euv = Sum(s) hm(s,v)*Bus(u,s)
+      call dcopy(9,0.0d0,0,euv,1)
+      do u=1,3
+      do v=1,3
+         do s=1,3
+            euv(u,v) = euv(u,v) + Bus(u,s)*hm(s,v)
+         end do
+      end do
+      end do
+*/
+
+
    //*** calculate stress(u,v) = Sum(s) hm(s,v)*Bus(u,s)
-   for (size_t v=0; v<3; ++v)
+   std::fill(stress, stress + 9, 0.0);
    for (size_t u=0; u<3; ++u)
    {
-      stress[u+3*v] = 0.0;
-      for (size_t s=0; s<3; ++s)
-         stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
+      for (size_t v=0; v<3; ++v)
+      {
+         for (size_t s=0; s<3; ++s)
+         {
+            stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
+         }
+      }
    }
 
 }

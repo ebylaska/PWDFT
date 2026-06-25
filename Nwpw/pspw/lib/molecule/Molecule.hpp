@@ -536,6 +536,21 @@ public:
    void psi_1nonlocal_stress(double *tstress)
    {
       mypsp->v_nonlocal_euv(psi1,tstress,occ1);
+
+      constexpr double pi = units::PI;
+      const double scal = 1.0/(2.0*pi);
+      double hm[9];
+      for (size_t i=0; i<3; ++i)
+      for (size_t j=0; j<3; ++j)
+         hm[i+3*j] = scal*mygrid->lattice->unitg(i,j);
+
+      const double evnl = this->vnl_ave();
+
+      for (size_t v=0; v<3; ++v)
+      for (size_t u=0; u<3; ++u)
+      {
+         tstress[u+3*v] -= (evnl)*hm[u+3*v];
+      }
    }
 
    void dng_1coulomb_stress(double *tstress)

@@ -807,10 +807,12 @@ void Ewald::stress(double *stress)
 
 
    // Perform the dot product - Assuming ewald_f_ddot_sub is your legacy function
-   etmp2 = ewald_f_ddot_sub(enpack, F, H_vec.data());
+   etmp2 = 2.0 * ewald_f_ddot_sub(enpack, F, H_vec.data());
 
    // Parallel Reduction
    if (tnp > 1) etmp2 = ewaldparall->SumAll(0, etmp2);
+
+   etmp2 *= -0.5 * ss_inv_omega;
 
    for (size_t v=0; v<3; ++v)
    for (size_t u=0; u<3; ++u)
@@ -880,15 +882,13 @@ void Ewald::stress(double *stress)
 
             // Step B: Weighted dot product using the legacy function.
             // We pass the pointer to the start of our vector.
-            double sum_val = ewald_f_ddot_sub(enpack, g_prod.data(), tmp2.data());
+            double sum_val = 2.0*ewald_f_ddot_sub(enpack, g_prod.data(), tmp2.data());
 
             // Step C: Assign to the symmetric tensor index
-            Cus[u + 3 * s] = ss_inv_omega * sum_val;
+            Cus[u + 3*s] = ss_inv_omega * sum_val;
         }
     }
    }
-
-
 
    // R-space contributions
 
@@ -903,25 +903,26 @@ void Ewald::stress(double *stress)
    {
       if (dutask == tid) 
       {
-         if ( n1==0  &&  n2==0  &&  n3==0 ) continue;
-
-         double ax = n1*unita[0] + n2*unita[3] + n3*unita[6];
-         double ay = n1*unita[1] + n2*unita[4] + n3*unita[7];
-         double az = n1*unita[2] + n2*unita[5] + n3*unita[8];
- 
-         //double ea = std::sqrt(ax*ax + ay*ay + az*az);
-         double ea = std::hypot(ax, ay, az); 
-         double w  = ea * epsilon;
-         double ss = std::erfc(w)/ea + (2.0 * epsilon / std::sqrt(pi)) * std::exp(-w*w);
-         ss = (zz_part*ss) / (ea*ea);
-
-         // Update symmetric tensor components
-         Cus[0] += ss * ax*ax; // 1,1
-         Cus[3] += ss * ax*ay; // 1,2
-         Cus[6] += ss * ax*az; // 1,3
-         Cus[4] += ss * ay*ay; // 2,2
-         Cus[7] += ss * ay*az; // 2,3
-         Cus[8] += ss * az*az; // 3,3
+         if (!(n1==0  &&  n2==0  &&  n3==0))
+         {
+            double ax = n1*unita[0] + n2*unita[3] + n3*unita[6];
+            double ay = n1*unita[1] + n2*unita[4] + n3*unita[7];
+            double az = n1*unita[2] + n2*unita[5] + n3*unita[8];
+  
+            //double ea = std::sqrt(ax*ax + ay*ay + az*az);
+            double ea = std::hypot(ax, ay, az); 
+            double w  = ea * epsilon;
+            double ss = std::erfc(w)/ea + (2.0 * epsilon / std::sqrt(pi)) * std::exp(-w*w);
+            ss = (zz_part*ss) / (ea*ea);
+     
+            // Update symmetric tensor components
+            Cus[0] += ss * ax*ax; // 1,1
+            Cus[3] += ss * ax*ay; // 1,2
+            Cus[6] += ss * ax*az; // 1,3
+            Cus[4] += ss * ay*ay; // 2,2
+            Cus[7] += ss * ay*az; // 2,3
+            Cus[8] += ss * az*az; // 3,3
+         }
       }
       dutask = (dutask + 1) % tnp;
    }
@@ -961,6 +962,7 @@ void Ewald::stress(double *stress)
       }
       dutask = (dutask + 1) % tnp;
    }
+
    if (tnp > 1) ewaldparall->Vector_SumAll(0, 9, Cus.data());
 
    for (size_t u=0; u<3; ++u)
@@ -972,6 +974,7 @@ void Ewald::stress(double *stress)
    for (size_t u=0; u<3; ++u)
       for (size_t s=0; s<3; ++s)
          stress[u+3*v] += Cus[u+3*s]*hm[s+3*v];
+
 
 }
 
