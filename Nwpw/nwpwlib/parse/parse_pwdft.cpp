@@ -1564,858 +1564,859 @@ static json parse_dplot(json dplot, int *curptr,
  **************************************************/
 
 static json parse_nwpw(json nwpwjson, int *curptr,
-                       std::vector<std::string> lines) {
-  // json nwpwjson;
-
-  int cur = *curptr;
-  int endcount = 1;
-  ++cur;
-  std::string line;
-  std::vector<std::string> ss;
-
-  while (endcount > 0) {
-    line = mystring_lowercase(lines[cur]);
-
-    /*
-          if (mystring_contains(line,"steepest_descent"))
-          if (mystring_contains(line,"car-parrinello"))
-    */
-    if (mystring_contains(line, "simulation_cell")) 
-    {
-       if (nwpwjson["simulation_cell"].is_null()) {
-         json simulation_cell;
-         nwpwjson["simulation_cell"] = simulation_cell;
-       }
-       *curptr = cur;
-       nwpwjson["simulation_cell"] = parse_simulation_cell(nwpwjson["simulation_cell"], curptr, lines);
-       cur = *curptr;
-
-    } else if (mystring_contains(line, "brillouin_zone")) {
-       if (nwpwjson["brillouin_zone"].is_null() || (mystring_contains(line, "reset"))) 
-       {
-          json brillouin_zone;
-          //json kpoints = nlohmann::json::array();
-          nwpwjson["brillouin_zone"] = brillouin_zone;
-       }
-       *curptr = cur;
-       nwpwjson["brillouin_zone"] = parse_brillouin_zone(nwpwjson["brillouin_zone"], curptr, lines);
-       cur = *curptr;
-    } 
-    else if (mystring_contains(line, "monkhorst-pack")) 
-    {
-       if (nwpwjson["brillouin_zone"].is_null())
-       {
-          //json kpoints = nlohmann::json::array();
-          json brillouinjson;
-          nwpwjson["brillouin_zone"] = brillouinjson;
-       }
-       ss = mystring_split0(line);
-       int nkx=1,nky=1,nkz=1;
-       double skx=0.0,sky=0.0,skz=0.0;
-       if (ss.size() > 1) nkx = std::stoi(ss[1]);
-       if (ss.size() > 2) nky = std::stoi(ss[2]);
-       if (ss.size() > 3) nkz = std::stoi(ss[3]);
-       if (ss.size() > 4) skx = std::stod(ss[4]);
-       if (ss.size() > 5) sky = std::stod(ss[5]);
-       if (ss.size() > 6) skz = std::stod(ss[6]);
-
-       std::vector<std::vector<double>> kvectors;
-       if (!nwpwjson["brillouin_zone"]["kvectors"].is_null() && nwpwjson["brillouin_zone"]["kvectors"].is_array()) 
-       {
-             // Convert the JSON array to a vector of vectors of doubles
-             kvectors = nwpwjson["brillouin_zone"]["kvectors"].get<std::vector<std::vector<double>>>();
-       }
-       monkhorst_pack_set(nkx,nky,nkz,kvectors);
-
-       // define mk shift
-       auto fold = [](double x) {
-          if (x >=  0.5) x -= 1.0;
-          if (x <  -0.5) x += 1.0;
-          return x;
-       };
-       for (auto& k : kvectors) 
-       {
-          k[0] = fold(k[0] + skx/nkx);
-          k[1] = fold(k[1] + sky/nky);
-          k[2] = fold(k[2] + skz/nkz);
-       }
-
-       nwpwjson["brillouin_zone"]["monkhorst-pack"] = { nkx, nky, nkz };
-       nwpwjson["brillouin_zone"]["monkhorst-pack-shift"] = { skx, sky, skz };
-
-       nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
-
-    } 
-    else if (mystring_contains(line, "pseudopotentials")) 
-    {
-       if (nwpwjson["pseudopotentials"].is_null()) {
-         json pseudopotentials;
-         nwpwjson["pseudopotentials"] = pseudopotentials;
-       }
-       *curptr = cur;
-       nwpwjson["pseudopotentials"] = parse_pseudopotentials(nwpwjson["pseudopotentials"], curptr, lines);
-       cur = *curptr;
-    } else if (mystring_contains(line, "steepest_descent")) {
-       if (nwpwjson["steepest_descent"].is_null()) {
-         json steepest_descent;
-         nwpwjson["steepest_descent"] = steepest_descent;
-       }
-       *curptr = cur;
-       nwpwjson["steepest_descent"] = parse_steepest_descent(nwpwjson["steepest_descent"], curptr, lines);
-       cur = *curptr;
-    } else if (mystring_contains(line, "car-parrinello")) {
-       if (nwpwjson["car-parrinello"].is_null()) {
-         json car_parrinello;
-         nwpwjson["car-parrinello"] = car_parrinello;
-       }
-       *curptr = cur;
-       nwpwjson["car-parrinello"] =
-           parse_car_parrinello(nwpwjson["car-parrinello"], curptr, lines);
-       cur = *curptr;
-    } else if (mystring_contains(line, "dplot")) {
-       if (nwpwjson["dplot"].is_null()) {
-         json dplot;
-         nwpwjson["dplot"] = dplot;
-       }
-       *curptr = cur;
-       nwpwjson["dplot"] = parse_dplot(nwpwjson["dplot"], curptr, lines);
-       cur = *curptr;
-    } else if (mystring_contains(line, "initialize_wavefunction")) {
-       if (mystring_contains(line, " off"))
-         nwpwjson["initialize_wavefunction"] = false;
-       else if (mystring_contains(line, " no"))
-         nwpwjson["initialize_wavefunction"] = false;
-       else if (mystring_contains(line, " false"))
-         nwpwjson["initialize_wavefunction"] = false;
-      
-       else if (mystring_contains(line, " yes"))
-         nwpwjson["initialize_wavefunction"] = true;
-       else if (mystring_contains(line, " true"))
-         nwpwjson["initialize_wavefunction"] = true;
-       else if (mystring_contains(line, " on"))
-         nwpwjson["initialize_wavefunction"] = true;
-       else
-         nwpwjson["initialize_wavefunction"] = true;
-    } else if (mystring_contains(line, "io_norbs_max")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-         nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
-    } else if (mystring_contains(line, "nobalance")) {
-       nwpwjson["nobalance"] = true;
-    } else if (mystring_contains(line, "nolagrange")) {
-       nwpwjson["nolagrange"] = true;
-       if (mystring_contains(line, " off"))        nwpwjson["nolagrange"] = false;
-       else if (mystring_contains(line, " false")) nwpwjson["nolagrange"] = false;
-       else if (mystring_contains(line, " true"))  nwpwjson["nolagrange"] = true;
-       else
-           nwpwjson["nolagrange"] = true;
-    } else if (mystring_contains(line, "use_grid_cmp")) {
-       nwpwjson["use_grid_cmp"] = true;
-    } else if (mystring_contains(line, "fast_erf")) {
-       nwpwjson["fast_erf"] = true;
-    } else if (mystring_contains(line, "mapping")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["mapping"] = std::stoi(ss[1]);
-    } else if (mystring_contains(line, "initial_psi_random_algorithm")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
-    } else if (mystring_contains(line, "tile_factor")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["tile_factor"] = std::stoi(ss[1]);
-    } else if (mystring_contains(line, "1d-slab")) {
-       nwpwjson["mapping"] = 1;
-    } else if (mystring_contains(line, "2d-hilbert")) {
-       nwpwjson["mapping"] = 2;
-    } else if (mystring_contains(line, "2d-hcurve")) {
-       nwpwjson["mapping"] = 3;
-    } else if (mystring_contains(line, "np_dimensions")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 2)
-         nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2])};
-       if (ss.size() > 3)
-         nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2]), std::stoi(ss[3])};
-
-    } else if (mystring_contains(line, "loop")) {
-       std::vector<int> loop;
-       loop.push_back(1);
-       loop.push_back(1);
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-         loop[0] = std::stoi(ss[1]);
-       if (ss.size() > 2)
-         loop[1] = std::stoi(ss[2]);
-       nwpwjson["loop"] = loop;
-    } else if (mystring_contains(line, "bo_steps")) {
-       std::vector<int> loop;
-       loop.push_back(1);
-       loop.push_back(1);
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-         loop[0] = std::stoi(ss[1]);
-       if (ss.size() > 2)
-         loop[1] = std::stoi(ss[2]);
-       nwpwjson["bo_steps"] = loop;
-    } else if (mystring_contains(line, "bo_time_step")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["bo_time_step"] = std::stod(ss[1]);
-    } else if (mystring_contains(line, "bo_algorithm")) {
-       if (mystring_contains(line, " leap-frog"))
-          nwpwjson["bo_algorithm"] = 2;
-       else if (mystring_contains(line, " velocity-verlet"))
-          nwpwjson["bo_algorithm"] = 1;
-       else
-          nwpwjson["bo_algorithm"] = 0;
-    } else if (mystring_contains(line, "xc")) {
-        nwpwjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
-        
-        // set the grimme and vdw options
-        std::string options_disp;
-        bool has_disp   = false;
-        bool has_vdw    = false;
-        bool is_grimme2 = false;
-        bool is_vdw2    = false;
-        if      (mystring_contains(nwpwjson["xc"], "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
-        else if (mystring_contains(nwpwjson["xc"], "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
-        else if (mystring_contains(nwpwjson["xc"], "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
-        else if (mystring_contains(nwpwjson["xc"], "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
-        else if (mystring_contains(nwpwjson["xc"], "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
-
-        if      (mystring_contains(nwpwjson["xc"], "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
-        else if (mystring_contains(nwpwjson["xc"], "-vdw"))     {has_vdw = true; is_vdw2 = false; }
-
-        if (has_disp)
-        {
-           auto add_disp = [&](const std::string& func_flag) {
-              if (!has_disp) return;
-              // ensure exactly one -func … prefix
-              if (!func_flag.empty()) {
-                 // always keep a leading space before subsequent flags
-                 options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
-              }
-           };
-       
-           if      (mystring_contains(nwpwjson["xc"], "revpbe0")) {add_disp("revpbe0");}
-           else if (mystring_contains(nwpwjson["xc"], "pbe0"))    {add_disp("pbe0");}
-           else if (mystring_contains(nwpwjson["xc"], "hse"))     {add_disp("hse06");}
-           else if (mystring_contains(nwpwjson["xc"], "bnl"))     {add_disp("hse06");}  // if that’s really what you want
-           else if (mystring_contains(nwpwjson["xc"], "b3lypr"))  {add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
-           else if (mystring_contains(nwpwjson["xc"], "blyp0"))   {add_disp("b3-lyp");} // if this alias is desired
-       
-           // Non-hybrid GGAs (specific → general)
-           else if (mystring_contains(nwpwjson["xc"], "revpbe"))     {add_disp("revpbe");}
-           else if (mystring_contains(nwpwjson["xc"], "pbesol"))     {add_disp("pbesol");}
-           else if (mystring_contains(nwpwjson["xc"], "pbe96"))      {add_disp("pbe");}
-           else if (mystring_contains(nwpwjson["xc"], "xbeef-cpbe")) {add_disp("pbesol");} // confirm
-           else if (mystring_contains(nwpwjson["xc"], "beef"))       {add_disp("pbesol");} // confirm
-           else if (mystring_contains(nwpwjson["xc"], "blyp"))       {add_disp("b-lyp");}
-           else if (mystring_contains(nwpwjson["xc"], "pbe"))        {add_disp("pbe");}
+                       std::vector<std::string> lines) 
+{
+   // json nwpwjson;
+ 
+   int cur = *curptr;
+   int endcount = 1;
+   ++cur;
+   std::string line;
+   std::vector<std::string> ss;
+ 
+   while (endcount > 0) {
+     line = mystring_lowercase(lines[cur]);
+ 
+     /*
+           if (mystring_contains(line,"steepest_descent"))
+           if (mystring_contains(line,"car-parrinello"))
+     */
+     if (mystring_contains(line, "simulation_cell")) 
+     {
+        if (nwpwjson["simulation_cell"].is_null()) {
+          json simulation_cell;
+          nwpwjson["simulation_cell"] = simulation_cell;
         }
-
-        nwpwjson["has_disp"]     = has_disp;
-        nwpwjson["is_grimme2"]   = is_grimme2;
-        nwpwjson["options_disp"] = options_disp;
-        nwpwjson["has_vdw"] = has_vdw;
-        nwpwjson["is_vdw2"] = is_vdw2;
-
-    } else if (mystring_contains(line, "cutoff")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-          nwpwjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
-       if (ss.size() > 2)
-          nwpwjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
-    } else if (mystring_contains(line, "ewald_ncut")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-          nwpwjson["ewald_ncut"] = std::stoi(ss[1]);
-    } else if (mystring_contains(line, "ewald_rcut")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-          nwpwjson["ewald_rcut"] = std::stod(ss[1]);
-    } else if ((mystring_contains(line, "unrestricted")) || (mystring_contains(line, "odft"))) {
-       nwpwjson["ispin"] = 2;
-    } else if (mystring_contains(line, "restricted")) {
-       nwpwjson["ispin"] = 1;
-    } else if (mystring_contains(line, "mult")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-       {
-          int mult = std::stoi(ss[1]);
-          nwpwjson["mult"] = mult;
-          if (mult > 1) nwpwjson["ispin"] = 2;
-       }
-    } else if (mystring_contains(line, "eprecondition")) {
-       if (ss.size() == 2)
-          nwpwjson["eprecondition"] = std::stod(ss[1]);
-    } else if (mystring_contains(line, "sprecondition")) {
-       if (ss.size() == 2)
-          nwpwjson["sprecondition"] = std::stod(ss[1]);
-
-    } else if (mystring_contains(line, "tolerances")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
-       if (ss.size() == 3)
-          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
-       if (ss.size() > 3)
-          nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
-                                   std::stod(ss[3])};
-    } else if (mystring_contains(line, "time_step")) {
-       ss = mystring_split0(line);
-       if (ss.size() > 1)
-          nwpwjson["time_step"] = std::stod(ss[1]);
-    } else if (mystring_contains(line, "intitial_velocities")) {
-       ss = mystring_split0(line);
-       if (ss.size() == 2)
-         nwpwjson["initial_velocities"] = {std::stod(ss[1]), 12345};
-       else if (ss.size() > 2)
-         nwpwjson["initial_velocities"] = {std::stod(ss[1]), std::stoi(ss[2])};
-       else
-         nwpwjson["initial_velocities"] = {298.15, 12345};
-
-
-    } else if (mystring_contains(line, "scf")) {
-       if (mystring_contains(line, "ks-grassmann-cg"))
-          nwpwjson["minimizer"] = 3;
-       else if (mystring_contains(line, "ks-grassmann-lmbfgs"))
-          nwpwjson["minimizer"] = 6;
-       else if (mystring_contains(line, "potential"))
-          nwpwjson["minimizer"] = 5;
-       else
-          nwpwjson["minimizer"] = 8;
-
-       if (mystring_contains(line, "ks-grassmann-lmbfgs")) nwpwjson["ks_algorithm"] = 3;
-       if (mystring_contains(line, "ks-grassmann-cg"))     nwpwjson["ks_algorithm"] = 2;
-       if (mystring_contains(line, "ks-rmm-diis"))         nwpwjson["ks_algorithm"] = 1;
-       if (mystring_contains(line, "ks-cg"))               nwpwjson["ks_algorithm"] = 0;
-       if (mystring_contains(line, "ks-block-cg"))         nwpwjson["ks_algorithm"] = -1;
-
-       // scf_algorithm = 2
-       // Pulay / DIIS / Johnson–Pulay (difference-based Pulay with regularization)
-       if (mystring_contains(line, "johnson-pulay")) nwpwjson["scf_algorithm"] = 2;
-       if (mystring_contains(line, "diis"))          nwpwjson["scf_algorithm"] = 2;
-       if (mystring_contains(line, "pulay"))         nwpwjson["scf_algorithm"] = 2;
-
-       if (mystring_contains(line, "anderson"))      nwpwjson["scf_algorithm"] = 3;
-       if (mystring_contains(line, "broyden"))       nwpwjson["scf_algorithm"] = 1;
-       if (mystring_contains(line, "thomas-fermi"))  nwpwjson["scf_algorithm"] = 4;
-       if (mystring_contains(line, "simple"))        nwpwjson["scf_algorithm"] = 0;
-
-       if (mystring_contains(line, "alpha")) 
-          nwpwjson["scf_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
-       if (mystring_contains(line, "beta")) 
-          nwpwjson["scf_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
-       if (mystring_contains(line, "kerker")) 
-          nwpwjson["kerker_g0"] = std::stod(mystring_trim(mystring_split(line, "kerker")[1]));
-       if (mystring_contains(line, " iterations")) 
-          nwpwjson["ks_maxit_orb"] = std::stoi(mystring_trim(mystring_split(line, " iterations")[1]));
-       if (mystring_contains(line, "outer_iterations")) 
-          nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
-       if (mystring_contains(line, "diis_histories")) 
-          nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
-       if (mystring_contains(line, "extra_rotate")) 
-       {
-          nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
-          if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
-          if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
-       }
-
-
-    // smear 
-    //SMEAR <sigma default 0.001> 
-    //[TEMPERATURE <temperature>] 
-    //[FERMI || GAUSSIAN || MARZARI-VANDERBILT default FERMI] 
-    //[ORBITALS <integer orbitals default 4>] 
-
-    } else if (mystring_contains(line, "cg")) {
-       if (mystring_contains(line, "stiefel"))
-         nwpwjson["minimizer"] = 4;
-       else if (mystring_contains(line, "stich"))
-         nwpwjson["minimizer"] = 9;
-       else
-         nwpwjson["minimizer"] = 1;
-
-    } else if (mystring_contains(line, "lmbfgs")) {
-       if (mystring_contains(line, "stiefel"))
-         nwpwjson["minimizer"] = 7;
-       else if (mystring_contains(line, "stich"))
-         nwpwjson["minimizer"] = 10;
-       else
-         nwpwjson["minimizer"] = 2;
-
-       int lmbfgs_size = 2;
-       ss = mystring_split0(line);
-       for (auto iis = 0; iis < ss.size(); ++iis)
-         if (mystring_isfloat(ss[iis]))
-            lmbfgs_size = std::stoi(ss[iis]);
-       if (lmbfgs_size > 2)
-          nwpwjson["lmbfgs_size"] = lmbfgs_size;
-
-    } else if (mystring_contains(line, "smear")) {
-       double kT=0.001;
-       double kb=3.16679e-6;
-       double temperature;
-
-       ss = mystring_split0(line);
-       if (ss.size()>1)
-         if (mystring_isfloat(ss[1]))
-           kT = std::stod(ss[1]);
-
-       temperature = kT/kb;
-
-       nwpwjson["fractional"] = true;
-       nwpwjson["fractional_frozen"] = false;
-       nwpwjson["fractional_orbitals"] = {4,4};
-       nwpwjson["fractional_kT"] = kT;
-       nwpwjson["fractional_temperature"] = temperature;
-       nwpwjson["fractional_smeartype"]   = 2;
-
-       if (mystring_contains(line, "fixed"))              nwpwjson["fractional_smeartype"] = -1;
-       if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;
-       if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
-       if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
-       if (mystring_contains(line, "hermite"))            nwpwjson["fractional_smeartype"] = 3;
-       if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
-       if (mystring_contains(line, "methfessel-paxton"))  nwpwjson["fractional_smeartype"] = 5;
-       if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 6;
-       if (mystring_contains(line, "lorentzian"))         nwpwjson["fractional_smeartype"] = 7;
-       if (mystring_contains(line, "no correction"))      nwpwjson["fractional_smeartype"] = 8;
-       if (mystring_contains(line, "frozen"))             nwpwjson["fractional_frozen"] = true;
-       if (mystring_contains(line, "orbitals"))  
-       {
-          //std::cout << "line=" << line << std::endl;
-          std::vector<int> norbs;
-          norbs.push_back(1);
-          norbs.push_back(1);
-          //ss = mystring_split0(line);
-          ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
-          if (ss.size() > 0)
-          {
-             norbs[0] = std::stoi(ss[0]);
-             //std::cout << "ss1=" << ss[1] << std::endl;
-          }
-          if (ss.size() > 1)
-          {
-             norbs[1] = std::stoi(ss[1]);
-             //std::cout << "ss2=" << ss[2] << std::endl;
-          }
-          nwpwjson["fractional_orbitals"] = norbs;
-       }
-       if (mystring_contains(line, "filling"))  
-       {
-          std::string rr = " " + mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " ");
-          //std::vector<double> filling = mystring_double_list(mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " "), " ");
-          std::vector<double> filling = mystring_double_list(rr,"");
-          nwpwjson["fractional_filling"] = filling;
-       }
-
-       if (mystring_contains(line, "alpha ")) 
-          nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
-
-       if (mystring_contains(line, "alpha_min ")) 
-          nwpwjson["fractional_alpha_min"] = std::stod(mystring_trim(mystring_split(line, "alpha_min")[1]));
-
-       if (mystring_contains(line, "alpha_max ")) 
-          nwpwjson["fractional_alpha_max"] = std::stod(mystring_trim(mystring_split(line, "alpha_max")[1]));
-
-       if (mystring_contains(line, "beta ")) 
-          nwpwjson["fractional_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
-
-       if (mystring_contains(line, "gamma ")) 
-          nwpwjson["fractional_gamma"] = std::stod(mystring_trim(mystring_split(line, "gamma")[1]));
-
-       if (mystring_contains(line, "temperature"))
-       {
-          temperature = std::stod(mystring_trim(mystring_split(line, "temperature")[1]));
-          kT = temperature/kb;
-          nwpwjson["fractional_kT"] = kT;
-          nwpwjson["fractional_temperature"] = temperature;
-       }
-
-    } else if (mystring_contains(line, "vectors")) {
-       if (mystring_contains(line, " input"))
-         nwpwjson["input_wavefunction_filename"] = mystring_split0(
-             mystring_trim(mystring_split(line, " input")[1]))[0];
-
-       if (mystring_contains(line, " output"))
-         nwpwjson["output_wavefunction_filename"] = mystring_split0(
-             mystring_trim(mystring_split(line, " output")[1]))[0];
-
-       if (mystring_contains(line, "vinput"))
-         nwpwjson["input_v_wavefunction_filename"] = mystring_split0(
-             mystring_trim(mystring_split(line, "vinput")[1]))[0];
-
-       if (mystring_contains(line, "voutput"))
-         nwpwjson["output_v_wavefunction_filename"] = mystring_split0(
-             mystring_trim(mystring_split(line, "voutput")[1]))[0];
-    } 
-    else if (mystring_contains(line, "translation")) 
-    {
-       if (mystring_contains(line, " off"))        nwpwjson["fix_translation"] = true;
-       else if (mystring_contains(line, " no"))    nwpwjson["fix_translation"] = true;
-       else if (mystring_contains(line, " false")) nwpwjson["fix_translation"] = true;
-      
-       else if (mystring_contains(line, " yes")) nwpwjson["fix_translation"] = false;
-       else if (mystring_contains(line, " true")) nwpwjson["fix_translation"] = false;
-       else if (mystring_contains(line, " on")) nwpwjson["fix_translation"] = false;
-       else if (mystring_contains(line, " allow_translation"))
-          nwpwjson["fix_translation"] = false;
-       else
-          nwpwjson["fix_translation"] = true;
-    } 
-    else if (mystring_contains(line, "rotation")) 
-    {
-       if (mystring_contains(line, " off"))        nwpwjson["fix_rotation"] = true;
-       else if (mystring_contains(line, " no"))    nwpwjson["fix_rotation"] = true;
-       else if (mystring_contains(line, " false")) nwpwjson["fix_rotation"] = true;
-       else if (mystring_contains(line, " yes"))   nwpwjson["fix_rotation"] = false;
-       else if (mystring_contains(line, " true"))  nwpwjson["fix_rotation"] = false;
-       else if (mystring_contains(line, " on"))    nwpwjson["fix_rotation"] = false;
-       else
-         nwpwjson["fix_rotation"] = false;
-    } 
-    else if (mystring_contains(line, "apc")) 
-    {
-       if (nwpwjson["apc"].is_null()) {
-         json apc;
-         nwpwjson["apc"] = apc;
-       }
-       nwpwjson["apc"]["on"] = true;
-       if (mystring_contains(line, " off"))  nwpwjson["apc"]["on"] = false;
-       if (mystring_contains(line, "gc"))    nwpwjson["apc"]["Gc"] = mystring_double_list(line, "gc")[0];
-       if (mystring_contains(line, "gamma")) nwpwjson["apc"]["gamma"] = mystring_double_list(line, "gamma");
-       if (mystring_contains(line, "u"))     nwpwjson["apc"]["u"] = mystring_double_list(line, "u");
-       if (mystring_contains(line, "q"))     nwpwjson["apc"]["q"] = mystring_double_list(line, "q");
-    } 
-    else if (mystring_contains(line, "born")) 
-    {
-       if (nwpwjson["born"].is_null()) {
-         json born;
-         nwpwjson["born"] = born;
-       }
-       nwpwjson["born"]["on"] = true;
-       if (mystring_contains(line, " off"))        nwpwjson["born"]["on"] = false;
-       if (mystring_contains(line, " norelax"))    nwpwjson["born"]["relax"] = false;
-       else if (mystring_contains(line, " relax")) nwpwjson["born"]["relax"] = true;
-       if (mystring_contains(line, "dielec"))
-          nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
-       if (mystring_contains(line, "rcut"))
-          nwpwjson["born"]["rcut"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut")[1]))[0]);
-       if (mystring_contains(line, "bradii"))
-          nwpwjson["born"]["bradii"] = mystring_double_list(line, "bradii");
-    } 
-    else if (mystring_contains(line, "efield")) 
-    {
-       if (nwpwjson["efield"].is_null()) {
-         json efield;
-         nwpwjson["efield"] = efield;
-       }
-       nwpwjson["efield"]["on"] = true;
-       if (mystring_contains(line, " off"))      nwpwjson["efield"]["on"] = false;
-       if (mystring_contains(line, " periodic")) nwpwjson["efield"]["type"] = 0;
-       if (mystring_contains(line, " apc"))      nwpwjson["efield"]["type"] = 1;
-       if (mystring_contains(line, " rgrid"))    nwpwjson["efield"]["type"] = 2;
-       if (mystring_contains(line, " center"))   nwpwjson["efield"]["center"] = mystring_double_list(line, "center");
-       if (mystring_contains(line, " vector"))   nwpwjson["efield"]["vector"] = mystring_double_list(line, "vector");
-      
-       if ((nwpwjson["efield"]["on"]) && (mystring_contains(line, " on")) &&
-           (!mystring_contains(line, " vector")))
-         nwpwjson["efield"]["vector"] = mystring_double_list(line, "on");
-    } 
-    else if (mystring_contains(line, "generalized_poisson")) 
-    {
-       std::string check = mystring_split0(mystring_trim(mystring_split(line, "generalized_poisson")[1]))[0];
-       nwpwjson["generalized_poisson"]["on"] = true;
-       if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["on"] = false;
-       if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["on"] = false;
-       if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["on"] = false;
-       if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["on"] = true;
-       if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["on"] = true;
-       if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["on"] = true;
-
-       if (mystring_contains(line, " relax_dielec"))
-       {
-          check = mystring_split0(mystring_trim(mystring_split(line, " relax_dielec")[1]))[0];
-          nwpwjson["generalized_poisson"]["relax_dielec"] = true; // default
-          if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
-          if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["relax_dielec"] = false;
-          if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["relax_dielec"] = false;
-          if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["relax_dielec"] = true;
-          if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["relax_dielec"] = true;
-          if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["relax_dielec"] = true;
-       }
-       if (mystring_contains(line, " fix_dielec"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
-       if (mystring_contains(line, " unfix_dielec")) nwpwjson["generalized_poisson"]["relax_dielec"] = true;
-
-       if (mystring_contains(line, " cube_dielec"))
-       {
-          check = mystring_split0(mystring_trim(mystring_split(line, " cube_dielec")[1]))[0];
-          nwpwjson["generalized_poisson"]["cube_dielec"] = true;
-          if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["cube_dielec"] = false;
-          if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["cube_dielec"] = false;
-          if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["cube_dielec"] = false;
-          if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["cube_dielec"] = true;
-          if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["cube_dielec"] = true;
-          if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["cube_dielec"] = true;
-       }
-
-       if (mystring_contains(line, " dielec"))
-          nwpwjson["generalized_poisson"]["dielec"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
-       if (mystring_contains(line, " rho0"))
-          nwpwjson["generalized_poisson"]["rho0"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rho0")[1]))[0]);
-       if (mystring_contains(line, " beta"))
-          nwpwjson["generalized_poisson"]["beta"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " beta")[1]))[0]);
-       if (mystring_contains(line, " rhomin"))
-          nwpwjson["generalized_poisson"]["rhomin"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomin")[1]))[0]);
-       if (mystring_contains(line, " rhomax"))
-          nwpwjson["generalized_poisson"]["rhomax"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomax")[1]))[0]);
-       if (mystring_contains(line, " rcut_ion"))
-          nwpwjson["generalized_poisson"]["rcut_ion"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut_ion")[1]))[0]);
-       if (mystring_contains(line, " alpha"))
-          nwpwjson["generalized_poisson"]["alpha"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " alpha")[1]))[0]);
-       if (mystring_contains(line, " maxit"))
-          nwpwjson["generalized_poisson"]["maxit"] 
-          = std::stoi(mystring_split0(mystring_trim(mystring_split(line, " maxit")[1]))[0]);
-       if (mystring_contains(line, " rmin"))
-          nwpwjson["generalized_poisson"]["rmin"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmin")[1]))[0]);
-       if (mystring_contains(line, " rmax"))
-          nwpwjson["generalized_poisson"]["rmax"] 
-          = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmax")[1]))[0]);
-       if (mystring_contains(line, " filter"))
-       {
-          double x = std::stod(mystring_split0(mystring_trim(mystring_split(line, " filter")[1]))[0]);
-          if (std::isnan(x))
-             x = 1.0;
-          nwpwjson["generalized_poisson"]["filter"] = x;
-       }
-
-       if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
-       if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
-       if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
-       if (mystring_contains(line, " sphere"))     nwpwjson["generalized_poisson"]["model"] = 3;
-    
-    } else if (mystring_contains(line, "staged_gpu_fft")) {
-       std::string check = mystring_split0(mystring_trim(mystring_split(line, "staged_gpu_fft")[1]))[0];
-       nwpwjson["staged_gpu_fft"]["on"] = true;
-       if (mystring_contains(check, "off"))   nwpwjson["staged_gpu_fft"]["on"] = false;
-       if (mystring_contains(check, "no"))    nwpwjson["staged_gpu_fft"]["on"] = false;
-       if (mystring_contains(check, "false")) nwpwjson["staged_gpu_fft"]["on"] = false;
-       if (mystring_contains(check, "on"))    nwpwjson["staged_gpu_fft"]["on"] = true;
-       if (mystring_contains(check, "yes"))   nwpwjson["staged_gpu_fft"]["on"] = true;
-       if (mystring_contains(check, "true"))  nwpwjson["staged_gpu_fft"]["on"] = true;
-
-    } else if (mystring_contains(line, "fft_container_size")) {
-       int nffts_size = 0;
-       try {
-          nffts_size = std::stoi(mystring_split0(mystring_trim(mystring_split(line, "fft_container_size")[1]))[0]);
-       } catch (const std::invalid_argument& e) {
-          std::cerr << "Invalid argument: " << e.what() << std::endl;
-       } catch (const std::out_of_range& e) {
-           std::cerr << "Out of range: " << e.what() << std::endl;
-       }
-       if ((nffts_size<100) || (nffts_size>0)) 
-          nwpwjson["fft_container_size"] = nffts_size;
-    }
-    else if (mystring_contains(line, "virtual")) {
-       ss = mystring_split0(line);
-       if (ss.size()>1) 
-       {
-          std::vector<int> nexcited(2,0);
-
-          try {
-             if (ss.size() > 1) nexcited[0] = std::stoi(ss[1]);
-             if (ss.size() > 2) nexcited[1] = std::stoi(ss[2]);
-          } catch (...) { /* keep defaults */ }
-        
-          if (nexcited[0] < 0) nexcited[0] = 0;
-          if (nexcited[1] < 0) nexcited[1] = 0;
-        
-          nwpwjson["virtual"] = nexcited;
-       }
-    }
-    else if ((mystring_contains(line, "pspspin")) &&
-             (mystring_contains(line, "off") ||
-              mystring_contains(line, ".false.") ||
-              mystring_contains(line, "F"))) {
-
-       nwpwjson["pspspin"] = false;
-       nwpwjson.erase("pspspin_up");
-       nwpwjson.erase("pspspin_down");
-    }
-    else if (mystring_contains(line, "pspspin")) {
-       std::istringstream iss(line);
-       std::string keyword, spin, lstr, mstr;
-       double penalty;
-       int ion;
-       int m=-9;
-
-       bool not_m = false;
-       iss >> keyword >> spin;
+        *curptr = cur;
+        nwpwjson["simulation_cell"] = parse_simulation_cell(nwpwjson["simulation_cell"], curptr, lines);
+        cur = *curptr;
+ 
+     } else if (mystring_contains(line, "brillouin_zone")) {
+        if (nwpwjson["brillouin_zone"].is_null() || (mystring_contains(line, "reset"))) 
+        {
+           json brillouin_zone;
+           //json kpoints = nlohmann::json::array();
+           nwpwjson["brillouin_zone"] = brillouin_zone;
+        }
+        *curptr = cur;
+        nwpwjson["brillouin_zone"] = parse_brillouin_zone(nwpwjson["brillouin_zone"], curptr, lines);
+        cur = *curptr;
+     } 
+     else if (mystring_contains(line, "monkhorst-pack")) 
+     {
+        if (nwpwjson["brillouin_zone"].is_null())
+        {
+           //json kpoints = nlohmann::json::array();
+           json brillouinjson;
+           nwpwjson["brillouin_zone"] = brillouinjson;
+        }
+        ss = mystring_split0(line);
+        int nkx=1,nky=1,nkz=1;
+        double skx=0.0,sky=0.0,skz=0.0;
+        if (ss.size() > 1) nkx = std::stoi(ss[1]);
+        if (ss.size() > 2) nky = std::stoi(ss[2]);
+        if (ss.size() > 3) nkz = std::stoi(ss[3]);
+        if (ss.size() > 4) skx = std::stod(ss[4]);
+        if (ss.size() > 5) sky = std::stod(ss[5]);
+        if (ss.size() > 6) skz = std::stod(ss[6]);
+ 
+        std::vector<std::vector<double>> kvectors;
+        if (!nwpwjson["brillouin_zone"]["kvectors"].is_null() && nwpwjson["brillouin_zone"]["kvectors"].is_array()) 
+        {
+              // Convert the JSON array to a vector of vectors of doubles
+              kvectors = nwpwjson["brillouin_zone"]["kvectors"].get<std::vector<std::vector<double>>>();
+        }
+        monkhorst_pack_set(nkx,nky,nkz,kvectors);
+ 
+        // define mk shift
+        auto fold = [](double x) {
+           if (x >=  0.5) x -= 1.0;
+           if (x <  -0.5) x += 1.0;
+           return x;
+        };
+        for (auto& k : kvectors) 
+        {
+           k[0] = fold(k[0] + skx/nkx);
+           k[1] = fold(k[1] + sky/nky);
+           k[2] = fold(k[2] + skz/nkz);
+        }
+ 
+        nwpwjson["brillouin_zone"]["monkhorst-pack"] = { nkx, nky, nkz };
+        nwpwjson["brillouin_zone"]["monkhorst-pack-shift"] = { skx, sky, skz };
+ 
+        nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
+ 
+     } 
+     else if (mystring_contains(line, "pseudopotentials")) 
+     {
+        if (nwpwjson["pseudopotentials"].is_null()) {
+          json pseudopotentials;
+          nwpwjson["pseudopotentials"] = pseudopotentials;
+        }
+        *curptr = cur;
+        nwpwjson["pseudopotentials"] = parse_pseudopotentials(nwpwjson["pseudopotentials"], curptr, lines);
+        cur = *curptr;
+     } else if (mystring_contains(line, "steepest_descent")) {
+        if (nwpwjson["steepest_descent"].is_null()) {
+          json steepest_descent;
+          nwpwjson["steepest_descent"] = steepest_descent;
+        }
+        *curptr = cur;
+        nwpwjson["steepest_descent"] = parse_steepest_descent(nwpwjson["steepest_descent"], curptr, lines);
+        cur = *curptr;
+     } else if (mystring_contains(line, "car-parrinello")) {
+        if (nwpwjson["car-parrinello"].is_null()) {
+          json car_parrinello;
+          nwpwjson["car-parrinello"] = car_parrinello;
+        }
+        *curptr = cur;
+        nwpwjson["car-parrinello"] =
+            parse_car_parrinello(nwpwjson["car-parrinello"], curptr, lines);
+        cur = *curptr;
+     } else if (mystring_contains(line, "dplot")) {
+        if (nwpwjson["dplot"].is_null()) {
+          json dplot;
+          nwpwjson["dplot"] = dplot;
+        }
+        *curptr = cur;
+        nwpwjson["dplot"] = parse_dplot(nwpwjson["dplot"], curptr, lines);
+        cur = *curptr;
+     } else if (mystring_contains(line, "initialize_wavefunction")) {
+        if (mystring_contains(line, " off"))
+          nwpwjson["initialize_wavefunction"] = false;
+        else if (mystring_contains(line, " no"))
+          nwpwjson["initialize_wavefunction"] = false;
+        else if (mystring_contains(line, " false"))
+          nwpwjson["initialize_wavefunction"] = false;
        
-       if (mystring_contains(spin, "not_m")) {
-          not_m = true;
-          iss >> m >> spin >> lstr >> penalty;
-       }
-       else
-          iss >> lstr >> penalty;
-
-       if (spin == "alpha") spin = "up";
-       if (spin == "beta")  spin = "down";
-
-       std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
-
-       // L -> integer mapping
-       std::map<std::string, int> l_map = {
-           {"s", 0}, {"p", 1}, {"d", 2}, {"f", 3},
-           {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}
-       };
-
-       int lval = -1;
-       if (l_map.find(lstr) != l_map.end()) {
-          lval = l_map[lstr];
-       } else {
-          std::cerr << "[WARNING] Unrecognized l value: " << lstr << std::endl;
-       }
-
-       std::vector<int> ions;
-       while (iss >> ion)
-          ions.push_back(ion);
-
-       if (!ions.empty()) {
-          json entry;
-          entry["not_m"] = not_m;
-          entry["spin"]  = spin;
-          entry["lstr"]  = lstr;     // original string (optional but helpful)
-          entry["l"]     = lval;
-          if (not_m) entry["m"]     = m;
-          entry["penalty"]  = penalty;
-          entry["ions"]  = ions;
-
-          nwpwjson["pspspin"] = true;
-
-          if (spin == "up") { 
-             if (!nwpwjson.contains("pspspin_up")) nwpwjson["pspspin_up"] = json::array();
-             nwpwjson["pspspin_up"].push_back(entry);
-          } else if (spin == "down") {
-             if (!nwpwjson.contains("pspspin_down")) nwpwjson["pspspin_down"] = json::array();
-             nwpwjson["pspspin_down"].push_back(entry);
-          }
-       }
-       else
-          std::cerr << "[WARNING] pspspin entry ignored due to missing ion indices: " << line << std::endl;
-    }
-    else if ((mystring_contains(mystring_lowercase(line), "uterm")) &&
-             (mystring_contains(line, "off") ||
-              mystring_contains(line, ".false.") ||
-              mystring_contains(line, "F"))) {
-
-       nwpwjson["uterm"] = false;
-       nwpwjson.erase("uterm_list");
-    }
-    else if (mystring_contains(mystring_lowercase(line), "uterm")) {
-       std::istringstream iss(line);
-       std::string keyword, lstr;
-       double uvalue,jvalue;
-       int ion;
-       iss >> keyword >> lstr >> uvalue >> jvalue;
-
-       std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
-
-       // L -> integer mapping
-       std::map<std::string, int> l_map = {
-           {"s", 0}, {"p", 1}, {"d", 2}, {"f", 3},
-           {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}
-       };
-
-       int lval = -1;
-       if (l_map.find(lstr) != l_map.end()) {
-          lval = l_map[lstr];
-       } else {
-          std::cerr << "[WARNING] Unrecognized l value: " << lstr << std::endl;
-       }
-
-
-       std::vector<json> ion_tokens;
-       std::string token;
-
-       while (iss >> token) {
-          // If it's an integer, store as int
-          try {
-             int ion = std::stoi(token);
-             ion_tokens.push_back(ion);
-          } catch (...) {
-             ion_tokens.push_back(token);  // store string for later resolution
-          }
-       }
-
-
-       if (!ion_tokens.empty()) {
-          json entry;
-          entry["lstr"]   = lstr;     // original string (optional but helpful)
-          entry["l"]      = lval;
-          entry["uvalue"] = uvalue;
-          entry["jvalue"] = jvalue;
-          entry["ions"]   = ion_tokens;
-
-          nwpwjson["uterm"] = true;
-          if (!nwpwjson.contains("uterm_list")) 
-             nwpwjson["uterm_list"] = json::array();
-
-          nwpwjson["uterm_list"].push_back(entry);
-
-       }
-
-    }
-    else if (mystring_contains(mystring_lowercase(line), "includestress")) {
-
-       if (mystring_contains(line, " off"))        nwpwjson["includestress"] = false;
-       else if (mystring_contains(line, " no"))    nwpwjson["includestress"] = false;
-       else if (mystring_contains(line, " false")) nwpwjson["includestress"] = false;
-
-       else if (mystring_contains(line, " yes"))   nwpwjson["includestress"] = true; 
-       else if (mystring_contains(line, " true"))  nwpwjson["includestress"] = true; 
-       else if (mystring_contains(line, " on"))    nwpwjson["includestress"] = true; 
-       else
-          nwpwjson["includestress"] = true;
-
-    }
-    else if (mystring_contains(mystring_lowercase(line), "stress_numerical")) {
-
-       if (mystring_contains(line, " off"))        nwpwjson["stress_numerical"] = false;
-       else if (mystring_contains(line, " no"))    nwpwjson["stress_numerical"] = false;
-       else if (mystring_contains(line, " false")) nwpwjson["stress_numerical"] = false;
-
-       else if (mystring_contains(line, " yes"))   nwpwjson["stress_numerical"] = true; 
-       else if (mystring_contains(line, " true"))  nwpwjson["stress_numerical"] = true; 
-       else if (mystring_contains(line, " on"))    nwpwjson["stress_numerical"] = true; 
-       else
-          nwpwjson["stress_numerical"] = true;
-    }
-
-
-    ++cur;
-    if (mystring_contains(lines[cur], "end"))
-      --endcount;
-  }
-
-  *curptr = cur;
-
-  return nwpwjson;
+        else if (mystring_contains(line, " yes"))
+          nwpwjson["initialize_wavefunction"] = true;
+        else if (mystring_contains(line, " true"))
+          nwpwjson["initialize_wavefunction"] = true;
+        else if (mystring_contains(line, " on"))
+          nwpwjson["initialize_wavefunction"] = true;
+        else
+          nwpwjson["initialize_wavefunction"] = true;
+     } else if (mystring_contains(line, "io_norbs_max")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+          nwpwjson["io_norbs_max"] = std::stoi(ss[1]);
+     } else if (mystring_contains(line, "nobalance")) {
+        nwpwjson["nobalance"] = true;
+     } else if (mystring_contains(line, "nolagrange")) {
+        nwpwjson["nolagrange"] = true;
+        if (mystring_contains(line, " off"))        nwpwjson["nolagrange"] = false;
+        else if (mystring_contains(line, " false")) nwpwjson["nolagrange"] = false;
+        else if (mystring_contains(line, " true"))  nwpwjson["nolagrange"] = true;
+        else
+            nwpwjson["nolagrange"] = true;
+     } else if (mystring_contains(line, "use_grid_cmp")) {
+        nwpwjson["use_grid_cmp"] = true;
+     } else if (mystring_contains(line, "fast_erf")) {
+        nwpwjson["fast_erf"] = true;
+     } else if (mystring_contains(line, "mapping")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           nwpwjson["mapping"] = std::stoi(ss[1]);
+     } else if (mystring_contains(line, "initial_psi_random_algorithm")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           nwpwjson["initial_psi_random_algorithm"] = std::stoi(ss[1]);
+     } else if (mystring_contains(line, "tile_factor")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           nwpwjson["tile_factor"] = std::stoi(ss[1]);
+     } else if (mystring_contains(line, "1d-slab")) {
+        nwpwjson["mapping"] = 1;
+     } else if (mystring_contains(line, "2d-hilbert")) {
+        nwpwjson["mapping"] = 2;
+     } else if (mystring_contains(line, "2d-hcurve")) {
+        nwpwjson["mapping"] = 3;
+     } else if (mystring_contains(line, "np_dimensions")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 2)
+          nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2])};
+        if (ss.size() > 3)
+          nwpwjson["np_dimensions"] = {std::stoi(ss[1]), std::stoi(ss[2]), std::stoi(ss[3])};
+ 
+     } else if (mystring_contains(line, "loop")) {
+        std::vector<int> loop;
+        loop.push_back(1);
+        loop.push_back(1);
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+          loop[0] = std::stoi(ss[1]);
+        if (ss.size() > 2)
+          loop[1] = std::stoi(ss[2]);
+        nwpwjson["loop"] = loop;
+     } else if (mystring_contains(line, "bo_steps")) {
+        std::vector<int> loop;
+        loop.push_back(1);
+        loop.push_back(1);
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+          loop[0] = std::stoi(ss[1]);
+        if (ss.size() > 2)
+          loop[1] = std::stoi(ss[2]);
+        nwpwjson["bo_steps"] = loop;
+     } else if (mystring_contains(line, "bo_time_step")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           nwpwjson["bo_time_step"] = std::stod(ss[1]);
+     } else if (mystring_contains(line, "bo_algorithm")) {
+        if (mystring_contains(line, " leap-frog"))
+           nwpwjson["bo_algorithm"] = 2;
+        else if (mystring_contains(line, " velocity-verlet"))
+           nwpwjson["bo_algorithm"] = 1;
+        else
+           nwpwjson["bo_algorithm"] = 0;
+     } else if (mystring_contains(line, "xc")) {
+         nwpwjson["xc"] = mystring_trim(mystring_split(line, "xc")[1]);
+         
+         // set the grimme and vdw options
+         std::string options_disp;
+         bool has_disp   = false;
+         bool has_vdw    = false;
+         bool is_grimme2 = false;
+         bool is_vdw2    = false;
+         if      (mystring_contains(nwpwjson["xc"], "-grimme2")) {has_disp = true; is_grimme2 = true;  options_disp = "-old -noprint";}
+         else if (mystring_contains(nwpwjson["xc"], "-grimme3")) {has_disp = true; is_grimme2 = false; options_disp = "-zero -noprint";}
+         else if (mystring_contains(nwpwjson["xc"], "-grimme4")) {has_disp = true; is_grimme2 = false; options_disp = "-bj -num -noprint";}
+         else if (mystring_contains(nwpwjson["xc"], "-grimme5")) {has_disp = true; is_grimme2 = false; options_disp = "-zerom -noprint";}
+         else if (mystring_contains(nwpwjson["xc"], "-grimme6")) {has_disp = true; is_grimme2 = false; options_disp = "-bjm -num -noprint";}
+ 
+         if      (mystring_contains(nwpwjson["xc"], "-vdw2"))    {has_vdw = true; is_vdw2 = true; }
+         else if (mystring_contains(nwpwjson["xc"], "-vdw"))     {has_vdw = true; is_vdw2 = false; }
+ 
+         if (has_disp)
+         {
+            auto add_disp = [&](const std::string& func_flag) {
+               if (!has_disp) return;
+               // ensure exactly one -func … prefix
+               if (!func_flag.empty()) {
+                  // always keep a leading space before subsequent flags
+                  options_disp = "-func " + func_flag + (options_disp.empty() ? "" : " " + options_disp);
+               }
+            };
+        
+            if      (mystring_contains(nwpwjson["xc"], "revpbe0")) {add_disp("revpbe0");}
+            else if (mystring_contains(nwpwjson["xc"], "pbe0"))    {add_disp("pbe0");}
+            else if (mystring_contains(nwpwjson["xc"], "hse"))     {add_disp("hse06");}
+            else if (mystring_contains(nwpwjson["xc"], "bnl"))     {add_disp("hse06");}  // if that’s really what you want
+            else if (mystring_contains(nwpwjson["xc"], "b3lypr"))  {add_disp("b3-lyp");} // treat b3lypr as hybrid remainder path
+            else if (mystring_contains(nwpwjson["xc"], "blyp0"))   {add_disp("b3-lyp");} // if this alias is desired
+        
+            // Non-hybrid GGAs (specific → general)
+            else if (mystring_contains(nwpwjson["xc"], "revpbe"))     {add_disp("revpbe");}
+            else if (mystring_contains(nwpwjson["xc"], "pbesol"))     {add_disp("pbesol");}
+            else if (mystring_contains(nwpwjson["xc"], "pbe96"))      {add_disp("pbe");}
+            else if (mystring_contains(nwpwjson["xc"], "xbeef-cpbe")) {add_disp("pbesol");} // confirm
+            else if (mystring_contains(nwpwjson["xc"], "beef"))       {add_disp("pbesol");} // confirm
+            else if (mystring_contains(nwpwjson["xc"], "blyp"))       {add_disp("b-lyp");}
+            else if (mystring_contains(nwpwjson["xc"], "pbe"))        {add_disp("pbe");}
+         }
+ 
+         nwpwjson["has_disp"]     = has_disp;
+         nwpwjson["is_grimme2"]   = is_grimme2;
+         nwpwjson["options_disp"] = options_disp;
+         nwpwjson["has_vdw"] = has_vdw;
+         nwpwjson["is_vdw2"] = is_vdw2;
+ 
+     } else if (mystring_contains(line, "cutoff")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+           nwpwjson["cutoff"] = {std::stod(ss[1]), 2 * std::stod(ss[1])};
+        if (ss.size() > 2)
+           nwpwjson["cutoff"] = {std::stod(ss[1]), std::stod(ss[2])};
+     } else if (mystring_contains(line, "ewald_ncut")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+           nwpwjson["ewald_ncut"] = std::stoi(ss[1]);
+     } else if (mystring_contains(line, "ewald_rcut")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+           nwpwjson["ewald_rcut"] = std::stod(ss[1]);
+     } else if ((mystring_contains(line, "unrestricted")) || (mystring_contains(line, "odft"))) {
+        nwpwjson["ispin"] = 2;
+     } else if (mystring_contains(line, "restricted")) {
+        nwpwjson["ispin"] = 1;
+     } else if (mystring_contains(line, "mult")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+        {
+           int mult = std::stoi(ss[1]);
+           nwpwjson["mult"] = mult;
+           if (mult > 1) nwpwjson["ispin"] = 2;
+        }
+     } else if (mystring_contains(line, "eprecondition")) {
+        if (ss.size() == 2)
+           nwpwjson["eprecondition"] = std::stod(ss[1]);
+     } else if (mystring_contains(line, "sprecondition")) {
+        if (ss.size() == 2)
+           nwpwjson["sprecondition"] = std::stod(ss[1]);
+ 
+     } else if (mystring_contains(line, "tolerances")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+           nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[1]), 1.0e-4};
+        if (ss.size() == 3)
+           nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]), 1.0e-4};
+        if (ss.size() > 3)
+           nwpwjson["tolerances"] = {std::stod(ss[1]), std::stod(ss[2]),
+                                    std::stod(ss[3])};
+     } else if (mystring_contains(line, "time_step")) {
+        ss = mystring_split0(line);
+        if (ss.size() > 1)
+           nwpwjson["time_step"] = std::stod(ss[1]);
+     } else if (mystring_contains(line, "intitial_velocities")) {
+        ss = mystring_split0(line);
+        if (ss.size() == 2)
+          nwpwjson["initial_velocities"] = {std::stod(ss[1]), 12345};
+        else if (ss.size() > 2)
+          nwpwjson["initial_velocities"] = {std::stod(ss[1]), std::stoi(ss[2])};
+        else
+          nwpwjson["initial_velocities"] = {298.15, 12345};
+ 
+ 
+     } else if (mystring_contains(line, "scf")) {
+        if (mystring_contains(line, "ks-grassmann-cg"))
+           nwpwjson["minimizer"] = 3;
+        else if (mystring_contains(line, "ks-grassmann-lmbfgs"))
+           nwpwjson["minimizer"] = 6;
+        else if (mystring_contains(line, "potential"))
+           nwpwjson["minimizer"] = 5;
+        else
+           nwpwjson["minimizer"] = 8;
+ 
+        if (mystring_contains(line, "ks-grassmann-lmbfgs")) nwpwjson["ks_algorithm"] = 3;
+        if (mystring_contains(line, "ks-grassmann-cg"))     nwpwjson["ks_algorithm"] = 2;
+        if (mystring_contains(line, "ks-rmm-diis"))         nwpwjson["ks_algorithm"] = 1;
+        if (mystring_contains(line, "ks-cg"))               nwpwjson["ks_algorithm"] = 0;
+        if (mystring_contains(line, "ks-block-cg"))         nwpwjson["ks_algorithm"] = -1;
+ 
+        // scf_algorithm = 2
+        // Pulay / DIIS / Johnson–Pulay (difference-based Pulay with regularization)
+        if (mystring_contains(line, "johnson-pulay")) nwpwjson["scf_algorithm"] = 2;
+        if (mystring_contains(line, "diis"))          nwpwjson["scf_algorithm"] = 2;
+        if (mystring_contains(line, "pulay"))         nwpwjson["scf_algorithm"] = 2;
+ 
+        if (mystring_contains(line, "anderson"))      nwpwjson["scf_algorithm"] = 3;
+        if (mystring_contains(line, "broyden"))       nwpwjson["scf_algorithm"] = 1;
+        if (mystring_contains(line, "thomas-fermi"))  nwpwjson["scf_algorithm"] = 4;
+        if (mystring_contains(line, "simple"))        nwpwjson["scf_algorithm"] = 0;
+ 
+        if (mystring_contains(line, "alpha")) 
+           nwpwjson["scf_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+        if (mystring_contains(line, "beta")) 
+           nwpwjson["scf_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
+        if (mystring_contains(line, "kerker")) 
+           nwpwjson["kerker_g0"] = std::stod(mystring_trim(mystring_split(line, "kerker")[1]));
+        if (mystring_contains(line, " iterations")) 
+           nwpwjson["ks_maxit_orb"] = std::stoi(mystring_trim(mystring_split(line, " iterations")[1]));
+        if (mystring_contains(line, "outer_iterations")) 
+           nwpwjson["ks_maxit_orbs"] = std::stoi(mystring_trim(mystring_split(line, "outer_iterations")[1]));
+        if (mystring_contains(line, "diis_histories")) 
+           nwpwjson["diis_histories"] = std::stoi(mystring_trim(mystring_split(line, "diis_histories")[1]));
+        if (mystring_contains(line, "extra_rotate")) 
+        {
+           nwpwjson["scf_extra_rotate"] = true;
+           if (mystring_contains(line, "off"))   nwpwjson["scf_extra_rotate"] = false;
+           if (mystring_contains(line, "no"))    nwpwjson["scf_extra_rotate"] = false;
+           if (mystring_contains(line, "false")) nwpwjson["scf_extra_rotate"] = false;
+           if (mystring_contains(line, "on"))    nwpwjson["scf_extra_rotate"] = true;
+           if (mystring_contains(line, "yes"))   nwpwjson["scf_extra_rotate"] = true;
+           if (mystring_contains(line, "true"))  nwpwjson["scf_extra_rotate"] = true;
+        }
+ 
+ 
+     // smear 
+     //SMEAR <sigma default 0.001> 
+     //[TEMPERATURE <temperature>] 
+     //[FERMI || GAUSSIAN || MARZARI-VANDERBILT default FERMI] 
+     //[ORBITALS <integer orbitals default 4>] 
+ 
+     } else if (mystring_contains(line, "cg")) {
+        if (mystring_contains(line, "stiefel"))
+          nwpwjson["minimizer"] = 4;
+        else if (mystring_contains(line, "stich"))
+          nwpwjson["minimizer"] = 9;
+        else
+          nwpwjson["minimizer"] = 1;
+ 
+     } else if (mystring_contains(line, "lmbfgs")) {
+        if (mystring_contains(line, "stiefel"))
+          nwpwjson["minimizer"] = 7;
+        else if (mystring_contains(line, "stich"))
+          nwpwjson["minimizer"] = 10;
+        else
+          nwpwjson["minimizer"] = 2;
+ 
+        int lmbfgs_size = 2;
+        ss = mystring_split0(line);
+        for (auto iis = 0; iis < ss.size(); ++iis)
+          if (mystring_isfloat(ss[iis]))
+             lmbfgs_size = std::stoi(ss[iis]);
+        if (lmbfgs_size > 2)
+           nwpwjson["lmbfgs_size"] = lmbfgs_size;
+ 
+     } else if (mystring_contains(line, "smear")) {
+        double kT=0.001;
+        double kb=3.16679e-6;
+        double temperature;
+ 
+        ss = mystring_split0(line);
+        if (ss.size()>1)
+          if (mystring_isfloat(ss[1]))
+            kT = std::stod(ss[1]);
+ 
+        temperature = kT/kb;
+ 
+        nwpwjson["fractional"] = true;
+        nwpwjson["fractional_frozen"] = false;
+        nwpwjson["fractional_orbitals"] = {4,4};
+        nwpwjson["fractional_kT"] = kT;
+        nwpwjson["fractional_temperature"] = temperature;
+        nwpwjson["fractional_smeartype"]   = 2;
+ 
+        if (mystring_contains(line, "fixed"))              nwpwjson["fractional_smeartype"] = -1;
+        if (mystring_contains(line, "step"))               nwpwjson["fractional_smeartype"] = 0;
+        if (mystring_contains(line, "fermi"))              nwpwjson["fractional_smeartype"] = 1;
+        if (mystring_contains(line, "gaussian"))           nwpwjson["fractional_smeartype"] = 2;
+        if (mystring_contains(line, "hermite"))            nwpwjson["fractional_smeartype"] = 3;
+        if (mystring_contains(line, "marzari-vanderbilt")) nwpwjson["fractional_smeartype"] = 4;
+        if (mystring_contains(line, "methfessel-paxton"))  nwpwjson["fractional_smeartype"] = 5;
+        if (mystring_contains(line, "cold"))               nwpwjson["fractional_smeartype"] = 6;
+        if (mystring_contains(line, "lorentzian"))         nwpwjson["fractional_smeartype"] = 7;
+        if (mystring_contains(line, "no correction"))      nwpwjson["fractional_smeartype"] = 8;
+        if (mystring_contains(line, "frozen"))             nwpwjson["fractional_frozen"] = true;
+        if (mystring_contains(line, "orbitals"))  
+        {
+           //std::cout << "line=" << line << std::endl;
+           std::vector<int> norbs;
+           norbs.push_back(1);
+           norbs.push_back(1);
+           //ss = mystring_split0(line);
+           ss = mystring_split0(mystring_trim(mystring_split(line, "orbitals")[1]));
+           if (ss.size() > 0)
+           {
+              norbs[0] = std::stoi(ss[0]);
+              //std::cout << "ss1=" << ss[1] << std::endl;
+           }
+           if (ss.size() > 1)
+           {
+              norbs[1] = std::stoi(ss[1]);
+              //std::cout << "ss2=" << ss[2] << std::endl;
+           }
+           nwpwjson["fractional_orbitals"] = norbs;
+        }
+        if (mystring_contains(line, "filling"))  
+        {
+           std::string rr = " " + mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " ");
+           //std::vector<double> filling = mystring_double_list(mystring_ireplace(mystring_split(mystring_split(mystring_trim(mystring_split(line, "filling")[1]),"]")[0],"[")[1], ",", " "), " ");
+           std::vector<double> filling = mystring_double_list(rr,"");
+           nwpwjson["fractional_filling"] = filling;
+        }
+ 
+        if (mystring_contains(line, "alpha ")) 
+           nwpwjson["fractional_alpha"] = std::stod(mystring_trim(mystring_split(line, "alpha")[1]));
+ 
+        if (mystring_contains(line, "alpha_min ")) 
+           nwpwjson["fractional_alpha_min"] = std::stod(mystring_trim(mystring_split(line, "alpha_min")[1]));
+ 
+        if (mystring_contains(line, "alpha_max ")) 
+           nwpwjson["fractional_alpha_max"] = std::stod(mystring_trim(mystring_split(line, "alpha_max")[1]));
+ 
+        if (mystring_contains(line, "beta ")) 
+           nwpwjson["fractional_beta"] = std::stod(mystring_trim(mystring_split(line, "beta")[1]));
+ 
+        if (mystring_contains(line, "gamma ")) 
+           nwpwjson["fractional_gamma"] = std::stod(mystring_trim(mystring_split(line, "gamma")[1]));
+ 
+        if (mystring_contains(line, "temperature"))
+        {
+           temperature = std::stod(mystring_trim(mystring_split(line, "temperature")[1]));
+           kT = temperature/kb;
+           nwpwjson["fractional_kT"] = kT;
+           nwpwjson["fractional_temperature"] = temperature;
+        }
+ 
+     } else if (mystring_contains(line, "vectors")) {
+        if (mystring_contains(line, " input"))
+          nwpwjson["input_wavefunction_filename"] = mystring_split0(
+              mystring_trim(mystring_split(line, " input")[1]))[0];
+ 
+        if (mystring_contains(line, " output"))
+          nwpwjson["output_wavefunction_filename"] = mystring_split0(
+              mystring_trim(mystring_split(line, " output")[1]))[0];
+ 
+        if (mystring_contains(line, "vinput"))
+          nwpwjson["input_v_wavefunction_filename"] = mystring_split0(
+              mystring_trim(mystring_split(line, "vinput")[1]))[0];
+ 
+        if (mystring_contains(line, "voutput"))
+          nwpwjson["output_v_wavefunction_filename"] = mystring_split0(
+              mystring_trim(mystring_split(line, "voutput")[1]))[0];
+     } 
+     else if (mystring_contains(line, "translation")) 
+     {
+        if (mystring_contains(line, " off"))        nwpwjson["fix_translation"] = true;
+        else if (mystring_contains(line, " no"))    nwpwjson["fix_translation"] = true;
+        else if (mystring_contains(line, " false")) nwpwjson["fix_translation"] = true;
+       
+        else if (mystring_contains(line, " yes")) nwpwjson["fix_translation"] = false;
+        else if (mystring_contains(line, " true")) nwpwjson["fix_translation"] = false;
+        else if (mystring_contains(line, " on")) nwpwjson["fix_translation"] = false;
+        else if (mystring_contains(line, " allow_translation"))
+           nwpwjson["fix_translation"] = false;
+        else
+           nwpwjson["fix_translation"] = true;
+     } 
+     else if (mystring_contains(line, "rotation")) 
+     {
+        if (mystring_contains(line, " off"))        nwpwjson["fix_rotation"] = true;
+        else if (mystring_contains(line, " no"))    nwpwjson["fix_rotation"] = true;
+        else if (mystring_contains(line, " false")) nwpwjson["fix_rotation"] = true;
+        else if (mystring_contains(line, " yes"))   nwpwjson["fix_rotation"] = false;
+        else if (mystring_contains(line, " true"))  nwpwjson["fix_rotation"] = false;
+        else if (mystring_contains(line, " on"))    nwpwjson["fix_rotation"] = false;
+        else
+          nwpwjson["fix_rotation"] = false;
+     } 
+     else if (mystring_contains(line, "apc")) 
+     {
+        if (nwpwjson["apc"].is_null()) {
+          json apc;
+          nwpwjson["apc"] = apc;
+        }
+        nwpwjson["apc"]["on"] = true;
+        if (mystring_contains(line, " off"))  nwpwjson["apc"]["on"] = false;
+        if (mystring_contains(line, "gc"))    nwpwjson["apc"]["Gc"] = mystring_double_list(line, "gc")[0];
+        if (mystring_contains(line, "gamma")) nwpwjson["apc"]["gamma"] = mystring_double_list(line, "gamma");
+        if (mystring_contains(line, "u"))     nwpwjson["apc"]["u"] = mystring_double_list(line, "u");
+        if (mystring_contains(line, "q"))     nwpwjson["apc"]["q"] = mystring_double_list(line, "q");
+     } 
+     else if (mystring_contains(line, "born")) 
+     {
+        if (nwpwjson["born"].is_null()) {
+          json born;
+          nwpwjson["born"] = born;
+        }
+        nwpwjson["born"]["on"] = true;
+        if (mystring_contains(line, " off"))        nwpwjson["born"]["on"] = false;
+        if (mystring_contains(line, " norelax"))    nwpwjson["born"]["relax"] = false;
+        else if (mystring_contains(line, " relax")) nwpwjson["born"]["relax"] = true;
+        if (mystring_contains(line, "dielec"))
+           nwpwjson["born"]["dielec"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
+        if (mystring_contains(line, "rcut"))
+           nwpwjson["born"]["rcut"] = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut")[1]))[0]);
+        if (mystring_contains(line, "bradii"))
+           nwpwjson["born"]["bradii"] = mystring_double_list(line, "bradii");
+     } 
+     else if (mystring_contains(line, "efield")) 
+     {
+        if (nwpwjson["efield"].is_null()) {
+          json efield;
+          nwpwjson["efield"] = efield;
+        }
+        nwpwjson["efield"]["on"] = true;
+        if (mystring_contains(line, " off"))      nwpwjson["efield"]["on"] = false;
+        if (mystring_contains(line, " periodic")) nwpwjson["efield"]["type"] = 0;
+        if (mystring_contains(line, " apc"))      nwpwjson["efield"]["type"] = 1;
+        if (mystring_contains(line, " rgrid"))    nwpwjson["efield"]["type"] = 2;
+        if (mystring_contains(line, " center"))   nwpwjson["efield"]["center"] = mystring_double_list(line, "center");
+        if (mystring_contains(line, " vector"))   nwpwjson["efield"]["vector"] = mystring_double_list(line, "vector");
+       
+        if ((nwpwjson["efield"]["on"]) && (mystring_contains(line, " on")) &&
+            (!mystring_contains(line, " vector")))
+          nwpwjson["efield"]["vector"] = mystring_double_list(line, "on");
+     } 
+     else if (mystring_contains(line, "generalized_poisson")) 
+     {
+        std::string check = mystring_split0(mystring_trim(mystring_split(line, "generalized_poisson")[1]))[0];
+        nwpwjson["generalized_poisson"]["on"] = true;
+        if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["on"] = false;
+        if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["on"] = false;
+        if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["on"] = false;
+        if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["on"] = true;
+        if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["on"] = true;
+        if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["on"] = true;
+ 
+        if (mystring_contains(line, " relax_dielec"))
+        {
+           check = mystring_split0(mystring_trim(mystring_split(line, " relax_dielec")[1]))[0];
+           nwpwjson["generalized_poisson"]["relax_dielec"] = true; // default
+           if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+           if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+           if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+           if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+           if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+           if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+        }
+        if (mystring_contains(line, " fix_dielec"))   nwpwjson["generalized_poisson"]["relax_dielec"] = false;
+        if (mystring_contains(line, " unfix_dielec")) nwpwjson["generalized_poisson"]["relax_dielec"] = true;
+ 
+        if (mystring_contains(line, " cube_dielec"))
+        {
+           check = mystring_split0(mystring_trim(mystring_split(line, " cube_dielec")[1]))[0];
+           nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+           if (mystring_contains(check, "off"))   nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+           if (mystring_contains(check, "no"))    nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+           if (mystring_contains(check, "false")) nwpwjson["generalized_poisson"]["cube_dielec"] = false;
+           if (mystring_contains(check, "on"))    nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+           if (mystring_contains(check, "yes"))   nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+           if (mystring_contains(check, "true"))  nwpwjson["generalized_poisson"]["cube_dielec"] = true;
+        }
+ 
+        if (mystring_contains(line, " dielec"))
+           nwpwjson["generalized_poisson"]["dielec"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " dielec")[1]))[0]);
+        if (mystring_contains(line, " rho0"))
+           nwpwjson["generalized_poisson"]["rho0"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rho0")[1]))[0]);
+        if (mystring_contains(line, " beta"))
+           nwpwjson["generalized_poisson"]["beta"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " beta")[1]))[0]);
+        if (mystring_contains(line, " rhomin"))
+           nwpwjson["generalized_poisson"]["rhomin"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomin")[1]))[0]);
+        if (mystring_contains(line, " rhomax"))
+           nwpwjson["generalized_poisson"]["rhomax"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rhomax")[1]))[0]);
+        if (mystring_contains(line, " rcut_ion"))
+           nwpwjson["generalized_poisson"]["rcut_ion"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rcut_ion")[1]))[0]);
+        if (mystring_contains(line, " alpha"))
+           nwpwjson["generalized_poisson"]["alpha"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " alpha")[1]))[0]);
+        if (mystring_contains(line, " maxit"))
+           nwpwjson["generalized_poisson"]["maxit"] 
+           = std::stoi(mystring_split0(mystring_trim(mystring_split(line, " maxit")[1]))[0]);
+        if (mystring_contains(line, " rmin"))
+           nwpwjson["generalized_poisson"]["rmin"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmin")[1]))[0]);
+        if (mystring_contains(line, " rmax"))
+           nwpwjson["generalized_poisson"]["rmax"] 
+           = std::stod(mystring_split0(mystring_trim(mystring_split(line, " rmax")[1]))[0]);
+        if (mystring_contains(line, " filter"))
+        {
+           double x = std::stod(mystring_split0(mystring_trim(mystring_split(line, " filter")[1]))[0]);
+           if (std::isnan(x))
+              x = 1.0;
+           nwpwjson["generalized_poisson"]["filter"] = x;
+        }
+ 
+        if (mystring_contains(line, " andreussi"))  nwpwjson["generalized_poisson"]["model"] = 0;
+        if (mystring_contains(line, " andreussi2")) nwpwjson["generalized_poisson"]["model"] = 1;
+        if (mystring_contains(line, " fattebert"))  nwpwjson["generalized_poisson"]["model"] = 2;
+        if (mystring_contains(line, " sphere"))     nwpwjson["generalized_poisson"]["model"] = 3;
+     
+     } else if (mystring_contains(line, "staged_gpu_fft")) {
+        std::string check = mystring_split0(mystring_trim(mystring_split(line, "staged_gpu_fft")[1]))[0];
+        nwpwjson["staged_gpu_fft"]["on"] = true;
+        if (mystring_contains(check, "off"))   nwpwjson["staged_gpu_fft"]["on"] = false;
+        if (mystring_contains(check, "no"))    nwpwjson["staged_gpu_fft"]["on"] = false;
+        if (mystring_contains(check, "false")) nwpwjson["staged_gpu_fft"]["on"] = false;
+        if (mystring_contains(check, "on"))    nwpwjson["staged_gpu_fft"]["on"] = true;
+        if (mystring_contains(check, "yes"))   nwpwjson["staged_gpu_fft"]["on"] = true;
+        if (mystring_contains(check, "true"))  nwpwjson["staged_gpu_fft"]["on"] = true;
+ 
+     } else if (mystring_contains(line, "fft_container_size")) {
+        int nffts_size = 0;
+        try {
+           nffts_size = std::stoi(mystring_split0(mystring_trim(mystring_split(line, "fft_container_size")[1]))[0]);
+        } catch (const std::invalid_argument& e) {
+           std::cerr << "Invalid argument: " << e.what() << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "Out of range: " << e.what() << std::endl;
+        }
+        if ((nffts_size<100) || (nffts_size>0)) 
+           nwpwjson["fft_container_size"] = nffts_size;
+     }
+     else if (mystring_contains(line, "virtual")) {
+        ss = mystring_split0(line);
+        if (ss.size()>1) 
+        {
+           std::vector<int> nexcited(2,0);
+ 
+           try {
+              if (ss.size() > 1) nexcited[0] = std::stoi(ss[1]);
+              if (ss.size() > 2) nexcited[1] = std::stoi(ss[2]);
+           } catch (...) { /* keep defaults */ }
+         
+           if (nexcited[0] < 0) nexcited[0] = 0;
+           if (nexcited[1] < 0) nexcited[1] = 0;
+         
+           nwpwjson["virtual"] = nexcited;
+        }
+     }
+     else if ((mystring_contains(line, "pspspin")) &&
+              (mystring_contains(line, "off") ||
+               mystring_contains(line, ".false.") ||
+               mystring_contains(line, "F"))) {
+ 
+        nwpwjson["pspspin"] = false;
+        nwpwjson.erase("pspspin_up");
+        nwpwjson.erase("pspspin_down");
+     }
+     else if (mystring_contains(line, "pspspin")) {
+        std::istringstream iss(line);
+        std::string keyword, spin, lstr, mstr;
+        double penalty;
+        int ion;
+        int m=-9;
+ 
+        bool not_m = false;
+        iss >> keyword >> spin;
+        
+        if (mystring_contains(spin, "not_m")) {
+           not_m = true;
+           iss >> m >> spin >> lstr >> penalty;
+        }
+        else
+           iss >> lstr >> penalty;
+ 
+        if (spin == "alpha") spin = "up";
+        if (spin == "beta")  spin = "down";
+ 
+        std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
+ 
+        // L -> integer mapping
+        std::map<std::string, int> l_map = {
+            {"s", 0}, {"p", 1}, {"d", 2}, {"f", 3},
+            {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}
+        };
+ 
+        int lval = -1;
+        if (l_map.find(lstr) != l_map.end()) {
+           lval = l_map[lstr];
+        } else {
+           std::cerr << "[WARNING] Unrecognized l value: " << lstr << std::endl;
+        }
+ 
+        std::vector<int> ions;
+        while (iss >> ion)
+           ions.push_back(ion);
+ 
+        if (!ions.empty()) {
+           json entry;
+           entry["not_m"] = not_m;
+           entry["spin"]  = spin;
+           entry["lstr"]  = lstr;     // original string (optional but helpful)
+           entry["l"]     = lval;
+           if (not_m) entry["m"]     = m;
+           entry["penalty"]  = penalty;
+           entry["ions"]  = ions;
+ 
+           nwpwjson["pspspin"] = true;
+ 
+           if (spin == "up") { 
+              if (!nwpwjson.contains("pspspin_up")) nwpwjson["pspspin_up"] = json::array();
+              nwpwjson["pspspin_up"].push_back(entry);
+           } else if (spin == "down") {
+              if (!nwpwjson.contains("pspspin_down")) nwpwjson["pspspin_down"] = json::array();
+              nwpwjson["pspspin_down"].push_back(entry);
+           }
+        }
+        else
+           std::cerr << "[WARNING] pspspin entry ignored due to missing ion indices: " << line << std::endl;
+     }
+     else if ((mystring_contains(mystring_lowercase(line), "uterm")) &&
+              (mystring_contains(line, "off") ||
+               mystring_contains(line, ".false.") ||
+               mystring_contains(line, "F"))) {
+ 
+        nwpwjson["uterm"] = false;
+        nwpwjson.erase("uterm_list");
+     }
+     else if (mystring_contains(mystring_lowercase(line), "uterm")) {
+        std::istringstream iss(line);
+        std::string keyword, lstr;
+        double uvalue,jvalue;
+        int ion;
+        iss >> keyword >> lstr >> uvalue >> jvalue;
+ 
+        std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
+ 
+        // L -> integer mapping
+        std::map<std::string, int> l_map = {
+            {"s", 0}, {"p", 1}, {"d", 2}, {"f", 3},
+            {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}
+        };
+ 
+        int lval = -1;
+        if (l_map.find(lstr) != l_map.end()) {
+           lval = l_map[lstr];
+        } else {
+           std::cerr << "[WARNING] Unrecognized l value: " << lstr << std::endl;
+        }
+ 
+ 
+        std::vector<json> ion_tokens;
+        std::string token;
+ 
+        while (iss >> token) {
+           // If it's an integer, store as int
+           try {
+              int ion = std::stoi(token);
+              ion_tokens.push_back(ion);
+           } catch (...) {
+              ion_tokens.push_back(token);  // store string for later resolution
+           }
+        }
+ 
+ 
+        if (!ion_tokens.empty()) {
+           json entry;
+           entry["lstr"]   = lstr;     // original string (optional but helpful)
+           entry["l"]      = lval;
+           entry["uvalue"] = uvalue;
+           entry["jvalue"] = jvalue;
+           entry["ions"]   = ion_tokens;
+ 
+           nwpwjson["uterm"] = true;
+           if (!nwpwjson.contains("uterm_list")) 
+              nwpwjson["uterm_list"] = json::array();
+ 
+           nwpwjson["uterm_list"].push_back(entry);
+ 
+        }
+ 
+     }
+     else if (mystring_contains(mystring_lowercase(line), "includestress")) {
+ 
+        if (mystring_contains(line, " off"))        nwpwjson["includestress"] = false;
+        else if (mystring_contains(line, " no"))    nwpwjson["includestress"] = false;
+        else if (mystring_contains(line, " false")) nwpwjson["includestress"] = false;
+ 
+        else if (mystring_contains(line, " yes"))   nwpwjson["includestress"] = true; 
+        else if (mystring_contains(line, " true"))  nwpwjson["includestress"] = true; 
+        else if (mystring_contains(line, " on"))    nwpwjson["includestress"] = true; 
+        else
+           nwpwjson["includestress"] = true;
+ 
+     }
+     else if (mystring_contains(mystring_lowercase(line), "stress_numerical")) {
+ 
+        if (mystring_contains(line, " off"))        nwpwjson["stress_numerical"] = false;
+        else if (mystring_contains(line, " no"))    nwpwjson["stress_numerical"] = false;
+        else if (mystring_contains(line, " false")) nwpwjson["stress_numerical"] = false;
+ 
+        else if (mystring_contains(line, " yes"))   nwpwjson["stress_numerical"] = true; 
+        else if (mystring_contains(line, " true"))  nwpwjson["stress_numerical"] = true; 
+        else if (mystring_contains(line, " on"))    nwpwjson["stress_numerical"] = true; 
+        else
+           nwpwjson["stress_numerical"] = true;
+     }
+ 
+ 
+     ++cur;
+     if (mystring_contains(lines[cur], "end"))
+       --endcount;
+   }
+ 
+   *curptr = cur;
+ 
+   return nwpwjson;
 }
 
 /************************************************** 

@@ -767,9 +767,11 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
    accumulate(tstress);
 
    //**** Local pseudo energy component : dE_local/dhuv ****
+   std::cout << "Into local stress" << std::endl;
    mymolecule.dng_1local_stress(tstress);
    if (oprint) print_stress_array(" local psp stress (au)  ", tstress);
    accumulate(tstress);
+   std::cout << "Out local stress" << std::endl;
 
    //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
    mymolecule.psi_1nonlocal_stress(tstress);

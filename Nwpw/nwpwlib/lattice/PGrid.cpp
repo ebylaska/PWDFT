@@ -60,7 +60,8 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    eps = 1.0e-12;
 
    // aligned Memory
-   std::size_t aligned_size3d = (3 * nfft3d * sizeof(double) + Alignment - 1) & ~(Alignment - 1);
+   //std::size_t aligned_size3d = (3 * nfft3d * sizeof(double) + Alignment - 1) & ~(Alignment - 1);
+   std::size_t aligned_size3d = (3 * nfft3d  + Alignment - 1) & ~(Alignment - 1);
    Garray = new (std::nothrow) double[aligned_size3d]();
    G1 = Garray;
    G2 = Garray + nfft3d;

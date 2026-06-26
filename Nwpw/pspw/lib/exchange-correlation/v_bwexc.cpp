@@ -521,10 +521,10 @@ void v_bwexc_euv(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
       mypneb->c_pack(0, gry);
       mypneb->c_pack(0, grz);
 
-      mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,0), grx);
-      mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,1), gry);
-      mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,2), grz);
 
+      //mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,0), grx);
+      //mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,1), gry);
+      //mypneb->tc_pack_iMul(0, mypneb->Gpackxyz(0,2), grz);
 
       //**** W(u,s) = Sum(G) [i*G(u)*dcongj(rhog)*gr(s)] ****
       //****         where gr(1)=grx,gr(2)=gry,gr(3)=grz ****
@@ -813,9 +813,17 @@ void v_bwexc_euv(const int gga, Pneb *mypneb, vdw_DF *vdw,  const double *dn,
 
    }
 
+
    for (size_t v=0; v<3; ++v)
-   for (size_t u=0; u<3; ++u)
-     stress[u+3*v] += W[u+3*v];
+   {
+      for (size_t u=0; u<3; ++u)
+      {
+         stress[u+3*v] = 0.0;
+         for (size_t s=0; s<3; ++s)
+            stress[u+3*v] += W[u+3*s]*hm[s+3*v];
+      }
+   }
+
 
 }
 

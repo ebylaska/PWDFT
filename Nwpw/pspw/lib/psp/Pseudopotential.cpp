@@ -1533,6 +1533,9 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    mygrid->t_pack(0, tmp2);
    mygrid->tt_pack_copy(0, tmp2, dvl);
 
+   double sumvl = mygrid->tt_pack_dot(0,dvl,dvl);
+   std::cout << "sumvl=" << sumvl << std::endl;
+
    /* reading dvnl 3d blocks */
    if (*nprj > 0)
    {
@@ -2158,9 +2161,11 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
    // stressexist
    bool need_stress = control.compute_stress() || control.cell_optimize() || control.parrinello_rahman();
+   std::cout << "need_stress=" << need_stress << std::endl;
    if (need_stress)
    {
 
+   std::cout << "into need_stress npsp=" << npsp << std::endl;
 
       double *dvnl_ptr, *dncore_ptr;;
 
@@ -2178,6 +2183,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
          if (vpp_formatter_check(mypneb, fname2, psp_version)) 
          {
+   std::cout << "into vpp2_generate" << std::endl;
             strcpy(pspname, myion->atom(ia));
             strcat(pspname, ".psp");
             control.add_permanent_dir(pspname);
@@ -2196,6 +2202,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
          }
          else 
          {
+   std::cout << "into vpp2_read" << std::endl;
             int version_local = 0;
             vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita, 
                       aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia], 
@@ -3674,10 +3681,8 @@ void Pseudopotential::v_local_euv(const double *dng, const double *vc, double *s
       int ia = myion->katm[ii];
       mystrfac->strfac_pack(0,ii,exi);
 
-
       // **** tmp2(G) = Real[ dconjg(dng(G))*exi(G) ] ****
       mypneb->cct_pack_conjgMul(0,dng,exi,tmp2);
-
 
       // **** tmp2(G) = tmp2(G)*(dvl(G)) ****
       mypneb->tt_pack_Mul2(0,dvl[ia],tmp2);
@@ -3864,19 +3869,6 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
 
       }
    }
-
-
-/*     *** calculate euv = Sum(s) hm(s,v)*Bus(u,s)
-      call dcopy(9,0.0d0,0,euv,1)
-      do u=1,3
-      do v=1,3
-         do s=1,3
-            euv(u,v) = euv(u,v) + Bus(u,s)*hm(s,v)
-         end do
-      end do
-      end do
-*/
-
 
    //*** calculate stress(u,v) = Sum(s) hm(s,v)*Bus(u,s)
    std::fill(stress, stress + 9, 0.0);

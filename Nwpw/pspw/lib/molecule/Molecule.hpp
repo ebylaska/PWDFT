@@ -528,9 +528,11 @@ public:
 
    void dng_1local_stress(double *tstress)
    {
-     auto mycoul12 = myelectron->get_mycoulomb12();
-     double *vc = mycoul12->mycoulomb1->get_vc();
-     mypsp->v_local_euv(dng1,vc,tstress);
+    
+      auto mycoul12 = myelectron->get_mycoulomb12();
+      double *vc = mycoul12->mycoulomb1->get_vc();
+      mypsp->v_local_euv(dng1,vc,tstress);
+     
    }
 
    void psi_1nonlocal_stress(double *tstress)
@@ -564,9 +566,6 @@ public:
       double exc0 = exc();
       double pxc0 = pxc();
 
-      std::cout << "exc=" << exc0 << std::endl;
-      std::cout << "pxc=" << pxc0 << std::endl;
-
       constexpr double pi     = units::PI;
       double scal = 1.0/(2.0*pi);
       double hm[9];
@@ -581,8 +580,12 @@ public:
          tstress[u+3*v] = (exc0-pxc0)*hm[u+3*v];
       }
 
+      double tstress2[9] = {0};
       auto myxc = myelectron->get_myxc();
-      myxc->v_exc_euv(ispin,rho1_all,tstress);
+      myxc->v_exc_euv(ispin,rho1_all,tstress2);
+
+      for (auto uv=0; uv<9; ++uv)
+         tstress[uv] += tstress2[uv];
    }
 
    void ewald_stress(double *tstress)
