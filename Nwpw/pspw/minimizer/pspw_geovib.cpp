@@ -645,6 +645,8 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    }
    DSCAL_PWDFT(nfsize, mrone, fion, one);
 
+   // calculate stress here
+
    if ((flag==3) || (flag==4)) 
    {
  
@@ -803,6 +805,8 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
 
       }
       DSCAL_PWDFT(nfsize, mrone, fion, one);
+
+      // calculate stress here
  
       /* lmbfgs gradient */
       geom_lmbfgs.lmbfgs(myion.rion1, fion, sion);

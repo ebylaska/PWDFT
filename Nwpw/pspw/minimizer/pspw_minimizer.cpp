@@ -8,6 +8,7 @@
 //
 #include "Parallel.hpp"
 #include "iofmt.hpp"
+#include "util_cell.hpp" 
 #include "util_linesearch.hpp"
 //#include	"control.hpp"
 #include "Control2.hpp"
@@ -538,57 +539,98 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    // calculate stress
    if (flag == 10) 
    {
-      double stress[9]={0.0};
+      // --- 1. Data Initialization ---
+      double stress[9] = {0.0};
+      double lstress[6] = {0.0};
+      double sigma[9]  = {0.0};
+      double trace = 0.0;
+      double pressure_au = 0.0;
+      double sum_sq = 0.0;
+      double normS = 0.0;
 
-      cgsd_energy_stress(mymolecule, stress, true, coutput);
+      // Conversion constants
+      const double au_to_gpa   = 2941.46;
+      const double gpa_to_mbar = 0.01;
+      const double gpa_to_atm  = 9869.23;
+
+      // --- 2. Computation ---
+      cgsd_energy_stress(mymolecule, stress, hprint, coutput);
+      util_cell_lattice_gradient(stress, mylattice.unita_ptr(), lstress);
+
+      // Transform stress: sigma = -1/Omega * (Stress * Unita)
+      double scal = -1.0 / mylattice.omega();
+      for (int v = 0; v < 3; ++v) {        // Column index (Fortran order)
+          for (int u = 0; u < 3; ++u) {    // Row index
+              double sum = 0.0;
+              for (int s = 0; s < 3; ++s) { // Summation index
+                  sum += stress[u + 3*s] * mylattice.unita(s, v);
+              }
+              sigma[u + 3*v] = scal * sum;
+          }
+      }
+
 
       if (lprint) 
       {
-         // Calculate Frobenius Norm |S| = sqrt(sum of all squares)
-         double sum_sq = 0;
-         for (int i = 0; i < 9; ++i) {
-             sum_sq += stress[i] * stress[i];
-         }
-         double normS = std::sqrt(sum_sq);
-
-         // Calculate Pressure (P = Trace / 3)
-         // Trace is the sum of diagonal elements: s[0] + s[4] + s[8]
-         double trace = stress[0] + stress[4] + stress[8];
-         double pressure_au = trace / 3.0;
-
-         // Define conversion factors (based on your example values)
-         // Based on your output: 0.0205 au -> 60.3 GPa
-         double au_to_gpa = 2941.46; // Derived from 6030 / 0.02048
-         double gpa_to_mbar = 0.01;  // 1 Mbar = 100 GPa
-         double gpa_to_atm = 9869.23; // 1 GPa = 9869 atm
-
-         // --- PRINTING BLOCK ---
-         coutput << std::endl << " == Lattice Stress ==" << std::endl << std::endl;
-        
-         // Set precision to match your output: Scientific notation, width 8, 5 decimal places
-         coutput << std::scientific << std::setprecision(5);
- 
-         // Print Matrix Rows
-         coutput << "     =====     total stress (au)      =====" << std::endl;
-         for (int i=0; i<3; ++i) {
-             coutput << (i==0 ? " S =  ( " : "      ( ");
-
-             for (int j=0; j<3; ++j) {
-                 // Indexing: Row 0: 0,1,2 | Row 1: 3,4,5 | Row 2: 6,7,8
-                 coutput <<  Ffmt(10,5) << stress[i * 3 + j] << " ";
+         // --- 3. Printing Logic (Encapsulated to prevent duplication) ---
+         // This lambda handles the repetitive task of printing tensors and their physics
+         auto print_tensor_stats = [&](const std::string& label, const double* Acol) {
+             coutput << "\n == " << label << " ==" << std::endl << std::endl;
+             coutput << "     =========  tensor (au)  =========" << std::endl;
+  
+             // Column-major storage: A(i,j) is Acol[i + 3*j]
+             auto A = [&](int i, int j) -> double { return Acol[i + 3*j]; };
+  
+             // Print as rows (i) and columns (j)
+             for (int i = 0; i < 3; ++i) {
+                 coutput << (i == 0 ? " S =  ( " : "      ( ");
+                 for (int j = 0; j < 3; ++j) {
+                     coutput << Ffmt(10, 5) << A(i, j) << " ";
+                 }
+                 coutput << ")" << std::endl;
              }
-             coutput << ")" << std::endl;
-         }
-         coutput << "     ======================================" << std::endl;
+             coutput << "     =====================================" << std::endl;
+  
+             // Frobenius norm: independent of layout, can sum raw storage
+             double s_sq = 0.0;
+             for (int k = 0; k < 9; ++k) s_sq += Acol[k] * Acol[k];
+             double norm = std::sqrt(s_sq);
+  
+             // Trace: same indices for both layouts in 3x3 flat (0,4,8)
+             double tr = Acol[0] + Acol[4] + Acol[8];
+             double pres = tr / 3.0;
+  
+             coutput << "     |S|      = " << norm << std::endl;
+             coutput << "     pressure = " << pres << " au" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa * gpa_to_mbar) << " Mbar" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa) << " GPa" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa * gpa_to_atm) << " atm" << std::endl;
+         };
 
-         // Print Magnitude, Pressure and Conversions
-         coutput << "     |S|      = " << normS << std::endl;
-         coutput << "     pressure = " << pressure_au << " au" << std::endl;
-         coutput << "              = " << (pressure_au * au_to_gpa * gpa_to_mbar) << " Mbar" << std::endl;
-         coutput << "              = " << (pressure_au * au_to_gpa) << " GPa" << std::endl;
-         coutput << "              = " << (pressure_au * au_to_gpa * gpa_to_atm) << " atm" << std::endl;
+         // --- 4. Execution of Prints ---
+         coutput << std::scientific << std::setprecision(5);
+
+         // Print Primary Stress
+         print_tensor_stats("Total Stress", stress);
+       
+         // Print Lattice Derivatives (L-Stress)
+         coutput << "\n == Lattice Energy Derivatives ==" << std::endl;
+         coutput << Ffmt(11, 5);
+         coutput << " dE/da     = " << lstress[0] << "\n";
+         coutput << " dE/db     = " << lstress[1] << "\n";
+         coutput << " dE/dc     = " << lstress[2] << "\n";
+         coutput << " dE/dalpha = " << lstress[3] << "\n";
+         coutput << " dE/dbeta  = " << lstress[4] << "\n";
+         coutput << " dE/dgamma = " << lstress[5] << "\n";
+
+         // Print Transformed (Internal) Stress
+         print_tensor_stats("Internal Stress (Transformed)", sigma);
+    
          coutput << std::endl;
       }
+
+      rtdbjson["pspw"]["stress"] = std::vector<double>(stress, stress+9);
+      rtdbjson["pspw"]["lstress"] = std::vector<double>(lstress, lstress+6);
    }
 
 

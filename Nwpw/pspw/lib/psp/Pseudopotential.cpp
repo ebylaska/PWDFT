@@ -1533,9 +1533,6 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    mygrid->t_pack(0, tmp2);
    mygrid->tt_pack_copy(0, tmp2, dvl);
 
-   double sumvl = mygrid->tt_pack_dot(0,dvl,dvl);
-   std::cout << "sumvl=" << sumvl << std::endl;
-
    /* reading dvnl 3d blocks */
    if (*nprj > 0)
    {
@@ -2161,12 +2158,9 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
    // stressexist
    bool need_stress = control.compute_stress() || control.cell_optimize() || control.parrinello_rahman();
-   std::cout << "need_stress=" << need_stress << std::endl;
+
    if (need_stress)
    {
-
-   std::cout << "into need_stress npsp=" << npsp << std::endl;
-
       double *dvnl_ptr, *dncore_ptr;;
 
       dvl  = new (std::nothrow) double *[npsp]();
@@ -2202,7 +2196,6 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
          }
          else 
          {
-   std::cout << "into vpp2_read" << std::endl;
             int version_local = 0;
             vpp2_read(mypneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita, 
                       aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia], 
