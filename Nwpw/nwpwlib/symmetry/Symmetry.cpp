@@ -147,8 +147,10 @@ Symmetry::Symmetry()
  *           Symmetry::Symmetry            *
  *                                         *
  *******************************************/
+
 Symmetry::Symmetry(const std::string& sg_name)
 {
+
     const auto& db = spacegroup_db();
     const auto& matches = db.by_name(sg_name);
 

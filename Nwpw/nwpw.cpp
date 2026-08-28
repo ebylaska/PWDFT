@@ -909,6 +909,7 @@ int main(int argc, char *argv[]) {
 
   rtdbstr = resolve_symmetry_and_cell(rtdbstr);
 
+
   int task = parse_task(rtdbstr);
   MPI_Barrier(MPI_COMM_WORLD);
 

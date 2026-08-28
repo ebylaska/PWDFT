@@ -679,6 +679,169 @@ static void write_coords_xyz(json& out_coords, const std::vector<double>& coords
    }
 }
 
+static double wrap01(double x)
+{
+    x -= std::floor(x);
+
+    if (x < 0.0)
+        x += 1.0;
+
+    // Avoid values such as 1.0 caused by roundoff.
+    if (x >= 1.0 - 1.0e-12)
+        x = 0.0;
+
+    return x;
+}
+
+static void frac_to_cart_rows(const double unita[9],
+                              const double f[3],
+                              double r[3])
+{
+    r[0] = f[0] * unita[0] +
+           f[1] * unita[3] +
+           f[2] * unita[6];
+
+    r[1] = f[0] * unita[1] +
+           f[1] * unita[4] +
+           f[2] * unita[7];
+
+    r[2] = f[0] * unita[2] +
+           f[1] * unita[5] +
+           f[2] * unita[8];
+}
+
+static void cart_to_frac_rows(const double unita[9],
+                              const double r[3],
+                              double f[3])
+{
+    // Matrix whose columns are the row-stored lattice vectors.
+    const double M[9] = {
+        unita[0], unita[3], unita[6],
+        unita[1], unita[4], unita[7],
+        unita[2], unita[5], unita[8]
+    };
+
+    double Minv[9];
+    invert_3x3(M, Minv);
+
+    f[0] = Minv[0] * r[0] +
+           Minv[1] * r[1] +
+           Minv[2] * r[2];
+
+    f[1] = Minv[3] * r[0] +
+           Minv[4] * r[1] +
+           Minv[5] * r[2];
+
+    f[2] = Minv[6] * r[0] +
+           Minv[7] * r[1] +
+           Minv[8] * r[2];
+}
+
+static bool same_fractional_position(const double a[3],
+                                     const double b[3],
+                                     double tol)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        // Fractional coordinates are periodic modulo integer translations.
+        double d = a[i] - b[i];
+        d -= std::round(d);
+
+        if (std::abs(d) > tol)
+            return false;
+    }
+
+    return true;
+}
+
+static void expand_atoms_by_symmetry(
+    const Symmetry& sym,
+    const double unita[9],
+    const std::vector<std::string>& input_symbols,
+    const std::vector<double>& input_coords_xyz,
+    std::vector<std::string>& output_symbols,
+    std::vector<double>& output_coords_xyz)
+{
+    if (input_coords_xyz.size() != 3 * input_symbols.size())
+    {
+        throw std::runtime_error(
+            "expand_atoms_by_symmetry: symbols/coordinates mismatch");
+    }
+
+    constexpr double duplicate_tolerance = 1.0e-8;
+
+    std::vector<std::array<double, 3>> generated_positions;
+    std::vector<std::string> generated_symbols;
+
+    for (std::size_t atom = 0;
+         atom < input_symbols.size();
+         ++atom)
+    {
+        const double r[3] = {
+            input_coords_xyz[3 * atom + 0],
+            input_coords_xyz[3 * atom + 1],
+            input_coords_xyz[3 * atom + 2]
+        };
+
+        double f0[3];
+        cart_to_frac_rows(unita, r, f0);
+
+        for (const SymOp& op : sym.operators())
+        {
+            double f[3];
+
+            for (int i = 0; i < 3; ++i)
+            {
+                f[i] = op.t[i];
+
+                for (int j = 0; j < 3; ++j)
+                    f[i] += op.R[i][j] * f0[j];
+
+                f[i] = wrap01(f[i]);
+            }
+
+            bool duplicate = false;
+
+            for (std::size_t old = 0;
+                 old < generated_positions.size();
+                 ++old)
+            {
+                if (generated_symbols[old] == input_symbols[atom] &&
+                    same_fractional_position(
+                        f,
+                        generated_positions[old].data(),
+                        duplicate_tolerance))
+                {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (!duplicate)
+            {
+                generated_positions.push_back(
+                    {f[0], f[1], f[2]});
+
+                generated_symbols.push_back(input_symbols[atom]);
+            }
+        }
+    }
+
+    output_symbols = generated_symbols;
+    output_coords_xyz.clear();
+    output_coords_xyz.reserve(3 * generated_positions.size());
+
+    for (const auto& f : generated_positions)
+    {
+        double r[3];
+        frac_to_cart_rows(unita, f.data(), r);
+
+        output_coords_xyz.push_back(r[0]);
+        output_coords_xyz.push_back(r[1]);
+        output_coords_xyz.push_back(r[2]);
+    }
+}
+
 
 // ======================================================
 // Main function
@@ -841,6 +1004,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
 {
    auto rtdbjson = json::parse(rtdbstring);
 
+
    const std::string geomname = get_geomname(rtdbjson);
 
    // ---- sanity: geometry block must exist
@@ -899,6 +1063,8 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    std::vector<double> point_group_inertia_axes(9);
    std::vector<double> point_group_inertia_moments(3);
 
+
+
    if (geomjson.contains("symmetry") && geomjson["symmetry"].is_object())
    {
       const json& sj = geomjson["symmetry"];
@@ -926,6 +1092,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    bool autospace = read_bool_flag(geomjson, "autospace");
    if (autospace && !have_coords)
      autospace = false;  // degrade safely
+
 
    if (geomjson.contains("symmetry_tolerance") &&
       (geomjson["symmetry_tolerance"].is_number_float() || geomjson["symmetry_tolerance"].is_number_integer()))
@@ -1068,6 +1235,78 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
       //sym = pwdft::Symmetry(); // identity
       //sym_source = "identity";
       return rtdbjson.dump();
+   }
+
+
+   if (!symmetry_primitive_requested && sym.is_space_group() && have_coords)
+   {
+      std::vector<std::string> expanded_symbols;
+      std::vector<double> expanded_coords_xyz;
+
+      std::vector<double> input_masses = geomjson.value("masses", std::vector<double>{});
+      std::vector<double> input_charges = geomjson.value("charges", std::vector<double>{});
+      std::vector<double> input_velocities = geomjson.value("velocities", std::vector<double>{});
+
+      expand_atoms_by_symmetry(
+          sym,
+          unita_in,
+          symbols,
+          coords_xyz,
+          expanded_symbols,
+          expanded_coords_xyz);
+
+      std::cout << "Expanded atoms: "
+                << symbols.size() << " -> "
+                << expanded_symbols.size()
+                << std::endl;
+
+      symbols.swap(expanded_symbols);
+      coords_xyz.swap(expanded_coords_xyz);
+      write_symbols_and_coords_flat( geomjson, symbols, coords_xyz);
+
+      geomjson["nion"] = static_cast<int>(symbols.size());
+
+      // The expansion routine generated Cartesian coordinates.
+      geomjson["fractional"] = false;
+
+      geomjson["masses"] = std::vector<double>(symbols.size(), 12.0);
+      geomjson["charges"] = std::vector<double>(symbols.size(), 6.0);
+      geomjson["velocities"] = std::vector<double>(3 * symbols.size(), 0.0);
+
+      /*
+      const std::size_t n_input = input_symbols.size();
+
+      const std::size_t n_effective = symbols.size();
+
+      auto expand_scalar_field =
+          [&](const std::vector<double>& input, const std::string& field) -> std::vector<double>
+      {
+         if (input.empty())
+             return {};
+       
+         if (input.size() == n_effective)
+             return input;
+       
+         if (input.size() == 1)
+             return std::vector<double>(
+                 n_effective, input.front());
+       
+         if (input.size() != n_input)
+         {
+             throw std::runtime_error(field + " does not match input atom count");
+         }
+       
+         std::vector<double> output;
+         output.reserve(n_effective);
+       
+         // The expansion routine should also return the source
+         // input-atom index for each generated atom.
+         for (std::size_t i = 0; i < n_effective; ++i)
+             output.push_back(input[0]);
+       
+         return output;
+      };
+      */
    }
 
 

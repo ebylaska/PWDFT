@@ -369,6 +369,12 @@ static json parse_geometry(json geom, int *curptr,
     // read the symmetry  [SYMMETRY [group] <string group_name> [print] [tol <real tol default 1d-2>]]
     //[SYMMETRY [group] <string group_name>|<integer group number>  [setting <integer setting>] [print] [tol <real tol default 1d-2>]] [primitive|conventional]
     //symmetry Ci
+    // Expected forms:
+    //
+    //   symmetry Ci
+    //   symmetry 225
+    //   symmetry group Fd-3m:1 conventional
+    //   symmetry Fd-3m setting 1 conventional
     else if (mystring_contains(mystring_lowercase(line), "symmetry")) {
        symmetry_specified = true;
        ss = mystring_split0(line);
@@ -387,8 +393,25 @@ static json parse_geometry(json geom, int *curptr,
 
        if (mystring_contains(line, "primitive"))    { symmetry_primitive = true; }
        if (mystring_contains(line, "conventional")) { symmetry_primitive = false; }
+       
+       // Also recognize the setting suffix in names such as Fd-3m:1.
+       // Extract :1 or :2 from names such as Fd-3m:1.
+       if (symmetry_group_name.has_value())
+       {
+          std::string& name = *symmetry_group_name;
+          const std::size_t colon = name.rfind(':');
+     
+          if (colon != std::string::npos && colon + 1 < name.size() && is_integer(name.substr(colon + 1)))
+          {
+             symmetry_group_setting = std::stoi(name.substr(colon + 1));
+          }
+          else if (symmetry_group_setting != 0)
+          {
+             // Convert "Fd-3m" + setting 1 into "Fd-3m:1".
+             name += ":" + std::to_string(symmetry_group_setting);
+          }
+       }
     }
-
 
     // read the geometry
     else if (mystring_trim(line).size() > 1) 
@@ -558,6 +581,7 @@ static json parse_geometry(json geom, int *curptr,
   *curptr = cur;
 
   geom[geometry] = geomjson;
+
 
   return geom;
 }
@@ -944,6 +968,7 @@ static void monkhorst_pack_set(const int nx, const int ny, const int nz, std::ve
  *   and adds them to the JSON object 'brillouinjson'.
  * - If it encounters a "monkhorst-pack" keyword, it extracts mesh size information and
  *   calls the 'monkhorst_pack_set' function to generate and update k-vectors.
+ * - If it encounters a "kpoint-symmetry" keyword, it extracts symmetry option for kpoint reduction.
  * - Other keywords like "path" and "max_kpoints_print" can be added as needed.
  * - The parsing process continues until the "end" keyword is encountered.
  *
@@ -1020,6 +1045,16 @@ static json parse_brillouin_zone(json brillouinjson, int *curptr, std::vector<st
          brillouinjson["monkhorst-pack-shift"] = { skx, sky, skz };
 
          brillouinjson["kvectors"] = kvectors;
+
+      } else if (mystring_contains(line, "kpoint-symmetry")) {
+         std::string mode = "auto";
+         ss = mystring_split0(line);
+         
+         if (ss.size() > 1) mode = mystring_lowercase(ss[1]);
+         if (mode != "auto" && mode != "proper" && mode != "full" && mode != "none" && mode != "NWChem")
+            mode = "auto";
+
+         brillouinjson["kpoint-symmetry"] = mode;
 
       } else if (mystring_contains(line, "path")) {
          //band_path_set(brillouinjson);
@@ -1647,6 +1682,19 @@ static json parse_nwpw(json nwpwjson, int *curptr,
         nwpwjson["brillouin_zone"]["kvectors"] = kvectors;
  
      } 
+
+     else if (mystring_contains(line, "kpoint-symmetry")) 
+     {
+        std::string mode = "auto";
+        ss = mystring_split0(line);
+         
+        if (ss.size() > 1) mode = mystring_lowercase(ss[1]);
+        if (mode != "auto" && mode != "proper" && mode != "full" && mode != "none")
+            mode = "auto";
+
+        nwpwjson["brillouin_zone"]["kpoint-symmetry"] = mode;
+     }
+
      else if (mystring_contains(line, "pseudopotentials")) 
      {
         if (nwpwjson["pseudopotentials"].is_null()) {
