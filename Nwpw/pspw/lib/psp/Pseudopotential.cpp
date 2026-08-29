@@ -2177,7 +2177,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
          if (vpp_formatter_check(mypneb, fname2, psp_version)) 
          {
-   std::cout << "into vpp2_generate" << std::endl;
+   std::cout << " into vpp2_generate" << std::endl;
             strcpy(pspname, myion->atom(ia));
             strcat(pspname, ".psp");
             control.add_permanent_dir(pspname);

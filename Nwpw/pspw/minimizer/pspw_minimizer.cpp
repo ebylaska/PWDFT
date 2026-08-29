@@ -216,6 +216,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       else
          coutput << " parallel mapping         : not balanced" << std::endl;
 
+      coutput << " TASK FLAG = " << flag << std::endl;
       if (mygrid.d3db::mygdevice.has_gpu())
       {
          //coutput << " parallel mapping         : has GPU" << std::endl;
@@ -541,6 +542,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    {
       // --- 1. Data Initialization ---
       double stress[9] = {0.0};
+      double stress_sym[9] = {0.0};
       double lstress[6] = {0.0};
       double sigma[9]  = {0.0};
       double trace = 0.0;
@@ -555,7 +557,8 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
       // --- 2. Computation ---
       cgsd_energy_stress(mymolecule, stress, hprint, coutput);
-      util_cell_lattice_gradient(stress, mylattice.unita_ptr(), lstress);
+      mymolecule.myion->symmetrize_stress(stress, stress_sym);
+      util_cell_lattice_gradient(stress_sym, mylattice.unita_ptr(), lstress);
 
       // Transform stress: sigma = -1/Omega * (Stress * Unita)
       double scal = -1.0 / mylattice.omega();
@@ -563,7 +566,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
           for (int u = 0; u < 3; ++u) {    // Row index
               double sum = 0.0;
               for (int s = 0; s < 3; ++s) { // Summation index
-                  sum += stress[u + 3*s] * mylattice.unita(s, v);
+                  sum += stress_sym[u + 3*s] * mylattice.unita(s, v);
               }
               sigma[u + 3*v] = scal * sum;
           }
@@ -612,6 +615,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
          // Print Primary Stress
          print_tensor_stats("Total Stress", stress);
+         print_tensor_stats("Total Symmetrize Stress", stress_sym);
        
          // Print Lattice Derivatives (L-Stress)
          coutput << "\n == Lattice Energy Derivatives ==" << std::endl;
@@ -624,13 +628,14 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
          coutput << " dE/dgamma = " << lstress[5] << "\n";
 
          // Print Transformed (Internal) Stress
-         print_tensor_stats("Internal Stress (Transformed)", sigma);
+         print_tensor_stats("Internal Symmetrized Stress (Transformed)", sigma);
     
          coutput << std::endl;
       }
 
-      rtdbjson["pspw"]["stress"] = std::vector<double>(stress, stress+9);
-      rtdbjson["pspw"]["lstress"] = std::vector<double>(lstress, lstress+6);
+      rtdbjson["pspw"]["stress"]     = std::vector<double>(stress, stress+9);
+      rtdbjson["pspw"]["stress_sym"] = std::vector<double>(stress_sym, stress_sym+9);
+      rtdbjson["pspw"]["lstress"]    = std::vector<double>(lstress, lstress+6);
    }
 
 

@@ -586,6 +586,10 @@ public:
    const std::vector<std::vector<int>>& get_symmetry_atom_map() const { return symmetry_atom_map; }
 
    void project_cartesian_vector(double *v) const;
+   void symmetrize_stress(const double stress_in[9], double stress_out[9]) const;
+   void symmetrize_lattice(double unita[9]) const;
+   void symmetrize_lattice_polar(double A[9]) const;
+
    void symmetrize_positions(double *rion) const;
    void symmetrize_ion_array(double* r_array);
    void symmetrize_rion1();

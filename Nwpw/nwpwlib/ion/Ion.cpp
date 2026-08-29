@@ -2322,6 +2322,970 @@ void Ion::project_cartesian_vector(double *v) const
         v[i] = vsum[i] * inv;
 }
 
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_stress             *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Project a stress tensor onto the point-group symmetry of the system.
+ *
+ * Symmetrizes a Cartesian second-rank stress tensor by averaging it over the
+ * unique rotational parts of the active symmetry operations:
+ *
+ *     S_sym = (1 / N) sum_g Q_g S Q_g^T
+ *
+ * where:
+ *
+ *   - S      is the input Cartesian stress tensor,
+ *   - Q_g    is the Cartesian rotation associated with symmetry operation g,
+ *   - N      is the number of unique rotational matrices,
+ *   - S_sym  is the symmetry-projected stress tensor.
+ *
+ * For crystalline systems, the symmetry operators stored in @c mysymmetry
+ * operate in fractional coordinates. Their rotations are transformed into
+ * Cartesian coordinates using the lattice matrix:
+ *
+ *     Q = A R A^{-1}
+ *
+ * where @c A is the lattice matrix and @c R is the fractional-coordinate
+ * rotation matrix. Fractional translations are ignored because translations
+ * do not affect a homogeneous stress tensor.
+ *
+ * For molecular systems, the stored rotation matrices are assumed to already
+ * be Cartesian rotations and are used directly.
+ *
+ * The input tensor is first symmetrized to remove numerical antisymmetric
+ * noise. The output is symmetrized again after projection to remove residual
+ * roundoff:
+ *
+ *     S_ij = S_ji
+ *
+ * Matrix storage is column-major, consistent with the rest of the @c Ion
+ * implementation:
+ *
+ *     A[i + 3*j] == A(i,j)
+ *
+ * For a cubic space group such as @c Fd-3m, the resulting tensor should have
+ * equal diagonal elements and vanishing off-diagonal elements, subject only
+ * to numerical noise:
+ *
+ *     S_sym = | p  0  0 |
+ *             | 0  p  0 |
+ *             | 0  0  p |
+ *
+ * @param[in]  stress_in
+ *     Input 3x3 Cartesian stress tensor stored in column-major order.
+ *
+ * @param[out] stress_out
+ *     Output 3x3 symmetry-projected Cartesian stress tensor stored in
+ *     column-major order. It may alias @p stress_in only if the implementation
+ *     is changed to use a temporary copy before writing the output.
+ *
+ * @pre
+ *     @p stress_in and @p stress_out point to arrays containing at least nine
+ *     elements.
+ *
+ * @pre
+ *     For crystalline systems, @c sym_unita must point to a valid nonsingular
+ *     3x3 lattice matrix.
+ *
+ * @note
+ *     Symmetry operations with identical rotational parts but different
+ *     fractional translations are counted only once. This is important for
+ *     centered space groups, where centering translations would otherwise
+ *     cause the same Cartesian rotation to be over-weighted.
+ *
+ * @note
+ *     The routine changes only the tensor representation. It does not change
+ *     the sign convention, units, lattice derivatives, or stored atomic
+ *     coordinates.
+ *
+ * @note
+ *     The function should generally be applied to the physical Cartesian
+ *     stress tensor, such as @c sigma, rather than directly to lattice
+ *     derivatives such as @c lstress.
+ */
+void Ion::symmetrize_stress(const double stress_in[9], double stress_out[9]) const
+{
+   if (!stress_in || !stress_out)
+      return;
+
+   const int nops = symmetry_nops();
+
+   if (nops <= 1)
+   {
+      std::copy(stress_in, stress_in + 9, stress_out);
+      return;
+   }
+
+   // Column-major 3x3 matrix multiplication:
+   // Multiplication: C = A * B
+   auto matmul = [](const double A[9], const double B[9], double C[9])
+   {
+      for (int j=0; j<3; ++j)
+      {
+         for (int i=0; i<3; ++i)
+         {
+            C[i+3*j] = 0.0;
+            for (int k=0; k<3; ++k)
+            {
+               C[i+3*j] += A[i+3*k] * B[k+3*j];
+            }
+         }
+      }
+   };
+
+   // Transpose: AT=A
+   auto transpose = [](const double A[9],
+                        double AT[9])
+   {
+      for (int j=0; j<3; ++j)
+      {
+         for (int i=0; i<3; ++i)
+            AT[i+3*j] = A[j+3*i];
+      }
+   };
+
+   //Determinant: det = |A| 
+   auto determinant = [](const double A[9])
+   {
+        return
+            A[0] * (A[4] * A[8] - A[5] * A[7])
+          - A[3] * (A[1] * A[8] - A[2] * A[7])
+          + A[6] * (A[1] * A[5] - A[2] * A[4]);
+   };
+
+   //Inverse:  A-1 
+   auto invert = [&](const double A[9], double Ainv[9])
+   {
+      const double det = determinant(A);
+
+      if (std::abs(det) < 1.0e-14)
+      {
+         throw std::runtime_error("Ion::symmetrize_stress: singular lattice");
+      }
+
+      const double invdet = 1.0 / det;
+
+      // Column-major inverse
+      Ainv[0] =  (A[4] * A[8] - A[7] * A[5]) * invdet;
+      Ainv[1] =  (A[7] * A[2] - A[1] * A[8]) * invdet;
+      Ainv[2] =  (A[1] * A[5] - A[4] * A[2]) * invdet;
+
+      Ainv[3] =  (A[6] * A[5] - A[3] * A[8]) * invdet;
+      Ainv[4] =  (A[0] * A[8] - A[6] * A[2]) * invdet;
+      Ainv[5] =  (A[3] * A[2] - A[0] * A[5]) * invdet;
+
+      Ainv[6] =  (A[3] * A[7] - A[6] * A[4]) * invdet;
+      Ainv[7] =  (A[6] * A[1] - A[0] * A[7]) * invdet;
+      Ainv[8] =  (A[0] * A[4] - A[3] * A[1]) * invdet;
+   };
+
+   // Stress should be symmetric. Remove tiny antisymmetric
+   // numerical noise before projecting it.
+   double S[9];
+
+   for (int j=0; j<3; ++j)
+   {
+      for (int i=0; i<3; ++i)
+      {
+          S[i+3*j] = 0.5*(stress_in[i+3*j] + stress_in[j+3*i]);
+      }
+   }
+
+   // For a crystal:
+   //    Q = A R A^{-1}
+   // For a molecule, R is already a Cartesian rotation.
+
+   double Ainv[9] = {0.0};
+
+   if (is_crystal)
+   {
+      if (!sym_unita)
+      {
+         std::copy(S, S + 9, stress_out);
+         return;
+      }
+      invert(sym_unita, Ainv);
+   }
+
+   std::vector<std::array<double, 9>> unique_rotations;
+
+   auto same_rotation = [](const std::array<double, 9>& X, const std::array<double, 9>& Y)
+   {
+      constexpr double tol = 1.0e-12;
+
+      for (int i=0; i<9; ++i)
+      {
+         if (std::abs(X[i] - Y[i]) > tol)
+            return false;
+      }
+
+      return true;
+   };
+
+   // Build unique Cartesian rotations. 
+   // When projecting a Cartesian stress tensor.
+   // Ignore the translation parts of the space-group operations.
+   // A homogeneous stress tensor transforms only under the rotation:
+   //     S' = Q * S * Q^T
+   for (const auto& op : mysymmetry.operators())
+   {
+      double R[9] = {0.0};
+
+      for (int i=0; i<3; ++i)
+      {
+         for (int j=0; j<3; ++j)
+            R[i+3*j] = op.R[i][j];
+      }
+
+      double Q[9] = {0.0};
+
+      if (is_crystal)
+      {
+         double AR[9] = {0.0};
+
+         matmul(sym_unita, R, AR);
+         matmul(AR, Ainv, Q);
+      }
+      else
+      {
+         std::copy(R, R + 9, Q);
+      }
+
+      std::array<double, 9> Qarray{};
+
+      for (int i=0; i<9; ++i)
+          Qarray[i] = Q[i];
+
+      const auto existing =
+          std::find_if(
+              unique_rotations.begin(),
+              unique_rotations.end(),
+              [&](const auto& old)
+              {
+                  return same_rotation(Qarray, old);
+              });
+
+      if (existing == unique_rotations.end())
+         unique_rotations.push_back(Qarray);
+   }
+
+   if (unique_rotations.empty())
+   {
+      std::copy(S, S + 9, stress_out);
+      return;
+   }
+
+   double sum[9] = {0.0};
+
+   // S_sym = average(Q S Q^T)
+   for (const auto& Qarray : unique_rotations)
+   {
+      const double* Q = Qarray.data();
+
+      double QT[9] = {0.0};
+      double QS[9] = {0.0};
+      double QSQ_T[9] = {0.0};
+
+      transpose(Q, QT);
+      matmul(Q, S, QS);
+      matmul(QS, QT, QSQ_T);
+
+      for (int i=0; i<9; ++i)
+        sum[i] += QSQ_T[i];
+   }
+
+   const double scale = 1.0 / static_cast<double>(unique_rotations.size());
+
+   for (int i=0; i<9; ++i)
+      stress_out[i] = scale * sum[i];
+
+   // Remove final roundoff antisymmetry.
+   for (int i=0; i<3; ++i)
+   {
+      for (int j=i+1; j<3; ++j)
+      {
+         const double value = 0.5 * (stress_out[i+3*j] + stress_out[j+3*i]);
+
+         stress_out[i+3*j] = value;
+         stress_out[j+3*i] = value;
+      }
+   }
+}
+
+/*******************************************
+ *                                         *
+ *      Ion::symmetrize_lattice            *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Project the lattice metric onto the active crystal symmetry.
+ *
+ * The lattice matrix is stored column-major:
+ *
+ *     A[i + 3*j] == A(i,j)
+ *
+ * where the columns of @p A are the Cartesian lattice vectors. The metric
+ * tensor is
+ *
+ *     G = A^T A
+ *
+ * For each symmetry operation, the fractional rotation R is converted to a
+ * Cartesian rotation:
+ *
+ *     Q = A R A^{-1}
+ *
+ * The translation part of the space-group operation is ignored. The metric
+ * is then projected according to:
+ *
+ *     G_sym = (1/N) sum_g Q_g G Q_g^T
+ *
+ * Finally, a Cholesky factor A_sym is constructed such that:
+ *
+ *     G_sym = A_sym^T A_sym
+ *
+ * and copied back into @p A.
+ *
+ * For a cubic crystal such as diamond with Fd-3m symmetry, the resulting
+ * lattice is cubic up to numerical precision.
+ *
+ * @param[in,out] A
+ *     3x3 column-major lattice matrix.
+ *
+ * @note
+ *     Operations having the same rotation but different translations are
+ *     counted only once. Space-group translations do not transform a
+ *     homogeneous lattice metric.
+ */
+void Ion::symmetrize_lattice(double A[9]) const
+{
+   if (A == nullptr || symmetry_nops() <= 1)
+      return;
+
+   if (!is_crystal)
+      return;
+
+   // Column-major matrix multiplication: C = X * Y
+   auto matmul3 = [](const double X[9], const double Y[9], double C[9])
+   {
+      for (int j=0; j<3; ++j)
+      {
+         for (int i=0; i<3; ++i)
+         {
+            C[i+3*j] = 0.0;
+
+            for (int k=0; k<3; ++k)
+            {
+               C[i+3*j] += X[i+3*k]*Y[k+3*j];
+            }
+         }
+      }
+   };
+
+   auto transpose3_local = [](const double X[9], double XT[9])
+   {
+      for (int i=0; i<3; ++i)
+      {
+         for (int j=0; j<3; ++j)
+            XT[i+3*j] = X[j+3*i];
+      }
+   };
+
+   // Column-major determinant.
+   auto determinant3_column_major = [](const double X[9])
+   {
+      return
+          X[0] * (X[4] * X[8] - X[7] * X[5])
+        - X[3] * (X[1] * X[8] - X[7] * X[2])
+        + X[6] * (X[1] * X[5] - X[4] * X[2]);
+   };
+
+   // Column-major 3x3 matrix inverse.
+   auto invert3_column_major = [&](const double X[9], double Xinv[9])
+   {
+      const double det = determinant3_column_major(X);
+
+      if (std::abs(det) < 1.0e-14)
+      {
+         throw std::runtime_error("Ion::symmetrize_lattice: singular lattice matrix");
+      }
+
+      const double invdet = 1.0 / det;
+
+      // Xinv is stored column-major.
+      Xinv[0] =  (X[4] * X[8] - X[7] * X[5]) * invdet;
+      Xinv[1] =  (X[5] * X[6] - X[3] * X[8]) * invdet;
+      Xinv[2] =  (X[3] * X[7] - X[4] * X[6]) * invdet;
+
+      Xinv[3] =  (X[6] * X[5] - X[2] * X[7]) * invdet;
+      Xinv[4] =  (X[0] * X[8] - X[6] * X[2]) * invdet;
+      Xinv[5] =  (X[2] * X[6] - X[0] * X[5]) * invdet;
+
+      Xinv[6] =  (X[3] * X[5] - X[6] * X[4]) * invdet;
+      Xinv[7] =  (X[6] * X[1] - X[0] * X[7]) * invdet;
+      Xinv[8] =  (X[0] * X[4] - X[3] * X[1]) * invdet;
+   };
+
+   // Compute the original metric: G = A^T A
+   double AT[9] = {0.0};
+   double G[9]  = {0.0};
+
+   transpose3_local(A, AT);
+   matmul3(AT, A, G);
+
+   // Compute A^{-1}
+   double Ainv[9] = {0.0};
+   invert3_column_major(A, Ainv);
+
+   // Keep only unique Cartesian rotations.
+   std::vector<std::array<double, 9>> rotations;
+
+   auto same_rotation = [](const std::array<double, 9>& X, const std::array<double, 9>& Y)
+   {
+      constexpr double tol = 1.0e-12;
+
+      for (int i=0; i<9; ++i)
+      {
+         if (std::abs(X[i]-Y[i]) > tol)
+            return false;
+      }
+
+      return true;
+   };
+
+   for (const auto& op : mysymmetry.operators())
+   {
+      // SymOp::R is indexed as R[i][j]. Convert it to the column-major convention used by this function.
+      double R[9] = {0.0};
+
+      for (int i=0; i<3; ++i)
+      {
+          for (int j=0; j<3; ++j)
+              R[i+3*j] = op.R[i][j];
+      }
+
+      /*
+       * Convert fractional rotation to Cartesian rotation:
+       *
+       *     Q = A R A^{-1}
+       *
+       * The translation op.t is intentionally ignored.
+       */
+      double AR[9] = {0.0};
+      double Q[9]  = {0.0};
+
+      matmul3(A, R, AR);
+      matmul3(AR, Ainv, Q);
+
+      std::array<double, 9> Qarray{};
+
+      for (int i = 0; i < 9; ++i)
+          Qarray[i] = Q[i];
+
+      const auto existing =
+          std::find_if(
+              rotations.begin(),
+              rotations.end(),
+              [&](const auto& old_rotation)
+              {
+                  return same_rotation(Qarray, old_rotation);
+              });
+
+      if (existing == rotations.end())
+          rotations.push_back(Qarray);
+   }
+
+   if (rotations.empty())
+       return;
+
+   // Average transformed metrics: G_sym = average(Q G Q^T)
+   double Gsum[9] = {0.0};
+
+   for (const auto& Qarray : rotations)
+   {
+      const double* Q = Qarray.data();
+
+      double QT[9]    = {0.0};
+      double QG[9]    = {0.0};
+      double QGQT[9]  = {0.0};
+
+      transpose3_local(Q, QT);
+      matmul3(Q, G, QG);
+      matmul3(QG, QT, QGQT);
+
+      for (int i=0; i<9; ++i)
+         Gsum[i] += QGQT[i];
+   }
+
+   const double scale = 1.0 / static_cast<double>(rotations.size());
+
+   for (int i=0; i<9; ++i)
+       Gsum[i] *= scale;
+
+   // Remove numerical antisymmetry from G_sym.
+   for (int i=0; i<3; ++i)
+   {
+      for (int j=i+1; j<3; ++j)
+      {
+         const double value = 0.5 * (Gsum[i+3*j] + Gsum[j+3*i]);
+         Gsum[i+3*j] = value;
+         Gsum[j+3*i] = value;
+      }
+   }
+
+   /*
+    * Reconstruct A from:
+    *
+    *     Gsum = A_sym^T A_sym
+    *
+    * Use an upper-triangular Cholesky factor:
+    *
+    *     A_sym = | a00  a01  a02 |
+    *              |  0   a11  a12 |
+    *              |  0    0   a22 |
+    *
+    * in column-major storage.
+    */
+   constexpr double metric_tol = 1.0e-14;
+
+   const double g00 = Gsum[0];
+   const double g01 = Gsum[3];
+   const double g02 = Gsum[6];
+   const double g11 = Gsum[4];
+   const double g12 = Gsum[7];
+   const double g22 = Gsum[8];
+
+   if (g00 <= metric_tol)
+   {
+      throw std::runtime_error("Ion::symmetrize_lattice: invalid metric tensor");
+   }
+
+   const double a00 = std::sqrt(g00);
+   const double a01 = g01 / a00;
+   const double a02 = g02 / a00;
+
+   const double d11 = g11 - a01 * a01;
+
+   if (d11 <= metric_tol)
+   {
+       throw std::runtime_error(
+           "Ion::symmetrize_lattice: metric is not positive definite");
+   }
+
+   const double a11 = std::sqrt(d11);
+
+   const double a12 = (g12 - a01 * a02) / a11;
+
+   const double d22 = g22 - a02 * a02 - a12 * a12;
+
+   if (d22 <= metric_tol)
+   {
+      throw std::runtime_error("Ion::symmetrize_lattice: metric is not positive definite");
+   }
+
+   const double a22 = std::sqrt(d22);
+
+   // Store the upper-triangular Cholesky factor column-major.
+   A[0] = a00;
+   A[1] = 0.0;
+   A[2] = 0.0;
+
+   A[3] = a01;
+   A[4] = a11;
+   A[5] = 0.0;
+
+   A[6] = a02;
+   A[7] = a12;
+   A[8] = a22;
+}
+
+
+/*******************************************
+ *                                         *
+ *    Ion::symmetrize_lattice_polar        *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Symmetrize the lattice metric while preserving lattice orientation.
+ *
+ * The lattice matrix is stored column-major:
+ *
+ *     A[i + 3*j] == A(i,j)
+ *
+ * and its columns are the Cartesian lattice vectors. The metric tensor is
+ *
+ *     G = A^T A
+ *
+ * The metric is projected over the unique Cartesian rotations associated with
+ * the active symmetry operations:
+ *
+ *     G_sym = (1/N) sum_g Q_g G Q_g^T
+ *
+ * For a crystal, the fractional-space rotation R is converted to Cartesian
+ * coordinates using:
+ *
+ *     Q = A R A^{-1}
+ *
+ * The translation part of each space-group operation is ignored.
+ *
+ * The original lattice is polar-decomposed:
+ *
+ *     A = U P
+ *     P = sqrt(A^T A)
+ *
+ * The symmetrized lattice is reconstructed as:
+ *
+ *     A_sym = U sqrt(G_sym)
+ *
+ * Thus, the symmetrized metric is applied while retaining the original
+ * lattice orientation. This avoids the axis-aligned triangular lattice
+ * produced by a Cholesky reconstruction.
+ *
+ * @param[in,out] A
+ *     Column-major 3x3 lattice matrix.
+ *
+ * @throws std::runtime_error if the lattice is singular or the symmetrized
+ *         metric is not positive definite.
+ */
+void Ion::symmetrize_lattice_polar(double A[9]) const
+{
+   if (A == nullptr || symmetry_nops() <= 1)
+      return;
+
+   if (!is_crystal)
+      return;
+
+   auto matmul3_local = [](const double X[9], const double Y[9], double Z[9])
+   {
+      for (int j=0; j<3; ++j)
+      {
+         for (int i=0; i<3; ++i)
+         {
+            Z[i+3*j] = 0.0;
+
+            for (int k=0; k<3; ++k)
+            {
+               Z[i+3*j] += X[i+3*k]*Y[k+3*j];
+            }
+         }
+      }
+   };
+
+   auto transpose3_local = [](const double X[9], double XT[9])
+   {
+      for (int i=0; i<3; ++i)
+      {
+         for (int j=0; j<3; ++j)
+            XT[i+3*j] = X[j+3*i];
+      }
+   };
+
+   auto determinant3_column_major = [](const double X[9])
+   {
+      return
+          X[0] * (X[4] * X[8] - X[7] * X[5])
+        - X[3] * (X[1] * X[8] - X[7] * X[2])
+        + X[6] * (X[1] * X[5] - X[4] * X[2]);
+   };
+
+   auto invert3_column_major = [&](const double X[9], double Xinv[9])
+   {
+       const double det =
+           determinant3_column_major(X);
+
+       if (std::abs(det) < 1.0e-14)
+       {
+           throw std::runtime_error(
+               "Ion::symmetrize_lattice_polar: "
+               "singular lattice matrix");
+       }
+
+       const double invdet = 1.0 / det;
+
+       Xinv[0] =  (X[4] * X[8] - X[7] * X[5]) * invdet;
+       Xinv[1] =  (X[2] * X[7] - X[1] * X[8]) * invdet;
+       Xinv[2] =  (X[1] * X[5] - X[2] * X[4]) * invdet;
+
+       Xinv[3] =  (X[5] * X[6] - X[3] * X[8]) * invdet;
+       Xinv[4] =  (X[0] * X[8] - X[2] * X[6]) * invdet;
+       Xinv[5] =  (X[2] * X[3] - X[0] * X[5]) * invdet;
+
+       Xinv[6] =  (X[3] * X[7] - X[4] * X[6]) * invdet;
+       Xinv[7] =  (X[1] * X[6] - X[0] * X[7]) * invdet;
+       Xinv[8] =  (X[0] * X[4] - X[3] * X[1]) * invdet;
+   };
+
+   /*
+    * Compute the symmetric square root and inverse square root of
+    * a positive-definite 3x3 matrix using Jacobi diagonalization.
+    *
+    *     G = V D V^T
+    *     sqrt(G)     = V sqrt(D) V^T
+    *     invsqrt(G)  = V invsqrt(D) V^T
+    */
+   auto symmetric_sqrt_and_inverse = [&](const double G[9], double sqrtG[9], double invsqrtG[9])
+   {
+      double B[9];
+      double V[9] = {
+         1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0
+      };
+
+      for (int i=0; i<9; ++i)
+         B[i] = G[i];
+
+      constexpr int max_iterations = 100;
+      constexpr double offdiag_tol = 1.0e-14;
+
+      for (int iteration = 0; iteration < max_iterations; ++iteration)
+      {
+         int p = 0;
+         int q = 1;
+         double largest = 0.0;
+
+         for (int i=0; i<3; ++i)
+         {
+             for (int j=i+1; j<3; ++j)
+             {
+                 const double value = std::abs(B[i+3*j]);
+
+                 if (value > largest)
+                 {
+                    largest = value;
+                    p = i;
+                    q = j;
+                 }
+             }
+         }
+
+         if (largest < offdiag_tol)
+            break;
+
+         const double app = B[p + 3*p];
+         const double aqq = B[q + 3*q];
+         const double apq = B[p + 3*q];
+
+         const double angle = 0.5 * std::atan2( 2.0 * apq, aqq - app);
+
+         const double c = std::cos(angle);
+         const double s = std::sin(angle);
+
+         double J[9] = {
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+         };
+
+         J[p + 3*p] = c;
+         J[q + 3*q] = c;
+         J[p + 3*q] = s;
+         J[q + 3*p] = -s;
+
+         double JT[9];
+         double temp[9];
+         double Bnew[9];
+         double Vnew[9];
+
+         transpose3_local(J, JT);
+
+         // Bnew = J^T B J
+         matmul3_local(JT, B, temp);
+         matmul3_local(temp, J, Bnew);
+
+         // Vnew = V J
+         matmul3_local(V, J, Vnew);
+
+         for (int i = 0; i < 9; ++i)
+         {
+             B[i] = Bnew[i];
+             V[i] = Vnew[i];
+         }
+      }
+
+      // Remove residual numerical asymmetry.
+      for (int i=0; i<3; ++i)
+      {
+         for (int j=i+1; j<3; ++j)
+         {
+            const double value = 0.5 * (B[i+3*j] + B[j+3*i]);
+
+            B[i+3*j] = value;
+            B[j+3*i] = value;
+         }
+      }
+
+      const double eigenvalues[3] = {
+          B[0],
+          B[4],
+          B[8]
+      };
+
+      double Dsqrt[9] = {0.0};
+      double DinvSqrt[9] = {0.0};
+
+      for (int i = 0; i < 3; ++i)
+      {
+          double eigenvalue = eigenvalues[i];
+
+          if (eigenvalue < 0.0 && eigenvalue > -1.0e-12)
+          {
+             eigenvalue = 0.0;
+          }
+
+          if (eigenvalue <= 0.0)
+          {
+             throw std::runtime_error("Ion::symmetrize_lattice_polar: " "metric is not positive definite");
+          }
+
+          Dsqrt[i+3*i] = std::sqrt(eigenvalue);
+          DinvSqrt[i+3*i] = 1.0 / Dsqrt[i + 3*i];
+      }
+
+      double VT[9];
+      double temp[9];
+
+      transpose3_local(V, VT);
+
+      // sqrtG = V * sqrt(D) * V^T
+      matmul3_local(V, Dsqrt, temp);
+      matmul3_local(temp, VT, sqrtG);
+
+      // invsqrtG = V * invsqrt(D) * V^T
+      matmul3_local(V, DinvSqrt, temp);
+      matmul3_local(temp, VT, invsqrtG);
+   };
+
+   // Original metric: G = A^T A
+   double AT[9] = {0.0};
+   double G[9] = {0.0};
+
+   transpose3_local(A, AT);
+   matmul3_local(AT, A, G);
+
+   // Original polar decomposition: A = U P;  P = sqrt(G); U = A invsqrt(G)
+   double sqrtG_original[9] = {0.0};
+   double invsqrtG_original[9] = {0.0};
+
+   symmetric_sqrt_and_inverse(G,sqrtG_original,invsqrtG_original);
+
+   double U[9] = {0.0};
+
+   matmul3_local(A,invsqrtG_original, U);
+
+   // Build unique Cartesian rotations.
+   std::vector<std::array<double, 9>> rotations;
+
+   auto same_rotation = [](const std::array<double, 9>& X, const std::array<double, 9>& Y)
+   {
+      constexpr double tol = 1.0e-12;
+
+      for (int i=0; i<9; ++i)
+      {
+         if (std::abs(X[i] - Y[i]) > tol)
+             return false;
+      }
+
+      return true;
+   };
+
+   double Ainv[9] = {0.0};
+   invert3_column_major(A, Ainv);
+
+   for (const auto& op : mysymmetry.operators())
+   {
+      double R[9] = {0.0};
+
+      for (int i = 0; i < 3; ++i)
+      {
+          for (int j=0; j<3; ++j)
+              R[i+3*j] = op.R[i][j];
+      }
+
+      // Convert fractional rotation R to Cartesian rotation: Q = A R A^{-1}
+      // The translation part op.t is intentionally ignored.
+      double AR[9] = {0.0};
+      double Q[9] = {0.0};
+
+      matmul3_local(A, R, AR);
+      matmul3_local(AR, Ainv, Q);
+
+      std::array<double, 9> Qarray{};
+
+      for (int i=0; i<9; ++i)
+         Qarray[i] = Q[i];
+
+      const auto existing =
+         std::find_if(
+             rotations.begin(),
+             rotations.end(),
+             [&](const auto& old_rotation)
+             {
+                return same_rotation(Qarray, old_rotation);
+             });
+
+      if (existing == rotations.end())
+         rotations.push_back(Qarray);
+   }
+
+   if (rotations.empty())
+       return;
+
+   // Average transformed metrics: Gsym = average(Q G Q^T)
+   double Gsum[9] = {0.0};
+
+   for (const auto& Qarray : rotations)
+   {
+      const double* Q = Qarray.data();
+
+      double QT[9] = {0.0};
+      double QG[9] = {0.0};
+      double QGQT[9] = {0.0};
+
+      transpose3_local(Q, QT);
+      matmul3_local(Q, G, QG);
+      matmul3_local(QG, QT, QGQT);
+
+      for (int i=0; i<9; ++i)
+         Gsum[i] += QGQT[i];
+   }
+
+   const double scale = 1.0 / static_cast<double>(rotations.size());
+
+   for (int i=0; i<9; ++i)
+       Gsum[i] *= scale;
+
+   // Remove numerical antisymmetry from Gsym.
+   for (int i=0; i<3; ++i)
+   {
+      for (int j=i+1; j<3; ++j)
+      {
+         const double value = 0.5 * (Gsum[i+3*j] + Gsum[j+3*i]);
+
+         Gsum[i+3*j] = value;
+         Gsum[j+3*i] = value;
+      }
+   }
+
+   // Symmetrized positive-definite factor: Psym = sqrt(Gsym)
+   double sqrtG_sym[9] = {0.0};
+   double invsqrtG_sym[9] = {0.0};
+
+   symmetric_sqrt_and_inverse(Gsum, sqrtG_sym, invsqrtG_sym);
+
+   // Preserve the original polar orientation: Asym = U Psym
+   double Asym[9] = {0.0};
+
+   matmul3_local(U, sqrtG_sym, Asym);
+
+   for (int i=0; i<9; ++i)
+      A[i] = Asym[i];
+}
+
+
+
 
 /*******************************************
  *                                         *
